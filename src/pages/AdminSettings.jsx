@@ -9,6 +9,7 @@ import { ShieldCheck, BookOpen, GraduationCap, Puzzle, CalendarRange, Settings2 
 import LookupTable from '@/components/admin/LookupTable';
 import PhasenTable from '@/components/admin/PhasenTable';
 import WartungsmodusToggle from '@/components/admin/WartungsmodusToggle';
+import AktivitaetenKatalog from '@/components/admin/AktivitaetenKatalog';
 
 const KATEGORIEN = ['Diagnostik', 'Input', 'Übung', 'Projekt', 'Prüfung'];
 
@@ -58,7 +59,7 @@ export default function AdminSettings() {
 
       {/* Lookup-Tabellen */}
       <Tabs defaultValue="faecher">
-        <TabsList className="bg-muted grid w-full grid-cols-4">
+        <TabsList className="bg-muted grid w-full grid-cols-5">
           <TabsTrigger value="faecher" className="gap-1.5 text-xs">
             <BookOpen className="w-3.5 h-3.5" />Fächer
           </TabsTrigger>
@@ -70,6 +71,9 @@ export default function AdminSettings() {
           </TabsTrigger>
           <TabsTrigger value="phasen" className="gap-1.5 text-xs">
             <CalendarRange className="w-3.5 h-3.5" />Phasen
+          </TabsTrigger>
+          <TabsTrigger value="aktivitaeten" className="gap-1.5 text-xs">
+            <Puzzle className="w-3.5 h-3.5" />Aktivitäten
           </TabsTrigger>
         </TabsList>
 
@@ -166,6 +170,11 @@ export default function AdminSettings() {
               <PhasenTable items={phasenRaw} />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Aktivitäten-Katalog */}
+        <TabsContent value="aktivitaeten" className="mt-4">
+          <AktivitaetenKatalog />
         </TabsContent>
       </Tabs>
     </div>

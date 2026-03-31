@@ -1,0 +1,245 @@
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Edit2, Plus, Trash2, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+
+const PHASEN = [
+  { value: 'Input', label: 'Input (Erarbeitung)', color: 'bg-blue-100 text-blue-700' },
+  { value: 'Übung', label: 'Übung', color: 'bg-green-100 text-green-700' },
+  { value: 'Abschluss', label: 'Abschluss', color: 'bg-purple-100 text-purple-700' },
+];
+
+export default function AktivitaetenKatalog() {
+  const queryClient = useQueryClient();
+  const [selectedPhase, setSelectedPhase] = useState('Input');
+  const [editDialog, setEditDialog] = useState({ open: false, aktivitaet: null });
+  const [formSchemaText, setFormSchemaText] = useState('');
+  const [formSchemaError, setFormSchemaError] = useState('');
+
+  // ── Query ──
+  const { data: aktivitaeten = [], isLoading } = useQuery({
+    queryKey: ['aktivitaetenKatalog'],
+    queryFn: () => base44.entities.AktivitaetenKatalog.list(),
+  });
+
+  // ── Mutations ──
+  const updateToggle = useMutation({
+    mutationFn: ({ id, isActive }) =>
+      base44.entities.AktivitaetenKatalog.update(id, { is_active: isActive }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['aktivitaetenKatalog'] });
+      toast.success('Aktivität aktualisiert');
+    },
+  });
+
+  const updateFormSchema = useMutation({
+    mutationFn: ({ id, formSchema }) =>
+      base44.entities.AktivitaetenKatalog.update(id, { form_schema: formSchema }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['aktivitaetenKatalog'] });
+      setEditDialog({ open: false, aktivitaet: null });
+      toast.success('Form-Schema aktualisiert');
+    },
+  });
+
+  const deleteAktivitaet = useMutation({
+    mutationFn: (id) => base44.entities.AktivitaetenKatalog.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['aktivitaetenKatalog'] });
+      toast.success('Aktivität gelöscht');
+    },
+  });
+
+  // ── Handlers ──
+  const handleEditClick = (aktivitaet) => {
+    setFormSchemaText(JSON.stringify(aktivitaet.form_schema || [], null, 2));
+    setFormSchemaError('');
+    setEditDialog({ open: true, aktivitaet });
+  };
+
+  const handleSaveSchema = () => {
+    try {
+      const parsed = JSON.parse(formSchemaText);
+      if (!Array.isArray(parsed)) throw new Error('Form-Schema muss ein Array sein');
+      updateFormSchema.mutate({ id: editDialog.aktivitaet.id, formSchema: parsed });
+    } catch (err) {
+      setFormSchemaError(err.message);
+    }
+  };
+
+  // ── Filter & Group ──
+  const aktivitaeterForPhase = (phase) =>
+    aktivitaeten
+      .filter((a) => a.phase === phase)
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Aktivitäten-Katalog</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Verwalten Sie die verfügbaren Aktivitäten für jede Lernpaket-Phase und deren Metadaten-Anforderungen.
+        </p>
+      </div>
+
+      <Tabs value={selectedPhase} onValueChange={setSelectedPhase}>
+        <TabsList className="bg-muted">
+          {PHASEN.map((phase) => (
+            <TabsTrigger key={phase.value} value={phase.value}>
+              {phase.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {PHASEN.map((phase) => {
+          const items = aktivitaeterForPhase(phase.value);
+          return (
+            <TabsContent key={phase.value} value={phase.value} className="mt-6 space-y-4">
+              {items.length === 0 ? (
+                <Card className="border-dashed border-2">
+                  <CardContent className="text-center py-12">
+                    <p className="text-muted-foreground mb-4">
+                      Keine Aktivitäten für diese Phase hinterlegt.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-3">
+                  {items.map((aktivitaet) => (
+                    <Card key={aktivitaet.id} className="border shadow-sm overflow-hidden">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-semibold text-foreground">{aktivitaet.name}</h3>
+                              <Badge className={cn('text-[10px]', phase.color)}>
+                                {phase.label}
+                              </Badge>
+                            </div>
+
+                            {aktivitaet.form_schema && aktivitaet.form_schema.length > 0 && (
+                              <div className="text-xs text-muted-foreground mb-2">
+                                <span className="font-medium">Felder:</span>{' '}
+                                {aktivitaet.form_schema.map((f) => f.field_name).join(', ')}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-3 shrink-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">
+                                {aktivitaet.is_active ? 'Aktiv' : 'Inaktiv'}
+                              </span>
+                              <Switch
+                                checked={aktivitaet.is_active}
+                                onCheckedChange={(checked) =>
+                                  updateToggle.mutate({ id: aktivitaet.id, isActive: checked })
+                                }
+                                disabled={updateToggle.isPending}
+                              />
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleEditClick(aktivitaet)}
+                              >
+                                <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => deleteAktivitaet.mutate(aktivitaet.id)}
+                                disabled={deleteAktivitaet.isPending}
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          );
+        })}
+      </Tabs>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialog.open} onOpenChange={(open) => setEditDialog({ ...editDialog, open })}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Form-Schema bearbeiten: {editDialog.aktivitaet?.name}</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div>
+              <Label className="text-sm font-medium mb-2 block">
+                Form-Schema (JSON-Array)
+              </Label>
+              <Textarea
+                value={formSchemaText}
+                onChange={(e) => {
+                  setFormSchemaText(e.target.value);
+                  setFormSchemaError('');
+                }}
+                placeholder='[{"field_name": "url", "type": "url", "label": "Video-URL"}]'
+                className="font-mono text-xs min-h-[300px]"
+              />
+              {formSchemaError && (
+                <p className="text-xs text-destructive mt-2">{formSchemaError}</p>
+              )}
+              <p className="text-xs text-muted-foreground mt-2">
+                Verfügbare Feldtypen: text, textarea, url, file, image, audio, number, select, json, info
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialog({ open: false, aktivitaet: null })}>
+              Abbrechen
+            </Button>
+            <Button
+              onClick={handleSaveSchema}
+              disabled={updateFormSchema.isPending}
+              className="gap-2"
+            >
+              {updateFormSchema.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+              Speichern
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

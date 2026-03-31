@@ -1,0 +1,90 @@
+{
+  "name": "AktivitaetenKatalog",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name der Aktivit\u00e4t (z.B. 'Video anschauen')"
+    },
+    "phase": {
+      "type": "string",
+      "enum": [
+        "Input",
+        "\u00dcbung",
+        "Abschluss"
+      ],
+      "description": "Phase des Lernpakets"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Ob die Aktivit\u00e4t global verf\u00fcgbar ist"
+    },
+    "form_schema": {
+      "type": "array",
+      "description": "Array von Feldkonfigurationen f\u00fcr das Frontend-Rendering",
+      "items": {
+        "type": "object",
+        "properties": {
+          "field_name": {
+            "type": "string",
+            "description": "Eindeutiger Feldname (z.B. 'url', 'file', 'text')"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "textarea",
+              "url",
+              "file",
+              "image",
+              "audio",
+              "number",
+              "select",
+              "json",
+              "info"
+            ],
+            "description": "Feldtyp"
+          },
+          "label": {
+            "type": "string",
+            "description": "Anzeige-Label im Formular"
+          },
+          "required": {
+            "type": "boolean",
+            "default": false,
+            "description": "Ob das Feld erforderlich ist"
+          },
+          "options": {
+            "type": "array",
+            "description": "Optionen f\u00fcr Select-Felder",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "placeholder": {
+            "type": "string",
+            "description": "Placeholder-Text"
+          }
+        },
+        "required": [
+          "field_name",
+          "type",
+          "label"
+        ]
+      }
+    }
+  },
+  "required": [
+    "name",
+    "phase"
+  ]
+}
