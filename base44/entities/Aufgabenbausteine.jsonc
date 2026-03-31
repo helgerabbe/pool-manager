@@ -10,6 +10,15 @@
       "type": "string",
       "description": "Referenz zum zugeh\u00f6rigen Lernziel (Foreign Key)"
     },
+    "anforderungsebene": {
+      "type": "string",
+      "enum": [
+        "1 - Basis",
+        "2 - Transfer",
+        "3 - Projekt"
+      ],
+      "description": "Ebene des Aufgabenbausteins \u2013 bestimmt die Differenzierung"
+    },
     "baustein_typ": {
       "type": "string",
       "enum": [
@@ -46,7 +55,7 @@
         "2-Sterne",
         "3-Sterne"
       ],
-      "description": "Schwierigkeitsgrad (prim\u00e4r f\u00fcr Ebene-2-Aufgaben)"
+      "description": "Schwierigkeitsgrad (prim\u00e4r f\u00fcr Ebene-2/3-Aufgaben)"
     },
     "material_typ": {
       "type": "string",

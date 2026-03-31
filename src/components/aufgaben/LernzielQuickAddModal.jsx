@@ -14,8 +14,7 @@ export default function LernzielQuickAddModal({ open, onOpenChange, onSubmit }) 
     setSaving(true);
     await onSubmit({
       formulierung_fachsprache: text,
-      anforderungsebene: 'Ebene 1 - Basis',
-      // Kategorie bleibt offen — kann danach gesetzt werden
+      kategorie: 'Fachwissen',
     });
     setText('');
     setSaving(false);
@@ -35,7 +34,7 @@ export default function LernzielQuickAddModal({ open, onOpenChange, onSubmit }) 
           <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2 text-xs text-green-800">
             <Target className="w-3.5 h-3.5 mt-0.5 shrink-0 text-green-600" />
             <span>
-              Wird als <strong>Ebene 1 – Basis</strong>-Lernziel im aktuellen Lernpaket angelegt
+              Wird als <strong>Basiskompetenz</strong> im aktuellen Lernpaket angelegt
               und erscheint sofort in der Drag-Liste.
             </span>
           </div>

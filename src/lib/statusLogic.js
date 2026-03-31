@@ -1,10 +1,14 @@
 /**
- * statusLogic.js — Ampel-Logik für den Workspace
+ * statusLogic.js — Ampel-Logik für den Workspace (Atom-Modell)
+ *
+ * Modell:
+ *   - Lernziele = atomare Basis-Bausteine (kein anforderungsebene mehr)
+ *   - Aufgabenbausteine tragen die Ebene: "1 - Basis", "2 - Transfer", "3 - Projekt"
  *
  * Status-Werte:
- *   'red'    — Leer / kritisch unvollständig (kein Kind-Element vorhanden)
- *   'yellow' — In Bearbeitung (teilweise vorhanden, Lock aktiv, oder Alignment-Lücken)
- *   'green'  — Vollständig (Constructive Alignment erfüllt)
+ *   'red'    — Leer / kritisch unvollständig
+ *   'yellow' — In Bearbeitung (teilweise vorhanden, Lock aktiv, Mapping fehlt)
+ *   'green'  — Vollständig
  */
 
 // ── Hilfsfunktionen ────────────────────────────────────────────────────────────
@@ -13,58 +17,52 @@ function hatInhalt(aufgabe) {
   return aufgabe.aufgabentext_inhalt && aufgabe.aufgabentext_inhalt.trim() !== '';
 }
 
-function hatEbene2Felder(aufgabe) {
+function istTransferOderProjekt(aufgabe) {
   return (
-    hatInhalt(aufgabe) &&
-    aufgabe.schwierigkeitsgrad &&
-    aufgabe.schwierigkeitsgrad.trim() !== ''
+    aufgabe.anforderungsebene === '2 - Transfer' ||
+    aufgabe.anforderungsebene === '3 - Projekt' ||
+    // Rückwärtskompatibilität mit altem baustein_typ
+    aufgabe.baustein_typ === 'Ebene-2-Aufgabe' ||
+    aufgabe.baustein_typ === 'Ebene-3-Projekt'
   );
 }
 
 /**
- * Prüft ob eine Ebene-2-Aufgabe das Alignment-Minimum erfüllt:
- * Text + Sterne + mindestens 1 Mapping-Eintrag.
- *
- * @param {object}   aufgabe
- * @param {object[]} mappings — alle MappingAufgabeBasisziel-Datensätze (flat, alle Aufgaben)
- * @returns {'green'|'yellow'|'red'}
+ * Status einer Transfer/Projekt-Aufgabe:
+ * Grün = Textinhalt vorhanden UND mindestens 1 Lernziel-Atom zugeordnet.
  */
 export function getEbene2AufgabeStatus(aufgabe, mappings = []) {
-  if (aufgabe.lock_status) return 'yellow'; // Gesperrt → immer gelb
-  const hatFelder  = hatEbene2Felder(aufgabe);
+  if (aufgabe.lock_status) return 'yellow';
+  const hatText    = hatInhalt(aufgabe);
   const hatMapping = mappings.some(m => m.aufgabe_id === aufgabe.id);
-  if (hatFelder && hatMapping) return 'green';
-  if (hatFelder || hatMapping) return 'yellow'; // Einer der beiden Teile fehlt
+  if (hatText && hatMapping) return 'green';
+  if (hatText || hatMapping) return 'yellow';
   return 'red';
 }
 
 /**
- * Gibt zurück, ob eine Ebene-2-Aufgabe Textinhalt hat, aber noch kein Mapping.
- * Wird in der Sidebar für die Warnmeldung verwendet.
+ * Gibt zurück, ob eine Transfer-Aufgabe Textinhalt hat, aber noch kein Mapping.
  */
 export function ebene2FehltMapping(aufgabe, mappings = []) {
   return (
-    aufgabe.baustein_typ === 'Ebene-2-Aufgabe' &&
+    istTransferOderProjekt(aufgabe) &&
     hatInhalt(aufgabe) &&
     !mappings.some(m => m.aufgabe_id === aufgabe.id)
   );
 }
 
 /**
- * Berechnet den Ampel-Status eines einzelnen Aufgabenbausteins
- * (berücksichtigt Ebene-2-Mapping-Pflicht wenn mappings übergeben werden).
+ * Status eines einzelnen Aufgabenbausteins.
  *
- * @param {object}   aufgabe
- * @param {string}   userEmail
- * @param {object[]} mappings
- * @returns {'green'|'yellow'|'red'}
+ * - Basis-Bausteine (1 - Basis): Inhalt ODER Opt-Out = grün
+ * - Transfer/Projekt (2/3):      Inhalt + Mapping = grün
  */
 export function getAufgabeStatus(aufgabe, userEmail, mappings = []) {
   if (aufgabe.lock_status && aufgabe.locked_by_user !== userEmail) return 'yellow';
-  if (aufgabe.baustein_typ === 'Ebene-2-Aufgabe') {
+  if (istTransferOderProjekt(aufgabe)) {
     return getEbene2AufgabeStatus(aufgabe, mappings);
   }
-  // Ebene 1 / alle anderen: Inhalt ODER Opt-Out = grün
+  // Basis-Baustein: Inhalt ODER Opt-Out = grün
   if (aufgabe.is_opt_out === true || hatInhalt(aufgabe)) return 'green';
   return 'red';
 }

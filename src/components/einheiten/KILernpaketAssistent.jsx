@@ -102,7 +102,6 @@ Antworte NUR mit dem JSON-Objekt. Kein Text, keine Markdown-Blöcke.
                     type: 'object',
                     properties: {
                       formulierung_fachsprache: { type: 'string' },
-                      anforderungsebene: { type: 'string' },
                       kategorie: { type: 'string' },
                       schueler_uebersetzung: { type: 'string' },
                     },
@@ -166,7 +165,6 @@ Antworte NUR mit dem JSON-Objekt. Kein Text, keine Markdown-Blöcke.
         ...p,
         lernziele: [...p.lernziele, {
           formulierung_fachsprache: '',
-          anforderungsebene: 'Ebene 1 - Basis',
           kategorie: 'Fachwissen',
           schueler_uebersetzung: '',
         }],
@@ -195,7 +193,6 @@ Antworte NUR mit dem JSON-Objekt. Kein Text, keine Markdown-Blöcke.
         await base44.entities.Lernziele.create({
           lernpaket_id: neuesPaket.id,
           formulierung_fachsprache: ziel.formulierung_fachsprache,
-          anforderungsebene: 'Ebene 1 - Basis',
           kategorie: ziel.kategorie || 'Fachwissen',
           schueler_uebersetzung: ziel.schueler_uebersetzung || '',
         });

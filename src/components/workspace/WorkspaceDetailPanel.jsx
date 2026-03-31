@@ -16,10 +16,9 @@ import {
   TrendingUp, AlertTriangle
 } from 'lucide-react';
 
-const ebeneColors = {
-  'Ebene 1 - Basis':    'bg-green-100 text-green-700',
-  'Ebene 2 - Transfer': 'bg-blue-100 text-blue-700',
-  'Ebene 3 - Projekt':  'bg-purple-100 text-purple-700',
+const kategorieColors = {
+  'Fachwissen':          'bg-blue-100 text-blue-700',
+  'Fähigkeit/Fertigkeit': 'bg-amber-100 text-amber-700',
 };
 
 const bausteinColors = {
@@ -258,9 +257,11 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium">{lz.formulierung_fachsprache}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge className={`text-[10px] ${ebeneColors[lz.anforderungsebene] || ''}`}>
-                        {lz.anforderungsebene}
-                      </Badge>
+                      {lz.kategorie && (
+                        <Badge className={`text-[10px] ${kategorieColors[lz.kategorie] || ''}`}>
+                          {lz.kategorie}
+                        </Badge>
+                      )}
                       <span className="text-xs text-muted-foreground">{lzAufgaben.length} Bausteine</span>
                     </div>
                   </div>
@@ -318,7 +319,9 @@ function LernzielPanel({ lernziel, paketId, aufgaben, userEmail, kannBearbeiten,
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2 mb-2 flex-wrap">
-            <Badge className={ebeneColors[lernziel.anforderungsebene] || ''}>{lernziel.anforderungsebene}</Badge>
+            {lernziel.kategorie && (
+              <Badge className={kategorieColors[lernziel.kategorie] || ''}>{lernziel.kategorie}</Badge>
+            )}
             <StatusBadge status={lzStatus} />
           </div>
           <h2 className="text-xl font-bold leading-snug">{lernziel.formulierung_fachsprache}</h2>

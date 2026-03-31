@@ -114,11 +114,11 @@ export default function Ebene2MappingView({ aufgabe, lernpaketId, einheitId, kan
 
   const einheitPaketIds = einheitPakete.map(p => p.id);
 
-  // ── Nur Ebene-1-Lernziele dieser Einheit laden (gefiltert, nach Paket-IDs)
+  // ── Alle Lernziele dieser Einheit laden (alle sind Basis-Atome)
   const { data: ebene1Ziele = [] } = useQuery({
-    queryKey: ['lernziele-ebene1', einheitPaketIds.join(',')],
+    queryKey: ['lernziele-einheit', einheitPaketIds.join(',')],
     queryFn: async () => {
-      const alle = await base44.entities.Lernziele.filter({ anforderungsebene: 'Ebene 1 - Basis' });
+      const alle = await base44.entities.Lernziele.list();
       return alle.filter(lz => einheitPaketIds.includes(lz.lernpaket_id));
     },
     enabled: einheitPaketIds.length > 0,

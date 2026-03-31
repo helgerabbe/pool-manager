@@ -10,22 +10,13 @@
       "type": "string",
       "description": "Formulierung in Fachsprache (Ich kann...)"
     },
-    "anforderungsebene": {
-      "type": "string",
-      "enum": [
-        "Ebene 1 - Basis",
-        "Ebene 2 - Transfer",
-        "Ebene 3 - Projekt"
-      ],
-      "description": "Anforderungsebene des Lernziels"
-    },
     "kategorie": {
       "type": "string",
       "enum": [
         "Fachwissen",
         "F\u00e4higkeit/Fertigkeit"
       ],
-      "description": "Kategorie (nur relevant f\u00fcr Ebene 1 - Basis) \u2013 steuert auto-generierte Baustein-Templates"
+      "description": "Kategorie des Lernziels \u2013 steuert auto-generierte Baustein-Templates"
     },
     "schueler_uebersetzung": {
       "type": "string",
@@ -34,7 +25,6 @@
   },
   "required": [
     "lernpaket_id",
-    "formulierung_fachsprache",
-    "anforderungsebene"
+    "formulierung_fachsprache"
   ]
 }
