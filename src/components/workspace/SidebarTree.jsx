@@ -74,9 +74,10 @@ function BausteinNode({ aufgabe, selectedId, onSelect, userEmail, mappings }) {
 
 // ── Tree-Node: Lernziel (Level 2) ─────────────────────────────────────────────
 
-function LernzielNode({ lernziel, aufgaben, paketId, selectedId, onSelect, kannBearbeiten, userEmail, mappings }) {
+function LernzielNode({ lernziel, aufgaben, paketId, selectedId, onSelect, kannBearbeiten, userEmail, mappings, highlightedAtomIds }) {
   const [open, setOpen]  = useState(false);
   const isSelected       = selectedId === lernziel.id;
+  const isHighlighted    = highlightedAtomIds?.has(lernziel.id);
   const status           = getLernzielStatus(lernziel, aufgaben, paketId, userEmail, mappings);
   const bausteine        = aufgaben.filter(a => a.lernpaket_id === paketId && a.lernziel_id === lernziel.id);
 
@@ -95,9 +96,11 @@ function LernzielNode({ lernziel, aufgaben, paketId, selectedId, onSelect, kannB
             'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors min-w-0',
             isSelected
               ? 'bg-primary text-primary-foreground'
-              : status === 'red'
-                ? 'text-red-700 bg-red-50 hover:bg-red-100'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              : isHighlighted
+                ? 'bg-amber-100 text-amber-800 ring-1 ring-amber-400'
+                : status === 'red'
+                  ? 'text-red-700 bg-red-50 hover:bg-red-100'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
           )}
         >
           <Target className="w-3 h-3 shrink-0" />
@@ -137,7 +140,7 @@ function LernzielNode({ lernziel, aufgaben, paketId, selectedId, onSelect, kannB
 
 // ── Tree-Node: Lernpaket (Level 1) ────────────────────────────────────────────
 
-function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings }) {
+function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, highlightedAtomIds }) {
   const [open, setOpen]  = useState(true);
   const isSelected       = selectedId === paket.id;
   const paketZiele       = lernziele.filter(lz => lz.lernpaket_id === paket.id);
@@ -182,6 +185,7 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
               kannBearbeiten={kannBearbeiten}
               userEmail={userEmail}
               mappings={mappings}
+              highlightedAtomIds={highlightedAtomIds}
             />
           ))}
           {kannBearbeiten && (
@@ -230,6 +234,7 @@ export default function SidebarTree({
   onSelect,
   kannBearbeiten,
   userEmail = '',
+  highlightedAtomIds = new Set(),
 }) {
   const selectedId = selectedNode?.id;
   const { prozent, gruen, gesamt } = getEinheitFortschritt(lernpakete, lernziele, aufgaben, userEmail, mappings);
@@ -305,6 +310,7 @@ export default function SidebarTree({
                 kannBearbeiten={kannBearbeiten}
                 userEmail={userEmail}
                 mappings={mappings}
+                highlightedAtomIds={highlightedAtomIds}
               />
             ))}
             {kannBearbeiten && (

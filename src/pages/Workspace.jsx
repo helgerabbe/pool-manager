@@ -4,22 +4,25 @@ import { base44 } from '@/api/base44Client';
 import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
 import SidebarTree from '@/components/workspace/SidebarTree';
-import BreadcrumbHeader from '@/components/workspace/BreadcrumbHeader';
 import WorkspaceDetailPanel from '@/components/workspace/WorkspaceDetailPanel';
+import WorkspaceStats from '@/components/workspace/WorkspaceStats';
+import TransferSaeule from '@/components/workspace/TransferSaeule';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PanelLeftClose, PanelLeft, BookOpen } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BookOpen, Layers, Zap, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 
 /**
- * Workspace — Master-Detail-Planungsbereich
+ * Workspace — Drei-Säulen-Architektur
  *
- * URL-Schema: /workspace?einheit=<id>
- * State:
- *  selectedEinheitId  — aktive Einheit (aus URL-Param oder Dropdown)
- *  selectedNode       — { type, id, data?, paketId?, lernzielId? }
- *  sidebarOpen        — Sidebar sichtbar?
+ * Säule 1 (Tab "Basis"):      Hierarchischer Baum + Detail-Panel (Lernpakete → Atome)
+ * Säule 2 (Tab "Transfer"):   Transfer-Aufgaben (anforderungsebene: "2 - Transfer") + Mapping
+ * Säule 3 (Tab "Projekte"):   Anwendungsprojekte (anforderungsebene: "3 - Projekt") + Mapping
+ *
+ * Cross-Highlighting: Beim Klick auf eine Transfer/Projekt-Aufgabe werden die
+ * gemappten Lernziel-Atome in Säule 1 visuell hervorgehoben.
  */
 export default function Workspace() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -28,12 +31,14 @@ export default function Workspace() {
   const { permissions, authUser, rolle, isLoading: rbacLoading } = useRBAC();
   const queryClient = useQueryClient();
 
-  // ── State ──────────────────────────────────────────────────────────────────
+  // ── State ────────────────────────────────────────────────────────────────────
   const [selectedEinheitId, setSelectedEinheitId] = useState(initialEinheitId);
   const [selectedNode, setSelectedNode]           = useState(null);
-  const [sidebarOpen, setSidebarOpen]             = useState(true);
+  const [activeTab, setActiveTab]                 = useState('basis');
+  // Cross-Highlighting: Set von Lernziel-IDs, die hervorgehoben werden sollen
+  const [highlightedAtomIds, setHighlightedAtomIds] = useState(new Set());
 
-  // ── Queries ────────────────────────────────────────────────────────────────
+  // ── Queries ──────────────────────────────────────────────────────────────────
   const { data: einheiten = [], isLoading: einheitenLoading } = useQuery({
     queryKey: ['einheiten'],
     queryFn: () => base44.entities.Einheiten.list('-created_date'),
@@ -63,7 +68,7 @@ export default function Workspace() {
     enabled: !!selectedEinheitId,
   });
 
-  // ── Aktive Einheit ─────────────────────────────────────────────────────────
+  // ── Aktive Einheit ────────────────────────────────────────────────────────────
   const einheit = einheiten.find(e => e.id === selectedEinheitId) || null;
 
   const paketeFuerEinheit = lernpakete
@@ -71,35 +76,38 @@ export default function Workspace() {
     .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0));
 
   const paketIds = paketeFuerEinheit.map(p => p.id);
-  const zieleFuerEinheit   = lernziele.filter(lz => paketIds.includes(lz.lernpaket_id));
+  const zieleFuerEinheit    = lernziele.filter(lz => paketIds.includes(lz.lernpaket_id));
   const aufgabenFuerEinheit = aufgaben.filter(a  => paketIds.includes(a.lernpaket_id));
 
-  // ── RBAC ───────────────────────────────────────────────────────────────────
+  // ── RBAC ──────────────────────────────────────────────────────────────────────
   const kannDieseEinheitBearbeiten = einheit
     ? permissions.kannEinheitBearbeiten(einheit.fach)
     : false;
   const istAdmin = rolle === ROLLEN.ADMIN;
 
-  // ── Navigations-Callbacks ─────────────────────────────────────────────────
-  const handleSelect = useCallback((node) => {
-    setSelectedNode(node);
-  }, []);
+  // ── Callbacks ─────────────────────────────────────────────────────────────────
+  const handleSelect = useCallback((node) => setSelectedNode(node), []);
 
   const handleEinheitChange = (id) => {
     setSelectedEinheitId(id);
     setSelectedNode({ type: 'einheit', id });
-    // URL-Param aktualisieren (kein Router-Push nötig)
+    setHighlightedAtomIds(new Set());
     const url = new URL(window.location.href);
     url.searchParams.set('einheit', id);
     window.history.replaceState({}, '', url);
   };
 
-  // ── Delete-Mutations ───────────────────────────────────────────────────────
+  // Cross-Highlighting von Säule 2/3 → Säule 1
+  const handleAtomHighlight = useCallback((atomIds) => {
+    setHighlightedAtomIds(new Set(atomIds));
+  }, []);
+
+  // ── Delete-Mutations ──────────────────────────────────────────────────────────
   const deleteLernpaket = useMutation({
     mutationFn: async (id) => {
-      const relZiele   = zieleFuerEinheit.filter(lz => lz.lernpaket_id === id);
-      const relAufgaben = aufgabenFuerEinheit.filter(a => a.lernpaket_id === id);
-      for (const z of relZiele)   await base44.entities.Lernziele.delete(z.id);
+      const relZiele    = zieleFuerEinheit.filter(lz => lz.lernpaket_id === id);
+      const relAufgaben = aufgabenFuerEinheit.filter(a  => a.lernpaket_id === id);
+      for (const z of relZiele)    await base44.entities.Lernziele.delete(z.id);
       for (const a of relAufgaben) await base44.entities.Aufgabenbausteine.delete(a.id);
       return base44.entities.Lernpakete.delete(id);
     },
@@ -115,13 +123,12 @@ export default function Workspace() {
     mutationFn: (id) => base44.entities.Lernziele.delete(id),
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['lernziele'] });
-      // Zurück zum übergeordneten Paket navigieren
       const lz = zieleFuerEinheit.find(lz => lz.id === id);
       if (lz) setSelectedNode({ type: 'lernpaket', id: lz.lernpaket_id });
     },
   });
 
-  // ── Loading ────────────────────────────────────────────────────────────────
+  // ── Loading ───────────────────────────────────────────────────────────────────
   if (rbacLoading || einheitenLoading) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
@@ -130,7 +137,6 @@ export default function Workspace() {
     );
   }
 
-  // ── Keine Einheiten vorhanden ──────────────────────────────────────────────
   if (einheiten.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4 text-center">
@@ -141,34 +147,23 @@ export default function Workspace() {
             Legen Sie zuerst eine Einheit an, um den Workspace zu nutzen.
           </p>
         </div>
-        <Link to="/einheiten">
-          <Button>Zu den Einheiten</Button>
-        </Link>
+        <Link to="/einheiten"><Button>Zu den Einheiten</Button></Link>
       </div>
     );
   }
 
+  const transferCount = aufgabenFuerEinheit.filter(a => a.anforderungsebene === '2 - Transfer').length;
+  const projektCount  = aufgabenFuerEinheit.filter(a => a.anforderungsebene === '3 - Projekt').length;
+
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] -mx-4 sm:-mx-6 lg:-mx-8 -my-8">
 
-      {/* ── Top-Bar: Einheitenauswahl ────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card shrink-0">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setSidebarOpen(o => !o)}
-          title="Sidebar umschalten"
-        >
-          {sidebarOpen
-            ? <PanelLeftClose className="w-4 h-4" />
-            : <PanelLeft      className="w-4 h-4" />
-          }
-        </Button>
-
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+      {/* ── Top-Bar ──────────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border bg-card shrink-0 flex-wrap gap-y-2">
+        <div className="flex items-center gap-2 min-w-0">
           <span className="text-sm text-muted-foreground shrink-0">Einheit:</span>
           <Select value={selectedEinheitId || ''} onValueChange={handleEinheitChange}>
-            <SelectTrigger className="w-64 h-8 text-sm">
+            <SelectTrigger className="w-56 h-8 text-sm">
               <SelectValue placeholder="Einheit auswählen…" />
             </SelectTrigger>
             <SelectContent>
@@ -181,73 +176,95 @@ export default function Workspace() {
           </Select>
         </div>
 
-        <Link to="/einheiten" className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0">
+        {/* Statistik-Leiste */}
+        {einheit && (
+          <WorkspaceStats
+            lernpakete={paketeFuerEinheit}
+            lernziele={zieleFuerEinheit}
+            aufgaben={aufgabenFuerEinheit}
+            mappings={mappings}
+            userEmail={authUser?.email || ''}
+          />
+        )}
+
+        <Link to="/einheiten" className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0 ml-auto">
           ← Übersicht
         </Link>
       </div>
 
-      {/* ── Split-Screen ──────────────────────────────────────────────────────── */}
-      <div className="flex flex-1 overflow-hidden">
+      {/* ── Drei-Säulen-Tabs ─────────────────────────────────────────────────── */}
+      {!einheit ? (
+        <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center">
+          <BookOpen className="w-12 h-12 text-muted-foreground/30" />
+          <div>
+            <p className="font-semibold">Einheit auswählen</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Wählen Sie oben eine Einheit aus, um mit der Planung zu beginnen.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <Tabs
+          value={activeTab}
+          onValueChange={(tab) => { setActiveTab(tab); setHighlightedAtomIds(new Set()); }}
+          className="flex flex-col flex-1 overflow-hidden"
+        >
+          {/* Tab-Leiste */}
+          <div className="px-4 pt-2 border-b border-border bg-card shrink-0">
+            <TabsList className="h-9">
+              <TabsTrigger value="basis" className="gap-1.5 text-xs">
+                <Layers className="w-3.5 h-3.5" />
+                Basis-Lernpakete
+                {paketeFuerEinheit.length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
+                    {paketeFuerEinheit.length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="transfer" className="gap-1.5 text-xs">
+                <Zap className="w-3.5 h-3.5" />
+                Transfer-Übungen
+                {transferCount > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">
+                    {transferCount}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="projekt" className="gap-1.5 text-xs">
+                <FolderOpen className="w-3.5 h-3.5" />
+                Projekte
+                {projektCount > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[10px] font-bold">
+                    {projektCount}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-        {/* ── Sidebar (Master) ──────────────────────────────────────────────── */}
-        <aside className={cn(
-          'border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden transition-all duration-200',
-          sidebarOpen ? 'w-72' : 'w-0'
-        )}>
-          {sidebarOpen && einheit && (
-            <div className="flex-1 overflow-y-auto p-3">
-              <SidebarTree
-                einheit={einheit}
-                lernpakete={paketeFuerEinheit}
-                lernziele={zieleFuerEinheit}
-                aufgaben={aufgabenFuerEinheit}
-                mappings={mappings}
-                selectedNode={selectedNode}
-                onSelect={handleSelect}
-                kannBearbeiten={kannDieseEinheitBearbeiten}
-                userEmail={authUser?.email || ''}
-              />
-            </div>
-          )}
-          {sidebarOpen && !einheit && (
-            <div className="flex items-center justify-center h-full text-center p-6">
-              <p className="text-sm text-muted-foreground">Wählen Sie oben eine Einheit aus.</p>
-            </div>
-          )}
-        </aside>
+          {/* ── Säule 1: Basis-Lernpakete (Master-Detail) ────────────────────── */}
+          <TabsContent value="basis" className="flex flex-1 overflow-hidden m-0 p-0">
+            {/* Sidebar */}
+            <aside className="w-72 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-3">
+                <SidebarTree
+                  einheit={einheit}
+                  lernpakete={paketeFuerEinheit}
+                  lernziele={zieleFuerEinheit}
+                  aufgaben={aufgabenFuerEinheit}
+                  mappings={mappings}
+                  selectedNode={selectedNode}
+                  onSelect={handleSelect}
+                  kannBearbeiten={kannDieseEinheitBearbeiten}
+                  userEmail={authUser?.email || ''}
+                  highlightedAtomIds={highlightedAtomIds}
+                />
+              </div>
+            </aside>
 
-        {/* ── Detail-Bereich (Master) ───────────────────────────────────────── */}
-        <main className="flex-1 flex flex-col overflow-hidden">
-
-          {/* Breadcrumb (fixiert am oberen Rand der Arbeitsfläche) */}
-          {einheit && (
-            <BreadcrumbHeader
-              einheit={einheit}
-              lernpakete={paketeFuerEinheit}
-              lernziele={zieleFuerEinheit}
-              aufgaben={aufgabenFuerEinheit}
-              selectedNode={selectedNode}
-              onNavigate={handleSelect}
-              userEmail={authUser?.email || ''}
-            />
-          )}
-
-          {/* Scrollbarer Content */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="max-w-3xl mx-auto px-6 py-6">
-              {!einheit ? (
-                /* Wizard-Schritt 0: Keine Einheit ausgewählt */
-                <div className="flex flex-col items-center justify-center h-64 gap-4 text-center">
-                  <BookOpen className="w-12 h-12 text-muted-foreground/30" />
-                  <div>
-                    <p className="font-semibold">Einheit auswählen</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Wählen Sie oben eine Einheit aus, um mit der Planung zu beginnen.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                /* Conditional Rendering: Formular-Panel je nach Node-Typ */
+            {/* Detail-Panel */}
+            <main className="flex-1 overflow-y-auto">
+              <div className="max-w-3xl mx-auto px-6 py-6">
                 <WorkspaceDetailPanel
                   selectedNode={selectedNode}
                   einheit={einheit}
@@ -265,11 +282,41 @@ export default function Workspace() {
                   onDeleteLernpaket={(id) => deleteLernpaket.mutate(id)}
                   onDeleteLernziel={(id) => deleteLernziel.mutate(id)}
                 />
-              )}
-            </div>
-          </div>
-        </main>
-      </div>
+              </div>
+            </main>
+          </TabsContent>
+
+          {/* ── Säule 2: Transfer-Übungen ─────────────────────────────────────── */}
+          <TabsContent value="transfer" className="flex-1 overflow-hidden m-0 p-0">
+            <TransferSaeule
+              ebene="2 - Transfer"
+              lernpakete={paketeFuerEinheit}
+              lernziele={zieleFuerEinheit}
+              aufgaben={aufgabenFuerEinheit}
+              mappings={mappings}
+              einheitId={einheit.id}
+              kannBearbeiten={kannDieseEinheitBearbeiten}
+              onAtomHighlight={handleAtomHighlight}
+              highlightedAufgabeId={null}
+            />
+          </TabsContent>
+
+          {/* ── Säule 3: Anwendungs-Projekte ──────────────────────────────────── */}
+          <TabsContent value="projekt" className="flex-1 overflow-hidden m-0 p-0">
+            <TransferSaeule
+              ebene="3 - Projekt"
+              lernpakete={paketeFuerEinheit}
+              lernziele={zieleFuerEinheit}
+              aufgaben={aufgabenFuerEinheit}
+              mappings={mappings}
+              einheitId={einheit.id}
+              kannBearbeiten={kannDieseEinheitBearbeiten}
+              onAtomHighlight={handleAtomHighlight}
+              highlightedAufgabeId={null}
+            />
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 }
