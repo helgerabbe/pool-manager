@@ -37,19 +37,9 @@ const REAL_BADGE = {
  */
 export default function RoleSwitcher({ realRolle, anzeigeRolle }) {
   const { mockedRole, setMockedRole } = useMockedRole();
-  const isAdmin    = realRolle === ROLLEN.ADMIN;
-  const isMocked   = !!mockedRole;
+  const isMocked = !!mockedRole;
 
-  // Für Nicht-Admins: nur passives Badge anzeigen
-  if (!isAdmin) {
-    return anzeigeRolle ? (
-      <span className={`text-[10px] font-semibold px-2 py-1 rounded-full hidden sm:inline-flex items-center ${REAL_BADGE[anzeigeRolle] || 'bg-muted text-muted-foreground'}`}>
-        {anzeigeRolle}
-      </span>
-    ) : null;
-  }
-
-  // Admin: klickbares Dropdown
+  // Immer klickbares Dropdown (Dev-Modus)
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
