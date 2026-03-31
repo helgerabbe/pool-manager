@@ -1,15 +1,21 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { BookOpen, Layers, Target, Puzzle, Home } from 'lucide-react';
+import { BookOpen, Layers, Home, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useRBAC } from '@/hooks/useRBAC';
+import { Badge } from '@/components/ui/badge';
 
-const navItems = [
-  { path: '/', label: 'Übersicht', icon: Home },
-  { path: '/einheiten', label: 'Einheiten', icon: BookOpen },
-];
+const rollenBadgeColors = {
+  Administrator:      'bg-red-100 text-red-700',
+  Fachschaftsleitung: 'bg-purple-100 text-purple-700',
+  Fachlehrkraft:      'bg-blue-100 text-blue-700',
+  Betrachter:         'bg-gray-100 text-gray-600',
+  'Moodle-Designer':  'bg-green-100 text-green-700',
+};
 
 export default function AppLayout() {
   const location = useLocation();
+  const { rolle, permissions } = useRBAC();
 
   return (
     <div className="min-h-screen bg-background">
@@ -27,9 +33,12 @@ export default function AppLayout() {
               </div>
             </Link>
             <nav className="flex items-center gap-1">
-              {navItems.map(item => {
+              {[
+                { path: '/', label: 'Übersicht', icon: Home },
+                { path: '/einheiten', label: 'Einheiten', icon: BookOpen },
+              ].map(item => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path || 
+                const isActive = location.pathname === item.path ||
                   (item.path !== '/' && location.pathname.startsWith(item.path));
                 return (
                   <Link
@@ -37,8 +46,8 @@ export default function AppLayout() {
                     to={item.path}
                     className={cn(
                       "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
-                      isActive 
-                        ? "bg-primary text-primary-foreground" 
+                      isActive
+                        ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted"
                     )}
                   >
@@ -47,6 +56,25 @@ export default function AppLayout() {
                   </Link>
                 );
               })}
+              {permissions.kannBenutzerVerwalten && (
+                <Link
+                  to="/benutzerverwaltung"
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
+                    location.pathname === '/benutzerverwaltung'
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span className="hidden sm:inline">Benutzer</span>
+                </Link>
+              )}
+              {rolle && (
+                <Badge className={`ml-2 text-[10px] hidden sm:inline-flex ${rollenBadgeColors[rolle] || 'bg-muted text-muted-foreground'}`}>
+                  {rolle}
+                </Badge>
+              )}
             </nav>
           </div>
         </div>

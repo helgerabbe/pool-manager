@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
+import { useRBAC } from '@/hooks/useRBAC';
+import { ROLLEN } from '@/lib/rbac';
+import AufgabenbausteintCard from '@/components/aufgaben/AufgabenbausteintCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,10 +51,11 @@ const bausteinColors = {
 };
 
 export default function EinheitDetail() {
-  const einheitId = new URLSearchParams(window.location.search).get('id') || 
+  const einheitId = new URLSearchParams(window.location.search).get('id') ||
     window.location.pathname.split('/').pop();
-    
+
   const queryClient = useQueryClient();
+  const { permissions, authUser, rolle } = useRBAC();
 
   const [showLernpaketForm, setShowLernpaketForm] = useState(false);
   const [showLernzielForm, setShowLernzielForm] = useState(false);
@@ -148,6 +152,15 @@ export default function EinheitDetail() {
   const getLernzieleForPaket = (paketId) => zieleFuerEinheit.filter(lz => lz.lernpaket_id === paketId);
   const getAufgabenForPaket = (paketId) => aufgabenFuerEinheit.filter(a => a.lernpaket_id === paketId);
 
+  // RBAC: Einheit-spezifische Permissions
+  const kannDieseEinheitBearbeiten = einheit
+    ? permissions.kannEinheitBearbeiten(einheit.fach)
+    : false;
+  const kannFreigabeAendern = einheit
+    ? permissions.kannFreigabeStatusAendern(einheit.fach)
+    : false;
+  const istAdmin = rolle === ROLLEN.ADMIN;
+
   return (
     <div className="space-y-6">
       {/* Breadcrumb + Header */}
@@ -173,10 +186,12 @@ export default function EinheitDetail() {
               )}
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setShowEditEinheit(true)} className="gap-2">
-            <Edit className="w-4 h-4" />
-            Bearbeiten
-          </Button>
+          {kannDieseEinheitBearbeiten && (
+            <Button variant="outline" size="sm" onClick={() => setShowEditEinheit(true)} className="gap-2">
+              <Edit className="w-4 h-4" />
+              Bearbeiten
+            </Button>
+          )}
         </div>
       </div>
 
@@ -230,11 +245,13 @@ export default function EinheitDetail() {
 
         {/* Lernpakete Tab */}
         <TabsContent value="lernpakete" className="space-y-4 mt-4">
-          <div className="flex justify-end">
-            <Button onClick={() => setShowLernpaketForm(true)} size="sm" className="gap-2">
-              <Plus className="w-4 h-4" />Neues Lernpaket
-            </Button>
-          </div>
+          {kannDieseEinheitBearbeiten && (
+            <div className="flex justify-end">
+              <Button onClick={() => setShowLernpaketForm(true)} size="sm" className="gap-2">
+                <Plus className="w-4 h-4" />Neues Lernpaket
+              </Button>
+            </div>
+          )}
 
           {paketeFuerEinheit.length === 0 ? (
             <EmptyState
@@ -266,11 +283,13 @@ export default function EinheitDetail() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteDialog({ open: true, type: 'lernpaket', id: paket.id })}>
-                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                          </Button>
-                        </div>
+                        {kannDieseEinheitBearbeiten && (
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteDialog({ open: true, type: 'lernpaket', id: paket.id })}>
+                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0 space-y-4">
@@ -278,9 +297,11 @@ export default function EinheitDetail() {
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Lernziele</h4>
-                          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => { setSelectedPaketId(paket.id); setShowLernzielForm(true); }}>
-                            <Plus className="w-3 h-3" />Hinzufügen
-                          </Button>
+                          {kannDieseEinheitBearbeiten && (
+                            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => { setSelectedPaketId(paket.id); setShowLernzielForm(true); }}>
+                              <Plus className="w-3 h-3" />Hinzufügen
+                            </Button>
+                          )}
                         </div>
                         {paketZiele.length === 0 ? (
                           <p className="text-xs text-muted-foreground italic py-2">Noch keine Lernziele definiert.</p>
@@ -295,9 +316,11 @@ export default function EinheitDetail() {
                                     {ziel.anforderungsebene}
                                   </Badge>
                                 </div>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => setDeleteDialog({ open: true, type: 'lernziel', id: ziel.id })}>
-                                  <Trash2 className="w-3 h-3 text-destructive" />
-                                </Button>
+                                {kannDieseEinheitBearbeiten && (
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => setDeleteDialog({ open: true, type: 'lernziel', id: ziel.id })}>
+                                    <Trash2 className="w-3 h-3 text-destructive" />
+                                  </Button>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -308,36 +331,30 @@ export default function EinheitDetail() {
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aufgabenbausteine</h4>
-                          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => { setSelectedPaketId(paket.id); setShowAufgabenForm(true); }}>
-                            <Plus className="w-3 h-3" />Hinzufügen
-                          </Button>
+                          {kannDieseEinheitBearbeiten && (
+                            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => { setSelectedPaketId(paket.id); setShowAufgabenForm(true); }}>
+                              <Plus className="w-3 h-3" />Hinzufügen
+                            </Button>
+                          )}
                         </div>
                         {paketAufgaben.length === 0 ? (
                           <p className="text-xs text-muted-foreground italic py-2">Noch keine Aufgabenbausteine erstellt.</p>
                         ) : (
                           <div className="space-y-2">
                             {paketAufgaben.map(aufgabe => (
-                              <div key={aufgabe.id} className="flex items-start gap-2 p-2 rounded-lg bg-muted/50 group">
-                                <Puzzle className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <Badge className={`text-[10px] ${bausteinColors[aufgabe.baustein_typ] || 'bg-muted text-muted-foreground'}`}>
-                                      {aufgabe.baustein_typ}
-                                    </Badge>
-                                    {aufgabe.lock_status && (
-                                      <span className="flex items-center gap-1 text-[10px] text-amber-600">
-                                        <Lock className="w-3 h-3" />{aufgabe.locked_by_user}
-                                      </span>
-                                    )}
-                                  </div>
-                                  {aufgabe.aufgabentext_inhalt && (
-                                    <p className="text-sm mt-1 text-muted-foreground line-clamp-2">{aufgabe.aufgabentext_inhalt}</p>
-                                  )}
-                                </div>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => setDeleteDialog({ open: true, type: 'aufgabe', id: aufgabe.id })}>
-                                  <Trash2 className="w-3 h-3 text-destructive" />
-                                </Button>
-                              </div>
+                              <AufgabenbausteintCard
+                                key={aufgabe.id}
+                                aufgabe={aufgabe}
+                                userEmail={authUser?.email}
+                                kannBearbeiten={kannDieseEinheitBearbeiten}
+                                kannLoeschen={kannDieseEinheitBearbeiten}
+                                istAdmin={istAdmin}
+                                onDelete={(id) => setDeleteDialog({ open: true, type: 'aufgabe', id })}
+                                onLockAcquired={(id) => {
+                                  // Hier könnte ein Edit-Modal geöffnet werden
+                                  // Lock wird automatisch beim Schließen freigegeben
+                                }}
+                              />
                             ))}
                           </div>
                         )}

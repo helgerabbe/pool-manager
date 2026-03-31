@@ -9,6 +9,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import Dashboard from '@/pages/Dashboard';
 import EinheitenListe from '@/pages/EinheitenListe';
 import EinheitDetail from '@/pages/EinheitDetail';
+import Benutzerverwaltung from '@/pages/Benutzerverwaltung';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -40,6 +41,7 @@ const AuthenticatedApp = () => {
         <Route path="/" element={<Dashboard />} />
         <Route path="/einheiten" element={<EinheitenListe />} />
         <Route path="/einheiten/:id" element={<EinheitDetail />} />
+        <Route path="/benutzerverwaltung" element={<Benutzerverwaltung />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

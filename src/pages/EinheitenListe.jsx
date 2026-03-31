@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { useRBAC } from '@/hooks/useRBAC';
+import { kannEinheitSehen } from '@/lib/rbac';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,6 +17,7 @@ export default function EinheitenListe() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterFach, setFilterFach] = useState('all');
   const queryClient = useQueryClient();
+  const { permissions, rolle } = useRBAC();
 
   const { data: einheiten = [], isLoading } = useQuery({
     queryKey: ['einheiten'],
@@ -34,7 +37,8 @@ export default function EinheitenListe() {
   const filtered = einheiten.filter(e => {
     const matchSearch = e.titel_der_einheit?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchFach = filterFach === 'all' || e.fach === filterFach;
-    return matchSearch && matchFach;
+    const matchRBAC = kannEinheitSehen(rolle, e.freigabe_status);
+    return matchSearch && matchFach && matchRBAC;
   });
 
   const faecher = [...new Set(einheiten.map(e => e.fach).filter(Boolean))];
@@ -56,10 +60,12 @@ export default function EinheitenListe() {
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Einheiten</h1>
           <p className="text-sm text-muted-foreground mt-1">{einheiten.length} Einheit{einheiten.length !== 1 ? 'en' : ''} insgesamt</p>
         </div>
-        <Button onClick={() => setShowForm(true)} className="gap-2">
-          <Plus className="w-4 h-4" />
-          Neue Einheit
-        </Button>
+        {permissions.kannSchreiben && (
+          <Button onClick={() => setShowForm(true)} className="gap-2">
+            <Plus className="w-4 h-4" />
+            Neue Einheit
+          </Button>
+        )}
       </div>
 
       {einheiten.length > 0 && (

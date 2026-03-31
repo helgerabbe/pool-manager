@@ -1,0 +1,57 @@
+{
+  "name": "Benutzer",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Referenz zur eingebauten User-Entit\u00e4t (Email als FK)"
+    },
+    "rolle": {
+      "type": "string",
+      "enum": [
+        "Administrator",
+        "Fachschaftsleitung",
+        "Fachlehrkraft",
+        "Betrachter",
+        "Moodle-Designer"
+      ],
+      "description": "Systemrolle des Benutzers"
+    },
+    "fachbereich_zustaendigkeit": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Deutsch",
+          "Mathematik",
+          "Englisch",
+          "Franz\u00f6sisch",
+          "Latein",
+          "Biologie",
+          "Chemie",
+          "Physik",
+          "Geschichte",
+          "Geographie",
+          "Politik",
+          "Wirtschaft",
+          "Kunst",
+          "Musik",
+          "Sport",
+          "Religion",
+          "Ethik",
+          "Informatik"
+        ]
+      },
+      "description": "Zust\u00e4ndige F\u00e4cher des Benutzers (Mehrfachauswahl m\u00f6glich)"
+    },
+    "ist_aktiv": {
+      "type": "boolean",
+      "default": true,
+      "description": "Ob das Konto aktiv ist"
+    }
+  },
+  "required": [
+    "user_id",
+    "rolle"
+  ]
+}
