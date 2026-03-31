@@ -222,21 +222,22 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   });
 
   const PHASES = [
-    { key: 'input', label: 'Input (Erarbeitung)', icon: '📚', defaultDisabled: false },
-    { key: 'uebung', label: 'Übung', icon: '✏️', defaultDisabled: false },
-    { key: 'abschluss', label: 'Abschluss', icon: '🎯', defaultDisabled: false },
+    { key: 'Input', label: 'Input (Erarbeitung)', icon: '📚', defaultDisabled: false },
+    { key: 'Übung', label: 'Übung', icon: '✏️', defaultDisabled: false },
+    { key: 'Abschluss', label: 'Abschluss', icon: '🎯', defaultDisabled: false },
   ];
 
   const handlePhaseToggle = (phaseKey) => {
     const phasenConfig = paket.phasen_konfiguration || {};
     const phaseConfig = phasenConfig[phaseKey] || {};
     const newDisabledState = !phaseConfig.disabled;
+    const updatedPhaseConfig = {
+      ...phaseConfig,
+      disabled: newDisabledState,
+    };
     const newConfig = {
       ...phasenConfig,
-      [phaseKey]: {
-        ...phaseConfig,
-        disabled: newDisabledState,
-      },
+      [phaseKey]: updatedPhaseConfig,
     };
     base44.entities.Lernpakete.update(paket.id, { phasen_konfiguration: newConfig }).then(() => {
       queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
@@ -598,7 +599,12 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient
 
   const phasenConfig = paket.phasen_konfiguration || {};
   const phaseConfig = phasenConfig[phaseKey] || {};
-  const phaseAktivitaeten = aktivitaeten.filter(a => a.phase === phaseLabel && a.is_active);
+  const phaseMappings = {
+    'Input (Erarbeitung)': ['Input', 'Input (Erarbeitung)'],
+    'Übung': ['Übung'],
+    'Abschluss': ['Abschluss'],
+  };
+  const phaseAktivitaeten = aktivitaeten.filter(a => phaseMappings[phaseLabel]?.includes(a.phase) && a.is_active);
   const currentAktivitaet = phaseConfig.selected_aktivitaet_id 
     ? aktivitaeten.find(a => a.id === phaseConfig.selected_aktivitaet_id)
     : null;
@@ -919,31 +925,27 @@ export default function WorkspaceDetailPanel({
   }
 
   if (type === 'phase') {
-    const phaseLabel = { input: 'Input (Erarbeitung)', uebung: 'Übung', abschluss: 'Abschluss' }[selectedNode.phase] || selectedNode.phase;
-    const phaseConfig = selectedNode.data?.phasen_konfiguration?.[selectedNode.phase] || {};
+    const paket = lernpakete.find(p => p.id === selectedNode.paketId);
+    if (!paket) return null;
+    
+    const phaseKeyMap = { input: 'Input', uebung: 'Übung', abschluss: 'Abschluss' };
+    const phaseKey = phaseKeyMap[selectedNode.phase] || selectedNode.phase;
+    const phaseLabelMap = { 'Input': 'Input (Erarbeitung)', 'Übung': 'Übung', 'Abschluss': 'Abschluss' };
+    const phaseLabel = phaseLabelMap[phaseKey] || phaseKey;
     
     return (
-      <div className="space-y-4">
+      <>
         <div>
-          <h2 className="text-xl font-bold">{phaseLabel}</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Konfigurieren Sie die Aktivität für diese Phase
-          </p>
-        </div>
-        
-        {!phaseConfig.selected_aktivitaet_id ? (
-          <StepEmptyState
-            icon={Puzzle}
-            title="Noch keine Aktivität zugeordnet"
-            description="Klicken Sie auf das Feld 'Aktivität zuordnen', um eine Aktivität für diese Phase auszuwählen."
-            status="yellow"
+          <h2 className="text-lg font-bold mb-4">{phaseLabel}</h2>
+          <PhaseContent
+            paket={paket}
+            phaseKey={phaseKey}
+            phaseLabel={phaseLabel}
+            kannBearbeiten={kannBearbeiten}
+            queryClient={queryClient}
           />
-        ) : (
-          <div className="p-4 rounded-lg border bg-card space-y-3">
-            <p className="text-sm font-medium">Aktivität konfigurieren im Lernpaket-Panel</p>
-          </div>
-        )}
-      </div>
+        </div>
+      </>
     );
   }
 
