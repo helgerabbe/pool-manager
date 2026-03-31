@@ -21,6 +21,16 @@
     "schueler_uebersetzung": {
       "type": "string",
       "description": "Sch\u00fclergerechte Formulierung f\u00fcr die Lernlandkarte"
+    },
+    "sync_status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "exported",
+        "modified"
+      ],
+      "default": "new",
+      "description": "Sync-Status f\u00fcr Moodle-Export-Tracking"
     }
   },
   "required": [

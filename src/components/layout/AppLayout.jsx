@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { BookOpen, Layers, Home, ShieldCheck, DatabaseZap, Download, LayoutTemplate, Settings2 } from 'lucide-react';
+import { BookOpen, Layers, Home, ShieldCheck, DatabaseZap, Download, LayoutTemplate, Settings2, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
 import RoleSwitcher from '@/components/layout/RoleSwitcher';
@@ -29,8 +29,8 @@ export default function AppLayout() {
             <nav className="flex items-center gap-1">
               {[
                 { path: '/', label: 'Übersicht', icon: Home },
-                { path: '/einheiten', label: 'Einheiten', icon: BookOpen },
-                { path: '/workspace', label: 'Workspace', icon: LayoutTemplate },
+                { path: '/einheit/create', label: 'Neue Einheit', icon: PlusCircle },
+                { path: '/einheit/workspace', label: 'Workspace', icon: LayoutTemplate },
               ].map(item => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path ||
@@ -53,10 +53,10 @@ export default function AppLayout() {
               })}
               {permissions.kannExportieren && (
                 <Link
-                  to="/moodle-export"
+                  to="/einheit/export"
                   className={cn(
                     "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
-                    location.pathname === '/moodle-export'
+                    location.pathname === '/einheit/export'
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   )}

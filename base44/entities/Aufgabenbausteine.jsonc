@@ -87,6 +87,16 @@
     "locked_by_user": {
       "type": "string",
       "description": "E-Mail des Nutzers, der den Baustein gerade bearbeitet"
+    },
+    "sync_status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "exported",
+        "modified"
+      ],
+      "default": "new",
+      "description": "Sync-Status f\u00fcr Moodle-Export-Tracking"
     }
   },
   "required": [

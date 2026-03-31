@@ -61,6 +61,16 @@
       ],
       "default": "In Planung",
       "description": "Freigabestatus der Einheit"
+    },
+    "sync_status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "exported",
+        "modified"
+      ],
+      "default": "new",
+      "description": "Sync-Status f\u00fcr Moodle-Export-Tracking"
     }
   },
   "required": [
