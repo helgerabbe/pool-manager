@@ -569,6 +569,9 @@ function LernzielPanel({ lernziel, paketId, aufgaben, userEmail, kannBearbeiten,
 // ── PhaseContent: Aktivitäten-Anzeige und -Verwaltung ─────────────────────────
 
 function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient }) {
+  const [selectedAktivitaetId, setSelectedAktivitaetId] = useState(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   const { data: aktivitaeten = [] } = useQuery({
     queryKey: ['aktivitaeten'],
     queryFn: () => base44.entities.AktivitaetenKatalog.list(),
@@ -580,13 +583,22 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient
   const currentAktivitaet = phaseConfig.selected_aktivitaet_id 
     ? aktivitaeten.find(a => a.id === phaseConfig.selected_aktivitaet_id)
     : null;
+  const selectedAktivitaet = selectedAktivitaetId
+    ? aktivitaeten.find(a => a.id === selectedAktivitaetId)
+    : null;
 
   const handleSelectAktivitaet = (aktivitaetId) => {
+    setSelectedAktivitaetId(aktivitaetId);
+    setIsDialogOpen(true);
+  };
+
+  const handleSaveAktivitaet = () => {
+    if (!selectedAktivitaetId) return;
     const newConfig = {
       ...phasenConfig,
       [phaseKey]: {
         ...(phasenConfig[phaseKey] || {}),
-        selected_aktivitaet_id: aktivitaetId,
+        selected_aktivitaet_id: selectedAktivitaetId,
         field_values: {},
       },
     };
@@ -594,6 +606,8 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient
       phasen_konfiguration: newConfig
     }).then(() => {
       queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+      setIsDialogOpen(false);
+      setSelectedAktivitaetId(null);
     });
   };
 
@@ -610,57 +624,84 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient
   };
 
   return (
-    <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 space-y-3">
-      {/* Aktuelle Aktivität */}
-      {currentAktivitaet ? (
-        <div className="p-3 rounded-lg bg-white border border-border space-y-2">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1">
-              <p className="font-medium text-sm">{currentAktivitaet.name}</p>
-              {currentAktivitaet.form_schema && currentAktivitaet.form_schema.length > 0 && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {currentAktivitaet.form_schema.length} Felder
-                </p>
+    <>
+      <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 space-y-3">
+        {/* Aktuelle Aktivität */}
+        {currentAktivitaet ? (
+          <div className="p-3 rounded-lg bg-white border border-border space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1">
+                <p className="font-medium text-sm">{currentAktivitaet.name}</p>
+                {currentAktivitaet.form_schema && currentAktivitaet.form_schema.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {currentAktivitaet.form_schema.length} Felder
+                  </p>
+                )}
+              </div>
+              {kannBearbeiten && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={handleRemoveAktivitaet}
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                </Button>
               )}
             </div>
-            {kannBearbeiten && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={handleRemoveAktivitaet}
-              >
-                <Trash2 className="w-3.5 h-3.5 text-destructive" />
-              </Button>
-            )}
           </div>
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground italic">Keine Aktivität zugeordnet</p>
-      )}
+        ) : (
+          <p className="text-sm text-muted-foreground italic">Keine Aktivität zugeordnet</p>
+        )}
 
-      {/* Aktivität hinzufügen */}
-      {kannBearbeiten && (
-        <div className="space-y-2">
-          <Label className="text-xs">Aktivität zuordnen</Label>
-          <select
-            onChange={(e) => {
-              if (e.target.value) handleSelectAktivitaet(e.target.value);
-              e.target.value = '';
-            }}
-            defaultValue=""
-            className="w-full px-2 py-1.5 text-sm rounded-lg border border-input bg-white"
-          >
-            <option value="">-- Aktivität wählen --</option>
-            {phaseAktivitaeten.map(akt => (
-              <option key={akt.id} value={akt.id}>
-                {akt.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-    </div>
+        {/* Aktivität hinzufügen */}
+        {kannBearbeiten && (
+          <div className="space-y-2">
+            <Label className="text-xs">Aktivität zuordnen</Label>
+            <select
+              onChange={(e) => {
+                if (e.target.value) handleSelectAktivitaet(e.target.value);
+                e.target.value = '';
+              }}
+              defaultValue=""
+              className="w-full px-2 py-1.5 text-sm rounded-lg border border-input bg-white"
+            >
+              <option value="">-- Aktivität wählen --</option>
+              {phaseAktivitaeten.map(akt => (
+                <option key={akt.id} value={akt.id}>
+                  {akt.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+
+      {/* Aktivitäts-Konfiguration Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedAktivitaet ? selectedAktivitaet.name : 'Aktivität konfigurieren'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Hier können Sie die Parameter für diese Aktivität eingeben.
+            </p>
+            {/* Platzhalter für zukünftige Formularfelder */}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Abbrechen
+            </Button>
+            <Button onClick={handleSaveAktivitaet}>
+              Speichern
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
