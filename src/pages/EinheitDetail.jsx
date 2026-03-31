@@ -176,7 +176,8 @@ export default function EinheitDetail() {
   const [showEditEinheit, setShowEditEinheit] = useState(false);
   const [selectedPaketId, setSelectedPaketId] = useState(null);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, type: '', id: '' });
-  const [activeTab, setActiveTab] = useState('lernpakete');
+  const [activeTab, setActiveTab] = useState('hierarchie');
+  const [expandedPakete, setExpandedPakete] = useState({});
   const [kiSubTab, setKiSubTab]   = useState('coach');
   const [braindumpVorbefuellt, setBraindumpVorbefuellt] = useState('');
 
@@ -351,200 +352,15 @@ export default function EinheitDetail() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-muted">
-          <TabsTrigger value="lernpakete" className="gap-1.5">
-            <Layers className="w-3.5 h-3.5" />Lernpakete
-          </TabsTrigger>
-          {kannKIAssistent && (
-            <TabsTrigger value="ki-assistent" className="gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" />KI-Assistent
-            </TabsTrigger>
-          )}
-          <TabsTrigger value="alignment" className="gap-1.5">
-            <LayoutGrid className="w-3.5 h-3.5" />Alignment-Check
-          </TabsTrigger>
           <TabsTrigger value="hierarchie" className="gap-1.5">
             <BookOpen className="w-3.5 h-3.5" />Gesamtübersicht
           </TabsTrigger>
+          <TabsTrigger value="alignment" className="gap-1.5">
+            <LayoutGrid className="w-3.5 h-3.5" />Alignment-Check
+          </TabsTrigger>
         </TabsList>
 
-        {/* ── Lernpakete-Tab ── */}
-        <TabsContent value="lernpakete" className="space-y-4 mt-4">
-          {kannDieseEinheitBearbeiten && (
-            <div className="flex justify-end">
-              <Button onClick={() => setShowLernpaketForm(true)} size="sm" className="gap-2">
-                <Plus className="w-4 h-4" />Neues Lernpaket
-              </Button>
-            </div>
-          )}
 
-          {paketeFuerEinheit.length === 0 ? (
-            <EmptyState
-              icon={Layers}
-              title="Noch keine Lernpakete"
-              description="Unterteilen Sie die Einheit in thematische Lernpakete."
-              actionLabel={kannDieseEinheitBearbeiten ? "Erstes Lernpaket erstellen" : undefined}
-              onAction={kannDieseEinheitBearbeiten ? () => setShowLernpaketForm(true) : undefined}
-            />
-          ) : (
-            <div className="space-y-4">
-              {paketeFuerEinheit.map(paket => {
-                const paketZiele    = getLernzieleForPaket(paket.id);
-                const paketAufgaben = getAufgabenForPaket(paket.id);
-                return (
-                  <Card key={paket.id} className="border shadow-sm overflow-hidden">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-                            {paket.reihenfolge_nummer}
-                          </div>
-                          <div>
-                            <CardTitle className="text-base">{paket.titel_des_pakets}</CardTitle>
-                            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                              <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{paket.geschaetzte_dauer_minuten} Min.</span>
-                              <span>{paketZiele.length} Lernziele</span>
-                              <span>{paketAufgaben.length} Aufgaben</span>
-                            </div>
-                          </div>
-                        </div>
-                        {kannDieseEinheitBearbeiten && (
-                          <Button variant="ghost" size="icon" className="h-8 w-8"
-                            onClick={() => setDeleteDialog({ open: true, type: 'lernpaket', id: paket.id })}>
-                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                          </Button>
-                        )}
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="pt-0 space-y-4">
-                      {/* Lernziele */}
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Lernziele</h4>
-                          {kannDieseEinheitBearbeiten && (
-                            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1"
-                              onClick={() => { setSelectedPaketId(paket.id); setShowLernzielForm(true); }}>
-                              <Plus className="w-3 h-3" />Hinzufügen
-                            </Button>
-                          )}
-                        </div>
-                        {paketZiele.length === 0 ? (
-                          <p className="text-xs text-muted-foreground italic py-2">Noch keine Lernziele definiert.</p>
-                        ) : (
-                          <div className="space-y-2">
-                            {paketZiele.map(ziel => (
-                              <div key={ziel.id} className="flex items-start gap-2 p-2 rounded-lg bg-muted/50 group">
-                                <Target className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm">{ziel.formulierung_fachsprache}</p>
-                                  <Badge className={`mt-1 text-[10px] ${ebeneColors[ziel.anforderungsebene] || ''}`}>
-                                    {ziel.anforderungsebene}
-                                  </Badge>
-                                </div>
-                                {kannDieseEinheitBearbeiten && (
-                                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                                    onClick={() => setDeleteDialog({ open: true, type: 'lernziel', id: ziel.id })}>
-                                    <Trash2 className="w-3 h-3 text-destructive" />
-                                  </Button>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Aufgabenbausteine */}
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aufgabenbausteine</h4>
-                          {kannDieseEinheitBearbeiten && (
-                            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1"
-                              onClick={() => { setSelectedPaketId(paket.id); setShowAufgabenForm(true); }}>
-                              <Plus className="w-3 h-3" />Hinzufügen
-                            </Button>
-                          )}
-                        </div>
-                        {paketAufgaben.length === 0 ? (
-                          <p className="text-xs text-muted-foreground italic py-2">Noch keine Aufgabenbausteine erstellt.</p>
-                        ) : (
-                          <div className="space-y-2">
-                            {paketAufgaben.map(aufgabe => (
-                              <AufgabeRow
-                                key={aufgabe.id}
-                                aufgabe={aufgabe}
-                                userEmail={authUser?.email}
-                                kannBearbeiten={kannDieseEinheitBearbeiten}
-                                kannLoeschen={kannDieseEinheitBearbeiten}
-                                istAdmin={istAdmin}
-                                onDelete={(id) => setDeleteDialog({ open: true, type: 'aufgabe', id })}
-                                onEditSave={(id, data) => updateAufgabe.mutateAsync({ id, data })}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* ── KI-Assistent-Tab ── */}
-        {kannKIAssistent && (
-          <TabsContent value="ki-assistent" className="mt-4 space-y-4">
-            {/* Sub-Tabs: Coach ↔ Generator */}
-            <div className="flex gap-1 p-1 rounded-lg bg-muted w-fit">
-              <button
-                onClick={() => setKiSubTab('coach')}
-                className={cn(
-                  'px-4 py-1.5 rounded-md text-sm font-medium transition-all',
-                  kiSubTab === 'coach'
-                    ? 'bg-card shadow text-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                💬 Didaktik-Coach
-              </button>
-              <button
-                onClick={() => setKiSubTab('generator')}
-                className={cn(
-                  'px-4 py-1.5 rounded-md text-sm font-medium transition-all',
-                  kiSubTab === 'generator'
-                    ? 'bg-card shadow text-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                ⚡ Braindump-Generator
-              </button>
-            </div>
-
-            {kiSubTab === 'coach' && (
-              <DidaktikCoachChat
-                onBraindumpUebernehmen={(text) => {
-                  setBraindumpVorbefuellt(text);
-                  setKiSubTab('generator');
-                }}
-              />
-            )}
-
-            {kiSubTab === 'generator' && (
-              <KILernpaketAssistent
-                einheitId={einheitId}
-                einheit={einheit}
-                existingPaketeCount={paketeFuerEinheit.length}
-                initialBraindump={braindumpVorbefuellt}
-                onCreated={() => {
-                  queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-                  queryClient.invalidateQueries({ queryKey: ['lernziele'] });
-                  setBraindumpVorbefuellt('');
-                  setActiveTab('lernpakete');
-                }}
-              />
-            )}
-          </TabsContent>
-        )}
 
         {/* ── Alignment-Board-Tab ── */}
         <TabsContent value="alignment" className="mt-4">
@@ -555,52 +371,95 @@ export default function EinheitDetail() {
           />
         </TabsContent>
 
-        {/* ── Hierarchie-Tab ── */}
+        {/* ── Hierarchie-Tab (Gesamtübersicht mit ausklappbaren Paketen) ── */}
         <TabsContent value="hierarchie" className="mt-4">
           {paketeFuerEinheit.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-10">
-              Erstellen Sie zunächst Lernpakete in der Lernpakete-Ansicht.
+              Erstellen Sie zunächst Lernpakete, um einen Überblick zu erhalten.
             </p>
           ) : (
-            <div className="space-y-2">
-              {paketeFuerEinheit.map(paket => (
-                <Card key={paket.id} className="border shadow-sm">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+            <div className="space-y-3">
+              {paketeFuerEinheit.map(paket => {
+                const paketZiele = getLernzieleForPaket(paket.id);
+                const isOpen = expandedPakete[paket.id] || false;
+                const phasen = paket.phasen_konfiguration || { Input: {}, Übung: {}, Abschluss: {} };
+                
+                return (
+                  <Card key={paket.id} className="border shadow-sm overflow-hidden">
+                    <button
+                      onClick={() => setExpandedPakete(prev => ({ ...prev, [paket.id]: !prev[paket.id] }))}
+                      className="w-full flex items-center gap-3 px-4 py-4 hover:bg-muted/30 transition-colors text-left"
+                    >
+                      <ChevronRight className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                      <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
                         {paket.reihenfolge_nummer}
                       </div>
-                      <span className="font-semibold text-sm">{paket.titel_des_pakets}</span>
-                      <span className="text-xs text-muted-foreground ml-auto">{paket.geschaetzte_dauer_minuten} Min.</span>
-                    </div>
-                    <div className="ml-8 space-y-1">
-                      {getLernzieleForPaket(paket.id).map(ziel => (
-                        <div key={ziel.id} className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <ChevronRight className="w-3 h-3" />
-                          <Target className="w-3 h-3 text-green-600" />
-                          <span className="truncate">{ziel.formulierung_fachsprache}</span>
-                          <Badge className={`ml-auto text-[10px] shrink-0 ${ebeneColors[ziel.anforderungsebene] || ''}`}>
-                            {ziel.anforderungsebene}
-                          </Badge>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm">{paket.titel_des_pakets}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {paketZiele.length} Lernziel{paketZiele.length !== 1 ? 'e' : ''} · {paket.geschaetzte_dauer_minuten} Min.
+                        </p>
+                      </div>
+                    </button>
+
+                    {isOpen && (
+                      <div className="border-t border-border px-4 py-4 bg-muted/30 space-y-4">
+                        {/* Lernziele */}
+                        {paketZiele.length > 0 && (
+                          <div>
+                            <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Lernziele</h5>
+                            <div className="space-y-1.5">
+                              {paketZiele.map(ziel => (
+                                <div key={ziel.id} className="flex items-start gap-2 text-sm">
+                                  <Target className="w-3.5 h-3.5 text-green-600 mt-0.5 shrink-0" />
+                                  <div>
+                                    <p className="text-foreground">{ziel.formulierung_fachsprache}</p>
+                                    {ziel.kategorie && (
+                                      <Badge className="mt-1 text-[10px] bg-muted text-muted-foreground">{ziel.kategorie}</Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Phasen-Übersicht */}
+                        <div>
+                          <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Lernphasen</h5>
+                          <div className="space-y-1.5">
+                            {[
+                              { key: 'Input', label: 'Input', icon: '📥' },
+                              { key: 'Übung', label: 'Übung', icon: '✏️' },
+                              { key: 'Abschluss', label: 'Abschluss', icon: '✓' },
+                            ].map(phase => {
+                              const phaseData = phasen[phase.key] || {};
+                              const isDisabled = phaseData.disabled || false;
+                              return (
+                                <div
+                                  key={phase.key}
+                                  className={`flex items-center gap-2 p-2 rounded text-sm ${
+                                    isDisabled
+                                      ? 'bg-muted/40 text-muted-foreground opacity-50'
+                                      : 'bg-primary/5 text-foreground'
+                                  }`}
+                                >
+                                  <span>{phase.icon}</span>
+                                  <span className="font-medium">{phase.label}</span>
+                                  {isDisabled && <span className="text-[10px] ml-auto text-muted-foreground italic">deaktiviert</span>}
+                                  {phaseData.selected_aktivitaet_id && !isDisabled && (
+                                    <span className="text-[10px] ml-auto text-muted-foreground">• Aktivität konfiguriert</span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-                      ))}
-                      {getAufgabenForPaket(paket.id).map(aufgabe => (
-                        <div key={aufgabe.id} className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <ChevronRight className="w-3 h-3" />
-                          {aufgabe.lock_status
-                            ? <Lock className="w-3 h-3 text-amber-500" />
-                            : <Puzzle className="w-3 h-3 text-purple-600" />
-                          }
-                          <Badge className={`text-[10px] ${bausteinColors[aufgabe.baustein_typ] || ''}`}>
-                            {aufgabe.baustein_typ}
-                          </Badge>
-                          <span className="truncate">{aufgabe.aufgabentext_inhalt?.substring(0, 60)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      </div>
+                    )}
+                  </Card>
+                );
+              })}
             </div>
           )}
         </TabsContent>
