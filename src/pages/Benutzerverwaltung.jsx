@@ -13,11 +13,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter as AlertDialogFoot, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { 
   ShieldCheck, UserPlus, Trash2, Edit, Users, 
-  Lock, Unlock, AlertTriangle, CheckCircle, Mail
+  Lock, Unlock, AlertTriangle, CheckCircle, Mail, Upload
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { useRecordLock } from '@/hooks/useRecordLock';
+import UserImport from '@/components/admin/UserImport';
 
 const FAECHER = ["Deutsch","Mathematik","Englisch","Französisch","Latein","Biologie","Chemie","Physik","Geschichte","Geographie","Politik","Wirtschaft","Kunst","Musik","Sport","Religion","Ethik","Informatik"];
 
@@ -150,6 +151,7 @@ export default function Benutzerverwaltung() {
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
+  const [showImport, setShowImport] = useState(false);
 
   const { data: benutzer = [], isLoading } = useQuery({
     queryKey: ['benutzer'],
@@ -214,10 +216,22 @@ export default function Benutzerverwaltung() {
           </h1>
           <p className="text-sm text-muted-foreground mt-1">{benutzer.length} registrierte Benutzer</p>
         </div>
-        <Button onClick={() => setShowForm(true)} className="gap-2">
-          <UserPlus className="w-4 h-4" />Benutzer hinzufügen
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowImport(v => !v)} className="gap-2">
+            <Upload className="w-4 h-4" />{showImport ? 'Import schließen' : 'CSV importieren'}
+          </Button>
+          <Button onClick={() => setShowForm(true)} className="gap-2">
+            <UserPlus className="w-4 h-4" />Benutzer hinzufügen
+          </Button>
+        </div>
       </div>
+
+      {/* CSV-Import */}
+      {showImport && (
+        <UserImport onImportSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['benutzer'] });
+        }} />
+      )}
 
       {/* Rechtematrix-Übersicht */}
       <Card className="border-0 shadow-sm">
