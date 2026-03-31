@@ -75,7 +75,7 @@ export default function RoleSwitcher({ realRolle, anzeigeRolle }) {
           return (
             <DropdownMenuItem
               key={r.value}
-              onClick={() => setMockedRole(r.value === ROLLEN.ADMIN ? null : r.value)}
+              onClick={() => setMockedRole(r.value)}
               className={cn(
                 'flex items-center gap-2 cursor-pointer',
                 isActive && 'bg-muted'
