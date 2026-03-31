@@ -1,17 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronRight, Loader2 } from 'lucide-react';
 
-const FAECHER = ["Deutsch","Mathematik","Englisch","Französisch","Latein","Biologie","Chemie","Physik","Geschichte","Geographie","Politik","Wirtschaft","Kunst","Musik","Sport","Religion","Ethik","Informatik"];
-const JAHRGAENGE = ["5","6","7","8","9","10","11","12","13"];
 const NAVLOGIK = ["Sequenziell","Offen"];
 
 export default function WizardStep1Meta({ onDone }) {
   const [form, setForm] = useState({ fach: '', titel_der_einheit: '', jahrgangsstufe: '', navigationslogik: 'Sequenziell' });
   const [saving, setSaving] = useState(false);
+
+  // Lade Fächer aus der Datenbank
+  const { data: faecher = [] } = useQuery({
+    queryKey: ['lookupFaecher'],
+    queryFn: async () => {
+      const results = await base44.entities.LookupFaecher.list();
+      return results.filter(f => f.ist_aktiv).sort((a, b) => (a.reihenfolge ?? 999) - (b.reihenfolge ?? 999));
+    },
+  });
+
+  // Lade Jahrgänge aus der Datenbank
+  const { data: jahrgaenge = [] } = useQuery({
+    queryKey: ['lookupJahrgaenge'],
+    queryFn: async () => {
+      const results = await base44.entities.LookupJahrgaenge.list();
+      return results.filter(j => j.ist_aktiv).sort((a, b) => (a.reihenfolge ?? 999) - (b.reihenfolge ?? 999));
+    },
+  });
 
   const canSubmit = form.fach && form.titel_der_einheit.trim() && form.jahrgangsstufe;
 
@@ -45,7 +63,7 @@ export default function WizardStep1Meta({ onDone }) {
             <Select value={form.fach} onValueChange={v => setForm({ ...form, fach: v })}>
               <SelectTrigger><SelectValue placeholder="Fach wählen" /></SelectTrigger>
               <SelectContent>
-                {FAECHER.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                {faecher.map(f => <SelectItem key={f.id} value={f.name}>{f.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -54,7 +72,7 @@ export default function WizardStep1Meta({ onDone }) {
             <Select value={form.jahrgangsstufe} onValueChange={v => setForm({ ...form, jahrgangsstufe: v })}>
               <SelectTrigger><SelectValue placeholder="Jahrgang" /></SelectTrigger>
               <SelectContent>
-                {JAHRGAENGE.map(j => <SelectItem key={j} value={j}>Jg. {j}</SelectItem>)}
+                {jahrgaenge.map(j => <SelectItem key={j.id} value={j.bezeichnung}>Jg. {j.bezeichnung}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
