@@ -8,14 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Sparkles, Loader2, Plus, Trash2, ChevronDown, ChevronRight, CheckCircle2, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const EBENEN = ['Ebene 1 - Basis', 'Ebene 2 - Transfer', 'Ebene 3 - Projekt'];
 const KATEGORIEN = ['Fachwissen', 'Fähigkeit/Fertigkeit'];
-
-const ebeneColors = {
-  'Ebene 1 - Basis':    'bg-green-100 text-green-700',
-  'Ebene 2 - Transfer': 'bg-blue-100 text-blue-700',
-  'Ebene 3 - Projekt':  'bg-purple-100 text-purple-700',
-};
 
 export default function KILernpaketAssistent({ einheitId, einheit, existingPaketeCount, onCreated }) {
   const [braindump, setBraindump] = useState('');
@@ -31,66 +24,48 @@ export default function KILernpaketAssistent({ einheitId, einheit, existingPaket
 
     const naechsteNr = existingPaketeCount + 1;
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `Du bist ein Experte für kompetenzorientierte Unterrichtsplanung nach dem Prinzip des Constructive Alignment.
+      prompt: `Rolle: Experte für kompetenzorientierte Unterrichtsplanung (Atome-Modell).
 
-Deine Aufgabe: Analysiere den Braindump einer Lehrkraft und extrahiere daraus atomare, strukturierte Lernpakete mit Lernzielen.
-
-═══════════════════════════════════════
-SCHRITT 1 — VALIDIERUNG (Immer zuerst)
-═══════════════════════════════════════
-
-Prüfe, ob die Eingabe verwertbar ist. Sie ist NICHT verwertbar, wenn:
-- Sie kürzer als 20 Zeichen ist.
-- Sie keinen erkennbaren Unterrichtsbezug hat (z.B. nur Zahlen, Nonsense).
-- Sie keinerlei didaktische Themen, Inhalte oder Kompetenzen erkennen lässt.
-
-Wenn NICHT verwertbar:
-Gib exakt dieses JSON zurück:
-{ "valid": false, "fehler": "Kurze Begründung auf Deutsch, warum die Eingabe unzureichend ist.", "lernpakete": [] }
-
-Wenn verwertbar: Fahre mit Schritt 2 fort.
+Aufgabe: Analysiere den folgenden Braindump einer Lehrkraft und extrahiere daraus ausschließlich atomare Basis-Lernziele (Ebene 1) für modulare Lernpakete.
 
 ═══════════════════════════════════════
-SCHRITT 2 — EXTRAKTION & REGELN
+SCHRITT 1 — VALIDIERUNG
 ═══════════════════════════════════════
+Prüfe die Verwertbarkeit des Braindumps (min. 20 Zeichen, Fachbezug vorhanden).
+Wenn NICHT verwertbar: { "valid": false, "fehler": "Begründung auf Deutsch", "lernpakete": [] }
 
-Kontext-Daten:
+═══════════════════════════════════════
+SCHRITT 2 — ATOMISIERUNG (Regeln)
+═══════════════════════════════════════
+1. Fokus Ebene 1: Erstelle NUR Lernziele, die als fundamentale Bausteine dienen. Keine Transfer- oder Anwendungsaufgaben.
+2. Kategorisierung: Jedes Lernziel MUSS exakt einer dieser Kategorien angehören:
+   • "Fachwissen" (Fakten, Begriffe, Regeln)
+   • "Fähigkeit/Fertigkeit" (Methoden, konkretes Tun)
+3. Formulierung: IMMER "Ich kann..." + handlungsorientiertes Verb.
+4. Granularität: Ein Lernpaket = Ein inhaltlicher Aspekt (z.B. "Zitieren", "Begriffe der Zelle").
+5. Schülerübersetzung: Alltagsnahe, einfache Umformulierung desselben Ziels.
+6. Dauer: Integer in Minuten (45, 90, 135).
+7. Reihenfolge: Fortlaufend ab ${naechsteNr}.
+
+Kontext:
 - Fach: ${einheit?.fach || 'unbekannt'}
 - Einheit: ${einheit?.titel_der_einheit || 'unbekannt'}
 - Jahrgangsstufe: ${einheit?.jahrgangsstufe || 'unbekannt'}
-- Nächste freie Paket-Nummer: ${naechsteNr}
 
 Braindump der Lehrkraft:
 """
 ${braindump}
 """
 
-Regeln für die Generierung:
-1. Granularität (Lego-Prinzip): Zerlege komplexe Themen in kleinschrittige Lernpakete. Ein Paket behandelt genau einen isolierten Aspekt.
-2. Lernziele formulierst du IMMER als „Ich kann..."-Satz.
-3. Anforderungsebene: Weise jedem Lernziel exakt einen dieser Enum-Werte zu:
-   • "Ebene 1 - Basis"
-   • "Ebene 2 - Transfer"
-   • "Ebene 3 - Projekt"
-4. Kategorie-Zwang (Nur für Ebene 1): Jedes Lernziel der Ebene "Ebene 1 - Basis" MUSS zwingend exakt einen dieser Enum-Werte erhalten:
-   • "Fachwissen" (deklarativ: Fakten, Begriffe)
-   • "Fähigkeit/Fertigkeit" (prozedural: Methoden, Tun)
-5. Kategorie-Ausschluss: Für "Ebene 2 - Transfer" und "Ebene 3 - Projekt" muss der Wert für "kategorie" zwingend null sein.
-6. Schülerübersetzung: Eine alltagsnahe, einfache Umformulierung des Ziels für die Lernlandkarte.
-7. Dauer: Geschätzte Dauer des Pakets als Integer (nur Zahlen: 45, 90, 135).
-8. Reihenfolge: Nummeriere die Pakete fortlaufend, beginnend mit ${naechsteNr}.
-
 Selbstprüfung vor der Ausgabe:
 - Beginnt jedes Lernziel mit „Ich kann"?
-- Hat jedes Ebene-1-Ziel eine Kategorie (nicht null)?
-- Ist die Kategorie bei Ebene 2 und 3 exakt null?
+- Hat jedes Lernziel exakt eine Kategorie ("Fachwissen" oder "Fähigkeit/Fertigkeit")?
 - Ist die Reihenfolge lückenlos ab ${naechsteNr}?
 
 ═══════════════════════════════════════
-SCHRITT 3 — AUSGABEFORMAT (Striktes JSON)
+SCHRITT 3 — STRIKTES JSON-OUTPUT
 ═══════════════════════════════════════
-
-Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt. Kein Text vor oder nach dem JSON. Keine Markdown-Codeblock-Formatierung. Halte dich exakt an folgendes Schema:
+Antworte NUR mit dem JSON-Objekt. Kein Text, keine Markdown-Blöcke.
 
 {
   "valid": true,
@@ -98,14 +73,13 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt. Kein Text vor oder nach 
   "lernpakete": [
     {
       "reihenfolge_nummer": ${naechsteNr},
-      "titel_des_pakets": "String",
+      "titel_des_pakets": "Name des Atoms",
       "geschaetzte_dauer_minuten": 45,
       "lernziele": [
         {
           "formulierung_fachsprache": "Ich kann...",
-          "anforderungsebene": "Ebene 1 - Basis",
-          "kategorie": "Fähigkeit/Fertigkeit",
-          "schueler_uebersetzung": "String"
+          "kategorie": "Fachwissen",
+          "schueler_uebersetzung": "Einfache Sprache"
         }
       ]
     }
@@ -218,16 +192,13 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt. Kein Text vor oder nach 
 
       for (const ziel of paket.lernziele) {
         if (!ziel.formulierung_fachsprache?.trim()) continue;
-        const zielData = {
+        await base44.entities.Lernziele.create({
           lernpaket_id: neuesPaket.id,
           formulierung_fachsprache: ziel.formulierung_fachsprache,
-          anforderungsebene: ziel.anforderungsebene,
+          anforderungsebene: 'Ebene 1 - Basis',
+          kategorie: ziel.kategorie || 'Fachwissen',
           schueler_uebersetzung: ziel.schueler_uebersetzung || '',
-        };
-        if (ziel.anforderungsebene === 'Ebene 1 - Basis' && ziel.kategorie) {
-          zielData.kategorie = ziel.kategorie;
-        }
-        await base44.entities.Lernziele.create(zielData);
+        });
         erstellteZiele++;
       }
     }
@@ -370,23 +341,14 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt. Kein Text vor oder nach 
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <select
-                            value={ziel.anforderungsebene}
-                            onChange={e => handleLernzielChange(pIdx, zIdx, 'anforderungsebene', e.target.value)}
+                            value={ziel.kategorie || 'Fachwissen'}
+                            onChange={e => handleLernzielChange(pIdx, zIdx, 'kategorie', e.target.value)}
                             className="text-xs border border-input rounded-md px-2 py-1 bg-background"
                           >
-                            {EBENEN.map(e => <option key={e} value={e}>{e}</option>)}
+                            {KATEGORIEN.map(k => <option key={k} value={k}>{k}</option>)}
                           </select>
-                          {ziel.anforderungsebene === 'Ebene 1 - Basis' && (
-                            <select
-                              value={ziel.kategorie || 'Fachwissen'}
-                              onChange={e => handleLernzielChange(pIdx, zIdx, 'kategorie', e.target.value)}
-                              className="text-xs border border-input rounded-md px-2 py-1 bg-background"
-                            >
-                              {KATEGORIEN.map(k => <option key={k} value={k}>{k}</option>)}
-                            </select>
-                          )}
-                          <Badge className={`text-[10px] ${ebeneColors[ziel.anforderungsebene] || ''}`}>
-                            {ziel.anforderungsebene}
+                          <Badge className="text-[10px] bg-green-100 text-green-700">
+                            Ebene 1 - Basis
                           </Badge>
                         </div>
                       </div>
