@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { BookOpen, Layers, Home, ShieldCheck, DatabaseZap } from 'lucide-react';
+import { BookOpen, Layers, Home, ShieldCheck, DatabaseZap, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
 import { Badge } from '@/components/ui/badge';
@@ -56,6 +56,20 @@ export default function AppLayout() {
                   </Link>
                 );
               })}
+              {permissions.kannExportieren && (
+                <Link
+                  to="/moodle-export"
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
+                    location.pathname === '/moodle-export'
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="hidden sm:inline">Export</span>
+                </Link>
+              )}
               {permissions.kannBenutzerVerwalten && (
                 <>
                   <Link

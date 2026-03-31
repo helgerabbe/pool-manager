@@ -11,6 +11,7 @@ import EinheitenListe from '@/pages/EinheitenListe';
 import EinheitDetail from '@/pages/EinheitDetail';
 import Benutzerverwaltung from '@/pages/Benutzerverwaltung';
 import SeedAdmin from '@/pages/SeedAdmin';
+import MoodleExport from '@/pages/MoodleExport';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -44,6 +45,7 @@ const AuthenticatedApp = () => {
         <Route path="/einheiten/:id" element={<EinheitDetail />} />
         <Route path="/benutzerverwaltung" element={<Benutzerverwaltung />} />
         <Route path="/seed" element={<SeedAdmin />} />
+        <Route path="/moodle-export" element={<MoodleExport />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

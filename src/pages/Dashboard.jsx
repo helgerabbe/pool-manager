@@ -1,11 +1,40 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
-import { BookOpen, Layers, Target, Puzzle, ArrowRight, TrendingUp } from 'lucide-react';
+import { useRBAC } from '@/hooks/useRBAC';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import {
+  BookOpen, Layers, Target, Puzzle, ArrowRight,
+  TrendingUp, Plus, Search, Filter, Lock
+} from 'lucide-react';
+import EinheitForm from '@/components/einheiten/EinheitForm';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { kannEinheitSehen } from '@/lib/rbac';
+
+const FAECHER = ["Deutsch","Mathematik","Englisch","Französisch","Latein","Biologie","Chemie","Physik","Geschichte","Geographie","Politik","Wirtschaft","Kunst","Musik","Sport","Religion","Ethik","Informatik"];
+const JAHRGANGSSTUFEN = ["5","6","7","8","9","10","11","12","13"];
+
+const fachColors = {
+  Deutsch: 'bg-blue-100 text-blue-700', Mathematik: 'bg-red-100 text-red-700',
+  Englisch: 'bg-green-100 text-green-700', Biologie: 'bg-emerald-100 text-emerald-700',
+  Chemie: 'bg-orange-100 text-orange-700', Physik: 'bg-violet-100 text-violet-700',
+  Geschichte: 'bg-amber-100 text-amber-700', Informatik: 'bg-cyan-100 text-cyan-700',
+};
 
 export default function Dashboard() {
+  const { permissions, rolle } = useRBAC();
+  const queryClient = useQueryClient();
+  const [showForm, setShowForm] = useState(false);
+  const [search, setSearch] = useState('');
+  const [filterFach, setFilterFach] = useState('all');
+  const [filterJahrgang, setFilterJahrgang] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+
   const { data: einheiten = [] } = useQuery({
     queryKey: ['einheiten'],
     queryFn: () => base44.entities.Einheiten.list('-created_date'),
@@ -23,22 +52,45 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Aufgabenbausteine.list(),
   });
 
-  const stats = [
-    { label: 'Einheiten', value: einheiten.length, icon: BookOpen, color: 'bg-primary/10 text-primary' },
-    { label: 'Lernpakete', value: lernpakete.length, icon: Layers, color: 'bg-accent/10 text-accent' },
-    { label: 'Lernziele', value: lernziele.length, icon: Target, color: 'bg-green-100 text-green-700' },
-    { label: 'Aufgabenbausteine', value: aufgaben.length, icon: Puzzle, color: 'bg-purple-100 text-purple-700' },
-  ];
+  const createEinheit = useMutation({
+    mutationFn: (data) => base44.entities.Einheiten.create(data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['einheiten'] }),
+  });
 
-  const freigegebene = einheiten.filter(e => e.freigabe_status === 'Freigegeben für Moodle').length;
-  const inPlanung = einheiten.filter(e => e.freigabe_status !== 'Freigegeben für Moodle').length;
+  const sichtbareEinheiten = einheiten.filter(e => kannEinheitSehen(rolle, e.freigabe_status));
+
+  const gefilterteEinheiten = sichtbareEinheiten.filter(e => {
+    const matchSearch  = !search || e.titel_der_einheit?.toLowerCase().includes(search.toLowerCase()) || e.fach?.toLowerCase().includes(search.toLowerCase());
+    const matchFach    = filterFach === 'all' || e.fach === filterFach;
+    const matchJg      = filterJahrgang === 'all' || e.jahrgangsstufe === filterJahrgang;
+    const matchStatus  = filterStatus === 'all' || e.freigabe_status === filterStatus || (!e.freigabe_status && filterStatus === 'In Planung');
+    return matchSearch && matchFach && matchJg && matchStatus;
+  });
+
+  const freigegebene = sichtbareEinheiten.filter(e => e.freigabe_status === 'Freigegeben für Moodle').length;
+  const inPlanung    = sichtbareEinheiten.filter(e => e.freigabe_status !== 'Freigegeben für Moodle').length;
+  const activeLocksCount = aufgaben.filter(a => a.lock_status).length;
+
+  const stats = [
+    { label: 'Einheiten',         value: sichtbareEinheiten.length, icon: BookOpen, color: 'bg-primary/10 text-primary' },
+    { label: 'Lernpakete',        value: lernpakete.length,         icon: Layers,   color: 'bg-accent/10 text-accent' },
+    { label: 'Lernziele',         value: lernziele.length,          icon: Target,   color: 'bg-green-100 text-green-700' },
+    { label: 'Aufgabenbausteine', value: aufgaben.length,           icon: Puzzle,   color: 'bg-purple-100 text-purple-700' },
+  ];
 
   return (
     <div className="space-y-8">
       {/* Hero */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground tracking-tight">Willkommen im PoolPlaner</h1>
-        <p className="text-muted-foreground mt-2 text-lg">Ihre Meta-Planungsebene für selbstgesteuerte Poolzeiten.</p>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">Willkommen im PoolPlaner</h1>
+          <p className="text-muted-foreground mt-1">Ihre Meta-Planungsebene für selbstgesteuerte Poolzeiten.</p>
+        </div>
+        {permissions.kannSchreiben && (
+          <Button onClick={() => setShowForm(true)} className="gap-2 shrink-0">
+            <Plus className="w-4 h-4" />Neue Einheit
+          </Button>
+        )}
       </div>
 
       {/* Stats Grid */}
@@ -53,7 +105,7 @@ export default function Dashboard() {
                     <Icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                    <p className="text-2xl font-bold">{stat.value}</p>
                     <p className="text-xs text-muted-foreground">{stat.label}</p>
                   </div>
                 </div>
@@ -63,35 +115,32 @@ export default function Dashboard() {
         })}
       </div>
 
-      {/* Status Overview */}
+      {/* Status & Locks */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-foreground">Freigabestatus</h2>
+              <h2 className="font-semibold">Freigabestatus</h2>
               <TrendingUp className="w-4 h-4 text-muted-foreground" />
             </div>
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">In Planung</span>
-                <span className="text-sm font-semibold">{inPlanung}</span>
-              </div>
-              <div className="w-full bg-muted rounded-full h-2">
-                <div 
-                  className="bg-accent h-2 rounded-full transition-all" 
-                  style={{ width: einheiten.length > 0 ? `${(inPlanung / einheiten.length) * 100}%` : '0%' }} 
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Freigegeben für Moodle</span>
-                <span className="text-sm font-semibold">{freigegebene}</span>
-              </div>
-              <div className="w-full bg-muted rounded-full h-2">
-                <div 
-                  className="bg-primary h-2 rounded-full transition-all" 
-                  style={{ width: einheiten.length > 0 ? `${(freigegebene / einheiten.length) * 100}%` : '0%' }} 
-                />
-              </div>
+              {[
+                { label: 'In Planung', value: inPlanung, color: 'bg-accent' },
+                { label: 'Freigegeben für Moodle', value: freigegebene, color: 'bg-primary' },
+              ].map(row => (
+                <div key={row.label}>
+                  <div className="flex items-center justify-between text-sm mb-1">
+                    <span className="text-muted-foreground">{row.label}</span>
+                    <span className="font-semibold">{row.value}</span>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div
+                      className={`${row.color} h-2 rounded-full transition-all`}
+                      style={{ width: sichtbareEinheiten.length > 0 ? `${(row.value / sichtbareEinheiten.length) * 100}%` : '0%' }}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -99,32 +148,129 @@ export default function Dashboard() {
         <Card className="border-0 shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-foreground">Neueste Einheiten</h2>
-              <Link to="/einheiten" className="text-xs text-primary hover:underline flex items-center gap-1">
-                Alle anzeigen <ArrowRight className="w-3 h-3" />
-              </Link>
+              <h2 className="font-semibold">Schnellzugriff</h2>
             </div>
-            <div className="space-y-3">
-              {einheiten.slice(0, 4).map(e => (
-                <Link 
-                  key={e.id} 
-                  to={`/einheiten/${e.id}`}
-                  className="flex items-center justify-between p-2 rounded-lg hover:bg-muted transition-colors"
-                >
-                  <div>
-                    <p className="text-sm font-medium">{e.titel_der_einheit}</p>
-                    <p className="text-xs text-muted-foreground">{e.fach} · Jg. {e.jahrgangsstufe}</p>
+            <div className="space-y-2">
+              <Link to="/einheiten" className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors">
+                <span className="text-sm font-medium flex items-center gap-2"><BookOpen className="w-4 h-4 text-primary" />Alle Einheiten</span>
+                <ArrowRight className="w-4 h-4 text-muted-foreground" />
+              </Link>
+              {permissions.kannExportieren && (
+                <Link to="/moodle-export" className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors">
+                  <span className="text-sm font-medium flex items-center gap-2"><Puzzle className="w-4 h-4 text-green-600" />Moodle-Export</span>
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-green-100 text-green-700 text-[10px]">{freigegebene} bereit</Badge>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
                   </div>
-                  <ArrowRight className="w-4 h-4 text-muted-foreground" />
                 </Link>
-              ))}
-              {einheiten.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">Noch keine Einheiten erstellt.</p>
+              )}
+              {activeLocksCount > 0 && permissions.kannBenutzerVerwalten && (
+                <Link to="/benutzerverwaltung" className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors bg-amber-50">
+                  <span className="text-sm font-medium flex items-center gap-2"><Lock className="w-4 h-4 text-amber-600" />Aktive Locks</span>
+                  <Badge className="bg-amber-100 text-amber-700 text-[10px]">{activeLocksCount} aktiv</Badge>
+                </Link>
               )}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Einheiten-Übersicht mit Filtern */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Einheit oder Fach suchen…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Select value={filterFach} onValueChange={setFilterFach}>
+            <SelectTrigger className="w-full sm:w-36"><SelectValue placeholder="Fach" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Alle Fächer</SelectItem>
+              {FAECHER.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={filterJahrgang} onValueChange={setFilterJahrgang}>
+            <SelectTrigger className="w-full sm:w-32"><SelectValue placeholder="Jahrgang" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Alle Jahrgänge</SelectItem>
+              {JAHRGANGSSTUFEN.map(j => <SelectItem key={j} value={j}>Jg. {j}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Alle Status</SelectItem>
+              <SelectItem value="In Planung">In Planung</SelectItem>
+              <SelectItem value="Freigegeben für Moodle">Freigegeben</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {gefilterteEinheiten.length === 0 ? (
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-10 text-center">
+              <Filter className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-muted-foreground text-sm">Keine Einheiten gefunden.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {gefilterteEinheiten.map(e => {
+              const paketCount  = lernpakete.filter(lp => lp.einheit_id === e.id).length;
+              const paketIds    = lernpakete.filter(lp => lp.einheit_id === e.id).map(p => p.id);
+              const aufgabeCount = aufgaben.filter(a => paketIds.includes(a.lernpaket_id)).length;
+              const lockCount    = aufgaben.filter(a => paketIds.includes(a.lernpaket_id) && a.lock_status).length;
+              const isFreigegeben = e.freigabe_status === 'Freigegeben für Moodle';
+
+              return (
+                <Link key={e.id} to={`/einheiten/${e.id}`}>
+                  <Card className="border shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 h-full cursor-pointer">
+                    <CardContent className="p-5 flex flex-col gap-3 h-full">
+                      <div className="flex items-start justify-between gap-2">
+                        <Badge className={`text-[10px] shrink-0 ${fachColors[e.fach] || 'bg-muted text-muted-foreground'}`}>
+                          {e.fach}
+                        </Badge>
+                        <Badge variant={isFreigegeben ? 'default' : 'secondary'} className="text-[10px] shrink-0">
+                          {isFreigegeben ? 'Freigegeben' : 'In Planung'}
+                        </Badge>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-sm leading-snug">{e.titel_der_einheit}</h3>
+                        <p className="text-xs text-muted-foreground mt-1">Jahrgang {e.jahrgangsstufe} · {e.navigationslogik}</p>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border">
+                        <span>{paketCount} Pakete · {aufgabeCount} Aufgaben</span>
+                        {lockCount > 0 && (
+                          <span className="flex items-center gap-1 text-amber-600">
+                            <Lock className="w-3 h-3" />{lockCount}
+                          </span>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+        {(search || filterFach !== 'all' || filterJahrgang !== 'all' || filterStatus !== 'all') && (
+          <p className="text-xs text-muted-foreground text-center">
+            {gefilterteEinheiten.length} von {sichtbareEinheiten.length} Einheiten
+          </p>
+        )}
+      </div>
+
+      <EinheitForm
+        open={showForm}
+        onOpenChange={setShowForm}
+        onSubmit={(data) => createEinheit.mutate(data)}
+      />
     </div>
   );
 }
