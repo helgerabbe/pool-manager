@@ -10,6 +10,7 @@ import LernzielForm from '@/components/lernziele/LernzielForm';
 import AufgabenbausteinForm from '@/components/aufgaben/AufgabenbausteintForm';
 import EinheitForm from '@/components/einheiten/EinheitForm';
 import Ebene2MappingView from '@/components/aufgaben/Ebene2MappingView';
+import ActivityContentEditor from '@/components/workspace/ActivityContentEditor';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -679,26 +680,36 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient
 
       {/* Aktivitäts-Konfiguration Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {selectedAktivitaet ? selectedAktivitaet.name : 'Aktivität konfigurieren'}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Hier können Sie die Parameter für diese Aktivität eingeben.
-            </p>
-            {/* Platzhalter für zukünftige Formularfelder */}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Abbrechen
-            </Button>
-            <Button onClick={handleSaveAktivitaet}>
-              Speichern
-            </Button>
-          </DialogFooter>
+          {selectedAktivitaet && (
+            <ActivityContentEditor
+              aktivitaet={selectedAktivitaet}
+              currentValues={phaseConfig.field_values || {}}
+              onSave={(fieldValues) => {
+                const newConfig = {
+                  ...phasenConfig,
+                  [phaseKey]: {
+                    ...(phasenConfig[phaseKey] || {}),
+                    selected_aktivitaet_id: selectedAktivitaetId,
+                    field_values: fieldValues,
+                  },
+                };
+                base44.entities.Lernpakete.update(paket.id, {
+                  phasen_konfiguration: newConfig
+                }).then(() => {
+                  queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+                  setIsDialogOpen(false);
+                  setSelectedAktivitaetId(null);
+                });
+              }}
+              onClose={() => setIsDialogOpen(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </>
