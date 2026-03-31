@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useRecordLock } from '@/hooks/useRecordLock';
 import { getLernzielStatus, getLernpaketStatus, getEinheitFortschritt } from '@/lib/statusLogic';
@@ -559,7 +559,7 @@ function PhasePanel({ paket, phaseKey, phaseLabel, kannBearbeiten }) {
   const queryClient = useQueryClient();
   const [selectedAktivitaetId, setSelectedAktivitaetId] = useState(null);
 
-  const { data: aktivitaeten = [] } = React.useQuery({
+  const { data: aktivitaeten = [] } = useQuery({
     queryKey: ['aktivitaeten'],
     queryFn: () => base44.entities.AktivitaetenKatalog.list(),
   });
