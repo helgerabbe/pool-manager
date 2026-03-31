@@ -198,6 +198,7 @@ export default function Workspace() {
                 selectedNode={selectedNode}
                 onSelect={handleSelect}
                 kannBearbeiten={kannDieseEinheitBearbeiten}
+                userEmail={authUser?.email || ''}
               />
             </div>
           )}
@@ -217,8 +218,10 @@ export default function Workspace() {
               einheit={einheit}
               lernpakete={paketeFuerEinheit}
               lernziele={zieleFuerEinheit}
+              aufgaben={aufgabenFuerEinheit}
               selectedNode={selectedNode}
               onNavigate={handleSelect}
+              userEmail={authUser?.email || ''}
             />
           )}
 

@@ -1,40 +1,41 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { ChevronRight, BookOpen, Layers, Target, Puzzle, Lock, Plus } from 'lucide-react';
 import {
-  ChevronRight, BookOpen, Layers, Target, Puzzle,
-  CheckCircle2, AlertCircle, Lock, Plus
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+  getLernzielStatus,
+  getLernpaketStatus,
+  getEinheitFortschritt,
+} from '@/lib/statusLogic';
 
-// ── Hilfsfunktionen für Status-Berechnung ─────────────────────────────────────
+// ── Ampel-Dot ──────────────────────────────────────────────────────────────────
+// Kompakte farbige Kreisanzeige für den Status-Überblick im Baum.
 
-function getPaketStatus(paket, lernziele, aufgaben) {
-  const ziele = lernziele.filter(lz => lz.lernpaket_id === paket.id);
-  if (ziele.length === 0) return 'empty';      // Noch keine Lernziele
-  const alleHabenAufgaben = ziele.every(lz =>
-    aufgaben.some(a => a.lernpaket_id === paket.id && a.lernziel_id === lz.id)
+const AMPEL = {
+  green:  { dot: 'bg-green-500',  ring: 'ring-green-200',  label: 'Vollständig' },
+  yellow: { dot: 'bg-amber-400',  ring: 'ring-amber-200',  label: 'In Bearbeitung' },
+  red:    { dot: 'bg-red-500',    ring: 'ring-red-200',    label: 'Unvollständig' },
+};
+
+function AmpelDot({ status, size = 'sm' }) {
+  const cfg = AMPEL[status];
+  if (!cfg) return null;
+  const dim = size === 'sm' ? 'w-2 h-2' : 'w-2.5 h-2.5';
+  return (
+    <span
+      title={cfg.label}
+      className={`inline-block shrink-0 rounded-full ring-2 ${dim} ${cfg.dot} ${cfg.ring}`}
+    />
   );
-  return alleHabenAufgaben ? 'complete' : 'incomplete';
-}
-
-function getLernzielStatus(lernziel, aufgaben, paketId) {
-  const hat = aufgaben.some(a => a.lernpaket_id === paketId && a.lernziel_id === lernziel.id);
-  return hat ? 'complete' : 'missing';
-}
-
-// ── Status-Icons ──────────────────────────────────────────────────────────────
-
-function StatusIcon({ status }) {
-  if (status === 'complete')   return <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />;
-  if (status === 'incomplete') return <AlertCircle  className="w-3.5 h-3.5 text-amber-500 shrink-0" />;
-  if (status === 'missing')    return <AlertCircle  className="w-3.5 h-3.5 text-red-400 shrink-0" />;
-  return null;
 }
 
 // ── Tree-Node: Aufgabenbaustein (Level 3) ─────────────────────────────────────
 
-function BausteinNode({ aufgabe, selectedId, onSelect }) {
-  const isSelected = selectedId === aufgabe.id;
+function BausteinNode({ aufgabe, selectedId, onSelect, userEmail }) {
+  const isSelected  = selectedId === aufgabe.id;
+  const isLocked    = aufgabe.lock_status && aufgabe.locked_by_user !== userEmail;
+  const lockedByMe  = aufgabe.lock_status && aufgabe.locked_by_user === userEmail;
+  const ampelStatus = isLocked ? 'yellow' : 'green';
+
   return (
     <button
       onClick={() => onSelect({ type: 'aufgabe', id: aufgabe.id, data: aufgabe })}
@@ -42,56 +43,62 @@ function BausteinNode({ aufgabe, selectedId, onSelect }) {
         'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
         isSelected
           ? 'bg-primary text-primary-foreground'
-          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+          : isLocked
+            ? 'text-amber-700 bg-amber-50 hover:bg-amber-100'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
       )}
     >
       <Puzzle className="w-3 h-3 shrink-0" />
-      {aufgabe.lock_status && <Lock className="w-3 h-3 text-amber-500 shrink-0" />}
-      <span className="truncate">{aufgabe.baustein_typ}</span>
+      {isLocked && <Lock className="w-3 h-3 text-amber-500 shrink-0" />}
+      <span className="truncate flex-1">{aufgabe.baustein_typ}</span>
+      {!isSelected && <AmpelDot status={ampelStatus} />}
     </button>
   );
 }
 
 // ── Tree-Node: Lernziel (Level 2) ─────────────────────────────────────────────
 
-function LernzielNode({ lernziel, aufgaben, paketId, selectedId, onSelect, kannBearbeiten }) {
-  const [open, setOpen] = useState(false);
-  const isSelected = selectedId === lernziel.id;
-  const status = getLernzielStatus(lernziel, aufgaben, paketId);
-  const bausteine = aufgaben.filter(a => a.lernpaket_id === paketId && a.lernziel_id === lernziel.id);
+function LernzielNode({ lernziel, aufgaben, paketId, selectedId, onSelect, kannBearbeiten, userEmail }) {
+  const [open, setOpen]  = useState(false);
+  const isSelected       = selectedId === lernziel.id;
+  const status           = getLernzielStatus(lernziel, aufgaben, paketId, userEmail);
+  const bausteine        = aufgaben.filter(a => a.lernpaket_id === paketId && a.lernziel_id === lernziel.id);
 
   return (
     <div>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5">
         <button
           onClick={() => setOpen(o => !o)}
-          className="p-0.5 text-muted-foreground hover:text-foreground"
+          className="p-0.5 text-muted-foreground hover:text-foreground shrink-0"
         >
           <ChevronRight className={cn('w-3 h-3 transition-transform', open && 'rotate-90')} />
         </button>
         <button
           onClick={() => onSelect({ type: 'lernziel', id: lernziel.id, data: lernziel, paketId })}
           className={cn(
-            'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
+            'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors min-w-0',
             isSelected
               ? 'bg-primary text-primary-foreground'
-              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              : status === 'red'
+                ? 'text-red-700 bg-red-50 hover:bg-red-100'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
           )}
         >
           <Target className="w-3 h-3 shrink-0" />
           <span className="truncate flex-1">{lernziel.formulierung_fachsprache || 'Lernziel'}</span>
-          <StatusIcon status={status} />
+          {!isSelected && <AmpelDot status={status} />}
         </button>
       </div>
 
       {open && (
-        <div className="ml-5 mt-0.5 space-y-0.5 border-l border-border pl-2">
+        <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-2">
           {bausteine.map(a => (
             <BausteinNode
               key={a.id}
               aufgabe={a}
               selectedId={selectedId}
               onSelect={onSelect}
+              userEmail={userEmail}
             />
           ))}
           {kannBearbeiten && (
@@ -113,25 +120,25 @@ function LernzielNode({ lernziel, aufgaben, paketId, selectedId, onSelect, kannB
 
 // ── Tree-Node: Lernpaket (Level 1) ────────────────────────────────────────────
 
-function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten }) {
-  const [open, setOpen] = useState(true);
-  const isSelected = selectedId === paket.id;
-  const paketZiele = lernziele.filter(lz => lz.lernpaket_id === paket.id);
-  const status = getPaketStatus(paket, lernziele, aufgaben);
+function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail }) {
+  const [open, setOpen]  = useState(true);
+  const isSelected       = selectedId === paket.id;
+  const paketZiele       = lernziele.filter(lz => lz.lernpaket_id === paket.id);
+  const status           = getLernpaketStatus(paket, lernziele, aufgaben, userEmail);
 
   return (
     <div>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5">
         <button
           onClick={() => setOpen(o => !o)}
-          className="p-0.5 text-muted-foreground hover:text-foreground"
+          className="p-0.5 text-muted-foreground hover:text-foreground shrink-0"
         >
           <ChevronRight className={cn('w-3.5 h-3.5 transition-transform', open && 'rotate-90')} />
         </button>
         <button
           onClick={() => onSelect({ type: 'lernpaket', id: paket.id, data: paket })}
           className={cn(
-            'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-sm font-medium transition-colors',
+            'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-sm font-medium transition-colors min-w-0',
             isSelected
               ? 'bg-primary text-primary-foreground'
               : 'text-foreground hover:bg-muted'
@@ -141,12 +148,12 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
             {paket.reihenfolge_nummer}
           </div>
           <span className="truncate flex-1">{paket.titel_des_pakets}</span>
-          <StatusIcon status={status} />
+          {!isSelected && <AmpelDot status={status} size="md" />}
         </button>
       </div>
 
       {open && (
-        <div className="ml-5 mt-1 space-y-0.5 border-l border-border pl-2">
+        <div className="ml-4 mt-1 space-y-0.5 border-l border-border pl-2">
           {paketZiele.map(lz => (
             <LernzielNode
               key={lz.id}
@@ -156,6 +163,7 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
               selectedId={selectedId}
               onSelect={onSelect}
               kannBearbeiten={kannBearbeiten}
+              userEmail={userEmail}
             />
           ))}
           {kannBearbeiten && (
@@ -167,7 +175,9 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
             </button>
           )}
           {paketZiele.length === 0 && (
-            <p className="px-2 py-1 text-[11px] text-amber-500 italic">Lernziel benötigt</p>
+            <p className="px-2 py-1 text-[11px] text-red-400 italic flex items-center gap-1">
+              <AmpelDot status="red" /> Noch kein Lernziel
+            </p>
           )}
         </div>
       )}
@@ -175,18 +185,23 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
   );
 }
 
+// ── Ampel-Legende ──────────────────────────────────────────────────────────────
+
+function AmpelLegende() {
+  return (
+    <div className="flex items-center justify-center gap-4 py-2 px-3 bg-muted/50 rounded-lg text-[10px] text-muted-foreground">
+      {Object.entries(AMPEL).map(([key, cfg]) => (
+        <span key={key} className="flex items-center gap-1.5">
+          <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
+          {cfg.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 // ── SidebarTree (Haupt-Export) ────────────────────────────────────────────────
 
-/**
- * Props:
- *  einheit         — Einheit-Datensatz
- *  lernpakete      — gefiltert für diese Einheit
- *  lernziele       — gefiltert für diese Einheit
- *  aufgaben        — gefiltert für diese Einheit
- *  selectedNode    — { type, id, ... }
- *  onSelect        — Callback wenn Node geklickt
- *  kannBearbeiten  — RBAC
- */
 export default function SidebarTree({
   einheit,
   lernpakete,
@@ -195,25 +210,51 @@ export default function SidebarTree({
   selectedNode,
   onSelect,
   kannBearbeiten,
+  userEmail = '',
 }) {
   const selectedId = selectedNode?.id;
+  const { prozent, gruen, gesamt } = getEinheitFortschritt(lernpakete, lernziele, aufgaben, userEmail);
+
+  // Gesamtstatus der Einheit für den Root-Node
+  const einheitStatus =
+    gesamt === 0 ? 'red' :
+    prozent === 100 ? 'green' : 'yellow';
 
   return (
-    <nav className="h-full flex flex-col">
-      {/* Einheit-Root */}
+    <nav className="h-full flex flex-col gap-2">
+
+      {/* Einheit-Root mit Mini-Fortschrittsbalken */}
       <button
         onClick={() => onSelect({ type: 'einheit', id: einheit?.id, data: einheit })}
         className={cn(
-          'w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-colors mb-3',
+          'w-full flex items-start gap-2.5 px-3 py-3 rounded-lg text-left transition-colors',
           selectedNode?.type === 'einheit'
             ? 'bg-primary text-primary-foreground'
-            : 'bg-muted/50 hover:bg-muted text-foreground'
+            : 'bg-muted/60 hover:bg-muted text-foreground'
         )}
       >
-        <BookOpen className="w-4 h-4 shrink-0" />
+        <BookOpen className="w-4 h-4 shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold truncate">{einheit?.titel_der_einheit}</p>
+          <div className="flex items-center gap-2 mb-1">
+            <p className="text-xs font-bold truncate flex-1">{einheit?.titel_der_einheit}</p>
+            {selectedNode?.type !== 'einheit' && <AmpelDot status={einheitStatus} />}
+          </div>
           <p className="text-[10px] opacity-70">{einheit?.fach} · Jg. {einheit?.jahrgangsstufe}</p>
+          {/* Mini-Fortschrittsbalken */}
+          {gesamt > 0 && (
+            <div className="mt-2">
+              <div className="w-full bg-black/10 rounded-full h-1.5">
+                <div
+                  className={cn(
+                    'h-1.5 rounded-full transition-all',
+                    prozent === 100 ? 'bg-green-400' : prozent > 50 ? 'bg-amber-400' : 'bg-red-400'
+                  )}
+                  style={{ width: `${prozent}%` }}
+                />
+              </div>
+              <p className="text-[10px] opacity-60 mt-0.5">{gruen}/{gesamt} Pakete fertig</p>
+            </div>
+          )}
         </div>
       </button>
 
@@ -243,6 +284,7 @@ export default function SidebarTree({
                 selectedId={selectedId}
                 onSelect={onSelect}
                 kannBearbeiten={kannBearbeiten}
+                userEmail={userEmail}
               />
             ))}
             {kannBearbeiten && (
@@ -256,6 +298,9 @@ export default function SidebarTree({
           </>
         )}
       </div>
+
+      {/* Legende */}
+      <AmpelLegende />
     </nav>
   );
 }
