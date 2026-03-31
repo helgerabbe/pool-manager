@@ -72,14 +72,13 @@ function BausteinNode({ aufgabe, selectedId, onSelect, userEmail, mappings }) {
   );
 }
 
-// ── Tree-Node: Lernziel (Level 2) ─────────────────────────────────────────────
+// ── Tree-Node: Phase (Level 2) ────────────────────────────────────────────────
 
-function LernzielNode({ lernziel, aufgaben, paketId, selectedId, onSelect, kannBearbeiten, userEmail, mappings, highlightedAtomIds }) {
+function PhaseNode({ phase, phaseLabel, paket, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings }) {
   const [open, setOpen]  = useState(false);
-  const isSelected       = selectedId === lernziel.id;
-  const isHighlighted    = highlightedAtomIds?.has(lernziel.id);
-  const status           = getLernzielStatus(lernziel, aufgaben, paketId, userEmail, mappings);
-  const bausteine        = aufgaben.filter(a => a.lernpaket_id === paketId && a.lernziel_id === lernziel.id);
+  const isSelected       = selectedId === `phase-${paket.id}-${phase}`;
+  const phasenConfig     = paket.phasen_konfiguration?.[phase] || {};
+  const isDisabled       = phasenConfig.disabled === true;
 
   return (
     <div>
@@ -91,47 +90,36 @@ function LernzielNode({ lernziel, aufgaben, paketId, selectedId, onSelect, kannB
           <ChevronRight className={cn('w-3 h-3 transition-transform', open && 'rotate-90')} />
         </button>
         <button
-          onClick={() => onSelect({ type: 'lernziel', id: lernziel.id, data: lernziel, paketId })}
+          onClick={() => onSelect({ type: 'phase', id: `phase-${paket.id}-${phase}`, phase, paketId: paket.id, data: paket })}
           className={cn(
             'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors min-w-0',
             isSelected
               ? 'bg-primary text-primary-foreground'
-              : isHighlighted
-                ? 'bg-amber-100 text-amber-800 ring-1 ring-amber-400'
-                : status === 'red'
-                  ? 'text-red-700 bg-red-50 hover:bg-red-100'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              : isDisabled
+                ? 'text-muted-foreground/50 opacity-60'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
           )}
         >
-          <Target className="w-3 h-3 shrink-0" />
-          <span className="truncate flex-1">{lernziel.formulierung_fachsprache || 'Lernziel'}</span>
-          {!isSelected && <AmpelDot status={status} />}
+          <span className="w-3 h-3 shrink-0">
+            {phase === 'input' && '📚'}
+            {phase === 'uebung' && '✏️'}
+            {phase === 'abschluss' && '🎯'}
+          </span>
+          <span className="truncate flex-1">{phaseLabel}</span>
         </button>
       </div>
 
-      {open && (
+      {open && !isDisabled && (
         <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-2">
-          {bausteine.map(a => (
-            <BausteinNode
-              key={a.id}
-              aufgabe={a}
-              selectedId={selectedId}
-              onSelect={onSelect}
-              userEmail={userEmail}
-              mappings={mappings}
-            />
-          ))}
-          {kannBearbeiten && (
-            <button
-              onClick={() => onSelect({ type: 'new-aufgabe', paketId, lernzielId: lernziel.id })}
-              className="w-full flex items-center gap-1.5 px-2 py-1 rounded-md text-left text-[11px] text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
-            >
-              <Plus className="w-3 h-3" /> Baustein hinzufügen
-            </button>
-          )}
-          {bausteine.length === 0 && !kannBearbeiten && (
-            <p className="px-2 py-1 text-[11px] text-red-400 italic">Keine Bausteine</p>
-          )}
+          <p className="px-2 py-1 text-[11px] text-muted-foreground">
+            {phasenConfig.selected_aktivitaet_id ? 'Aktivität konfiguriert' : 'Keine Aktivität'}
+          </p>
+        </div>
+      )}
+
+      {open && isDisabled && (
+        <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-2">
+          <p className="px-2 py-1 text-[11px] text-muted-foreground/60 italic">Diese Phase ist deaktiviert</p>
         </div>
       )}
     </div>
@@ -143,8 +131,13 @@ function LernzielNode({ lernziel, aufgaben, paketId, selectedId, onSelect, kannB
 function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, highlightedAtomIds, isSequenzielleUndGesperrt }) {
   const [open, setOpen]  = useState(true);
   const isSelected       = selectedId === paket.id;
-  const paketZiele       = lernziele.filter(lz => lz.lernpaket_id === paket.id);
   const status           = getLernpaketStatus(paket, lernziele, aufgaben, userEmail, mappings);
+  
+  const PHASES = [
+    { key: 'input', label: 'Input (Erarbeitung)' },
+    { key: 'uebung', label: 'Übung' },
+    { key: 'abschluss', label: 'Abschluss' },
+  ];
 
   return (
     <div>
@@ -178,18 +171,18 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
 
       {open && (
         <div className="ml-4 mt-1 space-y-0.5 border-l border-border pl-2">
-          {paketZiele.map(lz => (
-            <LernzielNode
-              key={lz.id}
-              lernziel={lz}
+          {PHASES.map(phase => (
+            <PhaseNode
+              key={phase.key}
+              phase={phase.key}
+              phaseLabel={phase.label}
+              paket={paket}
               aufgaben={aufgaben}
-              paketId={paket.id}
               selectedId={selectedId}
               onSelect={onSelect}
               kannBearbeiten={kannBearbeiten}
               userEmail={userEmail}
               mappings={mappings}
-              highlightedAtomIds={highlightedAtomIds}
             />
           ))}
           {kannBearbeiten && (
@@ -199,11 +192,6 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
             >
               <Plus className="w-3 h-3" /> Lernziel hinzufügen
             </button>
-          )}
-          {paketZiele.length === 0 && (
-            <p className="px-2 py-1 text-[11px] text-red-400 italic flex items-center gap-1">
-              <AmpelDot status="red" /> Noch kein Lernziel
-            </p>
           )}
         </div>
       )}
