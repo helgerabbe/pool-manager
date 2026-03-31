@@ -33,56 +33,56 @@ export default function Workspace() {
 
   // ── State ────────────────────────────────────────────────────────────────────
   const [selectedEinheitId, setSelectedEinheitId] = useState(initialEinheitId);
-  const [selectedNode, setSelectedNode]           = useState(null);
-  const [activeTab, setActiveTab]                 = useState('basis');
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [activeTab, setActiveTab] = useState('basis');
   // Cross-Highlighting: Set von Lernziel-IDs, die hervorgehoben werden sollen
   const [highlightedAtomIds, setHighlightedAtomIds] = useState(new Set());
 
   // ── Queries ──────────────────────────────────────────────────────────────────
   const { data: einheiten = [], isLoading: einheitenLoading } = useQuery({
     queryKey: ['einheiten'],
-    queryFn: () => base44.entities.Einheiten.list('-created_date'),
+    queryFn: () => base44.entities.Einheiten.list('-created_date')
   });
 
   const { data: lernpakete = [] } = useQuery({
     queryKey: ['lernpakete'],
     queryFn: () => base44.entities.Lernpakete.list(),
-    enabled: !!selectedEinheitId,
+    enabled: !!selectedEinheitId
   });
 
   const { data: lernziele = [] } = useQuery({
     queryKey: ['lernziele'],
     queryFn: () => base44.entities.Lernziele.list(),
-    enabled: !!selectedEinheitId,
+    enabled: !!selectedEinheitId
   });
 
   const { data: aufgaben = [] } = useQuery({
     queryKey: ['aufgaben'],
     queryFn: () => base44.entities.Aufgabenbausteine.list(),
-    enabled: !!selectedEinheitId,
+    enabled: !!selectedEinheitId
   });
 
   const { data: mappings = [] } = useQuery({
     queryKey: ['mappingBasisziele'],
     queryFn: () => base44.entities.MappingAufgabeBasisziel.list(),
-    enabled: !!selectedEinheitId,
+    enabled: !!selectedEinheitId
   });
 
   // ── Aktive Einheit ────────────────────────────────────────────────────────────
-  const einheit = einheiten.find(e => e.id === selectedEinheitId) || null;
+  const einheit = einheiten.find((e) => e.id === selectedEinheitId) || null;
 
-  const paketeFuerEinheit = lernpakete
-    .filter(lp => lp.einheit_id === selectedEinheitId)
-    .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0));
+  const paketeFuerEinheit = lernpakete.
+  filter((lp) => lp.einheit_id === selectedEinheitId).
+  sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0));
 
-  const paketIds = paketeFuerEinheit.map(p => p.id);
-  const zieleFuerEinheit    = lernziele.filter(lz => paketIds.includes(lz.lernpaket_id));
-  const aufgabenFuerEinheit = aufgaben.filter(a  => paketIds.includes(a.lernpaket_id));
+  const paketIds = paketeFuerEinheit.map((p) => p.id);
+  const zieleFuerEinheit = lernziele.filter((lz) => paketIds.includes(lz.lernpaket_id));
+  const aufgabenFuerEinheit = aufgaben.filter((a) => paketIds.includes(a.lernpaket_id));
 
   // ── RBAC ──────────────────────────────────────────────────────────────────────
-  const kannDieseEinheitBearbeiten = einheit
-    ? permissions.kannEinheitBearbeiten(einheit.fach)
-    : false;
+  const kannDieseEinheitBearbeiten = einheit ?
+  permissions.kannEinheitBearbeiten(einheit.fach) :
+  false;
   const istAdmin = rolle === ROLLEN.ADMIN;
 
   // ── Callbacks ─────────────────────────────────────────────────────────────────
@@ -105,9 +105,9 @@ export default function Workspace() {
   // ── Delete-Mutations ──────────────────────────────────────────────────────────
   const deleteLernpaket = useMutation({
     mutationFn: async (id) => {
-      const relZiele    = zieleFuerEinheit.filter(lz => lz.lernpaket_id === id);
-      const relAufgaben = aufgabenFuerEinheit.filter(a  => a.lernpaket_id === id);
-      for (const z of relZiele)    await base44.entities.Lernziele.delete(z.id);
+      const relZiele = zieleFuerEinheit.filter((lz) => lz.lernpaket_id === id);
+      const relAufgaben = aufgabenFuerEinheit.filter((a) => a.lernpaket_id === id);
+      for (const z of relZiele) await base44.entities.Lernziele.delete(z.id);
       for (const a of relAufgaben) await base44.entities.Aufgabenbausteine.delete(a.id);
       return base44.entities.Lernpakete.delete(id);
     },
@@ -116,16 +116,16 @@ export default function Workspace() {
       queryClient.invalidateQueries({ queryKey: ['lernziele'] });
       queryClient.invalidateQueries({ queryKey: ['aufgaben'] });
       setSelectedNode({ type: 'einheit', id: selectedEinheitId });
-    },
+    }
   });
 
   const deleteLernziel = useMutation({
     mutationFn: (id) => base44.entities.Lernziele.delete(id),
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['lernziele'] });
-      const lz = zieleFuerEinheit.find(lz => lz.id === id);
+      const lz = zieleFuerEinheit.find((lz) => lz.id === id);
       if (lz) setSelectedNode({ type: 'lernpaket', id: lz.lernpaket_id });
-    },
+    }
   });
 
   // ── Loading ───────────────────────────────────────────────────────────────────
@@ -133,8 +133,8 @@ export default function Workspace() {
     return (
       <div className="flex items-center justify-center h-[60vh]">
         <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
-      </div>
-    );
+      </div>);
+
   }
 
   if (einheiten.length === 0) {
@@ -148,12 +148,12 @@ export default function Workspace() {
           </p>
         </div>
         <Link to="/einheiten"><Button>Zu den Einheiten</Button></Link>
-      </div>
-    );
+      </div>);
+
   }
 
-  const transferCount = aufgabenFuerEinheit.filter(a => a.anforderungsebene === '2 - Transfer').length;
-  const projektCount  = aufgabenFuerEinheit.filter(a => a.anforderungsebene === '3 - Projekt').length;
+  const transferCount = aufgabenFuerEinheit.filter((a) => a.anforderungsebene === '2 - Transfer').length;
+  const projektCount = aufgabenFuerEinheit.filter((a) => a.anforderungsebene === '3 - Projekt').length;
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] -mx-4 sm:-mx-6 lg:-mx-8 -my-8">
@@ -167,25 +167,25 @@ export default function Workspace() {
               <SelectValue placeholder="Einheit auswählen…" />
             </SelectTrigger>
             <SelectContent>
-              {einheiten.map(e => (
-                <SelectItem key={e.id} value={e.id}>
+              {einheiten.map((e) =>
+              <SelectItem key={e.id} value={e.id}>
                   {e.fach} – {e.titel_der_einheit} (Jg. {e.jahrgangsstufe})
                 </SelectItem>
-              ))}
+              )}
             </SelectContent>
           </Select>
         </div>
 
         {/* Statistik-Leiste */}
-        {einheit && (
-          <WorkspaceStats
-            lernpakete={paketeFuerEinheit}
-            lernziele={zieleFuerEinheit}
-            aufgaben={aufgabenFuerEinheit}
-            mappings={mappings}
-            userEmail={authUser?.email || ''}
-          />
-        )}
+        {einheit &&
+        <WorkspaceStats
+          lernpakete={paketeFuerEinheit}
+          lernziele={zieleFuerEinheit}
+          aufgaben={aufgabenFuerEinheit}
+          mappings={mappings}
+          userEmail={authUser?.email || ''} />
+
+        }
 
         <Link to="/einheiten" className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0 ml-auto">
           ← Übersicht
@@ -193,8 +193,8 @@ export default function Workspace() {
       </div>
 
       {/* ── Drei-Säulen-Tabs ─────────────────────────────────────────────────── */}
-      {!einheit ? (
-        <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center">
+      {!einheit ?
+      <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center">
           <BookOpen className="w-12 h-12 text-muted-foreground/30" />
           <div>
             <p className="font-semibold">Einheit auswählen</p>
@@ -202,42 +202,42 @@ export default function Workspace() {
               Wählen Sie oben eine Einheit aus, um mit der Planung zu beginnen.
             </p>
           </div>
-        </div>
-      ) : (
-        <Tabs
-          value={activeTab}
-          onValueChange={(tab) => { setActiveTab(tab); setHighlightedAtomIds(new Set()); }}
-          className="flex flex-col flex-1 overflow-hidden"
-        >
+        </div> :
+
+      <Tabs
+        value={activeTab}
+        onValueChange={(tab) => {setActiveTab(tab);setHighlightedAtomIds(new Set());}}
+        className="flex flex-col flex-1 overflow-hidden">
+        
           {/* Tab-Leiste */}
           <div className="px-4 pt-2 border-b border-border bg-card shrink-0">
-            <TabsList className="h-9">
+            <TabsList className="bg-muted text-muted-foreground my-2 px-1 py-1 rounded-lg inline-flex items-center justify-center h-9">
               <TabsTrigger value="basis" className="gap-1.5 text-xs">
                 <Layers className="w-3.5 h-3.5" />
                 Basis-Lernpakete
-                {paketeFuerEinheit.length > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
+                {paketeFuerEinheit.length > 0 &&
+              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
                     {paketeFuerEinheit.length}
                   </span>
-                )}
+              }
               </TabsTrigger>
               <TabsTrigger value="transfer" className="gap-1.5 text-xs">
                 <Zap className="w-3.5 h-3.5" />
                 Transfer-Übungen
-                {transferCount > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">
+                {transferCount > 0 &&
+              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">
                     {transferCount}
                   </span>
-                )}
+              }
               </TabsTrigger>
               <TabsTrigger value="projekt" className="gap-1.5 text-xs">
                 <FolderOpen className="w-3.5 h-3.5" />
                 Projekte
-                {projektCount > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[10px] font-bold">
+                {projektCount > 0 &&
+              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[10px] font-bold">
                     {projektCount}
                   </span>
-                )}
+              }
               </TabsTrigger>
             </TabsList>
           </div>
@@ -248,17 +248,17 @@ export default function Workspace() {
             <aside className="w-72 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden">
               <div className="flex-1 overflow-y-auto p-3">
                 <SidebarTree
-                  einheit={einheit}
-                  lernpakete={paketeFuerEinheit}
-                  lernziele={zieleFuerEinheit}
-                  aufgaben={aufgabenFuerEinheit}
-                  mappings={mappings}
-                  selectedNode={selectedNode}
-                  onSelect={handleSelect}
-                  kannBearbeiten={kannDieseEinheitBearbeiten}
-                  userEmail={authUser?.email || ''}
-                  highlightedAtomIds={highlightedAtomIds}
-                />
+                einheit={einheit}
+                lernpakete={paketeFuerEinheit}
+                lernziele={zieleFuerEinheit}
+                aufgaben={aufgabenFuerEinheit}
+                mappings={mappings}
+                selectedNode={selectedNode}
+                onSelect={handleSelect}
+                kannBearbeiten={kannDieseEinheitBearbeiten}
+                userEmail={authUser?.email || ''}
+                highlightedAtomIds={highlightedAtomIds} />
+              
               </div>
             </aside>
 
@@ -266,22 +266,22 @@ export default function Workspace() {
             <main className="flex-1 overflow-y-auto">
               <div className="max-w-3xl mx-auto px-6 py-6">
                 <WorkspaceDetailPanel
-                  selectedNode={selectedNode}
-                  einheit={einheit}
-                  lernpakete={paketeFuerEinheit}
-                  lernziele={zieleFuerEinheit}
-                  aufgaben={aufgabenFuerEinheit}
-                  userEmail={authUser?.email}
-                  kannBearbeiten={kannDieseEinheitBearbeiten}
-                  istAdmin={istAdmin}
-                  onNavigate={handleSelect}
-                  onNewLernpaket={() => handleSelect({ type: 'new-lernpaket' })}
-                  onNewLernziel={(paketId) => handleSelect({ type: 'new-lernziel', paketId })}
-                  onNewAufgabe={(paketId, lernzielId) => handleSelect({ type: 'new-aufgabe', paketId, lernzielId })}
-                  onEditEinheit={() => {}}
-                  onDeleteLernpaket={(id) => deleteLernpaket.mutate(id)}
-                  onDeleteLernziel={(id) => deleteLernziel.mutate(id)}
-                />
+                selectedNode={selectedNode}
+                einheit={einheit}
+                lernpakete={paketeFuerEinheit}
+                lernziele={zieleFuerEinheit}
+                aufgaben={aufgabenFuerEinheit}
+                userEmail={authUser?.email}
+                kannBearbeiten={kannDieseEinheitBearbeiten}
+                istAdmin={istAdmin}
+                onNavigate={handleSelect}
+                onNewLernpaket={() => handleSelect({ type: 'new-lernpaket' })}
+                onNewLernziel={(paketId) => handleSelect({ type: 'new-lernziel', paketId })}
+                onNewAufgabe={(paketId, lernzielId) => handleSelect({ type: 'new-aufgabe', paketId, lernzielId })}
+                onEditEinheit={() => {}}
+                onDeleteLernpaket={(id) => deleteLernpaket.mutate(id)}
+                onDeleteLernziel={(id) => deleteLernziel.mutate(id)} />
+              
               </div>
             </main>
           </TabsContent>
@@ -289,34 +289,34 @@ export default function Workspace() {
           {/* ── Säule 2: Transfer-Übungen ─────────────────────────────────────── */}
           <TabsContent value="transfer" className="flex-1 overflow-hidden m-0 p-0">
             <TransferSaeule
-              ebene="2 - Transfer"
-              lernpakete={paketeFuerEinheit}
-              lernziele={zieleFuerEinheit}
-              aufgaben={aufgabenFuerEinheit}
-              mappings={mappings}
-              einheitId={einheit.id}
-              kannBearbeiten={kannDieseEinheitBearbeiten}
-              onAtomHighlight={handleAtomHighlight}
-              highlightedAufgabeId={null}
-            />
+            ebene="2 - Transfer"
+            lernpakete={paketeFuerEinheit}
+            lernziele={zieleFuerEinheit}
+            aufgaben={aufgabenFuerEinheit}
+            mappings={mappings}
+            einheitId={einheit.id}
+            kannBearbeiten={kannDieseEinheitBearbeiten}
+            onAtomHighlight={handleAtomHighlight}
+            highlightedAufgabeId={null} />
+          
           </TabsContent>
 
           {/* ── Säule 3: Anwendungs-Projekte ──────────────────────────────────── */}
           <TabsContent value="projekt" className="flex-1 overflow-hidden m-0 p-0">
             <TransferSaeule
-              ebene="3 - Projekt"
-              lernpakete={paketeFuerEinheit}
-              lernziele={zieleFuerEinheit}
-              aufgaben={aufgabenFuerEinheit}
-              mappings={mappings}
-              einheitId={einheit.id}
-              kannBearbeiten={kannDieseEinheitBearbeiten}
-              onAtomHighlight={handleAtomHighlight}
-              highlightedAufgabeId={null}
-            />
+            ebene="3 - Projekt"
+            lernpakete={paketeFuerEinheit}
+            lernziele={zieleFuerEinheit}
+            aufgaben={aufgabenFuerEinheit}
+            mappings={mappings}
+            einheitId={einheit.id}
+            kannBearbeiten={kannDieseEinheitBearbeiten}
+            onAtomHighlight={handleAtomHighlight}
+            highlightedAufgabeId={null} />
+          
           </TabsContent>
         </Tabs>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
