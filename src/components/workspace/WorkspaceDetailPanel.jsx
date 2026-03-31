@@ -258,15 +258,15 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
           <h2 className="text-xl font-bold">{paket.titel_des_pakets}</h2>
           <StatusBadge status={pStatus} />
           {(() => {
-          const phasenConfig = paket.phasen_konfiguration || {};
-          const hasIncomplete = Object.values(phasenConfig).some(
-            phase => phase.selected_aktivitaet_id && !phase.is_complete
-          );
-          return hasIncomplete ? (
-            <span title="Aktivität-Inhalte unvollständig" className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" /> Inhalt unvollständig
-            </span>
-          ) : null;
+            const phasenConfig = paket.phasen_konfiguration || {};
+            const hasIncomplete = Object.values(phasenConfig).some(
+              phase => phase && phase.selected_aktivitaet_id && !phase.is_complete
+            );
+            return hasIncomplete ? (
+              <span title="Aktivität-Inhalte unvollständig" className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" /> Inhalt unvollständig
+              </span>
+            ) : null;
           })()}
           </div>
           <p className="text-sm text-muted-foreground flex items-center gap-2">
