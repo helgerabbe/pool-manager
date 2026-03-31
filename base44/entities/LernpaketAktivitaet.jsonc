@@ -1,0 +1,42 @@
+{
+  "name": "LernpaketAktivitaet",
+  "type": "object",
+  "properties": {
+    "lernpaket_id": {
+      "type": "string",
+      "description": "Referenz zum Lernpaket (Foreign Key)"
+    },
+    "aktivitaet_id": {
+      "type": "string",
+      "description": "Referenz zur Aktivit\u00e4t aus dem AktivitaetenKatalog (Foreign Key)"
+    },
+    "phase": {
+      "type": "string",
+      "enum": [
+        "Input",
+        "\u00dcbung",
+        "Abschluss"
+      ],
+      "description": "Lernphase, in der die Aktivit\u00e4t verwendet wird"
+    },
+    "is_complete": {
+      "type": "boolean",
+      "default": false,
+      "description": "Gibt an, ob alle Pflichtfelder ausgef\u00fcllt sind"
+    },
+    "content_data": {
+      "type": "object",
+      "description": "JSON-Objekt mit den eingegebenen Inhalten (URL, Text, Paare, etc.)",
+      "additionalProperties": true
+    },
+    "reihenfolge": {
+      "type": "number",
+      "description": "Sortierreihenfolge der Aktivit\u00e4ten innerhalb einer Phase"
+    }
+  },
+  "required": [
+    "lernpaket_id",
+    "aktivitaet_id",
+    "phase"
+  ]
+}

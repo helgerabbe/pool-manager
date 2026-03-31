@@ -12,13 +12,14 @@ import EinheitForm from '@/components/einheiten/EinheitForm';
 import Ebene2MappingView from '@/components/aufgaben/Ebene2MappingView';
 import ActivityContentEditor from '@/components/workspace/ActivityContentEditor';
 import ActivityPreviewModal from '@/components/workspace/ActivityPreviewModal';
+import ActivityContentForm from '@/components/workspace/ActivityContentForm';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import {
   BookOpen, Layers, Target, Puzzle, Plus, Edit, Trash2,
   Clock, Lock, Unlock, AlertCircle, CheckCircle2, ArrowDown,
-  TrendingUp, AlertTriangle, Eye
+  TrendingUp, AlertTriangle, Eye, AlertTriangle as WarningIcon
 } from 'lucide-react';
 
 const kategorieColors = {
@@ -251,11 +252,22 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <div className="w-7 h-7 rounded bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-              {paket.reihenfolge_nummer}
-            </div>
-            <h2 className="text-xl font-bold">{paket.titel_des_pakets}</h2>
-            <StatusBadge status={pStatus} />
+          <div className="w-7 h-7 rounded bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
+          {paket.reihenfolge_nummer}
+          </div>
+          <h2 className="text-xl font-bold">{paket.titel_des_pakets}</h2>
+          <StatusBadge status={pStatus} />
+          {(() => {
+          const phasenConfig = paket.phasen_konfiguration || {};
+          const hasIncomplete = Object.values(phasenConfig).some(
+            phase => phase.selected_aktivitaet_id && !phase.is_complete
+          );
+          return hasIncomplete ? (
+            <span title="Aktivität-Inhalte unvollständig" className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" /> Inhalt unvollständig
+            </span>
+          ) : null;
+          })()}
           </div>
           <p className="text-sm text-muted-foreground flex items-center gap-2">
             <Clock className="w-3.5 h-3.5" />{paket.geschaetzte_dauer_minuten} Minuten
@@ -575,6 +587,8 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewAktivitaet, setPreviewAktivitaet] = useState(null);
+  const [contentFormOpen, setContentFormOpen] = useState(false);
+  const [contentFormAktivitaet, setContentFormAktivitaet] = useState(null);
 
   const { data: aktivitaeten = [] } = useQuery({
     queryKey: ['aktivitaeten'],
@@ -643,6 +657,19 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient
                 )}
               </div>
               <div className="flex items-center gap-1">
+                {kannBearbeiten && currentAktivitaet.form_schema && currentAktivitaet.form_schema.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs gap-1"
+                    onClick={() => {
+                      setContentFormAktivitaet(currentAktivitaet);
+                      setContentFormOpen(true);
+                    }}
+                  >
+                    Inhalt bearbeiten
+                  </Button>
+                )}
                 {phaseConfig.field_values && Object.keys(phaseConfig.field_values).length > 0 && (
                   <Button
                     variant="ghost"
@@ -738,6 +765,31 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient
         onOpenChange={setPreviewOpen}
         aktivitaet={previewAktivitaet}
         fieldValues={phaseConfig.field_values || {}}
+      />
+
+      {/* Aktivitäts-Inhalts-Form */}
+      <ActivityContentForm
+        open={contentFormOpen}
+        onOpenChange={setContentFormOpen}
+        aktivitaet={contentFormAktivitaet}
+        initialData={phaseConfig.field_values || {}}
+        onSave={({ content_data, is_complete }) => {
+          const newConfig = {
+            ...phasenConfig,
+            [phaseKey]: {
+              ...(phasenConfig[phaseKey] || {}),
+              selected_aktivitaet_id: selectedAktivitaetId,
+              field_values: content_data,
+              is_complete,
+            },
+          };
+          base44.entities.Lernpakete.update(paket.id, {
+            phasen_konfiguration: newConfig
+          }).then(() => {
+            queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+            setContentFormOpen(false);
+          });
+        }}
       />
     </>
   );
