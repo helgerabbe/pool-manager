@@ -29,34 +29,88 @@ export default function KILernpaketAssistent({ einheitId, einheit, existingPaket
     setIsGenerating(true);
     setVorschau(null);
 
+    const naechsteNr = existingPaketeCount + 1;
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `Du bist ein Experte für kompetenzorientierte Unterrichtsplanung.
-      
-Analysiere den folgenden Braindump eines Lehrers und extrahiere daraus Lernpakete mit zugehörigen Lernzielen.
+      prompt: `Du bist ein Experte für kompetenzorientierte Unterrichtsplanung nach dem Prinzip des Constructive Alignment.
 
-Kontext:
+Deine Aufgabe: Analysiere den Braindump einer Lehrkraft und extrahiere daraus atomare, strukturierte Lernpakete mit Lernzielen.
+
+═══════════════════════════════════════
+SCHRITT 1 — VALIDIERUNG (Immer zuerst)
+═══════════════════════════════════════
+
+Prüfe, ob die Eingabe verwertbar ist. Sie ist NICHT verwertbar, wenn:
+- Sie kürzer als 20 Zeichen ist.
+- Sie keinen erkennbaren Unterrichtsbezug hat (z.B. nur Zahlen, Nonsense).
+- Sie keinerlei didaktische Themen, Inhalte oder Kompetenzen erkennen lässt.
+
+Wenn NICHT verwertbar:
+Gib exakt dieses JSON zurück:
+{ "valid": false, "fehler": "Kurze Begründung auf Deutsch, warum die Eingabe unzureichend ist.", "lernpakete": [] }
+
+Wenn verwertbar: Fahre mit Schritt 2 fort.
+
+═══════════════════════════════════════
+SCHRITT 2 — EXTRAKTION & REGELN
+═══════════════════════════════════════
+
+Kontext-Daten:
 - Fach: ${einheit?.fach || 'unbekannt'}
 - Einheit: ${einheit?.titel_der_einheit || 'unbekannt'}
 - Jahrgangsstufe: ${einheit?.jahrgangsstufe || 'unbekannt'}
+- Nächste freie Paket-Nummer: ${naechsteNr}
 
-Braindump des Lehrers:
+Braindump der Lehrkraft:
 """
 ${braindump}
 """
 
-Regeln für die Extraktion:
-1. Extrahiere alle erkennbaren Lernpakete (thematische Einheiten/Module)
-2. Jedem Lernpaket ordne Lernziele zu
-3. Formuliere Lernziele als "Ich kann..."-Sätze in Fachsprache
-4. Ordne jedem Lernziel eine Anforderungsebene zu:
-   - "Ebene 1 - Basis": Grundwissen und Grundfertigkeiten
-   - "Ebene 2 - Transfer": Anwendung und Übertragung
-   - "Ebene 3 - Projekt": Kreative und komplexe Aufgaben
-5. Für Ebene 1 ordne auch eine Kategorie zu: "Fachwissen" oder "Fähigkeit/Fertigkeit"
-6. Schätze eine sinnvolle Bearbeitungsdauer in Minuten pro Paket (z.B. 45, 90, 135)
-7. Vergib Reihenfolge-Nummern beginnend ab ${existingPaketeCount + 1}
+Regeln für die Generierung:
+1. Granularität (Lego-Prinzip): Zerlege komplexe Themen in kleinschrittige Lernpakete. Ein Paket behandelt genau einen isolierten Aspekt.
+2. Lernziele formulierst du IMMER als „Ich kann..."-Satz.
+3. Anforderungsebene: Weise jedem Lernziel exakt einen dieser Enum-Werte zu:
+   • "Ebene 1 - Basis"
+   • "Ebene 2 - Transfer"
+   • "Ebene 3 - Projekt"
+4. Kategorie-Zwang (Nur für Ebene 1): Jedes Lernziel der Ebene "Ebene 1 - Basis" MUSS zwingend exakt einen dieser Enum-Werte erhalten:
+   • "Fachwissen" (deklarativ: Fakten, Begriffe)
+   • "Fähigkeit/Fertigkeit" (prozedural: Methoden, Tun)
+5. Kategorie-Ausschluss: Für "Ebene 2 - Transfer" und "Ebene 3 - Projekt" muss der Wert für "kategorie" zwingend null sein.
+6. Schülerübersetzung: Eine alltagsnahe, einfache Umformulierung des Ziels für die Lernlandkarte.
+7. Dauer: Geschätzte Dauer des Pakets als Integer (nur Zahlen: 45, 90, 135).
+8. Reihenfolge: Nummeriere die Pakete fortlaufend, beginnend mit ${naechsteNr}.
 
-Antworte NUR mit validem JSON, kein Text davor oder danach.`,
+Selbstprüfung vor der Ausgabe:
+- Beginnt jedes Lernziel mit „Ich kann"?
+- Hat jedes Ebene-1-Ziel eine Kategorie (nicht null)?
+- Ist die Kategorie bei Ebene 2 und 3 exakt null?
+- Ist die Reihenfolge lückenlos ab ${naechsteNr}?
+
+═══════════════════════════════════════
+SCHRITT 3 — AUSGABEFORMAT (Striktes JSON)
+═══════════════════════════════════════
+
+Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt. Kein Text vor oder nach dem JSON. Keine Markdown-Codeblock-Formatierung. Halte dich exakt an folgendes Schema:
+
+{
+  "valid": true,
+  "fehler": null,
+  "lernpakete": [
+    {
+      "reihenfolge_nummer": ${naechsteNr},
+      "titel_des_pakets": "String",
+      "geschaetzte_dauer_minuten": 45,
+      "lernziele": [
+        {
+          "formulierung_fachsprache": "Ich kann...",
+          "anforderungsebene": "Ebene 1 - Basis",
+          "kategorie": "Fähigkeit/Fertigkeit",
+          "schueler_uebersetzung": "String"
+        }
+      ]
+    }
+  ]
+}`,
       response_json_schema: {
         type: 'object',
         properties: {
@@ -86,6 +140,12 @@ Antworte NUR mit validem JSON, kein Text davor oder danach.`,
         },
       },
     });
+
+    if (!result?.valid) {
+      toast.error(result?.fehler || 'Die Eingabe konnte nicht verarbeitet werden.');
+      setIsGenerating(false);
+      return;
+    }
 
     const pakete = result?.lernpakete || [];
     setVorschau(pakete);
