@@ -10,6 +10,7 @@ import Dashboard from '@/pages/Dashboard';
 import EinheitenListe from '@/pages/EinheitenListe';
 import EinheitDetail from '@/pages/EinheitDetail';
 import Benutzerverwaltung from '@/pages/Benutzerverwaltung';
+import SeedAdmin from '@/pages/SeedAdmin';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -42,6 +43,7 @@ const AuthenticatedApp = () => {
         <Route path="/einheiten" element={<EinheitenListe />} />
         <Route path="/einheiten/:id" element={<EinheitDetail />} />
         <Route path="/benutzerverwaltung" element={<Benutzerverwaltung />} />
+        <Route path="/seed" element={<SeedAdmin />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

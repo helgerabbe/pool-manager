@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { BookOpen, Layers, Home, ShieldCheck } from 'lucide-react';
+import { BookOpen, Layers, Home, ShieldCheck, DatabaseZap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
 import { Badge } from '@/components/ui/badge';
@@ -57,18 +57,32 @@ export default function AppLayout() {
                 );
               })}
               {permissions.kannBenutzerVerwalten && (
-                <Link
-                  to="/benutzerverwaltung"
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
-                    location.pathname === '/benutzerverwaltung'
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <ShieldCheck className="w-4 h-4" />
-                  <span className="hidden sm:inline">Benutzer</span>
-                </Link>
+                <>
+                  <Link
+                    to="/benutzerverwaltung"
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
+                      location.pathname === '/benutzerverwaltung'
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span className="hidden sm:inline">Benutzer</span>
+                  </Link>
+                  <Link
+                    to="/seed"
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
+                      location.pathname === '/seed'
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <DatabaseZap className="w-4 h-4" />
+                    <span className="hidden sm:inline">Seed</span>
+                  </Link>
+                </>
               )}
               {rolle && (
                 <Badge className={`ml-2 text-[10px] hidden sm:inline-flex ${rollenBadgeColors[rolle] || 'bg-muted text-muted-foreground'}`}>
