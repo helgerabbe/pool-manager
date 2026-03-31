@@ -9,6 +9,7 @@ import LernpaketForm from '@/components/lernpakete/LernpaketForm';
 import LernzielForm from '@/components/lernziele/LernzielForm';
 import AufgabenbausteinForm from '@/components/aufgaben/AufgabenbausteintForm';
 import EinheitForm from '@/components/einheiten/EinheitForm';
+import Ebene2MappingView from '@/components/aufgaben/Ebene2MappingView';
 import {
   BookOpen, Layers, Target, Puzzle, Plus, Edit, Trash2,
   Clock, Lock, Unlock, AlertCircle, CheckCircle2, ArrowDown,
@@ -445,6 +446,12 @@ export default function WorkspaceDetailPanel({
   userEmail, kannBearbeiten, istAdmin,
   onNavigate, onDeleteLernpaket, onDeleteLernziel,
 }) {
+  // Prüfen ob eine Ebene-2-Aufgabe ausgewählt ist
+  const selectedAufgabe = selectedNode?.type === 'aufgabe'
+    ? aufgaben.find(a => a.id === selectedNode.id)
+    : null;
+  const isEbene2Aufgabe = selectedAufgabe?.baustein_typ === 'Ebene-2-Aufgabe';
+
   const [lernpaketFormOpen, setLernpaketFormOpen] = useState(false);
   const [lernzielFormOpen,  setLernzielFormOpen]  = useState(false);
   const [aufgabeFormOpen,   setAufgabeFormOpen]   = useState(false);
@@ -591,6 +598,18 @@ export default function WorkspaceDetailPanel({
           onSubmit={(data) => createLernziel.mutate(data)}
         />
       </>
+    );
+  }
+
+  if (type === 'aufgabe' && isEbene2Aufgabe) {
+    const lernpaketIdFuerAufgabe = selectedAufgabe.lernpaket_id;
+    return (
+      <Ebene2MappingView
+        aufgabe={selectedAufgabe}
+        lernpaketId={lernpaketIdFuerAufgabe}
+        einheitId={einheit?.id}
+        kannBearbeiten={kannBearbeiten}
+      />
     );
   }
 

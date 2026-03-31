@@ -1,0 +1,22 @@
+{
+  "name": "MappingAufgabeBasisziel",
+  "type": "object",
+  "properties": {
+    "aufgabe_id": {
+      "type": "string",
+      "description": "FK zur Ebene-2-Aufgabe (Aufgabenbausteine.id)"
+    },
+    "basisziel_id": {
+      "type": "string",
+      "description": "FK zum Ebene-1-Lernziel (Lernziele.id)"
+    },
+    "reihenfolge": {
+      "type": "number",
+      "description": "Optionale Sortierreihenfolge in der Dropzone"
+    }
+  },
+  "required": [
+    "aufgabe_id",
+    "basisziel_id"
+  ]
+}

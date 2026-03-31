@@ -39,6 +39,28 @@
       "type": "string",
       "description": "Vorgaben f\u00fcr den KI-Tutor / Erwartungshorizont"
     },
+    "schwierigkeitsgrad": {
+      "type": "string",
+      "enum": [
+        "1-Stern",
+        "2-Sterne",
+        "3-Sterne"
+      ],
+      "description": "Schwierigkeitsgrad (prim\u00e4r f\u00fcr Ebene-2-Aufgaben)"
+    },
+    "material_typ": {
+      "type": "string",
+      "enum": [
+        "Freitext",
+        "Buchverweis",
+        "Datei-Upload"
+      ],
+      "description": "Art des Begleitmaterials"
+    },
+    "material_referenz": {
+      "type": "string",
+      "description": "Buchverweis-Text oder hochgeladene Datei-URL"
+    },
     "is_opt_out": {
       "type": "boolean",
       "default": false,
