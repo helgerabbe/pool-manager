@@ -11,13 +11,14 @@ import AufgabenbausteinForm from '@/components/aufgaben/AufgabenbausteintForm';
 import EinheitForm from '@/components/einheiten/EinheitForm';
 import Ebene2MappingView from '@/components/aufgaben/Ebene2MappingView';
 import ActivityContentEditor from '@/components/workspace/ActivityContentEditor';
+import ActivityPreviewModal from '@/components/workspace/ActivityPreviewModal';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import {
   BookOpen, Layers, Target, Puzzle, Plus, Edit, Trash2,
   Clock, Lock, Unlock, AlertCircle, CheckCircle2, ArrowDown,
-  TrendingUp, AlertTriangle
+  TrendingUp, AlertTriangle, Eye
 } from 'lucide-react';
 
 const kategorieColors = {
@@ -572,6 +573,8 @@ function LernzielPanel({ lernziel, paketId, aufgaben, userEmail, kannBearbeiten,
 function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient }) {
   const [selectedAktivitaetId, setSelectedAktivitaetId] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewAktivitaet, setPreviewAktivitaet] = useState(null);
 
   const { data: aktivitaeten = [] } = useQuery({
     queryKey: ['aktivitaeten'],
@@ -639,16 +642,32 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient
                   </p>
                 )}
               </div>
-              {kannBearbeiten && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={handleRemoveAktivitaet}
-                >
-                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                </Button>
-              )}
+              <div className="flex items-center gap-1">
+                {phaseConfig.field_values && Object.keys(phaseConfig.field_values).length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => {
+                      setPreviewAktivitaet(currentAktivitaet);
+                      setPreviewOpen(true);
+                    }}
+                    title="Schüler-Vorschau anzeigen"
+                  >
+                    <Eye className="w-3.5 h-3.5 text-primary" />
+                  </Button>
+                )}
+                {kannBearbeiten && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={handleRemoveAktivitaet}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         ) : (
@@ -712,6 +731,14 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Aktivitäts-Vorschau Modal */}
+      <ActivityPreviewModal
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        aktivitaet={previewAktivitaet}
+        fieldValues={phaseConfig.field_values || {}}
+      />
     </>
   );
 }
