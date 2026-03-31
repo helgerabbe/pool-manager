@@ -82,6 +82,14 @@ export function kannExportieren(rolle) {
 }
 
 /**
+ * Darf der Nutzer den KI-Lernpaket-Assistenten nutzen?
+ * Nur Administrator und Fachschaftsleitung.
+ */
+export function kannKIAssistentNutzen(rolle) {
+  return [ROLLEN.ADMIN, ROLLEN.FACHSCHAFT].includes(rolle);
+}
+
+/**
  * Berechnet die vollständige Permissions-Map für eine Rolle.
  * Nützlich für UI-Entscheidungen.
  */
@@ -94,6 +102,7 @@ export function getPermissions(rolle, benutzerFaecher = []) {
     kannFreigabeAendern: [ROLLEN.ADMIN, ROLLEN.FACHSCHAFT].includes(rolle),
     kannBenutzerVerwalten: rolle === ROLLEN.ADMIN,
     kannExportieren: kannExportieren(rolle),
+    kannKIAssistentNutzen: kannKIAssistentNutzen(rolle),
     nurFreigegebene: rolle === ROLLEN.MOODLE,
     // Hilfsfunktionen mit Fach-Kontext
     kannEinheitBearbeiten: (fach) => kannEinheitBearbeiten(rolle, benutzerFaecher, fach),

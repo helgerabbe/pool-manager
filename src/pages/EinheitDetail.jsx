@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ArrowLeft, Plus, Layers, Target, Puzzle, Clock,
   Edit, Trash2, Lock, BookOpen, ChevronRight,
-  AlertCircle, LayoutGrid, CheckSquare, Unlock
+  AlertCircle, LayoutGrid, CheckSquare, Unlock, Sparkles
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -22,6 +22,7 @@ import AufgabenbausteinForm from '@/components/aufgaben/AufgabenbausteintForm';
 import EinheitForm from '@/components/einheiten/EinheitForm';
 import AlignmentBoard from '@/components/AlignmentBoard';
 import EmptyState from '@/components/shared/EmptyState';
+import KILernpaketAssistent from '@/components/einheiten/KILernpaketAssistent';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription,
@@ -256,6 +257,7 @@ export default function EinheitDetail() {
   const kannDieseEinheitBearbeiten = einheit ? permissions.kannEinheitBearbeiten(einheit.fach) : false;
   const kannFreigabeAendern        = einheit ? permissions.kannFreigabeStatusAendern(einheit.fach) : false;
   const istAdmin = rolle === ROLLEN.ADMIN;
+  const kannKIAssistent = permissions.kannKIAssistentNutzen;
 
   if (!einheit) {
     return (
@@ -348,6 +350,11 @@ export default function EinheitDetail() {
           <TabsTrigger value="lernpakete" className="gap-1.5">
             <Layers className="w-3.5 h-3.5" />Lernpakete
           </TabsTrigger>
+          {kannKIAssistent && (
+            <TabsTrigger value="ki-assistent" className="gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" />KI-Assistent
+            </TabsTrigger>
+          )}
           <TabsTrigger value="alignment" className="gap-1.5">
             <LayoutGrid className="w-3.5 h-3.5" />Alignment-Check
           </TabsTrigger>
@@ -479,6 +486,22 @@ export default function EinheitDetail() {
             </div>
           )}
         </TabsContent>
+
+        {/* ── KI-Assistent-Tab ── */}
+        {kannKIAssistent && (
+          <TabsContent value="ki-assistent" className="mt-4">
+            <KILernpaketAssistent
+              einheitId={einheitId}
+              einheit={einheit}
+              existingPaketeCount={paketeFuerEinheit.length}
+              onCreated={() => {
+                queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+                queryClient.invalidateQueries({ queryKey: ['lernziele'] });
+                setActiveTab('lernpakete');
+              }}
+            />
+          </TabsContent>
+        )}
 
         {/* ── Alignment-Board-Tab ── */}
         <TabsContent value="alignment" className="mt-4">
