@@ -81,48 +81,28 @@ function PhaseNode({ phase, phaseLabel, paket, aufgaben, selectedId, onSelect, k
   const isDisabled       = phasenConfig.disabled === true;
 
   return (
-    <div>
-      <div className="flex items-center gap-0.5">
-        <button
-          onClick={() => setOpen(o => !o)}
-          className="p-0.5 text-muted-foreground hover:text-foreground shrink-0"
-        >
-          <ChevronRight className={cn('w-3 h-3 transition-transform', open && 'rotate-90')} />
-        </button>
-        <button
-          onClick={() => onSelect({ type: 'phase', id: `phase-${paket.id}-${phase}`, phase, paketId: paket.id, data: paket })}
-          className={cn(
-            'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors min-w-0',
-            isSelected
-              ? 'bg-primary text-primary-foreground'
-              : isDisabled
-                ? 'text-muted-foreground/50 opacity-60'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-          )}
-        >
-          <span className="w-3 h-3 shrink-0">
-            {phase === 'input' && '📚'}
-            {phase === 'uebung' && '✏️'}
-            {phase === 'abschluss' && '🎯'}
-          </span>
-          <span className="truncate flex-1">{phaseLabel}</span>
-        </button>
-      </div>
-
-      {open && !isDisabled && (
-        <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-2">
-          <p className="px-2 py-1 text-[11px] text-muted-foreground">
-            {phasenConfig.selected_aktivitaet_id ? 'Aktivität konfiguriert' : 'Keine Aktivität'}
-          </p>
-        </div>
+    <button
+      onClick={() => onSelect({ type: 'phase', id: `phase-${paket.id}-${phase}`, phase, paketId: paket.id, data: paket })}
+      disabled={isDisabled}
+      className={cn(
+        'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
+        isSelected
+          ? 'bg-primary text-primary-foreground'
+          : isDisabled
+            ? 'text-muted-foreground/50 opacity-60 cursor-not-allowed'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
       )}
-
-      {open && isDisabled && (
-        <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-2">
-          <p className="px-2 py-1 text-[11px] text-muted-foreground/60 italic">Diese Phase ist deaktiviert</p>
-        </div>
+    >
+      <span className="w-3 h-3 shrink-0">
+        {phase === 'input' && '📚'}
+        {phase === 'uebung' && '✏️'}
+        {phase === 'abschluss' && '🎯'}
+      </span>
+      <span className="truncate flex-1">{phaseLabel}</span>
+      {!isSelected && phasenConfig.selected_aktivitaet_id && (
+        <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded shrink-0">OK</span>
       )}
-    </div>
+    </button>
   );
 }
 

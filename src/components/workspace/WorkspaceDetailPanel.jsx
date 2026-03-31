@@ -233,8 +233,9 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
         disabled: !phaseConfig.disabled,
       },
     };
-    base44.entities.Lernpakete.update(paket.id, { phasen_konfiguration: newConfig });
-    queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+    base44.entities.Lernpakete.update(paket.id, { phasen_konfiguration: newConfig }).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+    });
   };
 
   const handleEditLernziel = (lz) => {
@@ -552,6 +553,113 @@ function LernzielPanel({ lernziel, paketId, aufgaben, userEmail, kannBearbeiten,
   );
 }
 
+// ── Panel: Lernphase mit Aktivitäten ──────────────────────────────────────────
+
+function PhasePanel({ paket, phaseKey, phaseLabel, kannBearbeiten }) {
+  const queryClient = useQueryClient();
+  const [selectedAktivitaetId, setSelectedAktivitaetId] = useState(null);
+
+  const { data: aktivitaeten = [] } = React.useQuery({
+    queryKey: ['aktivitaeten'],
+    queryFn: () => base44.entities.AktivitaetenKatalog.list(),
+  });
+
+  const phasenConfig = paket.phasen_konfiguration || {};
+  const phaseConfig = phasenConfig[phaseKey] || {};
+  const phaseAktivitaeten = aktivitaeten.filter(a => a.phase === phaseLabel && a.is_active);
+  const selectedAktivitaet = selectedAktivitaetId 
+    ? aktivitaeten.find(a => a.id === selectedAktivitaetId)
+    : null;
+
+  const handleSelectAktivitaet = (aktivitaetId) => {
+    const newConfig = {
+      ...phasenConfig,
+      selected_aktivitaet_id: aktivitaetId,
+      field_values: {},
+    };
+    base44.entities.Lernpakete.update(paket.id, {
+      phasen_konfiguration: { ...phasenConfig, [phaseKey]: newConfig }
+    });
+    queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+    setSelectedAktivitaetId(null);
+  };
+
+  const currentAktivitaet = phaseConfig.selected_aktivitaet_id 
+    ? aktivitaeten.find(a => a.id === phaseConfig.selected_aktivitaet_id)
+    : null;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">{phaseLabel}</h2>
+        <p className="text-sm text-muted-foreground mt-1">Phase des Lernpakets: {paket.titel_des_pakets}</p>
+      </div>
+
+      {/* Aktuelle Aktivität */}
+      {currentAktivitaet ? (
+        <div className="p-4 rounded-lg border bg-card space-y-3">
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="font-semibold">{currentAktivitaet.name}</h3>
+              {currentAktivitaet.form_schema && currentAktivitaet.form_schema.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Felder: {currentAktivitaet.form_schema.map(f => f.label).join(', ')}
+                </p>
+              )}
+            </div>
+            {kannBearbeiten && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  const newConfig = { ...phasenConfig };
+                  delete newConfig[phaseKey].selected_aktivitaet_id;
+                  base44.entities.Lernpakete.update(paket.id, {
+                    phasen_konfiguration: { ...phasenConfig, [phaseKey]: newConfig }
+                  });
+                  queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+                }}
+                title="Aktivität entfernen"
+              >
+                <Trash2 className="w-4 h-4 text-destructive" />
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="p-6 rounded-lg border-2 border-dashed bg-muted/30 text-center">
+          <Puzzle className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">Noch keine Aktivität zugeordnet</p>
+        </div>
+      )}
+
+      {/* Aktivität hinzufügen */}
+      {kannBearbeiten && (
+        <div className="space-y-2">
+          <Label>Neue Aktivität zuordnen</Label>
+          <div className="flex gap-2">
+            <select
+              value={selectedAktivitaetId || ''}
+              onChange={(e) => {
+                const aktivitaetId = e.target.value;
+                if (aktivitaetId) handleSelectAktivitaet(aktivitaetId);
+              }}
+              className="flex-1 px-3 py-2 rounded-lg border border-input bg-white"
+            >
+              <option value="">-- Aktivität wählen --</option>
+              {phaseAktivitaeten.map(akt => (
+                <option key={akt.id} value={akt.id}>
+                  {akt.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Haupt-Export ──────────────────────────────────────────────────────────────
 
 export default function WorkspaceDetailPanel({
@@ -666,12 +774,18 @@ export default function WorkspaceDetailPanel({
   }
 
   if (type === 'phase') {
+    const paket = lernpakete.find(p => p.id === selectedNode.paketId);
+    if (!paket) return null;
+    
+    const phaseKey = selectedNode.phase;
+    const phaseLabels = { input: 'Input (Erarbeitung)', uebung: 'Übung', abschluss: 'Abschluss' };
+    
     return (
-      <StepEmptyState
-        icon={Puzzle}
-        title={`Phase: ${selectedNode.phase === 'input' ? 'Input' : selectedNode.phase === 'uebung' ? 'Übung' : 'Abschluss'}`}
-        description="Konfigurieren Sie diese Phase im Lernpaket-Bereich auf der linken Seite."
-        status="yellow"
+      <PhasePanel
+        paket={paket}
+        phaseKey={phaseKey}
+        phaseLabel={phaseLabels[phaseKey]}
+        kannBearbeiten={kannBearbeiten}
       />
     );
   }
