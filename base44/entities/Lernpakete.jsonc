@@ -18,6 +18,60 @@
       "type": "number",
       "description": "Gesch\u00e4tzte Bearbeitungsdauer in Minuten"
     },
+    "phasen_konfiguration": {
+      "type": "object",
+      "description": "Konfiguration der drei Lernphasen (Input/\u00dcbung/Abschluss)",
+      "properties": {
+        "Input": {
+          "type": "object",
+          "properties": {
+            "disabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Ob die Erarbeitungsphase \u00fcbersprungen wird"
+            },
+            "selected_aktivitaet_id": {
+              "type": "string",
+              "description": "ID der gew\u00e4hlten Aktivit\u00e4t"
+            },
+            "field_values": {
+              "type": "object",
+              "description": "Werte der dynamischen Formularfelder"
+            }
+          }
+        },
+        "\u00dcbung": {
+          "type": "object",
+          "properties": {
+            "disabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "selected_aktivitaet_id": {
+              "type": "string"
+            },
+            "field_values": {
+              "type": "object"
+            }
+          }
+        },
+        "Abschluss": {
+          "type": "object",
+          "properties": {
+            "disabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "selected_aktivitaet_id": {
+              "type": "string"
+            },
+            "field_values": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
     "sync_status": {
       "type": "string",
       "enum": [
