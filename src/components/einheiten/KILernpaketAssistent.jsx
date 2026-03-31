@@ -10,8 +10,8 @@ import { toast } from 'sonner';
 
 const KATEGORIEN = ['Fachwissen', 'Fähigkeit/Fertigkeit'];
 
-export default function KILernpaketAssistent({ einheitId, einheit, existingPaketeCount, onCreated }) {
-  const [braindump, setBraindump] = useState('');
+export default function KILernpaketAssistent({ einheitId, einheit, existingPaketeCount, onCreated, initialBraindump = '' }) {
+  const [braindump, setBraindump] = useState(initialBraindump);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [vorschau, setVorschau] = useState(null); // Array of { titel, dauer, lernziele: [] }

@@ -14,6 +14,7 @@ import {
   Edit, Trash2, Lock, BookOpen, ChevronRight,
   AlertCircle, LayoutGrid, CheckSquare, Unlock, Sparkles
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import LernpaketForm from '@/components/lernpakete/LernpaketForm';
@@ -23,6 +24,7 @@ import EinheitForm from '@/components/einheiten/EinheitForm';
 import AlignmentBoard from '@/components/AlignmentBoard';
 import EmptyState from '@/components/shared/EmptyState';
 import KILernpaketAssistent from '@/components/einheiten/KILernpaketAssistent';
+import DidaktikCoachChat from '@/components/ai/DidaktikCoachChat';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription,
@@ -175,6 +177,8 @@ export default function EinheitDetail() {
   const [selectedPaketId, setSelectedPaketId] = useState(null);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, type: '', id: '' });
   const [activeTab, setActiveTab] = useState('lernpakete');
+  const [kiSubTab, setKiSubTab]   = useState('coach');
+  const [braindumpVorbefuellt, setBraindumpVorbefuellt] = useState('');
 
   // ── Queries ──
   const { data: einheiten = [] } = useQuery({
@@ -489,17 +493,56 @@ export default function EinheitDetail() {
 
         {/* ── KI-Assistent-Tab ── */}
         {kannKIAssistent && (
-          <TabsContent value="ki-assistent" className="mt-4">
-            <KILernpaketAssistent
-              einheitId={einheitId}
-              einheit={einheit}
-              existingPaketeCount={paketeFuerEinheit.length}
-              onCreated={() => {
-                queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-                queryClient.invalidateQueries({ queryKey: ['lernziele'] });
-                setActiveTab('lernpakete');
-              }}
-            />
+          <TabsContent value="ki-assistent" className="mt-4 space-y-4">
+            {/* Sub-Tabs: Coach ↔ Generator */}
+            <div className="flex gap-1 p-1 rounded-lg bg-muted w-fit">
+              <button
+                onClick={() => setKiSubTab('coach')}
+                className={cn(
+                  'px-4 py-1.5 rounded-md text-sm font-medium transition-all',
+                  kiSubTab === 'coach'
+                    ? 'bg-card shadow text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                💬 Didaktik-Coach
+              </button>
+              <button
+                onClick={() => setKiSubTab('generator')}
+                className={cn(
+                  'px-4 py-1.5 rounded-md text-sm font-medium transition-all',
+                  kiSubTab === 'generator'
+                    ? 'bg-card shadow text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                ⚡ Braindump-Generator
+              </button>
+            </div>
+
+            {kiSubTab === 'coach' && (
+              <DidaktikCoachChat
+                onBraindumpUebernehmen={(text) => {
+                  setBraindumpVorbefuellt(text);
+                  setKiSubTab('generator');
+                }}
+              />
+            )}
+
+            {kiSubTab === 'generator' && (
+              <KILernpaketAssistent
+                einheitId={einheitId}
+                einheit={einheit}
+                existingPaketeCount={paketeFuerEinheit.length}
+                initialBraindump={braindumpVorbefuellt}
+                onCreated={() => {
+                  queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+                  queryClient.invalidateQueries({ queryKey: ['lernziele'] });
+                  setBraindumpVorbefuellt('');
+                  setActiveTab('lernpakete');
+                }}
+              />
+            )}
           </TabsContent>
         )}
 
