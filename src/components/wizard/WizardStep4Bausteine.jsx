@@ -104,11 +104,11 @@ export default function WizardStep4Bausteine({ einheitId, onDone }) {
                 </span>
               </div>
 
-              <div className="p-3 space-y-2">
+              <div className="p-3 flex gap-2">
                 {PHASEN.map(phase => (
                   <div
                     key={phase.key}
-                    className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
+                    className={`flex flex-1 items-center gap-2 p-2.5 rounded-lg border-2 transition-all ${
                       phasenConfig[paket.id]?.[phase.key]
                         ? `${phase.color} border-opacity-100`
                         : 'bg-muted/30 border-muted opacity-50'
@@ -118,7 +118,7 @@ export default function WizardStep4Bausteine({ einheitId, onDone }) {
                       checked={phasenConfig[paket.id]?.[phase.key] || false}
                       onCheckedChange={() => handleToggle(paket.id, phase.key)}
                     />
-                    <span className="text-sm font-medium">{phase.label}</span>
+                    <span className="text-sm font-medium truncate">{phase.label}</span>
                   </div>
                 ))}
               </div>
