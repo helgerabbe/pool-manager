@@ -221,7 +221,7 @@ export default function Workspace() {
                   </span>
               }
               </TabsTrigger>
-              <TabsTrigger value="transfer" className="gap-1.5 text-xs">
+              <TabsTrigger value="transfer" className="bg-yellow-200 px-3 py-1 text-xs font-medium rounded-md inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow gap-1.5">
                 <Zap className="w-3.5 h-3.5" />
                 Transfer-Übungen
                 {transferCount > 0 &&
@@ -230,7 +230,7 @@ export default function Workspace() {
                   </span>
               }
               </TabsTrigger>
-              <TabsTrigger value="projekt" className="gap-1.5 text-xs">
+              <TabsTrigger value="projekt" className="bg-purple-200 px-3 py-1 text-xs font-medium rounded-md inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow gap-1.5">
                 <FolderOpen className="w-3.5 h-3.5" />
                 Projekte
                 {projektCount > 0 &&
