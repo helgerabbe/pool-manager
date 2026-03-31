@@ -215,9 +215,9 @@ export default function DidaktikCoachChat({ onBraindumpUebernehmen }) {
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Schreiben Sie Ihre Ideen oder stellen Sie eine Frage… (Enter = Senden, Shift+Enter = Zeilenumbruch)"
-            className="flex-1 min-h-[48px] max-h-[120px] resize-none text-sm"
+            className="flex-1 min-h-[240px] max-h-[400px] resize-none text-sm"
             disabled={isLoading}
-            rows={2}
+            rows={10}
           />
           <Button
             onClick={sendMessage}
