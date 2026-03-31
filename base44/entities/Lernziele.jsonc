@@ -1,0 +1,32 @@
+{
+  "name": "Lernziele",
+  "type": "object",
+  "properties": {
+    "lernpaket_id": {
+      "type": "string",
+      "description": "Referenz zum \u00fcbergeordneten Lernpaket (Foreign Key)"
+    },
+    "formulierung_fachsprache": {
+      "type": "string",
+      "description": "Formulierung in Fachsprache (Ich kann...)"
+    },
+    "anforderungsebene": {
+      "type": "string",
+      "enum": [
+        "Ebene 1 - Basis",
+        "Ebene 2 - Transfer",
+        "Ebene 3 - Projekt"
+      ],
+      "description": "Anforderungsebene des Lernziels"
+    },
+    "schueler_uebersetzung": {
+      "type": "string",
+      "description": "Sch\u00fclergerechte Formulierung f\u00fcr die Lernlandkarte"
+    }
+  },
+  "required": [
+    "lernpaket_id",
+    "formulierung_fachsprache",
+    "anforderungsebene"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "Lernpakete",
+  "type": "object",
+  "properties": {
+    "einheit_id": {
+      "type": "string",
+      "description": "Referenz zur \u00fcbergeordneten Einheit (Foreign Key)"
+    },
+    "reihenfolge_nummer": {
+      "type": "number",
+      "description": "Reihenfolge innerhalb der Einheit"
+    },
+    "titel_des_pakets": {
+      "type": "string",
+      "description": "Titel des Lernpakets"
+    },
+    "geschaetzte_dauer_minuten": {
+      "type": "number",
+      "description": "Gesch\u00e4tzte Bearbeitungsdauer in Minuten"
+    }
+  },
+  "required": [
+    "einheit_id",
+    "titel_des_pakets",
+    "reihenfolge_nummer"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "name": "Aufgabenbausteine",
+  "type": "object",
+  "properties": {
+    "lernpaket_id": {
+      "type": "string",
+      "description": "Referenz zum \u00fcbergeordneten Lernpaket (Foreign Key)"
+    },
+    "lernziel_id": {
+      "type": "string",
+      "description": "Referenz zum zugeh\u00f6rigen Lernziel (Foreign Key)"
+    },
+    "baustein_typ": {
+      "type": "string",
+      "enum": [
+        "Pre-Test",
+        "Input",
+        "Ebene-1-\u00dcbung",
+        "Ebene-2-Aufgabe",
+        "Ebene-3-Projekt",
+        "Exit-Check",
+        "Pr\u00fcfung Typ A",
+        "Pr\u00fcfung Typ B",
+        "Pr\u00fcfung Typ C"
+      ],
+      "description": "Typ des Aufgabenbausteins"
+    },
+    "aufgabentext_inhalt": {
+      "type": "string",
+      "description": "Aufgabentext / Inhalt (Rich Text)"
+    },
+    "erwartungshorizont_ki_prompt": {
+      "type": "string",
+      "description": "Vorgaben f\u00fcr den KI-Tutor / Erwartungshorizont"
+    },
+    "lock_status": {
+      "type": "boolean",
+      "default": false,
+      "description": "True = wird gerade von einem Nutzer bearbeitet"
+    },
+    "locked_by_user": {
+      "type": "string",
+      "description": "E-Mail des Nutzers, der den Baustein gerade bearbeitet"
+    }
+  },
+  "required": [
+    "lernpaket_id",
+    "baustein_typ"
+  ]
+}
