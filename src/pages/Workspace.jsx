@@ -211,8 +211,8 @@ export default function Workspace() {
         
           {/* Tab-Leiste */}
           <div className="px-4 pt-2 border-b border-border bg-card shrink-0">
-            <TabsList className="bg-muted text-muted-foreground my-2 px-1 py-1 rounded-lg inline-flex items-center justify-center h-9">
-              <TabsTrigger value="basis" className="gap-1.5 text-xs">
+            <TabsList className="bg-muted text-muted-foreground my-3 px-1 py-1 rounded-lg inline-flex items-center justify-center h-9">
+              <TabsTrigger value="basis" className="bg-lime-200 px-3 py-1 text-xs font-medium rounded-md inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow gap-1.5">
                 <Layers className="w-3.5 h-3.5" />
                 Basis-Lernpakete
                 {paketeFuerEinheit.length > 0 &&
