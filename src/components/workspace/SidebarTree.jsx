@@ -5,7 +5,10 @@ import {
   getLernzielStatus,
   getLernpaketStatus,
   getEinheitFortschritt,
+  getAufgabeStatus,
+  ebene2FehltMapping,
 } from '@/lib/statusLogic';
+import { AlertTriangle } from 'lucide-react';
 
 // ── Ampel-Dot ──────────────────────────────────────────────────────────────────
 // Kompakte farbige Kreisanzeige für den Status-Überblick im Baum.
@@ -30,16 +33,18 @@ function AmpelDot({ status, size = 'sm' }) {
 
 // ── Tree-Node: Aufgabenbaustein (Level 3) ─────────────────────────────────────
 
-function BausteinNode({ aufgabe, selectedId, onSelect, userEmail }) {
-  const isSelected  = selectedId === aufgabe.id;
-  const isLocked    = aufgabe.lock_status && aufgabe.locked_by_user !== userEmail;
-  const isOptOut    = aufgabe.is_opt_out === true;
-  const hasContent  = aufgabe.aufgabentext_inhalt && aufgabe.aufgabentext_inhalt.trim() !== '';
-  const ampelStatus = isLocked ? 'yellow' : (isOptOut || hasContent) ? 'green' : 'red';
+function BausteinNode({ aufgabe, selectedId, onSelect, userEmail, mappings }) {
+  const isSelected   = selectedId === aufgabe.id;
+  const isLocked     = aufgabe.lock_status && aufgabe.locked_by_user !== userEmail;
+  const isOptOut     = aufgabe.is_opt_out === true;
+  const isEbene2     = aufgabe.baustein_typ === 'Ebene-2-Aufgabe';
+  const ampelStatus  = getAufgabeStatus(aufgabe, userEmail, mappings);
+  const warnMapping  = !isSelected && ebene2FehltMapping(aufgabe, mappings);
 
   return (
     <button
       onClick={() => onSelect({ type: 'aufgabe', id: aufgabe.id, data: aufgabe })}
+      title={warnMapping ? 'Kein Basiskompetenz-Mapping vorhanden' : undefined}
       className={cn(
         'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
         isSelected
@@ -48,11 +53,14 @@ function BausteinNode({ aufgabe, selectedId, onSelect, userEmail }) {
             ? 'text-muted-foreground/50 line-through hover:bg-muted/50'
             : isLocked
               ? 'text-amber-700 bg-amber-50 hover:bg-amber-100'
-              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              : warnMapping
+                ? 'text-amber-700 bg-amber-50/60 hover:bg-amber-100'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
       )}
     >
-      <Puzzle className={cn('w-3 h-3 shrink-0', isOptOut && 'opacity-40')} />
+      <Puzzle className={cn('w-3 h-3 shrink-0', isOptOut && 'opacity-40', isEbene2 && !isSelected && 'text-cyan-600')} />
       {isLocked && <Lock className="w-3 h-3 text-amber-500 shrink-0" />}
+      {warnMapping && <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />}
       <span className="truncate flex-1">{aufgabe.baustein_typ}</span>
       {isOptOut && !isSelected && (
         <span className="text-[9px] bg-muted text-muted-foreground px-1 rounded no-underline" style={{ textDecoration: 'none' }}>
@@ -66,10 +74,10 @@ function BausteinNode({ aufgabe, selectedId, onSelect, userEmail }) {
 
 // ── Tree-Node: Lernziel (Level 2) ─────────────────────────────────────────────
 
-function LernzielNode({ lernziel, aufgaben, paketId, selectedId, onSelect, kannBearbeiten, userEmail }) {
+function LernzielNode({ lernziel, aufgaben, paketId, selectedId, onSelect, kannBearbeiten, userEmail, mappings }) {
   const [open, setOpen]  = useState(false);
   const isSelected       = selectedId === lernziel.id;
-  const status           = getLernzielStatus(lernziel, aufgaben, paketId, userEmail);
+  const status           = getLernzielStatus(lernziel, aufgaben, paketId, userEmail, mappings);
   const bausteine        = aufgaben.filter(a => a.lernpaket_id === paketId && a.lernziel_id === lernziel.id);
 
   return (
@@ -107,6 +115,7 @@ function LernzielNode({ lernziel, aufgaben, paketId, selectedId, onSelect, kannB
               selectedId={selectedId}
               onSelect={onSelect}
               userEmail={userEmail}
+              mappings={mappings}
             />
           ))}
           {kannBearbeiten && (
@@ -128,11 +137,11 @@ function LernzielNode({ lernziel, aufgaben, paketId, selectedId, onSelect, kannB
 
 // ── Tree-Node: Lernpaket (Level 1) ────────────────────────────────────────────
 
-function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail }) {
+function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings }) {
   const [open, setOpen]  = useState(true);
   const isSelected       = selectedId === paket.id;
   const paketZiele       = lernziele.filter(lz => lz.lernpaket_id === paket.id);
-  const status           = getLernpaketStatus(paket, lernziele, aufgaben, userEmail);
+  const status           = getLernpaketStatus(paket, lernziele, aufgaben, userEmail, mappings);
 
   return (
     <div>
@@ -172,6 +181,7 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
               onSelect={onSelect}
               kannBearbeiten={kannBearbeiten}
               userEmail={userEmail}
+              mappings={mappings}
             />
           ))}
           {kannBearbeiten && (
@@ -215,13 +225,14 @@ export default function SidebarTree({
   lernpakete,
   lernziele,
   aufgaben,
+  mappings = [],
   selectedNode,
   onSelect,
   kannBearbeiten,
   userEmail = '',
 }) {
   const selectedId = selectedNode?.id;
-  const { prozent, gruen, gesamt } = getEinheitFortschritt(lernpakete, lernziele, aufgaben, userEmail);
+  const { prozent, gruen, gesamt } = getEinheitFortschritt(lernpakete, lernziele, aufgaben, userEmail, mappings);
 
   // Gesamtstatus der Einheit für den Root-Node
   const einheitStatus =
@@ -293,6 +304,7 @@ export default function SidebarTree({
                 onSelect={onSelect}
                 kannBearbeiten={kannBearbeiten}
                 userEmail={userEmail}
+                mappings={mappings}
               />
             ))}
             {kannBearbeiten && (

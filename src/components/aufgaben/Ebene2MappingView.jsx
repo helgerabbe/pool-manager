@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Star, GripVertical, Plus, Target, Puzzle, X,
-  BookOpen, FileText, Upload, Zap, Save, Info
+  BookOpen, FileText, Upload, Zap, Save, Info, AlertTriangle
 } from 'lucide-react';
 import LernzielQuickAddModal from './LernzielQuickAddModal';
 
@@ -340,6 +340,17 @@ export default function Ebene2MappingView({ aufgabe, lernpaketId, einheitId, kan
               <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
               <span>Ziehe Basiskompetenzen hierher, die für diese Transferaufgabe beherrscht werden müssen.</span>
             </div>
+
+            {/* Pflicht-Hinweis: Text vorhanden aber kein Mapping */}
+            {zugeordneteZiele.length === 0 && formData.aufgabentext_inhalt?.trim() !== '' && (
+              <div className="p-2 bg-amber-50 border border-amber-300 rounded-lg flex items-start gap-1.5 text-[11px] text-amber-800">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-600" />
+                <span>
+                  <strong>Achtung:</strong> Ordne mindestens eine Basiskompetenz per Drag &amp; Drop zu,
+                  um diesen Baustein abzuschließen.
+                </span>
+              </div>
+            )}
 
             <Droppable droppableId="dropzone">
               {(provided, snapshot) => (

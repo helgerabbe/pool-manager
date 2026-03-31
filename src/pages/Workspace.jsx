@@ -57,6 +57,12 @@ export default function Workspace() {
     enabled: !!selectedEinheitId,
   });
 
+  const { data: mappings = [] } = useQuery({
+    queryKey: ['mappingBasisziele'],
+    queryFn: () => base44.entities.MappingAufgabeBasisziel.list(),
+    enabled: !!selectedEinheitId,
+  });
+
   // ── Aktive Einheit ─────────────────────────────────────────────────────────
   const einheit = einheiten.find(e => e.id === selectedEinheitId) || null;
 
@@ -195,6 +201,7 @@ export default function Workspace() {
                 lernpakete={paketeFuerEinheit}
                 lernziele={zieleFuerEinheit}
                 aufgaben={aufgabenFuerEinheit}
+                mappings={mappings}
                 selectedNode={selectedNode}
                 onSelect={handleSelect}
                 kannBearbeiten={kannDieseEinheitBearbeiten}
