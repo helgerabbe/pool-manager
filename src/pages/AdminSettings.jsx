@@ -13,7 +13,7 @@ import WartungsmodusToggle from '@/components/admin/WartungsmodusToggle';
 const KATEGORIEN = ['Diagnostik', 'Input', 'Übung', 'Projekt', 'Prüfung'];
 
 export default function AdminSettings() {
-  const { realRolle } = useRBAC();
+  const { rolle: realRolle } = useRBAC();
   const {
     wartungsmodus, setWartungsmodus,
     faecherRaw, jahrgaengeRaw, bausteinTypenRaw, phasenRaw,
