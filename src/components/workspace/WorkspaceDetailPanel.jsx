@@ -206,6 +206,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   const pStatus = getLernpaketStatus(paket, paketZiele, aufgaben, userEmail);
   const [editLernzielId, setEditLernzielId] = useState(null);
   const [editLernzielData, setEditLernzielData] = useState(null);
+  const [expandedPhase, setExpandedPhase] = useState(null);
   const queryClient = useQueryClient();
 
   const updateLernziel = useMutation({
@@ -292,36 +293,37 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
         </div>
       )}
 
-      {/* Phasen mit Toggle */}
+      {/* Phasen mit Toggle und Aktivitäten */}
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-muted-foreground">Lernphasen</h3>
         {PHASES.map(phase => {
           const phasenConfig = paket.phasen_konfiguration || {};
           const phaseConfig = phasenConfig[phase.key] || {};
           const isDisabled = phaseConfig.disabled === true;
-          
+          const isExpanded = expandedPhase === phase.key;
+
           return (
-            <div
-              key={phase.key}
-              className={`p-4 rounded-lg border transition-all ${
-                isDisabled ? 'bg-muted/50 border-muted text-muted-foreground/60' : 'bg-card border-border'
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3 flex-1 min-w-0">
+            <div key={phase.key} className="space-y-2">
+              {/* Toggle + Header */}
+              <div className="flex items-start justify-between gap-3 p-3 rounded-lg border bg-card">
+                <button
+                  onClick={() => !isDisabled && setExpandedPhase(isExpanded ? null : phase.key)}
+                  disabled={isDisabled}
+                  className="flex items-start gap-3 flex-1 min-w-0 text-left"
+                >
                   <span className="text-lg mt-0.5">{phase.icon}</span>
                   <div className="flex-1 min-w-0">
                     <p className={`font-medium text-sm ${isDisabled ? 'opacity-60' : ''}`}>
                       {phase.label}
                     </p>
                     {phaseConfig.selected_aktivitaet_id && !isDisabled && (
-                      <p className="text-xs text-muted-foreground mt-1">Aktivität konfiguriert</p>
+                      <p className="text-xs text-green-600 mt-1 font-medium">✓ Aktivität zugeordnet</p>
                     )}
                     {isDisabled && (
                       <p className="text-xs text-muted-foreground/60 mt-1 italic">Diese Phase ist deaktiviert</p>
                     )}
                   </div>
-                </div>
+                </button>
                 {kannBearbeiten && (
                   <Switch
                     checked={!isDisabled}
@@ -329,6 +331,17 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                   />
                 )}
               </div>
+
+              {/* Expanded Content */}
+              {isExpanded && !isDisabled && (
+                <PhaseContent
+                  paket={paket}
+                  phaseKey={phase.key}
+                  phaseLabel={phase.label}
+                  kannBearbeiten={kannBearbeiten}
+                  queryClient={queryClient}
+                />
+              )}
             </div>
           );
         })}
@@ -553,12 +566,9 @@ function LernzielPanel({ lernziel, paketId, aufgaben, userEmail, kannBearbeiten,
   );
 }
 
-// ── Panel: Lernphase mit Aktivitäten ──────────────────────────────────────────
+// ── PhaseContent: Aktivitäten-Anzeige und -Verwaltung ─────────────────────────
 
-function PhasePanel({ paket, phaseKey, phaseLabel, kannBearbeiten }) {
-  const queryClient = useQueryClient();
-  const [selectedAktivitaetId, setSelectedAktivitaetId] = useState(null);
-
+function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient }) {
   const { data: aktivitaeten = [] } = useQuery({
     queryKey: ['aktivitaeten'],
     queryFn: () => base44.entities.AktivitaetenKatalog.list(),
@@ -567,43 +577,49 @@ function PhasePanel({ paket, phaseKey, phaseLabel, kannBearbeiten }) {
   const phasenConfig = paket.phasen_konfiguration || {};
   const phaseConfig = phasenConfig[phaseKey] || {};
   const phaseAktivitaeten = aktivitaeten.filter(a => a.phase === phaseLabel && a.is_active);
-  const selectedAktivitaet = selectedAktivitaetId 
-    ? aktivitaeten.find(a => a.id === selectedAktivitaetId)
+  const currentAktivitaet = phaseConfig.selected_aktivitaet_id 
+    ? aktivitaeten.find(a => a.id === phaseConfig.selected_aktivitaet_id)
     : null;
 
   const handleSelectAktivitaet = (aktivitaetId) => {
     const newConfig = {
       ...phasenConfig,
-      selected_aktivitaet_id: aktivitaetId,
-      field_values: {},
+      [phaseKey]: {
+        ...(phasenConfig[phaseKey] || {}),
+        selected_aktivitaet_id: aktivitaetId,
+        field_values: {},
+      },
     };
     base44.entities.Lernpakete.update(paket.id, {
-      phasen_konfiguration: { ...phasenConfig, [phaseKey]: newConfig }
+      phasen_konfiguration: newConfig
+    }).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
     });
-    queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-    setSelectedAktivitaetId(null);
   };
 
-  const currentAktivitaet = phaseConfig.selected_aktivitaet_id 
-    ? aktivitaeten.find(a => a.id === phaseConfig.selected_aktivitaet_id)
-    : null;
+  const handleRemoveAktivitaet = () => {
+    const newConfig = { ...phasenConfig };
+    if (newConfig[phaseKey]) {
+      delete newConfig[phaseKey].selected_aktivitaet_id;
+    }
+    base44.entities.Lernpakete.update(paket.id, {
+      phasen_konfiguration: newConfig
+    }).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+    });
+  };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">{phaseLabel}</h2>
-        <p className="text-sm text-muted-foreground mt-1">Phase des Lernpakets: {paket.titel_des_pakets}</p>
-      </div>
-
+    <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 space-y-3">
       {/* Aktuelle Aktivität */}
       {currentAktivitaet ? (
-        <div className="p-4 rounded-lg border bg-card space-y-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="font-semibold">{currentAktivitaet.name}</h3>
+        <div className="p-3 rounded-lg bg-white border border-border space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              <p className="font-medium text-sm">{currentAktivitaet.name}</p>
               {currentAktivitaet.form_schema && currentAktivitaet.form_schema.length > 0 && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Felder: {currentAktivitaet.form_schema.map(f => f.label).join(', ')}
+                  {currentAktivitaet.form_schema.length} Felder
                 </p>
               )}
             </div>
@@ -611,49 +627,37 @@ function PhasePanel({ paket, phaseKey, phaseLabel, kannBearbeiten }) {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => {
-                  const newConfig = { ...phasenConfig };
-                  delete newConfig[phaseKey].selected_aktivitaet_id;
-                  base44.entities.Lernpakete.update(paket.id, {
-                    phasen_konfiguration: { ...phasenConfig, [phaseKey]: newConfig }
-                  });
-                  queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-                }}
-                title="Aktivität entfernen"
+                className="h-7 w-7"
+                onClick={handleRemoveAktivitaet}
               >
-                <Trash2 className="w-4 h-4 text-destructive" />
+                <Trash2 className="w-3.5 h-3.5 text-destructive" />
               </Button>
             )}
           </div>
         </div>
       ) : (
-        <div className="p-6 rounded-lg border-2 border-dashed bg-muted/30 text-center">
-          <Puzzle className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">Noch keine Aktivität zugeordnet</p>
-        </div>
+        <p className="text-sm text-muted-foreground italic">Keine Aktivität zugeordnet</p>
       )}
 
       {/* Aktivität hinzufügen */}
       {kannBearbeiten && (
         <div className="space-y-2">
-          <Label>Neue Aktivität zuordnen</Label>
-          <div className="flex gap-2">
-            <select
-              value={selectedAktivitaetId || ''}
-              onChange={(e) => {
-                const aktivitaetId = e.target.value;
-                if (aktivitaetId) handleSelectAktivitaet(aktivitaetId);
-              }}
-              className="flex-1 px-3 py-2 rounded-lg border border-input bg-white"
-            >
-              <option value="">-- Aktivität wählen --</option>
-              {phaseAktivitaeten.map(akt => (
-                <option key={akt.id} value={akt.id}>
-                  {akt.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Label className="text-xs">Aktivität zuordnen</Label>
+          <select
+            onChange={(e) => {
+              if (e.target.value) handleSelectAktivitaet(e.target.value);
+              e.target.value = '';
+            }}
+            defaultValue=""
+            className="w-full px-2 py-1.5 text-sm rounded-lg border border-input bg-white"
+          >
+            <option value="">-- Aktivität wählen --</option>
+            {phaseAktivitaeten.map(akt => (
+              <option key={akt.id} value={akt.id}>
+                {akt.name}
+              </option>
+            ))}
+          </select>
         </div>
       )}
     </div>
@@ -774,20 +778,7 @@ export default function WorkspaceDetailPanel({
   }
 
   if (type === 'phase') {
-    const paket = lernpakete.find(p => p.id === selectedNode.paketId);
-    if (!paket) return null;
-    
-    const phaseKey = selectedNode.phase;
-    const phaseLabels = { input: 'Input (Erarbeitung)', uebung: 'Übung', abschluss: 'Abschluss' };
-    
-    return (
-      <PhasePanel
-        paket={paket}
-        phaseKey={phaseKey}
-        phaseLabel={phaseLabels[phaseKey]}
-        kannBearbeiten={kannBearbeiten}
-      />
-    );
+    return null; // Phasen werden jetzt inline im LernpaketPanel angezeigt
   }
 
   if (type === 'new-lernpaket') {
