@@ -14,6 +14,7 @@ import Benutzerverwaltung from '@/pages/Benutzerverwaltung';
 import SeedAdmin from '@/pages/SeedAdmin';
 import MoodleExport from '@/pages/MoodleExport';
 import Workspace from '@/pages/Workspace';
+import AdminSettings from '@/pages/AdminSettings';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -49,6 +50,7 @@ const AuthenticatedApp = () => {
         <Route path="/seed" element={<SeedAdmin />} />
         <Route path="/moodle-export" element={<MoodleExport />} />
         <Route path="/workspace" element={<Workspace />} />
+        <Route path="/admin-settings" element={<AdminSettings />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

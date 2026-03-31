@@ -1,0 +1,22 @@
+{
+  "name": "LookupFaecher",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name des Fachs (z.B. 'Mathematik')"
+    },
+    "ist_aktiv": {
+      "type": "boolean",
+      "default": true,
+      "description": "Ob das Fach in Dropdowns erscheint"
+    },
+    "reihenfolge": {
+      "type": "number",
+      "description": "Sortierreihenfolge in Dropdown-Listen"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

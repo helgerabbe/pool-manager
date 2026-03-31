@@ -4,11 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-
-const FAECHER = ["Deutsch", "Mathematik", "Englisch", "Französisch", "Latein", "Biologie", "Chemie", "Physik", "Geschichte", "Geographie", "Politik", "Wirtschaft", "Kunst", "Musik", "Sport", "Religion", "Ethik", "Informatik"];
-const JAHRGANGSSTUFEN = ["5", "6", "7", "8", "9", "10", "11", "12", "13"];
+import { useSystemSettings } from '@/hooks/useSystemSettings';
 
 export default function EinheitForm({ open, onOpenChange, onSubmit, initialData }) {
+  const { faecher, jahrgaenge } = useSystemSettings();
   const [formData, setFormData] = useState(initialData || {
     fach: '',
     titel_der_einheit: '',
@@ -35,7 +34,7 @@ export default function EinheitForm({ open, onOpenChange, onSubmit, initialData 
             <Select value={formData.fach} onValueChange={v => setFormData({ ...formData, fach: v })}>
               <SelectTrigger><SelectValue placeholder="Fach wählen" /></SelectTrigger>
               <SelectContent>
-                {FAECHER.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                {faecher.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -54,7 +53,7 @@ export default function EinheitForm({ open, onOpenChange, onSubmit, initialData 
               <Select value={formData.jahrgangsstufe} onValueChange={v => setFormData({ ...formData, jahrgangsstufe: v })}>
                 <SelectTrigger><SelectValue placeholder="Jg." /></SelectTrigger>
                 <SelectContent>
-                  {JAHRGANGSSTUFEN.map(j => <SelectItem key={j} value={j}>Jahrgang {j}</SelectItem>)}
+                  {jahrgaenge.map(j => <SelectItem key={j} value={j}>Jahrgang {j}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

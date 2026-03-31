@@ -1,0 +1,33 @@
+{
+  "name": "LookupBausteinTypen",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name des Baustein-Typs (z.B. 'Pre-Test', 'H5P-Input', 'KI-Aufgabe')"
+    },
+    "kategorie": {
+      "type": "string",
+      "enum": [
+        "Diagnostik",
+        "Input",
+        "\u00dcbung",
+        "Projekt",
+        "Pr\u00fcfung"
+      ],
+      "description": "\u00dcbergeordnete Kategorie f\u00fcr Gruppierung"
+    },
+    "ist_aktiv": {
+      "type": "boolean",
+      "default": true,
+      "description": "Ob dieser Typ in Dropdowns erscheint"
+    },
+    "reihenfolge": {
+      "type": "number",
+      "description": "Sortierreihenfolge"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

@@ -49,16 +49,39 @@ export function useRBAC() {
     ? (DUMMY_FAECHER_FUER_MOCKED_ROLLE[mockedRole] ?? [])
     : realFaecher;
 
+  // ── Wartungsmodus: Schreibrechte für non-Admins sperren ──────────────────
+  const { data: systemSettings = [] } = useQuery({
+    queryKey: ['systemeinstellungen'],
+    queryFn: () => base44.entities.Systemeinstellungen.list(),
+    staleTime: 60 * 1000,
+  });
+  const wartungsmodus = systemSettings.find(s => s.schluessel === 'wartungsmodus')?.wert_boolean === true;
+  const schreibgesperrt = wartungsmodus && realRolle !== ROLLEN.ADMIN;
+
+  const basePermissions = getPermissions(aktiveRolle, aktiveFaecher);
+
+  // Im Wartungsmodus werden alle Schreibrechte für non-Admins auf false gesetzt
+  const permissions = schreibgesperrt
+    ? {
+        ...basePermissions,
+        kannSchreiben: false,
+        kannLoeschen: false,
+        kannFreigabeAendern: false,
+        kannEinheitBearbeiten: () => false,
+        kannFreigabeStatusAendern: () => false,
+        wartungsmodus: true,
+      }
+    : { ...basePermissions, wartungsmodus: false };
+
   return {
     isLoading,
     authUser,
     profil,
-    // `rolle` = die aktuell wirksame Rolle (ggf. simuliert)
     rolle:      aktiveRolle,
-    // `realRolle` = immer die echte Datenbankrolle (für RoleSwitcher-Sichtbarkeit)
     realRolle,
     faecher:    aktiveFaecher,
     isMocked:   istEchterAdmin && !!mockedRole,
-    permissions: getPermissions(aktiveRolle, aktiveFaecher),
+    wartungsmodus,
+    permissions,
   };
 }

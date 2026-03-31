@@ -1,0 +1,21 @@
+{
+  "name": "Systemeinstellungen",
+  "type": "object",
+  "properties": {
+    "schluessel": {
+      "type": "string",
+      "description": "Eindeutiger Schl\u00fcssel (z.B. 'wartungsmodus')"
+    },
+    "wert_boolean": {
+      "type": "boolean",
+      "description": "Wert f\u00fcr Boolean-Einstellungen (z.B. Wartungsmodus)"
+    },
+    "wert_text": {
+      "type": "string",
+      "description": "Wert f\u00fcr Text-Einstellungen"
+    }
+  },
+  "required": [
+    "schluessel"
+  ]
+}

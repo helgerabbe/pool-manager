@@ -4,13 +4,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-
-const BAUSTEIN_TYPEN = [
-  "Pre-Test", "Input", "Ebene-1-Übung", "Ebene-2-Aufgabe", 
-  "Ebene-3-Projekt", "Exit-Check", "Prüfung Typ A", "Prüfung Typ B", "Prüfung Typ C"
-];
+import { useSystemSettings } from '@/hooks/useSystemSettings';
 
 export default function AufgabenbausteinForm({ open, onOpenChange, onSubmit, initialData, lernziele }) {
+  const { bausteinTypen } = useSystemSettings();
   const [formData, setFormData] = useState(initialData || {
     baustein_typ: '',
     lernziel_id: '',
@@ -37,7 +34,7 @@ export default function AufgabenbausteinForm({ open, onOpenChange, onSubmit, ini
               <Select value={formData.baustein_typ} onValueChange={v => setFormData({ ...formData, baustein_typ: v })}>
                 <SelectTrigger><SelectValue placeholder="Typ wählen" /></SelectTrigger>
                 <SelectContent>
-                  {BAUSTEIN_TYPEN.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  {bausteinTypen.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

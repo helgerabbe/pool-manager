@@ -1,0 +1,22 @@
+{
+  "name": "LookupJahrgaenge",
+  "type": "object",
+  "properties": {
+    "bezeichnung": {
+      "type": "string",
+      "description": "Bezeichnung der Jahrgangsstufe (z.B. '10' oder 'Q1')"
+    },
+    "ist_aktiv": {
+      "type": "boolean",
+      "default": true,
+      "description": "Ob dieser Jahrgang in Dropdowns erscheint"
+    },
+    "reihenfolge": {
+      "type": "number",
+      "description": "Sortierreihenfolge"
+    }
+  },
+  "required": [
+    "bezeichnung"
+  ]
+}

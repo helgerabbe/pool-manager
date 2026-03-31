@@ -1,9 +1,10 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { BookOpen, Layers, Home, ShieldCheck, DatabaseZap, Download, LayoutTemplate } from 'lucide-react';
+import { BookOpen, Layers, Home, ShieldCheck, DatabaseZap, Download, LayoutTemplate, Settings2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
 import RoleSwitcher from '@/components/layout/RoleSwitcher';
+import WartungsBanner from '@/components/layout/WartungsBanner';
 
 export default function AppLayout() {
   const location = useLocation();
@@ -11,6 +12,7 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen bg-background">
+      <WartungsBanner />
       {/* Top Navigation */}
       <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -78,7 +80,19 @@ export default function AppLayout() {
                     <span className="hidden sm:inline">Benutzer</span>
                   </Link>
                   <Link
-                    to="/seed"
+                   to="/admin-settings"
+                   className={cn(
+                     "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
+                     location.pathname === '/admin-settings'
+                       ? "bg-primary text-primary-foreground"
+                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                   )}
+                  >
+                   <Settings2 className="w-4 h-4" />
+                   <span className="hidden sm:inline">Einstellungen</span>
+                  </Link>
+                  <Link
+                   to="/seed"
                     className={cn(
                       "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
                       location.pathname === '/seed'
