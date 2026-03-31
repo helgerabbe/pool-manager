@@ -104,13 +104,15 @@ export function getLernzielStatus(lernziel, aufgaben, paketId, userEmail = '', m
  * - Grün:   Alle Lernziele sind Grün.
  *
  * @param {object}   paket
- * @param {object[]} lernziele
+ * @param {object[]} lernziele — Lernziele für DIESES Paket (bereits gefiltert)
  * @param {object[]} aufgaben
  * @param {string}   userEmail
  * @returns {'green'|'yellow'|'red'}
  */
 export function getLernpaketStatus(paket, lernziele, aufgaben, userEmail = '', mappings = []) {
-  const paketZiele = lernziele.filter(lz => lz.lernpaket_id === paket.id);
+  // WICHTIG: lernziele sollte bereits für dieses Paket gefiltert sein
+  // (wird vom Caller mit paketZiele gefiltert)
+  const paketZiele = lernziele;
 
   if (paketZiele.length === 0) return 'red';
 
