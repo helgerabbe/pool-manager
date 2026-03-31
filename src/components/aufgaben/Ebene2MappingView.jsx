@@ -105,23 +105,24 @@ export default function Ebene2MappingView({ aufgabe, lernpaketId, einheitId, kan
 
   const [quickAddOpen, setQuickAddOpen] = useState(false);
 
-  // ── Alle Ebene-1-Lernziele der Einheit laden
-  const { data: alleLernziele = [] } = useQuery({
-    queryKey: ['lernziele'],
-    queryFn: () => base44.entities.Lernziele.list(),
-  });
-  const { data: alleLernpakete = [] } = useQuery({
-    queryKey: ['lernpakete'],
-    queryFn: () => base44.entities.Lernpakete.list(),
+  // ── Nur Pakete der aktuellen Einheit laden (gefiltert)
+  const { data: einheitPakete = [] } = useQuery({
+    queryKey: ['lernpakete', einheitId],
+    queryFn: () => base44.entities.Lernpakete.filter({ einheit_id: einheitId }),
+    enabled: !!einheitId,
   });
 
-  // Pakete dieser Einheit → Lernziele Ebene 1 dieser Einheit
-  const einheitPaketIds = alleLernpakete
-    .filter(p => p.einheit_id === einheitId)
-    .map(p => p.id);
-  const ebene1Ziele = alleLernziele.filter(
-    lz => einheitPaketIds.includes(lz.lernpaket_id) && lz.anforderungsebene === 'Ebene 1 - Basis'
-  );
+  const einheitPaketIds = einheitPakete.map(p => p.id);
+
+  // ── Nur Ebene-1-Lernziele dieser Einheit laden (gefiltert, nach Paket-IDs)
+  const { data: ebene1Ziele = [] } = useQuery({
+    queryKey: ['lernziele-ebene1', einheitPaketIds.join(',')],
+    queryFn: async () => {
+      const alle = await base44.entities.Lernziele.filter({ anforderungsebene: 'Ebene 1 - Basis' });
+      return alle.filter(lz => einheitPaketIds.includes(lz.lernpaket_id));
+    },
+    enabled: einheitPaketIds.length > 0,
+  });
 
   // ── Bestehendes Mapping laden
   const { data: mappings = [] } = useQuery({
@@ -159,9 +160,14 @@ export default function Ebene2MappingView({ aufgabe, lernpaketId, einheitId, kan
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['mappingBasisziele', aufgabe?.id] }),
   });
 
+  // Ziel-Paket für neue Basiskompetenzen: erstes Paket der Einheit (nicht das Transferaufgaben-Paket)
+  const zielPaketFuerBasis = einheitPakete.find(p => p.id !== lernpaketId)?.id || lernpaketId;
+
   const createLernziel = useMutation({
-    mutationFn: (data) => base44.entities.Lernziele.create({ ...data, lernpaket_id: lernpaketId }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lernziele'] }),
+    mutationFn: (data) => base44.entities.Lernziele.create({ ...data, lernpaket_id: zielPaketFuerBasis }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lernziele-ebene1', einheitId] });
+    },
   });
 
   // ── Drag & Drop Handler
