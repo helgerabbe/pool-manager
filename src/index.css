@@ -87,3 +87,87 @@
     @apply bg-background text-foreground font-inter;
   }
 }
+
+/* Print Media Queries für Bauplan-Export */
+@media print {
+  /* Verstecke Navigation und UI-Elemente */
+  header,
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Seitenumbruch-Optimierung */
+  body {
+    background: white;
+    color: black;
+  }
+
+  #moodle-bauplan {
+    max-width: 100%;
+  }
+
+  .print\:page-break-after-avoid {
+    page-break-after: avoid;
+  }
+
+  .print\:break-inside-avoid {
+    break-inside: avoid;
+  }
+
+  h1 {
+    font-size: 2rem;
+    page-break-after: avoid;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    page-break-after: avoid;
+  }
+
+  h3 {
+    page-break-after: avoid;
+  }
+
+  /* Farbige Elemente beim Druck beibehalten */
+  .bg-blue-50,
+  .bg-green-50,
+  .bg-purple-50,
+  .bg-slate-50 {
+    background-color: inherit;
+    border: 1px solid #d1d5db;
+  }
+
+  .border-blue-200,
+  .border-green-200,
+  .border-purple-200,
+  .border-slate-200 {
+    border-color: #d1d5db;
+  }
+
+  /* Badges lesbar beim Druck */
+  .bg-green-100,
+  .bg-yellow-100 {
+    background-color: #f3f4f6;
+    color: black;
+    border: 1px solid #d1d5db;
+  }
+
+  /* Abstände für Print */
+  p {
+    margin: 0.5rem 0;
+  }
+
+  ul {
+    margin: 0.5rem 0;
+  }
+
+  li {
+    margin: 0.25rem 0;
+  }
+
+  /* Footer nur beim Druck sichtbar */
+  .print\:block {
+    display: block;
+  }
+}

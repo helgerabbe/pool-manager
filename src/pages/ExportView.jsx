@@ -6,10 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Download, Copy, Loader2, CheckCircle2, AlertCircle, FileJson } from 'lucide-react';
+import { Download, Copy, Loader2, CheckCircle2, AlertCircle, FileJson, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useRBAC } from '@/hooks/useRBAC';
+import MoodleBauplanView from '@/components/export/MoodleBauplanView';
 
 export default function ExportView() {
   const { permissions } = useRBAC();
@@ -246,9 +247,10 @@ export default function ExportView() {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* JSON-Preview */}
-            <Tabs defaultValue="preview" className="w-full">
+            <Tabs defaultValue="bauplan" className="w-full">
               <TabsList>
-                <TabsTrigger value="preview">Vorschau</TabsTrigger>
+                <TabsTrigger value="bauplan">Bauplan (Print)</TabsTrigger>
+                <TabsTrigger value="preview">Statistik</TabsTrigger>
                 <TabsTrigger value="raw">Raw JSON</TabsTrigger>
               </TabsList>
 
@@ -298,6 +300,10 @@ export default function ExportView() {
                 <pre className="p-4 rounded-lg bg-muted text-xs overflow-auto max-h-[400px] border border-border">
                   <code>{JSON.stringify(exportResult, null, 2)}</code>
                 </pre>
+              </TabsContent>
+
+              <TabsContent value="bauplan" className="mt-4 print:block">
+                <MoodleBauplanView exportData={exportResult} />
               </TabsContent>
             </Tabs>
 
