@@ -16,6 +16,7 @@ export default function KILernpaketAssistent({ einheitId, einheit, existingPaket
   const [isSaving, setIsSaving] = useState(false);
   const [vorschau, setVorschau] = useState(null); // Array of { titel, dauer, lernziele: [] }
   const [expandedPakete, setExpandedPakete] = useState({});
+  const [erfolg, setErfolg] = useState(null); // { pakete: number, ziele: number }
 
   const handleGenerieren = async () => {
     if (!braindump.trim()) return;
@@ -201,6 +202,7 @@ Antworte NUR mit dem JSON-Objekt. Kein Text, keine Markdown-Blöcke.
     }
 
     setIsSaving(false);
+    setErfolg({ pakete: erstelltePakete, ziele: erstellteZiele });
     setVorschau(null);
     setBraindump('');
     toast.success(`${erstelltePakete} Lernpakete und ${erstellteZiele} Lernziele erfolgreich angelegt.`);
@@ -222,8 +224,29 @@ Antworte NUR mit dem JSON-Objekt. Kein Text, keine Markdown-Blöcke.
         </div>
       </div>
 
+      {/* Erfolgsmeldung */}
+      {erfolg && (
+        <div className="p-4 rounded-xl bg-green-50 border border-green-200 flex items-start gap-3">
+          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0 text-lg">
+            ✓
+          </div>
+          <div className="flex-1">
+            <h4 className="font-semibold text-green-900">Erfolgreich angelegt!</h4>
+            <p className="text-sm text-green-700 mt-0.5">
+              <strong>{erfolg.pakete}</strong> Lernpakete und <strong>{erfolg.ziele}</strong> Lernziele wurden hinzugefügt.
+            </p>
+            <button
+              onClick={() => setErfolg(null)}
+              className="text-xs text-green-600 hover:text-green-700 hover:underline mt-2"
+            >
+              Weitere Lernpakete hinzufügen →
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Eingabe */}
-      {!vorschau && (
+      {!vorschau && !erfolg && (
         <div className="space-y-3">
           <Textarea
             value={braindump}
