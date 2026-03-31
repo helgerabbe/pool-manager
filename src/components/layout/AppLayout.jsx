@@ -3,19 +3,11 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { BookOpen, Layers, Home, ShieldCheck, DatabaseZap, Download, LayoutTemplate } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
-import { Badge } from '@/components/ui/badge';
-
-const rollenBadgeColors = {
-  Administrator:      'bg-red-100 text-red-700',
-  Fachschaftsleitung: 'bg-purple-100 text-purple-700',
-  Fachlehrkraft:      'bg-blue-100 text-blue-700',
-  Betrachter:         'bg-gray-100 text-gray-600',
-  'Moodle-Designer':  'bg-green-100 text-green-700',
-};
+import RoleSwitcher from '@/components/layout/RoleSwitcher';
 
 export default function AppLayout() {
   const location = useLocation();
-  const { rolle, permissions } = useRBAC();
+  const { rolle, realRolle, permissions } = useRBAC();
 
   return (
     <div className="min-h-screen bg-background">
@@ -99,11 +91,7 @@ export default function AppLayout() {
                   </Link>
                 </>
               )}
-              {rolle && (
-                <Badge className={`ml-2 text-[10px] hidden sm:inline-flex ${rollenBadgeColors[rolle] || 'bg-muted text-muted-foreground'}`}>
-                  {rolle}
-                </Badge>
-              )}
+              <RoleSwitcher realRolle={realRolle} anzeigeRolle={rolle} />
             </nav>
           </div>
         </div>
