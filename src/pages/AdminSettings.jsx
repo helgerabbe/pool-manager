@@ -47,7 +47,7 @@ export default function AdminSettings() {
           Globale Systemeinstellungen
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Verwalten Sie die Lookup-Tabellen (Fächer, Jahrgänge, Bausteintypen, Phasen) und den Systembetrieb.
+          Verwalten Sie die Lookup-Tabellen (Fächer, Jahrgänge, Phasen) und Aktivitäten sowie den Systembetrieb.
         </p>
       </div>
 
@@ -59,15 +59,12 @@ export default function AdminSettings() {
 
       {/* Lookup-Tabellen */}
       <Tabs defaultValue="faecher">
-        <TabsList className="bg-muted grid w-full grid-cols-5">
+        <TabsList className="bg-muted grid w-full grid-cols-4">
           <TabsTrigger value="faecher" className="gap-1.5 text-xs">
             <BookOpen className="w-3.5 h-3.5" />Fächer
           </TabsTrigger>
           <TabsTrigger value="jahrgaenge" className="gap-1.5 text-xs">
             <GraduationCap className="w-3.5 h-3.5" />Jahrgänge
-          </TabsTrigger>
-          <TabsTrigger value="bausteine" className="gap-1.5 text-xs">
-            <Puzzle className="w-3.5 h-3.5" />Bausteintypen
           </TabsTrigger>
           <TabsTrigger value="phasen" className="gap-1.5 text-xs">
             <CalendarRange className="w-3.5 h-3.5" />Phasen
@@ -114,43 +111,6 @@ export default function AdminSettings() {
                 queryKey={['lookupJahrgaenge']}
                 items={jahrgaengeRaw}
                 labelField="bezeichnung"
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Bausteintypen */}
-        <TabsContent value="bausteine" className="mt-4">
-          <Card className="border shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base">Aufgaben-Bausteintypen verwalten</CardTitle>
-              <CardDescription>
-                Fügen Sie neue Bausteintypen hinzu (z.B. „H5P-Input", „KI-Aufgabe") oder deaktivieren
-                Sie nicht mehr benötigte Typen.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <LookupTable
-                entityName="LookupBausteinTypen"
-                queryKey={['lookupBausteinTypen']}
-                items={bausteinTypenRaw}
-                labelField="name"
-                extraFields={[{ key: 'kategorie', label: 'Kategorie' }]}
-                renderExtra={(extra, setExtra) => (
-                  <Select
-                    value={extra.kategorie || ''}
-                    onValueChange={v => setExtra({ ...extra, kategorie: v })}
-                  >
-                    <SelectTrigger className="w-36 h-9">
-                      <SelectValue placeholder="Kategorie" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {KATEGORIEN.map(k => (
-                        <SelectItem key={k} value={k}>{k}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
               />
             </CardContent>
           </Card>

@@ -45,6 +45,10 @@
       ],
       "description": "Jahrgangsstufe"
     },
+    "zeit_phase_id": {
+      "type": "string",
+      "description": "FK zur Zeitphase (Halbjahr) aus LookupPhasen"
+    },
     "navigationslogik": {
       "type": "string",
       "enum": [

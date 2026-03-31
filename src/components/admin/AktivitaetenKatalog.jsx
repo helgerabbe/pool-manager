@@ -6,9 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Edit2, Plus, Trash2, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Edit2, Plus, Trash2, Loader2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -21,9 +21,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
 const PHASEN = [
-  { value: 'Input', label: 'Input (Erarbeitung)', color: 'bg-blue-100 text-blue-700' },
-  { value: 'Übung', label: 'Übung', color: 'bg-green-100 text-green-700' },
-  { value: 'Abschluss', label: 'Abschluss', color: 'bg-purple-100 text-purple-700' },
+  { value: 'Input', label: 'Input (Erarbeitung)', color: 'bg-blue-100 text-blue-700', backendValue: 'Input' },
+  { value: 'Übung', label: 'Übung', color: 'bg-green-100 text-green-700', backendValue: 'Übung' },
+  { value: 'Abschluss', label: 'Abschluss', color: 'bg-purple-100 text-purple-700', backendValue: 'Abschluss' },
 ];
 
 export default function AktivitaetenKatalog() {
@@ -37,6 +37,21 @@ export default function AktivitaetenKatalog() {
   const { data: aktivitaeten = [], isLoading } = useQuery({
     queryKey: ['aktivitaetenKatalog'],
     queryFn: () => base44.entities.AktivitaetenKatalog.list(),
+  });
+
+  // ── Seed Mutation ──
+  const seedMutation = useMutation({
+    mutationFn: async () => {
+      const res = await base44.functions.invoke('seedAktivitaetenKatalog', {});
+      return res.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['aktivitaetenKatalog'] });
+      toast.success(`${data.count || 0} Standard-Aktivitäten geladen`);
+    },
+    onError: (err) => {
+      toast.error('Seed fehlgeschlagen: ' + err.message);
+    },
   });
 
   // ── Mutations ──
@@ -85,9 +100,9 @@ export default function AktivitaetenKatalog() {
   };
 
   // ── Filter & Group ──
-  const aktivitaeterForPhase = (phase) =>
+  const aktivitaeterForPhase = (phaseValue) =>
     aktivitaeten
-      .filter((a) => a.phase === phase)
+      .filter((a) => a.phase === phaseValue || a.phase === PHASEN.find(p => p.value === phaseValue)?.backendValue)
       .sort((a, b) => a.name.localeCompare(b.name));
 
   if (isLoading) {
@@ -122,10 +137,21 @@ export default function AktivitaetenKatalog() {
             <TabsContent key={phase.value} value={phase.value} className="mt-6 space-y-4">
               {items.length === 0 ? (
                 <Card className="border-dashed border-2">
-                  <CardContent className="text-center py-12">
-                    <p className="text-muted-foreground mb-4">
+                  <CardContent className="text-center py-12 space-y-4">
+                    <p className="text-muted-foreground">
                       Keine Aktivitäten für diese Phase hinterlegt.
                     </p>
+                    {aktivitaeten.length === 0 && (
+                      <Button
+                        onClick={() => seedMutation.mutate()}
+                        disabled={seedMutation.isPending}
+                        className="gap-2"
+                      >
+                        {seedMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                        <RefreshCw className="w-4 h-4" />
+                        Standard-Aktivitäten laden (Seed)
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               ) : (

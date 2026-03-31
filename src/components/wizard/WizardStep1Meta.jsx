@@ -10,7 +10,13 @@ import { ChevronRight, Loader2 } from 'lucide-react';
 const NAVLOGIK = ["Sequenziell","Offen"];
 
 export default function WizardStep1Meta({ onDone }) {
-  const [form, setForm] = useState({ fach: '', titel_der_einheit: '', jahrgangsstufe: '', navigationslogik: 'Sequenziell' });
+  const [form, setForm] = useState({ 
+    fach: '', 
+    titel_der_einheit: '', 
+    jahrgangsstufe: '', 
+    zeit_phase_id: '',
+    navigationslogik: 'Sequenziell' 
+  });
   const [saving, setSaving] = useState(false);
 
   // Lade Fächer aus der Datenbank
@@ -31,7 +37,16 @@ export default function WizardStep1Meta({ onDone }) {
     },
   });
 
-  const canSubmit = form.fach && form.titel_der_einheit.trim() && form.jahrgangsstufe;
+  // Lade Phasen aus der Datenbank
+  const { data: phasen = [] } = useQuery({
+    queryKey: ['lookupPhasen'],
+    queryFn: async () => {
+      const results = await base44.entities.LookupPhasen.list();
+      return results.filter(p => p.ist_aktiv).sort((a, b) => a.bezeichnung.localeCompare(b.bezeichnung));
+    },
+  });
+
+  const canSubmit = form.fach && form.titel_der_einheit.trim() && form.jahrgangsstufe && form.zeit_phase_id;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -76,6 +91,15 @@ export default function WizardStep1Meta({ onDone }) {
               </SelectContent>
             </Select>
           </div>
+        </div>
+        <div className="space-y-2">
+          <Label>Zeitraum / Phase (Halbjahr) *</Label>
+          <Select value={form.zeit_phase_id} onValueChange={v => setForm({ ...form, zeit_phase_id: v })}>
+            <SelectTrigger><SelectValue placeholder="Phase wählen" /></SelectTrigger>
+            <SelectContent>
+              {phasen.map(p => <SelectItem key={p.id} value={p.id}>{p.bezeichnung}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label>Navigationslogik</Label>
