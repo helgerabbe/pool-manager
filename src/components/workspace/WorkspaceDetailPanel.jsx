@@ -606,8 +606,10 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient
     : null;
 
   const handleSelectAktivitaet = (aktivitaetId) => {
+    const aktivitaet = aktivitaeten.find(a => a.id === aktivitaetId);
     setSelectedAktivitaetId(aktivitaetId);
-    setIsDialogOpen(true);
+    setContentFormAktivitaet(aktivitaet);
+    setContentFormOpen(true);
   };
 
   const handleSaveAktivitaet = () => {
@@ -649,7 +651,14 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient
           <div className="p-3 rounded-lg bg-white border border-border space-y-2">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1">
-                <p className="font-medium text-sm">{currentAktivitaet.name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-sm">{currentAktivitaet.name}</p>
+                  {phaseConfig.is_complete === false && (
+                    <span title="Inhalt unvollständig: Platzhalter" className="flex items-center gap-1 text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
+                      <AlertTriangle className="w-3 h-3" />
+                    </span>
+                  )}
+                </div>
                 {currentAktivitaet.form_schema && currentAktivitaet.form_schema.length > 0 && (
                   <p className="text-xs text-muted-foreground mt-1">
                     {currentAktivitaet.form_schema.length} Felder

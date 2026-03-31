@@ -8,8 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Download, RefreshCw, AlertCircle, CheckCircle2,
-  Layers, Target, Puzzle, BookOpen, FileJson, Loader2
+  Layers, Target, Puzzle, BookOpen, FileJson, Loader2, ChevronDown, AlertTriangle
 } from 'lucide-react';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -62,6 +68,25 @@ export default function ExportCenter() {
   const paketIds = paketeFuerEinheit.map(p => p.id);
   const zieleFuerEinheit    = lernziele.filter(lz => paketIds.includes(lz.lernpaket_id));
   const aufgabenFuerEinheit = aufgaben.filter(a   => paketIds.includes(a.lernpaket_id));
+
+  // Sammle unvollständige Aktivitäten
+  const unvollstaendige = [];
+  paketeFuerEinheit.forEach(paket => {
+    const phasenConfig = paket.phasen_konfiguration || {};
+    Object.entries(phasenConfig).forEach(([phaseKey, phaseConfig]) => {
+      if (phaseConfig && phaseConfig.selected_aktivitaet_id && phaseConfig.is_complete === false) {
+        const akt = lernpakete.find(lp => 
+          lp.phasen_konfiguration?.[phaseKey]?.selected_aktivitaet_id === phaseConfig.selected_aktivitaet_id
+        );
+        const phaseLabel = { input: 'Input', uebung: 'Übung', abschluss: 'Abschluss' }[phaseKey] || phaseKey;
+        unvollstaendige.push({
+          paketTitel: paket.titel_des_pakets,
+          phase: phaseLabel,
+          aktivitaetId: phaseConfig.selected_aktivitaet_id,
+        });
+      }
+    });
+  });
 
   // Delta: nur 'new' oder 'modified'
   const deltaEinheit  = einheit && ['new','modified'].includes(einheit.sync_status) ? [einheit] : [];
@@ -226,8 +251,44 @@ export default function ExportCenter() {
             ))}
           </div>
 
+          {/* Unvollständigkeits-Warnung */}
+          {unvollstaendige.length > 0 && (
+            <Card className="border border-yellow-200 bg-yellow-50/40">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2 text-yellow-800">
+                  <AlertTriangle className="w-4 h-4" />
+                  {unvollstaendige.length} Aktivität{unvollstaendige.length !== 1 ? 'en' : ''} sind inhaltlich unvollständig
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-xs text-yellow-700 mb-3">
+                  Die folgenden Aktivitäten enthalten noch Platzhalter und erfordern manuelle Nacharbeit in Moodle:
+                </p>
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="incomplete-activities">
+                    <AccordionTrigger className="text-sm hover:no-underline">
+                      <span className="text-yellow-800 font-medium">Details anzeigen ({unvollstaendige.length})</span>
+                    </AccordionTrigger>
+                    <AccordionContent className="pt-4">
+                      <div className="space-y-2">
+                        {unvollstaendige.map((item, idx) => (
+                          <div key={idx} className="flex items-start gap-2 text-xs text-yellow-700 p-2 rounded bg-white/50 border border-yellow-100">
+                            <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
+                            <span>
+                              <strong>{item.paketTitel}</strong> → <em>{item.phase}</em>
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Delta-Vorschau */}
-          {deltaTotal > 0 && (
+           {deltaTotal > 0 && (
             <Card className="border border-amber-200 bg-amber-50/40">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2 text-amber-800">
