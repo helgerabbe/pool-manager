@@ -97,9 +97,16 @@ function EinheitPanel({ einheit, lernpakete, lernziele, aufgaben, kannBearbeiten
   const barColor =
     prozent === 100 ? 'bg-green-500' :
     prozent > 50    ? 'bg-amber-400' : 'bg-red-400';
+  const isSequenziell = einheit?.navigationslogik === 'Sequenziell';
 
   return (
     <div className="space-y-6">
+      {isSequenziell && (
+        <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm text-blue-700 flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span><strong>Sequenzielle Navigation:</strong> Lernpakete müssen in der vorgegebenen Reihenfolge bearbeitet werden. Ein Paket wird freigegeben, wenn alle vorherigen vollständig sind.</span>
+        </div>
+      )}
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-xl font-bold">{einheit.titel_der_einheit}</h2>

@@ -140,7 +140,7 @@ function LernzielNode({ lernziel, aufgaben, paketId, selectedId, onSelect, kannB
 
 // ── Tree-Node: Lernpaket (Level 1) ────────────────────────────────────────────
 
-function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, highlightedAtomIds }) {
+function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, highlightedAtomIds, isSequenzielleUndGesperrt }) {
   const [open, setOpen]  = useState(true);
   const isSelected       = selectedId === paket.id;
   const paketZiele       = lernziele.filter(lz => lz.lernpaket_id === paket.id);
@@ -157,12 +157,16 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
         </button>
         <button
           onClick={() => onSelect({ type: 'lernpaket', id: paket.id, data: paket })}
+          disabled={isSequenzielleUndGesperrt}
           className={cn(
-            'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-sm font-medium transition-colors min-w-0',
+            'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-sm font-medium transition-colors min-w-0 disabled:opacity-50 disabled:cursor-not-allowed',
             isSelected
               ? 'bg-primary text-primary-foreground'
-              : 'text-foreground hover:bg-muted'
+              : isSequenzielleUndGesperrt
+                ? 'text-muted-foreground/50 bg-muted/30'
+                : 'text-foreground hover:bg-muted'
           )}
+          title={isSequenzielleUndGesperrt ? 'Paket ist gesperrt: Vorherige Pakete müssen vollständig sein' : undefined}
         >
           <div className="w-5 h-5 rounded bg-primary/15 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
             {paket.reihenfolge_nummer}
@@ -238,6 +242,16 @@ export default function SidebarTree({
 }) {
   const selectedId = selectedNode?.id;
   const { prozent, gruen, gesamt } = getEinheitFortschritt(lernpakete, lernziele, aufgaben, userEmail, mappings);
+  
+  // Sequenziell-Logik: bestimme, welche Pakete freigeschaltet sind
+  const isSequenziell = einheit?.navigationslogik === 'Sequenziell';
+  const getPaketIsLocked = (paket) => {
+    if (!isSequenziell) return false;
+    // Finde alle Pakete mit niedrigerer Reihenfolge
+    const lowerPakete = lernpakete.filter(p => (p.reihenfolge_nummer || 0) < (paket.reihenfolge_nummer || 0));
+    // Alle müssen vollständig sein, damit dieses Paket freigegeben ist
+    return !lowerPakete.every(p => getLernpaketStatus(p, lernziele, aufgaben, userEmail, mappings) === 'green');
+  };
 
   // Gesamtstatus der Einheit für den Root-Node
   const einheitStatus =
@@ -311,6 +325,7 @@ export default function SidebarTree({
                 userEmail={userEmail}
                 mappings={mappings}
                 highlightedAtomIds={highlightedAtomIds}
+                isSequenzielleUndGesperrt={getPaketIsLocked(paket)}
               />
             ))}
             {kannBearbeiten && (

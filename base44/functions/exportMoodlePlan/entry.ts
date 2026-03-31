@@ -141,6 +141,7 @@ Deno.serve(async (req) => {
       unit_name: einheit.titel_der_einheit,
       unit_subject: einheit.fach,
       unit_grade: einheit.jahrgangsstufe,
+      unit_navigation_logic: einheit.navigationslogik,
       sections: moodleSections,
       summary: {
         total_sections: moodleSections.length,
