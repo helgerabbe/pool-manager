@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { BookOpen, Layers, Home, ShieldCheck, DatabaseZap, Download } from 'lucide-react';
+import { BookOpen, Layers, Home, ShieldCheck, DatabaseZap, Download, LayoutTemplate } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +36,7 @@ export default function AppLayout() {
               {[
                 { path: '/', label: 'Übersicht', icon: Home },
                 { path: '/einheiten', label: 'Einheiten', icon: BookOpen },
+                { path: '/workspace', label: 'Workspace', icon: LayoutTemplate },
               ].map(item => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path ||
