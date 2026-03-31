@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, ChevronDown, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import DynamicFieldRenderer from './DynamicFieldRenderer';
 
 const PHASEN = [
   { key: 'Input', label: 'Erarbeitung', color: 'border-blue-300 bg-blue-50' },
@@ -15,12 +16,12 @@ const PHASEN = [
   { key: 'Abschluss', label: 'Abschluss', color: 'border-purple-300 bg-purple-50' },
 ];
 
-export default function LernpaketDetail({ lernpaketId, onSave }) {
+export default function LernpaketDetail({ lernpaketId, einheitId, onSave }) {
   const queryClient = useQueryClient();
   const [phasenState, setPhasenState] = useState({
-    Input: { disabled: false, selected_aktivitaet_id: '', field_values: {} },
-    Übung: { disabled: false, selected_aktivitaet_id: '', field_values: {} },
-    Abschluss: { disabled: false, selected_aktivitaet_id: '', field_values: {} },
+    Input: { is_active: true, selected_aktivitaet_id: '', meta_data: {} },
+    Übung: { is_active: true, selected_aktivitaet_id: '', meta_data: {} },
+    Abschluss: { is_active: true, selected_aktivitaet_id: '', meta_data: {} },
   });
 
   // Lade Lernpaket-Daten
@@ -39,12 +40,41 @@ export default function LernpaketDetail({ lernpaketId, onSave }) {
     queryFn: () => base44.entities.AktivitaetenKatalog.list(),
   });
 
+  // Lade Lernziele für Multiselect (KI-Check)
+  const { data: lernziele } = useQuery({
+    queryKey: ['lernziele', einheitId],
+    queryFn: async () => {
+      const pakete = await base44.entities.Lernpakete.filter({ einheit_id: einheitId });
+      const ziele = [];
+      for (const paket of pakete) {
+        const paketZiele = await base44.entities.Lernziele.filter({ lernpaket_id: paket.id });
+        ziele.push(...paketZiele);
+      }
+      return ziele;
+    },
+    enabled: !!einheitId,
+  });
+
   // Lade initial die Phasen-Konfiguration vom Lernpaket
   useEffect(() => {
     if (lernpaket?.phasen_konfiguration) {
       setPhasenState(lernpaket.phasen_konfiguration);
     }
   }, [lernpaket]);
+
+  // Handler für Metadaten-Änderungen
+  const handleMetaDataChange = (phase, fieldName, value) => {
+    setPhasenState((prev) => ({
+      ...prev,
+      [phase]: {
+        ...prev[phase],
+        meta_data: {
+          ...prev[phase].meta_data,
+          [fieldName]: value,
+        },
+      },
+    }));
+  };
 
   // Mutation zum Speichern
   const updateMutation = useMutation({
@@ -66,7 +96,7 @@ export default function LernpaketDetail({ lernpaketId, onSave }) {
       ...prev,
       [phase]: {
         ...prev[phase],
-        disabled: !prev[phase].disabled,
+        is_active: !prev[phase].is_active,
       },
     }));
   };
@@ -77,13 +107,21 @@ export default function LernpaketDetail({ lernpaketId, onSave }) {
       [phase]: {
         ...prev[phase],
         selected_aktivitaet_id: aktivitaetId,
+        meta_data: {}, // Reset meta_data bei Aktivitätswechsel
       },
     }));
   };
 
   const handleSave = async () => {
+    // Struktur für Backend anpassen: phasen_konfiguration mit Input/Übung/Abschluss Keys
+    const phasenKonfiguration = {
+      Input: phasenState.Input,
+      Übung: phasenState.Übung,
+      Abschluss: phasenState.Abschluss,
+    };
+    
     await updateMutation.mutateAsync({
-      phasen_konfiguration: phasenState,
+      phasen_konfiguration: phasenKonfiguration,
     });
   };
 
@@ -92,6 +130,14 @@ export default function LernpaketDetail({ lernpaketId, onSave }) {
   PHASEN.forEach((p) => {
     aktivitaetenByPhase[p.key] = aktivitaeten?.filter((a) => a.phase === p.key) || [];
   });
+
+  // Multiselect-Optionen für Lernziele (KI-Check)
+  const multiSelectLernziele =
+    lernziele?.map((z) => ({
+      id: z.id,
+      label: z.formulierung_fachsprache,
+      description: z.schueler_uebersetzung,
+    })) || [];
 
   if (lernpaketLoading || aktivitaetenLoading) {
     return (
@@ -132,14 +178,14 @@ export default function LernpaketDetail({ lernpaketId, onSave }) {
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-muted-foreground font-medium">Aktivieren</span>
                     <Switch
-                      checked={!state.disabled}
+                      checked={state.is_active}
                       onCheckedChange={() => handleToggle(phase.key)}
                     />
                   </div>
                 </div>
               </CardHeader>
 
-              {!state.disabled && (
+              {state.is_active && (
                 <CardContent className="space-y-4">
                   {/* Aktivitäts-Dropdown */}
                   <div className="space-y-2">
@@ -169,29 +215,16 @@ export default function LernpaketDetail({ lernpaketId, onSave }) {
                     </Select>
                   </div>
 
-                  {/* Form-Schema Platzhalter */}
-                  {selectedAktivitaet?.form_schema && selectedAktivitaet.form_schema.length > 0 && (
-                    <div className="p-3 rounded-lg bg-muted/50 border border-border">
-                      <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <ChevronDown className="w-4 h-4 mt-0.5 shrink-0" />
-                        <div>
-                          <p className="font-medium text-foreground">
-                            {selectedAktivitaet.form_schema.length} Konfigurationsfeld(er)
-                          </p>
-                          <p className="text-xs mt-1">
-                            Formularfelder werden im nächsten Schritt implementiert
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedAktivitaet?.form_schema?.length === 0 && (
-                    <div className="p-3 rounded-lg bg-green-50 border border-green-200">
-                      <p className="text-xs text-green-700">
-                        ✓ Diese Aktivität benötigt keine weitere Konfiguration
-                      </p>
-                    </div>
+                  {/* Dynamic Field Renderer */}
+                  {selectedAktivitaet && (
+                    <DynamicFieldRenderer
+                      formSchema={selectedAktivitaet.form_schema}
+                      metaData={state.meta_data}
+                      onMetaDataChange={(fieldName, value) =>
+                        handleMetaDataChange(phase.key, fieldName, value)
+                      }
+                      multiSelectOptions={phase.key === 'Abschluss' ? multiSelectLernziele : []}
+                    />
                   )}
                 </CardContent>
               )}
