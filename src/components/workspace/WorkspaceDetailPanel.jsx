@@ -200,7 +200,7 @@ function EinheitPanel({ einheit, lernpakete, lernziele, aufgaben, kannBearbeiten
 
 function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail, onNavigate, onNewLernziel, onDelete }) {
   const paketZiele = lernziele.filter(lz => lz.lernpaket_id === paket.id);
-  const pStatus = getLernpaketStatus(paket, lernziele, aufgaben, userEmail);
+  const pStatus = getLernpaketStatus(paket, paketZiele, aufgaben, userEmail);
 
   const ampelMsg = {
     red:    'Dieses Lernpaket hat noch keine Lernziele. Fügen Sie jetzt das erste Lernziel hinzu.',
