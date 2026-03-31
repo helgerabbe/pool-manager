@@ -40,13 +40,11 @@ export function useRBAC() {
   const realRolle  = profil?.rolle || ROLLEN.BETRACHTER;
   const realFaecher = profil?.fachbereich_zustaendigkeit || [];
 
-  // ── Impersonation: nur für echte Admins ──────────────────────────────────
-  // Wenn mockedRole gesetzt ist UND der echte Account Admin ist,
-  // werden Rolle und Fachbereiche für die gesamte UI überschrieben.
+  // ── Impersonation: mockedRole überschreibt immer die echte Rolle ─────────
   const istEchterAdmin = realRolle === ROLLEN.ADMIN;
-  const aktiveRolle = (istEchterAdmin && mockedRole) ? mockedRole : realRolle;
-  const aktiveFaecher = (istEchterAdmin && mockedRole)
-    ? (DUMMY_FAECHER_FUER_MOCKED_ROLLE[mockedRole] ?? [])
+  const aktiveRolle = mockedRole ?? realRolle;
+  const aktiveFaecher = mockedRole
+    ? (DUMMY_FAECHER_FUER_MOCKED_ROLLE[mockedRole] ?? realFaecher)
     : realFaecher;
 
   // ── Wartungsmodus: Schreibrechte für non-Admins sperren ──────────────────
@@ -80,7 +78,7 @@ export function useRBAC() {
     rolle:      aktiveRolle,
     realRolle,
     faecher:    aktiveFaecher,
-    isMocked:   istEchterAdmin && !!mockedRole,
+    isMocked:   !!mockedRole,
     wartungsmodus,
     permissions,
   };
