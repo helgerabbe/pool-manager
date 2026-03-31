@@ -100,10 +100,16 @@ export default function AktivitaetenKatalog() {
   };
 
   // ── Filter & Group ──
-  const aktivitaeterForPhase = (phaseValue) =>
-    aktivitaeten
-      .filter((a) => a.phase === phaseValue || a.phase === PHASEN.find(p => p.value === phaseValue)?.backendValue)
+  const aktivitaeterForPhase = (phaseValue) => {
+    const phaseMappings = {
+      'Input': ['Input', 'Input (Erarbeitung)'],
+      'Übung': ['Übung'],
+      'Abschluss': ['Abschluss'],
+    };
+    return aktivitaeten
+      .filter((a) => phaseMappings[phaseValue]?.includes(a.phase))
       .sort((a, b) => a.name.localeCompare(b.name));
+  };
 
   if (isLoading) {
     return (

@@ -230,11 +230,12 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   const handlePhaseToggle = (phaseKey) => {
     const phasenConfig = paket.phasen_konfiguration || {};
     const phaseConfig = phasenConfig[phaseKey] || {};
+    const newDisabledState = !phaseConfig.disabled;
     const newConfig = {
       ...phasenConfig,
       [phaseKey]: {
         ...phaseConfig,
-        disabled: !phaseConfig.disabled,
+        disabled: newDisabledState,
       },
     };
     base44.entities.Lernpakete.update(paket.id, { phasen_konfiguration: newConfig }).then(() => {
@@ -918,7 +919,32 @@ export default function WorkspaceDetailPanel({
   }
 
   if (type === 'phase') {
-    return null; // Phasen werden jetzt inline im LernpaketPanel angezeigt
+    const phaseLabel = { input: 'Input (Erarbeitung)', uebung: 'Übung', abschluss: 'Abschluss' }[selectedNode.phase] || selectedNode.phase;
+    const phaseConfig = selectedNode.data?.phasen_konfiguration?.[selectedNode.phase] || {};
+    
+    return (
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-xl font-bold">{phaseLabel}</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Konfigurieren Sie die Aktivität für diese Phase
+          </p>
+        </div>
+        
+        {!phaseConfig.selected_aktivitaet_id ? (
+          <StepEmptyState
+            icon={Puzzle}
+            title="Noch keine Aktivität zugeordnet"
+            description="Klicken Sie auf das Feld 'Aktivität zuordnen', um eine Aktivität für diese Phase auszuwählen."
+            status="yellow"
+          />
+        ) : (
+          <div className="p-4 rounded-lg border bg-card space-y-3">
+            <p className="text-sm font-medium">Aktivität konfigurieren im Lernpaket-Panel</p>
+          </div>
+        )}
+      </div>
+    );
   }
 
   if (type === 'new-lernpaket') {
