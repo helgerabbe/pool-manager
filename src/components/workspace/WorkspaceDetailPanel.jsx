@@ -10,6 +10,9 @@ import LernzielForm from '@/components/lernziele/LernzielForm';
 import AufgabenbausteinForm from '@/components/aufgaben/AufgabenbausteintForm';
 import EinheitForm from '@/components/einheiten/EinheitForm';
 import Ebene2MappingView from '@/components/aufgaben/Ebene2MappingView';
+import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import {
   BookOpen, Layers, Target, Puzzle, Plus, Edit, Trash2,
   Clock, Lock, Unlock, AlertCircle, CheckCircle2, ArrowDown,
@@ -196,19 +199,51 @@ function EinheitPanel({ einheit, lernpakete, lernziele, aufgaben, kannBearbeiten
   );
 }
 
-// ── Panel: Lernpaket ──────────────────────────────────────────────────────────
+// ── Panel: Lernpaket mit Phasen ───────────────────────────────────────────────
 
 function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail, onNavigate, onNewLernziel, onDelete }) {
   const paketZiele = lernziele.filter(lz => lz.lernpaket_id === paket.id);
   const pStatus = getLernpaketStatus(paket, paketZiele, aufgaben, userEmail);
+  const [editLernzielId, setEditLernzielId] = useState(null);
+  const [editLernzielData, setEditLernzielData] = useState(null);
+  const queryClient = useQueryClient();
 
-  const ampelMsg = {
-    red:    'Dieses Lernpaket hat noch keine Lernziele. Fügen Sie jetzt das erste Lernziel hinzu.',
-    yellow: 'Einige Lernziele fehlen noch Aufgabenbausteine oder sind gerade gesperrt.',
+  const updateLernziel = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Lernziele.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lernziele'] });
+      setEditLernzielId(null);
+      setEditLernzielData(null);
+    },
+  });
+
+  const PHASES = [
+    { key: 'input', label: 'Input (Erarbeitung)', icon: '📚', defaultDisabled: false },
+    { key: 'uebung', label: 'Übung', icon: '✏️', defaultDisabled: false },
+    { key: 'abschluss', label: 'Abschluss', icon: '🎯', defaultDisabled: false },
+  ];
+
+  const handlePhaseToggle = (phaseKey) => {
+    const phasenConfig = paket.phasen_konfiguration || {};
+    const phaseConfig = phasenConfig[phaseKey] || {};
+    const newConfig = {
+      ...phasenConfig,
+      [phaseKey]: {
+        ...phaseConfig,
+        disabled: !phaseConfig.disabled,
+      },
+    };
+    base44.entities.Lernpakete.update(paket.id, { phasen_konfiguration: newConfig });
+    queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+  };
+
+  const handleEditLernziel = (lz) => {
+    setEditLernzielId(lz.id);
+    setEditLernzielData({ kategorie: lz.kategorie, schueler_uebersetzung: lz.schueler_uebersetzung });
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -229,56 +264,124 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
         )}
       </div>
 
-      {paketZiele.length === 0 && <AmpelBanner status={pStatus} message={ampelMsg[pStatus]} />}
-
-      {paketZiele.length === 0 ? (
-        <StepEmptyState
-          icon={Target}
-          title="Noch keine Lernziele"
-          description="Definieren Sie zuerst Lernziele, bevor Aufgabenbausteine angelegt werden können."
-          actionLabel={kannBearbeiten ? "Jetzt erstes Lernziel hinzufügen" : undefined}
-          onAction={kannBearbeiten ? onNewLernziel : undefined}
-          status="red"
-        />
-      ) : (
-        <>
-          {kannBearbeiten && (
-            <Button onClick={onNewLernziel} size="sm" variant="outline" className="gap-2">
-              <Plus className="w-4 h-4" /> Lernziel hinzufügen
-            </Button>
-          )}
+      {/* Lernziele-Anzeige */}
+      {paketZiele.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Lernziele</h3>
           <div className="space-y-2">
-            {paketZiele.map(lz => {
-              const lzStatus = getLernzielStatus(lz, aufgaben, paket.id, userEmail);
-              const dotColor = lzStatus === 'green' ? 'bg-green-500' : lzStatus === 'yellow' ? 'bg-amber-400' : 'bg-red-500';
-              const lzAufgaben = aufgaben.filter(a => a.lernpaket_id === paket.id && a.lernziel_id === lz.id);
-              return (
-                <button
-                  key={lz.id}
-                  onClick={() => onNavigate({ type: 'lernziel', id: lz.id, data: lz, paketId: paket.id })}
-                  className={`w-full flex items-start gap-3 p-3 rounded-lg border hover:bg-muted transition-colors text-left ${
-                    lzStatus === 'red' ? 'border-red-200 bg-red-50/50 hover:bg-red-50' : ''
-                  }`}
-                >
-                  <Target className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">{lz.formulierung_fachsprache}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      {lz.kategorie && (
-                        <Badge className={`text-[10px] ${kategorieColors[lz.kategorie] || ''}`}>
-                          {lz.kategorie}
-                        </Badge>
-                      )}
-                      <span className="text-xs text-muted-foreground">{lzAufgaben.length} Bausteine</span>
-                    </div>
-                  </div>
-                  <span className={`w-2.5 h-2.5 rounded-full ring-2 ring-offset-1 shrink-0 mt-1 ${dotColor}`} />
-                </button>
-              );
-            })}
+            {paketZiele.map(lz => (
+              <button
+                key={lz.id}
+                onClick={() => handleEditLernziel(lz)}
+                className="w-full flex items-start gap-3 p-3 rounded-lg border hover:bg-muted transition-colors text-left"
+              >
+                <Target className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{lz.formulierung_fachsprache}</p>
+                  {lz.kategorie && (
+                    <Badge className={`text-[10px] mt-1 ${kategorieColors[lz.kategorie] || ''}`}>
+                      {lz.kategorie}
+                    </Badge>
+                  )}
+                </div>
+                <Edit className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              </button>
+            ))}
           </div>
-        </>
+        </div>
       )}
+
+      {/* Phasen mit Toggle */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-muted-foreground">Lernphasen</h3>
+        {PHASES.map(phase => {
+          const phasenConfig = paket.phasen_konfiguration || {};
+          const phaseConfig = phasenConfig[phase.key] || {};
+          const isDisabled = phaseConfig.disabled === true;
+          
+          return (
+            <div
+              key={phase.key}
+              className={`p-4 rounded-lg border transition-all ${
+                isDisabled ? 'bg-muted/50 border-muted text-muted-foreground/60' : 'bg-card border-border'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <span className="text-lg mt-0.5">{phase.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-medium text-sm ${isDisabled ? 'opacity-60' : ''}`}>
+                      {phase.label}
+                    </p>
+                    {phaseConfig.selected_aktivitaet_id && !isDisabled && (
+                      <p className="text-xs text-muted-foreground mt-1">Aktivität konfiguriert</p>
+                    )}
+                    {isDisabled && (
+                      <p className="text-xs text-muted-foreground/60 mt-1 italic">Diese Phase ist deaktiviert</p>
+                    )}
+                  </div>
+                </div>
+                {kannBearbeiten && (
+                  <Switch
+                    checked={!isDisabled}
+                    onCheckedChange={() => handlePhaseToggle(phase.key)}
+                  />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Edit Lernziel Dialog */}
+      <Dialog open={!!editLernzielId} onOpenChange={(open) => { if (!open) setEditLernzielId(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Lernziel bearbeiten</DialogTitle>
+          </DialogHeader>
+          {editLernzielData && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Kategorie</Label>
+                <div className="flex gap-2">
+                  {['Fachwissen', 'Fähigkeit/Fertigkeit'].map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setEditLernzielData({ ...editLernzielData, kategorie: cat })}
+                      className={`flex-1 py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all ${
+                        editLernzielData.kategorie === cat
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border hover:border-primary/40'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Schüler-Übersetzung (optional)</Label>
+                <input
+                  type="text"
+                  value={editLernzielData.schueler_uebersetzung || ''}
+                  onChange={(e) => setEditLernzielData({ ...editLernzielData, schueler_uebersetzung: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-input"
+                  placeholder="Schülergerechte Formulierung..."
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditLernzielId(null)}>Abbrechen</Button>
+            <Button
+              onClick={() => updateLernziel.mutate({ id: editLernzielId, data: editLernzielData })}
+              disabled={updateLernziel.isPending}
+            >
+              Speichern
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -559,28 +662,17 @@ export default function WorkspaceDetailPanel({
   }
 
   if (type === 'lernziel') {
-    const lernziel = lernziele.find(lz => lz.id === selectedNode.id);
-    if (!lernziel) return null;
-    const paketId = selectedNode.paketId || lernziel.lernpaket_id;
+    return null; // Lernziele werden jetzt nur noch im LernpaketPanel bearbeitet
+  }
+
+  if (type === 'phase') {
     return (
-      <>
-        <LernzielPanel
-          lernziel={lernziel}
-          paketId={paketId}
-          aufgaben={aufgaben}
-          userEmail={userEmail}
-          kannBearbeiten={kannBearbeiten}
-          istAdmin={istAdmin}
-          onNewAufgabe={() => setAufgabeFormOpen(true)}
-          onDelete={() => onDeleteLernziel(lernziel.id)}
-        />
-        <AufgabenbausteinForm
-          open={aufgabeFormOpen}
-          onOpenChange={setAufgabeFormOpen}
-          onSubmit={(data) => createAufgabe.mutate({ ...data, lernpaket_id: paketId, lernziel_id: lernziel.id })}
-          lernziele={[lernziel]}
-        />
-      </>
+      <StepEmptyState
+        icon={Puzzle}
+        title={`Phase: ${selectedNode.phase === 'input' ? 'Input' : selectedNode.phase === 'uebung' ? 'Übung' : 'Abschluss'}`}
+        description="Konfigurieren Sie diese Phase im Lernpaket-Bereich auf der linken Seite."
+        status="yellow"
+      />
     );
   }
 
