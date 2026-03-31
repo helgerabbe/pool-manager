@@ -21,7 +21,13 @@
         "Exit-Check",
         "Pr\u00fcfung Typ A",
         "Pr\u00fcfung Typ B",
-        "Pr\u00fcfung Typ C"
+        "Pr\u00fcfung Typ C",
+        "Input/Erkl\u00e4rung",
+        "Infoseite/Cheat-Sheet",
+        "Musterl\u00f6sung",
+        "\u00dcbungsaufgaben",
+        "Fakten-Input",
+        "Drill-\u00dcbung"
       ],
       "description": "Typ des Aufgabenbausteins"
     },
@@ -32,6 +38,15 @@
     "erwartungshorizont_ki_prompt": {
       "type": "string",
       "description": "Vorgaben f\u00fcr den KI-Tutor / Erwartungshorizont"
+    },
+    "is_opt_out": {
+      "type": "boolean",
+      "default": false,
+      "description": "Wenn true: Baustein wird bewusst ausgelassen (z\u00e4hlt als vollst\u00e4ndig)"
+    },
+    "opt_out_begruendung": {
+      "type": "string",
+      "description": "Pflichtbegr\u00fcndung wenn is_opt_out = true"
     },
     "lock_status": {
       "type": "boolean",

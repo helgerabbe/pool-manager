@@ -58,22 +58,20 @@ export function getLernzielStatus(lernziel, aufgaben, paketId, userEmail = '') {
   );
   if (hatFremdenLock) return 'yellow';
 
-  // Grün-Check: Constructive Alignment — mindestens ein Baustein aus jeder Pflicht-Gruppe?
-  const vorhandeneTypen = new Set(lzAufgaben.map(a => a.baustein_typ));
+  // Neue Opt-Out-Logik für Ebene 1 mit Template-Bausteinen:
+  // Ein Baustein gilt als "erledigt" wenn er entweder Inhalt hat ODER is_opt_out = true.
+  // Alle Bausteine müssen erledigt sein → Grün.
+  const allErledigt = lzAufgaben.every(
+    a => a.is_opt_out === true || (a.aufgabentext_inhalt && a.aufgabentext_inhalt.trim() !== '')
+  );
+  if (allErledigt) return 'green';
 
-  const hatRahmen  = PFLICHT_GRUPPEN.rahmen.some(t  => vorhandeneTypen.has(t));
-  const hatNiveau1 = PFLICHT_GRUPPEN.niveau1.some(t => vorhandeneTypen.has(t));
-  const hatNiveau2 = PFLICHT_GRUPPEN.niveau2.some(t => vorhandeneTypen.has(t));
-  const hatNiveau3 = PFLICHT_GRUPPEN.niveau3.some(t => vorhandeneTypen.has(t));
+  // Prüfen ob überhaupt einer begonnen wurde
+  const irgendwasAngefangen = lzAufgaben.some(
+    a => a.is_opt_out === true || (a.aufgabentext_inhalt && a.aufgabentext_inhalt.trim() !== '')
+  );
 
-  // Anforderungsebene des Lernziels bestimmt, welche Niveau-Bausteine erwartet werden
-  const ebene = lernziel.anforderungsebene;
-  let alignmentErfuellt = hatRahmen;
-  if (ebene === 'Ebene 1 - Basis')    alignmentErfuellt = hatRahmen && hatNiveau1;
-  if (ebene === 'Ebene 2 - Transfer') alignmentErfuellt = hatRahmen && hatNiveau1 && hatNiveau2;
-  if (ebene === 'Ebene 3 - Projekt')  alignmentErfuellt = hatRahmen && hatNiveau1 && hatNiveau2 && hatNiveau3;
-
-  return alignmentErfuellt ? 'green' : 'yellow';
+  return irgendwasAngefangen ? 'yellow' : 'red';
 }
 
 /**

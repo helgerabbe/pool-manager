@@ -19,6 +19,14 @@
       ],
       "description": "Anforderungsebene des Lernziels"
     },
+    "kategorie": {
+      "type": "string",
+      "enum": [
+        "Fachwissen",
+        "F\u00e4higkeit/Fertigkeit"
+      ],
+      "description": "Kategorie (nur relevant f\u00fcr Ebene 1 - Basis) \u2013 steuert auto-generierte Baustein-Templates"
+    },
     "schueler_uebersetzung": {
       "type": "string",
       "description": "Sch\u00fclergerechte Formulierung f\u00fcr die Lernlandkarte"

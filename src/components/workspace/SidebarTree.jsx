@@ -33,8 +33,9 @@ function AmpelDot({ status, size = 'sm' }) {
 function BausteinNode({ aufgabe, selectedId, onSelect, userEmail }) {
   const isSelected  = selectedId === aufgabe.id;
   const isLocked    = aufgabe.lock_status && aufgabe.locked_by_user !== userEmail;
-  const lockedByMe  = aufgabe.lock_status && aufgabe.locked_by_user === userEmail;
-  const ampelStatus = isLocked ? 'yellow' : 'green';
+  const isOptOut    = aufgabe.is_opt_out === true;
+  const hasContent  = aufgabe.aufgabentext_inhalt && aufgabe.aufgabentext_inhalt.trim() !== '';
+  const ampelStatus = isLocked ? 'yellow' : (isOptOut || hasContent) ? 'green' : 'red';
 
   return (
     <button
@@ -43,14 +44,21 @@ function BausteinNode({ aufgabe, selectedId, onSelect, userEmail }) {
         'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
         isSelected
           ? 'bg-primary text-primary-foreground'
-          : isLocked
-            ? 'text-amber-700 bg-amber-50 hover:bg-amber-100'
-            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+          : isOptOut
+            ? 'text-muted-foreground/50 line-through hover:bg-muted/50'
+            : isLocked
+              ? 'text-amber-700 bg-amber-50 hover:bg-amber-100'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
       )}
     >
-      <Puzzle className="w-3 h-3 shrink-0" />
+      <Puzzle className={cn('w-3 h-3 shrink-0', isOptOut && 'opacity-40')} />
       {isLocked && <Lock className="w-3 h-3 text-amber-500 shrink-0" />}
       <span className="truncate flex-1">{aufgabe.baustein_typ}</span>
+      {isOptOut && !isSelected && (
+        <span className="text-[9px] bg-muted text-muted-foreground px-1 rounded no-underline" style={{ textDecoration: 'none' }}>
+          out
+        </span>
+      )}
       {!isSelected && <AmpelDot status={ampelStatus} />}
     </button>
   );
