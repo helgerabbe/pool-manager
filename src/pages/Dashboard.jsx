@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { useRBAC } from '@/hooks/useRBAC';
@@ -10,11 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import {
   BookOpen, Layers, Target, Puzzle, ArrowRight,
-  TrendingUp, Plus, Search, Filter, Lock
+  TrendingUp, Plus, Search, Filter, Lock, Trash2
 } from 'lucide-react';
 import EinheitForm from '@/components/einheiten/EinheitForm';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { kannEinheitSehen } from '@/lib/rbac';
+import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal';
+import { kannEinheitSehen, ROLLEN } from '@/lib/rbac';
+import { toast } from 'sonner';
 
 const FAECHER = ["Deutsch","Mathematik","Englisch","Französisch","Latein","Biologie","Chemie","Physik","Geschichte","Geographie","Politik","Wirtschaft","Kunst","Musik","Sport","Religion","Ethik","Informatik"];
 const JAHRGANGSSTUFEN = ["5","6","7","8","9","10","11","12","13"];
@@ -34,6 +35,23 @@ export default function Dashboard() {
   const [filterFach, setFilterFach] = useState('all');
   const [filterJahrgang, setFilterJahrgang] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [deleteTarget, setDeleteTarget] = useState(null); // { id, titel }
+  const [isDeleting, setIsDeleting] = useState(false);
+  const isAdmin = rolle === ROLLEN.ADMIN;
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    const res = await base44.functions.invoke('deleteEinheit', { einheitId: deleteTarget.id });
+    if (res.data?.success) {
+      toast.success('Einheit erfolgreich gelöscht.');
+      queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+    } else {
+      toast.error('Fehler beim Löschen der Einheit.');
+    }
+    setIsDeleting(false);
+    setDeleteTarget(null);
+  };
 
   const { data: einheiten = [] } = useQuery({
     queryKey: ['einheiten'],
@@ -228,32 +246,43 @@ export default function Dashboard() {
               const isFreigegeben = e.freigabe_status === 'Freigegeben für Moodle';
 
               return (
-                <Link key={e.id} to={`/einheiten/${e.id}`}>
-                  <Card className="border shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 h-full cursor-pointer">
-                    <CardContent className="p-5 flex flex-col gap-3 h-full">
-                      <div className="flex items-start justify-between gap-2">
-                        <Badge className={`text-[10px] shrink-0 ${fachColors[e.fach] || 'bg-muted text-muted-foreground'}`}>
-                          {e.fach}
-                        </Badge>
-                        <Badge variant={isFreigegeben ? 'default' : 'secondary'} className="text-[10px] shrink-0">
-                          {isFreigegeben ? 'Freigegeben' : 'In Planung'}
-                        </Badge>
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-sm leading-snug">{e.titel_der_einheit}</h3>
-                        <p className="text-xs text-muted-foreground mt-1">Jahrgang {e.jahrgangsstufe} · {e.navigationslogik}</p>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border">
-                        <span>{paketCount} Pakete · {aufgabeCount} Aufgaben</span>
-                        {lockCount > 0 && (
-                          <span className="flex items-center gap-1 text-amber-600">
-                            <Lock className="w-3 h-3" />{lockCount}
-                          </span>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                <div key={e.id} className="relative group/card">
+                  <Link to={`/einheiten/${e.id}`}>
+                    <Card className="border shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 h-full cursor-pointer">
+                      <CardContent className="p-5 flex flex-col gap-3 h-full">
+                        <div className="flex items-start justify-between gap-2">
+                          <Badge className={`text-[10px] shrink-0 ${fachColors[e.fach] || 'bg-muted text-muted-foreground'}`}>
+                            {e.fach}
+                          </Badge>
+                          <Badge variant={isFreigegeben ? 'default' : 'secondary'} className="text-[10px] shrink-0">
+                            {isFreigegeben ? 'Freigegeben' : 'In Planung'}
+                          </Badge>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-sm leading-snug">{e.titel_der_einheit}</h3>
+                          <p className="text-xs text-muted-foreground mt-1">Jahrgang {e.jahrgangsstufe} · {e.navigationslogik}</p>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border">
+                          <span>{paketCount} Pakete · {aufgabeCount} Aufgaben</span>
+                          {lockCount > 0 && (
+                            <span className="flex items-center gap-1 text-amber-600">
+                              <Lock className="w-3 h-3" />{lockCount}
+                            </span>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                  {isAdmin && (
+                    <button
+                      onClick={() => setDeleteTarget({ id: e.id, titel: e.titel_der_einheit })}
+                      className="absolute top-2 right-2 z-10 p-1.5 rounded-md bg-white/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 hover:bg-red-50 transition-all opacity-0 group-hover/card:opacity-100"
+                      title="Einheit löschen"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -270,6 +299,14 @@ export default function Dashboard() {
         open={showForm}
         onOpenChange={setShowForm}
         onSubmit={(data) => createEinheit.mutate(data)}
+      />
+
+      <DeleteConfirmModal
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        titel={deleteTarget?.titel || ''}
+        isLoading={isDeleting}
       />
     </div>
   );

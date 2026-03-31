@@ -97,7 +97,8 @@ export default function EinheitenListe() {
             <EinheitCard 
               key={einheit.id} 
               einheit={einheit} 
-              lernpaketCount={getLernpaketCount(einheit.id)} 
+              lernpaketCount={getLernpaketCount(einheit.id)}
+              rolle={rolle}
             />
           ))}
         </div>
