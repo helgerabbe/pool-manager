@@ -1,366 +1,217 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { AlertCircle, Upload, X } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, ChevronDown, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 const PHASEN = [
-  { id: 'Input', label: 'Erarbeitung', color: 'bg-blue-50 border-blue-200' },
-  { id: 'Übung', label: 'Übung', color: 'bg-green-50 border-green-200' },
-  { id: 'Abschluss', label: 'Abschluss', color: 'bg-purple-50 border-purple-200' },
+  { key: 'Input', label: 'Erarbeitung', color: 'border-blue-300 bg-blue-50' },
+  { key: 'Übung', label: 'Übung', color: 'border-green-300 bg-green-50' },
+  { key: 'Abschluss', label: 'Abschluss', color: 'border-purple-300 bg-purple-50' },
 ];
 
-// ──── Dynamisches Feld-Rendering ────
-function DynamicField({ field, value, onChange }) {
-  const baseInputClasses = 'h-9 text-sm';
-
-  switch (field.type) {
-    case 'text':
-      return (
-        <Input
-          type="text"
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={field.placeholder}
-          required={field.required}
-          className={baseInputClasses}
-        />
-      );
-
-    case 'url':
-      return (
-        <Input
-          type="url"
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={field.placeholder || 'https://...'}
-          required={field.required}
-          className={baseInputClasses}
-        />
-      );
-
-    case 'number':
-      return (
-        <Input
-          type="number"
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={field.placeholder}
-          required={field.required}
-          className={baseInputClasses}
-        />
-      );
-
-    case 'textarea':
-      return (
-        <Textarea
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={field.placeholder}
-          required={field.required}
-          className="min-h-[100px] text-sm"
-        />
-      );
-
-    case 'file':
-    case 'image':
-    case 'audio':
-      return (
-        <div className="border-2 border-dashed border-muted rounded-lg p-4 text-center">
-          <div className="flex flex-col items-center gap-2">
-            <Upload className="w-4 h-4 text-muted-foreground" />
-            <input
-              type="file"
-              accept={
-                field.type === 'image' ? 'image/*' :
-                field.type === 'audio' ? 'audio/*' :
-                '*'
-              }
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  onChange(file.name); // Speichere Dateinamen oder URL nach Upload
-                }
-              }}
-              required={field.required}
-              className="hidden"
-              id={`file-${field.field_name}`}
-            />
-            <label
-              htmlFor={`file-${field.field_name}`}
-              className="text-xs text-primary cursor-pointer hover:underline"
-            >
-              Klicke zum Hochladen oder ziehe eine Datei hierher
-            </label>
-            {value && <span className="text-xs text-muted-foreground mt-2">{value}</span>}
-          </div>
-        </div>
-      );
-
-    case 'select':
-      return (
-        <Select value={value || ''} onValueChange={onChange}>
-          <SelectTrigger className="h-9 text-sm">
-            <SelectValue placeholder="-- Auswählen --" />
-          </SelectTrigger>
-          <SelectContent>
-            {field.options?.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      );
-
-    case 'json':
-      return (
-        <Textarea
-          value={typeof value === 'string' ? value : JSON.stringify(value || [], null, 2)}
-          onChange={(e) => {
-            try {
-              onChange(JSON.parse(e.target.value));
-            } catch {
-              onChange(e.target.value);
-            }
-          }}
-          placeholder={field.placeholder || 'JSON eingeben...'}
-          className="font-mono text-xs min-h-[120px]"
-        />
-      );
-
-    case 'info':
-      return (
-        <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 flex items-start gap-2">
-          <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
-          <p className="text-xs text-blue-900">{field.label}</p>
-        </div>
-      );
-
-    default:
-      return (
-        <Input
-          type="text"
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Unbekannter Feldtyp"
-          className={baseInputClasses}
-        />
-      );
-  }
-}
-
-// ──── Phase-Container ────
-function PhaseContainer({ phase, aktivitaeten, paketData, onDataChange, isDisabled, onToggleDisable }) {
-  const [selectedAktivitaetId, setSelectedAktivitaetId] = useState(paketData?.selected_aktivitaet_id || '');
-  const [fieldValues, setFieldValues] = useState(paketData?.field_values || {});
-
-  const aktivitaeterFuerPhase = aktivitaeten.filter(
-    (a) => a.is_active && a.phase === phase.id
-  );
-
-  const selectedAktivitaet = aktivitaeten.find((a) => a.id === selectedAktivitaetId);
-
-  const handleActivityChange = (newId) => {
-    setSelectedAktivitaetId(newId);
-    setFieldValues({});
-    onDataChange({
-      selected_aktivitaet_id: newId,
-      field_values: {},
-    });
-  };
-
-  const handleFieldChange = (fieldName, value) => {
-    const newValues = { ...fieldValues, [fieldName]: value };
-    setFieldValues(newValues);
-    onDataChange({
-      selected_aktivitaet_id: selectedAktivitaetId,
-      field_values: newValues,
-    });
-  };
-
-  return (
-    <Card className={cn('border-2 transition-all', isDisabled ? 'bg-muted/30 opacity-50' : phase.color)}>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-              {PHASEN.findIndex((p) => p.id === phase.id) + 1}
-            </div>
-            <CardTitle className="text-base">{phase.label}</CardTitle>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground">{isDisabled ? 'Übersprungen' : 'Aktiv'}</span>
-            <Switch
-              checked={!isDisabled}
-              onCheckedChange={() => onToggleDisable()}
-              disabled={!aktivitaeterFuerPhase.length}
-            />
-          </div>
-        </div>
-      </CardHeader>
-
-      {!isDisabled && aktivitaeterFuerPhase.length > 0 && (
-        <CardContent className="pt-0 space-y-4">
-          {/* Aktivitäts-Dropdown */}
-          <div>
-            <Label className="text-xs font-medium mb-2 block">Aktivität</Label>
-            <Select value={selectedAktivitaetId} onValueChange={handleActivityChange}>
-              <SelectTrigger className="h-9 text-sm">
-                <SelectValue placeholder="Aktivität auswählen..." />
-              </SelectTrigger>
-              <SelectContent>
-                {aktivitaeterFuerPhase.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Dynamische Felder */}
-          {selectedAktivitaet?.form_schema && selectedAktivitaet.form_schema.length > 0 && (
-            <div className="space-y-4 pt-2 border-t border-border">
-              {selectedAktivitaet.form_schema.map((field) => (
-                <div key={field.field_name}>
-                  {field.type !== 'info' && (
-                    <Label className="text-xs font-medium mb-2 block">
-                      {field.label}
-                      {field.required && <span className="text-destructive ml-1">*</span>}
-                    </Label>
-                  )}
-                  <DynamicField
-                    field={field}
-                    value={fieldValues[field.field_name]}
-                    onChange={(value) => handleFieldChange(field.field_name, value)}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {selectedAktivitaet && selectedAktivitaet.form_schema?.length === 0 && (
-            <p className="text-xs text-muted-foreground text-center py-4">
-              Diese Aktivität benötigt keine weiteren Einstellungen.
-            </p>
-          )}
-        </CardContent>
-      )}
-
-      {!isDisabled && aktivitaeterFuerPhase.length === 0 && (
-        <CardContent className="text-center py-6">
-          <p className="text-xs text-muted-foreground">
-            Keine Aktivitäten für diese Phase verfügbar.
-          </p>
-        </CardContent>
-      )}
-    </Card>
-  );
-}
-
-// ──── Haupt-Komponente ────
-export default function LernpaketDetail({ lernpaketId }) {
+export default function LernpaketDetail({ lernpaketId, onSave }) {
   const queryClient = useQueryClient();
-  const [phasenData, setPhasenData] = useState({
+  const [phasenState, setPhasenState] = useState({
     Input: { disabled: false, selected_aktivitaet_id: '', field_values: {} },
     Übung: { disabled: false, selected_aktivitaet_id: '', field_values: {} },
     Abschluss: { disabled: false, selected_aktivitaet_id: '', field_values: {} },
   });
 
-  // ── Queries ──
-  const { data: aktivitaeten = [] } = useQuery({
-    queryKey: ['aktivitaetenKatalog'],
+  // Lade Lernpaket-Daten
+  const { data: lernpaket, isLoading: lernpaketLoading } = useQuery({
+    queryKey: ['lernpaket', lernpaketId],
+    queryFn: async () => {
+      const paket = await base44.entities.Lernpakete.list();
+      return paket.find((p) => p.id === lernpaketId);
+    },
+    enabled: !!lernpaketId,
+  });
+
+  // Lade Aktivitätenkatalog
+  const { data: aktivitaeten, isLoading: aktivitaetenLoading } = useQuery({
+    queryKey: ['aktivitaeten'],
     queryFn: () => base44.entities.AktivitaetenKatalog.list(),
   });
 
-  const { data: lernpaket } = useQuery({
-    queryKey: ['lernpaket', lernpaketId],
-    queryFn: () => base44.entities.Lernpakete.get(lernpaketId),
-  });
-
-  // ── Mutation zum Speichern der Phasendaten ──
-  const savePhasenData = useMutation({
-    mutationFn: (data) =>
-      base44.entities.Lernpakete.update(lernpaketId, {
-        phasen_konfiguration: data,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lernpaket', lernpaketId] });
-      toast.success('Phase gespeichert');
-    },
-  });
-
-  // Lade existierende Phasendaten
+  // Lade initial die Phasen-Konfiguration vom Lernpaket
   useEffect(() => {
     if (lernpaket?.phasen_konfiguration) {
-      setPhasenData(lernpaket.phasen_konfiguration);
+      setPhasenState(lernpaket.phasen_konfiguration);
     }
   }, [lernpaket]);
 
-  const handlePhaseChange = (phaseId, data) => {
-    const updated = { ...phasenData, [phaseId]: data };
-    setPhasenData(updated);
-  };
+  // Mutation zum Speichern
+  const updateMutation = useMutation({
+    mutationFn: async (data) => {
+      await base44.entities.Lernpakete.update(lernpaketId, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lernpaket', lernpaketId] });
+      toast.success('Phasenkonfiguration gespeichert');
+      onSave?.();
+    },
+    onError: (err) => {
+      toast.error('Fehler beim Speichern: ' + err.message);
+    },
+  });
 
-  const handleTogglePhase = (phaseId) => {
-    const updated = {
-      ...phasenData,
-      [phaseId]: {
-        ...phasenData[phaseId],
-        disabled: !phasenData[phaseId].disabled,
+  const handleToggle = (phase) => {
+    setPhasenState((prev) => ({
+      ...prev,
+      [phase]: {
+        ...prev[phase],
+        disabled: !prev[phase].disabled,
       },
-    };
-    setPhasenData(updated);
+    }));
   };
 
-  const handleSave = () => {
-    savePhasenData.mutate(phasenData);
+  const handleActivitySelect = (phase, aktivitaetId) => {
+    setPhasenState((prev) => ({
+      ...prev,
+      [phase]: {
+        ...prev[phase],
+        selected_aktivitaet_id: aktivitaetId,
+      },
+    }));
   };
+
+  const handleSave = async () => {
+    await updateMutation.mutateAsync({
+      phasen_konfiguration: phasenState,
+    });
+  };
+
+  // Gruppiere Aktivitäten nach Phase
+  const aktivitaetenByPhase = {};
+  PHASEN.forEach((p) => {
+    aktivitaetenByPhase[p.key] = aktivitaeten?.filter((a) => a.phase === p.key) || [];
+  });
+
+  if (lernpaketLoading || aktivitaetenLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      {/* Titel */}
       <div>
-        <h2 className="text-lg font-bold text-foreground">{lernpaket?.titel_des_pakets}</h2>
+        <h2 className="text-2xl font-bold text-foreground">{lernpaket?.titel_des_pakets}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Konfigurieren Sie die drei Lernphasen für dieses Paket.
+          Konfigurieren Sie die Aktivitäten für jede Lernphase
         </p>
       </div>
 
-      {/* Phase-Container */}
-      <div className="grid gap-6">
-        {PHASEN.map((phase) => (
-          <PhaseContainer
-            key={phase.id}
-            phase={phase}
-            aktivitaeten={aktivitaeten}
-            paketData={phasenData[phase.id]}
-            onDataChange={(data) => handlePhaseChange(phase.id, data)}
-            isDisabled={phasenData[phase.id]?.disabled || false}
-            onToggleDisable={() => handleTogglePhase(phase.id)}
-          />
-        ))}
+      {/* Phasen-Container */}
+      <div className="space-y-4">
+        {PHASEN.map((phase) => {
+          const state = phasenState[phase.key];
+          const aktivs = aktivitaetenByPhase[phase.key];
+          const selectedAktivitaet = aktivs.find((a) => a.id === state.selected_aktivitaet_id);
+
+          return (
+            <Card
+              key={phase.key}
+              className={cn(
+                'border-2 transition-all',
+                state.disabled ? 'opacity-50 bg-muted/30' : phase.color
+              )}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">{phase.label}</CardTitle>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground font-medium">Aktivieren</span>
+                    <Switch
+                      checked={!state.disabled}
+                      onCheckedChange={() => handleToggle(phase.key)}
+                    />
+                  </div>
+                </div>
+              </CardHeader>
+
+              {!state.disabled && (
+                <CardContent className="space-y-4">
+                  {/* Aktivitäts-Dropdown */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Aktivität wählen</label>
+                    <Select
+                      value={state.selected_aktivitaet_id || ''}
+                      onValueChange={(value) => handleActivitySelect(phase.key, value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={`Wähle eine Aktivität für ${phase.label}…`}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {aktivs.length === 0 ? (
+                          <div className="p-2 text-sm text-muted-foreground">
+                            Keine Aktivitäten verfügbar
+                          </div>
+                        ) : (
+                          aktivs.map((akt) => (
+                            <SelectItem key={akt.id} value={akt.id}>
+                              {akt.name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Form-Schema Platzhalter */}
+                  {selectedAktivitaet?.form_schema && selectedAktivitaet.form_schema.length > 0 && (
+                    <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                      <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <ChevronDown className="w-4 h-4 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="font-medium text-foreground">
+                            {selectedAktivitaet.form_schema.length} Konfigurationsfeld(er)
+                          </p>
+                          <p className="text-xs mt-1">
+                            Formularfelder werden im nächsten Schritt implementiert
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedAktivitaet?.form_schema?.length === 0 && (
+                    <div className="p-3 rounded-lg bg-green-50 border border-green-200">
+                      <p className="text-xs text-green-700">
+                        ✓ Diese Aktivität benötigt keine weitere Konfiguration
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              )}
+            </Card>
+          );
+        })}
       </div>
 
       {/* Speichern-Button */}
-      <div className="flex justify-end pt-4">
-        <Button onClick={handleSave} disabled={savePhasenData.isPending} className="gap-2">
-          {savePhasenData.isPending ? 'Speichert...' : 'Konfiguration speichern'}
+      <div className="flex justify-end gap-2 pt-4 border-t">
+        <Button variant="outline" onClick={() => window.location.reload()}>
+          Abbrechen
+        </Button>
+        <Button
+          onClick={handleSave}
+          disabled={updateMutation.isPending}
+          className="gap-2"
+        >
+          {updateMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+          Speichern
         </Button>
       </div>
     </div>

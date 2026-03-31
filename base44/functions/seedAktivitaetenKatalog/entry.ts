@@ -1,33 +1,32 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 const AKTIVITAETEN = [
-  // ──── INPUT PHASE ────
+  // INPUT-PHASE (Erarbeitung)
   {
     name: 'Text lesen',
     phase: 'Input',
     is_active: true,
     form_schema: [
       {
-        field_name: 'text_content',
+        field_name: 'text',
         type: 'textarea',
-        label: 'Textinhalt',
+        label: 'Text eingeben',
         required: true,
-        placeholder: 'Geben Sie den zu lesenden Text ein...'
-      }
-    ]
+      },
+    ],
   },
   {
-    name: 'Dokument',
+    name: 'Dokument (PDF/Bild)',
     phase: 'Input',
     is_active: true,
     form_schema: [
       {
-        field_name: 'document_file',
+        field_name: 'file',
         type: 'file',
-        label: 'Dokument hochladen (PDF, Word, etc.)',
-        required: true
-      }
-    ]
+        label: 'Datei-Upload',
+        required: true,
+      },
+    ],
   },
   {
     name: 'Bild anschauen',
@@ -35,18 +34,12 @@ const AKTIVITAETEN = [
     is_active: true,
     form_schema: [
       {
-        field_name: 'image_file',
+        field_name: 'image',
         type: 'image',
-        label: 'Bild hochladen',
-        required: true
+        label: 'Bild-Upload',
+        required: true,
       },
-      {
-        field_name: 'image_description',
-        type: 'textarea',
-        label: 'Bildbeschreibung für Schüler',
-        required: false
-      }
-    ]
+    ],
   },
   {
     name: 'Video anschauen',
@@ -57,22 +50,10 @@ const AKTIVITAETEN = [
         field_name: 'video_url',
         type: 'url',
         label: 'Video-URL (YouTube/Vimeo)',
-        required: false,
-        placeholder: 'https://youtube.com/watch?v=...'
+        required: true,
+        placeholder: 'https://youtube.com/watch?v=...',
       },
-      {
-        field_name: 'video_file',
-        type: 'file',
-        label: 'oder Video-Datei hochladen',
-        required: false
-      },
-      {
-        field_name: 'video_duration_minutes',
-        type: 'number',
-        label: 'Videolänge (Minuten)',
-        required: false
-      }
-    ]
+    ],
   },
   {
     name: 'Audio hören',
@@ -80,18 +61,12 @@ const AKTIVITAETEN = [
     is_active: true,
     form_schema: [
       {
-        field_name: 'audio_file',
+        field_name: 'audio',
         type: 'audio',
-        label: 'Audiodatei hochladen (MP3, WAV)',
-        required: true
+        label: 'Audio-Datei-Upload',
+        required: true,
       },
-      {
-        field_name: 'audio_transcript',
-        type: 'textarea',
-        label: 'Transkript (optional)',
-        required: false
-      }
-    ]
+    ],
   },
   {
     name: 'Webseite besuchen',
@@ -99,19 +74,13 @@ const AKTIVITAETEN = [
     is_active: true,
     form_schema: [
       {
-        field_name: 'website_url',
+        field_name: 'web_url',
         type: 'url',
-        label: 'Webseiten-URL',
+        label: 'URL zur Webseite',
         required: true,
-        placeholder: 'https://example.com'
+        placeholder: 'https://example.com',
       },
-      {
-        field_name: 'website_instructions',
-        type: 'textarea',
-        label: 'Bearbeitungsanleitung für Schüler',
-        required: false
-      }
-    ]
+    ],
   },
   {
     name: 'Lehrwerk/Quelle',
@@ -119,40 +88,35 @@ const AKTIVITAETEN = [
     is_active: true,
     form_schema: [
       {
-        field_name: 'source_title',
+        field_name: 'lehrwerk',
         type: 'text',
-        label: 'Titel des Lehrwerks/der Quelle',
-        required: true
+        label: 'Lehrwerk',
+        required: true,
       },
       {
-        field_name: 'source_page',
-        type: 'number',
-        label: 'Seitenzahl',
-        required: true
-      },
-      {
-        field_name: 'source_chapter',
+        field_name: 'seite',
         type: 'text',
-        label: 'Kapitel/Abschnitt',
-        required: false
-      }
-    ]
+        label: 'Seite/Aufgabe',
+        required: false,
+      },
+    ],
   },
 
-  // ──── ÜBUNG PHASE ────
+  // ÜBUNGS-PHASE (Übung)
   {
-    name: 'Fragen beantworten',
+    name: 'Frage(n) beantworten',
     phase: 'Übung',
     is_active: true,
     form_schema: [
       {
-        field_name: 'questions_json',
+        field_name: 'fragen_json',
         type: 'json',
-        label: 'Fragen und Antworten (JSON)',
+        label: 'Fragen & Antworten',
         required: true,
-        placeholder: '[{"question": "Frage 1?", "answer": "Antwort 1"}]'
-      }
-    ]
+        placeholder:
+          '[{"frage": "Was ist 2+2?", "antwort": "4"}, {"frage": "Was ist die Hauptstadt Deutschlands?", "antwort": "Berlin"}]',
+      },
+    ],
   },
   {
     name: 'Paare finden',
@@ -160,13 +124,14 @@ const AKTIVITAETEN = [
     is_active: true,
     form_schema: [
       {
-        field_name: 'pairs_json',
+        field_name: 'paare_json',
         type: 'json',
-        label: 'Paare (Schlüssel/Wert als JSON)',
+        label: 'Paare (Links/Rechts)',
         required: true,
-        placeholder: '[{"left": "Begriff A", "right": "Definition A"}]'
-      }
-    ]
+        placeholder:
+          '[{"links": "Apfel", "rechts": "Obst"}, {"links": "Karotte", "rechts": "Gemüse"}]',
+      },
+    ],
   },
   {
     name: 'Begriffe zuordnen',
@@ -174,13 +139,14 @@ const AKTIVITAETEN = [
     is_active: true,
     form_schema: [
       {
-        field_name: 'categories_json',
+        field_name: 'kategorien_json',
         type: 'json',
-        label: 'Kategorien und Begriffe (JSON)',
+        label: 'Kategorien & Begriffe',
         required: true,
-        placeholder: '[{"category": "Kategorie 1", "items": ["Begriff A", "Begriff B"]}]'
-      }
-    ]
+        placeholder:
+          '{"Obst": ["Apfel", "Banane"], "Gemüse": ["Karotte", "Brokkoli"]}',
+      },
+    ],
   },
   {
     name: 'Lückentext ausfüllen',
@@ -188,19 +154,12 @@ const AKTIVITAETEN = [
     is_active: true,
     form_schema: [
       {
-        field_name: 'gaptext_content',
+        field_name: 'lueckentext',
         type: 'textarea',
-        label: 'Text mit Lücken (markieren Sie Lücken mit [LÜCKE])',
-        required: true
-      },
-      {
-        field_name: 'gaptext_solutions',
-        type: 'json',
-        label: 'Lösungen als JSON-Array',
+        label: 'Text mit Lücken (nutze ___ für Lücken)',
         required: true,
-        placeholder: '["Lösung 1", "Lösung 2"]'
-      }
-    ]
+      },
+    ],
   },
   {
     name: 'Text schreiben',
@@ -208,24 +167,12 @@ const AKTIVITAETEN = [
     is_active: true,
     form_schema: [
       {
-        field_name: 'writing_prompt',
-        type: 'textarea',
-        label: 'Schreib-Anleitung',
-        required: true
+        field_name: 'konfiguration',
+        type: 'text',
+        label: 'Länge/Umfang (z.B. "5-10 Sätze")',
+        required: false,
       },
-      {
-        field_name: 'writing_min_words',
-        type: 'number',
-        label: 'Mindestanzahl Wörter',
-        required: false
-      },
-      {
-        field_name: 'writing_max_words',
-        type: 'number',
-        label: 'Maximalanzahl Wörter',
-        required: false
-      }
-    ]
+    ],
   },
   {
     name: 'Aufgabe im Lehrwerk',
@@ -233,73 +180,76 @@ const AKTIVITAETEN = [
     is_active: true,
     form_schema: [
       {
-        field_name: 'textbook_title',
+        field_name: 'lehrwerk',
         type: 'text',
-        label: 'Lehrwerk-Titel',
-        required: true
+        label: 'Lehrwerk',
+        required: true,
       },
       {
-        field_name: 'textbook_page',
-        type: 'number',
-        label: 'Seitenzahl',
-        required: true
+        field_name: 'seite',
+        type: 'text',
+        label: 'Seite',
+        required: false,
       },
       {
-        field_name: 'textbook_exercise_number',
+        field_name: 'nummer',
         type: 'text',
-        label: 'Aufgabennummer (z.B. "3.1")',
-        required: true
-      }
-    ]
+        label: 'Aufgabennummer',
+        required: false,
+      },
+    ],
   },
 
-  // ──── ABSCHLUSS PHASE ────
+  // ABSCHLUSS-PHASE
   {
     name: 'Bearbeitung bestätigen',
     phase: 'Abschluss',
     is_active: true,
     form_schema: [
       {
-        field_name: 'confirmation_message',
-        type: 'textarea',
-        label: 'Bestätigungsmeldung für Schüler',
+        field_name: 'nachricht',
+        type: 'text',
+        label: 'Bestätigungs-Nachricht',
         required: false,
-        placeholder: 'Sie haben alle Aufgaben abgeschlossen!'
-      }
-    ]
+        placeholder: 'Geben Sie hier eine optionale Nachricht ein',
+      },
+    ],
   },
   {
     name: 'Dokument abgeben',
     phase: 'Abschluss',
     is_active: true,
-    form_schema: [
-      {
-        field_name: 'submission_label',
-        type: 'info',
-        label: 'Info: Schüler reichen hier ihre Lösung ein',
-        required: false
-      }
-    ]
+    form_schema: [],
   },
   {
-    name: 'Test/Quiz',
+    name: 'Test',
     phase: 'Abschluss',
     is_active: true,
     form_schema: [
       {
-        field_name: 'quiz_questions',
+        field_name: 'test_json',
         type: 'json',
-        label: 'Test-Fragen mit Antworten (JSON)',
+        label: 'Aufgaben & Antworten',
         required: true,
-        placeholder: '[{"question": "Frage 1?", "correct_answer": "A", "options": ["A", "B", "C"]}]'
+        placeholder:
+          '[{"aufgabe": "Was ist Photosynthese?", "loesung": "Prozess der Energiegewinnung durch Licht"}]',
       },
+    ],
+  },
+  {
+    name: 'Quiz',
+    phase: 'Abschluss',
+    is_active: true,
+    form_schema: [
       {
-        field_name: 'quiz_pass_percentage',
-        type: 'number',
-        label: 'Bestehensquote (%)',
-        required: false
-      }
-    ]
+        field_name: 'quiz_json',
+        type: 'json',
+        label: 'Fragen & Antwortoptionen',
+        required: true,
+        placeholder:
+          '[{"frage": "Was ist 2+2?", "optionen": ["3", "4", "5"], "loesung": "4"}]',
+      },
+    ],
   },
   {
     name: 'KI-Check',
@@ -307,20 +257,13 @@ const AKTIVITAETEN = [
     is_active: true,
     form_schema: [
       {
-        field_name: 'ai_check_criteria',
-        type: 'json',
-        label: 'KI-Prüfkriterien (verknüpfte Lernziele)',
-        required: false,
-        placeholder: '[{"criterion": "Kriterium 1", "weight": 1.0}]'
+        field_name: 'lernziele_select',
+        type: 'text',
+        label: 'Zu überprüfende Lernziele (Beschreibung)',
+        required: true,
       },
-      {
-        field_name: 'ai_check_prompt',
-        type: 'textarea',
-        label: 'KI-Bewertungs-Prompt',
-        required: false
-      }
-    ]
-  }
+    ],
+  },
 ];
 
 Deno.serve(async (req) => {
@@ -328,30 +271,34 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
-    if (!user || user.role !== 'admin') {
+    // Nur Admins dürfen seeden
+    if (user?.role !== 'admin') {
       return Response.json(
         { error: 'Forbidden: Admin access required' },
         { status: 403 }
       );
     }
 
-    // Existierende Aktivitäten löschen
-    const existing = await base44.asServiceRole.entities.AktivitaetenKatalog.list();
-    for (const item of existing) {
-      await base44.asServiceRole.entities.AktivitaetenKatalog.delete(item.id);
+    // Leere die bestehende Tabelle
+    const existierende = await base44.asServiceRole.entities.AktivitaetenKatalog.list();
+    for (const akt of existierende) {
+      await base44.asServiceRole.entities.AktivitaetenKatalog.delete(akt.id);
     }
 
-    // Neue Aktivitäten erstellen
-    const created = [];
+    // Füge die neuen Aktivitäten ein
+    const erstellte = [];
     for (const aktivitaet of AKTIVITAETEN) {
-      const result = await base44.asServiceRole.entities.AktivitaetenKatalog.create(aktivitaet);
-      created.push(result);
+      const result = await base44.asServiceRole.entities.AktivitaetenKatalog.create(
+        aktivitaet
+      );
+      erstellte.push(result);
     }
 
     return Response.json({
       success: true,
-      message: `${created.length} Aktivitäten erfolgreich angelegt`,
-      count: created.length
+      message: `${erstellte.length} Aktivitäten erfolgreich seeded`,
+      count: erstellte.length,
+      aktivitaeten: erstellte,
     });
   } catch (error) {
     return Response.json(
