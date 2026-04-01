@@ -360,6 +360,37 @@ export async function createBulkAufgaben(aufgaben) {
   }
 }
 
+/**
+ * Replikation: Generiere Varianten einer Masteraufgabe
+ * 
+ * @param {string} masterId - ID der Masteraufgabe
+ * @param {number} anzahl - Anzahl der zu generierenden Varianten (1-20)
+ * @returns {Promise<{success: boolean, replicas: Array, metadata: Object}>}
+ */
+export async function generateReplicas(masterId, anzahl = 10) {
+  if (!masterId) {
+    throw new Error('masterId is required');
+  }
+
+  if (anzahl < 1 || anzahl > 20) {
+    throw new Error('Anzahl muss zwischen 1 und 20 liegen');
+  }
+
+  try {
+    const response = await base44.functions.invoke('generateReplicasSecure', {
+      master_id: masterId,
+      anzahl,
+    });
+    return response.data;
+  } catch (error) {
+    const status = error.response?.status || 500;
+    const errorData = error.response?.data || {};
+    const message = errorData.error || error.message || 'Unknown error';
+
+    throw new SecureApiError(status, message);
+  }
+}
+
 export const secureApi = {
   deleteEinheit,
   createEinheit,
@@ -370,6 +401,7 @@ export const secureApi = {
   generateBulkAufgaben,
   generateBulkEbene2,
   createBulkAufgaben,
+  generateReplicas,
 };
 
 export default secureApi;

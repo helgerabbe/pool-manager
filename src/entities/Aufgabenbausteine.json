@@ -1,0 +1,134 @@
+{
+  "name": "Aufgabenbausteine",
+  "type": "object",
+  "properties": {
+    "lernpaket_id": {
+      "type": "string",
+      "description": "Referenz zum übergeordneten Lernpaket (Foreign Key)"
+    },
+    "lernziel_id": {
+      "type": "string",
+      "description": "Referenz zum zugehörigen Lernziel (Foreign Key)"
+    },
+    "anforderungsebene": {
+      "type": "string",
+      "enum": [
+        "1 - Basis",
+        "2 - Transfer",
+        "3 - Projekt"
+      ],
+      "description": "Ebene des Aufgabenbausteins – bestimmt die Differenzierung"
+    },
+    "baustein_typ": {
+      "type": "string",
+      "enum": [
+        "Pre-Test",
+        "Input",
+        "Ebene-1-Übung",
+        "Ebene-2-Aufgabe",
+        "Ebene-3-Projekt",
+        "Exit-Check",
+        "Prüfung Typ A",
+        "Prüfung Typ B",
+        "Prüfung Typ C",
+        "Input/Erklärung",
+        "Infoseite/Cheat-Sheet",
+        "Musterlösung",
+        "Übungsaufgaben",
+        "Fakten-Input",
+        "Drill-Übung"
+      ],
+      "description": "Typ des Aufgabenbausteins"
+    },
+    "aufgabentext_inhalt": {
+      "type": "string",
+      "description": "Aufgabentext / Inhalt (Rich Text)"
+    },
+    "erwartungshorizont_ki_prompt": {
+      "type": "string",
+      "description": "Vorgaben für den KI-Tutor / Erwartungshorizont"
+    },
+    "schwierigkeitsgrad": {
+      "type": "string",
+      "enum": [
+        "1-Stern",
+        "2-Sterne",
+        "3-Sterne"
+      ],
+      "description": "Schwierigkeitsgrad (primär für Ebene-2/3-Aufgaben)"
+    },
+    "material_typ": {
+      "type": "string",
+      "enum": [
+        "Freitext",
+        "Buchverweis",
+        "Datei-Upload"
+      ],
+      "description": "Art des Begleitmaterials"
+    },
+    "material_referenz": {
+      "type": "string",
+      "description": "Buchverweis-Text oder hochgeladene Datei-URL"
+    },
+    "is_opt_out": {
+      "type": "boolean",
+      "default": false,
+      "description": "Wenn true: Baustein wird bewusst ausgelassen (zählt als vollständig)"
+    },
+    "opt_out_begruendung": {
+      "type": "string",
+      "description": "Pflichtbegründung wenn is_opt_out = true"
+    },
+    "lock_status": {
+      "type": "boolean",
+      "default": false,
+      "description": "True = wird gerade von einem Nutzer bearbeitet"
+    },
+    "locked_by_user": {
+      "type": "string",
+      "description": "E-Mail des Nutzers, der den Baustein gerade bearbeitet"
+    },
+    "is_master": {
+      "type": "boolean",
+      "default": false,
+      "description": "True = Dies ist eine Masteraufgabe für KI-Replikation"
+    },
+    "master_id": {
+      "type": "string",
+      "description": "UUID der Masteraufgabe, falls diese ein Replikat ist (nullable)"
+    },
+    "export_to_moodle": {
+      "type": "boolean",
+      "default": true,
+      "description": "Bestimmt, ob diese Aufgabe in Moodle exportiert werden soll"
+    },
+    "activity_type": {
+      "type": "string",
+      "description": "Aktivitätstyp für dynamische Master-Replikation (z.B. 'match_terms', 'quiz', 'free_text')"
+    },
+    "activity_config": {
+      "type": "object",
+      "description": "Strukturierte Konfiguration der Aktivität (z.B. Paarungen für Match, Optionen für Quiz)",
+      "additionalProperties": true
+    },
+    "sync_status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "exported",
+        "modified"
+      ],
+      "default": "new",
+      "description": "Sync-Status für Moodle-Export-Tracking"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel des letzten erfolgreichen Moodle-Exports (nullable)"
+    }
+  },
+  "required": [
+    "lernpaket_id",
+    "baustein_typ"
+  ]
+}
