@@ -54,26 +54,34 @@ export function useSecureMutation({
       // Extract error message from SecureApiError or generic error
       let errorMessage = error.message || 'Ein Fehler ist aufgetreten.';
 
-      // If it's a SecureApiError with context, use the message directly
-      // (which comes from backend: "Cannot create unit for subject: Deutsch")
-      if (error.isForbidden && error.isForbidden()) {
-        // 403 Forbidden – RBAC denied
+      // 409 CONFLICT: Optimistic Locking - Version mismatch
+      if (error.isConflict && error.isConflict()) {
+        toast.error('Speicherkonflikt', {
+          description: 'Ein anderer Nutzer hat diese Daten in der Zwischenzeit geändert. Bitte laden Sie die Seite neu.',
+          duration: 6000,
+        });
+      }
+      // 403 Forbidden – RBAC denied
+      else if (error.isForbidden && error.isForbidden()) {
         toast.error(`Keine Berechtigung: ${errorMessage}`, {
           description: `${operationName} konnte nicht durchgeführt werden.`,
           duration: 5000,
         });
-      } else if (error.isNotFound && error.isNotFound()) {
-        // 404 Not Found
+      }
+      // 404 Not Found
+      else if (error.isNotFound && error.isNotFound()) {
         toast.error(`Nicht gefunden: ${errorMessage}`, {
           duration: 4000,
         });
-      } else if (error.isUnauthorized && error.isUnauthorized()) {
-        // 401 Unauthorized
+      }
+      // 401 Unauthorized
+      else if (error.isUnauthorized && error.isUnauthorized()) {
         toast.error('Authentifizierung erforderlich. Bitte melden Sie sich an.', {
           duration: 5000,
         });
-      } else {
-        // Generic error
+      }
+      // Generic error
+      else {
         toast.error(`Fehler beim ${operationName.toLowerCase()}: ${errorMessage}`, {
           duration: 4000,
         });

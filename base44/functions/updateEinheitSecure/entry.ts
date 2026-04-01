@@ -1,20 +1,41 @@
 /**
  * updateEinheitSecure.js
- * 
- * Phase 6.3: Sichere UPDATE Operation für Einheiten mit:
- * - RBAC Validation
- * - Input Validation
- * - Audit Logging
+ *
+ * Phase 6.4: Optimistic Locking mit Version-Check
+ * - Validiert die mitgelieferte `version` gegen die DB-Version
+ * - Returns HTTP 409 Conflict wenn Versionen ungleich sind
+ * - Inkrementiert Version bei erfolgreicher Änderung
+ * - RBAC + Audit Logging
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 /**
- * Main Handler
+ * HTTP 409 Conflict Error für Versionskonflikte
  */
+class VersionConflictError extends Error {
+  constructor(currentVersion, providedVersion) {
+    super(
+      `Version conflict: Expected version ${providedVersion}, but database has version ${currentVersion}`
+    );
+    this.name = 'VersionConflictError';
+    this.status = 409;
+    this.currentVersion = currentVersion;
+    this.providedVersion = providedVersion;
+  }
+}
+
 Deno.serve(async (req) => {
+  // Allow OPTIONS for CORS
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204 });
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      },
+    });
   }
 
   if (req.method !== 'POST') {
@@ -22,7 +43,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // 1. Auth
+    // 1. Initialize Base44 Client
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
@@ -30,39 +51,62 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 2. Parse payload
+    // 2. Parse Payload
     const payload = await req.json();
-    const { einheit_id, titel_der_einheit, gesamtziel, fach, jahrgangsstufe, freigabe_status } = payload;
+    const {
+      einheit_id,
+      titel_der_einheit,
+      gesamtziel,
+      fach,
+      jahrgangsstufe,
+      freigabe_status,
+      version, // CRITICAL: Client-side version für Optimistic Locking
+    } = payload;
 
     if (!einheit_id) {
-      return Response.json({ error: 'einheit_id is required' }, { status: 400 });
+      return Response.json(
+        { error: 'Missing einheit_id in payload' },
+        { status: 400 }
+      );
     }
 
-    // 3. Fetch existing Einheit
-    const existingEinheit = await base44.asServiceRole.entities.Einheiten.get(einheit_id);
-    if (!existingEinheit) {
+    // 3. Fetch Current Entity
+    const currentEinheit = await base44.asServiceRole.entities.Einheiten.get(
+      einheit_id
+    );
+
+    if (!currentEinheit) {
       return Response.json({ error: 'Einheit not found' }, { status: 404 });
     }
 
-    // 4. Input Validation - Only validate if provided
-    if (titel_der_einheit !== undefined && !titel_der_einheit?.trim()) {
-      return Response.json({ error: 'titel_der_einheit cannot be empty' }, { status: 400 });
-    }
-    if (fach !== undefined && !fach?.trim()) {
-      return Response.json({ error: 'fach cannot be empty' }, { status: 400 });
-    }
-    if (jahrgangsstufe !== undefined && !jahrgangsstufe?.toString().trim()) {
-      return Response.json({ error: 'jahrgangsstufe cannot be empty' }, { status: 400 });
+    // 4. VERSION CHECK (Optimistic Locking)
+    const dbVersion = currentEinheit.version || 1;
+    if (version && version !== dbVersion) {
+      // Conflict: Client hat eine andere Version als DB
+      return Response.json(
+        {
+          error: 'Version conflict',
+          message: `Speicherkonflikt: Ein anderer Nutzer hat diese Daten in der Zwischenzeit geändert. Aktualisieren Sie die Seite.`,
+          current_version: dbVersion,
+          provided_version: version,
+        },
+        {
+          status: 409,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json',
+          },
+        }
+      );
     }
 
-    // 5. RBAC Check - Owner or specific roles can update
+    // 5. RBAC Check
     const benutzerList = await base44.asServiceRole.entities.Benutzer.filter({
       user_id: user.email,
     });
-    
+
     const benutzer = benutzerList?.[0];
     const role = benutzer?.rolle;
-    const targetFach = fach || existingEinheit.fach;
 
     let allowed = false;
     let rbacReason = '';
@@ -70,15 +114,13 @@ Deno.serve(async (req) => {
     if (role === 'Administrator') {
       allowed = true;
     } else if (role === 'Fachschaftsleitung') {
-      // Can only update units for their subject
       const subjects = benutzer?.fachbereich_zustaendigkeit || [];
-      if (subjects.includes(targetFach)) {
+      if (subjects.includes(currentEinheit.fach)) {
         allowed = true;
       } else {
-        rbacReason = `Cannot update unit for subject: ${targetFach}. You are responsible for: ${subjects.join(', ') || 'no subjects'}`;
+        rbacReason = `Not responsible for subject: ${currentEinheit.fach}`;
       }
     } else if (role === 'Fachlehrkraft') {
-      // Check if user is LEITUNG of this unit
       const membership = await base44.asServiceRole.entities.EinheitMembers.filter({
         einheit_id: einheit_id,
         user_email: user.email,
@@ -86,14 +128,13 @@ Deno.serve(async (req) => {
       if (membership?.[0]?.unit_role === 'LEITUNG') {
         allowed = true;
       } else {
-        rbacReason = 'Must be unit lead to update this unit';
+        rbacReason = 'Must be unit lead to update';
       }
     } else {
-      rbacReason = `Role ${role} cannot update units`;
+      rbacReason = `Role ${role} cannot update`;
     }
 
     if (!allowed) {
-      // Log failed attempt
       try {
         await base44.asServiceRole.entities.AuditLog.create({
           user_email: user.email,
@@ -109,22 +150,36 @@ Deno.serve(async (req) => {
 
       return Response.json(
         { error: rbacReason || 'Permission denied' },
-        { status: 403 }
+        {
+          status: 403,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json',
+          },
+        }
       );
     }
 
-    // 6. Build update data - only include provided fields
+    // 6. Prepare Update Data
     const updateData = {};
-    if (titel_der_einheit !== undefined) updateData.titel_der_einheit = titel_der_einheit;
+    if (titel_der_einheit !== undefined)
+      updateData.titel_der_einheit = titel_der_einheit;
     if (gesamtziel !== undefined) updateData.gesamtziel = gesamtziel;
     if (fach !== undefined) updateData.fach = fach;
     if (jahrgangsstufe !== undefined) updateData.jahrgangsstufe = jahrgangsstufe;
-    if (freigabe_status !== undefined) updateData.freigabe_status = freigabe_status;
+    if (freigabe_status !== undefined)
+      updateData.freigabe_status = freigabe_status;
 
-    // 7. Update Einheit
-    const updatedEinheit = await base44.entities.Einheiten.update(einheit_id, updateData);
+    // 7. INCREMENT VERSION on successful update
+    updateData.version = dbVersion + 1;
 
-    // 8. Log Success
+    // 8. Execute Update
+    const updatedEinheit = await base44.asServiceRole.entities.Einheiten.update(
+      einheit_id,
+      updateData
+    );
+
+    // 9. Audit Log Success
     try {
       await base44.asServiceRole.entities.AuditLog.create({
         user_email: user.email,
@@ -138,21 +193,37 @@ Deno.serve(async (req) => {
       console.error('Audit log error:', logError.message);
     }
 
-    // 9. Return Success
+    // 10. Return Success with new version
     return Response.json(
       {
         success: true,
-        data: updatedEinheit,
-        message: 'Einheit updated successfully',
+        data: {
+          ...updatedEinheit,
+          version: dbVersion + 1, // Return updated version to client
+        },
       },
-      { status: 200 }
+      {
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json',
+        },
+      }
     );
   } catch (error) {
     console.error('[UPDATE_EINHEIT_ERROR]', error);
 
     return Response.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
+      {
+        error: error.message || 'Internal server error',
+      },
+      {
+        status: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json',
+        },
+      }
     );
   }
 });

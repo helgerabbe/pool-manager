@@ -15,10 +15,11 @@ import { base44 } from '@/api/base44Client';
  * Custom error class für besseres Error Handling
  */
 export class SecureApiError extends Error {
-  constructor(status, message) {
+  constructor(status, message, additionalData = {}) {
     super(message);
     this.name = 'SecureApiError';
     this.status = status;
+    this.additionalData = additionalData;
   }
 
   isForbidden() {
@@ -31,6 +32,10 @@ export class SecureApiError extends Error {
 
   isUnauthorized() {
     return this.status === 401;
+  }
+
+  isConflict() {
+    return this.status === 409;
   }
 }
 
@@ -103,9 +108,9 @@ export async function createEinheit(data) {
  * Sichere Einheit Update Operation via Base44 SDK
  * 
  * @param {string} einheitId - Die ID der zu aktualisierenden Einheit
- * @param {Object} data - { titel_der_einheit?, gesamtziel?, fach?, jahrgangsstufe?, freigabe_status? }
+ * @param {Object} data - { titel_der_einheit?, gesamtziel?, fach?, jahrgangsstufe?, freigabe_status?, version? }
  * @returns {Promise<{success: boolean, data: Object}>}
- * @throws {SecureApiError} Bei Fehler (403 Forbidden, 404 Not Found, etc.)
+ * @throws {SecureApiError} Bei Fehler (403 Forbidden, 404 Not Found, 409 Conflict, etc.)
  */
 export async function updateEinheit(einheitId, data) {
   if (!einheitId) {
@@ -123,7 +128,13 @@ export async function updateEinheit(einheitId, data) {
     const errorData = error.response?.data || {};
     const message = errorData.error || error.message || 'Unknown error';
 
-    throw new SecureApiError(status, message);
+    // Extrahiere zusätzliche Daten für 409 Conflicts
+    const additionalData = {
+      current_version: errorData.current_version,
+      provided_version: errorData.provided_version,
+    };
+
+    throw new SecureApiError(status, message, additionalData);
   }
 }
 

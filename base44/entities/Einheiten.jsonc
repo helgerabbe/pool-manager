@@ -77,6 +77,11 @@
       "format": "date-time",
       "description": "Zeitstempel des letzten erfolgreichen Moodle-Exports (nullable)"
     },
+    "last_exported_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel des letzten Exports als JSON-Datei (nullable)"
+    },
     "structural_lock": {
       "type": "string",
       "description": "E-Mail des Nutzers, der gerade die Struktur bearbeitet (Structural Lock)"
@@ -85,6 +90,11 @@
       "type": "string",
       "format": "date-time",
       "description": "Zeitstempel des Structural Locks (Auto-Timeout nach 60 Min)"
+    },
+    "version": {
+      "type": "integer",
+      "default": 1,
+      "description": "Optimistic Locking Version (inkrementiert bei jedem Update)"
     }
   },
   "required": [
