@@ -457,6 +457,7 @@ export default function EinheitStrukturBoard({
     const newId = `tf-new-${Date.now()}`;
     setSpalten(prev => [...prev, { id: newId, titel: `Themenfeld ${prev.length + 1}`, themenfeldId: null }]);
     setPaketeMap(prev => ({ ...prev, [newId]: [] }));
+    setModesMap(prev => ({ ...prev, [newId]: 'offen' }));
     setIsDirty(true);
   };
 
