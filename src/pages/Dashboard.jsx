@@ -101,27 +101,27 @@ export default function Dashboard() {
           {recentEinheiten.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">Keine Einheiten in den letzten 3 Wochen bearbeitet</p>
           ) : (
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {recentEinheiten.map(einheit => (
                 <Link key={einheit.id} to={`/einheiten/${einheit.id}`}>
-                  <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors border border-transparent hover:border-border group/item">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm group-hover/item:text-primary transition-colors truncate">
+                  <Card className="h-full hover:shadow-md transition-shadow border hover:border-primary/20 group/card">
+                    <CardContent className="p-4 h-full flex flex-col">
+                      <p className="font-semibold text-sm group-hover/card:text-primary transition-colors line-clamp-2 flex-1">
                         {einheit.titel_der_einheit}
                       </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge className={`text-[10px] shrink-0 ${fachColors[einheit.fach] || 'bg-muted text-muted-foreground'}`}>
-                          {einheit.fach}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">Jg. {einheit.jahrgangsstufe}</span>
+                      <div className="space-y-3 mt-4 pt-4 border-t">
+                        <div className="flex items-center justify-between">
+                          <Badge className={`text-[10px] shrink-0 ${fachColors[einheit.fach] || 'bg-muted text-muted-foreground'}`}>
+                            {einheit.fach}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">Jg. {einheit.jahrgangsstufe}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(einheit.updated_date), { addSuffix: true, locale: de })}
+                        </p>
                       </div>
-                    </div>
-                    <div className="text-right shrink-0 ml-4">
-                      <p className="text-xs text-muted-foreground whitespace-nowrap">
-                        {formatDistanceToNow(new Date(einheit.updated_date), { addSuffix: true, locale: de })}
-                      </p>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 </Link>
               ))}
             </div>
