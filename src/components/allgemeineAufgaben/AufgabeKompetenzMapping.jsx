@@ -259,15 +259,37 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
     }
   };
 
-  // Gruppiere Lernziele nach Themenfeld (nur der aktuellen Einheit)
+  // Gruppiere Lernziele nach Themenfeld (alle Kompetenzen der Einheit)
   const paketeFuerEinheit = lernpakete.filter((p) => p.einheit_id === einheitId);
+  const paketIdsFuerEinheit = paketeFuerEinheit.map((p) => p.id);
+  
+  // Alle Lernziele der Einheit (unabhängig vom Themenfeld)
+  const alleLernzieleEinheit = alleLernziele.filter((lz) =>
+    paketIdsFuerEinheit.includes(lz.lernpaket_id)
+  );
+  
+  // Gruppiere nach Themenfeld
   const themenfeldMitLernzielen = themenfelder.map((tf) => ({
     themenfeld: tf,
-    lernziele: alleLernziele.filter((lz) => {
+    lernziele: alleLernzieleEinheit.filter((lz) => {
       const paket = paketeFuerEinheit.find((p) => p.id === lz.lernpaket_id);
       return paket?.themenfeld_id === tf.id;
     }),
   }));
+  
+  // Lernziele ohne Themenfeld
+  const lernzieleOhneThemenfeld = alleLernzieleEinheit.filter((lz) => {
+    const paket = paketeFuerEinheit.find((p) => p.id === lz.lernpaket_id);
+    return !paket?.themenfeld_id;
+  });
+  
+  // Nur non-empty Gruppen + optional ohne Themenfeld
+  const themenfeldMitLernzielenGefiltert = [
+    ...themenfeldMitLernzielen.filter((item) => item.lernziele.length > 0),
+    ...(lernzieleOhneThemenfeld.length > 0
+      ? [{ themenfeld: { id: '_none', titel: 'Ohne Themenfeld' }, lernziele: lernzieleOhneThemenfeld }]
+      : [])
+  ];
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
@@ -294,21 +316,19 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
                   <h3 className="text-sm font-semibold">Verfügbare Kompetenzen</h3>
                 </div>
                 <div className="flex-1 overflow-y-auto p-3 space-y-3">
-                  {themenfeldMitLernzielen.length === 0 ? (
+                  {themenfeldMitLernzielenGefiltert.length === 0 ? (
                     <p className="text-xs text-muted-foreground text-center py-4">
                       Keine Kompetenzen vorhanden
                     </p>
                   ) : (
-                    themenfeldMitLernzielen
-                      .filter((item) => item.lernziele.length > 0)
-                      .map((item) => (
-                        <div key={item.themenfeld.id}>
-                          <ThemenfeldGroup
-                            themenfeld={item.themenfeld}
-                            lernziele={item.lernziele}
-                          />
-                        </div>
-                      ))
+                    themenfeldMitLernzielenGefiltert.map((item) => (
+                      <div key={item.themenfeld.id}>
+                        <ThemenfeldGroup
+                          themenfeld={item.themenfeld}
+                          lernziele={item.lernziele}
+                        />
+                      </div>
+                    ))
                   )}
                   {provided.placeholder}
                 </div>
