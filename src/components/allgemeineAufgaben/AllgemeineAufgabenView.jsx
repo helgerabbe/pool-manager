@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { Plus, Star, FileText, ChevronRight, Edit, Trash2 } from 'lucide-react';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 import AufgabeKompetenzMapping from '@/components/allgemeineAufgaben/AufgabeKompetenzMapping';
+import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
 
 /**
  * Schwierigkeitsgrad-Anzeige (1-3 Sterne)
@@ -204,6 +205,33 @@ export default function AllgemeineAufgabenView({
       base44.entities.Themenfeld.filter({ einheit_id: einheitId }),
   });
 
+  const { data: lernpakete = [] } = useQuery({
+    queryKey: ['lernpakete'],
+    queryFn: () => base44.entities.Lernpakete.list(),
+  });
+
+  const { data: mappedLernziele = [] } = useQuery({
+    queryKey: ['allgemeineAufgabeMappings', selectedAufgabeId],
+    queryFn: () =>
+      selectedAufgabeId
+        ? base44.entities.AllgemeineAufgabeLernzielMapping.filter({
+            aufgabe_id: selectedAufgabeId,
+          })
+        : Promise.resolve([]),
+    enabled: !!selectedAufgabeId,
+  });
+
+  const { data: alleLernziele = [] } = useQuery({
+    queryKey: ['lernziele'],
+    queryFn: () => base44.entities.Lernziele.list(),
+  });
+
+  const getMappedLernziele = () => {
+    return mappedLernziele
+      .map((m) => alleLernziele.find((lz) => lz.id === m.lernziel_id))
+      .filter(Boolean);
+  };
+
   // Delete-Mutation
   const deleteAufgabe = useMutation({
     mutationFn: (id) => base44.entities.AllgemeineAufgabe.delete(id),
@@ -288,6 +316,7 @@ export default function AllgemeineAufgabenView({
               <TabsList className="mx-6 mt-3 bg-muted">
                 <TabsTrigger value="angaben" className="text-xs">Angaben</TabsTrigger>
                 <TabsTrigger value="kompetenzen" className="text-xs">Kompetenzen</TabsTrigger>
+                <TabsTrigger value="ki-prompt" className="text-xs">KI-Tutor Prompt</TabsTrigger>
               </TabsList>
 
               {/* Tab 1: Allgemeine Angaben */}
@@ -306,13 +335,22 @@ export default function AllgemeineAufgabenView({
 
               {/* Tab 2: Kompetenz-Zuordnung */}
               <TabsContent value="kompetenzen" className="flex-1 overflow-hidden m-0">
-                <AufgabeKompetenzMapping
-                  aufgabe={selectedAufgabe}
-                  einheitId={einheitId}
-                  onComplete={() => {}}
-                />
+               <AufgabeKompetenzMapping
+                 aufgabe={selectedAufgabe}
+                 einheitId={einheitId}
+                 onComplete={() => {}}
+               />
               </TabsContent>
-            </Tabs>
+
+              {/* Tab 3: KI-Tutor Prompt */}
+              <TabsContent value="ki-prompt" className="flex-1 overflow-y-auto m-0">
+               <AITutorPromptPanel
+                 aufgabe={selectedAufgabe}
+                 mappedLernziele={getMappedLernziele()}
+                 lernpakete={lernpakete}
+               />
+              </TabsContent>
+              </Tabs>
           </main>
         ) : (
           <main className="flex-1 flex items-center justify-center text-center">
