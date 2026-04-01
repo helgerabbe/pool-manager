@@ -344,11 +344,12 @@ export default function AllgemeineAufgabenView({
 
               {/* Tab 3: KI-Tutor Prompt */}
               <TabsContent value="ki-prompt" className="flex-1 overflow-y-auto m-0">
-               <AITutorPromptPanel
-                 aufgabe={selectedAufgabe}
-                 mappedLernziele={getMappedLernziele()}
-                 lernpakete={lernpakete}
-               />
+                <AITutorPromptPanel
+                  aufgabe={selectedAufgabe}
+                  mappedLernziele={getMappedLernziele()}
+                  lernpakete={lernpakete}
+                  einheit={einheit}
+                />
               </TabsContent>
               </Tabs>
           </main>
