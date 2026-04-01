@@ -10,7 +10,7 @@ import TransferSaeule from '@/components/workspace/TransferSaeule';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Layers, Zap, FolderOpen } from 'lucide-react';
+import { BookOpen, Layers, ClipboardList, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 
@@ -222,7 +222,7 @@ export default function Workspace() {
               }
               </TabsTrigger>
               <TabsTrigger value="transfer" className="bg-yellow-200 mx-5 px-3 py-1 text-xs font-medium rounded-md inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow gap-1.5">
-                <Zap className="w-3.5 h-3.5" />
+                <ClipboardList className="w-3.5 h-3.5" />
                 Allgemeine Aufgaben
                 {transferCount > 0 &&
               <span className="ml-1 px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">

@@ -77,32 +77,29 @@ function BausteinNode({ aufgabe, selectedId, onSelect, userEmail, mappings }) {
 // ── Tree-Node: Phase (Level 2) ────────────────────────────────────────────────
 
 function PhaseNode({ phase, phaseLabel, paket, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, aktivitaetenMap }) {
-  const isSelected       = selectedId === `phase-${paket.id}-${phase}`;
-  const phasenConfig     = paket.phasen_konfiguration?.[phase] || {};
-  const isDisabled       = phasenConfig.disabled === true;
-  const hasAktivitaet    = !!phasenConfig.selected_aktivitaet_id;
-  const aktivitaetName   = hasAktivitaet ? (aktivitaetenMap?.[phasenConfig.selected_aktivitaet_id] || '…') : null;
-  const aktivitaetId     = `aktivitaet-${paket.id}-${phase}`;
+  const isSelected           = selectedId === `phase-${paket.id}-${phase}`;
+  const phasenConfig         = paket.phasen_konfiguration?.[phase] || {};
+  const isDisabled           = phasenConfig.disabled === true;
+  const hasAktivitaet        = !!phasenConfig.selected_aktivitaet_id;
+  const aktivitaetName       = hasAktivitaet ? (aktivitaetenMap?.[phasenConfig.selected_aktivitaet_id] || '…') : null;
+  const aktivitaetId         = `aktivitaet-${paket.id}-${phase}`;
   const isAktivitaetSelected = selectedId === aktivitaetId;
-  const [open, setOpen]  = useState(hasAktivitaet);
+  const [open, setOpen]      = useState(false);
 
   return (
     <div>
       <div className="flex items-center gap-0.5">
-        {hasAktivitaet && (
-          <button
-            onClick={() => setOpen(o => !o)}
-            className="p-0.5 text-muted-foreground hover:text-foreground shrink-0"
-          >
-            <ChevronRight className={cn('w-3 h-3 transition-transform', open && 'rotate-90')} />
-          </button>
-        )}
+        <button
+          onClick={() => setOpen(o => !o)}
+          className="p-0.5 text-muted-foreground hover:text-foreground shrink-0"
+        >
+          <ChevronRight className={cn('w-3 h-3 transition-transform', open && 'rotate-90')} />
+        </button>
         <button
           onClick={() => !isDisabled && onSelect({ type: 'phase', id: `phase-${paket.id}-${phase}`, phase, paketId: paket.id, data: paket })}
           disabled={isDisabled}
           className={cn(
             'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
-            !hasAktivitaet && 'ml-3.5',
             isSelected
               ? 'bg-primary text-primary-foreground'
               : isDisabled
@@ -122,28 +119,34 @@ function PhaseNode({ phase, phaseLabel, paket, aufgaben, selectedId, onSelect, k
         </button>
       </div>
 
-      {/* Aktivitäts-Sub-Node */}
-      {open && hasAktivitaet && (
+      {/* Aktivitäts-Sub-Node (immer aufklappbar) */}
+      {open && (
         <div className="ml-6 mt-0.5 border-l border-border pl-2">
-          <button
-            onClick={() => onSelect({
-              type: 'aktivitaet-edit',
-              id: aktivitaetId,
-              phase,
-              paketId: paket.id,
-              aktivitaetId: phasenConfig.selected_aktivitaet_id,
-            })}
-            className={cn(
-              'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-[11px] transition-colors',
-              isAktivitaetSelected
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            )}
-          >
-            <Puzzle className="w-3 h-3 shrink-0" />
-            <span className="truncate flex-1">{aktivitaetName}</span>
-            <Edit className="w-3 h-3 shrink-0 opacity-50" />
-          </button>
+          {hasAktivitaet ? (
+            <button
+              onClick={() => onSelect({
+                type: 'aktivitaet-edit',
+                id: aktivitaetId,
+                phase,
+                paketId: paket.id,
+                aktivitaetId: phasenConfig.selected_aktivitaet_id,
+              })}
+              className={cn(
+                'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-[11px] transition-colors',
+                isAktivitaetSelected
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              )}
+            >
+              <Puzzle className="w-3 h-3 shrink-0" />
+              <span className="truncate flex-1">{aktivitaetName}</span>
+              <Edit className="w-3 h-3 shrink-0 opacity-50" />
+            </button>
+          ) : (
+            <p className="px-2 py-1.5 text-[11px] text-muted-foreground/50 italic">
+              {isDisabled ? 'Phase deaktiviert' : 'Keine Aktivität zugeordnet'}
+            </p>
+          )}
         </div>
       )}
     </div>
