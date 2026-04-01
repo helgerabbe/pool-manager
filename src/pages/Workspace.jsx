@@ -221,7 +221,7 @@ export default function Workspace() {
   const projektCount = aufgabenFuerEinheit.filter((a) => a.anforderungsebene === '3 - Projekt').length;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] -mx-4 sm:-mx-6 lg:-mx-8 -my-8">
+    <div className="flex flex-col h-full w-full bg-background">
 
       {/* ── Structural-Lock-Banner ───────────────────────────────────────────── */}
       {structLocked && (
@@ -245,7 +245,7 @@ export default function Workspace() {
       )}
 
       {/* ── Top-Bar: nur Einheiten-Selector ─────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-4 py-2 border-b border-border bg-card shrink-0 flex-wrap gap-y-1">
+      <div className="flex items-center gap-3 px-4 sm:px-6 lg:px-8 py-2 border-b border-border bg-card shrink-0 flex-wrap gap-y-1">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-sm text-muted-foreground shrink-0 hidden sm:inline">Einheit:</span>
           <Select value={selectedEinheitId || ''} onValueChange={handleEinheitChange}>
@@ -292,7 +292,7 @@ export default function Workspace() {
 
       {/* ── Haupt-Inhalt ─────────────────────────────────────────────────────── */}
       {!einheit ?
-      <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center">
+      <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center overflow-hidden min-h-0">
           <BookOpen className="w-12 h-12 text-muted-foreground/30" />
           <div>
             <p className="font-semibold">Einheit auswählen</p>
@@ -314,10 +314,10 @@ export default function Workspace() {
       <Tabs
         value={activeTab}
         onValueChange={(tab) => {setActiveTab(tab);setHighlightedAtomIds(new Set());}}
-        className="flex flex-col flex-1 overflow-hidden">
+        className="flex flex-col flex-1 overflow-hidden min-h-0">
         
           {/* Tab-Leiste */}
-          <div className="px-4 pt-2 border-b border-border bg-card shrink-0">
+          <div className="px-4 sm:px-6 lg:px-8 pt-2 border-b border-border bg-card shrink-0">
             <TabsList className="bg-muted text-muted-foreground my-3 pt-1 pr-4 pb-1 pl-4 rounded-lg inline-flex items-center justify-center h-9">
               <TabsTrigger value="basis" className="bg-lime-200 px-3 py-1 text-xs font-medium rounded-md inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow gap-1.5">
                 <Layers className="w-3.5 h-3.5" />
@@ -371,8 +371,8 @@ export default function Workspace() {
             </aside>
 
             {/* Detail-Panel */}
-            <main className="flex-1 overflow-y-auto">
-              <div className="max-w-3xl mx-auto px-6 py-6">
+            <main className="flex-1 overflow-y-auto min-h-0">
+              <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <WorkspaceDetailPanel
                 selectedNode={selectedNode}
                 einheit={einheit}
