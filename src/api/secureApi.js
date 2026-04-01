@@ -167,12 +167,55 @@ export async function publishEinheit(einheitId, targetStatus = 'Freigegeben für
 }
 
 /**
+ * Phase 6.5: Aggregations-Endpoint für Workspace-Daten (löst N+1 Problem)
+ *
+ * @param {string} einheitId - Die ID der Einheit
+ * @returns {Promise<{success: boolean, data: {einheit, themenfelder, _flat}}>}
+ * @throws {SecureApiError} Bei Fehler (403 Forbidden, 404 Not Found, etc.)
+ *
+ * @example
+ * const { data } = await secureApi.getWorkspaceData('einheit-123');
+ * // Rückgabe: hierarchische Struktur mit Themenfeldern → Lernpakete → Lernziele → Aufgaben
+ * data.themenfelder.forEach(tf => {
+ *   tf.lernpakete.forEach(paket => {
+ *     paket.lernziele.forEach(ziel => {
+ *       ziel.aufgaben.forEach(aufgabe => { ... });
+ *     });
+ *   });
+ * });
+ *
+ * // Flat lookup tables für schnelle Lookups
+ * const paket = data._flat.lernpakete.find(p => p.id === 'id-123');
+ */
+export async function getWorkspaceData(einheitId) {
+  if (!einheitId) {
+    throw new Error('einheitId is required');
+  }
+
+  try {
+    const response = await base44.functions.invoke(
+      'getWorkspaceEinheitDataSecure',
+      { einheit_id: einheitId }
+    );
+    return response.data;
+  } catch (error) {
+    const status = error.response?.status || 500;
+    const errorData = error.response?.data || {};
+    const message = errorData.error || error.message || 'Unknown error';
+
+    throw new SecureApiError(status, message);
+  }
+}
+
+/**
  * Alle Funktionen als Objekt exportieren (alternative API)
  */
 export const secureApi = {
   deleteEinheit,
   createEinheit,
   updateEinheit,
+  publishEinheit,
+  getWorkspaceData,
 };
 
 export default secureApi;
