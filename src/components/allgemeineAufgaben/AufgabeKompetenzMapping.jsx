@@ -263,16 +263,22 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
     }
   };
 
-  // Gruppiere alle Lernziele der Einheit nach Themenfeld + unzugeordnete
+  // Filtere ALLE Lernziele der Einheit (unabhängig vom Themenfeld)
+  const lernzieleDeEinheit = alleLernziele.filter((lz) => {
+    const paket = lernpakete.find((p) => p.id === lz.lernpaket_id);
+    return paket?.einheit_id === einheitId;
+  });
+
+  // Gruppiere diese nach Themenfeld
   const themenfeldMitLernzielen = themenfelder.map((tf) => ({
     themenfeld: tf,
-    lernziele: alleLernziele.filter((lz) => {
+    lernziele: lernzieleDeEinheit.filter((lz) => {
       const paket = lernpakete.find((p) => p.id === lz.lernpaket_id);
-      return paket?.einheit_id === einheitId && paket?.themenfeld_id === tf.id;
+      return paket?.themenfeld_id === tf.id;
     })
   }));
 
-  // Füge unzugeordnete Lernziele hinzu (ohne Lernpaket oder Lernpaket existiert nicht)
+  // Unzugeordnete: Lernziele ohne Lernpaket oder Lernpaket nicht in Einheit
   const unzugeordneteLernziele = alleLernziele.filter((lz) => {
     const paket = lernpakete.find((p) => p.id === lz.lernpaket_id);
     return !paket || paket.einheit_id !== einheitId;
