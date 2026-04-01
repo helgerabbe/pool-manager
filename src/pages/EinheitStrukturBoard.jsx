@@ -478,10 +478,10 @@ export default function EinheitStrukturBoard() {
   const zugeordnet   = spalten.reduce((n, s) => n + (paketeMap[s.id]?.length || 0), 0);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] -mx-4 sm:-mx-6 lg:-mx-8 -my-8">
+    <div className="flex flex-col h-full w-full">
 
       {/* ── Top-Bar ── */}
-      <div className="shrink-0 px-6 py-4 border-b-2 border-border bg-card shadow-sm flex items-center justify-between gap-4 flex-wrap">
+      <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-4 border-b-2 border-border bg-card shadow-sm flex items-center justify-between gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold leading-tight text-foreground">{einheit?.titel_der_einheit}</h1>
@@ -532,21 +532,21 @@ export default function EinheitStrukturBoard() {
 
       {/* ── Structural-Lock-Banner oder Readonly-Banner ── */}
       {kannStrukturBearbeiten ? (
-        <div className="shrink-0 px-6 py-3 bg-blue-100 border-b-2 border-blue-300 text-sm text-blue-900 flex items-center gap-3 font-medium">
+        <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-3 bg-blue-100 border-b-2 border-blue-300 text-sm text-blue-900 flex items-center gap-3 font-medium">
           <Lock className="w-4 h-4 shrink-0 text-blue-700" />
           <span>
             <strong>✓ Struktur-Editiermodus aktiv</strong> — Andere Nutzer können bestehende Inhalte weiter speichern, aber keine neuen Bearbeitungssitzungen starten.
           </span>
         </div>
       ) : (
-        <div className="shrink-0 px-6 py-3 bg-slate-100 border-b-2 border-slate-300 text-sm text-slate-900 flex items-center gap-3 font-medium">
+        <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-3 bg-slate-100 border-b-2 border-slate-300 text-sm text-slate-900 flex items-center gap-3 font-medium">
           <Lock className="w-4 h-4 shrink-0 text-slate-700" />
           <span><strong>🔒 Nur-Lese-Ansicht</strong> — Struktur-Änderungen erfordern die Rolle Fachschaftsleitung oder Administrator.</span>
         </div>
       )}
 
       {/* ── Hinweis-Banner ── */}
-      <div className="shrink-0 px-6 py-3 bg-amber-100 border-b-2 border-amber-300 text-sm text-amber-900 flex items-center gap-3 font-medium">
+      <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-3 bg-amber-100 border-b-2 border-amber-300 text-sm text-amber-900 flex items-center gap-3 font-medium">
         <FolderOpen className="w-4 h-4 shrink-0 text-amber-700" />
         <span>
           <strong>💡 Tipp:</strong> Ziehen Sie Lernpakete in die passenden Themenfelder. Pakete mit <Lock className="w-4 h-4 inline text-amber-700 mx-1" /> werden gerade bearbeitet.
@@ -554,7 +554,7 @@ export default function EinheitStrukturBoard() {
       </div>
 
       {/* ── Board ── */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden">
+      <div className="flex-1 overflow-x-auto overflow-y-hidden min-h-0">
         <DragDropContext onDragEnd={handleDragEnd}>
           <div className="flex gap-4 h-full p-4 min-w-max">
 

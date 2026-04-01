@@ -90,7 +90,7 @@ export default function EinheitViewManager() {
   // RENDER — Strikte vertikale Stacking-Hierarchie
   // ════════════════════════════════════════════════════════════════════════════
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] w-full bg-background">
+    <div className="flex flex-col h-screen w-full bg-background">
 
       {/* Container 1: UnitToolbar (Sub-Header) ────────────────────────────────── */}
       <UnitToolbar
@@ -102,8 +102,8 @@ export default function EinheitViewManager() {
 
       {/* Container 2: Hinweis-Banner (Struktur-Lock / Optional) ──────────────── */}
       {structLocked && (
-        <div className="px-4 sm:px-6 lg:px-8 py-2 bg-orange-50 border-b border-orange-200">
-          <p className="text-xs text-orange-800">
+        <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-3 bg-orange-100 border-b-2 border-orange-300">
+          <p className="text-sm font-medium text-orange-900">
             <strong>⚠️ Struktur wird gerade bearbeitet</strong> — von {einheit?.structural_lock}. 
             Bestehende Inhalte können gespeichert werden.
           </p>
@@ -111,7 +111,7 @@ export default function EinheitViewManager() {
       )}
 
       {/* Container 3: Main Content (Kanban-Board oder Workspace) ──────────────── */}
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 overflow-hidden min-h-0">
         {viewMode === 'struktur' ? (
           // ── Struktur-Ansicht: Kanban-Board mit Themenfeldern + Lernpaketen ──
           <EinheitStrukturBoard
