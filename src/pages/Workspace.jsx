@@ -359,7 +359,7 @@ export default function Workspace() {
                   </span>
               }
               </TabsTrigger>
-              <TabsTrigger value="lernlandkarte" className="bg-pink-200 text-slate-600 ml-1 pt-1 pr-3 pb-1 pl-4 text-xs font-medium rounded-md inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow gap-1.5">
+              <TabsTrigger value="lernlandkarte" className="bg-pink-200 text-slate-600 ml-4 pt-1 pr-3 pb-1 pl-4 text-xs font-medium rounded-md inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow gap-1.5">
                 <BookOpen className="w-3.5 h-3.5" />
                 Lernlandkarte
               </TabsTrigger>
