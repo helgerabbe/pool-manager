@@ -1,11 +1,12 @@
 /**
  * MoodleExportManager.jsx
  *
- * Selective Export Manager für Moodle-Daten
+ * Selective Export Manager für Moodle-Daten mit Delta-Unterstützung
  * - Filtert Einheiten & Basismodule nach Freigabe-Status + Delta-Status
  * - Checkbox-basierte Selektion (alle standardmäßig checked)
  * - Gruppiert Anzeige nach Entity-Typ
- * - Generiert Export-Payload nur für ausgewählte Elemente
+ * - Generiert Export-Payload mit optionaler Delta-Logik
+ * - Zeigt Warn-Banner bei nachträglichen Änderungen
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -29,19 +30,18 @@ import {
   RotateCw,
   Clock,
   Check,
+  Zap,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatExportDate } from '@/lib/statusLogic';
+import { generateDeltaPayload } from '@/lib/deltaPayloadGenerator';
+import SyncWarningBanner from '@/components/sync/SyncWarningBanner';
 
 // ── Filter-Helper: Exportierbare Einheiten ────────────────────────────────────
 
 function filterExportableEinheiten(einheiten = []) {
   return einheiten.filter((e) => {
-    // Bedingung 1: Status ist "Freigegeben für Moodle"
     const isFreigegeben = e.freigabe_status === 'Freigegeben für Moodle';
-
-    // Bedingung 2: Entweder noch nie exportiert (last_synced_at null)
-    //             oder älter als updated_at (Delta vorhanden)
     const hasSync = e.last_synced_at !== null && e.last_synced_at !== undefined;
     const isOutdated =
       !hasSync ||
@@ -63,7 +63,7 @@ function filterExportableBasismodule(basismodule = []) {
   });
 }
 
-// ── Status-Badge: Neu vs. Update vs. Exportiert ──────────────────────────────
+// ── Status-Badge ──────────────────────────────────────────────────────
 
 function ExportStatusBadge({ item, isBasismodul = false }) {
   const isNew = !item.last_synced_at;
@@ -136,35 +136,40 @@ function ExportItemRow({ item, isSelected, onToggle, isBasismodul = false, onCon
   const exportDate = item.last_exported_at ? formatExportDate(item.last_exported_at) : null;
 
   return (
-    <div className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
-      <Checkbox
-        checked={isSelected}
-        onCheckedChange={onToggle}
-        className="mt-1 shrink-0"
-      />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{title}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
-        {exportDate && (
-          <p className="text-xs text-slate-600 mt-2">
-            💾 Zuletzt exportiert: {exportDate}
-          </p>
-        )}
+    <div className="space-y-2">
+      <div className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+        <Checkbox
+          checked={isSelected}
+          onCheckedChange={onToggle}
+          className="mt-1 shrink-0"
+        />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium truncate">{title}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+          {exportDate && (
+            <p className="text-xs text-slate-600 mt-2">
+              💾 Zuletzt exportiert: {exportDate}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <ExportStatusBadge item={item} isBasismodul={isBasismodul} />
+          {isExportedWaitingSync && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onConfirmSync(item.id)}
+              className="h-7 text-xs gap-1"
+            >
+              <Check className="w-3 h-3" />
+              Sync OK
+            </Button>
+          )}
+        </div>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <ExportStatusBadge item={item} isBasismodul={isBasismodul} />
-        {isExportedWaitingSync && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onConfirmSync(item.id)}
-            className="h-7 text-xs gap-1"
-          >
-            <Check className="w-3 h-3" />
-            Sync OK
-          </Button>
-        )}
-      </div>
+
+      {/* Warn-Banner: Nach Export erneut geändert */}
+      <SyncWarningBanner item={item} isBasismodul={isBasismodul} />
     </div>
   );
 }
@@ -176,6 +181,7 @@ export default function MoodleExportManager({ open, onOpenChange }) {
   const [selectedEinheitIds, setSelectedEinheitIds] = useState(new Set());
   const [selectedBasismodulIds, setSelectedBasismodulIds] = useState(new Set());
   const [isExporting, setIsExporting] = useState(false);
+  const [deltaMode, setDeltaMode] = useState(false); // Toggle für Delta vs. Full
 
   // Fetch Daten
   const { data: allEinheiten = [], refetch: refetchEinheiten } = useQuery({
@@ -186,6 +192,26 @@ export default function MoodleExportManager({ open, onOpenChange }) {
   const { data: allBasismodule = [], refetch: refetchBasismodule } = useQuery({
     queryKey: ['basismodule'],
     queryFn: () => base44.entities.Basismodule.list(),
+  });
+
+  const { data: allLernpakete = [] } = useQuery({
+    queryKey: ['lernpakete'],
+    queryFn: () => base44.entities.Lernpakete.list(),
+  });
+
+  const { data: allLernziele = [] } = useQuery({
+    queryKey: ['lernziele'],
+    queryFn: () => base44.entities.Lernziele.list(),
+  });
+
+  const { data: allAufgaben = [] } = useQuery({
+    queryKey: ['aufgaben'],
+    queryFn: () => base44.entities.Aufgabenbausteine.list(),
+  });
+
+  const { data: allThemenfelder = [] } = useQuery({
+    queryKey: ['themenfelder'],
+    queryFn: () => base44.entities.Themenfeld.list(),
   });
 
   // Mutations für Sync-Bestätigung
@@ -278,7 +304,7 @@ export default function MoodleExportManager({ open, onOpenChange }) {
     }
   };
 
-  // Export-Logik: Payload generieren + last_exported_at setzen
+  // Export-Logik mit Delta-Unterstützung
   const handleGenerateExport = async () => {
     if (selectedEinheitIds.size === 0 && selectedBasismodulIds.size === 0) {
       toast.error('Bitte wählen Sie mindestens ein Element zum Exportieren aus.');
@@ -288,7 +314,6 @@ export default function MoodleExportManager({ open, onOpenChange }) {
     setIsExporting(true);
 
     try {
-      // Sammle ausgewählte Daten
       const selectedEinheitenData = exportableEinheiten.filter((e) =>
         selectedEinheitIds.has(e.id)
       );
@@ -297,36 +322,42 @@ export default function MoodleExportManager({ open, onOpenChange }) {
       );
 
       const nowTimestamp = new Date().toISOString();
+      let totalChangedCount = 0;
+      const einheitPayloads = [];
 
-      // ✅ Setze last_exported_at für alle ausgewählten Einheiten
-      await Promise.all([
-        ...selectedEinheitenData.map((e) =>
-          base44.entities.Einheiten.update(e.id, {
-            last_exported_at: nowTimestamp,
-          })
-        ),
-        ...selectedBasismoduleData.map((b) =>
-          base44.entities.Basismodule.update(b.id, {
-            last_exported_at: nowTimestamp,
-          })
-        ),
-      ]);
+      // ── EINHEITEN: Mit Delta-Logik ──
+      for (const einheit of selectedEinheitenData) {
+        try {
+          const deltaPayload = generateDeltaPayload(
+            einheit,
+            allLernpakete,
+            allLernziele,
+            allAufgaben,
+            allThemenfelder,
+            einheit.last_exported_at,
+            deltaMode // true = nur Delta, false = alles
+          );
 
-      // Erstelle Export-Payload
-      const exportPayload = {
+          einheitPayloads.push(deltaPayload);
+          totalChangedCount += deltaPayload.statistics.total_changed_count;
+
+          // ✅ Setze last_exported_at
+          await base44.entities.Einheiten.update(einheit.id, {
+            last_exported_at: nowTimestamp,
+          });
+        } catch (validationError) {
+          console.warn(`Validierungsfehler für Einheit ${einheit.id}:`, validationError);
+          toast.error(
+            `Validierungsfehler für "${einheit.titel_der_einheit}": ${validationError.message}`
+          );
+          throw validationError;
+        }
+      }
+
+      // ── BASISMODULE: Full-Export ──
+      const basismodulePayload = {
         timestamp: nowTimestamp,
-        export_type: 'moodle_selective_delta',
-        einheiten: selectedEinheitenData.map((e) => ({
-          id: e.id,
-          titel_der_einheit: e.titel_der_einheit,
-          fach: e.fach,
-          jahrgangsstufe: e.jahrgangsstufe,
-          gesamtziel: e.gesamtziel,
-          freigabe_status: e.freigabe_status,
-          updated_date: e.updated_date,
-          last_synced_at: e.last_synced_at,
-          last_exported_at: nowTimestamp,
-        })),
+        export_type: 'basismodule',
         basismodule: selectedBasismoduleData.map((b) => ({
           id: b.id,
           fach: b.fach,
@@ -338,31 +369,52 @@ export default function MoodleExportManager({ open, onOpenChange }) {
           last_exported_at: nowTimestamp,
         })),
         statistics: {
-          einheiten_count: selectedEinheitenData.length,
           basismodule_count: selectedBasismoduleData.length,
-          total_count:
-            selectedEinheitenData.length + selectedBasismoduleData.length,
         },
       };
 
-      // Download als JSON-Datei
-      const dataStr = JSON.stringify(exportPayload, null, 2);
+      // ✅ Setze last_exported_at für Basismodule
+      await Promise.all(
+        selectedBasismoduleData.map((b) =>
+          base44.entities.Basismodule.update(b.id, {
+            last_exported_at: nowTimestamp,
+          })
+        )
+      );
+
+      // ── Kombiniere Payloads ──
+      const combinedPayload = {
+        timestamp: nowTimestamp,
+        export_type: deltaMode ? 'moodle_delta_combined' : 'moodle_full_combined',
+        is_delta_export: deltaMode,
+        einheiten: einheitPayloads,
+        basismodule: basismodulePayload,
+        statistics: {
+          einheiten_count: selectedEinheitenData.length,
+          basismodule_count: selectedBasismoduleData.length,
+          total_changed_count:
+            totalChangedCount + selectedBasismoduleData.length,
+        },
+      };
+
+      // ── Download JSON-Datei ──
+      const dataStr = JSON.stringify(combinedPayload, null, 2);
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
       const url = URL.createObjectURL(dataBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `moodle-export-${new Date().toISOString().split('T')[0]}.json`;
+      link.download = `moodle-export-${deltaMode ? 'delta-' : ''}${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      // Refresh Daten
+      // ── Refresh Daten ──
       refetchEinheiten();
       refetchBasismodule();
 
       toast.success(
-        `${exportPayload.statistics.total_count} Element(e) exportiert.`
+        `${deltaMode ? 'Delta-' : ''}Export erfolgreich: ${combinedPayload.statistics.total_changed_count} Element(e).`
       );
       onOpenChange(false);
     } catch (error) {
@@ -388,14 +440,32 @@ export default function MoodleExportManager({ open, onOpenChange }) {
   // Render
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Moodle Export Manager</DialogTitle>
           <DialogDescription>
-            Wählen Sie die Einheiten und Basismodule aus, die exportiert werden
-            sollen.
+            Wählen Sie die Einheiten und Basismodule aus, die exportiert werden sollen.
           </DialogDescription>
         </DialogHeader>
+
+        {/* Delta-Mode Toggle */}
+        <div className="flex items-center gap-3 px-6 py-3 rounded-lg bg-slate-50 border border-slate-200">
+          <Zap className="w-4 h-4 text-slate-500" />
+          <label className="flex items-center gap-2 cursor-pointer flex-1">
+            <input
+              type="checkbox"
+              checked={deltaMode}
+              onChange={(e) => setDeltaMode(e.target.checked)}
+              className="w-4 h-4 rounded"
+            />
+            <span className="text-sm font-medium text-slate-700">
+              Nur Delta-Änderungen exportieren
+            </span>
+          </label>
+          <span className="text-xs text-muted-foreground">
+            {deltaMode ? 'Nur neue/geänderte Inhalte' : 'Vollständige Daten'}
+          </span>
+        </div>
 
         {/* Info-Banner */}
         {exportableEinheiten.length === 0 && exportableBasismodule.length === 0 ? (
@@ -422,7 +492,7 @@ export default function MoodleExportManager({ open, onOpenChange }) {
                   onToggleAll={toggleAllEinheiten}
                   count={exportableEinheiten.length}
                 />
-                <div className="space-y-2 pl-2">
+                <div className="space-y-3 pl-2">
                   {exportableEinheiten.map((einheit) => (
                     <ExportItemRow
                       key={einheit.id}
@@ -449,7 +519,7 @@ export default function MoodleExportManager({ open, onOpenChange }) {
                   onToggleAll={toggleAllBasismodule}
                   count={exportableBasismodule.length}
                 />
-                <div className="space-y-2 pl-2">
+                <div className="space-y-3 pl-2">
                   {exportableBasismodule.map((basismodul) => (
                     <ExportItemRow
                       key={basismodul.id}

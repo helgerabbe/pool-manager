@@ -22,6 +22,7 @@ import {
   Clock, Lock, Unlock, AlertCircle, CheckCircle2, ArrowDown,
   TrendingUp, AlertTriangle, Eye, AlertTriangle as WarningIcon, UserCheck, PenLine
 } from 'lucide-react';
+import SyncWarningBanner from '@/components/sync/SyncWarningBanner';
 import { useLernpaketLock } from '@/hooks/useLernpaketLock';
 import { isPaketLocked } from '@/lib/statusLogic';
 
@@ -236,6 +237,9 @@ function EinheitPanel({ einheit, lernpakete, lernziele, aufgaben, themenfelder =
 
   return (
     <div className="space-y-6">
+      {/* Warn-Banner: Nach Export erneut geändert */}
+      <SyncWarningBanner item={einheit} isBasismodul={false} />
+
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-xl font-bold">{einheit.titel_der_einheit}</h2>
