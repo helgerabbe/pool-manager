@@ -3,10 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { Plus, Search, Star, FileText, ChevronRight, Edit, Trash2 } from 'lucide-react';
+import { Plus, Star, FileText, ChevronRight, Edit, Trash2 } from 'lucide-react';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 import AufgabeKompetenzMapping from '@/components/allgemeineAufgaben/AufgabeKompetenzMapping';
 
@@ -190,7 +189,6 @@ export default function AllgemeineAufgabenView({
 }) {
   const queryClient = useQueryClient();
   const [selectedAufgabeId, setSelectedAufgabeId] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [createFormOpen, setCreateFormOpen] = useState(false);
   const [editingAufgabe, setEditingAufgabe] = useState(null);
 
@@ -223,15 +221,7 @@ export default function AllgemeineAufgabenView({
     },
   });
 
-  // Filterung & Gruppierung
-  const gefiltert = useMemo(() => {
-    const lower = searchTerm.toLowerCase();
-    return allgemeineAufgaben.filter(a =>
-      a.titel?.toLowerCase().includes(lower) ||
-      a.aufgabenstellung?.toLowerCase().includes(lower)
-    );
-  }, [allgemeineAufgaben, searchTerm]);
-
+  // Gruppierung nach Themenfeld
   const gruppiertNachThemenfeld = useMemo(() => {
     const gruppen = {};
 
@@ -244,7 +234,7 @@ export default function AllgemeineAufgabenView({
     gruppen['_none'] = { titel: 'Ohne Themenfeld', aufgaben: [], themenfeld: null };
 
     // Aufgaben verteilen
-    gefiltert.forEach(aufgabe => {
+    allgemeineAufgaben.forEach(aufgabe => {
       const key = aufgabe.themenfeld_id || '_none';
       if (gruppen[key]) {
         gruppen[key].aufgaben.push(aufgabe);
@@ -252,56 +242,37 @@ export default function AllgemeineAufgabenView({
     });
 
     return Object.values(gruppen).filter(g => g.aufgaben.length > 0);
-  }, [gefiltert, themenfelder]);
+  }, [allgemeineAufgaben, themenfelder]);
 
   const selectedAufgabe = allgemeineAufgaben.find(a => a.id === selectedAufgabeId);
 
   return (
     <div className="flex flex-col flex-1 h-full bg-background overflow-hidden">
-      {/* Header */}
-      <div className="shrink-0 px-6 py-4 border-b border-border bg-card space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Allgemeine Aufgaben</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {einheit?.fach} • {einheit?.titel_der_einheit}
-            </p>
-          </div>
-          {kannBearbeiten && (
-            <Button
-              size="sm"
-              onClick={() => {
-                setEditingAufgabe(null);
-                setCreateFormOpen(true);
-              }}
-              className="gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Neue Aufgabe
-            </Button>
-          )}
-        </div>
-
-        {/* Suchfeld */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Nach Aufgaben suchen..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 h-8 text-sm"
-          />
-        </div>
-      </div>
-
       {/* Two-Column Layout */}
       <div className="flex flex-1 overflow-hidden">
         {/* Linke Spalte: Sidebar mit Baumstruktur */}
         <aside className="w-80 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden">
+          {/* Button für neue Aufgabe */}
+          {kannBearbeiten && (
+            <div className="shrink-0 px-4 py-3 border-b border-border">
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEditingAufgabe(null);
+                  setCreateFormOpen(true);
+                }}
+                className="gap-2 w-full"
+              >
+                <Plus className="w-4 h-4" />
+                Neue Aufgabe
+              </Button>
+            </div>
+          )}
+
           <div className="flex-1 overflow-y-auto p-4 space-y-1">
-            {gefiltert.length === 0 ? (
+            {allgemeineAufgaben.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-8">
-                {searchTerm ? 'Keine Aufgaben gefunden' : 'Noch keine Aufgaben'}
+                Noch keine Aufgaben
               </p>
             ) : (
               gruppiertNachThemenfeld.map(gruppe => (
