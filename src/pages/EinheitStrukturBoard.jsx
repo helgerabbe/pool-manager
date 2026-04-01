@@ -17,7 +17,10 @@ import {
 import { cn } from '@/lib/utils';
 import { useStructuralLock } from '@/hooks/useStructuralLock';
 import { useRBAC } from '@/hooks/useRBAC';
+import { useStructuralUnsavedChanges } from '@/hooks/useStructuralUnsavedChanges';
 import EinheitSettingsModal from '@/components/einheiten/EinheitSettingsModal';
+import UnsavedChangesModal from '@/components/workspace/UnsavedChangesModal';
+import { toast } from 'sonner';
 
 // ── Mini-Dialog: Neues Lernpaket ──────────────────────────────────────────────
 
@@ -227,7 +230,7 @@ function Spalte({ id, titel, pakete, lockedPaketIds, onAddPaket, onDeletePaket, 
 
 const SAMMELBECKEN_ID = '__sammelbecken__';
 
-export default function EinheitStrukturBoard() {
+export default function EinheitStrukturBoard({ onSaveStart = null, onSaveEnd = null } = {}) {
   const { id: einheitId } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -263,7 +266,11 @@ export default function EinheitStrukturBoard() {
   const [saving, setSaving]               = useState(false);
   const [initialized, setInitialized]     = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [settingsOpen, setSettingsOpen] = useState(false); // { spalteId, titel, lockedPakete[] }
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  
+  // ── Dirty-State & Navigation Guard ────────────────────────────────────────
+  const { isDirty, setIsDirty, blocker, shouldBlock, setShouldBlock } = useStructuralUnsavedChanges();
+  const [discardOnNavigate, setDiscardOnNavigate] = useState(false);
 
   // Berechtigungen: Struktur-Board nur für ADMIN + FACHSCHAFTSLEITUNG editierbar
   const kannStrukturBearbeiten = einheit
@@ -314,6 +321,8 @@ export default function EinheitStrukturBoard() {
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
+    setIsDirty(true);
+
     // Welches Paket wird verschoben?
     const movedPaket = (paketeMap[source.droppableId] || [])[source.index];
     const targetSpalte = spalten.find(s => s.id === destination.droppableId);
@@ -352,13 +361,16 @@ export default function EinheitStrukturBoard() {
   // ── Board-Aktionen ────────────────────────────────────────────────────────────
 
   const handleNeuesThemenfeld = () => {
+    setIsDirty(true);
     const newId = `tf-new-${Date.now()}`;
     setSpalten(prev => [...prev, { id: newId, titel: `Themenfeld ${prev.length + 1}`, themenfeldId: null }]);
     setPaketeMap(prev => ({ ...prev, [newId]: [] }));
   };
 
-  const handleTitelChange = (spalteId, neuerTitel) =>
+  const handleTitelChange = (spalteId, neuerTitel) => {
+    setIsDirty(true);
     setSpalten(prev => prev.map(s => s.id === spalteId ? { ...s, titel: neuerTitel } : s));
+  };
 
   // Delete-Sperre: Pakete mit aktivem Content-Lock prüfen
   const handleDeleteSpalteRequest = (spalteId) => {
@@ -386,6 +398,7 @@ export default function EinheitStrukturBoard() {
   };
 
   const handleDeleteSpalteConfirmed = () => {
+    setIsDirty(true);
     const { spalteId } = deleteConfirm;
     setPaketeMap(prev => {
       const paketeAusSpalte = prev[spalteId] || [];
@@ -398,6 +411,7 @@ export default function EinheitStrukturBoard() {
   };
 
   const handleAddPaket = (spalteId, titel, dauer) => {
+    setIsDirty(true);
     const tempId = `new-${Date.now()}`;
     setPaketeMap(prev => ({
       ...prev,
@@ -413,6 +427,7 @@ export default function EinheitStrukturBoard() {
   };
 
   const handleDeletePaket = (paketId) => {
+    setIsDirty(true);
     setPaketeMap(prev => {
       const next = {};
       Object.entries(prev).forEach(([k, v]) => { next[k] = v.filter(p => p.id !== paketId); });
@@ -425,44 +440,56 @@ export default function EinheitStrukturBoard() {
   const handleSpeichern = async () => {
     setSaving(true);
 
-    const spaltenMitId = [];
-    for (let i = 0; i < spalten.length; i++) {
-      const spalte = spalten[i];
-      let themenfeldId = spalte.themenfeldId;
-      if (!themenfeldId) {
-        const neu = await base44.entities.Themenfeld.create({
-          einheit_id: einheitId, titel: spalte.titel, reihenfolge: i + 1,
-        });
-        themenfeldId = neu.id;
+    try {
+      // Backend-Aufruf via Backend-Funktion
+      const response = await base44.functions.invoke('saveEinheitStruktur', {
+        einheit_id: einheitId,
+        spalten,
+        paketeMap,
+      });
+
+      if (response.data?.success) {
+        toast.success('Struktur erfolgreich gespeichert.');
+        setIsDirty(false);
+        queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+        queryClient.invalidateQueries({ queryKey: ['themenfelder'] });
+        navigate(`/workspace?einheit=${einheitId}`);
       } else {
-        await base44.entities.Themenfeld.update(themenfeldId, { titel: spalte.titel, reihenfolge: i + 1 });
+        toast.error('Fehler beim Speichern: ' + (response.data?.error || 'Unbekannter Fehler'));
       }
-      spaltenMitId.push({ ...spalte, themenfeldId });
+    } catch (error) {
+      console.error('Error saving structure:', error);
+      toast.error('Fehler beim Speichern der Struktur.');
+    } finally {
+      setSaving(false);
     }
-
-    for (const [spalteId, pakete] of Object.entries(paketeMap)) {
-      const spalte = spaltenMitId.find(s => s.id === spalteId);
-      const themenfeldId = spalte?.themenfeldId || null;
-      for (let i = 0; i < pakete.length; i++) {
-        const paket = pakete[i];
-        const updateData = { themenfeld_id: themenfeldId, reihenfolge_nummer: i + 1 };
-        if (paket.isNew) {
-          await base44.entities.Lernpakete.create({
-            einheit_id: einheitId,
-            titel_des_pakets: paket.titel_des_pakets,
-            geschaetzte_dauer_minuten: paket.geschaetzte_dauer_minuten || 45,
-            ...updateData,
-          });
-        } else {
-          await base44.entities.Lernpakete.update(paket.id, updateData);
-        }
-      }
-    }
-
-    queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-    queryClient.invalidateQueries({ queryKey: ['themenfelder'] });
-    navigate(`/workspace?einheit=${einheitId}`);
   };
+
+  // ── Navigation-Blocker Handler ─────────────────────────────────────────────
+  const handleSaveAndNavigate = async () => {
+    await handleSpeichern();
+  };
+
+  const handleDiscardAndNavigate = () => {
+    setIsDirty(false);
+    setDiscardOnNavigate(true);
+    setShouldBlock(false);
+    if (blocker.state === 'blocked') {
+      blocker.proceed();
+    }
+  };
+
+  const handleCancelNavigation = () => {
+    setShouldBlock(false);
+  };
+
+  // ── Blocker-Effekt: Automatisch navigieren, wenn discard gesetzt ──────────────
+  useEffect(() => {
+    if (discardOnNavigate && blocker.state === 'blocked') {
+      blocker.proceed();
+      setDiscardOnNavigate(false);
+    }
+  }, [discardOnNavigate, blocker]);
 
   // ── Rendering ─────────────────────────────────────────────────────────────────
 
@@ -479,56 +506,6 @@ export default function EinheitStrukturBoard() {
 
   return (
     <div className="flex flex-col h-full w-full">
-
-      {/* ── Top-Bar ── */}
-      <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-4 border-b-2 border-border bg-card shadow-sm flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold leading-tight text-foreground">{einheit?.titel_der_einheit}</h1>
-            <button
-              onClick={() => setSettingsOpen(true)}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-background border border-transparent hover:border-border transition-colors"
-              title="Einheiten-Einstellungen"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
-          </div>
-          <p className="text-sm font-medium text-foreground mt-1">
-            <span className="text-muted-foreground">{einheit?.fach} · Jg. {einheit?.jahrgangsstufe}</span> ·{' '}
-            <span className={cn(
-              'font-semibold',
-              zugeordnet === gesamtPakete && gesamtPakete > 0 ? 'text-green-700' : 'text-orange-700'
-            )}>
-              {zugeordnet}/{gesamtPakete} Pakete zugeordnet
-            </span>
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {lockedPaketIds.size > 0 && (
-            <span className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg">
-              <Lock className="w-3 h-3" />
-              {lockedPaketIds.size} Paket{lockedPaketIds.size !== 1 ? 'e' : ''} aktiv bearbeitet
-            </span>
-          )}
-          {kannStrukturBearbeiten && (
-            <Button variant="outline" onClick={handleNeuesThemenfeld} className="gap-2">
-              <Plus className="w-4 h-4" /> Neues Themenfeld
-            </Button>
-          )}
-          {kannStrukturBearbeiten ? (
-            <Button onClick={handleSpeichern} disabled={saving} className="gap-2">
-              {saving
-                ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                : <ArrowRight className="w-4 h-4" />}
-              Speichern & Zum Workspace
-            </Button>
-          ) : (
-            <Button variant="outline" onClick={() => navigate(`/workspace?einheit=${einheitId}`)} className="gap-2">
-              <ArrowRight className="w-4 h-4" /> Zum Workspace
-            </Button>
-          )}
-        </div>
-      </div>
 
       {/* ── Structural-Lock-Banner oder Readonly-Banner ── */}
       {kannStrukturBearbeiten ? (
@@ -605,6 +582,15 @@ export default function EinheitStrukturBoard() {
           currentUserEmail={authUser?.email}
         />
       )}
+
+      {/* ── Unsaved Changes Modal ── */}
+      <UnsavedChangesModal
+        open={shouldBlock}
+        onSave={handleSaveAndNavigate}
+        onDiscard={handleDiscardAndNavigate}
+        onCancel={handleCancelNavigation}
+        isSaving={saving}
+      />
 
       {/* ── Delete-Confirm-Dialog ── */}
       <AlertDialog open={!!deleteConfirm} onOpenChange={open => !open && setDeleteConfirm(null)}>

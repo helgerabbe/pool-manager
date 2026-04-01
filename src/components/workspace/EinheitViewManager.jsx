@@ -10,7 +10,7 @@
  * Route: `/einheiten/:id`
  * Props: einheitId (aus URL-Parametern)
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -93,6 +93,7 @@ export default function EinheitViewManager() {
     <div className="flex flex-col h-screen w-full bg-background">
 
       {/* Container 1: UnitToolbar (Sub-Header) ────────────────────────────────── */}
+      {/* Hinweis: Dirty-State und Save-Logik wird von EinheitStrukturBoard selbst verwaltet */}
       <UnitToolbar
         einheit={einheit}
         viewMode={viewMode}

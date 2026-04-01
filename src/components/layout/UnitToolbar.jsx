@@ -9,7 +9,7 @@
  * - RECHTS: Aktions-Buttons (Neues Themenfeld, Einstellungen, Export)
  */
 import React from 'react';
-import { LayoutGrid, SlidersHorizontal, Settings, Download, Plus } from 'lucide-react';
+import { LayoutGrid, SlidersHorizontal, Settings, Download, Plus, Check, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import NavigationTooltip from '@/components/layout/NavigationTooltip';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,9 @@ export default function UnitToolbar({
   onViewModeChange,
   onSettingsOpen,
   onAddThemenfeld,
+  isDirty = false,
+  onSaveStructure,
+  isSaving = false,
 }) {
   if (!einheit) return null;
 
@@ -92,6 +95,32 @@ export default function UnitToolbar({
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span className="hidden md:inline">Themenfeld</span>
+                </Button>
+              </NavigationTooltip>
+            )}
+
+            {/* Struktur-Speichern Button (nur im Struktur-Modus) */}
+            {viewMode === 'struktur' && onSaveStructure && (
+              <NavigationTooltip label={isDirty ? 'Ungespeicherte Änderungen' : 'Alles gespeichert'}>
+                <Button
+                  onClick={onSaveStructure}
+                  disabled={isSaving || !isDirty}
+                  className={cn(
+                    'gap-1.5',
+                    isDirty
+                      ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                      : 'bg-muted text-muted-foreground'
+                  )}
+                  size="sm"
+                >
+                  {isSaving ? (
+                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : isDirty ? (
+                    <Save className="w-3.5 h-3.5" />
+                  ) : (
+                    <Check className="w-3.5 h-3.5" />
+                  )}
+                  <span className="hidden sm:inline">{isDirty ? 'Speichern' : 'Gespeichert'}</span>
                 </Button>
               </NavigationTooltip>
             )}
