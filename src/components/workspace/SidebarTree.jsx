@@ -210,9 +210,9 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
 
 // ── Themenfeld-Node ───────────────────────────────────────────────────────────
 
-function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenziell, aktivitaetenMap }) {
-  const [open, setOpen] = useState(true);
-  const isSelected      = selectedId === `themenfeld-${themenfeld.id}`;
+function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenziell, aktivitaetenMap, isSammelbecken = false }) {
+   const [open, setOpen] = useState(true);
+   const isSelected      = selectedId === `themenfeld-${themenfeld.id}`;
 
   // Aggregierter Ampelstatus des Themenfelds
   const paketStatuses = lernpakete.map(p => getLernpaketStatus(p, lernziele, aufgaben, userEmail, mappings));
@@ -247,12 +247,12 @@ function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedI
           onClick={() => onSelect({ type: 'themenfeld', id: `themenfeld-${themenfeld.id}`, themenfeldId: themenfeld.id, data: themenfeld })}
           className={cn(
             'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-sm font-semibold transition-colors min-w-0',
-            isSelected ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted'
+            isSelected ? 'bg-primary text-primary-foreground' : isSammelbecken ? 'text-foreground hover:bg-slate-100' : 'text-foreground hover:bg-muted'
           )}
         >
-          <FolderOpen className="w-3.5 h-3.5 shrink-0 text-amber-500" />
+          <FolderOpen className={cn('w-3.5 h-3.5 shrink-0', isSammelbecken ? 'text-slate-500' : 'text-amber-500')} />
           <span className="truncate flex-1">{themenfeld.titel}</span>
-          {!isSelected && <AmpelDot status={themenfeldStatus} size="md" />}
+          {!isSelected && !isSammelbecken && <AmpelDot status={themenfeldStatus} size="md" />}
           {!isSelected && hatUnvollstaendigeAktivitaet && (
             <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
           )}
@@ -402,6 +402,26 @@ export default function SidebarTree({
       {/* ── Baum-Inhalt ── */}
       <div className="flex-1 overflow-y-auto space-y-1 pr-1">
 
+        {/* Unzugeordnete Pakete als Ordner (oben) */}
+        {paketeOhneThemenfeld.length > 0 && (
+          <div className="hidden lg:block">
+            <ThemenfeldNode
+              themenfeld={{ id: '__unzugeordnet__', titel: 'Unzugeordnete Lernpakete', reihenfolge: -1, bearbeitungsmodus: 'offen' }}
+              lernpakete={paketeOhneThemenfeld}
+              lernziele={lernziele}
+              aufgaben={aufgaben}
+              selectedId={selectedId}
+              onSelect={onSelect}
+              kannBearbeiten={false}
+              userEmail={userEmail}
+              mappings={mappings}
+              isSequenziell={false}
+              aktivitaetenMap={aktivitaetenMap}
+              isSammelbecken={true}
+            />
+          </div>
+        )}
+
         {/* Desktop: Alle Themenfelder als Baum */}
         {themenfelder.length > 0 ? (
           <div className="hidden lg:block space-y-1">
@@ -448,31 +468,6 @@ export default function SidebarTree({
                 />
               ));
             })()}
-          </div>
-        )}
-
-        {/* Unzugeordnete Pakete */}
-        {paketeOhneThemenfeld.length > 0 && (
-          <div className="space-y-1 mt-2 pt-2 border-t border-border">
-            <p className="px-3 py-1 text-xs font-semibold text-muted-foreground">Unzugeordnete Lernpakete</p>
-            {paketeOhneThemenfeld
-              .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0))
-              .map(paket => (
-                <LernpaketNode
-                  key={paket.id}
-                  paket={paket}
-                  lernziele={lernziele}
-                  aufgaben={aufgaben}
-                  selectedId={selectedId}
-                  onSelect={onSelect}
-                  kannBearbeiten={false}
-                  userEmail={userEmail}
-                  mappings={mappings}
-                  isSequenzielleUndGesperrt={false}
-                  aktivitaetenMap={aktivitaetenMap}
-                  showNumber={false}
-                />
-              ))}
           </div>
         )}
 
