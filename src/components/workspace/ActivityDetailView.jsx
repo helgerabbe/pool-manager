@@ -87,6 +87,23 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
+        {/* Aufgabenstellung (immer zuerst) */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aufgabenstellung</label>
+          {editMode ? (
+            <Textarea
+              value={formData.task_description || ''}
+              onChange={e => setFormData({ ...formData, task_description: e.target.value })}
+              placeholder="Beschreibe hier, was der Schüler tun soll..."
+              className="min-h-20"
+            />
+          ) : (
+            <div className="bg-muted/50 rounded-lg p-3 text-sm">
+              <p>{formData.task_description || <span className="italic text-muted-foreground">Nicht ausgefüllt</span>}</p>
+            </div>
+          )}
+        </div>
+
         {/* Schema-basierte Felder rendern */}
         {catalog.form_schema?.map(field => {
           const fieldValue = formData[field.field_name];
