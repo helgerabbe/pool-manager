@@ -31,15 +31,6 @@ export function useStructuralUnsavedChanges() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
 
-  // ── Manual navigation blocking via modal (handled in component) ──────────
-  useEffect(() => {
-    if (isDirty) {
-      setShouldBlock(true);
-    } else {
-      setShouldBlock(false);
-    }
-  }, [isDirty]);
-
   return {
     isDirty,
     setIsDirty,
