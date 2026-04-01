@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -22,8 +22,16 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { AlertTriangle, CheckCircle2, Download, RotateCw } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Download,
+  RotateCw,
+  Clock,
+  Check,
+} from 'lucide-react';
 import { toast } from 'sonner';
+import { formatExportDate } from '@/lib/statusLogic';
 
 // ── Filter-Helper: Exportierbare Einheiten ────────────────────────────────────
 
@@ -55,11 +63,33 @@ function filterExportableBasismodule(basismodule = []) {
   });
 }
 
-// ── Status-Badge: Neu vs. Update ──────────────────────────────────────────────
+// ── Status-Badge: Neu vs. Update vs. Exportiert ──────────────────────────────
 
 function ExportStatusBadge({ item, isBasismodul = false }) {
-  const lastSyncField = isBasismodul ? 'last_synced_at' : 'last_synced_at';
-  const isNew = !item[lastSyncField];
+  const isNew = !item.last_synced_at;
+  const isExported = item.last_exported_at && !item.last_synced_at;
+  const isUpdatedAfterExport =
+    item.last_exported_at &&
+    item.updated_date &&
+    new Date(item.updated_date) > new Date(item.last_exported_at);
+
+  if (isUpdatedAfterExport) {
+    return (
+      <Badge className="bg-red-100 text-red-700 gap-1">
+        <AlertTriangle className="w-3 h-3" />
+        Nach Export geändert
+      </Badge>
+    );
+  }
+
+  if (isExported) {
+    return (
+      <Badge className="bg-blue-100 text-blue-700 gap-1">
+        <Clock className="w-3 h-3" />
+        Exportiert
+      </Badge>
+    );
+  }
 
   if (isNew) {
     return (
@@ -71,7 +101,7 @@ function ExportStatusBadge({ item, isBasismodul = false }) {
   }
 
   return (
-    <Badge className="bg-blue-100 text-blue-700 gap-1">
+    <Badge className="bg-amber-100 text-amber-700 gap-1">
       <RotateCw className="w-3 h-3" />
       Update
     </Badge>
@@ -96,11 +126,14 @@ function GroupHeader({ label, allSelected, onToggleAll, count }) {
 
 // ── Item Row mit Checkbox ─────────────────────────────────────────────────────
 
-function ExportItemRow({ item, isSelected, onToggle, isBasismodul = false }) {
+function ExportItemRow({ item, isSelected, onToggle, isBasismodul = false, onConfirmSync }) {
   const title = isBasismodul ? item.titel : item.titel_der_einheit;
   const subtitle = isBasismodul
     ? `Fach: ${item.fach}`
     : `${item.fach} · Jahrgang ${item.jahrgangsstufe}`;
+
+  const isExportedWaitingSync = item.last_exported_at && !item.last_synced_at;
+  const exportDate = item.last_exported_at ? formatExportDate(item.last_exported_at) : null;
 
   return (
     <div className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
@@ -112,8 +145,26 @@ function ExportItemRow({ item, isSelected, onToggle, isBasismodul = false }) {
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{title}</p>
         <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+        {exportDate && (
+          <p className="text-xs text-slate-600 mt-2">
+            💾 Zuletzt exportiert: {exportDate}
+          </p>
+        )}
       </div>
-      <ExportStatusBadge item={item} isBasismodul={isBasismodul} />
+      <div className="flex items-center gap-2 shrink-0">
+        <ExportStatusBadge item={item} isBasismodul={isBasismodul} />
+        {isExportedWaitingSync && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onConfirmSync(item.id)}
+            className="h-7 text-xs gap-1"
+          >
+            <Check className="w-3 h-3" />
+            Sync OK
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
@@ -127,14 +178,37 @@ export default function MoodleExportManager({ open, onOpenChange }) {
   const [isExporting, setIsExporting] = useState(false);
 
   // Fetch Daten
-  const { data: allEinheiten = [] } = useQuery({
+  const { data: allEinheiten = [], refetch: refetchEinheiten } = useQuery({
     queryKey: ['einheiten'],
     queryFn: () => base44.entities.Einheiten.list(),
   });
 
-  const { data: allBasismodule = [] } = useQuery({
+  const { data: allBasismodule = [], refetch: refetchBasismodule } = useQuery({
     queryKey: ['basismodule'],
     queryFn: () => base44.entities.Basismodule.list(),
+  });
+
+  // Mutations für Sync-Bestätigung
+  const confirmEinheitSync = useMutation({
+    mutationFn: (einheitId) =>
+      base44.entities.Einheiten.update(einheitId, {
+        last_synced_at: new Date().toISOString(),
+      }),
+    onSuccess: () => {
+      refetchEinheiten();
+      toast.success('Moodle-Synchronisierung bestätigt.');
+    },
+  });
+
+  const confirmBasismodulSync = useMutation({
+    mutationFn: (basismodulId) =>
+      base44.entities.Basismodule.update(basismodulId, {
+        last_synced_at: new Date().toISOString(),
+      }),
+    onSuccess: () => {
+      refetchBasismodule();
+      toast.success('Moodle-Synchronisierung bestätigt.');
+    },
   });
 
   // Filter exportierbare Elemente
@@ -204,7 +278,7 @@ export default function MoodleExportManager({ open, onOpenChange }) {
     }
   };
 
-  // Export-Logik: Payload generieren
+  // Export-Logik: Payload generieren + last_exported_at setzen
   const handleGenerateExport = async () => {
     if (selectedEinheitIds.size === 0 && selectedBasismodulIds.size === 0) {
       toast.error('Bitte wählen Sie mindestens ein Element zum Exportieren aus.');
@@ -222,9 +296,25 @@ export default function MoodleExportManager({ open, onOpenChange }) {
         selectedBasismodulIds.has(b.id)
       );
 
+      const nowTimestamp = new Date().toISOString();
+
+      // ✅ Setze last_exported_at für alle ausgewählten Einheiten
+      await Promise.all([
+        ...selectedEinheitenData.map((e) =>
+          base44.entities.Einheiten.update(e.id, {
+            last_exported_at: nowTimestamp,
+          })
+        ),
+        ...selectedBasismoduleData.map((b) =>
+          base44.entities.Basismodule.update(b.id, {
+            last_exported_at: nowTimestamp,
+          })
+        ),
+      ]);
+
       // Erstelle Export-Payload
       const exportPayload = {
-        timestamp: new Date().toISOString(),
+        timestamp: nowTimestamp,
         export_type: 'moodle_selective_delta',
         einheiten: selectedEinheitenData.map((e) => ({
           id: e.id,
@@ -235,6 +325,7 @@ export default function MoodleExportManager({ open, onOpenChange }) {
           freigabe_status: e.freigabe_status,
           updated_date: e.updated_date,
           last_synced_at: e.last_synced_at,
+          last_exported_at: nowTimestamp,
         })),
         basismodule: selectedBasismoduleData.map((b) => ({
           id: b.id,
@@ -244,6 +335,7 @@ export default function MoodleExportManager({ open, onOpenChange }) {
           status: b.status,
           updated_date: b.updated_date,
           last_synced_at: b.last_synced_at,
+          last_exported_at: nowTimestamp,
         })),
         statistics: {
           einheiten_count: selectedEinheitenData.length,
@@ -265,6 +357,10 @@ export default function MoodleExportManager({ open, onOpenChange }) {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
+      // Refresh Daten
+      refetchEinheiten();
+      refetchBasismodule();
+
       toast.success(
         `${exportPayload.statistics.total_count} Element(e) exportiert.`
       );
@@ -274,6 +370,18 @@ export default function MoodleExportManager({ open, onOpenChange }) {
       toast.error('Fehler beim Exportieren: ' + error.message);
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  // Sync-Bestätigung Handler
+  const handleConfirmSync = (id) => {
+    const einheit = exportableEinheiten.find((e) => e.id === id);
+    const basismodul = exportableBasismodule.find((b) => b.id === id);
+
+    if (einheit) {
+      confirmEinheitSync.mutate(id);
+    } else if (basismodul) {
+      confirmBasismodulSync.mutate(id);
     }
   };
 
@@ -322,6 +430,7 @@ export default function MoodleExportManager({ open, onOpenChange }) {
                       isSelected={selectedEinheitIds.has(einheit.id)}
                       onToggle={() => toggleEinheit(einheit.id)}
                       isBasismodul={false}
+                      onConfirmSync={handleConfirmSync}
                     />
                   ))}
                 </div>
@@ -348,6 +457,7 @@ export default function MoodleExportManager({ open, onOpenChange }) {
                       isSelected={selectedBasismodulIds.has(basismodul.id)}
                       onToggle={() => toggleBasismodul(basismodul.id)}
                       isBasismodul={true}
+                      onConfirmSync={handleConfirmSync}
                     />
                   ))}
                 </div>

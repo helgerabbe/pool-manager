@@ -177,3 +177,93 @@ export function getEinheitFortschritt(lernpakete, lernziele, aufgaben, userEmail
 
   return { prozent: Math.round((gruen / gesamt) * 100), gruen, gesamt };
 }
+
+// ── Moodle Sync-Status Logik ──────────────────────────────────────────────────
+
+/**
+ * Berechnet den detaillierten Moodle-Sync-Status für eine Einheit oder ein Basismodul.
+ *
+ * Status-Werte:
+ *   'green'   — Synchron: last_synced_at >= updated_date
+ *   'blue'    — Exportiert (Warten): last_exported_at > last_synced_at UND updated_date <= last_exported_at
+ *   'orange'  — Änderung ausstehend: updated_date > last_synced_at UND (kein Export oder updated_date > last_exported_at)
+ *   'red'     — Achtung: Nach Export erneut geändert (last_exported_at gesetzt UND updated_date > last_exported_at)
+ *
+ * @param {object} entity — Einheit oder Basismodul mit updated_date, last_synced_at, last_exported_at
+ * @returns {object} { status: 'green'|'blue'|'orange'|'red', message: string }
+ */
+export function getDetailedSyncStatus(entity) {
+  if (!entity) return { status: 'gray', message: 'Keine Daten' };
+
+  const updatedDate = entity.updated_date ? new Date(entity.updated_date) : null;
+  const lastSyncedAt = entity.last_synced_at ? new Date(entity.last_synced_at) : null;
+  const lastExportedAt = entity.last_exported_at ? new Date(entity.last_exported_at) : null;
+
+  // ROT: Nach Export erneut geändert
+  if (lastExportedAt && updatedDate && updatedDate > lastExportedAt) {
+    return {
+      status: 'red',
+      message: 'Nach Export erneut geändert – Erneuter Export erforderlich',
+      icon: 'alert',
+    };
+  }
+
+  // GRÜN: Synchron
+  if (lastSyncedAt && updatedDate && lastSyncedAt >= updatedDate) {
+    return {
+      status: 'green',
+      message: 'In Moodle synchronisiert',
+      icon: 'check',
+    };
+  }
+
+  // BLAU: Exportiert (wartet auf Moodle-Bestätigung)
+  if (
+    lastExportedAt &&
+    lastSyncedAt &&
+    lastExportedAt > lastSyncedAt &&
+    updatedDate &&
+    updatedDate <= lastExportedAt
+  ) {
+    return {
+      status: 'blue',
+      message: 'Exportiert – Wartet auf Moodle-Bestätigung',
+      icon: 'clock',
+    };
+  }
+
+  // ORANGE: Änderung ausstehend
+  if (updatedDate && (!lastSyncedAt || updatedDate > lastSyncedAt)) {
+    return {
+      status: 'orange',
+      message: 'Änderungen ausstehend – Export erforderlich',
+      icon: 'alert-triangle',
+    };
+  }
+
+  // Standard: Noch nie exportiert oder gesynced
+  return {
+    status: 'gray',
+    message: 'Bereit für Export',
+    icon: 'info',
+  };
+}
+
+/**
+ * Formatiert das Exportdatum für die Anzeige.
+ *
+ * @param {string|Date|null} date
+ * @returns {string} — z.B. "1. Apr 2026, 14:30" oder "Noch nicht exportiert"
+ */
+export function formatExportDate(date) {
+  if (!date) return 'Noch nicht exportiert';
+
+  const d = new Date(date);
+  return d.toLocaleDateString('de-DE', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
