@@ -17,7 +17,7 @@ function DraggableLernziel({ lernziel, isHighlighted, index }) {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={`flex items-center gap-2 p-2 rounded border cursor-grab active:cursor-grabbing transition-all ${
+          className={`flex items-start gap-1.5 p-2 rounded border text-xs cursor-grab active:cursor-grabbing transition-all ${
             snapshot.isDragging
               ? 'opacity-50 ring-2 ring-primary'
               : isHighlighted
@@ -25,11 +25,11 @@ function DraggableLernziel({ lernziel, isHighlighted, index }) {
                 : 'bg-white hover:bg-muted'
           }`}
         >
-          <GripVertical className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-          <div className="flex-1 min-w-0 text-xs">
-            <p className="font-medium truncate">{lernziel.formulierung_fachsprache}</p>
+          <GripVertical className="w-3 h-3 text-muted-foreground shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="font-medium truncate text-xs">{lernziel.formulierung_fachsprache}</p>
             {lernziel.kategorie && (
-              <Badge variant="secondary" className="text-[10px] mt-1">
+              <Badge variant="secondary" className="text-[9px] mt-0.5">
                 {lernziel.kategorie}
               </Badge>
             )}
@@ -54,20 +54,20 @@ function LernzielDropzone({
         <div
           ref={provided.innerRef}
           {...provided.droppableProps}
-          className={`p-4 rounded-lg border-2 transition-all ${
+          className={`flex flex-col gap-2 border-2 rounded-lg transition-all h-full ${
             snapshot.isDraggingOver
               ? 'border-primary/60 bg-primary/5'
-              : 'border-dashed border-muted-foreground/30 bg-muted/20'
-          } min-h-32 flex flex-col gap-3`}
+              : 'border-dashed border-slate-300 bg-slate-50'
+          }`}
         >
-          <p className="text-xs text-muted-foreground font-medium">
+          <p className="shrink-0 text-xs text-muted-foreground font-medium px-3 pt-3">
             {mappedLernziele.length === 0
               ? 'Benötigte Kompetenzen hier ablegen'
               : `${mappedLernziele.length} Kompetenz(en) zugeordnet`}
           </p>
 
           {mappedLernziele.length > 0 && (
-            <div className="space-y-2">
+            <div className="flex-1 overflow-y-auto space-y-2 px-3 pb-3">
               {mappedLernziele.map((lz) => (
                 <LernzielBadge
                   key={lz.id}
@@ -92,18 +92,18 @@ function ThemenfeldGroup({ themenfeld, lernziele }) {
   if (lernziele.length === 0) return null;
 
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="border rounded-lg overflow-hidden bg-white">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-3 py-2 bg-amber-50 border-b border-amber-200 hover:bg-amber-100 transition-colors text-left"
+        className="w-full flex items-center justify-between px-2 py-1.5 bg-amber-50 border-b border-amber-200 hover:bg-amber-100 transition-colors text-left"
       >
-        <span className="text-xs font-semibold text-amber-800">{themenfeld.titel}</span>
-        <span className={`text-xs text-amber-600 transition-transform ${isOpen ? 'rotate-0' : '-rotate-90'}`}>
+        <span className="text-xs font-semibold text-amber-800 truncate">{themenfeld.titel}</span>
+        <span className={`text-xs text-amber-600 transition-transform shrink-0 ml-2 ${isOpen ? 'rotate-0' : '-rotate-90'}`}>
           ▼
         </span>
       </button>
       {isOpen && (
-        <div className="p-2 space-y-1.5 bg-white">
+        <div className="p-1 space-y-1 bg-white">
           {lernziele.map((lz, index) => (
             <DraggableLernziel key={lz.id} lernziel={lz} isHighlighted={false} index={index} />
           ))}
@@ -303,19 +303,19 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
         </div>
 
         {/* Split-Screen Layout */}
-        <div className="flex-1 grid grid-cols-2 gap-6 min-h-0 overflow-hidden">
+        <div className="flex-1 flex gap-6 min-h-0 overflow-hidden">
           {/* Linke Seite: Quellen-Liste */}
           <Droppable droppableId="lernziele-source" isDropDisabled={true}>
             {(provided) => (
               <div
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className="flex flex-col min-h-0 overflow-hidden border rounded-lg"
+                className="w-1/2 flex flex-col min-h-0 overflow-hidden border rounded-lg bg-background"
               >
-                <div className="px-4 py-3 bg-slate-100 border-b sticky top-0 z-10">
-                  <h3 className="text-sm font-semibold">Verfügbare Kompetenzen</h3>
+                <div className="shrink-0 px-4 py-2 bg-slate-100 border-b">
+                  <h3 className="text-xs font-semibold">Verfügbare Kompetenzen</h3>
                 </div>
-                <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
                   {themenfeldMitLernzielenGefiltert.length === 0 ? (
                     <p className="text-xs text-muted-foreground text-center py-4">
                       Keine Kompetenzen vorhanden
@@ -337,17 +337,17 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
           </Droppable>
 
           {/* Rechte Seite: Aufgabe + Dropzone */}
-          <div className="flex flex-col min-h-0 overflow-hidden border rounded-lg bg-card p-4 space-y-4">
-            <div>
-              <h3 className="text-sm font-semibold mb-1 truncate">
+          <div className="w-1/2 flex flex-col min-h-0 overflow-hidden rounded-lg bg-card">
+            <div className="shrink-0 px-4 py-2 border-b">
+              <h3 className="text-xs font-semibold truncate">
                 {aufgabe?.titel || 'Aufgabe'}
               </h3>
-              <p className="text-xs text-muted-foreground line-clamp-2">
+              <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
                 {aufgabe?.aufgabenstellung}
               </p>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto min-h-0 p-3">
               <LernzielDropzone
                 aufgabeId={aufgabe?.id}
                 mappedLernziele={mappedLernziele}
