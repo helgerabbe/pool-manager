@@ -8,7 +8,7 @@ import WorkspaceDetailPanel from '@/components/workspace/WorkspaceDetailPanel';
 import ActivityDetailView from '@/components/workspace/ActivityDetailView';
 import AllgemeineAufgabenView from '@/components/allgemeineAufgaben/AllgemeineAufgabenView';
 import ProjektaufgabenView from '@/components/projektaufgaben/ProjektaufgabenView';
-import LernlandkartePreview from '@/components/lernlandkarte/LernlandkartePreview';
+
 import { usePresence } from '@/hooks/usePresence';
 import { isStructurallyLocked } from '@/hooks/useStructuralLock';
 import { Button } from '@/components/ui/button';
@@ -333,10 +333,6 @@ export default function Workspace() {
                   </span>
               }
               </TabsTrigger>
-              <TabsTrigger value="lernlandkarte" className="bg-pink-200 text-slate-600 ml-4 pt-1 pr-3 pb-1 pl-4 text-xs font-medium rounded-md inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow gap-1.5">
-                <BookOpen className="w-3.5 h-3.5" />
-                Lernlandkarte
-              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -421,21 +417,7 @@ export default function Workspace() {
           
           </TabsContent>
 
-          {/* ── Lernlandkarte ────────────────── */}
-          <TabsContent
-          value="lernlandkarte"
-          className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0 border-none">
-          
-            <LernlandkartePreview
-            einheit={einheit}
-            lernpakete={paketeFuerEinheit}
-            lernziele={zieleFuerEinheit}
-            aufgaben={aufgabenFuerEinheit}
-            themenfelder={themenfelder}
-            allgemeineAufgaben={aufgabenFuerEinheit.filter((a) => a.anforderungsebene === '2 - Transfer')}
-            projektaufgaben={projektaufgabenFuerEinheit} />
-          
-          </TabsContent>
+
         </Tabs>
       }
       {einheit &&
