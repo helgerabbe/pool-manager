@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -231,7 +231,7 @@ function MaterialUploader({ materials, onMaterialsChange }) {
 }
 
 // ── Haupt-Component ──
-export default function AufgabeCreateView({ open, onOpenChange, einheitId, themenfelder = [], onSuccess }) {
+export default function AufgabeCreateView({ open, onOpenChange, einheitId, themenfelder = [], onSuccess, initialData = null }) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     titel: '',
@@ -240,6 +240,17 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
     themenfeld_id: null,
     materialien: [],
   });
+
+  // Reset formData wenn initialData sich ändert (für Bearbeitung)
+  React.useEffect(() => {
+    if (open) {
+      if (initialData) {
+        setFormData(initialData);
+      } else {
+        setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, themenfeld_id: null, materialien: [] });
+      }
+    }
+  }, [open, initialData]);
 
   const createAufgabe = useMutation({
     mutationFn: (data) =>
@@ -257,20 +268,37 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
     onError: () => toast.error('Fehler beim Erstellen'),
   });
 
+  const updateAufgabe = useMutation({
+    mutationFn: (data) =>
+      base44.entities.AllgemeineAufgabe.update(initialData.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
+      toast.success('Aufgabe aktualisiert');
+      onSuccess?.();
+      setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, themenfeld_id: null, materialien: [] });
+      onOpenChange(false);
+    },
+    onError: () => toast.error('Fehler beim Aktualisieren'),
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.aufgabenstellung.trim()) {
       toast.error('Aufgabenstellung ist erforderlich');
       return;
     }
-    createAufgabe.mutate(formData);
+    if (initialData) {
+      updateAufgabe.mutate(formData);
+    } else {
+      createAufgabe.mutate(formData);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Neue Allgemeine Aufgabe</DialogTitle>
+          <DialogTitle>{initialData ? 'Aufgabe bearbeiten' : 'Neue Allgemeine Aufgabe'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -348,11 +376,15 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
             </Button>
             <Button
               type="submit"
-              disabled={createAufgabe.isPending || !formData.aufgabenstellung.trim()}
+              disabled={(createAufgabe.isPending || updateAufgabe.isPending) || !formData.aufgabenstellung.trim()}
               className="gap-2"
             >
-              {createAufgabe.isPending ? (
+              {createAufgabe.isPending || updateAufgabe.isPending ? (
                 <>Wird gespeichert…</>
+              ) : initialData ? (
+                <>
+                  <Save className="w-4 h-4" /> Speichern
+                </>
               ) : (
                 <>
                   <Save className="w-4 h-4" /> Speichern & Weiter zu Kompetenzen

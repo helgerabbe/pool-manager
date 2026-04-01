@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { Plus, Search, Star, FileText, AlertTriangle, CheckCircle2, Grip, ArrowLeft } from 'lucide-react';
+import { Plus, Search, Star, FileText, AlertTriangle, CheckCircle2, Grip, ArrowLeft, Edit } from 'lucide-react';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 import AufgabeKompetenzMapping from '@/components/allgemeineAufgaben/AufgabeKompetenzMapping';
 
@@ -48,15 +48,14 @@ function StatusBadge({ hatInhalt, hatTitel }) {
 /**
  * Einzelne Aufgaben-Karte
  */
-function AufgabeCard({ aufgabe, isSelected, onSelect, kannBearbeiten, onEdit }) {
+function AufgabeCard({ aufgabe, isSelected, onSelect, kannBearbeiten, onEdit, onEditClick }) {
   const hatTitel = !!aufgabe.titel?.trim();
   const hatInhalt = !!aufgabe.aufgabenstellung?.trim();
   const hatMaterialien = aufgabe.materialien && aufgabe.materialien.length > 0;
   const istVollstaendig = hatTitel && hatInhalt;
 
   return (
-    <button
-      onClick={() => onSelect(aufgabe)}
+    <div
       className={cn(
         'w-full text-left p-4 rounded-xl border-2 transition-all space-y-3 hover:shadow-md',
         isSelected
@@ -64,7 +63,7 @@ function AufgabeCard({ aufgabe, isSelected, onSelect, kannBearbeiten, onEdit }) 
           : 'border-border bg-card hover:border-primary/40'
       )}
     >
-      {/* Header: Schwierigkeit + Status */}
+      {/* Header: Schwierigkeit + Status + Button */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
           {aufgabe.schwierigkeitsgrad ? (
@@ -73,43 +72,63 @@ function AufgabeCard({ aufgabe, isSelected, onSelect, kannBearbeiten, onEdit }) 
             <span className="text-xs text-muted-foreground italic">Keine Schwierigkeit</span>
           )}
         </div>
-        <StatusBadge hatInhalt={hatInhalt} hatTitel={hatTitel} />
+        <div className="flex items-center gap-2">
+          <StatusBadge hatInhalt={hatInhalt} hatTitel={hatTitel} />
+          {kannBearbeiten && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditClick?.(aufgabe);
+              }}
+              className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+              title="Aufgabe bearbeiten"
+            >
+              <Edit className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Titel */}
-      <div>
-        <p className="text-sm font-semibold line-clamp-2">
-          {hatTitel ? aufgabe.titel : <span className="text-muted-foreground italic">Kein Titel</span>}
-        </p>
-      </div>
-
-      {/* Aufgabenstellung (Preview) */}
-      {hatInhalt && (
-        <p className="text-xs text-muted-foreground line-clamp-2">{aufgabe.aufgabenstellung}</p>
-      )}
-
-      {/* Materialien Badge */}
-      {hatMaterialien && (
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <FileText className="w-3.5 h-3.5" />
-          <span>{aufgabe.materialien.length} Material(ien)</span>
+      {/* Clickable area */}
+      <button
+        onClick={() => onSelect(aufgabe)}
+        className="w-full text-left space-y-2 hover:opacity-75 transition-opacity"
+      >
+        {/* Titel */}
+        <div>
+          <p className="text-sm font-semibold line-clamp-2">
+            {hatTitel ? aufgabe.titel : <span className="text-muted-foreground italic">Kein Titel</span>}
+          </p>
         </div>
-      )}
 
-      {/* Sync-Status */}
-      {aufgabe.sync_status && aufgabe.sync_status !== 'new' && (
-        <div className="text-[10px] text-muted-foreground">
-          Status: <span className="font-medium">{aufgabe.sync_status === 'exported' ? 'Exportiert' : 'Geändert'}</span>
-        </div>
-      )}
-    </button>
+        {/* Aufgabenstellung (Preview) */}
+        {hatInhalt && (
+          <p className="text-xs text-muted-foreground line-clamp-2">{aufgabe.aufgabenstellung}</p>
+        )}
+
+        {/* Materialien Badge */}
+        {hatMaterialien && (
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <FileText className="w-3.5 h-3.5" />
+            <span>{aufgabe.materialien.length} Material(ien)</span>
+          </div>
+        )}
+
+        {/* Sync-Status */}
+        {aufgabe.sync_status && aufgabe.sync_status !== 'new' && (
+          <div className="text-[10px] text-muted-foreground">
+            Status: <span className="font-medium">{aufgabe.sync_status === 'exported' ? 'Exportiert' : 'Geändert'}</span>
+          </div>
+        )}
+      </button>
+    </div>
   );
 }
 
 /**
  * Kategorien-Gruppe (z.B. Themenfelder)
  */
-function AufgabenGruppe({ titel, aufgaben, selectedId, onSelect, kannBearbeiten }) {
+function AufgabenGruppe({ titel, aufgaben, selectedId, onSelect, kannBearbeiten, onEditClick }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between px-1">
@@ -124,6 +143,8 @@ function AufgabenGruppe({ titel, aufgaben, selectedId, onSelect, kannBearbeiten 
             isSelected={selectedId === aufgabe.id}
             onSelect={onSelect}
             kannBearbeiten={kannBearbeiten}
+            onEdit={onSelect}
+            onEditClick={onEditClick}
           />
         ))}
       </div>
@@ -142,6 +163,7 @@ export default function AllgemeineAufgabenView({
   const [selectedAufgabeId, setSelectedAufgabeId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [createFormOpen, setCreateFormOpen] = useState(false);
+  const [editingAufgabe, setEditingAufgabe] = useState(null);
 
   // Daten abrufen
   const { data: einheit } = useQuery({
@@ -266,7 +288,10 @@ export default function AllgemeineAufgabenView({
         {kannBearbeiten && (
           <Button
             size="sm"
-            onClick={() => setCreateFormOpen(true)}
+            onClick={() => {
+              setEditingAufgabe(null);
+              setCreateFormOpen(true);
+            }}
             className="gap-2 shrink-0"
           >
             <Plus className="w-4 h-4" />
@@ -301,20 +326,26 @@ export default function AllgemeineAufgabenView({
                 selectedId={selectedAufgabeId}
                 onSelect={(a) => setSelectedAufgabeId(a.id)}
                 kannBearbeiten={kannBearbeiten}
+                onEditClick={(a) => {
+                  setEditingAufgabe(a);
+                  setCreateFormOpen(true);
+                }}
               />
             ))}
           </div>
         )}
       </div>
 
-      {/* Create Dialog */}
+      {/* Create/Edit Dialog */}
       <AufgabeCreateView
         open={createFormOpen}
         onOpenChange={setCreateFormOpen}
         einheitId={einheitId}
         themenfelder={themenfelder}
+        initialData={editingAufgabe}
         onSuccess={() => {
           setCreateFormOpen(false);
+          setEditingAufgabe(null);
           queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
         }}
       />
