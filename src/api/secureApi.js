@@ -208,6 +208,42 @@ export async function getWorkspaceData(einheitId) {
 }
 
 /**
+ * Phase 6.5: Paginierter Einheiten-List-Endpoint
+ *
+ * @param {number} page - Seitennummer (Standard: 1)
+ * @param {number} limit - Einträge pro Seite (Standard: 15, Max: 100)
+ * @returns {Promise<{success: boolean, data: Array, meta: {total_count, current_page, total_pages, page_size}}>}
+ * @throws {SecureApiError} Bei Fehler
+ *
+ * @example
+ * const result = await secureApi.getEinheitenList(1, 15);
+ * // result.data: Array von Einheiten (max 15 pro Seite)
+ * // result.meta.total_pages: Gesamtzahl Seiten für Pagination
+ */
+export async function getEinheitenList(page = 1, limit = 15) {
+  if (page < 1) {
+    throw new Error('page must be >= 1');
+  }
+  if (limit < 1 || limit > 100) {
+    throw new Error('limit must be between 1 and 100');
+  }
+
+  try {
+    const response = await base44.functions.invoke('getEinheitenListSecure', {
+      page,
+      limit,
+    });
+    return response.data;
+  } catch (error) {
+    const status = error.response?.status || 500;
+    const errorData = error.response?.data || {};
+    const message = errorData.error || error.message || 'Unknown error';
+
+    throw new SecureApiError(status, message);
+  }
+}
+
+/**
  * Alle Funktionen als Objekt exportieren (alternative API)
  */
 export const secureApi = {
@@ -216,6 +252,7 @@ export const secureApi = {
   updateEinheit,
   publishEinheit,
   getWorkspaceData,
+  getEinheitenList,
 };
 
 export default secureApi;
