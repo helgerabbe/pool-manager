@@ -246,8 +246,7 @@ export default function Workspace() {
   const allgemeineAufgabenCount = allgemeineAufgabenData.filter(a => 
     !a.anforderungsebene || ['1 - Basis', '2 - Transfer'].includes(a.anforderungsebene)
   ).length;
-  const transferCount = aufgabenFuerEinheit.filter((a) => a.anforderungsebene === '2 - Transfer').length;
-  const projektCount = aufgabenFuerEinheit.filter((a) => a.anforderungsebene === '3 - Projekt').length;
+  const projektCount = allgemeineAufgabenData.filter((a) => a.anforderungsebene === '3 - Projekt').length;
 
   return (
     <div className="flex flex-col h-full w-full bg-background">
