@@ -52,7 +52,7 @@ export default function EinheitCreateWizard() {
 
   const handleStep4Done = () => {
     queryClient.invalidateQueries({ queryKey: ['aufgaben'] });
-    navigate(`/einheit/${einheitId}/struktur`);
+    navigate(`/workspace?einheit=${einheitId}&fromWizard=1`);
   };
 
   return (

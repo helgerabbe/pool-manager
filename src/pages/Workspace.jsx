@@ -10,9 +10,10 @@ import TransferSaeule from '@/components/workspace/TransferSaeule';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Layers, Zap, FolderOpen } from 'lucide-react';
+import { BookOpen, Layers, Zap, FolderOpen, LayoutGrid, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
+import StrukturBoardEmbedded from '@/components/workspace/StrukturBoardEmbedded';
 
 /**
  * Workspace — Drei-Säulen-Architektur
@@ -37,6 +38,20 @@ export default function Workspace() {
   const [selectedNode, setSelectedNode] = useState(null);
   const [activeTab, setActiveTab] = useState('basis');
   const [highlightedAtomIds, setHighlightedAtomIds] = useState(new Set());
+
+  // View-Toggle: 'struktur' | 'detail'
+  // Beim ersten Laden nach Wizard (fromWizard param) → Struktur, sonst letzter Modus aus localStorage
+  const fromWizard = new URLSearchParams(window.location.search).get('fromWizard') === '1';
+  const lsKey = `workspace_view_${selectedEinheitId}`;
+  const [viewMode, setViewMode] = useState(() => {
+    if (fromWizard) return 'struktur';
+    return localStorage.getItem(lsKey) || 'detail';
+  });
+
+  const handleViewModeChange = (mode) => {
+    setViewMode(mode);
+    if (selectedEinheitId) localStorage.setItem(`workspace_view_${selectedEinheitId}`, mode);
+  };
 
   // ── Queries ──────────────────────────────────────────────────────────────────
   const { data: einheiten = [], isLoading: einheitenLoading } = useQuery({
@@ -200,15 +215,44 @@ export default function Workspace() {
           </Select>
         </div>
 
-        {/* Statistik-Leiste */}
-        {einheit &&
+        {/* View-Toggle */}
+        {einheit && (
+          <div className="flex items-center bg-muted rounded-lg p-0.5 gap-0.5">
+            <button
+              onClick={() => handleViewModeChange('struktur')}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+                viewMode === 'struktur'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              Struktur
+            </button>
+            <button
+              onClick={() => handleViewModeChange('detail')}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+                viewMode === 'detail'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              Detail
+            </button>
+          </div>
+        )}
+
+        {/* Statistik-Leiste (nur Detail-Modus) */}
+        {einheit && viewMode === 'detail' &&
         <WorkspaceStats
           lernpakete={paketeFuerEinheit}
           lernziele={zieleFuerEinheit}
           aufgaben={aufgabenFuerEinheit}
           mappings={mappings}
           userEmail={authUser?.email || ''} />
-
         }
 
         <Link to="/einheiten" className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0 ml-auto">
@@ -216,7 +260,7 @@ export default function Workspace() {
         </Link>
       </div>
 
-      {/* ── Drei-Säulen-Tabs ─────────────────────────────────────────────────── */}
+      {/* ── Haupt-Inhalt ─────────────────────────────────────────────────────── */}
       {!einheit ?
       <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center">
           <BookOpen className="w-12 h-12 text-muted-foreground/30" />
@@ -226,7 +270,16 @@ export default function Workspace() {
               Wählen Sie oben eine Einheit aus, um mit der Planung zu beginnen.
             </p>
           </div>
-        </div> :
+        </div>
+      : viewMode === 'struktur' ? (
+        <StrukturBoardEmbedded
+          einheitId={selectedEinheitId}
+          lernpakete={paketeFuerEinheit}
+          themenfelder={themenfelder}
+          queryClient={queryClient}
+          onSaved={() => handleViewModeChange('detail')}
+        />
+      ) :
 
       <Tabs
         value={activeTab}

@@ -54,6 +54,7 @@ const AuthenticatedApp = () => {
         <Route path="/moodle-export" element={<MoodleExport />} />
         <Route path="/workspace" element={<Workspace />} />
         <Route path="/einheit/create" element={<EinheitCreateWizard />} />
+        {/* /einheit/:id/struktur → Workspace mit Struktur-Toggle vorausgewählt */}
         <Route path="/einheit/:id/struktur" element={<EinheitStrukturBoard />} />
         <Route path="/einheit/workspace" element={<Workspace />} />
         <Route path="/einheit/export" element={<ExportCenter />} />
