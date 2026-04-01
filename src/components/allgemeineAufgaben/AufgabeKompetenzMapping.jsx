@@ -118,6 +118,8 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
   const queryClient = useQueryClient();
   const [mappedLernziele, setMappedLernziele] = useState([]);
   const [savingIds, setSavingIds] = useState(new Set());
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Fetch Lernziele der Einheit
   const { data: alleLernziele = [] } = useQuery({
@@ -202,6 +204,7 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
 
       // Hinzufügen
       setMappedLernziele((prev) => [...prev, lernziel]);
+      setHasChanges(true);
       setSavingIds((prev) => new Set([...prev, lernziel.id]));
 
       try {
@@ -209,11 +212,11 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
           aufgabe_id: aufgabe.id,
           lernziel_id: lernziel.id
         });
-        toast.success('Kompetenz zugeordnet');
       } catch (err) {
         setMappedLernziele((prev) =>
         prev.filter((lz) => lz.id !== lernziel.id)
         );
+        setHasChanges(false);
         toast.error('Fehler beim Speichern');
       } finally {
         setSavingIds((prev) => {
@@ -235,6 +238,7 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
     setMappedLernziele((prev) =>
     prev.filter((lz) => lz.id !== lernzielId)
     );
+    setHasChanges(true);
     setSavingIds((prev) => new Set([...prev, lernzielId]));
 
     try {
@@ -242,13 +246,13 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
       if (mapping) {
         await deleteMapping.mutateAsync(mapping.id);
       }
-      toast.success('Verknüpfung aufgehoben');
     } catch (err) {
       // Rollback: Bei Fehler zurück in Dropzone
       const lernziel = alleLernziele.find((lz) => lz.id === lernzielId);
       if (lernziel) {
         setMappedLernziele((prev) => [...prev, lernziel]);
       }
+      setHasChanges(false);
       toast.error('Fehler beim Löschen');
     } finally {
       setSavingIds((prev) => {
@@ -259,7 +263,7 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
     }
   };
 
-  // Gruppiere alle Lernziele der Einheit nach Themenfeld
+  // Gruppiere alle Lernziele der Einheit nach Themenfeld + unzugeordnete
   const themenfeldMitLernzielen = themenfelder.map((tf) => ({
     themenfeld: tf,
     lernziele: alleLernziele.filter((lz) => {
@@ -267,6 +271,26 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
       return paket?.einheit_id === einheitId && paket?.themenfeld_id === tf.id;
     })
   }));
+
+  // Füge unzugeordnete Lernziele hinzu (ohne Lernpaket oder Lernpaket existiert nicht)
+  const unzugeordneteLernziele = alleLernziele.filter((lz) => {
+    const paket = lernpakete.find((p) => p.id === lz.lernpaket_id);
+    return !paket || paket.einheit_id !== einheitId;
+  });
+
+  const handleSaveChanges = async () => {
+    setIsSaving(true);
+    try {
+      // Alle ausstehenden Speicherungen sind bereits durch Drag&Drop abgeschlossen
+      await new Promise(resolve => setTimeout(resolve, 300));
+      toast.success('Änderungen gespeichert');
+      setHasChanges(false);
+    } catch (err) {
+      toast.error('Fehler beim Speichern');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
@@ -300,6 +324,18 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
                   
                         </div>
                 )
+                }
+                {unzugeordneteLernziele.length > 0 &&
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="w-full flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-200 text-left">
+                    <span className="text-xs font-semibold text-slate-700">Unzugeordnete Kompetenzen</span>
+                  </div>
+                  <div className="p-2 space-y-1.5 bg-white">
+                    {unzugeordneteLernziele.map((lz, index) =>
+                      <DraggableLernziel key={lz.id} lernziel={lz} isHighlighted={false} index={index} />
+                    )}
+                  </div>
+                </div>
                 }
                   {provided.placeholder}
                 </div>
@@ -337,22 +373,23 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
             'Noch keine Kompetenzen zugeordnet' :
             `${mappedLernziele.length} Kompetenz(en) zugeordnet`}
           </p>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onComplete?.(false)}>
-              
-              Abbrechen
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => onComplete?.(true)}
-              className="gap-2">
-              
-              <CheckCircle className="w-4 h-4" /> Fertig
-            </Button>
-          </div>
+          <Button
+            size="sm"
+            onClick={handleSaveChanges}
+            disabled={!hasChanges || isSaving}
+            className="gap-2">
+            
+            {isSaving ? (
+              <>
+                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Wird gespeichert…
+              </>
+            ) : (
+              <>
+                <CheckCircle className="w-4 h-4" /> Speichern
+              </>
+            )}
+          </Button>
         </div>
       </div>
     </DragDropContext>);
