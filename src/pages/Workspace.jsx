@@ -274,41 +274,7 @@ export default function Workspace() {
         </div>
       }
 
-      {/* ── Top-Bar: nur Einheiten-Selector ─────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-4 sm:px-6 lg:px-8 py-2 border-b border-border bg-card shrink-0 flex-wrap gap-y-1">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-sm text-muted-foreground shrink-0 hidden sm:inline">Einheit:</span>
-          <Select value={selectedEinheitId || ''} onValueChange={handleEinheitChange}>
-            <SelectTrigger className="w-64 h-8 text-sm">
-              <SelectValue placeholder="Einheit auswählen…" />
-            </SelectTrigger>
-            <SelectContent>
-              {einheiten.map((e) =>
-              <SelectItem key={e.id} value={e.id}>
-                  {e.fach} – {e.titel_der_einheit} (Jg. {e.jahrgangsstufe})
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-        </div>
 
-        {/* Statistik-Leiste (nur Detail-Modus) */}
-        {einheit && viewMode === 'detail' &&
-        <WorkspaceStats
-          lernpakete={paketeFuerEinheit}
-          lernziele={zieleFuerEinheit}
-          aufgaben={aufgabenFuerEinheit}
-          mappings={mappings}
-          userEmail={authUser?.email || ''}
-          phaseAktivitaeten={lernpaketAktivitaeten} />
-        }
-
-        <div className="ml-auto">
-          <Link to="/einheiten" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-            ← Übersicht
-          </Link>
-        </div>
-      </div>
 
 
 
