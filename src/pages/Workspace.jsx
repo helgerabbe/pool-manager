@@ -7,6 +7,8 @@ import SidebarTree from '@/components/workspace/SidebarTree';
 import WorkspaceDetailPanel from '@/components/workspace/WorkspaceDetailPanel';
 import WorkspaceStats from '@/components/workspace/WorkspaceStats';
 import TransferSaeule from '@/components/workspace/TransferSaeule';
+import PresenceBadge from '@/components/workspace/PresenceBadge';
+import { usePresence } from '@/hooks/usePresence';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -105,6 +107,9 @@ export default function Workspace() {
   permissions.kannEinheitBearbeiten(einheit.fach) :
   false;
   const istAdmin = rolle === ROLLEN.ADMIN;
+
+  // ── Präsenz ──────────────────────────────────────────────────────────────────
+  const { onlineUsers } = usePresence(selectedEinheitId);
 
   // ── Callbacks ─────────────────────────────────────────────────────────────────
   // handleSelect is defined below with themenfeld-awareness
@@ -255,9 +260,12 @@ export default function Workspace() {
           userEmail={authUser?.email || ''} />
         }
 
-        <Link to="/einheiten" className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0 ml-auto">
-          ← Übersicht
-        </Link>
+        <div className="ml-auto flex items-center gap-3 shrink-0">
+          <PresenceBadge onlineUsers={onlineUsers} />
+          <Link to="/einheiten" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+            ← Übersicht
+          </Link>
+        </div>
       </div>
 
       {/* ── Haupt-Inhalt ─────────────────────────────────────────────────────── */}
