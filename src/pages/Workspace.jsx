@@ -367,7 +367,7 @@ export default function Workspace() {
           </div>
 
           {/* ── Säule 1: Basis-Lernpakete (Master-Detail) ────────────────────── */}
-          <TabsContent value="basis" className="flex flex-1 overflow-hidden m-0 p-0">
+          <TabsContent value="basis" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0 border-none">
             {/* Sidebar */}
             <aside className="w-96 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden">
               <div className="flex-1 overflow-y-auto p-3">
@@ -428,7 +428,7 @@ export default function Workspace() {
           {/* ── Säule 2: Allgemeine Aufgaben ──────────────────────────────────── */}
           <TabsContent 
             value="transfer" 
-            className="flex flex-col flex-1 overflow-hidden m-0 p-0 border-none"
+            className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0 border-none"
           >
             <AllgemeineAufgabenView
               einheitId={selectedEinheitId}
@@ -439,7 +439,7 @@ export default function Workspace() {
           {/* ── Säule 3: Anwendungs- und Projektaufgaben ───────────────────── */}
           <TabsContent 
             value="projekt" 
-            className="flex flex-col flex-1 overflow-hidden m-0 p-0 border-none"
+            className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0 border-none"
           >
             <ProjektaufgabenView
               einheitId={selectedEinheitId}
@@ -450,7 +450,7 @@ export default function Workspace() {
           {/* ── Lernlandkarte ────────────────── */}
           <TabsContent 
             value="lernlandkarte" 
-            className="flex flex-col flex-1 overflow-hidden m-0 p-0 border-none"
+            className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0 border-none"
           >
             <LernlandkartePreview
               einheit={einheit}
