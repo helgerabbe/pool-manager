@@ -10,6 +10,49 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 /**
+ * STRICT SCHEMA VALIDATION (Mirror of Frontend Zod Schemas)
+ * Phase 6.6: Backend-seitige Validierung analog zu Frontend
+ */
+function validateEinheitPayload(data) {
+  const errors = {};
+
+  // titel_der_einheit: required, min 3, max 200
+  if (!data.titel_der_einheit || typeof data.titel_der_einheit !== 'string') {
+    errors.titel_der_einheit = 'Titel ist erforderlich';
+  } else if (data.titel_der_einheit.trim().length < 3) {
+    errors.titel_der_einheit = 'Titel muss mindestens 3 Zeichen lang sein';
+  } else if (data.titel_der_einheit.length > 200) {
+    errors.titel_der_einheit = 'Titel darf maximal 200 Zeichen lang sein';
+  }
+
+  // fach: required, must be in enum
+  const VALID_FAECHER = [
+    'Deutsch', 'Mathematik', 'Englisch', 'Französisch', 'Latein',
+    'Biologie', 'Chemie', 'Physik', 'Geschichte', 'Geographie',
+    'Politik', 'Wirtschaft', 'Kunst', 'Musik', 'Sport', 'Religion', 'Ethik', 'Informatik'
+  ];
+  if (!data.fach || !VALID_FAECHER.includes(data.fach)) {
+    errors.fach = 'Bitte wählen Sie ein gültiges Fach aus';
+  }
+
+  // jahrgangsstufe: required, must be in enum
+  const VALID_JAHRGAENGE = ['5', '6', '7', '8', '9', '10', '11', '12', '13'];
+  if (!data.jahrgangsstufe || !VALID_JAHRGAENGE.includes(String(data.jahrgangsstufe))) {
+    errors.jahrgangsstufe = 'Bitte wählen Sie eine gültige Jahrgangsstufe aus';
+  }
+
+  // gesamtziel: optional, max 1000
+  if (data.gesamtziel && data.gesamtziel.length > 1000) {
+    errors.gesamtziel = 'Gesamtziel darf maximal 1000 Zeichen lang sein';
+  }
+
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors,
+  };
+}
+
+/**
  * Main Handler
  */
 Deno.serve(async (req) => {
@@ -34,15 +77,16 @@ Deno.serve(async (req) => {
     const payload = await req.json();
     const { titel_der_einheit, gesamtziel, fach, jahrgangsstufe, freigabe_status } = payload;
 
-    // 3. Input Validation
-    if (!titel_der_einheit?.trim()) {
-      return Response.json({ error: 'titel_der_einheit is required' }, { status: 400 });
-    }
-    if (!fach?.trim()) {
-      return Response.json({ error: 'fach is required' }, { status: 400 });
-    }
-    if (!jahrgangsstufe?.toString().trim()) {
-      return Response.json({ error: 'jahrgangsstufe is required' }, { status: 400 });
+    // 3. STRICT INPUT VALIDATION (Phase 6.6: Zod Mirror)
+    const validation = validateEinheitPayload(payload);
+    if (!validation.valid) {
+      return Response.json(
+        {
+          error: 'Validation failed',
+          details: validation.errors,
+        },
+        { status: 400 }
+      );
     }
 
     // 4. RBAC Check - Only Administrator, Fachschaftsleitung, Fachlehrkraft can create
