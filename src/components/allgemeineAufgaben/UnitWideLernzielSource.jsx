@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useDraggable } from '@dnd-kit/core';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, ChevronDown, GripVertical } from 'lucide-react';
+import { Search, ChevronDown, GripVertical, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ── Farben für Themenfelder ──
@@ -22,7 +22,7 @@ function getThemenfeldColor(index) {
 }
 
 // ── Draggable Lernziel Item ──
-function DraggableLernzielItem({ lernziel, themenfeldColor, isHighlighted }) {
+function DraggableLernzielItem({ lernziel, themenfeldColor, isHighlighted, isLinked }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `lz-${lernziel.id}`,
     data: { type: 'lernziel', lernziel },
@@ -37,9 +37,11 @@ function DraggableLernzielItem({ lernziel, themenfeldColor, isHighlighted }) {
         'flex items-start gap-2 p-2 rounded border cursor-grab active:cursor-grabbing transition-all text-left',
         isDragging
           ? 'opacity-60 ring-2 ring-primary shadow-lg'
-          : isHighlighted
-            ? 'bg-primary/10 border-primary/50'
-            : 'bg-white hover:bg-muted border-border'
+          : isLinked
+            ? 'bg-green-50 border-green-200 opacity-60'
+            : isHighlighted
+              ? 'bg-primary/10 border-primary/50'
+              : 'bg-white hover:bg-muted border-border'
       )}
     >
       <GripVertical className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
@@ -56,6 +58,9 @@ function DraggableLernzielItem({ lernziel, themenfeldColor, isHighlighted }) {
           </Badge>
         )}
       </div>
+      {isLinked && (
+        <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+      )}
     </div>
   );
 }
@@ -69,6 +74,7 @@ function LernpaketCollapsible({
   onToggle,
   searchTerm,
   highlightedLernzielIds,
+  linkedLernzielIds = new Set(),
 }) {
   const hasMatches = searchTerm
     ? lernziele.some(
@@ -127,6 +133,7 @@ function LernpaketCollapsible({
               lernziel={lz}
               themenfeldColor={themenfeldColor}
               isHighlighted={highlightedLernzielIds.has(lz.id)}
+              isLinked={linkedLernzielIds.has(lz.id)}
             />
           ))}
         </div>
@@ -145,6 +152,7 @@ function ThemenfeldCollapsible({
   searchTerm,
   highlightedLernzielIds,
   themenfeldColor,
+  linkedLernzielIds = new Set(),
 }) {
   const [openLernpakete, setOpenLernpakete] = useState(new Set());
 
@@ -244,6 +252,7 @@ function ThemenfeldCollapsible({
               }}
               searchTerm={searchTerm}
               highlightedLernzielIds={highlightedLernzielIds}
+              linkedLernzielIds={linkedLernzielIds}
             />
           ))}
         </div>
@@ -257,6 +266,7 @@ export default function UnitWideLernzielSource({
   einheitId,
   currentAufgabeThemenfeldId,
   highlightedLernzielIds = new Set(),
+  linkedLernzielIds = new Set(),
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [openThemenfelder, setOpenThemenfelder] = useState(new Set());
@@ -346,6 +356,7 @@ export default function UnitWideLernzielSource({
               searchTerm={searchTerm}
               highlightedLernzielIds={highlightedLernzielIds}
               themenfeldColor={getThemenfeldColor(idx)}
+              linkedLernzielIds={linkedLernzielIds}
             />
           ))
         )}
