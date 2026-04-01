@@ -290,24 +290,6 @@ export default function ProjektCreateView({ open, onOpenChange, einheitId, theme
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Themenfeld */}
-          {themenfelder.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="themenfeld">Themenfeld (optional)</Label>
-              <select
-                id="themenfeld"
-                value={formData.themenfeld_id || ''}
-                onChange={(e) => setFormData({ ...formData, themenfeld_id: e.target.value || null })}
-                className="w-full h-9 px-3 border rounded-lg text-sm bg-white"
-              >
-                <option value="">-- Kein Themenfeld --</option>
-                {themenfelder.map(tf => (
-                  <option key={tf.id} value={tf.id}>{tf.titel}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
           {/* Titel */}
           <div className="space-y-2">
             <Label htmlFor="titel">Titel (optional)</Label>
@@ -369,13 +351,9 @@ export default function ProjektCreateView({ open, onOpenChange, einheitId, theme
             >
               {createProjekt.isPending || updateProjekt.isPending ? (
                 <>Wird gespeichert…</>
-              ) : initialData ? (
-                <>
-                  <Save className="w-4 h-4" /> Speichern
-                </>
               ) : (
                 <>
-                  <Save className="w-4 h-4" /> Speichern & Weiter zu Kompetenzen
+                  <Save className="w-4 h-4" /> Speichern
                 </>
               )}
             </Button>

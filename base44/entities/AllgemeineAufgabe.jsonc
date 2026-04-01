@@ -10,6 +10,16 @@
       "type": "string",
       "description": "FK zum Themenfeld (optional)"
     },
+    "anforderungsebene": {
+      "type": "string",
+      "enum": [
+        "1 - Basis",
+        "2 - Transfer",
+        "3 - Projekt"
+      ],
+      "default": "1 - Basis",
+      "description": "Anforderungsebene der Aufgabe"
+    },
     "titel": {
       "type": "string",
       "description": "Titel der Aufgabe (optional)"
