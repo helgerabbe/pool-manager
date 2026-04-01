@@ -58,8 +58,8 @@ function AktivitaetSubNode({ phasenConfig, aktivitaetId, aktivitaetName, isAktiv
     >
       <Puzzle className="w-3 h-3 shrink-0" />
       <span className="truncate flex-1">{aktivitaetName}</span>
-      {isIncomplete && !isAktivitaetSelected && (
-        <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" title="Inhalt unvollständig" />
+      {isIncomplete && (
+        <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" title="Inhalt unvollständig: Bitte alle Pflichtfelder ausfüllen" />
       )}
       <Edit className="w-3 h-3 shrink-0 opacity-50" />
     </button>

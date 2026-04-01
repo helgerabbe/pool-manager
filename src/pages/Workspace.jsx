@@ -343,7 +343,7 @@ export default function Workspace() {
           {/* ── Säule 1: Basis-Lernpakete (Master-Detail) ────────────────────── */}
           <TabsContent value="basis" className="flex flex-1 overflow-hidden m-0 p-0">
             {/* Sidebar */}
-            <aside className="w-72 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden">
+            <aside className="w-96 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden">
               <div className="flex-1 overflow-y-auto p-3">
                 <SidebarTree
                 einheit={einheit}

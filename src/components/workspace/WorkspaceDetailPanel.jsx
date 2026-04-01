@@ -794,9 +794,10 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <p className="font-medium text-sm">{currentAktivitaet.name}</p>
-                  {phaseConfig.is_complete === false && (
-                    <span title="Inhalt unvollständig: Platzhalter" className="flex items-center gap-1 text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
+                  {phaseConfig.is_complete === false && !phaseConfig.field_values?.fill_in_moodle_later && (
+                    <span title="Inhalt unvollständig: Bitte alle Pflichtfelder ausfüllen" className="flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">
                       <AlertTriangle className="w-3 h-3" />
+                      Unvollständig
                     </span>
                   )}
                 </div>
