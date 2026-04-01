@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
+import ErrorBoundary from '@/components/errors/ErrorBoundary';
+import { SkeletonWorkspace } from '@/components/loading/SkeletonLoader';
 import SidebarTree from '@/components/workspace/SidebarTree';
 import WorkspaceDetailPanel from '@/components/workspace/WorkspaceDetailPanel';
 import ActivityDetailView from '@/components/workspace/ActivityDetailView';
@@ -221,11 +223,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
   // ── Loading ───────────────────────────────────────────────────────────────────
   if (rbacLoading || einheitenLoading) {
-    return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
-      </div>);
-
+    return <SkeletonWorkspace />;
   }
 
   if (einheiten.length === 0) {
@@ -249,9 +247,10 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const projektCount = allgemeineAufgabenData.filter((a) => a.anforderungsebene === '3 - Projekt').length;
 
   return (
-    <div className="flex flex-col h-full w-full bg-background">
+    <ErrorBoundary label="Workspace">
+      <div className="flex flex-col h-full w-full bg-background">
 
-      {/* ── Structural-Lock-Banner ───────────────────────────────────────────── */}
+        {/* ── Structural-Lock-Banner ───────────────────────────────────────────── */}
       {structLocked &&
       <div className="shrink-0 px-4 py-2 bg-orange-50 border-b border-orange-200 text-xs text-orange-800 flex items-center gap-2">
           <Lock className="w-3.5 h-3.5 shrink-0 text-orange-600" />
@@ -337,10 +336,11 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
           {/* ── Säule 1: Basis-Lernpakete (Master-Detail) ────────────────────── */}
           <TabsContent value="basis" className="data-[state=active]:flex data-[state=inactive]:hidden flex-row flex-1 overflow-hidden m-0 p-0">
-            {/* Sidebar */}
-            <aside className="w-96 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden">
-              <div className="flex-1 overflow-y-auto p-3">
-                <SidebarTree
+            <ErrorBoundary label="Basis-Struktur">
+              {/* Sidebar */}
+              <aside className="w-96 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden">
+                <div className="flex-1 overflow-y-auto p-3">
+                  <SidebarTree
                 einheit={einheit}
                 lernpakete={paketeFuerEinheit}
                 lernziele={zieleFuerEinheit}
@@ -353,13 +353,14 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                 userEmail={authUser?.email || ''}
                 highlightedAtomIds={highlightedAtomIds}
                 phaseAktivitaeten={lernpaketAktivitaeten} />
-              </div>
-            </aside>
+                </div>
+                </aside>
 
-            {/* Detail-Panel */}
-            <main className="flex-1 overflow-y-auto min-h-0">
-              <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                {selectedNode?.type === 'aktivitaet-edit' ?
+                {/* Detail-Panel */}
+                <main className="flex-1 overflow-y-auto min-h-0">
+                <ErrorBoundary label="Detail-Panel">
+                <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                  {selectedNode?.type === 'aktivitaet-edit' ?
               (() => {
                 const activityRecord = lernpaketAktivitaeten.find((a) => a.id === selectedNode.activityRecordId);
                 if (!activityRecord) return null;
@@ -391,30 +392,32 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
               }
               </div>
-            </main>
-          </TabsContent>
+              </ErrorBoundary>
+              </main>
+              </ErrorBoundary>
+              </TabsContent>
 
-          {/* ── Säule 2: Allgemeine Aufgaben ──────────────────────────────────── */}
-          <TabsContent
-          value="transfer"
-          className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0 border-none">
-          
-            <AllgemeineAufgabenView
-            einheitId={selectedEinheitId}
-            kannBearbeiten={kannDieseEinheitBearbeiten} />
-          
-          </TabsContent>
+              {/* ── Säule 2: Allgemeine Aufgaben ──────────────────────────────────── */}
+              <TabsContent
+              value="transfer"
+              className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0 border-none">
+              <ErrorBoundary label="Allgemeine Aufgaben">
+              <AllgemeineAufgabenView
+              einheitId={selectedEinheitId}
+              kannBearbeiten={kannDieseEinheitBearbeiten} />
+              </ErrorBoundary>
+              </TabsContent>
 
-          {/* ── Säule 3: Anwendungs- und Projektaufgaben ───────────────────── */}
-          <TabsContent
-          value="projekt"
-          className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0 border-none">
-          
-            <ProjektaufgabenView
-            einheitId={selectedEinheitId}
-            kannBearbeiten={kannDieseEinheitBearbeiten} />
-          
-          </TabsContent>
+              {/* ── Säule 3: Anwendungs- und Projektaufgaben ───────────────────── */}
+              <TabsContent
+              value="projekt"
+              className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0 border-none">
+              <ErrorBoundary label="Projektaufgaben">
+              <ProjektaufgabenView
+              einheitId={selectedEinheitId}
+              kannBearbeiten={kannDieseEinheitBearbeiten} />
+              </ErrorBoundary>
+              </TabsContent>
 
 
         </Tabs>
@@ -427,6 +430,8 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
         currentUserEmail={authUser?.email} />
 
       }
-    </div>);
+      </div>
+      </ErrorBoundary>
+      );
 
-}
+      }

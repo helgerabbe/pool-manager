@@ -327,8 +327,8 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="h-full flex flex-col gap-4 p-6 overflow-y-auto">
-          {/* Split-Screen Layout */}
-          <div className="flex-1 grid grid-cols-2 gap-6 min-h-0 overflow-hidden">
+          {/* Split-Screen Layout - Responsiv */}
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 min-h-0 overflow-hidden">
             {/* Linke Seite: Quellen-Liste */}
             <Droppable droppableId="lernziele-source" isDropDisabled={true}>
               {(provided) => (
