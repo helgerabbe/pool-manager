@@ -13,8 +13,16 @@ export function generateInteractiveProjectCoach(aufgabe, einheit, lernpakete, le
     paketeFuerEinheit.some(p => p.id === lz.lernpaket_id)
   );
 
+  // Unzugeordnete Lernziele (keine Lernpaket-Zuordnung)
+  const unzugeordneteZiele = lernziele.filter(lz => 
+    !paketeFuerEinheit.some(p => p.id === lz.lernpaket_id)
+  );
+
   // Erstelle strukturierte Lernlandkarte
-  const lernlandkarte = paketeFuerEinheit
+  const lernlandkarteTeile = [];
+
+  // Pakete mit ihren Zielen
+  const paketeTeil = paketeFuerEinheit
     .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0))
     .map(paket => {
       const ziele = zieleFuerEinheit
@@ -25,6 +33,20 @@ export function generateInteractiveProjectCoach(aufgabe, einheit, lernpakete, le
       return `**${paket.titel_des_pakets}** (${paket.geschaetzte_dauer_minuten || '?'} Min)\n${ziele || '(Keine Ziele definiert)'}`;
     })
     .join('\n\n');
+
+  if (paketeTeil) lernlandkarteTeile.push(paketeTeil);
+
+  // Unzugeordnete Lernziele
+  if (unzugeordneteZiele.length > 0) {
+    const unzugeordnetTeil = `**Nicht zugeordnete Lernziele**\n${unzugeordneteZiele
+      .map(lz => `• ${lz.formulierung_fachsprache}`)
+      .join('\n')}`;
+    lernlandkarteTeile.push(unzugeordnetTeil);
+  }
+
+  const lernlandkarte = lernlandkarteTeile.length > 0 
+    ? lernlandkarteTeile.join('\n\n')
+    : 'Keine Lernziele vorhanden';
 
   const fach = einheit.fach || 'dem Unterricht';
   const thema = einheit.titel_der_einheit || 'dieses Themengebiet';
