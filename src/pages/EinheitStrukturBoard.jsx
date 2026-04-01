@@ -231,7 +231,13 @@ function Spalte({ id, titel, pakete, lockedPaketIds, onAddPaket, onDeletePaket, 
 
 const SAMMELBECKEN_ID = '__sammelbecken__';
 
-export default function EinheitStrukturBoard({ onSaveStart = null, onSaveEnd = null } = {}) {
+export default function EinheitStrukturBoard({ 
+  onDirtyChange = null, 
+  onSavingChange = null, 
+  onErrorChange = null,
+  onSaveStart = null, 
+  onSaveEnd = null 
+} = {}) {
   const { id: einheitId } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -273,6 +279,19 @@ export default function EinheitStrukturBoard({ onSaveStart = null, onSaveEnd = n
   // ── Dirty-State & Navigation Guard ────────────────────────────────────────
   const { isDirty, setIsDirty, shouldBlock, setShouldBlock } = useStructuralUnsavedChanges();
   const [discardOnNavigate, setDiscardOnNavigate] = useState(false);
+
+  // Propagiere Änderungen nach oben
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  useEffect(() => {
+    onSavingChange?.(saving);
+  }, [saving, onSavingChange]);
+
+  useEffect(() => {
+    onErrorChange?.(lastError);
+  }, [lastError, onErrorChange]);
 
   // Berechtigungen: Struktur-Board nur für ADMIN + FACHSCHAFTSLEITUNG editierbar
   const kannStrukturBearbeiten = einheit
@@ -363,10 +382,10 @@ export default function EinheitStrukturBoard({ onSaveStart = null, onSaveEnd = n
   // ── Board-Aktionen ────────────────────────────────────────────────────────────
 
   const handleNeuesThemenfeld = () => {
-    setIsDirty(true);
     const newId = `tf-new-${Date.now()}`;
     setSpalten(prev => [...prev, { id: newId, titel: `Themenfeld ${prev.length + 1}`, themenfeldId: null }]);
     setPaketeMap(prev => ({ ...prev, [newId]: [] }));
+    setIsDirty(true);
   };
 
   const handleTitelChange = (spalteId, neuerTitel) => {

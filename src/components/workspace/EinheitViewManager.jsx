@@ -44,10 +44,15 @@ export default function EinheitViewManager() {
   // ── Settings Modal ────────────────────────────────────────────────────────
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // ── Struktur-Saving State (vom Kind-Component gesendet) ─────────────────────
+  // ── Struktur-Saving State (von EinheitStrukturBoard gesendet) ──────────────
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastError, setLastError] = useState(null);
+
+  // Callbacks für EinheitStrukturBoard
+  const handleDirtyChange = (dirty) => setIsDirty(dirty);
+  const handleSavingChange = (saving) => setIsSaving(saving);
+  const handleErrorChange = (error) => setLastError(error);
 
   // ── Query: Einheit laden ──────────────────────────────────────────────────
   const { data: einheit, isLoading: einheitLoading } = useQuery({
@@ -126,6 +131,9 @@ export default function EinheitViewManager() {
           <EinheitStrukturBoard
             einheitId={einheitId}
             kannBearbeiten={kannDieseEinheitBearbeiten}
+            onDirtyChange={handleDirtyChange}
+            onSavingChange={handleSavingChange}
+            onErrorChange={handleErrorChange}
             onSaved={() => handleViewModeChange('inhalte')}
           />
         ) : (
