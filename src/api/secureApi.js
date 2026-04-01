@@ -280,6 +280,58 @@ export async function getEinheitenList(page = 1, limit = 15) {
 /**
  * Alle Funktionen als Objekt exportieren (alternative API)
  */
+/**
+ * Bulk-Aufgaben-Generator: Erzeugt KI-basierte Varianten einer Master-Aufgabe
+ * 
+ * @param {Object} payload - { master_aufgabe_text, loesung_text, lernziel?, fach, jahrgangsstufe, anzahl }
+ * @returns {Promise<{success: boolean, generated_tasks: Array, metadata: Object}>}
+ * @throws {SecureApiError} Bei Fehler (400 Bad Request, 500 LLM Error, etc.)
+ */
+export async function generateBulkAufgaben(payload) {
+  if (!payload?.master_aufgabe_text || !payload?.loesung_text || !payload?.fach || !payload?.jahrgangsstufe || !payload?.anzahl) {
+    throw new Error('Missing required fields for bulk generation');
+  }
+
+  if (payload.anzahl < 1 || payload.anzahl > 20) {
+    throw new Error('Anzahl muss zwischen 1 und 20 liegen');
+  }
+
+  try {
+    const response = await base44.functions.invoke('generateBulkAufgabenSecure', payload);
+    return response.data;
+  } catch (error) {
+    const status = error.response?.status || 500;
+    const errorData = error.response?.data || {};
+    const message = errorData.error || error.message || 'Unknown error';
+
+    throw new SecureApiError(status, message);
+  }
+}
+
+/**
+ * Batch-Create für multiple Aufgaben
+ * 
+ * @param {Array} aufgaben - Array von Aufgaben-Objekten
+ * @returns {Promise<{success: boolean, created_count: number}>}
+ */
+export async function createBulkAufgaben(aufgaben) {
+  if (!Array.isArray(aufgaben) || aufgaben.length === 0) {
+    throw new Error('Aufgaben array muss nicht-leer sein');
+  }
+
+  try {
+    const results = await Promise.all(
+      aufgaben.map((aufgabe) => base44.entities.Aufgabenbausteine.create(aufgabe))
+    );
+    return { success: true, created_count: results.length };
+  } catch (error) {
+    const status = error.response?.status || 500;
+    const message = error.message || 'Bulk create failed';
+
+    throw new SecureApiError(status, message);
+  }
+}
+
 export const secureApi = {
   deleteEinheit,
   createEinheit,
@@ -287,6 +339,8 @@ export const secureApi = {
   publishEinheit,
   getWorkspaceData,
   getEinheitenList,
+  generateBulkAufgaben,
+  createBulkAufgaben,
 };
 
 export default secureApi;
