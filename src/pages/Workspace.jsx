@@ -399,12 +399,11 @@ export default function Workspace() {
                   })()
                 ) : (
                   <WorkspaceDetailPanel
-                    selectedNode={selectedNode}
+                    selectedNode={{ ...selectedNode, themenfelder }}
                     einheit={einheit}
                     lernpakete={paketeFuerEinheit}
                     lernziele={zieleFuerEinheit}
                     aufgaben={aufgabenFuerEinheit}
-                    themenfelder={themenfelder}
                     userEmail={authUser?.email}
                     kannBearbeiten={kannDieseEinheitBearbeiten}
                     istAdmin={istAdmin}

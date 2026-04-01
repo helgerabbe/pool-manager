@@ -47,26 +47,14 @@ export default function EinheitForm({ open, onOpenChange, onSubmit, initialData 
               placeholder="z.B. Lineare Funktionen"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Jahrgangsstufe *</Label>
-              <Select value={formData.jahrgangsstufe} onValueChange={v => setFormData({ ...formData, jahrgangsstufe: v })}>
-                <SelectTrigger><SelectValue placeholder="Jg." /></SelectTrigger>
-                <SelectContent>
-                  {jahrgaenge.map(j => <SelectItem key={j} value={j}>Jahrgang {j}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Navigationslogik</Label>
-              <Select value={formData.navigationslogik} onValueChange={v => setFormData({ ...formData, navigationslogik: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Sequenziell">Sequenziell</SelectItem>
-                  <SelectItem value="Offen">Offen</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label>Jahrgangsstufe *</Label>
+            <Select value={formData.jahrgangsstufe} onValueChange={v => setFormData({ ...formData, jahrgangsstufe: v })}>
+              <SelectTrigger><SelectValue placeholder="Jg." /></SelectTrigger>
+              <SelectContent>
+                {jahrgaenge.map(j => <SelectItem key={j} value={j}>Jahrgang {j}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
