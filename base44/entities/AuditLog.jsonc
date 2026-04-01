@@ -1,0 +1,58 @@
+{
+  "name": "AuditLog",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "E-Mail des Users der die Action durchgef\u00fchrt hat"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "CREATE",
+        "UPDATE",
+        "DELETE",
+        "PUBLISH",
+        "EXPORT"
+      ],
+      "description": "Aktion die durchgef\u00fchrt wurde"
+    },
+    "resource_type": {
+      "type": "string",
+      "description": "Typ der betroffenen Entit\u00e4t (Einheiten, Lernpakete, etc.)"
+    },
+    "resource_id": {
+      "type": "string",
+      "description": "ID der betroffenen Entit\u00e4t"
+    },
+    "changes": {
+      "type": "object",
+      "description": "Bei UPDATE: Welche Felder wurden ge\u00e4ndert",
+      "additionalProperties": true
+    },
+    "affected_count": {
+      "type": "number",
+      "description": "Bei Cascade Delete: Wie viele Entities wurden gel\u00f6scht",
+      "default": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "success",
+        "failed"
+      ],
+      "description": "Erfolg der Operation"
+    },
+    "error_message": {
+      "type": "string",
+      "description": "Fehlermeldung falls Status = failed"
+    }
+  },
+  "required": [
+    "user_email",
+    "action",
+    "resource_type",
+    "resource_id",
+    "status"
+  ]
+}
