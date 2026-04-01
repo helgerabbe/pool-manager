@@ -53,7 +53,6 @@ function useBreadcrumb(location) {
 export default function AppLayout() {
   const location = useLocation();
   const { realRolle, permissions } = useRBAC();
-  const breadcrumbLabel = useBreadcrumb(location);
 
   const isActive = (path) =>
     path === '/'
@@ -70,21 +69,14 @@ export default function AppLayout() {
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
 
-            {/* Links: Logo + Breadcrumb */}
-            <div className="flex items-center gap-3 min-w-0">
+            {/* Links: Logo */}
+            <div className="flex items-center gap-2.5 shrink-0">
               <Link to="/" className="flex items-center gap-2.5 shrink-0">
                 <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
                   <Layers className="w-4 h-4 text-primary-foreground" />
                 </div>
                 <span className="text-base font-bold text-foreground tracking-tight hidden sm:inline">PoolPlaner</span>
               </Link>
-
-              {breadcrumbLabel && (
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
-                  <span className="text-sm text-muted-foreground truncate max-w-[240px]">{breadcrumbLabel}</span>
-                </div>
-              )}
             </div>
 
             {/* Rechts: NUR globale Icons (Home, Einheiten, Admin, Profil) */}
