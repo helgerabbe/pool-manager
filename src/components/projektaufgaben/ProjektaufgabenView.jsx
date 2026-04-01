@@ -83,7 +83,7 @@ export default function ProjektaufgabenView({ einheitId, kannBearbeiten }) {
   return (
     <div className="h-full flex flex-col bg-background overflow-hidden">
       {/* Header */}
-      <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-4 border-b border-border bg-card space-y-3">
+      <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-3 border-b border-border bg-card space-y-2">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-bold">Anwendungs- und Projektaufgaben</h2>
@@ -114,7 +114,7 @@ export default function ProjektaufgabenView({ einheitId, kannBearbeiten }) {
       </div>
 
       {/* Inhalt */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-3">
         {gefiltert.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center gap-4">
             <Layers className="w-8 h-8 text-muted-foreground/40" />
