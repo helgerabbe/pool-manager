@@ -1,14 +1,41 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { BookOpen, Layers, Home, ShieldCheck, DatabaseZap, Download, LayoutTemplate, Settings2, PlusCircle } from 'lucide-react';
+import { Layers, Home, ShieldCheck, DatabaseZap, Download, LayoutTemplate, Settings2, PlusCircle, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
 import RoleSwitcher from '@/components/layout/RoleSwitcher';
 import WartungsBanner from '@/components/layout/WartungsBanner';
+import NavigationTooltip from '@/components/layout/NavigationTooltip';
+import { base44 } from '@/api/base44Client';
+
+// Wiederverwendbarer Icon-Nav-Link mit sofortigem Tooltip
+function NavIconLink({ to, icon: Icon, label, isActive }) {
+  return (
+    <NavigationTooltip label={label}>
+      <Link
+        to={to}
+        aria-label={label}
+        className={cn(
+          'flex items-center justify-center w-10 h-10 rounded-xl transition-all',
+          isActive
+            ? 'bg-primary text-primary-foreground shadow-sm'
+            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+        )}
+      >
+        <Icon className="w-5 h-5" />
+      </Link>
+    </NavigationTooltip>
+  );
+}
 
 export default function AppLayout() {
   const location = useLocation();
   const { rolle, realRolle, permissions } = useRBAC();
+
+  const isActive = (path) =>
+    path === '/'
+      ? location.pathname === '/'
+      : location.pathname === path || location.pathname.startsWith(path);
 
   return (
     <div className="min-h-screen bg-background">
@@ -17,7 +44,9 @@ export default function AppLayout() {
       <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center gap-3">
+
+            {/* Logo */}
+            <Link to="/" className="flex items-center gap-3 shrink-0">
               <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
                 <Layers className="w-5 h-5 text-primary-foreground" />
               </div>
@@ -26,85 +55,43 @@ export default function AppLayout() {
                 <span className="hidden sm:inline text-xs text-muted-foreground ml-2">Kollaborative Unterrichtsplanung</span>
               </div>
             </Link>
-            <nav className="flex items-center gap-1">
-              {[
-                { path: '/', label: 'Übersicht', icon: Home },
-                { path: '/einheit/create', label: 'Neue Einheit', icon: PlusCircle },
-                { path: '/einheit/workspace', label: 'Workspace', icon: LayoutTemplate },
-              ].map(item => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.path ||
-                  (item.path !== '/' && location.pathname.startsWith(item.path));
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={cn(
-                      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                    )}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span className="hidden sm:inline">{item.label}</span>
-                  </Link>
-                );
-              })}
+
+            {/* Icon-Nav */}
+            <nav className="flex items-center gap-1" aria-label="Hauptnavigation">
+
+              {/* Trennlinie */}
+              <div className="w-px h-6 bg-border mx-1" />
+
+              <NavIconLink to="/"                 icon={Home}        label="Übersicht"    isActive={isActive('/')} />
+              <NavIconLink to="/einheit/create"   icon={PlusCircle}  label="Neue Einheit" isActive={isActive('/einheit/create')} />
+              <NavIconLink to="/einheit/workspace" icon={LayoutTemplate} label="Workspace" isActive={isActive('/einheit/workspace')} />
+
               {permissions.kannExportieren && (
-                <Link
-                  to="/einheit/export"
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
-                    location.pathname === '/einheit/export'
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">Export</span>
-                </Link>
+                <NavIconLink to="/einheit/export" icon={Download} label="Moodle-Export" isActive={isActive('/einheit/export')} />
               )}
+
               {permissions.kannBenutzerVerwalten && (
                 <>
-                  <Link
-                    to="/benutzerverwaltung"
-                    className={cn(
-                      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
-                      location.pathname === '/benutzerverwaltung'
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                    )}
-                  >
-                    <ShieldCheck className="w-4 h-4" />
-                    <span className="hidden sm:inline">Benutzer</span>
-                  </Link>
-                  <Link
-                   to="/admin-settings"
-                   className={cn(
-                     "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
-                     location.pathname === '/admin-settings'
-                       ? "bg-primary text-primary-foreground"
-                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                   )}
-                  >
-                   <Settings2 className="w-4 h-4" />
-                   <span className="hidden sm:inline">Einstellungen</span>
-                  </Link>
-                  <Link
-                   to="/seed"
-                    className={cn(
-                      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
-                      location.pathname === '/seed'
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                    )}
-                  >
-                    <DatabaseZap className="w-4 h-4" />
-                    <span className="hidden sm:inline">Seed</span>
-                  </Link>
+                  <div className="w-px h-6 bg-border mx-1" />
+                  <NavIconLink to="/benutzerverwaltung" icon={ShieldCheck} label="Benutzerverwaltung" isActive={isActive('/benutzerverwaltung')} />
+                  <NavIconLink to="/admin-settings"     icon={Settings2}   label="Einstellungen"      isActive={isActive('/admin-settings')} />
+                  <NavIconLink to="/seed"               icon={DatabaseZap} label="Seed-Daten"          isActive={isActive('/seed')} />
                 </>
               )}
+
+              <div className="w-px h-6 bg-border mx-1" />
+
+              {/* Abmelden */}
+              <NavigationTooltip label="Abmelden">
+                <button
+                  aria-label="Abmelden"
+                  onClick={() => base44.auth.logout()}
+                  className="flex items-center justify-center w-10 h-10 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </NavigationTooltip>
+
               <RoleSwitcher realRolle={realRolle} anzeigeRolle={rolle} />
             </nav>
           </div>
