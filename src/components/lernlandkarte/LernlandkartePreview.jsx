@@ -152,28 +152,33 @@ export default function LernlandkartePreview({
                 lernziele={zieleFuerEinheit}
               />
             ))
-          ) : (
-            <p className="text-xs text-muted-foreground text-center py-4">
-              Keine Inhalte vorhanden
-            </p>
-          )}
+          ) : null}
           
-          {/* Unzugeordnete Lernziele */}
+          {/* Pseudo-Themenfeld für Nicht-Zugeordnete Lernziele */}
           {unzugeordneteZiele.length > 0 && (
-            <div className="border rounded-lg border-border overflow-hidden">
+            <div className="border rounded-lg border-border overflow-hidden mb-3">
               <button className="w-full flex items-center gap-2 px-3 py-2 bg-card hover:bg-muted/50 transition-colors text-left font-semibold text-sm">
+                <ChevronDown className="w-4 h-4 shrink-0" />
                 <BookOpen className="w-4 h-4 text-primary" />
                 Nicht zugeordnete Lernziele
                 <Badge variant="secondary" className="text-[9px] ml-auto">
                   {unzugeordneteZiele.length}
                 </Badge>
               </button>
-              <div className="border-t border-border bg-muted/30 px-3 py-2 space-y-1">
-                {unzugeordneteZiele.map(ziel => (
-                  <LernzielCompact key={ziel.id} lernziel={ziel} />
-                ))}
+              <div className="border-t border-border bg-muted/30">
+                <div className="px-3 py-2 space-y-1">
+                  {unzugeordneteZiele.map(ziel => (
+                    <LernzielCompact key={ziel.id} lernziel={ziel} />
+                  ))}
+                </div>
               </div>
             </div>
+          )}
+
+          {themenfeldMitPaketen.length === 0 && unzugeordneteZiele.length === 0 && (
+            <p className="text-xs text-muted-foreground text-center py-4">
+              Keine Inhalte vorhanden
+            </p>
           )}
         </div>
       </div>
