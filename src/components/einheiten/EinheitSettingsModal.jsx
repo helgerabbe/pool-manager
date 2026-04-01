@@ -18,6 +18,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Settings, Users, Save, Plus, Trash2, Crown, Edit, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useDraftState } from '@/hooks/useDraftState';
+import { SavedIndicator } from '@/hooks/useSavedIndicator.jsx';
 
 const FAECHER = ["Deutsch","Mathematik","Englisch","Französisch","Latein","Biologie","Chemie","Physik","Geschichte","Geographie","Politik","Wirtschaft","Kunst","Musik","Sport","Religion","Ethik","Informatik"];
 const JAHRGANGSSTUFEN = ["5","6","7","8","9","10","11","12","13"];
@@ -45,8 +47,9 @@ function UnitRoleBadge({ role, size = 'sm' }) {
 
 // ── Tab 1: Allgemein ──────────────────────────────────────────────────────────
 
-function TabAllgemein({ einheit, onSave, isSaving }) {
-  const [form, setForm] = useState({
+function TabAllgemein({ einheit, onSave, isSaving, showSaved }) {
+  const draftKey = `einheit-settings-${einheit.id}`;
+  const { data: form, setData: setForm } = useDraftState(draftKey, {
     titel_der_einheit: einheit.titel_der_einheit || '',
     gesamtziel:        einheit.gesamtziel || '',
     fach:              einheit.fach || '',
@@ -54,7 +57,7 @@ function TabAllgemein({ einheit, onSave, isSaving }) {
     freigabe_status:   einheit.freigabe_status || 'In Planung',
   });
 
-  const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
+  const set = (key, val) => setForm({ ...form, [key]: val });
 
   return (
     <div className="space-y-4 pt-2">
@@ -105,7 +108,8 @@ function TabAllgemein({ einheit, onSave, isSaving }) {
         </Select>
       </div>
 
-      <div className="pt-2 flex justify-end">
+      <div className="pt-2 flex justify-end gap-2">
+        <SavedIndicator show={showSaved} />
         <Button onClick={() => onSave(form)} disabled={isSaving || !form.titel_der_einheit || !form.fach || !form.jahrgangsstufe} className="gap-2">
           {isSaving
             ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -292,6 +296,7 @@ function TabTeam({ einheitId, currentUserEmail, isLeitung }) {
 export default function EinheitSettingsModal({ open, onOpenChange, einheit, currentUserEmail }) {
   const queryClient = useQueryClient();
   const [isSaving, setIsSaving] = useState(false);
+  const [showSaved, setShowSaved] = useState(false);
 
   const { data: myMembership } = useQuery({
     queryKey: ['einheit-members', einheit?.id, currentUserEmail],
@@ -305,11 +310,19 @@ export default function EinheitSettingsModal({ open, onOpenChange, einheit, curr
 
   const handleSaveMetadata = async (formData) => {
     setIsSaving(true);
-    await base44.entities.Einheiten.update(einheit.id, formData);
-    queryClient.invalidateQueries({ queryKey: ['einheiten'] });
-    setIsSaving(false);
-    toast.success('Einheit gespeichert.');
-    onOpenChange(false);
+    try {
+      await base44.entities.Einheiten.update(einheit.id, formData);
+      queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+      localStorage.removeItem(`einheit-settings-${einheit.id}`);
+      setShowSaved(true);
+      setTimeout(() => setShowSaved(false), 1500);
+      toast.success('Einheit gespeichert.');
+      setTimeout(() => onOpenChange(false), 500);
+    } catch (err) {
+      toast.error('Fehler beim Speichern.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!einheit) return null;
@@ -337,7 +350,7 @@ export default function EinheitSettingsModal({ open, onOpenChange, einheit, curr
           </TabsList>
 
           <TabsContent value="allgemein">
-            <TabAllgemein einheit={einheit} onSave={handleSaveMetadata} isSaving={isSaving} />
+            <TabAllgemein einheit={einheit} onSave={handleSaveMetadata} isSaving={isSaving} showSaved={showSaved} />
           </TabsContent>
 
           <TabsContent value="team">
