@@ -6,8 +6,10 @@ import { ROLLEN } from '@/lib/rbac';
 import SidebarTree from '@/components/workspace/SidebarTree';
 import WorkspaceDetailPanel from '@/components/workspace/WorkspaceDetailPanel';
 import WorkspaceStats from '@/components/workspace/WorkspaceStats';
-import TransferSaeule from '@/components/workspace/TransferSaeule';
 import ActivityDetailView from '@/components/workspace/ActivityDetailView';
+import AllgemeineAufgabenView from '@/components/allgemeineAufgaben/AllgemeineAufgabenView';
+import ProjektaufgabenView from '@/components/projektaufgaben/ProjektaufgabenView';
+import LernlandkartePreview from '@/components/lernlandkarte/LernlandkartePreview';
 import { usePresence } from '@/hooks/usePresence';
 import { isStructurallyLocked } from '@/hooks/useStructuralLock';
 import { Button } from '@/components/ui/button';
@@ -325,7 +327,7 @@ export default function Workspace() {
       <Tabs
         value={activeTab}
         onValueChange={(tab) => {setActiveTab(tab);setHighlightedAtomIds(new Set());}}
-        className="flex flex-col flex-1 overflow-hidden min-h-0 w-full">
+        className="flex flex-col flex-1 h-full overflow-hidden m-0 p-0">
         
           {/* Tab-Leiste */}
           <div className="px-4 sm:px-6 lg:px-8 pt-2 border-b border-border bg-card shrink-0">
@@ -356,6 +358,10 @@ export default function Workspace() {
                     {projektCount}
                   </span>
               }
+              </TabsTrigger>
+              <TabsTrigger value="lernlandkarte" className="bg-pink-200 text-slate-600 px-3 py-1 text-xs font-medium rounded-md inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow gap-1.5">
+                <BookOpen className="w-3.5 h-3.5" />
+                Lernlandkarte
               </TabsTrigger>
             </TabsList>
           </div>
@@ -420,34 +426,42 @@ export default function Workspace() {
             </main>
           </TabsContent>
 
-          {/* ── Säule 2: Transfer-Übungen (Themenfeld-gefiltert) ──────────────── */}
-          <TabsContent value="transfer" className="flex-1 overflow-y-auto m-0 p-0 outline-none data-[state=inactive]:hidden">
-            <TransferSaeule
-            ebene="2 - Transfer"
-            lernpakete={paketeFuerThemenfeld}
-            lernziele={zieleFuerThemenfeld}
-            aufgaben={aufgabenFuerThemenfeld}
-            mappings={mappings}
-            einheitId={einheit.id}
-            kannBearbeiten={kannDieseEinheitBearbeiten}
-            onAtomHighlight={handleAtomHighlight}
-            highlightedAufgabeId={null} />
-          
+          {/* ── Säule 2: Allgemeine Aufgaben ──────────────────────────────────── */}
+          <TabsContent 
+            value="transfer" 
+            className="data-[state=active]:flex flex-col flex-1 h-full overflow-hidden m-0 mt-0 p-0 border-none outline-none"
+          >
+            <AllgemeineAufgabenView
+              einheitId={selectedEinheitId}
+              kannBearbeiten={kannDieseEinheitBearbeiten}
+            />
           </TabsContent>
 
-          {/* ── Säule 3: Projekte (globaler Einheits-Scope) ───────────────────── */}
-          <TabsContent value="projekt" className="flex-1 overflow-y-auto m-0 p-0 outline-none data-[state=inactive]:hidden">
-            <TransferSaeule
-            ebene="3 - Projekt"
-            lernpakete={paketeFuerEinheit}
-            lernziele={zieleFuerEinheit}
-            aufgaben={projektaufgabenFuerEinheit}
-            mappings={mappings}
-            einheitId={einheit.id}
-            kannBearbeiten={kannDieseEinheitBearbeiten}
-            onAtomHighlight={handleAtomHighlight}
-            highlightedAufgabeId={null} />
-          
+          {/* ── Säule 3: Anwendungs- und Projektaufgaben ───────────────────── */}
+          <TabsContent 
+            value="projekt" 
+            className="data-[state=active]:flex flex-col flex-1 h-full overflow-hidden m-0 mt-0 p-0 border-none outline-none"
+          >
+            <ProjektaufgabenView
+              einheitId={selectedEinheitId}
+              kannBearbeiten={kannDieseEinheitBearbeiten}
+            />
+          </TabsContent>
+
+          {/* ── Lernlandkarte ────────────────── */}
+          <TabsContent 
+            value="lernlandkarte" 
+            className="data-[state=active]:flex flex-col flex-1 h-full overflow-hidden m-0 mt-0 p-0 border-none outline-none"
+          >
+            <LernlandkartePreview
+              einheit={einheit}
+              lernpakete={paketeFuerEinheit}
+              lernziele={zieleFuerEinheit}
+              aufgaben={aufgabenFuerEinheit}
+              themenfelder={themenfelder}
+              allgemeineAufgaben={aufgabenFuerEinheit.filter(a => a.anforderungsebene === '2 - Transfer')}
+              projektaufgaben={projektaufgabenFuerEinheit}
+            />
           </TabsContent>
         </Tabs>
       }
