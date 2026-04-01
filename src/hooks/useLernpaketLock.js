@@ -18,6 +18,13 @@ export function useLernpaketLock(paketId, userEmail) {
     return base44.functions.invoke('lernpaketLock', { action, paket_id: paketId });
   }, [paketId]);
 
+  const stopHeartbeat = useCallback(() => {
+    if (heartbeatRef.current) {
+      clearInterval(heartbeatRef.current);
+      heartbeatRef.current = null;
+    }
+  }, []);
+
   const startHeartbeat = useCallback(() => {
     stopHeartbeat();
     heartbeatRef.current = setInterval(async () => {
@@ -36,13 +43,6 @@ export function useLernpaketLock(paketId, userEmail) {
       }
     }, HEARTBEAT_INTERVAL);
   }, [callLockApi, stopHeartbeat]);
-
-  const stopHeartbeat = useCallback(() => {
-    if (heartbeatRef.current) {
-      clearInterval(heartbeatRef.current);
-      heartbeatRef.current = null;
-    }
-  }, []);
 
   // Cleanup beim Unmount (Seite schließen / Tab wechseln)
   useEffect(() => {
