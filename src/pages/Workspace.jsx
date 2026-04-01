@@ -7,6 +7,7 @@ import SidebarTree from '@/components/workspace/SidebarTree';
 import WorkspaceDetailPanel from '@/components/workspace/WorkspaceDetailPanel';
 import WorkspaceStats from '@/components/workspace/WorkspaceStats';
 import TransferSaeule from '@/components/workspace/TransferSaeule';
+import ActivityDetailView from '@/components/workspace/ActivityDetailView';
 import { usePresence } from '@/hooks/usePresence';
 import { isStructurallyLocked } from '@/hooks/useStructuralLock';
 import { Button } from '@/components/ui/button';
@@ -92,6 +93,18 @@ export default function Workspace() {
   const { data: themenfelder = [] } = useQuery({
     queryKey: ['themenfelder', selectedEinheitId],
     queryFn: () => base44.entities.Themenfeld.filter({ einheit_id: selectedEinheitId }),
+    enabled: !!selectedEinheitId
+  });
+
+  const { data: lernpaketAktivitaeten = [] } = useQuery({
+    queryKey: ['lernpaketAktivitaeten'],
+    queryFn: () => base44.entities.LernpaketAktivitaet.list(),
+    enabled: !!selectedEinheitId
+  });
+
+  const { data: aktivitaetenKatalog = [] } = useQuery({
+    queryKey: ['aktivitaetenKatalog'],
+    queryFn: () => base44.entities.AktivitaetenKatalog.list(),
     enabled: !!selectedEinheitId
   });
 
@@ -364,24 +377,41 @@ export default function Workspace() {
             {/* Detail-Panel */}
             <main className="flex-1 overflow-y-auto min-h-0">
               <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                <WorkspaceDetailPanel
-                selectedNode={selectedNode}
-                einheit={einheit}
-                lernpakete={paketeFuerEinheit}
-                lernziele={zieleFuerEinheit}
-                aufgaben={aufgabenFuerEinheit}
-                themenfelder={themenfelder}
-                userEmail={authUser?.email}
-                kannBearbeiten={kannDieseEinheitBearbeiten}
-                istAdmin={istAdmin}
-                onNavigate={handleSelect}
-                onNewLernpaket={() => handleSelect({ type: 'new-lernpaket' })}
-                onNewLernziel={(paketId) => handleSelect({ type: 'new-lernziel', paketId })}
-                onNewAufgabe={(paketId, lernzielId) => handleSelect({ type: 'new-aufgabe', paketId, lernzielId })}
-                onEditEinheit={() => {}}
-                onDeleteLernpaket={(id) => deleteLernpaket.mutate(id)}
-                onDeleteLernziel={(id) => deleteLernziel.mutate(id)} />
-              
+                {selectedNode?.type === 'aktivitaet' ? (
+                  (() => {
+                    const aktivitaet = lernpaketAktivitaeten.find(a => a.id === selectedNode.id);
+                    return aktivitaet ? (
+                      <>
+                        <ActivityDetailView
+                          aktivitaet={aktivitaet}
+                          aktivitaetKatalog={aktivitaetenKatalog}
+                          lernpaketId={selectedNode.paketId}
+                          phase={selectedNode.phase}
+                          onClose={() => handleSelect({ type: 'lernpaket', id: selectedNode.paketId })}
+                        />
+                      </>
+                    ) : null;
+                  })()
+                ) : (
+                  <WorkspaceDetailPanel
+                    selectedNode={selectedNode}
+                    einheit={einheit}
+                    lernpakete={paketeFuerEinheit}
+                    lernziele={zieleFuerEinheit}
+                    aufgaben={aufgabenFuerEinheit}
+                    themenfelder={themenfelder}
+                    userEmail={authUser?.email}
+                    kannBearbeiten={kannDieseEinheitBearbeiten}
+                    istAdmin={istAdmin}
+                    onNavigate={handleSelect}
+                    onNewLernpaket={() => handleSelect({ type: 'new-lernpaket' })}
+                    onNewLernziel={(paketId) => handleSelect({ type: 'new-lernziel', paketId })}
+                    onNewAufgabe={(paketId, lernzielId) => handleSelect({ type: 'new-aufgabe', paketId, lernzielId })}
+                    onEditEinheit={() => {}}
+                    onDeleteLernpaket={(id) => deleteLernpaket.mutate(id)}
+                    onDeleteLernziel={(id) => deleteLernziel.mutate(id)}
+                  />
+                )}
               </div>
             </main>
           </TabsContent>
