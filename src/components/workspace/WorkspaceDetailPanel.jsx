@@ -369,14 +369,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
           </Button>
         </div>
       )}
-      {!inEditMode && !isLockedByOther && kannBearbeiten && (
-        <Button onClick={handleStartEdit} disabled={isLocking} variant="outline" size="sm" className="gap-2 w-full">
-          {isLocking
-            ? <div className="w-3.5 h-3.5 border-2 border-muted border-t-primary rounded-full animate-spin" />
-            : <PenLine className="w-3.5 h-3.5" />}
-          Paket bearbeiten
-        </Button>
-      )}
+
 
       {/* Lernziele-Anzeige */}
       <div className="space-y-2">
