@@ -719,13 +719,6 @@ function AktivitaetEditPanel({ paket, phaseKey, phaseLabel, kannBearbeiten, quer
 // ── PhaseContent: Aktivitäten-Anzeige und -Verwaltung ─────────────────────────
 
 function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient }) {
-  const [selectedAktivitaetId, setSelectedAktivitaetId] = useState(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewAktivitaet, setPreviewAktivitaet] = useState(null);
-  const [contentFormOpen, setContentFormOpen] = useState(false);
-  const [contentFormAktivitaet, setContentFormAktivitaet] = useState(null);
-
   const { data: aktivitaeten = [] } = useQuery({
     queryKey: ['aktivitaeten'],
     queryFn: () => base44.entities.AktivitaetenKatalog.list(),
@@ -742,33 +735,22 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient
   const currentAktivitaet = phaseConfig.selected_aktivitaet_id 
     ? aktivitaeten.find(a => a.id === phaseConfig.selected_aktivitaet_id)
     : null;
-  const selectedAktivitaet = selectedAktivitaetId
-    ? aktivitaeten.find(a => a.id === selectedAktivitaetId)
-    : null;
 
   const handleSelectAktivitaet = (aktivitaetId) => {
-    const aktivitaet = aktivitaeten.find(a => a.id === aktivitaetId);
-    setSelectedAktivitaetId(aktivitaetId);
-    setContentFormAktivitaet(aktivitaet);
-    setContentFormOpen(true);
-  };
-
-  const handleSaveAktivitaet = () => {
-    if (!selectedAktivitaetId) return;
+    if (!aktivitaetId) return;
     const newConfig = {
       ...phasenConfig,
       [phaseKey]: {
         ...(phasenConfig[phaseKey] || {}),
-        selected_aktivitaet_id: selectedAktivitaetId,
+        selected_aktivitaet_id: aktivitaetId,
         field_values: {},
+        is_complete: false,
       },
     };
     base44.entities.Lernpakete.update(paket.id, {
       phasen_konfiguration: newConfig
     }).then(() => {
       queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-      setIsDialogOpen(false);
-      setSelectedAktivitaetId(null);
     });
   };
 
@@ -776,6 +758,8 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient
     const newConfig = { ...phasenConfig };
     if (newConfig[phaseKey]) {
       delete newConfig[phaseKey].selected_aktivitaet_id;
+      delete newConfig[phaseKey].field_values;
+      delete newConfig[phaseKey].is_complete;
     }
     base44.entities.Lernpakete.update(paket.id, {
       phasen_konfiguration: newConfig
@@ -785,166 +769,66 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient
   };
 
   return (
-    <>
-      <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 space-y-3">
-        {/* Aktuelle Aktivität */}
-        {currentAktivitaet ? (
-          <div className="p-3 rounded-lg bg-white border border-border space-y-2">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="font-medium text-sm">{currentAktivitaet.name}</p>
-                  {phaseConfig.is_complete === false && !phaseConfig.field_values?.fill_in_moodle_later && (
-                    <span title="Inhalt unvollständig: Bitte alle Pflichtfelder ausfüllen" className="flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">
-                      <AlertTriangle className="w-3 h-3" />
-                      Unvollständig
-                    </span>
-                  )}
-                </div>
-                {currentAktivitaet.form_schema && currentAktivitaet.form_schema.length > 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {currentAktivitaet.form_schema.length} Felder
-                  </p>
+    <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 space-y-3">
+      {/* Aktuelle Aktivität */}
+      {currentAktivitaet ? (
+        <div className="p-3 rounded-lg bg-white border border-border space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <p className="font-medium text-sm">{currentAktivitaet.name}</p>
+                {phaseConfig.is_complete === false && (
+                  <span title="Inhalt unvollständig: Bitte alle Pflichtfelder ausfüllen" className="flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">
+                    <AlertTriangle className="w-3 h-3" />
+                    Unvollständig
+                  </span>
                 )}
               </div>
-              <div className="flex items-center gap-1">
-                {kannBearbeiten && currentAktivitaet.form_schema && currentAktivitaet.form_schema.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs gap-1"
-                    onClick={() => {
-                      setContentFormAktivitaet(currentAktivitaet);
-                      setContentFormOpen(true);
-                    }}
-                  >
-                    Inhalt bearbeiten
-                  </Button>
-                )}
-                {phaseConfig.field_values && Object.keys(phaseConfig.field_values).length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => {
-                      setPreviewAktivitaet(currentAktivitaet);
-                      setPreviewOpen(true);
-                    }}
-                    title="Schüler-Vorschau anzeigen"
-                  >
-                    <Eye className="w-3.5 h-3.5 text-primary" />
-                  </Button>
-                )}
-                {kannBearbeiten && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={handleRemoveAktivitaet}
-                  >
-                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                  </Button>
-                )}
-              </div>
+              {currentAktivitaet.form_schema && currentAktivitaet.form_schema.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {currentAktivitaet.form_schema.length} Felder
+                </p>
+              )}
             </div>
+            {kannBearbeiten && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={handleRemoveAktivitaet}
+                title="Aktivität entfernen"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-destructive" />
+              </Button>
+            )}
           </div>
-        ) : (
-          <p className="text-sm text-muted-foreground italic">Keine Aktivität zugeordnet</p>
-        )}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground italic">Keine Aktivität zugeordnet</p>
+      )}
 
-        {/* Aktivität hinzufügen */}
-        {kannBearbeiten && (
-          <div className="space-y-2">
-            <Label className="text-xs">Aktivität zuordnen</Label>
-            <select
-              onChange={(e) => {
-                if (e.target.value) handleSelectAktivitaet(e.target.value);
-                e.target.value = '';
-              }}
-              defaultValue=""
-              className="w-full px-2 py-1.5 text-sm rounded-lg border border-input bg-white"
-            >
-              <option value="">-- Aktivität wählen --</option>
-              {phaseAktivitaeten.map(akt => (
-                <option key={akt.id} value={akt.id}>
-                  {akt.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-      </div>
-
-      {/* Aktivitäts-Konfiguration Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedAktivitaet ? selectedAktivitaet.name : 'Aktivität konfigurieren'}
-            </DialogTitle>
-          </DialogHeader>
-          {selectedAktivitaet && (
-            <ActivityContentEditor
-              aktivitaet={selectedAktivitaet}
-              currentValues={phaseConfig.field_values || {}}
-              onSave={(fieldValues) => {
-                const newConfig = {
-                  ...phasenConfig,
-                  [phaseKey]: {
-                    ...(phasenConfig[phaseKey] || {}),
-                    selected_aktivitaet_id: selectedAktivitaetId,
-                    field_values: fieldValues,
-                  },
-                };
-                base44.entities.Lernpakete.update(paket.id, {
-                  phasen_konfiguration: newConfig
-                }).then(() => {
-                  queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-                  setIsDialogOpen(false);
-                  setSelectedAktivitaetId(null);
-                });
-              }}
-              onClose={() => setIsDialogOpen(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Aktivitäts-Vorschau Modal */}
-      <ActivityPreviewModal
-        open={previewOpen}
-        onOpenChange={setPreviewOpen}
-        aktivitaet={previewAktivitaet}
-        fieldValues={phaseConfig.field_values || {}}
-      />
-
-      {/* Aktivitäts-Inhalts-Form */}
-      <ActivityContentForm
-        open={contentFormOpen}
-        onOpenChange={setContentFormOpen}
-        aktivitaet={contentFormAktivitaet}
-        initialData={phaseConfig.field_values || {}}
-        onSave={({ content_data, is_complete }) => {
-          const aktId = selectedAktivitaetId || phaseConfig.selected_aktivitaet_id;
-          const newConfig = {
-            ...phasenConfig,
-            [phaseKey]: {
-              ...(phasenConfig[phaseKey] || {}),
-              selected_aktivitaet_id: aktId,
-              field_values: content_data,
-              is_complete,
-            },
-          };
-          base44.entities.Lernpakete.update(paket.id, {
-            phasen_konfiguration: newConfig
-          }).then(() => {
-            queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-            setContentFormOpen(false);
-            setSelectedAktivitaetId(null);
-          });
-        }}
-      />
-    </>
+      {/* Aktivität hinzufügen */}
+      {kannBearbeiten && (
+        <div className="space-y-2">
+          <Label className="text-xs">Aktivität zuordnen</Label>
+          <select
+            onChange={(e) => {
+              if (e.target.value) handleSelectAktivitaet(e.target.value);
+              e.target.value = '';
+            }}
+            defaultValue=""
+            className="w-full px-2 py-1.5 text-sm rounded-lg border border-input bg-white"
+          >
+            <option value="">-- Aktivität wählen --</option>
+            {phaseAktivitaeten.map(akt => (
+              <option key={akt.id} value={akt.id}>
+                {akt.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+    </div>
   );
 }
 

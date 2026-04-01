@@ -1,31 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Edit, Save, X, Clock, Users, FileText } from 'lucide-react';
+import { Edit, Save, X, FileText, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function ActivityDetailView({ aktivitaet, aktivitaetKatalog, onClose, lernpaketId, phase }) {
+export default function ActivityDetailView({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient }) {
   const [editMode, setEditMode] = useState(false);
-  const [formData, setFormData] = useState(aktivitaet?.content_data || {});
+  const [formData, setFormData] = useState({});
   const [saving, setSaving] = useState(false);
-  const queryClient = useQueryClient();
 
-  const catalog = aktivitaetKatalog?.find(a => a.id === aktivitaet?.aktivitaet_id);
+  const { data: aktivitaetenKatalog = [] } = useQuery({
+    queryKey: ['aktivitaetenKatalog'],
+    queryFn: () => base44.entities.AktivitaetenKatalog.list(),
+  });
+
+  const phasenConfig = paket?.phasen_konfiguration || {};
+  const phaseConfig = phasenConfig[phaseKey] || {};
+  const catalog = aktivitaetenKatalog?.find(a => a.id === phaseConfig.selected_aktivitaet_id);
 
   useEffect(() => {
-    setFormData(aktivitaet?.content_data || {});
-  }, [aktivitaet]);
+    setFormData(phaseConfig.field_values || {});
+  }, [phaseConfig]);
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      await base44.entities.LernpaketAktivitaet.update(aktivitaet.id, {
-        content_data: formData,
-        is_complete: true,
+      const newConfig = {
+        ...phasenConfig,
+        [phaseKey]: {
+          ...phaseConfig,
+          field_values: formData,
+          is_complete: true,
+        },
+      };
+      await base44.entities.Lernpakete.update(paket.id, {
+        phasen_konfiguration: newConfig,
       });
       queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
       setEditMode(false);
@@ -37,7 +50,7 @@ export default function ActivityDetailView({ aktivitaet, aktivitaetKatalog, onCl
     }
   };
 
-  if (!aktivitaet || !catalog) {
+  if (!paket || !catalog) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground">
         <p>Keine Aktivität ausgewählt.</p>
@@ -51,7 +64,13 @@ export default function ActivityDetailView({ aktivitaet, aktivitaetKatalog, onCl
       <div className="flex items-start justify-between gap-3 p-4 border-b">
         <div className="flex-1 min-w-0">
           <h2 className="text-lg font-semibold truncate">{catalog.name}</h2>
-          <p className="text-xs text-muted-foreground mt-1">Phase: {phase}</p>
+          <p className="text-xs text-muted-foreground mt-1">Phase: {phaseLabel}</p>
+          {phaseConfig.is_complete === false && (
+            <div className="flex items-center gap-1 text-xs text-amber-600 mt-2">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              Inhalt unvollständig
+            </div>
+          )}
         </div>
         <div className="flex gap-2 shrink-0">
           {!editMode ? (
