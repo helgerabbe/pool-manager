@@ -12,6 +12,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Plus, GripVertical, Clock, Trash2, FolderOpen, Layers, X, Check, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -193,10 +194,11 @@ export default function StrukturBoardEmbedded({
   queryClient,
   onSaved,   // callback nach erfolgreichem Speichern
 }) {
-  const [spalten, setSpalten]       = useState([]);
-  const [paketeMap, setPaketeMap]   = useState({});
-  const [saving, setSaving]         = useState(false);
+  const [spalten, setSpalten]         = useState([]);
+  const [paketeMap, setPaketeMap]     = useState({});
+  const [saving, setSaving]           = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // { spalteId, titel, paketCount }
 
   // ── Initialisierung ───────────────────────────────────────────────────────
 
@@ -264,14 +266,31 @@ export default function StrukturBoardEmbedded({
   const handleTitelChange = (spalteId, neuerTitel) =>
     setSpalten(prev => prev.map(s => s.id === spalteId ? { ...s, titel: neuerTitel } : s));
 
-  const handleDeleteSpalte = (spalteId) => {
+  const handleDeleteSpalteRequest = (spalteId) => {
+    const spalte = spalten.find(s => s.id === spalteId);
+    const paketCount = (paketeMap[spalteId] || []).length;
+    setDeleteConfirm({ spalteId, titel: spalte?.titel || 'Themenfeld', paketCount });
+  };
+
+  const handleDeleteSpalteConfirmed = () => {
+    const { spalteId } = deleteConfirm;
+
+    // Sammelbecken-Liste: verschobene Pakete ans Ende anhängen, mit neuen Sort-Indizes
     setPaketeMap(prev => {
-      const out = prev[spalteId] || [];
-      const next = { ...prev, [SAMMELBECKEN_ID]: [...(prev[SAMMELBECKEN_ID] || []), ...out] };
+      const paketeInSpalte = (prev[spalteId] || []).map(p => ({ ...p, themenfeld_id: null }));
+      const sammelbecken   = prev[SAMMELBECKEN_ID] || [];
+      // Sort-Indizes fortführend vergeben
+      const verschoben = paketeInSpalte.map((p, i) => ({
+        ...p,
+        reihenfolge_nummer: sammelbecken.length + i + 1,
+      }));
+      const next = { ...prev, [SAMMELBECKEN_ID]: [...sammelbecken, ...verschoben] };
       delete next[spalteId];
       return next;
     });
+
     setSpalten(prev => prev.filter(s => s.id !== spalteId));
+    setDeleteConfirm(null);
   };
 
   const handleAddPaket = (spalteId, titel, dauer) => {
@@ -402,7 +421,7 @@ export default function StrukturBoardEmbedded({
                 pakete={paketeMap[spalte.id] || []}
                 onAddPaket={handleAddPaket}
                 onDeletePaket={handleDeletePaket}
-                onDeleteSpalte={() => handleDeleteSpalte(spalte.id)}
+                onDeleteSpalte={() => handleDeleteSpalteRequest(spalte.id)}
                 onTitelChange={neuerTitel => handleTitelChange(spalte.id, neuerTitel)}
               />
             ))}
@@ -418,6 +437,32 @@ export default function StrukturBoardEmbedded({
           </div>
         </DragDropContext>
       </div>
+
+      {/* Bestätigungsdialog */}
+      <AlertDialog open={!!deleteConfirm} onOpenChange={open => !open && setDeleteConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Themenfeld „{deleteConfirm?.titel}" löschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteConfirm?.paketCount > 0
+                ? <>
+                    Das Themenfeld enthält <strong>{deleteConfirm.paketCount} Lernpaket{deleteConfirm.paketCount !== 1 ? 'e' : ''}</strong>.
+                    {' '}Diese werden sicher zurück in das <strong>Sammelbecken</strong> verschoben und bleiben vollständig erhalten – kein Inhalt geht verloren.
+                  </>
+                : 'Das leere Themenfeld wird entfernt.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteSpalteConfirmed}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {deleteConfirm?.paketCount > 0 ? 'Löschen & ins Sammelbecken verschieben' : 'Themenfeld löschen'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
