@@ -120,11 +120,18 @@ export default function LernlandkartePreview({
     <div className="h-full flex flex-col bg-background overflow-hidden">
       {/* Kompakter Header */}
       <div className="shrink-0 px-4 py-3 border-b border-border bg-card">
-        <div className="max-w-4xl">
-          <p className="text-xs text-muted-foreground mb-1">
-            {einheit?.fach} • Klasse {einheit?.jahrgangsstufe}
-          </p>
-          <h2 className="text-sm font-bold">{einheit?.titel_der_einheit}</h2>
+        <div className="max-w-4xl space-y-2">
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">
+              {einheit?.fach} • Klasse {einheit?.jahrgangsstufe}
+            </p>
+            <h2 className="text-sm font-bold">{einheit?.titel_der_einheit}</h2>
+          </div>
+          {einheit?.gesamtziel && (
+            <p className="text-xs text-muted-foreground italic border-l-2 border-primary/30 pl-2">
+              {einheit.gesamtziel}
+            </p>
+          )}
         </div>
       </div>
 

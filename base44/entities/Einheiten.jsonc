@@ -30,6 +30,10 @@
       "type": "string",
       "description": "Titel der Unterrichtseinheit"
     },
+    "gesamtziel": {
+      "type": "string",
+      "description": "\u00dcbergeordnetes Lernziel der Einheit (Nordstern)"
+    },
     "jahrgangsstufe": {
       "type": "string",
       "enum": [

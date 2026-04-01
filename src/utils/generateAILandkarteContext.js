@@ -8,14 +8,20 @@
  * @param {Array} themenfelder - Liste der Themenfelder
  * @param {Array} lernpakete - Liste der Lernpakete
  * @param {Array} lernziele - Liste der Lernziele
+ * @param {Object} einheit - Die Einheit mit optionalem gesamtziel
  * @returns {string} Strukturierter Kontext-Text
  */
-export function generateAILandkarteContext(themenfelder, lernpakete, lernziele) {
+export function generateAILandkarteContext(themenfelder, lernpakete, lernziele, einheit = null) {
   if (!themenfelder || !lernpakete || !lernziele) {
     return '';
   }
 
   let context = '';
+
+  // Wenn Übergeordnetes Ziel vorhanden, am Anfang hinzufügen
+  if (einheit?.gesamtziel) {
+    context += `Übergeordnetes Ziel der Einheit: ${einheit.gesamtziel}\n`;
+  }
 
   // Sortiere Themenfelder
   const sortedThemenfelder = [...themenfelder].sort(

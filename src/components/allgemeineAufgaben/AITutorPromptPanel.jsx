@@ -22,9 +22,11 @@ export function generateTutorPrompt(aufgabe, mappedLernziele, lernpakete, einhei
   const fach = einheit?.fach || 'dem Unterricht';
   const thema = einheit?.titel_der_einheit || 'dieses Themengebiet';
   const jahrgang = einheit?.jahrgangsstufe || '–';
+  const gesamtziel = einheit?.gesamtziel || '';
 
   const prompt = `Du bist ein motivierender und strenger KI-Tutor für das Fach ${fach} im Themengebiet "${thema}" (Jahrgangsstufe ${jahrgang}). 
 Wir befinden uns an einer Integrierten Gesamtschule in Niedersachsen. Das wichtigste pädagogische Ziel dieser Übung ist es, dass ich (der Schüler) lerne, selbstständig und eigenverantwortlich zu arbeiten.
+${gesamtziel ? `\nÜbergeordnetes Ziel dieser Unterrichtseinheit: ${gesamtziel}` : ''}
 Ich werde dir gleich meine Lösung zu einer Aufgabe geben.
 
 Hier ist die Aufgabenstellung:

@@ -48,6 +48,7 @@ function UnitRoleBadge({ role, size = 'sm' }) {
 function TabAllgemein({ einheit, onSave, isSaving }) {
   const [form, setForm] = useState({
     titel_der_einheit: einheit.titel_der_einheit || '',
+    gesamtziel:        einheit.gesamtziel || '',
     fach:              einheit.fach || '',
     jahrgangsstufe:    einheit.jahrgangsstufe || '',
     freigabe_status:   einheit.freigabe_status || 'In Planung',
@@ -60,6 +61,16 @@ function TabAllgemein({ einheit, onSave, isSaving }) {
       <div className="space-y-1.5">
         <Label>Titel der Einheit</Label>
         <Input value={form.titel_der_einheit} onChange={e => set('titel_der_einheit', e.target.value)} placeholder="z.B. Quadratische Gleichungen" />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>Gesamtziel der Einheit</Label>
+        <textarea
+          value={form.gesamtziel}
+          onChange={e => set('gesamtziel', e.target.value)}
+          placeholder="Beschreiben Sie hier kurz das übergeordnete Ziel dieser Einheit (z.B. Was ist die Kernkompetenz am Ende?)..."
+          className="w-full px-3 py-2 border rounded-lg text-sm min-h-20 resize-none"
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
