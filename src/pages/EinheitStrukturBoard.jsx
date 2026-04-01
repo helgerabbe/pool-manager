@@ -69,37 +69,37 @@ function PaketKarte({ paket, index, onDelete, hasContentLock }) {
           ref={provided.innerRef}
           {...provided.draggableProps}
           className={cn(
-            'group flex items-start gap-2 p-3 rounded-lg border bg-card text-sm transition-shadow',
+            'group flex items-start gap-2 p-3 rounded-lg border-2 bg-white text-sm transition-all',
             snapshot.isDragging
-              ? 'shadow-xl border-primary/40 rotate-1 scale-105'
-              : 'shadow-sm hover:shadow-md border-border'
+              ? 'shadow-xl border-primary/60 rotate-1 scale-105 z-50'
+              : 'shadow-sm hover:shadow-lg border-border hover:border-primary/40'
           )}
         >
-          <div {...provided.dragHandleProps} className="mt-0.5 text-muted-foreground/40 hover:text-muted-foreground cursor-grab">
+          <div {...provided.dragHandleProps} className="mt-0.5 text-slate-400 hover:text-foreground cursor-grab transition-colors">
             <GripVertical className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <p className="font-medium leading-snug truncate">{paket.titel_des_pakets}</p>
+              <p className="font-semibold leading-snug truncate text-foreground">{paket.titel_des_pakets}</p>
               {hasContentLock && (
                 <span title={`Wird bearbeitet von: ${paket.locked_by}`}
-                  className="shrink-0 flex items-center gap-0.5 text-[10px] text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-full">
-                  <Lock className="w-2.5 h-2.5" />
+                  className="shrink-0 flex items-center gap-0.5 text-[10px] text-white bg-orange-600 px-2 py-0.5 rounded-full font-bold">
+                  <Lock className="w-3 h-3" />
                   {paket.locked_by?.split('@')[0]}
                 </span>
               )}
             </div>
             {paket.geschaetzte_dauer_minuten && (
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                <Clock className="w-3 h-3" />{paket.geschaetzte_dauer_minuten} Min.
+              <p className="text-xs text-slate-600 mt-1.5 flex items-center gap-1 font-medium">
+                <Clock className="w-3.5 h-3.5" />{paket.geschaetzte_dauer_minuten} Min.
               </p>
             )}
           </div>
           <button
             onClick={() => onDelete(paket.id)}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 text-destructive transition-all shrink-0"
+            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-100 text-red-600 transition-all shrink-0 hover:scale-110"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       )}
@@ -125,17 +125,17 @@ function Spalte({ id, titel, pakete, lockedPaketIds, onAddPaket, onDeletePaket, 
 
   return (
     <div className={cn(
-      'flex flex-col rounded-xl border shrink-0 w-72',
-      isSammelbecken ? 'bg-slate-50 border-slate-200' : 'bg-card border-border'
+      'flex flex-col rounded-lg border-2 shrink-0 w-72 shadow-sm',
+      isSammelbecken ? 'bg-slate-50 border-slate-300' : 'bg-card border-primary/20'
     )}>
       {/* Header */}
       <div className={cn(
-        'flex items-center gap-2 px-3 py-3 rounded-t-xl border-b',
-        isSammelbecken ? 'border-slate-200 bg-slate-100/80' : 'border-border bg-muted/40'
+        'flex items-center gap-2 px-4 py-3 rounded-t-lg border-b-2 font-semibold',
+        isSammelbecken ? 'border-slate-300 bg-slate-200 text-slate-900' : 'border-primary/20 bg-primary/10 text-foreground'
       )}>
         {isSammelbecken
-          ? <Layers className="w-4 h-4 text-muted-foreground shrink-0" />
-          : <FolderOpen className="w-4 h-4 text-amber-500 shrink-0" />}
+          ? <Layers className="w-5 h-5 text-slate-700 shrink-0" />
+          : <FolderOpen className="w-5 h-5 text-amber-600 shrink-0" />}
 
         {editingTitel && !isSammelbecken ? (
           <Input
@@ -143,11 +143,11 @@ function Spalte({ id, titel, pakete, lockedPaketIds, onAddPaket, onDeletePaket, 
             onChange={e => setTitelDraft(e.target.value)}
             onBlur={handleTitelSave}
             onKeyDown={e => { if (e.key === 'Enter') handleTitelSave(); if (e.key === 'Escape') setEditingTitel(false); }}
-            className="h-7 text-sm font-semibold flex-1"
+            className="h-8 text-sm font-semibold flex-1"
           />
         ) : (
           <button
-            className={cn('flex-1 text-sm font-semibold text-left truncate', !isSammelbecken && 'hover:text-primary')}
+            className={cn('flex-1 text-sm font-semibold text-left truncate', !isSammelbecken && 'hover:text-primary cursor-pointer')}
             onClick={() => !isSammelbecken && setEditingTitel(true)}
             title={!isSammelbecken ? 'Klicken zum Bearbeiten' : undefined}
           >
@@ -155,7 +155,7 @@ function Spalte({ id, titel, pakete, lockedPaketIds, onAddPaket, onDeletePaket, 
           </button>
         )}
 
-        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">{pakete.length}</span>
+        <span className="text-xs font-bold text-white bg-primary/80 px-2 py-1 rounded-full shrink-0 w-6 h-6 flex items-center justify-center">{pakete.length}</span>
 
         {!isSammelbecken && kannBearbeiten && (
           <button
@@ -180,8 +180,8 @@ function Spalte({ id, titel, pakete, lockedPaketIds, onAddPaket, onDeletePaket, 
             ref={provided.innerRef}
             {...provided.droppableProps}
             className={cn(
-              'flex-1 p-2 space-y-2 min-h-[120px] rounded-b-xl transition-colors',
-              snapshot.isDraggingOver && 'bg-primary/5'
+              'flex-1 p-3 space-y-2 min-h-[120px] rounded-b-lg transition-colors',
+              snapshot.isDraggingOver ? 'bg-primary/15 border-b-2 border-primary/40' : 'bg-white/50'
             )}
           >
             {pakete.map((paket, index) => (
@@ -195,8 +195,8 @@ function Spalte({ id, titel, pakete, lockedPaketIds, onAddPaket, onDeletePaket, 
             ))}
             {provided.placeholder}
             {pakete.length === 0 && !snapshot.isDraggingOver && (
-              <div className="flex items-center justify-center h-20 text-xs text-muted-foreground/40 border-2 border-dashed border-muted rounded-lg">
-                Hierher ziehen
+              <div className="flex items-center justify-center h-20 text-xs font-semibold text-slate-500 border-2 border-dashed border-slate-300 rounded-lg bg-slate-50">
+                📦 Hierher ziehen
               </div>
             )}
           </div>
@@ -204,7 +204,7 @@ function Spalte({ id, titel, pakete, lockedPaketIds, onAddPaket, onDeletePaket, 
       </Droppable>
 
       {/* Paket hinzufügen */}
-      <div className="px-2 pb-2">
+      <div className="px-3 pb-3">
         {addingPaket ? (
           <NeuesPaketInline
             onAdd={(t, d) => { onAddPaket(id, t, d); setAddingPaket(false); }}
@@ -213,9 +213,9 @@ function Spalte({ id, titel, pakete, lockedPaketIds, onAddPaket, onDeletePaket, 
         ) : (
           <button
             onClick={() => setAddingPaket(true)}
-            className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-primary hover:text-primary-foreground hover:bg-primary transition-all border border-primary/30"
           >
-            <Plus className="w-3.5 h-3.5" /> Lernpaket hinzufügen
+            <Plus className="w-4 h-4" /> Lernpaket hinzufügen
           </button>
         )}
       </div>
@@ -481,23 +481,23 @@ export default function EinheitStrukturBoard() {
     <div className="flex flex-col h-[calc(100vh-4rem)] -mx-4 sm:-mx-6 lg:-mx-8 -my-8">
 
       {/* ── Top-Bar ── */}
-      <div className="shrink-0 px-6 py-3 border-b border-border bg-card flex items-center justify-between gap-4 flex-wrap">
+      <div className="shrink-0 px-6 py-4 border-b-2 border-border bg-card shadow-sm flex items-center justify-between gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-lg font-bold leading-tight">{einheit?.titel_der_einheit}</h1>
+            <h1 className="text-xl font-bold leading-tight text-foreground">{einheit?.titel_der_einheit}</h1>
             <button
               onClick={() => setSettingsOpen(true)}
-              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-background border border-transparent hover:border-border transition-colors"
               title="Einheiten-Einstellungen"
             >
-              <Settings className="w-3.5 h-3.5" />
+              <Settings className="w-4 h-4" />
             </button>
           </div>
-          <p className="text-sm text-muted-foreground">
-            {einheit?.fach} · Jg. {einheit?.jahrgangsstufe} ·{' '}
+          <p className="text-sm font-medium text-foreground mt-1">
+            <span className="text-muted-foreground">{einheit?.fach} · Jg. {einheit?.jahrgangsstufe}</span> ·{' '}
             <span className={cn(
-              'font-medium',
-              zugeordnet === gesamtPakete && gesamtPakete > 0 ? 'text-green-600' : 'text-amber-600'
+              'font-semibold',
+              zugeordnet === gesamtPakete && gesamtPakete > 0 ? 'text-green-700' : 'text-orange-700'
             )}>
               {zugeordnet}/{gesamtPakete} Pakete zugeordnet
             </span>
@@ -532,24 +532,24 @@ export default function EinheitStrukturBoard() {
 
       {/* ── Structural-Lock-Banner oder Readonly-Banner ── */}
       {kannStrukturBearbeiten ? (
-        <div className="shrink-0 px-6 py-2 bg-blue-50 border-b border-blue-200 text-xs text-blue-800 flex items-center gap-2">
-          <Lock className="w-3.5 h-3.5 shrink-0 text-blue-600" />
+        <div className="shrink-0 px-6 py-3 bg-blue-100 border-b-2 border-blue-300 text-sm text-blue-900 flex items-center gap-3 font-medium">
+          <Lock className="w-4 h-4 shrink-0 text-blue-700" />
           <span>
-            <strong>Struktur-Editiermodus aktiv.</strong> Andere Nutzer können bestehende Inhalte weiter speichern, aber keine neuen Bearbeitungssitzungen starten.
+            <strong>✓ Struktur-Editiermodus aktiv</strong> — Andere Nutzer können bestehende Inhalte weiter speichern, aber keine neuen Bearbeitungssitzungen starten.
           </span>
         </div>
       ) : (
-        <div className="shrink-0 px-6 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-600 flex items-center gap-2">
-          <Lock className="w-3.5 h-3.5 shrink-0" />
-          <span><strong>Nur-Lese-Ansicht.</strong> Struktur-Änderungen erfordern die Rolle Fachschaftsleitung oder Administrator.</span>
+        <div className="shrink-0 px-6 py-3 bg-slate-100 border-b-2 border-slate-300 text-sm text-slate-900 flex items-center gap-3 font-medium">
+          <Lock className="w-4 h-4 shrink-0 text-slate-700" />
+          <span><strong>🔒 Nur-Lese-Ansicht</strong> — Struktur-Änderungen erfordern die Rolle Fachschaftsleitung oder Administrator.</span>
         </div>
       )}
 
       {/* ── Hinweis-Banner ── */}
-      <div className="shrink-0 px-6 py-2 bg-amber-50 border-b border-amber-200 text-xs text-amber-800 flex items-center gap-2">
-        <FolderOpen className="w-3.5 h-3.5 shrink-0" />
+      <div className="shrink-0 px-6 py-3 bg-amber-100 border-b-2 border-amber-300 text-sm text-amber-900 flex items-center gap-3 font-medium">
+        <FolderOpen className="w-4 h-4 shrink-0 text-amber-700" />
         <span>
-          <strong>Tipp:</strong> Ziehen Sie Lernpakete in die passenden Themenfelder. Pakete mit <Lock className="w-3 h-3 inline text-amber-600 mx-0.5" /> werden gerade bearbeitet.
+          <strong>💡 Tipp:</strong> Ziehen Sie Lernpakete in die passenden Themenfelder. Pakete mit <Lock className="w-4 h-4 inline text-amber-700 mx-1" /> werden gerade bearbeitet.
         </span>
       </div>
 
