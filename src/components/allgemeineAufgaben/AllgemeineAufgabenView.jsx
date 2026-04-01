@@ -248,7 +248,7 @@ export default function AllgemeineAufgabenView({
           <AufgabeKompetenzMapping
             aufgabe={selectedAufgabe}
             einheitId={einheitId}
-            kannBearbeiten={kannBearbeiten}
+            onComplete={() => setSelectedAufgabeId(null)}
           />
         </div>
       </div>
