@@ -8,6 +8,8 @@ import WorkspaceDetailPanel from '@/components/workspace/WorkspaceDetailPanel';
 import WorkspaceStats from '@/components/workspace/WorkspaceStats';
 import TransferSaeule from '@/components/workspace/TransferSaeule';
 import AllgemeineAufgabenView from '@/components/allgemeineAufgaben/AllgemeineAufgabenView';
+import ProjektaufgabenView from '@/components/projektaufgaben/ProjektaufgabenView';
+import LernlandkartePreview from '@/components/lernlandkarte/LernlandkartePreview';
 import ActivityDetailView from '@/components/workspace/ActivityDetailView';
 import { usePresence } from '@/hooks/usePresence';
 import { isStructurallyLocked } from '@/hooks/useStructuralLock';
@@ -351,12 +353,16 @@ export default function Workspace() {
               </TabsTrigger>
               <TabsTrigger value="projekt" className="bg-purple-200 text-slate-600 px-3 py-1 text-xs font-medium rounded-md inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow gap-1.5">
                 <FolderOpen className="w-3.5 h-3.5" />
-                Projekte
+                Anwendungs- und Projektaufgaben
                 {projektCount > 0 &&
               <span className="ml-1 px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[10px] font-bold">
                     {projektCount}
                   </span>
               }
+              </TabsTrigger>
+              <TabsTrigger value="lernlandkarte" className="bg-emerald-200 text-slate-600 px-3 py-1 text-xs font-medium rounded-md inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow gap-1.5">
+                <BookOpen className="w-3.5 h-3.5" />
+                Lernlandkarte
               </TabsTrigger>
             </TabsList>
           </div>
@@ -429,21 +435,27 @@ export default function Workspace() {
             />
           </TabsContent>
 
-          {/* ── Säule 3: Projekte (globaler Einheits-Scope) ───────────────────── */}
+          {/* ── Säule 3: Anwendungs- und Projektaufgaben (globaler Einheits-Scope) ───────────────────── */}
           <TabsContent value="projekt" className="flex-1 overflow-hidden m-0 p-0">
-            <TransferSaeule
-            ebene="3 - Projekt"
-            lernpakete={paketeFuerEinheit}
-            lernziele={zieleFuerEinheit}
-            aufgaben={projektaufgabenFuerEinheit}
-            mappings={mappings}
-            einheitId={einheit.id}
-            kannBearbeiten={kannDieseEinheitBearbeiten}
-            onAtomHighlight={handleAtomHighlight}
-            highlightedAufgabeId={null} />
-          
+            <ProjektaufgabenView
+              einheitId={selectedEinheitId}
+              kannBearbeiten={kannDieseEinheitBearbeiten}
+            />
           </TabsContent>
-        </Tabs>
+
+          {/* ── Lernlandkarte: Schülerfreundlicher Überblick ────────────────── */}
+          <TabsContent value="lernlandkarte" className="flex-1 overflow-hidden m-0 p-0">
+            <LernlandkartePreview
+              einheit={einheit}
+              lernpakete={paketeFuerEinheit}
+              lernziele={zieleFuerEinheit}
+              aufgaben={aufgabenFuerEinheit}
+              themenfelder={themenfelder}
+              allgemeineAufgaben={aufgabenFuerEinheit.filter(a => a.anforderungsebene === '2 - Transfer')}
+              projektaufgaben={projektaufgabenFuerEinheit}
+            />
+          </TabsContent>
+          </Tabs>
       }
       {einheit && (
         <EinheitSettingsModal
