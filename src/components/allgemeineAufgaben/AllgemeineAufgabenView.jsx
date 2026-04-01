@@ -95,17 +95,9 @@ function AufgabeNode({ aufgabe, isSelected, onSelect }) {
 function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit, onDelete }) {
   const hatTitel = !!aufgabe.titel?.trim();
   const hatInhalt = !!aufgabe.aufgabenstellung?.trim();
-  const themenfeld = themenfelder.find(tf => tf.id === aufgabe.themenfeld_id);
 
   return (
     <div className="space-y-6 p-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-lg font-bold">{aufgabe.titel || 'Unbenannte Aufgabe'}</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          {themenfeld ? `Themenfeld: ${themenfeld.titel}` : 'Kein Themenfeld zugeordnet'}
-        </p>
-      </div>
 
       {/* Metadaten */}
       <div className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-muted/30 border border-border">
@@ -291,13 +283,6 @@ export default function AllgemeineAufgabenView({
         {/* Rechte Spalte: Detail-Panel */}
         {selectedAufgabe ? (
           <main className="flex-1 flex flex-col overflow-hidden">
-            {/* Detail-Header */}
-            <div className="shrink-0 px-6 py-3 border-b border-border bg-card/50">
-              <h2 className="text-lg font-bold truncate">
-                {selectedAufgabe.titel || 'Unbenannte Aufgabe'}
-              </h2>
-            </div>
-
             {/* Tabs für Angaben & Kompetenzen */}
             <Tabs defaultValue="angaben" className="flex-1 flex flex-col overflow-hidden">
               <TabsList className="mx-6 mt-3 bg-muted">
