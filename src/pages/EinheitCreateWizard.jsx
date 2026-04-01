@@ -28,12 +28,12 @@ export default function EinheitCreateWizard() {
   const [paketeCreated, setPaketeCreated] = useState([]);
 
   const handleStep1Done = async (metaData) => {
-    const einheit = await base44.entities.Einheiten.create({
-      ...metaData,
-      freigabe_status: 'In Planung',
-      sync_status: 'new',
-    });
+    // Atomare Erstellung: Einheit + Default-Themenfeld + Default-Lernpaket
+    const res = await base44.functions.invoke('createEinheitMitDefaults', { metaData });
+    const { einheit } = res.data;
     queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+    queryClient.invalidateQueries({ queryKey: ['themenfelder', einheit.id] });
+    queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
     setEinheitId(einheit.id);
     setCurrentStep(2);
   };
@@ -55,29 +55,8 @@ export default function EinheitCreateWizard() {
     navigate(`/workspace?einheit=${einheitId}&fromWizard=1`);
   };
 
-  const handleSkipToStruktur = async () => {
-    if (einheitId) {
-      // Prüfen ob bereits Themenfelder vorhanden
-      const vorhandeneThemenfelder = await base44.entities.Themenfeld.filter({ einheit_id: einheitId });
-      if (vorhandeneThemenfelder.length === 0) {
-        // Default-Themenfeld anlegen
-        const themenfeld = await base44.entities.Themenfeld.create({
-          einheit_id: einheitId,
-          titel: 'Themenfeld 1',
-          reihenfolge: 1,
-        });
-        // Default-Lernpaket anlegen
-        await base44.entities.Lernpakete.create({
-          einheit_id: einheitId,
-          themenfeld_id: themenfeld.id,
-          titel_des_pakets: 'Neues Lernpaket',
-          reihenfolge_nummer: 1,
-          geschaetzte_dauer_minuten: 45,
-        });
-        queryClient.invalidateQueries({ queryKey: ['themenfelder', einheitId] });
-        queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-      }
-    }
+  const handleSkipToStruktur = () => {
+    // Defaults wurden bereits in handleStep1Done atomar angelegt
     navigate(`/workspace?einheit=${einheitId}&fromWizard=1`);
   };
 
