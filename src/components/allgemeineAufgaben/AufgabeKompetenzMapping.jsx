@@ -259,12 +259,12 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
     }
   };
 
-  // Gruppiere Lernziele nach Themenfeld
+  // Gruppiere alle Lernziele der Einheit nach Themenfeld
   const themenfeldMitLernzielen = themenfelder.map((tf) => ({
     themenfeld: tf,
     lernziele: alleLernziele.filter((lz) => {
       const paket = lernpakete.find((p) => p.id === lz.lernpaket_id);
-      return paket?.themenfeld_id === tf.id;
+      return paket?.einheit_id === einheitId && paket?.themenfeld_id === tf.id;
     })
   }));
 
