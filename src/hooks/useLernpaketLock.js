@@ -22,12 +22,20 @@ export function useLernpaketLock(paketId, userEmail) {
     stopHeartbeat();
     heartbeatRef.current = setInterval(async () => {
       try {
-        await callLockApi('heartbeat');
+        const res = await callLockApi('heartbeat');
+        // Warnung: Themenfeld gelöscht oder Einheit verschwunden
+        if (res?.data?.warning) {
+          setLockError(res.data.warning);
+        }
+        if (res?.data?.stale) {
+          stopHeartbeat();
+          setLockError('Die übergeordnete Einheit existiert nicht mehr.');
+        }
       } catch {
-        // Heartbeat fehlgeschlagen – ignorieren, Lock läuft irgendwann ab
+        // Heartbeat fehlgeschlagen – ignorieren
       }
     }, HEARTBEAT_INTERVAL);
-  }, [callLockApi]);
+  }, [callLockApi, stopHeartbeat]);
 
   const stopHeartbeat = useCallback(() => {
     if (heartbeatRef.current) {
@@ -49,14 +57,25 @@ export function useLernpaketLock(paketId, userEmail) {
       if (res?.data?.success) {
         queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
         startHeartbeat();
-        return true;
+        return { success: true };
+      } else if (res?.data?.structural_lock) {
+        // HTTP 423: Structural Lock aktiv
+        setLockError(res.data.message || 'Struktur wird gerade angepasst.');
+        return { success: false, structural_lock: true, message: res.data.message };
       } else {
-        setLockError(res?.data?.locked_by || 'Gesperrt');
-        return false;
+        setLockError(res?.data?.message || res?.data?.locked_by || 'Gesperrt');
+        return { success: false, locked_by: res?.data?.locked_by };
       }
     } catch (e) {
+      // Axios wirft bei 4xx — response ist in e.response
+      const data = e?.response?.data;
+      if (data?.structural_lock) {
+        const msg = data.message || 'Die Struktur der Einheit wird gerade angepasst.';
+        setLockError(msg);
+        return { success: false, structural_lock: true, message: msg };
+      }
       setLockError('Fehler beim Sperren');
-      return false;
+      return { success: false };
     } finally {
       setIsLocking(false);
     }

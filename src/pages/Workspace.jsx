@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useRBAC } from '@/hooks/useRBAC';
@@ -9,10 +9,11 @@ import WorkspaceStats from '@/components/workspace/WorkspaceStats';
 import TransferSaeule from '@/components/workspace/TransferSaeule';
 import PresenceBadge from '@/components/workspace/PresenceBadge';
 import { usePresence } from '@/hooks/usePresence';
+import { isStructurallyLocked } from '@/hooks/useStructuralLock';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Layers, Zap, FolderOpen, LayoutGrid, SlidersHorizontal } from 'lucide-react';
+import { BookOpen, Layers, Zap, FolderOpen, LayoutGrid, SlidersHorizontal, Lock, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import StrukturBoardEmbedded from '@/components/workspace/StrukturBoardEmbedded';
@@ -111,6 +112,23 @@ export default function Workspace() {
   // ── Präsenz ──────────────────────────────────────────────────────────────────
   const { onlineUsers } = usePresence(selectedEinheitId);
 
+  // ── Structural-Lock-Check + "Paket verschoben"-Notification ──────────────────
+  const [movedNotification, setMovedNotification] = useState(null);
+
+  useEffect(() => {
+    if (!selectedEinheitId) return;
+    const ch = new BroadcastChannel(`presence_${selectedEinheitId}`);
+    ch.onmessage = (ev) => {
+      if (ev.data?.type === 'paket_moved') {
+        setMovedNotification(ev.data);
+        setTimeout(() => setMovedNotification(null), 6000);
+      }
+    };
+    return () => ch.close();
+  }, [selectedEinheitId]);
+
+  const structLocked = einheit ? isStructurallyLocked(einheit, authUser?.email) : false;
+
   // ── Callbacks ─────────────────────────────────────────────────────────────────
   // handleSelect is defined below with themenfeld-awareness
 
@@ -201,6 +219,27 @@ export default function Workspace() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] -mx-4 sm:-mx-6 lg:-mx-8 -my-8">
+
+      {/* ── Structural-Lock-Banner ───────────────────────────────────────────── */}
+      {structLocked && (
+        <div className="shrink-0 px-4 py-2 bg-orange-50 border-b border-orange-200 text-xs text-orange-800 flex items-center gap-2">
+          <Lock className="w-3.5 h-3.5 shrink-0 text-orange-600" />
+          <span>
+            <strong>Struktur wird angepasst</strong> von {einheit?.structural_lock}. Bestehende Inhalte können gespeichert werden, neue Bearbeitungssitzungen sind kurzzeitig gesperrt.
+          </span>
+        </div>
+      )}
+
+      {/* ── "Paket verschoben"-Toast-Banner ─────────────────────────────────── */}
+      {movedNotification && (
+        <div className="shrink-0 px-4 py-2 bg-blue-50 border-b border-blue-200 text-xs text-blue-800 flex items-center gap-2 animate-in slide-in-from-top-1">
+          <ArrowRight className="w-3.5 h-3.5 shrink-0 text-blue-600" />
+          <span>
+            <strong>Achtung:</strong> Das Paket „{movedNotification.paketTitel}" wurde in das Themenfeld <strong>{movedNotification.neuesThemenfeld}</strong> verschoben.
+          </span>
+          <button onClick={() => setMovedNotification(null)} className="ml-auto text-blue-500 hover:text-blue-700">✕</button>
+        </div>
+      )}
 
       {/* ── Top-Bar ──────────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border bg-card shrink-0 flex-wrap gap-y-2">
