@@ -327,11 +327,11 @@ export default function Workspace() {
       <Tabs
         value={activeTab}
         onValueChange={(tab) => {setActiveTab(tab);setHighlightedAtomIds(new Set());}}
-        className="flex flex-col flex-1 overflow-hidden min-h-0">
+        className="flex flex-col flex-1 overflow-hidden min-h-0 m-0 p-0">
         
           {/* Tab-Leiste */}
-          <div className="px-4 sm:px-6 lg:px-8 pt-2 border-b border-border bg-card shrink-0">
-            <TabsList className="bg-muted text-muted-foreground my-3 pt-1 pr-4 pb-1 pl-4 rounded-lg inline-flex items-center justify-center h-9">
+          <div className="px-4 sm:px-6 lg:px-8 py-2 border-b border-border bg-card shrink-0">
+            <TabsList className="bg-muted text-muted-foreground inline-flex items-center justify-center h-9 gap-1 p-1">
               <TabsTrigger value="basis" className="bg-lime-200 px-3 py-1 text-xs font-medium rounded-md inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow gap-1.5">
                 <Layers className="w-3.5 h-3.5" />
                 Lernpakete
