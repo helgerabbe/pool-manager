@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { Plus, Star, FileText, ChevronRight, Edit, Trash2 } from 'lucide-react';
 import ProjektCreateView from './ProjektCreateView';
+import LernlandkartePreview from '@/components/lernlandkarte/LernlandkartePreview';
 import { toast } from 'sonner';
 
 
@@ -361,10 +362,13 @@ export default function ProjektaufgabenView({
               </TabsContent>
 
               {/* Tab 2: Lernlandkarte */}
-               <TabsContent value="lernlandkarte" className="flex-1 overflow-y-auto m-0">
-                 <div className="p-6">
-                   <p className="text-muted-foreground">Lernlandkarte wird vorbereitet…</p>
-                 </div>
+               <TabsContent value="lernlandkarte" className="flex-1 overflow-hidden m-0">
+                <LernlandkartePreview
+                  einheit={einheit}
+                  lernpakete={lernpakete}
+                  lernziele={lernziele}
+                  themenfelder={themenfelder}
+                />
                </TabsContent>
 
                {/* Tab 3: KI-Tutor Prompt */}
