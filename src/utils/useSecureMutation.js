@@ -25,6 +25,7 @@ export function useSecureMutation({
   invalidateQueries = [],
   showSuccessToast = true,
   successMessage,
+  onConflict, // ← NEW: Callback für HTTP 409 Conflicts
 }) {
   const queryClient = useQueryClient();
 
@@ -55,11 +56,12 @@ export function useSecureMutation({
       let errorMessage = error.message || 'Ein Fehler ist aufgetreten.';
 
       // 409 CONFLICT: Optimistic Locking - Version mismatch
+      // → Hard Block: Zeige Dialog, kein anderer Error-Toast
       if (error.isConflict && error.isConflict()) {
-        toast.error('Speicherkonflikt', {
-          description: 'Ein anderer Nutzer hat diese Daten in der Zwischenzeit geändert. Bitte laden Sie die Seite neu.',
-          duration: 6000,
-        });
+        // Rufe den Conflict-Handler auf (Komponente zeigt Dialog)
+        if (onConflict && typeof onConflict === 'function') {
+          onConflict(error);
+        }
       }
       // 403 Forbidden – RBAC denied
       else if (error.isForbidden && error.isForbidden()) {
@@ -87,8 +89,8 @@ export function useSecureMutation({
         });
       }
 
-      // Custom error callback if provided
-      if (onError) {
+      // Custom error callback if provided (aber nicht für 409!)
+      if (onError && !error.isConflict?.()) {
         onError(error, variables, context);
       }
     },
