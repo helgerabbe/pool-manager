@@ -3,10 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { useRBAC } from '@/hooks/useRBAC';
+import { useEinheitenListInfinite } from '@/hooks/useEinheitenListInfinite';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Plus, Clock, Users, BookOpen, Puzzle } from 'lucide-react';
+import { ArrowRight, Plus, Clock, Users, BookOpen, Puzzle, Loader2 } from 'lucide-react';
 import EinheitForm from '@/components/einheiten/EinheitForm';
 import { toast } from 'sonner';
 import { formatDistanceToNow, subWeeks, isAfter } from 'date-fns';
@@ -25,10 +26,8 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
 
-  const { data: einheiten = [] } = useQuery({
-    queryKey: ['einheiten'],
-    queryFn: () => base44.entities.Einheiten.list('-updated_date'),
-  });
+  const { einheiten, hasNextPage, fetchNextPage, isFetchingNextPage, isPending } =
+    useEinheitenListInfinite(15);
 
   const { data: allUsers = [] } = useQuery({
     queryKey: ['users'],
@@ -55,12 +54,8 @@ export default function Dashboard() {
     },
   });
 
-  // Zuletzt bearbeitete Einheiten (letzte 3 Wochen)
-  const threeWeeksAgo = subWeeks(new Date(), 3);
-  const recentEinheiten = einheiten
-    .filter(e => isAfter(new Date(e.updated_date), threeWeeksAgo))
-    .sort((a, b) => new Date(b.updated_date).getTime() - new Date(a.updated_date).getTime())
-    .slice(0, 15);
+  // Alle geladenen Einheiten sind bereits sortiert nach updated_date vom Backend
+  const recentEinheiten = einheiten;
 
   // Mock online users (würde durch echtes Presence-Tracking ersetzt)
   const onlineUsers = allUsers.slice(0, 3).map(u => ({
@@ -91,39 +86,65 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold flex items-center gap-2">
               <Clock className="w-4 h-4 text-muted-foreground" />
-              Zuletzt bearbeitet (letzte 3 Wochen)
+              Zuletzt bearbeitet
             </h2>
-            <Link to="/einheiten" className="text-sm text-primary hover:underline flex items-center gap-1">
-              Alle ansehen <ArrowRight className="w-3 h-3" />
-            </Link>
           </div>
 
-          {recentEinheiten.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">Keine Einheiten in den letzten 3 Wochen bearbeitet</p>
+          {isPending ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Lädt Einheiten...</p>
+          ) : recentEinheiten.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Keine Einheiten gefunden</p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {recentEinheiten.map(einheit => (
-                <Link key={einheit.id} to={`/einheiten/${einheit.id}`}>
-                  <Card className="h-full hover:shadow-md transition-shadow border hover:border-primary/20 group/card">
-                    <CardContent className="p-4 h-full flex flex-col">
-                      <p className="font-semibold text-sm group-hover/card:text-primary transition-colors line-clamp-2 flex-1">
-                        {einheit.titel_der_einheit}
-                      </p>
-                      <div className="space-y-3 mt-4 pt-4 border-t">
-                        <div className="flex items-center justify-between">
-                          <Badge className={`text-[10px] shrink-0 ${fachColors[einheit.fach] || 'bg-muted text-muted-foreground'}`}>
-                            {einheit.fach}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">Jg. {einheit.jahrgangsstufe}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(einheit.updated_date), { addSuffix: true, locale: de })}
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {recentEinheiten.map(einheit => (
+                  <Link key={einheit.id} to={`/einheiten/${einheit.id}`}>
+                    <Card className="h-full hover:shadow-md transition-shadow border hover:border-primary/20 group/card">
+                      <CardContent className="p-4 h-full flex flex-col">
+                        <p className="font-semibold text-sm group-hover/card:text-primary transition-colors line-clamp-2 flex-1">
+                          {einheit.titel_der_einheit}
                         </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
+                        <div className="space-y-3 mt-4 pt-4 border-t">
+                          <div className="flex items-center justify-between">
+                            <Badge className={`text-[10px] shrink-0 ${fachColors[einheit.fach] || 'bg-muted text-muted-foreground'}`}>
+                              {einheit.fach}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">Jg. {einheit.jahrgangsstufe}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(einheit.updated_date), { addSuffix: true, locale: de })}
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+
+              {/* "Mehr laden" Button */}
+              {hasNextPage ? (
+                <div className="flex justify-center pt-4">
+                  <Button
+                    onClick={() => fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    {isFetchingNextPage ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Lädt...
+                      </>
+                    ) : (
+                      'Weitere Einheiten laden'
+                    )}
+                  </Button>
+                </div>
+              ) : recentEinheiten.length > 0 ? (
+                <p className="text-xs text-muted-foreground text-center pt-4">
+                  Alle Einheiten geladen
+                </p>
+              ) : null}
             </div>
           )}
         </CardContent>
