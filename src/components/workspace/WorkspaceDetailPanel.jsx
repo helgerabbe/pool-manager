@@ -889,6 +889,7 @@ export default function WorkspaceDetailPanel({
             phaseLabel={phaseLabel}
             kannBearbeiten={kannBearbeiten}
             queryClient={queryClient}
+            onNavigate={onNavigate}
           />
         </div>
       </>
