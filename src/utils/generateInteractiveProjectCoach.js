@@ -1,58 +1,117 @@
 /**
  * Generiert einen hochstrukturierten System-Prompt für einen KI-Projekt-Coach.
- * Socratic-Coaching für komplexe Projektaufgaben mit Dialog-fokussiertem Ansatz.
+ * 
+ * Phase 4: Robustes Null-Handling & String-Sanitizing
+ * - Strikte Prüfung auf null/undefined
+ * - Fallback-Strings für fehlende Daten
+ * - Saubere Formatierung ohne [Object object]
+ */
+
+/**
+ * Sanitiert einen String für sichere KI-Prompt-Eingabe
+ */
+function sanitizeString(str) {
+  if (!str || typeof str !== 'string') return '';
+  return str
+    .trim()
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n');
+}
+
+/**
+ * Erstellt eine sauber formatierte Lernlandkarte ohne null-Werte
+ */
+function buildLernlandkarte(paketeFuerEinheit, lernziele, unzugeordneteZiele) {
+  const lernlandkarteTeile = [];
+
+  // Pakete mit ihren Zielen (mit Null-Checks)
+  if (Array.isArray(paketeFuerEinheit) && paketeFuerEinheit.length > 0) {
+    const paketeTeil = paketeFuerEinheit
+      .filter(p => p && p.id) // Null-Filter
+      .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0))
+      .map(paket => {
+        const paketTitel = sanitizeString(paket.titel_des_pakets) || 'Unbenanntes Paket';
+        const dauer = paket.geschaetzte_dauer_minuten || '?';
+        
+        const ziele = lernziele
+          .filter(lz => lz && lz.id && lz.lernpaket_id === paket.id)
+          .map(lz => {
+            const zielText = sanitizeString(lz.formulierung_fachsprache || lz.schueler_uebersetzung);
+            return zielText ? `• ${zielText}` : null;
+          })
+          .filter(Boolean)
+          .join('\n');
+        
+        return `**${paketTitel}** (${dauer} Min)\n${ziele || '(Keine Ziele definiert)'}`;
+      })
+      .filter(Boolean)
+      .join('\n\n');
+
+    if (paketeTeil) {
+      lernlandkarteTeile.push(paketeTeil);
+    }
+  }
+
+  // Unzugeordnete Lernziele
+  if (Array.isArray(unzugeordneteZiele) && unzugeordneteZiele.length > 0) {
+    const unzugeordnetTeil = `**Nicht zugeordnete Lernziele**\n${unzugeordneteZiele
+      .filter(lz => lz && lz.id)
+      .map(lz => {
+        const zielText = sanitizeString(lz.formulierung_fachsprache || lz.schueler_uebersetzung);
+        return zielText ? `• ${zielText}` : null;
+      })
+      .filter(Boolean)
+      .join('\n')}`;
+    
+    if (unzugeordnetTeil !== '**Nicht zugeordnete Lernziele**\n') {
+      lernlandkarteTeile.push(unzugeordnetTeil);
+    }
+  }
+
+  return lernlandkarteTeile.length > 0
+    ? lernlandkarteTeile.join('\n\n').trim()
+    : '[Keine Lernziele vorhanden]';
+}
+
+/**
+ * Generiert einen Projekt-Coach-Prompt mit Null-Handling
+ * 
+ * @param {Object} aufgabe - Die Projektaufgabe
+ * @param {Object} einheit - Die Einheit
+ * @param {Array} lernpakete - Liste der Lernpakete
+ * @param {Array} lernziele - Liste der Lernziele
+ * @returns {string|null} Der generierte Prompt oder null bei kritischen Fehlern
  */
 export function generateInteractiveProjectCoach(aufgabe, einheit, lernpakete, lernziele) {
+  // Strikte Validierungen
   if (!aufgabe || !einheit) {
     return null;
   }
 
-  // Filtere Lernpakete und Ziele für diese Einheit
-  const paketeFuerEinheit = lernpakete.filter(p => p.einheit_id === einheit.id);
-  const zieleFuerEinheit = lernziele.filter(lz => 
-    paketeFuerEinheit.some(p => p.id === lz.lernpaket_id)
-  );
-
-  // Unzugeordnete Lernziele (keine Lernpaket-Zuordnung)
-  const unzugeordneteZiele = lernziele.filter(lz => 
-    !paketeFuerEinheit.some(p => p.id === lz.lernpaket_id)
-  );
-
-  // Erstelle strukturierte Lernlandkarte
-  const lernlandkarteTeile = [];
-
-  // Pakete mit ihren Zielen
-  const paketeTeil = paketeFuerEinheit
-    .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0))
-    .map(paket => {
-      const ziele = zieleFuerEinheit
-        .filter(lz => lz.lernpaket_id === paket.id)
-        .map(lz => `• ${lz.formulierung_fachsprache}`)
-        .join('\n');
-      
-      return `**${paket.titel_des_pakets}** (${paket.geschaetzte_dauer_minuten || '?'} Min)\n${ziele || '(Keine Ziele definiert)'}`;
-    })
-    .join('\n\n');
-
-  if (paketeTeil) lernlandkarteTeile.push(paketeTeil);
-
-  // Unzugeordnete Lernziele
-  if (unzugeordneteZiele.length > 0) {
-    const unzugeordnetTeil = `**Nicht zugeordnete Lernziele**\n${unzugeordneteZiele
-      .map(lz => `• ${lz.formulierung_fachsprache}`)
-      .join('\n')}`;
-    lernlandkarteTeile.push(unzugeordnetTeil);
+  if (!Array.isArray(lernpakete) || !Array.isArray(lernziele)) {
+    return null;
   }
 
-  const lernlandkarte = lernlandkarteTeile.length > 0 
-    ? lernlandkarteTeile.join('\n\n')
-    : 'Keine Lernziele vorhanden';
+  // Filtere Lernpakete und Ziele für diese Einheit (mit Null-Checks)
+  const paketeFuerEinheit = lernpakete.filter(p => p && p.id && p.einheit_id === einheit.id);
+  const zieleFuerEinheit = lernziele.filter(lz =>
+    lz && lz.id && paketeFuerEinheit.some(p => p.id === lz.lernpaket_id)
+  );
 
-  const fach = einheit.fach || 'dem Unterricht';
-  const thema = einheit.titel_der_einheit || 'dieses Themengebiet';
-  const jahrgang = einheit.jahrgangsstufe || '–';
-  const gesamtziel = einheit.gesamtziel || '';
-  const aufgabeText = aufgabe.aufgabenstellung || '';
+  // Unzugeordnete Lernziele
+  const unzugeordneteZiele = lernziele.filter(lz =>
+    lz && lz.id && !paketeFuerEinheit.some(p => p.id === lz.lernpaket_id)
+  );
+
+  // Erstelle saubere Lernlandkarte
+  const lernlandkarte = buildLernlandkarte(paketeFuerEinheit, zieleFuerEinheit, unzugeordneteZiele);
+
+  // Sanitize alle kritischen Felder mit Fallbacks
+  const fach = sanitizeString(einheit.fach) || 'dem Unterricht';
+  const thema = sanitizeString(einheit.titel_der_einheit) || 'dieses Themengebiet';
+  const jahrgang = sanitizeString(einheit.jahrgangsstufe) || '–';
+  const gesamtziel = sanitizeString(einheit.gesamtziel) || '[Kein Gesamtziel definiert]';
+  const aufgabeText = sanitizeString(aufgabe.aufgabenstellung) || '[Keine Aufgabenstellung hinterlegt]';
 
   const prompt = `KONTEXT:
 Du bist ein erfahrener KI-Projekt-Coach an einer Integrierten Gesamtschule (IGS) in Niedersachsen.
@@ -63,7 +122,7 @@ DIE AUFGABE:
 ${aufgabeText}
 
 DEIN WISSEN (LERNLANDKARTE):
-${lernlandkarte || 'Keine Lernpakete vorhanden'}
+${lernlandkarte}
 
 DEINE STRATEGIE ALS COACH:
 
@@ -84,7 +143,7 @@ STRIKTE REGELN:
 - Stelle eine Frage am Ende jeder Antwort, um den Dialog zu fördern.
 
 STARTE DAS GESPRÄCH JETZT:
-Stelle dich kurz vor (Name, Rolle), nenne das Hauptziel dieser Einheit und frage den Schüler höflich: "Wie plan du deinen ersten Zugriff auf diese Projektaufgabe? Was ist dein Plan?"`;
+Stelle dich kurz vor (Name, Rolle), nenne das Hauptziel dieser Einheit und frage den Schüler höflich: "Wie planst du deinen ersten Zugriff auf diese Projektaufgabe? Was ist dein Plan?"`;
 
   return prompt;
 }

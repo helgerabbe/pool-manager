@@ -1,36 +1,60 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Copy, CheckCircle2 } from 'lucide-react';
+import { Copy, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 /**
- * Generiert den KI-Tutor Prompt basierend auf Aufgabe und gemappten Lernzielen
+ * Phase 4: Robustes Null-Handling für KI-Tutor Prompts
+ * - Strikte Prüfung auf null/undefined Variablen
+ * - Fallback-Strings für fehlende Aufgabenstellung/Ziele
+ * - Graceful Degradation mit Empty State
+ */
+
+/**
+ * Generiert den KI-Tutor Prompt mit vollständigem Null-Handling
  */
 export function generateTutorPrompt(aufgabe, mappedLernziele, lernpakete, einheit) {
-  if (!aufgabe || !mappedLernziele || mappedLernziele.length === 0) {
+  // Kritische Validierungen
+  if (!aufgabe || !Array.isArray(mappedLernziele) || mappedLernziele.length === 0) {
+    return null; // Keine Kompetenzen zugeordnet
+  }
+
+  if (!Array.isArray(lernpakete)) {
     return null;
   }
 
-  // Erstelle die Liste der Lernziele mit zugehörigen Paketen
-  const zieleMitPaketen = mappedLernziele.map((lz) => {
-    const paket = lernpakete.find((p) => p.id === lz.lernpaket_id);
-    const zielText = lz.schueler_uebersetzung || lz.formulierung_fachsprache;
-    const paketTitel = paket?.titel_des_pakets || 'Unbekanntes Paket';
-    return `- ${zielText} (Gehört zum Lernpaket: ${paketTitel})`;
-  }).join('\n');
+  // Sanitize und validiere Aufgabenstellung
+  const aufgabeText = sanitizeString(aufgabe.aufgabenstellung) || '[Keine Aufgabenstellung hinterlegt]';
 
-  const fach = einheit?.fach || 'dem Unterricht';
-  const thema = einheit?.titel_der_einheit || 'dieses Themengebiet';
-  const jahrgang = einheit?.jahrgangsstufe || '–';
-  const gesamtziel = einheit?.gesamtziel || '';
+  // Erstelle die Liste der Lernziele mit zugehörigen Paketen (mit Null-Checks)
+  const zieleMitPaketen = mappedLernziele
+    .filter(lz => lz && lz.id)
+    .map((lz) => {
+      const paket = lernpakete.find((p) => p && p.id === lz.lernpaket_id);
+      const zielText = sanitizeString(lz.schueler_uebersetzung || lz.formulierung_fachsprache) || 'Unbekanntes Lernziel';
+      const paketTitel = paket ? sanitizeString(paket.titel_des_pakets) : 'Unbekanntes Paket';
+      return `- ${zielText} (Gehört zum Lernpaket: ${paketTitel})`;
+    })
+    .join('\n');
 
-  const prompt = `Du bist ein motivierender und strenger KI-Tutor für das Fach ${fach} im Themengebiet "${thema}" (Jahrgangsstufe ${jahrgang}). 
+  if (!zieleMitPaketen) {
+    return null; // Keine gültigen Ziele
+  }
+
+  // Fallback-Werte mit Sanitizing
+  const fach = sanitizeString(einheit?.fach) || 'dem Unterricht';
+  const thema = sanitizeString(einheit?.titel_der_einheit) || 'dieses Themengebiet';
+  const jahrgang = sanitizeString(einheit?.jahrgangsstufe) || '–';
+  const gesamtziel = sanitizeString(einheit?.gesamtziel) || '';
+
+  const prompt = `Du bist ein motivierender und strenger KI-Tutor für das Fach ${fach} im Themengebiet "${thema}" (Jahrgangsstufe ${jahrgang}).
 Wir befinden uns an einer Integrierten Gesamtschule in Niedersachsen. Das wichtigste pädagogische Ziel dieser Übung ist es, dass ich (der Schüler) lerne, selbstständig und eigenverantwortlich zu arbeiten.
 ${gesamtziel ? `\nÜbergeordnetes Ziel dieser Unterrichtseinheit: ${gesamtziel}` : ''}
+
 Ich werde dir gleich meine Lösung zu einer Aufgabe geben.
 
 Hier ist die Aufgabenstellung:
-${aufgabe.aufgabenstellung}
+${aufgabeText}
 
 Bitte bewerte meine Lösung AUSSCHLIESSLICH anhand der folgenden Kompetenzen, die ich für diese Aufgabe beherrschen muss:
 ${zieleMitPaketen}
@@ -56,6 +80,34 @@ Hier ist meine Lösung:
 }
 
 /**
+ * Sanitiert einen String für sichere KI-Prompt-Eingabe
+ */
+function sanitizeString(str) {
+  if (!str || typeof str !== 'string') return '';
+  return str
+    .trim()
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n');
+}
+
+/**
+ * Empty State Component für fehlende Kompetenzen
+ */
+function PromptEmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center h-full py-12 px-6">
+      <div className="rounded-lg bg-amber-50 p-6 border border-amber-200 max-w-sm text-center space-y-3">
+        <AlertTriangle className="w-8 h-8 text-amber-600 mx-auto" />
+        <h3 className="font-semibold text-amber-900">Prompt kann nicht generiert werden</h3>
+        <p className="text-sm text-amber-800">
+          Bitte ordnen Sie der Aufgabe zuerst Kompetenzen / Lernziele zu.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Panel für KI-Tutor Prompt Anzeige und Verwaltung
  */
 export default function AITutorPromptPanel({
@@ -64,7 +116,7 @@ export default function AITutorPromptPanel({
   lernpakete,
   einheit,
 }) {
-  const [copied, setCopied] = React.useState(false);
+  const [copied, setCopied] = useState(false);
 
   const prompt = useMemo(
     () => generateTutorPrompt(aufgabe, mappedLernziele, lernpakete, einheit),
@@ -83,17 +135,9 @@ export default function AITutorPromptPanel({
     }
   };
 
+  // Graceful Degradation: Empty State statt Fehler
   if (!prompt) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <p className="text-muted-foreground mb-2">Keine Kompetenzen zugeordnet</p>
-          <p className="text-sm text-muted-foreground">
-            Bitte ordne zuerst Kompetenzen zu, um den Prompt zu generieren.
-          </p>
-        </div>
-      </div>
-    );
+    return <PromptEmptyState />;
   }
 
   return (
@@ -104,6 +148,7 @@ export default function AITutorPromptPanel({
           size="sm"
           variant="outline"
           onClick={handleCopyPrompt}
+          disabled={!prompt}
           className="gap-2"
         >
           {copied ? (
