@@ -76,9 +76,12 @@ function BausteinNode({ aufgabe, selectedId, onSelect, userEmail, mappings }) {
 
 // ── Tree-Node: Phase (Level 2) ────────────────────────────────────────────────
 
+const PHASE_KEY_MAP = { input: 'Input', uebung: 'Übung', abschluss: 'Abschluss' };
+
 function PhaseNode({ phase, phaseLabel, paket, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, aktivitaetenMap }) {
   const isSelected           = selectedId === `phase-${paket.id}-${phase}`;
-  const phasenConfig         = paket.phasen_konfiguration?.[phase] || {};
+  const configKey            = PHASE_KEY_MAP[phase] || phase;
+  const phasenConfig         = paket.phasen_konfiguration?.[configKey] || {};
   const isDisabled           = phasenConfig.disabled === true;
   const hasAktivitaet        = !!phasenConfig.selected_aktivitaet_id;
   const aktivitaetName       = hasAktivitaet ? (aktivitaetenMap?.[phasenConfig.selected_aktivitaet_id] || '…') : null;
