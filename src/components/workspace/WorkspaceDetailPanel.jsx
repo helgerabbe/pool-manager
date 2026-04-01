@@ -283,31 +283,38 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
       </div>
 
       {/* Lernziele-Anzeige */}
-      {paketZiele.length > 0 && (
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Lernziele</h3>
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Lernziele</h3>
-          <div className="space-y-2">
-            {paketZiele.map(lz => (
-              <button
-                key={lz.id}
-                onClick={() => handleEditLernziel(lz)}
-                className="w-full flex items-start gap-3 p-3 rounded-lg border hover:bg-muted transition-colors text-left"
-              >
-                <Target className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{lz.formulierung_fachsprache}</p>
-                  {lz.kategorie && (
-                    <Badge className={`text-[10px] mt-1 ${kategorieColors[lz.kategorie] || ''}`}>
-                      {lz.kategorie}
-                    </Badge>
-                  )}
-                </div>
-                <Edit className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-              </button>
-            ))}
-          </div>
+          {paketZiele.map(lz => (
+            <button
+              key={lz.id}
+              onClick={() => handleEditLernziel(lz)}
+              className="w-full flex items-start gap-3 p-3 rounded-lg border hover:bg-muted transition-colors text-left"
+            >
+              <Target className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">{lz.formulierung_fachsprache}</p>
+                {lz.kategorie && (
+                  <Badge className={`text-[10px] mt-1 ${kategorieColors[lz.kategorie] || ''}`}>
+                    {lz.kategorie}
+                  </Badge>
+                )}
+              </div>
+              <Edit className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            </button>
+          ))}
+          {kannBearbeiten && (
+            <button
+              onClick={onNewLernziel}
+              className="w-full flex items-center gap-2 p-3 rounded-lg border border-dashed border-border hover:border-primary/40 hover:bg-primary/5 transition-colors text-left text-sm text-muted-foreground hover:text-primary"
+            >
+              <Plus className="w-4 h-4" />
+              {paketZiele.length === 0 ? 'Erstes Lernziel hinzufügen' : 'Weiteres Lernziel hinzufügen'}
+            </button>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Phasen mit Toggle und Aktivitäten */}
       <div className="space-y-3">
@@ -582,6 +589,76 @@ function LernzielPanel({ lernziel, paketId, aufgaben, userEmail, kannBearbeiten,
   );
 }
 
+// ── AktivitaetEditPanel: Direkt-Bearbeitungsansicht aus dem Baum ──────────────
+
+function AktivitaetEditPanel({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient }) {
+  const [contentFormOpen, setContentFormOpen] = useState(false);
+
+  const { data: aktivitaeten = [] } = useQuery({
+    queryKey: ['aktivitaeten'],
+    queryFn: () => base44.entities.AktivitaetenKatalog.list(),
+  });
+
+  const phasenConfig = paket.phasen_konfiguration || {};
+  const phaseConfig = phasenConfig[phaseKey] || {};
+  const aktivitaet = aktivitaeten.find(a => a.id === phaseConfig.selected_aktivitaet_id);
+
+  // Öffne die ContentForm automatisch beim Mounten
+  React.useEffect(() => {
+    if (aktivitaet) setContentFormOpen(true);
+  }, [aktivitaet?.id]);
+
+  if (!aktivitaet) {
+    return (
+      <StepEmptyState
+        icon={Puzzle}
+        title="Aktivität nicht gefunden"
+        description="Die dieser Phase zugeordnete Aktivität konnte nicht geladen werden."
+        status="yellow"
+      />
+    );
+  }
+
+  return (
+    <>
+      <div className="space-y-3">
+        <div>
+          <p className="text-xs text-muted-foreground">{phaseLabel}</p>
+          <h2 className="text-lg font-bold">{aktivitaet.name}</h2>
+        </div>
+        {kannBearbeiten && (
+          <Button onClick={() => setContentFormOpen(true)} className="gap-2">
+            <Edit className="w-4 h-4" /> Inhalt bearbeiten
+          </Button>
+        )}
+      </div>
+
+      <ActivityContentForm
+        open={contentFormOpen}
+        onOpenChange={setContentFormOpen}
+        aktivitaet={aktivitaet}
+        initialData={phaseConfig.field_values || {}}
+        onSave={({ content_data, is_complete }) => {
+          const newConfig = {
+            ...phasenConfig,
+            [phaseKey]: {
+              ...phaseConfig,
+              field_values: content_data,
+              is_complete,
+            },
+          };
+          base44.entities.Lernpakete.update(paket.id, {
+            phasen_konfiguration: newConfig
+          }).then(() => {
+            queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+            setContentFormOpen(false);
+          });
+        }}
+      />
+    </>
+  );
+}
+
 // ── PhaseContent: Aktivitäten-Anzeige und -Verwaltung ─────────────────────────
 
 function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient }) {
@@ -790,11 +867,12 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient
         aktivitaet={contentFormAktivitaet}
         initialData={phaseConfig.field_values || {}}
         onSave={({ content_data, is_complete }) => {
+          const aktId = selectedAktivitaetId || phaseConfig.selected_aktivitaet_id;
           const newConfig = {
             ...phasenConfig,
             [phaseKey]: {
               ...(phasenConfig[phaseKey] || {}),
-              selected_aktivitaet_id: selectedAktivitaetId,
+              selected_aktivitaet_id: aktId,
               field_values: content_data,
               is_complete,
             },
@@ -804,6 +882,7 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient
           }).then(() => {
             queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
             setContentFormOpen(false);
+            setSelectedAktivitaetId(null);
           });
         }}
       />
@@ -922,6 +1001,24 @@ export default function WorkspaceDetailPanel({
 
   if (type === 'lernziel') {
     return null; // Lernziele werden jetzt nur noch im LernpaketPanel bearbeitet
+  }
+
+  if (type === 'aktivitaet-edit') {
+    const paket = lernpakete.find(p => p.id === selectedNode.paketId);
+    if (!paket) return null;
+    const phaseKeyMap = { input: 'Input', uebung: 'Übung', abschluss: 'Abschluss' };
+    const phaseKey = phaseKeyMap[selectedNode.phase] || selectedNode.phase;
+    const phaseLabelMap = { 'Input': 'Input (Erarbeitung)', 'Übung': 'Übung', 'Abschluss': 'Abschluss' };
+    const phaseLabel = phaseLabelMap[phaseKey] || phaseKey;
+    return (
+      <AktivitaetEditPanel
+        paket={paket}
+        phaseKey={phaseKey}
+        phaseLabel={phaseLabel}
+        kannBearbeiten={kannBearbeiten}
+        queryClient={queryClient}
+      />
+    );
   }
 
   if (type === 'phase') {

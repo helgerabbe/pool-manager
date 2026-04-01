@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { ChevronRight, BookOpen, Layers, Target, Puzzle, Lock, Plus } from 'lucide-react';
+import { ChevronRight, BookOpen, Layers, Target, Puzzle, Lock, Plus, Edit } from 'lucide-react';
 import {
   getLernzielStatus,
   getLernpaketStatus,
@@ -9,6 +9,8 @@ import {
   ebene2FehltMapping,
 } from '@/lib/statusLogic';
 import { AlertTriangle } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 
 // ── Ampel-Dot ──────────────────────────────────────────────────────────────────
 // Kompakte farbige Kreisanzeige für den Status-Überblick im Baum.
@@ -74,42 +76,84 @@ function BausteinNode({ aufgabe, selectedId, onSelect, userEmail, mappings }) {
 
 // ── Tree-Node: Phase (Level 2) ────────────────────────────────────────────────
 
-function PhaseNode({ phase, phaseLabel, paket, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings }) {
-  const [open, setOpen]  = useState(false);
+function PhaseNode({ phase, phaseLabel, paket, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, aktivitaetenMap }) {
   const isSelected       = selectedId === `phase-${paket.id}-${phase}`;
   const phasenConfig     = paket.phasen_konfiguration?.[phase] || {};
   const isDisabled       = phasenConfig.disabled === true;
+  const hasAktivitaet    = !!phasenConfig.selected_aktivitaet_id;
+  const aktivitaetName   = hasAktivitaet ? (aktivitaetenMap?.[phasenConfig.selected_aktivitaet_id] || '…') : null;
+  const aktivitaetId     = `aktivitaet-${paket.id}-${phase}`;
+  const isAktivitaetSelected = selectedId === aktivitaetId;
+  const [open, setOpen]  = useState(hasAktivitaet);
 
   return (
-    <button
-      onClick={() => onSelect({ type: 'phase', id: `phase-${paket.id}-${phase}`, phase, paketId: paket.id, data: paket })}
-      disabled={isDisabled}
-      className={cn(
-        'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
-        isSelected
-          ? 'bg-primary text-primary-foreground'
-          : isDisabled
-            ? 'text-muted-foreground/50 opacity-60 cursor-not-allowed'
-            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+    <div>
+      <div className="flex items-center gap-0.5">
+        {hasAktivitaet && (
+          <button
+            onClick={() => setOpen(o => !o)}
+            className="p-0.5 text-muted-foreground hover:text-foreground shrink-0"
+          >
+            <ChevronRight className={cn('w-3 h-3 transition-transform', open && 'rotate-90')} />
+          </button>
+        )}
+        <button
+          onClick={() => !isDisabled && onSelect({ type: 'phase', id: `phase-${paket.id}-${phase}`, phase, paketId: paket.id, data: paket })}
+          disabled={isDisabled}
+          className={cn(
+            'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
+            !hasAktivitaet && 'ml-3.5',
+            isSelected
+              ? 'bg-primary text-primary-foreground'
+              : isDisabled
+                ? 'text-muted-foreground/50 opacity-60 cursor-not-allowed'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+          )}
+        >
+          <span className="w-3 h-3 shrink-0">
+            {phase === 'input' && '📚'}
+            {phase === 'uebung' && '✏️'}
+            {phase === 'abschluss' && '🎯'}
+          </span>
+          <span className="truncate flex-1">{phaseLabel}</span>
+          {!isSelected && hasAktivitaet && (
+            <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded shrink-0">OK</span>
+          )}
+        </button>
+      </div>
+
+      {/* Aktivitäts-Sub-Node */}
+      {open && hasAktivitaet && (
+        <div className="ml-6 mt-0.5 border-l border-border pl-2">
+          <button
+            onClick={() => onSelect({
+              type: 'aktivitaet-edit',
+              id: aktivitaetId,
+              phase,
+              paketId: paket.id,
+              aktivitaetId: phasenConfig.selected_aktivitaet_id,
+            })}
+            className={cn(
+              'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-[11px] transition-colors',
+              isAktivitaetSelected
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            )}
+          >
+            <Puzzle className="w-3 h-3 shrink-0" />
+            <span className="truncate flex-1">{aktivitaetName}</span>
+            <Edit className="w-3 h-3 shrink-0 opacity-50" />
+          </button>
+        </div>
       )}
-    >
-      <span className="w-3 h-3 shrink-0">
-        {phase === 'input' && '📚'}
-        {phase === 'uebung' && '✏️'}
-        {phase === 'abschluss' && '🎯'}
-      </span>
-      <span className="truncate flex-1">{phaseLabel}</span>
-      {!isSelected && phasenConfig.selected_aktivitaet_id && (
-        <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded shrink-0">OK</span>
-      )}
-    </button>
+    </div>
   );
 }
 
 // ── Tree-Node: Lernpaket (Level 1) ────────────────────────────────────────────
 
-function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, highlightedAtomIds, isSequenzielleUndGesperrt }) {
-  const [open, setOpen]  = useState(true);
+function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, highlightedAtomIds, isSequenzielleUndGesperrt, aktivitaetenMap, initialOpen }) {
+  const [open, setOpen]  = useState(initialOpen ?? false);
   const isSelected       = selectedId === paket.id;
   const status           = getLernpaketStatus(paket, lernziele, aufgaben, userEmail, mappings);
   
@@ -163,16 +207,9 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
               kannBearbeiten={kannBearbeiten}
               userEmail={userEmail}
               mappings={mappings}
+              aktivitaetenMap={aktivitaetenMap}
             />
           ))}
-          {kannBearbeiten && (
-            <button
-              onClick={() => onSelect({ type: 'new-lernziel', paketId: paket.id })}
-              className="w-full flex items-center gap-1.5 px-2 py-1 rounded-md text-left text-[11px] text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
-            >
-              <Plus className="w-3 h-3" /> Lernziel hinzufügen
-            </button>
-          )}
         </div>
       )}
     </div>
@@ -210,6 +247,12 @@ export default function SidebarTree({
 }) {
   const selectedId = selectedNode?.id;
   const { prozent, gruen, gesamt } = getEinheitFortschritt(lernpakete, lernziele, aufgaben, userEmail, mappings);
+
+  const { data: aktivitaetenList = [] } = useQuery({
+    queryKey: ['aktivitaeten'],
+    queryFn: () => base44.entities.AktivitaetenKatalog.list(),
+  });
+  const aktivitaetenMap = Object.fromEntries(aktivitaetenList.map(a => [a.id, a.name]));
   
   // Sequenziell-Logik: bestimme, welche Pakete freigeschaltet sind
   const isSequenziell = einheit?.navigationslogik === 'Sequenziell';
@@ -294,6 +337,8 @@ export default function SidebarTree({
                 mappings={mappings}
                 highlightedAtomIds={highlightedAtomIds}
                 isSequenzielleUndGesperrt={getPaketIsLocked(paket)}
+                aktivitaetenMap={aktivitaetenMap}
+                initialOpen={false}
               />
             ))}
             {kannBearbeiten && (
