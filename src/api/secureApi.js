@@ -309,6 +309,34 @@ export async function generateBulkAufgaben(payload) {
 }
 
 /**
+ * Bulk-Aufgaben-Generator für Ebene 2 (Transfer/Anwendungsaufgaben)
+ * 
+ * @param {Object} payload - { master_aufgabe_text, loesung_text, themenfeld?, kompetenzen?, schwierigkeitsgrad?, fach, jahrgangsstufe, anzahl }
+ * @returns {Promise<{success: boolean, generated_tasks: Array, metadata: Object}>}
+ * @throws {SecureApiError} Bei Fehler (400 Bad Request, 500 LLM Error, etc.)
+ */
+export async function generateBulkEbene2(payload) {
+  if (!payload?.master_aufgabe_text || !payload?.loesung_text || !payload?.fach || !payload?.jahrgangsstufe || !payload?.anzahl) {
+    throw new Error('Missing required fields for bulk generation');
+  }
+
+  if (payload.anzahl < 1 || payload.anzahl > 20) {
+    throw new Error('Anzahl muss zwischen 1 und 20 liegen');
+  }
+
+  try {
+    const response = await base44.functions.invoke('generateBulkEbene2Secure', payload);
+    return response.data;
+  } catch (error) {
+    const status = error.response?.status || 500;
+    const errorData = error.response?.data || {};
+    const message = errorData.error || error.message || 'Unknown error';
+
+    throw new SecureApiError(status, message);
+  }
+}
+
+/**
  * Batch-Create für multiple Aufgaben
  * 
  * @param {Array} aufgaben - Array von Aufgaben-Objekten
@@ -340,6 +368,7 @@ export const secureApi = {
   getWorkspaceData,
   getEinheitenList,
   generateBulkAufgaben,
+  generateBulkEbene2,
   createBulkAufgaben,
 };
 

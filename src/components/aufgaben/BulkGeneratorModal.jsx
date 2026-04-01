@@ -271,25 +271,45 @@ export default function BulkGeneratorModal({
   lernpaketId,
   lernzielId,
   onSuccess,
+  // Neue Props für generisches Design
+  entityType = 'ebene1', // 'ebene1' | 'ebene2'
+  contextData = {}, // Zusätzliche Kontextinformationen
+  createMutationFn = null, // Custom Mutation-Funktion
+  invalidateKeys = [], // React Query Keys zum Invalidieren
 }) {
   const queryClient = useQueryClient();
   const [step, setStep] = useState(1); // 1=Input, 2=Loading, 3=Review
   const [generatedTasks, setGeneratedTasks] = useState([]);
   const [anzahlRequested, setAnzahlRequested] = useState(10);
 
-  // Mutation 1: Generate via LLM
+  // Mutation 1: Generate via LLM (Ebene 1 oder Ebene 2)
   const generateMutation = useMutation({
     mutationFn: async (anzahl) => {
       setAnzahlRequested(anzahl);
-      const result = await secureApi.generateBulkAufgaben({
+      
+      const basePayload = {
         master_aufgabe_text: masterAufgabe.aufgabentext_inhalt || masterAufgabe.aufgabentext,
         loesung_text: masterAufgabe.erwartungshorizont_ki_prompt || 'Siehe Aufgabentext',
-        lernziel,
         fach,
         jahrgangsstufe,
         anzahl,
+      };
+
+      // Ebene 2 benötigt zusätzliche Kontextdaten
+      if (entityType === 'ebene2') {
+        return secureApi.generateBulkEbene2({
+          ...basePayload,
+          themenfeld: contextData.themenfeld || '',
+          kompetenzen: contextData.kompetenzen || '',
+          schwierigkeitsgrad: contextData.schwierigkeitsgrad || '',
+        });
+      }
+
+      // Default: Ebene 1
+      return secureApi.generateBulkAufgaben({
+        ...basePayload,
+        lernziel,
       });
-      return result;
     },
     onSuccess: (data) => {
       setGeneratedTasks(data.generated_tasks);
@@ -305,22 +325,34 @@ export default function BulkGeneratorModal({
   // Mutation 2: Save selected tasks
   const saveMutation = useMutation({
     mutationFn: async (selectedTasks) => {
-      // Baue Aufgaben-Objekte für DB
+      // Nutze custom Mutation-Funktion oder Standard-Logik
+      if (createMutationFn) {
+        return createMutationFn(selectedTasks);
+      }
+
+      // Default: Aufgabenbausteine erstellen
       const aufgabenToCreate = selectedTasks.map((task) => ({
         lernpaket_id: lernpaketId,
         lernziel_id: lernzielId || null,
-        baustein_typ: 'Ebene-1-Übung',
+        baustein_typ: entityType === 'ebene2' ? 'Ebene-2-Aufgabe' : 'Ebene-1-Übung',
         aufgabentext_inhalt: task.aufgabentext,
         erwartungshorizont_ki_prompt: task.loesung,
-        schwierigkeitsgrad: '1-Stern',
+        schwierigkeitsgrad: contextData.schwierigkeitsgrad || '1-Stern',
         material_typ: 'Freitext',
       }));
 
       return secureApi.createBulkAufgaben(aufgabenToCreate);
     },
     onSuccess: (data) => {
+      // Invalidiere Standard + Custom Query Keys
       queryClient.invalidateQueries({ queryKey: ['aufgaben'] });
       queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+      
+      // Invalidiere zusätzliche Keys
+      invalidateKeys.forEach((key) => {
+        queryClient.invalidateQueries({ queryKey: key });
+      });
+
       toast.success(`${data.created_count} Aufgaben gespeichert`);
       onOpenChange(false);
       setStep(1);
