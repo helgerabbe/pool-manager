@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { AlertCircle, CheckCircle2, Save, Clock } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, ExternalLink } from 'lucide-react';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
 
 /**
@@ -62,6 +62,7 @@ export default function ActivityContentForm({
   onSave,
 }) {
   const [formData, setFormData] = useState(initialData);
+  const [fillInMoodleLater, setFillInMoodleLater] = useState(initialData?.fill_in_moodle_later ?? false);
   const [isDirty, setIsDirty] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
 
@@ -75,19 +76,25 @@ export default function ActivityContentForm({
   };
 
   const handleSaveComplete = () => {
+    // Vollständig wenn: fill_in_moodle_later ODER alle Pflichtfelder befüllt
+    if (fillInMoodleLater) {
+      onSave({ content_data: { ...formData, fill_in_moodle_later: true }, is_complete: true });
+      onOpenChange(false);
+      setIsDirty(false);
+      return;
+    }
     const validation = validateFormData(formSchema, formData);
     if (!validation.isValid) {
       setValidationErrors(validation.errors);
       return;
     }
-    onSave({ content_data: formData, is_complete: true });
+    onSave({ content_data: { ...formData, fill_in_moodle_later: false }, is_complete: true });
     onOpenChange(false);
     setIsDirty(false);
   };
 
   const handleSaveDraft = () => {
-    // Entwurf speichert auch ohne Validierung, aber is_complete bleibt false
-    onSave({ content_data: formData, is_complete: false });
+    onSave({ content_data: { ...formData, fill_in_moodle_later: fillInMoodleLater }, is_complete: fillInMoodleLater });
     onOpenChange(false);
     setIsDirty(false);
   };
@@ -118,8 +125,29 @@ export default function ActivityContentForm({
           </div>
         )}
 
-        {/* Formularfelder */}
-        <div className="space-y-5 py-4">
+        {/* "In Moodle befüllen"-Checkbox */}
+        <label className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
+          fillInMoodleLater ? 'border-blue-300 bg-blue-50' : 'border-border bg-muted/30'
+        }`}>
+          <input
+            type="checkbox"
+            checked={fillInMoodleLater}
+            onChange={e => { setFillInMoodleLater(e.target.checked); setIsDirty(true); setValidationErrors([]); }}
+            className="mt-0.5 w-4 h-4 accent-blue-600 shrink-0"
+          />
+          <div>
+            <p className={`text-sm font-semibold ${fillInMoodleLater ? 'text-blue-800' : 'text-foreground'}`}>
+              <ExternalLink className="w-3.5 h-3.5 inline mr-1" />
+              Inhalt erst direkt in Moodle ergänzen
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Die Aktivität gilt als vollständig – der Inhalt wird später in Moodle eingepflegt.
+            </p>
+          </div>
+        </label>
+
+        {/* Formularfelder (ausgegraut wenn fill_in_moodle_later) */}
+        <div className={`space-y-5 py-4 ${fillInMoodleLater ? 'opacity-40 pointer-events-none select-none' : ''}`}>
           {/* Globales Aufgabenstellungs-Feld (immer sichtbar, optional) */}
           <div className="space-y-2">
             <Label>Aufgabenstellung <span className="text-muted-foreground font-normal">(optional)</span></Label>

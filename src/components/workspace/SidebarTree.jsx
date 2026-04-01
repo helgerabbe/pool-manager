@@ -78,6 +78,36 @@ function BausteinNode({ aufgabe, selectedId, onSelect, userEmail, mappings }) {
 
 const PHASE_KEY_MAP = { input: 'Input', uebung: 'Übung', abschluss: 'Abschluss' };
 
+function AktivitaetSubNode({ phasenConfig, aktivitaetId, aktivitaetName, isAktivitaetSelected, onSelect, phase, paketId }) {
+  const isIncomplete = phasenConfig.is_complete === false && !phasenConfig.field_values?.fill_in_moodle_later;
+  return (
+    <button
+      onClick={() => onSelect({
+        type: 'aktivitaet-edit',
+        id: aktivitaetId,
+        phase,
+        paketId,
+        aktivitaetId: phasenConfig.selected_aktivitaet_id,
+      })}
+      className={cn(
+        'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-[11px] transition-colors',
+        isAktivitaetSelected
+          ? 'bg-primary text-primary-foreground'
+          : isIncomplete
+            ? 'text-amber-700 bg-amber-50/60 hover:bg-amber-100'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+      )}
+    >
+      <Puzzle className="w-3 h-3 shrink-0" />
+      <span className="truncate flex-1">{aktivitaetName}</span>
+      {isIncomplete && !isAktivitaetSelected && (
+        <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" title="Inhalt unvollständig" />
+      )}
+      <Edit className="w-3 h-3 shrink-0 opacity-50" />
+    </button>
+  );
+}
+
 function PhaseNode({ phase, phaseLabel, paket, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, aktivitaetenMap }) {
   const isSelected           = selectedId === `phase-${paket.id}-${phase}`;
   const configKey            = PHASE_KEY_MAP[phase] || phase;
@@ -126,25 +156,15 @@ function PhaseNode({ phase, phaseLabel, paket, aufgaben, selectedId, onSelect, k
       {open && (
         <div className="ml-6 mt-0.5 border-l border-border pl-2">
           {hasAktivitaet ? (
-            <button
-              onClick={() => onSelect({
-                type: 'aktivitaet-edit',
-                id: aktivitaetId,
-                phase,
-                paketId: paket.id,
-                aktivitaetId: phasenConfig.selected_aktivitaet_id,
-              })}
-              className={cn(
-                'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-[11px] transition-colors',
-                isAktivitaetSelected
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              )}
-            >
-              <Puzzle className="w-3 h-3 shrink-0" />
-              <span className="truncate flex-1">{aktivitaetName}</span>
-              <Edit className="w-3 h-3 shrink-0 opacity-50" />
-            </button>
+            <AktivitaetSubNode
+              phasenConfig={phasenConfig}
+              aktivitaetId={aktivitaetId}
+              aktivitaetName={aktivitaetName}
+              isAktivitaetSelected={isAktivitaetSelected}
+              onSelect={onSelect}
+              phase={phase}
+              paketId={paket.id}
+            />
           ) : (
             <p className="px-2 py-1.5 text-[11px] text-muted-foreground/50 italic">
               {isDisabled ? 'Phase deaktiviert' : 'Keine Aktivität zugeordnet'}
@@ -170,6 +190,15 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
     { key: 'uebung', label: 'Übung' },
     { key: 'abschluss', label: 'Abschluss' },
   ];
+
+  // Aggregation: Hat dieses Paket Aktivitäten mit unvollständigem Inhalt?
+  const hatUnvollstaendigeAktivitaet = PHASES.some(ph => {
+    const configKey = PHASE_KEY_MAP[ph.key] || ph.key;
+    const phaseData = paket.phasen_konfiguration?.[configKey];
+    if (!phaseData || phaseData.disabled) return false;
+    if (!phaseData.selected_aktivitaet_id) return false;
+    return phaseData.is_complete === false && !phaseData.field_values?.fill_in_moodle_later;
+  });
 
   return (
     <div>
@@ -214,6 +243,9 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
             </span>
           )}
           {!isSelected && !lockedByOther && !lockedByMe && <AmpelDot status={status} size="md" />}
+          {!isSelected && hatUnvollstaendigeAktivitaet && (
+            <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" title="Aktivitäten mit unvollständigem Inhalt" />
+          )}
         </button>
       </div>
 
