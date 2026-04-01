@@ -196,7 +196,7 @@ export default function AllgemeineAufgabenView({
   const selectedAufgabe = allgemeineAufgaben.find(a => a.id === selectedAufgabeId);
 
   return (
-    <div className="h-full flex flex-col gap-4 p-6 bg-background overflow-hidden">
+    <div className="h-full flex flex-col gap-2 p-4 bg-background overflow-hidden">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Allgemeine Aufgaben</h1>
@@ -206,7 +206,7 @@ export default function AllgemeineAufgabenView({
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {/* Suchfeld */}
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

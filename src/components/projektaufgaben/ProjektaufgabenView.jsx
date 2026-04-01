@@ -83,7 +83,7 @@ export default function ProjektaufgabenView({ einheitId, kannBearbeiten }) {
   return (
     <div className="h-full flex flex-col bg-background overflow-hidden">
       {/* Header */}
-      <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-3 border-b border-border bg-card space-y-2">
+      <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-2 border-b border-border bg-card space-y-1">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-bold">Anwendungs- und Projektaufgaben</h2>

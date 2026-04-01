@@ -170,7 +170,7 @@ export default function LernlandkartePreview({
   return (
     <div className="h-full flex flex-col bg-gradient-to-b from-slate-50 to-background overflow-hidden">
       {/* Header */}
-      <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-3 border-b border-border bg-card space-y-2">
+      <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-2 border-b border-border bg-card space-y-1">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <BookOpen className="w-6 h-6 text-primary" />
           Lernlandkarte
