@@ -272,25 +272,6 @@ function EinheitPanel({ einheit, lernpakete, lernziele, aufgaben, themenfelder =
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: 'Lernpakete', value: lernpakete.length, icon: Layers, color: 'text-primary bg-primary/10' },
-          { label: 'Lernziele',  value: lernziele.length,  icon: Target,  color: 'text-green-700 bg-green-100' },
-          { label: 'Aufgaben',   value: aufgaben.length,   icon: Puzzle,  color: 'text-purple-700 bg-purple-100' },
-        ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="p-4 rounded-xl border bg-card flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${color}`}>
-              <Icon className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-xl font-bold">{value}</p>
-              <p className="text-xs text-muted-foreground">{label}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
       {lernpakete.length === 0 && (
         <AmpelBanner status="red" message="Legen Sie zunächst ein Lernpaket an, um mit der Planung zu beginnen." />
       )}
