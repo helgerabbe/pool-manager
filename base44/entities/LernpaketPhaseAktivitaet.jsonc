@@ -1,0 +1,42 @@
+{
+  "name": "LernpaketPhaseAktivitaet",
+  "type": "object",
+  "properties": {
+    "lernpaket_id": {
+      "type": "string",
+      "description": "FK zur Lernpakete-Entity"
+    },
+    "phase": {
+      "type": "string",
+      "enum": [
+        "Input",
+        "\u00dcbung",
+        "Abschluss"
+      ],
+      "description": "Lernphase"
+    },
+    "aktivitaet_id": {
+      "type": "string",
+      "description": "FK zu AktivitaetenKatalog"
+    },
+    "field_values": {
+      "type": "object",
+      "description": "Konfigurierte Feldwerte f\u00fcr diese Aktivit\u00e4t",
+      "additionalProperties": true
+    },
+    "is_complete": {
+      "type": "boolean",
+      "default": false,
+      "description": "Alle Pflichtfelder ausgef\u00fcllt?"
+    },
+    "reihenfolge": {
+      "type": "number",
+      "description": "Sortierreihenfolge innerhalb der Phase"
+    }
+  },
+  "required": [
+    "lernpaket_id",
+    "phase",
+    "aktivitaet_id"
+  ]
+}

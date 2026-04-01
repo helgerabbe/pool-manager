@@ -1,18 +1,13 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { ChevronRight, BookOpen, Layers, Puzzle, Lock, Plus, Edit, UserRound, FolderOpen } from 'lucide-react';
-import { AlertTriangle } from 'lucide-react';
+import { ChevronRight, BookOpen, Layers, Puzzle, Lock, Edit, UserRound, FolderOpen, AlertTriangle } from 'lucide-react';
 import {
   getLernpaketStatus,
   getEinheitFortschritt,
-  getAufgabeStatus,
-  ebene2FehltMapping,
   isPaketLocked,
 } from '@/lib/statusLogic';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-
-// ── Ampel-Dot ──────────────────────────────────────────────────────────────────
 
 const AMPEL = {
   green:  { dot: 'bg-green-500',  ring: 'ring-green-200',  label: 'Vollständig' },
@@ -32,24 +27,20 @@ function AmpelDot({ status, size = 'sm' }) {
   );
 }
 
-// ── Aktivitäts-Sub-Node ───────────────────────────────────────────────────────
-
-const PHASE_KEY_MAP = { input: 'Input', uebung: 'Übung', abschluss: 'Abschluss' };
-
-function AktivitaetSubNode({ phasenConfig, aktivitaetId, aktivitaetName, isAktivitaetSelected, onSelect, phase, paketId }) {
-  const isIncomplete = phasenConfig.is_complete === false && !phasenConfig.field_values?.fill_in_moodle_later;
+function AktivitaetSubNode({ activity, aktivitaetName, isSelected, onSelect, paketId }) {
+  const isIncomplete = !activity.is_complete;
   return (
     <button
       onClick={() => onSelect({
         type: 'aktivitaet-edit',
-        id: aktivitaetId,
-        phase,
+        id: activity.id,
+        phase: activity.phase,
         paketId,
-        aktivitaetId: phasenConfig.selected_aktivitaet_id,
+        activityRecordId: activity.id,
       })}
       className={cn(
         'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-[11px] transition-colors',
-        isAktivitaetSelected
+        isSelected
           ? 'bg-primary text-primary-foreground'
           : isIncomplete
             ? 'text-amber-700 bg-amber-50/60 hover:bg-amber-100'
@@ -59,25 +50,23 @@ function AktivitaetSubNode({ phasenConfig, aktivitaetId, aktivitaetName, isAktiv
       <Puzzle className="w-3 h-3 shrink-0" />
       <span className="truncate flex-1">{aktivitaetName}</span>
       {isIncomplete && (
-        <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" title="Inhalt unvollständig: Bitte alle Pflichtfelder ausfüllen" />
+        <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" title="Inhalt unvollständig" />
       )}
       <Edit className="w-3 h-3 shrink-0 opacity-50" />
     </button>
   );
 }
 
-// ── Phase-Node ────────────────────────────────────────────────────────────────
+const PHASES = [
+  { key: 'Input', label: 'Input (Erarbeitung)' },
+  { key: 'Übung', label: 'Übung' },
+  { key: 'Abschluss', label: 'Abschluss' },
+];
 
-function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, aktivitaetenMap }) {
-  const isSelected           = selectedId === `phase-${paket.id}-${phase}`;
-  const configKey            = PHASE_KEY_MAP[phase] || phase;
-  const phasenConfig         = paket.phasen_konfiguration?.[configKey] || {};
-  const isDisabled           = phasenConfig.disabled === true;
-  const hasAktivitaet        = !!phasenConfig.selected_aktivitaet_id;
-  const aktivitaetName       = hasAktivitaet ? (aktivitaetenMap?.[phasenConfig.selected_aktivitaet_id] || '…') : null;
-  const aktivitaetId         = `aktivitaet-${paket.id}-${phase}`;
-  const isAktivitaetSelected = selectedId === aktivitaetId;
-  const [open, setOpen]      = useState(false);
+function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseActivities, aktivitaetenMap }) {
+  const isSelected = selectedId === `phase-${paket.id}-${phase}`;
+  const activities = paketPhaseActivities.filter(a => a.phase === phase);
+  const [open, setOpen] = useState(false);
 
   return (
     <div>
@@ -86,40 +75,38 @@ function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, aktivitaete
           <ChevronRight className={cn('w-3 h-3 transition-transform', open && 'rotate-90')} />
         </button>
         <button
-          onClick={() => !isDisabled && onSelect({ type: 'phase', id: `phase-${paket.id}-${phase}`, phase, paketId: paket.id, data: paket })}
-          disabled={isDisabled}
+          onClick={() => onSelect({ type: 'phase', id: `phase-${paket.id}-${phase}`, phase, paketId: paket.id })}
           className={cn(
             'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
-            isSelected ? 'bg-primary text-primary-foreground'
-              : isDisabled ? 'text-muted-foreground/50 opacity-60 cursor-not-allowed'
-              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            isSelected ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
           )}
         >
           <span className="w-3 h-3 shrink-0">
-            {phase === 'input' && '📚'}{phase === 'uebung' && '✏️'}{phase === 'abschluss' && '🎯'}
+            {phase === 'Input' && '📚'}{phase === 'Übung' && '✏️'}{phase === 'Abschluss' && '🎯'}
           </span>
           <span className="truncate flex-1">{phaseLabel}</span>
-          {!isSelected && hasAktivitaet && (
-            <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded shrink-0">OK</span>
+          {!isSelected && activities.length > 0 && (
+            <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded shrink-0">{activities.length}</span>
           )}
         </button>
       </div>
       {open && (
-        <div className="ml-6 mt-0.5 border-l border-border pl-2">
-          {hasAktivitaet ? (
-            <AktivitaetSubNode
-              phasenConfig={phasenConfig}
-              aktivitaetId={aktivitaetId}
-              aktivitaetName={aktivitaetName}
-              isAktivitaetSelected={isAktivitaetSelected}
-              onSelect={onSelect}
-              phase={phase}
-              paketId={paket.id}
-            />
+        <div className="ml-6 mt-0.5 border-l border-border pl-2 space-y-0.5">
+          {activities.length === 0 ? (
+            <p className="px-2 py-1.5 text-[11px] text-muted-foreground/50 italic">Keine Aktivitäten</p>
           ) : (
-            <p className="px-2 py-1.5 text-[11px] text-muted-foreground/50 italic">
-              {isDisabled ? 'Phase deaktiviert' : 'Keine Aktivität zugeordnet'}
-            </p>
+            activities
+              .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
+              .map(activity => (
+                <AktivitaetSubNode
+                  key={activity.id}
+                  activity={activity}
+                  aktivitaetName={aktivitaetenMap[activity.aktivitaet_id] || '…'}
+                  isSelected={selectedId === activity.id}
+                  onSelect={onSelect}
+                  paketId={paket.id}
+                />
+              ))
           )}
         </div>
       )}
@@ -127,27 +114,14 @@ function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, aktivitaete
   );
 }
 
-// ── Lernpaket-Node ────────────────────────────────────────────────────────────
+function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenzielleUndGesperrt, aktivitaetenMap, paketPhaseActivities, showNumber = false }) {
+  const [open, setOpen] = useState(false);
+  const isSelected = selectedId === paket.id;
+  const status = getLernpaketStatus(paket, lernziele, aufgaben, userEmail, mappings);
+  const lockedByOther = isPaketLocked(paket) && paket.locked_by !== userEmail;
+  const lockedByMe = isPaketLocked(paket) && paket.locked_by === userEmail;
 
-const PHASES = [
-  { key: 'input', label: 'Input (Erarbeitung)' },
-  { key: 'uebung', label: 'Übung' },
-  { key: 'abschluss', label: 'Abschluss' },
-];
-
-function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenzielleUndGesperrt, aktivitaetenMap, showNumber = false }) {
-   const [open, setOpen] = useState(false);
-   const isSelected      = selectedId === paket.id;
-   const status          = getLernpaketStatus(paket, lernziele, aufgaben, userEmail, mappings);
-   const lockedByOther   = isPaketLocked(paket) && paket.locked_by !== userEmail;
-   const lockedByMe      = isPaketLocked(paket) && paket.locked_by === userEmail;
-
-  const hatUnvollstaendigeAktivitaet = PHASES.some(ph => {
-    const configKey = PHASE_KEY_MAP[ph.key] || ph.key;
-    const phaseData = paket.phasen_konfiguration?.[configKey];
-    if (!phaseData || phaseData.disabled || !phaseData.selected_aktivitaet_id) return false;
-    return phaseData.is_complete === false && !phaseData.field_values?.fill_in_moodle_later;
-  });
+  const hatUnvollstaendigeAktivitaet = paketPhaseActivities.some(a => !a.is_complete);
 
   return (
     <div>
@@ -156,22 +130,22 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
           <ChevronRight className={cn('w-3.5 h-3.5 transition-transform', open && 'rotate-90')} />
         </button>
         <button
-           onClick={() => onSelect({ type: 'lernpaket', id: paket.id, data: paket })}
-           disabled={isSequenzielleUndGesperrt}
-           title={isSequenzielleUndGesperrt ? 'Vorherige Pakete müssen vollständig sein' : undefined}
-           className={cn(
-             'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-sm font-medium transition-colors min-w-0 disabled:opacity-50 disabled:cursor-not-allowed',
-             isSelected ? 'bg-primary text-primary-foreground'
-               : isSequenzielleUndGesperrt ? 'text-muted-foreground/50 bg-muted/30'
-               : lockedByOther ? 'text-foreground hover:bg-amber-50 bg-amber-50/50'
-               : 'text-foreground hover:bg-muted'
-           )}
-         >
-           {showNumber && (
-             <div className="w-5 h-5 rounded bg-primary/15 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
-               {paket.reihenfolge_nummer}
-             </div>
-           )}
+          onClick={() => onSelect({ type: 'lernpaket', id: paket.id, data: paket })}
+          disabled={isSequenzielleUndGesperrt}
+          title={isSequenzielleUndGesperrt ? 'Vorherige Pakete müssen vollständig sein' : undefined}
+          className={cn(
+            'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-sm font-medium transition-colors min-w-0 disabled:opacity-50 disabled:cursor-not-allowed',
+            isSelected ? 'bg-primary text-primary-foreground'
+              : isSequenzielleUndGesperrt ? 'text-muted-foreground/50 bg-muted/30'
+              : lockedByOther ? 'text-foreground hover:bg-amber-50 bg-amber-50/50'
+              : 'text-foreground hover:bg-muted'
+          )}
+        >
+          {showNumber && (
+            <div className="w-5 h-5 rounded bg-primary/15 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
+              {paket.reihenfolge_nummer}
+            </div>
+          )}
           <span className="truncate flex-1">{paket.titel_des_pakets}</span>
           {!isSelected && lockedByOther && (
             <span title={`Bearbeitet von: ${paket.locked_by}`} className="flex items-center gap-0.5 text-[10px] text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded shrink-0">
@@ -199,6 +173,7 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
               paket={paket}
               selectedId={selectedId}
               onSelect={onSelect}
+              paketPhaseActivities={paketPhaseActivities}
               aktivitaetenMap={aktivitaetenMap}
             />
           ))}
@@ -208,13 +183,10 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
   );
 }
 
-// ── Themenfeld-Node ───────────────────────────────────────────────────────────
+function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenziell, aktivitaetenMap, paketPhaseActivitiesMap, isSammelbecken = false }) {
+  const [open, setOpen] = useState(true);
+  const isSelected = selectedId === `themenfeld-${themenfeld.id}`;
 
-function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenziell, aktivitaetenMap, isSammelbecken = false }) {
-   const [open, setOpen] = useState(true);
-   const isSelected      = selectedId === `themenfeld-${themenfeld.id}`;
-
-  // Aggregierter Ampelstatus des Themenfelds
   const paketStatuses = lernpakete.map(p => getLernpaketStatus(p, lernziele, aufgaben, userEmail, mappings));
   const themenfeldStatus =
     paketStatuses.length === 0 ? 'red' :
@@ -222,15 +194,9 @@ function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedI
     paketStatuses.some(s => s === 'red') ? 'red' : 'yellow';
 
   const hatUnvollstaendigeAktivitaet = lernpakete.some(paket =>
-    PHASES.some(ph => {
-      const configKey = PHASE_KEY_MAP[ph.key] || ph.key;
-      const phaseData = paket.phasen_konfiguration?.[configKey];
-      if (!phaseData || phaseData.disabled || !phaseData.selected_aktivitaet_id) return false;
-      return phaseData.is_complete === false && !phaseData.field_values?.fill_in_moodle_later;
-    })
+    (paketPhaseActivitiesMap[paket.id] || []).some(a => !a.is_complete)
   );
 
-  // Sequenziell-Logik innerhalb eines Themenfelds
   const getPaketIsLocked = (paket) => {
     if (!isSequenziell) return false;
     const lowerPakete = lernpakete.filter(p => (p.reihenfolge_nummer || 0) < (paket.reihenfolge_nummer || 0));
@@ -277,6 +243,7 @@ function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedI
                 mappings={mappings}
                 isSequenzielleUndGesperrt={getPaketIsLocked(paket)}
                 aktivitaetenMap={aktivitaetenMap}
+                paketPhaseActivities={paketPhaseActivitiesMap[paket.id] || []}
                 showNumber={isSequenziell}
               />
             ))
@@ -286,8 +253,6 @@ function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedI
     </div>
   );
 }
-
-// ── Ampel-Legende ──────────────────────────────────────────────────────────────
 
 function AmpelLegende() {
   return (
@@ -301,8 +266,6 @@ function AmpelLegende() {
     </div>
   );
 }
-
-// ── SidebarTree (Haupt-Export) ────────────────────────────────────────────────
 
 export default function SidebarTree({
   einheit,
@@ -318,25 +281,31 @@ export default function SidebarTree({
   highlightedAtomIds = new Set(),
 }) {
   const selectedId = selectedNode?.id;
-
-  // Responsive: Auf kleinen Screens Dropdown für Themenfeld-Auswahl
   const [mobileThemenfeldId, setMobileThemenfeldId] = useState(themenfelder[0]?.id || null);
 
   const { data: aktivitaetenList = [] } = useQuery({
-    queryKey: ['aktivitaeten'],
+    queryKey: ['aktivitaetenKatalog'],
     queryFn: () => base44.entities.AktivitaetenKatalog.list(),
   });
   const aktivitaetenMap = Object.fromEntries(aktivitaetenList.map(a => [a.id, a.name]));
 
+  const { data: phaseActivities = [] } = useQuery({
+    queryKey: ['lernpaketPhaseAktivitaeten'],
+    queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list(),
+  });
+
+  const paketPhaseActivitiesMap = Object.fromEntries(
+    lernpakete.map(paket => [
+      paket.id,
+      phaseActivities.filter(pa => pa.lernpaket_id === paket.id),
+    ])
+  );
+
   const { prozent, gruen, gesamt } = getEinheitFortschritt(lernpakete, lernziele, aufgaben, userEmail, mappings);
   const isSequenziell = einheit?.navigationslogik === 'Sequenziell';
-
   const einheitStatus = gesamt === 0 ? 'red' : prozent === 100 ? 'green' : 'yellow';
 
-  // Pakete ohne Themenfeld (Rückwärtskompatibilität)
   const paketeOhneThemenfeld = lernpakete.filter(p => !p.themenfeld_id);
-
-  // Themenfelder mit ihren Paketen
   const themenfeldMitPaketen = themenfelder
     .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
     .map(tf => ({
@@ -348,14 +317,11 @@ export default function SidebarTree({
 
   return (
     <nav className="h-full flex flex-col gap-2">
-      {/* Einheit-Root */}
       <button
         onClick={() => onSelect({ type: 'einheit', id: einheit?.id, data: einheit })}
         className={cn(
           'w-full flex items-start gap-2.5 px-3 py-3 rounded-lg text-left transition-colors',
-          selectedNode?.type === 'einheit'
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-muted/60 hover:bg-muted text-foreground'
+          selectedNode?.type === 'einheit' ? 'bg-primary text-primary-foreground' : 'bg-muted/60 hover:bg-muted text-foreground'
         )}
       >
         <BookOpen className="w-4 h-4 shrink-0 mt-0.5" />
@@ -379,7 +345,6 @@ export default function SidebarTree({
         </div>
       </button>
 
-      {/* ── Responsive Themenfeld-Auswahl (nur auf kleinen Screens) ── */}
       {themenfelder.length > 0 && (
         <div className="lg:hidden px-1">
           <label className="text-[10px] text-muted-foreground mb-1 block">Themenfeld:</label>
@@ -399,14 +364,11 @@ export default function SidebarTree({
         </div>
       )}
 
-      {/* ── Baum-Inhalt ── */}
       <div className="flex-1 overflow-y-auto space-y-1 pr-1">
-
-        {/* Unzugeordnete Pakete als Ordner (oben) */}
         {paketeOhneThemenfeld.length > 0 && (
           <div className="hidden lg:block">
             <ThemenfeldNode
-              themenfeld={{ id: '__unzugeordnet__', titel: 'Unzugeordnete Lernpakete', reihenfolge: -1, bearbeitungsmodus: 'offen' }}
+              themenfeld={{ id: '__unzugeordnet__', titel: 'Unzugeordnete Lernpakete', reihenfolge: -1 }}
               lernpakete={paketeOhneThemenfeld}
               lernziele={lernziele}
               aufgaben={aufgaben}
@@ -417,12 +379,12 @@ export default function SidebarTree({
               mappings={mappings}
               isSequenziell={false}
               aktivitaetenMap={aktivitaetenMap}
+              paketPhaseActivitiesMap={paketPhaseActivitiesMap}
               isSammelbecken={true}
             />
           </div>
         )}
 
-        {/* Desktop: Alle Themenfelder als Baum */}
         {themenfelder.length > 0 ? (
           <div className="hidden lg:block space-y-1">
             {themenfeldMitPaketen.map(({ themenfeld, pakete }) => (
@@ -439,12 +401,12 @@ export default function SidebarTree({
                 mappings={mappings}
                 isSequenziell={isSequenziell}
                 aktivitaetenMap={aktivitaetenMap}
+                paketPhaseActivitiesMap={paketPhaseActivitiesMap}
               />
             ))}
           </div>
         ) : null}
 
-        {/* Mobile: nur das gewählte Themenfeld */}
         {themenfelder.length > 0 && mobileThemenfeldId && (
           <div className="lg:hidden space-y-1">
             {(() => {
@@ -464,6 +426,7 @@ export default function SidebarTree({
                   mappings={mappings}
                   isSequenzielleUndGesperrt={false}
                   aktivitaetenMap={aktivitaetenMap}
+                  paketPhaseActivities={paketPhaseActivitiesMap[paket.id] || []}
                   showNumber={tf?.bearbeitungsmodus === 'sequenziell'}
                 />
               ));
@@ -471,7 +434,6 @@ export default function SidebarTree({
           </div>
         )}
 
-        {/* Fallback: Keine Themenfelder und keine Pakete */}
         {themenfelder.length === 0 && lernpakete.length === 0 && (
           <div className="px-3 py-4 text-center">
             <Layers className="w-6 h-6 text-muted-foreground/40 mx-auto mb-2" />
@@ -480,7 +442,6 @@ export default function SidebarTree({
         )}
       </div>
 
-      {/* Legende */}
       <AmpelLegende />
     </nav>
   );

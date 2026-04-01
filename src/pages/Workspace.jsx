@@ -379,17 +379,11 @@ export default function Workspace() {
               <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 {selectedNode?.type === 'aktivitaet-edit' ? (
                   (() => {
-                    const paket = paketeFuerEinheit.find(p => p.id === selectedNode.paketId);
-                    if (!paket) return null;
-                    const phaseKeyMap = { input: 'Input', uebung: 'Übung', abschluss: 'Abschluss' };
-                    const phaseKey = phaseKeyMap[selectedNode.phase] || selectedNode.phase;
-                    const phaseLabelMap = { 'Input': 'Input (Erarbeitung)', 'Übung': 'Übung', 'Abschluss': 'Abschluss' };
-                    const phaseLabel = phaseLabelMap[phaseKey] || phaseKey;
+                    const activityRecord = lernpaketAktivitaeten.find(a => a.id === selectedNode.activityRecordId);
+                    if (!activityRecord) return null;
                     return (
                       <ActivityDetailView
-                        paket={paket}
-                        phaseKey={phaseKey}
-                        phaseLabel={phaseLabel}
+                        activityRecord={activityRecord}
                         kannBearbeiten={kannDieseEinheitBearbeiten}
                         queryClient={queryClient}
                       />

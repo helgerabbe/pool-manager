@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Edit, Save, X, FileText, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function ActivityDetailView({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient }) {
+export default function ActivityDetailView({ activityRecord, kannBearbeiten, queryClient }) {
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({});
   const [saving, setSaving] = useState(false);
@@ -18,29 +18,22 @@ export default function ActivityDetailView({ paket, phaseKey, phaseLabel, kannBe
     queryFn: () => base44.entities.AktivitaetenKatalog.list(),
   });
 
-  const phasenConfig = paket?.phasen_konfiguration || {};
-  const phaseConfig = phasenConfig[phaseKey] || {};
-  const catalog = aktivitaetenKatalog?.find(a => a.id === phaseConfig.selected_aktivitaet_id);
+  const catalog = aktivitaetenKatalog?.find(a => a.id === activityRecord?.aktivitaet_id);
 
   useEffect(() => {
-    setFormData(phaseConfig.field_values || {});
-  }, [phaseConfig]);
+    setFormData(activityRecord?.field_values || {});
+  }, [activityRecord?.field_values]);
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      const newConfig = {
-        ...phasenConfig,
-        [phaseKey]: {
-          ...phaseConfig,
-          field_values: formData,
-          is_complete: true,
-        },
-      };
-      await base44.entities.Lernpakete.update(paket.id, {
-        phasen_konfiguration: newConfig,
+      await base44.entities.LernpaketPhaseAktivitaet.update(activityRecord.id, {
+        field_values: formData,
+        is_complete: true,
       });
-      queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+      queryClient.invalidateQueries({
+        queryKey: ['lernpaketPhaseAktivitaeten'],
+      });
       setEditMode(false);
       toast.success('Aktivität gespeichert.');
     } catch (err) {
@@ -50,7 +43,7 @@ export default function ActivityDetailView({ paket, phaseKey, phaseLabel, kannBe
     }
   };
 
-  if (!paket || !catalog) {
+  if (!activityRecord || !catalog) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground">
         <p>Keine Aktivität ausgewählt.</p>
@@ -64,8 +57,8 @@ export default function ActivityDetailView({ paket, phaseKey, phaseLabel, kannBe
       <div className="flex items-start justify-between gap-3 p-4 border-b">
         <div className="flex-1 min-w-0">
           <h2 className="text-lg font-semibold truncate">{catalog.name}</h2>
-          <p className="text-xs text-muted-foreground mt-1">Phase: {phaseLabel}</p>
-          {phaseConfig.is_complete === false && (
+          <p className="text-xs text-muted-foreground mt-1">Phase: {activityRecord.phase}</p>
+          {!activityRecord.is_complete && (
             <div className="flex items-center gap-1 text-xs text-amber-600 mt-2">
               <AlertTriangle className="w-3.5 h-3.5" />
               Inhalt unvollständig
