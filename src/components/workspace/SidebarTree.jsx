@@ -135,12 +135,12 @@ const PHASES = [
   { key: 'abschluss', label: 'Abschluss' },
 ];
 
-function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenzielleUndGesperrt, aktivitaetenMap }) {
-  const [open, setOpen] = useState(false);
-  const isSelected      = selectedId === paket.id;
-  const status          = getLernpaketStatus(paket, lernziele, aufgaben, userEmail, mappings);
-  const lockedByOther   = isPaketLocked(paket) && paket.locked_by !== userEmail;
-  const lockedByMe      = isPaketLocked(paket) && paket.locked_by === userEmail;
+function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenzielleUndGesperrt, aktivitaetenMap, showNumber = false }) {
+   const [open, setOpen] = useState(false);
+   const isSelected      = selectedId === paket.id;
+   const status          = getLernpaketStatus(paket, lernziele, aufgaben, userEmail, mappings);
+   const lockedByOther   = isPaketLocked(paket) && paket.locked_by !== userEmail;
+   const lockedByMe      = isPaketLocked(paket) && paket.locked_by === userEmail;
 
   const hatUnvollstaendigeAktivitaet = PHASES.some(ph => {
     const configKey = PHASE_KEY_MAP[ph.key] || ph.key;
@@ -156,20 +156,22 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
           <ChevronRight className={cn('w-3.5 h-3.5 transition-transform', open && 'rotate-90')} />
         </button>
         <button
-          onClick={() => onSelect({ type: 'lernpaket', id: paket.id, data: paket })}
-          disabled={isSequenzielleUndGesperrt}
-          title={isSequenzielleUndGesperrt ? 'Vorherige Pakete müssen vollständig sein' : undefined}
-          className={cn(
-            'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-sm font-medium transition-colors min-w-0 disabled:opacity-50 disabled:cursor-not-allowed',
-            isSelected ? 'bg-primary text-primary-foreground'
-              : isSequenzielleUndGesperrt ? 'text-muted-foreground/50 bg-muted/30'
-              : lockedByOther ? 'text-foreground hover:bg-amber-50 bg-amber-50/50'
-              : 'text-foreground hover:bg-muted'
-          )}
-        >
-          <div className="w-5 h-5 rounded bg-primary/15 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
-            {paket.reihenfolge_nummer}
-          </div>
+           onClick={() => onSelect({ type: 'lernpaket', id: paket.id, data: paket })}
+           disabled={isSequenzielleUndGesperrt}
+           title={isSequenzielleUndGesperrt ? 'Vorherige Pakete müssen vollständig sein' : undefined}
+           className={cn(
+             'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-sm font-medium transition-colors min-w-0 disabled:opacity-50 disabled:cursor-not-allowed',
+             isSelected ? 'bg-primary text-primary-foreground'
+               : isSequenzielleUndGesperrt ? 'text-muted-foreground/50 bg-muted/30'
+               : lockedByOther ? 'text-foreground hover:bg-amber-50 bg-amber-50/50'
+               : 'text-foreground hover:bg-muted'
+           )}
+         >
+           {showNumber && (
+             <div className="w-5 h-5 rounded bg-primary/15 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
+               {paket.reihenfolge_nummer}
+             </div>
+           )}
           <span className="truncate flex-1">{paket.titel_des_pakets}</span>
           {!isSelected && lockedByOther && (
             <span title={`Bearbeitet von: ${paket.locked_by}`} className="flex items-center gap-0.5 text-[10px] text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded shrink-0">
@@ -275,16 +277,9 @@ function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedI
                 mappings={mappings}
                 isSequenzielleUndGesperrt={getPaketIsLocked(paket)}
                 aktivitaetenMap={aktivitaetenMap}
+                showNumber={isSequenziell}
               />
             ))
-          )}
-          {kannBearbeiten && (
-            <button
-              onClick={() => onSelect({ type: 'new-lernpaket', themenfeldId: themenfeld.id })}
-              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors border border-dashed border-border"
-            >
-              <Plus className="w-3 h-3" /> Lernpaket hinzufügen
-            </button>
           )}
         </div>
       )}
@@ -419,21 +414,13 @@ export default function SidebarTree({
                 aufgaben={aufgaben}
                 selectedId={selectedId}
                 onSelect={onSelect}
-                kannBearbeiten={kannBearbeiten}
+                kannBearbeiten={false}
                 userEmail={userEmail}
                 mappings={mappings}
                 isSequenziell={isSequenziell}
                 aktivitaetenMap={aktivitaetenMap}
               />
             ))}
-            {kannBearbeiten && (
-              <button
-                onClick={() => onSelect({ type: 'new-themenfeld' })}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors border border-dashed border-border mt-1"
-              >
-                <Plus className="w-3.5 h-3.5" /> Neues Themenfeld
-              </button>
-            )}
           </div>
         ) : null}
 
@@ -443,6 +430,7 @@ export default function SidebarTree({
             {(() => {
               const entry = themenfeldMitPaketen.find(e => e.themenfeld.id === mobileThemenfeldId);
               if (!entry) return null;
+              const tf = themenfelder.find(t => t.id === mobileThemenfeldId);
               return entry.pakete.map(paket => (
                 <LernpaketNode
                   key={paket.id}
@@ -451,68 +439,49 @@ export default function SidebarTree({
                   aufgaben={aufgaben}
                   selectedId={selectedId}
                   onSelect={onSelect}
-                  kannBearbeiten={kannBearbeiten}
+                  kannBearbeiten={false}
                   userEmail={userEmail}
                   mappings={mappings}
                   isSequenzielleUndGesperrt={false}
                   aktivitaetenMap={aktivitaetenMap}
+                  showNumber={tf?.bearbeitungsmodus === 'sequenziell'}
                 />
               ));
             })()}
-            {kannBearbeiten && (
-              <button
-                onClick={() => onSelect({ type: 'new-lernpaket', themenfeldId: mobileThemenfeldId })}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors border border-dashed border-border mt-2"
-              >
-                <Plus className="w-3.5 h-3.5" /> Neues Lernpaket
-              </button>
-            )}
           </div>
         )}
 
-        {/* Fallback: Pakete ohne Themenfeld (Rückwärtskompatibilität) */}
-        {themenfelder.length === 0 && (
-          <>
-            {lernpakete.length === 0 ? (
-              <div className="px-3 py-4 text-center">
-                <Layers className="w-6 h-6 text-muted-foreground/40 mx-auto mb-2" />
-                <p className="text-xs text-muted-foreground">Noch keine Lernpakete.</p>
-                {kannBearbeiten && (
-                  <button onClick={() => onSelect({ type: 'new-lernpaket' })} className="mt-2 text-xs text-primary hover:underline">
-                    + Lernpaket anlegen
-                  </button>
-                )}
-              </div>
-            ) : (
-              <>
-                {lernpakete
-                  .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0))
-                  .map(paket => (
-                    <LernpaketNode
-                      key={paket.id}
-                      paket={paket}
-                      lernziele={lernziele}
-                      aufgaben={aufgaben}
-                      selectedId={selectedId}
-                      onSelect={onSelect}
-                      kannBearbeiten={kannBearbeiten}
-                      userEmail={userEmail}
-                      mappings={mappings}
-                      isSequenzielleUndGesperrt={false}
-                      aktivitaetenMap={aktivitaetenMap}
-                    />
-                  ))}
-                {kannBearbeiten && (
-                  <button
-                    onClick={() => onSelect({ type: 'new-lernpaket' })}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors border border-dashed border-border mt-2"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Neues Lernpaket
-                  </button>
-                )}
-              </>
-            )}
-          </>
+        {/* Unzugeordnete Pakete */}
+        {paketeOhneThemenfeld.length > 0 && (
+          <div className="space-y-1 mt-2 pt-2 border-t border-border">
+            <p className="px-3 py-1 text-xs font-semibold text-muted-foreground">Unzugeordnete Lernpakete</p>
+            {paketeOhneThemenfeld
+              .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0))
+              .map(paket => (
+                <LernpaketNode
+                  key={paket.id}
+                  paket={paket}
+                  lernziele={lernziele}
+                  aufgaben={aufgaben}
+                  selectedId={selectedId}
+                  onSelect={onSelect}
+                  kannBearbeiten={false}
+                  userEmail={userEmail}
+                  mappings={mappings}
+                  isSequenzielleUndGesperrt={false}
+                  aktivitaetenMap={aktivitaetenMap}
+                  showNumber={false}
+                />
+              ))}
+          </div>
+        )}
+
+        {/* Fallback: Keine Themenfelder und keine Pakete */}
+        {themenfelder.length === 0 && lernpakete.length === 0 && (
+          <div className="px-3 py-4 text-center">
+            <Layers className="w-6 h-6 text-muted-foreground/40 mx-auto mb-2" />
+            <p className="text-xs text-muted-foreground">Noch keine Lernpakete. Erstellen Sie diese in der Struktur-Ansicht.</p>
+          </div>
         )}
       </div>
 
