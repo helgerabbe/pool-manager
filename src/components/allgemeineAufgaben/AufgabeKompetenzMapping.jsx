@@ -61,9 +61,9 @@ function LernzielDropzone({
         }>
         
           <p className="text-xs text-muted-foreground font-medium">
-            {mappedLernziele.length === 0 ?
-          'Benötigte Kompetenzen hier ablegen' :
-          `${mappedLernziele.length} Kompetenz(en) zugeordnet`}
+          {mappedLernziele.length === 0 ?
+          'Benötigte Lernziele hier ablegen' :
+          `${mappedLernziele.length} Lernziel(e) zugeordnet`}
           </p>
 
           {mappedLernziele.length > 0 &&
@@ -198,7 +198,7 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
 
       // Bereits gemappt?
       if (mappedLernziele.some((lz) => lz.id === lernziel.id)) {
-        toast.info('Kompetenz ist bereits zugeordnet');
+        toast.info('Lernziel ist bereits zugeordnet');
         return;
       }
 
@@ -312,13 +312,13 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
               className="flex flex-col min-h-0 overflow-hidden border rounded-lg">
               
                 <div className="px-4 py-3 bg-slate-100 border-b sticky top-0 z-10">
-                  <h3 className="text-sm font-semibold">Verfügbare Kompetenzen</h3>
+                  <h3 className="text-sm font-semibold">Verfügbare Lernziele</h3>
                 </div>
                 <div className="flex-1 overflow-y-auto p-3 space-y-3">
                   {themenfeldMitLernzielen.length === 0 ?
                 <p className="text-xs text-muted-foreground text-center py-4">
-                      Keine Kompetenzen vorhanden
-                    </p> :
+                    Keine Lernziele vorhanden
+                  </p> :
 
                 themenfeldMitLernzielen.
                 filter((item) => item.lernziele.length > 0).
@@ -334,7 +334,7 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
                 {unzugeordneteLernziele.length > 0 &&
                 <div className="border rounded-lg overflow-hidden">
                   <div className="w-full flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-200 text-left">
-                    <span className="text-xs font-semibold text-slate-700">Unzugeordnete Kompetenzen</span>
+                    <span className="text-xs font-semibold text-slate-700">Nicht zugeordnete Lernziele</span>
                   </div>
                   <div className="p-2 space-y-1.5 bg-white">
                     {unzugeordneteLernziele.map((lz, index) =>
@@ -376,8 +376,8 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
         <div className="flex items-center justify-between border-t pt-4">
           <p className="text-xs text-muted-foreground">
             {mappedLernziele.length === 0 ?
-            'Noch keine Kompetenzen zugeordnet' :
-            `${mappedLernziele.length} Kompetenz(en) zugeordnet`}
+            'Noch keine Lernziele zugeordnet' :
+            `${mappedLernziele.length} Lernziel(e) zugeordnet`}
           </p>
           <Button
             size="sm"
