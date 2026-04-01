@@ -76,17 +76,55 @@ export async function deleteEinheit(einheitId) {
 }
 
 /**
- * Placeholder für weitere sichere Operationen
- * Diese werden in Phase 6.3 implementiert
+ * Sichere Einheit Create Operation via Base44 SDK
+ * 
+ * @param {Object} data - { titel_der_einheit, fach, jahrgangsstufe, gesamtziel?, freigabe_status? }
+ * @returns {Promise<{success: boolean, data: Object}>}
+ * @throws {SecureApiError} Bei Fehler (403 Forbidden, 400 Validation, etc.)
  */
 export async function createEinheit(data) {
-  // Wird implementiert in Phase 6.3
-  throw new Error('Not yet implemented');
+  if (!data?.titel_der_einheit?.trim() || !data?.fach || !data?.jahrgangsstufe) {
+    throw new Error('Missing required fields: titel_der_einheit, fach, jahrgangsstufe');
+  }
+
+  try {
+    const response = await base44.functions.invoke('createEinheitSecure', data);
+    return response.data;
+  } catch (error) {
+    const status = error.response?.status || 500;
+    const errorData = error.response?.data || {};
+    const message = errorData.error || error.message || 'Unknown error';
+
+    throw new SecureApiError(status, message);
+  }
 }
 
+/**
+ * Sichere Einheit Update Operation via Base44 SDK
+ * 
+ * @param {string} einheitId - Die ID der zu aktualisierenden Einheit
+ * @param {Object} data - { titel_der_einheit?, gesamtziel?, fach?, jahrgangsstufe?, freigabe_status? }
+ * @returns {Promise<{success: boolean, data: Object}>}
+ * @throws {SecureApiError} Bei Fehler (403 Forbidden, 404 Not Found, etc.)
+ */
 export async function updateEinheit(einheitId, data) {
-  // Wird implementiert in Phase 6.3
-  throw new Error('Not yet implemented');
+  if (!einheitId) {
+    throw new Error('einheitId is required');
+  }
+
+  try {
+    const response = await base44.functions.invoke('updateEinheitSecure', {
+      einheit_id: einheitId,
+      ...data,
+    });
+    return response.data;
+  } catch (error) {
+    const status = error.response?.status || 500;
+    const errorData = error.response?.data || {};
+    const message = errorData.error || error.message || 'Unknown error';
+
+    throw new SecureApiError(status, message);
+  }
 }
 
 /**
