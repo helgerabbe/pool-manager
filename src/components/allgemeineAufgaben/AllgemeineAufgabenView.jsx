@@ -191,13 +191,18 @@ export default function AllgemeineAufgabenView({
     queryFn: () => base44.entities.Einheiten.filter({ id: einheitId }).then(r => r[0]),
   });
 
-  const { data: allgemeineAufgaben = [] } = useQuery({
+  const { data: allAufgaben = [] } = useQuery({
     queryKey: ['allgemeineAufgaben', einheitId],
     queryFn: () =>
       base44.entities.AllgemeineAufgabe.filter({
         einheit_id: einheitId,
       }),
   });
+
+  // Filtere nur Basis- und Transfer-Aufgaben (nicht Projekt-Aufgaben)
+  const allgemeineAufgaben = allAufgaben.filter(a => 
+    !a.anforderungsebene || ['1 - Basis', '2 - Transfer'].includes(a.anforderungsebene)
+  );
 
   const { data: themenfelder = [] } = useQuery({
     queryKey: ['themenfelder', einheitId],
