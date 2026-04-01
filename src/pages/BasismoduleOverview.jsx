@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BookOpen, Plus, Edit, Trash2, Search } from 'lucide-react';
+import { BookOpen, Plus, Edit, Trash2, Search, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import BasismodulDetailView from '@/components/basismodule/BasismodulDetailView';
+import { getExportPendingCount } from '@/lib/syncLogic';
+import SyncStatusBadge from '@/components/sync/SyncStatusBadge';
 
 const FAECHER = [
   'Deutsch', 'Mathematik', 'Englisch', 'Französisch', 'Latein',
@@ -36,6 +38,7 @@ export default function BasismoduleOverview() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFach, setSelectedFach] = useState('');
+  const [showOnlyChanged, setShowOnlyChanged] = useState(false);
 
   // Fetch Basismodule
   const { data: basismodule = [], isLoading } = useQuery({
@@ -54,15 +57,18 @@ export default function BasismoduleOverview() {
   });
 
   // Filter & Group
+  const pendingCount = useMemo(() => getExportPendingCount(basismodule), [basismodule]);
+
   const filtered = useMemo(() => {
     return basismodule.filter(m => {
       const matchesFach = !selectedFach || m.fach === selectedFach;
       const matchesSearch = !searchTerm || 
         m.titel.toLowerCase().includes(searchTerm.toLowerCase()) ||
         m.beschreibung_thema?.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesFach && matchesSearch;
+      const matchChanged = !showOnlyChanged || !m.last_synced_at;
+      return matchesFach && matchesSearch && matchChanged;
     });
-  }, [basismodule, selectedFach, searchTerm]);
+  }, [basismodule, selectedFach, searchTerm, showOnlyChanged]);
 
   const grouped = useMemo(() => {
     const groups = {};
@@ -118,27 +124,42 @@ export default function BasismoduleOverview() {
           </div>
 
           {/* Filters */}
-          <div className="flex gap-3 flex-wrap">
-            <div className="flex-1 min-w-64 relative">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Nach Titel oder Beschreibung suchen..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+          <div className="space-y-3">
+            <div className="flex gap-3 flex-wrap">
+              <div className="flex-1 min-w-64 relative">
+                <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Nach Titel oder Beschreibung suchen..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={selectedFach} onValueChange={setSelectedFach}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Alle Fächer" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>Alle Fächer</SelectItem>
+                  {FAECHER.map(f => (
+                    <SelectItem key={f} value={f}>{f}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={selectedFach} onValueChange={setSelectedFach}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Alle Fächer" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={null}>Alle Fächer</SelectItem>
-                {FAECHER.map(f => (
-                  <SelectItem key={f} value={f}>{f}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {pendingCount > 0 && (
+              <button
+                onClick={() => setShowOnlyChanged(!showOnlyChanged)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  showOnlyChanged
+                    ? 'bg-amber-100 text-amber-700 border border-amber-300'
+                    : 'bg-amber-50 text-amber-700 border border-amber-200 hover:border-amber-300'
+                }`}
+              >
+                <AlertCircle className="w-4 h-4" />
+                {pendingCount} ausstehend
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -165,16 +186,19 @@ export default function BasismoduleOverview() {
                       className="p-4 rounded-lg border bg-card hover:border-primary/40 transition-colors"
                     >
                       <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-sm">{module.titel}</h3>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {module.jahrgang_empfehlung && `Jg. ${module.jahrgang_empfehlung}`}
-                          </p>
-                        </div>
-                        <Badge className={`text-[10px] shrink-0 ml-2 ${STATUS_COLORS[module.status] || ''}`}>
-                          {module.status}
-                        </Badge>
-                      </div>
+                         <div className="flex-1">
+                           <div className="flex items-center gap-2 flex-wrap">
+                             <h3 className="font-semibold text-sm">{module.titel}</h3>
+                             <SyncStatusBadge entity={module} entityType="basismodul" />
+                           </div>
+                           <p className="text-xs text-muted-foreground mt-0.5">
+                             {module.jahrgang_empfehlung && `Jg. ${module.jahrgang_empfehlung}`}
+                           </p>
+                         </div>
+                         <Badge className={`text-[10px] shrink-0 ml-2 ${STATUS_COLORS[module.status] || ''}`}>
+                           {module.status}
+                         </Badge>
+                       </div>
 
                       {module.beschreibung_thema && (
                         <p className="text-xs text-muted-foreground line-clamp-2 mb-3">

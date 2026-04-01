@@ -6,16 +6,18 @@ import { kannEinheitSehen } from '@/lib/rbac';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, AlertCircle } from 'lucide-react';
 import EinheitCard from '@/components/einheiten/EinheitCard';
 import EinheitForm from '@/components/einheiten/EinheitForm';
 import EmptyState from '@/components/shared/EmptyState';
 import { BookOpen } from 'lucide-react';
+import { getExportPendingCount } from '@/lib/syncLogic';
 
 export default function EinheitenListe() {
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterFach, setFilterFach] = useState('all');
+  const [showOnlyChanged, setShowOnlyChanged] = useState(false);
   const queryClient = useQueryClient();
   const { permissions, rolle } = useRBAC();
 
@@ -34,11 +36,14 @@ export default function EinheitenListe() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['einheiten'] }),
   });
 
+  const pendingCount = getExportPendingCount(einheiten);
+
   const filtered = einheiten.filter(e => {
     const matchSearch = e.titel_der_einheit?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchFach = filterFach === 'all' || e.fach === filterFach;
     const matchRBAC = kannEinheitSehen(rolle, e.freigabe_status);
-    return matchSearch && matchFach && matchRBAC;
+    const matchChanged = !showOnlyChanged || (e.sync_status === 'modified' || e.sync_status === 'new' || !e.last_synced_at);
+    return matchSearch && matchFach && matchRBAC && matchChanged;
   });
 
   const faecher = [...new Set(einheiten.map(e => e.fach).filter(Boolean))];
@@ -69,25 +74,42 @@ export default function EinheitenListe() {
       </div>
 
       {einheiten.length > 0 && (
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Einheiten durchsuchen..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Einheiten durchsuchen..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={filterFach} onValueChange={setFilterFach}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Alle Fächer" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle Fächer</SelectItem>
+                {faecher.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
-          <Select value={filterFach} onValueChange={setFilterFach}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Alle Fächer" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alle Fächer</SelectItem>
-              {faecher.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          {pendingCount > 0 && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowOnlyChanged(!showOnlyChanged)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  showOnlyChanged
+                    ? 'bg-amber-100 text-amber-700 border border-amber-300'
+                    : 'bg-amber-50 text-amber-700 border border-amber-200 hover:border-amber-300'
+                }`}
+              >
+                <AlertCircle className="w-4 h-4" />
+                {pendingCount} ausstehend
+              </button>
+            </div>
+          )}
         </div>
       )}
 
