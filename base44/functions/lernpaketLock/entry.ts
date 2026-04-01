@@ -20,6 +20,14 @@ Deno.serve(async (req) => {
   const user = await base44.auth.me();
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
+  // ── RBAC: Nur schreibberechtigte Rollen dürfen Locks setzen ─────────────────
+  const SCHREIB_ROLLEN = ['Administrator', 'Fachschaftsleitung', 'Fachlehrkraft'];
+  const userProfile = await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email });
+  const userRolle = userProfile?.[0]?.rolle;
+  if (!userRolle || !SCHREIB_ROLLEN.includes(userRolle)) {
+    return Response.json({ error: 'Keine Schreibberechtigung für diese Rolle' }, { status: 403 });
+  }
+
   const body = await req.json();
   const { action, paket_id } = body;
 

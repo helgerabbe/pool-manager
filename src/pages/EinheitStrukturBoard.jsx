@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStructuralLock } from '@/hooks/useStructuralLock';
+import { useRBAC } from '@/hooks/useRBAC';
 
 // ── Mini-Dialog: Neues Lernpaket ──────────────────────────────────────────────
 
@@ -107,7 +108,7 @@ function PaketKarte({ paket, index, onDelete, hasContentLock }) {
 
 // ── Spalte ─────────────────────────────────────────────────────────────────────
 
-function Spalte({ id, titel, pakete, lockedPaketIds, onAddPaket, onDeletePaket, onDeleteSpalte, onTitelChange, isSammelbecken = false }) {
+function Spalte({ id, titel, pakete, lockedPaketIds, onAddPaket, onDeletePaket, onDeleteSpalte, onTitelChange, isSammelbecken = false, kannBearbeiten = true }) {
   const [addingPaket, setAddingPaket] = useState(false);
   const [editingTitel, setEditingTitel] = useState(false);
   const [titelDraft, setTitelDraft] = useState(titel);
@@ -155,7 +156,7 @@ function Spalte({ id, titel, pakete, lockedPaketIds, onAddPaket, onDeletePaket, 
 
         <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">{pakete.length}</span>
 
-        {!isSammelbecken && (
+        {!isSammelbecken && kannBearbeiten && (
           <button
             onClick={onDeleteSpalte}
             title={hasActiveLocks ? 'Enthält aktiv bearbeitete Pakete' : 'Themenfeld löschen'}
@@ -230,7 +231,10 @@ export default function EinheitStrukturBoard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  // Structural Lock sofort beim Betreten setzen
+  // RBAC: Struktur-Bearbeitung nur für ADMIN + FACHSCHAFTSLEITUNG
+  const { permissions } = useRBAC();
+
+  // Structural Lock sofort beim Betreten setzen (nur wenn berechtigt)
   useStructuralLock(einheitId);
 
   // ── Daten laden ──────────────────────────────────────────────────────────────
@@ -258,6 +262,11 @@ export default function EinheitStrukturBoard() {
   const [saving, setSaving]               = useState(false);
   const [initialized, setInitialized]     = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null); // { spalteId, titel, lockedPakete[] }
+
+  // Berechtigungen: Struktur-Board nur für ADMIN + FACHSCHAFTSLEITUNG editierbar
+  const kannStrukturBearbeiten = einheit
+    ? permissions.kannStrukturBearbeiten(einheit.fach)
+    : false;
 
   // Welche Pakete haben einen aktiven Content-Lock?
   const lockedPaketIds = new Set(
@@ -490,25 +499,40 @@ export default function EinheitStrukturBoard() {
               {lockedPaketIds.size} Paket{lockedPaketIds.size !== 1 ? 'e' : ''} aktiv bearbeitet
             </span>
           )}
-          <Button variant="outline" onClick={handleNeuesThemenfeld} className="gap-2">
-            <Plus className="w-4 h-4" /> Neues Themenfeld
-          </Button>
-          <Button onClick={handleSpeichern} disabled={saving} className="gap-2">
-            {saving
-              ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              : <ArrowRight className="w-4 h-4" />}
-            Speichern & Zum Workspace
-          </Button>
+          {kannStrukturBearbeiten && (
+            <Button variant="outline" onClick={handleNeuesThemenfeld} className="gap-2">
+              <Plus className="w-4 h-4" /> Neues Themenfeld
+            </Button>
+          )}
+          {kannStrukturBearbeiten ? (
+            <Button onClick={handleSpeichern} disabled={saving} className="gap-2">
+              {saving
+                ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                : <ArrowRight className="w-4 h-4" />}
+              Speichern & Zum Workspace
+            </Button>
+          ) : (
+            <Button variant="outline" onClick={() => navigate(`/workspace?einheit=${einheitId}`)} className="gap-2">
+              <ArrowRight className="w-4 h-4" /> Zum Workspace
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* ── Structural-Lock-Banner ── */}
-      <div className="shrink-0 px-6 py-2 bg-blue-50 border-b border-blue-200 text-xs text-blue-800 flex items-center gap-2">
-        <Lock className="w-3.5 h-3.5 shrink-0 text-blue-600" />
-        <span>
-          <strong>Struktur-Editiermodus aktiv.</strong> Andere Nutzer können bestehende Inhalte weiter speichern, aber keine neuen Bearbeitungssitzungen starten.
-        </span>
-      </div>
+      {/* ── Structural-Lock-Banner oder Readonly-Banner ── */}
+      {kannStrukturBearbeiten ? (
+        <div className="shrink-0 px-6 py-2 bg-blue-50 border-b border-blue-200 text-xs text-blue-800 flex items-center gap-2">
+          <Lock className="w-3.5 h-3.5 shrink-0 text-blue-600" />
+          <span>
+            <strong>Struktur-Editiermodus aktiv.</strong> Andere Nutzer können bestehende Inhalte weiter speichern, aber keine neuen Bearbeitungssitzungen starten.
+          </span>
+        </div>
+      ) : (
+        <div className="shrink-0 px-6 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-600 flex items-center gap-2">
+          <Lock className="w-3.5 h-3.5 shrink-0" />
+          <span><strong>Nur-Lese-Ansicht.</strong> Struktur-Änderungen erfordern die Rolle Fachschaftsleitung oder Administrator.</span>
+        </div>
+      )}
 
       {/* ── Hinweis-Banner ── */}
       <div className="shrink-0 px-6 py-2 bg-amber-50 border-b border-amber-200 text-xs text-amber-800 flex items-center gap-2">
@@ -546,6 +570,7 @@ export default function EinheitStrukturBoard() {
                 onDeletePaket={handleDeletePaket}
                 onDeleteSpalte={() => handleDeleteSpalteRequest(spalte.id)}
                 onTitelChange={neuerTitel => handleTitelChange(spalte.id, neuerTitel)}
+                kannBearbeiten={kannStrukturBearbeiten}
               />
             ))}
 

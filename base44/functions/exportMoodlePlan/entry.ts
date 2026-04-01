@@ -1,13 +1,29 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
+// ── RBAC-Rollen ──────────────────────────────────────────────────────────────
+const ROLLEN = { ADMIN: 'Administrator', FACHSCHAFT: 'Fachschaftsleitung' };
+
+async function checkRole(base44, allowedRollen, einheitFach = null) {
+  const user = await base44.auth.me();
+  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  const profile = await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email });
+  const profil = profile[0];
+  if (!profil) return Response.json({ error: 'Kein Benutzerprofil' }, { status: 403 });
+  if (!allowedRollen.includes(profil.rolle)) {
+    return Response.json({ error: `Keine Berechtigung für den Export. Erforderlich: ${allowedRollen.join(' oder ')}` }, { status: 403 });
+  }
+  if (einheitFach && profil.rolle !== ROLLEN.ADMIN) {
+    const faecher = profil.fachbereich_zustaendigkeit || [];
+    if (!faecher.includes(einheitFach)) {
+      return Response.json({ error: `Keine Zuständigkeit für Fach "${einheitFach}"` }, { status: 403 });
+    }
+  }
+  return null;
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const { einheitId, exportType } = await req.json();
 
@@ -23,6 +39,10 @@ Deno.serve(async (req) => {
     if (!einheit) {
       return Response.json({ error: 'Einheit not found' }, { status: 404 });
     }
+
+    // ──── RBAC: Nur ADMIN + FACHSCHAFTSLEITUNG dürfen exportieren ────────────
+    const roleError = await checkRole(base44, [ROLLEN.ADMIN, ROLLEN.FACHSCHAFT], einheit.fach);
+    if (roleError) return roleError;
 
     // ──── 2. Hole alle Lernpakete für die Einheit ────
     const lernpakete = await base44.asServiceRole.entities.Lernpakete.filter({
