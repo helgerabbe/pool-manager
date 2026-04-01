@@ -60,7 +60,15 @@ function NeuesPaketInline({ onAdd, onCancel }) {
 
 // ── Paket-Karte ───────────────────────────────────────────────────────────────
 
-function PaketKarte({ paket, index, onDelete }) {
+function PaketKarte({ paket, index, onDelete, onRename }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft]     = useState(paket.titel_des_pakets);
+
+  const saveRename = () => {
+    if (draft.trim() && draft.trim() !== paket.titel_des_pakets) onRename(paket.id, draft.trim());
+    setEditing(false);
+  };
+
   return (
     <Draggable draggableId={paket.id} index={index}>
       {(provided, snapshot) => (
@@ -78,8 +86,25 @@ function PaketKarte({ paket, index, onDelete }) {
             <GripVertical className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-medium leading-snug">{paket.titel_des_pakets}</p>
-            {paket.geschaetzte_dauer_minuten && (
+            {editing ? (
+              <Input
+                autoFocus
+                value={draft}
+                onChange={e => setDraft(e.target.value)}
+                onBlur={saveRename}
+                onKeyDown={e => { if (e.key === 'Enter') saveRename(); if (e.key === 'Escape') setEditing(false); }}
+                className="h-7 text-sm font-medium py-0 px-1"
+              />
+            ) : (
+              <p
+                className="font-medium leading-snug cursor-pointer hover:text-primary"
+                onDoubleClick={() => { setDraft(paket.titel_des_pakets); setEditing(true); }}
+                title="Doppelklick zum Umbenennen"
+              >
+                {paket.titel_des_pakets}
+              </p>
+            )}
+            {paket.geschaetzte_dauer_minuten && !editing && (
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                 <Clock className="w-3 h-3" />{paket.geschaetzte_dauer_minuten} Min.
               </p>
@@ -87,7 +112,7 @@ function PaketKarte({ paket, index, onDelete }) {
           </div>
           <button
             onClick={() => onDelete(paket.id)}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 text-destructive transition-all"
+            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 text-destructive transition-all shrink-0"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -99,7 +124,7 @@ function PaketKarte({ paket, index, onDelete }) {
 
 // ── Spalte ────────────────────────────────────────────────────────────────────
 
-function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onDeleteSpalte, onTitelChange, isSammelbecken = false }) {
+function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onRenamePaket, onDeleteSpalte, onTitelChange, isSammelbecken = false }) {
   const [addingPaket, setAddingPaket]     = useState(false);
   const [editingTitel, setEditingTitel]   = useState(false);
   const [titelDraft, setTitelDraft]       = useState(titel);
@@ -153,7 +178,7 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onDeleteSpalte, 
             className={cn('flex-1 p-2 space-y-2 min-h-[120px] rounded-b-xl transition-colors', snapshot.isDraggingOver && 'bg-primary/5')}
           >
             {pakete.map((paket, index) => (
-              <PaketKarte key={paket.id} paket={paket} index={index} onDelete={onDeletePaket} />
+              <PaketKarte key={paket.id} paket={paket} index={index} onDelete={onDeletePaket} onRename={onRenamePaket} />
             ))}
             {provided.placeholder}
             {pakete.length === 0 && !snapshot.isDraggingOver && (
@@ -259,8 +284,16 @@ export default function StrukturBoardEmbedded({
 
   const handleNeuesThemenfeld = () => {
     const newId = `tf-new-${Date.now()}`;
+    const defaultPaket = {
+      id: `new-${Date.now()}`,
+      titel_des_pakets: 'Neues Lernpaket',
+      geschaetzte_dauer_minuten: 45,
+      reihenfolge_nummer: 1,
+      einheit_id: einheitId,
+      isNew: true,
+    };
     setSpalten(prev => [...prev, { id: newId, titel: `Themenfeld ${prev.length + 1}`, themenfeldId: null }]);
-    setPaketeMap(prev => ({ ...prev, [newId]: [] }));
+    setPaketeMap(prev => ({ ...prev, [newId]: [defaultPaket] }));
   };
 
   const handleTitelChange = (spalteId, neuerTitel) =>
@@ -312,6 +345,16 @@ export default function StrukturBoardEmbedded({
     setPaketeMap(prev => {
       const next = {};
       Object.entries(prev).forEach(([k, v]) => { next[k] = v.filter(p => p.id !== paketId); });
+      return next;
+    });
+  };
+
+  const handleRenamePaket = (paketId, neuerTitel) => {
+    setPaketeMap(prev => {
+      const next = {};
+      Object.entries(prev).forEach(([k, v]) => {
+        next[k] = v.map(p => p.id === paketId ? { ...p, titel_des_pakets: neuerTitel } : p);
+      });
       return next;
     });
   };
@@ -407,6 +450,7 @@ export default function StrukturBoardEmbedded({
               pakete={paketeMap[SAMMELBECKEN_ID] || []}
               onAddPaket={handleAddPaket}
               onDeletePaket={handleDeletePaket}
+              onRenamePaket={handleRenamePaket}
               isSammelbecken
             />
 
@@ -421,6 +465,7 @@ export default function StrukturBoardEmbedded({
                 pakete={paketeMap[spalte.id] || []}
                 onAddPaket={handleAddPaket}
                 onDeletePaket={handleDeletePaket}
+                onRenamePaket={handleRenamePaket}
                 onDeleteSpalte={() => handleDeleteSpalteRequest(spalte.id)}
                 onTitelChange={neuerTitel => handleTitelChange(spalte.id, neuerTitel)}
               />

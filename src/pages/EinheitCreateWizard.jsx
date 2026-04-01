@@ -55,7 +55,29 @@ export default function EinheitCreateWizard() {
     navigate(`/workspace?einheit=${einheitId}&fromWizard=1`);
   };
 
-  const handleSkipToStruktur = () => {
+  const handleSkipToStruktur = async () => {
+    if (einheitId) {
+      // Prüfen ob bereits Themenfelder vorhanden
+      const vorhandeneThemenfelder = await base44.entities.Themenfeld.filter({ einheit_id: einheitId });
+      if (vorhandeneThemenfelder.length === 0) {
+        // Default-Themenfeld anlegen
+        const themenfeld = await base44.entities.Themenfeld.create({
+          einheit_id: einheitId,
+          titel: 'Themenfeld 1',
+          reihenfolge: 1,
+        });
+        // Default-Lernpaket anlegen
+        await base44.entities.Lernpakete.create({
+          einheit_id: einheitId,
+          themenfeld_id: themenfeld.id,
+          titel_des_pakets: 'Neues Lernpaket',
+          reihenfolge_nummer: 1,
+          geschaetzte_dauer_minuten: 45,
+        });
+        queryClient.invalidateQueries({ queryKey: ['themenfelder', einheitId] });
+        queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+      }
+    }
     navigate(`/workspace?einheit=${einheitId}&fromWizard=1`);
   };
 
