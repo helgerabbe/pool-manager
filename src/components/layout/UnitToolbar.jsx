@@ -22,9 +22,9 @@ export default function UnitToolbar({
   onSettingsOpen,
   onAddThemenfeld,
   isDirty = false,
-  onSaveStructure,
   isSaving = false,
   lastError = null,
+  onSaveStructure = null,
 }) {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 

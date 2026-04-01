@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -235,6 +235,7 @@ export default function EinheitStrukturBoard({
   onDirtyChange = null, 
   onSavingChange = null, 
   onErrorChange = null,
+  onSave = null,
   onSaveStart = null, 
   onSaveEnd = null 
 } = {}) {
@@ -292,6 +293,10 @@ export default function EinheitStrukturBoard({
   useEffect(() => {
     onErrorChange?.(lastError);
   }, [lastError, onErrorChange]);
+
+  useEffect(() => {
+    onSave?.(handleSpeichern);
+  }, [handleSpeichern, onSave]);
 
   // Berechtigungen: Struktur-Board nur für ADMIN + FACHSCHAFTSLEITUNG editierbar
   const kannStrukturBearbeiten = einheit
@@ -458,7 +463,7 @@ export default function EinheitStrukturBoard({
 
   // ── Speichern ─────────────────────────────────────────────────────────────────
 
-  const handleSpeichern = async () => {
+  const handleSpeichern = useCallback(async () => {
     setSaving(true);
     setLastError(null);
 
@@ -483,13 +488,13 @@ export default function EinheitStrukturBoard({
         toast.error('Fehler beim Speichern: ' + errorMsg);
       }
     } catch (error) {
-      console.error('Error saving structure:', error);
-      setLastError('Fehler beim Speichern. Bitte versuchen Sie es erneut.');
-      toast.error('Fehler beim Speichern der Struktur.');
+    console.error('Error saving structure:', error);
+    setLastError('Fehler beim Speichern. Bitte versuchen Sie es erneut.');
+    toast.error('Fehler beim Speichern der Struktur.');
     } finally {
-      setSaving(false);
+    setSaving(false);
     }
-  };
+    }, [einheitId, spalten, paketeMap, queryClient]);
 
   // ── Navigation-Blocker Handler ─────────────────────────────────────────────
   const handleSaveAndNavigate = async () => {

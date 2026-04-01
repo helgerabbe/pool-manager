@@ -53,6 +53,8 @@ export default function EinheitViewManager() {
   const handleDirtyChange = (dirty) => setIsDirty(dirty);
   const handleSavingChange = (saving) => setIsSaving(saving);
   const handleErrorChange = (error) => setLastError(error);
+  const [saveFunction, setSaveFunction] = useState(null);
+  const handleSaveFunction = (fn) => setSaveFunction(() => fn);
 
   // ── Query: Einheit laden ──────────────────────────────────────────────────
   const { data: einheit, isLoading: einheitLoading } = useQuery({
@@ -112,6 +114,7 @@ export default function EinheitViewManager() {
         isDirty={isDirty}
         isSaving={isSaving}
         lastError={lastError}
+        onSaveStructure={viewMode === 'struktur' ? saveFunction : null}
       />
 
       {/* Container 2: Hinweis-Banner (Struktur-Lock / Optional) ──────────────── */}
@@ -134,6 +137,7 @@ export default function EinheitViewManager() {
             onDirtyChange={handleDirtyChange}
             onSavingChange={handleSavingChange}
             onErrorChange={handleErrorChange}
+            onSave={handleSaveFunction}
             onSaved={() => handleViewModeChange('inhalte')}
           />
         ) : (
