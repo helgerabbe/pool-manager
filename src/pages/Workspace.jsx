@@ -31,9 +31,9 @@ import UnitToolbar from '@/components/layout/UnitToolbar';
  * Cross-Highlighting: Beim Klick auf eine Transfer/Projekt-Aufgabe werden die
  * gemappten Lernziel-Atome in Säule 1 visuell hervorgehoben.
  */
-export default function Workspace() {
+export default function Workspace({ initialEinheitId: initialEinheitIdProp = null }) {
   const urlParams = new URLSearchParams(window.location.search);
-  const initialEinheitId = urlParams.get('einheit') || null;
+  const initialEinheitId = initialEinheitIdProp || urlParams.get('einheit') || null;
 
   const { permissions, authUser, rolle, isLoading: rbacLoading } = useRBAC();
   const queryClient = useQueryClient();

@@ -143,8 +143,7 @@ export default function EinheitViewManager() {
         ) : (
           // ── Inhalts-Ansicht: Workspace mit Detail-Bearbeitung ────────────────
           <Workspace
-            // Der Workspace wird mit dem einheitId über URL-Parametern initialisiert
-            // Die Komponente liest den Parameter selbst: ?einheit=<id>
+            initialEinheitId={einheitId}
           />
         )}
       </main>
