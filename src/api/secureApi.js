@@ -1,7 +1,7 @@
 /**
  * secureApi.js
  * 
- * Frontend Adapter für sichere Backend API Calls
+ * Frontend Adapter für sichere Backend API Calls via Base44 SDK
  * Wrapping der deleteEinheitSecure, createEinheitSecure etc. Functions
  * 
  * Usage:
@@ -35,24 +35,7 @@ export class SecureApiError extends Error {
 }
 
 /**
- * Helper: Invoke backend function via Base44 SDK
- */
-async function invokeFunctionWithErrorHandling(functionName, params) {
-  try {
-    const response = await base44.functions.invoke(functionName, params);
-    return response.data;
-  } catch (error) {
-    // Parse error response
-    const status = error.response?.status || 500;
-    const errorData = error.response?.data || {};
-    const message = errorData.error || error.message || 'Unknown error';
-
-    throw new SecureApiError(status, message);
-  }
-}
-
-/**
- * Sichere Einheit Delete Operation
+ * Sichere Einheit Delete Operation via Base44 SDK
  * 
  * @param {string} einheitId - Die ID der zu löschenden Einheit
  * @returns {Promise<{success: boolean, deleted_count: number}>}
@@ -77,9 +60,19 @@ export async function deleteEinheit(einheitId) {
     throw new Error('einheitId is required');
   }
 
-  return invokeFunctionWithErrorHandling('deleteEinheitSecure', {
-    einheit_id: einheitId,
-  });
+  try {
+    const response = await base44.functions.invoke('deleteEinheitSecure', {
+      einheit_id: einheitId,
+    });
+    return response.data;
+  } catch (error) {
+    // Parse error response from backend function
+    const status = error.response?.status || 500;
+    const errorData = error.response?.data || {};
+    const message = errorData.error || error.message || 'Unknown error';
+
+    throw new SecureApiError(status, message);
+  }
 }
 
 /**

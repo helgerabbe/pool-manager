@@ -73,14 +73,14 @@ Deno.serve(async (req) => {
       status: 204,
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       },
     });
   }
 
-  if (req.method !== 'DELETE') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method must be POST' }, { status: 405 });
   }
 
   try {
@@ -92,12 +92,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 2. Parse ID from URL
-    const url = new URL(req.url);
-    const einheitId = url.searchParams.get('id');
+    // 2. Parse ID from payload (invoked via base44.functions.invoke)
+    const payload = await req.json();
+    const einheitId = payload?.einheit_id;
 
     if (!einheitId) {
-      return Response.json({ error: 'Missing id parameter' }, { status: 400 });
+      return Response.json({ error: 'Missing einheit_id in payload' }, { status: 400 });
     }
 
     // 3. Fetch target entity
