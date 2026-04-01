@@ -4,8 +4,9 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { Plus, Search, Star, FileText, AlertTriangle, CheckCircle2, Grip, ArrowLeft, Edit } from 'lucide-react';
+import { Plus, Search, Star, FileText, ChevronRight, Edit, Trash2 } from 'lucide-react';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 import AufgabeKompetenzMapping from '@/components/allgemeineAufgaben/AufgabeKompetenzMapping';
 
@@ -19,7 +20,7 @@ function SternDisplay({ grad }) {
       {[1, 2, 3].map(n => (
         <Star
           key={n}
-          className={cn('w-3.5 h-3.5', n <= count ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/20')}
+          className={cn('w-3 h-3', n <= count ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/20')}
         />
       ))}
     </div>
@@ -27,127 +28,155 @@ function SternDisplay({ grad }) {
 }
 
 /**
- * Status-Badge (Vollständig/Unvollständig)
+ * Baumstruktur-Node für Themenfeld
  */
-function StatusBadge({ hatInhalt, hatTitel }) {
-  const istVollstaendig = hatInhalt && hatTitel;
-  return (
-    <Badge
-      className={cn(
-        'text-[10px] px-2 py-0.5',
-        istVollstaendig
-          ? 'bg-green-100 text-green-700'
-          : 'bg-amber-100 text-amber-700'
-      )}
-    >
-      {istVollstaendig ? '✓ Fertig' : '⚠ Unvollständig'}
-    </Badge>
-  );
-}
-
-/**
- * Einzelne Aufgaben-Karte
- */
-function AufgabeCard({ aufgabe, isSelected, onSelect, kannBearbeiten, onEdit, onEditClick }) {
-  const hatTitel = !!aufgabe.titel?.trim();
-  const hatInhalt = !!aufgabe.aufgabenstellung?.trim();
-  const hatMaterialien = aufgabe.materialien && aufgabe.materialien.length > 0;
-  const istVollstaendig = hatTitel && hatInhalt;
+function ThemenfeldNode({ themenfeld, aufgaben, selectedId, onSelect }) {
+  const [isOpen, setIsOpen] = useState(true);
 
   return (
-    <div
-      className={cn(
-        'w-full text-left p-4 rounded-xl border-2 transition-all space-y-3 hover:shadow-md',
-        isSelected
-          ? 'border-primary bg-primary/5 ring-2 ring-primary/40'
-          : 'border-border bg-card hover:border-primary/40'
-      )}
-    >
-      {/* Header: Schwierigkeit + Status + Button */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2">
-          {aufgabe.schwierigkeitsgrad ? (
-            <SternDisplay grad={aufgabe.schwierigkeitsgrad} />
-          ) : (
-            <span className="text-xs text-muted-foreground italic">Keine Schwierigkeit</span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <StatusBadge hatInhalt={hatInhalt} hatTitel={hatTitel} />
-          {kannBearbeiten && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEditClick?.(aufgabe);
-              }}
-              className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-              title="Aufgabe bearbeiten"
-            >
-              <Edit className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Clickable area */}
+    <div className="space-y-1">
       <button
-        onClick={() => onSelect(aufgabe)}
-        className="w-full text-left space-y-2 hover:opacity-75 transition-opacity"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left hover:bg-muted/50 transition-colors"
       >
-        {/* Titel */}
-        <div>
-          <p className="text-sm font-semibold line-clamp-2">
-            {hatTitel ? aufgabe.titel : <span className="text-muted-foreground italic">Kein Titel</span>}
-          </p>
-        </div>
-
-        {/* Aufgabenstellung (Preview) */}
-        {hatInhalt && (
-          <p className="text-xs text-muted-foreground line-clamp-2">{aufgabe.aufgabenstellung}</p>
-        )}
-
-        {/* Materialien Badge */}
-        {hatMaterialien && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <FileText className="w-3.5 h-3.5" />
-            <span>{aufgabe.materialien.length} Material(ien)</span>
-          </div>
-        )}
-
-        {/* Sync-Status */}
-        {aufgabe.sync_status && aufgabe.sync_status !== 'new' && (
-          <div className="text-[10px] text-muted-foreground">
-            Status: <span className="font-medium">{aufgabe.sync_status === 'exported' ? 'Exportiert' : 'Geändert'}</span>
-          </div>
-        )}
+        <ChevronRight className={cn('w-4 h-4 transition-transform shrink-0', isOpen && 'rotate-90')} />
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide truncate">
+          {themenfeld.titel}
+        </span>
+        <Badge variant="secondary" className="text-[10px] ml-auto shrink-0">
+          {aufgaben.length}
+        </Badge>
       </button>
+
+      {isOpen && (
+        <div className="pl-4 space-y-0.5">
+          {aufgaben.map(aufgabe => (
+            <AufgabeNode
+              key={aufgabe.id}
+              aufgabe={aufgabe}
+              isSelected={selectedId === aufgabe.id}
+              onSelect={onSelect}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 /**
- * Kategorien-Gruppe (z.B. Themenfelder)
+ * Einzelner Aufgaben-Node im Baum
  */
-function AufgabenGruppe({ titel, aufgaben, selectedId, onSelect, kannBearbeiten, onEditClick }) {
+function AufgabeNode({ aufgabe, isSelected, onSelect }) {
+  const hatTitel = !!aufgabe.titel?.trim();
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between px-1">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{titel}</h3>
-        <Badge variant="outline" className="text-xs">{aufgaben.length}</Badge>
+    <button
+      onClick={() => onSelect(aufgabe)}
+      className={cn(
+        'w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-xs transition-colors',
+        isSelected
+          ? 'bg-primary/10 border border-primary/30'
+          : 'hover:bg-muted/50'
+      )}
+    >
+      <span className="w-1 h-1 rounded-full bg-muted-foreground/40 shrink-0" />
+      <span className={cn('truncate flex-1', !hatTitel && 'italic text-muted-foreground')}>
+        {hatTitel ? aufgabe.titel : 'Kein Titel'}
+      </span>
+      {aufgabe.schwierigkeitsgrad && (
+        <SternDisplay grad={aufgabe.schwierigkeitsgrad} />
+      )}
+    </button>
+  );
+}
+
+/**
+ * Detail-Panel: Allgemeine Angaben (Tab 1)
+ */
+function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit, onDelete }) {
+  const hatTitel = !!aufgabe.titel?.trim();
+  const hatInhalt = !!aufgabe.aufgabenstellung?.trim();
+  const themenfeld = themenfelder.find(tf => tf.id === aufgabe.themenfeld_id);
+
+  return (
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <div>
+        <h2 className="text-lg font-bold">{aufgabe.titel || 'Unbenannte Aufgabe'}</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          {themenfeld ? `Themenfeld: ${themenfeld.titel}` : 'Kein Themenfeld zugeordnet'}
+        </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {aufgaben.map(aufgabe => (
-          <AufgabeCard
-            key={aufgabe.id}
-            aufgabe={aufgabe}
-            isSelected={selectedId === aufgabe.id}
-            onSelect={onSelect}
-            kannBearbeiten={kannBearbeiten}
-            onEdit={onSelect}
-            onEditClick={onEditClick}
-          />
-        ))}
+
+      {/* Metadaten */}
+      <div className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-muted/30 border border-border">
+        <div>
+          <p className="text-xs text-muted-foreground">Schwierigkeitsgrad</p>
+          <div className="mt-1">
+            {aufgabe.schwierigkeitsgrad ? (
+              <SternDisplay grad={aufgabe.schwierigkeitsgrad} />
+            ) : (
+              <span className="text-xs text-muted-foreground">Nicht gesetzt</span>
+            )}
+          </div>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Status</p>
+          <Badge className={cn('mt-1', hatTitel && hatInhalt ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700')}>
+            {hatTitel && hatInhalt ? '✓ Vollständig' : '⚠ Unvollständig'}
+          </Badge>
+        </div>
       </div>
+
+      {/* Aufgabenstellung */}
+      <div>
+        <p className="text-xs font-semibold text-muted-foreground mb-2">Aufgabenstellung</p>
+        <div className="p-3 rounded-lg bg-muted/20 border border-border text-sm whitespace-pre-wrap">
+          {aufgabe.aufgabenstellung || <span className="text-muted-foreground italic">Nicht vorhanden</span>}
+        </div>
+      </div>
+
+      {/* Materialien */}
+      {aufgabe.materialien && aufgabe.materialien.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-2">Materialien ({aufgabe.materialien.length})</p>
+          <div className="space-y-2">
+            {aufgabe.materialien.map((mat, idx) => (
+              <div key={idx} className="p-2 rounded-lg bg-muted/20 border border-border text-xs">
+                <p className="font-medium mb-0.5">
+                  {mat.type === 'freitext' && '📝'} {mat.type === 'pdf' && '📄'} {mat.type === 'image' && '🖼️'} {mat.type === 'book_ref' && '📚'}
+                  {' '}{mat.label || mat.content || mat.url || '…'}
+                </p>
+                {mat.content && <p className="text-muted-foreground line-clamp-2">{mat.content}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Aktionen */}
+      {kannBearbeiten && (
+        <div className="flex gap-2 pt-4 border-t border-border">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onEdit(aufgabe)}
+            className="gap-2"
+          >
+            <Edit className="w-4 h-4" />
+            Bearbeiten
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onDelete(aufgabe.id)}
+            className="gap-2 text-destructive hover:text-destructive ml-auto"
+          >
+            <Trash2 className="w-4 h-4" />
+            Löschen
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -185,6 +214,15 @@ export default function AllgemeineAufgabenView({
       base44.entities.Themenfeld.filter({ einheit_id: einheitId }),
   });
 
+  // Delete-Mutation
+  const deleteAufgabe = useMutation({
+    mutationFn: (id) => base44.entities.AllgemeineAufgabe.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
+      setSelectedAufgabeId(null);
+    },
+  });
+
   // Filterung & Gruppierung
   const gefiltert = useMemo(() => {
     const lower = searchTerm.toLowerCase();
@@ -218,121 +256,117 @@ export default function AllgemeineAufgabenView({
 
   const selectedAufgabe = allgemeineAufgaben.find(a => a.id === selectedAufgabeId);
 
-  // Wenn eine Aufgabe ausgewählt ist, zeige die Mapping-Detailansicht
-  if (selectedAufgabe) {
-    return (
-      <div className="flex flex-col flex-1 h-full bg-background overflow-hidden">
-        {/* Header mit Zurück-Button */}
-        <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-3 border-b border-border bg-card">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSelectedAufgabeId(null)}
-            className="gap-2 mb-3"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Zurück zur Übersicht
-          </Button>
+  return (
+    <div className="flex flex-col flex-1 h-full bg-background overflow-hidden">
+      {/* Header */}
+      <div className="shrink-0 px-6 py-4 border-b border-border bg-card space-y-3">
+        <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold">
-              {selectedAufgabe.titel || selectedAufgabe.aufgabenstellung}
-            </h2>
+            <h1 className="text-2xl font-bold">Allgemeine Aufgaben</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Lernziele zuordnen
+              {einheit?.fach} • {einheit?.titel_der_einheit}
             </p>
           </div>
+          {kannBearbeiten && (
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditingAufgabe(null);
+                setCreateFormOpen(true);
+              }}
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Neue Aufgabe
+            </Button>
+          )}
         </div>
 
-        {/* Mapping-Detail */}
-        <div className="flex-1 overflow-hidden">
-          <AufgabeKompetenzMapping
-            aufgabe={selectedAufgabe}
-            einheitId={einheitId}
-            onComplete={() => setSelectedAufgabeId(null)}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // Standard-Listenansicht
-  return (
-    <div className="flex flex-col flex-1 h-full p-4 sm:p-6 bg-background overflow-hidden justify-start gap-2">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Allgemeine Aufgaben</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {einheit?.fach} • {einheit?.titel_der_einheit}
-        </p>
-      </div>
-
-      {/* Toolbar */}
-      <div className="flex items-center gap-2">
         {/* Suchfeld */}
-        <div className="flex-1 relative">
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Nach Aufgaben suchen..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
+            className="pl-9 h-8 text-sm"
           />
         </div>
-
-        {/* Stats */}
-        <Badge variant="outline" className="text-xs whitespace-nowrap">
-          {gefiltert.length} Aufgabe(n)
-        </Badge>
-
-        {/* Neue Aufgabe Button */}
-        {kannBearbeiten && (
-          <Button
-            size="sm"
-            onClick={() => {
-              setEditingAufgabe(null);
-              setCreateFormOpen(true);
-            }}
-            className="gap-2 shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            Neue Aufgabe
-          </Button>
-        )}
       </div>
 
-      {/* Content Grid */}
-      <div className="flex-1 overflow-y-auto pr-2">
-        {gefiltert.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mb-3">
-              <FileText className="w-6 h-6 text-muted-foreground/40" />
+      {/* Two-Column Layout */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Linke Spalte: Sidebar mit Baumstruktur */}
+        <aside className="w-80 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-4 space-y-1">
+            {gefiltert.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-8">
+                {searchTerm ? 'Keine Aufgaben gefunden' : 'Noch keine Aufgaben'}
+              </p>
+            ) : (
+              gruppiertNachThemenfeld.map(gruppe => (
+                <ThemenfeldNode
+                  key={gruppe.titel}
+                  themenfeld={gruppe.themenfeld || { id: '_none', titel: gruppe.titel }}
+                  aufgaben={gruppe.aufgaben}
+                  selectedId={selectedAufgabeId}
+                  onSelect={(a) => setSelectedAufgabeId(a.id)}
+                />
+              ))
+            )}
+          </div>
+        </aside>
+
+        {/* Rechte Spalte: Detail-Panel */}
+        {selectedAufgabe ? (
+          <main className="flex-1 flex flex-col overflow-hidden">
+            {/* Detail-Header */}
+            <div className="shrink-0 px-6 py-3 border-b border-border bg-card/50">
+              <h2 className="text-lg font-bold truncate">
+                {selectedAufgabe.titel || 'Unbenannte Aufgabe'}
+              </h2>
             </div>
-            <p className="text-sm font-medium">
-              {searchTerm ? 'Keine Aufgaben gefunden' : 'Noch keine Aufgaben'}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {kannBearbeiten
-                ? 'Erstellen Sie Ihre erste Aufgabe mit dem Button oben.'
-                : 'Noch keine Aufgaben vorhanden.'}
-            </p>
-          </div>
+
+            {/* Tabs für Angaben & Kompetenzen */}
+            <Tabs defaultValue="angaben" className="flex-1 flex flex-col overflow-hidden">
+              <TabsList className="mx-6 mt-3 bg-muted">
+                <TabsTrigger value="angaben" className="text-xs">Angaben</TabsTrigger>
+                <TabsTrigger value="kompetenzen" className="text-xs">Kompetenzen</TabsTrigger>
+              </TabsList>
+
+              {/* Tab 1: Allgemeine Angaben */}
+              <TabsContent value="angaben" className="flex-1 overflow-y-auto m-0">
+                <AllgemeineAngabenPanel
+                  aufgabe={selectedAufgabe}
+                  themenfelder={themenfelder}
+                  kannBearbeiten={kannBearbeiten}
+                  onEdit={(a) => {
+                    setEditingAufgabe(a);
+                    setCreateFormOpen(true);
+                  }}
+                  onDelete={(id) => deleteAufgabe.mutate(id)}
+                />
+              </TabsContent>
+
+              {/* Tab 2: Kompetenz-Zuordnung */}
+              <TabsContent value="kompetenzen" className="flex-1 overflow-hidden m-0">
+                <AufgabeKompetenzMapping
+                  aufgabe={selectedAufgabe}
+                  einheitId={einheitId}
+                  onComplete={() => {}}
+                />
+              </TabsContent>
+            </Tabs>
+          </main>
         ) : (
-          <div className="space-y-6">
-            {gruppiertNachThemenfeld.map(gruppe => (
-              <AufgabenGruppe
-                key={gruppe.titel}
-                titel={gruppe.titel}
-                aufgaben={gruppe.aufgaben}
-                selectedId={selectedAufgabeId}
-                onSelect={(a) => setSelectedAufgabeId(a.id)}
-                kannBearbeiten={kannBearbeiten}
-                onEditClick={(a) => {
-                  setEditingAufgabe(a);
-                  setCreateFormOpen(true);
-                }}
-              />
-            ))}
-          </div>
+          <main className="flex-1 flex items-center justify-center text-center">
+            <div>
+              <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">
+                Wählen Sie eine Aufgabe aus, um Details zu sehen
+              </p>
+            </div>
+          </main>
         )}
       </div>
 
