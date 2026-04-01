@@ -114,33 +114,33 @@ function ThemenfeldGroup({ themenfeld, lernziele }) {
 }
 
 // ── Haupt-Component ──
-export default function AufgabeKompetenzMapping({ aufgabe, einheit, onComplete }) {
+export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete }) {
   const queryClient = useQueryClient();
   const [mappedLernziele, setMappedLernziele] = useState([]);
   const [savingIds, setSavingIds] = useState(new Set());
 
-  // Fetch Lernziele der Einheit
+  // Fetch Lernpakete der Einheit
+  const { data: lernpakete = [] } = useQuery({
+    queryKey: ['lernpakete'],
+    queryFn: () => base44.entities.Lernpakete.list(),
+    enabled: !!einheitId,
+  });
+
+  // Fetch Lernziele (gefiltert über Lernpakete)
   const { data: alleLernziele = [] } = useQuery({
-    queryKey: ['lernziele'],
+    queryKey: ['lernziele', einheitId],
     queryFn: () => base44.entities.Lernziele.list(),
-    enabled: !!einheit?.id,
+    enabled: !!einheitId,
   });
 
   // Fetch Themenfelder
   const { data: themenfelder = [] } = useQuery({
-    queryKey: ['themenfelder', einheit?.id],
+    queryKey: ['themenfelder', einheitId],
     queryFn: () =>
-      einheit?.id
-        ? base44.entities.Themenfeld.filter({ einheit_id: einheit.id })
+      einheitId
+        ? base44.entities.Themenfeld.filter({ einheit_id: einheitId })
         : Promise.resolve([]),
-    enabled: !!einheit?.id,
-  });
-
-  // Fetch Lernpakete
-  const { data: lernpakete = [] } = useQuery({
-    queryKey: ['lernpakete'],
-    queryFn: () => base44.entities.Lernpakete.list(),
-    enabled: !!einheit?.id,
+    enabled: !!einheitId,
   });
 
   // Fetch bestehende Mappings
@@ -259,11 +259,12 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, onComplete }
     }
   };
 
-  // Gruppiere Lernziele nach Themenfeld
+  // Gruppiere Lernziele nach Themenfeld (nur der aktuellen Einheit)
+  const paketeFuerEinheit = lernpakete.filter((p) => p.einheit_id === einheitId);
   const themenfeldMitLernzielen = themenfelder.map((tf) => ({
     themenfeld: tf,
     lernziele: alleLernziele.filter((lz) => {
-      const paket = lernpakete.find((p) => p.id === lz.lernpaket_id);
+      const paket = paketeFuerEinheit.find((p) => p.id === lz.lernpaket_id);
       return paket?.themenfeld_id === tf.id;
     }),
   }));
