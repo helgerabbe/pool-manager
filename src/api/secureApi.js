@@ -128,6 +128,34 @@ export async function updateEinheit(einheitId, data) {
 }
 
 /**
+ * Sichere Einheit Publish Operation (Status-Änderung) via Base44 SDK
+ * 
+ * @param {string} einheitId - Die ID der zu publishenden Einheit
+ * @param {string} targetStatus - Ziel-Status (z.B. "Freigegeben für Moodle")
+ * @returns {Promise<{success: boolean, data: Object}>}
+ * @throws {SecureApiError} Bei Fehler (403 Forbidden, 404 Not Found, etc.)
+ */
+export async function publishEinheit(einheitId, targetStatus = 'Freigegeben für Moodle') {
+  if (!einheitId) {
+    throw new Error('einheitId is required');
+  }
+
+  try {
+    const response = await base44.functions.invoke('publishEinheitSecure', {
+      id: einheitId,
+      status: targetStatus,
+    });
+    return response.data;
+  } catch (error) {
+    const status = error.response?.status || 500;
+    const errorData = error.response?.data || {};
+    const message = errorData.error || error.message || 'Unknown error';
+
+    throw new SecureApiError(status, message);
+  }
+}
+
+/**
  * Alle Funktionen als Objekt exportieren (alternative API)
  */
 export const secureApi = {
