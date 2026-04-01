@@ -263,28 +263,23 @@ export default function ProjektaufgabenView({
   // Filtere nur Projektaufgaben (anforderungsebene: "3 - Projekt")
   const projektaufgaben = allgemeineAufgaben.filter(a => a.anforderungsebene === '3 - Projekt');
 
-  // Gruppierung nach Themenfeld
-  const gruppiertNachThemenfeld = useMemo(() => {
-    const gruppen = {};
+  // Gruppierung nach Aufgabentyp
+  const gruppiertNachTyp = useMemo(() => {
+    const gruppen = {
+      'Anwendungsaufgabe': { titel: 'Anwendungsaufgaben', aufgaben: [] },
+      'Projektaufgabe': { titel: 'Projektaufgaben', aufgaben: [] },
+      '_none': { titel: 'Ohne Aufgabentyp', aufgaben: [] }
+    };
 
-    // Themenfeld-Gruppen vorinitialisieren
-    themenfelder.forEach(tf => {
-      gruppen[tf.id] = { titel: tf.titel, aufgaben: [], themenfeld: tf };
-    });
-
-    // Ohne Themenfeld
-    gruppen['_none'] = { titel: 'Ohne Themenfeld', aufgaben: [], themenfeld: null };
-
-    // Aufgaben verteilen
     projektaufgaben.forEach(aufgabe => {
-      const key = aufgabe.themenfeld_id || '_none';
+      const key = aufgabe.aufgabentyp_projekt || '_none';
       if (gruppen[key]) {
         gruppen[key].aufgaben.push(aufgabe);
       }
     });
 
     return Object.values(gruppen).filter(g => g.aufgaben.length > 0);
-  }, [projektaufgaben, themenfelder]);
+  }, [projektaufgaben]);
 
   const selectedAufgabe = projektaufgaben.find(a => a.id === selectedAufgabeId);
 
@@ -315,20 +310,28 @@ export default function ProjektaufgabenView({
             </div>
           )}
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-1">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {projektaufgaben.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-8">
                 Noch keine Aufgaben
               </p>
             ) : (
-              gruppiertNachThemenfeld.map(gruppe => (
-                <ThemenfeldNode
-                  key={gruppe.titel}
-                  themenfeld={gruppe.themenfeld || { id: '_none', titel: gruppe.titel }}
-                  aufgaben={gruppe.aufgaben}
-                  selectedId={selectedAufgabeId}
-                  onSelect={(a) => setSelectedAufgabeId(a.id)}
-                />
+              gruppiertNachTyp.map(gruppe => (
+                <div key={gruppe.titel} className="space-y-1">
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    {gruppe.titel}
+                  </div>
+                  <div className="pl-2 space-y-0.5">
+                    {gruppe.aufgaben.map(aufgabe => (
+                      <AufgabeNode
+                        key={aufgabe.id}
+                        aufgabe={aufgabe}
+                        isSelected={selectedAufgabeId === aufgabe.id}
+                        onSelect={(a) => setSelectedAufgabeId(a.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
               ))
             )}
           </div>

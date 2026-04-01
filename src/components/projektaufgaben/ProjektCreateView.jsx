@@ -224,7 +224,7 @@ export default function ProjektCreateView({ open, onOpenChange, einheitId, theme
     titel: '',
     aufgabenstellung: '',
     schwierigkeitsgrad: null,
-    themenfeld_id: null,
+    aufgabentyp_projekt: null,
     anforderungsebene: '3 - Projekt',
     materialien: [],
   });
@@ -235,7 +235,7 @@ export default function ProjektCreateView({ open, onOpenChange, einheitId, theme
       if (initialData) {
         setFormData(initialData);
       } else {
-        setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, themenfeld_id: null, anforderungsebene: '3 - Projekt', materialien: [] });
+        setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, aufgabentyp_projekt: null, anforderungsebene: '3 - Projekt', materialien: [] });
       }
     }
   }, [open, initialData]);
@@ -250,7 +250,7 @@ export default function ProjektCreateView({ open, onOpenChange, einheitId, theme
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
       toast.success('Anwendungs- und Projektaufgabe erstellt!');
       onSuccess?.(result);
-      setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, themenfeld_id: null, anforderungsebene: '3 - Projekt', materialien: [] });
+      setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, aufgabentyp_projekt: null, anforderungsebene: '3 - Projekt', materialien: [] });
       onOpenChange(false);
     },
     onError: () => toast.error('Fehler beim Erstellen'),
@@ -263,7 +263,7 @@ export default function ProjektCreateView({ open, onOpenChange, einheitId, theme
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
       toast.success('Anwendungs- und Projektaufgabe aktualisiert');
       onSuccess?.();
-      setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, themenfeld_id: null, anforderungsebene: '3 - Projekt', materialien: [] });
+      setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, aufgabentyp_projekt: null, anforderungsebene: '3 - Projekt', materialien: [] });
       onOpenChange(false);
     },
     onError: () => toast.error('Fehler beim Aktualisieren'),
@@ -328,6 +328,21 @@ export default function ProjektCreateView({ open, onOpenChange, einheitId, theme
               value={formData.schwierigkeitsgrad}
               onChange={(val) => setFormData({ ...formData, schwierigkeitsgrad: val })}
             />
+          </div>
+
+          {/* Aufgabentyp (Projekt) */}
+          <div className="space-y-2">
+            <Label htmlFor="aufgabentyp">Aufgabentyp (optional)</Label>
+            <select
+              id="aufgabentyp"
+              value={formData.aufgabentyp_projekt || ''}
+              onChange={(e) => setFormData({ ...formData, aufgabentyp_projekt: e.target.value || null })}
+              className="w-full h-9 px-3 border rounded-lg text-sm bg-white"
+            >
+              <option value="">-- Ohne Aufgabentyp --</option>
+              <option value="Anwendungsaufgabe">Anwendungsaufgabe</option>
+              <option value="Projektaufgabe">Projektaufgabe</option>
+            </select>
           </div>
 
           {/* Materialien */}
