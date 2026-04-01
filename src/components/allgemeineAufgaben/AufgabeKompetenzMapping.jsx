@@ -3,49 +3,40 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  DndContext,
-  DragEndEvent,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import { useDroppable } from '@dnd-kit/core';
-import { useDraggable } from '@dnd-kit/core';
+import { Draggable, Droppable, DragDropContext } from '@hello-pangea/dnd';
 import { GripVertical, Trash2, CheckCircle, X } from 'lucide-react';
 import { toast } from 'sonner';
 import LernzielBadge from '@/components/allgemeineAufgaben/LernzielBadge';
 
 // ── Draggable Lernziel ──
-function DraggableLernziel({ lernziel, isHighlighted }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `lz-${lernziel.id}`,
-    data: { type: 'lernziel', lernziel },
-  });
-
+function DraggableLernziel({ lernziel, isHighlighted, index }) {
   return (
-    <div
-      ref={setNodeRef}
-      {...attributes}
-      {...listeners}
-      className={`flex items-center gap-2 p-2 rounded border cursor-grab active:cursor-grabbing transition-all ${
-        isDragging
-          ? 'opacity-50 ring-2 ring-primary'
-          : isHighlighted
-            ? 'bg-primary/10 border-primary/40'
-            : 'bg-white hover:bg-muted'
-      }`}
-    >
-      <GripVertical className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-      <div className="flex-1 min-w-0 text-xs">
-        <p className="font-medium truncate">{lernziel.formulierung_fachsprache}</p>
-        {lernziel.kategorie && (
-          <Badge variant="secondary" className="text-[10px] mt-1">
-            {lernziel.kategorie}
-          </Badge>
-        )}
-      </div>
-    </div>
+    <Draggable draggableId={`lz-${lernziel.id}`} index={index}>
+      {(provided, snapshot) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          {...provided.dragHandleProps}
+          className={`flex items-center gap-2 p-2 rounded border cursor-grab active:cursor-grabbing transition-all ${
+            snapshot.isDragging
+              ? 'opacity-50 ring-2 ring-primary'
+              : isHighlighted
+                ? 'bg-primary/10 border-primary/40'
+                : 'bg-white hover:bg-muted'
+          }`}
+        >
+          <GripVertical className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <div className="flex-1 min-w-0 text-xs">
+            <p className="font-medium truncate">{lernziel.formulierung_fachsprache}</p>
+            {lernziel.kategorie && (
+              <Badge variant="secondary" className="text-[10px] mt-1">
+                {lernziel.kategorie}
+              </Badge>
+            )}
+          </div>
+        </div>
+      )}
+    </Draggable>
   );
 }
 
@@ -57,43 +48,45 @@ function LernzielDropzone({
   onMappingRemoved,
   removingIds = new Set(),
 }) {
-  const { setNodeRef, isOver } = useDroppable({
-    id: `dropzone-${aufgabeId}`,
-  });
-
   return (
-    <div
-      ref={setNodeRef}
-      className={`p-4 rounded-lg border-2 transition-all ${
-        isOver
-          ? 'border-primary/60 bg-primary/5'
-          : 'border-dashed border-muted-foreground/30 bg-muted/20'
-      } min-h-32 flex flex-col gap-3`}
-    >
-      <p className="text-xs text-muted-foreground font-medium">
-        {mappedLernziele.length === 0
-          ? 'Benötigte Kompetenzen hier ablegen'
-          : `${mappedLernziele.length} Kompetenz(en) zugeordnet`}
-      </p>
+    <Droppable droppableId={`dropzone-${aufgabeId}`}>
+      {(provided, snapshot) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.droppableProps}
+          className={`p-4 rounded-lg border-2 transition-all ${
+            snapshot.isDraggingOver
+              ? 'border-primary/60 bg-primary/5'
+              : 'border-dashed border-muted-foreground/30 bg-muted/20'
+          } min-h-32 flex flex-col gap-3`}
+        >
+          <p className="text-xs text-muted-foreground font-medium">
+            {mappedLernziele.length === 0
+              ? 'Benötigte Kompetenzen hier ablegen'
+              : `${mappedLernziele.length} Kompetenz(en) zugeordnet`}
+          </p>
 
-      {mappedLernziele.length > 0 && (
-        <div className="space-y-2">
-          {mappedLernziele.map((lz) => (
-            <LernzielBadge
-              key={lz.id}
-              lernziel={lz}
-              onRemove={onMappingRemoved}
-              isRemoving={removingIds.has(lz.id)}
-            />
-          ))}
+          {mappedLernziele.length > 0 && (
+            <div className="space-y-2">
+              {mappedLernziele.map((lz) => (
+                <LernzielBadge
+                  key={lz.id}
+                  lernziel={lz}
+                  onRemove={onMappingRemoved}
+                  isRemoving={removingIds.has(lz.id)}
+                />
+              ))}
+            </div>
+          )}
+          {provided.placeholder}
         </div>
       )}
-    </div>
+    </Droppable>
   );
 }
 
 // ── Akkordeon für Themenfelder + Lernpakete ──
-function ThemenfeldGroup({ themenfeld, lernziele, onDragEnd }) {
+function ThemenfeldGroup({ themenfeld, lernziele }) {
   const [isOpen, setIsOpen] = useState(true);
 
   if (lernziele.length === 0) return null;
@@ -111,8 +104,8 @@ function ThemenfeldGroup({ themenfeld, lernziele, onDragEnd }) {
       </button>
       {isOpen && (
         <div className="p-2 space-y-1.5 bg-white">
-          {lernziele.map((lz) => (
-            <DraggableLernziel key={lz.id} lernziel={lz} isHighlighted={false} />
+          {lernziele.map((lz, index) => (
+            <DraggableLernziel key={lz.id} lernziel={lz} isHighlighted={false} index={index} />
           ))}
         </div>
       )}
@@ -170,13 +163,6 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, onComplete }
     setMappedLernziele(mapped);
   }, [alleLernziele, existingMappings]);
 
-  // Drag & Drop Setup
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      distance: 8,
-    })
-  );
-
   // Mutation für Mapping erstellen/löschen
   const createMapping = useMutation({
     mutationFn: (data) =>
@@ -199,39 +185,43 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, onComplete }
   });
 
   // Drag-End-Handler
-  const handleDragEnd = async (event) => {
-    const { active } = event;
-    if (active.data.current?.type !== 'lernziel') return;
+  const handleDragEnd = async (result) => {
+    const { source, destination, draggableId } = result;
+    if (!destination || destination.droppableId.startsWith('dropzone-')) {
+      // Extrahiere Lernziel-ID aus draggableId (format: "lz-{id}")
+      const lernzielId = draggableId.replace('lz-', '');
+      const lernziel = alleLernziele.find((lz) => lz.id === lernzielId);
+      
+      if (!lernziel) return;
 
-    const lernziel = active.data.current.lernziel;
+      // Bereits gemappt?
+      if (mappedLernziele.some((lz) => lz.id === lernziel.id)) {
+        toast.info('Kompetenz ist bereits zugeordnet');
+        return;
+      }
 
-    // Bereits gemappt?
-    if (mappedLernziele.some((lz) => lz.id === lernziel.id)) {
-      toast.info('Kompetenz ist bereits zugeordnet');
-      return;
-    }
+      // Hinzufügen
+      setMappedLernziele((prev) => [...prev, lernziel]);
+      setSavingIds((prev) => new Set([...prev, lernziel.id]));
 
-    // Hinzufügen
-    setMappedLernziele((prev) => [...prev, lernziel]);
-    setSavingIds((prev) => new Set([...prev, lernziel.id]));
-
-    try {
-      await createMapping.mutateAsync({
-        aufgabe_id: aufgabe.id,
-        lernziel_id: lernziel.id,
-      });
-      toast.success('Kompetenz zugeordnet');
-    } catch (err) {
-      setMappedLernziele((prev) =>
-        prev.filter((lz) => lz.id !== lernziel.id)
-      );
-      toast.error('Fehler beim Speichern');
-    } finally {
-      setSavingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(lernziel.id);
-        return next;
-      });
+      try {
+        await createMapping.mutateAsync({
+          aufgabe_id: aufgabe.id,
+          lernziel_id: lernziel.id,
+        });
+        toast.success('Kompetenz zugeordnet');
+      } catch (err) {
+        setMappedLernziele((prev) =>
+          prev.filter((lz) => lz.id !== lernziel.id)
+        );
+        toast.error('Fehler beim Speichern');
+      } finally {
+        setSavingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(lernziel.id);
+          return next;
+        });
+      }
     }
   };
 
@@ -279,7 +269,7 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, onComplete }
   }));
 
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+    <DragDropContext onDragEnd={handleDragEnd}>
       <div className="h-full flex flex-col gap-4 p-6 overflow-y-auto">
         {/* Header */}
         <div>
@@ -292,29 +282,38 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, onComplete }
         {/* Split-Screen Layout */}
         <div className="flex-1 grid grid-cols-2 gap-6 min-h-0 overflow-hidden">
           {/* Linke Seite: Quellen-Liste */}
-          <div className="flex flex-col min-h-0 overflow-hidden border rounded-lg">
-            <div className="px-4 py-3 bg-slate-100 border-b sticky top-0 z-10">
-              <h3 className="text-sm font-semibold">Verfügbare Kompetenzen</h3>
-            </div>
-            <div className="flex-1 overflow-y-auto p-3 space-y-3">
-              {themenfeldMitLernzielen.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4">
-                  Keine Kompetenzen vorhanden
-                </p>
-              ) : (
-                themenfeldMitLernzielen
-                  .filter((item) => item.lernziele.length > 0)
-                  .map((item) => (
-                    <ThemenfeldGroup
-                      key={item.themenfeld.id}
-                      themenfeld={item.themenfeld}
-                      lernziele={item.lernziele}
-                      onDragEnd={handleDragEnd}
-                    />
-                  ))
-              )}
-            </div>
-          </div>
+          <Droppable droppableId="lernziele-source" isDropDisabled={true}>
+            {(provided) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className="flex flex-col min-h-0 overflow-hidden border rounded-lg"
+              >
+                <div className="px-4 py-3 bg-slate-100 border-b sticky top-0 z-10">
+                  <h3 className="text-sm font-semibold">Verfügbare Kompetenzen</h3>
+                </div>
+                <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                  {themenfeldMitLernzielen.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-4">
+                      Keine Kompetenzen vorhanden
+                    </p>
+                  ) : (
+                    themenfeldMitLernzielen
+                      .filter((item) => item.lernziele.length > 0)
+                      .map((item) => (
+                        <div key={item.themenfeld.id}>
+                          <ThemenfeldGroup
+                            themenfeld={item.themenfeld}
+                            lernziele={item.lernziele}
+                          />
+                        </div>
+                      ))
+                  )}
+                  {provided.placeholder}
+                </div>
+              </div>
+            )}
+          </Droppable>
 
           {/* Rechte Seite: Aufgabe + Dropzone */}
           <div className="flex flex-col min-h-0 overflow-hidden border rounded-lg bg-card p-4 space-y-4">
@@ -364,6 +363,6 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, onComplete }
           </div>
         </div>
       </div>
-    </DndContext>
+    </DragDropContext>
   );
 }

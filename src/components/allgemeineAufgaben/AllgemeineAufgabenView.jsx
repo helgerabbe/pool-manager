@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { Plus, Search, Star, FileText, AlertTriangle, CheckCircle2, Grip } from 'lucide-react';
+import { Plus, Search, Star, FileText, AlertTriangle, CheckCircle2, Grip, ArrowLeft } from 'lucide-react';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
+import AufgabeKompetenzMapping from '@/components/allgemeineAufgaben/AufgabeKompetenzMapping';
 
 /**
  * Schwierigkeitsgrad-Anzeige (1-3 Sterne)
@@ -195,6 +196,44 @@ export default function AllgemeineAufgabenView({
 
   const selectedAufgabe = allgemeineAufgaben.find(a => a.id === selectedAufgabeId);
 
+  // Wenn eine Aufgabe ausgewählt ist, zeige die Mapping-Detailansicht
+  if (selectedAufgabe) {
+    return (
+      <div className="flex flex-col flex-1 h-full bg-background overflow-hidden">
+        {/* Header mit Zurück-Button */}
+        <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-3 border-b border-border bg-card">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedAufgabeId(null)}
+            className="gap-2 mb-3"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Zurück zur Übersicht
+          </Button>
+          <div>
+            <h2 className="text-lg font-bold">
+              {selectedAufgabe.titel || selectedAufgabe.aufgabenstellung}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Lernziele zuordnen
+            </p>
+          </div>
+        </div>
+
+        {/* Mapping-Detail */}
+        <div className="flex-1 overflow-hidden">
+          <AufgabeKompetenzMapping
+            aufgabe={selectedAufgabe}
+            einheitId={einheitId}
+            kannBearbeiten={kannBearbeiten}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Standard-Listenansicht
   return (
     <div className="flex flex-col flex-1 h-full p-4 sm:p-6 bg-background overflow-hidden justify-start gap-2">
       {/* Header */}
