@@ -231,12 +231,13 @@ function MaterialUploader({ materials, onMaterialsChange }) {
 }
 
 // ── Haupt-Component ──
-export default function AufgabeCreateView({ open, onOpenChange, einheitId, onSuccess }) {
+export default function AufgabeCreateView({ open, onOpenChange, einheitId, themenfelder = [], onSuccess }) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     titel: '',
     aufgabenstellung: '',
     schwierigkeitsgrad: null,
+    themenfeld_id: null,
     materialien: [],
   });
 
@@ -249,8 +250,8 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, onSuc
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
       toast.success('Aufgabe erstellt! Schritt 2: Kompetenzen zuordnen.');
-      onSuccess(result);
-      setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, materialien: [] });
+      onSuccess?.(result);
+      setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, themenfeld_id: null, materialien: [] });
       onOpenChange(false);
     },
     onError: () => toast.error('Fehler beim Erstellen'),
@@ -273,6 +274,24 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, onSuc
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Themenfeld */}
+          {themenfelder.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="themenfeld">Themenfeld (optional)</Label>
+              <select
+                id="themenfeld"
+                value={formData.themenfeld_id || ''}
+                onChange={(e) => setFormData({ ...formData, themenfeld_id: e.target.value || null })}
+                className="w-full h-9 px-3 border rounded-lg text-sm bg-white"
+              >
+                <option value="">-- Kein Themenfeld --</option>
+                {themenfelder.map(tf => (
+                  <option key={tf.id} value={tf.id}>{tf.titel}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Titel */}
           <div className="space-y-2">
             <Label htmlFor="titel">Titel (optional)</Label>
