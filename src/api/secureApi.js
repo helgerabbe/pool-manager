@@ -10,6 +10,8 @@
  */
 
 import { base44 } from '@/api/base44Client';
+import { validateEntity, EINHEIT_SCHEMA, LERNPAKET_SCHEMA, AUFGABE_SCHEMA } from '@/lib/validationSchemas';
+import { isValidTransition } from '@/lib/stateMachine';
 
 /**
  * Custom error class für besseres Error Handling
@@ -88,8 +90,12 @@ export async function deleteEinheit(einheitId) {
  * @throws {SecureApiError} Bei Fehler (403 Forbidden, 400 Validation, etc.)
  */
 export async function createEinheit(data) {
-  if (!data?.titel_der_einheit?.trim() || !data?.fach || !data?.jahrgangsstufe) {
-    throw new Error('Missing required fields: titel_der_einheit, fach, jahrgangsstufe');
+  // Frontend-Validierung vor API-Call
+  const validation = validateEntity(data, EINHEIT_SCHEMA);
+  if (!validation.valid) {
+    const error = new SecureApiError(400, 'Validierungsfehler');
+    error.validationErrors = validation.errors;
+    throw error;
   }
 
   try {
@@ -112,9 +118,37 @@ export async function createEinheit(data) {
  * @returns {Promise<{success: boolean, data: Object}>}
  * @throws {SecureApiError} Bei Fehler (403 Forbidden, 404 Not Found, 409 Conflict, etc.)
  */
-export async function updateEinheit(einheitId, data) {
+export async function updateEinheit(einheitId, data, currentEinheit = null) {
   if (!einheitId) {
     throw new Error('einheitId is required');
+  }
+
+  // Validiere nur die Felder, die updated werden
+  const schema = Object.keys(data).reduce((acc, key) => {
+    if (EINHEIT_SCHEMA[key]) {
+      acc[key] = EINHEIT_SCHEMA[key];
+    }
+    return acc;
+  }, {});
+
+  if (Object.keys(schema).length > 0) {
+    const validation = validateEntity(data, schema);
+    if (!validation.valid) {
+      const error = new SecureApiError(400, 'Validierungsfehler');
+      error.validationErrors = validation.errors;
+      throw error;
+    }
+  }
+
+  // State Machine: Prüfe ob Status-Übergang erlaubt ist
+  if (data.freigabe_status && currentEinheit?.freigabe_status) {
+    if (!isValidTransition(currentEinheit.freigabe_status, data.freigabe_status)) {
+      const error = new SecureApiError(
+        400,
+        `Ungültiger Status-Übergang: "${currentEinheit.freigabe_status}" → "${data.freigabe_status}"`
+      );
+      throw error;
+    }
   }
 
   try {
