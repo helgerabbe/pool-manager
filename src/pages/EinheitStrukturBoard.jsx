@@ -326,10 +326,6 @@ export default function EinheitStrukturBoard({
     onErrorChange?.(lastError);
   }, [lastError, onErrorChange]);
 
-  useEffect(() => {
-    onSave?.(handleSpeichern);
-  }, [handleSpeichern, onSave]);
-
   // Berechtigungen: Struktur-Board nur für ADMIN + FACHSCHAFTSLEITUNG editierbar
   const kannStrukturBearbeiten = einheit
     ? permissions.kannStrukturBearbeiten(einheit.fach)
@@ -560,6 +556,11 @@ export default function EinheitStrukturBoard({
       setDiscardOnNavigate(false);
     }
   }, [discardOnNavigate]);
+
+  // ── Pass save function to parent ──────────────────────────────────────────────
+  useEffect(() => {
+    onSave?.(handleSpeichern);
+  }, [handleSpeichern, onSave]);
 
   // ── Rendering ─────────────────────────────────────────────────────────────────
 
