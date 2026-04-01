@@ -325,7 +325,7 @@ export default function Workspace() {
       <Tabs
         value={activeTab}
         onValueChange={(tab) => {setActiveTab(tab);setHighlightedAtomIds(new Set());}}
-        className="flex flex-col flex-1 overflow-hidden min-h-0">
+        className="flex flex-col flex-1 overflow-hidden min-h-0 w-full">
         
           {/* Tab-Leiste */}
           <div className="px-4 sm:px-6 lg:px-8 pt-2 border-b border-border bg-card shrink-0">
@@ -421,7 +421,7 @@ export default function Workspace() {
           </TabsContent>
 
           {/* ── Säule 2: Transfer-Übungen (Themenfeld-gefiltert) ──────────────── */}
-          <TabsContent value="transfer" className="flex-1 overflow-hidden m-0 p-0">
+          <TabsContent value="transfer" className="flex-1 overflow-y-auto m-0 p-0 outline-none data-[state=inactive]:hidden">
             <TransferSaeule
             ebene="2 - Transfer"
             lernpakete={paketeFuerThemenfeld}
@@ -436,7 +436,7 @@ export default function Workspace() {
           </TabsContent>
 
           {/* ── Säule 3: Projekte (globaler Einheits-Scope) ───────────────────── */}
-          <TabsContent value="projekt" className="flex-1 overflow-hidden m-0 p-0">
+          <TabsContent value="projekt" className="flex-1 overflow-y-auto m-0 p-0 outline-none data-[state=inactive]:hidden">
             <TransferSaeule
             ebene="3 - Projekt"
             lernpakete={paketeFuerEinheit}
