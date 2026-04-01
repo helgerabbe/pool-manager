@@ -7,6 +7,7 @@ import SidebarTree from '@/components/workspace/SidebarTree';
 import WorkspaceDetailPanel from '@/components/workspace/WorkspaceDetailPanel';
 import WorkspaceStats from '@/components/workspace/WorkspaceStats';
 import TransferSaeule from '@/components/workspace/TransferSaeule';
+import AllgemeineAufgabenView from '@/components/allgemeineAufgaben/AllgemeineAufgabenView';
 import ActivityDetailView from '@/components/workspace/ActivityDetailView';
 import { usePresence } from '@/hooks/usePresence';
 import { isStructurallyLocked } from '@/hooks/useStructuralLock';
@@ -420,19 +421,12 @@ export default function Workspace() {
             </main>
           </TabsContent>
 
-          {/* ── Säule 2: Transfer-Übungen (Themenfeld-gefiltert) ──────────────── */}
+          {/* ── Säule 2: Allgemeine Aufgaben ──────────────────────────────────── */}
           <TabsContent value="transfer" className="flex-1 overflow-hidden m-0 p-0">
-            <TransferSaeule
-            ebene="2 - Transfer"
-            lernpakete={paketeFuerThemenfeld}
-            lernziele={zieleFuerThemenfeld}
-            aufgaben={aufgabenFuerThemenfeld}
-            mappings={mappings}
-            einheitId={einheit.id}
-            kannBearbeiten={kannDieseEinheitBearbeiten}
-            onAtomHighlight={handleAtomHighlight}
-            highlightedAufgabeId={null} />
-          
+            <AllgemeineAufgabenView
+              einheitId={selectedEinheitId}
+              kannBearbeiten={kannDieseEinheitBearbeiten}
+            />
           </TabsContent>
 
           {/* ── Säule 3: Projekte (globaler Einheits-Scope) ───────────────────── */}
