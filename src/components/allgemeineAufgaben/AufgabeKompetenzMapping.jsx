@@ -14,6 +14,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { useDraggable } from '@dnd-kit/core';
 import { GripVertical, Trash2, CheckCircle, X } from 'lucide-react';
 import { toast } from 'sonner';
+import LernzielBadge from '@/components/allgemeineAufgaben/LernzielBadge';
 
 // ── Draggable Lernziel ──
 function DraggableLernziel({ lernziel, isHighlighted }) {
@@ -54,6 +55,7 @@ function LernzielDropzone({
   mappedLernziele,
   onMappingAdded,
   onMappingRemoved,
+  removingIds = new Set(),
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `dropzone-${aufgabeId}`,
@@ -77,20 +79,12 @@ function LernzielDropzone({
       {mappedLernziele.length > 0 && (
         <div className="space-y-2">
           {mappedLernziele.map((lz) => (
-            <div
+            <LernzielBadge
               key={lz.id}
-              className="flex items-center justify-between gap-2 p-2 rounded bg-white border border-primary/30"
-            >
-              <div className="flex-1 min-w-0 text-xs">
-                <p className="font-medium truncate">{lz.formulierung_fachsprache}</p>
-              </div>
-              <button
-                onClick={() => onMappingRemoved(lz.id)}
-                className="text-destructive hover:text-destructive/80 shrink-0"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
+              lernziel={lz}
+              onRemove={onMappingRemoved}
+              isRemoving={removingIds.has(lz.id)}
+            />
           ))}
         </div>
       )}
@@ -241,26 +235,30 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, onComplete }
     }
   };
 
-  // Mapping entfernen
+  // Mapping entfernen (Optimistic Update)
   const handleRemoveMapping = async (lernzielId) => {
     const mapping = existingMappings.find(
       (m) => m.lernziel_id === lernzielId
     );
-    if (!mapping) {
-      setMappedLernziele((prev) =>
-        prev.filter((lz) => lz.id !== lernzielId)
-      );
-      return;
-    }
 
+    // Optimistic UI: Sofort aus Dropzone entfernen
+    setMappedLernziele((prev) =>
+      prev.filter((lz) => lz.id !== lernzielId)
+    );
     setSavingIds((prev) => new Set([...prev, lernzielId]));
+
     try {
-      await deleteMapping.mutateAsync(mapping.id);
-      setMappedLernziele((prev) =>
-        prev.filter((lz) => lz.id !== lernzielId)
-      );
-      toast.success('Zuordnung entfernt');
+      // Nur API call, wenn ein Mapping existiert
+      if (mapping) {
+        await deleteMapping.mutateAsync(mapping.id);
+      }
+      toast.success('Verknüpfung aufgehoben');
     } catch (err) {
+      // Rollback: Bei Fehler zurück in Dropzone
+      const lernziel = alleLernziele.find((lz) => lz.id === lernzielId);
+      if (lernziel) {
+        setMappedLernziele((prev) => [...prev, lernziel]);
+      }
       toast.error('Fehler beim Löschen');
     } finally {
       setSavingIds((prev) => {
@@ -335,6 +333,7 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, onComplete }
                 mappedLernziele={mappedLernziele}
                 onMappingAdded={() => {}}
                 onMappingRemoved={handleRemoveMapping}
+                removingIds={savingIds}
               />
             </div>
           </div>
