@@ -13,10 +13,11 @@ import { isStructurallyLocked } from '@/hooks/useStructuralLock';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Layers, Zap, FolderOpen, LayoutGrid, SlidersHorizontal, Lock, ArrowRight } from 'lucide-react';
+import { BookOpen, Layers, Zap, FolderOpen, LayoutGrid, SlidersHorizontal, Lock, ArrowRight, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import StrukturBoardEmbedded from '@/components/workspace/StrukturBoardEmbedded';
+import EinheitSettingsModal, { UnitRoleBadge } from '@/components/einheiten/EinheitSettingsModal';
 
 /**
  * Workspace — Drei-Säulen-Architektur
@@ -41,6 +42,8 @@ export default function Workspace() {
   const [selectedNode, setSelectedNode] = useState(null);
   const [activeTab, setActiveTab] = useState('basis');
   const [highlightedAtomIds, setHighlightedAtomIds] = useState(new Set());
+
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // View-Toggle: 'struktur' | 'detail'
   // Beim ersten Laden nach Wizard (fromWizard param) → Struktur, sonst letzter Modus aus localStorage
@@ -259,6 +262,17 @@ export default function Workspace() {
           </Select>
         </div>
 
+        {/* Settings-Button */}
+        {einheit && (
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            title="Einheiten-Einstellungen"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+        )}
+
         {/* View-Toggle */}
         {einheit && (
           <div className="flex items-center bg-muted rounded-lg p-0.5 gap-0.5">
@@ -443,6 +457,14 @@ export default function Workspace() {
           </TabsContent>
         </Tabs>
       }
+      {einheit && (
+        <EinheitSettingsModal
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+          einheit={einheit}
+          currentUserEmail={authUser?.email}
+        />
+      )}
     </div>);
 
 }

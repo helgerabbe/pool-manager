@@ -56,7 +56,8 @@ Deno.serve(async (req) => {
 
   // ── RBAC: Nur ADMIN und FACHSCHAFTSLEITUNG dürfen Einheiten löschen ────────
   // Fach der Einheit laden für Zuständigkeitsprüfung
-  const einheit = await base44.asServiceRole.entities.Einheiten.get(einheitId);
+  const einheitArr = await base44.asServiceRole.entities.Einheiten.filter({ id: einheitId });
+  const einheit = einheitArr[0];
   if (!einheit) return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
 
   const roleError = await checkRole(base44, [ROLLEN.ADMIN, ROLLEN.FACHSCHAFT], einheit.fach);

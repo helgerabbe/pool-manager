@@ -1,0 +1,33 @@
+{
+  "name": "EinheitMembers",
+  "type": "object",
+  "properties": {
+    "einheit_id": {
+      "type": "string",
+      "description": "Referenz zur Einheit (Foreign Key)"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "E-Mail des Mitglieds (FK zu User)"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Anzeigename des Mitglieds (denormalisiert)"
+    },
+    "unit_role": {
+      "type": "string",
+      "enum": [
+        "LEITUNG",
+        "EDITOR",
+        "READER"
+      ],
+      "default": "EDITOR",
+      "description": "Rolle des Nutzers speziell f\u00fcr diese Einheit"
+    }
+  },
+  "required": [
+    "einheit_id",
+    "user_email",
+    "unit_role"
+  ]
+}

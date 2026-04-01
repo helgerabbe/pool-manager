@@ -13,6 +13,7 @@ import {
   TrendingUp, Plus, Search, Filter, Lock, Trash2
 } from 'lucide-react';
 import EinheitForm from '@/components/einheiten/EinheitForm';
+import { UnitRoleBadge } from '@/components/einheiten/EinheitSettingsModal';
 import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal';
 import { kannEinheitSehen, ROLLEN } from '@/lib/rbac';
 import { toast } from 'sonner';
@@ -28,7 +29,7 @@ const fachColors = {
 };
 
 export default function Dashboard() {
-  const { permissions, rolle } = useRBAC();
+  const { permissions, rolle, authUser } = useRBAC();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
@@ -70,9 +71,30 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Aufgabenbausteine.list(),
   });
 
+  const { data: myMemberships = [] } = useQuery({
+    queryKey: ['einheit-members-mine', authUser?.email],
+    queryFn: () => base44.entities.EinheitMembers.filter({ user_email: authUser?.email }),
+    enabled: !!authUser?.email,
+  });
+
   const createEinheit = useMutation({
-    mutationFn: (data) => base44.entities.Einheiten.create(data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['einheiten'] }),
+    mutationFn: async (data) => {
+      const einheit = await base44.entities.Einheiten.create(data);
+      // Ersteller automatisch als LEITUNG eintragen
+      if (einheit?.id && authUser?.email) {
+        await base44.entities.EinheitMembers.create({
+          einheit_id: einheit.id,
+          user_email: authUser.email,
+          user_name: authUser.full_name || authUser.email,
+          unit_role: 'LEITUNG',
+        });
+      }
+      return einheit;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+      queryClient.invalidateQueries({ queryKey: ['einheit-members-mine', authUser?.email] });
+    },
   });
 
   const sichtbareEinheiten = einheiten.filter(e => kannEinheitSehen(rolle, e.freigabe_status));
@@ -244,6 +266,8 @@ export default function Dashboard() {
               const aufgabeCount = aufgaben.filter(a => paketIds.includes(a.lernpaket_id)).length;
               const lockCount    = aufgaben.filter(a => paketIds.includes(a.lernpaket_id) && a.lock_status).length;
               const isFreigegeben = e.freigabe_status === 'Freigegeben für Moodle';
+              const membership = myMemberships.find(m => m.einheit_id === e.id);
+              const unitRole = membership?.unit_role || (e.created_by === authUser?.email ? 'LEITUNG' : null);
 
               return (
                 <div key={e.id} className="relative group/card">
@@ -260,7 +284,10 @@ export default function Dashboard() {
                         </div>
                         <div className="flex-1">
                           <h3 className="font-semibold text-sm leading-snug">{e.titel_der_einheit}</h3>
-                          <p className="text-xs text-muted-foreground mt-1">Jahrgang {e.jahrgangsstufe} · {e.navigationslogik}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-xs text-muted-foreground">Jg. {e.jahrgangsstufe} · {e.navigationslogik}</p>
+                            {unitRole && <UnitRoleBadge role={unitRole} />}
+                          </div>
                         </div>
                         <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border">
                           <span>{paketCount} Pakete · {aufgabeCount} Aufgaben</span>

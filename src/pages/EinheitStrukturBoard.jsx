@@ -12,11 +12,12 @@ import {
 } from '@/components/ui/alert-dialog';
 import {
   Plus, GripVertical, Clock, Trash2, ArrowRight, Layers,
-  FolderOpen, X, Check, Lock, AlertTriangle,
+  FolderOpen, X, Check, Lock, AlertTriangle, Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStructuralLock } from '@/hooks/useStructuralLock';
 import { useRBAC } from '@/hooks/useRBAC';
+import EinheitSettingsModal from '@/components/einheiten/EinheitSettingsModal';
 
 // ── Mini-Dialog: Neues Lernpaket ──────────────────────────────────────────────
 
@@ -232,7 +233,7 @@ export default function EinheitStrukturBoard() {
   const queryClient = useQueryClient();
 
   // RBAC: Struktur-Bearbeitung nur für ADMIN + FACHSCHAFTSLEITUNG
-  const { permissions } = useRBAC();
+  const { permissions, authUser } = useRBAC();
 
   // Structural Lock sofort beim Betreten setzen (nur wenn berechtigt)
   useStructuralLock(einheitId);
@@ -261,7 +262,8 @@ export default function EinheitStrukturBoard() {
   const [paketeMap, setPaketeMap]         = useState({});
   const [saving, setSaving]               = useState(false);
   const [initialized, setInitialized]     = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState(null); // { spalteId, titel, lockedPakete[] }
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [settingsOpen, setSettingsOpen] = useState(false); // { spalteId, titel, lockedPakete[] }
 
   // Berechtigungen: Struktur-Board nur für ADMIN + FACHSCHAFTSLEITUNG editierbar
   const kannStrukturBearbeiten = einheit
@@ -481,7 +483,16 @@ export default function EinheitStrukturBoard() {
       {/* ── Top-Bar ── */}
       <div className="shrink-0 px-6 py-3 border-b border-border bg-card flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-lg font-bold leading-tight">{einheit?.titel_der_einheit}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-bold leading-tight">{einheit?.titel_der_einheit}</h1>
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              title="Einheiten-Einstellungen"
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </button>
+          </div>
           <p className="text-sm text-muted-foreground">
             {einheit?.fach} · Jg. {einheit?.jahrgangsstufe} ·{' '}
             <span className={cn(
@@ -584,6 +595,16 @@ export default function EinheitStrukturBoard() {
           </div>
         </DragDropContext>
       </div>
+
+      {/* ── Settings-Modal ── */}
+      {einheit && (
+        <EinheitSettingsModal
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+          einheit={einheit}
+          currentUserEmail={authUser?.email}
+        />
+      )}
 
       {/* ── Delete-Confirm-Dialog ── */}
       <AlertDialog open={!!deleteConfirm} onOpenChange={open => !open && setDeleteConfirm(null)}>
