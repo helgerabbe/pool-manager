@@ -112,6 +112,11 @@ export default function LernlandkartePreview({
     paketeFuerEinheit.some(p => p.id === lz.lernpaket_id)
   );
 
+  // Unzugeordnete Lernziele
+  const unzugeordneteZiele = lernziele.filter(lz => 
+    !paketeFuerEinheit.some(p => p.id === lz.lernpaket_id)
+  );
+
   const themenfeldMitPaketen = themenfelder
     .filter(tf => paketeFuerEinheit.some(p => p.themenfeld_id === tf.id))
     .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
@@ -151,6 +156,24 @@ export default function LernlandkartePreview({
             <p className="text-xs text-muted-foreground text-center py-4">
               Keine Inhalte vorhanden
             </p>
+          )}
+          
+          {/* Unzugeordnete Lernziele */}
+          {unzugeordneteZiele.length > 0 && (
+            <div className="border rounded-lg border-border overflow-hidden">
+              <button className="w-full flex items-center gap-2 px-3 py-2 bg-card hover:bg-muted/50 transition-colors text-left font-semibold text-sm">
+                <BookOpen className="w-4 h-4 text-primary" />
+                Nicht zugeordnete Lernziele
+                <Badge variant="secondary" className="text-[9px] ml-auto">
+                  {unzugeordneteZiele.length}
+                </Badge>
+              </button>
+              <div className="border-t border-border bg-muted/30 px-3 py-2 space-y-1">
+                {unzugeordneteZiele.map(ziel => (
+                  <LernzielCompact key={ziel.id} lernziel={ziel} />
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </div>
