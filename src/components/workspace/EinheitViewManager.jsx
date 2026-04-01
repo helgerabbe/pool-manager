@@ -87,39 +87,48 @@ export default function EinheitViewManager() {
   const kannDieseEinheitBearbeiten = permissions.kannEinheitBearbeiten(einheit.fach);
 
   // ════════════════════════════════════════════════════════════════════════════
-  // RENDER
+  // RENDER — Strikte vertikale Stacking-Hierarchie
   // ════════════════════════════════════════════════════════════════════════════
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] -mx-4 sm:-mx-6 lg:-mx-8 -my-8">
+    <div className="flex flex-col h-[calc(100vh-4rem)] w-full bg-background">
 
-      {/* ── UnitToolbar (Sub-Header mit View-Toggle) ────────────────────────── */}
+      {/* Container 1: UnitToolbar (Sub-Header) ────────────────────────────────── */}
       <UnitToolbar
         einheit={einheit}
         viewMode={viewMode}
         onViewModeChange={handleViewModeChange}
         onSettingsOpen={() => setSettingsOpen(true)}
-        onlineUsers={onlineUsers}
-        structLocked={structLocked}
-        currentUserEmail={authUser?.email}
       />
 
-      {/* ── Haupt-Inhalt (bedingtes Rendering) ───────────────────────────────── */}
-      {viewMode === 'struktur' ? (
-        // ── Struktur-Ansicht: Kanban-Board mit Themenfeldern + Lernpaketen ──
-        <EinheitStrukturBoard
-          einheitId={einheitId}
-          kannBearbeiten={kannDieseEinheitBearbeiten}
-          onSaved={() => handleViewModeChange('inhalte')}
-        />
-      ) : (
-        // ── Inhalts-Ansicht: Workspace mit Detail-Bearbeitung ────────────────
-        <Workspace
-          // Der Workspace wird mit dem einheitId über URL-Parametern initialisiert
-          // Die Komponente liest den Parameter selbst: ?einheit=<id>
-        />
+      {/* Container 2: Hinweis-Banner (Struktur-Lock / Optional) ──────────────── */}
+      {structLocked && (
+        <div className="px-4 sm:px-6 lg:px-8 py-2 bg-orange-50 border-b border-orange-200">
+          <p className="text-xs text-orange-800">
+            <strong>⚠️ Struktur wird gerade bearbeitet</strong> — von {einheit?.structural_lock}. 
+            Bestehende Inhalte können gespeichert werden.
+          </p>
+        </div>
       )}
 
-      {/* ── Settings Modal ────────────────────────────────────────────────────── */}
+      {/* Container 3: Main Content (Kanban-Board oder Workspace) ──────────────── */}
+      <main className="flex-1 overflow-hidden">
+        {viewMode === 'struktur' ? (
+          // ── Struktur-Ansicht: Kanban-Board mit Themenfeldern + Lernpaketen ──
+          <EinheitStrukturBoard
+            einheitId={einheitId}
+            kannBearbeiten={kannDieseEinheitBearbeiten}
+            onSaved={() => handleViewModeChange('inhalte')}
+          />
+        ) : (
+          // ── Inhalts-Ansicht: Workspace mit Detail-Bearbeitung ────────────────
+          <Workspace
+            // Der Workspace wird mit dem einheitId über URL-Parametern initialisiert
+            // Die Komponente liest den Parameter selbst: ?einheit=<id>
+          />
+        )}
+      </main>
+
+      {/* Settings Modal ────────────────────────────────────────────────────────── */}
       {einheit && (
         <EinheitSettingsModal
           open={settingsOpen}
