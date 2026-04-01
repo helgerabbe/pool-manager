@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { toast } from 'sonner';
 import { useRecordLock } from '@/hooks/useRecordLock';
 import { getLernzielStatus, getLernpaketStatus, getEinheitFortschritt } from '@/lib/statusLogic';
 import { Button } from '@/components/ui/button';
@@ -899,23 +900,50 @@ export default function WorkspaceDetailPanel({
   }, [selectedNode]);
 
   const createLernpaket = useMutation({
-    mutationFn: (data) => base44.entities.Lernpakete.create({ ...data, einheit_id: einheit?.id }),
+    mutationFn: (data) => {
+      if (!data.titel_des_pakets?.trim() || !data.einheit_id?.trim()) {
+        throw new Error('Titel und Einheit sind erforderlich');
+      }
+      return base44.entities.Lernpakete.create({ ...data, einheit_id: einheit?.id });
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lernpakete'] }),
+    onError: (error) => {
+      console.error('Fehler beim Erstellen des Pakets:', error);
+      toast.error(`Fehler: ${error.message}`);
+    },
   });
+  
   const createLernziel = useMutation({
-    mutationFn: (data) => base44.entities.Lernziele.create({
-      ...data,
-      lernpaket_id: selectedNode?.paketId || selectedNode?.data?.lernpaket_id,
-    }),
+    mutationFn: (data) => {
+      if (!data.formulierung_fachsprache?.trim() || !data.lernpaket_id?.trim()) {
+        throw new Error('Formulierung und Lernpaket sind erforderlich');
+      }
+      return base44.entities.Lernziele.create({
+        ...data,
+        lernpaket_id: selectedNode?.paketId || selectedNode?.data?.lernpaket_id,
+      });
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lernziele'] }),
+    onError: (error) => {
+      console.error('Fehler beim Erstellen des Lernziels:', error);
+      toast.error(`Fehler: ${error.message}`);
+    },
   });
+  
   const createAufgabe = useMutation({
     mutationFn: (data) => {
+      if (!data.baustein_typ?.trim()) {
+        throw new Error('Baustein-Typ ist erforderlich');
+      }
       const clean = { ...data, lernpaket_id: selectedNode?.paketId, lernziel_id: selectedNode?.lernzielId };
       if (clean.lernziel_id === 'none') delete clean.lernziel_id;
       return base44.entities.Aufgabenbausteine.create(clean);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['aufgaben'] }),
+    onError: (error) => {
+      console.error('Fehler beim Erstellen der Aufgabe:', error);
+      toast.error(`Fehler: ${error.message}`);
+    },
   });
   const updateEinheit = useMutation({
     mutationFn: (data) => base44.entities.Einheiten.update(einheit?.id, data),
