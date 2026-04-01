@@ -177,6 +177,12 @@ export default function Workspace() {
   const zieleFuerThemenfeld  = lernziele.filter(lz => paketIdsFuerThemenfeld.includes(lz.lernpaket_id));
   const aufgabenFuerThemenfeld = aufgaben.filter(a => paketIdsFuerThemenfeld.includes(a.lernpaket_id) && a.anforderungsebene !== '3 - Projekt');
 
+  // Mapping für StatusLogik: paketId → phaseAktivitaeten
+  const phaseAktivitaetenByPaket = {};
+  paketeFuerEinheit.forEach(p => {
+    phaseAktivitaetenByPaket[p.id] = lernpaketAktivitaeten.filter(pa => pa.lernpaket_id === p.id);
+  });
+
   // Säule 3: globale Projektaufgaben der gesamten Einheit (unabhängig vom Themenfeld)
   const projektaufgabenFuerEinheit = aufgabenFuerEinheit.filter(a => a.anforderungsebene === '3 - Projekt');
 
@@ -282,7 +288,8 @@ export default function Workspace() {
             lernziele={zieleFuerEinheit}
             aufgaben={aufgabenFuerEinheit}
             mappings={mappings}
-            userEmail={authUser?.email || ''} />
+            userEmail={authUser?.email || ''}
+            phaseAktivitaeten={lernpaketAktivitaeten} />
         }
 
         <div className="ml-auto">
@@ -369,7 +376,8 @@ export default function Workspace() {
                 onSelect={handleSelect}
                 kannBearbeiten={kannDieseEinheitBearbeiten}
                 userEmail={authUser?.email || ''}
-                highlightedAtomIds={highlightedAtomIds} />
+                highlightedAtomIds={highlightedAtomIds}
+                phaseAktivitaeten={lernpaketAktivitaeten} />
               
               </div>
             </aside>

@@ -2,12 +2,12 @@ import React from 'react';
 import { getLernpaketStatus } from '@/lib/statusLogic';
 import { Layers, CheckSquare, FolderOpen } from 'lucide-react';
 
-export default function WorkspaceStats({ lernpakete, lernziele, aufgaben, mappings, userEmail }) {
+export default function WorkspaceStats({ lernpakete, lernziele, aufgaben, mappings, userEmail, phaseAktivitaeten = [] }) {
   const paketIds = lernpakete.map(p => p.id);
   const aufgabenEinheit = aufgaben.filter(a => paketIds.includes(a.lernpaket_id));
 
   const fertigePakete = lernpakete.filter(
-    p => getLernpaketStatus(p, lernziele, aufgaben, userEmail, mappings) === 'green'
+    p => getLernpaketStatus(p, lernziele, aufgaben, userEmail, mappings, phaseAktivitaeten) === 'green'
   ).length;
 
   const transferAufgaben = aufgabenEinheit.filter(a => a.anforderungsebene === '2 - Transfer');

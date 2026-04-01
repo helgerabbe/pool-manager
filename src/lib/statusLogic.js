@@ -118,19 +118,35 @@ export function isPaketLocked(paket) {
  * @param {object[]} lernziele  — (nicht mehr primär genutzt, für Kompatibilität erhalten)
  * @param {object[]} aufgaben   — (nicht mehr primär genutzt, für Kompatibilität erhalten)
  * @param {string}   userEmail
+ * @param {object[]} mappings   — MappingAufgabeBasisziel
+ * @param {object[]} phaseAktivitaeten — LernpaketPhaseAktivitaet (optional, neue Logik)
  * @returns {'green'|'yellow'|'red'}
  */
-export function getLernpaketStatus(paket, lernziele, aufgaben, userEmail = '', mappings = []) {
+export function getLernpaketStatus(paket, lernziele, aufgaben, userEmail = '', mappings = [], phaseAktivitaeten = []) {
   const config = paket.phasen_konfiguration || {};
   const PHASE_KEYS = ['Input', 'Übung', 'Abschluss'];
 
-  // ROT: Mindestens eine aktive Phase ohne zugeordnete Aktivität
-  const hatUnvollstaendigePhase = PHASE_KEYS.some(key => {
-    const phase = config[key] || {};
-    if (phase.disabled === true) return false; // deaktivierte Phase ignorieren
-    return !phase.selected_aktivitaet_id;
-  });
-  if (hatUnvollstaendigePhase) return 'red';
+  // Wenn phaseAktivitaeten vorhanden: nutze neue Logik (LernpaketPhaseAktivitaet)
+  if (phaseAktivitaeten.length > 0) {
+    const paketAktivitaeten = phaseAktivitaeten.filter(pa => pa.lernpaket_id === paket.id);
+    
+    // Prüfe ob alle aktiven Phasen mindestens eine Aktivität haben
+    const hatUnvollstaendigePhase = PHASE_KEYS.some(key => {
+      const phase = config[key] || {};
+      if (phase.disabled === true) return false; // deaktivierte Phase ignorieren
+      // Prüfe ob diese Phase eine Aktivität hat
+      return !paketAktivitaeten.some(pa => pa.phase === key);
+    });
+    if (hatUnvollstaendigePhase) return 'red';
+  } else {
+    // Fallback auf alte Logik für Rückwärtskompatibilität
+    const hatUnvollstaendigePhase = PHASE_KEYS.some(key => {
+      const phase = config[key] || {};
+      if (phase.disabled === true) return false;
+      return !phase.selected_aktivitaet_id;
+    });
+    if (hatUnvollstaendigePhase) return 'red';
+  }
 
   // GELB: Paket ist von jemand anderem gesperrt
   if (isPaketLocked(paket) && paket.locked_by !== userEmail) return 'yellow';
@@ -147,14 +163,16 @@ export function getLernpaketStatus(paket, lernziele, aufgaben, userEmail = '', m
  * @param {object[]} lernziele
  * @param {object[]} aufgaben
  * @param {string}   userEmail
+ * @param {object[]} mappings
+ * @param {object[]} phaseAktivitaeten — LernpaketPhaseAktivitaet (optional)
  * @returns {{ prozent: number, gruen: number, gesamt: number }}
  */
-export function getEinheitFortschritt(lernpakete, lernziele, aufgaben, userEmail = '', mappings = []) {
+export function getEinheitFortschritt(lernpakete, lernziele, aufgaben, userEmail = '', mappings = [], phaseAktivitaeten = []) {
   const gesamt = lernpakete.length;
   if (gesamt === 0) return { prozent: 0, gruen: 0, gesamt: 0 };
 
   const gruen = lernpakete.filter(
-    p => getLernpaketStatus(p, lernziele, aufgaben, userEmail, mappings) === 'green'
+    p => getLernpaketStatus(p, lernziele, aufgaben, userEmail, mappings, phaseAktivitaeten) === 'green'
   ).length;
 
   return { prozent: Math.round((gruen / gesamt) * 100), gruen, gesamt };

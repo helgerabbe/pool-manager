@@ -114,10 +114,10 @@ function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseA
   );
 }
 
-function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenzielleUndGesperrt, aktivitaetenMap, paketPhaseActivities, showNumber = false }) {
+function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenzielleUndGesperrt, aktivitaetenMap, paketPhaseActivities, showNumber = false, phaseAktivitaeten = [] }) {
   const [open, setOpen] = useState(false);
   const isSelected = selectedId === paket.id;
-  const status = getLernpaketStatus(paket, lernziele, aufgaben, userEmail, mappings);
+  const status = getLernpaketStatus(paket, lernziele, aufgaben, userEmail, mappings, phaseAktivitaeten);
   const lockedByOther = isPaketLocked(paket) && paket.locked_by !== userEmail;
   const lockedByMe = isPaketLocked(paket) && paket.locked_by === userEmail;
 
@@ -183,11 +183,11 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
   );
 }
 
-function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenziell, aktivitaetenMap, paketPhaseActivitiesMap, isSammelbecken = false }) {
+function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenziell, aktivitaetenMap, paketPhaseActivitiesMap, isSammelbecken = false, phaseAktivitaeten = [] }) {
   const [open, setOpen] = useState(true);
   const isSelected = selectedId === `themenfeld-${themenfeld.id}`;
 
-  const paketStatuses = lernpakete.map(p => getLernpaketStatus(p, lernziele, aufgaben, userEmail, mappings));
+  const paketStatuses = lernpakete.map(p => getLernpaketStatus(p, lernziele, aufgaben, userEmail, mappings, phaseAktivitaeten));
   const themenfeldStatus =
     paketStatuses.length === 0 ? 'red' :
     paketStatuses.every(s => s === 'green') ? 'green' :
@@ -279,6 +279,7 @@ export default function SidebarTree({
   kannBearbeiten,
   userEmail = '',
   highlightedAtomIds = new Set(),
+  phaseAktivitaeten = [],
 }) {
   const selectedId = selectedNode?.id;
   const [mobileThemenfeldId, setMobileThemenfeldId] = useState(themenfelder[0]?.id || null);
@@ -301,7 +302,7 @@ export default function SidebarTree({
     ])
   );
 
-  const { prozent, gruen, gesamt } = getEinheitFortschritt(lernpakete, lernziele, aufgaben, userEmail, mappings);
+  const { prozent, gruen, gesamt } = getEinheitFortschritt(lernpakete, lernziele, aufgaben, userEmail, mappings, phaseAktivitaeten);
   const isSequenziell = einheit?.navigationslogik === 'Sequenziell';
   const einheitStatus = gesamt === 0 ? 'red' : prozent === 100 ? 'green' : 'yellow';
 
@@ -381,6 +382,7 @@ export default function SidebarTree({
               aktivitaetenMap={aktivitaetenMap}
               paketPhaseActivitiesMap={paketPhaseActivitiesMap}
               isSammelbecken={true}
+              phaseAktivitaeten={phaseAktivitaeten}
             />
           </div>
         )}
@@ -402,6 +404,7 @@ export default function SidebarTree({
                 isSequenziell={isSequenziell}
                 aktivitaetenMap={aktivitaetenMap}
                 paketPhaseActivitiesMap={paketPhaseActivitiesMap}
+                phaseAktivitaeten={phaseAktivitaeten}
               />
             ))}
           </div>
@@ -428,6 +431,7 @@ export default function SidebarTree({
                   aktivitaetenMap={aktivitaetenMap}
                   paketPhaseActivities={paketPhaseActivitiesMap[paket.id] || []}
                   showNumber={tf?.bearbeitungsmodus === 'sequenziell'}
+                  phaseAktivitaeten={phaseAktivitaeten}
                 />
               ));
             })()}
