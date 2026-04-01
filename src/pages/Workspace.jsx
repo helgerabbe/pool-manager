@@ -5,7 +5,6 @@ import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
 import SidebarTree from '@/components/workspace/SidebarTree';
 import WorkspaceDetailPanel from '@/components/workspace/WorkspaceDetailPanel';
-import WorkspaceStats from '@/components/workspace/WorkspaceStats';
 import ActivityDetailView from '@/components/workspace/ActivityDetailView';
 import AllgemeineAufgabenView from '@/components/allgemeineAufgaben/AllgemeineAufgabenView';
 import ProjektaufgabenView from '@/components/projektaufgaben/ProjektaufgabenView';
