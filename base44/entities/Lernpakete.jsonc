@@ -4,11 +4,15 @@
   "properties": {
     "einheit_id": {
       "type": "string",
-      "description": "Referenz zur \u00fcbergeordneten Einheit (Foreign Key)"
+      "description": "Referenz zur \u00fcbergeordneten Einheit (Foreign Key) \u2014 f\u00fcr R\u00fcckw\u00e4rtskompatibilit\u00e4t erhalten"
+    },
+    "themenfeld_id": {
+      "type": "string",
+      "description": "Referenz zum \u00fcbergeordneten Themenfeld (Foreign Key) \u2014 prim\u00e4re Zuordnung"
     },
     "reihenfolge_nummer": {
       "type": "number",
-      "description": "Reihenfolge innerhalb der Einheit"
+      "description": "Reihenfolge innerhalb des Themenfelds"
     },
     "titel_des_pakets": {
       "type": "string",

@@ -33,9 +33,9 @@ export default function Workspace() {
 
   // ── State ────────────────────────────────────────────────────────────────────
   const [selectedEinheitId, setSelectedEinheitId] = useState(initialEinheitId);
+  const [selectedThemenfeldId, setSelectedThemenfeldId] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
   const [activeTab, setActiveTab] = useState('basis');
-  // Cross-Highlighting: Set von Lernziel-IDs, die hervorgehoben werden sollen
   const [highlightedAtomIds, setHighlightedAtomIds] = useState(new Set());
 
   // ── Queries ──────────────────────────────────────────────────────────────────
@@ -68,6 +68,12 @@ export default function Workspace() {
     enabled: !!selectedEinheitId
   });
 
+  const { data: themenfelder = [] } = useQuery({
+    queryKey: ['themenfelder', selectedEinheitId],
+    queryFn: () => base44.entities.Themenfeld.filter({ einheit_id: selectedEinheitId }),
+    enabled: !!selectedEinheitId
+  });
+
   // ── Aktive Einheit ────────────────────────────────────────────────────────────
   const einheit = einheiten.find((e) => e.id === selectedEinheitId) || null;
 
@@ -86,10 +92,11 @@ export default function Workspace() {
   const istAdmin = rolle === ROLLEN.ADMIN;
 
   // ── Callbacks ─────────────────────────────────────────────────────────────────
-  const handleSelect = useCallback((node) => setSelectedNode(node), []);
+  // handleSelect is defined below with themenfeld-awareness
 
   const handleEinheitChange = (id) => {
     setSelectedEinheitId(id);
+    setSelectedThemenfeldId(null);
     setSelectedNode({ type: 'einheit', id });
     setHighlightedAtomIds(new Set());
     const url = new URL(window.location.href);
@@ -101,6 +108,23 @@ export default function Workspace() {
   const handleAtomHighlight = useCallback((atomIds) => {
     setHighlightedAtomIds(new Set(atomIds));
   }, []);
+
+  // Beim Navigieren zu einem Themenfeld: selectedThemenfeldId setzen
+  const handleSelect = useCallback((node) => {
+    if (node?.type === 'themenfeld') setSelectedThemenfeldId(node.themenfeldId);
+    setSelectedNode(node);
+  }, []);
+
+  // Pakete/Ziele/Aufgaben gefiltert nach aktivem Themenfeld (für Säulen 1+2)
+  const paketeFuerThemenfeld = selectedThemenfeldId
+    ? paketeFuerEinheit.filter(p => p.themenfeld_id === selectedThemenfeldId)
+    : paketeFuerEinheit;
+  const paketIdsFuerThemenfeld = paketeFuerThemenfeld.map(p => p.id);
+  const zieleFuerThemenfeld  = lernziele.filter(lz => paketIdsFuerThemenfeld.includes(lz.lernpaket_id));
+  const aufgabenFuerThemenfeld = aufgaben.filter(a => paketIdsFuerThemenfeld.includes(a.lernpaket_id) && a.anforderungsebene !== '3 - Projekt');
+
+  // Säule 3: globale Projektaufgaben der gesamten Einheit (unabhängig vom Themenfeld)
+  const projektaufgabenFuerEinheit = aufgabenFuerEinheit.filter(a => a.anforderungsebene === '3 - Projekt');
 
   // ── Delete-Mutations ──────────────────────────────────────────────────────────
   const deleteLernpaket = useMutation({
@@ -253,6 +277,7 @@ export default function Workspace() {
                 lernziele={zieleFuerEinheit}
                 aufgaben={aufgabenFuerEinheit}
                 mappings={mappings}
+                themenfelder={themenfelder}
                 selectedNode={selectedNode}
                 onSelect={handleSelect}
                 kannBearbeiten={kannDieseEinheitBearbeiten}
@@ -271,6 +296,7 @@ export default function Workspace() {
                 lernpakete={paketeFuerEinheit}
                 lernziele={zieleFuerEinheit}
                 aufgaben={aufgabenFuerEinheit}
+                themenfelder={themenfelder}
                 userEmail={authUser?.email}
                 kannBearbeiten={kannDieseEinheitBearbeiten}
                 istAdmin={istAdmin}
@@ -286,13 +312,13 @@ export default function Workspace() {
             </main>
           </TabsContent>
 
-          {/* ── Säule 2: Transfer-Übungen ─────────────────────────────────────── */}
+          {/* ── Säule 2: Transfer-Übungen (Themenfeld-gefiltert) ──────────────── */}
           <TabsContent value="transfer" className="flex-1 overflow-hidden m-0 p-0">
             <TransferSaeule
             ebene="2 - Transfer"
-            lernpakete={paketeFuerEinheit}
-            lernziele={zieleFuerEinheit}
-            aufgaben={aufgabenFuerEinheit}
+            lernpakete={paketeFuerThemenfeld}
+            lernziele={zieleFuerThemenfeld}
+            aufgaben={aufgabenFuerThemenfeld}
             mappings={mappings}
             einheitId={einheit.id}
             kannBearbeiten={kannDieseEinheitBearbeiten}
@@ -301,13 +327,13 @@ export default function Workspace() {
           
           </TabsContent>
 
-          {/* ── Säule 3: Anwendungs-Projekte ──────────────────────────────────── */}
+          {/* ── Säule 3: Projekte (globaler Einheits-Scope) ───────────────────── */}
           <TabsContent value="projekt" className="flex-1 overflow-hidden m-0 p-0">
             <TransferSaeule
             ebene="3 - Projekt"
             lernpakete={paketeFuerEinheit}
             lernziele={zieleFuerEinheit}
-            aufgaben={aufgabenFuerEinheit}
+            aufgaben={projektaufgabenFuerEinheit}
             mappings={mappings}
             einheitId={einheit.id}
             kannBearbeiten={kannDieseEinheitBearbeiten}

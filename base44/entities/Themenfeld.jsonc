@@ -1,0 +1,36 @@
+{
+  "name": "Themenfeld",
+  "type": "object",
+  "properties": {
+    "einheit_id": {
+      "type": "string",
+      "description": "Referenz zur \u00fcbergeordneten Einheit (Foreign Key)"
+    },
+    "titel": {
+      "type": "string",
+      "description": "Titel des Themenfelds (z.B. 'Grundrechenarten', 'Textanalyse')"
+    },
+    "beschreibung": {
+      "type": "string",
+      "description": "Kurzbeschreibung des Themenfelds (optional)"
+    },
+    "reihenfolge": {
+      "type": "number",
+      "description": "Sortierreihenfolge innerhalb der Einheit"
+    },
+    "sync_status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "exported",
+        "modified"
+      ],
+      "default": "new",
+      "description": "Sync-Status f\u00fcr Moodle-Export-Tracking"
+    }
+  },
+  "required": [
+    "einheit_id",
+    "titel"
+  ]
+}
