@@ -1,12 +1,13 @@
 import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Layers, Home, ShieldCheck, DatabaseZap, Download, LayoutTemplate, Settings2, PlusCircle, LogOut } from 'lucide-react';
+import { Outlet, Link, useLocation, useParams } from 'react-router-dom';
+import { Layers, Home, ShieldCheck, DatabaseZap, Download, LayoutTemplate, Settings2, PlusCircle, LogOut, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
 import RoleSwitcher from '@/components/layout/RoleSwitcher';
 import WartungsBanner from '@/components/layout/WartungsBanner';
 import NavigationTooltip from '@/components/layout/NavigationTooltip';
 import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
 
 // Wiederverwendbarer Icon-Nav-Link mit sofortigem Tooltip
 function NavIconLink({ to, icon: Icon, label, isActive }) {
@@ -28,9 +29,31 @@ function NavIconLink({ to, icon: Icon, label, isActive }) {
   );
 }
 
+// ── Breadcrumb-Logik ─────────────────────────────────────────────────────────
+
+function useBreadcrumb(location) {
+  const urlParams = new URLSearchParams(location.search);
+  const einheitId = urlParams.get('einheit');
+
+  const { data: einheiten = [] } = useQuery({
+    queryKey: ['einheiten'],
+    queryFn: () => base44.entities.Einheiten.list('-created_date'),
+    enabled: !!einheitId,
+  });
+
+  const isWorkspace = location.pathname === '/workspace' || location.pathname.startsWith('/einheit/');
+  const einheit = einheiten.find(e => e.id === einheitId);
+
+  if (!isWorkspace) return null;
+  return einheit ? `${einheit.fach} – ${einheit.titel_der_einheit}` : 'Arbeitsbereich';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function AppLayout() {
   const location = useLocation();
   const { rolle, realRolle, permissions } = useRBAC();
+  const breadcrumbLabel = useBreadcrumb(location);
 
   const isActive = (path) =>
     path === '/'
@@ -45,16 +68,22 @@ export default function AppLayout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
 
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-3 shrink-0">
-              <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
-                <Layers className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <div>
-                <span className="text-lg font-bold text-foreground tracking-tight">PoolPlaner</span>
-                <span className="hidden sm:inline text-xs text-muted-foreground ml-2">Kollaborative Unterrichtsplanung</span>
-              </div>
-            </Link>
+            {/* Logo + Breadcrumb */}
+            <div className="flex items-center gap-3 min-w-0">
+              <Link to="/" className="flex items-center gap-2.5 shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
+                  <Layers className="w-4 h-4 text-primary-foreground" />
+                </div>
+                <span className="text-base font-bold text-foreground tracking-tight hidden sm:inline">PoolPlaner</span>
+              </Link>
+
+              {breadcrumbLabel && (
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
+                  <span className="text-sm text-muted-foreground truncate max-w-[240px]">{breadcrumbLabel}</span>
+                </div>
+              )}
+            </div>
 
             {/* Icon-Nav */}
             <nav className="flex items-center gap-1" aria-label="Hauptnavigation">

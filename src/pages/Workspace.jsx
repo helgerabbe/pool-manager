@@ -7,17 +7,17 @@ import SidebarTree from '@/components/workspace/SidebarTree';
 import WorkspaceDetailPanel from '@/components/workspace/WorkspaceDetailPanel';
 import WorkspaceStats from '@/components/workspace/WorkspaceStats';
 import TransferSaeule from '@/components/workspace/TransferSaeule';
-import PresenceBadge from '@/components/workspace/PresenceBadge';
 import { usePresence } from '@/hooks/usePresence';
 import { isStructurallyLocked } from '@/hooks/useStructuralLock';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Layers, Zap, FolderOpen, LayoutGrid, SlidersHorizontal, Lock, ArrowRight, Settings } from 'lucide-react';
+import { BookOpen, Layers, Zap, FolderOpen, Lock, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import StrukturBoardEmbedded from '@/components/workspace/StrukturBoardEmbedded';
 import EinheitSettingsModal, { UnitRoleBadge } from '@/components/einheiten/EinheitSettingsModal';
+import UnitToolbar from '@/components/layout/UnitToolbar';
 
 /**
  * Workspace — Drei-Säulen-Architektur
@@ -244,12 +244,12 @@ export default function Workspace() {
         </div>
       )}
 
-      {/* ── Top-Bar ──────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border bg-card shrink-0 flex-wrap gap-y-2">
+      {/* ── Top-Bar: nur Einheiten-Selector ─────────────────────────────────── */}
+      <div className="flex items-center gap-3 px-4 py-2 border-b border-border bg-card shrink-0 flex-wrap gap-y-1">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-sm text-muted-foreground shrink-0">Einheit:</span>
+          <span className="text-sm text-muted-foreground shrink-0 hidden sm:inline">Einheit:</span>
           <Select value={selectedEinheitId || ''} onValueChange={handleEinheitChange}>
-            <SelectTrigger className="w-56 h-8 text-sm">
+            <SelectTrigger className="w-64 h-8 text-sm">
               <SelectValue placeholder="Einheit auswählen…" />
             </SelectTrigger>
             <SelectContent>
@@ -262,64 +262,33 @@ export default function Workspace() {
           </Select>
         </div>
 
-        {/* Settings-Button */}
-        {einheit && (
-          <button
-            onClick={() => setSettingsOpen(true)}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            title="Einheiten-Einstellungen"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
-        )}
-
-        {/* View-Toggle */}
-        {einheit && (
-          <div className="flex items-center bg-muted rounded-lg p-0.5 gap-0.5">
-            <button
-              onClick={() => handleViewModeChange('struktur')}
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
-                viewMode === 'struktur'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              Struktur
-            </button>
-            <button
-              onClick={() => handleViewModeChange('detail')}
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
-                viewMode === 'detail'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              Detail
-            </button>
-          </div>
-        )}
-
         {/* Statistik-Leiste (nur Detail-Modus) */}
         {einheit && viewMode === 'detail' &&
-        <WorkspaceStats
-          lernpakete={paketeFuerEinheit}
-          lernziele={zieleFuerEinheit}
-          aufgaben={aufgabenFuerEinheit}
-          mappings={mappings}
-          userEmail={authUser?.email || ''} />
+          <WorkspaceStats
+            lernpakete={paketeFuerEinheit}
+            lernziele={zieleFuerEinheit}
+            aufgaben={aufgabenFuerEinheit}
+            mappings={mappings}
+            userEmail={authUser?.email || ''} />
         }
 
-        <div className="ml-auto flex items-center gap-3 shrink-0">
-          <PresenceBadge onlineUsers={onlineUsers} />
+        <div className="ml-auto">
           <Link to="/einheiten" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
             ← Übersicht
           </Link>
         </div>
       </div>
+
+      {/* ── Sub-Header: UnitToolbar ───────────────────────────────────────────── */}
+      <UnitToolbar
+        einheit={einheit}
+        viewMode={viewMode}
+        onViewModeChange={handleViewModeChange}
+        onSettingsOpen={() => setSettingsOpen(true)}
+        onlineUsers={onlineUsers}
+        structLocked={structLocked}
+        currentUserEmail={authUser?.email}
+      />
 
       {/* ── Haupt-Inhalt ─────────────────────────────────────────────────────── */}
       {!einheit ?
