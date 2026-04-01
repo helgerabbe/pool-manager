@@ -96,33 +96,47 @@ export function getLernzielStatus(lernziel, aufgaben, paketId, userEmail = '', m
   return 'yellow';
 }
 
+const LOCK_TIMEOUT_MS = 30 * 60 * 1000; // 30 Minuten
+
 /**
- * Berechnet den Ampel-Status eines Lernpakets.
+ * Prüft ob ein Lernpaket aktuell aktiv gesperrt ist (Lock nicht abgelaufen).
+ */
+export function isPaketLocked(paket) {
+  if (!paket.locked_by || !paket.locked_at) return false;
+  const age = Date.now() - new Date(paket.locked_at).getTime();
+  return age < LOCK_TIMEOUT_MS;
+}
+
+/**
+ * Berechnet den Ampel-Status eines Lernpakets (neue phasenbasierte Logik).
  *
- * - Rot:    Keine Lernziele vorhanden.
- * - Gelb:   Lernziele vorhanden, aber mindestens eines ist Gelb oder Rot.
- * - Grün:   Alle Lernziele sind Grün.
+ * - ROT:   Mindestens eine aktive Phase hat KEINE Aktivität zugeordnet.
+ * - GELB:  Paket ist aktuell durch einen anderen Nutzer gesperrt.
+ * - GRÜN:  Nicht gesperrt UND alle aktiven Phasen haben eine Aktivität.
  *
  * @param {object}   paket
- * @param {object[]} lernziele — Lernziele für DIESES Paket (bereits gefiltert)
- * @param {object[]} aufgaben
+ * @param {object[]} lernziele  — (nicht mehr primär genutzt, für Kompatibilität erhalten)
+ * @param {object[]} aufgaben   — (nicht mehr primär genutzt, für Kompatibilität erhalten)
  * @param {string}   userEmail
  * @returns {'green'|'yellow'|'red'}
  */
 export function getLernpaketStatus(paket, lernziele, aufgaben, userEmail = '', mappings = []) {
-  // WICHTIG: lernziele sollte bereits für dieses Paket gefiltert sein
-  // (wird vom Caller mit paketZiele gefiltert)
-  const paketZiele = lernziele;
+  const config = paket.phasen_konfiguration || {};
+  const PHASE_KEYS = ['Input', 'Übung', 'Abschluss'];
 
-  if (paketZiele.length === 0) return 'red';
+  // ROT: Mindestens eine aktive Phase ohne zugeordnete Aktivität
+  const hatUnvollstaendigePhase = PHASE_KEYS.some(key => {
+    const phase = config[key] || {};
+    if (phase.disabled === true) return false; // deaktivierte Phase ignorieren
+    return !phase.selected_aktivitaet_id;
+  });
+  if (hatUnvollstaendigePhase) return 'red';
 
-  const statusListe = paketZiele.map(lz =>
-    getLernzielStatus(lz, aufgaben, paket.id, userEmail, mappings)
-  );
+  // GELB: Paket ist von jemand anderem gesperrt
+  if (isPaketLocked(paket) && paket.locked_by !== userEmail) return 'yellow';
 
-  if (statusListe.every(s => s === 'green'))  return 'green';
-  if (statusListe.some(s => s === 'red'))     return 'red';
-  return 'yellow';
+  // GRÜN: Alle aktiven Phasen haben eine Aktivität und kein fremder Lock
+  return 'green';
 }
 
 /**

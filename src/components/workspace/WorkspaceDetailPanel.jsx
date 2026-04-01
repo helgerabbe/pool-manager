@@ -19,8 +19,10 @@ import { Label } from '@/components/ui/label';
 import {
   BookOpen, Layers, Target, Puzzle, Plus, Edit, Trash2,
   Clock, Lock, Unlock, AlertCircle, CheckCircle2, ArrowDown,
-  TrendingUp, AlertTriangle, Eye, AlertTriangle as WarningIcon
+  TrendingUp, AlertTriangle, Eye, AlertTriangle as WarningIcon, UserCheck, PenLine
 } from 'lucide-react';
+import { useLernpaketLock } from '@/hooks/useLernpaketLock';
+import { isPaketLocked } from '@/lib/statusLogic';
 
 const kategorieColors = {
   'Fachwissen':          'bg-blue-100 text-blue-700',
@@ -211,6 +213,19 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   const [editLernzielData, setEditLernzielData] = useState(null);
   const [expandedPhase, setExpandedPhase] = useState(null);
   const queryClient = useQueryClient();
+  const { acquireLock, releaseLock, forceUnlock, isLocking } = useLernpaketLock(paket.id, userEmail);
+
+  const isLockedByOther = isPaketLocked(paket) && paket.locked_by !== userEmail;
+  const isLockedByMe    = isPaketLocked(paket) && paket.locked_by === userEmail;
+  // Bearbeitungsmodus: Lock gehört mir
+  const inEditMode = isLockedByMe;
+
+  const handleStartEdit = async () => {
+    await acquireLock();
+  };
+  const handleStopEdit = async () => {
+    await releaseLock();
+  };
 
   const updateLernziel = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Lernziele.update(id, data),
@@ -282,6 +297,38 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
         )}
       </div>
 
+      {/* ── Lock-Banner ── */}
+      {isLockedByOther && (
+        <div className="flex items-start gap-3 p-3 rounded-xl border-2 border-amber-300 bg-amber-50 text-sm text-amber-800">
+          <Lock className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+          <div className="flex-1">
+            <p className="font-semibold">Wird gerade bearbeitet</p>
+            <p className="text-xs mt-0.5 text-amber-700">
+              <strong>{paket.locked_by}</strong> bearbeitet dieses Paket gerade. Bitte warten Sie, bis die Bearbeitung abgeschlossen ist.
+            </p>
+          </div>
+        </div>
+      )}
+      {isLockedByMe && (
+        <div className="flex items-center justify-between gap-3 p-3 rounded-xl border-2 border-primary/40 bg-primary/5 text-sm">
+          <div className="flex items-center gap-2 text-primary">
+            <PenLine className="w-4 h-4" />
+            <span className="font-medium">Bearbeitungsmodus aktiv</span>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleStopEdit} className="gap-1.5 text-xs">
+            <Unlock className="w-3.5 h-3.5" /> Bearbeitung beenden
+          </Button>
+        </div>
+      )}
+      {!inEditMode && !isLockedByOther && kannBearbeiten && (
+        <Button onClick={handleStartEdit} disabled={isLocking} variant="outline" size="sm" className="gap-2 w-full">
+          {isLocking
+            ? <div className="w-3.5 h-3.5 border-2 border-muted border-t-primary rounded-full animate-spin" />
+            : <PenLine className="w-3.5 h-3.5" />}
+          Paket bearbeiten
+        </Button>
+      )}
+
       {/* Lernziele-Anzeige */}
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Lernziele</h3>
@@ -304,7 +351,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
               <Edit className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
             </button>
           ))}
-          {kannBearbeiten && (
+          {inEditMode && (
             <button
               onClick={onNewLernziel}
               className="w-full flex items-center gap-2 p-3 rounded-lg border border-dashed border-border hover:border-primary/40 hover:bg-primary/5 transition-colors text-left text-sm text-muted-foreground hover:text-primary"
@@ -347,7 +394,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                     )}
                   </div>
                 </button>
-                {kannBearbeiten && (
+                {inEditMode && (
                   <Switch
                     checked={!isDisabled}
                     onCheckedChange={() => handlePhaseToggle(phase.key)}

@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { ChevronRight, BookOpen, Layers, Target, Puzzle, Lock, Plus, Edit } from 'lucide-react';
+import { ChevronRight, BookOpen, Layers, Puzzle, Lock, Plus, Edit, UserRound } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import {
-  getLernzielStatus,
   getLernpaketStatus,
   getEinheitFortschritt,
   getAufgabeStatus,
   ebene2FehltMapping,
+  isPaketLocked,
 } from '@/lib/statusLogic';
-import { AlertTriangle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 
@@ -159,7 +159,9 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
   const [open, setOpen]  = useState(initialOpen ?? false);
   const isSelected       = selectedId === paket.id;
   const status           = getLernpaketStatus(paket, lernziele, aufgaben, userEmail, mappings);
-  
+  const lockedByOther    = isPaketLocked(paket) && paket.locked_by !== userEmail;
+  const lockedByMe       = isPaketLocked(paket) && paket.locked_by === userEmail;
+
   const PHASES = [
     { key: 'input', label: 'Input (Erarbeitung)' },
     { key: 'uebung', label: 'Übung' },
@@ -184,7 +186,9 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
               ? 'bg-primary text-primary-foreground'
               : isSequenzielleUndGesperrt
                 ? 'text-muted-foreground/50 bg-muted/30'
-                : 'text-foreground hover:bg-muted'
+                : lockedByOther
+                  ? 'text-foreground hover:bg-amber-50 bg-amber-50/50'
+                  : 'text-foreground hover:bg-muted'
           )}
           title={isSequenzielleUndGesperrt ? 'Paket ist gesperrt: Vorherige Pakete müssen vollständig sein' : undefined}
         >
@@ -192,7 +196,21 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
             {paket.reihenfolge_nummer}
           </div>
           <span className="truncate flex-1">{paket.titel_des_pakets}</span>
-          {!isSelected && <AmpelDot status={status} size="md" />}
+          {/* Lock-Indikator mit Tooltip */}
+          {!isSelected && lockedByOther && (
+            <span
+              title={`Wird bearbeitet von: ${paket.locked_by}`}
+              className="flex items-center gap-0.5 text-[10px] text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded shrink-0"
+            >
+              <UserRound className="w-2.5 h-2.5" />
+            </span>
+          )}
+          {!isSelected && lockedByMe && (
+            <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded shrink-0 flex items-center gap-0.5">
+              <Lock className="w-2.5 h-2.5" />
+            </span>
+          )}
+          {!isSelected && !lockedByOther && !lockedByMe && <AmpelDot status={status} size="md" />}
         </button>
       </div>
 

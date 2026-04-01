@@ -27,16 +27,13 @@
           "properties": {
             "disabled": {
               "type": "boolean",
-              "default": false,
-              "description": "Ob die Erarbeitungsphase \u00fcbersprungen wird"
+              "default": false
             },
             "selected_aktivitaet_id": {
-              "type": "string",
-              "description": "ID der gew\u00e4hlten Aktivit\u00e4t"
+              "type": "string"
             },
             "field_values": {
-              "type": "object",
-              "description": "Werte der dynamischen Formularfelder"
+              "type": "object"
             }
           }
         },
@@ -71,6 +68,15 @@
           }
         }
       }
+    },
+    "locked_by": {
+      "type": "string",
+      "description": "E-Mail des Nutzers, der das Paket gerade bearbeitet (Lock)"
+    },
+    "locked_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel, wann der Lock gesetzt wurde (f\u00fcr Auto-Timeout nach 30 Min)"
     },
     "sync_status": {
       "type": "string",
