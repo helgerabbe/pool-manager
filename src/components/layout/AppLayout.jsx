@@ -87,13 +87,16 @@ export default function AppLayout() {
               )}
             </div>
 
-            {/* Rechts: NUR globale Icons (Home, Admin, Profil) */}
+            {/* Rechts: NUR globale Icons (Home, Einheiten, Admin, Profil) */}
             <nav className="flex items-center gap-1" aria-label="Globale Navigation">
 
               <div className="w-px h-6 bg-border mx-1" />
 
               {/* Home / Startseite */}
               <NavIconLink to="/" icon={Home} label="Startseite" isActive={isActive('/')} />
+
+              {/* Einheiten / Arbeitsbereich */}
+              <NavIconLink to="/einheiten" icon={Layers} label="Einheiten / Arbeitsbereich" isActive={isActive('/einheiten') || isActive('/workspace')} />
 
               {/* Admin-Bereich (nur für Admins) */}
               {permissions.kannBenutzerVerwalten && (
