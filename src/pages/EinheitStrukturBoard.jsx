@@ -346,6 +346,39 @@ export default function EinheitStrukturBoard({
       .map(p => p.id)
   );
 
+  // ── Speichern (muss VOR Effekten definiert sein) ──────────────────────────────
+  const handleSpeichern = useCallback(async () => {
+    setSaving(true);
+    setLastError(null);
+
+    try {
+      const response = await base44.functions.invoke('saveEinheitStruktur', {
+        einheit_id: einheitId,
+        spalten,
+        paketeMap,
+        modesMap,
+      });
+
+      if (response.data?.success) {
+        toast.success('Struktur erfolgreich gespeichert.');
+        setIsDirty(false);
+        setLastError(null);
+        queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+        queryClient.invalidateQueries({ queryKey: ['themenfelder'] });
+      } else {
+        const errorMsg = response.data?.error || 'Unbekannter Fehler';
+        setLastError('Fehler beim Speichern. Bitte versuchen Sie es erneut.');
+        toast.error('Fehler beim Speichern: ' + errorMsg);
+      }
+    } catch (error) {
+      console.error('Error saving structure:', error);
+      setLastError('Fehler beim Speichern. Bitte versuchen Sie es erneut.');
+      toast.error('Fehler beim Speichern der Struktur.');
+    } finally {
+      setSaving(false);
+    }
+  }, [einheitId, spalten, paketeMap, modesMap, queryClient]);
+
   // ── Initialisierung ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (initialized || paketeLoading || tfLoading) return;
@@ -504,41 +537,7 @@ export default function EinheitStrukturBoard({
     });
   };
 
-  // ── Speichern ─────────────────────────────────────────────────────────────────
 
-  const handleSpeichern = useCallback(async () => {
-    setSaving(true);
-    setLastError(null);
-
-    try {
-      // Backend-Aufruf via Backend-Funktion
-      const response = await base44.functions.invoke('saveEinheitStruktur', {
-        einheit_id: einheitId,
-        spalten,
-        paketeMap,
-        modesMap,
-      });
-
-      if (response.data?.success) {
-        toast.success('Struktur erfolgreich gespeichert.');
-        setIsDirty(false);
-        setLastError(null);
-        queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-        queryClient.invalidateQueries({ queryKey: ['themenfelder'] });
-        // Nicht automatisch navigieren — Benutzer bleibt auf Board
-      } else {
-        const errorMsg = response.data?.error || 'Unbekannter Fehler';
-        setLastError('Fehler beim Speichern. Bitte versuchen Sie es erneut.');
-        toast.error('Fehler beim Speichern: ' + errorMsg);
-      }
-    } catch (error) {
-    console.error('Error saving structure:', error);
-    setLastError('Fehler beim Speichern. Bitte versuchen Sie es erneut.');
-    toast.error('Fehler beim Speichern der Struktur.');
-    } finally {
-    setSaving(false);
-    }
-    }, [einheitId, spalten, paketeMap, modesMap, queryClient]);
 
   // ── Navigation-Blocker Handler ─────────────────────────────────────────────
   const handleSaveAndNavigate = async () => {
