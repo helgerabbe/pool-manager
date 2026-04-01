@@ -55,6 +55,10 @@ export default function EinheitCreateWizard() {
     navigate(`/workspace?einheit=${einheitId}&fromWizard=1`);
   };
 
+  const handleSkipToStruktur = () => {
+    navigate(`/workspace?einheit=${einheitId}&fromWizard=1`);
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Header */}
@@ -109,6 +113,7 @@ export default function EinheitCreateWizard() {
           <WizardStep2Coach
             onDone={handleStep2Done}
             onSkip={() => setCurrentStep(3)}
+            onSkipAll={handleSkipToStruktur}
           />
         )}
         {currentStep === 3 && einheitId && (
@@ -116,6 +121,7 @@ export default function EinheitCreateWizard() {
             einheitId={einheitId}
             initialBraindump={coachOutput}
             onDone={handleStep3Done}
+            onSkipAll={handleSkipToStruktur}
           />
         )}
         {currentStep === 4 && einheitId && (
@@ -123,6 +129,7 @@ export default function EinheitCreateWizard() {
             einheitId={einheitId}
             pakete={paketeCreated}
             onDone={handleStep4Done}
+            onSkipAll={handleSkipToStruktur}
           />
         )}
       </div>

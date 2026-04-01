@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, SkipForward } from 'lucide-react';
+import { ChevronRight, SkipForward, LogIn } from 'lucide-react';
 import DidaktikCoachChat from '@/components/ai/DidaktikCoachChat';
 
-export default function WizardStep2Coach({ onDone, onSkip }) {
+export default function WizardStep2Coach({ onDone, onSkip, onSkipAll }) {
   const [capturedText, setCapturedText] = useState('');
 
   const handleUebernehmen = (text) => {
@@ -25,10 +25,16 @@ export default function WizardStep2Coach({ onDone, onSkip }) {
       />
 
       <div className="flex justify-between pt-2 border-t border-border">
-        <Button variant="ghost" onClick={onSkip} className="gap-2 text-muted-foreground">
-          <SkipForward className="w-4 h-4" />
-          Überspringen
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" onClick={onSkip} className="gap-2 text-muted-foreground">
+            <SkipForward className="w-4 h-4" />
+            Überspringen
+          </Button>
+          <Button variant="outline" onClick={onSkipAll} className="gap-2 text-muted-foreground border-dashed">
+            <LogIn className="w-4 h-4" />
+            Überspringen & Leer starten
+          </Button>
+        </div>
         <Button
           onClick={() => onDone(capturedText)}
           disabled={!capturedText}

@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, SkipForward } from 'lucide-react';
 import KILernpaketAssistent from '@/components/einheiten/KILernpaketAssistent';
 
-export default function WizardStep3Generator({ einheitId, initialBraindump, onDone }) {
+export default function WizardStep3Generator({ einheitId, initialBraindump, onDone, onSkipAll }) {
   const [done, setDone] = useState(false);
 
   const { data: einheiten = [] } = useQuery({
@@ -37,14 +37,18 @@ export default function WizardStep3Generator({ einheitId, initialBraindump, onDo
         onCreated={() => setDone(true)}
       />
 
-      {done && (
-        <div className="flex justify-end pt-2 border-t border-border">
+      <div className="flex justify-between pt-2 border-t border-border">
+        <Button variant="outline" onClick={onSkipAll} className="gap-2 text-muted-foreground border-dashed">
+          <SkipForward className="w-4 h-4" />
+          Überspringen & Leer starten
+        </Button>
+        {done && (
           <Button onClick={() => onDone(lernpakete.filter(lp => lp.einheit_id === einheitId))} className="gap-2">
             <ChevronRight className="w-4 h-4" />
             Weiter: Basis-Befüllung
           </Button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

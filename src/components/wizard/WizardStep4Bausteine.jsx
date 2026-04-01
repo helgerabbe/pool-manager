@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, BookOpen, Check } from 'lucide-react';
+import { Loader2, BookOpen, Check, SkipForward } from 'lucide-react';
 import { toast } from 'sonner';
 
 const PHASEN = [
@@ -12,7 +12,7 @@ const PHASEN = [
   { key: 'Abschluss', label: 'Abschluss', color: 'bg-purple-50 border-purple-200' },
 ];
 
-export default function WizardStep4Bausteine({ einheitId, onDone }) {
+export default function WizardStep4Bausteine({ einheitId, onDone, onSkipAll }) {
   const queryClient = useQueryClient();
   const [generating, setGenerating] = useState(false);
   const [done, setDone] = useState(false);
@@ -134,8 +134,9 @@ export default function WizardStep4Bausteine({ einheitId, onDone }) {
       )}
 
       <div className="flex justify-between pt-2 border-t border-border">
-        <Button variant="outline" onClick={onDone} className="text-muted-foreground">
-          Überspringen → Zum Workspace
+        <Button variant="outline" onClick={onSkipAll || onDone} className="gap-2 text-muted-foreground border-dashed">
+          <SkipForward className="w-4 h-4" />
+          Überspringen & Leer starten
         </Button>
         {!done ? (
           <Button onClick={handleGenerieren} disabled={generating || paketeFuerEinheit.length === 0} className="gap-2">
