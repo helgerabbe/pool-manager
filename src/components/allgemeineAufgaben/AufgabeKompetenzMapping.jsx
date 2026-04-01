@@ -114,7 +114,7 @@ function ThemenfeldGroup({ themenfeld, lernziele }) {
 }
 
 // ── Haupt-Component ──
-export default function AufgabeKompetenzMapping({ aufgabe, einheit, onComplete }) {
+export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete }) {
   const queryClient = useQueryClient();
   const [mappedLernziele, setMappedLernziele] = useState([]);
   const [savingIds, setSavingIds] = useState(new Set());
@@ -123,24 +123,24 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, onComplete }
   const { data: alleLernziele = [] } = useQuery({
     queryKey: ['lernziele'],
     queryFn: () => base44.entities.Lernziele.list(),
-    enabled: !!einheit?.id
+    enabled: !!einheitId
   });
 
   // Fetch Themenfelder
   const { data: themenfelder = [] } = useQuery({
-    queryKey: ['themenfelder', einheit?.id],
+    queryKey: ['themenfelder', einheitId],
     queryFn: () =>
-    einheit?.id ?
-    base44.entities.Themenfeld.filter({ einheit_id: einheit.id }) :
+    einheitId ?
+    base44.entities.Themenfeld.filter({ einheit_id: einheitId }) :
     Promise.resolve([]),
-    enabled: !!einheit?.id
+    enabled: !!einheitId
   });
 
   // Fetch Lernpakete
   const { data: lernpakete = [] } = useQuery({
     queryKey: ['lernpakete'],
     queryFn: () => base44.entities.Lernpakete.list(),
-    enabled: !!einheit?.id
+    enabled: !!einheitId
   });
 
   // Fetch bestehende Mappings
@@ -271,14 +271,6 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, onComplete }
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="h-full flex flex-col gap-4 p-6 overflow-y-auto">
-        {/* Header */}
-        <div>
-          
-          
-
-          
-        </div>
-
         {/* Split-Screen Layout */}
         <div className="flex-1 grid grid-cols-2 gap-6 min-h-0 overflow-hidden">
           {/* Linke Seite: Quellen-Liste */}
