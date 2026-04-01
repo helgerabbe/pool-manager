@@ -41,7 +41,7 @@ export default function PhaseActivitiesList({
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['lernpaketPhaseAktivitaeten', paket.id, phase],
+        queryKey: ['lernpaketPhaseAktivitaeten'],
       });
       setNewActivityId('');
       toast.success('Aktivität hinzugefügt.');
@@ -54,7 +54,7 @@ export default function PhaseActivitiesList({
       base44.entities.LernpaketPhaseAktivitaet.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['lernpaketPhaseAktivitaeten', paket.id, phase],
+        queryKey: ['lernpaketPhaseAktivitaeten'],
       });
       toast.success('Aktivität entfernt.');
     },
