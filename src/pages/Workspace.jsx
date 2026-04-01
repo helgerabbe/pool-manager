@@ -279,16 +279,7 @@ export default function Workspace() {
         </div>
       </div>
 
-      {/* ── Sub-Header: UnitToolbar ───────────────────────────────────────────── */}
-      <UnitToolbar
-        einheit={einheit}
-        viewMode={viewMode}
-        onViewModeChange={handleViewModeChange}
-        onSettingsOpen={() => setSettingsOpen(true)}
-        onlineUsers={onlineUsers}
-        structLocked={structLocked}
-        currentUserEmail={authUser?.email}
-      />
+
 
       {/* ── Haupt-Inhalt ─────────────────────────────────────────────────────── */}
       {!einheit ?
