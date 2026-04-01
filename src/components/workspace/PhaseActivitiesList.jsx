@@ -3,17 +3,20 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2, AlertTriangle, GripVertical } from 'lucide-react';
+import { Plus, Edit, Trash2, AlertTriangle, GripVertical, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
+import MasterTaskModal from '@/components/aufgaben/MasterTaskModal';
 
 export default function PhaseActivitiesList({
   paket,
   phase,
   kannBearbeiten,
   onSelectActivity,
+  lernziele = [],
 }) {
   const queryClient = useQueryClient();
   const [newActivityId, setNewActivityId] = useState('');
+  const [masterModalOpen, setMasterModalOpen] = useState(null); // null oder activity.id
 
   const { data: aktivitaeten = [] } = useQuery({
     queryKey: ['lernpaketPhaseAktivitaeten', paket.id, phase],
@@ -137,6 +140,16 @@ export default function PhaseActivitiesList({
                         variant="ghost"
                         size="sm"
                         className="h-7 text-xs gap-1"
+                        onClick={() => setMasterModalOpen(activity.id)}
+                        title="Masteraufgabe für diese Aktivität erstellen"
+                      >
+                        <Wand2 className="w-3.5 h-3.5" />
+                        Master
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs gap-1"
                         onClick={() =>
                           onSelectActivity({
                             paketId: paket.id,
@@ -160,6 +173,24 @@ export default function PhaseActivitiesList({
                   )}
                 </div>
               </div>
+              
+              {masterModalOpen === activity.id && (
+                <MasterTaskModal
+                  open={true}
+                  onOpenChange={(open) => {
+                    if (!open) setMasterModalOpen(null);
+                  }}
+                  lernpaketId={paket.id}
+                  lernzielId={null}
+                  activityType="free_text"
+                  contextData={{ activity: katalog?.name }}
+                  onSuccess={() => {
+                    setMasterModalOpen(null);
+                    queryClient.invalidateQueries({ queryKey: ['aufgaben'] });
+                    toast.success('Masteraufgabe erstellt');
+                  }}
+                />
+              )}
             </div>
           );
         })}
