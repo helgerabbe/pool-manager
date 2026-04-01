@@ -17,6 +17,7 @@ import Workspace from '@/pages/Workspace';
 import AdminSettings from '@/pages/AdminSettings';
 import EinheitCreateWizard from '@/pages/EinheitCreateWizard';
 import ExportCenter from '@/pages/ExportCenter';
+import EinheitStrukturBoard from '@/pages/EinheitStrukturBoard';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -53,6 +54,7 @@ const AuthenticatedApp = () => {
         <Route path="/moodle-export" element={<MoodleExport />} />
         <Route path="/workspace" element={<Workspace />} />
         <Route path="/einheit/create" element={<EinheitCreateWizard />} />
+        <Route path="/einheit/:id/struktur" element={<EinheitStrukturBoard />} />
         <Route path="/einheit/workspace" element={<Workspace />} />
         <Route path="/einheit/export" element={<ExportCenter />} />
         <Route path="/admin-settings" element={<AdminSettings />} />
