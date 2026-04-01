@@ -97,8 +97,8 @@ export default function Workspace() {
   });
 
   const { data: lernpaketAktivitaeten = [] } = useQuery({
-    queryKey: ['lernpaketAktivitaeten'],
-    queryFn: () => base44.entities.LernpaketAktivitaet.list(),
+    queryKey: ['lernpaketPhaseAktivitaeten'],
+    queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list(),
     enabled: !!selectedEinheitId
   });
 
