@@ -367,7 +367,7 @@ export default function Workspace() {
           </div>
 
           {/* ── Säule 1: Basis-Lernpakete (Master-Detail) ────────────────────── */}
-          <TabsContent value="basis" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0 border-none">
+          <TabsContent value="basis" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
             {/* Sidebar */}
             <aside className="w-96 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden">
               <div className="flex-1 overflow-y-auto p-3">
