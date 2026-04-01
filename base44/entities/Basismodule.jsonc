@@ -1,0 +1,59 @@
+{
+  "name": "Basismodule",
+  "type": "object",
+  "properties": {
+    "fach": {
+      "type": "string",
+      "enum": [
+        "Deutsch",
+        "Mathematik",
+        "Englisch",
+        "Franz\u00f6sisch",
+        "Latein",
+        "Biologie",
+        "Chemie",
+        "Physik",
+        "Geschichte",
+        "Geographie",
+        "Politik",
+        "Wirtschaft",
+        "Kunst",
+        "Musik",
+        "Sport",
+        "Religion",
+        "Ethik",
+        "Informatik"
+      ],
+      "description": "Unterrichtsfach"
+    },
+    "titel": {
+      "type": "string",
+      "description": "Titel des Basismoduls (z.B. Rechtschreibung, Gleichungen)"
+    },
+    "beschreibung_thema": {
+      "type": "string",
+      "description": "Beschreibung: Worum geht es in diesem Modul?"
+    },
+    "geplante_inhalte": {
+      "type": "string",
+      "description": "Geplante Inhalte: Was soll hier gelernt werden?"
+    },
+    "jahrgang_empfehlung": {
+      "type": "string",
+      "description": "Jahrg\u00e4nge, f\u00fcr die dieses Modul empfohlen wird (z.B. 5-7, 8-10)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Entwurf",
+        "Bereit f\u00fcr Moodle"
+      ],
+      "default": "Entwurf",
+      "description": "Status des Basismoduls"
+    }
+  },
+  "required": [
+    "fach",
+    "titel"
+  ]
+}

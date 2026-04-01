@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Layers, Home, ShieldCheck, DatabaseZap, LogOut, ChevronRight } from 'lucide-react';
+import { Layers, Home, ShieldCheck, DatabaseZap, LogOut, ChevronRight, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
 import RoleSwitcher from '@/components/layout/RoleSwitcher';
@@ -89,6 +89,9 @@ export default function AppLayout() {
 
               {/* Einheiten / Arbeitsbereich */}
               <NavIconLink to="/einheiten" icon={Layers} label="Einheiten / Arbeitsbereich" isActive={isActive('/einheiten') || isActive('/workspace')} />
+
+              {/* Basismodule */}
+              <NavIconLink to="/basismodule" icon={BookOpen} label="Basismodule" isActive={isActive('/basismodule')} />
 
               {/* Admin-Bereich (nur für Admins) */}
               {permissions.kannBenutzerVerwalten && (

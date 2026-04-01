@@ -17,6 +17,7 @@ import AdminSettings from '@/pages/AdminSettings';
 import EinheitCreateWizard from '@/pages/EinheitCreateWizard';
 import ExportCenter from '@/pages/ExportCenter';
 import EinheitViewManager from '@/components/workspace/EinheitViewManager';
+import BasismoduleOverview from '@/pages/BasismoduleOverview';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -48,6 +49,7 @@ const AuthenticatedApp = () => {
         <Route path="/" element={<Dashboard />} />
         <Route path="/einheiten" element={<EinheitenListe />} />
         <Route path="/einheiten/:id" element={<EinheitViewManager />} />
+        <Route path="/basismodule" element={<BasismoduleOverview />} />
         <Route path="/benutzerverwaltung" element={<Benutzerverwaltung />} />
         <Route path="/seed" element={<SeedAdmin />} />
         <Route path="/moodle-export" element={<MoodleExport />} />
