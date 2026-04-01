@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, AlertCircle, Clock } from 'lucide-react';
-import { getDeltaStatus } from '@/lib/syncLogic';
+import { getDeltaStatus } from '@/lib/deltaExportLogic';
 
 export default function SyncStatusBadge({ entity, entityType = 'unit' }) {
   if (!entity) return null;

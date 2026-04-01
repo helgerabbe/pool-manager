@@ -1,5 +1,5 @@
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
-import { isAlreadySynced } from '@/lib/syncLogic';
+import { isAlreadySynced } from '@/lib/deltaExportLogic';
 
 export default function SyncAlertBanner({ entity, entityType = 'Element' }) {
   if (!isAlreadySynced(entity)) return null;

@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, AlertCircle } from 'lucide-react';
+import SyncStatusBadge from '@/components/sync/SyncStatusBadge';
 import EinheitCard from '@/components/einheiten/EinheitCard';
 import EinheitForm from '@/components/einheiten/EinheitForm';
 import EmptyState from '@/components/shared/EmptyState';
 import { BookOpen } from 'lucide-react';
-import { getExportPendingCount } from '@/lib/syncLogic';
+import { getExportPendingCount } from '@/lib/deltaExportLogic';
 
 export default function EinheitenListe() {
   const [showForm, setShowForm] = useState(false);

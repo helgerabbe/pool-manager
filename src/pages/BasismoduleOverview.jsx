@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BookOpen, Plus, Edit, Trash2, Search, AlertCircle } from 'lucide-react';
+import { AlertCircle, BookOpen, Plus, Edit, Trash2, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import BasismodulDetailView from '@/components/basismodule/BasismodulDetailView';
-import { getExportPendingCount } from '@/lib/syncLogic';
+import { getExportPendingCount } from '@/lib/deltaExportLogic';
 import SyncStatusBadge from '@/components/sync/SyncStatusBadge';
 
 const FAECHER = [
