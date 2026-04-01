@@ -206,7 +206,7 @@ function EinheitPanel({ einheit, lernpakete, lernziele, aufgaben, kannBearbeiten
 
 // ── Panel: Lernpaket mit Phasen ───────────────────────────────────────────────
 
-function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail, onNavigate, onNewLernziel, onDelete }) {
+function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail, istAdmin, onNavigate, onNewLernziel, onDelete }) {
   const paketZiele = lernziele.filter(lz => lz.lernpaket_id === paket.id);
   const pStatus = getLernpaketStatus(paket, paketZiele, aufgaben, userEmail);
   const [editLernzielId, setEditLernzielId] = useState(null);
@@ -306,6 +306,16 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
             <p className="text-xs mt-0.5 text-amber-700">
               <strong>{paket.locked_by}</strong> bearbeitet dieses Paket gerade. Bitte warten Sie, bis die Bearbeitung abgeschlossen ist.
             </p>
+            {istAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => { await forceUnlock(); }}
+                className="mt-2 gap-1.5 text-xs border-amber-400 text-amber-800 hover:bg-amber-100"
+              >
+                <Unlock className="w-3.5 h-3.5" /> Sperre aufheben (Admin)
+              </Button>
+            )}
           </div>
         </div>
       )}
@@ -1033,6 +1043,7 @@ export default function WorkspaceDetailPanel({
           aufgaben={aufgaben}
           kannBearbeiten={kannBearbeiten}
           userEmail={userEmail}
+          istAdmin={istAdmin}
           onNavigate={onNavigate}
           onNewLernziel={() => setLernzielFormOpen(true)}
           onDelete={() => onDeleteLernpaket(paket.id)}
