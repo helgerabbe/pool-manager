@@ -7,15 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronRight, Loader2 } from 'lucide-react';
 
-const NAVLOGIK = ["Sequenziell","Offen"];
-
 export default function WizardStep1Meta({ onDone }) {
   const [form, setForm] = useState({ 
     fach: '', 
     titel_der_einheit: '', 
     jahrgangsstufe: '', 
-    zeit_phase_id: '',
-    navigationslogik: 'Sequenziell' 
+    zeit_phase_id: ''
   });
   const [saving, setSaving] = useState(false);
 
@@ -98,15 +95,6 @@ export default function WizardStep1Meta({ onDone }) {
             <SelectTrigger><SelectValue placeholder="Phase wählen" /></SelectTrigger>
             <SelectContent>
               {phasen.map(p => <SelectItem key={p.id} value={p.id}>{p.bezeichnung}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Navigationslogik</Label>
-          <Select value={form.navigationslogik} onValueChange={v => setForm({ ...form, navigationslogik: v })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {NAVLOGIK.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>

@@ -50,7 +50,6 @@ function TabAllgemein({ einheit, onSave, isSaving }) {
     titel_der_einheit: einheit.titel_der_einheit || '',
     fach:              einheit.fach || '',
     jahrgangsstufe:    einheit.jahrgangsstufe || '',
-    navigationslogik:  einheit.navigationslogik || 'Sequenziell',
     freigabe_status:   einheit.freigabe_status || 'In Planung',
   });
 
@@ -84,27 +83,15 @@ function TabAllgemein({ einheit, onSave, isSaving }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label>Navigationslogik</Label>
-          <Select value={form.navigationslogik} onValueChange={v => set('navigationslogik', v)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Sequenziell">Sequenziell</SelectItem>
-              <SelectItem value="Offen">Offen</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <Label>Freigabestatus</Label>
-          <Select value={form.freigabe_status} onValueChange={v => set('freigabe_status', v)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="In Planung">In Planung</SelectItem>
-              <SelectItem value="Freigegeben für Moodle">Freigegeben für Moodle</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="space-y-1.5">
+        <Label>Freigabestatus</Label>
+        <Select value={form.freigabe_status} onValueChange={v => set('freigabe_status', v)}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="In Planung">In Planung</SelectItem>
+            <SelectItem value="Freigegeben für Moodle">Freigegeben für Moodle</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="pt-2 flex justify-end">

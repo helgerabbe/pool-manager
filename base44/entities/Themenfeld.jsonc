@@ -18,6 +18,15 @@
       "type": "number",
       "description": "Sortierreihenfolge innerhalb der Einheit"
     },
+    "bearbeitungsmodus": {
+      "type": "string",
+      "enum": [
+        "sequenziell",
+        "offen"
+      ],
+      "default": "offen",
+      "description": "Bearbeitungsmodus f\u00fcr dieses Themenfeld"
+    },
     "sync_status": {
       "type": "string",
       "enum": [

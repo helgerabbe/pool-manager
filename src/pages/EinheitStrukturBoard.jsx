@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import {
   Plus, GripVertical, Clock, Trash2, ArrowRight, Layers,
-  FolderOpen, X, Check, Lock, AlertTriangle, Settings,
+  FolderOpen, X, Check, Lock, AlertTriangle, Settings, ListOrdered, Grid3x3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStructuralLock } from '@/hooks/useStructuralLock';
@@ -65,7 +65,7 @@ function NeuesPaketInline({ onAdd, onCancel }) {
 
 // ── Lernpaket-Karte ───────────────────────────────────────────────────────────
 
-function PaketKarte({ paket, index, onDelete, hasContentLock }) {
+function PaketKarte({ paket, index, onDelete, hasContentLock, showNumber = false }) {
   return (
     <Draggable draggableId={paket.id} index={index}>
       {(provided, snapshot) => (
@@ -79,9 +79,15 @@ function PaketKarte({ paket, index, onDelete, hasContentLock }) {
               : 'shadow-sm hover:shadow-lg border-border hover:border-primary/40'
           )}
         >
-          <div {...provided.dragHandleProps} className="mt-0.5 text-slate-400 hover:text-foreground cursor-grab transition-colors">
-            <GripVertical className="w-4 h-4" />
-          </div>
+          {showNumber ? (
+            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground font-bold text-xs shrink-0">
+              {index + 1}
+            </div>
+          ) : (
+            <div {...provided.dragHandleProps} className="mt-0.5 text-slate-400 hover:text-foreground cursor-grab transition-colors">
+              <GripVertical className="w-4 h-4" />
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               <p className="font-semibold leading-snug truncate text-foreground">{paket.titel_des_pakets}</p>
@@ -113,7 +119,20 @@ function PaketKarte({ paket, index, onDelete, hasContentLock }) {
 
 // ── Spalte ─────────────────────────────────────────────────────────────────────
 
-function Spalte({ id, titel, pakete, lockedPaketIds, onAddPaket, onDeletePaket, onDeleteSpalte, onTitelChange, isSammelbecken = false, kannBearbeiten = true }) {
+function Spalte({ 
+  id, 
+  titel, 
+  pakete, 
+  lockedPaketIds, 
+  onAddPaket, 
+  onDeletePaket, 
+  onDeleteSpalte, 
+  onTitelChange, 
+  onModeChange,
+  isSammelbecken = false, 
+  kannBearbeiten = true,
+  bearbeitungsmodus = 'offen'
+}) {
   const [addingPaket, setAddingPaket] = useState(false);
   const [editingTitel, setEditingTitel] = useState(false);
   const [titelDraft, setTitelDraft] = useState(titel);
@@ -126,6 +145,7 @@ function Spalte({ id, titel, pakete, lockedPaketIds, onAddPaket, onDeletePaket, 
   };
 
   const hasActiveLocks = pakete.some(p => lockedPaketIds.has(p.id));
+  const isSequential = bearbeitungsmodus === 'sequenziell';
 
   return (
     <div className={cn(
@@ -163,6 +183,16 @@ function Spalte({ id, titel, pakete, lockedPaketIds, onAddPaket, onDeletePaket, 
 
         {!isSammelbecken && kannBearbeiten && (
           <button
+            onClick={() => onModeChange?.(id, isSequential ? 'offen' : 'sequenziell')}
+            title={isSequential ? 'Wechsel zu Offen-Modus' : 'Wechsel zu Sequenziell-Modus'}
+            className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+          >
+            {isSequential ? <ListOrdered className="w-4 h-4" /> : <Grid3x3 className="w-4 h-4" />}
+          </button>
+        )}
+
+        {!isSammelbecken && kannBearbeiten && (
+          <button
             onClick={onDeleteSpalte}
             title={hasActiveLocks ? 'Enthält aktiv bearbeitete Pakete' : 'Themenfeld löschen'}
             className={cn(
@@ -195,6 +225,7 @@ function Spalte({ id, titel, pakete, lockedPaketIds, onAddPaket, onDeletePaket, 
                 index={index}
                 onDelete={onDeletePaket}
                 hasContentLock={lockedPaketIds.has(paket.id)}
+                showNumber={isSequential}
               />
             ))}
             {provided.placeholder}
@@ -271,6 +302,7 @@ export default function EinheitStrukturBoard({
   // ── Lokaler Board-State ───────────────────────────────────────────────────────
   const [spalten, setSpalten]             = useState([]);
   const [paketeMap, setPaketeMap]         = useState({});
+  const [modesMap, setModesMap]           = useState({});
   const [saving, setSaving]               = useState(false);
   const [initialized, setInitialized]     = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -323,7 +355,12 @@ export default function EinheitStrukturBoard({
       .map(tf => ({ id: `tf-${tf.id}`, titel: tf.titel, themenfeldId: tf.id }));
 
     const newPaketeMap = { [SAMMELBECKEN_ID]: [] };
-    tfSpalten.forEach(s => { newPaketeMap[s.id] = []; });
+    const newModesMap = {};
+    tfSpalten.forEach(s => { 
+      newPaketeMap[s.id] = [];
+      const tfData = remoteThemenfelder.find(tf => tf.id === s.themenfeldId);
+      newModesMap[s.id] = tfData?.bearbeitungsmodus || 'offen';
+    });
 
     remotePakete.forEach(p => {
       const spalteId = p.themenfeld_id ? `tf-${p.themenfeld_id}` : SAMMELBECKEN_ID;
@@ -337,6 +374,7 @@ export default function EinheitStrukturBoard({
 
     setSpalten(tfSpalten);
     setPaketeMap(newPaketeMap);
+    setModesMap(newModesMap);
     setInitialized(true);
   }, [remotePakete, remoteThemenfelder, paketeLoading, tfLoading, initialized]);
 
@@ -396,6 +434,11 @@ export default function EinheitStrukturBoard({
   const handleTitelChange = (spalteId, neuerTitel) => {
     setIsDirty(true);
     setSpalten(prev => prev.map(s => s.id === spalteId ? { ...s, titel: neuerTitel } : s));
+  };
+
+  const handleModeChange = (spalteId, newMode) => {
+    setIsDirty(true);
+    setModesMap(prev => ({ ...prev, [spalteId]: newMode }));
   };
 
   // Delete-Sperre: Pakete mit aktivem Content-Lock prüfen
@@ -473,6 +516,7 @@ export default function EinheitStrukturBoard({
         einheit_id: einheitId,
         spalten,
         paketeMap,
+        modesMap,
       });
 
       if (response.data?.success) {
@@ -494,7 +538,7 @@ export default function EinheitStrukturBoard({
     } finally {
     setSaving(false);
     }
-    }, [einheitId, spalten, paketeMap, queryClient]);
+    }, [einheitId, spalten, paketeMap, modesMap, queryClient]);
 
   // ── Navigation-Blocker Handler ─────────────────────────────────────────────
   const handleSaveAndNavigate = async () => {
@@ -588,7 +632,9 @@ export default function EinheitStrukturBoard({
                 onDeletePaket={handleDeletePaket}
                 onDeleteSpalte={() => handleDeleteSpalteRequest(spalte.id)}
                 onTitelChange={neuerTitel => handleTitelChange(spalte.id, neuerTitel)}
+                onModeChange={handleModeChange}
                 kannBearbeiten={kannStrukturBearbeiten}
+                bearbeitungsmodus={modesMap[spalte.id] || 'offen'}
               />
             ))}
 

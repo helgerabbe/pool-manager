@@ -49,14 +49,6 @@
       "type": "string",
       "description": "FK zur Zeitphase (Halbjahr) aus LookupPhasen"
     },
-    "navigationslogik": {
-      "type": "string",
-      "enum": [
-        "Sequenziell",
-        "Offen"
-      ],
-      "description": "Navigationslogik der Einheit"
-    },
     "freigabe_status": {
       "type": "string",
       "enum": [

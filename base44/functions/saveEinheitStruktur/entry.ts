@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { einheit_id, spalten, paketeMap } = body;
+    const { einheit_id, spalten, paketeMap, modesMap } = body;
 
     if (!einheit_id || !spalten || !paketeMap) {
       return Response.json(
@@ -50,6 +50,7 @@ Deno.serve(async (req) => {
     for (let i = 0; i < spalten.length; i++) {
       const spalte = spalten[i];
       let themenfeldId = spalte.themenfeldId;
+      const bearbeitungsmodus = modesMap?.[spalte.id] || 'offen';
 
       if (!themenfeldId) {
         // Neues Themenfeld erstellen
@@ -57,6 +58,7 @@ Deno.serve(async (req) => {
           einheit_id,
           titel: spalte.titel,
           reihenfolge: i + 1,
+          bearbeitungsmodus,
         });
         themenfeldId = newTf.id;
       } else {
@@ -64,6 +66,7 @@ Deno.serve(async (req) => {
         await base44.entities.Themenfeld.update(themenfeldId, {
           titel: spalte.titel,
           reihenfolge: i + 1,
+          bearbeitungsmodus,
         });
       }
 
