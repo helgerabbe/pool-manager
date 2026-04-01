@@ -282,6 +282,12 @@ export default function StrukturBoardEmbedded({
 
   // ── Aktionen ──────────────────────────────────────────────────────────────
 
+  const DEFAULT_PHASEN = {
+    Input:     { disabled: false, selected_aktivitaet_id: null, field_values: {} },
+    Übung:     { disabled: false, selected_aktivitaet_id: null, field_values: {} },
+    Abschluss: { disabled: false, selected_aktivitaet_id: null, field_values: {} },
+  };
+
   const handleNeuesThemenfeld = () => {
     const newId = `tf-new-${Date.now()}`;
     const defaultPaket = {
@@ -290,6 +296,7 @@ export default function StrukturBoardEmbedded({
       geschaetzte_dauer_minuten: 45,
       reihenfolge_nummer: 1,
       einheit_id: einheitId,
+      phasen_konfiguration: DEFAULT_PHASEN,
       isNew: true,
     };
     setSpalten(prev => [...prev, { id: newId, titel: `Themenfeld ${prev.length + 1}`, themenfeldId: null }]);
@@ -336,6 +343,7 @@ export default function StrukturBoardEmbedded({
         geschaetzte_dauer_minuten: dauer,
         reihenfolge_nummer: (prev[spalteId] || []).length + 1,
         einheit_id: einheitId,
+        phasen_konfiguration: DEFAULT_PHASEN,
         isNew: true,
       }],
     }));
@@ -392,6 +400,7 @@ export default function StrukturBoardEmbedded({
             einheit_id: einheitId,
             titel_des_pakets: paket.titel_des_pakets,
             geschaetzte_dauer_minuten: paket.geschaetzte_dauer_minuten || 45,
+            phasen_konfiguration: paket.phasen_konfiguration || DEFAULT_PHASEN,
             ...update,
           });
         } else {
