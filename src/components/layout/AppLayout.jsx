@@ -1,6 +1,6 @@
 import React from 'react';
-import { Outlet, Link, useLocation, useParams } from 'react-router-dom';
-import { Layers, Home, ShieldCheck, DatabaseZap, Download, LayoutTemplate, Settings2, PlusCircle, LogOut, ChevronRight } from 'lucide-react';
+import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Layers, Home, ShieldCheck, DatabaseZap, LogOut, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
 import RoleSwitcher from '@/components/layout/RoleSwitcher';
@@ -52,7 +52,7 @@ function useBreadcrumb(location) {
 
 export default function AppLayout() {
   const location = useLocation();
-  const { rolle, realRolle, permissions } = useRBAC();
+  const { realRolle, permissions } = useRBAC();
   const breadcrumbLabel = useBreadcrumb(location);
 
   const isActive = (path) =>
@@ -63,12 +63,14 @@ export default function AppLayout() {
   return (
     <div className="min-h-screen bg-background">
       <WartungsBanner />
-      {/* Top Navigation */}
+      {/* ═══════════════════════════════════════════════════════════════════════════ */}
+      {/* ──────────────────── GLOBALE TOP BAR (immer sichtbar) ──────────────────── */}
+      {/* ═══════════════════════════════════════════════════════════════════════════ */}
       <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
 
-            {/* Logo + Breadcrumb */}
+            {/* Links: Logo + Breadcrumb */}
             <div className="flex items-center gap-3 min-w-0">
               <Link to="/" className="flex items-center gap-2.5 shrink-0">
                 <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
@@ -85,32 +87,26 @@ export default function AppLayout() {
               )}
             </div>
 
-            {/* Icon-Nav */}
-            <nav className="flex items-center gap-1" aria-label="Hauptnavigation">
+            {/* Rechts: NUR globale Icons (Home, Admin, Profil) */}
+            <nav className="flex items-center gap-1" aria-label="Globale Navigation">
 
-              {/* Trennlinie */}
               <div className="w-px h-6 bg-border mx-1" />
 
-              <NavIconLink to="/"                 icon={Home}        label="Übersicht"    isActive={isActive('/')} />
-              <NavIconLink to="/einheit/create"   icon={PlusCircle}  label="Neue Einheit" isActive={isActive('/einheit/create')} />
-              <NavIconLink to="/einheit/workspace" icon={LayoutTemplate} label="Workspace" isActive={isActive('/einheit/workspace')} />
+              {/* Home / Startseite */}
+              <NavIconLink to="/" icon={Home} label="Startseite" isActive={isActive('/')} />
 
-              {permissions.kannExportieren && (
-                <NavIconLink to="/einheit/export" icon={Download} label="Moodle-Export" isActive={isActive('/einheit/export')} />
-              )}
-
+              {/* Admin-Bereich (nur für Admins) */}
               {permissions.kannBenutzerVerwalten && (
                 <>
                   <div className="w-px h-6 bg-border mx-1" />
                   <NavIconLink to="/benutzerverwaltung" icon={ShieldCheck} label="Benutzerverwaltung" isActive={isActive('/benutzerverwaltung')} />
-                  <NavIconLink to="/admin-settings"     icon={Settings2}   label="Einstellungen"      isActive={isActive('/admin-settings')} />
-                  <NavIconLink to="/seed"               icon={DatabaseZap} label="Seed-Daten"          isActive={isActive('/seed')} />
+                  <NavIconLink to="/admin-settings" icon={DatabaseZap} label="Einstellungen" isActive={isActive('/admin-settings')} />
                 </>
               )}
 
               <div className="w-px h-6 bg-border mx-1" />
 
-              {/* Abmelden */}
+              {/* Logout & Role Switcher */}
               <NavigationTooltip label="Abmelden">
                 <button
                   aria-label="Abmelden"
@@ -121,14 +117,14 @@ export default function AppLayout() {
                 </button>
               </NavigationTooltip>
 
-              <RoleSwitcher realRolle={realRolle} anzeigeRolle={rolle} />
+              <RoleSwitcher realRolle={realRolle} anzeigeRolle={realRolle} />
             </nav>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="px-4 sm:px-6 lg:px-8 py-8">
         <Outlet />
       </main>
     </div>
