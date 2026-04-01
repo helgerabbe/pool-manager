@@ -5,10 +5,9 @@ import { useSystemSettings } from '@/hooks/useSystemSettings';
 import { ROLLEN } from '@/lib/rbac';
 
 /**
- * Wird für non-Admin-Nutzer oben im Layout angezeigt,
- * wenn der Wartungsmodus aktiv ist.
+ * Interner Hook-basierter Banner (mit Hooks sicher)
  */
-export default function WartungsBanner() {
+function WartungsBannerContent() {
   const { realRolle } = useRBAC();
   const { wartungsmodus } = useSystemSettings();
 
@@ -23,4 +22,11 @@ export default function WartungsBanner() {
       </div>
     </div>
   );
+}
+
+/**
+ * Sichere Wrapper-Komponente ohne Hooks
+ */
+export default function WartungsBanner() {
+  return <WartungsBannerContent />;
 }
