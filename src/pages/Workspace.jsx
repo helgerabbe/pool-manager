@@ -427,23 +427,23 @@ export default function Workspace() {
             </TabsContent>
 
             {/* ── Säule 2: Allgemeine Aufgaben ──────────────────────────────────── */}
-            <TabsContent value="transfer" className="flex-1 overflow-hidden m-0 p-0">
-            <AllgemeineAufgabenView
-              einheitId={selectedEinheitId}
-              kannBearbeiten={kannDieseEinheitBearbeiten}
-            />
+            <TabsContent value="transfer" className="flex-1 overflow-hidden m-0 p-0 border-none" style={{marginTop: 0}}>
+              <AllgemeineAufgabenView
+                einheitId={selectedEinheitId}
+                kannBearbeiten={kannDieseEinheitBearbeiten}
+              />
             </TabsContent>
 
             {/* ── Säule 3: Anwendungs- und Projektaufgaben (globaler Einheits-Scope) ───────────────────── */}
-          <TabsContent value="projekt" className="flex-1 overflow-hidden m-0 p-0">
-            <ProjektaufgabenView
-              einheitId={selectedEinheitId}
-              kannBearbeiten={kannDieseEinheitBearbeiten}
-            />
-          </TabsContent>
+             <TabsContent value="projekt" className="flex-1 overflow-hidden m-0 p-0 border-none" style={{marginTop: 0}}>
+               <ProjektaufgabenView
+                 einheitId={selectedEinheitId}
+                 kannBearbeiten={kannDieseEinheitBearbeiten}
+               />
+             </TabsContent>
 
           {/* ── Lernlandkarte: Schülerfreundlicher Überblick ────────────────── */}
-          <TabsContent value="lernlandkarte" className="flex-1 overflow-hidden m-0 p-0">
+          <TabsContent value="lernlandkarte" className="flex-1 overflow-hidden m-0 p-0 border-none" style={{marginTop: 0}}>
             <LernlandkartePreview
               einheit={einheit}
               lernpakete={paketeFuerEinheit}
