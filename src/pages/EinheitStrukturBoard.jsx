@@ -20,6 +20,7 @@ import { useRBAC } from '@/hooks/useRBAC';
 import { useStructuralUnsavedChanges } from '@/hooks/useStructuralUnsavedChanges';
 import EinheitSettingsModal from '@/components/einheiten/EinheitSettingsModal';
 import UnsavedChangesModal from '@/components/workspace/UnsavedChangesModal';
+import LoadingOverlay from '@/components/workspace/LoadingOverlay';
 import { toast } from 'sonner';
 
 // ── Mini-Dialog: Neues Lernpaket ──────────────────────────────────────────────
@@ -267,6 +268,7 @@ export default function EinheitStrukturBoard({ onSaveStart = null, onSaveEnd = n
   const [initialized, setInitialized]     = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [lastError, setLastError]         = useState(null);
   
   // ── Dirty-State & Navigation Guard ────────────────────────────────────────
   const { isDirty, setIsDirty, blocker, shouldBlock, setShouldBlock } = useStructuralUnsavedChanges();
@@ -439,6 +441,7 @@ export default function EinheitStrukturBoard({ onSaveStart = null, onSaveEnd = n
 
   const handleSpeichern = async () => {
     setSaving(true);
+    setLastError(null);
 
     try {
       // Backend-Aufruf via Backend-Funktion
@@ -451,14 +454,18 @@ export default function EinheitStrukturBoard({ onSaveStart = null, onSaveEnd = n
       if (response.data?.success) {
         toast.success('Struktur erfolgreich gespeichert.');
         setIsDirty(false);
+        setLastError(null);
         queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
         queryClient.invalidateQueries({ queryKey: ['themenfelder'] });
-        navigate(`/workspace?einheit=${einheitId}`);
+        // Nicht automatisch navigieren — Benutzer bleibt auf Board
       } else {
-        toast.error('Fehler beim Speichern: ' + (response.data?.error || 'Unbekannter Fehler'));
+        const errorMsg = response.data?.error || 'Unbekannter Fehler';
+        setLastError('Fehler beim Speichern. Bitte versuchen Sie es erneut.');
+        toast.error('Fehler beim Speichern: ' + errorMsg);
       }
     } catch (error) {
       console.error('Error saving structure:', error);
+      setLastError('Fehler beim Speichern. Bitte versuchen Sie es erneut.');
       toast.error('Fehler beim Speichern der Struktur.');
     } finally {
       setSaving(false);
@@ -505,7 +512,10 @@ export default function EinheitStrukturBoard({ onSaveStart = null, onSaveEnd = n
   const zugeordnet   = spalten.reduce((n, s) => n + (paketeMap[s.id]?.length || 0), 0);
 
   return (
-    <div className="flex flex-col h-full w-full">
+    <div className="flex flex-col h-full w-full relative">
+
+      {/* ── Loading Overlay während Speichern ── */}
+      <LoadingOverlay isVisible={saving} />
 
       {/* ── Structural-Lock-Banner oder Readonly-Banner ── */}
       {kannStrukturBearbeiten ? (

@@ -44,6 +44,11 @@ export default function EinheitViewManager() {
   // ── Settings Modal ────────────────────────────────────────────────────────
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  // ── Struktur-Saving State (vom Kind-Component gesendet) ─────────────────────
+  const [isDirty, setIsDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastError, setLastError] = useState(null);
+
   // ── Query: Einheit laden ──────────────────────────────────────────────────
   const { data: einheit, isLoading: einheitLoading } = useQuery({
     queryKey: ['einheit', einheitId],
@@ -99,6 +104,9 @@ export default function EinheitViewManager() {
         viewMode={viewMode}
         onViewModeChange={handleViewModeChange}
         onSettingsOpen={() => setSettingsOpen(true)}
+        isDirty={isDirty}
+        isSaving={isSaving}
+        lastError={lastError}
       />
 
       {/* Container 2: Hinweis-Banner (Struktur-Lock / Optional) ──────────────── */}

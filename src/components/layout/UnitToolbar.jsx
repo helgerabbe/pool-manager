@@ -5,11 +5,11 @@
  * 
  * Struktur:
  * - LINKS: Ansichts-Umschalter (Struktur vs. Inhalte)
- * - MITTE: Titel + Metadaten (Fach, Jahrgang, Pakete)
+ * - MITTE: Titel + Dynamischer Status-Badge (Dirty/Saving/Saved)
  * - RECHTS: Aktions-Buttons (Neues Themenfeld, Einstellungen, Export)
  */
-import React from 'react';
-import { LayoutGrid, SlidersHorizontal, Settings, Download, Plus, Check, Save } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { LayoutGrid, SlidersHorizontal, Settings, Download, Plus, Check, Save, AlertCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import NavigationTooltip from '@/components/layout/NavigationTooltip';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,21 @@ export default function UnitToolbar({
   isDirty = false,
   onSaveStructure,
   isSaving = false,
+  lastError = null,
 }) {
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+  // Auto-fade Success-Message nach 5 Sekunden
+  useEffect(() => {
+    if (!isDirty && !isSaving && !lastError) {
+      if (!showSuccessMessage) {
+        setShowSuccessMessage(true);
+        const timer = setTimeout(() => setShowSuccessMessage(false), 5000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isDirty, isSaving, lastError, showSuccessMessage]);
+
   if (!einheit) return null;
 
   return (
@@ -68,15 +82,48 @@ export default function UnitToolbar({
           </div>
 
           {/* ════════════════════════════════════════════════════════════════════════ */}
-          {/* MITTE: Titel + Metadaten (zentriert) */}
+          {/* MITTE: Titel + Status-Badge + Metadaten (zentriert) */}
           {/* ════════════════════════════════════════════════════════════════════════ */}
           <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <h2 className="text-lg font-bold text-foreground">
-              {einheit.titel_der_einheit}
-            </h2>
+            <div className="flex items-center gap-2 justify-center">
+              <h2 className="text-lg font-bold text-foreground">
+                {einheit.titel_der_einheit}
+              </h2>
+              
+              {/* Status-Badge */}
+              {lastError ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-destructive/10 text-destructive animate-pulse">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  Fehler
+                </span>
+              ) : isSaving ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Speichere...
+                </span>
+              ) : isDirty ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  Ungespeichert
+                </span>
+              ) : showSuccessMessage ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 animate-out fade-out-50 slide-out-to-right-1 duration-500">
+                  <Check className="w-3.5 h-3.5" />
+                  Übernommen
+                </span>
+              ) : null}
+            </div>
+            
             <p className="text-xs text-muted-foreground mt-0.5">
               {einheit.fach} • Jg. {einheit.jahrgangsstufe}
             </p>
+
+            {/* Fehler-Text */}
+            {lastError && (
+              <p className="text-xs text-destructive mt-1 font-medium">
+                {lastError}
+              </p>
+            )}
           </div>
 
           {/* ════════════════════════════════════════════════════════════════════════ */}
