@@ -282,52 +282,76 @@ Antworte NUR mit dem JSON-Objekt. Kein Text, keine Markdown-Blöcke.
   };
 
   const handleAnlegen = async () => {
-    if (!vorschau || !vorschau.pakete || vorschau.pakete.length === 0) return;
+    if (!vorschau || !vorschau.themenfelder || vorschau.themenfelder.length === 0) return;
     setIsSaving(true);
 
     let erstelltePakete = 0;
     let erstellteZiele = 0;
     let erstellteThemenfelder = 0;
-    const themenfeldMap = {}; // Map: themenfeldTitel → themenfeldId
 
-    // Schritt 1: Themenfelder anlegen
-    for (const tf of vorschau.themenfelder || []) {
+    // ══════════════════════════════════════════════════════════════════════════════
+    // Schritt 1 & 2: Themenfelder KASKADIEREND mit ihren Inhalten anlegen
+    // ══════════════════════════════════════════════════════════════════════════════
+    for (const tf of vorschau.themenfelder) {
+      // 1a. Themenfeld anlegen
       const neuesTF = await base44.entities.Themenfeld.create({
         einheit_id: einheitId,
         titel: tf.titel,
-        reihenfolge: (vorschau.themenfelder?.indexOf(tf) || 0) + 1,
+        reihenfolge: erstellteThemenfelder + 1,
+        beschreibung: tf.beschreibung || '',
       });
-      themenfeldMap[tf.titel] = neuesTF.id;
       erstellteThemenfelder++;
-    }
 
-    // Schritt 2: Lernpakete + Lernziele anlegen (mit themenfeld_id)
-    for (const paket of vorschau.pakete) {
-      const themenfeldId = themenfeldMap[paket.themenfeldTitel] || null;
-      
-      const neuesPaket = await base44.entities.Lernpakete.create({
-        einheit_id: einheitId,
-        themenfeld_id: themenfeldId,
-        titel_des_pakets: paket.titel_des_pakets,
-        reihenfolge_nummer: paket.reihenfolge_nummer,
-        geschaetzte_dauer_minuten: paket.geschaetzte_dauer_minuten,
-      });
-      erstelltePakete++;
-
-      for (const ziel of paket.lernziele) {
-        if (!ziel.formulierung_fachsprache?.trim()) continue;
-        await base44.entities.Lernziele.create({
-          lernpaket_id: neuesPaket.id,
-          formulierung_fachsprache: ziel.formulierung_fachsprache,
-          kategorie: ziel.kategorie || 'Fachwissen',
-          schueler_uebersetzung: ziel.schueler_uebersetzung || '',
+      // 1b. Lernpakete INNERHALB dieses Themenfelds anlegen
+      for (const paket of tf.lernpakete || []) {
+        const neuesPaket = await base44.entities.Lernpakete.create({
+          einheit_id: einheitId,
+          themenfeld_id: neuesTF.id, // Direkt das gerade erstellte Themenfeld
+          titel_des_pakets: paket.titel,
+          reihenfolge_nummer: (tf.lernpakete || []).indexOf(paket) + 1,
+          geschaetzte_dauer_minuten: paket.dauer || 45,
         });
-        erstellteZiele++;
+        erstelltePakete++;
+
+        // 1c. Lernziele INNERHALB dieses Pakets anlegen
+        for (const ziel of paket.lernziele || []) {
+          if (!ziel.formulierung_fachsprache?.trim()) continue;
+          await base44.entities.Lernziele.create({
+            lernpaket_id: neuesPaket.id,
+            formulierung_fachsprache: ziel.formulierung_fachsprache,
+            kategorie: ziel.kategorie || 'Fachwissen',
+            schueler_uebersetzung: ziel.schueler_uebersetzung || '',
+          });
+          erstellteZiele++;
+        }
+      }
+
+      // 1d. Transferaufgaben (Ebene 2) INNERHALB dieses Themenfelds anlegen
+      // (Optional: Falls Aufgaben-Entity existiert und konfiguriert)
+      for (const aufgabe of tf.aufgaben || []) {
+        // Placeholder für Transferaufgabe-Logik
+        // await base44.entities.Aufgabenbausteine.create({
+        //   einheit_id: einheitId,
+        //   themenfeld_id: neuesTF.id,
+        //   titel: aufgabe.titel,
+        //   anforderungsebene: '2 - Transfer',
+        //   ...
+        // });
       }
     }
 
-    // Hinweis: Transferaufgaben + Projektaufgaben könnten hier auch angelegt werden,
-    // wenn diese Entities existieren. Für jetzt: nur Themenfelder + Lernpakete + Lernziele.
+    // ══════════════════════════════════════════════════════════════════════════════
+    // Schritt 3: Projektaufgaben (Ebene 3 — übergreifend) anlegen
+    // ══════════════════════════════════════════════════════════════════════════════
+    for (const projekt of vorschau.projektaufgaben || []) {
+      // Placeholder für Projektaufgabe-Logik
+      // await base44.entities.Aufgabenbausteine.create({
+      //   einheit_id: einheitId,
+      //   titel: projekt.titel,
+      //   anforderungsebene: '3 - Projekt',
+      //   ...
+      // });
+    }
 
     setIsSaving(false);
     setErfolg({ pakete: erstelltePakete, ziele: erstellteZiele, themenfelder: erstellteThemenfelder });
