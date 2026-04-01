@@ -172,21 +172,21 @@ export default function Workspace() {
   }, []);
 
   // Pakete/Ziele/Aufgaben gefiltert nach aktivem Themenfeld (für Säulen 1+2)
-  const paketeFuerThemenfeld = selectedThemenfeldId
-    ? paketeFuerEinheit.filter(p => p.themenfeld_id === selectedThemenfeldId)
-    : paketeFuerEinheit;
-  const paketIdsFuerThemenfeld = paketeFuerThemenfeld.map(p => p.id);
-  const zieleFuerThemenfeld  = lernziele.filter(lz => paketIdsFuerThemenfeld.includes(lz.lernpaket_id));
-  const aufgabenFuerThemenfeld = aufgaben.filter(a => paketIdsFuerThemenfeld.includes(a.lernpaket_id) && a.anforderungsebene !== '3 - Projekt');
+  const paketeFuerThemenfeld = selectedThemenfeldId ?
+  paketeFuerEinheit.filter((p) => p.themenfeld_id === selectedThemenfeldId) :
+  paketeFuerEinheit;
+  const paketIdsFuerThemenfeld = paketeFuerThemenfeld.map((p) => p.id);
+  const zieleFuerThemenfeld = lernziele.filter((lz) => paketIdsFuerThemenfeld.includes(lz.lernpaket_id));
+  const aufgabenFuerThemenfeld = aufgaben.filter((a) => paketIdsFuerThemenfeld.includes(a.lernpaket_id) && a.anforderungsebene !== '3 - Projekt');
 
   // Mapping für StatusLogik: paketId → phaseAktivitaeten
   const phaseAktivitaetenByPaket = {};
-  paketeFuerEinheit.forEach(p => {
-    phaseAktivitaetenByPaket[p.id] = lernpaketAktivitaeten.filter(pa => pa.lernpaket_id === p.id);
+  paketeFuerEinheit.forEach((p) => {
+    phaseAktivitaetenByPaket[p.id] = lernpaketAktivitaeten.filter((pa) => pa.lernpaket_id === p.id);
   });
 
   // Säule 3: globale Projektaufgaben der gesamten Einheit (unabhängig vom Themenfeld)
-  const projektaufgabenFuerEinheit = aufgabenFuerEinheit.filter(a => a.anforderungsebene === '3 - Projekt');
+  const projektaufgabenFuerEinheit = aufgabenFuerEinheit.filter((a) => a.anforderungsebene === '3 - Projekt');
 
   // ── Delete-Mutations ──────────────────────────────────────────────────────────
   const deleteLernpaket = useMutation({
@@ -245,25 +245,25 @@ export default function Workspace() {
     <div className="flex flex-col h-full w-full bg-background">
 
       {/* ── Structural-Lock-Banner ───────────────────────────────────────────── */}
-      {structLocked && (
-        <div className="shrink-0 px-4 py-2 bg-orange-50 border-b border-orange-200 text-xs text-orange-800 flex items-center gap-2">
+      {structLocked &&
+      <div className="shrink-0 px-4 py-2 bg-orange-50 border-b border-orange-200 text-xs text-orange-800 flex items-center gap-2">
           <Lock className="w-3.5 h-3.5 shrink-0 text-orange-600" />
           <span>
             <strong>Struktur wird angepasst</strong> von {einheit?.structural_lock}. Bestehende Inhalte können gespeichert werden, neue Bearbeitungssitzungen sind kurzzeitig gesperrt.
           </span>
         </div>
-      )}
+      }
 
       {/* ── "Paket verschoben"-Toast-Banner ─────────────────────────────────── */}
-      {movedNotification && (
-        <div className="shrink-0 px-4 py-2 bg-blue-50 border-b border-blue-200 text-xs text-blue-800 flex items-center gap-2 animate-in slide-in-from-top-1">
+      {movedNotification &&
+      <div className="shrink-0 px-4 py-2 bg-blue-50 border-b border-blue-200 text-xs text-blue-800 flex items-center gap-2 animate-in slide-in-from-top-1">
           <ArrowRight className="w-3.5 h-3.5 shrink-0 text-blue-600" />
           <span>
             <strong>Achtung:</strong> Das Paket „{movedNotification.paketTitel}" wurde in das Themenfeld <strong>{movedNotification.neuesThemenfeld}</strong> verschoben.
           </span>
           <button onClick={() => setMovedNotification(null)} className="ml-auto text-blue-500 hover:text-blue-700">✕</button>
         </div>
-      )}
+      }
 
       {/* ── Top-Bar: nur Einheiten-Selector ─────────────────────────────────── */}
       <div className="flex items-center gap-3 px-4 sm:px-6 lg:px-8 py-2 border-b border-border bg-card shrink-0 flex-wrap gap-y-1">
@@ -285,13 +285,13 @@ export default function Workspace() {
 
         {/* Statistik-Leiste (nur Detail-Modus) */}
         {einheit && viewMode === 'detail' &&
-          <WorkspaceStats
-            lernpakete={paketeFuerEinheit}
-            lernziele={zieleFuerEinheit}
-            aufgaben={aufgabenFuerEinheit}
-            mappings={mappings}
-            userEmail={authUser?.email || ''}
-            phaseAktivitaeten={lernpaketAktivitaeten} />
+        <WorkspaceStats
+          lernpakete={paketeFuerEinheit}
+          lernziele={zieleFuerEinheit}
+          aufgaben={aufgabenFuerEinheit}
+          mappings={mappings}
+          userEmail={authUser?.email || ''}
+          phaseAktivitaeten={lernpaketAktivitaeten} />
         }
 
         <div className="ml-auto">
@@ -313,16 +313,16 @@ export default function Workspace() {
               Wählen Sie oben eine Einheit aus, um mit der Planung zu beginnen.
             </p>
           </div>
-        </div>
-      : viewMode === 'struktur' ? (
-        <StrukturBoardEmbedded
-          einheitId={selectedEinheitId}
-          lernpakete={paketeFuerEinheit}
-          themenfelder={themenfelder}
-          queryClient={queryClient}
-          onSaved={() => handleViewModeChange('detail')}
-        />
-      ) :
+        </div> :
+      viewMode === 'struktur' ?
+      <StrukturBoardEmbedded
+        einheitId={selectedEinheitId}
+        lernpakete={paketeFuerEinheit}
+        themenfelder={themenfelder}
+        queryClient={queryClient}
+        onSaved={() => handleViewModeChange('detail')} /> :
+
+
 
       <Tabs
         value={activeTab}
@@ -359,7 +359,7 @@ export default function Workspace() {
                   </span>
               }
               </TabsTrigger>
-              <TabsTrigger value="lernlandkarte" className="bg-pink-200 text-slate-600 px-3 py-1 text-xs font-medium rounded-md inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow gap-1.5">
+              <TabsTrigger value="lernlandkarte" className="bg-pink-200 text-slate-600 ml-1 pt-1 pr-3 pb-1 pl-4 text-xs font-medium rounded-md inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow gap-1.5">
                 <BookOpen className="w-3.5 h-3.5" />
                 Lernlandkarte
               </TabsTrigger>
@@ -390,88 +390,88 @@ export default function Workspace() {
             {/* Detail-Panel */}
             <main className="flex-1 overflow-y-auto min-h-0">
               <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                {selectedNode?.type === 'aktivitaet-edit' ? (
-                  (() => {
-                    const activityRecord = lernpaketAktivitaeten.find(a => a.id === selectedNode.activityRecordId);
-                    if (!activityRecord) return null;
-                    return (
-                      <ActivityDetailView
-                        activityRecord={activityRecord}
-                        kannBearbeiten={kannDieseEinheitBearbeiten}
-                        queryClient={queryClient}
-                      />
-                    );
-                  })()
-                ) : (
-                  <WorkspaceDetailPanel
-                    selectedNode={{ ...selectedNode, themenfelder }}
-                    einheit={einheit}
-                    lernpakete={paketeFuerEinheit}
-                    lernziele={zieleFuerEinheit}
-                    aufgaben={aufgabenFuerEinheit}
-                    userEmail={authUser?.email}
+                {selectedNode?.type === 'aktivitaet-edit' ?
+              (() => {
+                const activityRecord = lernpaketAktivitaeten.find((a) => a.id === selectedNode.activityRecordId);
+                if (!activityRecord) return null;
+                return (
+                  <ActivityDetailView
+                    activityRecord={activityRecord}
                     kannBearbeiten={kannDieseEinheitBearbeiten}
-                    istAdmin={istAdmin}
-                    onNavigate={handleSelect}
-                    onNewLernpaket={() => handleSelect({ type: 'new-lernpaket' })}
-                    onNewLernziel={(paketId) => handleSelect({ type: 'new-lernziel', paketId })}
-                    onNewAufgabe={(paketId, lernzielId) => handleSelect({ type: 'new-aufgabe', paketId, lernzielId })}
-                    onEditEinheit={() => {}}
-                    onDeleteLernpaket={(id) => deleteLernpaket.mutate(id)}
-                    onDeleteLernziel={(id) => deleteLernziel.mutate(id)}
-                  />
-                )}
+                    queryClient={queryClient} />);
+
+
+              })() :
+
+              <WorkspaceDetailPanel
+                selectedNode={{ ...selectedNode, themenfelder }}
+                einheit={einheit}
+                lernpakete={paketeFuerEinheit}
+                lernziele={zieleFuerEinheit}
+                aufgaben={aufgabenFuerEinheit}
+                userEmail={authUser?.email}
+                kannBearbeiten={kannDieseEinheitBearbeiten}
+                istAdmin={istAdmin}
+                onNavigate={handleSelect}
+                onNewLernpaket={() => handleSelect({ type: 'new-lernpaket' })}
+                onNewLernziel={(paketId) => handleSelect({ type: 'new-lernziel', paketId })}
+                onNewAufgabe={(paketId, lernzielId) => handleSelect({ type: 'new-aufgabe', paketId, lernzielId })}
+                onEditEinheit={() => {}}
+                onDeleteLernpaket={(id) => deleteLernpaket.mutate(id)}
+                onDeleteLernziel={(id) => deleteLernziel.mutate(id)} />
+
+              }
               </div>
             </main>
           </TabsContent>
 
           {/* ── Säule 2: Allgemeine Aufgaben ──────────────────────────────────── */}
-          <TabsContent 
-            value="transfer" 
-            className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0 border-none"
-          >
+          <TabsContent
+          value="transfer"
+          className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0 border-none">
+          
             <AllgemeineAufgabenView
-              einheitId={selectedEinheitId}
-              kannBearbeiten={kannDieseEinheitBearbeiten}
-            />
+            einheitId={selectedEinheitId}
+            kannBearbeiten={kannDieseEinheitBearbeiten} />
+          
           </TabsContent>
 
           {/* ── Säule 3: Anwendungs- und Projektaufgaben ───────────────────── */}
-          <TabsContent 
-            value="projekt" 
-            className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0 border-none"
-          >
+          <TabsContent
+          value="projekt"
+          className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0 border-none">
+          
             <ProjektaufgabenView
-              einheitId={selectedEinheitId}
-              kannBearbeiten={kannDieseEinheitBearbeiten}
-            />
+            einheitId={selectedEinheitId}
+            kannBearbeiten={kannDieseEinheitBearbeiten} />
+          
           </TabsContent>
 
           {/* ── Lernlandkarte ────────────────── */}
-          <TabsContent 
-            value="lernlandkarte" 
-            className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0 border-none"
-          >
+          <TabsContent
+          value="lernlandkarte"
+          className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0 border-none">
+          
             <LernlandkartePreview
-              einheit={einheit}
-              lernpakete={paketeFuerEinheit}
-              lernziele={zieleFuerEinheit}
-              aufgaben={aufgabenFuerEinheit}
-              themenfelder={themenfelder}
-              allgemeineAufgaben={aufgabenFuerEinheit.filter(a => a.anforderungsebene === '2 - Transfer')}
-              projektaufgaben={projektaufgabenFuerEinheit}
-            />
+            einheit={einheit}
+            lernpakete={paketeFuerEinheit}
+            lernziele={zieleFuerEinheit}
+            aufgaben={aufgabenFuerEinheit}
+            themenfelder={themenfelder}
+            allgemeineAufgaben={aufgabenFuerEinheit.filter((a) => a.anforderungsebene === '2 - Transfer')}
+            projektaufgaben={projektaufgabenFuerEinheit} />
+          
           </TabsContent>
         </Tabs>
       }
-      {einheit && (
-        <EinheitSettingsModal
-          open={settingsOpen}
-          onOpenChange={setSettingsOpen}
-          einheit={einheit}
-          currentUserEmail={authUser?.email}
-        />
-      )}
+      {einheit &&
+      <EinheitSettingsModal
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        einheit={einheit}
+        currentUserEmail={authUser?.email} />
+
+      }
     </div>);
 
 }
