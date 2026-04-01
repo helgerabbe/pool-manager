@@ -9,7 +9,6 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AppLayout from '@/components/layout/AppLayout';
 import Dashboard from '@/pages/Dashboard';
 import EinheitenListe from '@/pages/EinheitenListe';
-import EinheitDetail from '@/pages/EinheitDetail';
 import Benutzerverwaltung from '@/pages/Benutzerverwaltung';
 import SeedAdmin from '@/pages/SeedAdmin';
 import MoodleExport from '@/pages/MoodleExport';
@@ -17,7 +16,7 @@ import Workspace from '@/pages/Workspace';
 import AdminSettings from '@/pages/AdminSettings';
 import EinheitCreateWizard from '@/pages/EinheitCreateWizard';
 import ExportCenter from '@/pages/ExportCenter';
-import EinheitStrukturBoard from '@/pages/EinheitStrukturBoard';
+import EinheitViewManager from '@/components/workspace/EinheitViewManager';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -48,15 +47,12 @@ const AuthenticatedApp = () => {
       <Route element={<AppLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/einheiten" element={<EinheitenListe />} />
-        <Route path="/einheiten/:id" element={<EinheitDetail />} />
+        <Route path="/einheiten/:id" element={<EinheitViewManager />} />
         <Route path="/benutzerverwaltung" element={<Benutzerverwaltung />} />
         <Route path="/seed" element={<SeedAdmin />} />
         <Route path="/moodle-export" element={<MoodleExport />} />
         <Route path="/workspace" element={<Workspace />} />
         <Route path="/einheit/create" element={<EinheitCreateWizard />} />
-        {/* /einheit/:id/struktur → Workspace mit Struktur-Toggle vorausgewählt */}
-        <Route path="/einheit/:id/struktur" element={<EinheitStrukturBoard />} />
-        <Route path="/einheit/workspace" element={<Workspace />} />
         <Route path="/einheit/export" element={<ExportCenter />} />
         <Route path="/admin-settings" element={<AdminSettings />} />
       </Route>
