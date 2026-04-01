@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,12 @@ function SternRating({ value, onChange }) {
       {[1, 2, 3].map(star => (
         <button
           key={star}
-          onClick={() => onChange(value === star ? null : star)}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onChange(value === star ? null : star);
+          }}
           className={`text-2xl transition-transform hover:scale-110 ${
             value && value >= star ? 'text-amber-400' : 'text-gray-300'
           }`}
@@ -27,7 +32,12 @@ function SternRating({ value, onChange }) {
       ))}
       {value && (
         <button
-          onClick={() => onChange(null)}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onChange(null);
+          }}
           className="text-xs text-muted-foreground hover:text-foreground ml-2"
         >
           Zurücksetzen
@@ -208,14 +218,27 @@ function MaterialUploader({ materials, onMaterialsChange }) {
 }
 
 // ── Haupt-Component ──
-export default function ProjektCreateView({ open, onOpenChange, einheitId, onSuccess }) {
+export default function ProjektCreateView({ open, onOpenChange, einheitId, themenfelder = [], initialData = null, onSuccess }) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     titel: '',
     aufgabenstellung: '',
     schwierigkeitsgrad: null,
+    themenfeld_id: null,
+    anforderungsebene: '3 - Projekt',
     materialien: [],
   });
+
+  // Reset formData wenn initialData sich ändert (für Bearbeitung)
+  React.useEffect(() => {
+    if (open) {
+      if (initialData) {
+        setFormData(initialData);
+      } else {
+        setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, themenfeld_id: null, anforderungsebene: '3 - Projekt', materialien: [] });
+      }
+    }
+  }, [open, initialData]);
 
   const createProjekt = useMutation({
     mutationFn: (data) =>
@@ -227,10 +250,23 @@ export default function ProjektCreateView({ open, onOpenChange, einheitId, onSuc
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
       toast.success('Anwendungs- und Projektaufgabe erstellt!');
       onSuccess?.(result);
-      setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, materialien: [] });
+      setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, themenfeld_id: null, anforderungsebene: '3 - Projekt', materialien: [] });
       onOpenChange(false);
     },
     onError: () => toast.error('Fehler beim Erstellen'),
+  });
+
+  const updateProjekt = useMutation({
+    mutationFn: (data) =>
+      base44.entities.AllgemeineAufgabe.update(initialData.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
+      toast.success('Anwendungs- und Projektaufgabe aktualisiert');
+      onSuccess?.();
+      setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, themenfeld_id: null, anforderungsebene: '3 - Projekt', materialien: [] });
+      onOpenChange(false);
+    },
+    onError: () => toast.error('Fehler beim Aktualisieren'),
   });
 
   const handleSubmit = (e) => {
@@ -239,17 +275,39 @@ export default function ProjektCreateView({ open, onOpenChange, einheitId, onSuc
       toast.error('Aufgabenstellung ist erforderlich');
       return;
     }
-    createProjekt.mutate(formData);
+    if (initialData) {
+      updateProjekt.mutate(formData);
+    } else {
+      createProjekt.mutate(formData);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Neue Anwendungs- und Projektaufgabe</DialogTitle>
+          <DialogTitle>{initialData ? 'Anwendungs- und Projektaufgabe bearbeiten' : 'Neue Anwendungs- und Projektaufgabe'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Themenfeld */}
+          {themenfelder.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="themenfeld">Themenfeld (optional)</Label>
+              <select
+                id="themenfeld"
+                value={formData.themenfeld_id || ''}
+                onChange={(e) => setFormData({ ...formData, themenfeld_id: e.target.value || null })}
+                className="w-full h-9 px-3 border rounded-lg text-sm bg-white"
+              >
+                <option value="">-- Kein Themenfeld --</option>
+                {themenfelder.map(tf => (
+                  <option key={tf.id} value={tf.id}>{tf.titel}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Titel */}
           <div className="space-y-2">
             <Label htmlFor="titel">Titel (optional)</Label>
@@ -306,14 +364,18 @@ export default function ProjektCreateView({ open, onOpenChange, einheitId, onSuc
             </Button>
             <Button
               type="submit"
-              disabled={createProjekt.isPending || !formData.aufgabenstellung.trim()}
+              disabled={(createProjekt.isPending || updateProjekt.isPending) || !formData.aufgabenstellung.trim()}
               className="gap-2"
             >
-              {createProjekt.isPending ? (
+              {createProjekt.isPending || updateProjekt.isPending ? (
                 <>Wird gespeichert…</>
-              ) : (
+              ) : initialData ? (
                 <>
                   <Save className="w-4 h-4" /> Speichern
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" /> Speichern & Weiter zu Kompetenzen
                 </>
               )}
             </Button>
