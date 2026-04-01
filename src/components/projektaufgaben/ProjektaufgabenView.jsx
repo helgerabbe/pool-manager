@@ -338,10 +338,11 @@ export default function ProjektaufgabenView({
         {/* Rechte Spalte: Detail-Panel */}
         {selectedAufgabe ? (
           <main className="flex-1 flex flex-col overflow-hidden">
-            {/* Tabs für Angaben & KI-Prompt */}
+            {/* Tabs für Angaben, Lernlandkarte & KI-Prompt */}
             <Tabs defaultValue="angaben" className="flex-1 flex flex-col overflow-hidden">
               <TabsList className="mx-6 mt-3 bg-muted">
                 <TabsTrigger value="angaben" className="text-xs">Angaben</TabsTrigger>
+                <TabsTrigger value="lernlandkarte" className="text-xs">Lernlandkarte</TabsTrigger>
                 <TabsTrigger value="ki-prompt" className="text-xs">KI-Tutor Prompt</TabsTrigger>
               </TabsList>
 
@@ -359,8 +360,15 @@ export default function ProjektaufgabenView({
                 />
               </TabsContent>
 
-              {/* Tab 2: KI-Tutor Prompt */}
-              <TabsContent value="ki-prompt" className="flex-1 overflow-y-auto m-0">
+              {/* Tab 2: Lernlandkarte */}
+               <TabsContent value="lernlandkarte" className="flex-1 overflow-y-auto m-0">
+                 <div className="p-6">
+                   <p className="text-muted-foreground">Lernlandkarte wird vorbereitet…</p>
+                 </div>
+               </TabsContent>
+
+               {/* Tab 3: KI-Tutor Prompt */}
+               <TabsContent value="ki-prompt" className="flex-1 overflow-y-auto m-0">
                 <KITutorPromptPlaceholder />
               </TabsContent>
             </Tabs>
