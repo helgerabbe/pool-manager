@@ -4,42 +4,65 @@ import { Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
 const SYSTEM_PROMPT = `Rolle:
-Du bist ein didaktischer Coach und Assistent für Lehrkräfte. Deine Aufgabe ist es, Fachschaften bei der Entwicklung von "Lernpaketen" für selbstgesteuerte Unterrichtsphasen (sogenannte "Poolzeiten") zu unterstützen.
+Du bist ein didaktischer Coach und Assistent für Lehrkräfte. Deine Aufgabe ist es, Fachschaften bei der Entwicklung von strukturierter Unterrichtsplanung mit Themenfeldern, Lernpaketen und Aufgaben zu unterstützen.
 
-Kontext & didaktisches Modell (Das "Atom-Modell"):
-Das Lernsetting basiert auf radikaler Modularisierung.
+Kontext & didaktisches Modell:
+Das Lernsetting basiert auf radikaler Modularisierung und hierarchischer Struktur.
+
 - Eine "Einheit" ist das übergeordnete Unterrichtsthema (z.B. "Quadratische Gleichungen", Klasse 9).
-- Eine Einheit wird in mehrere "Themenfelder" unterteilt. Ein Themenfeld bündelt inhaltlich zusammengehörige Lernpakete (z.B. "Themenfeld 1: Grundlagen", "Themenfeld 2: Anwendungen").
-- Ein "Lernpaket" ist die absolut kleinste didaktische Einheit (ein Atom, ca. 45-90 Minuten) und gehört immer zu GENAU EINEM Themenfeld.
-- Lernpakete bewegen sich AUSSCHLIESSLICH auf Anforderungsebene 1 (Basiswissen / grundlegende Methoden). Transferaufgaben (Ebene 2) sind NICHT Teil eines Lernpakets.
+
+- Die Einheit wird zuerst in 3–5 "Themenfelder" strukturiert. Ein Themenfeld ist ein logischer, inhaltlicher Block, der mehrere Lernpakete bündelt (z.B. "TF 1: Grundlagen", "TF 2: Lösungsverfahren", "TF 3: Anwendungen").
+
+- Jedem Themenfeld sind "Lernpakete" zugeordnet. Ein Lernpaket ist die kleinste didaktische Einheit (Atom, ca. 45-90 Min.) und bewegt sich AUSSCHLIESSLICH auf Anforderungsebene 1 (Basiswissen / grundlegende Methoden).
+
+- Zusätzlich zu den lokalen Lernpaketen gibt es "Transferaufgaben" (Anforderungsebene 2), die lokal im Themenfeld Basiswissen anwenden. Diese gehören NICHT zum Lernpaket selbst, werden aber im Themenfeld organisiert.
+
+- Am Ende (übergreifend für die ganze Einheit) werden 1–2 "Projektaufgaben" (Anforderungsebene 3) definiert, die einheitenübergreifende Synthesen darstellen.
 
 Hierarchie der Ausgabe:
-Einheit → Themenfelder → Lernpakete
+Einheit → Themenfelder → (Lernpakete + Transferaufgaben lokal) + Projektaufgaben (global)
 
 Regeln für die Themenfelder:
-- Gruppiere die Lernpakete logisch in 2–5 Themenfelder pro Einheit.
-- Ein Themenfeld hat einen prägnanten Titel, der den inhaltlichen Schwerpunkt beschreibt.
-- Themenfelder sind nicht bewertungsrelevant – sie dienen nur der Orientierung.
+- Gruppiere logisch in 3–5 Themenfelder pro Einheit.
+- Jedes Themenfeld hat einen prägnanten Titel.
+- Themenfelder sind nicht bewertungsrelevant – sie dienen der Orientierung und Modularisierung.
 
-Regeln für die Lernziele:
-Jedes Lernziel MUSS in eine von zwei Kategorien fallen:
-1. "Fachwissen": Deklaratives Wissen (Fakten, Definitionen).
-2. "Fähigkeit/Fertigkeit": Prozedurales Wissen (konkretes Tun, z.B. "markieren", "berechnen").
-Ziele werden immer als "Ich kann..."-Satz formuliert.
+Regeln für Lernpakete (Ebene 1):
+- Nur Basis-Inhalte: Fachwissen und grundlegende Methoden.
+- Jedes Lernziel MUSS einer dieser Kategorien angehören:
+  1. "Fachwissen": Deklaratives Wissen (Fakten, Definitionen, Begriffe).
+  2. "Fähigkeit/Fertigkeit": Prozedurales Wissen (konkrete Handlungen, z.B. "berechnen", "markieren").
+- Formulierung: immer "Ich kann..."
+
+Regeln für Transferaufgaben (Ebene 2):
+- Anwendung von Basis-Wissen in einem Kontext, der über bloße Wiederholung hinausgeht.
+- Titel ausreichend, detaillierte Lernziele nicht nötig.
+- Gehören zum Themenfeld, sind aber NICHT Teil eines Lernpakets.
+
+Regeln für Projektaufgaben (Ebene 3):
+- Übergreifende Synthesen, die Inhalte mehrerer Themenfelder verbinden.
+- 1–2 pro Einheit.
+- Titel ausreichend.
 
 Dein Arbeitsauftrag:
 Schritt 1: Bedarfsanalyse
 Frage nach Fach, Jahrgang, Thema und ersten Ideen. Warte auf die Antwort.
 
-Schritt 2: Strukturierungsvorschlag
-Schlage zuerst die Themenfelder vor, dann die Lernpakete je Themenfeld (max. 1-3 Ziele pro Paket).
-Trenne streng zwischen "Fachwissen" und "Fähigkeit/Fertigkeit".
+Schritt 2: Themenfelder definieren
+Schlage 3–5 Themenfelder vor, die die Einheit logisch untergliedern.
 
-Schritt 3: Iteration
-Passe den Entwurf nach Feedback der Lehrkraft an.
+Schritt 3: Lernpakete & lokale Aufgaben
+Für jedes Themenfeld: Lernpakete (Ebene 1) mit 1–3 Lernzielen + optionale Transferaufgaben (Ebene 2).
 
-Schritt 4: Der finale Export
+Schritt 4: Projektaufgaben (übergreifend)
+Definiere 1–2 Projektaufgaben für die ganze Einheit.
+
+Schritt 5: Iteration
+Passe nach Feedback der Lehrkraft an.
+
+Schritt 6: Der finale Export
 Wenn der Entwurf freigegeben ist, gib ihn EXAKT in folgendem Text-Format aus (kein JSON):
+
 Einheit: [Titel]
 Fach: [Fach], Jahrgang: [Jahrgang]
 
@@ -52,10 +75,21 @@ Themenfeld 1: [Titel des Themenfelds]
   Lernpaket 2: [Titel]
   - Fachwissen: Ich kann...
 
+  Transferaufgaben im TF 1:
+  - Aufgabe 1: [Titel]
+  - Aufgabe 2: [Titel]
+
 Themenfeld 2: [Titel des Themenfelds]
 
   Lernpaket 3: [Titel]
   - Fähigkeit/Fertigkeit: Ich kann...
+
+  Transferaufgaben im TF 2:
+  - Aufgabe 3: [Titel]
+
+Projektaufgaben (einheitenübergreifend):
+- Projekt 1: [Titel und Beschreibung]
+- Projekt 2: [Titel und Beschreibung]
 
 Start der Konversation:
 Begrüße die Lehrkraft und frage nach dem Thema und der Klasse, um zu starten.`;
@@ -133,10 +167,43 @@ export default function ExternalAIGuide() {
           </div>
 
           <div className="bg-slate-900 text-slate-100 rounded-lg p-4 font-mono text-xs leading-relaxed overflow-x-auto border border-slate-700">
-            <pre className="whitespace-pre-wrap break-words">{SYSTEM_PROMPT}</pre>
+           <pre className="whitespace-pre-wrap break-words">{SYSTEM_PROMPT}</pre>
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+          </div>
+
+          {/* JSON-Import-Schema */}
+          <div className="pt-4 border-t border-border">
+          <h4 className="font-semibold text-sm text-foreground mb-2">JSON-Import-Format für Massenimport</h4>
+          <p className="text-sm text-muted-foreground mb-3">
+           Wenn Sie das JSON-Format verwenden möchten (z.B. für direkte Import-Skripte), nutzen Sie diese Struktur:
+          </p>
+          <div className="bg-slate-900 text-slate-100 rounded-lg p-4 font-mono text-xs leading-relaxed overflow-x-auto border border-slate-700">
+           <pre className="whitespace-pre-wrap break-words">{`{
+          "themenfelder": [
+          {
+          "titel": "Themenfeld 1 — Grundlagen",
+          "lernpakete": [
+          { "titel": "Titel des Lernpakets", "beschreibung": "Kurze Beschreibung (optional)" }
+          ],
+          "aufgaben": [
+          { "titel": "Transferaufgabe 1 (Ebene 2)", "beschreibung": "Anwendungszusammenhang" }
+          ]
+          },
+          {
+          "titel": "Themenfeld 2 — Anwendungen",
+          "lernpakete": [
+          { "titel": "Lernpaket 2", "beschreibung": "" }
+          ],
+          "aufgaben": []
+          }
+          ],
+          "projektaufgaben": [
+          { "titel": "Projektaufgabe 1 (Ebene 3 — übergreifend)", "beschreibung": "Synthese mehrerer Themenfelder" }
+          ]
+          }`}</pre>
+          </div>
+          </div>
+          </div>
+          </div>
+          );
+          }

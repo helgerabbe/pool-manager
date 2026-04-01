@@ -8,7 +8,7 @@ import { Send, Sparkles, Bot, User, ArrowDownToLine, RotateCcw } from 'lucide-re
 
 // ── Erkennung: Enthält die Nachricht einen finalen Strukturentwurf? ────────────
 function isFinalStruktur(text) {
-  return /Einheit:/i.test(text) && /Lernpaket\s*1:/i.test(text);
+  return /Einheit:/i.test(text) && (/Themenfeld\s*1:/i.test(text) || /Lernpaket\s*1:/i.test(text));
 }
 
 // ── Typing-Indikator ──────────────────────────────────────────────────────────
@@ -145,7 +145,7 @@ export default function DidaktikCoachChat({ onBraindumpUebernehmen }) {
           <div>
             <h3 className="font-semibold text-sm text-foreground">Didaktik-Coach</h3>
             <p className="text-[11px] text-muted-foreground">
-              Strukturiert Ihre Ideen ins Atom-Modell (Ebene 1)
+              Strukturiert Ihre Ideen in Themenfelder, Lernpakete & Aufgaben
             </p>
           </div>
         </div>
@@ -173,7 +173,7 @@ export default function DidaktikCoachChat({ onBraindumpUebernehmen }) {
               <p className="font-semibold text-foreground">Hallo! Ich bin Ihr Didaktik-Coach.</p>
               <p className="text-sm text-muted-foreground mt-1 max-w-xs">
                 Erzählen Sie mir von Ihrem Unterrichtsthema — ich helfe Ihnen, daraus
-                feingranulare Lernpakete im Atom-Modell zu strukturieren.
+                Themenfelder, Lernpakete und Aufgaben zu strukturieren.
               </p>
             </div>
             <div className="flex flex-wrap gap-2 justify-center mt-2">
