@@ -1,0 +1,79 @@
+{
+  "name": "AllgemeineAufgabe",
+  "type": "object",
+  "properties": {
+    "einheit_id": {
+      "type": "string",
+      "description": "FK zur Einheit"
+    },
+    "themenfeld_id": {
+      "type": "string",
+      "description": "FK zum Themenfeld (optional)"
+    },
+    "titel": {
+      "type": "string",
+      "description": "Titel der Aufgabe (optional)"
+    },
+    "aufgabenstellung": {
+      "type": "string",
+      "description": "Aufgabenstellung als Rich-Text (erforderlich)"
+    },
+    "schwierigkeitsgrad": {
+      "type": "integer",
+      "enum": [
+        1,
+        2,
+        3
+      ],
+      "description": "Schwierigkeitsgrad (1=leicht, 2=mittel, 3=schwer, null=keine Angabe)"
+    },
+    "materialien": {
+      "type": "array",
+      "description": "Array von Materialien/Ressourcen",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "pdf",
+              "image",
+              "book_ref",
+              "free_text"
+            ],
+            "description": "Art des Materials"
+          },
+          "content": {
+            "type": "string",
+            "description": "Textinhalt (f\u00fcr free_text oder book_ref)"
+          },
+          "url": {
+            "type": "string",
+            "description": "URL zur Datei (f\u00fcr pdf oder image)"
+          },
+          "label": {
+            "type": "string",
+            "description": "Optionales Label/Beschreibung f\u00fcr das Material"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      }
+    },
+    "sync_status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "exported",
+        "modified"
+      ],
+      "default": "new",
+      "description": "Sync-Status f\u00fcr Moodle-Export-Tracking"
+    }
+  },
+  "required": [
+    "einheit_id",
+    "aufgabenstellung"
+  ]
+}
