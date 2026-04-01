@@ -420,6 +420,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                   phaseLabel={phase.label}
                   kannBearbeiten={kannBearbeiten}
                   queryClient={queryClient}
+                  onNavigate={onNavigate}
                 />
               )}
             </div>
@@ -720,13 +721,19 @@ function AktivitaetEditPanel({ paket, phaseKey, phaseLabel, kannBearbeiten, quer
 
 import PhaseActivitiesList from '@/components/workspace/PhaseActivitiesList';
 
-function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, onSelectActivity }) {
+function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient, onNavigate }) {
   return (
     <PhaseActivitiesList
       paket={paket}
       phase={phaseKey}
       kannBearbeiten={kannBearbeiten}
-      onSelectActivity={onSelectActivity}
+      onSelectActivity={(data) => onNavigate({
+        type: 'aktivitaet-edit',
+        id: data.activityId,
+        phase: data.phaseKey,
+        paketId: data.paketId,
+        activityRecordId: data.activityId,
+      })}
     />
   );
 }
