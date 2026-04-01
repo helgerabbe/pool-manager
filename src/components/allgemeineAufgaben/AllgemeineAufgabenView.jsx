@@ -196,7 +196,7 @@ export default function AllgemeineAufgabenView({
   const selectedAufgabe = allgemeineAufgaben.find(a => a.id === selectedAufgabeId);
 
   return (
-    <div className="h-full flex flex-col gap-2 p-4 bg-background overflow-hidden">
+    <div className="flex flex-col flex-1 h-full p-4 sm:p-6 bg-background overflow-hidden justify-start gap-2">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Allgemeine Aufgaben</h1>
