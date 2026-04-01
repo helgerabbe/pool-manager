@@ -76,7 +76,8 @@ HINWEISE:
 }
 
 // deno-lint-ignore no-undef
-Deno.serve(async (req) => {
+if (typeof Deno !== 'undefined') {
+  Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204 });
   }
@@ -222,4 +223,5 @@ Gib die Varianten als striktes JSON-Array zurück:
       { status: 500 }
     );
   }
-});
+  });
+}

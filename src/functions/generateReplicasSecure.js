@@ -9,7 +9,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 // deno-lint-ignore no-undef
-Deno.serve(async (req) => {
+if (typeof Deno !== 'undefined') {
+  Deno.serve(async (req) => {
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
   }
@@ -149,7 +150,8 @@ Antworte nur mit einem validen JSON-Array.
       { status: 500 }
     );
   }
-});
+  });
+}
 
 /**
  * Konstruiere den LLM System-Prompt basierend auf Activity-Type
