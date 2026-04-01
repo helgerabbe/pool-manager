@@ -112,10 +112,11 @@ export default function LernlandkartePreview({
     paketeFuerEinheit.some(p => p.id === lz.lernpaket_id)
   );
 
-  // Unzugeordnete Lernziele
-  const unzugeordneteZiele = lernziele.filter(lz => 
-    !paketeFuerEinheit.some(p => p.id === lz.lernpaket_id)
-  );
+  // Unzugeordnete Lernziele (Lernziele, deren Pakete kein Themenfeld haben)
+  const unzugeordneteZiele = lernziele.filter(lz => {
+    const paket = paketeFuerEinheit.find(p => p.id === lz.lernpaket_id);
+    return paket && !paket.themenfeld_id;
+  });
 
   const themenfeldMitPaketen = themenfelder
     .filter(tf => paketeFuerEinheit.some(p => p.themenfeld_id === tf.id))
