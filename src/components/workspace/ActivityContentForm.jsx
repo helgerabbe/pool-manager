@@ -120,9 +120,21 @@ export default function ActivityContentForm({
 
         {/* Formularfelder */}
         <div className="space-y-5 py-4">
+          {/* Globales Aufgabenstellungs-Feld (immer sichtbar, optional) */}
+          <div className="space-y-2">
+            <Label>Aufgabenstellung <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <textarea
+              value={formData.task_description || ''}
+              onChange={e => handleFieldChange('task_description', e.target.value)}
+              placeholder="Beschreibe hier kurz, was der Schüler tun soll..."
+              rows={3}
+              className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm resize-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+          </div>
+
           {formSchema.length === 0 ? (
             <div className="p-6 rounded-lg bg-muted/50 text-center text-sm text-muted-foreground">
-              Keine Formularfelder definiert.
+              Keine weiteren Formularfelder definiert.
             </div>
           ) : (
             formSchema.map(field => (

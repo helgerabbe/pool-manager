@@ -77,6 +77,7 @@ Deno.serve(async (req) => {
           activities.push({
             phase: phase,
             type: 'Activity',
+            task_description: fieldValues.task_description || null,
             config: fieldValues,
             sync_status: paket.sync_status,
           });
