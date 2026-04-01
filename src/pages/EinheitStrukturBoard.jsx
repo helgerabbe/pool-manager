@@ -271,7 +271,7 @@ export default function EinheitStrukturBoard({ onSaveStart = null, onSaveEnd = n
   const [lastError, setLastError]         = useState(null);
   
   // ── Dirty-State & Navigation Guard ────────────────────────────────────────
-  const { isDirty, setIsDirty, blocker, shouldBlock, setShouldBlock } = useStructuralUnsavedChanges();
+  const { isDirty, setIsDirty, shouldBlock, setShouldBlock } = useStructuralUnsavedChanges();
   const [discardOnNavigate, setDiscardOnNavigate] = useState(false);
 
   // Berechtigungen: Struktur-Board nur für ADMIN + FACHSCHAFTSLEITUNG editierbar
@@ -481,9 +481,6 @@ export default function EinheitStrukturBoard({ onSaveStart = null, onSaveEnd = n
     setIsDirty(false);
     setDiscardOnNavigate(true);
     setShouldBlock(false);
-    if (blocker.state === 'blocked') {
-      blocker.proceed();
-    }
   };
 
   const handleCancelNavigation = () => {
@@ -492,11 +489,10 @@ export default function EinheitStrukturBoard({ onSaveStart = null, onSaveEnd = n
 
   // ── Blocker-Effekt: Automatisch navigieren, wenn discard gesetzt ──────────────
   useEffect(() => {
-    if (discardOnNavigate && blocker.state === 'blocked') {
-      blocker.proceed();
+    if (discardOnNavigate) {
       setDiscardOnNavigate(false);
     }
-  }, [discardOnNavigate, blocker]);
+  }, [discardOnNavigate]);
 
   // ── Rendering ─────────────────────────────────────────────────────────────────
 

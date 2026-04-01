@@ -1,5 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useBlocker } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 
 /**
  * useStructuralUnsavedChanges
@@ -10,7 +9,8 @@ import { useBlocker } from 'react-router-dom';
  * Rückgaben:
  * - isDirty: boolean — gibt an, ob ungespeicherte Änderungen vorliegen
  * - setIsDirty: (bool) => void — Dirty-State setzen
- * - shouldBlockNavigation: boolean — wird true, wenn Blocker aktiv ist
+ * - shouldBlock: boolean — wird true, wenn Navigation blockiert werden soll
+ * - setShouldBlock: (bool) => void — Blockierungs-State setzen
  */
 
 export function useStructuralUnsavedChanges() {
@@ -31,19 +31,18 @@ export function useStructuralUnsavedChanges() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
 
-  // ── React Router Blocker ──────────────────────────────────────────────────
-  const blocker = useBlocker(({ currentLocation, nextLocation }) => {
-    if (isDirty && currentLocation.pathname !== nextLocation.pathname) {
+  // ── Manual navigation blocking via modal (handled in component) ──────────
+  useEffect(() => {
+    if (isDirty) {
       setShouldBlock(true);
-      return true; // Block navigation
+    } else {
+      setShouldBlock(false);
     }
-    return false;
-  });
+  }, [isDirty]);
 
   return {
     isDirty,
     setIsDirty,
-    blocker,
     shouldBlock,
     setShouldBlock,
   };
