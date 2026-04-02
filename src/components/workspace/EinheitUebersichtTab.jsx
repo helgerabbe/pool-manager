@@ -183,7 +183,7 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
   return (
     <div className="px-6 lg:px-10 py-8 max-w-7xl mx-auto w-full">
 
-      {/* ── Zweispalten-Layout: Konfiguration | Team ──────────────────────────── */}
+      {/* ── Zweispalten-Layout: Konfiguration | Mitarbeiter ────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
 
         {/* ── Spalte 1: Metadaten ──────────────────────────────────────────────── */}
@@ -260,128 +260,8 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
           </div>
         </section>
 
-        {/* ── Spalte 2: Team ───────────────────────────────────────────────────── */}
+        {/* ── Spalte 2: Mitarbeiter ────────────────────────────────────────────── */}
         <section className="space-y-5">
-          <div>
-            <h2 className="text-lg font-semibold">Team</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">Mitglieder und ihre Rollen in dieser Einheit.</p>
-          </div>
-
-          <div className="space-y-3 p-5 rounded-xl border bg-card">
-            {membersLoading ? (
-              <div className="flex justify-center py-6"><div className="w-6 h-6 border-2 border-muted border-t-primary rounded-full animate-spin" /></div>
-            ) : members.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6 border border-dashed rounded-lg">Noch keine Mitglieder zugewiesen.</p>
-            ) : (
-              members.map(m => {
-                const isMe = m.user_email === currentUserEmail;
-                return (
-                  <div key={m.id} className="flex items-center gap-3 p-3 rounded-lg border bg-background">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary shrink-0">
-                      {(m.user_name || m.user_email).charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{m.user_name || m.user_email}</p>
-                      <p className="text-xs text-muted-foreground truncate">{m.user_email}</p>
-                    </div>
-                    {isLeitung && !isMe ? (
-                      <Select value={m.unit_role} onValueChange={v => updateRole.mutate({ memberId: m.id, role: v })}>
-                        <SelectTrigger className="w-28 h-7 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="LEITUNG">Leitung</SelectItem>
-                          <SelectItem value="EDITOR">Editor</SelectItem>
-                          <SelectItem value="READER">Leser</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <UnitRoleBadge role={m.unit_role} />
-                    )}
-                    {isLeitung && !isMe && (
-                      <button
-                        onClick={() => removeMember.mutate(m.id)}
-                        className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                    {isMe && <span className="text-[10px] text-muted-foreground italic shrink-0">Ich</span>}
-                  </div>
-                );
-              })
-            )}
-
-            {isLeitung && (
-              <div className="pt-1">
-                {!adding ? (
-                  <Button variant="outline" size="sm" onClick={() => setAdding(true)} className="gap-2 w-full">
-                    <Plus className="w-3.5 h-3.5" /> Mitglied hinzufügen
-                  </Button>
-                ) : (
-                  <div className="space-y-3 p-3 rounded-lg bg-muted/50 border">
-                    <p className="text-xs font-semibold text-muted-foreground">Neues Mitglied</p>
-                    {availableUsers.length > 0 ? (
-                      <Select value={newEmail} onValueChange={setNewEmail}>
-                        <SelectTrigger className="text-sm"><SelectValue placeholder="Nutzer auswählen…" /></SelectTrigger>
-                        <SelectContent>
-                          {availableUsers.map(u => (
-                            <SelectItem key={u.email} value={u.email}>
-                              <span className="font-medium">{u.full_name}</span>
-                              <span className="text-muted-foreground ml-2 text-xs">{u.email}</span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Input placeholder="E-Mail-Adresse…" value={newEmail} onChange={e => setNewEmail(e.target.value)} className="text-sm" />
-                    )}
-                    <div className="space-y-1.5">
-                      <p className="text-xs font-semibold text-muted-foreground">Rolle</p>
-                      <div className="grid grid-cols-3 gap-2">
-                        {['LEITUNG', 'EDITOR', 'READER'].map(roleKey => (
-                          <TooltipProvider key={roleKey}>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <button
-                                  onClick={() => setNewRole(roleKey)}
-                                  className={cn(
-                                    'p-2 rounded-lg border text-xs font-medium transition-all cursor-help',
-                                    newRole === roleKey
-                                      ? UNIT_ROLE_CONFIG[roleKey].color
-                                      : 'bg-background border-border text-muted-foreground hover:border-primary/50'
-                                  )}
-                                >
-                                  {UNIT_ROLE_CONFIG[roleKey].Icon && (
-                                    <>
-                                      {React.createElement(UNIT_ROLE_CONFIG[roleKey].Icon, { className: 'w-3 h-3 inline mr-1' })}
-                                    </>
-                                  )}
-                                  {UNIT_ROLE_CONFIG[roleKey].label}
-                                </button>
-                              </TooltipTrigger>
-                              <TooltipContent side="bottom" className="max-w-xs text-xs">
-                                {UNIT_ROLE_CONFIG[roleKey].description}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => { setAdding(false); setNewEmail(''); }} className="flex-1">Abbrechen</Button>
-                      <Button size="sm" className="flex-1 gap-1" disabled={!newEmail || addMember.isPending} onClick={() => addMember.mutate({ email: newEmail, role: newRole })}>
-                        <Plus className="w-3.5 h-3.5" /> Hinzufügen
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* ── Spalte 3: Mitarbeiter (nur Admin + Fachschaftsleitung) ─────────── */}
-        {kannMitarbeiterHinzufuegen && (
-          <section className="space-y-5 lg:col-span-2">
             <div>
               <h2 className="text-lg font-semibold">Mitarbeiter</h2>
               <p className="text-sm text-muted-foreground mt-0.5">Fachlehrkräfte dieser Einheit volle Bearbeitungsrechte geben.</p>
@@ -453,7 +333,6 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
               )}
             </div>
           </section>
-        )}
 
       </div>
     </div>
