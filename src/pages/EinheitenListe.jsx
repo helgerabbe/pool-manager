@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useRBAC } from '@/hooks/useRBAC';
 import { kannEinheitSehen } from '@/lib/rbac';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, AlertCircle } from 'lucide-react';
+import { Plus, Search, AlertCircle, Wand2 } from 'lucide-react';
 import SyncStatusBadge from '@/components/sync/SyncStatusBadge';
 import EinheitCard from '@/components/einheiten/EinheitCard';
-import EinheitForm from '@/components/einheiten/EinheitForm';
 import EmptyState from '@/components/shared/EmptyState';
 import { BookOpen } from 'lucide-react';
 import { getExportPendingCount } from '@/lib/deltaExportLogic';
+import { useNavigate } from 'react-router-dom';
 
 export default function EinheitenListe() {
-  const [showForm, setShowForm] = useState(false);
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterFach, setFilterFach] = useState('all');
   const [showOnlyChanged, setShowOnlyChanged] = useState(false);
@@ -30,11 +30,6 @@ export default function EinheitenListe() {
   const { data: lernpakete = [] } = useQuery({
     queryKey: ['lernpakete'],
     queryFn: () => base44.entities.Lernpakete.list(),
-  });
-
-  const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Einheiten.create(data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['einheiten'] }),
   });
 
   const pendingCount = getExportPendingCount(einheiten);
@@ -67,9 +62,9 @@ export default function EinheitenListe() {
           <p className="text-sm text-muted-foreground mt-1">{einheiten.length} Einheit{einheiten.length !== 1 ? 'en' : ''} insgesamt</p>
         </div>
         {permissions.kannSchreiben && (
-          <Button onClick={() => setShowForm(true)} className="gap-2">
-            <Plus className="w-4 h-4" />
-            Neue Einheit
+          <Button onClick={() => navigate('/einheit/create')} className="gap-2">
+            <Wand2 className="w-4 h-4" />
+            Neue Einheit (Wizard)
           </Button>
         )}
       </div>
@@ -131,17 +126,12 @@ export default function EinheitenListe() {
           title="Noch keine Einheiten"
           description="Erstellen Sie Ihre erste Unterrichtseinheit, um mit der Planung zu beginnen."
           actionLabel="Erste Einheit erstellen"
-          onAction={() => setShowForm(true)}
+          onAction={() => navigate('/einheit/create')}
         />
       ) : (
         <p className="text-sm text-muted-foreground text-center py-10">Keine Einheiten gefunden.</p>
       )}
 
-      <EinheitForm
-        open={showForm}
-        onOpenChange={setShowForm}
-        onSubmit={(data) => createMutation.mutate(data)}
-      />
     </div>
   );
 }
