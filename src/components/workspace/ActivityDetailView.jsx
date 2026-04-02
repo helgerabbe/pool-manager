@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Edit, Save, X, FileText, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import ApprovalStatusBadge from '@/components/workspace/ApprovalStatusBadge';
+import ApprovalActionButton from '@/components/workspace/ApprovalActionButton';
 
 export default function ActivityDetailView({ activityRecord, kannBearbeiten, queryClient }) {
   const [editMode, setEditMode] = useState(false);
@@ -64,24 +66,35 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
               Inhalt unvollständig
             </div>
           )}
+          <div className="mt-2">
+            <ApprovalStatusBadge syncStatus={activityRecord.sync_status} />
+          </div>
         </div>
-        <div className="flex gap-2 shrink-0">
-          {!editMode ? (
-            <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-2">
-              <Edit className="w-3.5 h-3.5" />
-              Bearbeiten
-            </Button>
-          ) : (
-            <>
-              <Button size="sm" variant="ghost" onClick={() => setEditMode(false)} disabled={saving}>
-                <X className="w-3.5 h-3.5" />
+        <div className="flex gap-2 shrink-0 flex-col items-end">
+          <div className="flex gap-2">
+            {!editMode ? (
+              <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-2">
+                <Edit className="w-3.5 h-3.5" />
+                Bearbeiten
               </Button>
-              <Button size="sm" onClick={handleSave} disabled={saving} className="gap-2">
-                {saving ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                Speichern
-              </Button>
-            </>
-          )}
+            ) : (
+              <>
+                <Button size="sm" variant="ghost" onClick={() => setEditMode(false)} disabled={saving}>
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+                <Button size="sm" onClick={handleSave} disabled={saving} className="gap-2">
+                  {saving ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  Speichern
+                </Button>
+              </>
+            )}
+          </div>
+          <ApprovalActionButton 
+            entityId={activityRecord.id} 
+            entityType="activity" 
+            syncStatus={activityRecord.sync_status}
+            kannBearbeiten={true}
+          />
         </div>
       </div>
 

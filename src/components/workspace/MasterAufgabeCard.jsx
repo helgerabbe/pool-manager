@@ -16,6 +16,8 @@ import { Label } from '@/components/ui/label';
 import { Crown, Trash2, Sparkles, Loader2, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import LockBanner from '@/components/workspace/LockBanner';
 import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
+import ApprovalActionButton from '@/components/workspace/ApprovalActionButton';
+import ApprovalStatusBadge from '@/components/workspace/ApprovalStatusBadge';
 import { isLockExpired } from '@/hooks/useActivityLock';
 import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus';
 import { TASK_STATUS_CONFIG } from '@/lib/stateMachine';
@@ -260,7 +262,13 @@ export default function MasterAufgabeCard({
           </button>
         )}
 
-        <div className="flex items-center gap-1 ml-auto shrink-0">
+        <div className="flex items-center gap-2 ml-auto shrink-0">
+          <ApprovalActionButton 
+            entityId={master.id}
+            entityType="master"
+            syncStatus={master.sync_status}
+            kannBearbeiten={kannBearbeiten}
+          />
           <button
             onClick={() => setCollapsed(c => !c)}
             className="p-1 text-muted-foreground hover:text-foreground rounded"

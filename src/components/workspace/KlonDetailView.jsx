@@ -18,6 +18,8 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Save, Check, X, Edit, ArrowRight, Plus, Trash2, Lock } from 'lucide-react';
 import LockBanner from '@/components/workspace/LockBanner';
+import ApprovalActionButton from '@/components/workspace/ApprovalActionButton';
+import ApprovalStatusBadge from '@/components/workspace/ApprovalStatusBadge';
 import { useKlonLock, isLockExpired } from '@/hooks/useActivityLock';
 import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus';
 import { TASK_STATUS_CONFIG } from '@/lib/stateMachine';
@@ -119,9 +121,7 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail }) {
   const addDistractor = () => setData(d => ({ ...d, distractors: [...(d.distractors || []), ''] }));
   const removeDistractor = (idx) => setData(d => ({ ...d, distractors: d.distractors.filter((_, i) => i !== idx) }));
 
-  const statusBadge = klon.sync_status === 'approved'
-    ? <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">✓ Freigegeben</Badge>
-    : <Badge variant="secondary">Entwurf {klon.klon_index || '?'}</Badge>;
+  const statusBadge = <ApprovalStatusBadge syncStatus={klon.sync_status} />;
 
   const syncCfg = TASK_STATUS_CONFIG[syncStatus.currentStatus];
   const syncBadge = syncCfg
@@ -156,12 +156,12 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail }) {
               </>
             ) : (
               <>
-                {klon.sync_status !== 'approved' && (
-                  <Button size="sm" variant="outline" onClick={() => approveMutation.mutate()} disabled={approveMutation.isPending}
-                    className="gap-1.5 text-green-700 border-green-300 hover:bg-green-50">
-                    <Check className="w-3.5 h-3.5" /> Freigeben
-                  </Button>
-                )}
+                <ApprovalActionButton 
+                  entityId={klon.id}
+                  entityType="klon"
+                  syncStatus={klon.sync_status}
+                  kannBearbeiten={true}
+                />
                 <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
                   <Edit className="w-3.5 h-3.5" /> Bearbeiten
                 </Button>
