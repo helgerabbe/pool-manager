@@ -65,16 +65,16 @@ export default function ActivityMasterPanel({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col h-full overflow-hidden space-y-0">
       {/* ── Basisangaben der Aktivität ───────────────────────────────────────── */}
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border bg-muted/30">
+      <div className="flex-1 rounded-xl border border-border bg-card overflow-hidden flex flex-col min-h-0">
+        <div className="shrink-0 flex items-center gap-3 px-4 py-2.5 border-b border-border bg-muted/30">
           <span className="text-sm font-semibold">{catalogEntry?.name}</span>
           <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded">
             Phase: {activityRecord.phase}
           </span>
         </div>
-        <div className="p-1">
+        <div className="flex-1 overflow-hidden p-1">
           <ActivityDetailView
             activityRecord={activityRecord}
             kannBearbeiten={kannBearbeiten}
@@ -85,7 +85,7 @@ export default function ActivityMasterPanel({
 
       {/* ── Masteraufgaben-Bereich (nur wenn supports_master) ───────────────── */}
       {supportsMaster && (
-        <div className="space-y-4">
+        <div className="shrink-0 space-y-4 overflow-y-auto p-4">
 
           {/* Sektion-Header */}
           <div className="flex items-center justify-between">

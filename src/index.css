@@ -79,12 +79,24 @@
 }
 
 @layer base {
+  html,
+  body {
+    height: 100vh;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }
 
   body {
     @apply bg-background text-foreground font-inter;
+  }
+
+  #root {
+    @apply h-screen w-screen flex flex-col overflow-hidden;
   }
 }
 
