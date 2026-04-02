@@ -8,12 +8,15 @@
     },
     "text": {
       "type": "string",
-      "description": "Formulierung des Lernziels (z.B. 'Brüche kürzen und erweitern können')"
+      "description": "Formulierung des Lernziels (z.B. 'Br\u00fcche k\u00fcrzen und erweitern k\u00f6nnen')"
     },
     "reihenfolge": {
       "type": "number",
       "description": "Sortierreihenfolge"
     }
   },
-  "required": ["basislernpaket_id", "text"]
+  "required": [
+    "basislernpaket_id",
+    "text"
+  ]
 }
