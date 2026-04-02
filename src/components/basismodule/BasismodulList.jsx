@@ -12,9 +12,14 @@ export default function BasismodulList({ selectedId, onSelect, onCreateNew }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFach, setSelectedFach] = useState('');
 
-  const { data: basismodule = [] } = useQuery({
+  const { data: basismodule = [], isLoading, error } = useQuery({
     queryKey: ['basismodule'],
-    queryFn: () => base44.entities.Basismodul.list(),
+    queryFn: async () => {
+      const result = await base44.entities.Basismodul.list();
+      return result || [];
+    },
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   // Gruppiere nach Fach und filtere
@@ -97,12 +102,24 @@ export default function BasismodulList({ selectedId, onSelect, onCreateNew }) {
       </div>
 
       {/* Liste */}
-      <div className="flex-1 overflow-y-auto">
-        {Object.keys(filteredGroups).length === 0 ? (
-          <div className="p-4 text-center text-sm text-muted-foreground">
-            Keine Module gefunden
-          </div>
-        ) : (
+       <div className="flex-1 overflow-y-auto">
+         {isLoading ? (
+           <div className="p-4 text-center text-sm text-muted-foreground">
+             Wird geladen...
+           </div>
+         ) : error ? (
+           <div className="p-4 text-center text-sm text-destructive">
+             Fehler beim Laden der Module
+           </div>
+         ) : Object.keys(filteredGroups).length === 0 && basismodule.length === 0 ? (
+           <div className="p-4 text-center text-sm text-muted-foreground">
+             Keine Module vorhanden
+           </div>
+         ) : Object.keys(filteredGroups).length === 0 ? (
+           <div className="p-4 text-center text-sm text-muted-foreground">
+             Keine Module gefunden
+           </div>
+         ) : (
           Object.entries(filteredGroups).map(([fach, modules]) => (
             <div key={fach} className="space-y-1 p-3">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-2">
