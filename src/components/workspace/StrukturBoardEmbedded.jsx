@@ -292,6 +292,9 @@ export default function StrukturBoardEmbedded({
   const [deleteConfirm, setDeleteConfirm] = useState(null); // { spalteId, titel, paketCount }
   // Dialog-State: { open, spalteId, paket | null }
   const [paketDialog, setPaketDialog] = useState({ open: false, spalteId: null, paket: null });
+  // Track original state for deletion detection
+  const [originalSpaltenIds, setOriginalSpaltenIds] = useState(new Set());
+  const [originalPaketIds, setOriginalPaketIds] = useState(new Set());
 
   // ── Initialisierung ───────────────────────────────────────────────────────
 
@@ -318,6 +321,9 @@ export default function StrukturBoardEmbedded({
 
     setSpalten(tfSpalten);
     setPaketeMap(newMap);
+    // Store original IDs to detect deletions
+    setOriginalSpaltenIds(new Set(tfSpalten.map(s => s.themenfeldId)));
+    setOriginalPaketIds(new Set(remotePakete.map(p => p.id)));
     setInitialized(true);
   }, [remotePakete, remoteThemenfelder, initialized]);
 
@@ -449,61 +455,83 @@ export default function StrukturBoardEmbedded({
   const handleSpeichern = async () => {
     setSaving(true);
 
-    // 1. Themenfelder anlegen/updaten
-    const spaltenMitId = [];
-    for (let i = 0; i < spalten.length; i++) {
-      const spalte = spalten[i];
-      let themenfeldId = spalte.themenfeldId;
-      if (!themenfeldId) {
-        const neu = await base44.entities.Themenfeld.create({ einheit_id: einheitId, titel: spalte.titel, reihenfolge: i + 1 });
-        themenfeldId = neu.id;
-      } else {
-        await base44.entities.Themenfeld.update(themenfeldId, { titel: spalte.titel, reihenfolge: i + 1 });
+    try {
+      // 0. Identifiziere gelöschte Pakete und Themenfelder
+      const aktuellePacketIds = new Set(Object.values(paketeMap).flat().map(p => p.id));
+      const paketIdZumLoeschen = Array.from(originalPaketIds).filter(id => !aktuellePacketIds.has(id) && !id.startsWith('new-'));
+      
+      const aktuelleThemenfeldIds = new Set(spalten.map(s => s.themenfeldId).filter(Boolean));
+      const themenfeldIdZumLoeschen = Array.from(originalSpaltenIds).filter(id => !aktuelleThemenfeldIds.has(id));
+
+      // Lösche Pakete
+      for (const paketId of paketIdZumLoeschen) {
+        await base44.entities.Lernpakete.delete(paketId);
       }
-      spaltenMitId.push({ ...spalte, themenfeldId });
-    }
 
-    // 2. Lernpakete: NUR themenfeld_id + reihenfolge_nummer aktualisieren
-    for (const [spalteId, pakete] of Object.entries(paketeMap)) {
-      const spalte = spaltenMitId.find(s => s.id === spalteId);
-      const themenfeldId = spalte?.themenfeldId || null;
+      // Lösche Themenfelder
+      for (const themenfeldId of themenfeldIdZumLoeschen) {
+        await base44.entities.Themenfeld.delete(themenfeldId);
+      }
 
-      for (let i = 0; i < pakete.length; i++) {
-        const paket = pakete[i];
-        const update = { themenfeld_id: themenfeldId, reihenfolge_nummer: i + 1 };
+      // 1. Themenfelder anlegen/updaten
+      const spaltenMitId = [];
+      for (let i = 0; i < spalten.length; i++) {
+        const spalte = spalten[i];
+        let themenfeldId = spalte.themenfeldId;
+        if (!themenfeldId) {
+          const neu = await base44.entities.Themenfeld.create({ einheit_id: einheitId, titel: spalte.titel, reihenfolge: i + 1 });
+          themenfeldId = neu.id;
+        } else {
+          await base44.entities.Themenfeld.update(themenfeldId, { titel: spalte.titel, reihenfolge: i + 1 });
+        }
+        spaltenMitId.push({ ...spalte, themenfeldId });
+      }
 
-        if (paket.isNew) {
-          const neuesPaket = await base44.entities.Lernpakete.create({
-            einheit_id: einheitId,
-            titel_des_pakets: paket.titel_des_pakets,
-            geschaetzte_dauer_minuten: paket.geschaetzte_dauer_minuten || 45,
-            phasen_konfiguration: paket.phasen_konfiguration || DEFAULT_PHASEN,
-            ...update,
-          });
-          // Lernziele anlegen, falls vorhanden
-          if (paket.lernziele && paket.lernziele.length > 0) {
-            for (const lz of paket.lernziele) {
-              if (lz.formulierung_fachsprache?.trim()) {
-                await base44.entities.Lernziele.create({
-                  lernpaket_id: neuesPaket.id,
-                  formulierung_fachsprache: lz.formulierung_fachsprache.trim(),
-                  kategorie: lz.kategorie || 'Fachwissen',
-                });
+      // 2. Lernpakete: NUR themenfeld_id + reihenfolge_nummer aktualisieren
+      for (const [spalteId, pakete] of Object.entries(paketeMap)) {
+        const spalte = spaltenMitId.find(s => s.id === spalteId);
+        const themenfeldId = spalte?.themenfeldId || null;
+
+        for (let i = 0; i < pakete.length; i++) {
+          const paket = pakete[i];
+          const update = { themenfeld_id: themenfeldId, reihenfolge_nummer: i + 1 };
+
+          if (paket.isNew) {
+            const neuesPaket = await base44.entities.Lernpakete.create({
+              einheit_id: einheitId,
+              titel_des_pakets: paket.titel_des_pakets,
+              geschaetzte_dauer_minuten: paket.geschaetzte_dauer_minuten || 45,
+              phasen_konfiguration: paket.phasen_konfiguration || DEFAULT_PHASEN,
+              ...update,
+            });
+            // Lernziele anlegen, falls vorhanden
+            if (paket.lernziele && paket.lernziele.length > 0) {
+              for (const lz of paket.lernziele) {
+                if (lz.formulierung_fachsprache?.trim()) {
+                  await base44.entities.Lernziele.create({
+                    lernpaket_id: neuesPaket.id,
+                    formulierung_fachsprache: lz.formulierung_fachsprache.trim(),
+                    kategorie: lz.kategorie || 'Fachwissen',
+                  });
+                }
               }
             }
+          } else {
+            // Nur Struktur-Felder – phasen_konfiguration, locked_by etc. bleiben unangetastet
+            await base44.entities.Lernpakete.update(paket.id, update);
           }
-        } else {
-          // Nur Struktur-Felder – phasen_konfiguration, locked_by etc. bleiben unangetastet
-          await base44.entities.Lernpakete.update(paket.id, update);
         }
       }
-    }
 
-    queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-    queryClient.invalidateQueries({ queryKey: ['themenfelder', einheitId] });
-    setSaving(false);
-    setIsDirty(false);
-    onSaved?.();
+      queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+      queryClient.invalidateQueries({ queryKey: ['themenfelder', einheitId] });
+      setSaving(false);
+      setIsDirty(false);
+      onSaved?.();
+    } catch (error) {
+      console.error('Fehler beim Speichern:', error);
+      setSaving(false);
+    }
   };
 
   const gesamtPakete = Object.values(paketeMap).flat().length;
