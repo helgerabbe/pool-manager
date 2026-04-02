@@ -137,6 +137,7 @@ const AKTIVITAETEN = [
     name: 'Begriffe zuordnen',
     phase: 'Übung',
     is_active: true,
+    supports_master: true,
     form_schema: [
       {
         field_name: 'kategorien_json',
