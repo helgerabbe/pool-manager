@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useRBAC } from '@/hooks/useRBAC';
 import { kannEinheitSehen } from '@/lib/rbac';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { Plus, Search, AlertCircle, Wand2 } from 'lucide-react';
 import SyncStatusBadge from '@/components/sync/SyncStatusBadge';
 import EinheitCard from '@/components/einheiten/EinheitCard';
@@ -14,11 +16,80 @@ import { BookOpen } from 'lucide-react';
 import { getExportPendingCount } from '@/lib/deltaExportLogic';
 import { useNavigate } from 'react-router-dom';
 
+const FAECHER = ['Deutsch','Mathematik','Englisch','Französisch','Latein','Biologie','Chemie','Physik','Geschichte','Geographie','Politik','Wirtschaft','Kunst','Musik','Sport','Religion','Ethik','Informatik'];
+const JAHRGAENGE = ['5','6','7','8','9','10','11','12','13'];
+
+function SchnellErstellenModal({ open, onOpenChange, onCreated }) {
+  const [form, setForm] = useState({ titel_der_einheit: '', fach: '', jahrgangsstufe: '' });
+
+  const createMutation = useMutation({
+    mutationFn: (data) => base44.entities.Einheiten.create(data),
+    onSuccess: (einheit) => {
+      setForm({ titel_der_einheit: '', fach: '', jahrgangsstufe: '' });
+      onOpenChange(false);
+      onCreated(einheit);
+    },
+  });
+
+  const isValid = form.titel_der_einheit.trim() && form.fach && form.jahrgangsstufe;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Neue Einheit erstellen</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label>Titel der Einheit *</Label>
+            <Input
+              placeholder="z.B. Quadratische Gleichungen"
+              value={form.titel_der_einheit}
+              onChange={e => setForm({ ...form, titel_der_einheit: e.target.value })}
+              autoFocus
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Unterrichtsfach *</Label>
+            <Select value={form.fach} onValueChange={v => setForm({ ...form, fach: v })}>
+              <SelectTrigger><SelectValue placeholder="Fach auswählen..." /></SelectTrigger>
+              <SelectContent>
+                {FAECHER.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Jahrgangsstufe *</Label>
+            <Select value={form.jahrgangsstufe} onValueChange={v => setForm({ ...form, jahrgangsstufe: v })}>
+              <SelectTrigger><SelectValue placeholder="Jahrgang auswählen..." /></SelectTrigger>
+              <SelectContent>
+                {JAHRGAENGE.map(j => <SelectItem key={j} value={j}>{j}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
+          <Button
+            onClick={() => createMutation.mutate(form)}
+            disabled={!isValid || createMutation.isPending}
+            className="gap-2"
+          >
+            {createMutation.isPending && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+            Erstellen
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function EinheitenListe() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterFach, setFilterFach] = useState('all');
   const [showOnlyChanged, setShowOnlyChanged] = useState(false);
+  const [schnellErstellen, setSchnellErstellen] = useState(false);
   const queryClient = useQueryClient();
   const { permissions, rolle } = useRBAC();
 
@@ -62,10 +133,16 @@ export default function EinheitenListe() {
           <p className="text-sm text-muted-foreground mt-1">{einheiten.length} Einheit{einheiten.length !== 1 ? 'en' : ''} insgesamt</p>
         </div>
         {permissions.kannSchreiben && (
-          <Button onClick={() => navigate('/einheit/create')} className="gap-2">
-            <Wand2 className="w-4 h-4" />
-            Neue Einheit (Wizard)
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setSchnellErstellen(true)} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Neue Einheit
+            </Button>
+            <Button onClick={() => navigate('/einheit/create')} className="gap-2">
+              <Wand2 className="w-4 h-4" />
+              Neue Einheit (Wizard)
+            </Button>
+          </div>
         )}
       </div>
 
@@ -132,6 +209,14 @@ export default function EinheitenListe() {
         <p className="text-sm text-muted-foreground text-center py-10">Keine Einheiten gefunden.</p>
       )}
 
+      <SchnellErstellenModal
+        open={schnellErstellen}
+        onOpenChange={setSchnellErstellen}
+        onCreated={(einheit) => {
+          queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+          navigate(`/einheiten/${einheit.id}`);
+        }}
+      />
     </div>
   );
 }
