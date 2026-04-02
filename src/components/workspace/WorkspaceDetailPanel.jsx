@@ -970,27 +970,7 @@ export default function WorkspaceDetailPanel({
   const type = selectedNode.type;
 
   if (type === 'einheit') {
-    return (
-      <>
-        <EinheitPanel
-          einheit={einheit}
-          lernpakete={lernpakete}
-          lernziele={lernziele}
-          aufgaben={aufgaben}
-          themenfelder={selectedNode?.themenfelder || []}
-          kannBearbeiten={kannBearbeiten}
-          userEmail={userEmail}
-          onNavigate={onNavigate}
-          onEdit={() => setEditEinheitOpen(true)}
-        />
-        <EinheitForm
-          open={editEinheitOpen}
-          onOpenChange={setEditEinheitOpen}
-          onSubmit={(data) => updateEinheit.mutate(data)}
-          initialData={einheit}
-        />
-      </>
-    );
+    return null;
   }
 
   if (type === 'lernpaket') {

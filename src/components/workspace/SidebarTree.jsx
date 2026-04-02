@@ -318,34 +318,6 @@ export default function SidebarTree({
 
   return (
     <nav className="h-full flex flex-col gap-2">
-      <button
-        onClick={() => onSelect({ type: 'einheit', id: einheit?.id, data: einheit })}
-        className={cn(
-          'w-full flex items-start gap-2.5 px-3 py-3 rounded-lg text-left transition-colors',
-          selectedNode?.type === 'einheit' ? 'bg-primary text-primary-foreground' : 'bg-muted/60 hover:bg-muted text-foreground'
-        )}
-      >
-        <BookOpen className="w-4 h-4 shrink-0 mt-0.5" />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <p className="text-xs font-bold truncate flex-1">{einheit?.titel_der_einheit}</p>
-            {selectedNode?.type !== 'einheit' && <AmpelDot status={einheitStatus} />}
-          </div>
-          <p className="text-[10px] opacity-70">{einheit?.fach} · Jg. {einheit?.jahrgangsstufe}</p>
-          {gesamt > 0 && (
-            <div className="mt-2">
-              <div className="w-full bg-black/10 rounded-full h-1.5">
-                <div
-                  className={cn('h-1.5 rounded-full transition-all', prozent === 100 ? 'bg-green-400' : prozent > 50 ? 'bg-amber-400' : 'bg-red-400')}
-                  style={{ width: `${prozent}%` }}
-                />
-              </div>
-              <p className="text-[10px] opacity-60 mt-0.5">{gruen}/{gesamt} Pakete fertig</p>
-            </div>
-          )}
-        </div>
-      </button>
-
       {themenfelder.length > 0 && (
         <div className="lg:hidden px-1">
           <label className="text-[10px] text-muted-foreground mb-1 block">Themenfeld:</label>
