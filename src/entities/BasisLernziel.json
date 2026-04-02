@@ -1,0 +1,19 @@
+{
+  "name": "BasisLernziel",
+  "type": "object",
+  "properties": {
+    "basislernpaket_id": {
+      "type": "string",
+      "description": "FK zum Basislernpaket"
+    },
+    "text": {
+      "type": "string",
+      "description": "Formulierung des Lernziels (z.B. 'Brüche kürzen und erweitern können')"
+    },
+    "reihenfolge": {
+      "type": "number",
+      "description": "Sortierreihenfolge"
+    }
+  },
+  "required": ["basislernpaket_id", "text"]
+}

@@ -1,0 +1,39 @@
+{
+  "name": "Basismodul",
+  "type": "object",
+  "properties": {
+    "fach": {
+      "type": "string",
+      "enum": [
+        "Deutsch",
+        "Mathematik",
+        "Englisch",
+        "Französisch",
+        "Latein",
+        "Biologie",
+        "Chemie",
+        "Physik",
+        "Geschichte",
+        "Geographie",
+        "Politik",
+        "Wirtschaft",
+        "Kunst",
+        "Musik",
+        "Sport",
+        "Religion",
+        "Ethik",
+        "Informatik"
+      ],
+      "description": "Unterrichtsfach"
+    },
+    "titel": {
+      "type": "string",
+      "description": "Titel des Basismoduls (z.B. 'Mathe Grundlagen')"
+    },
+    "beschreibung": {
+      "type": "string",
+      "description": "Optionale Beschreibung des Basismoduls"
+    }
+  },
+  "required": ["fach", "titel"]
+}

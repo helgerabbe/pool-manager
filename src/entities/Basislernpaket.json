@@ -1,0 +1,23 @@
+{
+  "name": "Basislernpaket",
+  "type": "object",
+  "properties": {
+    "basismodul_id": {
+      "type": "string",
+      "description": "FK zum Basismodul"
+    },
+    "titel": {
+      "type": "string",
+      "description": "Titel des Basislernpakets (z.B. 'Bruchrechnung')"
+    },
+    "beschreibung": {
+      "type": "string",
+      "description": "Optionale Beschreibung"
+    },
+    "reihenfolge": {
+      "type": "number",
+      "description": "Sortierreihenfolge"
+    }
+  },
+  "required": ["basismodul_id", "titel"]
+}
