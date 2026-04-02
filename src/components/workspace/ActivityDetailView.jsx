@@ -52,9 +52,9 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col">
       {/* Header */}
-      <div className="shrink-0 flex items-start justify-between gap-3 p-4 border-b">
+      <div className="flex items-start justify-between gap-3 p-4 border-b">
         <div className="flex-1 min-w-0">
           <h2 className="text-lg font-semibold truncate">{catalog.name}</h2>
           <p className="text-xs text-muted-foreground mt-1">Phase: {activityRecord.phase}</p>
@@ -86,7 +86,7 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-5 min-h-0">
+      <div className="p-4 space-y-5">
         {/* Aufgabenstellung (immer zuerst) */}
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aufgabenstellung</label>
