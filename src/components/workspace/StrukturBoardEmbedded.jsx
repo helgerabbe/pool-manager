@@ -321,8 +321,8 @@ export default function StrukturBoardEmbedded({
     setInitialized(true);
   }, [remotePakete, remoteThemenfelder, initialized]);
 
-  // Re-init wenn einheit sich ändert
-  useEffect(() => { setInitialized(false); }, [einheitId]);
+  // Re-init wenn einheit oder Remote-Daten sich ändern
+  useEffect(() => { setInitialized(false); }, [einheitId, remotePakete, remoteThemenfelder]);
 
   // ── DnD ───────────────────────────────────────────────────────────────────
 
