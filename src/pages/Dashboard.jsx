@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Clock, Users, Loader2 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, subWeeks, isAfter } from 'date-fns';
 import { de } from 'date-fns/locale';
 
 const fachColors = {
@@ -29,13 +29,18 @@ export default function Dashboard() {
     queryFn: () => base44.entities.User.list(),
   });
 
-  // Alle geladenen Einheiten sind bereits sortiert nach updated_date vom Backend
-  const recentEinheiten = einheiten;
+  // Filter Einheiten der letzten 2 Wochen
+  const twoWeeksAgo = subWeeks(new Date(), 2);
+  const recentEinheiten = einheiten.filter(einheit => {
+    if (!einheit.updated_date) return false;
+    return isAfter(new Date(einheit.updated_date), twoWeeksAgo);
+  });
 
-  // Mock online users (würde durch echtes Presence-Tracking ersetzt)
+  // Online users mit Rolle
   const onlineUsers = allUsers.slice(0, 3).map(u => ({
     email: u.email,
     full_name: u.full_name,
+    role: u.role || 'user',
   }));
 
   return (
@@ -136,6 +141,9 @@ export default function Dashboard() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium">
                       {user.full_name || user.email}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {user.role === 'admin' ? 'Administrator' : 'Nutzer'}
                     </p>
                   </div>
                 </div>
