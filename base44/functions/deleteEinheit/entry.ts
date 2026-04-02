@@ -2,7 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 // ── RBAC-Rollen (spiegelt lib/rbac.js) ──────────────────────────────────────
 const ROLLEN = {
-  ADMIN: 'Administrator',
+  ADMIN: 'admin',
   FACHSCHAFT: 'Fachschaftsleitung',
 };
 
