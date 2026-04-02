@@ -60,12 +60,12 @@ export default function AppLayout() {
       : location.pathname === path || location.pathname.startsWith(path);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen w-full flex flex-col overflow-hidden bg-background">
       <WartungsBanner />
       {/* ═══════════════════════════════════════════════════════════════════════════ */}
       {/* ──────────────────── GLOBALE TOP BAR (immer sichtbar) ──────────────────── */}
       {/* ═══════════════════════════════════════════════════════════════════════════ */}
-      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border">
+      <header className="shrink-0 bg-card/80 backdrop-blur-xl border-b border-border z-50">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
 
@@ -123,8 +123,10 @@ export default function AppLayout() {
       </header>
 
       {/* Main Content */}
-      <main className="px-4 sm:px-6 lg:px-8 py-8">
-        <Outlet />
+      <main className="flex-1 overflow-y-auto min-h-0">
+        <div className="px-4 sm:px-6 lg:px-8 py-8">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

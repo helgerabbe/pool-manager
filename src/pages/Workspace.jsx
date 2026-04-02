@@ -238,7 +238,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
   return (
     <ErrorBoundary label="Workspace">
-      <div className="flex flex-col h-full w-full bg-background">
+      <div className="flex flex-col h-full w-full overflow-hidden bg-background">
 
         {/* ── Structural-Lock-Banner ───────────────────────────────────────────── */}
         {structLocked && (
