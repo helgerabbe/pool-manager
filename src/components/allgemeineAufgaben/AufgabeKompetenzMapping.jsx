@@ -125,16 +125,11 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
   const queryClient = useQueryClient();
   const draftKey = `aufgaben-mapping-${aufgabe?.id}`;
   
-  // Draft-State
-  const { data: mappedLernziele, setData: setMappedLernziele, hasDraft, clearDraft } = useDraftState(
-    draftKey,
-    []
-  );
-  const { showRestore, restoreDraft, discardDraft } = useDraftRestore(draftKey);
+  // Lokaler State für die Arbeit (kein Draft-State nötig, da alles sofort gespeichert wird)
+  const [mappedLernziele, setMappedLernziele] = useState([]);
   const { showSavedIndicator, triggerSaved } = useSavedIndicator();
 
   const [savingIds, setSavingIds] = useState(new Set());
-  const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -169,12 +164,11 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
     enabled: !!aufgabe?.id,
   });
 
-  // Sync DB-Mappings mit lokalen Daten
+  // Sync DB-Mappings mit lokalen Daten (bei Tab-Wechsel)
   useEffect(() => {
     const mapped = alleLernziele.filter((lz) => existingMappings.some((m) => m.lernziel_id === lz.id));
     setMappedLernziele(mapped);
-    setHasChanges(false);
-  }, [alleLernziele, existingMappings, setMappedLernziele]);
+  }, [alleLernziele, existingMappings]);
 
   // Mutations
   const createMapping = useMutation({
@@ -208,7 +202,6 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
       }
 
       setMappedLernziele((prev) => [...prev, lernziel]);
-      setHasChanges(true);
       setSavingIds((prev) => new Set([...prev, lernziel.id]));
 
       try {
@@ -236,7 +229,6 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
       const lernziel = alleLernziele.find((lz) => lz.id === lernzielId);
 
       setMappedLernziele((prev) => prev.filter((lz) => lz.id !== lernzielId));
-      setHasChanges(true);
       setSavingIds((prev) => new Set([...prev, lernzielId]));
 
       try {
@@ -290,40 +282,8 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
     [alleLernziele, lernpakete, einheitId]
   );
 
-  const handleSaveChanges = async () => {
-    setIsSaving(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      toast.success('Änderungen gespeichert');
-      setHasChanges(false);
-      clearDraft();
-    } catch (err) {
-      toast.error('Fehler beim Speichern');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   return (
     <>
-      {showRestore && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-sm shadow-lg">
-            <h3 className="font-semibold mb-2">Draft gefunden</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Du hast ungespeicherte Änderungen bei dieser Aufgabe. Möchtest du sie wiederherstellen?
-            </p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={discardDraft}>
-                Verwerfen
-              </Button>
-              <Button size="sm" onClick={() => { restoreDraft(); discardDraft(); }}>
-                Wiederherstellen
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="h-full flex flex-col gap-4 p-6 overflow-y-auto">
@@ -402,30 +362,16 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
             </div>
           </div>
 
-          {/* Footer: Aktionen */}
+          {/* Footer: Info */}
           <div className="flex items-center justify-between border-t pt-4">
-            <p className="text-xs text-muted-foreground">
-              {mappedLernziele.length === 0
-                ? 'Noch keine Lernziele zugeordnet'
-                : `${mappedLernziele.length} Lernziel(e) zugeordnet`}
-            </p>
-            <Button
-              size="sm"
-              onClick={handleSaveChanges}
-              disabled={!hasChanges || isSaving}
-              className="gap-2"
-            >
-              {isSaving ? (
-                <>
-                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Wird gespeichert…
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="w-4 h-4" /> Speichern
-                </>
-              )}
-            </Button>
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-muted-foreground">
+                {mappedLernziele.length === 0
+                  ? 'Noch keine Lernziele zugeordnet'
+                  : `${mappedLernziele.length} Lernziel(e) zugeordnet`}
+              </p>
+              <SavedIndicator show={showSavedIndicator} />
+            </div>
           </div>
         </div>
       </DragDropContext>
