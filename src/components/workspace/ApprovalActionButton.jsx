@@ -11,8 +11,8 @@ export default function ApprovalActionButton({ entityId, entityType, syncStatus,
   const isModified = syncStatus === 'modified';
   const isDraft = syncStatus === 'draft';
   
-  // Nur Admins und Fachschaftsleitungen dürfen freigeben
-  const canApprove = kannBearbeiten && userRole && ['Administrator', 'Fachschaftsleitung'].includes(userRole);
+  // Nur globale Admins und Fachschaftsleitungen dürfen freigeben/entziehen
+  const canApprove = userRole && ['Administrator', 'Fachschaftsleitung'].includes(userRole);
 
   const approveMutation = useMutation({
     mutationFn: async () => {
