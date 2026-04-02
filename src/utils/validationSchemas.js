@@ -58,6 +58,10 @@ const BAUSTEIN_TYPEN = [
 
 const ANFORDERUNGSEBENEN = ['1 - Basis', '2 - Transfer', '3 - Projekt'];
 
+const TASK_SYNC_STATI = ['new', 'exported', 'modified', 'pending_export', 'to_delete', 'approved'];
+
+const TASK_STATUSES = ['draft', 'approved'];
+
 // ─────────────────────────────────────────────────────────────────────────
 // EINHEIT SCHEMA
 // ─────────────────────────────────────────────────────────────────────────
@@ -133,6 +137,16 @@ export const AufgabeSchema = z.object({
   schwierigkeitsgrad: z
     .enum(['1-Stern', '2-Sterne', '3-Sterne'])
     .optional(),
+  
+  sync_status: z
+    .enum(TASK_SYNC_STATI)
+    .default('new')
+    .optional(),
+  
+  status: z
+    .enum(TASK_STATUSES)
+    .default('draft')
+    .optional(),
 });
 
 export const AufgabeCreateSchema = AufgabeSchema;
@@ -184,6 +198,8 @@ export const SchemaHelpers = {
   getFreigabeStati: () => Array.from(FREIGABE_STATI),
   getBausteinTypen: () => Array.from(BAUSTEIN_TYPEN),
   getAnforderungsebenen: () => Array.from(ANFORDERUNGSEBENEN),
+  getTaskSyncStati: () => Array.from(TASK_SYNC_STATI),
+  getTaskStatuses: () => Array.from(TASK_STATUSES),
 };
 
 // ─────────────────────────────────────────────────────────────────────────
