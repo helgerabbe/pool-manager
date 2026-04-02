@@ -16,7 +16,7 @@ export default function BasismodulDetail({ basismodul, onDelete }) {
     queryKey: ['basislernpakete', basismodul?.id],
     queryFn: () =>
       basismodul?.id
-        ? base44.entities.Basislernpaket.filter({ basismodul_id: basismodul.id })
+        ? base44.entities.Basislernpakete.filter({ basismodul_id: basismodul.id })
         : Promise.resolve([]),
     enabled: !!basismodul?.id,
   });
@@ -27,7 +27,7 @@ export default function BasismodulDetail({ basismodul, onDelete }) {
   });
 
   const createPaket = useMutation({
-    mutationFn: (data) => base44.entities.Basislernpaket.create(data),
+    mutationFn: (data) => base44.entities.Basislernpakete.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['basislernpakete'] });
       setNewPaketTitel('');
