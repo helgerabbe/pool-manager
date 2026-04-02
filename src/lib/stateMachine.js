@@ -5,6 +5,7 @@
  *
  * Definiert erlaubte Status-Übergänge für Einheiten und andere Entities.
  * Verhindert ungültige Status-Transitionen.
+ * Enthält auch Task-Status-Konfiguration für UI-Rendering.
  *
  * Workflow für Einheiten (freigabe_status):
  * "In Planung" → "Freigegeben für Moodle" → optional zurück
