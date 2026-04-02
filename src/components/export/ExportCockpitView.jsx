@@ -22,11 +22,21 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { enrichDataWithEffectiveStatus, getEffectiveContentStatus } from './StatusCalculations';
 import { LernpaketContainer } from './CockpitRows';
+import { useExportLock } from '@/hooks/useExportLock';
+import { ExportLockBanner } from './ExportLockBanner';
+import { ExportWaitingView } from './ExportWaitingView';
+import { ExportConfirmationButton } from '@/components/admin/ExportConfirmationButton';
 
-export default function ExportCockpitView({ einheitId }) {
+export default function ExportCockpitView({ einheitId, userRole = 'user' }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedIds, setSelectedIds] = useState([]);
+
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Export-Lock Hook
+  // ──────────────────────────────────────────────────────────────────────────────
+
+  const { isLocked, pendingCount, pendingElements } = useExportLock(einheitId);
 
   // ──────────────────────────────────────────────────────────────────────────────
   // Daten laden
@@ -137,7 +147,28 @@ export default function ExportCockpitView({ einheitId }) {
   };
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // Render
+  // Render: Lock-View wenn Export lädt
+  // ──────────────────────────────────────────────────────────────────────────────
+
+  if (isLocked) {
+    return (
+      <div className="space-y-6 p-6">
+        <ExportLockBanner pendingCount={pendingCount} />
+        <ExportWaitingView pendingElements={pendingElements} />
+        {userRole === 'admin' && (
+          <div className="flex justify-center mt-8">
+            <ExportConfirmationButton 
+              einheitId={einheitId} 
+              userRole={userRole}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Render: Normal Export Cockpit
   // ──────────────────────────────────────────────────────────────────────────────
 
   return (
