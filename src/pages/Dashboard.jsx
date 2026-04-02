@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { useRBAC } from '@/hooks/useRBAC';
@@ -7,12 +7,9 @@ import { useEinheitenListInfinite } from '@/hooks/useEinheitenListInfinite';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Plus, Clock, Users, BookOpen, Puzzle, Loader2 } from 'lucide-react';
-import EinheitForm from '@/components/einheiten/EinheitForm';
-import { toast } from 'sonner';
-import { formatDistanceToNow, subWeeks, isAfter } from 'date-fns';
+import { Clock, Users, Loader2 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { ROLLEN } from '@/lib/rbac';
 
 const fachColors = {
   Deutsch: 'bg-blue-100 text-blue-700', Mathematik: 'bg-red-100 text-red-700',
@@ -22,9 +19,7 @@ const fachColors = {
 };
 
 export default function Dashboard() {
-  const { permissions, rolle, authUser } = useRBAC();
-  const queryClient = useQueryClient();
-  const [showForm, setShowForm] = useState(false);
+  const { permissions } = useRBAC();
 
   const { einheiten, hasNextPage, fetchNextPage, isFetchingNextPage, isPending } =
     useEinheitenListInfinite(15);
@@ -32,26 +27,6 @@ export default function Dashboard() {
   const { data: allUsers = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list(),
-  });
-
-  const createEinheit = useMutation({
-    mutationFn: async (data) => {
-      const einheit = await base44.entities.Einheiten.create(data);
-      if (einheit?.id && authUser?.email) {
-        await base44.entities.EinheitMembers.create({
-          einheit_id: einheit.id,
-          user_email: authUser.email,
-          user_name: authUser.full_name || authUser.email,
-          unit_role: 'LEITUNG',
-        });
-      }
-      return einheit;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['einheiten'] });
-      setShowForm(false);
-      toast.success('Einheit erstellt');
-    },
   });
 
   // Alle geladenen Einheiten sind bereits sortiert nach updated_date vom Backend
@@ -63,21 +38,12 @@ export default function Dashboard() {
     full_name: u.full_name,
   }));
 
-  const isAdmin = rolle === ROLLEN.ADMIN;
-
   return (
     <div className="space-y-8">
       {/* Hero */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Willkommen im PoolPlaner</h1>
-          <p className="text-muted-foreground mt-1">Aktuelle Aktivitäten und Online-Status</p>
-        </div>
-        {permissions.kannSchreiben && (
-          <Button onClick={() => setShowForm(true)} className="gap-2 shrink-0">
-            <Plus className="w-4 h-4" />Neue Einheit
-          </Button>
-        )}
+      <div>
+        <h1 className="text-3xl font-bold text-foreground tracking-tight">Willkommen im PoolPlaner</h1>
+        <p className="text-muted-foreground mt-1">Aktuelle Aktivitäten und Online-Status</p>
       </div>
 
       {/* Zuletzt bearbeitete Einheiten */}
@@ -179,11 +145,7 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      <EinheitForm
-        open={showForm}
-        onOpenChange={setShowForm}
-        onSubmit={(data) => createEinheit.mutate(data)}
-      />
+
     </div>
   );
 }
