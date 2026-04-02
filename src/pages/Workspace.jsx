@@ -8,18 +8,20 @@ import { SkeletonWorkspace } from '@/components/loading/SkeletonLoader';
 import SidebarTree from '@/components/workspace/SidebarTree';
 import WorkspaceDetailPanel from '@/components/workspace/WorkspaceDetailPanel';
 import ActivityDetailView from '@/components/workspace/ActivityDetailView';
+import AllgemeineAufgabenView from '@/components/allgemeineAufgaben/AllgemeineAufgabenView';
+import ProjektaufgabenView from '@/components/projektaufgaben/ProjektaufgabenView';
+
 import { usePresence } from '@/hooks/usePresence';
 import { isStructurallyLocked } from '@/hooks/useStructuralLock';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { BookOpen, Lock, ArrowRight } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BookOpen, Layers, Zap, FolderOpen, Lock, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import StrukturBoardEmbedded from '@/components/workspace/StrukturBoardEmbedded';
-import WorkspaceTabs from '@/components/workspace/WorkspaceTabs';
-import TaskCreationView from '@/components/workspace/TaskCreationView';
-import EinheitUebersichtTab from '@/components/workspace/EinheitUebersichtTab';
-import MoodleExportTab from '@/components/workspace/MoodleExportTab';
+import EinheitSettingsModal, { UnitRoleBadge } from '@/components/einheiten/EinheitSettingsModal';
+import UnitToolbar from '@/components/layout/UnitToolbar';
 
 /**
  * Workspace — Drei-Säulen-Architektur
@@ -42,12 +44,10 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const [selectedEinheitId, setSelectedEinheitId] = useState(initialEinheitId);
   const [selectedThemenfeldId, setSelectedThemenfeldId] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
-  const [activeTab, setActiveTab] = useState('einheit');
+  const [activeTab, setActiveTab] = useState('basis');
   const [highlightedAtomIds, setHighlightedAtomIds] = useState(new Set());
-  // Für Tab 3: die Aktivität, die aus Tab 2 ("Zur Aufgaben-Werkstatt") übergeben wird
-  const [taskWorkshopActivityId, setTaskWorkshopActivityId] = useState(null);
 
-
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // View-Toggle: 'struktur' | 'detail'
   // Beim ersten Laden nach Wizard (fromWizard param) → Struktur, sonst letzter Modus aus localStorage
@@ -57,13 +57,6 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     if (fromWizard) return 'struktur';
     return localStorage.getItem(lsKey) || 'detail';
   });
-
-  // Beim Tab-Wechsel: taskWorkshopActivityId nur löschen wenn weg von 'aufgaben'
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
-    setHighlightedAtomIds(new Set());
-    if (tab !== 'aufgaben') setTaskWorkshopActivityId(null);
-  };
 
   const handleViewModeChange = (mode) => {
     setViewMode(mode);
@@ -180,13 +173,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   }, []);
 
   // Beim Navigieren zu einem Themenfeld: selectedThemenfeldId setzen
-  // Beim Typ 'goto-task-workshop': Tab wechseln + ActivityId setzen
   const handleSelect = useCallback((node) => {
-    if (node?.type === 'goto-task-workshop') {
-      setTaskWorkshopActivityId(node.activityId);
-      setActiveTab('aufgaben');
-      return;
-    }
     if (node?.type === 'themenfeld') setSelectedThemenfeldId(node.themenfeldId);
     setSelectedNode(node);
   }, []);
@@ -299,85 +286,57 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             </p>
           </div>
         </div> :
+      viewMode === 'struktur' ?
+      <StrukturBoardEmbedded
+        einheitId={selectedEinheitId}
+        lernpakete={paketeFuerEinheit}
+        themenfelder={themenfelder}
+        queryClient={queryClient}
+        onSaved={() => handleViewModeChange('detail')} /> :
+
+
 
       <Tabs
         value={activeTab}
-        onValueChange={handleTabChange}
+        onValueChange={(tab) => {setActiveTab(tab);setHighlightedAtomIds(new Set());}}
         className="flex flex-col flex-1 h-full overflow-hidden m-0 p-0">
         
-          {/* Einheit-Infoleiste */}
-          <div className="px-4 sm:px-6 lg:px-8 py-2 border-b border-border bg-muted/40 shrink-0 flex items-center gap-3">
-            <span className="text-sm font-semibold text-foreground truncate">{einheit.titel_der_einheit}</span>
-            <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full shrink-0">{einheit.fach}</span>
+          {/* Tab-Leiste */}
+          <div className="px-4 sm:px-6 lg:px-8 pt-2 border-b border-border bg-card shrink-0">
+            <TabsList className="bg-muted text-muted-foreground my-3 pt-1 pr-4 pb-1 pl-4 rounded-lg inline-flex items-center justify-center h-9">
+              <TabsTrigger value="basis" className="bg-lime-200 px-3 py-1 text-xs font-medium rounded-md inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow gap-1.5">
+                <Layers className="w-3.5 h-3.5" />
+                Lernpakete
+                {paketeFuerEinheit.length > 0 &&
+              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
+                    {paketeFuerEinheit.length}
+                  </span>
+              }
+              </TabsTrigger>
+              <TabsTrigger value="transfer" className="bg-sky-200 text-slate-600 mx-5 px-3 py-1 text-xs font-medium rounded-md inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow gap-1.5">
+                <Zap className="w-3.5 h-3.5" />
+                Allgemeine Aufgaben
+                {allgemeineAufgabenCount > 0 &&
+              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">
+                    {allgemeineAufgabenCount}
+                  </span>
+              }
+              </TabsTrigger>
+              <TabsTrigger value="projekt" className="bg-purple-200 text-slate-600 px-3 py-1 text-xs font-medium rounded-md inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow gap-1.5">
+                <FolderOpen className="w-3.5 h-3.5" />
+                Anwendungs- und Projektaufgaben
+                {projektCount > 0 &&
+              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[10px] font-bold">
+                    {projektCount}
+                  </span>
+              }
+              </TabsTrigger>
+            </TabsList>
           </div>
 
-          {/* 3-Ebenen-Tab-Navigation */}
-          <div className="px-4 sm:px-6 lg:px-8 py-3 border-b border-border bg-card shrink-0">
-            <WorkspaceTabs
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-            />
-          </div>
-
-          {/* ── Tab 1: Einheit anlegen ───────────────────────────────────────── */}
-          <TabsContent value="einheit" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-y-auto m-0 p-0">
-            <ErrorBoundary label="Einheit">
-              {einheit && (
-                <EinheitUebersichtTab
-                  einheit={einheit}
-                  currentUserEmail={authUser?.email}
-                />
-              )}
-            </ErrorBoundary>
-          </TabsContent>
-
-          {/* ── Tab 2: Struktur anlegen → StrukturBoard ──────────────────────── */}
-          <TabsContent value="struktur" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
-            <ErrorBoundary label="Struktur">
-              {(() => {
-                // Prüfen ob ein Kollege gerade ein Lernpaket dieser Einheit gesperrt hat
-                const PAKET_LOCK_TIMEOUT_MS = 30 * 60 * 1000; // 30 Min
-                const aktiveLocks = paketeFuerEinheit.filter(p =>
-                  p.locked_by &&
-                  p.locked_by !== authUser?.email &&
-                  p.locked_at && (Date.now() - new Date(p.locked_at).getTime()) < PAKET_LOCK_TIMEOUT_MS
-                );
-                if (aktiveLocks.length > 0) {
-                  const locker = [...new Set(aktiveLocks.map(p => p.locked_by))];
-                  return (
-                    <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center p-8">
-                      <div className="w-16 h-16 rounded-2xl bg-orange-100 flex items-center justify-center">
-                        <Lock className="w-8 h-8 text-orange-500" />
-                      </div>
-                      <div className="max-w-md">
-                        <p className="text-lg font-semibold">Strukturbearbeitung gesperrt</p>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          {locker.join(', ')} {locker.length === 1 ? 'bearbeitet' : 'bearbeiten'} gerade Inhalte dieser Einheit.
-                          Strukturänderungen sind nicht möglich, solange Kollegen aktiv an Lernpaketen arbeiten.
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-3 italic">
-                          Die Sperre wird automatisch aufgehoben, sobald die Bearbeitung abgeschlossen ist.
-                        </p>
-                      </div>
-                    </div>
-                  );
-                }
-                return (
-                  <StrukturBoardEmbedded
-                    einheitId={selectedEinheitId}
-                    lernpakete={paketeFuerEinheit}
-                    themenfelder={themenfelder}
-                    queryClient={queryClient}
-                    onSaved={() => handleTabChange('aktivitaeten')}
-                  />
-                );
-              })()}
-            </ErrorBoundary>
-          </TabsContent>
-
-          {/* ── Tab 2: Aktivitäten zuordnen → Sidebar-Baum + Detail-Panel ───── */}
-          <TabsContent value="aktivitaeten" className="data-[state=active]:flex data-[state=inactive]:hidden flex-row flex-1 overflow-hidden m-0 p-0">
-            <ErrorBoundary label="Aktivitäten-Struktur">
+          {/* ── Säule 1: Basis-Lernpakete (Master-Detail) ────────────────────── */}
+          <TabsContent value="basis" className="data-[state=active]:flex data-[state=inactive]:hidden flex-row flex-1 overflow-hidden m-0 p-0">
+            <ErrorBoundary label="Basis-Struktur">
               {/* Sidebar */}
               <aside className="w-96 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden">
                 <div className="flex-1 overflow-y-auto p-3">
@@ -436,30 +395,41 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               </ErrorBoundary>
               </main>
               </ErrorBoundary>
-          </TabsContent>
+              </TabsContent>
 
-          {/* ── Tab 3: Aufgaben erstellen ─────────────────────────────────── */}
-          <TabsContent value="aufgaben" className="data-[state=active]:flex data-[state=inactive]:hidden flex-row flex-1 overflow-hidden m-0 p-0">
-            <ErrorBoundary label="Aufgaben erstellen">
-              <TaskCreationView
-                einheitId={selectedEinheitId}
-                einheit={einheit}
-                initialActivityId={taskWorkshopActivityId}
-                kannBearbeiten={kannDieseEinheitBearbeiten}
-              />
-            </ErrorBoundary>
-          </TabsContent>
+              {/* ── Säule 2: Allgemeine Aufgaben ──────────────────────────────────── */}
+              <TabsContent
+              value="transfer"
+              className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0 border-none">
+              <ErrorBoundary label="Allgemeine Aufgaben">
+              <AllgemeineAufgabenView
+              einheitId={selectedEinheitId}
+              kannBearbeiten={kannDieseEinheitBearbeiten} />
+              </ErrorBoundary>
+              </TabsContent>
 
-          {/* ── Tab 5: Nach Moodle exportieren ───────────────────────────────── */}
-          <TabsContent value="export" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-y-auto m-0 p-0">
-            <ErrorBoundary label="Moodle Export">
-              <MoodleExportTab />
-            </ErrorBoundary>
-          </TabsContent>
+              {/* ── Säule 3: Anwendungs- und Projektaufgaben ───────────────────── */}
+              <TabsContent
+              value="projekt"
+              className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0 border-none">
+              <ErrorBoundary label="Projektaufgaben">
+              <ProjektaufgabenView
+              einheitId={selectedEinheitId}
+              kannBearbeiten={kannDieseEinheitBearbeiten} />
+              </ErrorBoundary>
+              </TabsContent>
+
 
         </Tabs>
       }
+      {einheit &&
+      <EinheitSettingsModal
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        einheit={einheit}
+        currentUserEmail={authUser?.email} />
 
+      }
       </div>
       </ErrorBoundary>
       );
