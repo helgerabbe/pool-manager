@@ -288,6 +288,7 @@ export default function StrukturBoardEmbedded({
   const [paketeMap, setPaketeMap]     = useState({});
   const [saving, setSaving]           = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [isDirty, setIsDirty]         = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null); // { spalteId, titel, paketCount }
   // Dialog-State: { open, spalteId, paket | null }
   const [paketDialog, setPaketDialog] = useState({ open: false, spalteId: null, paket: null });
@@ -329,6 +330,7 @@ export default function StrukturBoardEmbedded({
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
+    setIsDirty(true);
     setPaketeMap(prev => {
       const next = { ...prev };
       const src = [...(next[source.droppableId] || [])];
@@ -356,6 +358,7 @@ export default function StrukturBoardEmbedded({
   };
 
   const handleNeuesThemenfeld = () => {
+    setIsDirty(true);
     const newId = `tf-new-${Date.now()}`;
     const defaultPaket = {
       id: `new-${Date.now()}`,
@@ -370,8 +373,10 @@ export default function StrukturBoardEmbedded({
     setPaketeMap(prev => ({ ...prev, [newId]: [defaultPaket] }));
   };
 
-  const handleTitelChange = (spalteId, neuerTitel) =>
+  const handleTitelChange = (spalteId, neuerTitel) => {
+    setIsDirty(true);
     setSpalten(prev => prev.map(s => s.id === spalteId ? { ...s, titel: neuerTitel } : s));
+  };
 
   const handleDeleteSpalteRequest = (spalteId) => {
     const spalte = spalten.find(s => s.id === spalteId);
@@ -380,6 +385,7 @@ export default function StrukturBoardEmbedded({
   };
 
   const handleDeleteSpalteConfirmed = () => {
+    setIsDirty(true);
     const { spalteId } = deleteConfirm;
 
     // Sammelbecken-Liste: verschobene Pakete ans Ende anhängen, mit neuen Sort-Indizes
@@ -405,6 +411,7 @@ export default function StrukturBoardEmbedded({
     setPaketDialog({ open: true, spalteId, paket });
 
   const handlePaketSave = ({ titel, dauer, lernziele }) => {
+    setIsDirty(true);
     const { spalteId, paket } = paketDialog;
     if (paket && !paket.isNew) {
       // Bestehendes Paket aktualisieren
@@ -438,6 +445,7 @@ export default function StrukturBoardEmbedded({
   };
 
   const handleDeletePaket = (paketId) => {
+    setIsDirty(true);
     setPaketeMap(prev => {
       const next = {};
       Object.entries(prev).forEach(([k, v]) => { next[k] = v.filter(p => p.id !== paketId); });
@@ -503,6 +511,7 @@ export default function StrukturBoardEmbedded({
     queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
     queryClient.invalidateQueries({ queryKey: ['themenfelder', einheitId] });
     setSaving(false);
+    setIsDirty(false);
     onSaved?.();
   };
 
@@ -512,24 +521,28 @@ export default function StrukturBoardEmbedded({
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* Aktions-Leiste */}
-      <div className="shrink-0 px-4 py-2 border-b border-border bg-card/50 flex items-center justify-between gap-3 flex-wrap">
-        <p className="text-sm text-muted-foreground">
-          <span className={cn('font-medium', zugeordnet === gesamtPakete && gesamtPakete > 0 ? 'text-green-600' : 'text-amber-600')}>
-            {zugeordnet}/{gesamtPakete}
-          </span>{' '}
-          Pakete Themenfeldern zugeordnet
-        </p>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleNeuesThemenfeld} className="gap-1.5">
-            <Plus className="w-3.5 h-3.5" /> Neues Themenfeld
-          </Button>
-          <Button size="sm" onClick={handleSpeichern} disabled={saving} className="gap-1.5">
-            {saving
-              ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              : <Save className="w-3.5 h-3.5" />}
-            Struktur speichern
-          </Button>
-        </div>
+      <div className="shrink-0 px-4 py-2 border-b border-border bg-card/50 flex items-center gap-3">
+        <Button
+          size="sm"
+          onClick={handleSpeichern}
+          disabled={saving || !isDirty}
+          className={cn(
+            'gap-1.5 transition-all duration-200',
+            isDirty
+              ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-200 animate-pulse'
+              : 'opacity-50'
+          )}
+        >
+          {saving
+            ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            : <Save className="w-3.5 h-3.5" />}
+          {isDirty ? '⚠ Struktur speichern' : 'Struktur gespeichert'}
+        </Button>
+        {isDirty && (
+          <p className="text-sm text-amber-600 font-medium">
+            Ungespeicherte Änderungen – bitte speichern bevor du den Tab wechselst!
+          </p>
+        )}
       </div>
 
       {/* Tipp */}
