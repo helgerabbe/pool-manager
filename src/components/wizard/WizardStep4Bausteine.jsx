@@ -27,17 +27,23 @@ export default function WizardStep4Bausteine({ einheitId, onDone, onSkipAll }) {
     .filter(lp => lp.einheit_id === einheitId)
     .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0));
 
-  // Initialisiere Config beim ersten Render
+  // Initialisiere Config wenn sich die Lernpakete ändern
   useEffect(() => {
-    if (paketeFuerEinheit.length > 0 && Object.keys(phasenConfig).length === 0) {
-      const config = {};
-      paketeFuerEinheit.forEach(paket => {
+    const config = {};
+    paketeFuerEinheit.forEach(paket => {
+      if (!phasenConfig[paket.id]) {
         config[paket.id] = {
           Input: true,
           Übung: true,
           Abschluss: true,
         };
-      });
+      } else {
+        config[paket.id] = phasenConfig[paket.id];
+      }
+    });
+    
+    // Nur aktualisieren wenn sich was geändert hat
+    if (JSON.stringify(config) !== JSON.stringify(phasenConfig)) {
       setPhasenConfig(config);
     }
   }, [paketeFuerEinheit]);
