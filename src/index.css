@@ -81,8 +81,9 @@
 @layer base {
   html,
   body {
-    height: 100vh;
-    overflow: hidden;
+    height: 100vh !important;
+    width: 100vw !important;
+    overflow: hidden !important;
     margin: 0;
     padding: 0;
   }
