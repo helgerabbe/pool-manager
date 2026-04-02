@@ -21,6 +21,8 @@ import EinheitUebersichtTab from '@/components/workspace/EinheitUebersichtTab';
 import MoodleExportTab from '@/components/workspace/MoodleExportTab';
 import ExportCockpitView from '@/components/export/ExportCockpitView';
 import MoodleExportView from '@/components/export/MoodleExportView';
+import AllgemeineAufgabenView from '@/components/allgemeineAufgaben/AllgemeineAufgabenView';
+import ProjektaufgabenView from '@/components/projektaufgaben/ProjektaufgabenView';
 
 export default function Workspace({ initialEinheitId: initialEinheitIdProp = null }) {
   const urlParams = new URLSearchParams(window.location.search);
@@ -409,7 +411,33 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               </ErrorBoundary>
             </TabsContent>
 
-            {/* ── Tab 5: Freigabe-Cockpit ──────────────────────────────────────── */}
+            {/* ── Tab 5: Allgemeine Aufgaben (Ebene 2) ────────────────────────── */}
+            <TabsContent value="ebene2" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-y-auto m-0 p-0">
+              <ErrorBoundary label="Allgemeine Aufgaben erstellen">
+                <AllgemeineAufgabenView 
+                  einheitId={selectedEinheitId}
+                  einheit={einheit}
+                  kannBearbeiten={kannDieseEinheitBearbeiten}
+                  userEmail={authUser?.email}
+                  userRole={rolle}
+                />
+              </ErrorBoundary>
+            </TabsContent>
+
+            {/* ── Tab 6: Anwendungs- & Projektaufgaben (Ebene 3) ──────────────── */}
+            <TabsContent value="ebene3" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-y-auto m-0 p-0">
+              <ErrorBoundary label="Anwendungs- und Projektaufgaben">
+                <ProjektaufgabenView 
+                  einheitId={selectedEinheitId}
+                  einheit={einheit}
+                  kannBearbeiten={kannDieseEinheitBearbeiten}
+                  userEmail={authUser?.email}
+                  userRole={rolle}
+                />
+              </ErrorBoundary>
+            </TabsContent>
+
+            {/* ── Tab 7: Freigabe-Cockpit ──────────────────────────────────────── */}
             <TabsContent value="cockpit" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-y-auto m-0 p-0">
               <ErrorBoundary label="Freigabe-Cockpit">
                 <div className="px-4 sm:px-6 lg:px-8 py-6">
@@ -421,7 +449,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               </ErrorBoundary>
             </TabsContent>
 
-            {/* ── Tab 6: Moodle-Export & Admin-Freigabe ────────────────────────── */}
+            {/* ── Tab 8: Moodle-Export & Admin-Freigabe ────────────────────────── */}
             <TabsContent value="export" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-y-auto m-0 p-0">
               <ErrorBoundary label="Moodle Export">
                 <MoodleExportView 
