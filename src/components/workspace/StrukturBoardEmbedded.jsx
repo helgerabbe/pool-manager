@@ -529,7 +529,7 @@ export default function StrukturBoardEmbedded({
           className={cn(
             'gap-1.5 transition-all duration-200',
             isDirty
-              ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-200 animate-pulse'
+            ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-200 animate-heartbeat'
               : 'opacity-50'
           )}
         >
