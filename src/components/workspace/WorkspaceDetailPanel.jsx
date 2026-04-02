@@ -561,6 +561,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                   kannBearbeiten={kannBearbeiten}
                   queryClient={queryClient}
                   onNavigate={onNavigate}
+                  onGoToTaskWorkshop={(activityId) => onNavigate({ type: 'goto-task-workshop', activityId })}
                 />
               )}
             </div>
@@ -861,7 +862,7 @@ function AktivitaetEditPanel({ paket, phaseKey, phaseLabel, kannBearbeiten, quer
 
 import PhaseActivitiesList from '@/components/workspace/PhaseActivitiesList';
 
-function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient, onNavigate }) {
+function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient, onNavigate, onGoToTaskWorkshop }) {
   return (
     <PhaseActivitiesList
       paket={paket}
@@ -874,6 +875,7 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient
         paketId: data.paketId,
         activityRecordId: data.activityId,
       })}
+      onGoToTaskWorkshop={onGoToTaskWorkshop}
     />
   );
 }

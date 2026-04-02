@@ -6,6 +6,7 @@
  * Sammelt Kontext, generiert LLM-Prompt, gibt strukturierte Varianten zurück.
  */
 
+/* eslint-disable no-undef */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 // deno-lint-ignore no-undef
