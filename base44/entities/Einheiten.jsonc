@@ -62,15 +62,26 @@
       "default": "In Planung",
       "description": "Freigabestatus der Einheit"
     },
+    "content_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "approved"
+      ],
+      "default": "approved",
+      "description": "P\u00e4dagogischer Status: Struktur-Container sind immer 'approved' (Auto-Gr\u00fcn)"
+    },
     "sync_status": {
       "type": "string",
       "enum": [
         "new",
-        "exported",
-        "modified"
+        "pending",
+        "synced",
+        "modified",
+        "to_delete"
       ],
       "default": "new",
-      "description": "Sync-Status f\u00fcr Moodle-Export-Tracking"
+      "description": "Moodle-Sync-Status: new, pending, synced, modified, to_delete"
     },
     "last_synced_at": {
       "type": "string",

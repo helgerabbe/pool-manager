@@ -1,9 +1,24 @@
 /**
  * contentStatusLogic.js
  * 
- * 2-Signal-System Logik:
- * - content_status: Pädagogische Qualität ('draft' | 'approved')
- * - sync_status: Moodle-Export-Status ('new' | 'pending' | 'synced' | 'modified' | 'to_delete')
+ * 2-Signal-System Logik für Ebenen 1-4:
+ * 
+ * EBENE 1-2 (Struktur-Container: Einheiten, Themenfelder, Lernpakete):
+ * - content_status: IMMER 'approved' (Auto-Grün, da nur Struktur-Hüllen)
+ * - sync_status: normal lifecycle ('new' → 'modified' → 'synced' → etc.)
+ * 
+ * EBENE 3 (Leere Aktivitäts-Hüllen):
+ * - content_status: FORCED 'draft' (erzwingt inhaltliche Arbeit)
+ * - sync_status: 'new' bei Erstellung
+ * 
+ * EBENE 4 (Klone & Masters):
+ * - content_status: User-controlled ('draft' ↔ 'approved')
+ * - sync_status: normal lifecycle
+ * 
+ * TOMBSTONE-PRINZIP:
+ * - DELETE → UPDATE mit sync_status='to_delete'
+ * - UI filtert 'to_delete' aus (nur für Nutzer unsichtbar)
+ * - Export-Center kann sie noch abrufen
  */
 
 /**
@@ -118,6 +133,40 @@ export const SYNC_STATUS_CONFIG = {
   to_delete: {
     label: 'Zur Löschung vorgesehen',
     color: 'bg-red-100 text-red-700',
-    description: 'Soll beim nächsten Sync gelöscht werden',
+    description: 'Soll beim nächsten Sync gelöscht werden (Tombstone)',
   },
 };
+
+/**
+ * Struktur-Automatik für Container (Einheiten, Themenfelder, Lernpakete)
+ * 
+ * Diese sind IMMER 'approved', da sie nur strukturelle Hüllen sind.
+ * Die pädagogische Qualität sitzt in den Child-Elementen (Aktivitäten, Klone).
+ */
+export const STRUCTURE_CONTAINER_DEFAULTS = {
+  content_status: 'approved', // Auto-Grün: Struktur-Container haben keine inhaltliche Freigabe
+  sync_status: 'new', // Bei Erstellung
+};
+
+/**
+ * Forced Draft für leere Aktivitäten-Hüllen (Ebene 3)
+ * 
+ * Wenn eine Aktivität aus dem Katalog neu zugeordnet wird, ist sie inhaltlich leer.
+ * Die forced-Draft-Logik erzwingt, dass der Inhalt gefüllt werden muss.
+ */
+export const EMPTY_ACTIVITY_DEFAULTS = {
+  content_status: 'draft', // FORCED: erzwingt Inhalt-Arbeit
+  sync_status: 'new',
+  is_complete: false,
+  field_values: {},
+};
+
+/**
+ * Prüft, ob ein Element ein Tombstone ist
+ * 
+ * @param {object} element - Das Element (Lernpaket, Aktivität, etc.)
+ * @returns {boolean} - true wenn sync_status === 'to_delete'
+ */
+export function isTombstone(element) {
+  return element?.sync_status === 'to_delete';
+}
