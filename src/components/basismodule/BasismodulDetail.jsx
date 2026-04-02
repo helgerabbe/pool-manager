@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import BasislernpaketCard from './BasislernpaketCard';
 
@@ -11,6 +11,8 @@ export default function BasismodulDetail({ basismodul, onDelete }) {
   const queryClient = useQueryClient();
   const [newPaketTitel, setNewPaketTitel] = useState('');
   const [isAddingPaket, setIsAddingPaket] = useState(false);
+  const [editingPaketId, setEditingPaketId] = useState(null);
+  const [editingPaketTitel, setEditingPaketTitel] = useState('');
 
   const { data: pakete = [] } = useQuery({
     queryKey: ['basislernpakete', basismodul?.id],
@@ -46,6 +48,25 @@ export default function BasismodulDetail({ basismodul, onDelete }) {
     onError: () => toast.error('Fehler beim Löschen'),
   });
 
+  const updatePaket = useMutation({
+    mutationFn: ({ id, titel }) => base44.entities.Basislernpakete.update(id, { titel }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['basislernpakete'] });
+      setEditingPaketId(null);
+      toast.success('Paket aktualisiert');
+    },
+    onError: () => toast.error('Fehler beim Aktualisieren'),
+  });
+
+  const deletePaket = useMutation({
+    mutationFn: (id) => base44.entities.Basislernpakete.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['basislernpakete'] });
+      toast.success('Paket gelöscht');
+    },
+    onError: () => toast.error('Fehler beim Löschen'),
+  });
+
   const handleAddPaket = async () => {
     if (!newPaketTitel.trim()) return;
     setIsAddingPaket(true);
@@ -65,6 +86,27 @@ export default function BasismodulDetail({ basismodul, onDelete }) {
       e.preventDefault();
       handleAddPaket();
     }
+  };
+
+  const handleEditStart = (paket) => {
+    setEditingPaketId(paket.id);
+    setEditingPaketTitel(paket.titel);
+  };
+
+  const handleEditSave = async (id) => {
+    if (!editingPaketTitel.trim()) {
+      toast.error('Paket-Titel darf nicht leer sein');
+      return;
+    }
+    await updatePaket.mutateAsync({
+      id,
+      titel: editingPaketTitel.trim(),
+    });
+  };
+
+  const handleEditCancel = () => {
+    setEditingPaketId(null);
+    setEditingPaketTitel('');
   };
 
   if (!basismodul) {
@@ -125,22 +167,77 @@ export default function BasismodulDetail({ basismodul, onDelete }) {
         </div>
 
         {/* Pakete-Liste */}
-        {pakete.length === 0 ? (
+         {pakete.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <p className="text-sm">Keine Pakete vorhanden</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {pakete.map((paket) => {
               const paketLernziele = alleLernziele.filter(
                 (lz) => lz.basislernpaket_id === paket.id
               );
               return (
-                <BasislernpaketCard
-                  key={paket.id}
-                  paket={paket}
-                  lernziele={paketLernziele}
-                />
+                <div key={paket.id} className="border rounded-lg bg-white">
+                  {editingPaketId === paket.id ? (
+                    <div className="p-3 space-y-2 border-b bg-muted/20">
+                      <Input
+                        type="text"
+                        value={editingPaketTitel}
+                        onChange={(e) => setEditingPaketTitel(e.target.value)}
+                        className="text-sm h-9"
+                        autoFocus
+                      />
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleEditCancel}
+                          className="gap-1"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          Abbrechen
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleEditSave(paket.id)}
+                          disabled={updatePaket.isPending}
+                          className="gap-1"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          Speichern
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 flex items-center justify-between border-b">
+                      <h3 className="text-sm font-semibold">{paket.titel}</h3>
+                      <div className="flex gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handleEditStart(paket)}
+                          className="h-8 w-8"
+                        >
+                          <Edit2 className="w-4 h-4 text-blue-600" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => deletePaket.mutate(paket.id)}
+                          disabled={deletePaket.isPending}
+                          className="h-8 w-8"
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  <BasislernpaketCard
+                    paket={paket}
+                    lernziele={paketLernziele}
+                  />
+                </div>
               );
             })}
           </div>
