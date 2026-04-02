@@ -65,7 +65,7 @@ export default function ActivityMasterPanel({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-visible h-auto">
       {/* ── Basisangaben der Aktivität ───────────────────────────────────────── */}
       <div className="rounded-xl border border-border bg-card">
         <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border bg-muted/30">

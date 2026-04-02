@@ -433,7 +433,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail 
       </aside>
 
       {/* ── Hauptbereich ─────────────────────────────────────────────────────── */}
-      <main className="flex-1 overflow-y-auto min-h-0">
+      <main className="h-[calc(100vh-140px)] overflow-y-auto">
         {!selectedItem && <EmptyState />}
 
         {/* Aktivität oder Master gewählt → ActivityMasterPanel */}
