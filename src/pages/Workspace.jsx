@@ -19,6 +19,7 @@ import StrukturBoardEmbedded from '@/components/workspace/StrukturBoardEmbedded'
 import WorkspaceTabs from '@/components/workspace/WorkspaceTabs';
 import TaskCreationView from '@/components/workspace/TaskCreationView';
 import EinheitUebersichtTab from '@/components/workspace/EinheitUebersichtTab';
+import MoodleExportTab from '@/components/workspace/MoodleExportTab';
 
 /**
  * Workspace — Drei-Säulen-Architektur
@@ -409,6 +410,13 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                 initialActivityId={taskWorkshopActivityId}
                 kannBearbeiten={kannDieseEinheitBearbeiten}
               />
+            </ErrorBoundary>
+          </TabsContent>
+
+          {/* ── Tab 5: Nach Moodle exportieren ───────────────────────────────── */}
+          <TabsContent value="export" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-y-auto m-0 p-0">
+            <ErrorBoundary label="Moodle Export">
+              <MoodleExportTab />
             </ErrorBoundary>
           </TabsContent>
 
