@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -6,7 +6,6 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -17,9 +16,8 @@ import {
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GripVertical, X, Plus, Upload, Eye, Edit } from 'lucide-react';
@@ -38,12 +36,22 @@ function SortableItemCard({ id, item, isPreview, onUpdate, onDelete }) {
     transition,
     isDragging,
   } = useSortable({ id });
+  const textareaRef = useRef(null);
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+
+  // Auto-resize Textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      const scrollHeight = textareaRef.current.scrollHeight;
+      textareaRef.current.style.height = Math.max(scrollHeight, 80) + 'px';
+    }
+  }, [item.content]);
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
@@ -118,11 +126,12 @@ function SortableItemCard({ id, item, isPreview, onUpdate, onDelete }) {
               Text-Inhalt
             </label>
             <Textarea
+              ref={textareaRef}
               value={item.content}
               onChange={(e) => onUpdate(id, { ...item, content: e.target.value })}
               placeholder="Gib den Text ein…"
               className={cn(
-                'h-20 text-sm resize-none',
+                'min-h-20 text-sm resize-none overflow-hidden',
                 isPreview && 'bg-muted/40 cursor-not-allowed'
               )}
               readOnly={isPreview}
@@ -256,18 +265,16 @@ export default function SortingTaskForm({ initialData = {}, onChange }) {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = items.findIndex((item) => item.id === active.id);
-      const newIndex = items.findIndex((item) => item.id === over.id);
+      const targetArray = isPreview ? previewItems : items;
+      const oldIndex = targetArray.findIndex((item) => item.id === active.id);
+      const newIndex = targetArray.findIndex((item) => item.id === over.id);
 
-      const newItems = arrayMove(items, oldIndex, newIndex);
-      setItems(newItems);
+      const newArray = arrayMove(targetArray, oldIndex, newIndex);
 
-      // Aktualisiere auch previewItems wenn im Vorschau-Modus
       if (isPreview) {
-        const oldPreviewIndex = previewItems.findIndex((item) => item.id === active.id);
-        const newPreviewIndex = previewItems.findIndex((item) => item.id === over.id);
-        const newPreviewItems = arrayMove(previewItems, oldPreviewIndex, newPreviewIndex);
-        setPreviewItems(newPreviewItems);
+        setPreviewItems(newArray);
+      } else {
+        setItems(newArray);
       }
     }
   };
@@ -352,14 +359,19 @@ export default function SortingTaskForm({ initialData = {}, onChange }) {
 
       {/* Items List mit Drag-and-Drop */}
       {activeItems.length > 0 ? (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
             <label className="text-xs font-semibold text-muted-foreground">
               Sortierbare Elemente ({activeItems.length})
             </label>
             {isPreview && (
               <Badge variant="secondary" className="text-xs">
-                {items.filter(i => i.content).length}/{items.length} mit Inhalt
+                ✓ Gemischt für Schüler-Ansicht
+              </Badge>
+            )}
+            {!isPreview && (
+              <Badge variant="outline" className="text-xs">
+                Position #{activeItems.length}
               </Badge>
             )}
           </div>
@@ -403,10 +415,20 @@ export default function SortingTaskForm({ initialData = {}, onChange }) {
 
       {/* Editor-Info */}
       {!isPreview && items.length > 0 && (
-        <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-800 space-y-1">
-          <p className="font-semibold">ℹ️ Die aktuelle Reihenfolge ist die korrekte Lösung.</p>
+        <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-xs text-blue-800 dark:text-blue-400 space-y-1">
+          <p className="font-semibold">ℹ️ Die aktuelle Reihenfolge definiert die korrekte Lösung</p>
           <p>
-            In der Vorschau werden diese Elemente automatisch gemischt, damit Schüler sie neu ordnen müssen.
+            In der Vorschau werden die Elemente automatisch gemischt und Lernende können sie per Drag-and-Drop neu ordnen.
+          </p>
+        </div>
+      )}
+
+      {/* Preview-Info */}
+      {isPreview && items.length > 0 && (
+        <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 text-xs text-green-800 dark:text-green-400 space-y-1">
+          <p className="font-semibold">👁️ Schüler-Vorschau aktiv</p>
+          <p>
+            Ziehe die Elemente in die richtige Reihenfolge. Im Editor ist die Lösung sichtbar.
           </p>
         </div>
       )}
