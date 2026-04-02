@@ -1,10 +1,14 @@
 /**
  * ExportCockpitView.jsx
  * * Ebene 5 – Freigabe-Cockpit für Moodle-Export
- * * Fixes:
- * - Fehlende Queries für MasterAufgabe und Aufgabenbausteine (Klone) hinzugefügt
- * - Rekursives Rendering bis zur tiefsten Ebene repariert
- * - Redundante Einheiten-Überschrift entfernt
+ * * FULL FEATURE SET:
+ * - Dynamische Slots & Collapsible
+ * - Volle 5-Ebenen-Hierarchie (Einheit -> Aufgabe)
+ * - 2-Signal-System (Pädagogisch & Technisch) mit exakter Vererbung
+ * - Kaskadierende Checkboxen (Parent wählt alle gültigen Children)
+ * - Zähler pro Ebene (X/Y markiert)
+ * - Status-Indikatoren im Dropdown-Menü
+ * - Undo-Funktion für gesperrte Elemente
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -20,7 +24,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 // ────────────────────────────────────────────────────────────────────────────────
-// 2-Badge System: Pädagogischer + Technischer Status
+// 2-Badge System
 // ────────────────────────────────────────────────────────────────────────────────
 
 function StatusBadges({ contentStatus, syncStatus }) {
@@ -37,53 +41,35 @@ function StatusBadges({ contentStatus, syncStatus }) {
     to_delete: { icon: '🗑️', label: 'wird entfernt', color: 'bg-red-100 text-red-800 border-red-300' },
   };
 
-  const contentData = contentBadges[contentStatus];
-  const syncData = syncBadges[syncStatus];
+  const cData = contentBadges[contentStatus];
+  const sData = syncBadges[syncStatus];
 
   return (
     <div className="flex gap-1.5 flex-wrap">
-      {contentData && (
-        <Badge className={cn('border text-xs font-semibold', contentData.color)}>
-          {contentData.icon} {contentData.label}
-        </Badge>
-      )}
-      {syncData && (
-        <Badge className={cn('border text-xs font-semibold', syncData.color)}>
-          {syncData.icon} {syncData.label}
-        </Badge>
-      )}
+      {cData && <Badge className={cn('border text-xs font-semibold', cData.color)}>{cData.icon} {cData.label}</Badge>}
+      {sData && <Badge className={cn('border text-xs font-semibold', sData.color)}>{sData.icon} {sData.label}</Badge>}
     </div>
   );
 }
 
 // ────────────────────────────────────────────────────────────────────────────────
-// Undo-Button für Pending Items
+// Undo-Button
 // ────────────────────────────────────────────────────────────────────────────────
 
-function UndoButton({ itemId, itemType, onSuccess }) {
+function UndoButton({ itemId, itemType }) {
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleUndo = async () => {
     setIsLoading(true);
     try {
-      const entityMap = {
-        activity: 'LernpaketPhaseAktivitaet',
-        master: 'MasterAufgabe',
-        klon: 'Aufgabenbausteine',
-      };
-
-      const entity = base44.entities[entityMap[itemType]];
-      await entity.update(itemId, { sync_status: 'modified' });
-
-      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      const entityName = itemType === 'master' ? 'MasterAufgabe' : 'Aufgabenbausteine';
+      await base44.entities[entityName].update(itemId, { sync_status: 'modified' });
       queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
       queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine'] });
-
       toast.success('Export-Sperre entfernt');
-      onSuccess?.();
     } catch (err) {
-      toast.error('Fehler: ' + err.message);
+      toast.error('Fehler beim Entsperren');
     } finally {
       setIsLoading(false);
     }
@@ -95,7 +81,7 @@ function UndoButton({ itemId, itemType, onSuccess }) {
       size="icon"
       onClick={handleUndo}
       disabled={isLoading}
-      className="h-6 w-6 text-destructive hover:bg-destructive/10"
+      className="h-6 w-6 text-destructive hover:bg-destructive/10 shrink-0"
       title="Export-Sperre entfernen"
     >
       <RotateCcw className={cn('w-3.5 h-3.5', isLoading && 'animate-spin')} />
@@ -104,31 +90,27 @@ function UndoButton({ itemId, itemType, onSuccess }) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────────
-// Helper: Calculated Status
+// Helper: Status Berechnungen
 // ────────────────────────────────────────────────────────────────────────────────
 
-function calculateDerivedContentStatus(children) {
-  if (!children || children.length === 0) return 'draft';
-  const allApproved = children.every((c) => (c.content_status || c.effective_content_status) === 'approved');
-  return allApproved ? 'approved' : 'draft';
+function calcContentStatus(aufgaben) {
+  if (!aufgaben || aufgaben.length === 0) return 'draft';
+  return aufgaben.every(a => a.content_status === 'approved') ? 'approved' : 'draft';
 }
 
-function calculateDerivedSyncStatus(children) {
-  if (!children || children.length === 0) return 'new';
-  const statuses = children.map((c) => c.sync_status);
-
+function calcSyncStatus(aufgaben) {
+  if (!aufgaben || aufgaben.length === 0) return 'new';
+  const statuses = aufgaben.map(a => a.sync_status);
   if (statuses.includes('pending')) return 'pending';
   if (statuses.includes('to_delete')) return 'to_delete';
   if (statuses.includes('modified')) return 'modified';
-  if (statuses.some((s) => s === 'synced') && statuses.some((s) => s !== 'synced')) {
-    return 'modified';
-  }
-  if (statuses.every((s) => s === 'synced')) return 'synced';
+  if (statuses.some(s => s === 'synced') && statuses.some(s => s !== 'synced')) return 'modified';
+  if (statuses.every(s => s === 'synced')) return 'synced';
   return 'new';
 }
 
 // ────────────────────────────────────────────────────────────────────────────────
-// Single Cockpit Slot (Collapsible)
+// Single Cockpit Slot
 // ────────────────────────────────────────────────────────────────────────────────
 
 function CockpitSlot({
@@ -142,7 +124,7 @@ function CockpitSlot({
   einheiten,
   lernpakete,
   themenfelder,
-  enrichedActivities,
+  aktivitaeten,
   aktivitaetenKatalog,
   masterAufgaben,
   aufgabenbausteine,
@@ -150,30 +132,47 @@ function CockpitSlot({
 }) {
   const { unitId, isCollapsed } = slot;
 
-  const availableEinheiten = einheiten.filter(
-    (e) => !selectedEinheitIds.includes(e.id) || e.id === unitId
-  );
+  // 1. Daten filtern für die Dropdown-Anzeige (inklusive Status-Check)
+  const availableEinheiten = einheiten.filter(e => !selectedEinheitIds.includes(e.id) || e.id === unitId);
 
-  // Helper zum Sammeln aller Aufgaben (Master/Klone) für eine Aktivität
+  // Helper: Alle Aufgaben einer bestimmten Einheit finden (für den Dropdown-Indikator)
+  const checkEinheitStatus = useCallback((eId) => {
+    const tfs = themenfelder.filter(tf => tf.einheit_id === eId);
+    const paks = lernpakete.filter(lp => tfs.some(tf => tf.id === lp.themenfeld_id));
+    const acts = aktivitaeten.filter(a => paks.some(p => p.id === a.lernpaket_id));
+    const masters = masterAufgaben.filter(m => acts.some(a => a.id === m.aktivitaet_id));
+    const klone = aufgabenbausteine.filter(k => masters.some(m => m.id === k.master_id));
+    const all = [...masters, ...klone];
+    
+    const hasNew = all.some(a => a.sync_status === 'new');
+    const hasMod = all.some(a => a.sync_status === 'modified');
+    return { hasNew, hasMod };
+  }, [themenfelder, lernpakete, aktivitaeten, masterAufgaben, aufgabenbausteine]);
+
+  // 2. Hierarchie Helper für den aktiven Slot
   const getAufgabenForAktivitaet = useCallback((actId) => {
     const masters = masterAufgaben.filter(m => m.aktivitaet_id === actId);
     const klone = aufgabenbausteine.filter(k => masters.some(m => m.id === k.master_id));
     return [...masters, ...klone];
   }, [masterAufgaben, aufgabenbausteine]);
 
-  const toggleItemCheckbox = useCallback((id) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  }, [setSelectedIds]);
+  // Kaskadierende Checkbox-Logik
+  const toggleBulkCheckbox = (aufgabenArray) => {
+    // Finde alle Aufgaben, die überhaupt auswählbar sind (approved & nicht pending)
+    const exportableTasks = aufgabenArray.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending');
+    if (exportableTasks.length === 0) return;
 
-  const handleEinheitChange = (newEinheitId) => {
-    updateSlot(slotId, { unitId: newEinheitId, isCollapsed: false });
+    const exportableIds = exportableTasks.map(a => a.id);
+    const allSelected = exportableIds.every(id => selectedIds.includes(id));
+
+    if (allSelected) {
+      // Deselect all
+      setSelectedIds(prev => prev.filter(id => !exportableIds.includes(id)));
+    } else {
+      // Select all (merge ohne Duplikate)
+      setSelectedIds(prev => [...new Set([...prev, ...exportableIds])]);
+    }
   };
-
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Render Hierarchie: Themenfeld > Lernpaket > Aktivitäten > Aufgaben
-  // ────────────────────────────────────────────────────────────────────────────────
 
   const renderHierarchy = () => {
     if (!unitId) return null;
@@ -184,99 +183,112 @@ function CockpitSlot({
       .map((tf) => {
         const tfPakete = lernpakete.filter((lp) => lp.themenfeld_id === tf.id);
         
-        // Sammle alle Aufgaben in diesem Themenfeld für den Vererbungsstatus
         let tfAllAufgaben = [];
         tfPakete.forEach(paket => {
-            const paketActivities = enrichedActivities.filter(a => a.lernpaket_id === paket.id);
+            const paketActivities = aktivitaeten.filter(a => a.lernpaket_id === paket.id);
             paketActivities.forEach(act => {
                 tfAllAufgaben = [...tfAllAufgaben, ...getAufgabenForAktivitaet(act.id)];
             });
         });
 
-        const tfDerivedContentStatus = calculateDerivedContentStatus(tfAllAufgaben);
-        const tfDerivedSyncStatus = calculateDerivedSyncStatus(tfAllAufgaben);
+        const tfExportable = tfAllAufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending');
+        const tfSelectedCount = tfExportable.filter(a => selectedIds.includes(a.id)).length;
+        const isTfFullySelected = tfExportable.length > 0 && tfSelectedCount === tfExportable.length;
 
         return (
           <div key={tf.id} className="space-y-2">
-            {/* Themenfeld */}
-            <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/40 transition">
-              <span className="text-sm font-semibold flex-1 truncate">{tf.titel}</span>
-              <StatusBadges contentStatus={tfDerivedContentStatus} syncStatus={tfDerivedSyncStatus} />
+            {/* Themenfeld Ebene */}
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/10 hover:bg-muted/30 transition">
+              <Checkbox
+                checked={isTfFullySelected}
+                onCheckedChange={() => toggleBulkCheckbox(tfAllAufgaben)}
+                disabled={tfExportable.length === 0}
+                className="h-4 w-4"
+              />
+              <span className="text-sm font-bold flex-1 truncate">{tf.titel}</span>
+              {tfExportable.length > 0 && (
+                  <span className="text-xs text-muted-foreground mr-2">{tfSelectedCount}/{tfExportable.length}</span>
+              )}
+              <StatusBadges contentStatus={calcContentStatus(tfAllAufgaben)} syncStatus={calcSyncStatus(tfAllAufgaben)} />
             </div>
 
-            {/* Lernpakete */}
-            <div className="pl-6 space-y-2 border-l border-border/50">
+            {/* Lernpakete Ebene */}
+            <div className="pl-6 space-y-2 border-l-2 border-muted">
               {tfPakete.map((paket) => {
-                const paketActivities = enrichedActivities.filter((a) => a.lernpaket_id === paket.id);
-                
+                const paketActivities = aktivitaeten.filter((a) => a.lernpaket_id === paket.id);
                 let paketAllAufgaben = [];
                 paketActivities.forEach(act => {
                     paketAllAufgaben = [...paketAllAufgaben, ...getAufgabenForAktivitaet(act.id)];
                 });
 
-                const paketDerivedContentStatus = calculateDerivedContentStatus(paketAllAufgaben);
-                const paketDerivedSyncStatus = calculateDerivedSyncStatus(paketAllAufgaben);
+                const pakExportable = paketAllAufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending');
+                const pakSelectedCount = pakExportable.filter(a => selectedIds.includes(a.id)).length;
+                const isPakFullySelected = pakExportable.length > 0 && pakSelectedCount === pakExportable.length;
 
                 return (
                   <div key={paket.id} className="space-y-1.5">
-                    {/* Lernpaket */}
-                    <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/40 transition">
-                      <span className="text-sm font-medium flex-1 truncate">{paket.titel_des_pakets}</span>
-                      <StatusBadges
-                        contentStatus={paketDerivedContentStatus}
-                        syncStatus={paketDerivedSyncStatus}
+                    <div className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-muted/30 transition">
+                      <Checkbox
+                        checked={isPakFullySelected}
+                        onCheckedChange={() => toggleBulkCheckbox(paketAllAufgaben)}
+                        disabled={pakExportable.length === 0}
+                        className="h-4 w-4"
                       />
+                      <span className="text-sm font-semibold flex-1 truncate text-foreground/90">{paket.titel_des_pakets}</span>
+                      {pakExportable.length > 0 && (
+                          <span className="text-xs text-muted-foreground mr-2">{pakSelectedCount}/{pakExportable.length}</span>
+                      )}
+                      <StatusBadges contentStatus={calcContentStatus(paketAllAufgaben)} syncStatus={calcSyncStatus(paketAllAufgaben)} />
                     </div>
 
-                    {/* Aktivitäten */}
-                    <div className="pl-6 space-y-1.5 border-l border-border/30">
+                    {/* Aktivitäten Ebene */}
+                    <div className="pl-6 space-y-1.5 border-l border-muted/50">
                       {paketActivities.map((act) => {
                         const actName = aktivitaetenKatalog.find((k) => k.id === act.aktivitaet_id)?.name || 'Aktivität';
                         const aufgaben = getAufgabenForAktivitaet(act.id);
                         
-                        const actDerivedContentStatus = calculateDerivedContentStatus(aufgaben);
-                        const actDerivedSyncStatus = calculateDerivedSyncStatus(aufgaben);
+                        const actExportable = aufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending');
+                        const actSelectedCount = actExportable.filter(a => selectedIds.includes(a.id)).length;
+                        const isActFullySelected = actExportable.length > 0 && actSelectedCount === actExportable.length;
 
                         return (
                           <div key={act.id} className="space-y-1">
-                            {/* Aktivität Header */}
-                            <div className="flex items-center gap-2 p-1.5 rounded hover:bg-muted/30 transition">
-                              <span className="text-xs font-semibold flex-1 truncate text-foreground">
-                                ↳ {actName}
-                              </span>
-                              <StatusBadges
-                                contentStatus={actDerivedContentStatus}
-                                syncStatus={actDerivedSyncStatus}
+                            <div className="flex items-center gap-2 p-1.5 rounded hover:bg-muted/20 transition">
+                              <Checkbox
+                                checked={isActFullySelected}
+                                onCheckedChange={() => toggleBulkCheckbox(aufgaben)}
+                                disabled={actExportable.length === 0}
+                                className="h-4 w-4"
                               />
+                              <span className="text-xs font-medium flex-1 truncate text-foreground/80">↳ {actName}</span>
+                              {actExportable.length > 0 && (
+                                  <span className="text-[10px] text-muted-foreground mr-2">{actSelectedCount}/{actExportable.length}</span>
+                              )}
+                              <StatusBadges contentStatus={calcContentStatus(aufgaben)} syncStatus={calcSyncStatus(aufgaben)} />
                             </div>
 
-                            {/* Aufgaben (Klone & Master) */}
+                            {/* Aufgaben Ebene (Leaf) */}
                             <div className="pl-6 space-y-1">
                                 {aufgaben.map((aufgabe) => {
                                     const isSelected = selectedIds.includes(aufgabe.id);
                                     const isPending = aufgabe.sync_status === 'pending';
                                     const isApproved = aufgabe.content_status === 'approved';
-                                    const aufgabeType = aufgabe.master_id ? 'klon' : 'master';
-                                    const title = aufgabe.titel || (aufgabeType === 'master' ? 'Master-Aufgabe' : 'Klon-Aufgabe');
+                                    const type = aufgabe.master_id ? 'klon' : 'master';
+                                    const title = aufgabe.titel || (type === 'master' ? 'Master-Aufgabe' : 'Klon-Aufgabe');
 
                                     return (
-                                        <div key={aufgabe.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-muted/20 transition">
+                                        <div key={aufgabe.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-muted/10 transition">
                                             <Checkbox
                                                 checked={isSelected}
-                                                onCheckedChange={() => toggleItemCheckbox(aufgabe.id)}
+                                                onCheckedChange={() => toggleBulkCheckbox([aufgabe])}
                                                 disabled={isPending || !isApproved}
                                                 className="h-4 w-4 shrink-0"
                                             />
                                             <span className="text-xs font-normal flex-1 truncate text-muted-foreground">
                                                 {title}
                                             </span>
-                                            
-                                            {isPending && <UndoButton itemId={aufgabe.id} itemType={aufgabeType} />}
-
-                                            <StatusBadges
-                                                contentStatus={aufgabe.content_status}
-                                                syncStatus={aufgabe.sync_status}
-                                            />
+                                            {isPending && <UndoButton itemId={aufgabe.id} itemType={type} />}
+                                            <StatusBadges contentStatus={aufgabe.content_status} syncStatus={aufgabe.sync_status} />
                                         </div>
                                     )
                                 })}
@@ -289,49 +301,38 @@ function CockpitSlot({
                 );
               })}
             </div>
+            <Separator className="my-2" />
           </div>
         );
       });
   };
 
   return (
-    <div className="space-y-4 p-4 border border-border rounded-lg bg-card/50 h-fit flex-1">
-      {/* Header mit Collapsible Button */}
-      <div className="flex items-center justify-end gap-2">
+    <div className="space-y-4 p-4 border border-border rounded-lg bg-card shadow-sm h-fit flex-1">
+      <div className="flex items-center justify-end gap-1 mb-2">
         {unitId && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => updateSlot(slotId, { isCollapsed: !isCollapsed })}
-            className="h-8 w-8"
-          >
+          <Button variant="ghost" size="icon" onClick={() => updateSlot(slotId, { isCollapsed: !isCollapsed })} className="h-7 w-7">
             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </Button>
         )}
-        {unitId && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => removeSlot(slotId)}
-            className="h-8 w-8 text-destructive hover:bg-destructive/10"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        )}
+        <Button variant="ghost" size="icon" onClick={() => removeSlot(slotId)} className="h-7 w-7 text-destructive hover:bg-destructive/10">
+          <Trash2 className="w-4 h-4" />
+        </Button>
       </div>
 
-      {/* Content */}
       {!isCollapsed && (
         <>
-          <Select value={unitId || ''} onValueChange={handleEinheitChange}>
-            <SelectTrigger className="h-9 text-sm font-semibold">
+          <Select value={unitId || ''} onValueChange={(val) => updateSlot(slotId, { unitId: val, isCollapsed: false })}>
+            <SelectTrigger className="h-10 text-sm font-semibold bg-background">
               <SelectValue placeholder="Einheit auswählen..." />
             </SelectTrigger>
-            <SelectContent className="text-sm">
+            <SelectContent>
               {availableEinheiten.map((e) => {
+                const { hasNew, hasMod } = checkEinheitStatus(e.id);
+                const indicator = hasNew ? ' (🆕 Updates)' : hasMod ? ' (⚠️ Änderungen)' : '';
                 return (
                   <SelectItem key={e.id} value={e.id} className="text-sm">
-                    {e.titel_der_einheit} ({e.fach})
+                    {e.titel_der_einheit} {indicator}
                   </SelectItem>
                 );
               })}
@@ -339,24 +340,23 @@ function CockpitSlot({
           </Select>
 
           {!unitId ? (
-            <div className="flex items-center justify-center text-center py-8 text-muted-foreground">
-              <p className="text-sm">Wähle eine Einheit aus</p>
+            <div className="flex items-center justify-center text-center py-10 text-muted-foreground text-sm">
+              Bitte wähle eine Einheit, um die Struktur zu laden.
             </div>
           ) : (
             <>
-              <div className="space-y-3 h-fit pt-2">
+              <div className="space-y-2 pt-4">
                 {renderHierarchy()}
               </div>
 
-              {/* Export Button */}
-              <div className="space-y-2 pt-3 border-t border-border/40">
+              {/* Export Trigger */}
+              <div className="pt-4 mt-4 border-t">
                 <Button
                   onClick={() => exportMutation.mutate()}
                   disabled={selectedIds.length === 0 || exportMutation.isPending}
-                  className="w-full h-9 gap-2 text-sm"
-                  size="sm"
+                  className="w-full font-semibold"
                 >
-                  {exportMutation.isPending ? 'Lädt...' : `🚀 ${selectedIds.length} Aufgaben zum Export freigeben`}
+                  {exportMutation.isPending ? 'Wird übergeben...' : `🚀 ${selectedIds.length} Aufgaben an Export-Zentrum übergeben`}
                 </Button>
               </div>
             </>
@@ -377,23 +377,18 @@ export default function ExportCockpitView({ initialEinheitId = null }) {
   const [nextSlotId, setNextSlotId] = useState(2);
   const [globalSelectedIds, setGlobalSelectedIds] = useState([]);
 
-  // Data Queries
+  // Data
   const { data: einheiten = [] } = useQuery({ queryKey: ['einheiten'], queryFn: () => base44.entities.Einheiten.list() });
   const { data: lernpakete = [] } = useQuery({ queryKey: ['lernpakete'], queryFn: () => base44.entities.Lernpakete.list() });
   const { data: themenfelder = [] } = useQuery({ queryKey: ['themenfelder'], queryFn: () => base44.entities.Themenfeld.list() });
-  const { data: activities = [] } = useQuery({ queryKey: ['lernpaketPhaseAktivitaeten'], queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list() });
+  const { data: aktivitaeten = [] } = useQuery({ queryKey: ['lernpaketPhaseAktivitaeten'], queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list() });
   const { data: aktivitaetenKatalog = [] } = useQuery({ queryKey: ['aktivitaetenKatalog'], queryFn: () => base44.entities.AktivitaetenKatalog.list() });
-  
-  // FEHLENDE QUERIES HINZUGEFÜGT
   const { data: masterAufgaben = [] } = useQuery({ queryKey: ['masterAufgaben'], queryFn: () => base44.entities.MasterAufgabe.list() });
   const { data: aufgabenbausteine = [] } = useQuery({ queryKey: ['aufgabenbausteine'], queryFn: () => base44.entities.Aufgabenbausteine.list() });
 
-  const visibleActivities = activities.filter((a) => a.sync_status !== 'to_delete');
-  const enrichedActivities = useMemo(() => visibleActivities.map((a) => ({ ...a, effective_content_status: a.content_status })), [visibleActivities]);
-
   const updateSlot = (slotId, updates) => {
-    setSlots((prevSlots) => {
-      const newSlots = prevSlots.map((s) => (s.id === slotId ? { ...s, ...updates } : s));
+    setSlots((prev) => {
+      const newSlots = prev.map((s) => (s.id === slotId ? { ...s, ...updates } : s));
       const lastSlot = newSlots[newSlots.length - 1];
       if (lastSlot && lastSlot.unitId && !newSlots.find((s) => !s.unitId)) {
         newSlots.push({ id: nextSlotId + 1, unitId: null, isCollapsed: false });
@@ -403,14 +398,18 @@ export default function ExportCockpitView({ initialEinheitId = null }) {
     });
   };
 
-  const removeSlot = (slotId) => setSlots((prev) => prev.filter((s) => s.id !== slotId));
+  const removeSlot = (slotId) => {
+    setSlots((prev) => {
+      const filtered = prev.filter((s) => s.id !== slotId);
+      return filtered.length === 0 ? [{ id: Date.now(), unitId: null, isCollapsed: false }] : filtered;
+    });
+  };
+
   const selectedEinheitIds = slots.map((s) => s.unitId).filter(Boolean);
 
   const exportMutation = useMutation({
     mutationFn: async () => {
-      if (globalSelectedIds.length === 0) throw new Error('Keine Elemente ausgewählt');
       for (const id of globalSelectedIds) {
-        // HINWEIS: Hier checkt das Backend normalerweise, ob es sich um Klon oder Master handelt.
         await base44.entities.Aufgabenbausteine.update(id, { sync_status: 'pending' }).catch(() => 
           base44.entities.MasterAufgabe.update(id, { sync_status: 'pending' })
         );
@@ -421,45 +420,43 @@ export default function ExportCockpitView({ initialEinheitId = null }) {
       queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine'] });
       queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
       setGlobalSelectedIds([]);
-      toast.success(`🚀 ${count} Aufgaben an das Export-Zentrum übergeben.`);
+      toast.success(`${count} Aufgaben an das Export-Zentrum übergeben.`);
     },
-    onError: (err) => toast.error('Fehler: ' + err.message),
+    onError: () => toast.error('Fehler bei der Übergabe.'),
   });
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="space-y-2">
-          <h2 className="text-3xl font-bold">Freigabe-Cockpit</h2>
-          <p className="text-base text-muted-foreground">
-            Wähle Einheiten aus und markiere die fertigen Aufgaben zur Übergabe an das Export-Zentrum.
+    <div className="min-h-screen bg-muted/20 p-6">
+      <div className="max-w-screen-2xl mx-auto space-y-6">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Freigabe-Cockpit</h2>
+          <p className="text-muted-foreground mt-2">
+            Vergleiche Einheiten und markiere fertige Aufgaben zur Übergabe an das Moodle-Export-Team.
           </p>
         </div>
 
-        {slots.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {slots.map((slot) => (
-              <CockpitSlot
-                key={slot.id}
-                slotId={slot.id}
-                slot={slot}
-                updateSlot={updateSlot}
-                removeSlot={removeSlot}
-                selectedEinheitIds={selectedEinheitIds}
-                selectedIds={globalSelectedIds}
-                setSelectedIds={setGlobalSelectedIds}
-                einheiten={einheiten}
-                lernpakete={lernpakete}
-                themenfelder={themenfelder}
-                enrichedActivities={enrichedActivities}
-                aktivitaetenKatalog={aktivitaetenKatalog}
-                masterAufgaben={masterAufgaben}
-                aufgabenbausteine={aufgabenbausteine}
-                exportMutation={exportMutation}
-              />
-            ))}
-          </div>
-        )}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+          {slots.map((slot) => (
+            <CockpitSlot
+              key={slot.id}
+              slotId={slot.id}
+              slot={slot}
+              updateSlot={updateSlot}
+              removeSlot={removeSlot}
+              selectedEinheitIds={selectedEinheitIds}
+              selectedIds={globalSelectedIds}
+              setSelectedIds={setGlobalSelectedIds}
+              einheiten={einheiten}
+              lernpakete={lernpakete}
+              themenfelder={themenfelder}
+              aktivitaeten={aktivitaeten.filter(a => a.sync_status !== 'to_delete')}
+              aktivitaetenKatalog={aktivitaetenKatalog}
+              masterAufgaben={masterAufgaben.filter(m => m.sync_status !== 'to_delete')}
+              aufgabenbausteine={aufgabenbausteine.filter(a => a.sync_status !== 'to_delete')}
+              exportMutation={exportMutation}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
