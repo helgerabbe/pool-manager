@@ -16,9 +16,7 @@ import { Save, Plus, Trash2, Crown, Edit, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useDraftState } from '@/hooks/useDraftState';
-
-const FAECHER = ["Deutsch","Mathematik","Englisch","Französisch","Latein","Biologie","Chemie","Physik","Geschichte","Geographie","Politik","Wirtschaft","Kunst","Musik","Sport","Religion","Ethik","Informatik"];
-const JAHRGANGSSTUFEN = ["5","6","7","8","9","10","11","12","13"];
+import { useSystemSettings } from '@/hooks/useSystemSettings';
 
 const UNIT_ROLE_CONFIG = {
   LEITUNG: { label: 'Leitung', color: 'bg-amber-100 text-amber-700 border-amber-200', Icon: Crown },
@@ -39,6 +37,7 @@ function UnitRoleBadge({ role }) {
 
 export default function EinheitUebersichtTab({ einheit, currentUserEmail }) {
   const queryClient = useQueryClient();
+  const { faecher, jahrgaenge } = useSystemSettings();
   const [isSaving, setIsSaving] = useState(false);
   const [adding, setAdding] = useState(false);
   const [newEmail, setNewEmail] = useState('');
@@ -164,7 +163,7 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail }) {
                 <Select value={form.fach} onValueChange={v => set('fach', v)}>
                   <SelectTrigger><SelectValue placeholder="Fach wählen" /></SelectTrigger>
                   <SelectContent>
-                    {FAECHER.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                    {faecher.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -173,7 +172,7 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail }) {
                 <Select value={form.jahrgangsstufe} onValueChange={v => set('jahrgangsstufe', v)}>
                   <SelectTrigger><SelectValue placeholder="Jahrgang" /></SelectTrigger>
                   <SelectContent>
-                    {JAHRGANGSSTUFEN.map(j => <SelectItem key={j} value={j}>Jg. {j}</SelectItem>)}
+                    {jahrgaenge.map(j => <SelectItem key={j} value={j}>Jg. {j}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
