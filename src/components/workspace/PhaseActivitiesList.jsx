@@ -63,13 +63,9 @@ export default function PhaseActivitiesList({
     onError: () => toast.error('Fehler beim Löschen.'),
   });
 
-  const phaseMappings = {
-    Input: ['Input', 'Input (Erarbeitung)'],
-    Übung: ['Übung'],
-    Abschluss: ['Abschluss'],
-  };
+  // Nur aktive Aktivitäten für die aktuelle Phase aus dem Katalog
   const phaseAktivitaeten = aktivitaetenKatalog.filter(a =>
-    phaseMappings[phase]?.includes(a.phase) && a.is_active
+    a.phase === phase && a.is_active === true
   );
 
   if (aktivitaeten.length === 0) {
