@@ -391,7 +391,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
     <div className="flex flex-row flex-1 overflow-hidden">
 
       {/* ── Sidebar ──────────────────────────────────────────────────────────── */}
-      <aside className="w-72 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden">
+      <aside className="w-96 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden">
         <div className="px-3 py-3 border-b border-border">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aktivitäten</p>
         </div>
