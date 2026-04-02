@@ -379,58 +379,103 @@ export default function ExportCockpitView({ initialEinheitId = null, userRole = 
   // Export-Mutation
   // ──────────────────────────────────────────────────────────────────────────────
 
-  // ─ Factory für Export-Mutation pro Slot
-  const createExportMutation = (selectedIds, setSelectedIds) => {
-    return useMutation({
-      mutationFn: async () => {
-        if (selectedIds.length === 0) {
-          throw new Error('Keine Elemente ausgewählt');
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Export-Mutationen für beide Slots
+  // ──────────────────────────────────────────────────────────────────────────────
+
+  const exportMutation1 = useMutation({
+    mutationFn: async () => {
+      if (slot1SelectedIds.length === 0) {
+        throw new Error('Keine Elemente ausgewählt');
+      }
+
+      const updates = slot1SelectedIds.map((id) => {
+        if (visibleActivities.find(a => a.id === id)) {
+          return { id, type: 'activity' };
+        } else if (visibleMasters.find(m => m.id === id)) {
+          return { id, type: 'master' };
+        } else {
+          return { id, type: 'klon' };
         }
+      });
 
-        const updates = selectedIds.map((id) => {
-          if (visibleActivities.find(a => a.id === id)) {
-            return { id, type: 'activity' };
-          } else if (visibleMasters.find(m => m.id === id)) {
-            return { id, type: 'master' };
-          } else {
-            return { id, type: 'klon' };
-          }
-        });
-
-        for (const { id, type } of updates) {
-          if (type === 'activity') {
-            await base44.entities.LernpaketPhaseAktivitaet.update(id, {
-              sync_status: 'pending',
-            });
-          } else if (type === 'master') {
-            await base44.entities.MasterAufgabe.update(id, {
-              sync_status: 'pending',
-            });
-          } else if (type === 'klon') {
-            await base44.entities.Aufgabenbausteine.update(id, {
-              sync_status: 'pending',
-            });
-          }
+      for (const { id, type } of updates) {
+        if (type === 'activity') {
+          await base44.entities.LernpaketPhaseAktivitaet.update(id, {
+            sync_status: 'pending',
+          });
+        } else if (type === 'master') {
+          await base44.entities.MasterAufgabe.update(id, {
+            sync_status: 'pending',
+          });
+        } else if (type === 'klon') {
+          await base44.entities.Aufgabenbausteine.update(id, {
+            sync_status: 'pending',
+          });
         }
+      }
 
-        return updates.length;
-      },
-      onSuccess: (count) => {
-        queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-        queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
-        queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine'] });
-        
-        setSelectedIds([]);
-        toast.success(`🚀 ${count} Element${count !== 1 ? 'e' : ''} zum Export markiert.`);
-      },
-      onError: (err) => {
-        toast.error('Fehler beim Export: ' + err.message);
-      },
-    });
-  };
+      return updates.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+      queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine'] });
+      
+      setSlot1SelectedIds([]);
+      toast.success(`🚀 ${count} Element${count !== 1 ? 'e' : ''} zum Export markiert.`);
+    },
+    onError: (err) => {
+      toast.error('Fehler beim Export: ' + err.message);
+    },
+  });
 
-  const exportMutation1 = createExportMutation(slot1SelectedIds, setSlot1SelectedIds);
-  const exportMutation2 = createExportMutation(slot2SelectedIds, setSlot2SelectedIds);
+  const exportMutation2 = useMutation({
+    mutationFn: async () => {
+      if (slot2SelectedIds.length === 0) {
+        throw new Error('Keine Elemente ausgewählt');
+      }
+
+      const updates = slot2SelectedIds.map((id) => {
+        if (visibleActivities.find(a => a.id === id)) {
+          return { id, type: 'activity' };
+        } else if (visibleMasters.find(m => m.id === id)) {
+          return { id, type: 'master' };
+        } else {
+          return { id, type: 'klon' };
+        }
+      });
+
+      for (const { id, type } of updates) {
+        if (type === 'activity') {
+          await base44.entities.LernpaketPhaseAktivitaet.update(id, {
+            sync_status: 'pending',
+          });
+        } else if (type === 'master') {
+          await base44.entities.MasterAufgabe.update(id, {
+            sync_status: 'pending',
+          });
+        } else if (type === 'klon') {
+          await base44.entities.Aufgabenbausteine.update(id, {
+            sync_status: 'pending',
+          });
+        }
+      }
+
+      return updates.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+      queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine'] });
+      
+      setSlot2SelectedIds([]);
+      toast.success(`🚀 ${count} Element${count !== 1 ? 'e' : ''} zum Export markiert.`);
+    },
+    onError: (err) => {
+      toast.error('Fehler beim Export: ' + err.message);
+    },
+  });
 
 
 

@@ -1,196 +1,346 @@
-/**
- * ClozeTextForm.jsx
- *
- * Intuitive GUI für Lückentexte (Cloze-Aufgaben) in Ebene 4 mit Schwierigkeitsgraden.
- *
- * Datenstruktur:
- * - baseText: "Die Hauptstadt von Deutschland ist [[0]]."
- * - gaps: [{
- *     id: 0,
- *     solution: "Berlin",
- *     feedback: "...",
- *     mode: "input" | "selection",
- *     distractors: ["München", "Hamburg"] (bei mode: 'selection')
- *   }]
- *
- * Interaktion:
- * 1. Nutzer markiert Text in der Textarea
- * 2. "Lücke erstellen"-Button erscheint als Floating-Button
- * 3. Text wird durch [[id]] ersetzt, Wort kommt in Gaps-Liste
- * 4. Pro Lücke: Mode-Toggle zwischen Freitext (input) und Auswahlmenü (selection)
- * 5. Bei Auswahlmenü: Distraktoren hinzufügen/bearbeiten
- * 6. Visuelle Unterscheidung in der Vorschau (blau = Freitext, lila = Auswahl)
- */
-
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Badge } from '@/components/ui/badge';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, Plus, Trash2, Edit2, X } from 'lucide-react';
+import { X, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
 
-export default function ClozeTextForm({ initialData = {}, onSave }) {
-  // ──────────────────────────────────────────────────────────────────────────────
-  // State
-  // ──────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────
+// GapCard: Konfigurationskarte für eine einzelne Lücke
+// ────────────────────────────────────────────────────────────────────────────────
 
+function GapCard({ gap, onUpdate, onDelete }) {
+  const [isEditingSolution, setIsEditingSolution] = useState(false);
+  const [newDistractor, setNewDistractor] = useState('');
+  const [mode, setMode] = useState(gap.mode || 'input');
+
+  const modeColors = {
+    input: 'bg-blue-100 text-blue-800 border-blue-300',
+    selection: 'bg-purple-100 text-purple-800 border-purple-300',
+  };
+
+  const handleModeChange = (newMode) => {
+    setMode(newMode);
+    onUpdate(gap.id, { ...gap, mode: newMode });
+  };
+
+  const handleSolutionChange = (value) => {
+    onUpdate(gap.id, { ...gap, solution: value });
+    setIsEditingSolution(false);
+  };
+
+  const handleFeedbackChange = (value) => {
+    onUpdate(gap.id, { ...gap, feedback: value });
+  };
+
+  const handleAddDistractor = () => {
+    if (!newDistractor.trim()) return;
+    const updated = {
+      ...gap,
+      distractors: [...(gap.distractors || []), newDistractor.trim()],
+    };
+    onUpdate(gap.id, updated);
+    setNewDistractor('');
+  };
+
+  const handleRemoveDistractor = (index) => {
+    const updated = {
+      ...gap,
+      distractors: (gap.distractors || []).filter((_, i) => i !== index),
+    };
+    onUpdate(gap.id, updated);
+  };
+
+  return (
+    <Card className="p-3 space-y-3 border border-border/60 bg-card/70">
+      {/* Header: Gap ID, Mode Badge, Delete */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-xs">
+            Lücke #{gap.id}
+          </Badge>
+          <Badge className={cn('text-xs border', modeColors[mode])}>
+            {mode === 'input' ? '📝 Freitext' : '📋 Auswahlmenü'}
+          </Badge>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onDelete(gap.id)}
+          className="h-7 w-7 text-destructive hover:bg-destructive/10"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+
+      {/* Lösungswort */}
+      <div className="space-y-1">
+        <label className="text-xs font-semibold text-muted-foreground">Lösungswort</label>
+        {isEditingSolution ? (
+          <div className="flex gap-1">
+            <Input
+              type="text"
+              value={gap.solution}
+              onChange={(e) => onUpdate(gap.id, { ...gap, solution: e.target.value })}
+              className="h-7 text-xs"
+              autoFocus
+            />
+            <Button
+              size="sm"
+              onClick={() => handleSolutionChange(gap.solution)}
+              className="h-7 text-xs px-2"
+            >
+              OK
+            </Button>
+          </div>
+        ) : (
+          <div
+            onClick={() => setIsEditingSolution(true)}
+            className="px-2 py-1.5 bg-muted/50 rounded text-xs border border-border/40 cursor-pointer hover:bg-muted/70 transition"
+          >
+            {gap.solution || '(leere Lösung)'}
+          </div>
+        )}
+      </div>
+
+      {/* Feedback */}
+      <div className="space-y-1">
+        <label className="text-xs font-semibold text-muted-foreground">Feedback (optional)</label>
+        <Textarea
+          value={gap.feedback || ''}
+          onChange={(e) => handleFeedbackChange(e.target.value)}
+          placeholder="z.B. 'Das ist korrekt, da Berlin die Hauptstadt von Deutschland ist.'"
+          className="h-16 text-xs resize-none"
+        />
+      </div>
+
+      {/* Mode Toggle */}
+      <Tabs value={mode} onValueChange={handleModeChange}>
+        <TabsList className="grid w-full grid-cols-2 h-7">
+          <TabsTrigger value="input" className="text-xs">
+            📝 Freitext
+          </TabsTrigger>
+          <TabsTrigger value="selection" className="text-xs">
+            📋 Auswahlmenü
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Selection Mode: Distractors */}
+        {mode === 'selection' && (
+          <TabsContent value="selection" className="space-y-2 mt-2">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground">
+                Distraktoren (falsche Antworten)
+              </label>
+
+              {/* Existierende Distraktoren */}
+              {(gap.distractors || []).length > 0 && (
+                <div className="space-y-1">
+                  {gap.distractors.map((distractor, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between px-2 py-1 bg-muted/30 rounded text-xs border border-border/30"
+                    >
+                      <span className="truncate">{distractor}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveDistractor(idx)}
+                        className="h-5 w-5 text-destructive/60 hover:bg-destructive/10 shrink-0"
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Neuer Distraktor */}
+              <div className="flex gap-1">
+                <Input
+                  type="text"
+                  value={newDistractor}
+                  onChange={(e) => setNewDistractor(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddDistractor()}
+                  placeholder="Neue falsche Antwort..."
+                  className="h-7 text-xs"
+                />
+                <Button
+                  onClick={handleAddDistractor}
+                  disabled={!newDistractor.trim()}
+                  size="sm"
+                  className="h-7 text-xs px-2 gap-1"
+                >
+                  <Plus className="w-3 h-3" />
+                  Hinzufügen
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+        )}
+      </Tabs>
+    </Card>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────────
+// ClozeTextForm: Hauptkomponente
+// ────────────────────────────────────────────────────────────────────────────────
+
+export default function ClozeTextForm({ initialData = {}, onChange }) {
   const [baseText, setBaseText] = useState(initialData.baseText || '');
   const [gaps, setGaps] = useState(initialData.gaps || []);
-  const [nextGapId, setNextGapId] = useState(
-    Math.max(...(initialData.gaps || []).map(g => g.id), -1) + 1
-  );
-
-  // Selection & Floating Button
-  const [selection, setSelection] = useState(null);
-  const [floatingButtonPos, setFloatingButtonPos] = useState(null);
+  const [selectedText, setSelectedText] = useState('');
+  const [selectionStart, setSelectionStart] = useState(null);
+  const [selectionEnd, setSelectionEnd] = useState(null);
   const textareaRef = useRef(null);
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // Helfer: Text-Manipulation (robust gegen Position-Korruption)
+  // Callback: Externe Änderungen übermitteln
   // ──────────────────────────────────────────────────────────────────────────────
 
-  /**
-   * Ersetzt das Wort an der gegebenen Position durch [[id]]
-   * Nutzt Positionen im aktuellen baseText, nicht relative Indizes.
-   */
-  const replaceSelectionWithGap = useCallback((selectedText, startPos, endPos, gapId) => {
-    const before = baseText.substring(0, startPos);
-    const after = baseText.substring(endPos);
-    const newText = `${before}[[${gapId}]]${after}`;
-    setBaseText(newText);
-  }, [baseText]);
-
-  /**
-   * Setzt eine Lücke zurück: Ersetzt [[id]] durch die Original-Lösung
-   */
-  const restoreGapToText = useCallback((gapId, solution) => {
-    const placeholder = `[[${gapId}]]`;
-    const newText = baseText.replace(placeholder, solution);
-    setBaseText(newText);
-  }, [baseText]);
-
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Selection-Handling
-  // ──────────────────────────────────────────────────────────────────────────────
-
-  const handleTextSelection = useCallback(() => {
-    if (!textareaRef.current) return;
-
-    const textarea = textareaRef.current;
-    const selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
-
-    if (!selectedText || selectedText.trim().length === 0) {
-      setSelection(null);
-      setFloatingButtonPos(null);
-      return;
+  useEffect(() => {
+    if (onChange) {
+      onChange({ baseText, gaps });
     }
+  }, [baseText, gaps]);
 
-    // Berechne Position des Floating Buttons (oben rechts der Selection)
-    setSelection({
-      text: selectedText,
-      start: textarea.selectionStart,
-      end: textarea.selectionEnd,
-    });
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Text-Markierungs-Logik
+  // ──────────────────────────────────────────────────────────────────────────────
 
-    // Floating Button Position berechnen (über dem Textarea)
-    const coords = getSelectionCoords();
-    if (coords) {
-      setFloatingButtonPos({
-        top: coords.top - 40,
-        left: coords.left,
-      });
-    }
-  }, []);
-
-  const getSelectionCoords = () => {
-    if (!textareaRef.current) return null;
+  const handleTextSelection = () => {
     const textarea = textareaRef.current;
-    if (textarea.selectionStart === textarea.selectionEnd) return null;
+    if (!textarea) return;
 
-    // Approximation: Berechne Position basierend auf der Textarea
-    const rect = textarea.getBoundingClientRect();
-    return {
-      top: rect.top,
-      left: rect.left + 10,
-    };
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    if (start !== end) {
+      const selected = baseText.substring(start, end);
+      setSelectedText(selected);
+      setSelectionStart(start);
+      setSelectionEnd(end);
+    } else {
+      setSelectedText('');
+      setSelectionStart(null);
+      setSelectionEnd(null);
+    }
   };
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // Gap Creation
+  // Lücke erstellen
   // ──────────────────────────────────────────────────────────────────────────────
 
   const handleCreateGap = () => {
-    if (!selection) return;
+    if (!selectedText.trim() || selectionStart === null || selectionEnd === null) {
+      return;
+    }
 
-    const { text, start, end } = selection;
+    const newGapId = Math.max(...gaps.map((g) => g.id), -1) + 1;
+
+    // Basteltext mit Platzhalter ersetzen
+    const before = baseText.substring(0, selectionStart);
+    const after = baseText.substring(selectionEnd);
+    const newBaseText = before + `[[${newGapId}]]` + after;
+
+    // Neue Lücke erstellen
     const newGap = {
-      id: nextGapId,
-      solution: text.trim(),
+      id: newGapId,
+      solution: selectedText.trim(),
       feedback: '',
       mode: 'input',
       distractors: [],
     };
 
-    // Ersetze Text durch Platzhalter
-    replaceSelectionWithGap(text, start, end, nextGapId);
-
-    // Füge Gap hinzu
+    setBaseText(newBaseText);
     setGaps([...gaps, newGap]);
-    setNextGapId(nextGapId + 1);
-
-    // Bereinige Selection
-    setSelection(null);
-    setFloatingButtonPos(null);
-
-    toast.success(`Lücke erstellt: "${text.trim()}"`);
+    setSelectedText('');
+    setSelectionStart(null);
+    setSelectionEnd(null);
   };
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // Gap Management (Edit & Delete)
+  // Lücke aktualisieren
   // ──────────────────────────────────────────────────────────────────────────────
 
-  const handleGapUpdate = (gapId, field, value) => {
-    setGaps(gaps.map(g => g.id === gapId ? { ...g, [field]: value } : g));
+  const handleUpdateGap = (gapId, updatedGap) => {
+    setGaps(gaps.map((g) => (g.id === gapId ? updatedGap : g)));
   };
+
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Lücke löschen
+  // ──────────────────────────────────────────────────────────────────────────────
 
   const handleDeleteGap = (gapId) => {
-    const gap = gaps.find(g => g.id === gapId);
-    if (!gap) return;
+    const gapToDelete = gaps.find((g) => g.id === gapId);
+    if (!gapToDelete) return;
 
-    // Setze Lösung im Text zurück
-    restoreGapToText(gapId, gap.solution);
+    // Platzhalter im Text durch Lösungswort ersetzen
+    const placeholder = `[[${gapId}]]`;
+    const newBaseText = baseText.replace(placeholder, gapToDelete.solution);
 
-    // Entferne aus Gaps-Liste
-    setGaps(gaps.filter(g => g.id !== gapId));
-    toast.success(`Lücke gelöscht: "${gap.solution}"`);
+    setBaseText(newBaseText);
+    setGaps(gaps.filter((g) => g.id !== gapId));
   };
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // Validierung
+  // Render: Text mit visuellen Platzhalter-Pillen
   // ──────────────────────────────────────────────────────────────────────────────
 
-  const hasGaps = gaps.length > 0;
-  const isValid = baseText.trim().length > 0 && hasGaps;
+  const renderTextWithGaps = () => {
+    const parts = [];
+    let lastIndex = 0;
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Save Handler
-  // ──────────────────────────────────────────────────────────────────────────────
+    // Regex: Alle Platzhalter [[0]], [[1]], etc. finden
+    const placeholderRegex = /\[\[(\d+)\]\]/g;
+    let match;
 
-  const handleSave = () => {
-    if (!isValid) {
-      toast.error('Bitte erstelle mindestens eine Lücke im Text.');
-      return;
+    while ((match = placeholderRegex.exec(baseText)) !== null) {
+      const gapId = parseInt(match[1], 10);
+      const gap = gaps.find((g) => g.id === gapId);
+
+      // Text vor dem Platzhalter
+      if (match.index > lastIndex) {
+        parts.push(
+          <span key={`text-${lastIndex}`}>{baseText.substring(lastIndex, match.index)}</span>
+        );
+      }
+
+      // Platzhalter als farbige Pille
+      if (gap) {
+        const gapModeColors = {
+          input: 'bg-blue-200 text-blue-900 border-blue-400',
+          selection: 'bg-purple-200 text-purple-900 border-purple-400',
+        };
+
+        parts.push(
+          <span
+            key={`gap-${gapId}`}
+            className={cn(
+              'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border',
+              gapModeColors[gap.mode] || gapModeColors.input
+            )}
+          >
+            Lücke {gapId}
+          </span>
+        );
+      }
+
+      lastIndex = match.index + match[0].length;
     }
 
-    onSave({
-      baseText,
-      gaps,
-    });
+    // Restteil nach dem letzten Platzhalter
+    if (lastIndex < baseText.length) {
+      parts.push(
+        <span key={`text-end`}>{baseText.substring(lastIndex)}</span>
+      );
+    }
+
+    return parts.length > 0 ? parts : <span>{baseText}</span>;
   };
 
   // ──────────────────────────────────────────────────────────────────────────────
@@ -198,285 +348,88 @@ export default function ClozeTextForm({ initialData = {}, onSave }) {
   // ──────────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6 p-4 rounded-lg border border-border bg-card">
+    <div className="space-y-4">
       {/* Header */}
-      <div>
-        <h3 className="text-lg font-semibold mb-1">Lückentext erstellen</h3>
-        <p className="text-sm text-muted-foreground">
-          Markiere Wörter im Text und erstelle Lücken. Die Lösung wird automatisch in die Verwaltung eingefügt.
+      <div className="space-y-1">
+        <h3 className="text-sm font-semibold">Lückentext Editor</h3>
+        <p className="text-xs text-muted-foreground">
+          Markiere Wörter im Text und klicke "Lücke erstellen" um Lücken zu definieren.
         </p>
       </div>
 
-      {/* Main Input Area */}
-      <div className="relative">
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Rohtext
-          </label>
-          <Textarea
-            ref={textareaRef}
-            value={baseText}
-            onChange={(e) => setBaseText(e.target.value)}
-            onMouseUp={handleTextSelection}
-            onKeyUp={handleTextSelection}
-            placeholder="Schreibe den Text hier... Markiere Wörter, um Lücken zu erstellen."
-            className="min-h-[120px] resize-none font-mono text-sm"
-          />
-        </div>
-
-        {/* Floating "Lücke erstellen" Button */}
-        {selection && floatingButtonPos && (
-          <Button
-            onClick={handleCreateGap}
-            size="sm"
-            className="absolute gap-1.5 shadow-lg animate-in fade-in-50 zoom-in-95"
-            style={{
-              top: `${floatingButtonPos.top}px`,
-              left: `${floatingButtonPos.left}px`,
-            }}
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Lücke
-          </Button>
-        )}
+      {/* Haupttext-Editor */}
+      <div className="space-y-2">
+        <label className="text-xs font-semibold text-muted-foreground">Text eingeben</label>
+        <Textarea
+          ref={textareaRef}
+          value={baseText}
+          onChange={(e) => setBaseText(e.target.value)}
+          onMouseUp={handleTextSelection}
+          onKeyUp={handleTextSelection}
+          placeholder="Gib deinen Text ein. Markiere Wörter, um Lücken zu erstellen..."
+          className="min-h-24 text-sm"
+        />
       </div>
 
-      {/* Validierungs-Banner */}
-      {!hasGaps && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
-          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-          <p className="text-sm text-amber-800">
-            Mindestens eine Lücke erforderlich. Markiere ein Wort und klicke auf "Lücke".
-          </p>
+      {/* Text-Vorschau mit Platzhalter */}
+      <div className="space-y-1">
+        <label className="text-xs font-semibold text-muted-foreground">Vorschau</label>
+        <div className="p-3 rounded-lg bg-muted/40 border border-border/50 text-sm leading-relaxed space-y-1">
+          {renderTextWithGaps()}
+          {baseText.length === 0 && (
+            <span className="italic text-muted-foreground">(Keine Vorschau verfügbar)</span>
+          )}
         </div>
-      )}
+      </div>
 
-      {/* Text-Vorschau (mit Lücken) */}
-      {hasGaps && (
-        <div className="p-3 rounded-lg bg-muted/50 border border-border">
-          <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Vorschau</p>
-          <div className="flex items-center gap-2 mb-2">
-            <Badge variant="outline" className="text-[10px] gap-1">
-              <span className="w-2 h-2 rounded-full bg-blue-500" /> Freitext
-            </Badge>
-            <Badge variant="outline" className="text-[10px] gap-1">
-              <span className="w-2 h-2 rounded-full bg-purple-500" /> Auswahl
-            </Badge>
-          </div>
-          <p className="text-sm leading-relaxed">
-            {baseText.split(/(\[\[\d+\]\])/g).map((part, idx) => {
-              const match = part.match(/\[\[(\d+)\]\]/);
-              if (match) {
-                const gapId = parseInt(match[1]);
-                const gap = gaps.find(g => g.id === gapId);
-                const isSelection = gap?.mode === 'selection';
-                return (
-                  <span
-                    key={idx}
-                    className={cn(
-                      'inline-block px-2 py-1 mx-0.5 rounded-md border font-semibold text-xs',
-                      isSelection
-                        ? 'bg-purple/20 border-purple/30 text-purple'
-                        : 'bg-blue-500/20 border-blue-500/30 text-blue-600'
-                    )}
-                    title={`Lösung: ${gap?.solution || '?'}${isSelection && gap?.distractors?.length ? ` | Distraktoren: ${gap.distractors.join(', ')}` : ''}`}
-                  >
-                    ___
-                  </span>
-                );
-              }
-              return <span key={idx}>{part}</span>;
-            })}
+      {/* Markierungs-Button */}
+      {selectedText && (
+        <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 space-y-2">
+          <p className="text-xs font-semibold text-blue-900">
+            Markiert: "<strong>{selectedText}</strong>"
           </p>
+          <Button
+            onClick={handleCreateGap}
+            className="w-full h-8 gap-2 text-xs bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Lücke erstellen
+          </Button>
         </div>
       )}
 
       {/* Lücken-Verwaltung */}
-      {hasGaps && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <h4 className="text-sm font-semibold">Lücken verwalten</h4>
+      {gaps.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-muted-foreground">
+              Verwaltete Lücken ({gaps.length})
+            </label>
             <Badge variant="outline" className="text-xs">
-              {gaps.length}
+              {gaps.filter((g) => g.mode === 'input').length} Freitext •{' '}
+              {gaps.filter((g) => g.mode === 'selection').length} Auswahlmenü
             </Badge>
           </div>
 
-          <div className="space-y-2">
-            {gaps.map((gap, idx) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {gaps.map((gap) => (
               <GapCard
                 key={gap.id}
                 gap={gap}
-                index={idx + 1}
-                onUpdate={(field, value) => handleGapUpdate(gap.id, field, value)}
-                onDelete={() => handleDeleteGap(gap.id)}
+                onUpdate={handleUpdateGap}
+                onDelete={handleDeleteGap}
               />
             ))}
           </div>
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div className="flex items-center gap-2 pt-4 border-t border-border">
-        <Button
-          onClick={handleSave}
-          disabled={!isValid}
-          className="gap-2"
-        >
-          <Edit2 className="w-3.5 h-3.5" />
-          Speichern
-        </Button>
-        <p className="text-xs text-muted-foreground ml-auto">
-          {gaps.length} Lücke{gaps.length !== 1 ? 'n' : ''} erstellt
-        </p>
-      </div>
+      {/* Leerer Zustand */}
+      {gaps.length === 0 && baseText.length > 0 && (
+        <div className="p-4 rounded-lg bg-muted/30 border border-dashed border-border text-center text-xs text-muted-foreground">
+          Keine Lücken erstellt. Markiere Wörter um zu beginnen.
+        </div>
+      )}
     </div>
-  );
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// GapCard – Komponente für Lücken-Verwaltung mit Mode & Distraktoren
-// ──────────────────────────────────────────────────────────────────────────────
-
-function GapCard({ gap, index, onUpdate, onDelete }) {
-  const [distractorInput, setDistractorInput] = useState('');
-
-  const addDistractor = () => {
-    if (!distractorInput.trim()) return;
-    const newDistractors = [...(gap.distractors || []), distractorInput.trim()];
-    onUpdate('distractors', newDistractors);
-    setDistractorInput('');
-    toast.success('Distraktor hinzugefügt');
-  };
-
-  const removeDistractor = (idx) => {
-    const newDistractors = (gap.distractors || []).filter((_, i) => i !== idx);
-    onUpdate('distractors', newDistractors);
-  };
-
-  const handleModeChange = (newMode) => {
-    onUpdate('mode', newMode);
-    // Distraktoren bleiben im State (für versehentliche Klicks)
-  };
-
-  return (
-    <Card className="bg-muted/30 border-border/50">
-      <CardContent className="p-3 space-y-3">
-        {/* Header: Index + Delete */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs font-mono">
-              #{index}
-            </Badge>
-            <span className="text-xs font-mono text-muted-foreground">
-              [[{gap.id}]]
-            </span>
-          </div>
-          <button
-            onClick={onDelete}
-            className="p-1 text-destructive hover:bg-destructive/10 rounded transition-colors"
-            title="Lücke löschen"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Solution Input */}
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-muted-foreground">Lösung</label>
-          <Input
-            type="text"
-            value={gap.solution}
-            onChange={(e) => onUpdate('solution', e.target.value)}
-            placeholder="z.B. Berlin"
-            className="h-8 text-sm"
-          />
-        </div>
-
-        {/* Feedback Input */}
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-muted-foreground">Feedback (optional)</label>
-          <Input
-            type="text"
-            value={gap.feedback || ''}
-            onChange={(e) => onUpdate('feedback', e.target.value)}
-            placeholder="Hinweis bei falscher Antwort..."
-            className="h-8 text-sm"
-          />
-        </div>
-
-        {/* Mode Tabs: Freitext vs. Auswahl */}
-        <Tabs value={gap.mode || 'input'} onValueChange={handleModeChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 h-8">
-            <TabsTrigger value="input" className="text-xs">
-              📝 Freitext
-            </TabsTrigger>
-            <TabsTrigger value="selection" className="text-xs">
-              📋 Auswahl
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Freitext Mode (passiv) */}
-          <TabsContent value="input" className="mt-2 p-2 rounded-lg bg-blue-50/50 border border-blue-200/30">
-            <p className="text-xs text-blue-700">
-              Schüler/innen können den Text frei eintippen.
-            </p>
-          </TabsContent>
-
-          {/* Auswahl Mode: Distraktoren */}
-          <TabsContent value="selection" className="mt-2 space-y-2 p-2 rounded-lg bg-purple-50/50 border border-purple-200/30">
-            <p className="text-xs text-purple-700 font-semibold">Falsche Antwortmöglichkeiten (Distraktoren)</p>
-
-            {/* Distraktoren-Liste */}
-            {(gap.distractors || []).length > 0 && (
-              <div className="space-y-1 max-h-24 overflow-y-auto">
-                {gap.distractors.map((distr, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-2 p-1.5 rounded bg-white border border-purple-200"
-                  >
-                    <span className="flex-1 text-xs text-purple-900">{distr}</span>
-                    <button
-                      onClick={() => removeDistractor(idx)}
-                      className="p-0.5 text-destructive hover:bg-destructive/10 rounded transition-colors"
-                      title="Distraktor entfernen"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Distraktor hinzufügen */}
-            <div className="flex gap-1">
-              <Input
-                type="text"
-                value={distractorInput}
-                onChange={(e) => setDistractorInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addDistractor()}
-                placeholder="z.B. Hamburg"
-                className="h-7 text-xs flex-1"
-              />
-              <Button
-                onClick={addDistractor}
-                size="sm"
-                variant="outline"
-                className="h-7 w-7 p-0"
-                title="Distraktor hinzufügen"
-              >
-                <Plus className="w-3.5 h-3.5" />
-              </Button>
-            </div>
-
-            {/* Info */}
-            <p className="text-[10px] text-purple-600 italic">
-              {(gap.distractors || []).length === 0
-                ? 'Füge mindestens einen Distraktor hinzu.'
-                : `${gap.distractors.length} Distraktor${gap.distractors.length !== 1 ? 'en' : ''} hinzugefügt.`}
-            </p>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
   );
 }
