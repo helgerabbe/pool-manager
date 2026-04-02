@@ -8,37 +8,47 @@ import { GripVertical, Trash2, CheckCircle, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDraftState, useDraftRestore } from '@/hooks/useDraftState';
 import { useSavedIndicator, SavedIndicator } from '@/hooks/useSavedIndicator.jsx';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import LernzielBadge from '@/components/allgemeineAufgaben/LernzielBadge';
 
 // ── Draggable Lernziel (memoized für Performance) ──
 const DraggableLernziel = React.memo(function DraggableLernziel({ lernziel, isHighlighted, index }) {
   return (
-    <Draggable draggableId={`lz-${lernziel.id}`} index={index}>
-      {(provided, snapshot) => (
-        <div
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          className={`flex items-center gap-2 p-2 rounded border cursor-grab active:cursor-grabbing transition-all ${
-            snapshot.isDragging
-              ? 'opacity-50 ring-2 ring-primary'
-              : isHighlighted
-              ? 'bg-primary/10 border-primary/40'
-              : 'bg-white hover:bg-muted'
-          }`}
-        >
-          <GripVertical className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-          <div className="flex-1 min-w-0 text-xs">
-            <p className="font-medium truncate">{lernziel.formulierung_fachsprache}</p>
-            {lernziel.kategorie && (
-              <Badge variant="secondary" className="text-[10px] mt-1">
-                {lernziel.kategorie}
-              </Badge>
+    <TooltipProvider>
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger asChild>
+          <Draggable draggableId={`lz-${lernziel.id}`} index={index}>
+            {(provided, snapshot) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.draggableProps}
+                {...provided.dragHandleProps}
+                className={`flex items-center gap-2 p-2 rounded border cursor-grab active:cursor-grabbing transition-all ${
+                  snapshot.isDragging
+                    ? 'opacity-50 ring-2 ring-primary'
+                    : isHighlighted
+                    ? 'bg-primary/10 border-primary/40'
+                    : 'bg-white hover:bg-muted'
+                }`}
+              >
+                <GripVertical className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0 text-xs">
+                  <p className="font-medium truncate">{lernziel.formulierung_fachsprache}</p>
+                  {lernziel.kategorie && (
+                    <Badge variant="secondary" className="text-[10px] mt-1">
+                      {lernziel.kategorie}
+                    </Badge>
+                  )}
+                </div>
+              </div>
             )}
-          </div>
-        </div>
-      )}
-    </Draggable>
+          </Draggable>
+        </TooltipTrigger>
+        <TooltipContent side="right" className="max-w-xs text-xs">
+          {lernziel.formulierung_fachsprache}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 });
 
