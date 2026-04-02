@@ -155,8 +155,8 @@ function ActivitySidebarItem({
         )}
       </button>
 
-      {/* Master-Knoten + deren Klone */}
-      {showChildren && masterAufgaben.length > 0 && (
+      {/* Master-Knoten + deren Klone — immer sichtbar, wenn Master-Aufgaben existieren */}
+      {masterAufgaben.length > 0 && (
         <div className="ml-4 mt-0.5 border-l border-border pl-2 space-y-0.5">
           {masterAufgaben.map((master, idx) => (
             <MasterSubItem
