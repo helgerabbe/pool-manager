@@ -98,6 +98,15 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail }) {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: () => base44.entities.Aufgabenbausteine.delete(klon.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine'] });
+      queryClient.invalidateQueries({ queryKey: ['klone'] });
+      toast.success('Klon gelöscht.');
+    },
+  });
+
   const pairs = data.pairs || [];
   const distractors = data.distractors || [];
 
@@ -155,6 +164,10 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail }) {
                 )}
                 <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
                   <Edit className="w-3.5 h-3.5" /> Bearbeiten
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => deleteMutation.mutate()} disabled={deleteMutation.isPending}
+                  className="gap-1.5 text-destructive hover:bg-red-50">
+                  <Trash2 className="w-3.5 h-3.5" /> Löschen
                 </Button>
               </>
             )}
