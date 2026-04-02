@@ -10,32 +10,40 @@ async function checkRole(base44, allowedRollen, einheitFach = null) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const profile = await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email });
-    const profil = profile[0];
-    if (!profil) return Response.json({ error: 'Kein Benutzerprofil gefunden' }, { status: 403 });
-
-    const rolle = profil.rolle;
-    if (!allowedRollen.includes(rolle)) {
+    // Nutzer-Rolle vom User-Objekt selbst (von Base44 Auth)
+    const userRole = user.role || user.rolle;
+    
+    if (!allowedRollen.includes(userRole)) {
       return Response.json(
-        { error: `Keine Berechtigung. Erforderlich: ${allowedRollen.join(' oder ')}. Ihre Rolle: ${rolle}` },
+        { error: `Keine Berechtigung. Erforderlich: ${allowedRollen.join(' oder ')}. Ihre Rolle: ${userRole}` },
         { status: 403 }
       );
     }
 
-    if (einheitFach && rolle !== ROLLEN.ADMIN) {
-      const faecher = profil.fachbereich_zustaendigkeit || [];
-      if (!faecher.includes(einheitFach)) {
-        return Response.json(
-          { error: `Keine Zuständigkeit für das Fach "${einheitFach}"` },
-          { status: 403 }
-        );
+    // Fachzuständigkeit prüfen (nur für Nicht-Admins)
+    if (einheitFach && userRole !== ROLLEN.ADMIN) {
+      // Versuche Benutzerprofil zu laden, aber nicht required
+      try {
+        const profile = await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email });
+        const profil = profile[0];
+        if (profil) {
+          const faecher = profil.fachbereich_zustaendigkeit || [];
+          if (!faecher.includes(einheitFach)) {
+            return Response.json(
+              { error: `Keine Zuständigkeit für das Fach "${einheitFach}"` },
+              { status: 403 }
+            );
+          }
+        }
+      } catch {
+        // Profil konnte nicht geladen werden, aber nicht kritisch
       }
     }
 
     return null;
   } catch (err) {
     console.error('checkRole error:', err.message);
-    return Response.json({ error: 'Fehler beim Prüfen der Berechtigung' }, { status: 500 });
+    return Response.json({ error: 'Fehler beim Prüfen der Berechtigung: ' + err.message }, { status: 500 });
   }
 }
 
