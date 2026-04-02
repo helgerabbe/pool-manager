@@ -200,6 +200,27 @@ export const AUFGABE_SCHEMA = {
   },
 };
 
+// ── Zod-Schema: MatchTerms ───────────────────────────────────────────────────
+
+import { z } from 'zod';
+
+/**
+ * Zod-Schema für "Begriffe zuordnen"-Aufgaben.
+ * Felder: instruction, pairs (min. 2), distractors (optional)
+ */
+export const MatchTermsSchema = z.object({
+  instruction: z.string().min(1, 'Arbeitsanweisung ist erforderlich'),
+  pairs: z
+    .array(
+      z.object({
+        left: z.string().min(1, 'Begriff darf nicht leer sein'),
+        right: z.string().min(1, 'Zuordnung darf nicht leer sein'),
+      })
+    )
+    .min(2, 'Mindestens 2 Begriffspaare sind erforderlich'),
+  distractors: z.array(z.string().min(1)).optional().default([]),
+});
+
 /**
  * Validiert ein Objekt gegen ein Schema.
  *
