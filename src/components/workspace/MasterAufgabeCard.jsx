@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Crown, Trash2, Sparkles, Loader2, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import LockBanner from '@/components/workspace/LockBanner';
 import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
@@ -38,6 +39,7 @@ function isMatchTerms(name = '') {
 function KlonGenerator({ master, onKlonesCreated }) {
   const queryClient = useQueryClient();
   const [hint, setHint] = useState('');
+  const [klonCount, setKlonCount] = useState(3);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
 
@@ -47,7 +49,7 @@ function KlonGenerator({ master, onKlonesCreated }) {
     try {
       const fv = master.field_values || {};
       const prompt = [
-        'Erstelle 3 didaktisch gleichwertige Variationen (Klone) dieser Lernaufgabe.',
+        `Erstelle ${klonCount} didaktisch gleichwertige Variationen (Klone) dieser Lernaufgabe.`,
         'Die Klone sollen die gleiche Struktur haben, aber unterschiedliche Begriffe/Inhalte verwenden.',
         fv.instruction ? `Original-Anweisung: "${fv.instruction}"` : '',
         fv.pairs ? `Original-Paare: ${JSON.stringify(fv.pairs)}` : '',
@@ -107,6 +109,21 @@ function KlonGenerator({ master, onKlonesCreated }) {
         <Sparkles className="w-3.5 h-3.5" /> Klone erzeugen
         <Badge variant="outline" className="text-[10px] ml-1">KI</Badge>
       </p>
+
+      <div className="flex items-center gap-3">
+        <Label htmlFor="klonCount" className="text-xs font-medium shrink-0">Anzahl Klone:</Label>
+        <Input
+          id="klonCount"
+          type="number"
+          min={1}
+          max={10}
+          value={klonCount}
+          onChange={e => setKlonCount(Math.max(1, parseInt(e.target.value) || 1))}
+          disabled={generating}
+          className="h-7 w-16 text-xs"
+        />
+      </div>
+
       <Textarea
         value={hint}
         onChange={e => setHint(e.target.value)}
