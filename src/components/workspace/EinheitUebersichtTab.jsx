@@ -5,7 +5,7 @@
  * Zeigt die Einheits-Metadaten (Titel, Ziel, Fach, Jahrgang, Status)
  * und die Teammitglieder direkt im Hauptbereich – kein Dialog.
  */
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -17,21 +17,46 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useDraftState } from '@/hooks/useDraftState';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const UNIT_ROLE_CONFIG = {
-  LEITUNG: { label: 'Leitung', color: 'bg-amber-100 text-amber-700 border-amber-200', Icon: Crown },
-  EDITOR:  { label: 'Editor',  color: 'bg-blue-100 text-blue-700 border-blue-200',   Icon: Edit  },
-  READER:  { label: 'Leser',   color: 'bg-slate-100 text-slate-600 border-slate-200', Icon: Eye  },
+  LEITUNG: { 
+    label: 'Leitung', 
+    color: 'bg-amber-100 text-amber-700 border-amber-200', 
+    Icon: Crown,
+    description: 'Vollständiger Zugriff: Alles verwalten, Mitglieder hinzufügen/entfernen, Rollen ändern.'
+  },
+  EDITOR:  { 
+    label: 'Editor',  
+    color: 'bg-blue-100 text-blue-700 border-blue-200',   
+    Icon: Edit,
+    description: 'Bearbeiten erlaubt: Inhalte erstellen, ändern und löschen. Keine Verwaltung.'
+  },
+  READER:  { 
+    label: 'Leser',   
+    color: 'bg-slate-100 text-slate-600 border-slate-200', 
+    Icon: Eye,
+    description: 'Nur Leserechte: Inhalte ansehen, aber nicht bearbeiten oder löschen.'
+  },
 };
 
 function UnitRoleBadge({ role }) {
   const cfg = UNIT_ROLE_CONFIG[role] || UNIT_ROLE_CONFIG.READER;
   const Icon = cfg.Icon;
   return (
-    <span className={cn('inline-flex items-center gap-1 border rounded-full font-medium text-[10px] px-2 py-0.5', cfg.color)}>
-      <Icon className="w-2.5 h-2.5" />
-      {cfg.label}
-    </span>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className={cn('inline-flex items-center gap-1 border rounded-full font-medium text-[10px] px-2 py-0.5 cursor-help', cfg.color)}>
+            <Icon className="w-2.5 h-2.5" />
+            {cfg.label}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="left" className="max-w-xs text-xs">
+          {cfg.description}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
@@ -278,14 +303,38 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail }) {
                     ) : (
                       <Input placeholder="E-Mail-Adresse…" value={newEmail} onChange={e => setNewEmail(e.target.value)} className="text-sm" />
                     )}
-                    <Select value={newRole} onValueChange={setNewRole}>
-                      <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="LEITUNG">Leitung</SelectItem>
-                        <SelectItem value="EDITOR">Editor</SelectItem>
-                        <SelectItem value="READER">Leser</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-semibold text-muted-foreground">Rolle</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {['LEITUNG', 'EDITOR', 'READER'].map(roleKey => (
+                          <TooltipProvider key={roleKey}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={() => setNewRole(roleKey)}
+                                  className={cn(
+                                    'p-2 rounded-lg border text-xs font-medium transition-all cursor-help',
+                                    newRole === roleKey
+                                      ? UNIT_ROLE_CONFIG[roleKey].color
+                                      : 'bg-background border-border text-muted-foreground hover:border-primary/50'
+                                  )}
+                                >
+                                  {UNIT_ROLE_CONFIG[roleKey].Icon && (
+                                    <>
+                                      {React.createElement(UNIT_ROLE_CONFIG[roleKey].Icon, { className: 'w-3 h-3 inline mr-1' })}
+                                    </>
+                                  )}
+                                  {UNIT_ROLE_CONFIG[roleKey].label}
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom" className="max-w-xs text-xs">
+                                {UNIT_ROLE_CONFIG[roleKey].description}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ))}
+                      </div>
+                    </div>
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm" onClick={() => { setAdding(false); setNewEmail(''); }} className="flex-1">Abbrechen</Button>
                       <Button size="sm" className="flex-1 gap-1" disabled={!newEmail || addMember.isPending} onClick={() => addMember.mutate({ email: newEmail, role: newRole })}>
