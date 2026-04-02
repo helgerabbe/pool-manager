@@ -20,6 +20,11 @@
       "default": true,
       "description": "Ob die Aktivit\u00e4t global verf\u00fcgbar ist"
     },
+    "supports_master": {
+      "type": "boolean",
+      "default": false,
+      "description": "Ob diese Aktivit\u00e4t als Mastervorlage f\u00fcr KI-Klone geeignet ist (z.B. Begriffe zuordnen = true, Lehrwerk/Quelle = false)"
+    },
     "form_schema": {
       "type": "array",
       "description": "Array von Feldkonfigurationen f\u00fcr das Frontend-Rendering",

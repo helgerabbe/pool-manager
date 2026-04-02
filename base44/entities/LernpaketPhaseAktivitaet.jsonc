@@ -29,6 +29,11 @@
       "default": false,
       "description": "Alle Pflichtfelder ausgef\u00fcllt?"
     },
+    "is_master": {
+      "type": "boolean",
+      "default": false,
+      "description": "Opt-in: Diese Aktivit\u00e4t wurde zur Mastervorlage f\u00fcr KI-Klone gemacht"
+    },
     "reihenfolge": {
       "type": "number",
       "description": "Sortierreihenfolge innerhalb der Phase"

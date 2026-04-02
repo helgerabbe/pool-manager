@@ -20,7 +20,6 @@ import ActivityDetailView from '@/components/workspace/ActivityDetailView';
 import LockBanner from '@/components/workspace/LockBanner';
 import { useActivityLock, isActivityLockedByOther } from '@/hooks/useActivityLock';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 
 const MATCH_TERMS_NAMES = ['begriffe zuordnen', 'zuordnen', 'match terms'];
 function isMatchTermsActivity(name = '') {
@@ -216,11 +215,22 @@ function MatchTermsWithLock({ activityRecord, kannBearbeiten, userEmail }) {
 
 // ── Haupt-Komponente ──────────────────────────────────────────────────────────
 
-export default function MasterActivityPanel({ activityRecord, catalogEntry, kannBearbeiten, userEmail, onKlonesCreated }) {
+export default function MasterActivityPanel({
+  activityRecord,
+  catalogEntry,
+  supportsMaster,   // aus AktivitaetenKatalog.supports_master
+  kannBearbeiten,
+  userEmail,
+  onKlonesCreated,
+}) {
   const queryClient = useQueryClient();
   const isMatchTerms = isMatchTermsActivity(catalogEntry?.name || '');
 
-  // Realtime-Subscription: sofortiges Update wenn Lock sich ändert
+  // is_master: Opt-in-Flag auf dem Record selbst (persistiert in DB)
+  const isMaster = activityRecord.is_master === true;
+  const [promotingToMaster, setPromotingToMaster] = useState(false);
+
+  // Realtime-Subscription: sofortiges Update wenn Lock oder is_master sich ändert
   useEffect(() => {
     const unsub = base44.entities.LernpaketPhaseAktivitaet.subscribe((event) => {
       if (event.id === activityRecord.id || event.data?.id === activityRecord.id) {
@@ -230,6 +240,84 @@ export default function MasterActivityPanel({ activityRecord, catalogEntry, kann
     return unsub;
   }, [activityRecord.id]);
 
+  const handlePromoteToMaster = async () => {
+    setPromotingToMaster(true);
+    await base44.entities.LernpaketPhaseAktivitaet.update(activityRecord.id, { is_master: true });
+    queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+    setPromotingToMaster(false);
+    toast.success('Zur Masteraufgabe gemacht.');
+  };
+
+  // ── Fall 1: supports_master === false → nur normales Formular ──────────────
+  if (!supportsMaster) {
+    return (
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border bg-muted/30">
+          <span className="text-sm font-semibold">{catalogEntry?.name}</span>
+          <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded">
+            Phase: {activityRecord.phase}
+          </span>
+        </div>
+        <div className="p-1">
+          <ActivityDetailView
+            activityRecord={activityRecord}
+            kannBearbeiten={kannBearbeiten}
+            queryClient={queryClient}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Fall 2: supports_master === true, aber is_master noch false → Opt-in ──
+  if (!isMaster) {
+    return (
+      <div className="space-y-4">
+        {/* Normales Formular */}
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border bg-muted/30">
+            <span className="text-sm font-semibold">{catalogEntry?.name}</span>
+            <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded">
+              Phase: {activityRecord.phase}
+            </span>
+          </div>
+          <div className="p-1">
+            <ActivityDetailView
+              activityRecord={activityRecord}
+              kannBearbeiten={kannBearbeiten}
+              queryClient={queryClient}
+            />
+          </div>
+        </div>
+
+        {/* Opt-in Button */}
+        {kannBearbeiten && (
+          <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-primary">Masteraufgabe aktivieren</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Wandle diese Aktivität in eine Mastervorlage um und erstelle KI-generierte Klone daraus.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handlePromoteToMaster}
+              disabled={promotingToMaster}
+              className="gap-2 shrink-0 border-primary/40 text-primary hover:bg-primary/10"
+            >
+              {promotingToMaster
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : <Sparkles className="w-3.5 h-3.5" />}
+              Zur Masteraufgabe machen
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Fall 3: supports_master === true UND is_master === true → Master-UI ───
   return (
     <div className="space-y-0">
       {/* MASTERAUFGABE-Container */}
@@ -264,10 +352,6 @@ export default function MasterActivityPanel({ activityRecord, catalogEntry, kann
               activityRecord={activityRecord}
               kannBearbeiten={kannBearbeiten && !isActivityLockedByOther(activityRecord, userEmail)}
               queryClient={queryClient}
-              userEmail={userEmail}
-              lockBanner={isActivityLockedByOther(activityRecord, userEmail)
-                ? <LockBanner lockedByUser={activityRecord.locked_by_user} />
-                : null}
             />
           )}
         </div>

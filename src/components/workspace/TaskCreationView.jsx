@@ -288,6 +288,9 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail 
     ? aktivitaetenKatalog.find(c => c.id === selectedItem.activity.aktivitaet_id)
     : null;
 
+  // supports_master: Flag aus dem Katalog-Eintrag (default: false für Input-Aktivitäten)
+  const supportsMaster = selectedCatalog?.supports_master === true;
+
   return (
     <div className="flex flex-row flex-1 overflow-hidden">
 
@@ -344,6 +347,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail 
               key={selectedItem.activity.id}
               activityRecord={selectedItem.activity}
               catalogEntry={selectedCatalog}
+              supportsMaster={supportsMaster}
               kannBearbeiten={kannBearbeiten}
               userEmail={userEmail}
               onKlonesCreated={() => {
