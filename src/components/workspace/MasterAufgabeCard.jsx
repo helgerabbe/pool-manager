@@ -16,8 +16,8 @@ import { Crown, Trash2, Sparkles, Loader2, AlertCircle, ChevronDown, ChevronUp }
 import LockBanner from '@/components/workspace/LockBanner';
 import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
 import { isLockExpired } from '@/hooks/useActivityLock';
-import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus.js';
-import { TASK_STATUS_CONFIG } from '@/lib/stateMachine.js';
+import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus';
+import { TASK_STATUS_CONFIG } from '@/lib/stateMachine';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 

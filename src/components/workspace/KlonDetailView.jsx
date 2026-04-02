@@ -19,8 +19,8 @@ import { Separator } from '@/components/ui/separator';
 import { Save, Check, X, Edit, ArrowRight, Plus, Trash2, Lock } from 'lucide-react';
 import LockBanner from '@/components/workspace/LockBanner';
 import { useKlonLock, isLockExpired } from '@/hooks/useActivityLock';
-import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus.js';
-import { TASK_STATUS_CONFIG } from '@/lib/stateMachine.js';
+import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus';
+import { TASK_STATUS_CONFIG } from '@/lib/stateMachine';
 import { toast } from 'sonner';
 
 function isKlonLockedByOther(klon, myEmail) {

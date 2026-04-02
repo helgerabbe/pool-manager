@@ -22,6 +22,34 @@ export const SYNC_STATUS = {
   MODIFIED: 'modified',
 };
 
+// ── Task Sync Status Config (für UI-Badges) ──────────────────────────────────
+export const TASK_STATUS_CONFIG = {
+  new: {
+    label: 'Neu',
+    color: 'text-blue-600',
+  },
+  exported: {
+    label: 'Exportiert',
+    color: 'text-green-600',
+  },
+  modified: {
+    label: 'Geändert',
+    color: 'text-amber-600',
+  },
+  pending_export: {
+    label: 'Export ausstehend',
+    color: 'text-orange-600',
+  },
+  to_delete: {
+    label: 'Zu löschen',
+    color: 'text-red-600',
+  },
+  approved: {
+    label: 'Freigegeben',
+    color: 'text-green-700',
+  },
+};
+
 // ── State Machine: Erlaubte Übergänge ────────────────────────────────────────
 /**
  * Definiert für jeden Status, welche anderen Stati er erreichen kann.
