@@ -12,6 +12,7 @@ import { Plus, Search, AlertCircle, Wand2 } from 'lucide-react';
 import SyncStatusBadge from '@/components/sync/SyncStatusBadge';
 import EinheitCard from '@/components/einheiten/EinheitCard';
 import EmptyState from '@/components/shared/EmptyState';
+import DeletionOverlay from '@/components/loading/DeletionOverlay';
 import { BookOpen } from 'lucide-react';
 import { getExportPendingCount } from '@/lib/deltaExportLogic';
 import { useNavigate } from 'react-router-dom';
@@ -90,6 +91,7 @@ export default function EinheitenListe() {
   const [filterFach, setFilterFach] = useState('all');
   const [showOnlyChanged, setShowOnlyChanged] = useState(false);
   const [schnellErstellen, setSchnellErstellen] = useState(false);
+  const [isDeletingAny, setIsDeletingAny] = useState(false);
   const queryClient = useQueryClient();
   const { permissions, rolle } = useRBAC();
 
@@ -194,6 +196,8 @@ export default function EinheitenListe() {
               einheit={einheit} 
               lernpaketCount={getLernpaketCount(einheit.id)}
               rolle={rolle}
+              onDeleteStart={() => setIsDeletingAny(true)}
+              onDeleteEnd={() => setIsDeletingAny(false)}
             />
           ))}
         </div>
@@ -217,6 +221,9 @@ export default function EinheitenListe() {
           navigate(`/einheiten/${einheit.id}`);
         }}
       />
+
+      {/* Globales Lösch-Overlay */}
+      <DeletionOverlay isVisible={isDeletingAny} message="Einheit wird unwiderruflich gelöscht... Bitte warten." />
     </div>
   );
 }

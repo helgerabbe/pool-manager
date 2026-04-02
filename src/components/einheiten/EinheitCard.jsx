@@ -23,7 +23,7 @@ const fachColors = {
   Informatik: 'bg-indigo-100 text-indigo-700',
 };
 
-export default function EinheitCard({ einheit, lernpaketCount, rolle }) {
+export default function EinheitCard({ einheit, lernpaketCount, rolle, onDeleteStart, onDeleteEnd }) {
   const colorClass = fachColors[einheit.fach] || 'bg-muted text-muted-foreground';
   const [showConfirm, setShowConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -32,6 +32,7 @@ export default function EinheitCard({ einheit, lernpaketCount, rolle }) {
 
   const handleDelete = async () => {
     setIsDeleting(true);
+    onDeleteStart?.();
     try {
       const res = await base44.functions.invoke('deleteEinheit', { einheitId: einheit.id });
       if (res.data?.success) {
@@ -44,6 +45,7 @@ export default function EinheitCard({ einheit, lernpaketCount, rolle }) {
         const errorMsg = res.data?.error || 'Fehler beim Löschen der Einheit.';
         toast.error(errorMsg);
         setIsDeleting(false);
+        onDeleteEnd?.();
       }
     } catch (err) {
       let errorMessage = 'Fehler beim Löschen der Einheit.';
@@ -57,6 +59,7 @@ export default function EinheitCard({ einheit, lernpaketCount, rolle }) {
       toast.error(errorMessage);
       console.error('Delete error:', err);
       setIsDeleting(false);
+      onDeleteEnd?.();
     }
   };
 
