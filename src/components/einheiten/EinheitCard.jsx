@@ -38,10 +38,20 @@ export default function EinheitCard({ einheit, lernpaketCount, rolle }) {
         toast.success('Einheit erfolgreich gelöscht.');
         queryClient.invalidateQueries({ queryKey: ['einheiten'] });
       } else {
-        toast.error(res.data?.error || 'Fehler beim Löschen der Einheit.');
+        const errorMsg = res.data?.error || 'Fehler beim Löschen der Einheit.';
+        toast.error(errorMsg);
       }
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Fehler beim Löschen der Einheit.');
+      let errorMessage = 'Fehler beim Löschen der Einheit.';
+      
+      if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      toast.error(errorMessage);
+      console.error('Delete error:', err);
     } finally {
       setIsDeleting(false);
       setShowConfirm(false);
