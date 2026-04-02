@@ -11,35 +11,57 @@ import { toast } from 'sonner';
  */
 
 /**
- * Generiert den KI-Tutor Prompt mit vollständigem Null-Handling
+ * Generiert den KI-Tutor Prompt mit Unterstützung für Basis-Lernziele
  */
-export function generateTutorPrompt(aufgabe, mappedLernziele, lernpakete, einheit) {
+export function generateTutorPrompt(aufgabe, mappedLernziele, mappedBasisLernziele, lernpakete, basismodule, einheit) {
   // Kritische Validierungen
-  if (!aufgabe || !Array.isArray(mappedLernziele) || mappedLernziele.length === 0) {
+  if (!aufgabe) {
+    return null;
+  }
+
+  const hasRegularGoals = Array.isArray(mappedLernziele) && mappedLernziele.length > 0;
+  const hasBasisGoals = Array.isArray(mappedBasisLernziele) && mappedBasisLernziele.length > 0;
+
+  if (!hasRegularGoals && !hasBasisGoals) {
     return null; // Keine Kompetenzen zugeordnet
   }
 
-  if (!Array.isArray(lernpakete)) {
+  if (hasRegularGoals && !Array.isArray(lernpakete)) {
+    return null;
+  }
+
+  if (hasBasisGoals && !Array.isArray(basismodule)) {
     return null;
   }
 
   // Sanitize und validiere Aufgabenstellung
   const aufgabeText = sanitizeString(aufgabe.aufgabenstellung) || '[Keine Aufgabenstellung hinterlegt]';
 
-  // Erstelle die Liste der Lernziele mit zugehörigen Paketen (mit Null-Checks)
-  const zieleMitPaketen = mappedLernziele
-    .filter(lz => lz && lz.id)
-    .map((lz) => {
-      const paket = lernpakete.find((p) => p && p.id === lz.lernpaket_id);
-      const zielText = sanitizeString(lz.schueler_uebersetzung || lz.formulierung_fachsprache) || 'Unbekanntes Lernziel';
-      const paketTitel = paket ? sanitizeString(paket.titel_des_pakets) : 'Unbekanntes Paket';
-      return `- ${zielText} (Gehört zum Lernpaket: ${paketTitel})`;
-    })
-    .join('\n');
+  // Erstelle die Liste der regulären Lernziele mit zugehörigen Paketen
+  const regularLernzieleString = hasRegularGoals
+    ? mappedLernziele
+        .filter(lz => lz && lz.id)
+        .map((lz) => {
+          const paket = lernpakete.find((p) => p && p.id === lz.lernpaket_id);
+          const zielText = sanitizeString(lz.schueler_uebersetzung || lz.formulierung_fachsprache) || 'Unbekanntes Lernziel';
+          const paketTitel = paket ? sanitizeString(paket.titel_des_pakets) : 'Unbekanntes Paket';
+          return `- ${zielText} (Gehört zum Lernpaket: ${paketTitel})`;
+        })
+        .join('\n')
+    : '';
 
-  if (!zieleMitPaketen) {
-    return null; // Keine gültigen Ziele
-  }
+  // Erstelle die Liste der Basis-Lernziele mit zugehörigen Modulen
+  const basisLernzieleString = hasBasisGoals
+    ? mappedBasisLernziele
+        .filter(lz => lz && lz.id)
+        .map((lz) => {
+          const modul = basismodule.find((m) => m && m.id === lz.basismodul_id);
+          const zielText = sanitizeString(lz.formulierung || lz.titel) || 'Unbekanntes Basis-Lernziel';
+          const modulTitel = modul ? sanitizeString(modul.titel) : 'Unbekanntes Modul';
+          return `- ${zielText} (Gehört zum Basismodul: ${modulTitel})`;
+        })
+        .join('\n')
+    : '';
 
   // Fallback-Werte mit Sanitizing
   const fach = sanitizeString(einheit?.fach) || 'dem Unterricht';
@@ -56,16 +78,24 @@ Ich werde dir gleich meine Lösung zu einer Aufgabe geben.
 Hier ist die Aufgabenstellung:
 ${aufgabeText}
 
-Bitte bewerte meine Lösung AUSSCHLIESSLICH anhand der folgenden Kompetenzen, die ich für diese Aufgabe beherrschen muss:
-${zieleMitPaketen}
+Bitte bewerte meine Lösung AUSSCHLIESSLICH anhand der folgenden Kompetenzen, die ich für diese Aufgabe beherrschen muss.
+
+Aktueller Unterrichtsstoff:
+${regularLernzieleString || '- Keine spezifischen Lernziele hinterlegt.'}
+
+${basisLernzieleString ? `Vorausgesetztes Basis-Vorwissen:\n${basisLernzieleString}` : ''}
 
 Gib mir dein Feedback in folgender Struktur:
 1. Kurzes, motivierendes Feedback zur Einleitung.
-2. Schätze für jede der oben genannten Kompetenzen ab, zu wie viel Prozent ich sie verstanden habe.
-3. Gib mir auf Basis dieser Prozente klare Handlungsanweisungen und nenne zwingend das zugehörige Lernpaket:
-   - Unter 60%: "Das hast du noch nicht so ganz richtig verstanden. Du solltest dir das zugehörige Lernpaket [Name des Lernpakets] unbedingt noch einmal intensiv anschauen."
-   - 60% bis 85%: "Du hast das schon überwiegend verstanden. Guck dir das zugehörige Lernpaket [Name des Lernpakets] noch einmal kurz an, damit es wirklich sicher sitzt."
-   - Über 85%: "Das hast du super verstanden! Hier musst du im Lernpaket [Name des Lernpakets] nichts weiter tun."
+2. Schätze für jede der oben genannten Kompetenzen (sowohl Unterrichtsstoff als auch Vorwissen) ab, zu wie viel Prozent ich sie verstanden habe.
+3. Gib mir auf Basis dieser Prozente klare Handlungsanweisungen:
+   - Unter 60%: "Das hast du noch nicht so ganz richtig verstanden."
+     -> Wenn aktueller Stoff: "Du solltest dir das zugehörige Lernpaket [Name] unbedingt noch einmal intensiv anschauen."
+     -> Wenn Vorwissen: "Hier fehlt dir eine wichtige Grundlage. Bitte wiederhole dazu das Basismodul [Name]."
+   - 60% bis 85%: "Du hast das schon überwiegend verstanden."
+     -> Wenn aktueller Stoff: "Guck dir das zugehörige Lernpaket [Name] noch einmal kurz an."
+     -> Wenn Vorwissen: "Frische diese Grundlage am besten im Basismodul [Name] noch einmal kurz auf."
+   - Über 85%: "Das hast du super verstanden! Hier musst du im zugehörigen Lernpaket / Basismodul nichts weiter tun."
 
 WICHTIGE REGELN FÜR DICH ALS KI:
 - Gib mir UNTER KEINEN UMSTÄNDEN die Musterlösung!
@@ -113,14 +143,16 @@ function PromptEmptyState() {
 export default function AITutorPromptPanel({
   aufgabe,
   mappedLernziele,
+  mappedBasisLernziele = [],
   lernpakete,
+  basismodule = [],
   einheit,
 }) {
   const [copied, setCopied] = useState(false);
 
   const prompt = useMemo(
-    () => generateTutorPrompt(aufgabe, mappedLernziele, lernpakete, einheit),
-    [aufgabe, mappedLernziele, lernpakete, einheit]
+    () => generateTutorPrompt(aufgabe, mappedLernziele, mappedBasisLernziele, lernpakete, basismodule, einheit),
+    [aufgabe, mappedLernziele, mappedBasisLernziele, lernpakete, basismodule, einheit]
   );
 
   const handleCopyPrompt = async () => {

@@ -237,6 +237,35 @@ export default function AllgemeineAufgabenView({
     queryFn: () => base44.entities.Lernziele.list(),
   });
 
+  const { data: mappedBasisLernziele = [] } = useQuery({
+    queryKey: ['allgemeineAufgabeBasisMappings', selectedAufgabeId],
+    queryFn: () =>
+      selectedAufgabeId
+        ? base44.entities.AllgemeineAufgabeBasisLernzielMapping.filter({
+            aufgabe_id: selectedAufgabeId,
+          })
+        : Promise.resolve([]),
+    enabled: !!selectedAufgabeId,
+  });
+
+  const { data: basisLernziele = [] } = useQuery({
+    queryKey: ['basisLernziele'],
+    queryFn: () => base44.entities.BasisLernziel.list(),
+  });
+
+  const { data: basismodule = [] } = useQuery({
+    queryKey: ['basismodule'],
+    queryFn: () => base44.entities.Basismodule.list(),
+  });
+
+  // Effektive Basis-Lernziele aus Mappings
+  const effectiveMappedBasisLernziele = useMemo(() => {
+    if (!selectedAufgabeId || mappedBasisLernziele.length === 0) return [];
+    return mappedBasisLernziele
+      .map((m) => basisLernziele.find((lz) => lz.id === m.basislernziel_id))
+      .filter(Boolean);
+  }, [selectedAufgabeId, mappedBasisLernziele, basisLernziele]);
+
   // Memoized: Gefilterte Lernziele basierend auf aktueller Mapping-Query
   const effectiveMappedLernziele = useMemo(() => {
     if (!selectedAufgabeId || mappedLernziele.length === 0) return [];
@@ -361,7 +390,9 @@ export default function AllgemeineAufgabenView({
                 <AITutorPromptPanel
                   aufgabe={selectedAufgabe}
                   mappedLernziele={effectiveMappedLernziele}
+                  mappedBasisLernziele={effectiveMappedBasisLernziele}
                   lernpakete={lernpakete}
+                  basismodule={basismodule}
                   einheit={einheit}
                 />
               </TabsContent>
