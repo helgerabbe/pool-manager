@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 const ROLLEN = {
-  ADMIN: 'Administrator',
+  ADMIN: 'admin',
   FACHSCHAFT: 'Fachschaftsleitung',
 };
 
