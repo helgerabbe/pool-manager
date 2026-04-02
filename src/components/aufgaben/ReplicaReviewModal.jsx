@@ -1,16 +1,13 @@
 /**
  * ReplicaReviewModal.jsx
  *
- * Phase 6.7: Review & Human-in-the-Loop Einzelspeicherung von Replikaten
- * 
- * Features:
- * - Zeige generierte Replikate in einer Liste
- * - Editierbar mit Textarea
- * - Einzelne "Speichern"-Buttons pro Replikat
- * - Loading Skeletons während Generierung
+ * Human-in-the-Loop Review Modal für generierte Replikate.
+ * - Temporäre Vorschau der KI-generierten Klone
+ * - "Verwerfen": Schließt ohne Speichern
+ * - "Als Entwürfe übernehmen": Speichert alle mit status='draft', is_master=false
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
@@ -24,12 +21,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Save, AlertCircle, Loader2, Check } from 'lucide-react';
+import { AlertCircle, Loader2, Check, Pencil, X } from 'lucide-react';
 import { toast } from 'sonner';
-
-// ─────────────────────────────────────────────────────────────────────────
-// STEP 1: Loading Skeleton
-// ─────────────────────────────────────────────────────────────────────────
+import { cn } from '@/lib/utils';
 
 function ReplicaSkeleton() {
   return (
@@ -37,175 +31,127 @@ function ReplicaSkeleton() {
       <div className="h-4 w-3/4 rounded bg-muted" />
       <div className="h-3 w-full rounded bg-muted" />
       <div className="h-3 w-5/6 rounded bg-muted" />
-      <div className="h-8 w-20 rounded bg-muted mt-4" />
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// STEP 2: Einzelnes Replikat mit Edit & Save
-// ─────────────────────────────────────────────────────────────────────────
+function ReplicaPreviewItem({ index, replica, onUpdate }) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(replica.aufgabentext);
+  const [loesung, setLoesung] = useState(replica.loesung);
 
-function ReplicaItem({
-  index,
-  replica,
-  masterId,
-  lernpaketId,
-  lernzielId,
-  onSaveSuccess,
-}) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedTask, setEditedTask] = useState(replica.aufgabentext);
-  const [editedSolution, setEditedSolution] = useState(replica.loesung);
-  const queryClient = useQueryClient();
-
-  // Mutation: Speichere dieses einzelne Replikat
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      const response = await base44.entities.Aufgabenbausteine.create({
-        lernpaket_id: lernpaketId,
-        lernziel_id: lernzielId || null,
-        baustein_typ: 'Ebene-1-Übung',
-        aufgabentext_inhalt: editedTask,
-        erwartungshorizont_ki_prompt: editedSolution,
-        is_master: false,
-        master_id: masterId,
-        export_to_moodle: true,
-      });
-      return response;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['aufgaben', lernpaketId] });
-      toast.success(`Replikat ${index + 1} gespeichert`);
-      setIsEditing(false);
-      if (onSaveSuccess) onSaveSuccess(data);
-    },
-    onError: (error) => {
-      toast.error(`Speichern fehlgeschlagen: ${error.message}`);
-    },
-  });
-
-  if (isEditing) {
-    return (
-      <div className="space-y-3 p-4 rounded-lg border border-primary/20 bg-primary/5">
-        <div className="flex items-center justify-between mb-2">
-          <Badge variant="secondary">Replikat {index + 1} (Editieren)</Badge>
-        </div>
-
-        <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">
-            Aufgabentext
-          </label>
-          <Textarea
-            value={editedTask}
-            onChange={(e) => setEditedTask(e.target.value)}
-            className="h-20 text-sm resize-none"
-          />
-        </div>
-
-        <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">
-            Lösungsskizze
-          </label>
-          <Textarea
-            value={editedSolution}
-            onChange={(e) => setEditedSolution(e.target.value)}
-            className="h-16 text-sm resize-none"
-          />
-        </div>
-
-        <div className="flex justify-end gap-2 pt-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setEditedTask(replica.aufgabentext);
-              setEditedSolution(replica.loesung);
-              setIsEditing(false);
-            }}
-          >
-            Abbrechen
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => saveMutation.mutate()}
-            disabled={saveMutation.isPending}
-            className="gap-1"
-          >
-            {saveMutation.isPending ? (
-              <>
-                <Loader2 className="w-3 h-3 animate-spin" />
-                Speichert...
-              </>
-            ) : (
-              <>
-                <Check className="w-3 h-3" />
-                Speichern
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const handleSave = () => {
+    onUpdate(index, { aufgabentext: text, loesung });
+    setEditing(false);
+  };
 
   return (
-    <div className="space-y-2 p-4 rounded-lg border bg-card hover:bg-muted/30 transition-colors">
-      <div className="flex items-start justify-between gap-3 mb-2">
-        <Badge variant="outline">Replikat {index + 1}</Badge>
+    <div className="p-4 rounded-lg border bg-card space-y-2">
+      <div className="flex items-center justify-between">
+        <Badge variant="outline" className="text-[10px]">Entwurf {index + 1}</Badge>
+        <button
+          onClick={() => setEditing(!editing)}
+          className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {editing ? <X className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
+        </button>
       </div>
 
-      <p className="text-sm font-medium line-clamp-2">{replica.aufgabentext}</p>
-      <p className="text-xs text-muted-foreground line-clamp-1">
-        📝 Lösung: {replica.loesung.substring(0, 60)}...
-      </p>
-
-      <div className="flex gap-2 pt-2">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => setIsEditing(true)}
-        >
-          Bearbeiten
-        </Button>
-        <Button
-          size="sm"
-          onClick={() => saveMutation.mutate()}
-          disabled={saveMutation.isPending}
-          className="gap-1"
-        >
-          {saveMutation.isPending ? (
-            <>
-              <Loader2 className="w-3 h-3 animate-spin" />
-              Speichert...
-            </>
-          ) : (
-            <>
-              <Save className="w-3 h-3" />
-              Diese Aufgabe speichern
-            </>
+      {editing ? (
+        <div className="space-y-2">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Aufgabentext</label>
+            <Textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              className="h-20 text-sm resize-none"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Lösungshinweis</label>
+            <Textarea
+              value={loesung}
+              onChange={(e) => setLoesung(e.target.value)}
+              className="h-14 text-sm resize-none"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button size="sm" variant="outline" onClick={() => setEditing(false)}>Abbrechen</Button>
+            <Button size="sm" onClick={handleSave} className="gap-1">
+              <Check className="w-3 h-3" /> Übernehmen
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <p className="text-sm text-foreground">{text}</p>
+          {loesung && (
+            <p className="text-xs text-muted-foreground italic line-clamp-1">
+              💡 {loesung}
+            </p>
           )}
-        </Button>
-      </div>
+        </>
+      )}
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────
-// MAIN COMPONENT
-// ─────────────────────────────────────────────────────────────────────────
 
 export default function ReplicaReviewModal({
   open,
   onOpenChange,
   isLoading,
-  replicas = [],
+  replicas: initialReplicas = [],
   masterId,
   lernpaketId,
   lernzielId,
+  masterData = {},
   error,
   onSaveSuccess,
 }) {
+  const [replicas, setReplicas] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Sync wenn neue Replikate reinkommen
+  React.useEffect(() => {
+    setReplicas(initialReplicas.map(r => ({ ...r })));
+  }, [initialReplicas]);
+
+  const handleUpdate = (index, updated) => {
+    setReplicas(prev => prev.map((r, i) => i === index ? { ...r, ...updated } : r));
+  };
+
+  const handleDiscard = () => {
+    onOpenChange(false);
+  };
+
+  const handleSaveAll = async () => {
+    setSaving(true);
+    try {
+      await Promise.all(replicas.map(r =>
+        base44.entities.Aufgabenbausteine.create({
+          lernpaket_id: lernpaketId,
+          lernziel_id: lernzielId || null,
+          baustein_typ: masterData.baustein_typ || 'Ebene-1-Übung',
+          aufgabentext_inhalt: r.aufgabentext,
+          erwartungshorizont_ki_prompt: r.loesung,
+          is_master: false,
+          master_id: masterId,
+          status: 'draft',
+          export_to_moodle: false,
+        })
+      ));
+      queryClient.invalidateQueries({ queryKey: ['aufgaben'] });
+      toast.success(`${replicas.length} Entwürfe gespeichert`);
+      onOpenChange(false);
+      if (onSaveSuccess) onSaveSuccess();
+    } catch (e) {
+      toast.error(`Speichern fehlgeschlagen: ${e.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -213,17 +159,14 @@ export default function ReplicaReviewModal({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Loader2 className="w-5 h-5 animate-spin text-primary" />
-              Replikate werden generiert...
+              KI generiert Aufgabenvarianten…
             </DialogTitle>
             <DialogDescription>
-              Die KI erstellt didaktisch gleichwertige Aufgabenvarianten.
+              Die KI erstellt didaktisch gleichwertige Klone. Bitte warten.
             </DialogDescription>
           </DialogHeader>
-
           <div className="space-y-3">
-            {[...Array(3)].map((_, i) => (
-              <ReplicaSkeleton key={i} />
-            ))}
+            {[...Array(3)].map((_, i) => <ReplicaSkeleton key={i} />)}
           </div>
         </DialogContent>
       </Dialog>
@@ -237,19 +180,16 @@ export default function ReplicaReviewModal({
           <DialogHeader>
             <DialogTitle>Fehler bei der Generierung</DialogTitle>
           </DialogHeader>
-
           <div className="flex items-start gap-3 p-3 rounded-lg border border-red-200 bg-red-50">
             <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
             <div className="text-sm text-red-800">
-              <p className="font-semibold mb-1">Generierung fehlgeschlagen</p>
-              <p className="text-xs">{error}</p>
+              <p className="font-semibold">Generierung fehlgeschlagen</p>
+              <p className="text-xs mt-1">{error}</p>
+              <p className="text-xs mt-2 text-red-600">Sie können das Modal schließen, den Zusatz-Prompt anpassen und erneut versuchen.</p>
             </div>
           </div>
-
           <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Schließen
-            </Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Schließen & anpassen</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -258,34 +198,47 @@ export default function ReplicaReviewModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Check className="w-5 h-5 text-green-600" />
-            {replicas.length} Replikate generiert
+            {replicas.length} Aufgabenvarianten generiert
           </DialogTitle>
           <DialogDescription>
-            Überprüfen Sie die generierten Aufgabenvarianten und speichern Sie diese einzeln.
+            Überprüfe die Entwürfe. Du kannst einzelne Texte bearbeiten (Stift-Icon). Erst nach "Als Entwürfe übernehmen" werden sie gespeichert.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3 max-h-[400px] overflow-y-auto">
+        <div className="space-y-3 overflow-y-auto flex-1 pr-1">
           {replicas.map((replica, index) => (
-            <ReplicaItem
+            <ReplicaPreviewItem
               key={index}
               index={index}
               replica={replica}
-              masterId={masterId}
-              lernpaketId={lernpaketId}
-              lernzielId={lernzielId}
-              onSaveSuccess={onSaveSuccess}
+              onUpdate={handleUpdate}
             />
           ))}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Schließen
+        <DialogFooter className="gap-2 flex-row justify-between sm:justify-between border-t pt-4 shrink-0">
+          <Button
+            variant="outline"
+            onClick={handleDiscard}
+            className="gap-2 text-muted-foreground"
+          >
+            <X className="w-4 h-4" />
+            Verwerfen
+          </Button>
+          <Button
+            onClick={handleSaveAll}
+            disabled={saving || replicas.length === 0}
+            className="gap-2"
+          >
+            {saving ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Speichert…</>
+            ) : (
+              <><Check className="w-4 h-4" /> Als Entwürfe übernehmen</>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

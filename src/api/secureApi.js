@@ -367,7 +367,7 @@ export async function createBulkAufgaben(aufgaben) {
  * @param {number} anzahl - Anzahl der zu generierenden Varianten (1-20)
  * @returns {Promise<{success: boolean, replicas: Array, metadata: Object}>}
  */
-export async function generateReplicas(masterId, anzahl = 10) {
+export async function generateReplicas(masterId, anzahl = 5, zusatzHinweise = '') {
   if (!masterId) {
     throw new Error('masterId is required');
   }
@@ -380,6 +380,7 @@ export async function generateReplicas(masterId, anzahl = 10) {
     const response = await base44.functions.invoke('generateReplicasSecure', {
       master_id: masterId,
       anzahl,
+      zusatz_hinweise: zusatzHinweise,
     });
     return response.data;
   } catch (error) {

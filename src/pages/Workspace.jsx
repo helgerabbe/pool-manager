@@ -16,7 +16,7 @@ import { BookOpen, Lock, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import StrukturBoardEmbedded from '@/components/workspace/StrukturBoardEmbedded';
 import WorkspaceTabs from '@/components/workspace/WorkspaceTabs';
-import TaskCreationView from '@/components/workspace/TaskCreationView';
+import TaskCreationView from '@/components/workspace/TaskCreationView.jsx';
 import EinheitUebersichtTab from '@/components/workspace/EinheitUebersichtTab';
 import MoodleExportTab from '@/components/workspace/MoodleExportTab';
 
