@@ -19,6 +19,8 @@ import { Separator } from '@/components/ui/separator';
 import { Save, Check, X, Edit, ArrowRight, Plus, Trash2, Lock } from 'lucide-react';
 import LockBanner from '@/components/workspace/LockBanner';
 import { useKlonLock, isLockExpired } from '@/hooks/useActivityLock';
+import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus.js';
+import { TASK_STATUS_CONFIG } from '@/lib/stateMachine.js';
 import { toast } from 'sonner';
 
 function isKlonLockedByOther(klon, myEmail) {
@@ -31,6 +33,15 @@ function isKlonLockedByOther(klon, myEmail) {
 export default function KlonDetailView({ klon, kannBearbeiten, userEmail }) {
   const queryClient = useQueryClient();
   const [editMode, setEditMode] = useState(false);
+
+  // State Machine für Moodle-Sync
+  const syncStatus = useSyncStatus(
+    klon.id,
+    klon.sync_status || TASK_SYNC_STATUS.DRAFT,
+    'Aufgabenbausteine',
+    ['klone', 'aufgabenbausteine']
+  );
+
   const [data, setData] = useState(() => {
     try {
       return typeof klon.aufgabentext_inhalt === 'string'
@@ -58,23 +69,33 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail }) {
   }, [klon.id]);
 
   const saveMutation = useMutation({
-    mutationFn: (updated) =>
-      base44.entities.Aufgabenbausteine.update(klon.id, {
+    mutationFn: (updated) => {
+      // State Machine: synced → modified, pending_export → blockiert
+      const newSyncStatus = syncStatus.getSyncStatusForSave();
+      return base44.entities.Aufgabenbausteine.update(klon.id, {
         aufgabentext_inhalt: JSON.stringify(updated),
         status: klon.status || 'draft',
-      }),
+        sync_status: newSyncStatus,
+      });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine', 'klone'] });
-      setEditMode(false); // → Lock freigegeben via useKlonLock
+      queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine'] });
+      queryClient.invalidateQueries({ queryKey: ['klone'] });
+      setEditMode(false);
       toast.success('Klon gespeichert.');
     },
-    onError: () => toast.error('Fehler beim Speichern.'),
+    onError: (err) => toast.error(err.message || 'Fehler beim Speichern.'),
   });
 
+  // Freigeben: setzt Klon-status 'approved' UND sync_status 'approved'
   const approveMutation = useMutation({
-    mutationFn: () => base44.entities.Aufgabenbausteine.update(klon.id, { status: 'approved' }),
+    mutationFn: () => base44.entities.Aufgabenbausteine.update(klon.id, {
+      status: 'approved',
+      sync_status: TASK_SYNC_STATUS.APPROVED,
+    }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine', 'klone'] });
+      queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine'] });
+      queryClient.invalidateQueries({ queryKey: ['klone'] });
       toast.success('Klon freigegeben.');
     },
   });
@@ -95,12 +116,23 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail }) {
     ? <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">✓ Freigegeben</Badge>
     : <Badge variant="secondary">Entwurf {klon.klon_index || '?'}</Badge>;
 
+  const syncCfg = TASK_STATUS_CONFIG[syncStatus.currentStatus];
+  const syncBadge = syncCfg
+    ? <Badge variant="outline" className={`text-[10px] ${syncCfg.color}`}>{syncCfg.label}</Badge>
+    : null;
+
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-2.5 bg-muted/40 border-b border-border">
         {statusBadge}
+        {syncBadge}
         <span className="text-xs text-muted-foreground flex-1">Klon-Aufgabe</span>
+        {syncStatus.isLockedForEdit && (
+          <span className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+            Export läuft – kein Edit
+          </span>
+        )}
         {kannBearbeiten && !lockedByOther && (
           <div className="flex gap-2">
             {editMode ? (

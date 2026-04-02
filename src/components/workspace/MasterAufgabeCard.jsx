@@ -16,6 +16,8 @@ import { Crown, Trash2, Sparkles, Loader2, AlertCircle, ChevronDown, ChevronUp }
 import LockBanner from '@/components/workspace/LockBanner';
 import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
 import { isLockExpired } from '@/hooks/useActivityLock';
+import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus.js';
+import { TASK_STATUS_CONFIG } from '@/lib/stateMachine.js';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -138,6 +140,15 @@ export default function MasterAufgabeCard({
   autoExpand = false,
 }) {
   const queryClient = useQueryClient();
+
+  // State Machine für Moodle-Sync
+  const syncStatus = useSyncStatus(
+    master.id,
+    master.sync_status || TASK_SYNC_STATUS.DRAFT,
+    'MasterAufgabe',
+    ['masterAufgaben']
+  );
+
   // Neue Karte direkt im Bearbeitungsmodus öffnen
   const [editMode, setEditMode] = useState(autoExpand);
   const [collapsed, setCollapsed] = useState(false);
@@ -150,14 +161,22 @@ export default function MasterAufgabeCard({
   const isMatch = isMatchTerms(catalogName);
 
   const saveMutation = useMutation({
-    mutationFn: ({ fv, closeEdit }) =>
-      base44.entities.MasterAufgabe.update(master.id, { field_values: fv, titel }),
+    mutationFn: ({ fv, closeEdit }) => {
+      // State Machine: synced → modified, pending_export → blockiert
+      const newSyncStatus = syncStatus.getSyncStatusForSave();
+      return base44.entities.MasterAufgabe.update(master.id, {
+        field_values: fv,
+        titel,
+        sync_status: newSyncStatus,
+      });
+    },
     onSuccess: (_, { closeEdit }) => {
       queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
       setHasPendingChanges(false);
       if (closeEdit) setEditMode(false);
       toast.success('Masteraufgabe gespeichert.');
     },
+    onError: (err) => toast.error(err.message || 'Fehler beim Speichern.'),
   });
 
   // Zwischenspeichern ohne Edit-Modus zu verlassen
@@ -198,6 +217,11 @@ export default function MasterAufgabeCard({
         <Badge variant="default" className="text-[11px] font-bold tracking-wide shrink-0">
           MASTER {index}
         </Badge>
+        {TASK_STATUS_CONFIG[syncStatus.currentStatus] && (
+          <Badge variant="outline" className={`text-[10px] shrink-0 ${TASK_STATUS_CONFIG[syncStatus.currentStatus].color}`}>
+            {TASK_STATUS_CONFIG[syncStatus.currentStatus].label}
+          </Badge>
+        )}
 
         {/* Titel inline editierbar */}
         {editingTitel ? (
