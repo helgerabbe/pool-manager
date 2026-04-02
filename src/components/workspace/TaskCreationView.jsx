@@ -15,10 +15,11 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ChevronRight, Package, MousePointerClick, AlertTriangle } from 'lucide-react';
+import { ChevronRight, Package, MousePointerClick, AlertTriangle, Lock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import MasterActivityPanel from '@/components/workspace/MasterActivityPanel';
 import KlonDetailView from '@/components/workspace/KlonDetailView';
+import { isActivityLockedByOther, isLockExpired } from '@/hooks/useActivityLock';
 import { cn } from '@/lib/utils';
 
 const PHASES = [
@@ -54,9 +55,10 @@ function KlonSubItem({ klon, isSelected, onSelect }) {
 
 // ── Sidebar: Aktivitäts-Zeile (mit eingerückten Klonen) ───────────────────────
 
-function ActivitySidebarItem({ activity, aktivitaetName, klone, selectedItem, onSelect, isIncomplete }) {
+function ActivitySidebarItem({ activity, aktivitaetName, klone, selectedItem, onSelect, isIncomplete, myEmail }) {
   const isActivitySelected = selectedItem?.type === 'activity' && selectedItem?.activity?.id === activity.id;
   const hasSelectedKlon = klone.some(k => selectedItem?.type === 'klon' && selectedItem?.klon?.id === k.id);
+  const lockedByOther = isActivityLockedByOther(activity, myEmail);
 
   return (
     <div>
@@ -72,7 +74,10 @@ function ActivitySidebarItem({ activity, aktivitaetName, klone, selectedItem, on
         )}
       >
         <span className="flex-1 truncate">{aktivitaetName}</span>
-        {isIncomplete && !isActivitySelected && (
+        {lockedByOther && !isActivitySelected && (
+          <Lock className="w-3 h-3 text-amber-500 shrink-0" title={`Gesperrt von ${activity.locked_by_user}`} />
+        )}
+        {isIncomplete && !isActivitySelected && !lockedByOther && (
           <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" title="Inhalt unvollständig" />
         )}
         {klone.length > 0 && (
@@ -109,6 +114,7 @@ function SidebarLernpaketFolder({
   selectedItem,
   onSelect,
   defaultOpen = false,
+  myEmail,
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const paketActivities = allActivities.filter(a => a.lernpaket_id === lernpaket.id);
@@ -162,6 +168,7 @@ function SidebarLernpaketFolder({
                         selectedItem={selectedItem}
                         onSelect={onSelect}
                         isIncomplete={!activity.is_complete}
+                        myEmail={myEmail}
                       />
                     ))}
                   </div>
@@ -195,7 +202,7 @@ function EmptyState() {
 
 // ── Haupt-Komponente ──────────────────────────────────────────────────────────
 
-export default function TaskCreationView({ einheitId, kannBearbeiten }) {
+export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail }) {
   const queryClient = useQueryClient();
   // selectedItem = null | { type: 'activity', activity } | { type: 'klon', klon }
   const [selectedItem, setSelectedItem] = useState(null);
@@ -313,6 +320,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten }) {
                     selectedItem={selectedItem}
                     onSelect={setSelectedItem}
                     defaultOpen={idx === 0}
+                    myEmail={userEmail}
                   />
                 ))}
               </div>
@@ -337,6 +345,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten }) {
               activityRecord={selectedItem.activity}
               catalogEntry={selectedCatalog}
               kannBearbeiten={kannBearbeiten}
+              userEmail={userEmail}
               onKlonesCreated={() => {
                 queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine', 'klone', einheitId] });
               }}
@@ -350,6 +359,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten }) {
               key={selectedItem.klon.id}
               klon={selectedItem.klon}
               kannBearbeiten={kannBearbeiten}
+              userEmail={userEmail}
             />
           </div>
         )}

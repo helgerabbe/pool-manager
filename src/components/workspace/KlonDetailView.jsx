@@ -1,11 +1,13 @@
 /**
  * KlonDetailView.jsx
  *
- * Bearbeitungsbereich für einen einzelnen gespeicherten Klon (Aufgabenbaustein).
- * Zeigt Inhalt editierbar an, Badge "Entwurf N" / "approved".
+ * Bearbeitungsbereich für einen einzelnen gespeicherten Klon.
+ * - Pessimistic Locking via useKlonLock
+ * - Lock-Banner für andere Nutzer
+ * - Realtime-Subscription für sofortige Lock-Updates
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Badge } from '@/components/ui/badge';
@@ -14,10 +16,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Save, Check, X, Edit, ArrowRight, Plus, Trash2 } from 'lucide-react';
+import { Save, Check, X, Edit, ArrowRight, Plus, Trash2, Lock } from 'lucide-react';
+import LockBanner from '@/components/workspace/LockBanner';
+import { useKlonLock, isLockExpired } from '@/hooks/useActivityLock';
 import { toast } from 'sonner';
 
-export default function KlonDetailView({ klon, kannBearbeiten }) {
+function isKlonLockedByOther(klon, myEmail) {
+  if (!klon?.lock_status) return false;
+  if (klon.locked_by_user === myEmail) return false;
+  if (isLockExpired(klon.locked_at)) return false;
+  return true;
+}
+
+export default function KlonDetailView({ klon, kannBearbeiten, userEmail }) {
   const queryClient = useQueryClient();
   const [editMode, setEditMode] = useState(false);
   const [data, setData] = useState(() => {
@@ -30,6 +41,22 @@ export default function KlonDetailView({ klon, kannBearbeiten }) {
     }
   });
 
+  // Pessimistic Lock
+  useKlonLock(klon.id, userEmail, editMode);
+
+  const lockedByOther = isKlonLockedByOther(klon, userEmail);
+
+  // Realtime-Subscription: Lock-Änderungen sofort spiegeln
+  useEffect(() => {
+    const unsub = base44.entities.Aufgabenbausteine.subscribe((event) => {
+      if (event.id === klon.id || event.data?.id === klon.id) {
+        queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine', 'klone'] });
+        queryClient.invalidateQueries({ queryKey: ['aufgaben'] });
+      }
+    });
+    return unsub;
+  }, [klon.id]);
+
   const saveMutation = useMutation({
     mutationFn: (updated) =>
       base44.entities.Aufgabenbausteine.update(klon.id, {
@@ -37,44 +64,36 @@ export default function KlonDetailView({ klon, kannBearbeiten }) {
         status: klon.status || 'draft',
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine', klon.master_activity_id] });
-      setEditMode(false);
+      queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine', 'klone'] });
+      setEditMode(false); // → Lock freigegeben via useKlonLock
       toast.success('Klon gespeichert.');
     },
     onError: () => toast.error('Fehler beim Speichern.'),
   });
 
   const approveMutation = useMutation({
-    mutationFn: () =>
-      base44.entities.Aufgabenbausteine.update(klon.id, { status: 'approved' }),
+    mutationFn: () => base44.entities.Aufgabenbausteine.update(klon.id, { status: 'approved' }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine', klon.master_activity_id] });
+      queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine', 'klone'] });
       toast.success('Klon freigegeben.');
     },
   });
 
-  const statusBadge =
-    klon.status === 'approved'
-      ? <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">✓ Freigegeben</Badge>
-      : <Badge variant="secondary">Entwurf {klon.klon_index || '?'}</Badge>;
-
   const pairs = data.pairs || [];
   const distractors = data.distractors || [];
 
-  const updatePair = (idx, side, val) => {
-    const newPairs = pairs.map((p, i) => i === idx ? { ...p, [side]: val } : p);
-    setData(d => ({ ...d, pairs: newPairs }));
-  };
-
+  const updatePair = (idx, side, val) =>
+    setData(d => ({ ...d, pairs: d.pairs.map((p, i) => i === idx ? { ...p, [side]: val } : p) }));
   const addPair = () => setData(d => ({ ...d, pairs: [...(d.pairs || []), { left: '', right: '' }] }));
   const removePair = (idx) => setData(d => ({ ...d, pairs: d.pairs.filter((_, i) => i !== idx) }));
-
-  const updateDistractor = (idx, val) => {
-    const newD = distractors.map((v, i) => i === idx ? val : v);
-    setData(d => ({ ...d, distractors: newD }));
-  };
+  const updateDistractor = (idx, val) =>
+    setData(d => ({ ...d, distractors: d.distractors.map((v, i) => i === idx ? val : v) }));
   const addDistractor = () => setData(d => ({ ...d, distractors: [...(d.distractors || []), ''] }));
   const removeDistractor = (idx) => setData(d => ({ ...d, distractors: d.distractors.filter((_, i) => i !== idx) }));
+
+  const statusBadge = klon.status === 'approved'
+    ? <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">✓ Freigegeben</Badge>
+    : <Badge variant="secondary">Entwurf {klon.klon_index || '?'}</Badge>;
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -82,7 +101,7 @@ export default function KlonDetailView({ klon, kannBearbeiten }) {
       <div className="flex items-center gap-3 px-4 py-2.5 bg-muted/40 border-b border-border">
         {statusBadge}
         <span className="text-xs text-muted-foreground flex-1">Klon-Aufgabe</span>
-        {kannBearbeiten && (
+        {kannBearbeiten && !lockedByOther && (
           <div className="flex gap-2">
             {editMode ? (
               <>
@@ -99,7 +118,8 @@ export default function KlonDetailView({ klon, kannBearbeiten }) {
             ) : (
               <>
                 {klon.status !== 'approved' && (
-                  <Button size="sm" variant="outline" onClick={() => approveMutation.mutate()} disabled={approveMutation.isPending} className="gap-1.5 text-green-700 border-green-300 hover:bg-green-50">
+                  <Button size="sm" variant="outline" onClick={() => approveMutation.mutate()} disabled={approveMutation.isPending}
+                    className="gap-1.5 text-green-700 border-green-300 hover:bg-green-50">
                     <Check className="w-3.5 h-3.5" /> Freigeben
                   </Button>
                 )}
@@ -110,19 +130,23 @@ export default function KlonDetailView({ klon, kannBearbeiten }) {
             )}
           </div>
         )}
+        {lockedByOther && (
+          <Button size="sm" variant="outline" disabled className="gap-1.5 opacity-50">
+            <Lock className="w-3.5 h-3.5" /> Gesperrt
+          </Button>
+        )}
       </div>
 
       {/* Inhalt */}
       <div className="p-5 space-y-5">
+        <LockBanner lockedByUser={lockedByOther ? klon.locked_by_user : null} />
+
         {/* Arbeitsanweisung */}
         <div className="space-y-1.5">
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Arbeitsanweisung</Label>
           {editMode ? (
-            <Textarea
-              value={data.instruction || ''}
-              onChange={e => setData(d => ({ ...d, instruction: e.target.value }))}
-              className="resize-none h-20 text-sm"
-            />
+            <Textarea value={data.instruction || ''} onChange={e => setData(d => ({ ...d, instruction: e.target.value }))}
+              className="resize-none h-20 text-sm" />
           ) : (
             <div className="bg-muted/50 rounded-lg p-3 text-sm">
               {data.instruction || <span className="italic text-muted-foreground">Nicht ausgefüllt</span>}
@@ -171,9 +195,7 @@ export default function KlonDetailView({ klon, kannBearbeiten }) {
           <div className="space-y-2">
             <Separator />
             <div className="flex items-center justify-between pt-1">
-              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Distraktoren
-              </Label>
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Distraktoren</Label>
               {editMode && (
                 <Button type="button" size="sm" variant="ghost" onClick={addDistractor} className="gap-1 text-xs h-7">
                   <Plus className="w-3 h-3" /> Distraktor
@@ -185,19 +207,13 @@ export default function KlonDetailView({ klon, kannBearbeiten }) {
                 {distractors.map((d, idx) => (
                   editMode ? (
                     <div key={idx} className="flex items-center gap-1">
-                      <Input
-                        value={d}
-                        onChange={e => updateDistractor(idx, e.target.value)}
-                        className="h-7 text-xs w-32"
-                      />
+                      <Input value={d} onChange={e => updateDistractor(idx, e.target.value)} className="h-7 text-xs w-32" />
                       <button onClick={() => removeDistractor(idx)} className="p-1 text-muted-foreground hover:text-destructive">
                         <Trash2 className="w-3 h-3" />
                       </button>
                     </div>
                   ) : (
-                    <span key={idx} className="px-2 py-0.5 rounded-full bg-muted text-xs border border-dashed border-border">
-                      {d}
-                    </span>
+                    <span key={idx} className="px-2 py-0.5 rounded-full bg-muted text-xs border border-dashed border-border">{d}</span>
                   )
                 ))}
               </div>

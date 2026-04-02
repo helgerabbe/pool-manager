@@ -2,33 +2,32 @@
  * MasterActivityPanel.jsx
  *
  * Wrapper für eine Master-Aktivität in Ebene 4.
- * - Hervorgehobener Container mit MASTERAUFGABE-Badge
- * - Für "Begriffe zuordnen": MatchTermsForm
- * - Für andere Typen: generisches ActivityDetailView
- * - Darunter: Klon-Generator (KI-Hinweis + Button)
+ * - MASTERAUFGABE-Badge + border-primary Container
+ * - MatchTermsForm für "Begriffe zuordnen", sonst ActivityDetailView
+ * - Pessimistic Locking via useActivityLock
+ * - Klon-Generator darunter
  */
 
-import React, { useState } from 'react';
-import { useQueryClient, useMutation } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import { Crown, Sparkles, Loader2, AlertCircle } from 'lucide-react';
-import ActivityDetailView from '@/components/workspace/ActivityDetailView';
+import { Crown, Sparkles, Loader2, AlertCircle, Edit, Save, X, Lock } from 'lucide-react';
 import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
+import ActivityDetailView from '@/components/workspace/ActivityDetailView';
+import LockBanner from '@/components/workspace/LockBanner';
+import { useActivityLock, isActivityLockedByOther } from '@/hooks/useActivityLock';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-// Aktivitätsnamen, die das MatchTerms-Formular verwenden
 const MATCH_TERMS_NAMES = ['begriffe zuordnen', 'zuordnen', 'match terms'];
-
-function isMatchTermsActivity(catalogName = '') {
-  return MATCH_TERMS_NAMES.some(n => catalogName.toLowerCase().includes(n));
+function isMatchTermsActivity(name = '') {
+  return MATCH_TERMS_NAMES.some(n => name.toLowerCase().includes(n));
 }
 
-// ── Klon-Generator-Sektion ────────────────────────────────────────────────────
+// ── Klon-Generator ────────────────────────────────────────────────────────────
 
 function KlonGenerator({ activityRecord, onKlonesCreated }) {
   const queryClient = useQueryClient();
@@ -40,14 +39,14 @@ function KlonGenerator({ activityRecord, onKlonesCreated }) {
     setGenerating(true);
     setError(null);
     try {
-      const fieldValues = activityRecord.field_values || {};
+      const fv = activityRecord.field_values || {};
       const prompt = [
         'Erstelle 3 didaktisch gleichwertige Variationen (Klone) dieser Lernaufgabe.',
         'Die Klone sollen die gleiche Struktur haben, aber unterschiedliche Begriffe/Inhalte verwenden.',
-        fieldValues.instruction ? `Original-Anweisung: "${fieldValues.instruction}"` : '',
-        fieldValues.pairs ? `Original-Paare: ${JSON.stringify(fieldValues.pairs)}` : '',
-        hint ? `Zusätzliche Hinweise: ${hint}` : '',
-        'Antworte als JSON-Array mit Objekten: { "instruction": string, "pairs": [{left, right}][], "distractors": string[] }',
+        fv.instruction ? `Original-Anweisung: "${fv.instruction}"` : '',
+        fv.pairs       ? `Original-Paare: ${JSON.stringify(fv.pairs)}` : '',
+        hint           ? `Zusätzliche Hinweise: ${hint}` : '',
+        'Antworte als JSON mit einem "klone"-Array, jedes Element: { "instruction": string, "pairs": [{left, right}][], "distractors": string[] }',
       ].filter(Boolean).join('\n');
 
       const result = await base44.integrations.Core.InvokeLLM({
@@ -73,7 +72,6 @@ function KlonGenerator({ activityRecord, onKlonesCreated }) {
       const klone = result?.klone || [];
       if (klone.length === 0) throw new Error('Keine Klone generiert.');
 
-      // Klone als Aufgabenbausteine speichern
       for (let i = 0; i < klone.length; i++) {
         await base44.entities.Aufgabenbausteine.create({
           lernpaket_id: activityRecord.lernpaket_id,
@@ -104,7 +102,6 @@ function KlonGenerator({ activityRecord, onKlonesCreated }) {
         <h3 className="text-sm font-semibold">Klone erzeugen</h3>
         <Badge variant="outline" className="text-[10px]">KI</Badge>
       </div>
-
       <div className="space-y-1.5">
         <label className="text-xs font-medium text-muted-foreground">
           Zusätzliche Hinweise für die KI <span className="font-normal">(optional)</span>
@@ -117,93 +114,167 @@ function KlonGenerator({ activityRecord, onKlonesCreated }) {
           disabled={generating}
         />
         <p className="text-[11px] text-muted-foreground/70">
-          Best practices: Kontext angeben (z.B. „Biologie Kl. 7"), Schwierigkeitsgrad steuern,
-          Themenvorgabe machen.
+          Best practices: Kontext angeben (z.B. „Biologie Kl. 7"), Schwierigkeitsgrad steuern, Themenvorgabe machen.
         </p>
       </div>
-
       {error && (
         <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">
           <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
           {error}
         </div>
       )}
-
-      <Button
-        onClick={handleGenerate}
-        disabled={generating}
-        className="w-full gap-2"
-      >
+      <Button onClick={handleGenerate} disabled={generating} className="w-full gap-2">
         {generating
           ? <><Loader2 className="w-4 h-4 animate-spin" /> Klone werden generiert…</>
-          : <><Sparkles className="w-4 h-4" /> Klone erzeugen</>
-        }
+          : <><Sparkles className="w-4 h-4" /> Klone erzeugen</>}
       </Button>
+    </div>
+  );
+}
+
+// ── MatchTerms mit Edit-Mode + Lock ──────────────────────────────────────────
+
+function MatchTermsWithLock({ activityRecord, kannBearbeiten, userEmail }) {
+  const queryClient = useQueryClient();
+  const [editMode, setEditMode] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Pessimistic lock: aktiv wenn editMode=true
+  useActivityLock(activityRecord.id, userEmail, editMode);
+
+  const lockedByOther = isActivityLockedByOther(activityRecord, userEmail);
+  const fieldValues = activityRecord.field_values || {};
+
+  const handleSave = async (data) => {
+    setSaving(true);
+    await base44.entities.LernpaketPhaseAktivitaet.update(activityRecord.id, {
+      field_values: data,
+      is_complete: true,
+    });
+    queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+    setSaving(false);
+    setEditMode(false); // → Lock wird via useActivityLock freigegeben
+    toast.success('Masteraufgabe gespeichert.');
+  };
+
+  const handleCancel = () => setEditMode(false); // → Lock freigegeben
+
+  return (
+    <div className="space-y-3">
+      {lockedByOther && <LockBanner lockedByUser={activityRecord.locked_by_user} />}
+
+      {!editMode ? (
+        <div className="space-y-4">
+          {/* Read-only Vorschau */}
+          {fieldValues.instruction && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Arbeitsanweisung</label>
+              <div className="bg-muted/50 rounded-lg p-3 text-sm">{fieldValues.instruction}</div>
+            </div>
+          )}
+          {fieldValues.pairs && fieldValues.pairs.length > 0 && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Begriffspaare ({fieldValues.pairs.length})
+              </label>
+              <div className="bg-muted/30 rounded-lg p-3 space-y-1.5">
+                {fieldValues.pairs.map((p, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm">
+                    <span className="flex-1 font-medium">{p.left}</span>
+                    <span className="text-muted-foreground/40">→</span>
+                    <span className="flex-1 text-muted-foreground">{p.right}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {kannBearbeiten && !lockedByOther && (
+            <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-2 mt-2">
+              <Edit className="w-3.5 h-3.5" /> Bearbeiten
+            </Button>
+          )}
+          {lockedByOther && (
+            <Button size="sm" variant="outline" disabled className="gap-2 mt-2 opacity-50">
+              <Lock className="w-3.5 h-3.5" /> Bearbeiten (gesperrt)
+            </Button>
+          )}
+        </div>
+      ) : (
+        <MatchTermsForm
+          initialData={{
+            instruction: fieldValues.instruction || '',
+            pairs: fieldValues.pairs || [],
+            distractors: (fieldValues.distractors || []).map(v => ({ value: v })),
+          }}
+          onSave={handleSave}
+          onCancel={handleCancel}
+        />
+      )}
     </div>
   );
 }
 
 // ── Haupt-Komponente ──────────────────────────────────────────────────────────
 
-export default function MasterActivityPanel({ activityRecord, catalogEntry, kannBearbeiten, onKlonesCreated }) {
+export default function MasterActivityPanel({ activityRecord, catalogEntry, kannBearbeiten, userEmail, onKlonesCreated }) {
   const queryClient = useQueryClient();
-
   const isMatchTerms = isMatchTermsActivity(catalogEntry?.name || '');
-  const fieldValues = activityRecord?.field_values || {};
 
-  const handleMatchTermsSave = async (data) => {
-    await base44.entities.LernpaketPhaseAktivitaet.update(activityRecord.id, {
-      field_values: data,
-      is_complete: true,
+  // Realtime-Subscription: sofortiges Update wenn Lock sich ändert
+  useEffect(() => {
+    const unsub = base44.entities.LernpaketPhaseAktivitaet.subscribe((event) => {
+      if (event.id === activityRecord.id || event.data?.id === activityRecord.id) {
+        queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      }
     });
-    queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-    toast.success('Masteraufgabe gespeichert.');
-  };
+    return unsub;
+  }, [activityRecord.id]);
 
   return (
     <div className="space-y-0">
-      {/* ── MASTERAUFGABE-Container ────────────────────────────────────────── */}
+      {/* MASTERAUFGABE-Container */}
       <div className="rounded-xl border-2 border-primary bg-card overflow-hidden">
-        {/* Badge-Header */}
         <div className="flex items-center gap-2 px-4 py-2.5 bg-primary/5 border-b border-primary/20">
           <Crown className="w-4 h-4 text-primary" />
           <Badge variant="default" className="text-[11px] font-bold tracking-wide">
             MASTERAUFGABE (VORLAGE)
           </Badge>
-          <span className="text-xs text-muted-foreground ml-1">
-            {catalogEntry?.name}
-          </span>
-          <span className="ml-auto text-[10px] text-muted-foreground bg-primary/10 px-2 py-0.5 rounded">
-            Phase: {activityRecord.phase}
-          </span>
+          <span className="text-xs text-muted-foreground ml-1">{catalogEntry?.name}</span>
+          {activityRecord.lock_status && !isActivityLockedByOther(activityRecord, userEmail) && (
+            <span className="ml-auto flex items-center gap-1 text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded">
+              <Lock className="w-3 h-3" /> In Bearbeitung
+            </span>
+          )}
+          {!activityRecord.lock_status && (
+            <span className="ml-auto text-[10px] text-muted-foreground bg-primary/10 px-2 py-0.5 rounded">
+              Phase: {activityRecord.phase}
+            </span>
+          )}
         </div>
 
-        {/* Formular-Inhalt */}
         <div className="p-5">
           {isMatchTerms ? (
-            <MatchTermsForm
-              initialData={{
-                instruction: fieldValues.instruction || '',
-                pairs: fieldValues.pairs || [],
-                distractors: (fieldValues.distractors || []).map(v => ({ value: v })),
-              }}
-              onSave={handleMatchTermsSave}
+            <MatchTermsWithLock
+              activityRecord={activityRecord}
+              kannBearbeiten={kannBearbeiten}
+              userEmail={userEmail}
             />
           ) : (
             <ActivityDetailView
               activityRecord={activityRecord}
-              kannBearbeiten={kannBearbeiten}
+              kannBearbeiten={kannBearbeiten && !isActivityLockedByOther(activityRecord, userEmail)}
               queryClient={queryClient}
+              userEmail={userEmail}
+              lockBanner={isActivityLockedByOther(activityRecord, userEmail)
+                ? <LockBanner lockedByUser={activityRecord.locked_by_user} />
+                : null}
             />
           )}
         </div>
       </div>
 
-      {/* ── Klon-Generator ────────────────────────────────────────────────── */}
-      <KlonGenerator
-        activityRecord={activityRecord}
-        onKlonesCreated={onKlonesCreated}
-      />
+      {/* Klon-Generator */}
+      <KlonGenerator activityRecord={activityRecord} onKlonesCreated={onKlonesCreated} />
     </div>
   );
 }
