@@ -98,6 +98,7 @@ export default function AppLayout() {
                 <>
                   <div className="w-px h-6 bg-border mx-1" />
                   <NavIconLink to="/benutzerverwaltung" icon={ShieldCheck} label="Benutzerverwaltung" isActive={isActive('/benutzerverwaltung')} />
+                  <NavIconLink to="/seed" icon={DatabaseZap} label="Seed-Daten" isActive={isActive('/seed')} />
                   <NavIconLink to="/admin-settings" icon={DatabaseZap} label="Einstellungen" isActive={isActive('/admin-settings')} />
                 </>
               )}
