@@ -360,17 +360,8 @@ export default function StrukturBoardEmbedded({
   const handleNeuesThemenfeld = () => {
     setIsDirty(true);
     const newId = `tf-new-${Date.now()}`;
-    const defaultPaket = {
-      id: `new-${Date.now()}`,
-      titel_des_pakets: 'Neues Lernpaket',
-      geschaetzte_dauer_minuten: 45,
-      reihenfolge_nummer: 1,
-      einheit_id: einheitId,
-      phasen_konfiguration: DEFAULT_PHASEN,
-      isNew: true,
-    };
     setSpalten(prev => [...prev, { id: newId, titel: `Themenfeld ${prev.length + 1}`, themenfeldId: null }]);
-    setPaketeMap(prev => ({ ...prev, [newId]: [defaultPaket] }));
+    setPaketeMap(prev => ({ ...prev, [newId]: [] }));
   };
 
   const handleTitelChange = (spalteId, neuerTitel) => {

@@ -326,7 +326,6 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                     lernpakete={paketeFuerEinheit}
                     themenfelder={themenfelder}
                     queryClient={queryClient}
-                    onSaved={() => handleTabChange('aktivitaeten')}
                   />
                 )}
               </ErrorBoundary>
