@@ -13,43 +13,62 @@
  * - Export-Integration (setze sync_status='pending' für selektierte Items)
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Zap } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { enrichDataWithEffectiveStatus, getEffectiveContentStatus } from './StatusCalculations';
-import { LernpaketContainer } from './CockpitRows';
+import { enrichDataWithEffectiveStatus } from './StatusCalculations';
 import { useExportLock } from '@/hooks/useExportLock';
 import { ExportLockBanner } from './ExportLockBanner';
 import { ExportWaitingView } from './ExportWaitingView';
-import { ExportConfirmationButton } from '@/components/admin/ExportConfirmationButton';
+import { cn } from '@/lib/utils';
 
-export default function ExportCockpitView({ einheitId, userRole = 'user' }) {
+export default function ExportCockpitView({ initialEinheitId = null, userRole = 'user' }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedIds, setSelectedIds] = useState([]);
+  const [selectedEinheitId, setSelectedEinheitId] = useState(initialEinheitId);
 
   // ──────────────────────────────────────────────────────────────────────────────
   // Export-Lock Hook
   // ──────────────────────────────────────────────────────────────────────────────
 
-  const { isLocked, pendingCount, pendingElements } = useExportLock(einheitId);
+  const { isLocked, pendingCount, pendingElements } = useExportLock(selectedEinheitId);
 
   // ──────────────────────────────────────────────────────────────────────────────
   // Daten laden
   // ──────────────────────────────────────────────────────────────────────────────
 
+  const { data: einheiten = [] } = useQuery({
+    queryKey: ['einheiten'],
+    queryFn: () => base44.entities.Einheiten.list(),
+  });
+
   const { data: lernpakete = [] } = useQuery({
-    queryKey: ['lernpakete', einheitId],
-    queryFn: () => base44.entities.Lernpakete.filter({ einheit_id: einheitId }),
+    queryKey: ['lernpakete', selectedEinheitId],
+    queryFn: () => base44.entities.Lernpakete.filter({ einheit_id: selectedEinheitId }),
+    enabled: !!selectedEinheitId,
+  });
+
+  const { data: themenfelder = [] } = useQuery({
+    queryKey: ['themenfelder', selectedEinheitId],
+    queryFn: () => base44.entities.Themenfeld.filter({ einheit_id: selectedEinheitId }),
+    enabled: !!selectedEinheitId,
   });
 
   const { data: activities = [] } = useQuery({
     queryKey: ['lernpaketPhaseAktivitaeten'],
     queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list(),
+  });
+
+  const { data: aktivitaetenKatalog = [] } = useQuery({
+    queryKey: ['aktivitaetenKatalog'],
+    queryFn: () => base44.entities.AktivitaetenKatalog.list(),
   });
 
   const { data: klone = [] } = useQuery({
@@ -132,19 +151,69 @@ export default function ExportCockpitView({ einheitId, userRole = 'user' }) {
   });
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // UI-Logik
+  // Kaskadierende Checkbox-Logik
   // ──────────────────────────────────────────────────────────────────────────────
 
-  const canSelectForExport = enrichedActivities.some(
-    a => a.effective_content_status === 'approved'
-  );
-  const hasSelectedItems = selectedIds.length > 0;
+  const paketIds = lernpakete.filter(lp => lp.einheit_id === selectedEinheitId).map(lp => lp.id);
+  const paketActivities = enrichedActivities.filter(a => paketIds.includes(a.lernpaket_id));
+  
+  const toggleEinheitCheckbox = useCallback(() => {
+    const approved = paketActivities.filter(a => a.effective_content_status === 'approved');
+    const approvedIds = approved.map(a => a.id);
+    const allSelected = approvedIds.length > 0 && approvedIds.every(id => selectedIds.includes(id));
+    
+    if (allSelected) {
+      setSelectedIds(prev => prev.filter(id => !approvedIds.includes(id)));
+    } else {
+      setSelectedIds(prev => [...new Set([...prev, ...approvedIds])]);
+    }
+  }, [paketActivities, selectedIds]);
 
-  const handleToggleSelect = (id, type) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+  const toggleThemenfeldCheckbox = useCallback((themenfeldId) => {
+    const lpForTf = lernpakete.filter(lp => lp.themenfeld_id === themenfeldId && lp.einheit_id === selectedEinheitId);
+    const lpIds = lpForTf.map(lp => lp.id);
+    const actForTf = enrichedActivities.filter(a => lpIds.includes(a.lernpaket_id) && a.effective_content_status === 'approved');
+    const actIds = actForTf.map(a => a.id);
+    
+    const allSelected = actIds.length > 0 && actIds.every(id => selectedIds.includes(id));
+    if (allSelected) {
+      setSelectedIds(prev => prev.filter(id => !actIds.includes(id)));
+    } else {
+      setSelectedIds(prev => [...new Set([...prev, ...actIds])]);
+    }
+  }, [lernpakete, enrichedActivities, selectedEinheitId, selectedIds]);
+
+  const toggleLernpaketCheckbox = useCallback((paketId) => {
+    const actForPaket = enrichedActivities.filter(a => a.lernpaket_id === paketId && a.effective_content_status === 'approved');
+    const actIds = actForPaket.map(a => a.id);
+    
+    const allSelected = actIds.length > 0 && actIds.every(id => selectedIds.includes(id));
+    if (allSelected) {
+      setSelectedIds(prev => prev.filter(id => !actIds.includes(id)));
+    } else {
+      setSelectedIds(prev => [...new Set([...prev, ...actIds])]);
+    }
+  }, [enrichedActivities, selectedIds]);
+
+  const toggleActivityCheckbox = (actId) => {
+    setSelectedIds(prev =>
+      prev.includes(actId) ? prev.filter(x => x !== actId) : [...prev, actId]
     );
   };
+
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Status Berechnungen
+  // ──────────────────────────────────────────────────────────────────────────────
+
+  const getStatusEmoji = (status) => {
+    if (status === 'approved') return '🟢';
+    if (status === 'draft') return '🔴';
+    return '⚪';
+  };
+
+  const canSelectForExport = paketActivities.some(a => a.effective_content_status === 'approved');
+  const hasSelectedItems = selectedIds.length > 0;
+  const currentEinheit = einheiten.find(e => e.id === selectedEinheitId);
 
   // ──────────────────────────────────────────────────────────────────────────────
   // Render: Lock-View wenn Export lädt
@@ -152,155 +221,196 @@ export default function ExportCockpitView({ einheitId, userRole = 'user' }) {
 
   if (isLocked) {
     return (
-      <div className="space-y-6 p-6">
+      <div className="space-y-3 p-3">
         <ExportLockBanner pendingCount={pendingCount} />
         <ExportWaitingView pendingElements={pendingElements} />
-        {userRole === 'admin' && (
-          <div className="flex justify-center mt-8">
-            <ExportConfirmationButton 
-              einheitId={einheitId} 
-              userRole={userRole}
-            />
-          </div>
-        )}
       </div>
     );
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // Render: Normal Export Cockpit
+  // Render: Cockpit mit hochverdichteter Struktur
   // ──────────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2 p-3 min-h-screen flex flex-col">
       {/* Header */}
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold">Freigabe-Cockpit</h2>
-        <p className="text-sm text-muted-foreground">
-          Überblick über alle Lernpakete und deren pädagogischen Status. 
-          Nur freigegeben (🟢) Aufgaben können exportiert werden.
+      <div className="space-y-1 mb-1">
+        <h2 className="text-xl font-bold">Freigabe-Cockpit</h2>
+        <p className="text-xs text-muted-foreground">
+          Wähle Einheit aus und markiere exportierbare Aufgaben (🟢).
         </p>
       </div>
 
-      {/* Legend */}
-      <div className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-muted/20 border border-border">
-        <div className="space-y-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Pädagogischer Status
-          </p>
-          <div className="space-y-1 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="font-bold">🔴</span>
-              <span>unfertig – Inhalt fehlt</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold">🟢</span>
-              <span>freigegeben – Export möglich</span>
-            </div>
-          </div>
+      {/* Einheit-Select */}
+      <div className="flex gap-2 mb-2">
+        <Select value={selectedEinheitId || ''} onValueChange={setSelectedEinheitId}>
+          <SelectTrigger className="h-8 text-xs flex-1">
+            <SelectValue placeholder="Einheit auswählen..." />
+          </SelectTrigger>
+          <SelectContent className="text-xs">
+            {einheiten.map(e => (
+              <SelectItem key={e.id} value={e.id} className="text-xs">
+                {e.titel_der_einheit} ({e.fach})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {!selectedEinheitId ? (
+        <div className="text-center py-8 text-muted-foreground text-xs">
+          Bitte wähle eine Einheit aus, um zu beginnen.
         </div>
-
-        <div className="space-y-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Moodle-Sync-Status
-          </p>
-          <div className="space-y-1 text-xs">
-            <div className="flex items-center gap-2">
-              <span>🆕 neu</span>
-              <span>✅ synced</span>
-              <span>⚠️ verändert</span>
+      ) : (
+        <>
+          {/* Einheit als Root-Ebene */}
+          {currentEinheit && (
+            <div className="border border-border rounded-md p-2 bg-card mb-2">
+              <div className="flex items-center gap-1">
+                <Checkbox
+                  checked={
+                    paketActivities.filter(a => a.effective_content_status === 'approved').length > 0 &&
+                    paketActivities
+                      .filter(a => a.effective_content_status === 'approved')
+                      .every(a => selectedIds.includes(a.id))
+                  }
+                  onChange={toggleEinheitCheckbox}
+                  className="h-4 w-4"
+                />
+                <span className="text-xs font-semibold flex-1">{currentEinheit.titel_der_einheit}</span>
+                <span className="text-[10px] text-muted-foreground">{getStatusEmoji(currentEinheit.content_status)}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span>🔒 gesperrt</span>
-              <span>🗑️ wird entfernt</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Status-Vererbung Erklärung */}
-      <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-800">
-        <p className="font-semibold mb-1">⚙️ Worst-Case-Prinzip:</p>
-        <p>
-          Wenn EIN Kind-Element (Klon/Master) 🔴 unferttig ist, 
-          zeigt der gesamte Pfad nach oben 🔴 unferttig. 
-          Ein Lernpaket ist nur 🟢 freigegeben, wenn ALLE enthaltenen Aufgaben 🟢 sind.
-        </p>
-      </div>
-
-      {/* Lernpakete Listen */}
-      <div className="space-y-3">
-        {lernpakete.length === 0 ? (
-          <p className="text-sm text-muted-foreground italic text-center py-8">
-            Keine Lernpakete vorhanden
-          </p>
-        ) : (
-          lernpakete
-            .filter(lp => lp.sync_status !== 'to_delete')
-            .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0))
-            .map((paket) => (
-              <LernpaketContainer
-                key={paket.id}
-                paket={paket}
-                activities={enrichedActivities}
-                selectedIds={selectedIds}
-                onToggleSelect={handleToggleSelect}
-                navigate={navigate}
-              />
-            ))
-        )}
-      </div>
-
-      {/* Export-Section (Sticky Footer) */}
-      {canSelectForExport && (
-        <div className="sticky bottom-0 bg-background border-t border-border p-4 rounded-t-lg space-y-3 shadow-lg">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">
-              {hasSelectedItems
-                ? `✓ ${selectedIds.length} Element${selectedIds.length !== 1 ? 'e' : ''} ausgewählt`
-                : '→ Wähle fertige (🟢) Aufgaben aus'}
-            </p>
-            <span className="text-xs text-muted-foreground">
-              {enrichedActivities.filter(a => a.effective_content_status === 'approved').length} 
-              {' '}exportierbar
-            </span>
-          </div>
-
-          <Button
-            onClick={() => exportMutation.mutate()}
-            disabled={!hasSelectedItems || exportMutation.isPending}
-            className="w-full gap-2 bg-primary hover:bg-primary/90 text-base py-6"
-            size="lg"
-          >
-            {exportMutation.isPending ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Exportiere…
-              </>
-            ) : (
-              <>
-                <Zap className="w-5 h-5" />
-                🚀 Änderungen jetzt nach Moodle übertragen
-              </>
-            )}
-          </Button>
-
-          {!canSelectForExport && (
-            <p className="text-xs text-amber-600 text-center bg-amber-50 p-2 rounded">
-              ⚠️ Alle Aufgaben müssen 🟢 freigegeben sein, um zu exportieren.
-            </p>
           )}
-        </div>
-      )}
 
-      {/* Fallback: Keine exportierbaren Items */}
-      {!canSelectForExport && lernpakete.length > 0 && (
-        <div className="text-center py-12 text-muted-foreground">
-          <p className="text-sm">
-            ⚠️ Keine exportierbaren Lernpakete vorhanden. 
-            Bitte stelle sicher, dass alle Aufgaben den Status 🟢 freigegeben haben.
-          </p>
-        </div>
+          {/* Themenfelder & Lernpakete (hochverdichtet) */}
+          <div className="flex-1 overflow-y-auto border border-border rounded-md p-1 bg-card/50 space-y-0">
+            {themenfelder
+              .filter(tf => tf.einheit_id === selectedEinheitId)
+              .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
+              .map(tf => {
+                const tfPakete = lernpakete.filter(lp => lp.themenfeld_id === tf.id);
+                const tfActivities = enrichedActivities.filter(a =>
+                  tfPakete.some(lp => lp.id === a.lernpaket_id) && a.effective_content_status === 'approved'
+                );
+                const tfSelectedCount = tfActivities.filter(a => selectedIds.includes(a.id)).length;
+                const allTfSelected = tfActivities.length > 0 && tfSelectedCount === tfActivities.length;
+
+                return (
+                  <div key={tf.id} className="border-b border-border/50 last:border-b-0">
+                    {/* Themenfeld Header */}
+                    <div className="flex items-center gap-1 px-1 py-0.5 hover:bg-muted/30">
+                      <Checkbox
+                        checked={allTfSelected}
+                        onChange={() => toggleThemenfeldCheckbox(tf.id)}
+                        disabled={tfActivities.length === 0}
+                        className="h-3 w-3"
+                      />
+                      <span className="text-[11px] font-semibold flex-1 truncate">{tf.titel}</span>
+                      {tfActivities.length > 0 && (
+                        <span className="text-[10px] text-muted-foreground">
+                          {tfSelectedCount}/{tfActivities.length}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Lernpakete in Themenfeld */}
+                    {tfPakete.map(paket => {
+                      const paketActivities = enrichedActivities.filter(
+                        a => a.lernpaket_id === paket.id && a.effective_content_status === 'approved'
+                      );
+                      const paketSelectedCount = paketActivities.filter(a => selectedIds.includes(a.id)).length;
+                      const allPaketSelected = paketActivities.length > 0 && paketSelectedCount === paketActivities.length;
+
+                      return (
+                        <div key={paket.id} className="border-l-2 border-border/30 ml-3">
+                          {/* Lernpaket Header */}
+                          <div className="flex items-center gap-1 px-1 py-0.5 hover:bg-muted/20">
+                            <Checkbox
+                              checked={allPaketSelected}
+                              onChange={() => toggleLernpaketCheckbox(paket.id)}
+                              disabled={paketActivities.length === 0}
+                              className="h-3 w-3"
+                            />
+                            <span className="text-[10px] font-medium flex-1 truncate">
+                              {paket.titel_des_pakets}
+                            </span>
+                            {paketActivities.length > 0 && (
+                              <span className="text-[9px] text-muted-foreground">
+                                {paketSelectedCount}/{paketActivities.length}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Aktivitäten in Lernpaket */}
+                          {paketActivities.map(act => {
+                            const actName = aktivitaetenKatalog.find(k => k.id === act.aktivitaet_id)?.name || 'Aktivität';
+                            const isSelected = selectedIds.includes(act.id);
+
+                            return (
+                              <div
+                                key={act.id}
+                                className={cn(
+                                  'flex items-center gap-1 px-1 py-0.5 ml-3 border-l border-border/20 hover:bg-muted/10',
+                                  isSelected && 'bg-primary/5'
+                                )}
+                              >
+                                <Checkbox
+                                  checked={isSelected}
+                                  onChange={() => toggleActivityCheckbox(act.id)}
+                                  className="h-3 w-3"
+                                />
+                                <span className="text-[9px] flex-1 truncate text-muted-foreground">
+                                  {actName}
+                                </span>
+                                <span className="text-[8px] text-muted-foreground/60">
+                                  {getStatusEmoji(act.effective_content_status)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+          </div>
+
+          {/* Sticky Footer: Export */}
+          {canSelectForExport && (
+            <div className="sticky bottom-0 bg-background border-t border-border p-2 rounded-t-lg space-y-1 shadow-lg mt-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium">
+                  {hasSelectedItems ? `✓ ${selectedIds.length} markiert` : '→ Auswahl treffen'}
+                </span>
+                <span className="text-muted-foreground">
+                  {paketActivities.filter(a => a.effective_content_status === 'approved').length} exportierbar
+                </span>
+              </div>
+
+              <Button
+                onClick={() => exportMutation.mutate()}
+                disabled={!hasSelectedItems || exportMutation.isPending}
+                className="w-full h-8 gap-1 text-xs"
+                size="sm"
+              >
+                {exportMutation.isPending ? (
+                  <>
+                    <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" />
+                    Lädt…
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3.5 h-3.5" />
+                    Zur Übergabe an das Export-Zentrum freigeben
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
