@@ -8,16 +8,19 @@
     },
     "titel": {
       "type": "string",
-      "description": "Titel des Basislernpakets (z.B. 'Bruchrechnung')"
+      "description": "Titel des Lernpakets"
     },
     "beschreibung": {
       "type": "string",
-      "description": "Optionale Beschreibung"
+      "description": "Beschreibung des Lernpakets"
     },
     "reihenfolge": {
       "type": "number",
-      "description": "Sortierreihenfolge"
+      "description": "Sortierreihenfolge innerhalb des Moduls"
     }
   },
-  "required": ["basismodul_id", "titel"]
+  "required": [
+    "basismodul_id",
+    "titel"
+  ]
 }

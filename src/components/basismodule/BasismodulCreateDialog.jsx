@@ -51,6 +51,7 @@ export default function BasismodulCreateDialog({ open, onOpenChange }) {
     mutationFn: (data) => base44.entities.Basismodule.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['basismodule'] });
+      queryClient.invalidateQueries({ queryKey: ['basislernpakete'] });
       toast.success('Basismodul erstellt');
       handleReset();
       onOpenChange(false);
