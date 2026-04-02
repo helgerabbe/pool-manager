@@ -35,11 +35,15 @@ export default function EinheitCard({ einheit, lernpaketCount, rolle }) {
     try {
       const res = await base44.functions.invoke('deleteEinheit', { einheitId: einheit.id });
       if (res.data?.success) {
+        // Warte kurz bevor wir das Modal schließen, damit der Success-State sichtbar ist
+        await new Promise(resolve => setTimeout(resolve, 800));
         toast.success('Einheit erfolgreich gelöscht.');
         queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+        setShowConfirm(false);
       } else {
         const errorMsg = res.data?.error || 'Fehler beim Löschen der Einheit.';
         toast.error(errorMsg);
+        setIsDeleting(false);
       }
     } catch (err) {
       let errorMessage = 'Fehler beim Löschen der Einheit.';
@@ -52,9 +56,7 @@ export default function EinheitCard({ einheit, lernpaketCount, rolle }) {
       
       toast.error(errorMessage);
       console.error('Delete error:', err);
-    } finally {
       setIsDeleting(false);
-      setShowConfirm(false);
     }
   };
 
