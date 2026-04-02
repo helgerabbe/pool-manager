@@ -231,11 +231,13 @@ export default function AllgemeineAufgabenView({
     queryFn: () => base44.entities.Lernziele.list(),
   });
 
-  const getMappedLernziele = () => {
+  // Memoized: Gefilterte Lernziele basierend auf aktueller Mapping-Query
+  const effectiveMappedLernziele = useMemo(() => {
+    if (!selectedAufgabeId || mappedLernziele.length === 0) return [];
     return mappedLernziele
       .map((m) => alleLernziele.find((lz) => lz.id === m.lernziel_id))
       .filter(Boolean);
-  };
+  }, [selectedAufgabeId, mappedLernziele, alleLernziele]);
 
   // Delete-Mutation
   const deleteAufgabe = useMutation({
@@ -351,7 +353,7 @@ export default function AllgemeineAufgabenView({
               <TabsContent value="ki-prompt" className="flex-1 overflow-y-auto m-0">
                 <AITutorPromptPanel
                   aufgabe={selectedAufgabe}
-                  mappedLernziele={getMappedLernziele()}
+                  mappedLernziele={effectiveMappedLernziele}
                   lernpakete={lernpakete}
                   einheit={einheit}
                 />
