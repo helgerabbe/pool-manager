@@ -9,7 +9,9 @@ import { DatabaseZap, CheckCircle2, AlertCircle, Loader2, ChevronRight, ShieldCh
 export default function SeedAdmin() {
   const { permissions, isLoading: rbacLoading } = useRBAC();
   const [running, setRunning] = useState(false);
+  const [runningAktiv, setRunningAktiv] = useState(false);
   const [result, setResult] = useState(null);
+  const [resultAktiv, setResultAktiv] = useState(null);
 
   const handleSeed = async () => {
     setRunning(true);
@@ -17,6 +19,14 @@ export default function SeedAdmin() {
     const response = await base44.functions.invoke('seedTestdata', {});
     setResult(response.data);
     setRunning(false);
+  };
+
+  const handleSeedAktivitaeten = async () => {
+    setRunningAktiv(true);
+    setResultAktiv(null);
+    const response = await base44.functions.invoke('seedAktivitaetenKatalog', {});
+    setResultAktiv(response.data);
+    setRunningAktiv(false);
   };
 
   if (rbacLoading) {
@@ -75,27 +85,42 @@ export default function SeedAdmin() {
         </CardContent>
       </Card>
 
-      <Button
-        onClick={handleSeed}
-        disabled={running}
-        size="lg"
-        className="w-full gap-2"
-      >
-        {running ? (
-          <><Loader2 className="w-4 h-4 animate-spin" />Daten werden eingespielt…</>
-        ) : (
-          <><DatabaseZap className="w-4 h-4" />Seed jetzt ausführen</>
-        )}
-      </Button>
+      <div className="space-y-3">
+        <Button
+          onClick={handleSeed}
+          disabled={running}
+          size="lg"
+          className="w-full gap-2"
+        >
+          {running ? (
+            <><Loader2 className="w-4 h-4 animate-spin" />Testdaten werden eingespielt…</>
+          ) : (
+            <><DatabaseZap className="w-4 h-4" />Testdaten einspielen</>
+          )}
+        </Button>
+        <Button
+          onClick={handleSeedAktivitaeten}
+          disabled={runningAktiv}
+          size="lg"
+          variant="outline"
+          className="w-full gap-2"
+        >
+          {runningAktiv ? (
+            <><Loader2 className="w-4 h-4 animate-spin" />Aktivitäten-Katalog wird aktualisiert…</>
+          ) : (
+            <><DatabaseZap className="w-4 h-4" />Aktivitäten-Katalog aktualisieren</>
+          )}
+        </Button>
+      </div>
 
-      {/* Ergebnis-Log */}
+      {/* Ergebnis-Log Testdaten */}
       {result && (
         <Card className={`border-0 shadow-sm ${result.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
           <CardHeader className="pb-2">
             <CardTitle className={`text-base flex items-center gap-2 ${result.success ? 'text-green-700' : 'text-red-700'}`}>
               {result.success
-                ? <><CheckCircle2 className="w-4 h-4" />Erfolgreich abgeschlossen</>
-                : <><AlertCircle className="w-4 h-4" />Fehler aufgetreten</>
+                ? <><CheckCircle2 className="w-4 h-4" />Testdaten erfolgreich eingespielt</>
+                : <><AlertCircle className="w-4 h-4" />Fehler beim Einspielen der Testdaten</>
               }
             </CardTitle>
           </CardHeader>
@@ -123,6 +148,33 @@ export default function SeedAdmin() {
                   );
                 })}
               </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Ergebnis-Log Aktivitäten-Katalog */}
+      {resultAktiv && (
+        <Card className={`border-0 shadow-sm ${resultAktiv.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+          <CardHeader className="pb-2">
+            <CardTitle className={`text-base flex items-center gap-2 ${resultAktiv.success ? 'text-green-700' : 'text-red-700'}`}>
+              {resultAktiv.success
+                ? <><CheckCircle2 className="w-4 h-4" />Aktivitäten-Katalog erfolgreich aktualisiert</>
+                : <><AlertCircle className="w-4 h-4" />Fehler beim Aktualisieren des Katalogs</>
+              }
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm">
+            {resultAktiv.error && (
+              <p className="text-red-700 mb-3">{resultAktiv.error}</p>
+            )}
+            {resultAktiv.message && (
+              <p className="text-green-800">{resultAktiv.message}</p>
+            )}
+            {resultAktiv.count && (
+              <p className="text-green-800 mt-2">
+                <strong>{resultAktiv.count}</strong> Aktivitäten eingespielt.
+              </p>
             )}
           </CardContent>
         </Card>
