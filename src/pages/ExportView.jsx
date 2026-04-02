@@ -6,11 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Download, Copy, Loader2, CheckCircle2, AlertCircle, FileJson, Eye } from 'lucide-react';
+import { Download, Copy, Loader2, CheckCircle2, AlertCircle, FileJson, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useRBAC } from '@/hooks/useRBAC';
 import MoodleBauplanView from '@/components/export/MoodleBauplanView';
+import ExportStagingArea from '@/components/export/ExportStagingArea';
 
 export default function ExportView() {
   const { permissions } = useRBAC();
@@ -42,6 +43,11 @@ export default function ExportView() {
         ? base44.entities.Lernziele.list()
         : Promise.resolve([]),
     enabled: !!selectedEinheitId,
+  });
+
+  const { data: aktivitaetenKatalog = [] } = useQuery({
+    queryKey: ['aktivitaetenKatalog'],
+    queryFn: () => base44.entities.AktivitaetenKatalog.list(),
   });
 
   const { data: aufgabenbausteine = [] } = useQuery({
@@ -142,10 +148,10 @@ export default function ExportView() {
         </p>
       </div>
 
-      {/* Einheit-Auswahl */}
+      {/* Einheit-Auswahl (immer sichtbar) */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">1. Einheit auswählen</CardTitle>
+          <CardTitle className="text-base">Einheit auswählen</CardTitle>
         </CardHeader>
         <CardContent>
           <select
@@ -166,8 +172,31 @@ export default function ExportView() {
         </CardContent>
       </Card>
 
-      {/* Statistik & Export-Optionen */}
-      {selectedEinheit && (
+      {/* Tabs: Staging Area | JSON-Export */}
+      <Tabs defaultValue="staging">
+        <TabsList>
+          <TabsTrigger value="staging" className="gap-2">
+            <Layers className="w-4 h-4" /> Staging Area
+          </TabsTrigger>
+          <TabsTrigger value="export" className="gap-2">
+            <FileJson className="w-4 h-4" /> JSON-Export
+          </TabsTrigger>
+        </TabsList>
+
+        {/* ── Tab 1: Staging Area ─────────────────────────────────────────── */}
+        <TabsContent value="staging" className="mt-4">
+          <ExportStagingArea
+            einheitId={selectedEinheitId}
+            lernpakete={lernpakete}
+            aktivitaetenKatalog={aktivitaetenKatalog}
+          />
+        </TabsContent>
+
+        {/* ── Tab 2: bisheriger JSON-Export-Workflow ──────────────────────── */}
+        <TabsContent value="export" className="mt-4 space-y-6">
+
+        {/* Statistik & Export-Optionen */}
+        {selectedEinheit && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">2. Export-Typ und Statistik</CardTitle>
@@ -228,10 +257,10 @@ export default function ExportView() {
         </Card>
       )}
 
-      {/* Export-Ergebnis */}
-      {exportResult && (
-        <Card>
-          <CardHeader>
+        {/* Export-Ergebnis */}
+        {exportResult && (
+          <Card>
+            <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-base">3. Export-Ergebnis</CardTitle>
@@ -329,8 +358,10 @@ export default function ExportView() {
               </Button>
             </div>
           </CardContent>
-        </Card>
-      )}
+          </Card>
+        )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

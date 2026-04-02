@@ -51,6 +51,23 @@
       "type": "string",
       "format": "date-time",
       "description": "Zeitstempel des Locks (f\u00fcr 2-Min-Timeout)"
+    },
+    "sync_status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "exported",
+        "modified",
+        "pending_export",
+        "to_delete"
+      ],
+      "default": "new",
+      "description": "Sync-Status f\u00fcr Moodle-Export-Tracking"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel des letzten erfolgreichen Moodle-Exports"
     }
   },
   "required": [
