@@ -58,7 +58,9 @@ const BAUSTEIN_TYPEN = [
 
 const ANFORDERUNGSEBENEN = ['1 - Basis', '2 - Transfer', '3 - Projekt'];
 
-const TASK_SYNC_STATI = ['draft', 'approved', 'pending_export', 'exported', 'modified', 'error', 'to_delete'];
+// 2-Signal-System: content_status (Pädagogische Qualität) vs sync_status (Moodle-Export)
+const CONTENT_STATI = ['draft', 'approved'];
+const SYNC_STATI = ['new', 'pending', 'synced', 'modified', 'to_delete'];
 
 // ─────────────────────────────────────────────────────────────────────────
 // EINHEIT SCHEMA
@@ -136,9 +138,14 @@ export const AufgabeSchema = z.object({
     .enum(['1-Stern', '2-Sterne', '3-Sterne'])
     .optional(),
   
-  sync_status: z
-    .enum(TASK_SYNC_STATI)
+  content_status: z
+    .enum(CONTENT_STATI)
     .default('draft')
+    .optional(),
+  
+  sync_status: z
+    .enum(SYNC_STATI)
+    .default('new')
     .optional(),
 });
 
@@ -191,7 +198,8 @@ export const SchemaHelpers = {
   getFreigabeStati: () => Array.from(FREIGABE_STATI),
   getBausteinTypen: () => Array.from(BAUSTEIN_TYPEN),
   getAnforderungsebenen: () => Array.from(ANFORDERUNGSEBENEN),
-  getTaskSyncStati: () => Array.from(TASK_SYNC_STATI),
+  getContentStati: () => Array.from(CONTENT_STATI),
+  getSyncStati: () => Array.from(SYNC_STATI),
 };
 
 // ─────────────────────────────────────────────────────────────────────────

@@ -20,6 +20,7 @@ import { Save, Check, X, Edit, ArrowRight, Plus, Trash2, Lock } from 'lucide-rea
 import LockBanner from '@/components/workspace/LockBanner';
 import ApprovalActionButton from '@/components/workspace/ApprovalActionButton';
 import ApprovalStatusBadge from '@/components/workspace/ApprovalStatusBadge';
+import ContentStatusToggle from '@/components/workspace/ContentStatusToggle';
 import { useKlonLock, isLockExpired } from '@/hooks/useActivityLock';
 import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus';
 import { TASK_STATUS_CONFIG } from '@/lib/stateMachine';
@@ -132,7 +133,12 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail }) {
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-2.5 bg-muted/40 border-b border-border">
-        {statusBadge}
+        <ContentStatusToggle 
+          entityId={klon.id}
+          entityType="klon"
+          contentStatus={klon.content_status || 'draft'}
+          canToggle={kannBearbeiten && !lockedByOther}
+        />
         {syncBadge}
         <span className="text-xs text-muted-foreground flex-1">Klon-Aufgabe</span>
         {syncStatus.isLockedForEdit && (

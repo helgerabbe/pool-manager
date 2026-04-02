@@ -37,19 +37,26 @@
       "format": "date-time",
       "description": "Zeitstempel des Locks (2-Min-Timeout)"
     },
-    "sync_status": {
+    "content_status": {
       "type": "string",
       "enum": [
         "draft",
-        "approved",
-        "pending_export",
-        "exported",
-        "modified",
-        "error",
-        "to_delete"
+        "approved"
       ],
       "default": "draft",
-      "description": "Synchronisierungs- und Freigabestatus der Master-Aufgabe"
+      "description": "P\u00e4dagogischer Status: draft (in Bearbeitung) oder approved (fertig f\u00fcr Export)"
+    },
+    "sync_status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "pending",
+        "synced",
+        "modified",
+        "to_delete"
+      ],
+      "default": "new",
+      "description": "Moodle-Sync-Status: new, pending, synced, modified, to_delete"
     },
     "last_synced_at": {
       "type": "string",
