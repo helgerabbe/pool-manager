@@ -3,15 +3,22 @@
  *
  * Tab 4: Aufgaben erstellen – strikte Master-Detail-Logik
  *
- * Sidebar:  Lernpakete = aufklappbare Ordner → Aktivitäten = wählbare Blätter
- * Hauptbereich: leer bis eine Aktivität gewählt wird, dann ActivityDetailView
+ * Sidebar:  Lernpakete = aufklappbare Ordner
+ *           → Aktivitäten = wählbare Blätter (Master)
+ *             → Klone = eingerückt unter der Aktivität
+ * Hauptbereich:
+ *   - leer       → EmptyState
+ *   - Aktivität  → MasterActivityPanel
+ *   - Klon       → KlonDetailView
  */
 
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { ChevronRight, Package, MousePointerClick, AlertTriangle } from 'lucide-react';
-import ActivityDetailView from '@/components/workspace/ActivityDetailView';
+import { Badge } from '@/components/ui/badge';
+import MasterActivityPanel from '@/components/workspace/MasterActivityPanel';
+import KlonDetailView from '@/components/workspace/KlonDetailView';
 import { cn } from '@/lib/utils';
 
 const PHASES = [
@@ -20,31 +27,103 @@ const PHASES = [
   { key: 'Abschluss', label: 'Abschluss', icon: '🎯' },
 ];
 
-// ── Sidebar: Lernpaket-Ordner mit aufklappbaren Aktivitäten ───────────────────
+// ── Klon-Unterzeile ───────────────────────────────────────────────────────────
+
+function KlonSubItem({ klon, isSelected, onSelect }) {
+  const label = klon.status === 'approved'
+    ? <Badge variant="outline" className="text-[10px] text-green-700 border-green-300 bg-green-50">✓ Freigegeben</Badge>
+    : <Badge variant="secondary" className="text-[10px]">Entwurf {klon.klon_index || '?'}</Badge>;
+
+  return (
+    <button
+      onClick={() => onSelect({ type: 'klon', klon })}
+      className={cn(
+        'w-full flex items-center gap-2 px-2 py-1 rounded-md text-left text-[11px] transition-colors',
+        isSelected
+          ? 'bg-primary/10 text-primary font-medium'
+          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+      )}
+    >
+      <span className="flex-1 truncate">
+        {klon.status === 'approved' ? '✓' : '○'} Klon {klon.klon_index || '?'}
+      </span>
+      {label}
+    </button>
+  );
+}
+
+// ── Sidebar: Aktivitäts-Zeile (mit eingerückten Klonen) ───────────────────────
+
+function ActivitySidebarItem({ activity, aktivitaetName, klone, selectedItem, onSelect, isIncomplete }) {
+  const isActivitySelected = selectedItem?.type === 'activity' && selectedItem?.activity?.id === activity.id;
+  const hasSelectedKlon = klone.some(k => selectedItem?.type === 'klon' && selectedItem?.klon?.id === k.id);
+
+  return (
+    <div>
+      <button
+        onClick={() => onSelect({ type: 'activity', activity })}
+        className={cn(
+          'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
+          isActivitySelected
+            ? 'bg-primary text-primary-foreground font-medium'
+            : isIncomplete
+              ? 'text-amber-700 bg-amber-50/60 hover:bg-amber-100'
+              : 'text-foreground hover:bg-muted'
+        )}
+      >
+        <span className="flex-1 truncate">{aktivitaetName}</span>
+        {isIncomplete && !isActivitySelected && (
+          <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" title="Inhalt unvollständig" />
+        )}
+        {klone.length > 0 && (
+          <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded shrink-0">
+            {klone.length}
+          </span>
+        )}
+      </button>
+
+      {/* Klone eingerückt */}
+      {(isActivitySelected || hasSelectedKlon) && klone.length > 0 && (
+        <div className="ml-4 mt-0.5 border-l border-border pl-2 space-y-0.5">
+          {klone.map(klon => (
+            <KlonSubItem
+              key={klon.id}
+              klon={klon}
+              isSelected={selectedItem?.type === 'klon' && selectedItem?.klon?.id === klon.id}
+              onSelect={onSelect}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Sidebar: Lernpaket-Ordner ─────────────────────────────────────────────────
 
 function SidebarLernpaketFolder({
   lernpaket,
   allActivities,
   aktivitaetenMap,
-  selectedActivityId,
-  onSelectActivity,
+  klonenByActivityId,
+  selectedItem,
+  onSelect,
   defaultOpen = false,
 }) {
   const [open, setOpen] = useState(defaultOpen);
-
   const paketActivities = allActivities.filter(a => a.lernpaket_id === lernpaket.id);
   const phasenConfig = lernpaket.phasen_konfiguration || {};
 
-  const hasSelected = paketActivities.some(a => a.id === selectedActivityId);
+  const hasSelectedChild =
+    (selectedItem?.type === 'activity' && paketActivities.some(a => a.id === selectedItem.activity?.id)) ||
+    (selectedItem?.type === 'klon' && paketActivities.some(a => (klonenByActivityId[a.id] || []).some(k => k.id === selectedItem.klon?.id)));
 
-  // Auto-expand wenn eine Aktivität darin selektiert ist
   useEffect(() => {
-    if (hasSelected) setOpen(true);
-  }, [hasSelected]);
+    if (hasSelectedChild) setOpen(true);
+  }, [hasSelectedChild]);
 
   return (
     <div>
-      {/* Ordner-Header – klappt nur auf/zu, selektiert nichts */}
       <button
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-left text-sm font-medium text-foreground hover:bg-muted transition-colors"
@@ -55,22 +134,17 @@ function SidebarLernpaketFolder({
         <span className="text-[10px] text-muted-foreground shrink-0">{paketActivities.length}</span>
       </button>
 
-      {/* Aktivitäten-Liste gruppiert nach Phase */}
       {open && (
         <div className="ml-5 mt-0.5 border-l border-border pl-2 space-y-2 pb-1">
           {paketActivities.length === 0 ? (
-            <p className="px-2 py-2 text-[11px] text-muted-foreground/50 italic">
-              Keine Aktivitäten zugeordnet
-            </p>
+            <p className="px-2 py-2 text-[11px] text-muted-foreground/50 italic">Keine Aktivitäten zugeordnet</p>
           ) : (
             PHASES.map(phase => {
               const phaseConfig = phasenConfig[phase.key] || {};
               if (phaseConfig.disabled) return null;
-
               const phaseActs = paketActivities
                 .filter(a => a.phase === phase.key)
                 .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
-
               if (phaseActs.length === 0) return null;
 
               return (
@@ -78,31 +152,19 @@ function SidebarLernpaketFolder({
                   <p className="px-2 py-0.5 text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wide">
                     {phase.icon} {phase.label}
                   </p>
-                  {phaseActs.map(activity => {
-                    const isSelected = activity.id === selectedActivityId;
-                    const isIncomplete = !activity.is_complete;
-                    return (
-                      <button
+                  <div className="space-y-0.5">
+                    {phaseActs.map(activity => (
+                      <ActivitySidebarItem
                         key={activity.id}
-                        onClick={() => onSelectActivity(activity)}
-                        className={cn(
-                          'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
-                          isSelected
-                            ? 'bg-primary text-primary-foreground font-medium'
-                            : isIncomplete
-                              ? 'text-amber-700 bg-amber-50/60 hover:bg-amber-100'
-                              : 'text-foreground hover:bg-muted'
-                        )}
-                      >
-                        <span className="flex-1 truncate">
-                          {aktivitaetenMap[activity.aktivitaet_id] || '…'}
-                        </span>
-                        {isIncomplete && !isSelected && (
-                          <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" title="Inhalt unvollständig" />
-                        )}
-                      </button>
-                    );
-                  })}
+                        activity={activity}
+                        aktivitaetName={aktivitaetenMap[activity.aktivitaet_id] || '…'}
+                        klone={klonenByActivityId[activity.id] || []}
+                        selectedItem={selectedItem}
+                        onSelect={onSelect}
+                        isIncomplete={!activity.is_complete}
+                      />
+                    ))}
+                  </div>
                 </div>
               );
             })
@@ -117,12 +179,12 @@ function SidebarLernpaketFolder({
 
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center h-full py-24 text-center gap-3 text-muted-foreground">
+    <div className="flex flex-col items-center justify-center h-full py-24 text-center gap-3">
       <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
         <MousePointerClick className="w-7 h-7 text-muted-foreground/40" />
       </div>
       <div>
-        <p className="font-semibold">Aktivität auswählen</p>
+        <p className="font-semibold text-muted-foreground">Aktivität auswählen</p>
         <p className="text-sm text-muted-foreground/70 mt-1 max-w-xs">
           Bitte wähle links eine Aktivität aus, um deren Aufgaben zu bearbeiten.
         </p>
@@ -135,8 +197,8 @@ function EmptyState() {
 
 export default function TaskCreationView({ einheitId, kannBearbeiten }) {
   const queryClient = useQueryClient();
-  // selectedActivity = vollständiges LernpaketPhaseAktivitaet-Objekt oder null
-  const [selectedActivity, setSelectedActivity] = useState(null);
+  // selectedItem = null | { type: 'activity', activity } | { type: 'klon', klon }
+  const [selectedItem, setSelectedItem] = useState(null);
 
   const { data: lernpakete = [] } = useQuery({
     queryKey: ['lernpakete'],
@@ -161,19 +223,40 @@ export default function TaskCreationView({ einheitId, kannBearbeiten }) {
     queryFn: () => base44.entities.AktivitaetenKatalog.list(),
   });
 
+  const { data: alleKlone = [] } = useQuery({
+    queryKey: ['aufgabenbausteine', 'klone', einheitId],
+    queryFn: () => base44.entities.Aufgabenbausteine.filter({ is_master: false }),
+    enabled: !!einheitId,
+  });
+
   const aktivitaetenMap = Object.fromEntries(aktivitaetenKatalog.map(a => [a.id, a.name]));
+
+  // Klone gruppiert nach master_activity_id
+  const klonenByActivityId = alleKlone.reduce((acc, k) => {
+    const key = k.master_activity_id;
+    if (!key) return acc;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(k);
+    return acc;
+  }, {});
+  // Sortierung nach klon_index
+  Object.values(klonenByActivityId).forEach(arr => arr.sort((a, b) => (a.klon_index || 0) - (b.klon_index || 0)));
 
   const paketeFuerEinheit = lernpakete
     .filter(lp => lp.einheit_id === einheitId)
     .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0));
 
-  // Wenn die selektierte Aktivität in den neuen Daten enthalten ist, aktualisieren
+  // Selektiertes Objekt bei Daten-Updates synchronisieren
   useEffect(() => {
-    if (selectedActivity) {
-      const updated = allActivities.find(a => a.id === selectedActivity.id);
-      if (updated) setSelectedActivity(updated);
+    if (selectedItem?.type === 'activity') {
+      const updated = allActivities.find(a => a.id === selectedItem.activity.id);
+      if (updated) setSelectedItem({ type: 'activity', activity: updated });
     }
-  }, [allActivities]);
+    if (selectedItem?.type === 'klon') {
+      const updated = alleKlone.find(k => k.id === selectedItem.klon.id);
+      if (updated) setSelectedItem({ type: 'klon', klon: updated });
+    }
+  }, [allActivities, alleKlone]);
 
   // Gruppiert nach Themenfeld
   const groupedPakete = themenfelder.length > 0
@@ -192,6 +275,11 @@ export default function TaskCreationView({ einheitId, kannBearbeiten }) {
         },
       ].filter(g => g.pakete.length > 0)
     : [{ label: null, pakete: paketeFuerEinheit }];
+
+  // Catalog-Entry für selektierte Aktivität
+  const selectedCatalog = selectedItem?.type === 'activity'
+    ? aktivitaetenKatalog.find(c => c.id === selectedItem.activity.aktivitaet_id)
+    : null;
 
   return (
     <div className="flex flex-row flex-1 overflow-hidden">
@@ -221,8 +309,9 @@ export default function TaskCreationView({ einheitId, kannBearbeiten }) {
                     lernpaket={lernpaket}
                     allActivities={allActivities}
                     aktivitaetenMap={aktivitaetenMap}
-                    selectedActivityId={selectedActivity?.id}
-                    onSelectActivity={setSelectedActivity}
+                    klonenByActivityId={klonenByActivityId}
+                    selectedItem={selectedItem}
+                    onSelect={setSelectedItem}
                     defaultOpen={idx === 0}
                   />
                 ))}
@@ -239,17 +328,30 @@ export default function TaskCreationView({ einheitId, kannBearbeiten }) {
 
       {/* ── Hauptbereich ────────────────────────────────────────────────────── */}
       <main className="flex-1 overflow-y-auto min-h-0">
-        {selectedActivity ? (
+        {!selectedItem && <EmptyState />}
+
+        {selectedItem?.type === 'activity' && (
           <div className="max-w-3xl mx-auto px-6 py-6">
-            <ActivityDetailView
-              key={selectedActivity.id}
-              activityRecord={selectedActivity}
+            <MasterActivityPanel
+              key={selectedItem.activity.id}
+              activityRecord={selectedItem.activity}
+              catalogEntry={selectedCatalog}
               kannBearbeiten={kannBearbeiten}
-              queryClient={queryClient}
+              onKlonesCreated={() => {
+                queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine', 'klone', einheitId] });
+              }}
             />
           </div>
-        ) : (
-          <EmptyState />
+        )}
+
+        {selectedItem?.type === 'klon' && (
+          <div className="max-w-3xl mx-auto px-6 py-6">
+            <KlonDetailView
+              key={selectedItem.klon.id}
+              klon={selectedItem.klon}
+              kannBearbeiten={kannBearbeiten}
+            />
+          </div>
         )}
       </main>
 
