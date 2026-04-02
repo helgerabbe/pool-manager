@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { BookOpen, LayoutGrid, Zap, Wand2, Upload } from 'lucide-react';
 
 const TABS = [
-  { value: 'einheit',      label: 'Einheit anlegen',        icon: BookOpen,    step: 1 },
+  { value: 'einheit',      label: 'Einheit verwalten',      icon: BookOpen,    step: 1 },
   { value: 'struktur',     label: 'Struktur anlegen',       icon: LayoutGrid,  step: 2 },
   { value: 'aktivitaeten', label: 'Aktivitäten zuordnen',   icon: Zap,         step: 3 },
   { value: 'aufgaben',     label: 'Aufgaben erstellen',     icon: Wand2,       step: 4 },
