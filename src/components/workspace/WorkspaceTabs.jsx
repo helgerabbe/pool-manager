@@ -8,12 +8,13 @@
  */
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { LayoutGrid, Zap, Wand2 } from 'lucide-react';
+import { BookOpen, LayoutGrid, Zap, Wand2 } from 'lucide-react';
 
 const TABS = [
-  { value: 'struktur',    label: 'Struktur anlegen',       icon: LayoutGrid, step: 1 },
-  { value: 'aktivitaeten', label: 'Aktivitäten zuordnen',  icon: Zap,         step: 2 },
-  { value: 'aufgaben',    label: 'Aufgaben erstellen',      icon: Wand2,       step: 3 },
+  { value: 'einheit',      label: 'Einheit anlegen',        icon: BookOpen,    step: 1 },
+  { value: 'struktur',     label: 'Struktur anlegen',       icon: LayoutGrid,  step: 2 },
+  { value: 'aktivitaeten', label: 'Aktivitäten zuordnen',   icon: Zap,         step: 3 },
+  { value: 'aufgaben',     label: 'Aufgaben erstellen',     icon: Wand2,       step: 4 },
 ];
 
 export default function WorkspaceTabs({ activeTab, onTabChange }) {

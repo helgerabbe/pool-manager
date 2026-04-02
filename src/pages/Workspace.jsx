@@ -16,9 +16,9 @@ import { BookOpen, Lock, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import StrukturBoardEmbedded from '@/components/workspace/StrukturBoardEmbedded';
-import EinheitSettingsModal from '@/components/einheiten/EinheitSettingsModal';
 import WorkspaceTabs from '@/components/workspace/WorkspaceTabs';
 import TaskCreationView from '@/components/workspace/TaskCreationView';
+import EinheitUebersichtTab from '@/components/workspace/EinheitUebersichtTab';
 
 /**
  * Workspace — Drei-Säulen-Architektur
@@ -41,12 +41,12 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const [selectedEinheitId, setSelectedEinheitId] = useState(initialEinheitId);
   const [selectedThemenfeldId, setSelectedThemenfeldId] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
-  const [activeTab, setActiveTab] = useState('struktur');
+  const [activeTab, setActiveTab] = useState('einheit');
   const [highlightedAtomIds, setHighlightedAtomIds] = useState(new Set());
   // Für Tab 3: die Aktivität, die aus Tab 2 ("Zur Aufgaben-Werkstatt") übergeben wird
   const [taskWorkshopActivityId, setTaskWorkshopActivityId] = useState(null);
 
-  const [settingsOpen, setSettingsOpen] = useState(false);
+
 
   // View-Toggle: 'struktur' | 'detail'
   // Beim ersten Laden nach Wizard (fromWizard param) → Struktur, sonst letzter Modus aus localStorage
@@ -312,7 +312,19 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             />
           </div>
 
-          {/* ── Tab 1: Struktur anlegen → StrukturBoard ──────────────────────── */}
+          {/* ── Tab 1: Einheit anlegen ───────────────────────────────────────── */}
+          <TabsContent value="einheit" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-y-auto m-0 p-0">
+            <ErrorBoundary label="Einheit">
+              {einheit && (
+                <EinheitUebersichtTab
+                  einheit={einheit}
+                  currentUserEmail={authUser?.email}
+                />
+              )}
+            </ErrorBoundary>
+          </TabsContent>
+
+          {/* ── Tab 2: Struktur anlegen → StrukturBoard ──────────────────────── */}
           <TabsContent value="struktur" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
             <ErrorBoundary label="Struktur">
               <StrukturBoardEmbedded
@@ -402,14 +414,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
         </Tabs>
       }
-      {einheit &&
-      <EinheitSettingsModal
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-        einheit={einheit}
-        currentUserEmail={authUser?.email} />
 
-      }
       </div>
       </ErrorBoundary>
       );
