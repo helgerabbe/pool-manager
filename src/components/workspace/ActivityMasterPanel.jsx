@@ -9,10 +9,10 @@
  */
 
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Plus, Loader2 } from 'lucide-react';
+import { Crown, Plus, Loader2, ChevronRight } from 'lucide-react';
 import ActivityDetailView from '@/components/workspace/ActivityDetailView';
 import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
 import { toast } from 'sonner';
@@ -27,6 +27,8 @@ export default function ActivityMasterPanel({
 }) {
   const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
+  // null = Aktivitätsansicht, 'new' = soeben erstellt → direkt zur Karte springen
+  const [focusedMasterId, setFocusedMasterId] = useState(null);
 
   // Alle MasterAufgaben für diese Aktivität
   const { data: masterAufgaben = [] } = useQuery({
@@ -51,19 +53,20 @@ export default function ActivityMasterPanel({
 
   const handleAddMaster = async () => {
     setCreating(true);
-    await base44.entities.MasterAufgabe.create({
+    const neu = await base44.entities.MasterAufgabe.create({
       activity_id: activityRecord.id,
       lernpaket_id: activityRecord.lernpaket_id,
       reihenfolge: masterAufgaben.length + 1,
     });
-    queryClient.invalidateQueries({ queryKey: ['masterAufgaben', activityRecord.id] });
+    await queryClient.invalidateQueries({ queryKey: ['masterAufgaben', activityRecord.id] });
     setCreating(false);
+    setFocusedMasterId(neu.id);   // direkt zur neuen Karte scrollen/fokussieren
     toast.success('Neue Masteraufgabe erstellt.');
   };
 
   return (
     <div className="space-y-6">
-      {/* ── Basisangaben ────────────────────────────────────────────────────── */}
+      {/* ── Basisangaben der Aktivität ───────────────────────────────────────── */}
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border bg-muted/30">
           <span className="text-sm font-semibold">{catalogEntry?.name}</span>
@@ -80,22 +83,29 @@ export default function ActivityMasterPanel({
         </div>
       </div>
 
-      {/* ── Masteraufgaben-Vorlagen ──────────────────────────────────────────── */}
+      {/* ── Masteraufgaben-Bereich (nur wenn supports_master) ───────────────── */}
       {supportsMaster && (
         <div className="space-y-4">
+
+          {/* Sektion-Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-semibold">Masteraufgaben-Vorlagen</h3>
+              <h3 className="text-sm font-semibold flex items-center gap-1.5">
+                <Crown className="w-4 h-4 text-primary" />
+                Masteraufgaben-Vorlagen
+              </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Erstelle Vorlagen und generiere KI-Klone daraus.
+                Jede Vorlage dient als Basis für KI-generierte Klone.
               </p>
             </div>
-            <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
-              {masterAufgaben.length} Vorlagen
-            </span>
+            {masterAufgaben.length > 0 && (
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full shrink-0">
+                {masterAufgaben.length} Vorlage{masterAufgaben.length !== 1 ? 'n' : ''}
+              </span>
+            )}
           </div>
 
-          {/* Karten-Liste */}
+          {/* Vorhandene Master-Karten */}
           {masterAufgaben.map((master, idx) => (
             <MasterAufgabeCard
               key={master.id}
@@ -105,13 +115,41 @@ export default function ActivityMasterPanel({
               klone={kloneByMasterId[master.id] || []}
               kannBearbeiten={kannBearbeiten}
               userEmail={userEmail}
-              onDeleted={() => queryClient.invalidateQueries({ queryKey: ['masterAufgaben', activityRecord.id] })}
+              autoExpand={master.id === focusedMasterId}
+              onDeleted={() => {
+                setFocusedMasterId(null);
+                queryClient.invalidateQueries({ queryKey: ['masterAufgaben', activityRecord.id] });
+              }}
               onKlonesCreated={() => queryClient.invalidateQueries({ queryKey: ['klone', activityRecord.id] })}
             />
           ))}
 
-          {/* Neue Masteraufgabe hinzufügen */}
-          {kannBearbeiten && (
+          {/* Leerzustand: prominenter CTA */}
+          {masterAufgaben.length === 0 && kannBearbeiten && (
+            <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/3 px-6 py-8 text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+                <Crown className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm">Noch keine Masteraufgaben</p>
+                <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
+                  Erstelle eine Vorlage und lass die KI daraus automatisch mehrere Aufgabenvarianten generieren.
+                </p>
+              </div>
+              <Button
+                onClick={handleAddMaster}
+                disabled={creating}
+                className="gap-2"
+              >
+                {creating
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Erstelle…</>
+                  : <><Plus className="w-4 h-4" /> Erste Masteraufgabe erstellen</>}
+              </Button>
+            </div>
+          )}
+
+          {/* Weitere Masteraufgabe hinzufügen (wenn schon welche vorhanden) */}
+          {masterAufgaben.length > 0 && kannBearbeiten && (
             <Button
               variant="outline"
               onClick={handleAddMaster}
@@ -120,7 +158,7 @@ export default function ActivityMasterPanel({
             >
               {creating
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Erstelle…</>
-                : <><Plus className="w-4 h-4" /> Neue Masteraufgabe hinzufügen</>}
+                : <><Plus className="w-4 h-4" /> Weitere Masteraufgabe hinzufügen</>}
             </Button>
           )}
 

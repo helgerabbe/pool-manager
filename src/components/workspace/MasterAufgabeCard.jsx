@@ -135,25 +135,40 @@ export default function MasterAufgabeCard({
   userEmail,
   onDeleted,
   onKlonesCreated,
+  autoExpand = false,
 }) {
   const queryClient = useQueryClient();
-  const [editMode, setEditMode] = useState(false);
+  // Neue Karte direkt im Bearbeitungsmodus öffnen
+  const [editMode, setEditMode] = useState(autoExpand);
   const [collapsed, setCollapsed] = useState(false);
   const [fieldValues, setFieldValues] = useState(master.field_values || {});
   const [titel, setTitel] = useState(master.titel || '');
   const [editingTitel, setEditingTitel] = useState(false);
+  const [hasPendingChanges, setHasPendingChanges] = useState(false);
 
   const locked = isLockedByOther(master, userEmail);
   const isMatch = isMatchTerms(catalogName);
 
   const saveMutation = useMutation({
-    mutationFn: (fv) => base44.entities.MasterAufgabe.update(master.id, { field_values: fv, titel }),
-    onSuccess: () => {
+    mutationFn: ({ fv, closeEdit }) =>
+      base44.entities.MasterAufgabe.update(master.id, { field_values: fv, titel }),
+    onSuccess: (_, { closeEdit }) => {
       queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
-      setEditMode(false);
+      setHasPendingChanges(false);
+      if (closeEdit) setEditMode(false);
       toast.success('Masteraufgabe gespeichert.');
     },
   });
+
+  // Zwischenspeichern ohne Edit-Modus zu verlassen
+  const handleSaveIntermediate = () => {
+    saveMutation.mutate({ fv: fieldValues, closeEdit: false });
+  };
+
+  // Speichern und Bearbeitung beenden
+  const handleSaveAndClose = (fv) => {
+    saveMutation.mutate({ fv: fv ?? fieldValues, closeEdit: true });
+  };
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
@@ -247,15 +262,29 @@ export default function MasterAufgabeCard({
           {/* Formular */}
           {isMatch ? (
             editMode ? (
-              <MatchTermsForm
-                initialData={{
-                  instruction: fieldValues.instruction || '',
-                  pairs: fieldValues.pairs || [],
-                  distractors: (fieldValues.distractors || []).map(v => ({ value: v })),
-                }}
-                onSave={(data) => saveMutation.mutate(data)}
-                onCancel={() => setEditMode(false)}
-              />
+              <>
+                <MatchTermsForm
+                  initialData={{
+                    instruction: fieldValues.instruction || '',
+                    pairs: fieldValues.pairs || [],
+                    distractors: (fieldValues.distractors || []).map(v => ({ value: v })),
+                  }}
+                  onSave={(data) => handleSaveAndClose(data)}
+                  onCancel={() => { setEditMode(false); setHasPendingChanges(false); }}
+                  onChange={() => setHasPendingChanges(true)}
+                />
+                {/* Zwischenspeichern-Banner */}
+                {hasPendingChanges && (
+                  <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
+                    <span>Ungespeicherte Änderungen</span>
+                    <Button size="sm" variant="outline" onClick={handleSaveIntermediate} disabled={saveMutation.isPending}
+                      className="gap-1.5 border-amber-300 hover:bg-amber-100 text-amber-800 h-7 text-xs">
+                      {saveMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                      Jetzt zwischenspeichern
+                    </Button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="space-y-3">
                 {fieldValues.instruction && (
@@ -297,21 +326,31 @@ export default function MasterAufgabeCard({
                 <div className="space-y-2">
                   <Textarea
                     value={fieldValues.task_description || ''}
-                    onChange={e => setFieldValues(fv => ({ ...fv, task_description: e.target.value }))}
+                    onChange={e => {
+                      setFieldValues(fv => ({ ...fv, task_description: e.target.value }));
+                      setHasPendingChanges(true);
+                    }}
                     placeholder="Aufgabenstellung..."
                     className="min-h-20 text-sm"
                   />
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="ghost" onClick={() => setEditMode(false)}>Abbrechen</Button>
-                    <Button size="sm" onClick={() => saveMutation.mutate(fieldValues)} disabled={saveMutation.isPending} className="gap-1.5">
-                      {saveMutation.isPending && <Loader2 className="w-3 h-3 animate-spin" />} Speichern
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => { setEditMode(false); setHasPendingChanges(false); }}>Abbrechen</Button>
+                    {hasPendingChanges && (
+                      <Button size="sm" variant="outline" onClick={handleSaveIntermediate} disabled={saveMutation.isPending}
+                        className="gap-1.5 border-amber-300 hover:bg-amber-100 text-amber-800">
+                        {saveMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                        Zwischenspeichern
+                      </Button>
+                    )}
+                    <Button size="sm" onClick={() => handleSaveAndClose()} disabled={saveMutation.isPending} className="gap-1.5 ml-auto">
+                      {saveMutation.isPending && <Loader2 className="w-3 h-3 animate-spin" />} Speichern & schließen
                     </Button>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-2">
                   <div className="bg-muted/50 rounded-lg p-3 text-sm">
-                    {fieldValues.task_description || <span className="italic text-muted-foreground">Nicht ausgefüllt</span>}
+                    {fieldValues.task_description || <span className="italic text-muted-foreground">Noch kein Inhalt. Klicke „Inhalt bearbeiten".</span>}
                   </div>
                   {kannBearbeiten && !locked && (
                     <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
