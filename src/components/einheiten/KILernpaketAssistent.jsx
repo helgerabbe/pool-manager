@@ -307,9 +307,9 @@ Antworte NUR mit dem JSON-Objekt. Kein Text, keine Markdown-Blöcke.
         const neuesPaket = await base44.entities.Lernpakete.create({
           einheit_id: einheitId,
           themenfeld_id: neuesTF.id, // Direkt das gerade erstellte Themenfeld
-          titel_des_pakets: paket.titel,
+          titel_des_pakets: paket.titel_des_pakets,
           reihenfolge_nummer: (tf.lernpakete || []).indexOf(paket) + 1,
-          geschaetzte_dauer_minuten: paket.dauer || 45,
+          geschaetzte_dauer_minuten: paket.geschaetzte_dauer_minuten || 45,
         });
         erstelltePakete++;
 
