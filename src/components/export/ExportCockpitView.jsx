@@ -3,13 +3,14 @@
  * 
  * Ebene 5 – Freigabe-Cockpit für Moodle-Export
  * 
- * Features:
- * - 2-Signal-System: content_status (pädagogisch) + sync_status (technisch)
- * - Hierarchische Status-Vererbung (Worst-Case-Prinzip)
+ * Implementiert das 2-Signal-System mit:
+ * - Pädagogischer Status (content_status: draft | approved)
+ * - Technischer Moodle-Status (sync_status: new | pending | synced | modified | to_delete)
+ * - Rekursive Status-Vererbung (Worst-Case-Prinzip)
  * - Smart Expand/Collapse (grüne Container eingeklappt, rote ausgeklappt)
- * - Checkboxen nur für 'approved' Elemente
- * - Deep Links zu Ebene 4 (Task-Editor)
- * - "Jetzt exportieren"-Button mit sync_status='pending' Update
+ * - Selektive Checkboxen (nur für 'approved' Items)
+ * - Deep Links zu Task-Editor (Ebene 4)
+ * - Export-Integration (setze sync_status='pending' für selektierte Items)
  */
 
 import React, { useState, useMemo } from 'react';
@@ -27,7 +28,10 @@ export default function ExportCockpitView({ einheitId }) {
   const queryClient = useQueryClient();
   const [selectedIds, setSelectedIds] = useState([]);
 
+  // ──────────────────────────────────────────────────────────────────────────────
   // Daten laden
+  // ──────────────────────────────────────────────────────────────────────────────
+
   const { data: lernpakete = [] } = useQuery({
     queryKey: ['lernpakete', einheitId],
     queryFn: () => base44.entities.Lernpakete.filter({ einheit_id: einheitId }),
@@ -48,23 +52,33 @@ export default function ExportCockpitView({ einheitId }) {
     queryFn: () => base44.entities.MasterAufgabe.list(),
   });
 
-  // Filtre zu_delete aus
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Daten filtern & anreichern
+  // ──────────────────────────────────────────────────────────────────────────────
+
+  // Tombstones ausfiltern
   const visibleActivities = activities.filter(a => a.sync_status !== 'to_delete');
   const visibleKlone = klone.filter(k => k.sync_status !== 'to_delete');
   const visibleMasters = masters.filter(m => m.sync_status !== 'to_delete');
 
-  // Reichere Daten an
+  // Status-Vererbung anwenden (Worst-Case-Prinzip)
   const enrichedActivities = useMemo(
     () => enrichDataWithEffectiveStatus(visibleActivities, visibleKlone, visibleMasters),
     [visibleActivities, visibleKlone, visibleMasters]
   );
 
+  // ──────────────────────────────────────────────────────────────────────────────
   // Export-Mutation
+  // ──────────────────────────────────────────────────────────────────────────────
+
   const exportMutation = useMutation({
     mutationFn: async () => {
-      // Setze alle selektierten IDs auf sync_status='pending'
+      if (selectedIds.length === 0) {
+        throw new Error('Keine Elemente ausgewählt');
+      }
+
+      // Bestimme Typ für jede selektierte ID
       const updates = selectedIds.map((id) => {
-        // Finde den Typ raus (activity, master, klon)
         if (visibleActivities.find(a => a.id === id)) {
           return { id, type: 'activity' };
         } else if (visibleMasters.find(m => m.id === id)) {
@@ -74,31 +88,57 @@ export default function ExportCockpitView({ einheitId }) {
         }
       });
 
-      // Batch-Update
+      // Batch-Update: Setze sync_status='pending' für alle selektierten Items
       for (const { id, type } of updates) {
         if (type === 'activity') {
-          await base44.entities.LernpaketPhaseAktivitaet.update(id, { sync_status: 'pending' });
+          await base44.entities.LernpaketPhaseAktivitaet.update(id, {
+            sync_status: 'pending',
+          });
         } else if (type === 'master') {
-          await base44.entities.MasterAufgabe.update(id, { sync_status: 'pending' });
+          await base44.entities.MasterAufgabe.update(id, {
+            sync_status: 'pending',
+          });
         } else if (type === 'klon') {
-          await base44.entities.Aufgabenbausteine.update(id, { sync_status: 'pending' });
+          await base44.entities.Aufgabenbausteine.update(id, {
+            sync_status: 'pending',
+          });
         }
       }
 
       return updates.length;
     },
     onSuccess: (count) => {
+      // Query invalidieren → UI aktualisiert automatisch
       queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
       queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
       queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine'] });
+      
       setSelectedIds([]);
-      toast.success(`🚀 ${count} Element(e) zum Export markiert (pending).`);
+      toast.success(`🚀 ${count} Element${count !== 1 ? 'e' : ''} zum Export markiert.`);
     },
-    onError: (err) => toast.error('Fehler beim Export: ' + err.message),
+    onError: (err) => {
+      toast.error('Fehler beim Export: ' + err.message);
+    },
   });
 
-  const canSelectForExport = enrichedActivities.some(a => a.effective_content_status === 'approved');
+  // ──────────────────────────────────────────────────────────────────────────────
+  // UI-Logik
+  // ──────────────────────────────────────────────────────────────────────────────
+
+  const canSelectForExport = enrichedActivities.some(
+    a => a.effective_content_status === 'approved'
+  );
   const hasSelectedItems = selectedIds.length > 0;
+
+  const handleToggleSelect = (id, type) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Render
+  // ──────────────────────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-6">
@@ -106,78 +146,100 @@ export default function ExportCockpitView({ einheitId }) {
       <div className="space-y-2">
         <h2 className="text-2xl font-bold">Freigabe-Cockpit</h2>
         <p className="text-sm text-muted-foreground">
-          Überblick über alle Lernpakete und deren pädagogischen Status. Nur fertige Aufgaben können exportiert werden.
+          Überblick über alle Lernpakete und deren pädagogischen Status. 
+          Nur freigegeben (🟢) Aufgaben können exportiert werden.
         </p>
       </div>
 
       {/* Legend */}
-      <div className="grid grid-cols-2 gap-3 p-4 rounded-lg bg-muted/20 border border-border">
+      <div className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-muted/20 border border-border">
         <div className="space-y-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase">Pädagogischer Status</p>
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs">
-              <span>🔴</span>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Pädagogischer Status
+          </p>
+          <div className="space-y-1 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="font-bold">🔴</span>
               <span>unfertig – Inhalt fehlt</span>
             </div>
-            <div className="flex items-center gap-2 text-xs">
-              <span>🟢</span>
+            <div className="flex items-center gap-2">
+              <span className="font-bold">🟢</span>
               <span>freigegeben – Export möglich</span>
             </div>
           </div>
         </div>
+
         <div className="space-y-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase">Moodle-Status</p>
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs">
-              <span>🆕</span>
-              <span>neu / ✅ synced / ⚠️ verändert</span>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Moodle-Sync-Status
+          </p>
+          <div className="space-y-1 text-xs">
+            <div className="flex items-center gap-2">
+              <span>🆕 neu</span>
+              <span>✅ synced</span>
+              <span>⚠️ verändert</span>
             </div>
-            <div className="flex items-center gap-2 text-xs">
-              <span>🔒</span>
-              <span>gesperrt (Export lädt) / 🗑️ wird entfernt</span>
+            <div className="flex items-center gap-2">
+              <span>🔒 gesperrt</span>
+              <span>🗑️ wird entfernt</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Lernpakete */}
+      {/* Status-Vererbung Erklärung */}
+      <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-800">
+        <p className="font-semibold mb-1">⚙️ Worst-Case-Prinzip:</p>
+        <p>
+          Wenn EIN Kind-Element (Klon/Master) 🔴 unferttig ist, 
+          zeigt der gesamte Pfad nach oben 🔴 unferttig. 
+          Ein Lernpaket ist nur 🟢 freigegeben, wenn ALLE enthaltenen Aufgaben 🟢 sind.
+        </p>
+      </div>
+
+      {/* Lernpakete Listen */}
       <div className="space-y-3">
         {lernpakete.length === 0 ? (
-          <p className="text-sm text-muted-foreground italic">Keine Lernpakete vorhanden</p>
+          <p className="text-sm text-muted-foreground italic text-center py-8">
+            Keine Lernpakete vorhanden
+          </p>
         ) : (
           lernpakete
             .filter(lp => lp.sync_status !== 'to_delete')
+            .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0))
             .map((paket) => (
               <LernpaketContainer
                 key={paket.id}
                 paket={paket}
                 activities={enrichedActivities}
                 selectedIds={selectedIds}
-                onToggleSelect={(id, type) => {
-                  setSelectedIds((prev) =>
-                    prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-                  );
-                }}
+                onToggleSelect={handleToggleSelect}
                 navigate={navigate}
               />
             ))
         )}
       </div>
 
-      {/* Export-Section */}
+      {/* Export-Section (Sticky Footer) */}
       {canSelectForExport && (
-        <div className="sticky bottom-0 bg-background border-t border-border p-4 rounded-t-lg space-y-3">
+        <div className="sticky bottom-0 bg-background border-t border-border p-4 rounded-t-lg space-y-3 shadow-lg">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium">
               {hasSelectedItems
-                ? `${selectedIds.length} Element${selectedIds.length !== 1 ? 'e' : ''} zum Export ausgewählt`
-                : 'Wähle fertige Aufgaben aus zum Exportieren'}
+                ? `✓ ${selectedIds.length} Element${selectedIds.length !== 1 ? 'e' : ''} ausgewählt`
+                : '→ Wähle fertige (🟢) Aufgaben aus'}
             </p>
+            <span className="text-xs text-muted-foreground">
+              {enrichedActivities.filter(a => a.effective_content_status === 'approved').length} 
+              {' '}exportierbar
+            </span>
           </div>
+
           <Button
             onClick={() => exportMutation.mutate()}
             disabled={!hasSelectedItems || exportMutation.isPending}
-            className="w-full gap-2 bg-primary hover:bg-primary/90"
+            className="w-full gap-2 bg-primary hover:bg-primary/90 text-base py-6"
+            size="lg"
           >
             {exportMutation.isPending ? (
               <>
@@ -186,16 +248,27 @@ export default function ExportCockpitView({ einheitId }) {
               </>
             ) : (
               <>
-                <Zap className="w-4 h-4" />
+                <Zap className="w-5 h-5" />
                 🚀 Änderungen jetzt nach Moodle übertragen
               </>
             )}
           </Button>
+
           {!canSelectForExport && (
-            <p className="text-xs text-amber-600 text-center">
-              Alle Aufgaben müssen auf 'freigegeben' (🟢) stehen, um zu exportieren.
+            <p className="text-xs text-amber-600 text-center bg-amber-50 p-2 rounded">
+              ⚠️ Alle Aufgaben müssen 🟢 freigegeben sein, um zu exportieren.
             </p>
           )}
+        </div>
+      )}
+
+      {/* Fallback: Keine exportierbaren Items */}
+      {!canSelectForExport && lernpakete.length > 0 && (
+        <div className="text-center py-12 text-muted-foreground">
+          <p className="text-sm">
+            ⚠️ Keine exportierbaren Lernpakete vorhanden. 
+            Bitte stelle sicher, dass alle Aufgaben den Status 🟢 freigegeben haben.
+          </p>
         </div>
       )}
     </div>
