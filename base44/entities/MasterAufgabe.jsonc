@@ -1,0 +1,45 @@
+{
+  "name": "MasterAufgabe",
+  "type": "object",
+  "properties": {
+    "activity_id": {
+      "type": "string",
+      "description": "FK zu LernpaketPhaseAktivitaet \u2013 die Aktivit\u00e4t, zu der dieser Master geh\u00f6rt"
+    },
+    "lernpaket_id": {
+      "type": "string",
+      "description": "Denormalisiert: FK zu Lernpakete (f\u00fcr einfachere Queries)"
+    },
+    "titel": {
+      "type": "string",
+      "description": "Optionaler Titel (z.B. 'Schwierigkeitsstufe A', 'Variante Biologie')"
+    },
+    "field_values": {
+      "type": "object",
+      "description": "Konfigurierte Feldwerte (Begriffspaare, Anweisung, Distraktoren etc.)",
+      "additionalProperties": true
+    },
+    "reihenfolge": {
+      "type": "number",
+      "description": "Sortierreihenfolge der Master-Aufgaben innerhalb einer Aktivit\u00e4t"
+    },
+    "lock_status": {
+      "type": "boolean",
+      "default": false,
+      "description": "True = wird gerade bearbeitet"
+    },
+    "locked_by_user": {
+      "type": "string",
+      "description": "E-Mail des Nutzers, der den Master gerade bearbeitet"
+    },
+    "locked_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel des Locks (2-Min-Timeout)"
+    }
+  },
+  "required": [
+    "activity_id",
+    "lernpaket_id"
+  ]
+}

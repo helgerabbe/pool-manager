@@ -79,6 +79,28 @@
       "type": "string",
       "description": "Pflichtbegr\u00fcndung wenn is_opt_out = true"
     },
+    "is_master": {
+      "type": "boolean",
+      "default": false,
+      "description": "Legacy-Flag (veraltet, wird nicht mehr verwendet)"
+    },
+    "master_aufgabe_id": {
+      "type": "string",
+      "description": "FK zu MasterAufgabe \u2013 der Master, zu dem dieser Klon geh\u00f6rt (1:n)"
+    },
+    "klon_index": {
+      "type": "number",
+      "description": "Laufende Nummer des Klons innerhalb einer MasterAufgabe"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "approved"
+      ],
+      "default": "draft",
+      "description": "Freigabestatus des Klons"
+    },
     "lock_status": {
       "type": "boolean",
       "default": false,
@@ -87,6 +109,11 @@
     "locked_by_user": {
       "type": "string",
       "description": "E-Mail des Nutzers, der den Baustein gerade bearbeitet"
+    },
+    "locked_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel des Locks (2-Min-Timeout)"
     },
     "sync_status": {
       "type": "string",

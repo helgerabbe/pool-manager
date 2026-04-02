@@ -1,23 +1,36 @@
 /**
- * TaskCreationView.jsx
+ * TaskCreationView.jsx – Tab 4: Aufgaben erstellen
  *
- * Tab 4: Aufgaben erstellen – strikte Master-Detail-Logik
+ * Datenmodell (1:n):
+ *   Aktivität
+ *     └─ MasterAufgabe 1  (entity: MasterAufgabe, FK: activity_id)
+ *          └─ Klon A      (entity: Aufgabenbausteine, FK: master_aufgabe_id)
+ *          └─ Klon B
+ *     └─ MasterAufgabe 2
+ *          └─ Klon C
  *
- * Sidebar:  Lernpakete = aufklappbare Ordner
- *           → Aktivitäten = wählbare Blätter (Master)
- *             → Klone = eingerückt unter der Aktivität
+ * Sidebar-Baum:
+ *   [Lernpaket]
+ *     [Phase]
+ *       Aktivität
+ *         ↳ Master 1
+ *            ○ Klon A
+ *            ○ Klon B
+ *         ↳ Master 2
+ *            ○ Klon C
+ *
  * Hauptbereich:
- *   - leer       → EmptyState
- *   - Aktivität  → MasterActivityPanel
- *   - Klon       → KlonDetailView
+ *   - Nichts gewählt    → EmptyState
+ *   - Aktivität gewählt → ActivityMasterPanel
+ *   - Klon gewählt      → KlonDetailView
  */
 
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ChevronRight, Package, MousePointerClick, AlertTriangle, Lock } from 'lucide-react';
+import { ChevronRight, Package, MousePointerClick, AlertTriangle, Lock, Crown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import MasterActivityPanel from '@/components/workspace/MasterActivityPanel';
+import ActivityMasterPanel from '@/components/workspace/ActivityMasterPanel';
 import KlonDetailView from '@/components/workspace/KlonDetailView';
 import { isActivityLockedByOther, isLockExpired } from '@/hooks/useActivityLock';
 import { cn } from '@/lib/utils';
@@ -28,13 +41,16 @@ const PHASES = [
   { key: 'Abschluss', label: 'Abschluss', icon: '🎯' },
 ];
 
+function isKlonLockedByOther(klon, myEmail) {
+  if (!klon?.lock_status) return false;
+  if (klon.locked_by_user === myEmail) return false;
+  if (isLockExpired(klon.locked_at)) return false;
+  return true;
+}
+
 // ── Klon-Unterzeile ───────────────────────────────────────────────────────────
 
 function KlonSubItem({ klon, isSelected, onSelect }) {
-  const label = klon.status === 'approved'
-    ? <Badge variant="outline" className="text-[10px] text-green-700 border-green-300 bg-green-50">✓ Freigegeben</Badge>
-    : <Badge variant="secondary" className="text-[10px]">Entwurf {klon.klon_index || '?'}</Badge>;
-
   return (
     <button
       onClick={() => onSelect({ type: 'klon', klon })}
@@ -48,17 +64,69 @@ function KlonSubItem({ klon, isSelected, onSelect }) {
       <span className="flex-1 truncate">
         {klon.status === 'approved' ? '✓' : '○'} Klon {klon.klon_index || '?'}
       </span>
-      {label}
+      {klon.status === 'approved'
+        ? <Badge variant="outline" className="text-[10px] text-green-700 border-green-300 bg-green-50">✓</Badge>
+        : <Badge variant="secondary" className="text-[10px]">Entwurf</Badge>}
     </button>
   );
 }
 
-// ── Sidebar: Aktivitäts-Zeile (mit eingerückten Klonen) ───────────────────────
+// ── Master-Unterzeile (mit eingerückten Klonen) ───────────────────────────────
 
-function ActivitySidebarItem({ activity, aktivitaetName, klone, selectedItem, onSelect, isIncomplete, myEmail }) {
-  const isActivitySelected = selectedItem?.type === 'activity' && selectedItem?.activity?.id === activity.id;
+function MasterSubItem({ master, index, klone, selectedItem, onSelect }) {
+  const isMasterSelected = selectedItem?.type === 'master' && selectedItem?.master?.id === master.id;
   const hasSelectedKlon = klone.some(k => selectedItem?.type === 'klon' && selectedItem?.klon?.id === k.id);
+
+  return (
+    <div>
+      <button
+        onClick={() => onSelect({ type: 'master', master })}
+        className={cn(
+          'w-full flex items-center gap-1.5 px-2 py-1 rounded-md text-left text-[11px] transition-colors',
+          isMasterSelected
+            ? 'bg-primary/15 text-primary font-semibold'
+            : 'text-foreground hover:bg-muted'
+        )}
+      >
+        <Crown className="w-3 h-3 shrink-0 text-primary/70" />
+        <span className="flex-1 truncate">{master.titel || `Master ${index}`}</span>
+        {klone.length > 0 && (
+          <span className="text-[10px] bg-primary/10 text-primary px-1 py-0.5 rounded shrink-0">
+            {klone.length}
+          </span>
+        )}
+      </button>
+
+      {(isMasterSelected || hasSelectedKlon) && klone.length > 0 && (
+        <div className="ml-4 mt-0.5 border-l border-border pl-2 space-y-0.5">
+          {klone.map(klon => (
+            <KlonSubItem
+              key={klon.id}
+              klon={klon}
+              isSelected={selectedItem?.type === 'klon' && selectedItem?.klon?.id === klon.id}
+              onSelect={onSelect}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Sidebar: Aktivitäts-Zeile ─────────────────────────────────────────────────
+
+function ActivitySidebarItem({
+  activity, aktivitaetName, masterAufgaben, kloneByMasterId,
+  selectedItem, onSelect, isIncomplete, myEmail,
+}) {
+  const isActivitySelected = selectedItem?.type === 'activity' && selectedItem?.activity?.id === activity.id;
+  const hasSelectedDescendant =
+    masterAufgaben.some(m =>
+      (selectedItem?.type === 'master' && selectedItem?.master?.id === m.id) ||
+      (selectedItem?.type === 'klon' && (kloneByMasterId[m.id] || []).some(k => k.id === selectedItem?.klon?.id))
+    );
   const lockedByOther = isActivityLockedByOther(activity, myEmail);
+  const showChildren = isActivitySelected || hasSelectedDescendant;
 
   return (
     <div>
@@ -80,21 +148,23 @@ function ActivitySidebarItem({ activity, aktivitaetName, klone, selectedItem, on
         {isIncomplete && !isActivitySelected && !lockedByOther && (
           <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" title="Inhalt unvollständig" />
         )}
-        {klone.length > 0 && (
+        {masterAufgaben.length > 0 && (
           <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded shrink-0">
-            {klone.length}
+            {masterAufgaben.length}M
           </span>
         )}
       </button>
 
-      {/* Klone eingerückt */}
-      {(isActivitySelected || hasSelectedKlon) && klone.length > 0 && (
+      {/* Master-Knoten + deren Klone */}
+      {showChildren && masterAufgaben.length > 0 && (
         <div className="ml-4 mt-0.5 border-l border-border pl-2 space-y-0.5">
-          {klone.map(klon => (
-            <KlonSubItem
-              key={klon.id}
-              klon={klon}
-              isSelected={selectedItem?.type === 'klon' && selectedItem?.klon?.id === klon.id}
+          {masterAufgaben.map((master, idx) => (
+            <MasterSubItem
+              key={master.id}
+              master={master}
+              index={idx + 1}
+              klone={kloneByMasterId[master.id] || []}
+              selectedItem={selectedItem}
               onSelect={onSelect}
             />
           ))}
@@ -107,22 +177,22 @@ function ActivitySidebarItem({ activity, aktivitaetName, klone, selectedItem, on
 // ── Sidebar: Lernpaket-Ordner ─────────────────────────────────────────────────
 
 function SidebarLernpaketFolder({
-  lernpaket,
-  allActivities,
-  aktivitaetenMap,
-  klonenByActivityId,
-  selectedItem,
-  onSelect,
-  defaultOpen = false,
-  myEmail,
+  lernpaket, allActivities, aktivitaetenMap,
+  masterAufgabenByActivityId, kloneByMasterId,
+  selectedItem, onSelect, defaultOpen = false, myEmail,
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const paketActivities = allActivities.filter(a => a.lernpaket_id === lernpaket.id);
   const phasenConfig = lernpaket.phasen_konfiguration || {};
 
-  const hasSelectedChild =
-    (selectedItem?.type === 'activity' && paketActivities.some(a => a.id === selectedItem.activity?.id)) ||
-    (selectedItem?.type === 'klon' && paketActivities.some(a => (klonenByActivityId[a.id] || []).some(k => k.id === selectedItem.klon?.id)));
+  const hasSelectedChild = paketActivities.some(a => {
+    if (selectedItem?.type === 'activity' && selectedItem?.activity?.id === a.id) return true;
+    const masters = masterAufgabenByActivityId[a.id] || [];
+    return masters.some(m =>
+      (selectedItem?.type === 'master' && selectedItem?.master?.id === m.id) ||
+      (selectedItem?.type === 'klon' && (kloneByMasterId[m.id] || []).some(k => k.id === selectedItem?.klon?.id))
+    );
+  });
 
   useEffect(() => {
     if (hasSelectedChild) setOpen(true);
@@ -164,7 +234,8 @@ function SidebarLernpaketFolder({
                         key={activity.id}
                         activity={activity}
                         aktivitaetName={aktivitaetenMap[activity.aktivitaet_id] || '…'}
-                        klone={klonenByActivityId[activity.id] || []}
+                        masterAufgaben={masterAufgabenByActivityId[activity.id] || []}
+                        kloneByMasterId={kloneByMasterId}
                         selectedItem={selectedItem}
                         onSelect={onSelect}
                         isIncomplete={!activity.is_complete}
@@ -204,7 +275,7 @@ function EmptyState() {
 
 export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail }) {
   const queryClient = useQueryClient();
-  // selectedItem = null | { type: 'activity', activity } | { type: 'klon', klon }
+  // selectedItem: null | { type: 'activity', activity } | { type: 'master', master } | { type: 'klon', klon }
   const [selectedItem, setSelectedItem] = useState(null);
 
   const { data: lernpakete = [] } = useQuery({
@@ -230,24 +301,41 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail 
     queryFn: () => base44.entities.AktivitaetenKatalog.list(),
   });
 
+  // Alle MasterAufgaben für diese Einheit
+  const paketIds = lernpakete.filter(lp => lp.einheit_id === einheitId).map(lp => lp.id);
+  const { data: alleMaster = [] } = useQuery({
+    queryKey: ['masterAufgaben', 'einheit', einheitId],
+    queryFn: () => base44.entities.MasterAufgabe.list(),
+    enabled: !!einheitId,
+    select: (data) => data.filter(m => paketIds.includes(m.lernpaket_id)),
+  });
+
+  // Alle Klone für diese Einheit
   const { data: alleKlone = [] } = useQuery({
-    queryKey: ['aufgabenbausteine', 'klone', einheitId],
+    queryKey: ['klone', 'einheit', einheitId],
     queryFn: () => base44.entities.Aufgabenbausteine.filter({ is_master: false }),
     enabled: !!einheitId,
   });
 
   const aktivitaetenMap = Object.fromEntries(aktivitaetenKatalog.map(a => [a.id, a.name]));
 
-  // Klone gruppiert nach master_activity_id
-  const klonenByActivityId = alleKlone.reduce((acc, k) => {
-    const key = k.master_activity_id;
-    if (!key) return acc;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(k);
+  // MasterAufgaben gruppiert nach activity_id, sortiert nach reihenfolge
+  const masterAufgabenByActivityId = alleMaster.reduce((acc, m) => {
+    if (!acc[m.activity_id]) acc[m.activity_id] = [];
+    acc[m.activity_id].push(m);
     return acc;
   }, {});
-  // Sortierung nach klon_index
-  Object.values(klonenByActivityId).forEach(arr => arr.sort((a, b) => (a.klon_index || 0) - (b.klon_index || 0)));
+  Object.values(masterAufgabenByActivityId).forEach(arr => arr.sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)));
+
+  // Klone gruppiert nach master_aufgabe_id
+  const kloneByMasterId = alleKlone
+    .filter(k => alleMaster.some(m => m.id === k.master_aufgabe_id))
+    .reduce((acc, k) => {
+      if (!acc[k.master_aufgabe_id]) acc[k.master_aufgabe_id] = [];
+      acc[k.master_aufgabe_id].push(k);
+      return acc;
+    }, {});
+  Object.values(kloneByMasterId).forEach(arr => arr.sort((a, b) => (a.klon_index || 0) - (b.klon_index || 0)));
 
   const paketeFuerEinheit = lernpakete
     .filter(lp => lp.einheit_id === einheitId)
@@ -259,11 +347,15 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail 
       const updated = allActivities.find(a => a.id === selectedItem.activity.id);
       if (updated) setSelectedItem({ type: 'activity', activity: updated });
     }
+    if (selectedItem?.type === 'master') {
+      const updated = alleMaster.find(m => m.id === selectedItem.master.id);
+      if (updated) setSelectedItem({ type: 'master', master: updated });
+    }
     if (selectedItem?.type === 'klon') {
       const updated = alleKlone.find(k => k.id === selectedItem.klon.id);
       if (updated) setSelectedItem({ type: 'klon', klon: updated });
     }
-  }, [allActivities, alleKlone]);
+  }, [allActivities, alleMaster, alleKlone]);
 
   // Gruppiert nach Themenfeld
   const groupedPakete = themenfelder.length > 0
@@ -284,22 +376,23 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail 
     : [{ label: null, pakete: paketeFuerEinheit }];
 
   // Catalog-Entry für selektierte Aktivität
-  const selectedCatalog = selectedItem?.type === 'activity'
-    ? aktivitaetenKatalog.find(c => c.id === selectedItem.activity.aktivitaet_id)
+  const selectedActivity = selectedItem?.type === 'activity'
+    ? selectedItem.activity
+    : selectedItem?.type === 'master'
+      ? allActivities.find(a => a.id === selectedItem.master.activity_id)
+      : null;
+  const selectedCatalog = selectedActivity
+    ? aktivitaetenKatalog.find(c => c.id === selectedActivity.aktivitaet_id)
     : null;
-
-  // supports_master: Flag aus dem Katalog-Eintrag (default: false für Input-Aktivitäten)
   const supportsMaster = selectedCatalog?.supports_master === true;
 
   return (
     <div className="flex flex-row flex-1 overflow-hidden">
 
-      {/* ── Sidebar ─────────────────────────────────────────────────────────── */}
+      {/* ── Sidebar ──────────────────────────────────────────────────────────── */}
       <aside className="w-72 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden">
         <div className="px-3 py-3 border-b border-border">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Aktivitäten
-          </p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aktivitäten</p>
         </div>
         <div className="flex-1 overflow-y-auto p-2 space-y-3">
           {groupedPakete.map(({ label, pakete, isRest }) => (
@@ -319,7 +412,8 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail 
                     lernpaket={lernpaket}
                     allActivities={allActivities}
                     aktivitaetenMap={aktivitaetenMap}
-                    klonenByActivityId={klonenByActivityId}
+                    masterAufgabenByActivityId={masterAufgabenByActivityId}
+                    kloneByMasterId={kloneByMasterId}
                     selectedItem={selectedItem}
                     onSelect={setSelectedItem}
                     defaultOpen={idx === 0}
@@ -337,26 +431,26 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail 
         </div>
       </aside>
 
-      {/* ── Hauptbereich ────────────────────────────────────────────────────── */}
+      {/* ── Hauptbereich ─────────────────────────────────────────────────────── */}
       <main className="flex-1 overflow-y-auto min-h-0">
         {!selectedItem && <EmptyState />}
 
-        {selectedItem?.type === 'activity' && (
+        {/* Aktivität oder Master gewählt → ActivityMasterPanel */}
+        {(selectedItem?.type === 'activity' || selectedItem?.type === 'master') && selectedActivity && (
           <div className="max-w-3xl mx-auto px-6 py-6">
-            <MasterActivityPanel
-              key={selectedItem.activity.id}
-              activityRecord={selectedItem.activity}
+            <ActivityMasterPanel
+              key={selectedActivity.id}
+              activityRecord={selectedActivity}
               catalogEntry={selectedCatalog}
               supportsMaster={supportsMaster}
               kannBearbeiten={kannBearbeiten}
               userEmail={userEmail}
-              onKlonesCreated={() => {
-                queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine', 'klone', einheitId] });
-              }}
+              einheitId={einheitId}
             />
           </div>
         )}
 
+        {/* Klon gewählt */}
         {selectedItem?.type === 'klon' && (
           <div className="max-w-3xl mx-auto px-6 py-6">
             <KlonDetailView
