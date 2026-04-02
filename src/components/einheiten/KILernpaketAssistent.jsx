@@ -30,8 +30,7 @@ export default function KILernpaketAssistent({ einheitId, einheit, existingPaket
 Aufgabe: Analysiere den Braindump und strukturiere daraus:
 1. Themenfelder (logische Blöcke)
 2. Lernpakete (je Themenfeld, Ebene 1 — Basiswissen)
-3. Transferaufgaben (lokal in Themenfeldern, Ebene 2)
-4. Projektaufgaben (übergreifend, Ebene 3)
+3. Lernziele (je Lernpaket, mit Kategorisierung)
 
 ═══════════════════════════════════════
 SCHRITT 1 — VALIDIERUNG
@@ -59,15 +58,7 @@ B. LERNPAKETE (Ebene 1 — je Themenfeld)
 6. Dauer: Integer in Minuten (45, 90, 135).
 7. Reihenfolge: Fortlaufend ab ${naechsteNr}.
 
-C. TRANSFERAUFGABEN (Ebene 2 — lokal im Themenfeld)
-- Anwendungsaufgaben, die Basis-Wissen des Themenfelds verwenden.
-- Keine detaillierten Lernziele nötig, nur Titel + optionale Beschreibung.
-- Pro Themenfeld: 0–2 Transferaufgaben.
 
-D. PROJEKTAUFGABEN (Ebene 3 — übergreifend)
-- Synthesen, die Inhalte mehrerer Themenfelder verbinden.
-- 1–2 pro Einheit.
-- Nur Titel + optionale Beschreibung.
 
 Kontext:
 - Fach: ${einheit?.fach || 'unbekannt'}
@@ -84,7 +75,6 @@ Selbstprüfung vor der Ausgabe:
 - Beginnt jedes Lernziel mit „Ich kann"?
 - Hat jedes Lernziel exakt eine Kategorie ("Fachwissen" oder "Fähigkeit/Fertigkeit")?
 - Ist die Reihenfolge der Lernpakete lückenlos ab ${naechsteNr}?
-- Gibt es 1–2 Projektaufgaben?
 
 ═══════════════════════════════════════
 SCHRITT 3 — STRIKTES JSON-OUTPUT
@@ -109,14 +99,8 @@ Antworte NUR mit dem JSON-Objekt. Kein Text, keine Markdown-Blöcke.
               "schueler_uebersetzung": "Einfache Sprache"
             }
           ]
-        }
-      ],
-      "transferaufgaben": [
-        {
-          "titel": "Transferaufgabe 1",
-          "beschreibung": "Anwendungskontext (optional)"
-        }
-      ]
+          }
+          ]
     }
   ],
   "projektaufgaben": [
@@ -157,27 +141,7 @@ Antworte NUR mit dem JSON-Objekt. Kein Text, keine Markdown-Blöcke.
                       },
                     },
                   },
-                },
-                transferaufgaben: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      titel: { type: 'string' },
-                      beschreibung: { type: 'string' },
-                    },
                   },
-                },
-              },
-            },
-          },
-          projektaufgaben: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                titel: { type: 'string' },
-                beschreibung: { type: 'string' },
               },
             },
           },
@@ -193,21 +157,17 @@ Antworte NUR mit dem JSON-Objekt. Kein Text, keine Markdown-Blöcke.
 
     // Flatten alle Lernpakete aus allen Themenfeldern für die Vorschau
     const themenfelder = result?.themenfelder || [];
-    const projektaufgaben = result?.projektaufgaben || [];
     
     const allePakete = themenfelder.flatMap((tf, tfIdx) =>
       (tf.lernpakete || []).map(paket => ({
         ...paket,
         themenfeldTitel: tf.titel,
         themenfeldIndex: tfIdx,
-        transferaufgaben: tf.transferaufgaben || [],
       }))
     );
     
-    // Speichere auch globale Projektaufgaben
     const dataWithProjectTasks = { 
       pakete: allePakete,
-      projektaufgaben,
       themenfelder
     };
     
@@ -340,18 +300,7 @@ Antworte NUR mit dem JSON-Objekt. Kein Text, keine Markdown-Blöcke.
       }
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════
-    // Schritt 3: Projektaufgaben (Ebene 3 — übergreifend) anlegen
-    // ══════════════════════════════════════════════════════════════════════════════
-    for (const projekt of vorschau.projektaufgaben || []) {
-      // Placeholder für Projektaufgabe-Logik
-      // await base44.entities.Aufgabenbausteine.create({
-      //   einheit_id: einheitId,
-      //   titel: projekt.titel,
-      //   anforderungsebene: '3 - Projekt',
-      //   ...
-      // });
-    }
+
 
     setIsSaving(false);
     setErfolg({ pakete: erstelltePakete, ziele: erstellteZiele, themenfelder: erstellteThemenfelder });
@@ -539,18 +488,6 @@ Antworte NUR mit dem JSON-Objekt. Kein Text, keine Markdown-Blöcke.
                          </CardContent>
                        )}
                      </Card>
-
-                     {/* Transferaufgaben in diesem Themenfeld */}
-                     {paket.transferaufgaben && paket.transferaufgaben.length > 0 && (
-                       <div className="ml-4 mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                         <p className="text-xs font-semibold text-blue-900 mb-2">Transferaufgaben (Ebene 2)</p>
-                         <ul className="space-y-1 text-sm text-blue-800">
-                           {paket.transferaufgaben.map((aufgabe, aIdx) => (
-                             <li key={aIdx}>— {aufgabe.titel}</li>
-                           ))}
-                         </ul>
-                       </div>
-                     )}
                    </div>
                  );
                })}
