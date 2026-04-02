@@ -19,6 +19,8 @@ import WorkspaceTabs from '@/components/workspace/WorkspaceTabs';
 import TaskCreationView from '@/components/workspace/TaskCreationView.jsx';
 import EinheitUebersichtTab from '@/components/workspace/EinheitUebersichtTab';
 import MoodleExportTab from '@/components/workspace/MoodleExportTab';
+import ExportCockpitView from '@/components/export/ExportCockpitView';
+import MoodleExportView from '@/components/export/MoodleExportView';
 
 export default function Workspace({ initialEinheitId: initialEinheitIdProp = null }) {
   const urlParams = new URLSearchParams(window.location.search);
@@ -284,7 +286,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full shrink-0">{einheit.fach}</span>
             </div>
 
-            {/* 5-Tab-Navigation */}
+            {/* 6-Step Navigation */}
             <div className="px-4 sm:px-6 lg:px-8 py-3 border-b border-border bg-card shrink-0">
               <WorkspaceTabs activeTab={activeTab} onTabChange={handleTabChange} />
             </div>
@@ -407,10 +409,26 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               </ErrorBoundary>
             </TabsContent>
 
-            {/* ── Tab 5: Nach Moodle exportieren ───────────────────────────────── */}
+            {/* ── Tab 5: Freigabe-Cockpit ──────────────────────────────────────── */}
+            <TabsContent value="cockpit" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-y-auto m-0 p-0">
+              <ErrorBoundary label="Freigabe-Cockpit">
+                <div className="px-4 sm:px-6 lg:px-8 py-6">
+                  <ExportCockpitView 
+                    einheitId={selectedEinheitId} 
+                    userRole={rolle}
+                  />
+                </div>
+              </ErrorBoundary>
+            </TabsContent>
+
+            {/* ── Tab 6: Moodle-Export & Admin-Freigabe ────────────────────────── */}
             <TabsContent value="export" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-y-auto m-0 p-0">
               <ErrorBoundary label="Moodle Export">
-                <MoodleExportTab />
+                <MoodleExportView 
+                  einheitId={selectedEinheitId} 
+                  userRole={rolle}
+                  isAdmin={istAdmin}
+                />
               </ErrorBoundary>
             </TabsContent>
 
