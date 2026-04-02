@@ -43,7 +43,7 @@ export default function InlineBasisLernzielSelector({
 
   const { data: allPakete = [] } = useQuery({
     queryKey: ['basislernpakete'],
-    queryFn: () => base44.entities.Basislernpaket.list(),
+    queryFn: () => base44.entities.Basislernpakete.list(),
   });
 
   const { data: allLernziele = [] } = useQuery({
