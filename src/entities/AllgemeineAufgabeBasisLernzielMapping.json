@@ -1,0 +1,19 @@
+{
+  "name": "AllgemeineAufgabeBasisLernzielMapping",
+  "type": "object",
+  "properties": {
+    "aufgabe_id": {
+      "type": "string",
+      "description": "FK zu AllgemeineAufgabe"
+    },
+    "basislernziel_id": {
+      "type": "string",
+      "description": "FK zu BasisLernziel"
+    },
+    "reihenfolge": {
+      "type": "number",
+      "description": "Optionale Sortierreihenfolge"
+    }
+  },
+  "required": ["aufgabe_id", "basislernziel_id"]
+}

@@ -9,6 +9,7 @@ import { Plus, Star, FileText, ChevronRight, Edit, Trash2 } from 'lucide-react';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 import AufgabeKompetenzMapping from '@/components/allgemeineAufgaben/AufgabeKompetenzMapping';
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
+import BasisLernzielSelector from '@/components/basismodule/BasisLernzielSelector';
 
 /**
  * Schwierigkeitsgrad-Anzeige (1-3 Sterne)
@@ -338,6 +339,12 @@ export default function AllgemeineAufgabenView({
                   }}
                   onDelete={(id) => deleteAufgabe.mutate(id)}
                 />
+                
+                {/* Basiskompetenzen Section */}
+                <div className="p-6 border-t border-border">
+                  <h3 className="text-sm font-semibold mb-4">Basis-Vorwissen</h3>
+                  <BasisLernzielSelector aufgabeId={selectedAufgabe?.id} />
+                </div>
               </TabsContent>
 
               {/* Tab 2: Kompetenz-Zuordnung */}
