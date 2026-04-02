@@ -64,6 +64,15 @@ export default function AktivitaetenKatalog() {
     },
   });
 
+  const updateSupportsMaster = useMutation({
+    mutationFn: ({ id, supportsMaster }) =>
+      base44.entities.AktivitaetenKatalog.update(id, { supports_master: supportsMaster }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['aktivitaetenKatalog'] });
+      toast.success('Master-Aufgaben-Einstellung aktualisiert');
+    },
+  });
+
   const updateFormSchema = useMutation({
     mutationFn: ({ id, formSchema }) =>
       base44.entities.AktivitaetenKatalog.update(id, { form_schema: formSchema }),
@@ -193,6 +202,19 @@ export default function AktivitaetenKatalog() {
                                   updateToggle.mutate({ id: aktivitaet.id, isActive: checked })
                                 }
                                 disabled={updateToggle.isPending}
+                              />
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">
+                                {aktivitaet.supports_master ? 'Master ✓' : 'Master ✗'}
+                              </span>
+                              <Switch
+                                checked={aktivitaet.supports_master || false}
+                                onCheckedChange={(checked) =>
+                                  updateSupportsMaster.mutate({ id: aktivitaet.id, supportsMaster: checked })
+                                }
+                                disabled={updateSupportsMaster.isPending}
                               />
                             </div>
 
