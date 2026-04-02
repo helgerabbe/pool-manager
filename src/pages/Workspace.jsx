@@ -293,11 +293,13 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             <TabsContent value="einheit" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-y-auto m-0 p-0">
               <ErrorBoundary label="Einheit">
                 {einheit && (
-                  <EinheitUebersichtTab
-                    einheit={einheit}
-                    currentUserEmail={authUser?.email}
-                  />
-                )}
+                   <EinheitUebersichtTab
+                     einheit={einheit}
+                     currentUserEmail={authUser?.email}
+                     currentUserRole={rolle}
+                     currentUserFaecher={permissions?.faecher || []}
+                   />
+                 )}
               </ErrorBoundary>
             </TabsContent>
 
