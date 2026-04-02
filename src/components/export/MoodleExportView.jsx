@@ -112,7 +112,7 @@ export default function MoodleExportView({ einheitId, userRole, isAdmin }) {
         <h2 className="text-3xl font-bold">🚀 Moodle-Export</h2>
         <p className="text-muted-foreground">
           Technische Freigabe und Administration des Moodle-Exports. 
-          Nur Administratoren können den Export-Abschluss bestätigen.
+          Nur Administratoren und das Moodle-Export-Team können den Export-Abschluss bestätigen.
         </p>
       </div>
 
@@ -227,13 +227,13 @@ export default function MoodleExportView({ einheitId, userRole, isAdmin }) {
         </CardContent>
       </Card>
 
-      {/* Admin-Bestätigungs-Sektion */}
-      {isAdmin ? (
+      {/* Admin/Exporter-Bestätigungs-Sektion */}
+      {['admin', 'exporter', 'moodle_export_team'].includes(userRole) ? (
         <Card className="border-2 border-green-300 bg-green-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-green-800">
               <CheckCircle2 className="w-5 h-5" />
-              Admin-Bereich: Export-Abschluss
+              Export-Team: Export-Abschluss
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -269,12 +269,12 @@ export default function MoodleExportView({ einheitId, userRole, isAdmin }) {
       ) : (
         <Card className="border-2 border-slate-200 bg-slate-50">
           <CardHeader>
-            <CardTitle className="text-slate-700">🔒 Admin-Bereich (eingeschränkt)</CardTitle>
+            <CardTitle className="text-slate-700">🔒 Export-Team (eingeschränkt)</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-slate-600">
-              Nur Administratoren können den Moodle-Export-Abschluss bestätigen. 
-              Bitte kontaktieren Sie einen Admin, um den Export freizugeben.
+              Nur Administratoren und Mitglieder des Moodle-Export-Teams können den Export-Abschluss bestätigen. 
+              Bitte kontaktieren Sie einen Autoriter, um den Export freizugeben.
             </p>
           </CardContent>
         </Card>

@@ -15,16 +15,16 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
 
     // ────────────────────────────────────────────────────────────────────────────
-    // Auth Check: Nur Admins
+    // Auth Check: Admins + Export-Team
     // ────────────────────────────────────────────────────────────────────────────
 
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (user.role !== 'admin') {
+    if (!['admin', 'exporter', 'moodle_export_team'].includes(user.role)) {
       return Response.json(
-        { error: 'Forbidden: Admin access required' },
+        { error: 'Forbidden: Admin or Export-Team access required' },
         { status: 403 }
       );
     }

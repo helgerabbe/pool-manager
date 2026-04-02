@@ -43,10 +43,10 @@ export function ExportConfirmationButton({ einheitId, userRole, className = '' }
   });
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // Render: Nur für Admins
+  // Render: Nur für Admins und Export-Team
   // ──────────────────────────────────────────────────────────────────────────────
 
-  if (userRole !== 'admin') {
+  if (!['admin', 'exporter', 'moodle_export_team'].includes(userRole)) {
     return null;
   }
 
