@@ -135,7 +135,7 @@ function DistractorRow({ index, register, errors, onRemove }) {
 
 // ── Haupt-Formular ────────────────────────────────────────────────────────────
 
-export default function MatchTermsForm({ initialData = {}, onSave, onCancel }) {
+export default function MatchTermsForm({ initialData = {}, onSave, onCancel, onChange }) {
   const defaultValues = {
     instruction: initialData.instruction || '',
     pairs: initialData.pairs?.length >= 2
@@ -153,11 +153,18 @@ export default function MatchTermsForm({ initialData = {}, onSave, onCancel }) {
     control,
     handleSubmit,
     formState: { errors, isValid },
+    watch,
   } = useForm({
     resolver: zodResolver(MatchTermsSchema),
     defaultValues,
     mode: 'onChange',
   });
+
+  // Aktualisiere Parent-Komponente bei Änderungen
+  const formData = watch();
+  React.useEffect(() => {
+    onChange?.();
+  }, [formData, onChange]);
 
   const {
     fields: pairFields,

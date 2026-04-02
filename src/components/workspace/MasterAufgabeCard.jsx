@@ -291,9 +291,18 @@ export default function MasterAufgabeCard({
                   initialData={{
                     instruction: fieldValues.instruction || '',
                     pairs: fieldValues.pairs || [],
-                    distractors: (fieldValues.distractors || []).map(v => ({ value: v })),
+                    distractors: (fieldValues.distractors || []).map(v => typeof v === 'string' ? { value: v } : v),
                   }}
-                  onSave={(data) => handleSaveAndClose(data)}
+                  onSave={(data) => {
+                    // Stelle sicher, dass Distraktoren als String-Array gespeichert werden
+                    const cleanedData = {
+                      instruction: data.instruction,
+                      pairs: data.pairs,
+                      distractors: (data.distractors || []).map(d => typeof d === 'string' ? d : d.value).filter(Boolean),
+                    };
+                    setFieldValues(cleanedData);
+                    handleSaveAndClose(cleanedData);
+                  }}
                   onCancel={() => { setEditMode(false); setHasPendingChanges(false); }}
                   onChange={() => setHasPendingChanges(true)}
                 />
