@@ -54,6 +54,21 @@ export default function AktivitaetenKatalog() {
     },
   });
 
+  // ── Reset Mutation (komplett neu mit 16 Aktivitäten) ──
+  const resetMutation = useMutation({
+    mutationFn: async () => {
+      const res = await base44.functions.invoke('resetAktivitaetenKatalog', {});
+      return res.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['aktivitaetenKatalog'] });
+      toast.success(`✅ Katalog zurückgesetzt! ${data.createdCount} neue Aktivitäten geladen.`);
+    },
+    onError: (err) => {
+      toast.error('Reset fehlgeschlagen: ' + err.message);
+    },
+  });
+
   // ── Mutations ──
   const updateToggle = useMutation({
     mutationFn: ({ id, isActive }) =>
@@ -130,11 +145,24 @@ export default function AktivitaetenKatalog() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Aktivitäten-Katalog</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Verwalten Sie die verfügbaren Aktivitäten für jede Lernpaket-Phase und deren Metadaten-Anforderungen.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Aktivitäten-Katalog</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Verwalten Sie die verfügbaren Aktivitäten für jede Lernpaket-Phase und deren Metadaten-Anforderungen.
+          </p>
+        </div>
+        <Button
+          onClick={() => resetMutation.mutate()}
+          disabled={resetMutation.isPending}
+          variant="outline"
+          className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50"
+          title="Löscht alle Aktivitäten und lädt die 16 Standard-Aktivitäten mit korrekten Schemas"
+        >
+          {resetMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+          <RefreshCw className="w-4 h-4" />
+          Katalog zurücksetzen
+        </Button>
       </div>
 
       <Tabs value={selectedPhase} onValueChange={setSelectedPhase}>
