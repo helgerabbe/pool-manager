@@ -48,7 +48,7 @@ export default function BasismodulCreateDialog({ open, onOpenChange }) {
   const [beschreibung, setBeschreibung] = useState('');
 
   const createBasismodul = useMutation({
-    mutationFn: (data) => base44.entities.Basismodul.create(data),
+    mutationFn: (data) => base44.entities.Basismodule.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['basismodule'] });
       toast.success('Basismodul erstellt');

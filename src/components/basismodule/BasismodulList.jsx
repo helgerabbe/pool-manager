@@ -15,7 +15,7 @@ export default function BasismodulList({ selectedId, onSelect, onCreateNew }) {
   const { data: basismodule = [], isLoading, error } = useQuery({
     queryKey: ['basismodule'],
     queryFn: async () => {
-      const result = await base44.entities.Basismodul.list();
+      const result = await base44.entities.Basismodule.list();
       return result || [];
     },
     staleTime: 0,
