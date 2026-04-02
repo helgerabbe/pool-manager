@@ -350,6 +350,7 @@ export default function AllgemeineAufgabenView({
               <TabsContent value="kompetenzen" className="flex-1 overflow-hidden m-0">
                <AufgabeKompetenzMapping
                  aufgabe={selectedAufgabe}
+                 einheit={einheit}
                  einheitId={einheitId}
                  onComplete={() => {}}
                />

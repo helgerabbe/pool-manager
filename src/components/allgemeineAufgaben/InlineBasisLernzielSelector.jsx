@@ -22,15 +22,15 @@ const FAECHER = [
 
 /**
  * Inline Basis-Lernziel-Auswahl für die linke Spalte des Kompetenzen-Tabs
- * Zeigt Akkordeons für Pakete und erlaubt direktes Anklicken von Lernzielen
+ * Filtert automatisch nach dem Fach der aktuellen Einheit
  */
 export default function InlineBasisLernzielSelector({
   aufgabeId,
+  einheitFach,
   onLernzielAdded,
   onLernzielRemoved,
 }) {
   const queryClient = useQueryClient();
-  const [selectedFach, setSelectedFach] = useState('');
   const [selectedModul, setSelectedModul] = useState('');
   const [expandedPakete, setExpandedPakete] = useState(new Set());
   const [checkedIds, setCheckedIds] = useState(new Set());
@@ -64,11 +64,11 @@ export default function InlineBasisLernzielSelector({
     setCheckedIds(new Set(existingMappings.map((m) => m.basislernziel_id)));
   }, [existingMappings]);
 
-  // Gefilterte Module nach Fach
+  // Gefilterte Module nach dem Fach der Einheit
   const filteredModule = useMemo(() => {
-    if (!selectedFach) return [];
-    return basismodule.filter((m) => m.fach === selectedFach);
-  }, [basismodule, selectedFach]);
+    if (!einheitFach) return [];
+    return basismodule.filter((m) => m.fach === einheitFach);
+  }, [basismodule, einheitFach]);
 
   // Pakete für das gewählte Modul
   const modulPakete = useMemo(() => {
@@ -154,43 +154,30 @@ export default function InlineBasisLernzielSelector({
     <div className="space-y-3">
       <h4 className="text-xs font-semibold text-muted-foreground uppercase">Basis-Vorwissen</h4>
 
-      {/* Fach + Modul Dropdowns */}
+      {/* Basismodul Dropdown */}
       <div className="space-y-2">
-        <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">Fach</label>
-          <Select value={selectedFach} onValueChange={setSelectedFach}>
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue placeholder="Fach wählen..." />
-            </SelectTrigger>
-            <SelectContent>
-              {FAECHER.map((f) => (
-                <SelectItem key={f} value={f}>
-                  {f}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">Basismodul</label>
-          <Select
-            value={selectedModul}
-            onValueChange={setSelectedModul}
-            disabled={!selectedFach}
-          >
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue placeholder="Modul wählen..." />
-            </SelectTrigger>
-            <SelectContent>
-              {filteredModule.map((m) => (
-                <SelectItem key={m.id} value={m.id}>
-                  {m.titel}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">Basismodul</label>
+        <Select
+          value={selectedModul}
+          onValueChange={setSelectedModul}
+          disabled={!einheitFach || filteredModule.length === 0}
+        >
+          <SelectTrigger className="h-8 text-xs">
+            <SelectValue placeholder="Modul wählen..." />
+          </SelectTrigger>
+          <SelectContent>
+            {filteredModule.map((m) => (
+              <SelectItem key={m.id} value={m.id}>
+                {m.titel}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {filteredModule.length === 0 && (
+          <p className="text-[10px] text-muted-foreground">
+            Keine Basismodule für {einheitFach} verfügbar
+          </p>
+        )}
       </div>
 
       {/* Akkordeons mit Lernzielen */}

@@ -133,7 +133,7 @@ const ThemenfeldGroup = React.memo(function ThemenfeldGroup({ themenfeld, lernzi
 });
 
 // ── Haupt-Component ──
-export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete }) {
+export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, onComplete }) {
   const queryClient = useQueryClient();
   const draftKey = `aufgaben-mapping-${aufgabe?.id}`;
   
@@ -392,6 +392,7 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
                     <div className="border-t pt-3">
                       <InlineBasisLernzielSelector 
                         aufgabeId={aufgabe?.id}
+                        einheitFach={einheit?.fach}
                         onLernzielAdded={() => {
                           triggerSaved();
                         }}
