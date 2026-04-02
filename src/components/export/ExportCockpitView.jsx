@@ -270,8 +270,8 @@ function CockpitSlot({
   };
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // Render Hierarchie: Themenfeld > Lernpaket > Aktivitäten
-  // ──────────────────────────────────────────────────────────────────────────────
+  // Render Hierarchie: Themenfeld > Lernpaket > Aktivitäten > Aufgaben
+  // ────────────────────────────────────────────────────────────────────────────────
 
   const renderHierarchy = () => {
     if (!unitId) return null;
@@ -309,7 +309,7 @@ function CockpitSlot({
               <StatusBadges contentStatus={tfDerivedContentStatus} syncStatus={tfDerivedSyncStatus} />
             </div>
 
-            {/* Lernpakete & Aktivitäten */}
+            {/* Lernpakete */}
             <div className="pl-6 space-y-2 border-l border-border/50">
               {tfPakete.map((paket) => {
                 const paketActivities = enrichedActivities.filter(
@@ -344,8 +344,8 @@ function CockpitSlot({
                       />
                     </div>
 
-                    {/* Aktivitäten (tiefste Ebene) */}
-                    <div className="pl-6 space-y-1 border-l border-border/30">
+                    {/* Aktivitäten & Aufgaben (Klone/Masters) */}
+                    <div className="pl-6 space-y-1.5 border-l border-border/30">
                       {paketActivities.map((act) => {
                         const actName = aktivitaetenKatalog.find((k) => k.id === act.aktivitaet_id)?.name ||
                           'Aktivität';
@@ -353,26 +353,26 @@ function CockpitSlot({
                         const isPending = act.sync_status === 'pending';
 
                         return (
-                          <div
-                            key={act.id}
-                            className="flex items-center gap-2 p-1.5 rounded hover:bg-muted/30 transition"
-                          >
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={() => toggleActivityCheckbox(act.id)}
-                              disabled={isPending}
-                              className="h-4 w-4 shrink-0"
-                            />
-                            <span className="text-xs font-normal flex-1 truncate text-foreground">
-                              {actName}
-                            </span>
+                          <div key={act.id} className="space-y-1">
+                            {/* Aktivität */}
+                            <div className="flex items-center gap-2 p-1.5 rounded hover:bg-muted/30 transition">
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={() => toggleActivityCheckbox(act.id)}
+                                disabled={isPending}
+                                className="h-4 w-4 shrink-0"
+                              />
+                              <span className="text-xs font-normal flex-1 truncate text-foreground">
+                                {actName}
+                              </span>
 
-                            {isPending && <UndoButton itemId={act.id} itemType="activity" />}
+                              {isPending && <UndoButton itemId={act.id} itemType="activity" />}
 
-                            <StatusBadges
-                              contentStatus={act.effective_content_status}
-                              syncStatus={act.sync_status}
-                            />
+                              <StatusBadges
+                                contentStatus={act.effective_content_status}
+                                syncStatus={act.sync_status}
+                              />
+                            </div>
                           </div>
                         );
                       })}
@@ -393,59 +393,49 @@ function CockpitSlot({
   return (
     <div className="space-y-4 p-4 border border-border rounded-lg bg-card/50 h-fit flex-1">
       {/* Header mit Collapsible Button */}
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <div className="text-sm font-semibold text-muted-foreground">Slot {slotId}</div>
-          {currentEinheit && (
-            <h3 className="text-base font-semibold text-foreground mt-1">{currentEinheit.titel_der_einheit}</h3>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {unitId && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => updateSlot(slotId, { isCollapsed: !isCollapsed })}
-              className="h-8 w-8"
-            >
-              {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </Button>
-          )}
-          {unitId && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => removeSlot(slotId)}
-              className="h-8 w-8 text-destructive hover:bg-destructive/10"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          )}
-        </div>
+      <div className="flex items-center justify-end gap-2">
+        {unitId && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => updateSlot(slotId, { isCollapsed: !isCollapsed })}
+            className="h-8 w-8"
+          >
+            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </Button>
+        )}
+        {unitId && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => removeSlot(slotId)}
+            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        )}
       </div>
 
       {/* Content (kann eingeklappt sein) */}
       {!isCollapsed && (
         <>
-          {/* Einheit-Select */}
+          {/* Einheit-Select mit Status-Indikator */}
           <Select value={unitId || ''} onValueChange={handleEinheitChange}>
             <SelectTrigger className="h-9 text-sm">
               <SelectValue placeholder="Einheit auswählen..." />
             </SelectTrigger>
             <SelectContent className="text-sm">
               {availableEinheiten.map((e) => {
-                const hasChanges = enrichedActivities.some(
-                  (a) =>
-                    lernpakete.some((lp) => lp.einheit_id === e.id && a.lernpaket_id === lp.id) &&
-                    (a.sync_status === 'new' || a.sync_status === 'modified')
+                const einheitActivities = enrichedActivities.filter(
+                  (a) => lernpakete.some((lp) => lp.einheit_id === e.id && a.lernpaket_id === lp.id)
                 );
+                const hasNew = einheitActivities.some((a) => a.sync_status === 'new');
+                const hasModified = einheitActivities.some((a) => a.sync_status === 'modified');
+                const statusText = hasNew ? ' (🆕 Updates)' : hasModified ? ' (⚠️ Änderungen)' : '';
 
                 return (
                   <SelectItem key={e.id} value={e.id} className="text-sm">
-                    <div className="flex items-center gap-2">
-                      <span>{e.titel_der_einheit} ({e.fach})</span>
-                      {hasChanges && <Badge className="bg-amber-100 text-amber-800 text-xs">⚠️ Änderungen</Badge>}
-                    </div>
+                    {e.titel_der_einheit} ({e.fach}){statusText}
                   </SelectItem>
                 );
               })}
