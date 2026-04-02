@@ -1,0 +1,78 @@
+{
+  "name": "AllgemeineAufgabe",
+  "type": "object",
+  "properties": {
+    "einheit_id": {
+      "type": "string",
+      "description": "FK zur Einheit"
+    },
+    "themenfeld_id": {
+      "type": "string",
+      "description": "FK zum Themenfeld (optional)"
+    },
+    "anforderungsebene": {
+      "type": "string",
+      "enum": ["1 - Basis", "2 - Transfer", "3 - Projekt"],
+      "default": "1 - Basis",
+      "description": "Anforderungsebene der Aufgabe"
+    },
+    "aufgabentyp_projekt": {
+      "type": "string",
+      "enum": ["Anwendungsaufgabe", "Projektaufgabe"],
+      "description": "Typ der Aufgabe (nur bei anforderungsebene: '3 - Projekt')"
+    },
+    "titel": {
+      "type": "string",
+      "description": "Titel der Aufgabe (optional)"
+    },
+    "aufgabenstellung": {
+      "type": "string",
+      "description": "Aufgabenstellung als Rich-Text (erforderlich)"
+    },
+    "schwierigkeitsgrad": {
+      "type": "integer",
+      "enum": [1, 2, 3],
+      "description": "Schwierigkeitsgrad (1=leicht, 2=mittel, 3=schwer, null=keine Angabe)"
+    },
+    "materialien": {
+      "type": "array",
+      "description": "Array von Materialien/Ressourcen",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["pdf", "image", "book_ref", "free_text"]
+          },
+          "content": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "content_status": {
+      "type": "string",
+      "enum": ["draft", "approved"],
+      "default": "draft",
+      "description": "Pädagogischer Status: draft (in Bearbeitung) oder approved (freigegeben)"
+    },
+    "sync_status": {
+      "type": "string",
+      "enum": ["new", "pending", "synced", "modified", "to_delete"],
+      "default": "new",
+      "description": "Moodle-Sync-Status: new, pending, synced, modified, to_delete"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel des letzten erfolgreichen Moodle-Exports (nullable)"
+    }
+  },
+  "required": ["einheit_id", "aufgabenstellung"]
+}

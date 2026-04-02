@@ -128,6 +128,8 @@ function CockpitSlot({
   aktivitaetenKatalog,
   masterAufgaben,
   aufgabenbausteine,
+  allgemeineAufgaben,
+  projektaufgaben,
   exportMutation,
 }) {
   const { unitId, isCollapsed } = slot;
@@ -191,7 +193,13 @@ function CockpitSlot({
             });
         });
 
-        const tfExportable = tfAllAufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending');
+        // Ebene 2: Allgemeine Aufgaben für dieses Themenfeld
+        const ebene2Aufgaben = allgemeineAufgaben.filter(
+          (a) => a.themenfeld_id === tf.id && a.anforderungsebene !== '3 - Projekt'
+        );
+
+        const tfAllAufgabenCombined = [...tfAllAufgaben, ...ebene2Aufgaben];
+        const tfExportable = tfAllAufgabenCombined.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending');
         const tfSelectedCount = tfExportable.filter(a => selectedIds.includes(a.id)).length;
         const isTfFullySelected = tfExportable.length > 0 && tfSelectedCount === tfExportable.length;
 
@@ -359,6 +367,37 @@ function CockpitSlot({
                   {exportMutation.isPending ? 'Wird übergeben...' : `🚀 ${selectedIds.length} Aufgaben an Export-Zentrum übergeben`}
                 </Button>
               </div>
+              {/* Ebene 3: Projekt-Aufgaben direkt auf Einheitsebene */}
+              {projektaufgaben.filter(p => p.einheit_id === unitId).length > 0 && (
+                <>
+                  <Separator className="my-4" />
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-bold px-2">Projekt-Aufgaben (Ebene 3)</h4>
+                    {projektaufgaben.filter(p => p.einheit_id === unitId).map((aufgabe) => {
+                      const isSelected = selectedIds.includes(aufgabe.id);
+                      const isPending = aufgabe.sync_status === 'pending';
+                      const isApproved = aufgabe.content_status === 'approved';
+                      const title = aufgabe.titel || 'Projekt ohne Titel';
+
+                      return (
+                        <div key={aufgabe.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-muted/10 transition pl-6">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleBulkCheckbox([aufgabe])}
+                            disabled={isPending || !isApproved}
+                            className="h-4 w-4 shrink-0"
+                          />
+                          <span className="text-xs font-normal flex-1 truncate text-muted-foreground">
+                            🎯 {title} (Ebene 3)
+                          </span>
+                          {isPending && <UndoButton itemId={aufgabe.id} itemType="projekt" />}
+                          <StatusBadges contentStatus={aufgabe.content_status} syncStatus={aufgabe.sync_status} />
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
             </>
           )}
         </>
@@ -385,6 +424,8 @@ export default function ExportCockpitView({ initialEinheitId = null }) {
   const { data: aktivitaetenKatalog = [] } = useQuery({ queryKey: ['aktivitaetenKatalog'], queryFn: () => base44.entities.AktivitaetenKatalog.list() });
   const { data: masterAufgaben = [] } = useQuery({ queryKey: ['masterAufgaben'], queryFn: () => base44.entities.MasterAufgabe.list() });
   const { data: aufgabenbausteine = [] } = useQuery({ queryKey: ['aufgabenbausteine'], queryFn: () => base44.entities.Aufgabenbausteine.list() });
+  const { data: allgemeineAufgaben = [] } = useQuery({ queryKey: ['allgemeineAufgaben'], queryFn: () => base44.entities.AllgemeineAufgabe.list() });
+  const { data: projektaufgaben = [] } = useQuery({ queryKey: ['projektaufgaben'], queryFn: () => base44.entities.AllgemeineAufgabe.filter({ anforderungsebene: '3 - Projekt' }) });
 
   const updateSlot = (slotId, updates) => {
     setSlots((prev) => {
@@ -410,15 +451,29 @@ export default function ExportCockpitView({ initialEinheitId = null }) {
   const exportMutation = useMutation({
     mutationFn: async () => {
       for (const id of globalSelectedIds) {
-        await base44.entities.Aufgabenbausteine.update(id, { sync_status: 'pending' }).catch(() => 
-          base44.entities.MasterAufgabe.update(id, { sync_status: 'pending' })
-        );
+        try {
+          // Versuche als Aufgabenbaustein
+          const isAufgabenbaustein = aufgabenbausteine.some(a => a.id === id);
+          const isMasterAufgabe = masterAufgaben.some(m => m.id === id);
+          const isAllgemeineAufgabe = allgemeineAufgaben.some(a => a.id === id);
+
+          if (isAufgabenbaustein) {
+            await base44.entities.Aufgabenbausteine.update(id, { sync_status: 'pending' });
+          } else if (isMasterAufgabe) {
+            await base44.entities.MasterAufgabe.update(id, { sync_status: 'pending' });
+          } else if (isAllgemeineAufgabe) {
+            await base44.entities.AllgemeineAufgabe.update(id, { sync_status: 'pending' });
+          }
+        } catch (err) {
+          console.error(`Fehler beim Aktualisieren von ${id}`, err);
+        }
       }
       return globalSelectedIds.length;
     },
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine'] });
       queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
       setGlobalSelectedIds([]);
       toast.success(`${count} Aufgaben an das Export-Zentrum übergeben.`);
     },
@@ -453,6 +508,8 @@ export default function ExportCockpitView({ initialEinheitId = null }) {
               aktivitaetenKatalog={aktivitaetenKatalog}
               masterAufgaben={masterAufgaben.filter(m => m.sync_status !== 'to_delete')}
               aufgabenbausteine={aufgabenbausteine.filter(a => a.sync_status !== 'to_delete')}
+              allgemeineAufgaben={allgemeineAufgaben.filter(a => a.sync_status !== 'to_delete')}
+              projektaufgaben={projektaufgaben.filter(p => p.sync_status !== 'to_delete')}
               exportMutation={exportMutation}
             />
           ))}

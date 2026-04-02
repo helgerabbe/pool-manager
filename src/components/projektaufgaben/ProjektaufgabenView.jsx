@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { Plus, Star, FileText, ChevronRight, Edit, Trash2, Copy, CheckCircle2 } from 'lucide-react';
 import ProjektCreateView from './ProjektCreateView';
+import PublishProjektaufgabeButton from './PublishProjektaufgabeButton';
 import LernlandkartePreview from '@/components/lernlandkarte/LernlandkartePreview';
 import { generateInteractiveProjectCoach } from '@/utils/generateInteractiveProjectCoach';
 import { toast } from 'sonner';
@@ -179,6 +180,10 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
             <Edit className="w-4 h-4" />
             Bearbeiten
           </Button>
+          <PublishProjektaufgabeButton 
+            aufgabe={aufgabe} 
+            kannBearbeiten={kannBearbeiten}
+          />
           <Button
             variant="outline"
             size="sm"

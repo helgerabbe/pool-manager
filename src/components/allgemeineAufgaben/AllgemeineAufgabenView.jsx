@@ -10,6 +10,7 @@ import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView
 import AufgabeKompetenzMapping from '@/components/allgemeineAufgaben/AufgabeKompetenzMapping';
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
 import BasisLernzielSelector from '@/components/basismodule/BasisLernzielSelector';
+import PublishAllgemeineAufgabeButton from '@/components/allgemeineAufgaben/PublishAllgemeineAufgabeButton';
 
 /**
  * Schwierigkeitsgrad-Anzeige (1-3 Sterne)
@@ -159,6 +160,10 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
             <Edit className="w-4 h-4" />
             Bearbeiten
           </Button>
+          <PublishAllgemeineAufgabeButton 
+            aufgabe={aufgabe} 
+            kannBearbeiten={kannBearbeiten}
+          />
           <Button
             variant="outline"
             size="sm"
