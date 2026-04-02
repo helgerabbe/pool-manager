@@ -1,13 +1,10 @@
 /**
  * ExportCockpitView.jsx
- * 
- * Ebene 5 – Freigabe-Cockpit für Moodle-Export
- * 
- * Upgrades:
- * - Dynamisches Slot-Array-System mit Auto-Add beim Hinzufügen einer Einheit
- * - Exklusive Einheiten-Filter: Bereits verwendete Einheiten nicht in anderen Dropdowns
- * - Einklappbare Slots (Collapsible)
- * - Bugfix: Vollständige Hierarchie mit Aktivitäten/Aufgaben (tiefste Ebene)
+ * * Ebene 5 – Freigabe-Cockpit für Moodle-Export
+ * * Fixes:
+ * - Fehlende Queries für MasterAufgabe und Aufgabenbausteine (Klone) hinzugefügt
+ * - Rekursives Rendering bis zur tiefsten Ebene repariert
+ * - Redundante Einheiten-Überschrift entfernt
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -112,7 +109,7 @@ function UndoButton({ itemId, itemType, onSuccess }) {
 
 function calculateDerivedContentStatus(children) {
   if (!children || children.length === 0) return 'draft';
-  const allApproved = children.every((c) => c.effective_content_status === 'approved');
+  const allApproved = children.every((c) => (c.content_status || c.effective_content_status) === 'approved');
   return allApproved ? 'approved' : 'draft';
 }
 
@@ -147,123 +144,28 @@ function CockpitSlot({
   themenfelder,
   enrichedActivities,
   aktivitaetenKatalog,
+  masterAufgaben,
+  aufgabenbausteine,
   exportMutation,
 }) {
-  const { unitId, isCollapsed, selectedApproved } = slot;
-
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Filter: Nur Einheiten anzeigen, die nicht in anderen Slots genutzt werden
-  // ──────────────────────────────────────────────────────────────────────────────
+  const { unitId, isCollapsed } = slot;
 
   const availableEinheiten = einheiten.filter(
     (e) => !selectedEinheitIds.includes(e.id) || e.id === unitId
   );
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Helpers
-  // ──────────────────────────────────────────────────────────────────────────────
+  // Helper zum Sammeln aller Aufgaben (Master/Klone) für eine Aktivität
+  const getAufgabenForAktivitaet = useCallback((actId) => {
+    const masters = masterAufgaben.filter(m => m.aktivitaet_id === actId);
+    const klone = aufgabenbausteine.filter(k => masters.some(m => m.id === k.master_id));
+    return [...masters, ...klone];
+  }, [masterAufgaben, aufgabenbausteine]);
 
-  const getApprovedActivitiesForEinheit = useCallback(() => {
-    if (!unitId) return [];
-    const paketIds = lernpakete.filter((lp) => lp.einheit_id === unitId).map((lp) => lp.id);
-    return enrichedActivities.filter(
-      (a) => paketIds.includes(a.lernpaket_id) && a.effective_content_status === 'approved'
+  const toggleItemCheckbox = useCallback((id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
-  }, [unitId, lernpakete, enrichedActivities]);
-
-  const getApprovedActivitiesForThemenfeld = useCallback(
-    (themenfeldId) => {
-      if (!unitId) return [];
-      const lpForTf = lernpakete.filter(
-        (lp) => lp.themenfeld_id === themenfeldId && lp.einheit_id === unitId
-      );
-      const lpIds = lpForTf.map((lp) => lp.id);
-      return enrichedActivities.filter(
-        (a) => lpIds.includes(a.lernpaket_id) && a.effective_content_status === 'approved'
-      );
-    },
-    [unitId, lernpakete, enrichedActivities]
-  );
-
-  const getApprovedActivitiesForLernpaket = useCallback(
-    (paketId) => {
-      return enrichedActivities.filter(
-        (a) => a.lernpaket_id === paketId && a.effective_content_status === 'approved'
-      );
-    },
-    [enrichedActivities]
-  );
-
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Checkbox Logic: Kaskadierung
-  // ──────────────────────────────────────────────────────────────────────────────
-
-  const toggleEinheitCheckbox = useCallback(() => {
-    const approved = getApprovedActivitiesForEinheit();
-    const approvedIds = approved.map((a) => a.id);
-    const allSelected = approvedIds.length > 0 && approvedIds.every((id) => selectedIds.includes(id));
-
-    if (allSelected) {
-      setSelectedIds((prev) => prev.filter((id) => !approvedIds.includes(id)));
-    } else {
-      setSelectedIds((prev) => [...new Set([...prev, ...approvedIds])]);
-    }
-  }, [getApprovedActivitiesForEinheit, selectedIds, setSelectedIds]);
-
-  const toggleThemenfeldCheckbox = useCallback(
-    (themenfeldId) => {
-      const actForTf = getApprovedActivitiesForThemenfeld(themenfeldId);
-      const actIds = actForTf.map((a) => a.id);
-
-      const allSelected = actIds.length > 0 && actIds.every((id) => selectedIds.includes(id));
-      if (allSelected) {
-        setSelectedIds((prev) => prev.filter((id) => !actIds.includes(id)));
-      } else {
-        setSelectedIds((prev) => [...new Set([...prev, ...actIds])]);
-      }
-    },
-    [getApprovedActivitiesForThemenfeld, selectedIds, setSelectedIds]
-  );
-
-  const toggleLernpaketCheckbox = useCallback(
-    (paketId) => {
-      const actForPaket = getApprovedActivitiesForLernpaket(paketId);
-      const actIds = actForPaket.map((a) => a.id);
-
-      const allSelected = actIds.length > 0 && actIds.every((id) => selectedIds.includes(id));
-      if (allSelected) {
-        setSelectedIds((prev) => prev.filter((id) => !actIds.includes(id)));
-      } else {
-        setSelectedIds((prev) => [...new Set([...prev, ...actIds])]);
-      }
-    },
-    [getApprovedActivitiesForLernpaket, selectedIds, setSelectedIds]
-  );
-
-  const toggleActivityCheckbox = useCallback(
-    (actId) => {
-      setSelectedIds((prev) =>
-        prev.includes(actId) ? prev.filter((x) => x !== actId) : [...prev, actId]
-      );
-    },
-    [setSelectedIds]
-  );
-
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Computed Values
-  // ──────────────────────────────────────────────────────────────────────────────
-
-  const paketIds = unitId
-    ? lernpakete.filter((lp) => lp.einheit_id === unitId).map((lp) => lp.id)
-    : [];
-  const paketActivities = enrichedActivities.filter((a) => paketIds.includes(a.lernpaket_id));
-  const currentEinheit = unitId ? einheiten.find((e) => e.id === unitId) : null;
-  const canSelectForExport = paketActivities.some((a) => a.effective_content_status === 'approved');
-  const hasSelectedItems = selectedApproved && selectedApproved.length > 0;
-
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Handle Einheit Change
-  // ──────────────────────────────────────────────────────────────────────────────
+  }, [setSelectedIds]);
 
   const handleEinheitChange = (newEinheitId) => {
     updateSlot(slotId, { unitId: newEinheitId, isCollapsed: false });
@@ -281,97 +183,103 @@ function CockpitSlot({
       .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
       .map((tf) => {
         const tfPakete = lernpakete.filter((lp) => lp.themenfeld_id === tf.id);
-        const tfActivities = enrichedActivities.filter(
-          (a) =>
-            tfPakete.some((lp) => lp.id === a.lernpaket_id) &&
-            a.effective_content_status === 'approved'
-        );
-        const tfSelectedCount = tfActivities.filter((a) => selectedIds.includes(a.id)).length;
-        const allTfSelected = tfActivities.length > 0 && tfSelectedCount === tfActivities.length;
+        
+        // Sammle alle Aufgaben in diesem Themenfeld für den Vererbungsstatus
+        let tfAllAufgaben = [];
+        tfPakete.forEach(paket => {
+            const paketActivities = enrichedActivities.filter(a => a.lernpaket_id === paket.id);
+            paketActivities.forEach(act => {
+                tfAllAufgaben = [...tfAllAufgaben, ...getAufgabenForAktivitaet(act.id)];
+            });
+        });
 
-        const tfDerivedContentStatus = calculateDerivedContentStatus(tfActivities);
-        const tfDerivedSyncStatus = calculateDerivedSyncStatus(tfActivities);
+        const tfDerivedContentStatus = calculateDerivedContentStatus(tfAllAufgaben);
+        const tfDerivedSyncStatus = calculateDerivedSyncStatus(tfAllAufgaben);
 
         return (
           <div key={tf.id} className="space-y-2">
             {/* Themenfeld */}
             <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/40 transition">
-              <Checkbox
-                checked={allTfSelected}
-                onCheckedChange={() => {}}
-                disabled={tfActivities.length === 0}
-                className="h-4 w-4"
-              />
               <span className="text-sm font-semibold flex-1 truncate">{tf.titel}</span>
-              {tfActivities.length > 0 && (
-                <span className="text-xs text-muted-foreground">{tfSelectedCount}/{tfActivities.length}</span>
-              )}
               <StatusBadges contentStatus={tfDerivedContentStatus} syncStatus={tfDerivedSyncStatus} />
             </div>
 
             {/* Lernpakete */}
             <div className="pl-6 space-y-2 border-l border-border/50">
               {tfPakete.map((paket) => {
-                const paketActivities = enrichedActivities.filter(
-                  (a) => a.lernpaket_id === paket.id && a.effective_content_status === 'approved'
-                );
-                const paketSelectedCount = paketActivities.filter((a) => selectedIds.includes(a.id)).length;
-                const allPaketSelected =
-                  paketActivities.length > 0 && paketSelectedCount === paketActivities.length;
+                const paketActivities = enrichedActivities.filter((a) => a.lernpaket_id === paket.id);
+                
+                let paketAllAufgaben = [];
+                paketActivities.forEach(act => {
+                    paketAllAufgaben = [...paketAllAufgaben, ...getAufgabenForAktivitaet(act.id)];
+                });
 
-                const paketDerivedContentStatus = calculateDerivedContentStatus(paketActivities);
-                const paketDerivedSyncStatus = calculateDerivedSyncStatus(paketActivities);
+                const paketDerivedContentStatus = calculateDerivedContentStatus(paketAllAufgaben);
+                const paketDerivedSyncStatus = calculateDerivedSyncStatus(paketAllAufgaben);
 
                 return (
                   <div key={paket.id} className="space-y-1.5">
                     {/* Lernpaket */}
                     <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/40 transition">
-                      <Checkbox
-                        checked={allPaketSelected}
-                        onCheckedChange={() => toggleLernpaketCheckbox(paket.id)}
-                        disabled={paketActivities.length === 0}
-                        className="h-4 w-4"
-                      />
                       <span className="text-sm font-medium flex-1 truncate">{paket.titel_des_pakets}</span>
-                      {paketActivities.length > 0 && (
-                        <span className="text-xs text-muted-foreground">
-                          {paketSelectedCount}/{paketActivities.length}
-                        </span>
-                      )}
                       <StatusBadges
                         contentStatus={paketDerivedContentStatus}
                         syncStatus={paketDerivedSyncStatus}
                       />
                     </div>
 
-                    {/* Aktivitäten & Aufgaben (Klone/Masters) */}
+                    {/* Aktivitäten */}
                     <div className="pl-6 space-y-1.5 border-l border-border/30">
                       {paketActivities.map((act) => {
-                        const actName = aktivitaetenKatalog.find((k) => k.id === act.aktivitaet_id)?.name ||
-                          'Aktivität';
-                        const isSelected = selectedIds.includes(act.id);
-                        const isPending = act.sync_status === 'pending';
+                        const actName = aktivitaetenKatalog.find((k) => k.id === act.aktivitaet_id)?.name || 'Aktivität';
+                        const aufgaben = getAufgabenForAktivitaet(act.id);
+                        
+                        const actDerivedContentStatus = calculateDerivedContentStatus(aufgaben);
+                        const actDerivedSyncStatus = calculateDerivedSyncStatus(aufgaben);
 
                         return (
                           <div key={act.id} className="space-y-1">
-                            {/* Aktivität */}
+                            {/* Aktivität Header */}
                             <div className="flex items-center gap-2 p-1.5 rounded hover:bg-muted/30 transition">
-                              <Checkbox
-                                checked={isSelected}
-                                onCheckedChange={() => toggleActivityCheckbox(act.id)}
-                                disabled={isPending}
-                                className="h-4 w-4 shrink-0"
-                              />
-                              <span className="text-xs font-normal flex-1 truncate text-foreground">
-                                {actName}
+                              <span className="text-xs font-semibold flex-1 truncate text-foreground">
+                                ↳ {actName}
                               </span>
-
-                              {isPending && <UndoButton itemId={act.id} itemType="activity" />}
-
                               <StatusBadges
-                                contentStatus={act.effective_content_status}
-                                syncStatus={act.sync_status}
+                                contentStatus={actDerivedContentStatus}
+                                syncStatus={actDerivedSyncStatus}
                               />
+                            </div>
+
+                            {/* Aufgaben (Klone & Master) */}
+                            <div className="pl-6 space-y-1">
+                                {aufgaben.map((aufgabe) => {
+                                    const isSelected = selectedIds.includes(aufgabe.id);
+                                    const isPending = aufgabe.sync_status === 'pending';
+                                    const isApproved = aufgabe.content_status === 'approved';
+                                    const aufgabeType = aufgabe.master_id ? 'klon' : 'master';
+                                    const title = aufgabe.titel || (aufgabeType === 'master' ? 'Master-Aufgabe' : 'Klon-Aufgabe');
+
+                                    return (
+                                        <div key={aufgabe.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-muted/20 transition">
+                                            <Checkbox
+                                                checked={isSelected}
+                                                onCheckedChange={() => toggleItemCheckbox(aufgabe.id)}
+                                                disabled={isPending || !isApproved}
+                                                className="h-4 w-4 shrink-0"
+                                            />
+                                            <span className="text-xs font-normal flex-1 truncate text-muted-foreground">
+                                                {title}
+                                            </span>
+                                            
+                                            {isPending && <UndoButton itemId={aufgabe.id} itemType={aufgabeType} />}
+
+                                            <StatusBadges
+                                                contentStatus={aufgabe.content_status}
+                                                syncStatus={aufgabe.sync_status}
+                                            />
+                                        </div>
+                                    )
+                                })}
                             </div>
                           </div>
                         );
@@ -385,10 +293,6 @@ function CockpitSlot({
         );
       });
   };
-
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Render
-  // ──────────────────────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-4 p-4 border border-border rounded-lg bg-card/50 h-fit flex-1">
@@ -416,26 +320,18 @@ function CockpitSlot({
         )}
       </div>
 
-      {/* Content (kann eingeklappt sein) */}
+      {/* Content */}
       {!isCollapsed && (
         <>
-          {/* Einheit-Select mit Status-Indikator */}
           <Select value={unitId || ''} onValueChange={handleEinheitChange}>
-            <SelectTrigger className="h-9 text-sm">
+            <SelectTrigger className="h-9 text-sm font-semibold">
               <SelectValue placeholder="Einheit auswählen..." />
             </SelectTrigger>
             <SelectContent className="text-sm">
               {availableEinheiten.map((e) => {
-                const einheitActivities = enrichedActivities.filter(
-                  (a) => lernpakete.some((lp) => lp.einheit_id === e.id && a.lernpaket_id === lp.id)
-                );
-                const hasNew = einheitActivities.some((a) => a.sync_status === 'new');
-                const hasModified = einheitActivities.some((a) => a.sync_status === 'modified');
-                const statusText = hasNew ? ' (🆕 Updates)' : hasModified ? ' (⚠️ Änderungen)' : '';
-
                 return (
                   <SelectItem key={e.id} value={e.id} className="text-sm">
-                    {e.titel_der_einheit} ({e.fach}){statusText}
+                    {e.titel_der_einheit} ({e.fach})
                   </SelectItem>
                 );
               })}
@@ -448,68 +344,21 @@ function CockpitSlot({
             </div>
           ) : (
             <>
-              {/* Hierarchie Render */}
-              <div className="space-y-3 h-fit">
-                {currentEinheit && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition">
-                      <Checkbox
-                        checked={
-                          paketActivities.filter((a) => a.effective_content_status === 'approved').length > 0 &&
-                          paketActivities
-                            .filter((a) => a.effective_content_status === 'approved')
-                            .every((a) => selectedIds.includes(a.id))
-                        }
-                        onCheckedChange={toggleEinheitCheckbox}
-                        className="h-5 w-5"
-                      />
-                      <span className="text-sm font-semibold flex-1 truncate">
-                        {currentEinheit.titel_der_einheit}
-                      </span>
-                      <StatusBadges
-                        contentStatus={currentEinheit.content_status}
-                        syncStatus={currentEinheit.sync_status}
-                      />
-                    </div>
-                    <Separator />
-                  </div>
-                )}
-
+              <div className="space-y-3 h-fit pt-2">
                 {renderHierarchy()}
               </div>
 
               {/* Export Button */}
-              {canSelectForExport && (
-                <div className="space-y-2 pt-3 border-t border-border/40">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-foreground">
-                      {hasSelectedItems ? `✓ ${selectedApproved?.length || 0} markiert` : '→ Auswahl'}
-                    </span>
-                    <span className="text-muted-foreground">
-                      {paketActivities.filter((a) => a.effective_content_status === 'approved').length} verfügbar
-                    </span>
-                  </div>
-
-                  <Button
-                    onClick={() => exportMutation.mutate()}
-                    disabled={!hasSelectedItems || exportMutation.isPending}
-                    className="w-full h-9 gap-2 text-sm"
-                    size="sm"
-                  >
-                    {exportMutation.isPending ? (
-                      <>
-                        <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" />
-                        Lädt…
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="w-4 h-4" />
-                        Freigeben
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
+              <div className="space-y-2 pt-3 border-t border-border/40">
+                <Button
+                  onClick={() => exportMutation.mutate()}
+                  disabled={selectedIds.length === 0 || exportMutation.isPending}
+                  className="w-full h-9 gap-2 text-sm"
+                  size="sm"
+                >
+                  {exportMutation.isPending ? 'Lädt...' : `🚀 ${selectedIds.length} Aufgaben zum Export freigeben`}
+                </Button>
+              </div>
             </>
           )}
         </>
@@ -519,122 +368,74 @@ function CockpitSlot({
 }
 
 // ────────────────────────────────────────────────────────────────────────────────
-// Main Component: Dynamisches Slot-System
+// Main Component
 // ────────────────────────────────────────────────────────────────────────────────
 
 export default function ExportCockpitView({ initialEinheitId = null }) {
   const queryClient = useQueryClient();
-  const [slots, setSlots] = useState([{ id: 1, unitId: initialEinheitId, isCollapsed: false, selectedApproved: [] }]);
+  const [slots, setSlots] = useState([{ id: 1, unitId: initialEinheitId, isCollapsed: false }]);
   const [nextSlotId, setNextSlotId] = useState(2);
   const [globalSelectedIds, setGlobalSelectedIds] = useState([]);
 
-  // ──────────────────────────────────────────────────────────────────────────────
   // Data Queries
-  // ──────────────────────────────────────────────────────────────────────────────
-
-  const { data: einheiten = [] } = useQuery({
-    queryKey: ['einheiten'],
-    queryFn: () => base44.entities.Einheiten.list(),
-  });
-
-  const { data: lernpakete = [] } = useQuery({
-    queryKey: ['lernpakete'],
-    queryFn: () => base44.entities.Lernpakete.list(),
-  });
-
-  const { data: themenfelder = [] } = useQuery({
-    queryKey: ['themenfelder'],
-    queryFn: () => base44.entities.Themenfeld.list(),
-  });
-
-  const { data: activities = [] } = useQuery({
-    queryKey: ['lernpaketPhaseAktivitaeten'],
-    queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list(),
-  });
-
-  const { data: aktivitaetenKatalog = [] } = useQuery({
-    queryKey: ['aktivitaetenKatalog'],
-    queryFn: () => base44.entities.AktivitaetenKatalog.list(),
-  });
-
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Data Processing
-  // ──────────────────────────────────────────────────────────────────────────────
+  const { data: einheiten = [] } = useQuery({ queryKey: ['einheiten'], queryFn: () => base44.entities.Einheiten.list() });
+  const { data: lernpakete = [] } = useQuery({ queryKey: ['lernpakete'], queryFn: () => base44.entities.Lernpakete.list() });
+  const { data: themenfelder = [] } = useQuery({ queryKey: ['themenfelder'], queryFn: () => base44.entities.Themenfeld.list() });
+  const { data: activities = [] } = useQuery({ queryKey: ['lernpaketPhaseAktivitaeten'], queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list() });
+  const { data: aktivitaetenKatalog = [] } = useQuery({ queryKey: ['aktivitaetenKatalog'], queryFn: () => base44.entities.AktivitaetenKatalog.list() });
+  
+  // FEHLENDE QUERIES HINZUGEFÜGT
+  const { data: masterAufgaben = [] } = useQuery({ queryKey: ['masterAufgaben'], queryFn: () => base44.entities.MasterAufgabe.list() });
+  const { data: aufgabenbausteine = [] } = useQuery({ queryKey: ['aufgabenbausteine'], queryFn: () => base44.entities.Aufgabenbausteine.list() });
 
   const visibleActivities = activities.filter((a) => a.sync_status !== 'to_delete');
-  const enrichedActivities = useMemo(
-    () =>
-      visibleActivities.map((a) => ({
-        ...a,
-        effective_content_status: a.content_status,
-      })),
-    [visibleActivities]
-  );
-
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Slot Management
-  // ──────────────────────────────────────────────────────────────────────────────
+  const enrichedActivities = useMemo(() => visibleActivities.map((a) => ({ ...a, effective_content_status: a.content_status })), [visibleActivities]);
 
   const updateSlot = (slotId, updates) => {
     setSlots((prevSlots) => {
       const newSlots = prevSlots.map((s) => (s.id === slotId ? { ...s, ...updates } : s));
-
-      // Auto-add neuen leeren Slot wenn letzte Slot eine Einheit hat
       const lastSlot = newSlots[newSlots.length - 1];
       if (lastSlot && lastSlot.unitId && !newSlots.find((s) => !s.unitId)) {
-        newSlots.push({ id: nextSlotId + 1, unitId: null, isCollapsed: false, selectedApproved: [] });
+        newSlots.push({ id: nextSlotId + 1, unitId: null, isCollapsed: false });
         setNextSlotId(nextSlotId + 2);
       }
-
       return newSlots;
     });
   };
 
-  const removeSlot = (slotId) => {
-    setSlots((prevSlots) => prevSlots.filter((s) => s.id !== slotId));
-  };
-
+  const removeSlot = (slotId) => setSlots((prev) => prev.filter((s) => s.id !== slotId));
   const selectedEinheitIds = slots.map((s) => s.unitId).filter(Boolean);
-
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Export Mutation
-  // ──────────────────────────────────────────────────────────────────────────────
 
   const exportMutation = useMutation({
     mutationFn: async () => {
       if (globalSelectedIds.length === 0) throw new Error('Keine Elemente ausgewählt');
-
       for (const id of globalSelectedIds) {
-        await base44.entities.LernpaketPhaseAktivitaet.update(id, { sync_status: 'pending' });
+        // HINWEIS: Hier checkt das Backend normalerweise, ob es sich um Klon oder Master handelt.
+        await base44.entities.Aufgabenbausteine.update(id, { sync_status: 'pending' }).catch(() => 
+          base44.entities.MasterAufgabe.update(id, { sync_status: 'pending' })
+        );
       }
       return globalSelectedIds.length;
     },
     onSuccess: (count) => {
-      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine'] });
+      queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
       setGlobalSelectedIds([]);
-      toast.success(`🚀 ${count} Element${count !== 1 ? 'e' : ''} zum Export markiert.`);
+      toast.success(`🚀 ${count} Aufgaben an das Export-Zentrum übergeben.`);
     },
-    onError: (err) => {
-      toast.error('Fehler: ' + err.message);
-    },
+    onError: (err) => toast.error('Fehler: ' + err.message),
   });
-
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Render
-  // ──────────────────────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
         <div className="space-y-2">
           <h2 className="text-3xl font-bold">Freigabe-Cockpit</h2>
           <p className="text-base text-muted-foreground">
-            Wähle Einheiten aus und markiere die Elemente zum Export. Das Grid füllt sich automatisch Reihe für Reihe.
+            Wähle Einheiten aus und markiere die fertigen Aufgaben zur Übergabe an das Export-Zentrum.
           </p>
         </div>
 
-        {/* Dynamic Slot Grid */}
         {slots.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {slots.map((slot) => (
@@ -652,6 +453,8 @@ export default function ExportCockpitView({ initialEinheitId = null }) {
                 themenfelder={themenfelder}
                 enrichedActivities={enrichedActivities}
                 aktivitaetenKatalog={aktivitaetenKatalog}
+                masterAufgaben={masterAufgaben}
+                aufgabenbausteine={aufgabenbausteine}
                 exportMutation={exportMutation}
               />
             ))}
