@@ -10,6 +10,8 @@ import { useDraftState, useDraftRestore } from '@/hooks/useDraftState';
 import { useSavedIndicator, SavedIndicator } from '@/hooks/useSavedIndicator.jsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import LernzielBadge from '@/components/allgemeineAufgaben/LernzielBadge';
+import InlineBasisLernzielSelector from '@/components/allgemeineAufgaben/InlineBasisLernzielSelector';
+import KompetenzDropzoneWithBasis from '@/components/allgemeineAufgaben/KompetenzDropzoneWithBasis';
 
 // ── Draggable Lernziel (memoized für Performance) ──
 const DraggableLernziel = React.memo(function DraggableLernziel({ lernziel, isHighlighted, index }) {
@@ -52,7 +54,7 @@ const DraggableLernziel = React.memo(function DraggableLernziel({ lernziel, isHi
   );
 });
 
-// ── Dropzone für Lernziele (memoized) ──
+// ── Legacy Dropzone (wird nicht mehr verwendet) ──
 const LernzielDropzone = React.memo(function LernzielDropzone({
   aufgabeId,
   mappedLernziele,
@@ -137,9 +139,11 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
   
   // Lokaler State für die Arbeit (kein Draft-State nötig, da alles sofort gespeichert wird)
   const [mappedLernziele, setMappedLernziele] = useState([]);
+  const [mappedBasisLernziele, setMappedBasisLernziele] = useState([]);
   const { showSavedIndicator, triggerSaved } = useSavedIndicator();
 
   const [savingIds, setSavingIds] = useState(new Set());
+  const [savingBasisIds, setSavingBasisIds] = useState(new Set());
   const [isSaving, setIsSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -174,11 +178,30 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
     enabled: !!aufgabe?.id,
   });
 
+  const { data: basisLernziele = [] } = useQuery({
+    queryKey: ['basisLernziele'],
+    queryFn: () => base44.entities.BasisLernziel.list(),
+  });
+
+  const { data: existingBasisMappings = [] } = useQuery({
+    queryKey: ['allgemeineAufgabeBasisMappings', aufgabe?.id],
+    queryFn: () =>
+      aufgabe?.id
+        ? base44.entities.AllgemeineAufgabeBasisLernzielMapping.filter({
+            aufgabe_id: aufgabe.id,
+          })
+        : Promise.resolve([]),
+    enabled: !!aufgabe?.id,
+  });
+
   // Sync DB-Mappings mit lokalen Daten (bei Tab-Wechsel)
   useEffect(() => {
     const mapped = alleLernziele.filter((lz) => existingMappings.some((m) => m.lernziel_id === lz.id));
     setMappedLernziele(mapped);
-  }, [alleLernziele, existingMappings]);
+
+    const mappedBasis = basisLernziele.filter((lz) => existingBasisMappings.some((m) => m.basislernziel_id === lz.id));
+    setMappedBasisLernziele(mappedBasis);
+  }, [alleLernziele, existingMappings, basisLernziele, existingBasisMappings]);
 
   // Mutations
   const createMapping = useMutation({
@@ -261,6 +284,19 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
     [existingMappings, alleLernziele, deleteMapping, setMappedLernziele]
   );
 
+  const handleRemoveBasisMapping = useCallback(
+    (basisLernzielId) => {
+      // Handler wird direkt von InlineBasisLernzielSelector aufgerufen
+      setMappedBasisLernziele((prev) => prev.filter((lz) => lz.id !== basisLernzielId));
+      setSavingBasisIds((prev) => {
+        const next = new Set(prev);
+        next.delete(basisLernzielId);
+        return next;
+      });
+    },
+    []
+  );
+
   // Gefilterte Listen (memoized)
   const lernzieleDeEinheit = useMemo(
     () =>
@@ -307,8 +343,8 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
                   {...provided.droppableProps}
                   className="flex flex-col min-h-0 overflow-hidden border rounded-lg"
                 >
-                  <div className="px-4 py-3 bg-slate-100 border-b sticky top-0 z-10 space-y-2">
-                    <h3 className="text-sm font-semibold">Verfügbare Lernziele</h3>
+                  <div className="px-4 py-3 bg-slate-100 border-b sticky top-0 z-20 space-y-2">
+                    <h3 className="text-sm font-semibold">Verfügbare Kompetenzen</h3>
                     <div className="relative">
                       <Search className="absolute left-2 top-2.5 w-4 h-4 text-muted-foreground" />
                       <input
@@ -320,31 +356,51 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
                       />
                     </div>
                   </div>
-                  <div className="flex-1 overflow-y-auto p-3 space-y-3">
-                    {themenfeldMitLernzielen.filter((item) => item.lernziele.length > 0).length === 0 ? (
-                      <p className="text-xs text-muted-foreground text-center py-4">Keine Lernziele vorhanden</p>
-                    ) : (
-                      themenfeldMitLernzielen.map((item) => (
-                        <ThemenfeldGroup
-                          key={item.themenfeld.id}
-                          themenfeld={item.themenfeld}
-                          lernziele={item.lernziele}
-                          searchTerm={searchTerm}
-                        />
-                      ))
-                    )}
-                    {unzugeordneteLernziele.length > 0 && (
-                      <div className="border rounded-lg overflow-hidden">
-                        <div className="px-3 py-2 bg-slate-50 border-b text-left">
-                          <span className="text-xs font-semibold text-slate-700">Nicht zugeordnete Lernziele</span>
-                        </div>
-                        <div className="p-2 space-y-1.5 bg-white">
-                          {unzugeordneteLernziele.map((lz, index) => (
-                            <DraggableLernziel key={lz.id} lernziel={lz} isHighlighted={false} index={index} />
+                  <div className="flex-1 overflow-y-auto p-3 space-y-4">
+                    {/* Bereich 1: Lernziele der Einheit */}
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase mb-2 px-1">Lernziele der Einheit</p>
+                      {themenfeldMitLernzielen.filter((item) => item.lernziele.length > 0).length === 0 ? (
+                        <p className="text-xs text-muted-foreground text-center py-4">Keine Lernziele vorhanden</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {themenfeldMitLernzielen.map((item) => (
+                            <ThemenfeldGroup
+                              key={item.themenfeld.id}
+                              themenfeld={item.themenfeld}
+                              lernziele={item.lernziele}
+                              searchTerm={searchTerm}
+                            />
                           ))}
                         </div>
-                      </div>
-                    )}
+                      )}
+                      {unzugeordneteLernziele.length > 0 && (
+                        <div className="mt-3 border rounded-lg overflow-hidden">
+                          <div className="px-3 py-2 bg-slate-50 border-b text-left">
+                            <span className="text-xs font-semibold text-slate-700">Nicht zugeordnete Lernziele</span>
+                          </div>
+                          <div className="p-2 space-y-1.5 bg-white">
+                            {unzugeordneteLernziele.map((lz, index) => (
+                              <DraggableLernziel key={lz.id} lernziel={lz} isHighlighted={false} index={index} />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Bereich 2: Basis-Vorwissen */}
+                    <div className="border-t pt-3">
+                      <InlineBasisLernzielSelector 
+                        aufgabeId={aufgabe?.id}
+                        onLernzielAdded={() => {
+                          triggerSaved();
+                        }}
+                        onLernzielRemoved={() => {
+                          triggerSaved();
+                        }}
+                      />
+                    </div>
+
                     {provided.placeholder}
                   </div>
                 </div>
@@ -362,11 +418,14 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
               </div>
 
               <div className="flex-1 overflow-y-auto">
-                <LernzielDropzone
+                <KompetenzDropzoneWithBasis
                   aufgabeId={aufgabe?.id}
                   mappedLernziele={mappedLernziele}
+                  mappedBasisLernziele={mappedBasisLernziele}
                   onMappingRemoved={handleRemoveMapping}
+                  onBasisMappingRemoved={handleRemoveBasisMapping}
                   removingIds={savingIds}
+                  removingBasisIds={savingBasisIds}
                 />
               </div>
             </div>
@@ -374,11 +433,11 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheitId, onComplete
 
           {/* Footer: Info */}
           <div className="flex items-center justify-between border-t pt-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <p className="text-xs text-muted-foreground">
-                {mappedLernziele.length === 0
-                  ? 'Noch keine Lernziele zugeordnet'
-                  : `${mappedLernziele.length} Lernziel(e) zugeordnet`}
+                {mappedLernziele.length + mappedBasisLernziele.length === 0
+                  ? 'Noch keine Kompetenzen zugeordnet'
+                  : `${mappedLernziele.length} Lernziel(e) + ${mappedBasisLernziele.length} Basis-Ziel(e)`}
               </p>
               <SavedIndicator show={showSavedIndicator} />
             </div>
