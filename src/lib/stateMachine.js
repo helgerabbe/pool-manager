@@ -18,16 +18,24 @@ export const EINHEIT_STATUS = {
 };
 
 export const SYNC_STATUS = {
-  NEW: 'new',
+  DRAFT: 'draft',
+  APPROVED: 'approved',
+  PENDING_EXPORT: 'pending_export',
   EXPORTED: 'exported',
   MODIFIED: 'modified',
+  ERROR: 'error',
+  TO_DELETE: 'to_delete',
 };
 
 // ── Task Sync Status Config (für UI-Badges) ──────────────────────────────────
 export const TASK_STATUS_CONFIG = {
-  new: {
-    label: 'Neu',
+  draft: {
+    label: 'Entwurf',
     color: 'text-blue-600',
+  },
+  approved: {
+    label: 'Freigegeben',
+    color: 'text-green-700',
   },
   exported: {
     label: 'Exportiert',
@@ -41,13 +49,13 @@ export const TASK_STATUS_CONFIG = {
     label: 'Export ausstehend',
     color: 'text-orange-600',
   },
-  to_delete: {
-    label: 'Zu löschen',
+  error: {
+    label: 'Fehler',
     color: 'text-red-600',
   },
-  approved: {
-    label: 'Freigegeben',
-    color: 'text-green-700',
+  to_delete: {
+    label: 'Zu löschen',
+    color: 'text-red-700',
   },
 };
 
@@ -129,14 +137,6 @@ export function getStatusColor(status) {
  * Sync-Status Farben
  */
 export function getSyncStatusColor(syncStatus) {
-  switch (syncStatus) {
-    case SYNC_STATUS.NEW:
-      return 'bg-blue-100 text-blue-700';
-    case SYNC_STATUS.EXPORTED:
-      return 'bg-green-100 text-green-700';
-    case SYNC_STATUS.MODIFIED:
-      return 'bg-amber-100 text-amber-700';
-    default:
-      return 'bg-slate-100 text-slate-700';
-  }
+  const config = TASK_STATUS_CONFIG[syncStatus];
+  return config ? config.color : 'text-slate-600';
 }

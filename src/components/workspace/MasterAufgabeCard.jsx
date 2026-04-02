@@ -162,7 +162,7 @@ export default function MasterAufgabeCard({
 
   const saveMutation = useMutation({
     mutationFn: ({ fv, closeEdit }) => {
-      // State Machine: synced → modified, pending_export → blockiert
+      // State Machine: exported + edit → modified, approved + edit → draft
       const newSyncStatus = syncStatus.getSyncStatusForSave();
       return base44.entities.MasterAufgabe.update(master.id, {
         field_values: fv,

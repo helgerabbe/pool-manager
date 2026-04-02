@@ -70,11 +70,10 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail }) {
 
   const saveMutation = useMutation({
     mutationFn: (updated) => {
-      // State Machine: synced → modified, pending_export → blockiert
+      // State Machine: exported + edit → modified, approved + edit → draft
       const newSyncStatus = syncStatus.getSyncStatusForSave();
       return base44.entities.Aufgabenbausteine.update(klon.id, {
         aufgabentext_inhalt: JSON.stringify(updated),
-        status: klon.status || 'draft',
         sync_status: newSyncStatus,
       });
     },
@@ -87,10 +86,9 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail }) {
     onError: (err) => toast.error(err.message || 'Fehler beim Speichern.'),
   });
 
-  // Freigeben: setzt Klon-status 'approved' UND sync_status 'approved'
+  // Freigeben: setzt sync_status 'approved'
   const approveMutation = useMutation({
     mutationFn: () => base44.entities.Aufgabenbausteine.update(klon.id, {
-      status: 'approved',
       sync_status: TASK_SYNC_STATUS.APPROVED,
     }),
     onSuccess: () => {
@@ -112,7 +110,7 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail }) {
   const addDistractor = () => setData(d => ({ ...d, distractors: [...(d.distractors || []), ''] }));
   const removeDistractor = (idx) => setData(d => ({ ...d, distractors: d.distractors.filter((_, i) => i !== idx) }));
 
-  const statusBadge = klon.status === 'approved'
+  const statusBadge = klon.sync_status === 'approved'
     ? <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">✓ Freigegeben</Badge>
     : <Badge variant="secondary">Entwurf {klon.klon_index || '?'}</Badge>;
 
@@ -149,7 +147,7 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail }) {
               </>
             ) : (
               <>
-                {klon.status !== 'approved' && (
+                {klon.sync_status !== 'approved' && (
                   <Button size="sm" variant="outline" onClick={() => approveMutation.mutate()} disabled={approveMutation.isPending}
                     className="gap-1.5 text-green-700 border-green-300 hover:bg-green-50">
                     <Check className="w-3.5 h-3.5" /> Freigeben

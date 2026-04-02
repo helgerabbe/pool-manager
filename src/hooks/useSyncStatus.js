@@ -11,40 +11,48 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
 export const TASK_SYNC_STATUS = {
-  NEW: 'new',
+  DRAFT: 'draft',
+  APPROVED: 'approved',
+  PENDING_EXPORT: 'pending_export',
   EXPORTED: 'exported',
   MODIFIED: 'modified',
-  PENDING_EXPORT: 'pending_export',
+  ERROR: 'error',
   TO_DELETE: 'to_delete',
-  APPROVED: 'approved',
 };
 
 /**
  * State-Transitions für Moodle-Export:
- *   new → (approved|exported|modified)
- *   exported → (modified|approved)
- *   modified → (pending_export|exported|approved)
- *   approved → (modified)
+ *   draft → (approved|pending_export|to_delete)
+ *   approved → (draft|pending_export|to_delete)
+ *   exported → (modified|pending_export|to_delete)
+ *   modified → (pending_export|to_delete)
+ *   error → (draft|to_delete)
  *   pending_export → [BLOCKIERT]
  *   to_delete → [BLOCKIERT]
  */
 const ALLOWED_TRANSITIONS = {
-  [TASK_SYNC_STATUS.NEW]: [
-    TASK_SYNC_STATUS.EXPORTED,
+  [TASK_SYNC_STATUS.DRAFT]: [
     TASK_SYNC_STATUS.APPROVED,
-    TASK_SYNC_STATUS.MODIFIED,
+    TASK_SYNC_STATUS.PENDING_EXPORT,
+    TASK_SYNC_STATUS.TO_DELETE,
+  ],
+  [TASK_SYNC_STATUS.APPROVED]: [
+    TASK_SYNC_STATUS.DRAFT,
+    TASK_SYNC_STATUS.PENDING_EXPORT,
+    TASK_SYNC_STATUS.TO_DELETE,
   ],
   [TASK_SYNC_STATUS.EXPORTED]: [
     TASK_SYNC_STATUS.MODIFIED,
-    TASK_SYNC_STATUS.APPROVED,
+    TASK_SYNC_STATUS.PENDING_EXPORT,
+    TASK_SYNC_STATUS.TO_DELETE,
   ],
   [TASK_SYNC_STATUS.MODIFIED]: [
     TASK_SYNC_STATUS.PENDING_EXPORT,
-    TASK_SYNC_STATUS.EXPORTED,
-    TASK_SYNC_STATUS.APPROVED,
+    TASK_SYNC_STATUS.TO_DELETE,
   ],
-  [TASK_SYNC_STATUS.APPROVED]: [
-    TASK_SYNC_STATUS.MODIFIED,
+  [TASK_SYNC_STATUS.ERROR]: [
+    TASK_SYNC_STATUS.DRAFT,
+    TASK_SYNC_STATUS.TO_DELETE,
   ],
   [TASK_SYNC_STATUS.PENDING_EXPORT]: [],
   [TASK_SYNC_STATUS.TO_DELETE]: [],
@@ -53,11 +61,11 @@ const ALLOWED_TRANSITIONS = {
 /**
  * Berechnet automatisch neuen sync_status basierend auf Edit-Operation.
  *
- * Regeln:
- *   - new/modified → bleiben wie sind
- *   - exported → wird zu modified
- *   - approved → wird zu modified
- *   - pending_export, to_delete → ERROR
+ * Regeln bei Inhaltsänderung:
+ *   - exported + edit → modified (später Moodle-UPDATE)
+ *   - approved + edit → draft (Freigabe zurückgenommen)
+ *   - draft + edit → draft (bleibt Draft)
+ *   - pending_export, to_delete → ERROR (blockiert)
  */
 function computeSyncStatusForSave(currentStatus) {
   if (currentStatus === TASK_SYNC_STATUS.PENDING_EXPORT) {
@@ -70,16 +78,18 @@ function computeSyncStatusForSave(currentStatus) {
     throw new Error('Aufgabe ist zum Löschen markiert. Bearbeitungen nicht möglich.');
   }
 
-  // exported, approved → modified
-  if (
-    currentStatus === TASK_SYNC_STATUS.EXPORTED ||
-    currentStatus === TASK_SYNC_STATUS.APPROVED
-  ) {
+  // exported + edit → modified (Moodle-UPDATE triggern)
+  if (currentStatus === TASK_SYNC_STATUS.EXPORTED) {
     return TASK_SYNC_STATUS.MODIFIED;
   }
 
-  // new, modified → bleiben wie sind
-  return currentStatus || TASK_SYNC_STATUS.NEW;
+  // approved + edit → draft (Freigabe zurückgenommen)
+  if (currentStatus === TASK_SYNC_STATUS.APPROVED) {
+    return TASK_SYNC_STATUS.DRAFT;
+  }
+
+  // draft, modified, error → bleiben wie sind
+  return currentStatus || TASK_SYNC_STATUS.DRAFT;
 }
 
 /**
@@ -114,12 +124,11 @@ export function useSyncStatus(
   }, [currentStatus]);
 
   // ─────────────────────────────────────────────────────────────────────
-  // Mutation: Approval (setzt status: 'approved' + sync_status: 'approved')
+  // Mutation: Approval (setzt sync_status: 'approved')
   // ─────────────────────────────────────────────────────────────────────
   const approveMutation = useMutation({
     mutationFn: () =>
       base44.entities[entityName].update(taskId, {
-        status: 'approved',
         sync_status: TASK_SYNC_STATUS.APPROVED,
       }),
     onSuccess: () => {
