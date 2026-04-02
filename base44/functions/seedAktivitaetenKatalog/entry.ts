@@ -1,91 +1,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 const AKTIVITAETEN = [
-  // INPUT-PHASE (Erarbeitung)
-  {
-    name: 'Text lesen',
-    phase: 'Input',
-    is_active: true,
-    form_schema: [
-      {
-        field_name: 'text',
-        type: 'textarea',
-        label: 'Text eingeben',
-        required: true,
-      },
-    ],
-  },
-  {
-    name: 'Dokument (PDF/Bild)',
-    phase: 'Input',
-    is_active: true,
-    form_schema: [
-      {
-        field_name: 'file',
-        type: 'file',
-        label: 'Datei-Upload',
-        required: true,
-      },
-    ],
-  },
-  {
-    name: 'Bild anschauen',
-    phase: 'Input',
-    is_active: true,
-    form_schema: [
-      {
-        field_name: 'image',
-        type: 'image',
-        label: 'Bild-Upload',
-        required: true,
-      },
-    ],
-  },
-  {
-    name: 'Video anschauen',
-    phase: 'Input',
-    is_active: true,
-    form_schema: [
-      {
-        field_name: 'video_url',
-        type: 'url',
-        label: 'Video-URL (YouTube/Vimeo)',
-        required: true,
-        placeholder: 'https://youtube.com/watch?v=...',
-      },
-    ],
-  },
-  {
-    name: 'Audio hören',
-    phase: 'Input',
-    is_active: true,
-    form_schema: [
-      {
-        field_name: 'audio',
-        type: 'audio',
-        label: 'Audio-Datei-Upload',
-        required: true,
-      },
-    ],
-  },
-  {
-    name: 'Webseite besuchen',
-    phase: 'Input',
-    is_active: true,
-    form_schema: [
-      {
-        field_name: 'web_url',
-        type: 'url',
-        label: 'URL zur Webseite',
-        required: true,
-        placeholder: 'https://example.com',
-      },
-    ],
-  },
+  // INPUT-PHASE (Erarbeitung) — supports_master: false
   {
     name: 'Lehrwerk/Quelle',
     phase: 'Input',
     is_active: true,
+    supports_master: false,
     form_schema: [
       {
         field_name: 'lehrwerk',
@@ -101,38 +22,52 @@ const AKTIVITAETEN = [
       },
     ],
   },
+  {
+    name: 'Text lesen',
+    phase: 'Input',
+    is_active: true,
+    supports_master: false,
+    form_schema: [
+      {
+        field_name: 'text',
+        type: 'textarea',
+        label: 'Text eingeben',
+        required: true,
+      },
+    ],
+  },
+  {
+    name: 'Video / Audio',
+    phase: 'Input',
+    is_active: true,
+    supports_master: false,
+    form_schema: [
+      {
+        field_name: 'media_url',
+        type: 'url',
+        label: 'Video- oder Audio-URL',
+        required: true,
+        placeholder: 'https://youtube.com/watch?v=... oder https://example.com/audio.mp3',
+      },
+    ],
+  },
+  {
+    name: 'Link / URL',
+    phase: 'Input',
+    is_active: true,
+    supports_master: false,
+    form_schema: [
+      {
+        field_name: 'url',
+        type: 'url',
+        label: 'Link zur Webseite',
+        required: true,
+        placeholder: 'https://example.com',
+      },
+    ],
+  },
 
-  // ÜBUNGS-PHASE (Übung)
-  {
-    name: 'Frage(n) beantworten',
-    phase: 'Übung',
-    is_active: true,
-    form_schema: [
-      {
-        field_name: 'fragen_json',
-        type: 'json',
-        label: 'Fragen & Antworten',
-        required: true,
-        placeholder:
-          '[{"frage": "Was ist 2+2?", "antwort": "4"}, {"frage": "Was ist die Hauptstadt Deutschlands?", "antwort": "Berlin"}]',
-      },
-    ],
-  },
-  {
-    name: 'Paare finden',
-    phase: 'Übung',
-    is_active: true,
-    form_schema: [
-      {
-        field_name: 'paare_json',
-        type: 'json',
-        label: 'Paare (Links/Rechts)',
-        required: true,
-        placeholder:
-          '[{"links": "Apfel", "rechts": "Obst"}, {"links": "Karotte", "rechts": "Gemüse"}]',
-      },
-    ],
-  },
+  // ÜBUNGS-PHASE (Übung) — supports_master: true
   {
     name: 'Begriffe zuordnen',
     phase: 'Übung',
@@ -140,19 +75,63 @@ const AKTIVITAETEN = [
     supports_master: true,
     form_schema: [
       {
-        field_name: 'kategorien_json',
-        type: 'json',
-        label: 'Kategorien & Begriffe',
+        field_name: 'instruction',
+        type: 'textarea',
+        label: 'Arbeitsanweisung',
         required: true,
-        placeholder:
-          '{"Obst": ["Apfel", "Banane"], "Gemüse": ["Karotte", "Brokkoli"]}',
+      },
+      {
+        field_name: 'pairs',
+        type: 'json',
+        label: 'Begriffspaare (JSON)',
+        required: true,
+        placeholder: '[{"left": "Begriff A", "right": "Definition A"}, ...]',
+      },
+      {
+        field_name: 'distractors',
+        type: 'json',
+        label: 'Distraktoren (optional, JSON-Array)',
+        required: false,
+        placeholder: '["Ablenkung 1", "Ablenkung 2", ...]',
       },
     ],
   },
   {
-    name: 'Lückentext ausfüllen',
+    name: 'Multiple Choice',
     phase: 'Übung',
     is_active: true,
+    supports_master: true,
+    form_schema: [
+      {
+        field_name: 'fragen_json',
+        type: 'json',
+        label: 'Fragen mit Optionen',
+        required: true,
+        placeholder:
+          '[{"frage": "Frage?", "optionen": ["A", "B", "C"], "loesung": "A"}, ...]',
+      },
+    ],
+  },
+  {
+    name: 'Kurzantwort',
+    phase: 'Übung',
+    is_active: true,
+    supports_master: true,
+    form_schema: [
+      {
+        field_name: 'fragen_json',
+        type: 'json',
+        label: 'Fragen & Antworten',
+        required: true,
+        placeholder: '[{"frage": "Was ist...?", "antwort": "..."}, ...]',
+      },
+    ],
+  },
+  {
+    name: 'Lückentext',
+    phase: 'Übung',
+    is_active: true,
+    supports_master: true,
     form_schema: [
       {
         field_name: 'lueckentext',
@@ -163,56 +142,76 @@ const AKTIVITAETEN = [
     ],
   },
   {
-    name: 'Text schreiben',
+    name: 'Reihenfolge / Sortierung',
     phase: 'Übung',
     is_active: true,
+    supports_master: true,
     form_schema: [
       {
-        field_name: 'konfiguration',
-        type: 'text',
-        label: 'Länge/Umfang (z.B. "5-10 Sätze")',
-        required: false,
+        field_name: 'items_json',
+        type: 'json',
+        label: 'Elemente in korrekter Reihenfolge',
+        required: true,
+        placeholder: '["Element 1", "Element 2", "Element 3", ...]',
       },
     ],
   },
   {
-    name: 'Aufgabe im Lehrwerk',
+    name: 'Bildbeschriftung',
     phase: 'Übung',
     is_active: true,
+    supports_master: true,
     form_schema: [
       {
-        field_name: 'lehrwerk',
-        type: 'text',
-        label: 'Lehrwerk',
+        field_name: 'bild_url',
+        type: 'url',
+        label: 'Bild-URL',
         required: true,
       },
       {
-        field_name: 'seite',
-        type: 'text',
-        label: 'Seite',
-        required: false,
+        field_name: 'beschriftungen_json',
+        type: 'json',
+        label: 'Beschriftungsaufgaben',
+        required: true,
+        placeholder: '[{"bereich": "Bereich 1", "beschriftung": "Label"}, ...]',
+      },
+    ],
+  },
+  {
+    name: 'KI-Tutor Aufgabe',
+    phase: 'Übung',
+    is_active: true,
+    supports_master: true,
+    form_schema: [
+      {
+        field_name: 'aufgabenstellung',
+        type: 'textarea',
+        label: 'Aufgabenstellung',
+        required: true,
       },
       {
-        field_name: 'nummer',
+        field_name: 'lernziele',
         type: 'text',
-        label: 'Aufgabennummer',
+        label: 'Zu überprüfende Lernziele',
         required: false,
       },
     ],
   },
 
-  // ABSCHLUSS-PHASE
+  // ABSCHLUSS-PHASE — gemischte supports_master-Werte
+  // Ohne Master (supports_master: false)
   {
     name: 'Bearbeitung bestätigen',
     phase: 'Abschluss',
     is_active: true,
+    supports_master: false,
     form_schema: [
       {
         field_name: 'nachricht',
         type: 'text',
         label: 'Bestätigungs-Nachricht',
         required: false,
-        placeholder: 'Geben Sie hier eine optionale Nachricht ein',
+        placeholder: 'Optional: Feedback oder Gratulation',
       },
     ],
   },
@@ -220,27 +219,29 @@ const AKTIVITAETEN = [
     name: 'Dokument abgeben',
     phase: 'Abschluss',
     is_active: true,
+    supports_master: false,
     form_schema: [],
   },
   {
-    name: 'Test',
+    name: 'KI-Check',
     phase: 'Abschluss',
     is_active: true,
+    supports_master: false,
     form_schema: [
       {
-        field_name: 'test_json',
-        type: 'json',
-        label: 'Aufgaben & Antworten',
+        field_name: 'lernziele_select',
+        type: 'text',
+        label: 'Zu überprüfende Lernziele (Beschreibung)',
         required: true,
-        placeholder:
-          '[{"aufgabe": "Was ist Photosynthese?", "loesung": "Prozess der Energiegewinnung durch Licht"}]',
       },
     ],
   },
+  // Mit Master (supports_master: true)
   {
     name: 'Quiz',
     phase: 'Abschluss',
     is_active: true,
+    supports_master: true,
     form_schema: [
       {
         field_name: 'quiz_json',
@@ -248,20 +249,23 @@ const AKTIVITAETEN = [
         label: 'Fragen & Antwortoptionen',
         required: true,
         placeholder:
-          '[{"frage": "Was ist 2+2?", "optionen": ["3", "4", "5"], "loesung": "4"}]',
+          '[{"frage": "Was ist 2+2?", "optionen": ["3", "4", "5"], "loesung": "4"}, ...]',
       },
     ],
   },
   {
-    name: 'KI-Check',
+    name: 'Test',
     phase: 'Abschluss',
     is_active: true,
+    supports_master: true,
     form_schema: [
       {
-        field_name: 'lernziele_select',
-        type: 'text',
-        label: 'Zu überprüfende Lernziele (Beschreibung)',
+        field_name: 'test_json',
+        type: 'json',
+        label: 'Aufgaben & Lösungen',
         required: true,
+        placeholder:
+          '[{"aufgabe": "Frage?", "loesung": "Antwort"}, ...]',
       },
     ],
   },
