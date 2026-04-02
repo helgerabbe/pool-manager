@@ -1,142 +1,142 @@
 /**
  * TaskCreationView.jsx
  *
- * Tab 4: Aufgaben erstellen
- * Zeigt pro Lernpaket die drei Lernphasen (Input / Übung / Abschluss)
- * mit ihren zugeordneten Aktivitäten (LernpaketPhaseAktivitaet).
+ * Tab 4: Aufgaben erstellen – strikte Master-Detail-Logik
+ *
+ * Sidebar:  Lernpakete = aufklappbare Ordner → Aktivitäten = wählbare Blätter
+ * Hauptbereich: leer bis eine Aktivität gewählt wird, dann ActivityDetailView
  */
 
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Button } from '@/components/ui/button';
-import { ChevronRight, Package, Wand2 } from 'lucide-react';
-import PhaseActivitiesList from '@/components/workspace/PhaseActivitiesList';
+import { ChevronRight, Package, MousePointerClick, AlertTriangle } from 'lucide-react';
 import ActivityDetailView from '@/components/workspace/ActivityDetailView';
 import { cn } from '@/lib/utils';
 
 const PHASES = [
-  { key: 'Input',     label: 'Input (Erarbeitung)', icon: '📚' },
-  { key: 'Übung',     label: 'Übung',               icon: '✏️' },
-  { key: 'Abschluss', label: 'Abschluss',            icon: '🎯' },
+  { key: 'Input',     label: 'Input',     icon: '📚' },
+  { key: 'Übung',     label: 'Übung',     icon: '✏️' },
+  { key: 'Abschluss', label: 'Abschluss', icon: '🎯' },
 ];
 
-// ── Sidebar-Item ──────────────────────────────────────────────────────────────
+// ── Sidebar: Lernpaket-Ordner mit aufklappbaren Aktivitäten ───────────────────
 
-function SidebarLernpaketItem({ lernpaket, isSelected, onSelect }) {
-  return (
-    <button
-      onClick={() => onSelect(lernpaket)}
-      className={cn(
-        'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-colors',
-        isSelected
-          ? 'bg-primary/10 text-primary font-medium'
-          : 'hover:bg-muted text-foreground'
-      )}
-    >
-      <Package className="w-4 h-4 shrink-0 text-muted-foreground" />
-      <span className="flex-1 truncate">{lernpaket.titel_des_pakets}</span>
-      <ChevronRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
-    </button>
-  );
-}
+function SidebarLernpaketFolder({
+  lernpaket,
+  allActivities,
+  aktivitaetenMap,
+  selectedActivityId,
+  onSelectActivity,
+  defaultOpen = false,
+}) {
+  const [open, setOpen] = useState(defaultOpen);
 
-// ── Hauptbereich: Phasen-Ansicht ──────────────────────────────────────────────
-
-function LernpaketPhasenView({ lernpaket, kannBearbeiten, queryClient }) {
-  const [editingActivity, setEditingActivity] = useState(null); // { id }
-
+  const paketActivities = allActivities.filter(a => a.lernpaket_id === lernpaket.id);
   const phasenConfig = lernpaket.phasen_konfiguration || {};
 
-  if (editingActivity) {
-    const { data: activityRecord } = { data: null }; // wird in ActivityDetailView selbst geladen
-    return (
-      <div className="space-y-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-2 -ml-2"
-          onClick={() => setEditingActivity(null)}
-        >
-          ← Zurück
-        </Button>
-        <ActivityDetailViewWrapper
-          activityRecordId={editingActivity.id}
-          kannBearbeiten={kannBearbeiten}
-          queryClient={queryClient}
-          onBack={() => setEditingActivity(null)}
-        />
-      </div>
-    );
-  }
+  const hasSelected = paketActivities.some(a => a.id === selectedActivityId);
+
+  // Auto-expand wenn eine Aktivität darin selektiert ist
+  useEffect(() => {
+    if (hasSelected) setOpen(true);
+  }, [hasSelected]);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold">{lernpaket.titel_des_pakets}</h2>
-        {lernpaket.geschaetzte_dauer_minuten && (
-          <p className="text-sm text-muted-foreground mt-1">
-            ⏱ {lernpaket.geschaetzte_dauer_minuten} Minuten
-          </p>
-        )}
-      </div>
+    <div>
+      {/* Ordner-Header – klappt nur auf/zu, selektiert nichts */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-left text-sm font-medium text-foreground hover:bg-muted transition-colors"
+      >
+        <ChevronRight className={cn('w-3.5 h-3.5 shrink-0 text-muted-foreground transition-transform', open && 'rotate-90')} />
+        <Package className="w-4 h-4 shrink-0 text-amber-500" />
+        <span className="flex-1 truncate">{lernpaket.titel_des_pakets}</span>
+        <span className="text-[10px] text-muted-foreground shrink-0">{paketActivities.length}</span>
+      </button>
 
-      {PHASES.map((phase) => {
-        const phaseConfig = phasenConfig[phase.key] || {};
-        const isDisabled = phaseConfig.disabled === true;
+      {/* Aktivitäten-Liste gruppiert nach Phase */}
+      {open && (
+        <div className="ml-5 mt-0.5 border-l border-border pl-2 space-y-2 pb-1">
+          {paketActivities.length === 0 ? (
+            <p className="px-2 py-2 text-[11px] text-muted-foreground/50 italic">
+              Keine Aktivitäten zugeordnet
+            </p>
+          ) : (
+            PHASES.map(phase => {
+              const phaseConfig = phasenConfig[phase.key] || {};
+              if (phaseConfig.disabled) return null;
 
-        return (
-          <div key={phase.key} className={cn('space-y-2', isDisabled && 'opacity-40')}>
-            <div className="flex items-center gap-2">
-              <span className="text-base">{phase.icon}</span>
-              <h3 className="text-sm font-semibold">{phase.label}</h3>
-              {isDisabled && (
-                <span className="text-xs text-muted-foreground italic">(deaktiviert)</span>
-              )}
-            </div>
+              const phaseActs = paketActivities
+                .filter(a => a.phase === phase.key)
+                .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
 
-            {!isDisabled && (
-              <div className="pl-6">
-                <PhaseActivitiesList
-                  paket={lernpaket}
-                  phase={phase.key}
-                  kannBearbeiten={kannBearbeiten}
-                  onSelectActivity={(data) => setEditingActivity({ id: data.activityId })}
-                />
-              </div>
-            )}
-          </div>
-        );
-      })}
+              if (phaseActs.length === 0) return null;
+
+              return (
+                <div key={phase.key}>
+                  <p className="px-2 py-0.5 text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wide">
+                    {phase.icon} {phase.label}
+                  </p>
+                  {phaseActs.map(activity => {
+                    const isSelected = activity.id === selectedActivityId;
+                    const isIncomplete = !activity.is_complete;
+                    return (
+                      <button
+                        key={activity.id}
+                        onClick={() => onSelectActivity(activity)}
+                        className={cn(
+                          'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
+                          isSelected
+                            ? 'bg-primary text-primary-foreground font-medium'
+                            : isIncomplete
+                              ? 'text-amber-700 bg-amber-50/60 hover:bg-amber-100'
+                              : 'text-foreground hover:bg-muted'
+                        )}
+                      >
+                        <span className="flex-1 truncate">
+                          {aktivitaetenMap[activity.aktivitaet_id] || '…'}
+                        </span>
+                        {isIncomplete && !isSelected && (
+                          <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" title="Inhalt unvollständig" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-// Wrapper, der ActivityDetailView mit der Record-ID lädt
-function ActivityDetailViewWrapper({ activityRecordId, kannBearbeiten, queryClient, onBack }) {
-  const { data: record } = useQuery({
-    queryKey: ['lernpaketPhaseAktivitaetRecord', activityRecordId],
-    queryFn: () => base44.entities.LernpaketPhaseAktivitaet.filter({ id: activityRecordId })
-      .then(res => res[0] || null),
-    enabled: !!activityRecordId,
-  });
+// ── Empty State ───────────────────────────────────────────────────────────────
 
-  if (!record) return <p className="text-sm text-muted-foreground">Lädt…</p>;
-
+function EmptyState() {
   return (
-    <ActivityDetailView
-      activityRecord={record}
-      kannBearbeiten={kannBearbeiten}
-      queryClient={queryClient}
-    />
+    <div className="flex flex-col items-center justify-center h-full py-24 text-center gap-3 text-muted-foreground">
+      <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
+        <MousePointerClick className="w-7 h-7 text-muted-foreground/40" />
+      </div>
+      <div>
+        <p className="font-semibold">Aktivität auswählen</p>
+        <p className="text-sm text-muted-foreground/70 mt-1 max-w-xs">
+          Bitte wähle links eine Aktivität aus, um deren Aufgaben zu bearbeiten.
+        </p>
+      </div>
+    </div>
   );
 }
 
 // ── Haupt-Komponente ──────────────────────────────────────────────────────────
 
-export default function TaskCreationView({ einheitId, einheit, initialActivityId, kannBearbeiten }) {
+export default function TaskCreationView({ einheitId, kannBearbeiten }) {
   const queryClient = useQueryClient();
-  const [selectedPaket, setSelectedPaket] = useState(null);
+  // selectedActivity = vollständiges LernpaketPhaseAktivitaet-Objekt oder null
+  const [selectedActivity, setSelectedActivity] = useState(null);
 
   const { data: lernpakete = [] } = useQuery({
     queryKey: ['lernpakete'],
@@ -150,32 +150,41 @@ export default function TaskCreationView({ einheitId, einheit, initialActivityId
     enabled: !!einheitId,
   });
 
+  const { data: allActivities = [] } = useQuery({
+    queryKey: ['lernpaketPhaseAktivitaeten'],
+    queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list(),
+    enabled: !!einheitId,
+  });
+
+  const { data: aktivitaetenKatalog = [] } = useQuery({
+    queryKey: ['aktivitaetenKatalog'],
+    queryFn: () => base44.entities.AktivitaetenKatalog.list(),
+  });
+
+  const aktivitaetenMap = Object.fromEntries(aktivitaetenKatalog.map(a => [a.id, a.name]));
+
   const paketeFuerEinheit = lernpakete
     .filter(lp => lp.einheit_id === einheitId)
     .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0));
 
-  // Auto-select erstes Paket
+  // Wenn die selektierte Aktivität in den neuen Daten enthalten ist, aktualisieren
   useEffect(() => {
-    if (paketeFuerEinheit.length > 0 && !selectedPaket) {
-      setSelectedPaket(paketeFuerEinheit[0]);
+    if (selectedActivity) {
+      const updated = allActivities.find(a => a.id === selectedActivity.id);
+      if (updated) setSelectedActivity(updated);
     }
-  }, [paketeFuerEinheit.length]);
-
-  // Wenn sich die Lernpakete aktualisieren, selectedPaket auch aktualisieren
-  useEffect(() => {
-    if (selectedPaket) {
-      const updated = paketeFuerEinheit.find(p => p.id === selectedPaket.id);
-      if (updated) setSelectedPaket(updated);
-    }
-  }, [lernpakete]);
+  }, [allActivities]);
 
   // Gruppiert nach Themenfeld
   const groupedPakete = themenfelder.length > 0
     ? [
-        ...themenfelder.map(tf => ({
-          label: tf.titel,
-          pakete: paketeFuerEinheit.filter(p => p.themenfeld_id === tf.id),
-        })).filter(g => g.pakete.length > 0),
+        ...themenfelder
+          .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
+          .map(tf => ({
+            label: tf.titel,
+            pakete: paketeFuerEinheit.filter(p => p.themenfeld_id === tf.id),
+          }))
+          .filter(g => g.pakete.length > 0),
         {
           label: 'Nicht zugeordnet',
           pakete: paketeFuerEinheit.filter(p => !p.themenfeld_id),
@@ -186,11 +195,12 @@ export default function TaskCreationView({ einheitId, einheit, initialActivityId
 
   return (
     <div className="flex flex-row flex-1 overflow-hidden">
-      {/* Sidebar */}
+
+      {/* ── Sidebar ─────────────────────────────────────────────────────────── */}
       <aside className="w-72 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden">
         <div className="px-3 py-3 border-b border-border">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Lernpakete
+            Aktivitäten
           </p>
         </div>
         <div className="flex-1 overflow-y-auto p-2 space-y-3">
@@ -198,51 +208,51 @@ export default function TaskCreationView({ einheitId, einheit, initialActivityId
             <div key={label || 'all'}>
               {label && (
                 <p className={cn(
-                  'text-[10px] font-bold uppercase tracking-wide px-3 py-1',
-                  isRest ? 'text-muted-foreground/50' : 'text-amber-700'
+                  'text-[10px] font-bold uppercase tracking-wide px-2 py-1',
+                  isRest ? 'text-muted-foreground/40' : 'text-amber-700'
                 )}>
                   {label}
                 </p>
               )}
-              {pakete.map(lernpaket => (
-                <SidebarLernpaketItem
-                  key={lernpaket.id}
-                  lernpaket={lernpaket}
-                  isSelected={selectedPaket?.id === lernpaket.id}
-                  onSelect={setSelectedPaket}
-                />
-              ))}
+              <div className="space-y-0.5">
+                {pakete.map((lernpaket, idx) => (
+                  <SidebarLernpaketFolder
+                    key={lernpaket.id}
+                    lernpaket={lernpaket}
+                    allActivities={allActivities}
+                    aktivitaetenMap={aktivitaetenMap}
+                    selectedActivityId={selectedActivity?.id}
+                    onSelectActivity={setSelectedActivity}
+                    defaultOpen={idx === 0}
+                  />
+                ))}
+              </div>
             </div>
           ))}
           {paketeFuerEinheit.length === 0 && (
             <p className="text-xs text-muted-foreground text-center py-8 px-3">
-              Noch keine Lernpakete. Lege zuerst eine Struktur im Struktur-Tab an.
+              Noch keine Lernpakete vorhanden.
             </p>
           )}
         </div>
       </aside>
 
-      {/* Hauptbereich */}
+      {/* ── Hauptbereich ────────────────────────────────────────────────────── */}
       <main className="flex-1 overflow-y-auto min-h-0">
-        <div className="max-w-3xl mx-auto px-6 py-6">
-          {selectedPaket ? (
-            <LernpaketPhasenView
-              key={selectedPaket.id}
-              lernpaket={selectedPaket}
+        {selectedActivity ? (
+          <div className="max-w-3xl mx-auto px-6 py-6">
+            <ActivityDetailView
+              key={selectedActivity.id}
+              activityRecord={selectedActivity}
               kannBearbeiten={kannBearbeiten}
               queryClient={queryClient}
             />
-          ) : (
-            <div className="flex flex-col items-center justify-center py-24 text-center gap-3">
-              <Wand2 className="w-10 h-10 text-muted-foreground/30" />
-              <p className="font-semibold text-muted-foreground">Lernpaket auswählen</p>
-              <p className="text-sm text-muted-foreground/70">
-                Wähle links ein Lernpaket, um die Aktivitäten zu sehen.
-              </p>
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <EmptyState />
+        )}
       </main>
+
     </div>
   );
 }
