@@ -1,5 +1,5 @@
 {
-  "name": "Basislernpaket",
+  "name": "Basislernpakete",
   "type": "object",
   "properties": {
     "basismodul_id": {
