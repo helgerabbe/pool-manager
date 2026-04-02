@@ -188,7 +188,9 @@ export default function InlineBasisLernzielSelector({
               Keine Lernpakete vorhanden
             </p>
           ) : (
-            paketMitLernzielen.map((group) => (
+            paketMitLernzielen
+              .filter((group) => group.lernziele.length > 0)
+              .map((group) => (
               <div key={group.paket.id} className="border rounded-lg overflow-hidden">
                 <button
                   onClick={() => togglePaket(group.paket.id)}
@@ -207,28 +209,34 @@ export default function InlineBasisLernzielSelector({
 
                 {expandedPakete.has(group.paket.id) && (
                   <div className="p-2 bg-white space-y-1.5">
-                    {group.lernziele.map((lz) => (
-                      <div
-                        key={lz.id}
-                        className="flex items-start gap-2.5 p-2 rounded hover:bg-muted/20 transition-colors"
-                      >
-                        <Checkbox
-                          id={`basis-${lz.id}`}
-                          checked={checkedIds.has(lz.id)}
-                          onCheckedChange={(checked) =>
-                            handleCheckChange(lz.id, checked)
-                          }
-                          disabled={createMapping.isPending || deleteMapping.isPending}
-                          className="mt-0.5 shrink-0"
-                        />
-                        <label
-                          htmlFor={`basis-${lz.id}`}
-                          className="text-xs leading-relaxed cursor-pointer flex-1 text-foreground/90"
+                    {group.lernziele.length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic">
+                        Keine Lernziele in diesem Paket
+                      </p>
+                    ) : (
+                      group.lernziele.map((lz) => (
+                        <div
+                          key={lz.id}
+                          className="flex items-start gap-2.5 p-2 rounded hover:bg-muted/20 transition-colors"
                         >
-                          {lz.text}
-                        </label>
-                      </div>
-                    ))}
+                          <Checkbox
+                            id={`basis-${lz.id}`}
+                            checked={checkedIds.has(lz.id)}
+                            onCheckedChange={(checked) =>
+                              handleCheckChange(lz.id, checked)
+                            }
+                            disabled={createMapping.isPending || deleteMapping.isPending}
+                            className="mt-0.5 shrink-0"
+                          />
+                          <label
+                            htmlFor={`basis-${lz.id}`}
+                            className="text-xs leading-relaxed cursor-pointer flex-1 text-foreground/90"
+                          >
+                            {lz.text}
+                          </label>
+                        </div>
+                      ))
+                    )}
                   </div>
                 )}
               </div>
