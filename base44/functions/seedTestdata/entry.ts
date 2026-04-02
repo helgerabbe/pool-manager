@@ -130,19 +130,19 @@ Deno.serve(async (req) => {
         {
           lernpaket_id: paket1Id,
           formulierung_fachsprache: 'Ich kann die typischen Stilmerkmale einer Kurzgeschichte (Einstieg in medias res, offenes Ende, beschränkte Figurenzahl) benennen und im Text nachweisen.',
-          anforderungsebene: 'Ebene 1 - Basis',
+          kategorie: 'Fachwissen',
           schueler_uebersetzung: 'Ich erkenne, woran man eine Kurzgeschichte erkennt und kann das am Text zeigen.',
         },
         {
           lernpaket_id: paket1Id,
           formulierung_fachsprache: 'Ich kann die Erzählperspektive und ihre Wirkung auf den Leser analysieren und in Bezug zur Intention des Autors setzen.',
-          anforderungsebene: 'Ebene 2 - Transfer',
+          kategorie: 'Fähigkeit/Fertigkeit',
           schueler_uebersetzung: 'Ich erkläre, wer erzählt und warum das wichtig für die Wirkung der Geschichte ist.',
         },
         {
           lernpaket_id: paket1Id,
           formulierung_fachsprache: 'Ich kann eine eigenständige, literarisch begründete Interpretation entwickeln und dabei Form und Inhalt aufeinander beziehen.',
-          anforderungsebene: 'Ebene 3 - Projekt',
+          kategorie: 'Fähigkeit/Fertigkeit',
           schueler_uebersetzung: 'Ich schreibe eine eigene fundierte Interpretation und belege meine Thesen am Text.',
         },
       ];
@@ -160,58 +160,48 @@ Deno.serve(async (req) => {
     // ─── 5. AUFGABENBAUSTEINE ────────────────────────────────────────────────────
     const existingAufgaben = await base44.asServiceRole.entities.Aufgabenbausteine.filter({ lernpaket_id: paket1Id });
 
-    if (existingAufgaben.length === 0 && lernzielIds.length >= 3) {
-      const [lz1Id, lz2Id, lz3Id] = lernzielIds;
-      const lockedByUser = 'lehrkraft.mueller@schule-beispiel.de';
-
+    if (existingAufgaben.length === 0) {
       const aufgabenData = [
         {
           lernpaket_id: paket1Id,
-          lernziel_id: lz1Id,
           baustein_typ: 'Pre-Test',
           aufgabentext_inhalt: 'Lies den folgenden Textausschnitt und beantworte die Fragen: Wo beginnt die Geschichte? Welche Figuren treten auf? Was fällt dir am Ende auf?\n\n[Textausschnitt: "Das Brot" von Wolfgang Borchert]',
-          erwartungshorizont_ki_prompt: 'Prüfe ob der Schüler folgende Aspekte nennt: Einstieg in medias res, max. 2-3 Figuren, offenes oder ambivalentes Ende. Gib konstruktives Feedback ohne die Lösung vorwegzunehmen.',
           lock_status: false,
           locked_by_user: '',
+          sync_status: 'draft',
         },
         {
           lernpaket_id: paket1Id,
-          lernziel_id: lz1Id,
           baustein_typ: 'Ebene-1-Übung',
           aufgabentext_inhalt: 'Ordne die folgenden Merkmale der Kurzgeschichte zu: Arbeite mit der Checkliste und markiere alle Merkmale, die du im Text "Das Brot" findest.\n\nMerkmale: [ ] Einstieg in medias res  [ ] Wenige Figuren  [ ] Alltägliche Situation  [ ] Offenes Ende  [ ] Keine Vorgeschichte  [ ] Knappe Sprache',
-          erwartungshorizont_ki_prompt: 'Alle 6 Merkmale sollten markiert sein. Erkläre bei falschen Antworten das jeweilige Merkmal anhand eines konkreten Textzitats.',
-          lock_status: true,
-          locked_by_user: lockedByUser,
+          lock_status: false,
+          locked_by_user: '',
+          sync_status: 'draft',
         },
         {
           lernpaket_id: paket1Id,
-          lernziel_id: lz2Id,
           baustein_typ: 'Ebene-2-Aufgabe',
           aufgabentext_inhalt: 'Analysiere die Erzählperspektive in "Das Brot":\n1. Aus welcher Perspektive wird erzählt?\n2. Was erfährt der Leser über die inneren Gedanken der Figuren?\n3. Warum könnte der Autor diese Perspektive gewählt haben?\n\nSchreibe einen zusammenhängenden Analyseabsatz (ca. 100-150 Wörter).',
-          erwartungshorizont_ki_prompt: 'Erwartete Inhalte: auktoriale oder personale Erzählperspektive (korrekte Benennung), Bezug zur emotionalen Distanz/Nähe, Wirkungsabsicht (Betroffenheit, Verständnis für beide Figuren). Kriterien: Fachbegriff korrekt, mind. 1 Textzitat, schlüssige Wirkungsthese.',
           lock_status: false,
           locked_by_user: '',
+          sync_status: 'draft',
         },
         {
           lernpaket_id: paket1Id,
-          lernziel_id: lz3Id,
           baustein_typ: 'Ebene-3-Projekt',
           aufgabentext_inhalt: 'Schreibe eine eigenständige Interpretation der Kurzgeschichte "Das Brot":\n\n→ Formuliere eine Deutungshypothese (These)\n→ Belege sie mit mindestens 3 Textzitaten\n→ Beziehe Form (Sprache, Struktur) und Inhalt (Thema, Figuren) aufeinander\n→ Formuliere ein abschließendes Fazit zur Wirkungsabsicht des Autors\n\nUmfang: ca. 400-500 Wörter',
-          erwartungshorizont_ki_prompt: 'Bewertungskriterien: (1) Deutungshypothese vorhanden und plausibel (2) Mindestens 3 korrekte Textzitate mit Quellenangabe (3) Formanalyse integriert (Sprachstil, Satzlänge, Ellipsen) (4) Inhaltliche Tiefe: Kriegsnachwirkungen, Scham, Schweigen als Themen erkannt (5) Schlüssiges Fazit. Feedback immer ermutigend und konstruktiv formulieren.',
           lock_status: false,
           locked_by_user: '',
+          sync_status: 'draft',
         },
       ];
 
       for (const ab of aufgabenData) {
         await base44.asServiceRole.entities.Aufgabenbausteine.create(ab);
-        const lockHinweis = ab.lock_status ? ` 🔒 (gesperrt durch ${ab.locked_by_user})` : '';
-        log.push(`✅ Aufgabenbaustein erstellt: ${ab.baustein_typ}${lockHinweis}`);
+        log.push(`✅ Aufgabenbaustein erstellt: ${ab.baustein_typ}`);
       }
-    } else if (existingAufgaben.length > 0) {
-      log.push(`⏭️  Aufgabenbausteine bereits vorhanden (${existingAufgaben.length} Bausteine)`);
     } else {
-      log.push(`⚠️  Aufgabenbausteine konnten nicht erstellt werden – Lernziele fehlen.`);
+      log.push(`⏭️  Aufgabenbausteine bereits vorhanden (${existingAufgaben.length} Bausteine)`);
     }
 
     return Response.json({
