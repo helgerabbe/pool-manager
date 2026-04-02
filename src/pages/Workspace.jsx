@@ -334,13 +334,44 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
           {/* ── Tab 2: Struktur anlegen → StrukturBoard ──────────────────────── */}
           <TabsContent value="struktur" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
             <ErrorBoundary label="Struktur">
-              <StrukturBoardEmbedded
-                einheitId={selectedEinheitId}
-                lernpakete={paketeFuerEinheit}
-                themenfelder={themenfelder}
-                queryClient={queryClient}
-                onSaved={() => handleTabChange('aktivitaeten')}
-              />
+              {(() => {
+                // Prüfen ob ein Kollege gerade ein Lernpaket dieser Einheit gesperrt hat
+                const PAKET_LOCK_TIMEOUT_MS = 30 * 60 * 1000; // 30 Min
+                const aktiveLocks = paketeFuerEinheit.filter(p =>
+                  p.locked_by &&
+                  p.locked_by !== authUser?.email &&
+                  p.locked_at && (Date.now() - new Date(p.locked_at).getTime()) < PAKET_LOCK_TIMEOUT_MS
+                );
+                if (aktiveLocks.length > 0) {
+                  const locker = [...new Set(aktiveLocks.map(p => p.locked_by))];
+                  return (
+                    <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center p-8">
+                      <div className="w-16 h-16 rounded-2xl bg-orange-100 flex items-center justify-center">
+                        <Lock className="w-8 h-8 text-orange-500" />
+                      </div>
+                      <div className="max-w-md">
+                        <p className="text-lg font-semibold">Strukturbearbeitung gesperrt</p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          {locker.join(', ')} {locker.length === 1 ? 'bearbeitet' : 'bearbeiten'} gerade Inhalte dieser Einheit.
+                          Strukturänderungen sind nicht möglich, solange Kollegen aktiv an Lernpaketen arbeiten.
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-3 italic">
+                          Die Sperre wird automatisch aufgehoben, sobald die Bearbeitung abgeschlossen ist.
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+                return (
+                  <StrukturBoardEmbedded
+                    einheitId={selectedEinheitId}
+                    lernpakete={paketeFuerEinheit}
+                    themenfelder={themenfelder}
+                    queryClient={queryClient}
+                    onSaved={() => handleTabChange('aktivitaeten')}
+                  />
+                );
+              })()}
             </ErrorBoundary>
           </TabsContent>
 
