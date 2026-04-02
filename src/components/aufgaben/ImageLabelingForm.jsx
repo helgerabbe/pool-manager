@@ -101,6 +101,8 @@ export default function ImageLabelingForm({ initialData = {}, onChange }) {
   const [isPreview, setIsPreview] = useState(false);
   const [previewAnswers, setPreviewAnswers] = useState({});
   const [draggedMarkerId, setDraggedMarkerId] = useState(null);
+  const [difficultyMode, setDifficultyMode] = useState(initialData.difficultyMode || 'drag_drop');
+  const [draggedLabel, setDraggedLabel] = useState(null);
   const imageContainerRef = useRef(null);
 
   // ──────────────────────────────────────────────────────────────────────────────
@@ -109,9 +111,9 @@ export default function ImageLabelingForm({ initialData = {}, onChange }) {
 
   useEffect(() => {
     if (onChange) {
-      onChange({ imageUrl, markers });
+      onChange({ imageUrl, markers, difficultyMode });
     }
-  }, [imageUrl, markers]);
+  }, [imageUrl, markers, difficultyMode]);
 
   // ──────────────────────────────────────────────────────────────────────────────
   // Image-Upload Handler
@@ -284,41 +286,51 @@ export default function ImageLabelingForm({ initialData = {}, onChange }) {
               </div>
             ))}
 
-            {/* Vorschau-Input/Select-Elemente */}
+            {/* Vorschau-Elemente basierend auf Modus */}
             {isPreview &&
-              markers.map((marker) => (
-                <div
-                  key={`preview-${marker.id}`}
-                  className="absolute flex items-center justify-center"
-                  style={{
-                    left: `${marker.x}%`,
-                    top: `${Math.max(marker.y + 4, 5)}%`,
-                    transform: 'translate(-50%, 0)',
-                  }}
-                >
-                  <Select
-                    value={previewAnswers[marker.id] || ''}
-                    onValueChange={(value) =>
-                      setPreviewAnswers({ ...previewAnswers, [marker.id]: value })
-                    }
+              (difficultyMode === 'drag_drop' ? (
+                // Drag-Drop Modus: Leere Drop-Targets
+                markers.map((marker) => (
+                  <div
+                    key={`drop-target-${marker.id}`}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const label = e.dataTransfer.getData('text/plain');
+                      setPreviewAnswers({ ...previewAnswers, [marker.id]: label });
+                    }}
+                    className="absolute w-14 h-8 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center bg-blue-100 border-2 border-dashed border-blue-400 rounded text-[9px] font-semibold text-blue-700 cursor-drop"
+                    style={{
+                      left: `${marker.x}%`,
+                      top: `${marker.y}%`,
+                    }}
+                    title="Drag & Drop hier ablegen"
                   >
-                    <SelectTrigger className="h-7 text-[10px] w-24 bg-white border border-border shadow-sm">
-                      <SelectValue placeholder="…" />
-                    </SelectTrigger>
-                    <SelectContent className="text-xs">
-                      <SelectItem value={marker.label} className="text-xs">
-                        {marker.label}
-                      </SelectItem>
-                      {markers
-                        .filter((m) => m.id !== marker.id)
-                        .map((other) => (
-                          <SelectItem key={other.id} value={other.label} className="text-xs">
-                            {other.label}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                    {previewAnswers[marker.id] ? previewAnswers[marker.id].substring(0, 8) : '→'}
+                  </div>
+                ))
+              ) : (
+                // Text-Input Modus: Eingabefelder
+                markers.map((marker) => (
+                  <div
+                    key={`input-target-${marker.id}`}
+                    className="absolute transform -translate-x-1/2 -translate-y-1/2"
+                    style={{
+                      left: `${marker.x}%`,
+                      top: `${marker.y}%`,
+                    }}
+                  >
+                    <Input
+                      type="text"
+                      placeholder="…"
+                      value={previewAnswers[marker.id] || ''}
+                      onChange={(e) =>
+                        setPreviewAnswers({ ...previewAnswers, [marker.id]: e.target.value })
+                      }
+                      className="h-7 text-xs w-20 text-center"
+                    />
+                  </div>
+                ))
               ))}
           </>
         ) : (
@@ -336,7 +348,7 @@ export default function ImageLabelingForm({ initialData = {}, onChange }) {
 
   return (
     <div className="space-y-4">
-      {/* Header mit Preview-Toggle */}
+      {/* Header mit Modus-Toggle und Preview-Toggle */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
@@ -369,6 +381,27 @@ export default function ImageLabelingForm({ initialData = {}, onChange }) {
             </TabsList>
           </Tabs>
         </div>
+
+        {/* Schwierigkeitsmodus-Toggle */}
+        {!isPreview && (
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-muted-foreground">Schwierigkeitsmodus</label>
+            <Tabs
+              value={difficultyMode}
+              onValueChange={setDifficultyMode}
+              className="w-full"
+            >
+              <TabsList className="grid w-full grid-cols-2 h-8 bg-secondary">
+                <TabsTrigger value="drag_drop" className="text-xs gap-1">
+                  🎯 Drag & Drop (Einfach)
+                </TabsTrigger>
+                <TabsTrigger value="text_input" className="text-xs gap-1">
+                  ⌨️ Selber Tippen (Schwer)
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        )}
       </div>
 
       {/* Editor-Modus */}
@@ -436,6 +469,32 @@ export default function ImageLabelingForm({ initialData = {}, onChange }) {
       {!isPreview && markers.length === 0 && imageUrl && (
         <div className="p-4 rounded-lg bg-muted/30 border border-dashed border-border text-center text-xs text-muted-foreground">
           Keine Marker gesetzt. Klicke auf das Bild um Marker zu platzieren.
+        </div>
+      )}
+
+      {/* Drag-Drop Label-Pool (nur im Vorschau-Modus mit drag_drop) */}
+      {isPreview && difficultyMode === 'drag_drop' && (
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-muted-foreground">
+            Label zum Ablegen (in beliebiger Reihenfolge)
+          </label>
+          <div className="flex flex-wrap gap-2 p-3 rounded-lg bg-muted/20 border border-border">
+            {markers
+              .sort(() => Math.random() - 0.5)
+              .map((marker) => (
+                <div
+                  key={`label-${marker.id}`}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = 'copy';
+                    e.dataTransfer.setData('text/plain', marker.label);
+                  }}
+                  className="px-3 py-1.5 bg-blue-500 text-white text-xs font-semibold rounded-lg cursor-move hover:bg-blue-600 transition shadow-sm select-none"
+                >
+                  {marker.label}
+                </div>
+              ))}
+          </div>
         </div>
       )}
     </div>
