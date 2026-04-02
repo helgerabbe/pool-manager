@@ -280,7 +280,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
             {/* Einheit-Infoleiste */}
             <div className="px-4 sm:px-6 lg:px-8 py-2 border-b border-border bg-muted/40 shrink-0 flex items-center gap-3">
-              <span className="text-sm font-semibold text-foreground truncate">{einheit.titel_der_einheit}</span>
+              <span className="text-base font-bold text-foreground truncate" style={{fontSize: '1.75rem', lineHeight: '1.2'}}>{einheit.titel_der_einheit}</span>
               <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full shrink-0">{einheit.fach}</span>
             </div>
 
