@@ -12,63 +12,143 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, GripVertical, Clock, Trash2, FolderOpen, Layers, X, Check, Save } from 'lucide-react';
+import { Plus, GripVertical, Clock, Trash2, FolderOpen, Layers, X, Save, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const SAMMELBECKEN_ID = '__sammelbecken__';
+// ── Lernpaket-Dialog ──────────────────────────────────────────────────────────
+// Öffnet sich beim Klick auf eine Paket-Karte oder beim Erstellen eines neuen Pakets.
 
-// ── Inline-Paket-Erstellen ────────────────────────────────────────────────────
-
-function NeuesPaketInline({ onAdd, onCancel }) {
+function LernpaketDialog({ open, onOpenChange, initialData, onSave }) {
+  const isNew = !initialData?.id || initialData?.isNew;
   const [titel, setTitel] = useState('');
   const [dauer, setDauer] = useState(45);
+  const [lernziele, setLernziele] = useState([]);
+
+  useEffect(() => {
+    if (open) {
+      setTitel(initialData?.titel_des_pakets || '');
+      setDauer(initialData?.geschaetzte_dauer_minuten || 45);
+      setLernziele(initialData?.lernziele || []);
+    }
+  }, [open, initialData]);
+
+  const addLernziel = () =>
+    setLernziele(prev => [...prev, { id: `lz-${Date.now()}`, formulierung_fachsprache: '', kategorie: 'Fachwissen', isNew: true }]);
+
+  const updateLernziel = (id, field, value) =>
+    setLernziele(prev => prev.map(lz => lz.id === id ? { ...lz, [field]: value } : lz));
+
+  const removeLernziel = (id) =>
+    setLernziele(prev => prev.filter(lz => lz.id !== id));
+
+  const handleSave = () => {
+    onSave({ titel, dauer, lernziele });
+    onOpenChange(false);
+  };
+
   return (
-    <div className="p-2 rounded-lg border-2 border-primary/30 bg-primary/5 space-y-2">
-      <Input
-        autoFocus
-        placeholder="Titel des Lernpakets…"
-        value={titel}
-        onChange={e => setTitel(e.target.value)}
-        className="h-8 text-sm"
-        onKeyDown={e => {
-          if (e.key === 'Enter' && titel.trim()) onAdd(titel.trim(), dauer);
-          if (e.key === 'Escape') onCancel();
-        }}
-      />
-      <div className="flex items-center gap-2">
-        <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-        <Input
-          type="number" min={5}
-          value={dauer}
-          onChange={e => setDauer(parseInt(e.target.value) || 45)}
-          className="h-7 text-xs w-20"
-        />
-        <span className="text-xs text-muted-foreground">Min.</span>
-        <div className="flex gap-1 ml-auto">
-          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onCancel}>
-            <X className="w-3.5 h-3.5" />
-          </Button>
-          <Button size="icon" className="h-7 w-7" disabled={!titel.trim()} onClick={() => onAdd(titel.trim(), dauer)}>
-            <Check className="w-3.5 h-3.5" />
-          </Button>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{isNew ? 'Neues Lernpaket' : 'Lernpaket bearbeiten'}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-5 py-2">
+          {/* Titel */}
+          <div className="space-y-2">
+            <Label>Titel des Lernpakets *</Label>
+            <Input
+              autoFocus
+              placeholder="z.B. Grundlagen der linearen Funktionen"
+              value={titel}
+              onChange={e => setTitel(e.target.value)}
+            />
+          </div>
+          {/* Dauer */}
+          <div className="space-y-2">
+            <Label>Geschätzte Bearbeitungsdauer</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number" min={5} step={5}
+                value={dauer}
+                onChange={e => setDauer(parseInt(e.target.value) || 45)}
+                className="w-28"
+              />
+              <span className="text-sm text-muted-foreground">Minuten</span>
+            </div>
+          </div>
+          {/* Lernziele */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label>Lernziele</Label>
+              <Button type="button" size="sm" variant="outline" onClick={addLernziel} className="gap-1.5 h-7 text-xs">
+                <Plus className="w-3.5 h-3.5" /> Lernziel hinzufügen
+              </Button>
+            </div>
+            {lernziele.length === 0 && (
+              <p className="text-xs text-muted-foreground italic">Noch keine Lernziele – optional hier hinzufügen oder später im Workspace anlegen.</p>
+            )}
+            <div className="space-y-3">
+              {lernziele.map((lz, idx) => (
+                <div key={lz.id} className="p-3 rounded-lg border bg-muted/30 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <Target className="w-4 h-4 text-green-600 shrink-0 mt-2" />
+                    <div className="flex-1 space-y-2">
+                      <Input
+                        placeholder={`Lernziel ${idx + 1}: Ich kann…`}
+                        value={lz.formulierung_fachsprache}
+                        onChange={e => updateLernziel(lz.id, 'formulierung_fachsprache', e.target.value)}
+                        className="text-sm"
+                      />
+                      <div className="flex gap-2">
+                        {['Fachwissen', 'Fähigkeit/Fertigkeit'].map(kat => (
+                          <button
+                            key={kat}
+                            type="button"
+                            onClick={() => updateLernziel(lz.id, 'kategorie', kat)}
+                            className={cn(
+                              'flex-1 py-1 px-2 rounded-md border text-xs font-medium transition-all',
+                              lz.kategorie === kat
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'border-border hover:border-primary/40 text-muted-foreground'
+                            )}
+                          >
+                            {kat}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeLernziel(lz.id)}
+                      className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors mt-1"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
+          <Button onClick={handleSave} disabled={!titel.trim()}>
+            {isNew ? 'Erstellen' : 'Speichern'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
+const SAMMELBECKEN_ID = '__sammelbecken__';
+
 // ── Paket-Karte ───────────────────────────────────────────────────────────────
 
-function PaketKarte({ paket, index, onDelete, onRename }) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft]     = useState(paket.titel_des_pakets);
-
-  const saveRename = () => {
-    if (draft.trim() && draft.trim() !== paket.titel_des_pakets) onRename(paket.id, draft.trim());
-    setEditing(false);
-  };
-
+function PaketKarte({ paket, index, onDelete, onEdit }) {
   return (
     <Draggable draggableId={paket.id} index={index}>
       {(provided, snapshot) => (
@@ -79,39 +159,32 @@ function PaketKarte({ paket, index, onDelete, onRename }) {
             'group flex items-start gap-2 p-3 rounded-lg border bg-card text-sm transition-shadow',
             snapshot.isDragging
               ? 'shadow-xl border-primary/40 rotate-1 scale-105'
-              : 'shadow-sm hover:shadow-md border-border'
+              : 'shadow-sm hover:shadow-md border-border hover:border-primary/30 cursor-pointer'
           )}
+          onClick={() => onEdit(paket)}
         >
-          <div {...provided.dragHandleProps} className="mt-0.5 text-muted-foreground/40 hover:text-muted-foreground cursor-grab">
+          <div
+            {...provided.dragHandleProps}
+            className="mt-0.5 text-muted-foreground/40 hover:text-muted-foreground cursor-grab"
+            onClick={e => e.stopPropagation()}
+          >
             <GripVertical className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
-            {editing ? (
-              <Input
-                autoFocus
-                value={draft}
-                onChange={e => setDraft(e.target.value)}
-                onBlur={saveRename}
-                onKeyDown={e => { if (e.key === 'Enter') saveRename(); if (e.key === 'Escape') setEditing(false); }}
-                className="h-7 text-sm font-medium py-0 px-1"
-              />
-            ) : (
-              <p
-                className="font-medium leading-snug cursor-pointer hover:text-primary"
-                onDoubleClick={() => { setDraft(paket.titel_des_pakets); setEditing(true); }}
-                title="Doppelklick zum Umbenennen"
-              >
-                {paket.titel_des_pakets}
-              </p>
-            )}
-            {paket.geschaetzte_dauer_minuten && !editing && (
+            <p className="font-medium leading-snug">{paket.titel_des_pakets}</p>
+            {paket.geschaetzte_dauer_minuten && (
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                 <Clock className="w-3 h-3" />{paket.geschaetzte_dauer_minuten} Min.
               </p>
             )}
+            {paket.lernziele && paket.lernziele.length > 0 && (
+              <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                <Target className="w-3 h-3" />{paket.lernziele.length} Lernziel{paket.lernziele.length !== 1 ? 'e' : ''}
+              </p>
+            )}
           </div>
           <button
-            onClick={() => onDelete(paket.id)}
+            onClick={e => { e.stopPropagation(); onDelete(paket.id); }}
             className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 text-destructive transition-all shrink-0"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -124,8 +197,7 @@ function PaketKarte({ paket, index, onDelete, onRename }) {
 
 // ── Spalte ────────────────────────────────────────────────────────────────────
 
-function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onRenamePaket, onDeleteSpalte, onTitelChange, isSammelbecken = false }) {
-  const [addingPaket, setAddingPaket]     = useState(false);
+function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onDeleteSpalte, onTitelChange, isSammelbecken = false }) {
   const [editingTitel, setEditingTitel]   = useState(false);
   const [titelDraft, setTitelDraft]       = useState(titel);
 
@@ -178,7 +250,7 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onRenamePaket, o
             className={cn('flex-1 p-2 space-y-2 min-h-[120px] rounded-b-xl transition-colors', snapshot.isDraggingOver && 'bg-primary/5')}
           >
             {pakete.map((paket, index) => (
-              <PaketKarte key={paket.id} paket={paket} index={index} onDelete={onDeletePaket} onRename={onRenamePaket} />
+              <PaketKarte key={paket.id} paket={paket} index={index} onDelete={onDeletePaket} onEdit={onEditPaket} />
             ))}
             {provided.placeholder}
             {pakete.length === 0 && !snapshot.isDraggingOver && (
@@ -190,21 +262,14 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onRenamePaket, o
         )}
       </Droppable>
 
-      {/* Paket hinzufügen */}
+      {/* Neues Lernpaket (gestrichelter Bereich) */}
       <div className="px-2 pb-2">
-        {addingPaket ? (
-          <NeuesPaketInline
-            onAdd={(t, d) => { onAddPaket(id, t, d); setAddingPaket(false); }}
-            onCancel={() => setAddingPaket(false)}
-          />
-        ) : (
-          <button
-            onClick={() => setAddingPaket(true)}
-            className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" /> Lernpaket hinzufügen
-          </button>
-        )}
+        <button
+          onClick={() => onAddPaket(id)}
+          className="w-full flex items-center gap-2 px-3 py-3 rounded-lg border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/5 text-xs text-muted-foreground hover:text-primary transition-all"
+        >
+          <Plus className="w-3.5 h-3.5" /> Neues Lernpaket
+        </button>
       </div>
     </div>
   );
@@ -224,6 +289,8 @@ export default function StrukturBoardEmbedded({
   const [saving, setSaving]           = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null); // { spalteId, titel, paketCount }
+  // Dialog-State: { open, spalteId, paket | null }
+  const [paketDialog, setPaketDialog] = useState({ open: false, spalteId: null, paket: null });
 
   // ── Initialisierung ───────────────────────────────────────────────────────
 
@@ -333,36 +400,47 @@ export default function StrukturBoardEmbedded({
     setDeleteConfirm(null);
   };
 
-  const handleAddPaket = (spalteId, titel, dauer) => {
-    const tempId = `new-${Date.now()}`;
-    setPaketeMap(prev => ({
-      ...prev,
-      [spalteId]: [...(prev[spalteId] || []), {
-        id: tempId,
-        titel_des_pakets: titel,
-        geschaetzte_dauer_minuten: dauer,
-        reihenfolge_nummer: (prev[spalteId] || []).length + 1,
-        einheit_id: einheitId,
-        phasen_konfiguration: DEFAULT_PHASEN,
-        isNew: true,
-      }],
-    }));
+  // Öffnet Dialog zum Erstellen (paket=null) oder Bearbeiten (paket=existierendes Paket)
+  const openPaketDialog = (spalteId, paket = null) =>
+    setPaketDialog({ open: true, spalteId, paket });
+
+  const handlePaketSave = ({ titel, dauer, lernziele }) => {
+    const { spalteId, paket } = paketDialog;
+    if (paket && !paket.isNew) {
+      // Bestehendes Paket aktualisieren
+      setPaketeMap(prev => {
+        const next = {};
+        Object.entries(prev).forEach(([k, v]) => {
+          next[k] = v.map(p => p.id === paket.id
+            ? { ...p, titel_des_pakets: titel, geschaetzte_dauer_minuten: dauer, lernziele }
+            : p);
+        });
+        return next;
+      });
+    } else {
+      // Neues Paket anlegen
+      const tempId = `new-${Date.now()}`;
+      setPaketeMap(prev => ({
+        ...prev,
+        [spalteId]: [...(prev[spalteId] || []), {
+          id: tempId,
+          titel_des_pakets: titel,
+          geschaetzte_dauer_minuten: dauer,
+          lernziele,
+          reihenfolge_nummer: (prev[spalteId] || []).length + 1,
+          einheit_id: einheitId,
+          phasen_konfiguration: DEFAULT_PHASEN,
+          isNew: true,
+        }],
+      }));
+    }
+    setPaketDialog({ open: false, spalteId: null, paket: null });
   };
 
   const handleDeletePaket = (paketId) => {
     setPaketeMap(prev => {
       const next = {};
       Object.entries(prev).forEach(([k, v]) => { next[k] = v.filter(p => p.id !== paketId); });
-      return next;
-    });
-  };
-
-  const handleRenamePaket = (paketId, neuerTitel) => {
-    setPaketeMap(prev => {
-      const next = {};
-      Object.entries(prev).forEach(([k, v]) => {
-        next[k] = v.map(p => p.id === paketId ? { ...p, titel_des_pakets: neuerTitel } : p);
-      });
       return next;
     });
   };
@@ -396,13 +474,25 @@ export default function StrukturBoardEmbedded({
         const update = { themenfeld_id: themenfeldId, reihenfolge_nummer: i + 1 };
 
         if (paket.isNew) {
-          await base44.entities.Lernpakete.create({
+          const neuesPaket = await base44.entities.Lernpakete.create({
             einheit_id: einheitId,
             titel_des_pakets: paket.titel_des_pakets,
             geschaetzte_dauer_minuten: paket.geschaetzte_dauer_minuten || 45,
             phasen_konfiguration: paket.phasen_konfiguration || DEFAULT_PHASEN,
             ...update,
           });
+          // Lernziele anlegen, falls vorhanden
+          if (paket.lernziele && paket.lernziele.length > 0) {
+            for (const lz of paket.lernziele) {
+              if (lz.formulierung_fachsprache?.trim()) {
+                await base44.entities.Lernziele.create({
+                  lernpaket_id: neuesPaket.id,
+                  formulierung_fachsprache: lz.formulierung_fachsprache.trim(),
+                  kategorie: lz.kategorie || 'Fachwissen',
+                });
+              }
+            }
+          }
         } else {
           // Nur Struktur-Felder – phasen_konfiguration, locked_by etc. bleiben unangetastet
           await base44.entities.Lernpakete.update(paket.id, update);
@@ -457,9 +547,9 @@ export default function StrukturBoardEmbedded({
               id={SAMMELBECKEN_ID}
               titel="Nicht zugeordnet"
               pakete={paketeMap[SAMMELBECKEN_ID] || []}
-              onAddPaket={handleAddPaket}
+              onAddPaket={(spalteId) => openPaketDialog(spalteId)}
               onDeletePaket={handleDeletePaket}
-              onRenamePaket={handleRenamePaket}
+              onEditPaket={(paket) => openPaketDialog(SAMMELBECKEN_ID, paket)}
               isSammelbecken
             />
 
@@ -472,9 +562,9 @@ export default function StrukturBoardEmbedded({
                 id={spalte.id}
                 titel={spalte.titel}
                 pakete={paketeMap[spalte.id] || []}
-                onAddPaket={handleAddPaket}
+                onAddPaket={(spalteId) => openPaketDialog(spalteId)}
                 onDeletePaket={handleDeletePaket}
-                onRenamePaket={handleRenamePaket}
+                onEditPaket={(paket) => openPaketDialog(spalte.id, paket)}
                 onDeleteSpalte={() => handleDeleteSpalteRequest(spalte.id)}
                 onTitelChange={neuerTitel => handleTitelChange(spalte.id, neuerTitel)}
               />
@@ -491,6 +581,14 @@ export default function StrukturBoardEmbedded({
           </div>
         </DragDropContext>
       </div>
+
+      {/* Lernpaket-Dialog */}
+      <LernpaketDialog
+        open={paketDialog.open}
+        onOpenChange={(open) => !open && setPaketDialog({ open: false, spalteId: null, paket: null })}
+        initialData={paketDialog.paket}
+        onSave={handlePaketSave}
+      />
 
       {/* Bestätigungsdialog */}
       <AlertDialog open={!!deleteConfirm} onOpenChange={open => !open && setDeleteConfirm(null)}>
