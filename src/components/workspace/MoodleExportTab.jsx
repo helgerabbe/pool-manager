@@ -97,6 +97,9 @@ export default function MoodleExportTab() {
   const { data: allLernziele = [] } = useQuery({ queryKey: ['lernziele'], queryFn: () => base44.entities.Lernziele.list() });
   const { data: allAufgaben = [] } = useQuery({ queryKey: ['aufgaben'], queryFn: () => base44.entities.Aufgabenbausteine.list() });
   const { data: allThemenfelder = [] } = useQuery({ queryKey: ['themenfelder'], queryFn: () => base44.entities.Themenfeld.list() });
+  const { data: allActivities = [] } = useQuery({ queryKey: ['lernpaketPhaseAktivitaeten'], queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list() });
+  const { data: allMaster = [] } = useQuery({ queryKey: ['masterAufgaben'], queryFn: () => base44.entities.MasterAufgabe.list() });
+  const { data: allKlone = [] } = useQuery({ queryKey: ['klone'], queryFn: () => base44.entities.Aufgabenbausteine.filter({ is_master: false }) });
 
   const confirmEinheitSync = useMutation({
     mutationFn: (id) => base44.entities.Einheiten.update(id, { last_synced_at: new Date().toISOString() }),
@@ -216,6 +219,27 @@ export default function MoodleExportTab() {
         </label>
         <span className="text-xs text-muted-foreground">{deltaMode ? 'Nur neue/geänderte Inhalte' : 'Vollständige Daten'}</span>
       </div>
+
+      {/* Hinweis auf freigegebene Aktivitäten/Klone */}
+      {(() => {
+        const approvedActivities = allActivities.filter(a => a.sync_status === 'approved').length;
+        const approvedMaster = allMaster.filter(m => m.sync_status === 'approved').length;
+        const approvedKlone = allKlone.filter(k => k.sync_status === 'approved').length;
+        const totalApproved = approvedActivities + approvedMaster + approvedKlone;
+        
+        if (totalApproved > 0 && totalExportable === 0) {
+          return (
+            <div className="flex items-start gap-3 p-5 rounded-xl border border-blue-200 bg-blue-50">
+              <AlertTriangle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-800">
+                <p className="font-semibold mb-1">Hinweis: Freigegebene Aktivitäten ohne Einheit-Export</p>
+                <p className="text-xs">Sie haben {totalApproved} Aktivität(en)/Aufgabe(n) freigegeben, aber keine Einheiten mit Status „Freigegeben für Moodle". Die freigegeben Aktivitäten müssen zuerst in eine Einheit exportiert werden.</p>
+              </div>
+            </div>
+          );
+        }
+        return null;
+      })()}
 
       {/* Inhalt */}
       {totalExportable === 0 ? (

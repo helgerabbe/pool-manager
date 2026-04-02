@@ -23,6 +23,7 @@ export default function ActivityMasterPanel({
   supportsMaster,
   kannBearbeiten,
   userEmail,
+  userRole,
   einheitId,
 }) {
   const queryClient = useQueryClient();
@@ -115,6 +116,7 @@ export default function ActivityMasterPanel({
               klone={kloneByMasterId[master.id] || []}
               kannBearbeiten={kannBearbeiten}
               userEmail={userEmail}
+              userRole={userRole}
               autoExpand={master.id === focusedMasterId}
               onDeleted={() => {
                 setFocusedMasterId(null);

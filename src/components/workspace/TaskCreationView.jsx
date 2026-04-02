@@ -274,7 +274,7 @@ function EmptyState() {
 
 // ── Haupt-Komponente ──────────────────────────────────────────────────────────
 
-export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail }) {
+export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail, userRole }) {
   const queryClient = useQueryClient();
   // selectedItem: null | { type: 'activity', activity } | { type: 'master', master } | { type: 'klon', klon }
   const [selectedItem, setSelectedItem] = useState(null);
@@ -446,6 +446,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail 
               supportsMaster={supportsMaster}
               kannBearbeiten={kannBearbeiten}
               userEmail={userEmail}
+              userRole={userRole}
               einheitId={einheitId}
             />
           </div>

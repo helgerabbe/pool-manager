@@ -402,6 +402,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                   initialActivityId={taskWorkshopActivityId}
                   kannBearbeiten={kannDieseEinheitBearbeiten}
                   userEmail={authUser?.email}
+                  userRole={rolle}
                 />
               </ErrorBoundary>
             </TabsContent>

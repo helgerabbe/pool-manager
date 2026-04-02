@@ -154,6 +154,7 @@ export default function MasterAufgabeCard({
   klone,
   kannBearbeiten,
   userEmail,
+  userRole,
   onDeleted,
   onKlonesCreated,
   autoExpand = false,
@@ -268,6 +269,7 @@ export default function MasterAufgabeCard({
             entityType="master"
             syncStatus={master.sync_status}
             kannBearbeiten={kannBearbeiten}
+            userRole={userRole}
           />
           <button
             onClick={() => setCollapsed(c => !c)}

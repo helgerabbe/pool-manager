@@ -5,11 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle2, RotateCw } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function ApprovalActionButton({ entityId, entityType, syncStatus, kannBearbeiten }) {
+export default function ApprovalActionButton({ entityId, entityType, syncStatus, kannBearbeiten, userRole }) {
   const queryClient = useQueryClient();
   const isApproved = syncStatus === 'approved';
   const isModified = syncStatus === 'modified';
   const isDraft = syncStatus === 'draft';
+  
+  // Nur Admins und Fachschaftsleitungen dürfen freigeben
+  const canApprove = kannBearbeiten && userRole && ['Administrator', 'Fachschaftsleitung'].includes(userRole);
 
   const approveMutation = useMutation({
     mutationFn: async () => {
@@ -50,7 +53,7 @@ export default function ApprovalActionButton({ entityId, entityType, syncStatus,
     }
   });
 
-  if (!kannBearbeiten) return null;
+  if (!canApprove) return null;
 
   if (isApproved) {
     return (
