@@ -92,15 +92,6 @@
       "type": "number",
       "description": "Laufende Nummer des Klons innerhalb einer MasterAufgabe"
     },
-    "status": {
-      "type": "string",
-      "enum": [
-        "draft",
-        "approved"
-      ],
-      "default": "draft",
-      "description": "Freigabestatus des Klons"
-    },
     "lock_status": {
       "type": "boolean",
       "default": false,
@@ -118,12 +109,16 @@
     "sync_status": {
       "type": "string",
       "enum": [
-        "new",
+        "draft",
+        "approved",
+        "pending_export",
         "exported",
-        "modified"
+        "modified",
+        "error",
+        "to_delete"
       ],
-      "default": "new",
-      "description": "Sync-Status f\u00fcr Moodle-Export-Tracking"
+      "default": "draft",
+      "description": "Synchronisierungs- und Freigabestatus des Aufgabenbausteins"
     },
     "last_synced_at": {
       "type": "string",

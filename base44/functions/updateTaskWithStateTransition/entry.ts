@@ -17,39 +17,41 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 // State Machine Konstanten
 const TASK_SYNC_STATUS = {
-  NEW: 'new',
-  EXPORTED: 'exported',
-  MODIFIED: 'modified',
-  PENDING_EXPORT: 'pending_export',
-  TO_DELETE: 'to_delete',
-  APPROVED: 'approved',
-};
-
-const TASK_STATUS = {
   DRAFT: 'draft',
   APPROVED: 'approved',
+  PENDING_EXPORT: 'pending_export',
+  EXPORTED: 'exported',
+  MODIFIED: 'modified',
+  ERROR: 'error',
+  TO_DELETE: 'to_delete',
 };
 
 // Allowed Transitions: currentStatus → newStatus
 const ALLOWED_TRANSITIONS = {
-  [TASK_SYNC_STATUS.NEW]: [
-    TASK_SYNC_STATUS.EXPORTED,
+  [TASK_SYNC_STATUS.DRAFT]: [
     TASK_SYNC_STATUS.APPROVED,
-    TASK_SYNC_STATUS.MODIFIED,
+    TASK_SYNC_STATUS.PENDING_EXPORT,
+    TASK_SYNC_STATUS.TO_DELETE,
+  ],
+  [TASK_SYNC_STATUS.APPROVED]: [
+    TASK_SYNC_STATUS.DRAFT,           // Zurück auf Draft bei Inhaltsänderung
+    TASK_SYNC_STATUS.PENDING_EXPORT,
+    TASK_SYNC_STATUS.TO_DELETE,
   ],
   [TASK_SYNC_STATUS.EXPORTED]: [
-    TASK_SYNC_STATUS.MODIFIED,
-    TASK_SYNC_STATUS.APPROVED,
+    TASK_SYNC_STATUS.MODIFIED,        // Nach Edit
+    TASK_SYNC_STATUS.PENDING_EXPORT,
+    TASK_SYNC_STATUS.TO_DELETE,
   ],
   [TASK_SYNC_STATUS.MODIFIED]: [
     TASK_SYNC_STATUS.PENDING_EXPORT,
-    TASK_SYNC_STATUS.EXPORTED,
-    TASK_SYNC_STATUS.APPROVED,
-  ],
-  [TASK_SYNC_STATUS.APPROVED]: [
-    TASK_SYNC_STATUS.MODIFIED,
+    TASK_SYNC_STATUS.TO_DELETE,
   ],
   [TASK_SYNC_STATUS.PENDING_EXPORT]: [], // Blockiert
+  [TASK_SYNC_STATUS.ERROR]: [
+    TASK_SYNC_STATUS.DRAFT,
+    TASK_SYNC_STATUS.TO_DELETE,
+  ],
   [TASK_SYNC_STATUS.TO_DELETE]: [],      // Blockiert
 };
 
@@ -57,11 +59,11 @@ const ALLOWED_TRANSITIONS = {
  * Berechnet automatisch den neuen sync_status basierend auf aktuellem Status
  * und Edit-Operation.
  *
- * Regel:
- *   - new/modified → bleiben wie sind (können bearbeitet werden)
- *   - exported → wird zu modified
- *   - approved → wird zu modified (bei Inhaltsänderung)
- *   - pending_export, to_delete → ERROR
+ * Regeln bei Inhaltsänderung (isContentChange === true):
+ *   - exported → modified (wurde bereits exportiert, jetzt geändert)
+ *   - approved → draft (war freigegeben, wurde aber geändert, zurück zu Draft)
+ *   - draft → draft (bleibt Draft)
+ *   - pending_export, to_delete → ERROR (blockiert)
  */
 function computeSyncStatusForSave(currentSyncStatus, isContentChange) {
   // Blockierte Zustände → Fehler werfen
@@ -75,18 +77,20 @@ function computeSyncStatusForSave(currentSyncStatus, isContentChange) {
     throw new Error('Aufgabe ist zum Löschen markiert. Bearbeitungen nicht möglich.');
   }
 
-  // Automatische Übergänge
+  // Automatische Übergänge bei Inhaltsänderung
   if (isContentChange) {
+    // Wenn exportiert und geändert → modified
     if (currentSyncStatus === TASK_SYNC_STATUS.EXPORTED) {
       return TASK_SYNC_STATUS.MODIFIED;
     }
+    // Wenn freigegeben und geändert → zurück zu draft
     if (currentSyncStatus === TASK_SYNC_STATUS.APPROVED) {
-      return TASK_SYNC_STATUS.MODIFIED;
+      return TASK_SYNC_STATUS.DRAFT;
     }
   }
 
   // Ansonsten: Status bleibt gleich
-  return currentSyncStatus || TASK_SYNC_STATUS.NEW;
+  return currentSyncStatus || TASK_SYNC_STATUS.DRAFT;
 }
 
 /**
@@ -141,19 +145,11 @@ Deno.serve(async (req) => {
     );
 
     // ─────────────────────────────────────────────────────────────────────
-    // 3. Freigabe-Logik (status: approved setzt sync_status: approved)
-    // ─────────────────────────────────────────────────────────────────────
-    let finalSyncStatus = newSyncStatus;
-    if (updates.status === TASK_STATUS.APPROVED) {
-      finalSyncStatus = TASK_SYNC_STATUS.APPROVED;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // 4. Update durchführen
+    // 3. Update durchführen (sync_status ist jetzt alleiniger Status)
     // ─────────────────────────────────────────────────────────────────────
     const updatePayload = {
       ...updates,
-      sync_status: finalSyncStatus,
+      sync_status: newSyncStatus,
       last_synced_at: currentTask.last_synced_at, // Unverändert
     };
 
@@ -182,8 +178,8 @@ Deno.serve(async (req) => {
       success: true,
       task: updatedTask,
       sync_status_transition: {
-        from: currentTask.sync_status || TASK_SYNC_STATUS.NEW,
-        to: finalSyncStatus,
+        from: currentTask.sync_status || TASK_SYNC_STATUS.DRAFT,
+        to: newSyncStatus,
         reason: isContentChange ? 'content_change' : 'metadata_update',
       },
     });
