@@ -6,6 +6,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { RoleProvider } from '@/lib/RoleContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import ProtectedRoute from '@/lib/ProtectedRoute';
 import AppLayout from '@/components/layout/AppLayout';
 import Dashboard from '@/pages/Dashboard';
 import EinheitenListe from '@/pages/EinheitenListe';
@@ -50,12 +51,46 @@ const AuthenticatedApp = () => {
         <Route path="/einheiten" element={<EinheitenListe />} />
         <Route path="/einheiten/:id" element={<EinheitViewManager />} />
         <Route path="/basismodule" element={<BasismoduleView />} />
-        <Route path="/benutzerverwaltung" element={<Benutzerverwaltung />} />
-        <Route path="/moodle-export" element={<MoodleExport />} />
+        
+        {/* ✅ GESCHÜTZT: Admin-Bereich */}
+        <Route
+          path="/benutzerverwaltung"
+          element={
+            <ProtectedRoute
+              component={Benutzerverwaltung}
+              requiredPermission="kannBenutzerVerwalten"
+              redirectTo="/"
+            />
+          }
+        />
+        
+        {/* ✅ GESCHÜTZT: Export mit Leseberechtigung */}
+        <Route
+          path="/moodle-export"
+          element={
+            <ProtectedRoute
+              component={MoodleExport}
+              requiredPermission="kannExportLesen"
+              redirectTo="/"
+            />
+          }
+        />
+        
         <Route path="/workspace" element={<Workspace />} />
         <Route path="/einheit/create" element={<EinheitCreateWizard />} />
         <Route path="/einheit/export" element={<ExportCenter />} />
-        <Route path="/admin-settings" element={<AdminSettings />} />
+        
+        {/* ✅ GESCHÜTZT: Admin-Einstellungen */}
+        <Route
+          path="/admin-settings"
+          element={
+            <ProtectedRoute
+              component={AdminSettings}
+              requiredPermission="kannBenutzerVerwalten"
+              redirectTo="/"
+            />
+          }
+        />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

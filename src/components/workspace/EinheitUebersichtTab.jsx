@@ -106,12 +106,29 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
   const set = (key, val) => setForm({ ...form, [key]: val });
 
   // ── Membership ──────────────────────────────────────────────────────────────
+  const [previousMembership, setPreviousMembership] = React.useState(null);
+
   const { data: myMembership } = useQuery({
     queryKey: ['einheit-members', einheit.id, currentUserEmail],
     queryFn: () => base44.entities.EinheitMembers.filter({ einheit_id: einheit.id, user_email: currentUserEmail }),
     enabled: !!currentUserEmail,
     select: d => d[0],
+    staleTime: 5000,  // ✅ Nur 5 Sekunden Cache
+    refetchInterval: 10000,  // ✅ Alle 10s im Hintergrund neuladen
+    refetchOnWindowFocus: true,  // ✅ Bei Tab-Wechsel neu validieren
   });
+
+  // ✅ Warnung, falls Delegation entzogen wurde
+  React.useEffect(() => {
+    if (previousMembership && !myMembership) {
+      toast.warning(
+        '🔒 Ihre Bearbeitungsrechte für diese Einheit wurden entzogen. ' +
+        'Bitte aktualisieren Sie die Seite.'
+      );
+    }
+    setPreviousMembership(myMembership);
+  }, [myMembership]);
+
   const isLeitung = myMembership?.unit_role === 'LEITUNG' || einheit.created_by === currentUserEmail;
 
   // Prüfe ob Benutzer darf Mitarbeiter hinzufügen (Admin oder Fachschaftsleitung im eigenen Fach)
@@ -140,14 +157,11 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
   // ── Mutations ───────────────────────────────────────────────────────────────
   const addMember = useMutation({
     mutationFn: async ({ email, role }) => {
-      const existing = members.find(m => m.user_email === email);
-      if (existing) return base44.entities.EinheitMembers.update(existing.id, { unit_role: role });
-      const user = allUsers.find(u => u.email === email);
-      return base44.entities.EinheitMembers.create({
-        einheit_id: einheit.id,
-        user_email: email,
-        user_name: user?.full_name || email,
-        unit_role: role,
+      // ✅ Nutze gesicherte Backend-Funktion
+      return await base44.functions.invoke('addEinheitMemberSecure', {
+        einheitId: einheit.id,
+        targetEmail: email,
+        newRole: role
       });
     },
     onSuccess: () => {
@@ -155,17 +169,22 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
       setNewEmail(''); setNewRole('EDITOR'); setAdding(false);
       toast.success('Mitglied hinzugefügt.');
     },
-    onError: () => toast.error('Fehler beim Hinzufügen.'),
+    onError: (err) => {
+      toast.error(
+        err.message?.includes('Berechtigung')
+          ? '🔒 Sie haben nicht die erforderlichen Berechtigungen.'
+          : 'Fehler: ' + err.message
+      );
+    },
   });
 
   const addMitarbeiter = useMutation({
     mutationFn: async (email) => {
-      const user = allUsers.find(u => u.email === email);
-      return base44.entities.EinheitMembers.create({
-        einheit_id: einheit.id,
-        user_email: email,
-        user_name: user?.full_name || email,
-        unit_role: 'LEITUNG', // Mitarbeiter bekommen LEITUNG-Rechte
+      // ✅ Nutze gesicherte Backend-Funktion mit LEITUNG-Rolle
+      return await base44.functions.invoke('addEinheitMemberSecure', {
+        einheitId: einheit.id,
+        targetEmail: email,
+        newRole: 'LEITUNG'
       });
     },
     onSuccess: () => {
@@ -174,7 +193,13 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
       setAddingMitarbeiter(false);
       toast.success('Mitarbeiter hinzugefügt.');
     },
-    onError: () => toast.error('Fehler beim Hinzufügen.'),
+    onError: (err) => {
+      toast.error(
+        err.message?.includes('Berechtigung')
+          ? '🔒 Sie haben nicht die erforderlichen Berechtigungen.'
+          : 'Fehler: ' + err.message
+      );
+    },
   });
 
   const removeMember = useMutation({
