@@ -229,6 +229,37 @@ export default function WizardStepAssistenz({
     }
   };
 
+  const handleRegenerateScenarios = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const regenerateMessage = 'Die vorherigen Vorschläge waren nicht passend. Bitte probiere einen komplett neuen Ansatz mit zwei unterschiedlichen didaktischen Perspektiven.';
+      
+      const response = await base44.functions.invoke('generateUnitStructure', {
+        stammdaten,
+        messages: [...messages, { role: 'user', content: regenerateMessage }],
+        documentUrls: documentUrls || [],
+      });
+
+      const aiReply = response.data?.aiResponse || 'Keine Antwort erhalten.';
+      const structure = response.data?.structure;
+
+      const textPart = aiReply.split('---JSON_START---')[0].trim();
+      setMessages(prev => [...prev, { role: 'assistant', content: textPart }]);
+
+      // Setze neue Szenarien
+      if (structure && structure.szenario_a && structure.szenario_b) {
+        setSzenarien(structure);
+        setSelectedScenario(null);
+      }
+    } catch (err) {
+      setError(err.message || 'Fehler bei der Neu-Generierung');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAcceptStructure = async () => {
     if (onStructureAccepted) {
       await onStructureAccepted({
@@ -266,6 +297,8 @@ export default function WizardStepAssistenz({
               szenarien={szenarien}
               onSelect={handleSelectScenario}
               selectedScenario={selectedScenario}
+              onRegenerate={handleRegenerateScenarios}
+              loading={loading}
             />
           ) : (
             <StructurePreview 

@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2 } from 'lucide-react';
 
-export default function ScenarioSelectionCards({ szenarien, onSelect, selectedScenario }) {
+export default function ScenarioSelectionCards({ szenarien, onSelect, selectedScenario, onRegenerate, loading }) {
   if (!szenarien) return null;
 
   const scenarios = [
@@ -11,7 +11,7 @@ export default function ScenarioSelectionCards({ szenarien, onSelect, selectedSc
   ];
 
   return (
-    <div className="space-y-4 overflow-y-auto pr-4">
+    <div className="space-y-4 overflow-y-auto pr-4 flex flex-col">
       <div className="text-center mb-6">
         <h3 className="font-semibold text-foreground mb-2">Wählen Sie einen didaktischen Ansatz</h3>
         <p className="text-xs text-muted-foreground">
@@ -19,7 +19,7 @@ export default function ScenarioSelectionCards({ szenarien, onSelect, selectedSc
         </p>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-4 flex-1">
         {scenarios.map(({ key, label, data }) => (
           <div
             key={key}
@@ -79,12 +79,26 @@ export default function ScenarioSelectionCards({ szenarien, onSelect, selectedSc
                   onSelect(key);
                 }}
                 className="w-full"
+                disabled={loading}
               >
                 {selectedScenario === key ? 'Ausgewählt' : 'Mit diesem Szenario weiterarbeiten'}
               </Button>
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Regenerate Button */}
+      <div className="mt-auto pt-4 border-t">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onRegenerate}
+          disabled={loading}
+          className="w-full"
+        >
+          {loading ? 'Neue Vorschläge werden generiert...' : 'Keines der Szenarien passt – bitte zwei neue Vorschläge generieren'}
+        </Button>
       </div>
     </div>
   );
