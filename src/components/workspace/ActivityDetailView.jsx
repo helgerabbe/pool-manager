@@ -18,7 +18,6 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
   const [saving, setSaving] = useState(false);
   const [userEmail, setUserEmail] = useState(null);
   const [hasDraft, setHasDraft] = useState(false);
-  const [lockLost, setLockLost] = useState(false);
   
   const { permissions } = useRBAC();
 
@@ -138,7 +137,6 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
       // ✅ Lock verloren (409 Conflict)
       if (status === 409) {
         toast.error('🔒 Lock wurde von jemand anderem übernommen. Speichern nicht möglich.');
-        setLockLost(true);
       } else if (status === 429) {
         toast.error('⏱️ Zu viele Speicher-Anfragen. Bitte warten Sie einen Moment.');
       } else if (msg.includes('403') || msg.includes('Insufficient permissions')) {
