@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { messages } = await req.json();
+  const { messages, documentUrls = [] } = await req.json();
   if (!Array.isArray(messages) || messages.length === 0) {
     return Response.json({ error: 'messages array required' }, { status: 400 });
   }
@@ -29,7 +29,19 @@ Deno.serve(async (req) => {
     return `${rolle}: ${m.content}`;
   }).join('\n\n');
 
-  const fullPrompt = `${SYSTEM_PROMPT}
+  let contextSection = '';
+  if (documentUrls && documentUrls.length > 0) {
+    contextSection = `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+KONTEXTDOKUMENTE ZUR BERÜCKSICHTIGUNG:
+Die Lehrkraft hat folgende Dokumente hochgeladen, die du bei der Strukturierung beachten sollst:
+- URLs: ${documentUrls.join(', ')}
+Extrahiere relevante Inhalte aus diesen Dokumenten (Lehrpläne, Arbeitspläne, etc.) und integriere sie in deinen Vorschlag.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+  }
+
+  const fullPrompt = `${SYSTEM_PROMPT}${contextSection}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 GESPRÄCHSVERLAUF:
@@ -41,6 +53,7 @@ Antworte jetzt als Coach (nur Deine Antwort, keine Rollenbezeichnung):`;
   const reply = await base44.asServiceRole.integrations.Core.InvokeLLM({
     prompt: fullPrompt,
     model: 'claude_sonnet_4_6',
+    file_urls: documentUrls && documentUrls.length > 0 ? documentUrls : undefined,
   });
 
   return Response.json({ reply: reply || '' });

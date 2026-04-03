@@ -49,10 +49,6 @@ export default function BasismodulCreateDialog({ open, onOpenChange }) {
   const [titel, setTitel] = useState('');
   const [beschreibung, setBeschreibung] = useState('');
 
-  if (!permissions.kannSchreiben) {
-    return null;
-  }
-
   const createBasismodul = useMutation({
     mutationFn: (data) => base44.entities.Basismodule.create(data),
     onSuccess: () => {
@@ -63,6 +59,10 @@ export default function BasismodulCreateDialog({ open, onOpenChange }) {
     },
     onError: () => toast.error('Fehler beim Erstellen'),
   });
+
+  if (!permissions.kannSchreiben) {
+    return null;
+  }
 
   const handleReset = () => {
     setFach('');

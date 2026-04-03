@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Send, Sparkles, Bot, User, ArrowDownToLine, RotateCcw } from 'lucide-react';
+import DocumentUploadPanel from './DocumentUploadPanel';
 
 // ── Erkennung: Enthält die Nachricht einen finalen Strukturentwurf? ────────────
 function isFinalStruktur(text) {
@@ -94,6 +95,7 @@ export default function DidaktikCoachChat({ onBraindumpUebernehmen }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput]       = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [documents, setDocuments] = useState([]);
   const bottomRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -114,6 +116,7 @@ export default function DidaktikCoachChat({ onBraindumpUebernehmen }) {
 
     const response = await base44.functions.invoke('didaktikCoach', {
       messages: newHistory.map(m => ({ role: m.role, content: m.content })),
+      documentUrls: documents.map(d => d.url),
     });
 
     const reply = response?.data?.reply || '(Keine Antwort erhalten)';
@@ -134,7 +137,7 @@ export default function DidaktikCoachChat({ onBraindumpUebernehmen }) {
   };
 
   return (
-    <div className="flex flex-col h-[600px] rounded-xl border border-border overflow-hidden bg-background">
+    <div className="flex flex-col h-auto max-h-[800px] rounded-xl border border-border overflow-hidden bg-background">
 
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-gradient-to-r from-primary/5 to-purple-50 shrink-0">
@@ -207,7 +210,8 @@ export default function DidaktikCoachChat({ onBraindumpUebernehmen }) {
       </div>
 
       {/* Eingabe-Bereich */}
-      <div className="shrink-0 p-4 border-t border-border bg-card">
+      <div className="shrink-0 p-4 border-t border-border bg-card space-y-3">
+        <DocumentUploadPanel onDocumentsChange={setDocuments} />
         <div className="flex items-end gap-2">
           <Textarea
             ref={textareaRef}
@@ -215,9 +219,9 @@ export default function DidaktikCoachChat({ onBraindumpUebernehmen }) {
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Schreiben Sie Ihre Ideen oder stellen Sie eine Frage… (Enter = Senden, Shift+Enter = Zeilenumbruch)"
-            className="flex-1 min-h-[240px] max-h-[400px] resize-none text-sm"
+            className="flex-1 min-h-[100px] max-h-[200px] resize-none text-sm"
             disabled={isLoading}
-            rows={10}
+            rows={5}
           />
           <Button
             onClick={sendMessage}
@@ -228,7 +232,7 @@ export default function DidaktikCoachChat({ onBraindumpUebernehmen }) {
             <Send className="w-4 h-4" />
           </Button>
         </div>
-        <p className="text-[10px] text-muted-foreground mt-1.5 text-center">
+        <p className="text-[10px] text-muted-foreground text-center">
           Der Coach führt Sie Schritt für Schritt — am Ende können Sie den Entwurf direkt übernehmen.
         </p>
       </div>
