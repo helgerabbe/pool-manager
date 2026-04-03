@@ -26,14 +26,18 @@ export function useRBAC() {
   const { data: authUser } = useQuery({
     queryKey: ['authUser'],
     queryFn: () => base44.auth.me(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,           // ✅ 30s statt 5min – aggressivere Cache-Invalidierung
+    refetchOnWindowFocus: true,      // ✅ Bei Tab-Wechsel neu abrufen
+    refetchOnReconnect: true,        // ✅ Bei Netzwerk-Reconnect neu abrufen
   });
 
   const { data: benutzerProfile = [], isLoading } = useQuery({
     queryKey: ['benutzerProfil', authUser?.email],
     queryFn: () => base44.entities.Benutzer.filter({ user_id: authUser?.email }),
     enabled: !!authUser?.email,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,            // ✅ 30s statt 5min – aggressivere Cache-Invalidierung
+    refetchOnWindowFocus: true,      // ✅ Bei Tab-Wechsel neu abrufen
+    refetchOnReconnect: true,        // ✅ Bei Netzwerk-Reconnect neu abrufen
   });
 
   const profil     = benutzerProfile[0] || null;

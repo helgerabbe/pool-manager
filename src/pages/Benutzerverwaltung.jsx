@@ -175,7 +175,13 @@ export default function Benutzerverwaltung() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Benutzer.update(id, data),
     onSuccess: () => {
+      // ✅ Cache-Invalidierung bei Rollenwechsel
       queryClient.invalidateQueries({ queryKey: ['benutzer'] });
+      // ✅ KRITISCH: Globale RBAC-Caches invalidieren bei globalem Rollenwechsel
+      queryClient.invalidateQueries({ queryKey: ['benutzerProfil'] });
+      queryClient.invalidateQueries({ queryKey: ['authUser'] });
+      // ✅ System-Permissions neu berechnen
+      queryClient.invalidateQueries({ queryKey: ['systemeinstellungen'] });
       setEditingUser(null);
     },
   });
