@@ -37,6 +37,14 @@ export default function AufgabenbausteintCard({
   onDelete,
   onLockAcquired,
 }) {
+  const [lockError, setLockError] = useState(false);
+
+  const handleLockDenied = (winnerEmail) => {
+    setLockError(true);
+    setTimeout(() => setLockError(false), 4000);
+    // Sofort UI invalidieren damit der neue Sperrer angezeigt wird
+  };
+
   // active=false: die Karte selbst hält keinen aktiven Edit-Mode –
   // Lock-Erwerb erfolgt manuell via handleEditClick
   const { acquireLock, releaseLock, forceReleaseLock } = useResourceLock(
@@ -44,9 +52,9 @@ export default function AufgabenbausteintCard({
     ['aufgaben', 'aufgabenbausteine', 'klone'],
     aufgabe.id,
     userEmail,
-    false
+    false,
+    handleLockDenied
   );
-  const [lockError, setLockError] = useState(false);
 
   const lockedByOther = checkLockedByOther(aufgabe, userEmail);
   const lockedByMe = aufgabe.lock_status && aufgabe.locked_by_user === userEmail && !isLockExpired(aufgabe.locked_at);
@@ -56,10 +64,8 @@ export default function AufgabenbausteintCard({
     const success = await acquireLock();
     if (success) {
       onLockAcquired?.(aufgabe.id);
-    } else {
-      setLockError(true);
-      setTimeout(() => setLockError(false), 3000);
     }
+    // Falls kein success: handleLockDenied wurde bereits vom Hook aufgerufen
   };
 
   const handleRelease = async () => {

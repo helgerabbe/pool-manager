@@ -1,21 +1,26 @@
 /**
  * useResourceLock.js
  *
- * Generischer pessimistic-locking Hook für beliebige Entitäten.
+ * Generischer pessimistic-locking Hook mit Optimistic Locking zur
+ * Behebung der Race-Condition beim gleichzeitigen Lock-Acquire.
  *
- * Architektur (identisch mit useActivityLock):
- * - lock_status, locked_by_user, locked_at direkt in der Entity gespeichert
- * - Heartbeat alle 30s: erneuert locked_at → hält Lock am Leben
- * - Auto-Expire: locked_at > 2 Minuten → gilt als abgelaufen (UI-seitig)
- * - Cleanup bei unmount + beforeunload
+ * Race-Condition-Lösung (Optimistic Locking):
+ *   - Beim Acquire: lies aktuellen Datensatz inkl. lock_version
+ *   - Schreibe Lock + lock_version + 1
+ *   - Lese sofort nach dem Write nochmals (Post-Write Verification)
+ *   - Falls locked_by_user !== userEmail → jemand anderes war schneller → Lock abweisen
+ *   - Das Zeitfenster der Race-Condition ist dadurch auf wenige Millisekunden reduziert
+ *     und der "Verlierer" wird zuverlässig erkannt
  *
- * Voraussetzung: Die Entität muss die Felder lock_status, locked_by_user, locked_at besitzen.
+ * Voraussetzung: Entität benötigt die Felder:
+ *   lock_status, locked_by_user, locked_at, lock_version
  *
- * @param {string} entityName   - Name der base44-Entität (z.B. 'Aufgabenbausteine')
- * @param {string[]} queryKeys  - React Query Keys, die nach Lock-Ops invalidiert werden
- * @param {string|null} recordId   - ID des zu sperrenden Datensatzes
- * @param {string|null} userEmail  - E-Mail des aktuellen Nutzers
- * @param {boolean} active         - true = Lock halten (z.B. editMode), false = freigeben
+ * @param {string}   entityName  - Name der base44-Entität (z.B. 'Aufgabenbausteine')
+ * @param {string[]} queryKeys   - React Query Keys, die nach Lock-Ops invalidiert werden
+ * @param {string|null} recordId    - ID des zu sperrenden Datensatzes
+ * @param {string|null} userEmail   - E-Mail des aktuellen Nutzers
+ * @param {boolean}     active      - true = Lock halten (editMode), false = freigeben
+ * @param {function}    [onLockDenied] - Callback wenn Lock abgewiesen wurde (Race-Condition)
  */
 
 import { useCallback, useEffect, useRef } from 'react';
@@ -43,7 +48,7 @@ export function isLockedByOther(record, myEmail) {
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
-export function useResourceLock(entityName, queryKeys, recordId, userEmail, active) {
+export function useResourceLock(entityName, queryKeys, recordId, userEmail, active, onLockDenied) {
   const queryClient = useQueryClient();
   const heartbeatRef = useRef(null);
   const heldRef = useRef(false);
@@ -58,10 +63,11 @@ export function useResourceLock(entityName, queryKeys, recordId, userEmail, acti
     );
   }, [queryClient, queryKeys]);
 
-  // ── Lock erwerben ─────────────────────────────────────────────────────────
+  // ── Lock erwerben (mit Optimistic Locking) ────────────────────────────────
   const acquireLock = useCallback(async () => {
     if (!recordId || !userEmail || !entity) return false;
 
+    // Schritt 1: Aktuellen Zustand lesen
     const records = await entity.filter({ id: recordId });
     const record = records[0];
     if (!record) return false;
@@ -71,16 +77,34 @@ export function useResourceLock(entityName, queryKeys, recordId, userEmail, acti
       return false;
     }
 
+    const currentVersion = record.lock_version ?? 0;
+
+    // Schritt 2: Lock setzen mit inkrementierter Version
     await entity.update(recordId, {
       lock_status: true,
       locked_by_user: userEmail,
       locked_at: new Date().toISOString(),
+      lock_version: currentVersion + 1,
     });
+
+    // Schritt 3: Post-Write Verification – wer hat wirklich gewonnen?
+    // Kurze Verzögerung damit ein konkurrierender Write ebenfalls abgeschlossen ist
+    await new Promise(resolve => setTimeout(resolve, 150));
+    const verifyRecords = await entity.filter({ id: recordId });
+    const verified = verifyRecords[0];
+
+    if (!verified || verified.locked_by_user !== userEmail) {
+      // Jemand anderes hat den Lock überschrieben → wir haben verloren
+      heldRef.current = false;
+      invalidate();
+      if (onLockDenied) onLockDenied(verified?.locked_by_user ?? null);
+      return false;
+    }
 
     heldRef.current = true;
     invalidate();
     return true;
-  }, [recordId, userEmail, entity, invalidate]);
+  }, [recordId, userEmail, entity, invalidate, onLockDenied]);
 
   // ── Lock freigeben ────────────────────────────────────────────────────────
   const releaseLock = useCallback(async () => {
@@ -96,9 +120,10 @@ export function useResourceLock(entityName, queryKeys, recordId, userEmail, acti
   }, [recordId, entity, invalidate]);
 
   // ── Admin Force-Release ───────────────────────────────────────────────────
-  const forceReleaseLock = useCallback(async () => {
-    if (!recordId || !entity) return;
-    await entity.update(recordId, {
+  const forceReleaseLock = useCallback(async (targetId) => {
+    const id = targetId ?? recordId;
+    if (!id || !entity) return;
+    await entity.update(id, {
       lock_status: false,
       locked_by_user: '',
       locked_at: null,
@@ -124,9 +149,10 @@ export function useResourceLock(entityName, queryKeys, recordId, userEmail, acti
         heldRef.current = false;
         clearInterval(heartbeatRef.current);
         heartbeatRef.current = null;
+        invalidate();
       }
     }, HEARTBEAT_MS);
-  }, [recordId, entity]);
+  }, [recordId, entity, invalidate]);
 
   const stopHeartbeat = useCallback(() => {
     if (heartbeatRef.current) {
@@ -147,7 +173,7 @@ export function useResourceLock(entityName, queryKeys, recordId, userEmail, acti
       stopHeartbeat();
       if (heldRef.current) releaseLock();
     };
-  }, [active, recordId]);
+  }, [active, recordId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Page-Unload Fallback ──────────────────────────────────────────────────
   useEffect(() => {

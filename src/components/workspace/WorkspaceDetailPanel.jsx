@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { useRecordLock } from '@/hooks/useRecordLock';
+import { useResourceLock, isLockedByOther as checkLockedByOther, isLockExpired } from '@/hooks/useResourceLock';
 import { getLernzielStatus, getLernpaketStatus, getEinheitFortschritt } from '@/lib/statusLogic';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -625,10 +625,18 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
 // ── Panel: Lernziel ───────────────────────────────────────────────────────────
 
 function LernzielPanel({ lernziel, paketId, aufgaben, userEmail, kannBearbeiten, istAdmin, onNewAufgabe, onDelete }) {
-  const { acquireLock, releaseLock, forceReleaseLock, isLockedByOther } = useRecordLock();
   const queryClient = useQueryClient();
   const [editAufgabe, setEditAufgabe] = useState(null);
   const [acquiring, setAcquiring]     = useState(null);
+  const [activeLockId, setActiveLockId] = useState(null);
+
+  const { acquireLock, releaseLock, forceReleaseLock } = useResourceLock(
+    'Aufgabenbausteine',
+    ['aufgaben', 'aufgabenbausteine'],
+    activeLockId,
+    userEmail,
+    false
+  );
 
   const lzAufgaben = aufgaben.filter(a => a.lernpaket_id === paketId && a.lernziel_id === lernziel.id);
   const lzStatus   = getLernzielStatus(lernziel, aufgaben, paketId, userEmail);
@@ -644,15 +652,18 @@ function LernzielPanel({ lernziel, paketId, aufgaben, userEmail, kannBearbeiten,
 
   const handleEdit = async (aufgabe) => {
     setAcquiring(aufgabe.id);
-    const ok = await acquireLock(aufgabe.id, userEmail);
+    setActiveLockId(aufgabe.id);
+    const ok = await acquireLock();
     setAcquiring(null);
     if (ok) setEditAufgabe(aufgabe);
+    else setActiveLockId(null);
   };
 
   const handleEditClose = async (data) => {
     if (data && editAufgabe) await updateAufgabe.mutateAsync({ id: editAufgabe.id, data });
-    if (editAufgabe) await releaseLock(editAufgabe.id, userEmail);
+    if (editAufgabe) await releaseLock();
     setEditAufgabe(null);
+    setActiveLockId(null);
   };
 
   const ampelMsg = {
@@ -709,7 +720,7 @@ function LernzielPanel({ lernziel, paketId, aufgaben, userEmail, kannBearbeiten,
             </Button>
           )}
           {lzAufgaben.map(aufgabe => {
-            const lockedByOther = isLockedByOther(aufgabe, userEmail);
+            const lockedByOther = checkLockedByOther(aufgabe, userEmail);
             const lockedByMe    = aufgabe.lock_status && aufgabe.locked_by_user === userEmail;
             return (
               <div
@@ -758,7 +769,7 @@ function LernzielPanel({ lernziel, paketId, aufgaben, userEmail, kannBearbeiten,
                     )}
                     {istAdmin && lockedByOther && (
                       <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-amber-600"
-                        onClick={() => forceReleaseLock(aufgabe.id)}>
+                        onClick={() => { setActiveLockId(aufgabe.id); forceReleaseLock(aufgabe.id); }}>
                         <Unlock className="w-3 h-3" /> Entsperren
                       </Button>
                     )}
