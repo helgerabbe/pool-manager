@@ -48,6 +48,21 @@ function BenutzerForm({ open, onOpenChange, onSubmit, initialData }) {
     ist_aktiv: true,
   });
 
+  const handleOpenChange = (newOpen) => {
+    if (!newOpen && !initialData) {
+      // Fenster schließen ohne zu bearbeiten → reset
+      setFormData({
+        user_id: '',
+        vorname: '',
+        nachname: '',
+        rolle: '',
+        fachbereich_zustaendigkeit: [],
+        ist_aktiv: true,
+      });
+    }
+    onOpenChange(newOpen);
+  };
+
   const toggleFach = (fach) => {
     const current = formData.fachbereich_zustaendigkeit || [];
     setFormData({
@@ -61,13 +76,23 @@ function BenutzerForm({ open, onOpenChange, onSubmit, initialData }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
-    onOpenChange(false);
+    if (!initialData) {
+      setFormData({
+        user_id: '',
+        vorname: '',
+        nachname: '',
+        rolle: '',
+        fachbereich_zustaendigkeit: [],
+        ist_aktiv: true,
+      });
+    }
+    handleOpenChange(false);
   };
 
   const brauchtFach = ['Fachschaftsleitung', 'Fachlehrkraft'].includes(formData.rolle);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{initialData ? 'Benutzer bearbeiten' : 'Benutzer hinzufügen'}</DialogTitle>
