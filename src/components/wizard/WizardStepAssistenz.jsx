@@ -5,18 +5,32 @@ import { Loader2, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 // Struktur-Vorschau Komponente
-function StructurePreview({ themenfelder = [], lernpakete = [] }) {
+function StructurePreview({ themenfelder = [], lernpakete = [], loading = false }) {
   return (
     <div className="space-y-4 overflow-y-auto pr-4">
       {themenfelder.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
-          <p className="text-sm">Die KI generiert hier die Struktur...</p>
+          <p className="text-sm">{loading ? 'Die KI generiert die Struktur...' : 'Noch keine Struktur vorhanden'}</p>
+          {loading && (
+            <div className="mt-4 space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="h-10 bg-blue-100 rounded-lg animate-pulse" />
+                  <div className="ml-4 space-y-2">
+                    {[...Array(2)].map((_, j) => (
+                      <div key={j} className="h-8 bg-slate-100 rounded-lg animate-pulse" />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         themenfelder.map(tf => (
           <div key={tf.id} className="space-y-2">
             {/* Themenfeld Header */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 animate-in fade-in slide-in-from-top-2">
               <h4 className="font-semibold text-sm text-foreground">{tf.titel}</h4>
               {tf.beschreibung && (
                 <p className="text-xs text-muted-foreground mt-1">{tf.beschreibung}</p>
@@ -27,8 +41,12 @@ function StructurePreview({ themenfelder = [], lernpakete = [] }) {
             <div className="ml-4 space-y-2">
               {lernpakete
                 .filter(lp => lp.themenfeld_id === tf.id)
-                .map(lp => (
-                  <div key={lp.id} className="bg-slate-50 border border-slate-200 rounded-lg p-2.5">
+                .map((lp, idx) => (
+                  <div 
+                    key={lp.id} 
+                    className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 animate-in fade-in slide-in-from-left-2"
+                    style={{ animationDelay: `${idx * 100}ms` }}
+                  >
                     <p className="text-sm font-medium text-foreground">{lp.titel_des_pakets}</p>
                     {lp.geschaetzte_dauer_minuten && (
                       <p className="text-xs text-muted-foreground mt-0.5">
@@ -99,18 +117,24 @@ export default function WizardStepAssistenz({
     setError(null);
 
     try {
-      const response = await base44.functions.invoke('didaktikCoach', {
+      const response = await base44.functions.invoke('generateUnitStructure', {
+        stammdaten,
         messages: [...messages, { role: 'user', content: userMessage }],
         documentUrls: documentUrls || [],
       });
 
-      const aiReply = response.data?.reply || 'Keine Antwort erhalten.';
-      setMessages(prev => [...prev, { role: 'assistant', content: aiReply }]);
+      const aiReply = response.data?.aiResponse || 'Keine Antwort erhalten.';
+      const structure = response.data?.structure;
 
-      // Versuche, die Struktur aus der AI-Antwort zu extrahieren (vereinfacht)
-      // In produktivem Code würde man hier ein komplexeres Parsing durchführen
-      if (aiReply.includes('Einheit:') || aiReply.includes('Lernpaket')) {
-        parseAndStoreStructure(aiReply);
+      // Extrahiere Text-Teil (vor dem JSON-Block)
+      const textPart = aiReply.split('---JSON---')[0].trim();
+      
+      setMessages(prev => [...prev, { role: 'assistant', content: textPart }]);
+
+      // Aktualisiere Struktur wenn JSON vorhanden
+      if (structure && structure.themenfelder && structure.lernpakete) {
+        setThemenfelder(structure.themenfelder);
+        setLernpakete(structure.lernpakete);
       }
     } catch (err) {
       setError(err.message || 'Fehler bei der KI-Kommunikation');
@@ -121,13 +145,6 @@ export default function WizardStepAssistenz({
     } finally {
       setLoading(false);
     }
-  };
-
-  const parseAndStoreStructure = (response) => {
-    // Vereinfachtes Parsing - in der Praxis würde man hier eine strukturierte Antwort erwarten
-    // Dies ist nur ein Platzhalter für die Logik
-    // Die echte Implementierung würde die AI-Antwort analysieren und in Themenfelder/Lernpakete umwandeln
-    console.log('Struktur-Parsing würde hier durchgeführt:', response);
   };
 
   const handleAcceptStructure = async () => {
@@ -158,7 +175,11 @@ export default function WizardStepAssistenz({
             <h3 className="font-semibold text-foreground text-sm">Live-Struktur-Vorschau</h3>
             <p className="text-xs text-muted-foreground mt-0.5">Nur-Lesen Ansicht</p>
           </div>
-          <StructurePreview themenfelder={themenfelder} lernpakete={lernpakete} />
+          <StructurePreview 
+            themenfelder={themenfelder} 
+            lernpakete={lernpakete}
+            loading={loading}
+          />
         </div>
 
         {/* Right: Chat Interface (30%, fixed) */}
