@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import ScenarioSelectionCards from './ScenarioSelectionCards';
 
 // Struktur-Vorschau Komponente
 function StructurePreview({ themenfelder = [], lernpakete = [], loading = false }) {
@@ -99,6 +100,9 @@ export default function WizardStepAssistenz({
   const [themenfelder, setThemenfelder] = useState([]);
   const [lernpakete, setLernpakete] = useState([]);
   const [error, setError] = useState(null);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [szenarien, setSzenarien] = useState(null);
+  const [selectedScenario, setSelectedScenario] = useState(null);
   const messagesEndRef = useRef(null);
 
   // Auto-scroll zu neuester Message
@@ -131,8 +135,13 @@ export default function WizardStepAssistenz({
       
       setMessages(prev => [...prev, { role: 'assistant', content: textPart }]);
 
-      // Aktualisiere Struktur wenn JSON vorhanden
-      if (structure && structure.themenfelder && Array.isArray(structure.themenfelder)) {
+      // Prüfe ob es Szenarien gibt (erste Anfrage)
+      if (structure && structure.szenario_a && structure.szenario_b) {
+        setSzenarien(structure);
+        setIsSelectionMode(true);
+      }
+      // Oder normale Ein-Szenario-Struktur
+      else if (structure && structure.themenfelder && Array.isArray(structure.themenfelder)) {
         const flatThemenfelder = structure.themenfelder.map((tf, idx) => ({
           id: `tf-${idx}`,
           titel: tf.titel,
@@ -165,6 +174,61 @@ export default function WizardStepAssistenz({
     }
   };
 
+  const handleSelectScenario = async (scenarioKey) => {
+    setSelectedScenario(scenarioKey);
+    
+    // Extrahiere die gewählte Struktur
+    const selectedData = szenarien[scenarioKey];
+    if (selectedData && selectedData.themenfelder) {
+      const flatThemenfelder = selectedData.themenfelder.map((tf, idx) => ({
+        id: `tf-${idx}`,
+        titel: tf.titel,
+        beschreibung: tf.beschreibung || '',
+      }));
+
+      const flatLernpakete = [];
+      selectedData.themenfelder.forEach((tf, tfIdx) => {
+        (tf.lernpakete || []).forEach((lp, lpIdx) => {
+          flatLernpakete.push({
+            id: `lp-${tfIdx}-${lpIdx}`,
+            themenfeld_id: `tf-${tfIdx}`,
+            titel_des_pakets: lp.titel,
+            geschaetzte_dauer_minuten: lp.geschaetzte_dauer_minuten || 60,
+          });
+        });
+      });
+
+      setThemenfelder(flatThemenfelder);
+      setLernpakete(flatLernpakete);
+
+      // Beende Selections-Modus
+      setIsSelectionMode(false);
+      setSzenarien(null);
+
+      // Sende automatisierte Chat-Nachricht
+      const confirmMessage = `Ich habe mich für ${scenarioKey === 'szenario_a' ? 'Szenario A' : 'Szenario B'} entschieden. Lass uns das verfeinern.`;
+      setMessages(prev => [...prev, { role: 'user', content: confirmMessage }]);
+      
+      // Versuche automatisch die Verfeinerung abzurufen
+      setLoading(true);
+      try {
+        const response = await base44.functions.invoke('generateUnitStructure', {
+          stammdaten,
+          messages: [...messages, { role: 'assistant', content: selectedData.erlaeuterung }],
+          documentUrls: documentUrls || [],
+        });
+
+        const aiReply = response.data?.aiResponse || '';
+        const textPart = aiReply.split('---JSON_START---')[0].trim();
+        setMessages(prev => [...prev, { role: 'assistant', content: textPart }]);
+      } catch (err) {
+        console.error('Refinement error:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   const handleAcceptStructure = async () => {
     if (onStructureAccepted) {
       await onStructureAccepted({
@@ -187,17 +251,29 @@ export default function WizardStepAssistenz({
 
       {/* Main Split-Screen Area */}
       <div className="flex flex-1 overflow-hidden gap-4 p-4">
-        {/* Left: Structure Preview (70%) */}
+        {/* Left: Structure Preview or Scenario Selection (70%) */}
         <div className="flex-1 bg-card border rounded-lg p-4 overflow-hidden flex flex-col">
           <div className="mb-4">
-            <h3 className="font-semibold text-foreground text-sm">Live-Struktur-Vorschau</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Nur-Lesen Ansicht</p>
+            <h3 className="font-semibold text-foreground text-sm">
+              {isSelectionMode ? 'Didaktische Ansätze' : 'Live-Struktur-Vorschau'}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {isSelectionMode ? 'Wählen Sie den gewünschten Ansatz' : 'Nur-Lesen Ansicht'}
+            </p>
           </div>
-          <StructurePreview 
-            themenfelder={themenfelder} 
-            lernpakete={lernpakete}
-            loading={loading}
-          />
+          {isSelectionMode && szenarien ? (
+            <ScenarioSelectionCards 
+              szenarien={szenarien}
+              onSelect={handleSelectScenario}
+              selectedScenario={selectedScenario}
+            />
+          ) : (
+            <StructurePreview 
+              themenfelder={themenfelder} 
+              lernpakete={lernpakete}
+              loading={loading}
+            />
+          )}
         </div>
 
         {/* Right: Chat Interface (30%, fixed) */}
