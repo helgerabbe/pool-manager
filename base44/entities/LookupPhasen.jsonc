@@ -4,17 +4,7 @@
   "properties": {
     "bezeichnung": {
       "type": "string",
-      "description": "Bezeichnung der Phase/des Zeitraums (z.B. 'Halbjahr 1 2025/26')"
-    },
-    "startdatum": {
-      "type": "string",
-      "format": "date",
-      "description": "Startdatum der Phase"
-    },
-    "enddatum": {
-      "type": "string",
-      "format": "date",
-      "description": "Enddatum der Phase"
+      "description": "Bezeichnung der Phase (z.B. 'Halbjahr 1 2025/26')"
     },
     "ist_aktiv": {
       "type": "boolean",
