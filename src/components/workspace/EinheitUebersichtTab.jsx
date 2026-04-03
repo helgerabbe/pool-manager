@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, Plus, Trash2, Crown, Edit, Eye } from 'lucide-react';
+import { Save, Plus, Trash2, Crown, Edit, Eye, Lock, Unlock, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useDraftState } from '@/hooks/useDraftState';
@@ -76,8 +76,32 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
     gesamtziel:        einheit.gesamtziel || '',
     fach:              einheit.fach || '',
     jahrgangsstufe:    einheit.jahrgangsstufe || '',
-    freigabe_status:   einheit.freigabe_status || 'In Planung',
   });
+
+  const [isLocking, setIsLocking] = useState(false);
+
+  // Wer darf den Sperrstatus ändern?
+  const kannSperrenToggle = currentUserRole === 'Administrator' ||
+    (currentUserRole === 'Fachschaftsleitung' && currentUserFaecher.includes(einheit.fach));
+
+  const istGesperrt = einheit.freigabe_status === 'Gesperrt';
+
+  const handleToggleSperre = async () => {
+    setIsLocking(true);
+    try {
+      const neuerStatus = istGesperrt ? 'Freigegeben für Bearbeitung' : 'Gesperrt';
+      await base44.entities.Einheiten.update(einheit.id, { freigabe_status: neuerStatus });
+      queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+      toast.success(istGesperrt
+        ? 'Einheit ist jetzt für die Bearbeitung freigegeben.'
+        : 'Einheit wurde für die Bearbeitung gesperrt.'
+      );
+    } catch {
+      toast.error('Fehler beim Ändern des Sperrstatus.');
+    } finally {
+      setIsLocking(false);
+    }
+  };
 
   const set = (key, val) => setForm({ ...form, [key]: val });
 
@@ -234,17 +258,6 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label>Freigabestatus</Label>
-              <Select value={form.freigabe_status} onValueChange={v => set('freigabe_status', v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="In Planung">In Planung</SelectItem>
-                  <SelectItem value="Freigegeben für Moodle">Freigegeben für Moodle</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             <div className="flex justify-end pt-1">
               <Button
                 onClick={handleSave}
@@ -260,7 +273,75 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
           </div>
         </section>
 
-        {/* ── Spalte 2: Mitarbeiter ────────────────────────────────────────────── */}
+        {/* ── Spalte 2: Bearbeitungssperre ─────────────────────────────────────── */}
+        <section className="space-y-5">
+          <div>
+            <h2 className="text-lg font-semibold">Bearbeitungsstatus</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">Steuert, ob Lehrkräfte Inhalte dieser Einheit bearbeiten dürfen.</p>
+          </div>
+
+          <div className={cn(
+            'p-5 rounded-xl border',
+            istGesperrt ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'
+          )}>
+            <div className="flex items-start gap-4">
+              <div className={cn(
+                'w-10 h-10 rounded-full flex items-center justify-center shrink-0',
+                istGesperrt ? 'bg-red-100' : 'bg-green-100'
+              )}>
+                {istGesperrt
+                  ? <Lock className="w-5 h-5 text-red-600" />
+                  : <Unlock className="w-5 h-5 text-green-600" />
+                }
+              </div>
+              <div className="flex-1">
+                <p className={cn('font-semibold text-sm', istGesperrt ? 'text-red-800' : 'text-green-800')}>
+                  {istGesperrt ? 'Einheit gesperrt' : 'Einheit freigegeben'}
+                </p>
+                <p className={cn('text-xs mt-1', istGesperrt ? 'text-red-600' : 'text-green-600')}>
+                  {istGesperrt
+                    ? 'Lehrkräfte können diese Einheit gerade nicht bearbeiten. Nur Lesen ist erlaubt.'
+                    : 'Lehrkräfte können Inhalte dieser Einheit bearbeiten.'
+                  }
+                </p>
+              </div>
+            </div>
+
+            {kannSperrenToggle ? (
+              <div className="mt-4">
+                <Button
+                  onClick={handleToggleSperre}
+                  disabled={isLocking}
+                  variant={istGesperrt ? 'default' : 'outline'}
+                  size="sm"
+                  className={cn(
+                    'gap-2 w-full',
+                    !istGesperrt && 'border-red-300 text-red-700 hover:bg-red-50'
+                  )}
+                >
+                  {isLocking
+                    ? <div className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                    : istGesperrt
+                      ? <Unlock className="w-3.5 h-3.5" />
+                      : <Lock className="w-3.5 h-3.5" />
+                  }
+                  {istGesperrt ? 'Einheit für Bearbeitung freigeben' : 'Einheit für Bearbeitung sperren'}
+                </Button>
+              </div>
+            ) : (
+              <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
+                <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
+                Nur Fachschaftsleitungen und Administratoren können den Sperrstatus ändern.
+              </div>
+            )}
+          </div>
+        </section>
+
+      </div>
+
+      {/* ── Zeile 2: Mitarbeiter (volle Breite) ──────────────────────────────── */}
+      <div className="mt-8">
+        {/* ── Spalte 2 (ehem.): Mitarbeiter ────────────────────────────────────────────── */}
         <section className="space-y-5">
             <div>
               <h2 className="text-lg font-semibold">Mitarbeiter</h2>

@@ -56,11 +56,11 @@
     "freigabe_status": {
       "type": "string",
       "enum": [
-        "In Planung",
-        "Freigegeben f\u00fcr Moodle"
+        "Freigegeben f\u00fcr Bearbeitung",
+        "Gesperrt"
       ],
-      "default": "In Planung",
-      "description": "Freigabestatus der Einheit"
+      "default": "Freigegeben f\u00fcr Bearbeitung",
+      "description": "Bearbeitungsstatus der Einheit: Freigegeben = Lehrer d\u00fcrfen bearbeiten, Gesperrt = nur Lesen"
     },
     "content_status": {
       "type": "string",

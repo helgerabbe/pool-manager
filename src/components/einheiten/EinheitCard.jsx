@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { BookOpen, ArrowRight, Clock, Layers, Trash2 } from 'lucide-react';
+import { BookOpen, ArrowRight, Clock, Layers, Trash2, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { base44 } from '@/api/base44Client';
@@ -74,9 +74,12 @@ export default function EinheitCard({ einheit, lernpaketCount, rolle, onDeleteSt
                   <Badge className={colorClass + ' font-medium'}>
                     {einheit.fach}
                   </Badge>
-                  <Badge variant={einheit.freigabe_status === 'Freigegeben für Moodle' ? 'default' : 'secondary'}>
-                    {einheit.freigabe_status || 'In Planung'}
-                  </Badge>
+                  {einheit.freigabe_status === 'Gesperrt' && (
+                    <Badge className="bg-red-100 text-red-700 border border-red-200 gap-1">
+                      <Lock className="w-3 h-3" />
+                      Gesperrt
+                    </Badge>
+                  )}
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
                   {einheit.titel_der_einheit}

@@ -113,10 +113,15 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const aufgabenFuerEinheit = aufgaben.filter((a) => paketIds.includes(a.lernpaket_id));
 
   // ── RBAC ──────────────────────────────────────────────────────────────────────
-  const kannDieseEinheitBearbeiten = einheit
-    ? permissions.kannEinheitBearbeiten(einheit.fach)
-    : false;
   const istAdmin = rolle === ROLLEN.ADMIN;
+  const istFachschaftsleitung = rolle === ROLLEN.FACHSCHAFT;
+  const kannSperreIgnorieren = istAdmin || istFachschaftsleitung;
+
+  // Einheit gesperrt? → normale Lehrkräfte dürfen nicht bearbeiten
+  const einheitGesperrt = einheit?.freigabe_status === 'Gesperrt';
+  const kannDieseEinheitBearbeiten = einheit
+    ? permissions.kannEinheitBearbeiten(einheit.fach) && (!einheitGesperrt || kannSperreIgnorieren)
+    : false;
 
   // ── Präsenz ──────────────────────────────────────────────────────────────────
   const { onlineUsers } = usePresence(selectedEinheitId);
@@ -243,6 +248,24 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   return (
     <ErrorBoundary label="Workspace">
       <div className="flex flex-col h-full w-full overflow-hidden bg-background">
+
+        {/* ── Einheit-Gesperrt-Banner ─────────────────────────────────────────── */}
+        {einheitGesperrt && !kannSperreIgnorieren && (
+          <div className="shrink-0 px-4 py-2.5 bg-red-50 border-b border-red-200 text-xs text-red-800 flex items-center gap-2">
+            <Lock className="w-3.5 h-3.5 shrink-0 text-red-600" />
+            <span>
+              <strong>Einheit gesperrt</strong> – Diese Einheit wurde für die Bearbeitung gesperrt. Inhalte können nur gelesen werden.
+            </span>
+          </div>
+        )}
+        {einheitGesperrt && kannSperreIgnorieren && (
+          <div className="shrink-0 px-4 py-2.5 bg-amber-50 border-b border-amber-200 text-xs text-amber-800 flex items-center gap-2">
+            <Lock className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+            <span>
+              <strong>Einheit gesperrt</strong> – Lehrkräfte können nicht bearbeiten. Sie haben als Fachschaftsleitung/Administrator weiterhin Schreibzugriff.
+            </span>
+          </div>
+        )}
 
         {/* ── Structural-Lock-Banner ───────────────────────────────────────────── */}
         {structLocked && (
