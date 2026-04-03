@@ -41,6 +41,8 @@ const rollenBeschreibungen = {
 function BenutzerForm({ open, onOpenChange, onSubmit, initialData }) {
   const [formData, setFormData] = useState(initialData || {
     user_id: '',
+    vorname: '',
+    nachname: '',
     rolle: '',
     fachbereich_zustaendigkeit: [],
     ist_aktiv: true,
@@ -81,6 +83,26 @@ function BenutzerForm({ open, onOpenChange, onSubmit, initialData }) {
               disabled={!!initialData}
             />
           </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Vorname *</Label>
+              <Input
+                value={formData.vorname}
+                onChange={e => setFormData({ ...formData, vorname: e.target.value })}
+                placeholder="Max"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Nachname *</Label>
+              <Input
+                value={formData.nachname}
+                onChange={e => setFormData({ ...formData, nachname: e.target.value })}
+                placeholder="Mustermann"
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label>Rolle *</Label>
             <Select value={formData.rolle} onValueChange={v => setFormData({ ...formData, rolle: v })}>
@@ -96,33 +118,35 @@ function BenutzerForm({ open, onOpenChange, onSubmit, initialData }) {
             )}
           </div>
 
-          {brauchtFach && (
-            <div className="space-y-2">
-              <Label>Fachbereich-Zuständigkeit {brauchtFach ? '*' : ''}</Label>
-              <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-muted/30 max-h-40 overflow-y-auto">
-                {FAECHER.map(fach => {
-                  const selected = (formData.fachbereich_zustaendigkeit || []).includes(fach);
-                  return (
-                    <button
-                      key={fach}
-                      type="button"
-                      onClick={() => toggleFach(fach)}
-                      className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                        selected
-                          ? 'bg-primary text-primary-foreground border-primary'
+          <div className="space-y-2">
+            <Label>Fachbereich-Zuständigkeit * (max. 5)</Label>
+            <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-muted/30 max-h-40 overflow-y-auto scroll-container">
+              {FAECHER.map(fach => {
+                const selected = (formData.fachbereich_zustaendigkeit || []).includes(fach);
+                const isFull = (formData.fachbereich_zustaendigkeit || []).length >= 5;
+                return (
+                  <button
+                    key={fach}
+                    type="button"
+                    onClick={() => toggleFach(fach)}
+                    disabled={isFull && !selected}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                      selected
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : isFull
+                          ? 'opacity-50 cursor-not-allowed bg-background text-foreground border-border'
                           : 'bg-background text-foreground border-border hover:border-primary/50'
-                      }`}
-                    >
-                      {fach}
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {(formData.fachbereich_zustaendigkeit || []).length} Fach/Fächer ausgewählt
-              </p>
+                    }`}
+                  >
+                    {fach}
+                  </button>
+                );
+              })}
             </div>
-          )}
+            <p className="text-xs text-muted-foreground">
+              {(formData.fachbereich_zustaendigkeit || []).length}/5 Fächer ausgewählt
+            </p>
+          </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
@@ -130,8 +154,10 @@ function BenutzerForm({ open, onOpenChange, onSubmit, initialData }) {
               type="submit"
               disabled={
                 !formData.user_id ||
+                !formData.vorname ||
+                !formData.nachname ||
                 !formData.rolle ||
-                (brauchtFach && (formData.fachbereich_zustaendigkeit || []).length === 0)
+                (formData.fachbereich_zustaendigkeit || []).length === 0
               }
             >
               {initialData ? 'Speichern' : 'Erstellen'}
@@ -359,26 +385,27 @@ export default function Benutzerverwaltung() {
                       {(b.user_id || '?')[0].toUpperCase()}
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium">{b.user_id}</p>
-                        {b.user_id === authUser?.email && (
-                          <Badge className="text-[10px] bg-primary/10 text-primary">Ich</Badge>
-                        )}
-                        {!b.ist_aktiv && (
-                          <Badge className="text-[10px] bg-muted text-muted-foreground">Inaktiv</Badge>
-                        )}
-                      </div>
-                      {b.fachbereich_zustaendigkeit?.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {b.fachbereich_zustaendigkeit.map(f => (
-                            <span key={f} className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{f}</span>
-                          ))}
-                        </div>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Hinzugefügt: {b.created_date && format(new Date(b.created_date), 'dd.MM.yyyy', { locale: de })}
-                      </p>
-                    </div>
+                         <div className="flex items-center gap-2">
+                           <p className="text-sm font-medium">{b.vorname} {b.nachname}</p>
+                           {b.user_id === authUser?.email && (
+                             <Badge className="text-[10px] bg-primary/10 text-primary">Ich</Badge>
+                           )}
+                           {!b.ist_aktiv && (
+                             <Badge className="text-[10px] bg-muted text-muted-foreground">Inaktiv</Badge>
+                           )}
+                         </div>
+                         <p className="text-xs text-muted-foreground">{b.user_id}</p>
+                         {b.fachbereich_zustaendigkeit?.length > 0 && (
+                           <div className="flex flex-wrap gap-1 mt-1">
+                             {b.fachbereich_zustaendigkeit.map(f => (
+                               <span key={f} className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{f}</span>
+                             ))}
+                           </div>
+                         )}
+                         <p className="text-xs text-muted-foreground mt-0.5">
+                           Hinzugefügt: {b.created_date && format(new Date(b.created_date), 'dd.MM.yyyy', { locale: de })}
+                         </p>
+                       </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <Badge className={`${rollenBadgeColors[b.rolle] || 'bg-muted text-muted-foreground'}`}>

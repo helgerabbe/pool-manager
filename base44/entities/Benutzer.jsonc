@@ -6,6 +6,14 @@
       "type": "string",
       "description": "Referenz zur eingebauten User-Entit\u00e4t (Email als FK)"
     },
+    "vorname": {
+      "type": "string",
+      "description": "Vorname des Benutzers"
+    },
+    "nachname": {
+      "type": "string",
+      "description": "Nachname des Benutzers"
+    },
     "rolle": {
       "type": "string",
       "enum": [
@@ -42,7 +50,8 @@
           "Informatik"
         ]
       },
-      "description": "Zust\u00e4ndige F\u00e4cher des Benutzers (Mehrfachauswahl m\u00f6glich)"
+      "description": "Zust\u00e4ndige F\u00e4cher des Benutzers (bis zu 5 m\u00f6glich)",
+      "maxItems": 5
     },
     "ist_aktiv": {
       "type": "boolean",
@@ -52,6 +61,7 @@
   },
   "required": [
     "user_id",
-    "rolle"
+    "rolle",
+    "fachbereich_zustaendigkeit"
   ]
 }
