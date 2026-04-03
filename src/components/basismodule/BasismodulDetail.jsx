@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Edit2, Trash2, Check, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, Check, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import BasislernpaketCard from './BasislernpaketCard';
 
@@ -39,7 +39,7 @@ export default function BasismodulDetail({ basismodul, onDelete }) {
   });
 
   const deleteBasismodul = useMutation({
-    mutationFn: () => base44.entities.Basismodul.delete(basismodul.id),
+    mutationFn: () => base44.entities.Basismodule.delete(basismodul.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['basismodule'] });
       toast.success('Modul gelöscht');
@@ -133,9 +133,22 @@ export default function BasismodulDetail({ basismodul, onDelete }) {
             disabled={deleteBasismodul.isPending}
             className="gap-1"
           >
-            <Trash2 className="w-3.5 h-3.5" />
-            Löschen
+            {deleteBasismodul.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+            {deleteBasismodul.isPending ? 'Wird gelöscht...' : 'Löschen'}
           </Button>
+
+          {/* Lösch-Overlay */}
+          {deleteBasismodul.isPending && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/50 backdrop-blur-sm">
+              <div className="flex flex-col items-center gap-4 p-8 rounded-xl bg-card border border-border shadow-lg">
+                <Loader2 className="w-12 h-12 text-primary animate-spin" />
+                <div className="text-center">
+                  <p className="text-sm font-medium text-foreground">Basismodul wird gelöscht... Bitte warten.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Dies kann einige Sekunden dauern...</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {basismodul.beschreibung && (
