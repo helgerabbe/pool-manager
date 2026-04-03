@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Mail, Send, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { Mail, Send, AlertTriangle, CheckCircle, Clock, Info } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { de } from 'date-fns/locale';
 
 export default function UserInviteTab({ benutzer = [] }) {
   const queryClient = useQueryClient();
@@ -22,6 +24,20 @@ export default function UserInviteTab({ benutzer = [] }) {
         return result || [];
       } catch (err) {
         console.error('User-Liste konnte nicht geladen werden:', err);
+        return [];
+      }
+    },
+  });
+
+  // Lade AuditLog um zu sehen, welche Einladungen gesendet wurden
+  const { data: auditLog = [] } = useQuery({
+    queryKey: ['auditLog'],
+    queryFn: async () => {
+      try {
+        const result = await base44.entities.AuditLog.list('-created_date');
+        return result || [];
+      } catch (err) {
+        console.error('AuditLog konnte nicht geladen werden:', err);
         return [];
       }
     },
@@ -58,6 +74,10 @@ export default function UserInviteTab({ benutzer = [] }) {
     <div className="space-y-3">
       {unregisteredBenutzer.map(b => {
         const isRegistered = users.find(u => u.email === b.user_id);
+        const lastInvite = auditLog
+          .filter(log => log.action === 'CREATE' && log.resource_type === 'inviteUserSecure' && log.changes?.email === b.user_id)
+          .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
+        
         return (
           <Card key={b.id} className="border-0 shadow-sm">
             <CardContent className="p-4 flex items-center justify-between">
@@ -65,11 +85,16 @@ export default function UserInviteTab({ benutzer = [] }) {
                 <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-xs font-bold text-amber-700 shrink-0">
                   {(b.vorname || '?')[0]}
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{b.vorname} {b.nachname}</p>
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <Mail className="w-3 h-3" />{b.user_id}
                   </p>
+                  {lastInvite && (
+                    <p className="text-xs text-blue-600 flex items-center gap-1 mt-1">
+                      <Info className="w-3 h-3" /> Einladung gesendet am {format(new Date(lastInvite.created_date), 'dd. MMM HH:mm', { locale: de })}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0 ml-4">
