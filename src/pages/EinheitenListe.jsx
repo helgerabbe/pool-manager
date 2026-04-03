@@ -214,8 +214,8 @@ export default function EinheitenListe() {
           icon={BookOpen}
           title="Noch keine Einheiten"
           description="Erstellen Sie Ihre erste Unterrichtseinheit, um mit der Planung zu beginnen."
-          actionLabel="Erste Einheit erstellen"
-          onAction={() => navigate('/einheit/create')}
+          actionLabel={permissions.kannSchreiben ? "Erste Einheit erstellen" : undefined}
+          onAction={permissions.kannSchreiben ? () => navigate('/einheit/create') : undefined}
         />
       ) : (
         <p className="text-sm text-muted-foreground text-center py-10">Keine Einheiten gefunden.</p>
