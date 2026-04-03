@@ -73,10 +73,10 @@ export default function AppLayout() {
             <div className="flex items-center gap-2.5 shrink-0">
               <Link to="/" className="flex items-center gap-2.5 shrink-0">
                 <img
-                  src="https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/29a132044_image.png"
-                  alt="Pool-Manager Icon"
-                  className="w-10 h-10 rounded-xl object-cover"
-                />
+                   src="https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/84d10855a_image.png"
+                   alt="Pool-Manager Icon"
+                   className="w-10 h-10 rounded-xl object-cover"
+                 />
                 <span className="text-base font-bold text-foreground tracking-tight hidden sm:inline">Pool-Manager</span>
               </Link>
             </div>

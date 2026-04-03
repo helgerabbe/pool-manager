@@ -300,22 +300,6 @@ export default function StrukturBoardEmbedded({
   const [originalSpaltenIds, setOriginalSpaltenIds] = useState(new Set());
   const [originalPaketIds, setOriginalPaketIds] = useState(new Set());
 
-  // RBAC: Nur Struktur-Bearbeiter dürfen hier rein (Bereich 1: Struktur) - nach allen Hooks
-  const kannStrukturBearbeiten = einheit ? permissions.kannStrukturBearbeiten(einheit.fach) : false;
-  if (!kannStrukturBearbeiten) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 text-center p-8">
-        <FolderOpen className="w-12 h-12 text-muted-foreground/30" />
-        <div>
-          <p className="font-semibold">Kein Zugriff</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Nur Fachschaftsleitung und Administratoren dürfen die Struktur bearbeiten.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   // ── Initialisierung ───────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -349,6 +333,22 @@ export default function StrukturBoardEmbedded({
 
   // Re-init wenn einheit oder Remote-Daten sich ändern
   useEffect(() => { setInitialized(false); }, [einheitId, remotePakete, remoteThemenfelder]);
+
+  // RBAC: Nur Struktur-Bearbeiter dürfen hier rein (Bereich 1: Struktur) - nach allen Hooks
+  const kannStrukturBearbeiten = einheit ? permissions.kannStrukturBearbeiten(einheit.fach) : false;
+  if (!kannStrukturBearbeiten) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 text-center p-8">
+        <FolderOpen className="w-12 h-12 text-muted-foreground/30" />
+        <div>
+          <p className="font-semibold">Kein Zugriff</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Nur Fachschaftsleitung und Administratoren dürfen die Struktur bearbeiten.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // ── DnD ───────────────────────────────────────────────────────────────────
 

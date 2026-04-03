@@ -369,19 +369,7 @@ export default function ExportCockpitView({ initialEinheitId = null }) {
 
   const selectedEinheitIds = slots.map(s => s.unitId).filter(Boolean);
 
-  // Permission check (nach allen Hooks)
-  if (!permissions.kannExportBedienen) {
-    return (
-      <div className="min-h-screen bg-muted/20 p-6 flex items-center justify-center">
-        <div className="text-center">
-          <ShieldCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">Kein Zugriff. Nur Moodle-Designer dürfen den Export bedienen.</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Export: setzt sync_status='pending' auf den ausgewählten Aktivitäten und Aufgaben
+  // Export: setzt sync_status='pending' auf den ausgewählten Aktivitäten und Aufgaben (Hook IMMER aufrufen)
   const exportMutation = useMutation({
     mutationFn: async () => {
       const allgemeineIds = new Set(allgemeineAufgaben.map(a => a.id));
@@ -402,6 +390,18 @@ export default function ExportCockpitView({ initialEinheitId = null }) {
     },
     onError: () => toast.error('Fehler bei der Übergabe.'),
   });
+
+  // Permission check (nach allen Hooks)
+  if (!permissions.kannExportBedienen) {
+    return (
+      <div className="min-h-screen bg-muted/20 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <ShieldCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">Kein Zugriff. Nur Moodle-Designer dürfen den Export bedienen.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-muted/20 p-6">

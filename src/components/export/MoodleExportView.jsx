@@ -88,18 +88,7 @@ export default function MoodleExportView({ einheitId, userRole, isAdmin }) {
     };
   }, [lernpakete, einheitActivities, masters, klone, einheitId]);
 
-  // Permission check (nach allen Hooks)
-  if (!permissions.kannExportLesen) {
-    return (
-      <div className="space-y-6 p-6 max-w-4xl mx-auto">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <p className="text-red-800">Kein Zugriff. Diese Seite ist nicht für Betrachter verfügbar.</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Zeitpunkt des letzten Exports ermitteln
+  // Zeitpunkt des letzten Exports ermitteln (Hook IMMER aufrufen)
   const lastSyncTimestamp = useMemo(() => {
     const syncedElements = [
       ...lernpakete,
@@ -113,6 +102,17 @@ export default function MoodleExportView({ einheitId, userRole, isAdmin }) {
 
     return syncedElements.length > 0 ? syncedElements[0] : null;
   }, [lernpakete, activities, masters, klone]);
+
+  // Permission check (nach allen Hooks)
+  if (!permissions.kannExportLesen) {
+    return (
+      <div className="space-y-6 p-6 max-w-4xl mx-auto">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <p className="text-red-800">Kein Zugriff. Diese Seite ist nicht für Betrachter verfügbar.</p>
+        </div>
+      </div>
+    );
+  }
 
   // ──────────────────────────────────────────────────────────────────────────────
   // Render
