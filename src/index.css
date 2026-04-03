@@ -101,6 +101,13 @@
   }
 }
 
+@layer components {
+  .scroll-container {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 /* Print Media Queries für Bauplan-Export */
 @media print {
   /* Verstecke Navigation und UI-Elemente */
