@@ -2,21 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useRBAC } from '@/hooks/useRBAC';
+import { useCollaborationLock } from '@/hooks/useCollaborationLock';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Edit, Save, X, FileText, AlertTriangle, Lock } from 'lucide-react';
+import { Edit, Save, X, FileText, AlertTriangle, Lock, Wifi, WifiOff, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import ApprovalStatusBadge from '@/components/workspace/ApprovalStatusBadge';
 import ApprovalActionButton from '@/components/workspace/ApprovalActionButton';
-import { useActivityLock, isActivityLockedByOther } from '@/hooks/useActivityLock';
 
 export default function ActivityDetailView({ activityRecord, kannBearbeiten, queryClient, einheitFach }) {
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({});
   const [saving, setSaving] = useState(false);
   const [userEmail, setUserEmail] = useState(null);
+  const [hasDraft, setHasDraft] = useState(false);
+  const [lockLost, setLockLost] = useState(false);
   
   const { permissions } = useRBAC();
 
@@ -24,10 +26,51 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
     base44.auth.me().then(u => setUserEmail(u?.email || null));
   }, []);
 
-  // Pessimistic Lock: aktiv wenn im Edit-Mode
-  useActivityLock(activityRecord?.id, userEmail, editMode);
+  // Collaboration Lock mit Offline-Support
+  const { isLocked: lockedByOther, retryCount, isOffline, lockLost } = useCollaborationLock(
+    'LernpaketPhaseAktivitaet',
+    ['lernpaketPhaseAktivitaeten'],
+    activityRecord?.id,
+    userEmail,
+    editMode
+  );
 
-  const lockedByOther = isActivityLockedByOther(activityRecord, userEmail);
+  // Auto-Save zu localStorage bei Änderungen (Offline-Fallback)
+  useEffect(() => {
+    if (!editMode || !activityRecord?.id || !formData || Object.keys(formData).length === 0) return;
+
+    const draftKey = `draft_activity_${activityRecord.id}`;
+    try {
+      localStorage.setItem(draftKey, JSON.stringify({
+        formData,
+        timestamp: new Date().toISOString(),
+        userEmail
+      }));
+      setHasDraft(true);
+    } catch (e) {
+      console.warn('[ActivityDetailView] localStorage write failed:', e);
+    }
+  }, [formData, editMode, activityRecord?.id, userEmail]);
+
+  // Prüfe ob Draft existiert beim Mount/Edit-Mode Wechsel
+  useEffect(() => {
+    if (!editMode || !activityRecord?.id) {
+      setHasDraft(false);
+      return;
+    }
+
+    const draftKey = `draft_activity_${activityRecord.id}`;
+    try {
+      const draft = localStorage.getItem(draftKey);
+      if (draft) {
+        const parsed = JSON.parse(draft);
+        setHasDraft(true);
+        // Nur anzeigen, nicht automatisch laden
+      }
+    } catch (e) {
+      console.warn('[ActivityDetailView] localStorage read failed:', e);
+    }
+  }, [editMode, activityRecord?.id]);
 
   const { data: aktivitaetenKatalog = [] } = useQuery({
     queryKey: ['aktivitaetenKatalog'],
@@ -57,6 +100,12 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
   }
 
   const handleSave = async () => {
+    // Blockiere Save wenn Lock verloren ist
+    if (lockLost) {
+      toast.error('❌ Lock verloren. Formular ist schreibgeschützt. Bitte aktualisieren Sie die Seite.');
+      return;
+    }
+
     setSaving(true);
     try {
       // ✅ Sichere Backend-Funktion mit Fachbereich-Scope-Validierung
@@ -71,14 +120,26 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
       queryClient.invalidateQueries({
         queryKey: ['lernpaketPhaseAktivitaeten'],
       });
+
+      // Lösche Draft aus localStorage nach erfolgreichem Save
+      try {
+        localStorage.removeItem(`draft_activity_${activityRecord.id}`);
+        setHasDraft(false);
+      } catch (e) {
+        console.warn('[ActivityDetailView] localStorage cleanup failed:', e);
+      }
+
       setEditMode(false);
       toast.success('Aktivität gespeichert.');
     } catch (err) {
       const msg = err.message || '';
       const status = err.response?.status;
       
-      // ✅ Rate-Limit: 429 Too Many Requests
-      if (status === 429) {
+      // ✅ Lock verloren (409 Conflict)
+      if (status === 409) {
+        toast.error('🔒 Lock wurde von jemand anderem übernommen. Speichern nicht möglich.');
+        setLockLost(true);
+      } else if (status === 429) {
         toast.error('⏱️ Zu viele Speicher-Anfragen. Bitte warten Sie einen Moment.');
       } else if (msg.includes('403') || msg.includes('Insufficient permissions')) {
         toast.error('🔒 Sie haben nicht die erforderlichen Berechtigungen für diese Einheit.');
@@ -92,6 +153,32 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
     }
   };
 
+  const handleRestoreDraft = () => {
+    const draftKey = `draft_activity_${activityRecord.id}`;
+    try {
+      const draft = localStorage.getItem(draftKey);
+      if (draft) {
+        const parsed = JSON.parse(draft);
+        setFormData(parsed.formData);
+        toast.success('Entwurf wiederhergestellt.');
+      }
+    } catch (e) {
+      toast.error('Fehler beim Wiederherstellen des Entwurfs.');
+      console.error('[ActivityDetailView] Draft restore failed:', e);
+    }
+  };
+
+  const handleClearDraft = () => {
+    const draftKey = `draft_activity_${activityRecord.id}`;
+    try {
+      localStorage.removeItem(draftKey);
+      setHasDraft(false);
+      toast.info('Entwurf gelöscht.');
+    } catch (e) {
+      console.warn('[ActivityDetailView] Draft clear failed:', e);
+    }
+  };
+
   if (!activityRecord || !catalog) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -102,6 +189,46 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
 
   return (
     <div className="flex flex-col">
+      {/* Offline/Connection Warning */}
+      {(isOffline || retryCount > 0 || hasDraft) && (
+        <div className="bg-amber-50 border-b border-amber-200 p-3 space-y-2">
+          {isOffline && (
+            <div className="flex items-center gap-2 text-amber-800 text-sm">
+              <WifiOff className="w-4 h-4" />
+              <span>Offline-Modus aktiv. Änderungen werden lokal gespeichert.</span>
+            </div>
+          )}
+          {retryCount > 0 && !isOffline && (
+            <div className="flex items-center gap-2 text-amber-800 text-sm">
+              <AlertTriangle className="w-4 h-4" />
+              <span>Verbindung instabil ({retryCount}/3 Versuche). Auto-Speichern verzögert...</span>
+            </div>
+          )}
+          {lockLost && (
+            <div className="flex items-center gap-2 text-red-700 text-sm bg-red-50 rounded p-2">
+              <AlertTriangle className="w-4 h-4" />
+              <span>Lock verloren. Formular ist schreibgeschützt.</span>
+            </div>
+          )}
+          {hasDraft && !editMode && (
+            <div className="flex items-center justify-between gap-2 text-blue-800 text-sm bg-blue-50 rounded p-2">
+              <div className="flex items-center gap-2">
+                <RotateCcw className="w-4 h-4" />
+                <span>Entwurf vorhanden. Möchten Sie wiederherstellen?</span>
+              </div>
+              <div className="flex gap-1">
+                <Button size="sm" variant="outline" className="text-xs" onClick={handleRestoreDraft}>
+                  Wiederherstellen
+                </Button>
+                <Button size="sm" variant="ghost" className="text-xs" onClick={handleClearDraft}>
+                  Löschen
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between gap-3 p-4 border-b">
         <div className="flex-1 min-w-0">
@@ -124,29 +251,39 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
                 size="sm"
                 variant="outline"
                 onClick={() => setEditMode(true)}
-                disabled={activityRecord.content_status === 'approved' || lockedByOther}
+                disabled={activityRecord.content_status === 'approved' || lockedByOther || lockLost}
                 title={
-                  activityRecord.content_status === 'approved'
-                    ? 'Freigabe zuerst aufheben um zu bearbeiten'
-                    : lockedByOther
-                      ? `Wird gerade von ${activityRecord.locked_by_user} bearbeitet`
-                      : undefined
+                  lockLost
+                    ? 'Lock verloren. Seite neu laden erforderlich.'
+                    : activityRecord.content_status === 'approved'
+                      ? 'Freigabe zuerst aufheben um zu bearbeiten'
+                      : lockedByOther
+                        ? `Wird gerade von ${activityRecord.locked_by_user} bearbeitet`
+                        : undefined
                 }
                 className="gap-2"
               >
-                {lockedByOther
-                  ? <><Lock className="w-3.5 h-3.5 text-amber-500" /> Gesperrt</>
-                  : <><Edit className="w-3.5 h-3.5" /> Bearbeiten</>
+                {lockLost
+                  ? <><Lock className="w-3.5 h-3.5 text-red-500" /> Lock verloren</>
+                  : lockedByOther
+                    ? <><Lock className="w-3.5 h-3.5 text-amber-500" /> Gesperrt</>
+                    : <><Edit className="w-3.5 h-3.5" /> Bearbeiten</>
                 }
               </Button>
             ) : (
               <>
-                <Button size="sm" variant="ghost" onClick={() => setEditMode(false)} disabled={saving}>
+                <Button size="sm" variant="ghost" onClick={() => setEditMode(false)} disabled={saving || lockLost}>
                   <X className="w-3.5 h-3.5" />
                 </Button>
-                <Button size="sm" onClick={handleSave} disabled={saving} className="gap-2">
+                <Button
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={saving || lockLost || isOffline}
+                  className="gap-2"
+                  title={lockLost ? 'Lock verloren' : isOffline ? 'Offline - Speichern verzögert' : ''}
+                >
                   {saving ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                  Speichern
+                  {isOffline ? 'Offline' : 'Speichern'}
                 </Button>
               </>
             )}

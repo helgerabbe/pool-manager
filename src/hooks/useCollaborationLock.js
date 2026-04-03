@@ -4,12 +4,19 @@
  * ✅ Robuster Collaboration-Lock mit:
  * - Atomarer Backend-Akquisition (acquireLockSecure)
  * - Heartbeat-Fehlerbehandlung mit Retry-Logic
+ * - Offline-Erkennung & Fallback
  * - Zuverlässiger Cleanup bei Unmount/Unload
- * - Polling-Fallback für Lock-Status
  * - Retry-Counter für UI-Feedback
  *
  * VERWENDUNG:
- * const { acquireLock, releaseLock, isLocked, retryCount } = useCollaborationLock(
+ * const {
+ *   acquireLock,
+ *   releaseLock,
+ *   isLocked,
+ *   retryCount,
+ *   isOffline,
+ *   lockLost
+ * } = useCollaborationLock(
  *   'LernpaketPhaseAktivitaet',
  *   ['lernpaketPhaseAktivitaeten'],
  *   activityId,
@@ -39,6 +46,8 @@ export function useCollaborationLock(
   const queryClient = useQueryClient();
   const [isLocked, setIsLocked] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [lockLost, setLockLost] = useState(false);
   const heartbeatRef = useRef(null);
   const heartbeatRetryRef = useRef(0);
   const heldRef = useRef(false);
@@ -117,7 +126,7 @@ export function useCollaborationLock(
     if (heartbeatRef.current) return;
 
     const performHeartbeat = async () => {
-      if (!heldRef.current || !recordId) return;
+      if (!heldRef.current || !recordId || isOffline) return;
 
       try {
         const entity = base44.entities[entityName];
@@ -151,13 +160,14 @@ export function useCollaborationLock(
           error.message
         );
 
-        // Nach max Retries → Lock als abgelaufen betrachten
+        // Nach max Retries → Lock als verloren markieren
         if (heartbeatRetryRef.current >= HEARTBEAT_RETRY_LIMIT) {
           console.error(
-            '[useCollaborationLock] Heartbeat max retries exceeded. Releasing lock.'
+            '[useCollaborationLock] Heartbeat max retries exceeded. Lock lost.'
           );
           heldRef.current = false;
           setIsLocked(false);
+          setLockLost(true);
           clearInterval(heartbeatRef.current);
           heartbeatRef.current = null;
         }
@@ -166,7 +176,7 @@ export function useCollaborationLock(
 
     heartbeatRef.current = setInterval(performHeartbeat, HEARTBEAT_MS);
     console.info('[useCollaborationLock] Heartbeat started');
-  }, [recordId, entityName, invalidate]);
+  }, [recordId, entityName, invalidate, isOffline]);
 
   const stopHeartbeat = useCallback(() => {
     if (heartbeatRef.current) {
@@ -194,6 +204,52 @@ export function useCollaborationLock(
       }
     };
   }, [active, recordId, acquireLock, startHeartbeat, stopHeartbeat, releaseLock]);
+
+  // ── Offline/Online Erkennung ──
+  useEffect(() => {
+    const handleOffline = () => {
+      setIsOffline(true);
+      console.info('[useCollaborationLock] Offline mode detected');
+    };
+
+    const handleOnline = async () => {
+      setIsOffline(false);
+      setRetryCount(0);
+      setLockLost(false);
+      heartbeatRetryRef.current = 0;
+      console.info('[useCollaborationLock] Online mode restored. Attempting lock revalidation...');
+
+      // Versuche Lock zu revalidieren wenn gerade aktiv
+      if (heldRef.current && recordId) {
+        try {
+          const entity = base44.entities[entityName];
+          const records = await entity.filter({ id: recordId });
+          const current = records[0];
+
+          if (current && current.locked_by_user === userEmailRef.current) {
+            // Lock ist immer noch gültig
+            console.info('[useCollaborationLock] Lock revalidated after reconnect');
+            // Heartbeat wird automatisch weitermachen
+          } else {
+            // Lock wurde verloren
+            heldRef.current = false;
+            setIsLocked(false);
+            setLockLost(true);
+            console.warn('[useCollaborationLock] Lock lost during offline period');
+          }
+        } catch (e) {
+          console.warn('[useCollaborationLock] Revalidation failed:', e.message);
+        }
+      }
+    };
+
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+    return () => {
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [recordId, entityName]);
 
   // ── Cleanup bei Unmount + Unload ──
   useEffect(() => {
@@ -223,6 +279,8 @@ export function useCollaborationLock(
     acquireLock,
     releaseLock,
     isLocked,
-    retryCount, // ← Für UI: zeige Verbindungsprobleme an
+    retryCount,
+    isOffline,
+    lockLost, // ← true wenn Lock nach 3 Retries verloren
   };
 }
