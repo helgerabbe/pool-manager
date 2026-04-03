@@ -201,6 +201,30 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ✅ NEU: Pre-Save Lock-Validierung (kritisch für Datenkonsistenz!)
+    // Prüfe: Speichert User noch den Lock? (Verhindert Lost Updates)
+    if (
+      aktivitaet.lock_status &&
+      aktivitaet.locked_by_user !== user.email
+    ) {
+      console.warn(
+        `[approveActivitySecure] DENIED - ${user.email} tried to approve but lock is held by ${aktivitaet.locked_by_user}`
+      );
+      return Response.json(
+        {
+          error: 'Lock no longer held by requesting user',
+          code: 'LOCK_NOT_OWNED',
+          currentLockOwner: aktivitaet.locked_by_user,
+          details: {
+            expectedOwner: user.email,
+            actualOwner: aktivitaet.locked_by_user,
+            timestamp: new Date().toISOString(),
+          }
+        },
+        { status: 409 } // Conflict
+      );
+    }
+
     // 6. Benutzer-Profil laden (Current User)
     const benutzer = await base44.asServiceRole.entities.Benutzer.filter({
       user_id: user.email
