@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Puzzle, Lock, Unlock, Edit, Trash2, AlertTriangle } from 'lucide-react';
-import { useRecordLock } from '@/hooks/useRecordLock';
+import { useResourceLock, isLockedByOther as checkLockedByOther, isLockExpired } from '@/hooks/useResourceLock';
 
 const bausteinColors = {
   'Pre-Test': 'bg-yellow-100 text-yellow-700',
@@ -37,15 +37,23 @@ export default function AufgabenbausteintCard({
   onDelete,
   onLockAcquired,
 }) {
-  const { acquireLock, releaseLock, forceReleaseLock, isLockedByOther } = useRecordLock();
+  // active=false: die Karte selbst hält keinen aktiven Edit-Mode –
+  // Lock-Erwerb erfolgt manuell via handleEditClick
+  const { acquireLock, releaseLock, forceReleaseLock } = useResourceLock(
+    'Aufgabenbausteine',
+    ['aufgaben', 'aufgabenbausteine', 'klone'],
+    aufgabe.id,
+    userEmail,
+    false
+  );
   const [lockError, setLockError] = useState(false);
 
-  const lockedByOther = isLockedByOther(aufgabe, userEmail);
-  const lockedByMe = aufgabe.lock_status && aufgabe.locked_by_user === userEmail;
+  const lockedByOther = checkLockedByOther(aufgabe, userEmail);
+  const lockedByMe = aufgabe.lock_status && aufgabe.locked_by_user === userEmail && !isLockExpired(aufgabe.locked_at);
 
   const handleEditClick = async () => {
     setLockError(false);
-    const success = await acquireLock(aufgabe.id, userEmail);
+    const success = await acquireLock();
     if (success) {
       onLockAcquired?.(aufgabe.id);
     } else {
@@ -55,11 +63,11 @@ export default function AufgabenbausteintCard({
   };
 
   const handleRelease = async () => {
-    await releaseLock(aufgabe.id, userEmail);
+    await releaseLock();
   };
 
   const handleForceRelease = async () => {
-    await forceReleaseLock(aufgabe.id);
+    await forceReleaseLock();
   };
 
   return (

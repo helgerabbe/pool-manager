@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { useRecordLock } from '@/hooks/useRecordLock';
+import { useResourceLock } from '@/hooks/useResourceLock';
 import UserImport from '@/components/admin/UserImport';
 
 const FAECHER = ["Deutsch","Mathematik","Englisch","Französisch","Latein","Biologie","Chemie","Physik","Geschichte","Geographie","Politik","Wirtschaft","Kunst","Musik","Sport","Religion","Ethik","Informatik"];
@@ -146,7 +146,7 @@ function BenutzerForm({ open, onOpenChange, onSubmit, initialData }) {
 export default function Benutzerverwaltung() {
   const { permissions, authUser } = useRBAC();
   const queryClient = useQueryClient();
-  const { forceReleaseLock } = useRecordLock();
+  const { forceReleaseLock } = useResourceLock('Aufgabenbausteine', ['aufgaben', 'aufgabenbausteine'], null, null, false);
 
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
