@@ -224,6 +224,13 @@ export default function MasterAufgabeCard({
   });
 
   const saveTitel = async () => {
+    // Kein Titel-Update wenn freigegeben
+    if (master.content_status === 'approved') {
+      toast.error('Freigabe zuerst aufheben um den Titel zu bearbeiten.');
+      setEditingTitel(false);
+      setTitel(master.titel || '');
+      return;
+    }
     await base44.entities.MasterAufgabe.update(master.id, { titel });
     queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
     setEditingTitel(false);

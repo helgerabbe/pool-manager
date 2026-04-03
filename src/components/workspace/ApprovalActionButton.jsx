@@ -46,14 +46,27 @@ export default function ApprovalActionButton({ entityId, entityType, contentStat
   });
 
   const setCascadeStatus = async (status) => {
-    // Setze Status auf alle Master dieser Aktivität
+    // Setze Status auf alle Master dieser Aktivität + deren Klone
+    // Bei Fehler: weiter mit anderen Mastern (kein Hard-Stop), aber Error loggen
+    const errors = [];
     for (const master of masterAufgaben) {
-      await base44.entities.MasterAufgabe.update(master.id, { content_status: status });
-      // Setze Status auf alle Klone dieses Masters
-      const klone = await base44.entities.Aufgabenbausteine.filter({ master_aufgabe_id: master.id });
-      for (const klon of klone) {
-        await base44.entities.Aufgabenbausteine.update(klon.id, { content_status: status });
+      try {
+        await base44.entities.MasterAufgabe.update(master.id, { content_status: status });
+        const klone = await base44.entities.Aufgabenbausteine.filter({ master_aufgabe_id: master.id });
+        for (const klon of klone) {
+          try {
+            await base44.entities.Aufgabenbausteine.update(klon.id, { content_status: status });
+          } catch (e) {
+            errors.push(`Klon ${klon.id}: ${e.message}`);
+          }
+        }
+      } catch (e) {
+        errors.push(`Master ${master.id}: ${e.message}`);
       }
+    }
+    if (errors.length > 0) {
+      console.warn('[ApprovalCascade] Teilfehler bei Statusübernahme:', errors);
+      toast.warning(`Status übernommen, aber ${errors.length} Unteraufgabe(n) konnten nicht aktualisiert werden.`);
     }
   };
 

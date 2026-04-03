@@ -5,15 +5,26 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Edit, Save, X, FileText, AlertTriangle } from 'lucide-react';
+import { Edit, Save, X, FileText, AlertTriangle, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import ApprovalStatusBadge from '@/components/workspace/ApprovalStatusBadge';
 import ApprovalActionButton from '@/components/workspace/ApprovalActionButton';
+import { useActivityLock, isActivityLockedByOther } from '@/hooks/useActivityLock';
 
 export default function ActivityDetailView({ activityRecord, kannBearbeiten, queryClient }) {
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({});
   const [saving, setSaving] = useState(false);
+  const [userEmail, setUserEmail] = useState(null);
+
+  useEffect(() => {
+    base44.auth.me().then(u => setUserEmail(u?.email || null));
+  }, []);
+
+  // Pessimistic Lock: aktiv wenn im Edit-Mode
+  useActivityLock(activityRecord?.id, userEmail, editMode);
+
+  const lockedByOther = isActivityLockedByOther(activityRecord, userEmail);
 
   const { data: aktivitaetenKatalog = [] } = useQuery({
     queryKey: ['aktivitaetenKatalog'],
@@ -77,12 +88,20 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
                 size="sm"
                 variant="outline"
                 onClick={() => setEditMode(true)}
-                disabled={activityRecord.content_status === 'approved'}
-                title={activityRecord.content_status === 'approved' ? 'Freigabe zuerst aufheben um zu bearbeiten' : undefined}
+                disabled={activityRecord.content_status === 'approved' || lockedByOther}
+                title={
+                  activityRecord.content_status === 'approved'
+                    ? 'Freigabe zuerst aufheben um zu bearbeiten'
+                    : lockedByOther
+                      ? `Wird gerade von ${activityRecord.locked_by_user} bearbeitet`
+                      : undefined
+                }
                 className="gap-2"
               >
-                <Edit className="w-3.5 h-3.5" />
-                Bearbeiten
+                {lockedByOther
+                  ? <><Lock className="w-3.5 h-3.5 text-amber-500" /> Gesperrt</>
+                  : <><Edit className="w-3.5 h-3.5" /> Bearbeiten</>
+                }
               </Button>
             ) : (
               <>

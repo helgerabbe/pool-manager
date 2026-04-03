@@ -46,7 +46,9 @@ export function isActivityLockedByOther(activity, myEmail) {
 export function useActivityLock(activityId, userEmail, active) {
   const queryClient = useQueryClient();
   const heartbeatRef = useRef(null);
-  const heldRef = useRef(false); // verhindert doppelte acquire/release
+  const heldRef = useRef(false);       // verhindert doppelte acquire/release
+  const userEmailRef = useRef(userEmail);
+  useEffect(() => { userEmailRef.current = userEmail; }, [userEmail]);
 
   const invalidate = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
@@ -90,16 +92,28 @@ export function useActivityLock(activityId, userEmail, active) {
     invalidate();
   }, [activityId, invalidate]);
 
-  // ── Heartbeat: hält locked_at frisch ──────────────────────────────────────
+  // ── Heartbeat: hält locked_at UND lock_status frisch ────────────────────────
   const startHeartbeat = useCallback(() => {
     if (heartbeatRef.current) return;
     heartbeatRef.current = setInterval(async () => {
       if (!heldRef.current || !activityId) return;
-      await base44.entities.LernpaketPhaseAktivitaet.update(activityId, {
-        locked_at: new Date().toISOString(),
-      });
+      // Prüfe ob unser Lock noch gültig ist (könnte extern resettet worden sein)
+      const records = await base44.entities.LernpaketPhaseAktivitaet.filter({ id: activityId });
+      const record = records[0];
+      if (record && record.locked_by_user === userEmailRef.current) {
+        // Lock gehört noch uns: erneuern
+        await base44.entities.LernpaketPhaseAktivitaet.update(activityId, {
+          lock_status: true,
+          locked_at: new Date().toISOString(),
+        });
+      } else {
+        // Lock wurde extern aufgehoben → Heartbeat stoppen
+        heldRef.current = false;
+        clearInterval(heartbeatRef.current);
+        heartbeatRef.current = null;
+      }
     }, HEARTBEAT_MS);
-  }, [activityId]);
+  }, [activityId, userEmail]);
 
   const stopHeartbeat = useCallback(() => {
     if (heartbeatRef.current) {
