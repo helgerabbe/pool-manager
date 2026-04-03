@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Layers, Home, ShieldCheck, DatabaseZap, LogOut, ChevronRight, BookOpen, Settings } from 'lucide-react';
+import { Layers, Home, ShieldCheck, LogOut, ChevronRight, BookOpen, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
 import RoleSwitcher from '@/components/layout/RoleSwitcher';
@@ -100,7 +100,6 @@ export default function AppLayout() {
                 <>
                   <div className="w-px h-6 bg-border mx-1" />
                   <NavIconLink to="/benutzerverwaltung" icon={ShieldCheck} label="Benutzerverwaltung" isActive={isActive('/benutzerverwaltung')} />
-                  <NavIconLink to="/seed" icon={DatabaseZap} label="Seed-Daten" isActive={isActive('/seed')} />
                   <NavIconLink to="/admin-settings" icon={Settings} label="Einstellungen" isActive={isActive('/admin-settings')} />
                 </>
               )}

@@ -10,7 +10,6 @@ import AppLayout from '@/components/layout/AppLayout';
 import Dashboard from '@/pages/Dashboard';
 import EinheitenListe from '@/pages/EinheitenListe';
 import Benutzerverwaltung from '@/pages/Benutzerverwaltung';
-import SeedAdmin from '@/pages/SeedAdmin';
 import MoodleExport from '@/pages/MoodleExport';
 import Workspace from '@/pages/Workspace';
 import AdminSettings from '@/pages/AdminSettings';
@@ -52,7 +51,6 @@ const AuthenticatedApp = () => {
         <Route path="/einheiten/:id" element={<EinheitViewManager />} />
         <Route path="/basismodule" element={<BasismoduleView />} />
         <Route path="/benutzerverwaltung" element={<Benutzerverwaltung />} />
-        <Route path="/seed" element={<SeedAdmin />} />
         <Route path="/moodle-export" element={<MoodleExport />} />
         <Route path="/workspace" element={<Workspace />} />
         <Route path="/einheit/create" element={<EinheitCreateWizard />} />
