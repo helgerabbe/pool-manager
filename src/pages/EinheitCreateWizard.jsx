@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useRBAC } from '@/hooks/useRBAC';
 import WizardStep1Meta from '@/components/wizard/WizardStep1Meta';
-import WizardStep2Coach from '@/components/wizard/WizardStep2Coach';
+import WizardStepAssistenz from '@/components/wizard/WizardStepAssistenz';
 import WizardStep3Generator from '@/components/wizard/WizardStep3Generator';
 import WizardStep4Bausteine from '@/components/wizard/WizardStep4Bausteine';
 import WizardStepper from '@/components/wizard/WizardStepper';
@@ -15,7 +15,7 @@ export default function EinheitCreateWizard() {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [einheitId, setEinheitId]     = useState(null);
-  const [coachOutput, setCoachOutput] = useState('');
+  const [stammdaten, setStammdaten]   = useState({});
   const [paketeCreated, setPaketeCreated] = useState([]);
   const [completedSteps, setCompletedSteps] = useState([]);
 
@@ -27,12 +27,13 @@ export default function EinheitCreateWizard() {
     queryClient.invalidateQueries({ queryKey: ['themenfelder', einheit.id] });
     queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
     setEinheitId(einheit.id);
+    setStammdaten(metaData);
     setCompletedSteps(prev => [...new Set([...prev, 1])]);
     setCurrentStep(2);
   };
 
-  const handleStep2Done = (braindumpText) => {
-    setCoachOutput(braindumpText);
+  const handleStep2Done = async (structureData) => {
+    // Structure wurde bereits aktualisiert, weitergehen zu Step 3
     setCompletedSteps(prev => [...new Set([...prev, 2])]);
     setCurrentStep(3);
   };
@@ -80,37 +81,37 @@ export default function EinheitCreateWizard() {
       />
 
       {/* Step Content */}
-      <div className="bg-card border border-border rounded-xl p-6 shadow-sm min-h-[400px]">
-        {currentStep === 1 && (
+      {currentStep === 1 && (
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
           <WizardStep1Meta onDone={handleStep1Done} />
-        )}
-        {currentStep === 2 && (
-          <WizardStep2Coach
-            onDone={handleStep2Done}
-            onSkip={() => {
-              setCompletedSteps(prev => [...new Set([...prev, 2])]);
-              setCurrentStep(3);
-            }}
-            onSkipAll={handleSkipToStruktur}
-          />
-        )}
-        {currentStep === 3 && einheitId && (
+        </div>
+      )}
+      {currentStep === 2 && einheitId && (
+        <WizardStepAssistenz
+          einheitId={einheitId}
+          stammdaten={stammdaten}
+          onStructureAccepted={handleStep2Done}
+        />
+      )}
+      {currentStep === 3 && einheitId && (
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm min-h-[400px]">
           <WizardStep3Generator
             einheitId={einheitId}
-            initialBraindump={coachOutput}
             onDone={handleStep3Done}
             onSkipAll={handleSkipToStruktur}
           />
-        )}
-        {currentStep === 4 && einheitId && (
+        </div>
+      )}
+      {currentStep === 4 && einheitId && (
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm min-h-[400px]">
           <WizardStep4Bausteine
             einheitId={einheitId}
             pakete={paketeCreated}
             onDone={handleStep4Done}
             onSkipAll={handleSkipToStruktur}
           />
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
