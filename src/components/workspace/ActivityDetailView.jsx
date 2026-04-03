@@ -59,17 +59,30 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
   const handleSave = async () => {
     setSaving(true);
     try {
-      await base44.entities.LernpaketPhaseAktivitaet.update(activityRecord.id, {
-        field_values: formData,
-        is_complete: true,
+      // ✅ Sichere Backend-Funktion mit Fachbereich-Scope-Validierung
+      await base44.functions.invoke('updateActivitySecure', {
+        activityId: activityRecord.id,
+        fieldValues: formData,
+        einheitId: activityRecord.lernpaket_id ? 
+          (await base44.entities.Lernpakete.filter({ id: activityRecord.lernpaket_id }))[0]?.einheit_id : null,
+        targetFach: einheitFach
       });
+
       queryClient.invalidateQueries({
         queryKey: ['lernpaketPhaseAktivitaeten'],
       });
       setEditMode(false);
       toast.success('Aktivität gespeichert.');
     } catch (err) {
-      toast.error('Fehler beim Speichern.');
+      const msg = err.message || '';
+      // Detailliertes Error-Handling
+      if (msg.includes('403') || msg.includes('Insufficient permissions')) {
+        toast.error('🔒 Sie haben nicht die erforderlichen Berechtigungen für diese Einheit.');
+      } else if (msg.includes('404')) {
+        toast.error('⚠️ Aktivität nicht gefunden.');
+      } else {
+        toast.error('Fehler beim Speichern: ' + msg);
+      }
     } finally {
       setSaving(false);
     }
