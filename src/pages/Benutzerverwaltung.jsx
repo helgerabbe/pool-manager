@@ -20,8 +20,6 @@ import { de } from 'date-fns/locale';
 import { useResourceLock } from '@/hooks/useResourceLock';
 import UserImport from '@/components/admin/UserImport';
 
-const FAECHER = ["Deutsch","Mathematik","Englisch","Französisch","Latein","Biologie","Chemie","Physik","Geschichte","Geographie","Politik","Wirtschaft","Kunst","Musik","Sport","Religion","Ethik","Informatik"];
-
 const rollenBadgeColors = {
   Administrator:      'bg-red-100 text-red-700',
   Fachschaftsleitung: 'bg-purple-100 text-purple-700',
@@ -38,7 +36,7 @@ const rollenBeschreibungen = {
   'Moodle-Designer':  'Bedient Moodle-Export. Lesezugriff auf freigegebene Inhalte.',
 };
 
-function BenutzerForm({ open, onOpenChange, onSubmit, initialData }) {
+function BenutzerForm({ open, onOpenChange, onSubmit, initialData, faecher = [] }) {
   const [formData, setFormData] = useState(initialData || {
     user_id: '',
     vorname: '',
@@ -146,14 +144,14 @@ function BenutzerForm({ open, onOpenChange, onSubmit, initialData }) {
           <div className="space-y-2">
             <Label>Fachbereich-Zuständigkeit * (max. 5)</Label>
             <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-muted/30 max-h-40 overflow-y-auto scroll-container">
-              {FAECHER.map(fach => {
-                const selected = (formData.fachbereich_zustaendigkeit || []).includes(fach);
+              {faecher.filter(f => f.ist_aktiv).sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)).map(fach => {
+                const selected = (formData.fachbereich_zustaendigkeit || []).includes(fach.name);
                 const isFull = (formData.fachbereich_zustaendigkeit || []).length >= 5;
                 return (
                   <button
-                    key={fach}
+                    key={fach.id}
                     type="button"
-                    onClick={() => toggleFach(fach)}
+                    onClick={() => toggleFach(fach.name)}
                     disabled={isFull && !selected}
                     className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
                       selected
@@ -163,7 +161,7 @@ function BenutzerForm({ open, onOpenChange, onSubmit, initialData }) {
                           : 'bg-background text-foreground border-border hover:border-primary/50'
                     }`}
                   >
-                    {fach}
+                    {fach.name}
                   </button>
                 );
               })}
@@ -203,6 +201,12 @@ export default function Benutzerverwaltung() {
   const [editingUser, setEditingUser] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [showImport, setShowImport] = useState(false);
+
+  const { data: faecher = [] } = useQuery({
+    queryKey: ['lookupFaecher'],
+    queryFn: () => base44.entities.LookupFaecher.list('reihenfolge'),
+    enabled: permissions.kannBenutzerVerwalten,
+  });
 
   const { data: benutzer = [], isLoading } = useQuery({
     queryKey: ['benutzer'],
@@ -468,6 +472,7 @@ export default function Benutzerverwaltung() {
         open={showForm}
         onOpenChange={setShowForm}
         onSubmit={(data) => createMutation.mutate(data)}
+        faecher={faecher}
       />
 
       {editingUser && (
@@ -476,6 +481,7 @@ export default function Benutzerverwaltung() {
           onOpenChange={(open) => { if (!open) setEditingUser(null); }}
           onSubmit={(data) => updateMutation.mutate({ id: editingUser.id, data })}
           initialData={editingUser}
+          faecher={faecher}
         />
       )}
 
