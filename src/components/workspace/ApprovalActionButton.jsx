@@ -173,11 +173,16 @@ export default function ApprovalActionButton({
     },
     onError: (err) => {
       const msg = err.message || '';
-      toast.error(
-        msg.includes('Berechtigung')
-          ? '🔒 Sie haben nicht die erforderlichen Berechtigungen.'
-          : 'Fehler: ' + msg
-      );
+      const status = err.response?.status;
+      
+      // ✅ Rate-Limit: 429 Too Many Requests
+      if (status === 429) {
+        toast.error('⏱️ Zu viele Freigabe-Anfragen. Bitte warten Sie einen Moment.');
+      } else if (msg.includes('Berechtigung')) {
+        toast.error('🔒 Sie haben nicht die erforderlichen Berechtigungen.');
+      } else {
+        toast.error('Fehler: ' + msg);
+      }
     },
   });
 

@@ -75,8 +75,12 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
       toast.success('Aktivität gespeichert.');
     } catch (err) {
       const msg = err.message || '';
-      // Detailliertes Error-Handling
-      if (msg.includes('403') || msg.includes('Insufficient permissions')) {
+      const status = err.response?.status;
+      
+      // ✅ Rate-Limit: 429 Too Many Requests
+      if (status === 429) {
+        toast.error('⏱️ Zu viele Speicher-Anfragen. Bitte warten Sie einen Moment.');
+      } else if (msg.includes('403') || msg.includes('Insufficient permissions')) {
         toast.error('🔒 Sie haben nicht die erforderlichen Berechtigungen für diese Einheit.');
       } else if (msg.includes('404')) {
         toast.error('⚠️ Aktivität nicht gefunden.');

@@ -20,6 +20,30 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
+// ✅ Rate-Limiter: In-Memory Tracking mit Timestamps
+const requestLog = new Map();
+
+function isRateLimited(userEmail, functionName, maxRequests = 60, windowMs = 60000) {
+  const key = `${userEmail}::${functionName}`;
+  const now = Date.now();
+  
+  if (!requestLog.has(key)) {
+    requestLog.set(key, []);
+  }
+  
+  const timestamps = requestLog.get(key);
+  const validTimestamps = timestamps.filter(ts => now - ts < windowMs);
+  requestLog.set(key, validTimestamps);
+  
+  if (validTimestamps.length >= maxRequests) {
+    return true; // Limit überschritten
+  }
+  
+  validTimestamps.push(now);
+  requestLog.set(key, validTimestamps);
+  return false;
+}
+
 /**
  * Prüft, ob ein User eine Aktivität bearbeiten darf.
  * Berücksichtigt globale Rollen UND delegierte Berechtigungen.
@@ -75,6 +99,15 @@ Deno.serve(async (req) => {
       return Response.json(
         { error: 'Unauthorized' },
         { status: 401 }
+      );
+    }
+
+    // ✅ Rate-Limiting: 60 Requests pro Minute pro User (häufiger beim Tippen)
+    if (isRateLimited(user.email, 'updateActivitySecure', 60, 60000)) {
+      console.warn(`[updateActivitySecure] Rate limit exceeded for ${user.email}`);
+      return Response.json(
+        { error: 'Zu viele Anfragen. Bitte warten Sie einen Moment.' },
+        { status: 429, headers: { 'Retry-After': '60' } }
       );
     }
 
