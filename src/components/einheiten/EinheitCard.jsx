@@ -36,11 +36,10 @@ export default function EinheitCard({ einheit, lernpaketCount, rolle, onDeleteSt
     try {
       const res = await base44.functions.invoke('deleteEinheit', { einheitId: einheit.id });
       if (res.data?.success) {
-        // Warte kurz bevor wir das Modal schließen, damit der Success-State sichtbar ist
-        await new Promise(resolve => setTimeout(resolve, 800));
         toast.success('Einheit erfolgreich gelöscht.');
         queryClient.invalidateQueries({ queryKey: ['einheiten'] });
         setShowConfirm(false);
+        onDeleteEnd?.();
       } else {
         const errorMsg = res.data?.error || 'Fehler beim Löschen der Einheit.';
         toast.error(errorMsg);
