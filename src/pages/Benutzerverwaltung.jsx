@@ -31,11 +31,11 @@ const rollenBadgeColors = {
 };
 
 const rollenBeschreibungen = {
-  Administrator:      'Vollzugriff auf alle Daten und Funktionen inkl. Benutzerverwaltung',
-  Fachschaftsleitung: 'Lesezugriff global, Schreibzugriff + Freigabe im eigenen Fachbereich',
-  Fachlehrkraft:      'Lesezugriff global, Schreibzugriff auf LP/LZ/AB im eigenen Fachbereich',
-  Betrachter:         'Nur Lesezugriff auf alle Einheiten',
-  'Moodle-Designer':  'Lesezugriff nur auf freigegebene Einheiten + Exportfunktionen',
+  Administrator:      'Vollzugriff auf alle Daten und Funktionen, bedient Moodle-Export.',
+  Fachschaftsleitung: 'Verwaltet Struktur (Einheiten/Themenfelder) + Inhalte im eigenen Fachbereich. Lesezugriff auf Export.',
+  Fachlehrkraft:      'Erstellt/bearbeitet Aktivitäten & Aufgaben im eigenen Fachbereich. Kann Inhalte freigeben. Lesezugriff auf Export.',
+  Betrachter:         'Nur Lesezugriff auf alle Inhalte. Kein Zugriff auf Export.',
+  'Moodle-Designer':  'Bedient Moodle-Export. Lesezugriff auf freigegebene Inhalte.',
 };
 
 function BenutzerForm({ open, onOpenChange, onSubmit, initialData }) {
@@ -237,43 +237,61 @@ export default function Benutzerverwaltung() {
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Rechtematrix</CardTitle>
+          <p className="text-xs text-muted-foreground mt-2">
+            3 Bereiche: Struktur (Einheiten/Themenfelder/LP) | Inhalte (Aktivitäten/Aufgaben) | Export (Moodle)
+          </p>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/50">
                 <th className="text-left px-4 py-2.5 font-semibold">Rolle</th>
-                <th className="text-center px-3 py-2.5 font-semibold">Erstellen</th>
-                <th className="text-center px-3 py-2.5 font-semibold">Lesen</th>
-                <th className="text-center px-3 py-2.5 font-semibold">Ändern</th>
-                <th className="text-center px-3 py-2.5 font-semibold">Löschen</th>
-                <th className="text-center px-3 py-2.5 font-semibold">Freigabe</th>
-                <th className="text-center px-3 py-2.5 font-semibold">Export</th>
+                <th colSpan="3" className="text-center px-3 py-2.5 font-semibold border-l">Bereich 1: Struktur</th>
+                <th colSpan="4" className="text-center px-3 py-2.5 font-semibold border-l">Bereich 2: Inhalte</th>
+                <th colSpan="2" className="text-center px-3 py-2.5 font-semibold border-l">Bereich 3: Export</th>
+              </tr>
+              <tr className="border-b bg-muted/20">
+                <th className="text-left px-4 py-1.5 font-medium text-xs">-</th>
+                <th className="text-center px-2 py-1.5 font-medium text-xs">E</th>
+                <th className="text-center px-2 py-1.5 font-medium text-xs">B</th>
+                <th className="text-center px-2 py-1.5 font-medium text-xs border-l">E</th>
+                <th className="text-center px-2 py-1.5 font-medium text-xs">B</th>
+                <th className="text-center px-2 py-1.5 font-medium text-xs">L</th>
+                <th className="text-center px-2 py-1.5 font-medium text-xs">F</th>
+                <th className="text-center px-2 py-1.5 font-medium text-xs border-l">Bed.</th>
+                <th className="text-center px-2 py-1.5 font-medium text-xs">Les.</th>
               </tr>
             </thead>
             <tbody>
               {[
-                { rolle: 'Administrator',      c:'✅', r:'✅ Alle',       u:'✅ Alle',    d:'✅', f:'✅', e:'✅' },
-                { rolle: 'Fachschaftsleitung', c:'⚠️ Eigene Fächer', r:'✅ Alle', u:'⚠️ Eigene Fächer', d:'⚠️ Eigene Fächer', f:'⚠️ Eigene Fächer', e:'❌' },
-                { rolle: 'Fachlehrkraft',      c:'⚠️ LP/LZ/AB', r:'✅ Alle', u:'⚠️ LP/LZ/AB', d:'⚠️ LP/LZ/AB', f:'❌', e:'❌' },
-                { rolle: 'Betrachter',         c:'❌', r:'✅ Alle',  u:'❌', d:'❌', f:'❌', e:'❌' },
-                { rolle: 'Moodle-Designer',    c:'❌', r:'⚠️ Nur Freigegeben', u:'❌', d:'❌', f:'❌', e:'✅' },
+                { rolle: 'Administrator', s_e:'✅', s_b:'✅', s_l:'✅', c_e:'✅', c_b:'✅', c_l:'✅', c_f:'✅', e_bed:'✅', e_les:'✅' },
+                { rolle: 'Fachschaftsleitung', s_e:'✅*', s_b:'✅*', s_l:'✅*', c_e:'✅*', c_b:'✅*', c_l:'✅*', c_f:'✅*', e_bed:'❌', e_les:'✅' },
+                { rolle: 'Fachlehrkraft', s_e:'❌', s_b:'❌', s_l:'❌', c_e:'✅*', c_b:'✅*', c_l:'✅*', c_f:'✅*', e_bed:'❌', e_les:'✅' },
+                { rolle: 'Betrachter', s_e:'❌', s_b:'❌', s_l:'❌', c_e:'❌', c_b:'❌', c_l:'✅', c_f:'❌', e_bed:'❌', e_les:'❌' },
+                { rolle: 'Moodle-Designer', s_e:'❌', s_b:'❌', s_l:'❌', c_e:'❌', c_b:'❌', c_l:'✅**', c_f:'❌', e_bed:'✅', e_les:'✅' },
               ].map(row => (
                 <tr key={row.rolle} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-2.5">
                     <Badge className={`${rollenBadgeColors[row.rolle]} text-xs`}>{row.rolle}</Badge>
                   </td>
-                  <td className="text-center px-3 py-2.5 text-xs">{row.c}</td>
-                  <td className="text-center px-3 py-2.5 text-xs">{row.r}</td>
-                  <td className="text-center px-3 py-2.5 text-xs">{row.u}</td>
-                  <td className="text-center px-3 py-2.5 text-xs">{row.d}</td>
-                  <td className="text-center px-3 py-2.5 text-xs">{row.f}</td>
-                  <td className="text-center px-3 py-2.5 text-xs">{row.e}</td>
+                  <td className="text-center px-2 py-2.5 text-xs">{row.s_e}</td>
+                  <td className="text-center px-2 py-2.5 text-xs">{row.s_b}</td>
+                  <td className="text-center px-2 py-2.5 text-xs border-l">{row.s_l}</td>
+                  <td className="text-center px-2 py-2.5 text-xs">{row.c_e}</td>
+                  <td className="text-center px-2 py-2.5 text-xs">{row.c_b}</td>
+                  <td className="text-center px-2 py-2.5 text-xs">{row.c_l}</td>
+                  <td className="text-center px-2 py-2.5 text-xs">{row.c_f}</td>
+                  <td className="text-center px-2 py-2.5 text-xs border-l">{row.e_bed}</td>
+                  <td className="text-center px-2 py-2.5 text-xs">{row.e_les}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <p className="text-xs text-muted-foreground px-4 py-2">⚠️ = nur im eigenen Fachbereich | LP=Lernpakete, LZ=Lernziele, AB=Aufgabenbausteine</p>
+          <p className="text-xs text-muted-foreground px-4 py-3">
+            <strong>Legende:</strong> E=Erstellen, B=Bearbeiten, L=Löschen, F=Freigeben, Bed.=Bedienen, Les.=Lesen
+            <br />
+            <strong>*</strong> = nur im eigenen Fachbereich | <strong>**</strong> = nur Freigegeben
+          </p>
         </CardContent>
       </Card>
 

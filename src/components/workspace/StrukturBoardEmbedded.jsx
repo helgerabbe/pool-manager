@@ -10,6 +10,7 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { base44 } from '@/api/base44Client';
+import { useRBAC } from '@/hooks/useRBAC';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -279,11 +280,14 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
 
 export default function StrukturBoardEmbedded({
   einheitId,
+  einheit, // wird von Workspace mitgegeben
   lernpakete: remotePakete,
   themenfelder: remoteThemenfelder,
   queryClient,
   onSaved,   // callback nach erfolgreichem Speichern
 }) {
+  const { permissions } = useRBAC();
+
   const [spalten, setSpalten]         = useState([]);
   const [paketeMap, setPaketeMap]     = useState({});
   const [saving, setSaving]           = useState(false);
@@ -295,6 +299,22 @@ export default function StrukturBoardEmbedded({
   // Track original state for deletion detection
   const [originalSpaltenIds, setOriginalSpaltenIds] = useState(new Set());
   const [originalPaketIds, setOriginalPaketIds] = useState(new Set());
+
+  // RBAC: Nur Struktur-Bearbeiter dürfen hier rein (Bereich 1: Struktur) - nach allen Hooks
+  const kannStrukturBearbeiten = einheit ? permissions.kannStrukturBearbeiten(einheit.fach) : false;
+  if (!kannStrukturBearbeiten) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 text-center p-8">
+        <FolderOpen className="w-12 h-12 text-muted-foreground/30" />
+        <div>
+          <p className="font-semibold">Kein Zugriff</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Nur Fachschaftsleitung und Administratoren dürfen die Struktur bearbeiten.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // ── Initialisierung ───────────────────────────────────────────────────────
 

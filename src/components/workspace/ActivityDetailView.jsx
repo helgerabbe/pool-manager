@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { useRBAC } from '@/hooks/useRBAC';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,11 +12,13 @@ import ApprovalStatusBadge from '@/components/workspace/ApprovalStatusBadge';
 import ApprovalActionButton from '@/components/workspace/ApprovalActionButton';
 import { useActivityLock, isActivityLockedByOther } from '@/hooks/useActivityLock';
 
-export default function ActivityDetailView({ activityRecord, kannBearbeiten, queryClient }) {
+export default function ActivityDetailView({ activityRecord, kannBearbeiten, queryClient, einheitFach }) {
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({});
   const [saving, setSaving] = useState(false);
   const [userEmail, setUserEmail] = useState(null);
+  
+  const { permissions } = useRBAC();
 
   useEffect(() => {
     base44.auth.me().then(u => setUserEmail(u?.email || null));
@@ -36,6 +39,22 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
   useEffect(() => {
     setFormData(activityRecord?.field_values || {});
   }, [activityRecord?.field_values]);
+
+  // Permission check: nur Inhalts-Bearbeiter dürfen Aktivitäten bearbeiten (nach allen Hooks)
+  const kannInhalteBearbeiten = einheitFach ? permissions.kannInhalteBearbeiten(einheitFach) : false;
+  if (!kannInhalteBearbeiten) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 text-center p-8">
+        <AlertTriangle className="w-12 h-12 text-muted-foreground/30" />
+        <div>
+          <p className="font-semibold">Kein Zugriff</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Sie dürfen keine Aktivitäten bearbeiten. Nur Fachlehrkräfte, Fachschaftsleitung und Administratoren haben diese Berechtigung.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSave = async () => {
     setSaving(true);

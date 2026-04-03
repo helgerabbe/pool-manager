@@ -12,12 +12,13 @@
 import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { useRBAC } from '@/hooks/useRBAC';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { RotateCcw, ChevronDown, ChevronRight, Trash2, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { RotateCcw, ChevronDown, ChevronRight, Trash2, CheckCircle2, Clock, AlertCircle, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -334,6 +335,8 @@ function CockpitSlot({ slotId, slot, updateSlot, removeSlot, selectedEinheitIds,
 
 export default function ExportCockpitView({ initialEinheitId = null }) {
   const queryClient = useQueryClient();
+  const { permissions } = useRBAC();
+  
   const [slots, setSlots] = useState([{ id: 1, unitId: initialEinheitId, isCollapsed: false }]);
   const [nextSlotId, setNextSlotId] = useState(2);
   const [globalSelectedIds, setGlobalSelectedIds] = useState([]);
@@ -365,6 +368,18 @@ export default function ExportCockpitView({ initialEinheitId = null }) {
   };
 
   const selectedEinheitIds = slots.map(s => s.unitId).filter(Boolean);
+
+  // Permission check (nach allen Hooks)
+  if (!permissions.kannExportBedienen) {
+    return (
+      <div className="min-h-screen bg-muted/20 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <ShieldCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">Kein Zugriff. Nur Moodle-Designer dürfen den Export bedienen.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Export: setzt sync_status='pending' auf den ausgewählten Aktivitäten und Aufgaben
   const exportMutation = useMutation({

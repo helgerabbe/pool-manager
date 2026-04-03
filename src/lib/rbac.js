@@ -1,20 +1,25 @@
 /**
- * RBAC — Role-Based Access Control für PoolPlaner
+ * RBAC — Role-Based Access Control für Pool-Manager
  *
- * ┌─────────────────────┬───────┬──────────┬───────────┬───────────┬────────────┐
- * │ Berechtigung        │ ADMIN │ FACHSCH. │ LEHRKRAFT │ BETRACHT. │ MOODLE-DS. │
- * ├─────────────────────┼───────┼──────────┼───────────┼───────────┼────────────┤
- * │ Einheit erstellen   │  ✓    │    ✓     │           │           │            │
- * │ Einheit löschen     │  ✓    │    ✓     │           │           │            │
- * │ Struktur-Board      │  ✓    │    ✓     │  (lesen)  │  (lesen)  │  (lesen)   │
- * │ Themenfeld löschen  │  ✓    │    ✓     │           │           │            │
- * │ Inhalte bearbeiten  │  ✓    │    ✓     │    ✓      │           │            │
- * │ LP verschieben      │  ✓    │    ✓     │    ✓      │           │            │
- * │ Moodle-Export       │  ✓    │    ✓     │           │           │    ✓       │
- * │ Benutzerverwaltung  │  ✓    │          │           │           │            │
- * │ Freigabe ändern     │  ✓    │    ✓     │           │           │            │
- * │ KI-Assistent        │  ✓    │    ✓     │           │           │            │
- * └─────────────────────┴───────┴──────────┴───────────┴───────────┴────────────┘
+ * ┌──────────────────────────┬───────┬──────────┬───────────┬───────────┬────────────┐
+ * │ Berechtigung             │ ADMIN │ FACHSCH. │ LEHRKRAFT │ BETRACHT. │ MOODLE-DS. │
+ * ├──────────────────────────┼───────┼──────────┼───────────┼───────────┼────────────┤
+ * │ BEREICH 1: STRUKTUR      │       │          │           │           │            │
+ * │ Einheit erstellen        │  ✓    │    ✓     │           │           │            │
+ * │ Einheit löschen          │  ✓    │    ✓     │           │           │            │
+ * │ Struktur bearbeiten      │  ✓    │    ✓*    │           │           │            │
+ * ├──────────────────────────┼───────┼──────────┼───────────┼───────────┼────────────┤
+ * │ BEREICH 2: INHALTE       │       │          │           │           │            │
+ * │ Aktivität erstellen      │  ✓    │    ✓*    │    ✓*     │           │            │
+ * │ Aktivität bearbeiten     │  ✓    │    ✓*    │    ✓*     │           │            │
+ * │ Aktivität löschen        │  ✓    │    ✓*    │    ✓*     │           │            │
+ * │ Aktivität freigeben      │  ✓    │    ✓*    │    ✓*     │           │            │
+ * ├──────────────────────────┼───────┼──────────┼───────────┼───────────┼────────────┤
+ * │ BEREICH 3: EXPORT        │       │          │           │           │            │
+ * │ Export bedienen          │  ✓    │          │           │           │    ✓       │
+ * │ Export lesen             │  ✓    │    ✓     │    ✓      │           │    ✓       │
+ * └──────────────────────────┴───────┴──────────┴───────────┴───────────┴────────────┘
+ * * = nur im zuständigen Fachbereich
  */
 
 export const ROLLEN = {
@@ -33,30 +38,16 @@ export function getEffectiveRolle(benutzerProfil) {
   return benutzerProfil?.rolle || ROLLEN.BETRACHTER;
 }
 
-/**
- * Darf der Nutzer generell schreibend tätig sein?
- */
-export function kannSchreiben(rolle) {
-  return [ROLLEN.ADMIN, ROLLEN.FACHSCHAFT, ROLLEN.LEHRKRAFT].includes(rolle);
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// BEREICH 1: STRUKTUR (Einheiten, Themenfelder, Lernpakete)
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Darf der Nutzer eine Einheit (oder deren Kinder) bearbeiten?
- * Berücksichtigt Fachzuständigkeit.
+ * Darf der Nutzer die Struktur bearbeiten?
+ * (Einheiten/Themenfelder/Lernpakete erstellen, bearbeiten, löschen)
+ * Nur ADMIN und FACHSCHAFTSLEITUNG (im eigenen Fachbereich).
  */
-export function kannEinheitBearbeiten(rolle, benutzerFaecher, einheitFach) {
-  if (rolle === ROLLEN.ADMIN) return true;
-  if (rolle === ROLLEN.FACHSCHAFT || rolle === ROLLEN.LEHRKRAFT) {
-    return Array.isArray(benutzerFaecher) && benutzerFaecher.includes(einheitFach);
-  }
-  return false;
-}
-
-/**
- * Darf der Nutzer den freigabe_status einer Einheit ändern?
- * Nur Administrator und Fachschaftsleitung (im eigenen Fach).
- */
-export function kannFreigabeStatusAendern(rolle, benutzerFaecher, einheitFach) {
+export function kannStrukturBearbeiten(rolle, benutzerFaecher, einheitFach) {
   if (rolle === ROLLEN.ADMIN) return true;
   if (rolle === ROLLEN.FACHSCHAFT) {
     return Array.isArray(benutzerFaecher) && benutzerFaecher.includes(einheitFach);
@@ -65,7 +56,97 @@ export function kannFreigabeStatusAendern(rolle, benutzerFaecher, einheitFach) {
 }
 
 /**
- * Darf der Nutzer eine Einheit in der Liste sehen?
+ * Darf der Nutzer Einheiten erstellen/verwalten?
+ */
+export function kannEinheitVerwalten(rolle) {
+  return [ROLLEN.ADMIN, ROLLEN.FACHSCHAFT].includes(rolle);
+}
+
+/**
+ * Darf der Nutzer Themenfelder löschen?
+ */
+export function kannThemenfeldLoeschen(rolle, benutzerFaecher, einheitFach) {
+  return kannStrukturBearbeiten(rolle, benutzerFaecher, einheitFach);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BEREICH 2: INHALTE (Aktivitäten, Aufgaben)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Darf der Nutzer Inhalte bearbeiten?
+ * (Aktivitäten, Aufgaben erstellen, bearbeiten, löschen, freigeben)
+ * ADMIN + FACHSCHAFTSLEITUNG (eigene Fächer) + LEHRKRAFT (eigene Fächer).
+ */
+export function kannInhalteBearbeiten(rolle, benutzerFaecher, einheitFach) {
+  if (rolle === ROLLEN.ADMIN) return true;
+  if (rolle === ROLLEN.FACHSCHAFT || rolle === ROLLEN.LEHRKRAFT) {
+    return Array.isArray(benutzerFaecher) && benutzerFaecher.includes(einheitFach);
+  }
+  return false;
+}
+
+/**
+ * Darf der Nutzer Aktivitäten/Aufgaben freigeben?
+ * (nur wenn auch Inhalte bearbeiten darf)
+ */
+export function kannInhaltFreigeben(rolle, benutzerFaecher, einheitFach) {
+  return kannInhalteBearbeiten(rolle, benutzerFaecher, einheitFach);
+}
+
+/**
+ * Darf der Nutzer eine Einheit (oder deren Kinder) bearbeiten?
+ * (für Inhalts-Bearbeitung, nicht Struktur)
+ * Berücksichtigt Fachzuständigkeit.
+ */
+export function kannEinheitBearbeiten(rolle, benutzerFaecher, einheitFach) {
+  return kannInhalteBearbeiten(rolle, benutzerFaecher, einheitFach);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BEREICH 3: EXPORT (Moodle-Export)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Darf der Nutzer Export bedienen?
+ * (Aktivitäten für Export markieren, Export abschließen)
+ * Nur MOODLE-DESIGNER und ADMIN.
+ */
+export function kannExportBedienen(rolle) {
+  return [ROLLEN.ADMIN, ROLLEN.MOODLE].includes(rolle);
+}
+
+/**
+ * Darf der Nutzer den Export-Bereich lesen?
+ * (alle außer Betrachter können lesen, aber nicht bedienen)
+ */
+export function kannExportLesen(rolle) {
+  return rolle !== ROLLEN.BETRACHTER;
+}
+
+/**
+ * Alias für alte API (Rückwärtskompatibilität)
+ * Nur ADMIN und FACHSCHAFTSLEITUNG konnten früher exportieren.
+ * Jetzt können nur ADMIN und MOODLE-DESIGNER exportieren.
+ */
+export function kannExportieren(rolle) {
+  return kannExportBedienen(rolle);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LEGACY / ALLGEMEIN
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Darf der Nutzer generell schreibend tätig sein?
+ * (admin, fachschaft, lehrkraft)
+ */
+export function kannSchreiben(rolle) {
+  return [ROLLEN.ADMIN, ROLLEN.FACHSCHAFT, ROLLEN.LEHRKRAFT].includes(rolle);
+}
+
+/**
+ * Darf der Nutzer Einheiten in der Liste sehen?
  * Moodle-Designer: nur freigegebene. Alle anderen: alle.
  */
 export function kannEinheitSehen(rolle, einheitFreigabeStatus) {
@@ -83,48 +164,24 @@ export function kannBenutzerverwaltungSehen(rolle) {
 }
 
 /**
- * Darf der Nutzer Export-Funktionen nutzen?
- * ADMIN + FACHSCHAFTSLEITUNG können exportieren (triggern den Export).
- * MOODLE-Designer kann nur lesen/anzeigen, nicht exportieren.
- */
-export function kannExportieren(rolle) {
-  return [ROLLEN.ADMIN, ROLLEN.FACHSCHAFT].includes(rolle);
-}
-
-/**
- * Darf der Nutzer das Struktur-Board bearbeiten?
- * (Themenfelder anlegen, löschen, umbenennen, Pakete strukturell verschieben)
- * Lehrkräfte haben nur Lesezugriff auf das Board.
- */
-export function kannStrukturBearbeiten(rolle, benutzerFaecher, einheitFach) {
-  if (rolle === ROLLEN.ADMIN) return true;
-  if (rolle === ROLLEN.FACHSCHAFT) {
-    return Array.isArray(benutzerFaecher) && benutzerFaecher.includes(einheitFach);
-  }
-  return false;
-}
-
-/**
- * Darf der Nutzer Themenfelder löschen?
- * Nur ADMIN und FACHSCHAFTSLEITUNG.
- */
-export function kannThemenfeldLoeschen(rolle, benutzerFaecher, einheitFach) {
-  return kannStrukturBearbeiten(rolle, benutzerFaecher, einheitFach);
-}
-
-/**
- * Darf der Nutzer Einheiten erstellen oder löschen?
- */
-export function kannEinheitVerwalten(rolle) {
-  return [ROLLEN.ADMIN, ROLLEN.FACHSCHAFT].includes(rolle);
-}
-
-/**
  * Darf der Nutzer den KI-Lernpaket-Assistenten nutzen?
  * Nur Administrator und Fachschaftsleitung.
  */
 export function kannKIAssistentNutzen(rolle) {
   return [ROLLEN.ADMIN, ROLLEN.FACHSCHAFT].includes(rolle);
+}
+
+/**
+ * Darf der Nutzer den freigabe_status einer Einheit ändern?
+ * Nur Administrator und Fachschaftsleitung (im eigenen Fach).
+ * (Unterschied zu kannInhaltFreigeben: das ist für Aktivitäten/Aufgaben)
+ */
+export function kannFreigabeStatusAendern(rolle, benutzerFaecher, einheitFach) {
+  if (rolle === ROLLEN.ADMIN) return true;
+  if (rolle === ROLLEN.FACHSCHAFT) {
+    return Array.isArray(benutzerFaecher) && benutzerFaecher.includes(einheitFach);
+  }
+  return false;
 }
 
 /**
@@ -135,19 +192,30 @@ export function getPermissions(rolle, benutzerFaecher = []) {
   return {
     rolle,
     faecher: benutzerFaecher,
-    kannSchreiben:         kannSchreiben(rolle),
-    kannLoeschen:          [ROLLEN.ADMIN, ROLLEN.FACHSCHAFT, ROLLEN.LEHRKRAFT].includes(rolle),
-    kannFreigabeAendern:   [ROLLEN.ADMIN, ROLLEN.FACHSCHAFT].includes(rolle),
-    kannBenutzerVerwalten: rolle === ROLLEN.ADMIN,
-    kannExportieren:       kannExportieren(rolle),
-    kannKIAssistentNutzen: kannKIAssistentNutzen(rolle),
-    kannEinheitVerwalten:  kannEinheitVerwalten(rolle),
-    nurFreigegebene:       rolle === ROLLEN.MOODLE,
-    istGast:               [ROLLEN.BETRACHTER, ROLLEN.MOODLE].includes(rolle),
-    // Fach-kontextabhängige Hilfsfunktionen
-    kannEinheitBearbeiten:       (fach) => kannEinheitBearbeiten(rolle, benutzerFaecher, fach),
-    kannFreigabeStatusAendern:   (fach) => kannFreigabeStatusAendern(rolle, benutzerFaecher, fach),
-    kannStrukturBearbeiten:      (fach) => kannStrukturBearbeiten(rolle, benutzerFaecher, fach),
-    kannThemenfeldLoeschen:      (fach) => kannThemenfeldLoeschen(rolle, benutzerFaecher, fach),
+
+    // ──────── BEREICH 1: STRUKTUR ────────────────────────────────────────
+    kannStrukturBearbeiten:    (fach) => kannStrukturBearbeiten(rolle, benutzerFaecher, fach),
+    kannEinheitVerwalten:      kannEinheitVerwalten(rolle),
+    kannThemenfeldLoeschen:    (fach) => kannThemenfeldLoeschen(rolle, benutzerFaecher, fach),
+
+    // ──────── BEREICH 2: INHALTE ────────────────────────────────────────
+    kannInhalteBearbeiten:     (fach) => kannInhalteBearbeiten(rolle, benutzerFaecher, fach),
+    kannInhaltFreigeben:       (fach) => kannInhaltFreigeben(rolle, benutzerFaecher, fach),
+    kannEinheitBearbeiten:     (fach) => kannEinheitBearbeiten(rolle, benutzerFaecher, fach),
+
+    // ──────── BEREICH 3: EXPORT ────────────────────────────────────────
+    kannExportBedienen:        kannExportBedienen(rolle),
+    kannExportLesen:           kannExportLesen(rolle),
+    kannExportieren:           kannExportieren(rolle), // Legacy alias
+
+    // ──────── ALLGEMEIN ────────────────────────────────────────
+    kannSchreiben:             kannSchreiben(rolle),
+    kannLoeschen:              [ROLLEN.ADMIN, ROLLEN.FACHSCHAFT, ROLLEN.LEHRKRAFT].includes(rolle),
+    kannBenutzerVerwalten:     rolle === ROLLEN.ADMIN,
+    kannKIAssistentNutzen:     kannKIAssistentNutzen(rolle),
+    kannFreigabeStatusAendern: (fach) => kannFreigabeStatusAendern(rolle, benutzerFaecher, fach),
+    nurFreigegebene:           rolle === ROLLEN.MOODLE,
+    istGast:                   [ROLLEN.BETRACHTER, ROLLEN.MOODLE].includes(rolle),
+    wartungsmodus:             false, // wird von useRBAC überschrieben
   };
 }

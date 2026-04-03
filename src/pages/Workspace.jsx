@@ -331,32 +331,45 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             </TabsContent>
 
             {/* ── Tab 2: Struktur anlegen → StrukturBoard ──────────────────────── */}
-            <TabsContent value="struktur" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
-              <ErrorBoundary label="Struktur">
-                {aktivePaketLocks.length > 0 ? (
-                  <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center p-8">
-                    <div className="w-16 h-16 rounded-2xl bg-orange-100 flex items-center justify-center">
-                      <Lock className="w-8 h-8 text-orange-500" />
-                    </div>
-                    <div className="max-w-md">
-                      <p className="text-lg font-semibold">Strukturbearbeitung gesperrt</p>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        {kollegen.join(', ')} {kollegen.length === 1 ? 'bearbeitet' : 'bearbeiten'} gerade Inhalte dieser Einheit.
-                        Strukturänderungen sind nicht möglich, solange Kollegen aktiv an Lernpaketen arbeiten.
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-3 italic">
-                        Die Sperre wird automatisch aufgehoben, sobald die Bearbeitung abgeschlossen ist.
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <StrukturBoardEmbedded
-                    einheitId={selectedEinheitId}
-                    lernpakete={paketeFuerEinheit}
-                    themenfelder={themenfelder}
-                    queryClient={queryClient}
-                  />
-                )}
+             <TabsContent value="struktur" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
+               <ErrorBoundary label="Struktur">
+                 {!permissions.kannStrukturBearbeiten(einheit?.fach) ? (
+                   <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center p-8">
+                     <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center">
+                       <Lock className="w-8 h-8 text-red-500" />
+                     </div>
+                     <div className="max-w-md">
+                       <p className="text-lg font-semibold">Strukturbearbeitung nicht erlaubt</p>
+                       <p className="text-sm text-muted-foreground mt-2">
+                         Nur Fachschaftsleitung und Administratoren dürfen die Struktur dieser Einheit bearbeiten.
+                       </p>
+                     </div>
+                   </div>
+                 ) : aktivePaketLocks.length > 0 ? (
+                     <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center p-8">
+                       <div className="w-16 h-16 rounded-2xl bg-orange-100 flex items-center justify-center">
+                         <Lock className="w-8 h-8 text-orange-500" />
+                       </div>
+                       <div className="max-w-md">
+                         <p className="text-lg font-semibold">Strukturbearbeitung gesperrt</p>
+                         <p className="text-sm text-muted-foreground mt-2">
+                           {kollegen.join(', ')} {kollegen.length === 1 ? 'bearbeitet' : 'bearbeiten'} gerade Inhalte dieser Einheit.
+                           Strukturänderungen sind nicht möglich, solange Kollegen aktiv an Lernpaketen arbeiten.
+                         </p>
+                         <p className="text-xs text-muted-foreground mt-3 italic">
+                           Die Sperre wird automatisch aufgehoben, sobald die Bearbeitung abgeschlossen ist.
+                         </p>
+                       </div>
+                     </div>
+                   ) : (
+                     <StrukturBoardEmbedded
+                       einheitId={selectedEinheitId}
+                       einheit={einheit}
+                       lernpakete={paketeFuerEinheit}
+                       themenfelder={themenfelder}
+                       queryClient={queryClient}
+                     />
+                   )}
               </ErrorBoundary>
             </TabsContent>
 
@@ -389,11 +402,12 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                         const activityRecord = lernpaketAktivitaeten.find((a) => a.id === selectedNode.activityRecordId);
                         if (!activityRecord) return null;
                         return (
-                          <ActivityDetailView
-                            activityRecord={activityRecord}
-                            kannBearbeiten={kannDieseEinheitBearbeiten}
-                            queryClient={queryClient}
-                          />
+                           <ActivityDetailView
+                             activityRecord={activityRecord}
+                             kannBearbeiten={kannDieseEinheitBearbeiten}
+                             einheitFach={einheit?.fach}
+                             queryClient={queryClient}
+                           />
                         );
                       })() : (
                         <WorkspaceDetailPanel

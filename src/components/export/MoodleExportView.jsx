@@ -14,6 +14,7 @@
 import React, { useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { useRBAC } from '@/hooks/useRBAC';
 import { useExportLock } from '@/hooks/useExportLock';
 import { ExportLockBanner } from './ExportLockBanner';
 import { ExportConfirmationButton } from '@/components/admin/ExportConfirmationButton';
@@ -26,10 +27,11 @@ import { de } from 'date-fns/locale';
 
 export default function MoodleExportView({ einheitId, userRole, isAdmin }) {
   const queryClient = useQueryClient();
+  const { permissions } = useRBAC();
   const { isLocked, pendingCount, pendingElements } = useExportLock(einheitId);
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // Daten laden
+  // Daten laden (alle Hooks ZUERST)
   // ──────────────────────────────────────────────────────────────────────────────
 
   const { data: lernpakete = [] } = useQuery({
@@ -85,6 +87,17 @@ export default function MoodleExportView({ einheitId, userRole, isAdmin }) {
       ].length,
     };
   }, [lernpakete, einheitActivities, masters, klone, einheitId]);
+
+  // Permission check (nach allen Hooks)
+  if (!permissions.kannExportLesen) {
+    return (
+      <div className="space-y-6 p-6 max-w-4xl mx-auto">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <p className="text-red-800">Kein Zugriff. Diese Seite ist nicht für Betrachter verfügbar.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Zeitpunkt des letzten Exports ermitteln
   const lastSyncTimestamp = useMemo(() => {
@@ -227,8 +240,8 @@ export default function MoodleExportView({ einheitId, userRole, isAdmin }) {
         </CardContent>
       </Card>
 
-      {/* Admin/Exporter-Bestätigungs-Sektion */}
-      {['admin', 'exporter', 'moodle_export_team'].includes(userRole) ? (
+      {/* Admin/Moodle-Designer-Bestätigungs-Sektion */}
+      {permissions.kannExportBedienen ? (
         <Card className="border-2 border-green-300 bg-green-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-green-800">
