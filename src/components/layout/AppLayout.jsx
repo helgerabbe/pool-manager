@@ -75,7 +75,7 @@ export default function AppLayout() {
                 <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
                   <Layers className="w-4 h-4 text-primary-foreground" />
                 </div>
-                <span className="text-base font-bold text-foreground tracking-tight hidden sm:inline">PoolPlaner</span>
+                <span className="text-base font-bold text-foreground tracking-tight hidden sm:inline">Pool-Manager</span>
               </Link>
             </div>
 
