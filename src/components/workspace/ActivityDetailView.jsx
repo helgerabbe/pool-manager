@@ -136,15 +136,17 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
       
       // ✅ Lock verloren (409 Conflict)
       if (status === 409) {
-        toast.error('🔒 Lock wurde von jemand anderem übernommen. Speichern nicht möglich.');
+        toast.error('⚠️ Diese Aufgabe wird gerade von jemand anderem bearbeitet. Bitte versuchen Sie es später erneut.');
       } else if (status === 429) {
-        toast.error('⏱️ Zu viele Speicher-Anfragen. Bitte warten Sie einen Moment.');
-      } else if (msg.includes('403') || msg.includes('Insufficient permissions')) {
-        toast.error('🔒 Sie haben nicht die erforderlichen Berechtigungen für diese Einheit.');
+        toast.error('📡 Zu viele Anfragen. Bitte warten Sie einen Moment und versuchen Sie es erneut.');
+      } else if (status === 403 || msg.includes('Insufficient permissions')) {
+        toast.error('🔒 Zugriff verweigert. Du benötigst Fachschaftsleiter-Rechte für diesen Bereich.');
       } else if (msg.includes('404')) {
-        toast.error('⚠️ Aktivität nicht gefunden.');
+        toast.error('⚠️ Aktivität nicht gefunden. Bitte aktualisieren Sie die Seite.');
+      } else if (!navigator.onLine) {
+        toast.error('📡 Verbindung unterbrochen. Deine Änderungen wurden lokal zwischengespeichert und werden synchronisiert, sobald du wieder online bist.');
       } else {
-        toast.error('Fehler beim Speichern: ' + msg);
+        toast.error('Fehler beim Speichern. Bitte versuchen Sie es erneut.');
       }
     } finally {
       setSaving(false);

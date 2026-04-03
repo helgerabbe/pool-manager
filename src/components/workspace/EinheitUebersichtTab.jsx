@@ -170,11 +170,12 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
       toast.success('Mitglied hinzugefügt.');
     },
     onError: (err) => {
-      toast.error(
-        err.message?.includes('Berechtigung')
-          ? '🔒 Sie haben nicht die erforderlichen Berechtigungen.'
-          : 'Fehler: ' + err.message
-      );
+      const msg = err.message || '';
+      if (msg.includes('Berechtigung') || msg.includes('403')) {
+        toast.error('🔒 Zugriff verweigert. Du benötigst Fachschaftsleiter-Rechte für diesen Bereich.');
+      } else {
+        toast.error('Fehler beim Hinzufügen. Bitte versuchen Sie es erneut.');
+      }
     },
   });
 
@@ -194,11 +195,12 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
       toast.success('Mitarbeiter hinzugefügt.');
     },
     onError: (err) => {
-      toast.error(
-        err.message?.includes('Berechtigung')
-          ? '🔒 Sie haben nicht die erforderlichen Berechtigungen.'
-          : 'Fehler: ' + err.message
-      );
+      const msg = err.message || '';
+      if (msg.includes('Berechtigung') || msg.includes('403')) {
+        toast.error('🔒 Zugriff verweigert. Du benötigst Fachschaftsleiter-Rechte für diesen Bereich.');
+      } else {
+        toast.error('Fehler beim Hinzufügen. Bitte versuchen Sie es erneut.');
+      }
     },
   });
 

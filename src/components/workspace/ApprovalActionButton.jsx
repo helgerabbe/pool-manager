@@ -177,11 +177,13 @@ export default function ApprovalActionButton({
       
       // ✅ Rate-Limit: 429 Too Many Requests
       if (status === 429) {
-        toast.error('⏱️ Zu viele Freigabe-Anfragen. Bitte warten Sie einen Moment.');
-      } else if (msg.includes('Berechtigung')) {
-        toast.error('🔒 Sie haben nicht die erforderlichen Berechtigungen.');
+        toast.error('📡 Zu viele Anfragen. Bitte warten Sie einen Moment und versuchen Sie es erneut.');
+      } else if (status === 403 || msg.includes('Berechtigung')) {
+        toast.error('🔒 Zugriff verweigert. Du benötigst Fachschaftsleiter-Rechte für diesen Bereich.');
+      } else if (msg.includes('approved')) {
+        toast.error('🚫 Freigegebene Inhalte sind gesperrt. Um Änderungen vorzunehmen, muss die Fachschaftsleitung die Freigabe zuerst zurückziehen.');
       } else {
-        toast.error('Fehler: ' + msg);
+        toast.error('Fehler beim Freigeben. Bitte versuchen Sie es erneut.');
       }
     },
   });
