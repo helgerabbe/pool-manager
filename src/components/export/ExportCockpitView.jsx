@@ -41,14 +41,19 @@ function AktivitaetStatusBadge({ activity }) {
 
 // ── Undo-Button für "Übergeben"-Status ──────────────────────────────────────
 
-function UndoButton({ activityId }) {
+function UndoButton({ activityId, entityType = 'activity' }) {
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
 
   const handleUndo = async () => {
     setLoading(true);
-    await base44.entities.LernpaketPhaseAktivitaet.update(activityId, { sync_status: 'modified' });
-    queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+    if (entityType === 'allgemein') {
+      await base44.entities.AllgemeineAufgabe.update(activityId, { sync_status: 'modified' });
+      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
+    } else {
+      await base44.entities.LernpaketPhaseAktivitaet.update(activityId, { sync_status: 'modified' });
+      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+    }
     toast.success('Übergabe zurückgesetzt.');
     setLoading(false);
   };
@@ -64,7 +69,7 @@ function UndoButton({ activityId }) {
 // ── Einzel-Cockpit-Slot ──────────────────────────────────────────────────────
 
 function CockpitSlot({ slotId, slot, updateSlot, removeSlot, selectedEinheitIds, selectedIds, setSelectedIds,
-  einheiten, lernpakete, themenfelder, aktivitaeten, aktivitaetenKatalog, exportMutation }) {
+  einheiten, lernpakete, themenfelder, aktivitaeten, aktivitaetenKatalog, allgemeineAufgaben, exportMutation }) {
 
   const { unitId, isCollapsed } = slot;
   const availableEinheiten = einheiten.filter(e => !selectedEinheitIds.includes(e.id) || e.id === unitId);
@@ -85,7 +90,7 @@ function CockpitSlot({ slotId, slot, updateSlot, removeSlot, selectedEinheitIds,
   const renderHierarchy = () => {
     if (!unitId) return null;
 
-    return themenfelder
+    const rows = themenfelder
       .filter(tf => tf.einheit_id === unitId)
       .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
       .map(tf => {
@@ -176,10 +181,96 @@ function CockpitSlot({ slotId, slot, updateSlot, removeSlot, selectedEinheitIds,
               )}
             </div>
 
+            {/* Allgemeine Aufgaben Ebene 1/2 in diesem Themenfeld */}
+            {(() => {
+              const ebene12 = allgemeineAufgaben.filter(
+                a => a.themenfeld_id === tf.id && a.anforderungsebene !== '3 - Projekt' && a.sync_status !== 'to_delete'
+              );
+              if (ebene12.length === 0) return null;
+              const exportable = ebene12.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending');
+              const selectedCount = exportable.filter(a => selectedIds.includes(a.id)).length;
+              const allSelected = exportable.length > 0 && selectedCount === exportable.length;
+              return (
+                <div className="pl-3 space-y-1 border-l-2 border-muted mt-1">
+                  <div className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-muted/30 transition">
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={() => toggleActivities(ebene12)}
+                      disabled={exportable.length === 0}
+                      className="h-4 w-4"
+                    />
+                    <span className="text-sm font-semibold flex-1">Allgemeine Aufgaben (Ebene 1/2)</span>
+                    {exportable.length > 0 && <span className="text-xs text-muted-foreground">{selectedCount}/{exportable.length}</span>}
+                  </div>
+                  <div className="pl-5 space-y-1 border-l border-muted/50">
+                    {ebene12.map(aufgabe => {
+                      const isSelected = selectedIds.includes(aufgabe.id);
+                      const isPending = aufgabe.sync_status === 'pending';
+                      const isApproved = aufgabe.content_status === 'approved';
+                      return (
+                        <div key={aufgabe.id} className={cn('flex items-center gap-2 p-1.5 rounded transition', isApproved ? 'hover:bg-muted/20' : 'opacity-60')}>
+                          <Checkbox checked={isSelected} onCheckedChange={() => toggleActivities([aufgabe])} disabled={!isApproved || isPending} className="h-4 w-4 shrink-0" />
+                          <span className={cn('text-xs flex-1 truncate', isApproved ? 'text-foreground' : 'text-muted-foreground')}>
+                            📝 {aufgabe.titel || 'Aufgabe ohne Titel'}
+                            {aufgabe.anforderungsebene && <span className="ml-1 text-muted-foreground">({aufgabe.anforderungsebene})</span>}
+                          </span>
+                          {isPending && <UndoButton activityId={aufgabe.id} entityType="allgemein" />}
+                          <AktivitaetStatusBadge activity={aufgabe} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
             <Separator className="my-2" />
           </div>
         );
       });
+
+      // Projektaufgaben (Ebene 3) direkt auf Einheitsebene (kein Themenfeld nötig)
+      const projektaufgaben = allgemeineAufgaben.filter(
+        a => a.einheit_id === unitId && a.anforderungsebene === '3 - Projekt' && a.sync_status !== 'to_delete'
+      );
+      if (projektaufgaben.length > 0) {
+        const exportable = projektaufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending');
+        const selectedCount = exportable.filter(a => selectedIds.includes(a.id)).length;
+        const allSelected = exportable.length > 0 && selectedCount === exportable.length;
+        rows.push(
+          <div key="_projektaufgaben" className="space-y-2">
+            <div className="px-2 py-1">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Projekt- & Anwendungsaufgaben (Ebene 3)</span>
+            </div>
+            <div className="pl-3 space-y-1 border-l-2 border-muted">
+              <div className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-muted/30 transition">
+                <Checkbox checked={allSelected} onCheckedChange={() => toggleActivities(projektaufgaben)} disabled={exportable.length === 0} className="h-4 w-4" />
+                <span className="text-sm font-semibold flex-1">Alle Projektaufgaben</span>
+                {exportable.length > 0 && <span className="text-xs text-muted-foreground">{selectedCount}/{exportable.length}</span>}
+              </div>
+              <div className="pl-5 space-y-1 border-l border-muted/50">
+                {projektaufgaben.map(aufgabe => {
+                  const isSelected = selectedIds.includes(aufgabe.id);
+                  const isPending = aufgabe.sync_status === 'pending';
+                  const isApproved = aufgabe.content_status === 'approved';
+                  return (
+                    <div key={aufgabe.id} className={cn('flex items-center gap-2 p-1.5 rounded transition', isApproved ? 'hover:bg-muted/20' : 'opacity-60')}>
+                      <Checkbox checked={isSelected} onCheckedChange={() => toggleActivities([aufgabe])} disabled={!isApproved || isPending} className="h-4 w-4 shrink-0" />
+                      <span className={cn('text-xs flex-1 truncate', isApproved ? 'text-foreground' : 'text-muted-foreground')}>
+                        🎯 {aufgabe.titel || 'Projektaufgabe ohne Titel'}
+                        {aufgabe.aufgabentyp_projekt && <span className="ml-1 text-muted-foreground">({aufgabe.aufgabentyp_projekt})</span>}
+                      </span>
+                      {isPending && <UndoButton activityId={aufgabe.id} entityType="allgemein" />}
+                      <AktivitaetStatusBadge activity={aufgabe} />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      }
+      return rows;
   };
 
   return (
@@ -252,6 +343,7 @@ export default function ExportCockpitView({ initialEinheitId = null }) {
   const { data: themenfelder = [] } = useQuery({ queryKey: ['themenfelder'], queryFn: () => base44.entities.Themenfeld.list() });
   const { data: aktivitaeten = [] } = useQuery({ queryKey: ['lernpaketPhaseAktivitaeten'], queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list() });
   const { data: aktivitaetenKatalog = [] } = useQuery({ queryKey: ['aktivitaetenKatalog'], queryFn: () => base44.entities.AktivitaetenKatalog.list() });
+  const { data: allgemeineAufgaben = [] } = useQuery({ queryKey: ['allgemeineAufgaben'], queryFn: () => base44.entities.AllgemeineAufgabe.list() });
 
   const updateSlot = (slotId, updates) => {
     setSlots(prev => {
@@ -274,18 +366,24 @@ export default function ExportCockpitView({ initialEinheitId = null }) {
 
   const selectedEinheitIds = slots.map(s => s.unitId).filter(Boolean);
 
-  // Export: setzt sync_status='pending' auf den ausgewählten Aktivitäten
+  // Export: setzt sync_status='pending' auf den ausgewählten Aktivitäten und Aufgaben
   const exportMutation = useMutation({
     mutationFn: async () => {
+      const allgemeineIds = new Set(allgemeineAufgaben.map(a => a.id));
       for (const id of globalSelectedIds) {
-        await base44.entities.LernpaketPhaseAktivitaet.update(id, { sync_status: 'pending' });
+        if (allgemeineIds.has(id)) {
+          await base44.entities.AllgemeineAufgabe.update(id, { sync_status: 'pending' });
+        } else {
+          await base44.entities.LernpaketPhaseAktivitaet.update(id, { sync_status: 'pending' });
+        }
       }
       return globalSelectedIds.length;
     },
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
       setGlobalSelectedIds([]);
-      toast.success(`${count} Aktivität${count !== 1 ? 'en' : ''} an das Export-Zentrum übergeben.`);
+      toast.success(`${count} Element${count !== 1 ? 'e' : ''} an das Export-Zentrum übergeben.`);
     },
     onError: () => toast.error('Fehler bei der Übergabe.'),
   });
@@ -316,6 +414,7 @@ export default function ExportCockpitView({ initialEinheitId = null }) {
               themenfelder={themenfelder}
               aktivitaeten={aktivitaeten.filter(a => a.sync_status !== 'to_delete')}
               aktivitaetenKatalog={aktivitaetenKatalog}
+              allgemeineAufgaben={allgemeineAufgaben}
               exportMutation={exportMutation}
             />
           ))}

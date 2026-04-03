@@ -182,7 +182,11 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
       {/* Aktionen */}
       {kannBearbeiten && (
         <div className="flex gap-2 pt-4 border-t border-border flex-wrap">
-          {aufgabe.content_status !== 'approved' ? (
+          {aufgabe.content_status === 'approved' ? (
+            <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1 flex items-center gap-1">
+              🔒 Freigegeben – Freigabe aufheben um zu bearbeiten
+            </p>
+          ) : (
             <Button
               variant="outline"
               size="sm"
@@ -192,10 +196,6 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
               <Edit className="w-4 h-4" />
               Bearbeiten
             </Button>
-          ) : (
-            <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1 flex items-center gap-1">
-              🔒 Freigegeben – Freigabe aufheben um zu bearbeiten
-            </p>
           )}
           <PublishProjektaufgabeButton 
             aufgabe={aufgabe} 
