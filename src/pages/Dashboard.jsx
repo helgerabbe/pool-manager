@@ -46,9 +46,12 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       {/* Hero */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground tracking-tight">Willkommen im PoolPlaner</h1>
-        <p className="text-muted-foreground mt-1">Aktuelle Aktivitäten und Online-Status</p>
+      <div className="rounded-2xl overflow-hidden shadow-md relative">
+        <img
+          src="https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/996944c1f_image.png"
+          alt="Pool-Manager – Die Orga-App für Freiarbeitszeiten"
+          className="w-full object-cover max-h-64"
+        />
       </div>
 
       {/* Zuletzt bearbeitete Einheiten */}
