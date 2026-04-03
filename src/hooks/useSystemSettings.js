@@ -36,7 +36,7 @@ export function useSystemSettings() {
 
   const { data: phasenRaw = [], isLoading: loadingPhasen } = useQuery({
     queryKey: ['lookupPhasen'],
-    queryFn: () => base44.entities.LookupPhasen.list('startdatum'),
+    queryFn: () => base44.entities.LookupPhasen.list('bezeichnung'),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -62,6 +62,7 @@ export function useSystemSettings() {
   return {
     isLoading: loadingFaecher || loadingJahrgaenge || loadingBausteine || loadingPhasen,
     wartungsmodus,
+    isWartungsmodusLoading: setWartungsmodus.isPending,
     setWartungsmodus: (aktiv) => setWartungsmodus.mutate(aktiv),
 
     // Gefiltert (nur aktive) — für Dropdowns in der App

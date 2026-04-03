@@ -16,7 +16,7 @@ const KATEGORIEN = ['Diagnostik', 'Input', 'Übung', 'Projekt', 'Prüfung'];
 export default function AdminSettings() {
   const { rolle: realRolle } = useRBAC();
   const {
-    wartungsmodus, setWartungsmodus,
+    wartungsmodus, setWartungsmodus, isWartungsmodusLoading,
     faecherRaw, jahrgaengeRaw, bausteinTypenRaw, phasenRaw,
     isLoading,
   } = useSystemSettings();
@@ -55,6 +55,7 @@ export default function AdminSettings() {
       <WartungsmodusToggle
         aktiv={wartungsmodus}
         onChange={setWartungsmodus}
+        isPending={isWartungsmodusLoading}
       />
 
       {/* Lookup-Tabellen */}
@@ -120,9 +121,9 @@ export default function AdminSettings() {
         <TabsContent value="phasen" className="mt-4">
           <Card className="border shadow-sm">
             <CardHeader className="pb-4">
-              <CardTitle className="text-base">Planungsphasen & Zeiträume</CardTitle>
+              <CardTitle className="text-base">Planungsphasen</CardTitle>
               <CardDescription>
-                Definieren Sie Schulhalbjahre oder Planungsphasen mit Start- und Enddatum.
+                Definieren Sie Schulhalbjahre oder Planungsphasen als Bezeichnungen.
                 Aktive Phasen können in Einheiten referenziert werden.
               </CardDescription>
             </CardHeader>

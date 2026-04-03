@@ -51,7 +51,8 @@ export function useRBAC() {
   const { data: systemSettings = [] } = useQuery({
     queryKey: ['systemeinstellungen'],
     queryFn: () => base44.entities.Systemeinstellungen.list(),
-    staleTime: 60 * 1000,
+    staleTime: 0,           // immer frisch prüfen – kritisch für Wartungsmodus
+    refetchInterval: 15000, // alle 15s im Hintergrund pollen
   });
   const wartungsmodus = systemSettings.find(s => s.schluessel === 'wartungsmodus')?.wert_boolean === true;
   const schreibgesperrt = wartungsmodus && realRolle !== ROLLEN.ADMIN;
