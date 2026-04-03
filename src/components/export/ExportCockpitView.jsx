@@ -206,23 +206,13 @@ function CockpitSlot({
 
         return (
           <div key={tf.id} className="space-y-2">
-            {/* Themenfeld Ebene */}
-            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/10 hover:bg-muted/30 transition">
-              <Checkbox
-                checked={isTfFullySelected}
-                onCheckedChange={() => toggleBulkCheckbox(tfAllAufgaben)}
-                disabled={tfExportable.length === 0}
-                className="h-4 w-4"
-              />
-              <span className="text-sm font-bold flex-1 truncate">{tf.titel}</span>
-              {tfExportable.length > 0 && (
-                  <span className="text-xs text-muted-foreground mr-2">{tfSelectedCount}/{tfExportable.length}</span>
-              )}
-              <StatusBadges contentStatus={calcContentStatus(tfAllAufgaben)} syncStatus={calcSyncStatus(tfAllAufgaben)} />
+            {/* Themenfeld Ebene – nur als Label, keine Checkbox */}
+            <div className="px-2 py-1.5">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{tf.titel}</span>
             </div>
 
             {/* Lernpakete Ebene */}
-            <div className="pl-6 space-y-2 border-l-2 border-muted">
+            <div className="pl-4 space-y-2 border-l-2 border-muted">
               {tfPakete.map((paket) => {
                 const paketActivities = aktivitaeten.filter((a) => a.lernpaket_id === paket.id);
                 let paketAllAufgaben = [];
