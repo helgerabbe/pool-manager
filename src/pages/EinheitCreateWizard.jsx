@@ -3,20 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useRBAC } from '@/hooks/useRBAC';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { CheckCircle2, ChevronRight, BookOpen, MessageSquare, Zap, Layers } from 'lucide-react';
 import WizardStep1Meta from '@/components/wizard/WizardStep1Meta';
 import WizardStep2Coach from '@/components/wizard/WizardStep2Coach';
 import WizardStep3Generator from '@/components/wizard/WizardStep3Generator';
 import WizardStep4Bausteine from '@/components/wizard/WizardStep4Bausteine';
-
-const STEPS = [
-  { id: 1, label: 'Meta-Daten',      icon: BookOpen,       desc: 'Titel, Fach, Jahrgang' },
-  { id: 2, label: 'Didaktik-Coach',  icon: MessageSquare,  desc: 'KI-gestützte Strukturierung' },
-  { id: 3, label: 'Massenimport',    icon: Zap,            desc: 'Lernpakete & Ziele anlegen' },
-  { id: 4, label: 'Basis-Befüllung', icon: Layers,         desc: 'Pflicht-Aktivitäten' },
-];
+import WizardStepper from '@/components/wizard/WizardStepper';
 
 export default function EinheitCreateWizard() {
   const navigate = useNavigate();
@@ -26,6 +17,7 @@ export default function EinheitCreateWizard() {
   const [einheitId, setEinheitId]     = useState(null);
   const [coachOutput, setCoachOutput] = useState('');
   const [paketeCreated, setPaketeCreated] = useState([]);
+  const [completedSteps, setCompletedSteps] = useState([]);
 
   const handleStep1Done = async (metaData) => {
     // Atomare Erstellung: Einheit + Default-Themenfeld + Default-Lernpaket
@@ -35,11 +27,13 @@ export default function EinheitCreateWizard() {
     queryClient.invalidateQueries({ queryKey: ['themenfelder', einheit.id] });
     queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
     setEinheitId(einheit.id);
+    setCompletedSteps(prev => [...new Set([...prev, 1])]);
     setCurrentStep(2);
   };
 
   const handleStep2Done = (braindumpText) => {
     setCoachOutput(braindumpText);
+    setCompletedSteps(prev => [...new Set([...prev, 2])]);
     setCurrentStep(3);
   };
 
@@ -47,12 +41,20 @@ export default function EinheitCreateWizard() {
     setPaketeCreated(pakete || []);
     queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
     queryClient.invalidateQueries({ queryKey: ['lernziele'] });
+    setCompletedSteps(prev => [...new Set([...prev, 3])]);
     setCurrentStep(4);
   };
 
   const handleStep4Done = () => {
     queryClient.invalidateQueries({ queryKey: ['aufgaben'] });
+    setCompletedSteps(prev => [...new Set([...prev, 4])]);
     navigate(`/workspace?einheit=${einheitId}&fromWizard=1`);
+  };
+
+  const handleStepClick = (stepId) => {
+    if (completedSteps.includes(stepId) || stepId < currentStep) {
+      setCurrentStep(stepId);
+    }
   };
 
   const handleSkipToStruktur = () => {
@@ -71,39 +73,11 @@ export default function EinheitCreateWizard() {
       </div>
 
       {/* Stepper */}
-      <div className="flex items-center gap-0">
-        {STEPS.map((step, idx) => {
-          const Icon = step.icon;
-          const isDone    = currentStep > step.id;
-          const isActive  = currentStep === step.id;
-          const isLocked  = currentStep < step.id;
-          return (
-            <React.Fragment key={step.id}>
-              <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-                <div className={cn(
-                  'w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all',
-                  isDone   ? 'bg-primary border-primary text-primary-foreground' :
-                  isActive ? 'bg-primary/10 border-primary text-primary' :
-                             'bg-background border-border text-muted-foreground'
-                )}>
-                  {isDone ? <CheckCircle2 className="w-5 h-5" /> : <Icon className="w-4 h-4" />}
-                </div>
-                <div className="text-center">
-                  <p className={cn('text-xs font-semibold truncate max-w-[80px]',
-                    isActive ? 'text-primary' : isDone ? 'text-foreground' : 'text-muted-foreground'
-                  )}>{step.label}</p>
-                  <p className="text-[10px] text-muted-foreground hidden sm:block truncate max-w-[90px]">{step.desc}</p>
-                </div>
-              </div>
-              {idx < STEPS.length - 1 && (
-                <div className={cn('h-0.5 flex-1 mt-[-18px] mx-1 transition-all',
-                  currentStep > step.id ? 'bg-primary' : 'bg-border'
-                )} />
-              )}
-            </React.Fragment>
-          );
-        })}
-      </div>
+      <WizardStepper
+        currentStep={currentStep}
+        completedSteps={completedSteps}
+        onStepClick={handleStepClick}
+      />
 
       {/* Step Content */}
       <div className="bg-card border border-border rounded-xl p-6 shadow-sm min-h-[400px]">
@@ -113,7 +87,10 @@ export default function EinheitCreateWizard() {
         {currentStep === 2 && (
           <WizardStep2Coach
             onDone={handleStep2Done}
-            onSkip={() => setCurrentStep(3)}
+            onSkip={() => {
+              setCompletedSteps(prev => [...new Set([...prev, 2])]);
+              setCurrentStep(3);
+            }}
             onSkipAll={handleSkipToStruktur}
           />
         )}
