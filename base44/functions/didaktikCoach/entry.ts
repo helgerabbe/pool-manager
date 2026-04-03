@@ -50,11 +50,21 @@ ${verlauf}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Antworte jetzt als Coach (nur Deine Antwort, keine Rollenbezeichnung):`;
 
-  const reply = await base44.asServiceRole.integrations.Core.InvokeLLM({
-    prompt: fullPrompt,
-    model: 'claude_sonnet_4_6',
-    file_urls: documentUrls && documentUrls.length > 0 ? documentUrls : undefined,
-  });
+  try {
+    const params = {
+      prompt: fullPrompt,
+      model: 'claude_sonnet_4_6',
+    };
 
-  return Response.json({ reply: reply || '' });
+    // Nur file_urls hinzufügen, wenn es tatsächlich URLs gibt
+    if (documentUrls && documentUrls.length > 0) {
+      params.file_urls = documentUrls;
+    }
+
+    const reply = await base44.asServiceRole.integrations.Core.InvokeLLM(params);
+    return Response.json({ reply: reply || '' });
+  } catch (error) {
+    console.error('didaktikCoach error:', error);
+    return Response.json({ error: error.message || 'Fehler beim Anrufen der KI' }, { status: 500 });
+  }
 });
