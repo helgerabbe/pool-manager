@@ -126,15 +126,33 @@ export default function WizardStepAssistenz({
       const aiReply = response.data?.aiResponse || 'Keine Antwort erhalten.';
       const structure = response.data?.structure;
 
-      // Extrahiere Text-Teil (vor dem JSON-Block)
-      const textPart = aiReply.split('---JSON---')[0].trim();
+      // Extrahiere Text-Teil (vor dem ---JSON_START--- Trenner)
+      const textPart = aiReply.split('---JSON_START---')[0].trim();
       
       setMessages(prev => [...prev, { role: 'assistant', content: textPart }]);
 
       // Aktualisiere Struktur wenn JSON vorhanden
-      if (structure && structure.themenfelder && structure.lernpakete) {
-        setThemenfelder(structure.themenfelder);
-        setLernpakete(structure.lernpakete);
+      if (structure && structure.themenfelder && Array.isArray(structure.themenfelder)) {
+        const flatThemenfelder = structure.themenfelder.map((tf, idx) => ({
+          id: `tf-${idx}`,
+          titel: tf.titel,
+          beschreibung: tf.beschreibung || '',
+        }));
+
+        const flatLernpakete = [];
+        structure.themenfelder.forEach((tf, tfIdx) => {
+          (tf.lernpakete || []).forEach((lp, lpIdx) => {
+            flatLernpakete.push({
+              id: `lp-${tfIdx}-${lpIdx}`,
+              themenfeld_id: `tf-${tfIdx}`,
+              titel_des_pakets: lp.titel,
+              geschaetzte_dauer_minuten: lp.geschaetzte_dauer_minuten || 60,
+            });
+          });
+        });
+
+        setThemenfelder(flatThemenfelder);
+        setLernpakete(flatLernpakete);
       }
     } catch (err) {
       setError(err.message || 'Fehler bei der KI-Kommunikation');
