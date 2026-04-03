@@ -37,9 +37,10 @@ export default function EinheitCard({ einheit, lernpaketCount, rolle, onDeleteSt
       const res = await base44.functions.invoke('deleteEinheit', { einheitId: einheit.id });
       if (res.data?.success) {
         toast.success('Einheit erfolgreich gelöscht.');
-        queryClient.invalidateQueries({ queryKey: ['einheiten'] });
         setShowConfirm(false);
         onDeleteEnd?.();
+        // invalidate NACH onDeleteEnd, damit das Overlay schon weg ist bevor die Card verschwindet
+        queryClient.invalidateQueries({ queryKey: ['einheiten'] });
       } else {
         const errorMsg = res.data?.error || 'Fehler beim Löschen der Einheit.';
         toast.error(errorMsg);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useRBAC } from '@/hooks/useRBAC';
@@ -93,6 +93,14 @@ export default function EinheitenListe() {
   const [schnellErstellen, setSchnellErstellen] = useState(false);
   const [isDeletingAny, setIsDeletingAny] = useState(false);
   const queryClient = useQueryClient();
+
+  // Reset Overlay falls es hängen bleibt (z.B. nach Einheitenliste-Refresh)
+  useEffect(() => {
+    if (isDeletingAny) {
+      const timeout = setTimeout(() => setIsDeletingAny(false), 15000);
+      return () => clearTimeout(timeout);
+    }
+  }, [isDeletingAny]);
   const { permissions, rolle } = useRBAC();
 
   const { data: einheiten = [], isLoading } = useQuery({
