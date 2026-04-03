@@ -19,6 +19,8 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { useResourceLock } from '@/hooks/useResourceLock';
 import UserImport from '@/components/admin/UserImport';
+import UserInviteTab from '@/components/admin/UserInviteTab';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const rollenBadgeColors = {
   Administrator:      'bg-red-100 text-red-700',
@@ -208,6 +210,20 @@ export default function Benutzerverwaltung() {
     enabled: permissions.kannBenutzerVerwalten,
   });
 
+  const { data: users = [] } = useQuery({
+    queryKey: ['appUsers'],
+    queryFn: async () => {
+      try {
+        const result = await base44.asServiceRole.entities.User.list();
+        return result || [];
+      } catch (err) {
+        console.error('User-Liste konnte nicht geladen werden:', err);
+        return [];
+      }
+    },
+    enabled: permissions.kannBenutzerVerwalten,
+  });
+
   const { data: benutzer = [], isLoading } = useQuery({
     queryKey: ['benutzer'],
     queryFn: () => base44.entities.Benutzer.list('-created_date'),
@@ -270,13 +286,15 @@ export default function Benutzerverwaltung() {
     <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
-            <ShieldCheck className="w-6 h-6 text-primary" />
-            Benutzerverwaltung
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">{benutzer.length} registrierte Benutzer</p>
-        </div>
+         <div>
+           <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
+             <ShieldCheck className="w-6 h-6 text-primary" />
+             Benutzerverwaltung
+           </h1>
+           <p className="text-sm text-muted-foreground mt-1">
+             {benutzer.filter(b => users?.find(u => u.email === b.user_id)).length} registriert | {benutzer.filter(b => !users?.find(u => u.email === b.user_id)).length} ausstehend
+           </p>
+         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setShowImport(v => !v)} className="gap-2">
             <Upload className="w-4 h-4" />{showImport ? 'Import schließen' : 'CSV importieren'}
@@ -392,80 +410,96 @@ export default function Benutzerverwaltung() {
         </Card>
       )}
 
-      {/* Benutzerliste */}
+      {/* Benutzerliste mit Tabs */}
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Users className="w-4 h-4" />
-            Registrierte Benutzer
+            Benutzerverwaltung
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          {benutzer.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-10">
-              Noch keine Benutzerprofile angelegt. Klicken Sie auf „Benutzer hinzufügen".
-            </p>
-          ) : (
-            <div className="divide-y">
-              {benutzer.map(b => (
-                <div key={b.id} className={`flex items-center justify-between px-6 py-4 hover:bg-muted/30 transition-colors ${!b.ist_aktiv ? 'opacity-50' : ''}`}>
-                  <div className="flex items-center gap-4">
-                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-                      {(b.user_id || '?')[0].toUpperCase()}
+          <Tabs defaultValue="registered" className="w-full">
+            <TabsList className="w-full justify-start border-b rounded-none bg-transparent p-0 h-auto">
+              <TabsTrigger value="registered" className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary">
+                Registrierte Benutzer
+              </TabsTrigger>
+              <TabsTrigger value="pending" className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary">
+                Ausstehende Einladungen ({benutzer.filter(b => !users?.find(u => u.email === b.user_id)).length})
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Tab 1: Registrierte */}
+            <TabsContent value="registered" className="p-4 m-0">
+              {benutzer.filter(b => users?.find(u => u.email === b.user_id)).length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-10">
+                  Noch keine registrierten Benutzer.
+                </p>
+              ) : (
+                <div className="divide-y">
+                  {benutzer.filter(b => users?.find(u => u.email === b.user_id)).map(b => (
+                    <div key={b.id} className={`flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors ${!b.ist_aktiv ? 'opacity-50' : ''}`}>
+                      <div className="flex items-center gap-4">
+                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
+                          {(b.user_id || '?')[0].toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium">{b.vorname} {b.nachname}</p>
+                            {b.user_id === authUser?.email && (
+                              <Badge className="text-[10px] bg-primary/10 text-primary">Ich</Badge>
+                            )}
+                            {!b.ist_aktiv && (
+                              <Badge className="text-[10px] bg-muted text-muted-foreground">Inaktiv</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">{b.user_id}</p>
+                          {b.fachbereich_zustaendigkeit?.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {b.fachbereich_zustaendigkeit.map(f => (
+                                <span key={f} className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{f}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge className={`${rollenBadgeColors[b.rolle] || 'bg-muted text-muted-foreground'}`}>
+                          {b.rolle}
+                        </Badge>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => { setEditingUser(b); }}
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            disabled={b.user_id === authUser?.email}
+                            onClick={() => setDeleteId(b.id)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                         <div className="flex items-center gap-2">
-                           <p className="text-sm font-medium">{b.vorname} {b.nachname}</p>
-                           {b.user_id === authUser?.email && (
-                             <Badge className="text-[10px] bg-primary/10 text-primary">Ich</Badge>
-                           )}
-                           {!b.ist_aktiv && (
-                             <Badge className="text-[10px] bg-muted text-muted-foreground">Inaktiv</Badge>
-                           )}
-                         </div>
-                         <p className="text-xs text-muted-foreground">{b.user_id}</p>
-                         {b.fachbereich_zustaendigkeit?.length > 0 && (
-                           <div className="flex flex-wrap gap-1 mt-1">
-                             {b.fachbereich_zustaendigkeit.map(f => (
-                               <span key={f} className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{f}</span>
-                             ))}
-                           </div>
-                         )}
-                         <p className="text-xs text-muted-foreground mt-0.5">
-                           Hinzugefügt: {b.created_date && format(new Date(b.created_date), 'dd.MM.yyyy', { locale: de })}
-                         </p>
-                       </div>
+                  ))}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Badge className={`${rollenBadgeColors[b.rolle] || 'bg-muted text-muted-foreground'}`}>
-                      {b.rolle}
-                    </Badge>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => { setEditingUser(b); }}
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        disabled={b.user_id === authUser?.email}
-                        onClick={() => setDeleteId(b.id)}
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  )}
+                  </TabsContent>
+
+                  {/* Tab 2: Ausstehende Einladungen */}
+                  <TabsContent value="pending" className="p-4 m-0">
+                  <UserInviteTab benutzer={benutzer} />
+                  </TabsContent>
+                  </Tabs>
+                  </CardContent>
+                  </Card>
 
       {/* Forms */}
       <BenutzerForm
