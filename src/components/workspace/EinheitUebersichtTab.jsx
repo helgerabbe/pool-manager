@@ -273,7 +273,7 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
           </div>
         </section>
 
-        {/* ── Spalte 2: Bearbeitungssperre ─────────────────────────────────────── */}
+        {/* ── Spalte 2: Bearbeitungsstatus + Mitarbeiter ───────────────────────── */}
         <section className="space-y-5">
           <div>
             <h2 className="text-lg font-semibold">Bearbeitungsstatus</h2>
@@ -335,85 +335,78 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
               </div>
             )}
           </div>
+
+          {/* ── Mitarbeiter (direkt unter Bearbeitungsstatus) ─────────────────── */}
+          <div>
+            <h2 className="text-lg font-semibold">Mitarbeiter</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">Fachlehrkräfte dieser Einheit volle Bearbeitungsrechte geben.</p>
+          </div>
+
+          <div className="space-y-3 p-5 rounded-xl border bg-card">
+            {members.filter(m => m.unit_role === 'LEITUNG').length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6 border border-dashed rounded-lg">Noch keine Mitarbeiter zugewiesen.</p>
+            ) : (
+              members.filter(m => m.unit_role === 'LEITUNG').map(m => {
+                const user = allUsers.find(u => u.email === m.user_email);
+                if (!user || user.role !== 'Fachlehrkraft') return null;
+                return (
+                  <div key={m.id} className="flex items-center gap-3 p-3 rounded-lg border bg-background">
+                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-sm font-bold text-green-700 shrink-0">
+                      {(m.user_name || m.user_email).charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{m.user_name || m.user_email}</p>
+                      <p className="text-xs text-muted-foreground truncate">{m.user_email}</p>
+                    </div>
+                    {isLeitung && (
+                      <button
+                        onClick={() => removeMember.mutate(m.id)}
+                        className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })
+            )}
+
+            {isLeitung && (
+              <div className="pt-1">
+                {!addingMitarbeiter ? (
+                  <Button variant="outline" size="sm" onClick={() => setAddingMitarbeiter(true)} className="gap-2 w-full">
+                    <Plus className="w-3.5 h-3.5" /> Mitarbeiter hinzufügen
+                  </Button>
+                ) : (
+                  <div className="space-y-3 p-3 rounded-lg bg-muted/50 border">
+                    <p className="text-xs font-semibold text-muted-foreground">Fachlehrkraft auswählen</p>
+                    {availableFachlehrkraefteForMitarbeiter.length > 0 ? (
+                      <Select value={mitarbeiterEmail} onValueChange={setMitarbeiterEmail}>
+                        <SelectTrigger className="text-sm"><SelectValue placeholder="Fachlehrkraft wählen…" /></SelectTrigger>
+                        <SelectContent>
+                          {availableFachlehrkraefteForMitarbeiter.map(u => (
+                            <SelectItem key={u.email} value={u.email}>
+                              <span className="font-medium">{u.full_name}</span>
+                              <span className="text-muted-foreground ml-2 text-xs">{u.email}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">Keine verfügbaren Fachlehrkräfte.</p>
+                    )}
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => { setAddingMitarbeiter(false); setMitarbeiterEmail(''); }} className="flex-1">Abbrechen</Button>
+                      <Button size="sm" className="flex-1 gap-1" disabled={!mitarbeiterEmail || addMitarbeiter.isPending} onClick={() => addMitarbeiter.mutate(mitarbeiterEmail)}>
+                        <Plus className="w-3.5 h-3.5" /> Hinzufügen
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </section>
-
-      </div>
-
-      {/* ── Zeile 2: Mitarbeiter (volle Breite) ──────────────────────────────── */}
-      <div className="mt-8">
-        {/* ── Spalte 2 (ehem.): Mitarbeiter ────────────────────────────────────────────── */}
-        <section className="space-y-5">
-            <div>
-              <h2 className="text-lg font-semibold">Mitarbeiter</h2>
-              <p className="text-sm text-muted-foreground mt-0.5">Fachlehrkräfte dieser Einheit volle Bearbeitungsrechte geben.</p>
-            </div>
-
-            <div className="space-y-3 p-5 rounded-xl border bg-card">
-              {/* Mitarbeiter-Liste (nur LEITUNG in dieser Einheit die Fachlehrkräfte sind) */}
-              {members.filter(m => m.unit_role === 'LEITUNG').length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-6 border border-dashed rounded-lg">Noch keine Mitarbeiter zugewiesen.</p>
-              ) : (
-                members.filter(m => m.unit_role === 'LEITUNG').map(m => {
-                  const user = allUsers.find(u => u.email === m.user_email);
-                  if (!user || user.role !== 'Fachlehrkraft') return null;
-                  return (
-                    <div key={m.id} className="flex items-center gap-3 p-3 rounded-lg border bg-background">
-                      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-sm font-bold text-green-700 shrink-0">
-                        {(m.user_name || m.user_email).charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{m.user_name || m.user_email}</p>
-                        <p className="text-xs text-muted-foreground truncate">{m.user_email}</p>
-                      </div>
-                      {isLeitung && (
-                        <button
-                          onClick={() => removeMember.mutate(m.id)}
-                          className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-
-              {isLeitung && (
-                <div className="pt-1">
-                  {!addingMitarbeiter ? (
-                    <Button variant="outline" size="sm" onClick={() => setAddingMitarbeiter(true)} className="gap-2 w-full">
-                      <Plus className="w-3.5 h-3.5" /> Mitarbeiter hinzufügen
-                    </Button>
-                  ) : (
-                    <div className="space-y-3 p-3 rounded-lg bg-muted/50 border">
-                      <p className="text-xs font-semibold text-muted-foreground">Fachlehrkraft auswählen</p>
-                      {availableFachlehrkraefteForMitarbeiter.length > 0 ? (
-                        <Select value={mitarbeiterEmail} onValueChange={setMitarbeiterEmail}>
-                          <SelectTrigger className="text-sm"><SelectValue placeholder="Fachlehrkraft wählen…" /></SelectTrigger>
-                          <SelectContent>
-                            {availableFachlehrkraefteForMitarbeiter.map(u => (
-                              <SelectItem key={u.email} value={u.email}>
-                                <span className="font-medium">{u.full_name}</span>
-                                <span className="text-muted-foreground ml-2 text-xs">{u.email}</span>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">Keine verfügbaren Fachlehrkräfte.</p>
-                      )}
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => { setAddingMitarbeiter(false); setMitarbeiterEmail(''); }} className="flex-1">Abbrechen</Button>
-                        <Button size="sm" className="flex-1 gap-1" disabled={!mitarbeiterEmail || addMitarbeiter.isPending} onClick={() => addMitarbeiter.mutate(mitarbeiterEmail)}>
-                          <Plus className="w-3.5 h-3.5" /> Hinzufügen
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </section>
 
       </div>
     </div>
