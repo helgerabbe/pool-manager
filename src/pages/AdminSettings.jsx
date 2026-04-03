@@ -5,7 +5,20 @@ import { ROLLEN } from '@/lib/rbac';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ShieldCheck, BookOpen, GraduationCap, Puzzle, CalendarRange, Settings2 } from 'lucide-react';
+import { ShieldCheck, BookOpen, GraduationCap, Puzzle, CalendarRange, Settings2, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useMutation } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { base44 } from '@/api/base44Client';
 import LookupTable from '@/components/admin/LookupTable';
 import PhasenTable from '@/components/admin/PhasenTable';
 import WartungsmodusToggle from '@/components/admin/WartungsmodusToggle';
@@ -14,12 +27,38 @@ import AktivitaetenKatalog from '@/components/admin/AktivitaetenKatalog';
 const KATEGORIEN = ['Diagnostik', 'Input', 'Übung', 'Projekt', 'Prüfung'];
 
 export default function AdminSettings() {
+  const [showResetDialog, setShowResetDialog] = useState(false);
   const { rolle: realRolle } = useRBAC();
   const {
     wartungsmodus, setWartungsmodus, isWartungsmodusLoading,
     faecherRaw, jahrgaengeRaw, bausteinTypenRaw, phasenRaw,
     isLoading,
   } = useSystemSettings();
+
+  const resetMutation = useMutation({
+    mutationFn: async () => {
+      return await base44.functions.invoke('resetSandboxData', {
+        confirmReset: true
+      });
+    },
+    onSuccess: (data) => {
+      setShowResetDialog(false);
+      toast.success(
+        `✅ Factory Reset erfolgreich! ${data.deleteCounts?.einheiten || 0} Einheiten und alle Aufgaben wurden gelöscht. ` +
+        (data.sampleUnitCreated ? 'Eine Beispiel-Einheit wurde erstellt.' : '')
+      );
+    },
+    onError: (err) => {
+      const msg = err.message || '';
+      if (err.response?.status === 403) {
+        toast.error('🔒 Nur Administratoren dürfen Factory Resets durchführen.');
+      } else if (err.response?.status === 429) {
+        toast.error('⏱️ Bitte warten Sie mindestens 1 Minute vor dem nächsten Reset.');
+      } else {
+        toast.error('Fehler beim Reset: ' + msg);
+      }
+    },
+  });
 
   if (realRolle !== ROLLEN.ADMIN) {
     return (
@@ -57,6 +96,37 @@ export default function AdminSettings() {
         onChange={setWartungsmodus}
         isPending={isWartungsmodusLoading}
       />
+
+      {/* Factory Reset */}
+      <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-6">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground">System auf Werkszustand zurücksetzen</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Löscht alle Einheiten, Themenfelder, Lernpakete und Aufgaben. Benutzerkonten und Systemeinstellungen bleiben erhalten.
+                Eine Beispiel-Einheit wird neu erstellt.
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="destructive"
+            onClick={() => setShowResetDialog(true)}
+            disabled={resetMutation.isPending}
+            className="gap-2 shrink-0"
+          >
+            {resetMutation.isPending ? (
+              <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <RotateCcw className="w-4 h-4" />
+            )}
+            {resetMutation.isPending ? 'Wird zurückgesetzt...' : 'Jetzt zurücksetzen'}
+          </Button>
+        </div>
+      </div>
 
       {/* Lookup-Tabellen */}
       <Tabs defaultValue="faecher">
@@ -138,6 +208,43 @@ export default function AdminSettings() {
           <AktivitaetenKatalog />
         </TabsContent>
       </Tabs>
+
+      {/* Reset-Bestätigungsdialog */}
+      <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="flex gap-3 items-start">
+              <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+              <div>
+                <AlertDialogTitle>System auf Werkszustand zurücksetzen?</AlertDialogTitle>
+                <AlertDialogDescription className="mt-2 space-y-2">
+                  <p>Dies wird alle erstellten Daten löschen:</p>
+                  <ul className="list-disc pl-5 space-y-1 text-sm">
+                    <li>Alle Einheiten und Themenfelder</li>
+                    <li>Alle Lernpakete und Aktivitäten</li>
+                    <li>Alle Aufgabenbausteine und Master-Aufgaben</li>
+                    <li>Alle Einheit-Mitgliedschaften</li>
+                  </ul>
+                  <p className="pt-2 font-semibold">Benutzerkonten und Systemeinstellungen bleiben erhalten.</p>
+                  <p className="text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded">
+                    ⚠️ Dieser Vorgang kann nicht rückgängig gemacht werden!
+                  </p>
+                </AlertDialogDescription>
+              </div>
+            </div>
+          </AlertDialogHeader>
+          <div className="flex gap-2 justify-end pt-2">
+            <AlertDialogCancel disabled={resetMutation.isPending}>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => resetMutation.mutate()}
+              disabled={resetMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {resetMutation.isPending ? 'Wird zurückgesetzt...' : 'Ja, unwiderruflich löschen'}
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
