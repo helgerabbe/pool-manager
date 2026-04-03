@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { useRBAC } from '@/hooks/useRBAC';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 export default function BasismodulList({ selectedId, onSelect, onCreateNew }) {
+  const { permissions } = useRBAC();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFach, setSelectedFach] = useState('');
 
@@ -51,11 +53,13 @@ export default function BasismodulList({ selectedId, onSelect, onCreateNew }) {
   return (
     <div className="flex flex-col h-full bg-card border-r border-border">
       {/* Header */}
-      <div className="shrink-0 p-4 border-b border-border space-y-3">
-        <Button onClick={onCreateNew} className="w-full gap-2">
-          <Plus className="w-4 h-4" />
-          Neues Modul
-        </Button>
+       <div className="shrink-0 p-4 border-b border-border space-y-3">
+         {permissions.kannSchreiben && (
+           <Button onClick={onCreateNew} className="w-full gap-2">
+             <Plus className="w-4 h-4" />
+             Neues Modul
+           </Button>
+         )}
 
         {/* Suchfeld */}
         <div className="relative">

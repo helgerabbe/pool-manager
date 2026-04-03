@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { useRBAC } from '@/hooks/useRBAC';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -42,10 +43,15 @@ const FAECHER = [
 ];
 
 export default function BasismodulCreateDialog({ open, onOpenChange }) {
+  const { permissions } = useRBAC();
   const queryClient = useQueryClient();
   const [fach, setFach] = useState('');
   const [titel, setTitel] = useState('');
   const [beschreibung, setBeschreibung] = useState('');
+
+  if (!permissions.kannSchreiben) {
+    return null;
+  }
 
   const createBasismodul = useMutation({
     mutationFn: (data) => base44.entities.Basismodule.create(data),
