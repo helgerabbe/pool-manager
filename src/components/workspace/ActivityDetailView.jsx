@@ -67,7 +67,7 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
             </div>
           )}
           <div className="mt-2">
-            <ApprovalStatusBadge syncStatus={activityRecord.sync_status} />
+            <ApprovalStatusBadge contentStatus={activityRecord.content_status} />
           </div>
         </div>
         <div className="flex gap-2 shrink-0 flex-col items-end">
@@ -92,7 +92,8 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
           <ApprovalActionButton 
             entityId={activityRecord.id} 
             entityType="activity" 
-            syncStatus={activityRecord.sync_status}
+            contentStatus={activityRecord.content_status}
+            missingFields={!activityRecord.is_complete ? ['Inhalt der Aktivität unvollständig'] : []}
             kannBearbeiten={true}
           />
         </div>

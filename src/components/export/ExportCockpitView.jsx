@@ -193,12 +193,13 @@ function CockpitSlot({
             });
         });
 
-        // Ebene 2: Allgemeine Aufgaben für dieses Themenfeld
+        // Ebene 2: Allgemeine Aufgaben für dieses Themenfeld (Basis + Transfer)
         const ebene2Aufgaben = allgemeineAufgaben.filter(
           (a) => a.themenfeld_id === tf.id && a.anforderungsebene !== '3 - Projekt'
         );
 
         const tfAllAufgabenCombined = [...tfAllAufgaben, ...ebene2Aufgaben];
+        // Nur freigegebene (content_status === 'approved') und noch nicht im Export (sync_status !== 'pending')
         const tfExportable = tfAllAufgabenCombined.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending');
         const tfSelectedCount = tfExportable.filter(a => selectedIds.includes(a.id)).length;
         const isTfFullySelected = tfExportable.length > 0 && tfSelectedCount === tfExportable.length;

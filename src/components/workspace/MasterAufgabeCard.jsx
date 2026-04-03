@@ -267,7 +267,12 @@ export default function MasterAufgabeCard({
           <ApprovalActionButton 
             entityId={master.id}
             entityType="master"
-            syncStatus={master.sync_status}
+            contentStatus={master.content_status}
+            missingFields={
+              !master.field_values?.instruction && !master.field_values?.task_description && !master.field_values?.pairs?.length
+                ? ['Aufgabeninhalt fehlt']
+                : []
+            }
             kannBearbeiten={kannBearbeiten}
             userRole={userRole}
           />
