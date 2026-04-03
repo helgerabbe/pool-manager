@@ -276,7 +276,7 @@ function CockpitSlot({
                               <StatusBadges contentStatus={calcContentStatus(aufgaben)} syncStatus={calcSyncStatus(aufgaben)} />
                             </div>
 
-                            {/* Aufgaben Ebene (Leaf) */}
+                            {/* Aufgaben Ebene (Leaf) – Master/Klon */}
                             <div className="pl-6 space-y-1">
                                 {aufgaben.map((aufgabe) => {
                                     const isSelected = selectedIds.includes(aufgabe.id);
@@ -310,6 +310,34 @@ function CockpitSlot({
                 );
               })}
             </div>
+            {/* Ebene 2: Allgemeine Aufgaben direkt im Themenfeld */}
+            {ebene2Aufgaben.length > 0 && (
+              <div className="pl-6 space-y-1 border-l-2 border-muted mt-1">
+                <p className="text-xs font-semibold text-muted-foreground px-1 mb-1">Allgemeine Aufgaben (Ebene 1/2)</p>
+                {ebene2Aufgaben.map((aufgabe) => {
+                  const isSelected = selectedIds.includes(aufgabe.id);
+                  const isPending = aufgabe.sync_status === 'pending';
+                  const isApproved = aufgabe.content_status === 'approved';
+                  const title = aufgabe.titel || 'Aufgabe ohne Titel';
+                  return (
+                    <div key={aufgabe.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-muted/10 transition">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleBulkCheckbox([aufgabe])}
+                        disabled={isPending || !isApproved}
+                        className="h-4 w-4 shrink-0"
+                      />
+                      <span className="text-xs font-normal flex-1 truncate text-muted-foreground">
+                        📝 {title}
+                      </span>
+                      {isPending && <UndoButton itemId={aufgabe.id} itemType="allgemein" />}
+                      <StatusBadges contentStatus={aufgabe.content_status} syncStatus={aufgabe.sync_status} />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             <Separator className="my-2" />
           </div>
         );

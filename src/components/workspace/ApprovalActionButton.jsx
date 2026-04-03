@@ -34,9 +34,8 @@ export default function ApprovalActionButton({ entityId, entityType, contentStat
   
   const isApproved = contentStatus === 'approved';
 
-  // Alle Rollen dürfen freigeben (Lehrer sollen ihren eigenen Content freigeben können)
-  // Admins und Fachschaftsleitung können auch die Freigabe rückgängig machen
-  const canRevokeApproval = userRole && ['Administrator', 'Fachschaftsleitung'].includes(userRole);
+  // Alle Rollen dürfen freigeben UND auch die Freigabe wieder aufheben
+  const canRevokeApproval = !!kannBearbeiten; // jeder mit Bearbeitungsrecht kann rückgängig machen
 
   const entityLabel = entityType === 'activity' ? 'Aktivität' : entityType === 'klon' ? 'Klon' : 'Masteraufgabe';
 

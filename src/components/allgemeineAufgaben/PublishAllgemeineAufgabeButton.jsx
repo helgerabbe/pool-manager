@@ -32,7 +32,7 @@ export default function PublishAllgemeineAufgabeButton({ aufgabe, kannBearbeiten
   const [missingFields, setMissingFields] = useState([]);
 
   const isApproved = aufgabe.content_status === 'approved';
-  const canRevoke = userRole && ['Administrator', 'Fachschaftsleitung'].includes(userRole);
+  const canRevoke = !!kannBearbeiten; // jeder mit Bearbeitungsrecht kann rückgängig machen
 
   const validateAufgabe = () => {
     return REQUIRED_FIELDS

@@ -374,12 +374,17 @@ export default function MasterAufgabeCard({
                     </div>
                   </div>
                 )}
-                {kannBearbeiten && !locked && (
+                {kannBearbeiten && !locked && master.content_status !== 'approved' && (
                   <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
                     Inhalt bearbeiten
                   </Button>
                 )}
-                {!fieldValues.instruction && !fieldValues.pairs?.length && (
+                {master.content_status === 'approved' && (
+                  <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1">
+                    🔒 Freigegeben – Freigabe aufheben um zu bearbeiten
+                  </p>
+                )}
+                {!fieldValues.instruction && !fieldValues.pairs?.length && master.content_status !== 'approved' && (
                   <p className="text-sm text-muted-foreground italic">Noch kein Inhalt. Klicke „Inhalt bearbeiten".</p>
                 )}
               </div>
@@ -417,10 +422,15 @@ export default function MasterAufgabeCard({
                   <div className="bg-muted/50 rounded-lg p-3 text-sm">
                     {fieldValues.task_description || <span className="italic text-muted-foreground">Noch kein Inhalt. Klicke „Inhalt bearbeiten".</span>}
                   </div>
-                  {kannBearbeiten && !locked && (
+                  {kannBearbeiten && !locked && master.content_status !== 'approved' && (
                     <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
                       Inhalt bearbeiten
                     </Button>
+                  )}
+                  {master.content_status === 'approved' && (
+                    <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1">
+                      🔒 Freigegeben – Freigabe aufheben um zu bearbeiten
+                    </p>
                   )}
                 </div>
               )}

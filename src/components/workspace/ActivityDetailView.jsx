@@ -73,7 +73,14 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
         <div className="flex gap-2 shrink-0 flex-col items-end">
           <div className="flex gap-2">
             {!editMode ? (
-              <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setEditMode(true)}
+                disabled={activityRecord.content_status === 'approved'}
+                title={activityRecord.content_status === 'approved' ? 'Freigabe zuerst aufheben um zu bearbeiten' : undefined}
+                className="gap-2"
+              >
                 <Edit className="w-3.5 h-3.5" />
                 Bearbeiten
               </Button>

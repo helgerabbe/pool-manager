@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { Plus, Star, FileText, ChevronRight, Edit, Trash2, Copy, CheckCircle2 } from 'lucide-react';
+import { Plus, Star, FileText, ChevronRight, Edit, Trash2, Copy, CheckCircle2, PenLine } from 'lucide-react';
 import ProjektCreateView from './ProjektCreateView';
 import PublishProjektaufgabeButton from './PublishProjektaufgabeButton';
 import LernlandkartePreview from '@/components/lernlandkarte/LernlandkartePreview';
@@ -79,6 +79,7 @@ function ThemenfeldNode({ themenfeld, aufgaben, selectedId, onSelect }) {
 // ── Einzelner Aufgaben-Node im Baum ──
 function AufgabeNode({ aufgabe, isSelected, onSelect }) {
   const hatTitel = !!aufgabe.titel?.trim();
+  const isApproved = aufgabe.content_status === 'approved';
   return (
     <button
       onClick={() => onSelect(aufgabe)}
@@ -89,7 +90,10 @@ function AufgabeNode({ aufgabe, isSelected, onSelect }) {
           : 'hover:bg-muted/50'
       )}
     >
-      <span className="w-1 h-1 rounded-full bg-muted-foreground/40 shrink-0" />
+      {isApproved
+        ? <CheckCircle2 className="w-3 h-3 text-green-600 shrink-0" />
+        : <PenLine className="w-3 h-3 text-amber-500 shrink-0" />
+      }
       <span className={cn('truncate flex-1', !hatTitel && 'italic text-muted-foreground')}>
         {hatTitel ? aufgabe.titel : 'Kein Titel'}
       </span>
@@ -135,9 +139,16 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
           </div>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Status</p>
-          <Badge className={cn('mt-1', hatTitel && hatInhalt ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700')}>
-            {hatTitel && hatInhalt ? '✓ Vollständig' : '⚠ Unvollständig'}
+          <p className="text-xs text-muted-foreground">Freigabe-Status</p>
+          <Badge className={cn('mt-1 flex items-center gap-1 w-fit',
+            aufgabe.content_status === 'approved'
+              ? 'bg-green-100 text-green-700 border border-green-300'
+              : 'bg-amber-100 text-amber-700 border border-amber-300'
+          )}>
+            {aufgabe.content_status === 'approved'
+              ? <><CheckCircle2 className="w-3 h-3" /> Freigegeben</>
+              : <><PenLine className="w-3 h-3" /> In Bearbeitung</>
+            }
           </Badge>
         </div>
       </div>
@@ -170,29 +181,37 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
 
       {/* Aktionen */}
       {kannBearbeiten && (
-        <div className="flex gap-2 pt-4 border-t border-border">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onEdit(aufgabe)}
-            className="gap-2"
-          >
-            <Edit className="w-4 h-4" />
-            Bearbeiten
-          </Button>
+        <div className="flex gap-2 pt-4 border-t border-border flex-wrap">
+          {aufgabe.content_status !== 'approved' ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(aufgabe)}
+              className="gap-2"
+            >
+              <Edit className="w-4 h-4" />
+              Bearbeiten
+            </Button>
+          ) : (
+            <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1 flex items-center gap-1">
+              🔒 Freigegeben – Freigabe aufheben um zu bearbeiten
+            </p>
+          )}
           <PublishProjektaufgabeButton 
             aufgabe={aufgabe} 
             kannBearbeiten={kannBearbeiten}
           />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onDelete(aufgabe.id)}
-            className="gap-2 text-destructive hover:text-destructive ml-auto"
-          >
-            <Trash2 className="w-4 h-4" />
-            Löschen
-          </Button>
+          {aufgabe.content_status !== 'approved' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDelete(aufgabe.id)}
+              className="gap-2 text-destructive hover:text-destructive ml-auto"
+            >
+              <Trash2 className="w-4 h-4" />
+              Löschen
+            </Button>
+          )}
         </div>
       )}
     </div>
