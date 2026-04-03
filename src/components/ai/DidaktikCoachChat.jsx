@@ -148,7 +148,7 @@ export default function DidaktikCoachChat({ onBraindumpUebernehmen }) {
           <div>
             <h3 className="font-semibold text-sm text-foreground">Didaktik-Coach</h3>
             <p className="text-[11px] text-muted-foreground">
-              Strukturiert Ihre Ideen in Themenfelder, Lernpakete & Aufgaben
+              Strukturiert Ihre Ideen in Themenfelder & Lernpakete
             </p>
           </div>
         </div>
@@ -176,7 +176,7 @@ export default function DidaktikCoachChat({ onBraindumpUebernehmen }) {
               <p className="font-semibold text-foreground">Hallo! Ich bin Ihr Didaktik-Coach.</p>
               <p className="text-sm text-muted-foreground mt-1 max-w-xs">
                 Erzählen Sie mir von Ihrem Unterrichtsthema — ich helfe Ihnen, daraus
-                Themenfelder, Lernpakete und Aufgaben zu strukturieren.
+                Themenfelder und Lernpakete zu strukturieren.
               </p>
             </div>
             <div className="flex flex-wrap gap-2 justify-center mt-2">
