@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import ScenarioSelectionCards from './ScenarioSelectionCards';
+import ScenarioSelectionGrid from './ScenarioSelectionGrid';
 
 // Struktur-Vorschau Komponente
 function StructurePreview({ themenfelder = [], lernpakete = [], loading = false }) {
@@ -100,7 +100,7 @@ export default function WizardStepAssistenz({
   const [themenfelder, setThemenfelder] = useState([]);
   const [lernpakete, setLernpakete] = useState([]);
   const [error, setError] = useState(null);
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [viewMode, setViewMode] = useState('initial'); // 'initial' | 'selection' | 'refinement'
   const [szenarien, setSzenarien] = useState(null);
   const [selectedScenario, setSelectedScenario] = useState(null);
   const messagesEndRef = useRef(null);
@@ -138,7 +138,7 @@ export default function WizardStepAssistenz({
       // Prüfe ob es Szenarien gibt (erste Anfrage)
       if (structure && structure.szenario_a && structure.szenario_b) {
         setSzenarien(structure);
-        setIsSelectionMode(true);
+        setViewMode('selection');
       }
       // Oder normale Ein-Szenario-Struktur
       else if (structure && structure.themenfelder && Array.isArray(structure.themenfelder)) {
@@ -201,8 +201,8 @@ export default function WizardStepAssistenz({
       setThemenfelder(flatThemenfelder);
       setLernpakete(flatLernpakete);
 
-      // Beende Selections-Modus
-      setIsSelectionMode(false);
+      // Beende Selections-Modus, starte Refinement
+      setViewMode('refinement');
       setSzenarien(null);
 
       // Sende automatisierte Chat-Nachricht
@@ -252,6 +252,7 @@ export default function WizardStepAssistenz({
       if (structure && structure.szenario_a && structure.szenario_b) {
         setSzenarien(structure);
         setSelectedScenario(null);
+        setViewMode('selection');
       }
     } catch (err) {
       setError(err.message || 'Fehler bei der Neu-Generierung');
@@ -282,34 +283,48 @@ export default function WizardStepAssistenz({
 
       {/* Main Split-Screen Area */}
       <div className="flex flex-1 overflow-hidden gap-4 p-4">
-        {/* Left: Structure Preview or Scenario Selection (70%) */}
+        {/* Left: Structure Preview (70%) */}
         <div className="flex-1 bg-card border rounded-lg p-4 overflow-hidden flex flex-col">
           <div className="mb-4">
             <h3 className="font-semibold text-foreground text-sm">
-              {isSelectionMode ? 'Didaktische Ansätze' : 'Live-Struktur-Vorschau'}
+              {viewMode === 'selection' ? 'Didaktische Ansätze' : 'Struktur-Vorschau'}
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {isSelectionMode ? 'Wählen Sie den gewünschten Ansatz' : 'Nur-Lesen Ansicht'}
+              {viewMode === 'initial' && 'Starten Sie das Gespräch um Vorschläge zu erhalten'}
+              {viewMode === 'selection' && 'Wählen Sie den gewünschten Ansatz'}
+              {viewMode === 'refinement' && `${themenfelder.length} Themenfelder`}
             </p>
           </div>
-          {isSelectionMode && szenarien ? (
-            <ScenarioSelectionCards 
+
+          {viewMode === 'selection' && szenarien ? (
+            <ScenarioSelectionGrid
               szenarien={szenarien}
               onSelect={handleSelectScenario}
               selectedScenario={selectedScenario}
               onRegenerate={handleRegenerateScenarios}
               loading={loading}
             />
-          ) : (
+          ) : viewMode === 'refinement' && themenfelder.length > 0 ? (
             <StructurePreview 
               themenfelder={themenfelder} 
               lernpakete={lernpakete}
               loading={loading}
             />
+          ) : (
+            <div className="text-center py-12 text-muted-foreground flex flex-col items-center justify-center flex-1">
+              {loading ? (
+                <>
+                  <Loader2 className="w-8 h-8 animate-spin mb-3 text-primary" />
+                  <p className="text-sm">Die KI generiert Strukturvorschläge...</p>
+                </>
+              ) : (
+                <p className="text-sm">Starten Sie oben rechts ein Gespräch</p>
+              )}
+            </div>
           )}
         </div>
 
-        {/* Right: Chat Interface (30%, fixed) */}
+        {/* Right: Chat Interface (30%, sticky) */}
         <div className="w-[30%] bg-card border rounded-lg p-4 flex flex-col overflow-hidden">
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto space-y-3 mb-4">
@@ -374,14 +389,16 @@ export default function WizardStepAssistenz({
       {/* Footer with Action Button */}
       <div className="border-t px-6 py-4 bg-muted/30 flex justify-between items-center">
         <p className="text-xs text-muted-foreground">
-          {themenfelder.length > 0
-            ? `${themenfelder.length} Themenfelder, ${lernpakete.length} Lernpakete`
-            : 'Keine Struktur erstellt'}
+          {viewMode === 'selection'
+            ? 'Wählen Sie einen Ansatz aus'
+            : themenfelder.length > 0
+              ? `${themenfelder.length} Themenfelder, ${lernpakete.length} Lernpakete`
+              : 'Keine Struktur erstellt'}
         </p>
         <div className="flex gap-2">
           <Button variant="outline">Zurück</Button>
           <Button
-            disabled={loading || themenfelder.length === 0}
+            disabled={loading || viewMode === 'selection' || themenfelder.length === 0}
             onClick={handleAcceptStructure}
             className="gap-2"
           >
@@ -393,7 +410,7 @@ export default function WizardStepAssistenz({
             ) : (
               <>
                 <CheckCircle className="w-4 h-4" />
-                Struktur in Werkbank übernehmen
+                Struktur übernehmen & zur Werkbank
               </>
             )}
           </Button>
