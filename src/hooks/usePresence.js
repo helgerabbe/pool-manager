@@ -1,123 +1,131 @@
 /**
- * usePresence
- * ───────────
- * Trackt, welche Nutzer eine Einheit gerade geöffnet haben.
- * Mechanismus: Entity-Subscription auf Lernpakete (die beim Lock-System
- * "touched" werden) + periodischer Heartbeat über einen Präsenz-Eintrag
- * im localStorage-Broadcast-Channel.
+ * usePresence (server-side)
+ * ─────────────────────────
+ * Trackt, welche Nutzer eine Einheit gerade geöffnet haben – geräteübergreifend.
+ * Mechanismus: base44 Entity `ActiveUsersPresence` + Realtime-Subscription.
  *
- * Kein separater WebSocket-Server nötig: Nutzt BroadcastChannel (same-origin
- * Tab-Sync) + base44 entity-Subscription als "Heartbeat-Trigger".
+ * - Beim Mounten: eigenen Eintrag erstellen/aktualisieren
+ * - Heartbeat alle 15s: last_seen_at aktualisieren
+ * - Subscription: andere Nutzer in Echtzeit sehen
+ * - Beim Unmounten / beforeunload: eigenen Eintrag löschen
  *
  * Rückgabe: { onlineUsers: [{ email, name }], count: number }
  */
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 
-const HEARTBEAT_INTERVAL = 15_000; // 15 s
-const STALE_TIMEOUT      = 40_000; // 40 s → gilt als offline
+const HEARTBEAT_INTERVAL = 15_000; // 15s
+const STALE_THRESHOLD_MS = 30_000; // 30s
 
 export function usePresence(einheitId) {
-  const [peers, setPeers] = useState({}); // { email: { name, lastSeen } }
-  const channelRef        = useRef(null);
-  const heartbeatRef      = useRef(null);
-  const myEmailRef        = useRef(null);
-  const myNameRef         = useRef(null);
-
-  // Stale-Peers bereinigen
-  const pruneStale = useCallback(() => {
-    const now = Date.now();
-    setPeers(prev => {
-      const next = { ...prev };
-      let changed = false;
-      Object.entries(next).forEach(([email, data]) => {
-        if (now - data.lastSeen > STALE_TIMEOUT) {
-          delete next[email];
-          changed = true;
-        }
-      });
-      return changed ? next : prev;
-    });
-  }, []);
-
-  const broadcast = useCallback((type) => {
-    if (!channelRef.current || !myEmailRef.current || !einheitId) return;
-    channelRef.current.postMessage({
-      type,
-      einheitId,
-      email: myEmailRef.current,
-      name:  myNameRef.current || myEmailRef.current,
-    });
-  }, [einheitId]);
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const myRecordIdRef  = useRef(null);
+  const myEmailRef     = useRef(null);
+  const heartbeatRef   = useRef(null);
+  const unsubscribeRef = useRef(null);
 
   useEffect(() => {
     if (!einheitId) return;
 
-    // Eigene Identität laden
-    base44.auth.me().then(user => {
-      if (!user) return;
+    let mounted = true;
+
+    const init = async () => {
+      const user = await base44.auth.me();
+      if (!user || !mounted) return;
+
       myEmailRef.current = user.email;
-      myNameRef.current  = user.full_name || user.email;
+      const now = new Date().toISOString();
 
-      // BroadcastChannel öffnen (channel-Name beinhaltet einheitId → isoliert)
-      const ch = new BroadcastChannel(`presence_${einheitId}`);
-      channelRef.current = ch;
+      // Existierenden Eintrag suchen (eigener Nutzer, selbe Einheit)
+      const existing = await base44.entities.ActiveUsersPresence.filter({
+        user_email: user.email,
+        current_view: einheitId,
+      });
 
-      ch.onmessage = (ev) => {
-        const { type, email, name } = ev.data || {};
-        if (!email || email === myEmailRef.current) return;
+      if (!mounted) return;
 
-        if (type === 'leave') {
-          setPeers(prev => {
-            const next = { ...prev };
-            delete next[email];
-            return next;
-          });
-        } else {
-          setPeers(prev => ({
-            ...prev,
-            [email]: { name: name || email, lastSeen: Date.now() },
-          }));
+      let recordId;
+      if (existing.length > 0) {
+        recordId = existing[0].id;
+        await base44.entities.ActiveUsersPresence.update(recordId, {
+          last_seen_at: now,
+          user_name: user.full_name || user.email,
+        });
+      } else {
+        const created = await base44.entities.ActiveUsersPresence.create({
+          user_email: user.email,
+          user_name: user.full_name || user.email,
+          current_view: einheitId,
+          last_seen_at: now,
+        });
+        recordId = created.id;
+      }
+
+      if (!mounted) {
+        // Wenn in der Zwischenzeit unmounted, sofort wieder löschen
+        base44.entities.ActiveUsersPresence.delete(recordId);
+        return;
+      }
+
+      myRecordIdRef.current = recordId;
+
+      // Hilfsfunktion: Anwesenheitsliste aus DB laden und stale-Filter anwenden
+      const loadPresence = async () => {
+        const all = await base44.entities.ActiveUsersPresence.filter({
+          current_view: einheitId,
+        });
+        const cutoff = Date.now() - STALE_THRESHOLD_MS;
+        const active = all.filter(entry => {
+          if (entry.user_email === myEmailRef.current) return false;
+          return new Date(entry.last_seen_at).getTime() > cutoff;
+        });
+        if (mounted) {
+          setOnlineUsers(active.map(e => ({ email: e.user_email, name: e.user_name || e.user_email })));
         }
       };
 
-      // Sofort ankündigen
-      broadcast('join');
+      // Erste Ladung
+      await loadPresence();
 
-      // Heartbeat
-      heartbeatRef.current = setInterval(() => {
-        broadcast('heartbeat');
-        pruneStale();
+      // Realtime-Subscription: bei jeder Änderung in der Tabelle neu laden
+      unsubscribeRef.current = base44.entities.ActiveUsersPresence.subscribe(() => {
+        loadPresence();
+      });
+
+      // Heartbeat: eigenes last_seen_at aktualisieren
+      heartbeatRef.current = setInterval(async () => {
+        if (!myRecordIdRef.current) return;
+        await base44.entities.ActiveUsersPresence.update(myRecordIdRef.current, {
+          last_seen_at: new Date().toISOString(),
+        });
       }, HEARTBEAT_INTERVAL);
+    };
 
-      // Seite/Tab verlassen
-      const handleUnload = () => broadcast('leave');
-      window.addEventListener('beforeunload', handleUnload);
-
-      return () => {
-        broadcast('leave');
-        window.removeEventListener('beforeunload', handleUnload);
-        clearInterval(heartbeatRef.current);
-        ch.close();
-        channelRef.current = null;
-      };
-    });
-  }, [einheitId, broadcast, pruneStale]);
-
-  // Einheit wechseln → alten Kanal sauber schließen
-  useEffect(() => {
-    return () => {
-      if (channelRef.current) {
-        broadcast('leave');
-        channelRef.current.close();
-        channelRef.current = null;
-      }
+    // Cleanup-Funktion: eigenen Eintrag löschen
+    const cleanup = () => {
+      mounted = false;
       clearInterval(heartbeatRef.current);
-      setPeers({});
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
+      if (myRecordIdRef.current) {
+        base44.entities.ActiveUsersPresence.delete(myRecordIdRef.current);
+        myRecordIdRef.current = null;
+      }
+    };
+
+    // beforeunload: Eintrag sofort entfernen
+    const handleUnload = () => cleanup();
+    window.addEventListener('beforeunload', handleUnload);
+
+    init();
+
+    return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+      cleanup();
     };
   }, [einheitId]);
-
-  const onlineUsers = Object.entries(peers).map(([email, { name }]) => ({ email, name }));
 
   return { onlineUsers, count: onlineUsers.length };
 }

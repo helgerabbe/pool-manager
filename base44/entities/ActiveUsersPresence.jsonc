@@ -1,0 +1,28 @@
+{
+  "name": "ActiveUsersPresence",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "E-Mail des aktiven Nutzers"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Anzeigename des Nutzers"
+    },
+    "current_view": {
+      "type": "string",
+      "description": "ID der aktuell angesehenen Einheit (einheitId)"
+    },
+    "last_seen_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel des letzten Heartbeats \u2013 Eintr\u00e4ge \u00e4lter als 30s gelten als offline"
+    }
+  },
+  "required": [
+    "user_email",
+    "current_view",
+    "last_seen_at"
+  ]
+}
