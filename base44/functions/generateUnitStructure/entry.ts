@@ -59,7 +59,7 @@ FÜR FOLGE-ANFRAGEN (Nach Szenario-Auswahl):
 Arbeite im Standard-Modus (ein Szenario, pädagogische Erläuterung + JSON mit "themenfelder" Key).
 Verfeinere das gewählte Szenario basierend auf Nutzerfeedback.
 
-WICHTIG: Das JSON muss VALID sein und muss IMMER nach '---JSON_START---' folgen.`;
+WICHTIG: Das JSON muss VALID sein und muss IMMER nach '---JSON_START---' folgen. Gib das JSON absolut roh zurück. Verwende KEINE Markdown-Formatierungen wie \`\`\`json vor oder nach dem Objekt.`;
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
@@ -125,9 +125,13 @@ Basierend auf dem bisherigen Gesprächsverlauf und den Stammdaten, generiere jet
 
     if (jsonMatch && jsonMatch[1]) {
       try {
-        structure = JSON.parse(jsonMatch[1]);
+        // Entferne Markdown-Codeblock-Syntax (```json ... ```) die KIs oft fälschlicherweise generieren
+        let jsonString = jsonMatch[1].trim();
+        jsonString = jsonString.replace(/^```(json)?\n?/i, '').replace(/\n?```$/i, '').trim();
+        structure = JSON.parse(jsonString);
       } catch (e) {
         console.error('JSON Parse Error:', e);
+        console.error('Fehlerhafter JSON-String:', jsonMatch[1]);
       }
     }
 
