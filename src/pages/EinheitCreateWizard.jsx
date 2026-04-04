@@ -84,10 +84,42 @@ export default function EinheitCreateWizard() {
   };
 
   const handleStep2Done = async (structureData) => {
-    // updated_date aktualisieren, damit der Entwurf nicht als "veraltet" gilt
-    if (einheitId) {
-      await base44.entities.Einheiten.update(einheitId, { version: (stammdaten.version || 1) });
+    const { themenfelder = [], lernpakete = [] } = structureData || {};
+
+    // Themenfelder + Lernpakete aus dem KI-Assistenten in die DB schreiben
+    if (einheitId && themenfelder.length > 0) {
+      // Zuerst alte Default-Einträge bereinigen
+      const existingTf = await base44.entities.Themenfeld.filter({ einheit_id: einheitId });
+      const existingLp = await base44.entities.Lernpakete.filter({ einheit_id: einheitId });
+      await Promise.all([
+        ...existingTf.map(tf => base44.entities.Themenfeld.delete(tf.id)),
+        ...existingLp.map(lp => base44.entities.Lernpakete.delete(lp.id)),
+      ]);
+
+      // Neue Struktur anlegen
+      for (let i = 0; i < themenfelder.length; i++) {
+        const tf = themenfelder[i];
+        const newTf = await base44.entities.Themenfeld.create({
+          einheit_id: einheitId,
+          titel: tf.titel,
+          reihenfolge: i + 1,
+        });
+        const pakete = lernpakete.filter(lp => lp.themenfeld_id === tf.id);
+        for (let j = 0; j < pakete.length; j++) {
+          await base44.entities.Lernpakete.create({
+            einheit_id: einheitId,
+            themenfeld_id: newTf.id,
+            titel_des_pakets: pakete[j].titel_des_pakets,
+            geschaetzte_dauer_minuten: pakete[j].geschaetzte_dauer_minuten || 45,
+            reihenfolge_nummer: j + 1,
+          });
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['themenfelder', einheitId] });
+      queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
     }
+
     setCompletedSteps(prev => [...new Set([...prev, 2])]);
     setCurrentStep(3);
   };
