@@ -80,24 +80,24 @@ export default function UserInviteTab({ benutzer = [] }) {
         
         return (
           <Card key={b.id} className="border-0 shadow-sm">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
+            <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
                 <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-xs font-bold text-amber-700 shrink-0">
                   {(b.vorname || '?')[0]}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{b.vorname} {b.nachname}</p>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Mail className="w-3 h-3" />{b.user_id}
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                    <Mail className="w-3 h-3 shrink-0" />{b.user_id}
                   </p>
                   {lastInvite && (
                     <p className="text-xs text-blue-600 flex items-center gap-1 mt-1">
-                      <Info className="w-3 h-3" /> Einladung gesendet am {format(new Date(lastInvite.created_date), 'dd. MMM HH:mm', { locale: de })}
+                      <Info className="w-3 h-3 shrink-0" /> Einladung gesendet am {format(new Date(lastInvite.created_date), 'dd. MMM HH:mm', { locale: de })}
                     </p>
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0 ml-4">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant="outline" className="text-xs">{b.rolle}</Badge>
                 {isRegistered ? (
                   <Badge className="text-xs bg-green-100 text-green-700">Registriert</Badge>
