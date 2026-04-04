@@ -79,6 +79,14 @@
         ]
       }
     },
+    "prioritaete_lernziele": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array von Lernziel-IDs, die als hochpriorit\u00e4r markiert sind",
+      "default": []
+    },
     "sync_status": {
       "type": "string",
       "enum": [
