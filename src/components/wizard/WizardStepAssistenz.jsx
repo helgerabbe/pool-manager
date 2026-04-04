@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, CheckCircle, AlertCircle, Wand2, HammerIcon, Upload, FileText, X } from 'lucide-react';
+import { Loader2, Send, CheckCircle, AlertCircle, Wand2, HammerIcon, Upload, FileText, X, Undo2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ScenarioSelectionGrid from './ScenarioSelectionGrid';
 
@@ -234,8 +234,28 @@ export default function WizardStepAssistenz({
   const [viewMode, setViewMode] = useState('initial'); // 'initial' | 'selection' | 'refinement'
   const [szenarien, setSzenarien] = useState(null);
   const [selectedScenario, setSelectedScenario] = useState(null);
+  const [structureHistory, setStructureHistory] = useState([]); // Undo-Historie (max. 8 Einträge)
   const messagesEndRef = useRef(null);
   const autoFetchDone = useRef(false);
+
+  // Hilfsfunktion: Speichert aktuellen Stand in Historie, bevor neue Struktur gesetzt wird
+  const pushToHistory = (currentTf, currentLp) => {
+    if (currentTf.length === 0) return;
+    setStructureHistory(prev => [...prev.slice(-7), { themenfelder: currentTf, lernpakete: currentLp }]);
+  };
+
+  // Undo: Letzten gespeicherten Stand wiederherstellen
+  const handleUndo = () => {
+    if (structureHistory.length === 0) return;
+    const prev = structureHistory[structureHistory.length - 1];
+    setThemenfelder(prev.themenfelder);
+    setLernpakete(prev.lernpakete);
+    setStructureHistory(h => h.slice(0, -1));
+    setMessages(m => [...m, {
+      role: 'user',
+      content: 'Der Nutzer hat die letzte Änderung verworfen und ist zum vorherigen Stand zurückgekehrt.',
+    }]);
+  };
 
   // Auto-scroll zu neuester Message
   useEffect(() => {
@@ -325,10 +345,10 @@ export default function WizardStepAssistenz({
       }
       // Refinement: direkt die Vorschau auf der linken Seite aktualisieren
       else if (structure && structure.themenfelder && Array.isArray(structure.themenfelder)) {
+        pushToHistory(themenfelder, lernpakete); // aktuellen Stand sichern
         const { flatThemenfelder, flatLernpakete } = flattenStructure(structure);
         setThemenfelder(flatThemenfelder);
         setLernpakete(flatLernpakete);
-        // Falls wir noch nicht im refinement-Modus waren, jetzt wechseln
         if (viewMode !== 'refinement') setViewMode('refinement');
       }
     } catch (err) {
@@ -348,6 +368,7 @@ export default function WizardStepAssistenz({
     // Extrahiere die gewählte Struktur
     const selectedData = szenarien[scenarioKey];
     if (selectedData && selectedData.themenfelder) {
+      pushToHistory(themenfelder, lernpakete); // aktuellen Stand sichern (falls vorhanden)
       const { flatThemenfelder, flatLernpakete } = flattenStructure(selectedData);
       setThemenfelder(flatThemenfelder);
       setLernpakete(flatLernpakete);
@@ -448,16 +469,31 @@ export default function WizardStepAssistenz({
       <div className="flex flex-1 overflow-hidden gap-4 p-4">
         {/* Left: Structure Preview (70%) */}
         <div className="flex-1 bg-card border rounded-lg p-4 overflow-hidden flex flex-col">
-          <div className="mb-4">
-            <h3 className="font-semibold text-foreground text-sm">
-              {viewMode === 'selection' ? 'Didaktische Ansätze' : loading ? 'Didaktische Ansätze' : 'Struktur-Vorschau'}
-            </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {loading && viewMode === 'initial' && 'KI generiert zwei Struktur-Vorschläge...'}
-              {!loading && viewMode === 'initial' && 'Starten Sie das Gespräch um Vorschläge zu erhalten'}
-              {viewMode === 'selection' && 'Wählen Sie den gewünschten Ansatz'}
-              {viewMode === 'refinement' && `${themenfelder.length} Themenfelder`}
-            </p>
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-foreground text-sm">
+                {viewMode === 'selection' ? 'Didaktische Ansätze' : loading ? 'Didaktische Ansätze' : 'Struktur-Vorschau'}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {loading && viewMode === 'initial' && 'KI generiert zwei Struktur-Vorschläge...'}
+                {!loading && viewMode === 'initial' && 'Starten Sie das Gespräch um Vorschläge zu erhalten'}
+                {viewMode === 'selection' && 'Wählen Sie den gewünschten Ansatz'}
+                {viewMode === 'refinement' && `${themenfelder.length} Themenfelder`}
+              </p>
+            </div>
+            {viewMode === 'refinement' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleUndo}
+                disabled={structureHistory.length === 0 || loading}
+                className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                title="Letzte KI-Änderung rückgängig machen"
+              >
+                <Undo2 className="w-3.5 h-3.5" />
+                Rückgängig {structureHistory.length > 0 && `(${structureHistory.length})`}
+              </Button>
+            )}
           </div>
 
           {viewMode === 'selection' && szenarien ? (
