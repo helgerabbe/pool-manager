@@ -29,17 +29,17 @@ function flattenStructure(structure) {
 function StructurePreview({ themenfelder = [], lernpakete = [], loading = false }) {
   if (loading && themenfelder.length === 0) {
     return (
-      <div className="flex flex-col gap-3 flex-1">
+      <div className="flex flex-col gap-2 flex-1">
         <div className="flex items-center gap-2 mb-1">
           <Loader2 className="w-4 h-4 animate-spin text-primary" />
           <p className="text-xs text-muted-foreground">KI entwirft Struktur-Vorschlag...</p>
         </div>
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="space-y-2">
-            <div className="h-10 bg-blue-100 rounded-lg animate-pulse" />
-            <div className="ml-4 space-y-2">
+          <div key={i} className="space-y-1">
+            <div className="h-7 bg-blue-100 rounded animate-pulse" />
+            <div className="ml-3 space-y-1">
               {[...Array(2)].map((_, j) => (
-                <div key={j} className="h-8 bg-slate-100 rounded-lg animate-pulse" />
+                <div key={j} className="h-6 bg-slate-100 rounded animate-pulse" />
               ))}
             </div>
           </div>
@@ -57,25 +57,21 @@ function StructurePreview({ themenfelder = [], lernpakete = [], loading = false 
   }
 
   return (
-    <div className="space-y-4 overflow-y-auto pr-2 flex-1">
+    <div className="space-y-2 overflow-y-auto pr-1 flex-1">
       {themenfelder.map(tf => (
-        <div key={tf.id} className="space-y-2">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <h4 className="font-semibold text-sm text-foreground">{tf.titel}</h4>
+        <div key={tf.id} className="space-y-1">
+          <div className="bg-blue-50 border border-blue-200 rounded px-2 py-1">
+            <h4 className="font-semibold text-xs text-foreground">{tf.titel}</h4>
           </div>
-          <div className="ml-4 space-y-2">
+          <div className="ml-3 space-y-0.5">
             {lernpakete
               .filter(lp => lp.themenfeld_id === tf.id)
-              .map((lp, idx) => (
+              .map((lp) => (
                 <div
                   key={lp.id}
-                  className="bg-slate-50 border border-slate-200 rounded-lg p-2.5"
-                  style={{ animationDelay: `${idx * 80}ms` }}
+                  className="bg-slate-50 border border-slate-200 rounded px-2 py-1"
                 >
-                  <p className="text-sm font-medium text-foreground">{lp.titel_des_pakets}</p>
-                  {lp.geschaetzte_dauer_minuten && (
-                    <p className="text-xs text-muted-foreground mt-0.5">⏱ {lp.geschaetzte_dauer_minuten} Min</p>
-                  )}
+                  <p className="text-xs text-foreground leading-tight">{lp.titel_des_pakets}</p>
                 </div>
               ))}
           </div>
@@ -227,7 +223,7 @@ export default function WizardStepAssistenz({
   };
 
   return (
-    <div className="flex flex-col bg-background" style={{ height: 'calc(100vh - 220px)' }}>
+    <div className="flex flex-col bg-background" style={{ height: 'calc(100vh - 160px)' }}>
       {/* Header */}
       <div className="border-b px-4 py-3 flex-shrink-0">
         <h2 className="text-base font-semibold">KI-Assistent: Struktur-Design</h2>
@@ -239,7 +235,7 @@ export default function WizardStepAssistenz({
       {/* Split-Screen */}
       <div className="flex flex-1 overflow-hidden gap-3 p-3">
         {/* Links: Struktur-Vorschau */}
-        <div className="flex-1 bg-card border rounded-lg p-4 overflow-hidden flex flex-col">
+        <div className="flex-1 bg-card border rounded-lg p-3 overflow-hidden flex flex-col">
           <div className="mb-3 flex items-center justify-between flex-shrink-0">
             <div>
               <h3 className="font-semibold text-sm text-foreground">Struktur-Vorschau</h3>
