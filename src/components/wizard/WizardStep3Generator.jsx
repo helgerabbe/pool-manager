@@ -59,7 +59,7 @@ export default function WizardStep3Generator({ einheitId, onDone }) {
       <div className="flex justify-end pt-2 border-t border-border">
         <Button onClick={() => onDone(paketeFuerEinheit)} className="gap-2">
           <ChevronRight className="w-4 h-4" />
-          Weiter zu Phase-Konfiguration
+          Weiter zu den Lernzielen
         </Button>
       </div>
     </div>
