@@ -42,7 +42,7 @@ export function useRBAC() {
 
   const profil     = benutzerProfile[0] || null;
   // Base44-Admins sind automatisch Administrator – auch ohne DB-Profil-Eintrag
-  const realRolle  = authUser?.role === 'Administrator' ? ROLLEN.ADMIN : (profil?.rolle || ROLLEN.BETRACHTER);
+  const realRolle  = (authUser?.role === 'Administrator' || authUser?.role === 'admin') ? ROLLEN.ADMIN : (profil?.rolle || ROLLEN.BETRACHTER);
   const realFaecher = profil?.fachbereich_zustaendigkeit || [];
 
   // ── Impersonation: mockedRole überschreibt immer die echte Rolle ─────────
@@ -60,7 +60,7 @@ export function useRBAC() {
     refetchInterval: 15000, // alle 15s im Hintergrund pollen
   });
   const wartungsmodus = systemSettings.find(s => s.schluessel === 'wartungsmodus')?.wert_boolean === true;
-  const schreibgesperrt = wartungsmodus && realRolle !== ROLLEN.ADMIN;
+  const schreibgesperrt = wartungsmodus && realRolle !== ROLLEN.ADMIN && authUser?.role !== 'admin';
 
   const basePermissions = getPermissions(aktiveRolle, aktiveFaecher);
 
