@@ -86,7 +86,7 @@ function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseA
           </span>
           <span className="truncate flex-1">{phaseLabel}</span>
           {!isSelected && activities.length > 0 && (
-            <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded shrink-0">{activities.length}</span>
+            <span className="w-5 h-5 flex items-center justify-center rounded-full bg-green-500 text-white text-[10px] font-bold shrink-0">{activities.length}</span>
           )}
         </button>
       </div>
@@ -115,7 +115,7 @@ function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseA
 }
 
 function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenzielleUndGesperrt, aktivitaetenMap, paketPhaseActivities, showNumber = false, phaseAktivitaeten = [] }) {
-  const [open, setOpen] = useState(false);
+   const [open, setOpen] = useState(false); // Geschlossen am Anfang
   const isSelected = selectedId === paket.id;
   const status = getLernpaketStatus(paket, lernziele, aufgaben, userEmail, mappings, phaseAktivitaeten);
   const lockedByOther = isPaketLocked(paket) && paket.locked_by !== userEmail;
