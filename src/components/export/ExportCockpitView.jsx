@@ -160,17 +160,20 @@ function CockpitSlot({ slotId, slot, updateSlot, removeSlot, selectedEinheitIds,
                                 isSelectable ? 'hover:bg-muted/20' : 'opacity-60'
                               )}>
                                 <Checkbox
-                                  checked={isSelected}
-                                  onCheckedChange={() => toggleActivities([act])}
-                                  disabled={!isSelectable}
-                                  className="h-4 w-4 shrink-0"
-                                />
-                                <span className={cn(
-                                  'text-xs flex-1 truncate',
-                                  isApproved ? 'text-foreground' : 'text-muted-foreground'
-                                )}>
-                                  {act.phase === 'Input' ? '📚' : act.phase === 'Übung' ? '✏️' : '🎯'} {actName}
-                                </span>
+                                   checked={isSelected}
+                                   onCheckedChange={() => toggleActivities([act])}
+                                   disabled={!isSelectable}
+                                   className="h-4 w-4 shrink-0"
+                                 />
+                                 <button
+                                   onClick={() => onNavigateToActivity?.(act.id, paket.id)}
+                                   className={cn(
+                                     'text-xs flex-1 truncate text-left transition',
+                                     isApproved ? 'text-primary hover:underline' : 'text-muted-foreground'
+                                   )}
+                                 >
+                                   {act.phase === 'Input' ? '📚' : act.phase === 'Übung' ? '✏️' : '🎯'} {actName}
+                                 </button>
                                 {isPending && <UndoButton activityId={act.id} />}
                                 <AktivitaetStatusBadge activity={act} />
                               </div>
