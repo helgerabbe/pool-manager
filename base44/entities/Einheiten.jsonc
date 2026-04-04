@@ -53,6 +53,15 @@
       "type": "string",
       "description": "FK zur Zeitphase (Halbjahr) aus LookupPhasen"
     },
+    "wizard_status": {
+      "type": "string",
+      "enum": [
+        "entwurf",
+        "aktiv"
+      ],
+      "default": "aktiv",
+      "description": "Wizard-Status: 'entwurf' = noch im Wizard, f\u00fcr andere unsichtbar. 'aktiv' = fertig und sichtbar."
+    },
     "freigabe_status": {
       "type": "string",
       "enum": [

@@ -65,12 +65,17 @@ Deno.serve(async (req) => {
     const benutzer = benutzerList?.[0];
     const role = benutzer?.rolle;
 
-    let filterCriteria = {};
+    // Basis-Filter: Entwürfe (noch im Wizard) sind für alle unsichtbar,
+    // außer dem Ersteller selbst. Da der Ersteller der einzige ist, der
+    // im Wizard arbeitet, reicht es, wizard_status != 'entwurf' zu filtern.
+    const draftFilter = { wizard_status: { $ne: 'entwurf' } };
+
+    let filterCriteria = { ...draftFilter };
 
     // Rolle bestimmt Filtierung:
     if (role === 'Administrator') {
-      // Admin sieht alles: Kein Filter
-      filterCriteria = {};
+      // Admin sieht alles außer Entwürfen
+      filterCriteria = { ...draftFilter };
     } else if (role === 'Fachschaftsleitung') {
       // Fachschaftsleitung sieht nur ihre Fächer
       const subjects = benutzer?.fachbereich_zustaendigkeit || [];
@@ -96,8 +101,8 @@ Deno.serve(async (req) => {
           }
         );
       }
-      // Fach muss in der Liste sein
-      filterCriteria = { fach: { $in: subjects } };
+      // Fach muss in der Liste sein, und kein Entwurf
+      filterCriteria = { ...draftFilter, fach: { $in: subjects } };
     } else if (role === 'Fachlehrkraft' || role === 'Betrachter') {
       // Fachlehrkraft/Betrachter sieht nur Einheiten, zu denen er Mitglied ist
       const membership = await base44.asServiceRole.entities.EinheitMembers.filter({
@@ -127,7 +132,7 @@ Deno.serve(async (req) => {
           }
         );
       }
-      filterCriteria = { id: { $in: einheitIds } };
+      filterCriteria = { ...draftFilter, id: { $in: einheitIds } };
     } else {
       // Unbekannte Rolle → keine Einheiten
       return Response.json(

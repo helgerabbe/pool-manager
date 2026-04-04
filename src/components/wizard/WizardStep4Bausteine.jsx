@@ -12,7 +12,7 @@ const PHASEN = [
   { key: 'Abschluss', label: 'Abschluss', color: 'bg-purple-50 border-purple-200' },
 ];
 
-export default function WizardStep4Bausteine({ einheitId, onDone, onSkipAll }) {
+export default function WizardStep4Bausteine({ einheitId, onDone, onSkipAll, onFinalize }) {
   const queryClient = useQueryClient();
   const [generating, setGenerating] = useState(false);
   const [done, setDone] = useState(false);
@@ -80,6 +80,11 @@ export default function WizardStep4Bausteine({ einheitId, onDone, onSkipAll }) {
     toast.success(`${count} Lernpakete mit Phasenkonfiguration aktualisiert.`);
     setGenerating(false);
     setDone(true);
+
+    // Einheit sofort auf 'aktiv' setzen und abschließen
+    await base44.entities.Einheiten.update(einheitId, { wizard_status: 'aktiv' });
+    queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+    if (onFinalize) onFinalize();
   };
 
   return (
@@ -140,14 +145,18 @@ export default function WizardStep4Bausteine({ einheitId, onDone, onSkipAll }) {
       )}
 
       <div className="flex justify-between pt-2 border-t border-border">
-        <Button variant="outline" onClick={onSkipAll || onDone} className="gap-2 text-muted-foreground border-dashed">
+        <Button variant="outline" onClick={async () => {
+          await base44.entities.Einheiten.update(einheitId, { wizard_status: 'aktiv' });
+          queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+          if (onSkipAll) onSkipAll(); else if (onDone) onDone();
+        }} className="gap-2 text-muted-foreground border-dashed">
           <SkipForward className="w-4 h-4" />
-          Überspringen & Leer starten
+          Überspringen & Einheit aktivieren
         </Button>
         {!done ? (
           <Button onClick={handleGenerieren} disabled={generating || paketeFuerEinheit.length === 0} className="gap-2">
             {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <BookOpen className="w-4 h-4" />}
-            Phasenkonfiguration speichern
+            Speichern & Einheit aktivieren
           </Button>
         ) : (
           <Button onClick={onDone} className="gap-2 bg-green-600 hover:bg-green-700">

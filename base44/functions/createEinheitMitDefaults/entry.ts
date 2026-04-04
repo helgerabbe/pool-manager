@@ -28,10 +28,11 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Fehlende Pflichtfelder: fach, titel_der_einheit, jahrgangsstufe' }, { status: 400 });
   }
 
-  // Schritt 1: Einheit anlegen
+  // Schritt 1: Einheit anlegen (als Entwurf – unsichtbar für andere User bis Wizard abgeschlossen)
   const einheit = await base44.entities.Einheiten.create({
     ...metaData,
-    freigabe_status: 'In Planung',
+    wizard_status: 'entwurf',
+    freigabe_status: 'Freigegeben für Bearbeitung',
     sync_status: 'new',
   });
 

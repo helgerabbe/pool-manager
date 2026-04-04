@@ -105,7 +105,11 @@ export default function EinheitenListe() {
 
   const { data: einheiten = [], isLoading } = useQuery({
     queryKey: ['einheiten'],
-    queryFn: () => base44.entities.Einheiten.list('-created_date'),
+    queryFn: async () => {
+      // Entwürfe (noch im Wizard) werden nie angezeigt
+      const all = await base44.entities.Einheiten.list('-created_date');
+      return all.filter(e => e.wizard_status !== 'entwurf');
+    },
   });
 
   const { data: lernpakete = [] } = useQuery({
