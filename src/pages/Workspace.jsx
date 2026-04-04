@@ -397,9 +397,9 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                   </div>
                 </aside>
 
-                <main className="flex-1 overflow-y-auto min-h-0">
-                  <ErrorBoundary label="Detail-Panel">
-                    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <main className="flex-1 overflow-hidden min-h-0">
+                   <ErrorBoundary label="Detail-Panel">
+                     <div className="h-full overflow-y-auto max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                       {selectedNode?.type === 'aktivitaet-edit' ? (() => {
                         const activityRecord = lernpaketAktivitaeten.find((a) => a.id === selectedNode.activityRecordId);
                         if (!activityRecord) return null;
