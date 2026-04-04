@@ -84,12 +84,19 @@ export default function EinheitCreateWizard() {
   };
 
   const handleStep2Done = async (structureData) => {
-    // Structure wurde bereits aktualisiert, weitergehen zu Step 3
+    // updated_date aktualisieren, damit der Entwurf nicht als "veraltet" gilt
+    if (einheitId) {
+      await base44.entities.Einheiten.update(einheitId, { version: (stammdaten.version || 1) });
+    }
     setCompletedSteps(prev => [...new Set([...prev, 2])]);
     setCurrentStep(3);
   };
 
-  const handleStep3Done = (pakete) => {
+  const handleStep3Done = async (pakete) => {
+    // updated_date aktualisieren
+    if (einheitId) {
+      await base44.entities.Einheiten.update(einheitId, { version: (stammdaten.version || 1) });
+    }
     setPaketeCreated(pakete || []);
     queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
     queryClient.invalidateQueries({ queryKey: ['lernziele'] });
