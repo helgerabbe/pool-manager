@@ -6,7 +6,8 @@ import { useRBAC } from '@/hooks/useRBAC';
 import WizardStep1Meta from '@/components/wizard/WizardStep1Meta';
 import WizardStepAssistenz from '@/components/wizard/WizardStepAssistenz';
 import WizardStep3Generator from '@/components/wizard/WizardStep3Generator';
-import WizardStep4Bausteine from '@/components/wizard/WizardStep4Bausteine';
+import WizardStepLernziele from '@/components/wizard/WizardStepLernziele';
+import WizardStep5Phasen from '@/components/wizard/WizardStep5Phasen';
 import WizardStepper from '@/components/wizard/WizardStepper';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -133,9 +134,15 @@ export default function EinheitCreateWizard() {
   };
 
   const handleStep4Done = () => {
+    queryClient.invalidateQueries({ queryKey: ['lernziele'] });
+    setCompletedSteps(prev => [...new Set([...prev, 4])]);
+    setCurrentStep(5);
+  };
+
+  const handleStep5Done = () => {
     queryClient.invalidateQueries({ queryKey: ['aufgaben'] });
     queryClient.invalidateQueries({ queryKey: ['einheiten'] });
-    setCompletedSteps(prev => [...new Set([...prev, 4])]);
+    setCompletedSteps(prev => [...new Set([...prev, 5])]);
     if (einheitId) {
       base44.entities.Einheiten.update(einheitId, { wizard_status: 'aktiv' });
     }
@@ -171,7 +178,7 @@ export default function EinheitCreateWizard() {
         <p className="text-muted-foreground mt-1 text-sm">
           {draftId
             ? `Weiter an: ${stammdaten.titel_der_einheit || '...'}`
-            : 'Geführter Prozess in 4 Schritten – vom Thema bis zur befüllten Lernstruktur.'}
+            : 'Geführter Prozess in 5 Schritten – vom Thema bis zur befüllten Lernstruktur.'}
         </p>
       </div>
 
@@ -229,10 +236,18 @@ export default function EinheitCreateWizard() {
       )}
       {currentStep === 4 && einheitId && (
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm min-h-[400px]">
-          <WizardStep4Bausteine
+          <WizardStepLernziele
+            einheitId={einheitId}
+            onDone={handleStep4Done}
+          />
+        </div>
+      )}
+      {currentStep === 5 && einheitId && (
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm min-h-[400px]">
+          <WizardStep5Phasen
             einheitId={einheitId}
             pakete={paketeCreated}
-            onDone={handleStep4Done}
+            onDone={handleStep5Done}
             onSkipAll={handleSkipToStruktur}
           />
         </div>
