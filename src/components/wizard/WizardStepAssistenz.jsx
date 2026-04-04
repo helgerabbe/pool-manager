@@ -111,6 +111,7 @@ export default function WizardStepAssistenz({
   const [lernpakete, setLernpakete] = useState([]);
   const [error, setError] = useState(null);
   const [structureHistory, setStructureHistory] = useState([]);
+  const [isTransferring, setIsTransferring] = useState(false);
   const messagesEndRef = useRef(null);
   const initialFetchDone = useRef(false);
 
@@ -217,13 +218,32 @@ export default function WizardStepAssistenz({
   };
 
   const handleAcceptStructure = async () => {
-    if (onStructureAccepted) {
-      await onStructureAccepted({ messages, themenfelder, lernpakete });
+    setIsTransferring(true);
+    try {
+      if (onStructureAccepted) {
+        await onStructureAccepted({ messages, themenfelder, lernpakete });
+      }
+    } catch (err) {
+      console.error('Transfer error:', err);
+      setError(err.message || 'Fehler beim Übertragen der Struktur');
+      setIsTransferring(false);
     }
   };
 
   return (
-    <div className="flex flex-col bg-background" style={{ height: 'calc(100vh - 160px)' }}>
+    <div className="flex flex-col bg-background relative" style={{ height: 'calc(100vh - 160px)' }}>
+      {/* Transfer-Overlay */}
+      {isTransferring && (
+        <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-card border border-border rounded-xl p-8 shadow-lg flex flex-col items-center gap-4">
+            <Loader2 className="w-12 h-12 animate-spin text-primary" />
+            <div className="text-center">
+              <p className="font-semibold text-foreground">Wird in die Werkbank übertragen...</p>
+              <p className="text-sm text-muted-foreground mt-1">Bitte einen Moment Geduld.</p>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="border-b px-4 py-3 flex-shrink-0">
         <h2 className="text-base font-semibold">KI-Assistent: Struktur-Design</h2>
@@ -312,17 +332,32 @@ export default function WizardStepAssistenz({
 
       {/* Footer */}
       <div className="border-t px-4 py-3 bg-muted/30 flex justify-between items-center flex-shrink-0">
-        <Button variant="ghost" size="sm" onClick={onSkipToManual} className="text-muted-foreground text-xs">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={onSkipToManual} 
+          disabled={isTransferring}
+          className="text-muted-foreground text-xs"
+        >
           Ohne Struktur zur manuellen Erstellung
         </Button>
         <Button
-          disabled={loading || themenfelder.length === 0}
+          disabled={loading || themenfelder.length === 0 || isTransferring}
           onClick={handleAcceptStructure}
           className="gap-2"
           size="sm"
         >
-          <CheckCircle className="w-4 h-4" />
-          Struktur übernehmen & zur Werkbank
+          {isTransferring ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Wird übertragen...
+            </>
+          ) : (
+            <>
+              <CheckCircle className="w-4 h-4" />
+              Struktur übernehmen & zur Werkbank
+            </>
+          )}
         </Button>
       </div>
     </div>
