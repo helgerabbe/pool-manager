@@ -184,7 +184,7 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
 }
 
 function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenziell, aktivitaetenMap, paketPhaseActivitiesMap, isSammelbecken = false, phaseAktivitaeten = [] }) {
-  const [open, setOpen] = useState(true);
+   const [open, setOpen] = useState(false);
   const isSelected = selectedId === `themenfeld-${themenfeld.id}`;
 
   const paketStatuses = lernpakete.map(p => getLernpaketStatus(p, lernziele, aufgaben, userEmail, mappings, phaseAktivitaeten));
