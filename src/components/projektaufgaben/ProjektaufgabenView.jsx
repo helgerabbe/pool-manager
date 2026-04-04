@@ -314,15 +314,21 @@ export default function ProjektaufgabenView({
       base44.entities.Themenfeld.filter({ einheit_id: einheitId }),
   });
 
-  const { data: lernpakete = [] } = useQuery({
+  const { data: allLernpakete = [] } = useQuery({
     queryKey: ['lernpakete'],
     queryFn: () => base44.entities.Lernpakete.list(),
   });
 
-  const { data: lernziele = [] } = useQuery({
+  // Filtere nur Pakete für diese Einheit
+  const lernpakete = allLernpakete.filter(p => p.einheit_id === einheitId);
+
+  const { data: allLernziele = [] } = useQuery({
     queryKey: ['lernziele'],
     queryFn: () => base44.entities.Lernziele.list(),
   });
+
+  // Filtere nur Ziele für die Pakete dieser Einheit
+  const lernziele = allLernziele.filter(lz => lernpakete.some(p => p.id === lz.lernpaket_id));
 
   const { data: aufgaben = [] } = useQuery({
     queryKey: ['aufgaben'],
