@@ -45,6 +45,10 @@ export default function EinheitCreateWizard() {
           jahrgangsstufe: einheit.jahrgangsstufe,
           zeit_phase_id: einheit.zeit_phase_id,
         });
+        // Lade den tatsächlich erreichten max Schritt
+        const maxStep = einheit.wizard_max_step || draftStep;
+        setCurrentStep(maxStep);
+        setCompletedSteps(Array.from({ length: maxStep - 1 }, (_, i) => i + 1));
       }
       setIsDraftLoading(false);
     });
@@ -121,6 +125,10 @@ export default function EinheitCreateWizard() {
     queryClient.invalidateQueries({ queryKey: ['themenfelder', einheitId] });
     queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
 
+    if (einheitId) {
+      await base44.entities.Einheiten.update(einheitId, { wizard_max_step: 3 });
+    }
+
     setCompletedSteps(prev => [...new Set([...prev, 2])]);
     setCurrentStep(3);
   };
@@ -130,23 +138,29 @@ export default function EinheitCreateWizard() {
     queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
     queryClient.invalidateQueries({ queryKey: ['lernziele'] });
     setCompletedSteps(prev => [...new Set([...prev, 3])]);
+    if (einheitId) {
+      await base44.entities.Einheiten.update(einheitId, { wizard_max_step: 4 });
+    }
     setCurrentStep(4);
   };
 
-  const handleStep4Done = () => {
+  const handleStep4Done = async () => {
     queryClient.invalidateQueries({ queryKey: ['lernziele'] });
     setCompletedSteps(prev => [...new Set([...prev, 4])]);
+    if (einheitId) {
+      await base44.entities.Einheiten.update(einheitId, { wizard_max_step: 5 });
+    }
     setCurrentStep(5);
   };
 
-  const handleStep5Done = () => {
+  const handleStep5Done = async () => {
     queryClient.invalidateQueries({ queryKey: ['aufgaben'] });
     queryClient.invalidateQueries({ queryKey: ['einheiten'] });
     setCompletedSteps(prev => [...new Set([...prev, 5])]);
     if (einheitId) {
-      base44.entities.Einheiten.update(einheitId, { wizard_status: 'aktiv' });
+      await base44.entities.Einheiten.update(einheitId, { wizard_status: 'aktiv' });
     }
-    navigate(`/workspace?einheit=${einheitId}&fromWizard=1`);
+    navigate(`/workspace?einheit=${einheitId}&tab=unit-overview&fromWizard=1`);
   };
 
   const handleStepClick = (stepId) => {
