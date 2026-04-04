@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Mail, Send, AlertTriangle, CheckCircle, Clock, Info } from 'lucide-react';
+import { Mail, Send, AlertTriangle, CheckCircle, Clock, Info, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
-export default function UserInviteTab({ benutzer = [] }) {
+export default function UserInviteTab({ benutzer = [], onEdit, onDelete }) {
   const queryClient = useQueryClient();
   const [inviteId, setInviteId] = useState(null);
   const [invitingId, setInvitingId] = useState(null);
@@ -116,6 +116,18 @@ export default function UserInviteTab({ benutzer = [] }) {
                   <Send className="w-3.5 h-3.5" />
                   Einladen
                 </Button>
+                {onEdit && (
+                  <Button size="sm" variant="ghost" onClick={() => onEdit(b)} className="gap-1.5">
+                    <Edit className="w-3.5 h-3.5" />
+                    Bearbeiten
+                  </Button>
+                )}
+                {onDelete && (
+                  <Button size="sm" variant="ghost" onClick={() => onDelete(b.id)} className="gap-1.5 text-destructive hover:text-destructive">
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Löschen
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

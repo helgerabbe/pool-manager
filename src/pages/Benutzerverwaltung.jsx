@@ -593,7 +593,11 @@ export default function Benutzerverwaltung() {
 
                   {/* Tab 2: Ausstehende Einladungen */}
                   <TabsContent value="pending" className="p-4 m-0">
-                  <UserInviteTab benutzer={benutzer} />
+                  <UserInviteTab
+                    benutzer={benutzer}
+                    onEdit={setEditingUser}
+                    onDelete={setDeleteId}
+                  />
                   </TabsContent>
                   </Tabs>
                   </CardContent>
