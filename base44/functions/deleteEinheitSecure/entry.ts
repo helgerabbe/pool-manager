@@ -114,11 +114,13 @@ Deno.serve(async (req) => {
     const benutzer = benutzerList?.[0];
     const role = benutzer?.rolle;
     
-    // Simple RBAC: Administrator always allowed, Fachlehrkraft only if unit lead
+    // Eigene Entwürfe darf jeder immer löschen (noch kein Membership-Eintrag vorhanden)
     let allowed = false;
     let rbacReason = '';
-    
-    if (role === 'Administrator') {
+
+    if (einheit.wizard_status === 'entwurf' && einheit.created_by === user.email) {
+      allowed = true;
+    } else if (role === 'Administrator') {
       allowed = true;
     } else if (role === 'Fachschaftsleitung') {
       // Check if responsible for this subject
