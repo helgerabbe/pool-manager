@@ -195,6 +195,27 @@ function EntryModeSelection({ stammdaten, onManual, onStartAI }) {
   );
 }
 
+// Hilfsfunktion: Flacht ein struktur-Objekt {themenfelder:[...]} in den lokalen State-Format um
+function flattenStructure(structure) {
+  const flatThemenfelder = structure.themenfelder.map((tf, idx) => ({
+    id: `tf-${idx}`,
+    titel: tf.titel,
+    beschreibung: tf.beschreibung || '',
+  }));
+  const flatLernpakete = [];
+  structure.themenfelder.forEach((tf, tfIdx) => {
+    (tf.lernpakete || []).forEach((lp, lpIdx) => {
+      flatLernpakete.push({
+        id: `lp-${tfIdx}-${lpIdx}`,
+        themenfeld_id: `tf-${tfIdx}`,
+        titel_des_pakets: lp.titel,
+        geschaetzte_dauer_minuten: lp.geschaetzte_dauer_minuten || 60,
+      });
+    });
+  });
+  return { flatThemenfelder, flatLernpakete };
+}
+
 export default function WizardStepAssistenz({
   einheitId,
   stammdaten = {},
@@ -245,22 +266,7 @@ export default function WizardStepAssistenz({
           setSzenarien(structure);
           setViewMode('selection');
         } else if (structure && structure.themenfelder && Array.isArray(structure.themenfelder)) {
-          const flatThemenfelder = structure.themenfelder.map((tf, idx) => ({
-            id: `tf-${idx}`,
-            titel: tf.titel,
-            beschreibung: tf.beschreibung || '',
-          }));
-          const flatLernpakete = [];
-          structure.themenfelder.forEach((tf, tfIdx) => {
-            (tf.lernpakete || []).forEach((lp, lpIdx) => {
-              flatLernpakete.push({
-                id: `lp-${tfIdx}-${lpIdx}`,
-                themenfeld_id: `tf-${tfIdx}`,
-                titel_des_pakets: lp.titel,
-                geschaetzte_dauer_minuten: lp.geschaetzte_dauer_minuten || 60,
-              });
-            });
-          });
+          const { flatThemenfelder, flatLernpakete } = flattenStructure(structure);
           setThemenfelder(flatThemenfelder);
           setLernpakete(flatLernpakete);
           setViewMode('refinement');
@@ -287,10 +293,24 @@ export default function WizardStepAssistenz({
     setError(null);
 
     try {
+      // Aktuellen Struktur-Kontext als JSON mitschicken, damit das Backend weiß was gerade existiert
+      const currentStructureContext = viewMode === 'refinement' && themenfelder.length > 0
+        ? JSON.stringify({
+            themenfelder: themenfelder.map(tf => ({
+              titel: tf.titel,
+              beschreibung: tf.beschreibung,
+              lernpakete: lernpakete
+                .filter(lp => lp.themenfeld_id === tf.id)
+                .map(lp => ({ titel: lp.titel_des_pakets, geschaetzte_dauer_minuten: lp.geschaetzte_dauer_minuten })),
+            })),
+          })
+        : null;
+
       const response = await base44.functions.invoke('generateUnitStructure', {
         stammdaten,
         messages: [...messages, { role: 'user', content: userMessage }],
         documentUrls: activeDocumentUrls,
+        currentStructure: currentStructureContext,
       });
 
       const chatText = response.data?.aiResponse || 'Keine Antwort erhalten.';
@@ -298,33 +318,18 @@ export default function WizardStepAssistenz({
 
       setMessages(prev => [...prev, { role: 'assistant', content: chatText }]);
 
-      // Prüfe ob es Szenarien gibt (erste Anfrage)
+      // Szenario-Auswahl (nur bei erster Anfrage)
       if (structure && structure.szenario_a && structure.szenario_b) {
         setSzenarien(structure);
         setViewMode('selection');
       }
-      // Oder normale Ein-Szenario-Struktur
+      // Refinement: direkt die Vorschau auf der linken Seite aktualisieren
       else if (structure && structure.themenfelder && Array.isArray(structure.themenfelder)) {
-        const flatThemenfelder = structure.themenfelder.map((tf, idx) => ({
-          id: `tf-${idx}`,
-          titel: tf.titel,
-          beschreibung: tf.beschreibung || '',
-        }));
-
-        const flatLernpakete = [];
-        structure.themenfelder.forEach((tf, tfIdx) => {
-          (tf.lernpakete || []).forEach((lp, lpIdx) => {
-            flatLernpakete.push({
-              id: `lp-${tfIdx}-${lpIdx}`,
-              themenfeld_id: `tf-${tfIdx}`,
-              titel_des_pakets: lp.titel,
-              geschaetzte_dauer_minuten: lp.geschaetzte_dauer_minuten || 60,
-            });
-          });
-        });
-
+        const { flatThemenfelder, flatLernpakete } = flattenStructure(structure);
         setThemenfelder(flatThemenfelder);
         setLernpakete(flatLernpakete);
+        // Falls wir noch nicht im refinement-Modus waren, jetzt wechseln
+        if (viewMode !== 'refinement') setViewMode('refinement');
       }
     } catch (err) {
       setError(err.message || 'Fehler bei der KI-Kommunikation');
@@ -343,24 +348,7 @@ export default function WizardStepAssistenz({
     // Extrahiere die gewählte Struktur
     const selectedData = szenarien[scenarioKey];
     if (selectedData && selectedData.themenfelder) {
-      const flatThemenfelder = selectedData.themenfelder.map((tf, idx) => ({
-        id: `tf-${idx}`,
-        titel: tf.titel,
-        beschreibung: tf.beschreibung || '',
-      }));
-
-      const flatLernpakete = [];
-      selectedData.themenfelder.forEach((tf, tfIdx) => {
-        (tf.lernpakete || []).forEach((lp, lpIdx) => {
-          flatLernpakete.push({
-            id: `lp-${tfIdx}-${lpIdx}`,
-            themenfeld_id: `tf-${tfIdx}`,
-            titel_des_pakets: lp.titel,
-            geschaetzte_dauer_minuten: lp.geschaetzte_dauer_minuten || 60,
-          });
-        });
-      });
-
+      const { flatThemenfelder, flatLernpakete } = flattenStructure(selectedData);
       setThemenfelder(flatThemenfelder);
       setLernpakete(flatLernpakete);
 

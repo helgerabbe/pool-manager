@@ -74,13 +74,18 @@ Deno.serve(async (req) => {
       stammdaten,
       messages = [],
       documentUrls = [],
+      currentStructure = null,
     } = await req.json();
 
     if (!stammdaten) {
       return Response.json({ error: 'Missing stammdaten' }, { status: 400 });
     }
 
-    // Baue Kontext aus Stammdaten
+    // Baue Kontext aus Stammdaten + aktueller Struktur (für Refinement-Loop)
+    const structureContext = currentStructure
+      ? `\nAktuell bestehende Struktur (bitte gezielt anpassen, nicht komplett neu generieren):\n${currentStructure}`
+      : '';
+
     const contextInfo = `
 Unterrichtseinheit:
 - Titel: ${stammdaten.titel_der_einheit}
@@ -88,6 +93,7 @@ Unterrichtseinheit:
 - Jahrgangsstufe: ${stammdaten.jahrgangsstufe}
 - Zeitraum: ${stammdaten.zeit_phase_id}
 ${documentUrls?.length > 0 ? `- Dokumente hochgeladen: ${documentUrls.length}` : ''}
+${structureContext}
 
 Entwirf eine strukturierte Unterrichtseinheit basierend auf diesen Vorgaben.`;
 
