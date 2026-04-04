@@ -44,7 +44,12 @@ export default function UserInviteTab({ benutzer = [], onEdit, onDelete }) {
   });
 
   const inviteMutation = useMutation({
-    mutationFn: (data) => base44.functions.invoke('inviteUserSecure', data),
+    mutationFn: async ({ email, rolle }) => {
+      // Platform-eingebauter Einladungsversand — versendet die E-Mail direkt
+      await base44.users.inviteUser(email, 'user');
+      // AuditLog separat schreiben (fire & forget)
+      base44.functions.invoke('inviteUserSecure', { email, rolle }).catch(() => {});
+    },
     onSuccess: () => {
       toast.success('Einladung gesendet!');
       setInviteId(null);
@@ -52,8 +57,8 @@ export default function UserInviteTab({ benutzer = [], onEdit, onDelete }) {
       queryClient.invalidateQueries({ queryKey: ['auditLog'] });
     },
     onError: (err) => {
-      const msg = err.response?.data?.error || err.message;
-      toast.error(`Fehler: ${msg}`);
+      const msg = err?.message || 'Unbekannter Fehler';
+      toast.error(`Fehler beim Senden: ${msg}`);
     }
   });
 
