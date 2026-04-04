@@ -1,65 +1,29 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
-const SYSTEM_PROMPT = `Rolle & Expertise:
-Du bist ein hochqualifizierter Didaktik-Experte für Gesamtschulen in Niedersachsen. Dein Spezialgebiet ist die kompetenzorientierte Unterrichtsentwicklung auf Basis der aktuellen Kerncurricula. Du unterstützt Lehrkräfte dabei, komplexe Unterrichtsthemen in eine klare, motivierende Struktur zu bringen.
+const SYSTEM_PROMPT = `Du bist ein hochqualifizierter Didaktik-Experte für Gesamtschulen in Niedersachsen. Dein Spezialgebiet ist die kompetenzorientierte Unterrichtsentwicklung auf Basis der aktuellen Kerncurricula.
 
-Deine Konzepte (Die POOL-MANAGER Logik):
-Du strukturierst Einheiten nach einer festen Hierarchie:
-1. THEMENFELD (Container): Eine thematische Klammer für ca. 1-2 Wochen Unterricht (z.B. 'Analyse von Kurzgeschichten').
-2. LERNPAKET: Eine konkrete Untereinheit innerhalb eines Themenfelds (z.B. 'Merkmale erkennen' oder 'Inhaltsangabe schreiben').
+Du strukturierst Unterrichtseinheiten nach dieser Hierarchie:
+1. THEMENFELD: Eine thematische Klammer für ca. 1-2 Wochen Unterricht.
+2. LERNPAKET: Eine konkrete Untereinheit innerhalb eines Themenfelds.
 
-SPEZIAL-MODUS: SZENARIO-GENERIERUNG (ERSTE ANFRAGE)
-Wenn dies die ERSTE Anfrage an den KI-Assistenten ist (kein Gesprächsverlauf vorhanden oder explizite Regenerierungs-Aufforderung):
-- Generiere ZWEI DEUTLICH UNTERSCHIEDLICHE, didaktisch begründete Szenarien (Szenario A und Szenario B).
-- Szenario A: "Klassisch-analytisch" – Fokus auf systematische Analyse, Fachstrukturen, logisch-deduktive Progression. Gut für strukturorientierte Lernende und Klassen mit hohem Leistungsniveau.
-- Szenario B: "Projektorientiert-kreativ" – Fokus auf handlungsorientierte Prozesse, Schülerfragen, explorativer Erwerb, Binnendifferenzierung. Gut für heterogene Klassen und Kompetenzförderung.
-- Die beiden Szenarien sollten in Themenfelder-Anzahl, Lernpaket-Fokus und didaktischer Tiefe deutlich voneinander abweichen.
-- Begründe jedes Szenario klar mit didaktischen Argumenten (z.B. Kompetenzbereiche nach Kerncurriculum, Schülerorientierung).
-- Präsentiere beide im Chat als konkrete, wählbare Alternativen.
+Für JEDE Anfrage (initial oder Folge-Anfrage) gilt:
+- Erstelle EINEN passgenauen Struktur-Entwurf als valides JSON.
+- Bei Folge-Anfragen: Passe die bestehende Struktur gezielt an das Nutzerfeedback an, generiere sie NICHT komplett neu.
+- Nutze niedersächsische Fachterminologie und achte auf logische Progression.
 
-Regeln für deine Antwort:
-- Sei kollegial, beratend und fachlich fundiert.
-- Nutze niedersächsische Fachterminologie (z.B. 'Kompetenzbereiche', 'Binnendifferenzierung').
-- Achte auf eine logische Progression (vom Einfachen zum Komplexen).
-
-TECHNISCHE VORGABE (Zwingend):
-Deine Antwort muss IMMER aus zwei Teilen bestehen, die durch die Zeichenfolge '---JSON_START---' getrennt sind.
-
-FÜR ERSTE ANFRAGE (Szenario-Modus):
-TEIL 1: Zwei pädagogische Erläuterungen (mit Zwischenüberschriften "Szenario A" und "Szenario B").
-TEIL 2: JSON mit zwei Szenarien:
+TECHNISCHE VORGABE (zwingend):
+- Gib AUSSCHLIESSLICH das rohe JSON zurück. Keinen erklärenden Text, keine Einleitung, kein Markdown.
+- Das JSON muss exakt diesem Schema folgen:
 {
-  "szenario_a": {
-    "titel": "Kurzer aussagekräftiger Titel",
-    "erlaeuterung": "Pädagogische Begründung (1-2 Absätze)",
-    "themenfelder": [
-      {
-        "titel": "Themenfeld-Name",
-        "lernpakete": [
-          { "titel": "Lernpaket-Name" }
-        ]
-      }
-    ]
-  },
-  "szenario_b": {
-    "titel": "Kurzer aussagekräftiger Titel",
-    "erlaeuterung": "Pädagogische Begründung (1-2 Absätze)",
-    "themenfelder": [
-      {
-        "titel": "Themenfeld-Name",
-        "lernpakete": [
-          { "titel": "Lernpaket-Name" }
-        ]
-      }
-    ]
-  }
-}
-
-FÜR FOLGE-ANFRAGEN (Nach Szenario-Auswahl):
-Arbeite im Standard-Modus (ein Szenario, pädagogische Erläuterung + JSON mit "themenfelder" Key).
-Verfeinere das gewählte Szenario basierend auf Nutzerfeedback.
-
-WICHTIG: Das JSON muss VALID sein und muss IMMER nach '---JSON_START---' folgen. Gib das JSON absolut roh zurück. Verwende KEINE Markdown-Formatierungen wie \`\`\`json vor oder nach dem Objekt.`;
+  "themenfelder": [
+    {
+      "titel": "Themenfeld-Name",
+      "lernpakete": [
+        { "titel": "Lernpaket-Name" }
+      ]
+    }
+  ]
+}`;
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
@@ -81,69 +45,53 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing stammdaten' }, { status: 400 });
     }
 
-    // Baue Kontext aus Stammdaten + aktueller Struktur (für Refinement-Loop)
     const structureContext = currentStructure
-      ? `\nAktuell bestehende Struktur (bitte gezielt anpassen, nicht komplett neu generieren):\n${currentStructure}`
+      ? `\nAktuell bestehende Struktur (nur gezielt anpassen):\n${currentStructure}`
       : '';
 
-    const contextInfo = `
-Unterrichtseinheit:
+    const fullPrompt = `Unterrichtseinheit:
 - Titel: ${stammdaten.titel_der_einheit}
 - Fach: ${stammdaten.fach}
 - Jahrgangsstufe: ${stammdaten.jahrgangsstufe}
-- Zeitraum: ${stammdaten.zeit_phase_id}
+- Zeitraum: ${stammdaten.zeit_phase_id || '–'}
 ${documentUrls?.length > 0 ? `- Dokumente hochgeladen: ${documentUrls.length}` : ''}
 ${structureContext}
 
-Entwirf eine strukturierte Unterrichtseinheit basierend auf diesen Vorgaben.`;
+${messages.length > 0
+  ? `Bisheriger Gesprächsverlauf:\n${messages.map(m => `${m.role === 'user' ? 'Lehrkraft' : 'KI'}: ${m.content}`).join('\n')}\n\nBitte passe die Struktur entsprechend dem letzten Wunsch der Lehrkraft an.`
+  : 'Erstelle einen passenden Struktur-Entwurf für diese Einheit.'}
 
-    // Baue LLM-Request mit Chat-Verlauf
-    const conversationMessages = [
-      ...messages.map(m => ({
-        role: m.role,
-        content: m.content,
-      })),
-    ];
+Antworte AUSSCHLIESSLICH mit dem rohen JSON. Kein Text davor oder danach.`;
 
-    const fullPrompt = `${contextInfo}
-
-Basierend auf dem bisherigen Gesprächsverlauf und den Stammdaten, generiere jetzt die strukturierte Einheit mit Themenfeldern und Lernpaketen.`;
-
-    // Rufe LLM auf
-    const response = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const rawResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: fullPrompt,
       model: 'claude_sonnet_4_6',
-      // Für echte Dokument-Verarbeitung würde man file_urls übergeben
-      // file_urls: documentUrls && documentUrls.length > 0 ? documentUrls : undefined,
     });
 
-    const aiResponse = response || '';
+    // Bereinige Markdown-Codeblöcke falls vorhanden
+    let jsonString = (rawResponse || '').trim();
+    jsonString = jsonString.replace(/^```(json)?\s*/i, '').replace(/\s*```$/i, '').trim();
 
-    // Extrahiere JSON aus Antwort nach ---JSON_START---
-    const jsonMatch = aiResponse.match(/---JSON_START---\s*([\s\S]*?)$/);
     let structure = null;
+    let aiResponse = '';
 
-    if (jsonMatch && jsonMatch[1]) {
-      try {
-        // Entferne Markdown-Codeblock-Syntax (```json ... ```) die KIs oft fälschlicherweise generieren
-        let jsonString = jsonMatch[1].trim();
-        jsonString = jsonString.replace(/^```(json)?\n?/i, '').replace(/\n?```$/i, '').trim();
-        structure = JSON.parse(jsonString);
-      } catch (e) {
-        console.error('JSON Parse Error:', e);
-        console.error('Fehlerhafter JSON-String:', jsonMatch[1]);
+    try {
+      structure = JSON.parse(jsonString);
+      // Erfolgs-Chat-Text manuell generieren
+      if (messages.length === 0) {
+        aiResponse = `Hier ist mein Vorschlag für die Struktur deiner Einheit „${stammdaten.titel_der_einheit}". Die Themenfelder und Lernpakete sind links sichtbar. Du kannst mir jetzt Änderungswünsche mitteilen – z.B. Lernpakete umbenennen, hinzufügen oder die Reihenfolge anpassen.`;
+      } else {
+        aiResponse = `Ich habe die Struktur entsprechend angepasst. Die aktualisierte Vorschau siehst du links. Was möchtest du als nächstes ändern?`;
       }
+    } catch (e) {
+      console.error('JSON Parse Error:', e);
+      console.error('Raw response:', jsonString);
+      aiResponse = 'Die KI konnte keine gültige Struktur generieren. Bitte versuche es erneut oder formuliere deinen Wunsch anders.';
     }
-
-    // Trenne Chat-Text vom JSON sauber auf Backend-Seite
-    const separatorIndex = aiResponse.indexOf('---JSON_START---');
-    const chatText = separatorIndex !== -1
-      ? aiResponse.substring(0, separatorIndex).trim()
-      : aiResponse.trim();
 
     return Response.json({
       success: true,
-      aiResponse: chatText,  // Nur der Chat-Text ohne JSON-Block
+      aiResponse,
       structure,
     });
   } catch (error) {
