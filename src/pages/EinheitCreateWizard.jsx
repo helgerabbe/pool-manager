@@ -125,20 +125,20 @@ export default function EinheitCreateWizard() {
   };
 
   const handleStep3Done = async (pakete) => {
-    if (einheitId) {
-      await base44.entities.Einheiten.update(einheitId, { wizard_status: 'aktiv' });
-    }
     setPaketeCreated(pakete || []);
     queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
     queryClient.invalidateQueries({ queryKey: ['lernziele'] });
-    queryClient.invalidateQueries({ queryKey: ['einheiten'] });
     setCompletedSteps(prev => [...new Set([...prev, 3])]);
-    navigate(`/workspace?einheit=${einheitId}&fromWizard=1`);
+    setCurrentStep(4);
   };
 
   const handleStep4Done = () => {
     queryClient.invalidateQueries({ queryKey: ['aufgaben'] });
+    queryClient.invalidateQueries({ queryKey: ['einheiten'] });
     setCompletedSteps(prev => [...new Set([...prev, 4])]);
+    if (einheitId) {
+      base44.entities.Einheiten.update(einheitId, { wizard_status: 'aktiv' });
+    }
     navigate(`/workspace?einheit=${einheitId}&fromWizard=1`);
   };
 
