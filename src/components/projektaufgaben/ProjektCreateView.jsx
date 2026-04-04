@@ -54,13 +54,9 @@ function MaterialUploader({ materials, onMaterialsChange }) {
   const [uploading, setUploading] = useState(false);
 
   const addMaterial = async () => {
-    if (!newMaterial.content) {
-      toast.error('Bitte geben Sie Inhalt ein');
-      return;
-    }
-
     let finalMaterial = { ...newMaterial };
 
+    // Abhängig vom Typ: Validierung und Upload
     if (newMaterial.type === 'pdf' || newMaterial.type === 'image') {
       if (!newMaterial.file) {
         toast.error('Bitte wählen Sie eine Datei');
@@ -70,17 +66,26 @@ function MaterialUploader({ materials, onMaterialsChange }) {
       try {
         const { file_url } = await base44.integrations.Core.UploadFile({ file: newMaterial.file });
         finalMaterial = { ...finalMaterial, url: file_url, content: '' };
+        toast.success('Datei hochgeladen!');
       } catch (err) {
         toast.error('Fehler beim Upload');
         setUploading(false);
         return;
       }
       setUploading(false);
+    } else {
+      // freitext oder book_ref: Inhalts-Validierung
+      if (!newMaterial.content?.trim()) {
+        toast.error('Bitte geben Sie Inhalt ein');
+        return;
+      }
     }
 
+    // Material zur Liste hinzufügen
     onMaterialsChange([...materials, finalMaterial]);
-    setNewMaterial({ type: 'freitext', content: '', label: '', file: null });
-    setActiveTab('freitext');
+    
+    // Formular zurücksetzen und Tab halten für weitere Einträge
+    setNewMaterial({ type: activeTab, content: '', label: '', file: null });
     toast.success('Material hinzugefügt');
   };
 
