@@ -118,7 +118,7 @@ export default function GesamtzielManager({ einheitId, gesamtziele = [], onUpdat
 
       {ziele.length === 0 && (
         <p className="text-xs text-muted-foreground italic">
-          Noch keine Gesamtziele gesetzt. Diese bilden später die Kompetenzlandkarte.
+          Noch keine Gesamtziele gesetzt. Diese bilden später die Kompetenz-Karte.
         </p>
       )}
     </div>
