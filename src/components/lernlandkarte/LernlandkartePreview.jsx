@@ -15,23 +15,15 @@ function LernzielCompact({ lernziel, isPrioritized = false, onTogglePriority, ka
       {kannBearbeiten && onTogglePriority && (
         <div className="flex items-center gap-2 mb-1.5 pb-1.5 border-b border-border/50">
           <label className="flex items-center gap-2 cursor-pointer group">
-            <input
-              type="checkbox"
-              checked={isPrioritized}
-              onChange={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onTogglePriority(lernziel.id);
-              }}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              className="w-4 h-4 cursor-pointer accent-amber-500"
-            />
-            <span className={cn('text-xs font-semibold transition-colors', isPrioritized ? 'text-amber-600' : 'text-muted-foreground group-hover:text-foreground')}>
-              {isPrioritized ? '★ Hohe Prio' : 'Hohe Prio'}
-            </span>
+           <input
+             type="checkbox"
+             checked={isPrioritized}
+             onChange={() => onTogglePriority(lernziel.id)}
+             className="w-4 h-4 cursor-pointer accent-amber-500"
+           />
+           <span className={cn('text-xs font-semibold transition-colors', isPrioritized ? 'text-amber-600' : 'text-muted-foreground group-hover:text-foreground')}>
+             {isPrioritized ? '★ Hohe Prio' : 'Hohe Prio'}
+           </span>
           </label>
         </div>
       )}
