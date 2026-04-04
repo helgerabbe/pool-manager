@@ -280,7 +280,7 @@ function EmptyState() {
 
 // ── Haupt-Komponente ──────────────────────────────────────────────────────────
 
-export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail, userRole }) {
+export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail, userRole, initialActivityId = null }) {
   const queryClient = useQueryClient();
   // selectedItem: null | { type: 'activity', activity } | { type: 'master', master } | { type: 'klon', klon }
   const [selectedItem, setSelectedItem] = useState(null);
@@ -363,6 +363,16 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
       if (updated) setSelectedItem({ type: 'klon', klon: updated });
     }
   }, [allActivities, alleMaster, alleKlone]);
+
+  // Wenn initialActivityId gesetzt, suche die Activity und wähle sie automatisch
+  useEffect(() => {
+    if (initialActivityId && allActivities.length > 0) {
+      const activity = allActivities.find(a => a.id === initialActivityId);
+      if (activity) {
+        setSelectedItem({ type: 'activity', activity });
+      }
+    }
+  }, [initialActivityId, allActivities]);
 
   // Gruppiert nach Themenfeld
   const groupedPakete = themenfelder.length > 0
