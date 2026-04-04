@@ -377,26 +377,13 @@ export default function WizardStepAssistenz({
       setViewMode('refinement');
       setSzenarien(null);
 
-      // Sende automatisierte Chat-Nachricht
-      const confirmMessage = `Ich habe mich für ${scenarioKey === 'szenario_a' ? 'Szenario A' : 'Szenario B'} entschieden. Lass uns das verfeinern.`;
-      setMessages(prev => [...prev, { role: 'user', content: confirmMessage }]);
-      
-      // Versuche automatisch die Verfeinerung abzurufen
-      setLoading(true);
-      try {
-        const response = await base44.functions.invoke('generateUnitStructure', {
-          stammdaten,
-          messages: [...messages, { role: 'assistant', content: selectedData.erlaeuterung }],
-          documentUrls: activeDocumentUrls,
-        });
-
-        const chatText = response.data?.aiResponse || '';
-        if (chatText) setMessages(prev => [...prev, { role: 'assistant', content: chatText }]);
-      } catch (err) {
-        console.error('Refinement error:', err);
-      } finally {
-        setLoading(false);
-      }
+      // Bestätigungsnachrichten im Chat anzeigen – kein weiterer API-Call nötig
+      const scenarioLabel = scenarioKey === 'szenario_a' ? 'Szenario A' : 'Szenario B';
+      setMessages(prev => [
+        ...prev,
+        { role: 'user', content: `Ich entscheide mich für ${scenarioLabel}.` },
+        { role: 'assistant', content: `Super! Ich habe ${scenarioLabel} übernommen. Die Struktur ist jetzt links sichtbar. Du kannst sie jetzt im Chat weiter verfeinern – z.B. Lernpakete umbenennen, hinzufügen oder entfernen.` },
+      ]);
     }
   };
 
