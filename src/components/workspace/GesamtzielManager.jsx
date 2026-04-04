@@ -17,7 +17,8 @@ export default function GesamtzielManager({ einheitId, gesamtziele = [], onUpdat
     
     setSaving(true);
     try {
-      const updatedZiele = [...ziele, newZiel.trim()];
+      const vollstaendigesZiel = `Du kannst ${newZiel.trim()}`;
+      const updatedZiele = [...ziele, vollstaendigesZiel];
       await base44.entities.Einheiten.update(einheitId, { gesamtziele: updatedZiele });
       setZiele(updatedZiele);
       setNewZiel('');
@@ -85,11 +86,14 @@ export default function GesamtzielManager({ einheitId, gesamtziele = [], onUpdat
         </div>
       )}
 
+      {/* Satzanfang-Vorlage */}
+      <p className="text-sm italic text-muted-foreground">Du kannst<span className="font-light">…</span></p>
+
       {/* Eingabefeld für neues Ziel */}
       <div className="flex gap-2 items-end">
         <div className="flex-1">
           <Input
-            placeholder="Neues Gesamtziel eingeben..."
+            placeholder="Eingabe vervollständigen (z.B. ‚Gedichte interpretieren')"
             value={newZiel}
             onChange={e => setNewZiel(e.target.value)}
             onKeyDown={handleKeyDown}
