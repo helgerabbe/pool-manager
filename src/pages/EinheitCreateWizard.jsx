@@ -115,13 +115,15 @@ export default function EinheitCreateWizard() {
           });
         }
       }
-
-      queryClient.invalidateQueries({ queryKey: ['themenfelder', einheitId] });
-      queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
     }
 
-    setCompletedSteps(prev => [...new Set([...prev, 2])]);
-    setCurrentStep(3);
+    // Einheit auf aktiv setzen und direkt zur Werkbank navigieren
+    await base44.entities.Einheiten.update(einheitId, { wizard_status: 'aktiv' });
+    queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+    queryClient.invalidateQueries({ queryKey: ['themenfelder', einheitId] });
+    queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+
+    navigate(`/workspace?einheit=${einheitId}&fromWizard=1`);
   };
 
   const handleStep3Done = async (pakete) => {

@@ -322,7 +322,7 @@ export default function WizardStepAssistenz({
           size="sm"
         >
           <CheckCircle className="w-4 h-4" />
-          Struktur übernehmen
+          Struktur übernehmen & zur Werkbank
         </Button>
       </div>
     </div>
