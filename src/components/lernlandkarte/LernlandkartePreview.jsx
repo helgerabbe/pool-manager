@@ -5,13 +5,15 @@ import { Badge } from '@/components/ui/badge';
 import { BookOpen, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// ── Kompakte Lernziel-Anzeige ──
-function LernzielCompact({ lernziel }) {
+// ── Kompakte Lernziel-Anzeige mit Priorisierung ──
+function LernzielCompact({ lernziel, isPrioritized = false, onTogglePriority, kannBearbeiten = false }) {
   const angezeigterText = lernziel.schueler_uebersetzung || lernziel.formulierung_fachsprache;
   
   return (
-    <div className="flex items-start gap-2 py-1.5 px-2 hover:bg-muted/50 rounded text-xs">
-      <span className="text-primary font-bold mt-0.5">•</span>
+    <div className={cn('flex items-start gap-2 py-1.5 px-2 rounded text-xs', kannBearbeiten ? 'hover:bg-muted/50' : '')}>
+      <span className={cn('font-bold mt-0.5', isPrioritized ? 'text-amber-500 text-lg' : 'text-primary')}>
+        {isPrioritized ? '★' : '•'}
+      </span>
       <div className="flex-1">
         <p className="text-sm">{angezeigterText}</p>
         {lernziel.kategorie && (
@@ -20,12 +22,21 @@ function LernzielCompact({ lernziel }) {
           </Badge>
         )}
       </div>
+      {kannBearbeiten && onTogglePriority && (
+        <input
+          type="checkbox"
+          checked={isPrioritized}
+          onChange={() => onTogglePriority(lernziel.id)}
+          className="mt-1 w-4 h-4 cursor-pointer"
+          title="Hohe Priorität für diese Aufgabe"
+        />
+      )}
     </div>
   );
 }
 
 // ── Kompaktes Lernpaket-Akkordeon ──
-function LernpaketAccordion({ lernpaket, lernziele }) {
+function LernpaketAccordion({ lernpaket, lernziele, prioritaeteZiele = [], onTogglePriority, kannBearbeiten = false }) {
   const [isOpen, setIsOpen] = useState(false);
   const paketZiele = lernziele.filter(lz => lz.lernpaket_id === lernpaket.id);
 
@@ -49,7 +60,13 @@ function LernpaketAccordion({ lernpaket, lernziele }) {
       {isOpen && paketZiele.length > 0 && (
         <div className="px-3 pb-2 bg-muted/20 space-y-1">
           {paketZiele.map(ziel => (
-            <LernzielCompact key={ziel.id} lernziel={ziel} />
+            <LernzielCompact
+              key={ziel.id}
+              lernziel={ziel}
+              isPrioritized={prioritaeteZiele.includes(ziel.id)}
+              onTogglePriority={onTogglePriority}
+              kannBearbeiten={kannBearbeiten}
+            />
           ))}
         </div>
       )}
@@ -64,7 +81,7 @@ function LernpaketAccordion({ lernpaket, lernziele }) {
 }
 
 // ── Kompaktes Themenfeld-Akkordeon ──
-function ThemenfeldAccordion({ themenfeld, lernpakete, lernziele }) {
+function ThemenfeldAccordion({ themenfeld, lernpakete, lernziele, prioritaeteZiele = [], onTogglePriority, kannBearbeiten = false }) {
   const [isOpen, setIsOpen] = useState(true);
   const paketeFuerThemenfeld = lernpakete.filter(p => p.themenfeld_id === themenfeld.id);
 
@@ -91,6 +108,9 @@ function ThemenfeldAccordion({ themenfeld, lernpakete, lernziele }) {
                 key={paket.id}
                 lernpaket={paket}
                 lernziele={lernziele}
+                prioritaeteZiele={prioritaeteZiele}
+                onTogglePriority={onTogglePriority}
+                kannBearbeiten={kannBearbeiten}
               />
             ))}
         </div>
@@ -105,6 +125,9 @@ export default function LernlandkartePreview({
   lernpakete,
   lernziele,
   themenfelder,
+  aufgabe,
+  kannBearbeiten = false,
+  onPriorityChange,
 }) {
   const { data: mappings = [] } = useQuery({
     queryKey: ['allgemeineAufgabeMappings'],
@@ -115,6 +138,15 @@ export default function LernlandkartePreview({
   const zieleFuerEinheit = lernziele.filter(lz => 
     paketeFuerEinheit.some(p => p.id === lz.lernpaket_id)
   );
+
+  const prioritaeteZiele = aufgabe?.prioritaete_lernziele || [];
+  
+  const handleTogglePriority = (zielId) => {
+    const neu = prioritaeteZiele.includes(zielId)
+      ? prioritaeteZiele.filter(id => id !== zielId)
+      : [...prioritaeteZiele, zielId];
+    onPriorityChange?.(neu);
+  };
 
   // Unzugeordnete Lernziele (Lernziele, deren Pakete kein Themenfeld haben)
   const unzugeordneteZiele = lernziele.filter(lz => {
@@ -149,6 +181,13 @@ export default function LernlandkartePreview({
         </div>
       </div>
 
+      {/* Info-Banner für editierbar */}
+      {kannBearbeiten && (
+        <div className="shrink-0 px-4 py-2 bg-amber-50 border-b border-amber-200 text-xs text-amber-700">
+          ☆ Aktiviere die Checkbox neben einem Lernziel, um es als höchste Priorität zu markieren
+        </div>
+      )}
+
       {/* Scroll-Bereich mit Akkordeons */}
       <div className="flex-1 overflow-y-auto px-4 py-3">
         <div className="max-w-4xl space-y-3">
@@ -159,6 +198,9 @@ export default function LernlandkartePreview({
                 themenfeld={themenfeld}
                 lernpakete={paketeFuerEinheit}
                 lernziele={zieleFuerEinheit}
+                prioritaeteZiele={prioritaeteZiele}
+                onTogglePriority={handleTogglePriority}
+                kannBearbeiten={kannBearbeiten}
               />
             ))
           ) : null}
@@ -175,6 +217,9 @@ export default function LernlandkartePreview({
                         key={paket.id}
                         lernpaket={paket}
                         lernziele={zieleFuerEinheit}
+                        prioritaeteZiele={prioritaeteZiele}
+                        onTogglePriority={handleTogglePriority}
+                        kannBearbeiten={kannBearbeiten}
                       />
                     ))}
                 </div>
@@ -196,7 +241,13 @@ export default function LernlandkartePreview({
               <div className="border-t border-border bg-muted/30">
                 <div className="px-3 py-2 space-y-1">
                   {unzugeordneteZiele.map(ziel => (
-                    <LernzielCompact key={ziel.id} lernziel={ziel} />
+                    <LernzielCompact
+                      key={ziel.id}
+                      lernziel={ziel}
+                      isPrioritized={prioritaeteZiele.includes(ziel.id)}
+                      onTogglePriority={handleTogglePriority}
+                      kannBearbeiten={kannBearbeiten}
+                    />
                   ))}
                 </div>
               </div>

@@ -56,6 +56,14 @@
         }
       }
     },
+    "prioritaete_lernziele": {
+      "type": "array",
+      "description": "Array von Lernziel-IDs mit hoher Priorität für diese Aufgabe",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
     "content_status": {
       "type": "string",
       "enum": ["draft", "approved"],

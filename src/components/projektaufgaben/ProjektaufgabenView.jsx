@@ -451,6 +451,12 @@ export default function ProjektaufgabenView({
                   lernpakete={lernpakete}
                   lernziele={lernziele}
                   themenfelder={themenfelder}
+                  aufgabe={selectedAufgabe}
+                  kannBearbeiten={kannBearbeiten}
+                  onPriorityChange={(neu) => {
+                    base44.entities.AllgemeineAufgabe.update(selectedAufgabe.id, { prioritaete_lernziele: neu });
+                    queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
+                  }}
                 />
                </TabsContent>
 

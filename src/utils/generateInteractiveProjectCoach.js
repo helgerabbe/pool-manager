@@ -74,7 +74,7 @@ function buildLernlandkarte(paketeFuerEinheit, lernziele, unzugeordneteZiele) {
 }
 
 /**
- * Generiert einen Projekt-Coach-Prompt mit Null-Handling
+ * Generiert einen Projekt-Coach-Prompt mit Null-Handling und Prioritäts-Lernzielen
  * 
  * @param {Object} aufgabe - Die Projektaufgabe
  * @param {Object} einheit - Die Einheit
@@ -103,6 +103,10 @@ export function generateInteractiveProjectCoach(aufgabe, einheit, lernpakete, le
     lz && lz.id && !paketeFuerEinheit.some(p => p.id === lz.lernpaket_id)
   );
 
+  // Prioritätsziele dieser Aufgabe
+  const prioritaeteZielIds = aufgabe.prioritaete_lernziele || [];
+  const prioritaeteZiele = lernziele.filter(lz => prioritaeteZielIds.includes(lz.id));
+
   // Erstelle saubere Lernlandkarte
   const lernlandkarte = buildLernlandkarte(paketeFuerEinheit, zieleFuerEinheit, unzugeordneteZiele);
 
@@ -113,6 +117,20 @@ export function generateInteractiveProjectCoach(aufgabe, einheit, lernpakete, le
   const gesamtziel = sanitizeString(einheit.gesamtziel) || '[Kein Gesamtziel definiert]';
   const aufgabeText = sanitizeString(aufgabe.aufgabenstellung) || '[Keine Aufgabenstellung hinterlegt]';
 
+  // Formatiere Prioritätsziele als separate Sektion
+  const prioritaeteTeile = prioritaeteZiele
+    .filter(lz => lz && lz.id)
+    .map(lz => {
+      const zielText = sanitizeString(lz.formulierung_fachsprache || lz.schueler_uebersetzung);
+      return zielText ? `★ ${zielText}` : null;
+    })
+    .filter(Boolean)
+    .join('\n');
+
+  const prioritaeteSektion = prioritaeteTeile
+    ? `\n\n⭐ BESONDERS WICHTIG FÜR DIESE AUFGABE (Hohe Priorität):\n${prioritaeteTeile}`
+    : '';
+
   const prompt = `KONTEXT:
 Du bist ein erfahrener KI-Projekt-Coach an einer Integrierten Gesamtschule (IGS) in Niedersachsen.
 Fach: ${fach} | Thema: ${thema} | Jahrgang: ${jahrgang}
@@ -122,13 +140,13 @@ DIE AUFGABE:
 ${aufgabeText}
 
 DEIN WISSEN (LERNLANDKARTE):
-${lernlandkarte}
+${lernlandkarte}${prioritaeteSektion}
 
 DEINE STRATEGIE ALS COACH:
 
-1. **Einstieg & Analyse**: Begrüße den Schüler kurz. Analysiere intern, welche Lernziele aus der Landkarte für DIESE Projektaufgabe kritisch sind.
+1. **Einstieg & Analyse**: Begrüße den Schüler kurz. Analysiere intern, welche Lernziele aus der Landkarte für DIESE Projektaufgabe kritisch sind. **Besondere Aufmerksamkeit auf die mit ⭐ markierten Ziele!**
 
-2. **Confidence-Check**: Frage den Schüler gezielt, wie sicher er sich bei diesen kritischen Kompetenzen fühlt. Biete bei Unsicherheit an, eine kurze "Check-Aufgabe" zu stellen, bevor es mit dem Projekt losgeht.
+2. **Confidence-Check**: Frage den Schüler gezielt, wie sicher er sich bei den ⭐-markierten Kompetenzen fühlt. Biete bei Unsicherheit an, eine kurze "Check-Aufgabe" zu stellen, bevor es mit dem Projekt losgeht.
 
 3. **Gemeinsame Planung**: Erstelle erst nach dem Check einen groben Schritt-für-Schritt-Plan (Meilensteine). Präsentiere diesen aber als VORSCHLAG und frage: "Passt dieser Fahrplan für dich oder wollen wir etwas anpassen?"
 
