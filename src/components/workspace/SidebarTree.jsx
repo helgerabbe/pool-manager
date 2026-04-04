@@ -161,7 +161,16 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
           {!isSelected && hatUnvollstaendigeAktivitaet && (
             <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" title="Aktivitäten mit unvollständigem Inhalt" />
           )}
-        </button>
+          {paketPhaseActivities.length >= 0 && (
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+              paketPhaseActivities.length === 0 ? 'bg-red-100 text-red-700' : 
+              paketPhaseActivities.length <= 2 ? 'bg-amber-100 text-amber-700' : 
+              'bg-green-100 text-green-700'
+            }`}>
+              {paketPhaseActivities.length}
+            </div>
+          )}
+          </button>
       </div>
       {open && (
         <div className="ml-4 mt-1 space-y-0.5 border-l border-border pl-2">
@@ -184,7 +193,7 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
 }
 
 function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenziell, aktivitaetenMap, paketPhaseActivitiesMap, isSammelbecken = false, phaseAktivitaeten = [] }) {
-   const [open, setOpen] = useState(false);
+   const [open, setOpen] = useState(!isSammelbecken);
   const isSelected = selectedId === `themenfeld-${themenfeld.id}`;
 
   const paketStatuses = lernpakete.map(p => getLernpaketStatus(p, lernziele, aufgaben, userEmail, mappings, phaseAktivitaeten));
@@ -232,20 +241,21 @@ function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedI
           ) : (
             lernpakete.map(paket => (
               <LernpaketNode
-                key={paket.id}
-                paket={paket}
-                lernziele={lernziele}
-                aufgaben={aufgaben}
-                selectedId={selectedId}
-                onSelect={onSelect}
-                kannBearbeiten={kannBearbeiten}
-                userEmail={userEmail}
-                mappings={mappings}
-                isSequenzielleUndGesperrt={getPaketIsLocked(paket)}
-                aktivitaetenMap={aktivitaetenMap}
-                paketPhaseActivities={paketPhaseActivitiesMap[paket.id] || []}
-                showNumber={isSequenziell}
-              />
+                 key={paket.id}
+                 paket={paket}
+                 lernziele={lernziele}
+                 aufgaben={aufgaben}
+                 selectedId={selectedId}
+                 onSelect={onSelect}
+                 kannBearbeiten={kannBearbeiten}
+                 userEmail={userEmail}
+                 mappings={mappings}
+                 isSequenzielleUndGesperrt={getPaketIsLocked(paket)}
+                 aktivitaetenMap={aktivitaetenMap}
+                 paketPhaseActivities={paketPhaseActivitiesMap[paket.id] || []}
+                 showNumber={isSequenziell}
+                 phaseAktivitaeten={phaseAktivitaeten}
+               />
             ))
           )}
         </div>

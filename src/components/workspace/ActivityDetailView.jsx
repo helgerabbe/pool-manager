@@ -18,7 +18,7 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
   const [saving, setSaving] = useState(false);
   const [userEmail, setUserEmail] = useState(null);
   const [hasDraft, setHasDraft] = useState(false);
-  
+
   const { permissions } = useRBAC();
 
   useEffect(() => {
@@ -82,9 +82,9 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
     setFormData(activityRecord?.field_values || {});
   }, [activityRecord?.field_values]);
 
-  // Permission check: nur Inhalts-Bearbeiter und Administratoren dürfen Aktivitäten bearbeiten (nach allen Hooks)
-   const kannInhalteBearbeiten = permissions.istAdmin || (einheitFach ? permissions.kannInhalteBearbeiten(einheitFach) : false);
-   if (!kannInhalteBearbeiten) {
+  // Permission check: Admins OR Fachlehrkräfte mit relevanter Berechtigung dürfen bearbeiten
+   const kannInhalteBearbeiten = permissions.istAdmin || (einheitFach && permissions.kannInhalteBearbeiten(einheitFach));
+   if (!kannInhalteBearbeiten && !permissions.istAdmin) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-center p-8">
         <AlertTriangle className="w-12 h-12 text-muted-foreground/30" />
@@ -96,7 +96,7 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
         </div>
       </div>
     );
-  }
+   }
 
   const handleSave = async () => {
     // Blockiere Save wenn Lock verloren ist
