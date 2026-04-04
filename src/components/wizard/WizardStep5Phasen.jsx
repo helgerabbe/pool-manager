@@ -60,24 +60,33 @@ export default function WizardStep5Phasen({ einheitId, onDone, onSkipAll }) {
     setGenerating(true);
     let count = 0;
 
-    for (const paket of paketeFuerEinheit) {
-      const config = phasenConfig[paket.id] || {};
-      const phasenKonfiguration = {
-        Input: { disabled: !config.Input, selected_aktivitaet_id: '', field_values: {} },
-        Übung: { disabled: !config.Übung, selected_aktivitaet_id: '', field_values: {} },
-        Abschluss: { disabled: !config.Abschluss, selected_aktivitaet_id: '', field_values: {} },
-      };
+    try {
+      for (const paket of paketeFuerEinheit) {
+        const config = phasenConfig[paket.id] || {};
+        const phasenKonfiguration = {
+          Input: { disabled: !config.Input, selected_aktivitaet_id: '', field_values: {} },
+          Übung: { disabled: !config.Übung, selected_aktivitaet_id: '', field_values: {} },
+          Abschluss: { disabled: !config.Abschluss, selected_aktivitaet_id: '', field_values: {} },
+        };
 
-      await base44.entities.Lernpakete.update(paket.id, {
-        phasen_konfiguration: phasenKonfiguration,
-      });
-      count++;
+        await base44.entities.Lernpakete.update(paket.id, {
+          phasen_konfiguration: phasenKonfiguration,
+        });
+        count++;
+      }
+
+      // Aktiviere die Einheit
+      await base44.entities.Einheiten.update(einheitId, { wizard_status: 'aktiv' });
+      
+      queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+      queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+      toast.success(`${count} Lernpakete konfiguriert. Einheit aktiviert.`);
+      
+      // Navigiere zum Workspace mit Übersichtstab
+      onDone?.();
+    } finally {
+      setGenerating(false);
     }
-
-    queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-    toast.success(`${count} Lernpakete mit Phasenkonfiguration aktualisiert.`);
-    setGenerating(false);
-    setDone(true);
   };
 
   return (
@@ -146,17 +155,23 @@ export default function WizardStep5Phasen({ einheitId, onDone, onSkipAll }) {
           <SkipForward className="w-4 h-4" />
           Überspringen & Einheit aktivieren
         </Button>
-        {!done ? (
-          <Button onClick={handleGenerieren} disabled={generating || paketeFuerEinheit.length === 0} className="gap-2">
-            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <BookOpen className="w-4 h-4" />}
-            Speichern & Einheit aktivieren
-          </Button>
-        ) : (
-          <Button onClick={onDone} className="gap-2 bg-green-600 hover:bg-green-700">
-            <Check className="w-4 h-4" />
-            Zum Workspace
-          </Button>
-        )}
+        <Button 
+          onClick={handleGenerieren} 
+          disabled={generating || paketeFuerEinheit.length === 0 || done} 
+          className="gap-2"
+        >
+          {generating ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Speichert...
+            </>
+          ) : (
+            <>
+              <BookOpen className="w-4 h-4" />
+              Speichern & Einheit aktivieren
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );
