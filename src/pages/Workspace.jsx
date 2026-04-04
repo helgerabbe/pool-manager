@@ -491,6 +491,14 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                   <ExportCockpitView 
                     einheitId={selectedEinheitId} 
                     userRole={rolle}
+                    onNavigateToActivity={(activityId, lernpaketId) => {
+                      handleTabChange('aufgaben');
+                      handleSelect({ type: 'aktivitaet-edit', activityRecordId: activityId });
+                    }}
+                    onNavigateToTask={(ebene, taskId) => {
+                      handleTabChange(ebene === 'ebene12' ? 'ebene2' : 'ebene3');
+                      handleSelect({ type: 'allgemein-aufgabe', id: taskId });
+                    }}
                   />
                 </ErrorBoundary>
               </div>

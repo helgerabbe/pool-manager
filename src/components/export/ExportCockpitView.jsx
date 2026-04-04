@@ -70,7 +70,7 @@ function UndoButton({ activityId, entityType = 'activity' }) {
 // ── Einzel-Cockpit-Slot ──────────────────────────────────────────────────────
 
 function CockpitSlot({ slotId, slot, updateSlot, removeSlot, selectedEinheitIds, selectedIds, setSelectedIds,
-  einheiten, lernpakete, themenfelder, aktivitaeten, aktivitaetenKatalog, allgemeineAufgaben, exportMutation }) {
+  einheiten, lernpakete, themenfelder, aktivitaeten, aktivitaetenKatalog, allgemeineAufgaben, exportMutation, onNavigateToActivity, onNavigateToTask }) {
 
   const { unitId, isCollapsed } = slot;
   const availableEinheiten = einheiten.filter(e => !selectedEinheitIds.includes(e.id) || e.id === unitId);
@@ -211,10 +211,13 @@ function CockpitSlot({ slotId, slot, updateSlot, removeSlot, selectedEinheitIds,
                       return (
                         <div key={aufgabe.id} className={cn('flex items-center gap-2 p-1.5 rounded transition', isApproved ? 'hover:bg-muted/20' : 'opacity-60')}>
                           <Checkbox checked={isSelected} onCheckedChange={() => toggleActivities([aufgabe])} disabled={!isApproved || isPending} className="h-4 w-4 shrink-0" />
-                          <span className={cn('text-xs flex-1 truncate', isApproved ? 'text-foreground' : 'text-muted-foreground')}>
+                          <button
+                            onClick={() => onNavigateToTask?.('ebene12', aufgabe.id)}
+                            className={cn('text-xs flex-1 truncate text-left transition', isApproved ? 'text-primary hover:underline' : 'text-muted-foreground')}
+                          >
                             📝 {aufgabe.titel || 'Aufgabe ohne Titel'}
                             {aufgabe.anforderungsebene && <span className="ml-1 text-muted-foreground">({aufgabe.anforderungsebene})</span>}
-                          </span>
+                          </button>
                           {isPending && <UndoButton activityId={aufgabe.id} entityType="allgemein" />}
                           <AktivitaetStatusBadge activity={aufgabe} />
                         </div>
@@ -257,10 +260,13 @@ function CockpitSlot({ slotId, slot, updateSlot, removeSlot, selectedEinheitIds,
                   return (
                     <div key={aufgabe.id} className={cn('flex items-center gap-2 p-1.5 rounded transition', isApproved ? 'hover:bg-muted/20' : 'opacity-60')}>
                       <Checkbox checked={isSelected} onCheckedChange={() => toggleActivities([aufgabe])} disabled={!isApproved || isPending} className="h-4 w-4 shrink-0" />
-                      <span className={cn('text-xs flex-1 truncate', isApproved ? 'text-foreground' : 'text-muted-foreground')}>
+                      <button
+                        onClick={() => onNavigateToTask?.('ebene3', aufgabe.id)}
+                        className={cn('text-xs flex-1 truncate text-left transition', isApproved ? 'text-primary hover:underline' : 'text-muted-foreground')}
+                      >
                         🎯 {aufgabe.titel || 'Projektaufgabe ohne Titel'}
                         {aufgabe.aufgabentyp_projekt && <span className="ml-1 text-muted-foreground">({aufgabe.aufgabentyp_projekt})</span>}
-                      </span>
+                      </button>
                       {isPending && <UndoButton activityId={aufgabe.id} entityType="allgemein" />}
                       <AktivitaetStatusBadge activity={aufgabe} />
                     </div>
@@ -333,7 +339,7 @@ function CockpitSlot({ slotId, slot, updateSlot, removeSlot, selectedEinheitIds,
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
-export default function ExportCockpitView({ initialEinheitId = null }) {
+export default function ExportCockpitView({ initialEinheitId = null, onNavigateToActivity = null, onNavigateToTask = null }) {
   const queryClient = useQueryClient();
   const { permissions } = useRBAC();
   
@@ -431,6 +437,8 @@ export default function ExportCockpitView({ initialEinheitId = null }) {
               aktivitaetenKatalog={aktivitaetenKatalog}
               allgemeineAufgaben={allgemeineAufgaben}
               exportMutation={exportMutation}
+              onNavigateToActivity={onNavigateToActivity}
+              onNavigateToTask={onNavigateToTask}
             />
           ))}
         </div>
