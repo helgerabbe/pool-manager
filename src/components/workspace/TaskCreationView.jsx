@@ -27,6 +27,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { ChevronRight, Package, MousePointerClick, AlertTriangle, Lock, Crown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -281,8 +282,13 @@ function EmptyState() {
 
 // ── Haupt-Komponente ──────────────────────────────────────────────────────────
 
-export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail, userRole, initialActivityId = null }) {
+export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail, userRole, initialActivityId: initialActivityIdProp = null }) {
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  
+  // ActivityID kann aus Props oder URL-Parametern kommen
+  const initialActivityId = initialActivityIdProp || searchParams.get('activity');
+  
   // selectedItem: null | { type: 'activity', activity } | { type: 'master', master } | { type: 'klon', klon }
   const [selectedItem, setSelectedItem] = useState(null);
   const [openPacketIds, setOpenPacketIds] = useState(new Set());

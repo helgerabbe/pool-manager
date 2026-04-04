@@ -11,6 +11,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useRBAC } from '@/hooks/useRBAC';
 import { Button } from '@/components/ui/button';
@@ -166,12 +167,14 @@ function CockpitSlot({ slotId, slot, updateSlot, removeSlot, selectedEinheitIds,
                                    className="h-4 w-4 shrink-0"
                                  />
                                  <button
-                                   onClick={() => onNavigateToActivity?.(act.id, paket.id)}
-                                   className={cn(
-                                     'text-xs flex-1 truncate text-left transition',
-                                     isApproved ? 'text-primary hover:underline' : 'text-muted-foreground'
-                                   )}
-                                 >
+                                    onClick={() => {
+                                      onNavigateToActivity?.(act.id, paket.id);
+                                    }}
+                                    className={cn(
+                                      'text-xs flex-1 truncate text-left transition',
+                                      isApproved ? 'text-primary hover:underline' : 'text-muted-foreground'
+                                    )}
+                                  >
                                    {act.phase === 'Input' ? '📚' : act.phase === 'Übung' ? '✏️' : '🎯'} {actName}
                                  </button>
                                 {isPending && <UndoButton activityId={act.id} />}
@@ -356,9 +359,20 @@ function CockpitSlot({ slotId, slot, updateSlot, removeSlot, selectedEinheitIds,
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
-export default function ExportCockpitView({ initialEinheitId = null, onNavigateToActivity = null, onNavigateToTask = null }) {
+export default function ExportCockpitView({ initialEinheitId = null, onNavigateToActivity: onNavCallback = null, onNavigateToTask = null }) {
   const queryClient = useQueryClient();
   const { permissions } = useRBAC();
+  const navigate = useNavigate();
+
+  const onNavigateToActivity = (activityId, paketId) => {
+    // Zuerst den Callback aufrufen falls vorhanden
+    if (onNavCallback) {
+      onNavCallback(activityId, paketId);
+    } else {
+      // Sonst direkt navigieren mit Activity-ID in der URL
+      navigate(`/workspace?einheit=${initialEinheitId}&aufgaben=true&activity=${activityId}`);
+    }
+  };
   
   const [slots, setSlots] = useState([{ id: 1, unitId: initialEinheitId, isCollapsed: false }]);
   const [nextSlotId, setNextSlotId] = useState(2);
