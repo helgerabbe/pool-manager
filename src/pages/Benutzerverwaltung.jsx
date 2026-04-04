@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter as AlertDialogFoot, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { 
   ShieldCheck, UserPlus, Trash2, Edit, Users, 
-  Lock, Unlock, AlertTriangle, CheckCircle, Mail, Upload
+  Lock, Unlock, AlertTriangle, CheckCircle, Mail, Upload, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -21,6 +21,7 @@ import { useResourceLock } from '@/hooks/useResourceLock';
 import UserImport from '@/components/admin/UserImport';
 import UserInviteTab from '@/components/admin/UserInviteTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const rollenBadgeColors = {
   Administrator:      'bg-red-100 text-red-700',
@@ -194,7 +195,93 @@ function BenutzerForm({ open, onOpenChange, onSubmit, initialData, faecher = [] 
   );
 }
 
+// Mobile Rechtematrix als aufklappbare Cards
+function MobileRechteMatrix() {
+  const [expanded, setExpanded] = useState(null);
+  const rollen = [
+    { rolle: 'Administrator',      farbe: rollenBadgeColors.Administrator,      rechte: ['Struktur: alles erstellen & bearbeiten', 'Inhalte: alles erstellen, bearbeiten, freigeben', 'Export: bedienen & lesen'] },
+    { rolle: 'Fachschaftsleitung', farbe: rollenBadgeColors.Fachschaftsleitung, rechte: ['Struktur: erstellen & bearbeiten (nur eigenes Fach)', 'Inhalte: erstellen, bearbeiten, freigeben (nur eigenes Fach)', 'Export: nur lesen'] },
+    { rolle: 'Fachlehrkraft',      farbe: rollenBadgeColors.Fachlehrkraft,      rechte: ['Struktur: kein Zugriff', 'Inhalte: erstellen, bearbeiten, freigeben (nur eigenes Fach)', 'Export: nur lesen'] },
+    { rolle: 'Betrachter',         farbe: rollenBadgeColors.Betrachter,         rechte: ['Struktur: kein Zugriff', 'Inhalte: nur lesen', 'Export: kein Zugriff'] },
+    { rolle: 'Moodle-Designer',    farbe: rollenBadgeColors['Moodle-Designer'],  rechte: ['Struktur: kein Zugriff', 'Inhalte: nur Freigegebene lesen', 'Export: bedienen & lesen'] },
+  ];
+  return (
+    <div className="space-y-2">
+      {rollen.map(r => (
+        <div key={r.rolle} className="border rounded-lg overflow-hidden">
+          <button
+            className="w-full flex items-center justify-between px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors"
+            onClick={() => setExpanded(expanded === r.rolle ? null : r.rolle)}
+          >
+            <Badge className={`${r.farbe} text-xs`}>{r.rolle}</Badge>
+            {expanded === r.rolle ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          </button>
+          {expanded === r.rolle && (
+            <div className="px-4 py-3 space-y-1 bg-white">
+              {r.rechte.map((recht, i) => (
+                <p key={i} className="text-sm text-foreground">{recht}</p>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Mobile Benutzerliste als Cards
+function MobileBenutzerCard({ b, authUser, onEdit, onDelete }) {
+  return (
+    <div className={`border rounded-lg p-4 space-y-3 ${!b.ist_aktiv ? 'opacity-50' : ''}`}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary flex-shrink-0">
+            {(b.user_id || '?')[0].toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <p className="text-sm font-semibold">{b.vorname} {b.nachname}</p>
+              {b.user_id === authUser?.email && (
+                <Badge className="text-[10px] bg-primary/10 text-primary">Ich</Badge>
+              )}
+              {!b.ist_aktiv && (
+                <Badge className="text-[10px] bg-muted text-muted-foreground">Inaktiv</Badge>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground truncate">{b.user_id}</p>
+          </div>
+        </div>
+        <div className="flex gap-1 flex-shrink-0">
+          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => onEdit(b)}>
+            <Edit className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost" size="icon" className="h-9 w-9"
+            disabled={b.user_id === authUser?.email}
+            onClick={() => onDelete(b.id)}
+          >
+            <Trash2 className="w-4 h-4 text-destructive" />
+          </Button>
+        </div>
+      </div>
+      <div className="flex items-center justify-between">
+        <Badge className={`${rollenBadgeColors[b.rolle] || 'bg-muted text-muted-foreground'} text-xs`}>
+          {b.rolle}
+        </Badge>
+        {b.fachbereich_zustaendigkeit?.length > 0 && (
+          <div className="flex flex-wrap gap-1 justify-end">
+            {b.fachbereich_zustaendigkeit.map(f => (
+              <span key={f} className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{f}</span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Benutzerverwaltung() {
+  const isMobile = useIsMobile();
   const { permissions, authUser } = useRBAC();
   const queryClient = useQueryClient();
   const { forceReleaseLock } = useResourceLock('Aufgabenbausteine', ['aufgaben', 'aufgabenbausteine'], null, null, false);
@@ -283,19 +370,19 @@ export default function Benutzerverwaltung() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-         <div>
-           <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
-             <ShieldCheck className="w-6 h-6 text-primary" />
-             Benutzerverwaltung
-           </h1>
-           <p className="text-sm text-muted-foreground mt-1">
-             {benutzer.filter(b => users?.find(u => u.email === b.user_id)).length} registriert | {benutzer.filter(b => !users?.find(u => u.email === b.user_id)).length} ausstehend
-           </p>
-         </div>
-        <div className="flex gap-2">
+      <div className={`flex ${isMobile ? 'flex-col gap-3' : 'items-center justify-between'}`}>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
+            <ShieldCheck className="w-6 h-6 text-primary" />
+            Benutzerverwaltung
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {benutzer.filter(b => users?.find(u => u.email === b.user_id)).length} registriert | {benutzer.filter(b => !users?.find(u => u.email === b.user_id)).length} ausstehend
+          </p>
+        </div>
+        <div className={`flex gap-2 ${isMobile ? 'flex-col' : ''}`}>
           <Button variant="outline" onClick={() => setShowImport(v => !v)} className="gap-2">
             <Upload className="w-4 h-4" />{showImport ? 'Import schließen' : 'CSV importieren'}
           </Button>
@@ -320,57 +407,63 @@ export default function Benutzerverwaltung() {
             3 Bereiche: Struktur (Einheiten/Themenfelder/LP) | Inhalte (Aktivitäten/Aufgaben) | Export (Moodle)
           </p>
         </CardHeader>
-        <CardContent className="p-0 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="text-left px-4 py-2.5 font-semibold">Rolle</th>
-                <th colSpan="3" className="text-center px-3 py-2.5 font-semibold border-l">Bereich 1: Struktur</th>
-                <th colSpan="4" className="text-center px-3 py-2.5 font-semibold border-l">Bereich 2: Inhalte</th>
-                <th colSpan="2" className="text-center px-3 py-2.5 font-semibold border-l">Bereich 3: Export</th>
-              </tr>
-              <tr className="border-b bg-muted/20">
-                <th className="text-left px-4 py-1.5 font-medium text-xs">-</th>
-                <th className="text-center px-2 py-1.5 font-medium text-xs">E</th>
-                <th className="text-center px-2 py-1.5 font-medium text-xs">B</th>
-                <th className="text-center px-2 py-1.5 font-medium text-xs border-l">E</th>
-                <th className="text-center px-2 py-1.5 font-medium text-xs">B</th>
-                <th className="text-center px-2 py-1.5 font-medium text-xs">L</th>
-                <th className="text-center px-2 py-1.5 font-medium text-xs">F</th>
-                <th className="text-center px-2 py-1.5 font-medium text-xs border-l">Bed.</th>
-                <th className="text-center px-2 py-1.5 font-medium text-xs">Les.</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { rolle: 'Administrator', s_e:'✅', s_b:'✅', s_l:'✅', c_e:'✅', c_b:'✅', c_l:'✅', c_f:'✅', e_bed:'✅', e_les:'✅' },
-                { rolle: 'Fachschaftsleitung', s_e:'✅*', s_b:'✅*', s_l:'✅*', c_e:'✅*', c_b:'✅*', c_l:'✅*', c_f:'✅*', e_bed:'❌', e_les:'✅' },
-                { rolle: 'Fachlehrkraft', s_e:'❌', s_b:'❌', s_l:'❌', c_e:'✅*', c_b:'✅*', c_l:'✅*', c_f:'✅*', e_bed:'❌', e_les:'✅' },
-                { rolle: 'Betrachter', s_e:'❌', s_b:'❌', s_l:'❌', c_e:'❌', c_b:'❌', c_l:'✅', c_f:'❌', e_bed:'❌', e_les:'❌' },
-                { rolle: 'Moodle-Designer', s_e:'❌', s_b:'❌', s_l:'❌', c_e:'❌', c_b:'❌', c_l:'✅**', c_f:'❌', e_bed:'✅', e_les:'✅' },
-              ].map(row => (
-                <tr key={row.rolle} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-2.5">
-                    <Badge className={`${rollenBadgeColors[row.rolle]} text-xs`}>{row.rolle}</Badge>
-                  </td>
-                  <td className="text-center px-2 py-2.5 text-xs">{row.s_e}</td>
-                  <td className="text-center px-2 py-2.5 text-xs">{row.s_b}</td>
-                  <td className="text-center px-2 py-2.5 text-xs border-l">{row.s_l}</td>
-                  <td className="text-center px-2 py-2.5 text-xs">{row.c_e}</td>
-                  <td className="text-center px-2 py-2.5 text-xs">{row.c_b}</td>
-                  <td className="text-center px-2 py-2.5 text-xs">{row.c_l}</td>
-                  <td className="text-center px-2 py-2.5 text-xs">{row.c_f}</td>
-                  <td className="text-center px-2 py-2.5 text-xs border-l">{row.e_bed}</td>
-                  <td className="text-center px-2 py-2.5 text-xs">{row.e_les}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="text-xs text-muted-foreground px-4 py-3">
-            <strong>Legende:</strong> E=Erstellen, B=Bearbeiten, L=Löschen, F=Freigeben, Bed.=Bedienen, Les.=Lesen
-            <br />
-            <strong>*</strong> = nur im eigenen Fachbereich | <strong>**</strong> = nur Freigegeben
-          </p>
+        <CardContent className={isMobile ? 'pb-4' : 'p-0 overflow-x-auto'}>
+          {isMobile ? (
+            <MobileRechteMatrix />
+          ) : (
+            <>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-left px-4 py-2.5 font-semibold">Rolle</th>
+                    <th colSpan="3" className="text-center px-3 py-2.5 font-semibold border-l">Bereich 1: Struktur</th>
+                    <th colSpan="4" className="text-center px-3 py-2.5 font-semibold border-l">Bereich 2: Inhalte</th>
+                    <th colSpan="2" className="text-center px-3 py-2.5 font-semibold border-l">Bereich 3: Export</th>
+                  </tr>
+                  <tr className="border-b bg-muted/20">
+                    <th className="text-left px-4 py-1.5 font-medium text-xs">-</th>
+                    <th className="text-center px-2 py-1.5 font-medium text-xs">E</th>
+                    <th className="text-center px-2 py-1.5 font-medium text-xs">B</th>
+                    <th className="text-center px-2 py-1.5 font-medium text-xs border-l">E</th>
+                    <th className="text-center px-2 py-1.5 font-medium text-xs">B</th>
+                    <th className="text-center px-2 py-1.5 font-medium text-xs">L</th>
+                    <th className="text-center px-2 py-1.5 font-medium text-xs">F</th>
+                    <th className="text-center px-2 py-1.5 font-medium text-xs border-l">Bed.</th>
+                    <th className="text-center px-2 py-1.5 font-medium text-xs">Les.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { rolle: 'Administrator', s_e:'✅', s_b:'✅', s_l:'✅', c_e:'✅', c_b:'✅', c_l:'✅', c_f:'✅', e_bed:'✅', e_les:'✅' },
+                    { rolle: 'Fachschaftsleitung', s_e:'✅*', s_b:'✅*', s_l:'✅*', c_e:'✅*', c_b:'✅*', c_l:'✅*', c_f:'✅*', e_bed:'❌', e_les:'✅' },
+                    { rolle: 'Fachlehrkraft', s_e:'❌', s_b:'❌', s_l:'❌', c_e:'✅*', c_b:'✅*', c_l:'✅*', c_f:'✅*', e_bed:'❌', e_les:'✅' },
+                    { rolle: 'Betrachter', s_e:'❌', s_b:'❌', s_l:'❌', c_e:'❌', c_b:'❌', c_l:'✅', c_f:'❌', e_bed:'❌', e_les:'❌' },
+                    { rolle: 'Moodle-Designer', s_e:'❌', s_b:'❌', s_l:'❌', c_e:'❌', c_b:'❌', c_l:'✅**', c_f:'❌', e_bed:'✅', e_les:'✅' },
+                  ].map(row => (
+                    <tr key={row.rolle} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-2.5">
+                        <Badge className={`${rollenBadgeColors[row.rolle]} text-xs`}>{row.rolle}</Badge>
+                      </td>
+                      <td className="text-center px-2 py-2.5 text-xs">{row.s_e}</td>
+                      <td className="text-center px-2 py-2.5 text-xs">{row.s_b}</td>
+                      <td className="text-center px-2 py-2.5 text-xs border-l">{row.s_l}</td>
+                      <td className="text-center px-2 py-2.5 text-xs">{row.c_e}</td>
+                      <td className="text-center px-2 py-2.5 text-xs">{row.c_b}</td>
+                      <td className="text-center px-2 py-2.5 text-xs">{row.c_l}</td>
+                      <td className="text-center px-2 py-2.5 text-xs">{row.c_f}</td>
+                      <td className="text-center px-2 py-2.5 text-xs border-l">{row.e_bed}</td>
+                      <td className="text-center px-2 py-2.5 text-xs">{row.e_les}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="text-xs text-muted-foreground px-4 py-3">
+                <strong>Legende:</strong> E=Erstellen, B=Bearbeiten, L=Löschen, F=Freigeben, Bed.=Bedienen, Les.=Lesen
+                <br />
+                <strong>*</strong> = nur im eigenen Fachbereich | <strong>**</strong> = nur Freigegeben
+              </p>
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -435,6 +528,18 @@ export default function Benutzerverwaltung() {
                 <p className="text-sm text-muted-foreground text-center py-10">
                   Noch keine registrierten Benutzer.
                 </p>
+              ) : isMobile ? (
+                <div className="space-y-3">
+                  {benutzer.filter(b => users?.find(u => u.email === b.user_id)).map(b => (
+                    <MobileBenutzerCard
+                      key={b.id}
+                      b={b}
+                      authUser={authUser}
+                      onEdit={setEditingUser}
+                      onDelete={setDeleteId}
+                    />
+                  ))}
+                </div>
               ) : (
                 <div className="divide-y">
                   {benutzer.filter(b => users?.find(u => u.email === b.user_id)).map(b => (
@@ -468,18 +573,11 @@ export default function Benutzerverwaltung() {
                           {b.rolle}
                         </Badge>
                         <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => { setEditingUser(b); }}
-                          >
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingUser(b); }}>
                             <Edit className="w-3.5 h-3.5" />
                           </Button>
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
+                            variant="ghost" size="icon" className="h-8 w-8"
                             disabled={b.user_id === authUser?.email}
                             onClick={() => setDeleteId(b.id)}
                           >
@@ -489,8 +587,8 @@ export default function Benutzerverwaltung() {
                       </div>
                     </div>
                   ))}
-                  </div>
-                  )}
+                </div>
+              )}
                   </TabsContent>
 
                   {/* Tab 2: Ausstehende Einladungen */}
