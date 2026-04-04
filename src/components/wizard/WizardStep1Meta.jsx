@@ -101,7 +101,7 @@ export default function WizardStep1Meta({ onDone }) {
         <div className="flex justify-end pt-2">
           <Button type="submit" disabled={!canSubmit || saving} className="gap-2">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
-            Weiter: Didaktik-Coach
+            Weiter: Strukturentwurf
           </Button>
         </div>
       </form>
