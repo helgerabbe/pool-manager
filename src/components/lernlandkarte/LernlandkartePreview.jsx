@@ -118,9 +118,12 @@ export default function LernlandkartePreview({
     return paket && !paket.themenfeld_id;
   });
 
+  // Alle Themenfelder für diese Einheit (auch ohne Pakete anzeigen)
   const themenfeldMitPaketen = themenfelder
-    .filter(tf => paketeFuerEinheit.some(p => p.themenfeld_id === tf.id))
     .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
+
+  // Pakete ohne Themenfeld-Zuordnung
+  const unzugeordnetePakete = paketeFuerEinheit.filter(p => !p.themenfeld_id);
 
   return (
     <div className="h-full flex flex-col bg-background overflow-hidden">
@@ -155,6 +158,25 @@ export default function LernlandkartePreview({
             ))
           ) : null}
           
+          {/* Pseudo-Themenfeld für Nicht-Zugeordnete Lernpakete */}
+          {unzugeordnetePakete.length > 0 && (
+            <div className="border rounded-lg border-border overflow-hidden mb-3">
+              <div className="border-t border-border bg-muted/30">
+                <div className="px-3 py-2 space-y-1">
+                  {unzugeordnetePakete
+                    .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0))
+                    .map(paket => (
+                      <LernpaketAccordion
+                        key={paket.id}
+                        lernpaket={paket}
+                        lernziele={zieleFuerEinheit}
+                      />
+                    ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Pseudo-Themenfeld für Nicht-Zugeordnete Lernziele */}
           {unzugeordneteZiele.length > 0 && (
             <div className="border rounded-lg border-border overflow-hidden mb-3">
@@ -176,7 +198,7 @@ export default function LernlandkartePreview({
             </div>
           )}
 
-          {themenfeldMitPaketen.length === 0 && unzugeordneteZiele.length === 0 && (
+          {themenfeldMitPaketen.length === 0 && unzugeordnetePakete.length === 0 && unzugeordneteZiele.length === 0 && (
             <p className="text-xs text-muted-foreground text-center py-4">
               Keine Inhalte vorhanden
             </p>
