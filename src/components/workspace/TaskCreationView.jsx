@@ -368,19 +368,16 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
 
   // Wenn initialActivityId gesetzt: Activity suchen + Baum öffnen bis dahin
   useEffect(() => {
-    if (initialActivityId && allActivities.length > 0) {
-      const activity = allActivities.find(a => a.id === initialActivityId);
-      if (activity) {
-        // Wähle die Activity aus
-        setSelectedItem({ type: 'activity', activity });
-        
-        // Finde das Lernpaket, zu dem diese Activity gehört
-        const paket = lernpakete.find(p => p.id === activity.lernpaket_id);
-        if (paket) {
-          // Öffne das Paket
-          setOpenPacketIds(new Set([paket.id]));
-        }
-      }
+    if (!initialActivityId || allActivities.length === 0) return;
+    
+    const activity = allActivities.find(a => a.id === initialActivityId);
+    if (!activity) return;
+    
+    setSelectedItem({ type: 'activity', activity });
+    
+    const paket = lernpakete.find(p => p.id === activity.lernpaket_id);
+    if (paket) {
+      setOpenPacketIds(new Set([paket.id]));
     }
   }, [initialActivityId, allActivities, lernpakete]);
 
