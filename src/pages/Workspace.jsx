@@ -247,7 +247,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
   return (
     <ErrorBoundary label="Workspace">
-      <div className="flex flex-col h-full w-full overflow-hidden bg-background">
+      <div className="flex flex-col h-screen w-full bg-background">
 
         {/* ── Einheit-Gesperrt-Banner ─────────────────────────────────────────── */}
         {einheitGesperrt && !kannSperreIgnorieren && (
@@ -317,17 +317,19 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             </div>
 
             {/* ── Tab 1: Einheit anlegen ───────────────────────────────────────── */}
-            <TabsContent value="einheit" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-y-auto m-0 p-0">
-              <ErrorBoundary label="Einheit">
-                {einheit && (
-                   <EinheitUebersichtTab
-                     einheit={einheit}
-                     currentUserEmail={authUser?.email}
-                     currentUserRole={rolle}
-                     currentUserFaecher={permissions?.faecher || []}
-                   />
-                 )}
-              </ErrorBoundary>
+            <TabsContent value="einheit" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
+              <div className="flex-1 overflow-y-auto">
+                <ErrorBoundary label="Einheit">
+                  {einheit && (
+                     <EinheitUebersichtTab
+                       einheit={einheit}
+                       currentUserEmail={authUser?.email}
+                       currentUserRole={rolle}
+                       currentUserFaecher={permissions?.faecher || []}
+                     />
+                   )}
+                </ErrorBoundary>
+              </div>
             </TabsContent>
 
             {/* ── Tab 2: Struktur anlegen → StrukturBoard ──────────────────────── */}
@@ -449,52 +451,58 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             </TabsContent>
 
             {/* ── Tab 5: Allgemeine Aufgaben (Ebene 2) ────────────────────────── */}
-            <TabsContent value="ebene2" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-y-auto m-0 p-0">
-              <ErrorBoundary label="Allgemeine Aufgaben erstellen">
-                <AllgemeineAufgabenView 
-                  einheitId={selectedEinheitId}
-                  einheit={einheit}
-                  kannBearbeiten={kannDieseEinheitBearbeiten}
-                  userEmail={authUser?.email}
-                  userRole={rolle}
-                />
-              </ErrorBoundary>
+            <TabsContent value="ebene2" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
+              <div className="flex-1 overflow-y-auto">
+                <ErrorBoundary label="Allgemeine Aufgaben erstellen">
+                  <AllgemeineAufgabenView 
+                    einheitId={selectedEinheitId}
+                    einheit={einheit}
+                    kannBearbeiten={kannDieseEinheitBearbeiten}
+                    userEmail={authUser?.email}
+                    userRole={rolle}
+                  />
+                </ErrorBoundary>
+              </div>
             </TabsContent>
 
             {/* ── Tab 6: Anwendungs- & Projektaufgaben (Ebene 3) ──────────────── */}
-            <TabsContent value="ebene3" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-y-auto m-0 p-0">
-              <ErrorBoundary label="Anwendungs- und Projektaufgaben">
-                <ProjektaufgabenView 
-                  einheitId={selectedEinheitId}
-                  einheit={einheit}
-                  kannBearbeiten={kannDieseEinheitBearbeiten}
-                  userEmail={authUser?.email}
-                  userRole={rolle}
-                />
-              </ErrorBoundary>
+            <TabsContent value="ebene3" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
+              <div className="flex-1 overflow-y-auto">
+                <ErrorBoundary label="Anwendungs- und Projektaufgaben">
+                  <ProjektaufgabenView 
+                    einheitId={selectedEinheitId}
+                    einheit={einheit}
+                    kannBearbeiten={kannDieseEinheitBearbeiten}
+                    userEmail={authUser?.email}
+                    userRole={rolle}
+                  />
+                </ErrorBoundary>
+              </div>
             </TabsContent>
 
             {/* ── Tab 7: Freigabe-Cockpit ──────────────────────────────────────── */}
-            <TabsContent value="cockpit" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-y-auto m-0 p-0">
-              <ErrorBoundary label="Freigabe-Cockpit">
-                <div className="px-4 sm:px-6 lg:px-8 py-6">
+            <TabsContent value="cockpit" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
+              <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6">
+                <ErrorBoundary label="Freigabe-Cockpit">
                   <ExportCockpitView 
                     einheitId={selectedEinheitId} 
                     userRole={rolle}
                   />
-                </div>
-              </ErrorBoundary>
+                </ErrorBoundary>
+              </div>
             </TabsContent>
 
             {/* ── Tab 8: Moodle-Export & Admin-Freigabe ────────────────────────── */}
-            <TabsContent value="export" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-y-auto m-0 p-0">
-              <ErrorBoundary label="Moodle Export">
-                <MoodleExportView 
-                  einheitId={selectedEinheitId} 
-                  userRole={rolle}
-                  isAdmin={istAdmin}
-                />
-              </ErrorBoundary>
+            <TabsContent value="export" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
+              <div className="flex-1 overflow-y-auto">
+                <ErrorBoundary label="Moodle Export">
+                  <MoodleExportView 
+                    einheitId={selectedEinheitId} 
+                    userRole={rolle}
+                    isAdmin={istAdmin}
+                  />
+                </ErrorBoundary>
+              </div>
             </TabsContent>
 
           </Tabs>
