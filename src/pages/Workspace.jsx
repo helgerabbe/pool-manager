@@ -333,9 +333,10 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             </TabsContent>
 
             {/* ── Tab 2: Struktur anlegen → StrukturBoard ──────────────────────── */}
-             <TabsContent value="struktur" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
-               <ErrorBoundary label="Struktur">
-                 {!permissions.kannStrukturBearbeiten(einheit?.fach) ? (
+              <TabsContent value="struktur" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
+                <div className="flex-1 overflow-y-auto">
+                  <ErrorBoundary label="Struktur">
+                    {!permissions.kannStrukturBearbeiten(einheit?.fach) ? (
                    <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center p-8">
                      <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center">
                        <Lock className="w-8 h-8 text-red-500" />
@@ -371,15 +372,17 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                        themenfelder={themenfelder}
                        queryClient={queryClient}
                      />
-                   )}
-              </ErrorBoundary>
-            </TabsContent>
+                     )}
+                     </ErrorBoundary>
+                     </div>
+                     </TabsContent>
 
             {/* ── Tab 3: Aktivitäten zuordnen → Sidebar-Baum + Detail-Panel ───── */}
             <TabsContent value="aktivitaeten" className="data-[state=active]:flex data-[state=inactive]:hidden flex-row flex-1 overflow-hidden m-0 p-0">
               <ErrorBoundary label="Aktivitäten-Struktur">
                 <aside className="w-96 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden">
-                  <div className="flex-1 overflow-y-auto p-3">
+                   <div className="flex-1 overflow-hidden p-3">
+                     <div className="h-full overflow-y-auto">
                     <SidebarTree
                       einheit={einheit}
                       lernpakete={paketeFuerEinheit}
@@ -393,9 +396,10 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                       userEmail={authUser?.email || ''}
                       highlightedAtomIds={highlightedAtomIds}
                       phaseAktivitaeten={lernpaketAktivitaeten}
-                    />
-                  </div>
-                </aside>
+                      />
+                      </div>
+                      </div>
+                      </aside>
 
                 <main className="flex-1 overflow-hidden min-h-0">
                    <ErrorBoundary label="Detail-Panel">
