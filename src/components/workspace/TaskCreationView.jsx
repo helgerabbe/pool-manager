@@ -376,14 +376,36 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
   useEffect(() => {
     if (!initialActivityId || allActivities.length === 0 || lernpakete.length === 0) return;
     
-    const activity = allActivities.find(a => a.id === initialActivityId);
-    if (!activity) return;
+    console.log("🔗 Deep-Link: Suche nach Activity", initialActivityId);
     
+    const activity = allActivities.find(a => a.id === initialActivityId);
+    if (!activity) {
+      console.log("❌ Deep-Link: Activity nicht gefunden");
+      return;
+    }
+
+    console.log("✓ Activity gefunden:", activity);
+    
+    // Selektiere die Activity
     setSelectedItem({ type: 'activity', activity });
     
+    // Finde das Lernpaket (Parent)
     const paket = lernpakete.find(p => p.id === activity.lernpaket_id);
     if (paket) {
-      setOpenPacketIds(new Set([paket.id]));
+      const keysToExpand = [paket.id];
+      
+      // Finde das Themenfeld (Grandparent)
+      if (paket.themenfeld_id) {
+        keysToExpand.push(paket.themenfeld_id);
+        console.log("📁 Öffne Hierarchie: Themenfeld ->", paket.themenfeld_id, "Paket ->", paket.id);
+      } else {
+        console.log("📁 Öffne Paket ->", paket.id);
+      }
+      
+      // Öffne alle Ordner
+      setOpenPacketIds(new Set(keysToExpand));
+    } else {
+      console.log("⚠️ Lernpaket für Activity nicht gefunden");
     }
   }, [initialActivityId, allActivities, lernpakete, searchParams]);
 
