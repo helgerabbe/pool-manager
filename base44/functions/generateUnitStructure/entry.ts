@@ -125,9 +125,15 @@ Basierend auf dem bisherigen Gesprächsverlauf und den Stammdaten, generiere jet
       }
     }
 
+    // Trenne Chat-Text vom JSON sauber auf Backend-Seite
+    const separatorIndex = aiResponse.indexOf('---JSON_START---');
+    const chatText = separatorIndex !== -1
+      ? aiResponse.substring(0, separatorIndex).trim()
+      : aiResponse.trim();
+
     return Response.json({
       success: true,
-      aiResponse,
+      aiResponse: chatText,  // Nur der Chat-Text ohne JSON-Block
       structure,
     });
   } catch (error) {

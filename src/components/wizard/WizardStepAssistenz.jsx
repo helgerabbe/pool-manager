@@ -236,11 +236,10 @@ export default function WizardStepAssistenz({
           documentUrls: activeDocumentUrls,
         });
 
-        const aiReply = response.data?.aiResponse || 'Keine Antwort erhalten.';
+        const chatText = response.data?.aiResponse || 'Keine Antwort erhalten.';
         const structure = response.data?.structure;
-        const textPart = aiReply.split('---JSON_START---')[0].trim();
 
-        setMessages([{ role: 'assistant', content: textPart }]);
+        setMessages([{ role: 'assistant', content: chatText }]);
 
         if (structure && structure.szenario_a && structure.szenario_b) {
           setSzenarien(structure);
@@ -294,13 +293,10 @@ export default function WizardStepAssistenz({
         documentUrls: activeDocumentUrls,
       });
 
-      const aiReply = response.data?.aiResponse || 'Keine Antwort erhalten.';
+      const chatText = response.data?.aiResponse || 'Keine Antwort erhalten.';
       const structure = response.data?.structure;
 
-      // Extrahiere Text-Teil (vor dem ---JSON_START--- Trenner)
-      const textPart = aiReply.split('---JSON_START---')[0].trim();
-      
-      setMessages(prev => [...prev, { role: 'assistant', content: textPart }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: chatText }]);
 
       // Prüfe ob es Szenarien gibt (erste Anfrage)
       if (structure && structure.szenario_a && structure.szenario_b) {
@@ -385,9 +381,8 @@ export default function WizardStepAssistenz({
           documentUrls: activeDocumentUrls,
         });
 
-        const aiReply = response.data?.aiResponse || '';
-        const textPart = aiReply.split('---JSON_START---')[0].trim();
-        setMessages(prev => [...prev, { role: 'assistant', content: textPart }]);
+        const chatText = response.data?.aiResponse || '';
+        if (chatText) setMessages(prev => [...prev, { role: 'assistant', content: chatText }]);
       } catch (err) {
         console.error('Refinement error:', err);
       } finally {
@@ -409,11 +404,10 @@ export default function WizardStepAssistenz({
         documentUrls: activeDocumentUrls,
       });
 
-      const aiReply = response.data?.aiResponse || 'Keine Antwort erhalten.';
+      const chatText = response.data?.aiResponse || 'Keine Antwort erhalten.';
       const structure = response.data?.structure;
 
-      const textPart = aiReply.split('---JSON_START---')[0].trim();
-      setMessages(prev => [...prev, { role: 'assistant', content: textPart }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: chatText }]);
 
       // Setze neue Szenarien
       if (structure && structure.szenario_a && structure.szenario_b) {
