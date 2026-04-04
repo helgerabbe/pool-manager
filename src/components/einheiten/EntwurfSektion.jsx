@@ -5,7 +5,7 @@ import { useRBAC } from '@/hooks/useRBAC';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Wand2, Trash2, Clock, BookOpen, GraduationCap } from 'lucide-react';
+import { Wand2, Trash2, Clock, BookOpen, GraduationCap, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -34,12 +34,16 @@ export default function EntwurfSektion() {
   });
 
   const handleDelete = async () => {
+    const idToDelete = deleteId;
     setIsDeleting(true);
-    await base44.functions.invoke('deleteEinheitSecure', { einheit_id: deleteId });
-    queryClient.invalidateQueries({ queryKey: ['einheiten-entwaerfe'] });
-    queryClient.invalidateQueries({ queryKey: ['einheiten'] });
-    setDeleteId(null);
-    setIsDeleting(false);
+    try {
+      await base44.functions.invoke('deleteEinheitSecure', { einheit_id: idToDelete });
+      queryClient.invalidateQueries({ queryKey: ['einheiten-entwaerfe'] });
+      queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+    } finally {
+      setDeleteId(null);
+      setIsDeleting(false);
+    }
   };
 
   const handleWeiterbearbeiten = (entwurf) => {
@@ -124,7 +128,7 @@ export default function EntwurfSektion() {
       </div>
 
       {/* Löschen-Dialog */}
-      <AlertDialog open={!!deleteId} onOpenChange={open => { if (!open) setDeleteId(null); }}>
+      <AlertDialog open={!!deleteId} onOpenChange={open => { if (!open && !isDeleting) setDeleteId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Entwurf verwerfen?</AlertDialogTitle>
@@ -134,13 +138,14 @@ export default function EntwurfSektion() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction
+            {/* Kein AlertDialogAction – verhindert automatisches Schließen vor Abschluss */}
+            <Button
               onClick={handleDelete}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? 'Wird gelöscht...' : 'Verwerfen'}
-            </AlertDialogAction>
+              {isDeleting ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Wird gelöscht...</> : 'Verwerfen'}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
