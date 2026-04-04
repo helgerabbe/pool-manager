@@ -189,33 +189,34 @@ export function kannFreigabeStatusAendern(rolle, benutzerFaecher, einheitFach) {
  * Nützlich für UI-Entscheidungen.
  */
 export function getPermissions(rolle, benutzerFaecher = []) {
-  return {
-    rolle,
-    faecher: benutzerFaecher,
+   return {
+     rolle,
+     faecher: benutzerFaecher,
+     istAdmin:                  rolle === ROLLEN.ADMIN,
 
-    // ──────── BEREICH 1: STRUKTUR ────────────────────────────────────────
-    kannStrukturBearbeiten:    (fach) => kannStrukturBearbeiten(rolle, benutzerFaecher, fach),
-    kannEinheitVerwalten:      kannEinheitVerwalten(rolle),
-    kannThemenfeldLoeschen:    (fach) => kannThemenfeldLoeschen(rolle, benutzerFaecher, fach),
+     // ──────── BEREICH 1: STRUKTUR ────────────────────────────────────────
+     kannStrukturBearbeiten:    (fach) => kannStrukturBearbeiten(rolle, benutzerFaecher, fach),
+     kannEinheitVerwalten:      kannEinheitVerwalten(rolle),
+     kannThemenfeldLoeschen:    (fach) => kannThemenfeldLoeschen(rolle, benutzerFaecher, fach),
 
-    // ──────── BEREICH 2: INHALTE ────────────────────────────────────────
-    kannInhalteBearbeiten:     (fach) => kannInhalteBearbeiten(rolle, benutzerFaecher, fach),
-    kannInhaltFreigeben:       (fach) => kannInhaltFreigeben(rolle, benutzerFaecher, fach),
-    kannEinheitBearbeiten:     (fach) => kannEinheitBearbeiten(rolle, benutzerFaecher, fach),
+     // ──────── BEREICH 2: INHALTE ────────────────────────────────────────
+     kannInhalteBearbeiten:     (fach) => kannInhalteBearbeiten(rolle, benutzerFaecher, fach),
+     kannInhaltFreigeben:       (fach) => kannInhaltFreigeben(rolle, benutzerFaecher, fach),
+     kannEinheitBearbeiten:     (fach) => kannEinheitBearbeiten(rolle, benutzerFaecher, fach),
 
-    // ──────── BEREICH 3: EXPORT ────────────────────────────────────────
-    kannExportBedienen:        kannExportBedienen(rolle),
-    kannExportLesen:           kannExportLesen(rolle),
-    kannExportieren:           kannExportieren(rolle), // Legacy alias
+     // ──────── BEREICH 3: EXPORT ────────────────────────────────────────
+     kannExportBedienen:        kannExportBedienen(rolle),
+     kannExportLesen:           kannExportLesen(rolle),
+     kannExportieren:           kannExportieren(rolle), // Legacy alias
 
-    // ──────── ALLGEMEIN ────────────────────────────────────────
-    kannSchreiben:             kannSchreiben(rolle),
-    kannLoeschen:              [ROLLEN.ADMIN, ROLLEN.FACHSCHAFT, ROLLEN.LEHRKRAFT].includes(rolle),
-    kannBenutzerVerwalten:     rolle === ROLLEN.ADMIN,
-    kannKIAssistentNutzen:     kannKIAssistentNutzen(rolle),
-    kannFreigabeStatusAendern: (fach) => kannFreigabeStatusAendern(rolle, benutzerFaecher, fach),
-    nurFreigegebene:           rolle === ROLLEN.MOODLE,
-    istGast:                   [ROLLEN.BETRACHTER, ROLLEN.MOODLE].includes(rolle),
-    wartungsmodus:             false, // wird von useRBAC überschrieben
-  };
+     // ──────── ALLGEMEIN ────────────────────────────────────────
+     kannSchreiben:             kannSchreiben(rolle),
+     kannLoeschen:              [ROLLEN.ADMIN, ROLLEN.FACHSCHAFT, ROLLEN.LEHRKRAFT].includes(rolle),
+     kannBenutzerVerwalten:     rolle === ROLLEN.ADMIN,
+     kannKIAssistentNutzen:     kannKIAssistentNutzen(rolle),
+     kannFreigabeStatusAendern: (fach) => kannFreigabeStatusAendern(rolle, benutzerFaecher, fach),
+     nurFreigegebene:           rolle === ROLLEN.MOODLE,
+     istGast:                   [ROLLEN.BETRACHTER, ROLLEN.MOODLE].includes(rolle),
+     wartungsmodus:             false, // wird von useRBAC überschrieben
+   };
 }
