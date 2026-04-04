@@ -117,25 +117,23 @@ export default function EinheitCreateWizard() {
       }
     }
 
-    // Einheit auf aktiv setzen und direkt zur Werkbank navigieren
-    await base44.entities.Einheiten.update(einheitId, { wizard_status: 'aktiv' });
-    queryClient.invalidateQueries({ queryKey: ['einheiten'] });
     queryClient.invalidateQueries({ queryKey: ['themenfelder', einheitId] });
     queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
 
-    navigate(`/workspace?einheit=${einheitId}&fromWizard=1`);
+    setCompletedSteps(prev => [...new Set([...prev, 2])]);
+    setCurrentStep(3);
   };
 
   const handleStep3Done = async (pakete) => {
-    // updated_date aktualisieren
     if (einheitId) {
-      await base44.entities.Einheiten.update(einheitId, { version: (stammdaten.version || 1) });
+      await base44.entities.Einheiten.update(einheitId, { wizard_status: 'aktiv' });
     }
     setPaketeCreated(pakete || []);
     queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
     queryClient.invalidateQueries({ queryKey: ['lernziele'] });
+    queryClient.invalidateQueries({ queryKey: ['einheiten'] });
     setCompletedSteps(prev => [...new Set([...prev, 3])]);
-    setCurrentStep(4);
+    navigate(`/workspace?einheit=${einheitId}&fromWizard=1`);
   };
 
   const handleStep4Done = () => {
