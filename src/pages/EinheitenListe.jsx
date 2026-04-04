@@ -13,6 +13,7 @@ import SyncStatusBadge from '@/components/sync/SyncStatusBadge';
 import EinheitCard from '@/components/einheiten/EinheitCard';
 import EmptyState from '@/components/shared/EmptyState';
 import DeletionOverlay from '@/components/loading/DeletionOverlay';
+import EntwurfSektion from '@/components/einheiten/EntwurfSektion';
 import { BookOpen } from 'lucide-react';
 import { getExportPendingCount } from '@/lib/deltaExportLogic';
 import { useNavigate } from 'react-router-dom';
@@ -159,6 +160,9 @@ export default function EinheitenListe() {
           </div>
         )}
       </div>
+
+      {/* Angefangene Entwürfe (nur für den Ersteller sichtbar) */}
+      <EntwurfSektion />
 
       {einheiten.length > 0 && (
         <div className="space-y-3">

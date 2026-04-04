@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -16,18 +16,48 @@ export default function EinheitCreateWizard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [currentStep, setCurrentStep] = useState(1);
-  const [einheitId, setEinheitId]     = useState(null);
+  // Draft-Resume: URL-Parameter auslesen
+  const urlParams = new URLSearchParams(window.location.search);
+  const draftId = urlParams.get('draftId');
+  const draftStep = parseInt(urlParams.get('step') || '1', 10);
+
+  const [currentStep, setCurrentStep] = useState(draftId ? draftStep : 1);
+  const [einheitId, setEinheitId]     = useState(draftId || null);
   const [stammdaten, setStammdaten]   = useState({});
   const [paketeCreated, setPaketeCreated] = useState([]);
-  const [completedSteps, setCompletedSteps] = useState([]);
+  const [completedSteps, setCompletedSteps] = useState(
+    draftId ? Array.from({ length: draftStep - 1 }, (_, i) => i + 1) : []
+  );
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isDraftLoading, setIsDraftLoading] = useState(!!draftId);
+
+  // Beim Wiederaufnehmen: Stammdaten aus DB laden
+  useEffect(() => {
+    if (!draftId) return;
+    base44.entities.Einheiten.filter({ id: draftId }).then(results => {
+      const einheit = results?.[0];
+      if (einheit) {
+        setStammdaten({
+          fach: einheit.fach,
+          titel_der_einheit: einheit.titel_der_einheit,
+          jahrgangsstufe: einheit.jahrgangsstufe,
+          zeit_phase_id: einheit.zeit_phase_id,
+        });
+      }
+      setIsDraftLoading(false);
+    });
+  }, [draftId]);
 
   const handleCancel = async () => {
     setIsCancelling(true);
+    if (draftId) {
+      // Draft-Resume: Entwurf bleibt erhalten, einfach zurück
+      navigate('/einheiten');
+      return;
+    }
     if (einheitId) {
-      // Einheit wurde bereits angelegt → Cascade-Delete
+      // Neuer Wizard: Einheit wurde angelegt → Cascade-Delete
       await base44.functions.invoke('deleteEinheitSecure', { einheit_id: einheitId });
       queryClient.invalidateQueries({ queryKey: ['einheiten'] });
     }
@@ -84,13 +114,25 @@ export default function EinheitCreateWizard() {
     navigate(`/workspace?einheit=${einheitId}&fromWizard=1`);
   };
 
+  if (isDraftLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Neue Einheit erstellen</h1>
+        <h1 className="text-2xl font-bold text-foreground">
+          {draftId ? 'Entwurf weiterbearbeiten' : 'Neue Einheit erstellen'}
+        </h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Geführter Prozess in 4 Schritten – vom Thema bis zur befüllten Lernstruktur.
+          {draftId
+            ? `Weiter an: ${stammdaten.titel_der_einheit || '...'}`
+            : 'Geführter Prozess in 4 Schritten – vom Thema bis zur befüllten Lernstruktur.'}
         </p>
       </div>
 
@@ -162,9 +204,11 @@ export default function EinheitCreateWizard() {
           <AlertDialogHeader>
             <AlertDialogTitle>Wizard abbrechen?</AlertDialogTitle>
             <AlertDialogDescription>
-              {einheitId
-                ? 'Die bereits angelegte Einheit und alle zugehörigen Daten werden unwiderruflich gelöscht.'
-                : 'Der Wizard wird geschlossen. Es wurden noch keine Daten gespeichert.'}
+              {draftId
+                ? 'Der Entwurf bleibt gespeichert und kann später weiterbearbeitet werden. Möchtest du zurück zur Einheitenliste?'
+                : einheitId
+                  ? 'Die bereits angelegte Einheit und alle zugehörigen Daten werden unwiderruflich gelöscht.'
+                  : 'Der Wizard wird geschlossen. Es wurden noch keine Daten gespeichert.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
