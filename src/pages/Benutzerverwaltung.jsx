@@ -145,7 +145,7 @@ function BenutzerForm({ open, onOpenChange, onSubmit, initialData, faecher = [] 
           </div>
 
           <div className="space-y-2">
-            <Label>Fachbereich-Zuständigkeit * (max. 5)</Label>
+            <Label>Fachbereich-Zugehörigkeit * (max. 5)</Label>
             <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-muted/30 max-h-40 overflow-y-auto scroll-container">
               {faecher.filter(f => f.ist_aktiv).sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)).map(fach => {
                 const selected = (formData.fachbereich_zustaendigkeit || []).includes(fach.name);
@@ -170,7 +170,7 @@ function BenutzerForm({ open, onOpenChange, onSubmit, initialData, faecher = [] 
               })}
             </div>
             <p className="text-xs text-muted-foreground">
-              {(formData.fachbereich_zustaendigkeit || []).length}/5 Fächer ausgewählt
+              {(formData.fachbereich_zustaendigkeit || []).length}/5 Fächer ausgewählt (Zugehörigkeit)
             </p>
           </div>
 
