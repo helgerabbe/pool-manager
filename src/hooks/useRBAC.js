@@ -42,7 +42,7 @@ export function useRBAC() {
 
   const profil     = benutzerProfile[0] || null;
   // Base44-Admins sind automatisch Administrator – auch ohne DB-Profil-Eintrag
-  const realRolle  = authUser?.role === 'admin' ? ROLLEN.ADMIN : (profil?.rolle || ROLLEN.BETRACHTER);
+  const realRolle  = authUser?.role === 'Administrator' ? ROLLEN.ADMIN : (profil?.rolle || ROLLEN.BETRACHTER);
   const realFaecher = profil?.fachbereich_zustaendigkeit || [];
 
   // ── Impersonation: mockedRole überschreibt immer die echte Rolle ─────────
