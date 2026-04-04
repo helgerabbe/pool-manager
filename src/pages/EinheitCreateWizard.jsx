@@ -220,11 +220,10 @@ export default function EinheitCreateWizard() {
         />
       )}
       {currentStep === 3 && einheitId && (
-        <div className="bg-card border border-border rounded-xl p-6 shadow-sm min-h-[400px]">
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm flex flex-col min-h-[600px]">
           <WizardStep3Generator
             einheitId={einheitId}
             onDone={handleStep3Done}
-            onSkipAll={handleSkipToStruktur}
           />
         </div>
       )}
