@@ -614,7 +614,7 @@ export default function WizardStepAssistenz({
               : 'Keine Struktur erstellt'}
         </p>
         <div className="flex gap-2">
-          <Button variant="outline">Zurück</Button>
+          <Button variant="outline" onClick={() => setEntryMode('selection')}>Zurück</Button>
           <Button
             disabled={loading || viewMode === 'selection' || themenfelder.length === 0}
             onClick={handleAcceptStructure}
