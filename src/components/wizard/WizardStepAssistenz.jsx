@@ -214,11 +214,68 @@ export default function WizardStepAssistenz({
   const [szenarien, setSzenarien] = useState(null);
   const [selectedScenario, setSelectedScenario] = useState(null);
   const messagesEndRef = useRef(null);
+  const autoFetchDone = useRef(false);
 
   // Auto-scroll zu neuester Message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Auto-Trigger: Sobald Split-Screen aktiv wird, sofort ersten Vorschlag laden
+  useEffect(() => {
+    if (entryMode !== 'ai_split_screen' || autoFetchDone.current) return;
+    autoFetchDone.current = true;
+
+    const fetchInitialStructure = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await base44.functions.invoke('generateUnitStructure', {
+          stammdaten,
+          messages: [],
+          documentUrls: activeDocumentUrls,
+        });
+
+        const aiReply = response.data?.aiResponse || 'Keine Antwort erhalten.';
+        const structure = response.data?.structure;
+        const textPart = aiReply.split('---JSON_START---')[0].trim();
+
+        setMessages([{ role: 'assistant', content: textPart }]);
+
+        if (structure && structure.szenario_a && structure.szenario_b) {
+          setSzenarien(structure);
+          setViewMode('selection');
+        } else if (structure && structure.themenfelder && Array.isArray(structure.themenfelder)) {
+          const flatThemenfelder = structure.themenfelder.map((tf, idx) => ({
+            id: `tf-${idx}`,
+            titel: tf.titel,
+            beschreibung: tf.beschreibung || '',
+          }));
+          const flatLernpakete = [];
+          structure.themenfelder.forEach((tf, tfIdx) => {
+            (tf.lernpakete || []).forEach((lp, lpIdx) => {
+              flatLernpakete.push({
+                id: `lp-${tfIdx}-${lpIdx}`,
+                themenfeld_id: `tf-${tfIdx}`,
+                titel_des_pakets: lp.titel,
+                geschaetzte_dauer_minuten: lp.geschaetzte_dauer_minuten || 60,
+              });
+            });
+          });
+          setThemenfelder(flatThemenfelder);
+          setLernpakete(flatLernpakete);
+          setViewMode('refinement');
+        }
+      } catch (err) {
+        setError(err.message || 'Fehler bei der KI-Kommunikation');
+        setMessages([{ role: 'assistant', content: 'Es trat ein Fehler auf. Bitte versuchen Sie es erneut.' }]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInitialStructure();
+  }, [entryMode]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -411,10 +468,11 @@ export default function WizardStepAssistenz({
         <div className="flex-1 bg-card border rounded-lg p-4 overflow-hidden flex flex-col">
           <div className="mb-4">
             <h3 className="font-semibold text-foreground text-sm">
-              {viewMode === 'selection' ? 'Didaktische Ansätze' : 'Struktur-Vorschau'}
+              {viewMode === 'selection' ? 'Didaktische Ansätze' : loading ? 'Didaktische Ansätze' : 'Struktur-Vorschau'}
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {viewMode === 'initial' && 'Starten Sie das Gespräch um Vorschläge zu erhalten'}
+              {loading && viewMode === 'initial' && 'KI generiert zwei Struktur-Vorschläge...'}
+              {!loading && viewMode === 'initial' && 'Starten Sie das Gespräch um Vorschläge zu erhalten'}
               {viewMode === 'selection' && 'Wählen Sie den gewünschten Ansatz'}
               {viewMode === 'refinement' && `${themenfelder.length} Themenfelder`}
             </p>
@@ -434,16 +492,34 @@ export default function WizardStepAssistenz({
               lernpakete={lernpakete}
               loading={loading}
             />
+          ) : loading ? (
+            /* Skeleton für initiales Laden der zwei Szenario-Karten */
+            <div className="flex flex-col gap-4 flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                <p className="text-xs text-muted-foreground">Die KI entwirft zwei didaktische Ansätze...</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4 flex-1">
+                {[0, 1].map(i => (
+                  <div key={i} className="border-2 border-dashed border-muted rounded-xl p-5 space-y-3 animate-pulse">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-muted" />
+                      <div className="h-4 w-24 bg-muted rounded" />
+                    </div>
+                    <div className="h-3 w-full bg-muted rounded" />
+                    <div className="h-3 w-4/5 bg-muted rounded" />
+                    <div className="space-y-2 mt-3">
+                      {[...Array(3)].map((_, j) => (
+                        <div key={j} className="h-8 bg-muted rounded-lg" />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : (
             <div className="text-center py-12 text-muted-foreground flex flex-col items-center justify-center flex-1">
-              {loading ? (
-                <>
-                  <Loader2 className="w-8 h-8 animate-spin mb-3 text-primary" />
-                  <p className="text-sm">Die KI generiert Strukturvorschläge...</p>
-                </>
-              ) : (
-                <p className="text-sm">Starten Sie oben rechts ein Gespräch</p>
-              )}
+              <p className="text-sm">Starten Sie oben rechts ein Gespräch</p>
             </div>
           )}
         </div>
