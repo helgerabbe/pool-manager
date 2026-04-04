@@ -84,7 +84,7 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
 
   // Permission check: Admins OR Fachlehrkräfte mit relevanter Berechtigung dürfen bearbeiten
    const kannInhalteBearbeiten = permissions.istAdmin || (einheitFach && permissions.kannInhalteBearbeiten(einheitFach));
-   if (!kannInhalteBearbeiten && !permissions.istAdmin) {
+   if (!kannInhalteBearbeiten) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-center p-8">
         <AlertTriangle className="w-12 h-12 text-muted-foreground/30" />
