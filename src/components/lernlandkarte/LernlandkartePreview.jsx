@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Badge } from '@/components/ui/badge';
@@ -140,6 +140,8 @@ export default function LernlandkartePreview({
   kannBearbeiten = false,
   onPriorityChange,
 }) {
+  const [localPrioZiele, setLocalPrioZiele] = useState(aufgabe?.prioritaete_lernziele || []);
+
   const { data: mappings = [] } = useQuery({
     queryKey: ['allgemeineAufgabeMappings'],
     queryFn: () => base44.entities.AllgemeineAufgabeLernzielMapping.list(),
@@ -150,12 +152,16 @@ export default function LernlandkartePreview({
     paketeFuerEinheit.some(p => p.id === lz.lernpaket_id)
   );
 
-  const prioritaeteZiele = aufgabe?.prioritaete_lernziele || [];
+  // Aktualisiere lokalen State wenn aufgabe sich ändert
+  React.useEffect(() => {
+    setLocalPrioZiele(aufgabe?.prioritaete_lernziele || []);
+  }, [aufgabe?.id, aufgabe?.prioritaete_lernziele]);
   
   const handleTogglePriority = (zielId) => {
-    const neu = prioritaeteZiele.includes(zielId)
-      ? prioritaeteZiele.filter(id => id !== zielId)
-      : [...prioritaeteZiele, zielId];
+    const neu = localPrioZiele.includes(zielId)
+      ? localPrioZiele.filter(id => id !== zielId)
+      : [...localPrioZiele, zielId];
+    setLocalPrioZiele(neu);
     onPriorityChange?.(neu);
   };
 
@@ -196,17 +202,17 @@ export default function LernlandkartePreview({
       <div className="flex-1 overflow-y-auto px-4 py-3">
         <div className="max-w-4xl space-y-3">
           {themenfeldMitPaketen.length > 0 ? (
-            themenfeldMitPaketen.map(themenfeld => (
-              <ThemenfeldAccordion
-                key={themenfeld.id}
-                themenfeld={themenfeld}
-                lernpakete={paketeFuerEinheit}
-                lernziele={zieleFuerEinheit}
-                prioritaeteZiele={prioritaeteZiele}
-                onTogglePriority={handleTogglePriority}
-                kannBearbeiten={kannBearbeiten}
-              />
-            ))
+           themenfeldMitPaketen.map(themenfeld => (
+             <ThemenfeldAccordion
+               key={themenfeld.id}
+               themenfeld={themenfeld}
+               lernpakete={paketeFuerEinheit}
+               lernziele={zieleFuerEinheit}
+               prioritaeteZiele={localPrioZiele}
+               onTogglePriority={handleTogglePriority}
+               kannBearbeiten={kannBearbeiten}
+             />
+           ))
           ) : null}
           
           {/* Pseudo-Themenfeld für Nicht-Zugeordnete Lernpakete */}
@@ -221,7 +227,7 @@ export default function LernlandkartePreview({
                         key={paket.id}
                         lernpaket={paket}
                         lernziele={zieleFuerEinheit}
-                        prioritaeteZiele={prioritaeteZiele}
+                        prioritaeteZiele={localPrioZiele}
                         onTogglePriority={handleTogglePriority}
                         kannBearbeiten={kannBearbeiten}
                       />
@@ -248,7 +254,7 @@ export default function LernlandkartePreview({
                     <LernzielCompact
                       key={ziel.id}
                       lernziel={ziel}
-                      isPrioritized={prioritaeteZiele.includes(ziel.id)}
+                      isPrioritized={localPrioZiele.includes(ziel.id)}
                       onTogglePriority={handleTogglePriority}
                       kannBearbeiten={kannBearbeiten}
                     />
