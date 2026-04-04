@@ -180,9 +180,8 @@ function ActivitySidebarItem({
 function SidebarLernpaketFolder({
   lernpaket, allActivities, aktivitaetenMap,
   masterAufgabenByActivityId, kloneByMasterId,
-  selectedItem, onSelect, defaultOpen = false, myEmail,
+  selectedItem, onSelect, defaultOpen = false, myEmail, isOpen = false, onToggleOpen,
 }) {
-  const [open, setOpen] = useState(defaultOpen);
   const paketActivities = allActivities.filter(a => a.lernpaket_id === lernpaket.id);
   const phasenConfig = lernpaket.phasen_konfiguration || {};
 
@@ -196,16 +195,18 @@ function SidebarLernpaketFolder({
   });
 
   useEffect(() => {
-    if (hasSelectedChild || defaultOpen) setOpen(true);
-  }, [hasSelectedChild, defaultOpen]);
+    if (hasSelectedChild && !isOpen && onToggleOpen) {
+      onToggleOpen(lernpaket.id, true);
+    }
+  }, [hasSelectedChild, isOpen, lernpaket.id, onToggleOpen]);
 
   return (
     <div>
       <button
-         onClick={() => setOpen(o => !o)}
+         onClick={() => onToggleOpen?.(lernpaket.id, !isOpen)}
          className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-left text-sm font-medium text-foreground hover:bg-muted transition-colors"
        >
-         <ChevronRight className={cn('w-3.5 h-3.5 shrink-0 text-muted-foreground transition-transform', open && 'rotate-90')} />
+         <ChevronRight className={cn('w-3.5 h-3.5 shrink-0 text-muted-foreground transition-transform', isOpen && 'rotate-90')} />
          <Package className="w-4 h-4 shrink-0 text-amber-500" />
          <span className="flex-1 truncate">{lernpaket.titel_des_pakets}</span>
          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
@@ -217,7 +218,7 @@ function SidebarLernpaketFolder({
          </div>
        </button>
 
-      {open && (
+      {isOpen && (
         <div className="ml-5 mt-0.5 border-l border-border pl-2 space-y-2 pb-1">
           {paketActivities.length === 0 ? (
             <p className="px-2 py-2 text-[11px] text-muted-foreground/50 italic">Keine Aktivitäten zugeordnet</p>
@@ -284,6 +285,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
   const queryClient = useQueryClient();
   // selectedItem: null | { type: 'activity', activity } | { type: 'master', master } | { type: 'klon', klon }
   const [selectedItem, setSelectedItem] = useState(null);
+  const [openPacketIds, setOpenPacketIds] = useState(new Set());
 
   const { data: lernpakete = [] } = useQuery({
     queryKey: ['lernpakete'],
@@ -364,15 +366,23 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
     }
   }, [allActivities, alleMaster, alleKlone]);
 
-  // Wenn initialActivityId gesetzt, suche die Activity und wähle sie automatisch
+  // Wenn initialActivityId gesetzt: Activity suchen + Baum öffnen bis dahin
   useEffect(() => {
     if (initialActivityId && allActivities.length > 0) {
       const activity = allActivities.find(a => a.id === initialActivityId);
       if (activity) {
+        // Wähle die Activity aus
         setSelectedItem({ type: 'activity', activity });
+        
+        // Finde das Lernpaket, zu dem diese Activity gehört
+        const paket = lernpakete.find(p => p.id === activity.lernpaket_id);
+        if (paket) {
+          // Öffne das Paket
+          setOpenPacketIds(new Set([paket.id]));
+        }
       }
     }
-  }, [initialActivityId, allActivities]);
+  }, [initialActivityId, allActivities, lernpakete]);
 
   // Gruppiert nach Themenfeld
   const groupedPakete = themenfelder.length > 0
@@ -436,6 +446,18 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
                     onSelect={setSelectedItem}
                     defaultOpen={idx === 0}
                     myEmail={userEmail}
+                    isOpen={openPacketIds.has(lernpaket.id)}
+                    onToggleOpen={(paketId, shouldOpen) => {
+                      setOpenPacketIds(prev => {
+                        const newSet = new Set(prev);
+                        if (shouldOpen) {
+                          newSet.add(paketId);
+                        } else {
+                          newSet.delete(paketId);
+                        }
+                        return newSet;
+                      });
+                    }}
                   />
                 ))}
               </div>
