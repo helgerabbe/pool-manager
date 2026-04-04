@@ -49,6 +49,7 @@ export default function UserInviteTab({ benutzer = [], onEdit, onDelete }) {
       toast.success('Einladung gesendet!');
       setInviteId(null);
       queryClient.invalidateQueries({ queryKey: ['appUsers'] });
+      queryClient.invalidateQueries({ queryKey: ['auditLog'] });
     },
     onError: (err) => {
       const msg = err.response?.data?.error || err.message;
@@ -86,13 +87,21 @@ export default function UserInviteTab({ benutzer = [], onEdit, onDelete }) {
                   {(b.vorname || '?')[0]}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">{b.vorname} {b.nachname}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-medium">{b.vorname} {b.nachname}</p>
+                    {lastInvite && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                        <Mail className="w-2.5 h-2.5" />
+                        Einladung gesendet
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
                     <Mail className="w-3 h-3 shrink-0" />{b.user_id}
                   </p>
                   {lastInvite && (
-                    <p className="text-xs text-blue-600 flex items-center gap-1 mt-1">
-                      <Info className="w-3 h-3 shrink-0" /> Einladung gesendet am {format(new Date(lastInvite.created_date), 'dd. MMM HH:mm', { locale: de })}
+                    <p className="text-xs text-blue-600 flex items-center gap-1 mt-0.5">
+                      <Info className="w-3 h-3 shrink-0" /> zuletzt am {format(new Date(lastInvite.created_date), 'dd. MMM HH:mm', { locale: de })}
                     </p>
                   )}
                 </div>
