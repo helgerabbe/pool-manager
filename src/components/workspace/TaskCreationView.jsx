@@ -182,7 +182,7 @@ function SidebarLernpaketFolder({
   masterAufgabenByActivityId, kloneByMasterId,
   selectedItem, onSelect, defaultOpen = false, myEmail,
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const paketActivities = allActivities.filter(a => a.lernpaket_id === lernpaket.id);
   const phasenConfig = lernpaket.phasen_konfiguration || {};
 
@@ -196,8 +196,8 @@ function SidebarLernpaketFolder({
   });
 
   useEffect(() => {
-    if (hasSelectedChild) setOpen(true);
-  }, [hasSelectedChild]);
+    if (hasSelectedChild || defaultOpen) setOpen(true);
+  }, [hasSelectedChild, defaultOpen]);
 
   return (
     <div>
