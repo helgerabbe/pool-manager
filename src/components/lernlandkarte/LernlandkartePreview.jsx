@@ -29,8 +29,6 @@ function LernpaketAccordion({ lernpaket, lernziele }) {
   const [isOpen, setIsOpen] = useState(false);
   const paketZiele = lernziele.filter(lz => lz.lernpaket_id === lernpaket.id);
 
-  if (paketZiele.length === 0) return null;
-
   return (
     <div className="border-b border-border last:border-b-0">
       <button
@@ -41,16 +39,24 @@ function LernpaketAccordion({ lernpaket, lernziele }) {
         <span className="text-xs font-semibold text-muted-foreground">
           {lernpaket.reihenfolge_nummer}. {lernpaket.titel_des_pakets}
         </span>
-        <Badge variant="secondary" className="text-[9px] ml-auto">
-          {paketZiele.length}
-        </Badge>
+        {paketZiele.length > 0 && (
+          <Badge variant="secondary" className="text-[9px] ml-auto">
+            {paketZiele.length}
+          </Badge>
+        )}
       </button>
       
-      {isOpen && (
+      {isOpen && paketZiele.length > 0 && (
         <div className="px-3 pb-2 bg-muted/20 space-y-1">
           {paketZiele.map(ziel => (
             <LernzielCompact key={ziel.id} lernziel={ziel} />
           ))}
+        </div>
+      )}
+      
+      {isOpen && paketZiele.length === 0 && (
+        <div className="px-3 pb-2 bg-muted/20 text-xs text-muted-foreground italic">
+          Keine Lernziele zugeordnet
         </div>
       )}
     </div>
@@ -61,8 +67,6 @@ function LernpaketAccordion({ lernpaket, lernziele }) {
 function ThemenfeldAccordion({ themenfeld, lernpakete, lernziele }) {
   const [isOpen, setIsOpen] = useState(true);
   const paketeFuerThemenfeld = lernpakete.filter(p => p.themenfeld_id === themenfeld.id);
-
-  if (paketeFuerThemenfeld.length === 0) return null;
 
   return (
     <div className="border rounded-lg border-border overflow-hidden mb-3">
@@ -118,8 +122,9 @@ export default function LernlandkartePreview({
     return paket && !paket.themenfeld_id;
   });
 
-  // Alle Themenfelder für diese Einheit (auch ohne Pakete anzeigen)
+  // Alle Themenfelder für diese Einheit, die Pakete enthalten
   const themenfeldMitPaketen = themenfelder
+    .filter(tf => paketeFuerEinheit.some(p => p.themenfeld_id === tf.id))
     .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
 
   // Pakete ohne Themenfeld-Zuordnung
