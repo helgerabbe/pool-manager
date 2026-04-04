@@ -3,7 +3,6 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Layers, Home, ShieldCheck, LogOut, ChevronRight, BookOpen, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
-import RoleSwitcher from '@/components/layout/RoleSwitcher';
 import WartungsBanner from '@/components/layout/WartungsBanner';
 import NavigationTooltip from '@/components/layout/NavigationTooltip';
 import { base44 } from '@/api/base44Client';
@@ -117,7 +116,7 @@ export default function AppLayout() {
                 </button>
               </NavigationTooltip>
 
-              <RoleSwitcher realRolle={realRolle} anzeigeRolle={realRolle} />
+
             </nav>
           </div>
         </div>
