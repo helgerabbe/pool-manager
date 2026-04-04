@@ -184,6 +184,7 @@ export default function EinheitCreateWizard() {
           einheitId={einheitId}
           stammdaten={stammdaten}
           onStructureAccepted={handleStep2Done}
+          onSkipToManual={handleSkipToStruktur}
         />
       )}
       {currentStep === 3 && einheitId && (

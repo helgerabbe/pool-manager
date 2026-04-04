@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import { Loader2, Send, CheckCircle, AlertCircle, Wand2, HammerIcon, Upload, FileText, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ScenarioSelectionGrid from './ScenarioSelectionGrid';
 
@@ -87,13 +87,123 @@ function ChatMessage({ role, content }) {
   );
 }
 
+// Startbildschirm: Weiche für manuell vs. KI
+function EntryModeSelection({ stammdaten, onManual, onStartAI }) {
+  const [uploadedUrls, setUploadedUrls] = useState([]);
+  const [uploadedNames, setUploadedNames] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    setUploading(true);
+    const newUrls = [];
+    const newNames = [];
+    for (const file of files) {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      newUrls.push(file_url);
+      newNames.push(file.name);
+    }
+    setUploadedUrls(prev => [...prev, ...newUrls]);
+    setUploadedNames(prev => [...prev, ...newNames]);
+    setUploading(false);
+  };
+
+  const removeFile = (idx) => {
+    setUploadedUrls(prev => prev.filter((_, i) => i !== idx));
+    setUploadedNames(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center py-10 px-4 space-y-8">
+      <div className="text-center space-y-2">
+        <h2 className="text-xl font-bold text-foreground">Wie möchtest du die Struktur aufbauen?</h2>
+        <p className="text-sm text-muted-foreground max-w-md">
+          Für <strong>{stammdaten.titel_der_einheit}</strong> ({stammdaten.fach}, Jg. {stammdaten.jahrgangsstufe})
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl">
+        {/* Karte A: Manuell */}
+        <div className="border-2 border-border rounded-xl p-6 flex flex-col gap-4 hover:border-primary/50 transition-colors bg-card">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
+              <HammerIcon className="w-5 h-5 text-secondary-foreground" />
+            </div>
+            <h3 className="font-semibold text-foreground">Ich habe bereits einen genauen Plan.</h3>
+          </div>
+          <p className="text-sm text-muted-foreground flex-1">
+            Baue die Themenfelder und Lernpakete komplett manuell auf. Du gelangst direkt zur Werkbank.
+          </p>
+          <Button variant="outline" className="w-full gap-2" onClick={onManual}>
+            <HammerIcon className="w-4 h-4" />
+            Zur manuellen Werkbank
+          </Button>
+        </div>
+
+        {/* Karte B: KI */}
+        <div className="border-2 border-primary/30 rounded-xl p-6 flex flex-col gap-4 bg-primary/5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Wand2 className="w-5 h-5 text-primary" />
+            </div>
+            <h3 className="font-semibold text-foreground">Ich benötige KI-Unterstützung.</h3>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Lass uns gemeinsam einen passenden Struktur-Entwurf erarbeiten.
+          </p>
+
+          {/* Upload-Zone */}
+          <div className="border border-dashed border-border rounded-lg p-3 bg-background space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Optional: Arbeitsplan oder Kerncurriculum hochladen</p>
+            {uploadedNames.length > 0 && (
+              <div className="space-y-1">
+                {uploadedNames.map((name, idx) => (
+                  <div key={idx} className="flex items-center justify-between bg-muted/50 rounded px-2 py-1">
+                    <span className="text-xs flex items-center gap-1.5 truncate">
+                      <FileText className="w-3 h-3 flex-shrink-0 text-primary" />
+                      {name}
+                    </span>
+                    <button onClick={() => removeFile(idx)} className="text-muted-foreground hover:text-destructive ml-2 flex-shrink-0">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <input ref={fileInputRef} type="file" accept=".pdf,.docx,.txt,.md" multiple className="hidden" onChange={handleFileUpload} />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full gap-2 text-xs h-8 border border-dashed"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+            >
+              {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+              {uploading ? 'Wird hochgeladen...' : 'Datei auswählen'}
+            </Button>
+          </div>
+
+          <Button className="w-full gap-2" onClick={() => onStartAI(uploadedUrls)}>
+            <Wand2 className="w-4 h-4" />
+            KI-Coach starten
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function WizardStepAssistenz({
   einheitId,
   stammdaten = {},
-  documentUrls = [],
   onStructureAccepted,
+  onSkipToManual,
   initialMessages = [],
 }) {
+  const [entryMode, setEntryMode] = useState('selection'); // 'selection' | 'ai_split_screen'
+  const [activeDocumentUrls, setActiveDocumentUrls] = useState([]);
   const [messages, setMessages] = useState(initialMessages || []);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -124,7 +234,7 @@ export default function WizardStepAssistenz({
       const response = await base44.functions.invoke('generateUnitStructure', {
         stammdaten,
         messages: [...messages, { role: 'user', content: userMessage }],
-        documentUrls: documentUrls || [],
+        documentUrls: activeDocumentUrls,
       });
 
       const aiReply = response.data?.aiResponse || 'Keine Antwort erhalten.';
@@ -215,7 +325,7 @@ export default function WizardStepAssistenz({
         const response = await base44.functions.invoke('generateUnitStructure', {
           stammdaten,
           messages: [...messages, { role: 'assistant', content: selectedData.erlaeuterung }],
-          documentUrls: documentUrls || [],
+          documentUrls: activeDocumentUrls,
         });
 
         const aiReply = response.data?.aiResponse || '';
@@ -239,7 +349,7 @@ export default function WizardStepAssistenz({
       const response = await base44.functions.invoke('generateUnitStructure', {
         stammdaten,
         messages: [...messages, { role: 'user', content: regenerateMessage }],
-        documentUrls: documentUrls || [],
+        documentUrls: activeDocumentUrls,
       });
 
       const aiReply = response.data?.aiResponse || 'Keine Antwort erhalten.';
@@ -270,6 +380,20 @@ export default function WizardStepAssistenz({
       });
     }
   };
+
+  // Weiche: Startbildschirm
+  if (entryMode === 'selection') {
+    return (
+      <EntryModeSelection
+        stammdaten={stammdaten}
+        onManual={onSkipToManual}
+        onStartAI={(urls) => {
+          setActiveDocumentUrls(urls);
+          setEntryMode('ai_split_screen');
+        }}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen bg-background">
