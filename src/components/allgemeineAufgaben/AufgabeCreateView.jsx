@@ -258,10 +258,15 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
     mutationFn: (data) =>
       base44.entities.AllgemeineAufgabe.create({
         einheit_id: einheitId,
-        ...data,
+        themenfeld_id: data.themenfeld_id || null,
+        titel: data.titel || null,
+        aufgabenstellung: data.aufgabenstellung,
+        schwierigkeitsgrad: data.schwierigkeitsgrad || null,
+        materialien: data.materialien || [],
       }),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
+      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgabenMappings'] });
       toast.success('Aufgabe erstellt! Schritt 2: Kompetenzen zuordnen.');
       onSuccess?.(result);
       setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, themenfeld_id: null, materialien: [] });
