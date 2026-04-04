@@ -317,7 +317,7 @@ export default function WizardStepAssistenz({
       {/* Footer */}
       <div className="border-t px-4 py-3 bg-muted/30 flex justify-between items-center flex-shrink-0">
         <Button variant="ghost" size="sm" onClick={onSkipToManual} className="text-muted-foreground text-xs">
-          Manuell bearbeiten
+          Ohne Struktur zur manuellen Erstellung
         </Button>
         <Button
           disabled={loading || themenfelder.length === 0}
