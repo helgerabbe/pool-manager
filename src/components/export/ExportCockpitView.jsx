@@ -101,7 +101,7 @@ function CockpitSlot({ slotId, slot, updateSlot, removeSlot, selectedEinheitIds,
         
         // Allgemeine Aufgaben (Ebene 1/2) für dieses Themenfeld
         const tfAufgaben = allgemeineAufgaben.filter(
-          a => a.themenfeld_id === tf.id && a.anforderungsebene !== '3 - Projekt' && a.sync_status !== 'to_delete'
+          a => (a.themenfeld_id === tf.id || !a.themenfeld_id) && a.anforderungsebene !== '3 - Projekt' && a.sync_status !== 'to_delete' && a.einheit_id === unitId
         );
 
         return (
