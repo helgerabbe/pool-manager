@@ -374,7 +374,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
 
   // Wenn initialActivityId gesetzt: Activity suchen + Baum öffnen bis dahin
   useEffect(() => {
-    if (!initialActivityId || allActivities.length === 0) return;
+    if (!initialActivityId || allActivities.length === 0 || lernpakete.length === 0) return;
     
     const activity = allActivities.find(a => a.id === initialActivityId);
     if (!activity) return;
@@ -385,7 +385,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
     if (paket) {
       setOpenPacketIds(new Set([paket.id]));
     }
-  }, [initialActivityId, allActivities, lernpakete]);
+  }, [initialActivityId, allActivities, lernpakete, searchParams]);
 
   // Gruppiert nach Themenfeld
   const groupedPakete = themenfelder.length > 0
