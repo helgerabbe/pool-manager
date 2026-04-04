@@ -8,6 +8,9 @@ import WizardStepAssistenz from '@/components/wizard/WizardStepAssistenz';
 import WizardStep3Generator from '@/components/wizard/WizardStep3Generator';
 import WizardStep4Bausteine from '@/components/wizard/WizardStep4Bausteine';
 import WizardStepper from '@/components/wizard/WizardStepper';
+import { Button } from '@/components/ui/button';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { ChevronLeft, X } from 'lucide-react';
 
 export default function EinheitCreateWizard() {
   const navigate = useNavigate();
@@ -18,6 +21,24 @@ export default function EinheitCreateWizard() {
   const [stammdaten, setStammdaten]   = useState({});
   const [paketeCreated, setPaketeCreated] = useState([]);
   const [completedSteps, setCompletedSteps] = useState([]);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  const handleCancel = async () => {
+    setIsCancelling(true);
+    if (einheitId) {
+      // Einheit wurde bereits angelegt → Cascade-Delete
+      await base44.functions.invoke('deleteEinheitSecure', { einheit_id: einheitId });
+      queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+    }
+    navigate('/einheiten');
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(prev => prev - 1);
+    }
+  };
 
   const handleStep1Done = async (metaData) => {
     // Atomare Erstellung: Einheit + Default-Themenfeld + Default-Lernpaket
@@ -80,6 +101,29 @@ export default function EinheitCreateWizard() {
         onStepClick={handleStepClick}
       />
 
+      {/* Navigation: Zurück + Abbrechen */}
+      <div className="flex items-center justify-between">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleBack}
+          disabled={currentStep === 1}
+          className="gap-1.5 text-muted-foreground"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Zurück
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowCancelDialog(true)}
+          className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+        >
+          <X className="w-4 h-4" />
+          Abbrechen
+        </Button>
+      </div>
+
       {/* Step Content */}
       {currentStep === 1 && (
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
@@ -112,6 +156,29 @@ export default function EinheitCreateWizard() {
           />
         </div>
       )}
+      {/* Abbrechen-Bestätigungsdialog */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Wizard abbrechen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {einheitId
+                ? 'Die bereits angelegte Einheit und alle zugehörigen Daten werden unwiderruflich gelöscht.'
+                : 'Der Wizard wird geschlossen. Es wurden noch keine Daten gespeichert.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCancelling}>Weitermachen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancel}
+              disabled={isCancelling}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isCancelling ? 'Wird gelöscht...' : 'Ja, abbrechen'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
