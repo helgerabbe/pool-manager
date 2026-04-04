@@ -131,7 +131,7 @@ function EntryModeSelection({ stammdaten, onManual, onStartAI }) {
             <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
               <HammerIcon className="w-5 h-5 text-secondary-foreground" />
             </div>
-            <h3 className="font-semibold text-foreground">Ich habe bereits einen genauen Plan.</h3>
+            <h3 className="font-semibold text-foreground">Ich habe bereits einen Plan.</h3>
           </div>
           <p className="text-sm text-muted-foreground flex-1">
             Baue die Themenfelder und Lernpakete komplett manuell auf. Du gelangst direkt zur Werkbank.
@@ -148,7 +148,7 @@ function EntryModeSelection({ stammdaten, onManual, onStartAI }) {
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
               <Wand2 className="w-5 h-5 text-primary" />
             </div>
-            <h3 className="font-semibold text-foreground">Ich benötige KI-Unterstützung.</h3>
+            <h3 className="font-semibold text-foreground">Ich wünsche KI-Unterstützung.</h3>
           </div>
           <p className="text-sm text-muted-foreground">
             Lass uns gemeinsam einen passenden Struktur-Entwurf erarbeiten.
