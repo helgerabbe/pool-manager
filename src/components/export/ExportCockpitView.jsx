@@ -98,6 +98,11 @@ function CockpitSlot({ slotId, slot, updateSlot, removeSlot, selectedEinheitIds,
         const tfPakete = lernpakete
           .filter(lp => lp.themenfeld_id === tf.id)
           .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0));
+        
+        // Allgemeine Aufgaben (Ebene 1/2) für dieses Themenfeld
+        const tfAufgaben = allgemeineAufgaben.filter(
+          a => a.themenfeld_id === tf.id && a.anforderungsebene !== '3 - Projekt' && a.sync_status !== 'to_delete'
+        );
 
         return (
           <div key={tf.id} className="space-y-2">
@@ -106,7 +111,7 @@ function CockpitSlot({ slotId, slot, updateSlot, removeSlot, selectedEinheitIds,
               <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{tf.titel}</span>
             </div>
 
-            {/* Lernpakete */}
+            {/* Lernpakete & Allgemeine Aufgaben auf gleicher Ebene */}
             <div className="pl-3 space-y-2 border-l-2 border-muted">
               {tfPakete.map(paket => {
                 const paketAktivitaeten = aktivitaeten.filter(a => a.lernpaket_id === paket.id);
@@ -177,56 +182,65 @@ function CockpitSlot({ slotId, slot, updateSlot, removeSlot, selectedEinheitIds,
                 );
               })}
 
-              {tfPakete.length === 0 && (
-                <p className="text-[11px] text-muted-foreground/50 italic px-2 py-1">Keine Lernpakete</p>
+              {/* Allgemeine Aufgaben (Ebene 1/2) auf gleicher Ebene wie Lernpakete */}
+              {tfAufgaben.length > 0 && (
+                <div className="space-y-1">
+                  {/* Allgemeine Aufgaben - Batch-Checkbox */}
+                  {(() => {
+                    const exportable = tfAufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending');
+                    const selectedCount = exportable.filter(a => selectedIds.includes(a.id)).length;
+                    const allSelected = exportable.length > 0 && selectedCount === exportable.length;
+                    return (
+                      <>
+                        <div className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-muted/30 transition">
+                          <Checkbox
+                            checked={allSelected}
+                            onCheckedChange={() => toggleActivities(tfAufgaben)}
+                            disabled={exportable.length === 0}
+                            className="h-4 w-4"
+                          />
+                          <span className="text-sm font-semibold flex-1">Allgemeine Aufgaben (Ebene 1/2)</span>
+                          {exportable.length > 0 && <span className="text-xs text-muted-foreground">{selectedCount}/{exportable.length}</span>}
+                          {exportable.length === 0 && tfAufgaben.length > 0 && (
+                            <Badge className="text-[10px] bg-red-50 text-red-700 border-red-200">
+                              <AlertCircle className="w-3 h-3 mr-1" />Nicht freigegeben
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        {/* Aufgaben-Zeilen */}
+                        <div className="pl-5 space-y-1 border-l border-muted/50">
+                          {tfAufgaben.map(aufgabe => {
+                            const isSelected = selectedIds.includes(aufgabe.id);
+                            const isPending = aufgabe.sync_status === 'pending';
+                            const isApproved = aufgabe.content_status === 'approved';
+                            const isSelectable = isApproved && !isPending;
+                            return (
+                              <div key={aufgabe.id} className={cn('flex items-center gap-2 p-1.5 rounded transition', isSelectable ? 'hover:bg-muted/20' : 'opacity-60')}>
+                                <Checkbox checked={isSelected} onCheckedChange={() => toggleActivities([aufgabe])} disabled={!isSelectable} className="h-4 w-4 shrink-0" />
+                                <button
+                                  onClick={() => onNavigateToTask?.('ebene12', aufgabe.id)}
+                                  className={cn('text-xs flex-1 truncate text-left transition', isApproved ? 'text-primary hover:underline' : 'text-muted-foreground')}
+                                >
+                                  📝 {aufgabe.titel || 'Aufgabe ohne Titel'}
+                                  {aufgabe.anforderungsebene && <span className="ml-1 text-muted-foreground">({aufgabe.anforderungsebene})</span>}
+                                </button>
+                                {isPending && <UndoButton activityId={aufgabe.id} entityType="allgemein" />}
+                                <AktivitaetStatusBadge activity={aufgabe} />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {tfPakete.length === 0 && tfAufgaben.length === 0 && (
+                <p className="text-[11px] text-muted-foreground/50 italic px-2 py-1">Keine Inhalte</p>
               )}
             </div>
-
-            {/* Allgemeine Aufgaben Ebene 1/2 in diesem Themenfeld */}
-            {(() => {
-              const ebene12 = allgemeineAufgaben.filter(
-                a => a.themenfeld_id === tf.id && a.anforderungsebene !== '3 - Projekt' && a.sync_status !== 'to_delete'
-              );
-              if (ebene12.length === 0) return null;
-              const exportable = ebene12.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending');
-              const selectedCount = exportable.filter(a => selectedIds.includes(a.id)).length;
-              const allSelected = exportable.length > 0 && selectedCount === exportable.length;
-              return (
-                <div className="pl-3 space-y-1 border-l-2 border-muted mt-1">
-                  <div className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-muted/30 transition">
-                    <Checkbox
-                      checked={allSelected}
-                      onCheckedChange={() => toggleActivities(ebene12)}
-                      disabled={exportable.length === 0}
-                      className="h-4 w-4"
-                    />
-                    <span className="text-sm font-semibold flex-1">Allgemeine Aufgaben (Ebene 1/2)</span>
-                    {exportable.length > 0 && <span className="text-xs text-muted-foreground">{selectedCount}/{exportable.length}</span>}
-                  </div>
-                  <div className="pl-5 space-y-1 border-l border-muted/50">
-                    {ebene12.map(aufgabe => {
-                      const isSelected = selectedIds.includes(aufgabe.id);
-                      const isPending = aufgabe.sync_status === 'pending';
-                      const isApproved = aufgabe.content_status === 'approved';
-                      return (
-                        <div key={aufgabe.id} className={cn('flex items-center gap-2 p-1.5 rounded transition', isApproved ? 'hover:bg-muted/20' : 'opacity-60')}>
-                          <Checkbox checked={isSelected} onCheckedChange={() => toggleActivities([aufgabe])} disabled={!isApproved || isPending} className="h-4 w-4 shrink-0" />
-                          <button
-                            onClick={() => onNavigateToTask?.('ebene12', aufgabe.id)}
-                            className={cn('text-xs flex-1 truncate text-left transition', isApproved ? 'text-primary hover:underline' : 'text-muted-foreground')}
-                          >
-                            📝 {aufgabe.titel || 'Aufgabe ohne Titel'}
-                            {aufgabe.anforderungsebene && <span className="ml-1 text-muted-foreground">({aufgabe.anforderungsebene})</span>}
-                          </button>
-                          {isPending && <UndoButton activityId={aufgabe.id} entityType="allgemein" />}
-                          <AktivitaetStatusBadge activity={aufgabe} />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })()}
 
             <Separator className="my-2" />
           </div>
