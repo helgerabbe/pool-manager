@@ -10,27 +10,46 @@ function LernzielCompact({ lernziel, isPrioritized = false, onTogglePriority, ka
   const angezeigterText = lernziel.schueler_uebersetzung || lernziel.formulierung_fachsprache;
   
   return (
-    <div className={cn('flex items-start gap-2 py-1.5 px-2 rounded text-xs', kannBearbeiten ? 'hover:bg-muted/50' : '')}>
-      <span className={cn('font-bold mt-0.5', isPrioritized ? 'text-amber-500 text-lg' : 'text-primary')}>
-        {isPrioritized ? '★' : '•'}
-      </span>
-      <div className="flex-1">
-        <p className="text-sm">{angezeigterText}</p>
-        {lernziel.kategorie && (
-          <Badge variant="secondary" className="text-[9px] mt-0.5">
-            {lernziel.kategorie}
-          </Badge>
-        )}
-      </div>
+    <div className="py-2 px-2 rounded text-xs">
+      {/* Checkbox + Label (nur im Bearbeitungsmodus) */}
       {kannBearbeiten && onTogglePriority && (
-        <input
-          type="checkbox"
-          checked={isPrioritized}
-          onChange={() => onTogglePriority(lernziel.id)}
-          className="mt-1 w-4 h-4 cursor-pointer"
-          title="Hohe Priorität für diese Aufgabe"
-        />
+        <div className="flex items-center gap-2 mb-1.5 pb-1.5 border-b border-border/50">
+          <label className="flex items-center gap-2 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={isPrioritized}
+              onChange={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onTogglePriority(lernziel.id);
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              className="w-4 h-4 cursor-pointer accent-amber-500"
+            />
+            <span className={cn('text-xs font-semibold transition-colors', isPrioritized ? 'text-amber-600' : 'text-muted-foreground group-hover:text-foreground')}>
+              {isPrioritized ? '★ Hohe Prio' : 'Hohe Prio'}
+            </span>
+          </label>
+        </div>
       )}
+      
+      {/* Lernziel-Inhalt */}
+      <div className="flex items-start gap-2">
+        <span className={cn('font-bold mt-0.5', isPrioritized ? 'text-amber-500 text-lg' : 'text-primary')}>
+          {isPrioritized ? '★' : '•'}
+        </span>
+        <div className="flex-1">
+          <p className="text-sm">{angezeigterText}</p>
+          {lernziel.kategorie && (
+            <Badge variant="secondary" className="text-[9px] mt-0.5">
+              {lernziel.kategorie}
+            </Badge>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -180,13 +199,6 @@ export default function LernlandkartePreview({
           )}
         </div>
       </div>
-
-      {/* Info-Banner für editierbar */}
-      {kannBearbeiten && (
-        <div className="shrink-0 px-4 py-2 bg-amber-50 border-b border-amber-200 text-xs text-amber-700">
-          ☆ Aktiviere die Checkbox neben einem Lernziel, um es als höchste Priorität zu markieren
-        </div>
-      )}
 
       {/* Scroll-Bereich mit Akkordeons */}
       <div className="flex-1 overflow-y-auto px-4 py-3">
