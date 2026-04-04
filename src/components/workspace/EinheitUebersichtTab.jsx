@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { useDraftState } from '@/hooks/useDraftState';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import GesamtzielManager from './GesamtzielManager';
 
 const UNIT_ROLE_CONFIG = {
   LEITUNG: { 
@@ -73,7 +74,6 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
   const draftKey = `einheit-settings-${einheit.id}`;
   const { data: form, setData: setForm } = useDraftState(draftKey, {
     titel_der_einheit: einheit.titel_der_einheit || '',
-    gesamtziel:        einheit.gesamtziel || '',
     fach:              einheit.fach || '',
     jahrgangsstufe:    einheit.jahrgangsstufe || '',
   });
@@ -254,13 +254,13 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label>Gesamtziel der Einheit</Label>
-              <textarea
-                value={form.gesamtziel}
-                onChange={e => set('gesamtziel', e.target.value)}
-                placeholder="Was ist die Kernkompetenz am Ende dieser Einheit?"
-                className="w-full px-3 py-2 border rounded-lg text-sm min-h-28 resize-none bg-background"
+            <div className="space-y-1.5 pt-2 pb-4 border-t">
+              <GesamtzielManager 
+                einheitId={einheit.id}
+                gesamtziele={einheit.gesamtziele || []}
+                onUpdate={() => {
+                  queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+                }}
               />
             </div>
 

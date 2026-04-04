@@ -30,9 +30,12 @@
       "type": "string",
       "description": "Titel der Unterrichtseinheit"
     },
-    "gesamtziel": {
-      "type": "string",
-      "description": "\u00dcbergeordnetes Lernziel der Einheit (Nordstern)"
+    "gesamtziele": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array von Gesamtzielen/Hauptkompetenzen der Einheit"
     },
     "jahrgangsstufe": {
       "type": "string",
@@ -61,6 +64,10 @@
       ],
       "default": "aktiv",
       "description": "Wizard-Status: 'entwurf' = noch im Wizard, f\u00fcr andere unsichtbar. 'aktiv' = fertig und sichtbar."
+    },
+    "wizard_max_step": {
+      "type": "integer",
+      "description": "H\u00f6chster erreichter Wizard-Schritt f\u00fcr Draft-Resume"
     },
     "freigabe_status": {
       "type": "string",
