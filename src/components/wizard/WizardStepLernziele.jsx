@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { ChevronRight, Loader2, RefreshCw, Check, AlertCircle } from 'lucide-react';
+import { ChevronRight, Loader2, RefreshCw, Check, AlertCircle, CheckCircle2, Circle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function WizardStepLernziele({ einheitId, onDone }) {
   const queryClient = useQueryClient();
   const [objectives, setObjectives] = useState([]);
+  const [approved, setApproved] = useState(new Set()); // IDs der genehmigten Lernziele
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -34,15 +35,40 @@ export default function WizardStepLernziele({ einheitId, onDone }) {
     generateObjectives(paketeFuerEinheit);
   }, [paketeFuerEinheit.length]);
 
-  const generateObjectives = async (pakete) => {
+  const generateObjectives = async (pakete, paketIdsToRegenerate = null) => {
     setLoading(true);
     setError(null);
     try {
+      // Wenn nur bestimmte Pakete regeneriert werden, behalte die anderen bei
+      let targetPakete = pakete;
+      if (paketIdsToRegenerate) {
+        targetPakete = pakete.filter(p => paketIdsToRegenerate.has(p.id));
+      }
+
       const response = await base44.functions.invoke('generateLearningObjectives', {
         einheitId,
-        lernpakete: pakete.map(p => ({ id: p.id, titel_des_pakets: p.titel_des_pakets })),
+        lernpakete: targetPakete.map(p => ({ id: p.id, titel_des_pakets: p.titel_des_pakets })),
       });
-      setObjectives(response.data.objectives || []);
+
+      const newObjectives = response.data.objectives || [];
+
+      if (paketIdsToRegenerate) {
+        // Merge: Ersetze nur die neu generierten Pakete
+        setObjectives(prev => {
+          const updated = [...prev];
+          newObjectives.forEach(newObj => {
+            const idx = updated.findIndex(o => o.lernpaket_id === newObj.lernpaket_id);
+            if (idx >= 0) {
+              updated[idx] = { ...updated[idx], ...newObj };
+            }
+          });
+          return updated;
+        });
+      } else {
+        // Initiales Laden: Alle Pakete mit leerer Genehmigung
+        setObjectives(newObjectives);
+        setApproved(new Set());
+      }
     } catch (err) {
       setError(err.message || 'Fehler bei der KI-Generierung');
       toast.error('Fehler beim Generieren der Lernziele');
@@ -52,9 +78,33 @@ export default function WizardStepLernziele({ einheitId, onDone }) {
   };
 
   const handleRegenerate = async () => {
+    // Regeneriere nur die nicht-genehmigten Pakete
+    const unapprovedIds = new Set(
+      objectives
+        .filter(obj => !approved.has(obj.lernpaket_id))
+        .map(obj => obj.lernpaket_id)
+    );
+
+    if (unapprovedIds.size === 0) {
+      toast.info('Alle Lernziele sind bereits genehmigt.');
+      return;
+    }
+
     setRegenerating(true);
-    await generateObjectives(paketeFuerEinheit);
+    await generateObjectives(paketeFuerEinheit, unapprovedIds);
     setRegenerating(false);
+  };
+
+  const toggleApproved = (lernpaketId) => {
+    setApproved(prev => {
+      const next = new Set(prev);
+      if (next.has(lernpaketId)) {
+        next.delete(lernpaketId);
+      } else {
+        next.add(lernpaketId);
+      }
+      return next;
+    });
   };
 
   const handleEdit = (index, field, value) => {
@@ -77,20 +127,22 @@ export default function WizardStepLernziele({ einheitId, onDone }) {
         await base44.entities.Lernziele.delete(lz.id);
       }
 
-      // Erstelle neue Lernziele
+      // Erstelle nur die genehmigten Lernziele
+      let savedCount = 0;
       for (const obj of objectives) {
-        if (obj.ziel_fach?.trim()) {
+        if (approved.has(obj.lernpaket_id) && obj.ziel_fach?.trim()) {
           await base44.entities.Lernziele.create({
             lernpaket_id: obj.lernpaket_id,
             formulierung_fachsprache: obj.ziel_fach.trim(),
             kategorie: 'Fachwissen',
             schueler_uebersetzung: obj.ziel_schueler?.trim() || '',
           });
+          savedCount++;
         }
       }
 
       queryClient.invalidateQueries({ queryKey: ['lernziele'] });
-      toast.success(`${objectives.length} Lernziele gespeichert.`);
+      toast.success(`${savedCount} Lernziele gespeichert.`);
       onDone?.();
     } catch (err) {
       toast.error('Fehler beim Speichern der Lernziele');
@@ -166,11 +218,33 @@ export default function WizardStepLernziele({ einheitId, onDone }) {
         </p>
       ) : (
         <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1">
-          {objectives.map((obj, idx) => (
-            <div key={idx} className="p-4 border border-border rounded-lg bg-card space-y-3">
+          {objectives.map((obj, idx) => {
+            const isApproved = approved.has(obj.lernpaket_id);
+            return (
+            <div 
+              key={idx} 
+              className={`p-4 border-2 rounded-lg space-y-3 transition-all ${
+                isApproved 
+                  ? 'border-green-300 bg-green-50/30' 
+                  : 'border-border bg-card'
+              }`}
+            >
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-sm">{obj.lernpaket_titel}</h3>
-                <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <button
+                    onClick={() => toggleApproved(obj.lernpaket_id)}
+                    className="flex-shrink-0 transition-colors hover:opacity-70"
+                    title={isApproved ? 'Ablehnen' : 'Akzeptieren'}
+                  >
+                    {isApproved ? (
+                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <Circle className="w-5 h-5 text-muted-foreground" />
+                    )}
+                  </button>
+                  <h3 className="font-semibold text-sm truncate">{obj.lernpaket_titel}</h3>
+                </div>
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded flex-shrink-0">
                   #{idx + 1}
                 </span>
               </div>
@@ -199,20 +273,26 @@ export default function WizardStepLernziele({ einheitId, onDone }) {
                 />
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       <div className="flex justify-between pt-2 border-t border-border gap-2">
-        <Button
-          variant="outline"
-          onClick={handleRegenerate}
-          disabled={regenerating || objectives.length === 0}
-          className="gap-2"
-        >
-          {regenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-          Neu generieren
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleRegenerate}
+            disabled={regenerating || objectives.length === 0 || approved.size === objectives.length}
+            className="gap-2"
+          >
+            {regenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            Nur nicht-genehmigten neu generieren
+          </Button>
+          <span className="flex items-center text-xs text-muted-foreground px-2 py-1 rounded bg-muted">
+            {approved.size} / {objectives.length} genehmigt
+          </span>
+        </div>
         <Button
           onClick={handleSave}
           disabled={saving || objectives.length === 0}
