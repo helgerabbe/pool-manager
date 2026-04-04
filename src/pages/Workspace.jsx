@@ -380,9 +380,9 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             {/* ── Tab 3: Aktivitäten zuordnen → Sidebar-Baum + Detail-Panel ───── */}
             <TabsContent value="aktivitaeten" className="data-[state=active]:flex data-[state=inactive]:hidden flex-row flex-1 overflow-hidden m-0 p-0">
               <ErrorBoundary label="Aktivitäten-Struktur">
-                <aside className="w-96 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden">
+                <aside className="w-96 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden h-full">
                    <div className="flex-1 overflow-hidden p-3">
-                     <div className="h-full overflow-y-auto">
+                     <div className="h-full overflow-y-auto pr-2">
                     <SidebarTree
                       einheit={einheit}
                       lernpakete={paketeFuerEinheit}
@@ -401,9 +401,9 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                       </div>
                       </aside>
 
-                <main className="flex-1 overflow-hidden min-h-0">
+                <main className="flex-1 overflow-hidden min-h-0 h-full">
                    <ErrorBoundary label="Detail-Panel">
-                     <div className="h-full overflow-y-auto max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                     <div className="h-full overflow-y-auto max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pr-2">
                       {selectedNode?.type === 'aktivitaet-edit' ? (() => {
                         const activityRecord = lernpaketAktivitaeten.find((a) => a.id === selectedNode.activityRecordId);
                         if (!activityRecord) return null;
