@@ -39,10 +39,16 @@ export function usePresence(einheitId) {
       const now = new Date().toISOString();
 
       // Existierenden Eintrag suchen (eigener Nutzer, selbe Einheit)
-      const existing = await base44.entities.ActiveUsersPresence.filter({
-        user_email: user.email,
-        current_view: einheitId,
-      });
+      let existing = [];
+      try {
+        existing = await base44.entities.ActiveUsersPresence.filter({
+          user_email: user.email,
+          current_view: einheitId,
+        });
+      } catch (err) {
+        // Rate-Limit oder Fehler – ignorieren und neuen Record erstellen
+        console.warn('[usePresence] Filter failed:', err.message);
+      }
 
       if (!mounted) return;
 
