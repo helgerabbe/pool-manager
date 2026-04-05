@@ -626,17 +626,25 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
       )}
       {isLockedByMe && !lockLostByAdmin && (
         <div className="flex items-center justify-between gap-3 p-3 rounded-xl border-2 border-primary/40 bg-primary/5 text-sm flex-wrap">
-          <div className="flex items-center gap-2 text-primary">
+          <div className="flex items-center gap-2 flex-1 text-primary">
             <PenLine className="w-4 h-4" />
-            <span className="font-medium">Bearbeitungsmodus aktiv</span>
-            {isDirty && <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">Ungespeichert</span>}
+            <input
+              type="text"
+              value={localTitel}
+              onChange={(e) => {
+                setLocalTitel(e.target.value);
+                setIsDirty(true);
+              }}
+              className="flex-1 bg-transparent border-b border-primary font-medium focus:outline-none"
+            />
+            {isDirty && <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 shrink-0">Ungespeichert</span>}
           </div>
           <div className="flex gap-2">
             <Button
               size="sm"
               variant="outline"
               onClick={handleSave}
-              disabled={isSaving}
+              disabled={!isDirty || isSaving}
               className="gap-1.5 text-xs"
             >
               {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
