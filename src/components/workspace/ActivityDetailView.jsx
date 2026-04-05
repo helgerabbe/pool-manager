@@ -159,12 +159,17 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
     }
     setSaving(true);
     try {
+      // ✅ Erst einheitId laden, DANN speichern
+      let einheitId = null;
+      if (activityRecord.lernpaket_id) {
+        const paket = await base44.entities.Lernpakete.get(activityRecord.lernpaket_id);
+        einheitId = paket?.einheit_id || null;
+      }
+      
       await base44.functions.invoke('updateActivitySecure', {
         activityId: activityRecord.id,
         fieldValues: formData,
-        einheitId: activityRecord.lernpaket_id
-          ? (await base44.entities.Lernpakete.filter({ id: activityRecord.lernpaket_id }))[0]?.einheit_id
-          : null,
+        einheitId,
         targetFach: einheitFach,
       });
       queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
@@ -176,19 +181,20 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
       const status = err?.response?.status;
       const code = err?.response?.data?.code;
       if (status === 409 && code === 'LOCK_NOT_OWNED') {
-        // Lock extern aufgehoben (z.B. Admin Force-Unlock) → sofort aus Bearbeitungsmodus werfen
         toast.error('Sperre wurde extern aufgehoben. Bearbeitungsmodus wird beendet.');
         setSaving(false);
         await doExitEditMode();
         return;
+      } else if (status === 400) {
+        toast.error('Erforderliche Parameter fehlen. Seite neu laden.');
       } else if (status === 409) {
         toast.error('Versionskollision – bitte Seite neu laden.');
       } else if (status === 403) {
-        toast.error('Zugriff verweigert.');
+        toast.error('Sie haben keine Berechtigung, diese Aktivität zu bearbeiten.');
       } else if (status === 429) {
         toast.error('Zu viele Anfragen. Bitte warten.');
       } else {
-        toast.error('Fehler beim Speichern.');
+        toast.error(`Fehler beim Speichern: ${err?.response?.data?.error || err.message}`);
       }
     } finally {
       setSaving(false);

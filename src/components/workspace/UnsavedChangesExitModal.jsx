@@ -13,40 +13,49 @@ export default function UnsavedChangesExitModal({ open, onOpenChange, onSaveAndE
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-amber-500" />
-            Ungespeicherte Änderungen
+          <DialogTitle className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-base font-semibold">Ungespeicherte Änderungen</p>
+              <p className="text-xs text-muted-foreground font-normal mt-1">Wie möchten Sie fortfahren?</p>
+            </div>
           </DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-muted-foreground">
-          Es gibt ungespeicherte Änderungen. Wie möchten Sie fortfahren?
-        </p>
-        <DialogFooter className="flex-col sm:flex-row gap-2 mt-2">
+        
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 my-2">
+          <p className="text-sm text-amber-900">
+            Ihre Änderungen werden <strong>nicht gespeichert</strong>, wenn Sie diese Option wählen.
+          </p>
+        </div>
+
+        <DialogFooter className="flex gap-3 mt-6 pt-4 border-t">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="gap-2 sm:order-1"
+            disabled={saving}
+            className="flex-1"
           >
-            <X className="w-4 h-4" /> Abbrechen
+            <X className="w-4 h-4 mr-2" /> Abbrechen
           </Button>
           <Button
             variant="destructive"
             onClick={onDiscard}
             disabled={saving}
-            className="gap-2 sm:order-2"
+            className="flex-1"
           >
-            <Trash2 className="w-4 h-4" /> Verwerfen & Beenden
+            <Trash2 className="w-4 h-4 mr-2" /> Verwerfen
           </Button>
           <Button
             onClick={onSaveAndExit}
             disabled={saving}
-            className="gap-2 sm:order-3"
+            className="flex-1 bg-green-600 hover:bg-green-700"
           >
             {saving
-              ? <Loader2 className="w-4 h-4 animate-spin" />
-              : <Save className="w-4 h-4" />
+              ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Speichert...</>
+              : <><Save className="w-4 h-4 mr-2" /> Speichern & Beenden</>
             }
-            Speichern & Beenden
           </Button>
         </DialogFooter>
       </DialogContent>
