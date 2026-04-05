@@ -553,7 +553,11 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
 
   const handleEditLernziel = (lz) => {
     setEditLernzielId(lz.id);
-    setEditLernzielData({ kategorie: lz.kategorie, schueler_uebersetzung: lz.schueler_uebersetzung });
+    setEditLernzielData({
+      formulierung_fachsprache: lz.formulierung_fachsprache,
+      kategorie: lz.kategorie,
+      schueler_uebersetzung: lz.schueler_uebersetzung,
+    });
   };
 
   return (
@@ -646,7 +650,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
               size="sm"
               variant="outline"
               onClick={handleSave}
-              disabled={isSaving || !isDirty}
+              disabled={isSaving}
               className="gap-1.5 text-xs"
             >
               {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
@@ -805,6 +809,16 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
           </DialogHeader>
           {editLernzielData && (
             <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Formulierung (Fachsprache)</Label>
+                <input
+                  type="text"
+                  value={editLernzielData.formulierung_fachsprache || ''}
+                  onChange={(e) => setEditLernzielData({ ...editLernzielData, formulierung_fachsprache: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-input"
+                  placeholder="Ich kann..."
+                />
+              </div>
               <div className="space-y-2">
                 <Label>Kategorie</Label>
                 <div className="flex gap-2">
