@@ -133,6 +133,7 @@ function ActivitySidebarItem({
   return (
     <div>
       <button
+        id={`activity-node-${activity.id}`}
         onClick={() => onSelect({ type: 'activity', activity })}
         className={cn(
           'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
@@ -285,6 +286,7 @@ function EmptyState() {
 export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail, userRole, initialActivityId: initialActivityIdProp = null }) {
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
+  const [debugSelectValue, setDebugSelectValue] = useState('');
   
   // ActivityID kann aus Props oder URL-Parametern kommen
   const initialActivityId = initialActivityIdProp || searchParams.get('activity');
@@ -372,6 +374,36 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
     }
   }, [allActivities, alleMaster, alleKlone]);
 
+  // ── Kern-Funktion: Baum öffnen und Activity laden ─────────────────────────
+  const openTreeAndLoadContent = (activityId) => {
+    if (!activityId || allActivities.length === 0 || lernpakete.length === 0) return;
+
+    console.log("🌳 openTreeAndLoadContent:", activityId);
+
+    const activity = allActivities.find(a => a.id === activityId);
+    if (!activity) {
+      console.warn("❌ Activity nicht gefunden:", activityId);
+      return;
+    }
+
+    // Lernpaket (Parent) und Themenfeld (Grandparent) ermitteln
+    const paket = lernpakete.find(p => p.id === activity.lernpaket_id);
+    const keysToExpand = paket ? [paket.id] : [];
+    if (paket?.themenfeld_id) keysToExpand.push(paket.themenfeld_id);
+
+    console.log("📁 Öffne Ordner:", keysToExpand);
+
+    // Alle relevanten Ordner öffnen + Activity selektieren
+    setOpenPacketIds(prev => new Set([...prev, ...keysToExpand]));
+    setSelectedItem({ type: 'activity', activity });
+
+    // Zum Element scrollen
+    setTimeout(() => {
+      const el = document.getElementById(`activity-node-${activityId}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  };
+
   // Wenn initialActivityId gesetzt: Activity suchen + Baum öffnen bis dahin
   useEffect(() => {
     if (!initialActivityId || allActivities.length === 0 || lernpakete.length === 0) return;
@@ -443,8 +475,30 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
 
       {/* ── Sidebar ──────────────────────────────────────────────────────────── */}
       <aside className="w-96 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden h-full">
-        <div className="px-3 py-3 border-b border-border shrink-0">
+        <div className="px-3 py-3 border-b border-border shrink-0 space-y-2">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aktivitäten</p>
+          {/* DEBUG: Flache Aktivitäts-Selectbox zum Testen der Baum-Navigation */}
+          {allActivities.filter(a => paketeFuerEinheit.some(p => p.id === a.lernpaket_id)).length > 0 && (
+            <select
+              value={debugSelectValue}
+              onChange={e => {
+                setDebugSelectValue(e.target.value);
+                openTreeAndLoadContent(e.target.value);
+              }}
+              className="w-full text-xs border border-border rounded px-2 py-1 bg-background text-foreground"
+            >
+              <option value="">🔍 Debug: Aktivität direkt anspringen…</option>
+              {allActivities
+                .filter(a => paketeFuerEinheit.some(p => p.id === a.lernpaket_id))
+                .sort((a, b) => (aktivitaetenMap[a.aktivitaet_id] || '').localeCompare(aktivitaetenMap[b.aktivitaet_id] || ''))
+                .map(a => (
+                  <option key={a.id} value={a.id}>
+                    {aktivitaetenMap[a.aktivitaet_id] || a.id} [{a.phase}]
+                  </option>
+                ))
+              }
+            </select>
+          )}
         </div>
         <div className="flex-1 overflow-hidden p-2">
           <div className="h-full overflow-y-auto space-y-3 pr-2">
