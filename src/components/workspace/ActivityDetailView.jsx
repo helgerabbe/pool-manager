@@ -31,14 +31,14 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
     base44.auth.me().then(u => setUserEmail(u?.email || null));
   }, []);
 
-  // Collaboration Lock mit Offline-Support
-  const { acquireLock, releaseLock, isLocked: lockedByOther, retryCount, isOffline, lockLost } = useCollaborationLock(
-    'LernpaketPhaseAktivitaet',
-    ['lernpaketPhaseAktivitaeten'],
-    activityRecord?.id,
-    userEmail,
-    editMode
-  );
+  // Collaboration Lock mit Offline-Support (kein auto-acquisition via editMode)
+   const { acquireLock, releaseLock, isLocked: lockedByOther, retryCount, isOffline, lockLost } = useCollaborationLock(
+     'LernpaketPhaseAktivitaet',
+     ['lernpaketPhaseAktivitaeten'],
+     activityRecord?.id,
+     userEmail,
+     false  // Nicht automatisch locken – nur manuell via handleEnterEditMode
+   );
 
   // Dirty-State: hat der Nutzer etwas geändert?
   const isDirty = JSON.stringify(formData) !== JSON.stringify(originalFormData);
