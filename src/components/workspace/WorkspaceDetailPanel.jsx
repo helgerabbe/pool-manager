@@ -383,15 +383,17 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   // Callback wenn Heartbeat meldet dass Lock extern aufgehoben wurde (Szenario 3)
   const handleLockLostExternally = useCallback(() => {
     setLockLostByAdmin(true);
+    setLocalEditMode(false);
     toast.error('Ihre Sperre wurde von einem Administrator aufgehoben. Bearbeitungsmodus beendet.');
     queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
   }, [queryClient]);
 
+  const [localEditMode, setLocalEditMode] = useState(false);
   const { acquireLock, releaseLock, forceUnlock, isLocking } = useLernpaketLock(paket.id, userEmail, handleLockLostExternally);
 
   const paketLockedBy = paket.locked_by_user || paket.locked_by;
   const isLockedByOther = isPaketLocked(paket) && paketLockedBy !== userEmail;
-  const isLockedByMe    = isPaketLocked(paket) && paketLockedBy === userEmail;
+  const isLockedByMe    = localEditMode || (isPaketLocked(paket) && paketLockedBy === userEmail);
   const inEditMode = isLockedByMe;
   // Refs aktuell halten für Navigation-Guard-Callback
   inEditModeRef.current = inEditMode;
@@ -433,7 +435,9 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
 
   const handleStartEdit = async () => {
     const result = await acquireLock();
-    if (!result?.success && result?.locked_by) {
+    if (result?.success) {
+      setLocalEditMode(true);
+    } else if (result?.locked_by) {
       toast.error(`Dieses Paket wird gerade von ${result.locked_by} bearbeitet.`);
     }
   };
@@ -474,6 +478,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
       entityId: paket.id,
     }).catch(() => {});
     queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+    setLocalEditMode(false);
     setIsDirty(false);
     setExitModalOpen(false);
     // Szenario 5B: Falls Navigation blockiert war, jetzt ausführen
