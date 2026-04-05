@@ -541,6 +541,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
     };
     base44.entities.Lernpakete.update(paket.id, { phasen_konfiguration: newConfig }).then(() => {
       queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+      setIsDirty(true);
     });
   };
 
@@ -786,6 +787,8 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                   queryClient={queryClient}
                   onNavigate={onNavigate}
                   onGoToTaskWorkshop={(activityId) => onNavigate({ type: 'goto-task-workshop', activityId })}
+                  onActivityChange={() => setIsDirty(true)}
+                  setIsDirty={setIsDirty}
                 />
               )}
             </div>
@@ -1128,7 +1131,7 @@ function AktivitaetEditPanel({ paket, phaseKey, phaseLabel, kannBearbeiten, quer
 import PhaseActivitiesList from '@/components/workspace/PhaseActivitiesList';
 import UnsavedChangesExitModal from '@/components/workspace/UnsavedChangesExitModal';
 
-function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, userEmail, queryClient, onNavigate, onGoToTaskWorkshop }) {
+function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, userEmail, queryClient, onNavigate, onGoToTaskWorkshop, onActivityChange, setIsDirty }) {
   return (
     <PhaseActivitiesList
       paket={paket}
@@ -1143,6 +1146,7 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, userEmail, 
         activityRecordId: data.activityId,
       })}
       onGoToTaskWorkshop={onGoToTaskWorkshop}
+      onActivityChange={onActivityChange}
     />
   );
 }
@@ -1337,6 +1341,8 @@ export default function WorkspaceDetailPanel({
             userEmail={userEmail}
             queryClient={queryClient}
             onNavigate={onNavigate}
+            onActivityChange={() => setIsDirty(true)}
+            setIsDirty={setIsDirty}
           />
         </div>
       </>

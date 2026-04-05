@@ -14,6 +14,7 @@ export default function PhaseActivitiesList({
   onSelectActivity,
   onGoToTaskWorkshop = null,
   lernziele = [],
+  onActivityChange = null,
 }) {
   const queryClient = useQueryClient();
   const [newActivityId, setNewActivityId] = useState('');
@@ -48,20 +49,22 @@ export default function PhaseActivitiesList({
       });
       setNewActivityId('');
       toast.success('Aktivität hinzugefügt.');
+      if (onActivityChange) onActivityChange();
     },
     onError: () => toast.error('Fehler beim Hinzufügen.'),
   });
 
   const deleteAktivitaet = useMutation({
-    mutationFn: (id) =>
-      base44.entities.LernpaketPhaseAktivitaet.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['lernpaketPhaseAktivitaeten'],
-      });
-      toast.success('Aktivität entfernt.');
-    },
-    onError: () => toast.error('Fehler beim Löschen.'),
+   mutationFn: (id) =>
+     base44.entities.LernpaketPhaseAktivitaet.delete(id),
+   onSuccess: () => {
+     queryClient.invalidateQueries({
+       queryKey: ['lernpaketPhaseAktivitaeten'],
+     });
+     toast.success('Aktivität entfernt.');
+     if (onActivityChange) onActivityChange();
+   },
+   onError: () => toast.error('Fehler beim Löschen.'),
   });
 
   // Nur aktive Aktivitäten für die aktuelle Phase aus dem Katalog
