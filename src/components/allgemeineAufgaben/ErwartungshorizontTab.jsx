@@ -182,11 +182,25 @@ export default function ErwartungshorizontTab({ aufgabe, kannBearbeiten }) {
   const [generating, setGenerating] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
 
-  // Musterlösung synchronisieren wenn Aufgabe wechselt
+  // Musterlösung synchronisieren wenn Aufgabe wechselt + Auto-Save beim Verlassen
   useEffect(() => {
     setMusterloesung(aufgabe?.musterloesung || '');
     setChatMessages([]);
     setIsDirty(false);
+  }, [aufgabe?.id]);
+
+  // Auto-Save: beim Verlassen des Tabs (Unmount) speichern falls dirty
+  const musterloesungRef = useRef(musterloesung);
+  const isDirtyRef = useRef(isDirty);
+  useEffect(() => { musterloesungRef.current = musterloesung; }, [musterloesung]);
+  useEffect(() => { isDirtyRef.current = isDirty; }, [isDirty]);
+
+  useEffect(() => {
+    return () => {
+      if (isDirtyRef.current && aufgabe?.id) {
+        base44.entities.AllgemeineAufgabe.update(aufgabe.id, { musterloesung: musterloesungRef.current });
+      }
+    };
   }, [aufgabe?.id]);
 
   // Speichern
@@ -205,22 +219,60 @@ export default function ErwartungshorizontTab({ aufgabe, kannBearbeiten }) {
     setIsDirty(true);
   };
 
-  // Platzhalter: Musterlösung generieren (wird in späterem Schritt mit KI verdrahtet)
+  // Bild-URLs aus Materialien extrahieren
+  const bildUrls = (aufgabe.materialien || [])
+    .filter(m => m.type === 'image' && m.url)
+    .map(m => m.url);
+  const hatBilder = bildUrls.length > 0;
+
+  // Musterlösung generieren via LLM
   const handleGenerate = async () => {
     setGenerating(true);
-    await new Promise(r => setTimeout(r, 600)); // Platzhalter-Delay
-    toast.info('KI-Generierung wird in einem späteren Schritt implementiert.');
+    const formInfo = [
+      aufgabe.ergebnis_form && `Ergebnisform: ${aufgabe.ergebnis_form}`,
+      aufgabe.ergebnis_dateiformat && `Dateiformat: ${aufgabe.ergebnis_dateiformat}`,
+    ].filter(Boolean).join(', ');
+
+    const prompt = `Du bist ein erfahrener Lehrer. Analysiere die folgende Aufgabe und erstelle eine präzise Musterlösung (Erwartungshorizont) in Textform.${formInfo ? ` Berücksichtige dabei, dass das erwartete Ergebnis die Form folgendermaßen haben soll: ${formInfo}.` : ''} Gib nur die Musterlösung ohne weitere Begrüßungsfloskeln aus.
+
+Aufgabe:
+${aufgabe.titel ? `Titel: ${aufgabe.titel}\n` : ''}${aufgabe.aufgabenstellung}`;
+
+    const result = await base44.integrations.Core.InvokeLLM({
+      prompt,
+      ...(hatBilder ? { file_urls: bildUrls, model: 'gemini_3_flash' } : {}),
+    });
+
+    const text = typeof result === 'string' ? result : result?.response || '';
+    setMusterloesung(text);
+    setIsDirty(true);
     setGenerating(false);
+    toast.success('Musterlösung generiert.');
   };
 
-  // Platzhalter: Chat-Nachricht senden
-  const handleChatSend = async (text) => {
-    setChatMessages(prev => [...prev, { role: 'user', content: text }]);
+  // Chat: iterative Anpassung via LLM
+  const handleChatSend = async (userText) => {
+    setChatMessages(prev => [...prev, { role: 'user', content: userText }]);
     setChatLoading(true);
-    await new Promise(r => setTimeout(r, 500));
+
+    const prompt = `Du bist ein Assistent zur Überarbeitung von schulischen Erwartungshorizonten.
+
+Hier ist der aktuelle Erwartungshorizont:
+${musterloesung || '(noch kein Text)'}
+
+Der Lehrer gibt dir nun folgenden Anpassungswunsch:
+${userText}
+
+Überarbeite den Erwartungshorizont entsprechend und gib NUR den vollständigen überarbeiteten Text aus – ohne Kommentare oder Erklärungen davor oder danach.`;
+
+    const result = await base44.integrations.Core.InvokeLLM({ prompt });
+    const newText = typeof result === 'string' ? result : result?.response || '';
+
+    setMusterloesung(newText);
+    setIsDirty(true);
     setChatMessages(prev => [...prev, {
       role: 'assistant',
-      content: 'KI-Chat wird in einem späteren Schritt implementiert.',
+      content: 'Erledigt! Ich habe die Musterlösung entsprechend deiner Vorgaben angepasst.',
     }]);
     setChatLoading(false);
   };
