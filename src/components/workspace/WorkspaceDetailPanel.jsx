@@ -495,28 +495,22 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
         <div className="space-y-2">
           {paketZiele.length === 0 ? (
             <button
-              onClick={kannBearbeiten ? onNewLernziel : undefined}
-              disabled={!kannBearbeiten}
+              onClick={inEditMode ? onNewLernziel : undefined}
+              disabled={!inEditMode}
               className={`w-full flex flex-col items-center justify-center gap-2 p-6 rounded-lg border-2 border-dashed transition-colors text-center
-                ${kannBearbeiten
+                ${inEditMode
                   ? 'border-primary/30 hover:border-primary hover:bg-primary/5 cursor-pointer'
                   : 'border-border cursor-default opacity-60'
                 }`}
             >
               <Target className="w-6 h-6 text-muted-foreground/40" />
-              <p className="text-sm text-muted-foreground">
-                {kannBearbeiten
-                  ? 'Noch kein Lernziel zugeordnet. Klicken Sie hier, um ein Lernziel hinzuzufügen.'
+              <span className="text-sm text-muted-foreground">
+                {inEditMode
+                  ? 'Noch kein Lernziel zugeordnet. Hier klicken, um ein Lernziel hinzuzufügen.'
                   : 'Noch kein Lernziel zugeordnet.'}
-              </p>
-              {kannBearbeiten && (
-                <div className="space-y-0.5 text-xs text-muted-foreground/70">
-                  <p>Fachliches Lernziel (Formulierung in Fachsprache)</p>
-                  <p>Schülerbezogenes Lernziel (schülergerechte Formulierung)</p>
-                </div>
-              )}
-              {kannBearbeiten && (
-                <span className="text-xs text-primary font-semibold mt-1">+ Jetzt Lernziel anlegen</span>
+              </span>
+              {inEditMode && (
+                <span className="text-xs text-primary font-medium">+ Lernziel hinzufügen</span>
               )}
             </button>
           ) : (
