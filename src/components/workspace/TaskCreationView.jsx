@@ -404,42 +404,16 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
     }, 100);
   };
 
-  // Wenn initialActivityId gesetzt: Activity suchen + Baum öffnen bis dahin
+  // Wenn initialActivityId gesetzt: openTreeAndLoadContent aufrufen (mit Timing-Sicherheit)
   useEffect(() => {
     if (!initialActivityId || allActivities.length === 0 || lernpakete.length === 0) return;
-    
-    console.log("🔗 Deep-Link: Suche nach Activity", initialActivityId);
-    
-    const activity = allActivities.find(a => a.id === initialActivityId);
-    if (!activity) {
-      console.log("❌ Deep-Link: Activity nicht gefunden");
-      return;
-    }
-
-    console.log("✓ Activity gefunden:", activity);
-    
-    // Selektiere die Activity
-    setSelectedItem({ type: 'activity', activity });
-    
-    // Finde das Lernpaket (Parent)
-    const paket = lernpakete.find(p => p.id === activity.lernpaket_id);
-    if (paket) {
-      const keysToExpand = [paket.id];
-      
-      // Finde das Themenfeld (Grandparent)
-      if (paket.themenfeld_id) {
-        keysToExpand.push(paket.themenfeld_id);
-        console.log("📁 Öffne Hierarchie: Themenfeld ->", paket.themenfeld_id, "Paket ->", paket.id);
-      } else {
-        console.log("📁 Öffne Paket ->", paket.id);
-      }
-      
-      // Öffne alle Ordner
-      setOpenPacketIds(new Set(keysToExpand));
-    } else {
-      console.log("⚠️ Lernpaket für Activity nicht gefunden");
-    }
-  }, [initialActivityId, allActivities, lernpakete, searchParams]);
+    // Kurze Verzögerung sicherstellen, dass der Baum gerendert ist
+    const timer = setTimeout(() => {
+      openTreeAndLoadContent(initialActivityId);
+      setDebugSelectValue(initialActivityId);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [initialActivityId, allActivities, lernpakete]);
 
   // Gruppiert nach Themenfeld
   const groupedPakete = themenfelder.length > 0
@@ -477,7 +451,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
       <aside className="w-96 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden h-full">
         <div className="px-3 py-3 border-b border-border shrink-0 space-y-2">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aktivitäten</p>
-          {/* DEBUG: Flache Aktivitäts-Selectbox zum Testen der Baum-Navigation */}
+          {/* Aktivitäts-Selectbox (versteckt, Logik aktiv für programmatische Ansteuerung) */}
           {allActivities.filter(a => paketeFuerEinheit.some(p => p.id === a.lernpaket_id)).length > 0 && (
             <select
               value={debugSelectValue}
@@ -485,7 +459,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
                 setDebugSelectValue(e.target.value);
                 openTreeAndLoadContent(e.target.value);
               }}
-              className="w-full text-xs border border-border rounded px-2 py-1 bg-background text-foreground"
+              style={{ display: 'none' }}
             >
               <option value="">🔍 Debug: Aktivität direkt anspringen…</option>
               {allActivities
