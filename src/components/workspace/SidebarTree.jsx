@@ -65,6 +65,7 @@ const PHASES = [
 function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseActivities, aktivitaetenMap }) {
   const isSelected = selectedId === `phase-${paket.id}-${phase}`;
   const activities = paketPhaseActivities.filter(a => a.phase === phase);
+  const hasIncompleteActivity = activities.some(a => !a.is_complete);
   const [open, setOpen] = useState(false);
 
   return (
@@ -85,7 +86,9 @@ function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseA
           </span>
           <span className="truncate flex-1">{phaseLabel}</span>
           {!isSelected && activities.length > 0 && (
-            <span className="w-5 h-5 flex items-center justify-center rounded-full bg-green-500 text-white text-[10px] font-bold shrink-0">{activities.length}</span>
+            <span className={`w-5 h-5 flex items-center justify-center rounded-full text-white text-[10px] font-bold shrink-0 ${
+              hasIncompleteActivity ? 'bg-amber-400' : 'bg-green-500'
+            }`}>{activities.length}</span>
           )}
         </button>
       </div>
