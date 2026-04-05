@@ -45,9 +45,9 @@ Deno.serve(async (req) => {
     const einheiten = await base44.asServiceRole.entities.Einheiten.filter({ id: paket.einheit_id });
     if (!einheiten?.[0]) {
       // Einheit gelöscht → Lock freigeben und abbrechen
-      if (paket.locked_by) {
+      if (paket.locked_by_user) {
         await base44.asServiceRole.entities.Lernpakete.update(paket_id, {
-          locked_by: null, locked_at: null,
+          locked_by_user: null, locked_at: null,
         }).catch(() => {});
       }
       return Response.json({
@@ -105,6 +105,7 @@ Deno.serve(async (req) => {
       locked_at: new Date().toISOString(),
       lock_version: currentVersion + 1,
     });
+    console.info(`[lernpaketLock] Lock acquired by ${user.email} on Lernpaket/${paket_id}`);
     return Response.json({ success: true, locked_by: user.email, lock_version: currentVersion + 1 });
   }
 
@@ -118,6 +119,7 @@ Deno.serve(async (req) => {
       locked_by_user: null,
       locked_at: null,
     });
+    console.info(`[lernpaketLock] Lock released by ${user.email} on Lernpaket/${paket_id}`);
     return Response.json({ success: true });
   }
 
