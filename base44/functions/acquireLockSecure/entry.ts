@@ -98,8 +98,8 @@ Deno.serve(async (req) => {
     const currentVersion = lockTarget.lock_version ?? 0;
 
      // ✅ Validate clientLockVersion (Compare-and-Swap)
-     // Wenn clientLockVersion gesetzt ist, muss die DB-Version exakt passen
-     if (clientLockVersion !== undefined && clientLockVersion !== currentVersion) {
+     // Nur wenn clientLockVersion explizit gesetzt wurde (nicht null/undefined)
+     if (clientLockVersion !== null && clientLockVersion !== undefined && clientLockVersion !== currentVersion) {
        console.warn(
          `[acquireLockSecure] Version mismatch: client has v${clientLockVersion}, DB has v${currentVersion}`
        );

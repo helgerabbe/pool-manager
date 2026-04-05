@@ -96,22 +96,20 @@ export function useCollaborationLock(
       entityName,
       entityId: recordId,
       parentId: parentId || null,
-      parentLockVersion: parentId ? parentLockVersion : 'N/A (direct lock)',
-      clientLockVersion: !parentId ? versionRef.current : undefined,
+      parentLockVersion: parentId ? (parentLockVersion ?? '(load failed)') : 'N/A',
       userEmail,
     });
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         console.log(`[useCollaborationLock.acquireLock] Attempt ${attempt}/${maxRetries}`);
-        // ✅ FIX: clientLockVersion ONLY für direkte Locks (kein parentId)
-        // Bei parentId wird das Parent-lock_version gelesen & versioniert
-        const shouldSendVersion = !parentId && versionRef.current !== null;
+        // ✅ Nur clientLockVersion senden wenn verfügbar
+        const versionToSend = !parentId ? versionRef.current : parentLockVersion;
         const response = await base44.functions.invoke('acquireLockSecure', {
           entityName,
           entityId: recordId,
           parentId: parentId || undefined,
-          clientLockVersion: shouldSendVersion ? versionRef.current : (parentId ? parentLockVersion : undefined),
+          ...(versionToSend !== null && versionToSend !== undefined && { clientLockVersion: versionToSend }),
         });
 
         console.log(`[useCollaborationLock.acquireLock] Response from backend:`, {
