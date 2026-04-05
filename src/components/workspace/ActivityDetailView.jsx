@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useLernpaketLock } from '@/hooks/useLernpaketLock';
+import { useEinheitLock } from '@/hooks/useEinheitLock';
 import { useRBAC } from '@/hooks/useRBAC';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ import { toast } from 'sonner';
 import ApprovalStatusBadge from '@/components/workspace/ApprovalStatusBadge';
 import ApprovalActionButton from '@/components/workspace/ApprovalActionButton';
 import UnsavedChangesExitModal from '@/components/workspace/UnsavedChangesExitModal';
+import EinheitLockBanner from '@/components/workspace/EinheitLockBanner';
 
 export default function ActivityDetailView({ activityRecord, kannBearbeiten, queryClient, einheitFach }) {
   const [editMode, setEditMode] = useState(false);
@@ -23,6 +25,10 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
 
   const { permissions } = useRBAC();
   const istAdminOderFachschaft = permissions?.istAdmin;
+
+  // Makro-Lock prüfen
+  const einheitId = activityRecord?.einheit_id;
+  const { isUnitLocked, lockedByEmail: unitLockedByEmail } = useEinheitLock(einheitId);
 
   // Single Source of Truth: Lock vom übergeordneten Lernpaket
   const { 
@@ -61,7 +67,8 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
   }, [activityRecord?.field_values]);
 
   // Permission: darf dieser User überhaupt bearbeiten?
-  const kannInhalteBearbeiten = permissions?.istAdmin || kannBearbeiten;
+  // Blockiert durch Makro-Lock
+  const kannInhalteBearbeiten = (permissions?.istAdmin || kannBearbeiten) && !isUnitLocked;
 
   // Bearbeitungsmodus aktivieren
   const handleEnterEditMode = async () => {
@@ -142,6 +149,13 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      {/* Makro-Lock Banner */}
+      {isUnitLocked && (
+        <div className="flex-shrink-0 px-4 pt-4">
+          <EinheitLockBanner isUnitLocked={isUnitLocked} lockedByEmail={unitLockedByEmail} />
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex-shrink-0 flex items-start justify-between gap-3 p-4 border-b">
         <div className="flex-1 min-w-0">

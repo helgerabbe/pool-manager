@@ -4,6 +4,8 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { getLernzielStatus, getLernpaketStatus, getEinheitFortschritt } from '@/lib/statusLogic';
 import { useLernpaketLock } from '@/hooks/useLernpaketLock';
+import { useEinheitLock } from '@/hooks/useEinheitLock';
+import EinheitLockBanner from '@/components/workspace/EinheitLockBanner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import LernpaketForm from '@/components/lernpakete/LernpaketForm';
@@ -1068,6 +1070,9 @@ export default function WorkspaceDetailPanel({
   userEmail, kannBearbeiten, istAdmin,
   onNavigate, onDeleteLernpaket, onDeleteLernziel,
 }) {
+  // Makro-Lock prüfen
+  const { isUnitLocked, lockedByEmail } = useEinheitLock(einheit?.id);
+
   // Prüfen ob eine Ebene-2-Aufgabe ausgewählt ist
   const selectedAufgabe = selectedNode?.type === 'aufgabe'
     ? aufgaben.find(a => a.id === selectedNode.id)
@@ -1149,12 +1154,15 @@ export default function WorkspaceDetailPanel({
 
   if (!selectedNode) {
     return (
-      <StepEmptyState
-        icon={BookOpen}
-        title="Wählen Sie einen Eintrag aus"
-        description="Klicken Sie links auf einen Eintrag in der Struktur, um hier die Details zu sehen."
-        status="yellow"
-      />
+      <div className="space-y-4">
+        <EinheitLockBanner isUnitLocked={isUnitLocked} lockedByEmail={lockedByEmail} />
+        <StepEmptyState
+          icon={BookOpen}
+          title="Wählen Sie einen Eintrag aus"
+          description="Klicken Sie links auf einen Eintrag in der Struktur, um hier die Details zu sehen."
+          status="yellow"
+        />
+      </div>
     );
   }
 
@@ -1167,13 +1175,16 @@ export default function WorkspaceDetailPanel({
   if (type === 'lernpaket') {
     const paket = lernpakete.find(p => p.id === selectedNode.id);
     if (!paket) return null;
+    // Blockiere Bearbeitungsmodus wenn Einheit gesperrt ist
+    const effectiveKannBearbeiten = kannBearbeiten && !isUnitLocked;
     return (
       <>
+        <EinheitLockBanner isUnitLocked={isUnitLocked} lockedByEmail={lockedByEmail} />
         <LernpaketPanel
           paket={paket}
           lernziele={lernziele}
           aufgaben={aufgaben}
-          kannBearbeiten={kannBearbeiten}
+          kannBearbeiten={effectiveKannBearbeiten}
           userEmail={userEmail}
           istAdmin={istAdmin}
           onNavigate={onNavigate}

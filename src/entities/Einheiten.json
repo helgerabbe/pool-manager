@@ -1,0 +1,137 @@
+{
+  "name": "Einheiten",
+  "type": "object",
+  "properties": {
+    "fach": {
+      "type": "string",
+      "enum": [
+        "Deutsch",
+        "Mathematik",
+        "Englisch",
+        "Französisch",
+        "Latein",
+        "Biologie",
+        "Chemie",
+        "Physik",
+        "Geschichte",
+        "Geographie",
+        "Politik",
+        "Wirtschaft",
+        "Kunst",
+        "Musik",
+        "Sport",
+        "Religion",
+        "Ethik",
+        "Informatik"
+      ],
+      "description": "Unterrichtsfach"
+    },
+    "titel_der_einheit": {
+      "type": "string",
+      "description": "Titel der Unterrichtseinheit"
+    },
+    "gesamtziele": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array von Gesamtzielen/Hauptkompetenzen der Einheit"
+    },
+    "jahrgangsstufe": {
+      "type": "string",
+      "enum": [
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13"
+      ],
+      "description": "Jahrgangsstufe"
+    },
+    "zeit_phase_id": {
+      "type": "string",
+      "description": "FK zur Zeitphase (Halbjahr) aus LookupPhasen"
+    },
+    "wizard_status": {
+      "type": "string",
+      "enum": [
+        "entwurf",
+        "aktiv"
+      ],
+      "default": "aktiv",
+      "description": "Wizard-Status: 'entwurf' = noch im Wizard, für andere unsichtbar. 'aktiv' = fertig und sichtbar."
+    },
+    "wizard_max_step": {
+      "type": "integer",
+      "description": "Höchster erreichter Wizard-Schritt für Draft-Resume"
+    },
+    "freigabe_status": {
+      "type": "string",
+      "enum": [
+        "Freigegeben für Bearbeitung",
+        "Gesperrt"
+      ],
+      "default": "Freigegeben für Bearbeitung",
+      "description": "Bearbeitungsstatus der Einheit: Freigegeben = Lehrer dürfen bearbeiten, Gesperrt = nur Lesen"
+    },
+    "content_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "approved"
+      ],
+      "default": "approved",
+      "description": "Pädagogischer Status: Struktur-Container sind immer 'approved' (Auto-Grün)"
+    },
+    "sync_status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "pending",
+        "synced",
+        "modified",
+        "to_delete"
+      ],
+      "default": "new",
+      "description": "Moodle-Sync-Status: new, pending, synced, modified, to_delete"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel des letzten erfolgreichen Moodle-Exports (nullable)"
+    },
+    "last_exported_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel des letzten Exports als JSON-Datei (nullable)"
+    },
+    "is_unit_locked": {
+      "type": "boolean",
+      "default": false,
+      "description": "Makro-Lock: True = Einheit wird gerade von Fachschaftsleitung bearbeitet (Struktur oder andere Modi)"
+    },
+    "unit_locked_by_email": {
+      "type": "string",
+      "description": "E-Mail des Nutzers, der die Einheit derzeit sperrt (Makro-Lock)"
+    },
+    "unit_locked_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel des Makro-Locks (für Auto-Timeout nach 60 Min)"
+    },
+    "version": {
+      "type": "integer",
+      "default": 1,
+      "description": "Optimistic Locking Version (inkrementiert bei jedem Update)"
+    }
+  },
+  "required": [
+    "fach",
+    "titel_der_einheit",
+    "jahrgangsstufe"
+  ]
+}
