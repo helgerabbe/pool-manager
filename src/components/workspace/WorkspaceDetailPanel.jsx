@@ -20,7 +20,7 @@ import { Label } from '@/components/ui/label';
 import {
   BookOpen, Layers, Target, Puzzle, Plus, Edit, Trash2,
   Clock, Lock, Unlock, AlertCircle, CheckCircle2, ArrowDown,
-  TrendingUp, AlertTriangle, Eye, AlertTriangle as WarningIcon, UserCheck, PenLine
+  TrendingUp, AlertTriangle, UserCheck, PenLine, Save, Loader2
 } from 'lucide-react';
 import SyncWarningBanner from '@/components/sync/SyncWarningBanner';
 import { useLernpaketLock } from '@/hooks/useLernpaketLock';
@@ -359,29 +359,126 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   const [editLernzielId, setEditLernzielId] = useState(null);
   const [editLernzielData, setEditLernzielData] = useState(null);
   const [expandedPhase, setExpandedPhase] = useState(null);
+  const [exitModalOpen, setExitModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  // Dirty-State: lokale Felder die noch nicht gespeichert wurden
+  const [localTitel, setLocalTitel] = useState(paket.titel_des_pakets || '');
+  const [isDirty, setIsDirty] = useState(false);
   const queryClient = useQueryClient();
   const { acquireLock, releaseLock, forceUnlock, isLocking } = useLernpaketLock(paket.id, userEmail);
 
   const paketLockedBy = paket.locked_by_user || paket.locked_by;
   const isLockedByOther = isPaketLocked(paket) && paketLockedBy !== userEmail;
   const isLockedByMe    = isPaketLocked(paket) && paketLockedBy === userEmail;
-  // Bearbeitungsmodus: Lock gehört mir
   const inEditMode = isLockedByMe;
 
+  // Sync localTitel wenn Paket von außen aktualisiert wird (z.B. nach Save)
+  React.useEffect(() => {
+    if (!inEditMode) {
+      setLocalTitel(paket.titel_des_pakets || '');
+      setIsDirty(false);
+    }
+  }, [paket.titel_des_pakets, inEditMode]);
+
+  // beforeunload: native Browser-Warnung bei ungespeicherten Änderungen
+  React.useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (inEditMode && isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [inEditMode, isDirty]);
+
+  // unload: Lock freigeben via Beacon
+  React.useEffect(() => {
+    const handleUnload = () => {
+      if (inEditMode) {
+        base44.functions.invoke('releaseLockSecure', {
+          entityName: 'Lernpakete',
+          entityId: paket.id,
+        }).catch(() => {});
+      }
+    };
+    window.addEventListener('beforeunload', handleUnload);
+    return () => window.removeEventListener('beforeunload', handleUnload);
+  }, [inEditMode, paket.id]);
+
   const handleStartEdit = async () => {
-    await acquireLock();
+    const result = await acquireLock();
+    if (!result?.success && result?.locked_by) {
+      toast.error(`Dieses Paket wird gerade von ${result.locked_by} bearbeitet.`);
+    }
   };
-  const handleStopEdit = async () => {
-    await releaseLock();
+
+  // Zwischenspeichern: Lock bleibt aktiv
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await base44.functions.invoke('updateLernpaketSecure', {
+        paketId: paket.id,
+        updates: { titel_des_pakets: localTitel },
+        expectedLockVersion: paket.lock_version,
+      });
+      queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+      setIsDirty(false);
+      toast.success('Gespeichert.');
+    } catch (err) {
+      const status = err?.response?.status;
+      if (status === 409) toast.error('Versionskollision – bitte Seite neu laden.');
+      else toast.error('Fehler beim Speichern.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Exit: mit Dirty-Check
+  const handleStopEdit = () => {
+    if (isDirty) {
+      setExitModalOpen(true);
+    } else {
+      doReleaseLock();
+    }
+  };
+
+  const doReleaseLock = async () => {
+    await base44.functions.invoke('releaseLockSecure', {
+      entityName: 'Lernpakete',
+      entityId: paket.id,
+    }).catch(() => {});
+    queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+    setIsDirty(false);
+    setExitModalOpen(false);
+  };
+
+  const handleSaveAndExit = async () => {
+    await handleSave();
+    await doReleaseLock();
+  };
+
+  const handleDiscard = async () => {
+    setLocalTitel(paket.titel_des_pakets || '');
+    setIsDirty(false);
+    queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+    await doReleaseLock();
   };
 
   const updateLernziel = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Lernziele.update(id, data),
+    mutationFn: ({ id, data }) => base44.functions.invoke('updateLernpaketSecure', {
+      paketId: paket.id,
+      updates: {},
+      expectedLockVersion: paket.lock_version,
+      lernzielUpdates: [{ id, data }],
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lernziele'] });
       setEditLernzielId(null);
       setEditLernzielData(null);
+      toast.success('Lernziel gespeichert.');
     },
+    onError: () => toast.error('Fehler beim Speichern des Lernziels.'),
   });
 
   const PHASES = [
@@ -467,15 +564,42 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
           </div>
         </div>
       )}
+      {!inEditMode && !isLockedByOther && kannBearbeiten && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleStartEdit}
+          disabled={isLocking}
+          className="gap-2 self-start"
+        >
+          {isLocking
+            ? <><div className="w-3.5 h-3.5 border-2 border-muted border-t-primary rounded-full animate-spin" /> Sperren…</>
+            : <><PenLine className="w-3.5 h-3.5" /> Bearbeitungsmodus aktivieren</>
+          }
+        </Button>
+      )}
       {isLockedByMe && (
-        <div className="flex items-center justify-between gap-3 p-3 rounded-xl border-2 border-primary/40 bg-primary/5 text-sm">
+        <div className="flex items-center justify-between gap-3 p-3 rounded-xl border-2 border-primary/40 bg-primary/5 text-sm flex-wrap">
           <div className="flex items-center gap-2 text-primary">
             <PenLine className="w-4 h-4" />
             <span className="font-medium">Bearbeitungsmodus aktiv</span>
+            {isDirty && <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">Ungespeichert</span>}
           </div>
-          <Button variant="outline" size="sm" onClick={handleStopEdit} className="gap-1.5 text-xs">
-            <Unlock className="w-3.5 h-3.5" /> Bearbeitung beenden
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleSave}
+              disabled={isSaving || !isDirty}
+              className="gap-1.5 text-xs"
+            >
+              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              Zwischenspeichern
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleStopEdit} disabled={isSaving} className="gap-1.5 text-xs">
+              <Unlock className="w-3.5 h-3.5" /> Bearbeitung beenden
+            </Button>
+          </div>
         </div>
       )}
 
@@ -606,6 +730,15 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
           );
         })}
       </div>
+
+      {/* Exit-Modal */}
+      <UnsavedChangesExitModal
+        open={exitModalOpen}
+        onOpenChange={setExitModalOpen}
+        onSaveAndExit={handleSaveAndExit}
+        onDiscard={handleDiscard}
+        saving={isSaving}
+      />
 
       {/* Edit Lernziel Dialog */}
       <Dialog open={!!editLernzielId} onOpenChange={(open) => { if (!open) setEditLernzielId(null); }}>
@@ -910,6 +1043,7 @@ function AktivitaetEditPanel({ paket, phaseKey, phaseLabel, kannBearbeiten, quer
 // ── PhaseContent: Aktivitäten-Anzeige und -Verwaltung ─────────────────────────
 
 import PhaseActivitiesList from '@/components/workspace/PhaseActivitiesList';
+import UnsavedChangesExitModal from '@/components/workspace/UnsavedChangesExitModal';
 
 function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient, onNavigate, onGoToTaskWorkshop }) {
   return (
