@@ -253,14 +253,45 @@ export default function ErwartungshorizontTab({ aufgabe, kannBearbeiten, einheit
       aufgabe.aufgabenstellung,
     ].filter(Boolean).join('\n');
 
-    const prompt = `Du bist ein erfahrener Lehrer im Fach ${fach} für die ${jahrgangsstufe}. Jahrgangsstufe. Aktuelles Thema der Einheit ist: '${thema}'.
-Analysiere die folgende Aufgabe${hatBilder ? ' (siehe beigefügtes Bild)' : ''} und erstelle eine präzise Musterlösung (Erwartungshorizont). Die Schüler sollen mit dieser Aufgabe primär folgende Kompetenzen nachweisen:
-${kompetenzListe}
-Richte den Erwartungshorizont exakt auf den Nachweis dieser Kompetenzen aus.${aufgabe.ergebnis_form || aufgabe.ergebnis_dateiformat ? `\nBerücksichtige zudem, dass das erwartete Ergebnis die Form '${aufgabe.ergebnis_form || 'offen'}' im Format '${aufgabe.ergebnis_dateiformat || 'offen'}' haben wird.` : ''}
-Gib ausschließlich die fertige Musterlösung aus, ohne einleitende oder abschließende Begrüßungsfloskeln.
+    // Dynamischer Prompt-Aufbau – nur vorhandene Werte einfügen
+    const promptParts = [];
 
-Aufgabe:
-${aufgabentext}`;
+    promptParts.push('Du bist ein erfahrener Lehrer.');
+
+    if (einheit?.fach && einheit?.jahrgangsstufe) {
+      promptParts.push(`Dein Fach ist ${einheit.fach} in der ${einheit.jahrgangsstufe}. Jahrgangsstufe.`);
+    } else if (einheit?.fach) {
+      promptParts.push(`Dein Fach ist ${einheit.fach}.`);
+    }
+
+    if (einheit?.titel_der_einheit) {
+      promptParts.push(`Das aktuelle Thema der Unterrichtseinheit ist '${einheit.titel_der_einheit}'.`);
+    }
+
+    promptParts.push(`Analysiere die folgende Aufgabe${hatBilder ? ' (siehe beigefügtes Bild)' : ''} und erstelle eine präzise Musterlösung (Erwartungshorizont).`);
+
+    if (alleKompetenzen.length > 0) {
+      promptParts.push(`Die Schüler sollen primär folgende Kompetenzen nachweisen:\n${kompetenzListe}\nRichte den Erwartungshorizont exakt auf diesen Nachweis aus.`);
+    }
+
+    const ergebnisForm = aufgabe.ergebnis_form;
+    const ergebnisFormat = aufgabe.ergebnis_dateiformat;
+    const formOffen = !ergebnisForm || ergebnisForm.toLowerCase().includes('offen');
+    const formatOffen = !ergebnisFormat || ergebnisFormat.toLowerCase().includes('offen') || ergebnisFormat.toLowerCase().includes('beliebig');
+    if (!formOffen || !formatOffen) {
+      const formTeile = [];
+      if (!formOffen) formTeile.push(`Form '${ergebnisForm}'`);
+      if (!formatOffen) formTeile.push(`Format '${ergebnisFormat}'`);
+      promptParts.push(`Das erwartete Ergebnis hat die ${formTeile.join(' im ')}.`);
+    }
+
+    promptParts.push('Gib ausschließlich die fertige Musterlösung aus, ohne einleitende oder abschließende Floskeln.');
+
+    if (aufgabentext) {
+      promptParts.push(`\nAufgabe:\n${aufgabentext}`);
+    }
+
+    const prompt = promptParts.join('\n');
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,
@@ -315,10 +346,11 @@ Gib NUR den vollständigen überarbeiteten Text aus – ohne Kommentare oder Erk
         <Separator />
 
         {/* Bereich 2: Generieren-Button */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <Button
             onClick={handleGenerate}
-            disabled={generating || !kannBearbeiten}
+            disabled={generating || !kannBearbeiten || (!aufgabe.aufgabenstellung?.trim() && !aufgabe.aufgaben_bild_url)}
+            title={!aufgabe.aufgabenstellung?.trim() && !aufgabe.aufgaben_bild_url ? 'Bitte zuerst Aufgabentext oder Bild in Tab 1 hinterlegen' : undefined}
             className="gap-2"
           >
             {generating
@@ -340,6 +372,9 @@ Gib NUR den vollständigen überarbeiteten Text aus – ohne Kommentare oder Erk
           )}
           {!kannBearbeiten && (
             <span className="text-xs text-muted-foreground">Schreibgeschützt</span>
+          )}
+          {kannBearbeiten && !aufgabe.aufgabenstellung?.trim() && !aufgabe.aufgaben_bild_url && (
+            <span className="text-xs text-amber-600">⚠ Bitte zuerst Aufgabentext oder Bild in Tab 1 hinterlegen</span>
           )}
         </div>
 
