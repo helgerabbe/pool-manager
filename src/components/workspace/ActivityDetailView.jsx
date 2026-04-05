@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useRBAC } from '@/hooks/useRBAC';
 import { useCollaborationLock } from '@/hooks/useCollaborationLock';
+import { useLernpaketLockGlobal } from '@/lib/LernpaketLockContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -15,31 +16,80 @@ import UnsavedChangesExitModal from '@/components/workspace/UnsavedChangesExitMo
 
 export default function ActivityDetailView({ activityRecord, kannBearbeiten, queryClient, einheitFach }) {
   const [editMode, setEditMode] = useState(false);
-   const [formData, setFormData] = useState({});
-   const [originalFormData, setOriginalFormData] = useState({});
-   const [saving, setSaving] = useState(false);
-   const [userEmail, setUserEmail] = useState(null);
-   const [hasDraft, setHasDraft] = useState(false);
-   const [exitModalOpen, setExitModalOpen] = useState(false);
-   const [acquiringLock, setAcquiringLock] = useState(false);
-   const [lockAttempted, setLockAttempted] = useState(false);
+  const [formData, setFormData] = useState({});
+  const [originalFormData, setOriginalFormData] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [userEmail, setUserEmail] = useState(null);
+  const [hasDraft, setHasDraft] = useState(false);
+  const [exitModalOpen, setExitModalOpen] = useState(false);
+  const [acquiringLock, setAcquiringLock] = useState(false);
+  const [lockAttempted, setLockAttempted] = useState(false);
+  const [initialSyncDone, setInitialSyncDone] = useState(false);
+  const [checkingLock, setCheckingLock] = useState(true);
 
   const { permissions, rolle } = useRBAC();
   const [forceUnlocking, setForceUnlocking] = useState(false);
   const istAdminOderFachschaft = rolle === 'Administrator' || rolle === 'Fachschaftsleitung' || permissions?.istAdmin;
+  const { currentLockedLernpaketId } = useLernpaketLockGlobal();
 
   useEffect(() => {
     base44.auth.me().then(u => setUserEmail(u?.email || null));
   }, []);
 
+  // ✅ INITIAL SYNC: Auto-Restore Bearbeitungsmodus beim Laden
+  useEffect(() => {
+    if (!activityRecord?.id || !userEmail || initialSyncDone) return;
+
+    const checkAndRestoreEditMode = async () => {
+      setCheckingLock(true);
+      try {
+        // ✅ Lade Parent-Lernpaket Status
+        const paket = await base44.entities.Lernpakete.get(activityRecord.lernpaket_id);
+        
+        if (!paket) {
+          setCheckingLock(false);
+          return;
+        }
+
+        // ✅ Validierung: Lock ist noch aktiv UND gehört dem aktuellen User?
+        const lockStillValid = 
+          paket.lock_status === true && 
+          paket.locked_by_user === userEmail &&
+          paket.lernpaket_id === activityRecord.lernpaket_id;
+
+        if (lockStillValid) {
+          // ✅ Lock ist gültig → Bearbeitungsmodus automatisch aktivieren
+          console.info('[ActivityDetailView] Auto-restoring edit mode for activity', activityRecord.id);
+          setEditMode(true);
+          setOriginalFormData({ ...formData });
+          // Der Hook wird die Heartbeat selbstständig starten da editMode=true
+        } else {
+          // ✅ Lock ist ungültig oder gehört jemand anderem
+          console.info('[ActivityDetailView] Lock not valid or held by other user. Staying in read mode.');
+          setEditMode(false);
+        }
+      } catch (error) {
+        console.error('[ActivityDetailView] Initial sync failed:', error);
+        // Bei Fehler: vorsichtshalber im Lesemodus bleiben
+        setEditMode(false);
+      } finally {
+        setCheckingLock(false);
+        setInitialSyncDone(true);
+      }
+    };
+
+    checkAndRestoreEditMode();
+  }, [activityRecord?.id, userEmail, initialSyncDone]);
+
   // Collaboration Lock mit Offline-Support
    // ✅ Hierarchie-Locking: Hook lädt Parent-lock_version selbst wenn parentId gesetzt ist
+   // active=true wenn editMode ODER wenn Auto-Restore aktiv ist
    const { acquireLock, releaseLock, isLocked: lockedByOther, retryCount, isOffline, lockLost } = useCollaborationLock(
      'LernpaketPhaseAktivitaet',
      ['lernpaketPhaseAktivitaeten'],
      activityRecord?.id,
      userEmail,
-     false,  // Nicht automatisch locken
+     editMode,  // ✅ Heartbeat läuft automatisch wenn editMode=true (auch nach Auto-Restore)
      undefined,  // onLockAcquired
      undefined,  // onLockDenied
      activityRecord?.lernpaket_id  // ✅ Hook lädt Parent-Version selbst
@@ -278,6 +328,16 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      {/* Initial Sync Loading */}
+      {checkingLock && !initialSyncDone && (
+        <div className="flex-shrink-0 bg-blue-50 border-b border-blue-200 p-3">
+          <div className="flex items-center gap-2 text-blue-800 text-sm">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Bearbeitungsmodus wird überprüft...</span>
+          </div>
+        </div>
+      )}
+
       {/* Offline/Connection Warning */}
       {(isOffline || retryCount > 0 || hasDraft) && (
         <div className="flex-shrink-0 bg-amber-50 border-b border-amber-200 p-3 space-y-2">
@@ -363,9 +423,10 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
                 size="sm"
                 variant="outline"
                 onClick={handleEnterEditMode}
-                disabled={lockedByOther || lockLost || acquiringLock}
+                disabled={lockedByOther || lockLost || acquiringLock || checkingLock}
                 title={
-                  lockLost ? 'Lock verloren. Seite neu laden.'
+                  checkingLock ? 'Überprüfe Bearbeitungsmodus...'
+                  : lockLost ? 'Lock verloren. Seite neu laden.'
                   : lockedByOther ? `Wird bearbeitet von ${activityRecord.locked_by_user}`
                   : undefined
                 }
