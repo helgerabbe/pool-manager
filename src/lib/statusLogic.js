@@ -96,13 +96,15 @@ export function getLernzielStatus(lernziel, aufgaben, paketId, userEmail = '', m
   return 'yellow';
 }
 
-const LOCK_TIMEOUT_MS = 30 * 60 * 1000; // 30 Minuten
+const LOCK_TIMEOUT_MS = 2 * 60 * 1000; // 2 Minuten (aligned mit Aktivitäten)
 
 /**
  * Prüft ob ein Lernpaket aktuell aktiv gesperrt ist (Lock nicht abgelaufen).
+ * Unterstützt beide Feldnamen für Rückwärtskompatibilität während der Migration.
  */
 export function isPaketLocked(paket) {
-  if (!paket.locked_by || !paket.locked_at) return false;
+  const lockedBy = paket.locked_by_user || paket.locked_by;
+  if (!lockedBy || !paket.locked_at) return false;
   const age = Date.now() - new Date(paket.locked_at).getTime();
   return age < LOCK_TIMEOUT_MS;
 }
@@ -149,7 +151,8 @@ export function getLernpaketStatus(paket, lernziele, aufgaben, userEmail = '', m
   }
 
   // GELB: Paket ist von jemand anderem gesperrt
-  if (isPaketLocked(paket) && paket.locked_by !== userEmail) return 'yellow';
+  const lockedBy = paket.locked_by_user || paket.locked_by;
+  if (isPaketLocked(paket) && lockedBy !== userEmail) return 'yellow';
 
   // GRÜN: Alle aktiven Phasen haben eine Aktivität und kein fremder Lock
   return 'green';

@@ -362,8 +362,9 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   const queryClient = useQueryClient();
   const { acquireLock, releaseLock, forceUnlock, isLocking } = useLernpaketLock(paket.id, userEmail);
 
-  const isLockedByOther = isPaketLocked(paket) && paket.locked_by !== userEmail;
-  const isLockedByMe    = isPaketLocked(paket) && paket.locked_by === userEmail;
+  const paketLockedBy = paket.locked_by_user || paket.locked_by;
+  const isLockedByOther = isPaketLocked(paket) && paketLockedBy !== userEmail;
+  const isLockedByMe    = isPaketLocked(paket) && paketLockedBy === userEmail;
   // Bearbeitungsmodus: Lock gehört mir
   const inEditMode = isLockedByMe;
 
@@ -451,7 +452,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
           <div className="flex-1">
             <p className="font-semibold">Wird gerade bearbeitet</p>
             <p className="text-xs mt-0.5 text-amber-700">
-              <strong>{paket.locked_by}</strong> bearbeitet dieses Paket gerade. Bitte warten Sie, bis die Bearbeitung abgeschlossen ist.
+              <strong>{paketLockedBy}</strong> bearbeitet dieses Paket gerade. Bitte warten Sie, bis die Bearbeitung abgeschlossen ist.
             </p>
             {istAdmin && (
               <Button

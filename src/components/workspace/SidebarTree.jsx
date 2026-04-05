@@ -118,8 +118,9 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
    const [open, setOpen] = useState(false); // Geschlossen am Anfang
   const isSelected = selectedId === paket.id;
   const status = getLernpaketStatus(paket, lernziele, aufgaben, userEmail, mappings, phaseAktivitaeten);
-  const lockedByOther = isPaketLocked(paket) && paket.locked_by !== userEmail;
-  const lockedByMe = isPaketLocked(paket) && paket.locked_by === userEmail;
+  const paketLockedBy = paket.locked_by_user || paket.locked_by;
+  const lockedByOther = isPaketLocked(paket) && paketLockedBy !== userEmail;
+  const lockedByMe = isPaketLocked(paket) && paketLockedBy === userEmail;
 
   const hatUnvollstaendigeAktivitaet = paketPhaseActivities.some(a => !a.is_complete);
 
@@ -148,7 +149,7 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
           )}
           <span className="truncate flex-1">{paket.titel_des_pakets}</span>
           {!isSelected && lockedByOther && (
-            <span title={`Bearbeitet von: ${paket.locked_by}`} className="flex items-center gap-0.5 text-[10px] text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded shrink-0">
+            <span title={`Bearbeitet von: ${paketLockedBy}`} className="flex items-center gap-0.5 text-[10px] text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded shrink-0">
               <UserRound className="w-2.5 h-2.5" />
             </span>
           )}

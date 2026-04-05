@@ -12,7 +12,7 @@
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
-const LOCK_TIMEOUT_MS       = 30 * 60 * 1000; // 30 Min (Content-Lock)
+const LOCK_TIMEOUT_MS       = 2 * 60 * 1000;  // 2 Min (Content-Lock, aligned with Aktivitäten)
 const STRUCT_LOCK_TIMEOUT_MS = 60 * 60 * 1000; // 60 Min (Structural Lock)
 
 Deno.serve(async (req) => {
@@ -85,32 +85,37 @@ Deno.serve(async (req) => {
     }
 
     // Content-Lock-Prüfung: Ist das Paket von jemand anderem gesperrt?
-    if (paket.locked_by && paket.locked_by !== user.email) {
+    if (paket.locked_by_user && paket.locked_by_user !== user.email) {
       const lockedAt = paket.locked_at ? new Date(paket.locked_at).getTime() : 0;
       const isExpired = Date.now() - lockedAt > LOCK_TIMEOUT_MS;
       if (!isExpired) {
         return Response.json({
           success: false,
-          locked_by: paket.locked_by,
-          message: `Dieses Paket wird gerade von ${paket.locked_by} bearbeitet.`,
+          locked_by: paket.locked_by_user,
+          message: `Dieses Paket wird gerade von ${paket.locked_by_user} bearbeitet.`,
         }, { status: 409 });
       }
     }
 
+    // Optimistic Locking: Version inkrementieren
+    const currentVersion = paket.lock_version ?? 0;
     await base44.asServiceRole.entities.Lernpakete.update(paket_id, {
-      locked_by: user.email,
+      lock_status: true,
+      locked_by_user: user.email,
       locked_at: new Date().toISOString(),
+      lock_version: currentVersion + 1,
     });
-    return Response.json({ success: true, locked_by: user.email });
+    return Response.json({ success: true, locked_by: user.email, lock_version: currentVersion + 1 });
   }
 
   // ── UNLOCK-Aktion ─────────────────────────────────────────────────────────────
   if (action === 'unlock') {
-    if (paket.locked_by && paket.locked_by !== user.email && user.role !== 'admin') {
+    if (paket.locked_by_user && paket.locked_by_user !== user.email && user.role !== 'admin') {
       return Response.json({ error: 'Kein Zugriff' }, { status: 403 });
     }
     await base44.asServiceRole.entities.Lernpakete.update(paket_id, {
-      locked_by: null,
+      lock_status: false,
+      locked_by_user: null,
       locked_at: null,
     });
     return Response.json({ success: true });
@@ -118,7 +123,7 @@ Deno.serve(async (req) => {
 
   // ── HEARTBEAT-Aktion ──────────────────────────────────────────────────────────
   if (action === 'heartbeat') {
-    if (paket.locked_by !== user.email) {
+    if (paket.locked_by_user !== user.email) {
       return Response.json({ error: 'Kein Lock vorhanden' }, { status: 403 });
     }
 

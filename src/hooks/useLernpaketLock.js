@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
 
-const HEARTBEAT_INTERVAL = 5 * 60 * 1000; // alle 5 Minuten
+const HEARTBEAT_INTERVAL = 30 * 1000; // alle 30 Sekunden (aligned mit Aktivitäten)
 
 /**
  * Hook zum Verwalten des Lernpaket-Locks.
@@ -81,21 +81,30 @@ export function useLernpaketLock(paketId, userEmail) {
     }
   }, [callLockApi, queryClient, startHeartbeat]);
 
-  const releaseLock = useCallback(async () => {
+  const releaseLock = useCallback(async (paketId) => {
     stopHeartbeat();
     try {
-      await callLockApi('unlock');
+      // Sichere Backend-Funktion statt direktem SDK-Write
+      await base44.functions.invoke('releaseLockSecure', {
+        entityName: 'Lernpakete',
+        entityId: paketId || paketId,
+      });
       queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
     } catch {
-      // Fehler beim Entsperren ignorieren – Lock läuft nach 30 Min ab
+      // Fallback: direkt via lernpaketLock
+      await callLockApi('unlock').catch(() => {});
+      queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
     }
   }, [callLockApi, queryClient, stopHeartbeat]);
 
   const forceUnlock = useCallback(async () => {
     stopHeartbeat();
-    await callLockApi('unlock');
+    await base44.functions.invoke('releaseLockSecure', {
+      entityName: 'Lernpakete',
+      entityId: paketId,
+    }).catch(() => callLockApi('unlock'));
     queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-  }, [callLockApi, queryClient, stopHeartbeat]);
+  }, [callLockApi, queryClient, stopHeartbeat, paketId]);
 
   return { acquireLock, releaseLock, forceUnlock, isLocking, lockError };
 }
