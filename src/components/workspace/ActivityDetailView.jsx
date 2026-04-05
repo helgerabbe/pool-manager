@@ -130,13 +130,11 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
         setEditMode(true);
         setOriginalFormData({ ...formData });
       } else {
-        const lockedBy = activityRecord?.locked_by_user;
-        toast.error(
-          lockedBy
-            ? `Diese Aktivität wird gerade von ${lockedBy} bearbeitet.`
-            : 'Diese Aktivität kann gerade nicht gesperrt werden. Bitte versuchen Sie es erneut.'
-        );
+        toast.error('Die Aktivität kann gerade nicht gesperrt werden. Bitte versuchen Sie es in einem Moment erneut.');
       }
+    } catch (error) {
+      console.error('[ActivityDetailView] Lock error:', error);
+      toast.error('Fehler beim Sperren der Aktivität. Bitte versuchen Sie es erneut.');
     } finally {
       setAcquiringLock(false);
     }
