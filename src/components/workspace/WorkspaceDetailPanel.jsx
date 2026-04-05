@@ -444,7 +444,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Lernziele</h3>
-          {inEditMode && paketZiele.length > 0 && (
+          {kannBearbeiten && paketZiele.length > 0 && (
             <button
               onClick={onNewLernziel}
               className="flex items-center gap-1 text-xs text-primary hover:underline"
@@ -456,21 +456,21 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
         <div className="space-y-2">
           {paketZiele.length === 0 ? (
             <button
-              onClick={inEditMode ? onNewLernziel : undefined}
-              disabled={!inEditMode}
+              onClick={kannBearbeiten ? onNewLernziel : undefined}
+              disabled={!kannBearbeiten}
               className={`w-full flex flex-col items-center justify-center gap-2 p-6 rounded-lg border-2 border-dashed transition-colors text-center
-                ${inEditMode
+                ${kannBearbeiten
                   ? 'border-primary/30 hover:border-primary hover:bg-primary/5 cursor-pointer'
                   : 'border-border cursor-default opacity-60'
                 }`}
             >
               <Target className="w-6 h-6 text-muted-foreground/40" />
               <span className="text-sm text-muted-foreground">
-                {inEditMode
+                {kannBearbeiten
                   ? 'Noch kein Lernziel zugeordnet. Hier klicken, um ein Lernziel hinzuzufügen.'
                   : 'Noch kein Lernziel zugeordnet.'}
               </span>
-              {inEditMode && (
+              {kannBearbeiten && (
                 <span className="text-xs text-primary font-medium">+ Lernziel hinzufügen</span>
               )}
             </button>
@@ -493,7 +493,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                       </Badge>
                     )}
                   </div>
-                  {inEditMode && (
+                  {kannBearbeiten && (
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => handleEditLernziel(lz)}
@@ -555,7 +555,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                     )}
                   </div>
                 </button>
-                {inEditMode && (
+                {kannBearbeiten && (
                   <Switch
                     checked={!isDisabled}
                     onCheckedChange={() => handlePhaseToggle(phase.key)}
@@ -572,7 +572,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                   kannBearbeiten={kannBearbeiten}
                   userEmail={userEmail}
                   queryClient={queryClient}
-                  inEditMode={isLockedByMe}
+                  inEditMode={false}
                   onNavigate={onNavigate}
                   onGoToTaskWorkshop={(activityId) => onNavigate({ type: 'goto-task-workshop', activityId })}
                 />
