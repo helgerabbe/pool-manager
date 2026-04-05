@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -8,11 +8,13 @@ const HEARTBEAT_INTERVAL = 30 * 1000; // alle 30 Sekunden (aligned mit Aktivitä
  * Hook zum Verwalten des Lernpaket-Locks.
  * Gibt Methoden zum Sperren/Entsperren und den aktuellen Lock-Status zurück.
  */
-export function useLernpaketLock(paketId, userEmail) {
+export function useLernpaketLock(paketId, userEmail, onLockLost) {
   const [isLocking, setIsLocking] = useState(false);
   const [lockError, setLockError] = useState(null);
   const queryClient = useQueryClient();
   const heartbeatRef = useRef(null);
+  const onLockLostRef = useRef(onLockLost);
+  onLockLostRef.current = onLockLost;
 
   const callLockApi = useCallback(async (action) => {
     return base44.functions.invoke('lernpaketLock', { action, paket_id: paketId });
@@ -25,7 +27,7 @@ export function useLernpaketLock(paketId, userEmail) {
     }
   }, []);
 
-  const startHeartbeat = useCallback(() => {
+  const startHeartbeat = useCallback((onLockLost) => {
     stopHeartbeat();
     heartbeatRef.current = setInterval(async () => {
       try {
@@ -38,11 +40,18 @@ export function useLernpaketLock(paketId, userEmail) {
           stopHeartbeat();
           setLockError('Die übergeordnete Einheit existiert nicht mehr.');
         }
-      } catch {
-        // Heartbeat fehlgeschlagen – ignorieren
+      } catch (e) {
+        // HTTP 403 = Lock nicht mehr vorhanden (z.B. nach Admin Force-Unlock oder Reaper)
+        if (e?.response?.status === 403) {
+          console.warn('[useLernpaketLock] Heartbeat 403: Lock verloren (extern aufgehoben)');
+          stopHeartbeat();
+          queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+          if (onLockLost) onLockLost();
+        }
+        // Andere Fehler ignorieren (Netzwerk-Fluktuationen)
       }
     }, HEARTBEAT_INTERVAL);
-  }, [callLockApi, stopHeartbeat]);
+  }, [callLockApi, stopHeartbeat, queryClient]);
 
   // Cleanup beim Unmount (Seite schließen / Tab wechseln)
   useEffect(() => {
@@ -56,7 +65,7 @@ export function useLernpaketLock(paketId, userEmail) {
       const res = await callLockApi('lock');
       if (res?.data?.success) {
         queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-        startHeartbeat();
+        startHeartbeat(onLockLostRef.current);
         return { success: true };
       } else if (res?.data?.structural_lock) {
         // HTTP 423: Structural Lock aktiv

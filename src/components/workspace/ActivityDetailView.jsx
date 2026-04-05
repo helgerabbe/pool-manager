@@ -178,10 +178,22 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
       if (andExit) await doExitEditMode();
     } catch (err) {
       const status = err?.response?.status;
-      if (status === 409) toast.error('Versionskollision – bitte Seite neu laden.');
-      else if (status === 403) toast.error('Zugriff verweigert.');
-      else if (status === 429) toast.error('Zu viele Anfragen. Bitte warten.');
-      else toast.error('Fehler beim Speichern.');
+      const code = err?.response?.data?.code;
+      if (status === 409 && code === 'LOCK_NOT_OWNED') {
+        // Lock extern aufgehoben (z.B. Admin Force-Unlock) → sofort aus Bearbeitungsmodus werfen
+        toast.error('Sperre wurde extern aufgehoben. Bearbeitungsmodus wird beendet.');
+        setSaving(false);
+        await doExitEditMode();
+        return;
+      } else if (status === 409) {
+        toast.error('Versionskollision – bitte Seite neu laden.');
+      } else if (status === 403) {
+        toast.error('Zugriff verweigert.');
+      } else if (status === 429) {
+        toast.error('Zu viele Anfragen. Bitte warten.');
+      } else {
+        toast.error('Fehler beim Speichern.');
+      }
     } finally {
       setSaving(false);
     }

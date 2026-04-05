@@ -179,23 +179,22 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ✅ NEU: Pre-Save Lock-Validierung (kritisch für Datenkonsistenz!)
-    // Prüfe: Speichert User noch den Lock? (Verhindert Lost Updates)
-    if (
-      aktivitaet.lock_status &&
-      aktivitaet.locked_by_user !== user.email
-    ) {
+    // ✅ Pre-Save Lock-Validierung (kritisch für Datenkonsistenz!)
+    // Prüfe: Hat der User den aktiven Lock? Blockiere auch wenn Lock komplett fehlt (z.B. nach Force-Unlock durch Admin).
+    const lockHeldByUser = aktivitaet.lock_status && aktivitaet.locked_by_user === user.email;
+    if (!lockHeldByUser) {
       console.warn(
-        `[updateActivitySecure] DENIED - ${user.email} tried to save but lock is held by ${aktivitaet.locked_by_user}`
+        `[updateActivitySecure] DENIED - ${user.email} tried to save but lock_status=${aktivitaet.lock_status}, locked_by_user=${aktivitaet.locked_by_user}`
       );
       return Response.json(
         {
-          error: 'Lock no longer held by requesting user',
+          error: 'Kein aktiver Lock vorhanden. Speichern nicht erlaubt (Lock wurde ggf. durch Admin aufgehoben).',
           code: 'LOCK_NOT_OWNED',
-          currentLockOwner: aktivitaet.locked_by_user,
+          lockStatus: aktivitaet.lock_status,
+          currentLockOwner: aktivitaet.locked_by_user ?? null,
           details: {
             expectedOwner: user.email,
-            actualOwner: aktivitaet.locked_by_user,
+            actualOwner: aktivitaet.locked_by_user ?? null,
             timestamp: new Date().toISOString(),
           }
         },

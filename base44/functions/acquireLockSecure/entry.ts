@@ -41,17 +41,58 @@ Deno.serve(async (req) => {
     }
 
     // ✅ Entity-Zugriff mit Service-Role
-    const entityRecords = await base44.asServiceRole.entities[entityName].filter({
-      id: entityId,
-    });
+    let entityRecords;
+    try {
+      entityRecords = await base44.asServiceRole.entities[entityName].filter({ id: entityId });
+    } catch {
+      return Response.json({ error: 'Record not found', code: 'NOT_FOUND' }, { status: 404 });
+    }
     const current = entityRecords[0];
 
     if (!current) {
-      return Response.json({ error: 'Record not found' }, { status: 404 });
+      return Response.json({ error: 'Record not found', code: 'NOT_FOUND' }, { status: 404 });
     }
 
     const currentVersion = current.lock_version ?? 0;
     const now = new Date().toISOString();
+
+    // ✅ SCHRITT 0: Szenario 4 – Structural Lock der übergeordneten Einheit prüfen
+    // (gilt für LernpaketPhaseAktivitaet und Lernpakete)
+    const STRUCT_LOCK_TIMEOUT_MS = 60 * 60 * 1000; // 60 Min
+    if (entityName === 'LernpaketPhaseAktivitaet' || entityName === 'Lernpakete') {
+      let einheitId = current.einheit_id;
+
+      // LernpaketPhaseAktivitaet → über Lernpaket zur Einheit navigieren
+      if (entityName === 'LernpaketPhaseAktivitaet' && current.lernpaket_id) {
+        const pakete = await base44.asServiceRole.entities.Lernpakete.filter({ id: current.lernpaket_id });
+        einheitId = pakete[0]?.einheit_id;
+      }
+
+      if (einheitId) {
+        const einheiten = await base44.asServiceRole.entities.Einheiten.filter({ id: einheitId });
+        const einheit = einheiten[0];
+        if (einheit?.structural_lock && einheit.structural_lock !== user.email) {
+          const lockedAt = einheit.structural_locked_at ? new Date(einheit.structural_locked_at).getTime() : 0;
+          const isExpired = Date.now() - lockedAt > STRUCT_LOCK_TIMEOUT_MS;
+          if (!isExpired) {
+            return Response.json(
+              {
+                error: 'Structural lock active on parent unit',
+                code: 'STRUCTURAL_LOCK_ACTIVE',
+                structural_lock: true,
+                lockedBy: einheit.structural_lock,
+                message: `Die Struktur der Einheit wird gerade von ${einheit.structural_lock} angepasst. Neue Inhalts-Bearbeitungen sind kurzzeitig gesperrt.`,
+              },
+              { status: 423 }
+            );
+          }
+          // Abgelaufenen Structural Lock bereinigen
+          await base44.asServiceRole.entities.Einheiten.update(einheitId, {
+            structural_lock: null, structural_locked_at: null,
+          }).catch(() => {});
+        }
+      }
+    }
 
     // ✅ SCHRITT 1: Prüfe ob Lock bereits von anderem User gehalten wird
     if (

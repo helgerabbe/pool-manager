@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -353,7 +353,17 @@ function EinheitPanel({ einheit, lernpakete, lernziele, aufgaben, themenfelder =
 
 // ── Panel: Lernpaket mit Phasen ───────────────────────────────────────────────
 
-function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail, istAdmin, onNavigate, onNewLernziel, onDelete }) {
+function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail, istAdmin, onNavigate: onNavigateRaw, onNewLernziel, onDelete }) {
+  // Szenario 5A: Navigation-Guard – blockiere Tab-Wechsel wenn dirty
+  const [pendingNav, setPendingNav] = useState(null);
+  const onNavigate = useCallback((node) => {
+    if (inEditModeRef.current && isDirtyRef.current) {
+      setPendingNav(node);
+      setExitModalOpen(true);
+    } else {
+      onNavigateRaw(node);
+    }
+  }, [onNavigateRaw]);
   const paketZiele = lernziele.filter(lz => lz.lernpaket_id === paket.id);
   const pStatus = getLernpaketStatus(paket, paketZiele, aufgaben, userEmail);
   const [editLernzielId, setEditLernzielId] = useState(null);
@@ -361,16 +371,31 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   const [expandedPhase, setExpandedPhase] = useState(null);
   const [exitModalOpen, setExitModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [lockLostByAdmin, setLockLostByAdmin] = useState(false);
   // Dirty-State: lokale Felder die noch nicht gespeichert wurden
   const [localTitel, setLocalTitel] = useState(paket.titel_des_pakets || '');
   const [isDirty, setIsDirty] = useState(false);
   const queryClient = useQueryClient();
-  const { acquireLock, releaseLock, forceUnlock, isLocking } = useLernpaketLock(paket.id, userEmail);
+  // Refs für Navigation-Guard (Callback braucht aktuellen State ohne Re-Renders)
+  const inEditModeRef = useRef(false);
+  const isDirtyRef = useRef(false);
+
+  // Callback wenn Heartbeat meldet dass Lock extern aufgehoben wurde (Szenario 3)
+  const handleLockLostExternally = useCallback(() => {
+    setLockLostByAdmin(true);
+    toast.error('Ihre Sperre wurde von einem Administrator aufgehoben. Bearbeitungsmodus beendet.');
+    queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+  }, [queryClient]);
+
+  const { acquireLock, releaseLock, forceUnlock, isLocking } = useLernpaketLock(paket.id, userEmail, handleLockLostExternally);
 
   const paketLockedBy = paket.locked_by_user || paket.locked_by;
   const isLockedByOther = isPaketLocked(paket) && paketLockedBy !== userEmail;
   const isLockedByMe    = isPaketLocked(paket) && paketLockedBy === userEmail;
   const inEditMode = isLockedByMe;
+  // Refs aktuell halten für Navigation-Guard-Callback
+  inEditModeRef.current = inEditMode;
+  isDirtyRef.current = isDirty;
 
   // Sync localTitel wenn Paket von außen aktualisiert wird (z.B. nach Save)
   React.useEffect(() => {
@@ -451,6 +476,12 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
     queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
     setIsDirty(false);
     setExitModalOpen(false);
+    // Szenario 5B: Falls Navigation blockiert war, jetzt ausführen
+    if (pendingNav) {
+      const nav = pendingNav;
+      setPendingNav(null);
+      onNavigateRaw(nav);
+    }
   };
 
   const handleSaveAndExit = async () => {
@@ -578,7 +609,16 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
           }
         </Button>
       )}
-      {isLockedByMe && (
+      {lockLostByAdmin && (
+        <div className="flex items-start gap-3 p-3 rounded-xl border-2 border-red-300 bg-red-50 text-sm text-red-800">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
+          <div>
+            <p className="font-semibold">Sperre extern aufgehoben</p>
+            <p className="text-xs mt-0.5">Ein Administrator hat Ihre Sperre aufgehoben. Speichern ist nicht mehr möglich.</p>
+          </div>
+        </div>
+      )}
+      {isLockedByMe && !lockLostByAdmin && (
         <div className="flex items-center justify-between gap-3 p-3 rounded-xl border-2 border-primary/40 bg-primary/5 text-sm flex-wrap">
           <div className="flex items-center gap-2 text-primary">
             <PenLine className="w-4 h-4" />
