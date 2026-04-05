@@ -12,7 +12,7 @@ import { BookOpen, LayoutGrid, Zap, Wand2, ClipboardList, Target, CheckSquare, R
 const TABS = [
   { value: 'einheit',      label: 'Einheit verwalten',                icon: BookOpen,       step: 1 },
   { value: 'struktur',     label: 'Struktur anlegen',                 icon: LayoutGrid,     step: 2 },
-  { value: 'aktivitaeten', label: 'Aktivitäten zuordnen',             icon: Zap,            step: 3 },
+  { value: 'aktivitaeten', label: 'Aktivitäten und Lernziele',          icon: Zap,            step: 3 },
   { value: 'aufgaben',     label: 'Basisaufgaben erstellen',          icon: Wand2,          step: 4 },
   { value: 'ebene2',       label: 'Allgemeine Aufgaben erstellen',    icon: ClipboardList,  step: 5 },
   { value: 'ebene3',       label: 'Anwendungs- & Projektaufgaben',    icon: Target,         step: 6 },

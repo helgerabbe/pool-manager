@@ -481,34 +481,71 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
 
       {/* Lernziele-Anzeige */}
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Lernziele</h3>
-        <div className="space-y-2">
-          {paketZiele.map(lz => (
-            <button
-              key={lz.id}
-              onClick={() => handleEditLernziel(lz)}
-              className="w-full flex items-start gap-3 p-3 rounded-lg border hover:bg-muted transition-colors text-left"
-            >
-              <Target className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">{lz.formulierung_fachsprache}</p>
-                {lz.kategorie && (
-                  <Badge className={`text-[10px] mt-1 ${kategorieColors[lz.kategorie] || ''}`}>
-                    {lz.kategorie}
-                  </Badge>
-                )}
-              </div>
-              <Edit className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-            </button>
-          ))}
-          {inEditMode && (
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Lernziele</h3>
+          {inEditMode && paketZiele.length > 0 && (
             <button
               onClick={onNewLernziel}
-              className="w-full flex items-center gap-2 p-3 rounded-lg border border-dashed border-border hover:border-primary/40 hover:bg-primary/5 transition-colors text-left text-sm text-muted-foreground hover:text-primary"
+              className="flex items-center gap-1 text-xs text-primary hover:underline"
             >
-              <Plus className="w-4 h-4" />
-              {paketZiele.length === 0 ? 'Erstes Lernziel hinzufügen' : 'Weiteres Lernziel hinzufügen'}
+              <Plus className="w-3 h-3" /> Hinzufügen
             </button>
+          )}
+        </div>
+        <div className="space-y-2">
+          {paketZiele.length === 0 ? (
+            <button
+              onClick={inEditMode ? onNewLernziel : undefined}
+              disabled={!inEditMode}
+              className={`w-full flex flex-col items-center justify-center gap-2 p-6 rounded-lg border-2 border-dashed transition-colors text-center
+                ${inEditMode
+                  ? 'border-primary/30 hover:border-primary hover:bg-primary/5 cursor-pointer'
+                  : 'border-border cursor-default opacity-60'
+                }`}
+            >
+              <Target className="w-6 h-6 text-muted-foreground/40" />
+              <span className="text-sm text-muted-foreground">
+                {inEditMode
+                  ? 'Noch kein Lernziel zugeordnet. Hier klicken, um ein Lernziel hinzuzufügen.'
+                  : 'Noch kein Lernziel zugeordnet.'}
+              </span>
+              {inEditMode && (
+                <span className="text-xs text-primary font-medium">+ Lernziel hinzufügen</span>
+              )}
+            </button>
+          ) : (
+            <>
+              {paketZiele.map(lz => (
+                <div
+                  key={lz.id}
+                  className="w-full flex items-start gap-3 p-3 rounded-lg border bg-card text-left"
+                >
+                  <Target className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{lz.formulierung_fachsprache}</p>
+                    {lz.schueler_uebersetzung && (
+                      <p className="text-xs text-muted-foreground italic mt-0.5">„{lz.schueler_uebersetzung}"</p>
+                    )}
+                    {lz.kategorie && (
+                      <Badge className={`text-[10px] mt-1 ${kategorieColors[lz.kategorie] || ''}`}>
+                        {lz.kategorie}
+                      </Badge>
+                    )}
+                  </div>
+                  {inEditMode && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => handleEditLernziel(lz)}
+                        className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                        title="Bearbeiten"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </>
           )}
         </div>
       </div>
