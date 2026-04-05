@@ -14,7 +14,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Sparkles, Send, FileText, Star, Loader2 } from 'lucide-react';
+import { Sparkles, Send, FileText, Star, Loader2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -373,10 +373,17 @@ Gib NUR den vollständigen überarbeiteten Text aus – ohne Kommentare oder Erk
           {!kannBearbeiten && (
             <span className="text-xs text-muted-foreground">Schreibgeschützt</span>
           )}
-          {kannBearbeiten && !aufgabe.aufgabenstellung?.trim() && !aufgabe.aufgaben_bild_url && (
-            <span className="text-xs text-amber-600">⚠ Bitte zuerst Aufgabentext oder Bild in Tab 1 hinterlegen</span>
-          )}
         </div>
+
+        {/* Validierungshinweis – reaktiv, verschwindet sobald Text oder Bild vorhanden */}
+        {kannBearbeiten && !aufgabe.aufgabenstellung?.trim() && !aufgabe.aufgaben_bild_url && (
+          <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+            <span>
+              Bitte geben Sie in den <strong>Kernangaben (Tab 1)</strong> einen Aufgabentext ein oder laden Sie ein Aufgabenbild hoch, um eine Musterlösung generieren zu können.
+            </span>
+          </div>
+        )}
 
         {/* Bereich 3: Split-Layout Editor + Chat */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4" style={{ minHeight: '320px' }}>
