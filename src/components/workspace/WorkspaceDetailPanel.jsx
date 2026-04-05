@@ -3,6 +3,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { getLernzielStatus, getLernpaketStatus, getEinheitFortschritt } from '@/lib/statusLogic';
+import { useLernpaketLock } from '@/hooks/useLernpaketLock';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import LernpaketForm from '@/components/lernpakete/LernpaketForm';
@@ -359,6 +360,10 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   const [localPhasenConfig, setLocalPhasenConfig] = useState(paket.phasen_konfiguration || {});
   const queryClient = useQueryClient();
 
+  // Lock-Management mit useLernpaketLock
+  const { canEdit, isLockedByOther, lockedByEmail, acquireLock, releaseLock } = useLernpaketLock(paket.id);
+  const [isEnteringEditMode, setIsEnteringEditMode] = useState(false);
+
   // Sync localTitel und Phasen-Config wenn Paket von außen aktualisiert wird
   React.useEffect(() => {
     setLocalTitel(paket.titel_des_pakets || '');
@@ -404,16 +409,50 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
     });
   };
 
+  // Handler für Bearbeitungsmodus
+  const handleEnterEditMode = async () => {
+    setIsEnteringEditMode(true);
+    try {
+      const ok = await acquireLock();
+      if (!ok) {
+        toast.error(`🔒 Dieses Lernpaket wird aktuell von ${lockedByEmail} bearbeitet.`);
+      }
+    } catch (err) {
+      toast.error('Fehler beim Sperren des Lernpakets.');
+    }
+    setIsEnteringEditMode(false);
+  };
+
+  const handleExitEditMode = async () => {
+    await releaseLock();
+  };
+
   return (
     <div className="space-y-6">
+      {/* Lock-Status Banner */}
+      {isLockedByOther && (
+        <div className="flex items-center gap-2 p-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-900">
+          <Lock className="w-4 h-4 shrink-0" />
+          <span className="text-sm">
+            🔒 Dieses Lernpaket wird aktuell bearbeitet von <strong>{lockedByEmail}</strong>.
+          </span>
+        </div>
+      )}
+
       <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <div className="w-7 h-7 rounded bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-          {paket.reihenfolge_nummer}
-          </div>
-          <h2 className="text-xl font-bold">{paket.titel_des_pakets}</h2>
-          <StatusBadge status={pStatus} />
+         <div>
+           <div className="flex items-center gap-2 mb-1 flex-wrap">
+           <div className="w-7 h-7 rounded bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
+           {paket.reihenfolge_nummer}
+           </div>
+           <h2 className="text-xl font-bold">{paket.titel_des_pakets}</h2>
+           <StatusBadge status={pStatus} />
+           {canEdit && (
+             <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 border border-blue-200 text-blue-700 text-xs font-medium">
+               <PenLine className="w-3 h-3" />
+               In Bearbeitung
+             </div>
+           )}
           {(() => {
             const phasenConfig = paket.phasen_konfiguration || {};
             const hasIncomplete = Object.values(phasenConfig).some(
@@ -430,12 +469,37 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
             <Clock className="w-3.5 h-3.5" />{paket.geschaetzte_dauer_minuten} Minuten
           </p>
         </div>
-        {kannBearbeiten && (
-          <Button variant="ghost" size="icon" onClick={onDelete} title="Lernpaket löschen">
-            <Trash2 className="w-4 h-4 text-destructive" />
-          </Button>
-        )}
-      </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {!canEdit && kannBearbeiten && !isLockedByOther && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleEnterEditMode}
+              disabled={isEnteringEditMode}
+              className="gap-2"
+            >
+              <PenLine className="w-3.5 h-3.5" />
+              Bearbeitungsmodus aktivieren
+            </Button>
+          )}
+          {canEdit && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleExitEditMode}
+              className="gap-2"
+            >
+              <X className="w-3.5 h-3.5" />
+              Bearbeitungsmodus beenden
+            </Button>
+          )}
+          {kannBearbeiten && canEdit && (
+            <Button variant="ghost" size="icon" onClick={onDelete} title="Lernpaket löschen">
+              <Trash2 className="w-4 h-4 text-destructive" />
+            </Button>
+          )}
+        </div>
+        </div>
 
 
 
@@ -444,7 +508,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Lernziele</h3>
-          {kannBearbeiten && paketZiele.length > 0 && (
+          {canEdit && kannBearbeiten && paketZiele.length > 0 && (
             <button
               onClick={onNewLernziel}
               className="flex items-center gap-1 text-xs text-primary hover:underline"
@@ -456,21 +520,21 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
         <div className="space-y-2">
           {paketZiele.length === 0 ? (
             <button
-              onClick={kannBearbeiten ? onNewLernziel : undefined}
-              disabled={!kannBearbeiten}
+              onClick={canEdit && kannBearbeiten ? onNewLernziel : undefined}
+              disabled={!canEdit || !kannBearbeiten}
               className={`w-full flex flex-col items-center justify-center gap-2 p-6 rounded-lg border-2 border-dashed transition-colors text-center
-                ${kannBearbeiten
+                ${canEdit && kannBearbeiten
                   ? 'border-primary/30 hover:border-primary hover:bg-primary/5 cursor-pointer'
                   : 'border-border cursor-default opacity-60'
                 }`}
-            >
+              >
               <Target className="w-6 h-6 text-muted-foreground/40" />
               <span className="text-sm text-muted-foreground">
-                {kannBearbeiten
+                {canEdit && kannBearbeiten
                   ? 'Noch kein Lernziel zugeordnet. Hier klicken, um ein Lernziel hinzuzufügen.'
                   : 'Noch kein Lernziel zugeordnet.'}
               </span>
-              {kannBearbeiten && (
+              {canEdit && kannBearbeiten && (
                 <span className="text-xs text-primary font-medium">+ Lernziel hinzufügen</span>
               )}
             </button>
@@ -493,7 +557,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                       </Badge>
                     )}
                   </div>
-                  {kannBearbeiten && (
+                  {canEdit && kannBearbeiten && (
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => handleEditLernziel(lz)}
@@ -555,7 +619,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                     )}
                   </div>
                 </button>
-                {kannBearbeiten && (
+                {canEdit && kannBearbeiten && (
                   <Switch
                     checked={!isDisabled}
                     onCheckedChange={() => handlePhaseToggle(phase.key)}
@@ -569,10 +633,10 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                   paket={paket}
                   phaseKey={phase.key}
                   phaseLabel={phase.label}
-                  kannBearbeiten={kannBearbeiten}
+                  kannBearbeiten={canEdit && kannBearbeiten}
                   userEmail={userEmail}
                   queryClient={queryClient}
-                  inEditMode={false}
+                  inEditMode={canEdit}
                   onNavigate={onNavigate}
                   onGoToTaskWorkshop={(activityId) => onNavigate({ type: 'goto-task-workshop', activityId })}
                 />
