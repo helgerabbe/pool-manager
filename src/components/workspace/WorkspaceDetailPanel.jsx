@@ -2,7 +2,6 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { useResourceLock, isLockedByOther as checkLockedByOther, isLockExpired } from '@/hooks/useResourceLock';
 import { getLernzielStatus, getLernpaketStatus, getEinheitFortschritt } from '@/lib/statusLogic';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,8 +10,6 @@ import LernzielForm from '@/components/lernziele/LernzielForm';
 import AufgabenbausteinForm from '@/components/aufgaben/AufgabenbausteintForm';
 import EinheitForm from '@/components/einheiten/EinheitForm';
 import Ebene2MappingView from '@/components/aufgaben/Ebene2MappingView';
-import ActivityContentEditor from '@/components/workspace/ActivityContentEditor';
-import ActivityPreviewModal from '@/components/workspace/ActivityPreviewModal';
 import ActivityContentForm from '@/components/workspace/ActivityContentForm';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -20,12 +17,9 @@ import { Label } from '@/components/ui/label';
 import {
   BookOpen, Layers, Target, Puzzle, Plus, Edit, Trash2,
   Clock, Lock, Unlock, AlertCircle, CheckCircle2, ArrowDown,
-  TrendingUp, AlertTriangle, UserCheck, PenLine, Save, Loader2
+  TrendingUp, AlertTriangle, PenLine
 } from 'lucide-react';
 import SyncWarningBanner from '@/components/sync/SyncWarningBanner';
-import { useLernpaketLockHierarchical } from '@/hooks/useLernpaketLockHierarchical';
-import { useLernpaketLockGlobal } from '@/lib/LernpaketLockContext';
-import { isPaketLocked } from '@/lib/statusLogic';
 
 const kategorieColors = {
   'Fachwissen':          'bg-blue-100 text-blue-700',
@@ -361,58 +355,15 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   const [editLernzielId, setEditLernzielId] = useState(null);
   const [editLernzielData, setEditLernzielData] = useState(null);
   const [expandedPhase, setExpandedPhase] = useState(null);
-  const [lockLostByAdmin, setLockLostByAdmin] = useState(false);
   const [localTitel, setLocalTitel] = useState(paket.titel_des_pakets || '');
   const [localPhasenConfig, setLocalPhasenConfig] = useState(paket.phasen_konfiguration || {});
   const queryClient = useQueryClient();
-  const globalLock = useLernpaketLockGlobal();
-  const inEditModeRef = useRef(false);
-
-  const handleLockLostExternally = useCallback(() => {
-    setLockLostByAdmin(true);
-    globalLock.clearLock();
-    toast.error('Ihre Sperre wurde von einem Administrator aufgehoben. Bearbeitungsmodus beendet.');
-    queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-  }, [globalLock, queryClient]);
-
-  const { acquireLock, releaseLock, forceUnlock, isLocking, isLockedByMe, isLockedByOther, lockedByUser } = useLernpaketLockHierarchical(paket.id, userEmail, handleLockLostExternally);
-
-  const inEditMode = isLockedByMe;
-  inEditModeRef.current = inEditMode;
 
   // Sync localTitel und Phasen-Config wenn Paket von außen aktualisiert wird
   React.useEffect(() => {
-    if (!inEditMode) {
-      setLocalTitel(paket.titel_des_pakets || '');
-      setLocalPhasenConfig(paket.phasen_konfiguration || {});
-    }
-  }, [paket.titel_des_pakets, paket.phasen_konfiguration, inEditMode]);
-
-  // unload: Lock freigeben via Beacon
-  React.useEffect(() => {
-    const handleUnload = () => {
-      if (inEditMode) {
-        base44.functions.invoke('releaseLockSecure', {
-          entityName: 'Lernpakete',
-          entityId: paket.id,
-        }).catch(() => {});
-      }
-    };
-    window.addEventListener('beforeunload', handleUnload);
-    return () => window.removeEventListener('beforeunload', handleUnload);
-  }, [inEditMode, paket.id]);
-
-  const handleStartEdit = async () => {
-    const success = await acquireLock();
-    if (success) {
-      toast.success('Bearbeitungsmodus aktiviert.');
-    }
-  };
-
-  const handleStopEdit = async () => {
-    await releaseLock();
-    toast.success('Bearbeitungsmodus beendet.');
-  };
+    setLocalTitel(paket.titel_des_pakets || '');
+    setLocalPhasenConfig(paket.phasen_konfiguration || {});
+  }, [paket.titel_des_pakets, paket.phasen_konfiguration]);
 
 
 
@@ -486,67 +437,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
         )}
       </div>
 
-      {/* ── Lock-Banner ── */}
-      {isLockedByOther && (
-        <div className="flex items-start gap-3 p-3 rounded-xl border-2 border-amber-300 bg-amber-50 text-sm text-amber-800">
-          <Lock className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
-          <div className="flex-1">
-            <p className="font-semibold">Wird gerade bearbeitet</p>
-            <p className="text-xs mt-0.5 text-amber-700">
-              <strong>{lockedByUser}</strong> bearbeitet dieses Paket gerade. Bitte warten Sie, bis die Bearbeitung abgeschlossen ist.
-            </p>
-            {istAdmin && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => { await forceUnlock(); }}
-                className="mt-2 gap-1.5 text-xs border-amber-400 text-amber-800 hover:bg-amber-100"
-              >
-                <Unlock className="w-3.5 h-3.5" /> Sperre aufheben (Admin)
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
-      {!inEditMode && !isLockedByOther && kannBearbeiten && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleStartEdit}
-          disabled={isLocking}
-          className="gap-2 self-start"
-        >
-          {isLocking
-            ? <><div className="w-3.5 h-3.5 border-2 border-muted border-t-primary rounded-full animate-spin" /> Sperren…</>
-            : <><PenLine className="w-3.5 h-3.5" /> Bearbeitungsmodus aktivieren</>
-          }
-        </Button>
-      )}
-      {lockLostByAdmin && (
-        <div className="flex items-start gap-3 p-3 rounded-xl border-2 border-red-300 bg-red-50 text-sm text-red-800">
-          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
-          <div>
-            <p className="font-semibold">Sperre extern aufgehoben</p>
-            <p className="text-xs mt-0.5">Ein Administrator hat Ihre Sperre aufgehoben. Speichern ist nicht mehr möglich.</p>
-          </div>
-        </div>
-      )}
-      {isLockedByMe && !lockLostByAdmin && (
-        <div className="flex items-center justify-between gap-3 p-3 rounded-xl border-2 border-primary/40 bg-primary/5 text-sm flex-wrap">
-          <div className="flex items-center gap-2 flex-1 text-primary">
-            <PenLine className="w-4 h-4" />
-            <input
-              type="text"
-              value={localTitel}
-              onChange={(e) => setLocalTitel(e.target.value)}
-              className="flex-1 bg-transparent border-b border-primary font-medium focus:outline-none"
-            />
-          </div>
-          <Button variant="outline" size="sm" onClick={handleStopEdit} className="gap-1.5 text-xs">
-            <Unlock className="w-3.5 h-3.5" /> Bearbeitung beenden
-          </Button>
-        </div>
-      )}
+
 
 
       {/* Lernziele-Anzeige */}
@@ -772,16 +663,6 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
 function LernzielPanel({ lernziel, paketId, aufgaben, userEmail, kannBearbeiten, istAdmin, onNewAufgabe, onDelete }) {
   const queryClient = useQueryClient();
   const [editAufgabe, setEditAufgabe] = useState(null);
-  const [acquiring, setAcquiring]     = useState(null);
-  const [activeLockId, setActiveLockId] = useState(null);
-
-  const { acquireLock, releaseLock, forceReleaseLock } = useResourceLock(
-    'Aufgabenbausteine',
-    ['aufgaben', 'aufgabenbausteine'],
-    activeLockId,
-    userEmail,
-    false
-  );
 
   const lzAufgaben = aufgaben.filter(a => a.lernpaket_id === paketId && a.lernziel_id === lernziel.id);
   const lzStatus   = getLernzielStatus(lernziel, aufgaben, paketId, userEmail);
@@ -795,20 +676,13 @@ function LernzielPanel({ lernziel, paketId, aufgaben, userEmail, kannBearbeiten,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['aufgaben'] }),
   });
 
-  const handleEdit = async (aufgabe) => {
-    setAcquiring(aufgabe.id);
-    setActiveLockId(aufgabe.id);
-    const ok = await acquireLock();
-    setAcquiring(null);
-    if (ok) setEditAufgabe(aufgabe);
-    else setActiveLockId(null);
+  const handleEdit = (aufgabe) => {
+    setEditAufgabe(aufgabe);
   };
 
   const handleEditClose = async (data) => {
     if (data && editAufgabe) await updateAufgabe.mutateAsync({ id: editAufgabe.id, data });
-    if (editAufgabe) await releaseLock();
     setEditAufgabe(null);
-    setActiveLockId(null);
   };
 
   const ampelMsg = {
@@ -864,71 +738,45 @@ function LernzielPanel({ lernziel, paketId, aufgaben, userEmail, kannBearbeiten,
               <Plus className="w-4 h-4" /> Baustein hinzufügen
             </Button>
           )}
-          {lzAufgaben.map(aufgabe => {
-            const lockedByOther = checkLockedByOther(aufgabe, userEmail);
-            const lockedByMe    = aufgabe.lock_status && aufgabe.locked_by_user === userEmail;
-            return (
-              <div
-                key={aufgabe.id}
-                className={`p-4 rounded-xl border transition-all ${
-                  lockedByOther ? 'bg-amber-50 border-amber-200' :
-                  lockedByMe    ? 'bg-primary/5 border-primary/30' :
-                                  'bg-card border-border hover:border-primary/30'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <Badge className={`text-[10px] ${bausteinColors[aufgabe.baustein_typ] || ''}`}>
-                        {aufgabe.baustein_typ}
-                      </Badge>
-                      {lockedByOther && (
-                        <span className="text-[10px] text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200 flex items-center gap-1">
-                          <Lock className="w-3 h-3" /> Gesperrt von {aufgabe.locked_by_user}
-                        </span>
-                      )}
-                      {lockedByMe && (
-                        <span className="text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20 flex items-center gap-1">
-                          <Lock className="w-3 h-3" /> Von mir bearbeitet
-                        </span>
-                      )}
-                    </div>
-                    {aufgabe.aufgabentext_inhalt && (
-                      <p className="text-sm text-muted-foreground">{aufgabe.aufgabentext_inhalt}</p>
-                    )}
-                    {aufgabe.erwartungshorizont_ki_prompt && (
-                      <p className="text-xs text-muted-foreground/60 mt-2 italic line-clamp-1">
-                        KI: {aufgabe.erwartungshorizont_ki_prompt}
-                      </p>
-                    )}
+          {lzAufgaben.map(aufgabe => (
+            <div
+              key={aufgabe.id}
+              className="p-4 rounded-xl border transition-all bg-card border-border hover:border-primary/30"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <Badge className={`text-[10px] ${bausteinColors[aufgabe.baustein_typ] || ''}`}>
+                      {aufgabe.baustein_typ}
+                    </Badge>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {kannBearbeiten && !lockedByOther && (
-                      <Button variant="ghost" size="sm" className="h-7 text-xs gap-1"
-                        onClick={() => handleEdit(aufgabe)} disabled={!!acquiring}>
-                        {acquiring === aufgabe.id
-                          ? <div className="w-3 h-3 border-2 border-muted border-t-primary rounded-full animate-spin" />
-                          : <Edit className="w-3 h-3" />}
-                        {lockedByMe ? 'Weiter' : 'Bearbeiten'}
-                      </Button>
-                    )}
-                    {istAdmin && lockedByOther && (
-                      <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-amber-600"
-                        onClick={() => { setActiveLockId(aufgabe.id); forceReleaseLock(aufgabe.id); }}>
-                        <Unlock className="w-3 h-3" /> Entsperren
-                      </Button>
-                    )}
-                    {kannBearbeiten && !lockedByOther && !lockedByMe && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7"
-                        onClick={() => deleteAufgabe.mutate(aufgabe.id)}>
-                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                      </Button>
-                    )}
-                  </div>
+                  {aufgabe.aufgabentext_inhalt && (
+                    <p className="text-sm text-muted-foreground">{aufgabe.aufgabentext_inhalt}</p>
+                  )}
+                  {aufgabe.erwartungshorizont_ki_prompt && (
+                    <p className="text-xs text-muted-foreground/60 mt-2 italic line-clamp-1">
+                      KI: {aufgabe.erwartungshorizont_ki_prompt}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  {kannBearbeiten && (
+                    <Button variant="ghost" size="sm" className="h-7 text-xs gap-1"
+                      onClick={() => handleEdit(aufgabe)}>
+                      <Edit className="w-3 h-3" />
+                      Bearbeiten
+                    </Button>
+                  )}
+                  {kannBearbeiten && (
+                    <Button variant="ghost" size="icon" className="h-7 w-7"
+                      onClick={() => deleteAufgabe.mutate(aufgabe.id)}>
+                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                    </Button>
+                  )}
                 </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       )}
 

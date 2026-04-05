@@ -16,7 +16,7 @@ import UnsavedChangesExitModal from '@/components/workspace/UnsavedChangesExitMo
 export default function ActivityDetailView({ activityRecord, kannBearbeiten, queryClient, einheitFach }) {
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({});
-  const [originalFormData, setOriginalFormData] = useState({});
+  const [isDirty, setIsDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [exitModalOpen, setExitModalOpen] = useState(false);
   const [userEmail, setUserEmail] = useState(null);
@@ -49,11 +49,8 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
   useEffect(() => {
     const values = activityRecord?.field_values || {};
     setFormData(values);
-    setOriginalFormData(values);
+    setIsDirty(false);
   }, [activityRecord?.field_values]);
-
-  // Dirty-Check: hat User was geändert?
-  const isDirty = JSON.stringify(formData) !== JSON.stringify(originalFormData);
 
   // Permission: darf dieser User überhaupt bearbeiten?
   const kannInhalteBearbeiten = permissions?.istAdmin || kannBearbeiten;
@@ -68,7 +65,6 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
       }
     }
     setEditMode(true);
-    setOriginalFormData({ ...formData });
   };
 
   // Speichern
@@ -80,11 +76,12 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
       });
 
       queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-      setOriginalFormData({ ...formData });
+      setIsDirty(false);
       toast.success('Aktivität gespeichert.');
 
       if (andExit) {
-        await handleExitEditMode();
+        await releaseLock();
+        setEditMode(false);
       }
     } catch (err) {
       console.error('[ActivityDetailView] Save error:', err);
@@ -99,9 +96,19 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
     if (isDirty) {
       setExitModalOpen(true);
     } else {
+      // Fall A: Keine Änderungen → direkt Lock freigeben
       await releaseLock();
       setEditMode(false);
     }
+  };
+
+  // Modal: Verwerfen (Datensatz neu laden + Lock freigeben)
+  const handleDiscardChanges = async () => {
+    setFormData(activityRecord?.field_values || {});
+    setIsDirty(false);
+    await releaseLock();
+    setEditMode(false);
+    setExitModalOpen(false);
   };
 
   // Admin Force-Unlock
@@ -180,7 +187,7 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
               <>
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="default"
                   onClick={() => handleSave(false)}
                   disabled={saving || !isDirty}
                   className="gap-2"
@@ -224,7 +231,10 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
           {editMode ? (
             <Textarea
               value={formData.task_description || ''}
-              onChange={e => setFormData({ ...formData, task_description: e.target.value })}
+              onChange={e => {
+                setFormData({ ...formData, task_description: e.target.value });
+                setIsDirty(true);
+              }}
               placeholder="Beschreibe hier, was der Schüler tun soll..."
               className="min-h-20"
             />
@@ -252,7 +262,10 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
                 {field.type === 'text' && (
                   <Input
                     value={fieldValue || ''}
-                    onChange={e => setFormData({ ...formData, [field.field_name]: e.target.value })}
+                    onChange={e => {
+                      setFormData({ ...formData, [field.field_name]: e.target.value });
+                      setIsDirty(true);
+                    }}
                     placeholder={field.placeholder}
                   />
                 )}
@@ -260,7 +273,10 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
                 {field.type === 'textarea' && (
                   <Textarea
                     value={fieldValue || ''}
-                    onChange={e => setFormData({ ...formData, [field.field_name]: e.target.value })}
+                    onChange={e => {
+                      setFormData({ ...formData, [field.field_name]: e.target.value });
+                      setIsDirty(true);
+                    }}
                     placeholder={field.placeholder}
                     className="min-h-24"
                   />
@@ -270,13 +286,19 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
                   <Input
                     type="url"
                     value={fieldValue || ''}
-                    onChange={e => setFormData({ ...formData, [field.field_name]: e.target.value })}
+                    onChange={e => {
+                      setFormData({ ...formData, [field.field_name]: e.target.value });
+                      setIsDirty(true);
+                    }}
                     placeholder={field.placeholder}
                   />
                 )}
 
                 {field.type === 'select' && (
-                  <Select value={fieldValue || ''} onValueChange={v => setFormData({ ...formData, [field.field_name]: v })}>
+                  <Select value={fieldValue || ''} onValueChange={v => {
+                    setFormData({ ...formData, [field.field_name]: v });
+                    setIsDirty(true);
+                  }}>
                     <SelectTrigger>
                       <SelectValue placeholder={field.placeholder} />
                     </SelectTrigger>
@@ -320,11 +342,7 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
         open={exitModalOpen}
         onOpenChange={setExitModalOpen}
         onSaveAndExit={() => handleSave(true)}
-        onDiscard={async () => {
-          await releaseLock();
-          setEditMode(false);
-          setExitModalOpen(false);
-        }}
+        onDiscard={handleDiscardChanges}
         saving={saving}
       />
     </div>
