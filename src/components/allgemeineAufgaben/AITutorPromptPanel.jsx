@@ -1,209 +1,174 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Copy, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Copy, CheckCircle2, AlertTriangle, RefreshCw, Save, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-/**
- * Phase 4: Robustes Null-Handling für KI-Tutor Prompts
- * - Strikte Prüfung auf null/undefined Variablen
- * - Fallback-Strings für fehlende Aufgabenstellung/Ziele
- * - Graceful Degradation mit Empty State
- */
+// ── Dynamischer Tutor-Prompt-Generator ───────────────────────────────────────
+function buildTutorPrompt({ aufgabe, einheit, mappedLernziele = [], mappedBasisLernziele = [] }) {
+  const parts = [];
 
-/**
- * Generiert den KI-Tutor Prompt mit Unterstützung für Basis-Lernziele
- */
-export function generateTutorPrompt(aufgabe, mappedLernziele, mappedBasisLernziele, lernpakete, basismodule, einheit) {
-  // Kritische Validierungen
-  if (!aufgabe) {
-    return null;
+  // Rolle
+  const roleParts = ['Du bist ein unterstützender KI-Tutor für Schüler'];
+  if (einheit?.jahrgangsstufe) roleParts.push(`der ${einheit.jahrgangsstufe}. Jahrgangsstufe`);
+  if (einheit?.fach) roleParts.push(`im Fach ${einheit.fach}`);
+  parts.push(roleParts.join(' ') + '.');
+
+  // Kontext
+  if (einheit?.titel_der_einheit) {
+    parts.push(`Das aktuelle Thema ist '${einheit.titel_der_einheit}'.`);
   }
 
-  const hasRegularGoals = Array.isArray(mappedLernziele) && mappedLernziele.length > 0;
-  const hasBasisGoals = Array.isArray(mappedBasisLernziele) && mappedBasisLernziele.length > 0;
-
-  if (!hasRegularGoals && !hasBasisGoals) {
-    return null; // Keine Kompetenzen zugeordnet
+  // Aufgabe
+  const aufgabentext = [aufgabe.titel && `Titel: ${aufgabe.titel}`, aufgabe.aufgabenstellung]
+    .filter(Boolean).join('\n');
+  if (aufgabentext) {
+    parts.push(`Der Schüler bearbeitet folgende Aufgabe:\n${aufgabentext}`);
   }
 
-  if (hasRegularGoals && !Array.isArray(lernpakete)) {
-    return null;
+  // Formale Kriterien
+  const form = aufgabe.ergebnis_form;
+  const format = aufgabe.ergebnis_dateiformat;
+  const formOffen = !form || form.toLowerCase().includes('offen');
+  const formatOffen = !format || format.toLowerCase().includes('offen') || format.toLowerCase().includes('beliebig');
+  if (!formOffen || !formatOffen) {
+    const teile = [];
+    if (!formOffen) teile.push(`Form '${form}'`);
+    if (!formatOffen) teile.push(`Dateiformat '${format}'`);
+    parts.push(`Die finale Abgabe wird in der ${teile.join(' als ')} erwartet.`);
   }
 
-  if (hasBasisGoals && !Array.isArray(basismodule)) {
-    return null;
+  // Kompetenzen
+  const alleKompetenzen = [
+    ...mappedLernziele.map(lz => lz.schueler_uebersetzung || lz.formulierung_fachsprache).filter(Boolean),
+    ...mappedBasisLernziele.map(lz => lz.text).filter(Boolean),
+  ];
+  if (alleKompetenzen.length > 0) {
+    const liste = alleKompetenzen.map((k, i) => `${i + 1}. ${k}`).join('\n');
+    parts.push(`Der Schüler soll dabei folgende Kompetenzen nachweisen:\n${liste}`);
   }
 
-  // Sanitize und validiere Aufgabenstellung
-  const aufgabeText = sanitizeString(aufgabe.aufgabenstellung) || '[Keine Aufgabenstellung hinterlegt]';
+  // Erwartungshorizont
+  const musterloesung = aufgabe.musterloesung?.trim();
+  if (musterloesung) {
+    parts.push(`Deine Bewertung und dein Feedback müssen sich strikt an folgendem Erwartungshorizont orientieren:\n--- ERWARTUNGSHORIZONT START ---\n${musterloesung}\n--- ERWARTUNGSHORIZONT ENDE ---`);
+  }
 
-  // Erstelle die Liste der regulären Lernziele mit zugehörigen Paketen
-  const regularLernzieleString = hasRegularGoals
-    ? mappedLernziele
-        .filter(lz => lz && lz.id)
-        .map((lz) => {
-          const paket = lernpakete.find((p) => p && p.id === lz.lernpaket_id);
-          const zielText = sanitizeString(lz.schueler_uebersetzung || lz.formulierung_fachsprache) || 'Unbekanntes Lernziel';
-          const paketTitel = paket ? sanitizeString(paket.titel_des_pakets) : 'Unbekanntes Paket';
-          return `- ${zielText} (Gehört zum Lernpaket: ${paketTitel})`;
-        })
-        .join('\n')
-    : '';
-
-  // Erstelle die Liste der Basis-Lernziele mit zugehörigen Modulen
-  const basisLernzieleString = hasBasisGoals
-    ? mappedBasisLernziele
-        .filter(lz => lz && lz.id)
-        .map((lz) => {
-          const modul = basismodule.find((m) => m && m.id === lz.basismodul_id);
-          const zielText = sanitizeString(lz.formulierung || lz.titel) || 'Unbekanntes Basis-Lernziel';
-          const modulTitel = modul ? sanitizeString(modul.titel) : 'Unbekanntes Modul';
-          return `- ${zielText} (Gehört zum Basismodul: ${modulTitel})`;
-        })
-        .join('\n')
-    : '';
-
-  // Fallback-Werte mit Sanitizing
-  const fach = sanitizeString(einheit?.fach) || 'dem Unterricht';
-  const thema = sanitizeString(einheit?.titel_der_einheit) || 'dieses Themengebiet';
-  const jahrgang = sanitizeString(einheit?.jahrgangsstufe) || '–';
-  const gesamtziel = sanitizeString(einheit?.gesamtziel) || '';
-
-  const prompt = `Du bist ein motivierender und strenger KI-Tutor für das Fach ${fach} im Themengebiet "${thema}" (Jahrgangsstufe ${jahrgang}).
-Wir befinden uns an einer Integrierten Gesamtschule in Niedersachsen. Das wichtigste pädagogische Ziel dieser Übung ist es, dass ich (der Schüler) lerne, selbstständig und eigenverantwortlich zu arbeiten.
-${gesamtziel ? `\nÜbergeordnetes Ziel dieser Unterrichtseinheit: ${gesamtziel}` : ''}
-
-Ich werde dir gleich meine Lösung zu einer Aufgabe geben.
-
-Hier ist die Aufgabenstellung:
-${aufgabeText}
-
-Bitte bewerte meine Lösung AUSSCHLIESSLICH anhand der folgenden Kompetenzen, die ich für diese Aufgabe beherrschen muss.
-
-Aktueller Unterrichtsstoff:
-${regularLernzieleString || '- Keine spezifischen Lernziele hinterlegt.'}
-
-${basisLernzieleString ? `Vorausgesetztes Basis-Vorwissen:\n${basisLernzieleString}` : ''}
-
-Gib mir dein Feedback in folgender Struktur:
-1. Kurzes, motivierendes Feedback zur Einleitung.
-2. Schätze für jede der oben genannten Kompetenzen (sowohl Unterrichtsstoff als auch Vorwissen) ab, zu wie viel Prozent ich sie verstanden habe.
-3. Gib mir auf Basis dieser Prozente klare Handlungsanweisungen:
-   - Unter 60%: "Das hast du noch nicht so ganz richtig verstanden."
-     -> Wenn aktueller Stoff: "Du solltest dir das zugehörige Lernpaket [Name] unbedingt noch einmal intensiv anschauen."
-     -> Wenn Vorwissen: "Hier fehlt dir eine wichtige Grundlage. Bitte wiederhole dazu das Basismodul [Name]."
-   - 60% bis 85%: "Du hast das schon überwiegend verstanden."
-     -> Wenn aktueller Stoff: "Guck dir das zugehörige Lernpaket [Name] noch einmal kurz an."
-     -> Wenn Vorwissen: "Frische diese Grundlage am besten im Basismodul [Name] noch einmal kurz auf."
-   - Über 85%: "Das hast du super verstanden! Hier musst du im zugehörigen Lernpaket / Basismodul nichts weiter tun."
-
-WICHTIGE REGELN FÜR DICH ALS KI:
-- Gib mir UNTER KEINEN UMSTÄNDEN die Musterlösung!
-- Löse die Aufgabe nicht für mich.
-- Stelle KEINE Leitfragen. Dein Ziel ist rein die Diagnose und der Verweis auf das Material.
-- Fordere mich am Ende auf, das Material durchzuarbeiten und die Lösung danach neu einzureichen.
-
-Hier ist meine Lösung:
-[HIER FÜGT DER SCHÜLER SEINE LÖSUNG EIN]`;
-
-  return prompt;
-}
-
-/**
- * Sanitiert einen String für sichere KI-Prompt-Eingabe
- */
-function sanitizeString(str) {
-  if (!str || typeof str !== 'string') return '';
-  return str
-    .trim()
-    .replace(/\s{2,}/g, ' ')
-    .replace(/\n{3,}/g, '\n\n');
-}
-
-/**
- * Empty State Component für fehlende Kompetenzen
- */
-function PromptEmptyState() {
-  return (
-    <div className="flex flex-col items-center justify-center h-full py-12 px-6">
-      <div className="rounded-lg bg-amber-50 p-6 border border-amber-200 max-w-sm text-center space-y-3">
-        <AlertTriangle className="w-8 h-8 text-amber-600 mx-auto" />
-        <h3 className="font-semibold text-amber-900">Prompt kann nicht generiert werden</h3>
-        <p className="text-sm text-amber-800">
-          Bitte ordnen Sie der Aufgabe zuerst Kompetenzen / Lernziele zu.
-        </p>
-      </div>
-    </div>
+  // Didaktische Direktive
+  parts.push(
+    'Bewerte die Eingaben des Schülers anhand dieses Erwartungshorizonts. Gib keine fertigen Lösungen vor, sondern nutze formatives Feedback, Hinweise und sokratische Fragen, um dem Schüler zu helfen, den Erwartungshorizont selbstständig zu erreichen.'
   );
+
+  return parts.join('\n\n');
 }
 
-/**
- * Panel für KI-Tutor Prompt Anzeige und Verwaltung
- */
+// ── Haupt-Komponente ──────────────────────────────────────────────────────────
 export default function AITutorPromptPanel({
   aufgabe,
-  mappedLernziele,
+  mappedLernziele = [],
   mappedBasisLernziele = [],
-  lernpakete,
-  basismodule = [],
   einheit,
 }) {
+  const queryClient = useQueryClient();
+  const [promptText, setPromptText] = useState('');
+  const [isDirty, setIsDirty] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const prompt = useMemo(
-    () => generateTutorPrompt(aufgabe, mappedLernziele, mappedBasisLernziele, lernpakete, basismodule, einheit),
-    [aufgabe, mappedLernziele, mappedBasisLernziele, lernpakete, basismodule, einheit]
-  );
+  const hatErwartungshorizont = !!aufgabe?.musterloesung?.trim();
 
-  const handleCopyPrompt = async () => {
-    if (!prompt) return;
-    try {
-      await navigator.clipboard.writeText(prompt);
-      setCopied(true);
-      toast.success('Prompt in Zwischenablage kopiert');
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      toast.error('Fehler beim Kopieren');
-    }
+  // Beim ersten Öffnen: gespeicherten Prompt laden oder neu generieren
+  useEffect(() => {
+    if (!aufgabe) return;
+    const generated = buildTutorPrompt({ aufgabe, einheit, mappedLernziele, mappedBasisLernziele });
+    setPromptText(generated);
+    setIsDirty(false);
+  }, [aufgabe?.id]);
+
+  // Auto-Save beim Verlassen
+  const promptRef = useRef(promptText);
+  const isDirtyRef = useRef(isDirty);
+  useEffect(() => { promptRef.current = promptText; }, [promptText]);
+  useEffect(() => { isDirtyRef.current = isDirty; }, [isDirty]);
+  useEffect(() => {
+    return () => {
+      if (isDirtyRef.current && aufgabe?.id) {
+        base44.entities.AllgemeineAufgabe.update(aufgabe.id, { erwartungshorizont_ki_prompt: promptRef.current });
+      }
+    };
+  }, [aufgabe?.id]);
+
+  const saveMutation = useMutation({
+    mutationFn: (text) => base44.entities.AllgemeineAufgabe.update(aufgabe.id, { erwartungshorizont_ki_prompt: text }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
+      setIsDirty(false);
+      toast.success('KI-Tutor Prompt gespeichert.');
+    },
+    onError: () => toast.error('Fehler beim Speichern.'),
+  });
+
+  const handleRegenerate = () => {
+    const generated = buildTutorPrompt({ aufgabe, einheit, mappedLernziele, mappedBasisLernziele });
+    setPromptText(generated);
+    setIsDirty(true);
+    toast.success('Prompt neu generiert.');
   };
 
-  // Graceful Degradation: Empty State statt Fehler
-  if (!prompt) {
-    return <PromptEmptyState />;
-  }
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(promptText);
+    setCopied(true);
+    toast.success('Prompt kopiert.');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (!aufgabe) return null;
 
   return (
-    <div className="space-y-4 p-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">KI-Tutor Prompt</h3>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleCopyPrompt}
-          disabled={!prompt}
-          className="gap-2"
-        >
-          {copied ? (
-            <>
-              <CheckCircle2 className="w-4 h-4 text-green-600" />
-              Kopiert
-            </>
-          ) : (
-            <>
-              <Copy className="w-4 h-4" />
-              Kopieren
-            </>
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex-1 overflow-y-auto p-5 space-y-4">
+
+        {/* Warnung: kein Erwartungshorizont */}
+        {!hatErwartungshorizont && (
+          <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+            <span>
+              <strong>Hinweis:</strong> Es wurde noch kein Erwartungshorizont (Tab 3) hinterlegt. Ohne diese Referenz kann der KI-Tutor dem Schüler kein präzises und auf die Musterlösung abgestimmtes Feedback geben.
+            </span>
+          </div>
+        )}
+
+        {/* Aktionsleiste */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <h3 className="text-sm font-semibold flex-1">KI-Tutor System-Prompt</h3>
+          <Button size="sm" variant="outline" onClick={handleRegenerate} className="gap-2">
+            <RefreshCw className="w-3.5 h-3.5" /> Neu generieren
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleCopy} className="gap-2">
+            {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? 'Kopiert' : 'Kopieren'}
+          </Button>
+          {isDirty && (
+            <Button size="sm" onClick={() => saveMutation.mutate(promptText)} disabled={saveMutation.isPending} className="gap-2">
+              {saveMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              Speichern
+            </Button>
           )}
-        </Button>
+        </div>
+
+        {/* Editierbare Textarea */}
+        <textarea
+          value={promptText}
+          onChange={e => { setPromptText(e.target.value); setIsDirty(true); }}
+          className="w-full px-4 py-3 text-sm border border-border rounded-lg resize-none bg-background focus:outline-none focus:ring-1 focus:ring-ring font-mono leading-relaxed"
+          style={{ minHeight: '480px' }}
+          placeholder="Kein Prompt generiert…"
+        />
+
+        <p className="text-xs text-muted-foreground">
+          Dieser Prompt steuert den KI-Tutor bei der Interaktion mit dem Schüler. Manuelle Anpassungen (z. B. Fachsprache-Anforderungen) sind jederzeit möglich.
+        </p>
       </div>
-
-      <pre className="bg-slate-50 p-4 rounded-md text-sm whitespace-pre-wrap text-foreground border border-border overflow-auto max-h-96">
-        {prompt}
-      </pre>
-
-      <p className="text-xs text-muted-foreground">
-        Dieser Prompt wird Schülern in Moodle zur Verfügung gestellt, um ihre Lösungen bewerten zu lassen.
-      </p>
     </div>
   );
 }
