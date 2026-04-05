@@ -47,10 +47,21 @@ export function usePresence(einheitId) {
       let recordId;
       if (existing.length > 0) {
         recordId = existing[0].id;
-        await base44.entities.ActiveUsersPresence.update(recordId, {
-          last_seen_at: now,
-          user_name: user.full_name || user.email,
-        });
+        try {
+          await base44.entities.ActiveUsersPresence.update(recordId, {
+            last_seen_at: now,
+            user_name: user.full_name || user.email,
+          });
+        } catch {
+          // Record wurde extern gelöscht – neu erstellen
+          const created = await base44.entities.ActiveUsersPresence.create({
+            user_email: user.email,
+            user_name: user.full_name || user.email,
+            current_view: einheitId,
+            last_seen_at: now,
+          });
+          recordId = created.id;
+        }
       } else {
         const created = await base44.entities.ActiveUsersPresence.create({
           user_email: user.email,
@@ -63,7 +74,11 @@ export function usePresence(einheitId) {
 
       if (!mounted) {
         // Wenn in der Zwischenzeit unmounted, sofort wieder löschen
-        base44.entities.ActiveUsersPresence.delete(recordId);
+        try {
+          base44.entities.ActiveUsersPresence.delete(recordId);
+        } catch {
+          // Ignorieren wenn Record nicht existiert
+        }
         return;
       }
 
@@ -115,7 +130,11 @@ export function usePresence(einheitId) {
         unsubscribeRef.current = null;
       }
       if (myRecordIdRef.current) {
-        base44.entities.ActiveUsersPresence.delete(myRecordIdRef.current);
+        try {
+          base44.entities.ActiveUsersPresence.delete(myRecordIdRef.current);
+        } catch {
+          // Ignorieren wenn Record nicht mehr existiert
+        }
         myRecordIdRef.current = null;
       }
     };
