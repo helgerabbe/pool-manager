@@ -434,11 +434,22 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   }, [inEditMode, paket.id]);
 
   const handleStartEdit = async () => {
-    const result = await acquireLock();
-    if (result?.success) {
-      setLocalEditMode(true);
-    } else if (result?.locked_by) {
-      toast.error(`Dieses Paket wird gerade von ${result.locked_by} bearbeitet.`);
+    try {
+      const result = await acquireLock();
+      console.log('[LernpaketPanel] acquireLock result:', result);
+      if (result?.success) {
+        setLocalEditMode(true);
+        toast.success('Bearbeitungsmodus aktiviert.');
+      } else if (result?.locked_by) {
+        toast.error(`Dieses Paket wird gerade von ${result.locked_by} bearbeitet.`);
+      } else if (result?.structural_lock) {
+        toast.error(result?.message || 'Strukturbearbeitung läuft — neue Inhalts-Bearbeitungen sind kurzzeitig gesperrt.');
+      } else {
+        toast.error('Bearbeitungsmodus konnte nicht aktiviert werden.');
+      }
+    } catch (err) {
+      console.error('[LernpaketPanel] acquireLock error:', err);
+      toast.error('Fehler beim Aktivieren des Bearbeitungsmodus.');
     }
   };
 
