@@ -275,7 +275,7 @@ export default function AllgemeineAufgabenView({
 
   const { data: basismodule = [] } = useQuery({
     queryKey: ['basismodule'],
-    queryFn: () => base44.entities.Basismodul.list(),
+    queryFn: () => base44.entities.Basismodule.list(),
   });
 
   // Effektive Basis-Lernziele aus Mappings
