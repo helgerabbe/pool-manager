@@ -106,13 +106,28 @@ export function useCollaborationLock(
         );
         return false;
       } catch (error) {
-        if (attempt < maxRetries) {
-          console.warn(`[useCollaborationLock] Lock attempt ${attempt} failed, retrying...`);
+        // Bei HTTP-Fehler: Status-Code prüfen
+        const status = error?.response?.status;
+        const data = error?.response?.data;
+
+        // 409 Race Condition: Retry
+        if (status === 409 && data?.code === 'RACE_CONDITION_DETECTED' && attempt < maxRetries) {
+          console.warn(`[useCollaborationLock] Race condition (409). Retrying... (attempt ${attempt}/${maxRetries})`);
           await new Promise(resolve => setTimeout(resolve, retryDelayMs));
-        } else {
-          console.error('[useCollaborationLock] acquireLock failed after all retries:', error);
-          return false;
+          continue;
         }
+
+        // Andere Fehler oder letzter Versuch
+        if (attempt < maxRetries && !status) {
+          // Netzwerkfehler: Retry
+          console.warn(`[useCollaborationLock] Network error. Retrying... (attempt ${attempt}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+          continue;
+        }
+
+        // Fehler endgültig
+        console.error(`[useCollaborationLock] Lock failed after attempt ${attempt}/${maxRetries}:`, error.message);
+        return false;
       }
     }
 
