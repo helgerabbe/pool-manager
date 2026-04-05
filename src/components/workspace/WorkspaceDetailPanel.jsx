@@ -457,10 +457,17 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      // Aktuelle Paket-Daten neu laden für Lock-Validierung
+      const freshPaket = (await base44.entities.Lernpakete.filter({ id: paket.id }))[0];
+      if (!freshPaket) {
+        toast.error('Lernpaket nicht gefunden.');
+        setIsSaving(false);
+        return;
+      }
       await base44.functions.invoke('updateLernpaketSecure', {
         paketId: paket.id,
         updates: { titel_des_pakets: localTitel },
-        expectedLockVersion: paket.lock_version,
+        expectedLockVersion: freshPaket.lock_version,
       });
       queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
       setIsDirty(false);
