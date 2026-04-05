@@ -180,7 +180,7 @@ function AssistenzChat({ messages, onSend, isLoading }) {
 }
 
 // ── Haupt-Tab-Komponente ──────────────────────────────────────────────────────
-export default function ErwartungshorizontTab({ aufgabe, kannBearbeiten }) {
+export default function ErwartungshorizontTab({ aufgabe, kannBearbeiten, einheit, mappedLernziele = [], mappedBasisLernziele = [] }) {
   const queryClient = useQueryClient();
   const [musterloesung, setMusterloesung] = useState(aufgabe?.musterloesung || '');
   const [chatMessages, setChatMessages] = useState([]);
@@ -232,18 +232,35 @@ export default function ErwartungshorizontTab({ aufgabe, kannBearbeiten }) {
   ].filter(Boolean);
   const hatBilder = bildUrls.length > 0;
 
+  // Kontext-Metadaten aus Einheit + Kompetenzen
+  const fach = einheit?.fach || 'unbekanntes Fach';
+  const jahrgangsstufe = einheit?.jahrgangsstufe || '?';
+  const thema = einheit?.titel_der_einheit || 'unbekanntes Thema';
+  const alleKompetenzen = [
+    ...mappedLernziele.map(lz => lz.formulierung_fachsprache || lz.schueler_uebersetzung).filter(Boolean),
+    ...mappedBasisLernziele.map(lz => lz.text).filter(Boolean),
+  ];
+  const kompetenzListe = alleKompetenzen.length > 0
+    ? alleKompetenzen.map((k, i) => `${i + 1}. ${k}`).join('\n')
+    : '(keine Kompetenzen zugeordnet)';
+
   // Musterlösung generieren via LLM
   const handleGenerate = async () => {
     setGenerating(true);
-    const formInfo = [
-      aufgabe.ergebnis_form && `Ergebnisform: ${aufgabe.ergebnis_form}`,
-      aufgabe.ergebnis_dateiformat && `Dateiformat: ${aufgabe.ergebnis_dateiformat}`,
-    ].filter(Boolean).join(', ');
 
-    const prompt = `Du bist ein erfahrener Lehrer. Analysiere die folgende Aufgabe und erstelle eine präzise Musterlösung (Erwartungshorizont) in Textform.${formInfo ? ` Berücksichtige dabei, dass das erwartete Ergebnis die Form folgendermaßen haben soll: ${formInfo}.` : ''} Gib nur die Musterlösung ohne weitere Begrüßungsfloskeln aus.
+    const aufgabentext = [
+      aufgabe.titel && `Titel: ${aufgabe.titel}`,
+      aufgabe.aufgabenstellung,
+    ].filter(Boolean).join('\n');
+
+    const prompt = `Du bist ein erfahrener Lehrer im Fach ${fach} für die ${jahrgangsstufe}. Jahrgangsstufe. Aktuelles Thema der Einheit ist: '${thema}'.
+Analysiere die folgende Aufgabe${hatBilder ? ' (siehe beigefügtes Bild)' : ''} und erstelle eine präzise Musterlösung (Erwartungshorizont). Die Schüler sollen mit dieser Aufgabe primär folgende Kompetenzen nachweisen:
+${kompetenzListe}
+Richte den Erwartungshorizont exakt auf den Nachweis dieser Kompetenzen aus.${aufgabe.ergebnis_form || aufgabe.ergebnis_dateiformat ? `\nBerücksichtige zudem, dass das erwartete Ergebnis die Form '${aufgabe.ergebnis_form || 'offen'}' im Format '${aufgabe.ergebnis_dateiformat || 'offen'}' haben wird.` : ''}
+Gib ausschließlich die fertige Musterlösung aus, ohne einleitende oder abschließende Begrüßungsfloskeln.
 
 Aufgabe:
-${aufgabe.titel ? `Titel: ${aufgabe.titel}\n` : ''}${aufgabe.aufgabenstellung}`;
+${aufgabentext}`;
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,
@@ -262,15 +279,16 @@ ${aufgabe.titel ? `Titel: ${aufgabe.titel}\n` : ''}${aufgabe.aufgabenstellung}`;
     setChatMessages(prev => [...prev, { role: 'user', content: userText }]);
     setChatLoading(true);
 
-    const prompt = `Du bist ein Assistent zur Überarbeitung von schulischen Erwartungshorizonten.
-
-Hier ist der aktuelle Erwartungshorizont:
+    const prompt = `Du bist ein Assistent zur Überarbeitung von schulischen Erwartungshorizonten im Fach ${fach} (${jahrgangsstufe}. Jahrgangsstufe). Hier ist der aktuelle Erwartungshorizont:
 ${musterloesung || '(noch kein Text)'}
 
 Der Lehrer gibt dir nun folgenden Anpassungswunsch:
 ${userText}
 
-Überarbeite den Erwartungshorizont entsprechend und gib NUR den vollständigen überarbeiteten Text aus – ohne Kommentare oder Erklärungen davor oder danach.`;
+Überarbeite den Erwartungshorizont entsprechend und behalte den Fokus auf die zugewiesenen Kompetenzen bei:
+${kompetenzListe}
+
+Gib NUR den vollständigen überarbeiteten Text aus – ohne Kommentare oder Erklärungen davor oder danach.`;
 
     const result = await base44.integrations.Core.InvokeLLM({ prompt });
     const newText = typeof result === 'string' ? result : result?.response || '';

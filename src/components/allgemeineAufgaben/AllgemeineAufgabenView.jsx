@@ -377,8 +377,8 @@ export default function AllgemeineAufgabenView({
             <Tabs defaultValue="angaben" className="flex-1 flex flex-col overflow-hidden">
               <TabsList className="mx-6 mt-3 bg-muted">
                 <TabsTrigger value="angaben" className="text-xs">Kernangaben</TabsTrigger>
-                <TabsTrigger value="erwartungshorizont" className="text-xs">Erwartungshorizont</TabsTrigger>
                 <TabsTrigger value="kompetenzen" className="text-xs">Kompetenzzuordnung</TabsTrigger>
+                <TabsTrigger value="erwartungshorizont" className="text-xs">Erwartungshorizont</TabsTrigger>
                 <TabsTrigger value="ki-prompt" className="text-xs">KI-Tutor Prompt</TabsTrigger>
               </TabsList>
 
@@ -396,15 +396,7 @@ export default function AllgemeineAufgabenView({
                 />
               </TabsContent>
 
-              {/* Tab 2: Erwartungshorizont */}
-              <TabsContent value="erwartungshorizont" className="flex-1 overflow-hidden m-0">
-                <ErwartungshorizontTab
-                  aufgabe={selectedAufgabe}
-                  kannBearbeiten={kannBearbeiten}
-                />
-              </TabsContent>
-
-              {/* Tab 3: Kompetenzzuordnung */}
+              {/* Tab 2: Kompetenzzuordnung */}
               <TabsContent value="kompetenzen" className="flex-1 overflow-hidden m-0">
                <AufgabeKompetenzMapping
                  aufgabe={selectedAufgabe}
@@ -412,6 +404,17 @@ export default function AllgemeineAufgabenView({
                  einheitId={einheitId}
                  onComplete={() => {}}
                />
+              </TabsContent>
+
+              {/* Tab 3: Erwartungshorizont */}
+              <TabsContent value="erwartungshorizont" className="flex-1 overflow-hidden m-0">
+                <ErwartungshorizontTab
+                  aufgabe={selectedAufgabe}
+                  einheit={einheit}
+                  mappedLernziele={effectiveMappedLernziele}
+                  mappedBasisLernziele={effectiveMappedBasisLernziele}
+                  kannBearbeiten={kannBearbeiten}
+                />
               </TabsContent>
 
               {/* Tab 4: KI-Tutor Prompt */}
