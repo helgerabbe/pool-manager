@@ -14,7 +14,6 @@ export default function PhaseActivitiesList({
   onSelectActivity,
   onGoToTaskWorkshop = null,
   lernziele = [],
-  onActivityChange = null,
 }) {
   const queryClient = useQueryClient();
   const [newActivityId, setNewActivityId] = useState('');
@@ -49,7 +48,6 @@ export default function PhaseActivitiesList({
       });
       setNewActivityId('');
       toast.success('Aktivität hinzugefügt.');
-      if (onActivityChange) onActivityChange();
     },
     onError: () => toast.error('Fehler beim Hinzufügen.'),
   });
@@ -62,7 +60,6 @@ export default function PhaseActivitiesList({
        queryKey: ['lernpaketPhaseAktivitaeten'],
      });
      toast.success('Aktivität entfernt.');
-     if (onActivityChange) onActivityChange();
    },
    onError: () => toast.error('Fehler beim Löschen.'),
   });

@@ -354,31 +354,17 @@ function EinheitPanel({ einheit, lernpakete, lernziele, aufgaben, themenfelder =
 // ── Panel: Lernpaket mit Phasen ───────────────────────────────────────────────
 
 function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail, istAdmin, onNavigate: onNavigateRaw, onNewLernziel, onDelete }) {
-  // Szenario 5A: Navigation-Guard – blockiere Tab-Wechsel wenn dirty
-  const [pendingNav, setPendingNav] = useState(null);
-  const onNavigate = useCallback((node) => {
-    if (inEditModeRef.current && isDirtyRef.current) {
-      setPendingNav(node);
-      setExitModalOpen(true);
-    } else {
-      onNavigateRaw(node);
-    }
-  }, [onNavigateRaw]);
+  const onNavigate = onNavigateRaw;
   const paketZiele = lernziele.filter(lz => lz.lernpaket_id === paket.id);
   const pStatus = getLernpaketStatus(paket, paketZiele, aufgaben, userEmail);
   const [editLernzielId, setEditLernzielId] = useState(null);
   const [editLernzielData, setEditLernzielData] = useState(null);
   const [expandedPhase, setExpandedPhase] = useState(null);
-  const [exitModalOpen, setExitModalOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [lockLostByAdmin, setLockLostByAdmin] = useState(false);
-  // Dirty-State: lokale Felder die noch nicht gespeichert wurden
   const [localTitel, setLocalTitel] = useState(paket.titel_des_pakets || '');
-  const [isDirty, setIsDirty] = useState(false);
   const queryClient = useQueryClient();
-  // Refs für Navigation-Guard (Callback braucht aktuellen State ohne Re-Renders)
+  // Ref für Navigation-Guard (Callback braucht aktuellen State ohne Re-Renders)
   const inEditModeRef = useRef(false);
-  const isDirtyRef = useRef(false);
 
   // Callback wenn Heartbeat meldet dass Lock extern aufgehoben wurde (Szenario 3)
   const handleLockLostExternally = useCallback(() => {
@@ -395,29 +381,15 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   const isLockedByOther = isPaketLocked(paket) && paketLockedBy !== userEmail;
   const isLockedByMe    = localEditMode || (isPaketLocked(paket) && paketLockedBy === userEmail);
   const inEditMode = isLockedByMe;
-  // Refs aktuell halten für Navigation-Guard-Callback
+  // Ref aktuell halten für Navigation-Guard-Callback
   inEditModeRef.current = inEditMode;
-  isDirtyRef.current = isDirty;
 
-  // Sync localTitel wenn Paket von außen aktualisiert wird (z.B. nach Save)
+  // Sync localTitel wenn Paket von außen aktualisiert wird
   React.useEffect(() => {
     if (!inEditMode) {
       setLocalTitel(paket.titel_des_pakets || '');
-      setIsDirty(false);
     }
   }, [paket.titel_des_pakets, inEditMode]);
-
-  // beforeunload: native Browser-Warnung bei ungespeicherten Änderungen
-  React.useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      if (inEditMode && isDirty) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [inEditMode, isDirty]);
 
   // unload: Lock freigeben via Beacon
   React.useEffect(() => {
@@ -453,70 +425,14 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
     }
   };
 
-  // Zwischenspeichern: Lock bleibt aktiv
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      // Aktuelle Paket-Daten neu laden für Lock-Validierung
-      const freshPaket = (await base44.entities.Lernpakete.filter({ id: paket.id }))[0];
-      if (!freshPaket) {
-        toast.error('Lernpaket nicht gefunden.');
-        setIsSaving(false);
-        return;
-      }
-      await base44.functions.invoke('updateLernpaketSecure', {
-        paketId: paket.id,
-        updates: { titel_des_pakets: localTitel },
-        expectedLockVersion: freshPaket.lock_version,
-      });
-      queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-      setIsDirty(false);
-      toast.success('Gespeichert.');
-    } catch (err) {
-      const status = err?.response?.status;
-      if (status === 409) toast.error('Versionskollision – bitte Seite neu laden.');
-      else toast.error('Fehler beim Speichern.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Exit: mit Dirty-Check
-  const handleStopEdit = () => {
-    if (isDirty) {
-      setExitModalOpen(true);
-    } else {
-      doReleaseLock();
-    }
-  };
-
-  const doReleaseLock = async () => {
+  // Exit: Lock freigeben
+  const handleStopEdit = async () => {
     await base44.functions.invoke('releaseLockSecure', {
       entityName: 'Lernpakete',
       entityId: paket.id,
     }).catch(() => {});
     queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
     setLocalEditMode(false);
-    setIsDirty(false);
-    setExitModalOpen(false);
-    // Szenario 5B: Falls Navigation blockiert war, jetzt ausführen
-    if (pendingNav) {
-      const nav = pendingNav;
-      setPendingNav(null);
-      onNavigateRaw(nav);
-    }
-  };
-
-  const handleSaveAndExit = async () => {
-    await handleSave();
-    await doReleaseLock();
-  };
-
-  const handleDiscard = async () => {
-    setLocalTitel(paket.titel_des_pakets || '');
-    setIsDirty(false);
-    queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-    await doReleaseLock();
   };
 
 
@@ -541,7 +457,6 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
     };
     base44.entities.Lernpakete.update(paket.id, { phasen_konfiguration: newConfig }).then(() => {
       queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-      setIsDirty(true);
     });
   };
 
@@ -639,29 +554,13 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
             <input
               type="text"
               value={localTitel}
-              onChange={(e) => {
-                setLocalTitel(e.target.value);
-                setIsDirty(true);
-              }}
+              onChange={(e) => setLocalTitel(e.target.value)}
               className="flex-1 bg-transparent border-b border-primary font-medium focus:outline-none"
             />
-            {isDirty && <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 shrink-0">Ungespeichert</span>}
           </div>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleSave}
-              disabled={!isDirty || isSaving}
-              className="gap-1.5 text-xs"
-            >
-              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-              Zwischenspeichern
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleStopEdit} disabled={isSaving} className="gap-1.5 text-xs">
-              <Unlock className="w-3.5 h-3.5" /> Bearbeitung beenden
-            </Button>
-          </div>
+          <Button variant="outline" size="sm" onClick={handleStopEdit} className="gap-1.5 text-xs">
+            <Unlock className="w-3.5 h-3.5" /> Bearbeitung beenden
+          </Button>
         </div>
       )}
 
@@ -801,8 +700,6 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                   queryClient={queryClient}
                   onNavigate={onNavigate}
                   onGoToTaskWorkshop={(activityId) => onNavigate({ type: 'goto-task-workshop', activityId })}
-                  onActivityChange={() => setIsDirty(true)}
-                  setIsDirty={setIsDirty}
                 />
               )}
             </div>
@@ -810,14 +707,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
         })}
       </div>
 
-      {/* Exit-Modal */}
-      <UnsavedChangesExitModal
-        open={exitModalOpen}
-        onOpenChange={setExitModalOpen}
-        onSaveAndExit={handleSaveAndExit}
-        onDiscard={handleDiscard}
-        saving={isSaving}
-      />
+
 
       {/* Edit Lernziel Dialog */}
       <Dialog open={!!editLernzielId} onOpenChange={(open) => { if (!open) setEditLernzielId(null); }}>
@@ -1145,7 +1035,7 @@ function AktivitaetEditPanel({ paket, phaseKey, phaseLabel, kannBearbeiten, quer
 import PhaseActivitiesList from '@/components/workspace/PhaseActivitiesList';
 import UnsavedChangesExitModal from '@/components/workspace/UnsavedChangesExitModal';
 
-function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, userEmail, queryClient, onNavigate, onGoToTaskWorkshop, onActivityChange, setIsDirty }) {
+function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, userEmail, queryClient, onNavigate, onGoToTaskWorkshop }) {
   return (
     <PhaseActivitiesList
       paket={paket}
@@ -1160,7 +1050,6 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, userEmail, 
         activityRecordId: data.activityId,
       })}
       onGoToTaskWorkshop={onGoToTaskWorkshop}
-      onActivityChange={onActivityChange}
     />
   );
 }
@@ -1355,8 +1244,6 @@ export default function WorkspaceDetailPanel({
             userEmail={userEmail}
             queryClient={queryClient}
             onNavigate={onNavigate}
-            onActivityChange={() => setIsDirty(true)}
-            setIsDirty={setIsDirty}
           />
         </div>
       </>
