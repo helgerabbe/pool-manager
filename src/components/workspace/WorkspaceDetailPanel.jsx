@@ -362,6 +362,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   const [expandedPhase, setExpandedPhase] = useState(null);
   const [lockLostByAdmin, setLockLostByAdmin] = useState(false);
   const [localTitel, setLocalTitel] = useState(paket.titel_des_pakets || '');
+  const [localPhasenConfig, setLocalPhasenConfig] = useState(paket.phasen_konfiguration || {});
   const queryClient = useQueryClient();
   // Ref für Navigation-Guard (Callback braucht aktuellen State ohne Re-Renders)
   const inEditModeRef = useRef(false);
@@ -384,12 +385,13 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   // Ref aktuell halten für Navigation-Guard-Callback
   inEditModeRef.current = inEditMode;
 
-  // Sync localTitel wenn Paket von außen aktualisiert wird
+  // Sync localTitel und Phasen-Config wenn Paket von außen aktualisiert wird
   React.useEffect(() => {
     if (!inEditMode) {
       setLocalTitel(paket.titel_des_pakets || '');
+      setLocalPhasenConfig(paket.phasen_konfiguration || {});
     }
-  }, [paket.titel_des_pakets, inEditMode]);
+  }, [paket.titel_des_pakets, paket.phasen_konfiguration, inEditMode]);
 
   // unload: Lock freigeben via Beacon
   React.useEffect(() => {
@@ -444,19 +446,24 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   ];
 
   const handlePhaseToggle = (phaseKey) => {
-    const phasenConfig = paket.phasen_konfiguration || {};
-    const phaseConfig = phasenConfig[phaseKey] || {};
+    const phaseConfig = localPhasenConfig[phaseKey] || {};
     const newDisabledState = !phaseConfig.disabled;
     const updatedPhaseConfig = {
       ...phaseConfig,
       disabled: newDisabledState,
     };
     const newConfig = {
-      ...phasenConfig,
+      ...localPhasenConfig,
       [phaseKey]: updatedPhaseConfig,
     };
+    // Optimistisch aktualisieren
+    setLocalPhasenConfig(newConfig);
+    // Mit Backend synchronisieren
     base44.entities.Lernpakete.update(paket.id, { phasen_konfiguration: newConfig }).then(() => {
       queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+    }).catch(() => {
+      // Fehler: Revert auf alten State
+      setLocalPhasenConfig(localPhasenConfig);
     });
   };
 
@@ -654,8 +661,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-muted-foreground">Lernphasen</h3>
         {PHASES.map(phase => {
-          const phasenConfig = paket.phasen_konfiguration || {};
-          const phaseConfig = phasenConfig[phase.key] || {};
+          const phaseConfig = localPhasenConfig[phase.key] || {};
           const isDisabled = phaseConfig.disabled === true;
           const isExpanded = expandedPhase === phase.key;
 
