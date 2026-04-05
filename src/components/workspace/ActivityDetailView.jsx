@@ -161,32 +161,40 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
     try {
       // ✅ Erst einheitId laden, DANN speichern
       let einheitId = null;
-      if (activityRecord.lernpaket_id) {
-        const paket = await base44.entities.Lernpakete.get(activityRecord.lernpaket_id);
-        einheitId = paket?.einheit_id || null;
+      if (activityRecord?.lernpaket_id) {
+        try {
+          const paket = await base44.entities.Lernpakete.get(activityRecord.lernpaket_id);
+          einheitId = paket?.einheit_id || null;
+        } catch (e) {
+          console.warn('[ActivityDetailView] Failed to load parent Lernpaket:', e);
+        }
       }
       
-      await base44.functions.invoke('updateActivitySecure', {
+      const response = await base44.functions.invoke('updateActivitySecure', {
         activityId: activityRecord.id,
         fieldValues: formData,
         einheitId,
         targetFach: einheitFach,
       });
-      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-      setOriginalFormData({ ...formData });
-      try { localStorage.removeItem(`draft_activity_${activityRecord.id}`); setHasDraft(false); } catch {}
-      toast.success('Aktivität gespeichert.');
-      if (andExit) await doExitEditMode();
+
+      if (response?.data?.success) {
+        queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+        setOriginalFormData({ ...formData });
+        try { localStorage.removeItem(`draft_activity_${activityRecord.id}`); setHasDraft(false); } catch {}
+        toast.success('Aktivität gespeichert.');
+        if (andExit) await doExitEditMode();
+      }
     } catch (err) {
       const status = err?.response?.status;
       const code = err?.response?.data?.code;
+      const message = err?.response?.data?.error || err?.message || 'Unbekannter Fehler';
+      
       if (status === 409 && code === 'LOCK_NOT_OWNED') {
         toast.error('Sperre wurde extern aufgehoben. Bearbeitungsmodus wird beendet.');
-        setSaving(false);
         await doExitEditMode();
         return;
       } else if (status === 400) {
-        toast.error('Erforderliche Parameter fehlen. Seite neu laden.');
+        toast.error('Erforderliche Parameter fehlen: ' + message);
       } else if (status === 409) {
         toast.error('Versionskollision – bitte Seite neu laden.');
       } else if (status === 403) {
@@ -194,7 +202,8 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
       } else if (status === 429) {
         toast.error('Zu viele Anfragen. Bitte warten.');
       } else {
-        toast.error(`Fehler beim Speichern: ${err?.response?.data?.error || err.message}`);
+        console.error('[ActivityDetailView] Save error:', err);
+        toast.error('Fehler beim Speichern: ' + message);
       }
     } finally {
       setSaving(false);
