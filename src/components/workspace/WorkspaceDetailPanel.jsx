@@ -512,21 +512,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
     await doReleaseLock();
   };
 
-  const updateLernziel = useMutation({
-    mutationFn: ({ id, data }) => base44.functions.invoke('updateLernpaketSecure', {
-      paketId: paket.id,
-      updates: {},
-      expectedLockVersion: paket.lock_version,
-      lernzielUpdates: [{ id, data }],
-    }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lernziele'] });
-      setEditLernzielId(null);
-      setEditLernzielData(null);
-      toast.success('Lernziel gespeichert.');
-    },
-    onError: () => toast.error('Fehler beim Speichern des Lernziels.'),
-  });
+
 
   const PHASES = [
     { key: 'Input', label: 'Input (Erarbeitung)', icon: '📚', defaultDisabled: false },
@@ -852,8 +838,24 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditLernzielId(null)}>Abbrechen</Button>
             <Button
-              onClick={() => updateLernziel.mutate({ id: editLernzielId, data: editLernzielData })}
-              disabled={updateLernziel.isPending}
+              onClick={async () => {
+                if (!editLernzielId || !editLernzielData) return;
+                try {
+                  await base44.functions.invoke('updateLernpaketSecure', {
+                    paketId: paket.id,
+                    updates: {},
+                    expectedLockVersion: paket.lock_version,
+                    lernzielUpdates: [{ id: editLernzielId, data: editLernzielData }],
+                  });
+                  queryClient.invalidateQueries({ queryKey: ['lernziele'] });
+                  setEditLernzielId(null);
+                  setEditLernzielData(null);
+                  toast.success('Lernziel gespeichert.');
+                } catch (error) {
+                  console.error('Fehler beim Speichern des Lernziels:', error);
+                  toast.error('Fehler beim Speichern des Lernziels.');
+                }
+              }}
             >
               Speichern
             </Button>
