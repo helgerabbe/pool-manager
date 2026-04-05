@@ -1134,6 +1134,7 @@ export default function WorkspaceDetailPanel({
 
   const [lernpaketFormOpen, setLernpaketFormOpen] = useState(false);
   const [lernzielFormOpen,  setLernzielFormOpen]  = useState(false);
+  const [lernzielPaketId, setLernzielPaketId] = useState(null);
   const [aufgabeFormOpen,   setAufgabeFormOpen]   = useState(false);
   const [editEinheitOpen,   setEditEinheitOpen]   = useState(false);
   const queryClient = useQueryClient();
@@ -1160,15 +1161,24 @@ export default function WorkspaceDetailPanel({
   
   const createLernziel = useMutation({
     mutationFn: (data) => {
-      if (!data.formulierung_fachsprache?.trim() || !data.lernpaket_id?.trim()) {
-        throw new Error('Formulierung und Lernpaket sind erforderlich');
+      const paketId = lernzielPaketId || selectedNode?.paketId || selectedNode?.data?.lernpaket_id;
+      if (!data.formulierung_fachsprache?.trim()) {
+        throw new Error('Formulierung ist erforderlich');
+      }
+      if (!paketId) {
+        throw new Error('Lernpaket-ID fehlt');
       }
       return base44.entities.Lernziele.create({
         ...data,
-        lernpaket_id: selectedNode?.paketId || selectedNode?.data?.lernpaket_id,
+        lernpaket_id: paketId,
       });
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lernziele'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lernziele'] });
+      setLernzielFormOpen(false);
+      setLernzielPaketId(null);
+      toast.success('Lernziel erstellt.');
+    },
     onError: (error) => {
       console.error('Fehler beim Erstellen des Lernziels:', error);
       toast.error(`Fehler: ${error.message}`);
@@ -1225,13 +1235,19 @@ export default function WorkspaceDetailPanel({
           userEmail={userEmail}
           istAdmin={istAdmin}
           onNavigate={onNavigate}
-          onNewLernziel={() => setLernzielFormOpen(true)}
+          onNewLernziel={() => {
+            setLernzielPaketId(paket.id);
+            setLernzielFormOpen(true);
+          }}
           onDelete={() => onDeleteLernpaket(paket.id)}
         />
         <LernzielForm
           open={lernzielFormOpen}
-          onOpenChange={setLernzielFormOpen}
-          onSubmit={(data) => createLernziel.mutate({ ...data, lernpaket_id: paket.id })}
+          onOpenChange={(open) => {
+            setLernzielFormOpen(open);
+            if (!open) setLernzielPaketId(null);
+          }}
+          onSubmit={(data) => createLernziel.mutate(data)}
         />
       </>
     );
