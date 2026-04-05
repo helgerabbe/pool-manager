@@ -6,11 +6,13 @@ import { Users } from 'lucide-react';
 
 const HEARTBEAT_INTERVAL = 15_000;
 const STALE_THRESHOLD_MS = 35_000;
+const DEBOUNCE_MS = 2_000;
 
 export default function Dashboard() {
   const [onlineUsers, setOnlineUsers] = useState([]);
   const myRecordIdRef = useRef(null);
   const heartbeatRef = useRef(null);
+  const debounceTimerRef = useRef(null);
 
   // Benutzer-Entity für Rollen (Administrator, Fachschaftsleitung etc.)
   const { data: benutzerList = [] } = useQuery({
@@ -29,9 +31,14 @@ export default function Dashboard() {
       const now = new Date().toISOString();
 
       // Bestehende eigene Einträge (alle current_view) bereinigen
-      const existing = await base44.entities.ActiveUsersPresence.filter({
-        user_email: user.email,
-      });
+      let existing = [];
+      try {
+        existing = await base44.entities.ActiveUsersPresence.filter({
+          user_email: user.email,
+        });
+      } catch (err) {
+        console.warn('[Dashboard] Filter failed:', err.message);
+      }
 
       let recordId;
       if (existing.length > 0) {
@@ -84,7 +91,10 @@ export default function Dashboard() {
       await loadPresence();
 
       const unsubscribe = base44.entities.ActiveUsersPresence.subscribe(() => {
-        loadPresence();
+        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = setTimeout(() => {
+          loadPresence();
+        }, DEBOUNCE_MS);
       });
 
       heartbeatRef.current = setInterval(() => {
@@ -103,6 +113,7 @@ export default function Dashboard() {
     const cleanup = () => {
       mounted = false;
       clearInterval(heartbeatRef.current);
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       if (unsubscribeFn) unsubscribeFn();
       if (myRecordIdRef.current) {
         base44.entities.ActiveUsersPresence.delete(myRecordIdRef.current);
