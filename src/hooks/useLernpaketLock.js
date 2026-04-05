@@ -2,11 +2,10 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
 
-const HEARTBEAT_INTERVAL = 30 * 1000; // alle 30 Sekunden (aligned mit Aktivitäten)
+const HEARTBEAT_INTERVAL = 30 * 1000; // alle 30 Sekunden
 
 /**
- * Hook zum Verwalten des Lernpaket-Locks.
- * Gibt Methoden zum Sperren/Entsperren und den aktuellen Lock-Status zurück.
+ * Hook zum Verwalten des Lernpaket-Locks mit acquireLockSecure.
  */
 export function useLernpaketLock(paketId, userEmail, onLockLost) {
   const [isLocking, setIsLocking] = useState(false);
@@ -16,10 +15,6 @@ export function useLernpaketLock(paketId, userEmail, onLockLost) {
   const onLockLostRef = useRef(onLockLost);
   onLockLostRef.current = onLockLost;
 
-  const callLockApi = useCallback(async (action) => {
-    return base44.functions.invoke('lernpaketLock', { action, paket_id: paketId });
-  }, [paketId]);
-
   const stopHeartbeat = useCallback(() => {
     if (heartbeatRef.current) {
       clearInterval(heartbeatRef.current);
@@ -27,33 +22,19 @@ export function useLernpaketLock(paketId, userEmail, onLockLost) {
     }
   }, []);
 
-  const startHeartbeat = useCallback((onLockLost) => {
+  const startHeartbeat = useCallback(() => {
     stopHeartbeat();
     heartbeatRef.current = setInterval(async () => {
       try {
-        const res = await callLockApi('heartbeat');
-        // Warnung: Themenfeld gelöscht oder Einheit verschwunden
-        if (res?.data?.warning) {
-          setLockError(res.data.warning);
-        }
-        if (res?.data?.stale) {
-          stopHeartbeat();
-          setLockError('Die übergeordnete Einheit existiert nicht mehr.');
-        }
+        // Prüfe ob Lock noch aktiv ist via Query Invalidation
+        await queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
       } catch (e) {
-        // HTTP 403 = Lock nicht mehr vorhanden (z.B. nach Admin Force-Unlock oder Reaper)
-        if (e?.response?.status === 403) {
-          console.warn('[useLernpaketLock] Heartbeat 403: Lock verloren (extern aufgehoben)');
-          stopHeartbeat();
-          queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-          if (onLockLost) onLockLost();
-        }
-        // Andere Fehler ignorieren (Netzwerk-Fluktuationen)
+        // Fehler ignorieren
       }
     }, HEARTBEAT_INTERVAL);
-  }, [callLockApi, stopHeartbeat, queryClient]);
+  }, [stopHeartbeat, queryClient]);
 
-  // Cleanup beim Unmount (Seite schließen / Tab wechseln)
+  // Cleanup beim Unmount
   useEffect(() => {
     return () => stopHeartbeat();
   }, [stopHeartbeat]);
@@ -62,58 +43,69 @@ export function useLernpaketLock(paketId, userEmail, onLockLost) {
     setIsLocking(true);
     setLockError(null);
     try {
-      const res = await callLockApi('lock');
+      const res = await base44.functions.invoke('acquireLockSecure', {
+        entityName: 'Lernpakete',
+        entityId: paketId,
+      });
+      console.log('[useLernpaketLock] acquireLockSecure response:', res?.data);
+      
       if (res?.data?.success) {
         queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-        startHeartbeat(onLockLostRef.current);
+        startHeartbeat();
         return { success: true };
-      } else if (res?.data?.structural_lock) {
-        // HTTP 423: Structural Lock aktiv
-        setLockError(res.data.message || 'Struktur wird gerade angepasst.');
-        return { success: false, structural_lock: true, message: res.data.message };
       } else {
-        setLockError(res?.data?.message || res?.data?.locked_by || 'Gesperrt');
-        return { success: false, locked_by: res?.data?.locked_by };
+        setLockError(res?.data?.message || 'Lock konnte nicht erworben werden.');
+        return { success: false, locked_by: res?.data?.lockedBy };
       }
     } catch (e) {
-      // Axios wirft bei 4xx — response ist in e.response
+      console.error('[useLernpaketLock] acquireLockSecure error:', e);
+      const status = e?.response?.status;
       const data = e?.response?.data;
-      if (data?.structural_lock) {
-        const msg = data.message || 'Die Struktur der Einheit wird gerade angepasst.';
+      
+      if (status === 423) {
+        // Structural Lock aktiv
+        const msg = data?.message || 'Die Struktur wird gerade angepasst.';
         setLockError(msg);
         return { success: false, structural_lock: true, message: msg };
+      } else if (status === 409) {
+        // Lock von jemand anderem
+        setLockError(data?.message || `Wird gerade von ${data?.lockedBy} bearbeitet.`);
+        return { success: false, locked_by: data?.lockedBy };
       }
-      setLockError('Fehler beim Sperren');
+      
+      setLockError('Fehler beim Sperren.');
       return { success: false };
     } finally {
       setIsLocking(false);
     }
-  }, [callLockApi, queryClient, startHeartbeat]);
+  }, [paketId, queryClient, startHeartbeat]);
 
-  const releaseLock = useCallback(async (paketId) => {
+  const releaseLock = useCallback(async () => {
     stopHeartbeat();
     try {
-      // Sichere Backend-Funktion statt direktem SDK-Write
       await base44.functions.invoke('releaseLockSecure', {
         entityName: 'Lernpakete',
-        entityId: paketId || paketId,
+        entityId: paketId,
       });
       queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-    } catch {
-      // Fallback: direkt via lernpaketLock
-      await callLockApi('unlock').catch(() => {});
+    } catch (e) {
+      console.error('[useLernpaketLock] releaseLockSecure error:', e);
       queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
     }
-  }, [callLockApi, queryClient, stopHeartbeat]);
+  }, [paketId, queryClient, stopHeartbeat]);
 
   const forceUnlock = useCallback(async () => {
     stopHeartbeat();
-    await base44.functions.invoke('releaseLockSecure', {
-      entityName: 'Lernpakete',
-      entityId: paketId,
-    }).catch(() => callLockApi('unlock'));
+    try {
+      await base44.functions.invoke('releaseLockSecure', {
+        entityName: 'Lernpakete',
+        entityId: paketId,
+      });
+    } catch (e) {
+      console.error('[useLernpaketLock] forceUnlock error:', e);
+    }
     queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-  }, [callLockApi, queryClient, stopHeartbeat, paketId]);
+  }, [paketId, queryClient, stopHeartbeat]);
 
   return { acquireLock, releaseLock, forceUnlock, isLocking, lockError };
 }
