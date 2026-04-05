@@ -54,6 +54,7 @@ Deno.serve(async (req) => {
     }
 
     const now = new Date().toISOString();
+    const STRUCT_LOCK_TIMEOUT_MS = 60 * 60 * 1000;
 
     // ✅ STRUCTURAL LOCK: Spezialpfad für Einheiten-Strukturbearbeitung
     if (lockType === 'structural' && entityName === 'Einheiten') {
@@ -85,7 +86,6 @@ Deno.serve(async (req) => {
 
     // ✅ SCHRITT 0: Szenario 4 – Structural Lock der übergeordneten Einheit prüfen
     // (gilt für LernpaketPhaseAktivitaet und Lernpakete)
-    const STRUCT_LOCK_TIMEOUT_MS = 60 * 60 * 1000;
     if (entityName === 'LernpaketPhaseAktivitaet' || entityName === 'Lernpakete') {
       let einheitId = current.einheit_id;
 
