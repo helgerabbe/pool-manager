@@ -10,6 +10,7 @@ export default function PhaseActivitiesList({
   paket,
   phase,
   kannBearbeiten,
+  userEmail,
   onSelectActivity,
   onGoToTaskWorkshop = null,
   lernziele = [],
@@ -65,8 +66,11 @@ export default function PhaseActivitiesList({
 
   // Nur aktive Aktivitäten für die aktuelle Phase aus dem Katalog
   const phaseAktivitaeten = aktivitaetenKatalog.filter(a =>
-    a.phase === phase && a.is_active === true
+   a.phase === phase && a.is_active === true
   );
+
+  // Bearbeitungsschutz: Nur der User mit Lock darf Aktivitäten hinzufügen/löschen
+  const paketLockedByMe = paket.locked_by_user === userEmail;
 
   if (aktivitaeten.length === 0) {
     return (
@@ -74,7 +78,7 @@ export default function PhaseActivitiesList({
         <p className="text-sm text-muted-foreground italic">
           Keine Aktivitäten zugeordnet
         </p>
-        {kannBearbeiten && (
+        {kannBearbeiten && paketLockedByMe && (
           <div className="space-y-2">
             <Label className="text-xs">Aktivität hinzufügen</Label>
             <select
@@ -129,7 +133,7 @@ export default function PhaseActivitiesList({
                   )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  {kannBearbeiten && (
+                  {kannBearbeiten && paketLockedByMe && (
                     <>
                       {onGoToTaskWorkshop && (
                         <Button
@@ -176,7 +180,7 @@ export default function PhaseActivitiesList({
           );
         })}
 
-      {kannBearbeiten && (
+      {kannBearbeiten && paketLockedByMe && (
         <div className="space-y-2">
           <Label className="text-xs">Weitere Aktivität hinzufügen</Label>
           <select
