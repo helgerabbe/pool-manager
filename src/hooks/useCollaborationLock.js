@@ -171,6 +171,10 @@ export function useCollaborationLock(
           clearInterval(heartbeatRef.current);
           heartbeatRef.current = null;
         }
+        // Frühwarnung ab Versuch 2
+        if (heartbeatRetryRef.current === HEARTBEAT_RETRY_LIMIT - 1) {
+          console.warn('[useCollaborationLock] Heartbeat warning: 1 retry left before lock loss');
+        }
       }
     };
 

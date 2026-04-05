@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Edit, Save, X, FileText, AlertTriangle, Lock, WifiOff, RotateCcw, PenLine, Loader2 } from 'lucide-react';
+import { Edit, Save, X, FileText, AlertTriangle, Lock, Unlock, WifiOff, RotateCcw, PenLine, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import ApprovalStatusBadge from '@/components/workspace/ApprovalStatusBadge';
 import ApprovalActionButton from '@/components/workspace/ApprovalActionButton';
@@ -23,7 +23,9 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
   const [exitModalOpen, setExitModalOpen] = useState(false);
   const [acquiringLock, setAcquiringLock] = useState(false);
 
-  const { permissions } = useRBAC();
+  const { permissions, rolle } = useRBAC();
+  const [forceUnlocking, setForceUnlocking] = useState(false);
+  const istAdminOderFachschaft = rolle === 'Administrator' || rolle === 'Fachschaftsleitung' || permissions?.istAdmin;
 
   useEffect(() => {
     base44.auth.me().then(u => setUserEmail(u?.email || null));
@@ -200,6 +202,23 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
     }
   };
 
+  // Admin Force-Unlock
+  const handleForceUnlock = async () => {
+    setForceUnlocking(true);
+    try {
+      await base44.functions.invoke('releaseLockSecure', {
+        entityName: 'LernpaketPhaseAktivitaet',
+        entityId: activityRecord.id,
+      });
+      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      toast.success('Sperre wurde aufgehoben.');
+    } catch {
+      toast.error('Sperre konnte nicht aufgehoben werden.');
+    } finally {
+      setForceUnlocking(false);
+    }
+  };
+
   const handleRestoreDraft = () => {
     const draftKey = `draft_activity_${activityRecord.id}`;
     try {
@@ -293,6 +312,23 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
         </div>
         <div className="flex gap-2 shrink-0 flex-col items-end">
           <div className="flex gap-2 flex-wrap justify-end">
+            {/* Admin Force-Unlock: sichtbar wenn Element von jemand anderem gesperrt ist */}
+            {lockedByOther && istAdminOderFachschaft && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleForceUnlock}
+                disabled={forceUnlocking}
+                className="gap-2 border-amber-400 text-amber-800 hover:bg-amber-50"
+                title={`Sperre von ${activityRecord.locked_by_user} aufheben (Admin)`}
+              >
+                {forceUnlocking
+                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  : <Unlock className="w-3.5 h-3.5" />
+                }
+                Sperre aufheben
+              </Button>
+            )}
             {!editMode ? (
               <Button
                 size="sm"
