@@ -728,6 +728,20 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                       >
                         <Edit className="w-3.5 h-3.5" />
                       </button>
+                      <button
+                        onClick={() => {
+                          if (window.confirm('Dieses Lernziel wirklich löschen?')) {
+                            base44.entities.Lernziele.delete(lz.id).then(() => {
+                              queryClient.invalidateQueries({ queryKey: ['lernziele'] });
+                              toast.success('Lernziel gelöscht.');
+                            }).catch(() => toast.error('Fehler beim Löschen.'));
+                          }
+                        }}
+                        className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                        title="Löschen"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   )}
                 </div>
