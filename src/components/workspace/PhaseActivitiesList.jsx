@@ -104,16 +104,17 @@ export default function PhaseActivitiesList({
   }
 
   return (
-    <div className="space-y-3">
-      {aktivitaeten
-        .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
-        .map((activity) => {
-          const katalog = aktivitaetenKatalog.find(a => a.id === activity.aktivitaet_id);
-          return (
-            <div
-              key={activity.id}
-              className="p-3 rounded-lg bg-white border border-border hover:border-primary/30 transition-colors"
-            >
+    <div className="space-y-2">
+      <div className="ml-4 border-l-2 border-primary/30 pl-4 space-y-2">
+        {aktivitaeten
+          .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
+          .map((activity) => {
+            const katalog = aktivitaetenKatalog.find(a => a.id === activity.aktivitaet_id);
+            return (
+              <div
+                key={activity.id}
+                className="p-3 rounded-lg bg-white border border-border hover:border-primary/30 transition-colors"
+              >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -177,13 +178,13 @@ export default function PhaseActivitiesList({
               
 
             </div>
-          );
-        })}
+            );
+            })}
 
-      {kannBearbeiten && paketLockedByMe && (
-        <div className="space-y-2">
-          <Label className="text-xs">Weitere Aktivität hinzufügen</Label>
-          <select
+            {kannBearbeiten && paketLockedByMe && (
+            <div className="space-y-2">
+            <Label className="text-xs">Weitere Aktivität hinzufügen</Label>
+            <select
             value={newActivityId}
             onChange={(e) => {
               if (e.target.value) {
@@ -191,16 +192,17 @@ export default function PhaseActivitiesList({
               }
             }}
             className="w-full px-2 py-1.5 text-sm rounded-lg border border-input bg-white"
-          >
+            >
             <option value="">-- Aktivität wählen --</option>
             {phaseAktivitaeten.map((akt) => (
               <option key={akt.id} value={akt.id}>
                 {akt.name}
               </option>
             ))}
-          </select>
-        </div>
-      )}
-    </div>
+            </select>
+            </div>
+            )}
+            </div>
+            </div>
   );
 }
