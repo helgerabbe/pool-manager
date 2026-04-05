@@ -296,9 +296,57 @@ Deno.serve(async (req) => {
     // 9. ✅ Berechtigung OK: Status setzen
     const newStatus = action === 'approve' ? 'approved' : 'draft';
 
-    await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(entityId, {
+    // ✅ NEU: Bei Freigabe (approve) → Standardwerte für leere Felder befüllen
+    let updateData = {
       content_status: newStatus
-    });
+    };
+
+    if (action === 'approve') {
+      // Laden der Aktivität aus dem Katalog um die Schema-Felder zu sehen
+      const katalog = await base44.asServiceRole.entities.AktivitaetenKatalog.filter({
+        id: aktivitaet.aktivitaet_id
+      });
+      const katalogEntry = katalog[0];
+
+      if (katalogEntry && katalogEntry.form_schema && Array.isArray(katalogEntry.form_schema)) {
+        const currentValues = aktivitaet.field_values || {};
+        const filledValues = { ...currentValues };
+
+        // Durchlaufe alle Schema-Felder und befülle leere mit Standardwerten
+        for (const field of katalogEntry.form_schema) {
+          const fieldName = field.field_name;
+          const isEmpty = !filledValues[fieldName] || 
+                         (Array.isArray(filledValues[fieldName]) && filledValues[fieldName].length === 0);
+
+          if (isEmpty && field.required) {
+            // Standardwert basierend auf Feldtyp
+            switch (field.type) {
+              case 'text':
+              case 'textarea':
+              case 'url':
+                filledValues[fieldName] = `[${field.label}: Wird noch ausgefüllt]`;
+                break;
+              case 'number':
+                filledValues[fieldName] = 0;
+                break;
+              case 'select':
+                // Nutze erste Option oder Leer-String
+                filledValues[fieldName] = field.options?.[0]?.value || '';
+                break;
+              case 'json':
+                filledValues[fieldName] = [];
+                break;
+              default:
+                filledValues[fieldName] = '';
+            }
+          }
+        }
+
+        updateData.field_values = filledValues;
+      }
+    }
+
+    await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(entityId, updateData);
 
     // 10. Cascade: Alle Master-Aufgaben + Klone aktualisieren
     let cascadeErrors = [];

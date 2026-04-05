@@ -253,12 +253,20 @@ export default function ApprovalActionButton({
               <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
               <div>
                 <AlertDialogTitle>Inhalt unvollständig</AlertDialogTitle>
-                <AlertDialogDescription className="mt-2 space-y-2">
-                  <p>Folgende Felder sind noch nicht ausgefüllt:</p>
+                <AlertDialogDescription className="mt-2 space-y-3">
+                  <p className="font-medium text-foreground">Folgende Felder sind noch nicht ausgefüllt:</p>
                   <ul className="list-disc pl-5 space-y-1 text-sm">
                     {missingFields.map((f, i) => <li key={i}>{f}</li>)}
                   </ul>
-                  <p className="pt-1">Trotzdem {isActivity ? 'freigeben' : 'als fertig markieren'}?</p>
+                  
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-1 text-sm">
+                    <p className="font-medium text-blue-900">ℹ️ Das passiert bei der Freigabe:</p>
+                    <p className="text-blue-800">
+                      Die leeren Felder werden automatisch mit Standardwerten gefüllt. Sie können diese später noch in Moodle oder hier anpassen und aktualisieren.
+                    </p>
+                  </div>
+
+                  <p className="pt-1 text-foreground font-medium">Trotzdem {isActivity ? 'freigeben' : 'als fertig markieren'}?</p>
                 </AlertDialogDescription>
               </div>
             </div>
