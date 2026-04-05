@@ -442,46 +442,44 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
               </div>
             )}
           </div>
-          </section>
 
-          </div>
-
-          {/* ── Sektion 3: Lernpakete im Bearbeitungsmodus ────────────────────── */}
-          <section className="mt-8 space-y-5">
+          {/* ── Lernpakete im Bearbeitungsmodus (in rechter Spalte) ───────────── */}
           <div>
-          <h2 className="text-lg font-semibold">Lernpakete im Bearbeitungsmodus</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">Zeigt an, welche Lernpakete gerade von jemandem bearbeitet werden.</p>
+           <h2 className="text-lg font-semibold">Lernpakete im Bearbeitungsmodus</h2>
+           <p className="text-sm text-muted-foreground mt-0.5">Zeigt an, welche Lernpakete gerade bearbeitet werden.</p>
           </div>
 
           <div className="space-y-3 p-5 rounded-xl border bg-card">
-          {activeLocks.length === 0 ? (
-           <p className="text-sm text-muted-foreground text-center py-6 border border-dashed rounded-lg">Keine Lernpakete werden gerade bearbeitet.</p>
-          ) : (
-           activeLocks.map(paket => (
-             <div key={paket.id} className="flex items-start gap-3 p-3 rounded-lg border bg-background hover:border-primary/30 transition-colors">
-               <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-sm font-bold text-amber-700 shrink-0">
-                 <Clock className="w-4 h-4" />
-               </div>
-               <div className="flex-1 min-w-0">
-                 <p className="text-sm font-medium truncate">{paket.titel_des_pakets}</p>
-                 <p className="text-xs text-muted-foreground mt-0.5">
-                   Bearbeitet von <strong>{paket.locked_by_email}</strong>
-                 </p>
-                 {paket.locked_at && (
-                   <p className="text-xs text-muted-foreground/60 mt-1">
-                     Seit {new Date(paket.locked_at).toLocaleString('de-DE', {
-                       hour: '2-digit',
-                       minute: '2-digit',
-                       second: '2-digit'
-                     })}
+           {activeLocks.length === 0 ? (
+             <p className="text-sm text-muted-foreground text-center py-6 border border-dashed rounded-lg">Keine Lernpakete werden gerade bearbeitet.</p>
+           ) : (
+             activeLocks.map(paket => (
+               <div key={paket.id} className="flex items-start gap-3 p-3 rounded-lg border bg-background hover:border-primary/30 transition-colors">
+                 <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-sm font-bold text-amber-700 shrink-0">
+                   <Clock className="w-4 h-4" />
+                 </div>
+                 <div className="flex-1 min-w-0">
+                   <p className="text-sm font-medium truncate">{paket.titel_des_pakets}</p>
+                   <p className="text-xs text-muted-foreground mt-0.5">
+                     Bearbeitet von <strong>{paket.locked_by_email}</strong>
                    </p>
-                 )}
+                   {paket.locked_at && (
+                     <p className="text-xs text-muted-foreground/60 mt-1">
+                       Seit {new Date(paket.locked_at).toLocaleString('de-DE', {
+                         hour: '2-digit',
+                         minute: '2-digit',
+                         second: '2-digit'
+                       })}
+                     </p>
+                   )}
+                 </div>
                </div>
-             </div>
-           ))
-          )}
+             ))
+           )}
           </div>
           </section>
+
+          </div>
           </div>
           );
           }
