@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, Plus, Trash2, Crown, Edit, Eye, Lock, Unlock, ShieldAlert } from 'lucide-react';
+import { Save, Plus, Trash2, Crown, Edit, Eye, Lock, Unlock, ShieldAlert, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useDraftState } from '@/hooks/useDraftState';
@@ -145,6 +145,15 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
     queryFn: () => base44.entities.User.list(),
     enabled: isLeitung,
   });
+
+  const { data: allLernpakete = [] } = useQuery({
+    queryKey: ['lernpakete'],
+    queryFn: () => base44.entities.Lernpakete.list(),
+  });
+
+  // Gefiltert: nur Lernpakete der aktuellen Einheit, die gerade gesperrt sind
+  const paketeFuerEinheit = allLernpakete.filter(p => p.einheit_id === einheit.id);
+  const activeLocks = paketeFuerEinheit.filter(p => p.is_locked && p.locked_by_email);
 
   // Für Mitarbeiter hinzufügen: nur Fachlehrkräfte
   const availableFachlehrkraefteForMitarbeiter = allUsers.filter(u => 
@@ -433,9 +442,46 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
               </div>
             )}
           </div>
-        </section>
+          </section>
 
-      </div>
-    </div>
-  );
-}
+          </div>
+
+          {/* ── Sektion 3: Lernpakete im Bearbeitungsmodus ────────────────────── */}
+          <section className="mt-8 space-y-5">
+          <div>
+          <h2 className="text-lg font-semibold">Lernpakete im Bearbeitungsmodus</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">Zeigt an, welche Lernpakete gerade von jemandem bearbeitet werden.</p>
+          </div>
+
+          <div className="space-y-3 p-5 rounded-xl border bg-card">
+          {activeLocks.length === 0 ? (
+           <p className="text-sm text-muted-foreground text-center py-6 border border-dashed rounded-lg">Keine Lernpakete werden gerade bearbeitet.</p>
+          ) : (
+           activeLocks.map(paket => (
+             <div key={paket.id} className="flex items-start gap-3 p-3 rounded-lg border bg-background hover:border-primary/30 transition-colors">
+               <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-sm font-bold text-amber-700 shrink-0">
+                 <Clock className="w-4 h-4" />
+               </div>
+               <div className="flex-1 min-w-0">
+                 <p className="text-sm font-medium truncate">{paket.titel_des_pakets}</p>
+                 <p className="text-xs text-muted-foreground mt-0.5">
+                   Bearbeitet von <strong>{paket.locked_by_email}</strong>
+                 </p>
+                 {paket.locked_at && (
+                   <p className="text-xs text-muted-foreground/60 mt-1">
+                     Seit {new Date(paket.locked_at).toLocaleString('de-DE', {
+                       hour: '2-digit',
+                       minute: '2-digit',
+                       second: '2-digit'
+                     })}
+                   </p>
+                 )}
+               </div>
+             </div>
+           ))
+          )}
+          </div>
+          </section>
+          </div>
+          );
+          }
