@@ -45,6 +45,32 @@
       ],
       "description": "Schwierigkeitsgrad (1=leicht, 2=mittel, 3=schwer, null=keine Angabe)"
     },
+    "ergebnis_form": {
+      "type": "string",
+      "enum": [
+        "Flie\u00dftext / Essay",
+        "Tabelle / Matrix",
+        "Pr\u00e4sentation / Folien",
+        "Schema / Konzept-Map / Zeichnung",
+        "Stichpunktartige \u00dcbersicht",
+        "Mischform / Offen"
+      ],
+      "description": "Erwartete Form des Ergebnisses"
+    },
+    "ergebnis_dateiformat": {
+      "type": "string",
+      "enum": [
+        "Textdokument (Word/PDF)",
+        "Bilddatei (JPG/PNG)",
+        "Pr\u00e4sentationsdatei (PowerPoint/PDF)",
+        "Offen / Beliebig"
+      ],
+      "description": "Erwartetes Dateiformat des Ergebnisses"
+    },
+    "musterloesung": {
+      "type": "string",
+      "description": "Musterl\u00f6sung / Erwartungshorizont als Rich-Text"
+    },
     "materialien": {
       "type": "array",
       "description": "Array von Materialien/Ressourcen",

@@ -11,6 +11,7 @@ import AufgabeKompetenzMapping from '@/components/allgemeineAufgaben/AufgabeKomp
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
 import InlineBasisLernzielSelector from '@/components/allgemeineAufgaben/InlineBasisLernzielSelector';
 import PublishAllgemeineAufgabeButton from '@/components/allgemeineAufgaben/PublishAllgemeineAufgabeButton';
+import ErwartungshorizontTab from '@/components/allgemeineAufgaben/ErwartungshorizontTab';
 
 /**
  * Schwierigkeitsgrad-Anzeige (1-3 Sterne)
@@ -375,12 +376,13 @@ export default function AllgemeineAufgabenView({
             {/* Tabs für Angaben & Kompetenzen */}
             <Tabs defaultValue="angaben" className="flex-1 flex flex-col overflow-hidden">
               <TabsList className="mx-6 mt-3 bg-muted">
-                <TabsTrigger value="angaben" className="text-xs">Angaben</TabsTrigger>
-                <TabsTrigger value="kompetenzen" className="text-xs">Kompetenzen</TabsTrigger>
+                <TabsTrigger value="angaben" className="text-xs">Kernangaben</TabsTrigger>
+                <TabsTrigger value="erwartungshorizont" className="text-xs">Erwartungshorizont</TabsTrigger>
+                <TabsTrigger value="kompetenzen" className="text-xs">Kompetenzzuordnung</TabsTrigger>
                 <TabsTrigger value="ki-prompt" className="text-xs">KI-Tutor Prompt</TabsTrigger>
               </TabsList>
 
-              {/* Tab 1: Allgemeine Angaben */}
+              {/* Tab 1: Kernangaben */}
               <TabsContent value="angaben" className="flex-1 overflow-y-auto m-0">
                 <AllgemeineAngabenPanel
                   aufgabe={selectedAufgabe}
@@ -394,7 +396,15 @@ export default function AllgemeineAufgabenView({
                 />
               </TabsContent>
 
-              {/* Tab 2: Kompetenz-Zuordnung */}
+              {/* Tab 2: Erwartungshorizont */}
+              <TabsContent value="erwartungshorizont" className="flex-1 overflow-hidden m-0">
+                <ErwartungshorizontTab
+                  aufgabe={selectedAufgabe}
+                  kannBearbeiten={kannBearbeiten}
+                />
+              </TabsContent>
+
+              {/* Tab 3: Kompetenzzuordnung */}
               <TabsContent value="kompetenzen" className="flex-1 overflow-hidden m-0">
                <AufgabeKompetenzMapping
                  aufgabe={selectedAufgabe}
@@ -404,7 +414,7 @@ export default function AllgemeineAufgabenView({
                />
               </TabsContent>
 
-              {/* Tab 3: KI-Tutor Prompt */}
+              {/* Tab 4: KI-Tutor Prompt */}
               <TabsContent value="ki-prompt" className="flex-1 overflow-y-auto m-0">
                 <AITutorPromptPanel
                   aufgabe={selectedAufgabe}

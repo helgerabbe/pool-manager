@@ -241,15 +241,17 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
     schwierigkeitsgrad: null,
     themenfeld_id: null,
     materialien: [],
+    ergebnis_form: '',
+    ergebnis_dateiformat: '',
   });
 
   // Reset formData wenn initialData sich ändert (für Bearbeitung)
   React.useEffect(() => {
     if (open) {
       if (initialData) {
-        setFormData(initialData);
+        setFormData({ ergebnis_form: '', ergebnis_dateiformat: '', ...initialData });
       } else {
-        setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, themenfeld_id: null, materialien: [] });
+        setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, themenfeld_id: null, materialien: [], ergebnis_form: '', ergebnis_dateiformat: '' });
       }
     }
   }, [open, initialData]);
@@ -365,6 +367,42 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
               value={formData.schwierigkeitsgrad}
               onChange={(val) => setFormData({ ...formData, schwierigkeitsgrad: val })}
             />
+          </div>
+
+          {/* Abgabeform */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="ergebnis_form">Erwartete Form des Ergebnisses</Label>
+              <select
+                id="ergebnis_form"
+                value={formData.ergebnis_form || ''}
+                onChange={(e) => setFormData({ ...formData, ergebnis_form: e.target.value || '' })}
+                className="w-full h-9 px-3 border rounded-lg text-sm bg-white"
+              >
+                <option value="">-- Bitte wählen --</option>
+                <option>Fließtext / Essay</option>
+                <option>Tabelle / Matrix</option>
+                <option>Präsentation / Folien</option>
+                <option>Schema / Konzept-Map / Zeichnung</option>
+                <option>Stichpunktartige Übersicht</option>
+                <option>Mischform / Offen</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ergebnis_dateiformat">Erwartetes Dateiformat</Label>
+              <select
+                id="ergebnis_dateiformat"
+                value={formData.ergebnis_dateiformat || ''}
+                onChange={(e) => setFormData({ ...formData, ergebnis_dateiformat: e.target.value || '' })}
+                className="w-full h-9 px-3 border rounded-lg text-sm bg-white"
+              >
+                <option value="">-- Bitte wählen --</option>
+                <option>Textdokument (Word/PDF)</option>
+                <option>Bilddatei (JPG/PNG)</option>
+                <option>Präsentationsdatei (PowerPoint/PDF)</option>
+                <option>Offen / Beliebig</option>
+              </select>
+            </div>
           </div>
 
           {/* Materialien */}
