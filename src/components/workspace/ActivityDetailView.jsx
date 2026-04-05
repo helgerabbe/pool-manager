@@ -15,13 +15,14 @@ import UnsavedChangesExitModal from '@/components/workspace/UnsavedChangesExitMo
 
 export default function ActivityDetailView({ activityRecord, kannBearbeiten, queryClient, einheitFach }) {
   const [editMode, setEditMode] = useState(false);
-  const [formData, setFormData] = useState({});
-  const [originalFormData, setOriginalFormData] = useState({});
-  const [saving, setSaving] = useState(false);
-  const [userEmail, setUserEmail] = useState(null);
-  const [hasDraft, setHasDraft] = useState(false);
-  const [exitModalOpen, setExitModalOpen] = useState(false);
-  const [acquiringLock, setAcquiringLock] = useState(false);
+   const [formData, setFormData] = useState({});
+   const [originalFormData, setOriginalFormData] = useState({});
+   const [saving, setSaving] = useState(false);
+   const [userEmail, setUserEmail] = useState(null);
+   const [hasDraft, setHasDraft] = useState(false);
+   const [exitModalOpen, setExitModalOpen] = useState(false);
+   const [acquiringLock, setAcquiringLock] = useState(false);
+   const [lockAttempted, setLockAttempted] = useState(false);
 
   const { permissions, rolle } = useRBAC();
   const [forceUnlocking, setForceUnlocking] = useState(false);
@@ -31,13 +32,18 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
     base44.auth.me().then(u => setUserEmail(u?.email || null));
   }, []);
 
-  // Collaboration Lock mit Offline-Support (kein auto-acquisition via editMode)
+  // Collaboration Lock mit Offline-Support
+   // ✅ Hierarchie-Locking: Locke das Parent-Lernpaket, nicht die Activity
    const { acquireLock, releaseLock, isLocked: lockedByOther, retryCount, isOffline, lockLost } = useCollaborationLock(
      'LernpaketPhaseAktivitaet',
      ['lernpaketPhaseAktivitaeten'],
      activityRecord?.id,
      userEmail,
-     false  // Nicht automatisch locken – nur manuell via handleEnterEditMode
+     false,  // Nicht automatisch locken
+     undefined,  // onLockAcquired
+     undefined,  // onLockDenied
+     activityRecord?.lernpaket_id,  // ✅ Parent: Lernpaket
+     activityRecord?.lock_version  // ✅ Client-seitige Version
    );
 
   // Dirty-State: hat der Nutzer etwas geändert?
@@ -121,10 +127,15 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
   // Permission check: Admins OR Fachlehrkräfte mit relevanter Berechtigung dürfen bearbeiten
    const kannInhalteBearbeiten = permissions.istAdmin || (einheitFach && permissions.kannInhalteBearbeiten(einheitFach)) || kannBearbeiten;
 
-  // Bearbeitungsmodus aktivieren (Lock erwerben)
+  // Bearbeitungsmodus aktivieren (Lock erwerben) – mit Debouncing
   const handleEnterEditMode = async () => {
+    // ✅ Debouncing: Button sofort deaktivieren, damit keine Doppel-Klicks möglich sind
+    if (lockAttempted || acquiringLock) return;
+    setLockAttempted(true);
     setAcquiringLock(true);
+
     try {
+      // ✅ Hierarchie-Lock: Locke das Parent-Lernpaket, nicht die Activity
       const ok = await acquireLock();
       if (ok) {
         setEditMode(true);
@@ -137,6 +148,7 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
       toast.error('Fehler beim Sperren der Aktivität. Bitte versuchen Sie es erneut.');
     } finally {
       setAcquiringLock(false);
+      setLockAttempted(false);
     }
   };
 

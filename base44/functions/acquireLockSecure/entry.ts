@@ -31,27 +31,40 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { entityName, entityId, lockType } = await req.json();
+    const { entityName, entityId, lockType, parentId, clientLockVersion } = await req.json();
 
-    if (!entityName || !entityId) {
-      return Response.json(
-        { error: 'Missing entityName or entityId' },
-        { status: 400 }
-      );
-    }
+     if (!entityName || !entityId) {
+       return Response.json(
+         { error: 'Missing entityName or entityId' },
+         { status: 400 }
+       );
+     }
 
-    // ✅ Entity-Zugriff mit Service-Role
-    let entityRecords;
-    try {
-      entityRecords = await base44.asServiceRole.entities[entityName].filter({ id: entityId });
-    } catch {
-      return Response.json({ error: 'Record not found', code: 'NOT_FOUND' }, { status: 404 });
-    }
-    const current = entityRecords[0];
+     // ✅ Entity-Zugriff mit Service-Role
+     let entityRecords;
+     try {
+       entityRecords = await base44.asServiceRole.entities[entityName].filter({ id: entityId });
+     } catch {
+       return Response.json({ error: 'Record not found', code: 'NOT_FOUND' }, { status: 404 });
+     }
+     const current = entityRecords[0];
 
-    if (!current) {
-      return Response.json({ error: 'Record not found', code: 'NOT_FOUND' }, { status: 404 });
-    }
+     if (!current) {
+       return Response.json({ error: 'Record not found', code: 'NOT_FOUND' }, { status: 404 });
+     }
+
+     // ✅ HIERARCHIE-CHECK: Wenn parentId vorhanden, locke das Parent statt der Activity
+     const lockEntityName = parentId ? 'Lernpakete' : entityName;
+     const lockEntityId = parentId || entityId;
+     let lockTarget = current;
+
+     if (parentId) {
+       const parentRecords = await base44.asServiceRole.entities.Lernpakete.filter({ id: parentId });
+       if (!parentRecords[0]) {
+         return Response.json({ error: 'Parent record not found', code: 'NOT_FOUND' }, { status: 404 });
+       }
+       lockTarget = parentRecords[0];
+     }
 
     const now = new Date().toISOString();
     const STRUCT_LOCK_TIMEOUT_MS = 60 * 60 * 1000;
@@ -82,107 +95,124 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, lockedBy: user.email, lockedAt: now });
     }
 
-    const currentVersion = current.lock_version ?? 0;
+    const currentVersion = lockTarget.lock_version ?? 0;
 
-    // ✅ SCHRITT 0: Szenario 4 – Structural Lock der übergeordneten Einheit prüfen
-    // (gilt für LernpaketPhaseAktivitaet und Lernpakete)
-    if (entityName === 'LernpaketPhaseAktivitaet' || entityName === 'Lernpakete') {
-      let einheitId = current.einheit_id;
+     // ✅ Validate clientLockVersion (Compare-and-Swap)
+     // Wenn clientLockVersion gesetzt ist, muss die DB-Version exakt passen
+     if (clientLockVersion !== undefined && clientLockVersion !== currentVersion) {
+       console.warn(
+         `[acquireLockSecure] Version mismatch: client has v${clientLockVersion}, DB has v${currentVersion}`
+       );
+       return Response.json(
+         {
+           error: 'Version mismatch - data was modified',
+           code: 'VERSION_MISMATCH',
+           expectedVersion: clientLockVersion,
+           currentVersion: currentVersion,
+         },
+         { status: 409 }
+       );
+     }
 
-      // LernpaketPhaseAktivitaet → über Lernpaket zur Einheit navigieren
-      if (entityName === 'LernpaketPhaseAktivitaet' && current.lernpaket_id) {
-        const pakete = await base44.asServiceRole.entities.Lernpakete.filter({ id: current.lernpaket_id });
-        einheitId = pakete[0]?.einheit_id;
-      }
+     // ✅ SCHRITT 0: Szenario 4 – Structural Lock der übergeordneten Einheit prüfen
+     // (gilt für LernpaketPhaseAktivitaet und Lernpakete)
+     if (lockEntityName === 'Lernpakete') {
+       let einheitId = lockTarget.einheit_id;
 
-      if (einheitId) {
-        const einheiten = await base44.asServiceRole.entities.Einheiten.filter({ id: einheitId });
-        const einheit = einheiten[0];
-        if (einheit?.structural_lock && einheit.structural_lock !== user.email) {
-          const lockedAt = einheit.structural_locked_at ? new Date(einheit.structural_locked_at).getTime() : 0;
-          const isExpired = Date.now() - lockedAt > STRUCT_LOCK_TIMEOUT_MS;
-          if (!isExpired) {
-            return Response.json(
-              {
-                error: 'Structural lock active on parent unit',
-                code: 'STRUCTURAL_LOCK_ACTIVE',
-                structural_lock: true,
-                lockedBy: einheit.structural_lock,
-                message: `Die Struktur der Einheit wird gerade von ${einheit.structural_lock} angepasst. Neue Inhalts-Bearbeitungen sind kurzzeitig gesperrt.`,
-              },
-              { status: 423 }
-            );
-          }
-          // Abgelaufenen Structural Lock bereinigen
-          await base44.asServiceRole.entities.Einheiten.update(einheitId, {
-            structural_lock: null, structural_locked_at: null,
-          }).catch(() => {});
-        }
-      }
-    }
+       if (einheitId) {
+         const einheiten = await base44.asServiceRole.entities.Einheiten.filter({ id: einheitId });
+         const einheit = einheiten[0];
+         if (einheit?.structural_lock && einheit.structural_lock !== user.email) {
+           const lockedAt = einheit.structural_locked_at ? new Date(einheit.structural_locked_at).getTime() : 0;
+           const isExpired = Date.now() - lockedAt > STRUCT_LOCK_TIMEOUT_MS;
+           if (!isExpired) {
+             return Response.json(
+               {
+                 error: 'Structural lock active on parent unit',
+                 code: 'STRUCTURAL_LOCK_ACTIVE',
+                 structural_lock: true,
+                 lockedBy: einheit.structural_lock,
+                 message: `Die Struktur der Einheit wird gerade von ${einheit.structural_lock} angepasst. Neue Inhalts-Bearbeitungen sind kurzzeitig gesperrt.`,
+               },
+               { status: 423 }
+             );
+           }
+           // Abgelaufenen Structural Lock bereinigen
+           await base44.asServiceRole.entities.Einheiten.update(einheitId, {
+             structural_lock: null, structural_locked_at: null,
+           }).catch(() => {});
+         }
+       }
+     }
 
-    // ✅ SCHRITT 1: Prüfe ob Lock bereits von anderem User gehalten wird
-    if (
-      current.lock_status &&
-      current.locked_by_user !== user.email &&
-      !isLockExpired(current.locked_at)
-    ) {
-      return Response.json(
-        {
-          error: 'Lock held by another user',
-          code: 'LOCK_HELD',
-          lockedBy: current.locked_by_user,
-          lockedAt: current.locked_at,
-        },
-        { status: 409 }
-      );
-    }
+     // ✅ SCHRITT 1: Prüfe ob Lock bereits von anderem User gehalten wird
+     if (
+       lockTarget.lock_status &&
+       lockTarget.locked_by_user !== user.email &&
+       !isLockExpired(lockTarget.locked_at)
+     ) {
+       return Response.json(
+         {
+           error: 'Lock held by another user',
+           code: 'LOCK_HELD',
+           lockedBy: lockTarget.locked_by_user,
+           lockedAt: lockTarget.locked_at,
+         },
+         { status: 409 }
+       );
+     }
 
-    // ✅ SCHRITT 2: Atomare Lock-Akquisition mit Versionsprüfung
-    await base44.asServiceRole.entities[entityName].update(entityId, {
-      lock_status: true,
-      locked_by_user: user.email,
-      locked_at: now,
-      lock_version: currentVersion + 1, // ← Nur wenn keine Race Condition
-    });
+     // ✅ SCHRITT 2: Atomare Lock-Akquisition mit Compare-and-Swap
+     // Update NUR wenn lock_version exakt currentVersion ist
+     await base44.asServiceRole.entities[lockEntityName].update(lockEntityId, {
+       lock_status: true,
+       locked_by_user: user.email,
+       locked_at: now,
+       lock_version: currentVersion + 1,
+     });
 
-    // ✅ SCHRITT 3: Post-Write Verification (SOFORT, kein Timeout)
-    const verifyRecords = await base44.asServiceRole.entities[entityName].filter({
-      id: entityId,
-    });
-    const verified = verifyRecords[0];
+     // ✅ SCHRITT 3: Post-Write Verification (SOFORT, kein Timeout)
+     const verifyRecords = await base44.asServiceRole.entities[lockEntityName].filter({
+       id: lockEntityId,
+     });
+     const verified = verifyRecords[0];
 
-    // Wurde der Write von jemand anderem überschrieben (Race Condition)?
-    if (
-      !verified ||
-      verified.locked_by_user !== user.email ||
-      verified.lock_version !== currentVersion + 1
-    ) {
-      console.warn(
-        `[acquireLockSecure] Race condition detected: ${user.email} lost lock on ${entityName}/${entityId}. Winner: ${verified?.locked_by_user ?? 'unknown'}`
-      );
+     // ✅ IDEMPOTENZ: Wenn Winner === user.email, zählt das als SUCCESS
+     if (
+       !verified ||
+       verified.lock_version !== currentVersion + 1
+     ) {
+       // Race Condition nur, wenn jemand ANDERES die Lock hält
+       if (verified?.locked_by_user !== user.email) {
+         console.warn(
+           `[acquireLockSecure] Race condition detected: ${user.email} lost lock on ${lockEntityName}/${lockEntityId}. Winner: ${verified?.locked_by_user ?? 'unknown'}`
+         );
 
-      return Response.json(
-        {
-          error: 'Lock acquisition failed due to race condition',
-          code: 'RACE_CONDITION_DETECTED',
-          winner: verified?.locked_by_user ?? 'unknown',
-          timestamp: new Date().toISOString(),
-        },
-        { status: 409 }
-      );
-    }
+         return Response.json(
+           {
+             error: 'Lock acquisition failed due to race condition',
+             code: 'RACE_CONDITION_DETECTED',
+             winner: verified?.locked_by_user ?? 'unknown',
+             timestamp: new Date().toISOString(),
+           },
+           { status: 409 }
+         );
+       }
+       // Sonst: Idempotenz-Fall – Du hast die Lock bereits, also ist das SUCCESS
+     }
 
     // ✅ SUCCESS
     console.info(
-      `[acquireLockSecure] Lock acquired by ${user.email} on ${entityName}/${entityId} (v${currentVersion + 1})`
+      `[acquireLockSecure] Lock acquired by ${user.email} on ${lockEntityName}/${lockEntityId} (v${currentVersion + 1})`
     );
 
     return Response.json({
       success: true,
       message: 'Lock acquired successfully',
-      entityName,
-      entityId,
+      entityName: lockEntityName,
+      entityId: lockEntityId,
+      originalEntityName: entityName,
+      originalEntityId: entityId,
       lockedBy: user.email,
       lockedAt: now,
       version: currentVersion + 1,

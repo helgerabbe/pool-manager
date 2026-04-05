@@ -35,27 +35,34 @@ const HEARTBEAT_MS = 30 * 1000; // 30 Sekunden
 const HEARTBEAT_RETRY_LIMIT = 3; // Max Fehlversuche vor Abort
 
 export function useCollaborationLock(
-  entityName,
-  queryKeys = [],
-  recordId,
-  userEmail,
-  active = false,
-  onLockAcquired,
-  onLockDenied
-) {
-  const queryClient = useQueryClient();
-  const [isLocked, setIsLocked] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
-  const [lockLost, setLockLost] = useState(false);
-  const heartbeatRef = useRef(null);
-  const heartbeatRetryRef = useRef(0);
-  const heldRef = useRef(false);
-  const userEmailRef = useRef(userEmail);
+   entityName,
+   queryKeys = [],
+   recordId,
+   userEmail,
+   active = false,
+   onLockAcquired,
+   onLockDenied,
+   parentId = null,  // ← Für Hierarchie-Locking (z.B. Lernpaket-ID)
+   currentLockVersion = null  // ← Client-seitige Lock-Version für Compare-and-Swap
+ ) {
+   const queryClient = useQueryClient();
+   const [isLocked, setIsLocked] = useState(false);
+   const [retryCount, setRetryCount] = useState(0);
+   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+   const [lockLost, setLockLost] = useState(false);
+   const heartbeatRef = useRef(null);
+   const heartbeatRetryRef = useRef(0);
+   const heldRef = useRef(false);
+   const userEmailRef = useRef(userEmail);
+   const versionRef = useRef(currentLockVersion);
 
   useEffect(() => {
-    userEmailRef.current = userEmail;
-  }, [userEmail]);
+     userEmailRef.current = userEmail;
+   }, [userEmail]);
+
+   useEffect(() => {
+     versionRef.current = currentLockVersion;
+   }, [currentLockVersion]);
 
   const invalidate = useCallback(() => {
     queryKeys.forEach(key =>
@@ -75,6 +82,8 @@ export function useCollaborationLock(
         const response = await base44.functions.invoke('acquireLockSecure', {
           entityName,
           entityId: recordId,
+          parentId: parentId || null,  // ✅ Hierarchie-Locking
+          clientLockVersion: versionRef.current,  // ✅ Compare-and-Swap
         });
 
         if (response.data?.success) {
@@ -132,7 +141,7 @@ export function useCollaborationLock(
     }
 
     return false;
-  }, [recordId, userEmail, entityName, invalidate, onLockAcquired, onLockDenied]);
+  }, [recordId, userEmail, entityName, invalidate, onLockAcquired, onLockDenied, parentId, currentLockVersion]);
 
   // ── Lock freigeben ──
   const releaseLock = useCallback(async () => {
