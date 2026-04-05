@@ -6,225 +6,216 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, Save, FileUp, BookMarked, Type } from 'lucide-react';
+import { AlertCircle, Save, FileUp, BookMarked, Type, ImagePlus, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-// ── Sterne-Rating (1-3, mit Reset) ──
+// ── Sterne-Rating ──────────────────────────────────────────────────────────────
 function SternRating({ value, onChange }) {
-   return (
-     <div className="flex items-center gap-2">
-       {[1, 2, 3].map(star => (
-         <button
-           key={star}
-           type="button"
-           onClick={() => onChange(value === star ? null : star)}
-           className={`text-2xl transition-transform hover:scale-110 ${
-             value && value >= star ? 'text-amber-400' : 'text-gray-300'
-           }`}
-           title={`${star} Stern${star > 1 ? 'e' : ''}`}
-         >
-           ★
-         </button>
-       ))}
-       {value && (
-         <button
-           type="button"
-           onClick={() => onChange(null)}
-           className="text-xs text-muted-foreground hover:text-foreground ml-2"
-         >
-           Zurücksetzen
-         </button>
-       )}
-     </div>
-   );
+  return (
+    <div className="flex items-center gap-2">
+      {[1, 2, 3].map(star => (
+        <button
+          key={star}
+          type="button"
+          onClick={() => onChange(value === star ? null : star)}
+          className={`text-2xl transition-transform hover:scale-110 ${value && value >= star ? 'text-amber-400' : 'text-gray-300'}`}
+          title={`${star} Stern${star > 1 ? 'e' : ''}`}
+        >★</button>
+      ))}
+      {value && (
+        <button type="button" onClick={() => onChange(null)} className="text-xs text-muted-foreground hover:text-foreground ml-2">
+          Zurücksetzen
+        </button>
+      )}
+    </div>
+  );
 }
 
-// ── Material-Uploader mit Tabs ──
-function MaterialUploader({ materials, onMaterialsChange }) {
-  const [activeTab, setActiveTab] = useState('freitext');
-  const [newMaterial, setNewMaterial] = useState({ type: 'freitext', content: '', label: '' });
+// ── Aufgabenstellung: Text + optionales Bild ───────────────────────────────────
+function AufgabenstellungSection({ text, onTextChange, bildUrl, onBildUrlChange }) {
   const [uploading, setUploading] = useState(false);
 
-  const addMaterial = async () => {
-    if (!newMaterial.content) {
-      toast.error('Bitte geben Sie Inhalt ein');
-      return;
-    }
-
-    let finalMaterial = { ...newMaterial };
-
-    // Datei-Upload
-    if (newMaterial.type === 'pdf' || newMaterial.type === 'image') {
-      if (!newMaterial.file) {
-        toast.error('Bitte wählen Sie eine Datei');
-        return;
-      }
-      setUploading(true);
-      try {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file: newMaterial.file });
-        finalMaterial = { ...finalMaterial, url: file_url, content: '' };
-      } catch (err) {
-        toast.error('Fehler beim Upload');
-        setUploading(false);
-        return;
-      }
-      setUploading(false);
-    }
-
-    onMaterialsChange([...materials, finalMaterial]);
-    setNewMaterial({ type: 'freitext', content: '', label: '', file: null });
-    setActiveTab('freitext');
-    toast.success('Material hinzugefügt');
-  };
-
-  const removeMaterial = (idx) => {
-    onMaterialsChange(materials.filter((_, i) => i !== idx));
+  const handleBildUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    onBildUrlChange(file_url);
+    setUploading(false);
+    toast.success('Bild hochgeladen');
   };
 
   return (
-    <div className="space-y-4 p-4 rounded-lg bg-muted/30 border border-border">
-      <h4 className="text-sm font-semibold">Materialien</h4>
+    <div className="space-y-3">
+      <Label>
+        Aufgabenstellung <span className="text-destructive">*</span>
+        <span className="text-xs font-normal text-muted-foreground ml-2">(Text, Bild oder beides)</span>
+      </Label>
 
-      {/* Materialien-Liste */}
-      {materials.length > 0 && (
-        <div className="space-y-2 mb-4">
-          {materials.map((mat, idx) => (
-            <div
-              key={idx}
-              className="flex items-center justify-between p-2 rounded bg-white border border-border text-sm"
+      {/* Textbereich */}
+      <textarea
+        value={text}
+        onChange={e => onTextChange(e.target.value)}
+        placeholder="Aufgabentext eingeben (optional wenn ein Bild hochgeladen wird)…"
+        className="w-full px-3 py-2 border border-border rounded-lg min-h-28 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+      />
+
+      {/* Bild-Upload */}
+      <div className="rounded-lg border border-dashed border-border bg-muted/20 p-3">
+        <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+          <ImagePlus className="w-3.5 h-3.5" /> Aufgaben-Bild / Screenshot (optional)
+        </p>
+
+        {bildUrl ? (
+          <div className="relative inline-block">
+            <img src={bildUrl} alt="Aufgabenbild" className="max-h-48 rounded border border-border object-contain" />
+            <button
+              type="button"
+              onClick={() => onBildUrlChange('')}
+              className="absolute top-1 right-1 bg-destructive text-white rounded-full p-0.5 hover:bg-destructive/80"
             >
-              <span>
-                {mat.type === 'freitext' && '📝'} {mat.type === 'pdf' && '📄'}{' '}
-                {mat.type === 'image' && '🖼️'} {mat.type === 'book_ref' && '📚'}
-                <span className="ml-2 truncate">{mat.label || mat.content || mat.url || '…'}</span>
-              </span>
-              <button
-                onClick={() => removeMaterial(idx)}
-                className="text-xs text-destructive hover:text-destructive/80"
-              >
-                ✕
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        ) : (
+          <label className="cursor-pointer flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            {uploading
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> Wird hochgeladen…</>
+              : <><FileUp className="w-4 h-4" /> Bild auswählen (JPG, PNG, GIF…)</>
+            }
+            <input type="file" accept="image/*" className="hidden" onChange={handleBildUpload} disabled={uploading} />
+          </label>
+        )}
+      </div>
+
+      {!text.trim() && !bildUrl && (
+        <div className="flex items-center gap-2 text-xs text-amber-600">
+          <AlertCircle className="w-3 h-3" /> Bitte Text eingeben oder ein Bild hochladen.
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Zusätzliches Material ──────────────────────────────────────────────────────
+function ZusaetzlichesMaterialSection({ materials, onMaterialsChange }) {
+  const [activeTab, setActiveTab] = useState('freitext');
+  const [newMaterial, setNewMaterial] = useState({ type: 'freitext', content: '', label: '', file: null });
+  const [uploading, setUploading] = useState(false);
+
+  const typeFromTab = (tab) => tab === 'freitext' ? 'free_text' : tab;
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setNewMaterial({ type: typeFromTab(tab), content: '', label: '', file: null });
+  };
+
+  const addMaterial = async () => {
+    const type = typeFromTab(activeTab);
+    if ((type === 'free_text' || type === 'book_ref') && !newMaterial.content.trim()) {
+      toast.error('Bitte Inhalt eingeben');
+      return;
+    }
+    if ((type === 'pdf' || type === 'image') && !newMaterial.file) {
+      toast.error('Bitte Datei auswählen');
+      return;
+    }
+
+    let finalMaterial = { type, label: newMaterial.label };
+
+    if (type === 'pdf' || type === 'image') {
+      setUploading(true);
+      const { file_url } = await base44.integrations.Core.UploadFile({ file: newMaterial.file });
+      finalMaterial.url = file_url;
+      setUploading(false);
+    } else {
+      finalMaterial.content = newMaterial.content;
+    }
+
+    onMaterialsChange([...materials, finalMaterial]);
+    setNewMaterial({ type: typeFromTab(activeTab), content: '', label: '', file: null });
+    toast.success('Material hinzugefügt');
+  };
+
+  const removeMaterial = (idx) => onMaterialsChange(materials.filter((_, i) => i !== idx));
+
+  const ICONS = { free_text: '📝', pdf: '📄', image: '🖼️', book_ref: '📚' };
+
+  return (
+    <div className="space-y-3 p-4 rounded-lg bg-muted/20 border border-border">
+      <h4 className="text-sm font-semibold">Zusätzliches Material zur Aufgabe</h4>
+      <p className="text-xs text-muted-foreground">Weitere Informationen, die zum Lösen der Aufgabe hilfreich sind (z.B. Arbeitsblatt, Tabelle, Buchseite).</p>
+
+      {/* Liste vorhandener Materialien */}
+      {materials.length > 0 && (
+        <div className="space-y-1.5">
+          {materials.map((mat, idx) => (
+            <div key={idx} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-border text-sm">
+              <span className="shrink-0">{ICONS[mat.type] || '📎'}</span>
+              {mat.type === 'image' && mat.url && (
+                <img src={mat.url} alt="" className="h-8 w-8 object-cover rounded border" />
+              )}
+              <span className="flex-1 truncate text-xs">{mat.label || mat.content || mat.url || '…'}</span>
+              <button type="button" onClick={() => removeMaterial(idx)} className="shrink-0 text-destructive hover:text-destructive/70">
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
           ))}
         </div>
       )}
 
-      {/* Material-Input Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-2">
+      {/* Neues Material hinzufügen */}
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-2">
         <TabsList className="grid w-full grid-cols-4 h-8">
-          <TabsTrigger value="freitext" className="text-xs">
-            <Type className="w-3 h-3 mr-1" /> Text
-          </TabsTrigger>
-          <TabsTrigger value="book_ref" className="text-xs">
-            <BookMarked className="w-3 h-3 mr-1" /> Buch
-          </TabsTrigger>
-          <TabsTrigger value="pdf" className="text-xs">
-            <FileUp className="w-3 h-3 mr-1" /> PDF
-          </TabsTrigger>
-          <TabsTrigger value="image" className="text-xs">
-            🖼️ Bild
-          </TabsTrigger>
+          <TabsTrigger value="freitext" className="text-xs"><Type className="w-3 h-3 mr-1" />Text</TabsTrigger>
+          <TabsTrigger value="book_ref" className="text-xs"><BookMarked className="w-3 h-3 mr-1" />Buch</TabsTrigger>
+          <TabsTrigger value="pdf" className="text-xs"><FileUp className="w-3 h-3 mr-1" />PDF</TabsTrigger>
+          <TabsTrigger value="image" className="text-xs">🖼️ Bild</TabsTrigger>
         </TabsList>
 
         <TabsContent value="freitext" className="space-y-2">
           <textarea
-            value={newMaterial.type === 'freitext' ? newMaterial.content : ''}
-            onChange={(e) =>
-              newMaterial.type === 'freitext' && setNewMaterial({ ...newMaterial, content: e.target.value })
-            }
-            placeholder="Text eingeben…"
-            className="w-full h-20 px-2 py-1 text-xs border rounded"
+            value={newMaterial.content}
+            onChange={e => setNewMaterial(p => ({ ...p, content: e.target.value }))}
+            placeholder="Freitext eingeben…"
+            className="w-full h-16 px-2 py-1.5 text-xs border border-border rounded resize-none focus:outline-none"
           />
-          <Input
-            placeholder="Label (optional)"
-            value={newMaterial.label}
-            onChange={(e) => setNewMaterial({ ...newMaterial, label: e.target.value })}
-            className="h-8 text-xs"
-          />
-          <Button
-            onClick={addMaterial}
-            disabled={uploading}
-            size="sm"
-            className="w-full text-xs"
-          >
-            Hinzufügen
-          </Button>
+          <Input placeholder="Label (optional)" value={newMaterial.label} onChange={e => setNewMaterial(p => ({ ...p, label: e.target.value }))} className="h-8 text-xs" />
+          <Button type="button" onClick={addMaterial} size="sm" className="w-full text-xs">Hinzufügen</Button>
         </TabsContent>
 
         <TabsContent value="book_ref" className="space-y-2">
           <Input
-            placeholder="z.B. 'Seite 45-47', 'Kapitel 3'"
-            value={newMaterial.type === 'book_ref' ? newMaterial.content : ''}
-            onChange={(e) =>
-              newMaterial.type === 'book_ref' && setNewMaterial({ ...newMaterial, content: e.target.value })
-            }
+            placeholder="z.B. 'Seite 45–47', 'Kapitel 3'"
+            value={newMaterial.content}
+            onChange={e => setNewMaterial(p => ({ ...p, content: e.target.value }))}
             className="h-8 text-xs"
           />
-          <Input
-            placeholder="Label (optional)"
-            value={newMaterial.label}
-            onChange={(e) => setNewMaterial({ ...newMaterial, label: e.target.value })}
-            className="h-8 text-xs"
-          />
-          <Button
-            onClick={addMaterial}
-            disabled={uploading}
-            size="sm"
-            className="w-full text-xs"
-          >
-            Hinzufügen
-          </Button>
+          <Input placeholder="Label (optional)" value={newMaterial.label} onChange={e => setNewMaterial(p => ({ ...p, label: e.target.value }))} className="h-8 text-xs" />
+          <Button type="button" onClick={addMaterial} size="sm" className="w-full text-xs">Hinzufügen</Button>
         </TabsContent>
 
         <TabsContent value="pdf" className="space-y-2">
-          <input
-            type="file"
-            accept=".pdf"
-            onChange={(e) =>
-              newMaterial.type === 'pdf' &&
-              setNewMaterial({ ...newMaterial, file: e.target.files?.[0] || null })
-            }
-            className="w-full text-xs"
-          />
-          <Input
-            placeholder="Label (optional)"
-            value={newMaterial.label}
-            onChange={(e) => setNewMaterial({ ...newMaterial, label: e.target.value })}
-            className="h-8 text-xs"
-          />
-          <Button
-            onClick={addMaterial}
-            disabled={uploading}
-            size="sm"
-            className="w-full text-xs"
-          >
-            {uploading ? 'Wird hochgeladen…' : 'Hochladen'}
+          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer hover:text-foreground">
+            <FileUp className="w-4 h-4" />
+            {newMaterial.file ? newMaterial.file.name : 'PDF auswählen…'}
+            <input type="file" accept=".pdf" className="hidden" onChange={e => setNewMaterial(p => ({ ...p, file: e.target.files?.[0] || null }))} />
+          </label>
+          <Input placeholder="Label (optional)" value={newMaterial.label} onChange={e => setNewMaterial(p => ({ ...p, label: e.target.value }))} className="h-8 text-xs" />
+          <Button type="button" onClick={addMaterial} disabled={uploading} size="sm" className="w-full text-xs">
+            {uploading ? <><Loader2 className="w-3 h-3 animate-spin mr-1" />Hochladen…</> : 'Hochladen & Hinzufügen'}
           </Button>
         </TabsContent>
 
         <TabsContent value="image" className="space-y-2">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) =>
-              newMaterial.type === 'image' &&
-              setNewMaterial({ ...newMaterial, file: e.target.files?.[0] || null })
-            }
-            className="w-full text-xs"
-          />
-          <Input
-            placeholder="Label (optional)"
-            value={newMaterial.label}
-            onChange={(e) => setNewMaterial({ ...newMaterial, label: e.target.value })}
-            className="h-8 text-xs"
-          />
-          <Button
-            onClick={addMaterial}
-            disabled={uploading}
-            size="sm"
-            className="w-full text-xs"
-          >
-            {uploading ? 'Wird hochgeladen…' : 'Hochladen'}
+          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer hover:text-foreground">
+            <ImagePlus className="w-4 h-4" />
+            {newMaterial.file ? newMaterial.file.name : 'Bild auswählen…'}
+            <input type="file" accept="image/*" className="hidden" onChange={e => setNewMaterial(p => ({ ...p, file: e.target.files?.[0] || null }))} />
+          </label>
+          <Input placeholder="Label (optional)" value={newMaterial.label} onChange={e => setNewMaterial(p => ({ ...p, label: e.target.value }))} className="h-8 text-xs" />
+          <Button type="button" onClick={addMaterial} disabled={uploading} size="sm" className="w-full text-xs">
+            {uploading ? <><Loader2 className="w-3 h-3 animate-spin mr-1" />Hochladen…</> : 'Hochladen & Hinzufügen'}
           </Button>
         </TabsContent>
       </Tabs>
@@ -232,59 +223,71 @@ function MaterialUploader({ materials, onMaterialsChange }) {
   );
 }
 
-// ── Haupt-Component ──
+// ── Haupt-Komponente ───────────────────────────────────────────────────────────
+const EMPTY_FORM = {
+  titel: '',
+  aufgabenstellung: '',
+  aufgaben_bild_url: '',
+  schwierigkeitsgrad: null,
+  themenfeld_id: null,
+  materialien: [],
+  ergebnis_form: '',
+  ergebnis_dateiformat: '',
+};
+
 export default function AufgabeCreateView({ open, onOpenChange, einheitId, themenfelder = [], onSuccess, initialData = null }) {
   const queryClient = useQueryClient();
-  const [formData, setFormData] = useState({
-    titel: '',
-    aufgabenstellung: '',
-    schwierigkeitsgrad: null,
-    themenfeld_id: null,
-    materialien: [],
-    ergebnis_form: '',
-    ergebnis_dateiformat: '',
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
 
-  // Reset formData wenn initialData sich ändert (für Bearbeitung)
   React.useEffect(() => {
     if (open) {
-      if (initialData) {
-        setFormData({ ergebnis_form: '', ergebnis_dateiformat: '', ...initialData });
-      } else {
-        setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, themenfeld_id: null, materialien: [], ergebnis_form: '', ergebnis_dateiformat: '' });
-      }
+      setFormData(initialData
+        ? { ...EMPTY_FORM, ...initialData }
+        : { ...EMPTY_FORM }
+      );
     }
   }, [open, initialData]);
 
+  const set = (field, val) => setFormData(p => ({ ...p, [field]: val }));
+
+  const isValid = !!(formData.aufgabenstellung?.trim() || formData.aufgaben_bild_url);
+
   const createAufgabe = useMutation({
-    mutationFn: (data) =>
-      base44.entities.AllgemeineAufgabe.create({
-        einheit_id: einheitId,
-        themenfeld_id: data.themenfeld_id || null,
-        titel: data.titel || null,
-        aufgabenstellung: data.aufgabenstellung,
-        schwierigkeitsgrad: data.schwierigkeitsgrad || null,
-        materialien: data.materialien || [],
-      }),
+    mutationFn: (data) => base44.entities.AllgemeineAufgabe.create({
+      einheit_id: einheitId,
+      themenfeld_id: data.themenfeld_id || null,
+      titel: data.titel || null,
+      aufgabenstellung: data.aufgabenstellung || '',
+      aufgaben_bild_url: data.aufgaben_bild_url || null,
+      schwierigkeitsgrad: data.schwierigkeitsgrad || null,
+      materialien: data.materialien || [],
+      ergebnis_form: data.ergebnis_form || null,
+      ergebnis_dateiformat: data.ergebnis_dateiformat || null,
+    }),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
-      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgabenMappings'] });
-      toast.success('Aufgabe erstellt! Schritt 2: Kompetenzen zuordnen.');
+      toast.success('Aufgabe erstellt!');
       onSuccess?.(result);
-      setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, themenfeld_id: null, materialien: [] });
       onOpenChange(false);
     },
     onError: () => toast.error('Fehler beim Erstellen'),
   });
 
   const updateAufgabe = useMutation({
-    mutationFn: (data) =>
-      base44.entities.AllgemeineAufgabe.update(initialData.id, data),
+    mutationFn: (data) => base44.entities.AllgemeineAufgabe.update(initialData.id, {
+      themenfeld_id: data.themenfeld_id || null,
+      titel: data.titel || null,
+      aufgabenstellung: data.aufgabenstellung || '',
+      aufgaben_bild_url: data.aufgaben_bild_url || null,
+      schwierigkeitsgrad: data.schwierigkeitsgrad || null,
+      materialien: data.materialien || [],
+      ergebnis_form: data.ergebnis_form || null,
+      ergebnis_dateiformat: data.ergebnis_dateiformat || null,
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
       toast.success('Aufgabe aktualisiert');
       onSuccess?.();
-      setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, themenfeld_id: null, materialien: [] });
       onOpenChange(false);
     },
     onError: () => toast.error('Fehler beim Aktualisieren'),
@@ -292,16 +295,12 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.aufgabenstellung.trim()) {
-      toast.error('Aufgabenstellung ist erforderlich');
-      return;
-    }
-    if (initialData) {
-      updateAufgabe.mutate(formData);
-    } else {
-      createAufgabe.mutate(formData);
-    }
+    if (!isValid) { toast.error('Bitte Text eingeben oder Bild hochladen'); return; }
+    if (initialData) updateAufgabe.mutate(formData);
+    else createAufgabe.mutate(formData);
   };
+
+  const isSaving = createAufgabe.isPending || updateAufgabe.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -310,74 +309,55 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
           <DialogTitle>{initialData ? 'Aufgabe bearbeiten' : 'Neue Allgemeine Aufgabe'}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-5">
+
           {/* Themenfeld */}
           {themenfelder.length > 0 && (
             <div className="space-y-2">
-              <Label htmlFor="themenfeld">Themenfeld (optional)</Label>
+              <Label>Themenfeld (optional)</Label>
               <select
-                id="themenfeld"
                 value={formData.themenfeld_id || ''}
-                onChange={(e) => setFormData({ ...formData, themenfeld_id: e.target.value || null })}
-                className="w-full h-9 px-3 border rounded-lg text-sm bg-white"
+                onChange={e => set('themenfeld_id', e.target.value || null)}
+                className="w-full h-9 px-3 border border-border rounded-lg text-sm bg-white"
               >
                 <option value="">-- Kein Themenfeld --</option>
-                {themenfelder.map(tf => (
-                  <option key={tf.id} value={tf.id}>{tf.titel}</option>
-                ))}
+                {themenfelder.map(tf => <option key={tf.id} value={tf.id}>{tf.titel}</option>)}
               </select>
             </div>
           )}
 
           {/* Titel */}
           <div className="space-y-2">
-            <Label htmlFor="titel">Titel (optional)</Label>
+            <Label>Titel (optional)</Label>
             <Input
-              id="titel"
               value={formData.titel}
-              onChange={(e) => setFormData({ ...formData, titel: e.target.value })}
-              placeholder="z.B. 'Energieflussdiagram analysieren'"
+              onChange={e => set('titel', e.target.value)}
+              placeholder="z.B. 'Energieflussdiagramm analysieren'"
             />
           </div>
 
-          {/* Aufgabenstellung */}
-          <div className="space-y-2">
-            <Label htmlFor="aufgabe">
-              Aufgabenstellung <span className="text-destructive">*</span>
-            </Label>
-            <textarea
-              id="aufgabe"
-              value={formData.aufgabenstellung}
-              onChange={(e) => setFormData({ ...formData, aufgabenstellung: e.target.value })}
-              placeholder="Beschreiben Sie die Aufgabe im Detail…"
-              className="w-full px-3 py-2 border rounded-lg min-h-32"
-            />
-            {!formData.aufgabenstellung && (
-              <div className="flex items-center gap-2 text-xs text-amber-600">
-                <AlertCircle className="w-3 h-3" />
-                Dieses Feld ist erforderlich
-              </div>
-            )}
-          </div>
+          {/* Aufgabenstellung (Text + Bild) */}
+          <AufgabenstellungSection
+            text={formData.aufgabenstellung}
+            onTextChange={val => set('aufgabenstellung', val)}
+            bildUrl={formData.aufgaben_bild_url}
+            onBildUrlChange={val => set('aufgaben_bild_url', val)}
+          />
 
           {/* Schwierigkeitsgrad */}
           <div className="space-y-2">
             <Label>Schwierigkeitsgrad</Label>
-            <SternRating
-              value={formData.schwierigkeitsgrad}
-              onChange={(val) => setFormData({ ...formData, schwierigkeitsgrad: val })}
-            />
+            <SternRating value={formData.schwierigkeitsgrad} onChange={val => set('schwierigkeitsgrad', val)} />
           </div>
 
-          {/* Abgabeform */}
+          {/* Ergebnis-Angaben */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="ergebnis_form">Erwartete Form des Ergebnisses</Label>
+              <Label>Erwartete Form des Ergebnisses</Label>
               <select
-                id="ergebnis_form"
                 value={formData.ergebnis_form || ''}
-                onChange={(e) => setFormData({ ...formData, ergebnis_form: e.target.value || '' })}
-                className="w-full h-9 px-3 border rounded-lg text-sm bg-white"
+                onChange={e => set('ergebnis_form', e.target.value)}
+                className="w-full h-9 px-3 border border-border rounded-lg text-sm bg-white"
               >
                 <option value="">-- Bitte wählen --</option>
                 <option>Fließtext / Essay</option>
@@ -389,12 +369,11 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ergebnis_dateiformat">Erwartetes Dateiformat</Label>
+              <Label>Erwartetes Dateiformat</Label>
               <select
-                id="ergebnis_dateiformat"
                 value={formData.ergebnis_dateiformat || ''}
-                onChange={(e) => setFormData({ ...formData, ergebnis_dateiformat: e.target.value || '' })}
-                className="w-full h-9 px-3 border rounded-lg text-sm bg-white"
+                onChange={e => set('ergebnis_dateiformat', e.target.value)}
+                className="w-full h-9 px-3 border border-border rounded-lg text-sm bg-white"
               >
                 <option value="">-- Bitte wählen --</option>
                 <option>Textdokument (Word/PDF)</option>
@@ -405,36 +384,21 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
             </div>
           </div>
 
-          {/* Materialien */}
-          <MaterialUploader
+          {/* Zusätzliches Material */}
+          <ZusaetzlichesMaterialSection
             materials={formData.materialien}
-            onMaterialsChange={(mats) => setFormData({ ...formData, materialien: mats })}
+            onMaterialsChange={mats => set('materialien', mats)}
           />
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Abbrechen
-            </Button>
-            <Button
-              type="submit"
-              disabled={(createAufgabe.isPending || updateAufgabe.isPending) || !formData.aufgabenstellung.trim()}
-              className="gap-2"
-            >
-              {createAufgabe.isPending || updateAufgabe.isPending ? (
-                <>Wird gespeichert…</>
-              ) : initialData ? (
-                <>
-                  <Save className="w-4 h-4" /> Speichern
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" /> Speichern & Weiter zu Kompetenzen
-                </>
-              )}
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
+            <Button type="submit" disabled={isSaving || !isValid} className="gap-2">
+              {isSaving
+                ? <><Loader2 className="w-4 h-4 animate-spin" />Wird gespeichert…</>
+                : initialData
+                  ? <><Save className="w-4 h-4" />Speichern</>
+                  : <><Save className="w-4 h-4" />Speichern & Weiter</>
+              }
             </Button>
           </DialogFooter>
         </form>

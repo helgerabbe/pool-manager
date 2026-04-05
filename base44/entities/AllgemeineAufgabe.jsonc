@@ -34,7 +34,11 @@
     },
     "aufgabenstellung": {
       "type": "string",
-      "description": "Aufgabenstellung als Rich-Text (erforderlich)"
+      "description": "Aufgabenstellung als Text (optional wenn aufgaben_bild_url gesetzt)"
+    },
+    "aufgaben_bild_url": {
+      "type": "string",
+      "description": "URL zu einem hochgeladenen Bild/Screenshot der Aufgabe (optional)"
     },
     "schwierigkeitsgrad": {
       "type": "integer",
@@ -73,7 +77,7 @@
     },
     "materialien": {
       "type": "array",
-      "description": "Array von Materialien/Ressourcen",
+      "description": "Zus\u00e4tzliche Materialien/Ressourcen zur Aufgabe (nicht die Aufgabe selbst)",
       "items": {
         "type": "object",
         "properties": {
@@ -125,7 +129,6 @@
     }
   },
   "required": [
-    "einheit_id",
-    "aufgabenstellung"
+    "einheit_id"
   ]
 }

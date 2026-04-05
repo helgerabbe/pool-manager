@@ -39,9 +39,15 @@ function AufgabenReview({ aufgabe }) {
         <p className="text-sm font-semibold">{aufgabe.titel}</p>
       )}
 
-      <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-        {aufgabe.aufgabenstellung || <span className="italic text-muted-foreground">Keine Aufgabenstellung</span>}
-      </div>
+      {aufgabe.aufgaben_bild_url && (
+        <img src={aufgabe.aufgaben_bild_url} alt="Aufgabenbild" className="max-h-56 rounded border border-border object-contain" />
+      )}
+      {aufgabe.aufgabenstellung && (
+        <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{aufgabe.aufgabenstellung}</div>
+      )}
+      {!aufgabe.aufgaben_bild_url && !aufgabe.aufgabenstellung && (
+        <span className="italic text-muted-foreground text-sm">Keine Aufgabenstellung</span>
+      )}
 
       {/* Materialien-Vorschau */}
       {aufgabe.materialien && aufgabe.materialien.length > 0 && (
@@ -219,10 +225,11 @@ export default function ErwartungshorizontTab({ aufgabe, kannBearbeiten }) {
     setIsDirty(true);
   };
 
-  // Bild-URLs aus Materialien extrahieren
-  const bildUrls = (aufgabe.materialien || [])
-    .filter(m => m.type === 'image' && m.url)
-    .map(m => m.url);
+  // Bild-URLs: Aufgaben-Bild + Bild-Materialien
+  const bildUrls = [
+    aufgabe.aufgaben_bild_url,
+    ...(aufgabe.materialien || []).filter(m => m.type === 'image' && m.url).map(m => m.url),
+  ].filter(Boolean);
   const hatBilder = bildUrls.length > 0;
 
   // Musterlösung generieren via LLM
