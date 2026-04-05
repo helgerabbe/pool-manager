@@ -11,7 +11,6 @@ import { base44 } from '@/api/base44Client';
 
 const AMPEL = {
   green:  { dot: 'bg-green-500',  ring: 'ring-green-200',  label: 'Vollständig' },
-  yellow: { dot: 'bg-amber-400',  ring: 'ring-amber-200',  label: 'In Bearbeitung' },
   red:    { dot: 'bg-red-500',    ring: 'ring-red-200',    label: 'Unvollständig' },
 };
 
@@ -158,16 +157,12 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
               <Lock className="w-2.5 h-2.5" />
             </span>
           )}
-          {!isSelected && !lockedByOther && !lockedByMe && <AmpelDot status={status} size="md" />}
+          {!isSelected && !lockedByOther && !lockedByMe && <AmpelDot status={status === 'yellow' ? 'red' : status} size="md" />}
           {!isSelected && hatUnvollstaendigeAktivitaet && (
             <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" title="Aktivitäten mit unvollständigem Inhalt" />
           )}
           {paketPhaseActivities.length >= 0 && (
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-              paketPhaseActivities.length === 0 ? 'bg-red-100 text-red-700' : 
-              paketPhaseActivities.length <= 2 ? 'bg-amber-100 text-amber-700' : 
-              'bg-green-100 text-green-700'
-            }`}>
+            <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-slate-200 text-slate-700">
               {paketPhaseActivities.length}
             </div>
           )}
