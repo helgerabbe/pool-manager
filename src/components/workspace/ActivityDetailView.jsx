@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { useLernpaketLock } from '@/hooks/useLernpaketLock';
 import { useRBAC } from '@/hooks/useRBAC';
-import { useCollaborationLock } from '@/hooks/useCollaborationLock';
-import { useLernpaketLockGlobal } from '@/lib/LernpaketLockContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Edit, Save, X, FileText, AlertTriangle, Lock, Unlock, WifiOff, RotateCcw, PenLine, Loader2 } from 'lucide-react';
+import { Edit, Save, X, FileText, AlertTriangle, Lock, Unlock, PenLine, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import ApprovalStatusBadge from '@/components/workspace/ApprovalStatusBadge';
 import ApprovalActionButton from '@/components/workspace/ApprovalActionButton';
@@ -19,147 +18,26 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
   const [formData, setFormData] = useState({});
   const [originalFormData, setOriginalFormData] = useState({});
   const [saving, setSaving] = useState(false);
-  const [userEmail, setUserEmail] = useState(null);
-  const [hasDraft, setHasDraft] = useState(false);
   const [exitModalOpen, setExitModalOpen] = useState(false);
-  const [acquiringLock, setAcquiringLock] = useState(false);
-  const [lockAttempted, setLockAttempted] = useState(false);
-  const [initialSyncDone, setInitialSyncDone] = useState(false);
-  const [checkingLock, setCheckingLock] = useState(true);
+  const [userEmail, setUserEmail] = useState(null);
 
-  const { permissions, rolle } = useRBAC();
-  const [forceUnlocking, setForceUnlocking] = useState(false);
-  const istAdminOderFachschaft = rolle === 'Administrator' || rolle === 'Fachschaftsleitung' || permissions?.istAdmin;
-  const { currentLockedLernpaketId } = useLernpaketLockGlobal();
+  const { permissions } = useRBAC();
+  const istAdminOderFachschaft = permissions?.istAdmin;
+
+  // Single Source of Truth: Lock vom übergeordneten Lernpaket
+  const { 
+    canEdit: canEditFromLock, 
+    isLockedByOther, 
+    lockedByEmail,
+    acquireLock,
+    releaseLock 
+  } = useLernpaketLock(activityRecord?.lernpaket_id);
 
   useEffect(() => {
     base44.auth.me().then(u => setUserEmail(u?.email || null));
   }, []);
 
-  // ✅ INITIAL SYNC: Auto-Restore Bearbeitungsmodus beim Laden
-  useEffect(() => {
-    if (!activityRecord?.id || !userEmail || initialSyncDone) return;
-
-    const checkAndRestoreEditMode = async () => {
-      setCheckingLock(true);
-      try {
-        // ✅ Lade Parent-Lernpaket Status
-        const paket = await base44.entities.Lernpakete.get(activityRecord.lernpaket_id);
-        
-        if (!paket) {
-          setCheckingLock(false);
-          return;
-        }
-
-        // ✅ Validierung: Lock ist noch aktiv UND gehört dem aktuellen User?
-        const lockStillValid = 
-          paket.lock_status === true && 
-          paket.locked_by_user === userEmail &&
-          paket.lernpaket_id === activityRecord.lernpaket_id;
-
-        if (lockStillValid) {
-          // ✅ Lock ist gültig → Bearbeitungsmodus automatisch aktivieren
-          console.info('[ActivityDetailView] Auto-restoring edit mode for activity', activityRecord.id);
-          setEditMode(true);
-          setOriginalFormData({ ...formData });
-          // Der Hook wird die Heartbeat selbstständig starten da editMode=true
-        } else {
-          // ✅ Lock ist ungültig oder gehört jemand anderem
-          console.info('[ActivityDetailView] Lock not valid or held by other user. Staying in read mode.');
-          setEditMode(false);
-        }
-      } catch (error) {
-        console.error('[ActivityDetailView] Initial sync failed:', error);
-        // Bei Fehler: vorsichtshalber im Lesemodus bleiben
-        setEditMode(false);
-      } finally {
-        setCheckingLock(false);
-        setInitialSyncDone(true);
-      }
-    };
-
-    checkAndRestoreEditMode();
-  }, [activityRecord?.id, userEmail, initialSyncDone]);
-
-  // Collaboration Lock mit Offline-Support
-   // ✅ Hierarchie-Locking: Hook lädt Parent-lock_version selbst wenn parentId gesetzt ist
-   // active=true wenn editMode ODER wenn Auto-Restore aktiv ist
-   const { acquireLock, releaseLock, isLocked: lockedByOther, retryCount, isOffline, lockLost } = useCollaborationLock(
-     'LernpaketPhaseAktivitaet',
-     ['lernpaketPhaseAktivitaeten'],
-     activityRecord?.id,
-     userEmail,
-     editMode,  // ✅ Heartbeat läuft automatisch wenn editMode=true (auch nach Auto-Restore)
-     undefined,  // onLockAcquired
-     undefined,  // onLockDenied
-     activityRecord?.lernpaket_id  // ✅ Hook lädt Parent-Version selbst
-   );
-
-  // Dirty-State: hat der Nutzer etwas geändert?
-  const isDirty = JSON.stringify(formData) !== JSON.stringify(originalFormData);
-
-  // beforeunload: native Browser-Warnung
-  useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      if (editMode && isDirty) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-    // unload: Lock via Beacon freigeben
-    const handleUnload = () => {
-      if (editMode && activityRecord?.id) {
-        base44.functions.invoke('releaseLockSecure', {
-          entityName: 'LernpaketPhaseAktivitaet',
-          entityId: activityRecord.id,
-        }).catch(() => {});
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('beforeunload', handleUnload);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('beforeunload', handleUnload);
-    };
-  }, [editMode, isDirty, activityRecord?.id]);
-
-  // Auto-Save zu localStorage bei Änderungen (Offline-Fallback)
-  useEffect(() => {
-    if (!editMode || !activityRecord?.id || !formData || Object.keys(formData).length === 0) return;
-
-    const draftKey = `draft_activity_${activityRecord.id}`;
-    try {
-      localStorage.setItem(draftKey, JSON.stringify({
-        formData,
-        timestamp: new Date().toISOString(),
-        userEmail
-      }));
-      setHasDraft(true);
-    } catch (e) {
-      console.warn('[ActivityDetailView] localStorage write failed:', e);
-    }
-  }, [formData, editMode, activityRecord?.id, userEmail]);
-
-  // Prüfe ob Draft existiert beim Mount/Edit-Mode Wechsel
-  useEffect(() => {
-    if (!editMode || !activityRecord?.id) {
-      setHasDraft(false);
-      return;
-    }
-
-    const draftKey = `draft_activity_${activityRecord.id}`;
-    try {
-      const draft = localStorage.getItem(draftKey);
-      if (draft) {
-        const parsed = JSON.parse(draft);
-        setHasDraft(true);
-        // Nur anzeigen, nicht automatisch laden
-      }
-    } catch (e) {
-      console.warn('[ActivityDetailView] localStorage read failed:', e);
-    }
-  }, [editMode, activityRecord?.id]);
-
+  // Laden des Aktivitäts-Katalogs
   const { data: aktivitaetenKatalog = [] } = useQuery({
     queryKey: ['aktivitaetenKatalog'],
     queryFn: () => base44.entities.AktivitaetenKatalog.list(),
@@ -167,154 +45,75 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
 
   const catalog = aktivitaetenKatalog?.find(a => a.id === activityRecord?.aktivitaet_id);
 
+  // Form-Daten initialisieren
   useEffect(() => {
     const values = activityRecord?.field_values || {};
     setFormData(values);
     setOriginalFormData(values);
   }, [activityRecord?.field_values]);
 
-  // Permission check: Admins OR Fachlehrkräfte mit relevanter Berechtigung dürfen bearbeiten
-   const kannInhalteBearbeiten = permissions.istAdmin || (einheitFach && permissions.kannInhalteBearbeiten(einheitFach)) || kannBearbeiten;
+  // Dirty-Check: hat User was geändert?
+  const isDirty = JSON.stringify(formData) !== JSON.stringify(originalFormData);
 
-  // Bearbeitungsmodus aktivieren (Lock erwerben) – mit Debouncing
+  // Permission: darf dieser User überhaupt bearbeiten?
+  const kannInhalteBearbeiten = permissions?.istAdmin || kannBearbeiten;
+
+  // Bearbeitungsmodus aktivieren
   const handleEnterEditMode = async () => {
-    // ✅ Debouncing: Button sofort deaktivieren, damit keine Doppel-Klicks möglich sind
-    if (lockAttempted || acquiringLock) return;
-    setLockAttempted(true);
-    setAcquiringLock(true);
-
-    try {
-      // ✅ Hierarchie-Lock: Locke das Parent-Lernpaket, nicht die Activity
+    if (!canEditFromLock) {
       const ok = await acquireLock();
-      if (ok) {
-        setEditMode(true);
-        setOriginalFormData({ ...formData });
-      } else {
-        toast.error('Die Aktivität kann gerade nicht gesperrt werden. Bitte versuchen Sie es in einem Moment erneut.');
+      if (!ok) {
+        toast.error(`Aktivität ist bereits gesperrt von ${lockedByEmail}`);
+        return;
       }
-    } catch (error) {
-      console.error('[ActivityDetailView] Lock error:', error);
-      toast.error('Fehler beim Sperren der Aktivität. Bitte versuchen Sie es erneut.');
-    } finally {
-      setAcquiringLock(false);
-      setLockAttempted(false);
     }
+    setEditMode(true);
+    setOriginalFormData({ ...formData });
   };
 
-  // Zwischenspeichern: Lock bleibt aktiv
+  // Speichern
   const handleSave = async (andExit = false) => {
-    if (lockLost) {
-      toast.error('Lock verloren. Bitte Seite neu laden.');
-      return;
-    }
     setSaving(true);
     try {
-      // ✅ Erst einheitId laden, DANN speichern
-      let einheitId = null;
-      if (activityRecord?.lernpaket_id) {
-        try {
-          const paket = await base44.entities.Lernpakete.get(activityRecord.lernpaket_id);
-          einheitId = paket?.einheit_id || null;
-        } catch (e) {
-          console.warn('[ActivityDetailView] Failed to load parent Lernpaket:', e);
-        }
-      }
-      
-      const response = await base44.functions.invoke('updateActivitySecure', {
-        activityId: activityRecord.id,
-        fieldValues: formData,
-        einheitId,
-        targetFach: einheitFach,
+      await base44.entities.LernpaketPhaseAktivitaet.update(activityRecord.id, {
+        field_values: formData,
       });
 
-      if (response?.data?.success) {
-        queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-        setOriginalFormData({ ...formData });
-        try { localStorage.removeItem(`draft_activity_${activityRecord.id}`); setHasDraft(false); } catch {}
-        toast.success('Aktivität gespeichert.');
-        if (andExit) await doExitEditMode();
+      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      setOriginalFormData({ ...formData });
+      toast.success('Aktivität gespeichert.');
+
+      if (andExit) {
+        await handleExitEditMode();
       }
     } catch (err) {
-      const status = err?.response?.status;
-      const code = err?.response?.data?.code;
-      const message = err?.response?.data?.error || err?.message || 'Unbekannter Fehler';
-      
-      if (status === 409 && code === 'LOCK_NOT_OWNED') {
-        toast.error('Sperre wurde extern aufgehoben. Bearbeitungsmodus wird beendet.');
-        await doExitEditMode();
-        return;
-      } else if (status === 400) {
-        toast.error('Erforderliche Parameter fehlen: ' + message);
-      } else if (status === 409) {
-        toast.error('Versionskollision – bitte Seite neu laden.');
-      } else if (status === 403) {
-        toast.error('Sie haben keine Berechtigung, diese Aktivität zu bearbeiten.');
-      } else if (status === 429) {
-        toast.error('Zu viele Anfragen. Bitte warten.');
-      } else {
-        console.error('[ActivityDetailView] Save error:', err);
-        toast.error('Fehler beim Speichern: ' + message);
-      }
+      console.error('[ActivityDetailView] Save error:', err);
+      toast.error('Fehler beim Speichern: ' + (err?.message || 'Unbekannter Fehler'));
     } finally {
       setSaving(false);
     }
   };
 
-  const doExitEditMode = async () => {
-    await releaseLock();
-    setEditMode(false);
-    setExitModalOpen(false);
-  };
-
-  // Bearbeitungsmodus beenden: mit Dirty-Check
-  const handleExitEditMode = () => {
+  // Bearbeitungsmodus beenden
+  const handleExitEditMode = async () => {
     if (isDirty) {
       setExitModalOpen(true);
     } else {
-      doExitEditMode();
+      await releaseLock();
+      setEditMode(false);
     }
   };
 
   // Admin Force-Unlock
   const handleForceUnlock = async () => {
-    setForceUnlocking(true);
     try {
-      await base44.functions.invoke('releaseLockSecure', {
-        entityName: 'LernpaketPhaseAktivitaet',
-        entityId: activityRecord.id,
+      await base44.functions.invoke('forceReleaseLockAdmin', {
+        lernpaketId: activityRecord?.lernpaket_id,
       });
       queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-      toast.success('Sperre wurde aufgehoben.');
-    } catch {
-      toast.error('Sperre konnte nicht aufgehoben werden.');
-    } finally {
-      setForceUnlocking(false);
-    }
-  };
-
-  const handleRestoreDraft = () => {
-    const draftKey = `draft_activity_${activityRecord.id}`;
-    try {
-      const draft = localStorage.getItem(draftKey);
-      if (draft) {
-        const parsed = JSON.parse(draft);
-        setFormData(parsed.formData);
-        toast.success('Entwurf wiederhergestellt.');
-      }
-    } catch (e) {
-      toast.error('Fehler beim Wiederherstellen des Entwurfs.');
-      console.error('[ActivityDetailView] Draft restore failed:', e);
-    }
-  };
-
-  const handleClearDraft = () => {
-    const draftKey = `draft_activity_${activityRecord.id}`;
-    try {
-      localStorage.removeItem(draftKey);
-      setHasDraft(false);
-      toast.info('Entwurf gelöscht.');
-    } catch (e) {
-      console.warn('[ActivityDetailView] Draft clear failed:', e);
+      toast.success('Lock wurde aufgehoben.');
+    } catch (err) {
+      toast.error('Lock konnte nicht aufgehoben werden.');
     }
   };
 
@@ -328,56 +127,6 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Initial Sync Loading */}
-      {checkingLock && !initialSyncDone && (
-        <div className="flex-shrink-0 bg-blue-50 border-b border-blue-200 p-3">
-          <div className="flex items-center gap-2 text-blue-800 text-sm">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Bearbeitungsmodus wird überprüft...</span>
-          </div>
-        </div>
-      )}
-
-      {/* Offline/Connection Warning */}
-      {(isOffline || retryCount > 0 || hasDraft) && (
-        <div className="flex-shrink-0 bg-amber-50 border-b border-amber-200 p-3 space-y-2">
-          {isOffline && (
-            <div className="flex items-center gap-2 text-amber-800 text-sm">
-              <WifiOff className="w-4 h-4" />
-              <span>Offline-Modus aktiv. Änderungen werden lokal gespeichert.</span>
-            </div>
-          )}
-          {retryCount > 0 && !isOffline && (
-            <div className="flex items-center gap-2 text-amber-800 text-sm">
-              <AlertTriangle className="w-4 h-4" />
-              <span>Verbindung instabil ({retryCount}/3 Versuche). Auto-Speichern verzögert...</span>
-            </div>
-          )}
-          {lockLost && (
-            <div className="flex items-center gap-2 text-red-700 text-sm bg-red-50 rounded p-2">
-              <AlertTriangle className="w-4 h-4" />
-              <span>Lock verloren. Formular ist schreibgeschützt.</span>
-            </div>
-          )}
-          {hasDraft && !editMode && (
-            <div className="flex items-center justify-between gap-2 text-blue-800 text-sm bg-blue-50 rounded p-2">
-              <div className="flex items-center gap-2">
-                <RotateCcw className="w-4 h-4" />
-                <span>Entwurf vorhanden. Möchten Sie wiederherstellen?</span>
-              </div>
-              <div className="flex gap-1">
-                <Button size="sm" variant="outline" className="text-xs" onClick={handleRestoreDraft}>
-                  Wiederherstellen
-                </Button>
-                <Button size="sm" variant="ghost" className="text-xs" onClick={handleClearDraft}>
-                  Löschen
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex-shrink-0 flex items-start justify-between gap-3 p-4 border-b">
         <div className="flex-1 min-w-0">
@@ -399,47 +148,33 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
             <ApprovalStatusBadge contentStatus={activityRecord.content_status} />
           </div>
         </div>
+
+        {/* Action Buttons */}
         <div className="flex gap-2 shrink-0 flex-col items-end">
           <div className="flex gap-2 flex-wrap justify-end">
-            {/* Admin Force-Unlock: sichtbar wenn Element von jemand anderem gesperrt ist */}
-            {lockedByOther && istAdminOderFachschaft && (
+            {/* Admin Force-Unlock */}
+            {isLockedByOther && istAdminOderFachschaft && (
               <Button
                 size="sm"
                 variant="outline"
                 onClick={handleForceUnlock}
-                disabled={forceUnlocking}
                 className="gap-2 border-amber-400 text-amber-800 hover:bg-amber-50"
-                title={`Sperre von ${activityRecord.locked_by_user} aufheben (Admin)`}
               >
-                {forceUnlocking
-                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  : <Unlock className="w-3.5 h-3.5" />
-                }
+                <Unlock className="w-3.5 h-3.5" />
                 Sperre aufheben
               </Button>
             )}
+
             {!editMode ? (
               <Button
                 size="sm"
                 variant="outline"
                 onClick={handleEnterEditMode}
-                disabled={lockedByOther || lockLost || acquiringLock || checkingLock}
-                title={
-                  checkingLock ? 'Überprüfe Bearbeitungsmodus...'
-                  : lockLost ? 'Lock verloren. Seite neu laden.'
-                  : lockedByOther ? `Wird bearbeitet von ${activityRecord.locked_by_user}`
-                  : undefined
-                }
+                disabled={isLockedByOther || !kannInhalteBearbeiten}
                 className="gap-2"
               >
-                {acquiringLock
-                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sperren…</>
-                  : lockLost
-                    ? <><Lock className="w-3.5 h-3.5 text-red-500" /> Lock verloren</>
-                    : lockedByOther
-                      ? <><Lock className="w-3.5 h-3.5 text-amber-500" /> Gesperrt</>
-                      : <><PenLine className="w-3.5 h-3.5" /> Bearbeitungsmodus aktivieren</>
-                }
+                <PenLine className="w-3.5 h-3.5" />
+                Bearbeitungsmodus aktivieren
               </Button>
             ) : (
               <>
@@ -447,12 +182,11 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
                   size="sm"
                   variant="outline"
                   onClick={() => handleSave(false)}
-                  disabled={saving || lockLost || isOffline || !isDirty}
+                  disabled={saving || !isDirty}
                   className="gap-2"
-                  title={lockLost ? 'Lock verloren' : isOffline ? 'Offline' : !isDirty ? 'Keine Änderungen' : ''}
                 >
                   {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                  Zwischenspeichern
+                  Speichern
                 </Button>
                 <Button
                   size="sm"
@@ -461,27 +195,30 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
                   disabled={saving}
                   className="gap-2"
                 >
-                  <X className="w-3.5 h-3.5" /> Bearbeitungsmodus beenden
+                  <X className="w-3.5 h-3.5" />
+                  Beenden
                 </Button>
               </>
             )}
           </div>
+
           {isDirty && editMode && (
             <span className="text-xs text-amber-600">Ungespeicherte Änderungen</span>
           )}
-          <ApprovalActionButton 
-            entityId={activityRecord.id} 
-            entityType="activity" 
+
+          <ApprovalActionButton
+            entityId={activityRecord.id}
+            entityType="activity"
             contentStatus={activityRecord.content_status}
             missingFields={!activityRecord.is_complete ? ['Inhalt der Aktivität unvollständig'] : []}
-            kannBearbeiten={true}
+            kannBearbeiten={kannInhalteBearbeiten}
           />
         </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
-        {/* Aufgabenstellung (immer zuerst) */}
+        {/* Aufgabenstellung */}
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aufgabenstellung</label>
           {editMode ? (
@@ -498,11 +235,11 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
           )}
         </div>
 
-        {/* Schema-basierte Felder rendern */}
+        {/* Schema-basierte Felder */}
         {catalog.form_schema?.map(field => {
           const fieldValue = formData[field.field_name];
           const isRequired = field.required;
-          const isEmpty = !fieldValue || (Array.isArray(fieldValue) && fieldValue.length === 0) || (typeof fieldValue === 'object' && Object.keys(fieldValue).length === 0);
+          const isEmpty = !fieldValue || (Array.isArray(fieldValue) && fieldValue.length === 0);
 
           if (editMode) {
             return (
@@ -553,44 +290,13 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
                   </Select>
                 )}
 
-                {field.type === 'number' && (
-                  <Input
-                    type="number"
-                    value={fieldValue || ''}
-                    onChange={e => setFormData({ ...formData, [field.field_name]: e.target.value })}
-                    placeholder={field.placeholder}
-                  />
-                )}
-
-                {field.type === 'file' && (
-                  <div className="space-y-2">
-                    {fieldValue && (
-                      <div className="p-2 rounded bg-muted text-sm">
-                        <FileText className="w-3.5 h-3.5 inline mr-2" />
-                        <a href={fieldValue} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                          {typeof fieldValue === 'string' ? fieldValue.split('/').pop() : 'Datei'}
-                        </a>
-                        <button
-                          onClick={() => setFormData({ ...formData, [field.field_name]: null })}
-                          className="ml-2 text-destructive text-xs hover:underline"
-                        >
-                          Entfernen
-                        </button>
-                      </div>
-                    )}
-                    <Input type="file" onChange={e => {
-                      // File upload would be handled here
-                    }} />
-                  </div>
-                )}
-
                 {isEmpty && isRequired && (
                   <p className="text-xs text-amber-600">Dieses Feld ist erforderlich.</p>
                 )}
               </div>
             );
           } else {
-            // Read-only mode
+            // Read-only
             return (
               <div key={field.field_name} className="space-y-1.5">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{field.label}</label>
@@ -599,19 +305,6 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
                     <a href={fieldValue} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline break-all">
                       {fieldValue}
                     </a>
-                  ) : field.type === 'file' && fieldValue ? (
-                    <a href={fieldValue} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-2">
-                      <FileText className="w-3.5 h-3.5" />
-                      {typeof fieldValue === 'string' ? fieldValue.split('/').pop() : 'Datei'}
-                    </a>
-                  ) : Array.isArray(fieldValue) ? (
-                    <div className="space-y-1">
-                      {fieldValue.map((item, idx) => (
-                        <div key={idx} className="text-xs">{typeof item === 'string' ? item : JSON.stringify(item)}</div>
-                      ))}
-                    </div>
-                  ) : typeof fieldValue === 'object' ? (
-                    <pre className="text-xs whitespace-pre-wrap break-words">{JSON.stringify(fieldValue, null, 2)}</pre>
                   ) : (
                     <p>{fieldValue || <span className="italic text-muted-foreground">Nicht ausgefüllt</span>}</p>
                   )}
@@ -620,20 +313,18 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
             );
           }
         })}
-
-        {(!catalog.form_schema || catalog.form_schema.length === 0) && (
-          <div className="text-center py-8 text-muted-foreground">
-            <p className="text-sm">Keine Felder für diese Aktivität konfiguriert.</p>
-          </div>
-        )}
       </div>
 
-      {/* Exit-Modal */}
+      {/* Exit Modal */}
       <UnsavedChangesExitModal
         open={exitModalOpen}
         onOpenChange={setExitModalOpen}
         onSaveAndExit={() => handleSave(true)}
-        onDiscard={doExitEditMode}
+        onDiscard={async () => {
+          await releaseLock();
+          setEditMode(false);
+          setExitModalOpen(false);
+        }}
         saving={saving}
       />
     </div>

@@ -92,25 +92,6 @@
       "type": "number",
       "description": "Laufende Nummer des Klons innerhalb einer MasterAufgabe"
     },
-    "lock_status": {
-      "type": "boolean",
-      "default": false,
-      "description": "True = wird gerade von einem Nutzer bearbeitet"
-    },
-    "locked_by_user": {
-      "type": "string",
-      "description": "E-Mail des Nutzers, der den Baustein gerade bearbeitet"
-    },
-    "locked_at": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Zeitstempel des Locks (2-Min-Timeout)"
-    },
-    "lock_version": {
-      "type": "integer",
-      "default": 0,
-      "description": "Optimistic Locking Version \u2013 inkrementiert bei jedem Lock-Acquire, verhindert Race Conditions"
-    },
     "content_status": {
       "type": "string",
       "enum": [

@@ -22,24 +22,19 @@
       "type": "number",
       "description": "Gesch\u00e4tzte Bearbeitungsdauer in Minuten"
     },
-    "lock_status": {
+    "is_locked": {
       "type": "boolean",
       "default": false,
       "description": "True = wird gerade von einem Nutzer bearbeitet"
     },
-    "locked_by_user": {
+    "locked_by_email": {
       "type": "string",
-      "description": "E-Mail des Nutzers, der das Paket gerade bearbeitet (Lock)"
+      "description": "E-Mail des Nutzers, der das Paket gerade bearbeitet"
     },
     "locked_at": {
       "type": "string",
       "format": "date-time",
       "description": "Zeitstempel, wann der Lock gesetzt wurde (f\u00fcr Auto-Timeout nach 30 Min)"
-    },
-    "lock_version": {
-      "type": "integer",
-      "default": 0,
-      "description": "Optimistic Locking Version \u2013 inkrementiert bei jedem Lock-Acquire, verhindert Race Conditions"
     },
     "content_status": {
       "type": "string",

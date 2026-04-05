@@ -38,20 +38,6 @@
       "type": "number",
       "description": "Sortierreihenfolge innerhalb der Phase"
     },
-    "lock_status": {
-      "type": "boolean",
-      "default": false,
-      "description": "True = wird gerade von einem Nutzer bearbeitet"
-    },
-    "locked_by_user": {
-      "type": "string",
-      "description": "E-Mail des Nutzers, der die Aktivit\u00e4t gerade bearbeitet"
-    },
-    "locked_at": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Zeitstempel des Locks (f\u00fcr 2-Min-Timeout)"
-    },
     "content_status": {
       "type": "string",
       "enum": [

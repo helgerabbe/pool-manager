@@ -1,20 +1,91 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
-import { useQueryClient } from '@tanstack/react-query';
-
-const HEARTBEAT_INTERVAL = 30 * 1000; // alle 30 Sekunden
-
 /**
- * Hook zum Verwalten des Lernpaket-Locks mit acquireLockSecure.
+ * useLernpaketLock
+ * 
+ * Single Source of Truth: Lernpaket-Lock als einzige Wahrheit.
+ * 
+ * Beim Mount:
+ * - Ruft checkLock auf → is_locked? locked_by_email?
+ * - Wenn is_locked === true UND locked_by_email === currentUser.email → canEdit = true
+ * 
+ * Heartbeat (alle 20s wenn locked):
+ * - Erneuert locked_at Timestamp
+ * 
+ * Bei Exit/Unmount:
+ * - Ruft releaseLock auf
+ * 
+ * Returns: {canEdit, isLockedByOther, lockedByEmail, acquireLock, releaseLock}
  */
-export function useLernpaketLock(paketId, userEmail, onLockLost) {
-  const [isLocking, setIsLocking] = useState(false);
-  const [lockError, setLockError] = useState(null);
-  const queryClient = useQueryClient();
-  const heartbeatRef = useRef(null);
-  const onLockLostRef = useRef(onLockLost);
-  onLockLostRef.current = onLockLost;
 
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { base44 } from '@/api/base44Client';
+
+const HEARTBEAT_INTERVAL = 20_000; // 20 Sekunden
+
+export function useLernpaketLock(lernpaketId) {
+  const [canEdit, setCanEdit] = useState(false);
+  const [isLockedByOther, setIsLockedByOther] = useState(false);
+  const [lockedByEmail, setLockedByEmail] = useState(null);
+  const [userEmail, setUserEmail] = useState(null);
+  const heartbeatRef = useRef(null);
+  const heldRef = useRef(false);
+
+  // User laden
+  useEffect(() => {
+    base44.auth.me().then(u => setUserEmail(u?.email || null));
+  }, []);
+
+  // Lock-Status prüfen
+  const checkLock = useCallback(async () => {
+    if (!lernpaketId || !userEmail) return;
+
+    try {
+      const response = await base44.functions.invoke('checkLockSecure', {
+        lernpaketId,
+      });
+
+      const { is_locked, locked_by_email } = response.data;
+
+      if (is_locked) {
+        const isMine = locked_by_email === userEmail;
+        setCanEdit(isMine);
+        setIsLockedByOther(!isMine);
+        setLockedByEmail(locked_by_email);
+
+        if (isMine) {
+          heldRef.current = true;
+          startHeartbeat();
+        }
+      } else {
+        setCanEdit(false);
+        setIsLockedByOther(false);
+        setLockedByEmail(null);
+        heldRef.current = false;
+      }
+    } catch (error) {
+      console.warn('[useLernpaketLock] checkLock failed:', error.message);
+    }
+  }, [lernpaketId, userEmail]);
+
+  // Heartbeat starten
+  const startHeartbeat = useCallback(() => {
+    if (heartbeatRef.current) return;
+
+    heartbeatRef.current = setInterval(async () => {
+      if (!heldRef.current || !lernpaketId || !userEmail) return;
+
+      try {
+        // Erneuere locked_at Timestamp
+        await base44.entities.Lernpakete.update(lernpaketId, {
+          locked_at: new Date().toISOString(),
+        });
+      } catch (error) {
+        console.warn('[useLernpaketLock] Heartbeat failed:', error.message);
+        // Weitermachen trotzdem – Server timeout macht den Rest
+      }
+    }, HEARTBEAT_INTERVAL);
+  }, [lernpaketId, userEmail]);
+
+  // Heartbeat stoppen
   const stopHeartbeat = useCallback(() => {
     if (heartbeatRef.current) {
       clearInterval(heartbeatRef.current);
@@ -22,90 +93,73 @@ export function useLernpaketLock(paketId, userEmail, onLockLost) {
     }
   }, []);
 
-  const startHeartbeat = useCallback(() => {
-    stopHeartbeat();
-    heartbeatRef.current = setInterval(async () => {
-      try {
-        // Prüfe ob Lock noch aktiv ist via Query Invalidation
-        await queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-      } catch (e) {
-        // Fehler ignorieren
-      }
-    }, HEARTBEAT_INTERVAL);
-  }, [stopHeartbeat, queryClient]);
-
-  // Cleanup beim Unmount
-  useEffect(() => {
-    return () => stopHeartbeat();
-  }, [stopHeartbeat]);
-
+  // Lock erwerben
   const acquireLock = useCallback(async () => {
-    setIsLocking(true);
-    setLockError(null);
-    try {
-      const res = await base44.functions.invoke('acquireLockSecure', {
-        entityName: 'Lernpakete',
-        entityId: paketId,
-      });
-      console.log('[useLernpaketLock] acquireLockSecure response:', res?.data);
-      
-      if (res?.data?.success) {
-        queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-        startHeartbeat();
-        return { success: true };
-      } else {
-        setLockError(res?.data?.message || 'Lock konnte nicht erworben werden.');
-        return { success: false, locked_by: res?.data?.lockedBy };
-      }
-    } catch (e) {
-      console.error('[useLernpaketLock] acquireLockSecure error:', e);
-      const status = e?.response?.status;
-      const data = e?.response?.data;
-      
-      if (status === 423) {
-        // Structural Lock aktiv
-        const msg = data?.message || 'Die Struktur wird gerade angepasst.';
-        setLockError(msg);
-        return { success: false, structural_lock: true, message: msg };
-      } else if (status === 409) {
-        // Lock von jemand anderem
-        setLockError(data?.message || `Wird gerade von ${data?.lockedBy} bearbeitet.`);
-        return { success: false, locked_by: data?.lockedBy };
-      }
-      
-      setLockError('Fehler beim Sperren.');
-      return { success: false };
-    } finally {
-      setIsLocking(false);
-    }
-  }, [paketId, queryClient, startHeartbeat]);
+    if (!lernpaketId || !userEmail) return false;
 
+    try {
+      await base44.functions.invoke('acquireLockSimple', {
+        lernpaketId,
+      });
+
+      heldRef.current = true;
+      setCanEdit(true);
+      setIsLockedByOther(false);
+      setLockedByEmail(userEmail);
+      startHeartbeat();
+      return true;
+    } catch (error) {
+      const status = error?.response?.status;
+      const code = error?.response?.data?.code;
+
+      if (status === 409 && code === 'ALREADY_LOCKED') {
+        const lockedBy = error?.response?.data?.locked_by_email;
+        setIsLockedByOther(true);
+        setLockedByEmail(lockedBy);
+      }
+
+      console.warn('[useLernpaketLock] acquireLock failed:', error.message);
+      return false;
+    }
+  }, [lernpaketId, userEmail, startHeartbeat]);
+
+  // Lock freigeben
   const releaseLock = useCallback(async () => {
-    stopHeartbeat();
-    try {
-      await base44.functions.invoke('releaseLockSecure', {
-        entityName: 'Lernpakete',
-        entityId: paketId,
-      });
-      queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-    } catch (e) {
-      console.error('[useLernpaketLock] releaseLockSecure error:', e);
-      queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-    }
-  }, [paketId, queryClient, stopHeartbeat]);
+    if (!lernpaketId || !userEmail) return;
 
-  const forceUnlock = useCallback(async () => {
     stopHeartbeat();
-    try {
-      await base44.functions.invoke('releaseLockSecure', {
-        entityName: 'Lernpakete',
-        entityId: paketId,
-      });
-    } catch (e) {
-      console.error('[useLernpaketLock] forceUnlock error:', e);
-    }
-    queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-  }, [paketId, queryClient, stopHeartbeat]);
+    heldRef.current = false;
+    setCanEdit(false);
 
-  return { acquireLock, releaseLock, forceUnlock, isLocking, lockError };
+    try {
+      await base44.functions.invoke('releaseLockSimple', {
+        lernpaketId,
+      });
+    } catch (error) {
+      console.warn('[useLernpaketLock] releaseLock failed:', error.message);
+    }
+  }, [lernpaketId, userEmail, stopHeartbeat]);
+
+  // Initial check beim Mount
+  useEffect(() => {
+    checkLock();
+  }, [lernpaketId, userEmail, checkLock]);
+
+  // Cleanup bei Unmount
+  useEffect(() => {
+    return () => {
+      stopHeartbeat();
+      if (heldRef.current) {
+        releaseLock();
+      }
+    };
+  }, [stopHeartbeat, releaseLock]);
+
+  return {
+    canEdit,
+    isLockedByOther,
+    lockedByEmail,
+    acquireLock,
+    releaseLock,
+  };
 }

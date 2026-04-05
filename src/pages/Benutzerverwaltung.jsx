@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { useResourceLock } from '@/hooks/useResourceLock';
 import UserImport from '@/components/admin/UserImport';
 import UserInviteTab from '@/components/admin/UserInviteTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -284,7 +283,6 @@ export default function Benutzerverwaltung() {
   const isMobile = useIsMobile();
   const { permissions, authUser } = useRBAC();
   const queryClient = useQueryClient();
-  const { forceReleaseLock } = useResourceLock('Aufgabenbausteine', ['aufgaben', 'aufgabenbausteine'], null, null, false);
 
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -317,13 +315,7 @@ export default function Benutzerverwaltung() {
     enabled: permissions.kannBenutzerVerwalten,
   });
 
-  const { data: aufgaben = [] } = useQuery({
-    queryKey: ['aufgaben'],
-    queryFn: () => base44.entities.Aufgabenbausteine.list(),
-    enabled: permissions.kannBenutzerVerwalten,
-  });
 
-  const lockedAufgaben = aufgaben.filter(a => a.lock_status);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Benutzer.create(data),
@@ -466,42 +458,6 @@ export default function Benutzerverwaltung() {
           )}
         </CardContent>
       </Card>
-
-      {/* Aktive Locks (Admin-Override) */}
-      {lockedAufgaben.length > 0 && (
-        <Card className="border border-amber-200 bg-amber-50 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2 text-amber-700">
-              <Lock className="w-4 h-4" />
-              Aktive Record-Locks ({lockedAufgaben.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {lockedAufgaben.map(aufgabe => (
-              <div key={aufgabe.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-amber-200">
-                <div className="flex items-center gap-3">
-                  <Lock className="w-4 h-4 text-amber-500" />
-                  <div>
-                    <p className="text-sm font-medium">{aufgabe.baustein_typ}</p>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Mail className="w-3 h-3" />{aufgabe.locked_by_user}
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 text-amber-700 border-amber-300 hover:bg-amber-100"
-                  onClick={() => forceReleaseLock(aufgabe.id)}
-                >
-                  <Unlock className="w-3.5 h-3.5" />
-                  Lock aufheben
-                </Button>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Benutzerliste mit Tabs */}
       <Card className="border-0 shadow-sm">
