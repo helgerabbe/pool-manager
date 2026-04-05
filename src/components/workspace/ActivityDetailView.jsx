@@ -34,6 +34,16 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
 
   // Collaboration Lock mit Offline-Support
    // ✅ Hierarchie-Locking: Locke das Parent-Lernpaket, nicht die Activity
+   // Lade Parent-Lernpaket für korrekte lock_version
+   const { data: parentLernpaket } = useQuery({
+     queryKey: ['lernpakete', activityRecord?.lernpaket_id],
+     queryFn: () =>
+       activityRecord?.lernpaket_id
+         ? base44.entities.Lernpakete.filter({ id: activityRecord.lernpaket_id }).then(r => r[0])
+         : Promise.resolve(null),
+     enabled: !!activityRecord?.lernpaket_id,
+   });
+
    const { acquireLock, releaseLock, isLocked: lockedByOther, retryCount, isOffline, lockLost } = useCollaborationLock(
      'LernpaketPhaseAktivitaet',
      ['lernpaketPhaseAktivitaeten'],
@@ -42,8 +52,8 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
      false,  // Nicht automatisch locken
      undefined,  // onLockAcquired
      undefined,  // onLockDenied
-     activityRecord?.lernpaket_id,  // ✅ Parent: Lernpaket
-     activityRecord?.lock_version  // ✅ Client-seitige Version
+     activityRecord?.lernpaket_id,  // ✅ Parent: Lernpaket-ID
+     parentLernpaket?.lock_version  // ✅ Parent's lock_version für CAS
    );
 
   // Dirty-State: hat der Nutzer etwas geändert?
