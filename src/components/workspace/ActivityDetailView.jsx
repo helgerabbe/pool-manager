@@ -119,20 +119,7 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
   }, [activityRecord?.field_values]);
 
   // Permission check: Admins OR Fachlehrkräfte mit relevanter Berechtigung dürfen bearbeiten
-   const kannInhalteBearbeiten = permissions.istAdmin || (einheitFach && permissions.kannInhalteBearbeiten(einheitFach));
-   if (!kannInhalteBearbeiten) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 text-center p-8">
-        <AlertTriangle className="w-12 h-12 text-muted-foreground/30" />
-        <div>
-          <p className="font-semibold">Kein Zugriff</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Sie dürfen keine Aktivitäten bearbeiten. Nur Fachlehrkräfte, Fachschaftsleitung und Administratoren haben diese Berechtigung.
-          </p>
-        </div>
-      </div>
-    );
-   }
+   const kannInhalteBearbeiten = permissions.istAdmin || (einheitFach && permissions.kannInhalteBearbeiten(einheitFach)) || kannBearbeiten;
 
   // Bearbeitungsmodus aktivieren (Lock erwerben)
   const handleEnterEditMode = async () => {
