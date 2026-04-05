@@ -23,7 +23,8 @@ import {
   TrendingUp, AlertTriangle, UserCheck, PenLine, Save, Loader2
 } from 'lucide-react';
 import SyncWarningBanner from '@/components/sync/SyncWarningBanner';
-import { useLernpaketLock } from '@/hooks/useLernpaketLock';
+import { useLernpaketLockHierarchical } from '@/hooks/useLernpaketLockHierarchical';
+import { useLernpaketLockGlobal } from '@/lib/LernpaketLockContext';
 import { isPaketLocked } from '@/lib/statusLogic';
 
 const kategorieColors = {
@@ -364,25 +365,19 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   const [localTitel, setLocalTitel] = useState(paket.titel_des_pakets || '');
   const [localPhasenConfig, setLocalPhasenConfig] = useState(paket.phasen_konfiguration || {});
   const queryClient = useQueryClient();
-  // Ref für Navigation-Guard (Callback braucht aktuellen State ohne Re-Renders)
+  const globalLock = useLernpaketLockGlobal();
   const inEditModeRef = useRef(false);
 
-  // Callback wenn Heartbeat meldet dass Lock extern aufgehoben wurde (Szenario 3)
   const handleLockLostExternally = useCallback(() => {
     setLockLostByAdmin(true);
-    setLocalEditMode(false);
+    globalLock.clearLock();
     toast.error('Ihre Sperre wurde von einem Administrator aufgehoben. Bearbeitungsmodus beendet.');
     queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-  }, [queryClient]);
+  }, [globalLock, queryClient]);
 
-  const [localEditMode, setLocalEditMode] = useState(false);
-  const { acquireLock, releaseLock, forceUnlock, isLocking } = useLernpaketLock(paket.id, userEmail, handleLockLostExternally);
+  const { acquireLock, releaseLock, forceUnlock, isLocking, isLockedByMe, isLockedByOther, lockedByUser } = useLernpaketLockHierarchical(paket.id, userEmail, handleLockLostExternally);
 
-  const paketLockedBy = paket.locked_by_user || paket.locked_by;
-  const isLockedByOther = isPaketLocked(paket) && paketLockedBy !== userEmail;
-  const isLockedByMe    = localEditMode || (isPaketLocked(paket) && paketLockedBy === userEmail);
   const inEditMode = isLockedByMe;
-  // Ref aktuell halten für Navigation-Guard-Callback
   inEditModeRef.current = inEditMode;
 
   // Sync localTitel und Phasen-Config wenn Paket von außen aktualisiert wird
@@ -408,33 +403,15 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   }, [inEditMode, paket.id]);
 
   const handleStartEdit = async () => {
-    try {
-      const result = await acquireLock();
-      console.log('[LernpaketPanel] acquireLock result:', result);
-      if (result?.success) {
-        setLocalEditMode(true);
-        toast.success('Bearbeitungsmodus aktiviert.');
-      } else if (result?.locked_by) {
-        toast.error(`Dieses Paket wird gerade von ${result.locked_by} bearbeitet.`);
-      } else if (result?.structural_lock) {
-        toast.error(result?.message || 'Strukturbearbeitung läuft — neue Inhalts-Bearbeitungen sind kurzzeitig gesperrt.');
-      } else {
-        toast.error('Bearbeitungsmodus konnte nicht aktiviert werden.');
-      }
-    } catch (err) {
-      console.error('[LernpaketPanel] acquireLock error:', err);
-      toast.error('Fehler beim Aktivieren des Bearbeitungsmodus.');
+    const success = await acquireLock();
+    if (success) {
+      toast.success('Bearbeitungsmodus aktiviert.');
     }
   };
 
-  // Exit: Lock freigeben
   const handleStopEdit = async () => {
-    await base44.functions.invoke('releaseLockSecure', {
-      entityName: 'Lernpakete',
-      entityId: paket.id,
-    }).catch(() => {});
-    queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-    setLocalEditMode(false);
+    await releaseLock();
+    toast.success('Bearbeitungsmodus beendet.');
   };
 
 
@@ -516,7 +493,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
           <div className="flex-1">
             <p className="font-semibold">Wird gerade bearbeitet</p>
             <p className="text-xs mt-0.5 text-amber-700">
-              <strong>{paketLockedBy}</strong> bearbeitet dieses Paket gerade. Bitte warten Sie, bis die Bearbeitung abgeschlossen ist.
+              <strong>{lockedByUser}</strong> bearbeitet dieses Paket gerade. Bitte warten Sie, bis die Bearbeitung abgeschlossen ist.
             </p>
             {istAdmin && (
               <Button
@@ -707,6 +684,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                   inEditMode={localEditMode}
                   onNavigate={onNavigate}
                   onGoToTaskWorkshop={(activityId) => onNavigate({ type: 'goto-task-workshop', activityId })}
+                  inEditMode={isLockedByMe}
                 />
               )}
             </div>
@@ -1251,7 +1229,7 @@ export default function WorkspaceDetailPanel({
             kannBearbeiten={kannBearbeiten}
             userEmail={userEmail}
             queryClient={queryClient}
-            inEditMode={localEditMode}
+            inEditMode={isLockedByMe}
             onNavigate={onNavigate}
           />
         </div>

@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { RoleProvider } from '@/lib/RoleContext';
+import { LernpaketLockProvider } from '@/lib/LernpaketLockContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ProtectedRoute from '@/lib/ProtectedRoute';
 import AppLayout from '@/components/layout/AppLayout';
@@ -103,12 +104,14 @@ function App() {
   return (
     <AuthProvider>
       <RoleProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
-      </QueryClientProvider>
+      <LernpaketLockProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <Router>
+            <AuthenticatedApp />
+          </Router>
+          <Toaster />
+        </QueryClientProvider>
+      </LernpaketLockProvider>
       </RoleProvider>
     </AuthProvider>
   )

@@ -179,22 +179,35 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ✅ Pre-Save Lock-Validierung (kritisch für Datenkonsistenz!)
-    // Prüfe: Hat der User den aktiven Lock? Blockiere auch wenn Lock komplett fehlt (z.B. nach Force-Unlock durch Admin).
-    const lockHeldByUser = aktivitaet.lock_status && aktivitaet.locked_by_user === user.email;
-    if (!lockHeldByUser) {
+    // ✅ Hierarchisches Lock-Validierung (kritisch!)
+    // Prüfe: Hat der User einen Lock auf dem übergeordneten Lernpaket?
+    // Die Aktivität erbt ihren Lock-Status vom Parent-Lernpaket.
+    const lernpaket = await base44.asServiceRole.entities.Lernpakete.get(aktivitaet.lernpaket_id);
+    if (!lernpaket) {
       console.warn(
-        `[updateActivitySecure] DENIED - ${user.email} tried to save but lock_status=${aktivitaet.lock_status}, locked_by_user=${aktivitaet.locked_by_user}`
+        `[updateActivitySecure] Lernpaket ${aktivitaet.lernpaket_id} for activity ${activityId} not found`
+      );
+      return Response.json(
+        { error: 'Parent Lernpaket not found' },
+        { status: 404 }
+      );
+    }
+
+    const paketLockHeldByUser = lernpaket.lock_status && lernpaket.locked_by_user === user.email;
+    if (!paketLockHeldByUser) {
+      console.warn(
+        `[updateActivitySecure] DENIED - ${user.email} tried to save activity but parent paket lock_status=${lernpaket.lock_status}, locked_by_user=${lernpaket.locked_by_user}`
       );
       return Response.json(
         {
-          error: 'Kein aktiver Lock vorhanden. Speichern nicht erlaubt (Lock wurde ggf. durch Admin aufgehoben).',
-          code: 'LOCK_NOT_OWNED',
-          lockStatus: aktivitaet.lock_status,
-          currentLockOwner: aktivitaet.locked_by_user ?? null,
+          error: 'Das übergeordnete Lernpaket ist nicht für Sie gesperrt. Speichern nicht erlaubt.',
+          code: 'PARENT_LOCK_NOT_OWNED',
+          paketId: lernpaket.id,
+          paketLockStatus: lernpaket.lock_status,
+          currentPaketLockOwner: lernpaket.locked_by_user ?? null,
           details: {
             expectedOwner: user.email,
-            actualOwner: aktivitaet.locked_by_user ?? null,
+            actualOwner: lernpaket.locked_by_user ?? null,
             timestamp: new Date().toISOString(),
           }
         },
