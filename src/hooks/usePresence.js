@@ -95,9 +95,14 @@ export function usePresence(einheitId) {
       // Heartbeat: eigenes last_seen_at aktualisieren
       heartbeatRef.current = setInterval(async () => {
         if (!myRecordIdRef.current) return;
-        await base44.entities.ActiveUsersPresence.update(myRecordIdRef.current, {
-          last_seen_at: new Date().toISOString(),
-        });
+        try {
+          await base44.entities.ActiveUsersPresence.update(myRecordIdRef.current, {
+            last_seen_at: new Date().toISOString(),
+          });
+        } catch {
+          // Eintrag wurde extern gelöscht – Ref zurücksetzen
+          myRecordIdRef.current = null;
+        }
       }, HEARTBEAT_INTERVAL);
     };
 
