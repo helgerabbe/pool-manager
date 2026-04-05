@@ -35,34 +35,34 @@ const HEARTBEAT_MS = 30 * 1000; // 30 Sekunden
 const HEARTBEAT_RETRY_LIMIT = 3; // Max Fehlversuche vor Abort
 
 export function useCollaborationLock(
-   entityName,
-   queryKeys = [],
-   recordId,
-   userEmail,
-   active = false,
-   onLockAcquired,
-   onLockDenied,
-   parentId = null,  // ← Für Hierarchie-Locking (z.B. Lernpaket-ID)
-   currentLockVersion = null  // ← Client-seitige Lock-Version für Compare-and-Swap
- ) {
-   const queryClient = useQueryClient();
-   const [isLocked, setIsLocked] = useState(false);
-   const [retryCount, setRetryCount] = useState(0);
-   const [isOffline, setIsOffline] = useState(!navigator.onLine);
-   const [lockLost, setLockLost] = useState(false);
-   const heartbeatRef = useRef(null);
-   const heartbeatRetryRef = useRef(0);
-   const heldRef = useRef(false);
-   const userEmailRef = useRef(userEmail);
-   const versionRef = useRef(currentLockVersion);
+  entityName,
+  queryKeys = [],
+  recordId,
+  userEmail,
+  active = false,
+  onLockAcquired,
+  onLockDenied,
+  parentId = null,  // ← Für Hierarchie-Locking (z.B. Lernpaket-ID)
+  currentLockVersion = null  // ← Client-seitige Lock-Version für Compare-and-Swap
+) {
+  const queryClient = useQueryClient();
+  const [isLocked, setIsLocked] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [lockLost, setLockLost] = useState(false);
+  const heartbeatRef = useRef(null);
+  const heartbeatRetryRef = useRef(0);
+  const heldRef = useRef(false);
+  const userEmailRef = useRef(userEmail);
+  const versionRef = useRef(currentLockVersion);
 
   useEffect(() => {
-     userEmailRef.current = userEmail;
-   }, [userEmail]);
+    userEmailRef.current = userEmail;
+  }, [userEmail]);
 
-   useEffect(() => {
-     versionRef.current = currentLockVersion;
-   }, [currentLockVersion]);
+  useEffect(() => {
+    versionRef.current = currentLockVersion;
+  }, [currentLockVersion]);
 
   const invalidate = useCallback(() => {
     queryKeys.forEach(key =>
@@ -72,18 +72,38 @@ export function useCollaborationLock(
 
   // ── Lock über Backend-Funktion erwerben (ATOMAR mit Retry) ──
   const acquireLock = useCallback(async () => {
-    if (!recordId || !userEmail) return false;
+    if (!recordId || !userEmail) {
+      console.warn('[useCollaborationLock.acquireLock] Early return: missing recordId or userEmail', { recordId, userEmail });
+      return false;
+    }
 
     const maxRetries = 3;
     const retryDelayMs = 300;
 
+    console.log('[useCollaborationLock.acquireLock] STARTING with:', {
+      entityName,
+      entityId: recordId,
+      parentId: parentId || null,
+      clientLockVersion: versionRef.current,
+      userEmail,
+    });
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
+        console.log(`[useCollaborationLock.acquireLock] Attempt ${attempt}/${maxRetries}`);
+        // ✅ FIX: clientLockVersion ONLY für direkte Locks (kein parentId)
+        // Bei parentId wird das Parent gelesen & versioniert, Activity-Version ist irrelevant
+        const shouldSendVersion = !parentId && versionRef.current !== null;
         const response = await base44.functions.invoke('acquireLockSecure', {
           entityName,
           entityId: recordId,
-          parentId: parentId || null,  // ✅ Hierarchie-Locking
-          clientLockVersion: versionRef.current,  // ✅ Compare-and-Swap
+          parentId: parentId || undefined,
+          clientLockVersion: shouldSendVersion ? versionRef.current : undefined,
+        });
+
+        console.log(`[useCollaborationLock.acquireLock] Response from backend:`, {
+          status: response?.status,
+          data: response?.data,
         });
 
         if (response.data?.success) {
@@ -100,28 +120,37 @@ export function useCollaborationLock(
         // Bei Race Condition: Retry, sonst abbrechen
         const code = response.data?.code;
         if (code === 'RACE_CONDITION_DETECTED' && attempt < maxRetries) {
-          console.warn(`[useCollaborationLock] Race condition detected. Retrying... (attempt ${attempt}/${maxRetries})`);
+          console.warn(`[useCollaborationLock.acquireLock] Race condition detected. Retrying... (attempt ${attempt}/${maxRetries})`);
           await new Promise(resolve => setTimeout(resolve, retryDelayMs));
           continue;
         }
 
         // Lock-Akquisition endgültig fehlgeschlagen (andere Lock-Gründe)
         const lockedByOther = response.data?.lockedBy ?? response.data?.winner;
+        console.error('[useCollaborationLock.acquireLock] Lock acquisition failed:', {
+          code,
+          lockedByOther,
+          fullResponse: response?.data,
+        });
         if (onLockDenied) {
           onLockDenied(lockedByOther);
         }
-        console.warn(
-          `[useCollaborationLock] Lock acquisition failed (code: ${code}). Winner: ${lockedByOther}`
-        );
         return false;
       } catch (error) {
         // Bei HTTP-Fehler: Status-Code prüfen
         const status = error?.response?.status;
         const data = error?.response?.data;
 
+        console.error(`[useCollaborationLock.acquireLock] EXCEPTION on attempt ${attempt}/${maxRetries}:`, {
+          status,
+          code: data?.code,
+          message: error.message,
+          fullData: data,
+        });
+
         // 409 Race Condition: Retry
         if (status === 409 && data?.code === 'RACE_CONDITION_DETECTED' && attempt < maxRetries) {
-          console.warn(`[useCollaborationLock] Race condition (409). Retrying... (attempt ${attempt}/${maxRetries})`);
+          console.warn(`[useCollaborationLock.acquireLock] Race condition (409). Retrying... (attempt ${attempt}/${maxRetries})`);
           await new Promise(resolve => setTimeout(resolve, retryDelayMs));
           continue;
         }
@@ -129,13 +158,13 @@ export function useCollaborationLock(
         // Andere Fehler oder letzter Versuch
         if (attempt < maxRetries && !status) {
           // Netzwerkfehler: Retry
-          console.warn(`[useCollaborationLock] Network error. Retrying... (attempt ${attempt}/${maxRetries})`);
+          console.warn(`[useCollaborationLock.acquireLock] Network error (no status). Retrying... (attempt ${attempt}/${maxRetries})`);
           await new Promise(resolve => setTimeout(resolve, retryDelayMs));
           continue;
         }
 
         // Fehler endgültig
-        console.error(`[useCollaborationLock] Lock failed after attempt ${attempt}/${maxRetries}:`, error.message);
+        console.error(`[useCollaborationLock.acquireLock] Lock failed after attempt ${attempt}/${maxRetries}`);
         return false;
       }
     }
