@@ -285,6 +285,7 @@ export default function StrukturBoardEmbedded({
   themenfelder: remoteThemenfelder,
   queryClient,
   onSaved,   // callback nach erfolgreichem Speichern
+  readOnly = false, // ← Structural Lock nicht aktiv
 }) {
   const { permissions } = useRBAC();
 
@@ -353,6 +354,7 @@ export default function StrukturBoardEmbedded({
   // ── DnD ───────────────────────────────────────────────────────────────────
 
   const handleDragEnd = ({ source, destination }) => {
+    if (readOnly) return;
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
@@ -559,39 +561,53 @@ export default function StrukturBoardEmbedded({
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
+      {/* Read-Only Banner */}
+      {readOnly && (
+        <div className="shrink-0 px-4 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-600 flex items-center gap-2">
+          <Save className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+          <span>
+            <strong>Lesemodus</strong> – Starten Sie den Bearbeitungsmodus über den Button oben, um Änderungen vorzunehmen.
+          </span>
+        </div>
+      )}
+
       {/* Aktions-Leiste */}
-      <div className="shrink-0 px-4 py-2 border-b border-border bg-card/50 flex items-center gap-3">
-        <Button
-          size="sm"
-          onClick={handleSpeichern}
-          disabled={saving || !isDirty}
-          className={cn(
-            'gap-1.5 transition-all duration-200',
-            isDirty
-            ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-200 animate-heartbeat'
-              : 'opacity-50'
+      {!readOnly && (
+        <div className="shrink-0 px-4 py-2 border-b border-border bg-card/50 flex items-center gap-3">
+          <Button
+            size="sm"
+            onClick={handleSpeichern}
+            disabled={saving || !isDirty}
+            className={cn(
+              'gap-1.5 transition-all duration-200',
+              isDirty
+              ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-200 animate-heartbeat'
+                : 'opacity-50'
+            )}
+          >
+            {saving
+              ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              : <Save className="w-3.5 h-3.5" />}
+            {isDirty ? '⚠ Struktur speichern' : 'Struktur gespeichert'}
+          </Button>
+          {isDirty && (
+            <p className="text-sm text-amber-600 font-medium">
+              Ungespeicherte Änderungen – bitte speichern bevor du den Tab wechselst!
+            </p>
           )}
-        >
-          {saving
-            ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            : <Save className="w-3.5 h-3.5" />}
-          {isDirty ? '⚠ Struktur speichern' : 'Struktur gespeichert'}
-        </Button>
-        {isDirty && (
-          <p className="text-sm text-amber-600 font-medium">
-            Ungespeicherte Änderungen – bitte speichern bevor du den Tab wechselst!
-          </p>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Tipp */}
-      <div className="shrink-0 px-4 py-1.5 bg-amber-50 border-b border-amber-200 text-xs text-amber-800 flex items-center gap-2">
-        <FolderOpen className="w-3.5 h-3.5 shrink-0" />
-        Lernpakete per Drag & Drop in Themenfelder ziehen · Themenfeld-Titel anklicken zum Umbenennen
-      </div>
+      {!readOnly && (
+        <div className="shrink-0 px-4 py-1.5 bg-amber-50 border-b border-amber-200 text-xs text-amber-800 flex items-center gap-2">
+          <FolderOpen className="w-3.5 h-3.5 shrink-0" />
+          Lernpakete per Drag & Drop in Themenfelder ziehen · Themenfeld-Titel anklicken zum Umbenennen
+        </div>
+      )}
 
       {/* Board */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden">
+      <div className={cn('flex-1 overflow-x-auto overflow-y-hidden', readOnly && 'opacity-60 pointer-events-none select-none')}>
         <DragDropContext onDragEnd={handleDragEnd}>
           <div className="flex gap-4 h-full p-4 min-w-max">
             {/* Sammelbecken */}
@@ -622,14 +638,14 @@ export default function StrukturBoardEmbedded({
               />
             ))}
 
-            {/* Neue-Spalte CTA */}
-            <button
+            {/* Neue-Spalte CTA – nur im Edit-Modus */}
+            {!readOnly && <button
               onClick={handleNeuesThemenfeld}
               className="shrink-0 w-64 rounded-xl border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/5 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-primary transition-colors self-stretch"
             >
               <Plus className="w-6 h-6" />
               <span className="text-sm font-medium">Neues Themenfeld</span>
-            </button>
+            </button>}
           </div>
         </DragDropContext>
       </div>

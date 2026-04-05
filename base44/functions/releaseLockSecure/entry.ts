@@ -22,7 +22,10 @@ const LOCK_OWNER_FIELD = {
   Lernpakete: 'locked_by_user',
   LernpaketPhaseAktivitaet: 'locked_by_user',
   Aufgabenbausteine: 'locked_by_user',
+  Einheiten: 'structural_lock', // ← Structural Lock
 };
+
+const STRUCT_LOCK_ENTITIES = new Set(['Einheiten']);
 
 const SUPPORTED_ENTITIES = Object.keys(LOCK_OWNER_FIELD);
 
@@ -55,7 +58,12 @@ Deno.serve(async (req) => {
     }
 
     // Datensatz laden
-    const records = await base44.asServiceRole.entities[entityName].filter({ id: entityId });
+    let records;
+    try {
+      records = await base44.asServiceRole.entities[entityName].filter({ id: entityId });
+    } catch {
+      return Response.json({ error: 'Datensatz nicht gefunden', code: 'NOT_FOUND' }, { status: 404 });
+    }
     const record = records[0];
 
     if (!record) {
@@ -82,12 +90,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Lock freigeben
-    await base44.asServiceRole.entities[entityName].update(entityId, {
-      lock_status: false,
-      [ownerField]: null,
-      locked_at: null,
-    });
+    // Lock freigeben (Structural vs. Content Lock)
+    const updatePayload = STRUCT_LOCK_ENTITIES.has(entityName)
+      ? { structural_lock: null, structural_locked_at: null }
+      : { lock_status: false, [ownerField]: null, locked_at: null };
+
+    await base44.asServiceRole.entities[entityName].update(entityId, updatePayload);
 
     console.info(
       `[releaseLockSecure] Lock released by ${user.email} on ${entityName}/${entityId}` +

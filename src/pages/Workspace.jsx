@@ -12,8 +12,9 @@ import { usePresence } from '@/hooks/usePresence';
 import { isStructurallyLocked } from '@/hooks/useStructuralLock';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { BookOpen, Lock, ArrowRight } from 'lucide-react';
+import { BookOpen, Lock, ArrowRight, PenLine, Unlock, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import StrukturBoardEmbedded from '@/components/workspace/StrukturBoardEmbedded';
 import WorkspaceTabs from '@/components/workspace/WorkspaceTabs';
 import TaskCreationView from '@/components/workspace/TaskCreationView.jsx';
@@ -126,7 +127,66 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   // ── Präsenz ──────────────────────────────────────────────────────────────────
   const { onlineUsers } = usePresence(selectedEinheitId);
 
-  // ── Structural-Lock + "Paket verschoben"-Notification ────────────────────────
+  // ── Structural-Lock (explizit per Button) ─────────────────────────────────
+  const [isStructuralEditingActive, setIsStructuralEditingActive] = useState(false);
+  const [acquiringStructLock, setAcquiringStructLock] = useState(false);
+  const [releasingStructLock, setReleasingStructLock] = useState(false);
+
+  // Lock freigeben wenn Einheit gewechselt wird
+  useEffect(() => {
+    setIsStructuralEditingActive(false);
+  }, [selectedEinheitId]);
+
+  const handleAcquireStructLock = async () => {
+    if (!einheit) return;
+    setAcquiringStructLock(true);
+    try {
+      const res = await base44.functions.invoke('acquireLockSecure', {
+        entityName: 'Einheiten',
+        entityId: einheit.id,
+        lockType: 'structural',
+      });
+      if (res.data?.success) {
+        setIsStructuralEditingActive(true);
+        queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+        toast.success('Strukturbearbeitung aktiviert.');
+      } else {
+        toast.error(res.data?.lockedBy
+          ? `Struktur wird gerade von ${res.data.lockedBy} bearbeitet.`
+          : 'Structural Lock konnte nicht erworben werden.');
+      }
+    } catch (err) {
+      const code = err?.response?.data?.code;
+      const owner = err?.response?.data?.lockedBy;
+      if (code === 'STRUCTURAL_LOCK_ACTIVE' || err?.response?.status === 423) {
+        toast.error(owner ? `Struktur wird von ${owner} bearbeitet.` : 'Struktur ist gesperrt.');
+      } else {
+        toast.error('Fehler beim Erwerben der Structural-Sperre.');
+      }
+    } finally {
+      setAcquiringStructLock(false);
+    }
+  };
+
+  const handleReleaseStructLock = async () => {
+    if (!einheit) return;
+    setReleasingStructLock(true);
+    try {
+      await base44.functions.invoke('releaseLockSecure', {
+        entityName: 'Einheiten',
+        entityId: einheit.id,
+      });
+      setIsStructuralEditingActive(false);
+      queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+      toast.success('Strukturbearbeitung beendet.');
+    } catch {
+      toast.error('Fehler beim Freigeben der Structural-Sperre.');
+    } finally {
+      setReleasingStructLock(false);
+    }
+  };
+
+  // ── "Paket verschoben"-Notification ──────────────────────────────────────────
   const [movedNotification, setMovedNotification] = useState(null);
 
   useEffect(() => {
@@ -305,10 +365,52 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
            onValueChange={handleTabChange}
            className="flex flex-col flex-1 overflow-hidden m-0 p-0">
 
-            {/* Einheit-Infoleiste */}
-            <div className="px-4 sm:px-6 lg:px-8 py-2 border-b border-border bg-muted/40 shrink-0 flex items-center gap-3">
-              <span className="text-base font-bold text-foreground truncate" style={{fontSize: '1.75rem', lineHeight: '1.2'}}>{einheit.titel_der_einheit}</span>
+            {/* ── Persistenter Header mit Structural-Lock-Control ─────────── */}
+            <div className="px-4 sm:px-6 lg:px-8 py-2 border-b border-border bg-muted/40 shrink-0 flex items-center gap-3 flex-wrap">
+              <span className="text-base font-bold text-foreground truncate flex-1 min-w-0" style={{fontSize: '1.5rem', lineHeight: '1.3'}}>{einheit.titel_der_einheit}</span>
               <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full shrink-0">{einheit.fach}</span>
+
+              {/* Status-Badge + Lock-Button – nur im Struktur-Tab und wenn Berechtigung */}
+              {activeTab === 'struktur' && permissions.kannStrukturBearbeiten(einheit?.fach) && (
+                <div className="flex items-center gap-2 shrink-0">
+                  {/* Status-Badge */}
+                  {isStructuralEditingActive ? (
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20">
+                      <PenLine className="w-3.5 h-3.5" /> Bearbeitungsmodus
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-muted px-2.5 py-1 rounded-full border border-border">
+                      <Lock className="w-3.5 h-3.5" /> Lesemodus
+                    </span>
+                  )}
+
+                  {/* Action-Button */}
+                  {isStructuralEditingActive ? (
+                    <button
+                      onClick={handleReleaseStructLock}
+                      disabled={releasingStructLock}
+                      className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted transition-colors disabled:opacity-50"
+                    >
+                      {releasingStructLock
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        : <Unlock className="w-3.5 h-3.5" />}
+                      Bearbeitung beenden
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleAcquireStructLock}
+                      disabled={acquiringStructLock || structLocked}
+                      title={structLocked ? `Gesperrt von ${einheit?.structural_lock}` : 'Strukturbearbeitung starten'}
+                      className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {acquiringStructLock
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        : <PenLine className="w-3.5 h-3.5" />}
+                      Einheit Struktur bearbeiten
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* 6-Step Navigation */}
@@ -334,48 +436,36 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
             {/* ── Tab 2: Struktur anlegen → StrukturBoard ──────────────────────── */}
               <TabsContent value="struktur" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
-                <div className="flex-1 overflow-y-auto">
-                  <ErrorBoundary label="Struktur">
-                    {!permissions.kannStrukturBearbeiten(einheit?.fach) ? (
-                   <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center p-8">
-                     <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center">
-                       <Lock className="w-8 h-8 text-red-500" />
-                     </div>
-                     <div className="max-w-md">
-                       <p className="text-lg font-semibold">Strukturbearbeitung nicht erlaubt</p>
-                       <p className="text-sm text-muted-foreground mt-2">
-                         Nur Fachschaftsleitung und Administratoren dürfen die Struktur dieser Einheit bearbeiten.
-                       </p>
-                     </div>
-                   </div>
-                 ) : aktivePaketLocks.length > 0 ? (
-                     <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center p-8">
-                       <div className="w-16 h-16 rounded-2xl bg-orange-100 flex items-center justify-center">
-                         <Lock className="w-8 h-8 text-orange-500" />
-                       </div>
-                       <div className="max-w-md">
-                         <p className="text-lg font-semibold">Strukturbearbeitung gesperrt</p>
-                         <p className="text-sm text-muted-foreground mt-2">
-                           {kollegen.join(', ')} {kollegen.length === 1 ? 'bearbeitet' : 'bearbeiten'} gerade Inhalte dieser Einheit.
-                           Strukturänderungen sind nicht möglich, solange Kollegen aktiv an Lernpaketen arbeiten.
-                         </p>
-                         <p className="text-xs text-muted-foreground mt-3 italic">
-                           Die Sperre wird automatisch aufgehoben, sobald die Bearbeitung abgeschlossen ist.
-                         </p>
-                       </div>
-                     </div>
-                   ) : (
-                     <StrukturBoardEmbedded
-                       einheitId={selectedEinheitId}
-                       einheit={einheit}
-                       lernpakete={paketeFuerEinheit}
-                       themenfelder={themenfelder}
-                       queryClient={queryClient}
-                     />
-                     )}
-                     </ErrorBoundary>
-                     </div>
-                     </TabsContent>
+                 <div className="flex-1 overflow-y-auto flex flex-col">
+                   <ErrorBoundary label="Struktur">
+                     {!permissions.kannStrukturBearbeiten(einheit?.fach) ? (
+                    <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center p-8">
+                      <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center">
+                        <Lock className="w-8 h-8 text-red-500" />
+                      </div>
+                      <div className="max-w-md">
+                        <p className="text-lg font-semibold">Strukturbearbeitung nicht erlaubt</p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Nur Fachschaftsleitung und Administratoren dürfen die Struktur dieser Einheit bearbeiten.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                      <StrukturBoardEmbedded
+                        einheitId={selectedEinheitId}
+                        einheit={einheit}
+                        lernpakete={paketeFuerEinheit}
+                        themenfelder={themenfelder}
+                        queryClient={queryClient}
+                        readOnly={!isStructuralEditingActive}
+                        onSaved={() => {
+                          handleReleaseStructLock();
+                        }}
+                      />
+                  )}
+                  </ErrorBoundary>
+                </div>
+              </TabsContent>
 
             {/* ── Tab 3: Aktivitäten zuordnen → Sidebar-Baum + Detail-Panel ───── */}
             <TabsContent value="aktivitaeten" className="data-[state=active]:flex data-[state=inactive]:hidden flex-row flex-1 overflow-hidden m-0 p-0">

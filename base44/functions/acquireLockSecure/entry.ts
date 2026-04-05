@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { entityName, entityId } = await req.json();
+    const { entityName, entityId, lockType } = await req.json();
 
     if (!entityName || !entityId) {
       return Response.json(
@@ -53,12 +53,39 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Record not found', code: 'NOT_FOUND' }, { status: 404 });
     }
 
-    const currentVersion = current.lock_version ?? 0;
     const now = new Date().toISOString();
+
+    // ✅ STRUCTURAL LOCK: Spezialpfad für Einheiten-Strukturbearbeitung
+    if (lockType === 'structural' && entityName === 'Einheiten') {
+      const existingOwner = current.structural_lock;
+      const lockedAt = current.structural_locked_at ? new Date(current.structural_locked_at).getTime() : 0;
+      const isExpired = Date.now() - lockedAt > STRUCT_LOCK_TIMEOUT_MS;
+
+      if (existingOwner && existingOwner !== user.email && !isExpired) {
+        return Response.json(
+          {
+            error: 'Structural lock held by another user',
+            code: 'STRUCTURAL_LOCK_ACTIVE',
+            lockedBy: existingOwner,
+          },
+          { status: 423 }
+        );
+      }
+
+      await base44.asServiceRole.entities.Einheiten.update(entityId, {
+        structural_lock: user.email,
+        structural_locked_at: now,
+      });
+
+      console.info(`[acquireLockSecure] Structural lock acquired by ${user.email} on Einheit/${entityId}`);
+      return Response.json({ success: true, lockedBy: user.email, lockedAt: now });
+    }
+
+    const currentVersion = current.lock_version ?? 0;
 
     // ✅ SCHRITT 0: Szenario 4 – Structural Lock der übergeordneten Einheit prüfen
     // (gilt für LernpaketPhaseAktivitaet und Lernpakete)
-    const STRUCT_LOCK_TIMEOUT_MS = 60 * 60 * 1000; // 60 Min
+    const STRUCT_LOCK_TIMEOUT_MS = 60 * 60 * 1000;
     if (entityName === 'LernpaketPhaseAktivitaet' || entityName === 'Lernpakete') {
       let einheitId = current.einheit_id;
 

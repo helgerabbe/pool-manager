@@ -44,6 +44,29 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ── Structural Lock Pflicht-Prüfung ──────────────────────────────────────
+    // KEIN User (auch kein Admin) darf speichern, ohne den expliziten Lock zu halten.
+    const einheitRecords = await base44.asServiceRole.entities.Einheiten.filter({ id: einheit_id });
+    const einheitRecord = einheitRecords[0];
+    if (!einheitRecord) {
+      return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
+    }
+    const STRUCT_LOCK_TIMEOUT_MS = 60 * 60 * 1000;
+    const lockOwner = einheitRecord.structural_lock;
+    const lockAt = einheitRecord.structural_locked_at ? new Date(einheitRecord.structural_locked_at).getTime() : 0;
+    const lockExpired = Date.now() - lockAt > STRUCT_LOCK_TIMEOUT_MS;
+
+    if (!lockOwner || lockExpired || lockOwner !== user.email) {
+      return Response.json(
+        {
+          error: 'Strukturbearbeitung verweigert: Sie haben keinen aktiven Structural Lock für diese Einheit.',
+          code: 'NO_STRUCTURAL_LOCK',
+          currentLockOwner: lockOwner || null,
+        },
+        { status: 423 }
+      );
+    }
+
     // ── Schritt 1: Themenfelder speichern/aktualisieren ──────────────────────
     const themenfeldMap = {};
 
