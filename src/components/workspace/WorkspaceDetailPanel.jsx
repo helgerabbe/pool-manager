@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import {
   BookOpen, Layers, Target, Puzzle, Plus, Edit, Trash2,
   Clock, Lock, Unlock, AlertCircle, CheckCircle2, ArrowDown,
-  TrendingUp, AlertTriangle, PenLine, Save, X
+  TrendingUp, AlertTriangle, PenLine, Save, X, Loader2
 } from 'lucide-react';
 import SyncWarningBanner from '@/components/sync/SyncWarningBanner';
 
@@ -361,8 +361,15 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   const queryClient = useQueryClient();
 
   // Lock-Management mit useLernpaketLock
-  const { canEdit, isLockedByOther, lockedByEmail, acquireLock, releaseLock } = useLernpaketLock(paket.id);
+  const { canEdit, isLockedByOther, lockedByEmail, isLoading: isLockLoading, acquireLock, releaseLock } = useLernpaketLock(paket.id);
   const [isEnteringEditMode, setIsEnteringEditMode] = useState(false);
+
+  // Synchronisiere Lock-Status mit UI bei Re-Mount
+  React.useEffect(() => {
+    if (canEdit && !isLockLoading) {
+      // Lock ist meiner und geladen → Bearbeitungsmodus ist implizit aktiv
+    }
+  }, [canEdit, isLockLoading]);
 
   // Sync localTitel und Phasen-Config wenn Paket von außen aktualisiert wird
   React.useEffect(() => {
@@ -475,11 +482,20 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
               variant="outline" 
               size="sm" 
               onClick={handleEnterEditMode}
-              disabled={isEnteringEditMode}
+              disabled={isEnteringEditMode || isLockLoading}
               className="gap-2"
             >
-              <PenLine className="w-3.5 h-3.5" />
-              Bearbeitungsmodus aktivieren
+              {isLockLoading ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Prüfe Status...
+                </>
+              ) : (
+                <>
+                  <PenLine className="w-3.5 h-3.5" />
+                  Bearbeitungsmodus aktivieren
+                </>
+              )}
             </Button>
           )}
           {canEdit && (

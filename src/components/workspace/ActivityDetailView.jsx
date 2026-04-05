@@ -29,9 +29,17 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
     canEdit: canEditFromLock, 
     isLockedByOther, 
     lockedByEmail,
+    isLoading: isLockLoading,
     acquireLock,
     releaseLock 
   } = useLernpaketLock(activityRecord?.lernpaket_id);
+
+  // Synchronisiere editMode mit canEditFromLock beim Re-Mount
+  useEffect(() => {
+    if (canEditFromLock && !isLockLoading) {
+      setEditMode(true);
+    }
+  }, [canEditFromLock, isLockLoading]);
 
   useEffect(() => {
     base44.auth.me().then(u => setUserEmail(u?.email || null));
@@ -177,11 +185,20 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
                 size="sm"
                 variant="outline"
                 onClick={handleEnterEditMode}
-                disabled={isLockedByOther || !kannInhalteBearbeiten}
+                disabled={isLockLoading || isLockedByOther || !kannInhalteBearbeiten}
                 className="gap-2"
               >
-                <PenLine className="w-3.5 h-3.5" />
-                Bearbeitungsmodus aktivieren
+                {isLockLoading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Prüfe Status...
+                  </>
+                ) : (
+                  <>
+                    <PenLine className="w-3.5 h-3.5" />
+                    Bearbeitungsmodus aktivieren
+                  </>
+                )}
               </Button>
             ) : (
               <>

@@ -26,8 +26,10 @@ export function useLernpaketLock(lernpaketId) {
   const [isLockedByOther, setIsLockedByOther] = useState(false);
   const [lockedByEmail, setLockedByEmail] = useState(null);
   const [userEmail, setUserEmail] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const heartbeatRef = useRef(null);
   const heldRef = useRef(false);
+  const mountedRef = useRef(true);
 
   // User laden
   useEffect(() => {
@@ -37,13 +39,16 @@ export function useLernpaketLock(lernpaketId) {
   // Lock-Status prüfen
   const checkLock = useCallback(async () => {
     if (!lernpaketId || !userEmail) return;
-
+    
+    setIsLoading(true);
     try {
       const response = await base44.functions.invoke('checkLockSecure', {
         lernpaketId,
       });
 
       const { is_locked, locked_by_email } = response.data;
+
+      if (!mountedRef.current) return;
 
       if (is_locked) {
         const isMine = locked_by_email === userEmail;
@@ -63,6 +68,10 @@ export function useLernpaketLock(lernpaketId) {
       }
     } catch (error) {
       console.warn('[useLernpaketLock] checkLock failed:', error.message);
+    } finally {
+      if (mountedRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [lernpaketId, userEmail]);
 
@@ -145,20 +154,34 @@ export function useLernpaketLock(lernpaketId) {
     checkLock();
   }, [lernpaketId, userEmail, checkLock]);
 
-  // Cleanup bei Unmount
+  // beforeunload: Nur bei echtem Browser-Close Lock freigeben
   useEffect(() => {
-    return () => {
-      stopHeartbeat();
+    const handleBeforeUnload = () => {
       if (heldRef.current) {
-        releaseLock();
+        // Sync releaseLock (beforeunload erlaubt keine async calls)
+        stopHeartbeat();
+        heldRef.current = false;
       }
     };
-  }, [stopHeartbeat, releaseLock]);
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [stopHeartbeat]);
+
+  // Cleanup bei Unmount: Nur Heartbeat stoppen, NICHT releaseLock
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      stopHeartbeat();
+      // NICHT releaseLock hier – Lock bleibt erhalten für Tab-Wechsel!
+    };
+  }, [stopHeartbeat]);
 
   return {
     canEdit,
     isLockedByOther,
     lockedByEmail,
+    isLoading,
     acquireLock,
     releaseLock,
   };
