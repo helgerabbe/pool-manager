@@ -346,10 +346,9 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
                 size="sm"
                 variant="outline"
                 onClick={handleEnterEditMode}
-                disabled={activityRecord.content_status === 'approved' || lockedByOther || lockLost || acquiringLock}
+                disabled={lockedByOther || lockLost || acquiringLock}
                 title={
                   lockLost ? 'Lock verloren. Seite neu laden.'
-                  : activityRecord.content_status === 'approved' ? 'Freigabe zuerst aufheben'
                   : lockedByOther ? `Wird bearbeitet von ${activityRecord.locked_by_user}`
                   : undefined
                 }

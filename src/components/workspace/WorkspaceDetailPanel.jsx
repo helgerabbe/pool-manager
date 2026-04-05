@@ -681,10 +681,9 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                   kannBearbeiten={kannBearbeiten}
                   userEmail={userEmail}
                   queryClient={queryClient}
-                  inEditMode={localEditMode}
+                  inEditMode={isLockedByMe}
                   onNavigate={onNavigate}
                   onGoToTaskWorkshop={(activityId) => onNavigate({ type: 'goto-task-workshop', activityId })}
-                  inEditMode={isLockedByMe}
                 />
               )}
             </div>
@@ -1229,7 +1228,7 @@ export default function WorkspaceDetailPanel({
             kannBearbeiten={kannBearbeiten}
             userEmail={userEmail}
             queryClient={queryClient}
-            inEditMode={isLockedByMe}
+            inEditMode={false}
             onNavigate={onNavigate}
           />
         </div>
