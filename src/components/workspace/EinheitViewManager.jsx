@@ -21,10 +21,8 @@ export default function EinheitViewManager() {
   // RENDER — Strikte vertikale Stacking-Hierarchie
   // ════════════════════════════════════════════════════════════════════════════
   return (
-    <div className="flex flex-col h-screen w-full bg-background">
-      <main className="flex-1 overflow-hidden min-h-0">
-        <Workspace initialEinheitId={einheitId} />
-      </main>
+    <div className="flex flex-col h-full w-full bg-background overflow-hidden">
+      <Workspace initialEinheitId={einheitId} />
     </div>
   );
 }

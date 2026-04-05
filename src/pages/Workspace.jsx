@@ -307,7 +307,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
   return (
     <ErrorBoundary label="Workspace">
-      <div className="flex flex-col h-screen w-screen fixed inset-0 bg-background overflow-hidden">
+      <div className="flex flex-col h-full w-full bg-background overflow-hidden">
 
         {/* ── Einheit-Gesperrt-Banner ─────────────────────────────────────────── */}
         {einheitGesperrt && !kannSperreIgnorieren && (

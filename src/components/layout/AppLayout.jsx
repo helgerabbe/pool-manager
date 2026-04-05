@@ -49,6 +49,29 @@ function useBreadcrumb(location) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+function WorkspaceAwareContent({ location }) {
+  const isFullScreen =
+    location.pathname === '/workspace' ||
+    location.pathname.startsWith('/einheiten/') ||
+    location.pathname.startsWith('/einheit/');
+
+  if (isFullScreen) {
+    return (
+      <div className="h-full w-full overflow-hidden">
+        <Outlet />
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full overflow-y-auto">
+      <div className="px-4 sm:px-6 lg:px-8 py-8">
+        <Outlet />
+      </div>
+    </div>
+  );
+}
+
 export default function AppLayout() {
   const location = useLocation();
   const { realRolle, permissions } = useRBAC();
@@ -123,10 +146,8 @@ export default function AppLayout() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto min-h-0">
-        <div className="px-4 sm:px-6 lg:px-8 py-8">
-          <Outlet />
-        </div>
+      <main className="flex-1 overflow-hidden min-h-0">
+        <WorkspaceAwareContent location={location} />
       </main>
     </div>
   );
