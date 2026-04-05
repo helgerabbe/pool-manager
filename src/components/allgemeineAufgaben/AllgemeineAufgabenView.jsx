@@ -258,10 +258,10 @@ export default function AllgemeineAufgabenView({
   });
 
   const { data: mappedBasisLernziele = [] } = useQuery({
-    queryKey: ['allgemeineAufgabeBasisMappings', selectedAufgabeId],
+    queryKey: ['allgemeineAufgabeMappings', selectedAufgabeId],
     queryFn: () =>
       selectedAufgabeId
-        ? base44.entities.AllgemeineAufgabeBasisLernzielMapping.filter({
+        ? base44.entities.AllgemeineAufgabeLernzielMapping.filter({
             aufgabe_id: selectedAufgabeId,
           })
         : Promise.resolve([]),
