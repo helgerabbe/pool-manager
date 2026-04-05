@@ -16,6 +16,7 @@ import { base44 } from '@/api/base44Client';
 
 const HEARTBEAT_INTERVAL = 15_000; // 15s
 const STALE_THRESHOLD_MS = 30_000; // 30s
+const DEBOUNCE_MS = 2_000; // 2s debounce für Subscription
 
 export function usePresence(einheitId) {
   const [onlineUsers, setOnlineUsers] = useState([]);
@@ -23,6 +24,7 @@ export function usePresence(einheitId) {
   const myEmailRef     = useRef(null);
   const heartbeatRef   = useRef(null);
   const unsubscribeRef = useRef(null);
+  const debounceTimerRef = useRef(null);
 
   useEffect(() => {
     if (!einheitId) return;
@@ -102,9 +104,12 @@ export function usePresence(einheitId) {
       // Erste Ladung
       await loadPresence();
 
-      // Realtime-Subscription: bei jeder Änderung in der Tabelle neu laden
+      // Realtime-Subscription mit Debouncing: verhindert Rate-Limit bei vielen Updates
       unsubscribeRef.current = base44.entities.ActiveUsersPresence.subscribe(() => {
-        loadPresence();
+        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = setTimeout(() => {
+          loadPresence();
+        }, DEBOUNCE_MS);
       });
 
       // Heartbeat: eigenes last_seen_at aktualisieren
@@ -125,6 +130,7 @@ export function usePresence(einheitId) {
     const cleanup = () => {
       mounted = false;
       clearInterval(heartbeatRef.current);
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       if (unsubscribeRef.current) {
         unsubscribeRef.current();
         unsubscribeRef.current = null;
