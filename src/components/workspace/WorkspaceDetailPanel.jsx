@@ -704,6 +704,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                   kannBearbeiten={kannBearbeiten}
                   userEmail={userEmail}
                   queryClient={queryClient}
+                  inEditMode={localEditMode}
                   onNavigate={onNavigate}
                   onGoToTaskWorkshop={(activityId) => onNavigate({ type: 'goto-task-workshop', activityId })}
                 />
@@ -1041,13 +1042,14 @@ function AktivitaetEditPanel({ paket, phaseKey, phaseLabel, kannBearbeiten, quer
 import PhaseActivitiesList from '@/components/workspace/PhaseActivitiesList';
 import UnsavedChangesExitModal from '@/components/workspace/UnsavedChangesExitModal';
 
-function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, userEmail, queryClient, onNavigate, onGoToTaskWorkshop }) {
+function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, userEmail, queryClient, onNavigate, onGoToTaskWorkshop, inEditMode }) {
   return (
     <PhaseActivitiesList
       paket={paket}
       phase={phaseKey}
       kannBearbeiten={kannBearbeiten}
       userEmail={userEmail}
+      inEditMode={inEditMode}
       onSelectActivity={(data) => onNavigate({
         type: 'aktivitaet-edit',
         id: data.activityId,
@@ -1249,6 +1251,7 @@ export default function WorkspaceDetailPanel({
             kannBearbeiten={kannBearbeiten}
             userEmail={userEmail}
             queryClient={queryClient}
+            inEditMode={localEditMode}
             onNavigate={onNavigate}
           />
         </div>

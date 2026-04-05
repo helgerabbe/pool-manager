@@ -11,6 +11,7 @@ export default function PhaseActivitiesList({
   phase,
   kannBearbeiten,
   userEmail,
+  inEditMode = false,
   onSelectActivity,
   onGoToTaskWorkshop = null,
   lernziele = [],
@@ -69,8 +70,8 @@ export default function PhaseActivitiesList({
    a.phase === phase && a.is_active === true
   );
 
-  // Bearbeitungsschutz: Nur der User mit Lock darf Aktivitäten hinzufügen/löschen
-  const paketLockedByMe = paket.locked_by_user === userEmail;
+  // Bearbeitungsschutz: Nur wenn Bearbeitungsmodus aktiv ist
+  const canEdit = inEditMode && kannBearbeiten;
 
   if (aktivitaeten.length === 0) {
     return (
@@ -78,27 +79,27 @@ export default function PhaseActivitiesList({
         <p className="text-sm text-muted-foreground italic">
           Keine Aktivitäten zugeordnet
         </p>
-        {kannBearbeiten && paketLockedByMe && (
-          <div className="space-y-2">
-            <Label className="text-xs">Aktivität hinzufügen</Label>
-            <select
-              value={newActivityId}
-              onChange={(e) => {
-                if (e.target.value) {
-                  createAktivitaet.mutate(e.target.value);
-                }
-              }}
-              className="w-full px-2 py-1.5 text-sm rounded-lg border border-input bg-white"
-            >
-              <option value="">-- Aktivität wählen --</option>
-              {phaseAktivitaeten.map((akt) => (
-                <option key={akt.id} value={akt.id}>
-                  {akt.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        {canEdit && (
+           <div className="space-y-2">
+             <Label className="text-xs">Aktivität hinzufügen</Label>
+             <select
+               value={newActivityId}
+               onChange={(e) => {
+                 if (e.target.value) {
+                   createAktivitaet.mutate(e.target.value);
+                 }
+               }}
+               className="w-full px-2 py-1.5 text-sm rounded-lg border border-input bg-white"
+             >
+               <option value="">-- Aktivität wählen --</option>
+               {phaseAktivitaeten.map((akt) => (
+                 <option key={akt.id} value={akt.id}>
+                   {akt.name}
+                 </option>
+               ))}
+             </select>
+           </div>
+         )}
       </div>
     );
   }
@@ -134,46 +135,46 @@ export default function PhaseActivitiesList({
                   )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  {kannBearbeiten && paketLockedByMe && (
-                    <>
-                      {onGoToTaskWorkshop && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs gap-1 text-primary border-primary/30 hover:bg-primary/5"
-                          onClick={() => onGoToTaskWorkshop(activity.id)}
-                          title="Zu Aufgaben-Werkstatt wechseln"
-                        >
-                          <ArrowRight className="w-3.5 h-3.5" />
-                          Aufgaben
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-xs gap-1"
-                        onClick={() =>
-                          onSelectActivity({
-                            paketId: paket.id,
-                            phaseKey: phase,
-                            activityId: activity.id,
-                          })
-                        }
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                        Bearbeiten
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => deleteAktivitaet.mutate(activity.id)}
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                      </Button>
-                    </>
-                  )}
-                </div>
+                   {canEdit && (
+                     <>
+                       {onGoToTaskWorkshop && (
+                         <Button
+                           variant="outline"
+                           size="sm"
+                           className="h-7 text-xs gap-1 text-primary border-primary/30 hover:bg-primary/5"
+                           onClick={() => onGoToTaskWorkshop(activity.id)}
+                           title="Zu Aufgaben-Werkstatt wechseln"
+                         >
+                           <ArrowRight className="w-3.5 h-3.5" />
+                           Aufgaben
+                         </Button>
+                       )}
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         className="h-7 text-xs gap-1"
+                         onClick={() =>
+                           onSelectActivity({
+                             paketId: paket.id,
+                             phaseKey: phase,
+                             activityId: activity.id,
+                           })
+                         }
+                       >
+                         <Edit className="w-3.5 h-3.5" />
+                         Bearbeiten
+                       </Button>
+                       <Button
+                         variant="ghost"
+                         size="icon"
+                         className="h-7 w-7"
+                         onClick={() => deleteAktivitaet.mutate(activity.id)}
+                       >
+                         <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                       </Button>
+                     </>
+                   )}
+                 </div>
               </div>
               
 
@@ -181,26 +182,26 @@ export default function PhaseActivitiesList({
             );
             })}
 
-            {kannBearbeiten && paketLockedByMe && (
-            <div className="space-y-2">
-            <Label className="text-xs">Weitere Aktivität hinzufügen</Label>
-            <select
-            value={newActivityId}
-            onChange={(e) => {
-              if (e.target.value) {
-                createAktivitaet.mutate(e.target.value);
-              }
-            }}
-            className="w-full px-2 py-1.5 text-sm rounded-lg border border-input bg-white"
-            >
-            <option value="">-- Aktivität wählen --</option>
-            {phaseAktivitaeten.map((akt) => (
-              <option key={akt.id} value={akt.id}>
-                {akt.name}
-              </option>
-            ))}
-            </select>
-            </div>
+            {canEdit && (
+              <div className="space-y-2">
+                <Label className="text-xs">Weitere Aktivität hinzufügen</Label>
+                <select
+                  value={newActivityId}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      createAktivitaet.mutate(e.target.value);
+                    }
+                  }}
+                  className="w-full px-2 py-1.5 text-sm rounded-lg border border-input bg-white"
+                >
+                  <option value="">-- Aktivität wählen --</option>
+                  {phaseAktivitaeten.map((akt) => (
+                    <option key={akt.id} value={akt.id}>
+                      {akt.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             )}
             </div>
             </div>
