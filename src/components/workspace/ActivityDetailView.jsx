@@ -268,10 +268,10 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Offline/Connection Warning */}
       {(isOffline || retryCount > 0 || hasDraft) && (
-        <div className="bg-amber-50 border-b border-amber-200 p-3 space-y-2">
+        <div className="flex-shrink-0 bg-amber-50 border-b border-amber-200 p-3 space-y-2">
           {isOffline && (
             <div className="flex items-center gap-2 text-amber-800 text-sm">
               <WifiOff className="w-4 h-4" />
@@ -310,17 +310,23 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
       )}
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 p-4 border-b">
+      <div className="flex-shrink-0 flex items-start justify-between gap-3 p-4 border-b">
         <div className="flex-1 min-w-0">
           <h2 className="text-lg font-semibold truncate">{catalog.name}</h2>
           <p className="text-xs text-muted-foreground mt-1">Phase: {activityRecord.phase}</p>
-          {!activityRecord.is_complete && (
-            <div className="flex items-center gap-1 text-xs text-amber-600 mt-2">
-              <AlertTriangle className="w-3.5 h-3.5" />
-              Inhalt unvollständig
-            </div>
-          )}
-          <div className="mt-2">
+          <div className="flex items-center gap-2 flex-wrap mt-2">
+            {editMode && (
+              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 border border-blue-200 text-blue-700 text-xs font-medium">
+                <PenLine className="w-3 h-3" />
+                In Bearbeitung
+              </div>
+            )}
+            {!activityRecord.is_complete && (
+              <div className="flex items-center gap-1 text-xs text-amber-600">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                Inhalt unvollständig
+              </div>
+            )}
             <ApprovalStatusBadge contentStatus={activityRecord.content_status} />
           </div>
         </div>
@@ -404,7 +410,7 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-5">
+      <div className="flex-1 overflow-y-auto p-4 space-y-5">
         {/* Aufgabenstellung (immer zuerst) */}
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aufgabenstellung</label>
