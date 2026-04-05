@@ -63,40 +63,60 @@ export function useCollaborationLock(
     );
   }, [queryClient, queryKeys]);
 
-  // ── Lock über Backend-Funktion erwerben (ATOMAR) ──
+  // ── Lock über Backend-Funktion erwerben (ATOMAR mit Retry) ──
   const acquireLock = useCallback(async () => {
     if (!recordId || !userEmail) return false;
 
-    try {
-      const response = await base44.functions.invoke('acquireLockSecure', {
-        entityName,
-        entityId: recordId,
-      });
+    const maxRetries = 3;
+    const retryDelayMs = 300;
 
-      if (response.data?.success) {
-        heldRef.current = true;
-        setIsLocked(true);
-        setRetryCount(0);
-        heartbeatRetryRef.current = 0;
-        invalidate();
-        if (onLockAcquired) onLockAcquired();
-        console.info(`[useCollaborationLock] Lock acquired for ${recordId}`);
-        return true;
-      }
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await base44.functions.invoke('acquireLockSecure', {
+          entityName,
+          entityId: recordId,
+        });
 
-      // Lock-Akquisition fehlgeschlagen
-      const lockedByOther = response.data?.lockedBy ?? response.data?.winner;
-      if (onLockDenied) {
-        onLockDenied(lockedByOther);
+        if (response.data?.success) {
+          heldRef.current = true;
+          setIsLocked(true);
+          setRetryCount(0);
+          heartbeatRetryRef.current = 0;
+          invalidate();
+          if (onLockAcquired) onLockAcquired();
+          console.info(`[useCollaborationLock] Lock acquired for ${recordId} (attempt ${attempt}/${maxRetries})`);
+          return true;
+        }
+
+        // Bei Race Condition: Retry, sonst abbrechen
+        const code = response.data?.code;
+        if (code === 'RACE_CONDITION_DETECTED' && attempt < maxRetries) {
+          console.warn(`[useCollaborationLock] Race condition detected. Retrying... (attempt ${attempt}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+          continue;
+        }
+
+        // Lock-Akquisition endgültig fehlgeschlagen (andere Lock-Gründe)
+        const lockedByOther = response.data?.lockedBy ?? response.data?.winner;
+        if (onLockDenied) {
+          onLockDenied(lockedByOther);
+        }
+        console.warn(
+          `[useCollaborationLock] Lock acquisition failed (code: ${code}). Winner: ${lockedByOther}`
+        );
+        return false;
+      } catch (error) {
+        if (attempt < maxRetries) {
+          console.warn(`[useCollaborationLock] Lock attempt ${attempt} failed, retrying...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+        } else {
+          console.error('[useCollaborationLock] acquireLock failed after all retries:', error);
+          return false;
+        }
       }
-      console.warn(
-        `[useCollaborationLock] Lock acquisition failed. Winner: ${lockedByOther}`
-      );
-      return false;
-    } catch (error) {
-      console.error('[useCollaborationLock] acquireLock error:', error);
-      return false;
     }
+
+    return false;
   }, [recordId, userEmail, entityName, invalidate, onLockAcquired, onLockDenied]);
 
   // ── Lock freigeben ──
