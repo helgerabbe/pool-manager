@@ -7,9 +7,90 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Plus, Trash2, AlertCircle, Upload, FileText, X } from 'lucide-react';
+import { Plus, Trash2, AlertCircle, Upload, FileText, X, Pencil, Check } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+
+// Inline-editierbares Feld mit Standardtext-Anzeige
+function DefaultTextareaField({ field, value, onChange, defaultText }) {
+  const [editing, setEditing] = useState(false);
+  const displayValue = value || defaultText;
+  const isDefault = !value;
+
+  if (!editing) {
+    return (
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">
+            {field.label}
+            {field.required && <span className="text-destructive ml-1">*</span>}
+          </Label>
+          <button
+            onClick={() => setEditing(true)}
+            className="flex items-center gap-1 text-xs text-primary hover:underline"
+          >
+            <Pencil className="w-3 h-3" />
+            {isDefault ? 'Anpassen' : 'Bearbeiten'}
+          </button>
+        </div>
+        <div
+          className={`rounded-lg border px-3 py-2 text-sm cursor-pointer hover:border-primary/50 transition-colors ${
+            isDefault
+              ? 'bg-blue-50 border-blue-200 text-blue-800 italic'
+              : 'bg-muted/40 border-border text-foreground'
+          }`}
+          onClick={() => setEditing(true)}
+        >
+          {isDefault && (
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 block mb-0.5 not-italic">
+              Standardtext
+            </span>
+          )}
+          {displayValue}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <Label className="text-sm font-medium">
+          {field.label}
+          {field.required && <span className="text-destructive ml-1">*</span>}
+        </Label>
+        <div className="flex items-center gap-2">
+          {isDefault && (
+            <button
+              onClick={() => { onChange(''); setEditing(false); }}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Standardtext wiederherstellen
+            </button>
+          )}
+          <button
+            onClick={() => setEditing(false)}
+            className="flex items-center gap-1 text-xs text-primary hover:underline"
+          >
+            <Check className="w-3 h-3" />
+            Fertig
+          </button>
+        </div>
+      </div>
+      <Textarea
+        value={value || defaultText}
+        onChange={(e) => {
+          const newVal = e.target.value;
+          // Wenn identisch mit Standardtext → als leer speichern (damit Standardtext greift)
+          onChange(newVal === defaultText ? '' : newVal);
+        }}
+        rows={4}
+        className="text-sm"
+        autoFocus
+      />
+    </div>
+  );
+}
 
 // JSON List-Builder für komplexe Datentypen
 function JsonListBuilder({ value, onChange, label, placeholder }) {
@@ -271,22 +352,31 @@ export default function DynamicFieldRenderer({
               </>
             )}
 
-            {/* TEXTAREA */}
+            {/* TEXTAREA – mit optionalem Standardtext */}
             {field.type === 'textarea' && (
-              <>
-                <Label htmlFor={field.field_name} className="text-sm font-medium">
-                  {field.label}
-                  {isRequired && <span className="text-destructive ml-1">*</span>}
-                </Label>
-                <Textarea
-                  id={field.field_name}
+              field.default_text ? (
+                <DefaultTextareaField
+                  field={field}
                   value={fieldValue}
-                  onChange={(e) => onMetaDataChange(field.field_name, e.target.value)}
-                  placeholder={field.placeholder}
-                  rows={6}
-                  className="text-sm"
+                  onChange={(val) => onMetaDataChange(field.field_name, val)}
+                  defaultText={field.default_text}
                 />
-              </>
+              ) : (
+                <>
+                  <Label htmlFor={field.field_name} className="text-sm font-medium">
+                    {field.label}
+                    {isRequired && <span className="text-destructive ml-1">*</span>}
+                  </Label>
+                  <Textarea
+                    id={field.field_name}
+                    value={fieldValue}
+                    onChange={(e) => onMetaDataChange(field.field_name, e.target.value)}
+                    placeholder={field.placeholder}
+                    rows={6}
+                    className="text-sm"
+                  />
+                </>
+              )
             )}
 
             {/* URL */}
