@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useMemo } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useRBAC } from '@/hooks/useRBAC';
+import { useWorkspaceData } from '@/hooks/useWorkspaceData';
 import { useRecordLock } from '@/hooks/useRecordLock';
 import { ROLLEN } from '@/lib/rbac';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ArrowLeft, Plus, Layers, Target, Puzzle, Clock,
   Edit, Trash2, Lock, BookOpen, ChevronRight,
-  AlertCircle, LayoutGrid, CheckSquare, Unlock, Sparkles
+  AlertCircle, LayoutGrid, CheckSquare, Unlock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -22,20 +23,11 @@ import LernzielForm from '@/components/lernziele/LernzielForm';
 import AufgabenbausteinForm from '@/components/aufgaben/AufgabenbausteintForm';
 import EinheitForm from '@/components/einheiten/EinheitForm';
 import AlignmentBoard from '@/components/AlignmentBoard';
-import EmptyState from '@/components/shared/EmptyState';
-import KILernpaketAssistent from '@/components/einheiten/KILernpaketAssistent';
-import DidaktikCoachChat from '@/components/ai/DidaktikCoachChat';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-
-const ebeneColors = {
-  'Ebene 1 - Basis':    'bg-green-100 text-green-700',
-  'Ebene 2 - Transfer': 'bg-blue-100 text-blue-700',
-  'Ebene 3 - Projekt':  'bg-purple-100 text-purple-700',
-};
 
 const bausteinColors = {
   'Pre-Test':        'bg-yellow-100 text-yellow-700',
@@ -166,9 +158,12 @@ function AufgabeRow({ aufgabe, userEmail, kannBearbeiten, kannLoeschen, istAdmin
 
 // ─── Haupt-Komponente ─────────────────────────────────────────────────────────
 export default function EinheitDetail() {
-  const einheitId = window.location.pathname.split('/').pop();
+  const { einheitId } = useParams();
   const queryClient = useQueryClient();
   const { permissions, authUser, rolle } = useRBAC();
+
+  // ── Consolidated Data Fetching with Custom Hook ──
+  const { einheiten = [], lernpakete = [], lernziele = [], aufgaben = [] } = useWorkspaceData(einheitId);
 
   const [showLernpaketForm, setShowLernpaketForm] = useState(false);
   const [showLernzielForm, setShowLernzielForm] = useState(false);
@@ -178,40 +173,32 @@ export default function EinheitDetail() {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, type: '', id: '' });
   const [activeTab, setActiveTab] = useState('hierarchie');
   const [expandedPakete, setExpandedPakete] = useState({});
-  const [kiSubTab, setKiSubTab]   = useState('coach');
-  const [braindumpVorbefuellt, setBraindumpVorbefuellt] = useState('');
 
-  // ── Queries ──
-  const { data: einheiten = [] } = useQuery({
-    queryKey: ['einheiten'],
-    queryFn: () => base44.entities.Einheiten.list(),
-  });
+  // ── Memoized Derived Data ──
+  const paketeFuerEinheit = useMemo(
+    () =>
+      lernpakete
+        .filter(lp => lp.einheit_id === einheitId)
+        .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0)),
+    [lernpakete, einheitId]
+  );
+
+  const paketIds = useMemo(() => paketeFuerEinheit.map(p => p.id), [paketeFuerEinheit]);
+
+  const zieleFuerEinheit = useMemo(
+    () => lernziele.filter(lz => paketIds.includes(lz.lernpaket_id)),
+    [lernziele, paketIds]
+  );
+
+  const aufgabenFuerEinheit = useMemo(
+    () => aufgaben.filter(a => paketIds.includes(a.lernpaket_id)),
+    [aufgaben, paketIds]
+  );
+
   const einheit = einheiten.find(e => e.id === einheitId);
 
-  const { data: lernpakete = [] } = useQuery({
-    queryKey: ['lernpakete'],
-    queryFn: () => base44.entities.Lernpakete.list(),
-  });
-  const paketeFuerEinheit = lernpakete
-    .filter(lp => lp.einheit_id === einheitId)
-    .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0));
-
-  const { data: lernziele = [] } = useQuery({
-    queryKey: ['lernziele'],
-    queryFn: () => base44.entities.Lernziele.list(),
-  });
-
-  const { data: aufgaben = [] } = useQuery({
-    queryKey: ['aufgaben'],
-    queryFn: () => base44.entities.Aufgabenbausteine.list(),
-  });
-
-  const paketIds = paketeFuerEinheit.map(p => p.id);
-  const zieleFuerEinheit  = lernziele.filter(lz => paketIds.includes(lz.lernpaket_id));
-  const aufgabenFuerEinheit = aufgaben.filter(a => paketIds.includes(a.lernpaket_id));
-
   const getLernzieleForPaket = (id) => zieleFuerEinheit.filter(lz => lz.lernpaket_id === id);
-  const getAufgabenForPaket  = (id) => aufgabenFuerEinheit.filter(a => a.lernpaket_id === id);
+  const getAufgabenForPaket = (id) => aufgabenFuerEinheit.filter(a => a.lernpaket_id === id);
 
   // ── Mutations ──
   const createLernpaket = useMutation({
@@ -238,16 +225,21 @@ export default function EinheitDetail() {
     mutationFn: (data) => base44.entities.Einheiten.update(einheitId, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['einheiten'] }),
   });
+
+  // ── Parallelized Delete Mutation ──
   const deleteMutation = useMutation({
     mutationFn: async ({ type, id }) => {
       if (type === 'lernpaket') {
-        for (const z of lernziele.filter(lz => lz.lernpaket_id === id))
-          await base44.entities.Lernziele.delete(z.id);
-        for (const a of aufgaben.filter(a => a.lernpaket_id === id))
-          await base44.entities.Aufgabenbausteine.delete(a.id);
+        const relZiele = lernziele.filter(lz => lz.lernpaket_id === id);
+        const relAufgaben = aufgaben.filter(a => a.lernpaket_id === id);
+        // Parallel deletion instead of sequential for...of loops
+        await Promise.all([
+          ...relZiele.map((z) => base44.entities.Lernziele.delete(z.id)),
+          ...relAufgaben.map((a) => base44.entities.Aufgabenbausteine.delete(a.id)),
+        ]);
         return base44.entities.Lernpakete.delete(id);
       }
-      if (type === 'lernziel')  return base44.entities.Lernziele.delete(id);
+      if (type === 'lernziel') return base44.entities.Lernziele.delete(id);
       if (type === 'aufgabe') return base44.entities.Aufgabenbausteine.delete(id);
     },
     onSuccess: () => {
@@ -260,9 +252,8 @@ export default function EinheitDetail() {
 
   // ── RBAC ──
   const kannDieseEinheitBearbeiten = einheit ? permissions.kannEinheitBearbeiten(einheit.fach) : false;
-  const kannFreigabeAendern        = einheit ? permissions.kannFreigabeStatusAendern(einheit.fach) : false;
+  const kannFreigabeAendern = einheit ? permissions.kannFreigabeStatusAendern(einheit.fach) : false;
   const istAdmin = rolle === ROLLEN.ADMIN;
-  const kannKIAssistent = permissions.kannKIAssistentNutzen;
 
   if (!einheit) {
     return (
@@ -332,8 +323,8 @@ export default function EinheitDetail() {
       <div className="grid grid-cols-3 gap-4">
         {[
           { icon: Layers, value: paketeFuerEinheit.length, label: 'Lernpakete', color: 'bg-primary/10 text-primary' },
-          { icon: Target, value: zieleFuerEinheit.length,   label: 'Lernziele',  color: 'bg-green-100 text-green-700' },
-          { icon: Puzzle, value: aufgabenFuerEinheit.length, label: 'Aufgaben',  color: 'bg-purple-100 text-purple-700' },
+          { icon: Target, value: zieleFuerEinheit.length, label: 'Lernziele', color: 'bg-green-100 text-green-700' },
+          { icon: Puzzle, value: aufgabenFuerEinheit.length, label: 'Aufgaben', color: 'bg-purple-100 text-purple-700' },
         ].map(({ icon: Icon, value, label, color }) => (
           <Card key={label} className="border-0 shadow-sm">
             <CardContent className="p-4 flex items-center gap-3">
@@ -360,8 +351,6 @@ export default function EinheitDetail() {
           </TabsTrigger>
         </TabsList>
 
-
-
         {/* ── Alignment-Board-Tab ── */}
         <TabsContent value="alignment" className="mt-4">
           <AlignmentBoard
@@ -381,9 +370,10 @@ export default function EinheitDetail() {
             <div className="space-y-3">
               {paketeFuerEinheit.map(paket => {
                 const paketZiele = getLernzieleForPaket(paket.id);
+                const paketAufgaben = getAufgabenForPaket(paket.id);
                 const isOpen = expandedPakete[paket.id] || false;
                 const phasen = paket.phasen_konfiguration || { Input: {}, Übung: {}, Abschluss: {} };
-                
+
                 return (
                   <Card key={paket.id} className="border shadow-sm overflow-hidden">
                     <button
@@ -424,7 +414,7 @@ export default function EinheitDetail() {
                           </div>
                         )}
 
-                        {/* Phasen-Übersicht */}
+                        {/* Lernphasen */}
                         <div>
                           <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Lernphasen</h5>
                           <div className="space-y-1.5">
@@ -455,6 +445,27 @@ export default function EinheitDetail() {
                             })}
                           </div>
                         </div>
+
+                        {/* Aufgaben */}
+                        {paketAufgaben.length > 0 && (
+                          <div>
+                            <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Aufgaben</h5>
+                            <div className="space-y-2">
+                              {paketAufgaben.map(aufgabe => (
+                                <AufgabeRow
+                                  key={aufgabe.id}
+                                  aufgabe={aufgabe}
+                                  userEmail={authUser?.email || ''}
+                                  kannBearbeiten={kannDieseEinheitBearbeiten}
+                                  kannLoeschen={kannDieseEinheitBearbeiten}
+                                  istAdmin={istAdmin}
+                                  onDelete={(id) => setDeleteDialog({ open: true, type: 'aufgabe', id })}
+                                  onEditSave={(id, data) => updateAufgabe.mutate({ id, data })}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </Card>
