@@ -73,46 +73,76 @@ function KlonSubItem({ klon, isSelected, onSelect, index }) {
   );
 }
 
-// ── Master-Unterzeile (mit eingerückten Klonen) ───────────────────────────────
+// ── Master-Unterzeile (mit eingerückten Klonen, einklappbar) ───────────────────────────────
 
-function MasterSubItem({ master, index, klone, selectedItem, onSelect }) {
+function MasterSubItem({ master, index, klone, selectedItem, onSelect, catalogEntry }) {
   const isMasterSelected = selectedItem?.type === 'master' && selectedItem?.master?.id === master.id;
   const hasSelectedKlon = klone.some(k => selectedItem?.type === 'klon' && selectedItem?.klon?.id === k.id);
+  const [expanded, setExpanded] = useState(isMasterSelected || hasSelectedKlon);
+
+  // Auto-expand wenn Master oder Klon selektiert wird
+  useEffect(() => {
+    if (isMasterSelected || hasSelectedKlon) {
+      setExpanded(true);
+    }
+  }, [isMasterSelected, hasSelectedKlon]);
+
+  const isKITutor = catalogEntry?.name?.toLowerCase().includes('ki-tutor');
 
   return (
     <div>
-      <button
-        onClick={() => onSelect({ type: 'master', master })}
-        className={cn(
-          'w-full flex items-center gap-1.5 px-2 py-1 rounded-md text-left text-[11px] transition-colors',
-          isMasterSelected
-            ? 'bg-primary/15 text-primary font-semibold'
-            : 'text-foreground hover:bg-muted'
+      <div className="flex items-center gap-0.5">
+        {/* Expand-Button (für KI-Tutor und Masters mit Klonen) */}
+        {isKITutor || klone.length > 0 ? (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="p-0.5 text-muted-foreground hover:text-foreground shrink-0"
+            title={expanded ? 'Einklappen' : 'Aufklappen'}
+          >
+            <ChevronRight className={cn('w-3 h-3 transition-transform', expanded && 'rotate-90')} />
+          </button>
+        ) : (
+          <div className="w-4" /> /* Spacer für Alignment */
         )}
-      >
-        <Crown className="w-3 h-3 shrink-0 text-primary/70" />
-        <span className="flex-1 truncate">{master.titel || `Master ${index}`}</span>
-        {master.content_status === 'approved' && (
-          <CheckCircle2 className="w-3 h-3 shrink-0 text-green-600" title="Fertig" />
-        )}
-        {klone.length > 0 && (
-          <span className="text-[10px] bg-primary/10 text-primary px-1 py-0.5 rounded shrink-0">
-            {klone.length}
-          </span>
-        )}
-      </button>
+        
+        <button
+          onClick={() => onSelect({ type: 'master', master })}
+          className={cn(
+            'flex-1 flex items-center gap-1.5 px-2 py-1 rounded-md text-left text-[11px] transition-colors',
+            isMasterSelected
+              ? 'bg-primary/15 text-primary font-semibold'
+              : 'text-foreground hover:bg-muted'
+          )}
+        >
+          <Crown className="w-3 h-3 shrink-0 text-primary/70" />
+          <span className="flex-1 truncate">{master.titel || `Master ${index}`}</span>
+          {master.content_status === 'approved' && (
+            <CheckCircle2 className="w-3 h-3 shrink-0 text-green-600" title="Fertig" />
+          )}
+          {klone.length > 0 && (
+            <span className="text-[10px] bg-primary/10 text-primary px-1 py-0.5 rounded shrink-0">
+              {klone.length}
+            </span>
+          )}
+        </button>
+      </div>
 
-      {(isMasterSelected || hasSelectedKlon) && klone.length > 0 && (
+      {/* Expandierte Klone oder Inhalts-Preview für KI-Tutor */}
+      {expanded && (
         <div className="ml-4 mt-0.5 border-l border-border pl-2 space-y-0.5">
-          {klone.map((klon, idx) => (
-            <KlonSubItem
-              key={klon.id}
-              klon={klon}
-              index={idx + 1}
-              isSelected={selectedItem?.type === 'klon' && selectedItem?.klon?.id === klon.id}
-              onSelect={onSelect}
-            />
-          ))}
+          {klone.length > 0 ? (
+            klone.map((klon, idx) => (
+              <KlonSubItem
+                key={klon.id}
+                klon={klon}
+                index={idx + 1}
+                isSelected={selectedItem?.type === 'klon' && selectedItem?.klon?.id === klon.id}
+                onSelect={onSelect}
+              />
+            ))
+          ) : isKITutor ? (
+            <p className="px-2 py-1 text-[10px] text-muted-foreground/60 italic">Keine Klone (KI-Tutor-Aufgabe)</p>
+          ) : null}
         </div>
       )}
     </div>
@@ -123,7 +153,7 @@ function MasterSubItem({ master, index, klone, selectedItem, onSelect }) {
 
 function ActivitySidebarItem({
   activity, aktivitaetName, masterAufgaben, kloneByMasterId,
-  selectedItem, onSelect, isIncomplete, myEmail,
+  selectedItem, onSelect, isIncomplete, myEmail, catalogEntry,
 }) {
   const isActivitySelected = selectedItem?.type === 'activity' && selectedItem?.activity?.id === activity.id;
   const hasSelectedDescendant =
@@ -173,6 +203,7 @@ function ActivitySidebarItem({
               klone={kloneByMasterId[master.id] || []}
               selectedItem={selectedItem}
               onSelect={onSelect}
+              catalogEntry={catalogEntry}
             />
           ))}
         </div>
@@ -186,7 +217,7 @@ function ActivitySidebarItem({
 function SidebarLernpaketFolder({
   lernpaket, allActivities, aktivitaetenMap,
   masterAufgabenByActivityId, kloneByMasterId,
-  selectedItem, onSelect, defaultOpen = false, myEmail, isOpen = false, onToggleOpen,
+  selectedItem, onSelect, defaultOpen = false, myEmail, isOpen = false, onToggleOpen, aktivitaetenKatalog,
 }) {
   const paketActivities = allActivities.filter(a => a.lernpaket_id === lernpaket.id);
   const phasenConfig = lernpaket.phasen_konfiguration || {};
@@ -243,19 +274,23 @@ function SidebarLernpaketFolder({
                     {phase.icon} {phase.label}
                   </p>
                   <div className="space-y-0.5">
-                    {phaseActs.map(activity => (
-                      <ActivitySidebarItem
-                        key={activity.id}
-                        activity={activity}
-                        aktivitaetName={aktivitaetenMap[activity.aktivitaet_id] || '…'}
-                        masterAufgaben={masterAufgabenByActivityId[activity.id] || []}
-                        kloneByMasterId={kloneByMasterId}
-                        selectedItem={selectedItem}
-                        onSelect={onSelect}
-                        isIncomplete={!activity.is_complete}
-                        myEmail={myEmail}
-                      />
-                    ))}
+                    {phaseActs.map(activity => {
+                       const actCatalog = aktivitaetenKatalog.find(c => c.id === activity.aktivitaet_id);
+                       return (
+                         <ActivitySidebarItem
+                           key={activity.id}
+                           activity={activity}
+                           aktivitaetName={aktivitaetenMap[activity.aktivitaet_id] || '…'}
+                           masterAufgaben={masterAufgabenByActivityId[activity.id] || []}
+                           kloneByMasterId={kloneByMasterId}
+                           selectedItem={selectedItem}
+                           onSelect={onSelect}
+                           isIncomplete={!activity.is_complete}
+                           myEmail={myEmail}
+                           catalogEntry={actCatalog}
+                         />
+                       );
+                     })}
                   </div>
                 </div>
               );
@@ -505,17 +540,18 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
                     myEmail={userEmail}
                     isOpen={openPacketIds.has(lernpaket.id)}
                     onToggleOpen={(paketId, shouldOpen) => {
-                      setOpenPacketIds(prev => {
-                        const newSet = new Set(prev);
-                        if (shouldOpen) {
-                          newSet.add(paketId);
-                        } else {
-                          newSet.delete(paketId);
-                        }
-                        return newSet;
-                      });
-                    }}
-                  />
+                       setOpenPacketIds(prev => {
+                         const newSet = new Set(prev);
+                         if (shouldOpen) {
+                           newSet.add(paketId);
+                         } else {
+                           newSet.delete(paketId);
+                         }
+                         return newSet;
+                       });
+                     }}
+                     aktivitaetenKatalog={aktivitaetenKatalog}
+                    />
                 ))}
               </div>
             </div>
