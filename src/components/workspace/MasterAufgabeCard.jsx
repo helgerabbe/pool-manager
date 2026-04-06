@@ -23,6 +23,7 @@ import LueckentextEditor, { LueckentextRenderer, validateBeforeSave } from '@/co
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import SortingListEditor from '@/components/workspace/SortingListEditor';
 import MultipleChoiceEditor from '@/components/workspace/MultipleChoiceEditor';
+import MiniQuizEditor from '@/components/workspace/MiniQuizEditor';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
 import { isLockExpired } from '@/hooks/useActivityLock';
 import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus';
@@ -41,7 +42,8 @@ const MATCH_TERMS_NAMES = ['begriffe zuordnen', 'zuordnen', 'match terms'];
 const LUECKENTEXT_NAMES = ['lückentext', 'lücken', 'lueckentext', 'cloze', 'fill in'];
 const IMAGE_LABELING_NAMES = ['bildbeschriftung', 'bildbeschreibung', 'image labeling'];
 const SORTING_NAMES = ['reihenfolge', 'sortierung', 'sorting', 'sequenzierung'];
-const MULTIPLE_CHOICE_NAMES = ['multiple choice', 'multiple-choice', 'mc-aufgabe', 'miniquiz', 'mini-quiz', 'quiz'];
+const MULTIPLE_CHOICE_NAMES = ['multiple choice', 'multiple-choice', 'mc-aufgabe'];
+const MINIQUIZ_NAMES = ['miniquiz', 'mini-quiz', 'quiz'];
 
 function isMatchTerms(name = '') {
   return MATCH_TERMS_NAMES.some(n => name.toLowerCase().includes(n));
@@ -57,6 +59,9 @@ function isSorting(name = '') {
 }
 function isMultipleChoice(name = '') {
   return MULTIPLE_CHOICE_NAMES.some(n => name.toLowerCase().includes(n));
+}
+function isMiniQuiz(name = '') {
+  return MINIQUIZ_NAMES.some(n => name.toLowerCase().includes(n));
 }
 
 // ── Master Approval Button ─────────────────────────────────────────────────────
@@ -147,6 +152,7 @@ export default function MasterAufgabeCard({
   const isSort = isSorting(catalogName);
   const isKITutor = catalogName?.toLowerCase().includes('ki-tutor');
   const isMC = isMultipleChoice(catalogName);
+  const isQuiz = isMiniQuiz(catalogName);
 
   const saveMutation = useMutation({
     mutationFn: ({ fv, closeEdit }) => {
@@ -542,6 +548,49 @@ export default function MasterAufgabeCard({
                 )}
               </div>
             )
+          ) : isQuiz ? (
+            /* ── Mini-Quiz-Editor ── */
+            <div className="space-y-3">
+              {editMode ? (
+                <>
+                  <MiniQuizEditor
+                    initialData={fieldValues}
+                    onSave={(data) => {
+                      setFieldValues(data);
+                      handleSaveAndClose(data);
+                    }}
+                    onCancel={() => { setEditMode(false); setHasPendingChanges(false); }}
+                    onChange={() => setHasPendingChanges(true)}
+                  />
+                </>
+              ) : (
+                <div className="space-y-3">
+                  {fieldValues.quizItems?.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                        Fragen ({fieldValues.quizItems.length})
+                      </p>
+                      <div className="bg-muted/30 rounded-lg p-3 space-y-2 text-sm max-h-48 overflow-y-auto">
+                        {fieldValues.quizItems.map((q, i) => (
+                          <div key={i} className="pb-2 border-b border-border/30 last:border-0 last:pb-0">
+                            <p className="font-medium">{i + 1}. {q.question}</p>
+                            <p className="mt-1 text-xs text-green-700 font-medium">✓ {q.correctAnswer}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {kannBearbeiten && !locked && (
+                    <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
+                      Inhalt bearbeiten
+                    </Button>
+                  )}
+                  {!fieldValues.quizItems?.length && (
+                    <p className="text-sm text-muted-foreground italic">Noch kein Inhalt. Klicke „Inhalt bearbeiten".</p>
+                  )}
+                </div>
+              )}
+            </div>
           ) : isMC ? (
             /* ── Multiple-Choice-Editor ── */
             <div className="space-y-3">
@@ -703,7 +752,7 @@ export default function MasterAufgabeCard({
           )}
 
           {/* Klon erstellen – NICHT für KI-Tutor und Bildbeschriftung */}
-          {!isKITutor && !isImageLabeling && (master.field_values?.lueckentext || master.field_values?.pairs?.length > 0 || master.field_values?.orderedItems?.length > 0 || master.field_values?.task_description || master.field_values?.mcItems?.length > 0) && !editMode && (
+          {!isKITutor && !isImageLabeling && (master.field_values?.lueckentext || master.field_values?.pairs?.length > 0 || master.field_values?.orderedItems?.length > 0 || master.field_values?.task_description || master.field_values?.mcItems?.length > 0 || master.field_values?.quizItems?.length > 0) && !editMode && (
             <div className="border-t border-border/60 pt-4">
               <Button
                 size="sm"
