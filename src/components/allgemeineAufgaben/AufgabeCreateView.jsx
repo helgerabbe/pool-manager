@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, Save, FileUp, BookMarked, Type, ImagePlus, X, Loader2 } from 'lucide-react';
+import { AlertCircle, Save, FileUp, BookMarked, Type, ImagePlus, X, Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 // ── Sterne-Rating ──────────────────────────────────────────────────────────────
@@ -233,11 +233,14 @@ const EMPTY_FORM = {
   materialien: [],
   ergebnis_form: '',
   ergebnis_dateiformat: '',
+  erwartungshorizont: '',
 };
 
 export default function AufgabeCreateView({ open, onOpenChange, einheitId, themenfelder = [], onSuccess, initialData = null }) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const [isDirty, setIsDirty] = useState(false);
+  const [generatingHorizont, setGeneratingHorizont] = useState(false);
 
   React.useEffect(() => {
     if (open) {
@@ -245,10 +248,14 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
         ? { ...EMPTY_FORM, ...initialData }
         : { ...EMPTY_FORM }
       );
+      setIsDirty(false);
     }
   }, [open, initialData]);
 
-  const set = (field, val) => setFormData(p => ({ ...p, [field]: val }));
+  const set = (field, val) => {
+    setFormData(p => ({ ...p, [field]: val }));
+    if (field === 'erwartungshorizont') setIsDirty(true);
+  };
 
   const isValid = !!(formData.aufgabenstellung?.trim() || formData.aufgaben_bild_url);
 
@@ -263,6 +270,7 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
       materialien: data.materialien || [],
       ergebnis_form: data.ergebnis_form || null,
       ergebnis_dateiformat: data.ergebnis_dateiformat || null,
+      erwartungshorizont: data.erwartungshorizont || null,
     }),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
@@ -283,6 +291,7 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
       materialien: data.materialien || [],
       ergebnis_form: data.ergebnis_form || null,
       ergebnis_dateiformat: data.ergebnis_dateiformat || null,
+      erwartungshorizont: data.erwartungshorizont || null,
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
@@ -292,6 +301,32 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
     },
     onError: () => toast.error('Fehler beim Aktualisieren'),
   });
+
+  const generateErtungshorizont = async () => {
+    if (!formData.aufgabenstellung.trim()) {
+      toast.error('Bitte füllen Sie zuerst die Aufgabenstellung aus.');
+      return;
+    }
+
+    setGeneratingHorizont(true);
+    try {
+      const { data } = await base44.functions.invoke('generateErwartungshorizont', {
+        aufgabenstellung: formData.aufgabenstellung,
+        einheitId,
+      });
+
+      if (data?.text) {
+        set('erwartungshorizont', data.text);
+        toast.success('Erwartungshorizont generiert!');
+      } else {
+        toast.error('Generierung fehlgeschlagen.');
+      }
+    } catch (err) {
+      toast.error('Fehler: ' + (err.message || 'Unbekannter Fehler'));
+    } finally {
+      setGeneratingHorizont(false);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -389,6 +424,43 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
             materials={formData.materialien}
             onMaterialsChange={mats => set('materialien', mats)}
           />
+
+          {/* Erwartungshorizont (für Ebene 3) */}
+          <div className="space-y-3 p-4 rounded-lg bg-blue-50 border border-blue-200">
+            <div className="flex items-center justify-between">
+              <Label className="text-base font-semibold text-blue-900">
+                Erwartungshorizont / Zielvorgaben
+              </Label>
+              <Button
+                type="button"
+                onClick={generateErtungshorizont}
+                disabled={generatingHorizont}
+                variant="outline"
+                size="sm"
+                className="gap-1.5 border-blue-300 text-blue-700 hover:bg-blue-100"
+              >
+                {generatingHorizont ? (
+                  <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Wird generiert…</>
+                ) : (
+                  <><Sparkles className="w-3.5 h-3.5" /> KI: Generieren</>
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-blue-700">
+              Definition des erwarteten Ergebnisses: Umfang, Kriterien, Lösungsansätze. Dient dem KI-Tutor als inhaltliche Leitplanke.
+            </p>
+            <textarea
+              value={formData.erwartungshorizont}
+              onChange={e => set('erwartungshorizont', e.target.value)}
+              placeholder="z.B. Ein erfolgreiches Projektergebnis sollte folgende Kriterien erfüllen: 1) Analyse durchgeführt, 2) Lösungsvorschlag begründet, 3) Kritische Reflexion einbezogen…"
+              className="w-full px-3 py-2 border border-blue-200 rounded-lg min-h-32 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
+            />
+            {isDirty && (
+              <p className="text-xs text-amber-600">
+                ✓ Ungespeicherte Änderungen – werden beim Speichern übernommen
+              </p>
+            )}
+          </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
