@@ -122,14 +122,29 @@ export default function Dashboard() {
        clearInterval(heartbeatRef.current);
        if (unsubscribeFn) unsubscribeFn();
        if (myRecordIdRef.current) {
-         base44.entities.ActiveUsersPresence.delete(myRecordIdRef.current).catch(() => {
-           // Ignorieren wenn Record nicht existiert
-         });
+         const recordId = myRecordIdRef.current;
          myRecordIdRef.current = null;
+         base44.entities.ActiveUsersPresence.delete(recordId).catch(err => {
+           // Ignorieren wenn Record nicht existiert (404) oder andere Fehler
+           console.debug('[Dashboard] Cleanup delete failed (expected):', err.message);
+         });
        }
      };
 
-    window.addEventListener('beforeunload', cleanup);
+    window.addEventListener('beforeunload', () => {
+       // Synchroner Cleanup bei beforeunload – keine async Operationen
+       mounted = false;
+       clearInterval(heartbeatRef.current);
+       if (myRecordIdRef.current) {
+         // Best effort: Versuch zu löschen, ignoriere Fehler
+         try {
+           base44.entities.ActiveUsersPresence.delete(myRecordIdRef.current);
+         } catch {
+           // beforeunload blockiert keine Fehler
+         }
+         myRecordIdRef.current = null;
+       }
+     });
     return () => {
       window.removeEventListener('beforeunload', cleanup);
       cleanup();
