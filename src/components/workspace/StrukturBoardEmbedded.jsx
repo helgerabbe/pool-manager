@@ -23,7 +23,9 @@ import { cn } from '@/lib/utils';
 // Öffnet sich beim Klick auf eine Paket-Karte oder beim Erstellen eines neuen Pakets.
 
 function LernpaketDialog({ open, onOpenChange, initialData, onSave }) {
-  const isNew = !initialData?.id || initialData?.isNew;
+  // isNew = true nur wenn initialData null/undefined ist (= "Neues Lernpaket" Button geklickt)
+  // Hat initialData eine id oder isNew-Flag, dann ist es immer "Bearbeiten"-Modus
+  const isNew = !initialData;
   const [titel, setTitel] = useState('');
   const [dauer, setDauer] = useState(45);
   const [lernziele, setLernziele] = useState([]);
@@ -434,37 +436,37 @@ export default function StrukturBoardEmbedded({
     setPaketDialog({ open: true, spalteId, paket });
 
   const handlePaketSave = ({ titel, dauer, lernziele }) => {
-    setIsDirty(true);
-    const { spalteId, paket } = paketDialog;
-    if (paket && !paket.isNew) {
-      // Bestehendes Paket aktualisieren
-      setPaketeMap(prev => {
-        const next = {};
-        Object.entries(prev).forEach(([k, v]) => {
-          next[k] = v.map(p => p.id === paket.id
-            ? { ...p, titel_des_pakets: titel, geschaetzte_dauer_minuten: dauer, lernziele }
-            : p);
-        });
-        return next;
-      });
-    } else {
-      // Neues Paket anlegen
-      const tempId = `new-${Date.now()}`;
-      setPaketeMap(prev => ({
-        ...prev,
-        [spalteId]: [...(prev[spalteId] || []), {
-          id: tempId,
-          titel_des_pakets: titel,
-          geschaetzte_dauer_minuten: dauer,
-          lernziele,
-          reihenfolge_nummer: (prev[spalteId] || []).length + 1,
-          einheit_id: einheitId,
-          phasen_konfiguration: DEFAULT_PHASEN,
-          isNew: true,
-        }],
-      }));
-    }
-    setPaketDialog({ open: false, spalteId: null, paket: null });
+   setIsDirty(true);
+   const { spalteId, paket } = paketDialog;
+   if (paket) {
+     // Paket bearbeiten (ob neu oder existierend)
+     setPaketeMap(prev => {
+       const next = {};
+       Object.entries(prev).forEach(([k, v]) => {
+         next[k] = v.map(p => p.id === paket.id
+           ? { ...p, titel_des_pakets: titel, geschaetzte_dauer_minuten: dauer, lernziele }
+           : p);
+       });
+       return next;
+     });
+   } else {
+     // Neues Paket anlegen (Dialog wurde ohne paket=null geöffnet)
+     const tempId = `new-${Date.now()}`;
+     setPaketeMap(prev => ({
+       ...prev,
+       [spalteId]: [...(prev[spalteId] || []), {
+         id: tempId,
+         titel_des_pakets: titel,
+         geschaetzte_dauer_minuten: dauer,
+         lernziele,
+         reihenfolge_nummer: (prev[spalteId] || []).length + 1,
+         einheit_id: einheitId,
+         phasen_konfiguration: DEFAULT_PHASEN,
+         isNew: true,
+       }],
+     }));
+   }
+   setPaketDialog({ open: false, spalteId: null, paket: null });
   };
 
   const handleDeletePaket = (paketId) => {
