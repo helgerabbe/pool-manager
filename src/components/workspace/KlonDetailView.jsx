@@ -43,7 +43,7 @@ function isLueckentext(name = '') {
   return LUECKENTEXT_NAMES.some(n => name.toLowerCase().includes(n));
 }
 
-export default function KlonDetailView({ klon, kannBearbeiten, userEmail, masterAufgabe, activityRecord, catalogEntry }) {
+export default function KlonDetailView({ klon, kannBearbeiten, userEmail, masterAufgabe, activityRecord, catalogEntry, onKlonDeleted }) {
   const queryClient = useQueryClient();
   // Im Bearbeitungsmodus immer direkt editierbar wenn berechtigt
   const [editMode, setEditMode] = useState(kannBearbeiten);
@@ -104,6 +104,7 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine'] });
       queryClient.invalidateQueries({ queryKey: ['klone'] });
+      onKlonDeleted?.();
       toast.success('Klon gelöscht.');
     },
   });
@@ -161,7 +162,16 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
     || null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 relative">
+      {/* Loading-Overlay beim Löschen */}
+      {deleteMutation.isPending && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 rounded-lg">
+          <div className="bg-card rounded-lg shadow-lg p-6 flex flex-col items-center gap-4">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-sm font-medium">Kopie wird gelöscht, bitte warten...</p>
+          </div>
+        </div>
+      )}
       {/* ── Aktivitäts-Header (vereinfacht für Klone) ── */}
       {activityRecord && catalogEntry && (
         <div className="rounded-xl border border-border bg-card p-4">
