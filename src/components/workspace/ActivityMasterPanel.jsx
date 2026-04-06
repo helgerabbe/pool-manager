@@ -296,23 +296,27 @@ export default function ActivityMasterPanel({
             <p className="text-sm text-muted-foreground italic">Keine Felder konfiguriert.</p>
           ) : (
             <div className={`space-y-4 ${!isInEditMode ? 'opacity-60 pointer-events-none select-none' : ''}`}>
+              {/* Aufgabentext ZUERST oben (Standardtext-Logik) */}
+              {(catalogEntry?.form_schema || [])
+                .filter(f => f.field_name === 'aufgabentext' && f.default_text)
+                .map((field) => (
+                  <DefaultTextareaFieldInline
+                    key={field.field_name}
+                    field={field}
+                    value={fieldValues[field.field_name] || ''}
+                    onChange={(val) => handleFieldChange(field.field_name, val)}
+                  />
+                ))}
+
+              {/* Alle anderen Felder */}
               {(catalogEntry?.form_schema || []).map((field) => {
+                // Überspringe Aufgabentext (wurde oben bereits angezeigt)
+                if (field.field_name === 'aufgabentext') return null;
+
                 // Bedingte Anzeige: inhalt nur wenn inhalt_typ === 'text', dokument_url nur wenn 'datei'
                 const inhaltTyp = fieldValues?.inhalt_typ;
                 if (field.field_name === 'inhalt' && inhaltTyp && inhaltTyp !== 'text') return null;
                 if (field.field_name === 'dokument_url' && inhaltTyp !== 'datei') return null;
-
-                // Aufgabentext mit Standardtext-Logik
-                if (field.field_name === 'aufgabentext' && field.default_text) {
-                  return (
-                    <DefaultTextareaFieldInline
-                      key={field.field_name}
-                      field={field}
-                      value={fieldValues[field.field_name] || ''}
-                      onChange={(val) => handleFieldChange(field.field_name, val)}
-                    />
-                  );
-                }
 
                 return (
                   <div key={field.field_name} className="space-y-1.5">
