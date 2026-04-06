@@ -19,6 +19,7 @@ import KlonErstellenModal from '@/components/workspace/KlonErstellenModal';
 import LockBanner from '@/components/workspace/LockBanner';
 import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
 import LueckentextEditor, { LueckentextRenderer, validateBeforeSave } from '@/components/workspace/LueckentextEditor';
+import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import { isLockExpired } from '@/hooks/useActivityLock';
 import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus';
 import { TASK_STATUS_CONFIG } from '@/lib/stateMachine';
@@ -34,12 +35,16 @@ function isLockedByOther(master, myEmail) {
 
 const MATCH_TERMS_NAMES = ['begriffe zuordnen', 'zuordnen', 'match terms'];
 const LUECKENTEXT_NAMES = ['lückentext', 'lücken', 'lueckentext', 'cloze', 'fill in'];
+const IMAGE_LABELING_NAMES = ['bildbeschriftung', 'bildbeschreibung', 'image labeling'];
 
 function isMatchTerms(name = '') {
   return MATCH_TERMS_NAMES.some(n => name.toLowerCase().includes(n));
 }
 function isLueckentext(name = '') {
   return LUECKENTEXT_NAMES.some(n => name.toLowerCase().includes(n));
+}
+function isImageLabeling(name = '') {
+  return IMAGE_LABELING_NAMES.some(n => name.toLowerCase().includes(n));
 }
 
 // ── Master Approval Button ─────────────────────────────────────────────────────
@@ -125,6 +130,7 @@ export default function MasterAufgabeCard({
   const locked = isLockedByOther(master, userEmail);
   const isMatch = isMatchTerms(catalogName);
   const isLuecke = isLueckentext(catalogName);
+  const isImageLabeling = isImageLabeling(catalogName);
   const isKITutor = catalogName?.toLowerCase().includes('ki-tutor');
 
   const saveMutation = useMutation({
@@ -339,6 +345,59 @@ export default function MasterAufgabeCard({
                 )}
               </div>
             )
+          ) : isImageLabeling ? (
+            /* ── Bildbeschriftungs-Editor ── */
+            <div className="space-y-3">
+              {editMode ? (
+                <>
+                  <ImageLabelingEditor
+                    initialData={fieldValues}
+                    onSave={(data) => {
+                      setFieldValues(data);
+                      handleSaveAndClose(data);
+                    }}
+                    onCancel={() => { setEditMode(false); setHasPendingChanges(false); }}
+                    onChange={() => setHasPendingChanges(true)}
+                  />
+                </>
+              ) : (
+                <div className="space-y-3">
+                  {fieldValues.aufgabenstellung && (
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Aufgabenstellung</p>
+                      <div className="bg-muted/50 rounded-lg p-3 text-sm">{fieldValues.aufgabenstellung}</div>
+                    </div>
+                  )}
+                  {fieldValues.backgroundImage && (
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Bild</p>
+                      <img src={fieldValues.backgroundImage} alt="Hintergrundbild" className="max-w-full h-auto max-h-48 rounded-lg border border-border" />
+                    </div>
+                  )}
+                  {fieldValues.dropZones?.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Zielbegriffe ({fieldValues.dropZones.length})</p>
+                      <div className="bg-muted/30 rounded-lg p-3 space-y-1.5 text-sm">
+                        {fieldValues.dropZones.map((zone, i) => (
+                          <div key={i} className="flex items-center justify-between">
+                            <span>{zone.label}</span>
+                            <span className="text-xs text-muted-foreground">{zone.x_percent?.toFixed(1)}% / {zone.y_percent?.toFixed(1)}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {kannBearbeiten && !locked && (
+                    <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
+                      Inhalt bearbeiten
+                    </Button>
+                  )}
+                  {!fieldValues.aufgabenstellung && !fieldValues.backgroundImage && (
+                    <p className="text-sm text-muted-foreground italic">Noch kein Inhalt. Klicke „Inhalt bearbeiten".</p>
+                  )}
+                </div>
+              )}
+            </div>
           ) : isLuecke ? (
             /* ── Lückentext-Editor ── */
             <div className="space-y-3">
@@ -438,8 +497,8 @@ export default function MasterAufgabeCard({
             </div>
           )}
 
-          {/* Klon erstellen – NICHT für KI-Tutor-Aufgaben */}
-          {!isKITutor && (master.field_values?.lueckentext || master.field_values?.pairs?.length > 0 || master.field_values?.task_description) && (
+          {/* Klon erstellen – NICHT für KI-Tutor und Bildbeschriftung */}
+          {!isKITutor && !isImageLabeling && (master.field_values?.lueckentext || master.field_values?.pairs?.length > 0 || master.field_values?.task_description) && (
             <div className="border-t border-border/60 pt-4">
               <Button
                 size="sm"
