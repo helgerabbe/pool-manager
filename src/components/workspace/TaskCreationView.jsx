@@ -167,9 +167,12 @@ function ActivitySidebarItem({
     <div>
       <div
         id={`activity-node-${activity.id}`}
+        onClick={() => onSelect({ type: 'activity', activity })}
         className={cn(
-          'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
-          'text-muted-foreground bg-muted/40 cursor-default'
+          'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors cursor-pointer',
+          isActivitySelected
+            ? 'bg-primary/15 text-primary font-medium'
+            : 'text-foreground hover:bg-muted/60'
         )}
       >
         <span className="flex-1 truncate">{aktivitaetName}</span>
