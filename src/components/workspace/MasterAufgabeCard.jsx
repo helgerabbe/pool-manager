@@ -113,7 +113,7 @@ export default function MasterAufgabeCard({
 
   // Neue Karte direkt im Bearbeitungsmodus öffnen
   const [editMode, setEditMode] = useState(autoExpand);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [fieldValues, setFieldValues] = useState(master.field_values || {});
   const [titel, setTitel] = useState(master.titel || '');
   const [editingTitel, setEditingTitel] = useState(false);
