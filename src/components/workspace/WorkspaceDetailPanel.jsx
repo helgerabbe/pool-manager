@@ -954,37 +954,43 @@ function LernzielPanel({ lernziel, paketId, aufgaben, userEmail, kannBearbeiten,
               key={aufgabe.id}
               className="p-4 rounded-xl border transition-all bg-card border-border hover:border-primary/30"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <Badge className={`text-[10px] ${bausteinColors[aufgabe.baustein_typ] || ''}`}>
-                      {aufgabe.baustein_typ}
-                    </Badge>
+              <div className="space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <Badge className={`text-[10px] ${bausteinColors[aufgabe.baustein_typ] || ''}`}>
+                        {aufgabe.baustein_typ}
+                      </Badge>
+                    </div>
                   </div>
-                  {aufgabe.aufgabentext_inhalt && (
-                    <p className="text-sm text-muted-foreground">{aufgabe.aufgabentext_inhalt}</p>
-                  )}
-                  {aufgabe.erwartungshorizont_ki_prompt && (
-                    <p className="text-xs text-muted-foreground/60 mt-2 italic line-clamp-1">
-                      KI: {aufgabe.erwartungshorizont_ki_prompt}
-                    </p>
-                  )}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {kannBearbeiten && (
+                      <Button variant="ghost" size="sm" className="h-7 text-xs gap-1"
+                        onClick={() => handleEdit(aufgabe)}>
+                        <Edit className="w-3 h-3" />
+                        Bearbeiten
+                      </Button>
+                    )}
+                    {kannBearbeiten && (
+                      <Button variant="ghost" size="icon" className="h-7 w-7"
+                        onClick={() => deleteAufgabe.mutate(aufgabe.id)}>
+                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  {kannBearbeiten && (
-                    <Button variant="ghost" size="sm" className="h-7 text-xs gap-1"
-                      onClick={() => handleEdit(aufgabe)}>
-                      <Edit className="w-3 h-3" />
-                      Bearbeiten
-                    </Button>
-                  )}
-                  {kannBearbeiten && (
-                    <Button variant="ghost" size="icon" className="h-7 w-7"
-                      onClick={() => deleteAufgabe.mutate(aufgabe.id)}>
-                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                    </Button>
-                  )}
-                </div>
+                {aufgabe.aufgabentext_inhalt && (
+                  <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
+                    <p className="text-sm text-blue-900 font-medium">Aufgabenstellung</p>
+                    <p className="text-sm text-blue-800 mt-1">{aufgabe.aufgabentext_inhalt}</p>
+                  </div>
+                )}
+                {aufgabe.erwartungshorizont_ki_prompt && (
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                    <p className="text-xs text-muted-foreground font-medium">KI-Prompt</p>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{aufgabe.erwartungshorizont_ki_prompt}</p>
+                  </div>
+                )}
               </div>
             </div>
           ))}
