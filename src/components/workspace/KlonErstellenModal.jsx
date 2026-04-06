@@ -59,56 +59,15 @@ export default function KlonErstellenModal({ open, onClose, master, klone, onKlo
    };
 
   // ── Option B: KI-Variationen ───────────────────────────────────────────────
-  const createAIVariations = async () => {
-    const fv = master.field_values || {};
-    const isLuecke = !!(fv.lueckentext);
+   const createAIVariations = async () => {
+     const fv = master.field_values || {};
+     const isLuecke = !!(fv.lueckentext);
+     const isSort = !!(fv.orderedItems);
 
-    const prompt = isLuecke ? [
-      `Erstelle ${count} Variationen dieses Lückentexts:`,
-      `"""${fv.lueckentext}"""`,
-      hint ? `Zusätzlicher Hinweis: ${hint}` : '',
-      'Antworte als JSON mit einem "klone"-Array, jedes Element: { "lueckentext": string }',
-    ].filter(Boolean).join('\n') : [
-      `Erstelle ${count} didaktisch gleichwertige Variationen (Klone) dieser Lernaufgabe.`,
-      'Die Klone sollen dieselbe Struktur und dasselbe didaktische Niveau haben, aber unterschiedliche Begriffe/Inhalte verwenden.',
-      fv.instruction ? `Original-Anweisung: "${fv.instruction}"` : '',
-      fv.pairs ? `Original-Begriffspaare: ${JSON.stringify(fv.pairs)}` : '',
-      hint ? `Thematischer Fokus für die KI: ${hint}` : '',
-      'Antworte als JSON mit einem "klone"-Array, jedes Element: { "instruction": string, "pairs": [{left, right}][], "distractors": string[] }',
-    ].filter(Boolean).join('\n');
+    let prompt, schema;
 
-    const nonLueckePrompt = prompt;
-
-    const schema = isLuecke
-      ? {
-          type: 'object',
-          properties: {
-            klone: {
-              type: 'array',
-              items: { type: 'object', properties: { lueckentext: { type: 'string' } }, required: ['lueckentext'] },
-            },
-          },
-        }
-      : {
-          type: 'object',
-          properties: {
-            klone: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  instruction: { type: 'string' },
-                  pairs: { type: 'array', items: { type: 'object', properties: { left: { type: 'string' }, right: { type: 'string' } }, required: ['left', 'right'] } },
-                  distractors: { type: 'array', items: { type: 'string' } },
-                },
-              },
-            },
-          },
-        };
-
-    const result = isLuecke
-      ? await base44.integrations.Core.InvokeLLM({
-          prompt: `ZWINGENDE REGEL FÜR LÜCKENTEXTE:
+    if (isLuecke) {
+      prompt = `ZWINGENDE REGEL FÜR LÜCKENTEXTE:
 
     Du bist ein erfahrener Deutsch- und Fremdsprachenlehrer. Deine Aufgabe ist es, Lückentexte didaktisch sinnvoll zu variieren, ohne die Zielwörter zu verändern.
 
@@ -130,16 +89,87 @@ export default function KlonErstellenModal({ open, onClose, master, klone, onKlo
     - Behalte die inhaltliche Bedeutung bei
     - Keine Erklärungen, nur den fertigen Text
 
-    Antworte als JSON mit einem "klone"-Array, jedes Element: { "lueckentext": string }`,
-          response_json_schema: schema,
-        })
-      : await base44.integrations.Core.InvokeLLM({ prompt: nonLueckePrompt, response_json_schema: schema });
+    Antworte als JSON mit einem "klone"-Array, jedes Element: { "lueckentext": string }`;
+      schema = {
+        type: 'object',
+        properties: {
+          klone: {
+            type: 'array',
+            items: { type: 'object', properties: { lueckentext: { type: 'string' } }, required: ['lueckentext'] },
+          },
+        },
+      };
+    } else if (isSort) {
+      prompt = `Du bist ein Pädagoge und generierst Sortierlisten-Aufgaben.
+
+    Hier ist eine Aufgabe mit einer sortierten Liste:
+    - Aufgabenstellung: "${fv.instruction}"
+    - Ursprüngliche Elemente (in korrekter Reihenfolge): ${JSON.stringify(fv.orderedItems)}
+    ${hint ? `- Thematischer Fokus: ${hint}` : ''}
+
+    Erstelle ${count} NEUE Sortierlisten zu verschiedenen Themen mit derselben Struktur und Schwierigkeit.
+
+    Anforderungen:
+    1. Jede neue Liste muss ${fv.orderedItems.length} Elemente haben
+    2. Die Elemente müssen bereits in der KORREKTEN REIHENFOLGE sortiert sein
+    3. Nutze verschiedene Themen, aber gleiches Sortierprinzip
+    4. Elemente sollten kurz (3-10 Wörter) sein
+    5. Altersgerecht und ansprechend
+
+    Antworte als JSON mit einem "klone"-Array, jedes Element: { "instruction": string, "orderedItems": [strings] }`;
+      schema = {
+        type: 'object',
+        properties: {
+          klone: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                instruction: { type: 'string' },
+                orderedItems: { type: 'array', items: { type: 'string' } },
+              },
+              required: ['instruction', 'orderedItems'],
+            },
+          },
+        },
+      };
+    } else {
+      prompt = [
+        `Erstelle ${count} didaktisch gleichwertige Variationen (Klone) dieser Lernaufgabe.`,
+        'Die Klone sollen dieselbe Struktur und dasselbe didaktische Niveau haben, aber unterschiedliche Begriffe/Inhalte verwenden.',
+        fv.instruction ? `Original-Anweisung: "${fv.instruction}"` : '',
+        fv.pairs ? `Original-Begriffspaare: ${JSON.stringify(fv.pairs)}` : '',
+        hint ? `Thematischer Fokus für die KI: ${hint}` : '',
+        'Antworte als JSON mit einem "klone"-Array, jedes Element: { "instruction": string, "pairs": [{left, right}][], "distractors": string[] }',
+      ].filter(Boolean).join('\n');
+      schema = {
+        type: 'object',
+        properties: {
+          klone: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                instruction: { type: 'string' },
+                pairs: { type: 'array', items: { type: 'object', properties: { left: { type: 'string' }, right: { type: 'string' } }, required: ['left', 'right'] } },
+                distractors: { type: 'array', items: { type: 'string' } },
+              },
+            },
+          },
+        },
+      };
+    }
+
+    const result = await base44.integrations.Core.InvokeLLM({
+      prompt,
+      response_json_schema: schema,
+    });
     const klone = result?.klone || [];
     if (klone.length === 0) throw new Error('Die KI hat keine Variationen generiert. Bitte erneut versuchen.');
 
     // Bestimme die nächste Klon-Nummer (aus den BESTEHENDEN Klonen, nicht den KI-generierten)
-    const maxIndex = klone.length > 0
-      ? Math.max(...klone.map(k => k.klon_index || 0))
+    const maxIndex = (master?.klone && master.klone.length > 0)
+      ? Math.max(...master.klone.map(k => k.klon_index || 0))
       : 0;
 
     for (let i = 0; i < result.klone.length; i++) {
@@ -259,6 +289,14 @@ export default function KlonErstellenModal({ open, onClose, master, klone, onKlo
                 <div className="mt-3 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 text-xs leading-relaxed">
                   <p className="font-medium mb-1">Hinweis:</p>
                   <p>Die KI formuliert den Text inhaltlich passend um. Die von Ihnen definierten Lückenwörter bleiben dabei exakt erhalten und werden in den neuen Text integriert.</p>
+                </div>
+              )}
+
+              {/* Hinweistext für Sortierungs-Aufgaben */}
+              {master?.field_values?.orderedItems && (
+                <div className="mt-3 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 text-xs leading-relaxed">
+                  <p className="font-medium mb-1">Hinweis:</p>
+                  <p>Die KI generiert neue Sortierlisten mit verschiedenen Themen, aber derselben Struktur und Schwierigkeit. Alle Elemente werden bereits in der korrekten Reihenfolge zurückgegeben.</p>
                 </div>
               )}
             </div>

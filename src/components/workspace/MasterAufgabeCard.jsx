@@ -20,6 +20,7 @@ import LockBanner from '@/components/workspace/LockBanner';
 import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
 import LueckentextEditor, { LueckentextRenderer, validateBeforeSave } from '@/components/workspace/LueckentextEditor';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
+import SortingListEditor from '@/components/workspace/SortingListEditor';
 import { isLockExpired } from '@/hooks/useActivityLock';
 import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus';
 import { TASK_STATUS_CONFIG } from '@/lib/stateMachine';
@@ -36,6 +37,7 @@ function isLockedByOther(master, myEmail) {
 const MATCH_TERMS_NAMES = ['begriffe zuordnen', 'zuordnen', 'match terms'];
 const LUECKENTEXT_NAMES = ['lückentext', 'lücken', 'lueckentext', 'cloze', 'fill in'];
 const IMAGE_LABELING_NAMES = ['bildbeschriftung', 'bildbeschreibung', 'image labeling'];
+const SORTING_NAMES = ['reihenfolge', 'sortierung', 'sorting', 'sequenzierung'];
 
 function isMatchTerms(name = '') {
   return MATCH_TERMS_NAMES.some(n => name.toLowerCase().includes(n));
@@ -45,6 +47,9 @@ function isLueckentext(name = '') {
 }
 function isImageLabelingType(name = '') {
   return IMAGE_LABELING_NAMES.some(n => name.toLowerCase().includes(n));
+}
+function isSorting(name = '') {
+  return SORTING_NAMES.some(n => name.toLowerCase().includes(n));
 }
 
 // ── Master Approval Button ─────────────────────────────────────────────────────
@@ -131,6 +136,7 @@ export default function MasterAufgabeCard({
   const isMatch = isMatchTerms(catalogName);
   const isLuecke = isLueckentext(catalogName);
   const isImageLabeling = isImageLabelingType(catalogName);
+  const isSort = isSorting(catalogName);
   const isKITutor = catalogName?.toLowerCase().includes('ki-tutor');
 
   const saveMutation = useMutation({
@@ -398,6 +404,53 @@ export default function MasterAufgabeCard({
                 </div>
               )}
             </div>
+          ) : isSort ? (
+            /* ── Sortierungs-Editor ── */
+            <div className="space-y-3">
+              {editMode ? (
+                <>
+                  <SortingListEditor
+                    initialData={fieldValues}
+                    onSave={(data) => {
+                      setFieldValues(data);
+                      handleSaveAndClose(data);
+                    }}
+                    onCancel={() => { setEditMode(false); setHasPendingChanges(false); }}
+                    onChange={() => setHasPendingChanges(true)}
+                  />
+                </>
+              ) : (
+                <div className="space-y-3">
+                  {fieldValues.instruction && (
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Aufgabenstellung</p>
+                      <div className="bg-muted/50 rounded-lg p-3 text-sm">{fieldValues.instruction}</div>
+                    </div>
+                  )}
+                  {fieldValues.orderedItems?.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Sortierliste ({fieldValues.orderedItems.length})</p>
+                      <div className="bg-muted/30 rounded-lg p-3 space-y-1">
+                        {fieldValues.orderedItems.map((item, i) => (
+                          <div key={i} className="flex items-center gap-2 text-sm">
+                            <span className="font-semibold text-muted-foreground w-6">{i + 1}.</span>
+                            <span>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {kannBearbeiten && !locked && (
+                    <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
+                      Inhalt bearbeiten
+                    </Button>
+                  )}
+                  {!fieldValues.instruction && !fieldValues.orderedItems?.length && (
+                    <p className="text-sm text-muted-foreground italic">Noch kein Inhalt. Klicke „Inhalt bearbeiten".</p>
+                  )}
+                </div>
+              )}
+            </div>
           ) : isLuecke ? (
             /* ── Lückentext-Editor ── */
             <div className="space-y-3">
@@ -498,7 +551,7 @@ export default function MasterAufgabeCard({
           )}
 
           {/* Klon erstellen – NICHT für KI-Tutor und Bildbeschriftung */}
-          {!isKITutor && !isImageLabeling && (master.field_values?.lueckentext || master.field_values?.pairs?.length > 0 || master.field_values?.task_description) && (
+          {!isKITutor && !isImageLabeling && (master.field_values?.lueckentext || master.field_values?.pairs?.length > 0 || master.field_values?.orderedItems?.length > 0 || master.field_values?.task_description) && (
             <div className="border-t border-border/60 pt-4">
               <Button
                 size="sm"
