@@ -136,7 +136,10 @@ export default function MasterAufgabeCard({
     onSuccess: (_, { closeEdit }) => {
       queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
       setHasPendingChanges(false);
-      if (closeEdit) setEditMode(false);
+      if (closeEdit) {
+        setEditMode(false);
+        setCollapsed(true);
+      }
       toast.success('Masteraufgabe gespeichert.');
     },
     onError: (err) => toast.error(err.message || 'Fehler beim Speichern.'),
