@@ -16,7 +16,7 @@ import { base44 } from '@/api/base44Client';
 
 const HEARTBEAT_INTERVAL = 15_000; // 15s
 const STALE_THRESHOLD_MS = 30_000; // 30s
-const DEBOUNCE_MS = 2_000; // 2s debounce für Subscription
+const DEBOUNCE_MS = 5_000; // 5s debounce für Subscription – verhindert Rate-Limit
 
 export function usePresence(einheitId) {
   const [onlineUsers, setOnlineUsers] = useState([]);
@@ -101,19 +101,24 @@ export function usePresence(einheitId) {
       myRecordIdRef.current = recordId;
 
       // Hilfsfunktion: Anwesenheitsliste aus DB laden und stale-Filter anwenden
-      const loadPresence = async () => {
-        const all = await base44.entities.ActiveUsersPresence.filter({
-          current_view: einheitId,
-        });
-        const cutoff = Date.now() - STALE_THRESHOLD_MS;
-        const active = all.filter(entry => {
-          if (entry.user_email === myEmailRef.current) return false;
-          return new Date(entry.last_seen_at).getTime() > cutoff;
-        });
-        if (mounted) {
-          setOnlineUsers(active.map(e => ({ email: e.user_email, name: e.user_name || e.user_email })));
-        }
-      };
+       const loadPresence = async () => {
+         try {
+           const all = await base44.entities.ActiveUsersPresence.filter({
+             current_view: einheitId,
+           });
+           const cutoff = Date.now() - STALE_THRESHOLD_MS;
+           const active = all.filter(entry => {
+             if (entry.user_email === myEmailRef.current) return false;
+             return new Date(entry.last_seen_at).getTime() > cutoff;
+           });
+           if (mounted) {
+             setOnlineUsers(active.map(e => ({ email: e.user_email, name: e.user_name || e.user_email })));
+           }
+         } catch (err) {
+           // Rate-Limit oder Fehler – nicht aktualisieren, nächster Versuch in DEBOUNCE_MS
+           console.warn('[usePresence] loadPresence failed:', err.message);
+         }
+       };
 
       // Erste Ladung
       await loadPresence();
@@ -121,8 +126,8 @@ export function usePresence(einheitId) {
       // Realtime-Subscription mit Debouncing: verhindert Rate-Limit bei vielen Updates
       unsubscribeRef.current = base44.entities.ActiveUsersPresence.subscribe(() => {
         if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = setTimeout(() => {
-          loadPresence();
+        debounceTimerRef.current = setTimeout(async () => {
+          await loadPresence();
         }, DEBOUNCE_MS);
       });
 
@@ -133,8 +138,9 @@ export function usePresence(einheitId) {
           await base44.entities.ActiveUsersPresence.update(myRecordIdRef.current, {
             last_seen_at: new Date().toISOString(),
           });
-        } catch {
-          // Eintrag wurde extern gelöscht – Ref zurücksetzen
+        } catch (err) {
+          // Eintrag wurde extern gelöscht oder Rate-Limit – Ref zurücksetzen
+          console.warn('[usePresence] Heartbeat failed:', err.message);
           myRecordIdRef.current = null;
         }
       }, HEARTBEAT_INTERVAL);
