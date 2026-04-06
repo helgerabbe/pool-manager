@@ -255,7 +255,7 @@ function SidebarLernpaketFolder({
        </button>
 
       {isOpen && (
-        <div className="ml-5 mt-0.5 border-l border-border pl-2 space-y-2 pb-1">
+        <div className="ml-5 mt-0.5 border-l border-border pl-2 space-y-0.5 pb-1">
           {paketActivities.length === 0 ? (
             <p className="px-2 py-2 text-[11px] text-muted-foreground/50 italic">Keine Aktivitäten zugeordnet</p>
           ) : (
@@ -267,43 +267,57 @@ function SidebarLernpaketFolder({
                 .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
               if (phaseActs.length === 0) return null;
 
+              const phaseExpanded = expandedPhases[phase.key] !== false;
+              const togglePhaseExpand = (phaseKey) => {
+                setExpandedPhases(prev => ({
+                  ...prev,
+                  [phaseKey]: !prev[phaseKey],
+                }));
+              };
+
               return (
                 <div key={phase.key}>
-                  <p className="px-2 py-0.5 text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wide">
-                    {phase.icon} {phase.label}
-                  </p>
-                  <div className="space-y-0.5">
-                    {phaseActs.map(activity => {
-                       const actCatalog = aktivitaetenKatalog.find(c => c.id === activity.aktivitaet_id);
-                       const masters = masterAufgabenByActivityId[activity.id] || [];
+                  <button
+                    onClick={() => togglePhaseExpand(phase.key)}
+                    className="w-full flex items-center gap-1.5 px-2 py-0.5 text-left text-[10px] font-semibold text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                  >
+                    <ChevronRight className={cn('w-3 h-3 shrink-0 transition-transform', phaseExpanded && 'rotate-90')} />
+                    {phase.icon} <span className="uppercase tracking-wide">{phase.label}</span>
+                  </button>
+                  {phaseExpanded && (
+                    <div className="ml-2 border-l border-border/40 pl-2 space-y-0.5">
+                      {phaseActs.map(activity => {
+                         const actCatalog = aktivitaetenKatalog.find(c => c.id === activity.aktivitaet_id);
+                         const masters = masterAufgabenByActivityId[activity.id] || [];
 
-                       // Completion-Logik: Alle Masters müssen approved sein UND field_values gefüllt haben
-                       const allMastersApproved = masters.length > 0 && masters.every(m => m.content_status === 'approved');
-                       const allMastersHaveContent = masters.length > 0 && masters.every(m => {
-                         const fv = m.field_values || {};
-                         // Prüfe, ob es Inhalt gibt (je nach Aktivitätstyp)
-                         return fv.instruction || fv.lueckentext || fv.pairs?.length > 0 || 
-                                fv.orderedItems?.length > 0 || fv.dropZones?.length > 0 || 
-                                fv.mcItems?.length > 0 || fv.task_description;
-                       });
-                       const isComplete = masters.length > 0 && allMastersApproved && allMastersHaveContent;
+                         // Completion-Logik: Alle Masters müssen approved sein UND field_values gefüllt haben
+                         const allMastersApproved = masters.length > 0 && masters.every(m => m.content_status === 'approved');
+                         const allMastersHaveContent = masters.length > 0 && masters.every(m => {
+                           const fv = m.field_values || {};
+                           // Prüfe, ob es Inhalt gibt (je nach Aktivitätstyp)
+                           return fv.instruction || fv.lueckentext || fv.pairs?.length > 0 || 
+                                  fv.orderedItems?.length > 0 || fv.dropZones?.length > 0 || 
+                                  fv.mcItems?.length > 0 || fv.task_description;
+                         });
+                         const isComplete = masters.length > 0 && allMastersApproved && allMastersHaveContent;
 
-                       return (
-                         <ActivitySidebarItem
-                           key={activity.id}
-                           activity={activity}
-                           aktivitaetName={aktivitaetenMap[activity.aktivitaet_id] || '…'}
-                           masterAufgaben={masters}
-                           kloneByMasterId={kloneByMasterId}
-                           selectedItem={selectedItem}
-                           onSelect={onSelect}
-                           isIncomplete={!isComplete}
-                           myEmail={myEmail}
-                           catalogEntry={actCatalog}
-                         />
-                       );
-                     })}
-                  </div>
+                         return (
+                           <ActivitySidebarItem
+                             key={activity.id}
+                             activity={activity}
+                             aktivitaetName={aktivitaetenMap[activity.aktivitaet_id] || '…'}
+                             masterAufgaben={masters}
+                             kloneByMasterId={kloneByMasterId}
+                             selectedItem={selectedItem}
+                             onSelect={onSelect}
+                             isIncomplete={!isComplete}
+                             myEmail={myEmail}
+                             catalogEntry={actCatalog}
+                           />
+                         );
+                       })}
+                    </div>
+                  )}
                 </div>
               );
             })
@@ -345,6 +359,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
   // selectedItem: null | { type: 'activity', activity } | { type: 'master', master } | { type: 'klon', klon }
   const [selectedItem, setSelectedItem] = useState(null);
   const [openPacketIds, setOpenPacketIds] = useState(new Set());
+  const [expandedPhases, setExpandedPhases] = useState({});
 
   const { data: lernpakete = [] } = useQuery({
     queryKey: ['lernpakete'],
