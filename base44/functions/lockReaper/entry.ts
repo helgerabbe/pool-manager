@@ -19,17 +19,25 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 const LOCK_TIMEOUT_MS = 2 * 60 * 1000; // 2 Minuten
 const BATCH_SIZE = 50; // Parallele Updates in Batches
 
-// Nur Top-Level Entities mit Lock-Fähigkeit
+// Flexibles Config-Array mit Lock-Feldnamen & Owner-Information
 const ENTITIES_WITH_LOCKS = [
   {
     name: 'Lernpakete',
     lockField: 'is_locked',
     lockTimeField: 'locked_at',
+    ownerField: 'locked_by',
   },
   {
     name: 'Einheiten',
     lockField: 'structural_lock',
     lockTimeField: 'structural_locked_at',
+    ownerField: null, // structural_lock hält bereits den String (Owner embedded)
+  },
+  {
+    name: 'Aufgabenbausteine',
+    lockField: 'lock_status',
+    lockTimeField: 'locked_at',
+    ownerField: 'locked_by_user',
   },
 ];
 
@@ -88,7 +96,7 @@ Deno.serve(async (req) => {
     // 2. Verarbeite jede Entity mit Lock-Fähigkeit
     // ─────────────────────────────────────────────────────────────────
     for (const entityConfig of ENTITIES_WITH_LOCKS) {
-      const { name, lockField, lockTimeField } = entityConfig;
+      const { name, lockField, lockTimeField, ownerField } = entityConfig;
       const entity = base44.asServiceRole.entities[name];
 
       if (!entity) {
@@ -137,13 +145,15 @@ Deno.serve(async (req) => {
       }
 
       // ─────────────────────────────────────────────────────────────────
-      // 4. Parallele Batch-Updates (statt sequenziell)
+      // 4. Dynamisches Update-Payload (flexibel für alle Entities)
       // ─────────────────────────────────────────────────────────────────
       const updatePayload = {
         [lockField]: null,
-        [`${lockField === 'is_locked' ? 'locked_by_email' : 'structural_lock'}`]: null,
         [lockTimeField]: null,
       };
+      if (ownerField) {
+        updatePayload[ownerField] = null;
+      }
 
       const batches = [];
       for (let i = 0; i < staleLocks.length; i += BATCH_SIZE) {
@@ -151,9 +161,10 @@ Deno.serve(async (req) => {
         const batchPromise = Promise.all(
           batch.map(record =>
             entity.update(record.id, updatePayload).then(() => {
+              const owner = ownerField ? record[ownerField] : record[lockField];
               console.info(
                 `[lockReaper] Released stale lock: ${name}/${record.id} ` +
-                `(held by ${record[lockField === 'is_locked' ? 'locked_by_email' : 'structural_lock']} since ${record[lockTimeField]})`
+                `(held by ${owner} since ${record[lockTimeField]})`
               );
               return 1;
             }).catch(err => {
