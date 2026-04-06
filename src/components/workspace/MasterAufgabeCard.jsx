@@ -13,12 +13,10 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Crown, Trash2, Sparkles, Loader2, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Crown, Trash2, Sparkles, Loader2, AlertCircle, ChevronDown, ChevronUp, CheckCircle2, RotateCw } from 'lucide-react';
 import LockBanner from '@/components/workspace/LockBanner';
 import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
 import LueckentextEditor, { LueckentextRenderer, validateBeforeSave } from '@/components/workspace/LueckentextEditor';
-import ApprovalActionButton from '@/components/workspace/ApprovalActionButton';
-import ApprovalStatusBadge from '@/components/workspace/ApprovalStatusBadge';
 import { isLockExpired } from '@/hooks/useActivityLock';
 import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus';
 import { TASK_STATUS_CONFIG } from '@/lib/stateMachine';
@@ -169,6 +167,50 @@ function KlonGenerator({ master, onKlonesCreated }) {
   );
 }
 
+// ── Master Approval Button ─────────────────────────────────────────────────────
+
+function MasterApprovalButton({ master, queryClient }) {
+  const approveMutation = useMutation({
+    mutationFn: (action) =>
+      base44.functions.invoke('approveMasterAufgabe', { masterId: master.id, action }),
+    onSuccess: (_, action) => {
+      queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+      toast.success(action === 'approve' ? '✓ Als fertig markiert.' : 'Fertig-Markierung zurückgezogen.');
+    },
+    onError: (err) => toast.error('Fehler: ' + (err.message || 'Unbekannter Fehler')),
+  });
+
+  const isApproved = master.content_status === 'approved';
+  const isPending = approveMutation.isPending;
+
+  if (isApproved) {
+    return (
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => approveMutation.mutate('unapprove')}
+        disabled={isPending}
+        className="gap-1.5 text-green-700 border-green-300 hover:bg-green-50 text-xs h-7"
+      >
+        {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCw className="w-3 h-3" />}
+        Zurücksetzen
+      </Button>
+    );
+  }
+
+  return (
+    <Button
+      size="sm"
+      onClick={() => approveMutation.mutate('approve')}
+      disabled={isPending}
+      className="gap-1.5 bg-green-600 hover:bg-green-700 text-white text-xs h-7"
+    >
+      {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+      Als fertig markieren
+    </Button>
+  );
+}
+
 // ── Haupt-Komponente ───────────────────────────────────────────────────────────
 
 export default function MasterAufgabeCard({
@@ -296,21 +338,17 @@ export default function MasterAufgabeCard({
         )}
 
         <div className="flex items-center gap-2 ml-auto shrink-0">
-          <ApprovalActionButton 
-            entityId={master.id}
-            entityType="master"
-            contentStatus={master.content_status}
-            missingFields={
-              !master.field_values?.instruction &&
-              !master.field_values?.task_description &&
-              !master.field_values?.pairs?.length &&
-              !master.field_values?.lueckentext
-                ? ['Aufgabeninhalt fehlt']
-                : []
-            }
-            kannBearbeiten={kannBearbeiten}
-            userRole={userRole}
-          />
+          {/* Fertig-Badge wenn approved */}
+          {master.content_status === 'approved' && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 border border-green-300 text-green-700 text-[11px] font-medium shrink-0">
+              <CheckCircle2 className="w-3 h-3" />
+              Fertig
+            </span>
+          )}
+          {/* Fertig markieren / Zurücksetzen Button */}
+          {kannBearbeiten && (
+            <MasterApprovalButton master={master} queryClient={queryClient} />
+          )}
           <button
             onClick={() => setCollapsed(c => !c)}
             className="p-1 text-muted-foreground hover:text-foreground rounded"
@@ -409,17 +447,12 @@ export default function MasterAufgabeCard({
                     </div>
                   </div>
                 )}
-                {kannBearbeiten && !locked && master.content_status !== 'approved' && (
-                  <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
-                    Inhalt bearbeiten
-                  </Button>
+                {kannBearbeiten && !locked && (
+                 <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
+                   Inhalt bearbeiten
+                 </Button>
                 )}
-                {master.content_status === 'approved' && (
-                  <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1">
-                    🔒 Freigegeben – Freigabe aufheben um zu bearbeiten
-                  </p>
-                )}
-                {!fieldValues.instruction && !fieldValues.pairs?.length && master.content_status !== 'approved' && (
+                {!fieldValues.instruction && !fieldValues.pairs?.length && (
                   <p className="text-sm text-muted-foreground italic">Noch kein Inhalt. Klicke „Inhalt bearbeiten".</p>
                 )}
               </div>
@@ -471,15 +504,10 @@ export default function MasterAufgabeCard({
                   ) : (
                     <p className="text-sm text-muted-foreground italic">Noch kein Lückentext. Klicke „Inhalt bearbeiten".</p>
                   )}
-                  {kannBearbeiten && !locked && master.content_status !== 'approved' && (
+                  {kannBearbeiten && !locked && (
                     <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
                       Inhalt bearbeiten
                     </Button>
-                  )}
-                  {master.content_status === 'approved' && (
-                    <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1">
-                      🔒 Freigegeben – Freigabe aufheben um zu bearbeiten
-                    </p>
                   )}
                 </div>
               )}
@@ -518,15 +546,10 @@ export default function MasterAufgabeCard({
                   <div className="bg-muted/50 rounded-lg p-3 text-sm">
                     {fieldValues.task_description || <span className="italic text-muted-foreground">Noch kein Inhalt. Klicke „Inhalt bearbeiten".</span>}
                   </div>
-                  {kannBearbeiten && !locked && master.content_status !== 'approved' && (
+                  {kannBearbeiten && !locked && (
                     <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
                       Inhalt bearbeiten
                     </Button>
-                  )}
-                  {master.content_status === 'approved' && (
-                    <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1">
-                      🔒 Freigegeben – Freigabe aufheben um zu bearbeiten
-                    </p>
                   )}
                 </div>
               )}

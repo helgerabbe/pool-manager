@@ -29,7 +29,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { ChevronRight, Package, MousePointerClick, AlertTriangle, Lock, Crown } from 'lucide-react';
+import { ChevronRight, Package, MousePointerClick, AlertTriangle, Lock, Crown, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import ActivityMasterPanel from '@/components/workspace/ActivityMasterPanel';
 import KlonDetailView from '@/components/workspace/KlonDetailView';
@@ -92,6 +92,9 @@ function MasterSubItem({ master, index, klone, selectedItem, onSelect }) {
       >
         <Crown className="w-3 h-3 shrink-0 text-primary/70" />
         <span className="flex-1 truncate">{master.titel || `Master ${index}`}</span>
+        {master.content_status === 'approved' && (
+          <CheckCircle2 className="w-3 h-3 shrink-0 text-green-600" title="Fertig" />
+        )}
         {klone.length > 0 && (
           <span className="text-[10px] bg-primary/10 text-primary px-1 py-0.5 rounded shrink-0">
             {klone.length}
