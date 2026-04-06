@@ -458,9 +458,14 @@ export default function MasterAufgabeCard({
                   </div>
                 </>
               ) : (
-                <div className="space-y-2">
-                  <LueckentextEditor value={fieldValues.lueckentext || ''} onChange={() => {}} readOnly />
-                  {!fieldValues.lueckentext && (
+                <div className="space-y-3">
+                  {fieldValues.lueckentext ? (
+                    <LueckentextEditor
+                      value={fieldValues.lueckentext}
+                      onChange={() => {}}
+                      readOnly
+                    />
+                  ) : (
                     <p className="text-sm text-muted-foreground italic">Noch kein Lückentext. Klicke „Inhalt bearbeiten".</p>
                   )}
                   {kannBearbeiten && !locked && master.content_status !== 'approved' && (

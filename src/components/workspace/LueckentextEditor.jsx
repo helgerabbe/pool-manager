@@ -57,15 +57,15 @@ function shuffle(arr) {
  * mode='student'  → Schüttelkasten oben + Lückenlinien im Text
  */
 export function LueckentextRenderer({ rawText, mode = 'teacher' }) {
-  if (!rawText) return <span className="italic text-muted-foreground">Kein Text eingegeben.</span>;
-
-  const parts = rawText.split(/(\[[^\]]+\])/g);
-
   const woerter = useMemo(() => {
-    if (mode !== 'student') return [];
+    if (!rawText || mode !== 'student') return [];
     const unique = [...new Set(extractLuecken(rawText))];
     return shuffle(unique);
   }, [rawText, mode]);
+
+  if (!rawText) return <span className="italic text-muted-foreground">Kein Text eingegeben.</span>;
+
+  const parts = rawText.split(/(\[[^\]]+\])/g);
 
   if (mode === 'student') {
 
@@ -254,10 +254,18 @@ export default function LueckentextEditor({ value, onChange, readOnly = false })
 
   if (readOnly) {
     return (
-      <div className="space-y-2">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Lückentext (Lehrer-Ansicht)</p>
-        <div className="bg-muted/50 rounded-lg p-3 leading-relaxed">
-          <LueckentextRenderer rawText={value} mode="teacher" />
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Lehrer-Ansicht</p>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 leading-relaxed">
+            <LueckentextRenderer rawText={value} mode="teacher" />
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Schüler-Ansicht (mit Schüttelkasten)</p>
+          <div className="bg-white border rounded-lg p-3">
+            <LueckentextRenderer rawText={value} mode="student" />
+          </div>
         </div>
       </div>
     );
