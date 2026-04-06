@@ -3,9 +3,36 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 /**
  * forceReleaseLockAdmin
  * 
- * Nur für Admins: Entsperrt ein Lernpaket erzwungenermaßen.
- * Keine Prüfung, wem der Lock gehört.
+ * Generische Admin-Funktion: Entsperrt Entities beliebiger Typen erzwungenermaßen.
+ * 
+ * Unterstützte Entity-Typen:
+ *   - Lernpakete: is_locked, locked_by_email, locked_at
+ *   - Einheiten: structural_lock, structural_locked_at
+ *   - Aufgabenbausteine: lock_status, locked_by_user, locked_at
+ * 
+ * Payload: { entityName, entityId }
+ * Nur Admins dürfen diese Funktion aufrufen.
  */
+
+// Feld-Konfiguration für verschiedene Entity-Typen
+const LOCK_FIELD_MAP = {
+  'Lernpakete': {
+    lockField: 'is_locked',
+    ownerField: 'locked_by_email',
+    timeField: 'locked_at',
+  },
+  'Einheiten': {
+    lockField: 'structural_lock',
+    ownerField: null,
+    timeField: 'structural_locked_at',
+  },
+  'Aufgabenbausteine': {
+    lockField: 'lock_status',
+    ownerField: 'locked_by_user',
+    timeField: 'locked_at',
+  },
+};
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -20,26 +47,43 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Admin only' }, { status: 403 });
     }
 
-    const { lernpaketId } = await req.json();
+    const { entityName, entityId } = await req.json();
 
-    if (!lernpaketId) {
-      return Response.json({ error: 'lernpaketId required' }, { status: 400 });
+    // Validierung
+    if (!entityName || !entityId) {
+      return Response.json({ error: 'entityName and entityId required' }, { status: 400 });
     }
 
-    const paket = await base44.entities.Lernpakete.get(lernpaketId);
-
-    if (!paket) {
-      return Response.json({ error: 'Lernpaket not found' }, { status: 404 });
+    if (!LOCK_FIELD_MAP[entityName]) {
+      return Response.json({ error: `Unsupported entityName: ${entityName}` }, { status: 400 });
     }
 
-    // Force release (kein Check)
-    await base44.entities.Lernpakete.update(lernpaketId, {
-      is_locked: false,
-      locked_by_email: null,
-      locked_at: null,
-    });
+    // Entity abrufen (Prüfung ob vorhanden)
+    const entity = await base44.entities[entityName].get(entityId);
+    if (!entity) {
+      return Response.json({ error: `${entityName} not found` }, { status: 404 });
+    }
 
-    return Response.json({ success: true });
+    // Lock-Felder auslesen
+    const { lockField, ownerField, timeField } = LOCK_FIELD_MAP[entityName];
+
+    // Update-Payload dynamisch zusammenstellen (alle Felder auf null)
+    const updatePayload = {
+      [lockField]: null,
+      [timeField]: null,
+    };
+    if (ownerField) {
+      updatePayload[ownerField] = null;
+    }
+
+    // Update via Service Role (RLS-sicher)
+    await base44.asServiceRole.entities[entityName].update(entityId, updatePayload);
+
+    console.info(
+      `[forceReleaseLockAdmin] Released lock for ${entityName}/${entityId} by admin ${user.email}`
+    );
+
+    return Response.json({ success: true, message: `Lock released for ${entityName}/${entityId}` });
   } catch (error) {
     console.error('[forceReleaseLockAdmin] Error:', error);
     return Response.json({ error: error.message }, { status: 500 });
