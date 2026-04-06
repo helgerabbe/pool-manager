@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Crown, Trash2, Sparkles, Loader2, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import LockBanner from '@/components/workspace/LockBanner';
 import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
+import LueckentextEditor, { LueckentextRenderer } from '@/components/workspace/LueckentextEditor';
 import ApprovalActionButton from '@/components/workspace/ApprovalActionButton';
 import ApprovalStatusBadge from '@/components/workspace/ApprovalStatusBadge';
 import { isLockExpired } from '@/hooks/useActivityLock';
@@ -32,8 +33,13 @@ function isLockedByOther(master, myEmail) {
 }
 
 const MATCH_TERMS_NAMES = ['begriffe zuordnen', 'zuordnen', 'match terms'];
+const LUECKENTEXT_NAMES = ['lückentext', 'lücken', 'lueckentext', 'cloze', 'fill in'];
+
 function isMatchTerms(name = '') {
   return MATCH_TERMS_NAMES.some(n => name.toLowerCase().includes(n));
+}
+function isLueckentext(name = '') {
+  return LUECKENTEXT_NAMES.some(n => name.toLowerCase().includes(n));
 }
 
 // ── Klon-Generator ─────────────────────────────────────────────────────────────
@@ -50,7 +56,16 @@ function KlonGenerator({ master, onKlonesCreated }) {
     setError(null);
     try {
       const fv = master.field_values || {};
-      const prompt = [
+      const isLuecke = !!(fv.lueckentext);
+
+      const prompt = isLuecke ? [
+        `Erstelle ${klonCount} didaktisch gleichwertige Variationen (Klone) dieses Lückentexts.`,
+        'Jeder Klon soll denselben Themenbereich abdecken, aber andere Begriffe/Sätze verwenden.',
+        'Markiere Lücken zwingend mit eckigen Klammern: z.B. [Begriff].',
+        `Original-Lückentext: "${fv.lueckentext}"`,
+        hint ? `Zusätzliche Hinweise: ${hint}` : '',
+        'Antworte als JSON mit einem "klone"-Array, jedes Element: { "lueckentext": string }',
+      ].filter(Boolean).join('\n') : [
         `Erstelle ${klonCount} didaktisch gleichwertige Variationen (Klone) dieser Lernaufgabe.`,
         'Die Klone sollen die gleiche Struktur haben, aber unterschiedliche Begriffe/Inhalte verwenden.',
         fv.instruction ? `Original-Anweisung: "${fv.instruction}"` : '',
@@ -59,25 +74,34 @@ function KlonGenerator({ master, onKlonesCreated }) {
         'Antworte als JSON mit einem "klone"-Array, jedes Element: { "instruction": string, "pairs": [{left, right}][], "distractors": string[] }',
       ].filter(Boolean).join('\n');
 
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt,
-        response_json_schema: {
-          type: 'object',
-          properties: {
-            klone: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  instruction: { type: 'string' },
-                  pairs: { type: 'array', items: { type: 'object', properties: { left: { type: 'string' }, right: { type: 'string' } }, required: ['left', 'right'] } },
-                  distractors: { type: 'array', items: { type: 'string' } },
+      const fv2 = master.field_values || {};
+      const isLuecke2 = !!(fv2.lueckentext);
+
+      const schema = isLuecke2
+        ? {
+            type: 'object',
+            properties: {
+              klone: { type: 'array', items: { type: 'object', properties: { lueckentext: { type: 'string' } }, required: ['lueckentext'] } },
+            },
+          }
+        : {
+            type: 'object',
+            properties: {
+              klone: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    instruction: { type: 'string' },
+                    pairs: { type: 'array', items: { type: 'object', properties: { left: { type: 'string' }, right: { type: 'string' } }, required: ['left', 'right'] } },
+                    distractors: { type: 'array', items: { type: 'string' } },
+                  },
                 },
               },
             },
-          },
-        },
-      });
+          };
+
+      const result = await base44.integrations.Core.InvokeLLM({ prompt, response_json_schema: schema });
 
       const klone = result?.klone || [];
       if (klone.length === 0) throw new Error('Keine Klone generiert.');
@@ -179,6 +203,7 @@ export default function MasterAufgabeCard({
 
   const locked = isLockedByOther(master, userEmail);
   const isMatch = isMatchTerms(catalogName);
+  const isLuecke = isLueckentext(catalogName);
 
   const saveMutation = useMutation({
     mutationFn: ({ fv, closeEdit }) => {
@@ -396,7 +421,53 @@ export default function MasterAufgabeCard({
                 )}
               </div>
             )
+          ) : isLuecke ? (
+            /* ── Lückentext-Editor ── */
+            <div className="space-y-3">
+              {editMode ? (
+                <>
+                  <LueckentextEditor
+                    value={fieldValues.lueckentext || ''}
+                    onChange={(text) => {
+                      setFieldValues(fv => ({ ...fv, lueckentext: text }));
+                      setHasPendingChanges(true);
+                    }}
+                  />
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => { setEditMode(false); setHasPendingChanges(false); }}>Abbrechen</Button>
+                    {hasPendingChanges && (
+                      <Button size="sm" variant="outline" onClick={handleSaveIntermediate} disabled={saveMutation.isPending}
+                        className="gap-1.5 border-amber-300 hover:bg-amber-100 text-amber-800">
+                        {saveMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                        Zwischenspeichern
+                      </Button>
+                    )}
+                    <Button size="sm" onClick={() => handleSaveAndClose()} disabled={saveMutation.isPending} className="gap-1.5 ml-auto">
+                      {saveMutation.isPending && <Loader2 className="w-3 h-3 animate-spin" />} Speichern & schließen
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-2">
+                  <LueckentextEditor value={fieldValues.lueckentext || ''} onChange={() => {}} readOnly />
+                  {!fieldValues.lueckentext && (
+                    <p className="text-sm text-muted-foreground italic">Noch kein Lückentext. Klicke „Inhalt bearbeiten".</p>
+                  )}
+                  {kannBearbeiten && !locked && master.content_status !== 'approved' && (
+                    <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
+                      Inhalt bearbeiten
+                    </Button>
+                  )}
+                  {master.content_status === 'approved' && (
+                    <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1">
+                      🔒 Freigegeben – Freigabe aufheben um zu bearbeiten
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           ) : (
+            /* ── Generischer Fallback ── */
             <div className="space-y-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Notizen / Aufgabenstellung</p>
               {editMode ? (
