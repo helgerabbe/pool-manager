@@ -1,68 +1,184 @@
 /**
  * lockReaper.js
  *
- * Scheduled background job: bereinigt verwaiste Locks
+ * Scheduled background job (Automation): bereinigt verwaiste Locks
  * die älter als LOCK_TIMEOUT_MS sind.
  *
- * Läuft alle 1 Minute via Automation (scheduled).
- * Entities: Lernpakete, LernpaketPhaseAktivitaet, Aufgabenbausteine
+ * Sicherheit & Architektur:
+ * - Erzwingt Automation-Secret-Validierung
+ * - Nur Lernpakete und Einheiten (keine untergeordneten Entities)
+ * - DB-Level Filtering (nur stale Locks)
+ * - Parallele Batch-Updates statt sequenzieller Aufrufe
+ * - Heartbeat-Konsept: Frontend erneuert Lock regelmäßig
+ *
+ * Läuft alle 30 Sekunden via Automation (scheduled).
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 const LOCK_TIMEOUT_MS = 2 * 60 * 1000; // 2 Minuten
+const BATCH_SIZE = 50; // Parallele Updates in Batches
 
-const ENTITIES = [
-  'Lernpakete',
-  'LernpaketPhaseAktivitaet',
-  'Aufgabenbausteine',
+// Nur Top-Level Entities mit Lock-Fähigkeit
+const ENTITIES_WITH_LOCKS = [
+  {
+    name: 'Lernpakete',
+    lockField: 'is_locked',
+    lockTimeField: 'locked_at',
+  },
+  {
+    name: 'Einheiten',
+    lockField: 'structural_lock',
+    lockTimeField: 'structural_locked_at',
+  },
 ];
+
+/**
+ * Validiert Automation-Secret aus Authorization-Header oder Env-Var
+ */
+function validateAutomationSecret(req) {
+  const authHeader = req.headers.get('authorization') || '';
+  const token = authHeader.replace('Bearer ', '');
+  const expectedSecret = Deno.env.get('AUTOMATION_SECRET');
+
+  if (!expectedSecret) {
+    console.warn('[lockReaper] AUTOMATION_SECRET not configured');
+    return false;
+  }
+
+  if (!token || token !== expectedSecret) {
+    return false;
+  }
+
+  return true;
+}
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Auth: Automation-Aufruf (kein User) oder eingeloggter Admin
-    const user = await base44.auth.me().catch(() => null);
-    if (user && user.role !== 'admin') {
-      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    // ─────────────────────────────────────────────────────────────────
+    // 1. Sicherheit: Automation-Secret validieren
+    // ─────────────────────────────────────────────────────────────────
+    const isValidAutomation = validateAutomationSecret(req);
+
+    // Fallback: User-basierte Auth (für manuelle Trigger)
+    let user = null;
+    if (!isValidAutomation) {
+      try {
+        user = await base44.auth.me();
+      } catch {
+        user = null;
+      }
+
+      // Wenn weder Secret noch Admin-User: Fehler
+      if (!user || user.role !== 'admin') {
+        return Response.json(
+          { error: 'Unauthorized: Invalid or missing automation secret' },
+          { status: 401 }
+        );
+      }
     }
-    // Kein User = Automation-Aufruf → erlaubt
 
     const now = Date.now();
     const results = {};
     let totalReleased = 0;
 
-    for (const entityName of ENTITIES) {
-      const entity = base44.asServiceRole.entities[entityName];
+    // ─────────────────────────────────────────────────────────────────
+    // 2. Verarbeite jede Entity mit Lock-Fähigkeit
+    // ─────────────────────────────────────────────────────────────────
+    for (const entityConfig of ENTITIES_WITH_LOCKS) {
+      const { name, lockField, lockTimeField } = entityConfig;
+      const entity = base44.asServiceRole.entities[name];
 
-      // Alle gesperrten Datensätze laden
-      const locked = await entity.filter({ lock_status: true });
-
-      const stale = locked.filter(record => {
-        if (!record.locked_at) return true; // kein Timestamp → immer veraltet
-        return now - new Date(record.locked_at).getTime() > LOCK_TIMEOUT_MS;
-      });
-
-      let released = 0;
-      for (const record of stale) {
-        await entity.update(record.id, {
-          lock_status: false,
-          locked_by_user: null,
-          locked_at: null,
-        });
-        released++;
-        console.info(
-          `[lockReaper] Released stale lock on ${entityName}/${record.id}` +
-          ` (was held by: ${record.locked_by_user}, locked at: ${record.locked_at})`
-        );
+      if (!entity) {
+        console.warn(`[lockReaper] Entity ${name} not found in SDK`);
+        results[name] = { error: 'Entity not available', released: 0 };
+        continue;
       }
 
-      results[entityName] = { found: stale.length, released };
+      // ─────────────────────────────────────────────────────────────────
+      // 3. DB-Level Filtering: Nur stale Locks abrufen
+      // ─────────────────────────────────────────────────────────────────
+      const staleThreshold = new Date(now - LOCK_TIMEOUT_MS).toISOString();
+
+      let staleLocks = [];
+      try {
+        // Filter: Lock gesetzt UND älter als Threshold
+        staleLocks = await entity.filter({
+          [lockField]: { $ne: null }, // Lock ist gesetzt
+          [lockTimeField]: { $lt: staleThreshold }, // älter als Threshold
+        });
+      } catch (filterError) {
+        // Fallback: Wenn komplexe Filter nicht unterstützt, laden und filtern
+        console.warn(
+          `[lockReaper] DB-level filtering failed for ${name}, using client-side filter`,
+          filterError.message
+        );
+        try {
+          const allWithLock = await entity.filter({
+            [lockField]: { $ne: null },
+          });
+          staleLocks = allWithLock.filter(record => {
+            const lockTime = record[lockTimeField];
+            if (!lockTime) return true; // Kein Timestamp = veraltet
+            return new Date(lockTime).getTime() < now - LOCK_TIMEOUT_MS;
+          });
+        } catch (fallbackError) {
+          console.error(`[lockReaper] Failed to fetch locks for ${name}:`, fallbackError);
+          results[name] = { error: fallbackError.message, released: 0 };
+          continue;
+        }
+      }
+
+      if (staleLocks.length === 0) {
+        results[name] = { found: 0, released: 0 };
+        continue;
+      }
+
+      // ─────────────────────────────────────────────────────────────────
+      // 4. Parallele Batch-Updates (statt sequenziell)
+      // ─────────────────────────────────────────────────────────────────
+      const updatePayload = {
+        [lockField]: null,
+        [`${lockField === 'is_locked' ? 'locked_by_email' : 'structural_lock'}`]: null,
+        [lockTimeField]: null,
+      };
+
+      const batches = [];
+      for (let i = 0; i < staleLocks.length; i += BATCH_SIZE) {
+        const batch = staleLocks.slice(i, i + BATCH_SIZE);
+        const batchPromise = Promise.all(
+          batch.map(record =>
+            entity.update(record.id, updatePayload).then(() => {
+              console.info(
+                `[lockReaper] Released stale lock: ${name}/${record.id} ` +
+                `(held by ${record[lockField === 'is_locked' ? 'locked_by_email' : 'structural_lock']} since ${record[lockTimeField]})`
+              );
+              return 1;
+            }).catch(err => {
+              console.error(
+                `[lockReaper] Failed to release lock ${name}/${record.id}:`,
+                err.message
+              );
+              return 0;
+            })
+          )
+        );
+        batches.push(batchPromise);
+      }
+
+      const releaseCounts = await Promise.all(batches);
+      const released = releaseCounts.flat().reduce((sum, count) => sum + count, 0);
+
+      results[name] = {
+        found: staleLocks.length,
+        released,
+      };
       totalReleased += released;
     }
 
-    console.info(`[lockReaper] Done. Total released: ${totalReleased}`);
+    console.info(`[lockReaper] Completed. Total released: ${totalReleased}`);
 
     return Response.json({
       success: true,
@@ -70,9 +186,11 @@ Deno.serve(async (req) => {
       totalReleased,
       details: results,
     });
-
   } catch (error) {
-    console.error('[lockReaper] Error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('[lockReaper] Unexpected error:', error);
+    return Response.json(
+      { error: error.message || 'Internal server error' },
+      { status: 500 }
+    );
   }
 });
