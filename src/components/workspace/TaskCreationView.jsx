@@ -174,7 +174,7 @@ function ActivitySidebarItem({
             ? 'bg-primary text-primary-foreground font-medium'
             : isIncomplete
               ? 'text-amber-700 bg-amber-50/60 hover:bg-amber-100'
-              : 'text-foreground hover:bg-muted'
+              : 'text-green-700 bg-green-50/60 hover:bg-green-100'
         )}
       >
         <span className="flex-1 truncate">{aktivitaetName}</span>
