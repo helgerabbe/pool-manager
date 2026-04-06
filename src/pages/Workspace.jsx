@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
+import { useWorkspaceData } from '@/hooks/useWorkspaceData';
 import ErrorBoundary from '@/components/errors/ErrorBoundary';
 import { SkeletonWorkspace } from '@/components/loading/SkeletonLoader';
 import SidebarTree from '@/components/workspace/SidebarTree';
@@ -13,7 +14,7 @@ import { isStructurallyLocked } from '@/hooks/useStructuralLock';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { BookOpen, Lock, ArrowRight, PenLine, Unlock, Loader2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import StrukturBoardEmbedded from '@/components/workspace/StrukturBoardEmbedded';
 import WorkspaceTabs from '@/components/workspace/WorkspaceTabs';
@@ -26,8 +27,8 @@ import AllgemeineAufgabenView from '@/components/allgemeineAufgaben/AllgemeineAu
 import ProjektaufgabenView from '@/components/projektaufgaben/ProjektaufgabenView';
 
 export default function Workspace({ initialEinheitId: initialEinheitIdProp = null }) {
-  const urlParams = new URLSearchParams(window.location.search);
-  const initialEinheitId = initialEinheitIdProp || urlParams.get('einheit') || null;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialEinheitId = initialEinheitIdProp || searchParams.get('einheit') || null;
 
   const { permissions, authUser, rolle, isLoading: rbacLoading } = useRBAC();
   const queryClient = useQueryClient();
@@ -40,7 +41,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const [highlightedAtomIds, setHighlightedAtomIds] = useState(new Set());
   const [taskWorkshopActivityId, setTaskWorkshopActivityId] = useState(null);
 
-  const fromWizard = new URLSearchParams(window.location.search).get('fromWizard') === '1';
+  const fromWizard = searchParams.get('fromWizard') === '1';
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -49,70 +50,42 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     if (tab !== 'aufgaben') setTaskWorkshopActivityId(null);
   };
 
-  // ── Queries ──────────────────────────────────────────────────────────────────
-  const { data: einheiten = [], isLoading: einheitenLoading } = useQuery({
-    queryKey: ['einheiten'],
-    queryFn: () => base44.entities.Einheiten.list('-created_date')
-  });
+  // ── Queries (ausgelagert in Custom Hook) ──────────────────────────────────────
+  const {
+    einheiten = [],
+    lernpakete = [],
+    lernziele = [],
+    aufgaben = [],
+    allgemeineAufgabenData = [],
+    mappings = [],
+    themenfelder = [],
+    lernpaketAktivitaeten = [],
+    aktivitaetenKatalog = [],
+    isLoading: einheitenLoading,
+  } = useWorkspaceData(selectedEinheitId);
 
-  const { data: lernpakete = [] } = useQuery({
-    queryKey: ['lernpakete'],
-    queryFn: () => base44.entities.Lernpakete.list(),
-    enabled: !!selectedEinheitId
-  });
-
-  const { data: lernziele = [] } = useQuery({
-    queryKey: ['lernziele'],
-    queryFn: () => base44.entities.Lernziele.list(),
-    enabled: !!selectedEinheitId
-  });
-
-  const { data: aufgaben = [] } = useQuery({
-    queryKey: ['aufgaben'],
-    queryFn: () => base44.entities.Aufgabenbausteine.list(),
-    enabled: !!selectedEinheitId
-  });
-
-  const { data: allgemeineAufgabenData = [] } = useQuery({
-    queryKey: ['allgemeineAufgaben', selectedEinheitId],
-    queryFn: () => base44.entities.AllgemeineAufgabe.filter({ einheit_id: selectedEinheitId }),
-    enabled: !!selectedEinheitId
-  });
-
-  const { data: mappings = [] } = useQuery({
-    queryKey: ['mappingBasisziele'],
-    queryFn: () => base44.entities.MappingAufgabeBasisziel.list(),
-    enabled: !!selectedEinheitId
-  });
-
-  const { data: themenfelder = [] } = useQuery({
-    queryKey: ['themenfelder', selectedEinheitId],
-    queryFn: () => base44.entities.Themenfeld.filter({ einheit_id: selectedEinheitId }),
-    enabled: !!selectedEinheitId
-  });
-
-  const { data: lernpaketAktivitaeten = [] } = useQuery({
-    queryKey: ['lernpaketPhaseAktivitaeten'],
-    queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list(),
-    enabled: !!selectedEinheitId
-  });
-
-  const { data: aktivitaetenKatalog = [] } = useQuery({
-    queryKey: ['aktivitaetenKatalog'],
-    queryFn: () => base44.entities.AktivitaetenKatalog.list(),
-    enabled: !!selectedEinheitId
-  });
-
-  // ── Aktive Einheit ────────────────────────────────────────────────────────────
+  // ── Aktive Einheit + Memoisierte abgeleitete Daten ──────────────────────────────
   const einheit = einheiten.find((e) => e.id === selectedEinheitId) || null;
 
-  const paketeFuerEinheit = lernpakete
-    .filter((lp) => lp.einheit_id === selectedEinheitId)
-    .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0));
+  const paketeFuerEinheit = useMemo(
+    () =>
+      lernpakete
+        .filter((lp) => lp.einheit_id === selectedEinheitId)
+        .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0)),
+    [lernpakete, selectedEinheitId]
+  );
 
-  const paketIds = paketeFuerEinheit.map((p) => p.id);
-  const zieleFuerEinheit = lernziele.filter((lz) => paketIds.includes(lz.lernpaket_id));
-  const aufgabenFuerEinheit = aufgaben.filter((a) => paketIds.includes(a.lernpaket_id));
+  const paketIds = useMemo(() => paketeFuerEinheit.map((p) => p.id), [paketeFuerEinheit]);
+
+  const zieleFuerEinheit = useMemo(
+    () => lernziele.filter((lz) => paketIds.includes(lz.lernpaket_id)),
+    [lernziele, paketIds]
+  );
+
+  const aufgabenFuerEinheit = useMemo(
+    () => aufgaben.filter((a) => paketIds.includes(a.lernpaket_id)),
+    [aufgaben, paketIds]
+  );
 
   // ── RBAC ──────────────────────────────────────────────────────────────────────
   const istAdmin = rolle === ROLLEN.ADMIN;
@@ -209,15 +182,27 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
   const structLocked = einheit ? isStructurallyLocked(einheit, authUser?.email) : false;
 
+  // Pakete/Ziele/Aufgaben gefiltert nach aktivem Themenfeld (memoisiert) – VOR Early Returns!
+  const paketeFuerThemenfeld = useMemo(
+    () =>
+      selectedThemenfeldId
+        ? paketeFuerEinheit.filter((p) => p.themenfeld_id === selectedThemenfeldId)
+        : paketeFuerEinheit,
+    [paketeFuerEinheit, selectedThemenfeldId]
+  );
+
+  const paketIdsFuerThemenfeld = useMemo(
+    () => paketeFuerThemenfeld.map((p) => p.id),
+    [paketeFuerThemenfeld]
+  );
+
   // ── Callbacks ─────────────────────────────────────────────────────────────────
   const handleEinheitChange = (id) => {
     setSelectedEinheitId(id);
     setSelectedThemenfeldId(null);
     setSelectedNode({ type: 'einheit', id });
     setHighlightedAtomIds(new Set());
-    const url = new URL(window.location.href);
-    url.searchParams.set('einheit', id);
-    window.history.replaceState({}, '', url);
+    setSearchParams({ einheit: id });
   };
 
   const handleAtomHighlight = useCallback((atomIds) => {
@@ -234,23 +219,16 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     setSelectedNode(node);
   }, []);
 
-  // Pakete/Ziele/Aufgaben gefiltert nach aktivem Themenfeld
-  const paketeFuerThemenfeld = selectedThemenfeldId
-    ? paketeFuerEinheit.filter((p) => p.themenfeld_id === selectedThemenfeldId)
-    : paketeFuerEinheit;
-  const paketIdsFuerThemenfeld = paketeFuerThemenfeld.map((p) => p.id);
-  const zieleFuerThemenfeld = lernziele.filter((lz) => paketIdsFuerThemenfeld.includes(lz.lernpaket_id));
-  const aufgabenFuerThemenfeld = aufgaben.filter(
-    (a) => paketIdsFuerThemenfeld.includes(a.lernpaket_id) && a.anforderungsebene !== '3 - Projekt'
-  );
-
-  // ── Delete-Mutations ──────────────────────────────────────────────────────────
+  // ── Delete-Mutations (parallelisiert) ─────────────────────────────────────────
   const deleteLernpaket = useMutation({
     mutationFn: async (id) => {
       const relZiele = zieleFuerEinheit.filter((lz) => lz.lernpaket_id === id);
       const relAufgaben = aufgabenFuerEinheit.filter((a) => a.lernpaket_id === id);
-      for (const z of relZiele) await base44.entities.Lernziele.delete(z.id);
-      for (const a of relAufgaben) await base44.entities.Aufgabenbausteine.delete(a.id);
+      // Parallele Requests statt sequenzielle for...of Schleifen
+      await Promise.all([
+        ...relZiele.map((z) => base44.entities.Lernziele.delete(z.id)),
+        ...relAufgaben.map((a) => base44.entities.Aufgabenbausteine.delete(a.id)),
+      ]);
       return base44.entities.Lernpakete.delete(id);
     },
     onSuccess: () => {
@@ -295,16 +273,24 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   ).length;
   const projektCount = allgemeineAufgabenData.filter((a) => a.anforderungsebene === '3 - Projekt').length;
 
-  // Bidirektionale Lock-Prüfung: Hat ein Kollege gerade ein Lernpaket gesperrt?
+  // Bidirektionale Lock-Prüfung (memoisiert)
   const PAKET_LOCK_TIMEOUT_MS = 30 * 60 * 1000;
-  const aktivePaketLocks = paketeFuerEinheit.filter(
-    (p) =>
-      p.locked_by &&
-      p.locked_by !== authUser?.email &&
-      p.locked_at &&
-      Date.now() - new Date(p.locked_at).getTime() < PAKET_LOCK_TIMEOUT_MS
+  const aktivePaketLocks = useMemo(
+    () =>
+      paketeFuerEinheit.filter(
+        (p) =>
+          p.locked_by &&
+          p.locked_by !== authUser?.email &&
+          p.locked_at &&
+          Date.now() - new Date(p.locked_at).getTime() < PAKET_LOCK_TIMEOUT_MS
+      ),
+    [paketeFuerEinheit, authUser?.email]
   );
-  const kollegen = [...new Set(aktivePaketLocks.map((p) => p.locked_by))];
+
+  const kollegen = useMemo(
+    () => [...new Set(aktivePaketLocks.map((p) => p.locked_by))],
+    [aktivePaketLocks]
+  );
 
   return (
     <ErrorBoundary label="Workspace">
@@ -368,7 +354,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
             {/* ── Persistenter Header mit Structural-Lock-Control ─────────── */}
             <div className="px-4 sm:px-6 lg:px-8 py-2 border-b border-border bg-muted/40 shrink-0 flex items-center gap-3 flex-wrap">
-              <span className="text-base font-bold text-foreground truncate flex-1 min-w-0" style={{fontSize: '1.5rem', lineHeight: '1.3'}}>{einheit.titel_der_einheit}</span>
+              <span className="text-2xl font-bold text-foreground truncate flex-1 min-w-0 leading-snug">{einheit.titel_der_einheit}</span>
               <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full shrink-0">{einheit.fach}</span>
 
               {/* Status-Badge + Lock-Button – nur im Struktur-Tab und wenn Berechtigung */}
@@ -495,7 +481,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                 <main className="flex-1 overflow-hidden min-h-0 h-full">
                    <ErrorBoundary label="Detail-Panel">
                      <div className="h-full overflow-y-auto max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pr-2">
-                      {selectedNode?.type === 'aktivitaet-edit' ? (() => {
+                      {selectedNode?.type === 'aktivitaet-edit' && (() => {
                         const activityRecord = lernpaketAktivitaeten.find((a) => a.id === selectedNode.activityRecordId);
                         if (!activityRecord) return null;
                         return (
@@ -506,7 +492,8 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                              queryClient={queryClient}
                            />
                         );
-                      })() : (
+                      })()}
+                      {selectedNode?.type !== 'aktivitaet-edit' && (
                         <WorkspaceDetailPanel
                           selectedNode={{ ...selectedNode, themenfelder }}
                           einheit={einheit}
