@@ -163,14 +163,22 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
 
   return (
     <div className="space-y-4">
-      {/* ── Aktivitäts-Header (ActivityDetailView) ── */}
-      {activityRecord && (
+      {/* ── Aktivitäts-Header (vereinfacht für Klone) ── */}
+      {activityRecord && catalogEntry && (
         <div className="rounded-xl border border-border bg-card p-4">
-          <ActivityDetailView
-            activityRecord={activityRecord}
-            kannBearbeiten={kannBearbeiten}
-            queryClient={queryClient}
-          />
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg font-semibold">{catalogEntry.name}</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Phase: {activityRecord.phase}</p>
+            </div>
+            <button
+              onClick={() => setEditMode(false)}
+              className="px-3 py-1.5 text-sm font-medium rounded-lg border border-input bg-background hover:bg-muted transition-colors shrink-0"
+              title="Bearbeitung beenden"
+            >
+              ✕ Bearbeitung beenden
+            </button>
+          </div>
         </div>
       )}
 
@@ -228,16 +236,11 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
 
         {/* Lückentext-Editor (bei Lückentext-Klonen) */}
         {isLueckentext(catalogEntry?.name) ? (
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Lückentext</p>
-              <LueckentextEditor
-                value={data.lueckentext || ''}
-                onChange={(text) => setData(d => ({ ...d, lueckentext: text }))}
-                readOnly={!editMode}
-              />
-            </div>
-          </div>
+          <LueckentextEditor
+            value={data.lueckentext || ''}
+            onChange={(text) => setData(d => ({ ...d, lueckentext: text }))}
+            readOnly={!editMode}
+          />
         ) : isMatchTerms(catalogEntry?.name) ? (
           /* Match-Terms-Formular */
           <div className="space-y-3">
