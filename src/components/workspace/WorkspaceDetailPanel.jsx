@@ -980,16 +980,12 @@ function LernzielPanel({ lernziel, paketId, aufgaben, userEmail, kannBearbeiten,
                   </div>
                 </div>
                 {aufgabe.aufgabentext_inhalt && (
-                  <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
-                    <p className="text-sm text-blue-900 font-medium">Aufgabenstellung</p>
-                    <p className="text-sm text-blue-800 mt-1">{aufgabe.aufgabentext_inhalt}</p>
-                  </div>
+                  <p className="text-sm text-muted-foreground">{aufgabe.aufgabentext_inhalt}</p>
                 )}
                 {aufgabe.erwartungshorizont_ki_prompt && (
-                  <div className="p-3 rounded-lg bg-muted/50 border border-border">
-                    <p className="text-xs text-muted-foreground font-medium">KI-Prompt</p>
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{aufgabe.erwartungshorizont_ki_prompt}</p>
-                  </div>
+                  <p className="text-xs text-muted-foreground/60 mt-2 italic line-clamp-1">
+                    KI: {aufgabe.erwartungshorizont_ki_prompt}
+                  </p>
                 )}
               </div>
             </div>
