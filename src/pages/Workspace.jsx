@@ -45,6 +45,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setHighlightedAtomIds(new Set());
+    setSelectedNode(null); // Zurücksetzen beim Tab-Wechsel
     if (tab !== 'aufgaben') setTaskWorkshopActivityId(null);
   };
 
