@@ -174,11 +174,11 @@ Fokus: Die konkrete, richtige Lösung dieser Aufgabe - nicht allgemeine pädagog
         />
       </div>
 
-      {/* ── Erwartungshorizont ── */}
+      {/* ── Musterlösung / Erwartungshorizont ── */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">
-            Erwartungshorizont <span className="text-muted-foreground font-normal">(optional)</span>
+            Musterlösung <span className="text-muted-foreground font-normal">(Erwartungshorizont)</span>
           </Label>
           {!isReadOnly && aufgabenstellung.trim() && (
             <Button
@@ -227,8 +227,8 @@ Fokus: Die konkrete, richtige Lösung dieser Aufgabe - nicht allgemeine pädagog
         <Textarea
           value={erwartungshorizont}
           onChange={(e) => handleFieldChange('erwartungshorizont', e.target.value)}
-          placeholder="Musterlösung, Lösungsschritte, Bewertungskriterien..."
-          rows={5}
+          placeholder="Geben Sie die erwartete Musterlösung ein: Was ist die richtige Antwort? Welche Lösungsschritte sind erforderlich? Welche Kriterien für Teilpunkte?"
+          rows={6}
           className="resize-none text-sm"
           disabled={isReadOnly}
         />
