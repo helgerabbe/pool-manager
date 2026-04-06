@@ -500,7 +500,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                         return (
                            <ActivityDetailView
                              activityRecord={activityRecord}
-                             kannBearbeiten={kannDieseEinheitBearbeiten}
+                             kannBearbeiten={false}
                              einheitFach={einheit?.fach}
                              queryClient={queryClient}
                            />
