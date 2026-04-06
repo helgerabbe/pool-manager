@@ -9,21 +9,12 @@ import { CheckCircle2, Clock, PenLine } from 'lucide-react';
  *   contentStatus – 'draft' | 'approved'
  */
 export default function ApprovalStatusBadge({ contentStatus }) {
-  const isApproved = contentStatus === 'approved';
+  if (contentStatus !== 'approved') return null;
 
   return (
-    <div className="flex items-center gap-2">
-      {isApproved ? (
-        <Badge className="bg-green-50 text-green-700 border border-green-300 flex items-center gap-1.5">
-          <CheckCircle2 className="w-3 h-3" />
-          Freigegeben
-        </Badge>
-      ) : (
-        <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50 flex items-center gap-1.5">
-          <PenLine className="w-3 h-3" />
-          In Bearbeitung
-        </Badge>
-      )}
-    </div>
+    <Badge className="bg-green-50 text-green-700 border border-green-300 flex items-center gap-1.5">
+      <CheckCircle2 className="w-3 h-3" />
+      Freigegeben
+    </Badge>
   );
 }
