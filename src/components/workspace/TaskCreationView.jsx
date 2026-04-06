@@ -148,7 +148,7 @@ function MasterSubItem({ master, index, klone, selectedItem, onSelect, catalogEn
   );
 }
 
-// ── Sidebar: Aktivitäts-Zeile ─────────────────────────────────────────────────
+// ── Sidebar: Aktivitäts-Zeile (nicht anklickbar – nur informativ) ─────────────────────
 
 function ActivitySidebarItem({
   activity, aktivitaetName, masterAufgaben, kloneByMasterId,
@@ -165,16 +165,11 @@ function ActivitySidebarItem({
 
   return (
     <div>
-      <button
+      <div
         id={`activity-node-${activity.id}`}
-        onClick={() => onSelect({ type: 'activity', activity })}
         className={cn(
           'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
-          isActivitySelected
-            ? 'bg-primary text-primary-foreground font-medium'
-            : isIncomplete
-              ? 'text-amber-700 bg-amber-50/60 hover:bg-amber-100'
-              : 'text-green-700 bg-green-50/60 hover:bg-green-100'
+          'text-muted-foreground bg-muted/40 cursor-default'
         )}
       >
         <span className="flex-1 truncate">{aktivitaetName}</span>
@@ -186,10 +181,10 @@ function ActivitySidebarItem({
         )}
         {masterAufgaben.length > 0 && (
           <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded shrink-0">
-            {masterAufgaben.length}M
+            {masterAufgaben.length}
           </span>
         )}
-      </button>
+      </div>
 
       {/* Master-Knoten + deren Klone — immer sichtbar, wenn Master-Aufgaben existieren */}
       {masterAufgaben.length > 0 && (

@@ -14,12 +14,13 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Crown, Plus, Loader2, ChevronRight, Save, Pencil, Check, ExternalLink } from 'lucide-react';
+import { Crown, Plus, Loader2, ChevronRight, ChevronDown, Save, Pencil, Check, ExternalLink } from 'lucide-react';
 import ActivityDetailView from '@/components/workspace/ActivityDetailView';
 import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 // Inline-editierbares Aufgabentext-Feld mit Standardtext
 function DefaultTextareaFieldInline({ field, value, onChange, readOnly = false }) {
@@ -262,6 +263,16 @@ export default function ActivityMasterPanel({
   // Bestimme ob aktueller Aktivitätstyp KI-Tutor ist
   const isKITutor = catalogEntry?.name?.toLowerCase().includes('ki-tutor');
 
+  // State für Phasen-Expandierung (ob Phasen-Container aufgeklappt sind)
+  const [expandedPhases, setExpandedPhases] = useState({});
+
+  const togglePhaseExpand = (phase) => {
+    setExpandedPhases(prev => ({
+      ...prev,
+      [phase]: !prev[phase],
+    }));
+  };
+
   return (
     <div className="space-y-6 overflow-visible h-auto">
       {/* ── Aktivitäts-Header ────────────────────────────────────────────────── */}
@@ -369,29 +380,86 @@ export default function ActivityMasterPanel({
         </div>
       )}
 
-      {/* ── Masteraufgaben-Bereich (immer sichtbar wenn supports_master) ───────── */}
+      {/* ── Phasen-Container mit Aufgaben (supports_master) ──────────────────────── */}
       {supportsMaster && (
-        <div className="space-y-4">
+       <div className="space-y-3">
+         {['Input', 'Übung', 'Abschluss'].map(phase => {
+           const phaseActivities = masterAufgaben.filter(m => {
+             // Vereinfachte Logik: alle Master für diese Aktivität anzeigen
+             // (In dieser Tab-Struktur haben wir keine Phase-Info auf MasterAufgabe)
+             return true;
+           });
+           const isExpanded = expandedPhases[phase] !== false;
 
-          {/* Sektion-Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-semibold flex items-center gap-1.5">
-                <Crown className="w-4 h-4 text-primary" />
-                Aufgaben
-              </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {isInEditMode
-                  ? 'Erstelle Vorlagen – die KI generiert daraus automatisch Aufgabenvarianten.'
-                  : 'Aktiviere den Bearbeitungsmodus um Aufgaben anzulegen.'}
-              </p>
-            </div>
-            {masterAufgaben.length > 0 && (
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full shrink-0">
-                {masterAufgaben.length} Masteraufgabe{masterAufgaben.length !== 1 ? 'n' : ''}
-              </span>
-            )}
-          </div>
+           return (
+             <div key={phase} className="rounded-lg border-2 border-primary/20 bg-primary/5 overflow-hidden">
+               {/* Phase-Header – Clickable mit Chevron */}
+               <button
+                 onClick={() => togglePhaseExpand(phase)}
+                 className={cn(
+                   'w-full flex items-center gap-3 px-4 py-3 text-left transition-all duration-200',
+                   'hover:bg-primary/10 active:bg-primary/15',
+                   isExpanded && 'bg-primary/10',
+                   'border-b border-primary/20'
+                 )}
+               >
+                 {isExpanded ? (
+                   <ChevronDown className="w-4 h-4 text-primary shrink-0" />
+                 ) : (
+                   <ChevronRight className="w-4 h-4 text-primary shrink-0" />
+                 )}
+                 <h3 className="text-sm font-semibold text-foreground flex-1">{phase}</h3>
+                 <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded shrink-0 font-medium">
+                   {phaseActivities.length}
+                 </span>
+               </button>
+
+               {/* Phase-Inhalt (aufgeklappt) */}
+               {isExpanded && (
+                 <div className="px-4 py-3 space-y-3 border-t border-primary/10">
+                   {phaseActivities.length === 0 ? (
+                     <p className="text-xs text-muted-foreground italic py-2">Keine Aufgaben in dieser Phase.</p>
+                   ) : (
+                     <div className="space-y-2 text-xs text-muted-foreground">
+                       {phaseActivities.map(m => (
+                         <div key={m.id} className="flex items-center gap-2 pl-4 py-1">
+                           <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
+                           <span className="truncate">{m.titel || `Aufgabe ${m.reihenfolge}`}</span>
+                         </div>
+                       ))}
+                     </div>
+                   )}
+                 </div>
+               )}
+             </div>
+           );
+         })}
+       </div>
+      )}
+
+      {/* ── Masteraufgaben-Bereich (Listing) ───────── */}
+      {supportsMaster && (
+       <div className="space-y-4">
+
+         {/* Sektion-Header */}
+         <div className="flex items-center justify-between">
+           <div>
+             <h3 className="text-sm font-semibold flex items-center gap-1.5">
+               <Crown className="w-4 h-4 text-primary" />
+               Aufgaben
+             </h3>
+             <p className="text-xs text-muted-foreground mt-0.5">
+               {isInEditMode
+                 ? 'Erstelle Vorlagen – die KI generiert daraus automatisch Aufgabenvarianten.'
+                 : 'Aktiviere den Bearbeitungsmodus um Aufgaben anzulegen.'}
+             </p>
+           </div>
+           {masterAufgaben.length > 0 && (
+             <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full shrink-0">
+               {masterAufgaben.length} Masteraufgabe{masterAufgaben.length !== 1 ? 'n' : ''}
+             </span>
+           )}
+         </div>
 
           {/* Vorhandene Master-Karten */}
           {masterAufgaben.map((master, idx) => 
