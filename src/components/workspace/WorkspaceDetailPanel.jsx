@@ -666,14 +666,16 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                   )}
                 </button>
 
-                {/* Phase-Toggle Switch im Header – disabled wenn nicht in Bearbeitungsmodus */}
-                <Switch
-                  checked={!isDisabled}
-                  onCheckedChange={() => kannBearbeiten && canEdit && handlePhaseToggle(phase.key)}
-                  disabled={!kannBearbeiten || !canEdit}
-                  onClick={e => e.stopPropagation()}
-                  className="shrink-0"
-                />
+                {/* Phase-Toggle Switch im Header */}
+                {kannBearbeiten && (
+                  <Switch
+                    checked={!isDisabled}
+                    onCheckedChange={() => handlePhaseToggle(phase.key)}
+                    disabled={isLockedByOther}
+                    onClick={e => e.stopPropagation()}
+                    className="shrink-0"
+                  />
+                )}
               </div>
 
               {/* Expanded Content */}
