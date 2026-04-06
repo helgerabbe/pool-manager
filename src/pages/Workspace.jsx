@@ -182,7 +182,26 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
   const structLocked = einheit ? isStructurallyLocked(einheit, authUser?.email) : false;
 
-  // Pakete/Ziele/Aufgaben gefiltert nach aktivem Themenfeld (memoisiert) – VOR Early Returns!
+  // Bidirektionale Lock-Prüfung (memoisiert) – VOR Early Returns!
+  const PAKET_LOCK_TIMEOUT_MS = 30 * 60 * 1000;
+  const aktivePaketLocks = useMemo(
+    () =>
+      paketeFuerEinheit.filter(
+        (p) =>
+          p.locked_by &&
+          p.locked_by !== authUser?.email &&
+          p.locked_at &&
+          Date.now() - new Date(p.locked_at).getTime() < PAKET_LOCK_TIMEOUT_MS
+      ),
+    [paketeFuerEinheit, authUser?.email]
+  );
+
+  const kollegen = useMemo(
+    () => [...new Set(aktivePaketLocks.map((p) => p.locked_by))],
+    [aktivePaketLocks]
+  );
+
+  // Pakete/Ziele/Aufgaben gefiltert nach aktivem Themenfeld (memoisiert)
   const paketeFuerThemenfeld = useMemo(
     () =>
       selectedThemenfeldId
@@ -250,47 +269,28 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
   // ── Loading ───────────────────────────────────────────────────────────────────
   if (rbacLoading || einheitenLoading) {
-    return <SkeletonWorkspace />;
+   return <SkeletonWorkspace />;
   }
 
   if (einheiten.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[60vh] gap-4 text-center">
-        <BookOpen className="w-12 h-12 text-muted-foreground/30" />
-        <div>
-          <p className="font-semibold">Keine Einheiten vorhanden</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Legen Sie zuerst eine Einheit an, um den Workspace zu nutzen.
-          </p>
-        </div>
-        <Link to="/einheiten"><Button>Zu den Einheiten</Button></Link>
-      </div>
-    );
+   return (
+     <div className="flex flex-col items-center justify-center h-[60vh] gap-4 text-center">
+       <BookOpen className="w-12 h-12 text-muted-foreground/30" />
+       <div>
+         <p className="font-semibold">Keine Einheiten vorhanden</p>
+         <p className="text-sm text-muted-foreground mt-1">
+           Legen Sie zuerst eine Einheit an, um den Workspace zu nutzen.
+         </p>
+       </div>
+       <Link to="/einheiten"><Button>Zu den Einheiten</Button></Link>
+     </div>
+   );
   }
 
   const allgemeineAufgabenCount = allgemeineAufgabenData.filter(
-    (a) => !a.anforderungsebene || ['1 - Basis', '2 - Transfer'].includes(a.anforderungsebene)
+   (a) => !a.anforderungsebene || ['1 - Basis', '2 - Transfer'].includes(a.anforderungsebene)
   ).length;
   const projektCount = allgemeineAufgabenData.filter((a) => a.anforderungsebene === '3 - Projekt').length;
-
-  // Bidirektionale Lock-Prüfung (memoisiert)
-  const PAKET_LOCK_TIMEOUT_MS = 30 * 60 * 1000;
-  const aktivePaketLocks = useMemo(
-    () =>
-      paketeFuerEinheit.filter(
-        (p) =>
-          p.locked_by &&
-          p.locked_by !== authUser?.email &&
-          p.locked_at &&
-          Date.now() - new Date(p.locked_at).getTime() < PAKET_LOCK_TIMEOUT_MS
-      ),
-    [paketeFuerEinheit, authUser?.email]
-  );
-
-  const kollegen = useMemo(
-    () => [...new Set(aktivePaketLocks.map((p) => p.locked_by))],
-    [aktivePaketLocks]
-  );
 
   return (
     <ErrorBoundary label="Workspace">
