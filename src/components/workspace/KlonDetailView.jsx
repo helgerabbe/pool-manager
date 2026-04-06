@@ -8,20 +8,19 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Save, X, ArrowRight, Plus, Trash2, Lock, CheckCircle2, RotateCw, Loader2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Save, ArrowRight, Plus, Trash2, Lock, Crown, Loader2 } from 'lucide-react';
 import LockBanner from '@/components/workspace/LockBanner';
 import ActivityDetailView from '@/components/workspace/ActivityDetailView';
 import { useKlonLock, isLockExpired } from '@/hooks/useActivityLock';
 import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus';
-import { TASK_STATUS_CONFIG } from '@/lib/stateMachine';
 import { toast } from 'sonner';
 
 function isKlonLockedByOther(klon, myEmail) {
@@ -109,18 +108,31 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
   const addDistractor = () => setData(d => ({ ...d, distractors: [...(d.distractors || []), ''] }));
   const removeDistractor = (idx) => setData(d => ({ ...d, distractors: d.distractors.filter((_, i) => i !== idx) }));
 
-  const isApproved = klon.content_status === 'approved';
+  const [convertDialogOpen, setConvertDialogOpen] = useState(false);
 
-  const approveMutation = useMutation({
-    mutationFn: (action) => base44.entities.Aufgabenbausteine.update(klon.id, {
-      content_status: action === 'approve' ? 'approved' : 'draft',
-    }),
-    onSuccess: (_, action) => {
-      queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine'] });
-      queryClient.invalidateQueries({ queryKey: ['klone'] });
-      toast.success(action === 'approve' ? '✓ Als fertig markiert.' : 'Fertig-Markierung zurückgezogen.');
+  const convertToMasterMutation = useMutation({
+    mutationFn: async () => {
+      // 1. Neue MasterAufgabe aus Klon-Daten erstellen
+      const reihenfolge = (masterAufgabe?.reihenfolge || 1) + 1;
+      await base44.entities.MasterAufgabe.create({
+        activity_id: klon.lernpaket_id ? undefined : masterAufgabe?.activity_id,
+        // activity_id vom Master übernehmen
+        ...(masterAufgabe?.activity_id ? { activity_id: masterAufgabe.activity_id } : {}),
+        lernpaket_id: klon.lernpaket_id,
+        field_values: data,
+        reihenfolge,
+        content_status: 'draft',
+        sync_status: TASK_SYNC_STATUS.DRAFT || 'new',
+      });
+      // 2. Klon löschen
+      await base44.entities.Aufgabenbausteine.delete(klon.id);
     },
-    onError: (err) => toast.error('Fehler: ' + (err.message || 'Unbekannter Fehler')),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+      queryClient.invalidateQueries({ queryKey: ['klone'] });
+      toast.success('Klon wurde erfolgreich zur Masteraufgabe umgewandelt.');
+    },
+    onError: (err) => toast.error('Fehler bei der Umwandlung: ' + (err.message || 'Unbekannt')),
   });
 
   // Aufgabenstellung aus dem Master oder der Aktivität
@@ -158,39 +170,24 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
           <span className="text-xs font-semibold text-foreground">
             Klon {klon.klon_index || ''}
           </span>
-          {isApproved ? (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 border border-green-300 text-green-700 text-[11px] font-medium">
-              <CheckCircle2 className="w-3 h-3" /> Fertig
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-700 text-[11px] font-medium">
-              Entwurf
-            </span>
-          )}
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-700 text-[11px] font-medium">
+            Entwurf
+          </span>
           <div className="flex-1" />
           {kannBearbeiten && !lockedByOther && (
             <div className="flex items-center gap-2">
               {editMode && (
                 <Button size="sm" onClick={() => saveMutation.mutate(data)} disabled={saveMutation.isPending} className="gap-1.5">
-                  {saveMutation.isPending
-                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    : <Save className="w-3.5 h-3.5" />}
+                  {saveMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                   Speichern
                 </Button>
               )}
-              {isApproved ? (
-                <Button size="sm" variant="outline" onClick={() => approveMutation.mutate('unapprove')} disabled={approveMutation.isPending}
-                  className="gap-1.5 text-green-700 border-green-300 hover:bg-green-50 text-xs h-7">
-                  {approveMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCw className="w-3 h-3" />}
-                  Zurücksetzen
-                </Button>
-              ) : (
-                <Button size="sm" onClick={() => approveMutation.mutate('approve')} disabled={approveMutation.isPending}
-                  className="gap-1.5 bg-green-600 hover:bg-green-700 text-white text-xs h-7">
-                  {approveMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
-                  Als fertig markieren
-                </Button>
-              )}
+              <Button size="sm" variant="outline" onClick={() => setConvertDialogOpen(true)}
+                disabled={convertToMasterMutation.isPending}
+                className="gap-1.5 text-primary border-primary/40 hover:bg-primary/5 text-xs h-7">
+                {convertToMasterMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Crown className="w-3 h-3" />}
+                Zur Masteraufgabe machen
+              </Button>
               <Button size="sm" variant="ghost" onClick={() => deleteMutation.mutate()} disabled={deleteMutation.isPending}
                 className="gap-1.5 text-destructive hover:bg-red-50 text-xs h-7">
                 <Trash2 className="w-3.5 h-3.5" /> Löschen
@@ -289,6 +286,31 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
         )}
       </div>
       </div>
+
+      {/* Bestätigungsdialog: Klon → Masteraufgabe */}
+      <AlertDialog open={convertDialogOpen} onOpenChange={setConvertDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Klon zur Masteraufgabe umwandeln?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Dieser Klon wird als eigenständige Masteraufgabe in der Aktivität angelegt. 
+              Er wird aus dem bisherigen Master-Klon-Verbund herausgelöst und ist danach eine vollständig 
+              unabhängige Masteraufgabe, von der du wieder Klone generieren kannst.
+              <br /><br />
+              <strong>Diese Aktion kann nicht rückgängig gemacht werden.</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => convertToMasterMutation.mutate()}
+              className="bg-primary hover:bg-primary/90"
+            >
+              Ja, zur Masteraufgabe machen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
