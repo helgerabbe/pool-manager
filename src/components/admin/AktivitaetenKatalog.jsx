@@ -131,7 +131,7 @@ export default function AktivitaetenKatalog() {
       'Abschluss': ['Abschluss'],
     };
     return aktivitaeten
-      .filter((a) => phaseMappings[phaseValue]?.includes(a.phase))
+      .filter((a) => phaseMappings[phaseValue]?.includes(a.phase) && a.is_active !== false)
       .sort((a, b) => a.name.localeCompare(b.name));
   };
 
