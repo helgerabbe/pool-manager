@@ -51,21 +51,21 @@ function isKlonLockedByOther(klon, myEmail) {
 
 // ── Klon-Unterzeile ───────────────────────────────────────────────────────────
 
-function KlonSubItem({ klon, isSelected, onSelect, index }) {
-  const isApproved = klon.sync_status === 'approved';
-  return (
-    <button
-      onClick={() => onSelect({ type: 'klon', klon })}
-      className={cn(
-        'w-full flex items-center gap-2 px-2 py-1 rounded-md text-left text-[11px] transition-colors',
-        isSelected
-          ? 'bg-primary/10 text-primary font-medium'
-          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-      )}
-    >
-      <span className="flex-1 truncate">
-        {isApproved ? '✓' : '○'} Kopie {index}
-      </span>
+function KlonSubItem({ klon, isSelected, onSelect }) {
+   const isApproved = klon.sync_status === 'approved';
+   return (
+     <button
+       onClick={() => onSelect({ type: 'klon', klon })}
+       className={cn(
+         'w-full flex items-center gap-2 px-2 py-1 rounded-md text-left text-[11px] transition-colors',
+         isSelected
+           ? 'bg-primary/10 text-primary font-medium'
+           : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+       )}
+     >
+       <span className="flex-1 truncate">
+         {isApproved ? '✓' : '○'} Kopie {klon.klon_index}
+       </span>
       {isApproved
         ? <Badge variant="outline" className="text-[10px] text-green-700 border-green-300 bg-green-50">✓ Export</Badge>
         : <Badge variant="secondary" className="text-[10px]">Entwurf</Badge>}
@@ -131,11 +131,10 @@ function MasterSubItem({ master, index, klone, selectedItem, onSelect, catalogEn
       {expanded && (
         <div className="ml-4 mt-0.5 border-l border-border pl-2 space-y-0.5">
           {klone.length > 0 ? (
-            klone.map((klon, idx) => (
+            klone.map((klon) => (
               <KlonSubItem
                 key={klon.id}
                 klon={klon}
-                index={idx + 1}
                 isSelected={selectedItem?.type === 'klon' && selectedItem?.klon?.id === klon.id}
                 onSelect={onSelect}
               />
