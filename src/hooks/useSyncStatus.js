@@ -1,11 +1,17 @@
 /**
- * useSyncStatus.js
+ * useSyncStatus.js (Refactored)
  *
  * Hook für State-Machine-Management von Task-Sync-Status.
  * Encapsuliert Mutations, Übergänge und UI-Logik für Moodle-Export-Tracking.
+ *
+ * Refactoring (2026-04-06):
+ * - Direktes Nutzen von `status` (Props) statt lokalem useState → Reaktivität auf Prop-Änderungen
+ * - Fallback DRAFT statt fehlerhaftem NEW
+ * - Optimistic Updates via onMutate in Mutations
+ * - Dynamisches Revoke mit targetStatus Parameter
  */
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -96,32 +102,31 @@ function computeSyncStatusForSave(currentStatus) {
  * Hook für Task-Sync-Status-Management
  *
  * @param {string} taskId - ID der Task
- * @param {string} initialStatus - Initialer sync_status (z.B. 'new', 'exported')
+ * @param {string} status - Aktueller sync_status aus Backend/React Query (Quelle der Wahrheit)
  * @param {string} entityName - Entity-Name (z.B. 'Aufgabenbausteine', 'MasterAufgabe')
  * @param {Array<string>} invalidateKeys - Query-Keys zum Invalidieren
  */
 export function useSyncStatus(
   taskId,
-  initialStatus = TASK_SYNC_STATUS.NEW,
+  status = TASK_SYNC_STATUS.DRAFT,
   entityName = 'Aufgabenbausteine',
   invalidateKeys = []
 ) {
   const queryClient = useQueryClient();
-  const [currentStatus, setCurrentStatus] = useState(initialStatus);
 
   // ─────────────────────────────────────────────────────────────────────
   // UI-Logik: Edit blockieren bei pending_export, to_delete
   // ─────────────────────────────────────────────────────────────────────
   const isLockedForEdit =
-    currentStatus === TASK_SYNC_STATUS.PENDING_EXPORT ||
-    currentStatus === TASK_SYNC_STATUS.TO_DELETE;
+    status === TASK_SYNC_STATUS.PENDING_EXPORT ||
+    status === TASK_SYNC_STATUS.TO_DELETE;
 
   // ─────────────────────────────────────────────────────────────────────
   // getSyncStatusForSave: Wird in save-Mutations aufgerufen
   // ─────────────────────────────────────────────────────────────────────
   const getSyncStatusForSave = useCallback(() => {
-    return computeSyncStatusForSave(currentStatus);
-  }, [currentStatus]);
+    return computeSyncStatusForSave(status);
+  }, [status]);
 
   // ─────────────────────────────────────────────────────────────────────
   // Mutation: Approval (setzt sync_status: 'approved')
@@ -131,14 +136,32 @@ export function useSyncStatus(
       base44.entities[entityName].update(taskId, {
         sync_status: TASK_SYNC_STATUS.APPROVED,
       }),
+    onMutate: async () => {
+      // Optimistic Update: Cache sofort aktualisieren
+      invalidateKeys.forEach(key => {
+        queryClient.setQueryData([key], (oldData) => {
+          if (!oldData) return oldData;
+          return Array.isArray(oldData)
+            ? oldData.map(item => 
+                item.id === taskId ? { ...item, sync_status: TASK_SYNC_STATUS.APPROVED } : item
+              )
+            : oldData;
+        });
+      });
+    },
     onSuccess: () => {
-      setCurrentStatus(TASK_SYNC_STATUS.APPROVED);
       invalidateKeys.forEach(key => {
         queryClient.invalidateQueries({ queryKey: [key] });
       });
       toast.success('Task freigegeben.');
     },
-    onError: (err) => toast.error(err.message || 'Freigabe fehlgeschlagen.'),
+    onError: (err) => {
+      toast.error(err.message || 'Freigabe fehlgeschlagen.');
+      // Cache bei Fehler zurückrollen via QueryClient
+      invalidateKeys.forEach(key => {
+        queryClient.invalidateQueries({ queryKey: [key] });
+      });
+    },
   });
 
   // ─────────────────────────────────────────────────────────────────────
@@ -149,55 +172,87 @@ export function useSyncStatus(
       base44.entities[entityName].update(taskId, {
         sync_status: TASK_SYNC_STATUS.PENDING_EXPORT,
       }),
+    onMutate: async () => {
+      // Optimistic Update
+      invalidateKeys.forEach(key => {
+        queryClient.setQueryData([key], (oldData) => {
+          if (!oldData) return oldData;
+          return Array.isArray(oldData)
+            ? oldData.map(item => 
+                item.id === taskId ? { ...item, sync_status: TASK_SYNC_STATUS.PENDING_EXPORT } : item
+              )
+            : oldData;
+        });
+      });
+    },
     onSuccess: () => {
-      setCurrentStatus(TASK_SYNC_STATUS.PENDING_EXPORT);
       invalidateKeys.forEach(key => {
         queryClient.invalidateQueries({ queryKey: [key] });
       });
       toast.success('Task zum Export eingeplant.');
     },
-    onError: (err) => toast.error(err.message || 'Export-Planung fehlgeschlagen.'),
+    onError: (err) => {
+      toast.error(err.message || 'Export-Planung fehlgeschlagen.');
+      invalidateKeys.forEach(key => {
+        queryClient.invalidateQueries({ queryKey: [key] });
+      });
+    },
   });
 
   // ─────────────────────────────────────────────────────────────────────
-  // Mutation: Revoke Export (setzt sync_status zurück zu 'modified')
+  // Mutation: Revoke Export (dynamisch mit targetStatus)
+  // Fallback: targetStatus = DRAFT (für neue, noch nicht exportierte Tasks)
   // ─────────────────────────────────────────────────────────────────────
   const revokeExportMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: ({ targetStatus = TASK_SYNC_STATUS.DRAFT } = {}) =>
       base44.entities[entityName].update(taskId, {
-        sync_status: TASK_SYNC_STATUS.MODIFIED,
+        sync_status: targetStatus,
       }),
+    onMutate: async ({ targetStatus = TASK_SYNC_STATUS.DRAFT } = {}) => {
+      // Optimistic Update mit Zielstatus
+      invalidateKeys.forEach(key => {
+        queryClient.setQueryData([key], (oldData) => {
+          if (!oldData) return oldData;
+          return Array.isArray(oldData)
+            ? oldData.map(item => 
+                item.id === taskId ? { ...item, sync_status: targetStatus } : item
+              )
+            : oldData;
+        });
+      });
+    },
     onSuccess: () => {
-      setCurrentStatus(TASK_SYNC_STATUS.MODIFIED);
       invalidateKeys.forEach(key => {
         queryClient.invalidateQueries({ queryKey: [key] });
       });
       toast.success('Export-Planung zurückgezogen.');
     },
-    onError: (err) => toast.error(err.message || 'Fehler beim Zurückziehen.'),
+    onError: (err) => {
+      toast.error(err.message || 'Fehler beim Zurückziehen.');
+      invalidateKeys.forEach(key => {
+        queryClient.invalidateQueries({ queryKey: [key] });
+      });
+    },
   });
 
   // ─────────────────────────────────────────────────────────────────────
   // Return API
   // ─────────────────────────────────────────────────────────────────────
   return {
-    // State
-    currentStatus,
+    // State (direkter Prop-Input, keine Kopie)
+    status,
     isLockedForEdit,
 
     // Helpers
     getSyncStatusForSave,
-    getAllowedTransitions: () => ALLOWED_TRANSITIONS[currentStatus] || [],
+    getAllowedTransitions: () => ALLOWED_TRANSITIONS[status] || [],
     canTransitionTo: (newStatus) =>
-      (ALLOWED_TRANSITIONS[currentStatus] || []).includes(newStatus),
+      (ALLOWED_TRANSITIONS[status] || []).includes(newStatus),
 
     // Mutations
     approveMutation,
     scheduleExportMutation,
     revokeExportMutation,
-
-    // Manual state update (für realtime-subscriptions)
-    setCurrentStatus,
   };
 }
 
