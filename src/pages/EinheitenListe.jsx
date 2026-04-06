@@ -18,11 +18,27 @@ import { BookOpen } from 'lucide-react';
 import { getExportPendingCount } from '@/lib/deltaExportLogic';
 import { useNavigate } from 'react-router-dom';
 
-const FAECHER = ['Deutsch','Mathematik','Englisch','Französisch','Latein','Biologie','Chemie','Physik','Geschichte','Geographie','Politik','Wirtschaft','Kunst','Musik','Sport','Religion','Ethik','Informatik'];
-const JAHRGAENGE = ['5','6','7','8','9','10','11','12','13'];
-
 function SchnellErstellenModal({ open, onOpenChange, onCreated }) {
   const [form, setForm] = useState({ titel_der_einheit: '', fach: '', jahrgangsstufe: '' });
+
+  // Lade Fächer und Jahrgangsstufen aus Datenbank
+  const { data: faecher = [] } = useQuery({
+    queryKey: ['lookup-faecher'],
+    queryFn: async () => {
+      const all = await base44.entities.LookupFaecher.list();
+      return all.filter(f => f.ist_aktiv).sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
+    },
+    enabled: open,
+  });
+
+  const { data: jahrgaenge = [] } = useQuery({
+    queryKey: ['lookup-jahrgaenge'],
+    queryFn: async () => {
+      const all = await base44.entities.LookupJahrgaenge.list();
+      return all.filter(j => j.ist_aktiv).sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
+    },
+    enabled: open,
+  });
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Einheiten.create(data),
@@ -56,7 +72,7 @@ function SchnellErstellenModal({ open, onOpenChange, onCreated }) {
             <Select value={form.fach} onValueChange={v => setForm({ ...form, fach: v })}>
               <SelectTrigger><SelectValue placeholder="Fach auswählen..." /></SelectTrigger>
               <SelectContent>
-                {FAECHER.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                {faecher.map(f => <SelectItem key={f.id} value={f.name}>{f.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -65,7 +81,7 @@ function SchnellErstellenModal({ open, onOpenChange, onCreated }) {
             <Select value={form.jahrgangsstufe} onValueChange={v => setForm({ ...form, jahrgangsstufe: v })}>
               <SelectTrigger><SelectValue placeholder="Jahrgang auswählen..." /></SelectTrigger>
               <SelectContent>
-                {JAHRGAENGE.map(j => <SelectItem key={j} value={j}>{j}</SelectItem>)}
+                {jahrgaenge.map(j => <SelectItem key={j.id} value={j.bezeichnung}>{j.bezeichnung}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
