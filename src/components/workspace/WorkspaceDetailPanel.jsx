@@ -624,46 +624,57 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
           const phaseActivities = lernpaketAktivitaeten.filter(a => a.lernpaket_id === paket.id && a.phase === phase.key);
 
           return (
-            <div key={phase.key} className="space-y-2">
-              {/* Accordion Header mit Chevron, Badge, und Hover-Effekt */}
-              <button
-                onClick={() => !isDisabled && setExpandedPhase(isExpanded ? null : phase.key)}
-                disabled={isDisabled}
-                className={cn(
-                  'w-full flex items-center gap-3 p-3 rounded-lg border bg-card transition-all',
-                  isDisabled
-                    ? 'opacity-60 cursor-not-allowed'
-                    : 'hover:bg-muted hover:border-primary/30 cursor-pointer'
-                )}
-              >
-                {/* Chevron */}
-                <ChevronRight
-                  className={cn(
-                    'w-5 h-5 text-muted-foreground transition-transform shrink-0',
-                    isExpanded && 'rotate-90'
+            <div key={phase.key} className="space-y-0">
+              {/* Accordion Header mit Chevron, Badge, Toggle und Hover-Effekt */}
+              <div className={cn(
+                'flex items-center gap-3 p-3 rounded-lg border bg-card transition-all',
+                isDisabled
+                  ? 'opacity-60'
+                  : 'hover:bg-muted hover:border-primary/30'
+              )}>
+                {/* Chevron + Click-Area */}
+                <button
+                  onClick={() => !isDisabled && setExpandedPhase(isExpanded ? null : phase.key)}
+                  disabled={isDisabled}
+                  className="flex items-center gap-3 flex-1 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  <ChevronRight
+                    className={cn(
+                      'w-5 h-5 text-muted-foreground transition-transform shrink-0',
+                      isExpanded && 'rotate-90'
+                    )}
+                  />
+
+                  {/* Phase Icon + Label */}
+                  <div className="flex items-center gap-2 flex-1">
+                    <span className="text-lg">{phase.icon}</span>
+                    <p className={cn('font-medium text-sm', isDisabled && 'opacity-60')}>
+                      {phase.label}
+                    </p>
+                  </div>
+
+                  {/* Aktivitäts-Count Badge */}
+                  {!isDisabled && phaseActivities.length > 0 && (
+                    <Badge variant="secondary" className="text-xs">
+                      {phaseActivities.length} {phaseActivities.length === 1 ? 'Aktivität' : 'Aktivitäten'}
+                    </Badge>
                   )}
-                />
 
-                {/* Phase Icon + Label */}
-                <div className="flex items-center gap-2 flex-1">
-                  <span className="text-lg">{phase.icon}</span>
-                  <p className={cn('font-medium text-sm', isDisabled && 'opacity-60')}>
-                    {phase.label}
-                  </p>
-                </div>
+                  {/* Deaktiviert-Info */}
+                  {isDisabled && (
+                    <span className="text-xs text-muted-foreground/60">Deaktiviert</span>
+                  )}
+                </button>
 
-                {/* Aktivitäts-Count Badge */}
-                {!isDisabled && phaseActivities.length > 0 && (
-                  <Badge variant="secondary" className="text-xs">
-                    {phaseActivities.length} {phaseActivities.length === 1 ? 'Aktivität' : 'Aktivitäten'}
-                  </Badge>
+                {/* Phase-Toggle Switch im Header – nur im Bearbeitungsmodus */}
+                {canEdit && kannBearbeiten && (
+                  <Switch
+                    checked={!isDisabled}
+                    onCheckedChange={() => handlePhaseToggle(phase.key)}
+                    onClick={e => e.stopPropagation()}
+                  />
                 )}
-
-                {/* Deaktiviert-Info */}
-                {isDisabled && (
-                  <span className="text-xs text-muted-foreground/60">Deaktiviert</span>
-                )}
-              </button>
+              </div>
 
               {/* Expanded Content */}
               {isExpanded && !isDisabled && (
@@ -678,17 +689,6 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                     inEditMode={canEdit}
                     onNavigate={onNavigate}
                     onGoToTaskWorkshop={(activityId) => onNavigate({ type: 'goto-task-workshop', activityId })}
-                  />
-                </div>
-              )}
-
-              {/* Phase-Toggle Switch (rechts) – nur im Bearbeitungsmodus */}
-              {canEdit && kannBearbeiten && (
-                <div className="flex items-center justify-between px-3 py-2 bg-muted/40 rounded-lg border border-muted">
-                  <span className="text-xs text-muted-foreground">Phase aktivieren</span>
-                  <Switch
-                    checked={!isDisabled}
-                    onCheckedChange={() => handlePhaseToggle(phase.key)}
                   />
                 </div>
               )}
