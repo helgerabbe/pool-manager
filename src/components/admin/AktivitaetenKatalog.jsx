@@ -62,7 +62,7 @@ export default function AktivitaetenKatalog() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['aktivitaetenKatalog'] });
-      toast.success(`✅ Katalog zurückgesetzt! ${data.createdCount || 13} Kern-Aktivitäten geladen.`);
+      toast.success(`✅ Katalog zurückgesetzt! ${data.createdCount} neue Aktivitäten geladen.`);
     },
     onError: (err) => {
       toast.error('Reset fehlgeschlagen: ' + err.message);
@@ -157,7 +157,7 @@ export default function AktivitaetenKatalog() {
           disabled={resetMutation.isPending}
           variant="outline"
           className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50"
-          title="Löscht alle Aktivitäten und lädt die 13 Kern-Aktivitäten"
+          title="Löscht alle Aktivitäten und lädt die 16 Standard-Aktivitäten mit korrekten Schemas"
         >
           {resetMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
           <RefreshCw className="w-4 h-4" />

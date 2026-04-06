@@ -27,38 +27,12 @@
     },
     "aufgabenstellung": {
       "type": "string",
-      "description": "Aufgabenstellung als Text (erforderlich)"
-    },
-    "aufgaben_bild_url": {
-      "type": "string",
-      "description": "URL zum optionalen Aufgabenbild"
+      "description": "Aufgabenstellung als Rich-Text (erforderlich)"
     },
     "schwierigkeitsgrad": {
       "type": "integer",
       "enum": [1, 2, 3],
       "description": "Schwierigkeitsgrad (1=leicht, 2=mittel, 3=schwer, null=keine Angabe)"
-    },
-    "ergebnis_form": {
-      "type": "string",
-      "enum": [
-        "Fließtext / Essay",
-        "Tabelle / Matrix",
-        "Präsentation / Folien",
-        "Schema / Konzept-Map / Zeichnung",
-        "Stichpunktartige Übersicht",
-        "Mischform / Offen"
-      ],
-      "description": "Erwartete Form des Ergebnisses"
-    },
-    "ergebnis_dateiformat": {
-      "type": "string",
-      "enum": [
-        "Textdokument (Word/PDF)",
-        "Bilddatei (JPG/PNG)",
-        "Präsentationsdatei (PowerPoint/PDF)",
-        "Offen / Beliebig"
-      ],
-      "description": "Erwartetes Dateiformat des Ergebnisses"
     },
     "materialien": {
       "type": "array",
@@ -81,14 +55,6 @@
           }
         }
       }
-    },
-    "erwartungshorizont": {
-      "type": "string",
-      "description": "Erwartungshorizont / Zielvorgaben für Ebene-3-Aufgaben (Anwendungs- und Projektaufgaben). Dient dem KI-Tutor als inhaltliche Leitplanke für die Lernbegleitung."
-    },
-    "musterloesung": {
-      "type": "string",
-      "description": "Musterl\u00f6sung / Erwartungshorizont als Rich-Text"
     },
     "prioritaete_lernziele": {
       "type": "array",

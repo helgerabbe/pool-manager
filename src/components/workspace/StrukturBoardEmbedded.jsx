@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 // Öffnet sich beim Klick auf eine Paket-Karte oder beim Erstellen eines neuen Pakets.
 
 function LernpaketDialog({ open, onOpenChange, initialData, onSave }) {
-  const isNew = !initialData?.id || initialData.id?.startsWith('new-');
+  const isNew = !initialData?.id || initialData?.isNew;
   const [titel, setTitel] = useState('');
   const [dauer, setDauer] = useState(45);
   const [lernziele, setLernziele] = useState([]);
@@ -332,10 +332,8 @@ export default function StrukturBoardEmbedded({
     setInitialized(true);
   }, [remotePakete, remoteThemenfelder, initialized]);
 
-  // Re-init nur wenn einheit sich ändert oder wir keine lokalen Änderungen haben
-  useEffect(() => { 
-    if (!isDirty) setInitialized(false); 
-  }, [einheitId]);
+  // Re-init wenn einheit oder Remote-Daten sich ändern
+  useEffect(() => { setInitialized(false); }, [einheitId, remotePakete, remoteThemenfelder]);
 
   // RBAC: Nur Struktur-Bearbeiter dürfen hier rein (Bereich 1: Struktur) - nach allen Hooks
   const kannStrukturBearbeiten = einheit ? permissions.kannStrukturBearbeiten(einheit.fach) : false;

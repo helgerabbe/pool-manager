@@ -18,7 +18,10 @@ import { BookOpen } from 'lucide-react';
 import { getExportPendingCount } from '@/lib/deltaExportLogic';
 import { useNavigate } from 'react-router-dom';
 
-function SchnellErstellenModal({ open, onOpenChange, onCreated, faecher = [], jahrgaenge = [] }) {
+const FAECHER = ['Deutsch','Mathematik','Englisch','Französisch','Latein','Biologie','Chemie','Physik','Geschichte','Geographie','Politik','Wirtschaft','Kunst','Musik','Sport','Religion','Ethik','Informatik'];
+const JAHRGAENGE = ['5','6','7','8','9','10','11','12','13'];
+
+function SchnellErstellenModal({ open, onOpenChange, onCreated }) {
   const [form, setForm] = useState({ titel_der_einheit: '', fach: '', jahrgangsstufe: '' });
 
   const createMutation = useMutation({
@@ -53,7 +56,7 @@ function SchnellErstellenModal({ open, onOpenChange, onCreated, faecher = [], ja
             <Select value={form.fach} onValueChange={v => setForm({ ...form, fach: v })}>
               <SelectTrigger><SelectValue placeholder="Fach auswählen..." /></SelectTrigger>
               <SelectContent>
-                {faecher.map(f => <SelectItem key={f.id} value={f.name}>{f.name}</SelectItem>)}
+                {FAECHER.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -62,7 +65,7 @@ function SchnellErstellenModal({ open, onOpenChange, onCreated, faecher = [], ja
             <Select value={form.jahrgangsstufe} onValueChange={v => setForm({ ...form, jahrgangsstufe: v })}>
               <SelectTrigger><SelectValue placeholder="Jahrgang auswählen..." /></SelectTrigger>
               <SelectContent>
-                {jahrgaenge.map(j => <SelectItem key={j.id} value={j.bezeichnung}>{j.bezeichnung}</SelectItem>)}
+                {JAHRGAENGE.map(j => <SelectItem key={j} value={j}>{j}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -115,16 +118,6 @@ export default function EinheitenListe() {
     queryFn: () => base44.entities.Lernpakete.list(),
   });
 
-  const { data: faecher = [] } = useQuery({
-    queryKey: ['lookup-faecher'],
-    queryFn: () => base44.entities.LookupFaecher.filter({ ist_aktiv: true }, '-reihenfolge'),
-  });
-
-  const { data: jahrgaenge = [] } = useQuery({
-    queryKey: ['lookup-jahrgaenge'],
-    queryFn: () => base44.entities.LookupJahrgaenge.filter({ ist_aktiv: true }, '-reihenfolge'),
-  });
-
   const pendingCount = getExportPendingCount(einheiten);
 
   const filtered = einheiten.filter(e => {
@@ -134,6 +127,8 @@ export default function EinheitenListe() {
     const matchChanged = !showOnlyChanged || (e.sync_status === 'modified' || e.sync_status === 'new' || !e.last_synced_at);
     return matchSearch && matchFach && matchRBAC && matchChanged;
   });
+
+  const faecher = [...new Set(einheiten.map(e => e.fach).filter(Boolean))];
 
   const getLernpaketCount = (einheitId) => lernpakete.filter(lp => lp.einheit_id === einheitId).length;
 
@@ -187,7 +182,7 @@ export default function EinheitenListe() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Alle Fächer</SelectItem>
-                {einheiten.map(e => e.fach).filter((f, i, arr) => f && arr.indexOf(f) === i).map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                {faecher.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -227,6 +222,8 @@ export default function EinheitenListe() {
           icon={BookOpen}
           title="Noch keine Einheiten"
           description="Erstellen Sie Ihre erste Unterrichtseinheit, um mit der Planung zu beginnen."
+          actionLabel={permissions.kannSchreiben ? "Erste Einheit erstellen" : undefined}
+          onAction={permissions.kannSchreiben ? () => navigate('/einheit/create') : undefined}
         />
       ) : (
         <p className="text-sm text-muted-foreground text-center py-10">Keine Einheiten gefunden.</p>
@@ -239,8 +236,6 @@ export default function EinheitenListe() {
           queryClient.invalidateQueries({ queryKey: ['einheiten'] });
           navigate(`/einheiten/${einheit.id}`);
         }}
-        faecher={faecher}
-        jahrgaenge={jahrgaenge}
       />
 
       {/* Globales Lösch-Overlay */}
