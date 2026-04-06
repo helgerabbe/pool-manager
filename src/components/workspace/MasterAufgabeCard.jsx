@@ -530,8 +530,10 @@ export default function MasterAufgabeCard({
             </div>
           )}
 
-          {/* Klon-Generator */}
-          <KlonGenerator master={master} onKlonesCreated={onKlonesCreated} />
+          {/* Klon-Generator – nur wenn Inhalt gespeichert ist */}
+          {(master.field_values?.lueckentext || master.field_values?.pairs?.length > 0 || master.field_values?.task_description) && (
+            <KlonGenerator master={master} onKlonesCreated={onKlonesCreated} />
+          )}
         </div>
       )}
     </div>
