@@ -18,6 +18,7 @@ import { Crown, Trash2, Sparkles, Loader2, ChevronDown, ChevronUp, CheckCircle2,
 import KlonErstellenModal from '@/components/workspace/KlonErstellenModal';
 import LockBanner from '@/components/workspace/LockBanner';
 import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
+import MatchTermsGeneratorModal from '@/components/workspace/MatchTermsGeneratorModal';
 import LueckentextEditor, { LueckentextRenderer, validateBeforeSave } from '@/components/workspace/LueckentextEditor';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import SortingListEditor from '@/components/workspace/SortingListEditor';
@@ -137,6 +138,7 @@ export default function MasterAufgabeCard({
   const [hasPendingChanges, setHasPendingChanges] = useState(false);
 
   const [klonModalOpen, setKlonModalOpen] = useState(false);
+  const [generatorOpen, setGeneratorOpen] = useState(false);
 
   const locked = isLockedByOther(master, userEmail);
   const isMatch = isMatchTerms(catalogName);
@@ -293,6 +295,18 @@ export default function MasterAufgabeCard({
           {isMatch ? (
             editMode ? (
               <>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold">Begriffspaare & Distraktoren</h3>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setGeneratorOpen(true)}
+                    className="gap-1.5 text-primary text-xs h-7"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    KI: Generieren
+                  </Button>
+                </div>
                 <MatchTermsForm
                   initialData={{
                     instruction: fieldValues.instruction || '',
@@ -312,7 +326,6 @@ export default function MasterAufgabeCard({
                   onCancel={() => { setEditMode(false); setHasPendingChanges(false); }}
                   onChange={() => setHasPendingChanges(true)}
                 />
-                {/* Unsaved Changes Banner */}
                 {hasPendingChanges && (
                   <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
                     <span>Ungespeicherte Änderungen</span>
@@ -323,9 +336,21 @@ export default function MasterAufgabeCard({
                     </Button>
                   </div>
                 )}
-              </>
-            ) : (
-              <div className="space-y-3">
+                <MatchTermsGeneratorModal
+                  open={generatorOpen}
+                  onClose={() => setGeneratorOpen(false)}
+                  onGenerate={(data) => {
+                    setFieldValues(fv => ({
+                      ...fv,
+                      pairs: data.pairs,
+                      distractors: data.distractors,
+                    }));
+                    setHasPendingChanges(true);
+                  }}
+                />
+                </>
+                ) : (
+                <div className="space-y-3">
                 {fieldValues.instruction && (
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Anweisung</p>
@@ -343,6 +368,20 @@ export default function MasterAufgabeCard({
                           <span className="flex-1 font-medium">{p.left}</span>
                           <span className="text-muted-foreground/40">→</span>
                           <span className="flex-1 text-muted-foreground">{p.right}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {fieldValues.distractors?.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                      Distraktoren ({fieldValues.distractors.length})
+                    </p>
+                    <div className="bg-red-50/30 rounded-lg p-3 space-y-1 text-sm">
+                      {fieldValues.distractors.map((d, i) => (
+                        <div key={i} className="text-red-700/70 text-xs">
+                          × {d}
                         </div>
                       ))}
                     </div>
