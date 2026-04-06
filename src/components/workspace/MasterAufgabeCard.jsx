@@ -43,7 +43,7 @@ function isMatchTerms(name = '') {
 function isLueckentext(name = '') {
   return LUECKENTEXT_NAMES.some(n => name.toLowerCase().includes(n));
 }
-function isImageLabeling(name = '') {
+function isImageLabelingType(name = '') {
   return IMAGE_LABELING_NAMES.some(n => name.toLowerCase().includes(n));
 }
 
@@ -130,7 +130,7 @@ export default function MasterAufgabeCard({
   const locked = isLockedByOther(master, userEmail);
   const isMatch = isMatchTerms(catalogName);
   const isLuecke = isLueckentext(catalogName);
-  const isImageLabeling = isImageLabeling(catalogName);
+  const isImageLabeling = isImageLabelingType(catalogName);
   const isKITutor = catalogName?.toLowerCase().includes('ki-tutor');
 
   const saveMutation = useMutation({
