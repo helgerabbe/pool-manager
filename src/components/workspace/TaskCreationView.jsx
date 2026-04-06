@@ -550,16 +550,24 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
         )}
 
         {/* Klon gewählt */}
-        {selectedItem?.type === 'klon' && (
-          <div className="max-w-3xl mx-auto px-6 py-6">
-            <KlonDetailView
-              key={selectedItem.klon.id}
-              klon={selectedItem.klon}
-              kannBearbeiten={kannBearbeiten}
-              userEmail={userEmail}
-            />
-          </div>
-        )}
+        {selectedItem?.type === 'klon' && (() => {
+          const klonMaster = alleMaster.find(m => m.id === selectedItem.klon.master_aufgabe_id);
+          const klonActivity = klonMaster ? allActivities.find(a => a.id === klonMaster.activity_id) : null;
+          const klonCatalog = klonActivity ? aktivitaetenKatalog.find(c => c.id === klonActivity.aktivitaet_id) : null;
+          return (
+            <div className="max-w-3xl mx-auto px-6 py-6">
+              <KlonDetailView
+                key={selectedItem.klon.id}
+                klon={selectedItem.klon}
+                kannBearbeiten={kannBearbeiten}
+                userEmail={userEmail}
+                masterAufgabe={klonMaster}
+                activityRecord={klonActivity}
+                catalogEntry={klonCatalog}
+              />
+            </div>
+          );
+        })()}
         </div>
         </main>
 
