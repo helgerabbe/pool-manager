@@ -34,6 +34,7 @@ function isKlonLockedByOther(klon, myEmail) {
 
 const MATCH_TERMS_NAMES = ['begriffe zuordnen', 'zuordnen', 'match terms'];
 const LUECKENTEXT_NAMES = ['lückentext', 'lücken', 'lueckentext', 'cloze', 'fill in'];
+const SORTING_NAMES = ['reihenfolge', 'sortierung', 'sorting', 'sequenzierung'];
 
 function isMatchTerms(name = '') {
   return MATCH_TERMS_NAMES.some(n => name.toLowerCase().includes(n));
@@ -41,6 +42,10 @@ function isMatchTerms(name = '') {
 
 function isLueckentext(name = '') {
   return LUECKENTEXT_NAMES.some(n => name.toLowerCase().includes(n));
+}
+
+function isSorting(name = '') {
+  return SORTING_NAMES.some(n => name.toLowerCase().includes(n));
 }
 
 export default function KlonDetailView({ klon, kannBearbeiten, userEmail, masterAufgabe, activityRecord, catalogEntry, onKlonDeleted }) {
@@ -250,6 +255,31 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
             onChange={(text) => setData(d => ({ ...d, lueckentext: text }))}
             readOnly={!editMode}
           />
+        ) : isSorting(catalogEntry?.name) ? (
+          /* Sortierungs-Anzeige */
+          <div className="space-y-3">
+            {data.instruction && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Aufgabenstellung</p>
+                <div className="bg-muted/50 rounded-lg p-3 text-sm">{data.instruction}</div>
+              </div>
+            )}
+            {data.orderedItems?.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                  Sortierliste ({data.orderedItems.length})
+                </p>
+                <div className="bg-muted/30 rounded-lg p-3 space-y-1">
+                  {data.orderedItems.map((item, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm">
+                      <span className="font-semibold text-muted-foreground w-6">{i + 1}.</span>
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         ) : isMatchTerms(catalogEntry?.name) ? (
           /* Match-Terms-Formular */
           <div className="space-y-3">
