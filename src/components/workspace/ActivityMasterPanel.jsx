@@ -20,7 +20,7 @@ import StandardInput from '@/components/workspace/inputs/StandardInput';
 import { toast } from 'sonner';
 
 // Inline-editierbares Aufgabentext-Feld mit Standardtext
-function DefaultTextareaFieldInline({ field, value, onChange }) {
+function DefaultTextareaFieldInline({ field, value, onChange, readOnly = false }) {
   const [editing, setEditing] = useState(false);
   const displayValue = value || field.default_text;
   const isDefault = !value;
@@ -30,13 +30,15 @@ function DefaultTextareaFieldInline({ field, value, onChange }) {
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">{field.label}</Label>
-          <button
-            onClick={() => setEditing(true)}
-            className="flex items-center gap-1 text-xs text-primary hover:underline"
-          >
-            <Pencil className="w-3 h-3" />
-            {isDefault ? 'Anpassen' : 'Bearbeiten'}
-          </button>
+          {!readOnly && (
+            <button
+              onClick={() => setEditing(true)}
+              className="flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              <Pencil className="w-3 h-3" />
+              {isDefault ? 'Anpassen' : 'Bearbeiten'}
+            </button>
+          )}
         </div>
         <div
           className={`rounded-lg border px-3 py-2 text-sm cursor-pointer hover:border-primary/50 transition-colors ${
@@ -202,12 +204,55 @@ export default function ActivityMasterPanel({
     toast.success('Neue Masteraufgabe erstellt.');
   };
 
+  // Für supports_master: Aktivität gilt als vollständig wenn mindestens 1 Masteraufgabe vorhanden
+  const effectivelyComplete = supportsMaster
+    ? masterAufgaben.length > 0
+    : activityRecord.is_complete;
+
+  // Aufgabentext-State (für supports_master Block)
+  const [aufgabentext, setAufgabentext] = useState(activityRecord?.field_values?.aufgabentext || '');
+  const [aufgabentextDirty, setAufgabentextDirty] = useState(false);
+
+  useEffect(() => {
+    setAufgabentext(activityRecord?.field_values?.aufgabentext || '');
+    setAufgabentextDirty(false);
+  }, [activityRecord?.id]);
+
+  const AUFGABENTEXT_DEFAULTS = {
+    'Lückentext': 'Fülle die Lücken mit den passenden Wörtern aus der Wortbank aus.',
+    'Begriffe zuordnen': 'Ordne die Begriffe den richtigen Kategorien zu.',
+    'Reihenfolge / Sortierung': 'Bringe die Elemente in die richtige Reihenfolge.',
+    'Multiple Choice': 'Wähle die richtige Antwort aus den Optionen aus.',
+    'Kurzantwort': 'Beantworte die Frage mit einem kurzen Satz oder Stichwort.',
+    'KI-Tutor Aufgabe': 'Bearbeite die folgende Aufgabe und erkläre deinen Lösungsweg.',
+    'Bildbeschreibung': 'Beschreibe das Bild möglichst genau mit eigenen Worten.',
+    'Quiz': 'Beantworte die Quiz-Fragen so vollständig wie möglich.',
+    'Begriffe zuordnen': 'Ordne jeden Begriff der richtigen Erklärung zu.',
+  };
+
+  const defaultAufgabentext = AUFGABENTEXT_DEFAULTS[catalogEntry?.name] || 'Bearbeite die folgende Aufgabe sorgfältig.';
+
+  const saveAufgabentextMutation = useMutation({
+    mutationFn: (text) => {
+      const newFieldValues = { ...(activityRecord?.field_values || {}), aufgabentext: text || defaultAufgabentext };
+      return base44.entities.LernpaketPhaseAktivitaet.update(activityRecord.id, {
+        field_values: newFieldValues,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      setAufgabentextDirty(false);
+      toast.success('Aufgabentext gespeichert.');
+    },
+    onError: () => toast.error('Fehler beim Speichern.'),
+  });
+
   return (
     <div className="space-y-6 overflow-visible h-auto">
       {/* ── Aktivitäts-Header ────────────────────────────────────────────────── */}
       <div className="rounded-xl border border-border bg-card p-4">
         <ActivityDetailView
-          activityRecord={activityRecord}
+          activityRecord={{ ...activityRecord, is_complete: effectivelyComplete }}
           kannBearbeiten={kannBearbeiten}
           queryClient={queryClient}
         />
@@ -274,6 +319,27 @@ export default function ActivityMasterPanel({
           {!isInEditMode && (
             <p className="text-xs text-muted-foreground italic">Bearbeitungsmodus aktivieren um Felder zu bearbeiten.</p>
           )}
+        </div>
+      )}
+
+      {/* ── Aufgabentext-Block (für supports_master Aktivitäten) ───────────────── */}
+      {supportsMaster && (
+        <div className="rounded-xl border border-border bg-card p-4">
+          <DefaultTextareaFieldInline
+            field={{
+              field_name: 'aufgabentext',
+              label: 'Aufgabenstellung',
+              default_text: defaultAufgabentext,
+            }}
+            value={aufgabentext}
+            onChange={(val) => {
+              setAufgabentext(val);
+              setAufgabentextDirty(true);
+              // Auto-save nach kurzer Verzögerung
+              saveAufgabentextMutation.mutate(val);
+            }}
+            readOnly={!isInEditMode}
+          />
         </div>
       )}
 
