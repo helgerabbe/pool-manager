@@ -296,9 +296,9 @@ export default function ActivityMasterPanel({
             <p className="text-sm text-muted-foreground italic">Keine Felder konfiguriert.</p>
           ) : (
             <div className={`space-y-4 ${!isInEditMode ? 'opacity-60 pointer-events-none select-none' : ''}`}>
-              {/* Aufgabentext ZUERST oben (Standardtext-Logik) */}
+              {/* Aufgabentext ZUERST oben (einheitlich für alle Aktivitätstypen) */}
               {(catalogEntry?.form_schema || [])
-                .filter(f => f.field_name === 'aufgabentext' && f.default_text)
+                .filter(f => f.field_name === 'aufgabentext')
                 .map((field) => (
                   <DefaultTextareaFieldInline
                     key={field.field_name}
