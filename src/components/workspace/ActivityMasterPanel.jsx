@@ -350,10 +350,22 @@ export default function ActivityMasterPanel({
 
       {/* ── Aufgabentext-Block (für supports_master Aktivitäten, NOT für KI-Tutor) ─ */}
       {supportsMaster && !isKITutor && (
-        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium">Aufgabenstellung</Label>
-            {isDirty && isInEditMode && (
+        <div className="rounded-xl border border-border bg-card p-4">
+          <DefaultTextareaFieldInline
+            field={{
+              field_name: 'aufgabentext',
+              label: 'Aufgabenstellung',
+              default_text: defaultAufgabentext,
+            }}
+            value={aufgabentext}
+            onChange={(val) => {
+              setAufgabentext(val);
+              setAufgabentextDirty(true);
+            }}
+            readOnly={!isInEditMode}
+          />
+          {aufgabentextDirty && isInEditMode && (
+            <div className="flex justify-end gap-2 mt-3 pt-3 border-t border-border">
               <Button
                 size="sm"
                 onClick={() => saveAufgabentextMutation.mutate(aufgabentext)}
@@ -364,19 +376,8 @@ export default function ActivityMasterPanel({
                   ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Speichern…</>
                   : <><Save className="w-3.5 h-3.5" /> Speichern</>}
               </Button>
-            )}
-          </div>
-          <Textarea
-            value={aufgabentext}
-            onChange={(val) => {
-              setAufgabentext(val);
-              setIsDirty(true);
-            }}
-            placeholder={defaultAufgabentext}
-            rows={4}
-            className="resize-none text-sm"
-            disabled={!isInEditMode}
-          />
+            </div>
+          )}
         </div>
       )}
 
