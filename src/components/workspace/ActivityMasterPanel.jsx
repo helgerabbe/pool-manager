@@ -8,14 +8,13 @@
  *      (nur wenn supports_master === true)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Crown, Plus, Loader2, ChevronRight } from 'lucide-react';
 import ActivityDetailView from '@/components/workspace/ActivityDetailView';
 import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
-import { useLernpaketLock } from '@/hooks/useLernpaketLock';
 import { toast } from 'sonner';
 
 export default function ActivityMasterPanel({
@@ -30,9 +29,28 @@ export default function ActivityMasterPanel({
   const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
   const [focusedMasterId, setFocusedMasterId] = useState(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState(null);
 
-  // Bearbeitungsmodus nur aktiv wenn Lernpaket-Lock gehalten wird
-  const { canEdit: lernpaketLockActive } = useLernpaketLock(activityRecord?.lernpaket_id);
+  useEffect(() => {
+    base44.auth.me().then(u => setCurrentUserEmail(u?.email || null));
+  }, []);
+
+  // Lock-Status direkt aus DB auslesen (Single Source of Truth)
+  const { data: lernpaket } = useQuery({
+    queryKey: ['lernpakete', activityRecord?.lernpaket_id],
+    queryFn: () => base44.entities.Lernpakete.filter({ id: activityRecord.lernpaket_id }),
+    select: (data) => data[0],
+    enabled: !!activityRecord?.lernpaket_id,
+    refetchInterval: 5000,
+  });
+
+  const LOCK_TIMEOUT_MS = 30 * 60 * 1000;
+  const lernpaketLockActive =
+    lernpaket?.is_locked &&
+    lernpaket?.locked_by_email === currentUserEmail &&
+    lernpaket?.locked_at &&
+    Date.now() - new Date(lernpaket.locked_at).getTime() < LOCK_TIMEOUT_MS;
+
   const isInEditMode = kannBearbeiten && lernpaketLockActive;
 
   // Alle MasterAufgaben für diese Aktivität
