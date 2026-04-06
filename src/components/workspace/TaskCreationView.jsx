@@ -148,7 +148,7 @@ function MasterSubItem({ master, index, klone, selectedItem, onSelect, catalogEn
   );
 }
 
-// ── Sidebar: Aktivitäts-Zeile (NICHT klickbar — nur Info) ─────────────────────────────────────────────────
+// ── Sidebar: Aktivitäts-Zeile ─────────────────────────────────────────────────
 
 function ActivitySidebarItem({
   activity, aktivitaetName, masterAufgaben, kloneByMasterId,
@@ -165,30 +165,31 @@ function ActivitySidebarItem({
 
   return (
     <div>
-      {/* Aktivität: NICHT klickbar, nur visuell als Info */}
-      <div
+      <button
+        id={`activity-node-${activity.id}`}
+        onClick={() => onSelect({ type: 'activity', activity })}
         className={cn(
           'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
           isActivitySelected
-            ? 'bg-primary/5 text-primary font-medium'
+            ? 'bg-primary text-primary-foreground font-medium'
             : isIncomplete
-              ? 'text-amber-700/70'
-              : 'text-green-700/70'
+              ? 'text-amber-700 bg-amber-50/60 hover:bg-amber-100'
+              : 'text-green-700 bg-green-50/60 hover:bg-green-100'
         )}
       >
         <span className="flex-1 truncate">{aktivitaetName}</span>
-        {lockedByOther && (
+        {lockedByOther && !isActivitySelected && (
           <Lock className="w-3 h-3 text-amber-500 shrink-0" title={`Gesperrt von ${activity.locked_by_user}`} />
         )}
-        {isIncomplete && !lockedByOther && (
+        {isIncomplete && !isActivitySelected && !lockedByOther && (
           <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" title="Inhalt unvollständig" />
         )}
         {masterAufgaben.length > 0 && (
-          <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0">
+          <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded shrink-0">
             {masterAufgaben.length}M
           </span>
         )}
-      </div>
+      </button>
 
       {/* Master-Knoten + deren Klone — immer sichtbar, wenn Master-Aufgaben existieren */}
       {masterAufgaben.length > 0 && (
@@ -238,14 +239,9 @@ function SidebarLernpaketFolder({
 
   return (
     <div>
-      {/* Lernpaket: NUR Klick zum Öffnen/Schließen des Baums (nicht zur Inhalts-Navigation) */}
       <button
          onClick={() => onToggleOpen?.(lernpaket.id, !isOpen)}
-         className={cn(
-           'w-full flex items-center gap-2 px-2 py-2 rounded-lg text-left text-sm font-medium transition-all',
-           'hover:bg-muted/60 active:bg-muted',
-           'cursor-pointer text-foreground'
-         )}
+         className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-left text-sm font-medium text-foreground hover:bg-muted transition-colors"
        >
          <ChevronRight className={cn('w-3.5 h-3.5 shrink-0 text-muted-foreground transition-transform', isOpen && 'rotate-90')} />
          <Package className="w-4 h-4 shrink-0 text-amber-500" />
@@ -282,12 +278,15 @@ function SidebarLernpaketFolder({
 
               return (
                 <div key={phase.key}>
-                  {/* Phase: NICHT klickbar im Baum, nur informativ */}
-                  <div className="w-full flex items-center gap-1.5 px-2 py-0.5 text-left text-[10px] font-semibold text-muted-foreground/50">
-                    <ChevronRight className={cn('w-3 h-3 shrink-0')} />
+                  <button
+                    onClick={() => togglePhaseExpand(phase.key)}
+                    className="w-full flex items-center gap-1.5 px-2 py-0.5 text-left text-[10px] font-semibold text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                  >
+                    <ChevronRight className={cn('w-3 h-3 shrink-0 transition-transform', phaseExpanded && 'rotate-90')} />
                     {phase.icon} <span className="uppercase tracking-wide">{phase.label}</span>
-                  </div>
-                  <div className="ml-2 border-l border-border/40 pl-2 space-y-0.5">
+                  </button>
+                  {phaseExpanded && (
+                    <div className="ml-2 border-l border-border/40 pl-2 space-y-0.5">
                       {phaseActs.map(activity => {
                          const actCatalog = aktivitaetenKatalog.find(c => c.id === activity.aktivitaet_id);
                          const masters = masterAufgabenByActivityId[activity.id] || [];
@@ -317,12 +316,13 @@ function SidebarLernpaketFolder({
                              catalogEntry={actCatalog}
                            />
                          );
-                         })}
-                         </div>
-                         </div>
-                         );
-                         })
-                         )}
+                       })}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       )}
     </div>
