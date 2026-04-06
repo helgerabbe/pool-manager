@@ -66,16 +66,56 @@ function isMiniQuiz(name = '') {
 
 // ── Master Approval Button ─────────────────────────────────────────────────────
 
-function MasterApprovalButton({ master, queryClient }) {
+function MasterApprovalButton({ master, queryClient, catalogName, fieldValues, setFieldValues }) {
+  const [confirmDialog, setConfirmDialog] = React.useState(false);
+  const [fillWithDefaults, setFillWithDefaults] = React.useState(false);
+  
   const approveMutation = useMutation({
-    mutationFn: (action) =>
-      base44.functions.invoke('approveMasterAufgabe', { masterId: master.id, action }),
+    mutationFn: async (action) => {
+      // Validierung vor Approval
+      const isQuiz = ['miniquiz', 'mini-quiz', 'quiz'].some(n => catalogName?.toLowerCase().includes(n));
+      
+      if (action === 'approve' && isQuiz && (!fieldValues.quizItems || fieldValues.quizItems.length === 0)) {
+        // Zeige Dialog statt direkt zu speichern
+        setConfirmDialog(true);
+        return Promise.reject({ skipToast: true });
+      }
+      
+      return base44.functions.invoke('approveMasterAufgabe', { masterId: master.id, action });
+    },
     onSuccess: (_, action) => {
       queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
       toast.success(action === 'approve' ? '✓ Als fertig markiert.' : 'Fertig-Markierung zurückgezogen.');
+      setConfirmDialog(false);
     },
-    onError: (err) => toast.error('Fehler: ' + (err.message || 'Unbekannter Fehler')),
+    onError: (err) => {
+      if (!err.skipToast) {
+        toast.error('Fehler: ' + (err.message || 'Unbekannter Fehler'));
+      }
+    },
   });
+
+  const handleApproveWithDefaults = async () => {
+    // Fülle mit Standarddaten wenn leer
+    const isQuiz = ['miniquiz', 'mini-quiz', 'quiz'].some(n => catalogName?.toLowerCase().includes(n));
+    
+    if (isQuiz && (!fieldValues.quizItems || fieldValues.quizItems.length === 0)) {
+      const defaultQuiz = {
+        ...fieldValues,
+        quizItems: [
+          { question: 'Wie heißt die Hauptstadt von Italien?', correctAnswer: 'Rom' }
+        ]
+      };
+      
+      // Speichere die Standarddaten
+      await base44.entities.MasterAufgabe.update(master.id, { field_values: defaultQuiz });
+      setFieldValues(defaultQuiz);
+      queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+    }
+    
+    // Approval durchführen
+    approveMutation.mutate('approve');
+  };
 
   const isApproved = master.content_status === 'approved';
   const isPending = approveMutation.isPending;
@@ -96,15 +136,44 @@ function MasterApprovalButton({ master, queryClient }) {
   }
 
   return (
-    <Button
-      size="sm"
-      onClick={() => approveMutation.mutate('approve')}
-      disabled={isPending}
-      className="gap-1.5 bg-green-600 hover:bg-green-700 text-white text-xs h-7"
-    >
-      {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
-      Als fertig markieren
-    </Button>
+    <>
+      <Button
+        size="sm"
+        onClick={() => approveMutation.mutate('approve')}
+        disabled={isPending}
+        className="gap-1.5 bg-green-600 hover:bg-green-700 text-white text-xs h-7"
+      >
+        {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+        Als fertig markieren
+      </Button>
+
+      {/* Validierungs-Dialog für leere Mini-Quiz */}
+      <AlertDialog open={confirmDialog} onOpenChange={setConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>⚠️ Mini-Quiz ist leer</AlertDialogTitle>
+            <AlertDialogDescription>
+              Es wurden noch keine Fragen hinzugefügt. Sollen die Felder mit einer Standardfrage gefüllt werden?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-800">
+            <p className="font-semibold mb-1">Standardfrage:</p>
+            <p className="mb-2">Wie heißt die Hauptstadt von Italien?</p>
+            <p className="font-semibold mb-1">Standardantwort:</p>
+            <p>Rom</p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleApproveWithDefaults}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Mit Standardfrage füllen & freigeben
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
@@ -256,7 +325,13 @@ export default function MasterAufgabeCard({
           )}
           {/* Fertig markieren / Zurücksetzen Button */}
           {kannBearbeiten && (
-            <MasterApprovalButton master={master} queryClient={queryClient} />
+            <MasterApprovalButton 
+              master={master} 
+              queryClient={queryClient}
+              catalogName={catalogName}
+              fieldValues={fieldValues}
+              setFieldValues={setFieldValues}
+            />
           )}
           <button
             onClick={() => setCollapsed(c => !c)}
