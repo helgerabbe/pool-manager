@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { getLernzielStatus, getLernpaketStatus, getEinheitFortschritt } from '@/lib/statusLogic';
 import { useLernpaketLock } from '@/hooks/useLernpaketLock';
 import { useEinheitLock } from '@/hooks/useEinheitLock';
@@ -20,7 +21,7 @@ import { Label } from '@/components/ui/label';
 import {
   BookOpen, Layers, Target, Puzzle, Plus, Edit, Trash2,
   Clock, Lock, Unlock, AlertCircle, CheckCircle2, ArrowDown,
-  TrendingUp, AlertTriangle, PenLine, Save, X, Loader2
+  TrendingUp, AlertTriangle, PenLine, Save, X, Loader2, ChevronRight
 } from 'lucide-react';
 import SyncWarningBanner from '@/components/sync/SyncWarningBanner';
 
@@ -362,6 +363,12 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   const [localPhasenConfig, setLocalPhasenConfig] = useState(paket.phasen_konfiguration || {});
   const queryClient = useQueryClient();
 
+  // Lade Aktivitäten für diese Phase
+  const { data: lernpaketAktivitaeten = [] } = useQuery({
+    queryKey: ['lernpaketPhaseAktivitaeten'],
+    queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list(),
+  });
+
   // Lock-Management mit useLernpaketLock
   const { canEdit, isLockedByOther, lockedByEmail, isLoading: isLockLoading, acquireLock, releaseLock } = useLernpaketLock(paket.id);
   const [isEnteringEditMode, setIsEnteringEditMode] = useState(false);
@@ -607,57 +614,83 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
         </div>
       </div>
 
-      {/* Phasen mit Toggle und Aktivitäten */}
+      {/* Phasen als Accordions */}
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-muted-foreground">Lernphasen</h3>
         {PHASES.map(phase => {
           const phaseConfig = localPhasenConfig[phase.key] || {};
           const isDisabled = phaseConfig.disabled === true;
           const isExpanded = expandedPhase === phase.key;
+          const phaseActivities = lernpaketAktivitaeten.filter(a => a.lernpaket_id === paket.id && a.phase === phase.key);
 
           return (
             <div key={phase.key} className="space-y-2">
-              {/* Toggle + Header */}
-              <div className="flex items-start justify-between gap-3 p-3 rounded-lg border bg-card">
-                <button
-                  onClick={() => !isDisabled && setExpandedPhase(isExpanded ? null : phase.key)}
-                  disabled={isDisabled}
-                  className="flex items-start gap-3 flex-1 min-w-0 text-left"
-                >
-                  <span className="text-lg mt-0.5">{phase.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className={`font-medium text-sm ${isDisabled ? 'opacity-60' : ''}`}>
-                      {phase.label}
-                    </p>
-                    {phaseConfig.selected_aktivitaet_id && !isDisabled && (
-                      <p className="text-xs text-green-600 mt-1 font-medium">✓ Aktivität zugeordnet</p>
-                    )}
-                    {isDisabled && (
-                      <p className="text-xs text-muted-foreground/60 mt-1 italic">Diese Phase ist deaktiviert</p>
-                    )}
-                  </div>
-                </button>
-                {canEdit && kannBearbeiten && (
+              {/* Accordion Header mit Chevron, Badge, und Hover-Effekt */}
+              <button
+                onClick={() => !isDisabled && setExpandedPhase(isExpanded ? null : phase.key)}
+                disabled={isDisabled}
+                className={cn(
+                  'w-full flex items-center gap-3 p-3 rounded-lg border bg-card transition-all',
+                  isDisabled
+                    ? 'opacity-60 cursor-not-allowed'
+                    : 'hover:bg-muted hover:border-primary/30 cursor-pointer'
+                )}
+              >
+                {/* Chevron */}
+                <ChevronRight
+                  className={cn(
+                    'w-5 h-5 text-muted-foreground transition-transform shrink-0',
+                    isExpanded && 'rotate-90'
+                  )}
+                />
+
+                {/* Phase Icon + Label */}
+                <div className="flex items-center gap-2 flex-1">
+                  <span className="text-lg">{phase.icon}</span>
+                  <p className={cn('font-medium text-sm', isDisabled && 'opacity-60')}>
+                    {phase.label}
+                  </p>
+                </div>
+
+                {/* Aktivitäts-Count Badge */}
+                {!isDisabled && phaseActivities.length > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {phaseActivities.length} {phaseActivities.length === 1 ? 'Aktivität' : 'Aktivitäten'}
+                  </Badge>
+                )}
+
+                {/* Deaktiviert-Info */}
+                {isDisabled && (
+                  <span className="text-xs text-muted-foreground/60">Deaktiviert</span>
+                )}
+              </button>
+
+              {/* Expanded Content */}
+              {isExpanded && !isDisabled && (
+                <div className="mt-2 pl-4">
+                  <PhaseContent
+                    paket={paket}
+                    phaseKey={phase.key}
+                    phaseLabel={phase.label}
+                    kannBearbeiten={canEdit && kannBearbeiten}
+                    userEmail={userEmail}
+                    queryClient={queryClient}
+                    inEditMode={canEdit}
+                    onNavigate={onNavigate}
+                    onGoToTaskWorkshop={(activityId) => onNavigate({ type: 'goto-task-workshop', activityId })}
+                  />
+                </div>
+              )}
+
+              {/* Phase-Toggle Switch (rechts) – nur im Bearbeitungsmodus */}
+              {canEdit && kannBearbeiten && (
+                <div className="flex items-center justify-between px-3 py-2 bg-muted/40 rounded-lg border border-muted">
+                  <span className="text-xs text-muted-foreground">Phase aktivieren</span>
                   <Switch
                     checked={!isDisabled}
                     onCheckedChange={() => handlePhaseToggle(phase.key)}
                   />
-                )}
-              </div>
-
-              {/* Expanded Content */}
-              {isExpanded && !isDisabled && (
-                <PhaseContent
-                  paket={paket}
-                  phaseKey={phase.key}
-                  phaseLabel={phase.label}
-                  kannBearbeiten={canEdit && kannBearbeiten}
-                  userEmail={userEmail}
-                  queryClient={queryClient}
-                  inEditMode={canEdit}
-                  onNavigate={onNavigate}
-                  onGoToTaskWorkshop={(activityId) => onNavigate({ type: 'goto-task-workshop', activityId })}
-                />
+                </div>
               )}
             </div>
           );

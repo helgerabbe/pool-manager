@@ -29,30 +29,18 @@ function AmpelDot({ status, size = 'sm' }) {
 function AktivitaetSubNode({ activity, aktivitaetName, isSelected, onSelect, paketId }) {
   const isIncomplete = !activity.is_complete;
   return (
-    <button
-      onClick={() => onSelect({
-        type: 'aktivitaet-edit',
-        id: activity.id,
-        phase: activity.phase,
-        paketId,
-        activityRecordId: activity.id,
-      })}
-      className={cn(
-        'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-[11px] transition-colors',
-        isSelected
-          ? 'bg-primary text-primary-foreground'
-          : isIncomplete
-            ? 'text-amber-700 bg-amber-50/60 hover:bg-amber-100'
-            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-      )}
-    >
+    <div className={cn(
+      'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-[11px]',
+      isIncomplete
+        ? 'text-amber-700'
+        : 'text-muted-foreground'
+    )}>
       <Puzzle className="w-3 h-3 shrink-0" />
       <span className="truncate flex-1">{aktivitaetName}</span>
       {isIncomplete && (
         <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" title="Inhalt unvollständig" />
       )}
-      <Edit className="w-3 h-3 shrink-0 opacity-50" />
-    </button>
+    </div>
   );
 }
 
@@ -63,7 +51,6 @@ const PHASES = [
 ];
 
 function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseActivities, aktivitaetenMap }) {
-  const isSelected = selectedId === `phase-${paket.id}-${phase}`;
   const activities = paketPhaseActivities.filter(a => a.phase === phase);
   const hasIncompleteActivity = activities.some(a => !a.is_complete);
   const [open, setOpen] = useState(false);
@@ -74,23 +61,18 @@ function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseA
         <button onClick={() => setOpen(o => !o)} className="p-0.5 text-muted-foreground hover:text-foreground shrink-0">
           <ChevronRight className={cn('w-3 h-3 transition-transform', open && 'rotate-90')} />
         </button>
-        <button
-          onClick={() => onSelect({ type: 'phase', id: `phase-${paket.id}-${phase}`, phase, paketId: paket.id })}
-          className={cn(
-            'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
-            isSelected ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-          )}
-        >
+        {/* Phase-Header: Nur visuell, keine Klick-Navigation */}
+        <div className="flex-1 flex items-center gap-2 px-2 py-1.5 text-left text-xs text-muted-foreground">
           <span className="w-3 h-3 shrink-0">
             {phase === 'Input' && '📚'}{phase === 'Übung' && '✏️'}{phase === 'Abschluss' && '🎯'}
           </span>
           <span className="truncate flex-1">{phaseLabel}</span>
-          {!isSelected && activities.length > 0 && (
+          {activities.length > 0 && (
             <span className={`w-5 h-5 flex items-center justify-center rounded-full text-white text-[10px] font-bold shrink-0 ${
               hasIncompleteActivity ? 'bg-amber-400' : 'bg-green-500'
             }`}>{activities.length}</span>
           )}
-        </button>
+        </div>
       </div>
       {open && (
         <div className="ml-6 mt-0.5 border-l border-border pl-2 space-y-0.5">
