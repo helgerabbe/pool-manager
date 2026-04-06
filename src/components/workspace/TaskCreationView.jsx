@@ -546,6 +546,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
                userEmail={userEmail}
                userRole={userRole}
                einheitId={einheitId}
+               selectedMasterId={selectedItem?.type === 'master' ? selectedItem.master.id : null}
                onMasterSelected={(masterId) => {
                  const master = alleMaster.find(m => m.id === masterId);
                  if (master) setSelectedItem({ type: 'master', master });

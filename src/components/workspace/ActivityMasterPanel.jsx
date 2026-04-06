@@ -103,11 +103,19 @@ export default function ActivityMasterPanel({
   einheitId,
   onMasterSelected = null,
   onKlonSelected = null,
+  selectedMasterId = null,
 }) {
   const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
-  const [focusedMasterId, setFocusedMasterId] = useState(null);
+  const [focusedMasterId, setFocusedMasterId] = useState(selectedMasterId);
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
+
+  // Wenn selectedMasterId von außen übergeben wird, setze focusedMasterId
+  useEffect(() => {
+    if (selectedMasterId) {
+      setFocusedMasterId(selectedMasterId);
+    }
+  }, [selectedMasterId]);
 
   useEffect(() => {
     base44.auth.me().then(u => setCurrentUserEmail(u?.email || null));
