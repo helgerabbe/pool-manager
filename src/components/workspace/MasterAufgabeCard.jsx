@@ -125,6 +125,7 @@ export default function MasterAufgabeCard({
   const locked = isLockedByOther(master, userEmail);
   const isMatch = isMatchTerms(catalogName);
   const isLuecke = isLueckentext(catalogName);
+  const isKITutor = catalogName?.toLowerCase().includes('ki-tutor');
 
   const saveMutation = useMutation({
     mutationFn: ({ fv, closeEdit }) => {
@@ -148,12 +149,7 @@ export default function MasterAufgabeCard({
     onError: (err) => toast.error(err.message || 'Fehler beim Speichern.'),
   });
 
-  // Zwischenspeichern ohne Edit-Modus zu verlassen
-  const handleSaveIntermediate = () => {
-    saveMutation.mutate({ fv: fieldValues, closeEdit: false });
-  };
-
-  // Speichern und Bearbeitung beenden
+  // Speichern und Bearbeitung beenden (kein Zwischenspeichern mehr)
   const handleSaveAndClose = (fv) => {
     saveMutation.mutate({ fv: fv ?? fieldValues, closeEdit: true });
   };
@@ -297,14 +293,14 @@ export default function MasterAufgabeCard({
                   onCancel={() => { setEditMode(false); setHasPendingChanges(false); }}
                   onChange={() => setHasPendingChanges(true)}
                 />
-                {/* Zwischenspeichern-Banner */}
+                {/* Unsaved Changes Banner */}
                 {hasPendingChanges && (
                   <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
                     <span>Ungespeicherte Änderungen</span>
-                    <Button size="sm" variant="outline" onClick={handleSaveIntermediate} disabled={saveMutation.isPending}
+                    <Button size="sm" variant="outline" onClick={() => handleSaveAndClose()} disabled={saveMutation.isPending}
                       className="gap-1.5 border-amber-300 hover:bg-amber-100 text-amber-800 h-7 text-xs">
                       {saveMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                      Jetzt zwischenspeichern
+                      Speichern
                     </Button>
                   </div>
                 )}
@@ -361,14 +357,14 @@ export default function MasterAufgabeCard({
                       <Button size="sm" variant="outline"
                         onClick={() => {
                           if (!validateBeforeSave(fieldValues.lueckentext || '')) return;
-                          handleSaveIntermediate();
+                          handleSaveAndClose();
                         }}
                         disabled={saveMutation.isPending}
                         className="gap-1.5 border-amber-300 hover:bg-amber-100 text-amber-800">
                         {saveMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                        Zwischenspeichern
+                        Speichern
                       </Button>
-                    )}
+                      )}
                     <Button size="sm"
                       onClick={() => {
                         if (!validateBeforeSave(fieldValues.lueckentext || '')) return;
@@ -416,12 +412,12 @@ export default function MasterAufgabeCard({
                   <div className="flex items-center gap-2">
                     <Button size="sm" variant="ghost" onClick={() => { setEditMode(false); setHasPendingChanges(false); }}>Abbrechen</Button>
                     {hasPendingChanges && (
-                      <Button size="sm" variant="outline" onClick={handleSaveIntermediate} disabled={saveMutation.isPending}
-                        className="gap-1.5 border-amber-300 hover:bg-amber-100 text-amber-800">
-                        {saveMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                        Zwischenspeichern
-                      </Button>
-                    )}
+                       <Button size="sm" variant="outline" onClick={() => handleSaveAndClose()} disabled={saveMutation.isPending}
+                         className="gap-1.5 border-amber-300 hover:bg-amber-100 text-amber-800">
+                         {saveMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                         Speichern
+                       </Button>
+                     )}
                     <Button size="sm" onClick={() => handleSaveAndClose()} disabled={saveMutation.isPending} className="gap-1.5 ml-auto">
                       {saveMutation.isPending && <Loader2 className="w-3 h-3 animate-spin" />} Speichern & schließen
                     </Button>
@@ -442,8 +438,8 @@ export default function MasterAufgabeCard({
             </div>
           )}
 
-          {/* Klon erstellen – nur wenn Inhalt gespeichert ist */}
-          {(master.field_values?.lueckentext || master.field_values?.pairs?.length > 0 || master.field_values?.task_description) && (
+          {/* Klon erstellen – NICHT für KI-Tutor-Aufgaben */}
+          {!isKITutor && (master.field_values?.lueckentext || master.field_values?.pairs?.length > 0 || master.field_values?.task_description) && (
             <div className="border-t border-border/60 pt-4">
               <Button
                 size="sm"

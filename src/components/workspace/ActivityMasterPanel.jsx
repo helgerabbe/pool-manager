@@ -13,10 +13,12 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Crown, Plus, Loader2, ChevronRight, Save, Pencil, Check, ExternalLink } from 'lucide-react';
 import ActivityDetailView from '@/components/workspace/ActivityDetailView';
 import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
+import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
 import { toast } from 'sonner';
 
 // Inline-editierbares Aufgabentext-Feld mit Standardtext
@@ -257,6 +259,9 @@ export default function ActivityMasterPanel({
     onError: () => toast.error('Fehler beim Speichern.'),
   });
 
+  // Bestimme ob aktueller Aktivitätstyp KI-Tutor ist
+  const isKITutor = catalogEntry?.name?.toLowerCase().includes('ki-tutor');
+
   return (
     <div className="space-y-6 overflow-visible h-auto">
       {/* ── Aktivitäts-Header ────────────────────────────────────────────────── */}
@@ -332,23 +337,34 @@ export default function ActivityMasterPanel({
         </div>
       )}
 
-      {/* ── Aufgabentext-Block (für supports_master Aktivitäten) ───────────────── */}
-      {supportsMaster && (
-        <div className="rounded-xl border border-border bg-card p-4">
-          <DefaultTextareaFieldInline
-            field={{
-              field_name: 'aufgabentext',
-              label: 'Aufgabenstellung',
-              default_text: defaultAufgabentext,
-            }}
+      {/* ── Aufgabentext-Block (für supports_master Aktivitäten, NOT für KI-Tutor) ─ */}
+      {supportsMaster && !isKITutor && (
+        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium">Aufgabenstellung</Label>
+            {isDirty && isInEditMode && (
+              <Button
+                size="sm"
+                onClick={() => saveAufgabentextMutation.mutate(aufgabentext)}
+                disabled={saveAufgabentextMutation.isPending}
+                className="gap-1.5 text-xs h-7"
+              >
+                {saveAufgabentextMutation.isPending
+                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Speichern…</>
+                  : <><Save className="w-3.5 h-3.5" /> Speichern</>}
+              </Button>
+            )}
+          </div>
+          <Textarea
             value={aufgabentext}
             onChange={(val) => {
               setAufgabentext(val);
-              setAufgabentextDirty(true);
-              // Auto-save nach kurzer Verzögerung
-              saveAufgabentextMutation.mutate(val);
+              setIsDirty(true);
             }}
-            readOnly={!isInEditMode}
+            placeholder={defaultAufgabentext}
+            rows={4}
+            className="resize-none text-sm"
+            disabled={!isInEditMode}
           />
         </div>
       )}
@@ -377,28 +393,73 @@ export default function ActivityMasterPanel({
             )}
           </div>
 
-          {/* Vorhandene Master-Karten (immer sichtbar) */}
-          {masterAufgaben.map((master, idx) => (
-           <MasterAufgabeCard
-             key={master.id}
-             master={master}
-             index={idx + 1}
-             catalogName={catalogEntry?.name || ''}
-             klone={kloneByMasterId[master.id] || []}
-             kannBearbeiten={isInEditMode}
-             userEmail={userEmail}
-             userRole={userRole}
-             autoExpand={master.id === focusedMasterId}
-             onDeleted={() => {
-               setFocusedMasterId(null);
-               queryClient.invalidateQueries({ queryKey: ['masterAufgaben', activityRecord.id] });
-             }}
-             onKlonesCreated={() => queryClient.invalidateQueries({ queryKey: ['klone', activityRecord.id] })}
-             onKlonSelected={(klonId) => {
-               onKlonSelected?.(klonId);
-             }}
-           />
-          ))}
+          {/* Vorhandene Master-Karten */}
+          {masterAufgaben.map((master, idx) => 
+            isKITutor ? (
+              // KI-Tutor-Spezialansicht
+              <div key={master.id} className="rounded-xl border border-border bg-card p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-sm font-semibold">Aufgabe {idx + 1}</h3>
+                    {master.content_status === 'approved' && (
+                      <span className="inline-flex items-center gap-1 text-xs text-green-700 bg-green-100 border border-green-300 rounded-full px-2 py-0.5 mt-1">
+                        ✓ Freigegeben
+                      </span>
+                    )}
+                  </div>
+                  {kannBearbeiten && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={async () => {
+                        if (window.confirm('Diese KI-Tutor-Aufgabe wird gelöscht.')) {
+                          try {
+                            await base44.entities.MasterAufgabe.delete(master.id);
+                            queryClient.invalidateQueries({ queryKey: ['masterAufgaben', activityRecord.id] });
+                            toast.success('Aufgabe gelöscht.');
+                          } catch (err) {
+                            toast.error(err.message || 'Fehler beim Löschen.');
+                          }
+                        }
+                      }}
+                      className="text-xs h-7"
+                    >
+                      Löschen
+                    </Button>
+                    )}
+                </div>
+                <KITutorMasterForm
+                  master={master}
+                  isInEditMode={isInEditMode}
+                  userEmail={userEmail}
+                  einheitId={einheitId}
+                  catalogEntry={catalogEntry}
+                  onSaved={() => queryClient.invalidateQueries({ queryKey: ['masterAufgaben', activityRecord.id] })}
+                />
+              </div>
+            ) : (
+              // Standard-Masteraufgaben für andere Typen
+              <MasterAufgabeCard
+                key={master.id}
+                master={master}
+                index={idx + 1}
+                catalogName={catalogEntry?.name || ''}
+                klone={kloneByMasterId[master.id] || []}
+                kannBearbeiten={isInEditMode}
+                userEmail={userEmail}
+                userRole={userRole}
+                autoExpand={master.id === focusedMasterId}
+                onDeleted={() => {
+                  setFocusedMasterId(null);
+                  queryClient.invalidateQueries({ queryKey: ['masterAufgaben', activityRecord.id] });
+                }}
+                onKlonesCreated={() => queryClient.invalidateQueries({ queryKey: ['klone', activityRecord.id] })}
+                onKlonSelected={(klonId) => {
+                  onKlonSelected?.(klonId);
+                }}
+              />
+            )
+          )}
 
           {/* Leerzustand */}
           {masterAufgaben.length === 0 && (

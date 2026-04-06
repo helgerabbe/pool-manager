@@ -108,7 +108,29 @@ export default function KlonErstellenModal({ open, onClose, master, klone, onKlo
 
     const result = isLuecke
       ? await base44.integrations.Core.InvokeLLM({
-          prompt: `Du bist ein Assistent für Lehrkräfte. Deine Aufgabe ist es, einen Lückentext inhaltlich umzuformulieren.\n\nEingabe:\nDu erhältst einen Text, in dem bestimmte Wörter in eckigen Klammern markiert sind (z. B. [Wort]). Diese markierten Wörter sind die Zielwörter, die gelernt werden sollen.\n\nDeine Aufgabe:\n\n1. Erfasse den inhaltlichen Sinn des Textes und identifiziere alle Wörter in eckigen Klammern [...]\n2. Schreibe einen neuen Text, der exakt denselben inhaltlichen Sinn und dieselben Fakten wiedergibt.\n3. Verändere die Satzstruktur, die Formulierungen und den Satzbau (Paraphrasieren).\n4. Zwingende Regel: Du musst exakt dieselben Zielwörter (die in der Eingabe in eckigen Klammern standen) in deinen neuen Text einbauen. Markiere diese Zielwörter in deiner Ausgabe zwingend wieder mit eckigen Klammern [...]\n5. Verändere die Zielwörter nicht (keine andere grammatikalische Zeitform oder Plural/Singular-Änderung), es sei denn, es ist für die Grammatik deines neuen Satzes absolut unvermeidbar.\n\nAusgabe:\nLiefere ausschließlich den fertigen neuen Lückentext zurück. Keine Einleitung, keine Erklärungen.\n\nBitte erstelle ${count} Variation(en) dieses Textes:\n\n${fv.lueckentext}\n\nAntworte als JSON mit einem "klone"-Array, jedes Element: { "lueckentext": string }`,
+          prompt: `ZWINGENDE REGEL FÜR LÜCKENTEXTE:
+
+    Du bist ein erfahrener Deutsch- und Fremdsprachenlehrer. Deine Aufgabe ist es, Lückentexte didaktisch sinnvoll zu variieren, ohne die Zielwörter zu verändern.
+
+    EINGABE:
+    Ein Lückentext, in dem bestimmte Wörter in eckigen Klammern [...] markiert sind. Diese Wörter sind UNVERÄNDERBAR.
+
+    KERNREGELN (ABSOLUT BINDEND):
+    1. Die Zielwörter in [...] dürfen NICHT verändert werden – weder in Zeitform, Numerus (Singular/Plural) noch in der Form. Sie bleiben exakt wie eingegeben.
+    2. Du musst alle Zielwörter in der exakt gleichen Reihenfolge und Form in den neuen Text integrieren.
+    3. Du darfst NUR die Satzstruktur, Formulierungen und den Satzbau ändern – aber nicht die inhaltlichen Fakten oder die Zielwörter selbst.
+    4. Der neue Text soll denselben didaktischen Zweck erfüllen und dieselben Konzepte abdecken wie das Original.
+
+    LÜCKENTEXT ZUM PARAPHRASIEREN:
+    ${fv.lueckentext}
+
+    BITTE ERSTELLE ${count} VARIATION(EN):
+    - Verändere Satzstruktur, Formulierungen und Wortstellung
+    - Behalte ALLE Zielwörter in [...] genau bei
+    - Behalte die inhaltliche Bedeutung bei
+    - Keine Erklärungen, nur den fertigen Text
+
+    Antworte als JSON mit einem "klone"-Array, jedes Element: { "lueckentext": string }`,
           response_json_schema: schema,
         })
       : await base44.integrations.Core.InvokeLLM({ prompt: nonLueckePrompt, response_json_schema: schema });
