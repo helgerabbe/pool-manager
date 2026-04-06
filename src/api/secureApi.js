@@ -284,10 +284,11 @@ export async function getEinheitenList(page = 1, limit = 15) {
  * Bulk-Aufgaben-Generator: Erzeugt KI-basierte Varianten einer Master-Aufgabe
  * 
  * @param {Object} payload - { master_aufgabe_text, loesung_text, lernziel?, fach, jahrgangsstufe, anzahl }
+ * @param {AbortSignal} signal - Optional AbortSignal für Request-Abbruch
  * @returns {Promise<{success: boolean, generated_tasks: Array, metadata: Object}>}
- * @throws {SecureApiError} Bei Fehler (400 Bad Request, 500 LLM Error, etc.)
+ * @throws {SecureApiError} Bei Fehler (400 Bad Request, 500 LLM Error, Timeout, etc.)
  */
-export async function generateBulkAufgaben(payload) {
+export async function generateBulkAufgaben(payload, signal = null) {
   if (!payload?.master_aufgabe_text || !payload?.loesung_text || !payload?.fach || !payload?.jahrgangsstufe || !payload?.anzahl) {
     throw new Error('Missing required fields for bulk generation');
   }
@@ -296,10 +297,32 @@ export async function generateBulkAufgaben(payload) {
     throw new Error('Anzahl muss zwischen 1 und 20 liegen');
   }
 
+  // Erstelle einen Timeout-Controller (60 Sekunden)
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => timeoutController.abort(), 60000);
+
+  // Kombiniere user-signal und timeout-signal
+  const mergedSignal = signal 
+    ? AbortSignal.any([signal, timeoutController.signal])
+    : timeoutController.signal;
+
   try {
-    const response = await base44.functions.invoke('generateBulkAufgabenSecure', payload);
+    const response = await base44.functions.invoke('generateBulkAufgabenSecure', payload, { signal: mergedSignal });
+    clearTimeout(timeoutId);
     return response.data;
   } catch (error) {
+    clearTimeout(timeoutId);
+
+    // Behandle spezifische Fehler
+    if (error.name === 'AbortError') {
+      const isTimeout = timeoutController.signal.aborted && !timeoutController.signal.reason;
+      throw new SecureApiError(
+        408,
+        isTimeout ? 'TIMEOUT_ERROR' : 'ABORT_ERROR',
+        { originalError: error }
+      );
+    }
+
     const status = error.response?.status || 500;
     const errorData = error.response?.data || {};
     const message = errorData.error || error.message || 'Unknown error';

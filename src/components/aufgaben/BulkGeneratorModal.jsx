@@ -8,7 +8,7 @@
  * Step 3: Review (Liste mit Checkboxen + Speichern)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { secureApi } from '@/api/secureApi';
 import {
@@ -73,7 +73,7 @@ function Step1Input({ onGenerate, isLoading }) {
 // STEP 2: Loading Skeleton
 // ─────────────────────────────────────────────────────────────────────────
 
-function Step2Loading({ count }) {
+function Step2Loading({ count, onCancel, isCanceling }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 mb-4">
@@ -96,6 +96,22 @@ function Step2Loading({ count }) {
           + {count - 5} weitere Varianten...
         </p>
       )}
+
+      <Button
+        variant="outline"
+        onClick={onCancel}
+        disabled={isCanceling}
+        className="w-full mt-4 gap-2"
+      >
+        {isCanceling ? (
+          <>
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            Wird abgebrochen...
+          </>
+        ) : (
+          'Abbrechen'
+        )}
+      </Button>
     </div>
   );
 }
@@ -281,12 +297,17 @@ export default function BulkGeneratorModal({
   const [step, setStep] = useState(1); // 1=Input, 2=Loading, 3=Review
   const [generatedTasks, setGeneratedTasks] = useState([]);
   const [anzahlRequested, setAnzahlRequested] = useState(10);
+  const abortControllerRef = React.useRef(null);
 
   // Mutation 1: Generate via LLM (Ebene 1 oder Ebene 2)
   const generateMutation = useMutation({
     mutationFn: async (anzahl) => {
       setAnzahlRequested(anzahl);
       
+      // Erstelle neuen AbortController für diesen Request
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       const basePayload = {
         master_aufgabe_text: masterAufgabe.aufgabentext_inhalt || masterAufgabe.aufgabentext,
         loesung_text: masterAufgabe.erwartungshorizont_ki_prompt || 'Siehe Aufgabentext',
@@ -302,25 +323,54 @@ export default function BulkGeneratorModal({
           themenfeld: contextData.themenfeld || '',
           kompetenzen: contextData.kompetenzen || '',
           schwierigkeitsgrad: contextData.schwierigkeitsgrad || '',
-        });
+        }, controller.signal);
       }
 
-      // Default: Ebene 1
+      // Default: Ebene 1 mit AbortSignal
       return secureApi.generateBulkAufgaben({
         ...basePayload,
         lernziel,
-      });
+      }, controller.signal);
     },
     onSuccess: (data) => {
+      abortControllerRef.current = null;
       setGeneratedTasks(data.generated_tasks);
       setStep(3); // Skip loading, go directly to review
       toast.success(`${data.metadata.count} Varianten generiert`);
     },
     onError: (error) => {
-      toast.error(`Generierung fehlgeschlagen: ${error.message}`);
+      abortControllerRef.current = null;
+      
+      // Nutzerfreundliche Fehler-Meldungen
+      let errorMessage = error.message;
+      if (error.message === 'TIMEOUT_ERROR') {
+        errorMessage = 'Die KI hat zu lange für die Antwort benötigt. Bitte versuchen Sie es mit einer geringeren Anzahl an Aufgaben erneut.';
+      } else if (error.message === 'ABORT_ERROR') {
+        errorMessage = 'Generierung abgebrochen.';
+      }
+      
+      toast.error(`Generierung fehlgeschlagen: ${errorMessage}`);
       setStep(1);
     },
   });
+
+  // Funktion zum Abbrechen der laufenden Generation
+  const handleCancelGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setStep(1);
+  };
+
+  // Cleanup: Breche laufende Requests ab wenn Modal geschlossen wird
+  React.useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   // Mutation 2: Save selected tasks
   const saveMutation = useMutation({
@@ -392,7 +442,13 @@ export default function BulkGeneratorModal({
         )}
 
         {/* STEP 2: Loading */}
-        {step === 2 && <Step2Loading count={anzahlRequested} />}
+        {step === 2 && (
+          <Step2Loading
+            count={anzahlRequested}
+            onCancel={handleCancelGeneration}
+            isCanceling={generateMutation.isPending && generateMutation.status === 'pending'}
+          />
+        )}
 
         {/* STEP 3: Review */}
         {step === 3 && (
@@ -408,8 +464,20 @@ export default function BulkGeneratorModal({
           <div className="flex items-start gap-3 p-3 rounded-lg border border-red-200 bg-red-50">
             <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
             <div className="text-sm text-red-800">
-              <p className="font-semibold mb-1">Generierung fehlgeschlagen</p>
-              <p className="text-xs">{generateMutation.error?.message}</p>
+              <p className="font-semibold mb-1">
+                {generateMutation.error?.message === 'ABORT_ERROR'
+                  ? 'Generierung abgebrochen'
+                  : generateMutation.error?.message === 'TIMEOUT_ERROR'
+                    ? 'Timeout: KI-Antwort zu langsam'
+                    : 'Generierung fehlgeschlagen'}
+              </p>
+              <p className="text-xs">
+                {generateMutation.error?.message === 'TIMEOUT_ERROR'
+                  ? 'Die KI hat zu lange für die Antwort benötigt. Bitte versuchen Sie es mit einer geringeren Anzahl an Aufgaben erneut.'
+                  : generateMutation.error?.message === 'ABORT_ERROR'
+                    ? 'Die Generierung wurde vom Nutzer abgebrochen.'
+                    : generateMutation.error?.message}
+              </p>
             </div>
           </div>
         )}
