@@ -24,7 +24,8 @@ import { toast } from 'sonner';
 // Inline-editierbares Aufgabentext-Feld mit Standardtext
 function DefaultTextareaFieldInline({ field, value, onChange, readOnly = false }) {
   const [editing, setEditing] = useState(false);
-  const displayValue = value || field.default_text;
+  const defaultText = field.default_text || 'Bearbeite die folgende Aufgabe sorgfältig.';
+  const displayValue = value || defaultText;
   const isDefault = !value;
 
   if (!editing) {
@@ -296,17 +297,23 @@ export default function ActivityMasterPanel({
             <p className="text-sm text-muted-foreground italic">Keine Felder konfiguriert.</p>
           ) : (
             <div className={`space-y-4 ${!isInEditMode ? 'opacity-60 pointer-events-none select-none' : ''}`}>
-              {/* Aufgabentext ZUERST oben (einheitlich für alle Aktivitätstypen) */}
+              {/* Aufgabentext ZUERST oben (einheitlich für ALLE Aktivitätstypen mit blauem Hintergrund) */}
               {(catalogEntry?.form_schema || [])
-                .filter(f => f.field_name === 'aufgabentext')
-                .map((field) => (
-                  <DefaultTextareaFieldInline
-                    key={field.field_name}
-                    field={field}
-                    value={fieldValues[field.field_name] || ''}
-                    onChange={(val) => handleFieldChange(field.field_name, val)}
-                  />
-                ))}
+                .find(f => f.field_name === 'aufgabentext') && (
+                <DefaultTextareaFieldInline
+                  key="aufgabentext"
+                  field={
+                    catalogEntry.form_schema.find(f => f.field_name === 'aufgabentext') || {
+                      field_name: 'aufgabentext',
+                      label: 'Aufgabenstellung',
+                      default_text: 'Bearbeite die folgende Aufgabe sorgfältig.'
+                    }
+                  }
+                  value={fieldValues.aufgabentext || ''}
+                  onChange={(val) => handleFieldChange('aufgabentext', val)}
+                  readOnly={!isInEditMode}
+                />
+              )}
 
               {/* Alle anderen Felder */}
               {(catalogEntry?.form_schema || []).map((field) => {
