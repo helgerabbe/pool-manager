@@ -21,6 +21,7 @@ import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
 import LueckentextEditor, { LueckentextRenderer, validateBeforeSave } from '@/components/workspace/LueckentextEditor';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import SortingListEditor from '@/components/workspace/SortingListEditor';
+import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
 import { isLockExpired } from '@/hooks/useActivityLock';
 import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus';
 import { TASK_STATUS_CONFIG } from '@/lib/stateMachine';
@@ -451,6 +452,51 @@ export default function MasterAufgabeCard({
                 </div>
               )}
             </div>
+          ) : isKITutor ? (
+            /* ── KI-Tutor-Editor ── */
+            editMode ? (
+              <KITutorMasterForm
+                master={master}
+                isInEditMode={true}
+                userEmail={userEmail}
+                einheitId={null}
+                catalogEntry={{ name: 'KI-Tutor' }}
+                onSaved={() => {
+                  setEditMode(false);
+                  setCollapsed(true);
+                  queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+                }}
+              />
+            ) : (
+              <div className="space-y-3">
+                {fieldValues.aufgabenstellung && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Aufgabenstellung</p>
+                    <div className="bg-muted/50 rounded-lg p-3 text-sm">{fieldValues.aufgabenstellung}</div>
+                  </div>
+                )}
+                {fieldValues.material && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Begleitmaterial</p>
+                    <div className="bg-muted/50 rounded-lg p-3 text-sm">{fieldValues.material}</div>
+                  </div>
+                )}
+                {fieldValues.erwartungshorizont && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Musterlösung</p>
+                    <div className="bg-muted/30 rounded-lg p-3 text-sm max-h-48 overflow-y-auto whitespace-pre-wrap">{fieldValues.erwartungshorizont}</div>
+                  </div>
+                )}
+                {kannBearbeiten && !locked && (
+                  <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
+                    Inhalt bearbeiten
+                  </Button>
+                )}
+                {!fieldValues.aufgabenstellung && (
+                  <p className="text-sm text-muted-foreground italic">Noch kein Inhalt. Klicke „Inhalt bearbeiten".</p>
+                )}
+              </div>
+            )
           ) : isLuecke ? (
             /* ── Lückentext-Editor ── */
             <div className="space-y-3">
@@ -551,7 +597,7 @@ export default function MasterAufgabeCard({
           )}
 
           {/* Klon erstellen – NICHT für KI-Tutor und Bildbeschriftung */}
-          {!isKITutor && !isImageLabeling && (master.field_values?.lueckentext || master.field_values?.pairs?.length > 0 || master.field_values?.orderedItems?.length > 0 || master.field_values?.task_description) && (
+          {!isKITutor && !isImageLabeling && (master.field_values?.lueckentext || master.field_values?.pairs?.length > 0 || master.field_values?.orderedItems?.length > 0 || master.field_values?.task_description) && !editMode && (
             <div className="border-t border-border/60 pt-4">
               <Button
                 size="sm"
