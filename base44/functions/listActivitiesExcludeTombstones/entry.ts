@@ -1,8 +1,13 @@
 /**
  * listActivitiesExcludeTombstones.js
  * 
- * Liefert alle Aktivitäten, filtert aber Tombstones aus.
- * Wird von der UI verwendet, damit gelöschte Aktivitäten unsichtbar sind.
+ * Liefert Aktivitäten, excl. Tombstones – mit DB-Level Filtering für Performance.
+ * 
+ * Performance & Sicherheit:
+ * - Datenbank-seitiges Filtern (sync_status !== 'to_delete')
+ * - Optional: Filterung nach lernpaket_id direkt in der DB-Query
+ * - Sicheres Request-Body-Parsing (Fallback bei fehlender/invalider Body)
+ * - Verhindert Memory Leaks bei großen Datenmengen
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
@@ -15,18 +20,24 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { lernpaket_id } = await req.json() || {};
+    // Sicheres Request-Parsing: Fallback bei fehlender/invalider JSON-Body
+    const body = await req.json().catch(() => ({}));
+    const { lernpaket_id } = body;
 
-    // Hole alle Aktivitäten
-    let activities = await base44.entities.LernpaketPhaseAktivitaet.list();
+    // ─────────────────────────────────────────────────────────────────
+    // DB-Level Filtering: Alle Bedingungen direkt an die Abfrage
+    // ─────────────────────────────────────────────────────────────────
+    const filterQuery = {
+      sync_status: { $ne: 'to_delete' }, // Tombstones ausschließen
+    };
 
-    // Filtere Tombstones aus
-    activities = activities.filter(a => a.sync_status !== 'to_delete');
-
-    // Optional: filtere nach Lernpaket
-    if (lernpaket_id) {
-      activities = activities.filter(a => a.lernpaket_id === lernpaket_id);
+    // Optional: Filterung nach Lernpaket-ID in die DB-Query aufnehmen
+    if (lernpaket_id && lernpaket_id.trim()) {
+      filterQuery.lernpaket_id = lernpaket_id;
     }
+
+    // Führe die gefilterte Abfrage auf Datenbankebene aus
+    const activities = await base44.entities.LernpaketPhaseAktivitaet.filter(filterQuery);
 
     return Response.json({
       success: true,
@@ -34,6 +45,7 @@ Deno.serve(async (req) => {
       total: activities.length,
     });
   } catch (error) {
+    console.error('[listActivitiesExcludeTombstones] Error:', error);
     return Response.json({ 
       error: error.message 
     }, { status: 500 });
