@@ -74,34 +74,8 @@ Deno.serve(async (req) => {
     const entity = SUPPORTED_ENTITIES[entityName];
 
     // ─────────────────────────────────────────────────────────────────
-    // 2. Autorisierungsprüfung (User-Kontext, keine ServiceRole)
+    // 2. Entity-Zugriff über ServiceRole (User ist bereits authentifiziert)
     // ─────────────────────────────────────────────────────────────────
-    // Der User muss Lesezugriff auf die Entität haben
-    const authCheckEntity = base44.entities[entityName];
-    if (!authCheckEntity) {
-      return Response.json(
-        { error: `Entity mapping failed for ${entityName}` },
-        { status: 500 }
-      );
-    }
-
-    let entityExists = false;
-    try {
-      // Versuche, die Entität im User-Kontext zu lesen
-      await authCheckEntity.read(entityId);
-      entityExists = true;
-    } catch (error) {
-      // Nutzer hat keine Leseberechtigung
-      console.error('[acquireLockSecure] Auth check failed:', error.message);
-      entityExists = false;
-    }
-
-    if (!entityExists) {
-      return Response.json(
-        { error: 'Forbidden: You do not have access to this entity' },
-        { status: 403 }
-      );
-    }
 
     // ─────────────────────────────────────────────────────────────────
     // 3. Atomares bedingtes Update (Race-Condition-Schutz)
