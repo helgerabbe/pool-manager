@@ -143,31 +143,18 @@ function MultiSelectField({ value, onChange, label, options }) {
   );
 }
 
-// File-Upload Handler
-function FileField({ value, onChange, label, required }) {
+// File-Upload Handler (nutzt Base44 SDK)
+function FileField({ value, onChange, label, required, accept }) {
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setIsUploading(true);
     try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: file,
-        headers: {
-          'X-Filename': file.name,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Upload fehlgeschlagen');
-      }
-
-      const data = await response.json();
-      onChange(data.url || data.file_url);
-      toast.success('Datei hochgeladen');
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      onChange(file_url);
+      toast.success(`"${file.name}" hochgeladen.`);
     } catch (err) {
       toast.error('Upload-Fehler: ' + err.message);
     } finally {
@@ -181,22 +168,27 @@ function FileField({ value, onChange, label, required }) {
         {label}
         {required && <span className="text-destructive ml-1">*</span>}
       </Label>
-      <div className="flex items-center gap-2">
-        <Input
-          id={`file-${label}`}
-          type="file"
-          onChange={handleFileUpload}
-          disabled={isUploading}
-          className="flex-1 text-xs"
-        />
-        {value && (
-          <div className="text-xs text-green-600 font-medium">✓ hochgeladen</div>
-        )}
-      </div>
-      {value && (
-        <div className="text-xs text-muted-foreground break-all">
-          URL: <code>{value}</code>
+      {value ? (
+        <div className="flex items-center gap-2 p-3 rounded-lg border border-green-200 bg-green-50">
+          <FileText className="w-4 h-4 text-green-700 shrink-0" />
+          <span className="text-xs text-green-700 flex-1 truncate">Dokument hochgeladen</span>
+          <button onClick={() => onChange('')} className="text-muted-foreground hover:text-destructive">
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
+      ) : (
+        <label className={`flex flex-col items-center gap-2 p-6 rounded-lg border-2 border-dashed cursor-pointer transition-colors ${isUploading ? 'opacity-50 pointer-events-none' : 'border-border hover:border-primary/40 hover:bg-muted/30'}`}>
+          <Upload className="w-5 h-5 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground text-center">
+            {isUploading ? 'Wird hochgeladen…' : 'PDF oder Word-Dokument auswählen'}
+          </span>
+          <input
+            type="file"
+            accept={accept || '.pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document'}
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+        </label>
       )}
     </div>
   );
@@ -220,9 +212,19 @@ export default function DynamicFieldRenderer({
     );
   }
 
+  // Bedingte Anzeige: inhalt nur wenn inhalt_typ === 'text', dokument_url nur wenn 'datei'
+  const inhaltTyp = metaData?.inhalt_typ;
+  const hasInhaltTypControl = formSchema.some(f => f.field_name === 'inhalt_typ');
+
   return (
     <div className="space-y-4 p-4 rounded-lg bg-muted/40 border border-border">
       {formSchema.map((field) => {
+        // Bedingte Felder ausblenden je nach inhalt_typ
+        if (hasInhaltTypControl) {
+          if (field.field_name === 'inhalt' && inhaltTyp !== 'text') return null;
+          if (field.field_name === 'dokument_url' && inhaltTyp !== 'datei') return null;
+        }
+
         const fieldValue = metaData?.[field.field_name] ?? '';
         const isRequired = field.required ?? false;
 
@@ -239,12 +241,33 @@ export default function DynamicFieldRenderer({
                   id={field.field_name}
                   type="text"
                   value={fieldValue}
-                  onChange={(e) =>
-                    onMetaDataChange(field.field_name, e.target.value)
-                  }
+                  onChange={(e) => onMetaDataChange(field.field_name, e.target.value)}
                   placeholder={field.placeholder}
                   className="text-sm"
                 />
+              </>
+            )}
+
+            {/* SELECT */}
+            {field.type === 'select' && (
+              <>
+                <Label className="text-sm font-medium">
+                  {field.label}
+                  {isRequired && <span className="text-destructive ml-1">*</span>}
+                </Label>
+                <Select
+                  value={fieldValue}
+                  onValueChange={(val) => onMetaDataChange(field.field_name, val)}
+                >
+                  <SelectTrigger className="text-sm">
+                    <SelectValue placeholder="Bitte wählen…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(field.options || []).map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </>
             )}
 
@@ -258,12 +281,10 @@ export default function DynamicFieldRenderer({
                 <Textarea
                   id={field.field_name}
                   value={fieldValue}
-                  onChange={(e) =>
-                    onMetaDataChange(field.field_name, e.target.value)
-                  }
+                  onChange={(e) => onMetaDataChange(field.field_name, e.target.value)}
                   placeholder={field.placeholder}
-                  rows={4}
-                  className="text-sm resize-none"
+                  rows={6}
+                  className="text-sm"
                 />
               </>
             )}
@@ -279,42 +300,21 @@ export default function DynamicFieldRenderer({
                   id={field.field_name}
                   type="url"
                   value={fieldValue}
-                  onChange={(e) =>
-                    onMetaDataChange(field.field_name, e.target.value)
-                  }
+                  onChange={(e) => onMetaDataChange(field.field_name, e.target.value)}
                   placeholder={field.placeholder || 'https://example.com'}
                   className="text-sm"
                 />
               </>
             )}
 
-            {/* FILE */}
-            {field.type === 'file' && (
+            {/* FILE / IMAGE / AUDIO */}
+            {(field.type === 'file' || field.type === 'image' || field.type === 'audio') && (
               <FileField
                 value={fieldValue}
                 onChange={(value) => onMetaDataChange(field.field_name, value)}
                 label={field.label}
                 required={isRequired}
-              />
-            )}
-
-            {/* IMAGE */}
-            {field.type === 'image' && (
-              <FileField
-                value={fieldValue}
-                onChange={(value) => onMetaDataChange(field.field_name, value)}
-                label={field.label}
-                required={isRequired}
-              />
-            )}
-
-            {/* AUDIO */}
-            {field.type === 'audio' && (
-              <FileField
-                value={fieldValue}
-                onChange={(value) => onMetaDataChange(field.field_name, value)}
-                label={field.label}
-                required={isRequired}
+                accept={field.type === 'image' ? 'image/*' : field.type === 'audio' ? 'audio/*' : undefined}
               />
             )}
 

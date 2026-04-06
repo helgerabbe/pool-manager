@@ -165,30 +165,37 @@ export default function ActivityContentForm({
               Keine weiteren Formularfelder definiert.
             </div>
           ) : (
-            formSchema.map(field => (
-              <div key={field.field_name} className="space-y-2">
-                <Label className="flex items-center gap-1">
-                  {field.label}
-                  {field.required && <span className="text-destructive">*</span>}
-                </Label>
+            formSchema.map(field => {
+              // Bedingte Anzeige: inhalt nur wenn inhalt_typ === 'text', dokument_url nur wenn 'datei'
+              const inhaltTyp = formData.inhalt_typ;
+              if (field.field_name === 'inhalt' && inhaltTyp && inhaltTyp !== 'text') return null;
+              if (field.field_name === 'dokument_url' && inhaltTyp !== 'datei') return null;
 
-                {field.type === 'info' ? (
-                  <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm text-blue-800">
+              return (
+                <div key={field.field_name} className="space-y-2">
+                  <Label className="flex items-center gap-1">
                     {field.label}
-                  </div>
-                ) : (
-                  <StandardInput
-                    field={field}
-                    value={formData[field.field_name] || ''}
-                    onChange={(value) => handleFieldChange(field.field_name, value)}
-                  />
-                )}
+                    {field.required && <span className="text-destructive">*</span>}
+                  </Label>
 
-                {field.placeholder && !field.required && (
-                  <p className="text-xs text-muted-foreground italic">{field.placeholder}</p>
-                )}
-              </div>
-            ))
+                  {field.type === 'info' ? (
+                    <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm text-blue-800">
+                      {field.label}
+                    </div>
+                  ) : (
+                    <StandardInput
+                      field={field}
+                      value={formData[field.field_name] || ''}
+                      onChange={(value) => handleFieldChange(field.field_name, value)}
+                    />
+                  )}
+
+                  {field.placeholder && !field.required && (
+                    <p className="text-xs text-muted-foreground italic">{field.placeholder}</p>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
 
