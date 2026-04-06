@@ -159,6 +159,7 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
       queryClient.invalidateQueries({ queryKey: ['masterAufgaben', 'einheit'] });
       queryClient.invalidateQueries({ queryKey: ['klone', 'einheit'] });
       toast.success('Klon wurde erfolgreich zur Masteraufgabe umgewandelt.');
+      onKlonDeleted?.();
     },
     onError: (err) => toast.error('Fehler bei der Umwandlung: ' + (err.message || 'Unbekannt')),
   });
