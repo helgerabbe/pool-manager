@@ -101,6 +101,8 @@ export default function ActivityMasterPanel({
   userEmail,
   userRole,
   einheitId,
+  onMasterSelected = null,
+  onKlonSelected = null,
 }) {
   const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
@@ -369,22 +371,25 @@ export default function ActivityMasterPanel({
 
           {/* Vorhandene Master-Karten (immer sichtbar) */}
           {masterAufgaben.map((master, idx) => (
-            <MasterAufgabeCard
-              key={master.id}
-              master={master}
-              index={idx + 1}
-              catalogName={catalogEntry?.name || ''}
-              klone={kloneByMasterId[master.id] || []}
-              kannBearbeiten={isInEditMode}
-              userEmail={userEmail}
-              userRole={userRole}
-              autoExpand={master.id === focusedMasterId}
-              onDeleted={() => {
-                setFocusedMasterId(null);
-                queryClient.invalidateQueries({ queryKey: ['masterAufgaben', activityRecord.id] });
-              }}
-              onKlonesCreated={() => queryClient.invalidateQueries({ queryKey: ['klone', activityRecord.id] })}
-            />
+           <MasterAufgabeCard
+             key={master.id}
+             master={master}
+             index={idx + 1}
+             catalogName={catalogEntry?.name || ''}
+             klone={kloneByMasterId[master.id] || []}
+             kannBearbeiten={isInEditMode}
+             userEmail={userEmail}
+             userRole={userRole}
+             autoExpand={master.id === focusedMasterId}
+             onDeleted={() => {
+               setFocusedMasterId(null);
+               queryClient.invalidateQueries({ queryKey: ['masterAufgaben', activityRecord.id] });
+             }}
+             onKlonesCreated={() => queryClient.invalidateQueries({ queryKey: ['klone', activityRecord.id] })}
+             onKlonSelected={(klonId) => {
+               onKlonSelected?.(klonId);
+             }}
+           />
           ))}
 
           {/* Leerzustand */}

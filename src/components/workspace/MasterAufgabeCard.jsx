@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Crown, Trash2, Sparkles, Loader2, ChevronDown, ChevronUp, CheckCircle2, RotateCw } from 'lucide-react';
+import { Crown, Trash2, Sparkles, Loader2, ChevronDown, ChevronUp, CheckCircle2, RotateCw, ChevronRight } from 'lucide-react';
 import KlonErstellenModal from '@/components/workspace/KlonErstellenModal';
 import LockBanner from '@/components/workspace/LockBanner';
 import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
@@ -98,6 +98,7 @@ export default function MasterAufgabeCard({
   userRole,
   onDeleted,
   onKlonesCreated,
+  onKlonSelected,
   autoExpand = false,
 }) {
   const queryClient = useQueryClient();
@@ -184,10 +185,14 @@ export default function MasterAufgabeCard({
     setEditingTitel(false);
   };
 
+  // Zeige Klone wenn zugeklappt
+  const showKloneWhenCollapsed = collapsed && klone.length > 0;
+
   return (
-    <div className="rounded-xl border-2 border-primary bg-card overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-2.5 bg-primary/5 border-b border-primary/20">
+    <div className="space-y-0">
+      <div className="rounded-xl border-2 border-primary bg-card overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-primary/5 border-b border-primary/20">
         <Crown className="w-4 h-4 text-primary shrink-0" />
         <Badge variant="default" className="text-[11px] font-bold tracking-wide shrink-0">
           MASTER {index}
@@ -490,6 +495,45 @@ export default function MasterAufgabeCard({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+
+    {/* Klone unterhalb wenn Masteraufgabe zugeklappt */}
+    {showKloneWhenCollapsed && (
+      <div className="ml-4 mt-2 space-y-2">
+          {klone.map((k) => (
+            <div
+              key={k.id}
+              onClick={() => onKlonSelected?.(k.id)}
+              className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg border border-green-200 bg-green-50/50 hover:bg-green-100 cursor-pointer transition-colors group"
+            >
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <ChevronRight className="w-3.5 h-3.5 text-green-700 shrink-0" />
+                <span className="text-xs font-medium text-green-900 truncate">
+                  Kopie {k.klon_index || '?'}
+                </span>
+                {k.content_status === 'approved' && (
+                  <span className="text-[10px] bg-green-200 text-green-800 px-1.5 py-0.5 rounded shrink-0 font-medium">
+                    Fertig
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeleteConfirmOpen(true);
+                }}
+                disabled={deleteMutation.isPending}
+                className="p-0.5 text-green-700 hover:text-destructive rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Kopie löschen"
+              >
+                {deleteMutation.isPending
+                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  : <Trash2 className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

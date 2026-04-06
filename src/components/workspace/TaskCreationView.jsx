@@ -535,20 +535,28 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
         {!selectedItem && <EmptyState />}
 
         {/* Aktivität oder Master gewählt → ActivityMasterPanel */}
-        {(selectedItem?.type === 'activity' || selectedItem?.type === 'master') && selectedActivity && (
-          <div className="max-w-3xl mx-auto px-6 py-6">
-            <ActivityMasterPanel
-              key={selectedActivity.id}
-              activityRecord={selectedActivity}
-              catalogEntry={selectedCatalog}
-              supportsMaster={supportsMaster}
-              kannBearbeiten={kannBearbeiten}
-              userEmail={userEmail}
-              userRole={userRole}
-              einheitId={einheitId}
-            />
-          </div>
-        )}
+         {(selectedItem?.type === 'activity' || selectedItem?.type === 'master') && selectedActivity && (
+           <div className="max-w-3xl mx-auto px-6 py-6">
+             <ActivityMasterPanel
+               key={selectedActivity.id}
+               activityRecord={selectedActivity}
+               catalogEntry={selectedCatalog}
+               supportsMaster={supportsMaster}
+               kannBearbeiten={kannBearbeiten}
+               userEmail={userEmail}
+               userRole={userRole}
+               einheitId={einheitId}
+               onMasterSelected={(masterId) => {
+                 const master = alleMaster.find(m => m.id === masterId);
+                 if (master) setSelectedItem({ type: 'master', master });
+               }}
+               onKlonSelected={(klonId) => {
+                 const klon = alleKlone.find(k => k.id === klonId);
+                 if (klon) setSelectedItem({ type: 'klon', klon });
+               }}
+             />
+           </div>
+         )}
 
         {/* Klon gewählt */}
         {selectedItem?.type === 'klon' && (() => {
