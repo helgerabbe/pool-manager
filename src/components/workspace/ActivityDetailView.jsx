@@ -21,6 +21,7 @@ import EinheitLockBanner from '@/components/workspace/EinheitLockBanner';
 export default function ActivityDetailView({ activityRecord, kannBearbeiten, queryClient, einheitFach }) {
   const { permissions } = useRBAC();
   const istAdminOderFachschaft = permissions?.istAdmin;
+  const [lockTransition, setLockTransition] = useState(null); // 'activating' | 'deactivating' | null
 
   const einheitId = activityRecord?.einheit_id;
   const { isUnitLocked, lockedByEmail: unitLockedByEmail } = useEinheitLock(einheitId);
@@ -44,7 +45,9 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
 
   const handleEnterEditMode = async () => {
     if (!canEditFromLock) {
+      setLockTransition('activating');
       const ok = await acquireLock();
+      setLockTransition(null);
       if (!ok) {
         toast.error(`Aktivität ist bereits gesperrt von ${lockedByEmail}`);
       }
@@ -52,7 +55,9 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
   };
 
   const handleExitEditMode = async () => {
+    setLockTransition('deactivating');
     await releaseLock();
+    setLockTransition(null);
   };
 
   const handleForceUnlock = async () => {
@@ -72,7 +77,17 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
   const isInEditMode = canEditFromLock;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 relative">
+      {/* Overlay während Lock-Transition */}
+      {lockTransition && (
+        <div className="absolute inset-0 z-10 bg-white/80 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center gap-2">
+          <Loader2 className="w-5 h-5 animate-spin text-primary" />
+          <p className="text-sm font-medium text-foreground">
+            {lockTransition === 'activating' ? 'Bearbeitungsmodus wird aktiviert…' : 'Bearbeitungsmodus wird beendet…'}
+          </p>
+          <p className="text-xs text-muted-foreground">Bitte einen kurzen Augenblick warten.</p>
+        </div>
+      )}
       {isUnitLocked && (
         <EinheitLockBanner isUnitLocked={isUnitLocked} lockedByEmail={unitLockedByEmail} />
       )}
