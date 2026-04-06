@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
     });
 
     // ─────────────────────────────────────────────────────────────────
-    // 5. Kaskadierendes Update: Untergeordnete Aufgabenbausteine
+    // 5. Kaskadierendes Update: Untergeordnete Aufgabenbausteine (parallel)
     // ─────────────────────────────────────────────────────────────────
     let cascadedCount = 0;
     try {
@@ -95,16 +95,22 @@ Deno.serve(async (req) => {
         aktivitaet_id: activity_id,
       });
 
-      // Markiere alle als to_delete
-      for (const task of childTasks) {
-        await base44.asServiceRole.entities.Aufgabenbausteine.update(task.id, {
-          sync_status: 'to_delete',
-        });
-        cascadedCount++;
+      // Paralleles Update: Alle Tasks gleichzeitig markieren + Lock-Felder zurücksetzen
+      if (childTasks.length > 0) {
+        const updatePromises = childTasks.map(task =>
+          base44.asServiceRole.entities.Aufgabenbausteine.update(task.id, {
+            sync_status: 'to_delete',
+            lock_status: null,
+            locked_by_user: null,
+            locked_at: null,
+          })
+        );
+        await Promise.all(updatePromises);
+        cascadedCount = childTasks.length;
       }
 
       console.info(
-        `[deleteActivityWithTombstone] Cascaded to_delete: ${cascadedCount} tasks for activity ${activity_id}`
+        `[deleteActivityWithTombstone] Cascaded to_delete: ${cascadedCount} tasks for activity ${activity_id} (Lock fields reset)`
       );
     } catch (cascadeError) {
       console.error(
