@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Crown, Trash2, Sparkles, Loader2, ChevronDown, ChevronUp, CheckCircle2, RotateCw } from 'lucide-react';
 import KlonErstellenModal from '@/components/workspace/KlonErstellenModal';
 import LockBanner from '@/components/workspace/LockBanner';
@@ -100,6 +101,7 @@ export default function MasterAufgabeCard({
   autoExpand = false,
 }) {
   const queryClient = useQueryClient();
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   // State Machine für Moodle-Sync
   const syncStatus = useSyncStatus(
@@ -237,7 +239,7 @@ export default function MasterAufgabeCard({
           </button>
           {kannBearbeiten && (
             <button
-              onClick={() => deleteMutation.mutate()}
+              onClick={() => setDeleteConfirmOpen(true)}
               disabled={deleteMutation.isPending}
               className="p-1 text-muted-foreground hover:text-destructive rounded"
               title="Masteraufgabe löschen"
@@ -461,6 +463,32 @@ export default function MasterAufgabeCard({
           />
         </div>
       )}
+
+      {/* Lösch-Bestätigungsdialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Masteraufgabe löschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Diese Masteraufgabe wird gelöscht, zusammen mit {klone.length} Klon{klone.length !== 1 ? 'en' : ''}.
+              <br /><br />
+              <strong>Diese Aktion kann nicht rückgängig gemacht werden.</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setDeleteConfirmOpen(false);
+                deleteMutation.mutate();
+              }}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
