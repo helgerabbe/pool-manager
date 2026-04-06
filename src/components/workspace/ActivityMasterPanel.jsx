@@ -89,25 +89,17 @@ export default function ActivityMasterPanel({
 
   return (
     <div className="space-y-6 overflow-visible h-auto">
-      {/* ── Basisangaben der Aktivität ───────────────────────────────────────── */}
-      <div className="rounded-xl border border-border bg-card">
-        <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border bg-muted/30">
-          <span className="text-sm font-semibold">{catalogEntry?.name}</span>
-          <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded">
-            Phase: {activityRecord.phase}
-          </span>
-        </div>
-        <div className="p-1">
-          <ActivityDetailView
-            activityRecord={activityRecord}
-            kannBearbeiten={kannBearbeiten}
-            queryClient={queryClient}
-          />
-        </div>
+      {/* ── Aktivitäts-Header ────────────────────────────────────────────────── */}
+      <div className="rounded-xl border border-border bg-card p-4">
+        <ActivityDetailView
+          activityRecord={activityRecord}
+          kannBearbeiten={kannBearbeiten}
+          queryClient={queryClient}
+        />
       </div>
 
-      {/* ── Masteraufgaben-Bereich (nur wenn supports_master UND Lernpaket-Lock aktiv) ───────────────── */}
-      {supportsMaster && isInEditMode && (
+      {/* ── Masteraufgaben-Bereich (immer sichtbar wenn supports_master) ───────── */}
+      {supportsMaster && (
         <div className="space-y-4">
 
           {/* Sektion-Header */}
@@ -115,20 +107,22 @@ export default function ActivityMasterPanel({
             <div>
               <h3 className="text-sm font-semibold flex items-center gap-1.5">
                 <Crown className="w-4 h-4 text-primary" />
-                Masteraufgaben-Vorlagen
+                Aufgaben
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Jede Vorlage dient als Basis für KI-generierte Klone.
+                {isInEditMode
+                  ? 'Erstelle Vorlagen – die KI generiert daraus automatisch Aufgabenvarianten.'
+                  : 'Aktiviere den Bearbeitungsmodus um Aufgaben anzulegen.'}
               </p>
             </div>
             {masterAufgaben.length > 0 && (
               <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full shrink-0">
-                {masterAufgaben.length} Vorlage{masterAufgaben.length !== 1 ? 'n' : ''}
+                {masterAufgaben.length} Masteraufgabe{masterAufgaben.length !== 1 ? 'n' : ''}
               </span>
             )}
           </div>
 
-          {/* Vorhandene Master-Karten */}
+          {/* Vorhandene Master-Karten (immer sichtbar) */}
           {masterAufgaben.map((master, idx) => (
             <MasterAufgabeCard
               key={master.id}
@@ -136,7 +130,7 @@ export default function ActivityMasterPanel({
               index={idx + 1}
               catalogName={catalogEntry?.name || ''}
               klone={kloneByMasterId[master.id] || []}
-              kannBearbeiten={kannBearbeiten}
+              kannBearbeiten={isInEditMode}
               userEmail={userEmail}
               userRole={userRole}
               autoExpand={master.id === focusedMasterId}
@@ -148,32 +142,32 @@ export default function ActivityMasterPanel({
             />
           ))}
 
-          {/* Leerzustand: prominenter CTA */}
-          {masterAufgaben.length === 0 && kannBearbeiten && (
-            <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/3 px-6 py-8 text-center space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
-                <Crown className="w-6 h-6 text-primary" />
+          {/* Leerzustand */}
+          {masterAufgaben.length === 0 && (
+            <div className="rounded-xl border-2 border-dashed border-border px-6 py-8 text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto">
+                <Crown className="w-6 h-6 text-muted-foreground/40" />
               </div>
               <div>
-                <p className="font-semibold text-sm">Noch keine Masteraufgaben</p>
+                <p className="font-semibold text-sm">Noch keine Aufgaben</p>
                 <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
-                  Erstelle eine Vorlage und lass die KI daraus automatisch mehrere Aufgabenvarianten generieren.
+                  {isInEditMode
+                    ? 'Erstelle jetzt die erste Masteraufgabe als Vorlage für KI-generierte Varianten.'
+                    : 'Aktiviere den Bearbeitungsmodus um die erste Aufgabe anzulegen.'}
                 </p>
               </div>
-              <Button
-                onClick={handleAddMaster}
-                disabled={creating}
-                className="gap-2"
-              >
-                {creating
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Erstelle…</>
-                  : <><Plus className="w-4 h-4" /> Erste Masteraufgabe erstellen</>}
-              </Button>
+              {isInEditMode && (
+                <Button onClick={handleAddMaster} disabled={creating} className="gap-2">
+                  {creating
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Erstelle…</>
+                    : <><Plus className="w-4 h-4" /> Erste Aufgabe erstellen</>}
+                </Button>
+              )}
             </div>
           )}
 
-          {/* Weitere Masteraufgabe hinzufügen (wenn schon welche vorhanden) */}
-          {masterAufgaben.length > 0 && kannBearbeiten && (
+          {/* Weitere Masteraufgabe hinzufügen */}
+          {masterAufgaben.length > 0 && isInEditMode && (
             <Button
               variant="outline"
               onClick={handleAddMaster}
@@ -182,14 +176,8 @@ export default function ActivityMasterPanel({
             >
               {creating
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Erstelle…</>
-                : <><Plus className="w-4 h-4" /> Weitere Masteraufgabe hinzufügen</>}
+                : <><Plus className="w-4 h-4" /> Weitere Aufgabe hinzufügen</>}
             </Button>
-          )}
-
-          {masterAufgaben.length === 0 && !kannBearbeiten && (
-            <p className="text-sm text-muted-foreground italic text-center py-6">
-              Noch keine Masteraufgaben vorhanden.
-            </p>
           )}
         </div>
       )}

@@ -1,3 +1,10 @@
+/**
+ * ActivityDetailView
+ *
+ * Kompakter Header für eine Aktivität in Tab 4.
+ * Zeigt: Name, Phase, Status-Badges, Bearbeitungsmodus-Button, Freigabe-Button.
+ * Keine Formularfelder mehr – Inhalte werden in den Masteraufgaben gepflegt.
+ */
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -5,128 +12,49 @@ import { useLernpaketLock } from '@/hooks/useLernpaketLock';
 import { useEinheitLock } from '@/hooks/useEinheitLock';
 import { useRBAC } from '@/hooks/useRBAC';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Edit, Save, X, FileText, AlertTriangle, Lock, Unlock, PenLine, Loader2 } from 'lucide-react';
+import { AlertTriangle, Unlock, PenLine, Loader2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import ApprovalStatusBadge from '@/components/workspace/ApprovalStatusBadge';
 import ApprovalActionButton from '@/components/workspace/ApprovalActionButton';
-import UnsavedChangesExitModal from '@/components/workspace/UnsavedChangesExitModal';
 import EinheitLockBanner from '@/components/workspace/EinheitLockBanner';
 
 export default function ActivityDetailView({ activityRecord, kannBearbeiten, queryClient, einheitFach }) {
-  const [editMode, setEditMode] = useState(false);
-  const [formData, setFormData] = useState({});
-  const [isDirty, setIsDirty] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [exitModalOpen, setExitModalOpen] = useState(false);
-  const [userEmail, setUserEmail] = useState(null);
-
   const { permissions } = useRBAC();
   const istAdminOderFachschaft = permissions?.istAdmin;
 
-  // Makro-Lock prüfen
   const einheitId = activityRecord?.einheit_id;
   const { isUnitLocked, lockedByEmail: unitLockedByEmail } = useEinheitLock(einheitId);
 
-  // Single Source of Truth: Lock vom übergeordneten Lernpaket
-  const { 
-    canEdit: canEditFromLock, 
-    isLockedByOther, 
+  const {
+    canEdit: canEditFromLock,
+    isLockedByOther,
     lockedByEmail,
     isLoading: isLockLoading,
     acquireLock,
-    releaseLock 
+    releaseLock,
   } = useLernpaketLock(activityRecord?.lernpaket_id);
 
-  // Synchronisiere editMode mit canEditFromLock beim Re-Mount
-  useEffect(() => {
-    if (canEditFromLock && !isLockLoading) {
-      setEditMode(true);
-    }
-  }, [canEditFromLock, isLockLoading]);
-
-  useEffect(() => {
-    base44.auth.me().then(u => setUserEmail(u?.email || null));
-  }, []);
-
-  // Laden des Aktivitäts-Katalogs
   const { data: aktivitaetenKatalog = [] } = useQuery({
     queryKey: ['aktivitaetenKatalog'],
     queryFn: () => base44.entities.AktivitaetenKatalog.list(),
   });
 
   const catalog = aktivitaetenKatalog?.find(a => a.id === activityRecord?.aktivitaet_id);
-
-  // Form-Daten initialisieren
-  useEffect(() => {
-    const values = activityRecord?.field_values || {};
-    setFormData(values);
-    setIsDirty(false);
-  }, [activityRecord?.field_values]);
-
-  // Permission: darf dieser User überhaupt bearbeiten?
-  // Blockiert durch Makro-Lock
   const kannInhalteBearbeiten = (permissions?.istAdmin || kannBearbeiten) && !isUnitLocked;
 
-  // Bearbeitungsmodus aktivieren
   const handleEnterEditMode = async () => {
     if (!canEditFromLock) {
       const ok = await acquireLock();
       if (!ok) {
         toast.error(`Aktivität ist bereits gesperrt von ${lockedByEmail}`);
-        return;
       }
-    }
-    setEditMode(true);
-  };
-
-  // Speichern
-  const handleSave = async (andExit = false) => {
-    setSaving(true);
-    try {
-      await base44.entities.LernpaketPhaseAktivitaet.update(activityRecord.id, {
-        field_values: formData,
-      });
-
-      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-      setIsDirty(false);
-      toast.success('Aktivität gespeichert.');
-
-      if (andExit) {
-        await releaseLock();
-        setEditMode(false);
-      }
-    } catch (err) {
-      console.error('[ActivityDetailView] Save error:', err);
-      toast.error('Fehler beim Speichern: ' + (err?.message || 'Unbekannter Fehler'));
-    } finally {
-      setSaving(false);
     }
   };
 
-  // Bearbeitungsmodus beenden
   const handleExitEditMode = async () => {
-    if (isDirty) {
-      setExitModalOpen(true);
-    } else {
-      // Fall A: Keine Änderungen → direkt Lock freigeben
-      await releaseLock();
-      setEditMode(false);
-    }
-  };
-
-  // Modal: Verwerfen (Datensatz neu laden + Lock freigeben)
-  const handleDiscardChanges = async () => {
-    setFormData(activityRecord?.field_values || {});
-    setIsDirty(false);
     await releaseLock();
-    setEditMode(false);
-    setExitModalOpen(false);
   };
 
-  // Admin Force-Unlock
   const handleForceUnlock = async () => {
     try {
       await base44.functions.invoke('forceReleaseLockAdmin', {
@@ -134,35 +62,28 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
       });
       queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
       toast.success('Lock wurde aufgehoben.');
-    } catch (err) {
+    } catch {
       toast.error('Lock konnte nicht aufgehoben werden.');
     }
   };
 
-  if (!activityRecord || !catalog) {
-    return (
-      <div className="flex items-center justify-center h-full text-muted-foreground">
-        <p>Keine Aktivität ausgewählt.</p>
-      </div>
-    );
-  }
+  if (!activityRecord || !catalog) return null;
+
+  const isInEditMode = canEditFromLock;
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      {/* Makro-Lock Banner */}
+    <div className="space-y-3">
       {isUnitLocked && (
-        <div className="flex-shrink-0 px-4 pt-4">
-          <EinheitLockBanner isUnitLocked={isUnitLocked} lockedByEmail={unitLockedByEmail} />
-        </div>
+        <EinheitLockBanner isUnitLocked={isUnitLocked} lockedByEmail={unitLockedByEmail} />
       )}
 
-      {/* Header */}
-      <div className="flex-shrink-0 flex items-start justify-between gap-3 p-4 border-b">
+      <div className="flex items-start justify-between gap-3">
+        {/* Linke Seite: Name + Badges */}
         <div className="flex-1 min-w-0">
-          <h2 className="text-lg font-semibold truncate">{catalog.name}</h2>
-          <p className="text-xs text-muted-foreground mt-1">Phase: {activityRecord.phase}</p>
+          <h2 className="text-lg font-semibold">{catalog.name}</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Phase: {activityRecord.phase}</p>
           <div className="flex items-center gap-2 flex-wrap mt-2">
-            {editMode && (
+            {isInEditMode && (
               <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 border border-blue-200 text-blue-700 text-xs font-medium">
                 <PenLine className="w-3 h-3" />
                 In Bearbeitung
@@ -178,23 +99,18 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2 shrink-0 flex-col items-end">
+        {/* Rechte Seite: Buttons */}
+        <div className="flex flex-col items-end gap-2 shrink-0">
           <div className="flex gap-2 flex-wrap justify-end">
-            {/* Admin Force-Unlock */}
             {isLockedByOther && istAdminOderFachschaft && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleForceUnlock}
-                className="gap-2 border-amber-400 text-amber-800 hover:bg-amber-50"
-              >
+              <Button size="sm" variant="outline" onClick={handleForceUnlock}
+                className="gap-2 border-amber-400 text-amber-800 hover:bg-amber-50">
                 <Unlock className="w-3.5 h-3.5" />
                 Sperre aufheben
               </Button>
             )}
 
-            {!editMode ? (
+            {!isInEditMode ? (
               <Button
                 size="sm"
                 variant="outline"
@@ -202,47 +118,18 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
                 disabled={isLockLoading || isLockedByOther || !kannInhalteBearbeiten}
                 className="gap-2"
               >
-                {isLockLoading ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    Prüfe Status...
-                  </>
-                ) : (
-                  <>
-                    <PenLine className="w-3.5 h-3.5" />
-                    Bearbeitungsmodus aktivieren
-                  </>
-                )}
+                {isLockLoading
+                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Prüfe Status...</>
+                  : <><PenLine className="w-3.5 h-3.5" /> Bearbeitungsmodus aktivieren</>
+                }
               </Button>
             ) : (
-              <>
-                <Button
-                  size="sm"
-                  variant="default"
-                  onClick={() => handleSave(false)}
-                  disabled={saving || !isDirty}
-                  className="gap-2"
-                >
-                  {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                  Speichern
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleExitEditMode}
-                  disabled={saving}
-                  className="gap-2"
-                >
-                  <X className="w-3.5 h-3.5" />
-                  Beenden
-                </Button>
-              </>
+              <Button size="sm" variant="outline" onClick={handleExitEditMode} className="gap-2">
+                <X className="w-3.5 h-3.5" />
+                Bearbeitung beenden
+              </Button>
             )}
           </div>
-
-          {isDirty && editMode && (
-            <span className="text-xs text-amber-600">Ungespeicherte Änderungen</span>
-          )}
 
           <ApprovalActionButton
             entityId={activityRecord.id}
@@ -253,129 +140,6 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
           />
         </div>
       </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-5">
-        {/* Aufgabenstellung */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aufgabenstellung</label>
-          {editMode ? (
-            <Textarea
-              value={formData.task_description || ''}
-              onChange={e => {
-                setFormData({ ...formData, task_description: e.target.value });
-                setIsDirty(true);
-              }}
-              placeholder="Beschreibe hier, was der Schüler tun soll..."
-              className="min-h-20"
-            />
-          ) : (
-            <div className="bg-muted/50 rounded-lg p-3 text-sm">
-              <p>{formData.task_description || <span className="italic text-muted-foreground">Nicht ausgefüllt</span>}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Schema-basierte Felder */}
-        {catalog.form_schema?.map(field => {
-          const fieldValue = formData[field.field_name];
-          const isRequired = field.required;
-          const isEmpty = !fieldValue || (Array.isArray(fieldValue) && fieldValue.length === 0);
-
-          if (editMode) {
-            return (
-              <div key={field.field_name} className="space-y-2">
-                <label className="text-sm font-medium">
-                  {field.label}
-                  {isRequired && <span className="text-destructive ml-1">*</span>}
-                </label>
-
-                {field.type === 'text' && (
-                  <Input
-                    value={fieldValue || ''}
-                    onChange={e => {
-                      setFormData({ ...formData, [field.field_name]: e.target.value });
-                      setIsDirty(true);
-                    }}
-                    placeholder={field.placeholder}
-                  />
-                )}
-
-                {field.type === 'textarea' && (
-                  <Textarea
-                    value={fieldValue || ''}
-                    onChange={e => {
-                      setFormData({ ...formData, [field.field_name]: e.target.value });
-                      setIsDirty(true);
-                    }}
-                    placeholder={field.placeholder}
-                    className="min-h-24"
-                  />
-                )}
-
-                {field.type === 'url' && (
-                  <Input
-                    type="url"
-                    value={fieldValue || ''}
-                    onChange={e => {
-                      setFormData({ ...formData, [field.field_name]: e.target.value });
-                      setIsDirty(true);
-                    }}
-                    placeholder={field.placeholder}
-                  />
-                )}
-
-                {field.type === 'select' && (
-                  <Select value={fieldValue || ''} onValueChange={v => {
-                    setFormData({ ...formData, [field.field_name]: v });
-                    setIsDirty(true);
-                  }}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={field.placeholder} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {field.options?.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-
-                {isEmpty && isRequired && (
-                  <p className="text-xs text-amber-600">Dieses Feld ist erforderlich.</p>
-                )}
-              </div>
-            );
-          } else {
-            // Read-only
-            return (
-              <div key={field.field_name} className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{field.label}</label>
-                <div className="bg-muted/50 rounded-lg p-3 text-sm">
-                  {field.type === 'url' && fieldValue ? (
-                    <a href={fieldValue} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline break-all">
-                      {fieldValue}
-                    </a>
-                  ) : (
-                    <p>{fieldValue || <span className="italic text-muted-foreground">Nicht ausgefüllt</span>}</p>
-                  )}
-                </div>
-              </div>
-            );
-          }
-        })}
-      </div>
-
-      {/* Exit Modal */}
-      <UnsavedChangesExitModal
-        open={exitModalOpen}
-        onOpenChange={setExitModalOpen}
-        onSaveAndExit={() => handleSave(true)}
-        onDiscard={handleDiscardChanges}
-        saving={saving}
-      />
     </div>
   );
 }
