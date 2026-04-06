@@ -28,6 +28,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Rolle validieren: Nur admin/lehrer dürfen kostintensive KI-Generation nutzen
+    if (!['admin', 'Fachlehrkraft', 'Fachschaftsleitung', 'Administrator'].includes(user.role)) {
+      return Response.json(
+        { error: 'Insufficient permissions for bulk generation' },
+        { status: 403 }
+      );
+    }
+
     const payload = await req.json();
     const {
       master_aufgabe_text,
@@ -81,14 +89,15 @@ KONTEXT:
 - Jahrgangsstufe: ${jahrgangsstufe}
 - Lernziel: ${lernziel || '(nicht spezifiziert)'}
 
-ANTWORT als JSON-Array, EXAKT dieses Format:
-[
-  { "aufgabentext": "...", "loesung": "..." },
-  { "aufgabentext": "...", "loesung": "..." },
-  ...
-]
+ANTWORT als JSON, EXAKT dieses Format:
+{
+  "tasks": [
+    { "aufgabentext": "...", "loesung": "..." },
+    { "aufgabentext": "...", "loesung": "..." }
+  ]
+}
 
-WICHTIG: Nur das JSON-Array, keine weiteren Erklärungen!`;
+WICHTIG: Nur das JSON-Objekt mit tasks-Array, keine weiteren Erklärungen!`;
 
     // ─────────────────────────────────────────────────────────────────────────
     // 3. INVOKE LLM VIA BASE44 INTEGRATION
@@ -118,20 +127,16 @@ WICHTIG: Nur das JSON-Array, keine weiteren Erklärungen!`;
         },
       });
 
-      // LLM zwängt die Antwort in das Schema
-      // Falls es direkt ein Array zurückgibt, wrappen wir es
-      if (Array.isArray(llmResponse)) {
-        generatedTasks = llmResponse;
-      } else if (llmResponse.tasks && Array.isArray(llmResponse.tasks)) {
-        generatedTasks = llmResponse.tasks;
-      } else {
-        // Fallback: Versuche zu parsen
-        generatedTasks = llmResponse;
+      // Extrahiere tasks direkt aus Schema
+      if (!llmResponse.tasks || !Array.isArray(llmResponse.tasks)) {
+        throw new Error('LLM response missing tasks array or invalid structure');
       }
 
-      // Validiere: Sollten wir mindestens eine Aufgabe haben?
-      if (!Array.isArray(generatedTasks) || generatedTasks.length === 0) {
-        throw new Error('LLM returned invalid or empty response');
+      generatedTasks = llmResponse.tasks;
+
+      // Validiere: Mindestens eine Aufgabe
+      if (generatedTasks.length === 0) {
+        throw new Error('LLM returned empty tasks array');
       }
 
       // Schneide auf anzahl zu (falls LLM zu viele generierte)
