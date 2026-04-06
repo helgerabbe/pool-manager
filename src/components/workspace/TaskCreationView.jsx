@@ -217,6 +217,7 @@ function SidebarLernpaketFolder({
   lernpaket, allActivities, aktivitaetenMap,
   masterAufgabenByActivityId, kloneByMasterId,
   selectedItem, onSelect, defaultOpen = false, myEmail, isOpen = false, onToggleOpen, aktivitaetenKatalog,
+  expandedPhases, setExpandedPhases,
 }) {
   const paketActivities = allActivities.filter(a => a.lernpaket_id === lernpaket.id);
   const phasenConfig = lernpaket.phasen_konfiguration || {};
@@ -578,6 +579,8 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
                        });
                      }}
                      aktivitaetenKatalog={aktivitaetenKatalog}
+                     expandedPhases={expandedPhases}
+                     setExpandedPhases={setExpandedPhases}
                     />
                 ))}
               </div>
