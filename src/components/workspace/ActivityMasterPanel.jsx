@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Crown, Plus, Loader2, ChevronRight } from 'lucide-react';
 import ActivityDetailView from '@/components/workspace/ActivityDetailView';
 import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
+import { useLernpaketLock } from '@/hooks/useLernpaketLock';
 import { toast } from 'sonner';
 
 export default function ActivityMasterPanel({
@@ -28,8 +29,11 @@ export default function ActivityMasterPanel({
 }) {
   const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
-  // null = Aktivitätsansicht, 'new' = soeben erstellt → direkt zur Karte springen
   const [focusedMasterId, setFocusedMasterId] = useState(null);
+
+  // Bearbeitungsmodus nur aktiv wenn Lernpaket-Lock gehalten wird
+  const { canEdit: lernpaketLockActive } = useLernpaketLock(activityRecord?.lernpaket_id);
+  const isInEditMode = kannBearbeiten && lernpaketLockActive;
 
   // Alle MasterAufgaben für diese Aktivität
   const { data: masterAufgaben = [] } = useQuery({
@@ -84,8 +88,8 @@ export default function ActivityMasterPanel({
         </div>
       </div>
 
-      {/* ── Masteraufgaben-Bereich (nur wenn supports_master UND Bearbeitungsmodus aktiv) ───────────────── */}
-      {supportsMaster && kannBearbeiten && (
+      {/* ── Masteraufgaben-Bereich (nur wenn supports_master UND Lernpaket-Lock aktiv) ───────────────── */}
+      {supportsMaster && isInEditMode && (
         <div className="space-y-4">
 
           {/* Sektion-Header */}
