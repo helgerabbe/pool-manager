@@ -41,7 +41,7 @@ const MATCH_TERMS_NAMES = ['begriffe zuordnen', 'zuordnen', 'match terms'];
 const LUECKENTEXT_NAMES = ['lückentext', 'lücken', 'lueckentext', 'cloze', 'fill in'];
 const IMAGE_LABELING_NAMES = ['bildbeschriftung', 'bildbeschreibung', 'image labeling'];
 const SORTING_NAMES = ['reihenfolge', 'sortierung', 'sorting', 'sequenzierung'];
-const MULTIPLE_CHOICE_NAMES = ['multiple choice', 'multiple-choice', 'mc-aufgabe'];
+const MULTIPLE_CHOICE_NAMES = ['multiple choice', 'multiple-choice', 'mc-aufgabe', 'miniquiz', 'mini-quiz', 'quiz'];
 
 function isMatchTerms(name = '') {
   return MATCH_TERMS_NAMES.some(n => name.toLowerCase().includes(n));
