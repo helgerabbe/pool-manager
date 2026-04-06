@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
     }
 
     // Release lock
-    await base44.asServiceRole.entities.Einheiten.update(entityId, {
+    await base44.entities.Einheiten.update(entityId, {
       structural_lock: null,
       structural_locked_at: null
     });

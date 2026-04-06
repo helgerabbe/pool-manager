@@ -74,32 +74,18 @@ Deno.serve(async (req) => {
     const entity = SUPPORTED_ENTITIES[entityName];
 
     // ─────────────────────────────────────────────────────────────────
-    // 2. Entity-Zugriff über ServiceRole (User ist bereits authentifiziert)
+    // 2. Entity-Zugriff über User-Kontext (mit auth)
     // ─────────────────────────────────────────────────────────────────
 
     // ─────────────────────────────────────────────────────────────────
     // 3. Atomares bedingtes Update (Race-Condition-Schutz)
     // ─────────────────────────────────────────────────────────────────
-    // Atomares Update mit Bedingung:
-    // - Nur wenn Lock-Spalte null ist ODER bereits vom User gesetzt
-    // - Verhindert Race Conditions durch bedingtes Update
-    //
-    // Die SDK filterFunktion mit Bedingungen simuliert diesen Fall:
-    // Wir versuchen zuerst zu lesen mit Bedingung, dann zu schreiben
-
-    const serviceRoleEntity = base44.asServiceRole.entities[entityName];
-    if (!serviceRoleEntity) {
-      return Response.json(
-        { error: `Service role entity mapping failed for ${entityName}` },
-        { status: 500 }
-      );
-    }
-
-    // Lese-Check: Aktuelle Lock-Status abrufen (ServiceRole für vollständigen Zugriff)
+    // Lese-Check: Aktuelle Lock-Status abrufen
     let currentEntity = null;
     try {
-      currentEntity = await serviceRoleEntity.read(entityId);
-    } catch {
+      currentEntity = await base44.entities[entityName].read(entityId);
+    } catch (err) {
+      console.error('[acquireLockSecure] Entity read failed:', err.message);
       return Response.json({ error: 'Entity not found' }, { status: 404 });
     }
 
@@ -126,7 +112,7 @@ Deno.serve(async (req) => {
     };
 
     try {
-      await serviceRoleEntity.update(entityId, updatePayload);
+      await base44.entities[entityName].update(entityId, updatePayload);
     } catch (error) {
       // Fallback: Falls das Update fehlschlägt (z.B. durch Constraint),
       // ist Lock wahrscheinlich von jemand anderem gesetzt worden
