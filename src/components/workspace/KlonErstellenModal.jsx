@@ -60,11 +60,9 @@ export default function KlonErstellenModal({ open, onClose, master, onKlonesCrea
     const isLuecke = !!(fv.lueckentext);
 
     const prompt = isLuecke ? [
-      `Erstelle ${count} didaktisch gleichwertige Variationen (Klone) dieses Lückentexts.`,
-      'Behalte die syntaktische Struktur bei: Lücken werden mit eckigen Klammern markiert, z.B. [Begriff].',
-      'Variiere den inhaltlichen Kontext, behalte aber das didaktische Niveau bei.',
-      `Original-Lückentext: "${fv.lueckentext}"`,
-      hint ? `Thematischer Fokus für die KI: ${hint}` : '',
+      `Erstelle ${count} Variationen dieses Lückentexts:`,
+      `"""${fv.lueckentext}"""`,
+      hint ? `Zusätzlicher Hinweis: ${hint}` : '',
       'Antworte als JSON mit einem "klone"-Array, jedes Element: { "lueckentext": string }',
     ].filter(Boolean).join('\n') : [
       `Erstelle ${count} didaktisch gleichwertige Variationen (Klone) dieser Lernaufgabe.`,
@@ -74,6 +72,8 @@ export default function KlonErstellenModal({ open, onClose, master, onKlonesCrea
       hint ? `Thematischer Fokus für die KI: ${hint}` : '',
       'Antworte als JSON mit einem "klone"-Array, jedes Element: { "instruction": string, "pairs": [{left, right}][], "distractors": string[] }',
     ].filter(Boolean).join('\n');
+
+    const nonLueckePrompt = prompt;
 
     const schema = isLuecke
       ? {
@@ -102,7 +102,12 @@ export default function KlonErstellenModal({ open, onClose, master, onKlonesCrea
           },
         };
 
-    const result = await base44.integrations.Core.InvokeLLM({ prompt, response_json_schema: schema });
+    const result = isLuecke
+      ? await base44.integrations.Core.InvokeLLM({
+          prompt: `Du bist ein Assistent für Lehrkräfte. Deine Aufgabe ist es, einen Lückentext inhaltlich umzuformulieren.\n\nEingabe:\nDu erhältst einen Text, in dem bestimmte Wörter in eckigen Klammern markiert sind (z. B. [Wort]). Diese markierten Wörter sind die Zielwörter, die gelernt werden sollen.\n\nDeine Aufgabe:\n\n1. Erfasse den inhaltlichen Sinn des Textes und identifiziere alle Wörter in eckigen Klammern [...]\n2. Schreibe einen neuen Text, der exakt denselben inhaltlichen Sinn und dieselben Fakten wiedergibt.\n3. Verändere die Satzstruktur, die Formulierungen und den Satzbau (Paraphrasieren).\n4. Zwingende Regel: Du musst exakt dieselben Zielwörter (die in der Eingabe in eckigen Klammern standen) in deinen neuen Text einbauen. Markiere diese Zielwörter in deiner Ausgabe zwingend wieder mit eckigen Klammern [...]\n5. Verändere die Zielwörter nicht (keine andere grammatikalische Zeitform oder Plural/Singular-Änderung), es sei denn, es ist für die Grammatik deines neuen Satzes absolut unvermeidbar.\n\nAusgabe:\nLiefere ausschließlich den fertigen neuen Lückentext zurück. Keine Einleitung, keine Erklärungen.\n\nBitte erstelle ${count} Variation(en) dieses Textes:\n\n${fv.lueckentext}\n\nAntworte als JSON mit einem "klone"-Array, jedes Element: { "lueckentext": string }`,
+          response_json_schema: schema,
+        })
+      : await base44.integrations.Core.InvokeLLM({ prompt: nonLueckePrompt, response_json_schema: schema });
     const klone = result?.klone || [];
     if (klone.length === 0) throw new Error('Die KI hat keine Variationen generiert. Bitte erneut versuchen.');
 
@@ -217,6 +222,14 @@ export default function KlonErstellenModal({ open, onClose, master, onKlonesCrea
                 className="resize-none h-20 text-sm"
                 disabled={loading}
               />
+
+              {/* Hinweistext für Lückentext */}
+              {master?.field_values?.lueckentext && (
+                <div className="mt-3 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 text-xs leading-relaxed">
+                  <p className="font-medium mb-1">Hinweis:</p>
+                  <p>Die KI formuliert den Text inhaltlich passend um. Die von Ihnen definierten Lückenwörter bleiben dabei exakt erhalten und werden in den neuen Text integriert.</p>
+                </div>
+              )}
             </div>
           )}
 
