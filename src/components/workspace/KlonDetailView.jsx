@@ -112,24 +112,32 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
 
   const convertToMasterMutation = useMutation({
     mutationFn: async () => {
-      // 1. Neue MasterAufgabe aus Klon-Daten erstellen
-      const reihenfolge = (masterAufgabe?.reihenfolge || 1) + 1;
+      if (!masterAufgabe?.activity_id) throw new Error('activity_id fehlt – Klon kann nicht promoted werden.');
+
+      // Klon-Inhalt (JSON-String in aufgabentext_inhalt) korrekt als field_values mappen.
+      // Lückentext-Klone haben { lueckentext: "..." } direkt in data (geparst aus aufgabentext_inhalt).
+      // Match-Terms-Klone haben { instruction, pairs, distractors }.
+      // Beide Formate sind direkt als field_values verwendbar.
+      const fieldValues = data && Object.keys(data).length > 0 ? data : {};
+
+      // Neue MasterAufgabe aus Klon-Daten erstellen
       await base44.entities.MasterAufgabe.create({
-        activity_id: klon.lernpaket_id ? undefined : masterAufgabe?.activity_id,
-        // activity_id vom Master übernehmen
-        ...(masterAufgabe?.activity_id ? { activity_id: masterAufgabe.activity_id } : {}),
+        activity_id: masterAufgabe.activity_id,
         lernpaket_id: klon.lernpaket_id,
-        field_values: data,
-        reihenfolge,
+        field_values: fieldValues,
+        reihenfolge: (masterAufgabe?.reihenfolge || 1) + 1,
         content_status: 'draft',
-        sync_status: TASK_SYNC_STATUS.DRAFT || 'new',
+        sync_status: 'new',  // korrekt für neu angelegte Entities im Moodle-Schema
       });
-      // 2. Klon löschen
+
+      // Klon löschen – löst Entkopplung aus (kein master_aufgabe_id mehr)
       await base44.entities.Aufgabenbausteine.delete(klon.id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
       queryClient.invalidateQueries({ queryKey: ['klone'] });
+      queryClient.invalidateQueries({ queryKey: ['masterAufgaben', 'einheit'] });
+      queryClient.invalidateQueries({ queryKey: ['klone', 'einheit'] });
       toast.success('Klon wurde erfolgreich zur Masteraufgabe umgewandelt.');
     },
     onError: (err) => toast.error('Fehler bei der Umwandlung: ' + (err.message || 'Unbekannt')),

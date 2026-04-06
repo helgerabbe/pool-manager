@@ -111,7 +111,8 @@ function KlonGenerator({ master, onKlonesCreated }) {
           aufgabentext_inhalt: JSON.stringify(klone[i]),
           is_master: false,
           master_aufgabe_id: master.id,
-          status: 'draft',
+          content_status: 'draft',   // korrekt: content_status, nicht status
+          sync_status: 'new',
           klon_index: i + 1,
         });
       }
