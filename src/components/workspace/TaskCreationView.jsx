@@ -275,16 +275,29 @@ function SidebarLernpaketFolder({
                   <div className="space-y-0.5">
                     {phaseActs.map(activity => {
                        const actCatalog = aktivitaetenKatalog.find(c => c.id === activity.aktivitaet_id);
+                       const masters = masterAufgabenByActivityId[activity.id] || [];
+
+                       // Completion-Logik: Alle Masters müssen approved sein UND field_values gefüllt haben
+                       const allMastersApproved = masters.length > 0 && masters.every(m => m.content_status === 'approved');
+                       const allMastersHaveContent = masters.length > 0 && masters.every(m => {
+                         const fv = m.field_values || {};
+                         // Prüfe, ob es Inhalt gibt (je nach Aktivitätstyp)
+                         return fv.instruction || fv.lueckentext || fv.pairs?.length > 0 || 
+                                fv.orderedItems?.length > 0 || fv.dropZones?.length > 0 || 
+                                fv.mcItems?.length > 0 || fv.task_description;
+                       });
+                       const isComplete = masters.length > 0 && allMastersApproved && allMastersHaveContent;
+
                        return (
                          <ActivitySidebarItem
                            key={activity.id}
                            activity={activity}
                            aktivitaetName={aktivitaetenMap[activity.aktivitaet_id] || '…'}
-                           masterAufgaben={masterAufgabenByActivityId[activity.id] || []}
+                           masterAufgaben={masters}
                            kloneByMasterId={kloneByMasterId}
                            selectedItem={selectedItem}
                            onSelect={onSelect}
-                           isIncomplete={!activity.is_complete}
+                           isIncomplete={!isComplete}
                            myEmail={myEmail}
                            catalogEntry={actCatalog}
                          />
