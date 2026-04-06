@@ -1,7 +1,84 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { Label } from '@/components/ui/label';
+import { Pencil, Check } from 'lucide-react';
 
-export default function StandardInput({ field, value = '', onChange }) {
+// Inline-editierbares Aufgabentext-Feld mit Standardtext
+function DefaultTextareaFieldInline({ field, value, onChange, readOnly = false }) {
+  const [editing, setEditing] = useState(false);
+  const defaultText = field.default_text || 'Bearbeite die folgende Aufgabe sorgfältig.';
+  const displayValue = value || defaultText;
+  const isDefault = !value;
+
+  if (!editing) {
+    return (
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">{field.label}</Label>
+          {!readOnly && (
+            <button
+              onClick={() => setEditing(true)}
+              className="flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              <Pencil className="w-3 h-3" />
+              {isDefault ? 'Anpassen' : 'Bearbeiten'}
+            </button>
+          )}
+        </div>
+        <div
+          className={`rounded-lg border px-3 py-2 text-sm cursor-pointer hover:border-primary/50 transition-colors ${
+            isDefault ? 'bg-blue-50 border-blue-200 text-blue-800 italic' : 'bg-muted/40 border-border text-foreground'
+          }`}
+          onClick={() => setEditing(true)}
+        >
+          {isDefault && (
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 block mb-0.5 not-italic">
+              Standardtext
+            </span>
+          )}
+          {displayValue}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <Label className="text-sm font-medium">{field.label}</Label>
+        <div className="flex items-center gap-3">
+          {!isDefault && (
+            <button
+              onClick={() => { onChange(''); setEditing(false); }}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Standardtext wiederherstellen
+            </button>
+          )}
+          <button
+            onClick={() => setEditing(false)}
+            className="flex items-center gap-1 text-xs text-primary hover:underline"
+          >
+            <Check className="w-3 h-3" />
+            Fertig
+          </button>
+        </div>
+      </div>
+      <textarea
+        value={value || field.default_text}
+        onChange={(e) => {
+          const newVal = e.target.value;
+          onChange(newVal === field.default_text ? '' : newVal);
+        }}
+        rows={4}
+        className="w-full px-3 py-2 rounded-lg border border-input text-sm"
+        autoFocus
+      />
+    </div>
+  );
+}
+
+export default function StandardInput({ field, value = '', onChange, readOnly = false }) {
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFileUpload = async (e) => {
@@ -32,6 +109,18 @@ export default function StandardInput({ field, value = '', onChange }) {
   }
 
   if (field.type === 'textarea') {
+    // Aufgabentext bekommt spezielles blaues Design
+    if (field.field_name === 'aufgabentext') {
+      return (
+        <DefaultTextareaFieldInline
+          field={field}
+          value={value}
+          onChange={onChange}
+          readOnly={readOnly}
+        />
+      );
+    }
+    // Alle anderen Textareas: Standard-Rendering
     return (
       <textarea
         value={value}
