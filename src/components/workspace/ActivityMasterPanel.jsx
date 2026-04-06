@@ -9,13 +9,87 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Crown, Plus, Loader2, ChevronRight } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Crown, Plus, Loader2, ChevronRight, Save, Pencil, Check, ExternalLink } from 'lucide-react';
 import ActivityDetailView from '@/components/workspace/ActivityDetailView';
 import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
+import StandardInput from '@/components/workspace/inputs/StandardInput';
 import { toast } from 'sonner';
+
+// Inline-editierbares Aufgabentext-Feld mit Standardtext
+function DefaultTextareaFieldInline({ field, value, onChange }) {
+  const [editing, setEditing] = useState(false);
+  const displayValue = value || field.default_text;
+  const isDefault = !value;
+
+  if (!editing) {
+    return (
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">{field.label}</Label>
+          <button
+            onClick={() => setEditing(true)}
+            className="flex items-center gap-1 text-xs text-primary hover:underline"
+          >
+            <Pencil className="w-3 h-3" />
+            {isDefault ? 'Anpassen' : 'Bearbeiten'}
+          </button>
+        </div>
+        <div
+          className={`rounded-lg border px-3 py-2 text-sm cursor-pointer hover:border-primary/50 transition-colors ${
+            isDefault ? 'bg-blue-50 border-blue-200 text-blue-800 italic' : 'bg-muted/40 border-border text-foreground'
+          }`}
+          onClick={() => setEditing(true)}
+        >
+          {isDefault && (
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 block mb-0.5 not-italic">
+              Standardtext
+            </span>
+          )}
+          {displayValue}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <Label className="text-sm font-medium">{field.label}</Label>
+        <div className="flex items-center gap-3">
+          {!isDefault && (
+            <button
+              onClick={() => { onChange(''); setEditing(false); }}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Standardtext wiederherstellen
+            </button>
+          )}
+          <button
+            onClick={() => setEditing(false)}
+            className="flex items-center gap-1 text-xs text-primary hover:underline"
+          >
+            <Check className="w-3 h-3" />
+            Fertig
+          </button>
+        </div>
+      </div>
+      <textarea
+        value={value || field.default_text}
+        onChange={(e) => {
+          const newVal = e.target.value;
+          onChange(newVal === field.default_text ? '' : newVal);
+        }}
+        rows={4}
+        className="w-full px-3 py-2 rounded-lg border border-input text-sm"
+        autoFocus
+      />
+    </div>
+  );
+}
 
 export default function ActivityMasterPanel({
   activityRecord,
@@ -52,6 +126,47 @@ export default function ActivityMasterPanel({
     Date.now() - new Date(lernpaket.locked_at).getTime() < LOCK_TIMEOUT_MS;
 
   const isInEditMode = kannBearbeiten && lernpaketLockActive;
+
+  // Formular-State für Aktivitäten ohne supports_master
+  const [fieldValues, setFieldValues] = useState(activityRecord?.field_values || {});
+  const [isDirty, setIsDirty] = useState(false);
+
+  // field_values neu laden wenn activityRecord wechselt
+  useEffect(() => {
+    setFieldValues(activityRecord?.field_values || {});
+    setIsDirty(false);
+  }, [activityRecord?.id]);
+
+  const saveFieldsMutation = useMutation({
+    mutationFn: (values) => {
+      const formSchema = catalogEntry?.form_schema || [];
+      // Standardtexte für leere aufgabentext-Felder einsetzen
+      const enrichedValues = { ...values };
+      formSchema.forEach(f => {
+        if (f.field_name === 'aufgabentext' && f.default_text && !enrichedValues[f.field_name]) {
+          enrichedValues[f.field_name] = f.default_text;
+        }
+      });
+      const requiredFilled = formSchema
+        .filter(f => f.required && f.field_name !== 'aufgabentext')
+        .every(f => enrichedValues[f.field_name]?.toString().trim());
+      return base44.entities.LernpaketPhaseAktivitaet.update(activityRecord.id, {
+        field_values: enrichedValues,
+        is_complete: requiredFilled,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      setIsDirty(false);
+      toast.success('Gespeichert.');
+    },
+    onError: () => toast.error('Fehler beim Speichern.'),
+  });
+
+  const handleFieldChange = (fieldName, value) => {
+    setFieldValues(prev => ({ ...prev, [fieldName]: value }));
+    setIsDirty(true);
+  };
 
   // Alle MasterAufgaben für diese Aktivität
   const { data: masterAufgaben = [] } = useQuery({
@@ -97,6 +212,70 @@ export default function ActivityMasterPanel({
           queryClient={queryClient}
         />
       </div>
+
+      {/* ── Inhaltsfelder für Aktivitäten ohne Masteraufgaben ──────────────────── */}
+      {!supportsMaster && (
+        <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-foreground">Inhalte konfigurieren</h3>
+            {isDirty && isInEditMode && (
+              <Button
+                size="sm"
+                onClick={() => saveFieldsMutation.mutate(fieldValues)}
+                disabled={saveFieldsMutation.isPending}
+                className="gap-1.5"
+              >
+                {saveFieldsMutation.isPending
+                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Speichern…</>
+                  : <><Save className="w-3.5 h-3.5" /> Speichern</>}
+              </Button>
+            )}
+          </div>
+
+          {(catalogEntry?.form_schema || []).length === 0 ? (
+            <p className="text-sm text-muted-foreground italic">Keine Felder konfiguriert.</p>
+          ) : (
+            <div className={`space-y-4 ${!isInEditMode ? 'opacity-60 pointer-events-none select-none' : ''}`}>
+              {(catalogEntry?.form_schema || []).map((field) => {
+                // Bedingte Anzeige: inhalt nur wenn inhalt_typ === 'text', dokument_url nur wenn 'datei'
+                const inhaltTyp = fieldValues?.inhalt_typ;
+                if (field.field_name === 'inhalt' && inhaltTyp && inhaltTyp !== 'text') return null;
+                if (field.field_name === 'dokument_url' && inhaltTyp !== 'datei') return null;
+
+                // Aufgabentext mit Standardtext-Logik
+                if (field.field_name === 'aufgabentext' && field.default_text) {
+                  return (
+                    <DefaultTextareaFieldInline
+                      key={field.field_name}
+                      field={field}
+                      value={fieldValues[field.field_name] || ''}
+                      onChange={(val) => handleFieldChange(field.field_name, val)}
+                    />
+                  );
+                }
+
+                return (
+                  <div key={field.field_name} className="space-y-1.5">
+                    <Label className="text-sm font-medium">
+                      {field.label}
+                      {field.required && <span className="text-destructive ml-1">*</span>}
+                    </Label>
+                    <StandardInput
+                      field={field}
+                      value={fieldValues[field.field_name] || ''}
+                      onChange={(val) => handleFieldChange(field.field_name, val)}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {!isInEditMode && (
+            <p className="text-xs text-muted-foreground italic">Bearbeitungsmodus aktivieren um Felder zu bearbeiten.</p>
+          )}
+        </div>
+      )}
 
       {/* ── Masteraufgaben-Bereich (immer sichtbar wenn supports_master) ───────── */}
       {supportsMaster && (
