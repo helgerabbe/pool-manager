@@ -84,8 +84,8 @@ export default function ActivityMasterPanel({
         </div>
       </div>
 
-      {/* ── Masteraufgaben-Bereich (nur wenn supports_master) ───────────────── */}
-      {supportsMaster && (
+      {/* ── Masteraufgaben-Bereich (nur wenn supports_master UND Bearbeitungsmodus aktiv) ───────────────── */}
+      {supportsMaster && kannBearbeiten && (
         <div className="space-y-4">
 
           {/* Sektion-Header */}
