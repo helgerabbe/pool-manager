@@ -115,16 +115,16 @@ export default function KlonErstellenModal({ open, onClose, master, klone, onKlo
     const klone = result?.klone || [];
     if (klone.length === 0) throw new Error('Die KI hat keine Variationen generiert. Bitte erneut versuchen.');
 
-    // Bestimme die nächste Klon-Nummer
+    // Bestimme die nächste Klon-Nummer (aus den BESTEHENDEN Klonen, nicht den KI-generierten)
     const maxIndex = klone.length > 0
       ? Math.max(...klone.map(k => k.klon_index || 0))
       : 0;
 
-    for (let i = 0; i < klone.length; i++) {
+    for (let i = 0; i < result.klone.length; i++) {
        await base44.entities.Aufgabenbausteine.create({
          lernpaket_id: master.lernpaket_id,
          baustein_typ: 'Ebene-1-Übung',
-         aufgabentext_inhalt: JSON.stringify(klone[i]),
+         aufgabentext_inhalt: JSON.stringify(result.klone[i]),
          is_master: false,
          master_aufgabe_id: master.id,
          content_status: 'draft',
