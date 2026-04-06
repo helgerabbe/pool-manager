@@ -75,20 +75,37 @@ export default function KITutorMasterForm({
       }
 
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Du bist ein erfahrener Lehrer und Prüfer. Deine Aufgabe ist es, auf Basis einer Schüleraufgabe einen detaillierten Erwartungshorizont (Lösungsschlüssel) zu schreiben.
+        prompt: `Du bist ein erfahrener Lehrer und Prüfer. Deine Aufgabe ist es, eine genaue Musterlösung und Lösungskriterien für eine Schüleraufgabe zu verfassen.
 
 Aufgabenstellung:
 "${aufgabenstellung}"
 
 ${material ? `Begleitmaterial/Kontext: ${material}` : ''}
 
-Schreibe einen präzisen Erwartungshorizont, der folgende Punkte enthält:
-1. Lösungsweg oder Lösungsschritte (wenn zutreffend)
-2. Erwartete Kernaussagen oder Konzepte
-3. Häufige Fehler oder Missverständnisse, auf die Schüler achten sollten
-4. Bewertungskriterien (falls mehrere Niveaus)
+Schreibe einen Erwartungshorizont, der folgende Punkte enthält:
 
-Format: Strukturiert, aber in Fließtext. Gerichtet an Lehrer, nicht an Schüler.`,
+1. MUSTERLÖSUNG / ERWARTETE ANTWORT
+   - Gib die konkrete richtige Lösung oder die erwarteten Lösungen an
+   - Sei spezifisch und präzise
+   
+2. LÖSUNGSSCHRITTE (falls zutreffend)
+   - Wie kommt man zu dieser Lösung?
+   - Welche Rechenschritte, Argumente oder Begründungen sind notwendig?
+
+3. AKZEPTABLE VARIANTEN (falls mehrere richtige Antworten möglich)
+   - Welche alternativen Antworten sind auch akzeptabel?
+   - Unter welchen Bedingungen werden sie akzeptiert?
+
+4. HÄUFIGE FEHLER & FEHLINTERPRETATIONEN
+   - Welche typischen Fehler machen Schüler?
+   - Welche Missverständnisse könnten vorliegen?
+
+5. BEWERTUNGSKRITERIEN
+   - Wie viele Punkte für vollständig richtig?
+   - Wie viele Punkte für teilweise richtig?
+   - Wann gibt es Punktabzug?
+
+Fokus: Die konkrete, richtige Lösung dieser Aufgabe - nicht allgemeine pädagogische Ratschläge.`,
         response_json_schema: {
           type: 'object',
           properties: {
