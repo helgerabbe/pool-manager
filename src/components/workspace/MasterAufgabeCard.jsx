@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Crown, Trash2, Sparkles, Loader2, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import LockBanner from '@/components/workspace/LockBanner';
 import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
-import LueckentextEditor, { LueckentextRenderer } from '@/components/workspace/LueckentextEditor';
+import LueckentextEditor, { LueckentextRenderer, validateBeforeSave } from '@/components/workspace/LueckentextEditor';
 import ApprovalActionButton from '@/components/workspace/ApprovalActionButton';
 import ApprovalStatusBadge from '@/components/workspace/ApprovalStatusBadge';
 import { isLockExpired } from '@/hooks/useActivityLock';
@@ -436,13 +436,23 @@ export default function MasterAufgabeCard({
                   <div className="flex items-center gap-2">
                     <Button size="sm" variant="ghost" onClick={() => { setEditMode(false); setHasPendingChanges(false); }}>Abbrechen</Button>
                     {hasPendingChanges && (
-                      <Button size="sm" variant="outline" onClick={handleSaveIntermediate} disabled={saveMutation.isPending}
+                      <Button size="sm" variant="outline"
+                        onClick={() => {
+                          if (!validateBeforeSave(fieldValues.lueckentext || '')) return;
+                          handleSaveIntermediate();
+                        }}
+                        disabled={saveMutation.isPending}
                         className="gap-1.5 border-amber-300 hover:bg-amber-100 text-amber-800">
                         {saveMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                         Zwischenspeichern
                       </Button>
                     )}
-                    <Button size="sm" onClick={() => handleSaveAndClose()} disabled={saveMutation.isPending} className="gap-1.5 ml-auto">
+                    <Button size="sm"
+                      onClick={() => {
+                        if (!validateBeforeSave(fieldValues.lueckentext || '')) return;
+                        handleSaveAndClose();
+                      }}
+                      disabled={saveMutation.isPending} className="gap-1.5 ml-auto">
                       {saveMutation.isPending && <Loader2 className="w-3 h-3 animate-spin" />} Speichern & schließen
                     </Button>
                   </div>
