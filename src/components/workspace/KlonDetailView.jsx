@@ -16,13 +16,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Save, ArrowRight, Plus, Trash2, Lock, Crown, Loader2 } from 'lucide-react';
+import { Save, ArrowRight, Plus, Trash2, Lock, Crown, Loader2, GripVertical } from 'lucide-react';
 import LockBanner from '@/components/workspace/LockBanner';
 import ActivityDetailView from '@/components/workspace/ActivityDetailView';
 import { useKlonLock, isLockExpired } from '@/hooks/useActivityLock';
 import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus';
 import LueckentextEditor, { LueckentextRenderer } from '@/components/workspace/LueckentextEditor';
 import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
+import SortingListEditor from '@/components/workspace/SortingListEditor';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { toast } from 'sonner';
 
 function isKlonLockedByOther(klon, myEmail) {
@@ -34,6 +36,7 @@ function isKlonLockedByOther(klon, myEmail) {
 
 const MATCH_TERMS_NAMES = ['begriffe zuordnen', 'zuordnen', 'match terms'];
 const LUECKENTEXT_NAMES = ['lückentext', 'lücken', 'lueckentext', 'cloze', 'fill in'];
+const SORTING_NAMES = ['reihenfolge', 'sortierung', 'sorting', 'sort'];
 
 function isMatchTerms(name = '') {
   return MATCH_TERMS_NAMES.some(n => name.toLowerCase().includes(n));
@@ -41,6 +44,10 @@ function isMatchTerms(name = '') {
 
 function isLueckentext(name = '') {
   return LUECKENTEXT_NAMES.some(n => name.toLowerCase().includes(n));
+}
+
+function isSorting(name = '') {
+  return SORTING_NAMES.some(n => name.toLowerCase().includes(n));
 }
 
 export default function KlonDetailView({ klon, kannBearbeiten, userEmail, masterAufgabe, activityRecord, catalogEntry, onKlonDeleted }) {
@@ -298,6 +305,48 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
               </div>
             )}
           </div>
+        ) : isSorting(catalogEntry?.name) ? (
+          /* Sortierungs-Aufgabe */
+          editMode ? (
+            <SortingListEditor
+              initialData={{
+                instruction: data.instruction || '',
+                orderedItems: data.orderedItems || [],
+              }}
+              onSave={(formData) => {
+                setData(formData);
+              }}
+              onCancel={() => {}}
+              onChange={() => {}}
+              readOnly={false}
+            />
+          ) : (
+            <div className="space-y-3">
+              {data.instruction && (
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Aufgabenstellung</p>
+                  <div className="bg-muted/50 rounded-lg p-3 text-sm">{data.instruction}</div>
+                </div>
+              )}
+              {data.orderedItems?.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                    Elemente ({data.orderedItems.length})
+                  </p>
+                  <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+                    {data.orderedItems.map((item, idx) => (
+                      <div key={idx} className="flex items-center gap-2 text-sm">
+                        <span className="w-6 text-xs font-semibold text-muted-foreground flex-shrink-0">
+                          {idx + 1}.
+                        </span>
+                        <span className="text-foreground">{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )
         ) : (
           /* Fallback: Arbeitsanweisung + Distraktoren */
           <>
