@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 // Öffnet sich beim Klick auf eine Paket-Karte oder beim Erstellen eines neuen Pakets.
 
 function LernpaketDialog({ open, onOpenChange, initialData, onSave }) {
-  const isNew = !initialData?.id || initialData?.isNew;
+  const isNew = !initialData?.id || initialData.id?.startsWith('new-');
   const [titel, setTitel] = useState('');
   const [dauer, setDauer] = useState(45);
   const [lernziele, setLernziele] = useState([]);
