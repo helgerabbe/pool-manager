@@ -1,438 +1,209 @@
 /**
  * ErwartungshorizontTab.jsx
  *
- * Tab 2 im Detail-Panel für Allgemeine Aufgaben.
- * Zeigt einen schreibgeschützten Review der Aufgabe,
- * einen "Musterlösung generieren"-Button (Platzhalter),
- * einen Rich-Text-Editor für die Musterlösung und
- * ein Chat-Fenster für iterative KI-Anpassungen.
+ * Tab für die Verwaltung des Erwartungshorizonts mit KI-Generierung.
+ * Nur für Ebene-3-Aufgaben (Anwendungs- und Projektaufgaben).
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Sparkles, Send, FileText, Star, Loader2, AlertTriangle } from 'lucide-react';
+import { AlertCircle, Sparkles, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 
-// ── Schreibgeschützte Aufgaben-Zusammenfassung ────────────────────────────────
-function AufgabenReview({ aufgabe }) {
-  return (
-    <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
-      <div className="flex items-center gap-2">
-        <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-          Aufgaben-Review
-        </span>
-        {aufgabe.ergebnis_form && (
-          <Badge variant="outline" className="text-[10px] ml-auto">{aufgabe.ergebnis_form}</Badge>
-        )}
-        {aufgabe.ergebnis_dateiformat && (
-          <Badge variant="outline" className="text-[10px]">{aufgabe.ergebnis_dateiformat}</Badge>
-        )}
-      </div>
-
-      {aufgabe.titel && (
-        <p className="text-sm font-semibold">{aufgabe.titel}</p>
-      )}
-
-      {aufgabe.aufgaben_bild_url && (
-        <img src={aufgabe.aufgaben_bild_url} alt="Aufgabenbild" className="max-h-56 rounded border border-border object-contain" />
-      )}
-      {aufgabe.aufgabenstellung && (
-        <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{aufgabe.aufgabenstellung}</div>
-      )}
-      {!aufgabe.aufgaben_bild_url && !aufgabe.aufgabenstellung && (
-        <span className="italic text-muted-foreground text-sm">Keine Aufgabenstellung</span>
-      )}
-
-      {/* Materialien-Vorschau */}
-      {aufgabe.materialien && aufgabe.materialien.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 pt-1">
-          {aufgabe.materialien.map((mat, idx) => (
-            <span key={idx} className="text-[10px] bg-muted border border-border rounded px-1.5 py-0.5">
-              {mat.type === 'freitext' && '📝'}
-              {mat.type === 'pdf' && '📄'}
-              {mat.type === 'image' && '🖼️'}
-              {mat.type === 'book_ref' && '📚'}
-              {' '}{mat.label || mat.content?.slice(0, 30) || mat.url?.slice(0, 30) || '…'}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Schwierigkeit */}
-      {aufgabe.schwierigkeitsgrad && (
-        <div className="flex gap-0.5">
-          {[1, 2, 3].map(n => (
-            <Star key={n} className={cn('w-3 h-3', n <= aufgabe.schwierigkeitsgrad ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/20')} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Einfacher Rich-Text-Editor (Textarea mit Toolbar-Hint) ────────────────────
-function MusterloesungEditor({ value, onChange, disabled }) {
-  return (
-    <div className="flex flex-col h-full border border-border rounded-lg overflow-hidden">
-      <div className="px-3 py-2 bg-muted/40 border-b border-border shrink-0">
-        <span className="text-xs font-semibold text-muted-foreground">Musterlösung / Erwartungshorizont</span>
-      </div>
-      <textarea
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        disabled={disabled}
-        placeholder="Hier wird die Musterlösung eingefügt. Manuell bearbeiten oder über die KI generieren…"
-        className="flex-1 w-full px-4 py-3 text-sm resize-none bg-background focus:outline-none disabled:opacity-50"
-        style={{ minHeight: '220px' }}
-      />
-    </div>
-  );
-}
-
-// ── Chat-Panel für iterative KI-Anpassungen ───────────────────────────────────
-function AssistenzChat({ messages, onSend, isLoading }) {
-  const [input, setInput] = useState('');
-  const bottomRef = useRef(null);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  const handleSend = () => {
-    const text = input.trim();
-    if (!text) return;
-    onSend(text);
-    setInput('');
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  return (
-    <div className="flex flex-col h-full border border-border rounded-lg overflow-hidden">
-      <div className="px-3 py-2 bg-muted/40 border-b border-border shrink-0">
-        <span className="text-xs font-semibold text-muted-foreground">KI-Assistenz</span>
-        <p className="text-[10px] text-muted-foreground/70 mt-0.5">Anpassungsbefehle an die KI senden</p>
-      </div>
-
-      {/* Nachrichtenverlauf */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-muted/10">
-        {messages.length === 0 ? (
-          <p className="text-[11px] text-muted-foreground/60 italic text-center py-6">
-            Noch keine Nachrichten.<br />Generiere zuerst eine Musterlösung.
-          </p>
-        ) : (
-          messages.map((msg, idx) => (
-            <div key={idx} className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
-              <div className={cn(
-                'max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed',
-                msg.role === 'user'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-card border border-border text-foreground'
-              )}>
-                {msg.content}
-              </div>
-            </div>
-          ))
-        )}
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-card border border-border rounded-xl px-3 py-2">
-              <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
-            </div>
-          </div>
-        )}
-        <div ref={bottomRef} />
-      </div>
-
-      {/* Eingabe */}
-      <div className="shrink-0 p-2 border-t border-border bg-background flex gap-2">
-        <textarea
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="z.B. 'Kürze die Lösung auf 3 Punkte' oder 'Füge ein Beispiel hinzu…'"
-          disabled={isLoading}
-          className="flex-1 px-3 py-1.5 text-xs border border-border rounded-lg resize-none bg-background focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
-          rows={2}
-        />
-        <Button
-          size="icon"
-          onClick={handleSend}
-          disabled={!input.trim() || isLoading}
-          className="shrink-0 self-end h-8 w-8"
-        >
-          <Send className="w-3.5 h-3.5" />
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-// ── Hilfsfunktion: Extrahiert lesbaren Text aus KI-Antwort ───────────────────
-function extractReadableText(raw) {
-  if (!raw || typeof raw !== 'string') return raw || '';
-  const trimmed = raw.trim();
-
-  // Wenn es wie JSON aussieht, versuche zu parsen und den Textinhalt zu extrahieren
-  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-    try {
-      const parsed = JSON.parse(trimmed);
-      // Gängige Felder in KI-Antwort-Objekten
-      const text = parsed?.output || parsed?.text || parsed?.content ||
-        parsed?.musterloesung || parsed?.result || parsed?.answer ||
-        parsed?.action_input?.prompt || parsed?.response || '';
-      if (text && typeof text === 'string') return text.trim();
-    } catch {
-      // kein valides JSON – weiter mit dem Rohtext
-    }
-  }
-
-  // Entferne führende/abschließende Code-Fences (```...```)
-  const fenceMatch = trimmed.match(/^```(?:\w+)?\n?([\s\S]*?)```$/);
-  if (fenceMatch) return fenceMatch[1].trim();
-
-  return trimmed;
-}
-
-// ── Haupt-Tab-Komponente ──────────────────────────────────────────────────────
-export default function ErwartungshorizontTab({ aufgabe, kannBearbeiten, einheit, mappedLernziele = [], mappedBasisLernziele = [] }) {
+export default function ErwartungshorizontTab({
+  aufgabe,
+  einheit,
+  mappedLernziele = [],
+  mappedBasisLernziele = [],
+  kannBearbeiten = false,
+}) {
   const queryClient = useQueryClient();
-  const [musterloesung, setMusterloesung] = useState(aufgabe?.musterloesung || '');
-  const [chatMessages, setChatMessages] = useState([]);
-  const [chatLoading, setChatLoading] = useState(false);
-  const [generating, setGenerating] = useState(false);
+  const [editText, setEditText] = useState(aufgabe?.erwartungshorizont || '');
   const [isDirty, setIsDirty] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  // Musterlösung synchronisieren wenn Aufgabe wechselt + Auto-Save beim Verlassen
-  useEffect(() => {
-    setMusterloesung(aufgabe?.musterloesung || '');
-    setChatMessages([]);
-    setIsDirty(false);
-  }, [aufgabe?.id]);
+  const isEbene3 = aufgabe?.anforderungsebene === '3 - Projekt';
 
-  // Auto-Save: beim Verlassen des Tabs (Unmount) speichern falls dirty
-  const musterloesungRef = useRef(musterloesung);
-  const isDirtyRef = useRef(isDirty);
-  useEffect(() => { musterloesungRef.current = musterloesung; }, [musterloesung]);
-  useEffect(() => { isDirtyRef.current = isDirty; }, [isDirty]);
-
-  useEffect(() => {
-    return () => {
-      if (isDirtyRef.current && aufgabe?.id) {
-        base44.entities.AllgemeineAufgabe.update(aufgabe.id, { musterloesung: musterloesungRef.current });
-      }
-    };
-  }, [aufgabe?.id]);
-
-  // Speichern
-  const saveMutation = useMutation({
-    mutationFn: (text) => base44.entities.AllgemeineAufgabe.update(aufgabe.id, { musterloesung: text }),
+  // Update Mutation
+  const updateMutation = useMutation({
+    mutationFn: (data) =>
+      base44.entities.AllgemeineAufgabe.update(aufgabe.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
       setIsDirty(false);
-      toast.success('Musterlösung gespeichert.');
+      toast.success('Erwartungshorizont gespeichert');
     },
-    onError: () => toast.error('Fehler beim Speichern.'),
+    onError: () => toast.error('Fehler beim Speichern'),
   });
 
-  const handleEditorChange = (val) => {
-    setMusterloesung(val);
-    setIsDirty(true);
+  const handleSave = () => {
+    updateMutation.mutate({ erwartungshorizont: editText });
   };
 
-  // Bild-URLs: Aufgaben-Bild + Bild-Materialien
-  const bildUrls = [
-    aufgabe.aufgaben_bild_url,
-    ...(aufgabe.materialien || []).filter(m => m.type === 'image' && m.url).map(m => m.url),
-  ].filter(Boolean);
-  const hatBilder = bildUrls.length > 0;
-
-  // Kontext-Metadaten aus Einheit + Kompetenzen
-  const fach = einheit?.fach || 'unbekanntes Fach';
-  const jahrgangsstufe = einheit?.jahrgangsstufe || '?';
-  const thema = einheit?.titel_der_einheit || 'unbekanntes Thema';
-  const alleKompetenzen = [
-    ...mappedLernziele.map(lz => lz.formulierung_fachsprache || lz.schueler_uebersetzung).filter(Boolean),
-    ...mappedBasisLernziele.map(lz => lz.text).filter(Boolean),
-  ];
-  const kompetenzListe = alleKompetenzen.length > 0
-    ? alleKompetenzen.map((k, i) => `${i + 1}. ${k}`).join('\n')
-    : '(keine Kompetenzen zugeordnet)';
-
-  // Musterlösung generieren via LLM
-  const handleGenerate = async () => {
-    setGenerating(true);
-
-    const aufgabentext = [
-      aufgabe.titel && `Titel: ${aufgabe.titel}`,
-      aufgabe.aufgabenstellung,
-    ].filter(Boolean).join('\n');
-
-    // Dynamischer Prompt-Aufbau – nur vorhandene Werte einfügen
-    const promptParts = [];
-
-    promptParts.push('Du bist ein erfahrener Lehrer.');
-
-    if (einheit?.fach && einheit?.jahrgangsstufe) {
-      promptParts.push(`Dein Fach ist ${einheit.fach} in der ${einheit.jahrgangsstufe}. Jahrgangsstufe.`);
-    } else if (einheit?.fach) {
-      promptParts.push(`Dein Fach ist ${einheit.fach}.`);
+  const handleGenerateWithAI = async () => {
+    if (!aufgabe.aufgabenstellung?.trim()) {
+      toast.error('Bitte füllen Sie zuerst die Aufgabenstellung aus.');
+      return;
     }
 
-    if (einheit?.titel_der_einheit) {
-      promptParts.push(`Das aktuelle Thema der Unterrichtseinheit ist '${einheit.titel_der_einheit}'.`);
+    setIsGenerating(true);
+    try {
+      const response = await base44.functions.invoke('generateErwartungshorizont', {
+        aufgabenstellung: aufgabe.aufgabenstellung,
+        lernziele: mappedLernziele.map(lz => ({
+          formulierung_fachsprache: lz.formulierung_fachsprache || lz.title,
+          title: lz.title
+        })),
+        lernpakete: [],
+      });
+
+      if (response.data?.erwartungshorizont) {
+        setEditText(response.data.erwartungshorizont);
+        setIsDirty(true);
+        toast.success('Erwartungshorizont generiert. Bitte überprüfen und speichern.');
+      } else {
+        toast.error('KI konnte keinen Erwartungshorizont generieren.');
+      }
+    } catch (err) {
+      toast.error('Fehler bei der KI-Generierung: ' + err.message);
+      console.error(err);
+    } finally {
+      setIsGenerating(false);
     }
-
-    promptParts.push(`Analysiere die folgende Aufgabe${hatBilder ? ' (siehe beigefügtes Bild)' : ''} und erstelle eine präzise Musterlösung (Erwartungshorizont).`);
-
-    if (alleKompetenzen.length > 0) {
-      promptParts.push(`Die Schüler sollen primär folgende Kompetenzen nachweisen:\n${kompetenzListe}\nRichte den Erwartungshorizont exakt auf diesen Nachweis aus.`);
-    }
-
-    const ergebnisForm = aufgabe.ergebnis_form;
-    const ergebnisFormat = aufgabe.ergebnis_dateiformat;
-    const formOffen = !ergebnisForm || ergebnisForm.toLowerCase().includes('offen');
-    const formatOffen = !ergebnisFormat || ergebnisFormat.toLowerCase().includes('offen') || ergebnisFormat.toLowerCase().includes('beliebig');
-    if (!formOffen || !formatOffen) {
-      const formTeile = [];
-      if (!formOffen) formTeile.push(`Form '${ergebnisForm}'`);
-      if (!formatOffen) formTeile.push(`Format '${ergebnisFormat}'`);
-      promptParts.push(`Das erwartete Ergebnis hat die ${formTeile.join(' im ')}.`);
-    }
-
-    promptParts.push('Gib ausschließlich die fertige Musterlösung als reinen Fließtext aus – KEIN JSON, KEINE Codeblöcke, KEINE Formatierungsanweisungen, KEINE technischen Metadaten. Nur der lesbare Text für den Lehrer, ohne einleitende oder abschließende Floskeln.');
-
-    if (aufgabentext) {
-      promptParts.push(`\nAufgabe:\n${aufgabentext}`);
-    }
-
-    const prompt = promptParts.join('\n');
-
-    const result = await base44.integrations.Core.InvokeLLM({
-      prompt,
-      ...(hatBilder ? { file_urls: bildUrls, model: 'gemini_3_flash' } : {}),
-    });
-
-    let text = typeof result === 'string' ? result : result?.response || '';
-    // Bereinigung: Falls die KI versehentlich JSON oder Action-Metadaten zurückgibt,
-    // versuche daraus den lesbaren Textinhalt zu extrahieren
-    text = extractReadableText(text);
-    setMusterloesung(text);
-    setIsDirty(true);
-    setGenerating(false);
-    toast.success('Musterlösung generiert.');
   };
 
-  // Chat: iterative Anpassung via LLM
-  const handleChatSend = async (userText) => {
-    setChatMessages(prev => [...prev, { role: 'user', content: userText }]);
-    setChatLoading(true);
-
-    const prompt = `Du bist ein Assistent zur Überarbeitung von schulischen Erwartungshorizonten im Fach ${fach} (${jahrgangsstufe}. Jahrgangsstufe). Hier ist der aktuelle Erwartungshorizont:
-${musterloesung || '(noch kein Text)'}
-
-Der Lehrer gibt dir nun folgenden Anpassungswunsch:
-${userText}
-
-Überarbeite den Erwartungshorizont entsprechend und behalte den Fokus auf die zugewiesenen Kompetenzen bei:
-${kompetenzListe}
-
-Gib NUR den vollständigen überarbeiteten Text aus – ohne Kommentare oder Erklärungen davor oder danach.`;
-
-    const result = await base44.integrations.Core.InvokeLLM({ prompt });
-    let newText = typeof result === 'string' ? result : result?.response || '';
-    newText = extractReadableText(newText);
-
-    setMusterloesung(newText);
-    setIsDirty(true);
-    setChatMessages(prev => [...prev, {
-      role: 'assistant',
-      content: 'Erledigt! Ich habe die Musterlösung entsprechend deiner Vorgaben angepasst.',
-    }]);
-    setChatLoading(false);
-  };
-
-  if (!aufgabe) return null;
+  if (!isEbene3) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center space-y-3 max-w-md">
+          <AlertCircle className="w-12 h-12 text-muted-foreground/30 mx-auto" />
+          <p className="text-sm text-muted-foreground">
+            Der Erwartungshorizont ist nur für <strong>Ebene-3-Aufgaben (Projekte/Anwendungen)</strong> relevant.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Aktuell: {aufgabe?.anforderungsebene || 'Keine Ebene gesetzt'}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Scrollbarer Innenbereich */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-5">
-
-        {/* Bereich 1: Aufgaben-Review */}
-        <AufgabenReview aufgabe={aufgabe} />
-
-        <Separator />
-
-        {/* Bereich 2: Generieren-Button */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <Button
-            onClick={handleGenerate}
-            disabled={generating || !kannBearbeiten || (!aufgabe.aufgabenstellung?.trim() && !aufgabe.aufgaben_bild_url)}
-            title={!aufgabe.aufgabenstellung?.trim() && !aufgabe.aufgaben_bild_url ? 'Bitte zuerst Aufgabentext oder Bild in Tab 1 hinterlegen' : undefined}
-            className="gap-2"
-          >
-            {generating
-              ? <><Loader2 className="w-4 h-4 animate-spin" /> Generiert…</>
-              : <><Sparkles className="w-4 h-4" /> Musterlösung generieren</>
-            }
-          </Button>
-          {isDirty && kannBearbeiten && (
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        {/* Header mit Generierung-Button */}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold">Erwartungshorizont</h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              Definieren Sie die Kriterien für erfolgreiche Bearbeitung. Dies wird als Leitplanke für den KI-Tutor verwendet.
+            </p>
+          </div>
+          {kannBearbeiten && (
             <Button
+              onClick={handleGenerateWithAI}
+              disabled={isGenerating || !aufgabe.aufgabenstellung?.trim()}
               variant="outline"
               size="sm"
-              onClick={() => saveMutation.mutate(musterloesung)}
-              disabled={saveMutation.isPending}
-              className="gap-2"
+              className="gap-2 shrink-0"
             >
-              {saveMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-              Speichern
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Wird generiert…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  KI: Generieren
+                </>
+              )}
             </Button>
-          )}
-          {!kannBearbeiten && (
-            <span className="text-xs text-muted-foreground">Schreibgeschützt</span>
           )}
         </div>
 
-        {/* Validierungshinweis – reaktiv, verschwindet sobald Text oder Bild vorhanden */}
-        {kannBearbeiten && !aufgabe.aufgabenstellung?.trim() && !aufgabe.aufgaben_bild_url && (
-          <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
-            <span>
-              Bitte geben Sie in den <strong>Kernangaben (Tab 1)</strong> einen Aufgabentext ein oder laden Sie ein Aufgabenbild hoch, um eine Musterlösung generieren zu können.
-            </span>
+        {/* Textarea */}
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Erwartungshorizont / Zielvorgaben
+          </label>
+          <textarea
+            value={editText}
+            onChange={e => {
+              setEditText(e.target.value);
+              setIsDirty(true);
+            }}
+            disabled={!kannBearbeiten}
+            placeholder={
+              !kannBearbeiten
+                ? 'Kein Erwartungshorizont definiert'
+                : 'Strukturieren Sie die Erwartungen:\n1. Inhaltliche Kriterien\n2. Umfang & Struktur\n3. Methoden & Prozess\n4. Qualitätsmerkmale\n5. Lernziel-Bezug'
+            }
+            className="w-full h-96 p-4 border border-border rounded-lg text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring disabled:bg-muted/20 disabled:text-muted-foreground"
+          />
+        </div>
+
+        {/* Verknüpfte Lernziele anzeigen */}
+        {mappedLernziele.length > 0 && (
+          <div className="space-y-2 p-3 rounded-lg bg-blue-50/30 border border-blue-200/30">
+            <p className="text-xs font-semibold text-muted-foreground">
+              Verknüpfte Lernziele ({mappedLernziele.length}):
+            </p>
+            <ul className="space-y-1 text-xs text-muted-foreground">
+              {mappedLernziele.map(lz => (
+                <li key={lz.id} className="list-disc list-inside">
+                  {lz.formulierung_fachsprache || lz.title}
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 
-        {/* Bereich 3: Split-Layout Editor + Chat */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4" style={{ minHeight: '320px' }}>
-          {/* Linke Seite: Editor */}
-          <MusterloesungEditor
-            value={musterloesung}
-            onChange={handleEditorChange}
-            disabled={!kannBearbeiten}
-          />
-
-          {/* Rechte Seite: Chat */}
-          <AssistenzChat
-            messages={chatMessages}
-            onSend={handleChatSend}
-            isLoading={chatLoading}
-          />
+        {/* Hinweis */}
+        <div className="p-3 rounded-lg bg-muted/20 border border-border space-y-2">
+          <p className="text-xs font-semibold">💡 Tipps für einen guten Erwartungshorizont:</p>
+          <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+            <li>Konkrete Inhalte: Was soll gelernt/verstanden werden?</li>
+            <li>Qualitätsmerkmale: Woran erkennt man gute/mittelmäßige/schlechte Arbeit?</li>
+            <li>Prozess-Anforderungen: Welche Arbeitsschritte sind sinnvoll?</li>
+            <li>Umfang: Wie detailliert sollte das Ergebnis sein?</li>
+          </ul>
         </div>
-
       </div>
+
+      {/* Footer mit Speichern-Button */}
+      {kannBearbeiten && isDirty && (
+        <div className="shrink-0 p-4 border-t border-border bg-muted/10 flex justify-end gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setEditText(aufgabe?.erwartungshorizont || '');
+              setIsDirty(false);
+            }}
+          >
+            Abbrechen
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={updateMutation.isPending}
+            className="gap-2"
+          >
+            {updateMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Wird gespeichert…
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                Speichern
+              </>
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

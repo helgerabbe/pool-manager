@@ -49,16 +49,17 @@ function buildTutorPrompt({ aufgabe, einheit, mappedLernziele = [], mappedBasisL
     parts.push(`Der Schüler soll dabei folgende Kompetenzen nachweisen:\n${liste}`);
   }
 
-  // Erwartungshorizont
-  const musterloesung = aufgabe.musterloesung?.trim();
-  if (musterloesung) {
-    parts.push(`Deine Bewertung und dein Feedback müssen sich strikt an folgendem Erwartungshorizont orientieren:\n--- ERWARTUNGSHORIZONT START ---\n${musterloesung}\n--- ERWARTUNGSHORIZONT ENDE ---`);
+  // Erwartungshorizont (prioritär: neues Feld, fallback: alte Musterösung)
+  const erwartungshorizont = aufgabe.erwartungshorizont?.trim() || aufgabe.musterloesung?.trim();
+  if (erwartungshorizont) {
+    parts.push(`Du nutzt den folgenden Erwartungshorizont als Leitplanke für deine Lernbegleitung:\n--- ERWARTUNGSHORIZONT START ---\n${erwartungshorizont}\n--- ERWARTUNGSHORIZONT ENDE ---`);
   }
 
-  // Didaktische Direktive
-  parts.push(
-    'Bewerte die Eingaben des Schülers anhand dieses Erwartungshorizonts. Gib keine fertigen Lösungen vor, sondern nutze formatives Feedback, Hinweise und sokratische Fragen, um dem Schüler zu helfen, den Erwartungshorizont selbstständig zu erreichen.'
-  );
+  // Didaktische Direktive: Betonung der Erwartungshorizont-Nutzung
+  const direktiveText = erwartungshorizont
+    ? 'Nutze den Erwartungshorizont als Zielmarke: Stelle Fragen, die den Schüler methodisch dorthin steuern. Gib kein Wissen preis, sondern unterstütze durch formatives Feedback und sokratische Fragen. Mache dem Schüler deutlich, welche Anforderungen noch nicht erfüllt sind.'
+    : 'Gib dem Schüler konstruktives Feedback mit Fragen und Hinweisen. Vermeide fertige Lösungen.';
+  parts.push(direktiveText);
 
   return parts.join('\n\n');
 }
@@ -75,7 +76,7 @@ export default function AITutorPromptPanel({
   const [isDirty, setIsDirty] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const hatErwartungshorizont = !!aufgabe?.musterloesung?.trim();
+  const hatErwartungshorizont = !!(aufgabe?.erwartungshorizont?.trim() || aufgabe?.musterloesung?.trim());
 
   // Beim ersten Öffnen: gespeicherten Prompt laden oder neu generieren
   useEffect(() => {
@@ -129,14 +130,14 @@ export default function AITutorPromptPanel({
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
 
         {/* Warnung: kein Erwartungshorizont */}
-        {!hatErwartungshorizont && (
-          <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
-            <span>
-              <strong>Hinweis:</strong> Es wurde noch kein Erwartungshorizont (Tab 3) hinterlegt. Ohne diese Referenz kann der KI-Tutor dem Schüler kein präzises und auf die Musterlösung abgestimmtes Feedback geben.
-            </span>
-          </div>
-        )}
+         {!hatErwartungshorizont && (
+           <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+             <span>
+               <strong>Hinweis:</strong> Es wurde noch kein Erwartungshorizont hinterlegt. Füllen Sie dazu bitte den Tab „Erwartungshorizont" aus. Ohne diese Referenz kann der KI-Tutor dem Schüler kein präzises, zielgerichtetes Feedback geben.
+             </span>
+           </div>
+         )}
 
         {/* Aktionsleiste */}
         <div className="flex items-center gap-2 flex-wrap">

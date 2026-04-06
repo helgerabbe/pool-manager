@@ -71,6 +71,10 @@
       ],
       "description": "Erwartetes Dateiformat des Ergebnisses"
     },
+    "erwartungshorizont": {
+      "type": "string",
+      "description": "Strukturierter Erwartungshorizont f\u00fcr Ebene-3-Aufgaben (Kriterien, Umfang, L\u00f6sungsans\u00e4tze)"
+    },
     "musterloesung": {
       "type": "string",
       "description": "Musterl\u00f6sung / Erwartungshorizont als Rich-Text"

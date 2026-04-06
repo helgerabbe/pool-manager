@@ -233,6 +233,7 @@ const EMPTY_FORM = {
   materialien: [],
   ergebnis_form: '',
   ergebnis_dateiformat: '',
+  erwartungshorizont: '',
 };
 
 export default function AufgabeCreateView({ open, onOpenChange, einheitId, themenfelder = [], onSuccess, initialData = null }) {
@@ -263,6 +264,7 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
       materialien: data.materialien || [],
       ergebnis_form: data.ergebnis_form || null,
       ergebnis_dateiformat: data.ergebnis_dateiformat || null,
+      erwartungshorizont: data.erwartungshorizont || null,
     }),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
@@ -283,6 +285,7 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
       materialien: data.materialien || [],
       ergebnis_form: data.ergebnis_form || null,
       ergebnis_dateiformat: data.ergebnis_dateiformat || null,
+      erwartungshorizont: data.erwartungshorizont || null,
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
@@ -382,6 +385,18 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
                 <option>Offen / Beliebig</option>
               </select>
             </div>
+          </div>
+
+          {/* Erwartungshorizont (für Ebene 3) */}
+          <div className="space-y-2">
+            <Label>Erwartungshorizont / Zielvorgaben (optional)</Label>
+            <textarea
+              value={formData.erwartungshorizont}
+              onChange={e => set('erwartungshorizont', e.target.value)}
+              placeholder="Definieren Sie, wie ein erfolgreiches Ergebnis aussieht: inhaltliche Kriterien, Umfang, Lösungsansätze, Qualitätsmerkmale…"
+              className="w-full px-3 py-2 border border-border rounded-lg min-h-32 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+            <p className="text-xs text-muted-foreground">Dieses Feld dient als Leitplanke für den KI-Tutor bei der Lernbegleitung.</p>
           </div>
 
           {/* Zusätzliches Material */}
