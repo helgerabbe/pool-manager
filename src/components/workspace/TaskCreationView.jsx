@@ -51,7 +51,7 @@ function isKlonLockedByOther(klon, myEmail) {
 
 // ── Klon-Unterzeile ───────────────────────────────────────────────────────────
 
-function KlonSubItem({ klon, isSelected, onSelect }) {
+function KlonSubItem({ klon, isSelected, onSelect, index }) {
   const isApproved = klon.sync_status === 'approved';
   return (
     <button
@@ -64,7 +64,7 @@ function KlonSubItem({ klon, isSelected, onSelect }) {
       )}
     >
       <span className="flex-1 truncate">
-        {isApproved ? '✓' : '○'} Klon {klon.klon_index || '?'}
+        {isApproved ? '✓' : '○'} Kopie {index}
       </span>
       {isApproved
         ? <Badge variant="outline" className="text-[10px] text-green-700 border-green-300 bg-green-50">✓ Export</Badge>
@@ -104,10 +104,11 @@ function MasterSubItem({ master, index, klone, selectedItem, onSelect }) {
 
       {(isMasterSelected || hasSelectedKlon) && klone.length > 0 && (
         <div className="ml-4 mt-0.5 border-l border-border pl-2 space-y-0.5">
-          {klone.map(klon => (
+          {klone.map((klon, idx) => (
             <KlonSubItem
               key={klon.id}
               klon={klon}
+              index={idx + 1}
               isSelected={selectedItem?.type === 'klon' && selectedItem?.klon?.id === klon.id}
               onSelect={onSelect}
             />
