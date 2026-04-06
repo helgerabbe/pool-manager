@@ -13,7 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Crown, Trash2, Sparkles, Loader2, AlertCircle, ChevronDown, ChevronUp, CheckCircle2, RotateCw } from 'lucide-react';
+import { Crown, Trash2, Sparkles, Loader2, ChevronDown, ChevronUp, CheckCircle2, RotateCw } from 'lucide-react';
+import KlonErstellenModal from '@/components/workspace/KlonErstellenModal';
 import LockBanner from '@/components/workspace/LockBanner';
 import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
 import LueckentextEditor, { LueckentextRenderer, validateBeforeSave } from '@/components/workspace/LueckentextEditor';
@@ -38,134 +39,6 @@ function isMatchTerms(name = '') {
 }
 function isLueckentext(name = '') {
   return LUECKENTEXT_NAMES.some(n => name.toLowerCase().includes(n));
-}
-
-// ── Klon-Generator ─────────────────────────────────────────────────────────────
-
-function KlonGenerator({ master, onKlonesCreated }) {
-  const queryClient = useQueryClient();
-  const [hint, setHint] = useState('');
-  const [klonCount, setKlonCount] = useState(3);
-  const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState(null);
-
-  const handleGenerate = async () => {
-    setGenerating(true);
-    setError(null);
-    try {
-      const fv = master.field_values || {};
-      const isLuecke = !!(fv.lueckentext);
-
-      const prompt = isLuecke ? [
-        `Erstelle ${klonCount} didaktisch gleichwertige Variationen (Klone) dieses Lückentexts.`,
-        'Jeder Klon soll denselben Themenbereich abdecken, aber andere Begriffe/Sätze verwenden.',
-        'Markiere Lücken zwingend mit eckigen Klammern: z.B. [Begriff].',
-        `Original-Lückentext: "${fv.lueckentext}"`,
-        hint ? `Zusätzliche Hinweise: ${hint}` : '',
-        'Antworte als JSON mit einem "klone"-Array, jedes Element: { "lueckentext": string }',
-      ].filter(Boolean).join('\n') : [
-        `Erstelle ${klonCount} didaktisch gleichwertige Variationen (Klone) dieser Lernaufgabe.`,
-        'Die Klone sollen die gleiche Struktur haben, aber unterschiedliche Begriffe/Inhalte verwenden.',
-        fv.instruction ? `Original-Anweisung: "${fv.instruction}"` : '',
-        fv.pairs ? `Original-Paare: ${JSON.stringify(fv.pairs)}` : '',
-        hint ? `Zusätzliche Hinweise: ${hint}` : '',
-        'Antworte als JSON mit einem "klone"-Array, jedes Element: { "instruction": string, "pairs": [{left, right}][], "distractors": string[] }',
-      ].filter(Boolean).join('\n');
-
-      const fv2 = master.field_values || {};
-      const isLuecke2 = !!(fv2.lueckentext);
-
-      const schema = isLuecke2
-        ? {
-            type: 'object',
-            properties: {
-              klone: { type: 'array', items: { type: 'object', properties: { lueckentext: { type: 'string' } }, required: ['lueckentext'] } },
-            },
-          }
-        : {
-            type: 'object',
-            properties: {
-              klone: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    instruction: { type: 'string' },
-                    pairs: { type: 'array', items: { type: 'object', properties: { left: { type: 'string' }, right: { type: 'string' } }, required: ['left', 'right'] } },
-                    distractors: { type: 'array', items: { type: 'string' } },
-                  },
-                },
-              },
-            },
-          };
-
-      const result = await base44.integrations.Core.InvokeLLM({ prompt, response_json_schema: schema });
-
-      const klone = result?.klone || [];
-      if (klone.length === 0) throw new Error('Keine Klone generiert.');
-
-      for (let i = 0; i < klone.length; i++) {
-        await base44.entities.Aufgabenbausteine.create({
-          lernpaket_id: master.lernpaket_id,
-          baustein_typ: 'Ebene-1-Übung',
-          aufgabentext_inhalt: JSON.stringify(klone[i]),
-          is_master: false,
-          master_aufgabe_id: master.id,
-          content_status: 'draft',   // korrekt: content_status, nicht status
-          sync_status: 'new',
-          klon_index: i + 1,
-        });
-      }
-
-      queryClient.invalidateQueries({ queryKey: ['klone'] });
-      toast.success(`${klone.length} Klone erstellt.`);
-      onKlonesCreated?.();
-    } catch (e) {
-      setError(e.message);
-      toast.error('Fehler beim Generieren.');
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  return (
-    <div className="border-t border-border/60 mt-4 pt-4 space-y-3">
-      <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-        <Sparkles className="w-3.5 h-3.5" /> Klone erzeugen
-        <Badge variant="outline" className="text-[10px] ml-1">KI</Badge>
-      </p>
-
-      <div className="flex items-center gap-3">
-        <Label htmlFor="klonCount" className="text-xs font-medium shrink-0">Anzahl Klone:</Label>
-        <Input
-          id="klonCount"
-          type="number"
-          min={1}
-          max={10}
-          value={klonCount}
-          onChange={e => setKlonCount(Math.max(1, parseInt(e.target.value) || 1))}
-          disabled={generating}
-          className="h-7 w-16 text-xs"
-        />
-      </div>
-
-      <Textarea
-        value={hint}
-        onChange={e => setHint(e.target.value)}
-        placeholder="Zusätzliche Hinweise (optional): z.B. 'Thema Biologie Kl. 7', 'schwierigere Begriffe'"
-        className="resize-none h-16 text-xs"
-        disabled={generating}
-      />
-      {error && (
-        <div className="flex items-start gap-2 p-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">
-          <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />{error}
-        </div>
-      )}
-      <Button size="sm" onClick={handleGenerate} disabled={generating} className="w-full gap-2">
-        {generating ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generiere…</> : <><Sparkles className="w-3.5 h-3.5" /> Klone erzeugen</>}
-      </Button>
-    </div>
-  );
 }
 
 // ── Master Approval Button ─────────────────────────────────────────────────────
@@ -243,6 +116,8 @@ export default function MasterAufgabeCard({
   const [titel, setTitel] = useState(master.titel || '');
   const [editingTitel, setEditingTitel] = useState(false);
   const [hasPendingChanges, setHasPendingChanges] = useState(false);
+
+  const [klonModalOpen, setKlonModalOpen] = useState(false);
 
   const locked = isLockedByOther(master, userEmail);
   const isMatch = isMatchTerms(catalogName);
@@ -557,10 +432,30 @@ export default function MasterAufgabeCard({
             </div>
           )}
 
-          {/* Klon-Generator – nur wenn Inhalt gespeichert ist */}
+          {/* Klon erstellen – nur wenn Inhalt gespeichert ist */}
           {(master.field_values?.lueckentext || master.field_values?.pairs?.length > 0 || master.field_values?.task_description) && (
-            <KlonGenerator master={master} onKlonesCreated={onKlonesCreated} />
+            <div className="border-t border-border/60 pt-4">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setKlonModalOpen(true)}
+                className="w-full gap-2 border-dashed"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Klone erstellen
+              </Button>
+            </div>
           )}
+
+          <KlonErstellenModal
+            open={klonModalOpen}
+            onClose={() => setKlonModalOpen(false)}
+            master={master}
+            onKlonesCreated={() => {
+              onKlonesCreated?.();
+              queryClient.invalidateQueries({ queryKey: ['klone'] });
+            }}
+          />
         </div>
       )}
     </div>
