@@ -275,7 +275,9 @@ export default function ActivityMasterPanel({
       </div>
 
       {/* ── Inhaltsfelder für Aktivitäten ohne Masteraufgaben ──────────────────── */}
-      {!supportsMaster && (
+      {!supportsMaster && (() => {
+        console.log('🔍 !supportsMaster Block gerendert für:', catalogEntry?.name, 'form_schema:', catalogEntry?.form_schema);
+        return (
         <div className="rounded-xl border border-border bg-card p-4 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-foreground">Inhalte konfigurieren</h3>
@@ -345,8 +347,9 @@ export default function ActivityMasterPanel({
           {!isInEditMode && (
             <p className="text-xs text-muted-foreground italic">Bearbeitungsmodus aktivieren um Felder zu bearbeiten.</p>
           )}
-        </div>
-      )}
+          </div>
+          );
+          })()}
 
       {/* ── Aufgabentext-Block (für supports_master Aktivitäten, NOT für KI-Tutor) ─ */}
       {supportsMaster && !isKITutor && (
