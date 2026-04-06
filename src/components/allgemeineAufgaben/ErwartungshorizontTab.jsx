@@ -179,6 +179,32 @@ function AssistenzChat({ messages, onSend, isLoading }) {
   );
 }
 
+// ── Hilfsfunktion: Extrahiert lesbaren Text aus KI-Antwort ───────────────────
+function extractReadableText(raw) {
+  if (!raw || typeof raw !== 'string') return raw || '';
+  const trimmed = raw.trim();
+
+  // Wenn es wie JSON aussieht, versuche zu parsen und den Textinhalt zu extrahieren
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      // Gängige Felder in KI-Antwort-Objekten
+      const text = parsed?.output || parsed?.text || parsed?.content ||
+        parsed?.musterloesung || parsed?.result || parsed?.answer ||
+        parsed?.action_input?.prompt || parsed?.response || '';
+      if (text && typeof text === 'string') return text.trim();
+    } catch {
+      // kein valides JSON – weiter mit dem Rohtext
+    }
+  }
+
+  // Entferne führende/abschließende Code-Fences (```...```)
+  const fenceMatch = trimmed.match(/^```(?:\w+)?\n?([\s\S]*?)```$/);
+  if (fenceMatch) return fenceMatch[1].trim();
+
+  return trimmed;
+}
+
 // ── Haupt-Tab-Komponente ──────────────────────────────────────────────────────
 export default function ErwartungshorizontTab({ aufgabe, kannBearbeiten, einheit, mappedLernziele = [], mappedBasisLernziele = [] }) {
   const queryClient = useQueryClient();
@@ -285,7 +311,7 @@ export default function ErwartungshorizontTab({ aufgabe, kannBearbeiten, einheit
       promptParts.push(`Das erwartete Ergebnis hat die ${formTeile.join(' im ')}.`);
     }
 
-    promptParts.push('Gib ausschließlich die fertige Musterlösung aus, ohne einleitende oder abschließende Floskeln.');
+    promptParts.push('Gib ausschließlich die fertige Musterlösung als reinen Fließtext aus – KEIN JSON, KEINE Codeblöcke, KEINE Formatierungsanweisungen, KEINE technischen Metadaten. Nur der lesbare Text für den Lehrer, ohne einleitende oder abschließende Floskeln.');
 
     if (aufgabentext) {
       promptParts.push(`\nAufgabe:\n${aufgabentext}`);
@@ -298,7 +324,10 @@ export default function ErwartungshorizontTab({ aufgabe, kannBearbeiten, einheit
       ...(hatBilder ? { file_urls: bildUrls, model: 'gemini_3_flash' } : {}),
     });
 
-    const text = typeof result === 'string' ? result : result?.response || '';
+    let text = typeof result === 'string' ? result : result?.response || '';
+    // Bereinigung: Falls die KI versehentlich JSON oder Action-Metadaten zurückgibt,
+    // versuche daraus den lesbaren Textinhalt zu extrahieren
+    text = extractReadableText(text);
     setMusterloesung(text);
     setIsDirty(true);
     setGenerating(false);
@@ -322,7 +351,8 @@ ${kompetenzListe}
 Gib NUR den vollständigen überarbeiteten Text aus – ohne Kommentare oder Erklärungen davor oder danach.`;
 
     const result = await base44.integrations.Core.InvokeLLM({ prompt });
-    const newText = typeof result === 'string' ? result : result?.response || '';
+    let newText = typeof result === 'string' ? result : result?.response || '';
+    newText = extractReadableText(newText);
 
     setMusterloesung(newText);
     setIsDirty(true);
