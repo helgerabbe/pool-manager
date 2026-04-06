@@ -188,21 +188,31 @@ export function useKlonLock(klonId, userEmail, active) {
   const releaseLock = useCallback(async () => {
     if (!klonId || !heldRef.current) return;
     heldRef.current = false;
-    await base44.entities.Aufgabenbausteine.update(klonId, {
-      lock_status: false,
-      locked_by_user: '',
-      locked_at: null,
-    });
-    invalidate();
+    try {
+      await base44.entities.Aufgabenbausteine.update(klonId, {
+        lock_status: false,
+        locked_by_user: '',
+        locked_at: null,
+      });
+      invalidate();
+    } catch {
+      // Klon wurde möglicherweise gelöscht (z.B. nach Promote to Master) – ignorieren
+    }
   }, [klonId, invalidate]);
 
   const startHeartbeat = useCallback(() => {
     if (heartbeatRef.current) return;
     heartbeatRef.current = setInterval(async () => {
       if (!heldRef.current || !klonId) return;
-      await base44.entities.Aufgabenbausteine.update(klonId, {
-        locked_at: new Date().toISOString(),
-      });
+      try {
+        await base44.entities.Aufgabenbausteine.update(klonId, {
+          locked_at: new Date().toISOString(),
+        });
+      } catch {
+        // Klon nicht mehr vorhanden – Heartbeat stoppen
+        heldRef.current = false;
+        stopHeartbeat();
+      }
     }, HEARTBEAT_MS);
   }, [klonId]);
 
