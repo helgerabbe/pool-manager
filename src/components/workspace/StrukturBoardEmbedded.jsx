@@ -332,8 +332,10 @@ export default function StrukturBoardEmbedded({
     setInitialized(true);
   }, [remotePakete, remoteThemenfelder, initialized]);
 
-  // Re-init wenn einheit oder Remote-Daten sich ändern
-  useEffect(() => { setInitialized(false); }, [einheitId, remotePakete, remoteThemenfelder]);
+  // Re-init nur wenn einheit sich ändert oder wir keine lokalen Änderungen haben
+  useEffect(() => { 
+    if (!isDirty) setInitialized(false); 
+  }, [einheitId]);
 
   // RBAC: Nur Struktur-Bearbeiter dürfen hier rein (Bereich 1: Struktur) - nach allen Hooks
   const kannStrukturBearbeiten = einheit ? permissions.kannStrukturBearbeiten(einheit.fach) : false;
