@@ -204,7 +204,7 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
       {/* ── Klon-Karte ── */}
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         {/* Header */}
-          <div className="flex items-center gap-3 px-4 py-2.5 bg-muted/40 border-b border-border">
+          <div className="flex items-center gap-3 px-4 py-2.5 bg-green-50 border-b border-green-200">
             <span className="text-xs font-semibold text-foreground">
               Kopie {klon.klon_index}
             </span>
