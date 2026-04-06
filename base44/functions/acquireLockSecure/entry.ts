@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
     // Lese-Check: Aktuelle Lock-Status abrufen
     let currentEntity = null;
     try {
-      currentEntity = await base44.entities[entityName].read(entityId);
+      currentEntity = await base44.entities[entityName].get(entityId);
     } catch (err) {
       console.error('[acquireLockSecure] Entity read failed:', err.message);
       return Response.json({ error: 'Entity not found' }, { status: 404 });
