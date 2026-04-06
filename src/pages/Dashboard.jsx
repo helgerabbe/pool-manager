@@ -62,53 +62,72 @@ export default function Dashboard() {
 
       myRecordIdRef.current = recordId;
 
-      const loadPresence = async () => {
-        const all = await base44.entities.ActiveUsersPresence.list();
-        const cutoff = Date.now() - STALE_THRESHOLD_MS;
+      let debounceTimer = null;
 
-        // Deduplizieren nach E-Mail (neuester Eintrag gewinnt), Stale rausfiltern
-        const byEmail = {};
-        for (const entry of all) {
-          const ts = new Date(entry.last_seen_at).getTime();
-          if (ts <= cutoff) continue;
-          if (!byEmail[entry.user_email] || ts > new Date(byEmail[entry.user_email].last_seen_at).getTime()) {
-            byEmail[entry.user_email] = entry;
-          }
-        }
+       const loadPresence = async () => {
+         try {
+           const all = await base44.entities.ActiveUsersPresence.list();
+           const cutoff = Date.now() - STALE_THRESHOLD_MS;
 
-        if (mounted) {
-          setOnlineUsers(Object.values(byEmail));
-        }
-      };
+           // Deduplizieren nach E-Mail (neuester Eintrag gewinnt), Stale rausfiltern
+           const byEmail = {};
+           for (const entry of all) {
+             const ts = new Date(entry.last_seen_at).getTime();
+             if (ts <= cutoff) continue;
+             if (!byEmail[entry.user_email] || ts > new Date(byEmail[entry.user_email].last_seen_at).getTime()) {
+               byEmail[entry.user_email] = entry;
+             }
+           }
 
-      await loadPresence();
+           if (mounted) {
+             setOnlineUsers(Object.values(byEmail));
+           }
+         } catch (err) {
+           // Rate-Limit oder Fehler ignorieren – nächster Heartbeat versucht es wieder
+           console.warn('[Dashboard] loadPresence error:', err.message);
+         }
+       };
 
-      const unsubscribe = base44.entities.ActiveUsersPresence.subscribe(() => {
-        loadPresence();
-      });
+       await loadPresence();
+
+       const unsubscribe = base44.entities.ActiveUsersPresence.subscribe(() => {
+         // Debounce: verhindert Rate-Limit bei vielen rapid Updates
+         if (debounceTimer) clearTimeout(debounceTimer);
+         debounceTimer = setTimeout(() => {
+           loadPresence();
+         }, 2000);
+       });
 
       heartbeatRef.current = setInterval(() => {
-        if (!myRecordIdRef.current) return;
-        base44.entities.ActiveUsersPresence.update(myRecordIdRef.current, {
-          last_seen_at: new Date().toISOString(),
-        });
-      }, HEARTBEAT_INTERVAL);
+         if (!myRecordIdRef.current) return;
+         base44.entities.ActiveUsersPresence.update(myRecordIdRef.current, {
+           last_seen_at: new Date().toISOString(),
+         }).catch(() => {
+           // Fehler ignorieren – Record gelöscht oder Rate-Limit
+           myRecordIdRef.current = null;
+         });
+       }, HEARTBEAT_INTERVAL);
 
-      return unsubscribe;
+       return () => {
+         if (debounceTimer) clearTimeout(debounceTimer);
+         unsubscribe();
+       };
     };
 
     let unsubscribeFn = null;
     init().then(fn => { unsubscribeFn = fn; });
 
     const cleanup = () => {
-      mounted = false;
-      clearInterval(heartbeatRef.current);
-      if (unsubscribeFn) unsubscribeFn();
-      if (myRecordIdRef.current) {
-        base44.entities.ActiveUsersPresence.delete(myRecordIdRef.current);
-        myRecordIdRef.current = null;
-      }
-    };
+       mounted = false;
+       clearInterval(heartbeatRef.current);
+       if (unsubscribeFn) unsubscribeFn();
+       if (myRecordIdRef.current) {
+         base44.entities.ActiveUsersPresence.delete(myRecordIdRef.current).catch(() => {
+           // Ignorieren wenn Record nicht existiert
+         });
+         myRecordIdRef.current = null;
+       }
+     };
 
     window.addEventListener('beforeunload', cleanup);
     return () => {
