@@ -301,7 +301,10 @@ export default function MasterAufgabeCard({
             entityType="master"
             contentStatus={master.content_status}
             missingFields={
-              !master.field_values?.instruction && !master.field_values?.task_description && !master.field_values?.pairs?.length
+              !master.field_values?.instruction &&
+              !master.field_values?.task_description &&
+              !master.field_values?.pairs?.length &&
+              !master.field_values?.lueckentext
                 ? ['Aufgabeninhalt fehlt']
                 : []
             }
