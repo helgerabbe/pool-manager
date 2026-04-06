@@ -215,6 +215,10 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     [paketeFuerThemenfeld]
   );
 
+  const activityRecordForEdit = selectedNode?.type === 'aktivitaet-edit' 
+    ? lernpaketAktivitaeten.find((a) => a.id === selectedNode.activityRecordId) 
+    : null;
+
   // ── Callbacks ─────────────────────────────────────────────────────────────────
   const handleEinheitChange = (id) => {
     setSelectedEinheitId(id);
@@ -481,39 +485,36 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                 <main className="flex-1 overflow-hidden min-h-0 h-full">
                    <ErrorBoundary label="Detail-Panel">
                      <div className="h-full overflow-y-auto max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pr-2">
-                      {selectedNode?.type === 'aktivitaet-edit' && (() => {
-                        const activityRecord = lernpaketAktivitaeten.find((a) => a.id === selectedNode.activityRecordId);
-                        if (!activityRecord) return null;
-                        return (
+                       {selectedNode?.type === 'aktivitaet-edit' ? (
+                         activityRecordForEdit ? (
                            <ActivityDetailView
-                             activityRecord={activityRecord}
+                             activityRecord={activityRecordForEdit}
                              kannBearbeiten={false}
                              einheitFach={einheit?.fach}
                              queryClient={queryClient}
                            />
-                        );
-                      })()}
-                      {selectedNode?.type !== 'aktivitaet-edit' && (
-                        <WorkspaceDetailPanel
-                          selectedNode={{ ...selectedNode, themenfelder }}
-                          einheit={einheit}
-                          lernpakete={paketeFuerEinheit}
-                          lernziele={zieleFuerEinheit}
-                          aufgaben={aufgabenFuerEinheit}
-                          userEmail={authUser?.email}
-                          kannBearbeiten={kannDieseEinheitBearbeiten}
-                          istAdmin={istAdmin}
-                          onNavigate={handleSelect}
-                          onNewLernpaket={() => handleSelect({ type: 'new-lernpaket' })}
-                          onNewLernziel={(paketId) => handleSelect({ type: 'new-lernziel', paketId })}
-                          onNewAufgabe={(paketId, lernzielId) => handleSelect({ type: 'new-aufgabe', paketId, lernzielId })}
-                          onEditEinheit={() => {}}
-                          onDeleteLernpaket={(id) => deleteLernpaket.mutate(id)}
-                          onDeleteLernziel={(id) => deleteLernziel.mutate(id)}
-                        />
-                      )}
-                    </div>
-                  </ErrorBoundary>
+                         ) : null
+                       ) : (
+                         <WorkspaceDetailPanel
+                           selectedNode={{ ...selectedNode, themenfelder }}
+                           einheit={einheit}
+                           lernpakete={paketeFuerEinheit}
+                           lernziele={zieleFuerEinheit}
+                           aufgaben={aufgabenFuerEinheit}
+                           userEmail={authUser?.email}
+                           kannBearbeiten={kannDieseEinheitBearbeiten}
+                           istAdmin={istAdmin}
+                           onNavigate={handleSelect}
+                           onNewLernpaket={() => handleSelect({ type: 'new-lernpaket' })}
+                           onNewLernziel={(paketId) => handleSelect({ type: 'new-lernziel', paketId })}
+                           onNewAufgabe={(paketId, lernzielId) => handleSelect({ type: 'new-aufgabe', paketId, lernzielId })}
+                           onEditEinheit={() => {}}
+                           onDeleteLernpaket={(id) => deleteLernpaket.mutate(id)}
+                           onDeleteLernziel={(id) => deleteLernziel.mutate(id)}
+                         />
+                       )}
+                     </div>
+                   </ErrorBoundary>
                 </main>
               </ErrorBoundary>
             </TabsContent>
