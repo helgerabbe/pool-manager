@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { isEqual } from 'npm:lodash-es@4.17.21';
 
 /**
  * Entity-Automation Handler: sync_status Change-Tracking
@@ -69,12 +70,15 @@ Deno.serve(async (req) => {
     // 5. Ignorierte Felder: Systemmetadaten, Lock, Sync-Timestamps
     // ───────────────────────────────────────────────────────────────────
     const ignoredFields = new Set([
-      // Lock-Felder
+      // Lock-Felder (Task & Paket)
       'lock_status',
       'locked_by_user',
       'locked_at',
       'is_locked',
       'locked_by_email',
+      // Einheiten-Structural-Lock
+      'structural_lock',
+      'structural_locked_at',
       // Systemmetadaten
       'updated_date',
       'created_date',
@@ -92,7 +96,7 @@ Deno.serve(async (req) => {
     const changedFields = Object.keys(data || {}).filter(k => {
       if (ignoredFields.has(k)) return false;
       if (k === 'sync_status') return false; // sync_status ist hier irrelevant
-      return JSON.stringify(data[k]) !== JSON.stringify(old_data?.[k]);
+      return !isEqual(data[k], old_data?.[k]);
     });
 
     if (changedFields.length === 0) {
