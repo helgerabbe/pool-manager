@@ -60,15 +60,21 @@ export function usePresence(einheitId) {
             last_seen_at: now,
             user_name: user.full_name || user.email,
           });
-        } catch {
-          // Record wurde extern gelöscht – neu erstellen
-          const created = await base44.entities.ActiveUsersPresence.create({
-            user_email: user.email,
-            user_name: user.full_name || user.email,
-            current_view: einheitId,
-            last_seen_at: now,
-          });
-          recordId = created.id;
+        } catch (err) {
+          // Record wurde extern gelöscht oder ist stale – neu erstellen
+          try {
+            const created = await base44.entities.ActiveUsersPresence.create({
+              user_email: user.email,
+              user_name: user.full_name || user.email,
+              current_view: einheitId,
+              last_seen_at: now,
+            });
+            recordId = created.id;
+          } catch {
+            // Fallback bei Fehler
+            console.warn('[usePresence] Could not create new record');
+            return;
+          }
         }
       } else {
         const created = await base44.entities.ActiveUsersPresence.create({
@@ -82,10 +88,12 @@ export function usePresence(einheitId) {
 
       if (!mounted) {
         // Wenn in der Zwischenzeit unmounted, sofort wieder löschen
-        try {
-          base44.entities.ActiveUsersPresence.delete(recordId);
-        } catch {
-          // Ignorieren wenn Record nicht existiert
+        if (recordId) {
+          try {
+            await base44.entities.ActiveUsersPresence.delete(recordId);
+          } catch {
+            // Ignorieren wenn Record nicht existiert oder stale ist
+          }
         }
         return;
       }
@@ -133,34 +141,43 @@ export function usePresence(einheitId) {
     };
 
     // Cleanup-Funktion: eigenen Eintrag löschen
-    const cleanup = () => {
-      mounted = false;
-      clearInterval(heartbeatRef.current);
-      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current();
-        unsubscribeRef.current = null;
-      }
-      if (myRecordIdRef.current) {
-        try {
-          base44.entities.ActiveUsersPresence.delete(myRecordIdRef.current);
-        } catch {
-          // Ignorieren wenn Record nicht mehr existiert
-        }
-        myRecordIdRef.current = null;
-      }
-    };
+     const cleanup = async () => {
+       mounted = false;
+       clearInterval(heartbeatRef.current);
+       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+       if (unsubscribeRef.current) {
+         unsubscribeRef.current();
+         unsubscribeRef.current = null;
+       }
+       if (myRecordIdRef.current) {
+         try {
+           await base44.entities.ActiveUsersPresence.delete(myRecordIdRef.current);
+         } catch {
+           // Ignorieren wenn Record nicht mehr existiert oder stale ist
+         }
+         myRecordIdRef.current = null;
+       }
+     };
 
     // beforeunload: Eintrag sofort entfernen
-    const handleUnload = () => cleanup();
-    window.addEventListener('beforeunload', handleUnload);
+     const handleUnload = () => {
+       mounted = false;
+       if (myRecordIdRef.current) {
+         try {
+           base44.entities.ActiveUsersPresence.delete(myRecordIdRef.current);
+         } catch {
+           // Ignorieren – async cleanup läuft parallel
+         }
+       }
+     };
+     window.addEventListener('beforeunload', handleUnload);
 
-    init();
+     init();
 
-    return () => {
-      window.removeEventListener('beforeunload', handleUnload);
-      cleanup();
-    };
+     return () => {
+       window.removeEventListener('beforeunload', handleUnload);
+       cleanup();
+     };
   }, [einheitId]);
 
   return { onlineUsers, count: onlineUsers.length };
