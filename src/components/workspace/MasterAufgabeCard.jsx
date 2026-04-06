@@ -456,6 +456,7 @@ export default function MasterAufgabeCard({
             open={klonModalOpen}
             onClose={() => setKlonModalOpen(false)}
             master={master}
+            klone={klone}
             onKlonesCreated={() => {
               onKlonesCreated?.();
               queryClient.invalidateQueries({ queryKey: ['klone'] });

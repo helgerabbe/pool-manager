@@ -18,7 +18,7 @@ import { Copy, Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-export default function KlonErstellenModal({ open, onClose, master, onKlonesCreated }) {
+export default function KlonErstellenModal({ open, onClose, master, klone, onKlonesCreated }) {
   const queryClient = useQueryClient();
   const [method, setMethod] = useState('copy'); // 'copy' | 'ai'
   const [count, setCount] = useState(1);
@@ -36,23 +36,27 @@ export default function KlonErstellenModal({ open, onClose, master, onKlonesCrea
   };
 
   // ── Option A: Exakte Kopien ────────────────────────────────────────────────
-  const createExactCopies = async () => {
-    const fv = master.field_values || {};
-    const baseIndex = Date.now(); // Basis für klon_index um Kollisionen zu vermeiden
+   const createExactCopies = async () => {
+     const fv = master.field_values || {};
 
-    for (let i = 0; i < count; i++) {
-      await base44.entities.Aufgabenbausteine.create({
-        lernpaket_id: master.lernpaket_id,
-        baustein_typ: 'Ebene-1-Übung',
-        aufgabentext_inhalt: JSON.stringify(fv),
-        is_master: false,
-        master_aufgabe_id: master.id,
-        content_status: 'draft',
-        sync_status: 'new',
-        klon_index: baseIndex + i,
-      });
-    }
-  };
+     // Bestimme die nächste Klon-Nummer
+     const maxIndex = klone.length > 0
+       ? Math.max(...klone.map(k => k.klon_index || 0))
+       : 0;
+
+     for (let i = 0; i < count; i++) {
+       await base44.entities.Aufgabenbausteine.create({
+         lernpaket_id: master.lernpaket_id,
+         baustein_typ: 'Ebene-1-Übung',
+         aufgabentext_inhalt: JSON.stringify(fv),
+         is_master: false,
+         master_aufgabe_id: master.id,
+         content_status: 'draft',
+         sync_status: 'new',
+         klon_index: maxIndex + i + 1,
+       });
+     }
+   };
 
   // ── Option B: KI-Variationen ───────────────────────────────────────────────
   const createAIVariations = async () => {
@@ -111,18 +115,23 @@ export default function KlonErstellenModal({ open, onClose, master, onKlonesCrea
     const klone = result?.klone || [];
     if (klone.length === 0) throw new Error('Die KI hat keine Variationen generiert. Bitte erneut versuchen.');
 
+    // Bestimme die nächste Klon-Nummer
+    const maxIndex = klone.length > 0
+      ? Math.max(...klone.map(k => k.klon_index || 0))
+      : 0;
+
     for (let i = 0; i < klone.length; i++) {
-      await base44.entities.Aufgabenbausteine.create({
-        lernpaket_id: master.lernpaket_id,
-        baustein_typ: 'Ebene-1-Übung',
-        aufgabentext_inhalt: JSON.stringify(klone[i]),
-        is_master: false,
-        master_aufgabe_id: master.id,
-        content_status: 'draft',
-        sync_status: 'new',
-        klon_index: Date.now() + i,
-      });
-    }
+       await base44.entities.Aufgabenbausteine.create({
+         lernpaket_id: master.lernpaket_id,
+         baustein_typ: 'Ebene-1-Übung',
+         aufgabentext_inhalt: JSON.stringify(klone[i]),
+         is_master: false,
+         master_aufgabe_id: master.id,
+         content_status: 'draft',
+         sync_status: 'new',
+         klon_index: maxIndex + i + 1,
+       });
+     }
   };
 
   const handleSubmit = async () => {
