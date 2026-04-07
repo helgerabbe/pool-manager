@@ -37,11 +37,11 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const [selectedEinheitId, setSelectedEinheitId] = useState(initialEinheitId);
   const [selectedThemenfeldId, setSelectedThemenfeldId] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
-  const [activeTab, setActiveTab] = useState('einheit');
+  const VALID_TABS = ['einheit', 'struktur', 'aktivitaeten', 'aufgaben', 'ebene2', 'ebene3', 'cockpit', 'export'];
+  const tabFromUrl = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'einheit');
   const [highlightedAtomIds, setHighlightedAtomIds] = useState(new Set());
   const [taskWorkshopActivityId, setTaskWorkshopActivityId] = useState(null);
-
-  const fromWizard = searchParams.get('fromWizard') === '1';
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -175,10 +175,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     return () => ch.close();
   }, [selectedEinheitId]);
 
-  // fromWizard → direkt zum Struktur-Tab
-  useEffect(() => {
-    if (fromWizard) setActiveTab('struktur');
-  }, [fromWizard]);
+
 
   const structLocked = einheit ? isStructurallyLocked(einheit, authUser?.email) : false;
 
