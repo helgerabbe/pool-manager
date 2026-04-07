@@ -19,7 +19,7 @@ export default function WizardStepLernziele({ einheitId, onDone }) {
 
   const { data: lernpakete = [] } = useQuery({
     queryKey: ['lernpakete'],
-    queryFn: () => base44.entities.Lernpakete.list(),
+    queryFn: () => base44.entities.Lernpakete.list('-created_date', 200),
   });
 
   const paketeFuerEinheit = lernpakete
@@ -65,9 +65,9 @@ export default function WizardStepLernziele({ einheitId, onDone }) {
           return updated;
         });
       } else {
-        // Initiales Laden: Alle Pakete mit leerer Genehmigung
+        // Initiales Laden: Alle Pakete auto-genehmigt
         setObjectives(newObjectives);
-        setApproved(new Set());
+        setApproved(new Set(newObjectives.map(o => o.lernpaket_id)));
       }
     } catch (err) {
       setError(err.message || 'Fehler bei der KI-Generierung');
@@ -119,7 +119,7 @@ export default function WizardStepLernziele({ einheitId, onDone }) {
     setSaving(true);
     try {
       // Lösche alte Lernziele für diese Lernpakete
-      const existingLz = await base44.entities.Lernziele.list();
+      const existingLz = await base44.entities.Lernziele.list('-created_date', 500);
       const paketIds = new Set(paketeFuerEinheit.map(p => p.id));
       const toDelete = existingLz.filter(lz => paketIds.has(lz.lernpaket_id));
       
@@ -127,10 +127,10 @@ export default function WizardStepLernziele({ einheitId, onDone }) {
         await base44.entities.Lernziele.delete(lz.id);
       }
 
-      // Erstelle nur die genehmigten Lernziele
+      // Erstelle alle Lernziele (genehmigte = alle mit Inhalt, nicht explizit abgelehnte)
       let savedCount = 0;
       for (const obj of objectives) {
-        if (approved.has(obj.lernpaket_id) && obj.ziel_fach?.trim()) {
+        if (obj.ziel_fach?.trim()) {
           await base44.entities.Lernziele.create({
             lernpaket_id: obj.lernpaket_id,
             formulierung_fachsprache: obj.ziel_fach.trim(),

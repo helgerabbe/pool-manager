@@ -9,13 +9,13 @@ export function useWorkspaceData(selectedEinheitId) {
 
   const { data: lernpakete = [] } = useQuery({
     queryKey: ['lernpakete'],
-    queryFn: () => base44.entities.Lernpakete.list(),
+    queryFn: () => base44.entities.Lernpakete.list('-created_date', 200),
     enabled: !!selectedEinheitId,
   });
 
   const { data: lernziele = [] } = useQuery({
     queryKey: ['lernziele'],
-    queryFn: () => base44.entities.Lernziele.list(),
+    queryFn: () => base44.entities.Lernziele.list('-created_date', 500),
     enabled: !!selectedEinheitId,
   });
 
