@@ -160,7 +160,7 @@ export default function EinheitCreateWizard() {
     if (einheitId) {
       await base44.entities.Einheiten.update(einheitId, { wizard_status: 'aktiv' });
     }
-    navigate(`/workspace?einheit=${einheitId}&tab=unit-overview&fromWizard=1`);
+    navigate(`/workspace?einheit=${einheitId}&tab=einheit&fromWizard=1`);
   };
 
   const handleStepClick = (stepId) => {
