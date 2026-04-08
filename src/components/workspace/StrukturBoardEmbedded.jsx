@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, GripVertical, Clock, Trash2, FolderOpen, Layers, X, Save, Target } from 'lucide-react';
+import { Plus, GripVertical, Clock, Trash2, FolderOpen, Layers, X, Save, Target, ChevronLeft, AlignJustify, LayoutList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ── Lernpaket-Dialog ──────────────────────────────────────────────────────────
@@ -151,7 +151,7 @@ const SAMMELBECKEN_ID = '__sammelbecken__';
 
 // ── Paket-Karte ───────────────────────────────────────────────────────────────
 
-function PaketKarte({ paket, index, onDelete, onEdit }) {
+function PaketKarte({ paket, index, onDelete, onEdit, compact = false }) {
   return (
     <Draggable draggableId={paket.id} index={index}>
       {(provided, snapshot) => (
@@ -159,28 +159,32 @@ function PaketKarte({ paket, index, onDelete, onEdit }) {
           ref={provided.innerRef}
           {...provided.draggableProps}
           className={cn(
-            'group flex items-start gap-2 p-3 rounded-lg border bg-card text-sm transition-shadow',
+            'group flex items-start gap-1.5 rounded-lg border bg-card text-sm transition-shadow',
+            compact ? 'p-1.5' : 'p-3',
             snapshot.isDragging
               ? 'shadow-xl border-primary/40 rotate-1 scale-105'
               : 'shadow-sm hover:shadow-md border-border hover:border-primary/30 cursor-pointer'
           )}
           onClick={() => onEdit(paket)}
+          title={compact ? paket.titel_des_pakets : undefined}
         >
           <div
             {...provided.dragHandleProps}
-            className="mt-0.5 text-muted-foreground/40 hover:text-muted-foreground cursor-grab"
+            className="mt-0.5 text-muted-foreground/40 hover:text-muted-foreground cursor-grab shrink-0"
             onClick={e => e.stopPropagation()}
           >
-            <GripVertical className="w-4 h-4" />
+            <GripVertical className="w-3.5 h-3.5" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-medium leading-snug">{paket.titel_des_pakets}</p>
-            {paket.geschaetzte_dauer_minuten && (
+            <p className={cn('font-medium leading-snug', compact && 'truncate whitespace-nowrap text-xs')}>
+              {paket.titel_des_pakets}
+            </p>
+            {!compact && paket.geschaetzte_dauer_minuten && (
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                 <Clock className="w-3 h-3" />{paket.geschaetzte_dauer_minuten} Min.
               </p>
             )}
-            {paket.lernziele && paket.lernziele.length > 0 && (
+            {!compact && paket.lernziele && paket.lernziele.length > 0 && (
               <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
                 <Target className="w-3 h-3" />{paket.lernziele.length} Lernziel{paket.lernziele.length !== 1 ? 'e' : ''}
               </p>
@@ -190,7 +194,7 @@ function PaketKarte({ paket, index, onDelete, onEdit }) {
             onClick={e => { e.stopPropagation(); onDelete(paket.id); }}
             className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 text-destructive transition-all shrink-0"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-3 h-3" />
           </button>
         </div>
       )}
@@ -200,17 +204,61 @@ function PaketKarte({ paket, index, onDelete, onEdit }) {
 
 // ── Spalte ────────────────────────────────────────────────────────────────────
 
-function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onDeleteSpalte, onTitelChange, isSammelbecken = false }) {
+function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onDeleteSpalte, onTitelChange, isSammelbecken = false, compact = false, collapsed = false, onToggleCollapse }) {
   const [editingTitel, setEditingTitel]   = useState(false);
   const [titelDraft, setTitelDraft]       = useState(titel);
 
-  // sync when parent renames
   useEffect(() => { setTitelDraft(titel); }, [titel]);
 
   const saveTitel = () => { if (titelDraft.trim()) onTitelChange(titelDraft.trim()); setEditingTitel(false); };
 
+  // Eingeklappte Ansicht
+  if (collapsed) {
+    return (
+      <div className={cn('flex flex-col rounded-xl border shrink-0 w-12 max-h-full', isSammelbecken ? 'bg-slate-50 border-slate-200' : 'bg-card border-border')}>
+        {/* Collapse-Toggle */}
+        <button
+          onClick={onToggleCollapse}
+          className="p-2 flex justify-center hover:bg-muted/60 rounded-t-xl transition-colors"
+          title="Spalte ausklappen"
+        >
+          <ChevronLeft className="w-4 h-4 text-muted-foreground rotate-180" />
+        </button>
+        {/* Vertikaler Titel */}
+        <div className="flex-1 flex items-center justify-center py-3 overflow-hidden">
+          <span
+            className="text-xs font-semibold text-muted-foreground whitespace-nowrap"
+            style={{ writingMode: 'vertical-rl', textOrientation: 'mixed', transform: 'rotate(180deg)' }}
+            title={titel}
+          >
+            {titel} ({pakete.length})
+          </span>
+        </div>
+        {/* Drop-Zone (unsichtbar, aber aktiv) */}
+        <Droppable droppableId={id}>
+          {(provided, snapshot) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className={cn(
+                'w-full min-h-[40px] rounded-b-xl transition-colors',
+                snapshot.isDraggingOver && 'bg-primary/20'
+              )}
+            >
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </div>
+    );
+  }
+
   return (
-    <div className={cn('flex flex-col rounded-xl border shrink-0 w-72 max-h-full', isSammelbecken ? 'bg-slate-50 border-slate-200' : 'bg-card border-border')}>
+    <div className={cn(
+      'flex flex-col rounded-xl border shrink-0 max-h-full transition-all duration-200',
+      compact ? 'w-56' : 'w-72',
+      isSammelbecken ? 'bg-slate-50 border-slate-200' : 'bg-card border-border'
+    )}>
       {/* Header */}
       <div className={cn('flex items-center gap-2 px-3 py-3 rounded-t-xl border-b shrink-0', isSammelbecken ? 'border-slate-200 bg-slate-100/80' : 'border-border bg-muted/40')}>
         {isSammelbecken
@@ -229,13 +277,24 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
           <button
             className={cn('flex-1 text-sm font-semibold text-left truncate', !isSammelbecken && 'hover:text-primary')}
             onClick={() => !isSammelbecken && setEditingTitel(true)}
-            title={!isSammelbecken ? 'Klicken zum Bearbeiten' : undefined}
+            title={titel}
           >
             {titel}
           </button>
         )}
 
         <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">{pakete.length}</span>
+
+        {/* Einklapp-Button (nur für Themenfelder) */}
+        {!isSammelbecken && onToggleCollapse && (
+          <button
+            onClick={onToggleCollapse}
+            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            title="Spalte einklappen"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+        )}
 
         {!isSammelbecken && (
           <button onClick={onDeleteSpalte} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
@@ -244,16 +303,16 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
         )}
       </div>
 
-      {/* Drop-Zone – scrollbar wenn zu viele Pakete */}
+      {/* Drop-Zone */}
       <Droppable droppableId={id}>
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={cn('flex-1 overflow-y-auto p-2 space-y-2 min-h-[120px] transition-colors scroll-container', snapshot.isDraggingOver && 'bg-primary/5')}
+            className={cn('flex-1 overflow-y-auto p-2 space-y-1.5 min-h-[120px] transition-colors scroll-container', snapshot.isDraggingOver && 'bg-primary/5')}
           >
             {pakete.map((paket, index) => (
-              <PaketKarte key={paket.id} paket={paket} index={index} onDelete={onDeletePaket} onEdit={onEditPaket} />
+              <PaketKarte key={paket.id} paket={paket} index={index} onDelete={onDeletePaket} onEdit={onEditPaket} compact={compact} />
             ))}
             {provided.placeholder}
             {pakete.length === 0 && !snapshot.isDraggingOver && (
@@ -265,11 +324,11 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
         )}
       </Droppable>
 
-      {/* Neues Lernpaket (gestrichelter Bereich) – immer sichtbar am unteren Rand */}
+      {/* Neues Lernpaket */}
       <div className="px-2 pb-2 pt-1 shrink-0">
         <button
           onClick={() => onAddPaket(id)}
-          className="w-full flex items-center gap-2 px-3 py-3 rounded-lg border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/5 text-xs text-muted-foreground hover:text-primary transition-all"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/5 text-xs text-muted-foreground hover:text-primary transition-all"
         >
           <Plus className="w-3.5 h-3.5" /> Neues Lernpaket
         </button>
@@ -296,12 +355,21 @@ export default function StrukturBoardEmbedded({
   const [saving, setSaving]           = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [isDirty, setIsDirty]         = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState(null); // { spalteId, titel, paketCount }
-  // Dialog-State: { open, spalteId, paket | null }
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [paketDialog, setPaketDialog] = useState({ open: false, spalteId: null, paket: null });
-  // Track original state for deletion detection
   const [originalSpaltenIds, setOriginalSpaltenIds] = useState(new Set());
   const [originalPaketIds, setOriginalPaketIds] = useState(new Set());
+  // View options
+  const [compact, setCompact]                   = useState(false);
+  const [collapsedSpalten, setCollapsedSpalten] = useState(new Set());
+
+  const toggleCollapse = (spalteId) => {
+    setCollapsedSpalten(prev => {
+      const next = new Set(prev);
+      next.has(spalteId) ? next.delete(spalteId) : next.add(spalteId);
+      return next;
+    });
+  };
 
   // ── Initialisierung ───────────────────────────────────────────────────────
 
@@ -574,6 +642,17 @@ export default function StrukturBoardEmbedded({
           <span>
             <strong>Lesemodus</strong> – Starten Sie den Bearbeitungsmodus über den Button oben, um Änderungen vorzunehmen.
           </span>
+          <div className="ml-auto">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setCompact(c => !c)}
+              className="h-7 gap-1.5 text-xs"
+            >
+              {compact ? <AlignJustify className="w-3.5 h-3.5" /> : <LayoutList className="w-3.5 h-3.5" />}
+              {compact ? 'Normal' : 'Kompakt'}
+            </Button>
+          </div>
         </div>
       )}
 
@@ -601,6 +680,17 @@ export default function StrukturBoardEmbedded({
               Ungespeicherte Änderungen – bitte speichern bevor du den Tab wechselst!
             </p>
           )}
+          <div className="ml-auto">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setCompact(c => !c)}
+              className="h-7 gap-1.5 text-xs"
+            >
+              {compact ? <AlignJustify className="w-3.5 h-3.5" /> : <LayoutList className="w-3.5 h-3.5" />}
+              {compact ? 'Normal' : 'Kompakt'}
+            </Button>
+          </div>
         </div>
       )}
 
@@ -625,6 +715,7 @@ export default function StrukturBoardEmbedded({
               onDeletePaket={handleDeletePaket}
               onEditPaket={(paket) => openPaketDialog(SAMMELBECKEN_ID, paket)}
               isSammelbecken
+              compact={compact}
             />
 
             <div className="w-px bg-border shrink-0 self-stretch" />
@@ -641,6 +732,9 @@ export default function StrukturBoardEmbedded({
                 onEditPaket={(paket) => openPaketDialog(spalte.id, paket)}
                 onDeleteSpalte={() => handleDeleteSpalteRequest(spalte.id)}
                 onTitelChange={neuerTitel => handleTitelChange(spalte.id, neuerTitel)}
+                compact={compact}
+                collapsed={collapsedSpalten.has(spalte.id)}
+                onToggleCollapse={() => toggleCollapse(spalte.id)}
               />
             ))}
 
