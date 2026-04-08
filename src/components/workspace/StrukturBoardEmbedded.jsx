@@ -158,42 +158,39 @@ function PaketKarte({ paket, index, onDelete, onEdit }) {
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          style={{
-            ...provided.draggableProps.style,
-            // Beim Drag normalgross, sonst über CSS-Klasse
-          }}
           className={cn(
-            'group relative flex items-center gap-1.5 px-2 py-1.5 rounded-md border bg-card text-xs',
-            'transition-all duration-150 origin-left',
+            'group flex items-start gap-2 p-3 rounded-lg border bg-card text-sm transition-shadow',
             snapshot.isDragging
-              ? 'shadow-xl border-primary/40 rotate-1 scale-105 z-50'
-              : 'shadow-sm border-border cursor-pointer hover:z-40 hover:scale-110 hover:shadow-lg hover:border-primary/40 hover:bg-primary/5'
+              ? 'shadow-xl border-primary/40 rotate-1 scale-105'
+              : 'shadow-sm hover:shadow-md border-border hover:border-primary/30 cursor-pointer'
           )}
           onClick={() => onEdit(paket)}
         >
           <div
             {...provided.dragHandleProps}
-            className="text-muted-foreground/30 hover:text-muted-foreground cursor-grab shrink-0"
+            className="mt-0.5 text-muted-foreground/40 hover:text-muted-foreground cursor-grab"
             onClick={e => e.stopPropagation()}
           >
-            <GripVertical className="w-3 h-3" />
+            <GripVertical className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-medium leading-tight truncate">{paket.titel_des_pakets}</p>
-            <p className="text-muted-foreground/70 flex items-center gap-1 mt-0.5">
-              {paket.geschaetzte_dauer_minuten && (
-                <span className="flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" />{paket.geschaetzte_dauer_minuten} Min.</span>
-              )}
-              {paket.lernziele?.length > 0 && (
-                <span className="flex items-center gap-0.5 text-green-600 ml-1"><Target className="w-2.5 h-2.5" />{paket.lernziele.length}</span>
-              )}
-            </p>
+            <p className="font-medium leading-snug">{paket.titel_des_pakets}</p>
+            {paket.geschaetzte_dauer_minuten && (
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                <Clock className="w-3 h-3" />{paket.geschaetzte_dauer_minuten} Min.
+              </p>
+            )}
+            {paket.lernziele && paket.lernziele.length > 0 && (
+              <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                <Target className="w-3 h-3" />{paket.lernziele.length} Lernziel{paket.lernziele.length !== 1 ? 'e' : ''}
+              </p>
+            )}
           </div>
           <button
             onClick={e => { e.stopPropagation(); onDelete(paket.id); }}
-            className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-destructive/10 text-destructive transition-all shrink-0"
+            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 text-destructive transition-all shrink-0"
           >
-            <Trash2 className="w-3 h-3" />
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
@@ -213,7 +210,7 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
   const saveTitel = () => { if (titelDraft.trim()) onTitelChange(titelDraft.trim()); setEditingTitel(false); };
 
   return (
-    <div className={cn('flex flex-col rounded-xl border shrink-0 w-52 max-h-full', isSammelbecken ? 'bg-slate-50 border-slate-200' : 'bg-card border-border')}>
+    <div className={cn('flex flex-col rounded-xl border shrink-0 w-72 max-h-full', isSammelbecken ? 'bg-slate-50 border-slate-200' : 'bg-card border-border')}>
       {/* Header */}
       <div className={cn('flex items-center gap-2 px-3 py-3 rounded-t-xl border-b shrink-0', isSammelbecken ? 'border-slate-200 bg-slate-100/80' : 'border-border bg-muted/40')}>
         {isSammelbecken
@@ -650,7 +647,7 @@ export default function StrukturBoardEmbedded({
             {/* Neue-Spalte CTA – nur im Edit-Modus */}
             {!readOnly && <button
               onClick={handleNeuesThemenfeld}
-              className="shrink-0 w-48 rounded-xl border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/5 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-primary transition-colors self-stretch"
+              className="shrink-0 w-64 rounded-xl border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/5 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-primary transition-colors self-stretch"
             >
               <Plus className="w-6 h-6" />
               <span className="text-sm font-medium">Neues Themenfeld</span>
