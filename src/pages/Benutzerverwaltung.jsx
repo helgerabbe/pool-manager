@@ -473,7 +473,7 @@ export default function Benutzerverwaltung() {
           <Tabs defaultValue="registered" className="w-full">
             <TabsList className="w-full justify-start border-b rounded-none bg-transparent p-0 h-auto">
               <TabsTrigger value="registered" className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary">
-                Registrierte Benutzer
+                Registrierte Benutzer ({benutzer.filter(b => users?.find(u => u.email === b.user_id)).length})
               </TabsTrigger>
               <TabsTrigger value="pending" className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary">
                 Ausstehende Einladungen ({benutzer.filter(b => !users?.find(u => u.email === b.user_id)).length})
