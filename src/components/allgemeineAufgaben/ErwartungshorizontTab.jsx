@@ -24,7 +24,9 @@ export default function ErwartungshorizontTab({
   const [isDirty, setIsDirty] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  const isEbene2 = aufgabe?.anforderungsebene === '2 - Transfer';
   const isEbene3 = aufgabe?.anforderungsebene === '3 - Projekt';
+  const hasErwartungshorizont = isEbene2 || isEbene3;
 
   // Update Mutation
   const updateMutation = useMutation({
@@ -74,13 +76,13 @@ export default function ErwartungshorizontTab({
     }
   };
 
-  if (!isEbene3) {
+  if (!hasErwartungshorizont) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center space-y-3 max-w-md">
           <AlertCircle className="w-12 h-12 text-muted-foreground/30 mx-auto" />
           <p className="text-sm text-muted-foreground">
-            Der Erwartungshorizont ist nur für <strong>Ebene-3-Aufgaben (Projekte/Anwendungen)</strong> relevant.
+            Der Erwartungshorizont ist für <strong>Ebene-2- und Ebene-3-Aufgaben</strong> verfügbar.
           </p>
           <p className="text-xs text-muted-foreground">
             Aktuell: {aufgabe?.anforderungsebene || 'Keine Ebene gesetzt'}
@@ -98,7 +100,9 @@ export default function ErwartungshorizontTab({
           <div>
             <h2 className="text-lg font-semibold">Erwartungshorizont</h2>
             <p className="text-xs text-muted-foreground mt-1">
-              Definieren Sie die Kriterien für erfolgreiche Bearbeitung. Dies wird als Leitplanke für den KI-Tutor verwendet.
+              {isEbene2
+                ? 'Definieren Sie die Lösungserwartung auf Basis der Aufgabenstellung und zugeordneter Kompetenzen. Wird als Leitplanke für den KI-Tutor verwendet.'
+                : 'Definieren Sie die Kriterien für erfolgreiche Bearbeitung (Inhalte, Umfang, Qualität). Wird als Leitplanke für den KI-Tutor verwendet.'}
             </p>
           </div>
           {kannBearbeiten && (
