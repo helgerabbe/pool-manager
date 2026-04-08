@@ -15,13 +15,13 @@ export default function UserInviteTab({ benutzer = [], onEdit, onDelete }) {
   const [inviteId, setInviteId] = useState(null);
   const [invitingId, setInvitingId] = useState(null);
 
-  // Lade echte User-Accounts
+  // Lade echte User-Accounts via Backend-Funktion (asServiceRole nur serverseitig möglich)
   const { data: users = [] } = useQuery({
     queryKey: ['appUsers'],
     queryFn: async () => {
       try {
-        const result = await base44.asServiceRole.entities.User.list();
-        return result || [];
+        const result = await base44.functions.invoke('listAppUsers', {});
+        return result.data?.users || [];
       } catch (err) {
         console.error('User-Liste konnte nicht geladen werden:', err);
         return [];
