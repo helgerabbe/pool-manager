@@ -1,56 +1,92 @@
 /**
- * usePresence (server-side)
- * ─────────────────────────
- * Trackt, welche Nutzer eine Einheit gerade geöffnet haben – geräteübergreifend.
- * Mechanismus: base44 Entity `ActiveUsersPresence` + Realtime-Subscription.
+ * usePresence (global, server-side)
+ * ──────────────────────────────────
+ * Trackt aktive Nutzer in der App geräteübergreifend via ActiveUsersPresence-Entity.
  *
- * - Beim Mounten: eigenen Eintrag erstellen/aktualisieren
- * - Heartbeat alle 15s: last_seen_at aktualisieren
- * - Subscription: andere Nutzer in Echtzeit sehen
- * - Beim Unmounten / beforeunload: eigenen Eintrag löschen
+ * Optimierungen:
+ * - Heartbeat alle 30s (reduziert API-Last)
+ * - STALE_THRESHOLD 120s (Puffer für 3+ verpasste Pings)
+ * - Page Visibility API: sofortiger Heartbeat bei Tab-Reaktivierung
+ * - Error-Catching im Interval: kein Absturz bei 502/Rate-Limit
+ * - Deduplizierung nach E-Mail (neuester Eintrag gewinnt)
  *
- * Rückgabe: { onlineUsers: [{ email, name }], count: number }
+ * Rückgabe: { onlineUsers, count }
  */
 import { useEffect, useRef, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 
-const HEARTBEAT_INTERVAL = 15_000; // 15s
-const STALE_THRESHOLD_MS = 30_000; // 30s
-const DEBOUNCE_MS = 5_000; // 5s debounce für Subscription – verhindert Rate-Limit
+const HEARTBEAT_INTERVAL = 30_000;  // 30s
+const STALE_THRESHOLD_MS = 120_000; // 120s = Puffer für 3 verpasste Pings
+const DEBOUNCE_MS = 3_000;
 
-export function usePresence(einheitId) {
+export function usePresence(currentView = 'dashboard') {
   const [onlineUsers, setOnlineUsers] = useState([]);
-  const myRecordIdRef  = useRef(null);
-  const myEmailRef     = useRef(null);
-  const heartbeatRef   = useRef(null);
-  const unsubscribeRef = useRef(null);
+  const myRecordIdRef   = useRef(null);
+  const myEmailRef      = useRef(null);
+  const heartbeatRef    = useRef(null);
+  const unsubscribeRef  = useRef(null);
   const debounceTimerRef = useRef(null);
+  const mountedRef      = useRef(true);
 
   useEffect(() => {
-    if (!einheitId) return;
+    mountedRef.current = true;
 
-    let mounted = true;
+    // ── Heartbeat-Funktion (wiederverwendbar für Visibility-Event) ──
+    const sendHeartbeat = async () => {
+      if (!myRecordIdRef.current) return;
+      try {
+        await base44.entities.ActiveUsersPresence.update(myRecordIdRef.current, {
+          last_seen_at: new Date().toISOString(),
+          current_view: currentView,
+        });
+      } catch (err) {
+        // Eintrag wurde extern gelöscht – Record-Ref zurücksetzen
+        console.warn('[usePresence] Heartbeat failed:', err.message);
+        myRecordIdRef.current = null;
+      }
+    };
+
+    // ── Presence-Liste laden + Stale-Filter + Deduplizierung ──
+    const loadPresence = async () => {
+      try {
+        const all = await base44.entities.ActiveUsersPresence.list();
+        const cutoff = Date.now() - STALE_THRESHOLD_MS;
+
+        // Deduplizieren nach E-Mail (neuester Eintrag pro Nutzer)
+        const byEmail = {};
+        for (const entry of all) {
+          if (entry.user_email === myEmailRef.current) continue;
+          const ts = new Date(entry.last_seen_at).getTime();
+          if (ts <= cutoff) continue;
+          if (!byEmail[entry.user_email] || ts > new Date(byEmail[entry.user_email].last_seen_at).getTime()) {
+            byEmail[entry.user_email] = entry;
+          }
+        }
+
+        if (mountedRef.current) {
+          setOnlineUsers(Object.values(byEmail));
+        }
+      } catch (err) {
+        console.warn('[usePresence] loadPresence failed:', err.message);
+      }
+    };
 
     const init = async () => {
       const user = await base44.auth.me();
-      if (!user || !mounted) return;
+      if (!user || !mountedRef.current) return;
 
       myEmailRef.current = user.email;
       const now = new Date().toISOString();
 
-      // Existierenden Eintrag suchen (eigener Nutzer, selbe Einheit)
+      // Bestehende eigene Einträge bereinigen
       let existing = [];
       try {
-        existing = await base44.entities.ActiveUsersPresence.filter({
-          user_email: user.email,
-          current_view: einheitId,
-        });
+        existing = await base44.entities.ActiveUsersPresence.filter({ user_email: user.email });
       } catch (err) {
-        // Rate-Limit oder Fehler – ignorieren und neuen Record erstellen
         console.warn('[usePresence] Filter failed:', err.message);
       }
 
-      if (!mounted) return;
+      if (!mountedRef.current) return;
 
       let recordId;
       if (existing.length > 0) {
@@ -59,132 +95,112 @@ export function usePresence(einheitId) {
           await base44.entities.ActiveUsersPresence.update(recordId, {
             last_seen_at: now,
             user_name: user.full_name || user.email,
+            current_view: currentView,
           });
-        } catch (err) {
-          // Record wurde extern gelöscht oder ist stale – neu erstellen
+          // Duplikate löschen
+          for (let i = 1; i < existing.length; i++) {
+            base44.entities.ActiveUsersPresence.delete(existing[i].id).catch(() => {});
+          }
+        } catch {
+          // Record gelöscht – neu erstellen
           try {
             const created = await base44.entities.ActiveUsersPresence.create({
               user_email: user.email,
               user_name: user.full_name || user.email,
-              current_view: einheitId,
+              current_view: currentView,
               last_seen_at: now,
             });
             recordId = created.id;
-          } catch {
-            // Fallback bei Fehler
-            console.warn('[usePresence] Could not create new record');
+          } catch (err) {
+            console.warn('[usePresence] Could not create record:', err.message);
             return;
           }
         }
       } else {
-        const created = await base44.entities.ActiveUsersPresence.create({
-          user_email: user.email,
-          user_name: user.full_name || user.email,
-          current_view: einheitId,
-          last_seen_at: now,
-        });
-        recordId = created.id;
+        try {
+          const created = await base44.entities.ActiveUsersPresence.create({
+            user_email: user.email,
+            user_name: user.full_name || user.email,
+            current_view: currentView,
+            last_seen_at: now,
+          });
+          recordId = created.id;
+        } catch (err) {
+          console.warn('[usePresence] Could not create record:', err.message);
+          return;
+        }
       }
 
-      if (!mounted) {
-        // Wenn in der Zwischenzeit unmounted, sofort wieder löschen
-        if (recordId) {
-          try {
-            await base44.entities.ActiveUsersPresence.delete(recordId);
-          } catch {
-            // Ignorieren wenn Record nicht existiert oder stale ist
-          }
-        }
+      if (!mountedRef.current) {
+        if (recordId) base44.entities.ActiveUsersPresence.delete(recordId).catch(() => {});
         return;
       }
 
       myRecordIdRef.current = recordId;
 
-      // Hilfsfunktion: Anwesenheitsliste aus DB laden und stale-Filter anwenden
-       const loadPresence = async () => {
-         try {
-           const all = await base44.entities.ActiveUsersPresence.filter({
-             current_view: einheitId,
-           });
-           const cutoff = Date.now() - STALE_THRESHOLD_MS;
-           const active = all.filter(entry => {
-             if (entry.user_email === myEmailRef.current) return false;
-             return new Date(entry.last_seen_at).getTime() > cutoff;
-           });
-           if (mounted) {
-             setOnlineUsers(active.map(e => ({ email: e.user_email, name: e.user_name || e.user_email })));
-           }
-         } catch (err) {
-           // Rate-Limit oder Fehler – nicht aktualisieren, nächster Versuch in DEBOUNCE_MS
-           console.warn('[usePresence] loadPresence failed:', err.message);
-         }
-       };
-
       // Erste Ladung
       await loadPresence();
 
-      // Realtime-Subscription mit Debouncing: verhindert Rate-Limit bei vielen Updates
+      // Realtime-Subscription mit Debounce
       unsubscribeRef.current = base44.entities.ActiveUsersPresence.subscribe(() => {
         if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = setTimeout(async () => {
-          await loadPresence();
-        }, DEBOUNCE_MS);
+        debounceTimerRef.current = setTimeout(loadPresence, DEBOUNCE_MS);
       });
 
-      // Heartbeat: eigenes last_seen_at aktualisieren
-      heartbeatRef.current = setInterval(async () => {
-        if (!myRecordIdRef.current) return;
-        try {
-          await base44.entities.ActiveUsersPresence.update(myRecordIdRef.current, {
-            last_seen_at: new Date().toISOString(),
-          });
-        } catch (err) {
-          // Eintrag wurde extern gelöscht oder Rate-Limit – Ref zurücksetzen
-          console.warn('[usePresence] Heartbeat failed:', err.message);
-          myRecordIdRef.current = null;
-        }
+      // Heartbeat-Interval (mit Error-Catching → Interval läuft immer weiter)
+      heartbeatRef.current = setInterval(() => {
+        sendHeartbeat();
       }, HEARTBEAT_INTERVAL);
+
+      // Page Visibility API: sofortiger Heartbeat bei Tab-Reaktivierung
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+          sendHeartbeat();
+          loadPresence();
+        }
+      };
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
+      // Cleanup inkl. visibilitychange-Listener
+      return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
     };
 
-    // Cleanup-Funktion: eigenen Eintrag löschen
-     const cleanup = async () => {
-       mounted = false;
-       clearInterval(heartbeatRef.current);
-       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-       if (unsubscribeRef.current) {
-         unsubscribeRef.current();
-         unsubscribeRef.current = null;
-       }
-       if (myRecordIdRef.current) {
-         try {
-           await base44.entities.ActiveUsersPresence.delete(myRecordIdRef.current);
-         } catch {
-           // Ignorieren wenn Record nicht mehr existiert oder stale ist
-         }
-         myRecordIdRef.current = null;
-       }
-     };
+    let cleanupVisibility = null;
+    init().then(fn => { cleanupVisibility = fn; });
 
-    // beforeunload: Eintrag sofort entfernen
-     const handleUnload = () => {
-       mounted = false;
-       if (myRecordIdRef.current) {
-         try {
-           base44.entities.ActiveUsersPresence.delete(myRecordIdRef.current);
-         } catch {
-           // Ignorieren – async cleanup läuft parallel
-         }
-       }
-     };
-     window.addEventListener('beforeunload', handleUnload);
+    const cleanup = () => {
+      mountedRef.current = false;
+      clearInterval(heartbeatRef.current);
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
+      if (cleanupVisibility) cleanupVisibility();
+      if (myRecordIdRef.current) {
+        const id = myRecordIdRef.current;
+        myRecordIdRef.current = null;
+        base44.entities.ActiveUsersPresence.delete(id).catch(() => {});
+      }
+    };
 
-     init();
+    const handleUnload = () => {
+      mountedRef.current = false;
+      clearInterval(heartbeatRef.current);
+      if (myRecordIdRef.current) {
+        try { base44.entities.ActiveUsersPresence.delete(myRecordIdRef.current); } catch {}
+        myRecordIdRef.current = null;
+      }
+    };
+    window.addEventListener('beforeunload', handleUnload);
 
-     return () => {
-       window.removeEventListener('beforeunload', handleUnload);
-       cleanup();
-     };
-  }, [einheitId]);
+    return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+      cleanup();
+    };
+  }, [currentView]);
 
   return { onlineUsers, count: onlineUsers.length };
 }

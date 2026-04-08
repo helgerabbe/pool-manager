@@ -7,6 +7,7 @@ import WartungsBanner from '@/components/layout/WartungsBanner';
 import NavigationTooltip from '@/components/layout/NavigationTooltip';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
+import { usePresence } from '@/hooks/usePresence';
 
 // Wiederverwendbarer Icon-Nav-Link mit sofortigem Tooltip
 function NavIconLink({ to, icon: Icon, label, isActive }) {
@@ -72,6 +73,12 @@ function WorkspaceAwareContent({ location }) {
   );
 }
 
+// Globaler Presence-Hook: läuft unabhängig von der aktuellen Seite
+function GlobalPresenceHeartbeat() {
+  usePresence('app');
+  return null;
+}
+
 export default function AppLayout() {
   const location = useLocation();
   const { realRolle, permissions } = useRBAC();
@@ -83,6 +90,7 @@ export default function AppLayout() {
 
   return (
     <div className="h-screen w-full flex flex-col overflow-hidden bg-background">
+      <GlobalPresenceHeartbeat />
       <WartungsBanner />
       {/* ═══════════════════════════════════════════════════════════════════════════ */}
       {/* ──────────────────── GLOBALE TOP BAR (immer sichtbar) ──────────────────── */}

@@ -1,161 +1,23 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users } from 'lucide-react';
-
-const HEARTBEAT_INTERVAL = 15_000;
-const STALE_THRESHOLD_MS = 35_000;
+import { usePresence } from '@/hooks/usePresence';
 
 export default function Dashboard() {
-  const [onlineUsers, setOnlineUsers] = useState([]);
-  const myRecordIdRef = useRef(null);
-  const heartbeatRef = useRef(null);
+  // Globaler Presence-Hook – Heartbeat läuft auch in AppLayout weiter,
+  // hier nur für die Dashboard-Anzeige (currentView = 'dashboard')
+  const { onlineUsers } = usePresence('dashboard');
 
-  // Benutzer-Entity für Rollen (Administrator, Fachschaftsleitung etc.)
   const { data: benutzerList = [] } = useQuery({
     queryKey: ['benutzer-all'],
     queryFn: () => base44.entities.Benutzer.list(),
   });
 
-  // Eigene Presence registrieren + Realtime-Subscription
-  useEffect(() => {
-    let mounted = true;
-
-    const init = async () => {
-      const user = await base44.auth.me();
-      if (!user || !mounted) return;
-
-      const now = new Date().toISOString();
-
-      // Bestehende eigene Einträge (alle current_view) bereinigen
-      const existing = await base44.entities.ActiveUsersPresence.filter({
-        user_email: user.email,
-      });
-
-      let recordId;
-      if (existing.length > 0) {
-        // Ersten behalten, Rest löschen
-        recordId = existing[0].id;
-        await base44.entities.ActiveUsersPresence.update(recordId, {
-          last_seen_at: now,
-          user_name: user.full_name || user.email,
-          current_view: 'dashboard',
-        });
-        for (let i = 1; i < existing.length; i++) {
-          base44.entities.ActiveUsersPresence.delete(existing[i].id);
-        }
-      } else {
-        const created = await base44.entities.ActiveUsersPresence.create({
-          user_email: user.email,
-          user_name: user.full_name || user.email,
-          current_view: 'dashboard',
-          last_seen_at: now,
-        });
-        recordId = created.id;
-      }
-
-      if (!mounted) {
-        base44.entities.ActiveUsersPresence.delete(recordId);
-        return;
-      }
-
-      myRecordIdRef.current = recordId;
-
-      let debounceTimer = null;
-
-       const loadPresence = async () => {
-         try {
-           const all = await base44.entities.ActiveUsersPresence.list();
-           const cutoff = Date.now() - STALE_THRESHOLD_MS;
-
-           // Deduplizieren nach E-Mail (neuester Eintrag gewinnt), Stale rausfiltern
-           const byEmail = {};
-           for (const entry of all) {
-             const ts = new Date(entry.last_seen_at).getTime();
-             if (ts <= cutoff) continue;
-             if (!byEmail[entry.user_email] || ts > new Date(byEmail[entry.user_email].last_seen_at).getTime()) {
-               byEmail[entry.user_email] = entry;
-             }
-           }
-
-           if (mounted) {
-             setOnlineUsers(Object.values(byEmail));
-           }
-         } catch (err) {
-           // Rate-Limit oder Fehler ignorieren – nächster Heartbeat versucht es wieder
-           console.warn('[Dashboard] loadPresence error:', err.message);
-         }
-       };
-
-       await loadPresence();
-
-       const unsubscribe = base44.entities.ActiveUsersPresence.subscribe(() => {
-         // Debounce: verhindert Rate-Limit bei vielen rapid Updates
-         if (debounceTimer) clearTimeout(debounceTimer);
-         debounceTimer = setTimeout(() => {
-           loadPresence();
-         }, 2000);
-       });
-
-      heartbeatRef.current = setInterval(() => {
-         if (!myRecordIdRef.current) return;
-         base44.entities.ActiveUsersPresence.update(myRecordIdRef.current, {
-           last_seen_at: new Date().toISOString(),
-         }).catch(() => {
-           // Fehler ignorieren – Record gelöscht oder Rate-Limit
-           myRecordIdRef.current = null;
-         });
-       }, HEARTBEAT_INTERVAL);
-
-       return () => {
-         if (debounceTimer) clearTimeout(debounceTimer);
-         unsubscribe();
-       };
-    };
-
-    let unsubscribeFn = null;
-    init().then(fn => { unsubscribeFn = fn; });
-
-    const cleanup = () => {
-       mounted = false;
-       clearInterval(heartbeatRef.current);
-       if (unsubscribeFn) unsubscribeFn();
-       if (myRecordIdRef.current) {
-         const recordId = myRecordIdRef.current;
-         myRecordIdRef.current = null;
-         base44.entities.ActiveUsersPresence.delete(recordId).catch(err => {
-           // Ignorieren wenn Record nicht existiert (404) oder andere Fehler
-           console.debug('[Dashboard] Cleanup delete failed (expected):', err.message);
-         });
-       }
-     };
-
-    window.addEventListener('beforeunload', () => {
-       // Synchroner Cleanup bei beforeunload – keine async Operationen
-       mounted = false;
-       clearInterval(heartbeatRef.current);
-       if (myRecordIdRef.current) {
-         // Best effort: Versuch zu löschen, ignoriere Fehler
-         try {
-           base44.entities.ActiveUsersPresence.delete(myRecordIdRef.current);
-         } catch {
-           // beforeunload blockiert keine Fehler
-         }
-         myRecordIdRef.current = null;
-       }
-     });
-    return () => {
-      window.removeEventListener('beforeunload', cleanup);
-      cleanup();
-    };
-  }, []);
-
-  // Rolle aus Benutzer-Entity ermitteln (Fallback: Base44-Rolle)
   const getRolle = (entry) => {
     const b = benutzerList.find(b => b.user_id === entry.user_email);
-    if (b?.rolle) return b.rolle;
-    return 'Nutzer';
+    return b?.rolle || 'Nutzer';
   };
 
   return (
