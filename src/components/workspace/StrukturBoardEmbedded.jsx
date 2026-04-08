@@ -613,9 +613,9 @@ export default function StrukturBoardEmbedded({
       )}
 
       {/* Board */}
-      <div className={cn('flex-1 overflow-x-auto overflow-y-hidden min-h-0', readOnly && 'opacity-60 pointer-events-none select-none')}>
+      <div className={cn('flex-1 overflow-x-auto overflow-y-hidden min-h-0', readOnly && 'opacity-60')}>
         <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="flex gap-4 h-full p-4 min-w-max items-start">
+          <div className={cn('flex gap-4 h-full p-4 min-w-max items-start', readOnly && 'pointer-events-none select-none')}>
             {/* Sammelbecken */}
             <Spalte
               id={SAMMELBECKEN_ID}
