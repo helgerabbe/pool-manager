@@ -202,21 +202,7 @@ export default function EinheitenListe() {
               </SelectContent>
             </Select>
           </div>
-          {pendingCount > 0 && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowOnlyChanged(!showOnlyChanged)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                  showOnlyChanged
-                    ? 'bg-amber-100 text-amber-700 border border-amber-300'
-                    : 'bg-amber-50 text-amber-700 border border-amber-200 hover:border-amber-300'
-                }`}
-              >
-                <AlertCircle className="w-4 h-4" />
-                {pendingCount} ausstehend
-              </button>
-            </div>
-          )}
+
         </div>
       )}
 
