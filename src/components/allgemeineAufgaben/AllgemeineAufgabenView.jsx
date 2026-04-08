@@ -205,6 +205,7 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
 export default function AllgemeineAufgabenView({
   einheitId,
   kannBearbeiten = false,
+  anforderungsebene = '2 - Transfer',
 }) {
   const queryClient = useQueryClient();
   const [selectedAufgabeId, setSelectedAufgabeId] = useState(null);
@@ -225,9 +226,9 @@ export default function AllgemeineAufgabenView({
       }),
   });
 
-  // Filtere nur Basis- und Transfer-Aufgaben (nicht Projekt-Aufgaben)
+  // Filtere Aufgaben nach der übergebenen Anforderungsebene
   const allgemeineAufgaben = allAufgaben.filter(a => 
-    !a.anforderungsebene || ['1 - Basis', '2 - Transfer'].includes(a.anforderungsebene)
+    a.anforderungsebene === anforderungsebene || (!a.anforderungsebene && anforderungsebene === '2 - Transfer')
   );
 
   const { data: themenfelder = [] } = useQuery({
@@ -449,6 +450,7 @@ export default function AllgemeineAufgabenView({
         einheitId={einheitId}
         themenfelder={themenfelder}
         initialData={editingAufgabe}
+        defaultAnforderungsebene={anforderungsebene}
         onSuccess={() => {
           setCreateFormOpen(false);
           setEditingAufgabe(null);

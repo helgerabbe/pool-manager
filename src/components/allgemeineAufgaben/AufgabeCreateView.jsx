@@ -236,7 +236,7 @@ const EMPTY_FORM = {
   erwartungshorizont: '',
 };
 
-export default function AufgabeCreateView({ open, onOpenChange, einheitId, themenfelder = [], onSuccess, initialData = null }) {
+export default function AufgabeCreateView({ open, onOpenChange, einheitId, themenfelder = [], onSuccess, initialData = null, defaultAnforderungsebene = '2 - Transfer' }) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState(EMPTY_FORM);
 
@@ -256,6 +256,7 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
   const createAufgabe = useMutation({
     mutationFn: (data) => base44.entities.AllgemeineAufgabe.create({
       einheit_id: einheitId,
+      anforderungsebene: defaultAnforderungsebene,
       themenfeld_id: data.themenfeld_id || null,
       titel: data.titel || null,
       aufgabenstellung: data.aufgabenstellung || '',

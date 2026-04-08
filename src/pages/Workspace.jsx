@@ -540,6 +540,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                     kannBearbeiten={kannDieseEinheitBearbeiten}
                     userEmail={authUser?.email}
                     userRole={rolle}
+                    anforderungsebene="2 - Transfer"
                   />
                 </ErrorBoundary>
               </div>
