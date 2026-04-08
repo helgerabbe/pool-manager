@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, GripVertical, Clock, Trash2, FolderOpen, Layers, X, Save, Target, ChevronLeft, AlignJustify, LayoutList } from 'lucide-react';
+import { Plus, GripVertical, Clock, Trash2, FolderOpen, Layers, X, Save, Target, ChevronLeft, AlignJustify, LayoutList, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ── Lernpaket-Dialog ──────────────────────────────────────────────────────────
@@ -204,7 +204,7 @@ function PaketKarte({ paket, index, onDelete, onEdit, compact = false }) {
 
 // ── Spalte ────────────────────────────────────────────────────────────────────
 
-function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onDeleteSpalte, onTitelChange, isSammelbecken = false, compact = false, collapsed = false, onToggleCollapse }) {
+function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onDeleteSpalte, onTitelChange, isSammelbecken = false, compact = false, collapsed = false, onToggleCollapse, sequenzNummer = null }) {
   const [editingTitel, setEditingTitel]   = useState(false);
   const [titelDraft, setTitelDraft]       = useState(titel);
 
@@ -224,6 +224,12 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
         >
           <ChevronLeft className="w-4 h-4 text-muted-foreground rotate-180" />
         </button>
+        {/* Sequenz-Nummer (collapsed) */}
+        {sequenzNummer !== null && (
+          <div className="flex justify-center pb-1">
+            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">{sequenzNummer}</span>
+          </div>
+        )}
         {/* Vertikaler Titel */}
         <div className="flex-1 flex items-center justify-center py-3 overflow-hidden">
           <span
@@ -263,7 +269,10 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
       <div className={cn('flex items-center gap-2 px-3 py-3 rounded-t-xl border-b shrink-0', isSammelbecken ? 'border-slate-200 bg-slate-100/80' : 'border-border bg-muted/40')}>
         {isSammelbecken
           ? <Layers className="w-4 h-4 text-muted-foreground shrink-0" />
-          : <FolderOpen className="w-4 h-4 text-amber-500 shrink-0" />}
+          : sequenzNummer !== null
+            ? <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold shrink-0">{sequenzNummer}</span>
+            : <FolderOpen className="w-4 h-4 text-amber-500 shrink-0" />
+        }
 
         {editingTitel && !isSammelbecken ? (
           <Input
@@ -702,6 +711,16 @@ export default function StrukturBoardEmbedded({
         </div>
       )}
 
+      {/* Sequenziell-Banner */}
+      {einheit?.bearbeitungsmodus === 'sequenziell' && (
+        <div className="shrink-0 px-4 py-2 bg-primary/5 border-b border-primary/20 text-xs text-primary flex items-center gap-2">
+          <ArrowRight className="w-3.5 h-3.5 shrink-0" />
+          <span>
+            <strong>Sequenzieller Modus:</strong> Themenfelder sind nummeriert – Schüler im Minimalpfad müssen sie in dieser Reihenfolge durcharbeiten. Einzelne Lernpakete bleiben jederzeit direkt ansteuerbar.
+          </span>
+        </div>
+      )}
+
       {/* Board */}
       <div className={cn('flex-1 overflow-x-auto overflow-y-hidden min-h-0', readOnly && 'opacity-60')}>
         <DragDropContext onDragEnd={handleDragEnd}>
@@ -721,7 +740,7 @@ export default function StrukturBoardEmbedded({
             <div className="w-px bg-border shrink-0 self-stretch" />
 
             {/* Themenfeld-Spalten */}
-            {spalten.map(spalte => (
+            {spalten.map((spalte, idx) => (
               <Spalte
                 key={spalte.id}
                 id={spalte.id}
@@ -735,6 +754,7 @@ export default function StrukturBoardEmbedded({
                 compact={compact}
                 collapsed={collapsedSpalten.has(spalte.id)}
                 onToggleCollapse={() => toggleCollapse(spalte.id)}
+                sequenzNummer={einheit?.bearbeitungsmodus === 'sequenziell' ? idx + 1 : null}
               />
             ))}
 
