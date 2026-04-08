@@ -666,8 +666,8 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                   )}
                 </button>
 
-                {/* Phase-Toggle Switch im Header */}
-                {kannBearbeiten && (
+                {/* Phase-Toggle Switch im Header – nur im aktiven Bearbeitungsmodus */}
+                {kannBearbeiten && canEdit && (
                   <Switch
                     checked={!isDisabled}
                     onCheckedChange={() => handlePhaseToggle(phase.key)}
