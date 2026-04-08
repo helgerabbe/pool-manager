@@ -72,6 +72,7 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
   const [mitarbeiterEmail, setMitarbeiterEmail] = useState('');
 
   const draftKey = `einheit-settings-${einheit.id}`;
+  // Werte direkt aus der Einheit – kein Draft (verhindert veraltete localStorage-Werte)
   const { data: form, setData: setForm } = useDraftState(draftKey, {
     titel_der_einheit: einheit.titel_der_einheit || '',
     fach:              einheit.fach || '',
@@ -79,6 +80,18 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
     zeit_phase_id:     einheit.zeit_phase_id || '',
     bearbeitungsmodus: einheit.bearbeitungsmodus || 'offen',
   });
+
+  // Draft-Werte werden durch aktuelle Backend-Werte überschrieben,
+  // damit veraltete localStorage-Einträge keine falschen Werte anzeigen
+  React.useEffect(() => {
+    setForm({
+      titel_der_einheit: einheit.titel_der_einheit || '',
+      fach:              einheit.fach || '',
+      jahrgangsstufe:    einheit.jahrgangsstufe || '',
+      zeit_phase_id:     einheit.zeit_phase_id || '',
+      bearbeitungsmodus: einheit.bearbeitungsmodus || 'offen',
+    });
+  }, [einheit.id]);
 
   const [isLocking, setIsLocking] = useState(false);
 
