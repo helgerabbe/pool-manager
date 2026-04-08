@@ -295,25 +295,27 @@ export default function Benutzerverwaltung() {
     enabled: permissions.kannBenutzerVerwalten,
   });
 
-  const { data: users = [] } = useQuery({
+  // Aggregierter Backend-Fetch: gibt { users: [...registrierte Auth-User] } zurück
+  const { data: users = [], isLoading: usersLoading } = useQuery({
     queryKey: ['appUsers'],
     queryFn: async () => {
-      try {
-        const result = await base44.asServiceRole.entities.User.list();
-        return result || [];
-      } catch (err) {
-        console.error('User-Liste konnte nicht geladen werden:', err);
-        return [];
-      }
+      const result = await base44.functions.invoke('listAppUsers', {});
+      return result.data?.users || [];
     },
     enabled: permissions.kannBenutzerVerwalten,
+    // Kein staleTime → bei Seitenbesuch immer frisch holen
+    staleTime: 0,
   });
 
-  const { data: benutzer = [], isLoading } = useQuery({
+  const { data: benutzer = [], isLoading: benutzerLoading } = useQuery({
     queryKey: ['benutzer'],
     queryFn: () => base44.entities.Benutzer.list('-created_date'),
     enabled: permissions.kannBenutzerVerwalten,
+    staleTime: 0,
   });
+
+  // Beide Queries müssen fertig sein – kein halbgares Rendering
+  const isLoading = benutzerLoading || usersLoading;
 
 
 
@@ -551,6 +553,7 @@ export default function Benutzerverwaltung() {
                   <TabsContent value="pending" className="p-4 m-0">
                   <UserInviteTab
                     benutzer={benutzer}
+                    users={users}
                     onEdit={setEditingUser}
                     onDelete={setDeleteId}
                   />

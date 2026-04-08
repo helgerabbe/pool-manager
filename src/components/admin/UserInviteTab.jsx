@@ -10,24 +10,11 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
-export default function UserInviteTab({ benutzer = [], onEdit, onDelete }) {
+// users-Prop wird von Benutzerverwaltung übergeben (bereits geladen, kein Doppel-Fetch)
+export default function UserInviteTab({ benutzer = [], users = [], onEdit, onDelete }) {
   const queryClient = useQueryClient();
   const [inviteId, setInviteId] = useState(null);
   const [invitingId, setInvitingId] = useState(null);
-
-  // Lade echte User-Accounts via Backend-Funktion (asServiceRole nur serverseitig möglich)
-  const { data: users = [] } = useQuery({
-    queryKey: ['appUsers'],
-    queryFn: async () => {
-      try {
-        const result = await base44.functions.invoke('listAppUsers', {});
-        return result.data?.users || [];
-      } catch (err) {
-        console.error('User-Liste konnte nicht geladen werden:', err);
-        return [];
-      }
-    },
-  });
 
   // Lade AuditLog um zu sehen, welche Einladungen gesendet wurden
   const { data: auditLog = [] } = useQuery({
