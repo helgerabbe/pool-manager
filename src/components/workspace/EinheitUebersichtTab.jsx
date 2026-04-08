@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, Plus, Trash2, Crown, Edit, Eye, Lock, Unlock, ShieldAlert, Clock } from 'lucide-react';
+import { Save, Plus, Trash2, Crown, Edit, Eye, Lock, Unlock, ShieldAlert, Clock, ArrowRight, LayoutList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useDraftState } from '@/hooks/useDraftState';
@@ -63,7 +63,7 @@ function UnitRoleBadge({ role }) {
 
 export default function EinheitUebersichtTab({ einheit, currentUserEmail, currentUserRole, currentUserFaecher = [] }) {
   const queryClient = useQueryClient();
-  const { faecher, jahrgaenge } = useSystemSettings();
+  const { faecher, jahrgaenge, phasen } = useSystemSettings();
   const [isSaving, setIsSaving] = useState(false);
   const [adding, setAdding] = useState(false);
   const [addingMitarbeiter, setAddingMitarbeiter] = useState(false);
@@ -76,6 +76,8 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
     titel_der_einheit: einheit.titel_der_einheit || '',
     fach:              einheit.fach || '',
     jahrgangsstufe:    einheit.jahrgangsstufe || '',
+    zeit_phase_id:     einheit.zeit_phase_id || '',
+    bearbeitungsmodus: einheit.bearbeitungsmodus || 'offen',
   });
 
   const [isLocking, setIsLocking] = useState(false);
@@ -290,6 +292,29 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
                   <SelectTrigger><SelectValue placeholder="Jahrgang" /></SelectTrigger>
                   <SelectContent>
                     {jahrgaenge.map(j => <SelectItem key={j} value={j}>Jg. {j}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Planungsphase (Halbjahr)</Label>
+                <Select value={form.zeit_phase_id || ''} onValueChange={v => set('zeit_phase_id', v || null)}>
+                  <SelectTrigger><SelectValue placeholder="Phase wählen…" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={null}>– Keine Zuordnung –</SelectItem>
+                    {phasen.map(p => <SelectItem key={p.id} value={p.id}>{p.bezeichnung}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Bearbeitungsmodus</Label>
+                <Select value={form.bearbeitungsmodus || 'offen'} onValueChange={v => set('bearbeitungsmodus', v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="offen">Offen (freie Reihenfolge)</SelectItem>
+                    <SelectItem value="sequenziell">Sequenziell (feste Reihenfolge)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
