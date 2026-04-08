@@ -210,9 +210,9 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
   const saveTitel = () => { if (titelDraft.trim()) onTitelChange(titelDraft.trim()); setEditingTitel(false); };
 
   return (
-    <div className={cn('flex flex-col rounded-xl border shrink-0 w-72', isSammelbecken ? 'bg-slate-50 border-slate-200' : 'bg-card border-border')}>
+    <div className={cn('flex flex-col rounded-xl border shrink-0 w-72 max-h-full', isSammelbecken ? 'bg-slate-50 border-slate-200' : 'bg-card border-border')}>
       {/* Header */}
-      <div className={cn('flex items-center gap-2 px-3 py-3 rounded-t-xl border-b', isSammelbecken ? 'border-slate-200 bg-slate-100/80' : 'border-border bg-muted/40')}>
+      <div className={cn('flex items-center gap-2 px-3 py-3 rounded-t-xl border-b shrink-0', isSammelbecken ? 'border-slate-200 bg-slate-100/80' : 'border-border bg-muted/40')}>
         {isSammelbecken
           ? <Layers className="w-4 h-4 text-muted-foreground shrink-0" />
           : <FolderOpen className="w-4 h-4 text-amber-500 shrink-0" />}
@@ -244,13 +244,13 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
         )}
       </div>
 
-      {/* Drop-Zone */}
+      {/* Drop-Zone – scrollbar wenn zu viele Pakete */}
       <Droppable droppableId={id}>
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={cn('flex-1 p-2 space-y-2 min-h-[120px] rounded-b-xl transition-colors', snapshot.isDraggingOver && 'bg-primary/5')}
+            className={cn('flex-1 overflow-y-auto p-2 space-y-2 min-h-[120px] transition-colors scroll-container', snapshot.isDraggingOver && 'bg-primary/5')}
           >
             {pakete.map((paket, index) => (
               <PaketKarte key={paket.id} paket={paket} index={index} onDelete={onDeletePaket} onEdit={onEditPaket} />
@@ -265,8 +265,8 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
         )}
       </Droppable>
 
-      {/* Neues Lernpaket (gestrichelter Bereich) */}
-      <div className="px-2 pb-2">
+      {/* Neues Lernpaket (gestrichelter Bereich) – immer sichtbar am unteren Rand */}
+      <div className="px-2 pb-2 pt-1 shrink-0">
         <button
           onClick={() => onAddPaket(id)}
           className="w-full flex items-center gap-2 px-3 py-3 rounded-lg border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/5 text-xs text-muted-foreground hover:text-primary transition-all"
@@ -613,9 +613,9 @@ export default function StrukturBoardEmbedded({
       )}
 
       {/* Board */}
-      <div className={cn('flex-1 overflow-x-auto overflow-y-hidden', readOnly && 'opacity-60 pointer-events-none select-none')}>
+      <div className={cn('flex-1 overflow-x-auto overflow-y-hidden min-h-0', readOnly && 'opacity-60 pointer-events-none select-none')}>
         <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="flex gap-4 h-full p-4 min-w-max">
+          <div className="flex gap-4 h-full p-4 min-w-max items-start">
             {/* Sammelbecken */}
             <Spalte
               id={SAMMELBECKEN_ID}
