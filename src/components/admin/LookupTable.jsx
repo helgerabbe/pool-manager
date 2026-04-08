@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, GripVertical, Check, X } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Check, X, Pencil } from 'lucide-react';
 
 /**
  * Generische CRUD-Tabelle für Lookup-Einträge.
@@ -126,17 +126,21 @@ export default function LookupTable({
               </>
             ) : (
               <>
-                <button
-                  className="flex-1 text-left text-sm font-medium hover:text-primary transition-colors"
-                  onClick={() => { setEditingId(item.id); setEditLabel(item[labelField]); }}
-                >
-                  {item[labelField]}
-                </button>
+                <span className="flex-1 text-sm font-medium">{item[labelField]}</span>
                 {extraFields.map(ef => (
                   <Badge key={ef.key} variant="secondary" className="text-[10px] shrink-0">
                     {item[ef.key] || '—'}
                   </Badge>
                 ))}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0 text-muted-foreground hover:text-primary"
+                  onClick={() => { setEditingId(item.id); setEditLabel(item[labelField]); }}
+                  title="Bearbeiten"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </Button>
               </>
             )}
 
