@@ -5,63 +5,73 @@ import { Button } from '@/components/ui/button';
 import { Copy, CheckCircle2, AlertTriangle, RefreshCw, Save, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-// ── Dynamischer Tutor-Prompt-Generator ───────────────────────────────────────
+// ── Dynamischer Tutor-Prompt-Generator (Level 2 – Transfer) ──────────────────
 function buildTutorPrompt({ aufgabe, einheit, mappedLernziele = [], mappedBasisLernziele = [] }) {
-  const parts = [];
+  const fach            = einheit?.fach || 'unbekanntes Fach';
+  const jahrgangsstufe  = einheit?.jahrgangsstufe || 'unbekannte Jahrgangsstufe';
+  const thema           = einheit?.titel_der_einheit || 'unbekanntes Thema';
+  const themenfeld      = aufgabe?.titel || '';
+  const aufgabenstellung = [aufgabe?.titel && `Titel: ${aufgabe.titel}`, aufgabe?.aufgabenstellung]
+    .filter(Boolean).join('\n') || 'Keine Aufgabenstellung hinterlegt.';
+  const erwartungshorizont = aufgabe?.erwartungshorizont?.trim()
+    || aufgabe?.musterloesung?.trim()
+    || 'Kein Erwartungshorizont hinterlegt.';
 
-  // Rolle
-  const roleParts = ['Du bist ein unterstützender KI-Tutor für Schüler'];
-  if (einheit?.jahrgangsstufe) roleParts.push(`der ${einheit.jahrgangsstufe}. Jahrgangsstufe`);
-  if (einheit?.fach) roleParts.push(`im Fach ${einheit.fach}`);
-  parts.push(roleParts.join(' ') + '.');
+  // Lernziele: schülergerechte Formulierung bevorzugen
+  const lernzieleTexte = [
+    ...mappedLernziele.map(lz => lz.schueler_uebersetzung || lz.formulierung_fachsprache),
+    ...mappedBasisLernziele.map(lz => lz.text),
+  ].filter(Boolean);
+  const lernziele = lernzieleTexte.length > 0
+    ? lernzieleTexte.join(', ')
+    : 'Keine spezifischen Lernziele hinterlegt.';
 
-  // Kontext
-  if (einheit?.titel_der_einheit) {
-    parts.push(`Das aktuelle Thema ist '${einheit.titel_der_einheit}'.`);
-  }
+  // Basismodule: Namen aus mappedBasisLernziele ableiten (falls vorhanden)
+  const basismodulNamen = mappedBasisLernziele
+    .map(lz => lz.modul_name || lz.titel || lz.text)
+    .filter(Boolean);
+  const basismodule = basismodulNamen.length > 0
+    ? basismodulNamen.join(', ')
+    : 'Keine spezifischen Module hinterlegt.';
 
-  // Aufgabe
-  const aufgabentext = [aufgabe.titel && `Titel: ${aufgabe.titel}`, aufgabe.aufgabenstellung]
-    .filter(Boolean).join('\n');
-  if (aufgabentext) {
-    parts.push(`Der Schüler bearbeitet folgende Aufgabe:\n${aufgabentext}`);
-  }
+  const themenKontext = themenfeld
+    ? `${thema} (${themenfeld})`
+    : thema;
 
-  // Formale Kriterien
-  const form = aufgabe.ergebnis_form;
-  const format = aufgabe.ergebnis_dateiformat;
-  const formOffen = !form || form.toLowerCase().includes('offen');
-  const formatOffen = !format || format.toLowerCase().includes('offen') || format.toLowerCase().includes('beliebig');
-  if (!formOffen || !formatOffen) {
-    const teile = [];
-    if (!formOffen) teile.push(`Form '${form}'`);
-    if (!formatOffen) teile.push(`Dateiformat '${format}'`);
-    parts.push(`Die finale Abgabe wird in der ${teile.join(' als ')} erwartet.`);
-  }
+  return `Du bist ein motivierender, geduldiger und verständnisvoller Lerncoach für Schüler der ${jahrgangsstufe}. Jahrgangsstufe im Fach ${fach}. 
 
-  // Kompetenzen
-  const alleKompetenzen = [
-    ...mappedLernziele.map(lz => lz.schueler_uebersetzung || lz.formulierung_fachsprache).filter(Boolean),
-    ...mappedBasisLernziele.map(lz => lz.text).filter(Boolean),
-  ];
-  if (alleKompetenzen.length > 0) {
-    const liste = alleKompetenzen.map((k, i) => `${i + 1}. ${k}`).join('\n');
-    parts.push(`Der Schüler soll dabei folgende Kompetenzen nachweisen:\n${liste}`);
-  }
+Dein Ziel ist es, die Antwort des Schülers auf eine bestimmte Aufgabe zu analysieren und ihm ein strukturiertes, lernförderliches Feedback zu geben. 
 
-  // Erwartungshorizont (prioritär: neues Feld, fallback: alte Musterösung)
-  const erwartungshorizont = aufgabe.erwartungshorizont?.trim() || aufgabe.musterloesung?.trim();
-  if (erwartungshorizont) {
-    parts.push(`Du nutzt den folgenden Erwartungshorizont als Leitplanke für deine Lernbegleitung:\n--- ERWARTUNGSHORIZONT START ---\n${erwartungshorizont}\n--- ERWARTUNGSHORIZONT ENDE ---`);
-  }
+[KONTEXT DER AUFGABE]
+Thema: ${themenKontext}
+Aufgabenstellung: ${aufgabenstellung}
+Erwartungshorizont (Korrekte Lösung): ${erwartungshorizont}
+Geprüfte Lernziele: ${lernziele}
+Verfügbare Basismodule zum Üben: ${basismodule}
 
-  // Didaktische Direktive: Betonung der Erwartungshorizont-Nutzung
-  const direktiveText = erwartungshorizont
-    ? 'Nutze den Erwartungshorizont als Zielmarke: Stelle Fragen, die den Schüler methodisch dorthin steuern. Gib kein Wissen preis, sondern unterstütze durch formatives Feedback und sokratische Fragen. Mache dem Schüler deutlich, welche Anforderungen noch nicht erfüllt sind.'
-    : 'Gib dem Schüler konstruktives Feedback mit Fragen und Hinweisen. Vermeide fertige Lösungen.';
-  parts.push(direktiveText);
+[DEINE AUFGABE ALS TUTOR]
+Analysiere die Eingabe des Schülers und vergleiche sie strikt mit dem 'Erwartungshorizont'. 
+Bewerte, inwieweit die 'Geprüften Lernziele' erreicht wurden. 
 
-  return parts.join('\n\n');
+WICHTIGE REGELN:
+1. VERRATE NIEMALS DIE LÖSUNG! Gib stattdessen Denkanstöße (Scaffolding).
+2. Schreibe in einer schülergerechten, ermutigenden Sprache (verwende "Du").
+3. Verurteile den Schüler nicht für Fehler, sondern betrachte Fehler als Lernchance.
+
+[STRUKTUR DEINER ANTWORT]
+Gliedere deine Antwort ZWINGEND in die folgenden vier Abschnitte und verwende diese Überschriften:
+
+🌟 Was dir schon ganz gut gelungen ist:
+(Nenne hier konkret, welche Teile der Schülerantwort korrekt sind und mit dem Erwartungshorizont übereinstimmen. Lobe den Einsatz.)
+
+📈 Wo du noch genauer hinschauen solltest:
+(Weise auf kleine Flüchtigkeitsfehler, Ungenauigkeiten oder Teilschritte hin, die nicht ganz passen. Stelle gezielte Leitfragen, damit der Schüler selbst auf den Fehler kommt.)
+
+🛑 Wo noch größere Lücken sind:
+(Benenne klar, sachlich und freundlich, welche Lernziele oder Kernaspekte aus dem Erwartungshorizont komplett fehlen oder falsch verstanden wurden.)
+
+🛠️ Dein nächster Schritt:
+(Nenne dem Schüler konkret 1 bis maximal 2 "Verfügbare Basismodule" aus der oben genannten Liste, die er sich ansehen muss, um genau die Lücken aus dem vorherigen Schritt zu schließen. Erkläre in einem Satz, warum dieses Modul ihm jetzt hilft.)`;
 }
 
 // ── Haupt-Komponente ──────────────────────────────────────────────────────────
