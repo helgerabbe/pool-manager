@@ -5,7 +5,7 @@
  * Zeigt die Einheits-Metadaten (Titel, Ziel, Fach, Jahrgang, Status)
  * und die Teammitglieder direkt im Hauptbereich – kein Dialog.
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Save, Plus, Trash2, Crown, Edit, Eye, Lock, Unlock, ShieldAlert, Clock, ArrowRight, LayoutList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { useDraftState } from '@/hooks/useDraftState';
+// useDraftState removed – form state managed directly
 import { useSystemSettings } from '@/hooks/useSystemSettings';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import GesamtzielManager from './GesamtzielManager';
@@ -71,27 +71,27 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
   const [newRole, setNewRole] = useState('EDITOR');
   const [mitarbeiterEmail, setMitarbeiterEmail] = useState('');
 
-  const draftKey = `einheit-settings-${einheit.id}`;
-  // Werte direkt aus der Einheit – kein Draft (verhindert veraltete localStorage-Werte)
-  const { data: form, setData: setForm } = useDraftState(draftKey, {
-    titel_der_einheit: einheit.titel_der_einheit || '',
-    fach:              einheit.fach || '',
-    jahrgangsstufe:    einheit.jahrgangsstufe || '',
-    zeit_phase_id:     einheit.zeit_phase_id || '',
-    bearbeitungsmodus: einheit.bearbeitungsmodus || 'offen',
+  const buildForm = (e) => ({
+    titel_der_einheit: e.titel_der_einheit || '',
+    fach:              e.fach || '',
+    jahrgangsstufe:    e.jahrgangsstufe || '',
+    zeit_phase_id:     e.zeit_phase_id || '',
+    bearbeitungsmodus: e.bearbeitungsmodus || 'offen',
   });
 
-  // Draft-Werte werden durch aktuelle Backend-Werte überschrieben,
-  // damit veraltete localStorage-Einträge keine falschen Werte anzeigen
-  React.useEffect(() => {
-    setForm({
-      titel_der_einheit: einheit.titel_der_einheit || '',
-      fach:              einheit.fach || '',
-      jahrgangsstufe:    einheit.jahrgangsstufe || '',
-      zeit_phase_id:     einheit.zeit_phase_id || '',
-      bearbeitungsmodus: einheit.bearbeitungsmodus || 'offen',
-    });
-  }, [einheit.id]);
+  const [form, setForm] = useState(() => buildForm(einheit));
+
+  // Immer wenn sich die Einheit vom Backend ändert, Form-State aktualisieren
+  useEffect(() => {
+    setForm(buildForm(einheit));
+  }, [
+    einheit.id,
+    einheit.titel_der_einheit,
+    einheit.fach,
+    einheit.jahrgangsstufe,
+    einheit.zeit_phase_id,
+    einheit.bearbeitungsmodus,
+  ]);
 
   const [isLocking, setIsLocking] = useState(false);
 
@@ -247,7 +247,6 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
     try {
       await base44.entities.Einheiten.update(einheit.id, form);
       queryClient.invalidateQueries({ queryKey: ['einheiten'] });
-      localStorage.removeItem(draftKey);
       toast.success('Einheit gespeichert.');
     } catch {
       toast.error('Fehler beim Speichern.');
