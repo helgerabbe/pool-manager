@@ -140,10 +140,14 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
     queryFn: () => base44.entities.EinheitMembers.filter({ einheit_id: einheit.id }),
   });
 
-  const { data: allUsers = [] } = useQuery({
-    queryKey: ['all-users'],
-    queryFn: () => base44.entities.User.list(),
-    enabled: isLeitung,
+  // Fachlehrkräfte via Backend laden (asServiceRole – Frontend-User.list() ist admin-only)
+  const { data: allFachlehrkraefte = [] } = useQuery({
+    queryKey: ['fachlehrkraefte'],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('listFachlehrkraefte', {});
+      return res.data?.fachlehrkraefte || [];
+    },
+    enabled: kannMitarbeiterHinzufuegen,
   });
 
   const { data: allLernpakete = [] } = useQuery({
@@ -155,13 +159,10 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
   const paketeFuerEinheit = allLernpakete.filter(p => p.einheit_id === einheit.id);
   const activeLocks = paketeFuerEinheit.filter(p => p.is_locked && p.locked_by_email);
 
-  // Für Mitarbeiter hinzufügen: nur Fachlehrkräfte
-  const availableFachlehrkraefteForMitarbeiter = allUsers.filter(u => 
-    u.role === 'Fachlehrkraft' && 
+  // Für Mitarbeiter hinzufügen: Fachlehrkräfte die noch nicht als LEITUNG eingetragen sind
+  const availableFachlehrkraefteForMitarbeiter = allFachlehrkraefte.filter(u => 
     !members.find(m => m.user_email === u.email && m.unit_role === 'LEITUNG')
   );
-
-  const availableUsers = allUsers.filter(u => !members.find(m => m.user_email === u.email));
 
   // ── Mutations ───────────────────────────────────────────────────────────────
   const addMember = useMutation({
@@ -383,8 +384,6 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
               <p className="text-sm text-muted-foreground text-center py-6 border border-dashed rounded-lg">Noch keine Mitarbeiter zugewiesen.</p>
             ) : (
               members.filter(m => m.unit_role === 'LEITUNG').map(m => {
-                const user = allUsers.find(u => u.email === m.user_email);
-                if (!user || user.role !== 'Fachlehrkraft') return null;
                 return (
                   <div key={m.id} className="flex items-center gap-3 p-3 rounded-lg border bg-background">
                     <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-sm font-bold text-green-700 shrink-0">
@@ -394,7 +393,7 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
                       <p className="text-sm font-medium truncate">{m.user_name || m.user_email}</p>
                       <p className="text-xs text-muted-foreground truncate">{m.user_email}</p>
                     </div>
-                    {isLeitung && (
+                    {kannMitarbeiterHinzufuegen && (
                       <button
                         onClick={() => removeMember.mutate(m.id)}
                         className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
@@ -407,7 +406,7 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
               })
             )}
 
-            {isLeitung && (
+            {kannMitarbeiterHinzufuegen && (
               <div className="pt-1">
                 {!addingMitarbeiter ? (
                   <Button variant="outline" size="sm" onClick={() => setAddingMitarbeiter(true)} className="gap-2 w-full">
@@ -433,7 +432,7 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
                     )}
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm" onClick={() => { setAddingMitarbeiter(false); setMitarbeiterEmail(''); }} className="flex-1">Abbrechen</Button>
-                      <Button size="sm" className="flex-1 gap-1" disabled={!mitarbeiterEmail || addMitarbeiter.isPending} onClick={() => addMitarbeiter.mutate(mitarbeiterEmail)}>
+                      <Button size="sm" className="flex-1 gap-1" disabled={!mitarbeiterEmail || addMitarbeiter.isPending} onClick={() => addMitarbeiter.mutate(mitarbeiterEmail)} >
                         <Plus className="w-3.5 h-3.5" /> Hinzufügen
                       </Button>
                     </div>
