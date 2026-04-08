@@ -93,10 +93,12 @@ export default function EinheitCard({ einheit, lernpaketCount, rolle, onDeleteSt
                     <Layers className="w-3.5 h-3.5" />
                     {lernpaketCount} Paket{lernpaketCount !== 1 ? 'e' : ''}
                   </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    {einheit.navigationslogik || 'Sequenziell'}
-                  </span>
+                  {einheit.bearbeitungsmodus && (
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      {einheit.bearbeitungsmodus === 'sequenziell' ? 'Sequenziell' : 'Offen'}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="px-6 py-3 bg-muted/50 flex items-center justify-between border-t">
