@@ -19,7 +19,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { RotateCcw, ChevronDown, ChevronRight, Trash2, CheckCircle2, Clock, AlertCircle, ShieldCheck } from 'lucide-react';
+import { RotateCcw, ChevronDown, ChevronRight, Trash2, CheckCircle2, Clock, AlertCircle, ShieldCheck, Info, Pencil, Upload, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -515,8 +515,34 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Freigabe-Cockpit</h2>
           <p className="text-muted-foreground mt-2">
-            Wähle freigegebene Aktivitäten zur Übergabe an das Moodle-Export-Team. Eine Aktivität ist exportierbar, wenn sie vollständig freigegeben ist.
+            Wähle freigegebene Aktivitäten zur Übergabe an das Moodle-Export-Team.
           </p>
+        </div>
+
+        {/* Workflow-Info */}
+        <div className="rounded-xl border border-border bg-card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Info className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-semibold">Status-Workflow im Überblick</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {[
+              { icon: <Pencil className="w-3.5 h-3.5" />, color: 'text-muted-foreground bg-muted/50 border-border', label: 'Entwurf', desc: 'Wird von der Lehrkraft bearbeitet. Nicht im Export sichtbar.' },
+              { icon: <Upload className="w-3.5 h-3.5" />, color: 'text-blue-700 bg-blue-50 border-blue-200', label: 'Freigegeben', desc: 'Fertig und wartet auf den Export.' },
+              { icon: <Clock className="w-3.5 h-3.5" />, color: 'text-orange-700 bg-orange-50 border-orange-200', label: 'Wird exportiert 🔒', desc: 'Export-Team hat Daten gezogen. Für Lehrkräfte schreibgeschützt.' },
+              { icon: <CheckCircle2 className="w-3.5 h-3.5" />, color: 'text-green-700 bg-green-50 border-green-200', label: 'In Moodle', desc: 'Export war erfolgreich. Die aktuelle Version ist live.' },
+              { icon: <AlertCircle className="w-3.5 h-3.5" />, color: 'text-red-700 bg-red-50 border-red-200', label: 'Export-Fehler', desc: 'Upload fehlgeschlagen. Sperre aufgehoben – bitte reparieren und neu freigeben.' },
+              { icon: <RefreshCw className="w-3.5 h-3.5" />, color: 'text-purple-700 bg-purple-50 border-purple-200', label: 'Geändert (Nicht live)', desc: 'Bereits exportiert, aber nachträglich bearbeitet. Neu freigeben für Moodle.' },
+            ].map(({ icon, color, label, desc }) => (
+              <div key={label} className={`flex items-start gap-2.5 p-2.5 rounded-lg border ${color}`}>
+                <div className="mt-0.5 shrink-0">{icon}</div>
+                <div>
+                  <p className="text-xs font-semibold">{label}</p>
+                  <p className="text-xs opacity-75 mt-0.5">{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
