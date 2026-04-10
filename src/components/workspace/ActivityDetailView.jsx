@@ -8,6 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { getAktivitaetenKatalog } from '@/services/AktivitaetService';
 import { useLernpaketLock } from '@/hooks/useLernpaketLock';
 import { useEinheitLock } from '@/hooks/useEinheitLock';
 import { useRBAC } from '@/hooks/useRBAC';
@@ -37,7 +38,7 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
 
   const { data: aktivitaetenKatalog = [] } = useQuery({
     queryKey: ['aktivitaetenKatalog'],
-    queryFn: () => base44.entities.AktivitaetenKatalog.list(),
+    queryFn: () => getAktivitaetenKatalog(),
   });
 
   const catalog = aktivitaetenKatalog?.find(a => a.id === activityRecord?.aktivitaet_id);

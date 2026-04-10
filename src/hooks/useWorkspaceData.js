@@ -1,5 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { getAllAufgabenbausteine } from '@/services/AufgabenbausteinService';
+import { getAllLernpaketAktivitaeten, getAktivitaetenKatalog } from '@/services/AktivitaetService';
+import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
 
 export function useWorkspaceData(selectedEinheitId) {
   const { data: einheiten = [], isLoading: einheitenLoading } = useQuery({
@@ -21,7 +24,7 @@ export function useWorkspaceData(selectedEinheitId) {
 
   const { data: aufgaben = [] } = useQuery({
     queryKey: ['aufgaben'],
-    queryFn: () => base44.entities.Aufgabenbausteine.list(),
+    queryFn: () => getAllAufgabenbausteine(),
     enabled: !!selectedEinheitId,
   });
 
@@ -39,19 +42,19 @@ export function useWorkspaceData(selectedEinheitId) {
 
   const { data: themenfelder = [] } = useQuery({
     queryKey: ['themenfelder', selectedEinheitId],
-    queryFn: () => base44.entities.Themenfeld.filter({ einheit_id: selectedEinheitId }),
+    queryFn: () => getThemenfelderByEinheit(selectedEinheitId),
     enabled: !!selectedEinheitId,
   });
 
   const { data: lernpaketAktivitaeten = [] } = useQuery({
     queryKey: ['lernpaketPhaseAktivitaeten'],
-    queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list(),
+    queryFn: () => getAllLernpaketAktivitaeten(),
     enabled: !!selectedEinheitId,
   });
 
   const { data: aktivitaetenKatalog = [] } = useQuery({
     queryKey: ['aktivitaetenKatalog'],
-    queryFn: () => base44.entities.AktivitaetenKatalog.list(),
+    queryFn: () => getAktivitaetenKatalog(),
     enabled: !!selectedEinheitId,
   });
 
