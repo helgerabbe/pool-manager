@@ -2,6 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
+import { getEinheitById } from '@/services/EinheitenService';
+import { getAllLernpakete } from '@/services/LernpaketService';
+import { getAllLernziele } from '@/services/LernzielService';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -216,7 +219,7 @@ export default function AllgemeineAufgabenView({
   // Daten abrufen
   const { data: einheit } = useQuery({
     queryKey: ['einheiten', einheitId],
-    queryFn: () => base44.entities.Einheiten.filter({ id: einheitId }).then(r => r[0]),
+    queryFn: () => getEinheitById(einheitId),
   });
 
   const { data: allAufgaben = [] } = useQuery({
@@ -239,7 +242,7 @@ export default function AllgemeineAufgabenView({
 
   const { data: lernpakete = [] } = useQuery({
     queryKey: ['lernpakete'],
-    queryFn: () => base44.entities.Lernpakete.list(),
+    queryFn: () => getAllLernpakete(),
   });
 
   const { data: mappedLernziele = [] } = useQuery({
@@ -255,7 +258,7 @@ export default function AllgemeineAufgabenView({
 
   const { data: alleLernziele = [] } = useQuery({
     queryKey: ['lernziele'],
-    queryFn: () => base44.entities.Lernziele.list(),
+    queryFn: () => getAllLernziele(),
   });
 
   const { data: mappedBasisLernziele = [] } = useQuery({

@@ -7,7 +7,7 @@ import WartungsBanner from '@/components/layout/WartungsBanner';
 import NavigationTooltip from '@/components/layout/NavigationTooltip';
 import { logout } from '@/services/AuthService';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { getAllEinheiten } from '@/services/EinheitenService';
 import { usePresence } from '@/hooks/usePresence';
 
 // Wiederverwendbarer Icon-Nav-Link mit sofortigem Tooltip
@@ -38,7 +38,7 @@ function useBreadcrumb(location) {
 
   const { data: einheiten = [] } = useQuery({
     queryKey: ['einheiten'],
-    queryFn: () => base44.entities.Einheiten.list('-created_date'),
+    queryFn: () => getAllEinheiten(),
     enabled: !!einheitId,
   });
 

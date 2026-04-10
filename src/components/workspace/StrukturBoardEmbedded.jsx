@@ -9,8 +9,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { base44 } from '@/api/base44Client';
 import { createThemenfeld, updateThemenfeld, deleteThemenfeld } from '@/services/ThemenfeldService';
+import { createLernziel } from '@/services/LernzielService';
 import { createLernpaket, updateLernpaket, deleteLernpaket } from '@/services/LernpaketService';
 import { useRBAC } from '@/hooks/useRBAC';
 import { Button } from '@/components/ui/button';
@@ -614,7 +614,7 @@ export default function StrukturBoardEmbedded({
             if (paket.lernziele && paket.lernziele.length > 0) {
               for (const lz of paket.lernziele) {
                 if (lz.formulierung_fachsprache?.trim()) {
-                  await base44.entities.Lernziele.create({
+                  await createLernziel({
                     lernpaket_id: neuesPaket.id,
                     formulierung_fachsprache: lz.formulierung_fachsprache.trim(),
                     kategorie: lz.kategorie || 'Fachwissen',

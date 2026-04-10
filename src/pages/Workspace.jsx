@@ -25,6 +25,8 @@ import ExportCockpitView from '@/components/export/ExportCockpitView';
 import MoodleExportView from '@/components/export/MoodleExportView';
 import AllgemeineAufgabenView from '@/components/allgemeineAufgaben/AllgemeineAufgabenView';
 import { deleteLernpaket as deleteLernpaketService } from '@/services/LernpaketService';
+import { deleteLernziel } from '@/services/LernzielService';
+import { deleteAufgabenbaustein } from '@/services/AufgabenbausteinService';
 import ProjektaufgabenView from '@/components/projektaufgaben/ProjektaufgabenView';
 
 export default function Workspace({ initialEinheitId: initialEinheitIdProp = null }) {
@@ -247,8 +249,8 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
       const relAufgaben = aufgabenFuerEinheit.filter((a) => a.lernpaket_id === id);
       // Parallele Requests statt sequenzielle for...of Schleifen
       await Promise.all([
-        ...relZiele.map((z) => base44.entities.Lernziele.delete(z.id)),
-        ...relAufgaben.map((a) => base44.entities.Aufgabenbausteine.delete(a.id)),
+        ...relZiele.map((z) => deleteLernziel(z.id)),
+        ...relAufgaben.map((a) => deleteAufgabenbaustein(a.id)),
       ]);
       return deleteLernpaketService(id);
     },

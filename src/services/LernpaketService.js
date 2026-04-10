@@ -44,3 +44,10 @@ export async function updateLernpaket(id, data) {
 export async function deleteLernpaket(id) {
   return base44.entities.Lernpakete.delete(id);
 }
+
+/**
+ * Alle Lernpakete laden (global, z.B. für übergreifende Listen).
+ */
+export async function getAllLernpakete() {
+  return base44.entities.Lernpakete.list('-created_date', 200);
+}

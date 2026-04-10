@@ -8,6 +8,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { updateEinheit } from '@/services/EinheitenService';
+import { getAllLernpakete } from '@/services/LernpaketService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -105,7 +107,7 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
     setIsLocking(true);
     try {
       const neuerStatus = istGesperrt ? 'Freigegeben für Bearbeitung' : 'Gesperrt';
-      await base44.entities.Einheiten.update(einheit.id, { freigabe_status: neuerStatus });
+      await updateEinheit(einheit.id, { freigabe_status: neuerStatus });
       queryClient.invalidateQueries({ queryKey: ['einheiten'] });
       toast.success(istGesperrt
         ? 'Einheit ist jetzt für die Bearbeitung freigegeben.'
@@ -167,7 +169,7 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
 
   const { data: allLernpakete = [] } = useQuery({
     queryKey: ['lernpakete'],
-    queryFn: () => base44.entities.Lernpakete.list(),
+    queryFn: () => getAllLernpakete(),
   });
 
   // Gefiltert: nur Lernpakete der aktuellen Einheit, die gerade gesperrt sind
@@ -245,7 +247,7 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await base44.entities.Einheiten.update(einheit.id, form);
+      await updateEinheit(einheit.id, form);
       queryClient.invalidateQueries({ queryKey: ['einheiten'] });
       toast.success('Einheit gespeichert.');
     } catch {

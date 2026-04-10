@@ -1,5 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { getAllEinheiten } from '@/services/EinheitenService';
+import { getAllLernpakete } from '@/services/LernpaketService';
+import { getAllLernziele } from '@/services/LernzielService';
 import { getAllAufgabenbausteine } from '@/services/AufgabenbausteinService';
 import { getAllLernpaketAktivitaeten, getAktivitaetenKatalog } from '@/services/AktivitaetService';
 import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
@@ -7,18 +10,18 @@ import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
 export function useWorkspaceData(selectedEinheitId) {
   const { data: einheiten = [], isLoading: einheitenLoading } = useQuery({
     queryKey: ['einheiten'],
-    queryFn: () => base44.entities.Einheiten.list('-created_date'),
+    queryFn: () => getAllEinheiten(),
   });
 
   const { data: lernpakete = [] } = useQuery({
     queryKey: ['lernpakete'],
-    queryFn: () => base44.entities.Lernpakete.list('-created_date', 200),
+    queryFn: () => getAllLernpakete(),
     enabled: !!selectedEinheitId,
   });
 
   const { data: lernziele = [] } = useQuery({
     queryKey: ['lernziele'],
-    queryFn: () => base44.entities.Lernziele.list('-created_date', 500),
+    queryFn: () => getAllLernziele(),
     enabled: !!selectedEinheitId,
   });
 
