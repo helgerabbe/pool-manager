@@ -37,7 +37,7 @@ const EINHEIT_HELP = {
     },
     {
       question: 'Was ist der Unterschied zwischen "offen" und "sequenziell"?',
-      answer: 'Im offenen Modus können Schüler die Lernpakete in beliebiger Reihenfolge bearbeiten. Im sequenziellen Modus sind die Themenfelder nummeriert und müssen der Reihe nach durchgearbeitet werden.',
+      answer: 'Der Modus bezieht sich auf die Themenfelder – nicht auf einzelne Lernpakete. Im offenen Modus können Schüler die Themenfelder in beliebiger Reihenfolge bearbeiten. Im sequenziellen Modus sind die Themenfelder nummeriert und müssen der Reihe nach durchgearbeitet werden. Lernpakete innerhalb eines Themenfelds sind immer frei zugänglich.',
     },
   ],
 };
