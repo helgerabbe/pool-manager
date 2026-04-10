@@ -7,7 +7,7 @@
  */
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { invokeFunction } from '@/utils/functionsHelper';
 import { updateEinheit } from '@/services/EinheitenService';
 import { getAllLernpakete } from '@/services/LernpaketService';
 import { getMembersByEinheit, getMembershipByEinheitAndUser, removeEinheitMember, updateEinheitMemberRole } from '@/services/EinheitMembersService';
@@ -161,7 +161,7 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
   const { data: allFachlehrkraefte = [] } = useQuery({
     queryKey: ['fachlehrkraefte'],
     queryFn: async () => {
-      const res = await base44.functions.invoke('listFachlehrkraefte', {});
+      const res = await invokeFunction('listFachlehrkraefte', {});
       return res.data?.fachlehrkraefte || [];
     },
     enabled: kannMitarbeiterHinzufuegen,
@@ -185,7 +185,7 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
   const addMember = useMutation({
     mutationFn: async ({ email, role }) => {
       // ✅ Nutze gesicherte Backend-Funktion
-      return await base44.functions.invoke('addEinheitMemberSecure', {
+      return await invokeFunction('addEinheitMemberSecure', {
         einheitId: einheit.id,
         targetEmail: email,
         newRole: role
@@ -209,7 +209,7 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
   const addMitarbeiter = useMutation({
     mutationFn: async (email) => {
       // ✅ Nutze gesicherte Backend-Funktion mit LEITUNG-Rolle
-      return await base44.functions.invoke('addEinheitMemberSecure', {
+      return await invokeFunction('addEinheitMemberSecure', {
         einheitId: einheit.id,
         targetEmail: email,
         newRole: 'LEITUNG'

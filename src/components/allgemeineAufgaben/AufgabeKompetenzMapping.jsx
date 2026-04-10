@@ -1,6 +1,10 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { getAllLernziele } from '@/services/LernzielService';
+import { getAllLernpakete } from '@/services/LernpaketService';
+import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
+import { getMappingsByAufgabe, createMapping, deleteMapping, getBasisMappingsByAufgabe } from '@/services/AllgemeineAufgabeService';
+import { getAllBasisLernziele } from '@/services/BasisLernzielService';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Draggable, Droppable, DragDropContext } from '@hello-pangea/dnd';
@@ -150,47 +154,36 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
   // Fetch Daten
   const { data: alleLernziele = [] } = useQuery({
     queryKey: ['lernziele'],
-    queryFn: () => base44.entities.Lernziele.list(),
+    queryFn: () => getAllLernziele(),
     enabled: !!einheitId,
   });
 
   const { data: themenfelder = [] } = useQuery({
     queryKey: ['themenfelder', einheitId],
-    queryFn: () =>
-      einheitId ? base44.entities.Themenfeld.filter({ einheit_id: einheitId }) : Promise.resolve([]),
+    queryFn: () => einheitId ? getThemenfelderByEinheit(einheitId) : Promise.resolve([]),
     enabled: !!einheitId,
   });
 
   const { data: lernpakete = [] } = useQuery({
     queryKey: ['lernpakete'],
-    queryFn: () => base44.entities.Lernpakete.list(),
+    queryFn: () => getAllLernpakete(),
     enabled: !!einheitId,
   });
 
   const { data: existingMappings = [] } = useQuery({
     queryKey: ['allgemeineAufgabeMappings', aufgabe?.id],
-    queryFn: () =>
-      aufgabe?.id
-        ? base44.entities.AllgemeineAufgabeLernzielMapping.filter({
-            aufgabe_id: aufgabe.id,
-          })
-        : Promise.resolve([]),
+    queryFn: () => aufgabe?.id ? getMappingsByAufgabe(aufgabe.id) : Promise.resolve([]),
     enabled: !!aufgabe?.id,
   });
 
   const { data: basisLernziele = [] } = useQuery({
     queryKey: ['basisLernziele'],
-    queryFn: () => base44.entities.BasisLernziel.list(),
+    queryFn: () => getAllBasisLernziele(),
   });
 
   const { data: existingBasisMappings = [] } = useQuery({
     queryKey: ['allgemeineAufgabeBasisMappings', aufgabe?.id],
-    queryFn: () =>
-      aufgabe?.id
-        ? base44.entities.AllgemeineAufgabeBasisLernzielMapping.filter({
-            aufgabe_id: aufgabe.id,
-          })
-        : Promise.resolve([]),
+    queryFn: () => aufgabe?.id ? getBasisMappingsByAufgabe(aufgabe.id) : Promise.resolve([]),
     enabled: !!aufgabe?.id,
   });
 
@@ -204,16 +197,16 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
   }, [alleLernziele, existingMappings, basisLernziele, existingBasisMappings]);
 
   // Mutations
-  const createMapping = useMutation({
-    mutationFn: (data) => base44.entities.AllgemeineAufgabeLernzielMapping.create(data),
+  const createMappingMutation = useMutation({
+    mutationFn: (data) => createMapping(data.aufgabe_id, data.lernziel_id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgabeMappings'] });
       triggerSaved();
     },
   });
 
-  const deleteMapping = useMutation({
-    mutationFn: (mappingId) => base44.entities.AllgemeineAufgabeLernzielMapping.delete(mappingId),
+  const deleteMappingMutation = useMutation({
+    mutationFn: (mappingId) => deleteMapping(mappingId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgabeMappings'] });
       triggerSaved();
@@ -238,7 +231,7 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
       setSavingIds((prev) => new Set([...prev, lernziel.id]));
 
       try {
-        await createMapping.mutateAsync({
+        await createMappingMutation.mutateAsync({
           aufgabe_id: aufgabe.id,
           lernziel_id: lernziel.id,
         });
@@ -253,7 +246,7 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
         });
       }
     },
-    [alleLernziele, mappedLernziele, aufgabe.id, createMapping, setMappedLernziele]
+    [alleLernziele, mappedLernziele, aufgabe.id, createMappingMutation, setMappedLernziele]
   );
 
   const handleRemoveMapping = useCallback(
@@ -266,7 +259,7 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
 
       try {
         if (mapping) {
-          await deleteMapping.mutateAsync(mapping.id);
+          await deleteMappingMutation.mutateAsync(mapping.id);
         }
       } catch (err) {
         if (lernziel) {
@@ -281,7 +274,7 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
         });
       }
     },
-    [existingMappings, alleLernziele, deleteMapping, setMappedLernziele]
+    [existingMappings, alleLernziele, deleteMappingMutation, setMappedLernziele]
   );
 
   const handleRemoveBasisMapping = useCallback(

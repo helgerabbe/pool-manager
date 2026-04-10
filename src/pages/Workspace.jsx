@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { invokeFunction } from '@/utils/functionsHelper';
 import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
 import { useWorkspaceData } from '@/hooks/useWorkspaceData';
@@ -25,7 +25,7 @@ import ExportCockpitView from '@/components/export/ExportCockpitView';
 import MoodleExportView from '@/components/export/MoodleExportView';
 import AllgemeineAufgabenView from '@/components/allgemeineAufgaben/AllgemeineAufgabenView';
 import { deleteLernpaket as deleteLernpaketService } from '@/services/LernpaketService';
-import { deleteLernziel } from '@/services/LernzielService';
+import { deleteLernziel as deleteLernzielService } from '@/services/LernzielService';
 import { deleteAufgabenbaustein } from '@/services/AufgabenbausteinService';
 import ProjektaufgabenView from '@/components/projektaufgaben/ProjektaufgabenView';
 
@@ -118,7 +118,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     if (!einheit) return;
     setAcquiringStructLock(true);
     try {
-      const res = await base44.functions.invoke('acquireLockSecure', {
+      const res = await invokeFunction('acquireLockSecure', {
         entityName: 'Einheiten',
         entityId: einheit.id,
         lockType: 'structural',
@@ -149,7 +149,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     if (!einheit) return;
     setReleasingStructLock(true);
     try {
-      await base44.functions.invoke('releaseLockSecure', {
+      await invokeFunction('releaseLockSecure', {
         entityName: 'Einheiten',
         entityId: einheit.id,
       });
@@ -249,7 +249,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
       const relAufgaben = aufgabenFuerEinheit.filter((a) => a.lernpaket_id === id);
       // Parallele Requests statt sequenzielle for...of Schleifen
       await Promise.all([
-        ...relZiele.map((z) => deleteLernziel(z.id)),
+        ...relZiele.map((z) => deleteLernzielService(z.id)),
         ...relAufgaben.map((a) => deleteAufgabenbaustein(a.id)),
       ]);
       return deleteLernpaketService(id);
@@ -263,7 +263,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   });
 
   const deleteLernziel = useMutation({
-    mutationFn: (id) => base44.entities.Lernziele.delete(id),
+    mutationFn: (id) => deleteLernzielService(id),
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['lernziele'] });
       const lz = zieleFuerEinheit.find((lz) => lz.id === id);

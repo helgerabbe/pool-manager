@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
 import { getEinheitById } from '@/services/EinheitenService';
 import { getAllLernpakete } from '@/services/LernpaketService';
 import { getAllLernziele } from '@/services/LernzielService';
 import { getAufgabenByEinheit, getMappingsByAufgabe, deleteAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
+import { getAllBasisLernziele, getAllBasismodule } from '@/services/BasisLernzielService';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -262,12 +262,12 @@ export default function AllgemeineAufgabenView({
 
   const { data: basisLernziele = [] } = useQuery({
     queryKey: ['basisLernziele'],
-    queryFn: () => base44.entities.BasisLernziel.list(),
+    queryFn: () => getAllBasisLernziele(),
   });
 
   const { data: basismodule = [] } = useQuery({
     queryKey: ['basismodule'],
-    queryFn: () => base44.entities.Basismodule.list(),
+    queryFn: () => getAllBasismodule(),
   });
 
   // Effektive Basis-Lernziele aus Mappings

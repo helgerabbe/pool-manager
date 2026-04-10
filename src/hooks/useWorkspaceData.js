@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { getAllEinheiten } from '@/services/EinheitenService';
+import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
+import { getAllMappingBasisziele } from '@/services/MappingBasiszielService';
 import { getAllLernpakete } from '@/services/LernpaketService';
 import { getAllLernziele } from '@/services/LernzielService';
 import { getAllAufgabenbausteine } from '@/services/AufgabenbausteinService';
@@ -33,13 +34,13 @@ export function useWorkspaceData(selectedEinheitId) {
 
   const { data: allgemeineAufgabenData = [] } = useQuery({
     queryKey: ['allgemeineAufgaben', selectedEinheitId],
-    queryFn: () => base44.entities.AllgemeineAufgabe.filter({ einheit_id: selectedEinheitId }),
+    queryFn: () => getAufgabenByEinheit(selectedEinheitId),
     enabled: !!selectedEinheitId,
   });
 
   const { data: mappings = [] } = useQuery({
     queryKey: ['mappingBasisziele'],
-    queryFn: () => base44.entities.MappingAufgabeBasisziel.list(),
+    queryFn: () => getAllMappingBasisziele(),
     enabled: !!selectedEinheitId,
   });
 

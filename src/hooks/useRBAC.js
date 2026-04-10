@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { getCurrentUser } from '@/services/AuthService';
+import { getBenutzerByEmail, getSystemeinstellungen } from '@/services/BenutzerService';
 import { getPermissions, ROLLEN } from '@/lib/rbac';
 import { useMockedRole } from '@/lib/RoleContext';
 
@@ -25,7 +26,7 @@ export function useRBAC() {
 
   const { data: authUser } = useQuery({
     queryKey: ['authUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => getCurrentUser(),
     staleTime: 30 * 1000,           // ✅ 30s statt 5min – aggressivere Cache-Invalidierung
     refetchOnWindowFocus: true,      // ✅ Bei Tab-Wechsel neu abrufen
     refetchOnReconnect: true,        // ✅ Bei Netzwerk-Reconnect neu abrufen
@@ -33,7 +34,7 @@ export function useRBAC() {
 
   const { data: benutzerProfile = [], isLoading } = useQuery({
     queryKey: ['benutzerProfil', authUser?.email],
-    queryFn: () => base44.entities.Benutzer.filter({ user_id: authUser?.email }),
+    queryFn: () => getBenutzerByEmail(authUser?.email),
     enabled: !!authUser?.email,
     staleTime: 30 * 1000,            // ✅ 30s statt 5min – aggressivere Cache-Invalidierung
     refetchOnWindowFocus: true,      // ✅ Bei Tab-Wechsel neu abrufen
@@ -55,7 +56,7 @@ export function useRBAC() {
   // ── Wartungsmodus: Schreibrechte für non-Admins sperren ──────────────────
   const { data: systemSettings = [] } = useQuery({
     queryKey: ['systemeinstellungen'],
-    queryFn: () => base44.entities.Systemeinstellungen.list(),
+    queryFn: () => getSystemeinstellungen(),
     staleTime: 0,           // immer frisch prüfen – kritisch für Wartungsmodus
     refetchInterval: 15000, // alle 15s im Hintergrund pollen
   });

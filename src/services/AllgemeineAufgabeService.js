@@ -89,6 +89,42 @@ export async function deleteMapping(mappingId) {
  * @param {object} aufgabeData - Felder für AllgemeineAufgabe
  * @param {string[]} lernzielIds - IDs der zu verknüpfenden Lernziele
  */
+// ── AllgemeineAufgabeBasisLernzielMapping ────────────────────────────────────
+
+/**
+ * Basis-Lernziel-Mappings einer Aufgabe laden.
+ */
+export async function getBasisMappingsByAufgabe(aufgabeId) {
+  return base44.entities.AllgemeineAufgabeBasisLernzielMapping.filter({ aufgabe_id: aufgabeId });
+}
+
+/**
+ * Basis-Lernziel-Mapping anlegen.
+ */
+export async function createBasisMapping(aufgabeId, basisLernzielId) {
+  return base44.entities.AllgemeineAufgabeBasisLernzielMapping.create({
+    aufgabe_id: aufgabeId,
+    basislernziel_id: basisLernzielId,
+  });
+}
+
+/**
+ * Basis-Lernziel-Mapping löschen.
+ */
+export async function deleteBasisMapping(mappingId) {
+  return base44.entities.AllgemeineAufgabeBasisLernzielMapping.delete(mappingId);
+}
+
+// ── Komposit-Operationen (Supabase-Transaktions-Kandidaten) ───────────────────
+
+/**
+ * Aufgabe anlegen UND gleichzeitig Lernziele verknüpfen.
+ * SUPABASE-HINWEIS: Diese Funktion ist ein expliziter Vorbereitungskandidat
+ * für eine atomare PostgreSQL-RPC-Transaktion.
+ *
+ * @param {object} aufgabeData - Felder für AllgemeineAufgabe
+ * @param {string[]} lernzielIds - IDs der zu verknüpfenden Lernziele
+ */
 export async function createAufgabeMitMappings(aufgabeData, lernzielIds = []) {
   const aufgabe = await createAllgemeineAufgabe(aufgabeData);
   if (lernzielIds.length > 0) {

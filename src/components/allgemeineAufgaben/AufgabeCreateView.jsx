@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { uploadFile } from '@/services/FileService';
 import { createAllgemeineAufgabe, updateAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,7 +40,7 @@ function AufgabenstellungSection({ text, onTextChange, bildUrl, onBildUrlChange 
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await uploadFile(file);
     onBildUrlChange(file_url);
     setUploading(false);
     toast.success('Bild hochgeladen');
@@ -126,7 +126,7 @@ function ZusaetzlichesMaterialSection({ materials, onMaterialsChange }) {
 
     if (type === 'pdf' || type === 'image') {
       setUploading(true);
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: newMaterial.file });
+      const { file_url } = await uploadFile(newMaterial.file);
       finalMaterial.url = file_url;
       setUploading(false);
     } else {

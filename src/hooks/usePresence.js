@@ -13,7 +13,15 @@
  * Rückgabe: { onlineUsers, count }
  */
 import { useEffect, useRef, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { getCurrentUser } from '@/services/AuthService';
+import {
+  listPresence,
+  filterPresenceByEmail,
+  createPresenceRecord,
+  updatePresenceRecord,
+  deletePresenceRecord,
+  subscribeToPresence,
+} from '@/services/PresenceService';
 
 const HEARTBEAT_INTERVAL = 30_000;  // 30s
 const STALE_THRESHOLD_MS = 120_000; // 120s = Puffer für 3 verpasste Pings
@@ -35,7 +43,7 @@ export function usePresence(currentView = 'dashboard') {
     const sendHeartbeat = async () => {
       if (!myRecordIdRef.current) return;
       try {
-        await base44.entities.ActiveUsersPresence.update(myRecordIdRef.current, {
+        await updatePresenceRecord(myRecordIdRef.current, {
           last_seen_at: new Date().toISOString(),
           current_view: currentView,
         });
@@ -49,7 +57,7 @@ export function usePresence(currentView = 'dashboard') {
     // ── Presence-Liste laden + Stale-Filter + Deduplizierung ──
     const loadPresence = async () => {
       try {
-        const all = await base44.entities.ActiveUsersPresence.list();
+        const all = await listPresence();
         const cutoff = Date.now() - STALE_THRESHOLD_MS;
 
         // Deduplizieren nach E-Mail (neuester Eintrag pro Nutzer)
@@ -72,7 +80,7 @@ export function usePresence(currentView = 'dashboard') {
     };
 
     const init = async () => {
-      const user = await base44.auth.me();
+      const user = await getCurrentUser();
       if (!user || !mountedRef.current) return;
 
       myEmailRef.current = user.email;
@@ -81,7 +89,7 @@ export function usePresence(currentView = 'dashboard') {
       // Bestehende eigene Einträge bereinigen
       let existing = [];
       try {
-        existing = await base44.entities.ActiveUsersPresence.filter({ user_email: user.email });
+        existing = await filterPresenceByEmail(user.email);
       } catch (err) {
         console.warn('[usePresence] Filter failed:', err.message);
       }
@@ -92,19 +100,19 @@ export function usePresence(currentView = 'dashboard') {
       if (existing.length > 0) {
         recordId = existing[0].id;
         try {
-          await base44.entities.ActiveUsersPresence.update(recordId, {
+          await updatePresenceRecord(recordId, {
             last_seen_at: now,
             user_name: user.full_name || user.email,
             current_view: currentView,
           });
           // Duplikate löschen
           for (let i = 1; i < existing.length; i++) {
-            base44.entities.ActiveUsersPresence.delete(existing[i].id).catch(() => {});
+            deletePresenceRecord(existing[i].id).catch(() => {});
           }
         } catch {
           // Record gelöscht – neu erstellen
           try {
-            const created = await base44.entities.ActiveUsersPresence.create({
+            const created = await createPresenceRecord({
               user_email: user.email,
               user_name: user.full_name || user.email,
               current_view: currentView,
@@ -118,7 +126,7 @@ export function usePresence(currentView = 'dashboard') {
         }
       } else {
         try {
-          const created = await base44.entities.ActiveUsersPresence.create({
+          const created = await createPresenceRecord({
             user_email: user.email,
             user_name: user.full_name || user.email,
             current_view: currentView,
@@ -132,7 +140,7 @@ export function usePresence(currentView = 'dashboard') {
       }
 
       if (!mountedRef.current) {
-        if (recordId) base44.entities.ActiveUsersPresence.delete(recordId).catch(() => {});
+        if (recordId) deletePresenceRecord(recordId).catch(() => {});
         return;
       }
 
@@ -142,7 +150,7 @@ export function usePresence(currentView = 'dashboard') {
       await loadPresence();
 
       // Realtime-Subscription mit Debounce
-      unsubscribeRef.current = base44.entities.ActiveUsersPresence.subscribe(() => {
+      unsubscribeRef.current = subscribeToPresence(() => {
         if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
         debounceTimerRef.current = setTimeout(loadPresence, DEBOUNCE_MS);
       });
@@ -182,7 +190,7 @@ export function usePresence(currentView = 'dashboard') {
       if (myRecordIdRef.current) {
         const id = myRecordIdRef.current;
         myRecordIdRef.current = null;
-        base44.entities.ActiveUsersPresence.delete(id).catch(() => {});
+        deletePresenceRecord(id).catch(() => {});
       }
     };
 
@@ -190,7 +198,7 @@ export function usePresence(currentView = 'dashboard') {
       mountedRef.current = false;
       clearInterval(heartbeatRef.current);
       if (myRecordIdRef.current) {
-        try { base44.entities.ActiveUsersPresence.delete(myRecordIdRef.current); } catch {}
+        try { deletePresenceRecord(myRecordIdRef.current); } catch {}
         myRecordIdRef.current = null;
       }
     };
