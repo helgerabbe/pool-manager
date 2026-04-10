@@ -115,6 +115,7 @@ function ThemenfeldPanel({ themenfeld, lernpakete, kannBearbeiten, queryClient }
       queryClient.invalidateQueries({ queryKey: ['themenfelder'] });
       setIsEditing(false);
     },
+    onError: () => toast.error('Fehler beim Speichern des Themenfelds.'),
   });
 
   const paketeFuerThemenfeld = lernpakete.filter(p => p.themenfeld_id === themenfeld?.id);
@@ -411,8 +412,9 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
     base44.entities.Lernpakete.update(paket.id, { phasen_konfiguration: newConfig }).then(() => {
       queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
     }).catch(() => {
-      // Fehler: Revert auf alten State
+      // Fehler: Revert auf alten State und Nutzer informieren
       setLocalPhasenConfig(localPhasenConfig);
+      toast.error('Fehler beim Speichern der Phasenkonfiguration.');
     });
   };
 
@@ -789,10 +791,12 @@ function LernzielPanel({ lernziel, paketId, aufgaben, userEmail, kannBearbeiten,
   const updateAufgabe = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Aufgabenbausteine.update(id, data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['aufgaben'] }); setEditAufgabe(null); },
+    onError: () => toast.error('Fehler beim Speichern des Aufgabenbausteins.'),
   });
   const deleteAufgabe = useMutation({
     mutationFn: (id) => base44.entities.Aufgabenbausteine.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['aufgaben'] }),
+    onError: () => toast.error('Fehler beim Löschen des Aufgabenbausteins.'),
   });
 
   const handleEdit = (aufgabe) => {
@@ -1198,6 +1202,7 @@ export default function WorkspaceDetailPanel({
   const updateEinheit = useMutation({
     mutationFn: (data) => base44.entities.Einheiten.update(einheit?.id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['einheiten'] }),
+    onError: () => toast.error('Fehler beim Speichern der Einheit.'),
   });
 
   if (!selectedNode) {

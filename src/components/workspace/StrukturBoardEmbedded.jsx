@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Plus, GripVertical, Clock, Trash2, FolderOpen, Layers, X, Save, Target, ChevronLeft, AlignJustify, LayoutList, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 // ── Lernpaket-Dialog ──────────────────────────────────────────────────────────
 // Öffnet sich beim Klick auf eine Paket-Karte oder beim Erstellen eines neuen Pakets.
@@ -636,6 +637,7 @@ export default function StrukturBoardEmbedded({
       onSaved?.();
     } catch (error) {
       console.error('Fehler beim Speichern:', error);
+      toast.error('Fehler beim Speichern der Struktur: ' + (error.message || 'Unbekannter Fehler'));
       setSaving(false);
     }
   };
