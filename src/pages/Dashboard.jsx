@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users } from 'lucide-react';
 import { usePresence } from '@/hooks/usePresence';
+import TutorialCard from '@/components/onboarding/TutorialSlideshow';
 
 export default function Dashboard() {
   // Globaler Presence-Hook – Heartbeat läuft auch in AppLayout weiter,
@@ -22,6 +23,8 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      <TutorialCard />
+
       <div className="flex gap-6 items-stretch">
         {/* Titelbild */}
         <div className="rounded-2xl overflow-hidden shadow-md flex-shrink-0 w-2/3">
