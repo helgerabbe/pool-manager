@@ -10,6 +10,7 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { base44 } from '@/api/base44Client';
+import { createThemenfeld, updateThemenfeld, deleteThemenfeld } from '@/services/ThemenfeldService';
 import { useRBAC } from '@/hooks/useRBAC';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -575,7 +576,7 @@ export default function StrukturBoardEmbedded({
 
       // Lösche Themenfelder
       for (const themenfeldId of themenfeldIdZumLoeschen) {
-        await base44.entities.Themenfeld.delete(themenfeldId);
+        await deleteThemenfeld(themenfeldId);
       }
 
       // 1. Themenfelder anlegen/updaten
@@ -584,10 +585,10 @@ export default function StrukturBoardEmbedded({
         const spalte = spalten[i];
         let themenfeldId = spalte.themenfeldId;
         if (!themenfeldId) {
-          const neu = await base44.entities.Themenfeld.create({ einheit_id: einheitId, titel: spalte.titel, reihenfolge: i + 1 });
+          const neu = await createThemenfeld({ einheitId, titel: spalte.titel, reihenfolge: i + 1 });
           themenfeldId = neu.id;
         } else {
-          await base44.entities.Themenfeld.update(themenfeldId, { titel: spalte.titel, reihenfolge: i + 1 });
+          await updateThemenfeld(themenfeldId, { titel: spalte.titel, reihenfolge: i + 1 });
         }
         spaltenMitId.push({ ...spalte, themenfeldId });
       }

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -233,8 +234,7 @@ export default function AllgemeineAufgabenView({
 
   const { data: themenfelder = [] } = useQuery({
     queryKey: ['themenfelder', einheitId],
-    queryFn: () =>
-      base44.entities.Themenfeld.filter({ einheit_id: einheitId }),
+    queryFn: () => getThemenfelderByEinheit(einheitId),
   });
 
   const { data: lernpakete = [] } = useQuery({
