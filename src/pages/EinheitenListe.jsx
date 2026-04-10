@@ -118,7 +118,7 @@ export default function EinheitenListe() {
       return () => clearTimeout(timeout);
     }
   }, [isDeletingAny]);
-  const { permissions, rolle } = useRBAC();
+  const { permissions, rolle, faecher: meineFaecher } = useRBAC();
 
   const { data: einheiten = [], isLoading } = useQuery({
     queryKey: ['einheiten'],
@@ -141,7 +141,9 @@ export default function EinheitenListe() {
     const matchFach = filterFach === 'all' || e.fach === filterFach;
     const matchRBAC = kannEinheitSehen(rolle, e.freigabe_status);
     const matchChanged = !showOnlyChanged || (e.sync_status === 'modified' || e.sync_status === 'new' || !e.last_synced_at);
-    return matchSearch && matchFach && matchRBAC && matchChanged;
+    // Fach-Filter: Nicht-Admins sehen nur Einheiten ihrer eigenen Fächer
+    const matchMeinFach = permissions.istAdmin || meineFaecher.length === 0 || meineFaecher.includes(e.fach);
+    return matchSearch && matchFach && matchRBAC && matchChanged && matchMeinFach;
   });
 
   const faecher = [...new Set(einheiten.map(e => e.fach).filter(Boolean))];
@@ -163,7 +165,7 @@ export default function EinheitenListe() {
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Einheiten</h1>
           <p className="text-sm text-muted-foreground mt-1">{einheiten.length} Einheit{einheiten.length !== 1 ? 'en' : ''} insgesamt</p>
         </div>
-        {permissions.kannSchreiben && (
+        {permissions.kannEinheitVerwalten && (
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setSchnellErstellen(true)} className="gap-2">
               <Plus className="w-4 h-4" />
