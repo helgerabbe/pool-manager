@@ -10,6 +10,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { updateEinheit } from '@/services/EinheitenService';
 import { getAllLernpakete } from '@/services/LernpaketService';
+import { getMembersByEinheit, getMembershipByEinheitAndUser, removeEinheitMember, updateEinheitMemberRole } from '@/services/EinheitMembersService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -127,9 +128,8 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
 
   const { data: myMembership } = useQuery({
     queryKey: ['einheit-members', einheit.id, currentUserEmail],
-    queryFn: () => base44.entities.EinheitMembers.filter({ einheit_id: einheit.id, user_email: currentUserEmail }),
+    queryFn: () => getMembershipByEinheitAndUser(einheit.id, currentUserEmail),
     enabled: !!currentUserEmail,
-    select: d => d[0],
     staleTime: 5000,  // ✅ Nur 5 Sekunden Cache
     refetchInterval: 10000,  // ✅ Alle 10s im Hintergrund neuladen
     refetchOnWindowFocus: true,  // ✅ Bei Tab-Wechsel neu validieren
@@ -154,7 +154,7 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
 
   const { data: members = [], isLoading: membersLoading } = useQuery({
     queryKey: ['einheit-members', einheit.id],
-    queryFn: () => base44.entities.EinheitMembers.filter({ einheit_id: einheit.id }),
+    queryFn: () => getMembersByEinheit(einheit.id),
   });
 
   // Fachlehrkräfte via Backend laden (asServiceRole – Frontend-User.list() ist admin-only)
@@ -232,7 +232,7 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
   });
 
   const removeMember = useMutation({
-    mutationFn: (id) => base44.entities.EinheitMembers.delete(id),
+    mutationFn: (id) => removeEinheitMember(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['einheit-members', einheit.id] });
       toast.success('Mitglied entfernt.');
@@ -240,7 +240,7 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
   });
 
   const updateRole = useMutation({
-    mutationFn: ({ memberId, role }) => base44.entities.EinheitMembers.update(memberId, { unit_role: role }),
+    mutationFn: ({ memberId, role }) => updateEinheitMemberRole(memberId, role),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['einheit-members', einheit.id] }),
   });
 

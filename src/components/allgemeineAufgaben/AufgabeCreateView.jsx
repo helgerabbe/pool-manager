@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { createAllgemeineAufgabe, updateAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -254,7 +255,7 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
   const isValid = !!(formData.aufgabenstellung?.trim() || formData.aufgaben_bild_url);
 
   const createAufgabe = useMutation({
-    mutationFn: (data) => base44.entities.AllgemeineAufgabe.create({
+    mutationFn: (data) => createAllgemeineAufgabe({
       einheit_id: einheitId,
       anforderungsebene: defaultAnforderungsebene,
       themenfeld_id: data.themenfeld_id || null,
@@ -277,7 +278,7 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
   });
 
   const updateAufgabe = useMutation({
-    mutationFn: (data) => base44.entities.AllgemeineAufgabe.update(initialData.id, {
+    mutationFn: (data) => updateAllgemeineAufgabe(initialData.id, {
       themenfeld_id: data.themenfeld_id || null,
       titel: data.titel || null,
       aufgabenstellung: data.aufgabenstellung || '',

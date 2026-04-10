@@ -5,6 +5,7 @@ import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
 import { getEinheitById } from '@/services/EinheitenService';
 import { getAllLernpakete } from '@/services/LernpaketService';
 import { getAllLernziele } from '@/services/LernzielService';
+import { getAufgabenByEinheit, getMappingsByAufgabe, deleteAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -224,10 +225,7 @@ export default function AllgemeineAufgabenView({
 
   const { data: allAufgaben = [] } = useQuery({
     queryKey: ['allgemeineAufgaben', einheitId],
-    queryFn: () =>
-      base44.entities.AllgemeineAufgabe.filter({
-        einheit_id: einheitId,
-      }),
+    queryFn: () => getAufgabenByEinheit(einheitId),
   });
 
   // Filtere Aufgaben nach der übergebenen Anforderungsebene
@@ -247,12 +245,7 @@ export default function AllgemeineAufgabenView({
 
   const { data: mappedLernziele = [] } = useQuery({
     queryKey: ['allgemeineAufgabeMappings', selectedAufgabeId],
-    queryFn: () =>
-      selectedAufgabeId
-        ? base44.entities.AllgemeineAufgabeLernzielMapping.filter({
-            aufgabe_id: selectedAufgabeId,
-          })
-        : Promise.resolve([]),
+    queryFn: () => selectedAufgabeId ? getMappingsByAufgabe(selectedAufgabeId) : Promise.resolve([]),
     enabled: !!selectedAufgabeId,
   });
 
@@ -263,12 +256,7 @@ export default function AllgemeineAufgabenView({
 
   const { data: mappedBasisLernziele = [] } = useQuery({
     queryKey: ['allgemeineAufgabeMappings', selectedAufgabeId],
-    queryFn: () =>
-      selectedAufgabeId
-        ? base44.entities.AllgemeineAufgabeLernzielMapping.filter({
-            aufgabe_id: selectedAufgabeId,
-          })
-        : Promise.resolve([]),
+    queryFn: () => selectedAufgabeId ? getMappingsByAufgabe(selectedAufgabeId) : Promise.resolve([]),
     enabled: !!selectedAufgabeId,
   });
 
@@ -300,7 +288,7 @@ export default function AllgemeineAufgabenView({
 
   // Delete-Mutation
   const deleteAufgabe = useMutation({
-    mutationFn: (id) => base44.entities.AllgemeineAufgabe.delete(id),
+    mutationFn: (id) => deleteAllgemeineAufgabe(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
       setSelectedAufgabeId(null);

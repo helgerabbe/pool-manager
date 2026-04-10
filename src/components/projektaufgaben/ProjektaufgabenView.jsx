@@ -1,6 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { getEinheitById } from '@/services/EinheitenService';
+import { getAllLernpakete } from '@/services/LernpaketService';
+import { getAllLernziele } from '@/services/LernzielService';
+import { getAllAufgabenbausteine } from '@/services/AufgabenbausteinService';
+import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
+import { getAufgabenByEinheit, updateAllgemeineAufgabe, deleteAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -297,26 +302,22 @@ export default function ProjektaufgabenView({
   // Daten abrufen
   const { data: einheit } = useQuery({
     queryKey: ['einheiten', einheitId],
-    queryFn: () => base44.entities.Einheiten.filter({ id: einheitId }).then(r => r[0]),
+    queryFn: () => getEinheitById(einheitId),
   });
 
   const { data: allgemeineAufgaben = [] } = useQuery({
     queryKey: ['allgemeineAufgaben', einheitId],
-    queryFn: () =>
-      base44.entities.AllgemeineAufgabe.filter({
-        einheit_id: einheitId,
-      }),
+    queryFn: () => getAufgabenByEinheit(einheitId),
   });
 
   const { data: themenfelder = [] } = useQuery({
     queryKey: ['themenfelder', einheitId],
-    queryFn: () =>
-      base44.entities.Themenfeld.filter({ einheit_id: einheitId }),
+    queryFn: () => getThemenfelderByEinheit(einheitId),
   });
 
   const { data: allLernpakete = [] } = useQuery({
     queryKey: ['lernpakete'],
-    queryFn: () => base44.entities.Lernpakete.list(),
+    queryFn: () => getAllLernpakete(),
   });
 
   // Filtere nur Pakete für diese Einheit
@@ -324,7 +325,7 @@ export default function ProjektaufgabenView({
 
   const { data: allLernziele = [] } = useQuery({
     queryKey: ['lernziele'],
-    queryFn: () => base44.entities.Lernziele.list(),
+    queryFn: () => getAllLernziele(),
   });
 
   // Filtere nur Ziele für die Pakete dieser Einheit
@@ -332,12 +333,12 @@ export default function ProjektaufgabenView({
 
   const { data: aufgaben = [] } = useQuery({
     queryKey: ['aufgaben'],
-    queryFn: () => base44.entities.Aufgabenbausteine.list(),
+    queryFn: () => getAllAufgabenbausteine(),
   });
 
   // Delete-Mutation
   const deleteAufgabe = useMutation({
-    mutationFn: (id) => base44.entities.AllgemeineAufgabe.delete(id),
+    mutationFn: (id) => deleteAllgemeineAufgabe(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
       setSelectedAufgabeId(null);
@@ -454,7 +455,7 @@ export default function ProjektaufgabenView({
                   aufgabe={selectedAufgabe}
                   kannBearbeiten={kannBearbeiten}
                   onPriorityChange={(neu) => {
-                    base44.entities.AllgemeineAufgabe.update(selectedAufgabe.id, { prioritaete_lernziele: neu });
+                   updateAllgemeineAufgabe(selectedAufgabe.id, { prioritaete_lernziele: neu });
                     queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
                   }}
                 />
