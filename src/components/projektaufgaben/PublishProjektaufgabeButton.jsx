@@ -82,12 +82,14 @@ export default function PublishProjektaufgabeButton({ aufgabe, kannBearbeiten = 
 
   if (isApproved) {
     if (!canRevoke) return null;
+    const isPendingExport = aufgabe.sync_status === 'pending';
     return (
       <Button
         variant="outline"
         size="sm"
         onClick={() => revokeMutation.mutate()}
-        disabled={revokeMutation.isPending}
+        disabled={revokeMutation.isPending || isPendingExport}
+        title={isPendingExport ? 'Nicht möglich: Aufgabe wird gerade exportiert' : undefined}
         className="gap-2 text-green-700 border-green-300 hover:bg-green-50"
       >
         {revokeMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCw className="w-3.5 h-3.5" />}

@@ -11,8 +11,8 @@
  * Die useExportLock-Logik ist hier NICHT aktiv für Admins (Interaktion erlaubt).
  */
 
-import React, { useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import React, { useMemo, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useRBAC } from '@/hooks/useRBAC';
 import { useExportLock } from '@/hooks/useExportLock';
@@ -21,7 +21,9 @@ import { ExportConfirmationButton } from '@/components/admin/ExportConfirmationB
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle2, Clock, AlertCircle, Zap } from 'lucide-react';
+import { CheckCircle2, Clock, AlertCircle, Zap, Send } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -29,6 +31,7 @@ export default function MoodleExportView({ einheitId, userRole, isAdmin }) {
   const queryClient = useQueryClient();
   const { permissions } = useRBAC();
   const { isLocked, pendingCount, pendingElements } = useExportLock(einheitId);
+  const [confirmedIds, setConfirmedIds] = useState(new Set());
 
   // ──────────────────────────────────────────────────────────────────────────────
   // Daten laden (alle Hooks ZUERST)
@@ -87,6 +90,43 @@ export default function MoodleExportView({ einheitId, userRole, isAdmin }) {
       ].length,
     };
   }, [lernpakete, einheitActivities, masters, klone, einheitId]);
+
+  // Pending-Elemente für flache Liste (Aktivitäten + allgemeine Aufgaben)
+  const { data: allgemeineAufgaben = [] } = useQuery({
+    queryKey: ['allgemeineAufgaben'],
+    queryFn: () => base44.entities.AllgemeineAufgabe.list(),
+    refetchInterval: 5000,
+  });
+
+  const pendingAufgaben = useMemo(() => {
+    const paketMap = Object.fromEntries(lernpakete.map(lp => [lp.id, lp]));
+    const actItems = activities
+      .filter(a => a.sync_status === 'pending' && paketMap[a.lernpaket_id]?.einheit_id === einheitId)
+      .map(a => ({ ...a, _label: `${a.phase}: Aktivität`, _type: 'aktivitaet' }));
+    const aufgabeItems = allgemeineAufgaben
+      .filter(a => a.sync_status === 'pending' && a.einheit_id === einheitId)
+      .map(a => ({ ...a, _label: a.titel || 'Aufgabe ohne Titel', _type: 'aufgabe' }));
+    return [...actItems, ...aufgabeItems];
+  }, [activities, allgemeineAufgaben, lernpakete, einheitId]);
+
+  // Initialise confirmedIds when pendingAufgaben change
+  React.useEffect(() => {
+    setConfirmedIds(new Set(pendingAufgaben.map(a => a.id)));
+  }, [pendingAufgaben.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const confirmMutation = useMutation({
+    mutationFn: async () => {
+      const successfulIds = pendingAufgaben.filter(a => confirmedIds.has(a.id)).map(a => a.id);
+      const failedIds = pendingAufgaben.filter(a => !confirmedIds.has(a.id)).map(a => a.id);
+      await base44.functions.invoke('confirmExportCompletion', { einheit_id: einheitId, successfulIds, failedIds });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
+      toast.success('Export bestätigt! Status aktualisiert.');
+    },
+    onError: () => toast.error('Fehler beim Bestätigen'),
+  });
 
   // Zeitpunkt des letzten Exports ermitteln (Hook IMMER aufrufen)
   const lastSyncTimestamp = useMemo(() => {
@@ -240,55 +280,56 @@ export default function MoodleExportView({ einheitId, userRole, isAdmin }) {
         </CardContent>
       </Card>
 
-      {/* Admin/Moodle-Designer-Bestätigungs-Sektion */}
-      {permissions.kannExportBedienen ? (
-        <Card className="border-2 border-green-300 bg-green-50">
+      {/* Pending-Aufgaben Liste mit Bestätigung */}
+      {permissions.kannExportBedienen && (
+        <Card className="border-2 border-orange-200 bg-orange-50/30">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-800">
-              <CheckCircle2 className="w-5 h-5" />
-              Export-Team: Export-Abschluss
+            <CardTitle className="flex items-center gap-2 text-orange-800">
+              <Send className="w-5 h-5" />
+              Export bestätigen ({pendingAufgaben.length} ausstehend)
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm text-green-800">
-              Sie können hier den Moodle-Export abschließen. Dies setzt alle 'pending'-Elemente auf 'synced' 
-              und bestätigt, dass der Export erfolgreich abgeschlossen wurde.
-            </p>
-
-            {!isLocked ? (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                <p className="text-xs text-amber-800 font-semibold">
-                  ℹ️ Kein laufender Export
-                </p>
-                <p className="text-xs text-amber-700 mt-1">
-                  Es gibt keine Elemente im Status 'pending'. Der Button wird aktiv, 
-                  sobald neue Elemente zum Export anstehen.
-                </p>
-              </div>
+            {pendingAufgaben.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Keine ausstehenden Elemente.</p>
             ) : (
               <>
-                <p className="text-sm font-semibold text-green-800">
-                  {pendingCount} Element{pendingCount !== 1 ? 'e' : ''} bereit zur Bestätigung
+                <p className="text-sm text-orange-800">
+                  Hake alle Elemente ab, die erfolgreich nach Moodle hochgeladen wurden. Nicht abgehakte werden als <strong>Fehler</strong> markiert.
                 </p>
-                <ExportConfirmationButton 
-                  einheitId={einheitId}
-                  userRole={userRole}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                />
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {pendingAufgaben.map(item => (
+                    <div key={item.id} className={`flex items-center gap-3 p-2.5 rounded-lg border transition ${
+                      confirmedIds.has(item.id) ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
+                    }`}>
+                      <Checkbox
+                        checked={confirmedIds.has(item.id)}
+                        onCheckedChange={(v) => setConfirmedIds(prev => {
+                          const next = new Set(prev);
+                          v ? next.add(item.id) : next.delete(item.id);
+                          return next;
+                        })}
+                      />
+                      <span className="text-sm flex-1 truncate">{item._label}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        confirmedIds.has(item.id) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      }`}>
+                        {confirmedIds.has(item.id) ? '✓ Erfolgreich' : '✗ Fehler'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={() => confirmMutation.mutate()}
+                  disabled={confirmMutation.isPending}
+                  className="w-full py-2 px-4 rounded-md bg-green-600 hover:bg-green-700 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {confirmMutation.isPending
+                    ? <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Wird gespeichert…</>
+                    : <><CheckCircle2 className="w-4 h-4" />Export bestätigen ({confirmedIds.size}/{pendingAufgaben.length})</>}
+                </button>
               </>
             )}
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="border-2 border-slate-200 bg-slate-50">
-          <CardHeader>
-            <CardTitle className="text-slate-700">🔒 Export-Team (eingeschränkt)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-slate-600">
-              Nur Administratoren und Mitglieder des Moodle-Export-Teams können den Export-Abschluss bestätigen. 
-              Bitte kontaktieren Sie einen Autoriter, um den Export freizugeben.
-            </p>
           </CardContent>
         </Card>
       )}

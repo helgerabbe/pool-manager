@@ -9,7 +9,7 @@
  * - Struktur: Einheit → Themenfeld (Label) → Lernpaket (Checkbox) → Aktivität (Checkbox)
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
@@ -79,9 +79,29 @@ function CockpitSlot({ slotId, slot, updateSlot, removeSlot, selectedEinheitIds,
   const { unitId, isCollapsed } = slot;
   const availableEinheiten = einheiten.filter(e => !selectedEinheitIds.includes(e.id) || e.id === unitId);
 
+  // Auto-Select: Wenn unitId gesetzt wird, alle approved+nicht-pending+nicht-synced selektieren
+  useEffect(() => {
+    if (!unitId) return;
+    const allItems = [
+      ...aktivitaeten.filter(a => {
+        const paket = lernpakete.find(lp => lp.id === a.lernpaket_id);
+        return paket && (paket.themenfeld_id
+          ? themenfelder.find(tf => tf.id === paket.themenfeld_id)?.einheit_id === unitId
+          : paket.einheit_id === unitId);
+      }),
+      ...allgemeineAufgaben.filter(a => a.einheit_id === unitId),
+    ];
+    const autoSelect = allItems
+      .filter(a => a.content_status === 'approved' && a.sync_status !== 'pending' && a.sync_status !== 'synced')
+      .map(a => a.id);
+    if (autoSelect.length > 0) {
+      setSelectedIds(prev => [...new Set([...prev, ...autoSelect])]);
+    }
+  }, [unitId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Toggle-Logik für Checkboxen
   const toggleActivities = useCallback((activityArray) => {
-    const exportable = activityArray.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending');
+    const exportable = activityArray.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending' && a.sync_status !== 'synced');
     if (exportable.length === 0) return;
     const ids = exportable.map(a => a.id);
     const allSelected = ids.every(id => selectedIds.includes(id));
@@ -155,8 +175,9 @@ function CockpitSlot({ slotId, slot, updateSlot, removeSlot, selectedEinheitIds,
                             const actName = aktivitaetenKatalog.find(k => k.id === act.aktivitaet_id)?.name || 'Aktivität';
                             const isSelected = selectedIds.includes(act.id);
                             const isPending = act.sync_status === 'pending';
+                            const isSynced = act.sync_status === 'synced';
                             const isApproved = act.content_status === 'approved';
-                            const isSelectable = isApproved && !isPending;
+                            const isSelectable = isApproved && !isPending && !isSynced;
 
                             return (
                               <div key={act.id} className={cn(
