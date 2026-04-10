@@ -79,66 +79,45 @@ const SLIDES = [
     color: 'bg-green-100 text-green-600',
     title: 'Navigation & Direkthilfe',
     text: 'Nutze die Tabulatoren oben zur Navigation. Klicke auf das ?-Symbol in jedem Tab, um jederzeit Direkthilfe zu erhalten.',
+    image: 'https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/c02dbf185_image.png',
   },
 ];
 
-// ── Dialog-Komponente ───────────────────────────────────────────────────────
-export default function TutorialSlideshow() {
-  const [open, setOpen] = useState(false);
+// ── Wiederverwendbarer Dialog (auch manuell aufrufbar) ─────────────────────
+export function TutorialSlideshowDialog({ open: controlledOpen, onClose }) {
   const [slide, setSlide] = useState(0);
-
-  useEffect(() => {
-    if (!getTutorialSeen()) {
-      setOpen(true);
-    }
-  }, []);
-
-  const handleClose = () => {
-    setTutorialSeen();
-    setOpen(false);
-  };
-
   const current = SLIDES[slide];
   const Icon = current.icon;
   const isLast = slide === SLIDES.length - 1;
   const total = SLIDES.length;
 
-  return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
-      <DialogContent className="sm:max-w-lg p-0 overflow-hidden gap-0">
+  const handleClose = () => {
+    setTutorialSeen();
+    setSlide(0);
+    onClose?.();
+  };
 
-        {/* Slide-Body */}
+  return (
+    <Dialog open={controlledOpen} onOpenChange={(v) => { if (!v) handleClose(); }}>
+      <DialogContent className="sm:max-w-lg p-0 overflow-hidden gap-0">
         <div className="flex flex-col items-center text-center px-8 pt-8 pb-4 gap-5">
-          {/* Icon */}
           <div className={cn('w-16 h-16 rounded-2xl flex items-center justify-center shrink-0', current.color)}>
             <Icon className="w-8 h-8" />
           </div>
-
-          {/* Titel & Text */}
+          {current.image && (
+            <img src={current.image} alt="Menüleisten-Vorschau" className="w-full rounded-xl border border-border shadow-sm object-contain max-h-20" />
+          )}
           <div className="space-y-2">
             <h2 className="text-xl font-bold leading-tight">{current.title}</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">{current.text}</p>
           </div>
-
-          {/* Fortschritts-Punkte */}
           <div className="flex items-center gap-1.5 mt-1">
             {SLIDES.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setSlide(i)}
-                className={cn(
-                  'h-1.5 rounded-full transition-all duration-200',
-                  i === slide ? 'w-5 bg-primary' : 'w-1.5 bg-muted-foreground/25'
-                )}
-              />
+              <button key={i} onClick={() => setSlide(i)} className={cn('h-1.5 rounded-full transition-all duration-200', i === slide ? 'w-5 bg-primary' : 'w-1.5 bg-muted-foreground/25')} />
             ))}
           </div>
-
-          {/* Zähler */}
           <p className="text-xs text-muted-foreground -mt-2">{slide + 1} von {total}</p>
         </div>
-
-        {/* Footer */}
         <div className="flex items-center justify-between px-8 py-4 border-t bg-muted/30">
           {slide > 0 ? (
             <Button variant="ghost" size="sm" onClick={() => setSlide(s => s - 1)} className="gap-1">
@@ -149,7 +128,6 @@ export default function TutorialSlideshow() {
               Überspringen
             </Button>
           )}
-
           {isLast ? (
             <Button onClick={handleClose} className="gap-2">
               <CheckCircle2 className="w-4 h-4" /> Tutorial beenden
@@ -163,4 +141,16 @@ export default function TutorialSlideshow() {
       </DialogContent>
     </Dialog>
   );
+}
+
+// ── Auto-Öffner beim ersten Login ───────────────────────────────────────────
+export default function TutorialSlideshow() {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!getTutorialSeen()) setOpen(true);
+  }, []);
+
+  if (!open) return null;
+  return <TutorialSlideshowDialog open={open} onClose={() => setOpen(false)} />;
 }
