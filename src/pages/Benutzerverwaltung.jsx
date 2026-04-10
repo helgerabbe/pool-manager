@@ -408,45 +408,58 @@ export default function Benutzerverwaltung() {
             <>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="text-left px-4 py-2.5 font-semibold">Rolle</th>
-                    <th colSpan="3" className="text-center px-3 py-2.5 font-semibold border-l">Bereich 1: Struktur</th>
-                    <th colSpan="4" className="text-center px-3 py-2.5 font-semibold border-l">Bereich 2: Inhalte</th>
-                    <th colSpan="2" className="text-center px-3 py-2.5 font-semibold border-l">Bereich 3: Export</th>
+                  <tr className="border-b border-border bg-muted/40">
+                    <th className="text-left px-4 py-3 font-semibold text-sm w-40">Rolle</th>
+                    <th colSpan="3" className="text-center px-3 py-3 font-semibold text-sm border-l border-border bg-blue-50/60">
+                      Struktur
+                      <span className="block text-xs font-normal text-muted-foreground">(Einheiten, Themenfelder)</span>
+                    </th>
+                    <th colSpan="4" className="text-center px-3 py-3 font-semibold text-sm border-l border-border bg-green-50/60">
+                      Inhalte
+                      <span className="block text-xs font-normal text-muted-foreground">(Aktivitäten & Aufgaben)</span>
+                    </th>
+                    <th colSpan="2" className="text-center px-3 py-3 font-semibold text-sm border-l border-border bg-purple-50/60">
+                      Export
+                      <span className="block text-xs font-normal text-muted-foreground">(Moodle)</span>
+                    </th>
                   </tr>
-                  <tr className="border-b bg-muted/20">
-                    <th className="text-left px-4 py-1.5 font-medium text-xs">-</th>
-                    <th className="text-center px-2 py-1.5 font-medium text-xs">E</th>
-                    <th className="text-center px-2 py-1.5 font-medium text-xs">B</th>
-                    <th className="text-center px-2 py-1.5 font-medium text-xs border-l">E</th>
-                    <th className="text-center px-2 py-1.5 font-medium text-xs">B</th>
-                    <th className="text-center px-2 py-1.5 font-medium text-xs">L</th>
-                    <th className="text-center px-2 py-1.5 font-medium text-xs">F</th>
-                    <th className="text-center px-2 py-1.5 font-medium text-xs border-l">Bed.</th>
-                    <th className="text-center px-2 py-1.5 font-medium text-xs">Les.</th>
+                  <tr className="border-b border-border bg-muted/20">
+                    <th className="text-left px-4 py-1.5 font-medium text-xs text-muted-foreground">–</th>
+                    <th className="text-center px-2 py-1.5 font-medium text-xs text-muted-foreground border-l border-border">E</th>
+                    <th className="text-center px-2 py-1.5 font-medium text-xs text-muted-foreground">B</th>
+                    <th className="text-center px-2 py-1.5 font-medium text-xs text-muted-foreground">L</th>
+                    <th className="text-center px-2 py-1.5 font-medium text-xs text-muted-foreground border-l border-border">E</th>
+                    <th className="text-center px-2 py-1.5 font-medium text-xs text-muted-foreground">B</th>
+                    <th className="text-center px-2 py-1.5 font-medium text-xs text-muted-foreground">L</th>
+                    <th className="text-center px-2 py-1.5 font-medium text-xs text-muted-foreground">F</th>
+                    <th className="text-center px-2 py-1.5 font-medium text-xs text-muted-foreground border-l border-border">Bed.</th>
+                    <th className="text-center px-2 py-1.5 font-medium text-xs text-muted-foreground">Les.</th>
                   </tr>
                 </thead>
                 <tbody>
                   {[
-                    { rolle: 'Administrator', s_e:'✅', s_b:'✅', s_l:'✅', c_e:'✅', c_b:'✅', c_l:'✅', c_f:'✅', e_bed:'✅', e_les:'✅' },
-                    { rolle: 'Fachschaftsleitung', s_e:'✅*', s_b:'✅*', s_l:'✅*', c_e:'✅*', c_b:'✅*', c_l:'✅*', c_f:'✅*', e_bed:'❌', e_les:'✅' },
-                    { rolle: 'Fachlehrkraft', s_e:'❌', s_b:'❌', s_l:'❌', c_e:'✅*', c_b:'✅*', c_l:'✅*', c_f:'✅*', e_bed:'❌', e_les:'✅' },
-                    { rolle: 'Betrachter', s_e:'❌', s_b:'❌', s_l:'❌', c_e:'❌', c_b:'❌', c_l:'✅', c_f:'❌', e_bed:'❌', e_les:'❌' },
-                    { rolle: 'Moodle-Designer', s_e:'❌', s_b:'❌', s_l:'❌', c_e:'❌', c_b:'❌', c_l:'✅**', c_f:'❌', e_bed:'✅', e_les:'✅' },
+                    // s_e/s_b/s_l = Struktur (Erstellen/Bearbeiten/Löschen)
+                    // c_e/c_b/c_l/c_f = Inhalte (Erstellen/Bearbeiten/Löschen/Freigeben)
+                    // e_bed/e_les = Export (Bedienen/Lesen)
+                    { rolle: 'Administrator',      s_e:'✅',  s_b:'✅',  s_l:'✅',  c_e:'✅',  c_b:'✅',  c_l:'✅',   c_f:'✅',  e_bed:'✅', e_les:'✅' },
+                    { rolle: 'Fachschaftsleitung', s_e:'✅*', s_b:'✅*', s_l:'✅*', c_e:'✅*', c_b:'✅*', c_l:'✅*',  c_f:'✅*', e_bed:'❌', e_les:'✅' },
+                    { rolle: 'Fachlehrkraft',      s_e:'❌',  s_b:'❌',  s_l:'❌',  c_e:'✅*', c_b:'✅*', c_l:'✅*',  c_f:'✅*', e_bed:'❌', e_les:'✅' },
+                    { rolle: 'Betrachter',         s_e:'❌',  s_b:'❌',  s_l:'❌',  c_e:'❌',  c_b:'❌',  c_l:'❌',   c_f:'❌',  e_bed:'❌', e_les:'❌' },
+                    { rolle: 'Moodle-Designer',    s_e:'❌',  s_b:'❌',  s_l:'❌',  c_e:'❌',  c_b:'❌',  c_l:'✅**', c_f:'❌',  e_bed:'✅', e_les:'✅' },
                   ].map(row => (
                     <tr key={row.rolle} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-2.5">
                         <Badge className={`${rollenBadgeColors[row.rolle]} text-xs`}>{row.rolle}</Badge>
                       </td>
-                      <td className="text-center px-2 py-2.5 text-xs">{row.s_e}</td>
-                      <td className="text-center px-2 py-2.5 text-xs">{row.s_b}</td>
-                      <td className="text-center px-2 py-2.5 text-xs border-l">{row.s_l}</td>
-                      <td className="text-center px-2 py-2.5 text-xs">{row.c_e}</td>
-                      <td className="text-center px-2 py-2.5 text-xs">{row.c_b}</td>
-                      <td className="text-center px-2 py-2.5 text-xs">{row.c_l}</td>
-                      <td className="text-center px-2 py-2.5 text-xs">{row.c_f}</td>
-                      <td className="text-center px-2 py-2.5 text-xs border-l">{row.e_bed}</td>
-                      <td className="text-center px-2 py-2.5 text-xs">{row.e_les}</td>
+                      <td className="text-center px-2 py-2.5 text-sm border-l border-border">{row.s_e}</td>
+                      <td className="text-center px-2 py-2.5 text-sm">{row.s_b}</td>
+                      <td className="text-center px-2 py-2.5 text-sm">{row.s_l}</td>
+                      <td className="text-center px-2 py-2.5 text-sm border-l border-border">{row.c_e}</td>
+                      <td className="text-center px-2 py-2.5 text-sm">{row.c_b}</td>
+                      <td className="text-center px-2 py-2.5 text-sm">{row.c_l}</td>
+                      <td className="text-center px-2 py-2.5 text-sm">{row.c_f}</td>
+                      <td className="text-center px-2 py-2.5 text-sm border-l border-border">{row.e_bed}</td>
+                      <td className="text-center px-2 py-2.5 text-sm">{row.e_les}</td>
                     </tr>
                   ))}
                 </tbody>
