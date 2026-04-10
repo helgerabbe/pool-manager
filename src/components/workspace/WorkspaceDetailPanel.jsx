@@ -1007,7 +1007,7 @@ function LernzielPanel({ lernziel, paketId, aufgaben, userEmail, kannBearbeiten,
 
 // ── AktivitaetEditPanel: Direkt-Bearbeitungsansicht aus dem Baum ──────────────
 
-function AktivitaetEditPanel({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient }) {
+function AktivitaetEditPanel({ paket, phaseKey, phaseLabel, kannBearbeiten, queryClient, activityRecordId }) {
   const [contentFormOpen, setContentFormOpen] = useState(false);
 
   const { data: aktivitaeten = [] } = useQuery({
@@ -1054,7 +1054,7 @@ function AktivitaetEditPanel({ paket, phaseKey, phaseLabel, kannBearbeiten, quer
         onOpenChange={setContentFormOpen}
         aktivitaet={aktivitaet}
         initialData={phaseConfig.field_values || {}}
-        onSave={({ content_data, is_complete }) => {
+        onSave={async ({ content_data, is_complete }) => {
           const newConfig = {
             ...phasenConfig,
             [phaseKey]: {
@@ -1063,12 +1063,23 @@ function AktivitaetEditPanel({ paket, phaseKey, phaseLabel, kannBearbeiten, quer
               is_complete,
             },
           };
-          base44.entities.Lernpakete.update(paket.id, {
-            phasen_konfiguration: newConfig
-          }).then(() => {
+          try {
+            // Schreibe in beide Datenstrukturen für Konsistenz
+            await base44.entities.Lernpakete.update(paket.id, { phasen_konfiguration: newConfig });
+            // Aktualisiere auch den LernpaketPhaseAktivitaet-Record (neue Architektur)
+            if (activityRecordId) {
+              await base44.entities.LernpaketPhaseAktivitaet.update(activityRecordId, {
+                field_values: content_data,
+                is_complete,
+              });
+            }
             queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+            queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
             setContentFormOpen(false);
-          });
+          } catch (err) {
+            const { toast: showToast } = await import('sonner');
+            showToast.error('Fehler beim Speichern: ' + (err.message || 'Unbekannter Fehler'));
+          }
         }}
       />
     </>
@@ -1274,6 +1285,7 @@ export default function WorkspaceDetailPanel({
         phaseLabel={phaseLabel}
         kannBearbeiten={kannBearbeiten}
         queryClient={queryClient}
+        activityRecordId={selectedNode.id}
       />
     );
   }
