@@ -188,7 +188,9 @@ export function usePresence(currentView = 'dashboard') {
     };
 
     let cleanupVisibility = null;
-    init().then(fn => { cleanupVisibility = fn; });
+    init()
+      .then(fn => { cleanupVisibility = fn; })
+      .catch(err => console.warn('[usePresence] init error:', err.message));
 
     const cleanup = () => {
       mountedRef.current = false;
