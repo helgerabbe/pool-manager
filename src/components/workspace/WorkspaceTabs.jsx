@@ -19,7 +19,7 @@ const TABS = [
       features: ['Titel, Fach und Jahrgang anpassen', 'Einheit sperren oder freigeben', 'Mitarbeiter hinzufügen'],
       faqs: [
         { question: 'Was bedeutet "Einheit gesperrt"?', answer: 'Lehrkräfte können keine Inhalte mehr bearbeiten. Nur Fachschaftsleitung und Admins haben weiterhin Schreibzugriff.' },
-        { question: 'Was ist der Unterschied zwischen offen und sequenziell?', answer: 'Offen: beliebige Reihenfolge der Lernpakete. Sequenziell: Themenfelder sind nummeriert und müssen der Reihe nach bearbeitet werden.' },
+        { question: 'Was ist der Unterschied zwischen offen und sequenziell?', answer: 'Offen: Themenfelder können in beliebiger Reihenfolge bearbeitet werden. Sequenziell: Themenfelder sind nummeriert und müssen der Reihe nach bearbeitet werden. Lernpakete innerhalb eines Themenfelds sind immer frei zugänglich.' },
       ],
     },
   },
