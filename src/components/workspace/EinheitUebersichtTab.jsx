@@ -20,6 +20,27 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 // useDraftState removed – form state managed directly
 import { useSystemSettings } from '@/hooks/useSystemSettings';
+import HelpDialog from '@/components/ui/HelpDialog';
+
+const EINHEIT_HELP = {
+  title: 'Einheit konfigurieren',
+  description: 'Hier verwalten Sie die Grundeinstellungen dieser Unterrichtseinheit: Titel, Fach, Jahrgang und Planungsphase. Außerdem können Sie den Bearbeitungsstatus steuern und Mitarbeiter hinzufügen.',
+  features: [
+    'Titel, Fach und Jahrgang der Einheit festlegen oder anpassen',
+    'Einheit für die Bearbeitung freigeben oder sperren',
+    'Fachlehrkräfte als Mitarbeiter hinzufügen und wieder entfernen',
+  ],
+  faqs: [
+    {
+      question: 'Was bedeutet "Einheit gesperrt"?',
+      answer: 'Wenn eine Einheit gesperrt ist, können normale Lehrkräfte keine Inhalte mehr bearbeiten. Nur Fachschaftsleitungen und Administratoren haben weiterhin Schreibzugriff. So können Sie eine fertige Einheit vor versehentlichen Änderungen schützen.',
+    },
+    {
+      question: 'Was ist der Unterschied zwischen "offen" und "sequenziell"?',
+      answer: 'Im offenen Modus können Schüler die Lernpakete in beliebiger Reihenfolge bearbeiten. Im sequenziellen Modus sind die Themenfelder nummeriert und müssen der Reihe nach durchgearbeitet werden.',
+    },
+  ],
+};
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import GesamtzielManager from './GesamtzielManager';
 
@@ -265,9 +286,12 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
 
         {/* ── Spalte 1: Metadaten ──────────────────────────────────────────────── */}
         <section className="space-y-5">
-          <div>
-            <h2 className="text-lg font-semibold">Einheit konfigurieren</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">Titel, Ziel, Fach und Status dieser Unterrichtseinheit.</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">Einheit konfigurieren</h2>
+              <p className="text-sm text-muted-foreground mt-0.5">Titel, Ziel, Fach und Status dieser Unterrichtseinheit.</p>
+            </div>
+            <HelpDialog {...EINHEIT_HELP} />
           </div>
 
           <div className="space-y-4 p-5 rounded-xl border bg-card">
