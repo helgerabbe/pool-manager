@@ -305,7 +305,6 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
   const navigate = useNavigate();
   const [selectedUnitId, setSelectedUnitId] = useState(initialEinheitId);
   const [selectedIds, setSelectedIds] = useState([]);
-  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const onNavigateToActivity = (activityId, paketId) => {
     if (onNavCallback) {
@@ -357,14 +356,13 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
           items.push({ id, label: `${akt?.phase || ''}: ${katalogName}` });
         }
       }
-      return { count: selectedIds.length, items };
+      return { count: selectedIds.length };
     },
-    onSuccess: ({ count, items }) => {
+    onSuccess: ({ count }) => {
       queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
       setSelectedIds([]);
-      toast.success(`${count} Element${count !== 1 ? 'e' : ''} übergeben.`);
-      if (selectedUnitId) setConfirmDialog({ einheitId: selectedUnitId, items });
+      toast.success(`${count} Element${count !== 1 ? 'e' : ''} übergeben – jetzt im Moodle-Export sichtbar.`);
     },
     onError: () => toast.error('Fehler bei der Übergabe.'),
   });
@@ -469,19 +467,6 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
         </div>
       </div>
 
-      {confirmDialog && (
-        <ExportConfirmDialog
-          pendingItems={confirmDialog.items}
-          einheitId={confirmDialog.einheitId}
-          onConfirmed={() => {
-            queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-            queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
-            setConfirmDialog(null);
-            toast.success('Export bestätigt und Status aktualisiert.');
-          }}
-          onCancel={() => setConfirmDialog(null)}
-        />
-      )}
     </div>
   );
 }
