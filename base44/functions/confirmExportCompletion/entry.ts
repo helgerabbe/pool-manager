@@ -1,10 +1,15 @@
 /**
  * confirmExportCompletion.js
- * 
- * Admin-Funktion zur Bestätigung des Moodle-Exports.
- * Setzt alle 'pending' Elemente der Einheit auf 'synced'.
- * 
- * Nur für Admins zugänglich.
+ *
+ * Selektive Bestätigung des Moodle-Exports.
+ * Nimmt zwei Arrays entgegen:
+ *   - successfulIds → sync_status = 'synced', last_synced_at = now
+ *   - failedIds     → sync_status = 'error'  (content_status bleibt 'approved' für Retry)
+ *
+ * Unterstützte Entity-Typen in den Arrays:
+ *   LernpaketPhaseAktivitaet, AllgemeineAufgabe, MasterAufgabe, Aufgabenbausteine, Lernpakete
+ *
+ * Sicherheit: einheit_id MUSS angegeben werden – wird als Filter für Masters/Klone verwendet.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
@@ -14,122 +19,99 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
-    // ────────────────────────────────────────────────────────────────────────────
-    // Auth Check: Admins + Export-Team
-    // ────────────────────────────────────────────────────────────────────────────
-
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!['admin', 'exporter', 'moodle_export_team'].includes(user.role)) {
-      return Response.json(
-        { error: 'Forbidden: Admin or Export-Team access required' },
-        { status: 403 }
-      );
+      return Response.json({ error: 'Forbidden: Admin or Export-Team access required' }, { status: 403 });
     }
-
-    // ────────────────────────────────────────────────────────────────────────────
-    // Request Parsing
-    // ────────────────────────────────────────────────────────────────────────────
 
     const body = await req.json();
-    const { einheit_id } = body;
+    const { einheit_id, successfulIds = [], failedIds = [] } = body;
 
     if (!einheit_id) {
-      return Response.json(
-        { error: 'Missing einheit_id' },
-        { status: 400 }
-      );
+      return Response.json({ error: 'Missing einheit_id' }, { status: 400 });
     }
 
-    // ────────────────────────────────────────────────────────────────────────────
-    // Lade alle Elemente der Einheit
-    // ────────────────────────────────────────────────────────────────────────────
+    if (successfulIds.length === 0 && failedIds.length === 0) {
+      return Response.json({ error: 'No IDs provided' }, { status: 400 });
+    }
 
-    const lernpakete = await base44.asServiceRole.entities.Lernpakete.filter({
-      einheit_id,
-    });
+    // ── Einheit-Kontext laden (für Masters/Klone-Filter) ────────────────────
+    const lernpakete = await base44.asServiceRole.entities.Lernpakete.filter({ einheit_id });
+    const paketIds = new Set(lernpakete.map(lp => lp.id));
 
-    const paketIds = lernpakete.map(lp => lp.id);
+    // ── Alle relevanten Entities für diese Einheit laden ────────────────────
+    const [aktivitaeten, allgemeineAufgaben, masters] = await Promise.all([
+      base44.asServiceRole.entities.LernpaketPhaseAktivitaet.list(),
+      base44.asServiceRole.entities.AllgemeineAufgabe.filter({ einheit_id }),
+      base44.asServiceRole.entities.MasterAufgabe.list(),
+    ]);
 
-    const activities = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.list();
-    const masters = await base44.asServiceRole.entities.MasterAufgabe.list();
-    const klone = await base44.asServiceRole.entities.Aufgabenbausteine.list();
-
-    const einheitActivities = activities.filter(a => paketIds.includes(a.lernpaket_id));
+    const einheitAktivitaetIds = new Set(aktivitaeten.filter(a => paketIds.has(a.lernpaket_id)).map(a => a.id));
+    const einheitAufgabeIds = new Set(allgemeineAufgaben.map(a => a.id));
+    const einheitMasterIds = new Set(masters.filter(m => paketIds.has(m.lernpaket_id)).map(m => m.id));
 
     const now = new Date().toISOString();
-    let updatedCount = 0;
+    let successCount = 0;
+    let errorCount = 0;
 
-    // ────────────────────────────────────────────────────────────────────────────
-    // Aktualisiere alle 'pending' Elemente → 'synced'
-    // ────────────────────────────────────────────────────────────────────────────
+    // ── Hilfsfunktion: Entity-Typ anhand bekannter ID-Sets ermitteln ─────────
+    const resolveEntity = (id) => {
+      if (einheitAktivitaetIds.has(id)) return 'LernpaketPhaseAktivitaet';
+      if (einheitAufgabeIds.has(id))    return 'AllgemeineAufgabe';
+      if (einheitMasterIds.has(id))     return 'MasterAufgabe';
+      // Lernpakete direkt per ID prüfen
+      if (paketIds.has(id))             return 'Lernpakete';
+      return null;
+    };
 
-    // Lernpakete
-    for (const paket of lernpakete) {
-      if (paket.sync_status === 'pending') {
-        await base44.asServiceRole.entities.Lernpakete.update(paket.id, {
-          sync_status: 'synced',
-          last_synced_at: now,
-        });
-        updatedCount++;
-      }
+    // ── successfulIds → 'synced' ─────────────────────────────────────────────
+    for (const id of successfulIds) {
+      const entityType = resolveEntity(id);
+      if (!entityType) continue;
+      await base44.asServiceRole.entities[entityType].update(id, {
+        sync_status: 'synced',
+        last_synced_at: now,
+      });
+      successCount++;
     }
 
-    // Aktivitäten
-    for (const activity of einheitActivities) {
-      if (activity.sync_status === 'pending') {
-        await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(
-          activity.id,
-          {
+    // Klone der erfolgreichen Masters auch auf synced setzen
+    const successMasterIds = successfulIds.filter(id => einheitMasterIds.has(id));
+    if (successMasterIds.length > 0) {
+      const klone = await base44.asServiceRole.entities.Aufgabenbausteine.list();
+      for (const klon of klone) {
+        if (successMasterIds.includes(klon.master_aufgabe_id) && klon.sync_status === 'pending') {
+          await base44.asServiceRole.entities.Aufgabenbausteine.update(klon.id, {
             sync_status: 'synced',
             last_synced_at: now,
-          }
-        );
-        updatedCount++;
+          });
+          successCount++;
+        }
       }
     }
 
-    // Masters
-    for (const master of masters) {
-      if (master.sync_status === 'pending') {
-        await base44.asServiceRole.entities.MasterAufgabe.update(master.id, {
-          sync_status: 'synced',
-          last_synced_at: now,
-        });
-        updatedCount++;
-      }
+    // ── failedIds → 'error' (content_status bleibt 'approved' für Retry) ────
+    for (const id of failedIds) {
+      const entityType = resolveEntity(id);
+      if (!entityType) continue;
+      await base44.asServiceRole.entities[entityType].update(id, {
+        sync_status: 'error',
+        // content_status NICHT ändern → bleibt 'approved' für nächsten Versuch
+      });
+      errorCount++;
     }
-
-    // Klone
-    for (const klon of klone) {
-      if (klon.sync_status === 'pending') {
-        await base44.asServiceRole.entities.Aufgabenbausteine.update(klon.id, {
-          sync_status: 'synced',
-          last_synced_at: now,
-        });
-        updatedCount++;
-      }
-    }
-
-    // ────────────────────────────────────────────────────────────────────────────
-    // Response
-    // ────────────────────────────────────────────────────────────────────────────
 
     return Response.json({
       success: true,
-      message: `✓ Export abgeschlossen. ${updatedCount} Element${updatedCount !== 1 ? 'e' : ''} aktualisiert.`,
-      updated_count: updatedCount,
+      message: `Export bestätigt: ${successCount} erfolgreich, ${errorCount} fehlgeschlagen.`,
+      synced_count: successCount,
+      error_count: errorCount,
       timestamp: now,
     });
   } catch (error) {
-    return Response.json(
-      {
-        success: false,
-        error: error.message || 'Unbekannter Fehler',
-      },
-      { status: 500 }
-    );
+    return Response.json({ success: false, error: error.message || 'Unbekannter Fehler' }, { status: 500 });
   }
 });

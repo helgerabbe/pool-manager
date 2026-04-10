@@ -73,7 +73,7 @@
     },
     "erwartungshorizont": {
       "type": "string",
-      "description": "Strukturierter Erwartungshorizont f\u00fcr Ebene-3-Aufgaben (Kriterien, Umfang, L\u00f6sungsans\u00e4tze)"
+      "description": "Strukturierter Erwartungshorizont f\u00fcr Ebene-3-Aufgaben"
     },
     "musterloesung": {
       "type": "string",
@@ -81,7 +81,7 @@
     },
     "materialien": {
       "type": "array",
-      "description": "Zus\u00e4tzliche Materialien/Ressourcen zur Aufgabe (nicht die Aufgabe selbst)",
+      "description": "Zus\u00e4tzliche Materialien/Ressourcen zur Aufgabe",
       "items": {
         "type": "object",
         "properties": {
@@ -92,20 +92,16 @@
               "image",
               "book_ref",
               "free_text"
-            ],
-            "description": "Art des Materials"
+            ]
           },
           "content": {
-            "type": "string",
-            "description": "Textinhalt (f\u00fcr free_text oder book_ref)"
+            "type": "string"
           },
           "url": {
-            "type": "string",
-            "description": "URL zur Datei (f\u00fcr pdf oder image)"
+            "type": "string"
           },
           "label": {
-            "type": "string",
-            "description": "Optionales Label/Beschreibung f\u00fcr das Material"
+            "type": "string"
           }
         },
         "required": [
@@ -121,15 +117,32 @@
       "description": "Array von Lernziel-IDs, die als hochpriorit\u00e4r markiert sind",
       "default": []
     },
+    "content_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "approved"
+      ],
+      "default": "draft",
+      "description": "P\u00e4dagogischer Status: draft (in Bearbeitung) oder approved (fertig f\u00fcr Export)"
+    },
     "sync_status": {
       "type": "string",
       "enum": [
         "new",
-        "exported",
-        "modified"
+        "pending",
+        "synced",
+        "modified",
+        "to_delete",
+        "error"
       ],
       "default": "new",
-      "description": "Sync-Status f\u00fcr Moodle-Export-Tracking"
+      "description": "Moodle-Sync-Status: new, pending, synced, modified, to_delete, error (fehlgeschlagener Export)"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel des letzten erfolgreichen Moodle-Exports (nullable)"
     }
   },
   "required": [

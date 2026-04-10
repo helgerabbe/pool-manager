@@ -107,24 +107,22 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ── 6. Status aktualisieren (mit Sync-Status-Verwaltung) ──────────────────
+    // ── 6. content_status aktualisieren ─────────────────────────────────────
+    // WICHTIG: sync_status wird hier NICHT verändert.
+    // Die Lehrkraft-Freigabe steuert nur den pädagogischen Status.
+    // Der sync_status obliegt ausschließlich dem Export-Cockpit (Moodle-Team).
     const newContentStatus = action === 'approve' ? 'approved' : 'draft';
-    const newSyncStatus = action === 'approve' ? 'pending' : 'new';
 
-    const updateData = {
+    await base44.asServiceRole.entities.MasterAufgabe.update(masterId, {
       content_status: newContentStatus,
-      sync_status: newSyncStatus,
-    };
-
-    await base44.asServiceRole.entities.MasterAufgabe.update(masterId, updateData);
+    });
 
     return Response.json({
       success: true,
       masterId,
       newContentStatus,
-      newSyncStatus,
       message: action === 'approve'
-        ? 'MasterAufgabe genehmigt und für Moodle-Export markiert'
+        ? 'MasterAufgabe freigegeben'
         : 'MasterAufgabe zu Entwurf zurückgesetzt',
     });
   } catch (error) {

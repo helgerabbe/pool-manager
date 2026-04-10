@@ -26,6 +26,9 @@ import { cn } from '@/lib/utils';
 // ── Status-Badge für eine Aktivität ─────────────────────────────────────────
 
 function AktivitaetStatusBadge({ activity }) {
+  if (activity.sync_status === 'error') {
+    return <Badge className="bg-red-100 text-red-800 border border-red-300 text-xs"><AlertCircle className="w-3 h-3 mr-1" />Fehler</Badge>;
+  }
   if (activity.sync_status === 'pending') {
     return <Badge className="bg-purple-100 text-purple-800 border border-purple-300 text-xs"><Clock className="w-3 h-3 mr-1" />Übergeben</Badge>;
   }
@@ -357,12 +360,74 @@ function CockpitSlot({ slotId, slot, updateSlot, removeSlot, selectedEinheitIds,
   );
 }
 
-// ── Main Component ───────────────────────────────────────────────────────────
+// ── Bestätigungs-Dialog nach Export ─────────────────────────────────────────
+
+function ExportConfirmDialog({ pendingItems, einheitId, onConfirmed, onCancel }) {
+  const queryClient = useQueryClient();
+  const [checkedIds, setCheckedIds] = useState(new Set(pendingItems.map(i => i.id)));
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const toggleId = (id) => {
+    setCheckedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const handleConfirm = async () => {
+    setIsSubmitting(true);
+    const successfulIds = pendingItems.filter(i => checkedIds.has(i.id)).map(i => i.id);
+    const failedIds = pendingItems.filter(i => !checkedIds.has(i.id)).map(i => i.id);
+    await base44.functions.invoke('confirmExportCompletion', { einheit_id: einheitId, successfulIds, failedIds });
+    setIsSubmitting(false);
+    onConfirmed();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+      <div className="bg-card rounded-xl border shadow-xl max-w-lg w-full max-h-[80vh] flex flex-col">
+        <div className="p-5 border-b">
+          <h3 className="font-semibold text-base">Export bestätigen</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Welche Elemente wurden erfolgreich nach Moodle übertragen?
+            Abgewählte Elemente werden als <strong>Fehler</strong> markiert und können beim nächsten Mal erneut versucht werden.
+          </p>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+          {pendingItems.map(item => (
+            <div key={item.id} className={cn('flex items-center gap-3 p-2.5 rounded-lg border transition', checkedIds.has(item.id) ? 'border-green-200 bg-green-50/40' : 'border-red-200 bg-red-50/40')}>
+              <Checkbox checked={checkedIds.has(item.id)} onCheckedChange={() => toggleId(item.id)} className="h-4 w-4 shrink-0" />
+              <span className="text-sm flex-1 truncate">{item.label}</span>
+              <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', checkedIds.has(item.id) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700')}>
+                {checkedIds.has(item.id) ? '✓ Erfolgreich' : '✗ Fehler'}
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="p-4 border-t flex gap-2 justify-end">
+          <Button variant="outline" onClick={onCancel} disabled={isSubmitting}>Abbrechen</Button>
+          <Button onClick={handleConfirm} disabled={isSubmitting} className="gap-2">
+            {isSubmitting
+              ? <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Speichern…</>
+              : <><CheckCircle2 className="w-4 h-4" />Bestätigen ({checkedIds.size}/{pendingItems.length})</>}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main Component ──────────────────────────────────────────────────
 
 export default function ExportCockpitView({ initialEinheitId = null, onNavigateToActivity: onNavCallback = null, onNavigateToTask = null }) {
   const queryClient = useQueryClient();
   const { permissions } = useRBAC();
   const navigate = useNavigate();
+  const [confirmDialog, setConfirmDialog] = useState(null); // { einheitId, items }
+  const [slots, setSlots] = useState([{ id: 1, unitId: initialEinheitId, isCollapsed: false }]);
+  const [nextSlotId, setNextSlotId] = useState(2);
+  const [globalSelectedIds, setGlobalSelectedIds] = useState([]);
 
   const onNavigateToActivity = (activityId, paketId) => {
     // Zuerst den Callback aufrufen falls vorhanden
@@ -374,10 +439,6 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
     }
   };
   
-  const [slots, setSlots] = useState([{ id: 1, unitId: initialEinheitId, isCollapsed: false }]);
-  const [nextSlotId, setNextSlotId] = useState(2);
-  const [globalSelectedIds, setGlobalSelectedIds] = useState([]);
-
   const { data: einheiten = [] } = useQuery({ queryKey: ['einheiten'], queryFn: () => base44.entities.Einheiten.list() });
   const { data: lernpakete = [] } = useQuery({ queryKey: ['lernpakete'], queryFn: () => base44.entities.Lernpakete.list() });
   const { data: themenfelder = [] } = useQuery({ queryKey: ['themenfelder'], queryFn: () => base44.entities.Themenfeld.list() });
@@ -406,24 +467,32 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
 
   const selectedEinheitIds = slots.map(s => s.unitId).filter(Boolean);
 
-  // Export: setzt sync_status='pending' auf den ausgewählten Aktivitäten und Aufgaben (Hook IMMER aufrufen)
+  // Export: setzt sync_status='pending' + öffnet Bestätigungsdialog
   const exportMutation = useMutation({
     mutationFn: async () => {
       const allgemeineIds = new Set(allgemeineAufgaben.map(a => a.id));
+      const items = [];
       for (const id of globalSelectedIds) {
         if (allgemeineIds.has(id)) {
+          const aufgabe = allgemeineAufgaben.find(a => a.id === id);
           await base44.entities.AllgemeineAufgabe.update(id, { sync_status: 'pending' });
+          items.push({ id, label: aufgabe?.titel || 'Aufgabe ohne Titel' });
         } else {
+          const akt = aktivitaeten.find(a => a.id === id);
+          const katalogName = aktivitaetenKatalog.find(k => k.id === akt?.aktivitaet_id)?.name || 'Aktivität';
           await base44.entities.LernpaketPhaseAktivitaet.update(id, { sync_status: 'pending' });
+          items.push({ id, label: `${akt?.phase || ''}: ${katalogName}` });
         }
       }
-      return globalSelectedIds.length;
+      return { count: globalSelectedIds.length, items };
     },
-    onSuccess: (count) => {
+    onSuccess: ({ count, items }) => {
       queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
       setGlobalSelectedIds([]);
-      toast.success(`${count} Element${count !== 1 ? 'e' : ''} an das Export-Zentrum übergeben.`);
+      toast.success(`${count} Element${count !== 1 ? 'e' : ''} übergeben. Bitte jetzt bestätigen.`);
+      const einheitId = slots.find(s => s.unitId)?.unitId;
+      if (einheitId) setConfirmDialog({ einheitId, items });
     },
     onError: () => toast.error('Fehler bei der Übergabe.'),
   });
@@ -474,6 +543,21 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
           ))}
         </div>
       </div>
+
+      {/* Bestätigungs-Dialog nach Export */}
+      {confirmDialog && (
+        <ExportConfirmDialog
+          pendingItems={confirmDialog.items}
+          einheitId={confirmDialog.einheitId}
+          onConfirmed={() => {
+            queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+            queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
+            setConfirmDialog(null);
+            toast.success('Export bestätigt und Status aktualisiert.');
+          }}
+          onCancel={() => setConfirmDialog(null)}
+        />
+      )}
     </div>
   );
 }

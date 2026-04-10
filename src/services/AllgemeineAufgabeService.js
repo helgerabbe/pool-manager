@@ -134,3 +134,20 @@ export async function createAufgabeMitMappings(aufgabeData, lernzielIds = []) {
   }
   return aufgabe;
 }
+
+/**
+ * Aufgabe freigeben (approve).
+ * Setzt NUR content_status = 'approved' — sync_status wird NICHT verändert.
+ * Die Sync-Status-Verwaltung obliegt ausschließlich dem Export-Cockpit.
+ */
+export async function approveAufgabe(id) {
+  return base44.entities.AllgemeineAufgabe.update(id, { content_status: 'approved' });
+}
+
+/**
+ * Freigabe einer Aufgabe aufheben.
+ * Setzt content_status zurück auf 'draft'.
+ */
+export async function unapproveAufgabe(id) {
+  return base44.entities.AllgemeineAufgabe.update(id, { content_status: 'draft' });
+}
