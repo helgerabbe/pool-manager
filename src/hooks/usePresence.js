@@ -48,9 +48,21 @@ export function usePresence(currentView = 'dashboard') {
           current_view: currentView,
         });
       } catch (err) {
-        // Eintrag wurde extern gelöscht – Record-Ref zurücksetzen
-        console.warn('[usePresence] Heartbeat failed:', err.message);
+        // Eintrag wurde extern gelöscht – neu erstellen
+        console.warn('[usePresence] Heartbeat failed, recreating record:', err.message);
         myRecordIdRef.current = null;
+        if (!myEmailRef.current) return;
+        try {
+          const created = await createPresenceRecord({
+            user_email: myEmailRef.current,
+            user_name: myEmailRef.current,
+            current_view: currentView,
+            last_seen_at: new Date().toISOString(),
+          });
+          myRecordIdRef.current = created.id;
+        } catch (e2) {
+          console.warn('[usePresence] Could not recreate record:', e2.message);
+        }
       }
     };
 
