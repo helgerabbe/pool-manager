@@ -11,6 +11,7 @@ import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { base44 } from '@/api/base44Client';
 import { createThemenfeld, updateThemenfeld, deleteThemenfeld } from '@/services/ThemenfeldService';
+import { createLernpaket, updateLernpaket, deleteLernpaket } from '@/services/LernpaketService';
 import { useRBAC } from '@/hooks/useRBAC';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -571,7 +572,7 @@ export default function StrukturBoardEmbedded({
 
       // Lösche Pakete
       for (const paketId of paketIdZumLoeschen) {
-        await base44.entities.Lernpakete.delete(paketId);
+        await deleteLernpaket(paketId);
       }
 
       // Lösche Themenfelder
@@ -603,14 +604,13 @@ export default function StrukturBoardEmbedded({
           const update = { themenfeld_id: themenfeldId, reihenfolge_nummer: i + 1 };
 
           if (paket.isNew) {
-            const neuesPaket = await base44.entities.Lernpakete.create({
+            const neuesPaket = await createLernpaket({
               einheit_id: einheitId,
               titel_des_pakets: paket.titel_des_pakets,
               geschaetzte_dauer_minuten: paket.geschaetzte_dauer_minuten || 45,
               phasen_konfiguration: paket.phasen_konfiguration || DEFAULT_PHASEN,
               ...update,
             });
-            // Lernziele anlegen, falls vorhanden
             if (paket.lernziele && paket.lernziele.length > 0) {
               for (const lz of paket.lernziele) {
                 if (lz.formulierung_fachsprache?.trim()) {
@@ -624,7 +624,7 @@ export default function StrukturBoardEmbedded({
             }
           } else {
             // Nur Struktur-Felder – phasen_konfiguration, locked_by etc. bleiben unangetastet
-            await base44.entities.Lernpakete.update(paket.id, update);
+            await updateLernpaket(paket.id, update);
           }
         }
       }

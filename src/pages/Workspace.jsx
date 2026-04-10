@@ -24,6 +24,7 @@ import MoodleExportTab from '@/components/workspace/MoodleExportTab';
 import ExportCockpitView from '@/components/export/ExportCockpitView';
 import MoodleExportView from '@/components/export/MoodleExportView';
 import AllgemeineAufgabenView from '@/components/allgemeineAufgaben/AllgemeineAufgabenView';
+import { deleteLernpaket as deleteLernpaketService } from '@/services/LernpaketService';
 import ProjektaufgabenView from '@/components/projektaufgaben/ProjektaufgabenView';
 
 export default function Workspace({ initialEinheitId: initialEinheitIdProp = null }) {
@@ -249,7 +250,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
         ...relZiele.map((z) => base44.entities.Lernziele.delete(z.id)),
         ...relAufgaben.map((a) => base44.entities.Aufgabenbausteine.delete(a.id)),
       ]);
-      return base44.entities.Lernpakete.delete(id);
+      return deleteLernpaketService(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
