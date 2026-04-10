@@ -1,5 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
+import TutorialSlideshow from '@/components/onboarding/TutorialSlideshow';
 import { Layers, Home, ShieldCheck, LogOut, ChevronRight, BookOpen, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
@@ -92,6 +93,7 @@ export default function AppLayout() {
   return (
     <div className="h-screen w-full flex flex-col overflow-hidden bg-background">
       <GlobalPresenceHeartbeat />
+      <TutorialSlideshow />
       <WartungsBanner />
       {/* ═══════════════════════════════════════════════════════════════════════════ */}
       {/* ──────────────────── GLOBALE TOP BAR (immer sichtbar) ──────────────────── */}

@@ -1,193 +1,166 @@
 /**
  * TutorialSlideshow.jsx
  *
- * Onboarding-Tutorial für neue Nutzer.
- * Zustand wird in localStorage gespeichert.
- * Migration-ready: Kommentar zeigt, wie man UserService einbinden kann.
+ * Automatisches Onboarding-Tutorial für neue Nutzer.
+ * Öffnet sich beim ersten Besuch automatisch.
+ * Persistenz via localStorage – kein base44-Import!
+ *
+ * Migration hint: getTutorialSeen / setTutorialSeen können später
+ * durch UserService.getTutorialStatus() / .setTutorialSeen() ersetzt werden.
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, ChevronLeft, X, BookOpen, Package, Rocket, CheckCircle2 } from 'lucide-react';
+import {
+  ChevronRight, ChevronLeft, CheckCircle2,
+  Users, Star, Trophy, LayoutGrid, ArrowRight,
+  FolderOpen, Target, Layers, HelpCircle
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// ── Persistenz (localStorage) ──────────────────────────────────────────────
-// Migration hint: Ersetze diese beiden Funktionen durch UserService-Calls,
-// z.B. UserService.updateTutorialStatus(true) / UserService.getTutorialStatus()
-const STORAGE_KEY = 'poolmanager_hasSeenTutorial';
+// ── Persistenz (reines Browser-API, kein base44) ───────────────────────────
+const STORAGE_KEY = 'poolmanager_tutorial_seen';
 
-export function getTutorialSeen() {
-  return localStorage.getItem(STORAGE_KEY) === 'true';
-}
+export const getTutorialSeen = () => localStorage.getItem(STORAGE_KEY) === 'true';
+export const setTutorialSeen = () => localStorage.setItem(STORAGE_KEY, 'true');
 
-export function setTutorialSeen() {
-  localStorage.setItem(STORAGE_KEY, 'true');
-}
-
-// ── Slide-Inhalte ──────────────────────────────────────────────────────────
+// ── Slide-Daten ─────────────────────────────────────────────────────────────
 const SLIDES = [
   {
-    icon: BookOpen,
+    icon: Users,
     color: 'bg-blue-100 text-blue-600',
-    title: 'Willkommen beim Pool Manager!',
-    subtitle: 'Deine Orga-App für Freiarbeitszeiten',
-    body: 'Der Pool Manager hilft dir, Unterrichtseinheiten strukturiert zu planen und deinen Schülern klare Lernpfade bereitzustellen. Alle Inhalte lassen sich direkt nach Moodle exportieren.',
+    title: 'Poolzeit & Selbstständigkeit',
+    text: 'Schüler arbeiten eigenverantwortlich an Fächern ihrer Wahl. Die Fächer geben Aufgaben und Deadlines vor, die Schüler steuern ihren Prozess.',
   },
   {
-    icon: Package,
+    icon: Star,
     color: 'bg-amber-100 text-amber-600',
-    title: 'Was ist ein Lernpaket?',
-    subtitle: 'Das Herzstück der App',
-    body: 'Ein Lernpaket ist eine abgeschlossene Lerneinheit zu einem Thema. Es enthält Lernziele, Aktivitäten (Videos, Übungen, Tests) und Aufgaben auf verschiedenen Anforderungsebenen – von Basis bis Projekt.',
+    title: 'Die 4 Lernprofile',
+    text: 'Jeder Schüler wählt ein Profil und entscheidet damit selbst über die Intensität und Tiefe der Bearbeitung.',
   },
   {
-    icon: Rocket,
+    icon: Trophy,
+    color: 'bg-yellow-100 text-yellow-600',
+    title: 'Zielwahl & Noten',
+    text: 'Das gewählte Ziel bestimmt die Note: Basisaufgaben (max. 3), Tests, Arbeiten oder Präsentationen (bis 1). Die Note ist eine bewusste Schülerentscheidung.',
+  },
+  {
+    icon: LayoutGrid,
+    color: 'bg-violet-100 text-violet-600',
+    title: 'Der Pool Manager',
+    text: 'Dieses Planungstool hilft uns, die vielen individuellen Lernpfade zu strukturieren und den Überblick zu bewahren.',
+  },
+  {
+    icon: ArrowRight,
+    color: 'bg-sky-100 text-sky-600',
+    title: 'Der Workflow zu Moodle',
+    text: 'Wir planen hier die fachliche Logik. Ein Experten-Team baut daraus den Moodle-Kurs. Änderungen hier fließen direkt nach Moodle zurück.',
+  },
+  {
+    icon: FolderOpen,
+    color: 'bg-orange-100 text-orange-600',
+    title: 'Einheiten & Themenfelder',
+    text: 'Die Struktur: Eine Einheit besteht aus mehreren Themenfeldern. Darin liegen die modular aufgebauten Lernpakete.',
+  },
+  {
+    icon: Target,
+    color: 'bg-red-100 text-red-600',
+    title: 'Allgemeine Aufgabe zum Paket',
+    text: 'Das Ziel sind Allgemeine Aufgaben (Ebene 2). Wenn Schüler dort hängen, zeigt das System ihnen das passende Lernpaket (Ebene 1) zur Hilfe.',
+  },
+  {
+    icon: Layers,
+    color: 'bg-teal-100 text-teal-600',
+    title: 'Das Lernmodul: Input, Übung, Abschluss',
+    text: 'Ein Lernpaket (15–30 Min.) hat immer 3 Phasen: Input (Erklärung), Übung (Anwendung) und Abschluss (Selbstprüfung).',
+  },
+  {
+    icon: HelpCircle,
     color: 'bg-green-100 text-green-600',
-    title: 'So startest du',
-    subtitle: 'In 3 Schritten zum ersten Lernpaket',
-    body: (
-      <ol className="space-y-2 text-sm text-left">
-        <li className="flex items-start gap-2">
-          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs font-bold shrink-0 mt-0.5">1</span>
-          <span><strong>Einheit anlegen</strong> – Wähle Fach, Jahrgang und Titel deiner Unterrichtseinheit.</span>
-        </li>
-        <li className="flex items-start gap-2">
-          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs font-bold shrink-0 mt-0.5">2</span>
-          <span><strong>Struktur aufbauen</strong> – Erstelle Themenfelder und ordne Lernpakete per Drag & Drop zu.</span>
-        </li>
-        <li className="flex items-start gap-2">
-          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs font-bold shrink-0 mt-0.5">3</span>
-          <span><strong>Inhalte befüllen</strong> – Füge Lernziele, Aktivitäten und Aufgaben hinzu und gib sie für Moodle frei.</span>
-        </li>
-      </ol>
-    ),
+    title: 'Navigation & Direkthilfe',
+    text: 'Nutze die Tabulatoren oben zur Navigation. Klicke auf das ?-Symbol in jedem Tab, um jederzeit Direkthilfe zu erhalten.',
   },
 ];
 
-// ── Dialog-Komponente ──────────────────────────────────────────────────────
-export function TutorialSlideshowDialog({ open, onClose }) {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const slide = SLIDES[currentSlide];
-  const Icon = slide.icon;
-  const isLast = currentSlide === SLIDES.length - 1;
+// ── Dialog-Komponente ───────────────────────────────────────────────────────
+export default function TutorialSlideshow() {
+  const [open, setOpen] = useState(false);
+  const [slide, setSlide] = useState(0);
 
-  const handleFinish = () => {
+  useEffect(() => {
+    if (!getTutorialSeen()) {
+      setOpen(true);
+    }
+  }, []);
+
+  const handleClose = () => {
     setTutorialSeen();
-    onClose(true); // true = abgeschlossen
+    setOpen(false);
   };
 
-  const handleSkip = () => {
-    setTutorialSeen();
-    onClose(false); // false = übersprungen
-  };
+  const current = SLIDES[slide];
+  const Icon = current.icon;
+  const isLast = slide === SLIDES.length - 1;
+  const total = SLIDES.length;
 
   return (
-    <Dialog open={open} onOpenChange={() => handleSkip()}>
-      <DialogContent className="sm:max-w-md p-0 overflow-hidden">
-        {/* Slide-Inhalt */}
-        <div className="flex flex-col items-center text-center p-8 gap-4">
+    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
+      <DialogContent className="sm:max-w-lg p-0 overflow-hidden gap-0">
+
+        {/* Slide-Body */}
+        <div className="flex flex-col items-center text-center px-8 pt-8 pb-4 gap-5">
           {/* Icon */}
-          <div className={cn('w-16 h-16 rounded-2xl flex items-center justify-center', slide.color)}>
+          <div className={cn('w-16 h-16 rounded-2xl flex items-center justify-center shrink-0', current.color)}>
             <Icon className="w-8 h-8" />
           </div>
 
-          {/* Texte */}
-          <div className="space-y-1">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{slide.subtitle}</p>
-            <h2 className="text-xl font-bold">{slide.title}</h2>
+          {/* Titel & Text */}
+          <div className="space-y-2">
+            <h2 className="text-xl font-bold leading-tight">{current.title}</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">{current.text}</p>
           </div>
 
-          <div className="text-sm text-muted-foreground leading-relaxed">
-            {typeof slide.body === 'string' ? <p>{slide.body}</p> : slide.body}
-          </div>
-
-          {/* Dots */}
-          <div className="flex gap-2 mt-2">
+          {/* Fortschritts-Punkte */}
+          <div className="flex items-center gap-1.5 mt-1">
             {SLIDES.map((_, i) => (
               <button
                 key={i}
-                onClick={() => setCurrentSlide(i)}
+                onClick={() => setSlide(i)}
                 className={cn(
-                  'w-2 h-2 rounded-full transition-all',
-                  i === currentSlide ? 'bg-primary w-6' : 'bg-muted-foreground/30'
+                  'h-1.5 rounded-full transition-all duration-200',
+                  i === slide ? 'w-5 bg-primary' : 'w-1.5 bg-muted-foreground/25'
                 )}
               />
             ))}
           </div>
+
+          {/* Zähler */}
+          <p className="text-xs text-muted-foreground -mt-2">{slide + 1} von {total}</p>
         </div>
 
         {/* Footer */}
         <div className="flex items-center justify-between px-8 py-4 border-t bg-muted/30">
-          {currentSlide > 0 ? (
-            <Button variant="ghost" size="sm" onClick={() => setCurrentSlide(c => c - 1)} className="gap-1">
+          {slide > 0 ? (
+            <Button variant="ghost" size="sm" onClick={() => setSlide(s => s - 1)} className="gap-1">
               <ChevronLeft className="w-4 h-4" /> Zurück
             </Button>
           ) : (
-            <Button variant="ghost" size="sm" onClick={handleSkip} className="text-muted-foreground">
+            <Button variant="ghost" size="sm" onClick={handleClose} className="text-muted-foreground text-xs">
               Überspringen
             </Button>
           )}
 
           {isLast ? (
-            <Button onClick={handleFinish} className="gap-2">
-              <CheckCircle2 className="w-4 h-4" /> Los geht's!
+            <Button onClick={handleClose} className="gap-2">
+              <CheckCircle2 className="w-4 h-4" /> Tutorial beenden
             </Button>
           ) : (
-            <Button onClick={() => setCurrentSlide(c => c + 1)} className="gap-1">
+            <Button onClick={() => setSlide(s => s + 1)} className="gap-1">
               Weiter <ChevronRight className="w-4 h-4" />
             </Button>
           )}
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-// ── Tutorial-Card für die Startseite ──────────────────────────────────────
-export default function TutorialCard() {
-  const [seen, setSeen] = useState(getTutorialSeen());
-  const [dialogOpen, setDialogOpen] = useState(false);
-
-  const handleClose = (completed) => {
-    setDialogOpen(false);
-    setSeen(true);
-  };
-
-  return (
-    <>
-      <div
-        className={cn(
-          'relative rounded-xl border p-5 flex items-start gap-4 cursor-pointer transition-all hover:shadow-md',
-          seen ? 'bg-green-50 border-green-200' : 'bg-primary/5 border-primary/20 hover:border-primary/40'
-        )}
-        onClick={() => setDialogOpen(true)}
-      >
-        {/* Badge */}
-        {seen && (
-          <div className="absolute top-3 right-3 flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100 border border-green-200 rounded-full px-2 py-0.5">
-            <CheckCircle2 className="w-3 h-3" /> Abgeschlossen
-          </div>
-        )}
-
-        <div className={cn(
-          'w-10 h-10 rounded-xl flex items-center justify-center shrink-0',
-          seen ? 'bg-green-100 text-green-600' : 'bg-primary/10 text-primary'
-        )}>
-          <BookOpen className="w-5 h-5" />
-        </div>
-
-        <div>
-          <p className="font-semibold text-sm">Onboarding-Tutorial</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {seen
-              ? 'Tutorial erneut ansehen – jederzeit verfügbar.'
-              : 'Neu hier? Lerne die wichtigsten Konzepte in 3 kurzen Schritten kennen.'}
-          </p>
-          <p className="text-xs font-medium text-primary mt-2">Tutorial {seen ? 'erneut ' : ''}starten →</p>
-        </div>
-      </div>
-
-      <TutorialSlideshowDialog open={dialogOpen} onClose={handleClose} />
-    </>
   );
 }
