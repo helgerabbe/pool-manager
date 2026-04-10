@@ -5,8 +5,9 @@ import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
 import WartungsBanner from '@/components/layout/WartungsBanner';
 import NavigationTooltip from '@/components/layout/NavigationTooltip';
-import { base44 } from '@/api/base44Client';
+import { logout } from '@/services/AuthService';
 import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import { usePresence } from '@/hooks/usePresence';
 
 // Wiederverwendbarer Icon-Nav-Link mit sofortigem Tooltip
@@ -140,7 +141,7 @@ export default function AppLayout() {
               <NavigationTooltip label="Abmelden">
                 <button
                   aria-label="Abmelden"
-                  onClick={() => base44.auth.logout()}
+                  onClick={() => logout(false)}
                   className="flex items-center justify-center w-10 h-10 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
                 >
                   <LogOut className="w-5 h-5" />
