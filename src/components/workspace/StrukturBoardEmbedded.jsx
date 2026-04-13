@@ -726,6 +726,52 @@ export default function StrukturBoardEmbedded({
 
       {/* Board */}
       <div className={cn('flex-1 overflow-x-auto overflow-y-auto min-h-0 scroll-container', readOnly && 'opacity-60')}>
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <div className={cn('flex gap-4 h-full p-4 min-w-max items-start', readOnly && 'pointer-events-none select-none')}>
+            {/* Sammelbecken */}
+            <Spalte
+              id={SAMMELBECKEN_ID}
+              titel="Nicht zugeordnet"
+              pakete={paketeMap[SAMMELBECKEN_ID] || []}
+              onAddPaket={(spalteId) => openPaketDialog(spalteId)}
+              onDeletePaket={handleDeletePaket}
+              onEditPaket={(paket) => openPaketDialog(SAMMELBECKEN_ID, paket)}
+              isSammelbecken
+              compact={compact}
+            />
+
+            <div className="w-px bg-border shrink-0 self-stretch" />
+
+            {/* Themenfeld-Spalten */}
+            {spalten.map((spalte, idx) => (
+              <Spalte
+                key={spalte.id}
+                id={spalte.id}
+                titel={spalte.titel}
+                pakete={paketeMap[spalte.id] || []}
+                onAddPaket={(spalteId) => openPaketDialog(spalteId)}
+                onDeletePaket={handleDeletePaket}
+                onEditPaket={(paket) => openPaketDialog(spalte.id, paket)}
+                onDeleteSpalte={() => handleDeleteSpalteRequest(spalte.id)}
+                onTitelChange={neuerTitel => handleTitelChange(spalte.id, neuerTitel)}
+                compact={compact}
+                collapsed={collapsedSpalten.has(spalte.id)}
+                onToggleCollapse={() => toggleCollapse(spalte.id)}
+                sequenzNummer={einheit?.bearbeitungsmodus === 'sequenziell' ? idx + 1 : null}
+              />
+            ))}
+
+            {/* Neue-Spalte CTA – nur im Edit-Modus */}
+            {!readOnly && <button
+              onClick={handleNeuesThemenfeld}
+              className="shrink-0 w-64 rounded-xl border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/5 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-primary transition-colors self-stretch"
+            >
+              <Plus className="w-6 h-6" />
+              <span className="text-sm font-medium">Neues Themenfeld</span>
+            </button>}
+          </div>
+        </DragDropContext>
+      </div>
 
       {/* Lernpaket-Dialog */}
       <LernpaketDialog
