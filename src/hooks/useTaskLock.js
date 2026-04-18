@@ -70,11 +70,20 @@ export function useTaskLock({ aufgabe, userEmail, lockFn, unlockFn, invalidateKe
       setIsEditMode(true);
       isEditModeRef.current = true;
     } catch (err) {
-      toast.error(err.message || 'Aufgabe konnte nicht gesperrt werden.');
+      // Spezifische Fehlermeldungen je nach Fehlertyp
+      const errorMsg = err.message || '';
+      
+      if (errorMsg.includes('locked') || errorMsg.includes('Sperre')) {
+        toast.error(`Bearbeiten nicht möglich: Diese Aufgabe wird gerade von ${aufgabe?.locked_by || 'einem anderen Nutzer'} bearbeitet.`);
+      } else if (errorMsg.includes('sync_status') || errorMsg.includes('pending') || errorMsg.includes('Export')) {
+        toast.error('Bearbeiten nicht möglich: Die Aufgabe befindet sich noch im Export-Prozess (Moodle/Brian).');
+      } else {
+        toast.error(errorMsg || 'Aufgabe konnte nicht gesperrt werden.');
+      }
     } finally {
       setIsLocking(false);
     }
-  }, [aufgabe?.id, userEmail, lockFn, invalidateKeys, queryClient]);
+  }, [aufgabe?.id, aufgabe?.locked_by, userEmail, lockFn, invalidateKeys, queryClient]);
 
   const exitEditMode = useCallback(async () => {
     if (!aufgabe?.id) return;

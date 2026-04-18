@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { getEinheitById } from '@/services/EinheitenService';
 import { getAllLernpakete } from '@/services/LernpaketService';
 import { getAllLernziele } from '@/services/LernzielService';
@@ -254,10 +255,14 @@ export default function ProjektaufgabenView({
   const [createFormOpen, setCreateFormOpen] = useState(false);
   const [editingAufgabe, setEditingAufgabe] = useState(null);
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
+  const [currentUserRole, setCurrentUserRole] = useState(null);
   const [wizardOpen, setWizardOpen] = useState(false);
 
   useEffect(() => {
-    base44.auth.me().then(u => setCurrentUserEmail(u?.email ?? null)).catch(() => {});
+    base44.auth.me().then(u => {
+      setCurrentUserEmail(u?.email ?? null);
+      setCurrentUserRole(u?.role ?? null);
+    }).catch(() => {});
   }, []);
 
   // Daten abrufen
@@ -413,8 +418,19 @@ export default function ProjektaufgabenView({
                 isLocking={lock.isLocking}
                 isLockedByOther={lock.isLockedByOther}
                 lockedByEmail={lock.lockedByEmail}
+                lockedAt={selectedAufgabe?.locked_at}
                 onEdit={lock.enterEditMode}
                 onCancel={lock.exitEditMode}
+                onForceUnlock={async () => {
+                  try {
+                    await unlockProjectTask(selectedAufgabe.id);
+                    queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheitId] });
+                    toast.success('Sperre wurde aufgehoben.');
+                  } catch (err) {
+                    toast.error('Fehler beim Aufheben der Sperre: ' + err.message);
+                  }
+                }}
+                isAdmin={currentUserRole === 'admin' || currentUserRole === 'Administrator'}
               />
             )}
 

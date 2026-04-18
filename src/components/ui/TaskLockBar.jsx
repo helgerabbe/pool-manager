@@ -7,34 +7,68 @@
  * - Gesperrt-Hinweis, wenn ein anderer Nutzer bearbeitet
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Lock, Loader2, X, Save } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { de } from 'date-fns/locale';
 
 export default function TaskLockBar({
   isEditMode,
   isLocking,
   isLockedByOther,
   lockedByEmail,
+  lockedAt,
   onEdit,
   onSave,
   onCancel,
+  onForceUnlock,
   isSaving = false,
   canEdit = true,
+  isAdmin = false,
 }) {
   if (!canEdit) return null;
+
+  // Berechne ob Lock älter als 60 Min ist
+  const isLockStale = useMemo(() => {
+    if (!lockedAt) return false;
+    return Date.now() - new Date(lockedAt).getTime() > 60 * 60 * 1000;
+  }, [lockedAt]);
+
+  const lockTimeAgo = useMemo(() => {
+    if (!lockedAt) return '';
+    return formatDistanceToNow(new Date(lockedAt), { addSuffix: true, locale: de });
+  }, [lockedAt]);
 
   if (isLockedByOther) {
     return (
       <div className="flex items-center gap-2 px-4 py-2 bg-orange-50 border-b border-orange-200">
         <Lock className="w-4 h-4 text-orange-500 shrink-0" />
-        <span className="text-xs text-orange-700 flex-1">
-          Wird gerade bearbeitet von <strong>{lockedByEmail}</strong>
-        </span>
-        <Badge className="bg-orange-100 text-orange-700 border border-orange-300 text-[10px]">
+        <div className="flex-1">
+          <span className="text-xs text-orange-700">
+            Wird gerade bearbeitet von <strong>{lockedByEmail}</strong>
+            {lockTimeAgo && <span className="text-orange-600 ml-1">({lockTimeAgo})</span>}
+          </span>
+          {isLockStale && (
+            <p className="text-xs text-orange-600 mt-0.5">
+              ⚠️ Diese Sperre ist älter als 60 Minuten – möglicherweise vergessen worden.
+            </p>
+          )}
+        </div>
+        <Badge className="bg-orange-100 text-orange-700 border border-orange-300 text-[10px] shrink-0">
           Schreibgeschützt
         </Badge>
+        {isAdmin && isLockStale && onForceUnlock && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onForceUnlock}
+            className="gap-1.5 h-7 text-xs text-destructive hover:text-destructive shrink-0"
+          >
+            Admin-Unlock
+          </Button>
+        )}
       </div>
     );
   }
