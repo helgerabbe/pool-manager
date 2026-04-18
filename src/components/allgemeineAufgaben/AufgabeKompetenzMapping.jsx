@@ -137,7 +137,7 @@ const ThemenfeldGroup = React.memo(function ThemenfeldGroup({ themenfeld, lernzi
 });
 
 // ── Haupt-Component ──
-export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, onComplete }) {
+export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, onComplete, kannBearbeiten = false }) {
   const queryClient = useQueryClient();
   const draftKey = `aufgaben-mapping-${aufgabe?.id}`;
   
@@ -216,6 +216,7 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
   // Drag-Handler
   const handleDragEnd = useCallback(
     async (result) => {
+      if (!kannBearbeiten) return;
       const { destination, draggableId } = result;
       if (!destination || !destination.droppableId.startsWith('dropzone-')) return;
 
@@ -251,6 +252,7 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
 
   const handleRemoveMapping = useCallback(
     async (lernzielId) => {
+      if (!kannBearbeiten) return;
       const mapping = existingMappings.find((m) => m.lernziel_id === lernzielId);
       const lernziel = alleLernziele.find((lz) => lz.id === lernzielId);
 
@@ -387,6 +389,7 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
                       <InlineBasisLernzielSelector 
                         aufgabeId={aufgabe?.id}
                         einheitFach={einheit?.fach}
+                        kannBearbeiten={kannBearbeiten}
                         onLernzielAdded={() => {
                           triggerSaved();
                         }}
@@ -421,6 +424,7 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
                   onBasisMappingRemoved={handleRemoveBasisMapping}
                   removingIds={savingIds}
                   removingBasisIds={savingBasisIds}
+                  kannBearbeiten={kannBearbeiten}
                 />
               </div>
             </div>

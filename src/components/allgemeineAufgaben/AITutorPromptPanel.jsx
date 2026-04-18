@@ -80,6 +80,7 @@ export default function AITutorPromptPanel({
   mappedLernziele = [],
   mappedBasisLernziele = [],
   einheit,
+  kannBearbeiten = false,
 }) {
   const queryClient = useQueryClient();
   const [promptText, setPromptText] = useState('');
@@ -152,14 +153,16 @@ export default function AITutorPromptPanel({
         {/* Aktionsleiste */}
         <div className="flex items-center gap-2 flex-wrap">
           <h3 className="text-sm font-semibold flex-1">KI-Tutor System-Prompt</h3>
-          <Button size="sm" variant="outline" onClick={handleRegenerate} className="gap-2">
-            <RefreshCw className="w-3.5 h-3.5" /> Neu generieren
-          </Button>
+          {kannBearbeiten && (
+            <Button size="sm" variant="outline" onClick={handleRegenerate} className="gap-2">
+              <RefreshCw className="w-3.5 h-3.5" /> Neu generieren
+            </Button>
+          )}
           <Button size="sm" variant="outline" onClick={handleCopy} className="gap-2">
             {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
             {copied ? 'Kopiert' : 'Kopieren'}
           </Button>
-          {isDirty && (
+          {kannBearbeiten && isDirty && (
             <Button size="sm" onClick={() => saveMutation.mutate(promptText)} disabled={saveMutation.isPending} className="gap-2">
               {saveMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               Speichern
@@ -170,8 +173,9 @@ export default function AITutorPromptPanel({
         {/* Editierbare Textarea */}
         <textarea
           value={promptText}
-          onChange={e => { setPromptText(e.target.value); setIsDirty(true); }}
-          className="w-full px-4 py-3 text-sm border border-border rounded-lg resize-none bg-background focus:outline-none focus:ring-1 focus:ring-ring font-mono leading-relaxed"
+          onChange={e => { if (kannBearbeiten) { setPromptText(e.target.value); setIsDirty(true); } }}
+          disabled={!kannBearbeiten}
+          className="w-full px-4 py-3 text-sm border border-border rounded-lg resize-none bg-background focus:outline-none focus:ring-1 focus:ring-ring font-mono leading-relaxed disabled:bg-muted/20 disabled:text-muted-foreground"
           style={{ minHeight: '480px' }}
           placeholder="Kein Prompt generiert…"
         />

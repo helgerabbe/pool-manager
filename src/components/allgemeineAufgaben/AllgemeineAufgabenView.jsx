@@ -442,6 +442,7 @@ export default function AllgemeineAufgabenView({
                  aufgabe={selectedAufgabe}
                  einheit={einheit}
                  einheitId={einheitId}
+                 kannBearbeiten={kannBearbeiten && lock.isEditMode}
                  onComplete={() => {}}
                />
               </TabsContent>
@@ -466,6 +467,7 @@ export default function AllgemeineAufgabenView({
                   lernpakete={lernpakete}
                   basismodule={basismodule}
                   einheit={einheit}
+                  kannBearbeiten={kannBearbeiten && lock.isEditMode}
                 />
               </TabsContent>
               </Tabs>

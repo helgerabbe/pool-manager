@@ -29,6 +29,7 @@ export default function InlineBasisLernzielSelector({
   einheitFach,
   onLernzielAdded,
   onLernzielRemoved,
+  kannBearbeiten = false,
 }) {
   const queryClient = useQueryClient();
   const [selectedModul, setSelectedModul] = useState('');
@@ -111,6 +112,7 @@ export default function InlineBasisLernzielSelector({
 
   const handleCheckChange = useCallback(
     async (lernzielId, checked) => {
+      if (!kannBearbeiten) return;
       const newChecked = new Set(checkedIds);
 
       try {
@@ -225,7 +227,7 @@ export default function InlineBasisLernzielSelector({
                             onCheckedChange={(checked) =>
                               handleCheckChange(lz.id, checked)
                             }
-                            disabled={createMapping.isPending || deleteMapping.isPending}
+                            disabled={!kannBearbeiten || createMapping.isPending || deleteMapping.isPending}
                             className="mt-0.5 shrink-0"
                           />
                           <label

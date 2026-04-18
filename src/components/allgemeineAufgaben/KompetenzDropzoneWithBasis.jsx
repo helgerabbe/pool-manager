@@ -16,6 +16,7 @@ export default function KompetenzDropzoneWithBasis({
   onBasisMappingRemoved,
   removingIds = new Set(),
   removingBasisIds = new Set(),
+  kannBearbeiten = false,
 }) {
   const totalCount = mappedLernziele.length + mappedBasisLernziele.length;
 
@@ -53,13 +54,15 @@ export default function KompetenzDropzoneWithBasis({
                     <p className="text-xs font-medium text-foreground flex-1 line-clamp-2">
                       {lz.formulierung_fachsprache}
                     </p>
-                    <button
-                      onClick={() => onMappingRemoved(lz.id)}
-                      disabled={removingIds.has(lz.id)}
-                      className="shrink-0 p-0.5 rounded hover:bg-destructive/10 transition-colors"
-                    >
-                      <X className="w-3 h-3 text-destructive" />
-                    </button>
+                    {kannBearbeiten && (
+                      <button
+                        onClick={() => onMappingRemoved(lz.id)}
+                        disabled={removingIds.has(lz.id)}
+                        className="shrink-0 p-0.5 rounded hover:bg-destructive/10 transition-colors"
+                      >
+                        <X className="w-3 h-3 text-destructive" />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -87,13 +90,15 @@ export default function KompetenzDropzoneWithBasis({
                         Vorwissen
                       </Badge>
                     </div>
-                    <button
-                      onClick={() => onBasisMappingRemoved(lz.id)}
-                      disabled={removingBasisIds.has(lz.id)}
-                      className="shrink-0 p-0.5 rounded hover:bg-destructive/10 transition-colors"
-                    >
-                      <X className="w-3 h-3 text-destructive" />
-                    </button>
+                    {kannBearbeiten && (
+                      <button
+                        onClick={() => onBasisMappingRemoved(lz.id)}
+                        disabled={removingBasisIds.has(lz.id)}
+                        className="shrink-0 p-0.5 rounded hover:bg-destructive/10 transition-colors"
+                      >
+                        <X className="w-3 h-3 text-destructive" />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
