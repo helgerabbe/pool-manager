@@ -6,18 +6,22 @@ import { getAllLernziele } from '@/services/LernzielService';
 import { getAllAufgabenbausteine } from '@/services/AufgabenbausteinService';
 import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
 import { getAufgabenByEinheit, updateAllgemeineAufgabe, deleteAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
+import { lockProjectTask, unlockProjectTask } from '@/services/ProjektaufgabeService';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { Plus, Star, FileText, ChevronRight, Edit, Trash2, Copy, CheckCircle2, PenLine, Lock } from 'lucide-react';
 import TaskStatusBadge from '@/components/ui/TaskStatusBadge';
+import TaskLockBar from '@/components/ui/TaskLockBar';
 import ProjektCreateView from './ProjektCreateView';
 import PublishProjektaufgabeButton from './PublishProjektaufgabeButton';
 import AbgabeDefinitionSection from './AbgabeDefinitionSection';
 import LernlandkartePreview from '@/components/lernlandkarte/LernlandkartePreview';
 import { generateInteractiveProjectCoach } from '@/utils/generateInteractiveProjectCoach';
 import { toast } from 'sonner';
+import { useTaskLock } from '@/hooks/useTaskLock';
+import { base44 } from '@/api/base44Client';
 
 
 // ── Sterne-Anzeige (1-3, mit Reset) ──
@@ -312,6 +316,11 @@ export default function ProjektaufgabenView({
   const [selectedAufgabeId, setSelectedAufgabeId] = useState(null);
   const [createFormOpen, setCreateFormOpen] = useState(false);
   const [editingAufgabe, setEditingAufgabe] = useState(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState(null);
+
+  useEffect(() => {
+    base44.auth.me().then(u => setCurrentUserEmail(u?.email ?? null)).catch(() => {});
+  }, []);
 
   // Daten abrufen
   const { data: einheit } = useQuery({
@@ -357,6 +366,19 @@ export default function ProjektaufgabenView({
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
       setSelectedAufgabeId(null);
     },
+  });
+
+  // Lock-Hook (nutzt dieselbe Query wie oben)
+  const selectedAufgabeForLock = allgemeineAufgaben
+    .filter(a => a.anforderungsebene === '3 - Projekt')
+    .find(a => a.id === selectedAufgabeId);
+
+  const lock = useTaskLock({
+    aufgabe: selectedAufgabeForLock,
+    userEmail: currentUserEmail,
+    lockFn: lockProjectTask,
+    unlockFn: unlockProjectTask,
+    invalidateKeys: [['allgemeineAufgaben', einheitId]],
   });
 
   // Filtere nur Projektaufgaben (anforderungsebene: "3 - Projekt")
@@ -437,6 +459,18 @@ export default function ProjektaufgabenView({
         {/* Rechte Spalte: Detail-Panel */}
         {selectedAufgabe ? (
           <main className="flex-1 flex flex-col overflow-hidden">
+            {/* Lock-Bar */}
+            {kannBearbeiten && (
+              <TaskLockBar
+                isEditMode={lock.isEditMode}
+                isLocking={lock.isLocking}
+                isLockedByOther={lock.isLockedByOther}
+                lockedByEmail={lock.lockedByEmail}
+                onEdit={lock.enterEditMode}
+                onCancel={lock.exitEditMode}
+              />
+            )}
+
             {/* Tabs für Angaben, Lernlandkarte & KI-Prompt */}
             <Tabs defaultValue="angaben" className="flex-1 flex flex-col overflow-hidden">
               <TabsList className="mx-6 mt-3 bg-muted">
@@ -451,7 +485,7 @@ export default function ProjektaufgabenView({
                 <AllgemeineAngabenPanel
                   aufgabe={selectedAufgabe}
                   themenfelder={themenfelder}
-                  kannBearbeiten={kannBearbeiten}
+                  kannBearbeiten={kannBearbeiten && lock.isEditMode}
                   onEdit={(a) => {
                     setEditingAufgabe(a);
                     setCreateFormOpen(true);
@@ -464,7 +498,7 @@ export default function ProjektaufgabenView({
               <TabsContent value="abgabe" className="flex-1 overflow-y-auto m-0">
                 <AbgabeDefinitionSection
                   aufgabe={selectedAufgabe}
-                  kannBearbeiten={kannBearbeiten}
+                  kannBearbeiten={kannBearbeiten && lock.isEditMode}
                 />
               </TabsContent>
 

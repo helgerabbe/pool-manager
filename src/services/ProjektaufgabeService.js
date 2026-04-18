@@ -64,3 +64,34 @@ export async function getProjectTasksByEinheit(einheitId) {
   const all = await base44.entities.AllgemeineAufgabe.filter({ einheit_id: einheitId });
   return all.filter(a => a.anforderungsebene === '3 - Projekt');
 }
+
+// ── Bearbeitungssperre (Locking) ──────────────────────────────────────────────
+
+/**
+ * Sperre setzen. Schlägt fehl, wenn bereits von einem anderen Nutzer gesperrt.
+ */
+export async function lockProjectTask(taskId, userEmail) {
+  const TIMEOUT_MS = 60 * 60 * 1000;
+  const current = await base44.entities.AllgemeineAufgabe.filter({ id: taskId });
+  const aufgabe = current[0];
+  if (aufgabe?.locked_by && aufgabe.locked_by !== userEmail) {
+    const age = Date.now() - new Date(aufgabe.locked_at || 0).getTime();
+    if (age < TIMEOUT_MS) {
+      throw new Error(`Wird gerade von ${aufgabe.locked_by} bearbeitet.`);
+    }
+  }
+  return base44.entities.AllgemeineAufgabe.update(taskId, {
+    locked_by: userEmail,
+    locked_at: new Date().toISOString(),
+  });
+}
+
+/**
+ * Sperre aufheben.
+ */
+export async function unlockProjectTask(taskId) {
+  return base44.entities.AllgemeineAufgabe.update(taskId, {
+    locked_by: null,
+    locked_at: null,
+  });
+}

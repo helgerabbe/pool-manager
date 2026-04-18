@@ -1,10 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
 import { getEinheitById } from '@/services/EinheitenService';
 import { getAllLernpakete } from '@/services/LernpaketService';
 import { getAllLernziele } from '@/services/LernzielService';
-import { getAufgabenByEinheit, getMappingsByAufgabe, deleteAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
+import { getAufgabenByEinheit, getMappingsByAufgabe, deleteAllgemeineAufgabe, lockTask, unlockTask } from '@/services/AllgemeineAufgabeService';
 import { getAllBasisLernziele, getAllBasismodule } from '@/services/BasisLernzielService';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,12 +12,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { Plus, Star, FileText, ChevronRight, Edit, Trash2, CheckCircle2, PenLine, Lock } from 'lucide-react';
 import TaskStatusBadge from '@/components/ui/TaskStatusBadge';
+import TaskLockBar from '@/components/ui/TaskLockBar';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 import AufgabeKompetenzMapping from '@/components/allgemeineAufgaben/AufgabeKompetenzMapping';
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
 import InlineBasisLernzielSelector from '@/components/allgemeineAufgaben/InlineBasisLernzielSelector';
 import PublishAllgemeineAufgabeButton from '@/components/allgemeineAufgaben/PublishAllgemeineAufgabeButton';
 import ErwartungshorizontTab from '@/components/allgemeineAufgaben/ErwartungshorizontTab';
+import { useTaskLock } from '@/hooks/useTaskLock';
+import { base44 } from '@/api/base44Client';
 
 /**
  * Schwierigkeitsgrad-Anzeige (1-3 Sterne)
@@ -234,6 +237,12 @@ export default function AllgemeineAufgabenView({
   const [selectedAufgabeId, setSelectedAufgabeId] = useState(null);
   const [createFormOpen, setCreateFormOpen] = useState(false);
   const [editingAufgabe, setEditingAufgabe] = useState(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState(null);
+
+  // Aktuellen Nutzer laden
+  React.useEffect(() => {
+    base44.auth.me().then(u => setCurrentUserEmail(u?.email ?? null)).catch(() => {});
+  }, []);
 
   // Daten abrufen
   const { data: einheit } = useQuery({
@@ -313,6 +322,15 @@ export default function AllgemeineAufgabenView({
     },
   });
 
+  // Lock-Hook
+  const lock = useTaskLock({
+    aufgabe: allgemeineAufgaben.find(a => a.id === selectedAufgabeId),
+    userEmail: currentUserEmail,
+    lockFn: lockTask,
+    unlockFn: unlockTask,
+    invalidateKeys: [['allgemeineAufgaben', einheitId]],
+  });
+
   // Gruppierung nach Themenfeld
   const gruppiertNachThemenfeld = useMemo(() => {
     const gruppen = {};
@@ -383,6 +401,18 @@ export default function AllgemeineAufgabenView({
         {/* Rechte Spalte: Detail-Panel */}
         {selectedAufgabe ? (
           <main className="flex-1 flex flex-col overflow-hidden">
+            {/* Lock-Bar */}
+            {kannBearbeiten && (
+              <TaskLockBar
+                isEditMode={lock.isEditMode}
+                isLocking={lock.isLocking}
+                isLockedByOther={lock.isLockedByOther}
+                lockedByEmail={lock.lockedByEmail}
+                onEdit={lock.enterEditMode}
+                onCancel={lock.exitEditMode}
+              />
+            )}
+
             {/* Tabs für Angaben & Kompetenzen */}
             <Tabs defaultValue="angaben" className="flex-1 flex flex-col overflow-hidden">
               <TabsList className="mx-6 mt-3 bg-muted">
@@ -397,7 +427,7 @@ export default function AllgemeineAufgabenView({
                 <AllgemeineAngabenPanel
                   aufgabe={selectedAufgabe}
                   themenfelder={themenfelder}
-                  kannBearbeiten={kannBearbeiten}
+                  kannBearbeiten={kannBearbeiten && lock.isEditMode}
                   onEdit={(a) => {
                     setEditingAufgabe(a);
                     setCreateFormOpen(true);
@@ -423,7 +453,7 @@ export default function AllgemeineAufgabenView({
                   einheit={einheit}
                   mappedLernziele={effectiveMappedLernziele}
                   mappedBasisLernziele={effectiveMappedBasisLernziele}
-                  kannBearbeiten={kannBearbeiten}
+                  kannBearbeiten={kannBearbeiten && lock.isEditMode}
                 />
               </TabsContent>
 

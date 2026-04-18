@@ -151,3 +151,35 @@ export async function approveAufgabe(id) {
 export async function unapproveAufgabe(id) {
   return base44.entities.AllgemeineAufgabe.update(id, { content_status: 'draft' });
 }
+
+// ── Bearbeitungssperre (Locking) ──────────────────────────────────────────────
+
+/**
+ * Sperre setzen. Schlägt fehl, wenn bereits von einem anderen Nutzer gesperrt.
+ * Auto-Timeout: Sperren älter als 60 Min werden ignoriert.
+ */
+export async function lockTask(taskId, userEmail) {
+  const TIMEOUT_MS = 60 * 60 * 1000;
+  const current = await base44.entities.AllgemeineAufgabe.filter({ id: taskId });
+  const aufgabe = current[0];
+  if (aufgabe?.locked_by && aufgabe.locked_by !== userEmail) {
+    const age = Date.now() - new Date(aufgabe.locked_at || 0).getTime();
+    if (age < TIMEOUT_MS) {
+      throw new Error(`Wird gerade von ${aufgabe.locked_by} bearbeitet.`);
+    }
+  }
+  return base44.entities.AllgemeineAufgabe.update(taskId, {
+    locked_by: userEmail,
+    locked_at: new Date().toISOString(),
+  });
+}
+
+/**
+ * Sperre aufheben.
+ */
+export async function unlockTask(taskId) {
+  return base44.entities.AllgemeineAufgabe.update(taskId, {
+    locked_by: null,
+    locked_at: null,
+  });
+}
