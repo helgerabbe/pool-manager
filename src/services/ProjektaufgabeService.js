@@ -102,46 +102,33 @@ export async function generateProjectTaskIdea(idee, task_type = 'Anwendungsaufga
  * Sperre setzen. Schlägt fehl, wenn bereits von einem anderen Nutzer gesperrt.
  */
 export async function lockProjectTask(taskId, userEmail) {
-  console.log('[DEBUG-SERVICE] lockProjectTask called with taskId:', taskId, 'userEmail:', userEmail);
   const TIMEOUT_MS = 60 * 60 * 1000;
   
-  try {
-    const current = await base44.entities.AllgemeineAufgabe.filter({ id: taskId });
-    console.log('[DEBUG-SERVICE] Filter result:', current);
-    const aufgabe = current[0];
-    
-    if (!aufgabe) {
-      throw new Error(`Aufgabe mit ID ${taskId} nicht gefunden`);
-    }
-    
-    if (aufgabe?.locked_by && aufgabe.locked_by !== userEmail) {
-      const age = Date.now() - new Date(aufgabe.locked_at || 0).getTime();
-      if (age < TIMEOUT_MS) {
-        throw new Error(`Wird gerade von ${aufgabe.locked_by} bearbeitet.`);
-      }
-    }
-    
-    // CRITICAL: Nur Lock-Felder updaten + rubric_criteria normalisieren
-    // Das verhindert Validierungsfehler bei kaputten Feldern wie rubric_criteria
-    const lockData = {
-      locked_by: userEmail,
-      locked_at: new Date().toISOString(),
-    };
-    
-    // Fallback: rubric_criteria normalisieren falls es ein Objekt ist
-    if (aufgabe.rubric_criteria && !Array.isArray(aufgabe.rubric_criteria)) {
-      lockData.rubric_criteria = [];
-      console.log('[DEBUG-SERVICE] Fixed rubric_criteria from object to array');
-    }
-    
-    console.log('[DEBUG-SERVICE] Updating AllgemeineAufgabe with lock:', lockData);
-    const result = await base44.entities.AllgemeineAufgabe.update(taskId, lockData);
-    console.log('[DEBUG-SERVICE] Update success:', result);
-    return result;
-  } catch (err) {
-    console.error('[DEBUG-SERVICE] lockProjectTask ERROR:', err.message);
-    throw err;
+  const current = await base44.entities.AllgemeineAufgabe.filter({ id: taskId });
+  const aufgabe = current[0];
+  
+  if (!aufgabe) {
+    throw new Error(`Aufgabe mit ID ${taskId} nicht gefunden`);
   }
+  
+  if (aufgabe?.locked_by && aufgabe.locked_by !== userEmail) {
+    const age = Date.now() - new Date(aufgabe.locked_at || 0).getTime();
+    if (age < TIMEOUT_MS) {
+      throw new Error(`Wird gerade von ${aufgabe.locked_by} bearbeitet.`);
+    }
+  }
+  
+  const lockData = {
+    locked_by: userEmail,
+    locked_at: new Date().toISOString(),
+  };
+  
+  // Fallback: rubric_criteria normalisieren falls es ein Objekt ist
+  if (aufgabe.rubric_criteria && !Array.isArray(aufgabe.rubric_criteria)) {
+    lockData.rubric_criteria = [];
+  }
+  
+  return base44.entities.AllgemeineAufgabe.update(taskId, lockData);
 }
 
 /**
