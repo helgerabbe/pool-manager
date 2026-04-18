@@ -13,6 +13,8 @@ import {
 // Bekannte Felder der Benutzer-Entität
 const DB_FELDER = [
   { key: 'email',   label: 'E-Mail *',              pflicht: true },
+  { key: 'vorname', label: 'Vorname',               pflicht: false },
+  { key: 'nachname', label: 'Nachname',             pflicht: false },
   { key: 'rolle',   label: 'Rolle',                  pflicht: false },
   { key: 'faecher', label: 'Fachbereich (Mehrfach)', pflicht: false },
 ];
@@ -109,6 +111,8 @@ function FieldMapping({ headers, mapping, onMapping, trennzeichen, onTrennzeiche
   // Automatisches Mapping anhand häufiger Spaltennamen
   const autoHints = {
     email: ['email', 'e-mail', 'mail', 'emailadresse', 'e_mail'],
+    vorname: ['vorname', 'firstname', 'first_name', 'given_name', 'forename'],
+    nachname: ['nachname', 'lastname', 'last_name', 'surname', 'family_name'],
     rolle: ['rolle', 'role', 'funktion', 'position'],
     faecher: ['fach', 'fächer', 'faecher', 'lehrbefähigung', 'lehrbefaehigung', 'subject', 'subjects'],
   };
@@ -206,23 +210,28 @@ function Vorschau({ rows, mapping, trennzeichen }) {
       <div className="overflow-x-auto border rounded-lg">
         <table className="w-full text-xs">
           <thead className="bg-muted/50">
-            <tr>
-              <th className="text-left px-3 py-2 font-semibold">E-Mail</th>
-              <th className="text-left px-3 py-2 font-semibold">Rolle</th>
-              <th className="text-left px-3 py-2 font-semibold">Fächer</th>
-            </tr>
+           <tr>
+             <th className="text-left px-3 py-2 font-semibold">E-Mail</th>
+             <th className="text-left px-3 py-2 font-semibold">Name</th>
+             <th className="text-left px-3 py-2 font-semibold">Rolle</th>
+             <th className="text-left px-3 py-2 font-semibold">Fächer</th>
+           </tr>
           </thead>
           <tbody className="divide-y">
             {preview.map((row, i) => {
               const email   = getMappedValue(row, 'email');
+              const vorname = getMappedValue(row, 'vorname') || '';
+              const nachname = getMappedValue(row, 'nachname') || '';
               const rolle   = getMappedValue(row, 'rolle') || 'Fachlehrkraft';
               const faecher = getMappedValue(row, 'faecher') || [];
               const emailOk = email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+              const fullName = [vorname, nachname].filter(Boolean).join(' ') || '—';
               return (
                 <tr key={i} className={emailOk ? '' : 'bg-red-50'}>
                   <td className="px-3 py-2">
                     <span className={emailOk ? '' : 'text-red-600 font-medium'}>{email || '—'}</span>
                   </td>
+                  <td className="px-3 py-2 text-sm">{fullName}</td>
                   <td className="px-3 py-2">
                     <Badge variant="secondary" className="text-[10px]">
                       {GUELTIGE_ROLLEN.includes(rolle) ? rolle : `${rolle} → Fachlehrkraft`}
@@ -321,9 +330,11 @@ export default function UserImport() {
 
     // Zeilen transformieren
     const transformed = rows.map(row => {
-      const emailCol   = mapping.email   || '';
-      const rolleCol   = mapping.rolle   || '';
-      const faecherCol = mapping.faecher || '';
+      const emailCol    = mapping.email   || '';
+      const vornameCol  = mapping.vorname || '';
+      const nachnameCol = mapping.nachname || '';
+      const rolleCol    = mapping.rolle   || '';
+      const faecherCol  = mapping.faecher || '';
 
       const faecherRaw = faecherCol ? (row[faecherCol] || '') : '';
       const faecher = faecherRaw
@@ -332,8 +343,10 @@ export default function UserImport() {
         .filter(Boolean);
 
       return {
-        email:   row[emailCol] || '',
-        rolle:   rolleCol ? row[rolleCol] : '',
+        email:    row[emailCol] || '',
+        vorname:  vornameCol ? row[vornameCol] : '',
+        nachname: nachnameCol ? row[nachnameCol] : '',
+        rolle:    rolleCol ? row[rolleCol] : '',
         faecher,
       };
     });
@@ -405,6 +418,14 @@ export default function UserImport() {
                     <span><strong>Pflichtfeld</strong> – E-Mail-Adresse der Lehrkraft (z.B. max@schule.de)</span>
                   </div>
                   <div className="flex items-start gap-2">
+                    <span className="font-mono bg-white px-2 py-1 rounded border border-slate-200 shrink-0">vorname</span>
+                    <span>Optional – Vorname der Lehrkraft</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-mono bg-white px-2 py-1 rounded border border-slate-200 shrink-0">nachname</span>
+                    <span>Optional – Nachname der Lehrkraft</span>
+                  </div>
+                  <div className="flex items-start gap-2">
                     <span className="font-mono bg-white px-2 py-1 rounded border border-slate-200 shrink-0">rolle</span>
                     <span>Optional – Eine von: Administrator, Fachschaftsleitung, Fachlehrkraft, Betrachter, Moodle-Designer (Standard: Fachlehrkraft)</span>
                   </div>
@@ -416,9 +437,9 @@ export default function UserImport() {
               </div>
             </div>
             <div className="bg-white rounded p-2.5 border border-slate-200 text-[11px] font-mono text-slate-600 overflow-x-auto">
-              <p className="whitespace-nowrap">email,rolle,faecher</p>
-              <p className="whitespace-nowrap text-slate-500">max@schule.de,Fachlehrkraft,Deutsch; Mathematik</p>
-              <p className="whitespace-nowrap text-slate-500">anna@schule.de,Fachschaftsleitung,Biologie; Chemie</p>
+              <p className="whitespace-nowrap">email,vorname,nachname,rolle,faecher</p>
+              <p className="whitespace-nowrap text-slate-500">max@schule.de,Maximilian,Müller,Fachlehrkraft,Deutsch; Mathematik</p>
+              <p className="whitespace-nowrap text-slate-500">anna@schule.de,Anna,Schmidt,Fachschaftsleitung,Biologie; Chemie</p>
             </div>
           </div>
         )}
