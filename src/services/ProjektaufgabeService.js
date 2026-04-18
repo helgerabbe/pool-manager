@@ -121,11 +121,14 @@ export async function lockProjectTask(taskId, userEmail) {
       }
     }
     
-    console.log('[DEBUG-SERVICE] Updating AllgemeineAufgabe with lock:', { locked_by: userEmail, locked_at: new Date().toISOString() });
-    const result = await base44.entities.AllgemeineAufgabe.update(taskId, {
+    // CRITICAL: Nur Lock-Felder updaten – nicht die ganze Entität!
+    // Das verhindert Validierungsfehler bei kaputten Feldern wie rubric_criteria
+    const lockData = {
       locked_by: userEmail,
       locked_at: new Date().toISOString(),
-    });
+    };
+    console.log('[DEBUG-SERVICE] Updating AllgemeineAufgabe with lock:', lockData);
+    const result = await base44.entities.AllgemeineAufgabe.update(taskId, lockData);
     console.log('[DEBUG-SERVICE] Update success:', result);
     return result;
   } catch (err) {
