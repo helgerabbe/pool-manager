@@ -149,15 +149,22 @@ function ZusaetzlichesMaterialSection({ materials, onMaterialsChange }) {
 
       {/* Liste vorhandener Materialien */}
       {materials.length > 0 && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {materials.map((mat, idx) => (
-            <div key={idx} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-border text-sm">
-              <span className="shrink-0">{ICONS[mat.type] || '📎'}</span>
-              {mat.type === 'image' && mat.url && (
-                <img src={mat.url} alt="" className="h-8 w-8 object-cover rounded border" />
-              )}
-              <span className="flex-1 truncate text-xs">{mat.label || mat.content || mat.url || '…'}</span>
-              <button type="button" onClick={() => removeMaterial(idx)} className="shrink-0 text-destructive hover:text-destructive/70">
+            <div key={idx} className="flex items-start gap-2 px-3 py-2 rounded-lg bg-white border border-border text-sm">
+              <span className="shrink-0 mt-0.5">{ICONS[mat.type] || '📎'}</span>
+              <div className="flex-1 min-w-0">
+                {mat.type === 'image' && mat.url && (
+                  <img src={mat.url} alt={mat.label || 'Bild'} className="max-h-32 rounded border border-border object-contain mb-1" />
+                )}
+                {mat.type === 'pdf' && mat.url && (
+                  <iframe src={mat.url} className="w-full h-40 rounded border border-border mb-1" title={mat.label || 'PDF'} />
+                )}
+                <span className="text-xs text-muted-foreground break-words">
+                  {mat.label || mat.content || (mat.type === 'image' || mat.type === 'pdf' ? '' : mat.url) || '…'}
+                </span>
+              </div>
+              <button type="button" onClick={() => removeMaterial(idx)} className="shrink-0 text-destructive hover:text-destructive/70 mt-0.5">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
