@@ -236,7 +236,9 @@ export function usePresence(currentView = 'dashboard') {
       mountedRef.current = false;
       clearInterval(heartbeatRef.current);
       if (myRecordIdRef.current) {
-        try { deletePresenceRecord(myRecordIdRef.current); } catch {}
+        deletePresenceRecord(myRecordIdRef.current).catch(err => {
+          console.debug('[usePresence] Unload delete failed:', err.message);
+        });
         myRecordIdRef.current = null;
       }
     };
