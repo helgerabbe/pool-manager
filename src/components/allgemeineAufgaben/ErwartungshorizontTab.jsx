@@ -24,6 +24,8 @@ export default function ErwartungshorizontTab({
   const [editText, setEditText] = useState(aufgabe?.erwartungshorizont || '');
   const [isDirty, setIsDirty] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [wasGenerated, setWasGenerated] = useState(false);
+  const [refinementText, setRefinementText] = useState('');
 
   const isEbene2 = aufgabe?.anforderungsebene === '2 - Transfer';
   const isEbene3 = aufgabe?.anforderungsebene === '3 - Projekt';
@@ -69,6 +71,8 @@ export default function ErwartungshorizontTab({
       if (response.data?.erwartungshorizont) {
         setEditText(response.data.erwartungshorizont);
         setIsDirty(true);
+        setWasGenerated(true);
+        setRefinementText('');
         toast.success('Erwartungshorizont generiert. Bitte überprüfen und speichern.');
       } else {
         toast.error('KI konnte keinen Erwartungshorizont generieren.');
@@ -78,6 +82,35 @@ export default function ErwartungshorizontTab({
     } finally {
       setIsGenerating(false);
       setExtraContext('');
+    }
+  };
+
+  const handleRefine = async () => {
+    if (!refinementText.trim()) return;
+    setIsGenerating(true);
+    try {
+      const response = await base44.functions.invoke('generateErwartungshorizont', {
+        aufgabenstellung: aufgabe.aufgabenstellung,
+        lernziele: mappedLernziele.map(lz => ({
+          formulierung_fachsprache: lz.formulierung_fachsprache || lz.title,
+          title: lz.title
+        })),
+        lernpakete: [],
+        bisheriger_entwurf: editText,
+        nachbesserung: refinementText,
+      });
+      if (response.data?.erwartungshorizont) {
+        setEditText(response.data.erwartungshorizont);
+        setIsDirty(true);
+        setRefinementText('');
+        toast.success('Erwartungshorizont überarbeitet.');
+      } else {
+        toast.error('KI konnte den Erwartungshorizont nicht überarbeiten.');
+      }
+    } catch (err) {
+      toast.error('Fehler bei der Überarbeitung: ' + err.message);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -211,6 +244,38 @@ export default function ErwartungshorizontTab({
             className="w-full h-96 p-4 border border-border rounded-lg text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring disabled:bg-muted/20 disabled:text-muted-foreground"
           />
         </div>
+
+        {/* Nachbessern-Bereich – erscheint nach erster KI-Generierung */}
+        {wasGenerated && kannBearbeiten && (
+          <div className="space-y-2 p-3 rounded-lg bg-amber-50/50 border border-amber-200">
+            <p className="text-xs font-semibold text-amber-800 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" />
+              KI-Nachbesserung
+            </p>
+            <p className="text-xs text-amber-700">
+              Nicht zufrieden? Gib der KI eine kurze Anweisung, was geändert werden soll.
+            </p>
+            <textarea
+              value={refinementText}
+              onChange={e => setRefinementText(e.target.value)}
+              placeholder="z.B. „Bitte den Punkt Methoden kürzen und stärker auf inhaltliche Kriterien eingehen.""
+              className="w-full h-20 p-2.5 border border-amber-200 rounded-lg text-xs resize-none focus:outline-none focus:ring-1 focus:ring-amber-400 bg-white"
+            />
+            <Button
+              onClick={handleRefine}
+              disabled={isGenerating || !refinementText.trim()}
+              size="sm"
+              variant="outline"
+              className="gap-2 border-amber-300 text-amber-800 hover:bg-amber-100"
+            >
+              {isGenerating ? (
+                <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Wird überarbeitet…</>
+              ) : (
+                <><Sparkles className="w-3.5 h-3.5" /> Nochmal überarbeiten</>
+              )}
+            </Button>
+          </div>
+        )}
 
         {/* Verknüpfte Lernziele anzeigen */}
         {mappedLernziele.length > 0 && (

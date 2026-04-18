@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { aufgabenstellung, lernziele = [], lernpakete = [] } = await req.json();
+    const { aufgabenstellung, lernziele = [], lernpakete = [], bisheriger_entwurf, nachbesserung } = await req.json();
 
     if (!aufgabenstellung?.trim()) {
       return Response.json(
@@ -25,7 +25,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Formatiere Lernziele für Kontex
     const lernzielContext = lernziele
       .map(lz => `- ${lz.formulierung_fachsprache || lz.title || lz}`)
       .join('\n');
@@ -34,7 +33,21 @@ Deno.serve(async (req) => {
       .map(lp => `- ${lp.titel_des_pakets}`)
       .join('\n');
 
-    const prompt = `Du bist ein erfahrener Didaktiker und Tutor. Erstelle einen strukturierten Erwartungshorizont für eine Projektaufgabe.
+    // Unterscheide: Erstgenerierung vs. Nachbesserung
+    const prompt = bisheriger_entwurf && nachbesserung
+      ? `Du bist ein erfahrener Didaktiker. Überarbeite den folgenden Erwartungshorizont gemäß der Anweisung der Lehrkraft.
+
+**Aufgabenstellung:**
+${aufgabenstellung}
+
+**Bisheriger Erwartungshorizont:**
+${bisheriger_entwurf}
+
+**Anweisung der Lehrkraft (was soll geändert werden):**
+${nachbesserung}
+
+Gib nur den überarbeiteten Erwartungshorizont zurück. Behalte alles bei, was nicht explizit geändert werden soll.`
+      : `Du bist ein erfahrener Didaktiker und Tutor. Erstelle einen strukturierten Erwartungshorizont für eine Projektaufgabe.
 
 **Aufgabenstellung:**
 ${aufgabenstellung}
