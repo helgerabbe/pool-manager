@@ -11,6 +11,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertCircle, Sparkles, Loader2, Save, HelpCircle } from 'lucide-react';
+import SpeechInputButton from '@/components/ui/SpeechInputButton';
 import { toast } from 'sonner';
 
 export default function ErwartungshorizontTab({
@@ -159,9 +160,12 @@ export default function ErwartungshorizontTab({
             Es sind noch keine Lernziele mit dieser Aufgabe verknüpft. Die KI kann trotzdem einen Erwartungshorizont erstellen – aber ein kurzer Hinweis hilft ihr dabei.
           </p>
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Was sollen die Schüler zeigen oder können? (optional)
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Was sollen die Schüler zeigen oder können? (optional)
+              </label>
+              <SpeechInputButton value={extraContext} onResult={setExtraContext} />
+            </div>
             <textarea
               value={extraContext}
               onChange={e => setExtraContext(e.target.value)}
@@ -226,9 +230,17 @@ export default function ErwartungshorizontTab({
 
         {/* Textarea */}
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Erwartungshorizont / Zielvorgaben
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Erwartungshorizont / Zielvorgaben
+            </label>
+            {kannBearbeiten && (
+              <SpeechInputButton
+                value={editText}
+                onResult={(text) => { setEditText(text); setIsDirty(true); }}
+              />
+            )}
+          </div>
           <textarea
             value={editText}
             onChange={e => {
@@ -255,12 +267,20 @@ export default function ErwartungshorizontTab({
             <p className="text-xs text-amber-700">
               Nicht zufrieden? Gib der KI eine kurze Anweisung, was geändert werden soll.
             </p>
-            <textarea
-              value={refinementText}
-              onChange={e => setRefinementText(e.target.value)}
-              placeholder={'z.B. "Bitte den Punkt Methoden kürzen und stärker auf inhaltliche Kriterien eingehen."'}
-              className="w-full h-20 p-2.5 border border-amber-200 rounded-lg text-xs resize-none focus:outline-none focus:ring-1 focus:ring-amber-400 bg-white"
-            />
+            <div className="relative">
+              <textarea
+                value={refinementText}
+                onChange={e => setRefinementText(e.target.value)}
+                placeholder="z.B. „Bitte den Punkt Methoden kürzen und stärker auf inhaltliche Kriterien eingehen.""
+                className="w-full h-20 p-2.5 pr-10 border border-amber-200 rounded-lg text-xs resize-none focus:outline-none focus:ring-1 focus:ring-amber-400 bg-white"
+              />
+              <div className="absolute top-2 right-2">
+                <SpeechInputButton
+                  value={refinementText}
+                  onResult={setRefinementText}
+                />
+              </div>
+            </div>
             <Button
               onClick={handleRefine}
               disabled={isGenerating || !refinementText.trim()}
