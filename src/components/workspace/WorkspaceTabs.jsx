@@ -142,7 +142,7 @@ export default function WorkspaceTabs({ activeTab, onTabChange }) {
                   {tab.label}
                 </TooltipContent>
               </Tooltip>
-              {isActive && <HelpDialog {...tab.help} />}
+              <HelpDialog {...tab.help} alwaysVisible={!isActive} />
             </div>
           );
         })}
