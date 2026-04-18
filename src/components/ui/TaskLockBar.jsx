@@ -28,9 +28,7 @@ export default function TaskLockBar({
   canEdit = true,
   isAdmin = false,
 }) {
-  if (!canEdit) return null;
-
-  // Berechne ob Lock älter als 60 Min ist
+  // Berechne ob Lock älter als 60 Min ist (MUSS vor allen bedingten returns aufgerufen werden)
   const isLockStale = useMemo(() => {
     if (!lockedAt) return false;
     return Date.now() - new Date(lockedAt).getTime() > 60 * 60 * 1000;
@@ -40,6 +38,8 @@ export default function TaskLockBar({
     if (!lockedAt) return '';
     return formatDistanceToNow(new Date(lockedAt), { addSuffix: true, locale: de });
   }, [lockedAt]);
+
+  if (!canEdit) return null;
 
   if (isLockedByOther) {
     return (

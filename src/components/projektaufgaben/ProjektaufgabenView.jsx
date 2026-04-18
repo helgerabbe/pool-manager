@@ -21,7 +21,6 @@ import PublishProjektaufgabeButton from './PublishProjektaufgabeButton';
 import AbgabeDefinitionSection from './AbgabeDefinitionSection';
 import LernlandkartePreview from '@/components/lernlandkarte/LernlandkartePreview';
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
-import { toast } from 'sonner';
 import { useTaskLock } from '@/hooks/useTaskLock';
 import { base44 } from '@/api/base44Client';
 
