@@ -13,38 +13,16 @@ import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Copy, CheckCircle2, AlertTriangle, RefreshCw, Save, Loader2, Info } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Save, Loader2, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
-// ── Einzelne Sektion mit Copy-Button ─────────────────────────────────────────
+// ── Einzelne Sektion (ohne Copy-Button) ──────────────────────────────────────
 function SegmentField({ label, description, value, onChange, kannBearbeiten, multiline = true }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    if (!value) return;
-    await navigator.clipboard.writeText(value);
-    setCopied(true);
-    toast.success(`"${label}" kopiert.`);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
     <div className="space-y-1.5">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-foreground uppercase tracking-wide">{label}</p>
-          {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
-        </div>
-        <button
-          onClick={handleCopy}
-          disabled={!value}
-          className="shrink-0 flex items-center gap-1 text-xs px-2.5 py-1 rounded-md border border-border bg-background hover:bg-muted transition-colors disabled:opacity-40"
-        >
-          {copied
-            ? <><CheckCircle2 className="w-3.5 h-3.5 text-green-600" /> Kopiert</>
-            : <><Copy className="w-3.5 h-3.5" /> Kopieren</>
-          }
-        </button>
+      <div>
+        <p className="text-xs font-semibold text-foreground uppercase tracking-wide">{label}</p>
+        {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
       </div>
 
       {multiline ? (
@@ -70,36 +48,13 @@ function SegmentField({ label, description, value, onChange, kannBearbeiten, mul
   );
 }
 
-// ── Rubriken-Anzeige ──────────────────────────────────────────────────────────
+// ── Rubriken-Anzeige (Read-only) ──────────────────────────────────────────────
 function RubrikenSection({ rubrics }) {
-  const [copiedAll, setCopiedAll] = useState(false);
-
-  const handleCopyAll = async () => {
-    if (!rubrics?.length) return;
-    const text = rubrics.map(r => `${r.title} (${r.points} Pkt.):\n${r.criteria_text}`).join('\n\n');
-    await navigator.clipboard.writeText(text);
-    setCopiedAll(true);
-    toast.success('Alle Rubriken kopiert.');
-    setTimeout(() => setCopiedAll(false), 2000);
-  };
-
   return (
     <div className="space-y-1.5">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Bewertungsrubriken</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Aus Tab „Abgabe & Gütekriterien" – strukturiert das Abschluss-Feedback des Tutors</p>
-        </div>
-        <button
-          onClick={handleCopyAll}
-          disabled={!rubrics?.length}
-          className="shrink-0 flex items-center gap-1 text-xs px-2.5 py-1 rounded-md border border-border bg-background hover:bg-muted transition-colors disabled:opacity-40"
-        >
-          {copiedAll
-            ? <><CheckCircle2 className="w-3.5 h-3.5 text-green-600" /> Kopiert</>
-            : <><Copy className="w-3.5 h-3.5" /> Alle kopieren</>
-          }
-        </button>
+      <div>
+        <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Bewertungsrubriken</p>
+        <p className="text-xs text-muted-foreground mt-0.5">Aus Tab „Abgabe & Gütekriterien" – werden direkt in den Brian-Export übernommen</p>
       </div>
 
       {!rubrics?.length ? (
@@ -245,18 +200,18 @@ export default function AITutorPromptPanel({
         <div className="flex items-center gap-2 flex-wrap pb-1 border-b border-border">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold">Brian.study – KI-Tutor Konfiguration</p>
-            <p className="text-xs text-muted-foreground">Fünf Felder für die direkte Übertragung in Brian.study – jedes Feld hat einen eigenen Kopieren-Button.</p>
+            <p className="text-xs text-muted-foreground">Automatisch generierte Felder. Prüfen und ggf. verfeinern. Kopieren im Brian-Export-Cockpit (Tab 9).</p>
           </div>
           <Button
             size="sm"
-            variant="outline"
+            variant="default"
             onClick={handleGenerate}
             disabled={isGenerating || !kannBearbeiten}
             className="gap-2 shrink-0"
           >
             {isGenerating
               ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Wird generiert…</>
-              : <><RefreshCw className="w-3.5 h-3.5" /> KI generieren</>
+              : <><RefreshCw className="w-3.5 h-3.5" /> Alle Felder generieren</>
             }
           </Button>
           {kannBearbeiten && isDirty && (

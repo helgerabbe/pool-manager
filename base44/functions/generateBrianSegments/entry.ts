@@ -63,6 +63,29 @@ Deno.serve(async (req) => {
     .map(r => `- ${r.title} (${r.points} Pkt.): ${r.criteria_text}`)
     .join('\n') || '';
 
+  // Automatische Konstruktion der System-Instruction
+  const outputFormatsStr = (task.output_formats || []).join(', ') || 'keine spezifischen Formate';
+  const systemInstructionAuto = `Du bist ein motivierender, geduldiger GEP-Lerncoach für Jahrgangsstufe ${jahrgang} im Fach ${fach}. 
+
+**Pädagogische Regel**: Du darfst NIEMALS die Lösung direkt verraten. Nutze stattdessen Scaffolding – stelle Denkanstöße und gezielte Rückfragen, die den Schüler zum eigenständigen Nachdenken anregen.
+
+**Interaktion**: Sprich kurz, konversationell und schülergerecht (Du-Form). Sieh Fehler als Lernchance – ermutige den Schüler weiterzumachen und zu reflektieren.
+
+**Aufgabenkontext**:
+- Thema: ${aufgabentitel}
+- Aufgabe: ${aufgabenstellung}
+${materialienStr !== '(keine Materialien)' ? `- Materialien zur Unterstützung:\n${materialienStr}` : ''}
+
+**Lernziele, auf die du dich beziehst**:
+${lernzieleStr}
+
+Leite den Schüler durch gezielte Fragen und Impulse, bis er die Aufgabe vollständig und nach den Lernzielen erarbeitet hat.`;
+
+  // Automatische Generierung der Completion-Rule
+  const completionRuleAuto = outputFormatsStr !== 'keine spezifischen Formate'
+    ? `Beende das Gespräch erst, wenn der Schüler alle wesentlichen inhaltlichen Aspekte für die geforderten Formate (${outputFormatsStr}) erarbeitet und präsentiert hat und die Lernziele sichtbar erreicht wurden.`
+    : `Beende das Gespräch erst, wenn der Schüler die Aufgabenstellung vollständig beantwortet hat, die wesentlichen Lernziele erreicht wurden und der Schüler keine weiteren Fragen hat.`;
+
   const prompt = `
 Du hilfst mir, fünf Brian.study-Konfigurationsfelder für eine Schulaufgabe zu generieren.
 
@@ -88,19 +111,11 @@ Erstelle die folgenden fünf Felder für Brian.study. Alle Texte sollen auf Deut
 2. brian_learner_instruction: Die Aufgabenstellung so aufbereitet, dass sie ein Schüler direkt versteht. Diese ist SICHTBAR für den Schüler. Formuliere klar, was der Schüler tun soll. Schreibe in der Du-Form. Max. 3-4 Sätze.
 
 3. brian_system_instruction: Die interne Tutor-Persona und Gesprächsführungsregeln (NICHT sichtbar für Schüler). 
-   Richtlinien:
-   - Du bist ein motivierender, geduldiger Lerncoach für Jahrgangsstufe ${jahrgang} im Fach ${fach}.
-   - Führe den Schüler durch Scaffolding und gezielte Rückfragen – verrate NIEMALS die Lösung direkt.
-   - Beziehe dich auf den Erwartungshorizont und die Lernziele, um zu beurteilen, ob der Schüler auf dem richtigen Weg ist.
-   - Konzentriere dich auf den Gesprächsprozess: ermutigen, nachfragen, Denkimpulse geben.
-   - Verwende KEINE starren Feedback-Kategorien mit Symbolen (🌟, 📈 etc.) im Gesprächsverlauf – diese kommen erst am Ende als Abschluss-Feedback über die Rubriken.
-   ${isEbene3 ? '- Begleite den Schüler prozessorientiert durch das Projekt. Würdige Zwischenstände.' : '- Gib nach jeder Schülerantwort einen gezielten Denkimpuls.'}
-   Schreibe die System-Anweisung als kompakten, klaren Absatz (nicht als Liste).
+   Nutze diese automatisch konstruierte Vorlage – passe sie nur minimal an, wenn nötig.
+   Vorlage: "${systemInstructionAuto}"
 
-4. brian_completion_rule: Wann ist der Dialog beendet? Beschreibe die Abbruchbedingung klar und konkret. 
-   Beispiel für Ebene 2: "Wenn der Schüler die Aufgabenstellung vollständig und korrekt beantwortet hat und die wesentlichen Lernziele im Gespräch sichtbar erreicht wurden."
-   ${isEbene3 ? 'Für Projekte: Wenn die finale Ausarbeitung vorliegt oder der Schüler keine weiteren Fragen hat.' : ''}
-   Max. 2-3 Sätze.
+4. brian_completion_rule: Wann ist der Dialog beendet? Nutze diese automatisch generierte Abbruchbedingung:
+   Vorlage: "${completionRuleAuto}"
 
 ${!rubrikenStr ? `5. rubric_criteria: Schlage 2-3 thematische Bewertungskategorien vor (Array von Objekten mit title, points, criteria_text). 
    Die Kategorien sollen inhaltlich zur Aufgabe passen und das Abschluss-Feedback des Tutors strukturieren. 
@@ -114,6 +129,8 @@ Antworte NUR mit validem JSON in diesem Format:
   "brian_completion_rule": "...",
   "rubric_criteria": [{ "title": "...", "points": 5, "criteria_text": "..." }]
 }
+
+**WICHTIG**: Verwende die oben angegebenen Vorlagen für brian_system_instruction und brian_completion_rule – fasse sie nur zusammen, optimiere wording oder erweitere bei Bedarf, aber behalte die Struktur und den Kontext bei.
 `;
 
   const result = await base44.integrations.Core.InvokeLLM({
@@ -141,9 +158,9 @@ Antworte NUR mit validem JSON in diesem Format:
     },
   });
 
-  // Wenn bereits Rubriken vorhanden, überschreibe sie nicht
-  if (rubrikenStr && result.rubric_criteria?.length === 0) {
-    result.rubric_criteria = Array.isArray(task.rubric_criteria) ? task.rubric_criteria : [];
+  // Rubriken-Mapping: Nutze bestehende Rubriken falls vorhanden, ansonsten KI-Vorschlag
+  if (Array.isArray(task.rubric_criteria) && task.rubric_criteria.length > 0) {
+    result.rubric_criteria = task.rubric_criteria;
   } else if (!Array.isArray(result.rubric_criteria)) {
     result.rubric_criteria = [];
   }

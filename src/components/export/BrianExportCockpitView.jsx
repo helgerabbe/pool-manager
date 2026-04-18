@@ -12,75 +12,51 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle2, Copy, ChevronDown, ChevronUp, BookOpen, Wand2 } from 'lucide-react';
+import { CheckCircle2, Copy, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-// ── Prompt-Generator (rein im Frontend) ──
-function generateBrianPrompt(aufgabe, params) {
-  const materialienText = (aufgabe.materialien || [])
-    .map(m => {
-      if (m.type === 'free_text' || m.type === 'freitext') return `[Text] ${m.content || ''}`;
-      if (m.type === 'book_ref') return `[Buchverweis] ${m.content || m.label || ''}`;
-      if (m.type === 'pdf' && m.url) return `[PDF] ${m.label || m.url}`;
-      if (m.type === 'image' && m.url) return `[Bild] ${m.label || m.url}`;
-      return null;
-    })
-    .filter(Boolean)
-    .join('\n');
+// ── Segment-Status Checker ──
+function isPromptReady(aufgabe) {
+  return !!(
+    aufgabe.brian_dialog_name?.trim() &&
+    aufgabe.brian_learner_instruction?.trim() &&
+    aufgabe.brian_system_instruction?.trim() &&
+    aufgabe.brian_completion_rule?.trim()
+  );
+}
 
-  const rubrikenText = Array.isArray(aufgabe.rubric_criteria) && aufgabe.rubric_criteria.length > 0
-    ? aufgabe.rubric_criteria
-        .map(r => `• ${r.title} (${r.points} Punkte)\n  ${r.criteria_text}`)
-        .join('\n\n')
-    : 'Keine Rubriken definiert.';
+// ── Segment-Copy-Button ──
+function SegmentCopyButton({ label, value }) {
+  const [copied, setCopied] = useState(false);
 
-  const totalPunkte = Array.isArray(aufgabe.rubric_criteria)
-    ? aufgabe.rubric_criteria.reduce((sum, r) => sum + (r.points || 0), 0)
-    : 0;
+  const handleCopy = async () => {
+    if (!value) return;
+    await navigator.clipboard.writeText(value);
+    setCopied(true);
+    toast.success(`"${label}" kopiert.`);
+    setTimeout(() => setCopied(false), 1500);
+  };
 
-  return `=== BRIAN.STUDY AUFGABEN-EXPORT ===
-
-GLOBALE PARAMETER:
-- Antwortstrenge: ${params.strenge}
-- Sprachschwierigkeit: ${params.sprache}
-- Kursniveau: ${params.kursniveau || 'Nicht angegeben'}
-
-AUFGABE:
-Titel: ${aufgabe.titel || 'Kein Titel'}
-Typ: ${aufgabe.anforderungsebene || ''} ${aufgabe.aufgabentyp_projekt ? `(${aufgabe.aufgabentyp_projekt})` : ''}
-
-AUFGABENSTELLUNG:
-${aufgabe.aufgabenstellung || 'Nicht definiert'}
-
-MATERIALIEN:
-${materialienText || 'Keine Materialien'}
-
-BEWERTUNGSRUBRIKEN (Gesamt: ${totalPunkte} Punkte):
-${rubrikenText}
-
-===================================`;
+  return (
+    <button
+      onClick={handleCopy}
+      disabled={!value}
+      className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-border bg-background hover:bg-muted transition-colors disabled:opacity-40"
+    >
+      {copied
+        ? <><CheckCircle2 className="w-3 h-3 text-green-600" /> Kopiert</>
+        : <><Copy className="w-3 h-3" /> Kopieren</>
+      }
+    </button>
+  );
 }
 
 // ── Einzelne Aufgaben-Karte ──
-function AufgabeCard({ aufgabe, params, onMarkAsSynced }) {
+function AufgabeCard({ aufgabe, onMarkAsSynced }) {
   const [expanded, setExpanded] = useState(false);
-  const [prompt, setPrompt] = useState('');
-  const [copied, setCopied] = useState(false);
   const isSynced = aufgabe.brian_sync_status === 'synced';
-
-  const handleGeneratePrompt = () => {
-    const generated = generateBrianPrompt(aufgabe, params);
-    setPrompt(generated);
-    setExpanded(true);
-  };
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(prompt);
-    setCopied(true);
-    toast.success('In Zwischenablage kopiert');
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const isReady = isPromptReady(aufgabe);
 
   const ebeneLabel = aufgabe.anforderungsebene === '3 - Projekt' ? '🎯 Ebene 3' : '📝 Ebene 2';
 
@@ -109,23 +85,20 @@ function AufgabeCard({ aufgabe, params, onMarkAsSynced }) {
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleGeneratePrompt}
-            className="gap-1.5 text-xs h-8"
-          >
-            <Wand2 className="w-3.5 h-3.5" />
-            Brian-Prompt
-          </Button>
+          {isReady && (
+            <Badge className="bg-green-100 text-green-800 border border-green-300 text-[10px] shrink-0 gap-1">
+              ✓ Bereit
+            </Badge>
+          )}
           {!isSynced && (
             <Button
               size="sm"
               onClick={() => onMarkAsSynced(aufgabe.id)}
               className="gap-1.5 text-xs h-8 bg-green-600 hover:bg-green-700"
+              disabled={!isReady}
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
-              In Brian markieren
+              Übertragen
             </Button>
           )}
           <button
@@ -137,50 +110,54 @@ function AufgabeCard({ aufgabe, params, onMarkAsSynced }) {
         </div>
       </div>
 
-      {/* Expandierter Bereich mit Prompt */}
+      {/* Expandierter Bereich mit Segmenten */}
       {expanded && (
-        <div className="border-t border-border p-4 space-y-3">
-          {prompt ? (
-            <>
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Generierter Brian-Prompt
-                </p>
-                <Button size="sm" variant="outline" onClick={handleCopy} className="gap-1.5 text-xs h-7">
-                  {copied ? (
-                    <><CheckCircle2 className="w-3.5 h-3.5 text-green-600" /> Kopiert</>
-                  ) : (
-                    <><Copy className="w-3.5 h-3.5" /> In Zwischenablage</>
-                  )}
-                </Button>
-              </div>
-              <textarea
-                value={prompt}
-                onChange={e => setPrompt(e.target.value)}
-                rows={14}
-                className="w-full p-3 text-xs font-mono bg-muted/20 border border-border rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-            </>
-          ) : (
-            <div className="text-center py-6">
-              <BookOpen className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-              <p className="text-xs text-muted-foreground">
-                Klicke "Brian-Prompt" um einen formatierten Export-Text zu generieren.
-              </p>
+        <div className="border-t border-border p-4 space-y-4">
+          {!isReady && (
+            <div className="flex items-start gap-2 p-3 rounded-lg border border-amber-200 bg-amber-50 text-xs text-amber-800">
+              <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+              <span>Nicht alle Felder sind gefüllt. Bitte im KI-Tutor-Prompt-Tab generieren oder ausfüllen.</span>
             </div>
           )}
 
-          {/* Rubriken-Vorschau */}
+          {/* Fünf Segmente */}
+          <div className="space-y-3">
+            {[
+              { label: '1. Dialogname', value: aufgabe.brian_dialog_name },
+              { label: '2. Anweisung für Lernende', value: aufgabe.brian_learner_instruction },
+              { label: '3. System-Anweisung (Tutor-Persona)', value: aufgabe.brian_system_instruction },
+              { label: '4. Completion-Rule', value: aufgabe.brian_completion_rule },
+            ].map(({ label, value }) => (
+              <div key={label} className="space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</p>
+                  <SegmentCopyButton label={label} value={value} />
+                </div>
+                <div className="p-2.5 rounded-lg border border-border bg-muted/10 text-xs leading-relaxed text-foreground">
+                  {value ? (
+                    <p className="whitespace-pre-wrap max-h-24 overflow-y-auto">{value}</p>
+                  ) : (
+                    <p className="text-muted-foreground italic">Nicht definiert</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Rubriken */}
           {Array.isArray(aufgabe.rubric_criteria) && aufgabe.rubric_criteria.length > 0 && (
-            <div className="pt-2 border-t border-border space-y-1.5">
-              <p className="text-xs font-semibold text-muted-foreground">
-                Rubriken ({aufgabe.rubric_criteria.reduce((s, r) => s + (r.points || 0), 0)} Punkte gesamt):
-              </p>
-              <div className="flex flex-wrap gap-2">
+            <div className="pt-2 border-t border-border space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  5. Bewertungsrubriken ({aufgabe.rubric_criteria.reduce((s, r) => s + (r.points || 0), 0)} Punkte)
+                </p>
+              </div>
+              <div className="space-y-1.5">
                 {aufgabe.rubric_criteria.map((r, i) => (
-                  <Badge key={i} variant="outline" className="text-xs gap-1">
-                    {r.title} · {r.points} Pkt.
-                  </Badge>
+                  <div key={i} className="p-2 rounded-lg border border-border bg-muted/10 text-xs">
+                    <p className="font-medium">{r.title} ({r.points} Punkte)</p>
+                    <p className="text-muted-foreground mt-0.5">{r.criteria_text}</p>
+                  </div>
                 ))}
               </div>
             </div>
@@ -336,7 +313,6 @@ export default function BrianExportCockpitView() {
               <AufgabeCard
                 key={aufgabe.id}
                 aufgabe={aufgabe}
-                params={params}
                 onMarkAsSynced={handleMarkAsSynced}
               />
             ))
