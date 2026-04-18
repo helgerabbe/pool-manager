@@ -109,6 +109,37 @@
         ]
       }
     },
+    "output_formats": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Gew\u00e4hlte Abgabeformate (z.B. ['presentation', 'timeline'])",
+      "default": []
+    },
+    "custom_format": {
+      "type": "string",
+      "description": "Manuell definiertes Abgabeformat (freier Text)"
+    },
+    "quality_focus": {
+      "type": "string",
+      "description": "Optionaler Bewertungsschwerpunkt der Lehrkraft"
+    },
+    "rubric_criteria": {
+      "type": "object",
+      "description": "KI-generierte G\u00fctekriterien mit drei Niveaustufen",
+      "properties": {
+        "sufficient": {
+          "type": "string"
+        },
+        "good": {
+          "type": "string"
+        },
+        "excellent": {
+          "type": "string"
+        }
+      }
+    },
     "prioritaete_lernziele": {
       "type": "array",
       "items": {

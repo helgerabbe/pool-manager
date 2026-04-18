@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { createProjectTask, updateProjectTask, uploadMaterialFile } from '@/services/ProjektaufgabeService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -64,7 +64,7 @@ function MaterialUploader({ materials, onMaterialsChange }) {
       }
       setUploading(true);
       try {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file: newMaterial.file });
+        const file_url = await uploadMaterialFile(newMaterial.file);
         finalMaterial = { ...finalMaterial, url: file_url, content: '' };
         toast.success('Datei hochgeladen!');
       } catch (err) {
@@ -249,30 +249,27 @@ export default function ProjektCreateView({ open, onOpenChange, einheitId, theme
     }
   }, [open, initialData]);
 
+  const EMPTY_FORM = { titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, aufgabentyp_projekt: null, anforderungsebene: '3 - Projekt', materialien: [] };
+
   const createProjekt = useMutation({
-    mutationFn: (data) =>
-      base44.entities.AllgemeineAufgabe.create({
-        einheit_id: einheitId,
-        ...data,
-      }),
+    mutationFn: (data) => createProjectTask(einheitId, data),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
       toast.success('Anwendungs- und Projektaufgabe erstellt!');
       onSuccess?.(result);
-      setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, aufgabentyp_projekt: null, anforderungsebene: '3 - Projekt', materialien: [] });
+      setFormData(EMPTY_FORM);
       onOpenChange(false);
     },
     onError: () => toast.error('Fehler beim Erstellen'),
   });
 
   const updateProjekt = useMutation({
-    mutationFn: (data) =>
-      base44.entities.AllgemeineAufgabe.update(initialData.id, data),
+    mutationFn: (data) => updateProjectTask(initialData.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
       toast.success('Anwendungs- und Projektaufgabe aktualisiert');
       onSuccess?.();
-      setFormData({ titel: '', aufgabenstellung: '', schwierigkeitsgrad: null, aufgabentyp_projekt: null, anforderungsebene: '3 - Projekt', materialien: [] });
+      setFormData(EMPTY_FORM);
       onOpenChange(false);
     },
     onError: () => toast.error('Fehler beim Aktualisieren'),
