@@ -32,6 +32,7 @@ export default function AiTaskWizardModal({
   const [idee, setIdee] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   // Bearbeitbare Felder nach KI-Antwort
   const [titel, setTitel] = useState('');
@@ -47,6 +48,7 @@ export default function AiTaskWizardModal({
       setTitel('');
       setAufgabenstellung('');
       setKompetenzen([]);
+      setErrorMsg('');
     }, 300);
   };
 
@@ -56,6 +58,7 @@ export default function AiTaskWizardModal({
       return;
     }
     setIsGenerating(true);
+    setErrorMsg('');
     try {
       const result = await generateTaskIdea(idee.trim(), taskType);
       setTitel(result.titel || '');
@@ -63,7 +66,11 @@ export default function AiTaskWizardModal({
       setKompetenzen(result.kompetenzen || []);
       setStep(2);
     } catch (err) {
-      toast.error('KI-Generierung fehlgeschlagen: ' + err.message);
+      const msg = err.message?.includes('429') || err.message?.includes('Rate limit')
+        ? 'Zu viele Anfragen gerade – bitte kurz warten und erneut versuchen.'
+        : 'KI-Generierung fehlgeschlagen: ' + err.message;
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setIsGenerating(false);
     }
@@ -104,6 +111,12 @@ export default function AiTaskWizardModal({
         {/* ── Schritt 1: Idee eingeben ── */}
         {step === 1 && (
           <div className="space-y-4 py-2">
+            {errorMsg && (
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-800">
+                <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
             <p className="text-sm text-muted-foreground">
               Beschreibe kurz deine Idee für eine Aufgabe. Die KI erstellt daraus einen vollständigen Entwurf.
             </p>
