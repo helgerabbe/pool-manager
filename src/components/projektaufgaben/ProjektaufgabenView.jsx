@@ -171,9 +171,12 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
           <div className="space-y-2">
             {aufgabe.materialien.map((mat, idx) => (
               <div key={idx} className="p-2 rounded-lg bg-muted/20 border border-border text-xs">
+                {mat.type === 'image' && mat.url ? (
+                  <img src={mat.url} alt={mat.label || 'Bild'} className="max-h-48 rounded border border-border object-contain mb-2" />
+                ) : null}
                 <p className="font-medium mb-0.5">
-                  {mat.type === 'freitext' && '📝'} {mat.type === 'pdf' && '📄'} {mat.type === 'image' && '🖼️'} {mat.type === 'book_ref' && '📚'}
-                  {' '}{mat.label || mat.content || mat.url || '…'}
+                  {mat.type === 'freitext' && '📝'} {mat.type === 'pdf' && '📄'} {mat.type === 'image' && !mat.url && '🖼️'} {mat.type === 'book_ref' && '📚'}
+                  {' '}{mat.label || mat.content || (mat.type !== 'image' ? mat.url : '') || '…'}
                 </p>
                 {mat.content && <p className="text-muted-foreground line-clamp-2">{mat.content}</p>}
               </div>

@@ -104,14 +104,19 @@ function MaterialUploader({ materials, onMaterialsChange }) {
               key={idx}
               className="flex items-start justify-between p-2 rounded bg-white border border-border text-sm gap-2"
             >
-              <span className="flex-1 min-w-0 break-words">
-                {mat.type === 'freitext' && '📝'} {mat.type === 'pdf' && '📄'}{' '}
-                {mat.type === 'image' && '🖼️'} {mat.type === 'book_ref' && '📚'}
-                <span className="ml-1">{mat.label || mat.content || mat.url || '…'}</span>
-              </span>
+              <div className="flex-1 min-w-0">
+                {mat.type === 'image' && mat.url ? (
+                  <img src={mat.url} alt={mat.label || 'Bild'} className="max-h-32 rounded border border-border object-contain mb-1" />
+                ) : null}
+                <span className="break-words text-xs text-muted-foreground">
+                  {mat.type === 'freitext' && '📝'} {mat.type === 'pdf' && '📄'}{' '}
+                  {mat.type === 'image' && !mat.url && '🖼️'} {mat.type === 'book_ref' && '📚'}
+                  {mat.label || mat.content || (mat.type === 'image' ? '' : mat.url) || '…'}
+                </span>
+              </div>
               <button
                 onClick={() => removeMaterial(idx)}
-                className="text-xs text-destructive hover:text-destructive/80"
+                className="text-xs text-destructive hover:text-destructive/80 shrink-0"
               >
                 ✕
               </button>
