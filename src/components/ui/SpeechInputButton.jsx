@@ -18,10 +18,65 @@ import { toast } from 'sonner';
 export default function SpeechInputButton({ onResult, value = '', disabled = false, className }) {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
+  const shouldRestartRef = useRef(false);
+  const accumulatedRef = useRef('');
 
   const isSupported = typeof window !== 'undefined' && (
     'SpeechRecognition' in window || 'webkitSpeechRecognition' in window
   );
+
+  const stopListening = () => {
+    shouldRestartRef.current = false;
+    recognitionRef.current?.stop();
+  };
+
+  const startRecognition = (currentValue) => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'de-DE';
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognitionRef.current = recognition;
+
+    recognition.onstart = () => setIsListening(true);
+
+    recognition.onresult = (e) => {
+      // Alle neuen finalen Ergebnisse sammeln
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) {
+          accumulatedRef.current += (accumulatedRef.current ? ' ' : '') + e.results[i][0].transcript;
+        }
+      }
+      const separator = currentValue.trim() ? ' ' : '';
+      onResult(currentValue + separator + accumulatedRef.current);
+    };
+
+    recognition.onerror = (e) => {
+      if (e.error === 'no-speech') return; // ignorieren, wird durch continuous abgedeckt
+      if (e.error !== 'aborted') {
+        toast.error('Spracherkennung fehlgeschlagen: ' + e.error);
+      }
+      shouldRestartRef.current = false;
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      // Automatisch neu starten solange der Nutzer nicht manuell gestoppt hat
+      if (shouldRestartRef.current) {
+        try {
+          recognition.start();
+        } catch {
+          setIsListening(false);
+          shouldRestartRef.current = false;
+        }
+      } else {
+        setIsListening(false);
+      }
+    };
+
+    recognition.start();
+  };
 
   const handleToggle = () => {
     if (!isSupported) {
@@ -30,32 +85,13 @@ export default function SpeechInputButton({ onResult, value = '', disabled = fal
     }
 
     if (isListening) {
-      recognitionRef.current?.stop();
+      stopListening();
       return;
     }
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'de-DE';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-    recognitionRef.current = recognition;
-
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = (e) => {
-      setIsListening(false);
-      if (e.error !== 'aborted') {
-        toast.error('Spracherkennung fehlgeschlagen: ' + e.error);
-      }
-    };
-    recognition.onresult = (e) => {
-      const transcript = e.results[0][0].transcript;
-      const separator = value.trim() ? ' ' : '';
-      onResult(value + separator + transcript);
-    };
-
-    recognition.start();
+    accumulatedRef.current = '';
+    shouldRestartRef.current = true;
+    startRecognition(value);
   };
 
   if (!isSupported) return null;
