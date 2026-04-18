@@ -50,7 +50,7 @@ function SternRating({ value, onChange }) {
 // ── Material-Uploader ──
 function MaterialUploader({ materials, onMaterialsChange }) {
   const [activeTab, setActiveTab] = useState('freitext');
-  const [newMaterial, setNewMaterial] = useState({ type: 'freitext', content: '', label: '' });
+  const [newMaterial, setNewMaterial] = useState({ type: 'freitext', content: '', label: '', file: null });
   const [uploading, setUploading] = useState(false);
 
   const addMaterial = async () => {
@@ -120,7 +120,7 @@ function MaterialUploader({ materials, onMaterialsChange }) {
         </div>
       )}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-2">
+      <Tabs value={activeTab} onValueChange={(tab) => { setActiveTab(tab); setNewMaterial({ type: tab, content: '', label: '', file: null }); }} className="space-y-2">
         <TabsList className="grid w-full grid-cols-4 h-8">
           <TabsTrigger value="freitext" className="text-xs">
             <Type className="w-3 h-3 mr-1" /> Text
@@ -180,10 +180,7 @@ function MaterialUploader({ materials, onMaterialsChange }) {
           <input
             type="file"
             accept=".pdf"
-            onChange={(e) =>
-              newMaterial.type === 'pdf' &&
-              setNewMaterial({ ...newMaterial, file: e.target.files?.[0] || null })
-            }
+            onChange={(e) => setNewMaterial({ ...newMaterial, type: 'pdf', file: e.target.files?.[0] || null })}
             className="w-full text-xs"
           />
           <Input
@@ -201,10 +198,7 @@ function MaterialUploader({ materials, onMaterialsChange }) {
           <input
             type="file"
             accept="image/*"
-            onChange={(e) =>
-              newMaterial.type === 'image' &&
-              setNewMaterial({ ...newMaterial, file: e.target.files?.[0] || null })
-            }
+            onChange={(e) => setNewMaterial({ ...newMaterial, type: 'image', file: e.target.files?.[0] || null })}
             className="w-full text-xs"
           />
           <Input
