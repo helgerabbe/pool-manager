@@ -226,7 +226,9 @@ export function usePresence(currentView = 'dashboard') {
       if (myRecordIdRef.current) {
         const id = myRecordIdRef.current;
         myRecordIdRef.current = null;
-        deletePresenceRecord(id).catch(() => {});
+        deletePresenceRecord(id).catch(err => {
+          console.debug('[usePresence] Cleanup delete failed (probably already gone):', err.message);
+        });
       }
     };
 
