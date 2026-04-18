@@ -99,6 +99,8 @@ export default function AITutorPromptPanel({
   });
   const [isDirty, setIsDirty] = useState(false);
 
+  // Erwartungshorizont ist nur für allgemeine Aufgaben (nicht Ebene 3) erforderlich
+  const istProjektaufgabe = aufgabe?.anforderungsebene === '3 - Projekt';
   const hatErwartungshorizont = !!(aufgabe?.erwartungshorizont?.trim() || aufgabe?.musterloesung?.trim());
 
   // Felder aus Aufgabe laden wenn sich aufgabe.id ändert
@@ -186,8 +188,8 @@ export default function AITutorPromptPanel({
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-1 overflow-y-auto p-5 space-y-5">
 
-        {/* Warnung: kein Erwartungshorizont */}
-        {!hatErwartungshorizont && (
+        {/* Warnung: kein Erwartungshorizont (nur für allgemeine Aufgaben) */}
+        {!istProjektaufgabe && !hatErwartungshorizont && (
           <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
             <span>
