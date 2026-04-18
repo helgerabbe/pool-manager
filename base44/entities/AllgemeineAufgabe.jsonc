@@ -144,6 +144,22 @@
       },
       "default": []
     },
+    "brian_dialog_name": {
+      "type": "string",
+      "description": "Brian.study: Name des Dialogs (entspricht dem Aufgabentitel)"
+    },
+    "brian_learner_instruction": {
+      "type": "string",
+      "description": "Brian.study: Anweisung f\u00fcr Lernende (sichtbar f\u00fcr Sch\u00fcler)"
+    },
+    "brian_system_instruction": {
+      "type": "string",
+      "description": "Brian.study: Interne System-Anweisung / Tutor-Persona (nicht f\u00fcr Sch\u00fcler sichtbar)"
+    },
+    "brian_completion_rule": {
+      "type": "string",
+      "description": "Brian.study: Abbruchbedingung \u2013 wann ist der Dialog beendet?"
+    },
     "prioritaete_lernziele": {
       "type": "array",
       "items": {
@@ -180,7 +196,7 @@
         "error"
       ],
       "default": "new",
-      "description": "Legacy Moodle-Sync-Status (wird durch moodle_sync_status ersetzt)"
+      "description": "Legacy Moodle-Sync-Status"
     },
     "moodle_sync_status": {
       "type": "string",

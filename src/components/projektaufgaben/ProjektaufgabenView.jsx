@@ -12,14 +12,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { Plus, Star, FileText, ChevronRight, Edit, Trash2, Copy, CheckCircle2, PenLine, Lock, Wand2 } from 'lucide-react';
+import { Plus, Star, FileText, ChevronRight, Edit, Trash2, CheckCircle2, PenLine, Lock, Wand2 } from 'lucide-react';
 import TaskStatusBadge from '@/components/ui/TaskStatusBadge';
 import TaskLockBar from '@/components/ui/TaskLockBar';
 import ProjektCreateView from './ProjektCreateView';
 import PublishProjektaufgabeButton from './PublishProjektaufgabeButton';
 import AbgabeDefinitionSection from './AbgabeDefinitionSection';
 import LernlandkartePreview from '@/components/lernlandkarte/LernlandkartePreview';
-import { generateInteractiveProjectCoach } from '@/utils/generateInteractiveProjectCoach';
+import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
 import { toast } from 'sonner';
 import { useTaskLock } from '@/hooks/useTaskLock';
 import { base44 } from '@/api/base44Client';
@@ -242,71 +242,7 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
   );
 }
 
-// ── Projekt-Coach Prompt Panel ──
-function ProjektCoachPanel({ aufgabe, einheit, lernpakete, lernziele }) {
-  const [copied, setCopied] = React.useState(false);
 
-  const prompt = useMemo(
-    () => generateInteractiveProjectCoach(aufgabe, einheit, lernpakete, lernziele),
-    [aufgabe, einheit, lernpakete, lernziele]
-  );
-
-  const handleCopyPrompt = async () => {
-    if (!prompt) return;
-    try {
-      await navigator.clipboard.writeText(prompt);
-      setCopied(true);
-      toast.success('Prompt in Zwischenablage kopiert');
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      toast.error('Fehler beim Kopieren');
-    }
-  };
-
-  if (!prompt) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <p className="text-muted-foreground">Keine Daten verfügbar</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4 p-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Projekt-Coach Prompt</h3>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleCopyPrompt}
-          className="gap-2"
-        >
-          {copied ? (
-            <>
-              <CheckCircle2 className="w-4 h-4 text-green-600" />
-              Kopiert
-            </>
-          ) : (
-            <>
-              <Copy className="w-4 h-4" />
-              Kopieren
-            </>
-          )}
-        </Button>
-      </div>
-
-      <pre className="bg-slate-50 p-4 rounded-md text-sm whitespace-pre-wrap text-foreground border border-border overflow-auto max-h-96">
-        {prompt}
-      </pre>
-
-      <p className="text-xs text-muted-foreground">
-        Dieser Prompt wird für das interaktive Coaching dieser Projektaufgabe verwendet. Er beinhaltet den Socratic-Dialog und die komplette Lernlandkarte als Kontext.
-      </p>
-    </div>
-  );
-}
 
 // ── Haupt-View für "Anwendungs- und Projektaufgaben" ──
 export default function ProjektaufgabenView({
@@ -529,13 +465,14 @@ export default function ProjektaufgabenView({
                 />
                </TabsContent>
 
-               {/* Tab 3: Projekt-Coach Prompt */}
+               {/* Tab 4: Brian KI-Tutor Konfiguration */}
                <TabsContent value="ki-prompt" className="flex-1 overflow-y-auto m-0">
-                <ProjektCoachPanel
+                <AITutorPromptPanel
                   aufgabe={selectedAufgabe}
                   einheit={einheit}
-                  lernpakete={lernpakete}
-                  lernziele={lernziele}
+                  mappedLernziele={lernziele}
+                  mappedBasisLernziele={[]}
+                  kannBearbeiten={kannBearbeiten && lock.isEditMode}
                 />
               </TabsContent>
             </Tabs>
