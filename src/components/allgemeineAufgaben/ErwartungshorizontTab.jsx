@@ -258,7 +258,7 @@ export default function ErwartungshorizontTab({
             <textarea
               value={refinementText}
               onChange={e => setRefinementText(e.target.value)}
-              placeholder="z.B. „Bitte den Punkt Methoden kürzen und stärker auf inhaltliche Kriterien eingehen.""
+              placeholder={'z.B. "Bitte den Punkt Methoden kürzen und stärker auf inhaltliche Kriterien eingehen."'}
               className="w-full h-20 p-2.5 border border-amber-200 rounded-lg text-xs resize-none focus:outline-none focus:ring-1 focus:ring-amber-400 bg-white"
             />
             <Button
