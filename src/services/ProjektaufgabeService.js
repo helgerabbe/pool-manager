@@ -121,12 +121,19 @@ export async function lockProjectTask(taskId, userEmail) {
       }
     }
     
-    // CRITICAL: Nur Lock-Felder updaten – nicht die ganze Entität!
+    // CRITICAL: Nur Lock-Felder updaten + rubric_criteria normalisieren
     // Das verhindert Validierungsfehler bei kaputten Feldern wie rubric_criteria
     const lockData = {
       locked_by: userEmail,
       locked_at: new Date().toISOString(),
     };
+    
+    // Fallback: rubric_criteria normalisieren falls es ein Objekt ist
+    if (aufgabe.rubric_criteria && !Array.isArray(aufgabe.rubric_criteria)) {
+      lockData.rubric_criteria = [];
+      console.log('[DEBUG-SERVICE] Fixed rubric_criteria from object to array');
+    }
+    
     console.log('[DEBUG-SERVICE] Updating AllgemeineAufgabe with lock:', lockData);
     const result = await base44.entities.AllgemeineAufgabe.update(taskId, lockData);
     console.log('[DEBUG-SERVICE] Update success:', result);
