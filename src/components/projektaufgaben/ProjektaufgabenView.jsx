@@ -283,6 +283,7 @@ export default function ProjektaufgabenView({
   const { data: allLernpakete = [] } = useQuery({
     queryKey: ['lernpakete'],
     queryFn: () => getAllLernpakete(),
+    enabled: !!einheitId,
   });
 
   // Filtere nur Pakete für diese Einheit
@@ -291,6 +292,7 @@ export default function ProjektaufgabenView({
   const { data: allLernziele = [] } = useQuery({
     queryKey: ['lernziele'],
     queryFn: () => getAllLernziele(),
+    enabled: !!einheitId && allLernpakete.length > 0,
   });
 
   // Filtere nur Ziele für die Pakete dieser Einheit
@@ -299,6 +301,7 @@ export default function ProjektaufgabenView({
   const { data: aufgaben = [] } = useQuery({
     queryKey: ['aufgaben'],
     queryFn: () => getAllAufgabenbausteine(),
+    enabled: !!einheitId && allLernziele.length > 0,
   });
 
   // Delete-Mutation
