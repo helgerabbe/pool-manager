@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Wand2, Sparkles, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
+import SpeechInputButton from '@/components/ui/SpeechInputButton';
 
 async function generateTaskIdea(idee, task_type) {
   const response = await base44.functions.invoke('generateTaskProposal', { idee, task_type });
@@ -107,9 +108,12 @@ export default function AiTaskWizardModal({
               Beschreibe kurz deine Idee für eine Aufgabe. Die KI erstellt daraus einen vollständigen Entwurf.
             </p>
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Deine grobe Idee
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Deine grobe Idee
+                </label>
+                <SpeechInputButton value={idee} onResult={setIdee} />
+              </div>
               <textarea
                 value={idee}
                 onChange={e => setIdee(e.target.value)}
