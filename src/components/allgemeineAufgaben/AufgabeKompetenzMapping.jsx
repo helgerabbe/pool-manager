@@ -312,13 +312,14 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
     [themenfelder, lernzieleDeEinheit, lernpakete]
   );
 
+  // Lernziele dieser Einheit, die keinem Themenfeld zugeordnet sind
   const unzugeordneteLernziele = useMemo(
     () =>
-      alleLernziele.filter((lz) => {
+      lernzieleDeEinheit.filter((lz) => {
         const paket = lernpakete.find((p) => p.id === lz.lernpaket_id);
-        return !paket || paket.einheit_id !== einheitId;
+        return !paket?.themenfeld_id;
       }),
-    [alleLernziele, lernpakete, einheitId]
+    [lernzieleDeEinheit, lernpakete]
   );
 
   return (
