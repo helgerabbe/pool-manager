@@ -62,14 +62,23 @@ export function useTaskLock({ aufgabe, userEmail, lockFn, unlockFn, invalidateKe
   }, [unlockFn]);
 
   const enterEditMode = useCallback(async () => {
-    if (!aufgabe?.id) return;
+    console.log('[DEBUG] 1. enterEditMode triggered, Task ID:', aufgabe?.id, 'userEmail:', userEmail);
+    if (!aufgabe?.id) {
+      console.error('[DEBUG] 1. ERROR: aufgabe.id ist leer!');
+      return;
+    }
     setIsLocking(true);
     try {
+      console.log('[DEBUG] 2. Calling lockFn with ID:', aufgabe.id);
       await lockFn(aufgabe.id, userEmail);
+      console.log('[DEBUG] 3. lockFn SUCCESS – invalidating queries:', invalidateKeys);
       invalidateKeys.forEach(key => queryClient.invalidateQueries({ queryKey: key }));
+      console.log('[DEBUG] 4. Setting isEditMode = true');
       setIsEditMode(true);
       isEditModeRef.current = true;
+      toast.success('Bearbeitungsmodus aktiviert – Sie können die Aufgabe jetzt ändern.');
     } catch (err) {
+      console.error('[DEBUG] 3. lockFn FAILED:', err);
       // Spezifische Fehlermeldungen je nach Fehlertyp
       const errorMsg = err.message || '';
       

@@ -102,19 +102,36 @@ export async function generateProjectTaskIdea(idee, task_type = 'Anwendungsaufga
  * Sperre setzen. Schlägt fehl, wenn bereits von einem anderen Nutzer gesperrt.
  */
 export async function lockProjectTask(taskId, userEmail) {
+  console.log('[DEBUG-SERVICE] lockProjectTask called with taskId:', taskId, 'userEmail:', userEmail);
   const TIMEOUT_MS = 60 * 60 * 1000;
-  const current = await base44.entities.AllgemeineAufgabe.filter({ id: taskId });
-  const aufgabe = current[0];
-  if (aufgabe?.locked_by && aufgabe.locked_by !== userEmail) {
-    const age = Date.now() - new Date(aufgabe.locked_at || 0).getTime();
-    if (age < TIMEOUT_MS) {
-      throw new Error(`Wird gerade von ${aufgabe.locked_by} bearbeitet.`);
+  
+  try {
+    const current = await base44.entities.AllgemeineAufgabe.filter({ id: taskId });
+    console.log('[DEBUG-SERVICE] Filter result:', current);
+    const aufgabe = current[0];
+    
+    if (!aufgabe) {
+      throw new Error(`Aufgabe mit ID ${taskId} nicht gefunden`);
     }
+    
+    if (aufgabe?.locked_by && aufgabe.locked_by !== userEmail) {
+      const age = Date.now() - new Date(aufgabe.locked_at || 0).getTime();
+      if (age < TIMEOUT_MS) {
+        throw new Error(`Wird gerade von ${aufgabe.locked_by} bearbeitet.`);
+      }
+    }
+    
+    console.log('[DEBUG-SERVICE] Updating AllgemeineAufgabe with lock:', { locked_by: userEmail, locked_at: new Date().toISOString() });
+    const result = await base44.entities.AllgemeineAufgabe.update(taskId, {
+      locked_by: userEmail,
+      locked_at: new Date().toISOString(),
+    });
+    console.log('[DEBUG-SERVICE] Update success:', result);
+    return result;
+  } catch (err) {
+    console.error('[DEBUG-SERVICE] lockProjectTask ERROR:', err.message);
+    throw err;
   }
-  return base44.entities.AllgemeineAufgabe.update(taskId, {
-    locked_by: userEmail,
-    locked_at: new Date().toISOString(),
-  });
 }
 
 /**
