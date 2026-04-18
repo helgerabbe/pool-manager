@@ -56,12 +56,14 @@ Erstelle einen detaillierten, strukturierten Erwartungshorizont, der folgende Pu
 
 Formatiere die Antwort strukturiert und präzise, damit sie als Richtlinie für die KI-Lernbegleitung dient.`;
 
-    const response = await base44.integrations.Core.InvokeLLM({
+    const generatedText = await base44.integrations.Core.InvokeLLM({
       prompt,
       model: 'automatic'
     });
 
-    const generatedText = response.data;
+    if (!generatedText || typeof generatedText !== 'string') {
+      return Response.json({ error: 'KI hat kein Ergebnis zurückgegeben' }, { status: 500 });
+    }
 
     return Response.json({
       success: true,

@@ -9,7 +9,8 @@ import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Sparkles, Loader2, Save } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AlertCircle, Sparkles, Loader2, Save, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ErwartungshorizontTab({
@@ -28,6 +29,10 @@ export default function ErwartungshorizontTab({
   const isEbene3 = aufgabe?.anforderungsebene === '3 - Projekt';
   const hasErwartungshorizont = isEbene2 || isEbene3;
 
+  // Dialog-State für Zusatzinfos
+  const [showContextDialog, setShowContextDialog] = useState(false);
+  const [extraContext, setExtraContext] = useState('');
+
   // Update Mutation
   const updateMutation = useMutation({
     mutationFn: (data) =>
@@ -44,16 +49,16 @@ export default function ErwartungshorizontTab({
     updateMutation.mutate({ erwartungshorizont: editText });
   };
 
-  const handleGenerateWithAI = async () => {
-    if (!aufgabe.aufgabenstellung?.trim()) {
-      toast.error('Bitte füllen Sie zuerst die Aufgabenstellung aus.');
-      return;
-    }
-
+  const doGenerate = async (additionalContext = '') => {
     setIsGenerating(true);
+    setShowContextDialog(false);
     try {
+      const aufgabenstellungMitKontext = additionalContext?.trim()
+        ? `${aufgabe.aufgabenstellung}\n\nZusätzlicher Kontext: ${additionalContext}`
+        : aufgabe.aufgabenstellung;
+
       const response = await base44.functions.invoke('generateErwartungshorizont', {
-        aufgabenstellung: aufgabe.aufgabenstellung,
+        aufgabenstellung: aufgabenstellungMitKontext,
         lernziele: mappedLernziele.map(lz => ({
           formulierung_fachsprache: lz.formulierung_fachsprache || lz.title,
           title: lz.title
@@ -70,9 +75,22 @@ export default function ErwartungshorizontTab({
       }
     } catch (err) {
       toast.error('Fehler bei der KI-Generierung: ' + err.message);
-      console.error(err);
     } finally {
       setIsGenerating(false);
+      setExtraContext('');
+    }
+  };
+
+  const handleGenerateWithAI = () => {
+    if (!aufgabe.aufgabenstellung?.trim()) {
+      toast.error('Bitte füllen Sie zuerst die Aufgabenstellung aus.');
+      return;
+    }
+    // Wenn keine Lernziele verknüpft: Rückfrage-Dialog zeigen
+    if (mappedLernziele.length === 0) {
+      setShowContextDialog(true);
+    } else {
+      doGenerate();
     }
   };
 
@@ -93,6 +111,51 @@ export default function ErwartungshorizontTab({
   }
 
   return (
+    <>
+    {/* Rückfrage-Dialog wenn keine Lernziele */}
+    <Dialog open={showContextDialog} onOpenChange={setShowContextDialog}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <HelpCircle className="w-5 h-5 text-accent" />
+            Zusätzlicher Kontext für die KI
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <p className="text-sm text-muted-foreground">
+            Es sind noch keine Lernziele mit dieser Aufgabe verknüpft. Die KI kann trotzdem einen Erwartungshorizont erstellen – aber ein kurzer Hinweis hilft ihr dabei.
+          </p>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Was sollen die Schüler zeigen oder können? (optional)
+            </label>
+            <textarea
+              value={extraContext}
+              onChange={e => setExtraContext(e.target.value)}
+              placeholder="z.B. Die Schüler sollen die Ursachen des Attentats erklären und in den historischen Kontext einordnen können…"
+              className="w-full h-28 p-3 border border-border rounded-lg text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+              autoFocus
+            />
+          </div>
+          <p className="text-xs text-muted-foreground italic">
+            Kein Hinweis? Kein Problem – die KI erstellt auf Basis der Aufgabenstellung einen Vorschlag.
+          </p>
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => setShowContextDialog(false)}>
+            Abbrechen
+          </Button>
+          <Button variant="outline" onClick={() => doGenerate('')} className="gap-2">
+            Ohne Hinweis generieren
+          </Button>
+          <Button onClick={() => doGenerate(extraContext)} className="gap-2">
+            <Sparkles className="w-4 h-4" />
+            Generieren
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {/* Header mit Generierung-Button */}
@@ -209,5 +272,6 @@ export default function ErwartungshorizontTab({
         </div>
       )}
     </div>
+    </>
   );
 }
