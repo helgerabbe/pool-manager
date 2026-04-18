@@ -174,9 +174,15 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
                 {mat.type === 'image' && mat.url ? (
                   <img src={mat.url} alt={mat.label || 'Bild'} className="max-h-48 rounded border border-border object-contain mb-2" />
                 ) : null}
+                {mat.type === 'pdf' && mat.url ? (
+                  <iframe src={mat.url} className="w-full h-56 rounded border border-border mb-2" title={mat.label || 'PDF'} />
+                ) : null}
                 <p className="font-medium mb-0.5">
-                  {mat.type === 'freitext' && '📝'} {mat.type === 'pdf' && '📄'} {mat.type === 'image' && !mat.url && '🖼️'} {mat.type === 'book_ref' && '📚'}
-                  {' '}{mat.label || mat.content || (mat.type !== 'image' ? mat.url : '') || '…'}
+                  {mat.type === 'freitext' && '📝'}
+                  {mat.type === 'pdf' && !mat.url && '📄'}
+                  {mat.type === 'image' && !mat.url && '🖼️'}
+                  {mat.type === 'book_ref' && '📚'}
+                  {' '}{mat.label || mat.content || (mat.type === 'image' || mat.type === 'pdf' ? '' : mat.url) || '…'}
                 </p>
                 {mat.content && <p className="text-muted-foreground line-clamp-2">{mat.content}</p>}
               </div>

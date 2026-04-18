@@ -108,10 +108,15 @@ function MaterialUploader({ materials, onMaterialsChange }) {
                 {mat.type === 'image' && mat.url ? (
                   <img src={mat.url} alt={mat.label || 'Bild'} className="max-h-32 rounded border border-border object-contain mb-1" />
                 ) : null}
+                {mat.type === 'pdf' && mat.url ? (
+                  <iframe src={mat.url} className="w-full h-40 rounded border border-border mb-1" title={mat.label || 'PDF'} />
+                ) : null}
                 <span className="break-words text-xs text-muted-foreground">
-                  {mat.type === 'freitext' && '📝'} {mat.type === 'pdf' && '📄'}{' '}
-                  {mat.type === 'image' && !mat.url && '🖼️'} {mat.type === 'book_ref' && '📚'}
-                  {mat.label || mat.content || (mat.type === 'image' ? '' : mat.url) || '…'}
+                  {mat.type === 'freitext' && '📝'}
+                  {mat.type === 'pdf' && !mat.url && '📄'}
+                  {mat.type === 'image' && !mat.url && '🖼️'}
+                  {mat.type === 'book_ref' && '📚'}
+                  {mat.label || mat.content || (mat.type === 'image' || mat.type === 'pdf' ? '' : mat.url) || '…'}
                 </span>
               </div>
               <button
