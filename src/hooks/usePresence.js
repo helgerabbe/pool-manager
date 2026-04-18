@@ -128,21 +128,26 @@ export function usePresence(currentView = 'dashboard') {
       let recordId;
       if (existing.length > 0) {
         recordId = existing[0].id;
-        const updateResult = await updatePresenceRecord(recordId, {
-          last_seen_at: now,
-          user_name: user.full_name || user.email,
-          current_view: currentView,
-        });
-        if (updateResult === null) {
-          // Record wurde extern gelöscht – neu erstellen
-          recordId = null;
-        } else {
-          // Duplikate löschen (Fehler silent ignorieren, wenn bereits gelöscht)
-          for (let i = 1; i < existing.length; i++) {
-            deletePresenceRecord(existing[i].id).catch(err => {
-              console.debug('[usePresence] Duplicate delete failed (probably already gone):', err.message);
-            });
+        try {
+          const updateResult = await updatePresenceRecord(recordId, {
+            last_seen_at: now,
+            user_name: user.full_name || user.email,
+            current_view: currentView,
+          });
+          if (updateResult === null) {
+            // Record wurde extern gelöscht – neu erstellen
+            recordId = null;
+          } else {
+            // Duplikate löschen (Fehler silent ignorieren, wenn bereits gelöscht)
+            for (let i = 1; i < existing.length; i++) {
+              deletePresenceRecord(existing[i].id).catch(err => {
+                console.debug('[usePresence] Duplicate delete failed (probably already gone):', err.message);
+              });
+            }
           }
+        } catch (err) {
+          console.debug('[usePresence] Update existing record failed, recreating:', err.message);
+          recordId = null;
         }
         if (!recordId) {
           try {
