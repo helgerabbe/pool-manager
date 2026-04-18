@@ -429,16 +429,13 @@ export default function ProjektaufgabenView({
 
               {/* Tab 1: Allgemeine Angaben */}
               <TabsContent value="angaben" className="flex-1 overflow-y-auto m-0">
-                <AllgemeineAngabenPanel
-                  aufgabe={selectedAufgabe}
-                  themenfelder={themenfelder}
-                  kannBearbeiten={kannBearbeiten && lock.isEditMode}
-                  onEdit={(a) => {
-                    setEditingAufgabe(a);
-                    setCreateFormOpen(true);
-                  }}
-                  onDelete={(id) => deleteAufgabe.mutate(id)}
-                />
+               <AllgemeineAngabenPanel
+                 aufgabe={selectedAufgabe}
+                 themenfelder={themenfelder}
+                 kannBearbeiten={kannBearbeiten && lock.isEditMode}
+                 onEdit={() => lock.enterEditMode()}
+                 onDelete={(id) => deleteAufgabe.mutate(id)}
+               />
               </TabsContent>
 
               {/* Tab 2: Abgabe & Gütekriterien */}
