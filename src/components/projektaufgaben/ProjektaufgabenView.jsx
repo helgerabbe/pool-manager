@@ -6,12 +6,13 @@ import { getAllLernziele } from '@/services/LernzielService';
 import { getAllAufgabenbausteine } from '@/services/AufgabenbausteinService';
 import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
 import { getAufgabenByEinheit, updateAllgemeineAufgabe, deleteAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
-import { lockProjectTask, unlockProjectTask } from '@/services/ProjektaufgabeService';
+import { lockProjectTask, unlockProjectTask, createProjectTask } from '@/services/ProjektaufgabeService';
+import AiTaskWizardModal from '@/components/ui/AiTaskWizardModal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { Plus, Star, FileText, ChevronRight, Edit, Trash2, Copy, CheckCircle2, PenLine, Lock } from 'lucide-react';
+import { Plus, Star, FileText, ChevronRight, Edit, Trash2, Copy, CheckCircle2, PenLine, Lock, Wand2 } from 'lucide-react';
 import TaskStatusBadge from '@/components/ui/TaskStatusBadge';
 import TaskLockBar from '@/components/ui/TaskLockBar';
 import ProjektCreateView from './ProjektCreateView';
@@ -317,6 +318,7 @@ export default function ProjektaufgabenView({
   const [createFormOpen, setCreateFormOpen] = useState(false);
   const [editingAufgabe, setEditingAufgabe] = useState(null);
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(u => setCurrentUserEmail(u?.email ?? null)).catch(() => {});
@@ -414,7 +416,7 @@ export default function ProjektaufgabenView({
         <aside className="w-80 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden">
           {/* Button für neue Aufgabe */}
           {kannBearbeiten && (
-            <div className="shrink-0 px-4 py-3 border-b border-border">
+            <div className="shrink-0 px-4 py-3 border-b border-border space-y-2">
               <Button
                 size="sm"
                 onClick={() => {
@@ -425,6 +427,15 @@ export default function ProjektaufgabenView({
               >
                 <Plus className="w-4 h-4" />
                 Neue Aufgabe
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setWizardOpen(true)}
+                className="gap-2 w-full border-primary/40 text-primary hover:bg-primary/5"
+              >
+                <Wand2 className="w-4 h-4" />
+                Mit KI entwerfen
               </Button>
             </div>
           )}
@@ -540,6 +551,21 @@ export default function ProjektaufgabenView({
           </main>
         )}
       </div>
+
+      {/* KI-Wizard */}
+      <AiTaskWizardModal
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        taskType="Anwendungsaufgabe / Projektaufgabe"
+        onSave={async ({ titel, aufgabenstellung, ki_kompetenz_tags }) => {
+          await createProjectTask(einheitId, {
+            titel,
+            aufgabenstellung,
+            ki_kompetenz_tags,
+          });
+          queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheitId] });
+        }}
+      />
 
       {/* Create/Edit Dialog */}
       <ProjektCreateView

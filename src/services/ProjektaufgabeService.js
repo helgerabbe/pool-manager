@@ -65,6 +65,16 @@ export async function getProjectTasksByEinheit(einheitId) {
   return all.filter(a => a.anforderungsebene === '3 - Projekt');
 }
 
+// ── KI-Aufgaben-Assistent ─────────────────────────────────────────────────────
+
+/**
+ * KI-Vorschlag für eine Projektaufgabe generieren.
+ */
+export async function generateProjectTaskIdea(idee, task_type = 'Anwendungsaufgabe / Projektaufgabe') {
+  const response = await base44.functions.invoke('generateTaskProposal', { idee, task_type });
+  return response.data;
+}
+
 // ── Bearbeitungssperre (Locking) ──────────────────────────────────────────────
 
 /**

@@ -152,6 +152,16 @@ export async function unapproveAufgabe(id) {
   return base44.entities.AllgemeineAufgabe.update(id, { content_status: 'draft' });
 }
 
+// ── KI-Aufgaben-Assistent ─────────────────────────────────────────────────────
+
+/**
+ * KI-Vorschlag für eine Aufgabe generieren.
+ */
+export async function generateTaskIdea(idee, task_type = 'Allgemeine Aufgabe') {
+  const response = await base44.functions.invoke('generateTaskProposal', { idee, task_type });
+  return response.data;
+}
+
 // ── Bearbeitungssperre (Locking) ──────────────────────────────────────────────
 
 /**

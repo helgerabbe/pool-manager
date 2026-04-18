@@ -4,13 +4,13 @@ import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
 import { getEinheitById } from '@/services/EinheitenService';
 import { getAllLernpakete } from '@/services/LernpaketService';
 import { getAllLernziele } from '@/services/LernzielService';
-import { getAufgabenByEinheit, getMappingsByAufgabe, deleteAllgemeineAufgabe, lockTask, unlockTask } from '@/services/AllgemeineAufgabeService';
+import { getAufgabenByEinheit, getMappingsByAufgabe, deleteAllgemeineAufgabe, lockTask, unlockTask, createAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
 import { getAllBasisLernziele, getAllBasismodule } from '@/services/BasisLernzielService';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { Plus, Star, FileText, ChevronRight, Edit, Trash2, CheckCircle2, PenLine, Lock } from 'lucide-react';
+import { Plus, Star, FileText, ChevronRight, Edit, Trash2, CheckCircle2, PenLine, Lock, Wand2 } from 'lucide-react';
 import TaskStatusBadge from '@/components/ui/TaskStatusBadge';
 import TaskLockBar from '@/components/ui/TaskLockBar';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
@@ -21,6 +21,7 @@ import PublishAllgemeineAufgabeButton from '@/components/allgemeineAufgaben/Publ
 import ErwartungshorizontTab from '@/components/allgemeineAufgaben/ErwartungshorizontTab';
 import { useTaskLock } from '@/hooks/useTaskLock';
 import { base44 } from '@/api/base44Client';
+import AiTaskWizardModal from '@/components/ui/AiTaskWizardModal';
 
 /**
  * Schwierigkeitsgrad-Anzeige (1-3 Sterne)
@@ -238,6 +239,7 @@ export default function AllgemeineAufgabenView({
   const [createFormOpen, setCreateFormOpen] = useState(false);
   const [editingAufgabe, setEditingAufgabe] = useState(null);
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   // Aktuellen Nutzer laden
   React.useEffect(() => {
@@ -364,7 +366,7 @@ export default function AllgemeineAufgabenView({
         <aside className="w-80 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden">
           {/* Button für neue Aufgabe */}
           {kannBearbeiten && (
-            <div className="shrink-0 px-4 py-3 border-b border-border">
+            <div className="shrink-0 px-4 py-3 border-b border-border space-y-2">
               <Button
                 size="sm"
                 onClick={() => {
@@ -375,6 +377,15 @@ export default function AllgemeineAufgabenView({
               >
                 <Plus className="w-4 h-4" />
                 Neue Aufgabe
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setWizardOpen(true)}
+                className="gap-2 w-full border-primary/40 text-primary hover:bg-primary/5"
+              >
+                <Wand2 className="w-4 h-4" />
+                Mit KI entwerfen
               </Button>
             </div>
           )}
@@ -483,6 +494,23 @@ export default function AllgemeineAufgabenView({
           </main>
         )}
       </div>
+
+      {/* KI-Wizard */}
+      <AiTaskWizardModal
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        taskType={anforderungsebene === '3 - Projekt' ? 'Projektaufgabe' : 'Allgemeine Aufgabe (Transfer)'}
+        onSave={async ({ titel, aufgabenstellung, ki_kompetenz_tags }) => {
+          await createAllgemeineAufgabe({
+            einheit_id: einheitId,
+            anforderungsebene,
+            titel,
+            aufgabenstellung,
+            ki_kompetenz_tags,
+          });
+          queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheitId] });
+        }}
+      />
 
       {/* Create/Edit Dialog */}
       <AufgabeCreateView
