@@ -207,13 +207,20 @@ export default function AITutorPromptPanel({
 
   // Manuell gespeicherte Änderungen sichern
   const saveMutation = useMutation({
-    mutationFn: () => base44.entities.AllgemeineAufgabe.update(aufgabe.id, segments),
+    mutationFn: () => {
+      const dataToSave = { ...segments };
+      // Stelle sicher, dass rubric_criteria nur mitgespeichert wird wenn es ein Array ist
+      if (!Array.isArray(aufgabe.rubric_criteria)) {
+        dataToSave.rubric_criteria = [];
+      }
+      return base44.entities.AllgemeineAufgabe.update(aufgabe.id, dataToSave);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
       setIsDirty(false);
       toast.success('Segmente gespeichert.');
     },
-    onError: () => toast.error('Fehler beim Speichern.'),
+    onError: (err) => toast.error('Fehler beim Speichern: ' + err.message),
   });
 
   if (!aufgabe) return null;

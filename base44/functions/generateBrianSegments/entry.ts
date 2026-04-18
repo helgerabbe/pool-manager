@@ -143,7 +143,9 @@ Antworte NUR mit validem JSON in diesem Format:
 
   // Wenn bereits Rubriken vorhanden, überschreibe sie nicht
   if (rubrikenStr && result.rubric_criteria?.length === 0) {
-    result.rubric_criteria = task.rubric_criteria || [];
+    result.rubric_criteria = Array.isArray(task.rubric_criteria) ? task.rubric_criteria : [];
+  } else if (!Array.isArray(result.rubric_criteria)) {
+    result.rubric_criteria = [];
   }
 
   return Response.json({ segments: result, status: 'success' });
