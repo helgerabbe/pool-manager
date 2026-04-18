@@ -102,12 +102,12 @@ function MaterialUploader({ materials, onMaterialsChange }) {
           {materials.map((mat, idx) => (
             <div
               key={idx}
-              className="flex items-center justify-between p-2 rounded bg-white border border-border text-sm"
+              className="flex items-start justify-between p-2 rounded bg-white border border-border text-sm gap-2"
             >
-              <span>
+              <span className="flex-1 min-w-0 break-words">
                 {mat.type === 'freitext' && '📝'} {mat.type === 'pdf' && '📄'}{' '}
                 {mat.type === 'image' && '🖼️'} {mat.type === 'book_ref' && '📚'}
-                <span className="ml-2 truncate">{mat.label || mat.content || mat.url || '…'}</span>
+                <span className="ml-1">{mat.label || mat.content || mat.url || '…'}</span>
               </span>
               <button
                 onClick={() => removeMaterial(idx)}
