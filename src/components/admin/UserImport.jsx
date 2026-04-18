@@ -192,8 +192,24 @@ function FieldMapping({ headers, mapping, onMapping, trennzeichen, onTrennzeiche
 function Vorschau({ rows, mapping, trennzeichen }) {
   const preview = rows.slice(0, 5);
 
+  // Auto-Hints für Spalten-Matching
+  const autoHints = {
+    email: ['email', 'e-mail', 'mail', 'emailadresse', 'e_mail'],
+    vorname: ['vorname', 'firstname', 'first_name', 'given_name', 'forename'],
+    nachname: ['nachname', 'lastname', 'last_name', 'surname', 'family_name'],
+    rolle: ['rolle', 'role', 'funktion', 'position'],
+    faecher: ['fach', 'fächer', 'faecher', 'lehrbefähigung', 'lehrbefaehigung', 'subject', 'subjects'],
+  };
+
+  const getAutoMatch = (dbKey) => {
+    const hints = autoHints[dbKey] || [];
+    const headers = preview.length > 0 ? Object.keys(preview[0]) : [];
+    return headers.find(h => hints.some(hint => h.toLowerCase().includes(hint))) || '';
+  };
+
   const getMappedValue = (row, dbKey) => {
-    const col = mapping[dbKey];
+    // Nutze Manual-Mapping falls vorhanden, sonst Auto-Match
+    const col = mapping[dbKey] || getAutoMatch(dbKey);
     if (!col) return null;
     const val = row[col] || '';
     if (dbKey === 'faecher') {
