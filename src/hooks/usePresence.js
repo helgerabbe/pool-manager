@@ -42,23 +42,43 @@ export function usePresence(currentView = 'dashboard') {
     // ── Heartbeat-Funktion (wiederverwendbar für Visibility-Event) ──
     const sendHeartbeat = async () => {
       if (!myRecordIdRef.current) return;
-      const result = await updatePresenceRecord(myRecordIdRef.current, {
-        last_seen_at: new Date().toISOString(),
-        current_view: currentView,
-      });
-      // null = Eintrag wurde extern gelöscht – neu erstellen
-      if (result === null && myEmailRef.current) {
-        myRecordIdRef.current = null;
-        try {
-          const created = await createPresenceRecord({
-            user_email: myEmailRef.current,
-            user_name: myEmailRef.current,
-            current_view: currentView,
-            last_seen_at: new Date().toISOString(),
-          });
-          myRecordIdRef.current = created.id;
-        } catch (e) {
-          console.warn('[usePresence] Could not recreate record:', e.message);
+      try {
+        const result = await updatePresenceRecord(myRecordIdRef.current, {
+          last_seen_at: new Date().toISOString(),
+          current_view: currentView,
+        });
+        // null = Eintrag wurde extern gelöscht – neu erstellen
+        if (result === null && myEmailRef.current) {
+          myRecordIdRef.current = null;
+          try {
+            const created = await createPresenceRecord({
+              user_email: myEmailRef.current,
+              user_name: myEmailRef.current,
+              current_view: currentView,
+              last_seen_at: new Date().toISOString(),
+            });
+            myRecordIdRef.current = created.id;
+          } catch (e) {
+            console.warn('[usePresence] Could not recreate record:', e.message);
+          }
+        }
+      } catch (err) {
+        // 404 = Record wurde gelöscht, recreate it
+        if (err.response?.status === 404 && myEmailRef.current) {
+          myRecordIdRef.current = null;
+          try {
+            const created = await createPresenceRecord({
+              user_email: myEmailRef.current,
+              user_name: myEmailRef.current,
+              current_view: currentView,
+              last_seen_at: new Date().toISOString(),
+            });
+            myRecordIdRef.current = created.id;
+          } catch (e) {
+            console.warn('[usePresence] Could not recreate after 404:', e.message);
+          }
+        } else {
+          console.debug('[usePresence] Heartbeat failed:', err.message);
         }
       }
     };
