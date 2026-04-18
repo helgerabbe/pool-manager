@@ -387,7 +387,7 @@ export default function UserImport() {
         {/* Schritt-Indikator */}
         <div className="flex items-center gap-1 mt-3">
           {SCHRITTE.map((s, i) => (
-            <React.Fragment key={s}>
+            <div key={i} className="flex items-center gap-1">
               <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
                 schritt === i + 1
                   ? 'bg-primary text-primary-foreground'
@@ -399,7 +399,7 @@ export default function UserImport() {
                 {s}
               </div>
               {i < SCHRITTE.length - 1 && <div className="flex-1 h-px bg-border" />}
-            </React.Fragment>
+            </div>
           ))}
         </div>
       </CardHeader>
