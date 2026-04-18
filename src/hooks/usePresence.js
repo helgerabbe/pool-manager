@@ -117,9 +117,11 @@ export function usePresence(currentView = 'dashboard') {
           // Record wurde extern gelöscht – neu erstellen
           recordId = null;
         } else {
-          // Duplikate löschen
+          // Duplikate löschen (Fehler silent ignorieren, wenn bereits gelöscht)
           for (let i = 1; i < existing.length; i++) {
-            deletePresenceRecord(existing[i].id).catch(() => {});
+            deletePresenceRecord(existing[i].id).catch(err => {
+              console.debug('[usePresence] Duplicate delete failed (probably already gone):', err.message);
+            });
           }
         }
         if (!recordId) {
