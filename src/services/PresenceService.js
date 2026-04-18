@@ -39,9 +39,15 @@ export async function createPresenceRecord(data) {
 
 /**
  * Bestehenden Präsenz-Eintrag aktualisieren (Heartbeat).
+ * Gibt null zurück wenn der Eintrag nicht mehr existiert (statt zu werfen).
  */
 export async function updatePresenceRecord(id, data) {
-  return base44.entities.ActiveUsersPresence.update(id, data);
+  try {
+    return await base44.entities.ActiveUsersPresence.update(id, data);
+  } catch (err) {
+    if (err.message?.includes('not found')) return null;
+    throw err;
+  }
 }
 
 /**

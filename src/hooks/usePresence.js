@@ -42,16 +42,13 @@ export function usePresence(currentView = 'dashboard') {
     // ── Heartbeat-Funktion (wiederverwendbar für Visibility-Event) ──
     const sendHeartbeat = async () => {
       if (!myRecordIdRef.current) return;
-      try {
-        await updatePresenceRecord(myRecordIdRef.current, {
-          last_seen_at: new Date().toISOString(),
-          current_view: currentView,
-        });
-      } catch (err) {
-        // Eintrag wurde extern gelöscht – neu erstellen
-        console.warn('[usePresence] Heartbeat failed, recreating record:', err.message);
+      const result = await updatePresenceRecord(myRecordIdRef.current, {
+        last_seen_at: new Date().toISOString(),
+        current_view: currentView,
+      });
+      // null = Eintrag wurde extern gelöscht – neu erstellen
+      if (result === null && myEmailRef.current) {
         myRecordIdRef.current = null;
-        if (!myEmailRef.current) return;
         try {
           const created = await createPresenceRecord({
             user_email: myEmailRef.current,
@@ -60,8 +57,8 @@ export function usePresence(currentView = 'dashboard') {
             last_seen_at: new Date().toISOString(),
           });
           myRecordIdRef.current = created.id;
-        } catch (e2) {
-          console.warn('[usePresence] Could not recreate record:', e2.message);
+        } catch (e) {
+          console.warn('[usePresence] Could not recreate record:', e.message);
         }
       }
     };
@@ -111,18 +108,21 @@ export function usePresence(currentView = 'dashboard') {
       let recordId;
       if (existing.length > 0) {
         recordId = existing[0].id;
-        try {
-          await updatePresenceRecord(recordId, {
-            last_seen_at: now,
-            user_name: user.full_name || user.email,
-            current_view: currentView,
-          });
+        const updateResult = await updatePresenceRecord(recordId, {
+          last_seen_at: now,
+          user_name: user.full_name || user.email,
+          current_view: currentView,
+        });
+        if (updateResult === null) {
+          // Record wurde extern gelöscht – neu erstellen
+          recordId = null;
+        } else {
           // Duplikate löschen
           for (let i = 1; i < existing.length; i++) {
             deletePresenceRecord(existing[i].id).catch(() => {});
           }
-        } catch {
-          // Record gelöscht – neu erstellen
+        }
+        if (!recordId) {
           try {
             const created = await createPresenceRecord({
               user_email: user.email,
