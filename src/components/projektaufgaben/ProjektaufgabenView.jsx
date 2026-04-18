@@ -451,7 +451,10 @@ export default function ProjektaufgabenView({
                  aufgabe={selectedAufgabe}
                  themenfelder={themenfelder}
                  kannBearbeiten={kannBearbeiten && lock.isEditMode}
-                 onEdit={() => lock.enterEditMode()}
+                 onEdit={() => {
+                   setEditingAufgabe(selectedAufgabe);
+                   setCreateFormOpen(true);
+                 }}
                  onDelete={(id) => deleteAufgabe.mutate(id)}
                />
               </TabsContent>
