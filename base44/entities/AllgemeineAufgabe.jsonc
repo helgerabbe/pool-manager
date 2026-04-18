@@ -126,19 +126,23 @@
       "description": "Optionaler Bewertungsschwerpunkt der Lehrkraft"
     },
     "rubric_criteria": {
-      "type": "object",
-      "description": "KI-generierte G\u00fctekriterien mit drei Niveaustufen",
-      "properties": {
-        "sufficient": {
-          "type": "string"
-        },
-        "good": {
-          "type": "string"
-        },
-        "excellent": {
-          "type": "string"
+      "type": "array",
+      "description": "Brian-kompatible Bewertungsrubriken: Array von {title, points, criteria_text}",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "points": {
+            "type": "number"
+          },
+          "criteria_text": {
+            "type": "string"
+          }
         }
-      }
+      },
+      "default": []
     },
     "prioritaete_lernziele": {
       "type": "array",
@@ -146,6 +150,14 @@
         "type": "string"
       },
       "description": "Array von Lernziel-IDs, die als hochpriorit\u00e4r markiert sind",
+      "default": []
+    },
+    "ki_kompetenz_tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Von der KI vorgeschlagene Kompetenz-Schlagworte (tempor\u00e4rer Hinweis f\u00fcr die Lehrkraft)",
       "default": []
     },
     "content_status": {
@@ -168,12 +180,39 @@
         "error"
       ],
       "default": "new",
-      "description": "Moodle-Sync-Status: new, pending, synced, modified, to_delete, error (fehlgeschlagener Export)"
+      "description": "Legacy Moodle-Sync-Status (wird durch moodle_sync_status ersetzt)"
+    },
+    "moodle_sync_status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "pending",
+        "synced",
+        "error"
+      ],
+      "default": "new",
+      "description": "Moodle-Export-Status: new, pending, synced, error"
+    },
+    "brian_sync_status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "pending",
+        "synced",
+        "error"
+      ],
+      "default": "new",
+      "description": "Brian.study-Export-Status: new, pending, synced, error"
     },
     "last_synced_at": {
       "type": "string",
       "format": "date-time",
       "description": "Zeitstempel des letzten erfolgreichen Moodle-Exports (nullable)"
+    },
+    "brian_synced_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel des letzten erfolgreichen Brian-Exports (nullable)"
     },
     "locked_by": {
       "type": "string",

@@ -7,7 +7,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { BookOpen, LayoutGrid, Zap, Wand2, ClipboardList, Target, CheckSquare, Rocket } from 'lucide-react';
+import { BookOpen, LayoutGrid, Zap, Wand2, ClipboardList, Target, CheckSquare, Rocket, ExternalLink } from 'lucide-react';
 import HelpDialog from '@/components/ui/HelpDialog';
 
 const TABS = [
@@ -104,6 +104,18 @@ const TABS = [
       faqs: [
         { question: 'Wer darf den Export bestätigen?', answer: 'Nur Administratoren und Moodle-Designer können den finalen Export auslösen und bestätigen.' },
         { question: 'Was passiert nach dem Export?', answer: 'Alle exportierten Elemente erhalten den Status "synced". Änderungen danach werden als "modified" markiert und müssen erneut exportiert werden.' },
+      ],
+    },
+  },
+  {
+    value: 'brian', label: 'Brian.study Export', icon: ExternalLink, step: 9,
+    help: {
+      title: 'Brian.study Export',
+      description: 'Generieren Sie Prompts für Brian.study und markieren Sie Aufgaben als exportiert (Dual-Lock).',
+      features: ['Globale Parameter setzen (Strenge, Sprache, Kursniveau)', 'Brian-Prompt pro Aufgabe generieren', 'Aufgabe als "In Brian" markieren – Dual-Lock aufheben'],
+      faqs: [
+        { question: 'Was ist der Dual-Lock?', answer: 'Eine Aufgabe bleibt gesperrt, bis sie in BEIDE Systeme exportiert wurde: Moodle UND Brian.study. Erst dann wird die Bearbeitungssperre aufgehoben.' },
+        { question: 'Was sind Bewertungsrubriken?', answer: 'Im Tab "Abgabe & Gütekriterien" (Ebene-3-Aufgaben) können Sie Brian-kompatible Rubriken mit Titel, Punkten und Kriterientext hinterlegen.' },
       ],
     },
   },

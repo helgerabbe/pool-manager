@@ -23,6 +23,7 @@ import EinheitUebersichtTab from '@/components/workspace/EinheitUebersichtTab';
 import MoodleExportTab from '@/components/workspace/MoodleExportTab';
 import ExportCockpitView from '@/components/export/ExportCockpitView';
 import MoodleExportView from '@/components/export/MoodleExportView';
+import BrianExportCockpitView from '@/components/export/BrianExportCockpitView';
 import AllgemeineAufgabenView from '@/components/allgemeineAufgaben/AllgemeineAufgabenView';
 import { deleteLernpaket as deleteLernpaketService } from '@/services/LernpaketService';
 import { deleteLernziel as deleteLernzielService } from '@/services/LernzielService';
@@ -40,7 +41,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const [selectedEinheitId, setSelectedEinheitId] = useState(initialEinheitId);
   const [selectedThemenfeldId, setSelectedThemenfeldId] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
-  const VALID_TABS = ['einheit', 'struktur', 'aktivitaeten', 'aufgaben', 'ebene2', 'ebene3', 'cockpit', 'export'];
+  const VALID_TABS = ['einheit', 'struktur', 'aktivitaeten', 'aufgaben', 'ebene2', 'ebene3', 'cockpit', 'export', 'brian'];
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'einheit');
   const [highlightedAtomIds, setHighlightedAtomIds] = useState(new Set());
@@ -593,6 +594,15 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                     userRole={rolle}
                     isAdmin={istAdmin}
                   />
+                </ErrorBoundary>
+              </div>
+            </TabsContent>
+
+            {/* ── Tab 9: Brian.study Export ─────────────────────────────────────── */}
+            <TabsContent value="brian" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
+              <div className="flex-1 overflow-y-auto">
+                <ErrorBoundary label="Brian Export">
+                  <BrianExportCockpitView />
                 </ErrorBoundary>
               </div>
             </TabsContent>

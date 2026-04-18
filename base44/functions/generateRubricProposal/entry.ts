@@ -9,38 +9,45 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { output_formats = [], custom_format = '', quality_focus = '' } = await req.json();
+    const { output_formats = [], custom_format = '', quality_focus = '', aufgabenstellung = '' } = await req.json();
 
-    // Formate zusammenbauen
     const alleFormate = [...output_formats];
     if (custom_format?.trim()) alleFormate.push(custom_format.trim());
 
-    if (alleFormate.length === 0) {
-      return Response.json({ error: 'Mindestens ein Abgabeformat muss angegeben werden.' }, { status: 400 });
-    }
-
-    const formateText = alleFormate.join(', ');
+    const formateText = alleFormate.length > 0 ? alleFormate.join(', ') : 'nicht spezifiziert';
     const fokusText = quality_focus?.trim()
       ? `Die Lehrkraft legt besonderen Wert auf: ${quality_focus.trim()}.`
       : '';
+    const aufgabeText = aufgabenstellung?.trim()
+      ? `Die Aufgabenstellung lautet: "${aufgabenstellung.trim()}"`
+      : '';
 
-    const prompt = `Du bist ein didaktischer Assistent für deutsche Schulen. Erstelle formelle Bewertungskriterien (Gütekriterien) für eine schulische Projektaufgabe.
+    const prompt = `Du bist ein didaktischer Assistent für deutsche Schulen. Erstelle 2 bis 3 thematische Bewertungsrubriken (Kategorien) für eine schulische Projektaufgabe.
 
-Die Schülerinnen und Schüler sollen folgende Abgabeformate erstellen: ${formateText}.
+${aufgabeText}
+Abgabeformate: ${formateText}.
 ${fokusText}
 
-Formuliere drei kurze, präzise Textblöcke (je 2–4 Sätze) für die drei Niveaustufen:
-- "Ausreichend": Minimale Anforderungen gerade erfüllt.
-- "Gut": Solide Leistung mit erkennbarer Auseinandersetzung.
-- "Sehr gut": Herausragende, eigenständige und durchdachte Leistung.
+Erstelle 2-3 sinnvolle Bewertungskategorien (z.B. "Inhaltliche Tiefe", "Darstellung & Struktur", "Quellenarbeit").
+Für jede Kategorie:
+- Ein prägnanter Titel (max. 5 Wörter)
+- Eine Punktzahl (typisch: 10 oder 15 Punkte je nach Gewichtung, Gesamtsumme ca. 25-30 Punkte)
+- Einen Kriterienstext: Ausformulierte Beschreibung was für die volle Punktzahl erwartet wird (3-5 Sätze)
 
-Die Kriterien sollen sich direkt auf die geforderten Formate und den genannten Fokus beziehen. Formuliere auf Deutsch, klar und beurteilbar.
-
-Antworte AUSSCHLIESSLICH mit einem JSON-Objekt in folgendem Format, ohne zusätzlichen Text oder Markdown:
+Antworte AUSSCHLIESSLICH mit einem JSON-Objekt in folgendem Format:
 {
-  "sufficient": "Text für ausreichende Leistung...",
-  "good": "Text für gute Leistung...",
-  "excellent": "Text für sehr gute Leistung..."
+  "rubrics": [
+    {
+      "title": "Inhaltliche Tiefe",
+      "points": 15,
+      "criteria_text": "..."
+    },
+    {
+      "title": "Darstellung & Struktur",
+      "points": 10,
+      "criteria_text": "..."
+    }
+  ]
 }`;
 
     const result = await base44.integrations.Core.InvokeLLM({
@@ -48,24 +55,28 @@ Antworte AUSSCHLIESSLICH mit einem JSON-Objekt in folgendem Format, ohne zusätz
       response_json_schema: {
         type: 'object',
         properties: {
-          sufficient: { type: 'string' },
-          good: { type: 'string' },
-          excellent: { type: 'string' },
+          rubrics: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                title: { type: 'string' },
+                points: { type: 'number' },
+                criteria_text: { type: 'string' },
+              },
+              required: ['title', 'points', 'criteria_text'],
+            },
+          },
         },
-        required: ['sufficient', 'good', 'excellent'],
+        required: ['rubrics'],
       },
     });
 
-    // result ist bereits ein geparster dict dank response_json_schema
-    if (!result?.sufficient || !result?.good || !result?.excellent) {
-      return Response.json({ error: 'KI hat kein gültiges Kriterien-Objekt zurückgegeben.' }, { status: 502 });
+    if (!result?.rubrics || result.rubrics.length === 0) {
+      return Response.json({ error: 'KI hat kein gültiges Rubriken-Array zurückgegeben.' }, { status: 502 });
     }
 
-    return Response.json({
-      sufficient: result.sufficient,
-      good: result.good,
-      excellent: result.excellent,
-    });
+    return Response.json({ rubrics: result.rubrics });
 
   } catch (error) {
     return Response.json({ error: error.message || 'Unbekannter Fehler' }, { status: 500 });

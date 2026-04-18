@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Sparkles, Loader2, Save } from 'lucide-react';
+import { Sparkles, Loader2, Save, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { generateRubricProposal, saveRubric, updateProjectTask } from '@/services/ProjektaufgabeService';
+import { base44 } from '@/api/base44Client';
 
 // ── Verfügbare Standardformate ──
 const STANDARD_FORMATE = [
@@ -15,7 +15,6 @@ const STANDARD_FORMATE = [
   { id: 'audio',        label: 'Audio/Podcast',   emoji: '🎙️' },
 ];
 
-// ── Format-Kachel ──
 function FormatKachel({ format, selected, onToggle }) {
   return (
     <button
@@ -34,19 +33,46 @@ function FormatKachel({ format, selected, onToggle }) {
   );
 }
 
-// ── Rubrik-Textarea ──
-function RubrikTextarea({ label, value, onChange, colorClass, placeholder }) {
+// ── Einzelne Rubrik-Zeile ──
+function RubrikRow({ rubrik, index, onChange, onDelete, kannBearbeiten }) {
   return (
-    <div className={cn('rounded-xl border border-border overflow-hidden', colorClass)}>
-      <div className="px-4 py-2 border-b border-border/50">
-        <p className="text-xs font-semibold text-foreground/70">{label}</p>
+    <div className="rounded-xl border border-border overflow-hidden bg-card">
+      <div className="flex items-center gap-3 px-4 py-2 bg-muted/30 border-b border-border">
+        <input
+          value={rubrik.title}
+          onChange={e => onChange(index, 'title', e.target.value)}
+          disabled={!kannBearbeiten}
+          placeholder="Kategorie-Titel (z.B. Inhaltliche Tiefe)"
+          className="flex-1 text-sm font-semibold bg-transparent focus:outline-none placeholder:text-muted-foreground/50 disabled:opacity-60"
+        />
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-xs text-muted-foreground">Punkte:</span>
+          <input
+            type="number"
+            value={rubrik.points}
+            onChange={e => onChange(index, 'points', Number(e.target.value))}
+            disabled={!kannBearbeiten}
+            className="w-16 h-7 px-2 text-sm text-center rounded border border-border bg-background focus:outline-none disabled:opacity-60"
+            min={1}
+            max={100}
+          />
+        </div>
+        {kannBearbeiten && (
+          <button
+            onClick={() => onDelete(index)}
+            className="text-muted-foreground hover:text-destructive transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
       <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
+        value={rubrik.criteria_text}
+        onChange={e => onChange(index, 'criteria_text', e.target.value)}
+        disabled={!kannBearbeiten}
+        placeholder="Ausformulierte Kriterien für die volle Punktzahl..."
         rows={4}
-        className="w-full px-4 py-3 text-sm bg-transparent resize-none focus:outline-none placeholder:text-muted-foreground/50"
+        className="w-full px-4 py-3 text-sm bg-transparent resize-none focus:outline-none placeholder:text-muted-foreground/50 disabled:opacity-60"
       />
     </div>
   );
@@ -57,21 +83,30 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
   const [outputFormats, setOutputFormats] = useState([]);
   const [customFormat, setCustomFormat]   = useState('');
   const [qualityFocus, setQualityFocus]   = useState('');
-  const [rubric, setRubric]               = useState({ sufficient: '', good: '', excellent: '' });
+  const [rubrics, setRubrics]             = useState([]);
   const [generating, setGenerating]       = useState(false);
   const [saving, setSaving]               = useState(false);
 
-  // Werte aus aufgabe laden
   useEffect(() => {
     if (!aufgabe) return;
     setOutputFormats(aufgabe.output_formats || []);
     setCustomFormat(aufgabe.custom_format || '');
     setQualityFocus(aufgabe.quality_focus || '');
-    setRubric({
-      sufficient: aufgabe.rubric_criteria?.sufficient || '',
-      good:       aufgabe.rubric_criteria?.good       || '',
-      excellent:  aufgabe.rubric_criteria?.excellent  || '',
-    });
+
+    // Migrationspfad: altes Objekt-Format → neues Array-Format
+    const stored = aufgabe.rubric_criteria;
+    if (Array.isArray(stored)) {
+      setRubrics(stored);
+    } else if (stored && typeof stored === 'object' && stored.sufficient !== undefined) {
+      // Legacy-Konvertierung
+      setRubrics([
+        { title: 'Ausreichend', points: 8, criteria_text: stored.sufficient || '' },
+        { title: 'Gut', points: 12, criteria_text: stored.good || '' },
+        { title: 'Sehr gut', points: 15, criteria_text: stored.excellent || '' },
+      ]);
+    } else {
+      setRubrics([]);
+    }
   }, [aufgabe?.id]);
 
   const toggleFormat = (id) => {
@@ -80,28 +115,37 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
     );
   };
 
+  const handleRubrikChange = (index, field, value) => {
+    setRubrics(prev => prev.map((r, i) => i === index ? { ...r, [field]: value } : r));
+  };
+
+  const handleAddRubrik = () => {
+    setRubrics(prev => [...prev, { title: '', points: 10, criteria_text: '' }]);
+  };
+
+  const handleDeleteRubrik = (index) => {
+    setRubrics(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleGenerateRubric = async () => {
-    if (outputFormats.length === 0 && !customFormat.trim()) {
-      toast.error('Bitte wähle mindestens ein Abgabeformat aus.');
-      return;
-    }
     setGenerating(true);
     try {
-      const result = await generateRubricProposal(aufgabe.id, {
+      const response = await base44.functions.invoke('generateRubricProposal', {
         output_formats: outputFormats,
         custom_format: customFormat,
         quality_focus: qualityFocus,
+        aufgabenstellung: aufgabe?.aufgabenstellung || '',
       });
-      setRubric({
-        sufficient: result.sufficient || '',
-        good:       result.good       || '',
-        excellent:  result.excellent  || '',
-      });
-      // Direkt speichern
-      await saveRubric(aufgabe.id, result);
-      toast.success('Gütekriterien generiert und gespeichert!');
+      const result = response.data;
+      if (result?.rubrics && Array.isArray(result.rubrics)) {
+        setRubrics(result.rubrics);
+        await base44.entities.AllgemeineAufgabe.update(aufgabe.id, { rubric_criteria: result.rubrics });
+        toast.success('Rubriken generiert und gespeichert!');
+      } else {
+        toast.error('KI hat kein gültiges Format zurückgegeben.');
+      }
     } catch (err) {
-      toast.error('Fehler beim Generieren der Gütekriterien');
+      toast.error('Fehler beim Generieren der Rubriken: ' + err.message);
     } finally {
       setGenerating(false);
     }
@@ -110,12 +154,12 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await updateProjectTask(aufgabe.id, {
+      await base44.entities.AllgemeineAufgabe.update(aufgabe.id, {
         output_formats: outputFormats,
         custom_format:  customFormat,
         quality_focus:  qualityFocus,
+        rubric_criteria: rubrics,
       });
-      await saveRubric(aufgabe.id, rubric);
       toast.success('Gespeichert');
     } catch {
       toast.error('Fehler beim Speichern');
@@ -123,6 +167,8 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
       setSaving(false);
     }
   };
+
+  const totalPoints = rubrics.reduce((sum, r) => sum + (r.points || 0), 0);
 
   return (
     <div className="space-y-8 p-6 max-w-2xl">
@@ -135,7 +181,6 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
             Welche Formate sollen Schülerinnen und Schüler einreichen? Mehrfachauswahl möglich.
           </p>
         </div>
-
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
           {STANDARD_FORMATE.map(fmt => (
             <FormatKachel
@@ -146,7 +191,6 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
             />
           ))}
         </div>
-
         <div className="space-y-1">
           <label className="text-xs text-muted-foreground font-medium">Eigenes Format definieren</label>
           <input
@@ -165,7 +209,6 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
         <div>
           <h3 className="text-sm font-semibold">Besonderer Fokus <span className="text-muted-foreground font-normal">(Optional)</span></h3>
         </div>
-
         <textarea
           value={qualityFocus}
           onChange={(e) => setQualityFocus(e.target.value)}
@@ -174,7 +217,6 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
           rows={3}
           className="w-full px-3 py-2 rounded-lg border border-border text-sm bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-60"
         />
-
         {kannBearbeiten && (
           <Button
             onClick={handleGenerateRubric}
@@ -182,46 +224,50 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
             className="gap-2 w-full sm:w-auto bg-primary hover:bg-primary/90"
           >
             {generating ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Gütekriterien werden generiert…</>
+              <><Loader2 className="w-4 h-4 animate-spin" /> Rubriken werden generiert…</>
             ) : (
-              <><Sparkles className="w-4 h-4" /> Gütekriterien mit KI generieren</>
+              <><Sparkles className="w-4 h-4" /> Bewertungsrubriken mit KI generieren (Brian-Format)</>
             )}
           </Button>
         )}
       </section>
 
-      {/* ── Block C: Gütekriterien ── */}
+      {/* ── Block C: Bewertungsrubriken (Brian-Format) ── */}
       <section className="space-y-4">
-        <div>
-          <h3 className="text-sm font-semibold">Gütekriterien</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Beschreibungen der drei Leistungsniveaus. Können nach der KI-Generierung manuell angepasst werden.
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold">Bewertungsrubriken</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Thematische Kategorien mit Punkten – kompatibel mit Brian.study.
+              {totalPoints > 0 && <span className="ml-2 font-medium text-primary">Gesamt: {totalPoints} Punkte</span>}
+            </p>
+          </div>
+          {kannBearbeiten && (
+            <Button variant="outline" size="sm" onClick={handleAddRubrik} className="gap-1.5">
+              <Plus className="w-3.5 h-3.5" />
+              Kategorie hinzufügen
+            </Button>
+          )}
         </div>
 
-        <div className="space-y-3">
-          <RubrikTextarea
-            label="Ausreichend"
-            colorClass="bg-orange-50"
-            value={rubric.sufficient}
-            onChange={(v) => setRubric(r => ({ ...r, sufficient: v }))}
-            placeholder="Mindestanforderungen gerade erfüllt…"
-          />
-          <RubrikTextarea
-            label="Gut"
-            colorClass="bg-yellow-50"
-            value={rubric.good}
-            onChange={(v) => setRubric(r => ({ ...r, good: v }))}
-            placeholder="Solide Leistung mit erkennbarer Auseinandersetzung…"
-          />
-          <RubrikTextarea
-            label="Sehr gut"
-            colorClass="bg-green-50"
-            value={rubric.excellent}
-            onChange={(v) => setRubric(r => ({ ...r, excellent: v }))}
-            placeholder="Herausragende, eigenständige und durchdachte Leistung…"
-          />
-        </div>
+        {rubrics.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground text-sm border border-dashed border-border rounded-xl">
+            Noch keine Rubriken. KI generieren oder manuell hinzufügen.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {rubrics.map((rubrik, index) => (
+              <RubrikRow
+                key={index}
+                rubrik={rubrik}
+                index={index}
+                onChange={handleRubrikChange}
+                onDelete={handleDeleteRubrik}
+                kannBearbeiten={kannBearbeiten}
+              />
+            ))}
+          </div>
+        )}
 
         {kannBearbeiten && (
           <Button
