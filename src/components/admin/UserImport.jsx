@@ -392,6 +392,37 @@ export default function UserImport() {
       </CardHeader>
 
       <CardContent className="space-y-5">
+        {/* CSV-Spalten-Anforderung */}
+        {schritt === 1 && (
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
+            <div className="flex items-start gap-2">
+              <Info className="w-4 h-4 text-slate-600 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-slate-900 mb-2">CSV-Spalten-Anforderungen</p>
+                <div className="space-y-2 text-xs text-slate-700">
+                  <div className="flex items-start gap-2">
+                    <span className="font-mono bg-white px-2 py-1 rounded border border-slate-200 shrink-0">email</span>
+                    <span><strong>Pflichtfeld</strong> – E-Mail-Adresse der Lehrkraft (z.B. max@schule.de)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-mono bg-white px-2 py-1 rounded border border-slate-200 shrink-0">rolle</span>
+                    <span>Optional – Eine von: Administrator, Fachschaftsleitung, Fachlehrkraft, Betrachter, Moodle-Designer (Standard: Fachlehrkraft)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-mono bg-white px-2 py-1 rounded border border-slate-200 shrink-0">faecher</span>
+                    <span>Optional – Fachbereiche, getrennt durch Semikolon, Komma, Pipe oder Slash (z.B. Deutsch; Mathe; Physik)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded p-2.5 border border-slate-200 text-[11px] font-mono text-slate-600 overflow-x-auto">
+              <p className="whitespace-nowrap">email,rolle,faecher</p>
+              <p className="whitespace-nowrap text-slate-500">max@schule.de,Fachlehrkraft,Deutsch; Mathematik</p>
+              <p className="whitespace-nowrap text-slate-500">anna@schule.de,Fachschaftsleitung,Biologie; Chemie</p>
+            </div>
+          </div>
+        )}
+
         {/* Schritt 1: Upload */}
         {schritt === 1 && <Dropzone onFile={handleFile} />}
 
