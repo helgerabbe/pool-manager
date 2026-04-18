@@ -115,17 +115,26 @@ export default function MoodleExportView({ einheitId, userRole, isAdmin }) {
   }, [pendingAufgaben.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const confirmMutation = useMutation({
-    mutationFn: async () => {
-      const successfulIds = pendingAufgaben.filter(a => confirmedIds.has(a.id)).map(a => a.id);
-      const failedIds = pendingAufgaben.filter(a => !confirmedIds.has(a.id)).map(a => a.id);
-      await base44.functions.invoke('confirmExportCompletion', { einheit_id: einheitId, successfulIds, failedIds });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
-      toast.success('Export bestätigt! Status aktualisiert.');
-    },
-    onError: () => toast.error('Fehler beim Bestätigen'),
+   mutationFn: async () => {
+     const successfulIds = pendingAufgaben.filter(a => confirmedIds.has(a.id)).map(a => a.id);
+     const failedIds = pendingAufgaben.filter(a => !confirmedIds.has(a.id)).map(a => a.id);
+
+     // Bestätige Export-Abschluss
+     await base44.functions.invoke('confirmExportCompletion', { einheit_id: einheitId, successfulIds, failedIds });
+
+     // Prüfe Dual-Lock für alle erfolgreich exportierten Aufgaben
+     await Promise.all(
+       successfulIds.map(id =>
+         base44.functions.invoke('checkAndReleaseDualLock', { aufgabe_id: id }).catch(() => {})
+       )
+     );
+   },
+   onSuccess: () => {
+     queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+     queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
+     toast.success('Export bestätigt! Dual-Lock geprüft und aktualisiert.');
+   },
+   onError: (err) => toast.error('Fehler beim Bestätigen: ' + err.message),
   });
 
   // Zeitpunkt des letzten Exports ermitteln (Hook IMMER aufrufen)

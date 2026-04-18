@@ -197,25 +197,28 @@ export default function BrianExportCockpitView() {
     const aufgabe = allAufgaben.find(a => a.id === aufgabeId);
     const now = new Date().toISOString();
 
-    // Dual-Lock: Bearbeitungssperre erst aufheben wenn BEIDE Exporte synced sind
-    const moodleSynced = aufgabe?.moodle_sync_status === 'synced' || aufgabe?.sync_status === 'synced';
-    const updateData = {
-      brian_sync_status: 'synced',
-      brian_synced_at: now,
-    };
-    // Wenn auch Moodle synced → Bearbeitungssperre aufheben
-    if (moodleSynced) {
-      updateData.locked_by = null;
-      updateData.locked_at = null;
-    }
+    try {
+      // Markiere als Brian-synced
+      await base44.entities.AllgemeineAufgabe.update(aufgabeId, {
+        brian_sync_status: 'synced',
+        brian_synced_at: now,
+      });
 
-    await base44.entities.AllgemeineAufgabe.update(aufgabeId, updateData);
-    queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
-    toast.success(
-      moodleSynced
-        ? 'Als "In Brian" markiert – Dual-Lock aufgehoben (Moodle + Brian beide synced).'
-        : 'Als "In Brian" markiert. Bearbeitungssperre bleibt bis Moodle-Export bestätigt.'
-    );
+      // Prüfe Dual-Lock: Darf Lock aufgehoben werden?
+      const checkResult = await base44.functions.invoke('checkAndReleaseDualLock', {
+        aufgabe_id: aufgabeId,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
+
+      if (checkResult.data?.locked === false) {
+        toast.success('Als "In Brian" markiert – Dual-Lock aufgehoben (Moodle + Brian beide synced).');
+      } else {
+        toast.success('Als "In Brian" markiert. Bearbeitungssperre bleibt bis Moodle-Export bestätigt.');
+      }
+    } catch (error) {
+      toast.error('Fehler: ' + error.message);
+    }
   };
 
   const params = { strenge, sprache, kursniveau };

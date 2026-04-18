@@ -39,9 +39,34 @@ export async function createAllgemeineAufgabe(data) {
 }
 
 /**
- * Aufgabe aktualisieren.
+ * Aufgabe aktualisieren mit Re-Export-Trigger.
+ * 
+ * CRITICAL: Falls die Aufgabe bereits vollständig exportiert ist (moodle_sync_status === 'synced' UND brian_sync_status === 'synced'),
+ * werden beide Sync-Stati auf 'modified' zurückgesetzt, damit das Export-Team sieht, dass eine neue Version vorliegt.
+ * 
+ * @param {string} id - Aufgaben-ID
+ * @param {object} data - Update-Daten
+ * @returns {Promise} Updated task
  */
 export async function updateAllgemeineAufgabe(id, data) {
+  // Aktuelle Aufgabe laden
+  const current = await base44.entities.AllgemeineAufgabe.filter({ id });
+  const aufgabe = current[0];
+
+  if (!aufgabe) {
+    throw new Error(`Aufgabe ${id} nicht gefunden`);
+  }
+
+  // Prüfung: Ist die Aufgabe vollständig exportiert?
+  const moodleSynced = aufgabe.moodle_sync_status === 'synced' || aufgabe.sync_status === 'synced';
+  const brianSynced = aufgabe.brian_sync_status === 'synced';
+
+  if ((moodleSynced || brianSynced) && Object.keys(data).length > 0) {
+    // Beide oder eine sind synced → Reset beide auf 'modified'
+    data.moodle_sync_status = 'modified';
+    data.brian_sync_status = 'modified';
+  }
+
   return base44.entities.AllgemeineAufgabe.update(id, data);
 }
 
