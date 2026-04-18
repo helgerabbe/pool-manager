@@ -154,15 +154,18 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Validierung: rubric_criteria muss immer ein Array sein
+      const rubricsToSave = Array.isArray(rubrics) ? rubrics : [];
+      
       await base44.entities.AllgemeineAufgabe.update(aufgabe.id, {
         output_formats: outputFormats,
         custom_format:  customFormat,
         quality_focus:  qualityFocus,
-        rubric_criteria: rubrics,
+        rubric_criteria: rubricsToSave,
       });
       toast.success('Gespeichert');
-    } catch {
-      toast.error('Fehler beim Speichern');
+    } catch (err) {
+      toast.error('Fehler beim Speichern: ' + err.message);
     } finally {
       setSaving(false);
     }
