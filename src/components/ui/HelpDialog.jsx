@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
  *   features    – Array<string>: Was man hier tun kann
  *   faqs        – Array<{ question: string, answer: string }>
  */
-export default function HelpDialog({ title, description, features = [], faqs = [], alwaysVisible = false }) {
+export default function HelpDialog({ title, description, features = [], faqs = [] }) {
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -21,7 +21,7 @@ export default function HelpDialog({ title, description, features = [], faqs = [
       <Button
         variant="ghost"
         size="icon"
-        className={`h-7 w-7 rounded-full transition-colors ${alwaysVisible ? 'text-muted-foreground/50 hover:text-accent' : 'text-accent hover:text-accent/80'}`}
+        className="h-7 w-7 rounded-full text-accent"
         onClick={() => setOpen(true)}
         title="Hilfe"
       >
