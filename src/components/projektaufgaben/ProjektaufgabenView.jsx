@@ -470,16 +470,20 @@ export default function ProjektaufgabenView({
               {/* Tab 3: Lernlandkarte */}
                <TabsContent value="lernlandkarte" className="flex-1 overflow-hidden m-0">
                 <LernlandkartePreview
-                  einheit={einheit}
-                  lernpakete={lernpakete}
-                  lernziele={lernziele}
-                  themenfelder={themenfelder}
-                  aufgabe={selectedAufgabe}
-                  kannBearbeiten={kannBearbeiten && lock.isEditMode}
-                  onPriorityChange={(neu) => {
-                   updateAllgemeineAufgabe(selectedAufgabe.id, { prioritaete_lernziele: neu });
-                    queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
-                  }}
+                   einheit={einheit}
+                   lernpakete={lernpakete}
+                   lernziele={lernziele}
+                   themenfelder={themenfelder}
+                   aufgabe={selectedAufgabe}
+                   kannBearbeiten={kannBearbeiten && lock.isEditMode}
+                   onPriorityChange={async (neu) => {
+                    try {
+                      await updateAllgemeineAufgabe(selectedAufgabe.id, { prioritaete_lernziele: neu });
+                      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheitId] });
+                    } catch (err) {
+                      toast.error('Fehler beim Speichern der Priorität: ' + err.message);
+                    }
+                   }}
                 />
                </TabsContent>
 
