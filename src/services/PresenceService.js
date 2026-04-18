@@ -52,9 +52,15 @@ export async function updatePresenceRecord(id, data) {
 
 /**
  * Präsenz-Eintrag löschen.
+ * Ignoriert "not found" Fehler (Eintrag bereits gelöscht).
  */
 export async function deletePresenceRecord(id) {
-  return base44.entities.ActiveUsersPresence.delete(id);
+  try {
+    return await base44.entities.ActiveUsersPresence.delete(id);
+  } catch (err) {
+    if (err.message?.includes('not found')) return null;
+    throw err;
+  }
 }
 
 /**
