@@ -14,6 +14,7 @@ import { Plus, Star, FileText, ChevronRight, Edit, Trash2, Copy, CheckCircle2, P
 import TaskStatusBadge from '@/components/ui/TaskStatusBadge';
 import ProjektCreateView from './ProjektCreateView';
 import PublishProjektaufgabeButton from './PublishProjektaufgabeButton';
+import AbgabeDefinitionSection from './AbgabeDefinitionSection';
 import LernlandkartePreview from '@/components/lernlandkarte/LernlandkartePreview';
 import { generateInteractiveProjectCoach } from '@/utils/generateInteractiveProjectCoach';
 import { toast } from 'sonner';
@@ -440,6 +441,7 @@ export default function ProjektaufgabenView({
             <Tabs defaultValue="angaben" className="flex-1 flex flex-col overflow-hidden">
               <TabsList className="mx-6 mt-3 bg-muted">
                 <TabsTrigger value="angaben" className="text-xs">Angaben</TabsTrigger>
+                <TabsTrigger value="abgabe" className="text-xs">Abgabe & Gütekriterien</TabsTrigger>
                 <TabsTrigger value="lernlandkarte" className="text-xs">Lernlandkarte</TabsTrigger>
                 <TabsTrigger value="ki-prompt" className="text-xs">KI-Tutor Prompt</TabsTrigger>
               </TabsList>
@@ -458,7 +460,15 @@ export default function ProjektaufgabenView({
                 />
               </TabsContent>
 
-              {/* Tab 2: Lernlandkarte */}
+              {/* Tab 2: Abgabe & Gütekriterien */}
+              <TabsContent value="abgabe" className="flex-1 overflow-y-auto m-0">
+                <AbgabeDefinitionSection
+                  aufgabe={selectedAufgabe}
+                  kannBearbeiten={kannBearbeiten}
+                />
+              </TabsContent>
+
+              {/* Tab 3: Lernlandkarte */}
                <TabsContent value="lernlandkarte" className="flex-1 overflow-hidden m-0">
                 <LernlandkartePreview
                   einheit={einheit}
