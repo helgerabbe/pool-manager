@@ -244,7 +244,7 @@ export default function AITutorPromptPanel({
             size="sm"
             variant="outline"
             onClick={handleGenerate}
-            disabled={isGenerating}
+            disabled={isGenerating || !kannBearbeiten}
             className="gap-2 shrink-0"
           >
             {isGenerating

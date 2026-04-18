@@ -457,7 +457,7 @@ export default function ProjektaufgabenView({
                   lernziele={lernziele}
                   themenfelder={themenfelder}
                   aufgabe={selectedAufgabe}
-                  kannBearbeiten={kannBearbeiten}
+                  kannBearbeiten={kannBearbeiten && lock.isEditMode}
                   onPriorityChange={(neu) => {
                    updateAllgemeineAufgabe(selectedAufgabe.id, { prioritaete_lernziele: neu });
                     queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
