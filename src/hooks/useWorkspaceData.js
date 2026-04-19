@@ -14,8 +14,7 @@ export function useWorkspaceData(einheitId) {
       const res = await base44.functions.invoke('getEinheitenListSecure', { page: 1, limit: 100 });
       return res.data?.data || [];
     },
-    staleTime: 5000,
-    refetchInterval: 15000,
+    staleTime: 5 * 60 * 1000, // 5 Minuten
   });
 
   // Lade Workspace-Detaildaten wenn einheitId gesetzt
@@ -27,9 +26,7 @@ export function useWorkspaceData(einheitId) {
       return res.data;
     },
     enabled: !!einheitId,
-    staleTime: 10000,
-    refetchInterval: 30000,
-    refetchOnWindowFocus: true,
+    staleTime: 5 * 60 * 1000, // 5 Minuten
   });
 
   // Kombiniere Daten: Nimm Detail-Daten wenn vorhanden, sonst Liste
