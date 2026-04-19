@@ -345,13 +345,28 @@ export default function UserImport() {
     const { rows } = csvData;
 
     try {
-      // Zeilen transformieren
+      // Auto-Match Logik (gleiche wie in FieldMapping)
+      const autoHints = {
+        email: ['email', 'e-mail', 'mail', 'emailadresse', 'e_mail'],
+        vorname: ['vorname', 'firstname', 'first_name', 'given_name', 'forename'],
+        nachname: ['nachname', 'lastname', 'last_name', 'surname', 'family_name'],
+        rolle: ['rolle', 'role', 'funktion', 'position'],
+        faecher: ['fach', 'fächer', 'faecher', 'lehrbefähigung', 'lehrbefaehigung', 'subject', 'subjects'],
+      };
+
+      const getAutoMatch = (dbKey) => {
+        const hints = autoHints[dbKey] || [];
+        const headers = csvData.headers || [];
+        return headers.find(h => hints.some(hint => h.toLowerCase().includes(hint))) || '';
+      };
+
+      // Zeilen transformieren MIT Auto-Match Fallback
       const transformed = rows.map(row => {
-        const emailCol    = mapping.email   || '';
-        const vornameCol  = mapping.vorname || '';
-        const nachnameCol = mapping.nachname || '';
-        const rolleCol    = mapping.rolle   || '';
-        const faecherCol  = mapping.faecher || '';
+        const emailCol    = mapping.email   || getAutoMatch('email');
+        const vornameCol  = mapping.vorname || getAutoMatch('vorname');
+        const nachnameCol = mapping.nachname || getAutoMatch('nachname');
+        const rolleCol    = mapping.rolle   || getAutoMatch('rolle');
+        const faecherCol  = mapping.faecher || getAutoMatch('faecher');
 
         const faecherRaw = faecherCol ? (row[faecherCol] || '') : '';
         const faecher = faecherRaw
@@ -363,7 +378,7 @@ export default function UserImport() {
           email:    row[emailCol] || '',
           vorname:  vornameCol ? row[vornameCol] : '',
           nachname: nachnameCol ? row[nachnameCol] : '',
-          rolle:    rolleCol ? row[rolleCol] : '',
+          rolle:    rolleCol ? row[rolleCol] : 'Fachlehrkraft',
           faecher,
         };
       });
