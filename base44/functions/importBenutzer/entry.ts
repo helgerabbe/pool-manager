@@ -28,7 +28,8 @@ Deno.serve(async (req) => {
   }
 
   // Berechtigung prüfen: Nur Administratoren (oder "Admin" als Alias) dürfen importieren
-  const benutzerProfile = await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email });
+  // WICHTIG: E-Mail normalisieren (toLowerCase) für konsistenten DB-Vergleich
+  const benutzerProfile = await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email.toLowerCase() });
   const benutzerRolle = benutzerProfile[0]?.rolle;
   const userRolle = user.role;
   
