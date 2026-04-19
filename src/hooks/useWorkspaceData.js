@@ -1,77 +1,63 @@
 import { useQuery } from '@tanstack/react-query';
-import { getAllEinheiten } from '@/services/EinheitenService';
-import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
-import { getAllMappingBasisziele } from '@/services/MappingBasiszielService';
-import { getAllLernpakete } from '@/services/LernpaketService';
-import { getAllLernziele } from '@/services/LernzielService';
-import { getAllAufgabenbausteine } from '@/services/AufgabenbausteinService';
-import { getAllLernpaketAktivitaeten, getAktivitaetenKatalog } from '@/services/AktivitaetService';
-import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
+import { invokeFunction } from '@/utils/functionsHelper';
+import { base44 } from '@/api/base44Client';
 
-export function useWorkspaceData(selectedEinheitId) {
-  const { data: einheiten = [], isLoading: einheitenLoading } = useQuery({
-    queryKey: ['einheiten'],
-    queryFn: () => getAllEinheiten(),
+/**
+ * useWorkspaceData – Custom Hook für Workspace-Daten
+ * Lädt ALLE hierarchischen Daten einer Einheit inkl. Members für RBAC
+ */
+export function useWorkspaceData(einheitId) {
+  // Lade Einheiten-Liste mit Members (für RBAC)
+  const { data: listData, isLoading: listLoading } = useQuery({
+    queryKey: ['einheiten-list-secure'],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('getEinheitenListSecure', { page: 1, limit: 100 });
+      return res.data?.data || [];
+    },
+    staleTime: 5000,
+    refetchInterval: 15000,
   });
 
-  const { data: lernpakete = [] } = useQuery({
-    queryKey: ['lernpakete'],
-    queryFn: () => getAllLernpakete(),
-    enabled: !!selectedEinheitId,
+  // Lade Workspace-Detaildaten wenn einheitId gesetzt
+  const { data: detailData, isLoading: detailLoading } = useQuery({
+    queryKey: ['workspace-data', einheitId],
+    queryFn: async () => {
+      if (!einheitId) return null;
+      const res = await invokeFunction('getWorkspaceEinheitDataSecure', { einheit_id: einheitId });
+      return res.data;
+    },
+    enabled: !!einheitId,
+    staleTime: 10000,
+    refetchInterval: 30000,
+    refetchOnWindowFocus: true,
   });
 
-  const { data: lernziele = [] } = useQuery({
-    queryKey: ['lernziele'],
-    queryFn: () => getAllLernziele(),
-    enabled: !!selectedEinheitId,
-  });
-
-  const { data: aufgaben = [] } = useQuery({
-    queryKey: ['aufgaben'],
-    queryFn: () => getAllAufgabenbausteine(),
-    enabled: !!selectedEinheitId,
-  });
-
-  const { data: allgemeineAufgabenData = [] } = useQuery({
-    queryKey: ['allgemeineAufgaben', selectedEinheitId],
-    queryFn: () => getAufgabenByEinheit(selectedEinheitId),
-    enabled: !!selectedEinheitId,
-  });
-
-  const { data: mappings = [] } = useQuery({
-    queryKey: ['mappingBasisziele'],
-    queryFn: () => getAllMappingBasisziele(),
-    enabled: !!selectedEinheitId,
-  });
-
-  const { data: themenfelder = [] } = useQuery({
-    queryKey: ['themenfelder', selectedEinheitId],
-    queryFn: () => getThemenfelderByEinheit(selectedEinheitId),
-    enabled: !!selectedEinheitId,
-  });
-
-  const { data: lernpaketAktivitaeten = [] } = useQuery({
-    queryKey: ['lernpaketPhaseAktivitaeten'],
-    queryFn: () => getAllLernpaketAktivitaeten(),
-    enabled: !!selectedEinheitId,
-  });
-
-  const { data: aktivitaetenKatalog = [] } = useQuery({
-    queryKey: ['aktivitaetenKatalog'],
-    queryFn: () => getAktivitaetenKatalog(),
-    enabled: !!selectedEinheitId,
+  // Kombiniere Daten: Nimm Detail-Daten wenn vorhanden, sonst Liste
+  const einheitData = detailData?.data?.einheit;
+  const einheitenFromList = listData || [];
+  
+  // ✅ WICHTIG: Wenn Detail-Daten geladen werden, verwende NUR diese (inkl. members)
+  const einheiten = einheitData ? [einheitData] : einheitenFromList;
+  
+  // 🔍 DEBUG: Logge Daten für Audit
+  console.log('[useWorkspaceData] Loaded:', {
+    einheitId,
+    hasDetailData: !!detailData,
+    hasEinheitData: !!einheitData,
+    einheitMembers: einheitData?.members?.length || 0,
+    einheitenCount: einheiten.length,
   });
 
   return {
     einheiten,
-    lernpakete,
-    lernziele,
-    aufgaben,
-    allgemeineAufgabenData,
-    mappings,
-    themenfelder,
-    lernpaketAktivitaeten,
-    aktivitaetenKatalog,
-    isLoading: einheitenLoading,
+    lernpakete: detailData?.data?._flat?.lernpakete || [],
+    lernziele: detailData?.data?._flat?.lernziele || [],
+    aufgaben: detailData?.data?._flat?.aufgaben || [],
+    allgemeineAufgabenData: [],
+    mappings: [],
+    themenfelder: detailData?.data?.themenfelder || [],
+    lernpaketAktivitaeten: [],
+    aktivitaetenKatalog: [],
+    isLoading: listLoading || detailLoading,
   };
 }
