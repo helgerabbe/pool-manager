@@ -9,6 +9,7 @@ export const DOC_GROUPS = [
     items: [
       { slug: 'erste-schritte', label: 'Erste Schritte' },
       { slug: 'einheiten-struktur', label: 'Einheiten & Struktur' },
+      { slug: 'lernpakete-aktivitaeten', label: 'Lernpakete & Aktivitäten' },
       { slug: 'lernziele', label: 'Lernziele' },
       { slug: 'materialien-medien', label: 'Materialien & Medien' },
     ],
@@ -125,17 +126,89 @@ Themenfelder gliedern Ihre Einheit in inhaltliche Abschnitte. Jedes Themenfeld k
 * **offen** – Lernende können alle Pakete in beliebiger Reihenfolge bearbeiten
 * **sequenziell** – Pakete müssen der Reihe nach absolviert werden
 
-## Lernpakete strukturieren (Der Dreiklang)
+> **Tipp:** Der sequenzielle Modus empfiehlt sich, wenn die Lernpakete aufeinander aufbauen (z.B. erst Grundlagen, dann Vertiefung).
+`,
 
-Sobald Themenfelder angelegt sind, füllen Sie diese mit Lernpaketen. Der Pool-Manager folgt dabei einem festen didaktischen Prinzip: Jedes Lernpaket ist in drei Phasen gegliedert:
+  'lernpakete-aktivitaeten': `# Lernpakete & Aktivitäten: Der praktische Arbeitsbereich
 
-| Phase | Zweck | Was gehört hinein? |
-|-------|-------|------------------|
-| **Input** | Wissen aufbauen | Materialien, Erklärvideos, Lesetexte |
-| **Übung** | Wissen anwenden | Trainingsaufgaben, Ebene-1-Bausteine |
-| **Abschluss** | Verstehen prüfen | Exit-Check, kurze Lernzielkontrolle |
+Herzlichen Glückwunsch – Sie haben eine Einheit mit Themenfeldern erstellt! Jetzt wird es konkret: In diesem Kapitel erfahren Sie, wie Sie Lernpakete mit Leben füllen.
 
-In diese drei Phasen ziehen Sie über den **Aktivitäten-Katalog** Ihre Aufgabenbausteine (Ebene 1) per Drag & Drop hinein.
+## Lernpakete anlegen
+
+Ein Lernpaket ist die kleinste Planungseinheit – denken Sie an eine einzelne Unterrichtsstunde oder eine kleine Hausaufgabe.
+
+**So legen Sie ein neues Lernpaket an:**
+
+1. Öffnen Sie Ihre Einheit im **Workspace** (Arbeitsbereich)
+2. Klicken Sie im gewünschten Themenfeld auf **„+ Lernpaket"**
+3. Vergeben Sie einen Titel (z.B. „Das Attentat von Sarajevo")
+4. Schätzen Sie die Bearbeitungsdauer (z.B. 45 Minuten)
+
+> **Tipp:** Ein Lernpaket sollte idealerweise nicht mehr als 3-4 Aktivitäten enthalten, um die Schüler nicht zu überfordern.
+
+## Die drei Lernphasen
+
+Jedes Lernpaket ist automatisch in drei didaktische Phasen unterteilt:
+
+| Phase | Wann nutzen? | Typische Aktivitäten |
+|-------|-------------|---------------------|
+| **Input** | Zu Beginn eines Themas | Erklärvideo lesen, Fachtext analysieren, Podcast hören |
+| **Übung** | Während der Erarbeitung | Lückentext ausfüllen, Begriffe zuordnen, Multiple Choice |
+| **Abschluss** | Zum Thema-Abschluss | Exit-Check, Mini-Quiz, Reflexionsfragen |
+
+**Wichtig:** Sie müssen nicht alle drei Phasen befüllen! Ein Lernpaket kann auch nur aus einer Input-Phase bestehen (z.B. wenn Sie nur ein Video zur Verfügung stellen möchten).
+
+## Aktivitäten aus dem Katalog
+
+Der Pool-Manager bietet Ihnen einen vorgefertigten **Aktivitäten-Katalog** – das sind standardisierte Aufgabentypen, die sich bewährt haben.
+
+### So fügen Sie eine Aktivität hinzu:
+
+1. Klicken Sie in der gewünschten Phase auf **„+ Aktivität"**
+2. Wählen Sie aus dem Katalog (z.B. „Lückentext", „Begriffe zuordnen", „Multiple Choice")
+3. Füllen Sie die Felder aus (die genaue Anzahl hängt vom Aktivitätentyp ab)
+4. Speichern Sie Ihre Eingabe
+
+### Die wichtigsten Aktivitätentypen im Überblick:
+
+| Aktivität | Beschreibung | Einsatzgebiet |
+|-----------|-------------|---------------|
+| **Lückentext** | Schüler ergänzen fehlende Wörter | Vokabeltraining, Fachbegriffe |
+| **Begriffe zuordnen** | Paare matching (z.B. Datum ↔ Ereignis) | Zuordnungen, Definitionen |
+| **Reihenfolge bilden** | Elemente chronologisch sortieren | Zeitstrahlen, Prozessabläufe |
+| **Multiple Choice** | Richtige Antwort(en) auswählen | Wissensabfrage, Verständnis-Checks |
+| **Freitext** | Offene Antwort in Textform | Reflexion, eigene Formulierungen |
+
+## Phasen ein- und ausblenden
+
+Sie können Phasen auch komplett deaktivieren, wenn Sie sie nicht benötigen:
+
+* Nutzen Sie den **Switch** neben dem Phasen-Namen
+* Deaktivierte Phasen werden für Schüler nicht angezeigt
+
+> **Beispiel:** Wenn Sie nur einen Input (Video) bereitstellen möchten, deaktivieren Sie Übung und Abschluss. Das Lernpaket besteht dann nur aus der Input-Phase.
+
+## Der Fortschrittsanzeiger
+
+Jedes Lernpaket zeigt Ihnen den **Fertigstellungsgrad** an:
+
+* 🟢 **Grün** = Alle Aktivitäten sind vollständig ausgefüllt
+* 🟡 **Gelb** = Mindestens eine Aktivität ist unvollständig (fehlende Pflichtfelder)
+* 🔴 **Rot** = Keine Aktivitäten zugeordnet
+
+Klicken Sie auf eine Aktivität, um sie zu bearbeiten. Unvollständige Aktivitäten werden mit einem ⚠️-Symbol markiert.
+
+## Navigation im Workspace
+
+Der Workspace ist Ihr Hauptarbeitsbereich. So finden Sie sich zurecht:
+
+| Bereich | Was sehen Sie? |
+|---------|---------------|
+| **Linke Sidebar** | Baumansicht: Einheit → Themenfelder → Lernpakete → Aktivitäten |
+| **Hauptbereich** | Detailansicht des ausgewählten Elements |
+| **Tab 3: Aufgaben erstellen** | Hier arbeiten Sie an Ebene-2- und Ebene-3-Aufgaben (Transfer & Projekte) |
+
+> **Tipp:** Nutzen Sie die Suchfunktion in der Sidebar, um schnell zu einem bestimmten Lernpaket zu springen.
 `,
 
   'lernziele': `# Lernziele & Kompetenzen: Der GPS-Tracker des Lernens
@@ -256,15 +329,9 @@ Nicht jede Einheit wird im Pool-Manager vollständig eingepflegt. Trotzdem kommt
 
 ## Die vier Aufgabenbausteine
 
-Wenn Sie ein Lernpaket öffnen, können Sie es mit konkreten Inhalten füllen. Der Pool-Manager bietet vier standardisierte Bausteine an, die den idealen Lernprozess abbilden:
-
 Während es in den Ebenen 2 und 3 um Transfer und freie Projekte geht, sichern Sie in Ebene 1 das grundlegende Fachwissen und die Basis-Fähigkeiten (Vokabeln, Formeln, historische Daten, grammatikalische Regeln).
 
 Da diese Aufgaben oft kleinteilig sind, bietet der Pool-Manager eine stark strukturierte Arbeitsweise und smarte KI-Werkzeuge, um Ihnen Zeit zu sparen.
-
-## Die vier Aufgabenbausteine
-
-Wenn Sie ein Lernpaket öffnen, können Sie es mit konkreten Inhalten füllen. Der Pool-Manager bietet vier standardisierte Bausteine an, die den idealen Lernprozess abbilden:
 
 | Baustein | Zweck | Beispiel |
 |---------|-------|---------|
@@ -283,16 +350,41 @@ Der Pool-Manager arbeitet mit einem **Opt-out-Prinzip** (bewusstes Auslassen). W
 
 Das Erstellen von 20 ähnlichen Mathe-Aufgaben oder 15 Grammatik-Sätzen kostet viel Zeit. Der **KI-Serien-Generator** nimmt Ihnen diese Arbeit ab:
 
-1. **Master-Aufgabe erstellen** – Sie erstellen nur ein einziges, perfektes Beispiel.
-   *Beispiel: „Berechne den Flächeninhalt eines Rechtecks mit a = 5 cm und b = 3 cm."*
+### Schritt-für-Schritt-Anleitung:
 
-2. **Lernziel anheften** – Sie verknüpfen die Master-Aufgabe mit dem passenden Lernziel (z.B. „Ich kann Flächen berechnen").
+1. **Master-Aufgabe erstellen**
+   * Erstellen Sie nur ein einziges, perfektes Beispiel
+   * *Beispiel: „Berechne den Flächeninhalt eines Rechtecks mit a = 5 cm und b = 3 cm."*
 
-3. **Klone generieren** – Sie klicken auf das KI-Symbol und wählen, wie viele Variationen Sie benötigen (z.B. 5 Stück).
+2. **Lernziel anheften**
+   * Verknüpfen Sie die Master-Aufgabe mit dem passenden Lernziel
+   * *Beispiel: „Ich kann Flächen berechnen"*
 
-Das System analysiert Ihre Master-Aufgabe und generiert automatisch **strukturell identische Klone mit anderen Werten** (z.B. a = 7 cm, b = 4 cm). Alle Klone erben das Lernziel der Master-Aufgabe automatisch.
+3. **Klone generieren**
+   * Klicken Sie auf das KI-Symbol 🪄
+   * Wählen Sie die Anzahl der Variationen (z.B. 5 Stück)
+   * Das System erstellt automatisch strukturell identische Klone mit anderen Werten
 
-> **Tipp:** Sie können die generierten Klone danach einzeln überprüfen, anpassen oder direkt für die Schüler freigeben.
+4. **Klone prüfen und freigeben**
+   * Überprüfen Sie die generierten Klone einzeln
+   * Passen Sie bei Bedarf an
+   * Geben Sie die Klone für die Schüler frei
+
+> **Tipp:** Alle Klone erben das Lernziel der Master-Aufgabe automatisch – Sie müssen es nicht bei jedem Klon neu zuweisen!
+
+### Beispiel aus der Praxis:
+
+**Master-Aufgabe (Deutsch):**
+> „Bestimme das Subjekt im Satz: 'Der schnelle Fuchs springt über den faulen Hund.'"
+
+**KI generiert 5 Klone:**
+1. „Bestimme das Subjekt: 'Die neugierige Katze schläft auf dem warmen Sofa.'"
+2. „Bestimme das Subjekt: 'Ein alter Mann geht langsam die Straße entlang.'"
+3. „Bestimme das Subjekt: 'Die fleißigen Schüler lernen für die Prüfung.'"
+4. „Bestimme das Subjekt: 'Ein großer Vogel fliegt über das hohe Haus.'"
+5. „Bestimme das Subjekt: 'Die kleine Maus versteckt sich in der Ecke.'"
+
+**Ergebnis:** Sie haben in 2 Minuten 5 grammatikalisch korrekte Übungsaufgaben erstellt – statt 30 Minuten manueller Arbeit!
 `,
 
   'ebene-2-allgemeine-aufgaben': `# Ebene 2: Allgemeine Aufgaben
@@ -662,24 +754,86 @@ Im Admin-Bereich können Test- und Sandbox-Daten zurückgesetzt werden. **Achtun
 
 Hier finden Sie Lösungen für die häufigsten Probleme im Pool-Manager.
 
-## Häufige Fragen
+## Navigation & Oberfläche
 
-* **Warum ist der "Bearbeiten"-Button grau?** Die Aufgabe ist entweder freigegeben (\`approved\`) oder wird gerade von jemand anderem bearbeitet. Prüfen Sie den Status in der Statusleiste oben.
-* **Der Moodle-Export schlägt fehl.** Stellen Sie sicher, dass alle Pflichtfelder ausgefüllt sind und der Content-Status auf \`approved\` steht.
-* **Ich kann meine Änderungen nicht speichern.** Möglicherweise ist die Sitzung abgelaufen. Laden Sie die Seite neu und versuchen Sie es erneut.
-* **Die KI generiert keinen Erwartungshorizont.** Für allgemeine Aufgaben (Ebene 2) muss ein Erwartungshorizont manuell hinterlegt sein, bevor die KI-Segmente generiert werden können.
+**Frage: Wo finde ich den Workspace (Arbeitsbereich)?**
+> Klicken Sie in der linken Navigation auf „Einheiten" und dann auf eine beliebige Einheit. Der Workspace öffnet sich automatisch.
 
-## Bearbeitungssperren lösen
+**Frage: Wie komme ich zu einer bestimmten Aktivität?**
+> Nutzen Sie die Suchfunktion in der linken Sidebar des Workspace. Geben Sie den Namen der Aktivität ein und klicken Sie auf das Ergebnis.
 
-Wenn Sie eine Aufgabe nicht bearbeiten können, weil sie gesperrt ist:
+**Frage: Warum sehe ich keinen „Bearbeiten"-Button?**
+> Das hängt von Ihrer Rolle ab:
+> * **Betrachter** können nur lesen
+> * **Fachlehrkräfte** können bearbeiten
+> * Bei **gesperrten** Aufgaben ist der Button deaktiviert
 
-1. Warten Sie, bis der andere Nutzer die Bearbeitung beendet
-2. Nach 60 Minuten läuft die Sperre automatisch ab
-3. Als Admin: Nutzen Sie "Admin-Unlock" für abgelaufene Sperren
+## Bearbeitungssperren
+
+**Frage: Ich muss dringend eine Aufgabe bearbeiten, aber sie ist gesperrt!**
+
+| Lösung | Wann? |
+|--------|-------|
+| **Kollegen ansprechen** | Wenn die Sperre aktuell ist (weniger als 60 Min.) |
+| **Warten** | Sperren laufen nach 60 Minuten automatisch ab |
+| **Admin-Unlock** | Wenn die Sperre fehlerhaft ist (nur für Administratoren) |
+
+**Frage: Die Aufgabe ist nach dem Export immer noch gesperrt!**
+> Das bedeutet, der Export ist noch nicht vollständig. Der Dual-Lock (Moodle UND Brian.study) wird erst aufgehoben, wenn beide Systeme erfolgreich übertragen wurden.
+
+## Export-Probleme
+
+**Frage: Der Moodle-Export schlägt fehl – was tun?**
+
+Prüfen Sie diese Punkte:
+1. Sind alle Pflichtfelder der Aktivität ausgefüllt?
+2. Ist der Content-Status auf \`approved\` (freigegeben)?
+3. Wurde der Export im Export-Cockpit korrekt bestätigt?
+
+**Frage: Wie exportiere ich eine Aufgabe nach Brian.study?**
+> Das Export-Team nutzt das **Export-Cockpit** (Tab 9 im Workspace). Dort können die KI-Prompt-Segmente kopiert und im Brian-Backend eingefügt werden.
+
+## KI-Funktionen
+
+**Frage: Die KI generiert keinen Erwartungshorizont.**
+> Für Ebene-2-Aufgaben müssen Sie zuerst eine grobe Aufgabenstellung eingeben. Die KI kann nur auf Basis Ihrer Eingaben arbeiten.
+
+**Frage: Die KI-Vorschläge sind zu allgemein.**
+> Geben Sie im „Besonderen Fokus" konkretere Hinweise (z.B. „Achte auf Quellenarbeit" statt nur „Gute Qualität").
+
+**Frage: Kann ich die KI-Generierung abbrechen?**
+> Ja, schließen Sie einfach das KI-Fenster. Es wurden noch keine Daten gespeichert.
+
+## Lernziele & Mapping
+
+**Frage: Warum muss ich Lernziele verknüpfen?**
+> Ohne Lernziel-Zuordnung weiß der KI-Tutor Brian nicht, welche Übungen er Schülern bei Wissenslücken empfehlen soll.
+
+**Frage: Ich finde das passende Lernziel nicht!**
+> Lernziele aus anderen Einheiten oder Basismodulen können ebenfalls ausgewählt werden. Nutzen Sie die Suchfunktion im Lernziel-Dialog.
+
+## Technische Probleme
+
+**Frage: Meine Änderungen werden nicht gespeichert.**
+> Mögliche Ursachen:
+> * Sitzung abgelaufen → Seite neu laden
+> * Keine Berechtigung → Rolle prüfen
+> * Aufgabe im Export → Warten bis Export fertig
+
+**Frage: Die App lädt nicht richtig.**
+> Versuchen Sie:
+> 1. Browser-Cache leeren (Strg+F5)
+> 2. Anderen Browser testen (Chrome, Firefox, Edge)
+> 3. Administrator informieren
 
 ## Support kontaktieren
 
-Bei technischen Problemen wenden Sie sich an Ihren Systemadministrator. Für inhaltliche Fragen steht die Fachschaftsleitung zur Verfügung.
+| Problem-Typ | Ansprechpartner |
+|-------------|----------------|
+| **Technische Fehler** | Systemadministrator |
+| **Inhaltliche Fragen** | Fachschaftsleitung / Export-Team |
+| **Benutzerrechte** | Administrator |
+> **Tipp:** Machen Sie bei Fehlern einen Screenshot und notieren Sie, was Sie gerade gemacht haben. Das hilft bei der Fehlersuche!
 `,
 };
 
