@@ -4,25 +4,25 @@
   "properties": {
     "user_email": {
       "type": "string",
-      "description": "E-Mail des aktiven Nutzers"
+      "description": "E-Mail des Users (FK zu User)"
     },
-    "user_name": {
+    "current_page": {
       "type": "string",
-      "description": "Anzeigename des Nutzers"
+      "description": "Aktuelle Seite (z.B. '/einheiten', '/workspace')"
     },
-    "current_view": {
-      "type": "string",
-      "description": "ID der aktuell angesehenen Einheit (einheitId)"
-    },
-    "last_seen_at": {
+    "last_activity": {
       "type": "string",
       "format": "date-time",
-      "description": "Zeitstempel des letzten Heartbeats \u2013 Eintr\u00e4ge \u00e4lter als 30s gelten als offline"
+      "description": "Zeitstempel der letzten Aktivit\u00e4t"
+    },
+    "is_online": {
+      "type": "boolean",
+      "default": true,
+      "description": "Ob der User gerade online ist"
     }
   },
   "required": [
     "user_email",
-    "current_view",
-    "last_seen_at"
+    "current_page"
   ]
 }
