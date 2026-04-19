@@ -214,7 +214,7 @@ export default function WorkspaceTabs({ activeTab, onTabChange }) {
           const Icon = tab.icon;
           const isActive = activeTab === tab.value;
           return (
-            <div key={tab.value} className="flex items-center">
+            <div key={tab.value}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
@@ -235,13 +235,13 @@ export default function WorkspaceTabs({ activeTab, onTabChange }) {
                       {tab.step}
                     </span>
                     <Icon className={cn('w-4 h-4 shrink-0 transition-all', isActive && 'scale-110')} />
+                    {isActive && <HelpDialog {...tab.help} />}
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-medium">
                   {tab.label}
                 </TooltipContent>
               </Tooltip>
-              {isActive && <HelpDialog {...tab.help} />}
             </div>
           );
         })}
