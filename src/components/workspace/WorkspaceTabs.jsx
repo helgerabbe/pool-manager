@@ -17,6 +17,7 @@ const getVisibleTabs = (rolle) => {
   const istAdmin = rolle === ROLLEN.ADMIN;
   const istFachschaft = rolle === ROLLEN.FACHSCHAFT;
   const istMoodleDesigner = rolle === ROLLEN.MOODLE_DESIGNER;
+  const istFachlehrkraft = rolle === ROLLEN.FACHLEHRKRAFT;
   const showExportTabs = istAdmin || istMoodleDesigner;
 
   const allTabs = [
@@ -39,20 +40,18 @@ const getVisibleTabs = (rolle) => {
     },
   },
   {
-    value: 'struktur', label: 'Struktur anlegen', icon: LayoutGrid, step: 2,
+    value: 'struktur', label: 'Struktur der Einheit', icon: LayoutGrid, step: 2,
     help: {
-      title: 'Struktur anlegen',
-      description: 'Hier bauen Sie das Grundgerüst Ihrer Einheit: Themenfelder als übergeordnete Blöcke und Lernpakete als konkrete Lernabschnitte.',
+      title: 'Struktur der Einheit',
+      description: 'Hier sehen Sie das Grundgerüst Ihrer Einheit: Themenfelder als übergeordnete Blöcke und Lernpakete als konkrete Lernabschnitte.',
       features: [
-        'Themenfelder erstellen, umbenennen und löschen',
-        'Lernpakete anlegen und Themenfeldern zuordnen',
-        'Reihenfolge per Drag & Drop ändern',
-        'Bearbeitungsmodus explizit aktivieren (Structural Lock)',
+        'Themenfelder und Lernpakete im Überblick',
+        'Reihenfolge und Zuordnung einsehen',
+        'Bearbeitungsmodus der Einheit erkennen',
       ],
       faqs: [
         { question: 'Was ist ein Themenfeld?', answer: 'Ein Themenfeld ist ein thematischer Block (z.B. "Grundrechenarten"), dem mehrere Lernpakete zugeordnet werden können. Es entspricht einem Kapitel oder einer Unterrichtssequenz.' },
-        { question: 'Was passiert mit Paketen, wenn ich ein Themenfeld lösche?', answer: 'Die Lernpakete werden sicher ins Sammelbecken verschoben – kein Inhalt geht verloren.' },
-        { question: 'Was ist der Structural Lock?', answer: 'Um versehentliche gleichzeitige Strukturänderungen zu vermeiden, muss der Bearbeitungsmodus explizit aktiviert werden. Andere Nutzer sehen dann, dass die Struktur gerade bearbeitet wird.' },
+        { question: 'Warum kann ich die Struktur nicht bearbeiten?', answer: 'Nur Fachschaftsleitung und Administratoren können die Struktur bearbeiten. Als Fachlehrkraft können Sie die Struktur einsehen, aber nicht ändern.' },
       ],
     },
   },
@@ -199,6 +198,8 @@ const getVisibleTabs = (rolle) => {
     if (['export', 'brian'].includes(tab.value)) {
       return showExportTabs;
     }
+    // Tabs 1 & 2 (Einheit verwalten, Struktur) sind für ALLE sichtbar (auch Fachlehrkräfte)
+    // Tabs 3-7 sind für alle Lehrkräfte sichtbar
     return true;
   });
 };
