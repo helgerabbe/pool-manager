@@ -293,9 +293,13 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   }
 
   const allgemeineAufgabenCount = allgemeineAufgabenData.filter(
-   (a) => !a.anforderungsebene || ['1 - Basis', '2 - Transfer'].includes(a.anforderungsebene)
+    (a) => !a.anforderungsebene || ['1 - Basis', '2 - Transfer'].includes(a.anforderungsebene)
   ).length;
   const projektCount = allgemeineAufgabenData.filter((a) => a.anforderungsebene === '3 - Projekt').length;
+
+  // ✅ TAB-SPERREN: Welche Tabs sind für welche Rolle sichtbar?
+  const istMoodleDesigner = rolle === ROLLEN.MOODLE_DESIGNER;
+  const showExportTabs = istAdmin || istMoodleDesigner; // Nur Admin und Moodle-Designer sehen Export-Tabs
 
   return (
     <ErrorBoundary label="Workspace">
@@ -414,14 +418,28 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             <TabsContent value="einheit" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
               <div className="flex-1 overflow-y-auto">
                 <ErrorBoundary label="Einheit">
-                  {einheit && (
-                     <EinheitUebersichtTab
-                       einheit={einheit}
-                       currentUserEmail={authUser?.email}
-                       currentUserRole={rolle}
-                       currentUserFaecher={permissions?.faecher || []}
-                     />
-                   )}
+                  {!istAdmin && !istFachschaftsleitung ? (
+                    <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center p-8">
+                      <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center">
+                        <Lock className="w-8 h-8 text-red-500" />
+                      </div>
+                      <div className="max-w-md">
+                        <p className="text-lg font-semibold">Einheitenverwaltung nicht erlaubt</p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Nur Fachschaftsleitung und Administratoren dürfen die Einheit-Metadaten (Titel, Fach, Jahrgangsstufe) bearbeiten.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    einheit && (
+                      <EinheitUebersichtTab
+                        einheit={einheit}
+                        currentUserEmail={authUser?.email}
+                        currentUserRole={rolle}
+                        currentUserFaecher={permissions?.faecher || []}
+                      />
+                    )
+                  )}
                 </ErrorBoundary>
               </div>
             </TabsContent>
@@ -586,26 +604,30 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             </TabsContent>
 
             {/* ── Tab 8: Moodle-Export & Admin-Freigabe ────────────────────────── */}
-            <TabsContent value="export" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
-              <div className="flex-1 overflow-y-auto">
-                <ErrorBoundary label="Moodle Export">
-                  <MoodleExportView 
-                    einheitId={selectedEinheitId} 
-                    userRole={rolle}
-                    isAdmin={istAdmin}
-                  />
-                </ErrorBoundary>
-              </div>
-            </TabsContent>
+            {!showExportTabs ? null : (
+              <TabsContent value="export" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
+                <div className="flex-1 overflow-y-auto">
+                  <ErrorBoundary label="Moodle Export">
+                    <MoodleExportView 
+                      einheitId={selectedEinheitId} 
+                      userRole={rolle}
+                      isAdmin={istAdmin}
+                    />
+                  </ErrorBoundary>
+                </div>
+              </TabsContent>
+            )}
 
             {/* ── Tab 9: Brian.study Export ─────────────────────────────────────── */}
-            <TabsContent value="brian" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
-              <div className="flex-1 overflow-y-auto">
-                <ErrorBoundary label="Brian Export">
-                  <BrianExportCockpitView />
-                </ErrorBoundary>
-              </div>
-            </TabsContent>
+            {!showExportTabs ? null : (
+              <TabsContent value="brian" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
+                <div className="flex-1 overflow-y-auto">
+                  <ErrorBoundary label="Brian Export">
+                    <BrianExportCockpitView />
+                  </ErrorBoundary>
+                </div>
+              </TabsContent>
+            )}
 
           </Tabs>
         )}

@@ -9,8 +9,17 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BookOpen, LayoutGrid, Zap, Wand2, ClipboardList, Target, CheckSquare, Rocket, ExternalLink } from 'lucide-react';
 import HelpDialog from '@/components/ui/HelpDialog';
+import { useRBAC } from '@/hooks/useRBAC';
+import { ROLLEN } from '@/lib/rbac';
 
-const TABS = [
+// ✅ TAB-SPERREN: Welche Tabs sind für welche Rolle sichtbar?
+const getVisibleTabs = (rolle) => {
+  const istAdmin = rolle === ROLLEN.ADMIN;
+  const istFachschaft = rolle === ROLLEN.FACHSCHAFT;
+  const istMoodleDesigner = rolle === ROLLEN.MOODLE_DESIGNER;
+  const showExportTabs = istAdmin || istMoodleDesigner;
+
+  const allTabs = [
   {
     value: 'einheit', label: 'Einheit verwalten', icon: BookOpen, step: 1,
     help: {
@@ -183,13 +192,24 @@ const TABS = [
       ],
     },
   },
-];
+  ];
+
+  return allTabs.filter(tab => {
+    // Export-Tabs (8 & 9) nur für Admin und Moodle-Designer
+    if (['export', 'brian'].includes(tab.value)) {
+      return showExportTabs;
+    }
+    return true;
+  });
+};
 
 export default function WorkspaceTabs({ activeTab, onTabChange }) {
+  const { rolle } = useRBAC();
+  const visibleTabs = getVisibleTabs(rolle);
   return (
     <TooltipProvider delayDuration={0}>
       <div className="flex items-center gap-1 bg-muted p-2 rounded-xl shrink-0">
-        {TABS.map((tab) => {
+        {visibleTabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.value;
           return (

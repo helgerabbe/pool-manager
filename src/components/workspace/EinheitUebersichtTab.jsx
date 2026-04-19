@@ -97,6 +97,10 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
   const [newRole, setNewRole] = useState('EDITOR');
   const [mitarbeiterEmail, setMitarbeiterEmail] = useState('');
 
+  // ✅ RBAC-Prüfung: Wer darf Einheit-Metadaten bearbeiten?
+  const kannEinheitBearbeiten = currentUserRole === 'Administrator' || 
+    currentUserRole === 'Fachschaftsleitung';
+
   const buildForm = (e) => ({
     titel_der_einheit: e.titel_der_einheit || '',
     fach:              e.fach || '',
@@ -297,81 +301,120 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
           </div>
 
           <div className="space-y-4 p-5 rounded-xl border bg-card">
-            <div className="space-y-1.5">
-              <Label>Titel der Einheit *</Label>
-              <Input
-                value={form.titel_der_einheit}
-                onChange={e => set('titel_der_einheit', e.target.value)}
-                placeholder="z.B. Interpretation von Kurzgeschichten"
-              />
-            </div>
-
-            <div className="space-y-1.5 pt-2 pb-4 border-t">
-              <GesamtzielManager 
-                einheitId={einheit.id}
-                gesamtziele={einheit.gesamtziele || []}
-                onUpdate={() => {
-                  queryClient.invalidateQueries({ queryKey: ['einheiten'] });
-                }}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Fach *</Label>
-                <Select value={form.fach} onValueChange={v => set('fach', v)}>
-                  <SelectTrigger><SelectValue placeholder="Fach wählen" /></SelectTrigger>
-                  <SelectContent>
-                    {faecher.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+            {!kannEinheitBearbeiten ? (
+              // ✅ LESE-MODUS für Fachlehrkräfte
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-muted-foreground">Titel der Einheit</Label>
+                  <p className="text-sm font-medium">{form.titel_der_einheit || '—'}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground">Fach</Label>
+                    <p className="text-sm font-medium">{form.fach || '—'}</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground">Jahrgangsstufe</Label>
+                    <p className="text-sm font-medium">{form.jahrgangsstufe || '—'}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground">Planungsphase</Label>
+                    <p className="text-sm font-medium">{phasen.find(p => p.id === form.zeit_phase_id)?.bezeichnung || '—'}</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground">Bearbeitungsmodus</Label>
+                    <p className="text-sm font-medium">{form.bearbeitungsmodus === 'sequenziell' ? 'Sequenziell' : 'Offen'}</p>
+                  </div>
+                </div>
+                <div className="pt-3 mt-3 border-t">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Lock className="w-3 h-3" />
+                    Nur Fachschaftsleitung und Administratoren können die Einheit-Metadaten bearbeiten.
+                  </p>
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label>Jahrgangsstufe *</Label>
-                <Select value={form.jahrgangsstufe} onValueChange={v => set('jahrgangsstufe', v)}>
-                  <SelectTrigger><SelectValue placeholder="Jahrgang" /></SelectTrigger>
-                  <SelectContent>
-                    {jahrgaenge.map(j => <SelectItem key={j} value={j}>Jg. {j}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            ) : (
+              // ✅ BEARBEITUNGS-MODUS für Admin/Fachschaft
+              <>
+                <div className="space-y-1.5">
+                  <Label>Titel der Einheit *</Label>
+                  <Input
+                    value={form.titel_der_einheit}
+                    onChange={e => set('titel_der_einheit', e.target.value)}
+                    placeholder="z.B. Interpretation von Kurzgeschichten"
+                  />
+                </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Planungsphase (Halbjahr)</Label>
-                <Select value={form.zeit_phase_id || ''} onValueChange={v => set('zeit_phase_id', v || null)}>
-                  <SelectTrigger><SelectValue placeholder="Phase wählen…" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={null}>– Keine Zuordnung –</SelectItem>
-                    {phasen.map(p => <SelectItem key={p.id} value={p.id}>{p.bezeichnung}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Bearbeitungsmodus</Label>
-                <Select value={form.bearbeitungsmodus || 'offen'} onValueChange={v => set('bearbeitungsmodus', v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="offen">Offen (freie Reihenfolge)</SelectItem>
-                    <SelectItem value="sequenziell">Sequenziell (feste Reihenfolge)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+                <div className="space-y-1.5 pt-2 pb-4 border-t">
+                  <GesamtzielManager 
+                    einheitId={einheit.id}
+                    gesamtziele={einheit.gesamtziele || []}
+                    onUpdate={() => {
+                      queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+                    }}
+                  />
+                </div>
 
-            <div className="flex justify-end pt-1">
-              <Button
-                onClick={handleSave}
-                disabled={isSaving || !form.titel_der_einheit || !form.fach || !form.jahrgangsstufe}
-                className="gap-2"
-              >
-                {isSaving
-                  ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  : <Save className="w-4 h-4" />}
-                Speichern
-              </Button>
-            </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Fach *</Label>
+                    <Select value={form.fach} onValueChange={v => set('fach', v)}>
+                      <SelectTrigger><SelectValue placeholder="Fach wählen" /></SelectTrigger>
+                      <SelectContent>
+                        {faecher.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Jahrgangsstufe *</Label>
+                    <Select value={form.jahrgangsstufe} onValueChange={v => set('jahrgangsstufe', v)}>
+                      <SelectTrigger><SelectValue placeholder="Jahrgang" /></SelectTrigger>
+                      <SelectContent>
+                        {jahrgaenge.map(j => <SelectItem key={j} value={j}>Jg. {j}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Planungsphase (Halbjahr)</Label>
+                    <Select value={form.zeit_phase_id || ''} onValueChange={v => set('zeit_phase_id', v || null)}>
+                      <SelectTrigger><SelectValue placeholder="Phase wählen…" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={null}>– Keine Zuordnung –</SelectItem>
+                        {phasen.map(p => <SelectItem key={p.id} value={p.id}>{p.bezeichnung}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Bearbeitungsmodus</Label>
+                    <Select value={form.bearbeitungsmodus || 'offen'} onValueChange={v => set('bearbeitungsmodus', v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="offen">Offen (freie Reihenfolge)</SelectItem>
+                        <SelectItem value="sequenziell">Sequenziell (feste Reihenfolge)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <Button
+                    onClick={handleSave}
+                    disabled={isSaving || !form.titel_der_einheit || !form.fach || !form.jahrgangsstufe}
+                    className="gap-2"
+                  >
+                    {isSaving
+                      ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      : <Save className="w-4 h-4" />}
+                    Speichern
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </section>
 
