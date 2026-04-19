@@ -1,20 +1,53 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getDocContent, DOC_NAV } from '@/lib/docsContent';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import DocEditor from '@/components/docs/DocEditor';
 
 export default function DocViewer() {
   const { slug } = useParams();
-  const content = getDocContent(slug);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [overrideContent, setOverrideContent] = useState(null); // null = noch nicht geladen
+
+  const defaultContent = getDocContent(slug);
+  const content = overrideContent ?? defaultContent;
 
   const currentIndex = DOC_NAV.findIndex(n => n.slug === slug);
   const prev = currentIndex > 0 ? DOC_NAV[currentIndex - 1] : null;
   const next = currentIndex < DOC_NAV.length - 1 ? DOC_NAV[currentIndex + 1] : null;
 
+  // Nutzerrolle prüfen & DB-Override laden
+  useEffect(() => {
+    setOverrideContent(null);
+    base44.auth.me().then(user => {
+      setIsAdmin(user?.role === 'admin');
+    }).catch(() => {});
+
+    base44.entities.DocContent.filter({ slug }).then(results => {
+      if (results.length > 0) {
+        setOverrideContent(results[0].content);
+      } else {
+        setOverrideContent(null);
+      }
+    }).catch(() => setOverrideContent(null));
+  }, [slug]);
+
   return (
     <div>
+      {/* Admin-Toolbar */}
+      {isAdmin && (
+        <div className="flex justify-end mb-4">
+          <DocEditor
+            slug={slug}
+            currentContent={content}
+            onSave={(newContent) => setOverrideContent(newContent)}
+          />
+        </div>
+      )}
+
       <article className="prose prose-slate max-w-none
         prose-headings:font-semibold prose-headings:text-foreground
         prose-p:text-muted-foreground prose-p:leading-relaxed
