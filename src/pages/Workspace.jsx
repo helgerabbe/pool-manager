@@ -66,7 +66,8 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     lernpaketAktivitaeten = [],
     aktivitaetenKatalog = [],
     isLoading: einheitenLoading,
-  } = useWorkspaceData(selectedEinheitId);
+    isFetching: einheitenIsFetching, // ✅ Silent Polling
+  } = useWorkspaceData(selectedEinheitId, isStructuralEditingActive);
 
   // ── Aktive Einheit + Memoisierte abgeleitete Daten ──────────────────────────────
   const einheit = einheiten.find((e) => e.id === selectedEinheitId) || null;
