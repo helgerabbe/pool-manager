@@ -31,10 +31,11 @@ export default function LookupTable({
   const queryClient = useQueryClient();
   const entity = base44.entities[entityName];
 
-  const [newLabel, setNewLabel]   = useState('');
-  const [newExtra, setNewExtra]   = useState({});
-  const [editingId, setEditingId] = useState(null);
-  const [editLabel, setEditLabel] = useState('');
+  const [newLabel, setNewLabel]     = useState('');
+  const [newExtra, setNewExtra]     = useState({});
+  const [editingId, setEditingId]   = useState(null);
+  const [editLabel, setEditLabel]   = useState('');
+  const [editExtra, setEditExtra]   = useState({});
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey });
 
@@ -69,7 +70,7 @@ export default function LookupTable({
   };
 
   const handleSaveEdit = (item) => {
-    updateMutation.mutate({ id: item.id, data: { [labelField]: editLabel.trim() } });
+    updateMutation.mutate({ id: item.id, data: { [labelField]: editLabel.trim(), ...editExtra } });
   };
 
   return (
@@ -117,6 +118,11 @@ export default function LookupTable({
                   className="flex-1 h-7 text-sm"
                   autoFocus
                 />
+                {renderExtra && renderExtra(
+                  { ...item, ...editExtra },
+                  (upd) => setEditExtra(prev => ({ ...prev, ...upd })),
+                  true
+                )}
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleSaveEdit(item)}>
                   <Check className="w-3.5 h-3.5 text-green-600" />
                 </Button>
@@ -126,6 +132,13 @@ export default function LookupTable({
               </>
             ) : (
               <>
+                {item.farbe && (
+                  <span
+                    className="w-4 h-4 rounded-full border border-border shrink-0"
+                    style={{ backgroundColor: item.farbe }}
+                    title={item.farbe}
+                  />
+                )}
                 <span className="flex-1 text-sm font-medium truncate min-w-0">{item[labelField]}</span>
                 {extraFields.map(ef => (
                   <Badge key={ef.key} variant="secondary" className="text-[10px] shrink-0 whitespace-nowrap">
@@ -136,7 +149,7 @@ export default function LookupTable({
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7 shrink-0 text-muted-foreground hover:text-primary"
-                  onClick={() => { setEditingId(item.id); setEditLabel(item[labelField]); }}
+                  onClick={() => { setEditingId(item.id); setEditLabel(item[labelField]); setEditExtra(item.farbe ? { farbe: item.farbe } : {}); }}
                   title="Bearbeiten"
                 >
                   <Pencil className="w-3.5 h-3.5" />

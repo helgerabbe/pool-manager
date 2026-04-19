@@ -161,6 +161,18 @@ export default function AdminSettings() {
                 queryKey={['lookupFaecher']}
                 items={faecherRaw}
                 labelField="name"
+                renderExtra={(values, setValues) => (
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <label className="text-xs text-muted-foreground whitespace-nowrap">Farbe:</label>
+                    <input
+                      type="color"
+                      value={values.farbe || '#94a3b8'}
+                      onChange={e => setValues({ farbe: e.target.value })}
+                      className="w-8 h-7 rounded cursor-pointer border border-input p-0.5 bg-transparent"
+                      title="Fach-Farbe auswählen"
+                    />
+                  </div>
+                )}
               />
             </CardContent>
           </Card>

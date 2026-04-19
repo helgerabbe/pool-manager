@@ -2,38 +2,24 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { BookOpen, ArrowRight, Clock, Layers, Trash2, Lock } from 'lucide-react';
+import { BookOpen, ArrowRight, Layers, Trash2, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { base44 } from '@/api/base44Client';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal';
 import { ROLLEN } from '@/lib/rbac';
-
-const fachColors = {
-  Deutsch: 'bg-red-100 text-red-700',
-  Mathematik: 'bg-blue-100 text-blue-700',
-  Englisch: 'bg-yellow-100 text-yellow-700',
-  Französisch: 'bg-purple-100 text-purple-700',
-  Latein: 'bg-rose-100 text-rose-700',
-  Biologie: 'bg-green-100 text-green-700',
-  Chemie: 'bg-orange-100 text-orange-700',
-  Physik: 'bg-cyan-100 text-cyan-700',
-  Geschichte: 'bg-amber-100 text-amber-700',
-  Geographie: 'bg-teal-100 text-teal-700',
-  Politik: 'bg-slate-100 text-slate-700',
-  Wirtschaft: 'bg-emerald-100 text-emerald-700',
-  Kunst: 'bg-pink-100 text-pink-700',
-  Musik: 'bg-violet-100 text-violet-700',
-  Sport: 'bg-lime-100 text-lime-700',
-  Religion: 'bg-sky-100 text-sky-700',
-  Ethik: 'bg-fuchsia-100 text-fuchsia-700',
-  Informatik: 'bg-indigo-100 text-indigo-700',
-};
+import { getFachFarbe, getFachBadgeStyle } from '@/lib/fachFarben';
 
 export default function EinheitCard({ einheit, lernpaketCount, rolle, onDeleteStart, onDeleteEnd }) {
-  const colorClass = fachColors[einheit.fach] || 'bg-muted text-muted-foreground';
+  const { data: faecher = [] } = useQuery({
+    queryKey: ['lookupFaecher'],
+    queryFn: () => base44.entities.LookupFaecher.list(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const fachHex = getFachFarbe(einheit.fach, faecher);
+  const badgeStyle = getFachBadgeStyle(fachHex);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const queryClient = useQueryClient();
@@ -80,7 +66,7 @@ export default function EinheitCard({ einheit, lernpaketCount, rolle, onDeleteSt
             <CardContent className="p-0 flex flex-col flex-1">
               <div className="p-6 flex-1 flex flex-col">
                 <div className="flex items-start justify-between mb-3">
-                  <Badge className={colorClass + ' font-medium'}>
+                  <Badge className="font-medium border" style={badgeStyle}>
                     {einheit.fach}
                   </Badge>
                   {einheit.freigabe_status === 'Gesperrt' && (

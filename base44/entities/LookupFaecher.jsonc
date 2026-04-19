@@ -6,6 +6,10 @@
       "type": "string",
       "description": "Name des Fachs (z.B. 'Mathematik')"
     },
+    "farbe": {
+      "type": "string",
+      "description": "Hex-Farbcode f\u00fcr dieses Fach (z.B. '#3b82f6')"
+    },
     "ist_aktiv": {
       "type": "boolean",
       "default": true,
