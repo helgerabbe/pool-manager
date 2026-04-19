@@ -429,7 +429,7 @@ export default function StrukturBoardEmbedded({
     setInitialized(false);
   }, [einheitId, remotePakete, remoteThemenfelder, isDirty]);
 
-  // ✅ RBAC: Wer darf Struktur bearbeiten? Berücksichtigt Unit-Level-Mitgliedschaft
+  // ✅ RBAC: Wer darf Struktur bearbeiten? AUSSCHLIEẞLICH unitAccess.hasFullAccess verwenden
   const unitAccess = hasUnitLevelAccess(
     permissions.rolle,
     permissions.faecher,
@@ -440,19 +440,7 @@ export default function StrukturBoardEmbedded({
   const kannStrukturBearbeiten = einheit ? unitAccess.hasFullAccess : false;
   
   // 🔒 HARTE SPERRE: Nur wenn Structural Lock aktiv ist, darf bearbeitet werden
-  // ABER: Lesemodus zeigt trotzdem die Struktur an, nur keine Bearbeitung
   const istLesemodus = !kannStrukturBearbeiten || !isStructuralEditingActive;
-  
-  // Debug-Log
-  console.log('[StrukturBoard] RBAC Check:', {
-    kannStrukturBearbeiten,
-    isStructuralEditingActive,
-    istLesemodus,
-    unitAccess,
-    userRole: permissions.rolle,
-    userEmail: authUser?.email,
-    members: einheit?.members?.length || 0,
-  });
 
   // Early Return nur wenn Einheit wirklich fehlt
   if (!einheit) {

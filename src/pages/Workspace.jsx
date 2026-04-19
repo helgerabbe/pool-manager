@@ -151,6 +151,21 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     };
   }, [isStructuralEditingActive, einheit?.id]);
 
+  // ✅ BEFOREUNLOAD: Not-Unlock wenn Browser-Tab geschlossen wird (Race Condition Fix)
+  // Hinweis: Der Backend-Timeout (60 Min) bereinigt verwaiste Locks automatisch
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isStructuralEditingActive && einheit) {
+        // Browser zeigt Standard-Dialog "Möchten Sie diese Seite verlassen?"
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isStructuralEditingActive, einheit?.id]);
+
   const handleAcquireStructLock = async () => {
     if (!einheit) return;
     setAcquiringStructLock(true);

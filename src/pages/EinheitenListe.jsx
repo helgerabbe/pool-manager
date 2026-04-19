@@ -129,7 +129,7 @@ export default function EinheitenListe() {
       return () => clearTimeout(timeout);
     }
   }, [isDeletingAny]);
-  const { permissions, rolle, faecher: meineFaecher, authUser } = useRBAC();
+  const { permissions, rolle, authUser } = useRBAC();
   
   // ✅ SCHRITT 2: Secure Backend-Funktion statt Client-Side Filtering
   const { data: einheiten = [], isLoading, isFetching } = useQuery({
@@ -162,7 +162,6 @@ export default function EinheitenListe() {
     const matchRBAC = kannEinheitSehen(rolle, e.freigabe_status);
     const matchChanged = !showOnlyChanged || (e.sync_status === 'modified' || e.sync_status === 'new' || !e.last_synced_at);
     
-    // ✅ KEIN matchMeinFach mehr - Backend hat bereits nach Fächern gefiltert!
     return matchSearch && matchFach && matchRBAC && matchChanged;
   });
 

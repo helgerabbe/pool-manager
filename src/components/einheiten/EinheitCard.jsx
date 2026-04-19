@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { BookOpen, ArrowRight, Layers, Trash2, Lock } from 'lucide-react';
+import { ArrowRight, Layers, Trash2, Lock, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { base44 } from '@/api/base44Client';
@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal';
 import { ROLLEN } from '@/lib/rbac';
 import { getFachFarbe, getFachBadgeStyle } from '@/lib/fachFarben';
+import EinheitAccessBadge from '@/components/ui/EinheitAccessBadge';
 
 export default function EinheitCard({ einheit, lernpaketCount, rolle, onDeleteStart, onDeleteEnd, currentUserEmail }) {
   const { data: faecher = [] } = useQuery({
@@ -24,11 +25,6 @@ export default function EinheitCard({ einheit, lernpaketCount, rolle, onDeleteSt
   const [isDeleting, setIsDeleting] = useState(false);
   const queryClient = useQueryClient();
   const isAdmin = rolle === ROLLEN.ADMIN;
-  
-  // ✅ Unit-Level-Mitarbeiter prüfen
-  const isAssignedMember = currentUserEmail && einheit.members?.some(
-    m => m.user_email === currentUserEmail && m.unit_role === 'LEITUNG'
-  );
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -81,12 +77,10 @@ export default function EinheitCard({ einheit, lernpaketCount, rolle, onDeleteSt
                         Gesperrt
                       </Badge>
                     )}
-                    {isAssignedMember && (
-                      <Badge className="bg-violet-100 text-violet-700 border border-violet-200 gap-1">
-                        <BookOpen className="w-3 h-3" />
-                        Eigene Mitarbeit
-                      </Badge>
-                    )}
+                    <EinheitAccessBadge 
+                      currentUserEmail={currentUserEmail} 
+                      members={einheit.members} 
+                    />
                   </div>
                 </div>
                 <h3 className="text-base font-semibold text-foreground mb-auto group-hover:text-primary transition-colors line-clamp-2">
