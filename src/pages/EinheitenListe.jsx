@@ -173,15 +173,27 @@ export default function EinheitenListe() {
           <p className="text-sm text-muted-foreground mt-1">{einheiten.length} Einheit{einheiten.length !== 1 ? 'en' : ''} insgesamt</p>
         </div>
         {permissions.kannEinheitVerwalten && (
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setSchnellErstellen(true)} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Neue Einheit
-            </Button>
-            <Button onClick={() => navigate('/einheit/create')} className="gap-2">
-              <Wand2 className="w-4 h-4" />
-              Neue Einheit (Wizard)
-            </Button>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <Button variant="outline" onClick={() => setSchnellErstellen(true)} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Neue Einheit
+              </Button>
+              <HelpBadge
+                text="Schnell eine neue Einheit anlegen: Nur Titel, Fach und Jahrgang erforderlich. Themenfelder und Inhalte können Sie später im Workspace ergänzen."
+                docsSlug="einheiten-struktur"
+              />
+            </div>
+            <div className="flex items-center gap-1">
+              <Button onClick={() => navigate('/einheit/create')} className="gap-2">
+                <Wand2 className="w-4 h-4" />
+                Neue Einheit (Wizard)
+              </Button>
+              <HelpBadge
+                text="Der geführte Wizard hilft Ihnen Schritt für Schritt: Metadaten, Gesamtziele, Themenfelder und Lernpakete werden strukturiert angelegt. Empfohlen für neue Einheiten."
+                docsSlug="einheiten-struktur"
+              />
+            </div>
           </div>
         )}
       </div>
