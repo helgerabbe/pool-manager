@@ -35,7 +35,7 @@ function DocsSidebar({ currentSlug, onClose }) {
                     to={`/docs/${item.slug}`}
                     onClick={onClose}
                     className={cn(
-                      'flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors',
+                      'flex items-center gap-2 px-3 py-2.5 rounded-md text-sm transition-colors',
                       isActive
                         ? 'bg-primary/10 text-primary font-medium'
                         : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -65,14 +65,14 @@ export default function DocsLayout() {
 
   return (
     <div className="flex h-full overflow-hidden bg-background">
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 shrink-0 flex-col border-r border-border bg-card">
+      {/* Desktop Sidebar – erst ab lg (1024px) fest eingeblendet, darunter Overlay */}
+      <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-border bg-card">
         <DocsSidebar currentSlug={slug} />
       </aside>
 
-      {/* Mobile Overlay Sidebar */}
+      {/* Tablet + Mobile Overlay Sidebar */}
       {sidebarOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
+        <div className="lg:hidden fixed inset-0 z-50 flex">
           <div className="w-64 bg-card border-r border-border flex flex-col shadow-xl">
             <DocsSidebar currentSlug={slug} onClose={() => setSidebarOpen(false)} />
           </div>
@@ -82,9 +82,9 @@ export default function DocsLayout() {
 
       {/* Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Mobile Header */}
-        <div className="md:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-card shrink-0">
-          <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)} className="h-8 w-8">
+        {/* Mobile + Tablet Header mit Hamburger */}
+        <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-card shrink-0">
+          <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)} className="h-10 w-10">
             <Menu className="w-4 h-4" />
           </Button>
           <span className="text-sm font-medium">Dokumentation</span>

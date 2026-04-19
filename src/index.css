@@ -81,9 +81,10 @@
 @layer base {
   html,
   body {
-    height: 100vh !important;
+    height: 100dvh !important;
     width: 100vw !important;
     overflow: hidden !important;
+    overflow-x: hidden !important;
     margin: 0;
     padding: 0;
   }
@@ -97,7 +98,9 @@
   }
 
   #root {
-    @apply h-screen w-screen flex flex-col overflow-hidden;
+    @apply w-screen flex flex-col overflow-hidden;
+    height: 100dvh;
+    overflow-x: hidden;
   }
 }
 

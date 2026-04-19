@@ -60,15 +60,15 @@ function WorkspaceAwareContent({ location }) {
 
   if (isFullScreen) {
     return (
-      <div className="h-full w-full overflow-hidden">
+      <div className="h-full w-full overflow-hidden overflow-x-hidden">
         <Outlet />
       </div>
     );
   }
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="px-4 sm:px-6 lg:px-8 py-8">
+    <div className="h-full overflow-y-auto overflow-x-hidden">
+      <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-full">
         <Outlet />
       </div>
     </div>
@@ -91,7 +91,7 @@ export default function AppLayout() {
       : location.pathname === path || location.pathname.startsWith(path);
 
   return (
-    <div className="h-screen w-full flex flex-col overflow-hidden bg-background">
+    <div className="h-[100dvh] w-full flex flex-col overflow-hidden overflow-x-hidden bg-background">
       <GlobalPresenceHeartbeat />
       <TutorialSlideshow />
       <WartungsBanner />
@@ -160,7 +160,7 @@ export default function AppLayout() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden min-h-0">
+      <main className="flex-1 overflow-hidden overflow-x-hidden min-h-0">
         <WorkspaceAwareContent location={location} />
       </main>
     </div>
