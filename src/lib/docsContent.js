@@ -422,35 +422,44 @@ Bei der Generierung verarbeitet das System:
 * **Fach und Jahrgangsstufe** der Einheit für einen passenden Ton und fachliche Präzision
 `,
 
-  'freigabe-qualitaetssicherung': `# Freigabe & Qualitätssicherung
+  'freigabe-qualitaetssicherung': `# Freigabe & Qualitätssicherung: Der finale Check
 
-Der Pool-Manager unterscheidet zwischen inhaltlicher Fertigstellung (Content-Status) und technischer Exportbereitschaft (Sync-Status).
+Sie haben eine tolle Aufgabe erstellt, Materialien angeheftet und die KI-Gütekriterien generieren lassen. Was nun? Wie kommt die Aufgabe zum Export-Team?
 
-## Übersicht
+Der Pool-Manager nutzt dafür einen bewussten Zwischenschritt: die **Freigabe**. Dieses System funktioniert wie ein digitaler Briefkasten zwischen den Lehrkräften und dem Team, das den Export nach Moodle und Brian.study übernimmt.
 
-* Jede Aufgabe hat einen **Content-Status**: \`draft\` oder \`approved\`
-* Nur freigegebene Aufgaben (\`approved\`) zählen als exportbereit
-* Die Freigabe kann bei Bedarf wieder zurückgenommen werden
+## Der sichere Hafen: „Entwurf"
 
-## Freigabe-Workflow
+Keine Sorge: Alles, was Sie im Pool-Manager neu anlegen, hat zunächst automatisch den Status **Entwurf**.
 
-1. Aufgabe erstellen → Status: **Entwurf** (gelb)
-2. Inhalte prüfen und vervollständigen
-3. "Freigeben" klicken → Status: **Freigegeben** (grün)
-4. Aufgabe erscheint im Export-Cockpit
+In diesem Status können nur Sie und Ihre Kollegen in der App die Aufgabe sehen. Schüler haben darauf keinen Zugriff, und auch das Export-Team ignoriert diese Aufgaben noch. Sie können also in aller Ruhe experimentieren, Texte umschreiben oder die Aufgabe an verschiedenen Tagen bearbeiten – nichts geht versehentlich „live".
 
-## Freigabe aufheben
+## Der Klick auf „Freigeben"
 
-Eine freigegebene Aufgabe kann nur bearbeitet werden, wenn die Freigabe zuerst aufgehoben wird. Bei exportierten Aufgaben (\`synced\`) muss zusätzlich ein Re-Export geplant werden.
+Sobald Sie mit Ihrer Aufgabe hundertprozentig zufrieden sind, klicken Sie auf den Button **„Für Export freigeben"**.
 
-## Qualitätsprüfung
+Was passiert in diesem Moment?
 
-Vor der Freigabe empfehlen wir:
+| Was? | Warum? |
+|------|--------|
+| **Das Schloss schnappt zu** | Die Aufgabe wird für die Bearbeitung gesperrt, damit das Export-Team nicht an einem sich ändernden Dokument arbeitet. |
+| **Digitaler Briefkasten** | Die Aufgabe taucht beim Export-Team in einer speziellen To-Do-Liste auf. |
 
-* Aufgabenstellung vollständig und verständlich?
-* Erwartungshorizont oder Rubriken vorhanden?
-* Materialien korrekt zugeordnet?
-* KI-Tutor-Felder generiert und geprüft?
+## Das Freigabe-Cockpit (Für das Export-Team)
+
+Das Export-Team (oder die Fachschaftsleitung) hat einen eigenen Bereich: das **Freigabe-Cockpit** (auch Export-Cockpit genannt).
+
+Hier sehen die Verantwortlichen eine aufgeräumte Liste mit allen Aufgaben, die von den Lehrkräften das grüne Licht bekommen haben. Das Team muss sich also nicht mühsam durch alle Einheiten klicken, sondern hat alle „lieferbereiten" Aufgaben zentral an einem Ort.
+
+Von hier aus startet das Team den eigentlichen Export nach Moodle und Brian.study (siehe Kapitel [Export-Workflow](/docs/export-workflow)).
+
+## Ich habe einen Fehler entdeckt! (Freigabe zurückziehen)
+
+Haben Sie eine Aufgabe freigegeben und bemerken kurz danach einen Tippfehler im Erwartungshorizont?
+
+Solange das Export-Team noch nicht mit der Arbeit begonnen hat (die Aufgabe also noch nicht den Status **„In Übertragung"** oder **„Live"** hat), können Sie die Freigabe jederzeit zurückziehen.
+
+Die Aufgabe fällt dann wieder in den Status **Entwurf** zurück, das Schloss öffnet sich, und die Aufgabe verschwindet wieder von der To-Do-Liste des Export-Teams.
 `,
 
   'kollaboration-sperren': `# Kollaboration & Sperren
