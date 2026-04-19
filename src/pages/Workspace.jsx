@@ -433,19 +433,6 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                       <Lock className="w-3.5 h-3.5" /> Lesemodus
                     </span>
                   )}
-                  
-                  {/* Debug-Info */}
-                  <button 
-                    onClick={() => console.log('🔍 Debug:', { 
-                      isStructuralEditingActive, 
-                      structLocked, 
-                      unitAccess,
-                      permissions: permissions.rolle 
-                    })}
-                    className="text-xs text-muted-foreground hover:text-primary"
-                  >
-                    🔍
-                  </button>
 
                   {/* Action-Button */}
                   {isStructuralEditingActive ? (
