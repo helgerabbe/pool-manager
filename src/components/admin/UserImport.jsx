@@ -344,33 +344,51 @@ export default function UserImport() {
     setImporting(true);
     const { rows } = csvData;
 
-    // Zeilen transformieren
-    const transformed = rows.map(row => {
-      const emailCol    = mapping.email   || '';
-      const vornameCol  = mapping.vorname || '';
-      const nachnameCol = mapping.nachname || '';
-      const rolleCol    = mapping.rolle   || '';
-      const faecherCol  = mapping.faecher || '';
+    try {
+      // Zeilen transformieren
+      const transformed = rows.map(row => {
+        const emailCol    = mapping.email   || '';
+        const vornameCol  = mapping.vorname || '';
+        const nachnameCol = mapping.nachname || '';
+        const rolleCol    = mapping.rolle   || '';
+        const faecherCol  = mapping.faecher || '';
 
-      const faecherRaw = faecherCol ? (row[faecherCol] || '') : '';
-      const faecher = faecherRaw
-        .split(trennzeichen)
-        .map(f => f.trim())
-        .filter(Boolean);
+        const faecherRaw = faecherCol ? (row[faecherCol] || '') : '';
+        const faecher = faecherRaw
+          .split(trennzeichen)
+          .map(f => f.trim())
+          .filter(Boolean);
 
-      return {
-        email:    row[emailCol] || '',
-        vorname:  vornameCol ? row[vornameCol] : '',
-        nachname: nachnameCol ? row[nachnameCol] : '',
-        rolle:    rolleCol ? row[rolleCol] : '',
-        faecher,
-      };
-    });
+        return {
+          email:    row[emailCol] || '',
+          vorname:  vornameCol ? row[vornameCol] : '',
+          nachname: nachnameCol ? row[nachnameCol] : '',
+          rolle:    rolleCol ? row[rolleCol] : '',
+          faecher,
+        };
+      });
 
-    const response = await base44.functions.invoke('importBenutzer', { rows: transformed });
-    setResult(response.data);
-    setSchritt(4);
-    setImporting(false);
+      const response = await base44.functions.invoke('importBenutzer', { rows: transformed });
+      
+      // Prüfen ob die Response erfolgreich war
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+      
+      setResult(response.data);
+      setSchritt(4);
+    } catch (error) {
+      console.error('Import-Fehler:', error);
+      // Freundliche Fehlermeldung anzeigen
+      setResult({
+        angelegt: 0,
+        aktualisiert: 0,
+        fehler: [{ zeile: 1, email: '—', grund: error.message || 'Import fehlgeschlagen. Bitte prüfe deine Berechtigung.' }],
+      });
+      setSchritt(4);
+    } finally {
+      setImporting(false);
+    }
   };
 
   const reset = () => {
