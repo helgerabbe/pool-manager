@@ -194,33 +194,55 @@ Einzelne Bausteine können mit einer **Begründung** als "bewusst ausgelassen" m
 
   'ebene-2-allgemeine-aufgaben': `# Ebene 2: Allgemeine Aufgaben
 
-Allgemeine Aufgaben sind transferorientierte Aufgaben, die Kompetenzen aus einem oder mehreren Lernpaketen verknüpfen und anwenden.
+Nachdem auf Ebene 1 das Basiswissen (Vokabeln, Formeln, Fakten) gesichert wurde, geht es in Ebene 2 um den **Transfer**. Hier analysieren die Schülerinnen und Schüler Texte, werten Diagramme aus oder schreiben kurze Erörterungen.
 
-## Übersicht
+Da diese Aufgaben komplexer sind, begleitet der KI-Tutor Brian.study die Lernenden bei jedem Schritt. Der Pool-Manager bietet Ihnen dafür passgenaue Werkzeuge.
 
-* Aufgaben können als **Bild oder Text** hinterlegt werden
-* Jede Aufgabe erhält einen **Schwierigkeitsgrad** (1–3 Sterne)
-* Der **Erwartungshorizont** steuert die KI-Tutor-Konfiguration
+## Schritt 1: Der KI-Aufgaben-Assistent (Ihr „Zauberstab")
 
-## Kompetenzanbindung
+Haben Sie grob im Kopf, was die Schüler machen sollen, aber es fehlt noch an der perfekten Formulierung? Lassen Sie sich von der App helfen!
 
-Über das Tab "Kompetenzzuordnung" werden Lernziele aus Lernpaketen mit der Aufgabe verknüpft. Diese Zuordnung:
+In der Übersicht der Allgemeinen Aufgaben finden Sie den Button **„Mit KI entwerfen"** (mit Zauberstab-Symbol).
 
-* erscheint in der **Lernlandkarte**
-* steuert, welche Ziele der KI-Tutor berücksichtigt
-* ermöglicht hochpriorisierte Markierungen (★)
+| Schritt | Was passiert? |
+|---------|--------------|
+| **Idee eingeben** | Tragen Sie ein paar Stichpunkte ein (z.B. „Vergleich der Weimarer Verfassung mit dem Grundgesetz, Fokus auf die Macht des Präsidenten") |
+| **Generieren** | Das System entwirft daraus einen motivierenden Aufgabentitel und eine schülergerechte Aufgabenstellung |
+| **Kompetenz-Vorschläge** | Die KI schlägt vor, welche Kompetenzen die Schüler benötigen (z.B. „Quellenanalyse", „Recherchieren") |
+| **Übernehmen** | Klicken Sie auf „Als neue Aufgabe übernehmen" – der Text ist danach jederzeit anpassbar |
 
-## Erwartungshorizont
+> **Wichtig zu den Kompetenzen:** Die von der KI vorgeschlagenen Kompetenzen sind zunächst nur „Notizzettel" für Sie. Vergessen Sie nicht, in der **Lernlandkarte (Tab 3)** die echten Basismodule (Ebene 1) mit dieser Aufgabe zu verknüpfen, damit das System weiß, wo Schüler bei Schwierigkeiten üben können.
 
-Der Erwartungshorizont beschreibt, was eine vollständige und korrekte Lösung beinhaltet. Er wird für die KI-Generierung benötigt und sollte folgende Punkte umfassen:
+## Schritt 2: Der Erwartungshorizont (Die Musterlösung)
 
-* Fachliche Kerninhalte
+Im Gegensatz zu den offenen Projektaufgaben (Ebene 3) gibt es in Ebene 2 in der Regel klare fachliche Kriterien oder eine Musterlösung.
+
+Tragen Sie im Feld **Erwartungshorizont** so präzise wie möglich ein, welche inhaltlichen Punkte in der Schülerantwort vorkommen müssen. Dieser Text ist besonders wichtig, da er später das „Gehirn" für die Bewertung durch den KI-Tutor bildet. Ein guter Erwartungshorizont umfasst:
+
+* Fachliche Kerninhalte und Begriffe
 * Erwartete Argumentation oder Struktur
-* Bewertungshinweise
+* Bewertungshinweise und Gewichtung
 
-## KI-Aufgaben-Assistent
+## Schritt 3: Den KI-Tutor vorbereiten (Vollautomatisch)
 
-Mit dem "KI entwerfen"-Button kann aus einer kurzen Idee automatisch eine vollständige Aufgabe mit Titel und Aufgabenstellung generiert werden.
+Wechseln Sie in den Reiter **„KI-Tutor Prompt"** und klicken Sie auf **„Alle Felder generieren"**. Das System erstellt automatisch:
+
+* Es übersetzt Ihren Erwartungshorizont in eine Bewertungsrubrik.
+* Es weist die KI streng an, den Schülern **niemals einfach die Lösung zu verraten**, sondern nur durch geschickte Rückfragen (**Scaffolding**) zu helfen.
+* Es bindet die verknüpften Lernziele ein, damit der Tutor den Schülern bei Lücken gezielt Übungen aus Ebene 1 empfehlen kann.
+
+> **Hinweis:** Sie müssen in diesem Reiter nichts herauskopieren. Lesen Sie die generierten Felder kurz gegen – das Export-Team holt sich diese Daten später automatisch ab.
+
+## Schritt 4: Warum kann ich meine Aufgabe nicht bearbeiten?
+
+Wenn der „Bearbeiten"-Button ausgegraut ist oder Sie nur eine Leseansicht sehen, greift der Sicherheits-Lock der App. Dies passiert in zwei Fällen:
+
+| Ursache | Was tun? |
+|---------|---------|
+| **Ein Kollege bearbeitet die Aufgabe** | Warten Sie – Sie sehen einen Hinweis, wer gerade aktiv ist. Nach 60 Minuten läuft die Sperre automatisch ab. |
+| **Aufgabe wartet auf Export** | Die Aufgabe wurde ins Freigabe-Cockpit geschickt. Sie wird automatisch entsperrt, sobald der Export erfolgreich war. |
+
+Mehr dazu im Kapitel [Export-Workflow](/docs/export-workflow).
 `,
 
   'ebene-3-projektaufgaben': `# Ebene 3: Projektaufgaben & Anwendungsaufgaben
