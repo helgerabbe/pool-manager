@@ -1,9 +1,37 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const ROLLEN = {
   ADMIN: 'admin',
   FACHSCHAFT: 'Fachschaftsleitung',
 };
+
+// Löscht ein Array von IDs sequenziell in Batches um Rate-Limits zu vermeiden
+async function deleteInBatches(deleteFn, ids, batchSize = 3, delayMs = 300) {
+  let deleted = 0;
+  for (let i = 0; i < ids.length; i += batchSize) {
+    const batch = ids.slice(i, i + batchSize);
+    await Promise.all(batch.map(id => deleteFn(id)));
+    deleted += batch.length;
+    if (i + batchSize < ids.length) {
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+  return deleted;
+}
+
+// Lädt IDs in Batches sequenziell
+async function filterInBatches(filterFn, ids, batchSize = 3, delayMs = 200) {
+  const results = [];
+  for (let i = 0; i < ids.length; i += batchSize) {
+    const batch = ids.slice(i, i + batchSize);
+    const batchResults = await Promise.all(batch.map(id => filterFn(id)));
+    results.push(...batchResults.flat());
+    if (i + batchSize < ids.length) {
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+  return results;
+}
 
 Deno.serve(async (req) => {
   try {
@@ -19,7 +47,6 @@ Deno.serve(async (req) => {
     try {
       user = await base44.auth.me();
     } catch (err) {
-      console.error('Auth error:', err.message);
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -27,15 +54,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('User:', JSON.stringify(user, null, 2));
-
     // RBAC: Nur Admins dürfen löschen
-    const userRole = user.role;
-    console.log('User role:', userRole);
-
-    if (userRole !== ROLLEN.ADMIN) {
+    if (user.role !== ROLLEN.ADMIN) {
       return Response.json(
-        { error: `Nur Administratoren dürfen Einheiten löschen. Ihre Rolle: ${userRole}` },
+        { error: `Nur Administratoren dürfen Einheiten löschen. Ihre Rolle: ${user.role}` },
         { status: 403 }
       );
     }
@@ -49,118 +71,116 @@ Deno.serve(async (req) => {
 
     console.log('Lösche Einheit:', einheit.id, einheit.titel_der_einheit);
 
-    // ── Cascade Delete ────────────────────────────────────────────────────────
+    // ── Cascade: Daten sammeln ────────────────────────────────────────────────
 
-    // 1. Alle Lernpakete dieser Einheit
+    // 1. Lernpakete
     const lernpakete = await base44.asServiceRole.entities.Lernpakete.filter({ einheit_id: einheitId });
     const paketIds = lernpakete.map(p => p.id);
     console.log(`Gefunden: ${lernpakete.length} Lernpakete`);
 
-    // 2. Alle Lernziele (über Lernpakete)
+    // 2. Lernziele (sequenziell)
     const lernziele = paketIds.length > 0
-      ? (await Promise.all(paketIds.map(pid =>
-          base44.asServiceRole.entities.Lernziele.filter({ lernpaket_id: pid })
-        ))).flat()
+      ? await filterInBatches(pid => base44.asServiceRole.entities.Lernziele.filter({ lernpaket_id: pid }), paketIds)
       : [];
     console.log(`Gefunden: ${lernziele.length} Lernziele`);
 
-    // 3. Alle Aufgabenbausteine (über Lernpakete)
+    // 3. Aufgabenbausteine (sequenziell)
     const aufgaben = paketIds.length > 0
-      ? (await Promise.all(paketIds.map(pid =>
-          base44.asServiceRole.entities.Aufgabenbausteine.filter({ lernpaket_id: pid })
-        ))).flat()
+      ? await filterInBatches(pid => base44.asServiceRole.entities.Aufgabenbausteine.filter({ lernpaket_id: pid }), paketIds)
       : [];
     console.log(`Gefunden: ${aufgaben.length} Aufgabenbausteine`);
 
-    // 4. Alle Mappings (über Aufgabenbausteine)
+    // 4. Mappings (sequenziell)
     const aufgabenIds = aufgaben.map(a => a.id);
-    let mappings = [];
-    if (aufgabenIds.length > 0) {
-      mappings = (await Promise.all(aufgabenIds.map(aid =>
-        base44.asServiceRole.entities.MappingAufgabeBasisziel.filter({ aufgabe_id: aid })
-      ))).flat();
-    }
+    const mappings = aufgabenIds.length > 0
+      ? await filterInBatches(aid => base44.asServiceRole.entities.MappingAufgabeBasisziel.filter({ aufgabe_id: aid }), aufgabenIds)
+      : [];
     console.log(`Gefunden: ${mappings.length} Mappings`);
 
-    // 5. Alle Master-Aufgaben (über Lernpakete)
+    // 5. Master-Aufgaben (sequenziell)
     const masterAufgaben = paketIds.length > 0
-      ? (await Promise.all(paketIds.map(pid =>
-          base44.asServiceRole.entities.MasterAufgabe.filter({ lernpaket_id: pid })
-        ))).flat()
+      ? await filterInBatches(pid => base44.asServiceRole.entities.MasterAufgabe.filter({ lernpaket_id: pid }), paketIds)
       : [];
     console.log(`Gefunden: ${masterAufgaben.length} Master-Aufgaben`);
 
-    // 6. Alle Lernpaket-Aktivitäten (über Lernpakete)
+    // 6. Lernpaket-Aktivitäten (sequenziell)
     const lernpaketAktivitaeten = paketIds.length > 0
-      ? (await Promise.all(paketIds.map(pid =>
-          base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({ lernpaket_id: pid })
-        ))).flat()
+      ? await filterInBatches(pid => base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({ lernpaket_id: pid }), paketIds)
       : [];
     console.log(`Gefunden: ${lernpaketAktivitaeten.length} Lernpaket-Aktivitäten`);
 
-    // 7. Alle Themenfelder
+    // 7. Themenfelder
     const themenfelder = await base44.asServiceRole.entities.Themenfeld.filter({ einheit_id: einheitId });
     console.log(`Gefunden: ${themenfelder.length} Themenfelder`);
 
-    // ── Löschen in korrekter Reihenfolge (Foreign Keys beachten) ────────────────
+    // 8. AllgemeineAufgaben (über einheit_id)
+    const allgemeineAufgaben = await base44.asServiceRole.entities.AllgemeineAufgabe.filter({ einheit_id: einheitId });
+    console.log(`Gefunden: ${allgemeineAufgaben.length} Allgemeine Aufgaben`);
 
-    // Schritt 1: Mappings löschen
+    // 9. AllgemeineAufgabe Lernziel-Mappings
+    const allgAufgabeIds = allgemeineAufgaben.map(a => a.id);
+    const allgMappings = allgAufgabeIds.length > 0
+      ? await filterInBatches(aid => base44.asServiceRole.entities.AllgemeineAufgabeLernzielMapping.filter({ aufgabe_id: aid }), allgAufgabeIds)
+      : [];
+    console.log(`Gefunden: ${allgMappings.length} AllgemeineAufgabe-Mappings`);
+
+    // 10. EinheitMembers
+    const members = await base44.asServiceRole.entities.EinheitMembers.filter({ einheit_id: einheitId });
+    console.log(`Gefunden: ${members.length} EinheitMembers`);
+
+    // ── Löschen in Reihenfolge (Foreign Keys beachten) ───────────────────────
+
     if (mappings.length > 0) {
-      await Promise.all(mappings.map(m =>
-        base44.asServiceRole.entities.MappingAufgabeBasisziel.delete(m.id)
-      ));
+      await deleteInBatches(id => base44.asServiceRole.entities.MappingAufgabeBasisziel.delete(id), mappings.map(m => m.id));
       console.log(`✓ ${mappings.length} Mappings gelöscht`);
     }
 
-    // Schritt 2: Aufgabenbausteine löschen
     if (aufgaben.length > 0) {
-      await Promise.all(aufgaben.map(a =>
-        base44.asServiceRole.entities.Aufgabenbausteine.delete(a.id)
-      ));
+      await deleteInBatches(id => base44.asServiceRole.entities.Aufgabenbausteine.delete(id), aufgaben.map(a => a.id));
       console.log(`✓ ${aufgaben.length} Aufgabenbausteine gelöscht`);
     }
 
-    // Schritt 3: Lernziele löschen
     if (lernziele.length > 0) {
-      await Promise.all(lernziele.map(lz =>
-        base44.asServiceRole.entities.Lernziele.delete(lz.id)
-      ));
+      await deleteInBatches(id => base44.asServiceRole.entities.Lernziele.delete(id), lernziele.map(lz => lz.id));
       console.log(`✓ ${lernziele.length} Lernziele gelöscht`);
     }
 
-    // Schritt 4: Master-Aufgaben löschen
     if (masterAufgaben.length > 0) {
-      await Promise.all(masterAufgaben.map(ma =>
-        base44.asServiceRole.entities.MasterAufgabe.delete(ma.id)
-      ));
+      await deleteInBatches(id => base44.asServiceRole.entities.MasterAufgabe.delete(id), masterAufgaben.map(ma => ma.id));
       console.log(`✓ ${masterAufgaben.length} Master-Aufgaben gelöscht`);
     }
 
-    // Schritt 5: Lernpaket-Aktivitäten löschen
     if (lernpaketAktivitaeten.length > 0) {
-      await Promise.all(lernpaketAktivitaeten.map(lpa =>
-        base44.asServiceRole.entities.LernpaketPhaseAktivitaet.delete(lpa.id)
-      ));
+      await deleteInBatches(id => base44.asServiceRole.entities.LernpaketPhaseAktivitaet.delete(id), lernpaketAktivitaeten.map(lpa => lpa.id));
       console.log(`✓ ${lernpaketAktivitaeten.length} Lernpaket-Aktivitäten gelöscht`);
     }
 
-    // Schritt 6: Lernpakete löschen
     if (lernpakete.length > 0) {
-      await Promise.all(lernpakete.map(p =>
-        base44.asServiceRole.entities.Lernpakete.delete(p.id)
-      ));
+      await deleteInBatches(id => base44.asServiceRole.entities.Lernpakete.delete(id), paketIds);
       console.log(`✓ ${lernpakete.length} Lernpakete gelöscht`);
     }
 
-    // Schritt 7: Themenfelder löschen
     if (themenfelder.length > 0) {
-      await Promise.all(themenfelder.map(tf =>
-        base44.asServiceRole.entities.Themenfeld.delete(tf.id)
-      ));
+      await deleteInBatches(id => base44.asServiceRole.entities.Themenfeld.delete(id), themenfelder.map(tf => tf.id));
       console.log(`✓ ${themenfelder.length} Themenfelder gelöscht`);
     }
 
-    // Schritt 8: Einheit löschen
+    if (allgMappings.length > 0) {
+      await deleteInBatches(id => base44.asServiceRole.entities.AllgemeineAufgabeLernzielMapping.delete(id), allgMappings.map(m => m.id));
+      console.log(`✓ ${allgMappings.length} AllgemeineAufgabe-Mappings gelöscht`);
+    }
+
+    if (allgemeineAufgaben.length > 0) {
+      await deleteInBatches(id => base44.asServiceRole.entities.AllgemeineAufgabe.delete(id), allgAufgabeIds);
+      console.log(`✓ ${allgemeineAufgaben.length} Allgemeine Aufgaben gelöscht`);
+    }
+
+    if (members.length > 0) {
+      await deleteInBatches(id => base44.asServiceRole.entities.EinheitMembers.delete(id), members.map(m => m.id));
+      console.log(`✓ ${members.length} EinheitMembers gelöscht`);
+    }
+
+    // Einheit selbst löschen
     await base44.asServiceRole.entities.Einheiten.delete(einheitId);
     console.log(`✓ Einheit gelöscht`);
 
@@ -175,6 +195,9 @@ Deno.serve(async (req) => {
         aufgabenbausteine: aufgaben.length,
         masterAufgaben: masterAufgaben.length,
         mappings: mappings.length,
+        allgemeineAufgaben: allgemeineAufgaben.length,
+        allgMappings: allgMappings.length,
+        members: members.length,
       },
     });
   } catch (err) {
