@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useParams, Outlet } from 'react-router-dom';
-import { DOC_NAV } from '@/lib/docsContent';
+import { DOC_GROUPS } from '@/lib/docsContent';
 import { cn } from '@/lib/utils';
 import { BookOpen, Menu, X, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 function DocsSidebar({ currentSlug, onClose }) {
   return (
     <nav className="flex flex-col h-full">
-      <div className="px-4 py-5 border-b border-border flex items-center gap-2">
+      {/* Header */}
+      <div className="px-4 py-5 border-b border-border flex items-center gap-2 shrink-0">
         <BookOpen className="w-5 h-5 text-primary shrink-0" />
         <span className="font-semibold text-sm">Dokumentation</span>
         {onClose && (
@@ -17,22 +18,41 @@ function DocsSidebar({ currentSlug, onClose }) {
           </button>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto py-3 px-2">
-        {DOC_NAV.map((item) => (
-          <Link
-            key={item.slug}
-            to={`/docs/${item.slug}`}
-            onClick={onClose}
-            className={cn(
-              'flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors mb-0.5',
-              currentSlug === item.slug
-                ? 'bg-primary/10 text-primary font-medium'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            )}
-          >
-            <ChevronRight className={cn('w-3 h-3 shrink-0 transition-transform', currentSlug === item.slug && 'rotate-90 text-primary')} />
-            {item.label}
-          </Link>
+
+      {/* Nav Groups */}
+      <div className="flex-1 overflow-y-auto py-4 px-3 space-y-5">
+        {DOC_GROUPS.map((group) => (
+          <div key={group.label}>
+            <p className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+              {group.label}
+            </p>
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const isActive = currentSlug === item.slug;
+                return (
+                  <Link
+                    key={item.slug}
+                    to={`/docs/${item.slug}`}
+                    onClick={onClose}
+                    className={cn(
+                      'flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors',
+                      isActive
+                        ? 'bg-primary/10 text-primary font-medium'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    )}
+                  >
+                    <ChevronRight
+                      className={cn(
+                        'w-3 h-3 shrink-0 transition-transform',
+                        isActive ? 'rotate-90 text-primary' : 'text-muted-foreground/40'
+                      )}
+                    />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
         ))}
       </div>
     </nav>
@@ -60,7 +80,7 @@ export default function DocsLayout() {
         </div>
       )}
 
-      {/* Content */}
+      {/* Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile Header */}
         <div className="md:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-card shrink-0">
@@ -71,7 +91,7 @@ export default function DocsLayout() {
         </div>
 
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-4xl mx-auto px-6 py-8">
+          <div className="max-w-3xl mx-auto px-6 py-10">
             <Outlet />
           </div>
         </main>
