@@ -124,33 +124,57 @@ Sobald Themenfelder angelegt sind, füllen Sie diese mit Lernpaketen. Der Pool-M
 In diese drei Phasen ziehen Sie über den **Aktivitäten-Katalog** Ihre Aufgabenbausteine (Ebene 1) per Drag & Drop hinein.
 `,
 
-  'lernziele': `# Lernziele
+  'lernziele': `# Lernziele & Kompetenzen: Der GPS-Tracker des Lernens
 
-Lernziele beschreiben, was Schülerinnen und Schüler nach dem Durcharbeiten eines Lernpakets können oder wissen sollen. Sie sind das Bindeglied zwischen Inhalten und Aufgaben.
+In einem guten Unterricht geht es nicht nur darum, „Stoff durchzunehmen", sondern bestimmte Kompetenzen zu erwerben. Im Pool-Manager sind Lernziele daher nicht einfach nur toter Text, sondern der Motor, der das System antreibt.
 
-## Übersicht
+Sie helfen dem KI-Tutor Brian.study dabei, die Schwächen der Schüler zu erkennen, und sie bilden die Grundlage für die **Lernlandkarte** – eine Art GPS-Tracker für den Lernfortschritt der Schüler.
 
-* Lernziele werden in der **Ich-kann-Form** formuliert
-* Jedes Lernziel gehört zu genau einem **Lernpaket**
-* Es gibt zwei Kategorien: **Fachwissen** und **Fähigkeit/Fertigkeit**
+## Die „Ich-kann"-Formel
 
-## Formulierungshinweise
+Wir verabschieden uns von sperrigen Lehrplan-Formulierungen. Im Pool-Manager werden Lernziele immer konsequent aus der Schülerperspektive formuliert:
 
-Gute Lernziele sind:
+| ❌ Statt | ✅ Besser |
+|----------|----------|
+| „Vermittlung der Ursachen des 1. Weltkriegs." | „Ich kann die drei Hauptursachen für den Ausbruch des 1. Weltkriegs benennen." |
+| „Diagrammanalyse" | „Ich kann ein Diagramm korrekt auswerten und die wichtigsten Aussagen benennen." |
 
-* **konkret** – messbar und überprüfbar
-* **kompetenzorientiert** – beschreiben eine Handlung, kein Wissen
-* **schülergerecht** – verständlich ohne Fachsprache
+Nur so können Schüler später selbstständig abhaken, ob sie etwas wirklich verstanden haben oder noch üben müssen.
 
-Beispiel: *Ich kann die drei Hauptursachen des Ersten Weltkriegs benennen und erklären.*
+## Fachwissen vs. Fähigkeit
 
-## Schülergerechte Übersetzung
+Wenn Sie ein neues Lernziel anlegen, fragt Sie das System nach der Kategorie:
 
-Zu jedem Lernziel kann eine vereinfachte Version für die **Lernlandkarte** hinterlegt werden, die direkt für Schüler sichtbar ist.
+| Kategorie | Was wird beschrieben? | Beispiel |
+|-----------|----------------------|---------|
+| **Fachwissen** | Faktenwissen, Formeln, Vokabeln, Daten | „Ich kenne den Aufbau einer Pflanzenzelle." |
+| **Fähigkeit / Fertigkeit** | Handwerkszeug, Methoden, das „Wie" | „Ich kann eine Pro-Contra-Diskussion moderieren." |
 
-## Prioritäten in Projektaufgaben
+> **Tipp:** Eine gute Einheit braucht immer eine gesunde Mischung aus beiden Kategorien!
 
-Im Tab "Lernlandkarte" bei Projektaufgaben können Lernziele als **hochpriorisiert (★)** markiert werden, um den Fokus für die Bearbeitung zu setzen.
+## Die schülergerechte Übersetzung
+
+Manchmal schreibt der offizielle Rahmenlehrplan Begriffe vor, die für Schüler nicht greifbar sind (z.B. „Multiperspektivische Quellenkritik"). Das System bietet daher ein Feld für die **schülergerechte Übersetzung**.
+
+Was Sie dort eintragen, ist das, was die Schüler später in ihrer Lernlandkarte sehen:
+*„Ich kann erkennen, ob der Autor eines Textes eine bestimmte Absicht verfolgt."*
+
+## Das Mapping: Lernziele mit Aufgaben verknüpfen
+
+Ein Lernziel bringt nichts, wenn es nicht geübt und geprüft wird. Daher werden Ziele im Pool-Manager fest an Aufgaben geknüpft:
+
+* **Ebene 1 (Basismodule):** Jede Übungsaufgabe erhält ein direkt zugehöriges Lernziel. Das System weiß: *Diese Aufgabe trainiert exakt dieses Ziel.*
+* **Ebene 2 & 3 (Transfer & Projekte):** In der Lernlandkarte (Tab 3) geben Sie an, welche Grundlagen-Ziele aus Ebene 1 für das Projekt zwingend vorausgesetzt werden.
+
+### Warum ist das Mapping so wichtig?
+
+Wenn ein Schüler bei einer Projektaufgabe (Ebene 3) scheitert, schaut Brian.study nach, welche Lernziele vorausgesetzt waren. Er sucht dann vollautomatisch die passenden Übungsaufgaben aus Ebene 1 heraus und empfiehlt:
+
+> *„Schau dir noch einmal dieses Basismodul an, um deine Lücke zu schließen!"*
+
+## Prioritäten setzen
+
+Im Tab „Lernlandkarte" bei Projekt- und Anwendungsaufgaben können Lernziele als **hochpriorisiert (★)** markiert werden, um den Fokus für die Bearbeitung zu setzen.
 `,
 
   'materialien-medien': `# Materialien & Medien
