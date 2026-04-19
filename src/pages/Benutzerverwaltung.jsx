@@ -470,7 +470,6 @@ export default function Benutzerverwaltung() {
                 <strong>*</strong> = nur im eigenen Fachbereich | <strong>**</strong> = nur Freigegeben
               </p>
             </div>
-            </>
           )}
         </CardContent>
       </Card>
