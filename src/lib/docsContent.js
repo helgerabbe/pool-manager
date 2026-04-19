@@ -209,33 +209,43 @@ Für eine optimale Performance empfehlen wir:
 * Keine eingebetteten Videos – stattdessen Links verwenden
 `,
 
-  'ebene-1-basismodule': `# Ebene 1: Basismodule
+  'ebene-1-basismodule': `# Ebene 1: Basismodule & Bausteine
 
-Basismodule bilden das Fundament jeder Unterrichtseinheit. Sie enthalten Lernpakete mit Aufgabenbausteinen auf der ersten Anforderungsebene.
+Die Basismodule der Ebene 1 sind das tägliche Brot des Unterrichts. Während es in den Ebenen 2 und 3 um Transfer und freie Projekte geht, sichern Sie in Ebene 1 das grundlegende Fachwissen und die Basis-Fähigkeiten (Vokabeln, Formeln, historische Daten, grammatikalische Regeln).
 
-## Übersicht
+Da diese Aufgaben oft kleinteilig sind, bietet der Pool-Manager eine stark strukturierte Arbeitsweise und smarte KI-Werkzeuge, um Ihnen Zeit zu sparen.
 
-* Basismodule sind **wiederverwendbar** über verschiedene Einheiten
-* Sie bestehen aus **Aufgabenbausteinen** verschiedener Typen
-* Die KI kann Bausteine automatisch **klonen und variieren** (Serien-Generator)
+## Die vier Aufgabenbausteine
 
-## Aufgabenbausteine-Typen
+Wenn Sie ein Lernpaket öffnen, können Sie es mit konkreten Inhalten füllen. Der Pool-Manager bietet vier standardisierte Bausteine an, die den idealen Lernprozess abbilden:
 
-* **Pre-Test** – Vorwissen aktivieren
-* **Input / Erklärung** – Neuen Stoff einführen
-* **Infoseite / Cheat-Sheet** – Nachschlageblatt
-* **Ebene-1-Übung** – Grundlegende Anwendung
-* **Drill-Übung** – Wiederholung zur Automatisierung
-* **Exit-Check** – Lernzielkontrolle am Ende
-* **Musterl ösung** – Referenzlösung für Schüler
+| Baustein | Zweck | Beispiel |
+|---------|-------|---------|
+| **Pre-Test** | Vorwissen testen – Schüler die den Test bestehen, können den Input ggf. überspringen | „Was weißt du schon über Brüche?" |
+| **Input** | Wissen aneignen – noch keine Prüfung, nur Materialbereitstellung | Erklärvideo, Buchseite, Fachtext, Podcast |
+| **Übung** | Wissen anwenden – wiederholbares Training bis zur Sicherheit | Vokabeltrainer, Zuordnungsaufgaben, Lückentexte |
+| **Exit-Check** | Wissen prüfen – formaler Abschluss, meldet Lernzielerreichung an Moodle / KI-Tutor | Kurze Abschlussaufgabe |
 
-## Opt-out
+## Flexibilität durch „Opt-out"
 
-Einzelne Bausteine können mit einer **Begründung** als "bewusst ausgelassen" markiert werden. Sie zählen dann als vollständig, ohne dass Inhalte eingefügt werden müssen.
+Müssen Sie immer alle vier Bausteine ausfüllen? **Nein.**
 
-## KI-Serien-Generator
+Der Pool-Manager arbeitet mit einem **Opt-out-Prinzip** (bewusstes Auslassen). Wenn Sie für ein Thema keinen Pre-Test benötigen, lassen Sie das Feld einfach leer – das System erkennt das automatisch und überspringt diesen Schritt für die Schüler. Auch ein Lernpaket, das nur aus einem Input (z.B. einem wichtigen Info-Video) besteht, ist völlig in Ordnung.
 
-Über den Serien-Generator können aus einer Master-Aufgabe automatisch mehrere variierte Klone erstellt werden – ideal für differenzierte Übungsserien.
+## Zeit sparen: Der KI-Serien-Generator
+
+Das Erstellen von 20 ähnlichen Mathe-Aufgaben oder 15 Grammatik-Sätzen kostet viel Zeit. Der **KI-Serien-Generator** nimmt Ihnen diese Arbeit ab:
+
+1. **Master-Aufgabe erstellen** – Sie erstellen nur ein einziges, perfektes Beispiel.
+   *Beispiel: „Berechne den Flächeninhalt eines Rechtecks mit a = 5 cm und b = 3 cm."*
+
+2. **Lernziel anheften** – Sie verknüpfen die Master-Aufgabe mit dem passenden Lernziel (z.B. „Ich kann Flächen berechnen").
+
+3. **Klone generieren** – Sie klicken auf das KI-Symbol und wählen, wie viele Variationen Sie benötigen (z.B. 5 Stück).
+
+Das System analysiert Ihre Master-Aufgabe und generiert automatisch **strukturell identische Klone mit anderen Werten** (z.B. a = 7 cm, b = 4 cm). Alle Klone erben das Lernziel der Master-Aufgabe automatisch.
+
+> **Tipp:** Sie können die generierten Klone danach einzeln überprüfen, anpassen oder direkt für die Schüler freigeben.
 `,
 
   'ebene-2-allgemeine-aufgaben': `# Ebene 2: Allgemeine Aufgaben
