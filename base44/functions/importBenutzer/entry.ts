@@ -34,8 +34,10 @@ Deno.serve(async (req) => {
   // Fallback: Falls noch keine Benutzer-Record existiert, prüfe die eingebaute User.role
   const rolle = benutzerProfile[0]?.rolle || user.role;
   
-  // Berechtigung prüfen: Administrator ODER Fachschaftsleitung dürfen importieren
-  const darfImportieren = rolle === 'Administrator' || rolle === 'Fachschaftsleitung';
+  // Berechtigung prüfen: Administrator (oder "Admin" als Alias) ODER Fachschaftsleitung dürfen importieren
+  const istAdmin = rolle === 'Administrator' || rolle === 'Admin';
+  const istFachleitung = rolle === 'Fachschaftsleitung';
+  const darfImportieren = istAdmin || istFachleitung;
   
   if (!rolle || !darfImportieren) {
     return Response.json({ 
