@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import TutorialSlideshow from '@/components/onboarding/TutorialSlideshow';
-import { Layers, Home, ShieldCheck, LogOut, ChevronRight, BookOpen, Settings } from 'lucide-react';
+import { Layers, Home, ShieldCheck, LogOut, ChevronRight, BookOpen, Settings, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
 import WartungsBanner from '@/components/layout/WartungsBanner';
@@ -127,6 +127,9 @@ export default function AppLayout() {
 
               {/* Basismodule */}
               <NavIconLink to="/basismodule" icon={BookOpen} label="Basismodule" isActive={isActive('/basismodule')} />
+
+              {/* Dokumentation */}
+              <NavIconLink to="/docs" icon={FileText} label="Dokumentation" isActive={isActive('/docs')} />
 
               {/* Admin-Bereich (nur für Admins) */}
               {permissions.kannBenutzerVerwalten && (

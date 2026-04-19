@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, BookOpen } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 
 /**
  * HelpDialog – kontextbezogenes Hilfesystem
@@ -12,8 +13,9 @@ import { Button } from '@/components/ui/button';
  *   description – Kurze Erklärung in einfacher Sprache
  *   features    – Array<string>: Was man hier tun kann
  *   faqs        – Array<{ question: string, answer: string }>
+ *   docsSlug    – Optionaler Slug für Deep-Link in die Dokumentation
  */
-export default function HelpDialog({ title, description, features = [], faqs = [] }) {
+export default function HelpDialog({ title, description, features = [], faqs = [], docsSlug }) {
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -72,6 +74,18 @@ export default function HelpDialog({ title, description, features = [], faqs = [
                     </AccordionItem>
                   ))}
                 </Accordion>
+              </div>
+            )}
+            {docsSlug && (
+              <div className="pt-3 border-t border-border">
+                <Link
+                  to={`/docs/${docsSlug}`}
+                  onClick={() => setOpen(false)}
+                  className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Ausführliche Dokumentation lesen
+                </Link>
               </div>
             )}
           </div>

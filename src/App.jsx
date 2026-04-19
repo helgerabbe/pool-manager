@@ -20,6 +20,9 @@ import ExportCenter from '@/pages/ExportCenter';
 import EinheitViewManager from '@/components/workspace/EinheitViewManager';
 import BasismoduleOverview from '@/pages/BasismoduleOverview';
 import BasismoduleView from '@/components/basismodule/BasismoduleView';
+import DocsLayout from '@/components/docs/DocsLayout';
+import DocsIndex from '@/pages/DocsIndex';
+import DocViewer from '@/pages/DocViewer';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -52,6 +55,10 @@ const AuthenticatedApp = () => {
         <Route path="/einheiten" element={<EinheitenListe />} />
         <Route path="/einheiten/:id" element={<EinheitViewManager />} />
         <Route path="/basismodule" element={<BasismoduleView />} />
+        <Route path="/docs" element={<DocsLayout />}>
+          <Route index element={<DocsIndex />} />
+          <Route path=":slug" element={<DocViewer />} />
+        </Route>
         
         {/* ✅ GESCHÜTZT: Admin-Bereich */}
         <Route
