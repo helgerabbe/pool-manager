@@ -105,15 +105,14 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     authUser?.email
   );
   
-  // 🔍 DEBUG: Rechte-Check Tab 2
-  console.log('Rechte-Check Tab 2:', {
-    einheitMembers: einheit?.members,
-    userEmail: authUser?.email,
-    rolle,
-    unitAccess,
-    kannStrukturBearbeitenGlobal: permissions?.kannStrukturBearbeiten?.(einheit?.fach),
-    kannStrukturBearbeitenMitUnit: permissions?.kannStrukturBearbeiten?.(einheit?.fach) || unitAccess.hasFullAccess
-  });
+  // 🔥 HARDCORE AUDIT TAB 2 🔥
+  console.log('🔥 HARDCORE AUDIT TAB 2 🔥');
+  console.log('1. Aktueller Tab:', activeTab);
+  console.log('2. Einheit Members vorhanden?:', einheit?.members ? 'JA' : 'NEIN', einheit?.members);
+  console.log('3. Current User Email:', authUser?.email);
+  console.log('4. Rechte-Check (hasUnitLevelAccess):', hasUnitLevelAccess(rolle, permissions?.faecher || [], einheit?.fach, einheit?.members || [], authUser?.email));
+  console.log('5. Globale FSL Rolle:', permissions?.kannStrukturBearbeiten?.(einheit?.fach));
+  console.log('6. Toggle wird gerendert:', activeTab === 'struktur' && (permissions.kannStrukturBearbeiten(einheit?.fach) || unitAccess.hasFullAccess));
 
   // Einheit gesperrt? → normale Lehrkräfte dürfen nicht bearbeiten
   const einheitGesperrt = einheit?.freigabe_status === 'Gesperrt';
