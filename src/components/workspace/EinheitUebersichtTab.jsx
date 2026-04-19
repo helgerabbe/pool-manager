@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 // useDraftState removed – form state managed directly
 import { useSystemSettings } from '@/hooks/useSystemSettings';
 import HelpDialog from '@/components/ui/HelpDialog';
+import HelpBadge from '@/components/ui/HelpBadge';
 
 const EINHEIT_HELP = {
   title: 'Einheit konfigurieren',
@@ -40,6 +41,7 @@ const EINHEIT_HELP = {
       answer: 'Der Modus bezieht sich auf die Themenfelder – nicht auf einzelne Lernpakete. Im offenen Modus können Schüler die Themenfelder in beliebiger Reihenfolge bearbeiten. Im sequenziellen Modus sind die Themenfelder nummeriert und müssen der Reihe nach durchgearbeitet werden. Lernpakete innerhalb eines Themenfelds sind immer frei zugänglich.',
     },
   ],
+  docsSlug: 'einheiten-struktur',
 };
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import GesamtzielManager from './GesamtzielManager';
@@ -376,7 +378,13 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
         {/* ── Spalte 2: Bearbeitungsstatus + Mitarbeiter ───────────────────────── */}
         <section className="space-y-5">
           <div>
-            <h2 className="text-lg font-semibold">Bearbeitungsstatus</h2>
+            <h2 className="text-lg font-semibold flex items-center gap-1.5">
+              Bearbeitungsstatus
+              <HelpBadge
+                text="Steuert, ob Lehrkräfte Inhalte dieser Einheit bearbeiten dürfen. 'Gesperrt' schützt fertige Einheiten vor versehentlichen Änderungen."
+                docsSlug="einheiten-struktur"
+              />
+            </h2>
             <p className="text-sm text-muted-foreground mt-0.5">Steuert, ob Lehrkräfte Inhalte dieser Einheit bearbeiten dürfen.</p>
           </div>
 
@@ -438,7 +446,13 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
 
           {/* ── Mitarbeiter (direkt unter Bearbeitungsstatus) ─────────────────── */}
           <div>
-            <h2 className="text-lg font-semibold">Mitarbeiter</h2>
+            <h2 className="text-lg font-semibold flex items-center gap-1.5">
+              Mitarbeiter
+              <HelpBadge
+                text="Hier fügen Sie Fachlehrkräfte als Mitarbeiter hinzu. Mitarbeiter erhalten volle Bearbeitungsrechte (LEITUNG-Rolle) für diese Einheit."
+                docsSlug="kollaboration-sperren"
+              />
+            </h2>
             <p className="text-sm text-muted-foreground mt-0.5">Fachlehrkräfte dieser Einheit volle Bearbeitungsrechte geben.</p>
           </div>
 
@@ -507,7 +521,13 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
 
           {/* ── Lernpakete im Bearbeitungsmodus (in rechter Spalte) ───────────── */}
           <div>
-           <h2 className="text-lg font-semibold">Lernpakete im Bearbeitungsmodus</h2>
+           <h2 className="text-lg font-semibold flex items-center gap-1.5">
+             Lernpakete im Bearbeitungsmodus
+             <HelpBadge
+               text="Sperren verhindern, dass zwei Lehrkräfte gleichzeitig dasselbe Lernpaket bearbeiten. Sperren laufen nach 60 Minuten automatisch ab."
+               docsSlug="kollaboration-sperren"
+             />
+           </h2>
            <p className="text-sm text-muted-foreground mt-0.5">Zeigt an, welche Lernpakete gerade bearbeitet werden.</p>
           </div>
 

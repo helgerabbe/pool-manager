@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { RotateCcw, AlertCircle, CheckCircle2, Clock, ShieldCheck, Info, Pencil, Upload, RefreshCw } from 'lucide-react';
+import HelpBadge from '@/components/ui/HelpBadge';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -382,7 +383,13 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
     <div className="min-h-screen bg-muted/20 p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Freigabe-Cockpit</h2>
+          <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            Freigabe-Cockpit
+            <HelpBadge
+              text="Hier siehst du alle von Lehrkräften freigegebenen Inhalte. Wähle Elemente aus und übergebe sie für den Moodle-Export."
+              docsSlug="export-workflow"
+            />
+          </h2>
           <p className="text-muted-foreground mt-2">
             Wähle eine Einheit, selektiere freigegebene Inhalte und übergebe sie an das Moodle-Export-Team.
           </p>
@@ -393,6 +400,10 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
           <div className="flex items-center gap-2 mb-3">
             <Info className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm font-semibold">Status-Workflow im Überblick</span>
+            <HelpBadge
+              text="Jede Aktivität durchläuft diesen Lebenszyklus: Entwurf → Freigegeben → In Übertragung → Live. Mehr Details in der Dokumentation."
+              docsSlug="export-workflow"
+            />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {[

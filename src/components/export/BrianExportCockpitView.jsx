@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CheckCircle2, Copy, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import HelpBadge from '@/components/ui/HelpBadge';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -229,7 +230,13 @@ export default function BrianExportCockpitView() {
 
         {/* Header */}
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Brian.study Export</h2>
+          <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            Brian.study Export
+            <HelpBadge
+              text="Hier kopierst du die 5 KI-Tutor-Segmente für jede Aufgabe und markierst sie als in Brian übertragen. Erst wenn Moodle UND Brian bestätigt sind, wird die Bearbeitungssperre aufgehoben."
+              docsSlug="export-workflow"
+            />
+          </h2>
           <p className="text-muted-foreground mt-2">
             Generiere Prompts für Brian.study und markiere Aufgaben als exportiert.
           </p>
