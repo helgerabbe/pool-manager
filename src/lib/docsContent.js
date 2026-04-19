@@ -44,30 +44,44 @@ export const DOC_NAV = DOC_GROUPS.flatMap(g => g.items);
 
 export const DOC_CONTENT = {
 
-  'erste-schritte': `# Erste Schritte
+  'erste-schritte': `# Erste Schritte: Systemübersicht & Rollen
 
-Willkommen im Pool-Manager! Diese Seite gibt Ihnen einen schnellen Einstieg in die wichtigsten Konzepte und zeigt, wie Sie in wenigen Schritten Ihre erste Unterrichtseinheit anlegen.
+Herzlich willkommen im Pool-Manager! Dieses System ist Ihr zentraler Arbeitsplatz, um modernen, KI-gestützten und kompetenzorientierten Unterricht zu planen.
 
-## Übersicht
+Bevor Sie Ihre erste eigene Unterrichtseinheit anlegen, gibt Ihnen dieses Kapitel einen kurzen Überblick darüber, wie das System „tickt" und welche Rechte Sie in der App haben.
 
-* **Einheit anlegen** – Starten Sie mit Fach, Jahrgangsstufe und einem Titel
-* **Struktur aufbauen** – Themenfelder und Lernpakete gliedern den Inhalt
-* **Aufgaben erstellen** – Drei Ebenen von Basis bis Projekt
-* **Exportieren** – Fertige Inhalte nach Moodle und Brian.study übertragen
+## Die Philosophie: Das Drei-Ebenen-Modell
 
-## Benutzerrollen
+Der Pool-Manager bietet Ihnen drei Anforderungsebenen, um Ihre Schüler bestmöglich zu fördern. Alles, was Sie hier bauen, ordnet sich in dieses Modell ein:
 
-| Rolle | Rechte |
-|-------|--------|
-| Administrator | Vollzugriff, Benutzerverwaltung |
-| Fachschaftsleitung | Einheiten erstellen & freigeben |
-| Fachlehrkraft | Inhalte bearbeiten |
-| Moodle-Designer | Export-Cockpit bedienen |
-| Betrachter | Nur lesen |
+| Ebene | Bezeichnung | Was passiert hier? |
+|-------|-------------|-------------------|
+| **Ebene 1** | Basismodule | Das Fundament – Schüler trainieren Vokabeln, Formeln und grundlegendes Fachwissen. |
+| **Ebene 2** | Allgemeine Aufgaben | Der Transfer – Schüler analysieren Texte oder werten Diagramme aus, begleitet durch den KI-Tutor. |
+| **Ebene 3** | Projektaufgaben | Die Königsdisziplin – freie, kreative Aufgaben (z.B. Podcasts, Portfolios) mit maßgeschneiderten Bewertungsrubriken. |
 
-## Erster Login
+> Wie Sie diese Ebenen strukturieren, erfahren Sie im nächsten Kapitel [Einheiten & Struktur](/docs/einheiten-struktur).
 
-Nach der Einladung per E-Mail erhalten Sie Zugang zum System. Beim ersten Login sollten Sie Ihr Profil unter *Benutzerverwaltung* vervollständigen und Ihre Fachzuständigkeiten hinterlegen.
+## Wer darf was? (Benutzerrollen)
+
+Da oft ganze Schulen oder Fachschaften im Pool-Manager zusammenarbeiten, hat nicht jeder Nutzer dieselben Menüs und Buttons. Ihre Möglichkeiten hängen von Ihrer zugewiesenen Rolle ab:
+
+| Rolle | Aufgabe |
+|-------|---------|
+| **Fachlehrkraft** | Einheiten erstellen, KI-Aufgaben generieren, Lernziele verknüpfen und Aufgaben für den Export freigeben. |
+| **Fachschaftsleitung / Export-Team** | Qualitätssicherung und Zugriff auf das Freigabe-Cockpit – übertragen fertige Aufgaben nach Moodle und Brian.study. |
+| **Betrachter** | Alle Einheiten und Aufgaben lesen, aber nichts bearbeiten oder löschen. Ideal für Referendare oder Vertretungskräfte. |
+| **Moodle-Designer** | Technische Spezialrolle – organisiert die optische Strukturierung der exportierten Kurse in Moodle. |
+| **Admin** | Systemverwaltung – verwaltet Benutzerkonten, lädt neue Kollegen ein und pflegt globale Listen (Fächer, Jahrgänge). |
+
+## Der erste Schritt ins System
+
+Wenn Sie sich das erste Mal einloggen, landen Sie auf Ihrem **Dashboard**.
+
+* Auf der linken Seite finden Sie die Hauptnavigation.
+* Unter dem Menüpunkt **„Einheiten"** finden Sie alle Unterrichtsvorhaben Ihrer Schule.
+
+> **Tipp:** Trauen Sie sich ruhig, auf eine bestehende Einheit zu klicken! Solange Sie nicht aktiv auf den Button „Bearbeiten" drücken, befinden Sie sich im sicheren Lese-Modus und können in Ruhe sehen, wie Ihre Kollegen das System nutzen.
 `,
 
   'einheiten-struktur': `# Einheiten & Struktur: Das Fundament
