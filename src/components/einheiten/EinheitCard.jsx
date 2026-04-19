@@ -76,10 +76,10 @@ export default function EinheitCard({ einheit, lernpaketCount, rolle, onDeleteSt
     <>
       <div className="relative group/card">
         <Link to={`/einheiten/${einheit.id}`}>
-          <Card className="group hover:shadow-lg hover:border-primary/20 transition-all duration-300 cursor-pointer overflow-hidden">
-            <CardContent className="p-0">
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
+          <Card className="group hover:shadow-lg hover:border-primary/20 transition-all duration-300 cursor-pointer overflow-hidden h-[168px] flex flex-col">
+            <CardContent className="p-0 flex flex-col flex-1">
+              <div className="p-6 flex-1 flex flex-col">
+                <div className="flex items-start justify-between mb-3">
                   <Badge className={colorClass + ' font-medium'}>
                     {einheit.fach}
                   </Badge>
@@ -90,10 +90,10 @@ export default function EinheitCard({ einheit, lernpaketCount, rolle, onDeleteSt
                     </Badge>
                   )}
                 </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
+                <h3 className="text-base font-semibold text-foreground mb-auto group-hover:text-primary transition-colors line-clamp-2">
                   {einheit.titel_der_einheit}
                 </h3>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-3">
                   <span className="flex items-center gap-1">
                     <BookOpen className="w-3.5 h-3.5" />
                     Jg. {einheit.jahrgangsstufe}
@@ -102,15 +102,9 @@ export default function EinheitCard({ einheit, lernpaketCount, rolle, onDeleteSt
                     <Layers className="w-3.5 h-3.5" />
                     {lernpaketCount} Paket{lernpaketCount !== 1 ? 'e' : ''}
                   </span>
-                  {einheit.bearbeitungsmodus && (
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      {einheit.bearbeitungsmodus === 'sequenziell' ? 'Sequenziell' : 'Offen'}
-                    </span>
-                  )}
                 </div>
               </div>
-              <div className="px-6 py-3 bg-muted/50 flex items-center justify-between border-t">
+              <div className="px-6 py-2.5 bg-muted/50 flex items-center justify-between border-t shrink-0">
                 <span className="text-xs text-muted-foreground">
                   {einheit.created_date && format(new Date(einheit.created_date), 'dd. MMM yyyy', { locale: de })}
                 </span>
