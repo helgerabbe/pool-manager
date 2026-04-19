@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Plus, Search } from 'lucide-react';
+import HelpBadge from '@/components/ui/HelpBadge';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -54,6 +55,13 @@ export default function BasismodulList({ selectedId, onSelect, onCreateNew }) {
     <div className="flex flex-col h-full bg-card border-r border-border">
       {/* Header */}
        <div className="shrink-0 p-4 border-b border-border space-y-3">
+         <div className="flex items-center justify-between">
+           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Basismodule</span>
+           <HelpBadge
+             text="Basismodule sind fachübergreifende Grundlagenmodule (z.B. 'Rechtschreibung', 'Bruchrechnung'). Sie enthalten Basislernpakete mit konkreten Lernzielen für Ebene-1-Übungen."
+             docsSlug="ebene-1-basismodule"
+           />
+         </div>
          {permissions.kannSchreiben && (
            <Button onClick={onCreateNew} className="w-full gap-2">
              <Plus className="w-4 h-4" />

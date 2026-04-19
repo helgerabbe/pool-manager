@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Edit2, Trash2, Check, X, Loader2 } from 'lucide-react';
+import HelpBadge from '@/components/ui/HelpBadge';
 import { toast } from 'sonner';
 import BasislernpaketCard from './BasislernpaketCard';
 
@@ -159,6 +160,13 @@ export default function BasismodulDetail({ basismodul, onDelete }) {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {/* Neues Paket hinzufügen */}
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Basislernpakete</p>
+          <HelpBadge
+            text="Basislernpakete bündeln verwandte Lernziele innerhalb eines Moduls (z.B. 'Addition', 'Subtraktion' im Modul 'Grundrechenarten'). Jedes Paket enthält konkrete Basis-Lernziele für den KI-Tutor."
+            docsSlug="ebene-1-basismodule"
+          />
+        </div>
         <div className="flex gap-2 mb-6">
           <Input
             type="text"
