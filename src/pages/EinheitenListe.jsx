@@ -131,19 +131,6 @@ export default function EinheitenListe() {
   }, [isDeletingAny]);
   const { permissions, rolle, faecher: meineFaecher } = useRBAC();
   
-  // ✅ SCHRITT 2: Debug-Log für Server-Side Filtering
-  useEffect(() => {
-    if (einheiten.length > 0 && !isLoading) {
-      console.log('✅ SCHRITT 2 - Server-Side Filtering aktiv:', {
-        einheiten_vom_backend: einheiten.length,
-        einheiten_gefiltert: filtered?.length || 0,
-        user_rolle: rolle,
-        user_faecher: meineFaecher,
-        hinweis: 'Backend hat bereits nach Fächern gefiltert - Frontend macht nur noch Search/Changed-Filter',
-      });
-    }
-  }, [einheiten, isLoading, rolle, meineFaecher]);
-
   // ✅ SCHRITT 2: Secure Backend-Funktion statt Client-Side Filtering
   const { data: einheiten = [], isLoading } = useQuery({
     queryKey: ['einheiten'],
@@ -176,6 +163,19 @@ export default function EinheitenListe() {
   });
 
   const faecher = [...new Set(einheiten.map(e => e.fach).filter(Boolean))];
+
+  // ✅ SCHRITT 2: Debug-Log für Server-Side Filtering (NACH Definitionen)
+  useEffect(() => {
+    if (einheiten.length > 0 && !isLoading) {
+      console.log('✅ SCHRITT 2 - Server-Side Filtering aktiv:', {
+        einheiten_vom_backend: einheiten.length,
+        einheiten_gefiltert: filtered?.length || 0,
+        user_rolle: rolle,
+        user_faecher: meineFaecher,
+        hinweis: 'Backend hat bereits nach Fächern gefiltert - Frontend macht nur noch Search/Changed-Filter',
+      });
+    }
+  }, [einheiten, isLoading, rolle, meineFaecher, filtered]);
 
   const getLernpaketCount = (einheitId) => lernpakete.filter(lp => lp.einheit_id === einheitId).length;
 
