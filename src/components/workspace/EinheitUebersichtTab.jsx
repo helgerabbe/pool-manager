@@ -276,7 +276,22 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
   });
 
   const removeMember = useMutation({
-    mutationFn: (id) => removeEinheitMember(id),
+    mutationFn: async (id) => {
+      // 🥚 EASTER EGG: Selbstlöschung verhindern
+      const memberToRemove = members.find(m => m.id === id);
+      const normalizedMemberEmail = memberToRemove?.user_email?.toLowerCase()?.trim() || '';
+      const normalizedCurrentUserEmail = currentUserEmail?.toLowerCase()?.trim() || '';
+      
+      if (memberToRemove && normalizedMemberEmail === normalizedCurrentUserEmail) {
+        toast.warning('🛑 Halt, Stopp!', {
+          description: 'Du kannst dich nicht selbst feuern! (Selbstmord ist hier keine Lösung 😉)',
+          duration: 5000,
+        });
+        return; // Abbruch - keine Backend-Operation
+      }
+      
+      return removeEinheitMember(id);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['einheit-members', einheit.id] });
       toast.success('Mitglied entfernt.');
