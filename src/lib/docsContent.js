@@ -376,27 +376,58 @@ Vor der Freigabe empfehlen wir:
 
   'kollaboration-sperren': `# Kollaboration & Sperren
 
-Mehrere Lehrkräfte können gleichzeitig an einer Einheit arbeiten. Um Datenverlust zu verhindern, setzt das System automatische Bearbeitungssperren.
+Der Pool-Manager ist ein echtes Team-Werkzeug. Oft arbeiten mehrere Lehrkräfte einer Fachschaft gleichzeitig in derselben Einheit. Damit Sie sich dabei nicht versehentlich gegenseitig Texte überschreiben oder Chaos bei den KI-Einstellungen entsteht, nutzt die App ein intelligentes **Sperrsystem (Locking)**.
 
-## Übersicht
+> **Warum Sperren?** Wenn zwei Lehrkräfte gleichzeitig denselben Text ändern, gewinnt am Ende die, die als Letztes auf „Speichern" drückt – und die Arbeit der anderen ist verloren. Das Sperrsystem verhindert genau das.
 
-* **Task-Lock** – Einzelne Aufgabe wird gesperrt sobald jemand "Bearbeiten" klickt
-* **Structural Lock** – Die gesamte Einheitsstruktur wird gesperrt
-* Sperren laufen nach **60 Minuten** automatisch ab
+## Leseansicht als Standard
+
+Wenn Sie eine Aufgabe öffnen (egal ob Ebene 1, 2 oder 3), befinden Sie sich zunächst immer in einer reinen **Leseansicht**. Sie können in Ruhe alles ansehen, Kriterien durchlesen und Materialien prüfen, ohne aus Versehen etwas zu verändern.
+
+Sobald Sie etwas anpassen möchten, klicken Sie aktiv auf den Button **„Bearbeiten"**.
+
+## Was passiert beim Klick auf „Bearbeiten"?
+
+In diesem Moment reserviert das System diese Aufgabe **exklusiv für Sie**. Für alle anderen Kollegen ändert sich die Ansicht sofort:
+
+* Der „Bearbeiten"-Button wird grau (deaktiviert).
+* Es erscheint ein Schloss-Symbol 🔒 und ein Hinweis, z.B. *„Wird gerade bearbeitet von Max Muster"*.
+
+Sie können nun in aller Ruhe Ihre Änderungen vornehmen – niemand kann Ihnen in dieser Zeit dazwischenfunken.
+
+## Wie wird eine Aufgabe wieder freigegeben?
+
+| Situation | Was passiert? |
+|-----------|--------------|
+| **Sie klicken „Speichern" oder „Abbrechen"** | Die Sperre wird sofort aufgehoben – der Nächste kann übernehmen |
+| **Aufgabe ist im Export-Cockpit** | Sperre bleibt aktiv, bis das Export-Team beide Systeme (Moodle **und** Brian.study) erfolgreich bespielt hat |
+| **Sicherheits-Timeout (60 Min.)** | Inaktive Sperren verfallen automatisch – ideal wenn ein Kollege den Browser geschlossen hat, ohne zu speichern |
+
+## Sperr-Arten im Überblick
+
+| Sperr-Typ | Was wird gesperrt? | Wer setzt sie? |
+|-----------|-------------------|----------------|
+| **Task-Lock** | Eine einzelne Aufgabe | Jede Lehrkraft beim Klick auf „Bearbeiten" |
+| **Export-Lock (Dual-Lock)** | Aufgabe während des Exports | Das Export-Cockpit automatisch |
+| **Structural Lock** | Die gesamte Einheitsstruktur (Themenfelder, Lernpakete) | Beim Bearbeiten der Struktur |
 
 ## Präsenz-Anzeige
 
-Im Arbeitsbereich sehen Sie, welche Kollegen gerade online sind und an welcher Einheit sie arbeiten.
+Im Arbeitsbereich sehen Sie, welche Kollegen gerade online sind und an welcher Einheit sie arbeiten – so können Sie Abstimmungen einfach direkt klären, bevor es zu Konflikten kommt.
 
-## Sperre übernehmen (Admin)
+## Admin-Unlock
 
-Wenn eine Sperre irrtümlich aktiv bleibt (z.B. Browser-Absturz), können Administratoren die Sperre über den **"Admin-Unlock"**-Button aufheben. Dieser erscheint nach 60 Minuten automatisch.
+Wenn eine Sperre irrtümlich aktiv bleibt (z.B. Browser-Absturz, vergessener Tab), können Administratoren die Sperre manuell aufheben. Der **„Admin-Unlock"**-Button erscheint automatisch, sobald eine Sperre älter als 60 Minuten ist.
 
-## Konflikte vermeiden
+## Erste Hilfe bei Sperren
 
-* Vor dem Bearbeiten: Prüfen Sie, ob jemand anderes die Aufgabe geöffnet hat
-* Nach der Bearbeitung: Immer auf "Abbrechen" oder "Speichern" klicken, um die Sperre freizugeben
-* Bei längerer Abwesenheit: Bearbeitungsmodus beenden
+**„Ich muss dringend an diese Aufgabe, aber sie ist gesperrt!"**
+Sprechen Sie den angezeigten Kollegen kurz an – oft ist der Tab im Hintergrund noch offen. Alternativ warten Sie auf den automatischen Timeout nach 60 Minuten, oder bitten Sie einen Administrator, die Sperre aufzuheben.
+
+**„Die Aufgabe ist nach dem Export immer noch gesperrt!"**
+Das bedeutet meist, dass das Export-Team erst die halbe Arbeit erledigt hat (z.B. die Aufgabe ist schon in Moodle, aber noch nicht in Brian.study hochgeladen). Sobald das Export-Cockpit für **beide** Systeme „Grünes Licht" gibt, öffnet sich das Schloss automatisch.
+
+Mehr dazu im Kapitel [Export-Workflow](/docs/export-workflow).
 `,
 
   'export-workflow': `# Export-Workflow (Moodle & Brian.study)
