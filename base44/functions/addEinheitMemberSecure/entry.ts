@@ -44,14 +44,19 @@ function isRateLimited(userEmail, functionName, maxRequests = 10, windowMs = 600
 /**
  * Prüft, ob ein User die Berechtigung hat, Mitglieder zur Einheit hinzuzufügen.
  * Akzeptiert EITHER globale Rolle ODER delegierte Leitung.
+ * 
+ * RBAC-Regeln:
+ * 1. Administrator: Darf JEDER Einheit Mitarbeiter hinzufügen
+ * 2. Fachschaftsleitung: Darf Einheiten im eigenen Fach Mitarbeiter hinzufügen
+ * 3. Fachlehrkraft mit LEITUNG-Rolle: Darf NUR dieser einen Einheit Mitarbeiter hinzufügen (Unit-Level FSL)
  */
 function canUserAddMembers(rolle, faecher, einheitFach, delegatedMembership) {
-  // Admin: immer erlaubt
+  // 1. Admin: immer erlaubt
   if (rolle === 'Administrator') {
     return { allowed: true, reason: 'admin_global' };
   }
 
-  // Fachschaftsleitung: nur im eigenen Fach
+  // 2. Fachschaftsleitung: nur im eigenen Fach
   if (rolle === 'Fachschaftsleitung') {
     if (Array.isArray(faecher) && faecher.includes(einheitFach)) {
       return { allowed: true, reason: 'fachschaft_fach' };
@@ -59,7 +64,7 @@ function canUserAddMembers(rolle, faecher, einheitFach, delegatedMembership) {
     return { allowed: false, reason: 'fachschaft_wrong_fach' };
   }
 
-  // Fachlehrkraft mit delegierter LEITUNG: nur diese Einheit
+  // 3. Fachlehrkraft mit delegierter LEITUNG: nur diese Einheit (Unit-Level FSL)
   if (rolle === 'Fachlehrkraft' && delegatedMembership?.unit_role === 'LEITUNG') {
     return { allowed: true, reason: 'lehrkraft_delegated_leitung' };
   }
@@ -130,11 +135,15 @@ Deno.serve(async (req) => {
     }
 
     // 5. Benutzer-Profil laden (Current User)
+    // ✅ WICHTIG: Base44-Admin-Rolle priorisieren (authUser.role kommt von Base44-Auth)
     const benutzer = await base44.asServiceRole.entities.Benutzer.filter({
       user_id: user.email
     });
     const profil = benutzer[0];
-    const rolle = profil?.rolle || 'Betrachter';
+    
+    // ✅ Admin-Rolle von Base44-Auth übernehmen, auch wenn kein Benutzer-Profil existiert
+    const istBase44Admin = user.role === 'Administrator' || user.role === 'admin';
+    const rolle = istBase44Admin ? 'Administrator' : (profil?.rolle || 'Betrachter');
     const faecher = profil?.fachbereich_zustaendigkeit || [];
 
     // 6. Delegierte Berechtigung prüfen (Current User)
