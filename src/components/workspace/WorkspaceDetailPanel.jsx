@@ -15,6 +15,7 @@ import AufgabenbausteinForm from '@/components/aufgaben/AufgabenbausteintForm';
 import EinheitForm from '@/components/einheiten/EinheitForm';
 import Ebene2MappingView from '@/components/aufgaben/Ebene2MappingView';
 import ActivityContentForm from '@/components/workspace/ActivityContentForm';
+import PhaseActivitiesSidebar from '@/components/workspace/PhaseActivitiesSidebar';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
