@@ -220,10 +220,10 @@ export default function WorkspaceTabs({ activeTab, onTabChange }) {
                   <button
                     onClick={() => onTabChange(tab.value)}
                     className={cn(
-                      'relative flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all font-medium',
+                      'relative flex items-center justify-center gap-2 py-3 rounded-lg border-2 transition-all font-medium',
                       isActive
-                        ? 'bg-primary text-primary-foreground border-primary shadow-md px-5'
-                        : 'bg-card border-border text-muted-foreground hover:border-primary/50 hover:bg-muted/50'
+                        ? 'bg-primary text-primary-foreground border-primary shadow-md px-8'
+                        : 'bg-card border-border text-muted-foreground hover:border-primary/50 hover:bg-muted/50 px-3'
                     )}
                   >
                     <span className={cn(
@@ -235,7 +235,7 @@ export default function WorkspaceTabs({ activeTab, onTabChange }) {
                       {tab.step}
                     </span>
                     <Icon className={cn('w-4 h-4 shrink-0 transition-all', isActive && 'scale-110')} />
-                    {isActive && <div className="absolute top-2 right-2"><HelpDialog {...tab.help} /></div>}
+                    {isActive && <div className="absolute top-3 right-3"><HelpDialog {...tab.help} /></div>}
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-medium">
