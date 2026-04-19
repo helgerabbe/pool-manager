@@ -101,6 +101,8 @@ Deno.serve(async (req) => {
 
         const payload = {
           user_id:                  email,
+          vorname:                  row.vorname || '',
+          nachname:                 row.nachname || '',
           rolle:                    finaleRolle,
           fachbereich_zustaendigkeit: Array.isArray(row.faecher) ? row.faecher : [],
           ist_aktiv:                true,
