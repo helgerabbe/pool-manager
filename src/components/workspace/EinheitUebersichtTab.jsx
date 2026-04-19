@@ -122,10 +122,9 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
 
   const [isLocking, setIsLocking] = useState(false);
 
-  // Wer darf den Sperrstatus ändern? (wird nach unitAccess-Berechnung gesetzt)
+
 
   const istGesperrt = einheit.freigabe_status === 'Gesperrt';
-  const kannSperrenToggle = unitAccess.hasFullAccess;
 
   const handleToggleSperre = async () => {
     setIsLocking(true);
@@ -169,14 +168,6 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
     setPreviousMembership(myMembership);
   }, [myMembership]);
 
-  // ✅ Normalisierter E-Mail-Vergleich (case-insensitive, ohne Leerzeichen)
-  const normalizedEmail = currentUserEmail?.toLowerCase()?.trim() || '';
-  const isLeitung = myMembership?.unit_role === 'LEITUNG' || 
-    (einheit.created_by?.toLowerCase()?.trim() === normalizedEmail);
-
-  // Prüfe ob Benutzer darf Mitarbeiter hinzufügen (wird nach unitAccess-Berechnung gesetzt)
-  const kannMitarbeiterHinzufuegen = unitAccess.hasFullAccess;
-
   const { data: members = [], isLoading: membersLoading } = useQuery({
     queryKey: ['einheit-members', einheit.id],
     queryFn: () => getMembersByEinheit(einheit.id),
@@ -197,6 +188,13 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
   );
   
   const kannEinheitBearbeiten = unitAccess.hasFullAccess;
+  const kannSperrenToggle = unitAccess.hasFullAccess;
+  const kannMitarbeiterHinzufuegen = unitAccess.hasFullAccess;
+
+  // ✅ Normalisierter E-Mail-Vergleich (case-insensitive, ohne Leerzeichen)
+  const normalizedEmail = currentUserEmail?.toLowerCase()?.trim() || '';
+  const isLeitung = myMembership?.unit_role === 'LEITUNG' || 
+    (einheit.created_by?.toLowerCase()?.trim() === normalizedEmail);
 
   // Fachlehrkräfte via Backend laden (asServiceRole – Frontend-User.list() ist admin-only)
   const { data: allFachlehrkraefte = [] } = useQuery({
