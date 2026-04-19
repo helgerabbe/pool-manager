@@ -39,13 +39,13 @@ const rollenBeschreibungen = {
 };
 
 function BenutzerForm({ open, onOpenChange, onSubmit, initialData, faecher = [] }) {
-  const [formData, setFormData] = useState(initialData || {
-    user_id: '',
-    vorname: '',
-    nachname: '',
-    rolle: '',
-    fachbereich_zustaendigkeit: [],
-    ist_aktiv: true,
+  const [formData, setFormData] = useState({
+    user_id: initialData?.user_id || '',
+    vorname: initialData?.vorname || '',
+    nachname: initialData?.nachname || '',
+    rolle: initialData?.rolle || '',
+    fachbereich_zustaendigkeit: initialData?.fachbereich_zustaendigkeit || [],
+    ist_aktiv: initialData?.ist_aktiv !== undefined ? initialData.ist_aktiv : true,
   });
 
   const handleOpenChange = (newOpen) => {
