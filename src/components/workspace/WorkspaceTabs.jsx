@@ -194,12 +194,12 @@ const getVisibleTabs = (rolle) => {
   ];
 
   return allTabs.filter(tab => {
-    // Export-Tabs (8 & 9) nur für Admin und Moodle-Designer
-    if (['export', 'brian'].includes(tab.value)) {
+    // Export-Tabs (7, 8 & 9) nur für Admin und Moodle-Designer
+    if (['cockpit', 'export', 'brian'].includes(tab.value)) {
       return showExportTabs;
     }
     // Tabs 1 & 2 (Einheit verwalten, Struktur) sind für ALLE sichtbar (auch Fachlehrkräfte)
-    // Tabs 3-7 sind für alle Lehrkräfte sichtbar
+    // Tabs 3-6 sind für alle Lehrkräfte sichtbar
     return true;
   });
 };
