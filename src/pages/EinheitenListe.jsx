@@ -120,12 +120,30 @@ export default function EinheitenListe() {
     }
   }, [isDeletingAny]);
   const { permissions, rolle, faecher: meineFaecher } = useRBAC();
+  
+  // ✅ PHASE 2 DEBUG: Filter-Zusammenfassung nach jedem Render
+  useEffect(() => {
+    if (einheiten.length > 0 && !isLoading) {
+      console.log('🔍 PHASE 2 - Filter-Zusammenfassung:', {
+        einheiten_gesamt: einheiten.length,
+        einheiten_gefiltert: filtered?.length || 0,
+        user_rolle: rolle,
+        user_faecher: meineFaecher,
+        istAdmin: permissions.istAdmin,
+      });
+    }
+  }, [einheiten, isLoading, rolle, meineFaecher, permissions.istAdmin]);
 
   const { data: einheiten = [], isLoading } = useQuery({
     queryKey: ['einheiten'],
     queryFn: async () => {
       // Entwürfe (noch im Wizard) werden nie angezeigt
       const all = await base44.entities.Einheiten.list('-created_date');
+      // ✅ PHASE 2 DEBUG: Alle Einheiten aus der DB
+      console.log('🔍 PHASE 2 - Einheiten aus DB (vor Filter):', {
+        anzahl: all.length,
+        faecher_verfuegbar: [...new Set(all.map(e => e.fach).filter(Boolean))],
+      });
       return all.filter(e => e.wizard_status !== 'entwurf');
     },
   });
@@ -145,6 +163,19 @@ export default function EinheitenListe() {
     // Fach-Filter: Nicht-Admins sehen nur Einheiten ihrer eigenen Fächer
     // WICHTIG: Wenn keine Fächer zugewiesen sind, sieht man KEINE Einheiten (außer Admin)
     const matchMeinFach = permissions.istAdmin || (meineFaecher.length > 0 && meineFaecher.includes(e.fach));
+    
+    // ✅ PHASE 2 DEBUG: Filter-Logik für jede Einheit
+    if (!matchMeinFach && !permissions.istAdmin) {
+      console.log('🔍 PHASE 2 - Einheit wird GEFILTERT (User sieht sie nicht):', {
+        einheit_titel: e.titel_der_einheit,
+        einheit_fach: e.fach,
+        user_faecher: meineFaecher,
+        user_rolle: rolle,
+        istAdmin: permissions.istAdmin,
+        matchMeinFach_grund: meineFaecher.length === 0 ? 'KEINE FÄCHER ZUGEWIESEN' : `Fächer-Array enthält ${e.fach} nicht`,
+      });
+    }
+    
     return matchSearch && matchFach && matchRBAC && matchChanged && matchMeinFach;
   });
 

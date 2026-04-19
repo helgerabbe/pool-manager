@@ -45,6 +45,15 @@ export function useRBAC() {
   // Base44-Admins sind automatisch Administrator – auch ohne DB-Profil-Eintrag
   const realRolle  = (authUser?.role === 'Administrator' || authUser?.role === 'admin') ? ROLLEN.ADMIN : (profil?.rolle || ROLLEN.BETRACHTER);
   const realFaecher = profil?.fachbereich_zustaendigkeit || [];
+  
+  // ✅ PHASE 1 DEBUG: Benutzerprofil mit Fächern
+  console.log('🔍 PHASE 1 - useRBAC: Benutzerprofil geladen:', {
+    email: authUser?.email,
+    rolle: realRolle,
+    faecher: realFaecher,
+    faecher_typ: Array.isArray(realFaecher) ? 'ARRAY ✓' : 'NICHT ARRAY ✗',
+    profil_roh: profil,
+  });
 
   // ── Impersonation: mockedRole überschreibt immer die echte Rolle ─────────
   const istEchterAdmin = realRolle === ROLLEN.ADMIN;
