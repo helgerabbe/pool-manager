@@ -34,14 +34,12 @@ Deno.serve(async (req) => {
   // Fallback: Falls noch keine Benutzer-Record existiert, prüfe die eingebaute User.role
   const rolle = benutzerProfile[0]?.rolle || user.role;
   
-  // Berechtigung prüfen: Administrator (oder "Admin" als Alias) ODER Fachschaftsleitung dürfen importieren
+  // Berechtigung prüfen: Nur Administratoren (oder "Admin" als Alias) dürfen importieren
   const istAdmin = rolle === 'Administrator' || rolle === 'Admin';
-  const istFachleitung = rolle === 'Fachschaftsleitung';
-  const darfImportieren = istAdmin || istFachleitung;
   
-  if (!rolle || !darfImportieren) {
+  if (!rolle || !istAdmin) {
     return Response.json({ 
-      error: `Kein Zugriff. Nur Administratoren und Fachschaftsleitungen dürfen Benutzer importieren. Deine Rolle: ${rolle || 'unbekannt'}, deine E-Mail: ${user.email}`, 
+      error: `Kein Zugriff. Nur Administratoren dürfen Benutzer importieren. Deine Rolle: ${rolle || 'unbekannt'}, deine E-Mail: ${user.email}`, 
       status: 403 
     }, { status: 403 });
   }
