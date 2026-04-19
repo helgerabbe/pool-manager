@@ -12,7 +12,7 @@ import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal';
 import { ROLLEN } from '@/lib/rbac';
 import { getFachFarbe, getFachBadgeStyle } from '@/lib/fachFarben';
 
-export default function EinheitCard({ einheit, lernpaketCount, rolle, onDeleteStart, onDeleteEnd }) {
+export default function EinheitCard({ einheit, lernpaketCount, rolle, onDeleteStart, onDeleteEnd, currentUserEmail }) {
   const { data: faecher = [] } = useQuery({
     queryKey: ['lookupFaecher'],
     queryFn: () => base44.entities.LookupFaecher.list(),
@@ -24,6 +24,11 @@ export default function EinheitCard({ einheit, lernpaketCount, rolle, onDeleteSt
   const [isDeleting, setIsDeleting] = useState(false);
   const queryClient = useQueryClient();
   const isAdmin = rolle === ROLLEN.ADMIN;
+  
+  // ✅ Unit-Level-Mitarbeiter prüfen
+  const isAssignedMember = currentUserEmail && einheit.members?.some(
+    m => m.user_email === currentUserEmail && m.unit_role === 'LEITUNG'
+  );
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -65,16 +70,24 @@ export default function EinheitCard({ einheit, lernpaketCount, rolle, onDeleteSt
           <Card className="group hover:shadow-lg hover:border-primary/20 transition-all duration-300 cursor-pointer overflow-hidden h-[168px] flex flex-col">
             <CardContent className="p-0 flex flex-col flex-1">
               <div className="p-6 flex-1 flex flex-col">
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-3 gap-2">
                   <Badge className="font-medium border" style={badgeStyle}>
                     {einheit.fach}
                   </Badge>
-                  {einheit.freigabe_status === 'Gesperrt' && (
-                    <Badge className="bg-red-100 text-red-700 border border-red-200 gap-1">
-                      <Lock className="w-3 h-3" />
-                      Gesperrt
-                    </Badge>
-                  )}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {einheit.freigabe_status === 'Gesperrt' && (
+                      <Badge className="bg-red-100 text-red-700 border border-red-200 gap-1">
+                        <Lock className="w-3 h-3" />
+                        Gesperrt
+                      </Badge>
+                    )}
+                    {isAssignedMember && (
+                      <Badge className="bg-violet-100 text-violet-700 border border-violet-200 gap-1">
+                        <BookOpen className="w-3 h-3" />
+                        Eigene Mitarbeit
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 <h3 className="text-base font-semibold text-foreground mb-auto group-hover:text-primary transition-colors line-clamp-2">
                   {einheit.titel_der_einheit}

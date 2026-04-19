@@ -129,7 +129,7 @@ export default function EinheitenListe() {
       return () => clearTimeout(timeout);
     }
   }, [isDeletingAny]);
-  const { permissions, rolle, faecher: meineFaecher } = useRBAC();
+  const { permissions, rolle, faecher: meineFaecher, authUser } = useRBAC();
   
   // ✅ SCHRITT 2: Secure Backend-Funktion statt Client-Side Filtering
   const { data: einheiten = [], isLoading, isFetching } = useQuery({
@@ -258,6 +258,7 @@ export default function EinheitenListe() {
               einheit={einheit} 
               lernpaketCount={getLernpaketCount(einheit.id)}
               rolle={rolle}
+              currentUserEmail={authUser?.email}
               onDeleteStart={() => setIsDeletingAny(true)}
               onDeleteEnd={() => setIsDeletingAny(false)}
             />

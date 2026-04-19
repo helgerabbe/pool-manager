@@ -172,6 +172,44 @@ export function kannKIAssistentNutzen(rolle) {
 }
 
 /**
+ * Prüft Unit-Level-Berechtigungen für eine spezifische Einheit.
+ * 
+ * RBAC-Regeln für erweiterte Rechte in einer Einheit:
+ * 1. Administrator: Immer volle Rechte
+ * 2. Fachschaftsleitung: Volle Rechte im eigenen Fach
+ * 3. Fachlehrkraft mit LEITUNG-Rolle in EinheitMembers: Volle Rechte für DIESE Einheit
+ * 
+ * @param {string} rolle - Globale Rolle des Nutzers
+ * @param {string[]} benutzerFaecher - Fächer des Nutzers
+ * @param {string} einheitFach - Fach der Einheit
+ * @param {Array} einheitMembers - Array von EinheitMembers für diese Einheit
+ * @param {string} currentUserEmail - Email des aktuellen Nutzers
+ * @returns {object} { hasFullAccess: boolean, isAssignedMember: boolean, reason: string }
+ */
+export function hasUnitLevelAccess(rolle, benutzerFaecher, einheitFach, einheitMembers, currentUserEmail) {
+  // 1. Administrator: immer volle Rechte
+  if (rolle === ROLLEN.ADMIN) {
+    return { hasFullAccess: true, isAssignedMember: false, reason: 'admin_global' };
+  }
+
+  // 2. Fachschaftsleitung im eigenen Fach: volle Rechte
+  if (rolle === ROLLEN.FACHSCHAFT && Array.isArray(benutzerFaecher) && benutzerFaecher.includes(einheitFach)) {
+    return { hasFullAccess: true, isAssignedMember: false, reason: 'fachschaft_fach' };
+  }
+
+  // 3. Fachlehrkraft mit LEITUNG-Rolle in dieser Einheit: volle Rechte (Unit-Level FSL)
+  const isAssignedMember = Array.isArray(einheitMembers) && 
+    einheitMembers.some(m => m.user_email === currentUserEmail && m.unit_role === 'LEITUNG');
+  
+  if (isAssignedMember) {
+    return { hasFullAccess: true, isAssignedMember: true, reason: 'unit_leitung' };
+  }
+
+  // Keine erweiterten Rechte
+  return { hasFullAccess: false, isAssignedMember: false, reason: 'no_access' };
+}
+
+/**
  * Darf der Nutzer den freigabe_status einer Einheit ändern?
  * Nur Administrator und Fachschaftsleitung (im eigenen Fach).
  * (Unterschied zu kannInhaltFreigeben: das ist für Aktivitäten/Aufgaben)

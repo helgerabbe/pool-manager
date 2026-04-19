@@ -169,22 +169,37 @@ Deno.serve(async (req) => {
     // In Produktionssystem würde Backend-Query mit LIMIT/OFFSET optimiert
     const pageData = allEinheiten.slice(offset, offset + limit);
 
-    // 6. MAP SELECTIVE FIELDS (nur was die Liste braucht)
-    const responseData = pageData.map((einheit) => ({
-      id: einheit.id,
-      fach: einheit.fach,
-      titel_der_einheit: einheit.titel_der_einheit,
-      jahrgangsstufe: einheit.jahrgangsstufe,
-      freigabe_status: einheit.freigabe_status,
-      sync_status: einheit.sync_status,
-      last_synced_at: einheit.last_synced_at,
-      last_exported_at: einheit.last_exported_at,
-      created_date: einheit.created_date,
-      updated_date: einheit.updated_date,
-      version: einheit.version,
-    }));
+    // 6. LADE MITGLIEDER FÜR ALLE EINHEITEN (für Unit-Level RBAC)
+    const einheitIds = pageData.map(e => e.id);
+    const alleMembers = await base44.asServiceRole.entities.EinheitMembers.filter({
+      einheit_id: { $in: einheitIds }
+    });
+
+    // 7. MAP SELECTIVE FIELDS (nur was die Liste braucht) + Members
+    const responseData = pageData.map((einheit) => {
+      const members = alleMembers.filter(m => m.einheit_id === einheit.id);
+      return {
+        id: einheit.id,
+        fach: einheit.fach,
+        titel_der_einheit: einheit.titel_der_einheit,
+        jahrgangsstufe: einheit.jahrgangsstufe,
+        freigabe_status: einheit.freigabe_status,
+        sync_status: einheit.sync_status,
+        last_synced_at: einheit.last_synced_at,
+        last_exported_at: einheit.last_exported_at,
+        created_date: einheit.created_date,
+        updated_date: einheit.updated_date,
+        version: einheit.version,
+        // ✅ Unit-Level-Mitglieder für RBAC-Prüfung
+        members: members.map(m => ({
+          user_email: m.user_email,
+          unit_role: m.unit_role,
+          user_name: m.user_name
+        }))
+      };
+    });
     
-    // 6b. DEBUG: Logge RBAC-Filterung für Audit
+    // 8. DEBUG: Logge RBAC-Filterung für Audit
     console.log('[EINHEITEN_LIST_SECURE] RBAC-Filter:', {
       user_email: user.email,
       role: role,
@@ -193,7 +208,7 @@ Deno.serve(async (req) => {
       total_count: totalCount,
     });
 
-    // 7. RESPONSE
+    // 9. RESPONSE
     const response = {
       success: true,
       data: responseData,
