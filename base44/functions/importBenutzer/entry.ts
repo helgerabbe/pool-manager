@@ -34,7 +34,12 @@ Deno.serve(async (req) => {
   
   console.log('DEBUG: user.email=', user.email, 'user.role=', userRolle, 'benutzer.rolle=', benutzerRolle);
   
-  const istAdmin = benutzerRolle === 'Administrator' || benutzerRolle === 'Admin' || userRolle === 'Administrator' || userRolle === 'Admin';
+  const istAdmin = 
+    benutzerRolle === 'Administrator' || 
+    benutzerRolle === 'Admin' || 
+    userRolle === 'Administrator' || 
+    userRolle === 'Admin' ||
+    userRolle === 'admin';  // lowercase variant
   
   if (!benutzerRolle && !userRolle) {
     return Response.json({ 
