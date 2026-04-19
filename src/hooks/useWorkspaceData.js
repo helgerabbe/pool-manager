@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { invokeFunction } from '@/utils/functionsHelper';
 import { base44 } from '@/api/base44Client';
@@ -71,7 +72,7 @@ export function useWorkspaceData(einheitId, isStructuralEditingActive = false) {
   // Nutzer mit Lock sehen keine Hintergrund-Updates (staleTime=Infinity)
   // Andere Nutzer können je nach Bedarf manuell refetchen
   // (für Struktur-Tab: useEffect könnte alle 30s refetch() aufrufen – aber SILENT)
-  React.useEffect(() => {
+  useEffect(() => {
     // Nur im Read-Only-Modus (kein Structural Lock)
     if (einheitId && typeof isStructuralEditingActive !== 'undefined' && !isStructuralEditingActive) {
       // Könnte hier ein stilles Polling aktivieren (z.B. alle 30 Sekunden)
