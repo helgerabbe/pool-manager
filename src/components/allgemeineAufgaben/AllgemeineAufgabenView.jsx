@@ -22,6 +22,7 @@ import ErwartungshorizontTab from '@/components/allgemeineAufgaben/Erwartungshor
 import { useTaskLock } from '@/hooks/useTaskLock';
 import { base44 } from '@/api/base44Client';
 import AiTaskWizardModal from '@/components/ui/AiTaskWizardModal';
+import HelpBadge from '@/components/ui/HelpBadge';
 
 /**
  * Schwierigkeitsgrad-Anzeige (1-3 Sterne)
@@ -428,9 +429,18 @@ export default function AllgemeineAufgabenView({
             <Tabs defaultValue="angaben" className="flex-1 flex flex-col overflow-hidden">
               <TabsList className="mx-6 mt-3 bg-muted">
                 <TabsTrigger value="angaben" className="text-xs">Kernangaben</TabsTrigger>
-                <TabsTrigger value="kompetenzen" className="text-xs">Kompetenzzuordnung</TabsTrigger>
-                <TabsTrigger value="erwartungshorizont" className="text-xs">Erwartungshorizont</TabsTrigger>
-                <TabsTrigger value="ki-prompt" className="text-xs">KI-Tutor Prompt</TabsTrigger>
+                <TabsTrigger value="kompetenzen" className="text-xs flex items-center gap-1">
+                  Kompetenzzuordnung
+                  <HelpBadge text="Verknüpfe Lernziele per Drag & Drop mit dieser Aufgabe. Der KI-Tutor nutzt sie für gezieltes Feedback." docsSlug="lernziele" />
+                </TabsTrigger>
+                <TabsTrigger value="erwartungshorizont" className="text-xs flex items-center gap-1">
+                  Erwartungshorizont
+                  <HelpBadge text="Beschreibt, welche Inhalte eine gute Schülerantwort aufweisen soll. Wird vom KI-Tutor als Leitplanke verwendet." docsSlug="ebene-2-allgemeine-aufgaben" />
+                </TabsTrigger>
+                <TabsTrigger value="ki-prompt" className="text-xs flex items-center gap-1">
+                  KI-Tutor Prompt
+                  <HelpBadge text="Die 5 Segmente, die Brian.study benötigt. Per Klick auf 'Alle Felder generieren' vollautomatisch erstellt." docsSlug="ki-tutor-brian" />
+                </TabsTrigger>
               </TabsList>
 
               {/* Tab 1: Kernangaben */}

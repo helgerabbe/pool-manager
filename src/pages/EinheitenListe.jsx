@@ -17,6 +17,7 @@ import EntwurfSektion from '@/components/einheiten/EntwurfSektion';
 import { BookOpen } from 'lucide-react';
 import { getExportPendingCount } from '@/lib/deltaExportLogic';
 import { useNavigate } from 'react-router-dom';
+import HelpBadge from '@/components/ui/HelpBadge';
 
 function SchnellErstellenModal({ open, onOpenChange, onCreated }) {
   const [form, setForm] = useState({ titel_der_einheit: '', fach: '', jahrgangsstufe: '' });
@@ -162,7 +163,13 @@ export default function EinheitenListe() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Einheiten</h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
+            Einheiten
+            <HelpBadge
+              text="Eine Einheit ist das Grundgerüst Ihrer Unterrichtsplanung. Jede Einheit enthält Themenfelder, Lernpakete und Aufgaben."
+              docsSlug="einheiten-struktur"
+            />
+          </h1>
           <p className="text-sm text-muted-foreground mt-1">{einheiten.length} Einheit{einheiten.length !== 1 ? 'en' : ''} insgesamt</p>
         </div>
         {permissions.kannEinheitVerwalten && (
