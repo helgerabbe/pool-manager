@@ -93,16 +93,14 @@ Deno.serve(async (req) => {
       if (subjects.includes(einheit.fach)) {
         hasReadAccess = true;
       }
-    } else if (role === 'Fachlehrkraft' || role === 'Betrachter') {
-      const membership = await base44.asServiceRole.entities.EinheitMembers.filter(
-        {
-          einheit_id: einheit_id,
-          user_email: user.email,
-        }
-      );
-      if (membership?.[0]) {
+    } else if (role === 'Fachlehrkraft') {
+      // ✅ Fachlehrkraft: Lesezugriff wenn Fach zuständig ist (auch ohne Unit-Level-Mitgliedschaft)
+      const subjects = benutzer?.fachbereich_zustaendigkeit || [];
+      if (subjects.includes(einheit.fach)) {
         hasReadAccess = true;
       }
+    } else if (role === 'Betrachter') {
+      hasReadAccess = true; // Betrachter können alles lesen
     }
 
     if (!hasReadAccess) {

@@ -444,9 +444,8 @@ export default function StrukturBoardEmbedded({
   // + GLOBALE SPERRE: Wenn isLockedByOther, dann immer Lesemodus
   // ✅ LESEMODUS für normale Lehrkräfte (können sehen, aber nicht bearbeiten)
   const istLesemodus = !kannStrukturBearbeiten || !isStructuralEditingActive || isLockedByOther;
-  const kannStrukturLesen = permissions.kannInhalteBearbeiten(einheit?.fach);
 
-  // Early Return nur wenn Einheit wirklich fehlt ODER keine Leseberechtigung
+  // Early Return nur wenn Einheit wirklich fehlt
   if (!einheit) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-center p-8">
@@ -461,21 +460,6 @@ export default function StrukturBoardEmbedded({
     );
   }
 
-  // Keine Leseberechtigung für Struktur
-  if (!kannStrukturLesen) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 text-center p-8">
-        <FolderOpen className="w-12 h-12 text-muted-foreground/30" />
-        <div>
-          <p className="font-semibold">Zugriff verweigert</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Sie haben keine Berechtigung, um die Struktur dieser Einheit zu sehen.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   // Debug-Log für Initialisierung
   console.log('[StrukturBoard] Render:', {
     initialized,
@@ -483,6 +467,10 @@ export default function StrukturBoardEmbedded({
     paketeCount: Object.values(paketeMap).flat().length,
     remotePaketeCount: remotePakete?.length || 0,
     remoteThemenfelderCount: remoteThemenfelder?.length || 0,
+    isDirty,
+    isStructuralEditingActive,
+    istLesemodus,
+    kannStrukturBearbeiten,
   });
 
   // ── DnD ───────────────────────────────────────────────────────────────────
