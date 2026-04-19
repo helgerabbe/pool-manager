@@ -6,8 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronRight, Loader2 } from 'lucide-react';
+import { useRBAC } from '@/hooks/useRBAC';
 
 export default function WizardStep1Meta({ onDone }) {
+  const { permissions, faecher: userFaecher } = useRBAC();
   const [form, setForm] = useState({ 
     fach: '', 
     titel_der_einheit: '', 
@@ -16,12 +18,21 @@ export default function WizardStep1Meta({ onDone }) {
   });
   const [saving, setSaving] = useState(false);
 
-  // Lade Fächer aus der Datenbank
+  // ✅ SCHRITT 3: Lade NUR die Fächer des Users (Security-Fix)
   const { data: faecher = [] } = useQuery({
     queryKey: ['lookupFaecher'],
     queryFn: async () => {
       const results = await base44.entities.LookupFaecher.list();
-      return results.filter(f => f.ist_aktiv).sort((a, b) => (a.reihenfolge ?? 999) - (b.reihenfolge ?? 999));
+      const activeFaecher = results.filter(f => f.ist_aktiv).sort((a, b) => (a.reihenfolge ?? 999) - (b.reihenfolge ?? 999));
+      
+      // Admin/Fachschaft sieht alle Fächer, Lehrkraft nur ihre eigenen
+      if (permissions.istAdmin) {
+        return activeFaecher;
+      }
+      // Filtere auf User-Fächer (fallback: alle wenn keine Fächer zugewiesen)
+      return userFaecher.length > 0 
+        ? activeFaecher.filter(f => userFaecher.includes(f.name))
+        : activeFaecher;
     },
   });
 

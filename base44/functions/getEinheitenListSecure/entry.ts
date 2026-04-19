@@ -104,14 +104,11 @@ Deno.serve(async (req) => {
       // Fach muss in der Liste sein, und kein Entwurf
       filterCriteria = { ...draftFilter, fach: { $in: subjects } };
     } else if (role === 'Fachlehrkraft' || role === 'Betrachter') {
-      // Fachlehrkraft/Betrachter sieht nur Einheiten, zu denen er Mitglied ist
-      const membership = await base44.asServiceRole.entities.EinheitMembers.filter({
-        user_email: user.email,
-      });
-
-      const einheitIds = membership.map((m) => m.einheit_id);
-      if (einheitIds.length === 0) {
-        // Keine Zuordnungen → keine Einheiten
+      // Fachlehrkraft/Betrachter sieht alle Einheiten IHRER FÄCHER
+      // Primäre Regel: fach muss in fachbereich_zustaendigkeit enthalten sein
+      const subjects = benutzer?.fachbereich_zustaendigkeit || [];
+      if (subjects.length === 0) {
+        // Keine Fächer zugeordnet → keine Einheiten
         return Response.json(
           {
             success: true,
@@ -132,7 +129,8 @@ Deno.serve(async (req) => {
           }
         );
       }
-      filterCriteria = { ...draftFilter, id: { $in: einheitIds } };
+      // Fach muss in der Liste sein, und kein Entwurf
+      filterCriteria = { ...draftFilter, fach: { $in: subjects } };
     } else {
       // Unbekannte Rolle → keine Einheiten
       return Response.json(
@@ -182,6 +180,15 @@ Deno.serve(async (req) => {
       updated_date: einheit.updated_date,
       version: einheit.version,
     }));
+    
+    // 6b. DEBUG: Logge RBAC-Filterung für Audit
+    console.log('[EINHEITEN_LIST_SECURE] RBAC-Filter:', {
+      user_email: user.email,
+      role: role,
+      subjects: role === 'Fachlehrkraft' || role === 'Betrachter' ? benutzer?.fachbereich_zustaendigkeit : 'N/A',
+      filtered_count: responseData.length,
+      total_count: totalCount,
+    });
 
     // 7. RESPONSE
     const response = {

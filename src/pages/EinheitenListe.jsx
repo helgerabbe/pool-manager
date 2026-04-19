@@ -21,13 +21,23 @@ import HelpBadge from '@/components/ui/HelpBadge';
 
 function SchnellErstellenModal({ open, onOpenChange, onCreated }) {
   const [form, setForm] = useState({ titel_der_einheit: '', fach: '', jahrgangsstufe: '' });
+  const { permissions, faecher: userFaecher } = useRBAC();
 
-  // Lade Fächer und Jahrgangsstufen aus Datenbank
+  // ✅ SCHRITT 3: Lade NUR die Fächer des Users (Security-Fix)
   const { data: faecher = [] } = useQuery({
     queryKey: ['lookup-faecher'],
     queryFn: async () => {
       const all = await base44.entities.LookupFaecher.list();
-      return all.filter(f => f.ist_aktiv).sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
+      const activeFaecher = all.filter(f => f.ist_aktiv).sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
+      
+      // Admin/Fachschaft sieht alle Fächer, Lehrkraft nur ihre eigenen
+      if (permissions.istAdmin) {
+        return activeFaecher;
+      }
+      // Filtere auf User-Fächer (fallback: alle wenn keine Fächer zugewiesen)
+      return userFaecher.length > 0 
+        ? activeFaecher.filter(f => userFaecher.includes(f.name))
+        : activeFaecher;
     },
     enabled: open,
   });
@@ -121,30 +131,29 @@ export default function EinheitenListe() {
   }, [isDeletingAny]);
   const { permissions, rolle, faecher: meineFaecher } = useRBAC();
   
-  // ✅ PHASE 2 DEBUG: Filter-Zusammenfassung nach jedem Render
+  // ✅ SCHRITT 2: Debug-Log für Server-Side Filtering
   useEffect(() => {
     if (einheiten.length > 0 && !isLoading) {
-      console.log('🔍 PHASE 2 - Filter-Zusammenfassung:', {
-        einheiten_gesamt: einheiten.length,
+      console.log('✅ SCHRITT 2 - Server-Side Filtering aktiv:', {
+        einheiten_vom_backend: einheiten.length,
         einheiten_gefiltert: filtered?.length || 0,
         user_rolle: rolle,
         user_faecher: meineFaecher,
-        istAdmin: permissions.istAdmin,
+        hinweis: 'Backend hat bereits nach Fächern gefiltert - Frontend macht nur noch Search/Changed-Filter',
       });
     }
-  }, [einheiten, isLoading, rolle, meineFaecher, permissions.istAdmin]);
+  }, [einheiten, isLoading, rolle, meineFaecher]);
 
+  // ✅ SCHRITT 2: Secure Backend-Funktion statt Client-Side Filtering
   const { data: einheiten = [], isLoading } = useQuery({
     queryKey: ['einheiten'],
     queryFn: async () => {
-      // Entwürfe (noch im Wizard) werden nie angezeigt
-      const all = await base44.entities.Einheiten.list('-created_date');
-      // ✅ PHASE 2 DEBUG: Alle Einheiten aus der DB
-      console.log('🔍 PHASE 2 - Einheiten aus DB (vor Filter):', {
-        anzahl: all.length,
-        faecher_verfuegbar: [...new Set(all.map(e => e.fach).filter(Boolean))],
+      // Secure Backend-Funktion mit Server-Side RBAC-Filterung
+      const response = await base44.functions.invoke('getEinheitenListSecure', {
+        page: 1,
+        limit: 100, // Hole alle für Pagination im Frontend
       });
-      return all.filter(e => e.wizard_status !== 'entwurf');
+      return response.data?.data || [];
     },
   });
 
@@ -155,28 +164,15 @@ export default function EinheitenListe() {
 
   const pendingCount = getExportPendingCount(einheiten);
 
+  // ✅ SCHRITT 2: Backend hat bereits nach Fächern gefiltert - nur noch Search/Changed-Filter
   const filtered = einheiten.filter(e => {
     const matchSearch = e.titel_der_einheit?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchFach = filterFach === 'all' || e.fach === filterFach;
     const matchRBAC = kannEinheitSehen(rolle, e.freigabe_status);
     const matchChanged = !showOnlyChanged || (e.sync_status === 'modified' || e.sync_status === 'new' || !e.last_synced_at);
-    // Fach-Filter: Nicht-Admins sehen nur Einheiten ihrer eigenen Fächer
-    // WICHTIG: Wenn keine Fächer zugewiesen sind, sieht man KEINE Einheiten (außer Admin)
-    const matchMeinFach = permissions.istAdmin || (meineFaecher.length > 0 && meineFaecher.includes(e.fach));
     
-    // ✅ PHASE 2 DEBUG: Filter-Logik für jede Einheit
-    if (!matchMeinFach && !permissions.istAdmin) {
-      console.log('🔍 PHASE 2 - Einheit wird GEFILTERT (User sieht sie nicht):', {
-        einheit_titel: e.titel_der_einheit,
-        einheit_fach: e.fach,
-        user_faecher: meineFaecher,
-        user_rolle: rolle,
-        istAdmin: permissions.istAdmin,
-        matchMeinFach_grund: meineFaecher.length === 0 ? 'KEINE FÄCHER ZUGEWIESEN' : `Fächer-Array enthält ${e.fach} nicht`,
-      });
-    }
-    
-    return matchSearch && matchFach && matchRBAC && matchChanged && matchMeinFach;
+    // ✅ KEIN matchMeinFach mehr - Backend hat bereits nach Fächern gefiltert!
+    return matchSearch && matchFach && matchRBAC && matchChanged;
   });
 
   const faecher = [...new Set(einheiten.map(e => e.fach).filter(Boolean))];
