@@ -315,12 +315,15 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
     }
   };
 
-  const { data: einheiten = [] } = useQuery({ queryKey: ['einheiten'], queryFn: () => base44.entities.Einheiten.list() });
-  const { data: lernpakete = [] } = useQuery({ queryKey: ['lernpakete'], queryFn: () => base44.entities.Lernpakete.list() });
-  const { data: themenfelder = [] } = useQuery({ queryKey: ['themenfelder'], queryFn: () => base44.entities.Themenfeld.list() });
-  const { data: aktivitaeten = [] } = useQuery({ queryKey: ['lernpaketPhaseAktivitaeten'], queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list() });
-  const { data: aktivitaetenKatalog = [] } = useQuery({ queryKey: ['aktivitaetenKatalog'], queryFn: () => base44.entities.AktivitaetenKatalog.list() });
-  const { data: allgemeineAufgaben = [] } = useQuery({ queryKey: ['allgemeineAufgaben'], queryFn: () => base44.entities.AllgemeineAufgabe.list() });
+  const { data: einheiten = [], isLoading: einheitenLoading } = useQuery({ queryKey: ['einheiten'], queryFn: () => base44.entities.Einheiten.list() });
+  const { data: lernpakete = [], isLoading: lernpaketeLoading } = useQuery({ queryKey: ['lernpakete'], queryFn: () => base44.entities.Lernpakete.list() });
+  const { data: themenfelder = [], isLoading: themenfelderLoading } = useQuery({ queryKey: ['themenfelder'], queryFn: () => base44.entities.Themenfeld.list() });
+  const { data: aktivitaeten = [], isLoading: aktivitaetenLoading } = useQuery({ queryKey: ['lernpaketPhaseAktivitaeten'], queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list() });
+  const { data: aktivitaetenKatalog = [], isLoading: katalogLoading } = useQuery({ queryKey: ['aktivitaetenKatalog'], queryFn: () => base44.entities.AktivitaetenKatalog.list() });
+  const { data: allgemeineAufgaben = [], isLoading: allgemeineLoading } = useQuery({ queryKey: ['allgemeineAufgaben'], queryFn: () => base44.entities.AllgemeineAufgabe.list() });
+
+  // ✅ Strikter Ladezustand: Verhindert "Flash of Unfiltered Data"
+  const isInitialLoading = einheitenLoading || lernpaketeLoading || themenfelderLoading || aktivitaetenLoading || katalogLoading || allgemeineLoading;
 
   // Auto-select when unit changes
   useEffect(() => {
@@ -374,6 +377,18 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
         <div className="text-center">
           <ShieldCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground">Kein Zugriff. Nur Moodle-Designer dürfen den Export bedienen.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ Strikter Early Return: Verhindert Rendering von ungefilterten Daten
+  if (isInitialLoading) {
+    return (
+      <div className="min-h-screen bg-muted/20 p-6 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-muted border-t-primary rounded-full animate-spin" />
+          <p className="text-sm text-muted-foreground font-medium">Cockpit-Daten werden geladen, bitte einen Moment Geduld...</p>
         </div>
       </div>
     );

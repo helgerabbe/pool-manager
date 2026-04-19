@@ -132,7 +132,7 @@ export default function EinheitenListe() {
   const { permissions, rolle, faecher: meineFaecher } = useRBAC();
   
   // ✅ SCHRITT 2: Secure Backend-Funktion statt Client-Side Filtering
-  const { data: einheiten = [], isLoading } = useQuery({
+  const { data: einheiten = [], isLoading, isFetching } = useQuery({
     queryKey: ['einheiten'],
     queryFn: async () => {
       // Secure Backend-Funktion mit Server-Side RBAC-Filterung
@@ -142,7 +142,11 @@ export default function EinheitenListe() {
       });
       return response.data?.data || [];
     },
+    staleTime: 0, // ✅ Daten immer als veraltet markieren → zwingt zum Neuladen
   });
+
+  // ✅ Strikter Ladezustand: Verhindert "Flash of Unfiltered Data"
+  const isInitialLoading = isLoading || isFetching;
 
   const { data: lernpakete = [] } = useQuery({
     queryKey: ['lernpakete'],
@@ -168,10 +172,12 @@ export default function EinheitenListe() {
 
   const getLernpaketCount = (einheitId) => lernpakete.filter(lp => lp.einheit_id === einheitId).length;
 
-  if (isLoading) {
+  // ✅ Strikter Early Return: Verhindert Rendering von ungefilterten Daten
+  if (isInitialLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <div className="w-10 h-10 border-4 border-muted border-t-primary rounded-full animate-spin" />
+        <p className="text-sm text-muted-foreground font-medium">Einheiten werden geladen, bitte einen Moment Geduld...</p>
       </div>
     );
   }
