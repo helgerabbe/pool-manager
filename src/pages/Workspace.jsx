@@ -460,9 +460,9 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               </TabsContent>
 
             {/* ── Tab 3: Aktivitäten zuordnen → Sidebar-Baum + Detail-Panel ───── */}
-            <TabsContent value="aktivitaeten" className="data-[state=active]:flex data-[state=inactive]:hidden flex-row flex-1 overflow-hidden m-0 p-0">
+            <TabsContent value="aktivitaeten" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col lg:flex-row flex-1 overflow-hidden m-0 p-0">
               <ErrorBoundary label="Aktivitäten-Struktur">
-                <aside className="w-96 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden h-full">
+                <aside className="w-full lg:w-96 border-b lg:border-b-0 lg:border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden h-64 lg:h-full min-h-0">
                    <div className="flex-1 overflow-hidden p-3">
                      <div className="h-full overflow-y-auto pr-2">
                     <SidebarTree
@@ -483,9 +483,9 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                       </div>
                       </aside>
 
-                <main className="flex-1 overflow-hidden min-h-0 h-full">
+                <main className="flex-1 overflow-hidden min-h-0 h-full lg:h-auto">
                    <ErrorBoundary label="Detail-Panel">
-                     <div className="h-full overflow-y-auto max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pr-2">
+                     <div className="h-full overflow-y-auto max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pr-2 w-full max-w-full">
                        {selectedNode?.type === 'aktivitaet-edit' ? (
                          activityRecordForEdit ? (
                            <ActivityDetailView
@@ -535,8 +535,8 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             </TabsContent>
 
             {/* ── Tab 5: Allgemeine Aufgaben (Ebene 2) ────────────────────────── */}
-            <TabsContent value="ebene2" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
-              <div className="flex-1 overflow-y-auto">
+            <TabsContent value="ebene2" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0 min-h-0">
+              <div className="flex-1 overflow-hidden min-h-0 flex flex-col">
                 <ErrorBoundary label="Allgemeine Aufgaben erstellen">
                   <AllgemeineAufgabenView 
                     einheitId={selectedEinheitId}
@@ -551,8 +551,8 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             </TabsContent>
 
             {/* ── Tab 6: Anwendungs- & Projektaufgaben (Ebene 3) ──────────────── */}
-            <TabsContent value="ebene3" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
-              <div className="flex-1 overflow-y-auto">
+            <TabsContent value="ebene3" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0 min-h-0">
+              <div className="flex-1 overflow-hidden min-h-0 flex flex-col">
                 <ErrorBoundary label="Anwendungs- und Projektaufgaben">
                   <ProjektaufgabenView 
                     einheitId={selectedEinheitId}

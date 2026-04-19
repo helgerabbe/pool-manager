@@ -8,9 +8,9 @@ export default function BasismoduleView() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   return (
-    <div className="h-full flex gap-0 bg-background overflow-hidden">
+    <div className="h-full flex flex-col lg:flex-row gap-0 bg-background overflow-hidden min-h-0">
       {/* Master-Spalte */}
-      <div className="w-80 shrink-0 overflow-hidden border-r border-border">
+      <div className="w-full lg:w-80 shrink-0 overflow-hidden border-b lg:border-b-0 lg:border-r border-border max-h-64 lg:max-h-full min-h-0">
         <BasismodulList
           selectedId={selectedBasismodul?.id}
           onSelect={setSelectedBasismodul}
@@ -19,7 +19,7 @@ export default function BasismoduleView() {
       </div>
 
       {/* Detail-Spalte */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden min-h-0">
         <BasismodulDetail
           basismodul={selectedBasismodul}
           onDelete={() => setSelectedBasismodul(null)}

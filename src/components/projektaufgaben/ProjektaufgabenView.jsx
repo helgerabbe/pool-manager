@@ -129,7 +129,7 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
     <div className="space-y-6 p-6">
 
       {/* Metadaten */}
-      <div className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-muted/30 border border-border">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-lg bg-muted/30 border border-border">
         <div>
           <p className="text-xs text-muted-foreground">Schwierigkeitsgrad</p>
           <div className="mt-1">
@@ -354,9 +354,9 @@ export default function ProjektaufgabenView({
   return (
     <div className="flex flex-col flex-1 h-full bg-background overflow-hidden">
       {/* Two-Column Layout */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden min-h-0">
         {/* Linke Spalte: Sidebar mit Baumstruktur */}
-        <aside className="w-80 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden">
+        <aside className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-border bg-card/50 flex flex-col shrink-0 lg:shrink-0 overflow-hidden max-h-64 lg:max-h-full h-full lg:h-auto min-h-0">
           {/* Button für neue Aufgabe */}
           {kannBearbeiten && (
             <div className="shrink-0 px-4 py-3 border-b border-border space-y-2">
@@ -412,7 +412,7 @@ export default function ProjektaufgabenView({
 
         {/* Rechte Spalte: Detail-Panel */}
         {selectedAufgabe ? (
-          <main className="flex-1 flex flex-col overflow-hidden">
+          <main className="flex-1 flex flex-col overflow-hidden min-h-0">
             {/* Lock-Bar */}
             {kannBearbeiten && (
               <TaskLockBar

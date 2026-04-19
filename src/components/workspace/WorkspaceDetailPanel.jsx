@@ -166,7 +166,7 @@ function ThemenfeldPanel({ themenfeld, lernpakete, kannBearbeiten, queryClient }
             <textarea
               value={form.beschreibung}
               onChange={(e) => setForm({ ...form, beschreibung: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-input min-h-20 resize-none"
+              className="w-full max-w-full px-3 py-2 rounded-lg border border-input min-h-20 resize-none"
               placeholder="Kurzbeschreibung des Themenfelds"
             />
           </div>
