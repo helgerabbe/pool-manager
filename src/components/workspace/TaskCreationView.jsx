@@ -29,7 +29,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { ChevronRight, Package, MousePointerClick, AlertTriangle, Lock, Crown, CheckCircle2 } from 'lucide-react';
+import { ChevronRight, Package, MousePointerClick, AlertTriangle, Lock, Crown, CheckCircle2, Menu, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import ActivityMasterPanel from '@/components/workspace/ActivityMasterPanel';
 import KlonDetailView from '@/components/workspace/KlonDetailView';
@@ -350,17 +350,18 @@ function EmptyState() {
 // ── Haupt-Komponente ──────────────────────────────────────────────────────────
 
 export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail, userRole, initialActivityId: initialActivityIdProp = null }) {
-  const queryClient = useQueryClient();
-  const [searchParams] = useSearchParams();
-  const [debugSelectValue, setDebugSelectValue] = useState('');
-  
-  // ActivityID kann aus Props oder URL-Parametern kommen
-  const initialActivityId = initialActivityIdProp || searchParams.get('activity');
-  
-  // selectedItem: null | { type: 'activity', activity } | { type: 'master', master } | { type: 'klon', klon }
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [openPacketIds, setOpenPacketIds] = useState(new Set());
-  const [expandedPhases, setExpandedPhases] = useState({});
+   const queryClient = useQueryClient();
+   const [searchParams] = useSearchParams();
+   const [debugSelectValue, setDebugSelectValue] = useState('');
+   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+   // ActivityID kann aus Props oder URL-Parametern kommen
+   const initialActivityId = initialActivityIdProp || searchParams.get('activity');
+
+   // selectedItem: null | { type: 'activity', activity } | { type: 'master', master } | { type: 'klon', klon }
+   const [selectedItem, setSelectedItem] = useState(null);
+   const [openPacketIds, setOpenPacketIds] = useState(new Set());
+   const [expandedPhases, setExpandedPhases] = useState({});
 
   const { data: lernpakete = [] } = useQuery({
     queryKey: ['lernpakete'],
@@ -514,10 +515,38 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
   return (
     <div className="flex flex-row flex-1 overflow-hidden">
 
-      {/* ── Sidebar ──────────────────────────────────────────────────────────── */}
-      <aside className="w-96 border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden h-full">
+      {/* ── Burger-Menü Button (lg-breaker) ──────────────────────────────────── */}
+      <div className="lg:hidden shrink-0 px-3 py-3 border-r border-border bg-card/50 h-full flex flex-col items-center justify-start pt-4">
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="p-2 hover:bg-muted rounded-lg transition-colors"
+          title={sidebarOpen ? 'Menü schließen' : 'Menü öffnen'}
+        >
+          {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+      </div>
+
+      {/* ── Sidebar (Mobile Overlay) ──────────────────────────────────────────── */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      <aside className={cn(
+        "fixed lg:static lg:w-96 z-50 w-80 border-r border-border bg-card flex flex-col shrink-0 overflow-hidden h-full transition-transform lg:transition-none",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      )}>
         <div className="px-3 py-3 border-b border-border shrink-0 space-y-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aktivitäten</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aktivitäten</p>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-1 hover:bg-muted rounded transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
           {/* Aktivitäts-Selectbox (versteckt, Logik aktiv für programmatische Ansteuerung) */}
           {allActivities.filter(a => paketeFuerEinheit.some(p => p.id === a.lernpaket_id)).length > 0 && (
             <select
@@ -540,8 +569,8 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
               }
             </select>
           )}
-        </div>
-        <div className="flex-1 overflow-hidden p-2">
+          </div>
+          <div className="flex-1 overflow-hidden min-h-0 p-2">
           <div className="h-full overflow-y-auto space-y-3 pr-2">
           {groupedPakete.map(({ label, pakete, isRest }) => (
             <div key={label || 'all'}>
@@ -596,8 +625,8 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
           </aside>
 
           {/* ── Hauptbereich ─────────────────────────────────────────────────────── */}
-          <main className="flex-1 w-full min-w-0 overflow-hidden h-full">
-          <div className="h-full overflow-y-auto pr-2">
+          <main className="flex-1 w-full min-w-0 overflow-hidden h-full lg:block hidden">
+            <div className="h-full overflow-y-auto min-h-0">
         {!selectedItem && <EmptyState />}
 
         {/* Aktivität oder Master gewählt → ActivityMasterPanel */}
@@ -645,8 +674,60 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
           );
         })()}
         </div>
-        </main>
+      </main>
 
-        </div>
-        );
-        }
+      {/* ── Hauptbereich Mobile (fullscreen wenn Sidebar offen) ──────────────── */}
+      <main className="flex-1 w-full min-w-0 overflow-hidden h-full lg:hidden">
+        {!sidebarOpen && (
+          <div className="h-full overflow-y-auto min-h-0">
+            {!selectedItem && <EmptyState />}
+
+            {(selectedItem?.type === 'activity' || selectedItem?.type === 'master') && selectedActivity && (
+              <div className="max-w-3xl mx-auto px-6 py-6">
+                <ActivityMasterPanel
+                  key={selectedActivity.id}
+                  activityRecord={selectedActivity}
+                  catalogEntry={selectedCatalog}
+                  supportsMaster={supportsMaster}
+                  kannBearbeiten={kannBearbeiten}
+                  userEmail={userEmail}
+                  userRole={userRole}
+                  einheitId={einheitId}
+                  selectedMasterId={selectedItem?.type === 'master' ? selectedItem.master.id : null}
+                  onMasterSelected={(masterId) => {
+                    const master = alleMaster.find(m => m.id === masterId);
+                    if (master) setSelectedItem({ type: 'master', master });
+                  }}
+                  onKlonSelected={(klonId) => {
+                    const klon = alleKlone.find(k => k.id === klonId);
+                    if (klon) setSelectedItem({ type: 'klon', klon });
+                  }}
+                />
+              </div>
+            )}
+
+            {selectedItem?.type === 'klon' && (() => {
+              const klonMaster = alleMaster.find(m => m.id === selectedItem.klon.master_aufgabe_id);
+              const klonActivity = klonMaster ? allActivities.find(a => a.id === klonMaster.activity_id) : null;
+              const klonCatalog = klonActivity ? aktivitaetenKatalog.find(c => c.id === klonActivity.aktivitaet_id) : null;
+              return (
+                <div className="max-w-3xl mx-auto px-6 py-6">
+                  <KlonDetailView
+                    key={selectedItem.klon.id}
+                    klon={selectedItem.klon}
+                    kannBearbeiten={kannBearbeiten}
+                    userEmail={userEmail}
+                    masterAufgabe={klonMaster}
+                    activityRecord={klonActivity}
+                    catalogEntry={klonCatalog}
+                  />
+                </div>
+              );
+            })()}
+          </div>
+        )}
+      </main>
+
+    </div>
+  );
+}
