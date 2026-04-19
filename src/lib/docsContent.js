@@ -70,36 +70,58 @@ Willkommen im Pool-Manager! Diese Seite gibt Ihnen einen schnellen Einstieg in d
 Nach der Einladung per E-Mail erhalten Sie Zugang zum System. Beim ersten Login sollten Sie Ihr Profil unter *Benutzerverwaltung* vervollständigen und Ihre Fachzuständigkeiten hinterlegen.
 `,
 
-  'einheiten-struktur': `# Einheiten & Struktur
+  'einheiten-struktur': `# Einheiten & Struktur: Das Fundament
 
-Eine **Einheit** ist das zentrale Organisationselement im Pool-Manager. Sie bündelt alle Inhalte zu einem Unterrichtsthema – von Lernzielen über Aufgaben bis hin zu Exportpaketen.
+Bevor Sie einzelne Aufgaben oder Lernziele erstellen, benötigen Sie einen strukturierten Rahmen. Der Pool-Manager organisiert Ihren Unterricht in einer klaren Hierarchie – ähnlich wie ein gut aufgeräumter Aktenschrank.
 
-## Übersicht
+## Die drei Ebenen der Organisation (Die Matroschka-Puppe)
 
-* Eine Einheit gehört zu einem **Fach** und einer **Jahrgangsstufe**
-* Sie wird über einen **Wizard** angelegt (Stammdaten → Ziele → Struktur)
-* Der **Status** steuert die Sichtbarkeit (Entwurf vs. Aktiv)
+Damit Schülerinnen und Schüler (und Sie als Lehrkraft!) nicht den Überblick verlieren, ist alles in drei ineinandergreifenden Ebenen organisiert:
 
-## Hierarchie
+| Ebene | Metapher | Beschreibung | Beispiel |
+|-------|----------|-------------|---------|
+| **Einheit** | 🗄️ Der Aktenschrank | Der größte Rahmen – ein großes Oberthema für einen bestimmten Jahrgang | „Geschichte, 9. Klasse: Der Erste Weltkrieg und die Weimarer Republik" |
+| **Themenfeld** | 🗂️ Die Schublade | Unterteilt die Einheit in logische Abschnitte | TF 1: „Ursachen des 1. Weltkriegs", TF 2: „Kriegsverlauf" |
+| **Lernpaket** | 📁 Die Aktenmappe | Enthält die konkreten Aufgaben, meist für 1–2 Unterrichtsstunden | „Das Attentat von Sarajevo" |
+
+Als Strukturdiagramm:
 
 \`\`\`
 Einheit
 └── Themenfeld
     └── Lernpaket
         ├── Lernziele
-        └── Aufgabenbausteine
+        └── Aufgabenbausteine (Ebene 1, 2, 3)
 \`\`\`
 
-## Themenfelder
+## Eine neue Einheit anlegen (Der Wizard)
 
-Themenfelder gliedern eine Einheit in inhaltliche Bereiche (z.B. "Textanalyse", "Grammatik"). Jedes Themenfeld kann einen **Bearbeitungsmodus** haben:
+Wenn Sie auf „Neue Einheit" klicken, öffnet sich der **Einheiten-Wizard**. Dieser Assistent führt Sie Schritt für Schritt durch die Erstellung:
+
+1. **Fach & Jahrgang** auswählen (die Listen pflegt Ihre Administration im Hintergrund)
+2. **Titel** vergeben – klar und wiedererkennbar
+3. **Gesamtziele** definieren: Was sollen die Schüler am Ende dieser Einheit grob verstanden haben?
+
+> **Hinweis:** Die detaillierten „Ich-kann"-Lernziele kommen erst später, wenn Sie einzelne Lernpakete befüllen.
+
+## Themenfelder anlegen
+
+Themenfelder gliedern Ihre Einheit in inhaltliche Abschnitte. Jedes Themenfeld kann einen **Bearbeitungsmodus** haben:
 
 * **offen** – Lernende können alle Pakete in beliebiger Reihenfolge bearbeiten
 * **sequenziell** – Pakete müssen der Reihe nach absolviert werden
 
-## Lernpakete
+## Lernpakete strukturieren (Der Dreiklang)
 
-Lernpakete sind die kleinste inhaltliche Einheit. Sie enthalten Aktivitäten in drei Phasen: **Input**, **Übung** und **Abschluss**.
+Sobald Themenfelder angelegt sind, füllen Sie diese mit Lernpaketen. Der Pool-Manager folgt dabei einem festen didaktischen Prinzip: Jedes Lernpaket ist in drei Phasen gegliedert:
+
+| Phase | Zweck | Was gehört hinein? |
+|-------|-------|------------------|
+| **Input** | Wissen aufbauen | Materialien, Erklärvideos, Lesetexte |
+| **Übung** | Wissen anwenden | Trainingsaufgaben, Ebene-1-Bausteine |
+| **Abschluss** | Verstehen prüfen | Exit-Check, kurze Lernzielkontrolle |
+
+In diese drei Phasen ziehen Sie über den **Aktivitäten-Katalog** Ihre Aufgabenbausteine (Ebene 1) per Drag & Drop hinein.
 `,
 
   'lernziele': `# Lernziele
