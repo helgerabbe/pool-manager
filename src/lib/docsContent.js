@@ -223,36 +223,71 @@ Der Erwartungshorizont beschreibt, was eine vollständige und korrekte Lösung b
 Mit dem "KI entwerfen"-Button kann aus einer kurzen Idee automatisch eine vollständige Aufgabe mit Titel und Aufgabenstellung generiert werden.
 `,
 
-  'ebene-3-projektaufgaben': `# Ebene 3: Projektaufgaben
+  'ebene-3-projektaufgaben': `# Ebene 3: Projektaufgaben & Anwendungsaufgaben
 
-Projektaufgaben sind komplexe, offene Aufgaben auf der höchsten Anforderungsebene. Sie ersetzen den klassischen Erwartungshorizont durch Gütekriterien und Bewertungsrubriken.
+Willkommen auf der höchsten Anforderungsebene! Während es in Ebene 1 und 2 oft um das Verstehen und Üben geht, wenden die Schülerinnen und Schüler ihr Wissen bei den Projektaufgaben (Ebene 3) frei und kreativ an.
 
-## Übersicht
+Da Projektaufgaben ergebnisoffen sind (es gibt nicht die eine richtige Musterlösung), bietet der Pool-Manager hier spezielle Werkzeuge, um den Schülern klare Leitplanken zu geben und den KI-Tutor "Brian.study" perfekt auf die Aufgabe vorzubereiten.
 
-* Unterscheidung zwischen **Anwendungsaufgaben** und **Projektaufgaben**
-* Keine Musterlösung – stattdessen **Abgabeformat & Rubriken**
-* Vollständige Integration mit dem **KI-Tutor Brian.study**
-
-## Aufgabentypen
+## Die zwei Aufgabentypen
 
 | Typ | Beschreibung |
 |-----|-------------|
-| Anwendungsaufgabe | Gelerntes auf neue Situation anwenden |
-| Projektaufgabe | Längerfristiges, produktionsorientiertes Vorhaben |
+| **Anwendungsaufgabe** | Gelerntes auf eine neue, konkrete Situation anwenden |
+| **Projektaufgabe** | Längerfristiges, produktionsorientiertes Vorhaben (z.B. eine Ausstellung, ein Podcast) |
 
-## Abgabeformate
+## Schritt 1: Abgabeformate definieren (Was wird erwartet?)
 
-Wählen Sie aus vordefinierten Formaten (Präsentation, Essay, Tabelle…) oder definieren Sie ein eigenes Format. Das Format beeinflusst die KI-generierten Gütekriterien.
+Im Tabreiter **„Abgabe & Gütekriterien"** legen Sie als Erstes fest, in welcher Form die Schüler ihr Endergebnis präsentieren sollen.
 
-## Bewertungsrubriken
+* **Auswahl-Kacheln:** Klicken Sie auf die passenden Kacheln (z. B. Text, Präsentation, Zeitleiste, Grafik). Sie können auch mehrere Formate gleichzeitig auswählen.
+* **Eigenes Format:** Fehlt etwas in der Liste? Tragen Sie im Textfeld darunter ein ganz eigenes Format ein (z. B. „Podcast-Skript" oder „Flyer").
+
+## Schritt 2: Besonderer Fokus (Worauf legen Sie Wert?)
+
+Unter den Formaten finden Sie ein optionales Textfeld für den **besonderen Fokus**. Hier teilen Sie dem System mit, was Ihnen bei der Bewertung dieser spezifischen Aufgabe am wichtigsten ist.
+
+> **Beispiel:** „Achte besonders auf eine saubere Quellenarbeit und eine chronologisch korrekte Reihenfolge der Ereignisse."
+
+**Tipp:** Je genauer Sie hier sind, desto besser kann die KI im nächsten Schritt die Bewertungskriterien für Sie vorschlagen.
+
+## Schritt 3: Gütekriterien generieren (Der KI-Assistent)
+
+Da es keine feste Musterlösung gibt, benötigt der KI-Tutor Brian.study klare **Bewertungsrubriken** (Kriterien und Punkte), um den Schülern sinnvolles Feedback geben zu können. Sie müssen sich diese Kriterien nicht mühsam selbst ausdenken!
+
+1. Klicken Sie auf den Button **„Gütekriterien mit KI generieren"**.
+2. Das System nimmt Ihre gewählten Abgabeformate und Ihren „Besonderen Fokus" und erstellt daraus automatisch 2–3 thematische Bewertungskategorien.
+3. **Nachbearbeiten:** Sie können die generierten Texte und Punkte anschließend in den Textfeldern nach Ihren Wünschen anpassen.
 
 Jede Rubrik enthält:
 
-* **Titel** (z.B. "Argumentation", "Struktur")
-* **Punkte** – Gewichtung im Gesamtbild
-* **Kriterienbeschreibung** – Was wird konkret erwartet?
+| Feld | Beschreibung |
+|------|-------------|
+| **Titel** | Thema der Rubrik, z.B. „Argumentation" oder „Struktur" |
+| **Punkte** | Gewichtung im Gesamtbild |
+| **Kriterienbeschreibung** | Was wird konkret erwartet? |
 
-Rubriken werden direkt in den Brian.study-Export übertragen.
+## Schritt 4: Der KI-Tutor Prompt (Vollautomatisch)
+
+Damit Brian.study genau weiß, wie er sich den Schülern gegenüber verhalten soll, benötigt er detaillierte Systemanweisungen (den sogenannten „Prompt").
+
+**Die gute Nachricht: Sie müssen kein KI-Experte sein!**
+
+Im Tabreiter **„KI-Tutor Prompt"** erledigt der Pool-Manager die gesamte Arbeit für Sie:
+
+1. Klicken Sie auf **„Alle Felder generieren"**.
+2. Das System baut aus Ihrer Aufgabenstellung, den Gütekriterien und den Abgabeformaten eine vollständige Tutor-Persona zusammen.
+3. Es legt automatisch fest, dass der Tutor nur Denkanstöße geben darf (**Scaffolding**) und niemals die Lösung verrät.
+4. Außerdem formuliert die KI die Abbruchbedingung (z.B. „Wenn die Zeitleiste vollständig besprochen wurde").
+
+> **Wichtiger Hinweis zum Export:** Sie sehen in diesem Bereich absichtlich keine Kopieren-Buttons. Sie müssen hier nichts herauskopieren! Ihre einzige Aufgabe ist es, die generierten Texte einmal gegenzulesen. Das eigentliche Kopieren und Übertragen in Brian.study übernimmt später das Export-Team im separaten **Export-Cockpit**.
+
+## Schritt 5: Die Lernlandkarte (Kompetenz-Mapping)
+
+Vergessen Sie nicht, im Reiter **„Lernlandkarte"** die Lernziele auszuwählen, die für dieses Projekt zwingend benötigt werden.
+
+* Wenn Sie den **KI-Aufgaben-Wizard** (den „Zauberstab" bei der Aufgabenerstellung) genutzt haben, stehen Ihnen die von der KI vorgeschlagenen Kompetenzen bereits als kleine Tags zur Orientierung zur Verfügung.
+* Verknüpfen Sie hier die passenden **Basismodule (Ebene 1)**, damit Schüler bei Lücken genau wissen, wo sie Grundlagen nacharbeiten müssen.
 `,
 
   'ki-tutor-brian': `# KI-Tutor Brian.study
