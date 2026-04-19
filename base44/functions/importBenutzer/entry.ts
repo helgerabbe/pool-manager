@@ -28,10 +28,17 @@ Deno.serve(async (req) => {
   }
 
   // Nur Admins dürfen importieren
-  const profile = await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email });
-  const rolle = profile[0]?.rolle;
+  // WICHTIG: Die User-Entity (built-in) hat email als ID, wir suchen nach der Custom Benutzer-Entity mit user_id = email
+  const adminProfile = await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email });
+  
+  // Fallback: Falls noch keine Benutzer-Record existiert, prüfe die eingebaute User.role
+  const rolle = adminProfile[0]?.rolle || user.role;
+  
   if (!rolle || rolle !== 'Administrator') {
-    return Response.json({ error: 'Kein Zugriff. Nur Administratoren dürfen Benutzer importieren.' }, { status: 403 });
+    return Response.json({ 
+      error: `Kein Zugriff. Nur Administratoren dürfen Benutzer importieren. Deine Rolle: ${rolle || 'unbekannt'}, deine E-Mail: ${user.email}`, 
+      status: 403 
+    }, { status: 403 });
   }
 
   const { rows } = await req.json();
