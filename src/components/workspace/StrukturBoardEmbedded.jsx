@@ -393,16 +393,18 @@ export default function StrukturBoardEmbedded({
 
   useEffect(() => {
     if (initialized) return;
-    if (!remotePakete || !remoteThemenfelder) return;
+    // Initialisiere auch mit leeren Arrays (wenn noch keine Daten da sind)
+    const pakete = remotePakete || [];
+    const felder = remoteThemenfelder || [];
 
-    const tfSpalten = [...remoteThemenfelder]
+    const tfSpalten = [...felder]
       .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
       .map(tf => ({ id: `tf-${tf.id}`, titel: tf.titel, themenfeldId: tf.id }));
 
     const newMap = { [SAMMELBECKEN_ID]: [] };
     tfSpalten.forEach(s => { newMap[s.id] = []; });
 
-    remotePakete.forEach(p => {
+    pakete.forEach(p => {
       const sid = p.themenfeld_id ? `tf-${p.themenfeld_id}` : SAMMELBECKEN_ID;
       if (!newMap[sid]) newMap[sid] = [];
       newMap[sid].push(p);
@@ -416,7 +418,7 @@ export default function StrukturBoardEmbedded({
     setPaketeMap(newMap);
     // Store original IDs to detect deletions
     setOriginalSpaltenIds(new Set(tfSpalten.map(s => s.themenfeldId)));
-    setOriginalPaketIds(new Set(remotePakete.map(p => p.id)));
+    setOriginalPaketIds(new Set(pakete.map(p => p.id)));
     setInitialized(true);
   }, [remotePakete, remoteThemenfelder, initialized]);
 
@@ -438,9 +440,21 @@ export default function StrukturBoardEmbedded({
   const kannStrukturBearbeiten = einheit ? unitAccess.hasFullAccess : false;
   
   // 🔒 HARTE SPERRE: Nur wenn Structural Lock aktiv ist, darf bearbeitet werden
+  // ABER: Lesemodus zeigt trotzdem die Struktur an, nur keine Bearbeitung
   const istLesemodus = !kannStrukturBearbeiten || !isStructuralEditingActive;
+  
+  // Debug-Log
+  console.log('[StrukturBoard] RBAC Check:', {
+    kannStrukturBearbeiten,
+    isStructuralEditingActive,
+    istLesemodus,
+    unitAccess,
+    userRole: permissions.rolle,
+    userEmail: authUser?.email,
+    members: einheit?.members?.length || 0,
+  });
 
-  // Fachlehrkräfte sehen die Struktur im Lesemodus (keine Bearbeitung)
+  // Early Return nur wenn Einheit wirklich fehlt
   if (!einheit) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-center p-8">
@@ -454,6 +468,15 @@ export default function StrukturBoardEmbedded({
       </div>
     );
   }
+
+  // Debug-Log für Initialisierung
+  console.log('[StrukturBoard] Render:', {
+    initialized,
+    spaltenCount: spalten.length,
+    paketeCount: Object.values(paketeMap).flat().length,
+    remotePaketeCount: remotePakete?.length || 0,
+    remoteThemenfelderCount: remoteThemenfelder?.length || 0,
+  });
 
   // ── DnD ───────────────────────────────────────────────────────────────────
 

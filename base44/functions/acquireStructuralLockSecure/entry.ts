@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
 
     // Setze Lock
     const now = new Date().toISOString();
-    await base44.entities.Einheiten.update(einheitId, {
+    await base44.entities.Einheiten.update(einheit_id, {
       structural_lock: user.email,
       structural_locked_at: now,
     });

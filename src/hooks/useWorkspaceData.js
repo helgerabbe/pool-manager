@@ -36,17 +36,26 @@ export function useWorkspaceData(einheitId) {
   const einheitData = detailData?.data?.einheit;
   const einheitenFromList = listData || [];
   
-  // ✅ WICHTIG: Wenn Detail-Daten geladen werden, verwende NUR diese (inkl. members)
-  const einheiten = einheitData ? [einheitData] : einheitenFromList;
+  // ✅ WICHTIG: Merge members aus der Liste in die detailData
+  const einheiten = einheitenFromList.map(e => {
+    if (einheitData && e.id === einheitData.id) {
+      // Merge detailData members in die Liste
+      return { ...e, ...einheitData };
+    }
+    return e;
+  });
+  
+  // Finde aktive Einheit
+  const activeEinheit = einheiten.find(e => e.id === einheitId) || null;
   
   // 🔍 DEBUG: Logge Daten für Audit
   console.log('[useWorkspaceData] Loaded:', {
     einheitId,
     hasDetailData: !!detailData,
     hasEinheitData: !!einheitData,
-    einheitMembers: einheitData?.members?.length || 0,
+    activeEinheitMembers: activeEinheit?.members?.length || 0,
     einheitenCount: einheiten.length,
-    structuralLock: einheitData?.structural_lock || null,
+    structuralLock: activeEinheit?.structural_lock || null,
   });
 
   return {
