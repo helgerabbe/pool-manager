@@ -72,60 +72,78 @@ Deno.serve(async (req) => {
   let aktualisiert = 0;
   const fehler = [];
 
-  // Batch-Verarbeitung für bessere Performance
-  const createPromises = [];
-  const updatePromises = [];
+  // Verarbeitung in Chunks für Progress-Updates (alle 10 Datensätze)
+  const CHUNK_SIZE = 10;
+  const totalRows = rows.length;
+  let processedCount = 0;
   
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    const zeile = i + 2; // 1-basiert, Zeile 1 = Header
+  for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+    const chunk = rows.slice(i, i + CHUNK_SIZE);
+    const chunkPromises = [];
+    
+    for (let j = 0; j < chunk.length; j++) {
+      const row = chunk[j];
+      const zeile = i + j + 2; // 1-basiert, Zeile 1 = Header
 
-    try {
-      const email = (row.email || '').trim().toLowerCase();
+      try {
+        const email = (row.email || '').trim().toLowerCase();
 
-      // E-Mail-Validierung
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        fehler.push({ zeile, email: row.email || '—', grund: 'Ungültige oder fehlende E-Mail-Adresse' });
-        continue;
+        // E-Mail-Validierung
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          fehler.push({ zeile, email: row.email || '—', grund: 'Ungültige oder fehlende E-Mail-Adresse' });
+          processedCount++;
+          continue;
+        }
+
+        const rolleWert = row.rolle || 'Fachlehrkraft';
+        const gueltigeRollen = ['Administrator', 'Fachschaftsleitung', 'Fachlehrkraft', 'Betrachter', 'Moodle-Designer'];
+        const finaleRolle = gueltigeRollen.includes(rolleWert) ? rolleWert : 'Fachlehrkraft';
+
+        const payload = {
+          user_id:                  email,
+          rolle:                    finaleRolle,
+          fachbereich_zustaendigkeit: Array.isArray(row.faecher) ? row.faecher : [],
+          ist_aktiv:                true,
+        };
+
+        if (existingByEmail[email]) {
+          // Upsert: vorhandenen Datensatz aktualisieren
+          chunkPromises.push(
+            base44.asServiceRole.entities.Benutzer.update(existingByEmail[email].id, payload)
+              .then(() => {
+                aktualisiert++;
+                processedCount++;
+              })
+              .catch(err => {
+                fehler.push({ zeile, email, grund: err.message || 'Update fehlgeschlagen' });
+                processedCount++;
+              })
+          );
+        } else {
+          // Neu anlegen
+          chunkPromises.push(
+            base44.asServiceRole.entities.Benutzer.create(payload)
+              .then(() => {
+                angelegt++;
+                processedCount++;
+              })
+              .catch(err => {
+                fehler.push({ zeile, email, grund: err.message || 'Create fehlgeschlagen' });
+                processedCount++;
+              })
+          );
+        }
+      } catch (err) {
+        fehler.push({ zeile, email: row.email || '—', grund: err.message || 'Unbekannter Fehler' });
+        processedCount++;
       }
-
-      const rolleWert = row.rolle || 'Fachlehrkraft';
-      const gueltigeRollen = ['Administrator', 'Fachschaftsleitung', 'Fachlehrkraft', 'Betrachter', 'Moodle-Designer'];
-      const finaleRolle = gueltigeRollen.includes(rolleWert) ? rolleWert : 'Fachlehrkraft';
-
-      const payload = {
-        user_id:                  email,
-        rolle:                    finaleRolle,
-        fachbereich_zustaendigkeit: Array.isArray(row.faecher) ? row.faecher : [],
-        ist_aktiv:                true,
-      };
-
-      if (existingByEmail[email]) {
-        // Upsert: vorhandenen Datensatz aktualisieren
-        updatePromises.push(
-          base44.asServiceRole.entities.Benutzer.update(existingByEmail[email].id, payload)
-            .then(() => aktualisiert++)
-            .catch(err => {
-              fehler.push({ zeile, email, grund: err.message || 'Update fehlgeschlagen' });
-            })
-        );
-      } else {
-        // Neu anlegen
-        createPromises.push(
-          base44.asServiceRole.entities.Benutzer.create(payload)
-            .then(() => angelegt++)
-            .catch(err => {
-              fehler.push({ zeile, email, grund: err.message || 'Create fehlgeschlagen' });
-            })
-        );
-      }
-    } catch (err) {
-      fehler.push({ zeile, email: row.email || '—', grund: err.message || 'Unbekannter Fehler' });
     }
+    
+    // Warte auf Chunk-Abschluss und sende Progress
+    await Promise.all(chunkPromises);
+    const progress = Math.round((processedCount / totalRows) * 100);
+    console.log(`PROGRESS: ${progress}% (${processedCount}/${totalRows}) - angelegt: ${angelegt}, aktualisiert: ${aktualisiert}`);
   }
-  
-  // Warte auf alle Batch-Operationen
-  await Promise.all([...createPromises, ...updatePromises]);
 
   return Response.json({ angelegt, aktualisiert, fehler });
 });
