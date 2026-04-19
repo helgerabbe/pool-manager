@@ -143,7 +143,8 @@ export default function EinheitenListe() {
     const matchRBAC = kannEinheitSehen(rolle, e.freigabe_status);
     const matchChanged = !showOnlyChanged || (e.sync_status === 'modified' || e.sync_status === 'new' || !e.last_synced_at);
     // Fach-Filter: Nicht-Admins sehen nur Einheiten ihrer eigenen Fächer
-    const matchMeinFach = permissions.istAdmin || meineFaecher.length === 0 || meineFaecher.includes(e.fach);
+    // WICHTIG: Wenn keine Fächer zugewiesen sind, sieht man KEINE Einheiten (außer Admin)
+    const matchMeinFach = permissions.istAdmin || (meineFaecher.length > 0 && meineFaecher.includes(e.fach));
     return matchSearch && matchFach && matchRBAC && matchChanged && matchMeinFach;
   });
 
