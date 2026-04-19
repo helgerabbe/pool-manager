@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
   // Nur Admins dürfen importieren
   const profile = await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email });
   const rolle = profile[0]?.rolle;
-  if (rolle !== 'Administrator') {
+  if (!rolle || rolle !== 'Administrator') {
     return Response.json({ error: 'Kein Zugriff. Nur Administratoren dürfen Benutzer importieren.' }, { status: 403 });
   }
 
