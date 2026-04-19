@@ -345,7 +345,7 @@ export default function UserImport() {
     const { rows } = csvData;
 
     try {
-      // Auto-Match Logik (gleiche wie in FieldMapping)
+      // Auto-Match Logik: Headers nach Spaltennamen UND Position abgleichen
       const autoHints = {
         email: ['email', 'e-mail', 'mail', 'emailadresse', 'e_mail'],
         vorname: ['vorname', 'firstname', 'first_name', 'given_name', 'forename'],
@@ -354,10 +354,25 @@ export default function UserImport() {
         faecher: ['fach', 'fächer', 'faecher', 'lehrbefähigung', 'lehrbefaehigung', 'subject', 'subjects'],
       };
 
+      const headers = csvData.headers || [];
+      
       const getAutoMatch = (dbKey) => {
         const hints = autoHints[dbKey] || [];
-        const headers = csvData.headers || [];
-        return headers.find(h => hints.some(hint => h.toLowerCase().includes(hint))) || '';
+        // 1. Versuche Exact-Match nach Namen
+        const namedMatch = headers.find(h => hints.some(hint => h.toLowerCase().includes(hint)));
+        if (namedMatch) return namedMatch;
+        
+        // 2. Fallback: Position-basiert (IServ-Export Muster)
+        // Typisches IServ-Muster: [vorname, nachname, email, rolle, faecher]
+        const positionMap = {
+          vorname: 0,
+          nachname: 1,
+          email: 2,
+          rolle: 3,
+          faecher: 4,
+        };
+        const expectedIdx = positionMap[dbKey];
+        return expectedIdx !== undefined && headers[expectedIdx] ? headers[expectedIdx] : '';
       };
 
       // Zeilen transformieren MIT Auto-Match Fallback
