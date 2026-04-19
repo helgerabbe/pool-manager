@@ -71,6 +71,10 @@ Deno.serve(async (req) => {
   let aktualisiert = 0;
   const fehler = [];
 
+  // Batch-Verarbeitung für bessere Performance
+  const createPromises = [];
+  const updatePromises = [];
+  
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
     const zeile = i + 2; // 1-basiert, Zeile 1 = Header
@@ -97,17 +101,30 @@ Deno.serve(async (req) => {
 
       if (existingByEmail[email]) {
         // Upsert: vorhandenen Datensatz aktualisieren
-        await base44.asServiceRole.entities.Benutzer.update(existingByEmail[email].id, payload);
-        aktualisiert++;
+        updatePromises.push(
+          base44.asServiceRole.entities.Benutzer.update(existingByEmail[email].id, payload)
+            .then(() => aktualisiert++)
+            .catch(err => {
+              fehler.push({ zeile, email, grund: err.message || 'Update fehlgeschlagen' });
+            })
+        );
       } else {
         // Neu anlegen
-        await base44.asServiceRole.entities.Benutzer.create(payload);
-        angelegt++;
+        createPromises.push(
+          base44.asServiceRole.entities.Benutzer.create(payload)
+            .then(() => angelegt++)
+            .catch(err => {
+              fehler.push({ zeile, email, grund: err.message || 'Create fehlgeschlagen' });
+            })
+        );
       }
     } catch (err) {
       fehler.push({ zeile, email: row.email || '—', grund: err.message || 'Unbekannter Fehler' });
     }
   }
+  
+  // Warte auf alle Batch-Operationen
+  await Promise.all([...createPromises, ...updatePromises]);
 
   return Response.json({ angelegt, aktualisiert, fehler });
 });
