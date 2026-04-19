@@ -219,7 +219,7 @@ export default function AktivitaetenKatalog() {
                             )}
                           </div>
 
-                          <div className="flex items-center gap-3 shrink-0">
+                          <div className="flex items-center gap-3 shrink-0 whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-muted-foreground">
                                 {aktivitaet.is_active ? 'Aktiv' : 'Inaktiv'}

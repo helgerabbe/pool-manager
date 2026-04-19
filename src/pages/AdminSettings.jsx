@@ -130,7 +130,7 @@ export default function AdminSettings() {
 
       {/* Lookup-Tabellen */}
       <Tabs defaultValue="faecher">
-        <TabsList className="bg-muted grid w-full grid-cols-4">
+        <TabsList className="bg-muted grid w-full grid-cols-2 sm:grid-cols-4">
           <TabsTrigger value="faecher" className="gap-1.5 text-xs">
             <BookOpen className="w-3.5 h-3.5" />Fächer
           </TabsTrigger>

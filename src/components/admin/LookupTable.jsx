@@ -126,9 +126,9 @@ export default function LookupTable({
               </>
             ) : (
               <>
-                <span className="flex-1 text-sm font-medium">{item[labelField]}</span>
+                <span className="flex-1 text-sm font-medium truncate min-w-0">{item[labelField]}</span>
                 {extraFields.map(ef => (
-                  <Badge key={ef.key} variant="secondary" className="text-[10px] shrink-0">
+                  <Badge key={ef.key} variant="secondary" className="text-[10px] shrink-0 whitespace-nowrap">
                     {item[ef.key] || '—'}
                   </Badge>
                 ))}

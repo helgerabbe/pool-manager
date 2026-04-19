@@ -401,12 +401,12 @@ export default function Benutzerverwaltung() {
             3 Bereiche: Struktur (Einheiten/Themenfelder/LP) | Inhalte (Aktivitäten/Aufgaben) | Export (Moodle)
           </p>
         </CardHeader>
-        <CardContent className={isMobile ? 'pb-4' : 'p-0 overflow-x-auto'}>
+        <CardContent className={isMobile ? 'pb-4' : 'p-0'}>
           {isMobile ? (
             <MobileRechteMatrix />
           ) : (
-            <>
-              <table className="w-full text-sm">
+            <div className="w-full overflow-x-auto">
+            <table className="w-full text-sm min-w-[640px]">
                 <thead>
                   <tr className="border-b border-border bg-muted/40">
                     <th className="text-left px-4 py-3 font-semibold text-sm w-40">Rolle</th>
@@ -448,8 +448,8 @@ export default function Benutzerverwaltung() {
                     { rolle: 'Moodle-Designer',    s_e:'❌',  s_b:'❌',  s_l:'❌',  c_e:'❌',  c_b:'❌',  c_l:'✅**', c_f:'❌',  e_bed:'✅', e_les:'✅' },
                   ].map(row => (
                     <tr key={row.rolle} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                      <td className="px-4 py-2.5">
-                        <Badge className={`${rollenBadgeColors[row.rolle]} text-xs`}>{row.rolle}</Badge>
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        <Badge className={`${rollenBadgeColors[row.rolle]} text-xs whitespace-nowrap`}>{row.rolle}</Badge>
                       </td>
                       <td className="text-center px-2 py-2.5 text-sm border-l border-border">{row.s_e}</td>
                       <td className="text-center px-2 py-2.5 text-sm">{row.s_b}</td>
@@ -469,6 +469,7 @@ export default function Benutzerverwaltung() {
                 <br />
                 <strong>*</strong> = nur im eigenen Fachbereich | <strong>**</strong> = nur Freigegeben
               </p>
+            </div>
             </>
           )}
         </CardContent>
@@ -543,7 +544,7 @@ export default function Benutzerverwaltung() {
                         <Badge className={`${rollenBadgeColors[b.rolle] || 'bg-muted text-muted-foreground'}`}>
                           {b.rolle}
                         </Badge>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 whitespace-nowrap">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingUser(b); }}>
                             <Edit className="w-3.5 h-3.5" />
                           </Button>

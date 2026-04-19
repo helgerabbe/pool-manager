@@ -85,9 +85,9 @@ function AufgabeCard({ aufgabe, onMarkAsSynced }) {
             <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{aufgabe.aufgabenstellung}</p>
           )}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
           {isReady && (
-            <Badge className="bg-green-100 text-green-800 border border-green-300 text-[10px] shrink-0 gap-1">
+            <Badge className="bg-green-100 text-green-800 border border-green-300 text-[10px] shrink-0 gap-1 whitespace-nowrap">
               ✓ Bereit
             </Badge>
           )}
@@ -95,7 +95,7 @@ function AufgabeCard({ aufgabe, onMarkAsSynced }) {
             <Button
               size="sm"
               onClick={() => onMarkAsSynced(aufgabe.id)}
-              className="gap-1.5 text-xs h-8 bg-green-600 hover:bg-green-700"
+              className="gap-1.5 text-xs h-8 bg-green-600 hover:bg-green-700 whitespace-nowrap"
               disabled={!isReady}
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
@@ -243,7 +243,7 @@ export default function BrianExportCockpitView() {
         </div>
 
         {/* Statistiken */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
             { label: 'Bereit für Brian', value: pending, color: 'text-blue-700 bg-blue-50 border-blue-200' },
             { label: 'In Brian exportiert', value: synced, color: 'text-green-700 bg-green-50 border-green-200' },

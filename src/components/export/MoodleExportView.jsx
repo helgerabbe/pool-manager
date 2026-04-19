@@ -182,7 +182,7 @@ export default function MoodleExportView({ einheitId, userRole, isAdmin }) {
       {isLocked && <ExportLockBanner pendingCount={pendingCount} />}
 
       {/* Export-Status Übersicht */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
         <Card>
           <CardContent className="pt-6 text-center">
             <div className="text-2xl font-bold text-foreground">{stats.total}</div>

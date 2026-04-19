@@ -26,22 +26,22 @@ function AktivitaetStatusBadge({ activity }) {
   const { sync_status, content_status } = activity;
 
   if (sync_status === 'error') {
-    return <Badge className="bg-red-100 text-red-800 border border-red-300 text-xs"><AlertCircle className="w-3 h-3 mr-1" />Export-Fehler</Badge>;
+    return <Badge className="bg-red-100 text-red-800 border border-red-300 text-xs whitespace-nowrap shrink-0"><AlertCircle className="w-3 h-3 mr-1" />Export-Fehler</Badge>;
   }
   if (sync_status === 'pending') {
-    return <Badge className="bg-orange-100 text-orange-800 border border-orange-300 text-xs"><Clock className="w-3 h-3 mr-1" />Wird exportiert 🔒</Badge>;
+    return <Badge className="bg-orange-100 text-orange-800 border border-orange-300 text-xs whitespace-nowrap shrink-0"><Clock className="w-3 h-3 mr-1" />Wird exportiert 🔒</Badge>;
   }
   if (sync_status === 'synced') {
-    return <Badge className="bg-green-100 text-green-800 border border-green-300 text-xs"><CheckCircle2 className="w-3 h-3 mr-1" />In Moodle</Badge>;
+    return <Badge className="bg-green-100 text-green-800 border border-green-300 text-xs whitespace-nowrap shrink-0"><CheckCircle2 className="w-3 h-3 mr-1" />In Moodle</Badge>;
   }
   if (sync_status === 'modified') {
-    return <Badge className="bg-purple-100 text-purple-800 border border-purple-300 text-xs"><RefreshCw className="w-3 h-3 mr-1" />Geändert</Badge>;
+    return <Badge className="bg-purple-100 text-purple-800 border border-purple-300 text-xs whitespace-nowrap shrink-0"><RefreshCw className="w-3 h-3 mr-1" />Geändert</Badge>;
   }
   if (content_status === 'approved') {
-    return <Badge className="bg-blue-100 text-blue-800 border border-blue-300 text-xs"><Upload className="w-3 h-3 mr-1" />Freigegeben</Badge>;
+    return <Badge className="bg-blue-100 text-blue-800 border border-blue-300 text-xs whitespace-nowrap shrink-0"><Upload className="w-3 h-3 mr-1" />Freigegeben</Badge>;
   }
   // draft / new
-  return <Badge className="bg-slate-100 text-slate-600 border border-slate-300 text-xs"><Pencil className="w-3 h-3 mr-1" />Entwurf</Badge>;
+  return <Badge className="bg-slate-100 text-slate-600 border border-slate-300 text-xs whitespace-nowrap shrink-0"><Pencil className="w-3 h-3 mr-1" />Entwurf</Badge>;
 }
 
 // ── Undo-Button für "pending"-Status ────────────────────────────────────────

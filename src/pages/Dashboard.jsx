@@ -22,9 +22,9 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-6 items-stretch">
+      <div className="flex flex-col md:flex-row gap-6 items-stretch">
         {/* Titelbild */}
-        <div className="rounded-2xl overflow-hidden shadow-md flex-shrink-0 w-2/3">
+        <div className="rounded-2xl overflow-hidden shadow-md w-full md:w-2/3 shrink-0">
           <img
             src="https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/996944c1f_image.png"
             alt="Pool-Manager – Die Orga-App für Freiarbeitszeiten"
@@ -34,7 +34,7 @@ export default function Dashboard() {
         </div>
 
         {/* Online-Nutzer */}
-        <Card className="border-0 shadow-sm flex-1">
+        <Card className="border-0 shadow-sm flex-1 min-w-0">
           <CardContent className="p-6 flex flex-col h-full">
             <h2 className="font-semibold flex items-center gap-2 mb-4">
               <Users className="w-4 h-4 text-muted-foreground" />
