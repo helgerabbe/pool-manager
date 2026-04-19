@@ -140,6 +140,15 @@ export default function AppLayout() {
                 </>
               )}
 
+              {/* Benutzer-Profil mit Rolle */}
+              <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-muted/50 border border-border">
+                <div className="flex flex-col items-end">
+                  <span className="text-xs font-semibold text-foreground leading-tight">
+                    {realRolle === 'Administrator' ? 'Admin' : realRolle}
+                  </span>
+                </div>
+              </div>
+
               <div className="w-px h-6 bg-border mx-1" />
 
               {/* Logout & Role Switcher */}
