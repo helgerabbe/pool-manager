@@ -348,6 +348,8 @@ export default function Benutzerverwaltung() {
       queryClient.invalidateQueries({ queryKey: ['authUser'] });
       // ✅ System-Permissions neu berechnen
       queryClient.invalidateQueries({ queryKey: ['systemeinstellungen'] });
+      // ✅ KRITISCH: Einheiten-Liste neu laden, damit RBAC-Filterung mit neuen Fächern funktioniert
+      queryClient.invalidateQueries({ queryKey: ['einheiten'] });
       setEditingUser(null);
     },
   });
