@@ -63,7 +63,10 @@ Deno.serve(async (req) => {
     });
 
     const benutzer = benutzerList?.[0];
-    const role = benutzer?.rolle;
+    
+    // CRITICAL: Admin-Rolle hat höchste Priorität - auch wenn kein Profil existiert
+    // User.role ist die Systemrolle aus der eingebauten User-Entität
+    const role = user.role === 'admin' ? 'Administrator' : (benutzer?.rolle || 'Betrachter');
 
     // Basis-Filter: Entwürfe (noch im Wizard) sind für alle unsichtbar,
     // außer dem Ersteller selbst. Da der Ersteller der einzige ist, der
@@ -72,9 +75,9 @@ Deno.serve(async (req) => {
 
     let filterCriteria = { ...draftFilter };
 
-    // Rolle bestimmt Filtierung:
+    // Rolle bestimmt Filterung:
     if (role === 'Administrator') {
-      // Admin sieht alles außer Entwürfen
+      // Admin sieht ALLE Einheiten außer Entwürfen (immer!)
       filterCriteria = { ...draftFilter };
     } else if (role === 'Fachschaftsleitung') {
       // Fachschaftsleitung sieht nur ihre Fächer
