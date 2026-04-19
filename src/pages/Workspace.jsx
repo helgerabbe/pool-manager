@@ -228,10 +228,6 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     return () => ch.close();
   }, [selectedEinheitId]);
 
-
-
-  const structLocked = einheit ? isStructurallyLocked(einheit, authUser?.email) : false;
-
   // Bidirektionale Lock-Prüfung (memoisiert) – VOR Early Returns!
   const PAKET_LOCK_TIMEOUT_MS = 30 * 60 * 1000;
   const aktivePaketLocks = useMemo(
