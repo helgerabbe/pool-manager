@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useRBAC } from '@/hooks/useRBAC';
@@ -47,6 +47,20 @@ function BenutzerForm({ open, onOpenChange, onSubmit, initialData, faecher = [] 
     fachbereich_zustaendigkeit: initialData?.fachbereich_zustaendigkeit || [],
     ist_aktiv: initialData?.ist_aktiv !== undefined ? initialData.ist_aktiv : true,
   });
+
+  // ✅ KRITISCH: Wenn initialData sich ändert (z.B. anderer User zum Bearbeiten), State aktualisieren
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        user_id: initialData.user_id || '',
+        vorname: initialData.vorname || '',
+        nachname: initialData.nachname || '',
+        rolle: initialData.rolle || '',
+        fachbereich_zustaendigkeit: initialData.fachbereich_zustaendigkeit || [],
+        ist_aktiv: initialData.ist_aktiv !== undefined ? initialData.ist_aktiv : true,
+      });
+    }
+  }, [initialData?.id]); // Nur bei Wechsel des Benutzers neu laden (ID-basiert)
 
   const handleOpenChange = (newOpen) => {
     if (!newOpen && !initialData) {
