@@ -1139,14 +1139,14 @@ function AktivitaetEditPanel({ paket, phaseKey, phaseLabel, kannBearbeiten, quer
 
 // ── PhaseContent: Aktivitäten-Anzeige und -Verwaltung ─────────────────────────
 
-import PhaseActivitiesList from '@/components/workspace/PhaseActivitiesList';
 import UnsavedChangesExitModal from '@/components/workspace/UnsavedChangesExitModal';
 
-function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, userEmail, queryClient, onNavigate, onGoToTaskWorkshop, inEditMode }) {
+function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, userEmail, queryClient, onNavigate, onGoToTaskWorkshop, inEditMode, sidebarOpen, setSidebarOpen }) {
   return (
-    <PhaseActivitiesList
+    <PhaseActivitiesSidebar
       paket={paket}
       phase={phaseKey}
+      phaseLabel={phaseLabel}
       kannBearbeiten={kannBearbeiten}
       userEmail={userEmail}
       inEditMode={inEditMode}
@@ -1158,6 +1158,8 @@ function PhaseContent({ paket, phaseKey, phaseLabel, kannBearbeiten, userEmail, 
         activityRecordId: data.activityId,
       })}
       onGoToTaskWorkshop={onGoToTaskWorkshop}
+      sidebarOpen={sidebarOpen}
+      setSidebarOpen={setSidebarOpen}
     />
   );
 }
@@ -1183,6 +1185,7 @@ export default function WorkspaceDetailPanel({
   const [lernzielPaketId, setLernzielPaketId] = useState(null);
   const [aufgabeFormOpen,   setAufgabeFormOpen]   = useState(false);
   const [editEinheitOpen,   setEditEinheitOpen]   = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -1364,6 +1367,8 @@ export default function WorkspaceDetailPanel({
             queryClient={queryClient}
             inEditMode={false}
             onNavigate={onNavigate}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
           />
         </div>
       </>
