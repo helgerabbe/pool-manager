@@ -177,36 +177,43 @@ Wenn ein Schüler bei einer Projektaufgabe (Ebene 3) scheitert, schaut Brian.stu
 Im Tab „Lernlandkarte" bei Projekt- und Anwendungsaufgaben können Lernziele als **hochpriorisiert (★)** markiert werden, um den Fokus für die Bearbeitung zu setzen.
 `,
 
-  'materialien-medien': `# Materialien & Medien
+  'materialien-medien': `# Materialien & Medien: Der Treibstoff für Ihre Aufgaben
 
-Aufgaben und Aktivitäten können mit verschiedenen Materialtypen angereichert werden – von Texten über Bilder bis hin zu PDFs und Buchverweisen.
+Eine gute Aufgabe funktioniert selten im luftleeren Raum. Oft benötigen Schülerinnen und Schüler einen Ausgangstext, ein Erklärvideo, ein Diagramm oder einen Podcast, um überhaupt arbeiten zu können.
 
-## Übersicht
+Im Pool-Manager können Sie Materialien zentral verwalten und direkt an Ihre Aufgaben anheften. Das Besondere daran: Sie füllen damit nicht nur die Schüleransicht in Moodle, sondern füttern gleichzeitig das „Gehirn" Ihres KI-Tutors.
 
-* Materialien können direkt **hochgeladen** oder als **Link/Verweis** hinterlegt werden
-* Jede Aufgabe unterstützt mehrere Materialien gleichzeitig
-* Bilder werden als Vorschau, PDFs als eingebettete Ansicht dargestellt
+## Unterstützte Formate
 
-## Unterstützte Typen
+| Format | Beschreibung |
+|--------|-------------|
+| **Texte & Arbeitsblätter** | Kurze Textausschnitte, Quellen oder Lesetexte – direkt eintippen oder einfügen |
+| **Dateien** | PDFs oder Bilder (Diagramme, Karikaturen, Fotos) |
+| **Externe Links** | Links zu YouTube-Videos, Podcasts oder interaktiven Webseiten |
 
-| Typ | Beschreibung |
-|-----|-------------|
-| PDF | Dokument-Upload, wird eingebettet angezeigt |
-| Bild | Foto oder Screenshot, wird als Vorschau gezeigt |
-| Buchverweis | Textangabe (z.B. "Lehrbuch S. 42–45") |
-| Freitext | Ergänzender Informationstext |
+## Wo werden Materialien angeheftet?
 
-## Aufgabenbilder
+Materialien können an zwei verschiedenen Orten auftauchen, je nachdem, was Sie erreichen möchten:
 
-Bei allgemeinen Aufgaben kann statt oder zusätzlich zur Aufgabenstellung ein **Bild hochgeladen** werden (z.B. ein Foto der Tafelaufschrift oder ein Arbeitsblatt-Scan).
+* **Als „Input" im Lernpaket (Ebene 1):** Wenn Schüler sich völlig unabhängig von einer konkreten Aufgabe erst in ein Thema einlesen sollen (z.B. ein Erklärvideo zum Einstieg).
+* **Direkt in der Aufgabe (Ebene 2 & 3):** Wenn das Material zwingend zur Lösung der Aufgabe benötigt wird (z.B. eine Karikatur, die analysiert werden soll, oder ein Zeitungsartikel, der zusammengefasst werden muss).
 
-## Hinweise zur Dateigröße
+## Das Geheimnis der KI: Wie Brian.study liest
 
-Für eine optimale Performance empfehlen wir:
+Wenn Sie ein Material an eine Aufgabe der Ebene 2 oder 3 anheften, passiert im Hintergrund Folgendes:
 
-* Bilder: max. 2 MB (JPG oder PNG)
-* PDFs: max. 10 MB
-* Keine eingebetteten Videos – stattdessen Links verwenden
+| Für wen? | Was passiert? |
+|----------|--------------|
+| **Schüler in Moodle** | Das Material wird optisch aufbereitet – Videos werden eingebettet, PDFs können heruntergeladen werden. |
+| **KI in Brian.study** | Die App integriert Ihr Material in den KI-Prompt – Brian „liest" den Inhalt und arbeitet damit. |
+
+**Warum ist das so wichtig?** KI neigt manchmal dazu, Dinge zu erfinden („halluzinieren") oder allgemeines Internet-Wissen heranzuziehen. Wenn Sie Brian.study jedoch Ihren eigenen Textausschnitt zur Verfügung stellen, weiß der KI-Tutor: *„Ich darf dem Schüler nur mit den Informationen aus genau diesem Text helfen."* Sie behalten damit die absolute fachliche Kontrolle darüber, auf welcher Grundlage die Schüler lernen.
+
+## Wichtig: Videos und Podcasts für die KI
+
+> **Hinweis:** Brian.study kann (aktuell) keine Videos schauen oder Podcasts anhören.
+
+Wenn Sie ein Video verlinken und möchten, dass der KI-Tutor inhaltliche Fragen der Schüler dazu beantworten kann, fügen Sie im Materialbereich bitte zusätzlich ein kurzes **Video-Skript oder eine inhaltliche Zusammenfassung als Text** ein. So „weiß" die KI, was in dem Video passiert.
 `,
 
   'ebene-1-basismodule': `# Ebene 1: Basismodule & Bausteine
