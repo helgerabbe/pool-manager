@@ -109,8 +109,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 5. PARALLEL QUERIES: Hole alle Daten auf einmal
-    const [themenfelder, lernpakete, lernziele, aufgaben] = await Promise.all([
+    // 5. PARALLEL QUERIES: Hole alle Daten auf einmal (inkl. Members für RBAC)
+    const [themenfelder, lernpakete, lernziele, aufgaben, einheitMembers] = await Promise.all([
       // Themenfelder mit nur benötigten Feldern
       base44.asServiceRole.entities.Themenfeld.filter({
         einheit_id: einheit_id,
@@ -123,6 +123,10 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.Lernziele.list(),
       // Aufgaben
       base44.asServiceRole.entities.Aufgabenbausteine.list(),
+      // ✅ Members für Unit-Level RBAC
+      base44.asServiceRole.entities.EinheitMembers.filter({
+        einheit_id: einheit_id,
+      }),
     ]);
 
     // 6. BUILD HIERARCHY: Frontend braucht nicht mehr zu filtern!
@@ -228,6 +232,8 @@ Deno.serve(async (req) => {
           version: einheit.version,
           created_date: einheit.created_date,
           updated_date: einheit.updated_date,
+          // ✅ Members für Unit-Level RBAC
+          members: einheitMembers || [],
         },
         // Hierarchie: Themenfelder → Lernpakete → Lernziele → Aufgaben
         themenfelder: themenfeldWithPakete,

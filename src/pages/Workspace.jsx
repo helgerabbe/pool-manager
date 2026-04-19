@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { invokeFunction } from '@/utils/functionsHelper';
 import { useRBAC } from '@/hooks/useRBAC';
-import { ROLLEN } from '@/lib/rbac';
+import { ROLLEN, hasUnitLevelAccess } from '@/lib/rbac';
 import { useWorkspaceData } from '@/hooks/useWorkspaceData';
 import ErrorBoundary from '@/components/errors/ErrorBoundary';
 import { SkeletonWorkspace } from '@/components/loading/SkeletonLoader';
@@ -96,10 +96,29 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const istFachschaftsleitung = rolle === ROLLEN.FACHSCHAFT;
   const kannSperreIgnorieren = istAdmin || istFachschaftsleitung;
 
+  // ✅ Unit-Level RBAC: Berücksichtigt LEITUNG-Rolle in EinheitMembers
+  const unitAccess = hasUnitLevelAccess(
+    rolle,
+    permissions?.faecher || [],
+    einheit?.fach,
+    einheit?.members || [],
+    authUser?.email
+  );
+  
+  // 🔍 DEBUG: Rechte-Check Tab 2
+  console.log('Rechte-Check Tab 2:', {
+    einheitMembers: einheit?.members,
+    userEmail: authUser?.email,
+    rolle,
+    unitAccess,
+    kannStrukturBearbeitenGlobal: permissions?.kannStrukturBearbeiten?.(einheit?.fach),
+    kannStrukturBearbeitenMitUnit: permissions?.kannStrukturBearbeiten?.(einheit?.fach) || unitAccess.hasFullAccess
+  });
+
   // Einheit gesperrt? → normale Lehrkräfte dürfen nicht bearbeiten
   const einheitGesperrt = einheit?.freigabe_status === 'Gesperrt';
   const kannDieseEinheitBearbeiten = einheit
-    ? permissions.kannEinheitBearbeiten(einheit.fach) && (!einheitGesperrt || kannSperreIgnorieren)
+    ? (permissions.kannEinheitBearbeiten(einheit.fach) || unitAccess.hasFullAccess) && (!einheitGesperrt || kannSperreIgnorieren)
     : false;
 
   // ── Präsenz ──────────────────────────────────────────────────────────────────
@@ -366,8 +385,8 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               <span className="text-2xl font-bold text-foreground truncate flex-1 min-w-0 leading-snug">{einheit.titel_der_einheit}</span>
               <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full shrink-0">{einheit.fach}</span>
 
-              {/* Status-Badge + Lock-Button – nur im Struktur-Tab und wenn Berechtigung */}
-              {activeTab === 'struktur' && permissions.kannStrukturBearbeiten(einheit?.fach) && (
+              {/* Status-Badge + Lock-Button – nur im Struktur-Tab und wenn Berechtigung (inkl. Unit-Level) */}
+              {activeTab === 'struktur' && (permissions.kannStrukturBearbeiten(einheit?.fach) || unitAccess.hasFullAccess) && (
                 <div className="flex items-center gap-2 shrink-0">
                   {/* Status-Badge */}
                   {isStructuralEditingActive ? (
