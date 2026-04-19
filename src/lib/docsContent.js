@@ -312,35 +312,51 @@ Vergessen Sie nicht, im Reiter **„Lernlandkarte"** die Lernziele auszuwählen,
 * Verknüpfen Sie hier die passenden **Basismodule (Ebene 1)**, damit Schüler bei Lücken genau wissen, wo sie Grundlagen nacharbeiten müssen.
 `,
 
-  'ki-tutor-brian': `# KI-Tutor Brian.study
+  'ki-tutor-brian': `# Der KI-Tutor: Brian.study
 
-Brian.study ist eine KI-gestützte Lernplattform, die als interaktiver Tutor für Schüler fungiert. Der Pool-Manager generiert alle notwendigen Konfigurationsfelder automatisch.
+Wenn Ihre Schülerinnen und Schüler an komplexen Aufgaben (Ebene 2 und 3) arbeiten, sind sie nicht auf sich allein gestellt. Während Moodle die Aufgabenstellung liefert, übernimmt **Brian.study** die Rolle des geduldigen, digitalen Lernbegleiters.
 
-## Übersicht
+Dieses Kapitel erklärt, wie Brian „denkt" und wie der Pool-Manager ihn vollautomatisch auf Ihren Unterricht vorbereitet.
 
-* Alle Aufgaben (Ebene 2 & 3) können für Brian.study konfiguriert werden
-* Die KI generiert alle **fünf Prompt-Segmente** auf Knopfdruck
-* Felder können manuell nachbearbeitet werden
+## Wer oder was ist Brian?
 
-## Die fünf Segmente
+Brian ist ein konversationeller Chatbot – er funktioniert wie ein Text-Chat (ähnlich wie WhatsApp), in dem der Schüler mit der KI schreibt.
 
-1. **Dialogname** – max. 60 Zeichen, wird als Titel im Tutor angezeigt
-2. **Anweisung für Lernende** – sichtbar für Schüler, klare Du-Form
-3. **System-Anweisung** – Tutor-Persona & Scaffolding (nur intern)
-4. **Abbruchbedingung** – Wann gilt die Aufgabe als abgeschlossen?
-5. **Bewertungsrubriken** – Strukturieren das Abschluss-Feedback
+**Brians wichtigste pädagogische Regel: Scaffolding statt Vorsagen.**
 
-## Generierung
+Brian wird Ihren Schülern niemals einfach die fertige Lösung präsentieren. Stattdessen nutzt er gezielte Rückfragen und Denkanstöße, um die Schüler selbst auf den richtigen Weg zu führen. Fehler werden dabei nicht verurteilt, sondern als Lernchance genutzt.
 
-Klicken Sie auf "Alle Felder generieren" im Tab "KI-Tutor Prompt". Die KI berücksichtigt:
+## Das „Gehirn" des Tutors: Die 5 Segmente
 
-* Aufgabenstellung und Erwartungshorizont (Ebene 2) bzw. Rubriken (Ebene 3)
-* Zugeordnete Lernziele
-* Fach und Jahrgangsstufe der Einheit
+Damit Brian weiß, worum es in Ihrer spezifischen Aufgabe geht, baut der Pool-Manager im Hintergrund ein exaktes „Gehirn" für ihn zusammen. Dieses besteht immer aus fünf Bausteinen:
 
-## Export
+| # | Segment | Was steht darin? | Sichtbar für Schüler? |
+|---|---------|-----------------|----------------------|
+| 1 | **Dialogname** | Titel der Aufgabe (z.B. „Analyse der Weimarer Verfassung") | ✅ Ja |
+| 2 | **Anweisung für Lernende** | Ihre ausformulierte Aufgabenstellung | ✅ Ja |
+| 3 | **Interne Anweisung (Persona)** | Erwartungshorizont, Lernziele, Scaffolding-Regeln – Brian wird hier zum motivierenden Coach „konditioniert" | ❌ Nein |
+| 4 | **Beendigungs-Regel** | Wann gilt der Dialog als abgeschlossen? (z.B. „Wenn die Zeitleiste vollständig besprochen wurde") | ❌ Nein |
+| 5 | **Bewertungsrubriken** | Ihre Gütekriterien (Punkte & Anforderungen) für das strukturierte Abschluss-Feedback | ❌ Nein |
 
-Die generierten Felder werden im **Brian.study Export-Cockpit** (Tab 9) zusammengeführt und können von dort kopiert oder direkt synchronisiert werden.
+> **Hinweis:** Die interne Anweisung (Segment 3) ist der wichtigste Baustein. Hier fließen Ihre Materialien und der Erwartungshorizont ein – je präziser diese Vorarbeit, desto hilfreicher ist Brian für Ihre Schüler.
+
+## Ihre Rolle als Lehrkraft: Der Autopilot
+
+Das Beste daran: **Sie müssen diese 5 Segmente nicht selbst schreiben!**
+
+1. Wechseln Sie im Tab der Aufgabe in den Reiter **„KI-Tutor Prompt"**.
+2. Klicken Sie auf **„Alle Felder generieren"**.
+3. Der Pool-Manager zieht sich alle Informationen, die Sie vorher erstellt haben (Aufgabenstellung, Erwartungshorizont, Gütekriterien, Lernziele), und übersetzt sie automatisch in die maschinenlesbare Sprache für Brian.
+
+**Sie müssen in diesem Reiter nichts kopieren oder exportieren.** Prüfen Sie die generierten Texte kurz auf Stimmigkeit – das Export-Team kümmert sich später im Export-Cockpit um die technische Übertragung zu Brian.study.
+
+## Was Brian berücksichtigt
+
+Bei der Generierung verarbeitet das System:
+
+* Aufgabenstellung und **Erwartungshorizont** (Ebene 2) bzw. **Bewertungsrubriken** (Ebene 3)
+* Alle verknüpften **Lernziele** – damit Brian bei Wissenslücken auf passende Ebene-1-Übungen verweisen kann
+* **Fach und Jahrgangsstufe** der Einheit für einen passenden Ton und fachliche Präzision
 `,
 
   'freigabe-qualitaetssicherung': `# Freigabe & Qualitätssicherung
