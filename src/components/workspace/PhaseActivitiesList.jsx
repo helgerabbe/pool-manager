@@ -128,11 +128,6 @@ export default function PhaseActivitiesList({
                       </span>
                     )}
                   </div>
-                  {katalog?.form_schema && katalog.form_schema.length > 0 && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {katalog.form_schema.length} Felder
-                    </p>
-                  )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                    {canEdit && (
