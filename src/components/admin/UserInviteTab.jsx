@@ -76,7 +76,7 @@ export default function UserInviteTab({ benutzer = [], users = [], onEdit, onDel
             <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-xs font-bold text-amber-700 shrink-0">
-                  {(b.vorname || '?')[0]}
+                  {(b.vorname || b.user_id || '?')[0].toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
