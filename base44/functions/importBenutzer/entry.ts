@@ -27,19 +27,25 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Nicht authentifiziert' }, { status: 401 });
   }
 
-  // Nur Benutzer mit kannBenutzerVerwalten-Berechtigung dürfen importieren
-  // WICHTIG: Die User-Entity (built-in) hat email als ID, wir suchen nach der Custom Benutzer-Entity mit user_id = email
-  const benutzerProfile = await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email });
-  
-  // Fallback: Falls noch keine Benutzer-Record existiert, prüfe die eingebaute User.role
-  const rolle = benutzerProfile[0]?.rolle || user.role;
-  
   // Berechtigung prüfen: Nur Administratoren (oder "Admin" als Alias) dürfen importieren
-  const istAdmin = rolle === 'Administrator' || rolle === 'Admin';
+  const benutzerProfile = await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email });
+  const benutzerRolle = benutzerProfile[0]?.rolle;
+  const userRolle = user.role;
   
-  if (!rolle || !istAdmin) {
+  console.log('DEBUG: user.email=', user.email, 'user.role=', userRolle, 'benutzer.rolle=', benutzerRolle);
+  
+  const istAdmin = benutzerRolle === 'Administrator' || benutzerRolle === 'Admin' || userRolle === 'Administrator' || userRolle === 'Admin';
+  
+  if (!benutzerRolle && !userRolle) {
     return Response.json({ 
-      error: `Kein Zugriff. Nur Administratoren dürfen Benutzer importieren. Deine Rolle: ${rolle || 'unbekannt'}, deine E-Mail: ${user.email}`, 
+      error: `Kein Zugriff. Keine Rolle gefunden. Deine E-Mail: ${user.email}`, 
+      status: 403 
+    }, { status: 403 });
+  }
+  
+  if (!istAdmin) {
+    return Response.json({ 
+      error: `Kein Zugriff. Nur Administratoren dürfen Benutzer importieren. Benutzer-Rolle: ${benutzerRolle || 'nicht gesetzt'}, User-Rolle: ${userRolle || 'nicht gesetzt'}, E-Mail: ${user.email}`, 
       status: 403 
     }, { status: 403 });
   }
