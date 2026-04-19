@@ -365,6 +365,7 @@ export default function StrukturBoardEmbedded({
   onSaved,   // callback nach erfolgreichem Speichern
   readOnly = false, // ← Structural Lock nicht aktiv
   isStructuralEditingActive = false, // ← NEU: Expliziter Lock-Status von Workspace
+  isLockedByOther = false, // ← GLOBALE SPERRE: Wenn true, dann ist gesamte Einheit read-only
 }) {
   const { permissions, authUser } = useRBAC();
 
@@ -440,7 +441,8 @@ export default function StrukturBoardEmbedded({
   const kannStrukturBearbeiten = einheit ? unitAccess.hasFullAccess : false;
   
   // 🔒 HARTE SPERRE: Nur wenn Structural Lock aktiv ist, darf bearbeitet werden
-  const istLesemodus = !kannStrukturBearbeiten || !isStructuralEditingActive;
+  // + GLOBALE SPERRE: Wenn isLockedByOther, dann immer Lesemodus
+  const istLesemodus = !kannStrukturBearbeiten || !isStructuralEditingActive || isLockedByOther;
 
   // Early Return nur wenn Einheit wirklich fehlt
   if (!einheit) {
@@ -687,11 +689,13 @@ export default function StrukturBoardEmbedded({
         <div className="shrink-0 px-4 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-600 flex items-center gap-2">
           <Save className="w-3.5 h-3.5 shrink-0 text-slate-400" />
           <span>
-            <strong>Lesemodus</strong> – {!isStructuralEditingActive
-              ? 'Bitte aktivieren Sie den Bearbeitungsmodus oben rechts, um die Struktur zu bearbeiten.'
-              : !unitAccess.isAssignedMember 
-                ? 'Nur Fachschaftsleitung und Administratoren können die Struktur bearbeiten.'
-                : 'Sie haben als zugewiesener Mitarbeiter (Leitung) Bearbeitungsrechte für diese Einheit.'}
+            <strong>Lesemodus</strong> – {isLockedByOther
+              ? 'Einheit wird gerade von einem anderen Nutzer im Struktur-Tab bearbeitet. Bitte warten Sie.'
+              : !isStructuralEditingActive
+                ? 'Bitte aktivieren Sie den Bearbeitungsmodus oben rechts, um die Struktur zu bearbeiten.'
+                : !unitAccess.isAssignedMember 
+                  ? 'Nur Fachschaftsleitung und Administratoren können die Struktur bearbeiten.'
+                  : 'Sie haben als zugewiesener Mitarbeiter (Leitung) Bearbeitungsrechte für diese Einheit.'}
           </span>
           <div className="ml-auto">
             <Button

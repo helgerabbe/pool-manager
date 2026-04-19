@@ -88,7 +88,7 @@ function UnitRoleBadge({ role }) {
   );
 }
 
-export default function EinheitUebersichtTab({ einheit, currentUserEmail, currentUserRole, currentUserFaecher = [] }) {
+export default function EinheitUebersichtTab({ einheit, currentUserEmail, currentUserRole, currentUserFaecher = [], isLockedByOther = false }) {
   const queryClient = useQueryClient();
   const { faecher, jahrgaenge, phasen } = useSystemSettings();
   const [isSaving, setIsSaving] = useState(false);
@@ -187,9 +187,9 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
     [currentUserRole, currentUserFaecher, einheit.fach, members, currentUserEmail]
   );
   
-  const kannEinheitBearbeiten = unitAccess.hasFullAccess;
-  const kannSperrenToggle = unitAccess.hasFullAccess;
-  const kannMitarbeiterHinzufuegen = unitAccess.hasFullAccess;
+  const kannEinheitBearbeiten = unitAccess.hasFullAccess && !isLockedByOther;
+  const kannSperrenToggle = unitAccess.hasFullAccess && !isLockedByOther;
+  const kannMitarbeiterHinzufuegen = unitAccess.hasFullAccess && !isLockedByOther;
 
   // ✅ Normalisierter E-Mail-Vergleich (case-insensitive, ohne Leerzeichen)
   const normalizedEmail = currentUserEmail?.toLowerCase()?.trim() || '';

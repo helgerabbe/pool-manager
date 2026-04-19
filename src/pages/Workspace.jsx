@@ -105,14 +105,9 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     authUser?.email
   );
   
-  // 🔥 HARDCORE AUDIT TAB 2 🔥
-  console.log('🔥 HARDCORE AUDIT TAB 2 🔥');
-  console.log('1. Aktueller Tab:', activeTab);
-  console.log('2. Einheit Members vorhanden?:', einheit?.members ? 'JA' : 'NEIN', einheit?.members);
-  console.log('3. Current User Email:', authUser?.email);
-  console.log('4. Rechte-Check (hasUnitLevelAccess):', hasUnitLevelAccess(rolle, permissions?.faecher || [], einheit?.fach, einheit?.members || [], authUser?.email));
-  console.log('5. Globale FSL Rolle:', permissions?.kannStrukturBearbeiten?.(einheit?.fach));
-  console.log('6. Toggle wird gerendert:', activeTab === 'struktur' && (permissions.kannStrukturBearbeiten(einheit?.fach) || unitAccess.hasFullAccess));
+  // ✅ GLOBALE STRUCTURAL-LOCK-PRÜFUNG (für alle Tabs)
+  const structLocked = einheit ? isStructurallyLocked(einheit, authUser?.email) : false;
+  const isLockedByOther = structLocked; // Alias für bessere Lesbarkeit
 
   // Einheit gesperrt? → normale Lehrkräfte dürfen nicht bearbeiten
   const einheitGesperrt = einheit?.freigabe_status === 'Gesperrt';
@@ -377,12 +372,12 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
           </div>
         )}
 
-        {/* ── Structural-Lock-Banner ───────────────────────────────────────────── */}
-        {structLocked && activeTab === 'struktur' && (
-          <div className="shrink-0 px-4 py-2 bg-orange-50 border-b border-orange-200 text-xs text-orange-800 flex items-center gap-2">
+        {/* ── GLOBALE STRUCTURAL-LOCK-WARNUNG (alle Tabs) ───────────────────────── */}
+        {isLockedByOther && (
+          <div className="shrink-0 px-4 py-2.5 bg-orange-50 border-b border-orange-200 text-xs text-orange-800 flex items-center gap-2">
             <Lock className="w-3.5 h-3.5 shrink-0 text-orange-600" />
             <span>
-              <strong>🔒 Diese Einheit wird aktuell von {einheit?.structural_lock} bearbeitet</strong> und ist daher für Änderungen gesperrt. Bitte warten Sie bis die Bearbeitung abgeschlossen ist.
+              <strong>🔒 Diese Einheit wird aktuell von {einheit?.structural_lock} im Struktur-Tab bearbeitet</strong> – Alle Bearbeitungsfunktionen sind gesperrt. Bitte warten Sie bis die Strukturbearbeitung abgeschlossen ist.
             </span>
           </div>
         )}
@@ -478,6 +473,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                        currentUserEmail={authUser?.email}
                        currentUserRole={rolle}
                        currentUserFaecher={permissions?.faecher || []}
+                       isLockedByOther={isLockedByOther}
                      />
                    )}
                  </ErrorBoundary>
@@ -486,23 +482,24 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
             {/* ── Tab 2: Struktur anlegen → StrukturBoard ──────────────────────── */}
                <TabsContent value="struktur" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
-                  <div className="flex-1 overflow-y-auto flex flex-col">
-                    <ErrorBoundary label="Struktur">
-                       <StrukturBoardEmbedded
-                         einheitId={selectedEinheitId}
-                         einheit={einheit}
-                         lernpakete={paketeFuerEinheit}
-                         themenfelder={themenfelder}
-                         queryClient={queryClient}
-                         readOnly={!isStructuralEditingActive}
-                         isStructuralEditingActive={isStructuralEditingActive}
-                         onSaved={() => {
-                           handleReleaseStructLock();
-                         }}
-                       />
-                    </ErrorBoundary>
-                 </div>
-               </TabsContent>
+                    <div className="flex-1 overflow-y-auto flex flex-col">
+                      <ErrorBoundary label="Struktur">
+                         <StrukturBoardEmbedded
+                           einheitId={selectedEinheitId}
+                           einheit={einheit}
+                           lernpakete={paketeFuerEinheit}
+                           themenfelder={themenfelder}
+                           queryClient={queryClient}
+                           readOnly={!isStructuralEditingActive || isLockedByOther}
+                           isStructuralEditingActive={isStructuralEditingActive}
+                           isLockedByOther={isLockedByOther}
+                           onSaved={() => {
+                             handleReleaseStructLock();
+                           }}
+                         />
+                      </ErrorBoundary>
+                   </div>
+                 </TabsContent>
 
             {/* ── Tab 3: Aktivitäten zuordnen → Sidebar-Baum + Detail-Panel ───── */}
             <TabsContent value="aktivitaeten" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col lg:flex-row flex-1 overflow-hidden m-0 p-0">
@@ -519,7 +516,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                       themenfelder={themenfelder}
                       selectedNode={selectedNode}
                       onSelect={handleSelect}
-                      kannBearbeiten={kannDieseEinheitBearbeiten}
+                      kannBearbeiten={kannDieseEinheitBearbeiten && !isLockedByOther}
                       userEmail={authUser?.email || ''}
                       highlightedAtomIds={highlightedAtomIds}
                       phaseAktivitaeten={lernpaketAktivitaeten}
@@ -548,7 +545,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                            lernziele={zieleFuerEinheit}
                            aufgaben={aufgabenFuerEinheit}
                            userEmail={authUser?.email}
-                           kannBearbeiten={kannDieseEinheitBearbeiten}
+                           kannBearbeiten={kannDieseEinheitBearbeiten && !isLockedByOther}
                            istAdmin={istAdmin}
                            onNavigate={handleSelect}
                            onNewLernpaket={() => handleSelect({ type: 'new-lernpaket' })}
@@ -572,9 +569,10 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                   einheitId={selectedEinheitId}
                   einheit={einheit}
                   initialActivityId={taskWorkshopActivityId}
-                  kannBearbeiten={kannDieseEinheitBearbeiten}
+                  kannBearbeiten={kannDieseEinheitBearbeiten && !isLockedByOther}
                   userEmail={authUser?.email}
                   userRole={rolle}
+                  isLockedByOther={isLockedByOther}
                 />
               </ErrorBoundary>
             </TabsContent>
@@ -586,10 +584,11 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                   <AllgemeineAufgabenView 
                     einheitId={selectedEinheitId}
                     einheit={einheit}
-                    kannBearbeiten={kannDieseEinheitBearbeiten}
+                    kannBearbeiten={kannDieseEinheitBearbeiten && !isLockedByOther}
                     userEmail={authUser?.email}
                     userRole={rolle}
                     anforderungsebene="2 - Transfer"
+                    isLockedByOther={isLockedByOther}
                   />
                 </ErrorBoundary>
               </div>
@@ -602,9 +601,10 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                   <ProjektaufgabenView 
                     einheitId={selectedEinheitId}
                     einheit={einheit}
-                    kannBearbeiten={kannDieseEinheitBearbeiten}
+                    kannBearbeiten={kannDieseEinheitBearbeiten && !isLockedByOther}
                     userEmail={authUser?.email}
                     userRole={rolle}
+                    isLockedByOther={isLockedByOther}
                   />
                 </ErrorBoundary>
               </div>
