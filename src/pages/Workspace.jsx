@@ -415,67 +415,39 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             </div>
 
             {/* ── Tab 1: Einheit anlegen ───────────────────────────────────────── */}
-            <TabsContent value="einheit" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
-              <div className="flex-1 overflow-y-auto">
-                <ErrorBoundary label="Einheit">
-                  {!istAdmin && !istFachschaftsleitung ? (
-                    <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center p-8">
-                      <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center">
-                        <Lock className="w-8 h-8 text-red-500" />
-                      </div>
-                      <div className="max-w-md">
-                        <p className="text-lg font-semibold">Einheitenverwaltung nicht erlaubt</p>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          Nur Fachschaftsleitung und Administratoren dürfen die Einheit-Metadaten (Titel, Fach, Jahrgangsstufe) bearbeiten.
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    einheit && (
-                      <EinheitUebersichtTab
-                        einheit={einheit}
-                        currentUserEmail={authUser?.email}
-                        currentUserRole={rolle}
-                        currentUserFaecher={permissions?.faecher || []}
-                      />
-                    )
-                  )}
-                </ErrorBoundary>
-              </div>
-            </TabsContent>
+             <TabsContent value="einheit" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
+               <div className="flex-1 overflow-y-auto">
+                 <ErrorBoundary label="Einheit">
+                   {einheit && (
+                     <EinheitUebersichtTab
+                       einheit={einheit}
+                       currentUserEmail={authUser?.email}
+                       currentUserRole={rolle}
+                       currentUserFaecher={permissions?.faecher || []}
+                     />
+                   )}
+                 </ErrorBoundary>
+               </div>
+             </TabsContent>
 
             {/* ── Tab 2: Struktur anlegen → StrukturBoard ──────────────────────── */}
-              <TabsContent value="struktur" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
-                 <div className="flex-1 overflow-y-auto flex flex-col">
-                   <ErrorBoundary label="Struktur">
-                     {!permissions.kannStrukturBearbeiten(einheit?.fach) ? (
-                    <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center p-8">
-                      <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center">
-                        <Lock className="w-8 h-8 text-red-500" />
-                      </div>
-                      <div className="max-w-md">
-                        <p className="text-lg font-semibold">Strukturbearbeitung nicht erlaubt</p>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          Nur Fachschaftsleitung und Administratoren dürfen die Struktur dieser Einheit bearbeiten.
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                      <StrukturBoardEmbedded
-                        einheitId={selectedEinheitId}
-                        einheit={einheit}
-                        lernpakete={paketeFuerEinheit}
-                        themenfelder={themenfelder}
-                        queryClient={queryClient}
-                        readOnly={!isStructuralEditingActive}
-                        onSaved={() => {
-                          handleReleaseStructLock();
-                        }}
-                      />
-                  )}
-                  </ErrorBoundary>
-                </div>
-              </TabsContent>
+               <TabsContent value="struktur" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
+                  <div className="flex-1 overflow-y-auto flex flex-col">
+                    <ErrorBoundary label="Struktur">
+                       <StrukturBoardEmbedded
+                         einheitId={selectedEinheitId}
+                         einheit={einheit}
+                         lernpakete={paketeFuerEinheit}
+                         themenfelder={themenfelder}
+                         queryClient={queryClient}
+                         readOnly={!isStructuralEditingActive}
+                         onSaved={() => {
+                           handleReleaseStructLock();
+                         }}
+                       />
+                   </ErrorBoundary>
+                 </div>
+               </TabsContent>
 
             {/* ── Tab 3: Aktivitäten zuordnen → Sidebar-Baum + Detail-Panel ───── */}
             <TabsContent value="aktivitaeten" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col lg:flex-row flex-1 overflow-hidden m-0 p-0">
