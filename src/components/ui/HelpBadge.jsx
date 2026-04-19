@@ -35,9 +35,14 @@ export default function HelpBadge({ text, docsSlug }) {
   const handleClick = () => {
     if (!open && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
+      const popoverWidth = 256; // w-64 = 16rem = 256px
+      const spaceRight = window.innerWidth - rect.left;
+      const left = spaceRight >= popoverWidth + 8
+        ? rect.left + window.scrollX
+        : rect.right + window.scrollX - popoverWidth;
       setPos({
         top: rect.bottom + window.scrollY + 6,
-        left: rect.left + window.scrollX,
+        left: Math.max(8, left), // mindestens 8px vom linken Rand
       });
     }
     setOpen(p => !p);
