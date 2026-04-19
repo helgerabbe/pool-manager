@@ -46,6 +46,7 @@ export function useWorkspaceData(einheitId) {
     hasEinheitData: !!einheitData,
     einheitMembers: einheitData?.members?.length || 0,
     einheitenCount: einheiten.length,
+    structuralLock: einheitData?.structural_lock || null,
   });
 
   return {

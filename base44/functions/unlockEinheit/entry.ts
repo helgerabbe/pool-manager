@@ -22,19 +22,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Einheit not found' }, { status: 404 });
     }
 
-    // Nur der aktuelle Lock-Holder darf entsperren
-    if (einheit.unit_locked_by_email !== user.email) {
+    // Nur der aktuelle Lock-Holder darf entsperren (Admin kann immer)
+    const isLockHolder = einheit.structural_lock === user.email;
+    const isAdmin = user.role === 'admin';
+    
+    if (!isLockHolder && !isAdmin) {
       return Response.json(
         { error: 'You do not hold the lock' },
         { status: 403 }
       );
     }
 
-    // Entferne den Makro-Lock
+    // Entferne Structural Lock
     await base44.entities.Einheiten.update(einheitId, {
-      is_unit_locked: false,
-      unit_locked_by_email: null,
-      unit_locked_at: null,
+      structural_lock: null,
+      structural_locked_at: null,
     });
 
     return Response.json({ success: true });

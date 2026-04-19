@@ -23,23 +23,43 @@ Deno.serve(async (req) => {
     }
 
     // Wenn bereits gesperrt von jemand anderem, lehne ab
-    if (einheit.is_unit_locked && einheit.unit_locked_by_email !== user.email) {
+    if (einheit.structural_lock && einheit.structural_lock !== user.email) {
       return Response.json(
         {
           success: false,
           reason: 'locked_by_other',
-          lockedByEmail: einheit.unit_locked_by_email,
+          lockedByEmail: einheit.structural_lock,
+          lockedAt: einheit.structural_locked_at,
         },
         { status: 409 }
       );
     }
 
-    // Setze den Makro-Lock
+    // Auto-Timeout: Wenn Lock > 60 Min alt, ignoriere ihn
+    const lockAge = einheit.structural_locked_at
+      ? Date.now() - new Date(einheit.structural_locked_at).getTime()
+      : Infinity;
+    const sixtyMinutes = 60 * 60 * 1000;
+    
+    if (lockAge > sixtyMinutes) {
+      console.log('[lockEinheit] Stale lock detected, overriding');
+    } else if (einheit.structural_lock) {
+      return Response.json(
+        {
+          success: false,
+          reason: 'locked_by_other',
+          lockedByEmail: einheit.structural_lock,
+          lockedAt: einheit.structural_locked_at,
+        },
+        { status: 409 }
+      );
+    }
+
+    // Setze Structural Lock
     const now = new Date().toISOString();
     await base44.entities.Einheiten.update(einheitId, {
-      is_unit_locked: true,
-      unit_locked_by_email: user.email,
-      unit_locked_at: now,
+      structural_lock: user.email,
+      structural_locked_at: now,
     });
 
     return Response.json({ success: true });

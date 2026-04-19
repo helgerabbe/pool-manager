@@ -128,34 +128,52 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const [acquiringStructLock, setAcquiringStructLock] = useState(false);
   const [releasingStructLock, setReleasingStructLock] = useState(false);
 
-  // Lock freigeben wenn Einheit gewechselt wird
+  // Lock freigeben wenn Einheit gewechselt wird ODER Tab gewechselt wird
   useEffect(() => {
-    setIsStructuralEditingActive(false);
-  }, [selectedEinheitId]);
+    if (isStructuralEditingActive && activeTab !== 'struktur') {
+      handleReleaseStructLock();
+    }
+  }, [activeTab, isStructuralEditingActive]);
+
+  useEffect(() => {
+    if (isStructuralEditingActive && !selectedEinheitId) {
+      handleReleaseStructLock();
+    }
+  }, [selectedEinheitId, isStructuralEditingActive]);
+
+  // Lock freigeben bei Page-Unmount (wenn User die Seite verlässt)
+  useEffect(() => {
+    return () => {
+      if (isStructuralEditingActive && einheit) {
+        invokeFunction('releaseStructuralLockSecure', { einheitId: einheit.id })
+          .catch(console.error);
+      }
+    };
+  }, [isStructuralEditingActive, einheit?.id]);
 
   const handleAcquireStructLock = async () => {
     if (!einheit) return;
     setAcquiringStructLock(true);
     try {
-      const res = await invokeFunction('acquireLockSecure', {
-        entityName: 'Einheiten',
-        entityId: einheit.id,
-        lockType: 'structural',
+      const res = await invokeFunction('acquireStructuralLockSecure', {
+        einheit_id: einheit.id,
       });
       if (res.data?.success) {
         setIsStructuralEditingActive(true);
         queryClient.invalidateQueries({ queryKey: ['einheiten'] });
-        toast.success('Strukturbearbeitung aktiviert.');
+        toast.success('✅ Strukturbearbeitung aktiviert. Andere Nutzer können jetzt keine Änderungen mehr vornehmen.');
       } else {
-        toast.error(res.data?.lockedBy
-          ? `Struktur wird gerade von ${res.data.lockedBy} bearbeitet.`
-          : 'Structural Lock konnte nicht erworben werden.');
+        const lockOwner = res.data?.lockedByEmail;
+        toast.error(
+          lockOwner
+            ? `🔒 Struktur wird gerade von ${lockOwner} bearbeitet. Bitte warten Sie bis die Bearbeitung abgeschlossen ist.`
+            : 'Structural Lock konnte nicht erworben werden.'
+        );
       }
     } catch (err) {
-      const code = err?.response?.data?.code;
-      const owner = err?.response?.data?.lockedBy;
-      if (code === 'STRUCTURAL_LOCK_ACTIVE' || err?.response?.status === 423) {
-        toast.error(owner ? `Struktur wird von ${owner} bearbeitet.` : 'Struktur ist gesperrt.');
+      const lockOwner = err?.response?.data?.lockedByEmail;
+      if (err?.response?.status === 409) {
+        toast.error(lockOwner ? `🔒 Struktur wird von ${lockOwner} bearbeitet.` : 'Struktur ist gesperrt.');
       } else {
         toast.error('Fehler beim Erwerben der Structural-Sperre.');
       }
@@ -168,15 +186,18 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     if (!einheit) return;
     setReleasingStructLock(true);
     try {
-      await invokeFunction('releaseLockSecure', {
-        entityName: 'Einheiten',
-        entityId: einheit.id,
+      await invokeFunction('releaseStructuralLockSecure', {
+        einheit_id: einheit.id,
       });
       setIsStructuralEditingActive(false);
       queryClient.invalidateQueries({ queryKey: ['einheiten'] });
-      toast.success('Strukturbearbeitung beendet.');
-    } catch {
-      toast.error('Fehler beim Freigeben der Structural-Sperre.');
+      toast.success('✅ Structural Lock freigegeben. Andere Nutzer können jetzt wieder Änderungen vornehmen.');
+    } catch (err) {
+      if (err?.response?.status === 403) {
+        toast.error('Sie haben diesen Lock nicht. Nur der Lock-Inhaber kann ihn freigeben.');
+      } else {
+        toast.error('Fehler beim Freigeben der Structural-Sperre.');
+      }
     } finally {
       setReleasingStructLock(false);
     }
@@ -342,11 +363,11 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
         )}
 
         {/* ── Structural-Lock-Banner ───────────────────────────────────────────── */}
-        {structLocked && (
+        {structLocked && activeTab === 'struktur' && (
           <div className="shrink-0 px-4 py-2 bg-orange-50 border-b border-orange-200 text-xs text-orange-800 flex items-center gap-2">
             <Lock className="w-3.5 h-3.5 shrink-0 text-orange-600" />
             <span>
-              <strong>Struktur wird angepasst</strong> von {einheit?.structural_lock}. Bestehende Inhalte können gespeichert werden, neue Bearbeitungssitzungen sind kurzzeitig gesperrt.
+              <strong>🔒 Diese Einheit wird aktuell von {einheit?.structural_lock} bearbeitet</strong> und ist daher für Änderungen gesperrt. Bitte warten Sie bis die Bearbeitung abgeschlossen ist.
             </span>
           </div>
         )}
@@ -459,11 +480,12 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                          themenfelder={themenfelder}
                          queryClient={queryClient}
                          readOnly={!isStructuralEditingActive}
+                         isStructuralEditingActive={isStructuralEditingActive}
                          onSaved={() => {
                            handleReleaseStructLock();
                          }}
                        />
-                   </ErrorBoundary>
+                    </ErrorBoundary>
                  </div>
                </TabsContent>
 

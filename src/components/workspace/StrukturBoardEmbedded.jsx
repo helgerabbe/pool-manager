@@ -364,6 +364,7 @@ export default function StrukturBoardEmbedded({
   queryClient,
   onSaved,   // callback nach erfolgreichem Speichern
   readOnly = false, // ← Structural Lock nicht aktiv
+  isStructuralEditingActive = false, // ← NEU: Expliziter Lock-Status von Workspace
 }) {
   const { permissions, authUser } = useRBAC();
 
@@ -435,7 +436,9 @@ export default function StrukturBoardEmbedded({
     authUser?.email
   );
   const kannStrukturBearbeiten = einheit ? unitAccess.hasFullAccess : false;
-  const istLesemodus = !kannStrukturBearbeiten;
+  
+  // 🔒 HARTE SPERRE: Nur wenn Structural Lock aktiv ist, darf bearbeitet werden
+  const istLesemodus = !kannStrukturBearbeiten || !isStructuralEditingActive;
 
   // Fachlehrkräfte sehen die Struktur im Lesemodus (keine Bearbeitung)
   if (!einheit) {
@@ -673,9 +676,11 @@ export default function StrukturBoardEmbedded({
         <div className="shrink-0 px-4 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-600 flex items-center gap-2">
           <Save className="w-3.5 h-3.5 shrink-0 text-slate-400" />
           <span>
-            <strong>Lesemodus</strong> – {!unitAccess.isAssignedMember 
-              ? 'Nur Fachschaftsleitung und Administratoren können die Struktur bearbeiten.'
-              : 'Sie haben als zugewiesener Mitarbeiter (Leitung) Bearbeitungsrechte für diese Einheit.'}
+            <strong>Lesemodus</strong> – {!isStructuralEditingActive
+              ? 'Bitte aktivieren Sie den Bearbeitungsmodus oben rechts, um die Struktur zu bearbeiten.'
+              : !unitAccess.isAssignedMember 
+                ? 'Nur Fachschaftsleitung und Administratoren können die Struktur bearbeiten.'
+                : 'Sie haben als zugewiesener Mitarbeiter (Leitung) Bearbeitungsrechte für diese Einheit.'}
           </span>
           <div className="ml-auto">
             <Button
@@ -692,7 +697,7 @@ export default function StrukturBoardEmbedded({
       )}
 
       {/* Aktions-Leiste */}
-      {!readOnly && (
+      {!readOnly && isStructuralEditingActive && (
         <div className="shrink-0 px-4 py-2 border-b border-border bg-card/50 flex items-center gap-3">
           <Button
             size="sm"
@@ -730,7 +735,7 @@ export default function StrukturBoardEmbedded({
       )}
 
       {/* Tipp */}
-      {!readOnly && (
+      {!readOnly && isStructuralEditingActive && (
         <div className="shrink-0 px-4 py-1.5 bg-amber-50 border-b border-amber-200 text-xs text-amber-800 flex items-center gap-2">
           <FolderOpen className="w-3.5 h-3.5 shrink-0" />
           Lernpakete per Drag & Drop in Themenfelder ziehen · Themenfeld-Titel anklicken zum Umbenennen
@@ -761,8 +766,8 @@ export default function StrukturBoardEmbedded({
               onEditPaket={(paket) => openPaketDialog(SAMMELBECKEN_ID, paket)}
               isSammelbecken
               compact={compact}
-              readOnly={readOnly}
-              istLesemodus={istLesemodus}
+              readOnly={readOnly || !isStructuralEditingActive}
+              istLesemodus={istLesemodus || !isStructuralEditingActive}
             />
 
             <div className="w-px bg-border shrink-0 self-stretch" />
@@ -783,13 +788,13 @@ export default function StrukturBoardEmbedded({
                 collapsed={collapsedSpalten.has(spalte.id)}
                 onToggleCollapse={() => toggleCollapse(spalte.id)}
                 sequenzNummer={einheit?.bearbeitungsmodus === 'sequenziell' ? idx + 1 : null}
-                readOnly={readOnly}
-                istLesemodus={istLesemodus}
+                readOnly={readOnly || !isStructuralEditingActive}
+                istLesemodus={istLesemodus || !isStructuralEditingActive}
               />
             ))}
 
             {/* Neue-Spalte CTA – nur im Edit-Modus */}
-            {!readOnly && !istLesemodus && (
+            {!readOnly && isStructuralEditingActive && !istLesemodus && (
               <button
                 onClick={handleNeuesThemenfeld}
                 className="shrink-0 w-64 rounded-xl border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/5 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-primary transition-colors self-stretch"
