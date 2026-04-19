@@ -79,11 +79,14 @@ Deno.serve(async (req) => {
     });
 
     const benutzer = benutzerList?.[0];
-    const role = benutzer?.rolle;
+    const benutzerRolle = benutzer?.rolle;
+    
+    // ✅ Fallback auf auth user.role wenn kein Benutzer-Eintrag existiert
+    const role = benutzerRolle || user.role;
 
     let hasReadAccess = false;
 
-    if (role === 'Administrator') {
+    if (role === 'Administrator' || user.role === 'admin') {
       hasReadAccess = true;
     } else if (role === 'Fachschaftsleitung') {
       const subjects = benutzer?.fachbereich_zustaendigkeit || [];

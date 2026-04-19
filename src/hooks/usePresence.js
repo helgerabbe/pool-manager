@@ -132,7 +132,7 @@ export function usePresence(currentView = 'dashboard') {
           const updateResult = await updatePresenceRecord(recordId, {
             last_seen_at: now,
             user_name: user.full_name || user.email,
-            current_view: currentView,
+            current_page: currentView,
           });
           if (updateResult === null) {
             // Record wurde extern gelöscht – neu erstellen
@@ -154,7 +154,7 @@ export function usePresence(currentView = 'dashboard') {
             const created = await createPresenceRecord({
               user_email: user.email,
               user_name: user.full_name || user.email,
-              current_view: currentView,
+              current_page: currentView,
               last_seen_at: now,
             });
             recordId = created.id;
@@ -168,7 +168,7 @@ export function usePresence(currentView = 'dashboard') {
           const created = await createPresenceRecord({
             user_email: user.email,
             user_name: user.full_name || user.email,
-            current_view: currentView,
+            current_page: currentView,
             last_seen_at: now,
           });
           recordId = created.id;
