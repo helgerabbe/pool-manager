@@ -50,7 +50,7 @@ export default function HelpBadge({ text, docsSlug }) {
 
   const popover = open && ReactDOM.createPortal(
     <div
-      style={{ position: 'absolute', top: pos.top, left: pos.left, zIndex: 9999 }}
+      style={{ position: 'absolute', top: pos.top, left: pos.left, zIndex: 9999, maxWidth: 'calc(100vw - 16px)' }}
       className="w-64 bg-popover text-popover-foreground rounded-lg border border-border shadow-lg p-3 text-xs leading-relaxed"
     >
       <p>{text}</p>

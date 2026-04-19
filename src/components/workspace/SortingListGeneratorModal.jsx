@@ -74,7 +74,7 @@ Beispiel-Output:
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="w-[95%] sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Sortierliste generieren</DialogTitle>
           <DialogDescription>

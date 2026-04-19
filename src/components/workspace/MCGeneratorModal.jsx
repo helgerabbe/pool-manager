@@ -136,15 +136,15 @@ Antworte ausschließlich mit JSON (kein zusätzlicher Text) im folgenden Format:
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent className="w-[95%] max-w-md flex flex-col max-h-[90dvh] overflow-hidden p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
           <DialogTitle>Multiple-Choice-Set generieren</DialogTitle>
           <DialogDescription>
             Lassen Sie die KI ein Fragen-Set basierend auf Ihrem Thema erstellen.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="flex-1 overflow-y-auto min-h-0 px-6 py-4 space-y-4">
           <div className="space-y-1.5">
             <Label className="text-sm font-medium">Thema *</Label>
             <Textarea
@@ -198,7 +198,7 @@ Antworte ausschließlich mit JSON (kein zusätzlicher Text) im folgenden Format:
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="px-6 py-4 border-t border-border shrink-0">
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Abbrechen
           </Button>

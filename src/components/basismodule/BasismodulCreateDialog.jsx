@@ -85,7 +85,7 @@ export default function BasismodulCreateDialog({ open, onOpenChange }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="w-[95%] sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Neues Basismodul</DialogTitle>
           <DialogDescription>

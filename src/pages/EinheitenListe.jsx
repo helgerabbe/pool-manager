@@ -54,7 +54,7 @@ function SchnellErstellenModal({ open, onOpenChange, onCreated }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="w-[95%] sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Neue Einheit erstellen</DialogTitle>
         </DialogHeader>
