@@ -15,6 +15,7 @@ export default function UserInviteTab({ benutzer = [], users = [], onEdit, onDel
   const queryClient = useQueryClient();
   const [inviteId, setInviteId] = useState(null);
   const [invitingId, setInvitingId] = useState(null);
+  const [deletingAll, setDeletingAll] = useState(false);
 
   // Lade AuditLog um zu sehen, welche Einladungen gesendet wurden
   const { data: auditLog = [] } = useQuery({
@@ -49,6 +50,23 @@ export default function UserInviteTab({ benutzer = [], users = [], onEdit, onDel
     }
   });
 
+  const deleteAllMutation = useMutation({
+    mutationFn: async (ids) => {
+      // Alle IDs parallel löschen
+      await Promise.all(ids.map(id => base44.entities.Benutzer.delete(id)));
+    },
+    onSuccess: () => {
+      toast.success('Alle ausstehenden Einladungen gelöscht!');
+      queryClient.invalidateQueries({ queryKey: ['benutzer'] });
+      setDeletingAll(false);
+    },
+    onError: (err) => {
+      const msg = err?.message || 'Unbekannter Fehler';
+      toast.error(`Fehler beim Löschen: ${msg}`);
+      setDeletingAll(false);
+    }
+  });
+
   // Filter: Benutzer-Metadaten ohne echten User-Account
   const unregisteredBenutzer = benutzer.filter(b => 
     !users.find(u => u.email === b.user_id)
@@ -63,8 +81,32 @@ export default function UserInviteTab({ benutzer = [], users = [], onEdit, onDel
     );
   }
 
+  const handleDeleteAll = () => {
+    if (window.confirm(`Möchtest du wirklich alle ${unregisteredBenutzer.length} ausstehenden Einladungen löschen?`)) {
+      setDeletingAll(true);
+      deleteAllMutation.mutate(unregisteredBenutzer.map(b => b.id));
+    }
+  };
+
   return (
     <div className="space-y-3">
+      {/* Header mit "Alle löschen"-Button */}
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm text-muted-foreground">
+          {unregisteredBenutzer.length} ausstehende Einladung{unregisteredBenutzer.length !== 1 ? 'en' : ''}
+        </p>
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={handleDeleteAll}
+          disabled={deletingAll || deleteAllMutation.isPending}
+          className="gap-2"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+          {deletingAll || deleteAllMutation.isPending ? 'Lösche...' : 'Alle löschen'}
+        </Button>
+      </div>
+
       {unregisteredBenutzer.map(b => {
         const isRegistered = users.find(u => u.email === b.user_id);
         const lastInvite = auditLog
