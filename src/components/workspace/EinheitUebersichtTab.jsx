@@ -45,6 +45,7 @@ const EINHEIT_HELP = {
 };
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import GesamtzielManager from './GesamtzielManager';
+import { hasUnitLevelAccess } from '@/lib/rbac';
 
 const UNIT_ROLE_CONFIG = {
   LEITUNG: { 
@@ -98,8 +99,16 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
   const [mitarbeiterEmail, setMitarbeiterEmail] = useState('');
 
   // ✅ RBAC-Prüfung: Wer darf Einheit-Metadaten bearbeiten?
-  const kannEinheitBearbeiten = currentUserRole === 'Administrator' || 
-    currentUserRole === 'Fachschaftsleitung';
+  // Berücksichtigt Unit-Level-Mitgliedschaft (LEITUNG-Rolle in EinheitMembers)
+  const unitAccess = hasUnitLevelAccess(
+    currentUserRole,
+    currentUserFaecher,
+    einheit.fach,
+    members,
+    currentUserEmail?.toLowerCase()?.trim() || ''
+  );
+  
+  const kannEinheitBearbeiten = unitAccess.hasFullAccess;
 
   const buildForm = (e) => ({
     titel_der_einheit: e.titel_der_einheit || '',
@@ -126,8 +135,8 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
   const [isLocking, setIsLocking] = useState(false);
 
   // Wer darf den Sperrstatus ändern?
-  const kannSperrenToggle = currentUserRole === 'Administrator' ||
-    (currentUserRole === 'Fachschaftsleitung' && currentUserFaecher.includes(einheit.fach));
+  // Berücksichtigt Unit-Level-Mitgliedschaft (LEITUNG-Rolle in EinheitMembers)
+  const kannSperrenToggle = unitAccess.hasFullAccess;
 
   const istGesperrt = einheit.freigabe_status === 'Gesperrt';
 
@@ -173,11 +182,14 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
     setPreviousMembership(myMembership);
   }, [myMembership]);
 
-  const isLeitung = myMembership?.unit_role === 'LEITUNG' || einheit.created_by === currentUserEmail;
+  // ✅ Normalisierter E-Mail-Vergleich (case-insensitive, ohne Leerzeichen)
+  const normalizedEmail = currentUserEmail?.toLowerCase()?.trim() || '';
+  const isLeitung = myMembership?.unit_role === 'LEITUNG' || 
+    (einheit.created_by?.toLowerCase()?.trim() === normalizedEmail);
 
-  // Prüfe ob Benutzer darf Mitarbeiter hinzufügen (Admin oder Fachschaftsleitung im eigenen Fach)
-  const kannMitarbeiterHinzufuegen = currentUserRole === 'Administrator' || 
-    (currentUserRole === 'Fachschaftsleitung' && currentUserFaecher.includes(einheit.fach));
+  // Prüfe ob Benutzer darf Mitarbeiter hinzufügen
+  // Berücksichtigt Unit-Level-Mitgliedschaft (LEITUNG-Rolle in EinheitMembers)
+  const kannMitarbeiterHinzufuegen = unitAccess.hasFullAccess;
 
   const { data: members = [], isLoading: membersLoading } = useQuery({
     queryKey: ['einheit-members', einheit.id],
@@ -204,9 +216,14 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
   const activeLocks = paketeFuerEinheit.filter(p => p.is_locked && p.locked_by_email);
 
   // Für Mitarbeiter hinzufügen: Fachlehrkräfte die noch nicht als LEITUNG eingetragen sind
-  const availableFachlehrkraefteForMitarbeiter = allFachlehrkraefte.filter(u => 
-    !members.find(m => m.user_email === u.email && m.unit_role === 'LEITUNG')
-  );
+  // ✅ Normalisierter E-Mail-Vergleich
+  const availableFachlehrkraefteForMitarbeiter = allFachlehrkraefte.filter(u => {
+    const normalizedUserEmail = u.email?.toLowerCase()?.trim() || '';
+    return !members.find(m => 
+      m.user_email?.toLowerCase()?.trim() === normalizedUserEmail && 
+      m.unit_role === 'LEITUNG'
+    );
+  });
 
   // ── Mutations ───────────────────────────────────────────────────────────────
   const addMember = useMutation({
@@ -331,7 +348,9 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
                 <div className="pt-3 mt-3 border-t">
                   <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                     <Lock className="w-3 h-3" />
-                    Nur Fachschaftsleitung und Administratoren können die Einheit-Metadaten bearbeiten.
+                    {!unitAccess.isAssignedMember 
+                      ? 'Nur Fachschaftsleitung und Administratoren können die Einheit-Metadaten bearbeiten.'
+                      : 'Sie haben als zugewiesener Mitarbeiter (Leitung) Bearbeitungsrechte für diese Einheit.'}
                   </p>
                 </div>
               </div>
@@ -482,7 +501,9 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
             ) : (
               <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
                 <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
-                Nur Fachschaftsleitungen und Administratoren können den Sperrstatus ändern.
+                {!unitAccess.isAssignedMember
+                  ? 'Nur Fachschaftsleitungen und Administratoren können den Sperrstatus ändern.'
+                  : 'Sie haben als zugewiesener Mitarbeiter (Leitung) das Recht, den Sperrstatus zu ändern.'}
               </div>
             )}
           </div>
