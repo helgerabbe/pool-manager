@@ -21,7 +21,7 @@ import { Label } from '@/components/ui/label';
 import {
   BookOpen, Layers, Target, Puzzle, Plus, Edit, Trash2,
   Clock, Lock, Unlock, AlertCircle, CheckCircle2, ArrowDown,
-  TrendingUp, AlertTriangle, PenLine, Save, X, Loader2, ChevronRight
+  TrendingUp, AlertTriangle, PenLine, Save, X, Loader2, ChevronRight, Menu
 } from 'lucide-react';
 import SyncWarningBanner from '@/components/sync/SyncWarningBanner';
 
@@ -362,6 +362,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   const [expandedPhase, setExpandedPhase] = useState(null);
   const [localTitel, setLocalTitel] = useState(paket.titel_des_pakets || '');
   const [localPhasenConfig, setLocalPhasenConfig] = useState(paket.phasen_konfiguration || {});
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // Lade Aktivitäten für diese Phase
@@ -639,6 +640,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                   onClick={() => !isDisabled && setExpandedPhase(isExpanded ? null : phase.key)}
                   disabled={isDisabled}
                   className="flex items-center gap-3 flex-1 cursor-pointer disabled:cursor-not-allowed"
+                  title={isExpanded ? 'Einklappen' : 'Ausklappen'}
                 >
                   <ChevronRight
                     className={cn(
@@ -668,6 +670,17 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                   )}
                 </button>
 
+                {/* Burger-Menü Button (lg-breaker) */}
+                {!isDisabled && (
+                  <button
+                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                    className="lg:hidden p-2 hover:bg-muted rounded-lg transition-colors"
+                    title="Aktivitäten auswählen"
+                  >
+                    <Menu className="w-5 h-5" />
+                  </button>
+                )}
+
                 {/* Phase-Toggle Switch im Header – nur im aktiven Bearbeitungsmodus */}
                 {kannBearbeiten && canEdit && (
                   <Switch
@@ -680,21 +693,55 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                 )}
               </div>
 
-              {/* Expanded Content */}
+              {/* Burger-Menü Sidebar für Aktivitäten-Auswahl */}
               {isExpanded && !isDisabled && (
-                <div className="mt-2 pl-4">
-                  <PhaseContent
-                    paket={paket}
-                    phaseKey={phase.key}
-                    phaseLabel={phase.label}
-                    kannBearbeiten={canEdit && kannBearbeiten}
-                    userEmail={userEmail}
-                    queryClient={queryClient}
-                    inEditMode={canEdit}
-                    onNavigate={onNavigate}
-                    onGoToTaskWorkshop={(activityId) => onNavigate({ type: 'goto-task-workshop', activityId })}
-                  />
-                </div>
+                <>
+                  {/* Sidebar Overlay für Mobile */}
+                  {sidebarOpen && (
+                    <div
+                      className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+                      onClick={() => setSidebarOpen(false)}
+                    />
+                  )}
+                  
+                  {/* Sidebar */}
+                  <div className={cn(
+                    "fixed lg:static z-50 w-80 lg:w-full border-r lg:border-none border-border bg-card lg:bg-transparent shrink-0 overflow-hidden h-full lg:h-auto transition-transform lg:transition-none",
+                    sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+                  )}>
+                    <div className="h-full overflow-y-auto min-h-0">
+                      {/* Mobile Header */}
+                      <div className="lg:hidden px-3 py-2 border-b border-border flex items-center justify-between">
+                        <p className="text-sm font-semibold">Aktivitäten</p>
+                        <button
+                          onClick={() => setSidebarOpen(false)}
+                          className="p-1 hover:bg-muted rounded transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      
+                      {/* Content */}
+                      <PhaseContent
+                        paket={paket}
+                        phaseKey={phase.key}
+                        phaseLabel={phase.label}
+                        kannBearbeiten={canEdit && kannBearbeiten}
+                        userEmail={userEmail}
+                        queryClient={queryClient}
+                        inEditMode={canEdit}
+                        onNavigate={(data) => {
+                          onNavigate(data);
+                          setSidebarOpen(false);
+                        }}
+                        onGoToTaskWorkshop={(activityId) => {
+                          onNavigate({ type: 'goto-task-workshop', activityId });
+                          setSidebarOpen(false);
+                        }}
+                      />
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           );
