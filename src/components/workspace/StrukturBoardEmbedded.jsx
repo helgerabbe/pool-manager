@@ -751,6 +751,8 @@ export default function StrukturBoardEmbedded({
               onEditPaket={(paket) => openPaketDialog(SAMMELBECKEN_ID, paket)}
               isSammelbecken
               compact={compact}
+              readOnly={readOnly}
+              istLesemodus={istLesemodus}
             />
 
             <div className="w-px bg-border shrink-0 self-stretch" />
@@ -771,6 +773,8 @@ export default function StrukturBoardEmbedded({
                 collapsed={collapsedSpalten.has(spalte.id)}
                 onToggleCollapse={() => toggleCollapse(spalte.id)}
                 sequenzNummer={einheit?.bearbeitungsmodus === 'sequenziell' ? idx + 1 : null}
+                readOnly={readOnly}
+                istLesemodus={istLesemodus}
               />
             ))}
 
