@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { getDocContent, DOC_NAV } from '@/lib/docsContent';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 
@@ -24,7 +25,7 @@ export default function DocViewer() {
         prose-table:text-sm prose-th:text-foreground prose-td:text-muted-foreground
         prose-a:text-primary prose-a:no-underline hover:prose-a:underline
       ">
-        <ReactMarkdown>{content}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
       </article>
 
       {/* Prev / Next Navigation */}
