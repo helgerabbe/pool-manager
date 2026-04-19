@@ -463,7 +463,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             <TabsContent value="aktivitaeten" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col lg:flex-row flex-1 overflow-hidden m-0 p-0">
               <ErrorBoundary label="Aktivitäten-Struktur">
                 <aside className="w-full lg:w-96 border-b lg:border-b-0 lg:border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden h-64 lg:h-full min-h-0">
-                   <div className="flex-1 overflow-hidden p-3">
+                   <div className="flex-1 overflow-hidden min-h-0 p-3">
                      <div className="h-full overflow-y-auto pr-2">
                     <SidebarTree
                       einheit={einheit}
@@ -485,7 +485,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
                 <main className="flex-1 overflow-hidden min-h-0 h-full lg:h-auto">
                    <ErrorBoundary label="Detail-Panel">
-                     <div className="h-full overflow-y-auto max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pr-2 w-full max-w-full">
+                     <div className="h-full overflow-y-auto max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full min-h-0">
                        {selectedNode?.type === 'aktivitaet-edit' ? (
                          activityRecordForEdit ? (
                            <ActivityDetailView
