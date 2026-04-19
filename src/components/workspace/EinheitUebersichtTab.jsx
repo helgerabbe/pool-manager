@@ -98,18 +98,6 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
   const [newRole, setNewRole] = useState('EDITOR');
   const [mitarbeiterEmail, setMitarbeiterEmail] = useState('');
 
-  // ✅ RBAC-Prüfung: Wer darf Einheit-Metadaten bearbeiten?
-  // Berücksichtigt Unit-Level-Mitgliedschaft (LEITUNG-Rolle in EinheitMembers)
-  const unitAccess = hasUnitLevelAccess(
-    currentUserRole,
-    currentUserFaecher,
-    einheit.fach,
-    members,
-    currentUserEmail?.toLowerCase()?.trim() || ''
-  );
-  
-  const kannEinheitBearbeiten = unitAccess.hasFullAccess;
-
   const buildForm = (e) => ({
     titel_der_einheit: e.titel_der_einheit || '',
     fach:              e.fach || '',
@@ -134,11 +122,10 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
 
   const [isLocking, setIsLocking] = useState(false);
 
-  // Wer darf den Sperrstatus ändern?
-  // Berücksichtigt Unit-Level-Mitgliedschaft (LEITUNG-Rolle in EinheitMembers)
-  const kannSperrenToggle = unitAccess.hasFullAccess;
+  // Wer darf den Sperrstatus ändern? (wird nach unitAccess-Berechnung gesetzt)
 
   const istGesperrt = einheit.freigabe_status === 'Gesperrt';
+  const kannSperrenToggle = unitAccess.hasFullAccess;
 
   const handleToggleSperre = async () => {
     setIsLocking(true);
@@ -187,14 +174,29 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
   const isLeitung = myMembership?.unit_role === 'LEITUNG' || 
     (einheit.created_by?.toLowerCase()?.trim() === normalizedEmail);
 
-  // Prüfe ob Benutzer darf Mitarbeiter hinzufügen
-  // Berücksichtigt Unit-Level-Mitgliedschaft (LEITUNG-Rolle in EinheitMembers)
+  // Prüfe ob Benutzer darf Mitarbeiter hinzufügen (wird nach unitAccess-Berechnung gesetzt)
   const kannMitarbeiterHinzufuegen = unitAccess.hasFullAccess;
 
   const { data: members = [], isLoading: membersLoading } = useQuery({
     queryKey: ['einheit-members', einheit.id],
     queryFn: () => getMembersByEinheit(einheit.id),
   });
+
+  // ✅ RBAC-Prüfung: Wer darf Einheit-Metadaten bearbeiten?
+  // Berücksichtigt Unit-Level-Mitgliedschaft (LEITUNG-Rolle in EinheitMembers)
+  // MUSS NACH members-Query stehen (Initialisierungsreihenfolge!)
+  const unitAccess = useMemo(() => 
+    hasUnitLevelAccess(
+      currentUserRole,
+      currentUserFaecher,
+      einheit.fach,
+      members,
+      currentUserEmail?.toLowerCase()?.trim() || ''
+    ),
+    [currentUserRole, currentUserFaecher, einheit.fach, members, currentUserEmail]
+  );
+  
+  const kannEinheitBearbeiten = unitAccess.hasFullAccess;
 
   // Fachlehrkräfte via Backend laden (asServiceRole – Frontend-User.list() ist admin-only)
   const { data: allFachlehrkraefte = [] } = useQuery({
