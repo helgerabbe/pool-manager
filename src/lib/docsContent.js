@@ -342,41 +342,71 @@ Wenn eine Sperre irrtümlich aktiv bleibt (z.B. Browser-Absturz), können Admini
 * Bei längerer Abwesenheit: Bearbeitungsmodus beenden
 `,
 
-  'export-workflow': `# Export-Workflow
+  'export-workflow': `# Export-Workflow (Moodle & Brian.study)
 
-Der Export überträgt fertige Inhalte aus dem Pool-Manager nach Moodle und Brian.study. Er erfolgt in koordinierten Schritten über das Export-Cockpit.
+In diesem Kapitel erfahren Sie, wie Ihre fertigen Aufgaben den Weg zu den Schülern finden. Da der Pool-Manager mit zwei Systemen arbeitet – **Moodle** für die Struktur und **Brian.study** für das KI-Coaching – folgt die App einem speziellen Sicherheits-Workflow, der sicherstellt, dass beide Systeme stets synchron sind.
 
-## Übersicht
+## Die zwei Wege einer Aufgabe
 
-* Zwei parallele Export-Kanäle: **Moodle** und **Brian.study**
-* Ein **Dual-Lock** verhindert unkoordinierte Änderungen nach dem Export
-* Der Sync-Status zeigt jederzeit den aktuellen Stand
+Aufgaben der Ebene 2 und 3 (Allgemeine Aufgaben und Projektaufgaben) sind **„hybrid"**. Das bedeutet:
 
-## Sync-Status
+* In **Moodle** wird der formale Rahmen, die Aufgabenstellung und der Link zum KI-Tutor bereitgestellt.
+* In **Brian.study** arbeitet der eigentliche KI-Tutor, der die Schüler beim Lösen individuell begleitet.
 
-| Status | Bedeutung |
-|--------|-----------|
-| \`new\` | Noch nie exportiert |
-| \`pending\` | Export wurde beauftragt |
-| \`synced\` | Erfolgreich übertragen |
-| \`modified\` | Nach Export verändert – Re-Export nötig |
-| \`error\` | Export fehlgeschlagen |
+Damit beides zusammenpasst, muss das Export-Team die Aufgabe an **beide Systeme** übertragen. Erst wenn beide Übertragungen erfolgreich waren, gilt eine Aufgabe als vollständig live.
 
-## Moodle-Export
+## Den Sync-Status verstehen
 
-1. Inhalte im Export-Cockpit prüfen
-2. Export-Paket herunterladen oder direkt übertragen
-3. Nach erfolgreicher Übertragung: Bestätigung im Cockpit
+An jeder Aufgabe finden Sie ein Status-Label, das verrät, wo die Aufgabe gerade „steckt":
 
-## Brian.study Export
+| Status | Farbe | Bedeutung |
+|--------|-------|-----------|
+| **Neu** | Grau | Die Aufgabe wurde erstellt, aber noch nicht für den Export freigegeben. |
+| **In Übertragung** | Gelb | Das Export-Team arbeitet gerade am Upload in Moodle oder Brian.study. |
+| **Live** | Grün | Die Aufgabe ist erfolgreich übertragen und für Schüler verfügbar. |
+| **Geändert** | Orange | Die Aufgabe war live, wurde aber nachträglich bearbeitet. Ein Re-Export ist nötig. |
+| **Fehler** | Rot | Der Export ist fehlgeschlagen. Das Export-Team muss eingreifen. |
 
-1. KI-Tutor-Felder für alle Aufgaben generieren
-2. Im Export-Cockpit Segmente kopieren oder synchronisieren
-3. Dual-Lock nach Bestätigung beider Exports freigeben
+> **Hinweis:** Der Status „Geändert" entsteht automatisch, sobald eine Lehrkraft eine bereits exportierte Aufgabe bearbeitet. Moodle und Brian.study werden erst nach dem nächsten Export wieder aktuell sein.
 
-## Dual-Lock
+## Warum ist die Aufgabe gesperrt? (Der Dual-Lock)
 
-Sobald eine Aufgabe in beiden Systemen \`synced\` ist, wird die Bearbeitungssperre automatisch aufgehoben. Bei Bedarf können Admins den Lock manuell freigeben.
+Sobald eine Aufgabe für den Export freigegeben wird, wird sie **für die Bearbeitung gesperrt**. Das ist ein wichtiger Schutzmechanismus: Würden Inhalte geändert werden, während das Export-Team sie gerade hochlädt, käme es zu Inkonsistenzen zwischen den Systemen.
+
+Das Schloss-Symbol 🔒 an einer Aufgabe zeigt an, dass der Export läuft. **Die Sperre wird erst automatisch aufgehoben, wenn beide Exporte – Moodle UND Brian.study – erfolgreich abgeschlossen wurden.** Erst dann ist die Aufgabe wieder zur Bearbeitung freigegeben.
+
+Als **Administrator** können Sie eine abgelaufene oder fehlerhafte Sperre manuell aufheben, falls der Export-Prozess unterbrochen wurde.
+
+## Der Export-Schritt für Schritt
+
+### Vorbereitung (Lehrkraft)
+
+1. Aufgabe vollständig ausfüllen (Aufgabenstellung, Erwartungshorizont / Rubriken)
+2. KI-Tutor-Felder im Tab „KI-Tutor Prompt" generieren und prüfen
+3. Aufgabe **freigeben** (Content-Status → \`approved\`)
+
+### Export (Export-Team / Moodle-Designer)
+
+1. Im **Export-Cockpit** alle exportbereiten Aufgaben prüfen
+2. **Moodle-Export** durchführen und Übertragung bestätigen
+3. **Brian.study-Export** durchführen: Prompt-Segmente kopieren und im Brian-Backend anlegen
+4. Beide Exporte im Cockpit als erfolgreich **bestätigen** → Dual-Lock wird aufgehoben
+
+### Nach dem Export
+
+* Aufgabe hat Status \`synced\` in beiden Systemen
+* Sperre ist aufgehoben – die Aufgabe kann wieder bearbeitet werden
+* Bei nachträglichen Änderungen: Status springt auf \`modified\` → neuer Export-Zyklus beginnt
+
+## Das Export-Cockpit
+
+Das Export-Cockpit (Tab 9 im Arbeitsbereich) ist die zentrale Schaltzentrale für das Export-Team. Dort sind alle Aufgaben aufgelistet, die:
+
+* noch nie exportiert wurden (\`new\`)
+* auf einen Re-Export warten (\`modified\`)
+* gerade im Export-Prozess sind (\`pending\`)
+
+Im Cockpit können die **Brian.study-Segmente** direkt kopiert werden. Außerdem steht eine **Druckansicht des Moodle-Bauplans** zur Verfügung.
 `,
 
   'administration': `# Administration
