@@ -154,7 +154,7 @@ const SAMMELBECKEN_ID = '__sammelbecken__';
 
 // ── Paket-Karte ───────────────────────────────────────────────────────────────
 
-function PaketKarte({ paket, index, onDelete, onEdit, compact = false }) {
+function PaketKarte({ paket, index, onDelete, onEdit, compact = false, readOnly = false, istLesemodus = false }) {
   return (
     <Draggable draggableId={paket.id} index={index}>
       {(provided, snapshot) => (
@@ -209,7 +209,7 @@ function PaketKarte({ paket, index, onDelete, onEdit, compact = false }) {
 
 // ── Spalte ────────────────────────────────────────────────────────────────────
 
-function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onDeleteSpalte, onTitelChange, isSammelbecken = false, compact = false, collapsed = false, onToggleCollapse, sequenzNummer = null }) {
+function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onDeleteSpalte, onTitelChange, isSammelbecken = false, compact = false, collapsed = false, onToggleCollapse, sequenzNummer = null, readOnly = false, istLesemodus = false }) {
   const [editingTitel, setEditingTitel]   = useState(false);
   const [titelDraft, setTitelDraft]       = useState(titel);
 
@@ -311,7 +311,7 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
         )}
 
         {!isSammelbecken && !readOnly && !istLesemodus && (
-          <button onClick={onDeleteSpalte} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+          <button onClick={() => !istLesemodus && onDeleteSpalte()} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
             <X className="w-3.5 h-3.5" />
           </button>
         )}
@@ -326,7 +326,7 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
             className={cn('flex-1 overflow-y-auto p-2 space-y-1.5 min-h-[120px] transition-colors scroll-container', snapshot.isDraggingOver && 'bg-primary/5')}
           >
             {pakete.map((paket, index) => (
-              <PaketKarte key={paket.id} paket={paket} index={index} onDelete={onDeletePaket} onEdit={onEditPaket} compact={compact} />
+              <PaketKarte key={paket.id} paket={paket} index={index} onDelete={onDeletePaket} onEdit={onEditPaket} compact={compact} readOnly={readOnly} istLesemodus={istLesemodus} />
             ))}
             {provided.placeholder}
             {pakete.length === 0 && !snapshot.isDraggingOver && (
@@ -342,7 +342,7 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
       {!readOnly && !istLesemodus && (
         <div className="px-2 pb-2 pt-1 shrink-0">
           <button
-            onClick={() => onAddPaket(id)}
+            onClick={() => !istLesemodus && onAddPaket(id)}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/5 text-xs text-muted-foreground hover:text-primary transition-all"
           >
             <Plus className="w-3.5 h-3.5" /> Neues Lernpaket

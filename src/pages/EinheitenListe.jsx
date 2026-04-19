@@ -164,18 +164,7 @@ export default function EinheitenListe() {
 
   const faecher = [...new Set(einheiten.map(e => e.fach).filter(Boolean))];
 
-  // ✅ SCHRITT 2: Debug-Log für Server-Side Filtering (NACH Definitionen)
-  useEffect(() => {
-    if (einheiten.length > 0 && !isLoading) {
-      console.log('✅ SCHRITT 2 - Server-Side Filtering aktiv:', {
-        einheiten_vom_backend: einheiten.length,
-        einheiten_gefiltert: filtered?.length || 0,
-        user_rolle: rolle,
-        user_faecher: meineFaecher,
-        hinweis: 'Backend hat bereits nach Fächern gefiltert - Frontend macht nur noch Search/Changed-Filter',
-      });
-    }
-  }, [einheiten, isLoading, rolle, meineFaecher, filtered]);
+
 
   const getLernpaketCount = (einheitId) => lernpakete.filter(lp => lp.einheit_id === einheitId).length;
 
