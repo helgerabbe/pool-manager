@@ -232,7 +232,33 @@ Wenn Sie ein Video verlinken und möchten, dass der KI-Tutor inhaltliche Fragen 
 
   'ebene-1-basismodule': `# Ebene 1: Basismodule & Bausteine
 
-Die Basismodule der Ebene 1 sind das tägliche Brot des Unterrichts. Während es in den Ebenen 2 und 3 um Transfer und freie Projekte geht, sichern Sie in Ebene 1 das grundlegende Fachwissen und die Basis-Fähigkeiten (Vokabeln, Formeln, historische Daten, grammatikalische Regeln).
+## Was sind Basismodule? (Wichtig vorab!)
+
+Basismodule sind **keine fachübergreifenden Grundlagenmodule**, sondern **einheitenübergreifende Grundlagen innerhalb eines Fachs**. Sie repräsentieren Fähigkeiten, Fertigkeiten oder Fachwissen, das in vielen Einheiten immer wieder gebraucht wird – zum Beispiel „Diagramme lesen" in Erdkunde, „Bruchrechnung" in Mathematik oder „Quellenanalyse" in Geschichte.
+
+### Warum gibt es Basismodule als eigenen Bereich?
+
+Nicht jede Einheit wird im Pool-Manager vollständig eingepflegt. Trotzdem kommt es vor, dass Aufgaben in einer Einheit Grundlagen voraussetzen, die eigentlich in einer anderen – vielleicht noch nicht angelegten – Einheit geübt werden. Genau hier helfen Basismodule:
+
+> **Basismodule sind bewusst leere Hüllen.** Sie bündeln Lernziele, die fachübergreifend in Aufgaben (Ebene 2 und Ebene 3) referenziert werden können – auch dann, wenn die eigentliche „Übungseinheit" für diese Grundlage gar nicht im Pool-Manager vorhanden ist.
+
+### Wozu werden Basismodule konkret genutzt?
+
+| Anwendungsfall | Erklärung |
+|----------------|-----------|
+| **Lernziel-Mapping bei Ebene-2-Aufgaben** | Im Tab „Lernlandkarte" können Sie Lernziele aus Basismodulen mit einer Transferaufgabe verknüpfen. So weiß der KI-Tutor Brian, welche Grundlagen er bei Wissenslücken empfehlen soll. |
+| **Lernziel-Mapping bei Ebene-3-Aufgaben** | Auch bei Projektaufgaben können Basisfähigkeiten als Voraussetzungen hinterlegt werden – z.B. „Ich kann eine Zeitleiste lesen" als Voraussetzung für ein Geschichtsprojekt. |
+| **Referenz ohne eigene Einheit** | Eine Fachschaft pflegt z.B. keine eigene Einheit „Bruchrechnen" im Pool, braucht aber trotzdem das Lernziel „Ich kann Brüche addieren" als Voraussetzung in einer Physik-Aufgabe. Das Basismodul liefert genau diese Möglichkeit. |
+
+> **Kurz gesagt:** Basismodule sind das Bindeglied zwischen einheitenspezifischen Aufgaben und dem allgemeinen Kompetenz-Fundament eines Fachs.
+
+---
+
+## Die vier Aufgabenbausteine
+
+Wenn Sie ein Lernpaket öffnen, können Sie es mit konkreten Inhalten füllen. Der Pool-Manager bietet vier standardisierte Bausteine an, die den idealen Lernprozess abbilden:
+
+Während es in den Ebenen 2 und 3 um Transfer und freie Projekte geht, sichern Sie in Ebene 1 das grundlegende Fachwissen und die Basis-Fähigkeiten (Vokabeln, Formeln, historische Daten, grammatikalische Regeln).
 
 Da diese Aufgaben oft kleinteilig sind, bietet der Pool-Manager eine stark strukturierte Arbeitsweise und smarte KI-Werkzeuge, um Ihnen Zeit zu sparen.
 

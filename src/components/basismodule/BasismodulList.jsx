@@ -58,7 +58,7 @@ export default function BasismodulList({ selectedId, onSelect, onCreateNew }) {
          <div className="flex items-center justify-between">
            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Basismodule</span>
            <HelpBadge
-             text="Basismodule sind fachübergreifende Grundlagenmodule (z.B. 'Rechtschreibung', 'Bruchrechnung'). Sie enthalten Basislernpakete mit konkreten Lernzielen für Ebene-1-Übungen."
+             text="Basismodule sind einheitenübergreifende Grundlagen eines Fachs – Fähigkeiten, Fertigkeiten oder Fachwissen, das in vielen Einheiten gebraucht wird. Sie sind leere Hüllen, die es ermöglichen, solche Grundlagen auch dann in Aufgaben zu referenzieren, wenn die zugehörige Einheit nicht im Pool-Manager gepflegt ist."
              docsSlug="ebene-1-basismodule"
            />
          </div>
