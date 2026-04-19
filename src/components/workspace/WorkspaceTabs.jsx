@@ -209,7 +209,7 @@ export default function WorkspaceTabs({ activeTab, onTabChange }) {
   const visibleTabs = getVisibleTabs(rolle);
   return (
     <TooltipProvider delayDuration={0}>
-      <div className="flex items-center gap-1 bg-muted p-2 rounded-xl shrink-0">
+      <div className="flex flex-wrap items-center gap-2 shrink-0">
         {visibleTabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.value;
@@ -220,19 +220,21 @@ export default function WorkspaceTabs({ activeTab, onTabChange }) {
                   <button
                     onClick={() => onTabChange(tab.value)}
                     className={cn(
-                      'flex items-center gap-2 px-3 py-2 rounded-lg transition-all',
+                      'flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all font-medium',
                       isActive
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                        ? 'bg-primary text-primary-foreground border-primary shadow-md'
+                        : 'bg-card border-border text-muted-foreground hover:border-primary/50 hover:bg-muted/50'
                     )}
                   >
                     <span className={cn(
-                      'flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold shrink-0',
-                      isActive ? 'bg-primary text-primary-foreground' : 'bg-muted-foreground/20 text-muted-foreground'
+                      'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold shrink-0 transition-all',
+                      isActive 
+                        ? 'bg-primary-foreground text-primary scale-110' 
+                        : 'bg-muted text-muted-foreground'
                     )}>
                       {tab.step}
                     </span>
-                    <Icon className="w-4 h-4 shrink-0" />
+                    <Icon className={cn('w-4 h-4 shrink-0 transition-all', isActive && 'scale-110')} />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-medium">
