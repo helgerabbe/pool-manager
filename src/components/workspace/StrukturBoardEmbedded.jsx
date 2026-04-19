@@ -13,6 +13,7 @@ import { createThemenfeld, updateThemenfeld, deleteThemenfeld } from '@/services
 import { createLernziel } from '@/services/LernzielService';
 import { createLernpaket, updateLernpaket, deleteLernpaket } from '@/services/LernpaketService';
 import { useRBAC } from '@/hooks/useRBAC';
+import { hasUnitLevelAccess } from '@/lib/rbac';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -364,7 +365,7 @@ export default function StrukturBoardEmbedded({
   onSaved,   // callback nach erfolgreichem Speichern
   readOnly = false, // ← Structural Lock nicht aktiv
 }) {
-  const { permissions } = useRBAC();
+  const { permissions, authUser } = useRBAC();
 
   const [spalten, setSpalten]         = useState([]);
   const [paketeMap, setPaketeMap]     = useState({});
@@ -425,8 +426,15 @@ export default function StrukturBoardEmbedded({
     setInitialized(false);
   }, [einheitId, remotePakete, remoteThemenfelder, isDirty]);
 
-  // RBAC: Wer darf Struktur bearbeiten? Fachlehrkräfte dürfen nur lesen
-  const kannStrukturBearbeiten = einheit ? permissions.kannStrukturBearbeiten(einheit.fach) : false;
+  // ✅ RBAC: Wer darf Struktur bearbeiten? Berücksichtigt Unit-Level-Mitgliedschaft
+  const unitAccess = hasUnitLevelAccess(
+    permissions.rolle,
+    permissions.faecher,
+    einheit?.fach,
+    einheit?.members || [],
+    authUser?.email
+  );
+  const kannStrukturBearbeiten = einheit ? unitAccess.hasFullAccess : false;
   const istLesemodus = !kannStrukturBearbeiten;
 
   // Fachlehrkräfte sehen die Struktur im Lesemodus (keine Bearbeitung)
@@ -665,7 +673,9 @@ export default function StrukturBoardEmbedded({
         <div className="shrink-0 px-4 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-600 flex items-center gap-2">
           <Save className="w-3.5 h-3.5 shrink-0 text-slate-400" />
           <span>
-            <strong>Lesemodus</strong> – {istLesemodus ? 'Nur Fachschaftsleitung und Administratoren können die Struktur bearbeiten.' : 'Starten Sie den Bearbeitungsmodus über den Button oben, um Änderungen vorzunehmen.'}
+            <strong>Lesemodus</strong> – {!unitAccess.isAssignedMember 
+              ? 'Nur Fachschaftsleitung und Administratoren können die Struktur bearbeiten.'
+              : 'Sie haben als zugewiesener Mitarbeiter (Leitung) Bearbeitungsrechte für diese Einheit.'}
           </span>
           <div className="ml-auto">
             <Button
