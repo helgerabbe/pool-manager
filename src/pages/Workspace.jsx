@@ -54,6 +54,11 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     if (tab !== 'aufgaben') setTaskWorkshopActivityId(null);
   };
 
+  // ── Structural-Lock State (muss VOR useWorkspaceData deklariert werden) ──────
+  const [isStructuralEditingActive, setIsStructuralEditingActive] = useState(false);
+  const [acquiringStructLock, setAcquiringStructLock] = useState(false);
+  const [releasingStructLock, setReleasingStructLock] = useState(false);
+
   // ── Queries (ausgelagert in Custom Hook) ──────────────────────────────────────
   const {
     einheiten = [],
@@ -120,9 +125,6 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const { onlineUsers } = usePresence(selectedEinheitId);
 
   // ── Structural-Lock (explizit per Button) ─────────────────────────────────
-  const [isStructuralEditingActive, setIsStructuralEditingActive] = useState(false);
-  const [acquiringStructLock, setAcquiringStructLock] = useState(false);
-  const [releasingStructLock, setReleasingStructLock] = useState(false);
 
   // Lock freigeben wenn Einheit gewechselt wird ODER Tab gewechselt wird
   useEffect(() => {
