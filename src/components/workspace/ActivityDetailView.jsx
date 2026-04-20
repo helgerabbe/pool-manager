@@ -13,7 +13,7 @@ import { useLernpaketLock } from '@/hooks/useLernpaketLock';
 import { useEinheitLock } from '@/hooks/useEinheitLock';
 import { useRBAC } from '@/hooks/useRBAC';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Unlock, PenLine, Loader2, X } from 'lucide-react';
+import { AlertTriangle, Unlock, PenLine, Loader2, X, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import ApprovalStatusBadge from '@/components/workspace/ApprovalStatusBadge';
 import ApprovalActionButton from '@/components/workspace/ApprovalActionButton';
@@ -91,6 +91,16 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
       )}
       {isUnitLocked && (
         <EinheitLockBanner isUnitLocked={isUnitLocked} lockedByEmail={unitLockedByEmail} />
+      )}
+
+      {/* Lock-Banner: Zeigt wer die Aktivität gerade bearbeitet */}
+      {isLockedByOther && lockedByEmail && (
+        <div className="flex items-center gap-2 p-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-900 text-sm">
+          <Lock className="w-4 h-4 shrink-0 text-amber-600" />
+          <span>
+            Diese Aktivität wird gerade von <strong>{lockedByEmail}</strong> bearbeitet. Der Bearbeitungsmodus kann erst aktiviert werden, wenn die Bearbeitung abgeschlossen ist.
+          </span>
+        </div>
       )}
 
       <div className="flex items-start justify-between gap-3">
