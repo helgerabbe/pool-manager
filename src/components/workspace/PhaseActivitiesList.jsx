@@ -119,14 +119,14 @@ export default function PhaseActivitiesList({
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <GripVertical className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <p className="font-medium text-sm">{katalog?.name || '…'}</p>
-                    {!activity.is_complete && (
-                      <span title="Inhalt unvollständig" className="flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">
-                        <AlertTriangle className="w-3 h-3" />
-                        Unvollständig
-                      </span>
-                    )}
+                   <GripVertical className="w-4 h-4 text-muted-foreground shrink-0" />
+                   <p className="font-semibold text-sm">{katalog?.name || '…'}</p>
+                   {!activity.is_complete && (
+                     <span title="Inhalt unvollständig" className="flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">
+                       <AlertTriangle className="w-3 h-3" />
+                       Unvollständig
+                     </span>
+                   )}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -146,8 +146,9 @@ export default function PhaseActivitiesList({
                        )}
                        <Button
                          variant="ghost"
-                         size="sm"
-                         className="h-7 text-xs gap-1"
+                         size="icon"
+                         className="h-7 w-7"
+                         title="Bearbeiten"
                          onClick={() =>
                            onSelectActivity({
                              paketId: paket.id,
@@ -157,7 +158,6 @@ export default function PhaseActivitiesList({
                          }
                        >
                          <Edit className="w-3.5 h-3.5" />
-                         Bearbeiten
                        </Button>
                        <Button
                          variant="ghost"

@@ -145,7 +145,7 @@ export default function PhaseActivitiesSidebar({
                 )}
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="ml-4 border-l-2 border-primary/30 pl-3 space-y-2">
                 {aktivitaeten
                   .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
                   .map((activity) => {
@@ -159,7 +159,7 @@ export default function PhaseActivitiesSidebar({
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <GripVertical className="w-4 h-4 text-muted-foreground shrink-0" />
-                              <p className="font-medium text-sm">{katalog?.name || '…'}</p>
+                              <p className="font-semibold text-sm">{katalog?.name || '…'}</p>
                               {!activity.is_complete && (
                                 <span title="Inhalt unvollständig" className="flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">
                                   <AlertTriangle className="w-3 h-3" />
@@ -167,11 +167,6 @@ export default function PhaseActivitiesSidebar({
                                 </span>
                               )}
                             </div>
-                            {katalog?.form_schema && katalog.form_schema.length > 0 && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {katalog.form_schema.length} Felder
-                              </p>
-                            )}
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
                             {canEdit && (
@@ -190,8 +185,9 @@ export default function PhaseActivitiesSidebar({
                                 )}
                                 <Button
                                   variant="ghost"
-                                  size="sm"
-                                  className="h-7 text-xs gap-1"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  title="Bearbeiten"
                                   onClick={() =>
                                     onSelectActivity({
                                       paketId: paket.id,
@@ -201,7 +197,6 @@ export default function PhaseActivitiesSidebar({
                                   }
                                 >
                                   <Edit className="w-3.5 h-3.5" />
-                                  Bearbeiten
                                 </Button>
                                 <Button
                                   variant="ghost"
