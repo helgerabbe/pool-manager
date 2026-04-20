@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -55,6 +55,22 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
   // Bearbeitungsmodus muss explizit aktiviert werden (wie bei MasterAufgabeCard)
   const [editMode, setEditMode] = useState(false);
 
+  // Lernpaket-Lock prüfen: Wenn jemand anders den Lernpaket-Lock hält, darf dieser Klon nicht bearbeitet werden
+  const LOCK_TIMEOUT_MS = 30 * 60 * 1000;
+  const { data: lernpaket } = useQuery({
+    queryKey: ['lernpakete', klon.lernpaket_id],
+    queryFn: () => base44.entities.Lernpakete.filter({ id: klon.lernpaket_id }),
+    select: (data) => data[0],
+    enabled: !!klon.lernpaket_id,
+    refetchInterval: 5000,
+  });
+
+  const lernpaketLockedByOther =
+    lernpaket?.is_locked &&
+    lernpaket?.locked_by_email !== userEmail &&
+    lernpaket?.locked_at &&
+    Date.now() - new Date(lernpaket.locked_at).getTime() < LOCK_TIMEOUT_MS;
+
   // State Machine für Moodle-Sync
   const syncStatus = useSyncStatus(
     klon.id,
@@ -76,7 +92,7 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
   // Pessimistic Lock
   useKlonLock(klon.id, userEmail, editMode);
 
-  const lockedByOther = isKlonLockedByOther(klon, userEmail);
+  const lockedByOther = isKlonLockedByOther(klon, userEmail) || lernpaketLockedByOther;
 
   // Realtime-Subscription: Lock-Änderungen sofort spiegeln
   useEffect(() => {
@@ -257,7 +273,10 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
 
       {/* Inhalt */}
       <div className="p-5 space-y-5">
-        <LockBanner lockedByUser={lockedByOther ? klon.locked_by_user : null} />
+        <LockBanner lockedByUser={
+          lernpaketLockedByOther ? lernpaket?.locked_by_email :
+          isKlonLockedByOther(klon, userEmail) ? klon.locked_by_user : null
+        } />
 
         {/* Lückentext-Editor (bei Lückentext-Klonen) */}
         {isLueckentext(catalogEntry?.name) ? (
