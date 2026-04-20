@@ -204,7 +204,7 @@ export default function MasterAufgabeCard({
   );
 
   // Neue Karte direkt im Bearbeitungsmodus öffnen
-  const [editMode, setEditMode] = useState(autoExpand);
+  const [editMode, setEditMode] = useState(autoExpand && kannBearbeiten);
   const [collapsed, setCollapsed] = useState(!autoExpand); // Bei autoExpand direkt aufgeklappt
   const [fieldValues, setFieldValues] = useState(master.field_values || {});
   const [titel, setTitel] = useState(master.titel || '');
@@ -323,8 +323,8 @@ export default function MasterAufgabeCard({
               Fertig
             </span>
           )}
-          {/* Fertig markieren / Zurücksetzen Button */}
-          {kannBearbeiten && (
+          {/* Fertig markieren / Zurücksetzen Button – nur im aktiven Bearbeitungsmodus */}
+          {kannBearbeiten && editMode && (
             <MasterApprovalButton 
               master={master} 
               queryClient={queryClient}
