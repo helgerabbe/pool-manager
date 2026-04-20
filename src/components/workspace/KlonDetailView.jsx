@@ -52,8 +52,8 @@ function isSorting(name = '') {
 
 export default function KlonDetailView({ klon, kannBearbeiten, userEmail, masterAufgabe, activityRecord, catalogEntry, onKlonDeleted }) {
   const queryClient = useQueryClient();
-  // Im Bearbeitungsmodus immer direkt editierbar wenn berechtigt
-  const [editMode, setEditMode] = useState(kannBearbeiten);
+  // Bearbeitungsmodus muss explizit aktiviert werden (wie bei MasterAufgabeCard)
+  const [editMode, setEditMode] = useState(false);
 
   // State Machine für Moodle-Sync
   const syncStatus = useSyncStatus(
@@ -188,13 +188,23 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
               <h2 className="text-lg font-semibold">{catalogEntry.name}</h2>
               <p className="text-xs text-muted-foreground mt-0.5">Phase: {activityRecord.phase}</p>
             </div>
-            <button
-              onClick={() => setEditMode(false)}
-              className="px-3 py-1.5 text-sm font-medium rounded-lg border border-input bg-background hover:bg-muted transition-colors shrink-0"
-              title="Bearbeitung beenden"
-            >
-              ✕ Bearbeitung beenden
-            </button>
+            {editMode ? (
+              <button
+                onClick={() => setEditMode(false)}
+                className="px-3 py-1.5 text-sm font-medium rounded-lg border border-input bg-background hover:bg-muted transition-colors shrink-0"
+                title="Bearbeitung beenden"
+              >
+                ✕ Bearbeitung beenden
+              </button>
+            ) : kannBearbeiten && !lockedByOther ? (
+              <button
+                onClick={() => setEditMode(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
+              >
+                <Save className="w-3.5 h-3.5" />
+                Bearbeitungsmodus aktivieren
+              </button>
+            ) : null}
           </div>
         </div>
       )}
@@ -220,14 +230,12 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
             Entwurf
           </span>
           <div className="flex-1" />
-          {kannBearbeiten && !lockedByOther && (
+          {kannBearbeiten && !lockedByOther && editMode && (
             <div className="flex items-center gap-2">
-              {editMode && (
-                <Button size="sm" onClick={() => saveMutation.mutate(data)} disabled={saveMutation.isPending} className="gap-1.5">
-                  {saveMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                  Speichern
-                </Button>
-              )}
+              <Button size="sm" onClick={() => saveMutation.mutate(data)} disabled={saveMutation.isPending} className="gap-1.5">
+                {saveMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                Speichern
+              </Button>
               <Button size="sm" variant="outline" onClick={() => setConvertDialogOpen(true)}
                 disabled={convertToMasterMutation.isPending}
                 className="gap-1.5 text-primary border-primary/40 hover:bg-primary/5 text-xs h-7">
