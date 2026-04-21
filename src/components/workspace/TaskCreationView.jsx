@@ -97,7 +97,6 @@ function MasterSubItem({ master, index, klone, selectedItem, onSelect, catalogEn
    // Farb-Logik basierend auf content_status
    const isReleased = master.content_status === 'approved';
    const textColor = isReleased ? 'text-green-600' : 'text-orange-600';
-   const isIncomplete = !master.is_complete;
 
    return (
      <div>
@@ -126,9 +125,6 @@ function MasterSubItem({ master, index, klone, selectedItem, onSelect, catalogEn
          >
            <Crown className="w-3 h-3 shrink-0 text-primary/70" />
            <span className="flex-1 truncate">{master.titel || `Master ${index}`}</span>
-           {isIncomplete && !isReleased && (
-             <AlertTriangle className="w-3 h-3 text-orange-500 shrink-0" title="Inhalt unvollständig" />
-           )}
            {isReleased && (
              <CheckCircle2 className="w-3 h-3 shrink-0 text-green-600" title="Freigegeben" />
            )}
@@ -164,47 +160,50 @@ function MasterSubItem({ master, index, klone, selectedItem, onSelect, catalogEn
 // ── Sidebar: Aktivitäts-Zeile ─────────────────────────────────────────────────
 
 function ActivitySidebarItem({
-   activity, aktivitaetName, masterAufgaben, kloneByMasterId,
-   selectedItem, onSelect, isIncomplete, myEmail, catalogEntry,
- }) {
-   const isActivitySelected = selectedItem?.type === 'activity' && selectedItem?.activity?.id === activity.id;
-   const hasSelectedDescendant =
-     masterAufgaben.some(m =>
-       (selectedItem?.type === 'master' && selectedItem?.master?.id === m.id) ||
-       (selectedItem?.type === 'klon' && (kloneByMasterId[m.id] || []).some(k => k.id === selectedItem?.klon?.id))
-     );
-   const lockedByOther = isActivityLockedByOther(activity, myEmail);
-   const showChildren = isActivitySelected || hasSelectedDescendant;
+    activity, aktivitaetName, masterAufgaben, kloneByMasterId,
+    selectedItem, onSelect, isIncomplete, myEmail, catalogEntry,
+  }) {
+    const isActivitySelected = selectedItem?.type === 'activity' && selectedItem?.activity?.id === activity.id;
+    const hasSelectedDescendant =
+      masterAufgaben.some(m =>
+        (selectedItem?.type === 'master' && selectedItem?.master?.id === m.id) ||
+        (selectedItem?.type === 'klon' && (kloneByMasterId[m.id] || []).some(k => k.id === selectedItem?.klon?.id))
+      );
+    const lockedByOther = isActivityLockedByOther(activity, myEmail);
+    const showChildren = isActivitySelected || hasSelectedDescendant;
 
-   // Konsistente Farb-Logik: Grün wenn freigegeben, Orange wenn Entwurf
-   const isReleased = activity.content_status === 'approved';
-   const textColor = isReleased ? 'text-green-600' : 'text-orange-600';
+    // Konsistente Farb-Logik: Grün wenn freigegeben, Orange wenn Entwurf
+    const isReleased = activity.content_status === 'approved';
+    const textColor = isReleased ? 'text-green-600' : 'text-orange-600';
 
-   return (
-     <div>
-       <button
-         id={`activity-node-${activity.id}`}
-         onClick={() => onSelect({ type: 'activity', activity })}
-         className={cn(
-           'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
-           isActivitySelected
-             ? 'bg-primary text-primary-foreground font-medium'
-             : cn('hover:bg-muted', textColor)
-         )}
-       >
-         <span className="flex-1 truncate">{aktivitaetName}</span>
-         {lockedByOther && !isActivitySelected && (
-           <Lock className="w-3 h-3 text-amber-500 shrink-0" title={`Gesperrt von ${activity.locked_by_user}`} />
-         )}
-         {isIncomplete && !isReleased && !isActivitySelected && !lockedByOther && (
-           <AlertTriangle className="w-3 h-3 text-orange-500 shrink-0" title="Inhalt unvollständig" />
-         )}
-         {masterAufgaben.length > 0 && (
-           <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded shrink-0">
-             {masterAufgaben.length}M
-           </span>
-         )}
-       </button>
+    // Warn-Symbol nur wenn tatsächlich unvollständig UND nicht freigegeben
+    const showWarning = isIncomplete && !isReleased && !isActivitySelected && !lockedByOther;
+
+    return (
+      <div>
+        <button
+          id={`activity-node-${activity.id}`}
+          onClick={() => onSelect({ type: 'activity', activity })}
+          className={cn(
+            'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
+            isActivitySelected
+              ? 'bg-primary text-primary-foreground font-medium'
+              : cn('hover:bg-muted', textColor)
+          )}
+        >
+          <span className="flex-1 truncate">{aktivitaetName}</span>
+          {lockedByOther && !isActivitySelected && (
+            <Lock className="w-3 h-3 text-amber-500 shrink-0" title={`Gesperrt von ${activity.locked_by_user}`} />
+          )}
+          {showWarning && (
+            <AlertTriangle className="w-3 h-3 text-orange-500 shrink-0" title="Inhalt unvollständig" />
+          )}
+          {masterAufgaben.length > 0 && (
+            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded shrink-0">
+              {masterAufgaben.length}M
+            </span>
+          )}
+        </button>
 
       {/* Master-Knoten + deren Klone — immer sichtbar, wenn Master-Aufgaben existieren */}
       {masterAufgaben.length > 0 && (
