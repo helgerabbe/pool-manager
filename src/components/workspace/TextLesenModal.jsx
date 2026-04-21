@@ -32,11 +32,12 @@ export default function TextLesenModal({
   // Bei jedem Öffnen Initialwerte neu laden
   useEffect(() => {
     if (open) {
-      setFieldValues(initialFieldValues);
-      setIsReleased(initialFieldValues.content_status === 'approved');
+      // Deep copy: Ensure nested objects (dropZones) are properly loaded
+      setFieldValues(JSON.parse(JSON.stringify(initialFieldValues || {})));
+      setIsReleased(initialFieldValues?.content_status === 'approved');
       setExportLockedWasEnabled(exportLocked);
     }
-  }, [open]);
+  }, [open, initialFieldValues]);
 
   // Reagiere auf Export-Lock-Änderung während Modal geöffnet ist
   useEffect(() => {
@@ -47,6 +48,7 @@ export default function TextLesenModal({
 
   const handleFieldChange = (fieldName, value) => {
     setFieldValues(prev => ({ ...prev, [fieldName]: value }));
+    console.log(`[TextLesenModal] Field changed: ${fieldName}`, value);
   };
 
   const handleCancel = () => {
@@ -54,19 +56,25 @@ export default function TextLesenModal({
   };
 
   const handleSave = () => {
+    // Validation: Ensure required fields are not empty
+    if (!fieldValues || Object.keys(fieldValues).length === 0) {
+      console.warn('[TextLesenModal] Attempting to save empty fieldValues');
+    }
+
     // Auto-Reset bei Export: Wenn bereits synced, markiere als modified für Re-Export
     const payload = {
       ...fieldValues,
       content_status: isReleased ? 'approved' : 'draft',
     };
-    
+
     // Wenn gerade aus 'synced' Status kommt und jetzt geändert wird,
     // markiere automatisch für Re-Export
-    if (initialFieldValues.moodle_sync_status === 'synced') {
+    if (initialFieldValues?.moodle_sync_status === 'synced') {
       payload.moodle_sync_status = 'modified';
       payload.is_dirty_since_export = true;
     }
-    
+
+    console.log('[TextLesenModal.handleSave] Payload:', payload);
     onSave?.(payload);
   };
 
