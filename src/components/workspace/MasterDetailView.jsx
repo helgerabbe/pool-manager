@@ -6,7 +6,7 @@
  * der den impliziten Lock-Workflow (Modal) triggert.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -138,41 +138,59 @@ function MasterContentReadOnly({ master, catalogName }) {
   }
 
   // Quiz
-  if (['miniquiz', 'mini-quiz', 'quiz'].some(n => catalogName.toLowerCase().includes(n)) && fv.quizItems?.length > 0) {
+  if (['miniquiz', 'mini-quiz', 'quiz'].some(n => catalogName.toLowerCase().includes(n))) {
     return (
       <div className="space-y-2">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Fragen ({fv.quizItems.length})</p>
-        <div className="bg-muted/30 rounded-lg p-3 space-y-2 text-sm max-h-64 overflow-y-auto">
-          {fv.quizItems.map((q, i) => (
-            <div key={i} className="pb-2 border-b border-border/30 last:border-0 last:pb-0">
-              <p className="font-medium">{i + 1}. {q.question}</p>
-              <p className="mt-1 text-xs text-green-700 font-medium">✓ {q.correctAnswer}</p>
+        {fv.questions?.length > 0 ? (
+          <>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Fragen ({fv.questions.length})</p>
+            <div className="bg-muted/30 rounded-lg p-3 space-y-2 text-sm max-h-64 overflow-y-auto">
+              {fv.questions.map((q, i) => (
+                <div key={i} className="pb-2 border-b border-border/30 last:border-0 last:pb-0">
+                  <p className="font-medium">{i + 1}. {q.question}</p>
+                  <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                    {q.answers?.map((ans, ai) => (
+                      <div key={ai} className={ans.isCorrect ? 'text-green-600 font-medium' : ''}>
+                        {ans.isCorrect && '✓ '}{ans.text}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground italic">Noch kein Inhalt vorhanden.</p>
+        )}
       </div>
     );
   }
 
   // Multiple Choice
-  if (['multiple choice', 'multiple-choice'].some(n => catalogName.toLowerCase().includes(n)) && fv.mcItems?.length > 0) {
+  if (['multiple choice', 'multiple-choice'].some(n => catalogName.toLowerCase().includes(n))) {
     return (
       <div className="space-y-2">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Fragen ({fv.mcItems.length})</p>
-        <div className="bg-muted/30 rounded-lg p-3 space-y-2 text-sm max-h-64 overflow-y-auto">
-          {fv.mcItems.map((q, i) => (
-            <div key={i} className="pb-2 border-b border-border/30 last:border-0 last:pb-0">
-              <p className="font-medium">{i + 1}. {q.question}</p>
-              <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-                {q.options?.map((opt, oi) => (
-                  <div key={oi} className={opt.isCorrect ? 'text-green-600 font-medium' : ''}>
-                    {opt.isCorrect && '✓ '}{opt.text}
+        {fv.mcItems?.length > 0 ? (
+          <>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Fragen ({fv.mcItems.length})</p>
+            <div className="bg-muted/30 rounded-lg p-3 space-y-2 text-sm max-h-64 overflow-y-auto">
+              {fv.mcItems.map((q, i) => (
+                <div key={i} className="pb-2 border-b border-border/30 last:border-0 last:pb-0">
+                  <p className="font-medium">{i + 1}. {q.question}</p>
+                  <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                    {q.options?.map((opt, oi) => (
+                      <div key={oi} className={opt.isCorrect ? 'text-green-600 font-medium' : ''}>
+                        {opt.isCorrect && '✓ '}{opt.text}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground italic">Noch kein Inhalt vorhanden.</p>
+        )}
       </div>
     );
   }
@@ -241,6 +259,11 @@ export default function MasterDetailView({
   const [kiTutorModalOpen, setKiTutorModalOpen] = useState(false);
   const [imageLabelingModalOpen, setImageLabelingModalOpen] = useState(false);
   const [fieldValues, setFieldValues] = useState(master.field_values || {});
+
+  // Re-Hydration: fieldValues immer aktualisieren wenn master sich ändert
+  useEffect(() => {
+    setFieldValues(master.field_values || {});
+  }, [master.field_values]);
 
   const saveMutation = useMutation({
     mutationFn: (fv) => base44.entities.MasterAufgabe.update(master.id, { field_values: fv }),
@@ -392,20 +415,27 @@ export default function MasterDetailView({
 
       {/* ── Sortierung-Modal ── */}
       {isSort && (
-        <SortingListModal
-          open={sortingModalOpen}
-          onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
-          initialData={fieldValues}
-          isSaving={saveMutation.isPending}
-          onSave={(newData) => {
-            const newFv = { ...fieldValues, ...newData };
-            setFieldValues(newFv);
-            saveMutation.mutate(newFv, {
-              onSuccess: () => handleCloseModal(),
-            });
-          }}
-          onCancel={handleCloseModal}
-        />
+       <SortingListModal
+         open={sortingModalOpen}
+         onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+         initialData={fieldValues}
+         isSaving={saveMutation.isPending}
+         onSave={(newData) => {
+           const { content_status, ...fvData } = newData;
+           const updatedFv = { ...fieldValues, ...fvData };
+           setFieldValues(updatedFv);
+           saveMutation.mutate(updatedFv, {
+             onSuccess: async () => {
+               if (content_status) {
+                 await base44.entities.MasterAufgabe.update(master.id, { content_status });
+               }
+               queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+               handleCloseModal();
+             },
+           });
+         }}
+         onCancel={handleCloseModal}
+       />
       )}
 
       {/* ── Match Terms-Modal ── */}
@@ -416,10 +446,17 @@ export default function MasterDetailView({
           initialData={fieldValues}
           isSaving={saveMutation.isPending}
           onSave={(newData) => {
-            const newFv = { ...fieldValues, ...newData };
-            setFieldValues(newFv);
-            saveMutation.mutate(newFv, {
-              onSuccess: () => handleCloseModal(),
+            const { content_status, ...fvData } = newData;
+            const updatedFv = { ...fieldValues, ...fvData };
+            setFieldValues(updatedFv);
+            saveMutation.mutate(updatedFv, {
+              onSuccess: async () => {
+                if (content_status) {
+                  await base44.entities.MasterAufgabe.update(master.id, { content_status });
+                }
+                queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+                handleCloseModal();
+              },
             });
           }}
           onCancel={handleCloseModal}
@@ -434,10 +471,17 @@ export default function MasterDetailView({
           initialData={fieldValues}
           isSaving={saveMutation.isPending}
           onSave={(newData) => {
-            const newFv = { ...fieldValues, ...newData };
-            setFieldValues(newFv);
-            saveMutation.mutate(newFv, {
-              onSuccess: () => handleCloseModal(),
+            const { content_status, ...fvData } = newData;
+            const updatedFv = { ...fieldValues, ...fvData };
+            setFieldValues(updatedFv);
+            saveMutation.mutate(updatedFv, {
+              onSuccess: async () => {
+                if (content_status) {
+                  await base44.entities.MasterAufgabe.update(master.id, { content_status });
+                }
+                queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+                handleCloseModal();
+              },
             });
           }}
           onCancel={handleCloseModal}
@@ -452,10 +496,17 @@ export default function MasterDetailView({
           initialData={fieldValues}
           isSaving={saveMutation.isPending}
           onSave={(newData) => {
-            const newFv = { ...fieldValues, ...newData };
-            setFieldValues(newFv);
-            saveMutation.mutate(newFv, {
-              onSuccess: () => handleCloseModal(),
+            const { content_status, ...fvData } = newData;
+            const updatedFv = { ...fieldValues, ...fvData };
+            setFieldValues(updatedFv);
+            saveMutation.mutate(updatedFv, {
+              onSuccess: async () => {
+                if (content_status) {
+                  await base44.entities.MasterAufgabe.update(master.id, { content_status });
+                }
+                queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+                handleCloseModal();
+              },
             });
           }}
           onCancel={handleCloseModal}
@@ -471,10 +522,17 @@ export default function MasterDetailView({
           isSaving={saveMutation.isPending}
           master={master}
           onSave={(newData) => {
-            const newFv = { ...fieldValues, ...newData };
-            setFieldValues(newFv);
-            saveMutation.mutate(newFv, {
-              onSuccess: () => handleCloseModal(),
+            const { content_status, ...fvData } = newData;
+            const updatedFv = { ...fieldValues, ...fvData };
+            setFieldValues(updatedFv);
+            saveMutation.mutate(updatedFv, {
+              onSuccess: async () => {
+                if (content_status) {
+                  await base44.entities.MasterAufgabe.update(master.id, { content_status });
+                }
+                queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+                handleCloseModal();
+              },
             });
           }}
           onCancel={handleCloseModal}
@@ -489,10 +547,17 @@ export default function MasterDetailView({
           initialData={fieldValues}
           isSaving={saveMutation.isPending}
           onSave={(newData) => {
-            const newFv = { ...fieldValues, ...newData };
-            setFieldValues(newFv);
-            saveMutation.mutate(newFv, {
-              onSuccess: () => handleCloseModal(),
+            const { content_status, ...fvData } = newData;
+            const updatedFv = { ...fieldValues, ...fvData };
+            setFieldValues(updatedFv);
+            saveMutation.mutate(updatedFv, {
+              onSuccess: async () => {
+                if (content_status) {
+                  await base44.entities.MasterAufgabe.update(master.id, { content_status });
+                }
+                queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+                handleCloseModal();
+              },
             });
           }}
           onCancel={handleCloseModal}
