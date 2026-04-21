@@ -165,7 +165,6 @@ export default function ActivityMasterPanel({
       setFieldValues({});
     }
     setIsDirty(false);
-    console.log('[ActivityMasterPanel] Field values reloaded:', activityRecord?.field_values);
   }, [activityRecord?.id, activityRecord?.field_values]);
 
   const saveFieldsMutation = useMutation({
@@ -174,11 +173,6 @@ export default function ActivityMasterPanel({
       // content_status aus values extrahieren (nicht in field_values speichern)
       const { content_status, moodle_sync_status, is_dirty_since_export, ...rest } = values;
       const enrichedValues = { ...rest };
-      
-      // Für Bildbeschriftung: Stelle sicher, dass alle erforderlichen Felder mit vorhanden sind
-      if (catalogEntry?.name?.toLowerCase().includes('bildbeschriftung')) {
-        console.log('[saveFieldsMutation] Saving ImageLabeling data:', enrichedValues);
-      }
       
       formSchema.forEach(f => {
         if (f.field_name === 'aufgabentext' && f.default_text && !enrichedValues[f.field_name]) {
@@ -197,7 +191,6 @@ export default function ActivityMasterPanel({
         ...(is_dirty_since_export !== undefined ? { is_dirty_since_export } : {}),
       };
       
-      console.log('[saveFieldsMutation] Update payload:', updatePayload);
       return base44.entities.LernpaketPhaseAktivitaet.update(activityRecord.id, updatePayload);
     },
     onSuccess: () => {
@@ -205,13 +198,9 @@ export default function ActivityMasterPanel({
       queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
       queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] }); // Sidebar-Refresh
       setIsDirty(false);
-      console.log('[saveFieldsMutation] Save successful, queries invalidated');
       toast.success('Gespeichert.');
     },
-    onError: (err) => {
-      console.error('[saveFieldsMutation] Save failed:', err);
-      toast.error('Fehler beim Speichern.');
-    },
+    onError: () => toast.error('Fehler beim Speichern.'),
   });
 
   const handleFieldChange = (fieldName, value) => {
@@ -255,24 +244,16 @@ export default function ActivityMasterPanel({
       enrichedValues.is_dirty_since_export = true;
     }
 
-    console.log('[ActivityMasterPanel.handleModalSave] Enriched values:', enrichedValues);
-
-    try {
-      await saveFieldsMutation.mutateAsync(enrichedValues, {
-        onSuccess: async () => {
-          // content_status nicht in lokalem fieldValues-State speichern
-          const { content_status, ...fieldOnly } = enrichedValues;
-          setFieldValues(fieldOnly);
-          console.log('[ActivityMasterPanel.handleModalSave] Save successful, local state updated');
-          setEditModalOpen(false);
-          await releaseLock();
-          onEditModeChange?.(false);
-        },
-      });
-    } catch (err) {
-      console.error('[ActivityMasterPanel.handleModalSave] Save failed:', err);
-      toast.error('Fehler beim Speichern: ' + (err?.message || 'Unbekannt'));
-    }
+    await saveFieldsMutation.mutateAsync(enrichedValues, {
+      onSuccess: async () => {
+        // content_status nicht in lokalem fieldValues-State speichern
+        const { content_status, ...fieldOnly } = enrichedValues;
+        setFieldValues(fieldOnly);
+        setEditModalOpen(false);
+        await releaseLock();
+        onEditModeChange?.(false);
+      },
+    });
   };
 
   // Alle MasterAufgaben für diese Aktivität
