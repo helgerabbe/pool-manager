@@ -131,6 +131,7 @@ export default function ActivityMasterPanel({
   }, []);
 
   // Lock-Status direkt aus DB auslesen (Single Source of Truth)
+  // refetchInterval: 5000ms (5 Sek) um sofortige UI-Aktualisierung nach Moodle-Sync zu ermöglichen
   const { data: lernpaket } = useQuery({
     queryKey: ['lernpakete', activityRecord?.lernpaket_id],
     queryFn: () => base44.entities.Lernpakete.filter({ id: activityRecord.lernpaket_id }),
