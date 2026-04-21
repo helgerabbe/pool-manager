@@ -474,6 +474,7 @@ export default function ActivityMasterPanel({
                 onKlonSelected={(klonId) => {
                   onKlonSelected?.(klonId);
                 }}
+                onEditModeChange={onEditModeChange}
               />
             )
           )}

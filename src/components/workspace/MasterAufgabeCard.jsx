@@ -27,6 +27,7 @@ import MultipleChoiceEditor from '@/components/workspace/MultipleChoiceEditor';
 import MiniQuizEditor from '@/components/workspace/MiniQuizEditor';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
 import { isLockExpired } from '@/hooks/useActivityLock';
+import { useLernpaketLock } from '@/hooks/useLernpaketLock';
 import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus';
 import { TASK_STATUS_CONFIG } from '@/lib/stateMachine';
 import { toast } from 'sonner';
@@ -191,6 +192,7 @@ export default function MasterAufgabeCard({
   onDeleted,
   onKlonesCreated,
   onKlonSelected,
+  onEditModeChange = null,
   autoExpand = false,
 }) {
   const queryClient = useQueryClient();
@@ -215,10 +217,14 @@ export default function MasterAufgabeCard({
   const [klonModalOpen, setKlonModalOpen] = useState(false);
   const [generatorOpen, setGeneratorOpen] = useState(false);
   const [lueckentextModalOpen, setLueckentextModalOpen] = useState(false);
+  const [acquiringLock, setAcquiringLock] = useState(false);
+
+  // Implizites Locking für Lückentext (unabhängig vom globalen Bearbeitungsmodus)
+  const isLuecke = isLueckentext(catalogName);
+  const { acquireLock, releaseLock } = useLernpaketLock(isLuecke ? master.lernpaket_id : null);
 
   const locked = isLockedByOther(master, userEmail);
   const isMatch = isMatchTerms(catalogName);
-  const isLuecke = isLueckentext(catalogName);
   const isImageLabeling = isImageLabelingType(catalogName);
   const isSort = isSorting(catalogName);
   const isKITutor = catalogName?.toLowerCase().includes('ki-tutor');
@@ -277,6 +283,25 @@ export default function MasterAufgabeCard({
     await base44.entities.MasterAufgabe.update(master.id, { titel });
     queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
     setEditingTitel(false);
+  };
+
+  // Implizites Locking: Lock erwerben → Modal öffnen → bei Schließen freigeben
+  const handleEditLueckentext = async () => {
+    setAcquiringLock(true);
+    const ok = await acquireLock();
+    setAcquiringLock(false);
+    if (!ok) {
+      // Lock konnte nicht erworben werden – Fehlermeldung bereits via useLernpaketLock
+      return;
+    }
+    onEditModeChange?.(true);
+    setLueckentextModalOpen(true);
+  };
+
+  const handleCloseLueckentextModal = () => {
+    setLueckentextModalOpen(false);
+    releaseLock();
+    onEditModeChange?.(false);
   };
 
   // Zeige Klone wenn zugeklappt
@@ -730,7 +755,7 @@ export default function MasterAufgabeCard({
               )}
             </div>
           ) : isLuecke ? (
-            /* ── Lückentext-Editor (WYSIWYG Modal) ── */
+            /* ── Lückentext-Editor (WYSIWYG Modal, implizites Locking) ── */
             <div className="space-y-3">
               {fieldValues.lueckentext ? (
                 <LueckentextEditor
@@ -741,21 +766,32 @@ export default function MasterAufgabeCard({
               ) : (
                 <p className="text-sm text-muted-foreground italic">Noch kein Lückentext. Klicke „Inhalt bearbeiten".</p>
               )}
-              {kannBearbeiten && !locked && (
-                <Button size="sm" variant="outline" onClick={() => setLueckentextModalOpen(true)} className="gap-1.5">
-                  Inhalt bearbeiten
+              {/* Button immer sichtbar für berechtigte Nutzer – kein globaler Bearbeitungsmodus nötig */}
+              {!locked && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleEditLueckentext}
+                  disabled={acquiringLock}
+                  className="gap-1.5"
+                >
+                  {acquiringLock
+                    ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sperren…</>
+                    : 'Inhalt bearbeiten'}
                 </Button>
               )}
               <LueckentextWysiwygModal
                 open={lueckentextModalOpen}
-                onOpenChange={setLueckentextModalOpen}
+                onOpenChange={(isOpen) => {
+                  if (!isOpen) handleCloseLueckentextModal();
+                }}
                 initialData={fieldValues}
                 isSaving={saveMutation.isPending}
                 onSave={(data) => {
                   const newFv = { ...fieldValues, ...data };
                   setFieldValues(newFv);
                   saveMutation.mutate({ fv: newFv, closeEdit: false }, {
-                    onSuccess: () => setLueckentextModalOpen(false),
+                    onSuccess: () => handleCloseLueckentextModal(),
                   });
                 }}
               />
