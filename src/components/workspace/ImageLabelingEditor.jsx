@@ -307,6 +307,7 @@ export default function ImageLabelingEditor({
               ref={imageRef}
               src={data.backgroundImage}
               alt="Bildbeschriftung"
+              draggable="false"
               onLoad={() => setImageLoaded(true)}
               onDragOver={handleDragOver}
               onDrop={handleDropOnImage}
