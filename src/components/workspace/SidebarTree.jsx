@@ -34,8 +34,12 @@ function AktivitaetSubNode({ activity, aktivitaetName, isSelected, onSelect, pak
   
   // Farben nach Freigabe-Status:
   // - Freigegeben (approved) → Grün
-  // - Nicht freigegeben (draft) → Orange/Gelb (mit oder ohne unvollständig-Warnung)
+  // - Nicht freigegeben (draft) → Orange/Gelb
+  // Warn-Symbol: nur wenn UNVOLLSTÄNDIG UND nicht freigegeben
   const textColor = isReleased ? 'text-green-600' : 'text-orange-600';
+  
+  // Debug: Zeige Masteraufgaben-Status wenn supportsMaster
+  const masterInfo = supportsMaster && masterAufgabenCount > 0 ? `${masterAufgabenCount}M` : null;
   
   return (
     <div className={cn(
@@ -44,6 +48,11 @@ function AktivitaetSubNode({ activity, aktivitaetName, isSelected, onSelect, pak
     )}>
       <Puzzle className="w-3 h-3 shrink-0" />
       <span className="truncate flex-1">{aktivitaetName}</span>
+      {masterInfo && (
+        <span className="text-[10px] font-semibold text-muted-foreground shrink-0" title={`${masterAufgabenCount} Masteraufgaben vorhanden`}>
+          {masterInfo}
+        </span>
+      )}
       {isIncomplete && !isReleased && (
         <AlertTriangle className="w-3 h-3 text-orange-500 shrink-0" title="Inhalt unvollständig" />
       )}
@@ -337,7 +346,8 @@ export default function SidebarTree({
     ])
   );
 
-  // Masteraufgaben gruppiert nach activity_id
+  // Masteraufgaben gruppiert nach LernpaketPhaseAktivitaet.id
+  // (Masteraufgaben verwenden activity_id, das ist die FK zur LernpaketPhaseAktivitaet)
   const masterAufgabenMap = Object.fromEntries(
     phaseActivities.map(activity => [
       activity.id,
