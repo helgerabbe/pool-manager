@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Loader2, AlertCircle } from 'lucide-react';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
+import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import ReleaseStatusToggle from '@/components/workspace/ReleaseStatusToggle';
 
 export default function TextLesenModal({
@@ -96,8 +97,32 @@ export default function TextLesenModal({
         )}
 
         {/* Scrollbarer Inhalt */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 min-h-0">
-          {/* Aufgabenstellung zuerst */}
+         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 min-h-0">
+           {/* Bildbeschriftungs-Editor (wenn Aktivität vom Typ ist) */}
+           {catalogEntry?.name?.toLowerCase().includes('bildbeschriftung') && (
+             <ImageLabelingEditor
+               initialData={fieldValues}
+               onSave={(data) => {
+                 const payload = {
+                   ...data,
+                   content_status: isReleased ? 'approved' : 'draft',
+                 };
+                 if (initialFieldValues.moodle_sync_status === 'synced') {
+                   payload.moodle_sync_status = 'modified';
+                   payload.is_dirty_since_export = true;
+                 }
+                 onSave?.(payload);
+               }}
+               onCancel={() => { /* do nothing, close button handles it */ }}
+               onChange={() => {}}
+               readOnly={false}
+             />
+           )}
+
+           {/* Rest der Felder: nur wenn NICHT Bildbeschriftung */}
+           {!catalogEntry?.name?.toLowerCase().includes('bildbeschriftung') && (
+             <>
+           {/* Aufgabenstellung zuerst */}
           {formSchema.find(f => f.field_name === 'aufgabentext') && (
             <div className="space-y-1.5">
               <Label>Aufgabenstellung</Label>
@@ -141,11 +166,13 @@ export default function TextLesenModal({
                 />
               </div>
             );
-          })}
-        </div>
+            })}
+             </>
+            )}
+            </div>
 
-        {/* Footer */}
-        <div className="px-6 py-5 border-t border-border shrink-0 space-y-4">
+            {/* Footer */}
+            <div className="px-6 py-5 border-t border-border shrink-0 space-y-4">
           {/* Premium Release-Toggle */}
           <ReleaseStatusToggle
             isReleased={isReleased}
