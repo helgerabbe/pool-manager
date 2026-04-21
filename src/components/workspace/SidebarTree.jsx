@@ -26,8 +26,10 @@ function AmpelDot({ status, size = 'sm' }) {
   );
 }
 
-function AktivitaetSubNode({ activity, aktivitaetName, isSelected, onSelect, paketId }) {
-  const isIncomplete = !activity.is_complete;
+function AktivitaetSubNode({ activity, aktivitaetName, isSelected, onSelect, paketId, masterAufgabenCount = 0, supportsMaster = false }) {
+  // Für supports_master Aktivitäten: vollständig wenn mindestens 1 Masteraufgabe vorhanden
+  // Für andere Aktivitäten: nutze is_complete Flag
+  const isIncomplete = supportsMaster ? masterAufgabenCount === 0 : !activity.is_complete;
   const isReleased = activity.content_status === 'approved';
   
   // Farben nach Freigabe-Status:
@@ -55,10 +57,17 @@ const PHASES = [
   { key: 'Abschluss', label: 'Abschluss' },
 ];
 
-function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseActivities, aktivitaetenMap }) {
+function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseActivities, aktivitaetenMap, masterAufgabenMap = {}, aktivitaetSupportsMasterMap = {} }) {
   const activities = paketPhaseActivities.filter(a => a.phase === phase);
+  
   // Warn-Icon nur zeigen wenn Aktivität unvollständig UND nicht freigegeben
-  const hasIncompleteActivity = activities.some(a => !a.is_complete && a.content_status !== 'approved');
+  // Beachte: Für supports_master Aktivitäten = unvollständig wenn keine Masteraufgaben
+  const hasIncompleteActivity = activities.some(a => {
+    const supportsMaster = aktivitaetSupportsMasterMap[a.aktivitaet_id];
+    const isIncomplete = supportsMaster ? (masterAufgabenMap[a.id] || []).length === 0 : !a.is_complete;
+    return isIncomplete && a.content_status !== 'approved';
+  });
+  
   const [open, setOpen] = useState(false);
 
   return (
@@ -95,6 +104,8 @@ function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseA
                   isSelected={selectedId === activity.id}
                   onSelect={onSelect}
                   paketId={paket.id}
+                  supportsMaster={aktivitaetSupportsMasterMap[activity.aktivitaet_id] || false}
+                  masterAufgabenCount={(masterAufgabenMap[activity.id] || []).length}
                 />
               ))
           )}
@@ -104,7 +115,7 @@ function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseA
   );
 }
 
-function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenzielleUndGesperrt, aktivitaetenMap, paketPhaseActivities, showNumber = false, phaseAktivitaeten = [], isEditingActive = false }) {
+function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenzielleUndGesperrt, aktivitaetenMap, paketPhaseActivities, showNumber = false, phaseAktivitaeten = [], isEditingActive = false, masterAufgabenMap = {}, aktivitaetSupportsMasterMap = {} }) {
    const [open, setOpen] = useState(false); // Geschlossen am Anfang
   const isSelected = selectedId === paket.id;
   const status = getLernpaketStatus(paket, lernziele, aufgaben, userEmail, mappings, phaseAktivitaeten);
@@ -114,7 +125,12 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
   const isActiveEditPaket = isEditingActive && lockedByMe;
 
   // Warn-Icon nur bei unvollständigen UND nicht freigegebenen Aktivitäten
-  const hatUnvollstaendigeAktivitaet = paketPhaseActivities.some(a => !a.is_complete && a.content_status !== 'approved');
+  // Beachte: Für supports_master Aktivitäten = unvollständig wenn keine Masteraufgaben
+  const hatUnvollstaendigeAktivitaet = paketPhaseActivities.some(a => {
+    const supportsMaster = aktivitaetSupportsMasterMap[a.aktivitaet_id];
+    const isIncomplete = supportsMaster ? (masterAufgabenMap[a.id] || []).length === 0 : !a.is_complete;
+    return isIncomplete && a.content_status !== 'approved';
+  });
 
   return (
     <div className={cn(isActiveEditPaket && "rounded-lg ring-2 ring-orange-400 bg-orange-50/50 ml-1 mr-0.5")}>
@@ -176,6 +192,8 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
               onSelect={onSelect}
               paketPhaseActivities={paketPhaseActivities}
               aktivitaetenMap={aktivitaetenMap}
+              masterAufgabenMap={masterAufgabenMap}
+              aktivitaetSupportsMasterMap={aktivitaetSupportsMasterMap}
             />
           ))}
         </div>
@@ -184,7 +202,7 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
   );
 }
 
-function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenziell, aktivitaetenMap, paketPhaseActivitiesMap, isSammelbecken = false, phaseAktivitaeten = [], isEditingActive = false }) {
+function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenziell, aktivitaetenMap, paketPhaseActivitiesMap, isSammelbecken = false, phaseAktivitaeten = [], isEditingActive = false, masterAufgabenMap = {}, aktivitaetSupportsMasterMap = {} }) {
    const [open, setOpen] = useState(!isSammelbecken);
   const isSelected = selectedId === `themenfeld-${themenfeld.id}`;
 
@@ -195,8 +213,13 @@ function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedI
     paketStatuses.some(s => s === 'red') ? 'red' : 'yellow';
 
   // Warn-Icon nur bei unvollständigen UND nicht freigegebenen Aktivitäten
+  // Beachte: Für supports_master Aktivitäten = unvollständig wenn keine Masteraufgaben
   const hatUnvollstaendigeAktivitaet = lernpakete.some(paket =>
-    (paketPhaseActivitiesMap[paket.id] || []).some(a => !a.is_complete && a.content_status !== 'approved')
+    (paketPhaseActivitiesMap[paket.id] || []).some(a => {
+      const supportsMaster = aktivitaetSupportsMasterMap[a.aktivitaet_id];
+      const isIncomplete = supportsMaster ? (masterAufgabenMap[a.id] || []).length === 0 : !a.is_complete;
+      return isIncomplete && a.content_status !== 'approved';
+    })
   );
 
   const getPaketIsLocked = (paket) => {
@@ -235,21 +258,23 @@ function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedI
             lernpakete.map(paket => (
               <LernpaketNode
                  key={paket.id}
-                 paket={paket}
-                 lernziele={lernziele}
-                 aufgaben={aufgaben}
-                 selectedId={selectedId}
-                 onSelect={onSelect}
-                 kannBearbeiten={kannBearbeiten}
-                 userEmail={userEmail}
-                 mappings={mappings}
-                 isSequenzielleUndGesperrt={getPaketIsLocked(paket)}
-                 aktivitaetenMap={aktivitaetenMap}
-                 paketPhaseActivities={paketPhaseActivitiesMap[paket.id] || []}
-                 showNumber={isSequenziell}
-                 phaseAktivitaeten={phaseAktivitaeten}
-                 isEditingActive={isEditingActive}
-               />
+                  paket={paket}
+                  lernziele={lernziele}
+                  aufgaben={aufgaben}
+                  selectedId={selectedId}
+                  onSelect={onSelect}
+                  kannBearbeiten={kannBearbeiten}
+                  userEmail={userEmail}
+                  mappings={mappings}
+                  isSequenzielleUndGesperrt={getPaketIsLocked(paket)}
+                  aktivitaetenMap={aktivitaetenMap}
+                  paketPhaseActivities={paketPhaseActivitiesMap[paket.id] || []}
+                  showNumber={isSequenziell}
+                  phaseAktivitaeten={phaseAktivitaeten}
+                  isEditingActive={isEditingActive}
+                  masterAufgabenMap={masterAufgabenMap}
+                  aktivitaetSupportsMasterMap={aktivitaetSupportsMasterMap}
+                />
             ))
           )}
         </div>
@@ -300,11 +325,29 @@ export default function SidebarTree({
     queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list(),
   });
 
+  const { data: masterAufgaben = [] } = useQuery({
+    queryKey: ['masterAufgaben'],
+    queryFn: () => base44.entities.MasterAufgabe.list(),
+  });
+
   const paketPhaseActivitiesMap = Object.fromEntries(
     lernpakete.map(paket => [
       paket.id,
       phaseActivities.filter(pa => pa.lernpaket_id === paket.id),
     ])
+  );
+
+  // Masteraufgaben gruppiert nach activity_id
+  const masterAufgabenMap = Object.fromEntries(
+    phaseActivities.map(activity => [
+      activity.id,
+      masterAufgaben.filter(m => m.activity_id === activity.id),
+    ])
+  );
+
+  // Katalog-Infos: Welche Aktivitäten haben supports_master = true?
+  const aktivitaetSupportsMasterMap = Object.fromEntries(
+    aktivitaetenList.map(a => [a.id, a.supports_master === true])
   );
 
   const { prozent, gruen, gesamt } = getEinheitFortschritt(lernpakete, lernziele, aufgaben, userEmail, mappings, phaseAktivitaeten);
@@ -361,6 +404,8 @@ export default function SidebarTree({
               isSammelbecken={true}
               phaseAktivitaeten={phaseAktivitaeten}
               isEditingActive={isEditingActive}
+              masterAufgabenMap={masterAufgabenMap}
+              aktivitaetSupportsMasterMap={aktivitaetSupportsMasterMap}
             />
           </div>
         )}
@@ -384,6 +429,8 @@ export default function SidebarTree({
                 paketPhaseActivitiesMap={paketPhaseActivitiesMap}
                 phaseAktivitaeten={phaseAktivitaeten}
                 isEditingActive={isEditingActive}
+                masterAufgabenMap={masterAufgabenMap}
+                aktivitaetSupportsMasterMap={aktivitaetSupportsMasterMap}
               />
             ))}
           </div>
@@ -397,22 +444,24 @@ export default function SidebarTree({
               const tf = themenfelder.find(t => t.id === mobileThemenfeldId);
               return entry.pakete.map(paket => (
                 <LernpaketNode
-                  key={paket.id}
-                  paket={paket}
-                  lernziele={lernziele}
-                  aufgaben={aufgaben}
-                  selectedId={selectedId}
-                  onSelect={onSelect}
-                  kannBearbeiten={false}
-                  userEmail={userEmail}
-                  mappings={mappings}
-                  isSequenzielleUndGesperrt={false}
-                  aktivitaetenMap={aktivitaetenMap}
-                  paketPhaseActivities={paketPhaseActivitiesMap[paket.id] || []}
-                  showNumber={tf?.bearbeitungsmodus === 'sequenziell'}
-                  phaseAktivitaeten={phaseAktivitaeten}
-                  isEditingActive={isEditingActive}
-                />
+                   key={paket.id}
+                   paket={paket}
+                   lernziele={lernziele}
+                   aufgaben={aufgaben}
+                   selectedId={selectedId}
+                   onSelect={onSelect}
+                   kannBearbeiten={false}
+                   userEmail={userEmail}
+                   mappings={mappings}
+                   isSequenzielleUndGesperrt={false}
+                   aktivitaetenMap={aktivitaetenMap}
+                   paketPhaseActivities={paketPhaseActivitiesMap[paket.id] || []}
+                   showNumber={tf?.bearbeitungsmodus === 'sequenziell'}
+                   phaseAktivitaeten={phaseAktivitaeten}
+                   isEditingActive={isEditingActive}
+                   masterAufgabenMap={masterAufgabenMap}
+                   aktivitaetSupportsMasterMap={aktivitaetSupportsMasterMap}
+                 />
               ));
             })()}
           </div>
