@@ -21,6 +21,7 @@ import StandardInput from '@/components/workspace/inputs/StandardInput';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
 import TextLesenModal from '@/components/workspace/TextLesenModal';
 import MoodleSyncStatusBadge from '@/components/workspace/MoodleSyncStatusBadge';
+import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import { toast } from 'sonner';
 
 // Inline-editierbares Aufgabentext-Feld mit Standardtext
@@ -380,6 +381,7 @@ export default function ActivityMasterPanel({
       {!supportsMaster && (() => {
         const schema = catalogEntry?.form_schema || [];
         const inhaltTyp = fieldValues?.inhalt_typ;
+        const isImageLabeling = catalogEntry?.name?.toLowerCase().includes('bildbeschriftung');
 
         const renderValue = (field) => {
           const val = fieldValues[field.field_name];
@@ -414,6 +416,15 @@ export default function ActivityMasterPanel({
               </div>
             )}
 
+            {/* Spezielle Vorschau für Bildbeschriftung */}
+            {isImageLabeling ? (
+              <div className="rounded-xl border border-border bg-card p-5">
+                <ImageLabelingEditor
+                  initialData={fieldValues}
+                  readOnly={true}
+                />
+              </div>
+            ) : (
             <div className="rounded-xl border border-border bg-card p-5 space-y-5">
               {schema.length === 0 && (
                 <p className="text-sm text-muted-foreground italic">Keine Felder konfiguriert.</p>
@@ -440,9 +451,10 @@ export default function ActivityMasterPanel({
                   </div>
                 );
               })}
-            </div>
+              </div>
+              )}
 
-            <TextLesenModal
+              <TextLesenModal
               open={editModalOpen}
               onOpenChange={(isOpen) => { if (!isOpen) handleModalCancel(); }}
               catalogEntry={catalogEntry}
