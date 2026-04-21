@@ -27,12 +27,10 @@ function AmpelDot({ status, size = 'sm' }) {
 }
 
 function AktivitaetSubNode({ activity, aktivitaetName, isSelected, onSelect, paketId, masterAufgabenList = [], supportsMaster = false }) {
-  // Für supports_master Aktivitäten: vollständig wenn mindestens 1 Masteraufgabe EXISTIERT UND alle is_complete === true
-  // Für andere Aktivitäten: nutze is_complete Flag
+  // Single Source of Truth: Vertraue dem is_complete Flag aus der Datenbank
+  // supportsMaster wird nur für die Anzeige (z.B. "1M") genutzt
   const masterAufgabenCount = masterAufgabenList.length;
-  const isIncomplete = supportsMaster 
-    ? (masterAufgabenCount === 0 || masterAufgabenList.some(m => !m.is_complete))
-    : !activity.is_complete;
+  const isIncomplete = !activity.is_complete;
   const isReleased = activity.content_status === 'approved';
   
   // Farben nach Freigabe-Status:
@@ -73,17 +71,8 @@ const PHASES = [
 function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseActivities, aktivitaetenMap, masterAufgabenMap = {}, aktivitaetSupportsMasterMap = {} }) {
   const activities = paketPhaseActivities.filter(a => a.phase === phase);
   
-  // Warn-Icon nur zeigen wenn Aktivität unvollständig (is_complete === false)
-  // Der Freigabe-Status (content_status) hat KEINEN Einfluss auf die Warn-Logik!
-  // Beachte: Für supports_master Aktivitäten = unvollständig wenn keine Masteraufgaben ODER wenn eine davon !is_complete
-  const hasIncompleteActivity = activities.some(a => {
-    const supportsMaster = aktivitaetSupportsMasterMap[a.aktivitaet_id];
-    const mList = masterAufgabenMap[a.id] || [];
-    const isIncomplete = supportsMaster 
-      ? (mList.length === 0 || mList.some(m => !m.is_complete))
-      : !a.is_complete;
-    return isIncomplete;
-  });
+  // Single Source of Truth: Warn-Icon nur wenn Datenbank is_complete === false
+  const hasIncompleteActivity = activities.some(a => !a.is_complete);
   
   const [open, setOpen] = useState(false);
 
@@ -141,17 +130,8 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
   const lockedByMe = isPaketLocked(paket) && paketLockedBy === userEmail;
   const isActiveEditPaket = isEditingActive && lockedByMe;
 
-  // Warn-Icon nur bei unvollständigen Aktivitäten (is_complete === false)
-  // Der Freigabe-Status (content_status) hat KEINEN Einfluss auf die Warn-Logik!
-  // Beachte: Für supports_master Aktivitäten = unvollständig wenn keine Masteraufgaben ODER wenn eine davon !is_complete
-  const hatUnvollstaendigeAktivitaet = paketPhaseActivities.some(a => {
-    const supportsMaster = aktivitaetSupportsMasterMap[a.aktivitaet_id];
-    const mList = masterAufgabenMap[a.id] || [];
-    const isIncomplete = supportsMaster 
-      ? (mList.length === 0 || mList.some(m => !m.is_complete))
-      : !a.is_complete;
-    return isIncomplete;
-  });
+  // Single Source of Truth: Warn-Icon nur wenn Datenbank is_complete === false
+  const hatUnvollstaendigeAktivitaet = paketPhaseActivities.some(a => !a.is_complete);
 
   return (
     <div className={cn(isActiveEditPaket && "rounded-lg ring-2 ring-orange-400 bg-orange-50/50 ml-1 mr-0.5")}>
@@ -233,18 +213,9 @@ function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedI
     paketStatuses.every(s => s === 'green') ? 'green' :
     paketStatuses.some(s => s === 'red') ? 'red' : 'yellow';
 
-  // Warn-Icon nur bei unvollständigen Aktivitäten (is_complete === false)
-  // Der Freigabe-Status (content_status) hat KEINEN Einfluss auf die Warn-Logik!
-  // Beachte: Für supports_master Aktivitäten = unvollständig wenn keine Masteraufgaben ODER wenn eine davon !is_complete
+  // Single Source of Truth: Warn-Icon nur wenn Datenbank is_complete === false
   const hatUnvollstaendigeAktivitaet = lernpakete.some(paket =>
-    (paketPhaseActivitiesMap[paket.id] || []).some(a => {
-      const supportsMaster = aktivitaetSupportsMasterMap[a.aktivitaet_id];
-      const mList = masterAufgabenMap[a.id] || [];
-      const isIncomplete = supportsMaster 
-        ? (mList.length === 0 || mList.some(m => !m.is_complete))
-        : !a.is_complete;
-      return isIncomplete;
-    })
+    (paketPhaseActivitiesMap[paket.id] || []).some(a => !a.is_complete)
   );
 
   const getPaketIsLocked = (paket) => {
