@@ -10,8 +10,9 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckSquare, Square } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
+import ReleaseStatusToggle from '@/components/workspace/ReleaseStatusToggle';
 
 export default function TextLesenModal({
   open,
@@ -110,37 +111,26 @@ export default function TextLesenModal({
         </div>
 
         {/* Footer */}
-        <DialogFooter className="px-6 py-4 border-t border-border shrink-0 flex items-center justify-between gap-3">
-          <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
-            Abbrechen
-          </Button>
-          <div className="flex flex-col items-end gap-2">
-            {/* Freigabe-Toggle */}
-            <button
-              type="button"
-              onClick={() => setIsReleased(v => !v)}
-              disabled={isSaving}
-              className="flex items-center gap-2 text-sm select-none"
-            >
-              {isReleased
-                ? <CheckSquare className="w-4 h-4 text-green-600 shrink-0" />
-                : <Square className="w-4 h-4 text-muted-foreground shrink-0" />}
-              <span className={isReleased ? 'text-green-700 font-medium' : 'text-muted-foreground'}>
-                Inhalt für Lernende freigeben
-              </span>
-            </button>
-            {isReleased && (
-              <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1">
-                Hinweis: Nach dem Speichern ist dieser Inhalt für Schüler sichtbar.
-              </p>
-            )}
+        <div className="px-6 py-5 border-t border-border shrink-0 space-y-4">
+          {/* Premium Release-Toggle */}
+          <ReleaseStatusToggle
+            isReleased={isReleased}
+            onToggle={setIsReleased}
+            disabled={isSaving}
+          />
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between gap-3">
+            <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
+              Abbrechen
+            </Button>
             <Button onClick={handleSave} disabled={isSaving} className="gap-2">
               {isSaving
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
                 : 'Speichern'}
             </Button>
           </div>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -17,9 +17,10 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Sparkles, Loader2, X, Plus, Info, Crown, Trash2, CheckSquare, Square } from 'lucide-react';
+import { Sparkles, Loader2, X, Plus, Info, Crown, Trash2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import ReleaseStatusToggle from '@/components/workspace/ReleaseStatusToggle';
 
 // ── Hilfsfunktionen ─────────────────────────────────────────────────────────────
 
@@ -445,104 +446,91 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
         </div>
 
         {/* Footer */}
-        <DialogFooter className="px-6 py-4 border-t border-border shrink-0 flex-wrap">
-          {/* Löschen-Bereich – links */}
-          <div className="flex items-center gap-2 flex-1">
-            {onDelete && !deleteConfirm && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setDeleteConfirm(true)}
-                disabled={isSaving || isDeleting}
-                className="gap-1.5 text-destructive hover:bg-red-50 hover:text-destructive"
-              >
-                <Trash2 className="w-4 h-4" />
-                {isCopy ? 'Kopie löschen' : 'Aufgabe löschen'}
-              </Button>
-            )}
-            {deleteConfirm && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-destructive font-medium">Wirklich löschen?</span>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleDelete}
-                  disabled={isDeleting}
-                  className="gap-1.5 h-7 text-xs"
-                >
-                  {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                  Ja, löschen
-                </Button>
+        <div className="px-6 py-5 border-t border-border shrink-0 space-y-4">
+          {/* Premium Release-Toggle */}
+          <ReleaseStatusToggle
+            isReleased={isReleased}
+            onToggle={setIsReleased}
+            disabled={isSaving || isDeleting}
+          />
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              {onDelete && !deleteConfirm && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setDeleteConfirm(false)}
-                  disabled={isDeleting}
-                  className="h-7 text-xs"
+                  onClick={() => setDeleteConfirm(true)}
+                  disabled={isSaving || isDeleting}
+                  className="gap-1.5 text-destructive hover:bg-red-50 hover:text-destructive"
                 >
-                  Abbrechen
+                  <Trash2 className="w-4 h-4" />
+                  {isCopy ? 'Kopie löschen' : 'Aufgabe löschen'}
                 </Button>
-              </div>
-            )}
-          </div>
+              )}
+              {deleteConfirm && (
+                <>
+                  <span className="text-xs text-destructive font-medium">Wirklich löschen?</span>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="gap-1.5 h-7 text-xs"
+                  >
+                    {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                    Ja, löschen
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDeleteConfirm(false)}
+                    disabled={isDeleting}
+                    className="h-7 text-xs"
+                  >
+                    Abbrechen
+                  </Button>
+                </>
+              )}
+            </div>
 
-          {/* Freigabe-Toggle + Speichern-Buttons – rechts */}
-          <div className="flex flex-col items-end gap-2">
-            {/* Freigabe-Checkbox */}
-            <button
-              type="button"
-              onClick={() => setIsReleased(v => !v)}
-              disabled={isSaving || isDeleting}
-              className="flex items-center gap-2 text-sm select-none"
-            >
-              {isReleased
-                ? <CheckSquare className="w-4 h-4 text-green-600 shrink-0" />
-                : <Square className="w-4 h-4 text-muted-foreground shrink-0" />}
-              <span className={isReleased ? 'text-green-700 font-medium' : 'text-muted-foreground'}>
-                Inhalt für Lernende freigeben
-              </span>
-            </button>
-            {isReleased && (
-              <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1">
-                Hinweis: Nach dem Speichern ist dieser Inhalt für Schüler sichtbar.
-              </p>
-            )}
             <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleClose} disabled={isSaving || isDeleting}>
-              Abbrechen
-            </Button>
-            {isCopy ? (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={handleSave}
-                  disabled={isSaving || isDeleting || blankIds.size === 0}
-                  className="gap-2"
-                >
-                  {isSaving
-                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
-                    : 'Kopie speichern'}
-                </Button>
-                <Button
-                  onClick={handleSaveAsNewMaster}
-                  disabled={isSaving || isDeleting || blankIds.size === 0}
-                  className="gap-2 bg-primary hover:bg-primary/90"
-                >
-                  {isSaving
-                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
-                    : <><Crown className="w-4 h-4" /> Als Master speichern</>}
-                </Button>
-              </>
-            ) : (
-              <Button onClick={handleSave} disabled={isSaving || isDeleting || blankIds.size === 0} className="gap-2">
-                {isSaving
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
-                  : 'Speichern'}
+              <Button variant="outline" onClick={handleClose} disabled={isSaving || isDeleting}>
+                Abbrechen
               </Button>
-            )}
+              {isCopy ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={handleSave}
+                    disabled={isSaving || isDeleting || blankIds.size === 0}
+                    className="gap-2"
+                  >
+                    {isSaving
+                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
+                      : 'Kopie speichern'}
+                  </Button>
+                  <Button
+                    onClick={handleSaveAsNewMaster}
+                    disabled={isSaving || isDeleting || blankIds.size === 0}
+                    className="gap-2 bg-primary hover:bg-primary/90"
+                  >
+                    {isSaving
+                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
+                      : <><Crown className="w-4 h-4" /> Als Master speichern</>}
+                  </Button>
+                </>
+              ) : (
+                <Button onClick={handleSave} disabled={isSaving || isDeleting || blankIds.size === 0} className="gap-2">
+                  {isSaving
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
+                    : 'Speichern'}
+                </Button>
+              )}
             </div>
           </div>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
