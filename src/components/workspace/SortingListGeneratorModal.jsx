@@ -35,38 +35,27 @@ export default function SortingListGeneratorModal({ open, onClose, onGenerate })
 
     setIsLoading(true);
     try {
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `Du bist ein erfahrener Pädagoge und generierst Sortierlisten für Schüleraufgaben.
-
-Generiere eine Sortierliste mit folgenden Parametern:
-- Thema: ${topic}
-- Sortierkriterium: ${criterion}
-
-Anforderungen:
-1. Generiere 5-8 Listenelemente zum gegebenen Thema.
-2. Die Elemente MÜSSEN bereits in der korrekten Reihenfolge (von Index 0 bis n) sortiert sein.
-3. Jedes Element sollte kurz (3-10 Wörter) sein.
-4. Nutze altersgerechte und ansprechende Formulierungen.
-5. Gib AUSSCHLIESSLICH ein JSON-Array von Strings zurück, nichts anderes.
-
-Beispiel-Output:
-["Element 1", "Element 2", "Element 3"]`,
-        response_json_schema: {
-          type: 'array',
-          items: { type: 'string' },
-        },
+      // Backend-Funktion mit robustem JSON-Parsing
+      const response = await base44.functions.invoke('generateSortingList', {
+        thema: topic.trim(),
+        kriterium: criterion.trim(),
       });
 
-      const items = response.data;
+      const items = response.data?.items;
       if (!Array.isArray(items) || items.length === 0) {
-        throw new Error('Ungültiges KI-Format');
+        throw new Error(response.data?.error || 'KI hat keine gültige Liste generiert');
       }
 
-      onGenerate(items);
+      // Limit auf 12 Elemente (wie im Editor vereinbart)
+      const limitedItems = items.slice(0, 12);
+
+      onGenerate(limitedItems);
       setTopic('');
       setCriterion('');
+      toast.success(`${limitedItems.length} Elemente generiert.`);
     } catch (err) {
-      toast.error('Fehler bei KI-Generierung: ' + (err.message || 'Unbekannt'));
+      console.error('generateSortingList error:', err);
+      toast.error('Fehler bei KI-Generierung: ' + (err.message || 'Unbekannter Fehler'));
     } finally {
       setIsLoading(false);
     }
