@@ -19,6 +19,7 @@ import { Crown, Plus, Loader2, ChevronRight, Save, Pencil, Check, ExternalLink }
 import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
+import TextLesenModal from '@/components/workspace/TextLesenModal';
 import { toast } from 'sonner';
 
 // Inline-editierbares Aufgabentext-Feld mit Standardtext
@@ -148,6 +149,9 @@ export default function ActivityMasterPanel({
   // Formular-State für Aktivitäten ohne supports_master
   const [fieldValues, setFieldValues] = useState(activityRecord?.field_values || {});
   const [isDirty, setIsDirty] = useState(false);
+  // Modal-State für "Text lesen" und ähnliche Aktivitäten
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [acquiringLock, setAcquiringLock] = useState(false);
 
   // field_values neu laden wenn activityRecord wechselt
   useEffect(() => {
@@ -184,6 +188,35 @@ export default function ActivityMasterPanel({
   const handleFieldChange = (fieldName, value) => {
     setFieldValues(prev => ({ ...prev, [fieldName]: value }));
     setIsDirty(true);
+  };
+
+  // Modal-Workflow: Lock erwerben → Modal öffnen
+  const handleOpenEditModal = async () => {
+    setAcquiringLock(true);
+    const ok = await acquireLock();
+    setAcquiringLock(false);
+    if (!ok) return;
+    onEditModeChange?.(true);
+    setEditModalOpen(true);
+  };
+
+  // Modal abbrechen: Lock freigeben, Modal schließen
+  const handleModalCancel = async () => {
+    setEditModalOpen(false);
+    await releaseLock();
+    onEditModeChange?.(false);
+  };
+
+  // Modal speichern: Daten persistieren, Lock freigeben, Modal schließen
+  const handleModalSave = async (values) => {
+    await saveFieldsMutation.mutateAsync(values, {
+      onSuccess: async () => {
+        setFieldValues(values);
+        setEditModalOpen(false);
+        await releaseLock();
+        onEditModeChange?.(false);
+      },
+    });
   };
 
   // Alle MasterAufgaben für diese Aktivität
@@ -295,82 +328,79 @@ export default function ActivityMasterPanel({
         </div>
       </div>
 
-      {/* ── Inhaltsfelder für Aktivitäten ohne Masteraufgaben ──────────────────── */}
+      {/* ── Read-Only-Ansicht für Aktivitäten ohne Masteraufgaben (z.B. "Text lesen") ── */}
       {!supportsMaster && (() => {
-        console.log('🔍 !supportsMaster Block gerendert für:', catalogEntry?.name, 'form_schema:', catalogEntry?.form_schema);
+        const schema = catalogEntry?.form_schema || [];
+        const inhaltTyp = fieldValues?.inhalt_typ;
+
+        const renderValue = (field) => {
+          const val = fieldValues[field.field_name];
+          if (!val) return <span className="italic text-muted-foreground/60">Noch nicht ausgefüllt.</span>;
+          if (field.type === 'select' && field.options?.length) {
+            const opt = field.options.find(o => o.value === val);
+            return <span>{opt?.label || val}</span>;
+          }
+          if (field.type === 'url') {
+            return <a href={val} target="_blank" rel="noopener noreferrer" className="text-primary underline break-all">{val}</a>;
+          }
+          if (['file', 'image', 'audio'].includes(field.type)) {
+            return <a href={val} target="_blank" rel="noopener noreferrer" className="text-primary underline text-xs break-all">{val}</a>;
+          }
+          return <p className="whitespace-pre-wrap leading-relaxed">{val}</p>;
+        };
+
         return (
-        <div className="rounded-xl border border-border bg-card p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-foreground">Inhalte konfigurieren</h3>
-            {isDirty && isInEditMode && (
-              <Button
-                size="sm"
-                onClick={() => saveFieldsMutation.mutate(fieldValues)}
-                disabled={saveFieldsMutation.isPending}
-                className="gap-1.5"
-              >
-                {saveFieldsMutation.isPending
-                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Speichern…</>
-                  : <><Save className="w-3.5 h-3.5" /> Speichern</>}
-              </Button>
+          <>
+            {kannBearbeiten && (
+              <div className="flex justify-end">
+                <Button onClick={handleOpenEditModal} disabled={acquiringLock} className="gap-2">
+                  {acquiringLock
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren…</>
+                    : <><Pencil className="w-4 h-4" /> Inhalt bearbeiten</>}
+                </Button>
+              </div>
             )}
-          </div>
 
-          {(catalogEntry?.form_schema || []).length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">Keine Felder konfiguriert.</p>
-          ) : (
-            <div className={`space-y-4 ${!isInEditMode ? 'opacity-60 pointer-events-none select-none' : ''}`}>
-              {/* Aufgabentext ZUERST oben (einheitlich für ALLE Aktivitätstypen mit blauem Hintergrund) */}
-              {(catalogEntry?.form_schema || [])
-                .find(f => f.field_name === 'aufgabentext') && (
-                <DefaultTextareaFieldInline
-                  key="aufgabentext"
-                  field={
-                    catalogEntry.form_schema.find(f => f.field_name === 'aufgabentext') || {
-                      field_name: 'aufgabentext',
-                      label: 'Aufgabenstellung',
-                      default_text: 'Bearbeite die folgende Aufgabe sorgfältig.'
-                    }
-                  }
-                  value={fieldValues.aufgabentext || ''}
-                  onChange={(val) => handleFieldChange('aufgabentext', val)}
-                  readOnly={!isInEditMode}
-                />
+            <div className="rounded-xl border border-border bg-card p-5 space-y-5">
+              {schema.length === 0 && (
+                <p className="text-sm text-muted-foreground italic">Keine Felder konfiguriert.</p>
               )}
-
-              {/* Alle anderen Felder */}
-              {(catalogEntry?.form_schema || []).map((field) => {
-                // Überspringe Aufgabentext (wurde oben bereits angezeigt)
+              {schema.find(f => f.field_name === 'aufgabentext') && (
+                <div className="space-y-1.5">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aufgabenstellung</p>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-900">
+                    {fieldValues.aufgabentext
+                      ? <p className="whitespace-pre-wrap leading-relaxed">{fieldValues.aufgabentext}</p>
+                      : <span className="italic text-blue-600/60">Noch nicht ausgefüllt.</span>}
+                  </div>
+                </div>
+              )}
+              {schema.map(field => {
                 if (field.field_name === 'aufgabentext') return null;
-
-                // Bedingte Anzeige: inhalt nur wenn inhalt_typ === 'text', dokument_url nur wenn 'datei'
-                const inhaltTyp = fieldValues?.inhalt_typ;
+                if (field.type === 'info') return null;
                 if (field.field_name === 'inhalt' && inhaltTyp && inhaltTyp !== 'text') return null;
                 if (field.field_name === 'dokument_url' && inhaltTyp !== 'datei') return null;
-
                 return (
                   <div key={field.field_name} className="space-y-1.5">
-                    <Label className="text-sm font-medium">
-                      {field.label}
-                      {field.required && <span className="text-destructive ml-1">*</span>}
-                    </Label>
-                    <StandardInput
-                      field={field}
-                      value={fieldValues[field.field_name] || ''}
-                      onChange={(val) => handleFieldChange(field.field_name, val)}
-                    />
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{field.label}</p>
+                    <div className="text-sm text-foreground">{renderValue(field)}</div>
                   </div>
                 );
               })}
             </div>
-          )}
 
-          {!isInEditMode && (
-            <p className="text-xs text-muted-foreground italic">Bearbeitungsmodus aktivieren um Felder zu bearbeiten.</p>
-          )}
-          </div>
-          );
-          })()}
+            <TextLesenModal
+              open={editModalOpen}
+              onOpenChange={(isOpen) => { if (!isOpen) handleModalCancel(); }}
+              catalogEntry={catalogEntry}
+              initialFieldValues={fieldValues}
+              onSave={handleModalSave}
+              onCancel={handleModalCancel}
+              isSaving={saveFieldsMutation.isPending}
+            />
+          </>
+        );
+      })()}
 
       {/* ── Aufgabentext-Block (für supports_master Aktivitäten, NOT für KI-Tutor) ─ */}
       {supportsMaster && !isKITutor && (
