@@ -515,8 +515,11 @@ export default function MasterAufgabeCard({
                   <ImageLabelingEditor
                     initialData={fieldValues}
                     onSave={(data) => {
-                      setFieldValues(data);
-                      handleSaveAndClose(data);
+                      // Check completion: aufgabenstellung + backgroundImage + mindestens 1 dropZone
+                      const isComplete = !!(data.aufgabenstellung && data.backgroundImage && data.dropZones?.length > 0);
+                      const dataWithCompletion = { ...data, is_complete: isComplete };
+                      setFieldValues(dataWithCompletion);
+                      handleSaveAndClose(dataWithCompletion);
                     }}
                     onCancel={() => { setEditMode(false); setHasPendingChanges(false); }}
                     onChange={() => setHasPendingChanges(true)}
