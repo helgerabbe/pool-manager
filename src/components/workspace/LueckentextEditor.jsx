@@ -224,6 +224,51 @@ function KIAssistentModal({ open, onOpenChange, onAccept }) {
   );
 }
 
+// ── Read-Only Ansicht mit Toggle ────────────────────────────────────────────────
+
+function LueckentextReadOnly({ value }) {
+  const [mode, setMode] = useState('teacher');
+
+  return (
+    <div className="space-y-3">
+      {/* Toggle */}
+      <div className="inline-flex rounded-lg border border-border bg-muted/40 p-0.5 gap-0.5">
+        <button
+          onClick={() => setMode('teacher')}
+          className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+            mode === 'teacher'
+              ? 'bg-white shadow-sm text-foreground border border-border/60'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          Lehrer-Ansicht
+        </button>
+        <button
+          onClick={() => setMode('student')}
+          className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+            mode === 'student'
+              ? 'bg-white shadow-sm text-foreground border border-border/60'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          Schüler-Ansicht
+        </button>
+      </div>
+
+      {/* Inhalt */}
+      {mode === 'teacher' ? (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 leading-relaxed">
+          <LueckentextRenderer rawText={value} mode="teacher" />
+        </div>
+      ) : (
+        <div className="bg-white border rounded-lg p-3">
+          <LueckentextRenderer rawText={value} mode="student" />
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Haupt-Editor ────────────────────────────────────────────────────────────────
 
 /**
@@ -253,22 +298,7 @@ export default function LueckentextEditor({ value, onChange, readOnly = false })
   const hasValidationError = value && open !== close;
 
   if (readOnly) {
-    return (
-      <div className="space-y-3">
-        <div className="space-y-1.5">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Lehrer-Ansicht</p>
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 leading-relaxed">
-            <LueckentextRenderer rawText={value} mode="teacher" />
-          </div>
-        </div>
-        <div className="space-y-1.5">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Schüler-Ansicht (mit Schüttelkasten)</p>
-          <div className="bg-white border rounded-lg p-3">
-            <LueckentextRenderer rawText={value} mode="student" />
-          </div>
-        </div>
-      </div>
-    );
+    return <LueckentextReadOnly value={value} />;
   }
 
   return (
