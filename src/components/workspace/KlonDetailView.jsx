@@ -315,16 +315,19 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
                 });
               }}
               onSaveAsNewMaster={async (newData) => {
-                // Speichere die Änderungen in die Klon-Daten und promote dann
                 const newFv = { ...data, ...newData };
                 setData(newFv);
-                // Klon-Daten aktualisieren, dann als Master anlegen
                 await base44.entities.Aufgabenbausteine.update(klon.id, {
                   aufgabentext_inhalt: JSON.stringify(newFv),
                 });
                 convertToMasterMutation.mutate(undefined, {
                   onSuccess: () => handleCloseLueckentextModal(),
                 });
+              }}
+              onDelete={async () => {
+                await deleteMutation.mutateAsync();
+                await releaseLock();
+                onEditModeChange?.(false);
               }}
             />
           </div>

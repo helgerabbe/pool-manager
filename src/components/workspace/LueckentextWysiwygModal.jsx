@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Sparkles, Loader2, X, Plus, Info, Crown } from 'lucide-react';
+import { Sparkles, Loader2, X, Plus, Info, Crown, Trash2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
@@ -203,7 +203,7 @@ function DistraktorenInput({ distraktoren, onChange }) {
 
 // ── Haupt-Modal ──────────────────────────────────────────────────────────────────
 
-export default function LueckentextWysiwygModal({ open, onOpenChange, initialData = {}, onSave, onSaveAsNewMaster, isSaving = false, isCopy = false }) {
+export default function LueckentextWysiwygModal({ open, onOpenChange, initialData = {}, onSave, onSaveAsNewMaster, onDelete, isSaving = false, isCopy = false }) {
   // Rohtext (aus dem der Lehrer schreibt / KI liefert)
   const [rawText, setRawText] = useState(() => {
     // Beim Öffnen: falls schon lueckentext vorhanden, extrahieren wir den Rohtext
@@ -318,7 +318,19 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
     if (payload) onSaveAsNewMaster?.(payload);
   };
 
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    await onDelete?.();
+    setIsDeleting(false);
+    setDeleteConfirm(false);
+    onOpenChange(false);
+  };
+
   const handleClose = () => {
+    setDeleteConfirm(false);
     onOpenChange(false);
   };
 
@@ -425,39 +437,82 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
         </div>
 
         {/* Footer */}
-        <DialogFooter className="px-6 py-4 border-t border-border shrink-0 gap-2 flex-wrap">
-          <Button variant="outline" onClick={handleClose} disabled={isSaving}>
-            Abbrechen
-          </Button>
-          {isCopy ? (
-            <>
+        <DialogFooter className="px-6 py-4 border-t border-border shrink-0 flex-wrap">
+          {/* Löschen-Bereich – links */}
+          <div className="flex items-center gap-2 flex-1">
+            {onDelete && !deleteConfirm && (
               <Button
-                variant="outline"
-                onClick={handleSave}
-                disabled={isSaving || blankIds.size === 0}
-                className="gap-2"
+                variant="ghost"
+                size="sm"
+                onClick={() => setDeleteConfirm(true)}
+                disabled={isSaving || isDeleting}
+                className="gap-1.5 text-destructive hover:bg-red-50 hover:text-destructive"
               >
-                {isSaving
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
-                  : 'Kopie speichern'}
+                <Trash2 className="w-4 h-4" />
+                {isCopy ? 'Kopie löschen' : 'Aufgabe löschen'}
               </Button>
-              <Button
-                onClick={handleSaveAsNewMaster}
-                disabled={isSaving || blankIds.size === 0}
-                className="gap-2 bg-primary hover:bg-primary/90"
-              >
-                {isSaving
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
-                  : <><Crown className="w-4 h-4" /> Als Masteraufgabe speichern</>}
-              </Button>
-            </>
-          ) : (
-            <Button onClick={handleSave} disabled={isSaving || blankIds.size === 0} className="gap-2">
-              {isSaving
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
-                : 'Speichern'}
+            )}
+            {deleteConfirm && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-destructive font-medium">Wirklich löschen?</span>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="gap-1.5 h-7 text-xs"
+                >
+                  {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                  Ja, löschen
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDeleteConfirm(false)}
+                  disabled={isDeleting}
+                  className="h-7 text-xs"
+                >
+                  Abbrechen
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Speichern-Buttons – rechts */}
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleClose} disabled={isSaving || isDeleting}>
+              Abbrechen
             </Button>
-          )}
+            {isCopy ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={handleSave}
+                  disabled={isSaving || isDeleting || blankIds.size === 0}
+                  className="gap-2"
+                >
+                  {isSaving
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
+                    : 'Kopie speichern'}
+                </Button>
+                <Button
+                  onClick={handleSaveAsNewMaster}
+                  disabled={isSaving || isDeleting || blankIds.size === 0}
+                  className="gap-2 bg-primary hover:bg-primary/90"
+                >
+                  {isSaving
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
+                    : <><Crown className="w-4 h-4" /> Als Master speichern</>}
+                </Button>
+              </>
+            ) : (
+              <Button onClick={handleSave} disabled={isSaving || isDeleting || blankIds.size === 0} className="gap-2">
+                {isSaving
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
+                  : 'Speichern'}
+              </Button>
+            )}
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

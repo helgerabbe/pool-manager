@@ -794,6 +794,16 @@ export default function MasterAufgabeCard({
                     onSuccess: () => handleCloseLueckentextModal(),
                   });
                 }}
+                onDelete={async () => {
+                  // Klone zuerst löschen, dann den Master selbst
+                  for (const k of klone) await base44.entities.Aufgabenbausteine.delete(k.id);
+                  await base44.entities.MasterAufgabe.delete(master.id);
+                  queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+                  queryClient.invalidateQueries({ queryKey: ['klone'] });
+                  await releaseLock();
+                  onEditModeChange?.(false);
+                  onDeleted?.();
+                }}
               />
             </div>
           ) : (
