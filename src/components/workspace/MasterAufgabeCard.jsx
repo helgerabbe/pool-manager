@@ -23,6 +23,7 @@ import LueckentextEditor, { LueckentextRenderer, validateBeforeSave } from '@/co
 import LueckentextWysiwygModal from '@/components/workspace/LueckentextWysiwygModal';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import SortingListEditor from '@/components/workspace/SortingListEditor';
+import SortingListModal from '@/components/workspace/SortingListModal';
 import MultipleChoiceEditor from '@/components/workspace/MultipleChoiceEditor';
 import MiniQuizEditor from '@/components/workspace/MiniQuizEditor';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
@@ -217,6 +218,7 @@ export default function MasterAufgabeCard({
   const [klonModalOpen, setKlonModalOpen] = useState(false);
   const [generatorOpen, setGeneratorOpen] = useState(false);
   const [lueckentextModalOpen, setLueckentextModalOpen] = useState(false);
+  const [sortingListModalOpen, setSortingListModalOpen] = useState(false);
   const [acquiringLock, setAcquiringLock] = useState(false);
 
   // Implizites Locking für Lückentext (unabhängig vom globalen Bearbeitungsmodus)
@@ -559,51 +561,68 @@ export default function MasterAufgabeCard({
               )}
             </div>
           ) : isSort ? (
-            /* ── Sortierungs-Editor ── */
+            /* ── Sortierungs-Editor (Modal mit Locking) ── */
             <div className="space-y-3">
-              {editMode ? (
-                <>
-                  <SortingListEditor
-                    initialData={fieldValues}
-                    onSave={(data) => {
-                      setFieldValues(data);
-                      handleSaveAndClose(data);
-                    }}
-                    onCancel={() => { setEditMode(false); setHasPendingChanges(false); }}
-                    onChange={() => setHasPendingChanges(true)}
-                  />
-                </>
-              ) : (
-                <div className="space-y-3">
-                  {fieldValues.instruction && (
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Aufgabenstellung</p>
-                      <div className="bg-muted/50 rounded-lg p-3 text-sm">{fieldValues.instruction}</div>
-                    </div>
-                  )}
-                  {fieldValues.orderedItems?.length > 0 && (
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Sortierliste ({fieldValues.orderedItems.length})</p>
-                      <div className="bg-muted/30 rounded-lg p-3 space-y-1">
-                        {fieldValues.orderedItems.map((item, i) => (
-                          <div key={i} className="flex items-center gap-2 text-sm">
-                            <span className="font-semibold text-muted-foreground w-6">{i + 1}.</span>
-                            <span>{item}</span>
-                          </div>
-                        ))}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Aufgabenstellung</p>
+                {fieldValues.instruction ? (
+                  <div className="bg-muted/50 rounded-lg p-3 text-sm">{fieldValues.instruction}</div>
+                ) : (
+                  <p className="italic text-muted-foreground text-sm">Noch nicht ausgefüllt.</p>
+                )}
+              </div>
+              {fieldValues.orderedItems?.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Sortierliste ({fieldValues.orderedItems.length})</p>
+                  <div className="bg-muted/30 rounded-lg p-3 space-y-1">
+                    {fieldValues.orderedItems.map((item, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm">
+                        <span className="font-semibold text-muted-foreground w-6">{i + 1}.</span>
+                        <span>{item}</span>
                       </div>
-                    </div>
-                  )}
-                  {kannBearbeiten && !locked && (
-                    <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
-                      Inhalt bearbeiten
-                    </Button>
-                  )}
-                  {!fieldValues.instruction && !fieldValues.orderedItems?.length && (
-                    <p className="text-sm text-muted-foreground italic">Noch kein Inhalt. Klicke „Inhalt bearbeiten".</p>
-                  )}
+                    ))}
+                  </div>
                 </div>
               )}
+              {kannBearbeiten && !locked && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSortingListModalOpen(true)}
+                  className="gap-1.5"
+                >
+                  Inhalt bearbeiten
+                </Button>
+              )}
+              {!fieldValues.instruction && !fieldValues.orderedItems?.length && (
+                <p className="text-sm text-muted-foreground italic">Noch kein Inhalt. Klicke „Inhalt bearbeiten".</p>
+              )}
+              <SortingListModal
+                open={sortingListModalOpen}
+                onOpenChange={(isOpen) => {
+                  if (!isOpen) setSortingListModalOpen(false);
+                }}
+                initialData={{ ...fieldValues, content_status: master.content_status, moodle_sync_status: master.moodle_sync_status }}
+                onSave={(data) => {
+                  const { content_status, ...fvData } = data;
+                  const newFv = { ...fieldValues, ...fvData };
+                  setFieldValues(newFv);
+                  saveMutation.mutate({ fv: newFv, closeEdit: false }, {
+                    onSuccess: async () => {
+                      if (content_status) {
+                        await base44.entities.MasterAufgabe.update(master.id, { content_status });
+                        queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+                        queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+                      }
+                      setSortingListModalOpen(false);
+                    },
+                  });
+                }}
+                onCancel={() => {
+                  setSortingListModalOpen(false);
+                }}
+                isSaving={saveMutation.isPending}
+              />
             </div>
           ) : isKITutor ? (
             /* ── KI-Tutor-Editor ── */
