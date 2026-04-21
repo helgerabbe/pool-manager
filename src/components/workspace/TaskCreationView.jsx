@@ -241,7 +241,7 @@ function SidebarLernpaketFolder({
   const isActiveLocked = isEditingActive && hasSelectedChild;
 
   return (
-    <div className={cn(isActiveLocked && "rounded-lg ring-2 ring-orange-400 bg-orange-50/50")}>
+    <div className={cn(isActiveLocked && "rounded-lg ring-2 ring-orange-400 bg-orange-50/50 ml-1 mr-0.5")}>
       <button
          onClick={() => onToggleOpen?.(lernpaket.id, !isOpen)}
          className={cn(
@@ -358,19 +358,30 @@ function EmptyState() {
 
 // ── Haupt-Komponente ──────────────────────────────────────────────────────────
 
-export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail, userRole, initialActivityId: initialActivityIdProp = null }) {
+export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail, userRole, initialActivityId: initialActivityIdProp = null, globalEditActive = false }) {
    const queryClient = useQueryClient();
    const [searchParams] = useSearchParams();
    const [debugSelectValue, setDebugSelectValue] = useState('');
    const [sidebarOpen, setSidebarOpen] = useState(false);
 
-   // Globaler Edit-Mode State (wird von ActivityDetailView nach oben gemeldet)
-   const [isEditingActive, setIsEditingActive] = useState(false);
+   // Globaler Edit-Mode State: initial aus globalEditActive (DB-Zustand), dann lokal überschreibbar
+   const [isEditingActive, setIsEditingActive] = useState(globalEditActive);
    const releaseEditLockRef = React.useRef(null);
+
+   // Sync mit globalEditActive bei Tab-Rückkehr (Persistenz über Tab-Wechsel)
+   useEffect(() => {
+     if (globalEditActive && !isEditingActive) {
+       setIsEditingActive(true);
+     } else if (!globalEditActive && isEditingActive && !releaseEditLockRef.current) {
+       // Lock ist extern abgelaufen/freigegeben worden
+       setIsEditingActive(false);
+     }
+   }, [globalEditActive]);
 
    const handleEditModeChange = React.useCallback((isEditing, releaseFn) => {
      setIsEditingActive(isEditing);
      if (isEditing && releaseFn) releaseEditLockRef.current = releaseFn;
+     if (!isEditing) releaseEditLockRef.current = null;
    }, []);
 
    const handleGlobalExitEdit = async () => {
@@ -563,20 +574,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
         sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         isEditingActive && "border-r-2 border-r-orange-400"
       )}>
-        {/* Edit-Mode-Banner in der Sidebar */}
-        {isEditingActive && (
-          <div className="px-3 py-2.5 bg-orange-500 text-white flex items-center gap-2 shrink-0">
-            <PenLine className="w-3.5 h-3.5 shrink-0 animate-pulse" />
-            <span className="text-xs font-semibold flex-1">Bearbeitungsmodus aktiv – Paket gesperrt</span>
-            <button
-              onClick={handleGlobalExitEdit}
-              className="text-white/80 hover:text-white transition-colors shrink-0"
-              title="Bearbeitung beenden"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
+
         <div className="px-3 py-3 border-b border-border shrink-0 space-y-2">
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aktivitäten</p>

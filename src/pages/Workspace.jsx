@@ -14,6 +14,7 @@ import { isStructurallyLocked } from '@/hooks/useStructuralLock';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { BookOpen, Lock, ArrowRight, PenLine, Unlock, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import StrukturBoardEmbedded from '@/components/workspace/StrukturBoardEmbedded';
@@ -86,6 +87,21 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   );
 
   const paketIds = useMemo(() => paketeFuerEinheit.map((p) => p.id), [paketeFuerEinheit]);
+
+  // ── Lernpaket-Edit-Mode: persistiert über Tab-Wechsel ─────────────────────────
+  // Abgeleitet aus DB-Daten: Hält der aktuelle User irgendeinen Lernpaket-Lock?
+  const PAKET_LOCK_TIMEOUT_EDIT_MS = 30 * 60 * 1000;
+  const isLernpaketEditActive = useMemo(
+    () =>
+      paketeFuerEinheit.some(
+        (p) =>
+          p.is_locked &&
+          p.locked_by_email === authUser?.email &&
+          p.locked_at &&
+          Date.now() - new Date(p.locked_at).getTime() < PAKET_LOCK_TIMEOUT_EDIT_MS
+      ),
+    [paketeFuerEinheit, authUser?.email]
+  );
 
   const zieleFuerEinheit = useMemo(
     () => lernziele.filter((lz) => paketIds.includes(lz.lernpaket_id)),
@@ -501,8 +517,19 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                  </TabsContent>
 
             {/* ── Tab 3: Aktivitäten zuordnen → Sidebar-Baum + Detail-Panel ───── */}
-            <TabsContent value="aktivitaeten" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col lg:flex-row flex-1 overflow-hidden m-0 p-0">
+            <TabsContent value="aktivitaeten" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
+              {/* Lernpaket-Edit-Warnung (wie in Tab 4) */}
+              {isLernpaketEditActive && (
+                <div className="shrink-0 px-4 py-2.5 bg-orange-500 text-white flex items-center gap-3">
+                  <PenLine className="w-4 h-4 shrink-0 animate-pulse" />
+                  <span className="text-sm font-semibold flex-1">✏️ Bearbeitungsmodus aktiv – ein Lernpaket ist für andere gesperrt</span>
+                </div>
+              )}
               <ErrorBoundary label="Aktivitäten-Struktur">
+                <div className={cn(
+                  "flex flex-col lg:flex-row flex-1 overflow-hidden transition-colors",
+                  isLernpaketEditActive && "bg-orange-50/60 ring-2 ring-inset ring-orange-300"
+                )}>
                 <aside className="w-full lg:w-96 border-b lg:border-b-0 lg:border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden h-64 lg:h-full min-h-0">
                    <div className="flex-1 overflow-hidden min-h-0 p-3">
                      <div className="h-full overflow-y-auto pr-2">
@@ -525,41 +552,42 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                       </aside>
 
                 <main className="flex-1 overflow-hidden min-h-0 h-full lg:h-auto">
-                   <ErrorBoundary label="Detail-Panel">
-                     <div className="h-full overflow-y-auto max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full min-h-0">
-                       {selectedNode?.type === 'aktivitaet-edit' ? (
-                         activityRecordForEdit ? (
-                           <ActivityDetailView
-                             activityRecord={activityRecordForEdit}
-                             kannBearbeiten={false}
-                             einheitFach={einheit?.fach}
-                             queryClient={queryClient}
-                           />
-                         ) : null
-                       ) : (
-                         <WorkspaceDetailPanel
-                           selectedNode={{ ...selectedNode, themenfelder }}
-                           einheit={einheit}
-                           lernpakete={paketeFuerEinheit}
-                           lernziele={zieleFuerEinheit}
-                           aufgaben={aufgabenFuerEinheit}
-                           userEmail={authUser?.email}
-                           kannBearbeiten={kannDieseEinheitBearbeiten && !isLockedByOther}
-                           istAdmin={istAdmin}
-                           onNavigate={handleSelect}
-                           onNewLernpaket={() => handleSelect({ type: 'new-lernpaket' })}
-                           onNewLernziel={(paketId) => handleSelect({ type: 'new-lernziel', paketId })}
-                           onNewAufgabe={(paketId, lernzielId) => handleSelect({ type: 'new-aufgabe', paketId, lernzielId })}
-                           onEditEinheit={() => {}}
-                           onDeleteLernpaket={(id) => deleteLernpaket.mutate(id)}
-                           onDeleteLernziel={(id) => deleteLernziel.mutate(id)}
-                         />
-                       )}
-                     </div>
-                   </ErrorBoundary>
+                  <ErrorBoundary label="Detail-Panel">
+                    <div className="h-full overflow-y-auto max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full min-h-0">
+                      {selectedNode?.type === 'aktivitaet-edit' ? (
+                        activityRecordForEdit ? (
+                          <ActivityDetailView
+                            activityRecord={activityRecordForEdit}
+                            kannBearbeiten={false}
+                            einheitFach={einheit?.fach}
+                            queryClient={queryClient}
+                          />
+                        ) : null
+                      ) : (
+                        <WorkspaceDetailPanel
+                          selectedNode={{ ...selectedNode, themenfelder }}
+                          einheit={einheit}
+                          lernpakete={paketeFuerEinheit}
+                          lernziele={zieleFuerEinheit}
+                          aufgaben={aufgabenFuerEinheit}
+                          userEmail={authUser?.email}
+                          kannBearbeiten={kannDieseEinheitBearbeiten && !isLockedByOther}
+                          istAdmin={istAdmin}
+                          onNavigate={handleSelect}
+                          onNewLernpaket={() => handleSelect({ type: 'new-lernpaket' })}
+                          onNewLernziel={(paketId) => handleSelect({ type: 'new-lernziel', paketId })}
+                          onNewAufgabe={(paketId, lernzielId) => handleSelect({ type: 'new-aufgabe', paketId, lernzielId })}
+                          onEditEinheit={() => {}}
+                          onDeleteLernpaket={(id) => deleteLernpaket.mutate(id)}
+                          onDeleteLernziel={(id) => deleteLernziel.mutate(id)}
+                        />
+                      )}
+                    </div>
+                  </ErrorBoundary>
                 </main>
-              </ErrorBoundary>
-            </TabsContent>
+                </div>
+                </ErrorBoundary>
+                </TabsContent>
 
             {/* ── Tab 4: Aufgaben erstellen ─────────────────────────────────── */}
             <TabsContent value="aufgaben" className="data-[state=active]:flex data-[state=inactive]:hidden flex-row flex-1 overflow-hidden m-0 p-0">
@@ -572,6 +600,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                   userEmail={authUser?.email}
                   userRole={rolle}
                   isLockedByOther={isLockedByOther}
+                  globalEditActive={isLernpaketEditActive}
                 />
               </ErrorBoundary>
             </TabsContent>
