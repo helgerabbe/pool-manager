@@ -33,6 +33,7 @@ import { ChevronRight, Package, MousePointerClick, AlertTriangle, Lock, Crown, C
 import { Badge } from '@/components/ui/badge';
 import ActivityMasterPanel from '@/components/workspace/ActivityMasterPanel';
 import KlonDetailView from '@/components/workspace/KlonDetailView';
+import MasterDetailView from '@/components/workspace/MasterDetailView';
 import { isActivityLockedByOther, isLockExpired } from '@/hooks/useActivityLock';
 import { cn } from '@/lib/utils';
 
@@ -537,15 +538,9 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
       ].filter(g => g.pakete.length > 0)
     : [{ label: null, pakete: paketeFuerEinheit }];
 
-  // Catalog-Entry für selektierte Aktivität
-  const selectedActivity = selectedItem?.type === 'activity'
-    ? selectedItem.activity
-    : selectedItem?.type === 'master'
-      ? allActivities.find(a => a.id === selectedItem.master.activity_id)
-      : null;
-  const selectedCatalog = selectedActivity
-    ? aktivitaetenKatalog.find(c => c.id === selectedActivity.aktivitaet_id)
-    : null;
+  // Catalog-Entry für Ansicht A (Aktivität direkt gewählt)
+  const selectedActivity = selectedItem?.type === 'activity' ? selectedItem.activity : null;
+  const selectedCatalog = selectedActivity ? aktivitaetenKatalog.find(c => c.id === selectedActivity.aktivitaet_id) : null;
   const supportsMaster = selectedCatalog?.supports_master === true;
 
   return (
@@ -685,33 +680,56 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
             <div className="h-full overflow-y-auto min-h-0">
         {!selectedItem && <EmptyState />}
 
-        {/* Aktivität oder Master gewählt → ActivityMasterPanel */}
-         {(selectedItem?.type === 'activity' || selectedItem?.type === 'master') && selectedActivity && (
-           <div className="max-w-3xl mx-auto px-6 py-6">
-             <ActivityMasterPanel
-               key={selectedActivity.id}
-               activityRecord={selectedActivity}
-               catalogEntry={selectedCatalog}
-               supportsMaster={supportsMaster}
-               kannBearbeiten={kannBearbeiten}
-               userEmail={userEmail}
-               userRole={userRole}
-               einheitId={einheitId}
-               selectedMasterId={selectedItem?.type === 'master' ? selectedItem.master.id : null}
-               onMasterSelected={(masterId) => {
-                 const master = alleMaster.find(m => m.id === masterId);
-                 if (master) setSelectedItem({ type: 'master', master });
-               }}
-               onKlonSelected={(klonId) => {
-                 const klon = alleKlone.find(k => k.id === klonId);
-                 if (klon) setSelectedItem({ type: 'klon', klon });
-               }}
-               onEditModeChange={handleEditModeChange}
-             />
-           </div>
-         )}
+        {/* Ansicht A: Aktivität gewählt → Übersicht (ActivityMasterPanel) */}
+        {selectedItem?.type === 'activity' && selectedActivity && (
+          <div className="max-w-3xl mx-auto px-6 py-6">
+            <ActivityMasterPanel
+              key={selectedActivity.id}
+              activityRecord={selectedActivity}
+              catalogEntry={selectedCatalog}
+              supportsMaster={supportsMaster}
+              kannBearbeiten={kannBearbeiten}
+              userEmail={userEmail}
+              userRole={userRole}
+              einheitId={einheitId}
+              onMasterSelected={(masterId) => {
+                const master = alleMaster.find(m => m.id === masterId);
+                if (master) setSelectedItem({ type: 'master', master });
+              }}
+              onKlonSelected={(klonId) => {
+                const klon = alleKlone.find(k => k.id === klonId);
+                if (klon) setSelectedItem({ type: 'klon', klon });
+              }}
+              onEditModeChange={handleEditModeChange}
+            />
+          </div>
+        )}
 
-        {/* Klon gewählt */}
+        {/* Ansicht B: Master gewählt → fokussierte Master-Detailansicht */}
+        {selectedItem?.type === 'master' && (() => {
+          const master = selectedItem.master;
+          const masterActivity = allActivities.find(a => a.id === master.activity_id);
+          const masterCatalog = masterActivity ? aktivitaetenKatalog.find(c => c.id === masterActivity.aktivitaet_id) : null;
+          const masterKlone = kloneByMasterId[master.id] || [];
+          const masterIndex = (masterAufgabenByActivityId[master.activity_id] || []).findIndex(m => m.id === master.id) + 1;
+          return (
+            <div className="max-w-3xl mx-auto px-6 py-6">
+              <MasterDetailView
+                key={master.id}
+                master={master}
+                index={masterIndex}
+                catalogEntry={masterCatalog}
+                klone={masterKlone}
+                kannBearbeiten={kannBearbeiten}
+                userEmail={userEmail}
+                onDeleted={() => setSelectedItem(masterActivity ? { type: 'activity', activity: masterActivity } : null)}
+                onEditModeChange={handleEditModeChange}
+              />
+            </div>
+          );
+        })()}
+
+        {/* Ansicht C: Klon gewählt → fokussierte Klon-Detailansicht */}
         {selectedItem?.type === 'klon' && (() => {
           const klonMaster = alleMaster.find(m => m.id === selectedItem.klon.master_aufgabe_id);
           const klonActivity = klonMaster ? allActivities.find(a => a.id === klonMaster.activity_id) : null;
@@ -726,6 +744,8 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
                 masterAufgabe={klonMaster}
                 activityRecord={klonActivity}
                 catalogEntry={klonCatalog}
+                onKlonDeleted={() => setSelectedItem(klonMaster ? { type: 'master', master: klonMaster } : null)}
+                onEditModeChange={handleEditModeChange}
               />
             </div>
           );
@@ -739,7 +759,8 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
           <div className="h-full overflow-y-auto min-h-0">
             {!selectedItem && <EmptyState />}
 
-            {(selectedItem?.type === 'activity' || selectedItem?.type === 'master') && selectedActivity && (
+            {/* Ansicht A: Aktivität */}
+            {selectedItem?.type === 'activity' && selectedActivity && (
               <div className="max-w-3xl mx-auto px-6 py-6">
                 <ActivityMasterPanel
                   key={selectedActivity.id}
@@ -750,7 +771,6 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
                   userEmail={userEmail}
                   userRole={userRole}
                   einheitId={einheitId}
-                  selectedMasterId={selectedItem?.type === 'master' ? selectedItem.master.id : null}
                   onMasterSelected={(masterId) => {
                     const master = alleMaster.find(m => m.id === masterId);
                     if (master) setSelectedItem({ type: 'master', master });
@@ -764,6 +784,31 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
               </div>
             )}
 
+            {/* Ansicht B: Master */}
+            {selectedItem?.type === 'master' && (() => {
+              const master = selectedItem.master;
+              const masterActivity = allActivities.find(a => a.id === master.activity_id);
+              const masterCatalog = masterActivity ? aktivitaetenKatalog.find(c => c.id === masterActivity.aktivitaet_id) : null;
+              const masterKlone = kloneByMasterId[master.id] || [];
+              const masterIndex = (masterAufgabenByActivityId[master.activity_id] || []).findIndex(m => m.id === master.id) + 1;
+              return (
+                <div className="max-w-3xl mx-auto px-6 py-6">
+                  <MasterDetailView
+                    key={master.id}
+                    master={master}
+                    index={masterIndex}
+                    catalogEntry={masterCatalog}
+                    klone={masterKlone}
+                    kannBearbeiten={kannBearbeiten}
+                    userEmail={userEmail}
+                    onDeleted={() => setSelectedItem(masterActivity ? { type: 'activity', activity: masterActivity } : null)}
+                    onEditModeChange={handleEditModeChange}
+                  />
+                </div>
+              );
+            })()}
+
+            {/* Ansicht C: Klon */}
             {selectedItem?.type === 'klon' && (() => {
               const klonMaster = alleMaster.find(m => m.id === selectedItem.klon.master_aufgabe_id);
               const klonActivity = klonMaster ? allActivities.find(a => a.id === klonMaster.activity_id) : null;
@@ -778,6 +823,8 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
                     masterAufgabe={klonMaster}
                     activityRecord={klonActivity}
                     catalogEntry={klonCatalog}
+                    onKlonDeleted={() => setSelectedItem(klonMaster ? { type: 'master', master: klonMaster } : null)}
+                    onEditModeChange={handleEditModeChange}
                   />
                 </div>
               );
