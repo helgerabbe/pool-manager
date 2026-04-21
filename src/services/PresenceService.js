@@ -45,7 +45,10 @@ export async function updatePresenceRecord(id, data) {
   try {
     return await base44.entities.ActiveUsersPresence.update(id, data);
   } catch (err) {
-    if (err.message?.includes('not found')) return null;
+    // Prüfe auf 404 oder "not found" in verschiedenen Error-Formaten
+    if (err.message?.includes('not found') || err.response?.status === 404 || err.status === 404) {
+      return null;
+    }
     throw err;
   }
 }
@@ -58,7 +61,10 @@ export async function deletePresenceRecord(id) {
   try {
     return await base44.entities.ActiveUsersPresence.delete(id);
   } catch (err) {
-    if (err.message?.includes('not found')) return null;
+    // Prüfe auf 404 oder "not found" in verschiedenen Error-Formaten
+    if (err.message?.includes('not found') || err.response?.status === 404 || err.status === 404) {
+      return null;
+    }
     throw err;
   }
 }
