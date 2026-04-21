@@ -27,6 +27,7 @@ import SortingListModal from '@/components/workspace/SortingListModal';
 import MultipleChoiceEditor from '@/components/workspace/MultipleChoiceEditor';
 import MiniQuizEditor from '@/components/workspace/MiniQuizEditor';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
+import MiniQuizModal from '@/components/workspace/MiniQuizModal';
 import { isLockExpired } from '@/hooks/useActivityLock';
 import { useLernpaketLock } from '@/hooks/useLernpaketLock';
 import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus';
@@ -219,6 +220,7 @@ export default function MasterAufgabeCard({
   const [generatorOpen, setGeneratorOpen] = useState(false);
   const [lueckentextModalOpen, setLueckentextModalOpen] = useState(false);
   const [sortingListModalOpen, setSortingListModalOpen] = useState(false);
+  const [miniQuizModalOpen, setMiniQuizModalOpen] = useState(false);
   const [acquiringLock, setAcquiringLock] = useState(false);
 
   // Implizites Locking für Lückentext (unabhängig vom globalen Bearbeitungsmodus)
@@ -674,47 +676,65 @@ export default function MasterAufgabeCard({
               </div>
             )
           ) : isQuiz ? (
-            /* ── Mini-Quiz-Editor ── */
+            /* ── Mini-Quiz-Editor (Modal mit Locking) ── */
             <div className="space-y-3">
-              {editMode ? (
-                <>
-                  <MiniQuizEditor
-                    initialData={fieldValues}
-                    onSave={(data) => {
-                      setFieldValues(data);
-                      handleSaveAndClose(data);
-                    }}
-                    onCancel={() => { setEditMode(false); setHasPendingChanges(false); }}
-                    onChange={() => setHasPendingChanges(true)}
-                  />
-                </>
-              ) : (
-                <div className="space-y-3">
-                  {fieldValues.quizItems?.length > 0 && (
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                        Fragen ({fieldValues.quizItems.length})
-                      </p>
-                      <div className="bg-muted/30 rounded-lg p-3 space-y-2 text-sm max-h-48 overflow-y-auto">
-                        {fieldValues.quizItems.map((q, i) => (
-                          <div key={i} className="pb-2 border-b border-border/30 last:border-0 last:pb-0">
-                            <p className="font-medium">{i + 1}. {q.question}</p>
-                            <p className="mt-1 text-xs text-green-700 font-medium">✓ {q.correctAnswer}</p>
-                          </div>
-                        ))}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Fragen</p>
+                {fieldValues.questions?.length > 0 ? (
+                  <div className="bg-muted/30 rounded-lg p-3 space-y-2 text-sm max-h-48 overflow-y-auto">
+                    {fieldValues.questions.map((q, i) => (
+                      <div key={i} className="pb-2 border-b border-border/30 last:border-0 last:pb-0">
+                        <p className="font-medium">{i + 1}. {q.question}</p>
+                        <div className="mt-1 space-y-0.5 text-xs">
+                          {q.answers?.map((ans, ai) => (
+                            <div key={ai} className={ans.isCorrect ? 'text-green-600 font-medium' : 'text-muted-foreground'}>
+                              {ans.isCorrect && '✓ '}{ans.text}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  {kannBearbeiten && !locked && (
-                    <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
-                      Inhalt bearbeiten
-                    </Button>
-                  )}
-                  {!fieldValues.quizItems?.length && (
-                    <p className="text-sm text-muted-foreground italic">Noch kein Inhalt. Klicke „Inhalt bearbeiten".</p>
-                  )}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="italic text-muted-foreground text-sm">Noch nicht ausgefüllt.</p>
+                )}
+              </div>
+              {kannBearbeiten && !locked && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setMiniQuizModalOpen(true)}
+                  className="gap-1.5"
+                >
+                  Inhalt bearbeiten
+                </Button>
               )}
+              <MiniQuizModal
+                open={miniQuizModalOpen}
+                onOpenChange={(isOpen) => {
+                  if (!isOpen) setMiniQuizModalOpen(false);
+                }}
+                initialData={{ ...fieldValues, content_status: master.content_status, moodle_sync_status: master.moodle_sync_status }}
+                onSave={(data) => {
+                  const { content_status, ...fvData } = data;
+                  const newFv = { ...fieldValues, ...fvData };
+                  setFieldValues(newFv);
+                  saveMutation.mutate({ fv: newFv, closeEdit: false }, {
+                    onSuccess: async () => {
+                      if (content_status) {
+                        await base44.entities.MasterAufgabe.update(master.id, { content_status });
+                        queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+                        queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+                      }
+                      setMiniQuizModalOpen(false);
+                    },
+                  });
+                }}
+                onCancel={() => {
+                  setMiniQuizModalOpen(false);
+                }}
+                isSaving={saveMutation.isPending}
+              />
             </div>
           ) : isMC ? (
             /* ── Multiple-Choice-Editor ── */
