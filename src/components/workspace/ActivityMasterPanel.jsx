@@ -215,6 +215,7 @@ export default function ActivityMasterPanel({
   };
 
   // Modal abbrechen: Lock freigeben, Modal schließen
+  // Abbrechen bleibt immer enabled, da keine Daten verändert werden
   const handleModalCancel = async () => {
     setEditModalOpen(false);
     await releaseLock();

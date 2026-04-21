@@ -134,10 +134,10 @@ export default function TextLesenModal({
           />
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-between gap-3">
-            <Button variant="outline" onClick={handleCancel} disabled={isSaving || exportLocked}>
-              Abbrechen
-            </Button>
+           <div className="flex items-center justify-between gap-3">
+             <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
+               Abbrechen
+             </Button>
             <Button
               onClick={handleSave}
               disabled={isSaving || exportLocked}

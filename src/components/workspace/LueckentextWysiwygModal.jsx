@@ -470,7 +470,7 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
                   variant="ghost"
                   size="sm"
                   onClick={() => setDeleteConfirm(true)}
-                  disabled={isSaving || isDeleting}
+                  disabled={isSaving || isDeleting || exportLocked}
                   className="gap-1.5 text-destructive hover:bg-red-50 hover:text-destructive"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -504,7 +504,7 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
             </div>
 
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={handleClose} disabled={isSaving || isDeleting || exportLocked}>
+              <Button variant="outline" onClick={handleClose} disabled={isSaving || isDeleting}>
                 Abbrechen
               </Button>
               {isCopy ? (
