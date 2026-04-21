@@ -314,17 +314,17 @@ function SidebarLernpaketFolder({
                       {phaseActs.map(activity => {
                          const actCatalog = aktivitaetenKatalog.find(c => c.id === activity.aktivitaet_id);
                          const masters = masterAufgabenByActivityId[activity.id] || [];
+                         const supportsMaster = actCatalog?.supports_master === true;
 
-                         // Completion-Logik: Alle Masters müssen approved sein UND field_values gefüllt haben
-                         const allMastersApproved = masters.length > 0 && masters.every(m => m.content_status === 'approved');
-                         const allMastersHaveContent = masters.length > 0 && masters.every(m => {
-                           const fv = m.field_values || {};
-                           // Prüfe, ob es Inhalt gibt (je nach Aktivitätstyp)
-                           return fv.instruction || fv.lueckentext || fv.pairs?.length > 0 || 
-                                  fv.orderedItems?.length > 0 || fv.dropZones?.length > 0 || 
-                                  fv.mcItems?.length > 0 || fv.task_description;
-                         });
-                         const isComplete = masters.length > 0 && allMastersApproved && allMastersHaveContent;
+                         // Completion-Logik unterscheidet zwischen Masters-Aktivitäten und normalen Aktivitäten
+                         let isComplete = false;
+                         if (supportsMaster) {
+                           // Für Master-Aktivitäten: Alle Masters müssen approved sein
+                           isComplete = masters.length > 0 && masters.every(m => m.content_status === 'approved');
+                         } else {
+                           // Für normale Aktivitäten (z.B. Text lesen): content_status === 'approved' ist ausreichend
+                           isComplete = activity.content_status === 'approved';
+                         }
 
                          return (
                            <ActivitySidebarItem
