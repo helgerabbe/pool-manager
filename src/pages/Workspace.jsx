@@ -159,7 +159,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   useEffect(() => {
     return () => {
       if (isStructuralEditingActive && einheit) {
-        invokeFunction('releaseStructuralLockSecure', { einheitId: einheit.id })
+        invokeFunction('releaseStructuralLockSecure', { einheit_id: einheit.id })
           .catch(console.error);
       }
     };
