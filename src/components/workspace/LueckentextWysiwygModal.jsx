@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Sparkles, Loader2, X, Plus, Info } from 'lucide-react';
+import { Sparkles, Loader2, X, Plus, Info, Crown } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
@@ -203,7 +203,7 @@ function DistraktorenInput({ distraktoren, onChange }) {
 
 // ── Haupt-Modal ──────────────────────────────────────────────────────────────────
 
-export default function LueckentextWysiwygModal({ open, onOpenChange, initialData = {}, onSave, isSaving = false }) {
+export default function LueckentextWysiwygModal({ open, onOpenChange, initialData = {}, onSave, onSaveAsNewMaster, isSaving = false, isCopy = false }) {
   // Rohtext (aus dem der Lehrer schreibt / KI liefert)
   const [rawText, setRawText] = useState(() => {
     // Beim Öffnen: falls schon lueckentext vorhanden, extrahieren wir den Rohtext
@@ -296,17 +296,26 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
     setBlankIds(blanks);
   };
 
-  const handleSave = () => {
+  const buildPayload = () => {
     if (blankIds.size === 0) {
       toast.error('Bitte mindestens ein Wort als Lücke markieren.');
-      return;
+      return null;
     }
     if (!rawText.trim()) {
       toast.error('Bitte einen Text eingeben.');
-      return;
+      return null;
     }
-    const lueckentext = buildLueckentextString(tokens, blankIds);
-    onSave({ lueckentext, lueckenWoerter, distraktoren });
+    return { lueckentext: buildLueckentextString(tokens, blankIds), lueckenWoerter, distraktoren };
+  };
+
+  const handleSave = () => {
+    const payload = buildPayload();
+    if (payload) onSave(payload);
+  };
+
+  const handleSaveAsNewMaster = () => {
+    const payload = buildPayload();
+    if (payload) onSaveAsNewMaster?.(payload);
   };
 
   const handleClose = () => {
@@ -416,15 +425,39 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
         </div>
 
         {/* Footer */}
-        <DialogFooter className="px-6 py-4 border-t border-border shrink-0 gap-2">
+        <DialogFooter className="px-6 py-4 border-t border-border shrink-0 gap-2 flex-wrap">
           <Button variant="outline" onClick={handleClose} disabled={isSaving}>
             Abbrechen
           </Button>
-          <Button onClick={handleSave} disabled={isSaving || blankIds.size === 0} className="gap-2">
-            {isSaving
-              ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
-              : 'Speichern'}
-          </Button>
+          {isCopy ? (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleSave}
+                disabled={isSaving || blankIds.size === 0}
+                className="gap-2"
+              >
+                {isSaving
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
+                  : 'Kopie speichern'}
+              </Button>
+              <Button
+                onClick={handleSaveAsNewMaster}
+                disabled={isSaving || blankIds.size === 0}
+                className="gap-2 bg-primary hover:bg-primary/90"
+              >
+                {isSaving
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
+                  : <><Crown className="w-4 h-4" /> Als Masteraufgabe speichern</>}
+              </Button>
+            </>
+          ) : (
+            <Button onClick={handleSave} disabled={isSaving || blankIds.size === 0} className="gap-2">
+              {isSaving
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
+                : 'Speichern'}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

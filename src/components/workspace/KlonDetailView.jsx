@@ -16,12 +16,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Save, ArrowRight, Plus, Trash2, Lock, Crown, Loader2, GripVertical } from 'lucide-react';
+import { Save, ArrowRight, Plus, Trash2, Lock, Crown, Loader2, GripVertical, Pencil } from 'lucide-react';
 import LockBanner from '@/components/workspace/LockBanner';
-import ActivityDetailView from '@/components/workspace/ActivityDetailView';
 import { useKlonLock, isLockExpired } from '@/hooks/useActivityLock';
+import { useLernpaketLock } from '@/hooks/useLernpaketLock';
 import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus';
 import LueckentextEditor, { LueckentextRenderer } from '@/components/workspace/LueckentextEditor';
+import LueckentextWysiwygModal from '@/components/workspace/LueckentextWysiwygModal';
 import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
 import SortingListEditor from '@/components/workspace/SortingListEditor';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -50,10 +51,15 @@ function isSorting(name = '') {
   return SORTING_NAMES.some(n => name.toLowerCase().includes(n));
 }
 
-export default function KlonDetailView({ klon, kannBearbeiten, userEmail, masterAufgabe, activityRecord, catalogEntry, onKlonDeleted }) {
+export default function KlonDetailView({ klon, kannBearbeiten, userEmail, masterAufgabe, activityRecord, catalogEntry, onKlonDeleted, onEditModeChange }) {
   const queryClient = useQueryClient();
-  // Bearbeitungsmodus muss explizit aktiviert werden (wie bei MasterAufgabeCard)
   const [editMode, setEditMode] = useState(false);
+
+  // Implizites Locking für Lückentext-Modal (Tab 4)
+  const isLuecke = isLueckentext(catalogEntry?.name);
+  const { acquireLock, releaseLock } = useLernpaketLock(isLuecke ? klon.lernpaket_id : null);
+  const [lueckentextModalOpen, setLueckentextModalOpen] = useState(false);
+  const [acquiringLock, setAcquiringLock] = useState(false);
 
   // Lernpaket-Lock prüfen: Wenn jemand anders den Lernpaket-Lock hält, darf dieser Klon nicht bearbeitet werden
   const LOCK_TIMEOUT_MS = 30 * 60 * 1000;
@@ -146,6 +152,22 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
 
   const [convertDialogOpen, setConvertDialogOpen] = useState(false);
 
+  // Implizites Locking: Lock erwerben → Modal öffnen
+  const handleEditKlon = async () => {
+    setAcquiringLock(true);
+    const ok = await acquireLock();
+    setAcquiringLock(false);
+    if (!ok) return;
+    onEditModeChange?.(true);
+    setLueckentextModalOpen(true);
+  };
+
+  const handleCloseLueckentextModal = async () => {
+    setLueckentextModalOpen(false);
+    await releaseLock();
+    onEditModeChange?.(false);
+  };
+
   const convertToMasterMutation = useMutation({
     mutationFn: async () => {
       if (!masterAufgabe?.activity_id) throw new Error('activity_id fehlt – Klon kann nicht promoted werden.');
@@ -196,34 +218,28 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
           </div>
         </div>
       )}
-      {/* ── Aktivitäts-Header (vereinfacht für Klone) ── */}
-      {activityRecord && catalogEntry && (
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <h2 className="text-lg font-semibold">{catalogEntry.name}</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Phase: {activityRecord.phase}</p>
-            </div>
-            {editMode ? (
-              <button
-                onClick={() => setEditMode(false)}
-                className="px-3 py-1.5 text-sm font-medium rounded-lg border border-input bg-background hover:bg-muted transition-colors shrink-0"
-                title="Bearbeitung beenden"
-              >
-                ✕ Bearbeitung beenden
-              </button>
-            ) : kannBearbeiten && !lockedByOther ? (
-              <button
-                onClick={() => setEditMode(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
-              >
-                <Save className="w-3.5 h-3.5" />
-                Bearbeitungsmodus aktivieren
-              </button>
-            ) : null}
-          </div>
+      {/* ── Header (Tab 4: Info + impliziter "Kopie bearbeiten"-Button) ── */}
+      <div className="rounded-xl border border-border bg-card px-4 py-3 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold truncate">{catalogEntry?.name || 'Kopie'}</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Kopie {klon.klon_index} · Phase: {activityRecord?.phase}
+          </p>
         </div>
-      )}
+        {kannBearbeiten && !lockedByOther && isLuecke && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleEditKlon}
+            disabled={acquiringLock}
+            className="gap-1.5 shrink-0"
+          >
+            {acquiringLock
+              ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sperren…</>
+              : <><Pencil className="w-3.5 h-3.5" /> Kopie bearbeiten</>}
+          </Button>
+        )}
+      </div>
 
       {/* ── Aufgabenstellung des Masters ── */}
       {aufgabenstellung && (
@@ -278,13 +294,40 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
           isKlonLockedByOther(klon, userEmail) ? klon.locked_by_user : null
         } />
 
-        {/* Lückentext-Editor (bei Lückentext-Klonen) */}
+        {/* Lückentext-Klon: Read-only Vorschau + Modal für Bearbeitung */}
         {isLueckentext(catalogEntry?.name) ? (
-          <LueckentextEditor
-            value={data.lueckentext || ''}
-            onChange={(text) => setData(d => ({ ...d, lueckentext: text }))}
-            readOnly={!editMode}
-          />
+          <div className="space-y-3">
+            {data.lueckentext
+              ? <LueckentextEditor value={data.lueckentext} onChange={() => {}} readOnly />
+              : <p className="text-sm text-muted-foreground italic">Noch kein Lückentext. Klicke „Kopie bearbeiten".</p>
+            }
+            <LueckentextWysiwygModal
+              open={lueckentextModalOpen}
+              onOpenChange={(isOpen) => { if (!isOpen) handleCloseLueckentextModal(); }}
+              initialData={data}
+              isSaving={saveMutation.isPending}
+              isCopy={true}
+              onSave={(newData) => {
+                const newFv = { ...data, ...newData };
+                setData(newFv);
+                saveMutation.mutate(newFv, {
+                  onSuccess: () => handleCloseLueckentextModal(),
+                });
+              }}
+              onSaveAsNewMaster={async (newData) => {
+                // Speichere die Änderungen in die Klon-Daten und promote dann
+                const newFv = { ...data, ...newData };
+                setData(newFv);
+                // Klon-Daten aktualisieren, dann als Master anlegen
+                await base44.entities.Aufgabenbausteine.update(klon.id, {
+                  aufgabentext_inhalt: JSON.stringify(newFv),
+                });
+                convertToMasterMutation.mutate(undefined, {
+                  onSuccess: () => handleCloseLueckentextModal(),
+                });
+              }}
+            />
+          </div>
         ) : isMatchTerms(catalogEntry?.name) ? (
           /* Match-Terms-Formular */
           <div className="space-y-3">
