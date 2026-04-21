@@ -441,14 +441,14 @@ export default function ImageLabelingEditor({
                   return (
                     <div
                       key={idx}
-                      className={`absolute border-2 rounded-lg flex items-center justify-center transition-all ${
+                      className={`absolute border-2 rounded-lg flex items-center justify-center transition-all backdrop-blur-sm shadow-sm ${
                         readOnly
-                          ? 'border-green-400 bg-green-50'
+                          ? 'border-solid border-white/80 bg-white/35 z-40'
                           : isDragging
-                          ? 'border-primary bg-primary/20 z-50'
+                          ? 'border-dashed border-blue-600 bg-white/40 z-50'
                           : isHovered
-                          ? 'border-primary/80 bg-primary/10 z-40'
-                          : 'border-dashed border-primary/40 bg-primary/5 z-30'
+                          ? 'border-dashed border-blue-500 bg-white/40 z-40'
+                          : 'border-dashed border-blue-500/60 bg-white/40 z-30'
                       }`}
                       style={{
                         left: `${zone.x_percent}%`,
@@ -465,10 +465,8 @@ export default function ImageLabelingEditor({
                       })}
                       title={zone.label}
                     >
-                      {/* Label */}
-                      <span className={`text-xs font-semibold text-center px-1 line-clamp-2 pointer-events-none ${
-                        readOnly ? 'text-green-800' : 'text-primary'
-                      }`}>
+                      {/* Label Badge mit solidem Hintergrund */}
+                      <span className="px-2 py-1 rounded-md shadow-md text-xs font-bold tracking-wide pointer-events-none bg-blue-600 text-white line-clamp-2 text-center max-w-[calc(100%-8px)]">
                         {zone.label}
                       </span>
 
