@@ -17,8 +17,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Upload, Plus, Trash2, Loader2, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
-const BADGE_WIDTH = 150;
-const BADGE_HEIGHT = 50;
+const DEFAULT_BADGE_WIDTH = 150;
+const DEFAULT_BADGE_HEIGHT = 50;
 
 export default function ImageLabelingEditor({
   initialData,
@@ -30,7 +30,13 @@ export default function ImageLabelingEditor({
   const [data, setData] = useState(() => ({
     aufgabenstellung: initialData?.aufgabenstellung || '',
     backgroundImage: initialData?.backgroundImage || '',
-    dropZones: initialData?.dropZones || [],
+    dropZones: (initialData?.dropZones || []).map(z => ({
+      label: z.label || '',
+      x_percent: z.x_percent ?? 50,
+      y_percent: z.y_percent ?? 50,
+      width: z.width ?? DEFAULT_BADGE_WIDTH,
+      height: z.height ?? DEFAULT_BADGE_HEIGHT,
+    })),
     distractors: (initialData?.distractors || []).map(d => typeof d === 'string' ? d : d),
   }));
 
@@ -59,16 +65,16 @@ export default function ImageLabelingEditor({
   const addDropZone = (label) => {
     setData(d => ({
       ...d,
-      dropZones: [...d.dropZones, { label, x_percent: 50, y_percent: 50 }],
+      dropZones: [...d.dropZones, { label, x_percent: 50, y_percent: 50, width: DEFAULT_BADGE_WIDTH, height: DEFAULT_BADGE_HEIGHT }],
     }));
     onChange?.();
   };
 
-  const updateDropZone = (idx, x_percent, y_percent) => {
+  const updateDropZone = (idx, updates) => {
     setData(d => ({
       ...d,
       dropZones: d.dropZones.map((z, i) =>
-        i === idx ? { ...z, x_percent, y_percent } : z
+        i === idx ? { ...z, ...updates } : z
       ),
     }));
     onChange?.();
@@ -129,7 +135,7 @@ export default function ImageLabelingEditor({
 
     const existingIdx = data.dropZones.findIndex(z => z.label === draggedLabel);
     if (existingIdx >= 0) {
-      updateDropZone(existingIdx, x_percent, y_percent);
+      updateDropZone(existingIdx, { x_percent, y_percent });
     } else {
       addDropZone(draggedLabel);
       // Aktualisierende Koordinate für den gerade hinzugefügten Eintrag
@@ -322,30 +328,24 @@ export default function ImageLabelingEditor({
             {/* Drop-Zones visualisieren */}
             {imageLoaded && imageRef.current && (
               <div className="absolute inset-0 pointer-events-none">
-                {data.dropZones.map((zone, idx) => {
-                  const rect = imageRef.current.getBoundingClientRect();
-                  const x = (zone.x_percent / 100) * rect.width - BADGE_WIDTH / 2;
-                  const y = (zone.y_percent / 100) * rect.height - BADGE_HEIGHT / 2;
-
-                  return (
-                    <div
-                      key={idx}
-                      className="absolute border-2 border-dashed border-primary/40 bg-primary/5 rounded-lg flex items-center justify-center"
-                      style={{
-                        left: `${zone.x_percent}%`,
-                        top: `${zone.y_percent}%`,
-                        width: `${BADGE_WIDTH}px`,
-                        height: `${BADGE_HEIGHT}px`,
-                        transform: 'translate(-50%, -50%)',
-                      }}
-                      title={zone.label}
-                    >
-                      <span className="text-xs font-semibold text-primary text-center px-1 line-clamp-2">
-                        {zone.label}
-                      </span>
-                    </div>
-                  );
-                })}
+                {data.dropZones.map((zone, idx) => (
+                  <div
+                    key={idx}
+                    className="absolute border-2 border-dashed border-primary/40 bg-primary/5 rounded-lg flex items-center justify-center"
+                    style={{
+                      left: `${zone.x_percent}%`,
+                      top: `${zone.y_percent}%`,
+                      width: `${zone.width}px`,
+                      height: `${zone.height}px`,
+                      transform: 'translate(-50%, -50%)',
+                    }}
+                    title={zone.label}
+                  >
+                    <span className="text-xs font-semibold text-primary text-center px-1 line-clamp-2">
+                      {zone.label}
+                    </span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
