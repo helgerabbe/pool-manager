@@ -797,6 +797,8 @@ export default function MasterAufgabeCard({
                       if (content_status) {
                         await base44.entities.MasterAufgabe.update(master.id, { content_status });
                         queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+                        // Invalidiere auch Aktivitäts-Query damit Sidebar synchronisiert wird
+                        queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
                       }
                       handleCloseLueckentextModal();
                     },

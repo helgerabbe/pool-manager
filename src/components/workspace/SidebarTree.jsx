@@ -28,17 +28,22 @@ function AmpelDot({ status, size = 'sm' }) {
 
 function AktivitaetSubNode({ activity, aktivitaetName, isSelected, onSelect, paketId }) {
   const isIncomplete = !activity.is_complete;
+  const isReleased = activity.content_status === 'approved';
+  
+  // Farben nach Freigabe-Status:
+  // - Freigegeben (approved) → Grün
+  // - Nicht freigegeben (draft) → Orange/Gelb (mit oder ohne unvollständig-Warnung)
+  const textColor = isReleased ? 'text-green-600' : 'text-orange-600';
+  
   return (
     <div className={cn(
       'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-[11px]',
-      isIncomplete
-        ? 'text-amber-700'
-        : 'text-muted-foreground'
+      textColor
     )}>
       <Puzzle className="w-3 h-3 shrink-0" />
       <span className="truncate flex-1">{aktivitaetName}</span>
-      {isIncomplete && (
-        <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" title="Inhalt unvollständig" />
+      {isIncomplete && !isReleased && (
+        <AlertTriangle className="w-3 h-3 text-orange-500 shrink-0" title="Inhalt unvollständig" />
       )}
     </div>
   );
@@ -52,7 +57,8 @@ const PHASES = [
 
 function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseActivities, aktivitaetenMap }) {
   const activities = paketPhaseActivities.filter(a => a.phase === phase);
-  const hasIncompleteActivity = activities.some(a => !a.is_complete);
+  // Warn-Icon nur zeigen wenn Aktivität unvollständig UND nicht freigegeben
+  const hasIncompleteActivity = activities.some(a => !a.is_complete && a.content_status !== 'approved');
   const [open, setOpen] = useState(false);
 
   return (
@@ -107,7 +113,8 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
   const lockedByMe = isPaketLocked(paket) && paketLockedBy === userEmail;
   const isActiveEditPaket = isEditingActive && lockedByMe;
 
-  const hatUnvollstaendigeAktivitaet = paketPhaseActivities.some(a => !a.is_complete);
+  // Warn-Icon nur bei unvollständigen UND nicht freigegebenen Aktivitäten
+  const hatUnvollstaendigeAktivitaet = paketPhaseActivities.some(a => !a.is_complete && a.content_status !== 'approved');
 
   return (
     <div className={cn(isActiveEditPaket && "rounded-lg ring-2 ring-orange-400 bg-orange-50/50 ml-1 mr-0.5")}>
@@ -187,8 +194,9 @@ function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedI
     paketStatuses.every(s => s === 'green') ? 'green' :
     paketStatuses.some(s => s === 'red') ? 'red' : 'yellow';
 
+  // Warn-Icon nur bei unvollständigen UND nicht freigegebenen Aktivitäten
   const hatUnvollstaendigeAktivitaet = lernpakete.some(paket =>
-    (paketPhaseActivitiesMap[paket.id] || []).some(a => !a.is_complete)
+    (paketPhaseActivitiesMap[paket.id] || []).some(a => !a.is_complete && a.content_status !== 'approved')
   );
 
   const getPaketIsLocked = (paket) => {

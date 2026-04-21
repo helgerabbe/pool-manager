@@ -181,7 +181,9 @@ export default function ActivityMasterPanel({
       });
     },
     onSuccess: () => {
+      // Invalidiere BEIDE Queries: Aktivitäten + Sidebar-Status
       queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] }); // Sidebar-Refresh
       setIsDirty(false);
       toast.success('Gespeichert.');
     },
