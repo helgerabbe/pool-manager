@@ -106,7 +106,9 @@ export default function ImageLabelingEditor({
     onChange?.();
   };
 
-  const handleDragStart = (label) => {
+  const handleDragStart = (e, label) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', label);
     setDraggedLabel(label);
   };
 
@@ -338,7 +340,7 @@ export default function ImageLabelingEditor({
                       }}
                       title={zone.label}
                     >
-                      <span className="text-[10px] font-semibold text-primary text-center px-1 line-clamp-2">
+                      <span className="text-xs font-semibold text-primary text-center px-1 line-clamp-2">
                         {zone.label}
                       </span>
                     </div>
@@ -357,8 +359,8 @@ export default function ImageLabelingEditor({
                   <div
                     key={term}
                     draggable
-                    onDragStart={() => handleDragStart(term)}
-                    className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium cursor-grab active:cursor-grabbing hover:opacity-90 transition-opacity"
+                    onDragStart={(e) => handleDragStart(e, term)}
+                    className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium cursor-grab active:cursor-grabbing hover:opacity-90 transition-opacity"
                   >
                     {term}
                   </div>
