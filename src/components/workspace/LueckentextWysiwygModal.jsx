@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Sparkles, Loader2, X, Plus, Info, Crown, Trash2 } from 'lucide-react';
+import { Sparkles, Loader2, X, Plus, Info, Crown, Trash2, CheckSquare, Square } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
@@ -204,6 +204,9 @@ function DistraktorenInput({ distraktoren, onChange }) {
 // ── Haupt-Modal ──────────────────────────────────────────────────────────────────
 
 export default function LueckentextWysiwygModal({ open, onOpenChange, initialData = {}, onSave, onSaveAsNewMaster, onDelete, isSaving = false, isCopy = false }) {
+  // Freigabe-State: initial aus DB
+  const [isReleased, setIsReleased] = useState(initialData.content_status === 'approved');
+
   // Rohtext (aus dem der Lehrer schreibt / KI liefert)
   const [rawText, setRawText] = useState(() => {
     // Beim Öffnen: falls schon lueckentext vorhanden, extrahieren wir den Rohtext
@@ -305,7 +308,12 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
       toast.error('Bitte einen Text eingeben.');
       return null;
     }
-    return { lueckentext: buildLueckentextString(tokens, blankIds), lueckenWoerter, distraktoren };
+    return {
+      lueckentext: buildLueckentextString(tokens, blankIds),
+      lueckenWoerter,
+      distraktoren,
+      content_status: isReleased ? 'approved' : 'draft',
+    };
   };
 
   const handleSave = () => {
@@ -478,8 +486,28 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
             )}
           </div>
 
-          {/* Speichern-Buttons – rechts */}
-          <div className="flex items-center gap-2">
+          {/* Freigabe-Toggle + Speichern-Buttons – rechts */}
+          <div className="flex flex-col items-end gap-2">
+            {/* Freigabe-Checkbox */}
+            <button
+              type="button"
+              onClick={() => setIsReleased(v => !v)}
+              disabled={isSaving || isDeleting}
+              className="flex items-center gap-2 text-sm select-none"
+            >
+              {isReleased
+                ? <CheckSquare className="w-4 h-4 text-green-600 shrink-0" />
+                : <Square className="w-4 h-4 text-muted-foreground shrink-0" />}
+              <span className={isReleased ? 'text-green-700 font-medium' : 'text-muted-foreground'}>
+                Inhalt für Lernende freigeben
+              </span>
+            </button>
+            {isReleased && (
+              <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1">
+                Hinweis: Nach dem Speichern ist dieser Inhalt für Schüler sichtbar.
+              </p>
+            )}
+            <div className="flex items-center gap-2">
             <Button variant="outline" onClick={handleClose} disabled={isSaving || isDeleting}>
               Abbrechen
             </Button>
@@ -512,6 +540,7 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
                   : 'Speichern'}
               </Button>
             )}
+            </div>
           </div>
         </DialogFooter>
       </DialogContent>

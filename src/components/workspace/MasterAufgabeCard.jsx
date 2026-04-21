@@ -785,13 +785,21 @@ export default function MasterAufgabeCard({
                 onOpenChange={(isOpen) => {
                   if (!isOpen) handleCloseLueckentextModal();
                 }}
-                initialData={fieldValues}
+                initialData={{ ...fieldValues, content_status: master.content_status }}
                 isSaving={saveMutation.isPending}
                 onSave={(data) => {
-                  const newFv = { ...fieldValues, ...data };
+                  const { content_status, ...fvData } = data;
+                  const newFv = { ...fieldValues, ...fvData };
                   setFieldValues(newFv);
                   saveMutation.mutate({ fv: newFv, closeEdit: false }, {
-                    onSuccess: () => handleCloseLueckentextModal(),
+                    onSuccess: async () => {
+                      // content_status separat auf MasterAufgabe speichern
+                      if (content_status) {
+                        await base44.entities.MasterAufgabe.update(master.id, { content_status });
+                        queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+                      }
+                      handleCloseLueckentextModal();
+                    },
                   });
                 }}
                 onDelete={async () => {

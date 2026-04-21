@@ -163,8 +163,9 @@ export default function ActivityMasterPanel({
   const saveFieldsMutation = useMutation({
     mutationFn: (values) => {
       const formSchema = catalogEntry?.form_schema || [];
-      // Standardtexte für leere aufgabentext-Felder einsetzen
-      const enrichedValues = { ...values };
+      // content_status aus values extrahieren (nicht in field_values speichern)
+      const { content_status, ...rest } = values;
+      const enrichedValues = { ...rest };
       formSchema.forEach(f => {
         if (f.field_name === 'aufgabentext' && f.default_text && !enrichedValues[f.field_name]) {
           enrichedValues[f.field_name] = f.default_text;
@@ -176,6 +177,7 @@ export default function ActivityMasterPanel({
       return base44.entities.LernpaketPhaseAktivitaet.update(activityRecord.id, {
         field_values: enrichedValues,
         is_complete: requiredFilled,
+        ...(content_status ? { content_status } : {}),
       });
     },
     onSuccess: () => {
@@ -212,7 +214,9 @@ export default function ActivityMasterPanel({
   const handleModalSave = async (values) => {
     await saveFieldsMutation.mutateAsync(values, {
       onSuccess: async () => {
-        setFieldValues(values);
+        // content_status nicht in lokalem fieldValues-State speichern
+        const { content_status, ...fieldOnly } = values;
+        setFieldValues(fieldOnly);
         setEditModalOpen(false);
         await releaseLock();
         onEditModeChange?.(false);
@@ -399,7 +403,7 @@ export default function ActivityMasterPanel({
               open={editModalOpen}
               onOpenChange={(isOpen) => { if (!isOpen) handleModalCancel(); }}
               catalogEntry={catalogEntry}
-              initialFieldValues={fieldValues}
+              initialFieldValues={{ ...fieldValues, content_status: activityRecord?.content_status }}
               onSave={handleModalSave}
               onCancel={handleModalCancel}
               isSaving={saveFieldsMutation.isPending}
