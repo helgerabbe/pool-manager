@@ -16,7 +16,6 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Crown, Plus, Loader2, ChevronRight, Save, Pencil, Check, ExternalLink } from 'lucide-react';
-import ActivityDetailView from '@/components/workspace/ActivityDetailView';
 import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
@@ -282,14 +281,18 @@ export default function ActivityMasterPanel({
 
   return (
     <div className="space-y-6 overflow-visible h-auto">
-      {/* ── Aktivitäts-Header ────────────────────────────────────────────────── */}
-      <div className="rounded-xl border border-border bg-card p-4">
-        <ActivityDetailView
-          activityRecord={{ ...activityRecord, is_complete: effectivelyComplete }}
-          kannBearbeiten={kannBearbeiten}
-          queryClient={queryClient}
-          onEditModeChange={onEditModeChange}
-        />
+      {/* ── Aktivitäts-Header (Tab 4: nur Info, KEIN Lock-Toggle-Button) ──────── */}
+      <div className="rounded-xl border border-border bg-card px-4 py-3 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold truncate">{catalogEntry?.name || 'Aktivität'}</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Phase: {activityRecord?.phase}</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {effectivelyComplete
+            ? <span className="text-xs font-medium text-green-700 bg-green-100 border border-green-300 px-2 py-0.5 rounded-full">✓ Vollständig</span>
+            : <span className="text-xs font-medium text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">Noch unvollständig</span>
+          }
+        </div>
       </div>
 
       {/* ── Inhaltsfelder für Aktivitäten ohne Masteraufgaben ──────────────────── */}
