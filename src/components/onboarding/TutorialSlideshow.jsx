@@ -9,7 +9,8 @@
  * durch UserService.getTutorialStatus() / .setTutorialSeen() ersetzt werden.
  */
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Button } from '@/components/ui/button';
 import {
   ChevronRight, ChevronLeft, CheckCircle2,
@@ -100,6 +101,7 @@ export function TutorialSlideshowDialog({ open: controlledOpen, onClose }) {
   return (
     <Dialog open={controlledOpen} onOpenChange={(v) => { if (!v) handleClose(); }}>
       <DialogContent className="sm:max-w-lg p-0 overflow-hidden gap-0">
+        <VisuallyHidden><DialogTitle>{current.title}</DialogTitle></VisuallyHidden>
         <div className="flex flex-col items-center text-center px-8 pt-8 pb-4 gap-5">
           <div className={cn('w-16 h-16 rounded-2xl flex items-center justify-center shrink-0', current.color)}>
             <Icon className="w-8 h-8" />
