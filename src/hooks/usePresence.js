@@ -124,8 +124,8 @@ export function usePresence(currentView = 'dashboard') {
           } else {
             // Duplikate löschen (Fehler silent ignorieren, wenn bereits gelöscht)
             for (let i = 1; i < existing.length; i++) {
-              deletePresenceRecord(existing[i].id).catch(err => {
-                console.debug('[usePresence] Duplicate delete failed (probably already gone):', err.message);
+              deletePresenceRecord(existing[i].id).catch(() => {
+                // Silently ignore
               });
             }
           }
@@ -215,8 +215,8 @@ export function usePresence(currentView = 'dashboard') {
       if (myRecordIdRef.current) {
         const id = myRecordIdRef.current;
         myRecordIdRef.current = null;
-        deletePresenceRecord(id).catch(err => {
-          console.debug('[usePresence] Cleanup delete failed (probably already gone):', err.message);
+        deletePresenceRecord(id).catch(() => {
+          // Silently ignore – record may have been deleted externally
         });
       }
     };
@@ -225,8 +225,8 @@ export function usePresence(currentView = 'dashboard') {
       mountedRef.current = false;
       clearInterval(heartbeatRef.current);
       if (myRecordIdRef.current) {
-        deletePresenceRecord(myRecordIdRef.current).catch(err => {
-          console.debug('[usePresence] Unload delete failed:', err.message);
+        deletePresenceRecord(myRecordIdRef.current).catch(() => {
+          // Silently ignore
         });
         myRecordIdRef.current = null;
       }
