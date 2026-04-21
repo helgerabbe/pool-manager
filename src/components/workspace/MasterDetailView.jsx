@@ -15,11 +15,17 @@ import { Crown, Pencil, Loader2, CheckCircle2, Sparkles } from 'lucide-react';
 import { useLernpaketLock } from '@/hooks/useLernpaketLock';
 import LueckentextEditor from '@/components/workspace/LueckentextEditor';
 import LueckentextWysiwygModal from '@/components/workspace/LueckentextWysiwygModal';
+import SortingListModal from '@/components/workspace/SortingListModal';
 import { toast } from 'sonner';
 
 const LUECKENTEXT_NAMES = ['lückentext', 'lücken', 'lueckentext', 'cloze', 'fill in'];
 function isLueckentext(name = '') {
   return LUECKENTEXT_NAMES.some(n => name.toLowerCase().includes(n));
+}
+
+const SORTING_NAMES = ['reihenfolge', 'sortierung', 'sequenzierung', 'sorting', 'sequence'];
+function isSorting(name = '') {
+  return SORTING_NAMES.some(n => name.toLowerCase().includes(n));
 }
 
 function MasterContentReadOnly({ master, catalogName }) {
@@ -187,10 +193,12 @@ export default function MasterDetailView({
   const queryClient = useQueryClient();
   const catalogName = catalogEntry?.name || '';
   const isLuecke = isLueckentext(catalogName);
+  const isSort = isSorting(catalogName);
 
-  const { acquireLock, releaseLock } = useLernpaketLock(isLuecke ? master.lernpaket_id : null);
+  const { acquireLock, releaseLock } = useLernpaketLock((isLuecke || isSort) ? master.lernpaket_id : null);
   const [acquiringLock, setAcquiringLock] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [lueckeModalOpen, setLueckeModalOpen] = useState(false);
+  const [sortingModalOpen, setSortingModalOpen] = useState(false);
   const [fieldValues, setFieldValues] = useState(master.field_values || {});
 
   const saveMutation = useMutation({
@@ -203,17 +211,20 @@ export default function MasterDetailView({
   });
 
   const handleEdit = async () => {
-    if (!isLuecke) return; // Andere Typen nutzen eigene Flows
+    if (!isLuecke && !isSort) return;
     setAcquiringLock(true);
     const ok = await acquireLock();
     setAcquiringLock(false);
     if (!ok) return;
     onEditModeChange?.(true);
-    setModalOpen(true);
+    
+    if (isLuecke) setLueckeModalOpen(true);
+    if (isSort) setSortingModalOpen(true);
   };
 
   const handleCloseModal = async () => {
-    setModalOpen(false);
+    setLueckeModalOpen(false);
+    setSortingModalOpen(false);
     await releaseLock();
     onEditModeChange?.(false);
   };
@@ -258,7 +269,7 @@ export default function MasterDetailView({
         </div>
 
         {/* Bearbeiten-Button */}
-        {kannBearbeiten && isLuecke && (
+        {kannBearbeiten && (isLuecke || isSort) && (
           <Button
             onClick={handleEdit}
             disabled={acquiringLock}
@@ -309,7 +320,7 @@ export default function MasterDetailView({
       {/* ── Lückentext-Modal ── */}
       {isLuecke && (
         <LueckentextWysiwygModal
-          open={modalOpen}
+          open={lueckeModalOpen}
           onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
           initialData={fieldValues}
           isSaving={saveMutation.isPending}
@@ -322,6 +333,24 @@ export default function MasterDetailView({
             });
           }}
           onDelete={handleDelete}
+        />
+      )}
+
+      {/* ── Sortierung-Modal ── */}
+      {isSort && (
+        <SortingListModal
+          open={sortingModalOpen}
+          onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+          initialData={fieldValues}
+          isSaving={saveMutation.isPending}
+          onSave={(newData) => {
+            const newFv = { ...fieldValues, ...newData };
+            setFieldValues(newFv);
+            saveMutation.mutate(newFv, {
+              onSuccess: () => handleCloseModal(),
+            });
+          }}
+          onCancel={handleCloseModal}
         />
       )}
     </div>
