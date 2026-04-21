@@ -518,14 +518,14 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
             {/* ── Tab 3: Aktivitäten zuordnen → Sidebar-Baum + Detail-Panel ───── */}
             <TabsContent value="aktivitaeten" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
-              {/* Lernpaket-Edit-Warnung (wie in Tab 4) */}
-              {isLernpaketEditActive && (
-                <div className="shrink-0 px-4 py-2.5 bg-orange-500 text-white flex items-center gap-3">
-                  <PenLine className="w-4 h-4 shrink-0 animate-pulse" />
-                  <span className="text-sm font-semibold flex-1">✏️ Bearbeitungsmodus aktiv – ein Lernpaket ist für andere gesperrt</span>
-                </div>
-              )}
               <ErrorBoundary label="Aktivitäten-Struktur">
+                {/* Sticky Edit-Banner – direkt an globalem isLernpaketEditActive gebunden (Single Source of Truth) */}
+                {isLernpaketEditActive && (
+                  <div className="shrink-0 bg-orange-500 text-white px-6 py-2.5 flex items-center gap-3">
+                    <PenLine className="w-4 h-4 shrink-0 animate-pulse" />
+                    <span className="text-sm font-semibold flex-1">✏️ Bearbeitungsmodus aktiv – ein Lernpaket ist für andere gesperrt</span>
+                  </div>
+                )}
                 <div className={cn(
                   "flex flex-col lg:flex-row flex-1 overflow-hidden transition-colors",
                   isLernpaketEditActive && "bg-orange-50/60 ring-2 ring-inset ring-orange-300"
@@ -546,6 +546,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                       userEmail={authUser?.email || ''}
                       highlightedAtomIds={highlightedAtomIds}
                       phaseAktivitaeten={lernpaketAktivitaeten}
+                      isEditingActive={isLernpaketEditActive}
                       />
                       </div>
                       </div>

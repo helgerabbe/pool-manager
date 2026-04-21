@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { ChevronRight, BookOpen, Layers, Puzzle, Lock, Edit, UserRound, FolderOpen, AlertTriangle } from 'lucide-react';
+import { ChevronRight, BookOpen, Layers, Puzzle, Lock, Edit, UserRound, FolderOpen, AlertTriangle, PenLine } from 'lucide-react';
 import {
   getLernpaketStatus,
   getEinheitFortschritt,
@@ -98,18 +98,19 @@ function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseA
   );
 }
 
-function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenzielleUndGesperrt, aktivitaetenMap, paketPhaseActivities, showNumber = false, phaseAktivitaeten = [] }) {
+function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenzielleUndGesperrt, aktivitaetenMap, paketPhaseActivities, showNumber = false, phaseAktivitaeten = [], isEditingActive = false }) {
    const [open, setOpen] = useState(false); // Geschlossen am Anfang
   const isSelected = selectedId === paket.id;
   const status = getLernpaketStatus(paket, lernziele, aufgaben, userEmail, mappings, phaseAktivitaeten);
   const paketLockedBy = paket.locked_by_user || paket.locked_by;
   const lockedByOther = isPaketLocked(paket) && paketLockedBy !== userEmail;
   const lockedByMe = isPaketLocked(paket) && paketLockedBy === userEmail;
+  const isActiveEditPaket = isEditingActive && lockedByMe;
 
   const hatUnvollstaendigeAktivitaet = paketPhaseActivities.some(a => !a.is_complete);
 
   return (
-    <div>
+    <div className={cn(isActiveEditPaket && "rounded-lg ring-2 ring-orange-400 bg-orange-50/50 ml-1 mr-0.5")}>
       <div className="flex items-center gap-0.5">
         <button onClick={() => setOpen(o => !o)} className="p-0.5 text-muted-foreground hover:text-foreground shrink-0">
           <ChevronRight className={cn('w-3.5 h-3.5 transition-transform', open && 'rotate-90')} />
@@ -137,10 +138,13 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
               <UserRound className="w-2.5 h-2.5" />
             </span>
           )}
-          {!isSelected && lockedByMe && (
+          {!isSelected && lockedByMe && !isActiveEditPaket && (
             <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded shrink-0 flex items-center gap-0.5">
               <Lock className="w-2.5 h-2.5" />
             </span>
+          )}
+          {isActiveEditPaket && (
+            <PenLine className="w-3.5 h-3.5 text-orange-500 shrink-0 animate-pulse" />
           )}
           {!isSelected && !lockedByOther && !lockedByMe && <AmpelDot status={status === 'yellow' ? 'red' : status} size="md" />}
           {!isSelected && hatUnvollstaendigeAktivitaet && (
@@ -173,7 +177,7 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
   );
 }
 
-function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenziell, aktivitaetenMap, paketPhaseActivitiesMap, isSammelbecken = false, phaseAktivitaeten = [] }) {
+function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenziell, aktivitaetenMap, paketPhaseActivitiesMap, isSammelbecken = false, phaseAktivitaeten = [], isEditingActive = false }) {
    const [open, setOpen] = useState(!isSammelbecken);
   const isSelected = selectedId === `themenfeld-${themenfeld.id}`;
 
@@ -236,6 +240,7 @@ function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedI
                  paketPhaseActivities={paketPhaseActivitiesMap[paket.id] || []}
                  showNumber={isSequenziell}
                  phaseAktivitaeten={phaseAktivitaeten}
+                 isEditingActive={isEditingActive}
                />
             ))
           )}
@@ -271,6 +276,7 @@ export default function SidebarTree({
   userEmail = '',
   highlightedAtomIds = new Set(),
   phaseAktivitaeten = [],
+  isEditingActive = false,
 }) {
   const selectedId = selectedNode?.id;
   const [mobileThemenfeldId, setMobileThemenfeldId] = useState(themenfelder[0]?.id || null);
@@ -346,6 +352,7 @@ export default function SidebarTree({
               paketPhaseActivitiesMap={paketPhaseActivitiesMap}
               isSammelbecken={true}
               phaseAktivitaeten={phaseAktivitaeten}
+              isEditingActive={isEditingActive}
             />
           </div>
         )}
@@ -368,6 +375,7 @@ export default function SidebarTree({
                 aktivitaetenMap={aktivitaetenMap}
                 paketPhaseActivitiesMap={paketPhaseActivitiesMap}
                 phaseAktivitaeten={phaseAktivitaeten}
+                isEditingActive={isEditingActive}
               />
             ))}
           </div>
@@ -395,6 +403,7 @@ export default function SidebarTree({
                   paketPhaseActivities={paketPhaseActivitiesMap[paket.id] || []}
                   showNumber={tf?.bearbeitungsmodus === 'sequenziell'}
                   phaseAktivitaeten={phaseAktivitaeten}
+                  isEditingActive={isEditingActive}
                 />
               ));
             })()}
