@@ -321,6 +321,23 @@ export default function MasterAufgabeCard({
     onEditModeChange?.(false);
   };
 
+  const handleEditSortierung = async () => {
+    setAcquiringLock(true);
+    const ok = await acquireLock();
+    setAcquiringLock(false);
+    if (!ok) {
+      return;
+    }
+    onEditModeChange?.(true);
+    setSortingListModalOpen(true);
+  };
+
+  const handleCloseSortierungModal = () => {
+    setSortingListModalOpen(false);
+    releaseLock();
+    onEditModeChange?.(false);
+  };
+
   // Zeige Klone wenn zugeklappt
   const showKloneWhenCollapsed = collapsed && klone.length > 0;
 
@@ -377,8 +394,8 @@ export default function MasterAufgabeCard({
                   // Lückentext: Implizites Locking über Modal
                   handleEditLueckentext();
                 } else if (isSort) {
-                  // Sortierung: Modal öffnen
-                  setSortingListModalOpen(true);
+                  // Sortierung: Implizites Locking über Modal
+                  handleEditSortierung();
                 } else if (isQuiz) {
                   // Mini-Quiz: Modal öffnen
                   setMiniQuizModalOpen(true);
@@ -648,7 +665,7 @@ export default function MasterAufgabeCard({
               <SortingListModal
                 open={sortingListModalOpen}
                 onOpenChange={(isOpen) => {
-                  if (!isOpen) setSortingListModalOpen(false);
+                  if (!isOpen) handleCloseSortierungModal();
                 }}
                 initialData={{ ...fieldValues, content_status: master.content_status, moodle_sync_status: master.moodle_sync_status }}
                 onSave={(data) => {
@@ -662,13 +679,11 @@ export default function MasterAufgabeCard({
                         queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
                         queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
                       }
-                      setSortingListModalOpen(false);
+                      handleCloseSortierungModal();
                     },
                   });
                 }}
-                onCancel={() => {
-                  setSortingListModalOpen(false);
-                }}
+                onCancel={handleCloseSortierungModal}
                 isSaving={saveMutation.isPending}
               />
             </div>
@@ -902,21 +917,9 @@ export default function MasterAufgabeCard({
               />
             </div>
           ) : (
-            /* ── Generischer Fallback (auch für Sortierung wenn nicht spezialisiert) ── */
+            /* ── Generischer Fallback ── */
             <div className="space-y-3">
-              {editMode && isSort ? (
-                <>
-                  <SortingListEditor
-                    initialData={fieldValues}
-                    onSave={(data) => {
-                      setFieldValues(data);
-                      handleSaveAndClose(data);
-                    }}
-                    onCancel={() => { setEditMode(false); setHasPendingChanges(false); }}
-                    onChange={() => setHasPendingChanges(true)}
-                  />
-                </>
-              ) : editMode ? (
+              {editMode ? (
                 <div className="space-y-2">
                   <Textarea
                     value={fieldValues.task_description || ''}
