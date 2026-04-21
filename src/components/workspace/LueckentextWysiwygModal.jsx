@@ -45,13 +45,12 @@ function buildLueckentextString(tokens, blankIds) {
     .join('');
 }
 
-// ── KI-Assistent Mini ────────────────────────────────────────────────────────────
+// ── KI-Assistent Full-Width ─────────────────────────────────────────────────────
 
-function KIAssistentInline({ onAccept }) {
+function KIAssistentExpanded({ onAccept }) {
   const [sourceMaterial, setSourceMaterial] = useState('');
   const [targetWords, setTargetWords] = useState('');
   const [generating, setGenerating] = useState(false);
-  const [open, setOpen] = useState(false);
 
   const handleGenerate = async () => {
     if (!sourceMaterial.trim()) {
@@ -64,7 +63,6 @@ function KIAssistentInline({ onAccept }) {
       const text = res.data?.text || '';
       if (text) {
         onAccept(text);
-        setOpen(false);
         setSourceMaterial('');
         setTargetWords('');
         toast.success('KI-Lückentext übernommen.');
@@ -76,43 +74,62 @@ function KIAssistentInline({ onAccept }) {
     }
   };
 
-  if (!open) {
-    return (
-      <Button size="sm" variant="outline" onClick={() => setOpen(true)} className="gap-1.5 text-xs border-primary/30 text-primary hover:bg-primary/5">
-        <Sparkles className="w-3.5 h-3.5" />
-        KI-Assistent
-      </Button>
-    );
-  }
-
   return (
-    <div className="p-3 border border-primary/20 rounded-lg bg-primary/5 space-y-3">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-primary flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5" /> KI-Assistent: Lückentext generieren
-        </p>
-        <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
-          <X className="w-3.5 h-3.5" />
-        </button>
+    <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-5 space-y-4">
+      {/* Header mit Icon und Titel */}
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
+          <Sparkles className="w-4 h-4 text-indigo-600" />
+        </div>
+        <h3 className="text-sm font-semibold text-indigo-900">KI-Assistent: Lückentext generieren</h3>
       </div>
-      <Textarea
-        value={sourceMaterial}
-        onChange={e => setSourceMaterial(e.target.value)}
-        placeholder="Quelltext oder Themenbeschreibung..."
-        className="min-h-20 text-sm"
-        disabled={generating}
-      />
-      <Input
-        value={targetWords}
-        onChange={e => setTargetWords(e.target.value)}
-        placeholder="Zielwörter (optional): Photosynthese, Chlorophyll, ..."
-        disabled={generating}
-      />
-      <Button onClick={handleGenerate} disabled={generating || !sourceMaterial.trim()} className="gap-2 w-full" size="sm">
-        {generating
-          ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generiere…</>
-          : <><Sparkles className="w-3.5 h-3.5" /> Generieren & übernehmen</>}
-      </Button>
+
+      {/* Hilfetext / Anleitung */}
+      <p className="text-sm text-slate-600 leading-relaxed">
+        Beschreibe ein Thema, zu dem die KI einen Lückentext verfassen soll (z. B. <em>"Fotosynthese"</em>), oder füge einen bereits bestehenden Text ein, aus dem die KI automatisch sinnvolle Lücken generiert.
+      </p>
+
+      {/* Eingabefelder: Side-by-Side Desktop, Stack Mobile */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Quelltext */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-slate-700">Quelltext oder Themenbeschreibung</label>
+          <Textarea
+            value={sourceMaterial}
+            onChange={e => setSourceMaterial(e.target.value)}
+            placeholder="z. B.: Fotosynthese, oder einen kompletten Text eingeben..."
+            className="min-h-[100px] text-sm"
+            disabled={generating}
+          />
+        </div>
+
+        {/* Zielwörter */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-slate-700">Zielwörter (optional)</label>
+          <Textarea
+            value={targetWords}
+            onChange={e => setTargetWords(e.target.value)}
+            placeholder="z. B.: Photosynthese, Chlorophyll, Glukose (komma-separiert)"
+            className="min-h-[100px] text-sm"
+            disabled={generating}
+          />
+          <p className="text-[10px] text-slate-500">Die KI wird diese Wörter bevorzugt als Lücken setzen.</p>
+        </div>
+      </div>
+
+      {/* Button */}
+      <div className="flex justify-end pt-2">
+        <Button
+          onClick={handleGenerate}
+          disabled={generating || !sourceMaterial.trim()}
+          className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white"
+          size="sm"
+        >
+          {generating
+            ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generiere…</>
+            : <><Sparkles className="w-3.5 h-3.5" /> Generieren & übernehmen</>}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -384,12 +401,12 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
         {/* Scrollbarer Inhalt */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6 min-h-0">
 
-          {/* ── Bereich A: Texteingabe ── */}
+          {/* ── KI-Assistent Full-Width ── */}
+          <KIAssistentExpanded onAccept={handleKIAccept} />
+
+          {/* ── Bereich A: Manuelle Texteingabe ── */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-semibold">Schritt 1: Text eingeben</Label>
-              <KIAssistentInline onAccept={handleKIAccept} />
-            </div>
+            <Label className="text-lg font-semibold">Schritt 1: Text eingeben oder manuell verfassen</Label>
             <Textarea
               value={rawText}
               onChange={e => handleRawTextChange(e.target.value)}
