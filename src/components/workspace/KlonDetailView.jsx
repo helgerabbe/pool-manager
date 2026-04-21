@@ -51,7 +51,7 @@ function isSorting(name = '') {
   return SORTING_NAMES.some(n => name.toLowerCase().includes(n));
 }
 
-export default function KlonDetailView({ klon, kannBearbeiten, userEmail, masterAufgabe, activityRecord, catalogEntry, onKlonDeleted, onEditModeChange }) {
+export default function KlonDetailView({ klon, kannBearbeiten, userEmail, masterAufgabe, activityRecord, catalogEntry, parentLernpaketName = null, onKlonDeleted, onEditModeChange }) {
   const queryClient = useQueryClient();
   const [editMode, setEditMode] = useState(false);
 
@@ -221,6 +221,11 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
       {/* ── Header (Tab 4: Info + impliziter "Kopie bearbeiten"-Button) ── */}
       <div className="rounded-xl border border-border bg-card px-4 py-3 flex items-center justify-between gap-3">
         <div className="min-w-0">
+          {parentLernpaketName && (
+            <p className="text-xs text-muted-foreground uppercase font-semibold tracking-wide mb-0.5 truncate">
+              {parentLernpaketName}
+            </p>
+          )}
           <h2 className="text-base font-semibold truncate">{catalogEntry?.name || 'Kopie'}</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             Kopie {klon.klon_index} · Phase: {activityRecord?.phase}

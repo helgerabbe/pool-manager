@@ -543,6 +543,10 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
   const selectedCatalog = selectedActivity ? aktivitaetenKatalog.find(c => c.id === selectedActivity.aktivitaet_id) : null;
   const supportsMaster = selectedCatalog?.supports_master === true;
 
+  // Lernpaket-Name für Breadcrumb/Overline in allen Detailansichten
+  const getLernpaketName = (lernpaketId) =>
+    lernpakete.find(lp => lp.id === lernpaketId)?.titel_des_pakets || null;
+
   return (
     <div className="flex flex-row flex-1 overflow-hidden">
 
@@ -692,6 +696,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
               userEmail={userEmail}
               userRole={userRole}
               einheitId={einheitId}
+              parentLernpaketName={getLernpaketName(selectedActivity.lernpaket_id)}
               onMasterSelected={(masterId) => {
                 const master = alleMaster.find(m => m.id === masterId);
                 if (master) setSelectedItem({ type: 'master', master });
@@ -722,6 +727,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
                 klone={masterKlone}
                 kannBearbeiten={kannBearbeiten}
                 userEmail={userEmail}
+                parentLernpaketName={getLernpaketName(master.lernpaket_id)}
                 onDeleted={() => setSelectedItem(masterActivity ? { type: 'activity', activity: masterActivity } : null)}
                 onEditModeChange={handleEditModeChange}
               />
@@ -744,6 +750,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
                 masterAufgabe={klonMaster}
                 activityRecord={klonActivity}
                 catalogEntry={klonCatalog}
+                parentLernpaketName={getLernpaketName(selectedItem.klon.lernpaket_id)}
                 onKlonDeleted={() => setSelectedItem(klonMaster ? { type: 'master', master: klonMaster } : null)}
                 onEditModeChange={handleEditModeChange}
               />
@@ -771,6 +778,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
                   userEmail={userEmail}
                   userRole={userRole}
                   einheitId={einheitId}
+                  parentLernpaketName={getLernpaketName(selectedActivity.lernpaket_id)}
                   onMasterSelected={(masterId) => {
                     const master = alleMaster.find(m => m.id === masterId);
                     if (master) setSelectedItem({ type: 'master', master });
@@ -801,6 +809,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
                     klone={masterKlone}
                     kannBearbeiten={kannBearbeiten}
                     userEmail={userEmail}
+                    parentLernpaketName={getLernpaketName(master.lernpaket_id)}
                     onDeleted={() => setSelectedItem(masterActivity ? { type: 'activity', activity: masterActivity } : null)}
                     onEditModeChange={handleEditModeChange}
                   />
@@ -823,6 +832,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
                     masterAufgabe={klonMaster}
                     activityRecord={klonActivity}
                     catalogEntry={klonCatalog}
+                    parentLernpaketName={getLernpaketName(selectedItem.klon.lernpaket_id)}
                     onKlonDeleted={() => setSelectedItem(klonMaster ? { type: 'master', master: klonMaster } : null)}
                     onEditModeChange={handleEditModeChange}
                   />
