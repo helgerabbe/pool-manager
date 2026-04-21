@@ -53,7 +53,11 @@ function isKlonLockedByOther(klon, myEmail) {
 // ── Klon-Unterzeile ───────────────────────────────────────────────────────────
 
 function KlonSubItem({ klon, isSelected, onSelect }) {
-   const isApproved = klon.sync_status === 'approved';
+   // Farb-Logik basierend auf content_status (nicht sync_status)
+   const isReleased = klon.content_status === 'approved';
+   const textColor = isReleased ? 'text-green-600' : 'text-orange-600';
+   const isIncomplete = !klon.is_complete;
+
    return (
      <button
        onClick={() => onSelect({ type: 'klon', klon })}
@@ -61,136 +65,146 @@ function KlonSubItem({ klon, isSelected, onSelect }) {
          'w-full flex items-center gap-2 px-2 py-1 rounded-md text-left text-[11px] transition-colors',
          isSelected
            ? 'bg-primary/10 text-primary font-medium'
-           : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+           : cn('hover:bg-muted', textColor)
        )}
      >
        <span className="flex-1 truncate">
-         {isApproved ? '✓' : '○'} Kopie {klon.klon_index}
+         {isReleased ? '✓' : '○'} Kopie {klon.klon_index}
        </span>
-      {isApproved
-        ? <Badge variant="outline" className="text-[10px] text-green-700 border-green-300 bg-green-50">✓ Export</Badge>
-        : <Badge variant="secondary" className="text-[10px]">Entwurf</Badge>}
-    </button>
-  );
+       {isIncomplete && !isReleased && (
+         <AlertTriangle className="w-3 h-3 text-orange-500 shrink-0" title="Inhalt unvollständig" />
+       )}
+     </button>
+   );
 }
 
 // ── Master-Unterzeile (mit eingerückten Klonen, einklappbar) ───────────────────────────────
 
 function MasterSubItem({ master, index, klone, selectedItem, onSelect, catalogEntry }) {
-  const isMasterSelected = selectedItem?.type === 'master' && selectedItem?.master?.id === master.id;
-  const hasSelectedKlon = klone.some(k => selectedItem?.type === 'klon' && selectedItem?.klon?.id === k.id);
-  const [expanded, setExpanded] = useState(isMasterSelected || hasSelectedKlon);
+   const isMasterSelected = selectedItem?.type === 'master' && selectedItem?.master?.id === master.id;
+   const hasSelectedKlon = klone.some(k => selectedItem?.type === 'klon' && selectedItem?.klon?.id === k.id);
+   const [expanded, setExpanded] = useState(isMasterSelected || hasSelectedKlon);
 
-  // Auto-expand wenn Master oder Klon selektiert wird
-  useEffect(() => {
-    if (isMasterSelected || hasSelectedKlon) {
-      setExpanded(true);
-    }
-  }, [isMasterSelected, hasSelectedKlon]);
+   // Auto-expand wenn Master oder Klon selektiert wird
+   useEffect(() => {
+     if (isMasterSelected || hasSelectedKlon) {
+       setExpanded(true);
+     }
+   }, [isMasterSelected, hasSelectedKlon]);
 
-  const isKITutor = catalogEntry?.name?.toLowerCase().includes('ki-tutor');
+   const isKITutor = catalogEntry?.name?.toLowerCase().includes('ki-tutor');
 
-  return (
-    <div>
-      <div className="flex items-center gap-0.5">
-        {/* Expand-Button (für KI-Tutor und Masters mit Klonen) */}
-        {isKITutor || klone.length > 0 ? (
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="p-0.5 text-muted-foreground hover:text-foreground shrink-0"
-            title={expanded ? 'Einklappen' : 'Aufklappen'}
-          >
-            <ChevronRight className={cn('w-3 h-3 transition-transform', expanded && 'rotate-90')} />
-          </button>
-        ) : (
-          <div className="w-4" /> /* Spacer für Alignment */
-        )}
-        
-        <button
-          onClick={() => onSelect({ type: 'master', master })}
-          className={cn(
-            'flex-1 flex items-center gap-1.5 px-2 py-1 rounded-md text-left text-[11px] transition-colors',
-            isMasterSelected
-              ? 'bg-primary/15 text-primary font-semibold'
-              : 'text-foreground hover:bg-muted'
-          )}
-        >
-          <Crown className="w-3 h-3 shrink-0 text-primary/70" />
-          <span className="flex-1 truncate">{master.titel || `Master ${index}`}</span>
-          {master.content_status === 'approved' && (
-            <CheckCircle2 className="w-3 h-3 shrink-0 text-green-600" title="Fertig" />
-          )}
-          {klone.length > 0 && (
-            <span className="text-[10px] bg-primary/10 text-primary px-1 py-0.5 rounded shrink-0">
-              {klone.length}
-            </span>
-          )}
-        </button>
-      </div>
+   // Farb-Logik basierend auf content_status
+   const isReleased = master.content_status === 'approved';
+   const textColor = isReleased ? 'text-green-600' : 'text-orange-600';
+   const isIncomplete = !master.is_complete;
 
-      {/* Expandierte Klone oder Inhalts-Preview für KI-Tutor */}
-      {expanded && (
-        <div className="ml-4 mt-0.5 border-l border-border pl-2 space-y-0.5">
-          {klone.length > 0 ? (
-            klone.map((klon) => (
-              <KlonSubItem
-                key={klon.id}
-                klon={klon}
-                isSelected={selectedItem?.type === 'klon' && selectedItem?.klon?.id === klon.id}
-                onSelect={onSelect}
-              />
-            ))
-          ) : isKITutor ? (
-            <p className="px-2 py-1 text-[10px] text-muted-foreground/60 italic">Keine Klone (KI-Tutor-Aufgabe)</p>
-          ) : null}
-        </div>
-      )}
-    </div>
-  );
+   return (
+     <div>
+       <div className="flex items-center gap-0.5">
+         {/* Expand-Button (für KI-Tutor und Masters mit Klonen) */}
+         {isKITutor || klone.length > 0 ? (
+           <button
+             onClick={() => setExpanded(!expanded)}
+             className="p-0.5 text-muted-foreground hover:text-foreground shrink-0"
+             title={expanded ? 'Einklappen' : 'Aufklappen'}
+           >
+             <ChevronRight className={cn('w-3 h-3 transition-transform', expanded && 'rotate-90')} />
+           </button>
+         ) : (
+           <div className="w-4" /> /* Spacer für Alignment */
+         )}
+
+         <button
+           onClick={() => onSelect({ type: 'master', master })}
+           className={cn(
+             'flex-1 flex items-center gap-1.5 px-2 py-1 rounded-md text-left text-[11px] transition-colors',
+             isMasterSelected
+               ? 'bg-primary/15 text-primary font-semibold'
+               : cn('hover:bg-muted', textColor)
+           )}
+         >
+           <Crown className="w-3 h-3 shrink-0 text-primary/70" />
+           <span className="flex-1 truncate">{master.titel || `Master ${index}`}</span>
+           {isIncomplete && !isReleased && (
+             <AlertTriangle className="w-3 h-3 text-orange-500 shrink-0" title="Inhalt unvollständig" />
+           )}
+           {isReleased && (
+             <CheckCircle2 className="w-3 h-3 shrink-0 text-green-600" title="Freigegeben" />
+           )}
+           {klone.length > 0 && (
+             <span className="text-[10px] bg-primary/10 text-primary px-1 py-0.5 rounded shrink-0">
+               {klone.length}
+             </span>
+           )}
+         </button>
+       </div>
+
+       {/* Expandierte Klone oder Inhalts-Preview für KI-Tutor */}
+       {expanded && (
+         <div className="ml-4 mt-0.5 border-l border-border pl-2 space-y-0.5">
+           {klone.length > 0 ? (
+             klone.map((klon) => (
+               <KlonSubItem
+                 key={klon.id}
+                 klon={klon}
+                 isSelected={selectedItem?.type === 'klon' && selectedItem?.klon?.id === klon.id}
+                 onSelect={onSelect}
+               />
+             ))
+           ) : isKITutor ? (
+             <p className="px-2 py-1 text-[10px] text-muted-foreground/60 italic">Keine Klone (KI-Tutor-Aufgabe)</p>
+           ) : null}
+         </div>
+       )}
+     </div>
+   );
 }
 
 // ── Sidebar: Aktivitäts-Zeile ─────────────────────────────────────────────────
 
 function ActivitySidebarItem({
-  activity, aktivitaetName, masterAufgaben, kloneByMasterId,
-  selectedItem, onSelect, isIncomplete, myEmail, catalogEntry,
-}) {
-  const isActivitySelected = selectedItem?.type === 'activity' && selectedItem?.activity?.id === activity.id;
-  const hasSelectedDescendant =
-    masterAufgaben.some(m =>
-      (selectedItem?.type === 'master' && selectedItem?.master?.id === m.id) ||
-      (selectedItem?.type === 'klon' && (kloneByMasterId[m.id] || []).some(k => k.id === selectedItem?.klon?.id))
-    );
-  const lockedByOther = isActivityLockedByOther(activity, myEmail);
-  const showChildren = isActivitySelected || hasSelectedDescendant;
+   activity, aktivitaetName, masterAufgaben, kloneByMasterId,
+   selectedItem, onSelect, isIncomplete, myEmail, catalogEntry,
+ }) {
+   const isActivitySelected = selectedItem?.type === 'activity' && selectedItem?.activity?.id === activity.id;
+   const hasSelectedDescendant =
+     masterAufgaben.some(m =>
+       (selectedItem?.type === 'master' && selectedItem?.master?.id === m.id) ||
+       (selectedItem?.type === 'klon' && (kloneByMasterId[m.id] || []).some(k => k.id === selectedItem?.klon?.id))
+     );
+   const lockedByOther = isActivityLockedByOther(activity, myEmail);
+   const showChildren = isActivitySelected || hasSelectedDescendant;
 
-  return (
-    <div>
-      <button
-        id={`activity-node-${activity.id}`}
-        onClick={() => onSelect({ type: 'activity', activity })}
-        className={cn(
-          'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
-          isActivitySelected
-            ? 'bg-primary text-primary-foreground font-medium'
-            : isIncomplete
-              ? 'text-amber-700 bg-amber-50/60 hover:bg-amber-100'
-              : 'text-green-700 bg-green-50/60 hover:bg-green-100'
-        )}
-      >
-        <span className="flex-1 truncate">{aktivitaetName}</span>
-        {lockedByOther && !isActivitySelected && (
-          <Lock className="w-3 h-3 text-amber-500 shrink-0" title={`Gesperrt von ${activity.locked_by_user}`} />
-        )}
-        {isIncomplete && !isActivitySelected && !lockedByOther && (
-          <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" title="Inhalt unvollständig" />
-        )}
-        {masterAufgaben.length > 0 && (
-          <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded shrink-0">
-            {masterAufgaben.length}M
-          </span>
-        )}
-      </button>
+   // Konsistente Farb-Logik: Grün wenn freigegeben, Orange wenn Entwurf
+   const isReleased = activity.content_status === 'approved';
+   const textColor = isReleased ? 'text-green-600' : 'text-orange-600';
+
+   return (
+     <div>
+       <button
+         id={`activity-node-${activity.id}`}
+         onClick={() => onSelect({ type: 'activity', activity })}
+         className={cn(
+           'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
+           isActivitySelected
+             ? 'bg-primary text-primary-foreground font-medium'
+             : cn('hover:bg-muted', textColor)
+         )}
+       >
+         <span className="flex-1 truncate">{aktivitaetName}</span>
+         {lockedByOther && !isActivitySelected && (
+           <Lock className="w-3 h-3 text-amber-500 shrink-0" title={`Gesperrt von ${activity.locked_by_user}`} />
+         )}
+         {isIncomplete && !isReleased && !isActivitySelected && !lockedByOther && (
+           <AlertTriangle className="w-3 h-3 text-orange-500 shrink-0" title="Inhalt unvollständig" />
+         )}
+         {masterAufgaben.length > 0 && (
+           <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded shrink-0">
+             {masterAufgaben.length}M
+           </span>
+         )}
+       </button>
 
       {/* Master-Knoten + deren Klone — immer sichtbar, wenn Master-Aufgaben existieren */}
       {masterAufgaben.length > 0 && (
