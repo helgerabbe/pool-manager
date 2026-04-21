@@ -63,7 +63,7 @@ export function usePresence(currentView = 'dashboard') {
           }
         }
       } catch (err) {
-        // Silent – Heartbeat fehlgeschlagen, Interval läuft weiter
+        // Silent ignore – interval continues
       }
     };
 
