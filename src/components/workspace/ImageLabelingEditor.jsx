@@ -301,7 +301,11 @@ export default function ImageLabelingEditor({
             <span>Ziehen Sie die Begriffe auf die gewünschte Stelle im Bild. Die gestrichelte Box zeigt den Toleranzbereich.</span>
           </div>
 
-          <div className="relative bg-muted/30 rounded-lg p-4 border border-dashed border-border inline-block max-w-full">
+          <div 
+            className="relative bg-muted/30 rounded-lg p-4 border border-dashed border-border inline-block max-w-full"
+            onDragOver={handleDragOver}
+            onDrop={handleDropOnImage}
+          >
             {/* Bild mit Drop-Zone */}
             <img
               ref={imageRef}
@@ -309,9 +313,7 @@ export default function ImageLabelingEditor({
               alt="Bildbeschriftung"
               draggable="false"
               onLoad={() => setImageLoaded(true)}
-              onDragOver={handleDragOver}
-              onDrop={handleDropOnImage}
-              className="max-w-full h-auto rounded-lg cursor-grab active:cursor-grabbing"
+              className="max-w-full h-auto rounded-lg cursor-grab active:cursor-grabbing select-none"
               style={{ maxHeight: '400px' }}
             />
 
