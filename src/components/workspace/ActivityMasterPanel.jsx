@@ -470,18 +470,34 @@ export default function ActivityMasterPanel({
 
       {/* ── Edit-Mode Toggle für supports_master Aktivitäten ── */}
       {supportsMaster && (
-        <div className="flex justify-end">
-          <Button
-            onClick={handleOpenEditModal}
-            disabled={acquiringLock || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
-            title={lernpaket?.moodle_sync_status === 'locked' ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
-            className="gap-2"
-          >
-            {acquiringLock
-              ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren…</>
-              : <><Pencil className="w-4 h-4" /> Inhalt bearbeiten</>}
-          </Button>
-        </div>
+        <>
+          {isInEditMode && (
+            <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg bg-orange-50 border border-orange-200">
+              <p className="text-sm text-orange-800 font-medium">Bearbeitungsmodus aktiv – das Lernpaket ist für andere gesperrt</p>
+              <button
+                onClick={handleModalCancel}
+                className="text-orange-600 hover:text-orange-800 text-lg font-bold"
+                title="Bearbeitung abschließen"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+          {!isInEditMode && (
+            <div className="flex justify-end">
+              <Button
+                onClick={handleOpenEditModal}
+                disabled={acquiringLock || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
+                title={lernpaket?.moodle_sync_status === 'locked' ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
+                className="gap-2"
+              >
+                {acquiringLock
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren…</>
+                  : <><Pencil className="w-4 h-4" /> Inhalt bearbeiten</>}
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
       {/* ── Aufgabentext-Block (für supports_master Aktivitäten, NOT für KI-Tutor) ─ */}
