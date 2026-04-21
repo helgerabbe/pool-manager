@@ -22,6 +22,7 @@ import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
 import TextLesenModal from '@/components/workspace/TextLesenModal';
 import MoodleSyncStatusBadge from '@/components/workspace/MoodleSyncStatusBadge';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
+import ReleaseStatusToggle from '@/components/workspace/ReleaseStatusToggle';
 import { toast } from 'sonner';
 
 // Inline-editierbares Aufgabentext-Feld mit Standardtext
@@ -257,6 +258,20 @@ export default function ActivityMasterPanel({
     });
   };
 
+  // Release-Status Toggle Handler
+  const handleReleaseToggle = async (isReleasing) => {
+    const newStatus = isReleasing ? 'approved' : 'draft';
+    try {
+      await base44.entities.LernpaketPhaseAktivitaet.update(activityRecord.id, {
+        content_status: newStatus,
+      });
+      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      toast.success(isReleasing ? 'Aktivität freigegeben.' : 'Freigabe zurückgezogen.');
+    } catch (err) {
+      toast.error('Fehler beim Ändern des Release-Status.');
+    }
+  };
+
   // Alle MasterAufgaben für diese Aktivität
   const { data: masterAufgaben = [] } = useQuery({
     queryKey: ['masterAufgaben', activityRecord.id],
@@ -382,6 +397,8 @@ export default function ActivityMasterPanel({
         const schema = catalogEntry?.form_schema || [];
         const inhaltTyp = fieldValues?.inhalt_typ;
         const isImageLabeling = catalogEntry?.name?.toLowerCase().includes('bildbeschriftung');
+        const isComplete = fieldValues && schema.filter(f => f.required && f.field_name !== 'aufgabentext').every(f => fieldValues[f.field_name]?.toString().trim());
+        const isReleased = activityRecord?.content_status === 'approved';
 
         const renderValue = (field) => {
           const val = fieldValues[field.field_name];
@@ -402,7 +419,18 @@ export default function ActivityMasterPanel({
         return (
           <>
             {kannBearbeiten && (
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-2">
+                {/* Release-Status Toggle für vollständige Aktivitäten */}
+                {isComplete && (
+                  <div className="w-full sm:w-auto">
+                    <ReleaseStatusToggle
+                      isReleased={isReleased}
+                      onToggle={handleReleaseToggle}
+                      disabled={false}
+                    />
+                  </div>
+                )}
+                {/* Edit-Button (nur wenn nicht freigegeben oder Bearbeiter) */}
                 <Button
                   onClick={handleOpenEditModal}
                   disabled={acquiringLock || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
