@@ -515,8 +515,9 @@ export default function MasterAufgabeCard({
                   <ImageLabelingEditor
                     initialData={fieldValues}
                     onSave={(data) => {
-                      // Check completion: aufgabenstellung + backgroundImage + mindestens 1 dropZone
-                      const isComplete = !!(data.aufgabenstellung && data.backgroundImage && data.dropZones?.length > 0);
+                      // Check completion: backgroundImage + mindestens 1 dropZone erforderlich
+                      // Aufgabenstellung ist optional
+                      const isComplete = !!(data.backgroundImage && data.dropZones?.length > 0);
                       const dataWithCompletion = { ...data, is_complete: isComplete };
                       setFieldValues(dataWithCompletion);
                       handleSaveAndClose(dataWithCompletion);
