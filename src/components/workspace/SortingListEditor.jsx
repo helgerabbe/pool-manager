@@ -59,16 +59,34 @@ export default function SortingListEditor({
     onChange?.();
   };
 
+  const MAX_ITEMS = 12;
+  const canAddMore = orderedItems.length < MAX_ITEMS;
+  const isAtLimit = orderedItems.length >= MAX_ITEMS;
+
   const handleGenerateItems = (items) => {
-    setOrderedItems(items);
+    // Schneide auf max 12 Elemente zu, wenn KI mehr generiert
+    const truncatedItems = items.slice(0, MAX_ITEMS);
+    if (items.length > MAX_ITEMS) {
+      toast.warning(`Nur die ersten ${MAX_ITEMS} Elemente wurden übernommen (max. ${MAX_ITEMS} erlaubt).`);
+    } else {
+      toast.success('Sortierliste generiert.');
+    }
+    setOrderedItems(truncatedItems);
     onChange?.();
     setGeneratorOpen(false);
-    toast.success('Sortierliste generiert.');
   };
 
   const handleSave = () => {
     if (!instruction.trim()) {
       toast.error('Aufgabenstellung ist erforderlich.');
+      return;
+    }
+    if (orderedItems.length < 2) {
+      toast.error('Mindestens 2 Elemente erforderlich.');
+      return;
+    }
+    if (orderedItems.length > MAX_ITEMS) {
+      toast.error(`Maximal ${MAX_ITEMS} Elemente erlaubt.`);
       return;
     }
     if (orderedItems.some(item => !item.trim())) {
@@ -175,15 +193,28 @@ export default function SortingListEditor({
         )}
 
         {!readOnly && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={addItem}
-            className="w-full gap-1.5 border-dashed"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Weiteres Element hinzufügen
-          </Button>
+          <div className="space-y-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={addItem}
+              disabled={!canAddMore}
+              className="w-full gap-1.5 border-dashed"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Weiteres Element hinzufügen
+            </Button>
+            {isAtLimit && (
+              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1.5 text-center">
+                Maximale Anzahl von {MAX_ITEMS} Elementen erreicht.
+              </p>
+            )}
+            {orderedItems.length > 0 && orderedItems.length < 2 && (
+              <p className="text-xs text-blue-600 bg-blue-50 border border-blue-200 rounded px-2 py-1.5 text-center">
+                Mindestens 2 Elemente erforderlich.
+              </p>
+            )}
+          </div>
         )}
       </div>
 
