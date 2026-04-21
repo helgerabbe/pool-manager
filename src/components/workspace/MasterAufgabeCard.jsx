@@ -367,6 +367,35 @@ export default function MasterAufgabeCard({
               Fertig
             </span>
           )}
+          {/* Universal "Inhalt bearbeiten"-Button für alle Masteraufgaben-Typen */}
+          {kannBearbeiten && !editMode && !locked && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                if (isLuecke) {
+                  // Lückentext: Implizites Locking über Modal
+                  handleEditLueckentext();
+                } else if (isSort) {
+                  // Sortierung: Modal öffnen
+                  setSortingListModalOpen(true);
+                } else if (isQuiz) {
+                  // Mini-Quiz: Modal öffnen
+                  setMiniQuizModalOpen(true);
+                } else {
+                  // Alle anderen Typen: Direkter Edit-Mode
+                  setEditMode(true);
+                }
+              }}
+              disabled={acquiringLock}
+              className="gap-1.5 text-xs h-7 text-primary border-primary/30 hover:bg-primary/5"
+              title="Inhalt dieser Masteraufgabe bearbeiten"
+            >
+              {acquiringLock
+                ? <><Loader2 className="w-3 h-3 animate-spin" /> Sperren…</>
+                : <>Inhalt bearbeiten</>}
+            </Button>
+          )}
           {/* Fertig markieren / Zurücksetzen Button – nur im aktiven Bearbeitungsmodus */}
           {kannBearbeiten && editMode && (
             <MasterApprovalButton 
