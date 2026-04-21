@@ -59,27 +59,11 @@ export function usePresence(currentView = 'dashboard') {
             });
             myRecordIdRef.current = created.id;
           } catch (e) {
-            console.warn('[usePresence] Could not recreate record:', e.message);
+            // Silent ignore
           }
         }
       } catch (err) {
-        // 404 = Record wurde gelöscht, recreate it
-        if (err.response?.status === 404 && myEmailRef.current) {
-          myRecordIdRef.current = null;
-          try {
-            const created = await createPresenceRecord({
-              user_email: myEmailRef.current,
-              user_name: myEmailRef.current,
-              current_page: currentView,
-              last_seen_at: new Date().toISOString(),
-            });
-            myRecordIdRef.current = created.id;
-          } catch (e) {
-            console.warn('[usePresence] Could not recreate after 404:', e.message);
-          }
-        } else {
-          console.debug('[usePresence] Heartbeat failed:', err.message);
-        }
+        // Silent – Heartbeat fehlgeschlagen, Interval läuft weiter
       }
     };
 
