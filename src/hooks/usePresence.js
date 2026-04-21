@@ -45,7 +45,7 @@ export function usePresence(currentView = 'dashboard') {
       try {
         const result = await updatePresenceRecord(myRecordIdRef.current, {
           last_seen_at: new Date().toISOString(),
-          current_view: currentView,
+          current_page: currentView,
         });
         // null = Eintrag wurde extern gelöscht – neu erstellen
         if (result === null && myEmailRef.current) {
@@ -54,7 +54,7 @@ export function usePresence(currentView = 'dashboard') {
             const created = await createPresenceRecord({
               user_email: myEmailRef.current,
               user_name: myEmailRef.current,
-              current_view: currentView,
+              current_page: currentView,
               last_seen_at: new Date().toISOString(),
             });
             myRecordIdRef.current = created.id;
@@ -70,7 +70,7 @@ export function usePresence(currentView = 'dashboard') {
             const created = await createPresenceRecord({
               user_email: myEmailRef.current,
               user_name: myEmailRef.current,
-              current_view: currentView,
+              current_page: currentView,
               last_seen_at: new Date().toISOString(),
             });
             myRecordIdRef.current = created.id;
