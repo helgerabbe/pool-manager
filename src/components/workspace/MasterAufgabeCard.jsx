@@ -49,6 +49,18 @@ const SORTING_NAMES = ['reihenfolge', 'sortierung', 'sequenzierung', 'sorting', 
 const MULTIPLE_CHOICE_NAMES = ['multiple choice', 'multiple-choice', 'mc-aufgabe', 'mc'];
 const MINIQUIZ_NAMES = ['miniquiz', 'mini-quiz', 'quiz', 'quizze'];
 
+function getActivityType(name = '') {
+  const lowerName = name.toLowerCase();
+  if (MATCH_TERMS_NAMES.some(n => lowerName.includes(n))) return 'match';
+  if (LUECKENTEXT_NAMES.some(n => lowerName.includes(n))) return 'lueckentext';
+  if (IMAGE_LABELING_NAMES.some(n => lowerName.includes(n))) return 'imagelabeling';
+  if (SORTING_NAMES.some(n => lowerName.includes(n))) return 'sorting';
+  if (MULTIPLE_CHOICE_NAMES.some(n => lowerName.includes(n))) return 'multiplechoice';
+  if (MINIQUIZ_NAMES.some(n => lowerName.includes(n))) return 'miniquiz';
+  if (lowerName.includes('ki-tutor')) return 'kitutor';
+  return null;
+}
+
 function isMatchTerms(name = '') {
   return MATCH_TERMS_NAMES.some(n => name.toLowerCase().includes(n));
 }
@@ -228,12 +240,13 @@ export default function MasterAufgabeCard({
   const { acquireLock, releaseLock } = useLernpaketLock(isLuecke ? master.lernpaket_id : null);
 
   const locked = isLockedByOther(master, userEmail);
-  const isMatch = isMatchTerms(catalogName);
-  const isImageLabeling = isImageLabelingType(catalogName);
-  const isSort = isSorting(catalogName);
-  const isKITutor = catalogName?.toLowerCase().includes('ki-tutor');
-  const isMC = isMultipleChoice(catalogName);
-  const isQuiz = isMiniQuiz(catalogName);
+  const activityType = getActivityType(catalogName);
+  const isMatch = activityType === 'match';
+  const isImageLabeling = activityType === 'imagelabeling';
+  const isSort = activityType === 'sorting';
+  const isKITutor = activityType === 'kitutor';
+  const isMC = activityType === 'multiplechoice';
+  const isQuiz = activityType === 'miniquiz';
 
   const saveMutation = useMutation({
     mutationFn: ({ fv, closeEdit }) => {
@@ -939,7 +952,7 @@ export default function MasterAufgabeCard({
           )}
 
           {/* Klon erstellen – NICHT für KI-Tutor und Bildbeschriftung */}
-          {!isKITutor && !isImageLabeling && (master.field_values?.lueckentext || master.field_values?.pairs?.length > 0 || master.field_values?.orderedItems?.length > 0 || master.field_values?.task_description || master.field_values?.mcItems?.length > 0 || master.field_values?.quizItems?.length > 0) && !editMode && (
+          {!isKITutor && !isImageLabeling && (master.field_values?.lueckentext || master.field_values?.pairs?.length > 0 || master.field_values?.orderedItems?.length > 0 || master.field_values?.task_description || master.field_values?.mcItems?.length > 0 || master.field_values?.questions?.length > 0) && !editMode && (
             <div className="border-t border-border/60 pt-4">
               <Button
                 size="sm"
