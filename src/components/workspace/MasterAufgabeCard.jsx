@@ -20,6 +20,7 @@ import LockBanner from '@/components/workspace/LockBanner';
 import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
 import MatchTermsGeneratorModal from '@/components/workspace/MatchTermsGeneratorModal';
 import LueckentextEditor, { LueckentextRenderer, validateBeforeSave } from '@/components/workspace/LueckentextEditor';
+import LueckentextWysiwygModal from '@/components/workspace/LueckentextWysiwygModal';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import SortingListEditor from '@/components/workspace/SortingListEditor';
 import MultipleChoiceEditor from '@/components/workspace/MultipleChoiceEditor';
@@ -213,6 +214,7 @@ export default function MasterAufgabeCard({
 
   const [klonModalOpen, setKlonModalOpen] = useState(false);
   const [generatorOpen, setGeneratorOpen] = useState(false);
+  const [lueckentextModalOpen, setLueckentextModalOpen] = useState(false);
 
   const locked = isLockedByOther(master, userEmail);
   const isMatch = isMatchTerms(catalogName);
@@ -728,59 +730,35 @@ export default function MasterAufgabeCard({
               )}
             </div>
           ) : isLuecke ? (
-            /* ── Lückentext-Editor ── */
+            /* ── Lückentext-Editor (WYSIWYG Modal) ── */
             <div className="space-y-3">
-              {editMode ? (
-                <>
-                  <LueckentextEditor
-                    value={fieldValues.lueckentext || ''}
-                    onChange={(text) => {
-                      setFieldValues(fv => ({ ...fv, lueckentext: text }));
-                      setHasPendingChanges(true);
-                    }}
-                  />
-                  <div className="flex items-center gap-2">
-                    <Button size="sm" variant="ghost" onClick={() => { setEditMode(false); setHasPendingChanges(false); }}>Abbrechen</Button>
-                    {hasPendingChanges && (
-                      <Button size="sm" variant="outline"
-                        onClick={() => {
-                          if (!validateBeforeSave(fieldValues.lueckentext || '')) return;
-                          handleSaveAndClose();
-                        }}
-                        disabled={saveMutation.isPending}
-                        className="gap-1.5 border-amber-300 hover:bg-amber-100 text-amber-800">
-                        {saveMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                        Speichern
-                      </Button>
-                      )}
-                    <Button size="sm"
-                      onClick={() => {
-                        if (!validateBeforeSave(fieldValues.lueckentext || '')) return;
-                        handleSaveAndClose();
-                      }}
-                      disabled={saveMutation.isPending} className="gap-1.5 ml-auto">
-                      {saveMutation.isPending && <Loader2 className="w-3 h-3 animate-spin" />} Speichern & schließen
-                    </Button>
-                  </div>
-                </>
+              {fieldValues.lueckentext ? (
+                <LueckentextEditor
+                  value={fieldValues.lueckentext}
+                  onChange={() => {}}
+                  readOnly
+                />
               ) : (
-                <div className="space-y-3">
-                  {fieldValues.lueckentext ? (
-                    <LueckentextEditor
-                      value={fieldValues.lueckentext}
-                      onChange={() => {}}
-                      readOnly
-                    />
-                  ) : (
-                    <p className="text-sm text-muted-foreground italic">Noch kein Lückentext. Klicke „Inhalt bearbeiten".</p>
-                  )}
-                  {kannBearbeiten && !locked && (
-                    <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
-                      Inhalt bearbeiten
-                    </Button>
-                  )}
-                </div>
+                <p className="text-sm text-muted-foreground italic">Noch kein Lückentext. Klicke „Inhalt bearbeiten".</p>
               )}
+              {kannBearbeiten && !locked && (
+                <Button size="sm" variant="outline" onClick={() => setLueckentextModalOpen(true)} className="gap-1.5">
+                  Inhalt bearbeiten
+                </Button>
+              )}
+              <LueckentextWysiwygModal
+                open={lueckentextModalOpen}
+                onOpenChange={setLueckentextModalOpen}
+                initialData={fieldValues}
+                isSaving={saveMutation.isPending}
+                onSave={(data) => {
+                  const newFv = { ...fieldValues, ...data };
+                  setFieldValues(newFv);
+                  saveMutation.mutate({ fv: newFv, closeEdit: false }, {
+                    onSuccess: () => setLueckentextModalOpen(false),
+                  });
+                }}
+              />
             </div>
           ) : (
             /* ── Generischer Fallback ── */
