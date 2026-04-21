@@ -468,6 +468,22 @@ export default function ActivityMasterPanel({
         );
       })()}
 
+      {/* ── Edit-Mode Toggle für supports_master Aktivitäten ── */}
+      {supportsMaster && (
+        <div className="flex justify-end">
+          <Button
+            onClick={handleOpenEditModal}
+            disabled={acquiringLock || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
+            title={lernpaket?.moodle_sync_status === 'locked' ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
+            className="gap-2"
+          >
+            {acquiringLock
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren…</>
+              : <><Pencil className="w-4 h-4" /> Inhalt bearbeiten</>}
+          </Button>
+        </div>
+      )}
+
       {/* ── Aufgabentext-Block (für supports_master Aktivitäten, NOT für KI-Tutor) ─ */}
       {supportsMaster && !isKITutor && (
         <div className="rounded-xl border border-border bg-card p-4">
