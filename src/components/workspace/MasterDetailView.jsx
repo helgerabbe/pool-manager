@@ -16,6 +16,11 @@ import { useLernpaketLock } from '@/hooks/useLernpaketLock';
 import LueckentextEditor from '@/components/workspace/LueckentextEditor';
 import LueckentextWysiwygModal from '@/components/workspace/LueckentextWysiwygModal';
 import SortingListModal from '@/components/workspace/SortingListModal';
+import MatchTermsModal from '@/components/workspace/MatchTermsModal';
+import MiniQuizModalDetail from '@/components/workspace/MiniQuizModalDetail';
+import MultipleChoiceModalDetail from '@/components/workspace/MultipleChoiceModalDetail';
+import KITutorModalDetail from '@/components/workspace/KITutorModalDetail';
+import ImageLabelingModalDetail from '@/components/workspace/ImageLabelingModalDetail';
 import { toast } from 'sonner';
 
 const LUECKENTEXT_NAMES = ['lückentext', 'lücken', 'lueckentext', 'cloze', 'fill in'];
@@ -26,6 +31,30 @@ function isLueckentext(name = '') {
 const SORTING_NAMES = ['reihenfolge', 'sortierung', 'sequenzierung', 'sorting', 'sequence'];
 function isSorting(name = '') {
   return SORTING_NAMES.some(n => name.toLowerCase().includes(n));
+}
+
+const MATCH_TERMS_NAMES = ['begriffe zuordnen', 'zuordnen', 'match terms'];
+function isMatch(name = '') {
+  return MATCH_TERMS_NAMES.some(n => name.toLowerCase().includes(n));
+}
+
+const MINIQUIZ_NAMES = ['miniquiz', 'mini-quiz', 'quiz'];
+function isQuiz(name = '') {
+  return MINIQUIZ_NAMES.some(n => name.toLowerCase().includes(n));
+}
+
+const MC_NAMES = ['multiple choice', 'multiple-choice'];
+function isMC(name = '') {
+  return MC_NAMES.some(n => name.toLowerCase().includes(n));
+}
+
+const IMAGE_LABELING_NAMES = ['bildbeschriftung', 'bildbeschreibung', 'image labeling'];
+function isImageLabeling(name = '') {
+  return IMAGE_LABELING_NAMES.some(n => name.toLowerCase().includes(n));
+}
+
+function isKITutor(name = '') {
+  return name.toLowerCase().includes('ki-tutor');
 }
 
 function MasterContentReadOnly({ master, catalogName }) {
@@ -194,11 +223,23 @@ export default function MasterDetailView({
   const catalogName = catalogEntry?.name || '';
   const isLuecke = isLueckentext(catalogName);
   const isSort = isSorting(catalogName);
+  const isMatchTerms = isMatch(catalogName);
+  const isQuizType = isQuiz(catalogName);
+  const isMCType = isMC(catalogName);
+  const isKITutorType = isKITutor(catalogName);
+  const isImageLabelingType = isImageLabeling(catalogName);
 
-  const { acquireLock, releaseLock } = useLernpaketLock((isLuecke || isSort) ? master.lernpaket_id : null);
+  const isSupportedType = isLuecke || isSort || isMatchTerms || isQuizType || isMCType || isKITutorType || isImageLabelingType;
+
+  const { acquireLock, releaseLock } = useLernpaketLock(isSupportedType ? master.lernpaket_id : null);
   const [acquiringLock, setAcquiringLock] = useState(false);
   const [lueckeModalOpen, setLueckeModalOpen] = useState(false);
   const [sortingModalOpen, setSortingModalOpen] = useState(false);
+  const [matchModalOpen, setMatchModalOpen] = useState(false);
+  const [quizModalOpen, setQuizModalOpen] = useState(false);
+  const [mcModalOpen, setMcModalOpen] = useState(false);
+  const [kiTutorModalOpen, setKiTutorModalOpen] = useState(false);
+  const [imageLabelingModalOpen, setImageLabelingModalOpen] = useState(false);
   const [fieldValues, setFieldValues] = useState(master.field_values || {});
 
   const saveMutation = useMutation({
@@ -211,20 +252,33 @@ export default function MasterDetailView({
   });
 
   const handleEdit = async () => {
-    if (!isLuecke && !isSort) return;
+    if (!isSupportedType) return;
+
     setAcquiringLock(true);
     const ok = await acquireLock();
     setAcquiringLock(false);
+    
     if (!ok) return;
     onEditModeChange?.(true);
     
     if (isLuecke) setLueckeModalOpen(true);
-    if (isSort) setSortingModalOpen(true);
+    else if (isSort) setSortingModalOpen(true);
+    else if (isMatchTerms) setMatchModalOpen(true);
+    else if (isQuizType) setQuizModalOpen(true);
+    else if (isMCType) setMcModalOpen(true);
+    else if (isKITutorType) setKiTutorModalOpen(true);
+    else if (isImageLabelingType) setImageLabelingModalOpen(true);
   };
 
   const handleCloseModal = async () => {
     setLueckeModalOpen(false);
     setSortingModalOpen(false);
+    setMatchModalOpen(false);
+    setQuizModalOpen(false);
+    setMcModalOpen(false);
+    setKiTutorModalOpen(false);
+    setImageLabelingModalOpen(false);
+    
     await releaseLock();
     onEditModeChange?.(false);
   };
@@ -269,7 +323,7 @@ export default function MasterDetailView({
         </div>
 
         {/* Bearbeiten-Button */}
-        {kannBearbeiten && (isLuecke || isSort) && (
+        {kannBearbeiten && isSupportedType && (
           <Button
             onClick={handleEdit}
             disabled={acquiringLock}
@@ -340,6 +394,97 @@ export default function MasterDetailView({
       {isSort && (
         <SortingListModal
           open={sortingModalOpen}
+          onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+          initialData={fieldValues}
+          isSaving={saveMutation.isPending}
+          onSave={(newData) => {
+            const newFv = { ...fieldValues, ...newData };
+            setFieldValues(newFv);
+            saveMutation.mutate(newFv, {
+              onSuccess: () => handleCloseModal(),
+            });
+          }}
+          onCancel={handleCloseModal}
+        />
+      )}
+
+      {/* ── Match Terms-Modal ── */}
+      {isMatchTerms && (
+        <MatchTermsModal
+          open={matchModalOpen}
+          onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+          initialData={fieldValues}
+          isSaving={saveMutation.isPending}
+          onSave={(newData) => {
+            const newFv = { ...fieldValues, ...newData };
+            setFieldValues(newFv);
+            saveMutation.mutate(newFv, {
+              onSuccess: () => handleCloseModal(),
+            });
+          }}
+          onCancel={handleCloseModal}
+        />
+      )}
+
+      {/* ── Mini Quiz-Modal ── */}
+      {isQuizType && (
+        <MiniQuizModalDetail
+          open={quizModalOpen}
+          onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+          initialData={fieldValues}
+          isSaving={saveMutation.isPending}
+          onSave={(newData) => {
+            const newFv = { ...fieldValues, ...newData };
+            setFieldValues(newFv);
+            saveMutation.mutate(newFv, {
+              onSuccess: () => handleCloseModal(),
+            });
+          }}
+          onCancel={handleCloseModal}
+        />
+      )}
+
+      {/* ── Multiple Choice-Modal ── */}
+      {isMCType && (
+        <MultipleChoiceModalDetail
+          open={mcModalOpen}
+          onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+          initialData={fieldValues}
+          isSaving={saveMutation.isPending}
+          onSave={(newData) => {
+            const newFv = { ...fieldValues, ...newData };
+            setFieldValues(newFv);
+            saveMutation.mutate(newFv, {
+              onSuccess: () => handleCloseModal(),
+            });
+          }}
+          onCancel={handleCloseModal}
+        />
+      )}
+
+      {/* ── KI-Tutor-Modal ── */}
+      {isKITutorType && (
+        <KITutorModalDetail
+          open={kiTutorModalOpen}
+          onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+          initialData={fieldValues}
+          isSaving={saveMutation.isPending}
+          master={master}
+          onSave={(newData) => {
+            const newFv = { ...fieldValues, ...newData };
+            setFieldValues(newFv);
+            saveMutation.mutate(newFv, {
+              onSuccess: () => handleCloseModal(),
+            });
+          }}
+          onCancel={handleCloseModal}
+        />
+      )}
+
+      {/* ── Bildbeschriftung-Modal ── */}
+      {isImageLabelingType && (
+        <ImageLabelingModalDetail
+          open={imageLabelingModalOpen}
           onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
           initialData={fieldValues}
           isSaving={saveMutation.isPending}
