@@ -498,45 +498,36 @@ export default function ImageLabelingEditor({
           </div>
 
           {/* Nicht platzierte Begriffe als Drag-Source (nur im Edit-Modus) / Wortspeicher (Read-Only) */}
-          {unplacedTerms.length > 0 && (
-            <div className="space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground">
-                {readOnly ? 'Wortspeicher:' : 'Nicht platzierte Begriffe:'}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {unplacedTerms.map(term => (
-                  <div
-                    key={term}
-                    draggable={!readOnly}
-                    onDragStart={(e) => !readOnly && handleDragStart(e, term)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-opacity ${
-                      readOnly
-                        ? 'bg-slate-100 border border-slate-300 text-slate-700'
-                        : 'bg-primary text-primary-foreground cursor-grab active:cursor-grabbing hover:opacity-90'
-                    }`}
-                  >
-                    {term}
-                  </div>
-                ))}
+          {(() => {
+            const wordsToDisplay = readOnly ? allTerms : unplacedTerms;
+            return wordsToDisplay.length > 0 ? (
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium text-muted-foreground">
+                  {readOnly ? 'Wortspeicher:' : 'Nicht platzierte Begriffe:'}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {wordsToDisplay.map(term => (
+                    <div
+                      key={term}
+                      draggable={!readOnly}
+                      onDragStart={(e) => !readOnly && handleDragStart(e, term)}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-opacity ${
+                        readOnly
+                          ? 'bg-slate-100 border border-slate-300 text-slate-700'
+                          : 'bg-primary text-primary-foreground cursor-grab active:cursor-grabbing hover:opacity-90'
+                      }`}
+                    >
+                      {term}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            ) : null;
+          })()}
         </div>
       )}
 
-      {/* Distraktoren-Anzeige (Read-Only) */}
-      {readOnly && data.distractors.length > 0 && (
-        <div className="space-y-1.5 border-t pt-4">
-          <p className="text-xs font-medium text-muted-foreground">Distraktoren (Falschantworten):</p>
-          <div className="flex flex-wrap gap-2">
-            {data.distractors.map((d, idx) => (
-              <span key={idx} className="px-3 py-1.5 rounded-full bg-red-100 border border-red-300 text-red-700 text-xs font-medium">
-                {d}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+
 
       {/* Speichern / Abbrechen (nur im Edit-Modus) */}
       {!readOnly && (
