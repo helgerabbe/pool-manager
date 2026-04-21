@@ -35,9 +35,8 @@ function AktivitaetSubNode({ activity, aktivitaetName, isSelected, onSelect, pak
   // Farben nach Freigabe-Status:
   // - Freigegeben (approved) → Grün
   // - Nicht freigegeben (draft) → Orange/Gelb
-  // Warn-Symbol: nur wenn UNVOLLSTÄNDIG UND NICHT freigegeben
-  // WICHTIG: Wenn eine Aktivität freigegeben ist (approved), zeige KEIN Warnsymbol, auch wenn unvollständig
-  const textColor = isReleased ? 'text-green-600' : isIncomplete ? 'text-orange-600' : 'text-foreground';
+  // Warn-Symbol: nur wenn UNVOLLSTÄNDIG UND nicht freigegeben
+  const textColor = isReleased ? 'text-green-600' : 'text-orange-600';
   
   // Debug: Zeige Masteraufgaben-Status wenn supportsMaster
   const masterInfo = supportsMaster && masterAufgabenCount > 0 ? `${masterAufgabenCount}M` : null;
