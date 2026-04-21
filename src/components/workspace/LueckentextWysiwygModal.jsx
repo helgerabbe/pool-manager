@@ -204,7 +204,7 @@ function DistraktorenInput({ distraktoren, onChange }) {
 
 // ── Haupt-Modal ──────────────────────────────────────────────────────────────────
 
-export default function LueckentextWysiwygModal({ open, onOpenChange, initialData = {}, onSave, onSaveAsNewMaster, onDelete, isSaving = false, isCopy = false }) {
+export default function LueckentextWysiwygModal({ open, onOpenChange, initialData = {}, onSave, onSaveAsNewMaster, onDelete, isSaving = false, isCopy = false, exportLocked = false }) {
   // Freigabe-State: initial aus DB
   const [isReleased, setIsReleased] = useState(initialData.content_status === 'approved');
 
@@ -319,7 +319,15 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
 
   const handleSave = () => {
     const payload = buildPayload();
-    if (payload) onSave(payload);
+    if (!payload) return;
+    
+    // Auto-Reset bei Export: Wenn bereits synced, markiere als modified für Re-Export
+    if (initialData.moodle_sync_status === 'synced') {
+      payload.moodle_sync_status = 'modified';
+      payload.is_dirty_since_export = true;
+    }
+    
+    onSave(payload);
   };
 
   const handleSaveAsNewMaster = () => {
@@ -496,7 +504,7 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
             </div>
 
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={handleClose} disabled={isSaving || isDeleting}>
+              <Button variant="outline" onClick={handleClose} disabled={isSaving || isDeleting || exportLocked}>
                 Abbrechen
               </Button>
               {isCopy ? (
@@ -504,7 +512,8 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
                   <Button
                     variant="outline"
                     onClick={handleSave}
-                    disabled={isSaving || isDeleting || blankIds.size === 0}
+                    disabled={isSaving || isDeleting || blankIds.size === 0 || exportLocked}
+                    title={exportLocked ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
                     className="gap-2"
                   >
                     {isSaving
@@ -513,7 +522,8 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
                   </Button>
                   <Button
                     onClick={handleSaveAsNewMaster}
-                    disabled={isSaving || isDeleting || blankIds.size === 0}
+                    disabled={isSaving || isDeleting || blankIds.size === 0 || exportLocked}
+                    title={exportLocked ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
                     className="gap-2 bg-primary hover:bg-primary/90"
                   >
                     {isSaving
@@ -522,7 +532,12 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
                   </Button>
                 </>
               ) : (
-                <Button onClick={handleSave} disabled={isSaving || isDeleting || blankIds.size === 0} className="gap-2">
+                <Button
+                  onClick={handleSave}
+                  disabled={isSaving || isDeleting || blankIds.size === 0 || exportLocked}
+                  title={exportLocked ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
+                  className="gap-2"
+                >
                   {isSaving
                     ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
                     : 'Speichern'}

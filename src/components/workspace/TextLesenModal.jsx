@@ -22,6 +22,7 @@ export default function TextLesenModal({
   onSave,        // (fieldValues) => Promise — speichert + gibt Lock frei
   onCancel,      // () => Promise — gibt Lock frei ohne zu speichern
   isSaving = false,
+  exportLocked = false,  // Wird bei Export-Lock deaktiviert
 }) {
   const [fieldValues, setFieldValues] = useState(initialFieldValues);
   const [isReleased, setIsReleased] = useState(initialFieldValues.content_status === 'approved');
@@ -43,7 +44,20 @@ export default function TextLesenModal({
   };
 
   const handleSave = () => {
-    onSave?.({ ...fieldValues, content_status: isReleased ? 'approved' : 'draft' });
+    // Auto-Reset bei Export: Wenn bereits synced, markiere als modified für Re-Export
+    const payload = {
+      ...fieldValues,
+      content_status: isReleased ? 'approved' : 'draft',
+    };
+    
+    // Wenn gerade aus 'synced' Status kommt und jetzt geändert wird,
+    // markiere automatisch für Re-Export
+    if (initialFieldValues.moodle_sync_status === 'synced') {
+      payload.moodle_sync_status = 'modified';
+      payload.is_dirty_since_export = true;
+    }
+    
+    onSave?.(payload);
   };
 
   const formSchema = catalogEntry?.form_schema || [];
@@ -121,10 +135,15 @@ export default function TextLesenModal({
 
           {/* Action Buttons */}
           <div className="flex items-center justify-between gap-3">
-            <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
+            <Button variant="outline" onClick={handleCancel} disabled={isSaving || exportLocked}>
               Abbrechen
             </Button>
-            <Button onClick={handleSave} disabled={isSaving} className="gap-2">
+            <Button
+              onClick={handleSave}
+              disabled={isSaving || exportLocked}
+              title={exportLocked ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
+              className="gap-2"
+            >
               {isSaving
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
                 : 'Speichern'}

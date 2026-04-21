@@ -20,6 +20,7 @@ import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
 import TextLesenModal from '@/components/workspace/TextLesenModal';
+import MoodleSyncStatusBadge from '@/components/workspace/MoodleSyncStatusBadge';
 import { toast } from 'sonner';
 
 // Inline-editierbares Aufgabentext-Feld mit Standardtext
@@ -196,7 +197,14 @@ export default function ActivityMasterPanel({
   };
 
   // Modal-Workflow: Lock erwerben → Modal öffnen
+  // HARD-LOCK: Prüfe Export-Sperre vor Modal-Öffnung
   const handleOpenEditModal = async () => {
+    // Check 1: Ist die Einheit zur Moodle-Synchronisation gesperrt?
+    if (lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked) {
+      toast.error('Einheit ist zur Moodle-Synchronisation gesperrt. Bitte später erneut versuchen.');
+      return;
+    }
+
     setAcquiringLock(true);
     const ok = await acquireLock();
     setAcquiringLock(false);
@@ -213,11 +221,20 @@ export default function ActivityMasterPanel({
   };
 
   // Modal speichern: Daten persistieren, Lock freigeben, Modal schließen
+  // AUTO-RESET: Wenn bereits exportiert, markiere als needs_reexport
   const handleModalSave = async (values) => {
-    await saveFieldsMutation.mutateAsync(values, {
+    // Wenn Aktivität bereits exportiert ist (synced) und jetzt geändert wird,
+    // setze moodle_sync_status auf 'modified' für Re-Export-Anforderung
+    let enrichedValues = { ...values };
+    if (activityRecord?.moodle_sync_status === 'synced') {
+      enrichedValues.moodle_sync_status = 'modified';
+      enrichedValues.is_dirty_since_export = true;
+    }
+
+    await saveFieldsMutation.mutateAsync(enrichedValues, {
       onSuccess: async () => {
         // content_status nicht in lokalem fieldValues-State speichern
-        const { content_status, ...fieldOnly } = values;
+        const { content_status, ...fieldOnly } = enrichedValues;
         setFieldValues(fieldOnly);
         setEditModalOpen(false);
         await releaseLock();
@@ -333,6 +350,12 @@ export default function ActivityMasterPanel({
           <p className="text-xs text-muted-foreground mt-0.5">Phase: {activityRecord?.phase}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          <MoodleSyncStatusBadge
+            status={activityRecord?.moodle_sync_status || 'new'}
+            lastSyncedAt={activityRecord?.last_synced_at}
+            isDirtySinceExport={activityRecord?.is_dirty_since_export}
+            exportLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
+          />
           {effectivelyComplete
             ? <span className="text-xs font-medium text-green-700 bg-green-100 border border-green-300 px-2 py-0.5 rounded-full">✓ Vollständig</span>
             : <span className="text-xs font-medium text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">Noch unvollständig</span>
@@ -365,7 +388,12 @@ export default function ActivityMasterPanel({
           <>
             {kannBearbeiten && (
               <div className="flex justify-end">
-                <Button onClick={handleOpenEditModal} disabled={acquiringLock} className="gap-2">
+                <Button
+                  onClick={handleOpenEditModal}
+                  disabled={acquiringLock || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
+                  title={lernpaket?.moodle_sync_status === 'locked' ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
+                  className="gap-2"
+                >
                   {acquiringLock
                     ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren…</>
                     : <><Pencil className="w-4 h-4" /> Inhalt bearbeiten</>}
@@ -405,10 +433,11 @@ export default function ActivityMasterPanel({
               open={editModalOpen}
               onOpenChange={(isOpen) => { if (!isOpen) handleModalCancel(); }}
               catalogEntry={catalogEntry}
-              initialFieldValues={{ ...fieldValues, content_status: activityRecord?.content_status }}
+              initialFieldValues={{ ...fieldValues, content_status: activityRecord?.content_status, moodle_sync_status: activityRecord?.moodle_sync_status }}
               onSave={handleModalSave}
               onCancel={handleModalCancel}
               isSaving={saveFieldsMutation.isPending}
+              exportLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
             />
           </>
         );
