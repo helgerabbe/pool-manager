@@ -193,6 +193,27 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ⛔ PHASE 2: Export-Lock-Enforcement (KRITISCH!)
+    // Blockiert alle Updates während eines aktiven Moodle-Exports
+    if (lernpaket.export_locked === true || lernpaket.moodle_sync_status === 'locked') {
+      console.warn(
+        `[updateActivitySecure] BLOCKED by export lock - ${user.email} tried to update ${activityId} ` +
+        `but export is in progress (export_locked=${lernpaket.export_locked}, moodle_sync_status=${lernpaket.moodle_sync_status})`
+      );
+      return Response.json(
+        {
+          error: 'Update abgelehnt: Einheit ist zur Moodle-Synchronisation gesperrt. Bitte versuchen Sie es später erneut.',
+          code: 'EXPORT_LOCKED',
+          details: {
+            export_locked: lernpaket.export_locked,
+            moodle_sync_status: lernpaket.moodle_sync_status,
+            lernpaketId: lernpaket.id
+          }
+        },
+        { status: 423, headers: { 'Retry-After': '5' } }
+      );
+    }
+
     const paketLockHeldByUser = lernpaket.lock_status && lernpaket.locked_by_user === user.email;
     if (!paketLockHeldByUser) {
       console.warn(
