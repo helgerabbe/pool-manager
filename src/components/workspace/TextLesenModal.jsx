@@ -10,7 +10,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
 import ReleaseStatusToggle from '@/components/workspace/ReleaseStatusToggle';
 
@@ -26,14 +26,23 @@ export default function TextLesenModal({
 }) {
   const [fieldValues, setFieldValues] = useState(initialFieldValues);
   const [isReleased, setIsReleased] = useState(initialFieldValues.content_status === 'approved');
+  const [exportLockedWasEnabled, setExportLockedWasEnabled] = useState(exportLocked);
 
   // Bei jedem Öffnen Initialwerte neu laden
   useEffect(() => {
     if (open) {
       setFieldValues(initialFieldValues);
       setIsReleased(initialFieldValues.content_status === 'approved');
+      setExportLockedWasEnabled(exportLocked);
     }
   }, [open]);
+
+  // Reagiere auf Export-Lock-Änderung während Modal geöffnet ist
+  useEffect(() => {
+    if (exportLocked && !exportLockedWasEnabled) {
+      setExportLockedWasEnabled(true); // Nur einmalig zeigen
+    }
+  }, [exportLocked, exportLockedWasEnabled]);
 
   const handleFieldChange = (fieldName, value) => {
     setFieldValues(prev => ({ ...prev, [fieldName]: value }));
@@ -74,6 +83,17 @@ export default function TextLesenModal({
             Inhalt wird nach dem Speichern automatisch freigegeben.
           </p>
         </DialogHeader>
+
+        {/* Export-Lock Warning Banner */}
+        {exportLocked && exportLockedWasEnabled && (
+          <div className="px-6 py-3 bg-red-50 border-b border-red-200 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-red-800">Einheit wurde für Moodle-Export gesperrt</p>
+              <p className="text-xs text-red-700 mt-0.5">Speichern ist vorübergehend nicht möglich. Bitte warten Sie, bis der Export abgeschlossen ist.</p>
+            </div>
+          </div>
+        )}
 
         {/* Scrollbarer Inhalt */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 min-h-0">

@@ -66,14 +66,26 @@ button.style.opacity < 1 (visuell grau) ✓
 1. Modal ist offen
 2. Exportprozess setzt `moodle_sync_status = 'locked'` (Backend-Simulation)
 3. Browser refetcht Lernpaket-Daten (5-Sekunden-Interval)
-4. **Erwartetes Ergebnis:** Modal kann immer noch geschlossen werden (Abbrechen-Button bleibt enabled)
+4. **Erwartetes Ergebnis:** 
+   - Modal kann immer noch geschlossen werden (Abbrechen-Button bleibt enabled)
+   - **Warn-Banner erscheint** oben im Modal (rot) mit Nachricht: "Einheit wurde für Moodle-Export gesperrt"
+   - Speichern-Button wird disabled
 5. Nach dem Schließen ist der Button wieder disabled
 
 **Validierung:**
 ```javascript
 // Abbrechen-Button.disabled === false ✓
 // Speichern-Button.disabled === true ✓
+// Export-Lock Warning Banner sichtbar ✓
+// Banner Text: "Einheit wurde für Moodle-Export gesperrt" ✓
 ```
+
+**Warn-Banner UX-Details:**
+- 🔴 Rotes Icon (AlertCircle)
+- 📝 Headline: "Einheit wurde für Moodle-Export gesperrt"
+- 📝 Body: "Speichern ist vorübergehend nicht möglich. Bitte warten Sie, bis der Export abgeschlossen ist."
+- Position: Oben im Modal nach Header (aber BEFORE Scroll-Content)
+- Animation: Sofort sichtbar wenn Export-Lock Statuswechsel erfasst wird
 
 ---
 
@@ -107,9 +119,11 @@ const testPackage = lernpakete[0]; // Wähle ein beliebiges
 console.log(testPackage.id); // Notiere die ID
 ```
 
-**2. Status auf "locked" setzen:**
+**2. Status auf "locked" setzen + Cache invalidieren:**
 ```javascript
 // Base44 Console
+import { queryClientInstance } from '@/lib/query-client';
+
 const packageId = "YOUR_LERNPAKET_ID";
 await base44.entities.Lernpakete.update(packageId, {
   moodle_sync_status: 'locked',
@@ -117,13 +131,17 @@ await base44.entities.Lernpakete.update(packageId, {
   locked_by_email: 'export@moodle.local',
   locked_at: new Date().toISOString(),
 });
-console.log("Export-Lock aktiviert");
+
+// 🔴 WICHTIG: Cache sofort invalidieren (nicht auf 5-Sec-Refetch warten)
+queryClientInstance.invalidateQueries({ queryKey: ['lernpakete'] });
+
+console.log("Export-Lock aktiviert + Cache invalidiert");
 ```
 
-**3. UI beobachten:**
-- Warte 5 Sekunden (refetchInterval)
-- Button sollte sich grau färben
-- Badge sollte auf Rot springen
+**3. UI beobachten (sofort):**
+- Button färbt sich grau (SOFORT, nicht nach 5 Sek)
+- Badge springt auf Rot
+- Falls Modal offen: Warn-Banner erscheint
 
 ---
 
@@ -173,6 +191,8 @@ console.log(`Test-Paket erstellt mit Lock: ${testLernpaket.id}`);
 | T1.3a | Modal bleibt geöffnet | [ ] | Nach Lock-Erwerb |
 | T1.3b | Abbrechen funktioniert | [ ] | Button enabled |
 | T1.3c | Speichern blockiert | [ ] | Button disabled |
+| T1.3d | Warn-Banner erscheint | [ ] | Rot, im Modal-Header |
+| T1.3e | Banner-Text informativ | [ ] | "Einheit wurde gesperrt" |
 | T1.4a | Badge zeigt Rot | [ ] | Status "In Arbeit" |
 | T1.4b | Badge-Icon korrekt | [ ] | "🔒" sichtbar |
 | T1.4c | Tooltip informativ | [ ] | Hover-Test |
@@ -245,15 +265,25 @@ console.log("Test-Lock entfernt");
 **Wenn ihr Race Conditions testen möchtet:**
 
 1. Modal öffnen (Lock erworben vor UI-Check)
-2. Parallel: Simuliere Export-Start
+2. Parallel: Simuliere Export-Start (in separatem Browser-Tab oder DevTools)
    ```javascript
-   // In separatem Browser-Tab oder Backend-Call
-   await base44.entities.Lernpakete.update(id, { moodle_sync_status: 'locked' });
+   // In DevTools-Konsole WÄHREND Modal offen ist
+   import { queryClientInstance } from '@/lib/query-client';
+   
+   const packageId = "YOUR_LERNPAKET_ID";
+   await base44.entities.Lernpakete.update(packageId, { 
+     moodle_sync_status: 'locked' 
+   });
+   // Cache sofort invalidieren
+   queryClientInstance.invalidateQueries({ queryKey: ['lernpakete'] });
    ```
-3. Beobachte:
-   - Badge springt von "Aktuell" zu "In Arbeit" (rot)
-   - Speichern-Button wird disabled
-   - Abbrechen-Button bleibt enabled ✓ (User kann Modal schließen)
+3. Beobachte in Echtzeit:
+   - 🔴 Badge springt von "Aktuell" zu "In Arbeit" (rot) — sofort
+   - ❌ Speichern-Button wird grau/disabled — sofort
+   - ✅ Abbrechen-Button bleibt **enabled** — wichtig!
+   - 📋 Warn-Banner "Einheit wurde für Moodle-Export gesperrt" erscheint — sofort
+4. **Nutzer-Action:** Modal abbrechen → schließt sich, Edit-Lock wird freigegeben
+5. **Ergebnis:** Einheit bleibt für alle (export_locked) gesperrt, bis Export fertig ist
 
 ---
 
