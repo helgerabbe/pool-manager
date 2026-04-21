@@ -107,6 +107,7 @@ export default function ActivityMasterPanel({
   onMasterSelected = null,
   onKlonSelected = null,
   selectedMasterId = null,
+  onEditModeChange = null,
 }) {
   const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
@@ -271,6 +272,7 @@ export default function ActivityMasterPanel({
           activityRecord={{ ...activityRecord, is_complete: effectivelyComplete }}
           kannBearbeiten={kannBearbeiten}
           queryClient={queryClient}
+          onEditModeChange={onEditModeChange}
         />
       </div>
 

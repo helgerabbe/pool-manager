@@ -25,11 +25,11 @@
  *   - Klon gewählt      → KlonDetailView
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { ChevronRight, Package, MousePointerClick, AlertTriangle, Lock, Crown, CheckCircle2, Menu, X } from 'lucide-react';
+import { ChevronRight, Package, MousePointerClick, AlertTriangle, Lock, Crown, CheckCircle2, Menu, X, PenLine } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import ActivityMasterPanel from '@/components/workspace/ActivityMasterPanel';
 import KlonDetailView from '@/components/workspace/KlonDetailView';
@@ -217,7 +217,7 @@ function SidebarLernpaketFolder({
   lernpaket, allActivities, aktivitaetenMap,
   masterAufgabenByActivityId, kloneByMasterId,
   selectedItem, onSelect, defaultOpen = false, myEmail, isOpen = false, onToggleOpen, aktivitaetenKatalog,
-  expandedPhases, setExpandedPhases,
+  expandedPhases, setExpandedPhases, isEditingActive = false,
 }) {
   const paketActivities = allActivities.filter(a => a.lernpaket_id === lernpaket.id);
   const phasenConfig = lernpaket.phasen_konfiguration || {};
@@ -237,15 +237,24 @@ function SidebarLernpaketFolder({
     }
   }, [hasSelectedChild, isOpen, lernpaket.id, onToggleOpen]);
 
+  // Prüfe ob dieses Paket das aktive (gesperrte) ist
+  const isActiveLocked = isEditingActive && hasSelectedChild;
+
   return (
-    <div>
+    <div className={cn(isActiveLocked && "rounded-lg ring-2 ring-orange-400 bg-orange-50/50")}>
       <button
          onClick={() => onToggleOpen?.(lernpaket.id, !isOpen)}
-         className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-left text-sm font-medium text-foreground hover:bg-muted transition-colors"
+         className={cn(
+           "w-full flex items-center gap-2 px-2 py-2 rounded-lg text-left text-sm font-medium transition-colors",
+           isActiveLocked
+             ? "text-orange-800 hover:bg-orange-100"
+             : "text-foreground hover:bg-muted"
+         )}
        >
          <ChevronRight className={cn('w-3.5 h-3.5 shrink-0 text-muted-foreground transition-transform', isOpen && 'rotate-90')} />
-         <Package className="w-4 h-4 shrink-0 text-amber-500" />
+         <Package className={cn("w-4 h-4 shrink-0", isActiveLocked ? "text-orange-500" : "text-amber-500")} />
          <span className="flex-1 truncate">{lernpaket.titel_des_pakets}</span>
+         {isActiveLocked && <PenLine className="w-3.5 h-3.5 text-orange-500 shrink-0 animate-pulse" />}
          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
            paketActivities.length === 0 ? 'bg-red-100 text-red-700' : 
            paketActivities.length <= 2 ? 'bg-amber-100 text-amber-700' : 
@@ -354,6 +363,22 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
    const [searchParams] = useSearchParams();
    const [debugSelectValue, setDebugSelectValue] = useState('');
    const [sidebarOpen, setSidebarOpen] = useState(false);
+
+   // Globaler Edit-Mode State (wird von ActivityDetailView nach oben gemeldet)
+   const [isEditingActive, setIsEditingActive] = useState(false);
+   const releaseEditLockRef = React.useRef(null);
+
+   const handleEditModeChange = React.useCallback((isEditing, releaseFn) => {
+     setIsEditingActive(isEditing);
+     if (isEditing && releaseFn) releaseEditLockRef.current = releaseFn;
+   }, []);
+
+   const handleGlobalExitEdit = async () => {
+     if (releaseEditLockRef.current) {
+       await releaseEditLockRef.current();
+       setIsEditingActive(false);
+     }
+   };
 
    // ActivityID kann aus Props oder URL-Parametern kommen
    const initialActivityId = initialActivityIdProp || searchParams.get('activity');
@@ -535,8 +560,23 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
       )}
       <aside className={cn(
         "fixed lg:static lg:w-96 z-50 w-80 border-r border-border bg-card flex flex-col shrink-0 overflow-hidden h-full transition-transform lg:transition-none",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+        isEditingActive && "border-r-2 border-r-orange-400"
       )}>
+        {/* Edit-Mode-Banner in der Sidebar */}
+        {isEditingActive && (
+          <div className="px-3 py-2.5 bg-orange-500 text-white flex items-center gap-2 shrink-0">
+            <PenLine className="w-3.5 h-3.5 shrink-0 animate-pulse" />
+            <span className="text-xs font-semibold flex-1">Bearbeitungsmodus aktiv – Paket gesperrt</span>
+            <button
+              onClick={handleGlobalExitEdit}
+              className="text-white/80 hover:text-white transition-colors shrink-0"
+              title="Bearbeitung beenden"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
         <div className="px-3 py-3 border-b border-border shrink-0 space-y-2">
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aktivitäten</p>
@@ -610,7 +650,8 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
                      aktivitaetenKatalog={aktivitaetenKatalog}
                      expandedPhases={expandedPhases}
                      setExpandedPhases={setExpandedPhases}
-                    />
+                     isEditingActive={isEditingActive}
+                     />
                 ))}
               </div>
             </div>
@@ -625,7 +666,24 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
           </aside>
 
           {/* ── Hauptbereich ─────────────────────────────────────────────────────── */}
-          <main className="flex-1 w-full min-w-0 overflow-hidden h-full lg:block hidden">
+          <main className={cn(
+            "flex-1 w-full min-w-0 overflow-hidden h-full lg:block hidden transition-colors",
+            isEditingActive && "bg-orange-50/60 ring-2 ring-inset ring-orange-300"
+          )}>
+            {/* Sticky Edit-Banner im Hauptbereich */}
+            {isEditingActive && (
+              <div className="sticky top-0 z-20 bg-orange-500 text-white px-6 py-2.5 flex items-center gap-3">
+                <PenLine className="w-4 h-4 shrink-0 animate-pulse" />
+                <span className="text-sm font-semibold flex-1">✏️ Bearbeitungsmodus aktiv – das Lernpaket ist für andere gesperrt</span>
+                <button
+                  onClick={handleGlobalExitEdit}
+                  className="flex items-center gap-1.5 text-xs font-medium bg-white/20 hover:bg-white/30 transition-colors px-3 py-1.5 rounded-full"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Bearbeitung abschließen
+                </button>
+              </div>
+            )}
             <div className="h-full overflow-y-auto min-h-0">
         {!selectedItem && <EmptyState />}
 
@@ -650,6 +708,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
                  const klon = alleKlone.find(k => k.id === klonId);
                  if (klon) setSelectedItem({ type: 'klon', klon });
                }}
+               onEditModeChange={handleEditModeChange}
              />
            </div>
          )}
@@ -702,6 +761,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
                     const klon = alleKlone.find(k => k.id === klonId);
                     if (klon) setSelectedItem({ type: 'klon', klon });
                   }}
+                  onEditModeChange={handleEditModeChange}
                 />
               </div>
             )}

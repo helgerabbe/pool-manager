@@ -19,7 +19,7 @@ import ApprovalStatusBadge from '@/components/workspace/ApprovalStatusBadge';
 import ApprovalActionButton from '@/components/workspace/ApprovalActionButton';
 import EinheitLockBanner from '@/components/workspace/EinheitLockBanner';
 
-export default function ActivityDetailView({ activityRecord, kannBearbeiten, queryClient, einheitFach }) {
+export default function ActivityDetailView({ activityRecord, kannBearbeiten, queryClient, einheitFach, onEditModeChange }) {
   const { permissions } = useRBAC();
   const istAdminOderFachschaft = permissions?.istAdmin;
   const [lockTransition, setLockTransition] = useState(null); // 'activating' | 'deactivating' | null
@@ -43,6 +43,11 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
 
   const catalog = aktivitaetenKatalog?.find(a => a.id === activityRecord?.aktivitaet_id);
   const kannInhalteBearbeiten = (permissions?.istAdmin || kannBearbeiten) && !isUnitLocked;
+
+  // Edit-Mode nach oben melden (für globales Banner in TaskCreationView)
+  useEffect(() => {
+    onEditModeChange?.(canEditFromLock, releaseLock);
+  }, [canEditFromLock]);
 
   const handleEnterEditMode = async () => {
     if (!canEditFromLock) {
