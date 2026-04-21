@@ -11,6 +11,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { useLernpaketLock } from '@/hooks/useLernpaketLock';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -112,6 +113,8 @@ export default function ActivityMasterPanel({
   const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
   const [focusedMasterId, setFocusedMasterId] = useState(selectedMasterId);
+  // Implizites Locking für "Neue Master-Aufgabe"
+  const { acquireLock, releaseLock } = useLernpaketLock(activityRecord?.lernpaket_id);
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
 
   // Wenn selectedMasterId von außen übergeben wird, setze focusedMasterId
@@ -207,15 +210,28 @@ export default function ActivityMasterPanel({
 
   const handleAddMaster = async () => {
     setCreating(true);
-    const neu = await base44.entities.MasterAufgabe.create({
-      activity_id: activityRecord.id,
-      lernpaket_id: activityRecord.lernpaket_id,
-      reihenfolge: masterAufgaben.length + 1,
-    });
-    await queryClient.invalidateQueries({ queryKey: ['masterAufgaben', activityRecord.id] });
-    setCreating(false);
-    setFocusedMasterId(neu.id);   // direkt zur neuen Karte scrollen/fokussieren
-    toast.success('Neue Masteraufgabe erstellt.');
+    // Lock erwerben bevor Karte erstellt wird
+    const lockOk = await acquireLock();
+    if (!lockOk) {
+      setCreating(false);
+      return; // Fehlermeldung kommt bereits aus useLernpaketLock
+    }
+    onEditModeChange?.(true);
+    try {
+      const neu = await base44.entities.MasterAufgabe.create({
+        activity_id: activityRecord.id,
+        lernpaket_id: activityRecord.lernpaket_id,
+        reihenfolge: masterAufgaben.length + 1,
+      });
+      await queryClient.invalidateQueries({ queryKey: ['masterAufgaben', activityRecord.id] });
+      setFocusedMasterId(neu.id); // direkt zur neuen Karte scrollen/fokussieren
+      toast.success('Neue Masteraufgabe erstellt.');
+    } finally {
+      // Lock wieder freigeben – MasterAufgabeCard übernimmt beim Bearbeiten ihren eigenen Lock
+      await releaseLock();
+      onEditModeChange?.(false);
+      setCreating(false);
+    }
   };
 
   // Für supports_master: Aktivität gilt als vollständig wenn mindestens 1 Masteraufgabe vorhanden
@@ -398,9 +414,7 @@ export default function ActivityMasterPanel({
                 Aufgaben
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {isInEditMode
-                  ? 'Erstelle Vorlagen – die KI generiert daraus automatisch Aufgabenvarianten.'
-                  : 'Aktiviere den Bearbeitungsmodus um Aufgaben anzulegen.'}
+                Erstelle Vorlagen – die KI generiert daraus automatisch Aufgabenvarianten.
               </p>
             </div>
             {masterAufgaben.length > 0 && (
@@ -488,23 +502,19 @@ export default function ActivityMasterPanel({
               <div>
                 <p className="font-semibold text-sm">Noch keine Aufgaben</p>
                 <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
-                  {isInEditMode
-                    ? 'Erstelle jetzt die erste Masteraufgabe als Vorlage für KI-generierte Varianten.'
-                    : 'Aktiviere den Bearbeitungsmodus um die erste Aufgabe anzulegen.'}
+                  Erstelle jetzt die erste Masteraufgabe als Vorlage für KI-generierte Varianten.
                 </p>
               </div>
-              {isInEditMode && (
-                <Button onClick={handleAddMaster} disabled={creating} className="gap-2">
-                  {creating
-                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Erstelle…</>
-                    : <><Plus className="w-4 h-4" /> Erste Aufgabe erstellen</>}
-                </Button>
-              )}
+              <Button onClick={handleAddMaster} disabled={creating} className="gap-2">
+                {creating
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren & Erstellen…</>
+                  : <><Plus className="w-4 h-4" /> Erste Aufgabe erstellen</>}
+              </Button>
             </div>
           )}
 
           {/* Weitere Masteraufgabe hinzufügen */}
-          {masterAufgaben.length > 0 && isInEditMode && (
+          {masterAufgaben.length > 0 && (
             <Button
               variant="outline"
               onClick={handleAddMaster}
@@ -512,7 +522,7 @@ export default function ActivityMasterPanel({
               className="w-full gap-2 border-dashed border-primary/40 text-primary hover:bg-primary/5 hover:border-primary/60"
             >
               {creating
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Erstelle…</>
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren & Erstellen…</>
                 : <><Plus className="w-4 h-4" /> Weitere Aufgabe hinzufügen</>}
             </Button>
           )}
