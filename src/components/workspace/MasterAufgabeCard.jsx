@@ -817,10 +817,21 @@ export default function MasterAufgabeCard({
               />
             </div>
           ) : (
-            /* ── Generischer Fallback ── */
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Notizen / Aufgabenstellung</p>
-              {editMode ? (
+            /* ── Generischer Fallback (auch für Sortierung wenn nicht spezialisiert) ── */
+            <div className="space-y-3">
+              {editMode && isSort ? (
+                <>
+                  <SortingListEditor
+                    initialData={fieldValues}
+                    onSave={(data) => {
+                      setFieldValues(data);
+                      handleSaveAndClose(data);
+                    }}
+                    onCancel={() => { setEditMode(false); setHasPendingChanges(false); }}
+                    onChange={() => setHasPendingChanges(true)}
+                  />
+                </>
+              ) : editMode ? (
                 <div className="space-y-2">
                   <Textarea
                     value={fieldValues.task_description || ''}
@@ -846,14 +857,38 @@ export default function MasterAufgabeCard({
                   </div>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  <div className="bg-muted/50 rounded-lg p-3 text-sm">
-                    {fieldValues.task_description || <span className="italic text-muted-foreground">Noch kein Inhalt. Klicke „Inhalt bearbeiten".</span>}
-                  </div>
+                <div className="space-y-3">
+                  {isSort && fieldValues.instruction && (
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Aufgabenstellung</p>
+                      <div className="bg-muted/50 rounded-lg p-3 text-sm">{fieldValues.instruction}</div>
+                    </div>
+                  )}
+                  {isSort && fieldValues.orderedItems?.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Sortierliste ({fieldValues.orderedItems.length})</p>
+                      <div className="bg-muted/30 rounded-lg p-3 space-y-1">
+                        {fieldValues.orderedItems.map((item, i) => (
+                          <div key={i} className="flex items-center gap-2 text-sm">
+                            <span className="font-semibold text-muted-foreground w-6">{i + 1}.</span>
+                            <span>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {!isSort && (
+                    <div className="bg-muted/50 rounded-lg p-3 text-sm">
+                      {fieldValues.task_description || <span className="italic text-muted-foreground">Noch kein Inhalt. Klicke „Inhalt bearbeiten".</span>}
+                    </div>
+                  )}
                   {kannBearbeiten && !locked && (
                     <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
                       Inhalt bearbeiten
                     </Button>
+                  )}
+                  {isSort && !fieldValues.instruction && !fieldValues.orderedItems?.length && (
+                    <p className="text-sm text-muted-foreground italic">Noch kein Inhalt. Klicke „Inhalt bearbeiten".</p>
                   )}
                 </div>
               )}
