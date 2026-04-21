@@ -58,15 +58,7 @@ export function useWorkspaceData(einheitId, isStructuralEditingActive = false) {
   // Finde aktive Einheit
   const activeEinheit = einheiten.find(e => e.id === einheitId) || null;
   
-  // 🔍 DEBUG: Logge Daten für Audit
-  console.log('[useWorkspaceData] Loaded:', {
-    einheitId,
-    hasDetailData: !!detailData,
-    hasEinheitData: !!einheitData,
-    activeEinheitMembers: activeEinheit?.members?.length || 0,
-    einheitenCount: einheiten.length,
-    structuralLock: activeEinheit?.structural_lock || null,
-  });
+
 
   // ✅ SMART POLLING: Manuelles Background Refetch im Read-Only-Modus
   // Nutzer mit Lock sehen keine Hintergrund-Updates (staleTime=Infinity)

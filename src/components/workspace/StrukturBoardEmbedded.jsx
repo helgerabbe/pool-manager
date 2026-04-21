@@ -460,18 +460,7 @@ export default function StrukturBoardEmbedded({
     );
   }
 
-  // Debug-Log für Initialisierung
-  console.log('[StrukturBoard] Render:', {
-    initialized,
-    spaltenCount: spalten.length,
-    paketeCount: Object.values(paketeMap).flat().length,
-    remotePaketeCount: remotePakete?.length || 0,
-    remoteThemenfelderCount: remoteThemenfelder?.length || 0,
-    isDirty,
-    isStructuralEditingActive,
-    istLesemodus,
-    kannStrukturBearbeiten,
-  });
+
 
   // ── DnD ───────────────────────────────────────────────────────────────────
 
