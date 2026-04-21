@@ -523,6 +523,7 @@ export default function ActivityMasterPanel({
                           try {
                             await base44.entities.MasterAufgabe.delete(master.id);
                             queryClient.invalidateQueries({ queryKey: ['masterAufgaben', activityRecord.id] });
+      queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] }); // Global refresh für Sidebar
                             toast.success('Aufgabe gelöscht.');
                           } catch (err) {
                             toast.error(err.message || 'Fehler beim Löschen.');
@@ -559,6 +560,7 @@ export default function ActivityMasterPanel({
                 onDeleted={() => {
                   setFocusedMasterId(null);
                   queryClient.invalidateQueries({ queryKey: ['masterAufgaben', activityRecord.id] });
+      queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] }); // Global refresh für Sidebar
                 }}
                 onKlonesCreated={() => queryClient.invalidateQueries({ queryKey: ['klone', activityRecord.id] })}
                 onKlonSelected={(klonId) => {
