@@ -214,13 +214,13 @@ export default function WorkspaceTabs({ activeTab, onTabChange }) {
           const Icon = tab.icon;
           const isActive = activeTab === tab.value;
           return (
-            <div key={tab.value}>
+            <div key={tab.value} className="relative">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
                     onClick={() => onTabChange(tab.value)}
                     className={cn(
-                      'relative flex items-center gap-2 py-3 rounded-lg border-2 transition-all font-medium',
+                      'flex items-center gap-2 py-3 rounded-lg border-2 transition-all font-medium',
                       isActive
                         ? 'bg-primary text-primary-foreground border-primary shadow-md px-8 justify-start'
                         : 'bg-card border-border text-muted-foreground hover:border-primary/50 hover:bg-muted/50 px-3 justify-center'
@@ -235,13 +235,13 @@ export default function WorkspaceTabs({ activeTab, onTabChange }) {
                       {tab.step}
                     </span>
                     <Icon className={cn('w-4 h-4 shrink-0 transition-all', isActive && 'scale-110')} />
-                    {isActive && <div className="absolute -top-1 -right-1"><HelpDialog {...tab.help} /></div>}
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-medium">
                   {tab.label}
                 </TooltipContent>
               </Tooltip>
+              {isActive && <div className="absolute -top-1 -right-1"><HelpDialog {...tab.help} /></div>}
             </div>
           );
         })}
