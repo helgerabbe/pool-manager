@@ -26,10 +26,13 @@ function AmpelDot({ status, size = 'sm' }) {
   );
 }
 
-function AktivitaetSubNode({ activity, aktivitaetName, isSelected, onSelect, paketId, masterAufgabenCount = 0, supportsMaster = false }) {
-  // Für supports_master Aktivitäten: vollständig wenn mindestens 1 Masteraufgabe vorhanden
+function AktivitaetSubNode({ activity, aktivitaetName, isSelected, onSelect, paketId, masterAufgabenList = [], supportsMaster = false }) {
+  // Für supports_master Aktivitäten: vollständig wenn mindestens 1 Masteraufgabe EXISTIERT UND alle is_complete === true
   // Für andere Aktivitäten: nutze is_complete Flag
-  const isIncomplete = supportsMaster ? masterAufgabenCount === 0 : !activity.is_complete;
+  const masterAufgabenCount = masterAufgabenList.length;
+  const isIncomplete = supportsMaster 
+    ? (masterAufgabenCount === 0 || masterAufgabenList.some(m => !m.is_complete))
+    : !activity.is_complete;
   const isReleased = activity.content_status === 'approved';
   
   // Farben nach Freigabe-Status:
@@ -72,10 +75,13 @@ function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseA
   
   // Warn-Icon nur zeigen wenn Aktivität unvollständig (is_complete === false)
   // Der Freigabe-Status (content_status) hat KEINEN Einfluss auf die Warn-Logik!
-  // Beachte: Für supports_master Aktivitäten = unvollständig wenn keine Masteraufgaben
+  // Beachte: Für supports_master Aktivitäten = unvollständig wenn keine Masteraufgaben ODER wenn eine davon !is_complete
   const hasIncompleteActivity = activities.some(a => {
     const supportsMaster = aktivitaetSupportsMasterMap[a.aktivitaet_id];
-    const isIncomplete = supportsMaster ? (masterAufgabenMap[a.id] || []).length === 0 : !a.is_complete;
+    const mList = masterAufgabenMap[a.id] || [];
+    const isIncomplete = supportsMaster 
+      ? (mList.length === 0 || mList.some(m => !m.is_complete))
+      : !a.is_complete;
     return isIncomplete;
   });
   
@@ -116,7 +122,7 @@ function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseA
                   onSelect={onSelect}
                   paketId={paket.id}
                   supportsMaster={aktivitaetSupportsMasterMap[activity.aktivitaet_id] || false}
-                  masterAufgabenCount={(masterAufgabenMap[activity.id] || []).length}
+                  masterAufgabenList={masterAufgabenMap[activity.id] || []}
                 />
               ))
           )}
@@ -137,10 +143,13 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
 
   // Warn-Icon nur bei unvollständigen Aktivitäten (is_complete === false)
   // Der Freigabe-Status (content_status) hat KEINEN Einfluss auf die Warn-Logik!
-  // Beachte: Für supports_master Aktivitäten = unvollständig wenn keine Masteraufgaben
+  // Beachte: Für supports_master Aktivitäten = unvollständig wenn keine Masteraufgaben ODER wenn eine davon !is_complete
   const hatUnvollstaendigeAktivitaet = paketPhaseActivities.some(a => {
     const supportsMaster = aktivitaetSupportsMasterMap[a.aktivitaet_id];
-    const isIncomplete = supportsMaster ? (masterAufgabenMap[a.id] || []).length === 0 : !a.is_complete;
+    const mList = masterAufgabenMap[a.id] || [];
+    const isIncomplete = supportsMaster 
+      ? (mList.length === 0 || mList.some(m => !m.is_complete))
+      : !a.is_complete;
     return isIncomplete;
   });
 
@@ -226,11 +235,14 @@ function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedI
 
   // Warn-Icon nur bei unvollständigen Aktivitäten (is_complete === false)
   // Der Freigabe-Status (content_status) hat KEINEN Einfluss auf die Warn-Logik!
-  // Beachte: Für supports_master Aktivitäten = unvollständig wenn keine Masteraufgaben
+  // Beachte: Für supports_master Aktivitäten = unvollständig wenn keine Masteraufgaben ODER wenn eine davon !is_complete
   const hatUnvollstaendigeAktivitaet = lernpakete.some(paket =>
     (paketPhaseActivitiesMap[paket.id] || []).some(a => {
       const supportsMaster = aktivitaetSupportsMasterMap[a.aktivitaet_id];
-      const isIncomplete = supportsMaster ? (masterAufgabenMap[a.id] || []).length === 0 : !a.is_complete;
+      const mList = masterAufgabenMap[a.id] || [];
+      const isIncomplete = supportsMaster 
+        ? (mList.length === 0 || mList.some(m => !m.is_complete))
+        : !a.is_complete;
       return isIncomplete;
     })
   );
@@ -361,7 +373,7 @@ export default function SidebarTree({
 
   // Katalog-Infos: Welche Aktivitäten haben supports_master = true?
   const aktivitaetSupportsMasterMap = Object.fromEntries(
-    aktivitaetenList.map(a => [a.id, a.supports_master === true])
+    aktivitaetenList.map(a => [a.id, Boolean(a.supports_master)])
   );
 
   const { prozent, gruen, gesamt } = getEinheitFortschritt(lernpakete, lernziele, aufgaben, userEmail, mappings, phaseAktivitaeten);
