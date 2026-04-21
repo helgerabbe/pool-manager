@@ -35,7 +35,8 @@ function AktivitaetSubNode({ activity, aktivitaetName, isSelected, onSelect, pak
   // Farben nach Freigabe-Status:
   // - Freigegeben (approved) → Grün
   // - Nicht freigegeben (draft) → Orange/Gelb
-  // Warn-Symbol: nur wenn UNVOLLSTÄNDIG UND nicht freigegeben
+  // Warn-Symbol: AUSSCHLIESSLICH wenn unvollständig (is_complete === false)
+  // Der Freigabe-Status hat keinen Einfluss auf die Warn-Logik!
   const textColor = isReleased ? 'text-green-600' : 'text-orange-600';
   
   // Debug: Zeige Masteraufgaben-Status wenn supportsMaster
@@ -53,8 +54,8 @@ function AktivitaetSubNode({ activity, aktivitaetName, isSelected, onSelect, pak
           {masterInfo}
         </span>
       )}
-      {isIncomplete && !isReleased && (
-        <AlertTriangle className="w-3 h-3 text-orange-500 shrink-0" title="Inhalt unvollständig" />
+      {isIncomplete && (
+        <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" title="Inhalt unvollständig" />
       )}
     </div>
   );
@@ -69,12 +70,13 @@ const PHASES = [
 function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseActivities, aktivitaetenMap, masterAufgabenMap = {}, aktivitaetSupportsMasterMap = {} }) {
   const activities = paketPhaseActivities.filter(a => a.phase === phase);
   
-  // Warn-Icon nur zeigen wenn Aktivität unvollständig UND nicht freigegeben
+  // Warn-Icon nur zeigen wenn Aktivität unvollständig (is_complete === false)
+  // Der Freigabe-Status (content_status) hat KEINEN Einfluss auf die Warn-Logik!
   // Beachte: Für supports_master Aktivitäten = unvollständig wenn keine Masteraufgaben
   const hasIncompleteActivity = activities.some(a => {
     const supportsMaster = aktivitaetSupportsMasterMap[a.aktivitaet_id];
     const isIncomplete = supportsMaster ? (masterAufgabenMap[a.id] || []).length === 0 : !a.is_complete;
-    return isIncomplete && a.content_status !== 'approved';
+    return isIncomplete;
   });
   
   const [open, setOpen] = useState(false);
@@ -133,12 +135,13 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
   const lockedByMe = isPaketLocked(paket) && paketLockedBy === userEmail;
   const isActiveEditPaket = isEditingActive && lockedByMe;
 
-  // Warn-Icon nur bei unvollständigen UND nicht freigegebenen Aktivitäten
+  // Warn-Icon nur bei unvollständigen Aktivitäten (is_complete === false)
+  // Der Freigabe-Status (content_status) hat KEINEN Einfluss auf die Warn-Logik!
   // Beachte: Für supports_master Aktivitäten = unvollständig wenn keine Masteraufgaben
   const hatUnvollstaendigeAktivitaet = paketPhaseActivities.some(a => {
     const supportsMaster = aktivitaetSupportsMasterMap[a.aktivitaet_id];
     const isIncomplete = supportsMaster ? (masterAufgabenMap[a.id] || []).length === 0 : !a.is_complete;
-    return isIncomplete && a.content_status !== 'approved';
+    return isIncomplete;
   });
 
   return (
@@ -221,13 +224,14 @@ function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedI
     paketStatuses.every(s => s === 'green') ? 'green' :
     paketStatuses.some(s => s === 'red') ? 'red' : 'yellow';
 
-  // Warn-Icon nur bei unvollständigen UND nicht freigegebenen Aktivitäten
+  // Warn-Icon nur bei unvollständigen Aktivitäten (is_complete === false)
+  // Der Freigabe-Status (content_status) hat KEINEN Einfluss auf die Warn-Logik!
   // Beachte: Für supports_master Aktivitäten = unvollständig wenn keine Masteraufgaben
   const hatUnvollstaendigeAktivitaet = lernpakete.some(paket =>
     (paketPhaseActivitiesMap[paket.id] || []).some(a => {
       const supportsMaster = aktivitaetSupportsMasterMap[a.aktivitaet_id];
       const isIncomplete = supportsMaster ? (masterAufgabenMap[a.id] || []).length === 0 : !a.is_complete;
-      return isIncomplete && a.content_status !== 'approved';
+      return isIncomplete;
     })
   );
 
