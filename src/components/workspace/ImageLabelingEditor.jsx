@@ -44,6 +44,13 @@ export default function ImageLabelingEditor({
   const imageRef = useRef(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [uploading, setUploading] = useState(false);
+  
+  // Drag & Resize State
+  const [draggingZoneIdx, setDraggingZoneIdx] = useState(null);
+  const [resizingZoneIdx, setResizingZoneIdx] = useState(null);
+  const [resizeHandle, setResizeHandle] = useState(null); // 'nw', 'ne', 'sw', 'se'
+  const [dragStart, setDragStart] = useState(null);
+  const [hoveredZoneIdx, setHoveredZoneIdx] = useState(null);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -112,6 +119,7 @@ export default function ImageLabelingEditor({
     onChange?.();
   };
 
+  // ── Unplaced Terms Drag & Drop (externe Begriffe auf Bild) ──
   const handleDragStart = (e, label) => {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', label);
@@ -150,6 +158,99 @@ export default function ImageLabelingEditor({
     setDraggedLabel(null);
     onChange?.();
   };
+
+  // ── Box-Drag Handler (bereits platzierte Zonen verschieben) ──
+  const handleBoxMouseDown = (e, idx) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!imageRef.current) return;
+    const rect = imageRef.current.getBoundingClientRect();
+    
+    setDraggingZoneIdx(idx);
+    setDragStart({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
+
+  const handleBoxMouseMove = (e) => {
+    if (draggingZoneIdx === null || !dragStart || !imageRef.current) return;
+    
+    const rect = imageRef.current.getBoundingClientRect();
+    const currentX = e.clientX - rect.left;
+    const currentY = e.clientY - rect.top;
+    
+    const zone = data.dropZones[draggingZoneIdx];
+    const dx = currentX - dragStart.x;
+    const dy = currentY - dragStart.y;
+    
+    // Neue Position in Pixeln
+    const newPixelX = (zone.x_percent / 100) * rect.width + dx;
+    const newPixelY = (zone.y_percent / 100) * rect.height + dy;
+    
+    // Clamp zu Box-Grenzen
+    const clampedX = Math.max(0, Math.min(rect.width, newPixelX));
+    const clampedY = Math.max(0, Math.min(rect.height, newPixelY));
+    
+    // Umrechnung zu Prozent
+    const x_percent = (clampedX / rect.width) * 100;
+    const y_percent = (clampedY / rect.height) * 100;
+    
+    updateDropZone(draggingZoneIdx, { x_percent, y_percent });
+    setDragStart({ x: currentX, y: currentY });
+    onChange?.();
+  };
+
+  const handleBoxMouseUp = () => {
+    setDraggingZoneIdx(null);
+    setDragStart(null);
+  };
+
+  // ── Resize Handler ──
+  const handleResizeMouseDown = (e, idx, handle) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setResizingZoneIdx(idx);
+    setResizeHandle(handle);
+    setDragStart({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleResizeMouseMove = (e) => {
+    if (resizingZoneIdx === null || !resizeHandle || !dragStart || !imageRef.current) return;
+    
+    const dx = e.clientX - dragStart.x;
+    const dy = e.clientY - dragStart.y;
+    
+    const zone = data.dropZones[resizingZoneIdx];
+    let newWidth = zone.width;
+    let newHeight = zone.height;
+    
+    // Resize basierend auf Handle-Position
+    if (resizeHandle.includes('e')) newWidth = Math.max(50, zone.width + dx);
+    if (resizeHandle.includes('w')) newWidth = Math.max(50, zone.width - dx);
+    if (resizeHandle.includes('s')) newHeight = Math.max(30, zone.height + dy);
+    if (resizeHandle.includes('n')) newHeight = Math.max(30, zone.height - dy);
+    
+    updateDropZone(resizingZoneIdx, { width: newWidth, height: newHeight });
+    setDragStart({ x: e.clientX, y: e.clientY });
+    onChange?.();
+  };
+
+  const handleResizeMouseUp = () => {
+    setResizingZoneIdx(null);
+    setResizeHandle(null);
+    setDragStart(null);
+  };
+
+  // Global Mouse Events für Drag & Resize
+  useEffect(() => {
+    if (draggingZoneIdx !== null || resizingZoneIdx !== null) {
+      document.addEventListener('mousemove', draggingZoneIdx !== null ? handleBoxMouseMove : handleResizeMouseMove);
+      document.addEventListener('mouseup', draggingZoneIdx !== null ? handleBoxMouseUp : handleResizeMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', draggingZoneIdx !== null ? handleBoxMouseMove : handleResizeMouseMove);
+        document.removeEventListener('mouseup', draggingZoneIdx !== null ? handleBoxMouseUp : handleResizeMouseUp);
+      };
+    }
+  }, [draggingZoneIdx, resizingZoneIdx, resizeHandle, dragStart, data.dropZones]);
 
   // Alle verfügbaren Begriffe (sowohl in dropZones als auch potenzielle neue)
   const allTerms = [
@@ -325,27 +426,62 @@ export default function ImageLabelingEditor({
               style={{ maxHeight: '400px' }}
             />
 
-            {/* Drop-Zones visualisieren */}
+            {/* Drop-Zones visualisieren & interaktiv machen */}
             {imageLoaded && imageRef.current && (
-              <div className="absolute inset-0 pointer-events-none">
-                {data.dropZones.map((zone, idx) => (
-                  <div
-                    key={idx}
-                    className="absolute border-2 border-dashed border-primary/40 bg-primary/5 rounded-lg flex items-center justify-center"
-                    style={{
-                      left: `${zone.x_percent}%`,
-                      top: `${zone.y_percent}%`,
-                      width: `${zone.width}px`,
-                      height: `${zone.height}px`,
-                      transform: 'translate(-50%, -50%)',
-                    }}
-                    title={zone.label}
-                  >
-                    <span className="text-xs font-semibold text-primary text-center px-1 line-clamp-2">
-                      {zone.label}
-                    </span>
-                  </div>
-                ))}
+              <div className="absolute inset-0">
+                {data.dropZones.map((zone, idx) => {
+                  const isHovered = hoveredZoneIdx === idx;
+                  const isDragging = draggingZoneIdx === idx;
+                  
+                  return (
+                    <div
+                      key={idx}
+                      className={`absolute border-2 rounded-lg flex items-center justify-center transition-all ${
+                        isDragging
+                          ? 'border-primary bg-primary/20 z-50'
+                          : isHovered
+                          ? 'border-primary/80 bg-primary/10 z-40'
+                          : 'border-dashed border-primary/40 bg-primary/5 z-30'
+                      }`}
+                      style={{
+                        left: `${zone.x_percent}%`,
+                        top: `${zone.y_percent}%`,
+                        width: `${zone.width}px`,
+                        height: `${zone.height}px`,
+                        transform: 'translate(-50%, -50%)',
+                        cursor: isDragging ? 'grabbing' : isHovered ? 'grab' : 'default',
+                      }}
+                      onMouseDown={(e) => handleBoxMouseDown(e, idx)}
+                      onMouseEnter={() => setHoveredZoneIdx(idx)}
+                      onMouseLeave={() => setHoveredZoneIdx(null)}
+                      title={`${zone.label} – ziehen zum verschieben`}
+                    >
+                      {/* Label */}
+                      <span className="text-xs font-semibold text-primary text-center px-1 line-clamp-2 pointer-events-none">
+                        {zone.label}
+                      </span>
+
+                      {/* Resize Handles (nur bei Hover sichtbar) */}
+                      {isHovered && (
+                        <>
+                          {['nw', 'ne', 'sw', 'se'].map(handle => (
+                            <div
+                              key={handle}
+                              onMouseDown={(e) => handleResizeMouseDown(e, idx, handle)}
+                              className={`absolute w-2 h-2 bg-white border border-primary/60 rounded-sm pointer-events-auto ${
+                                handle === 'nw' ? 'top-0 left-0 -translate-x-1 -translate-y-1 cursor-nwse-resize' :
+                                handle === 'ne' ? 'top-0 right-0 translate-x-1 -translate-y-1 cursor-nesw-resize' :
+                                handle === 'sw' ? 'bottom-0 left-0 -translate-x-1 translate-y-1 cursor-nesw-resize' :
+                                'bottom-0 right-0 translate-x-1 translate-y-1 cursor-nwse-resize'
+                              }`}
+                              title={`Resize ${handle}`}
+                            />
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
