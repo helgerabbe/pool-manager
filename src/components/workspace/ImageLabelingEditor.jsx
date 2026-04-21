@@ -265,60 +265,63 @@ export default function ImageLabelingEditor({
     <div className="space-y-4">
       {/* Aufgabenstellung */}
       <div className="space-y-1.5">
-        <Label className="text-sm font-medium">Aufgabenstellung</Label>
-        <Textarea
-          value={data.aufgabenstellung}
-          onChange={e => {
-            setData(d => ({ ...d, aufgabenstellung: e.target.value }));
-            onChange?.();
-          }}
-          placeholder="Beschreibe, was die Schüler machen sollen..."
-          rows={3}
-          disabled={readOnly}
-          className="text-sm"
-        />
+        {!readOnly && <Label className="text-sm font-medium">Aufgabenstellung</Label>}
+        {readOnly ? (
+          <p className="text-sm leading-relaxed text-foreground">{data.aufgabenstellung || 'Keine Aufgabenstellung definiert.'}</p>
+        ) : (
+          <Textarea
+            value={data.aufgabenstellung}
+            onChange={e => {
+              setData(d => ({ ...d, aufgabenstellung: e.target.value }));
+              onChange?.();
+            }}
+            placeholder="Beschreibe, was die Schüler machen sollen..."
+            rows={3}
+            className="text-sm"
+          />
+        )}
       </div>
 
-      {/* Bild-Upload */}
-      <div className="space-y-1.5">
-        <Label className="text-sm font-medium">Hintergrundbild</Label>
-        <div className="flex items-center gap-3">
-          {data.backgroundImage ? (
-            <div className="flex-1 px-3 py-2 rounded-lg bg-green-50 border border-green-200 text-xs text-green-700 flex items-center justify-between">
-              <span className="truncate">✓ Bild hochgeladen</span>
-              {!readOnly && (
+      {/* Bild-Upload (nur im Edit-Modus) */}
+      {!readOnly && (
+        <div className="space-y-1.5">
+          <Label className="text-sm font-medium">Hintergrundbild</Label>
+          <div className="flex items-center gap-3">
+            {data.backgroundImage ? (
+              <div className="flex-1 px-3 py-2 rounded-lg bg-green-50 border border-green-200 text-xs text-green-700 flex items-center justify-between">
+                <span className="truncate">✓ Bild hochgeladen</span>
                 <button
                   onClick={() => setData(d => ({ ...d, backgroundImage: '' }))}
                   className="text-green-600 hover:text-green-800"
                 >
                   ✕
                 </button>
-              )}
-            </div>
-          ) : (
-            <label className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-input hover:border-primary/50 cursor-pointer transition-colors">
-              {uploading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-xs text-muted-foreground">Lädt...</span>
-                </>
-              ) : (
-                <>
-                  <Upload className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">JPG, PNG – bis 5MB</span>
-                </>
-              )}
-              <input
-                type="file"
-                accept="image/jpeg,image/png"
-                onChange={handleImageUpload}
-                className="hidden"
-                disabled={readOnly || uploading}
-              />
-            </label>
-          )}
+              </div>
+            ) : (
+              <label className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-input hover:border-primary/50 cursor-pointer transition-colors">
+                {uploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-xs text-muted-foreground">Lädt...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">JPG, PNG – bis 5MB</span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  disabled={uploading}
+                />
+              </label>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Zielbegriffe-Manager */}
       {!readOnly && (
@@ -402,13 +405,15 @@ export default function ImageLabelingEditor({
         </div>
       )}
 
-      {/* Drag & Drop Editor */}
+      {/* Drag & Drop Editor (nur im Edit-Modus) / Read-Only Ansicht */}
       {data.backgroundImage && data.dropZones.length > 0 && (
         <div className="space-y-2 border-t pt-4">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 text-xs">
-            <Info className="w-3.5 h-3.5 shrink-0" />
-            <span>Ziehen Sie die Begriffe auf die gewünschte Stelle im Bild. Die gestrichelte Box zeigt den Toleranzbereich.</span>
-          </div>
+          {!readOnly && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 text-xs">
+              <Info className="w-3.5 h-3.5 shrink-0" />
+              <span>Ziehen Sie die Begriffe auf die gewünschte Stelle im Bild. Die gestrichelte Box zeigt den Toleranzbereich.</span>
+            </div>
+          )}
 
           <div 
             className="relative bg-muted/30 rounded-lg p-4 border border-dashed border-border inline-block max-w-full"
@@ -428,7 +433,7 @@ export default function ImageLabelingEditor({
 
             {/* Drop-Zones visualisieren & interaktiv machen */}
             {imageLoaded && imageRef.current && (
-              <div className="absolute inset-0">
+              <div className={readOnly ? 'absolute inset-0 pointer-events-none' : 'absolute inset-0'}>
                 {data.dropZones.map((zone, idx) => {
                   const isHovered = hoveredZoneIdx === idx;
                   const isDragging = draggingZoneIdx === idx;
@@ -437,7 +442,9 @@ export default function ImageLabelingEditor({
                     <div
                       key={idx}
                       className={`absolute border-2 rounded-lg flex items-center justify-center transition-all ${
-                        isDragging
+                        readOnly
+                          ? 'border-green-400 bg-green-50'
+                          : isDragging
                           ? 'border-primary bg-primary/20 z-50'
                           : isHovered
                           ? 'border-primary/80 bg-primary/10 z-40'
@@ -449,20 +456,24 @@ export default function ImageLabelingEditor({
                         width: `${zone.width}px`,
                         height: `${zone.height}px`,
                         transform: 'translate(-50%, -50%)',
-                        cursor: isDragging ? 'grabbing' : isHovered ? 'grab' : 'default',
+                        cursor: readOnly ? 'default' : (isDragging ? 'grabbing' : isHovered ? 'grab' : 'default'),
                       }}
-                      onMouseDown={(e) => handleBoxMouseDown(e, idx)}
-                      onMouseEnter={() => setHoveredZoneIdx(idx)}
-                      onMouseLeave={() => setHoveredZoneIdx(null)}
-                      title={`${zone.label} – ziehen zum verschieben`}
+                      {...(!readOnly && {
+                        onMouseDown: (e) => handleBoxMouseDown(e, idx),
+                        onMouseEnter: () => setHoveredZoneIdx(idx),
+                        onMouseLeave: () => setHoveredZoneIdx(null),
+                      })}
+                      title={zone.label}
                     >
                       {/* Label */}
-                      <span className="text-xs font-semibold text-primary text-center px-1 line-clamp-2 pointer-events-none">
+                      <span className={`text-xs font-semibold text-center px-1 line-clamp-2 pointer-events-none ${
+                        readOnly ? 'text-green-800' : 'text-primary'
+                      }`}>
                         {zone.label}
                       </span>
 
-                      {/* Resize Handles (nur bei Hover sichtbar) */}
-                      {isHovered && (
+                      {/* Resize Handles (nur im Edit-Modus & bei Hover sichtbar) */}
+                      {!readOnly && isHovered && (
                         <>
                           {['nw', 'ne', 'sw', 'se'].map(handle => (
                             <div
@@ -486,17 +497,23 @@ export default function ImageLabelingEditor({
             )}
           </div>
 
-          {/* Nicht platzierte Begriffe als Drag-Source */}
+          {/* Nicht platzierte Begriffe als Drag-Source (nur im Edit-Modus) / Wortspeicher (Read-Only) */}
           {unplacedTerms.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground">Nicht platzierte Begriffe:</p>
+              <p className="text-xs font-medium text-muted-foreground">
+                {readOnly ? 'Wortspeicher:' : 'Nicht platzierte Begriffe:'}
+              </p>
               <div className="flex flex-wrap gap-2">
                 {unplacedTerms.map(term => (
                   <div
                     key={term}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, term)}
-                    className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium cursor-grab active:cursor-grabbing hover:opacity-90 transition-opacity"
+                    draggable={!readOnly}
+                    onDragStart={(e) => !readOnly && handleDragStart(e, term)}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-opacity ${
+                      readOnly
+                        ? 'bg-slate-100 border border-slate-300 text-slate-700'
+                        : 'bg-primary text-primary-foreground cursor-grab active:cursor-grabbing hover:opacity-90'
+                    }`}
                   >
                     {term}
                   </div>
@@ -507,7 +524,21 @@ export default function ImageLabelingEditor({
         </div>
       )}
 
-      {/* Speichern / Abbrechen */}
+      {/* Distraktoren-Anzeige (Read-Only) */}
+      {readOnly && data.distractors.length > 0 && (
+        <div className="space-y-1.5 border-t pt-4">
+          <p className="text-xs font-medium text-muted-foreground">Distraktoren (Falschantworten):</p>
+          <div className="flex flex-wrap gap-2">
+            {data.distractors.map((d, idx) => (
+              <span key={idx} className="px-3 py-1.5 rounded-full bg-red-100 border border-red-300 text-red-700 text-xs font-medium">
+                {d}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Speichern / Abbrechen (nur im Edit-Modus) */}
       {!readOnly && (
         <div className="flex gap-2 border-t pt-3">
           <Button variant="ghost" onClick={onCancel}>
