@@ -54,8 +54,8 @@ export default function ReleaseStatusToggle({ isReleased, onToggle, disabled = f
             isReleased ? 'text-green-700/80' : 'text-slate-600'
           )}>
             {isReleased
-              ? 'Wird nach dem Speichern für Lernende sichtbar'
-              : 'Für Lernende aktuell unsichtbar'}
+              ? 'Ist für den Export nach Moodle freigegeben'
+              : 'Noch nicht für Export freigegeben'}
           </p>
         </div>
 
@@ -81,8 +81,8 @@ export default function ReleaseStatusToggle({ isReleased, onToggle, disabled = f
           : 'text-slate-600'
       )}>
         {isReleased
-          ? '✓ Inhalt ist für Schüler nach dem Speichern sofort verfügbar'
-          : '○ Inhalt bleibt in Bearbeitung – Schüler können es nicht sehen'}
+          ? '✓ Export-Status: Freigegeben für Moodle'
+          : '○ Export-Status: Noch nicht freigegeben'}
       </p>
     </div>
   );
