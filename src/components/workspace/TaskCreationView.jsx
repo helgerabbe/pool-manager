@@ -677,12 +677,12 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
 
           {/* ── Hauptbereich ─────────────────────────────────────────────────────── */}
           <main className={cn(
-            "flex-1 w-full min-w-0 overflow-hidden h-full lg:block hidden transition-colors",
+            "flex-1 w-full min-w-0 overflow-hidden h-full lg:flex hidden flex-col transition-colors",
             isEditingActive && "bg-orange-50/60 ring-2 ring-inset ring-orange-300"
           )}>
             {/* Sticky Edit-Banner im Hauptbereich */}
             {isEditingActive && (
-              <div className="sticky top-0 z-20 bg-orange-500 text-white px-6 py-2.5 flex items-center gap-3">
+              <div className="shrink-0 bg-orange-500 text-white px-6 py-2.5 flex items-center gap-3">
                 <PenLine className="w-4 h-4 shrink-0 animate-pulse" />
                 <span className="text-sm font-semibold flex-1">✏️ Bearbeitungsmodus aktiv – das Lernpaket ist für andere gesperrt</span>
                 <button
@@ -694,7 +694,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
                 </button>
               </div>
             )}
-            <div className="h-full overflow-y-auto min-h-0">
+            <div className="flex-1 overflow-y-auto min-h-0">
         {!selectedItem && <EmptyState />}
 
         {/* Ansicht A: Aktivität gewählt → Übersicht (ActivityMasterPanel) */}

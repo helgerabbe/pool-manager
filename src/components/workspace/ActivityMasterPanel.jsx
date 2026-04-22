@@ -222,7 +222,8 @@ export default function ActivityMasterPanel({
     const ok = await acquireLock();
     setAcquiringLock(false);
     if (!ok) return;
-    onEditModeChange?.(true);
+    // Übergebe releaseLock als zweites Argument damit TaskCreationView den Lock freigeben kann
+    onEditModeChange?.(true, releaseLock);
     setEditModalOpen(true);
   };
 
@@ -231,7 +232,7 @@ export default function ActivityMasterPanel({
   const handleModalCancel = async () => {
     setEditModalOpen(false);
     await releaseLock();
-    onEditModeChange?.(false);
+    onEditModeChange?.(false, null);
   };
 
   // Modal speichern: Daten persistieren, Lock freigeben, Modal schließen
@@ -252,7 +253,7 @@ export default function ActivityMasterPanel({
         setFieldValues(fieldOnly);
         setEditModalOpen(false);
         await releaseLock();
-        onEditModeChange?.(false);
+        onEditModeChange?.(false, null);
       },
     });
   };
@@ -468,19 +469,7 @@ export default function ActivityMasterPanel({
         );
       })()}
 
-      {/* ── Edit-Mode Banner für supports_master Aktivitäten ── */}
-      {supportsMaster && isInEditMode && (
-        <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg bg-orange-50 border border-orange-200">
-          <p className="text-sm text-orange-800 font-medium">Bearbeitungsmodus aktiv – das Lernpaket ist für andere gesperrt</p>
-          <button
-            onClick={handleModalCancel}
-            className="text-orange-600 hover:text-orange-800 text-lg font-bold"
-            title="Bearbeitung abschließen"
-          >
-            ✕
-          </button>
-        </div>
-      )}
+      {/* ── Edit-Mode Banner entfernt — wird global in TaskCreationView gerendert ── */}
 
       {/* ── Aufgabentext-Block (für supports_master Aktivitäten, NOT für KI-Tutor) ─ */}
       {supportsMaster && !isKITutor && (
