@@ -213,52 +213,18 @@ export default function LernpaketPanel({
         </div>
       </div>
 
-      {/* Zugeordnete Aktivitäten */}
-      {lernpaketAktivitaeten.filter(a => a.lernpaket_id === paket.id).length > 0 && (
-        <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Aktivitäten</h3>
-          <div className="space-y-2">
-            {['Input', 'Übung', 'Abschluss'].map(phase => {
-              const phaseActivities = lernpaketAktivitaeten.filter(a => a.lernpaket_id === paket.id && a.phase === phase);
-              if (phaseActivities.length === 0) return null;
-
-              const phaseLabels = { 'Input': '📚 Input', 'Übung': '✏️ Übung', 'Abschluss': '🎯 Abschluss' };
-
-              return (
-                <div key={phase} className="space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground">{phaseLabels[phase]}</p>
-                  {phaseActivities.map(activity => (
-                    <div
-                      key={activity.id}
-                      className="flex items-start gap-2 p-2 rounded border bg-card/50 text-sm cursor-pointer hover:bg-card transition-colors"
-                      onClick={() => onNavigate({ type: 'aktivitaet-edit', id: activity.id, paketId: paket.id, phase: phase.toLowerCase() })}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{activity.aktivitaet_id}</p>
-                        {activity.is_complete && <Badge variant="outline" className="text-[10px] mt-1">Fertig</Badge>}
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                    </div>
-                  ))}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       <div className="space-y-2">
-         <div className="flex items-center justify-between">
-           <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Lernziele</h3>
-           {canEdit && kannBearbeiten && !isLockedByOther && paketZiele.length > 0 && (
-             <button
-               onClick={onNewLernziel}
-               className="flex items-center gap-1 text-xs text-primary hover:underline"
-             >
-               <Plus className="w-3 h-3" /> Hinzufügen
-             </button>
-           )}
-         </div>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Lernziele</h3>
+          {canEdit && kannBearbeiten && !isLockedByOther && paketZiele.length > 0 && (
+            <button
+              onClick={onNewLernziel}
+              className="flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              <Plus className="w-3 h-3" /> Hinzufügen
+            </button>
+          )}
+        </div>
         <div className="space-y-2">
           {paketZiele.length === 0 ? (
             <button
