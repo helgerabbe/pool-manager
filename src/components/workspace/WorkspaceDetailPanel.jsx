@@ -787,12 +787,13 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                     <Menu className="w-5 h-5" />
                   </button>
                 )}
-                </div>
-                );
-                })}
-                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>}
 
-                {/* Edit Lernziel Dialog */}
+      {/* Edit Lernziel Dialog */}
       <Dialog open={!!editLernzielId} onOpenChange={(open) => { if (!open) setEditLernzielId(null); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
