@@ -6,7 +6,7 @@
  *
  * Kernaktivitäten nach Phase:
  * - Input: Lehrwerkquelle, Link / URL, Textlesen, Video-Audio
- * - Übung: Begriffe zuordnen, Bildbeschriftung, KI Tutoraufgabe, Lückentext, Miniquiz, Multiple Choice, Reihenfolge/Sortierung
+ * - Übung: Begriffe zuordnen, Bildbeschriftung, KI Tutoraufgabe, Lückentext, Miniquiz, Multiple Choice, Offene Aufgabe, Reihenfolge/Sortierung
  * - Abschluss: Test, KI Check, Bearbeitung bestätigen
  */
 
@@ -264,6 +264,21 @@ const CORE_ACTIVITIES = [
         type: 'json',
         label: 'Zu sortierende Elemente',
         required: true
+      }
+    ]
+  },
+  {
+    name: 'Offene Aufgabe',
+    phase: 'Übung',
+    is_active: true,
+    supports_master: true,
+    form_schema: [
+      {
+        field_name: 'description',
+        type: 'textarea',
+        label: 'Aufgabenbeschreibung',
+        required: true,
+        placeholder: 'Beschreiben Sie die Aufgabe für die Schüler:innen detailliert...'
       }
     ]
   },
