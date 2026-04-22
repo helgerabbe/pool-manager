@@ -39,9 +39,14 @@ function isMatch(name = '') {
   return MATCH_TERMS_NAMES.some(n => name.toLowerCase().includes(n));
 }
 
-const MINIQUIZ_NAMES = ['miniquiz', 'mini-quiz', 'quiz', 'test'];
+const MINIQUIZ_NAMES = ['miniquiz', 'mini-quiz', 'quiz'];
 function isQuiz(name = '') {
   return MINIQUIZ_NAMES.some(n => name.toLowerCase().includes(n));
+}
+
+const TEST_NAMES = ['test'];
+function isTest(name = '') {
+  return TEST_NAMES.some(n => name.toLowerCase().includes(n));
 }
 
 const MC_NAMES = ['multiple choice', 'multiple-choice'];
@@ -139,7 +144,7 @@ function MasterContentReadOnly({ master, catalogName }) {
   }
 
   // Quiz
-  if (['miniquiz', 'mini-quiz', 'quiz', 'test'].some(n => catalogName.toLowerCase().includes(n))) {
+  if (['miniquiz', 'mini-quiz', 'quiz'].some(n => catalogName.toLowerCase().includes(n))) {
     return (
       <div className="space-y-2">
         {fv.questions?.length > 0 ? (
@@ -247,8 +252,9 @@ export default function MasterDetailView({
   const isMCType = isMC(catalogName);
   const isKITutorType = isKITutor(catalogName);
   const isImageLabelingType = isImageLabeling(catalogName);
+  const isTestType = isTest(catalogName);
 
-  const isSupportedType = isLuecke || isSort || isMatchTerms || isQuizType || isMCType || isKITutorType || isImageLabelingType;
+  const isSupportedType = isLuecke || isSort || isMatchTerms || isQuizType || isMCType || isKITutorType || isImageLabelingType || isTestType;
 
   const { acquireLock, releaseLock } = useLernpaketLock(isSupportedType ? master.lernpaket_id : null);
   const [acquiringLock, setAcquiringLock] = useState(false);
@@ -260,6 +266,7 @@ export default function MasterDetailView({
   const [mcModalOpen, setMcModalOpen] = useState(false);
   const [kiTutorModalOpen, setKiTutorModalOpen] = useState(false);
   const [imageLabelingModalOpen, setImageLabelingModalOpen] = useState(false);
+  const [testModalOpen, setTestModalOpen] = useState(false);
   const [fieldValues, setFieldValues] = useState(master.field_values || {});
 
   // Klon-Bearbeitung
@@ -312,6 +319,7 @@ export default function MasterDetailView({
     else if (isMCType) setMcModalOpen(true);
     else if (isKITutorType) setKiTutorModalOpen(true);
     else if (isImageLabelingType) setImageLabelingModalOpen(true);
+    else if (isTestType) setTestModalOpen(true);
   };
 
   const handleCloseModal = async () => {
@@ -322,6 +330,7 @@ export default function MasterDetailView({
     setMcModalOpen(false);
     setKiTutorModalOpen(false);
     setImageLabelingModalOpen(false);
+    setTestModalOpen(false);
     setEditingKlonId(null);
     setKlonFieldValues({});
     
@@ -351,7 +360,8 @@ export default function MasterDetailView({
     else if (isQuizType) setQuizModalOpen(true);
     else if (isMCType) setMcModalOpen(true);
     else if (isImageLabelingType) setImageLabelingModalOpen(true);
-  };
+    else if (isTestType) setTestModalOpen(true);
+    };
 
   const saveKlonMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Aufgabenbausteine.update(id, {
@@ -607,20 +617,33 @@ export default function MasterDetailView({
             )}
 
             {/* ── Bildbeschriftung-Modal ── */}
-            {isImageLabelingType && (
-              <ImageLabelingModalDetail
-                open={imageLabelingModalOpen}
-                onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
-                initialData={activeData}
-                isSaving={isSavingAny}
-                onDelete={editingKlonId ? undefined : handleDelete}
-                onSave={handleModalSave}
-                onCancel={handleCloseModal}
-              />
-            )}
-          </>
-        );
-      })()}
+             {isImageLabelingType && (
+               <ImageLabelingModalDetail
+                 open={imageLabelingModalOpen}
+                 onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+                 initialData={activeData}
+                 isSaving={isSavingAny}
+                 onDelete={editingKlonId ? undefined : handleDelete}
+                 onSave={handleModalSave}
+                 onCancel={handleCloseModal}
+               />
+             )}
+
+             {/* ── Test-Modal ── */}
+             {isTestType && (
+               <MiniQuizModalDetail
+                 open={testModalOpen}
+                 onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+                 initialData={activeData}
+                 isSaving={isSavingAny}
+                 onDelete={editingKlonId ? undefined : handleDelete}
+                 onSave={handleModalSave}
+                 onCancel={handleCloseModal}
+               />
+             )}
+            </>
+            );
+            })()}
 
       {/* ── Klon-Modal ── */}
       <KlonErstellenModal
