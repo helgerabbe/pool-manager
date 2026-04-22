@@ -397,6 +397,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   // Dialog schließen = Lock freigeben (immer, egal ob Speichern oder Abbrechen)
   const handleCloseEditDialog = async () => {
     setEditDialogOpen(false);
+    setIsAcquiringLock(false);
     await releaseLock();
   };
 
