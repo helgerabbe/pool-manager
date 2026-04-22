@@ -12,6 +12,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Crown, Pencil, Loader2, CheckCircle2, Sparkles } from 'lucide-react';
+import KlonErstellenModal from '@/components/workspace/KlonErstellenModal';
 import { useLernpaketLock } from '@/hooks/useLernpaketLock';
 import LueckentextEditor from '@/components/workspace/LueckentextEditor';
 import LueckentextWysiwygModal from '@/components/workspace/LueckentextWysiwygModal';
@@ -251,6 +252,7 @@ export default function MasterDetailView({
 
   const { acquireLock, releaseLock } = useLernpaketLock(isSupportedType ? master.lernpaket_id : null);
   const [acquiringLock, setAcquiringLock] = useState(false);
+  const [klonModalOpen, setKlonModalOpen] = useState(false);
   const [lueckeModalOpen, setLueckeModalOpen] = useState(false);
   const [sortingModalOpen, setSortingModalOpen] = useState(false);
   const [matchModalOpen, setMatchModalOpen] = useState(false);
@@ -374,6 +376,19 @@ export default function MasterDetailView({
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Aufgaben-Inhalt</p>
         <MasterContentReadOnly master={master} catalogName={catalogName} />
       </div>
+
+      {/* ── Klon-Button ── */}
+      {kannBearbeiten && Object.keys(master.field_values || {}).length > 0 && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setKlonModalOpen(true)}
+          className="gap-2 border-dashed border-primary/50 text-primary hover:bg-primary/5 w-full"
+        >
+          <Sparkles className="w-4 h-4" />
+          Kopien / Klone erstellen
+        </Button>
+      )}
 
       {/* ── Klone-Übersicht ── */}
       {klone.length > 0 && (
@@ -543,6 +558,18 @@ export default function MasterDetailView({
           onCancel={handleCloseModal}
         />
       )}
+
+      {/* ── Klon-Modal ── */}
+      <KlonErstellenModal
+        open={klonModalOpen}
+        onClose={() => setKlonModalOpen(false)}
+        master={master}
+        klone={klone}
+        onKlonesCreated={() => {
+          queryClient.invalidateQueries({ queryKey: ['klone'] });
+          queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+        }}
+      />
 
       {/* ── Bildbeschriftung-Modal ── */}
       {isImageLabelingType && (
