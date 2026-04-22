@@ -47,6 +47,7 @@ export default function KlonErstellenModal({ open, onClose, master, klone, onKlo
      for (let i = 0; i < count; i++) {
        await base44.entities.Aufgabenbausteine.create({
          lernpaket_id: master.lernpaket_id,
+         aktivitaet_id: master.aktivitaet_id,
          baustein_typ: 'Ebene-1-Übung',
          aufgabentext_inhalt: JSON.stringify(fv),
          is_master: false,
@@ -175,6 +176,7 @@ export default function KlonErstellenModal({ open, onClose, master, klone, onKlo
     for (let i = 0; i < result.klone.length; i++) {
        await base44.entities.Aufgabenbausteine.create({
          lernpaket_id: master.lernpaket_id,
+         aktivitaet_id: master.aktivitaet_id,
          baustein_typ: 'Ebene-1-Übung',
          aufgabentext_inhalt: JSON.stringify(result.klone[i]),
          is_master: false,
