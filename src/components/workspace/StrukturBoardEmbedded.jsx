@@ -319,13 +319,13 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
       </div>
 
       {/* Drop-Zone */}
-      <Droppable droppableId={id}>
-        {(provided, snapshot) => (
-          <div
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-            className={cn('flex-1 overflow-y-auto p-2 space-y-1.5 min-h-[120px] transition-colors scroll-container', snapshot.isDraggingOver && 'bg-primary/5')}
-          >
+       <Droppable droppableId={id}>
+         {(provided, snapshot) => (
+           <div
+             ref={provided.innerRef}
+             {...provided.droppableProps}
+             className={cn('flex-1 p-2 space-y-1.5 min-h-[120px] transition-colors overflow-hidden', snapshot.isDraggingOver && 'bg-primary/5')}
+           >
             {pakete.map((paket, index) => (
               <PaketKarte key={paket.id} paket={paket} index={index} onDelete={onDeletePaket} onEdit={onEditPaket} compact={compact} readOnly={readOnly} istLesemodus={istLesemodus} />
             ))}
@@ -886,8 +886,8 @@ export default function StrukturBoardEmbedded({
         </div>
       )}
 
-      {/* Board */}
-      <div className={cn('flex-1 overflow-x-auto overflow-y-auto min-h-0 scroll-container', readOnly && 'opacity-60')}>
+      {/* Board – EINZIGER Scroll-Container für DnD! */}
+      <div className={cn('flex-1 overflow-x-auto overflow-y-auto min-h-0', readOnly && 'opacity-60')}>
         <DragDropContext onDragEnd={handleDragEnd}>
           <div className={cn('flex gap-4 h-full p-4 min-w-max items-start', readOnly && 'pointer-events-none select-none')}>
             {/* Sammelbecken */}
