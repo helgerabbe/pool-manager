@@ -274,12 +274,12 @@ export default function MasterDetailView({
   
   const isLuecke = isLueckentext(catalogName);
   const matchTerms = isMatch(catalogName);
-  const isMC = isMC(catalogName);
-  const isKITutor = isKITutor(catalogName);
-  const isImageLabeling = isImageLabeling(catalogName);
+  const isMCType = isMC(catalogName);
+  const isKITutorType = isKITutor(catalogName);
+  const isImageLabelingType = isImageLabeling(catalogName);
   const isSort = isSorting(catalogName);
 
-  const isSupportedType = isLuecke || isSort || matchTerms || isQuiz || isMC || isKITutor || isImageLabeling || isTest;
+  const isSupportedType = isLuecke || isSort || matchTerms || isQuiz || isMCType || isKITutorType || isImageLabelingType || isTest;
 
   const { acquireLock, releaseLock } = useLernpaketLock(isSupportedType ? master.lernpaket_id : null);
   const [acquiringLock, setAcquiringLock] = useState(false);
@@ -341,10 +341,10 @@ export default function MasterDetailView({
     else if (isSort) setSortingModalOpen(true);
     else if (isTest) setTestModalOpen(true);
     else if (isQuiz) setQuizModalOpen(true);
-    else if (isMC) setMcModalOpen(true);
+    else if (isMCType) setMcModalOpen(true);
     else if (matchTerms) setMatchModalOpen(true);
-    else if (isImageLabeling) setImageLabelingModalOpen(true);
-    else if (isKITutor) setKiTutorModalOpen(true);
+    else if (isImageLabelingType) setImageLabelingModalOpen(true);
+    else if (isKITutorType) setKiTutorModalOpen(true);
   };
 
   const handleCloseModal = async () => {
@@ -384,9 +384,9 @@ export default function MasterDetailView({
     else if (matchTerms) setMatchModalOpen(true);
     else if (isTest) setTestModalOpen(true);
     else if (isQuiz) setQuizModalOpen(true);
-    else if (isMC) setMcModalOpen(true);
-    else if (isImageLabeling) setImageLabelingModalOpen(true);
-    else if (isKITutor) setKiTutorModalOpen(true);
+    else if (isMCType) setMcModalOpen(true);
+    else if (isImageLabelingType) setImageLabelingModalOpen(true);
+    else if (isKITutorType) setKiTutorModalOpen(true);
     };
 
   const saveKlonMutation = useMutation({
@@ -616,7 +616,7 @@ export default function MasterDetailView({
              )}
 
              {/* ── Multiple Choice-Modal ── */}
-             {isMC && (
+             {isMCType && (
                <MultipleChoiceModalDetail
                  open={mcModalOpen}
                  onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
@@ -629,7 +629,7 @@ export default function MasterDetailView({
              )}
 
              {/* ── KI-Tutor-Modal ── */}
-             {isKITutor && (
+             {isKITutorType && (
                <KITutorModalDetail
                  open={kiTutorModalOpen}
                  onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
@@ -643,7 +643,7 @@ export default function MasterDetailView({
              )}
 
              {/* ── Bildbeschriftung-Modal ── */}
-              {isImageLabeling && (
+              {isImageLabelingType && (
                 <ImageLabelingModalDetail
                   open={imageLabelingModalOpen}
                   onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
