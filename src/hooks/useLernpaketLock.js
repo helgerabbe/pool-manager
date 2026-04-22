@@ -25,6 +25,7 @@ export function useLernpaketLock(lernpaketId) {
   const [canEdit, setCanEdit] = useState(false);
   const [isLockedByOther, setIsLockedByOther] = useState(false);
   const [lockedByEmail, setLockedByEmail] = useState(null);
+  const [lockErrorMessage, setLockErrorMessage] = useState(null); // Aussagekräftige Fehlermeldung
   const [userEmail, setUserEmail] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const heartbeatRef = useRef(null);
@@ -106,6 +107,8 @@ export function useLernpaketLock(lernpaketId) {
   const acquireLock = useCallback(async () => {
     if (!lernpaketId || !userEmail) return false;
 
+    setLockErrorMessage(null); // Fehlermeldung zurücksetzen
+
     try {
       await base44.functions.invoke('acquireLockSecure', {
         lernpaketId,
@@ -115,18 +118,34 @@ export function useLernpaketLock(lernpaketId) {
       setCanEdit(true);
       setIsLockedByOther(false);
       setLockedByEmail(userEmail);
+      setLockErrorMessage(null);
       startHeartbeat();
       return true;
     } catch (error) {
       const status = error?.response?.status;
-      const code = error?.response?.data?.code;
+      const data = error?.response?.data || {};
+      const lockedByEmail = data.locked_by_email;
+      const errorMsg = data.error || error.message;
 
-      if (status === 409 && code === 'ALREADY_LOCKED') {
-        const lockedBy = error?.response?.data?.locked_by_email;
+      // 409: Already locked by another user
+      if (status === 409) {
         setIsLockedByOther(true);
-        setLockedByEmail(lockedBy);
+        setLockedByEmail(lockedByEmail);
+        // Nutze aussagekräftige Fehlermeldung vom Backend
+        setLockErrorMessage(errorMsg);
+        console.warn('[useLernpaketLock] Lock conflict:', errorMsg);
+        return false;
       }
 
+      // 403: Keine Berechtigung
+      if (status === 403) {
+        setLockErrorMessage(errorMsg || 'Keine Berechtigung für diese Einheit');
+        console.warn('[useLernpaketLock] Permission denied:', errorMsg);
+        return false;
+      }
+
+      // Sonstiger Fehler
+      setLockErrorMessage(errorMsg || 'Fehler beim Erwerben des Locks');
       console.warn('[useLernpaketLock] acquireLock failed:', error.message);
       return false;
     }
@@ -141,13 +160,28 @@ export function useLernpaketLock(lernpaketId) {
     setCanEdit(false);
 
     try {
-      await base44.functions.invoke('releaseLockSimple', {
+      await base44.functions.invoke('releaseLernpaketLockSecure', {
         lernpaketId,
       });
+      setIsLockedByOther(false);
+      setLockedByEmail(null);
     } catch (error) {
+      const status = error?.response?.status;
+      
+      // 403: Nicht der Lock-Besitzer – aber UI gibt Feedback
+      if (status === 403) {
+        console.warn('[useLernpaketLock] Not lock owner:', error?.response?.data?.error);
+        // Fallback: Versuche trotzdem, Lock-Status zu prüfen
+        await checkLock();
+        return;
+      }
+
+      // Fehler beim Freigeben – aber lokal zurücksetzen um Blockade zu vermeiden
       console.warn('[useLernpaketLock] releaseLock failed:', error.message);
+      setIsLockedByOther(false);
+      setLockedByEmail(null);
     }
-  }, [lernpaketId, userEmail, stopHeartbeat]);
+  }, [lernpaketId, userEmail, stopHeartbeat, checkLock]);
 
   // Initial check beim Mount
   useEffect(() => {
@@ -181,6 +215,7 @@ export function useLernpaketLock(lernpaketId) {
     canEdit,
     isLockedByOther,
     lockedByEmail,
+    lockErrorMessage,
     isLoading,
     acquireLock,
     releaseLock,

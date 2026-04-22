@@ -374,7 +374,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   });
 
   // Lock-Management: Nur während Dialog offen ist
-  const { canEdit, isLockedByOther, lockedByEmail, isLoading: isLockLoading, acquireLock, releaseLock } = useLernpaketLock(paket.id);
+  const { canEdit, isLockedByOther, lockedByEmail, lockErrorMessage, isLoading: isLockLoading, acquireLock, releaseLock } = useLernpaketLock(paket.id);
   const [isAcquiringLock, setIsAcquiringLock] = useState(false);
 
   // Dialog öffnen = Lock erwerben
@@ -445,15 +445,15 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
     });
   };
 
-  // Handler für Bearbeitungsmodus
+  // Handler für Bearbeitungsmodus – nutzt aussagekräftige Fehlermeldung vom Hook
   const handleEnterEditMode = async () => {
-    try {
-      const ok = await acquireLock();
-      if (!ok) {
-        toast.error(`🔒 Dieses Lernpaket wird aktuell von ${lockedByEmail} bearbeitet.`);
-      }
-    } catch (err) {
-      toast.error('Fehler beim Sperren des Lernpakets.');
+    const ok = await acquireLock();
+    if (!ok) {
+      // Nutze lockErrorMessage vom Hook falls vorhanden, sonst Fallback
+      const errMsg = lockErrorMessage || (lockedByEmail
+        ? `🔒 Dieses Lernpaket wird aktuell von ${lockedByEmail} bearbeitet.`
+        : 'Lock konnte nicht erworben werden.');
+      toast.error(errMsg);
     }
   };
 

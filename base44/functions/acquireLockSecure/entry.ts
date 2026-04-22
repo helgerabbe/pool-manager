@@ -74,19 +74,30 @@ Deno.serve(async (req) => {
       const thirtyMinutes = 30 * 60 * 1000;
 
       if (lockAge < thirtyMinutes) {
-        // Lock ist noch aktiv → blockieren
+        // Lock ist noch aktiv → blockieren mit aussagekräftiger Fehlermeldung
+        const lockedAtDate = paket.locked_at ? new Date(paket.locked_at) : null;
+        const lockDurationSecs = lockedAtDate
+          ? Math.round((Date.now() - lockedAtDate.getTime()) / 1000)
+          : 0;
+        const timelineMsg =
+          lockDurationSecs < 60
+            ? `vor wenigen Sekunden`
+            : `vor ${Math.round(lockDurationSecs / 60)} Minuten`;
+
         return Response.json(
           {
-            error: `Locked by ${paket.locked_by_email}`,
+            error: `🔒 Das Lernpaket "${paket.titel_des_pakets}" wird gerade von ${paket.locked_by_email} bearbeitet (${timelineMsg}). Bitte warten Sie bis die Bearbeitung abgeschlossen ist.`,
             locked_by_email: paket.locked_by_email,
+            locked_at: paket.locked_at,
+            lock_duration_seconds: lockDurationSecs,
             code: 'ALREADY_LOCKED',
           },
           { status: 409 }
         );
       }
 
-      // Stale lock → wird überschrieben
-      console.log('[acquireLockSecure] Stale lock detected, overriding');
+      // Stale lock → wird überschrieben (nach 30 Min)
+      console.log('[acquireLockSecure] Stale lock detected (age: ' + Math.round(lockAge / 60 / 1000) + 'min), overriding');
     }
 
     // Sperre setzen
