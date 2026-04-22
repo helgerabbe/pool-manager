@@ -38,6 +38,7 @@ export default function OffeneAufgabeModal({
       <OffeneAufgabeEditor
         initialData={initialData}
         onChange={(data) => setEditorData(data)}
+        readOnly={false}
       />
     </BaseActivityModal>
   );
