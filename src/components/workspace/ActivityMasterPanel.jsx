@@ -213,7 +213,13 @@ export default function ActivityMasterPanel({
   // Modal-Workflow: Lock erwerben → Modal öffnen
   // HARD-LOCK: Prüfe Export-Sperre vor Modal-Öffnung
   const handleOpenEditModal = async () => {
-    // Check 1: Ist die Einheit zur Moodle-Synchronisation gesperrt?
+    // Check 1: Ist das Lernpaket von anderem User gesperrt?
+    if (isParentPaketLockedByOther) {
+      toast.error(`🔒 Dieses Lernpaket wird gerade von ${lernpaket?.locked_by_email} bearbeitet. Sie können erst Änderungen vornehmen, wenn die Bearbeitung abgeschlossen ist.`);
+      return;
+    }
+
+    // Check 2: Ist die Einheit zur Moodle-Synchronisation gesperrt?
     if (lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked) {
       toast.error('Einheit ist zur Moodle-Synchronisation gesperrt. Bitte später erneut versuchen.');
       return;
@@ -305,6 +311,9 @@ export default function ActivityMasterPanel({
       setCreating(false);
     }
   };
+
+  // Prüfe ob das Parent-Lernpaket von anderem User gesperrt ist
+  const isParentPaketLockedByOther = lernpaket?.is_locked && lernpaket?.locked_by_email !== currentUserEmail;
 
   // Für supports_master: Aktivität gilt als vollständig wenn mindestens 1 Masteraufgabe vorhanden
   const effectivelyComplete = supportsMaster
@@ -406,8 +415,8 @@ export default function ActivityMasterPanel({
                 <div className="flex justify-end">
                   <Button
                     onClick={handleOpenEditModal}
-                    disabled={acquiringLock || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || globalEditActive}
-                    title={globalEditActive ? 'Tab 4 ist in Bearbeitung – bitte warten bis diese abgeschlossen ist.' : lernpaket?.moodle_sync_status === 'locked' ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
+                    disabled={acquiringLock || isParentPaketLockedByOther || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || globalEditActive}
+                    title={isParentPaketLockedByOther ? `🔒 Lernpaket wird von ${lernpaket?.locked_by_email} bearbeitet` : globalEditActive ? 'Tab 4 ist in Bearbeitung – bitte warten bis diese abgeschlossen ist.' : lernpaket?.moodle_sync_status === 'locked' ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
                     className="gap-2"
                   >
                     {acquiringLock
@@ -484,9 +493,9 @@ export default function ActivityMasterPanel({
                   size="icon"
                   variant="ghost"
                   onClick={handleOpenEditModal}
-                  disabled={acquiringLock || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || globalEditActive}
-                  className="h-6 w-6 text-muted-foreground hover:text-primary"
-                  title={globalEditActive ? 'Tab 4 ist in Bearbeitung – bitte warten bis diese abgeschlossen ist.' : 'Aufgabenstellung bearbeiten'}
+                  disabled={acquiringLock || isParentPaketLockedByOther || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || globalEditActive}
+                  className="h-6 w-6 text-muted-foreground hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={isParentPaketLockedByOther ? `🔒 Lernpaket wird von ${lernpaket?.locked_by_email} bearbeitet` : globalEditActive ? 'Tab 4 ist in Bearbeitung – bitte warten bis diese abgeschlossen ist.' : 'Aufgabenstellung bearbeiten'}
                 >
                   {acquiringLock
                     ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -560,7 +569,7 @@ export default function ActivityMasterPanel({
                       </span>
                     )}
                   </div>
-                  {kannBearbeiten && (
+                  {kannBearbeiten && !isParentPaketLockedByOther && (
                     <Button
                       variant="destructive"
                       size="sm"
@@ -599,7 +608,7 @@ export default function ActivityMasterPanel({
                 index={idx + 1}
                 catalogName={catalogEntry?.name || ''}
                 klone={kloneByMasterId[master.id] || []}
-                kannBearbeiten={isInEditMode}
+                kannBearbeiten={isInEditMode && !isParentPaketLockedByOther}
                 userEmail={userEmail}
                 userRole={userRole}
                 autoExpand={master.id === focusedMasterId}
@@ -629,7 +638,7 @@ export default function ActivityMasterPanel({
                   Erstelle jetzt die erste Masteraufgabe als Vorlage für KI-generierte Varianten.
                 </p>
               </div>
-              <Button onClick={handleAddMaster} disabled={creating} className="gap-2">
+              <Button onClick={handleAddMaster} disabled={creating || isParentPaketLockedByOther} className="gap-2">
                 {creating
                   ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren & Erstellen…</>
                   : <><Plus className="w-4 h-4" /> Erste Aufgabe erstellen</>}
@@ -642,7 +651,7 @@ export default function ActivityMasterPanel({
             <Button
               variant="default"
               onClick={handleAddMaster}
-              disabled={creating}
+              disabled={creating || isParentPaketLockedByOther}
               className="w-full gap-2"
             >
               {creating
