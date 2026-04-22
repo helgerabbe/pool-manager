@@ -169,6 +169,22 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
               const selectedCount = exportable.filter(a => selectedIds.includes(a.id)).length;
               const allSelected = exportable.length > 0 && selectedCount === exportable.length;
 
+              // Gruppiere nach Phase
+              const phaseOrder = { 'Input': 0, 'Übung': 1, 'Abschluss': 2 };
+              const sortedByPhase = paketAktivitaeten
+                .sort((a, b) => {
+                  const phaseA = phaseOrder[a.phase] ?? 999;
+                  const phaseB = phaseOrder[b.phase] ?? 999;
+                  if (phaseA !== phaseB) return phaseA - phaseB;
+                  return (a.reihenfolge || 0) - (b.reihenfolge || 0);
+                });
+
+              // Gruppiere für Anzeige
+              const groupedByPhase = { Input: [], Übung: [], Abschluss: [] };
+              sortedByPhase.forEach(a => {
+                if (groupedByPhase[a.phase]) groupedByPhase[a.phase].push(a);
+              });
+
               return (
                 <div key={paket.id} className="space-y-1">
                   <div className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-muted/30 transition">
@@ -176,39 +192,44 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                     <span className="text-sm font-semibold flex-1 truncate">{paket.titel_des_pakets}</span>
                     {exportable.length > 0 && <span className="text-xs text-muted-foreground">{selectedCount}/{exportable.length}</span>}
                   </div>
-                  <div className="pl-5 space-y-1 border-l border-muted/50">
+                  <div className="pl-5 space-y-1.5 border-l border-muted/50">
                     {paketAktivitaeten.length === 0 ? (
                       <p className="text-[11px] text-muted-foreground/50 italic px-2 py-1">Keine Aktivitäten</p>
                     ) : (
-                      paketAktivitaeten
-                        .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
-                        .map(act => {
-                          const actName = aktivitaetenKatalog.find(k => k.id === act.aktivitaet_id)?.name || 'Aktivität';
-                          const isSelected = selectedIds.includes(act.id);
-                          const isPending = act.sync_status === 'pending';
-                          const isSynced = act.sync_status === 'synced';
-                          const isApproved = act.content_status === 'approved';
-                          const isSelectable = isApproved && !isPending && !isSynced;
+                      Object.entries(groupedByPhase).map(([phase, activities]) => (
+                        activities.length > 0 && (
+                          <div key={phase} className="space-y-1">
+                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1">{phase}</p>
+                            <div className="space-y-1">
+                              {activities.map(act => {
+                                const actName = aktivitaetenKatalog.find(k => k.id === act.aktivitaet_id)?.name || 'Aktivität';
+                                const isSelected = selectedIds.includes(act.id);
+                                const isPending = act.sync_status === 'pending';
+                                const isSynced = act.sync_status === 'synced';
+                                const isApproved = act.content_status === 'approved';
+                                const isSelectable = isApproved && !isPending && !isSynced;
 
-                          return (
-                            <div key={act.id} className={cn('flex items-center gap-2 p-1.5 rounded transition', isSelectable ? 'hover:bg-muted/20' : 'opacity-70')}>
-                              <Checkbox checked={isSelected} onCheckedChange={() => toggleActivities([act])} disabled={!isSelectable} className="h-4 w-4 shrink-0" />
-                              <button
-                                onClick={() => onNavigateToActivity?.(act.id, paket.id)}
-                                className={cn('text-xs flex-1 truncate text-left transition', isApproved ? 'text-primary hover:underline' : 'text-muted-foreground')}
-                              >
-                                {act.phase === 'Input' ? '📚' : act.phase === 'Übung' ? '✏️' : '🎯'} {actName}
-                              </button>
-                              {isPending && <UndoButton activityId={act.id} />}
-                              <AktivitaetStatusBadge activity={act} />
+                                return (
+                                  <div key={act.id} className={cn('flex items-center gap-2 p-1.5 rounded transition', isSelectable ? 'hover:bg-muted/20' : 'opacity-70')}>
+                                    <Checkbox checked={isSelected} onCheckedChange={() => toggleActivities([act])} disabled={!isSelectable} className="h-4 w-4 shrink-0" />
+                                    <button
+                                      onClick={() => onNavigateToActivity?.(act.id, paket.id)}
+                                      className={cn('text-xs flex-1 truncate text-left transition', isApproved ? 'text-primary hover:underline' : 'text-muted-foreground')}
+                                    >
+                                      {act.phase === 'Input' ? '📚' : act.phase === 'Übung' ? '✏️' : '🎯'} {actName}
+                                    </button>
+                                    {isPending && <UndoButton activityId={act.id} />}
+                                    <AktivitaetStatusBadge activity={act} />
+                                  </div>
+                                );
+                              })}
                             </div>
+                          </div>
+                        )
+                      ))
+                          </div>
                           );
-                        })
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                          })}
 
             {tfAufgaben.length > 0 && (() => {
               const exportable = tfAufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending');
