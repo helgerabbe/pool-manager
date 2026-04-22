@@ -25,7 +25,7 @@ import {
 
 const HEARTBEAT_INTERVAL = 30_000;  // 30s
 const STALE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes – shows only truly active users
-const DEBOUNCE_MS = 3_000;
+const DEBOUNCE_MS = 8_000; // ✅ Erhöht: bei vielen Nutzern 3s zu aggressiv → Rate Limit
 
 export function usePresence(currentView = 'dashboard') {
   const [onlineUsers, setOnlineUsers] = useState([]);
@@ -173,10 +173,29 @@ export function usePresence(currentView = 'dashboard') {
       await loadPresence();
 
       // Realtime-Subscription mit Debounce
-      unsubscribeRef.current = subscribeToPresence(() => {
-        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = setTimeout(loadPresence, DEBOUNCE_MS);
-      });
+       // ⚠️ WICHTIG: Subscription wird stummgeschaltet, wenn viele gleichzeitige Updates kommen
+       // um Rate Limit zu vermeiden (z.B. während Struktur-Speichern)
+       let updateCount = 0;
+       const resetCounter = () => { updateCount = 0; };
+       const updateCounterTimeout = setTimeout(resetCounter, 10_000);
+
+       unsubscribeRef.current = subscribeToPresence(() => {
+         updateCount++;
+         if (updateCount > 5) {
+           // Zu viele Updates in kurzer Zeit → ignorieren, bis Counter reset
+           console.warn('[usePresence] Zu viele gleichzeitige Updates, ignoriere Updates für 10s');
+           return;
+         }
+         if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+         debounceTimerRef.current = setTimeout(loadPresence, DEBOUNCE_MS);
+       });
+
+       // Cleanup für Counter-Timeout
+       const originalUnsubscribe = unsubscribeRef.current;
+       unsubscribeRef.current = () => {
+         clearTimeout(updateCounterTimeout);
+         originalUnsubscribe?.();
+       };
 
       // Heartbeat-Interval (mit Error-Catching → Interval läuft immer weiter)
       heartbeatRef.current = setInterval(() => {
