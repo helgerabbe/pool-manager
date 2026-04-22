@@ -143,9 +143,9 @@ export default function OffeneAufgabeEditor({ initialData = {}, onChange, readOn
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* KI-Assistent Bereich mit Spracherkennung */}
-      <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-5 space-y-4">
+      <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 space-y-3">
         <div className="flex items-start gap-3">
           <div className="bg-indigo-100 p-2 rounded-lg shrink-0">
             <Sparkles className="w-5 h-5 text-indigo-600" />
@@ -201,7 +201,7 @@ export default function OffeneAufgabeEditor({ initialData = {}, onChange, readOn
       </div>
 
       {/* Haupttextfeld */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-semibold">Aufgabenbeschreibung (Finaler Text)</Label>
           <span className="text-xs text-muted-foreground">{description.length} Zeichen</span>
@@ -210,13 +210,13 @@ export default function OffeneAufgabeEditor({ initialData = {}, onChange, readOn
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Hier erscheint die KI-generierte Aufgabe, oder schreibe sie manuell..."
-          className="min-h-[240px] resize-vertical"
+          className="min-h-[160px] resize-none"
         />
       </div>
 
       {/* Manuelle KI-Assistent Buttons */}
-      <div className="space-y-2">
-        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Weitere KI-Optionen</Label>
+      <div className="space-y-1.5">
+        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">KI-Optionen</Label>
         <div className="flex gap-2 flex-wrap">
           <Button
             variant="outline"
