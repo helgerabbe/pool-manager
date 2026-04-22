@@ -40,7 +40,6 @@ function AktivitaetStatusBadge({ activity }) {
   if (content_status === 'approved') {
     return <Badge className="bg-blue-100 text-blue-800 border border-blue-300 text-xs whitespace-nowrap shrink-0"><Upload className="w-3 h-3 mr-1" />Freigegeben</Badge>;
   }
-  // draft / new
   return <Badge className="bg-slate-100 text-slate-600 border border-slate-300 text-xs whitespace-nowrap shrink-0"><Pencil className="w-3 h-3 mr-1" />Entwurf</Badge>;
 }
 
@@ -71,69 +70,11 @@ function UndoButton({ activityId, entityType = 'activity' }) {
   );
 }
 
-// ── Bestätigungs-Dialog nach Export ─────────────────────────────────────────
-
-function ExportConfirmDialog({ pendingItems, einheitId, onConfirmed, onCancel }) {
-  const queryClient = useQueryClient();
-  const [checkedIds, setCheckedIds] = useState(new Set(pendingItems.map(i => i.id)));
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const toggleId = (id) => {
-    setCheckedIds(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
-  const handleConfirm = async () => {
-    setIsSubmitting(true);
-    const successfulIds = pendingItems.filter(i => checkedIds.has(i.id)).map(i => i.id);
-    const failedIds = pendingItems.filter(i => !checkedIds.has(i.id)).map(i => i.id);
-    await base44.functions.invoke('confirmExportCompletion', { einheit_id: einheitId, successfulIds, failedIds });
-    setIsSubmitting(false);
-    onConfirmed();
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-card rounded-xl border shadow-xl max-w-lg w-full max-h-[80vh] flex flex-col">
-        <div className="p-5 border-b">
-          <h3 className="font-semibold text-base">Export bestätigen</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Welche Elemente wurden erfolgreich nach Moodle übertragen?
-            Abgewählte Elemente werden als <strong>Fehler</strong> markiert.
-          </p>
-        </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {pendingItems.map(item => (
-            <div key={item.id} className={cn('flex items-center gap-3 p-2.5 rounded-lg border transition', checkedIds.has(item.id) ? 'border-green-200 bg-green-50/40' : 'border-red-200 bg-red-50/40')}>
-              <Checkbox checked={checkedIds.has(item.id)} onCheckedChange={() => toggleId(item.id)} className="h-4 w-4 shrink-0" />
-              <span className="text-sm flex-1 truncate">{item.label}</span>
-              <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', checkedIds.has(item.id) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700')}>
-                {checkedIds.has(item.id) ? '✓ Erfolgreich' : '✗ Fehler'}
-              </span>
-            </div>
-          ))}
-        </div>
-        <div className="p-4 border-t flex gap-2 justify-end">
-          <Button variant="outline" onClick={onCancel} disabled={isSubmitting}>Abbrechen</Button>
-          <Button onClick={handleConfirm} disabled={isSubmitting} className="gap-2">
-            {isSubmitting
-              ? <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Speichern…</>
-              : <><CheckCircle2 className="w-4 h-4" />Bestätigen ({checkedIds.size}/{pendingItems.length})</>}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── Haupt-Hierarchie-Renderer ────────────────────────────────────────────────
 
 function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, themenfelder, aktivitaeten, aktivitaetenKatalog, allgemeineAufgaben, masterAufgaben = [], onNavigateToActivity, onNavigateToTask }) {
 
-  const toggleActivities = useCallback((itemArray, isMaster = false) => {
+  const toggleActivities = useCallback((itemArray) => {
     const exportable = itemArray.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending' && a.sync_status !== 'synced');
     if (exportable.length === 0) return;
     const ids = exportable.map(a => a.id);
@@ -169,7 +110,6 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
               const selectedCount = exportable.filter(a => selectedIds.includes(a.id)).length;
               const allSelected = exportable.length > 0 && selectedCount === exportable.length;
 
-              // Gruppiere nach Phase
               const phaseOrder = { 'Input': 0, 'Übung': 1, 'Abschluss': 2 };
               const sortedByPhase = paketAktivitaeten
                 .sort((a, b) => {
@@ -179,7 +119,6 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                   return (a.reihenfolge || 0) - (b.reihenfolge || 0);
                 });
 
-              // Gruppiere für Anzeige
               const groupedByPhase = { Input: [], Übung: [], Abschluss: [] };
               sortedByPhase.forEach(a => {
                 if (groupedByPhase[a.phase]) groupedByPhase[a.phase].push(a);
@@ -197,113 +136,113 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                       <p className="text-[11px] text-muted-foreground/50 italic px-2 py-1">Keine Aktivitäten</p>
                     ) : (
                       Object.entries(groupedByPhase).map(([phase, activities]) => 
-                        activities.length > 0 ? (
+                        activities.length > 0 && (
                           <div key={phase} className="space-y-1">
                             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1">{phase}</p>
                             <div className="space-y-1">
                               {activities.map(act => {
-                                 const actName = aktivitaetenKatalog.find(k => k.id === act.aktivitaet_id)?.name || 'Aktivität';
-                                 const isPending = act.sync_status === 'pending';
-                                 const isSynced = act.sync_status === 'synced';
-                                 const isApproved = act.content_status === 'approved';
+                                const actName = aktivitaetenKatalog.find(k => k.id === act.aktivitaet_id)?.name || 'Aktivität';
+                                const isPending = act.sync_status === 'pending';
+                                const isSynced = act.sync_status === 'synced';
+                                const isApproved = act.content_status === 'approved';
 
-                                 // Finde alle MasterAufgaben für diese Aktivität
-                                 const actMasters = masterAufgaben.filter(m => m.lernpaket_phase_aktivitaet_id === act.id);
-                                 const hasMasterChildren = actMasters.length > 0;
-                                 const masterExportable = actMasters.filter(m => m.content_status === 'approved' && m.sync_status !== 'pending' && m.sync_status !== 'synced');
-                                 const masterSelectedCount = masterExportable.filter(m => selectedIds.includes(m.id)).length;
-                                 const allMastersSelected = masterExportable.length > 0 && masterSelectedCount === masterExportable.length;
+                                const actMasters = masterAufgaben.filter(m => m.lernpaket_phase_aktivitaet_id === act.id);
+                                const hasMasterChildren = actMasters.length > 0;
+                                const masterExportable = actMasters.filter(m => m.content_status === 'approved' && m.sync_status !== 'pending' && m.sync_status !== 'synced');
+                                const masterSelectedCount = masterExportable.filter(m => selectedIds.includes(m.id)).length;
+                                const allMastersSelected = masterExportable.length > 0 && masterSelectedCount === masterExportable.length;
 
-                                 // Masterfähige Aktivitäten sind nicht direkt selektierbar — nur ihre Masters
-                                 const isSelectable = !hasMasterChildren && isApproved && !isPending && !isSynced;
-                                 const isSelected = selectedIds.includes(act.id);
+                                const isSelectable = !hasMasterChildren && isApproved && !isPending && !isSynced;
+                                const isSelected = selectedIds.includes(act.id);
 
-                                 return (
-                                   <div key={act.id} className="space-y-0.5">
-                                     <div className={cn('flex items-center gap-2 p-1.5 rounded transition', isSelectable ? 'hover:bg-muted/20' : 'opacity-70')}>
-                                       {isSelectable && <Checkbox checked={isSelected} onCheckedChange={() => toggleActivities([act])} className="h-4 w-4 shrink-0" />}
-                                       {!isSelectable && <div className="h-4 w-4 shrink-0" />}
-                                       <button
-                                         onClick={() => onNavigateToActivity?.(act.id, paket.id)}
-                                         className={cn('text-xs flex-1 truncate text-left transition', isApproved ? 'text-primary hover:underline' : 'text-muted-foreground')}
-                                       >
-                                         {act.phase === 'Input' ? '📚' : act.phase === 'Übung' ? '✏️' : '🎯'} {actName}
-                                       </button>
-                                       {isPending && <UndoButton activityId={act.id} />}
-                                       <AktivitaetStatusBadge activity={act} />
-                                     </div>
+                                return (
+                                  <div key={act.id} className="space-y-0.5">
+                                    <div className={cn('flex items-center gap-2 p-1.5 rounded transition', isSelectable ? 'hover:bg-muted/20' : 'opacity-70')}>
+                                      {isSelectable && <Checkbox checked={isSelected} onCheckedChange={() => toggleActivities([act])} className="h-4 w-4 shrink-0" />}
+                                      {!isSelectable && <div className="h-4 w-4 shrink-0" />}
+                                      <button
+                                        onClick={() => onNavigateToActivity?.(act.id, paket.id)}
+                                        className={cn('text-xs flex-1 truncate text-left transition', isApproved ? 'text-primary hover:underline' : 'text-muted-foreground')}
+                                      >
+                                        {act.phase === 'Input' ? '📚' : act.phase === 'Übung' ? '✏️' : '🎯'} {actName}
+                                      </button>
+                                      {isPending && <UndoButton activityId={act.id} />}
+                                      <AktivitaetStatusBadge activity={act} />
+                                    </div>
 
-                                     {/* MasterAufgaben unter der Aktivität */}
-                                     {actMasters.length > 0 && (
-                                       <div className="pl-5 space-y-0.5 border-l border-muted/30 ml-1">
-                                         {masterExportable.length > 0 && (
-                                           <div className="flex items-center gap-2 p-1 rounded transition hover:bg-muted/10">
-                                             <Checkbox checked={allMastersSelected} onCheckedChange={() => toggleActivities(masterExportable)} className="h-3.5 w-3.5 shrink-0" />
-                                             <span className="text-[11px] font-medium text-muted-foreground flex-1 truncate">
-                                               Master ({masterSelectedCount}/{masterExportable.length})
-                                             </span>
-                                           </div>
-                                         )}
-                                         {actMasters.map(master => {
-                                           const masterSelected = selectedIds.includes(master.id);
-                                           const masterPending = master.sync_status === 'pending';
-                                           const masterApproved = master.content_status === 'approved';
-                                           const masterSelectable = masterApproved && !masterPending;
-                                           return (
-                                             <div key={master.id} className={cn('flex items-center gap-2 p-1 rounded transition text-[11px]', masterSelectable ? 'hover:bg-muted/10' : 'opacity-60')}>
-                                               <Checkbox checked={masterSelected} onCheckedChange={() => toggleActivities([master])} disabled={!masterSelectable} className="h-3.5 w-3.5 shrink-0" />
-                                               <span className="text-muted-foreground flex-1 truncate">
-                                                 👤 {master.titel || 'Master ohne Titel'}
-                                               </span>
-                                               {masterPending && <UndoButton activityId={master.id} />}
-                                               <AktivitaetStatusBadge activity={master} />
-                                             </div>
-                                           );
-                                         })}
-                                       </div>
-                                       )}
-                                       </div>
-                                       )}
-                                       </div>
-                               </div>
-                               );
-                               })}
-                               </div>
-                               )}
-
-                               {tfAufgaben.length > 0 && (() => {
-                               const exportable = tfAufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending');
-                               const selectedCount = exportable.filter(a => selectedIds.includes(a.id)).length;
-              const allSelected = exportable.length > 0 && selectedCount === exportable.length;
-              return (
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-muted/30 transition">
-                    <Checkbox checked={allSelected} onCheckedChange={() => toggleActivities(tfAufgaben)} disabled={exportable.length === 0} className="h-4 w-4" />
-                    <span className="text-sm font-semibold flex-1">Allgemeine Aufgaben (Ebene 1/2)</span>
-                    {exportable.length > 0 && <span className="text-xs text-muted-foreground">{selectedCount}/{exportable.length}</span>}
-                  </div>
-                  <div className="pl-5 space-y-1 border-l border-muted/50">
-                    {tfAufgaben.map(aufgabe => {
-                      const isSelected = selectedIds.includes(aufgabe.id);
-                      const isPending = aufgabe.sync_status === 'pending';
-                      const isApproved = aufgabe.content_status === 'approved';
-                      const isSelectable = isApproved && !isPending;
-                      return (
-                        <div key={aufgabe.id} className={cn('flex items-center gap-2 p-1.5 rounded transition', isSelectable ? 'hover:bg-muted/20' : 'opacity-70')}>
-                          <Checkbox checked={isSelected} onCheckedChange={() => toggleActivities([aufgabe])} disabled={!isSelectable} className="h-4 w-4 shrink-0" />
-                          <button onClick={() => onNavigateToTask?.('ebene12', aufgabe.id)} className={cn('text-xs flex-1 truncate text-left', isApproved ? 'text-primary hover:underline' : 'text-muted-foreground')}>
-                            📝 {aufgabe.titel || 'Aufgabe ohne Titel'}
-                            {aufgabe.anforderungsebene && <span className="ml-1 text-muted-foreground">({aufgabe.anforderungsebene})</span>}
-                          </button>
-                          {isPending && <UndoButton activityId={aufgabe.id} entityType="allgemein" />}
-                          <AktivitaetStatusBadge activity={aufgabe} />
-                        </div>
-                      );
-                    })}
+                                    {actMasters.length > 0 && (
+                                      <div className="pl-5 space-y-0.5 border-l border-muted/30 ml-1">
+                                        {masterExportable.length > 0 && (
+                                          <div className="flex items-center gap-2 p-1 rounded transition hover:bg-muted/10">
+                                            <Checkbox checked={allMastersSelected} onCheckedChange={() => toggleActivities(masterExportable)} className="h-3.5 w-3.5 shrink-0" />
+                                            <span className="text-[11px] font-medium text-muted-foreground flex-1 truncate">
+                                              Master ({masterSelectedCount}/{masterExportable.length})
+                                            </span>
+                                          </div>
+                                        )}
+                                        {actMasters.map(master => {
+                                          const masterSelected = selectedIds.includes(master.id);
+                                          const masterPending = master.sync_status === 'pending';
+                                          const masterApproved = master.content_status === 'approved';
+                                          const masterSelectable = masterApproved && !masterPending;
+                                          return (
+                                            <div key={master.id} className={cn('flex items-center gap-2 p-1 rounded transition text-[11px]', masterSelectable ? 'hover:bg-muted/10' : 'opacity-60')}>
+                                              <Checkbox checked={masterSelected} onCheckedChange={() => toggleActivities([master])} disabled={!masterSelectable} className="h-3.5 w-3.5 shrink-0" />
+                                              <span className="text-muted-foreground flex-1 truncate">
+                                                👤 {master.titel || 'Master ohne Titel'}
+                                              </span>
+                                              {masterPending && <UndoButton activityId={master.id} />}
+                                              <AktivitaetStatusBadge activity={master} />
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )
+                      )
+                    )}
                   </div>
                 </div>
               );
-            })()}
+            })}
+
+            {tfAufgaben.length > 0 && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-muted/30 transition">
+                  <Checkbox 
+                    checked={tfAufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending').length > 0 && tfAufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending').every(a => selectedIds.includes(a.id))} 
+                    onCheckedChange={() => toggleActivities(tfAufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending'))} 
+                    disabled={tfAufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending').length === 0} 
+                    className="h-4 w-4" 
+                  />
+                  <span className="text-sm font-semibold flex-1">Allgemeine Aufgaben (Ebene 1/2)</span>
+                </div>
+                <div className="pl-5 space-y-1 border-l border-muted/50">
+                  {tfAufgaben.map(aufgabe => {
+                    const isSelected = selectedIds.includes(aufgabe.id);
+                    const isPending = aufgabe.sync_status === 'pending';
+                    const isApproved = aufgabe.content_status === 'approved';
+                    const isSelectable = isApproved && !isPending;
+                    return (
+                      <div key={aufgabe.id} className={cn('flex items-center gap-2 p-1.5 rounded transition', isSelectable ? 'hover:bg-muted/20' : 'opacity-70')}>
+                        <Checkbox checked={isSelected} onCheckedChange={() => toggleActivities([aufgabe])} disabled={!isSelectable} className="h-4 w-4 shrink-0" />
+                        <button onClick={() => onNavigateToTask?.('ebene12', aufgabe.id)} className={cn('text-xs flex-1 truncate text-left', isApproved ? 'text-primary hover:underline' : 'text-muted-foreground')}>
+                          📝 {aufgabe.titel || 'Aufgabe ohne Titel'}
+                          {aufgabe.anforderungsebene && <span className="ml-1 text-muted-foreground">({aufgabe.anforderungsebene})</span>}
+                        </button>
+                        {isPending && <UndoButton activityId={aufgabe.id} entityType="allgemein" />}
+                        <AktivitaetStatusBadge activity={aufgabe} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {tfPakete.length === 0 && tfAufgaben.length === 0 && (
               <p className="text-[11px] text-muted-foreground/50 italic px-2 py-1">Keine Inhalte</p>
@@ -384,10 +323,8 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
   const { data: allgemeineAufgaben = [], isLoading: allgemeineLoading } = useQuery({ queryKey: ['allgemeineAufgaben'], queryFn: () => base44.entities.AllgemeineAufgabe.list() });
   const { data: masterAufgaben = [], isLoading: masterLoading } = useQuery({ queryKey: ['masterAufgaben'], queryFn: () => base44.entities.MasterAufgabe.list() });
 
-  // ✅ Strikter Ladezustand: Verhindert "Flash of Unfiltered Data"
   const isInitialLoading = einheitenLoading || lernpaketeLoading || themenfelderLoading || aktivitaetenLoading || katalogLoading || allgemeineLoading || masterLoading;
 
-  // Auto-select when unit changes
   useEffect(() => {
     if (!selectedUnitId) return;
     setSelectedIds([]);
@@ -409,17 +346,11 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
   const exportMutation = useMutation({
     mutationFn: async () => {
       const allgemeineIds = new Set(allgemeineAufgaben.map(a => a.id));
-      const items = [];
       for (const id of selectedIds) {
         if (allgemeineIds.has(id)) {
-          const aufgabe = allgemeineAufgaben.find(a => a.id === id);
           await base44.entities.AllgemeineAufgabe.update(id, { sync_status: 'pending' });
-          items.push({ id, label: aufgabe?.titel || 'Aufgabe ohne Titel' });
         } else {
-          const akt = aktivitaeten.find(a => a.id === id);
-          const katalogName = aktivitaetenKatalog.find(k => k.id === akt?.aktivitaet_id)?.name || 'Aktivität';
           await base44.entities.LernpaketPhaseAktivitaet.update(id, { sync_status: 'pending' });
-          items.push({ id, label: `${akt?.phase || ''}: ${katalogName}` });
         }
       }
       return { count: selectedIds.length };
@@ -444,7 +375,6 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
     );
   }
 
-  // ✅ Strikter Early Return: Verhindert Rendering von ungefilterten Daten
   if (isInitialLoading) {
     return (
       <div className="min-h-screen bg-muted/20 p-6 flex items-center justify-center">
@@ -472,7 +402,6 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
           </p>
         </div>
 
-        {/* Workflow-Info */}
         <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center gap-2 mb-3">
             <Info className="w-4 h-4 text-muted-foreground" />
@@ -502,7 +431,6 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
           </div>
         </div>
 
-        {/* Einheit-Selector + Inhalt */}
         <div className="rounded-xl border border-border bg-card shadow-sm p-5 space-y-4">
           <div>
             <label className="text-sm font-semibold text-muted-foreground mb-1.5 block">Einheit auswählen</label>
@@ -555,7 +483,6 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
           )}
         </div>
       </div>
-
     </div>
   );
 }
