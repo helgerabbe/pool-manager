@@ -587,6 +587,7 @@ export default function StrukturBoardEmbedded({
 
   const handleSpeichern = async () => {
     setSaving(true);
+    let success = false;
 
     try {
       // 0. Identifiziere gelöschte Pakete und Themenfelder
@@ -655,15 +656,22 @@ export default function StrukturBoardEmbedded({
         }
       }
 
-      queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-      queryClient.invalidateQueries({ queryKey: ['themenfelder', einheitId] });
-      setSaving(false);
-      setIsDirty(false);
-      onSaved?.();
+      // Invalidierungen MÜSSEN vor isDirty=false passieren
+      await queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+      await queryClient.invalidateQueries({ queryKey: ['themenfelder', einheitId] });
+      
+      success = true;
+      toast.success('Struktur erfolgreich gespeichert');
     } catch (error) {
-      console.error('Fehler beim Speichern:', error);
+      console.error('[StrukturBoard] Fehler beim Speichern:', error);
       toast.error('Fehler beim Speichern der Struktur: ' + (error.message || 'Unbekannter Fehler'));
+    } finally {
       setSaving(false);
+      // Nur auf false setzen wenn Speichern erfolgreich war
+      if (success) {
+        setIsDirty(false);
+        onSaved?.();
+      }
     }
   };
 
