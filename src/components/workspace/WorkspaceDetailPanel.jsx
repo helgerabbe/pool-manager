@@ -710,10 +710,10 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                         />
                       </div>
                     )}
-                  </div>
-                );
-              })}
-            </div>
+                    </div>
+                    );
+                    })}
+                    </div>
           </div>
 
           <DialogFooter>
