@@ -297,6 +297,56 @@ export default function LernpaketPanel({
         </div>
       </div>
 
+      {/* Zugeordnete Aktivitäten (informativ, nur lesend) */}
+      <div className="space-y-2 border-t pt-6">
+        <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Aktivitäten</h3>
+        {(() => {
+          const paketAktivitaeten = lernpaketAktivitaeten.filter(a => a.lernpaket_id === paket.id);
+          if (paketAktivitaeten.length === 0) {
+            return (
+              <div className="p-4 rounded-lg border border-dashed text-center text-sm text-muted-foreground">
+                Noch keine Aktivitäten zugeordnet.
+              </div>
+            );
+          }
+          
+          // Gruppiere nach Phase
+          const byPhase = {};
+          paketAktivitaeten.forEach(a => {
+            if (!byPhase[a.phase]) byPhase[a.phase] = [];
+            byPhase[a.phase].push(a);
+          });
+          
+          return (
+            <div className="space-y-3">
+              {['Input', 'Übung', 'Abschluss'].map(phase => {
+                const activities = byPhase[phase] || [];
+                if (activities.length === 0) return null;
+                
+                return (
+                  <div key={phase} className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase">{phase}</p>
+                    <div className="space-y-1.5">
+                      {activities.map(activity => (
+                        <div key={activity.id} className="flex items-start gap-2 p-2 rounded border border-border/50 bg-muted/40 text-xs">
+                          <span className="text-primary font-semibold shrink-0 mt-0.5">▸</span>
+                          <span className="flex-1 text-foreground">{activity.aktivitaet_id || 'Aktivität'}</span>
+                          {activity.is_complete && (
+                            <Badge className="shrink-0 text-[10px]" variant="secondary">
+                              Vollständig
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+      </div>
+
       <Dialog open={editDialogOpen} onOpenChange={handleCloseEditDialog}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
