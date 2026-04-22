@@ -262,6 +262,10 @@ export default function MasterDetailView({
   const [imageLabelingModalOpen, setImageLabelingModalOpen] = useState(false);
   const [fieldValues, setFieldValues] = useState(master.field_values || {});
 
+  // Klon-Bearbeitung
+  const [editingKlonId, setEditingKlonId] = useState(null);
+  const [klonFieldValues, setKlonFieldValues] = useState({});
+
   // Re-Hydration: fieldValues immer aktualisieren wenn master sich ändert
   useEffect(() => {
     setFieldValues(master.field_values || {});
@@ -318,10 +322,48 @@ export default function MasterDetailView({
     setMcModalOpen(false);
     setKiTutorModalOpen(false);
     setImageLabelingModalOpen(false);
+    setEditingKlonId(null);
+    setKlonFieldValues({});
     
     await releaseLock();
     onEditModeChange?.(false);
   };
+
+  const handleEditKopie = async (klon) => {
+    if (!isSupportedType) return;
+    setAcquiringLock(true);
+    const ok = await acquireLock();
+    setAcquiringLock(false);
+    if (!ok) return;
+    onEditModeChange?.(true);
+    // Lade Klon-Daten: Klone speichern ihre Daten in aufgabentext_inhalt (JSON-String)
+    let parsed = {};
+    try {
+      parsed = typeof klon.aufgabentext_inhalt === 'string'
+        ? JSON.parse(klon.aufgabentext_inhalt)
+        : klon.aufgabentext_inhalt || {};
+    } catch { parsed = {}; }
+    setEditingKlonId(klon.id);
+    setKlonFieldValues(parsed);
+    if (isLuecke) setLueckeModalOpen(true);
+    else if (isSort) setSortingModalOpen(true);
+    else if (isMatchTerms) setMatchModalOpen(true);
+    else if (isQuizType) setQuizModalOpen(true);
+    else if (isMCType) setMcModalOpen(true);
+    else if (isImageLabelingType) setImageLabelingModalOpen(true);
+  };
+
+  const saveKlonMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Aufgabenbausteine.update(id, {
+      aufgabentext_inhalt: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['klone'] });
+      queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine'] });
+      toast.success('Kopie gespeichert.');
+    },
+    onError: (err) => toast.error(err.message || 'Fehler beim Speichern.'),
+  });
 
   const handleDelete = async () => {
     for (const k of klone) await base44.entities.Aufgabenbausteine.delete(k.id);
@@ -406,61 +448,57 @@ export default function MasterDetailView({
         </Button>
       )}
 
-      {/* ── Lückentext-Modal ── */}
-      {isLuecke && (
-        <LueckentextWysiwygModal
-          open={lueckeModalOpen}
-          onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
-          initialData={fieldValues}
-          isSaving={saveMutation.isPending}
-          isCopy={false}
-          onSave={(newData) => {
-            const newFv = { ...fieldValues, ...newData };
-            setFieldValues(newFv);
-            saveMutation.mutate(newFv, {
+      {/* ── Klone-Liste mit Bearbeiten-Buttons ── */}
+      {klone.length > 0 && (
+        <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+            Kopien ({klone.length})
+          </p>
+          {klone.map((k) => (
+            <div key={k.id} className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-green-50 border border-green-200">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-sm font-medium text-green-900">Kopie {k.klon_index}</span>
+                {k.content_status === 'approved' && (
+                  <Badge className="text-[10px] bg-green-100 text-green-700 border-green-300">
+                    <CheckCircle2 className="w-3 h-3 mr-1" /> Fertig
+                  </Badge>
+                )}
+              </div>
+              {kannBearbeiten && isSupportedType && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleEditKopie(k)}
+                  disabled={acquiringLock}
+                  className="h-7 text-xs text-green-700 hover:text-green-800 hover:bg-green-100 gap-1 shrink-0"
+                >
+                  {acquiringLock
+                    ? <Loader2 className="w-3 h-3 animate-spin" />
+                    : <Pencil className="w-3 h-3" />}
+                  Kopie bearbeiten
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Helper: Aktuelle initialData für Modals (Master oder Klon) */}
+      {(() => {
+        const activeData = editingKlonId ? klonFieldValues : fieldValues;
+        const isSavingAny = saveMutation.isPending || saveKlonMutation.isPending;
+
+        const handleModalSave = (newData) => {
+          const { content_status, ...fvData } = newData;
+          if (editingKlonId) {
+            // Klon speichern
+            const updatedKlonFv = { ...klonFieldValues, ...fvData };
+            setKlonFieldValues(updatedKlonFv);
+            saveKlonMutation.mutate({ id: editingKlonId, data: updatedKlonFv }, {
               onSuccess: () => handleCloseModal(),
             });
-          }}
-          onDelete={handleDelete}
-        />
-      )}
-
-      {/* ── Sortierung-Modal ── */}
-      {isSort && (
-       <SortingListModal
-         open={sortingModalOpen}
-         onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
-         initialData={fieldValues}
-         isSaving={saveMutation.isPending}
-         onDelete={handleDelete}
-         onSave={(newData) => {
-           const { content_status, ...fvData } = newData;
-           const updatedFv = { ...fieldValues, ...fvData };
-           setFieldValues(updatedFv);
-           saveMutation.mutate(updatedFv, {
-             onSuccess: async () => {
-               if (content_status) {
-                 await base44.entities.MasterAufgabe.update(master.id, { content_status });
-               }
-               queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
-               handleCloseModal();
-             },
-           });
-         }}
-         onCancel={handleCloseModal}
-       />
-      )}
-
-      {/* ── Match Terms-Modal ── */}
-      {isMatchTerms && (
-        <MatchTermsModal
-          open={matchModalOpen}
-          onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
-          initialData={fieldValues}
-          isSaving={saveMutation.isPending}
-          onDelete={handleDelete}
-          onSave={(newData) => {
-            const { content_status, ...fvData } = newData;
+          } else {
+            // Master speichern
             const updatedFv = { ...fieldValues, ...fvData };
             setFieldValues(updatedFv);
             saveMutation.mutate(updatedFv, {
@@ -472,89 +510,117 @@ export default function MasterDetailView({
                 handleCloseModal();
               },
             });
-          }}
-          onCancel={handleCloseModal}
-        />
-      )}
+          }
+        };
 
-      {/* ── Mini Quiz-Modal ── */}
-      {isQuizType && (
-        <MiniQuizModalDetail
-          open={quizModalOpen}
-          onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
-          initialData={fieldValues}
-          isSaving={saveMutation.isPending}
-          onDelete={handleDelete}
-          onSave={(newData) => {
-            const { content_status, ...fvData } = newData;
-            const updatedFv = { ...fieldValues, ...fvData };
-            setFieldValues(updatedFv);
-            saveMutation.mutate(updatedFv, {
-              onSuccess: async () => {
-                if (content_status) {
-                  await base44.entities.MasterAufgabe.update(master.id, { content_status });
-                }
-                queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
-                handleCloseModal();
-              },
-            });
-          }}
-          onCancel={handleCloseModal}
-        />
-      )}
+        return (
+          <>
+            {/* ── Lückentext-Modal ── */}
+            {isLuecke && (
+              <LueckentextWysiwygModal
+                open={lueckeModalOpen}
+                onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+                initialData={activeData}
+                isSaving={isSavingAny}
+                isCopy={!!editingKlonId}
+                onSave={(newData) => {
+                  if (editingKlonId) {
+                    const updatedKlonFv = { ...klonFieldValues, ...newData };
+                    setKlonFieldValues(updatedKlonFv);
+                    saveKlonMutation.mutate({ id: editingKlonId, data: updatedKlonFv }, {
+                      onSuccess: () => handleCloseModal(),
+                    });
+                  } else {
+                    const newFv = { ...fieldValues, ...newData };
+                    setFieldValues(newFv);
+                    saveMutation.mutate(newFv, { onSuccess: () => handleCloseModal() });
+                  }
+                }}
+                onDelete={editingKlonId ? undefined : handleDelete}
+              />
+            )}
 
-      {/* ── Multiple Choice-Modal ── */}
-      {isMCType && (
-        <MultipleChoiceModalDetail
-          open={mcModalOpen}
-          onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
-          initialData={fieldValues}
-          isSaving={saveMutation.isPending}
-          onDelete={handleDelete}
-          onSave={(newData) => {
-            const { content_status, ...fvData } = newData;
-            const updatedFv = { ...fieldValues, ...fvData };
-            setFieldValues(updatedFv);
-            saveMutation.mutate(updatedFv, {
-              onSuccess: async () => {
-                if (content_status) {
-                  await base44.entities.MasterAufgabe.update(master.id, { content_status });
-                }
-                queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
-                handleCloseModal();
-              },
-            });
-          }}
-          onCancel={handleCloseModal}
-        />
-      )}
+            {/* ── Sortierung-Modal ── */}
+            {isSort && (
+              <SortingListModal
+                open={sortingModalOpen}
+                onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+                initialData={activeData}
+                isSaving={isSavingAny}
+                onDelete={editingKlonId ? undefined : handleDelete}
+                onSave={handleModalSave}
+                onCancel={handleCloseModal}
+              />
+            )}
 
-      {/* ── KI-Tutor-Modal ── */}
-      {isKITutorType && (
-        <KITutorModalDetail
-          open={kiTutorModalOpen}
-          onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
-          initialData={fieldValues}
-          isSaving={saveMutation.isPending}
-          master={master}
-          onDelete={handleDelete}
-          onSave={(newData) => {
-            const { content_status, ...fvData } = newData;
-            const updatedFv = { ...fieldValues, ...fvData };
-            setFieldValues(updatedFv);
-            saveMutation.mutate(updatedFv, {
-              onSuccess: async () => {
-                if (content_status) {
-                  await base44.entities.MasterAufgabe.update(master.id, { content_status });
-                }
-                queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
-                handleCloseModal();
-              },
-            });
-          }}
-          onCancel={handleCloseModal}
-        />
-      )}
+            {/* ── Match Terms-Modal ── */}
+            {isMatchTerms && (
+              <MatchTermsModal
+                open={matchModalOpen}
+                onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+                initialData={activeData}
+                isSaving={isSavingAny}
+                onDelete={editingKlonId ? undefined : handleDelete}
+                onSave={handleModalSave}
+                onCancel={handleCloseModal}
+              />
+            )}
+
+            {/* ── Mini Quiz-Modal ── */}
+            {isQuizType && (
+              <MiniQuizModalDetail
+                open={quizModalOpen}
+                onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+                initialData={activeData}
+                isSaving={isSavingAny}
+                onDelete={editingKlonId ? undefined : handleDelete}
+                onSave={handleModalSave}
+                onCancel={handleCloseModal}
+              />
+            )}
+
+            {/* ── Multiple Choice-Modal ── */}
+            {isMCType && (
+              <MultipleChoiceModalDetail
+                open={mcModalOpen}
+                onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+                initialData={activeData}
+                isSaving={isSavingAny}
+                onDelete={editingKlonId ? undefined : handleDelete}
+                onSave={handleModalSave}
+                onCancel={handleCloseModal}
+              />
+            )}
+
+            {/* ── KI-Tutor-Modal ── */}
+            {isKITutorType && (
+              <KITutorModalDetail
+                open={kiTutorModalOpen}
+                onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+                initialData={activeData}
+                isSaving={isSavingAny}
+                master={master}
+                onDelete={editingKlonId ? undefined : handleDelete}
+                onSave={handleModalSave}
+                onCancel={handleCloseModal}
+              />
+            )}
+
+            {/* ── Bildbeschriftung-Modal ── */}
+            {isImageLabelingType && (
+              <ImageLabelingModalDetail
+                open={imageLabelingModalOpen}
+                onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+                initialData={activeData}
+                isSaving={isSavingAny}
+                onDelete={editingKlonId ? undefined : handleDelete}
+                onSave={handleModalSave}
+                onCancel={handleCloseModal}
+              />
+            )}
+          </>
+        );
+      })()}
 
       {/* ── Klon-Modal ── */}
       <KlonErstellenModal
@@ -568,32 +634,6 @@ export default function MasterDetailView({
           handleCloseKlonModal();
         }}
       />
-
-      {/* ── Bildbeschriftung-Modal ── */}
-      {isImageLabelingType && (
-        <ImageLabelingModalDetail
-          open={imageLabelingModalOpen}
-          onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
-          initialData={fieldValues}
-          isSaving={saveMutation.isPending}
-          onDelete={handleDelete}
-          onSave={(newData) => {
-            const { content_status, ...fvData } = newData;
-            const updatedFv = { ...fieldValues, ...fvData };
-            setFieldValues(updatedFv);
-            saveMutation.mutate(updatedFv, {
-              onSuccess: async () => {
-                if (content_status) {
-                  await base44.entities.MasterAufgabe.update(master.id, { content_status });
-                }
-                queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
-                handleCloseModal();
-              },
-            });
-          }}
-          onCancel={handleCloseModal}
-        />
-      )}
     </div>
   );
 }
