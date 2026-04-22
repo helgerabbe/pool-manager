@@ -34,7 +34,7 @@ export default function OffeneAufgabeEditor({ initialData = {}, onChange, readOn
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
-      recognition.continuous = false;
+      recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = 'de-DE';
 
