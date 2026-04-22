@@ -412,13 +412,13 @@ export default function ActivityMasterPanel({
         return (
           <>
             {kannBearbeiten && (
-                <div className="flex justify-end">
-                  <Button
-                    onClick={handleOpenEditModal}
-                    disabled={acquiringLock || isParentPaketLockedByOther || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || globalEditActive}
-                    title={isParentPaketLockedByOther ? `🔒 Lernpaket wird von ${lernpaket?.locked_by_email} bearbeitet` : globalEditActive ? 'Tab 4 ist in Bearbeitung – bitte warten bis diese abgeschlossen ist.' : lernpaket?.moodle_sync_status === 'locked' ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
-                    className="gap-2"
-                  >
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleOpenEditModal}
+                  disabled={acquiringLock || isParentPaketLockedByOther || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || globalEditActive}
+                  title={isParentPaketLockedByOther ? `🔒 Lernpaket wird gerade von ${lernpaket?.locked_by_email} bearbeitet` : globalEditActive ? '🔒 Lernpaket wird gerade bearbeitet – bitte warten bis diese abgeschlossen ist.' : lernpaket?.moodle_sync_status === 'locked' ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
+                  className="gap-2"
+                >
                     {acquiringLock
                       ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren…</>
                       : <><Pencil className="w-4 h-4" /> Inhalt bearbeiten</>}
@@ -638,7 +638,7 @@ export default function ActivityMasterPanel({
                   Erstelle jetzt die erste Masteraufgabe als Vorlage für KI-generierte Varianten.
                 </p>
               </div>
-              <Button onClick={handleAddMaster} disabled={creating || isParentPaketLockedByOther} className="gap-2">
+              <Button onClick={handleAddMaster} disabled={creating || isParentPaketLockedByOther} title={isParentPaketLockedByOther ? `🔒 Lernpaket wird gerade von ${lernpaket?.locked_by_email} bearbeitet` : ''} className="gap-2">
                 {creating
                   ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren & Erstellen…</>
                   : <><Plus className="w-4 h-4" /> Erste Aufgabe erstellen</>}
@@ -652,6 +652,7 @@ export default function ActivityMasterPanel({
               variant="default"
               onClick={handleAddMaster}
               disabled={creating || isParentPaketLockedByOther}
+              title={isParentPaketLockedByOther ? `🔒 Lernpaket wird gerade von ${lernpaket?.locked_by_email} bearbeitet` : ''}
               className="w-full gap-2"
             >
               {creating
