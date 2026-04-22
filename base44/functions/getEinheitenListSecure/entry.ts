@@ -202,11 +202,23 @@ Deno.serve(async (req) => {
     // 8. DEBUG: Logge RBAC-Filterung für Audit
     console.log('[EINHEITEN_LIST_SECURE] RBAC-Filter:', {
       user_email: user.email,
-      role: role,
+      user_role_system: user.role,
+      user_role_resolved: role,
+      benutzer_rolle: benutzer?.rolle,
       subjects: role === 'Fachlehrkraft' || role === 'Betrachter' ? benutzer?.fachbereich_zustaendigkeit : 'N/A',
+      filterCriteria: JSON.stringify(filterCriteria),
+      allEinheiten_count: allEinheiten.length,
       filtered_count: responseData.length,
       total_count: totalCount,
     });
+    
+    // Zeige auch alle Einheiten die gefiltert wurden
+    console.log('[EINHEITEN_LIST_SECURE] Alle verfügbaren Einheiten:', allEinheiten.map(e => ({
+      id: e.id,
+      titel: e.titel_der_einheit,
+      fach: e.fach,
+      wizard_status: e.wizard_status,
+    })));
 
     // 9. RESPONSE
     const response = {
