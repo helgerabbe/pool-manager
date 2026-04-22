@@ -364,6 +364,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
   const [localTitel, setLocalTitel] = useState(paket.titel_des_pakets || '');
   const [localPhasenConfig, setLocalPhasenConfig] = useState(paket.phasen_konfiguration || {});
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // Lade Aktivitäten für diese Phase
@@ -372,24 +373,38 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
     queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list(),
   });
 
-  // Lock-Management mit useLernpaketLock
+  // Lock-Management: Nur während Dialog offen ist
   const { canEdit, isLockedByOther, lockedByEmail, isLoading: isLockLoading, acquireLock, releaseLock } = useLernpaketLock(paket.id);
-  const [isEnteringEditMode, setIsEnteringEditMode] = useState(false);
+  const [isAcquiringLock, setIsAcquiringLock] = useState(false);
 
-  // Synchronisiere Lock-Status mit UI bei Re-Mount
-  React.useEffect(() => {
-    if (canEdit && !isLockLoading) {
-      // Lock ist meiner und geladen → Bearbeitungsmodus ist implizit aktiv
+  // Dialog öffnen = Lock erwerben
+  const handleOpenEditDialog = async () => {
+    setIsAcquiringLock(true);
+    try {
+      const ok = await acquireLock();
+      if (!ok) {
+        toast.error(`🔒 Dieses Lernpaket wird aktuell von ${lockedByEmail} bearbeitet.`);
+        setIsAcquiringLock(false);
+        return;
+      }
+      setEditDialogOpen(true);
+    } catch (err) {
+      toast.error('Fehler beim Sperren des Lernpakets.');
+      setIsAcquiringLock(false);
     }
-  }, [canEdit, isLockLoading]);
+  };
+
+  // Dialog schließen = Lock freigeben (immer, egal ob Speichern oder Abbrechen)
+  const handleCloseEditDialog = async () => {
+    setEditDialogOpen(false);
+    await releaseLock();
+  };
 
   // Sync localTitel und Phasen-Config wenn Paket von außen aktualisiert wird
   React.useEffect(() => {
     setLocalTitel(paket.titel_des_pakets || '');
     setLocalPhasenConfig(paket.phasen_konfiguration || {});
   }, [paket.titel_des_pakets, paket.phasen_konfiguration]);
-
-
 
   const PHASES = [
     { key: 'Input', label: 'Input (Erarbeitung)', icon: '📚', defaultDisabled: false },
@@ -490,42 +505,36 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {!canEdit && kannBearbeiten && !isLockedByOther && (
+          {kannBearbeiten && !isLockedByOther && (
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={handleEnterEditMode}
-              disabled={isEnteringEditMode || isLockLoading}
+              onClick={handleOpenEditDialog}
+              disabled={isAcquiringLock}
               className="gap-2"
             >
-              {isLockLoading ? (
+              {isAcquiringLock ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Prüfe Status...
+                  Öffne...
                 </>
               ) : (
                 <>
                   <PenLine className="w-3.5 h-3.5" />
-                  Bearbeitungsmodus aktivieren
+                  Bearbeiten
                 </>
               )}
             </Button>
           )}
-          {canEdit && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleExitEditMode}
-              className="gap-2"
-            >
-              <X className="w-3.5 h-3.5" />
-              Bearbeitungsmodus beenden
-            </Button>
-          )}
-          {kannBearbeiten && canEdit && (
+          {kannBearbeiten && !isLockedByOther && (
             <Button variant="ghost" size="icon" onClick={onDelete} title="Lernpaket löschen">
               <Trash2 className="w-4 h-4 text-destructive" />
             </Button>
+          )}
+          {isLockedByOther && (
+            <span className="text-xs px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 font-medium">
+              🔒 Gesperrt
+            </span>
           )}
         </div>
         </div>
@@ -618,8 +627,105 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
         </div>
       </div>
 
-      {/* Phasen als Accordions */}
-      <div className="space-y-3">
+      {/* Edit Dialog für Lernpaket */}
+      <Dialog open={editDialogOpen} onOpenChange={handleCloseEditDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>📦 {paket.titel_des_pakets} bearbeiten</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* Phasen als Accordions */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-muted-foreground">Lernphasen</h3>
+              {PHASES.map(phase => {
+                const phaseConfig = localPhasenConfig[phase.key] || {};
+                const isDisabled = phaseConfig.disabled === true;
+                const isExpanded = expandedPhase === phase.key;
+                const phaseActivities = lernpaketAktivitaeten.filter(a => a.lernpaket_id === paket.id && a.phase === phase.key);
+
+                return (
+                  <div key={phase.key} className="space-y-0">
+                    {/* Accordion Header */}
+                    <div className={cn(
+                      'flex items-center gap-3 p-3 rounded-lg border bg-card transition-all',
+                      isDisabled
+                        ? 'opacity-60'
+                        : 'hover:bg-muted hover:border-primary/30'
+                    )}>
+                      {/* Chevron + Click-Area */}
+                      <button
+                        onClick={() => !isDisabled && setExpandedPhase(isExpanded ? null : phase.key)}
+                        disabled={isDisabled}
+                        className="flex items-center gap-3 flex-1 cursor-pointer disabled:cursor-not-allowed"
+                      >
+                        <ChevronRight
+                          className={cn(
+                            'w-5 h-5 text-muted-foreground transition-transform shrink-0',
+                            isExpanded && 'rotate-90'
+                          )}
+                        />
+                        <div className="flex items-center gap-2 flex-1">
+                          <span className="text-lg">{phase.icon}</span>
+                          <p className={cn('font-medium text-sm', isDisabled && 'opacity-60')}>
+                            {phase.label}
+                          </p>
+                        </div>
+                        {!isDisabled && phaseActivities.length > 0 && (
+                          <Badge variant="secondary" className="text-xs">
+                            {phaseActivities.length}
+                          </Badge>
+                        )}
+                      </button>
+
+                      {/* Phase-Toggle Switch */}
+                      {kannBearbeiten && (
+                        <Switch
+                          checked={!isDisabled}
+                          onCheckedChange={() => handlePhaseToggle(phase.key)}
+                          onClick={e => e.stopPropagation()}
+                          className="shrink-0"
+                        />
+                      )}
+                    </div>
+
+                    {/* Phase Content */}
+                    {isExpanded && !isDisabled && (
+                      <div className="mt-2">
+                        <PhaseContent
+                          paket={paket}
+                          phaseKey={phase.key}
+                          phaseLabel={phase.label}
+                          kannBearbeiten={kannBearbeiten}
+                          userEmail={userEmail}
+                          queryClient={queryClient}
+                          inEditMode={true}
+                          onNavigate={(data) => {
+                            onNavigate(data);
+                          }}
+                          onGoToTaskWorkshop={(activityId) => {
+                            onNavigate({ type: 'goto-task-workshop', activityId });
+                            handleCloseEditDialog();
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseEditDialog}>
+              Schließen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Phasen als Accordions – NUR im Lesemodus außerhalb des Dialogs (VERSTECKT) */}
+      {false && <div className="space-y-3">
         <h3 className="text-sm font-semibold text-muted-foreground">Lernphasen</h3>
         {PHASES.map(phase => {
           const phaseConfig = localPhasenConfig[phase.key] || {};
@@ -681,73 +787,10 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                     <Menu className="w-5 h-5" />
                   </button>
                 )}
-
-                {/* Phase-Toggle Switch im Header – nur im aktiven Bearbeitungsmodus */}
-                {kannBearbeiten && canEdit && (
-                  <Switch
-                    checked={!isDisabled}
-                    onCheckedChange={() => handlePhaseToggle(phase.key)}
-                    disabled={isLockedByOther}
-                    onClick={e => e.stopPropagation()}
-                    className="shrink-0"
-                  />
-                )}
-              </div>
-
-              {/* Burger-Menü Sidebar für Aktivitäten-Auswahl */}
-              {isExpanded && !isDisabled && (
-                <>
-                  {/* Sidebar Overlay für Mobile */}
-                  {sidebarOpen && (
-                    <div
-                      className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-                      onClick={() => setSidebarOpen(false)}
-                    />
-                  )}
-                  
-                  {/* Sidebar */}
-                  <div className={cn(
-                    "fixed lg:static z-50 w-80 lg:w-full border-r lg:border-none border-border bg-card lg:bg-transparent shrink-0 overflow-hidden h-full lg:h-auto transition-transform lg:transition-none",
-                    sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-                  )}>
-                    <div className="h-full overflow-y-auto min-h-0">
-                      {/* Mobile Header */}
-                      <div className="lg:hidden px-3 py-2 border-b border-border flex items-center justify-between">
-                        <p className="text-sm font-semibold">Aktivitäten</p>
-                        <button
-                          onClick={() => setSidebarOpen(false)}
-                          className="p-1 hover:bg-muted rounded transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                      
-                      {/* Content */}
-                      <PhaseContent
-                        paket={paket}
-                        phaseKey={phase.key}
-                        phaseLabel={phase.label}
-                        kannBearbeiten={canEdit && kannBearbeiten}
-                        userEmail={userEmail}
-                        queryClient={queryClient}
-                        inEditMode={canEdit}
-                        onNavigate={(data) => {
-                          onNavigate(data);
-                          setSidebarOpen(false);
-                        }}
-                        onGoToTaskWorkshop={(activityId) => {
-                          onNavigate({ type: 'goto-task-workshop', activityId });
-                          setSidebarOpen(false);
-                        }}
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          );
-        })}
-      </div>
+                </div>
+                );
+                })}
+                </div>
 
 
 
