@@ -504,14 +504,14 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {kannBearbeiten && !isLockedByOther && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleOpenEditDialog}
-              disabled={isAcquiringLock}
-              className="gap-2"
-            >
+           {kannBearbeiten && !isLockedByOther && (
+             <Button 
+               variant="outline" 
+               size="sm" 
+               onClick={handleOpenEditDialog}
+               disabled={isAcquiringLock || canEdit}
+               className="gap-2"
+             >
               {isAcquiringLock ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
