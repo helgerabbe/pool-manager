@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Sparkles, Loader2, Info, AlertTriangle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { toast } from 'sonner';
 
 // ── Hilfsfunktionen ─────────────────────────────────────────────────────────────

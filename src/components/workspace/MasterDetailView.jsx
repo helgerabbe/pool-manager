@@ -12,6 +12,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Crown, Pencil, Loader2, CheckCircle2, Sparkles } from 'lucide-react';
+import { sanitizeHtml } from '@/lib/sanitize';
 import KlonErstellenModal from '@/components/workspace/KlonErstellenModal';
 import { useLernpaketLock } from '@/hooks/useLocks';
 import LueckentextEditor from '@/components/workspace/LueckentextEditor';
@@ -75,7 +76,7 @@ function MasterContentReadOnly({ master, catalogName }) {
         {fv.instruction && (
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Anweisung</p>
-            <div className="bg-muted/50 rounded-lg p-3 text-sm">{fv.instruction}</div>
+            <div className="bg-muted/50 rounded-lg p-3 text-sm" dangerouslySetInnerHTML={{ __html: sanitizeHtml(fv.instruction) }} />
           </div>
         )}
         {fv.pairs?.length > 0 && (
@@ -116,7 +117,7 @@ function MasterContentReadOnly({ master, catalogName }) {
         {fv.instruction && (
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Aufgabenstellung</p>
-            <div className="bg-muted/50 rounded-lg p-3 text-sm">{fv.instruction}</div>
+            <div className="bg-muted/50 rounded-lg p-3 text-sm" dangerouslySetInnerHTML={{ __html: sanitizeHtml(fv.instruction) }} />
           </div>
         )}
         {fv.orderedItems?.length > 0 && (
@@ -233,13 +234,13 @@ function MasterContentReadOnly({ master, catalogName }) {
         {fv.aufgabenstellung && (
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Aufgabenstellung</p>
-            <div className="bg-muted/50 rounded-lg p-3 text-sm">{fv.aufgabenstellung}</div>
+            <div className="bg-muted/50 rounded-lg p-3 text-sm" dangerouslySetInnerHTML={{ __html: sanitizeHtml(fv.aufgabenstellung) }} />
           </div>
         )}
         {fv.erwartungshorizont && (
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Musterlösung</p>
-            <div className="bg-muted/30 rounded-lg p-3 text-sm max-h-48 overflow-y-auto whitespace-pre-wrap">{fv.erwartungshorizont}</div>
+            <div className="bg-muted/30 rounded-lg p-3 text-sm max-h-48 overflow-y-auto whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitizeHtml(fv.erwartungshorizont) }} />
           </div>
         )}
         {!fv.aufgabenstellung && <p className="text-sm text-muted-foreground italic">Noch kein Inhalt vorhanden.</p>}
@@ -251,7 +252,7 @@ function MasterContentReadOnly({ master, catalogName }) {
   return (
     <div>
       {fv.task_description
-        ? <div className="bg-muted/50 rounded-lg p-3 text-sm">{fv.task_description}</div>
+        ? <div className="bg-muted/50 rounded-lg p-3 text-sm" dangerouslySetInnerHTML={{ __html: sanitizeHtml(fv.task_description) }} />
         : <p className="text-sm text-muted-foreground italic">Noch kein Inhalt vorhanden.</p>}
     </div>
   );
@@ -470,9 +471,7 @@ export default function MasterDetailView({
       {master.field_values?.aufgabentext && (
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Aufgabenstellung</p>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-900">
-            {master.field_values.aufgabentext}
-          </div>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-900" dangerouslySetInnerHTML={{ __html: sanitizeHtml(master.field_values.aufgabentext) }} />
         </div>
       )}
 

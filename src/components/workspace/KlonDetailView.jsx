@@ -19,7 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Save, ArrowRight, Plus, Trash2, Lock, Crown, Loader2, GripVertical, Pencil } from 'lucide-react';
 import LockBanner from '@/components/workspace/LockBanner';
 import { useKlonLock, isLockExpired } from '@/hooks/useActivityLock';
-import { useLernpaketLock } from '@/hooks/useLernpaketLock';
+import { useLernpaketLock } from '@/hooks/useLocks';
 import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus';
 import LueckentextEditor, { LueckentextRenderer } from '@/components/workspace/LueckentextEditor';
 import LueckentextWysiwygModal from '@/components/workspace/LueckentextWysiwygModal';
