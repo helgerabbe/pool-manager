@@ -258,9 +258,8 @@ export function usePresence(currentView = 'dashboard') {
       mountedRef.current = false;
       clearInterval(heartbeatRef.current);
       if (myRecordIdRef.current) {
-        deletePresenceRecord(myRecordIdRef.current).catch(() => {
-          // Silently ignore
-        });
+        // Silently ignore 404: Record könnte bereits extern/durch andere Tabs gelöscht sein
+        deletePresenceRecord(myRecordIdRef.current).catch(() => {});
         myRecordIdRef.current = null;
       }
     };
