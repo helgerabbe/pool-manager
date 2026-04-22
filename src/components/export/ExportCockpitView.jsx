@@ -276,8 +276,8 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                                )}
 
                                {tfAufgaben.length > 0 && (() => {
-              const exportable = tfAufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending');
-              const selectedCount = exportable.filter(a => selectedIds.includes(a.id)).length;
+                               const exportable = tfAufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending');
+                               const selectedCount = exportable.filter(a => selectedIds.includes(a.id)).length;
               const allSelected = exportable.length > 0 && selectedCount === exportable.length;
               return (
                 <div className="space-y-1">
