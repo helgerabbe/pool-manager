@@ -112,6 +112,7 @@ export default function ActivityMasterPanel({
   onKlonSelected = null,
   selectedMasterId = null,
   onEditModeChange = null,
+  globalEditActive = false,
 }) {
   const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
@@ -402,19 +403,19 @@ export default function ActivityMasterPanel({
         return (
           <>
             {kannBearbeiten && (
-              <div className="flex justify-end">
-                <Button
-                  onClick={handleOpenEditModal}
-                  disabled={acquiringLock || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
-                  title={lernpaket?.moodle_sync_status === 'locked' ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
-                  className="gap-2"
-                >
-                  {acquiringLock
-                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren…</>
-                    : <><Pencil className="w-4 h-4" /> Inhalt bearbeiten</>}
-                </Button>
-              </div>
-            )}
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleOpenEditModal}
+                    disabled={acquiringLock || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || globalEditActive}
+                    title={globalEditActive ? 'Tab 4 ist in Bearbeitung – bitte warten bis diese abgeschlossen ist.' : lernpaket?.moodle_sync_status === 'locked' ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
+                    className="gap-2"
+                  >
+                    {acquiringLock
+                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren…</>
+                      : <><Pencil className="w-4 h-4" /> Inhalt bearbeiten</>}
+                  </Button>
+                </div>
+              )}
 
             {/* Spezielle Vorschau für Bildbeschriftung */}
             {isImageLabeling ? (
@@ -479,19 +480,19 @@ export default function ActivityMasterPanel({
               Aufgabenstellung
             </p>
             {kannBearbeiten && !isInEditMode && (
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={handleOpenEditModal}
-                disabled={acquiringLock || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
-                className="h-6 w-6 text-muted-foreground hover:text-primary"
-                title="Aufgabenstellung bearbeiten"
-              >
-                {acquiringLock
-                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  : <Pencil className="w-3.5 h-3.5" />}
-              </Button>
-            )}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={handleOpenEditModal}
+                  disabled={acquiringLock || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || globalEditActive}
+                  className="h-6 w-6 text-muted-foreground hover:text-primary"
+                  title={globalEditActive ? 'Tab 4 ist in Bearbeitung – bitte warten bis diese abgeschlossen ist.' : 'Aufgabenstellung bearbeiten'}
+                >
+                  {acquiringLock
+                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    : <Pencil className="w-3.5 h-3.5" />}
+                </Button>
+              )}
           </div>
           <DefaultTextareaFieldInline
             field={{

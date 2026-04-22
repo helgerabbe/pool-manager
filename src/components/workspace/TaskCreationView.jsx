@@ -711,6 +711,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
                 if (klon) setSelectedItem({ type: 'klon', klon });
               }}
               onEditModeChange={handleEditModeChange}
+              globalEditActive={isEditingActive}
             />
           </div>
         )}
@@ -775,25 +776,26 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
             {selectedItem?.type === 'activity' && selectedActivity && (
               <div className="max-w-3xl mx-auto px-6 py-6">
                 <ActivityMasterPanel
-                  key={selectedActivity.id}
-                  activityRecord={selectedActivity}
-                  catalogEntry={selectedCatalog}
-                  supportsMaster={supportsMaster}
-                  kannBearbeiten={kannBearbeiten}
-                  userEmail={userEmail}
-                  userRole={userRole}
-                  einheitId={einheitId}
-                  parentLernpaketName={getLernpaketName(selectedActivity.lernpaket_id)}
-                  onMasterSelected={(masterId) => {
-                    const master = alleMaster.find(m => m.id === masterId);
-                    if (master) setSelectedItem({ type: 'master', master });
-                  }}
-                  onKlonSelected={(klonId) => {
-                    const klon = alleKlone.find(k => k.id === klonId);
-                    if (klon) setSelectedItem({ type: 'klon', klon });
-                  }}
-                  onEditModeChange={handleEditModeChange}
-                />
+                   key={selectedActivity.id}
+                   activityRecord={selectedActivity}
+                   catalogEntry={selectedCatalog}
+                   supportsMaster={supportsMaster}
+                   kannBearbeiten={kannBearbeiten}
+                   userEmail={userEmail}
+                   userRole={userRole}
+                   einheitId={einheitId}
+                   parentLernpaketName={getLernpaketName(selectedActivity.lernpaket_id)}
+                   onMasterSelected={(masterId) => {
+                     const master = alleMaster.find(m => m.id === masterId);
+                     if (master) setSelectedItem({ type: 'master', master });
+                   }}
+                   onKlonSelected={(klonId) => {
+                     const klon = alleKlone.find(k => k.id === klonId);
+                     if (klon) setSelectedItem({ type: 'klon', klon });
+                   }}
+                   onEditModeChange={handleEditModeChange}
+                   globalEditActive={isEditingActive}
+                 />
               </div>
             )}
 
