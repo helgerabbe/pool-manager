@@ -190,23 +190,12 @@ export async function generateTaskIdea(idee, task_type = 'Allgemeine Aufgabe') {
 // ── Bearbeitungssperre (Locking) ──────────────────────────────────────────────
 
 /**
- * Sperre setzen. Schlägt fehl, wenn bereits von einem anderen Nutzer gesperrt.
- * Auto-Timeout: Sperren älter als 60 Min werden ignoriert.
+ * Sperre setzen mit RBAC-Prüfung.
+ * Schlägt fehl, wenn bereits von einem anderen Nutzer gesperrt oder kein Zugriff.
  */
 export async function lockTask(taskId, userEmail) {
-  const TIMEOUT_MS = 60 * 60 * 1000;
-  const current = await base44.entities.AllgemeineAufgabe.filter({ id: taskId });
-  const aufgabe = current[0];
-  if (aufgabe?.locked_by && aufgabe.locked_by !== userEmail) {
-    const age = Date.now() - new Date(aufgabe.locked_at || 0).getTime();
-    if (age < TIMEOUT_MS) {
-      throw new Error(`Wird gerade von ${aufgabe.locked_by} bearbeitet.`);
-    }
-  }
-  return base44.entities.AllgemeineAufgabe.update(taskId, {
-    locked_by: userEmail,
-    locked_at: new Date().toISOString(),
-  });
+  const response = await base44.functions.invoke('lockTaskSecure', { taskId });
+  return response.data;
 }
 
 /**

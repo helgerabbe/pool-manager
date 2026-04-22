@@ -99,36 +99,12 @@ export async function generateProjectTaskIdea(idee, task_type = 'Anwendungsaufga
 // ── Bearbeitungssperre (Locking) ──────────────────────────────────────────────
 
 /**
- * Sperre setzen. Schlägt fehl, wenn bereits von einem anderen Nutzer gesperrt.
+ * Sperre setzen mit RBAC-Prüfung.
+ * Schlägt fehl, wenn bereits von einem anderen Nutzer gesperrt oder kein Zugriff.
  */
 export async function lockProjectTask(taskId, userEmail) {
-  const TIMEOUT_MS = 60 * 60 * 1000;
-  
-  const current = await base44.entities.AllgemeineAufgabe.filter({ id: taskId });
-  const aufgabe = current[0];
-  
-  if (!aufgabe) {
-    throw new Error(`Aufgabe mit ID ${taskId} nicht gefunden`);
-  }
-  
-  if (aufgabe?.locked_by && aufgabe.locked_by !== userEmail) {
-    const age = Date.now() - new Date(aufgabe.locked_at || 0).getTime();
-    if (age < TIMEOUT_MS) {
-      throw new Error(`Wird gerade von ${aufgabe.locked_by} bearbeitet.`);
-    }
-  }
-  
-  const lockData = {
-    locked_by: userEmail,
-    locked_at: new Date().toISOString(),
-  };
-  
-  // Fallback: rubric_criteria normalisieren falls es ein Objekt ist
-  if (aufgabe.rubric_criteria && !Array.isArray(aufgabe.rubric_criteria)) {
-    lockData.rubric_criteria = [];
-  }
-  
-  return base44.entities.AllgemeineAufgabe.update(taskId, lockData);
+  const response = await base44.functions.invoke('lockProjectTaskSecure', { taskId });
+  return response.data;
 }
 
 /**
