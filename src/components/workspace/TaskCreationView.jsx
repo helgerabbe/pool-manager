@@ -612,6 +612,16 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
   return (
     <div className="flex flex-row flex-1 overflow-hidden">
 
+      {/* Lock-Warning für ausgewähltes Lernpaket */}
+      {selectedItem?.type === 'activity' && selectedItem?.activity?.is_locked && selectedItem?.activity?.locked_by_email && selectedItem?.activity?.locked_by_email !== userEmail && (
+        <div className="shrink-0 px-4 py-2.5 bg-amber-50 border-b border-amber-200 text-xs text-amber-800 flex items-center gap-2">
+          <Lock className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+          <span>
+            <strong>🔒 Dieses Lernpaket wird gerade von {selectedItem.activity.locked_by_email} bearbeitet</strong>
+          </span>
+        </div>
+      )}
+
       {/* ── Burger-Menü Button (lg-breaker) ──────────────────────────────────── */}
       <div className="lg:hidden shrink-0 px-3 py-3 border-r border-border bg-card/50 h-full flex flex-col items-center justify-start pt-4">
         <button
