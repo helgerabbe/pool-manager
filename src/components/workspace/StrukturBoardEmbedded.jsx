@@ -622,8 +622,8 @@ export default function StrukturBoardEmbedded({
 
       // 2. Lernpakete: NUR themenfeld_id + reihenfolge_nummer aktualisieren
       for (const [spalteId, pakete] of Object.entries(paketeMap)) {
-        const spalte = spaltenMitId.find(s => s.id === spalteId);
-        const themenfeldId = spalte?.themenfeldId || null;
+        // Sammelbecken hat themenfeldId = null, Themenfelder haben die echte ID
+        const themenfeldId = spalteId === SAMMELBECKEN_ID ? null : spaltenMitId.find(s => s.id === spalteId)?.themenfeldId || null;
 
         for (let i = 0; i < pakete.length; i++) {
           const paket = pakete[i];
