@@ -23,6 +23,7 @@ import TestModal from '@/components/workspace/TestModal';
 import MultipleChoiceModalDetail from '@/components/workspace/MultipleChoiceModalDetail';
 import KITutorModalDetail from '@/components/workspace/KITutorModalDetail';
 import ImageLabelingModalDetail from '@/components/workspace/ImageLabelingModalDetail';
+import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import { toast } from 'sonner';
 
 const LUECKENTEXT_NAMES = ['lückentext', 'lücken', 'lueckentext', 'cloze', 'fill in'];
@@ -52,6 +53,10 @@ function isImageLabeling(name = '') {
 
 function isKITutor(name = '') {
   return name.toLowerCase().includes('ki-tutor');
+}
+
+function isOffeneAufgabe(name = '') {
+  return name.toLowerCase().includes('offene aufgabe');
 }
 
 function MasterContentReadOnly({ master, catalogName }) {
@@ -278,8 +283,9 @@ export default function MasterDetailView({
   const isKITutorType = isKITutor(catalogName);
   const isImageLabelingType = isImageLabeling(catalogName);
   const isSort = isSorting(catalogName);
+  const isOffeneType = isOffeneAufgabe(catalogName);
 
-  const isSupportedType = isLuecke || isSort || matchTerms || isQuiz || isMCType || isKITutorType || isImageLabelingType || isTest;
+  const isSupportedType = isLuecke || isSort || matchTerms || isQuiz || isMCType || isKITutorType || isImageLabelingType || isTest || isOffeneType;
 
   const { acquireLock, releaseLock } = useLernpaketLock(isSupportedType ? master.lernpaket_id : null);
   const [acquiringLock, setAcquiringLock] = useState(false);
@@ -292,6 +298,7 @@ export default function MasterDetailView({
   const [kiTutorModalOpen, setKiTutorModalOpen] = useState(false);
   const [imageLabelingModalOpen, setImageLabelingModalOpen] = useState(false);
   const [testModalOpen, setTestModalOpen] = useState(false);
+  const [offeneAufgabeModalOpen, setOffeneAufgabeModalOpen] = useState(false);
   const [fieldValues, setFieldValues] = useState(master.field_values || {});
 
   // Klon-Bearbeitung
@@ -345,6 +352,7 @@ export default function MasterDetailView({
     else if (matchTerms) setMatchModalOpen(true);
     else if (isImageLabelingType) setImageLabelingModalOpen(true);
     else if (isKITutorType) setKiTutorModalOpen(true);
+    else if (isOffeneType) setOffeneAufgabeModalOpen(true);
   };
 
   const handleCloseModal = async () => {
@@ -356,6 +364,7 @@ export default function MasterDetailView({
     setKiTutorModalOpen(false);
     setImageLabelingModalOpen(false);
     setTestModalOpen(false);
+    setOffeneAufgabeModalOpen(false);
     setEditingKlonId(null);
     setKlonFieldValues({});
     
@@ -387,6 +396,7 @@ export default function MasterDetailView({
     else if (isMCType) setMcModalOpen(true);
     else if (isImageLabelingType) setImageLabelingModalOpen(true);
     else if (isKITutorType) setKiTutorModalOpen(true);
+    else if (isOffeneType) setOffeneAufgabeModalOpen(true);
     };
 
   const saveKlonMutation = useMutation({
@@ -661,6 +671,19 @@ export default function MasterDetailView({
               {isTest && (
                 <TestModal
                   open={testModalOpen}
+                  onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+                  initialData={activeData}
+                  isSaving={isSavingAny}
+                  onDelete={editingKlonId ? undefined : handleDelete}
+                  onSave={handleModalSave}
+                  onCancel={handleCloseModal}
+                />
+              )}
+
+              {/* ── Offene Aufgabe-Modal ── */}
+              {isOffeneType && (
+                <OffeneAufgabeModal
+                  open={offeneAufgabeModalOpen}
                   onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
                   initialData={activeData}
                   isSaving={isSavingAny}
