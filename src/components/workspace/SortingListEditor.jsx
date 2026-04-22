@@ -8,7 +8,7 @@
  * - "Weiteres Element hinzufügen" Button
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -30,6 +30,11 @@ export default function SortingListEditor({
   const [orderedItems, setOrderedItems] = useState(initialData.orderedItems || []);
   const [generatorOpen, setGeneratorOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Datenbrücke zum Modal
+  useEffect(() => {
+    onChange?.({ instruction, orderedItems });
+  }, [instruction, orderedItems]);
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;

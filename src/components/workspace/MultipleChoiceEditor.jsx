@@ -8,7 +8,7 @@
  * - KI-Generierungs-Button
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,12 @@ export default function MultipleChoiceEditor({
   const [mcItems, setMcItems] = useState(initialData.mcItems || []);
   const [generatorOpen, setGeneratorOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Datenbrücke zum Modal
+  useEffect(() => {
+    onChange?.({ instruction, displayCount: displayCount ? parseInt(displayCount) : mcItems.length, mcItems });
+  }, [instruction, displayCount, mcItems]);
+
   const [expandedQuestions, setExpandedQuestions] = useState(
     mcItems.reduce((acc, _, idx) => ({ ...acc, [idx]: true }), {})
   );

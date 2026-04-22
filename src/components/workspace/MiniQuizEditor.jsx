@@ -6,7 +6,7 @@
  * Limit: max. 12 Fragen
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,6 +31,11 @@ export default function MiniQuizEditor({
   const [tempAnswers, setTempAnswers] = useState([]);
   const [generatorOpen, setGeneratorOpen] = useState(false);
   const canAddMore = questions.length < MAX_QUESTIONS;
+
+  // Datenbrücke zum Modal
+  useEffect(() => {
+    onChange?.({ questions });
+  }, [questions]);
   const isAtLimit = questions.length >= MAX_QUESTIONS;
 
   const handleAddQuestion = () => {

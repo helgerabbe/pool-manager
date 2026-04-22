@@ -24,17 +24,25 @@ export default function MatchTermsModal({
   isSaving = false,
   exportLocked = false,
 }) {
-  const [fieldValues, setFieldValues] = useState(initialData);
   const [isReleased, setIsReleased] = useState(initialData?.content_status === 'approved');
   const [exportLockedWasEnabled, setExportLockedWasEnabled] = useState(exportLocked);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [editorData, setEditorData] = useState({
+    instruction: initialData?.instruction || '',
+    pairs: initialData?.pairs || [],
+    distractors: initialData?.distractors || [],
+  });
 
   useEffect(() => {
     if (open) {
-      setFieldValues(initialData || {});
       setIsReleased(initialData?.content_status === 'approved');
       setExportLockedWasEnabled(exportLocked);
+      setEditorData({
+        instruction: initialData?.instruction || '',
+        pairs: initialData?.pairs || [],
+        distractors: initialData?.distractors || [],
+      });
     }
   }, [open, initialData]);
 
@@ -58,7 +66,7 @@ export default function MatchTermsModal({
 
   const handleSave = () => {
     const payload = {
-      ...fieldValues,
+      ...editorData,
       content_status: isReleased ? 'approved' : 'draft',
     };
 
@@ -98,28 +106,12 @@ export default function MatchTermsModal({
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 min-h-0">
           <MatchTermsForm
             initialData={{
-              instruction: fieldValues.instruction || '',
-              pairs: fieldValues.pairs || [],
-              distractors: (fieldValues.distractors || []).map(v => typeof v === 'string' ? { value: v } : v),
+              instruction: initialData?.instruction || '',
+              pairs: initialData?.pairs || [],
+              distractors: (initialData?.distractors || []).map(v => typeof v === 'string' ? { value: v } : v),
             }}
-            onSave={(data) => {
-              const cleanedData = {
-                instruction: data.instruction,
-                pairs: data.pairs,
-                distractors: (data.distractors || []).map(d => typeof d === 'string' ? d : d.value).filter(Boolean),
-              };
-              const payload = {
-                ...cleanedData,
-                content_status: isReleased ? 'approved' : 'draft',
-              };
-              if (initialData?.moodle_sync_status === 'synced') {
-                payload.moodle_sync_status = 'modified';
-                payload.is_dirty_since_export = true;
-              }
-              onSave?.(payload);
-            }}
+            onChange={(data) => setEditorData(data)}
             onCancel={handleCancel}
-            onChange={() => {}}
           />
         </div>
 

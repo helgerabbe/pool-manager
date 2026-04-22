@@ -5,7 +5,7 @@
  * Side-by-Side-Layout mit Distraktoren-Bereich.
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -160,11 +160,16 @@ export default function MatchTermsForm({ initialData = {}, onSave, onCancel, onC
     mode: 'onChange',
   });
 
-  // Aktualisiere Parent-Komponente bei Änderungen
+  // Datenbrücke zum Modal: bei jeder Änderung aktuellen Stand hochfunken
   const formData = watch();
   React.useEffect(() => {
-    onChange?.();
-  }, [formData, onChange]);
+    const cleaned = {
+      instruction: formData.instruction,
+      pairs: formData.pairs,
+      distractors: (formData.distractors || []).map((d) => d.value).filter(Boolean),
+    };
+    onChange?.(cleaned);
+  }, [JSON.stringify(formData)]);
 
   const {
     fields: pairFields,

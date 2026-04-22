@@ -24,17 +24,25 @@ export default function MultipleChoiceModalDetail({
   isSaving = false,
   exportLocked = false,
 }) {
-  const [fieldValues, setFieldValues] = useState(initialData);
   const [isReleased, setIsReleased] = useState(initialData?.content_status === 'approved');
   const [exportLockedWasEnabled, setExportLockedWasEnabled] = useState(exportLocked);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [editorData, setEditorData] = useState({
+    instruction: initialData?.instruction || '',
+    displayCount: initialData?.displayCount || '',
+    mcItems: initialData?.mcItems || [],
+  });
 
   useEffect(() => {
     if (open) {
-      setFieldValues(initialData || {});
       setIsReleased(initialData?.content_status === 'approved');
       setExportLockedWasEnabled(exportLocked);
+      setEditorData({
+        instruction: initialData?.instruction || '',
+        displayCount: initialData?.displayCount || '',
+        mcItems: initialData?.mcItems || [],
+      });
     }
   }, [open, initialData]);
 
@@ -58,7 +66,7 @@ export default function MultipleChoiceModalDetail({
 
   const handleSave = () => {
     const payload = {
-      ...fieldValues,
+      ...editorData,
       content_status: isReleased ? 'approved' : 'draft',
     };
 
@@ -97,10 +105,9 @@ export default function MultipleChoiceModalDetail({
         {/* Scrollbarer Inhalt */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 min-h-0">
           <MultipleChoiceEditor
-            initialData={fieldValues}
-            onSave={handleSave}
+            initialData={initialData}
+            onChange={(data) => setEditorData(data)}
             onCancel={handleCancel}
-            onChange={() => {}}
             readOnly={false}
             hideActions={true}
           />

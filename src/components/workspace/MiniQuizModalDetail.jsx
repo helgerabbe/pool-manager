@@ -23,15 +23,15 @@ export default function MiniQuizModalDetail({
   isSaving = false,
   exportLocked = false,
 }) {
-  const [fieldValues, setFieldValues] = useState(initialData);
   const [isReleased, setIsReleased] = useState(initialData?.content_status === 'approved');
   const [exportLockedWasEnabled, setExportLockedWasEnabled] = useState(exportLocked);
+  const [editorData, setEditorData] = useState({ questions: initialData?.questions || [] });
 
   useEffect(() => {
     if (open) {
-      setFieldValues(initialData || {});
       setIsReleased(initialData?.content_status === 'approved');
       setExportLockedWasEnabled(exportLocked);
+      setEditorData({ questions: initialData?.questions || [] });
     }
   }, [open, initialData]);
 
@@ -47,7 +47,7 @@ export default function MiniQuizModalDetail({
 
   const handleSave = () => {
     const payload = {
-      ...fieldValues,
+      ...editorData,
       content_status: isReleased ? 'approved' : 'draft',
     };
 
@@ -86,21 +86,11 @@ export default function MiniQuizModalDetail({
         {/* Scrollbarer Inhalt */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 min-h-0">
           <MiniQuizEditor
-            initialData={fieldValues}
-            onSave={(data) => {
-              const payload = {
-                ...data,
-                content_status: isReleased ? 'approved' : 'draft',
-              };
-              if (initialData?.moodle_sync_status === 'synced') {
-                payload.moodle_sync_status = 'modified';
-                payload.is_dirty_since_export = true;
-              }
-              onSave?.(payload);
-            }}
+            initialData={initialData}
+            onChange={(data) => setEditorData(data)}
             onCancel={handleCancel}
-            onChange={() => {}}
             readOnly={false}
+            hideActions={true}
           />
         </div>
 

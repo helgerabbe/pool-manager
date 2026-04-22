@@ -24,18 +24,24 @@ export default function SortingListModal({
   isSaving = false,
   exportLocked = false,
 }) {
-  const [fieldValues, setFieldValues] = useState(initialData);
   const [isReleased, setIsReleased] = useState(initialData?.content_status === 'approved');
   const [exportLockedWasEnabled, setExportLockedWasEnabled] = useState(exportLocked);
+  const [editorData, setEditorData] = useState({
+    instruction: initialData?.instruction || '',
+    orderedItems: initialData?.orderedItems || [],
+  });
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Bei jedem Öffnen Initialwerte neu laden
   useEffect(() => {
     if (open) {
-      setFieldValues(initialData || {});
       setIsReleased(initialData?.content_status === 'approved');
       setExportLockedWasEnabled(exportLocked);
+      setEditorData({
+        instruction: initialData?.instruction || '',
+        orderedItems: initialData?.orderedItems || [],
+      });
     }
   }, [open, initialData]);
 
@@ -59,10 +65,8 @@ export default function SortingListModal({
   };
 
   const handleSave = () => {
-    // Wenn gerade aus 'synced' Status kommt und jetzt geändert wird,
-    // markiere automatisch für Re-Export
     const payload = {
-      ...fieldValues,
+      ...editorData,
       content_status: isReleased ? 'approved' : 'draft',
     };
 
@@ -101,10 +105,8 @@ export default function SortingListModal({
         {/* Scrollbarer Inhalt */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 min-h-0">
           <SortingListEditor
-            initialData={fieldValues}
-            onSave={handleSave}
-            onCancel={handleCancel}
-            onChange={() => {}}
+            initialData={initialData}
+            onChange={(data) => setEditorData(data)}
             readOnly={false}
             hideActions={true}
           />
