@@ -357,30 +357,22 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   // ✅ Auto-Release aller Locks bei Tab-Wechsel oder Seiten-Verlassen
   const releaseAllLocksOnTabChange = useCallback(async () => {
     // Gebe Structural Lock frei, falls aktiv
-    if (isStructuralEditingActive) {
+    if (isStructuralEditingActive && einheit) {
       try {
-        await invokeFunction('releaseStructuralLockSecure', { einheitId: selectedEinheitId });
+        await invokeFunction('releaseStructuralLockSecure', { einheit_id: einheit.id });
       } catch (err) {
         console.warn('Fehler beim Freigeben des Structural Locks:', err);
       }
     }
-    // Gebe Lernpaket Lock frei, falls aktiv (über die existierende Handler-Funktion)
-    if (isLernpaketEditActive) {
-      try {
-        await handleReleaseLernpaketLock?.();
-      } catch (err) {
-        console.warn('Fehler beim Freigeben des Lernpaket Locks:', err);
-      }
-    }
     // Gebe Tab 1 Lock frei, falls aktiv
-    if (isTab1EditingActive) {
+    if (isTab1EditingActive && einheit) {
       try {
-        await handleReleaseTab1Lock?.();
+        await invokeFunction('releaseStructuralLockSecure', { einheit_id: einheit.id });
       } catch (err) {
         console.warn('Fehler beim Freigeben des Tab 1 Locks:', err);
       }
     }
-  }, [isStructuralEditingActive, isLernpaketEditActive, isTab1EditingActive, selectedEinheitId]);
+  }, [isStructuralEditingActive, isTab1EditingActive, einheit]);
 
   // ✅ BeforeUnload: Browser-Close oder Tab-Close
   useEffect(() => {
