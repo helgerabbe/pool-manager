@@ -62,9 +62,9 @@ export default function EinheitCard({ einheit, lernpaketCount, rolle, onDeleteSt
   return (
     <>
       <div className="relative group/card">
-        <Link to={`/einheiten/${einheit.id}`}>
-          <Card className="group hover:shadow-lg hover:border-primary/20 transition-all duration-300 cursor-pointer overflow-hidden h-[168px] flex flex-col">
-            <CardContent className="p-0 flex flex-col flex-1">
+         <Link to={`/einheiten/${einheit.id}`}>
+           <Card className="group hover:shadow-lg hover:border-primary/20 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col min-h-[168px]">
+             <CardContent className="p-0 flex flex-col flex-1">
               <div className="p-6 flex-1 flex flex-col">
                 <div className="flex items-start justify-between mb-3 gap-2">
                   <Badge className="font-medium border" style={badgeStyle}>
