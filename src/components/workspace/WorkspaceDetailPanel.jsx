@@ -1310,6 +1310,21 @@ export default function WorkspaceDetailPanel({
     onError: () => toast.error('Fehler beim Speichern der Einheit.'),
   });
 
+  // Subscribe zu Lernpaket-Änderungen um Lock-Status realtime zu aktualisieren
+  useEffect(() => {
+    if (!selectedNode || selectedNode.type !== 'lernpaket' || !selectedNode?.id) return;
+    const paket = lernpakete.find(p => p.id === selectedNode.id);
+    if (!paket?.id) return;
+    
+    const unsub = base44.entities.Lernpakete.subscribe((event) => {
+      if (event.id === paket.id) {
+        queryClient.invalidateQueries({ queryKey: ['lernpakete', paket.id] });
+        queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+      }
+    });
+    return unsub;
+  }, [selectedNode, lernpakete, queryClient]);
+
   if (!selectedNode) {
     return (
       <div className="space-y-4">
@@ -1329,21 +1344,6 @@ export default function WorkspaceDetailPanel({
   if (type === 'einheit') {
     return null;
   }
-
-  // Subscribe zu Lernpaket-Änderungen um Lock-Status realtime zu aktualisieren
-  useEffect(() => {
-    if (type !== 'lernpaket' || !selectedNode?.id) return;
-    const paket = lernpakete.find(p => p.id === selectedNode.id);
-    if (!paket?.id) return;
-    
-    const unsub = base44.entities.Lernpakete.subscribe((event) => {
-      if (event.id === paket.id) {
-        queryClient.invalidateQueries({ queryKey: ['lernpakete', paket.id] });
-        queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-      }
-    });
-    return unsub;
-  }, [type, selectedNode?.id, lernpakete, queryClient]);
 
   if (type === 'lernpaket') {
     const paket = lernpakete.find(p => p.id === selectedNode.id);

@@ -172,6 +172,35 @@ function MasterContentReadOnly({ master, catalogName }) {
     );
   }
 
+  // Test (eigenständig wie Quiz, nutzt aber gleiches Format)
+  if (['test'].some(n => catalogName.toLowerCase().includes(n))) {
+    return (
+      <div className="space-y-2">
+        {fv.questions?.length > 0 ? (
+          <>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Fragen ({fv.questions.length})</p>
+            <div className="bg-muted/30 rounded-lg p-3 space-y-2 text-sm max-h-64 overflow-y-auto">
+              {fv.questions.map((q, i) => (
+                <div key={i} className="pb-2 border-b border-border/30 last:border-0 last:pb-0">
+                  <p className="font-medium">{i + 1}. {q.question}</p>
+                  <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                    {q.answers?.map((ans, ai) => (
+                      <div key={ai} className={ans.isCorrect ? 'text-green-600 font-medium' : ''}>
+                        {ans.isCorrect && '✓ '}{ans.text}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground italic">Noch kein Inhalt vorhanden.</p>
+        )}
+      </div>
+    );
+  }
+
   // Multiple Choice
   if (['multiple choice', 'multiple-choice'].some(n => catalogName.toLowerCase().includes(n))) {
     return (
