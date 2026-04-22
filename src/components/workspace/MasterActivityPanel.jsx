@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Crown, Sparkles, Loader2, AlertCircle, Edit, Save, X, Lock } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
 import ActivityDetailView from '@/components/workspace/ActivityDetailView';
 import LockBanner from '@/components/workspace/LockBanner';
@@ -136,14 +137,14 @@ function KlonGenerator({ activityRecord, onKlonesCreated }) {
   );
 }
 
-// ── Test mit Edit-Mode + Lock ───────────────────────────────────────────────────
+// ── Test mit Edit-Mode + Lock + Dialog ──────────────────────────────────────────
 
 function TestWithLock({ activityRecord, kannBearbeiten, userEmail }) {
   const queryClient = useQueryClient();
-  const [editMode, setEditMode] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  useActivityLock(activityRecord.id, userEmail, editMode);
+  useActivityLock(activityRecord.id, userEmail, editDialogOpen);
   const lockedByOther = isActivityLockedByOther(activityRecord, userEmail);
   const fieldValues = activityRecord.field_values || {};
 
@@ -155,15 +156,15 @@ function TestWithLock({ activityRecord, kannBearbeiten, userEmail }) {
     });
     queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
     setSaving(false);
-    setEditMode(false);
+    setEditDialogOpen(false);
     toast.success('Test gespeichert.');
   };
 
   return (
-    <div className="space-y-3">
-      {lockedByOther && <LockBanner lockedByUser={activityRecord.locked_by_user} />}
+    <>
+      <div className="space-y-3">
+        {lockedByOther && <LockBanner lockedByUser={activityRecord.locked_by_user} />}
 
-      {!editMode ? (
         <div className="space-y-4">
           {fieldValues.instruction && (
             <div className="space-y-1.5">
@@ -193,7 +194,7 @@ function TestWithLock({ activityRecord, kannBearbeiten, userEmail }) {
             </div>
           )}
           {kannBearbeiten && !lockedByOther && (
-            <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-2 mt-2">
+            <Button size="sm" variant="outline" onClick={() => setEditDialogOpen(true)} className="gap-2 mt-2">
               <Edit className="w-3.5 h-3.5" /> Bearbeiten
             </Button>
           )}
@@ -203,15 +204,28 @@ function TestWithLock({ activityRecord, kannBearbeiten, userEmail }) {
             </Button>
           )}
         </div>
-      ) : (
-        <ActivityDetailView
-          activityRecord={activityRecord}
-          kannBearbeiten={true}
-          queryClient={queryClient}
-          onClose={() => setEditMode(false)}
-        />
-      )}
-    </div>
+      </div>
+
+      {/* Dialog für Edit-Mode */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Test bearbeiten</DialogTitle>
+          </DialogHeader>
+          <ActivityDetailView
+            activityRecord={activityRecord}
+            kannBearbeiten={true}
+            queryClient={queryClient}
+            onClose={() => setEditDialogOpen(false)}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Schließen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
