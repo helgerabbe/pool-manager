@@ -220,7 +220,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
       });
       setIsStructuralEditingActive(false);
       queryClient.invalidateQueries({ queryKey: ['einheiten'] });
-      toast.success('✅ Structural Lock freigegeben. Andere Nutzer können jetzt wieder Änderungen vornehmen.');
+      toast.success('✅ Bearbeitungsmodus beendet. Andere Nutzer können jetzt wieder Änderungen vornehmen.');
     } catch (err) {
       if (err?.response?.status === 403) {
         toast.error('Sie haben diesen Lock nicht. Nur der Lock-Inhaber kann ihn freigeben.');
@@ -425,13 +425,31 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
            onValueChange={handleTabChange}
            className="flex flex-col flex-1 overflow-hidden m-0 p-0">
 
+            {/* ── PERSISTENTER LOCK-STATUS-BANNER (über allen Tabs) ──────────── */}
+            {isStructuralEditingActive && (
+              <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-2.5 bg-blue-50 border-b border-blue-200 flex items-center gap-3">
+                <PenLine className="w-4 h-4 text-blue-600 animate-pulse shrink-0" />
+                <span className="text-sm font-semibold text-blue-900 flex-1">
+                  ✏️ Du befindest dich im Bearbeitungsmodus. Nur du kannst Änderungen vornehmen.
+                </span>
+                <button
+                  onClick={handleReleaseStructLock}
+                  disabled={releasingStructLock}
+                  className="text-xs font-medium px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 shrink-0"
+                >
+                  {releasingStructLock ? <Loader2 className="w-3 h-3 animate-spin inline mr-1" /> : null}
+                  Bearbeitung beenden
+                </button>
+              </div>
+            )}
+
             {/* ── Persistenter Header mit Structural-Lock-Control ─────────── */}
             <div className="px-4 sm:px-6 lg:px-8 py-2 border-b border-border bg-muted/40 shrink-0 flex items-center gap-3 flex-wrap">
               <span className="text-2xl font-bold text-foreground truncate flex-1 min-w-0 leading-snug">{einheit.titel_der_einheit}</span>
               <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full shrink-0">{einheit.fach}</span>
 
-              {/* Status-Badge + Lock-Button – nur im Struktur-Tab und wenn Berechtigung (inkl. Unit-Level) */}
-              {activeTab === 'struktur' && (permissions.kannStrukturBearbeiten(einheit?.fach) || unitAccess.hasFullAccess) && (
+              {/* Status-Badge + Lock-Button – IMMER sichtbar wenn Berechtigung (inkl. Unit-Level) */}
+              {permissions.kannStrukturBearbeiten(einheit?.fach) || unitAccess.hasFullAccess ? (
                 <div className="flex items-center gap-2 shrink-0">
                   {/* Status-Badge */}
                   {isStructuralEditingActive ? (
@@ -470,7 +488,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                     </button>
                   )}
                 </div>
-              )}
+              ) : null}
             </div>
 
             {/* 6-Step Navigation */}

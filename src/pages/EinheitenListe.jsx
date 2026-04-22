@@ -60,6 +60,8 @@ function SchnellErstellenModal({ open, onOpenChange, onCreated }) {
     },
   });
 
+  const isSubmitting = createMutation.isPending;
+
   const isValid = form.titel_der_einheit.trim() && form.fach && form.jahrgangsstufe;
 
   return (
@@ -101,10 +103,10 @@ function SchnellErstellenModal({ open, onOpenChange, onCreated }) {
           <Button variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
           <Button
             onClick={() => createMutation.mutate(form)}
-            disabled={!isValid || createMutation.isPending}
+            disabled={!isValid || isSubmitting}
             className="gap-2"
           >
-            {createMutation.isPending && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+            {isSubmitting && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
             Erstellen
           </Button>
         </DialogFooter>
