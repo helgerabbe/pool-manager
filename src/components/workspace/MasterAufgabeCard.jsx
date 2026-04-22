@@ -24,7 +24,6 @@ import LueckentextWysiwygModal from '@/components/workspace/LueckentextWysiwygMo
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import SortingListEditor from '@/components/workspace/SortingListEditor';
 import SortingListModal from '@/components/workspace/SortingListModal';
-import MultipleChoiceEditor from '@/components/workspace/MultipleChoiceEditor';
 import MiniQuizEditor from '@/components/workspace/MiniQuizEditor';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
 import MiniQuizModal from '@/components/workspace/MiniQuizModal';
@@ -46,7 +45,6 @@ const MATCH_TERMS_NAMES = ['begriffe zuordnen', 'zuordnen', 'zuordnung', 'match 
 const LUECKENTEXT_NAMES = ['lückentext', 'lücken', 'lueckentext', 'cloze', 'fill in'];
 const IMAGE_LABELING_NAMES = ['bildbeschriftung', 'bildbeschreibung', 'image labeling'];
 const SORTING_NAMES = ['reihenfolge', 'sortierung', 'sequenzierung', 'sorting', 'sequence'];
-const MULTIPLE_CHOICE_NAMES = ['multiple choice', 'multiple-choice', 'mc-aufgabe', 'mc'];
 const MINIQUIZ_NAMES = ['miniquiz', 'mini-quiz', 'quiz', 'quizze'];
 
 function getActivityType(name = '') {
@@ -55,7 +53,6 @@ function getActivityType(name = '') {
   if (LUECKENTEXT_NAMES.some(n => lowerName.includes(n))) return 'lueckentext';
   if (IMAGE_LABELING_NAMES.some(n => lowerName.includes(n))) return 'imagelabeling';
   if (SORTING_NAMES.some(n => lowerName.includes(n))) return 'sorting';
-  if (MULTIPLE_CHOICE_NAMES.some(n => lowerName.includes(n))) return 'multiplechoice';
   if (MINIQUIZ_NAMES.some(n => lowerName.includes(n))) return 'miniquiz';
   if (lowerName.includes('ki-tutor')) return 'kitutor';
   return null;
@@ -72,9 +69,6 @@ function isImageLabelingType(name = '') {
 }
 function isSorting(name = '') {
   return SORTING_NAMES.some(n => name.toLowerCase().includes(n));
-}
-function isMultipleChoice(name = '') {
-  return MULTIPLE_CHOICE_NAMES.some(n => name.toLowerCase().includes(n));
 }
 function isMiniQuiz(name = '') {
   return MINIQUIZ_NAMES.some(n => name.toLowerCase().includes(n));
@@ -245,7 +239,6 @@ export default function MasterAufgabeCard({
   const isImageLabeling = activityType === 'imagelabeling';
   const isSort = activityType === 'sorting';
   const isKITutor = activityType === 'kitutor';
-  const isMC = activityType === 'multiplechoice';
   const isQuiz = activityType === 'miniquiz';
 
   const saveMutation = useMutation({
