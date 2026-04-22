@@ -393,8 +393,8 @@ export default function StrukturBoardEmbedded({
   // ── Initialisierung ───────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (initialized) return;
-    // Initialisiere auch mit leeren Arrays (wenn noch keine Daten da sind)
+    if (isDirty) return; // Nicht initialisieren, wenn lokale Änderungen ausstehen
+    
     const pakete = remotePakete || [];
     const felder = remoteThemenfelder || [];
 
@@ -418,17 +418,11 @@ export default function StrukturBoardEmbedded({
     setSpalten(tfSpalten);
     setPaketeMap(newMap);
     // Store original IDs to detect deletions
-    setOriginalSpaltenIds(new Set(tfSpalten.map(s => s.themenfeldId)));
+    setOriginalSpaltenIds(new Set(tfSpalten.map(s => s.themenfeldId).filter(Boolean)));
     setOriginalPaketIds(new Set(pakete.map(p => p.id)));
-    setInitialized(true);
-  }, [remotePakete, remoteThemenfelder, initialized]);
+  }, [remotePakete, remoteThemenfelder, isDirty]);
 
-  // Re-init NUR wenn Remote-Daten sich ändern oder einheit wechselt
-  // isDirty = local changes, sollte nicht triggern
-  useEffect(() => {
-    if (isDirty) return; // Nicht re-initialisieren, wenn lokale Änderungen ausstehen
-    setInitialized(false);
-  }, [einheitId, remotePakete, remoteThemenfelder, isDirty]);
+
 
   // ✅ RBAC: Wer darf Struktur bearbeiten? AUSSCHLIEẞLICH unitAccess.hasFullAccess verwenden
   const unitAccess = hasUnitLevelAccess(
