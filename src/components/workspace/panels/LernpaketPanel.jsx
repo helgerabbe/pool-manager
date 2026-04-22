@@ -45,6 +45,11 @@ export default function LernpaketPanel({
     queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list(),
   });
 
+  const { data: aktivitaetenKatalog = [] } = useQuery({
+    queryKey: ['aktivitaetenKatalog'],
+    queryFn: () => base44.entities.AktivitaetenKatalog.list(),
+  });
+
   const { canEdit, isLockedByOther, lockedByEmail, lockErrorMessage, isLoading: isLockLoading, acquireLock, releaseLock } = useLernpaketLock(paket.id);
   const [isAcquiringLock, setIsAcquiringLock] = useState(false);
 
@@ -327,17 +332,21 @@ export default function LernpaketPanel({
                   <div key={phase} className="space-y-2">
                     <p className="text-xs font-medium text-muted-foreground uppercase">{phase}</p>
                     <div className="space-y-1.5">
-                      {activities.map(activity => (
-                        <div key={activity.id} className="flex items-start gap-2 p-2 rounded border border-border/50 bg-muted/40 text-xs">
-                          <span className="text-primary font-semibold shrink-0 mt-0.5">▸</span>
-                          <span className="flex-1 text-foreground">{activity.aktivitaet_id || 'Aktivität'}</span>
-                          {activity.is_complete && (
-                            <Badge className="shrink-0 text-[10px]" variant="secondary">
-                              Vollständig
-                            </Badge>
-                          )}
-                        </div>
-                      ))}
+                      {activities.map(activity => {
+                        const katalogEntry = aktivitaetenKatalog.find(a => a.id === activity.aktivitaet_id);
+                        const aktivitaetName = katalogEntry?.name || 'Unbekannte Aktivität';
+                        return (
+                          <div key={activity.id} className="flex items-start gap-2 p-2 rounded border border-border/50 bg-muted/40 text-xs">
+                            <span className="text-primary font-semibold shrink-0 mt-0.5">▸</span>
+                            <span className="flex-1 text-foreground">{aktivitaetName}</span>
+                            {activity.is_complete && (
+                              <Badge className="shrink-0 text-[10px]" variant="secondary">
+                                Vollständig
+                              </Badge>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 );
