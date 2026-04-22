@@ -129,19 +129,34 @@ Deno.serve(async (req) => {
     }
 
     // ── 6. content_status aktualisieren ─────────────────────────────────────
-    // WICHTIG: sync_status wird hier NICHT verändert.
-    // Die Lehrkraft-Freigabe steuert nur den pädagogischen Status.
-    // Der sync_status obliegt ausschließlich dem Export-Cockpit (Moodle-Team).
     const newContentStatus = action === 'approve' ? 'approved' : 'draft';
 
     await base44.asServiceRole.entities.MasterAufgabe.update(masterId, {
       content_status: newContentStatus,
     });
 
+    // ── 7. LernpaketPhaseAktivitaet content_status synchronisieren ───────────
+    // Lade alle Masters dieser Activity und prüfe ob alle approved sind.
+    // Wenn ja → Activity auf 'approved' setzen; wenn mindestens einer 'draft' → 'draft'.
+    const allMasters = await base44.asServiceRole.entities.MasterAufgabe.filter({
+      activity_id: aufgabe.activity_id,
+    });
+
+    // Berücksichtige den neuen Status des gerade geänderten Masters
+    const allApproved = allMasters.every(m =>
+      m.id === masterId ? newContentStatus === 'approved' : m.content_status === 'approved'
+    );
+
+    const activityContentStatus = allApproved ? 'approved' : 'draft';
+    await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(aufgabe.activity_id, {
+      content_status: activityContentStatus,
+    });
+
     return Response.json({
       success: true,
       masterId,
       newContentStatus,
+      activityContentStatus,
       message: action === 'approve'
         ? 'MasterAufgabe freigegeben'
         : 'MasterAufgabe zu Entwurf zurückgesetzt',
