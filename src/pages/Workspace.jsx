@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { invokeFunction } from '@/utils/functionsHelper';
 import { useRBAC } from '@/hooks/useRBAC';
@@ -49,6 +49,8 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const [taskWorkshopActivityId, setTaskWorkshopActivityId] = useState(null);
 
   const handleTabChange = (tab) => {
+    // ✅ Vor Tab-Wechsel: Alle Locks freigeben
+    releaseAllLocksOnTabChange();
     setActiveTab(tab);
     setHighlightedAtomIds(new Set());
     setSelectedNode(null); // Zurücksetzen beim Tab-Wechsel
@@ -352,6 +354,62 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     : null;
 
   // ── Callbacks ─────────────────────────────────────────────────────────────────
+  // ✅ Auto-Release aller Locks bei Tab-Wechsel oder Seiten-Verlassen
+  const releaseAllLocksOnTabChange = useCallback(async () => {
+    // Gebe Structural Lock frei, falls aktiv
+    if (isStructuralEditingActive) {
+      try {
+        await invokeFunction('releaseStructuralLockSecure', { einheitId: selectedEinheitId });
+      } catch (err) {
+        console.warn('Fehler beim Freigeben des Structural Locks:', err);
+      }
+    }
+    // Gebe Lernpaket Lock frei, falls aktiv (über die existierende Handler-Funktion)
+    if (isLernpaketEditActive) {
+      try {
+        await handleReleaseLernpaketLock?.();
+      } catch (err) {
+        console.warn('Fehler beim Freigeben des Lernpaket Locks:', err);
+      }
+    }
+    // Gebe Tab 1 Lock frei, falls aktiv
+    if (isTab1EditingActive) {
+      try {
+        await handleReleaseTab1Lock?.();
+      } catch (err) {
+        console.warn('Fehler beim Freigeben des Tab 1 Locks:', err);
+      }
+    }
+  }, [isStructuralEditingActive, isLernpaketEditActive, isTab1EditingActive, selectedEinheitId]);
+
+  // ✅ BeforeUnload: Browser-Close oder Tab-Close
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      // Stille Freigabe ohne Toast/Bestätigung
+      releaseAllLocksOnTabChange();
+      // Optionale Bestätigung anzeigen
+      if (isStructuralEditingActive || isLernpaketEditActive || isTab1EditingActive) {
+        e.preventDefault();
+        e.returnValue = 'Du bist noch im Bearbeitungsmodus. Änderungen werden nicht gespeichert!';
+        return 'Du bist noch im Bearbeitungsmodus. Änderungen werden nicht gespeichert!';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isStructuralEditingActive, isLernpaketEditActive, isTab1EditingActive, releaseAllLocksOnTabChange]);
+
+  // ✅ Tab-Wechsel-Sicherung: Locks freigeben
+  useEffect(() => {
+    const previousTab = activeTab;
+    return () => {
+      // Wird aufgerufen, wenn activeTab sich ändert → Locks freigeben
+      if (previousTab !== activeTab) {
+        releaseAllLocksOnTabChange();
+      }
+    };
+  }, [activeTab, releaseAllLocksOnTabChange]);
+
   const handleEinheitChange = (id) => {
     setSelectedEinheitId(id);
     setSelectedThemenfeldId(null);
