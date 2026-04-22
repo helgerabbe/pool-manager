@@ -733,11 +733,15 @@ export default function StrukturBoardEmbedded({
       }
       console.log(`[StrukturBoard] 📦 PHASE4 ✓ ALLE ${paketCounter} PAKETE FERTIG!`);
 
-      // ── PHASE 5: Query Invalidation & Neuload (STRIKT) ───────────────────
-      console.log(`[StrukturBoard] 🔄 Invalidiere Cache und lade Struktur neu...`);
+      // ── PHASE 5: Query Refetch (AGGRESSIV) ───────────────────
+      console.log(`[StrukturBoard] 🔄 Lade alle Daten neu...`);
+      
+      // REFETCH statt INVALIDATE – zwingt sofortiges Neuladen
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['lernpakete'] }),
-        queryClient.invalidateQueries({ queryKey: ['themenfelder', einheitId] }),
+        queryClient.refetchQueries({ queryKey: ['lernpakete'] }),
+        queryClient.refetchQueries({ queryKey: ['themenfelder'] }),
+        queryClient.refetchQueries({ queryKey: ['lernziele'] }),
+        queryClient.refetchQueries({ queryKey: ['einheit', einheitId] }),
       ]);
 
       // ── PHASE 6: Erfolg! Bearbeitungsmodus beenden ───────────────────────
