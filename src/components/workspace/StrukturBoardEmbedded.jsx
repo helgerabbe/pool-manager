@@ -392,12 +392,9 @@ export default function StrukturBoardEmbedded({
     });
   };
 
-  // ── Initialisierung ───────────────────────────────────────────────────────
-
-  // ── Initialisierung ───────────────────────────────────────────────────
-  useEffect(() => {
-    if (isDirty) return; // Nicht initialisieren, wenn lokale Änderungen ausstehen
-    
+  // ── Zentrale Sync-Logik: Props → lokaler State ──────────────────────
+  const syncWithRemote = React.useCallback(() => {
+    console.log('[StrukturBoard] 🔄 Synchronisiere lokalen State mit Remote-Daten...');
     const pakete = remotePakete || [];
     const felder = remoteThemenfelder || [];
 
@@ -418,14 +415,20 @@ export default function StrukturBoardEmbedded({
       newMap[k].sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0));
     });
 
-    const spaltenIds = tfSpalten.map(s => s.themenfeldId).filter(Boolean);
-    const paketeIds = pakete.map(p => p.id);
-
     setSpalten(tfSpalten);
     setPaketeMap(newMap);
-    setOriginalSpaltenIds(new Set(spaltenIds));
-    setOriginalPaketIds(new Set(paketeIds));
-  }, [remotePakete, remoteThemenfelder, isDirty]);
+    setOriginalSpaltenIds(new Set(tfSpalten.map(s => s.themenfeldId).filter(Boolean)));
+    setOriginalPaketIds(new Set(pakete.map(p => p.id)));
+  }, [remotePakete, remoteThemenfelder]);
+
+  // ── Initialisierung ───────────────────────────────────────────────────────
+
+  // ── Initialisierung: Wenn nicht im Bearbeitungsmodus, mit Remote-Daten synchen ──
+  useEffect(() => {
+    if (!isDirty) {
+      syncWithRemote();
+    }
+  }, [remotePakete, remoteThemenfelder, isDirty, syncWithRemote]);
 
 
 
@@ -726,7 +729,12 @@ export default function StrukturBoardEmbedded({
       }
       console.log(`[StrukturBoard] 📦 PHASE4 ✓ ALLE ${paketCounter} PAKETE FERTIG!`);
 
-      // ── PHASE 5: Query Refetch (AGGRESSIV) ───────────────────
+      // ── PHASE 5: Dirty-Flag SOFORT auf false setzen ─────────────────────
+      // Damit der useEffect die neuen Props nicht blockiert
+      console.log('[StrukturBoard] 🔄 Setze isDirty=false, damit UI-Sync stattfinden kann...');
+      setIsDirty(false);
+
+      // ── PHASE 6: Query Refetch (AGGRESSIV) ───────────────────
       console.log(`[StrukturBoard] 🔄 Lade alle Daten neu...`);
       
       // REFETCH statt INVALIDATE – zwingt sofortiges Neuladen
@@ -737,14 +745,18 @@ export default function StrukturBoardEmbedded({
         queryClient.refetchQueries({ queryKey: ['einheit', einheitId] }),
       ]);
 
-      // ── PHASE 6: Erfolg! Bearbeitungsmodus beenden ───────────────────────
+      // ── PHASE 7: Expliziter Sync als Sicherheit ─────────────────────────
+      // Falls React-Query zu schnell ist und Props sich nicht "genug" ändern
+      console.log('[StrukturBoard] 🔄 Erzwinge lokalen State-Sync mit neuen Remote-Daten...');
+      syncWithRemote();
+
+      // ── PHASE 8: Erfolg! Bearbeitungsmodus beenden ───────────────────────
       console.log('[StrukturBoard] ✅ Speichern 100% erfolgreich!');
       clearTimeout(timeoutId);
       
       // Erst nach kurzer Verzögerung: Overlay schließen + Erfolg
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      setIsDirty(false);
       setSaving(false);
       setSaveOverlayOpen(false);
       
