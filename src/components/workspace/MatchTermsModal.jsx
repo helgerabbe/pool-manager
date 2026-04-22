@@ -10,7 +10,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertCircle, Trash2 } from 'lucide-react';
+import { Loader2, AlertCircle, Trash2, Crown } from 'lucide-react';
 import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
 import ReleaseStatusToggle from '@/components/workspace/ReleaseStatusToggle';
 
@@ -21,7 +21,9 @@ export default function MatchTermsModal({
   onSave,
   onCancel,
   onDelete,
+  onConvertToMaster,
   isSaving = false,
+  isConverting = false,
   exportLocked = false,
 }) {
   const [isReleased, setIsReleased] = useState(initialData?.content_status === 'approved');
@@ -119,10 +121,10 @@ export default function MatchTermsModal({
         <div className="px-6 py-5 border-t border-border shrink-0 space-y-4">
           <ReleaseStatusToggle isReleased={isReleased} onToggle={setIsReleased} disabled={isSaving} />
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {onDelete && !deleteConfirm && (
-                <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(true)} disabled={isSaving || isDeleting} className="gap-1.5 text-destructive hover:bg-red-50 hover:text-destructive">
-                  <Trash2 className="w-4 h-4" /> Aufgabe löschen
+                <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(true)} disabled={isSaving || isDeleting || isConverting} className="gap-1.5 text-destructive hover:bg-red-50 hover:text-destructive">
+                  <Trash2 className="w-4 h-4" /> Löschen
                 </Button>
               )}
               {deleteConfirm && (
@@ -134,10 +136,16 @@ export default function MatchTermsModal({
                   <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(false)} disabled={isDeleting} className="h-7 text-xs">Abbrechen</Button>
                 </>
               )}
+              {onConvertToMaster && !deleteConfirm && (
+                <Button variant="outline" size="sm" onClick={onConvertToMaster} disabled={isSaving || isDeleting || isConverting} className="gap-1.5 text-primary border-primary/40 hover:bg-primary/5">
+                  {isConverting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Crown className="w-3.5 h-3.5" />}
+                  Zur Masteraufgabe machen
+                </Button>
+              )}
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={handleCancel} disabled={isSaving || isDeleting}>Abbrechen</Button>
-              <Button onClick={handleSave} disabled={isSaving || exportLocked || isDeleting} title={exportLocked ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''} className="gap-2">
+              <Button variant="outline" onClick={handleCancel} disabled={isSaving || isDeleting || isConverting}>Abbrechen</Button>
+              <Button onClick={handleSave} disabled={isSaving || exportLocked || isDeleting || isConverting} title={exportLocked ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''} className="gap-2">
                 {isSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</> : 'Speichern'}
               </Button>
             </div>

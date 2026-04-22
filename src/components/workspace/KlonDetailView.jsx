@@ -382,6 +382,7 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
               onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
               initialData={data}
               isSaving={saveMutation.isPending}
+              isConverting={convertToMasterMutation.isPending}
               onSave={(newData) => {
                 const { content_status, ...fvData } = newData;
                 const updated = { ...data, ...fvData };
@@ -389,6 +390,7 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
                 saveMutation.mutate(updated, { onSuccess: () => handleCloseModal() });
               }}
               onCancel={handleCloseModal}
+              onConvertToMaster={() => convertToMasterMutation.mutate(undefined, { onSuccess: () => handleCloseModal() })}
             />
           </div>
         ) : isSorting(catalogEntry?.name) ? (
@@ -425,6 +427,7 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
               onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
               initialData={data}
               isSaving={saveMutation.isPending}
+              isConverting={convertToMasterMutation.isPending}
               onSave={(newData) => {
                 const { content_status, ...fvData } = newData;
                 const updated = { ...data, ...fvData };
@@ -432,6 +435,7 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
                 saveMutation.mutate(updated, { onSuccess: () => handleCloseModal() });
               }}
               onCancel={handleCloseModal}
+              onConvertToMaster={() => convertToMasterMutation.mutate(undefined, { onSuccess: () => handleCloseModal() })}
             />
           </div>
         ) : (
