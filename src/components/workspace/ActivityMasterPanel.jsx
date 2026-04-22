@@ -478,7 +478,7 @@ export default function ActivityMasterPanel({
               )}
 
               <TextLesenModal
-              open={editModalOpen}
+              open={editModalOpen && !catalogEntry?.name?.toLowerCase().includes('offene')}
               onOpenChange={(isOpen) => { if (!isOpen) handleModalCancel(); }}
               catalogEntry={catalogEntry}
               initialFieldValues={{ ...fieldValues, content_status: activityRecord?.content_status, moodle_sync_status: activityRecord?.moodle_sync_status }}
