@@ -127,7 +127,10 @@ export function MasterRow({ master, selectedIds, onToggleSelect, navigate }) {
 
 export function ActivityRow({ activity, selectedIds, onToggleSelect, navigate }) {
   const [expanded, setExpanded] = useState(activity.effective_content_status === 'draft');
-  const isSelectableForExport = activity.effective_content_status === 'approved';
+  
+  // Masterfähige Aktivitäten sind nicht direkt exportierbar — nur ihre Masters
+  const hasMasterChildren = activity.children?.some(c => c.type === 'master');
+  const isSelectableForExport = !hasMasterChildren && activity.effective_content_status === 'approved';
   const hasUnfinishedChild = activity.children?.some(c => c.effective_content_status === 'draft');
 
   return (
