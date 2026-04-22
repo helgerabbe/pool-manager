@@ -103,7 +103,7 @@ export function usePresence(currentView = 'dashboard') {
           setOnlineUsers(Object.values(byEmail));
         }
       } catch (err) {
-        console.warn('[usePresence] loadPresence failed:', err.message);
+        // Silent ignore
       }
     };
 
@@ -119,7 +119,7 @@ export function usePresence(currentView = 'dashboard') {
       try {
         existing = await filterPresenceByEmail(user.email);
       } catch (err) {
-        console.warn('[usePresence] Filter failed:', err.message);
+        // Silent ignore
       }
 
       if (!mountedRef.current) return;
@@ -145,7 +145,6 @@ export function usePresence(currentView = 'dashboard') {
             }
           }
         } catch (err) {
-          console.debug('[usePresence] Update existing record failed, recreating:', err.message);
           recordId = null;
         }
         if (!recordId) {
@@ -172,7 +171,6 @@ export function usePresence(currentView = 'dashboard') {
           });
           recordId = created.id;
         } catch (err) {
-          console.warn('[usePresence] Could not create record:', err.message);
           return;
         }
       }
