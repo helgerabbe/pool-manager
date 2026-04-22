@@ -597,91 +597,138 @@ export default function StrukturBoardEmbedded({
 
   const handleSpeichern = async () => {
     setSaving(true);
-    let success = false;
 
     try {
-      // 0. Identifiziere gelöschte Pakete und Themenfelder
+      console.log('[StrukturBoard] 🔄 Starte pessimistisches Speichern...');
+
+      // ── PHASE 1: Identifiziere alle Änderungen ──────────────────────────────
       const aktuellePacketIds = new Set(Object.values(paketeMap).flat().map(p => p.id));
       const paketIdZumLoeschen = Array.from(originalPaketIds).filter(id => !aktuellePacketIds.has(id) && !id.startsWith('new-'));
       
       const aktuelleThemenfeldIds = new Set(spalten.map(s => s.themenfeldId).filter(Boolean));
       const themenfeldIdZumLoeschen = Array.from(originalSpaltenIds).filter(id => !aktuelleThemenfeldIds.has(id));
 
-      // Lösche Pakete
-      for (const paketId of paketIdZumLoeschen) {
-        await deleteLernpaket(paketId);
+      console.log(`[StrukturBoard] 📋 Änderungen: ${paketIdZumLoeschen.length} Pakete zu löschen, ${themenfeldIdZumLoeschen.length} Themenfelder zu löschen`);
+
+      // ── PHASE 2: Löschungen (SEQUENZIELL) ──────────────────────────────────
+      if (paketIdZumLoeschen.length > 0) {
+        console.log(`[StrukturBoard] 🗑️ Lösche ${paketIdZumLoeschen.length} Pakete...`);
+        for (const paketId of paketIdZumLoeschen) {
+          const result = await deleteLernpaket(paketId);
+          if (!result) throw new Error(`Fehler: Paket ${paketId} konnte nicht gelöscht werden`);
+        }
       }
 
-      // Lösche Themenfelder
-      for (const themenfeldId of themenfeldIdZumLoeschen) {
-        await deleteThemenfeld(themenfeldId);
+      if (themenfeldIdZumLoeschen.length > 0) {
+        console.log(`[StrukturBoard] 🗑️ Lösche ${themenfeldIdZumLoeschen.length} Themenfelder...`);
+        for (const themenfeldId of themenfeldIdZumLoeschen) {
+          const result = await deleteThemenfeld(themenfeldId);
+          if (!result) throw new Error(`Fehler: Themenfeld ${themenfeldId} konnte nicht gelöscht werden`);
+        }
       }
 
-      // 1. Themenfelder anlegen/updaten
+      // ── PHASE 3: Themenfelder anlegen/updaten (SEQUENZIELL) ────────────────
+      console.log(`[StrukturBoard] 📁 Verarbeite ${spalten.length} Themenfelder...`);
       const spaltenMitId = [];
       for (let i = 0; i < spalten.length; i++) {
         const spalte = spalten[i];
         let themenfeldId = spalte.themenfeldId;
-        if (!themenfeldId) {
-          const neu = await createThemenfeld({ einheitId, titel: spalte.titel, reihenfolge: i + 1 });
-          themenfeldId = neu.id;
-        } else {
-          await updateThemenfeld(themenfeldId, { titel: spalte.titel, reihenfolge: i + 1 });
+        
+        try {
+          if (!themenfeldId) {
+            console.log(`[StrukturBoard] ➕ Erstelle neues Themenfeld: "${spalte.titel}"`);
+            const neu = await createThemenfeld({ einheitId, titel: spalte.titel, reihenfolge: i + 1 });
+            if (!neu?.id) throw new Error(`Fehler: Neu erstelltes Themenfeld hat keine ID`);
+            themenfeldId = neu.id;
+          } else {
+            console.log(`[StrukturBoard] ✏️ Aktualisiere Themenfeld: "${spalte.titel}" (ID: ${themenfeldId})`);
+            const result = await updateThemenfeld(themenfeldId, { titel: spalte.titel, reihenfolge: i + 1 });
+            if (!result) throw new Error(`Fehler: Themenfeld ${themenfeldId} konnte nicht aktualisiert werden`);
+          }
+          spaltenMitId.push({ ...spalte, themenfeldId });
+        } catch (err) {
+          throw new Error(`Fehler bei Themenfeld "${spalte.titel}": ${err.message}`);
         }
-        spaltenMitId.push({ ...spalte, themenfeldId });
       }
 
-      // 2. Lernpakete: NUR themenfeld_id + reihenfolge_nummer aktualisieren
+      // ── PHASE 4: Lernpakete aktualisieren (SEQUENZIELL) ───────────────────
+      console.log(`[StrukturBoard] 📦 Verarbeite Lernpakete und Verschiebungen...`);
+      const allePaketeUpdates = [];
+      
       for (const [spalteId, pakete] of Object.entries(paketeMap)) {
-        // Sammelbecken hat themenfeldId = null, Themenfelder haben die echte ID
         const themenfeldId = spalteId === SAMMELBECKEN_ID ? null : spaltenMitId.find(s => s.id === spalteId)?.themenfeldId || null;
 
         for (let i = 0; i < pakete.length; i++) {
           const paket = pakete[i];
           const update = { themenfeld_id: themenfeldId, reihenfolge_nummer: i + 1 };
 
-          if (paket.isNew) {
-            const neuesPaket = await createLernpaket({
-              einheit_id: einheitId,
-              titel_des_pakets: paket.titel_des_pakets,
-              geschaetzte_dauer_minuten: paket.geschaetzte_dauer_minuten || 45,
-              phasen_konfiguration: paket.phasen_konfiguration || DEFAULT_PHASEN,
-              ...update,
-            });
-            if (paket.lernziele && paket.lernziele.length > 0) {
-              for (const lz of paket.lernziele) {
-                if (lz.formulierung_fachsprache?.trim()) {
-                  await createLernziel({
-                    lernpaket_id: neuesPaket.id,
-                    formulierung_fachsprache: lz.formulierung_fachsprache.trim(),
-                    kategorie: lz.kategorie || 'Fachwissen',
-                  });
+          try {
+            if (paket.isNew) {
+              console.log(`[StrukturBoard] ➕ Erstelle neues Lernpaket: "${paket.titel_des_pakets}"`);
+              const neuesPaket = await createLernpaket({
+                einheit_id: einheitId,
+                titel_des_pakets: paket.titel_des_pakets,
+                geschaetzte_dauer_minuten: paket.geschaetzte_dauer_minuten || 45,
+                phasen_konfiguration: paket.phasen_konfiguration || DEFAULT_PHASEN,
+                ...update,
+              });
+              if (!neuesPaket?.id) throw new Error(`Fehler: Neu erstelltes Lernpaket hat keine ID`);
+
+              if (paket.lernziele && paket.lernziele.length > 0) {
+                for (const lz of paket.lernziele) {
+                  if (lz.formulierung_fachsprache?.trim()) {
+                    await createLernziel({
+                      lernpaket_id: neuesPaket.id,
+                      formulierung_fachsprache: lz.formulierung_fachsprache.trim(),
+                      kategorie: lz.kategorie || 'Fachwissen',
+                    });
+                  }
                 }
               }
+            } else {
+              console.log(`[StrukturBoard] ✏️ Aktualisiere Paket: "${paket.titel_des_pakets}" (ID: ${paket.id}, themenfeldId: ${themenfeldId}, Reihenfolge: ${i + 1})`);
+              const result = await updateLernpaket(paket.id, update);
+              if (!result) throw new Error(`Fehler: Paket ${paket.id} konnte nicht aktualisiert werden`);
             }
-          } else {
-            // Nur Struktur-Felder – phasen_konfiguration, locked_by etc. bleiben unangetastet
-            await updateLernpaket(paket.id, update);
+          } catch (err) {
+            throw new Error(`Fehler bei Paket "${paket.titel_des_pakets}": ${err.message}`);
           }
         }
       }
 
-      // Invalidierungen MÜSSEN vor isDirty=false passieren
-      await queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-      await queryClient.invalidateQueries({ queryKey: ['themenfelder', einheitId] });
+      // ── PHASE 5: Query Invalidation & Neuload (STRIKT) ───────────────────
+      console.log(`[StrukturBoard] 🔄 Invalidiere Cache und lade Struktur neu...`);
+      const invalidateResults = await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['lernpakete'] }),
+        queryClient.invalidateQueries({ queryKey: ['themenfelder', einheitId] }),
+      ]);
       
-      success = true;
-      toast.success('Struktur erfolgreich gespeichert');
+      if (!invalidateResults.every(r => r !== undefined)) {
+        throw new Error('Fehler: Cache konnte nicht invalidiert werden');
+      }
+
+      // ── PHASE 6: Erfolg! Bearbeitungsmodus beenden ───────────────────────
+      console.log('[StrukturBoard] ✅ Speichern 100% erfolgreich!');
+      setIsDirty(false);
+      toast.success('Struktur erfolgreich gespeichert und neu geladen.');
+      onSaved?.();
+
     } catch (error) {
-      console.error('[StrukturBoard] Fehler beim Speichern:', error);
-      toast.error('Fehler beim Speichern der Struktur: ' + (error.message || 'Unbekannter Fehler'));
+      // ── FEHLERBEHANDLUNG (HART) ───────────────────────────────────────────
+      console.error('[StrukturBoard] ❌ KRITISCHER FEHLER beim Speichern:', error);
+      
+      const errorMessage = 
+        error?.response?.data?.message || 
+        error?.message || 
+        'Kritischer Fehler beim Speichern der Struktur! Deine lokalen Änderungen sind noch nicht verloren. Überprüfe deine Internetverbindung und versuche erneut zu speichern.';
+
+      toast.error(`Speichern fehlgeschlagen: ${errorMessage}`);
+      
+      // ⚠️ WICHTIG: Bearbeitungsmodus NICHT beenden – Nutzer behält Änderungen
+      console.warn('[StrukturBoard] ⚠️ Bearbeitungsmodus bleibt aktiv (Daten nicht verloren)');
+      
     } finally {
       setSaving(false);
-      // Nur auf false setzen wenn Speichern erfolgreich war
-      if (success) {
-        setIsDirty(false);
-        onSaved?.();
-      }
     }
   };
 
