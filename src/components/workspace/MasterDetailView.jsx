@@ -19,6 +19,7 @@ import LueckentextWysiwygModal from '@/components/workspace/LueckentextWysiwygMo
 import SortingListModal from '@/components/workspace/SortingListModal';
 import MatchTermsModal from '@/components/workspace/MatchTermsModal';
 import MiniQuizModalDetail from '@/components/workspace/MiniQuizModalDetail';
+import TestModal from '@/components/workspace/MiniQuizModalDetail';
 import MultipleChoiceModalDetail from '@/components/workspace/MultipleChoiceModalDetail';
 import KITutorModalDetail from '@/components/workspace/KITutorModalDetail';
 import ImageLabelingModalDetail from '@/components/workspace/ImageLabelingModalDetail';
@@ -37,16 +38,6 @@ function isSorting(name = '') {
 const MATCH_TERMS_NAMES = ['begriffe zuordnen', 'zuordnen', 'match terms'];
 function isMatch(name = '') {
   return MATCH_TERMS_NAMES.some(n => name.toLowerCase().includes(n));
-}
-
-const MINIQUIZ_NAMES = ['miniquiz', 'mini-quiz', 'quiz'];
-function isQuiz(name = '') {
-  return MINIQUIZ_NAMES.some(n => name.toLowerCase().includes(n));
-}
-
-const TEST_NAMES = ['test'];
-function isTest(name = '') {
-  return TEST_NAMES.some(n => name.toLowerCase().includes(n));
 }
 
 const MC_NAMES = ['multiple choice', 'multiple-choice'];
@@ -274,16 +265,21 @@ export default function MasterDetailView({
 }) {
   const queryClient = useQueryClient();
   const catalogName = catalogEntry?.name || '';
+  
+  // 1. ZUERST auf Test prüfen
+  const isTest = ['test'].some(n => catalogName.toLowerCase().includes(n));
+  
+  // 2. Quiz darf NUR true sein, wenn es KEIN Test ist
+  const isQuiz = !isTest && ['miniquiz', 'mini-quiz', 'quiz'].some(n => catalogName.toLowerCase().includes(n));
+  
   const isLuecke = isLueckentext(catalogName);
+  const isMatch = ['begriffe zuordnen', 'zuordnen', 'match terms'].some(n => catalogName.toLowerCase().includes(n));
+  const isMC = isMC(catalogName);
+  const isKITutor = isKITutor(catalogName);
+  const isImageLabeling = isImageLabeling(catalogName);
   const isSort = isSorting(catalogName);
-  const isMatchTerms = isMatch(catalogName);
-  const isQuizType = isQuiz(catalogName);
-  const isMCType = isMC(catalogName);
-  const isKITutorType = isKITutor(catalogName);
-  const isImageLabelingType = isImageLabeling(catalogName);
-  const isTestType = isTest(catalogName);
 
-  const isSupportedType = isLuecke || isSort || isMatchTerms || isQuizType || isMCType || isKITutorType || isImageLabelingType || isTestType;
+  const isSupportedType = isLuecke || isSort || isMatch || isQuiz || isMC || isKITutor || isImageLabeling || isTest;
 
   const { acquireLock, releaseLock } = useLernpaketLock(isSupportedType ? master.lernpaket_id : null);
   const [acquiringLock, setAcquiringLock] = useState(false);
@@ -343,12 +339,12 @@ export default function MasterDetailView({
     
     if (isLuecke) setLueckeModalOpen(true);
     else if (isSort) setSortingModalOpen(true);
-    else if (isMatchTerms) setMatchModalOpen(true);
-    else if (isQuizType) setQuizModalOpen(true);
-    else if (isMCType) setMcModalOpen(true);
-    else if (isKITutorType) setKiTutorModalOpen(true);
-    else if (isImageLabelingType) setImageLabelingModalOpen(true);
-    else if (isTestType) setTestModalOpen(true);
+    else if (isTest) setTestModalOpen(true);
+    else if (isQuiz) setQuizModalOpen(true);
+    else if (isMC) setMcModalOpen(true);
+    else if (isMatch) setMatchModalOpen(true);
+    else if (isImageLabeling) setImageLabelingModalOpen(true);
+    else if (isKITutor) setKiTutorModalOpen(true);
   };
 
   const handleCloseModal = async () => {
@@ -385,11 +381,12 @@ export default function MasterDetailView({
     setKlonFieldValues(parsed);
     if (isLuecke) setLueckeModalOpen(true);
     else if (isSort) setSortingModalOpen(true);
-    else if (isMatchTerms) setMatchModalOpen(true);
-    else if (isQuizType) setQuizModalOpen(true);
-    else if (isMCType) setMcModalOpen(true);
-    else if (isImageLabelingType) setImageLabelingModalOpen(true);
-    else if (isTestType) setTestModalOpen(true);
+    else if (isMatch) setMatchModalOpen(true);
+    else if (isTest) setTestModalOpen(true);
+    else if (isQuiz) setQuizModalOpen(true);
+    else if (isMC) setMcModalOpen(true);
+    else if (isImageLabeling) setImageLabelingModalOpen(true);
+    else if (isKITutor) setKiTutorModalOpen(true);
     };
 
   const saveKlonMutation = useMutation({
@@ -593,7 +590,8 @@ export default function MasterDetailView({
             )}
 
             {/* ── Match Terms-Modal ── */}
-            {isMatchTerms && (
+            {/* ── Match Terms-Modal ── */}
+            {isMatch && (
               <MatchTermsModal
                 open={matchModalOpen}
                 onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
@@ -605,63 +603,10 @@ export default function MasterDetailView({
               />
             )}
 
-            {/* ── Mini Quiz-Modal ── */}
-            {isQuizType && (
-              <MiniQuizModalDetail
-                open={quizModalOpen}
-                onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
-                initialData={activeData}
-                isSaving={isSavingAny}
-                onDelete={editingKlonId ? undefined : handleDelete}
-                onSave={handleModalSave}
-                onCancel={handleCloseModal}
-              />
-            )}
-
-            {/* ── Multiple Choice-Modal ── */}
-            {isMCType && (
-              <MultipleChoiceModalDetail
-                open={mcModalOpen}
-                onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
-                initialData={activeData}
-                isSaving={isSavingAny}
-                onDelete={editingKlonId ? undefined : handleDelete}
-                onSave={handleModalSave}
-                onCancel={handleCloseModal}
-              />
-            )}
-
-            {/* ── KI-Tutor-Modal ── */}
-            {isKITutorType && (
-              <KITutorModalDetail
-                open={kiTutorModalOpen}
-                onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
-                initialData={activeData}
-                isSaving={isSavingAny}
-                master={master}
-                onDelete={editingKlonId ? undefined : handleDelete}
-                onSave={handleModalSave}
-                onCancel={handleCloseModal}
-              />
-            )}
-
-            {/* ── Bildbeschriftung-Modal ── */}
-             {isImageLabelingType && (
-               <ImageLabelingModalDetail
-                 open={imageLabelingModalOpen}
-                 onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
-                 initialData={activeData}
-                 isSaving={isSavingAny}
-                 onDelete={editingKlonId ? undefined : handleDelete}
-                 onSave={handleModalSave}
-                 onCancel={handleCloseModal}
-               />
-             )}
-
-             {/* ── Test-Modal ── */}
-             {isTestType && (
+            {/* ── Mini-Quiz-Modal (Nur wenn es WIRKLICH ein Quiz ist) ── */}
+             {isQuiz && (
                <MiniQuizModalDetail
-                 open={testModalOpen}
+                 open={quizModalOpen}
                  onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
                  initialData={activeData}
                  isSaving={isSavingAny}
@@ -670,6 +615,59 @@ export default function MasterDetailView({
                  onCancel={handleCloseModal}
                />
              )}
+
+             {/* ── Multiple Choice-Modal ── */}
+             {isMC && (
+               <MultipleChoiceModalDetail
+                 open={mcModalOpen}
+                 onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+                 initialData={activeData}
+                 isSaving={isSavingAny}
+                 onDelete={editingKlonId ? undefined : handleDelete}
+                 onSave={handleModalSave}
+                 onCancel={handleCloseModal}
+               />
+             )}
+
+             {/* ── KI-Tutor-Modal ── */}
+             {isKITutor && (
+               <KITutorModalDetail
+                 open={kiTutorModalOpen}
+                 onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+                 initialData={activeData}
+                 isSaving={isSavingAny}
+                 master={master}
+                 onDelete={editingKlonId ? undefined : handleDelete}
+                 onSave={handleModalSave}
+                 onCancel={handleCloseModal}
+               />
+             )}
+
+             {/* ── Bildbeschriftung-Modal ── */}
+              {isImageLabeling && (
+                <ImageLabelingModalDetail
+                  open={imageLabelingModalOpen}
+                  onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+                  initialData={activeData}
+                  isSaving={isSavingAny}
+                  onDelete={editingKlonId ? undefined : handleDelete}
+                  onSave={handleModalSave}
+                  onCancel={handleCloseModal}
+                />
+              )}
+
+              {/* ── Test-Modal ── */}
+              {isTest && (
+                <TestModal
+                  open={testModalOpen}
+                  onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+                  initialData={activeData}
+                  isSaving={isSavingAny}
+                  onDelete={editingKlonId ? undefined : handleDelete}
+                  onSave={handleModalSave}
+                  onCancel={handleCloseModal}
+                />
+              )}
             </>
             );
             })()}
