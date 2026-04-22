@@ -381,6 +381,8 @@ export default function StrukturBoardEmbedded({
   // View options
   const [compact, setCompact]                   = useState(false);
   const [collapsedSpalten, setCollapsedSpalten] = useState(new Set());
+  // Speicher-Overlay
+  const [saveOverlayOpen, setSaveOverlayOpen] = useState(false);
 
   const toggleCollapse = (spalteId) => {
     setCollapsedSpalten(prev => {
@@ -597,6 +599,7 @@ export default function StrukturBoardEmbedded({
 
   const handleSpeichern = async () => {
     setSaving(true);
+    setSaveOverlayOpen(true);
 
     try {
       console.log('[StrukturBoard] 🔄 Starte pessimistisches Speichern...');
@@ -709,26 +712,49 @@ export default function StrukturBoardEmbedded({
 
       // ── PHASE 6: Erfolg! Bearbeitungsmodus beenden ───────────────────────
       console.log('[StrukturBoard] ✅ Speichern 100% erfolgreich!');
+      
+      // Erst nach kurzer Verzögerung: Overlay schließen + Erfolg
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       setIsDirty(false);
-      toast.success('Struktur erfolgreich gespeichert und neu geladen.');
+      setSaving(false);
+      setSaveOverlayOpen(false);
+      
+      toast.success('✅ Struktur erfolgreich gespeichert! Bearbeitungsmodus wird beendet...');
+      
+      // Callback triggert Lock-Release in Workspace
       onSaved?.();
 
     } catch (error) {
       // ── FEHLERBEHANDLUNG (HART) ───────────────────────────────────────────
       console.error('[StrukturBoard] ❌ KRITISCHER FEHLER beim Speichern:', error);
+      console.error('[StrukturBoard] Error Details:', {
+        status: error?.response?.status,
+        message: error?.message,
+        data: error?.response?.data,
+        stack: error?.stack
+      });
       
+      // Explizite Fehlermeldung mit vollständigen Details
       const errorMessage = 
         error?.response?.data?.message || 
+        error?.response?.data?.error ||
         error?.message || 
-        'Kritischer Fehler beim Speichern der Struktur! Deine lokalen Änderungen sind noch nicht verloren. Überprüfe deine Internetverbindung und versuche erneut zu speichern.';
+        'Speichern fehlgeschlagen: Unbekannter Fehler';
 
-      toast.error(`Speichern fehlgeschlagen: ${errorMessage}`);
+      // 🚨 HART UND DEUTLICH
+      setSaving(false);
+      toast.error(`❌ FEHLER beim Speichern: ${errorMessage}`, {
+        duration: 10000 // 10 Sekunden
+      });
       
-      // ⚠️ WICHTIG: Bearbeitungsmodus NICHT beenden – Nutzer behält Änderungen
-      console.warn('[StrukturBoard] ⚠️ Bearbeitungsmodus bleibt aktiv (Daten nicht verloren)');
+      // Overlay bleibt offen bis Nutzer es schließt
+      console.warn('[StrukturBoard] ⚠️ Speichern fehlgeschlagen! Bearbeitungsmodus bleibt aktiv.');
+      console.warn('[StrukturBoard] Lokale Änderungen sind NICHT verloren. Bitte Internet prüfen und erneut versuchen.');
       
     } finally {
-      setSaving(false);
+      // In jedem Fall: setSaving(false) wurde oben bereits gesetzt
+      // Overlay wird NUR bei Erfolg geschlossen
     }
   };
 
@@ -882,6 +908,22 @@ export default function StrukturBoardEmbedded({
         initialData={paketDialog.paket}
         onSave={handlePaketSave}
       />
+
+      {/* ── Speicher-Overlay (blocking) ── */}
+      {saveOverlayOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full mx-4 flex flex-col items-center gap-4">
+            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="text-center">
+              <p className="font-semibold text-foreground text-lg">Struktur wird gespeichert…</p>
+              <p className="text-sm text-muted-foreground mt-2">Bitte warten Sie, alle Änderungen werden in die Datenbank geschrieben.</p>
+            </div>
+            <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
+              <div className="h-full bg-primary animate-pulse" style={{ width: '75%' }} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bestätigungsdialog */}
       <AlertDialog open={!!deleteConfirm} onOpenChange={open => !open && setDeleteConfirm(null)}>
