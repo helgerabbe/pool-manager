@@ -515,8 +515,8 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               <span className="text-2xl font-bold text-foreground truncate flex-1 min-w-0 leading-snug">{einheit.titel_der_einheit}</span>
               <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full shrink-0">{einheit.fach}</span>
 
-              {/* Status-Badge + Lock-Button – IMMER sichtbar wenn Berechtigung (inkl. Unit-Level) */}
-              {permissions.kannStrukturBearbeiten(einheit?.fach) || unitAccess.hasFullAccess ? (
+              {/* Status-Badge + Lock-Button – NUR in Tab 2 (Struktur) sichtbar */}
+              {(permissions.kannStrukturBearbeiten(einheit?.fach) || unitAccess.hasFullAccess) && activeTab === 'struktur' ? (
                 <div className="flex items-center gap-2 shrink-0">
                   {/* Status-Badge */}
                   {isStructuralEditingActive ? (
