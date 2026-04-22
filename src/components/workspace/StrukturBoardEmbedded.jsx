@@ -799,34 +799,7 @@ export default function StrukturBoardEmbedded({
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
-      {/* Read-Only Banner */}
-      {(readOnly || istLesemodus) && (
-        <div className="shrink-0 px-4 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-600 flex items-center gap-2">
-          <Save className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-          <span>
-            <strong>Lesemodus</strong> – {isLockedByOther
-              ? 'Einheit wird gerade von einem anderen Nutzer im Struktur-Tab bearbeitet. Bitte warten Sie.'
-              : !isStructuralEditingActive
-                ? 'Bitte aktivieren Sie den Bearbeitungsmodus oben rechts, um die Struktur zu bearbeiten.'
-                : !unitAccess.isAssignedMember 
-                  ? 'Nur Fachschaftsleitung und Administratoren können die Struktur bearbeiten.'
-                  : 'Sie haben als zugewiesener Mitarbeiter (Leitung) Bearbeitungsrechte für diese Einheit.'}
-          </span>
-          <div className="ml-auto">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setCompact(c => !c)}
-              className="h-7 gap-1.5 text-xs"
-            >
-              {compact ? <AlignJustify className="w-3.5 h-3.5" /> : <LayoutList className="w-3.5 h-3.5" />}
-              {compact ? 'Normal' : 'Kompakt'}
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Aktions-Leiste */}
+      {/* Aktions-Leiste – nur im Edit-Modus */}
       {!readOnly && isStructuralEditingActive && (
         <div className="shrink-0 px-4 py-2 border-b border-border bg-card/50 flex items-center gap-3">
           <Button
@@ -850,6 +823,31 @@ export default function StrukturBoardEmbedded({
               Ungespeicherte Änderungen – bitte speichern bevor du den Tab wechselst!
             </p>
           )}
+          <div className="ml-auto">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setCompact(c => !c)}
+              className="h-7 gap-1.5 text-xs"
+            >
+              {compact ? <AlignJustify className="w-3.5 h-3.5" /> : <LayoutList className="w-3.5 h-3.5" />}
+              {compact ? 'Normal' : 'Kompakt'}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Lesemodus-Banner – wenn nicht im Edit-Modus */}
+      {(readOnly || !isStructuralEditingActive) && (
+        <div className="shrink-0 px-4 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-600 flex items-center gap-2">
+          <Save className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+          <span>
+            {isLockedByOther
+              ? 'Einheit wird gerade von einem anderen Nutzer bearbeitet. Bitte warten Sie.'
+              : !unitAccess.hasFullAccess
+                ? 'Bearbeitungsmodus für Struktur nicht verfügbar.'
+                : 'Bearbeitungsmodus beenden oben rechts'}
+          </span>
           <div className="ml-auto">
             <Button
               size="sm"
