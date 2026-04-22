@@ -2,13 +2,13 @@
  * TestModal.jsx
  *
  * Modal für die Bearbeitung von "Test" Aktivitäten.
- * Nutzt BaseActivityModal als Wrapper und MiniQuizModalDetail als Editor
- * (Tests und Quizze teilen sich das gleiche Fragen-Antwort-Format).
+ * Nutzt BaseActivityModal als Wrapper und TestEditor für die Eingabe.
+ * Tests und Quizze sind vollständig getrennte Systeme.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import BaseActivityModal from '@/components/workspace/BaseActivityModal';
-import MiniQuizModalDetail from '@/components/workspace/MiniQuizModalDetail';
+import TestEditor from '@/components/workspace/TestEditor';
 
 export default function TestModal({
   open,
@@ -19,35 +19,27 @@ export default function TestModal({
   isSaving = false,
   isCopy = false,
   exportLocked = false,
-  onCancel,
 }) {
   const [editorData, setEditorData] = useState(initialData);
 
-  useEffect(() => {
-    if (open) {
-      setEditorData(initialData || {});
-    }
-  }, [open, initialData]);
-
-  const handleSave = (baseData) => {
-    const payload = {
-      ...editorData,
-      ...baseData,
-    };
-    onSave?.(payload);
-  };
-
   return (
-    <MiniQuizModalDetail
+    <BaseActivityModal
       open={open}
       onOpenChange={onOpenChange}
+      title={isCopy ? "Test-Kopie bearbeiten" : "Test bearbeiten"}
       initialData={initialData}
-      onSave={handleSave}
-      onDelete={onDelete}
       isSaving={isSaving}
       isCopy={isCopy}
       exportLocked={exportLocked}
-      onCancel={onCancel}
-    />
+      onDelete={onDelete}
+      onSave={(baseData) => {
+        onSave?.({ ...editorData, ...baseData });
+      }}
+    >
+      <TestEditor
+        initialData={initialData}
+        onChange={(data) => setEditorData(data)}
+      />
+    </BaseActivityModal>
   );
 }
