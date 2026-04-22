@@ -34,29 +34,29 @@ export default function Dashboard() {
         </div>
 
         {/* Online-Nutzer */}
-        <Card className="border-0 shadow-sm flex-1 min-w-0">
-          <CardContent className="p-6 flex flex-col h-full">
-            <h2 className="font-semibold flex items-center gap-2 mb-4">
-              <Users className="w-4 h-4 text-muted-foreground" />
-              Online-Nutzer ({onlineUsers.length})
-            </h2>
-            {onlineUsers.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">Keine Nutzer online</p>
-            ) : (
-              <div className="space-y-2">
-                {onlineUsers.map(entry => (
-                  <div key={entry.user_email} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                    <div className="w-2 h-2 rounded-full bg-green-500 shrink-0 animate-pulse" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{entry.user_name || entry.user_email}</p>
-                      <p className="text-xs text-muted-foreground">{getRolle(entry)}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+         <Card className="border-0 shadow-sm flex-1 min-w-0 max-h-96">
+           <CardContent className="p-6 flex flex-col h-full">
+             <h2 className="font-semibold flex items-center gap-2 mb-4 shrink-0">
+               <Users className="w-4 h-4 text-muted-foreground" />
+               Online-Nutzer ({onlineUsers.length})
+             </h2>
+             {onlineUsers.length === 0 ? (
+               <p className="text-sm text-muted-foreground text-center py-6">Keine Nutzer online</p>
+             ) : (
+               <div className="space-y-2 overflow-y-auto flex-1">
+                 {onlineUsers.map(entry => (
+                   <div key={entry.user_email} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 shrink-0">
+                     <div className="w-2 h-2 rounded-full bg-green-500 shrink-0 animate-pulse" />
+                     <div className="flex-1 min-w-0">
+                       <p className="text-sm font-medium">{entry.user_name || entry.user_email}</p>
+                       <p className="text-xs text-muted-foreground">{getRolle(entry)}</p>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+             )}
+           </CardContent>
+         </Card>
       </div>
 
       {/* Dezenter Tutorial-Neustart-Button */}
