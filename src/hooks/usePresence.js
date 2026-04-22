@@ -190,13 +190,12 @@ export function usePresence(currentView = 'dashboard') {
        // um Rate Limit zu vermeiden (z.B. während Struktur-Speichern)
        let updateCount = 0;
        const resetCounter = () => { updateCount = 0; };
-       const updateCounterTimeout = setTimeout(resetCounter, 10_000);
+       const updateCounterTimeout = setTimeout(resetCounter, 15_000);
 
        unsubscribeRef.current = subscribeToPresence(() => {
          updateCount++;
-         if (updateCount > 5) {
-           // Zu viele Updates in kurzer Zeit → ignorieren, bis Counter reset
-           console.warn('[usePresence] Zu viele gleichzeitige Updates, ignoriere Updates für 10s');
+         if (updateCount > 10) {
+           // Zu viele Updates in kurzer Zeit → silently ignorieren, bis Counter reset
            return;
          }
          if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
