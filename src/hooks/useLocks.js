@@ -47,31 +47,37 @@ function useGenericLock({
     }
   }, []);
 
-  // 2. Status prüfen (Polling)
-  const checkStatus = useCallback(async () => {
-    if (!resourceId || !checkFn) return;
-    try {
-      const { isLocked, lockedByEmail: byEmail, lockedAt } = await checkFn(resourceId);
-      if (!mountedRef.current) return;
+  // 2. Status prüfen (Polling) mit Retry-Logic für Rate Limits
+   const checkStatus = useCallback(async (retryCount = 0) => {
+     if (!resourceId || !checkFn) return;
+     try {
+       const { isLocked, lockedByEmail: byEmail, lockedAt } = await checkFn(resourceId);
+       if (!mountedRef.current) return;
 
-      const expired = isExpired(lockedAt);
-      if (isLocked && !expired) {
-        const isMine = byEmail === userEmail;
-        setIsLockedByOther(!isMine);
-        setLockedByEmail(byEmail);
-        // Setze canEdit nur, wenn wir nicht explizit acquireFn nutzen müssen (wie bei Einheit)
-        if (!acquireFn) setCanEdit(isMine); 
-      } else {
-        setIsLockedByOther(false);
-        setLockedByEmail(null);
-        if (!acquireFn) setCanEdit(false);
-      }
-    } catch (e) {
-      console.warn('[useLocks] Check failed:', e.message);
-    } finally {
-      if (mountedRef.current) setIsLoading(false);
-    }
-  }, [resourceId, userEmail, checkFn, isExpired, acquireFn]);
+       const expired = isExpired(lockedAt);
+       if (isLocked && !expired) {
+         const isMine = byEmail === userEmail;
+         setIsLockedByOther(!isMine);
+         setLockedByEmail(byEmail);
+         // Setze canEdit nur, wenn wir nicht explizit acquireFn nutzen müssen (wie bei Einheit)
+         if (!acquireFn) setCanEdit(isMine); 
+       } else {
+         setIsLockedByOther(false);
+         setLockedByEmail(null);
+         if (!acquireFn) setCanEdit(false);
+       }
+     } catch (e) {
+       // Rate limit (429) mit Exponential Backoff retry
+       if (e?.status === 429 && retryCount < 2) {
+         const delay = Math.pow(2, retryCount + 1) * 1000; // 2s, 4s
+         setTimeout(() => checkStatus(retryCount + 1), delay);
+         return;
+       }
+       console.warn('[useLocks] Check failed:', e.message);
+     } finally {
+       if (mountedRef.current) setIsLoading(false);
+     }
+   }, [resourceId, userEmail, checkFn, isExpired, acquireFn]);
 
   // 3. Heartbeat oder Polling starten
   const startTimer = useCallback(() => {
@@ -145,17 +151,18 @@ function useGenericLock({
 // ============================================================================
 
 export function useLernpaketLock(lernpaketId) {
-  const lock = useGenericLock({
-    resourceId: lernpaketId,
-    checkFn: async (id) => {
-      const res = await base44.functions.invoke('checkLockSecure', { lernpaketId: id });
-      return { isLocked: res.data.is_locked, lockedByEmail: res.data.locked_by_email };
-    },
-    acquireFn: async (id) => base44.functions.invoke('acquireLockSecure', { lernpaketId: id }),
-    releaseFn: async (id) => base44.functions.invoke('releaseLernpaketLockSecure', { lernpaketId: id }),
-    heartbeatFn: async (id) => base44.entities.Lernpakete.update(id, { locked_at: new Date().toISOString() }),
-    heartbeatIntervalMs: 20000,
-  });
+   const lock = useGenericLock({
+     resourceId: lernpaketId,
+     checkFn: async (id) => {
+       const res = await base44.functions.invoke('checkLockSecure', { lernpaketId: id });
+       return { isLocked: res.data.is_locked, lockedByEmail: res.data.locked_by_email, lockedAt: res.data.locked_at };
+     },
+     acquireFn: async (id) => base44.functions.invoke('acquireLockSecure', { lernpaketId: id }),
+     releaseFn: async (id) => base44.functions.invoke('releaseLernpaketLockSecure', { lernpaketId: id }),
+     heartbeatFn: async (id) => base44.entities.Lernpakete.update(id, { locked_at: new Date().toISOString() }),
+     heartbeatIntervalMs: 25000,
+     pollIntervalMs: 8000,
+   });
 
   return {
     canEdit: lock.canEdit,
