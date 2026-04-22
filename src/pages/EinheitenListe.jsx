@@ -132,7 +132,7 @@ export default function EinheitenListe() {
   const { permissions, rolle, authUser } = useRBAC();
   
   // ✅ SCHRITT 2: Secure Backend-Funktion statt Client-Side Filtering
-  const { data: einheiten = [], isLoading, isFetching } = useQuery({
+   const { data: responseData, isLoading, isFetching } = useQuery({
     queryKey: ['einheiten'],
     queryFn: async () => {
       // Secure Backend-Funktion mit Server-Side RBAC-Filterung
@@ -140,10 +140,13 @@ export default function EinheitenListe() {
         page: 1,
         limit: 100, // Hole alle für Pagination im Frontend
       });
-      return response.data?.data || [];
+      return response.data || {};
     },
     staleTime: 0, // ✅ Daten immer als veraltet markieren → zwingt zum Neuladen
   });
+
+  const einheiten = responseData.data || [];
+  const debugInfo = responseData.debug;
 
   // ✅ Strikter Ladezustand: Verhindert "Flash of Unfiltered Data"
   const isInitialLoading = isLoading || isFetching;
@@ -183,6 +186,18 @@ export default function EinheitenListe() {
 
   return (
     <div className="space-y-6">
+      {debugInfo && (
+        <div className="bg-blue-50 border border-blue-200 rounded p-3 text-xs font-mono text-blue-900">
+          <p className="font-bold mb-2">🔍 DEBUG INFO:</p>
+          <p>User: {debugInfo.user_email} | Role: {debugInfo.resolved_role}</p>
+          <p>Alle Einheiten vor Filter: {debugInfo.all_einheiten_before_filter?.length || 0}</p>
+          {debugInfo.all_einheiten_before_filter?.map(e => (
+            <div key={e.id} className="ml-4 text-gray-600">
+              • {e.titel} ({e.fach}) - wizard_status: {e.wizard_status}
+            </div>
+          ))}
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
