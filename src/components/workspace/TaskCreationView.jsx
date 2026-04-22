@@ -373,6 +373,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
    // Globaler Edit-Mode State: initial aus globalEditActive (DB-Zustand), dann lokal überschreibbar
    const [isEditingActive, setIsEditingActive] = useState(globalEditActive);
    const releaseEditLockRef = React.useRef(null);
+   const currentPaketLockRef = React.useRef(null);
 
    // Sync mit globalEditActive bei Tab-Rückkehr (Persistenz über Tab-Wechsel)
    useEffect(() => {
@@ -385,17 +386,54 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
    }, [globalEditActive]);
 
    const handleEditModeChange = React.useCallback((isEditing, releaseFn) => {
-     setIsEditingActive(isEditing);
-     if (isEditing && releaseFn) releaseEditLockRef.current = releaseFn;
-     if (!isEditing) releaseEditLockRef.current = null;
-   }, []);
+      setIsEditingActive(isEditing);
+      if (isEditing && releaseFn) releaseEditLockRef.current = releaseFn;
+      if (!isEditing) releaseEditLockRef.current = null;
+    }, []);
+
+   // Paket-Lock auf DB setzen/freigeben wenn isEditingActive wechselt
+   useEffect(() => {
+     const selectedPaketId = selectedItem?.type === 'activity' ? selectedItem.activity?.lernpaket_id : null;
+
+     if (isEditingActive && selectedPaketId) {
+       // Lock setzen
+       (async () => {
+         try {
+           await base44.entities.Lernpakete.update(selectedPaketId, {
+             is_locked: true,
+             locked_by_email: userEmail,
+             locked_at: new Date().toISOString(),
+           });
+           currentPaketLockRef.current = selectedPaketId;
+         } catch (err) {
+           console.warn('Fehler beim Setzen des Paket-Locks:', err.message);
+         }
+       })();
+     } else if (!isEditingActive && currentPaketLockRef.current) {
+       // Lock freigeben
+       (async () => {
+         try {
+           await base44.entities.Lernpakete.update(currentPaketLockRef.current, {
+             is_locked: false,
+             locked_by_email: null,
+             locked_at: null,
+           });
+         } catch (err) {
+           console.warn('Fehler beim Freigeben des Paket-Locks:', err.message);
+         } finally {
+           currentPaketLockRef.current = null;
+         }
+       })();
+     }
+   }, [isEditingActive, selectedItem?.type, selectedItem?.activity?.lernpaket_id, userEmail]);
 
    const handleGlobalExitEdit = async () => {
-     if (releaseEditLockRef.current) {
-       await releaseEditLockRef.current();
-       setIsEditingActive(false);
-     }
-   };
+      if (releaseEditLockRef.current) {
+        await releaseEditLockRef.current();
+        setIsEditingActive(false);
+      }
+      // Paket-Lock wird automatisch durch useEffect freigegeben
+    };
 
    // ActivityID kann aus Props oder URL-Parametern kommen
    const initialActivityId = initialActivityIdProp || searchParams.get('activity');
@@ -551,6 +589,25 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
   // Lernpaket-Name für Breadcrumb/Overline in allen Detailansichten
   const getLernpaketName = (lernpaketId) =>
     lernpakete.find(lp => lp.id === lernpaketId)?.titel_des_pakets || null;
+
+  // Cleanup bei Unmount: Lock freigeben
+  useEffect(() => {
+    return () => {
+      if (isEditingActive && currentPaketLockRef.current) {
+        (async () => {
+          try {
+            await base44.entities.Lernpakete.update(currentPaketLockRef.current, {
+              is_locked: false,
+              locked_by_email: null,
+              locked_at: null,
+            });
+          } catch (err) {
+            console.warn('Fehler beim Cleanup-Freigeben des Paket-Locks:', err.message);
+          }
+        })();
+      }
+    };
+  }, [isEditingActive]);
 
   return (
     <div className="flex flex-row flex-1 overflow-hidden">
