@@ -26,6 +26,11 @@ function isMatchTermsActivity(name = '') {
   return MATCH_TERMS_NAMES.some(n => name.toLowerCase().includes(n));
 }
 
+const TEST_NAMES = ['test'];
+function isTestActivity(name = '') {
+  return TEST_NAMES.some(n => name.toLowerCase().includes(n));
+}
+
 // ── Klon-Generator ────────────────────────────────────────────────────────────
 
 function KlonGenerator({ activityRecord, onKlonesCreated }) {
@@ -127,6 +132,85 @@ function KlonGenerator({ activityRecord, onKlonesCreated }) {
           ? <><Loader2 className="w-4 h-4 animate-spin" /> Klone werden generiert…</>
           : <><Sparkles className="w-4 h-4" /> Klone erzeugen</>}
       </Button>
+    </div>
+  );
+}
+
+// ── Test mit Edit-Mode + Lock ───────────────────────────────────────────────────
+
+function TestWithLock({ activityRecord, kannBearbeiten, userEmail }) {
+  const queryClient = useQueryClient();
+  const [editMode, setEditMode] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useActivityLock(activityRecord.id, userEmail, editMode);
+  const lockedByOther = isActivityLockedByOther(activityRecord, userEmail);
+  const fieldValues = activityRecord.field_values || {};
+
+  const handleSave = async (data) => {
+    setSaving(true);
+    await base44.entities.LernpaketPhaseAktivitaet.update(activityRecord.id, {
+      field_values: data,
+      is_complete: true,
+    });
+    queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+    setSaving(false);
+    setEditMode(false);
+    toast.success('Test gespeichert.');
+  };
+
+  return (
+    <div className="space-y-3">
+      {lockedByOther && <LockBanner lockedByUser={activityRecord.locked_by_user} />}
+
+      {!editMode ? (
+        <div className="space-y-4">
+          {fieldValues.instruction && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Anleitung</label>
+              <div className="bg-muted/50 rounded-lg p-3 text-sm">{fieldValues.instruction}</div>
+            </div>
+          )}
+          {fieldValues.passingScore && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Bestehensbedingung</label>
+              <div className="bg-muted/50 rounded-lg p-3 text-sm">{fieldValues.passingScore}%</div>
+            </div>
+          )}
+          {fieldValues.questions && Array.isArray(fieldValues.questions) && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Fragen ({fieldValues.questions.length})
+              </label>
+              <div className="bg-muted/30 rounded-lg p-3 space-y-2 text-sm max-h-48 overflow-y-auto">
+                {fieldValues.questions.map((q, i) => (
+                  <div key={i} className="pb-2 border-b border-border last:border-b-0 last:pb-0">
+                    <p className="font-medium">{i + 1}. {q.text}</p>
+                    <p className="text-xs text-muted-foreground">Typ: {q.type === 'mc' ? 'Multiple Choice' : 'Texteingabe'} · {q.points || 1} Punkt(e)</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {kannBearbeiten && !lockedByOther && (
+            <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-2 mt-2">
+              <Edit className="w-3.5 h-3.5" /> Bearbeiten
+            </Button>
+          )}
+          {lockedByOther && (
+            <Button size="sm" variant="outline" disabled className="gap-2 mt-2 opacity-50">
+              <Lock className="w-3.5 h-3.5" /> Bearbeiten (gesperrt)
+            </Button>
+          )}
+        </div>
+      ) : (
+        <ActivityDetailView
+          activityRecord={activityRecord}
+          kannBearbeiten={true}
+          queryClient={queryClient}
+          onClose={() => setEditMode(false)}
+        />
+      )}
     </div>
   );
 }
@@ -248,8 +332,30 @@ export default function MasterActivityPanel({
     toast.success('Zur Masteraufgabe gemacht.');
   };
 
-  // ── Fall 1: supports_master === false → nur normales Formular ──────────────
+  // ── Fall 1: supports_master === false → normales Formular oder Test-Special ──
   if (!supportsMaster) {
+    const isTest = isTestActivity(catalogEntry?.name || '');
+
+    if (isTest) {
+      return (
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border bg-muted/30">
+            <span className="text-sm font-semibold">{catalogEntry?.name}</span>
+            <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded">
+              Phase: {activityRecord.phase}
+            </span>
+          </div>
+          <div className="p-5">
+            <TestWithLock
+              activityRecord={activityRecord}
+              kannBearbeiten={kannBearbeiten}
+              userEmail={userEmail}
+            />
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border bg-muted/30">
