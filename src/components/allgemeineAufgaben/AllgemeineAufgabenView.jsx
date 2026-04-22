@@ -19,7 +19,7 @@ import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPan
 import InlineBasisLernzielSelector from '@/components/allgemeineAufgaben/InlineBasisLernzielSelector';
 import PublishAllgemeineAufgabeButton from '@/components/allgemeineAufgaben/PublishAllgemeineAufgabeButton';
 import ErwartungshorizontTab from '@/components/allgemeineAufgaben/ErwartungshorizontTab';
-import { useTaskLock } from '@/hooks/useTaskLock';
+import { useTaskLock } from '@/hooks/useLocks';
 import { base44 } from '@/api/base44Client';
 import AiTaskWizardModal from '@/components/ui/AiTaskWizardModal';
 import HelpBadge from '@/components/ui/HelpBadge';

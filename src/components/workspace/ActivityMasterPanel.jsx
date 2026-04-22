@@ -11,7 +11,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { useLernpaketLock } from '@/hooks/useLernpaketLock';
+import { useLernpaketLock } from '@/hooks/useLocks';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';

@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Crown, Pencil, Loader2, CheckCircle2, Sparkles } from 'lucide-react';
 import KlonErstellenModal from '@/components/workspace/KlonErstellenModal';
-import { useLernpaketLock } from '@/hooks/useLernpaketLock';
+import { useLernpaketLock } from '@/hooks/useLocks';
 import LueckentextEditor from '@/components/workspace/LueckentextEditor';
 import LueckentextWysiwygModal from '@/components/workspace/LueckentextWysiwygModal';
 import SortingListModal from '@/components/workspace/SortingListModal';
