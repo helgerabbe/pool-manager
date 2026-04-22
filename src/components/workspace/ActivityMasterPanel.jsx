@@ -468,45 +468,47 @@ export default function ActivityMasterPanel({
         );
       })()}
 
-      {/* ── Edit-Mode Toggle für supports_master Aktivitäten ── */}
-      {supportsMaster && (
-        <>
-          {isInEditMode && (
-            <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg bg-orange-50 border border-orange-200">
-              <p className="text-sm text-orange-800 font-medium">Bearbeitungsmodus aktiv – das Lernpaket ist für andere gesperrt</p>
-              <button
-                onClick={handleModalCancel}
-                className="text-orange-600 hover:text-orange-800 text-lg font-bold"
-                title="Bearbeitung abschließen"
-              >
-                ✕
-              </button>
-            </div>
-          )}
-          {!isInEditMode && (
-            <div className="flex justify-end">
-              <Button
-                onClick={handleOpenEditModal}
-                disabled={acquiringLock || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
-                title={lernpaket?.moodle_sync_status === 'locked' ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
-                className="gap-2"
-              >
-                {acquiringLock
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren…</>
-                  : <><Pencil className="w-4 h-4" /> Inhalt bearbeiten</>}
-              </Button>
-            </div>
-          )}
-        </>
+      {/* ── Edit-Mode Banner für supports_master Aktivitäten ── */}
+      {supportsMaster && isInEditMode && (
+        <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg bg-orange-50 border border-orange-200">
+          <p className="text-sm text-orange-800 font-medium">Bearbeitungsmodus aktiv – das Lernpaket ist für andere gesperrt</p>
+          <button
+            onClick={handleModalCancel}
+            className="text-orange-600 hover:text-orange-800 text-lg font-bold"
+            title="Bearbeitung abschließen"
+          >
+            ✕
+          </button>
+        </div>
       )}
 
       {/* ── Aufgabentext-Block (für supports_master Aktivitäten, NOT für KI-Tutor) ─ */}
       {supportsMaster && !isKITutor && (
         <div className="rounded-xl border border-border bg-card p-4">
+          {/* Aufgabenstellung-Header mit dezent-Stift-Icon statt großem Button */}
+          <div className="flex items-center gap-2 mb-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Aufgabenstellung
+            </p>
+            {kannBearbeiten && !isInEditMode && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={handleOpenEditModal}
+                disabled={acquiringLock || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
+                className="h-6 w-6 text-muted-foreground hover:text-primary"
+                title="Aufgabenstellung bearbeiten"
+              >
+                {acquiringLock
+                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  : <Pencil className="w-3.5 h-3.5" />}
+              </Button>
+            )}
+          </div>
           <DefaultTextareaFieldInline
             field={{
               field_name: 'aufgabentext',
-              label: 'Aufgabenstellung',
+              label: '',
               default_text: defaultAufgabentext,
             }}
             value={aufgabentext}
@@ -649,10 +651,10 @@ export default function ActivityMasterPanel({
           {/* Weitere Masteraufgabe hinzufügen */}
           {masterAufgaben.length > 0 && (
             <Button
-              variant="outline"
+              variant="default"
               onClick={handleAddMaster}
               disabled={creating}
-              className="w-full gap-2 border-dashed border-primary/40 text-primary hover:bg-primary/5 hover:border-primary/60"
+              className="w-full gap-2"
             >
               {creating
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren & Erstellen…</>
