@@ -391,10 +391,26 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
       if (!isEditing) releaseEditLockRef.current = null;
     }, []);
 
+   const handleGlobalExitEdit = async () => {
+      if (releaseEditLockRef.current) {
+        await releaseEditLockRef.current();
+        setIsEditingActive(false);
+      }
+      // Paket-Lock wird automatisch durch useEffect freigegeben
+    };
+
+   // ActivityID kann aus Props oder URL-Parametern kommen
+   const initialActivityId = initialActivityIdProp || searchParams.get('activity');
+
+   // selectedItem: null | { type: 'activity', activity } | { type: 'master', master } | { type: 'klon', klon }
+   const [selectedItem, setSelectedItem] = useState(null);
+   const [openPacketIds, setOpenPacketIds] = useState(new Set());
+   const [expandedPhases, setExpandedPhases] = useState({});
+
    // Paket-Lock auf DB setzen/freigeben wenn isEditingActive wechselt
    useEffect(() => {
      const selectedPaketId = selectedItem?.type === 'activity' ? selectedItem.activity?.lernpaket_id : null;
-
+     
      if (isEditingActive && selectedPaketId) {
        // Lock setzen
        (async () => {
@@ -426,22 +442,6 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
        })();
      }
    }, [isEditingActive, selectedItem?.type, selectedItem?.activity?.lernpaket_id, userEmail]);
-
-   const handleGlobalExitEdit = async () => {
-      if (releaseEditLockRef.current) {
-        await releaseEditLockRef.current();
-        setIsEditingActive(false);
-      }
-      // Paket-Lock wird automatisch durch useEffect freigegeben
-    };
-
-   // ActivityID kann aus Props oder URL-Parametern kommen
-   const initialActivityId = initialActivityIdProp || searchParams.get('activity');
-
-   // selectedItem: null | { type: 'activity', activity } | { type: 'master', master } | { type: 'klon', klon }
-   const [selectedItem, setSelectedItem] = useState(null);
-   const [openPacketIds, setOpenPacketIds] = useState(new Set());
-   const [expandedPhases, setExpandedPhases] = useState({});
 
   const { data: lernpakete = [] } = useQuery({
     queryKey: ['lernpakete'],
