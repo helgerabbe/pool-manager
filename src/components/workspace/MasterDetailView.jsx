@@ -276,6 +276,21 @@ export default function MasterDetailView({
     onError: (err) => toast.error(err.message || 'Fehler beim Speichern.'),
   });
 
+  const handleOpenKlonModal = async () => {
+    setAcquiringLock(true);
+    const ok = await acquireLock();
+    setAcquiringLock(false);
+    if (!ok) return;
+    onEditModeChange?.(true);
+    setKlonModalOpen(true);
+  };
+
+  const handleCloseKlonModal = async () => {
+    setKlonModalOpen(false);
+    await releaseLock();
+    onEditModeChange?.(false);
+  };
+
   const handleEdit = async () => {
     if (!isSupportedType) return;
 
@@ -382,10 +397,11 @@ export default function MasterDetailView({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setKlonModalOpen(true)}
+          onClick={handleOpenKlonModal}
+          disabled={acquiringLock}
           className="gap-2 border-dashed border-primary/50 text-primary hover:bg-primary/5 w-full"
         >
-          <Sparkles className="w-4 h-4" />
+          {acquiringLock ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
           Kopien / Klone erstellen
         </Button>
       )}
@@ -562,12 +578,13 @@ export default function MasterDetailView({
       {/* ── Klon-Modal ── */}
       <KlonErstellenModal
         open={klonModalOpen}
-        onClose={() => setKlonModalOpen(false)}
+        onClose={handleCloseKlonModal}
         master={master}
         klone={klone}
         onKlonesCreated={() => {
           queryClient.invalidateQueries({ queryKey: ['klone'] });
           queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+          handleCloseKlonModal();
         }}
       />
 
