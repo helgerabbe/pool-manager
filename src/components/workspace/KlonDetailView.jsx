@@ -244,6 +244,28 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
               : <><Pencil className="w-3.5 h-3.5" /> Kopie bearbeiten</>}
           </Button>
         )}
+        {kannBearbeiten && !lockedByOther && !isLuecke && (isSorting(catalogEntry?.name) || isMatchTerms(catalogEntry?.name)) && (
+          editMode ? (
+            <div className="flex items-center gap-2 shrink-0">
+              <Button size="sm" onClick={() => saveMutation.mutate(data)} disabled={saveMutation.isPending} className="gap-1.5">
+                {saveMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                Speichern
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => { setEditMode(false); onEditModeChange?.(false); }}>
+                Abbrechen
+              </Button>
+            </div>
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => { setEditMode(true); onEditModeChange?.(true); }}
+              className="gap-1.5 shrink-0"
+            >
+              <Pencil className="w-3.5 h-3.5" /> Kopie bearbeiten
+            </Button>
+          )
+        )}
       </div>
 
       {/* ── Aufgabenstellung des Masters ── */}
@@ -267,7 +289,7 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
             Entwurf
           </span>
           <div className="flex-1" />
-          {kannBearbeiten && !lockedByOther && editMode && (
+          {kannBearbeiten && !lockedByOther && editMode && isLuecke && (
             <div className="flex items-center gap-2">
               <Button size="sm" onClick={() => saveMutation.mutate(data)} disabled={saveMutation.isPending} className="gap-1.5">
                 {saveMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
@@ -353,8 +375,11 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
                     distractors: (formData.distractors || []).map(d => typeof d === 'string' ? d : d.value).filter(Boolean),
                   };
                   setData(cleanedData);
+                  saveMutation.mutate(cleanedData, {
+                    onSuccess: () => { setEditMode(false); onEditModeChange?.(false); }
+                  });
                 }}
-                onCancel={() => {}}
+                onCancel={() => { setEditMode(false); onEditModeChange?.(false); }}
                 onChange={() => {}}
               />
             ) : (
@@ -394,9 +419,12 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
               }}
               onSave={(formData) => {
                 setData(formData);
+                saveMutation.mutate(formData, {
+                  onSuccess: () => { setEditMode(false); onEditModeChange?.(false); }
+                });
               }}
-              onCancel={() => {}}
-              onChange={() => {}}
+              onCancel={() => { setEditMode(false); onEditModeChange?.(false); }}
+              onChange={(d) => { if (d) setData(prev => ({ ...prev, ...d })); }}
               readOnly={false}
             />
           ) : (
