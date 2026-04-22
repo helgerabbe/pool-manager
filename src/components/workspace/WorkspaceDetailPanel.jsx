@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, use } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -22,7 +22,7 @@ import { Label } from '@/components/ui/label';
 import {
   BookOpen, Layers, Target, Puzzle, Plus, Edit, Trash2,
   Clock, Lock, Unlock, AlertCircle, CheckCircle2, ArrowDown,
-  TrendingUp, AlertTriangle, PenLine, Save, X, Loader2, ChevronRight, Menu
+  TrendingUp, AlertTriangle, PenLine, Save, X, Loader2, ChevronRight, Menu, Crown
 } from 'lucide-react';
 import SyncWarningBanner from '@/components/sync/SyncWarningBanner';
 
@@ -481,6 +481,12 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
            </div>
            <h2 className="text-xl font-bold">{paket.titel_des_pakets}</h2>
            <StatusBadge status={pStatus} />
+           {isLockedByOther && (
+             <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 border border-amber-200 text-amber-800 text-xs font-medium">
+               <Lock className="w-3 h-3" />
+               Gesperrt von {paket.locked_by_email}
+             </div>
+           )}
            {canEdit && (
              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 border border-blue-200 text-blue-700 text-xs font-medium">
                <PenLine className="w-3 h-3" />
@@ -504,12 +510,13 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-           {kannBearbeiten && !isLockedByOther && (
+           {kannBearbeiten && (
              <Button 
                variant="outline" 
                size="sm" 
                onClick={handleOpenEditDialog}
-               disabled={isAcquiringLock || canEdit}
+               disabled={isAcquiringLock || canEdit || isLockedByOther}
+               title={isLockedByOther ? `🔒 Wird gerade von ${paket.locked_by_email} bearbeitet` : ''}
                className="gap-2"
              >
               {isAcquiringLock ? (
@@ -525,8 +532,14 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
               )}
             </Button>
           )}
-          {kannBearbeiten && !isLockedByOther && (
-            <Button variant="ghost" size="icon" onClick={onDelete} title="Lernpaket löschen">
+          {kannBearbeiten && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onDelete} 
+              disabled={isLockedByOther}
+              title={isLockedByOther ? `🔒 Wird gerade von ${paket.locked_by_email} bearbeitet` : 'Lernpaket löschen'}
+            >
               <Trash2 className="w-4 h-4 text-destructive" />
             </Button>
           )}
@@ -545,7 +558,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Lernziele</h3>
-          {canEdit && kannBearbeiten && paketZiele.length > 0 && (
+          {canEdit && kannBearbeiten && !isLockedByOther && paketZiele.length > 0 && (
             <button
               onClick={onNewLernziel}
               className="flex items-center gap-1 text-xs text-primary hover:underline"
@@ -594,7 +607,7 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
                       </Badge>
                     )}
                   </div>
-                  {canEdit && kannBearbeiten && (
+                  {canEdit && kannBearbeiten && !isLockedByOther && (
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => handleEditLernziel(lz)}
@@ -1316,6 +1329,21 @@ export default function WorkspaceDetailPanel({
   if (type === 'einheit') {
     return null;
   }
+
+  // Subscribe zu Lernpaket-Änderungen um Lock-Status realtime zu aktualisieren
+  useEffect(() => {
+    if (type !== 'lernpaket' || !selectedNode?.id) return;
+    const paket = lernpakete.find(p => p.id === selectedNode.id);
+    if (!paket?.id) return;
+    
+    const unsub = base44.entities.Lernpakete.subscribe((event) => {
+      if (event.id === paket.id) {
+        queryClient.invalidateQueries({ queryKey: ['lernpakete', paket.id] });
+        queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+      }
+    });
+    return unsub;
+  }, [type, selectedNode?.id, lernpakete, queryClient]);
 
   if (type === 'lernpaket') {
     const paket = lernpakete.find(p => p.id === selectedNode.id);
