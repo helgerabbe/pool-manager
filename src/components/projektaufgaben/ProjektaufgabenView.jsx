@@ -21,7 +21,7 @@ import PublishProjektaufgabeButton from './PublishProjektaufgabeButton';
 import AbgabeDefinitionSection from './AbgabeDefinitionSection';
 import LernlandkartePreview from '@/components/lernlandkarte/LernlandkartePreview';
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
-import { useTaskLock } from '@/hooks/useTaskLock';
+// Task lock is handled by TaskLockBar component - no separate hook needed
 import { base44 } from '@/api/base44Client';
 
 
@@ -313,18 +313,60 @@ export default function ProjektaufgabenView({
     },
   });
 
-  // Lock-Hook (nutzt dieselbe Query wie oben)
+  // Lock state for selected task
+  const [lockState, setLockState] = React.useState({
+    isEditMode: false,
+    isLocking: false,
+    isLockedByOther: false,
+    lockedByEmail: null,
+  });
+
   const selectedAufgabeForLock = allgemeineAufgaben
     .filter(a => a.anforderungsebene === '3 - Projekt')
     .find(a => a.id === selectedAufgabeId);
 
-  const lock = useTaskLock({
-    aufgabe: selectedAufgabeForLock,
-    userEmail: currentUserEmail,
-    lockFn: lockProjectTask,
-    unlockFn: unlockProjectTask,
-    invalidateKeys: [['allgemeineAufgaben', einheitId]],
-  });
+  // Check if task is locked by another user
+  React.useEffect(() => {
+    if (selectedAufgabeForLock?.locked_by && selectedAufgabeForLock.locked_by !== currentUserEmail) {
+      setLockState(prev => ({
+        ...prev,
+        isLockedByOther: true,
+        lockedByEmail: selectedAufgabeForLock.locked_by,
+      }));
+    } else {
+      setLockState(prev => ({ ...prev, isLockedByOther: false, lockedByEmail: null }));
+    }
+  }, [selectedAufgabeForLock, currentUserEmail]);
+
+  const lock = {
+    isEditMode: lockState.isEditMode,
+    isLocking: lockState.isLocking,
+    isLockedByOther: lockState.isLockedByOther,
+    lockedByEmail: lockState.lockedByEmail,
+    enterEditMode: async () => {
+      setLockState(prev => ({ ...prev, isLocking: true }));
+      try {
+        await lockProjectTask(selectedAufgabeForLock.id);
+        setLockState(prev => ({ ...prev, isEditMode: true }));
+      } catch (err) {
+        toast.error('Fehler beim Aktivieren des Bearbeitungsmodus: ' + err.message);
+      } finally {
+        setLockState(prev => ({ ...prev, isLocking: false }));
+      }
+    },
+    exitEditMode: async () => {
+      setLockState(prev => ({ ...prev, isLocking: true }));
+      try {
+        await unlockProjectTask(selectedAufgabeForLock.id);
+        setLockState(prev => ({ ...prev, isEditMode: false }));
+        queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheitId] });
+      } catch (err) {
+        toast.error('Fehler beim Beenden des Bearbeitungsmodus: ' + err.message);
+      } finally {
+        setLockState(prev => ({ ...prev, isLocking: false }));
+      }
+    },
+  };
 
   // Filtere nur Projektaufgaben (anforderungsebene: "3 - Projekt")
   const projektaufgaben = allgemeineAufgaben.filter(a => a.anforderungsebene === '3 - Projekt');

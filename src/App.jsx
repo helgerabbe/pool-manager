@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { RoleProvider } from '@/lib/RoleContext';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ProtectedRoute from '@/lib/ProtectedRoute';
@@ -49,59 +50,67 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
-    <Routes>
-      <Route element={<AppLayout />}>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/einheiten" element={<EinheitenListe />} />
-        <Route path="/einheiten/:id" element={<EinheitViewManager />} />
-        <Route path="/basismodule" element={<BasismoduleView />} />
-        <Route path="/docs" element={<DocsLayout />}>
-          <Route index element={<DocsIndex />} />
-          <Route path=":slug" element={<DocViewer />} />
+    <ErrorBoundary fallback="Die Navigation konnte nicht geladen werden.">
+      <Routes>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<ErrorBoundary fallback="Dashboard konnte nicht geladen werden."><Dashboard /></ErrorBoundary>} />
+          <Route path="/einheiten" element={<ErrorBoundary fallback="Einheitenliste konnte nicht geladen werden."><EinheitenListe /></ErrorBoundary>} />
+          <Route path="/einheiten/:id" element={<ErrorBoundary fallback="Einheitansicht konnte nicht geladen werden."><EinheitViewManager /></ErrorBoundary>} />
+          <Route path="/basismodule" element={<ErrorBoundary fallback="Basismodule konnte nicht geladen werden."><BasismoduleView /></ErrorBoundary>} />
+          <Route path="/docs" element={<ErrorBoundary fallback="Dokumentation konnte nicht geladen werden."><DocsLayout /></ErrorBoundary>}>
+            <Route index element={<DocsIndex />} />
+            <Route path=":slug" element={<DocViewer />} />
+          </Route>
+          
+          {/* ✅ GESCHÜTZT: Admin-Bereich */}
+          <Route
+            path="/benutzerverwaltung"
+            element={
+              <ErrorBoundary fallback="Benutzerverwaltung konnte nicht geladen werden.">
+                <ProtectedRoute
+                  component={Benutzerverwaltung}
+                  requiredPermission="kannBenutzerVerwalten"
+                  redirectTo="/"
+                />
+              </ErrorBoundary>
+            }
+          />
+          
+          {/* ✅ GESCHÜTZT: Export mit Leseberechtigung */}
+          <Route
+            path="/moodle-export"
+            element={
+              <ErrorBoundary fallback="Moodle-Export konnte nicht geladen werden.">
+                <ProtectedRoute
+                  component={MoodleExport}
+                  requiredPermission="kannExportLesen"
+                  redirectTo="/"
+                />
+              </ErrorBoundary>
+            }
+          />
+          
+          <Route path="/workspace" element={<ErrorBoundary fallback="Workspace konnte nicht geladen werden."><Workspace /></ErrorBoundary>} />
+          <Route path="/einheit/create" element={<ErrorBoundary fallback="Erstellungsassistent konnte nicht geladen werden."><EinheitCreateWizard /></ErrorBoundary>} />
+          <Route path="/einheit/export" element={<ErrorBoundary fallback="Export-Center konnte nicht geladen werden."><ExportCenter /></ErrorBoundary>} />
+          
+          {/* ✅ GESCHÜTZT: Admin-Einstellungen */}
+          <Route
+            path="/admin-settings"
+            element={
+              <ErrorBoundary fallback="Admin-Einstellungen konnte nicht geladen werden.">
+                <ProtectedRoute
+                  component={AdminSettings}
+                  requiredPermission="kannBenutzerVerwalten"
+                  redirectTo="/"
+                />
+              </ErrorBoundary>
+            }
+          />
         </Route>
-        
-        {/* ✅ GESCHÜTZT: Admin-Bereich */}
-        <Route
-          path="/benutzerverwaltung"
-          element={
-            <ProtectedRoute
-              component={Benutzerverwaltung}
-              requiredPermission="kannBenutzerVerwalten"
-              redirectTo="/"
-            />
-          }
-        />
-        
-        {/* ✅ GESCHÜTZT: Export mit Leseberechtigung */}
-        <Route
-          path="/moodle-export"
-          element={
-            <ProtectedRoute
-              component={MoodleExport}
-              requiredPermission="kannExportLesen"
-              redirectTo="/"
-            />
-          }
-        />
-        
-        <Route path="/workspace" element={<Workspace />} />
-        <Route path="/einheit/create" element={<EinheitCreateWizard />} />
-        <Route path="/einheit/export" element={<ExportCenter />} />
-        
-        {/* ✅ GESCHÜTZT: Admin-Einstellungen */}
-        <Route
-          path="/admin-settings"
-          element={
-            <ProtectedRoute
-              component={AdminSettings}
-              requiredPermission="kannBenutzerVerwalten"
-              redirectTo="/"
-            />
-          }
-        />
-      </Route>
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
+        <Route path="*" element={<PageNotFound />} />
+      </Routes>
+    </ErrorBoundary>
   );
 };
 
