@@ -796,9 +796,9 @@ export default function StrukturBoardEmbedded({
       
     } finally {
       clearTimeout(timeoutId);
-      // In jedem Fall: setSaving(false) wurde oben bereits gesetzt
-      // isSavingPhase wird unten nach Callback auf false gesetzt
-      // Overlay wird NUR bei Erfolg geschlossen
+      // Immer aufräumen, auch bei Fehler
+      setIsSavingPhase(false);
+      // setSaving(false) wurde bereits oben im catch/success gesetzt
     }
   };
 
