@@ -21,6 +21,8 @@ export default function OffeneAufgabeEditor({ initialData = {}, onChange, readOn
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const recognitionRef = useRef(null);
+  const finalTranscriptRef = useRef('');
+  const resultIndexRef = useRef(0);
 
   // DATENBRÜCKE ZUM MODAL
   useEffect(() => {
@@ -39,11 +41,22 @@ export default function OffeneAufgabeEditor({ initialData = {}, onChange, readOn
       recognition.lang = 'de-DE';
 
       recognition.onresult = (event) => {
-        let currentTranscript = '';
+        // Sammle alle finalen Results (isFinal = true) akkumulativ
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          currentTranscript += event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscriptRef.current += event.results[i][0].transcript + ' ';
+          }
         }
-        setTranscript(currentTranscript);
+
+        // Zeige aktuellen zusammengesetzten Text + interim Results
+        let currentInterim = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (!event.results[i].isFinal) {
+            currentInterim += event.results[i][0].transcript;
+          }
+        }
+
+        setTranscript((finalTranscriptRef.current + currentInterim).trim());
       };
 
       recognition.onerror = (event) => {
@@ -68,6 +81,8 @@ export default function OffeneAufgabeEditor({ initialData = {}, onChange, readOn
       recognitionRef.current?.stop();
     } else {
       setTranscript('');
+      finalTranscriptRef.current = '';
+      resultIndexRef.current = 0;
       try {
         recognitionRef.current?.start();
         setIsListening(true);
