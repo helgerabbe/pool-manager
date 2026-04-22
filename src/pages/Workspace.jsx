@@ -618,12 +618,14 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                               // ⚠️ Kleine Verzögerung, damit React die alte Komponente abbaut
                               await new Promise(resolve => setTimeout(resolve, 100));
 
-                              // Lock freigeben
+                              // Lock freigeben (setzt isStructuralEditingActive=false)
                               await handleReleaseStructLock();
 
-                              // Nach Lock-Freigabe: frische Daten laden
-                              await queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-                              await queryClient.invalidateQueries({ queryKey: ['themenfelder'] });
+                              // KRITISCH: Invalidiere den Workspace-Query mit GANZZAHLIGEM staleTime-Reset
+                              // Weil useWorkspaceData staleTime:Infinity im Edit-Modus setzt,
+                              // muss man FORCE-REFETCH (nicht nur invalidate) nach Lock-Release
+                              console.log('[Workspace] 🔄 Force-Refetch workspace-data nach Lock-Release...');
+                              await queryClient.refetchQueries({ queryKey: ['workspace-data', selectedEinheitId], type: 'all' });
                             }}
                           />
                        </ErrorBoundary>
