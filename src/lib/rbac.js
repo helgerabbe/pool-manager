@@ -22,13 +22,9 @@
  * * = nur im zuständigen Fachbereich
  */
 
-export const ROLLEN = {
-  ADMIN: 'Administrator',
-  FACHSCHAFT: 'Fachschaftsleitung',
-  LEHRKRAFT: 'Fachlehrkraft',
-  BETRACHTER: 'Betrachter',
-  MOODLE: 'Moodle-Designer',
-};
+import { ROLLEN } from './rbacConfig';
+
+export { ROLLEN };
 
 /**
  * Prüft ob der Benutzer-Profil-Datensatz (Benutzer-Entity) geladen ist.

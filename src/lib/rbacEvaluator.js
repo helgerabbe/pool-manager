@@ -6,44 +6,7 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
-
-/**
- * RBAC Matrix: Welche Rollen dürfen welche Operationen durchführen
- * 
- * Rollen:
- * - Administrator: Vollzugriff
- * - Fachschaftsleitung: Kann ihre zuständigen Fächer verwalten
- * - Fachlehrkraft: Kann nur an Einheiten bearbeiten, bei denen sie Leitung ist
- * - Betrachter: Keine Schreibzugriffe
- */
-export const RBAC_MATRIX = {
-  Administrator: {
-    allowAll: true, // Keine weiteren Checks nötig
-  },
-  Fachschaftsleitung: {
-    operations: {
-      CREATE: ['Einheiten', 'Themenfeld', 'Lernpakete', 'Lernziele', 'Aufgabenbausteine', 'AllgemeineAufgabe', 'Basismodule'],
-      UPDATE: ['Einheiten', 'Themenfeld', 'Lernpakete', 'Lernziele', 'Aufgabenbausteine', 'AllgemeineAufgabe', 'Basismodule'],
-      DELETE: ['Einheiten', 'Themenfeld', 'Lernpakete', 'Lernziele', 'Aufgabenbausteine', 'AllgemeineAufgabe', 'Basismodule'],
-      PUBLISH: ['Einheiten', 'Basismodule'],
-    },
-    condition: 'mustOwnSubject', // User muss für das Fach zuständig sein
-  },
-  Fachlehrkraft: {
-    operations: {
-      CREATE: ['Themenfeld', 'Lernpakete', 'Lernziele', 'Aufgabenbausteine', 'AllgemeineAufgabe'],
-      UPDATE: ['Themenfeld', 'Lernpakete', 'Lernziele', 'Aufgabenbausteine', 'AllgemeineAufgabe'],
-      DELETE: ['Themenfeld', 'Lernpakete', 'Lernziele', 'Aufgabenbausteine', 'AllgemeineAufgabe'],
-    },
-    condition: 'mustBeUnitLead', // User muss Leitung dieser Einheit sein
-  },
-  Betrachter: {
-    operations: {
-      // Keine Writes
-    },
-    allowedReadOnly: true,
-  },
-};
+import { RBAC_MATRIX, ROLLEN } from './rbacConfig';
 
 /**
  * Evaluiert, ob ein User eine Operation durchführen darf
