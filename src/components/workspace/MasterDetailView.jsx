@@ -19,7 +19,7 @@ import LueckentextWysiwygModal from '@/components/workspace/LueckentextWysiwygMo
 import SortingListModal from '@/components/workspace/SortingListModal';
 import MatchTermsModal from '@/components/workspace/MatchTermsModal';
 import MiniQuizModalDetail from '@/components/workspace/MiniQuizModalDetail';
-import TestModal from '@/components/workspace/MiniQuizModalDetail';
+import TestModal from '@/components/workspace/TestModal';
 import MultipleChoiceModalDetail from '@/components/workspace/MultipleChoiceModalDetail';
 import KITutorModalDetail from '@/components/workspace/KITutorModalDetail';
 import ImageLabelingModalDetail from '@/components/workspace/ImageLabelingModalDetail';
