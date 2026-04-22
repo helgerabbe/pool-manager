@@ -392,9 +392,11 @@ export default function StrukturBoardEmbedded({
     });
   };
 
-  // ── Zentrale Sync-Logik: Props → lokaler State ──────────────────────
-  const syncWithRemote = React.useCallback(() => {
-    console.log('[StrukturBoard] 🔄 Synchronisiere lokalen State mit Remote-Daten...');
+  // ── Init: Props → Lokaler State (nur wenn nicht im Edit-Modus) ──────────
+  useEffect(() => {
+    if (isDirty) return; // Nicht initialisieren wenn Nutzer gerade bearbeitet
+
+    console.log('[StrukturBoard] 🔄 Initialisiere State aus Remote-Props...');
     const pakete = remotePakete || [];
     const felder = remoteThemenfelder || [];
 
@@ -419,16 +421,7 @@ export default function StrukturBoardEmbedded({
     setPaketeMap(newMap);
     setOriginalSpaltenIds(new Set(tfSpalten.map(s => s.themenfeldId).filter(Boolean)));
     setOriginalPaketIds(new Set(pakete.map(p => p.id)));
-  }, [remotePakete, remoteThemenfelder]);
-
-  // ── Initialisierung ───────────────────────────────────────────────────────
-
-  // ── Initialisierung: Wenn nicht im Bearbeitungsmodus, mit Remote-Daten synchen ──
-  useEffect(() => {
-    if (!isDirty) {
-      syncWithRemote();
-    }
-  }, [remotePakete, remoteThemenfelder, isDirty, syncWithRemote]);
+  }, [remotePakete, remoteThemenfelder, isDirty]);
 
 
 
@@ -751,13 +744,8 @@ export default function StrukturBoardEmbedded({
         queryClient.refetchQueries({ queryKey: ['einheit', einheitId] }),
       ]);
 
-      // ── PHASE 8: Expliziter Sync als Sicherheit ─────────────────────────
-      // Falls React-Query zu schnell ist und Props sich nicht "genug" ändern
-      console.log('[StrukturBoard] 🔄 Erzwinge lokalen State-Sync mit neuen Remote-Daten...');
-      syncWithRemote();
-
-      // ── PHASE 9: Erfolg! Bearbeitungsmodus beenden ───────────────────────
-      console.log('[StrukturBoard] ✅ Speichern 100% erfolgreich!');
+      // ── PHASE 8: Erfolg! Board-Remount wird über Callback getriggert ─────
+      console.log('[StrukturBoard] ✅ Speichern 100% erfolgreich! Triggere Key-Remount im Parent...');
       clearTimeout(timeoutId);
       
       // Erst nach kurzer Verzögerung: Overlay schließen + Erfolg
@@ -768,7 +756,8 @@ export default function StrukturBoardEmbedded({
       
       toast.success('✅ Struktur erfolgreich gespeichert! Bearbeitungsmodus wird beendet...');
       
-      // 🔄 KEY-REMOUNT: Callback triggert Lock-Release UND Board-Neustart
+      // 🔄 KEY-REMOUNT: Callback triggert Lock-Release UND kompletten Board-Neustart
+      // Der Neustart erzwingt Initialisierung aus 100% neuen Props
       onSaved?.();
 
     } catch (error) {
