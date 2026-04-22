@@ -29,7 +29,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { ChevronRight, Package, MousePointerClick, AlertTriangle, Lock, Crown, CheckCircle2, Menu, X, PenLine } from 'lucide-react';
+import { ChevronRight, Package, MousePointerClick, Lock, Crown, CheckCircle2, Menu, X, PenLine } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import ActivityMasterPanel from '@/components/workspace/ActivityMasterPanel';
 import KlonDetailView from '@/components/workspace/KlonDetailView';
@@ -71,9 +71,7 @@ function KlonSubItem({ klon, isSelected, onSelect }) {
        <span className="flex-1 truncate">
          {isReleased ? '✓' : '○'} Kopie {klon.klon_index}
        </span>
-       {isIncomplete && !isReleased && (
-         <AlertTriangle className="w-3 h-3 text-orange-500 shrink-0" title="Inhalt unvollständig" />
-       )}
+
      </button>
    );
 }
@@ -195,9 +193,7 @@ function ActivitySidebarItem({
           {lockedByOther && !isActivitySelected && (
             <Lock className="w-3 h-3 text-amber-500 shrink-0" title={`Gesperrt von ${activity.locked_by_user}`} />
           )}
-          {showWarning && (
-            <AlertTriangle className="w-3 h-3 text-orange-500 shrink-0" title="Inhalt unvollständig" />
-          )}
+
           {masterAufgaben.length > 0 && (
             <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded shrink-0">
               {masterAufgaben.length}M
