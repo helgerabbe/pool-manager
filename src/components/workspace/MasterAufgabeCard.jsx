@@ -1048,19 +1048,7 @@ export default function MasterAufgabeCard({
                   </span>
                 )}
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDeleteConfirmOpen(true);
-                }}
-                disabled={deleteMutation.isPending}
-                className="p-0.5 text-green-700 hover:text-destructive rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                title="Kopie löschen"
-              >
-                {deleteMutation.isPending
-                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  : <Trash2 className="w-3.5 h-3.5" />}
-              </button>
+
             </div>
           ))}
         </div>
