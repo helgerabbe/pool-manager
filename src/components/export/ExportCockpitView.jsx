@@ -256,17 +256,16 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                                             </div>
                                           );
                                         })}
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                            </div>
-                            ) : null
-                            )
-                            )}
-                  </div>
+                                        </div>
+                                        )}
+                                        </div>
+                                        );
+                                        })}
+                                        </div>
+                                        ) : null
+                                        )
+                                        })}
+                                        </div>
                 </div>
               );
             })}
