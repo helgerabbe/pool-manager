@@ -273,13 +273,13 @@ export default function MasterDetailView({
   const isQuiz = !isTest && ['miniquiz', 'mini-quiz', 'quiz'].some(n => catalogName.toLowerCase().includes(n));
   
   const isLuecke = isLueckentext(catalogName);
-  const isMatch = ['begriffe zuordnen', 'zuordnen', 'match terms'].some(n => catalogName.toLowerCase().includes(n));
+  const matchTerms = isMatch(catalogName);
   const isMC = isMC(catalogName);
   const isKITutor = isKITutor(catalogName);
   const isImageLabeling = isImageLabeling(catalogName);
   const isSort = isSorting(catalogName);
 
-  const isSupportedType = isLuecke || isSort || isMatch || isQuiz || isMC || isKITutor || isImageLabeling || isTest;
+  const isSupportedType = isLuecke || isSort || matchTerms || isQuiz || isMC || isKITutor || isImageLabeling || isTest;
 
   const { acquireLock, releaseLock } = useLernpaketLock(isSupportedType ? master.lernpaket_id : null);
   const [acquiringLock, setAcquiringLock] = useState(false);
@@ -342,7 +342,7 @@ export default function MasterDetailView({
     else if (isTest) setTestModalOpen(true);
     else if (isQuiz) setQuizModalOpen(true);
     else if (isMC) setMcModalOpen(true);
-    else if (isMatch) setMatchModalOpen(true);
+    else if (matchTerms) setMatchModalOpen(true);
     else if (isImageLabeling) setImageLabelingModalOpen(true);
     else if (isKITutor) setKiTutorModalOpen(true);
   };
@@ -381,7 +381,7 @@ export default function MasterDetailView({
     setKlonFieldValues(parsed);
     if (isLuecke) setLueckeModalOpen(true);
     else if (isSort) setSortingModalOpen(true);
-    else if (isMatch) setMatchModalOpen(true);
+    else if (matchTerms) setMatchModalOpen(true);
     else if (isTest) setTestModalOpen(true);
     else if (isQuiz) setQuizModalOpen(true);
     else if (isMC) setMcModalOpen(true);
@@ -590,7 +590,7 @@ export default function MasterDetailView({
             )}
 
             {/* ── Match Terms-Modal ── */}
-            {isMatch && (
+            {matchTerms && (
               <MatchTermsModal
                 open={matchModalOpen}
                 onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
