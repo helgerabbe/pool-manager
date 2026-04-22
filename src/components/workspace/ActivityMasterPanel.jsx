@@ -430,23 +430,36 @@ export default function ActivityMasterPanel({
 
             {/* Spezielle Vorschau für Bildbeschriftung */}
             {isImageLabeling ? (
-             <div className="rounded-xl border border-border bg-card p-5">
-               <ImageLabelingEditor
-                 initialData={fieldValues}
-                 readOnly={true}
-               />
-             </div>
+              <div className="rounded-xl border border-border bg-card p-5">
+                <ImageLabelingEditor
+                  initialData={fieldValues}
+                  readOnly={true}
+                />
+              </div>
             ) : catalogEntry?.name?.toLowerCase().includes('offene') ? (
-             // Offene Aufgabe mit KI-Assistent
-             <OffeneAufgabeModal
-               open={editModalOpen}
-               onOpenChange={(isOpen) => { if (!isOpen) handleModalCancel(); }}
-               initialData={fieldValues}
-               isSaving={saveFieldsMutation.isPending}
-               onSave={handleModalSave}
-               onCancel={handleModalCancel}
-               exportLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
-             />
+              <>
+                {/* Read-Only Preview für Offene Aufgabe */}
+                {!editModalOpen && (
+                  <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Aufgabenbeschreibung</p>
+                      <div className="bg-muted/30 rounded-lg p-4 text-sm whitespace-pre-wrap leading-relaxed border border-border">
+                        {fieldValues.description || <span className="text-muted-foreground italic">Noch keine Beschreibung vorhanden.</span>}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {/* Offene Aufgabe Modal */}
+                <OffeneAufgabeModal
+                  open={editModalOpen}
+                  onOpenChange={(isOpen) => { if (!isOpen) handleModalCancel(); }}
+                  initialData={fieldValues}
+                  isSaving={saveFieldsMutation.isPending}
+                  onSave={handleModalSave}
+                  onCancel={handleModalCancel}
+                  exportLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
+                />
+              </>
             ) : (
             <div className="rounded-xl border border-border bg-card p-5 space-y-5">
               {schema.length === 0 && (
