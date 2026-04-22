@@ -196,8 +196,8 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                     {paketAktivitaeten.length === 0 ? (
                       <p className="text-[11px] text-muted-foreground/50 italic px-2 py-1">Keine Aktivitäten</p>
                     ) : (
-                      Object.entries(groupedByPhase).map(([phase, activities]) => (
-                        activities.length > 0 && (
+                      Object.entries(groupedByPhase).map(([phase, activities]) => 
+                        activities.length > 0 ? (
                           <div key={phase} className="space-y-1">
                             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1">{phase}</p>
                             <div className="space-y-1">
@@ -225,13 +225,13 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                               })}
                             </div>
                           </div>
-                        )
-                        ))}
-                        )}
-                        </div>
-                        </div>
-                        );
-                        })}
+                        ) : null
+                      )}
+                    )}
+                  </div>
+                </div>
+              );
+            })}
 
             {tfAufgaben.length > 0 && (() => {
               const exportable = tfAufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending');
