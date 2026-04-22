@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Crown, Pencil, Loader2, CheckCircle2, Sparkles } from 'lucide-react';
 import { sanitizeHtml } from '@/lib/sanitize';
+import { getFriendlyErrorMessage } from '@/lib/errorMapper';
+import { resolveStatus } from '@/lib/statusUtils';
 import KlonErstellenModal from '@/components/workspace/KlonErstellenModal';
 import { useLernpaketLock } from '@/hooks/useLocks';
 import LueckentextEditor from '@/components/workspace/LueckentextEditor';
@@ -317,7 +319,7 @@ export default function MasterDetailView({
       queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
       toast.success('Masteraufgabe gespeichert.');
     },
-    onError: (err) => toast.error(err.message || 'Fehler beim Speichern.'),
+    onError: (err) => toast.error(getFriendlyErrorMessage(err)),
   });
 
   const handleOpenKlonModal = async () => {
@@ -409,7 +411,7 @@ export default function MasterDetailView({
       queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine'] });
       toast.success('Kopie gespeichert.');
     },
-    onError: (err) => toast.error(err.message || 'Fehler beim Speichern.'),
+    onError: (err) => toast.error(getFriendlyErrorMessage(err)),
   });
 
   const handleDelete = async () => {
@@ -439,9 +441,9 @@ export default function MasterDetailView({
             <h2 className="text-base font-bold truncate">{master.titel || `Masteraufgabe ${index}`}</h2>
             <div className="flex items-center gap-2 mt-0.5">
               <p className="text-xs text-muted-foreground">{catalogName}</p>
-              {master.content_status === 'approved' && (
-                <Badge className="text-[10px] bg-green-100 text-green-700 border-green-300">
-                  <CheckCircle2 className="w-3 h-3 mr-1" /> Fertig
+              {master.content_status && (
+                <Badge className={`text-[10px] ${resolveStatus(master).bgColor} ${resolveStatus(master).color} border-current`}>
+                  {resolveStatus(master).icon} {resolveStatus(master).label}
                 </Badge>
               )}
               {klone.length > 0 && (
@@ -505,9 +507,9 @@ export default function MasterDetailView({
             <div key={k.id} className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-green-50 border border-green-200">
               <div className="flex items-center gap-2 min-w-0">
                 <span className="text-sm font-medium text-green-900">Kopie {k.klon_index}</span>
-                {k.content_status === 'approved' && (
-                  <Badge className="text-[10px] bg-green-100 text-green-700 border-green-300">
-                    <CheckCircle2 className="w-3 h-3 mr-1" /> Fertig
+                {k.content_status && (
+                  <Badge className={`text-[10px] ${resolveStatus(k).bgColor} ${resolveStatus(k).color} border-current`}>
+                    {resolveStatus(k).icon} {resolveStatus(k).label}
                   </Badge>
                 )}
               </div>

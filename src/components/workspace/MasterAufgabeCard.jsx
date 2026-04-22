@@ -28,7 +28,7 @@ import MiniQuizEditor from '@/components/workspace/MiniQuizEditor';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
 import MiniQuizModal from '@/components/workspace/MiniQuizModal';
 import { isLockExpired } from '@/hooks/useActivityLock';
-import { useLernpaketLock } from '@/hooks/useLernpaketLock';
+import { useLernpaketLock } from '@/hooks/useLocks';
 import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus';
 import { TASK_STATUS_CONFIG } from '@/lib/stateMachine';
 import { toast } from 'sonner';
