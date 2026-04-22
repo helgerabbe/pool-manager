@@ -320,7 +320,10 @@ export default function EinheitUebersichtTab({
     try {
       await updateEinheit(einheit.id, form);
       queryClient.invalidateQueries({ queryKey: ['einheiten'] });
-      toast.success('Einheit gespeichert.');
+      toast.success('✅ Einheit gespeichert. Bearbeitungsmodus wird beendet.');
+      if (onReleaseLock) {
+        await onReleaseLock();
+      }
     } catch {
       toast.error('Fehler beim Speichern.');
     } finally {
