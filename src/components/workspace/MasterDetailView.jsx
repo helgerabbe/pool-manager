@@ -39,7 +39,7 @@ function isMatch(name = '') {
   return MATCH_TERMS_NAMES.some(n => name.toLowerCase().includes(n));
 }
 
-const MINIQUIZ_NAMES = ['miniquiz', 'mini-quiz', 'quiz'];
+const MINIQUIZ_NAMES = ['miniquiz', 'mini-quiz', 'quiz', 'test'];
 function isQuiz(name = '') {
   return MINIQUIZ_NAMES.some(n => name.toLowerCase().includes(n));
 }
@@ -139,7 +139,7 @@ function MasterContentReadOnly({ master, catalogName }) {
   }
 
   // Quiz
-  if (['miniquiz', 'mini-quiz', 'quiz'].some(n => catalogName.toLowerCase().includes(n))) {
+  if (['miniquiz', 'mini-quiz', 'quiz', 'test'].some(n => catalogName.toLowerCase().includes(n))) {
     return (
       <div className="space-y-2">
         {fv.questions?.length > 0 ? (
