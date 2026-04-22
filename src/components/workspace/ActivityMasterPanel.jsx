@@ -323,7 +323,6 @@ export default function ActivityMasterPanel({
     'Lückentext': 'Fülle die Lücken mit den passenden Wörtern aus der Wortbank aus.',
     'Begriffe zuordnen': 'Ordne die Begriffe den richtigen Kategorien zu.',
     'Reihenfolge / Sortierung': 'Bringe die Elemente in die richtige Reihenfolge.',
-    'Multiple Choice': 'Wähle die richtige Antwort aus den Optionen aus.',
     'Kurzantwort': 'Beantworte die Frage mit einem kurzen Satz oder Stichwort.',
     'KI-Tutor Aufgabe': 'Bearbeite die folgende Aufgabe und erkläre deinen Lösungsweg.',
     'Bildbeschreibung': 'Beschreibe das Bild möglichst genau mit eigenen Worten.',

@@ -776,67 +776,6 @@ export default function MasterAufgabeCard({
                 isSaving={saveMutation.isPending}
               />
             </div>
-          ) : isMC ? (
-            /* ── Multiple-Choice-Editor ── */
-            <div className="space-y-3">
-              {editMode ? (
-                <>
-                  <MultipleChoiceEditor
-                    initialData={fieldValues}
-                    onSave={(data) => {
-                      setFieldValues(data);
-                      handleSaveAndClose(data);
-                    }}
-                    onCancel={() => { setEditMode(false); setHasPendingChanges(false); }}
-                    onChange={() => setHasPendingChanges(true)}
-                  />
-                </>
-              ) : (
-                <div className="space-y-3">
-                  {fieldValues.instruction && (
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Aufgabenstellung</p>
-                      <div className="bg-muted/50 rounded-lg p-3 text-sm">{fieldValues.instruction}</div>
-                    </div>
-                  )}
-                  {fieldValues.displayCount && (
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Anzahl der Fragen</p>
-                      <div className="bg-muted/50 rounded-lg p-3 text-sm">{fieldValues.displayCount} / {fieldValues.mcItems?.length || 0}</div>
-                    </div>
-                  )}
-                  {fieldValues.mcItems?.length > 0 && (
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                        Fragen ({fieldValues.mcItems.length})
-                      </p>
-                      <div className="bg-muted/30 rounded-lg p-3 space-y-2 text-sm max-h-48 overflow-y-auto">
-                        {fieldValues.mcItems.map((q, i) => (
-                          <div key={i} className="pb-2 border-b border-border/30 last:border-0 last:pb-0">
-                            <p className="font-medium">{i + 1}. {q.question}</p>
-                            <div className="mt-1 space-y-1 text-xs text-muted-foreground">
-                              {q.options.map((opt, oi) => (
-                                <div key={oi} className={opt.isCorrect ? 'text-green-600 font-medium' : ''}>
-                                  {opt.isCorrect && '✓ '}{opt.text}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {kannBearbeiten && !locked && (
-                    <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
-                      Inhalt bearbeiten
-                    </Button>
-                  )}
-                  {!fieldValues.instruction && !fieldValues.mcItems?.length && (
-                    <p className="text-sm text-muted-foreground italic">Noch kein Inhalt. Klicke „Inhalt bearbeiten".</p>
-                  )}
-                </div>
-              )}
-            </div>
           ) : isLuecke ? (
             /* ── Lückentext-Editor (WYSIWYG Modal, implizites Locking) ── */
             <div className="space-y-3">
@@ -967,7 +906,7 @@ export default function MasterAufgabeCard({
           )}
 
           {/* Klon erstellen – NICHT für KI-Tutor und Bildbeschriftung */}
-          {!isKITutor && !isImageLabeling && (master.field_values?.lueckentext || master.field_values?.pairs?.length > 0 || master.field_values?.orderedItems?.length > 0 || master.field_values?.task_description || master.field_values?.mcItems?.length > 0 || master.field_values?.questions?.length > 0) && !editMode && (
+          {!isKITutor && !isImageLabeling && (master.field_values?.lueckentext || master.field_values?.pairs?.length > 0 || master.field_values?.orderedItems?.length > 0 || master.field_values?.task_description || master.field_values?.questions?.length > 0) && !editMode && (
             <div className="border-t border-border/60 pt-4">
               <Button
                 variant="ghost"
