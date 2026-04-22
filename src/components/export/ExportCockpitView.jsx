@@ -226,10 +226,12 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                             </div>
                           </div>
                         )
-                      ))
-                          </div>
-                          );
-                          })}
+                        ))}
+                        )}
+                        </div>
+                        </div>
+                        );
+                        })}
 
             {tfAufgaben.length > 0 && (() => {
               const exportable = tfAufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending');
