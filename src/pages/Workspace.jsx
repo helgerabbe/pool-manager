@@ -59,6 +59,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const [isStructuralEditingActive, setIsStructuralEditingActive] = useState(false);
   const [acquiringStructLock, setAcquiringStructLock] = useState(false);
   const [releasingStructLock, setReleasingStructLock] = useState(false);
+  const [strukturBoardKey, setStrukturBoardKey] = useState(0); // ← Key-Remount-Counter
 
   // ── Tab-1-Bearbeitungsmodus State ────────────────────────────────────────────
   const [isTab1EditingActive, setIsTab1EditingActive] = useState(false);
@@ -596,32 +597,38 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
              </TabsContent>
 
             {/* ── Tab 2: Struktur anlegen → StrukturBoard ──────────────────────── */}
-               <TabsContent value="struktur" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
-                    <div className="flex-1 overflow-y-auto flex flex-col">
-                      <ErrorBoundary label="Struktur">
-                         <StrukturBoardEmbedded
-                           einheitId={selectedEinheitId}
-                           einheit={einheit}
-                           lernpakete={paketeFuerEinheit}
-                           themenfelder={themenfelder}
-                           queryClient={queryClient}
-                           readOnly={!isStructuralEditingActive || isLockedByOther}
-                           isStructuralEditingActive={isStructuralEditingActive}
-                           isLockedByOther={isLockedByOther}
-                           onSaved={async () => {
-                             // ⚠️ WICHTIG: Lock ERST freigeben NACH die queryClient.invalidateQueries in StrukturBoard
-                             // vollständig abgearbeitet sind (der onSaved-Callback wird NACH den Invalidierungen aufgerufen)
-                             // Kurze Verzögerung um sicherzustellen dass Cache aktualisiert ist
-                             await new Promise(resolve => setTimeout(resolve, 100));
-                             await handleReleaseStructLock();
-                             // Nach Lock-Freigabe: erzwinge einen Fresh-Reload der kompletten Struktur
-                             await queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-                             await queryClient.invalidateQueries({ queryKey: ['themenfelder'] });
-                           }}
-                         />
-                      </ErrorBoundary>
-                   </div>
-                 </TabsContent>
+                <TabsContent value="struktur" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
+                     <div className="flex-1 overflow-y-auto flex flex-col">
+                       <ErrorBoundary label="Struktur">
+                          <StrukturBoardEmbedded
+                            key={strukturBoardKey}
+                            einheitId={selectedEinheitId}
+                            einheit={einheit}
+                            lernpakete={paketeFuerEinheit}
+                            themenfelder={themenfelder}
+                            queryClient={queryClient}
+                            readOnly={!isStructuralEditingActive || isLockedByOther}
+                            isStructuralEditingActive={isStructuralEditingActive}
+                            isLockedByOther={isLockedByOther}
+                            onSaved={async () => {
+                              // 🔄 KEY-REMOUNT: erzwinge kompletten Neustart der Komponente
+                              console.log('[Workspace] 🔄 onSaved-Callback: Triggere Board-Remount via Key-Increment');
+                              setStrukturBoardKey(prev => prev + 1);
+
+                              // ⚠️ Kleine Verzögerung, damit React die alte Komponente abbaut
+                              await new Promise(resolve => setTimeout(resolve, 100));
+
+                              // Lock freigeben
+                              await handleReleaseStructLock();
+
+                              // Nach Lock-Freigabe: frische Daten laden
+                              await queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+                              await queryClient.invalidateQueries({ queryKey: ['themenfelder'] });
+                            }}
+                          />
+                       </ErrorBoundary>
+                    </div>
+                  </TabsContent>
 
             {/* ── Tab 3: Aktivitäten zuordnen → Sidebar-Baum + Detail-Panel ───── */}
             <TabsContent value="aktivitaeten" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">

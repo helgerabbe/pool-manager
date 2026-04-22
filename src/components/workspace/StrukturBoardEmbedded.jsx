@@ -734,7 +734,13 @@ export default function StrukturBoardEmbedded({
       console.log('[StrukturBoard] 🔄 Setze isDirty=false, damit UI-Sync stattfinden kann...');
       setIsDirty(false);
 
-      // ── PHASE 6: Query Refetch (AGGRESSIV) ───────────────────
+      // ── PHASE 6: "Gedenksekunde" für Datenbank-Schreibvorgänge ──────────
+      // Race-Condition Fix: Gib der Datenbank Zeit, alle Schreibvorgänge zu beenden
+      // bevor wir die Daten neu laden. Backend sagt "OK!" aber die DB braucht noch Zeit.
+      console.log('[StrukturBoard] ⏳ Warte 800ms, damit Datenbank alle Schreibvorgänge abschließt...');
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // ── PHASE 7: Query Refetch (AGGRESSIV) ───────────────────
       console.log(`[StrukturBoard] 🔄 Lade alle Daten neu...`);
       
       // REFETCH statt INVALIDATE – zwingt sofortiges Neuladen
@@ -745,12 +751,12 @@ export default function StrukturBoardEmbedded({
         queryClient.refetchQueries({ queryKey: ['einheit', einheitId] }),
       ]);
 
-      // ── PHASE 7: Expliziter Sync als Sicherheit ─────────────────────────
+      // ── PHASE 8: Expliziter Sync als Sicherheit ─────────────────────────
       // Falls React-Query zu schnell ist und Props sich nicht "genug" ändern
       console.log('[StrukturBoard] 🔄 Erzwinge lokalen State-Sync mit neuen Remote-Daten...');
       syncWithRemote();
 
-      // ── PHASE 8: Erfolg! Bearbeitungsmodus beenden ───────────────────────
+      // ── PHASE 9: Erfolg! Bearbeitungsmodus beenden ───────────────────────
       console.log('[StrukturBoard] ✅ Speichern 100% erfolgreich!');
       clearTimeout(timeoutId);
       
@@ -762,7 +768,7 @@ export default function StrukturBoardEmbedded({
       
       toast.success('✅ Struktur erfolgreich gespeichert! Bearbeitungsmodus wird beendet...');
       
-      // Callback triggert Lock-Release in Workspace
+      // 🔄 KEY-REMOUNT: Callback triggert Lock-Release UND Board-Neustart
       onSaved?.();
 
     } catch (error) {
