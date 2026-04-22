@@ -394,6 +394,7 @@ export default function StrukturBoardEmbedded({
 
   // ── Initialisierung ───────────────────────────────────────────────────────
 
+  // ── Initialisierung ───────────────────────────────────────────────────
   useEffect(() => {
     if (isDirty) return; // Nicht initialisieren, wenn lokale Änderungen ausstehen
     
@@ -417,22 +418,14 @@ export default function StrukturBoardEmbedded({
       newMap[k].sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0));
     });
 
-    // Nur neu initialisieren, wenn sich die echten Daten geändert haben
-    // (Damit nicht die gerade gespeicherten lokalen Änderungen überschrieben werden)
-    const paketeIds = pakete.map(p => p.id).sort();
-    const spaltenIds = tfSpalten.map(s => s.themenfeldId).filter(Boolean).sort();
-    
-    // Vergleiche mit aktuellen Original-IDs um zu erkennen ob Daten sich wirklich geändert haben
-    const paketeHatSichGeaendert = paketeIds.join(',') !== Array.from(originalPaketIds).sort().join(',');
-    const spaltenHatSichGeaendert = spaltenIds.join(',') !== Array.from(originalSpaltenIds).sort().join(',');
-    
-    if (paketeHatSichGeaendert || spaltenHatSichGeaendert) {
-      setSpalten(tfSpalten);
-      setPaketeMap(newMap);
-      setOriginalSpaltenIds(new Set(spaltenIds));
-      setOriginalPaketIds(new Set(paketeIds));
-    }
-  }, [remotePakete, remoteThemenfelder, isDirty, originalPaketIds, originalSpaltenIds]);
+    const spaltenIds = tfSpalten.map(s => s.themenfeldId).filter(Boolean);
+    const paketeIds = pakete.map(p => p.id);
+
+    setSpalten(tfSpalten);
+    setPaketeMap(newMap);
+    setOriginalSpaltenIds(new Set(spaltenIds));
+    setOriginalPaketIds(new Set(paketeIds));
+  }, [remotePakete, remoteThemenfelder, isDirty]);
 
 
 
