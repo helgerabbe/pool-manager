@@ -38,24 +38,27 @@ export default function MiniQuizEditor({
   }, [questions]);
   const isAtLimit = questions.length >= MAX_QUESTIONS;
 
+  const [addError, setAddError] = useState('');
+
   const handleAddQuestion = () => {
     if (!tempQuestion.trim()) {
-      toast.error('Frage ist erforderlich.');
+      setAddError('Frage ist erforderlich.');
       return;
     }
     if (tempAnswers.length < 2) {
-      toast.error('Mindestens 2 Antwortoptionen erforderlich.');
+      setAddError('Mindestens 2 Antwortoptionen erforderlich.');
       return;
     }
     if (!tempAnswers.some(a => a.isCorrect)) {
-      toast.error('Mindestens 1 richtige Antwort erforderlich.');
+      setAddError('Bitte hake mindestens eine Antwort als korrekt an (Checkbox).');
       return;
     }
     const newQuestions = [...questions, { question: tempQuestion, answers: tempAnswers }];
     if (newQuestions.length > MAX_QUESTIONS) {
-      toast.error(`Maximal ${MAX_QUESTIONS} Fragen erlaubt.`);
+      setAddError(`Maximal ${MAX_QUESTIONS} Fragen erlaubt.`);
       return;
     }
+    setAddError('');
     setQuestions(newQuestions);
     setTempQuestion('');
     setTempAnswers([]);
@@ -208,6 +211,11 @@ export default function MiniQuizEditor({
             </div>
           </div>
 
+          {addError && (
+            <p className="text-xs text-destructive bg-red-50 border border-red-200 rounded px-2 py-1.5">
+              ⚠ {addError}
+            </p>
+          )}
           <Button
             size="sm"
             onClick={handleAddQuestion}
