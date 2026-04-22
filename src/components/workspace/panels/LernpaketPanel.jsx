@@ -335,15 +335,16 @@ export default function LernpaketPanel({
                       {activities.map(activity => {
                         const katalogEntry = aktivitaetenKatalog.find(a => a.id === activity.aktivitaet_id);
                         const aktivitaetName = katalogEntry?.name || 'Unbekannte Aktivität';
+                        const phaseColors = {
+                          'Input': 'bg-green-50 border-green-200',
+                          'Übung': 'bg-pink-50 border-pink-200',
+                          'Abschluss': 'bg-blue-50 border-blue-200',
+                        };
+                        const bgColor = phaseColors[activity.phase] || 'bg-muted/40 border-border/50';
                         return (
-                          <div key={activity.id} className="flex items-start gap-2 p-2 rounded border border-border/50 bg-muted/40 text-xs">
+                          <div key={activity.id} className={`flex items-start gap-2 p-2 rounded border text-xs ${bgColor}`}>
                             <span className="text-primary font-semibold shrink-0 mt-0.5">▸</span>
                             <span className="flex-1 text-foreground">{aktivitaetName}</span>
-                            {activity.is_complete && (
-                              <Badge className="shrink-0 text-[10px]" variant="secondary">
-                                Vollständig
-                              </Badge>
-                            )}
                           </div>
                         );
                       })}
