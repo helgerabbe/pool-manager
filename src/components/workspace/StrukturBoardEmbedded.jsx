@@ -247,16 +247,16 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
           </span>
         </div>
         {/* Drop-Zone (unsichtbar, aber aktiv) */}
-        <Droppable droppableId={id}>
-          {(provided, snapshot) => (
-            <div
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              className={cn(
-                'w-full min-h-[40px] rounded-b-xl transition-colors',
-                snapshot.isDraggingOver && 'bg-primary/20'
-              )}
-            >
+          <Droppable droppableId={id}>
+            {(provided, snapshot) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className={cn(
+                  'w-full min-h-[40px] rounded-b-xl transition-colors overflow-hidden',
+                  snapshot.isDraggingOver && 'bg-primary/20'
+                )}
+              >
               {provided.placeholder}
             </div>
           )}
