@@ -315,7 +315,13 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
     }
   };
 
-  const { data: einheiten = [], isLoading: einheitenLoading } = useQuery({ queryKey: ['einheiten'], queryFn: () => base44.entities.Einheiten.list() });
+  const { data: einheiten = [], isLoading: einheitenLoading } = useQuery({ 
+    queryKey: ['einheiten'], 
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getEinheitenListSecure', { page: 1, limit: 100 });
+      return response.data?.data || [];
+    }
+  });
   const { data: lernpakete = [], isLoading: lernpaketeLoading } = useQuery({ queryKey: ['lernpakete'], queryFn: () => base44.entities.Lernpakete.list() });
   const { data: themenfelder = [], isLoading: themenfelderLoading } = useQuery({ queryKey: ['themenfelder'], queryFn: () => base44.entities.Themenfeld.list() });
   const { data: aktivitaeten = [], isLoading: aktivitaetenLoading } = useQuery({ queryKey: ['lernpaketPhaseAktivitaeten'], queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list() });
