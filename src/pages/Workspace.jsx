@@ -608,8 +608,15 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                            readOnly={!isStructuralEditingActive || isLockedByOther}
                            isStructuralEditingActive={isStructuralEditingActive}
                            isLockedByOther={isLockedByOther}
-                           onSaved={() => {
-                             handleReleaseStructLock();
+                           onSaved={async () => {
+                             // ⚠️ WICHTIG: Lock ERST freigeben NACH die queryClient.invalidateQueries in StrukturBoard
+                             // vollständig abgearbeitet sind (der onSaved-Callback wird NACH den Invalidierungen aufgerufen)
+                             // Kurze Verzögerung um sicherzustellen dass Cache aktualisiert ist
+                             await new Promise(resolve => setTimeout(resolve, 100));
+                             await handleReleaseStructLock();
+                             // Nach Lock-Freigabe: erzwinge einen Fresh-Reload der kompletten Struktur
+                             await queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+                             await queryClient.invalidateQueries({ queryKey: ['themenfelder'] });
                            }}
                          />
                       </ErrorBoundary>
