@@ -232,12 +232,11 @@ export function usePresence(currentView = 'dashboard') {
       }
       if (cleanupVisibility) cleanupVisibility();
       if (myRecordIdRef.current) {
-        const id = myRecordIdRef.current;
-        myRecordIdRef.current = null;
-        deletePresenceRecord(id).catch(() => {
-          // Silently ignore – record may have been deleted externally
-        });
-      }
+         const id = myRecordIdRef.current;
+         myRecordIdRef.current = null;
+         // Silently ignore 404: Record könnte bereits extern gelöscht sein
+         deletePresenceRecord(id).catch(() => {});
+       }
     };
 
     const handleUnload = () => {
