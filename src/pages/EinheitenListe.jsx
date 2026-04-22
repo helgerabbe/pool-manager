@@ -187,15 +187,21 @@ export default function EinheitenListe() {
   return (
     <div className="space-y-6">
       {debugInfo && (
-        <div className="bg-blue-50 border border-blue-200 rounded p-3 text-xs font-mono text-blue-900">
-          <p className="font-bold mb-2">🔍 DEBUG INFO:</p>
+        <div className="bg-blue-50 border border-blue-200 rounded p-3 text-xs font-mono text-blue-900 space-y-2">
+          <p className="font-bold">🔍 DEBUG INFO:</p>
           <p>User: {debugInfo.user_email} | Role: {debugInfo.resolved_role}</p>
           <p>Alle Einheiten vor Filter: {debugInfo.all_einheiten_before_filter?.length || 0}</p>
           {debugInfo.all_einheiten_before_filter?.map(e => (
-            <div key={e.id} className="ml-4 text-gray-600">
+            <div key={e.id} className="ml-4">
               • {e.titel} ({e.fach}) - wizard_status: {e.wizard_status}
             </div>
           ))}
+          <div className="border-t border-blue-300 pt-2 mt-2">
+            <p className="font-bold">Filter Criteria:</p>
+            <pre className="bg-white p-2 rounded text-[10px] overflow-auto max-h-40">
+              {JSON.stringify(debugInfo.filter_criteria, null, 2)}
+            </pre>
+          </div>
         </div>
       )}
       <div className="flex items-center justify-between">
