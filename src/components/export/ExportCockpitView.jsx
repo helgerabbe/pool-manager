@@ -202,67 +202,80 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1">{phase}</p>
                             <div className="space-y-1">
                               {activities.map(act => {
-                                const actName = aktivitaetenKatalog.find(k => k.id === act.aktivitaet_id)?.name || 'Aktivität';
-                                const isSelected = selectedIds.includes(act.id);
-                                const isPending = act.sync_status === 'pending';
-                                const isSynced = act.sync_status === 'synced';
-                                const isApproved = act.content_status === 'approved';
-                                const isSelectable = isApproved && !isPending && !isSynced;
+                                 const actName = aktivitaetenKatalog.find(k => k.id === act.aktivitaet_id)?.name || 'Aktivität';
+                                 const isPending = act.sync_status === 'pending';
+                                 const isSynced = act.sync_status === 'synced';
+                                 const isApproved = act.content_status === 'approved';
 
-                                // Finde alle MasterAufgaben für diese Aktivität
-                                const actMasters = masterAufgaben.filter(m => m.lernpaket_phase_aktivitaet_id === act.id);
-                                const masterExportable = actMasters.filter(m => m.content_status === 'approved' && m.sync_status !== 'pending' && m.sync_status !== 'synced');
-                                const masterSelectedCount = masterExportable.filter(m => selectedIds.includes(m.id)).length;
-                                const allMastersSelected = masterExportable.length > 0 && masterSelectedCount === masterExportable.length;
+                                 // Finde alle MasterAufgaben für diese Aktivität
+                                 const actMasters = masterAufgaben.filter(m => m.lernpaket_phase_aktivitaet_id === act.id);
+                                 const hasMasterChildren = actMasters.length > 0;
+                                 const masterExportable = actMasters.filter(m => m.content_status === 'approved' && m.sync_status !== 'pending' && m.sync_status !== 'synced');
+                                 const masterSelectedCount = masterExportable.filter(m => selectedIds.includes(m.id)).length;
+                                 const allMastersSelected = masterExportable.length > 0 && masterSelectedCount === masterExportable.length;
 
-                                return (
-                                  <div key={act.id} className="space-y-0.5">
-                                    <div className={cn('flex items-center gap-2 p-1.5 rounded transition', isSelectable ? 'hover:bg-muted/20' : 'opacity-70')}>
-                                      <Checkbox checked={isSelected} onCheckedChange={() => toggleActivities([act])} disabled={!isSelectable} className="h-4 w-4 shrink-0" />
-                                      <button
-                                        onClick={() => onNavigateToActivity?.(act.id, paket.id)}
-                                        className={cn('text-xs flex-1 truncate text-left transition', isApproved ? 'text-primary hover:underline' : 'text-muted-foreground')}
-                                      >
-                                        {act.phase === 'Input' ? '📚' : act.phase === 'Übung' ? '✏️' : '🎯'} {actName}
-                                      </button>
-                                      {isPending && <UndoButton activityId={act.id} />}
-                                      <AktivitaetStatusBadge activity={act} />
-                                    </div>
+                                 // Masterfähige Aktivitäten sind nicht direkt selektierbar — nur ihre Masters
+                                 const isSelectable = !hasMasterChildren && isApproved && !isPending && !isSynced;
+                                 const isSelected = selectedIds.includes(act.id);
 
-                                    {/* MasterAufgaben unter der Aktivität */}
-                                    {actMasters.length > 0 && (
-                                      <div className="pl-5 space-y-0.5 border-l border-muted/30 ml-1">
-                                        {masterExportable.length > 0 && (
-                                          <div className="flex items-center gap-2 p-1 rounded transition hover:bg-muted/10">
-                                            <Checkbox checked={allMastersSelected} onCheckedChange={() => toggleActivities(masterExportable)} className="h-3.5 w-3.5 shrink-0" />
-                                            <span className="text-[11px] font-medium text-muted-foreground flex-1 truncate">
-                                              Master ({masterSelectedCount}/{masterExportable.length})
-                                            </span>
-                                          </div>
-                                        )}
-                                        {actMasters.map(master => {
-                                          const masterSelected = selectedIds.includes(master.id);
-                                          const masterPending = master.sync_status === 'pending';
-                                          const masterApproved = master.content_status === 'approved';
-                                          const masterSelectable = masterApproved && !masterPending;
-                                          return (
-                                            <div key={master.id} className={cn('flex items-center gap-2 p-1 rounded transition text-[11px]', masterSelectable ? 'hover:bg-muted/10' : 'opacity-60')}>
-                                              <Checkbox checked={masterSelected} onCheckedChange={() => toggleActivities([master])} disabled={!masterSelectable} className="h-3.5 w-3.5 shrink-0" />
-                                              <span className="text-muted-foreground flex-1 truncate">
-                                                👤 {master.titel || 'Master ohne Titel'}
-                                              </span>
-                                              {masterPending && <UndoButton activityId={master.id} />}
-                                              <AktivitaetStatusBadge activity={master} />
-                                            </div>
-                                          );
-                                        })}
-                                        </div>
-                                        )}
-                                        </div>
-                                        );
-                                        })}
+                                 return (
+                                   <div key={act.id} className="space-y-0.5">
+                                     <div className={cn('flex items-center gap-2 p-1.5 rounded transition', isSelectable ? 'hover:bg-muted/20' : 'opacity-70')}>
+                                       {isSelectable && <Checkbox checked={isSelected} onCheckedChange={() => toggleActivities([act])} className="h-4 w-4 shrink-0" />}
+                                       {!isSelectable && <div className="h-4 w-4 shrink-0" />}
+                                       <button
+                                         onClick={() => onNavigateToActivity?.(act.id, paket.id)}
+                                         className={cn('text-xs flex-1 truncate text-left transition', isApproved ? 'text-primary hover:underline' : 'text-muted-foreground')}
+                                       >
+                                         {act.phase === 'Input' ? '📚' : act.phase === 'Übung' ? '✏️' : '🎯'} {actName}
+                                       </button>
+                                       {isPending && <UndoButton activityId={act.id} />}
+                                       <AktivitaetStatusBadge activity={act} />
+                                     </div>
 
-            {tfAufgaben.length > 0 && (() => {
+                                     {/* MasterAufgaben unter der Aktivität */}
+                                     {actMasters.length > 0 && (
+                                       <div className="pl-5 space-y-0.5 border-l border-muted/30 ml-1">
+                                         {masterExportable.length > 0 && (
+                                           <div className="flex items-center gap-2 p-1 rounded transition hover:bg-muted/10">
+                                             <Checkbox checked={allMastersSelected} onCheckedChange={() => toggleActivities(masterExportable)} className="h-3.5 w-3.5 shrink-0" />
+                                             <span className="text-[11px] font-medium text-muted-foreground flex-1 truncate">
+                                               Master ({masterSelectedCount}/{masterExportable.length})
+                                             </span>
+                                           </div>
+                                         )}
+                                         {actMasters.map(master => {
+                                           const masterSelected = selectedIds.includes(master.id);
+                                           const masterPending = master.sync_status === 'pending';
+                                           const masterApproved = master.content_status === 'approved';
+                                           const masterSelectable = masterApproved && !masterPending;
+                                           return (
+                                             <div key={master.id} className={cn('flex items-center gap-2 p-1 rounded transition text-[11px]', masterSelectable ? 'hover:bg-muted/10' : 'opacity-60')}>
+                                               <Checkbox checked={masterSelected} onCheckedChange={() => toggleActivities([master])} disabled={!masterSelectable} className="h-3.5 w-3.5 shrink-0" />
+                                               <span className="text-muted-foreground flex-1 truncate">
+                                                 👤 {master.titel || 'Master ohne Titel'}
+                                               </span>
+                                               {masterPending && <UndoButton activityId={master.id} />}
+                                               <AktivitaetStatusBadge activity={master} />
+                                             </div>
+                                           );
+                                         })}
+                                       </div>
+                                     )}
+                                   </div>
+                                 );
+                               })}
+                               </div>
+                               ) : null
+                               )
+                               )}
+                               </div>
+                               );
+                               })}
+                               </div>
+                               )}
+
+                               {tfAufgaben.length > 0 && (() => {
               const exportable = tfAufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending');
               const selectedCount = exportable.filter(a => selectedIds.includes(a.id)).length;
               const allSelected = exportable.length > 0 && selectedCount === exportable.length;
