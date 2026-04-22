@@ -150,11 +150,11 @@ Ein Lernpaket ist die kleinste Planungseinheit – denken Sie an eine einzelne U
 
 Jedes Lernpaket ist automatisch in drei didaktische Phasen unterteilt:
 
-| Phase | Wann nutzen? | Typische Aktivitäten |
-|-------|-------------|---------------------|
-| **Input** | Zu Beginn eines Themas | Erklärvideo lesen, Fachtext analysieren, Podcast hören |
-| **Übung** | Während der Erarbeitung | Lückentext ausfüllen, Begriffe zuordnen, Multiple Choice |
-| **Abschluss** | Zum Thema-Abschluss | Exit-Check, Mini-Quiz, Reflexionsfragen |
+| Phase | Wann nutzen? | Beispiele |
+|-------|-------------|---------|
+| **Input** | Zu Beginn eines Themas – Schüler erhalten Informationen | Erklärvideos, Fachtexte, Lehrwerk/Quelle, Podcasts, Infoseiten |
+| **Übung** | Während der Erarbeitung – Schüler trainieren | Lückentexte, Begriffe zuordnen, Reihenfolge sortieren, Multiple Choice, Mini-Quizzes |
+| **Abschluss** | Zum Thema-Abschluss – Kontrolle und Reflexion | Exit-Checks, Tests, Offene Aufgaben |
 
 **Wichtig:** Sie müssen nicht alle drei Phasen befüllen! Ein Lernpaket kann auch nur aus einer Input-Phase bestehen (z.B. wenn Sie nur ein Video zur Verfügung stellen möchten).
 
@@ -169,15 +169,54 @@ Der Pool-Manager bietet Ihnen einen vorgefertigten **Aktivitäten-Katalog** – 
 3. Füllen Sie die Felder aus (die genaue Anzahl hängt vom Aktivitätentyp ab)
 4. Speichern Sie Ihre Eingabe
 
-### Die wichtigsten Aktivitätentypen im Überblick:
+### Alle verfügbaren Aktivitätentypen
+
+Der Pool-Manager bietet folgende Aktivitäten pro Phase:
+
+#### **Input-Aktivitäten** (Zum Erarbeiten von Inhalten)
 
 | Aktivität | Beschreibung | Einsatzgebiet |
 |-----------|-------------|---------------|
-| **Lückentext** | Schüler ergänzen fehlende Wörter | Vokabeltraining, Fachbegriffe |
-| **Begriffe zuordnen** | Paare matching (z.B. Datum ↔ Ereignis) | Zuordnungen, Definitionen |
-| **Reihenfolge bilden** | Elemente chronologisch sortieren | Zeitstrahlen, Prozessabläufe |
-| **Multiple Choice** | Richtige Antwort(en) auswählen | Wissensabfrage, Verständnis-Checks |
-| **Freitext** | Offene Antwort in Textform | Reflexion, eigene Formulierungen |
+| **Video anschauen** | Verknüpfung zu einem YouTube-Video oder ähnlich | Erklärvideo, Dokumentation |
+| **Lehrwerk/Quelle** | Verweis auf ein Buch oder externe Ressource mit Kapitel-Angabe | Textbasiertes Lernen, Quellenarbeit |
+| **Infoseite/Cheat-Sheet** | Kurze, strukturierte Übersichtsseite mit Fachwissen | Schnelle Informationen, Zusammenfassungen |
+| **Podcast hören** | Link zu einem Podcast mit Anleitung | Auditive Inhalte, Vorträge |
+
+#### **Übungs-Aktivitäten** (Zum Trainieren und Üben)
+
+| Aktivität | Beschreibung | Einsatzgebiet |
+|-----------|-------------|---------------|
+| **Lückentext** | Schüler ergänzen fehlende Wörter in einem Text | Vokabeltraining, Fachbegriffe, Grammatik |
+| **Begriffe zuordnen** | Paare matching (z.B. Datum ↔ Ereignis, Begriff ↔ Definition) | Zuordnungsaufgaben, Definitionen, Kontext |
+| **Reihenfolge bilden** | Elemente chronologisch oder logisch sortieren | Zeitstrahlen, Prozessabläufe, Kausalitäten |
+| **Multiple Choice** | Schüler wählen eine oder mehrere richtige Antworten | Wissensabfrage, Verständnis-Checks |
+| **Mini-Quiz** | Kurze Frage-Antwort-Serie zur Wissenskontrolle | Schnelle Überprüfung, spielerisches Lernen |
+| **Drill-Übung** | Wiederholte Übungen mit variierenden Beispielen | Vokabeln, Formeln, wiederkehrende Muster |
+
+#### **Abschluss-Aktivitäten** (Zur Kontrolle und Reflexion)
+
+| Aktivität | Beschreibung | Einsatzgebiet |
+|-----------|-------------|---------------|
+| **Test** | Formale Abschlussaufgabe mit Bewertung | Leistungsfeststellung, Abschlussprüfung |
+| **Exit-Check** | Kurze Kontrollfrage – Schüler zeigen Verständnis auf | Schnelle Erfolgskontrolle |
+| **Offene Aufgabe** | Schüler formulieren frei Gedanken oder Antworten | Reflexion, eigenständiges Schreiben, Transfer |
+
+### Masteraufgaben-fähige Aktivitäten
+
+Einige Aktivitäten können als **Mastervorlagen** verwendet werden, um automatisch Variationen zu generieren:
+
+* ✅ **Lückentext** – KI erstellt Variationen mit anderen Wörtern
+* ✅ **Begriffe zuordnen** – KI generiert neue Paare und Distraktoren
+* ✅ **Reihenfolge bilden** – KI erstellt neue Reihenfolgen zum gleichen Thema
+* ✅ **Multiple Choice** – KI generiert neue Fragen zum Lernziel
+* ✅ **Mini-Quiz** – KI erstellt neue Fragen mit unterschiedlichen Formulierungen
+* ✅ **KI-Tutor** – Mastervorlage für komplexe Aufgabenszenarien
+* ✅ **Bildbeschriftung** – KI erstellt Variationen mit anderen Bildern
+* ❌ **Video anschauen** – Keine Generierung (externe Quelle)
+* ❌ **Lehrwerk/Quelle** – Keine Generierung (externe Quelle)
+* ❌ **Infoseite** – Keine Generierung (statischer Inhalt)
+* ❌ **Test** – Keine Generierung (formale Prüfung)
+* ❌ **Offene Aufgabe** – Keine Generierung (ergebnisoffen)
 
 ## Phasen ein- und ausblenden
 
