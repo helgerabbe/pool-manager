@@ -41,41 +41,23 @@ Sortierkriterium: ${kriterium}
 
 Generiere eine korrekt sortierte Sortierliste. Antworte NUR mit dem JSON-Array, ohne weitere Erklärungen.`;
 
-    // Invoke LLM mit JSON Schema
+    // Invoke LLM mit JSON Schema (root muss object sein)
     const response = await base44.integrations.Core.InvokeLLM({
       prompt: userPrompt,
       response_json_schema: {
-        type: 'array',
-        items: { type: 'string' },
+        type: 'object',
+        properties: {
+          items: {
+            type: 'array',
+            items: { type: 'string' },
+          },
+        },
+        required: ['items'],
       },
     });
 
-    // Response-Handling: Base44 sollte bereits geparst zurückgeben
-    let items = [];
-    
-    if (Array.isArray(response)) {
-      // Direkt Array
-      items = response;
-    } else if (response?.data && Array.isArray(response.data)) {
-      // Nested in .data
-      items = response.data;
-    } else if (typeof response === 'string') {
-      // Fallback: String-Parsing
-      try {
-        items = JSON.parse(response);
-      } catch (e) {
-        // Notfall-Fallback: Split by newlines
-        items = response
-          .split('\n')
-          .map(line => line.replace(/^\d+[\.\)]\s*/, '').trim())
-          .filter(line => line.length > 0 && line !== '[]');
-      }
-    } else if (typeof response === 'object' && response !== null) {
-      // Versuche, beliebige Nested-Struktur zu extrahieren
-      if (Array.isArray(response)) {
-        items = response;
-      }
-    }
+    // Response ist bereits geparst: { items: [...] }
+    let items = response?.items || [];
 
     // Validierung
     if (!Array.isArray(items)) {
