@@ -24,7 +24,7 @@ import {
 } from '@/services/PresenceService';
 
 const HEARTBEAT_INTERVAL = 30_000;  // 30s
-const STALE_THRESHOLD_MS = 120_000; // 120s = Puffer für 3 verpasste Pings
+const STALE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes – shows only truly active users
 const DEBOUNCE_MS = 3_000;
 
 export function usePresence(currentView = 'dashboard') {
