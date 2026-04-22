@@ -735,14 +735,10 @@ export default function StrukturBoardEmbedded({
 
       // ── PHASE 5: Query Invalidation & Neuload (STRIKT) ───────────────────
       console.log(`[StrukturBoard] 🔄 Invalidiere Cache und lade Struktur neu...`);
-      const invalidateResults = await Promise.all([
+      await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['lernpakete'] }),
         queryClient.invalidateQueries({ queryKey: ['themenfelder', einheitId] }),
       ]);
-      
-      if (!invalidateResults.every(r => r !== undefined)) {
-        throw new Error('Fehler: Cache konnte nicht invalidiert werden');
-      }
 
       // ── PHASE 6: Erfolg! Bearbeitungsmodus beenden ───────────────────────
       console.log('[StrukturBoard] ✅ Speichern 100% erfolgreich!');
