@@ -634,7 +634,9 @@ export default function StrukturBoardEmbedded({
       if (paketIdZumLoeschen.length > 0) {
         console.log(`[StrukturBoard] 🗑️ Lösche ${paketIdZumLoeschen.length} Pakete...`);
         for (const paketId of paketIdZumLoeschen) {
+          console.log(`[StrukturBoard]   → deleteLernpaket(${paketId}) wird aufgerufen...`);
           const result = await deleteLernpaket(paketId);
+          console.log(`[StrukturBoard]   ✓ deleteLernpaket(${paketId}) abgeschlossen. Result:`, result);
           if (!result) throw new Error(`Fehler: Paket ${paketId} konnte nicht gelöscht werden`);
         }
       }
@@ -642,7 +644,9 @@ export default function StrukturBoardEmbedded({
       if (themenfeldIdZumLoeschen.length > 0) {
         console.log(`[StrukturBoard] 🗑️ Lösche ${themenfeldIdZumLoeschen.length} Themenfelder...`);
         for (const themenfeldId of themenfeldIdZumLoeschen) {
+          console.log(`[StrukturBoard]   → deleteThemenfeld(${themenfeldId}) wird aufgerufen...`);
           const result = await deleteThemenfeld(themenfeldId);
+          console.log(`[StrukturBoard]   ✓ deleteThemenfeld(${themenfeldId}) abgeschlossen. Result:`, result);
           if (!result) throw new Error(`Fehler: Themenfeld ${themenfeldId} konnte nicht gelöscht werden`);
         }
       }
@@ -653,38 +657,43 @@ export default function StrukturBoardEmbedded({
       for (let i = 0; i < spalten.length; i++) {
         const spalte = spalten[i];
         let themenfeldId = spalte.themenfeldId;
-        
+
         try {
           if (!themenfeldId) {
-            console.log(`[StrukturBoard] ➕ Erstelle neues Themenfeld: "${spalte.titel}"`);
+            console.log(`[StrukturBoard] ➕ PHASE3[${i}] Erstelle Themenfeld: "${spalte.titel}"...`);
             const neu = await createThemenfeld({ einheitId, titel: spalte.titel, reihenfolge: i + 1 });
+            console.log(`[StrukturBoard] ➕ PHASE3[${i}] ✓ Fertig. Neue ID:`, neu?.id);
             if (!neu?.id) throw new Error(`Fehler: Neu erstelltes Themenfeld hat keine ID`);
             themenfeldId = neu.id;
           } else {
-            console.log(`[StrukturBoard] ✏️ Aktualisiere Themenfeld: "${spalte.titel}" (ID: ${themenfeldId})`);
+            console.log(`[StrukturBoard] ✏️ PHASE3[${i}] Update Themenfeld: "${spalte.titel}" (${themenfeldId})...`);
             const result = await updateThemenfeld(themenfeldId, { titel: spalte.titel, reihenfolge: i + 1 });
+            console.log(`[StrukturBoard] ✏️ PHASE3[${i}] ✓ Fertig. Result:`, result);
             if (!result) throw new Error(`Fehler: Themenfeld ${themenfeldId} konnte nicht aktualisiert werden`);
           }
           spaltenMitId.push({ ...spalte, themenfeldId });
         } catch (err) {
+          console.error(`[StrukturBoard] ❌ PHASE3[${i}] FEHLER:`, err);
           throw new Error(`Fehler bei Themenfeld "${spalte.titel}": ${err.message}`);
         }
       }
 
       // ── PHASE 4: Lernpakete aktualisieren (SEQUENZIELL) ───────────────────
       console.log(`[StrukturBoard] 📦 Verarbeite Lernpakete und Verschiebungen...`);
-      const allePaketeUpdates = [];
-      
+      let paketCounter = 0;
+
       for (const [spalteId, pakete] of Object.entries(paketeMap)) {
         const themenfeldId = spalteId === SAMMELBECKEN_ID ? null : spaltenMitId.find(s => s.id === spalteId)?.themenfeldId || null;
+        console.log(`[StrukturBoard] 📦 PHASE4: Spalte ${spalteId} hat ${pakete.length} Pakete`);
 
         for (let i = 0; i < pakete.length; i++) {
           const paket = pakete[i];
           const update = { themenfeld_id: themenfeldId, reihenfolge_nummer: i + 1 };
+          paketCounter++;
 
           try {
             if (paket.isNew) {
-              console.log(`[StrukturBoard] ➕ Erstelle neues Lernpaket: "${paket.titel_des_pakets}"`);
+              console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}] Erstelle Paket: "${paket.titel_des_pakets}"...`);
               const neuesPaket = await createLernpaket({
                 einheit_id: einheitId,
                 titel_des_pakets: paket.titel_des_pakets,
@@ -692,29 +701,37 @@ export default function StrukturBoardEmbedded({
                 phasen_konfiguration: paket.phasen_konfiguration || DEFAULT_PHASEN,
                 ...update,
               });
+              console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}] ✓ Paket erstellt. ID:`, neuesPaket?.id);
               if (!neuesPaket?.id) throw new Error(`Fehler: Neu erstelltes Lernpaket hat keine ID`);
 
               if (paket.lernziele && paket.lernziele.length > 0) {
-                for (const lz of paket.lernziele) {
+                console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}] Erstelle ${paket.lernziele.length} Lernziele...`);
+                for (let lzIdx = 0; lzIdx < paket.lernziele.length; lzIdx++) {
+                  const lz = paket.lernziele[lzIdx];
                   if (lz.formulierung_fachsprache?.trim()) {
+                    console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}]   → LZ${lzIdx}: "${lz.formulierung_fachsprache.substring(0, 40)}..."...`);
                     await createLernziel({
                       lernpaket_id: neuesPaket.id,
                       formulierung_fachsprache: lz.formulierung_fachsprache.trim(),
                       kategorie: lz.kategorie || 'Fachwissen',
                     });
+                    console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}]   ✓ LZ${lzIdx} fertig`);
                   }
                 }
               }
             } else {
-              console.log(`[StrukturBoard] ✏️ Aktualisiere Paket: "${paket.titel_des_pakets}" (ID: ${paket.id}, themenfeldId: ${themenfeldId}, Reihenfolge: ${i + 1})`);
+              console.log(`[StrukturBoard] ✏️ PHASE4[${paketCounter}] Update Paket: "${paket.titel_des_pakets}" (ID: ${paket.id})...`);
               const result = await updateLernpaket(paket.id, update);
+              console.log(`[StrukturBoard] ✏️ PHASE4[${paketCounter}] ✓ Fertig. Result:`, result);
               if (!result) throw new Error(`Fehler: Paket ${paket.id} konnte nicht aktualisiert werden`);
             }
           } catch (err) {
+            console.error(`[StrukturBoard] ❌ PHASE4[${paketCounter}] FEHLER:`, err);
             throw new Error(`Fehler bei Paket "${paket.titel_des_pakets}": ${err.message}`);
           }
         }
       }
+      console.log(`[StrukturBoard] 📦 PHASE4 ✓ ALLE ${paketCounter} PAKETE FERTIG!`);
 
       // ── PHASE 5: Query Invalidation & Neuload (STRIKT) ───────────────────
       console.log(`[StrukturBoard] 🔄 Invalidiere Cache und lade Struktur neu...`);
