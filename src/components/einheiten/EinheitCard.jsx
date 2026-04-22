@@ -63,7 +63,7 @@ export default function EinheitCard({ einheit, lernpaketCount, rolle, onDeleteSt
     <>
       <div className="relative group/card">
          <Link to={`/einheiten/${einheit.id}`}>
-           <Card className="group hover:shadow-lg hover:border-primary/20 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col min-h-[168px]">
+           <Card className="group hover:shadow-lg hover:border-primary/20 transition-all duration-300 cursor-pointer overflow-hidden h-[168px] flex flex-col">
              <CardContent className="p-0 flex flex-col flex-1">
               <div className="p-6 flex-1 flex flex-col">
                 <div className="flex items-start justify-between mb-3 gap-2">
@@ -83,7 +83,7 @@ export default function EinheitCard({ einheit, lernpaketCount, rolle, onDeleteSt
                     />
                   </div>
                 </div>
-                <h3 className="text-base font-semibold text-foreground mb-auto group-hover:text-primary transition-colors line-clamp-2">
+                <h3 className="text-base font-semibold text-foreground mb-auto group-hover:text-primary transition-colors truncate">
                   {einheit.titel_der_einheit}
                 </h3>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground mt-3">
