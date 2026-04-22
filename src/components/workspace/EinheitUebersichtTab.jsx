@@ -7,6 +7,7 @@
  */
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { invokeFunction } from '@/utils/functionsHelper';
 import { updateEinheit } from '@/services/EinheitenService';
 import { getAllLernpakete } from '@/services/LernpaketService';
@@ -15,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Save, Plus, Trash2, Crown, Edit, Eye, Lock, Unlock, ShieldAlert, Clock, ArrowRight, LayoutList, PenLine, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -102,7 +104,10 @@ export default function EinheitUebersichtTab({
 }) {
   const queryClient = useQueryClient();
   const { faecher, jahrgaenge, phasen } = useSystemSettings();
+  const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [adding, setAdding] = useState(false);
   const [addingMitarbeiter, setAddingMitarbeiter] = useState(false);
   const [newEmail, setNewEmail] = useState('');
@@ -331,8 +336,56 @@ export default function EinheitUebersichtTab({
     }
   };
 
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await invokeFunction('deleteEinheitSecure', {
+        einheitId: einheit.id
+      });
+      queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+      toast.success('🗑️ Einheit unwiderruflich gelöscht.');
+      navigate('/einheiten');
+    } catch (err) {
+      toast.error(err.message || 'Fehler beim Löschen der Einheit.');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
   return (
-    <div className="px-6 lg:px-10 py-8 max-w-7xl mx-auto w-full">
+    <>
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>🗑️ Einheit unwiderruflich löschen?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2 mt-2">
+              <p>
+                Du bist dabei, die Einheit <strong>"{einheit.titel_der_einheit}"</strong> vollständig zu löschen.
+              </p>
+              <p className="text-destructive font-semibold">
+                ⚠️ Diese Aktion kann nicht rückgängig gemacht werden!
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Alle zugeordneten Themenfelder, Lernpakete, Lernziele und Aufgaben werden ebenfalls gelöscht.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex gap-3 justify-end">
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive hover:bg-destructive/90 gap-2"
+            >
+              {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              Ja, löschen
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <div className="px-6 lg:px-10 py-8 max-w-7xl mx-auto w-full">
 
       {/* ── Zweispalten-Layout: Konfiguration | Mitarbeiter ────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
@@ -475,18 +528,27 @@ export default function EinheitUebersichtTab({
                   </div>
                 </div>
 
-                <div className="flex justify-end pt-1">
-                  <Button
-                    onClick={handleSave}
-                    disabled={isSaving || !form.titel_der_einheit || !form.fach || !form.jahrgangsstufe}
-                    className="gap-2"
-                  >
-                    {isSaving
-                      ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      : <Save className="w-4 h-4" />}
-                    Speichern
-                  </Button>
-                </div>
+                <div className="flex justify-between pt-1">
+                   <Button
+                     onClick={() => setShowDeleteDialog(true)}
+                     disabled={isDeleting}
+                     variant="destructive"
+                     className="gap-2"
+                   >
+                     {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                     Einheit löschen
+                   </Button>
+                   <Button
+                     onClick={handleSave}
+                     disabled={isSaving || !form.titel_der_einheit || !form.fach || !form.jahrgangsstufe}
+                     className="gap-2"
+                   >
+                     {isSaving
+                       ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                       : <Save className="w-4 h-4" />}
+                     Speichern
+                   </Button>
+                 </div>
               </>
             )}
           </div>
@@ -682,5 +744,6 @@ export default function EinheitUebersichtTab({
 
           </div>
           </div>
+          </>
           );
           }
