@@ -395,34 +395,15 @@ export default function MasterDetailView({
       {/* ── Klon-Button ── */}
       {kannBearbeiten && Object.keys(master.field_values || {}).length > 0 && (
         <Button
-          variant="outline"
-          size="sm"
           onClick={handleOpenKlonModal}
           disabled={acquiringLock}
-          className="gap-2 border-dashed border-primary/50 text-primary hover:bg-primary/5 w-full"
+          className="gap-2 w-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 font-semibold"
+          variant="ghost"
+          size="default"
         >
           {acquiringLock ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          Kopien / Klone erstellen
+          Kopien / KI-Klone erstellen
         </Button>
-      )}
-
-      {/* ── Klone-Übersicht ── */}
-      {klone.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-            Kopien ({klone.length})
-          </p>
-          <div className="space-y-1.5">
-            {klone.map((k) => (
-              <div key={k.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 border border-green-200 text-sm">
-                <span className="font-medium text-green-900">Kopie {k.klon_index}</span>
-                {k.content_status === 'approved' && (
-                  <Badge className="text-[10px] bg-green-100 text-green-700 border-green-300">✓ Fertig</Badge>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
       )}
 
       {/* ── Lückentext-Modal ── */}

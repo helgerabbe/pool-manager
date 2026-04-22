@@ -450,17 +450,7 @@ export default function MasterAufgabeCard({
         <div className="p-4 space-y-4">
           <LockBanner lockedByUser={locked ? master.locked_by_user : null} />
 
-          {/* Klon-Zähler */}
-          {klone.length > 0 && (
-            <p className="text-xs text-muted-foreground">
-              {klone.length} Klon{klone.length !== 1 ? 'e' : ''} vorhanden
-              {klone.filter(k => k.status === 'approved').length > 0 && (
-                <span className="text-green-600 ml-1">
-                  ({klone.filter(k => k.status === 'approved').length} freigegeben)
-                </span>
-              )}
-            </p>
-          )}
+
 
           {/* Formular */}
           {isMatch ? (
@@ -987,13 +977,13 @@ export default function MasterAufgabeCard({
           {!isKITutor && !isImageLabeling && (master.field_values?.lueckentext || master.field_values?.pairs?.length > 0 || master.field_values?.orderedItems?.length > 0 || master.field_values?.task_description || master.field_values?.mcItems?.length > 0 || master.field_values?.questions?.length > 0) && !editMode && (
             <div className="border-t border-border/60 pt-4">
               <Button
-                size="sm"
-                variant="outline"
+                variant="ghost"
+                size="default"
                 onClick={() => setKlonModalOpen(true)}
-                className="w-full gap-2 border-dashed"
+                className="w-full gap-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 font-semibold"
               >
-                <Sparkles className="w-3.5 h-3.5" />
-                Klone erstellen
+                <Sparkles className="w-4 h-4" />
+                Kopien / KI-Klone erstellen
               </Button>
             </div>
           )}
