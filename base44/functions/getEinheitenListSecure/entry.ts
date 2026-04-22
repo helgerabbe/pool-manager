@@ -230,18 +230,6 @@ Deno.serve(async (req) => {
         total_pages: totalPages,
         page_size: limit,
       },
-      debug: {
-        user_email: user.email,
-        user_role_system: user.role,
-        resolved_role: role,
-        all_einheiten_before_filter: allEinheiten.map(e => ({
-          id: e.id,
-          titel: e.titel_der_einheit,
-          fach: e.fach,
-          wizard_status: e.wizard_status,
-        })),
-        filter_criteria: filterCriteria,
-      }
     };
 
     return Response.json(response, {

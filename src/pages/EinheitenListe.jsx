@@ -132,7 +132,7 @@ export default function EinheitenListe() {
   const { permissions, rolle, authUser } = useRBAC();
   
   // ✅ SCHRITT 2: Secure Backend-Funktion statt Client-Side Filtering
-   const { data: responseData, isLoading, isFetching } = useQuery({
+   const { data: einheiten = [], isLoading, isFetching } = useQuery({
     queryKey: ['einheiten'],
     queryFn: async () => {
       // Secure Backend-Funktion mit Server-Side RBAC-Filterung
@@ -140,13 +140,10 @@ export default function EinheitenListe() {
         page: 1,
         limit: 100, // Hole alle für Pagination im Frontend
       });
-      return response.data || {};
+      return response.data?.data || [];
     },
     staleTime: 0, // ✅ Daten immer als veraltet markieren → zwingt zum Neuladen
   });
-
-  const einheiten = responseData.data || [];
-  const debugInfo = responseData.debug;
 
   // ✅ Strikter Ladezustand: Verhindert "Flash of Unfiltered Data"
   const isInitialLoading = isLoading || isFetching;
@@ -186,24 +183,6 @@ export default function EinheitenListe() {
 
   return (
     <div className="space-y-6">
-      {debugInfo && (
-        <div className="bg-blue-50 border border-blue-200 rounded p-3 text-xs font-mono text-blue-900 space-y-2">
-          <p className="font-bold">🔍 DEBUG INFO:</p>
-          <p>User: {debugInfo.user_email} | Role: {debugInfo.resolved_role}</p>
-          <p>Alle Einheiten vor Filter: {debugInfo.all_einheiten_before_filter?.length || 0}</p>
-          {debugInfo.all_einheiten_before_filter?.map(e => (
-            <div key={e.id} className="ml-4">
-              • {e.titel} ({e.fach}) - wizard_status: {e.wizard_status}
-            </div>
-          ))}
-          <div className="border-t border-blue-300 pt-2 mt-2">
-            <p className="font-bold">Filter Criteria:</p>
-            <pre className="bg-white p-2 rounded text-[10px] overflow-auto max-h-40">
-              {JSON.stringify(debugInfo.filter_criteria, null, 2)}
-            </pre>
-          </div>
-        </div>
-      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
