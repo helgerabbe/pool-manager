@@ -266,8 +266,6 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                                  );
                                })}
                                </div>
-                               ) : null
-                               )
                                )}
                                </div>
                                );
