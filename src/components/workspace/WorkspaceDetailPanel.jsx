@@ -446,7 +446,6 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
 
   // Handler für Bearbeitungsmodus
   const handleEnterEditMode = async () => {
-    setIsEnteringEditMode(true);
     try {
       const ok = await acquireLock();
       if (!ok) {
@@ -455,7 +454,6 @@ function LernpaketPanel({ paket, lernziele, aufgaben, kannBearbeiten, userEmail,
     } catch (err) {
       toast.error('Fehler beim Sperren des Lernpakets.');
     }
-    setIsEnteringEditMode(false);
   };
 
   const handleExitEditMode = async () => {

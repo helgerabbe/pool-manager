@@ -157,6 +157,8 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     }
   }, [activeTab, isStructuralEditingActive, isTab1EditingActive]);
 
+
+
   useEffect(() => {
     if (isStructuralEditingActive && !selectedEinheitId) {
       handleReleaseStructLock();
@@ -373,6 +375,14 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     if (node?.type === 'themenfeld') setSelectedThemenfeldId(node.themenfeldId);
     setSelectedNode(node);
   }, []);
+
+  const handleCloseDialog = useCallback(() => {
+    // Dialog geschlossen → selectedNode zurücksetzen auf 'einheit'
+    // Das freigeben des Lernpaket-Locks wird dann automatisch vom Backend übernommen
+    if (selectedNode?.type === 'aktivitaet-edit' || selectedNode?.type === 'phase') {
+      setSelectedNode({ type: 'einheit', id: selectedEinheitId });
+    }
+  }, [selectedNode?.type, selectedEinheitId]);
 
   // ── Delete-Mutations (parallelisiert) ─────────────────────────────────────────
   const deleteLernpaket = useMutation({
@@ -652,6 +662,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                             kannBearbeiten={false}
                             einheitFach={einheit?.fach}
                             queryClient={queryClient}
+                            onClose={handleCloseDialog}
                           />
                         ) : null
                       ) : (
