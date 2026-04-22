@@ -63,7 +63,22 @@ export function usePresence(currentView = 'dashboard') {
           }
         }
       } catch (err) {
-        // Silent ignore – interval continues
+        // 404 = Record wurde extern gelöscht → rekonstruieren
+        if (err?.response?.status === 404 && myEmailRef.current) {
+          myRecordIdRef.current = null;
+          try {
+            const created = await createPresenceRecord({
+              user_email: myEmailRef.current,
+              user_name: myEmailRef.current,
+              current_page: currentView,
+              last_seen_at: new Date().toISOString(),
+            });
+            myRecordIdRef.current = created.id;
+          } catch (e) {
+            // Silent ignore
+          }
+        }
+        // Andere Fehler ignorieren – Interval läuft weiter
       }
     };
 
