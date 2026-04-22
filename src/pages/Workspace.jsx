@@ -60,6 +60,11 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const [acquiringStructLock, setAcquiringStructLock] = useState(false);
   const [releasingStructLock, setReleasingStructLock] = useState(false);
 
+  // ── Tab-1-Bearbeitungsmodus State ────────────────────────────────────────────
+  const [isTab1EditingActive, setIsTab1EditingActive] = useState(false);
+  const [acquiringTab1Lock, setAcquiringTab1Lock] = useState(false);
+  const [releasingTab1Lock, setReleasingTab1Lock] = useState(false);
+
   // ── Queries (ausgelagert in Custom Hook) ──────────────────────────────────────
   const {
     einheiten = [],
@@ -147,13 +152,19 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     if (isStructuralEditingActive && activeTab !== 'struktur') {
       handleReleaseStructLock();
     }
-  }, [activeTab, isStructuralEditingActive]);
+    if (isTab1EditingActive && activeTab !== 'einheit') {
+      handleReleaseTab1Lock();
+    }
+  }, [activeTab, isStructuralEditingActive, isTab1EditingActive]);
 
   useEffect(() => {
     if (isStructuralEditingActive && !selectedEinheitId) {
       handleReleaseStructLock();
     }
-  }, [selectedEinheitId, isStructuralEditingActive]);
+    if (isTab1EditingActive && !selectedEinheitId) {
+      handleReleaseTab1Lock();
+    }
+  }, [selectedEinheitId, isStructuralEditingActive, isTab1EditingActive]);
 
   // Lock freigeben bei Page-Unmount (wenn User die Seite verlässt)
   useEffect(() => {
@@ -162,8 +173,12 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
         invokeFunction('releaseStructuralLockSecure', { einheit_id: einheit.id })
           .catch(console.error);
       }
+      if (isTab1EditingActive && einheit) {
+        invokeFunction('releaseStructuralLockSecure', { einheit_id: einheit.id })
+          .catch(console.error);
+      }
     };
-  }, [isStructuralEditingActive, einheit?.id]);
+  }, [isStructuralEditingActive, isTab1EditingActive, einheit?.id]);
 
   // ✅ BEFOREUNLOAD: Not-Unlock wenn Browser-Tab geschlossen wird (Race Condition Fix)
   // Hinweis: Der Backend-Timeout (60 Min) bereinigt verwaiste Locks automatisch
@@ -229,6 +244,58 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
       }
     } finally {
       setReleasingStructLock(false);
+    }
+  };
+
+  const handleAcquireTab1Lock = async () => {
+    if (!einheit) return;
+    setAcquiringTab1Lock(true);
+    try {
+      const res = await invokeFunction('acquireStructuralLockSecure', {
+        einheit_id: einheit.id,
+      });
+      if (res.data?.success) {
+        setIsTab1EditingActive(true);
+        queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+        toast.success('✅ Bearbeitungsmodus für Tab 1 aktiviert. Andere Nutzer können jetzt keine Änderungen mehr vornehmen.');
+      } else {
+        const lockOwner = res.data?.lockedByEmail;
+        toast.error(
+          lockOwner
+            ? `🔒 Einheit wird gerade von ${lockOwner} bearbeitet. Bitte warten Sie bis die Bearbeitung abgeschlossen ist.`
+            : 'Bearbeitungsmodus konnte nicht aktiviert werden.'
+        );
+      }
+    } catch (err) {
+      const lockOwner = err?.response?.data?.lockedByEmail;
+      if (err?.response?.status === 409) {
+        toast.error(lockOwner ? `🔒 Einheit wird von ${lockOwner} bearbeitet.` : 'Einheit ist gesperrt.');
+      } else {
+        toast.error('Fehler beim Aktivieren des Bearbeitungsmodus.');
+      }
+    } finally {
+      setAcquiringTab1Lock(false);
+    }
+  };
+
+  const handleReleaseTab1Lock = async () => {
+    if (!einheit) return;
+    setReleasingTab1Lock(true);
+    try {
+      await invokeFunction('releaseStructuralLockSecure', {
+        einheit_id: einheit.id,
+      });
+      setIsTab1EditingActive(false);
+      queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+      toast.success('✅ Bearbeitungsmodus für Tab 1 beendet. Andere Nutzer können jetzt wieder Änderungen vornehmen.');
+    } catch (err) {
+      if (err?.response?.status === 403) {
+        toast.error('Sie haben diesen Lock nicht. Nur der Lock-Inhaber kann ihn freigeben.');
+      } else {
+        toast.error('Fehler beim Freigeben des Bearbeitungsmodus.');
+      }
+    } finally {
+      setReleasingTab1Lock(false);
     }
   };
 
@@ -426,18 +493,18 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
            className="flex flex-col flex-1 overflow-hidden m-0 p-0">
 
             {/* ── PERSISTENTER LOCK-STATUS-BANNER (über allen Tabs) ──────────── */}
-            {isStructuralEditingActive && (
+            {(isStructuralEditingActive || isTab1EditingActive) && (
               <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-2.5 bg-blue-50 border-b border-blue-200 flex items-center gap-3">
                 <PenLine className="w-4 h-4 text-blue-600 animate-pulse shrink-0" />
                 <span className="text-sm font-semibold text-blue-900 flex-1">
                   ✏️ Du befindest dich im Bearbeitungsmodus. Nur du kannst Änderungen vornehmen.
                 </span>
                 <button
-                  onClick={handleReleaseStructLock}
-                  disabled={releasingStructLock}
+                  onClick={isStructuralEditingActive ? handleReleaseStructLock : handleReleaseTab1Lock}
+                  disabled={releasingStructLock || releasingTab1Lock}
                   className="text-xs font-medium px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 shrink-0"
                 >
-                  {releasingStructLock ? <Loader2 className="w-3 h-3 animate-spin inline mr-1" /> : null}
+                  {(releasingStructLock || releasingTab1Lock) ? <Loader2 className="w-3 h-3 animate-spin inline mr-1" /> : null}
                   Bearbeitung beenden
                 </button>
               </div>
@@ -507,6 +574,11 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                        currentUserRole={rolle}
                        currentUserFaecher={permissions?.faecher || []}
                        isLockedByOther={isLockedByOther}
+                       isEditingActive={isTab1EditingActive}
+                       onAcquireLock={handleAcquireTab1Lock}
+                       onReleaseLock={handleReleaseTab1Lock}
+                       isAcquiring={acquiringTab1Lock}
+                       isReleasing={releasingTab1Lock}
                      />
                    )}
                  </ErrorBoundary>

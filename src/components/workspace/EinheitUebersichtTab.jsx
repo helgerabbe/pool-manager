@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, Plus, Trash2, Crown, Edit, Eye, Lock, Unlock, ShieldAlert, Clock, ArrowRight, LayoutList } from 'lucide-react';
+import { Save, Plus, Trash2, Crown, Edit, Eye, Lock, Unlock, ShieldAlert, Clock, ArrowRight, LayoutList, PenLine, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 // useDraftState removed – form state managed directly
@@ -88,7 +88,18 @@ function UnitRoleBadge({ role }) {
   );
 }
 
-export default function EinheitUebersichtTab({ einheit, currentUserEmail, currentUserRole, currentUserFaecher = [], isLockedByOther = false }) {
+export default function EinheitUebersichtTab({ 
+  einheit, 
+  currentUserEmail, 
+  currentUserRole, 
+  currentUserFaecher = [], 
+  isLockedByOther = false,
+  isEditingActive = false,
+  onAcquireLock = null,
+  onReleaseLock = null,
+  isAcquiring = false,
+  isReleasing = false,
+}) {
   const queryClient = useQueryClient();
   const { faecher, jahrgaenge, phasen } = useSystemSettings();
   const [isSaving, setIsSaving] = useState(false);
@@ -187,9 +198,10 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
     [currentUserRole, currentUserFaecher, einheit.fach, members, currentUserEmail]
   );
   
-  const kannEinheitBearbeiten = unitAccess.hasFullAccess && !isLockedByOther;
-  const kannSperrenToggle = unitAccess.hasFullAccess && !isLockedByOther;
-  const kannMitarbeiterHinzufuegen = unitAccess.hasFullAccess && !isLockedByOther;
+  const kannEinheitBearbeiten = unitAccess.hasFullAccess && !isLockedByOther && isEditingActive;
+  const kannSperrenToggle = unitAccess.hasFullAccess && !isLockedByOther && isEditingActive;
+  const kannMitarbeiterHinzufuegen = unitAccess.hasFullAccess && !isLockedByOther && isEditingActive;
+  const kannBearbeitungsstartButton = unitAccess.hasFullAccess && !isLockedByOther && onAcquireLock;
 
   // ✅ Normalisierter E-Mail-Vergleich (case-insensitive, ohne Leerzeichen)
   const normalizedEmail = currentUserEmail?.toLowerCase()?.trim() || '';
@@ -332,9 +344,12 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
             <HelpDialog {...EINHEIT_HELP} />
           </div>
 
-          <div className="space-y-4 p-5 rounded-xl border bg-card">
+          <div className={cn(
+            'space-y-4 p-5 rounded-xl border transition-colors',
+            isEditingActive ? 'bg-card' : 'bg-muted/30'
+          )}>
             {!kannEinheitBearbeiten ? (
-              // ✅ LESE-MODUS für Fachlehrkräfte
+              // ✅ LESE-MODUS oder BEARBEITUNGSMODUS INAKTIV
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <Label className="text-muted-foreground">Titel der Einheit</Label>
@@ -361,12 +376,34 @@ export default function EinheitUebersichtTab({ einheit, currentUserEmail, curren
                   </div>
                 </div>
                 <div className="pt-3 mt-3 border-t">
-                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Lock className="w-3 h-3" />
-                    {!unitAccess.isAssignedMember 
-                      ? 'Nur Fachschaftsleitung und Administratoren können die Einheit-Metadaten bearbeiten.'
-                      : 'Sie haben als zugewiesener Mitarbeiter (Leitung) Bearbeitungsrechte für diese Einheit.'}
-                  </p>
+                  {isEditingActive ? (
+                    <p className="text-xs text-green-700 flex items-center gap-1.5 bg-green-50 px-2.5 py-1.5 rounded-lg border border-green-200">
+                      <Edit className="w-3 h-3" />
+                      Bearbeitungsmodus aktiv – Du kannst Änderungen vornehmen.
+                    </p>
+                  ) : kannBearbeitungsstartButton ? (
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                        <Lock className="w-3 h-3" />
+                        Bearbeitungsmodus ist deaktiviert.
+                      </p>
+                      <button
+                        onClick={onAcquireLock}
+                        disabled={isAcquiring}
+                        className="w-full flex items-center justify-center gap-2 text-xs font-medium px-3 py-2 rounded-lg border border-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isAcquiring ? <Loader2 className="w-3 h-3 animate-spin" /> : <PenLine className="w-3 h-3" />}
+                        Bearbeitungsmodus aktivieren
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <Lock className="w-3 h-3" />
+                      {!unitAccess.isAssignedMember 
+                        ? 'Nur Fachschaftsleitung und Administratoren können die Einheit-Metadaten bearbeiten.'
+                        : 'Sie haben als zugewiesener Mitarbeiter (Leitung) Bearbeitungsrechte für diese Einheit.'}
+                    </p>
+                  )}
                 </div>
               </div>
             ) : (
