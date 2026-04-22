@@ -234,7 +234,7 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                                       <div className="pl-5 space-y-0.5 border-l border-muted/30 ml-1">
                                         {masterExportable.length > 0 && (
                                           <div className="flex items-center gap-2 p-1 rounded transition hover:bg-muted/10">
-                                            <Checkbox checked={allMastersSelected} onCheckedChange={() => toggleActivities(actMasters, true)} className="h-3.5 w-3.5 shrink-0" />
+                                            <Checkbox checked={allMastersSelected} onCheckedChange={() => toggleActivities(masterExportable)} className="h-3.5 w-3.5 shrink-0" />
                                             <span className="text-[11px] font-medium text-muted-foreground flex-1 truncate">
                                               Master ({masterSelectedCount}/{masterExportable.length})
                                             </span>
@@ -247,7 +247,7 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                                           const masterSelectable = masterApproved && !masterPending;
                                           return (
                                             <div key={master.id} className={cn('flex items-center gap-2 p-1 rounded transition text-[11px]', masterSelectable ? 'hover:bg-muted/10' : 'opacity-60')}>
-                                              <Checkbox checked={masterSelected} onCheckedChange={() => toggleActivities([master], true)} disabled={!masterSelectable} className="h-3.5 w-3.5 shrink-0" />
+                                              <Checkbox checked={masterSelected} onCheckedChange={() => toggleActivities([master])} disabled={!masterSelectable} className="h-3.5 w-3.5 shrink-0" />
                                               <span className="text-muted-foreground flex-1 truncate">
                                                 👤 {master.titel || 'Master ohne Titel'}
                                               </span>
@@ -266,7 +266,6 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                                         )
                                         })}
                                         </div>
-                </div>
               );
             })}
 
