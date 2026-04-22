@@ -107,7 +107,7 @@ export function useLernpaketLock(lernpaketId) {
     if (!lernpaketId || !userEmail) return false;
 
     try {
-      await base44.functions.invoke('acquireLockSimple', {
+      await base44.functions.invoke('acquireLockSecure', {
         lernpaketId,
       });
 
