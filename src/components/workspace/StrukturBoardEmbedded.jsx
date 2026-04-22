@@ -658,7 +658,12 @@ export default function StrukturBoardEmbedded({
             themenfeldId = neu.id;
           } else {
             console.log(`[StrukturBoard] ✏️ PHASE3[${i}] Update Themenfeld: "${spalte.titel}" (${themenfeldId})...`);
-            const result = await updateThemenfeld(themenfeldId, { titel: spalte.titel, reihenfolge: i + 1 });
+            const originalThemenfeld = remoteThemenfelder.find(tf => tf.id === themenfeldId);
+            const updateData = { titel: spalte.titel, reihenfolge: i + 1 };
+            if (originalThemenfeld && originalThemenfeld.titel !== spalte.titel) {
+              console.log(`[StrukturBoard] ✏️ PHASE3[${i}] → Titel geändert: "${originalThemenfeld.titel}" → "${spalte.titel}"`);
+            }
+            const result = await updateThemenfeld(themenfeldId, updateData);
             console.log(`[StrukturBoard] ✏️ PHASE3[${i}] ✓ Fertig. Result:`, result);
             if (!result) throw new Error(`Fehler: Themenfeld ${themenfeldId} konnte nicht aktualisiert werden`);
           }
@@ -712,7 +717,14 @@ export default function StrukturBoardEmbedded({
               }
             } else {
               console.log(`[StrukturBoard] ✏️ PHASE4[${paketCounter}] Update Paket: "${paket.titel_des_pakets}" (ID: ${paket.id})...`);
-              const result = await updateLernpaket(paket.id, update);
+              // Titel-Änderungen auch speichern, falls geändert
+              const originalPaket = remotePakete.find(p => p.id === paket.id);
+              const updateData = { ...update };
+              if (originalPaket && originalPaket.titel_des_pakets !== paket.titel_des_pakets) {
+                updateData.titel_des_pakets = paket.titel_des_pakets;
+                console.log(`[StrukturBoard] ✏️ PHASE4[${paketCounter}] → Titel geändert: "${originalPaket.titel_des_pakets}" → "${paket.titel_des_pakets}"`);
+              }
+              const result = await updateLernpaket(paket.id, updateData);
               console.log(`[StrukturBoard] ✏️ PHASE4[${paketCounter}] ✓ Fertig. Result:`, result);
               if (!result) throw new Error(`Fehler: Paket ${paket.id} konnte nicht aktualisiert werden`);
             }
