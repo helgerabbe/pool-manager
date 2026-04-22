@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { ChevronRight, BookOpen, Layers, Puzzle, Lock, Edit, UserRound, FolderOpen, AlertTriangle, PenLine } from 'lucide-react';
+import { ChevronRight, BookOpen, Layers, Puzzle, Lock, Edit, UserRound, FolderOpen, PenLine } from 'lucide-react';
 import {
   getLernpaketStatus,
   getEinheitFortschritt,
@@ -55,9 +55,7 @@ function AktivitaetSubNode({ activity, aktivitaetName, isSelected, onSelect, pak
           {masterInfo}
         </span>
       )}
-      {isIncomplete && (
-        <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" title="Inhalt unvollständig" />
-      )}
+
     </div>
   );
 }
@@ -171,9 +169,7 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
             <PenLine className="w-3.5 h-3.5 text-orange-500 shrink-0 animate-pulse" />
           )}
           {!isSelected && !lockedByOther && !lockedByMe && <AmpelDot status={status === 'yellow' ? 'red' : status} size="md" />}
-          {!isSelected && hatUnvollstaendigeAktivitaet && (
-            <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" title="Aktivitäten mit unvollständigem Inhalt" />
-          )}
+
           {paketPhaseActivities.length >= 0 && (
             <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-slate-200 text-slate-700">
               {paketPhaseActivities.length}
@@ -240,9 +236,7 @@ function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedI
           <FolderOpen className={cn('w-3.5 h-3.5 shrink-0', isSammelbecken ? 'text-slate-500' : 'text-amber-500')} />
           <span className="truncate flex-1">{themenfeld.titel}</span>
           {!isSelected && !isSammelbecken && <AmpelDot status={themenfeldStatus} size="md" />}
-          {!isSelected && hatUnvollstaendigeAktivitaet && (
-            <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
-          )}
+
         </button>
       </div>
 
