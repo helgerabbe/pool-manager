@@ -461,34 +461,34 @@ export default function ActivityMasterPanel({
                 />
               </>
             ) : (
-            <div className="rounded-xl border border-border bg-card p-5 space-y-5">
-              {schema.length === 0 && (
-                <p className="text-sm text-muted-foreground italic">Keine Felder konfiguriert.</p>
-              )}
-              {schema.find(f => f.field_name === 'aufgabentext') && (
-                <div className="space-y-1.5">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aufgabenstellung</p>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-900">
-                    {fieldValues.aufgabentext
-                      ? <p className="whitespace-pre-wrap leading-relaxed">{fieldValues.aufgabentext}</p>
-                      : <span className="italic text-blue-600/60">Noch nicht ausgefüllt.</span>}
+              <div className="rounded-xl border border-border bg-card p-5 space-y-5">
+                {schema.length === 0 && (
+                  <p className="text-sm text-muted-foreground italic">Keine Felder konfiguriert.</p>
+                )}
+                {schema.find(f => f.field_name === 'aufgabentext') && (
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aufgabenstellung</p>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-900">
+                      {fieldValues.aufgabentext
+                        ? <p className="whitespace-pre-wrap leading-relaxed">{fieldValues.aufgabentext}</p>
+                        : <span className="italic text-blue-600/60">Noch nicht ausgefüllt.</span>}
+                    </div>
                   </div>
-                </div>
-              )}
-              {schema.map(field => {
-                if (field.field_name === 'aufgabentext') return null;
-                if (field.type === 'info') return null;
-                if (field.field_name === 'inhalt' && inhaltTyp && inhaltTyp !== 'text') return null;
-                if (field.field_name === 'dokument_url' && inhaltTyp !== 'datei') return null;
-                return (
-                  <div key={field.field_name} className="space-y-1.5">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{field.label}</p>
-                    <div className="text-sm text-foreground">{renderValue(field)}</div>
-                  </div>
-                );
-              })}
+                )}
+                {schema.map(field => {
+                  if (field.field_name === 'aufgabentext') return null;
+                  if (field.type === 'info') return null;
+                  if (field.field_name === 'inhalt' && inhaltTyp && inhaltTyp !== 'text') return null;
+                  if (field.field_name === 'dokument_url' && inhaltTyp !== 'datei') return null;
+                  return (
+                    <div key={field.field_name} className="space-y-1.5">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{field.label}</p>
+                      <div className="text-sm text-foreground">{renderValue(field)}</div>
+                    </div>
+                  );
+                })}
               </div>
-              )}
+            )}
 
               <TextLesenModal
               open={editModalOpen && !catalogEntry?.name?.toLowerCase().includes('offene')}
