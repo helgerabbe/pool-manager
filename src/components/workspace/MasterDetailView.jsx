@@ -454,15 +454,7 @@ export default function MasterDetailView({
         )}
       </div>
 
-      {/* --- TEMPORÄRER DEBUG OUTPUT --- */}
-      <div className="mt-4 p-3 bg-red-100 border-2 border-red-500 rounded-lg text-xs font-mono text-red-900 space-y-1">
-        <p className="font-bold uppercase">System-Röntgenblick:</p>
-        <p>1. Aktueller catalogName: <strong>"{catalogName}"</strong></p>
-        <p>2. Schlägt isQuiz an? <strong>{isQuiz ? 'JA' : 'NEIN'}</strong></p>
-        <p>3. Schlägt isTest an? <strong>{isTest ? 'JA' : 'NEIN'}</strong></p>
-        <p>4. Existiert TestModal-Import? <strong>{typeof TestModal !== 'undefined' ? 'JA' : 'NEIN (Import fehlt!)'}</strong></p>
-      </div>
-      {/* ------------------------------- */}
+
 
       {/* ── Aufgabentext aus Aktivität ── */}
       {master.field_values?.aufgabentext && (
