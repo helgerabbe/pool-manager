@@ -415,12 +415,22 @@ export default function StrukturBoardEmbedded({
       newMap[k].sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0));
     });
 
-    setSpalten(tfSpalten);
-    setPaketeMap(newMap);
-    // Store original IDs to detect deletions
-    setOriginalSpaltenIds(new Set(tfSpalten.map(s => s.themenfeldId).filter(Boolean)));
-    setOriginalPaketIds(new Set(pakete.map(p => p.id)));
-  }, [remotePakete, remoteThemenfelder, isDirty]);
+    // Nur neu initialisieren, wenn sich die echten Daten geändert haben
+    // (Damit nicht die gerade gespeicherten lokalen Änderungen überschrieben werden)
+    const paketeIds = pakete.map(p => p.id).sort();
+    const spaltenIds = tfSpalten.map(s => s.themenfeldId).filter(Boolean).sort();
+    
+    // Vergleiche mit aktuellen Original-IDs um zu erkennen ob Daten sich wirklich geändert haben
+    const paketeHatSichGeaendert = paketeIds.join(',') !== Array.from(originalPaketIds).sort().join(',');
+    const spaltenHatSichGeaendert = spaltenIds.join(',') !== Array.from(originalSpaltenIds).sort().join(',');
+    
+    if (paketeHatSichGeaendert || spaltenHatSichGeaendert) {
+      setSpalten(tfSpalten);
+      setPaketeMap(newMap);
+      setOriginalSpaltenIds(new Set(spaltenIds));
+      setOriginalPaketIds(new Set(paketeIds));
+    }
+  }, [remotePakete, remoteThemenfelder, isDirty, originalPaketIds, originalSpaltenIds]);
 
 
 
