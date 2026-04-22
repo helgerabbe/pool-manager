@@ -611,20 +611,21 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                             isStructuralEditingActive={isStructuralEditingActive}
                             isLockedByOther={isLockedByOther}
                             onSaved={async () => {
-                              // 🔄 KEY-REMOUNT: erzwinge kompletten Neustart der Komponente
+                              // 🔄 PHASE 1: Key-Remount erzwingt kompletten Neustart der Komponente
                               console.log('[Workspace] 🔄 onSaved-Callback: Triggere Board-Remount via Key-Increment');
                               setStrukturBoardKey(prev => prev + 1);
 
-                              // ⚠️ Kleine Verzögerung, damit React die alte Komponente abbaut
+                              // ⚠️ Kleine Verzögerung (100ms), damit React die alte Komponente abbaut + neue mountet
                               await new Promise(resolve => setTimeout(resolve, 100));
 
-                              // Lock freigeben (setzt isStructuralEditingActive=false)
+                              // 🔄 PHASE 2: Lock freigeben (setzt isStructuralEditingActive=false)
+                              console.log('[Workspace] 🔄 Gebe Structural Lock frei...');
                               await handleReleaseStructLock();
 
-                              // KRITISCH: Invalidiere den Workspace-Query mit GANZZAHLIGEM staleTime-Reset
-                              // Weil useWorkspaceData staleTime:Infinity im Edit-Modus setzt,
-                              // muss man FORCE-REFETCH (nicht nur invalidate) nach Lock-Release
-                              console.log('[Workspace] 🔄 Force-Refetch workspace-data nach Lock-Release...');
+                              // 🔄 PHASE 3: Force-Refetch der Workspace-Daten
+                              // Wichtig: staleTime:Infinity im Edit-Modus blockiert invalidations,
+                              // daher MUSS man refetch() aufrufen nach Lock-Release
+                              console.log('[Workspace] 🔄 Force-Refetch workspace-data...');
                               await queryClient.refetchQueries({ queryKey: ['workspace-data', selectedEinheitId], type: 'all' });
                             }}
                           />

@@ -372,6 +372,7 @@ export default function StrukturBoardEmbedded({
   const [spalten, setSpalten]         = useState([]);
   const [paketeMap, setPaketeMap]     = useState({});
   const [saving, setSaving]           = useState(false);
+  const [isSavingPhase, setIsSavingPhase] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [isDirty, setIsDirty]         = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -392,9 +393,9 @@ export default function StrukturBoardEmbedded({
     });
   };
 
-  // ── Init: Props → Lokaler State (nur wenn nicht im Edit-Modus) ──────────
+  // ── Init: Props → Lokaler State (nur wenn nicht im Edit-Modus UND nicht gerade Speichern) ──────────
   useEffect(() => {
-    if (isDirty) return; // Nicht initialisieren wenn Nutzer gerade bearbeitet
+    if (isDirty || isSavingPhase) return; // Nicht initialisieren wenn Nutzer bearbeitet ODER gerade speichert
 
     console.log('[StrukturBoard] 🔄 Initialisiere State aus Remote-Props...');
     const pakete = remotePakete || [];
@@ -421,7 +422,7 @@ export default function StrukturBoardEmbedded({
     setPaketeMap(newMap);
     setOriginalSpaltenIds(new Set(tfSpalten.map(s => s.themenfeldId).filter(Boolean)));
     setOriginalPaketIds(new Set(pakete.map(p => p.id)));
-  }, [remotePakete, remoteThemenfelder, isDirty]);
+  }, [remotePakete, remoteThemenfelder, isDirty, isSavingPhase]);
 
 
 
@@ -588,6 +589,7 @@ export default function StrukturBoardEmbedded({
 
   const handleSpeichern = async () => {
     setSaving(true);
+    setIsSavingPhase(true); // ← BLOCKIERE Remote-Updates während Speichern
     setSaveOverlayOpen(true);
 
     // Timeout: Wenn Speichern länger als 30 Sekunden dauert → Error erzwingen
@@ -758,6 +760,7 @@ export default function StrukturBoardEmbedded({
       
       // 🔄 KEY-REMOUNT: Callback triggert Lock-Release UND kompletten Board-Neustart
       // Der Neustart erzwingt Initialisierung aus 100% neuen Props
+      // WICHTIG: isSavingPhase wird später im Callback auf false gesetzt
       onSaved?.();
 
     } catch (error) {
@@ -794,6 +797,7 @@ export default function StrukturBoardEmbedded({
     } finally {
       clearTimeout(timeoutId);
       // In jedem Fall: setSaving(false) wurde oben bereits gesetzt
+      // isSavingPhase wird unten nach Callback auf false gesetzt
       // Overlay wird NUR bei Erfolg geschlossen
     }
   };
