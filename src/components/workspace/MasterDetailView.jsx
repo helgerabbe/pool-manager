@@ -420,6 +420,7 @@ export default function MasterDetailView({
          onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
          initialData={fieldValues}
          isSaving={saveMutation.isPending}
+         onDelete={handleDelete}
          onSave={(newData) => {
            const { content_status, ...fvData } = newData;
            const updatedFv = { ...fieldValues, ...fvData };
@@ -445,6 +446,7 @@ export default function MasterDetailView({
           onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
           initialData={fieldValues}
           isSaving={saveMutation.isPending}
+          onDelete={handleDelete}
           onSave={(newData) => {
             const { content_status, ...fvData } = newData;
             const updatedFv = { ...fieldValues, ...fvData };
@@ -470,6 +472,7 @@ export default function MasterDetailView({
           onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
           initialData={fieldValues}
           isSaving={saveMutation.isPending}
+          onDelete={handleDelete}
           onSave={(newData) => {
             const { content_status, ...fvData } = newData;
             const updatedFv = { ...fieldValues, ...fvData };
@@ -495,6 +498,7 @@ export default function MasterDetailView({
           onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
           initialData={fieldValues}
           isSaving={saveMutation.isPending}
+          onDelete={handleDelete}
           onSave={(newData) => {
             const { content_status, ...fvData } = newData;
             const updatedFv = { ...fieldValues, ...fvData };
@@ -521,6 +525,7 @@ export default function MasterDetailView({
           initialData={fieldValues}
           isSaving={saveMutation.isPending}
           master={master}
+          onDelete={handleDelete}
           onSave={(newData) => {
             const { content_status, ...fvData } = newData;
             const updatedFv = { ...fieldValues, ...fvData };
@@ -546,6 +551,7 @@ export default function MasterDetailView({
           onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
           initialData={fieldValues}
           isSaving={saveMutation.isPending}
+          onDelete={handleDelete}
           onSave={(newData) => {
             const { content_status, ...fvData } = newData;
             const updatedFv = { ...fieldValues, ...fvData };

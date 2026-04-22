@@ -23,6 +23,7 @@ export default function MiniQuizEditor({
   onCancel,
   onChange,
   readOnly = false,
+  hideActions = false,
 }) {
   const [questions, setQuestions] = useState(initialData.questions || []);
   const [editingIndex, setEditingIndex] = useState(null);
@@ -329,8 +330,8 @@ export default function MiniQuizEditor({
         </div>
       )}
 
-      {/* Action Buttons (nur im Edit-Mode) */}
-      {!readOnly && (
+      {/* Action Buttons — nur wenn hideActions nicht gesetzt (d.h. kein übergeordnetes Modal) */}
+      {!readOnly && !hideActions && (
         <div className="flex gap-2 pt-2 border-t">
           <Button size="sm" variant="ghost" onClick={onCancel}>
             Abbrechen

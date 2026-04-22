@@ -24,6 +24,7 @@ export default function SortingListEditor({
   onCancel,
   onChange,
   readOnly = false,
+  hideActions = false,
 }) {
   const [instruction, setInstruction] = useState(initialData.instruction || '');
   const [orderedItems, setOrderedItems] = useState(initialData.orderedItems || []);
@@ -218,8 +219,8 @@ export default function SortingListEditor({
         )}
       </div>
 
-      {/* Aktions-Buttons */}
-      {!readOnly && (
+      {/* Aktions-Buttons — nur wenn hideActions nicht gesetzt (d.h. kein übergeordnetes Modal) */}
+      {!readOnly && !hideActions && (
         <div className="flex items-center gap-2">
           <Button size="sm" variant="ghost" onClick={onCancel}>
             Abbrechen

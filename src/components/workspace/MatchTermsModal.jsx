@@ -10,7 +10,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Trash2 } from 'lucide-react';
 import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
 import ReleaseStatusToggle from '@/components/workspace/ReleaseStatusToggle';
 
@@ -20,12 +20,15 @@ export default function MatchTermsModal({
   initialData = {},
   onSave,
   onCancel,
+  onDelete,
   isSaving = false,
   exportLocked = false,
 }) {
   const [fieldValues, setFieldValues] = useState(initialData);
   const [isReleased, setIsReleased] = useState(initialData?.content_status === 'approved');
   const [exportLockedWasEnabled, setExportLockedWasEnabled] = useState(exportLocked);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -42,7 +45,15 @@ export default function MatchTermsModal({
   }, [exportLocked, exportLockedWasEnabled]);
 
   const handleCancel = () => {
+    setDeleteConfirm(false);
     onCancel?.();
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    await onDelete?.();
+    setIsDeleting(false);
+    setDeleteConfirm(false);
   };
 
   const handleSave = () => {
@@ -114,28 +125,30 @@ export default function MatchTermsModal({
 
         {/* Footer */}
         <div className="px-6 py-5 border-t border-border shrink-0 space-y-4">
-          {/* Premium Release-Toggle */}
-          <ReleaseStatusToggle
-            isReleased={isReleased}
-            onToggle={setIsReleased}
-            disabled={isSaving}
-          />
-
-          {/* Action Buttons */}
+          <ReleaseStatusToggle isReleased={isReleased} onToggle={setIsReleased} disabled={isSaving} />
           <div className="flex items-center justify-between gap-3">
-            <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
-              Abbrechen
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={isSaving || exportLocked}
-              title={exportLocked ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
-              className="gap-2"
-            >
-              {isSaving
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
-                : 'Speichern'}
-            </Button>
+            <div className="flex items-center gap-2">
+              {onDelete && !deleteConfirm && (
+                <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(true)} disabled={isSaving || isDeleting} className="gap-1.5 text-destructive hover:bg-red-50 hover:text-destructive">
+                  <Trash2 className="w-4 h-4" /> Aufgabe löschen
+                </Button>
+              )}
+              {deleteConfirm && (
+                <>
+                  <span className="text-xs text-destructive font-medium">Wirklich löschen?</span>
+                  <Button variant="destructive" size="sm" onClick={handleDelete} disabled={isDeleting} className="gap-1.5 h-7 text-xs">
+                    {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />} Ja, löschen
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(false)} disabled={isDeleting} className="h-7 text-xs">Abbrechen</Button>
+                </>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={handleCancel} disabled={isSaving || isDeleting}>Abbrechen</Button>
+              <Button onClick={handleSave} disabled={isSaving || exportLocked || isDeleting} title={exportLocked ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''} className="gap-2">
+                {isSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</> : 'Speichern'}
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

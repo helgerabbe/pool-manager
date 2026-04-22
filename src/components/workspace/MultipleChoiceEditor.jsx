@@ -25,6 +25,7 @@ export default function MultipleChoiceEditor({
   onCancel,
   onChange,
   readOnly = false,
+  hideActions = false,
 }) {
   const [instruction, setInstruction] = useState(initialData.instruction || '');
   const [displayCount, setDisplayCount] = useState(initialData.displayCount || '');
@@ -352,8 +353,8 @@ export default function MultipleChoiceEditor({
         )}
       </div>
 
-      {/* Aktions-Buttons */}
-      {!readOnly && (
+      {/* Aktions-Buttons — nur wenn hideActions nicht gesetzt (d.h. kein übergeordnetes Modal) */}
+      {!readOnly && !hideActions && (
         <div className="flex items-center gap-2 border-t border-border pt-4">
           <Button size="sm" variant="ghost" onClick={onCancel}>
             Abbrechen
