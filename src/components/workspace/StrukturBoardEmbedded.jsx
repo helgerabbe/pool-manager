@@ -601,8 +601,25 @@ export default function StrukturBoardEmbedded({
     setSaving(true);
     setSaveOverlayOpen(true);
 
+    // Timeout: Wenn Speichern länger als 30 Sekunden dauert → Error erzwingen
+    const timeoutId = setTimeout(() => {
+      console.error('[StrukturBoard] ⏰ TIMEOUT: Speichern hat mehr als 30 Sekunden gedauert!');
+      setSaving(false);
+      toast.error('❌ Speichern hat zu lange gedauert (Timeout nach 30s). Bitte überprüfe deine Internetverbindung und versuche erneut.', {
+        duration: 15000
+      });
+    }, 30000);
+
     try {
       console.log('[StrukturBoard] 🔄 Starte pessimistisches Speichern...');
+      console.log('[StrukturBoard] Helper-Funktionen verfügbar?', {
+        createThemenfeld: typeof createThemenfeld,
+        updateThemenfeld: typeof updateThemenfeld,
+        deleteThemenfeld: typeof deleteThemenfeld,
+        createLernpaket: typeof createLernpaket,
+        updateLernpaket: typeof updateLernpaket,
+        deleteLernpaket: typeof deleteLernpaket,
+      });
 
       // ── PHASE 1: Identifiziere alle Änderungen ──────────────────────────────
       const aktuellePacketIds = new Set(Object.values(paketeMap).flat().map(p => p.id));
@@ -712,6 +729,7 @@ export default function StrukturBoardEmbedded({
 
       // ── PHASE 6: Erfolg! Bearbeitungsmodus beenden ───────────────────────
       console.log('[StrukturBoard] ✅ Speichern 100% erfolgreich!');
+      clearTimeout(timeoutId);
       
       // Erst nach kurzer Verzögerung: Overlay schließen + Erfolg
       await new Promise(resolve => setTimeout(resolve, 300));
@@ -727,18 +745,22 @@ export default function StrukturBoardEmbedded({
 
     } catch (error) {
       // ── FEHLERBEHANDLUNG (HART) ───────────────────────────────────────────
+      clearTimeout(timeoutId);
       console.error('[StrukturBoard] ❌ KRITISCHER FEHLER beim Speichern:', error);
+      console.error('[StrukturBoard] Error Name:', error?.name);
+      console.error('[StrukturBoard] Error Stack:', error?.stack);
       console.error('[StrukturBoard] Error Details:', {
         status: error?.response?.status,
         message: error?.message,
         data: error?.response?.data,
-        stack: error?.stack
+        type: error?.constructor?.name,
       });
       
       // Explizite Fehlermeldung mit vollständigen Details
       const errorMessage = 
         error?.response?.data?.message || 
         error?.response?.data?.error ||
+        error?.name ||
         error?.message || 
         'Speichern fehlgeschlagen: Unbekannter Fehler';
 
@@ -753,6 +775,7 @@ export default function StrukturBoardEmbedded({
       console.warn('[StrukturBoard] Lokale Änderungen sind NICHT verloren. Bitte Internet prüfen und erneut versuchen.');
       
     } finally {
+      clearTimeout(timeoutId);
       // In jedem Fall: setSaving(false) wurde oben bereits gesetzt
       // Overlay wird NUR bei Erfolg geschlossen
     }
