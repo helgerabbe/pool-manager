@@ -25,6 +25,8 @@ import LueckentextEditor, { LueckentextRenderer } from '@/components/workspace/L
 import LueckentextWysiwygModal from '@/components/workspace/LueckentextWysiwygModal';
 import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
 import SortingListEditor from '@/components/workspace/SortingListEditor';
+import SortingListModal from '@/components/workspace/SortingListModal';
+import MatchTermsModal from '@/components/workspace/MatchTermsModal';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { toast } from 'sonner';
 
@@ -55,10 +57,14 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
   const queryClient = useQueryClient();
   const [editMode, setEditMode] = useState(false);
 
-  // Implizites Locking für Lückentext-Modal (Tab 4)
+  // Implizites Locking für Modal-basierte Bearbeitung (Tab 4)
   const isLuecke = isLueckentext(catalogEntry?.name);
-  const { acquireLock, releaseLock } = useLernpaketLock(isLuecke ? klon.lernpaket_id : null);
+  const isSort = isSorting(catalogEntry?.name);
+  const isMatch = isMatchTerms(catalogEntry?.name);
+  const { acquireLock, releaseLock } = useLernpaketLock(klon.lernpaket_id);
   const [lueckentextModalOpen, setLueckentextModalOpen] = useState(false);
+  const [sortingModalOpen, setSortingModalOpen] = useState(false);
+  const [matchModalOpen, setMatchModalOpen] = useState(false);
   const [acquiringLock, setAcquiringLock] = useState(false);
 
   // Lernpaket-Lock prüfen: Wenn jemand anders den Lernpaket-Lock hält, darf dieser Klon nicht bearbeitet werden
@@ -152,21 +158,28 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
 
   const [convertDialogOpen, setConvertDialogOpen] = useState(false);
 
-  // Implizites Locking: Lock erwerben → Modal öffnen
+  // Implizites Locking: Lock erwerben → richtiges Modal öffnen
   const handleEditKlon = async () => {
     setAcquiringLock(true);
     const ok = await acquireLock();
     setAcquiringLock(false);
     if (!ok) return;
     onEditModeChange?.(true);
-    setLueckentextModalOpen(true);
+    if (isLuecke) setLueckentextModalOpen(true);
+    else if (isSort) setSortingModalOpen(true);
+    else if (isMatch) setMatchModalOpen(true);
   };
 
-  const handleCloseLueckentextModal = async () => {
+  const handleCloseModal = async () => {
     setLueckentextModalOpen(false);
+    setSortingModalOpen(false);
+    setMatchModalOpen(false);
     await releaseLock();
     onEditModeChange?.(false);
   };
+
+  // Alias für Lückentext (bestehender Code-Kompatibilität)
+  const handleCloseLueckentextModal = handleCloseModal;
 
   const convertToMasterMutation = useMutation({
     mutationFn: async () => {
@@ -231,7 +244,7 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
             Kopie {klon.klon_index} · Phase: {activityRecord?.phase}
           </p>
         </div>
-        {kannBearbeiten && !lockedByOther && isLuecke && (
+        {kannBearbeiten && !lockedByOther && (isLuecke || isSort || isMatch) && (
           <Button
             size="sm"
             variant="outline"
@@ -243,28 +256,6 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
               ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sperren…</>
               : <><Pencil className="w-3.5 h-3.5" /> Kopie bearbeiten</>}
           </Button>
-        )}
-        {kannBearbeiten && !lockedByOther && !isLuecke && (isSorting(catalogEntry?.name) || isMatchTerms(catalogEntry?.name)) && (
-          editMode ? (
-            <div className="flex items-center gap-2 shrink-0">
-              <Button size="sm" onClick={() => saveMutation.mutate(data)} disabled={saveMutation.isPending} className="gap-1.5">
-                {saveMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                Speichern
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => { setEditMode(false); onEditModeChange?.(false); }}>
-                Abbrechen
-              </Button>
-            </div>
-          ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => { setEditMode(true); onEditModeChange?.(true); }}
-              className="gap-1.5 shrink-0"
-            >
-              <Pencil className="w-3.5 h-3.5" /> Kopie bearbeiten
-            </Button>
-          )
         )}
       </div>
 
@@ -359,101 +350,90 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
             />
           </div>
         ) : isMatchTerms(catalogEntry?.name) ? (
-          /* Match-Terms-Formular */
+          /* Match-Terms: Read-Only + Modal */
           <div className="space-y-3">
-            {editMode ? (
-              <MatchTermsForm
-                initialData={{
-                  instruction: data.instruction || '',
-                  pairs: data.pairs || [],
-                  distractors: (data.distractors || []).map(v => typeof v === 'string' ? { value: v } : v),
-                }}
-                onSave={(formData) => {
-                  const cleanedData = {
-                    instruction: formData.instruction,
-                    pairs: formData.pairs,
-                    distractors: (formData.distractors || []).map(d => typeof d === 'string' ? d : d.value).filter(Boolean),
-                  };
-                  setData(cleanedData);
-                  saveMutation.mutate(cleanedData, {
-                    onSuccess: () => { setEditMode(false); onEditModeChange?.(false); }
-                  });
-                }}
-                onCancel={() => { setEditMode(false); onEditModeChange?.(false); }}
-                onChange={() => {}}
-              />
-            ) : (
-              <div className="space-y-3">
-                {data.instruction && (
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Anweisung</p>
-                    <div className="bg-muted/50 rounded-lg p-3 text-sm">{data.instruction}</div>
-                  </div>
-                )}
-                {data.pairs?.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                      Begriffspaare ({data.pairs.length})
-                    </p>
-                    <div className="bg-muted/30 rounded-lg p-3 space-y-1.5">
-                      {data.pairs.map((p, i) => (
-                        <div key={i} className="flex items-center gap-2 text-sm">
-                          <span className="flex-1 font-medium">{p.left}</span>
-                          <span className="text-muted-foreground/40">→</span>
-                          <span className="flex-1 text-muted-foreground">{p.right}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+            {data.instruction && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Anweisung</p>
+                <div className="bg-muted/50 rounded-lg p-3 text-sm">{data.instruction}</div>
               </div>
             )}
+            {data.pairs?.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                  Begriffspaare ({data.pairs.length})
+                </p>
+                <div className="bg-muted/30 rounded-lg p-3 space-y-1.5">
+                  {data.pairs.map((p, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm">
+                      <span className="flex-1 font-medium">{p.left}</span>
+                      <span className="text-muted-foreground/40">→</span>
+                      <span className="flex-1 text-muted-foreground">{p.right}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {!data.instruction && !data.pairs?.length && (
+              <p className="text-sm text-muted-foreground italic">Noch kein Inhalt. Klicke „Kopie bearbeiten".</p>
+            )}
+            <MatchTermsModal
+              open={matchModalOpen}
+              onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+              initialData={data}
+              isSaving={saveMutation.isPending}
+              onSave={(newData) => {
+                const { content_status, ...fvData } = newData;
+                const updated = { ...data, ...fvData };
+                setData(updated);
+                saveMutation.mutate(updated, { onSuccess: () => handleCloseModal() });
+              }}
+              onCancel={handleCloseModal}
+            />
           </div>
         ) : isSorting(catalogEntry?.name) ? (
-          /* Sortierungs-Aufgabe */
-          editMode ? (
-            <SortingListEditor
-              initialData={{
-                instruction: data.instruction || '',
-                orderedItems: data.orderedItems || [],
+          /* Sortierungs-Aufgabe: Read-Only + Modal */
+          <div className="space-y-3">
+            {data.instruction && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Aufgabenstellung</p>
+                <div className="bg-muted/50 rounded-lg p-3 text-sm">{data.instruction}</div>
+              </div>
+            )}
+            {data.orderedItems?.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                  Elemente ({data.orderedItems.length})
+                </p>
+                <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+                  {data.orderedItems.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2 text-sm">
+                      <span className="w-6 text-xs font-semibold text-muted-foreground flex-shrink-0">
+                        {idx + 1}.
+                      </span>
+                      <span className="text-foreground">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {!data.instruction && !data.orderedItems?.length && (
+              <p className="text-sm text-muted-foreground italic">Noch kein Inhalt. Klicke „Kopie bearbeiten".</p>
+            )}
+            <SortingListModal
+              open={sortingModalOpen}
+              onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
+              initialData={data}
+              isSaving={saveMutation.isPending}
+              onSave={(newData) => {
+                const { content_status, ...fvData } = newData;
+                const updated = { ...data, ...fvData };
+                setData(updated);
+                saveMutation.mutate(updated, { onSuccess: () => handleCloseModal() });
               }}
-              onSave={(formData) => {
-                setData(formData);
-                saveMutation.mutate(formData, {
-                  onSuccess: () => { setEditMode(false); onEditModeChange?.(false); }
-                });
-              }}
-              onCancel={() => { setEditMode(false); onEditModeChange?.(false); }}
-              onChange={(d) => { if (d) setData(prev => ({ ...prev, ...d })); }}
-              readOnly={false}
+              onCancel={handleCloseModal}
             />
-          ) : (
-            <div className="space-y-3">
-              {data.instruction && (
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Aufgabenstellung</p>
-                  <div className="bg-muted/50 rounded-lg p-3 text-sm">{data.instruction}</div>
-                </div>
-              )}
-              {data.orderedItems?.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                    Elemente ({data.orderedItems.length})
-                  </p>
-                  <div className="bg-muted/30 rounded-lg p-3 space-y-2">
-                    {data.orderedItems.map((item, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-sm">
-                        <span className="w-6 text-xs font-semibold text-muted-foreground flex-shrink-0">
-                          {idx + 1}.
-                        </span>
-                        <span className="text-foreground">{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )
+          </div>
         ) : (
           /* Fallback: Arbeitsanweisung + Distraktoren */
           <>
