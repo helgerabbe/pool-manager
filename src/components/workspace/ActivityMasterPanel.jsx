@@ -294,7 +294,7 @@ export default function ActivityMasterPanel({
         lernpaket_id: activityRecord.lernpaket_id,
         reihenfolge: masterAufgaben.length + 1,
       });
-      await queryClient.invalidateQueries({ queryKey: ['masterAufgaben', activityRecord.id] });
+      await queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] }); // Invalidiert alle masterAufgaben-Queries (inkl. Sidebar)
       setFocusedMasterId(neu.id); // direkt zur neuen Karte scrollen/fokussieren
       toast.success('Neue Masteraufgabe erstellt.');
     } finally {
