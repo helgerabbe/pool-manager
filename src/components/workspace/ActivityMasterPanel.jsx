@@ -20,6 +20,7 @@ import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
 import TextLesenModal from '@/components/workspace/TextLesenModal';
+import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import MoodleSyncStatusBadge from '@/components/workspace/MoodleSyncStatusBadge';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import { toast } from 'sonner';
@@ -338,6 +339,7 @@ export default function ActivityMasterPanel({
     'Bildbeschreibung': 'Beschreibe das Bild möglichst genau mit eigenen Worten.',
     'Quiz': 'Beantworte die Quiz-Fragen so vollständig wie möglich.',
     'Begriffe zuordnen': 'Ordne jeden Begriff der richtigen Erklärung zu.',
+    'Offene Aufgabe': 'Bearbeite die folgende Aufgabe detailliert und vollständig.',
   };
 
   const defaultAufgabentext = AUFGABENTEXT_DEFAULTS[catalogEntry?.name] || 'Bearbeite die folgende Aufgabe sorgfältig.';
@@ -428,12 +430,23 @@ export default function ActivityMasterPanel({
 
             {/* Spezielle Vorschau für Bildbeschriftung */}
             {isImageLabeling ? (
-              <div className="rounded-xl border border-border bg-card p-5">
-                <ImageLabelingEditor
-                  initialData={fieldValues}
-                  readOnly={true}
-                />
-              </div>
+             <div className="rounded-xl border border-border bg-card p-5">
+               <ImageLabelingEditor
+                 initialData={fieldValues}
+                 readOnly={true}
+               />
+             </div>
+            ) : catalogEntry?.name?.toLowerCase().includes('offene') ? (
+             // Offene Aufgabe mit KI-Assistent
+             <OffeneAufgabeModal
+               open={editModalOpen}
+               onOpenChange={(isOpen) => { if (!isOpen) handleModalCancel(); }}
+               initialData={fieldValues}
+               isSaving={saveFieldsMutation.isPending}
+               onSave={handleModalSave}
+               onCancel={handleModalCancel}
+               exportLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
+             />
             ) : (
             <div className="rounded-xl border border-border bg-card p-5 space-y-5">
               {schema.length === 0 && (
