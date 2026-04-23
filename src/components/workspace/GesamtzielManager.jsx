@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,16 @@ export default function GesamtzielManager({ einheitId, gesamtziele = [], onUpdat
   const [ziele, setZiele] = useState(gesamtziele);
   const [newZiel, setNewZiel] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // Synchronisiere mit externen Props-Updates (z.B. nach Refetch durch Parent)
+  // aber NUR wenn gerade kein Speichervorgang läuft (sonst würden lokale Änderungen überschrieben)
+  const prevGesamtziele = useRef(gesamtziele);
+  useEffect(() => {
+    if (!saving && gesamtziele !== prevGesamtziele.current) {
+      setZiele(gesamtziele);
+    }
+    prevGesamtziele.current = gesamtziele;
+  }, [gesamtziele, saving]);
 
   const handleAddZiel = async () => {
     if (!newZiel.trim()) return;
