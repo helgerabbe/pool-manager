@@ -288,17 +288,14 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
       await invokeFunction('releaseStructuralLockSecure', {
         einheit_id: einheit.id,
       });
-      setIsTab1EditingActive(false);
-      queryClient.invalidateQueries({ queryKey: ['einheiten'] });
-      toast.success('✅ Bearbeitungsmodus für Tab 1 beendet. Andere Nutzer können jetzt wieder Änderungen vornehmen.');
     } catch (err) {
-      if (err?.response?.status === 403) {
-        toast.error('Sie haben diesen Lock nicht. Nur der Lock-Inhaber kann ihn freigeben.');
-      } else {
-        toast.error('Fehler beim Freigeben des Bearbeitungsmodus.');
-      }
+      // Lock-Release-Fehler ignorieren – Bearbeitungsmodus wird trotzdem beendet
+      console.warn('[Tab1 Lock Release] Fehler beim Lock-Release (ignoriert):', err?.response?.status);
     } finally {
+      // Bearbeitungsmodus IMMER beenden, unabhängig vom Lock-Release-Ergebnis
+      setIsTab1EditingActive(false);
       setReleasingTab1Lock(false);
+      queryClient.refetchQueries({ queryKey: ['workspace-data', einheit.id] });
     }
   };
 
