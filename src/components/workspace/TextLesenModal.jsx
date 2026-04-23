@@ -6,7 +6,7 @@
  * Footer: Abbrechen (unlock + schließen) | Speichern (save + unlock + schließen)
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -29,15 +29,18 @@ export default function TextLesenModal({
   const [isReleased, setIsReleased] = useState(initialFieldValues.content_status === 'approved');
   const [exportLockedWasEnabled, setExportLockedWasEnabled] = useState(exportLocked);
 
-  // Bei jedem Öffnen Initialwerte neu laden
+  // Nur beim ÖFFNEN des Modals Initialwerte laden (nicht bei jedem Re-render)
+  // initialFieldValues NICHT als Dependency — das ist ein neues Objekt bei jedem Parent-Render
+  const prevOpenRef = useRef(false);
   useEffect(() => {
-    if (open) {
-      // Deep copy: Ensure nested objects (dropZones) are properly loaded
+    if (open && !prevOpenRef.current) {
+      // Modal wurde gerade geöffnet → Werte initialisieren
       setFieldValues(JSON.parse(JSON.stringify(initialFieldValues || {})));
       setIsReleased(initialFieldValues?.content_status === 'approved');
       setExportLockedWasEnabled(exportLocked);
     }
-  }, [open, initialFieldValues]);
+    prevOpenRef.current = open;
+  }, [open]);
 
   // Reagiere auf Export-Lock-Änderung während Modal geöffnet ist
   useEffect(() => {
