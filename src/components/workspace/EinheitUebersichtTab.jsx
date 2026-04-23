@@ -9,7 +9,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { invokeFunction } from '@/utils/functionsHelper';
-import { updateEinheit } from '@/services/EinheitenService';
 import { getAllLernpakete } from '@/services/LernpaketService';
 import { getMembersByEinheit, getMembershipByEinheitAndUser, removeEinheitMember, updateEinheitMemberRole } from '@/services/EinheitMembersService';
 import { Button } from '@/components/ui/button';
@@ -146,13 +145,19 @@ export default function EinheitUebersichtTab({
     setIsLocking(true);
     try {
       const neuerStatus = istGesperrt ? 'Freigegeben für Bearbeitung' : 'Gesperrt';
-      await updateEinheit(einheit.id, { freigabe_status: neuerStatus });
-      queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+      await invokeFunction('updateEinheitSecure', {
+        einheit_id: einheit.id,
+        freigabe_status: neuerStatus,
+        version: einheit.version,
+      });
+      await queryClient.refetchQueries({ queryKey: ['workspace-data', einheit.id] });
+      await queryClient.refetchQueries({ queryKey: ['einheiten-list-secure'] });
       toast.success(istGesperrt
         ? 'Einheit ist jetzt für die Bearbeitung freigegeben.'
         : 'Einheit wurde für die Bearbeitung gesperrt.'
       );
-    } catch {
+    } catch (error) {
+      console.error('[ToggleSperre] Fehler:', error);
       toast.error('Fehler beim Ändern des Sperrstatus.');
     } finally {
       setIsLocking(false);
@@ -321,16 +326,44 @@ export default function EinheitUebersichtTab({
   });
 
   const handleSave = async () => {
+    console.log('[Tab 1 Save] Starte Speicherprozess...');
+    console.log('[Tab 1 Save] Einheit ID:', einheit.id);
+    console.log('[Tab 1 Save] Payload:', form);
+
+    if (!einheit.id) {
+      toast.error('Fehler: Einheit-ID fehlt.');
+      return;
+    }
+
     setIsSaving(true);
     try {
-      await updateEinheit(einheit.id, form);
-      queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+      const result = await invokeFunction('updateEinheitSecure', {
+        einheit_id: einheit.id,
+        titel_der_einheit: form.titel_der_einheit,
+        fach: form.fach,
+        jahrgangsstufe: form.jahrgangsstufe,
+        zeit_phase_id: form.zeit_phase_id || null,
+        bearbeitungsmodus: form.bearbeitungsmodus,
+        version: einheit.version,
+      });
+
+      console.log('[Tab 1 Save] DB Antwort:', result?.data);
+
+      if (result?.data?.error) {
+        throw new Error(result.data.error);
+      }
+
+      await queryClient.refetchQueries({ queryKey: ['workspace-data', einheit.id] });
+      await queryClient.refetchQueries({ queryKey: ['einheiten-list-secure'] });
+
       toast.success('✅ Einheit gespeichert. Bearbeitungsmodus wird beendet.');
       if (onReleaseLock) {
         await onReleaseLock();
       }
-    } catch {
-      toast.error('Fehler beim Speichern.');
+    } catch (error) {
+      console.error('[Tab 1 Save] KRITISCHER FEHLER:', error);
+      toast.error(`Fehler beim Speichern: ${error?.response?.data?.message || error.message || 'Unbekannter Fehler'}`);
+      // Bearbeitungsmodus bleibt aktiv!
     } finally {
       setIsSaving(false);
     }

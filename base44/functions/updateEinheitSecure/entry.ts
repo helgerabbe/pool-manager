@@ -56,9 +56,11 @@ Deno.serve(async (req) => {
     const {
       einheit_id,
       titel_der_einheit,
-      gesamtziel,
+      gesamtziele,
       fach,
       jahrgangsstufe,
+      zeit_phase_id,
+      bearbeitungsmodus,
       freigabe_status,
       version, // CRITICAL: Client-side version für Optimistic Locking
     } = payload;
@@ -162,13 +164,15 @@ Deno.serve(async (req) => {
 
     // 6. Prepare Update Data
     const updateData = {};
-    if (titel_der_einheit !== undefined)
-      updateData.titel_der_einheit = titel_der_einheit;
-    if (gesamtziel !== undefined) updateData.gesamtziel = gesamtziel;
+    if (titel_der_einheit !== undefined) updateData.titel_der_einheit = titel_der_einheit;
+    if (gesamtziele !== undefined) updateData.gesamtziele = gesamtziele;
     if (fach !== undefined) updateData.fach = fach;
     if (jahrgangsstufe !== undefined) updateData.jahrgangsstufe = jahrgangsstufe;
-    if (freigabe_status !== undefined)
-      updateData.freigabe_status = freigabe_status;
+    if (zeit_phase_id !== undefined) updateData.zeit_phase_id = zeit_phase_id;
+    if (bearbeitungsmodus !== undefined) updateData.bearbeitungsmodus = bearbeitungsmodus;
+    if (freigabe_status !== undefined) updateData.freigabe_status = freigabe_status;
+
+    console.log('[updateEinheitSecure] Payload:', { einheit_id, updateData, version });
 
     // 7. INCREMENT VERSION on successful update
     updateData.version = dbVersion + 1;
