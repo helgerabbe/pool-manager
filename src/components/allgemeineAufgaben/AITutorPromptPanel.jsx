@@ -48,31 +48,23 @@ function SegmentField({ label, description, value, onChange, kannBearbeiten, mul
   );
 }
 
-// ── Rubriken-Anzeige (Read-only) ──────────────────────────────────────────────
-function RubrikenSection({ rubrics }) {
+// ── Erwartungshorizont-Anzeige für Ebene-2-Aufgaben (Read-only, informativ) ──
+function ErwartungshorizontSection({ aufgabe }) {
+  const horizont = aufgabe?.erwartungshorizont || aufgabe?.musterloesung || '';
   return (
     <div className="space-y-1.5">
       <div>
-        <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Bewertungsrubriken</p>
-        <p className="text-xs text-muted-foreground mt-0.5">Aus Tab „Abgabe & Gütekriterien" – werden direkt in den Brian-Export übernommen</p>
+        <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Erwartungshorizont (Tutor-Kontext)</p>
+        <p className="text-xs text-muted-foreground mt-0.5">Wird als fachlicher Kontext in die interne System-Anweisung des KI-Tutors eingebettet</p>
       </div>
-
-      {!rubrics?.length ? (
+      {!horizont ? (
         <div className="flex items-center gap-2 p-3 rounded-lg border border-amber-200 bg-amber-50 text-xs text-amber-800">
           <Info className="w-3.5 h-3.5 shrink-0" />
-          <span>Noch keine Rubriken definiert. Bitte im Tab „Abgabe & Gütekriterien" anlegen oder per KI generieren.</span>
+          <span>Noch kein Erwartungshorizont definiert. Bitte im Tab „Erwartungshorizont" hinterlegen.</span>
         </div>
       ) : (
-        <div className="space-y-2">
-          {rubrics.map((r, i) => (
-            <div key={i} className="p-3 rounded-lg border border-border bg-muted/20 text-sm">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-medium">{r.title}</span>
-                <span className="text-xs text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">{r.points} Pkt.</span>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">{r.criteria_text}</p>
-            </div>
-          ))}
+        <div className="p-3 rounded-lg border border-border bg-muted/20 text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+          {horizont}
         </div>
       )}
     </div>
@@ -182,8 +174,6 @@ export default function AITutorPromptPanel({
 
   if (!aufgabe) return null;
 
-  const rubrics = aufgabe.rubric_criteria || [];
-
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-1 overflow-y-auto p-5 space-y-5">
@@ -269,11 +259,13 @@ export default function AITutorPromptPanel({
           kannBearbeiten={kannBearbeiten}
         />
 
-        {/* Feld 5: Rubriken */}
-        <RubrikenSection rubrics={rubrics} />
+        {/* Feld 5: Erwartungshorizont als Tutor-Kontext (nur für Ebene-2-Aufgaben) */}
+        {!istProjektaufgabe && (
+          <ErwartungshorizontSection aufgabe={aufgabe} />
+        )}
 
         <p className="text-xs text-muted-foreground pt-2 border-t border-border">
-          Tipp: Rubriken werden im Tab „Abgabe & Gütekriterien" angelegt oder per KI generiert. Sie strukturieren das Abschluss-Feedback des Tutors nach Beendigung des Dialogs.
+          Tipp: Der Erwartungshorizont wird vom KI-Tutor genutzt, um das Feedback an die Schülerantwort anzupassen. Je präziser der Erwartungshorizont, desto gezielter das Tutoring.
         </p>
       </div>
     </div>
