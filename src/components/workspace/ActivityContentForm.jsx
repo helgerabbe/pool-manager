@@ -148,33 +148,17 @@ export default function ActivityContentForm({
 
         {/* Formularfelder (ausgegraut wenn fill_in_moodle_later) */}
         <div className={`space-y-5 py-4 ${fillInMoodleLater ? 'opacity-40 pointer-events-none select-none' : ''}`}>
-          {/* Aufgabenstellung – oben als erstes mit blauem Hintergrund */}
-          {formData.task_description ? (
-            <div className="p-3 rounded-lg bg-blue-50 border border-blue-100 space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-medium text-blue-900">Aufgabenstellung</p>
-                <button
-                  type="button"
-                  onClick={() => handleFieldChange('task_description', '')}
-                  className="text-xs text-blue-600 hover:text-blue-800 underline"
-                >
-                  Anpassen
-                </button>
-              </div>
-              <p className="text-sm text-blue-800">{formData.task_description}</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <Label>Aufgabenstellung <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <textarea
-                value={formData.task_description || ''}
-                onChange={e => handleFieldChange('task_description', e.target.value)}
-                placeholder="Beschreibe hier kurz, was der Schüler tun soll..."
-                rows={3}
-                className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm resize-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              />
-            </div>
-          )}
+          {/* Aufgabenstellung – immer als Textarea, kein Toggle */}
+          <div className="space-y-2">
+            <Label>Aufgabenstellung <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <textarea
+              value={formData.task_description || ''}
+              onChange={e => handleFieldChange('task_description', e.target.value)}
+              placeholder="Beschreibe hier kurz, was der Schüler tun soll..."
+              rows={3}
+              className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm resize-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+          </div>
 
           {formSchema.length === 0 ? (
             <div className="p-6 rounded-lg bg-muted/50 text-center text-sm text-muted-foreground">
