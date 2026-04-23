@@ -360,6 +360,7 @@ export default function StrukturBoardEmbedded({
   einheitId,
   einheit, // wird von Workspace mitgegeben
   lernpakete: remotePakete,
+  lernziele: remoteLernziele = [],
   themenfelder: remoteThemenfelder,
   queryClient,
   onSaved,   // callback nach erfolgreichem Speichern
@@ -408,10 +409,18 @@ export default function StrukturBoardEmbedded({
     const newMap = { [SAMMELBECKEN_ID]: [] };
     tfSpalten.forEach(s => { newMap[s.id] = []; });
 
+    // Lernziele pro Paket gruppieren (damit sie im Dialog + auf der Karte sichtbar sind)
+    const zieleByPaket = (remoteLernziele || []).reduce((acc, lz) => {
+      if (!acc[lz.lernpaket_id]) acc[lz.lernpaket_id] = [];
+      acc[lz.lernpaket_id].push(lz);
+      return acc;
+    }, {});
+
     pakete.forEach(p => {
       const sid = p.themenfeld_id ? `tf-${p.themenfeld_id}` : SAMMELBECKEN_ID;
       if (!newMap[sid]) newMap[sid] = [];
-      newMap[sid].push(p);
+      // Lernziele an Paket hängen, damit sie im Dialog wieder angezeigt werden
+      newMap[sid].push({ ...p, lernziele: zieleByPaket[p.id] || [] });
     });
 
     Object.keys(newMap).forEach(k => {
@@ -422,7 +431,7 @@ export default function StrukturBoardEmbedded({
     setPaketeMap(newMap);
     setOriginalSpaltenIds(new Set(tfSpalten.map(s => s.themenfeldId).filter(Boolean)));
     setOriginalPaketIds(new Set(pakete.map(p => p.id)));
-  }, [remotePakete, remoteThemenfelder, isDirty, isSavingPhase]);
+  }, [remotePakete, remoteLernziele, remoteThemenfelder, isDirty, isSavingPhase]);
 
 
 

@@ -602,6 +602,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                             einheitId={selectedEinheitId}
                             einheit={einheit}
                             lernpakete={paketeFuerEinheit}
+                            lernziele={zieleFuerEinheit}
                             themenfelder={themenfelder}
                             queryClient={queryClient}
                             readOnly={!isStructuralEditingActive || isLockedByOther}
