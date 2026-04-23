@@ -159,16 +159,16 @@ export default function ActivityMasterPanel({
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [acquiringLock, setAcquiringLock] = useState(false);
 
-  // field_values neu laden wenn activityRecord wechselt
+  // field_values neu laden NUR wenn sich die Aktivität selbst wechselt (ID-Wechsel)
+  // NICHT bei field_values-Änderung – das würde Hintergrund-Refetches die lokale Eingabe überschreiben
   useEffect(() => {
     if (activityRecord?.field_values) {
-      // Deep copy nested objects to avoid stale state
       setFieldValues(JSON.parse(JSON.stringify(activityRecord.field_values)));
     } else {
       setFieldValues({});
     }
     setIsDirty(false);
-  }, [activityRecord?.id, activityRecord?.field_values]);
+  }, [activityRecord?.id]);
 
   const saveFieldsMutation = useMutation({
     mutationFn: (values) => {
