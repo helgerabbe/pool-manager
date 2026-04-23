@@ -542,8 +542,10 @@ export default function StrukturBoardEmbedded({
   };
 
   const handlePaketSave = ({ titel, dauer, lernziele }) => {
+   console.log('[StrukturBoard] 📝 handlePaketSave aufgerufen:', { titel, dauer, lernzieleCount: lernziele?.length, lernziele });
    setIsDirty(true);
    const { spalteId, paket } = paketDialog;
+   console.log('[StrukturBoard] 📝 Dialog-Kontext:', { spalteId, paketId: paket?.id, istBearbeiten: !!paket });
    if (paket) {
      // Paket bearbeiten (ob neu oder existierend)
      setPaketeMap(prev => {
