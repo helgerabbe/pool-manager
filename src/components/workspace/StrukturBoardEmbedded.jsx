@@ -728,6 +728,9 @@ export default function StrukturBoardEmbedded({
               console.log(`[StrukturBoard] ✏️ PHASE4[${paketCounter}] ✓ Fertig. Result:`, result);
               if (!result) throw new Error(`Fehler: Paket ${paket.id} konnte nicht aktualisiert werden`);
 
+              // DEBUG: Lernziele-Status auf dem Paket loggen
+              console.log(`[StrukturBoard] 🔍 PHASE4[${paketCounter}] paket.lernziele:`, paket.lernziele, 'typeof:', typeof paket.lernziele, 'isArray:', Array.isArray(paket.lernziele));
+
               // NEU: Neue Lernziele für bestehende Pakete speichern
               if (paket.lernziele && paket.lernziele.length > 0) {
                 for (const lz of paket.lernziele) {
