@@ -229,7 +229,13 @@ export default function ActivityMasterPanel({
     setAcquiringLock(true);
     const ok = await acquireLock();
     setAcquiringLock(false);
-    if (!ok) return;
+    if (!ok) {
+      const msg = lernpaket?.locked_by_email
+        ? `🔒 Dieses Lernpaket wird gerade von ${lernpaket.locked_by_email} bearbeitet.`
+        : 'Bearbeitungsmodus konnte nicht gestartet werden. Bitte laden Sie die Seite neu.';
+      toast.error(msg);
+      return;
+    }
     // Übergebe releaseLock als zweites Argument damit TaskCreationView den Lock freigeben kann
     onEditModeChange?.(true, releaseLock);
     setEditModalOpen(true);
@@ -293,7 +299,11 @@ export default function ActivityMasterPanel({
     const lockOk = await acquireLock();
     if (!lockOk) {
       setCreating(false);
-      return; // Fehlermeldung kommt bereits aus useLernpaketLock
+      const msg = lernpaket?.locked_by_email
+        ? `🔒 Dieses Lernpaket wird gerade von ${lernpaket.locked_by_email} bearbeitet.`
+        : 'Bearbeitungsmodus konnte nicht gestartet werden. Bitte laden Sie die Seite neu.';
+      toast.error(msg);
+      return;
     }
     onEditModeChange?.(true);
     try {

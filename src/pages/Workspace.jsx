@@ -260,21 +260,21 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
       if (res.data?.success) {
         setIsTab1EditingActive(true);
         queryClient.invalidateQueries({ queryKey: ['einheiten'] });
-        toast.success('✅ Bearbeitungsmodus für Tab 1 aktiviert. Andere Nutzer können jetzt keine Änderungen mehr vornehmen.');
+        toast.success('✅ Bearbeitungsmodus aktiviert.');
       } else {
-        const lockOwner = res.data?.lockedByEmail;
+        const lockOwner = res.data?.lockedByEmail || res.data?.locked_by_email;
         toast.error(
           lockOwner
             ? `🔒 Einheit wird gerade von ${lockOwner} bearbeitet. Bitte warten Sie bis die Bearbeitung abgeschlossen ist.`
-            : 'Bearbeitungsmodus konnte nicht aktiviert werden.'
+            : 'Bearbeitungsmodus konnte nicht aktiviert werden. Bitte laden Sie die Seite neu.'
         );
       }
     } catch (err) {
-      const lockOwner = err?.response?.data?.lockedByEmail;
+      const lockOwner = err?.response?.data?.lockedByEmail || err?.response?.data?.locked_by_email;
       if (err?.response?.status === 409) {
-        toast.error(lockOwner ? `🔒 Einheit wird von ${lockOwner} bearbeitet.` : 'Einheit ist gesperrt.');
+        toast.error(lockOwner ? `🔒 Einheit wird von ${lockOwner} bearbeitet.` : '🔒 Einheit ist gerade gesperrt. Bitte versuchen Sie es erneut.');
       } else {
-        toast.error('Fehler beim Aktivieren des Bearbeitungsmodus.');
+        toast.error(`Bearbeitungsmodus konnte nicht gestartet werden: ${err?.message || 'Unbekannter Fehler'}`);
       }
     } finally {
       setAcquiringTab1Lock(false);
