@@ -431,6 +431,24 @@ export default function EinheitUebersichtTab({
                     <p className="text-sm font-medium">{form.bearbeitungsmodus === 'sequenziell' ? 'Sequenziell' : 'Offen'}</p>
                   </div>
                 </div>
+
+                {/* Gesamtziele im Lesemodus */}
+                {einheit.gesamtziele?.length > 0 && (
+                  <div className="space-y-2 pt-3 mt-1 border-t">
+                    <Label className="text-muted-foreground">Gesamtziele</Label>
+                    <div className="space-y-1.5">
+                      {einheit.gesamtziele.map((ziel, idx) => (
+                        <div key={idx} className="flex items-start gap-2.5 p-2.5 rounded-lg border bg-blue-50 border-blue-200">
+                          <div className="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center text-[10px] font-bold text-blue-700 shrink-0 mt-0.5">
+                            {idx + 1}
+                          </div>
+                          <p className="text-sm text-foreground">{ziel}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="pt-3 mt-3 border-t">
                   {isEditingActive ? (
                     <p className="text-xs text-green-700 flex items-center gap-1.5 bg-green-50 px-2.5 py-1.5 rounded-lg border border-green-200">
