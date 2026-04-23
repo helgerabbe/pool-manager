@@ -506,8 +506,10 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
     .filter(lp => lp.einheit_id === einheitId)
     .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0));
 
-  // Selektiertes Objekt bei Daten-Updates synchronisieren
+  // Selektiertes Objekt bei Daten-Updates synchronisieren – NUR wenn kein Edit-Modus aktiv
+  // (sonst würden Hintergrund-Refetches ungespeicherte Formular-Eingaben überschreiben)
   useEffect(() => {
+    if (isEditingActive) return;
     if (selectedItem?.type === 'activity') {
       const updated = allActivities.find(a => a.id === selectedItem.activity.id);
       if (updated) setSelectedItem({ type: 'activity', activity: updated });
@@ -520,7 +522,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
       const updated = alleKlone.find(k => k.id === selectedItem.klon.id);
       if (updated) setSelectedItem({ type: 'klon', klon: updated });
     }
-  }, [allActivities, alleMaster, alleKlone]);
+  }, [allActivities, alleMaster, alleKlone, isEditingActive]);
 
   // ── Kern-Funktion: Baum öffnen und Activity laden ─────────────────────────
   const openTreeAndLoadContent = (activityId) => {
