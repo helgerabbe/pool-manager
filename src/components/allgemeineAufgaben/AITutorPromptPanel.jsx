@@ -16,6 +16,76 @@ import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, Save, Loader2, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
+// ── Tutor-Persona Auswahl ─────────────────────────────────────────────────────
+const TUTOR_PERSONAS = [
+  {
+    value: 'standard',
+    label: 'Standard-Tutor',
+    description: 'Ausgewogenes Scaffolding – führt den Schüler schrittweise zur Lösung',
+  },
+  {
+    value: 'unterstuetzend',
+    label: 'Unterstützender Tutor',
+    description: 'Besonders einfühlsam und geduldig – gibt mehr Hilfestellungen und Zwischenschritte',
+  },
+  {
+    value: 'streng',
+    label: 'Strenger Tutor',
+    description: 'Fordert präzise Antworten – gibt wenig Hilfestellungen und verlangt eigenständiges Denken',
+  },
+  {
+    value: 'restriktiv',
+    label: 'Restriktiver Tutor',
+    description: 'Gibt keinerlei Hinweise – der Schüler muss die Aufgabe vollständig selbstständig lösen',
+  },
+];
+
+function TutorPersonaSection({ personaValue, personaZusatz, onPersonaChange, onZusatzChange, kannBearbeiten }) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="text-xs font-semibold text-foreground uppercase tracking-wide">3 · Tutor-Persona</p>
+        <p className="text-xs text-muted-foreground mt-0.5">Legt das Verhalten und den Betreuungsstil des KI-Tutors fest</p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {TUTOR_PERSONAS.map(p => {
+          const isSelected = (personaValue || 'standard') === p.value;
+          return (
+            <button
+              key={p.value}
+              type="button"
+              disabled={!kannBearbeiten}
+              onClick={() => kannBearbeiten && onPersonaChange(p.value)}
+              className={`text-left p-3 rounded-lg border-2 transition-all ${
+                isSelected
+                  ? 'border-primary bg-primary/5 text-foreground'
+                  : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:bg-muted/40 disabled:cursor-default'
+              }`}
+            >
+              <p className={`text-sm font-medium ${isSelected ? 'text-primary' : ''}`}>{p.label}</p>
+              <p className="text-xs mt-0.5 leading-snug">{p.description}</p>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Optionales Zusatzfeld */}
+      <div className="space-y-1">
+        <p className="text-xs text-muted-foreground font-medium">Ergänzende Informationen <span className="font-normal">(optional)</span></p>
+        <textarea
+          value={personaZusatz || ''}
+          onChange={e => kannBearbeiten && onZusatzChange(e.target.value)}
+          readOnly={!kannBearbeiten}
+          rows={3}
+          placeholder="z.B. besondere Hinweise zur fachlichen Strenge, Sprachebene oder Scaffolding-Strategie …"
+          className="w-full px-3 py-2.5 text-sm border border-border rounded-lg resize-none bg-background focus:outline-none focus:ring-1 focus:ring-ring leading-relaxed read-only:bg-muted/20 read-only:text-foreground placeholder:text-muted-foreground/50"
+        />
+      </div>
+    </div>
+  );
+}
+
 // ── Einzelne Sektion (ohne Copy-Button) ──────────────────────────────────────
 function SegmentField({ label, description, value, onChange, kannBearbeiten, multiline = true }) {
   return (
@@ -87,7 +157,9 @@ export default function AITutorPromptPanel({
     brian_dialog_name: '',
     brian_learner_instruction: '',
     brian_system_instruction: '',
-    brian_completion_rule: '',
+    brian_completion_rule: 'Der Dialog ist beendet, wenn die Aufgabe vollständig und korrekt bearbeitet wurde.',
+    tutor_persona: 'standard',
+    tutor_persona_zusatz: '',
   });
   const [isDirty, setIsDirty] = useState(false);
 
@@ -102,7 +174,9 @@ export default function AITutorPromptPanel({
       brian_dialog_name: aufgabe.brian_dialog_name || aufgabe.titel || '',
       brian_learner_instruction: aufgabe.brian_learner_instruction || aufgabe.aufgabenstellung || '',
       brian_system_instruction: aufgabe.brian_system_instruction || '',
-      brian_completion_rule: aufgabe.brian_completion_rule || '',
+      brian_completion_rule: aufgabe.brian_completion_rule || 'Der Dialog ist beendet, wenn die Aufgabe vollständig und korrekt bearbeitet wurde.',
+      tutor_persona: aufgabe.tutor_persona || 'standard',
+      tutor_persona_zusatz: aufgabe.tutor_persona_zusatz || '',
     });
     setIsDirty(false);
   }, [aufgabe?.id]);
@@ -241,12 +315,12 @@ export default function AITutorPromptPanel({
           kannBearbeiten={kannBearbeiten}
         />
 
-        {/* Feld 3: Interne System-Anweisung */}
-        <SegmentField
-          label="3 · Interne System-Anweisung (Tutor-Persona)"
-          description="Nicht sichtbar für Schüler – definiert das Scaffolding-Verhalten und den fachlichen Kontext des Tutors"
-          value={segments.brian_system_instruction}
-          onChange={kannBearbeiten ? v => updateField('brian_system_instruction', v) : undefined}
+        {/* Feld 3: Tutor-Persona */}
+        <TutorPersonaSection
+          personaValue={segments.tutor_persona}
+          personaZusatz={segments.tutor_persona_zusatz}
+          onPersonaChange={v => updateField('tutor_persona', v)}
+          onZusatzChange={v => updateField('tutor_persona_zusatz', v)}
           kannBearbeiten={kannBearbeiten}
         />
 
