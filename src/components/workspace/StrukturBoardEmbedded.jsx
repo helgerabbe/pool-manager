@@ -730,20 +730,23 @@ export default function StrukturBoardEmbedded({
               console.log(`[StrukturBoard] ✏️ PHASE4[${paketCounter}] ✓ Fertig. Result:`, result);
               if (!result) throw new Error(`Fehler: Paket ${paket.id} konnte nicht aktualisiert werden`);
 
-              // DEBUG: Lernziele-Status auf dem Paket loggen
-              console.log(`[StrukturBoard] 🔍 PHASE4[${paketCounter}] paket.lernziele:`, paket.lernziele, 'typeof:', typeof paket.lernziele, 'isArray:', Array.isArray(paket.lernziele));
-
               // NEU: Neue Lernziele für bestehende Pakete speichern
-              if (paket.lernziele && paket.lernziele.length > 0) {
-                for (const lz of paket.lernziele) {
-                  if (lz.isNew && lz.formulierung_fachsprache?.trim()) {
-                    console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}] Erstelle neues Lernziel für existierendes Paket: "${lz.formulierung_fachsprache.substring(0, 40)}..."`);
-                    await createLernziel({
-                      lernpaket_id: paket.id,
-                      formulierung_fachsprache: lz.formulierung_fachsprache.trim(),
-                      kategorie: lz.kategorie || 'Fachwissen',
-                    });
-                  }
+              // Ein Lernziel ist "neu", wenn es isNew=true hat ODER eine Temp-ID (startet mit 'lz-')
+              console.log(`[StrukturBoard] 🔍 PHASE4[${paketCounter}] paket.lernziele:`, paket.lernziele);
+              if (Array.isArray(paket.lernziele) && paket.lernziele.length > 0) {
+                const neueLernziele = paket.lernziele.filter(lz =>
+                  (lz.isNew === true || (typeof lz.id === 'string' && lz.id.startsWith('lz-')))
+                  && lz.formulierung_fachsprache?.trim()
+                );
+                console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}] Erstelle ${neueLernziele.length} neue Lernziele für Paket ${paket.id}...`);
+                for (const lz of neueLernziele) {
+                  console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}]   → LZ: "${lz.formulierung_fachsprache.substring(0, 40)}..."`);
+                  await createLernziel({
+                    lernpaket_id: paket.id,
+                    formulierung_fachsprache: lz.formulierung_fachsprache.trim(),
+                    kategorie: lz.kategorie || 'Fachwissen',
+                  });
+                  console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}]   ✓ Fertig`);
                 }
               }
             }
