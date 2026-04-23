@@ -209,7 +209,7 @@ export default function WorkspaceTabs({ activeTab, onTabChange }) {
   const visibleTabs = getVisibleTabs(rolle);
   return (
     <TooltipProvider delayDuration={0}>
-      <div className="flex flex-wrap items-center gap-2 shrink-0">
+      <div className="flex flex-wrap items-center gap-1.5 shrink-0">
         {visibleTabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.value;
@@ -220,10 +220,10 @@ export default function WorkspaceTabs({ activeTab, onTabChange }) {
                   <button
                     onClick={() => onTabChange(tab.value)}
                     className={cn(
-                      'flex items-center gap-2 py-3 rounded-lg border-2 transition-all font-medium',
+                      'flex items-center gap-2 py-2 rounded-lg border-2 transition-all font-medium',
                       isActive
-                        ? 'bg-primary text-primary-foreground border-primary shadow-md px-8 justify-start'
-                        : 'bg-card border-border text-muted-foreground hover:border-primary/50 hover:bg-muted/50 px-3 justify-center'
+                        ? 'bg-primary text-primary-foreground border-primary shadow-md px-6 justify-start'
+                        : 'bg-card border-border text-muted-foreground hover:border-primary/50 hover:bg-muted/50 px-2.5 justify-center'
                     )}
                   >
                     <span className={cn(

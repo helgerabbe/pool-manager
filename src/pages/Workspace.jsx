@@ -505,7 +505,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
             {/* ── PERSISTENTER LOCK-STATUS-BANNER (über allen Tabs) ──────────── */}
             {(isStructuralEditingActive || isTab1EditingActive) && (
-              <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-2.5 bg-blue-50 border-b border-blue-200 flex items-center gap-3">
+              <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-1.5 bg-blue-50 border-b border-blue-200 flex items-center gap-3">
                 <PenLine className="w-4 h-4 text-blue-600 animate-pulse shrink-0" />
                 <span className="text-sm font-semibold text-blue-900 flex-1">
                   ✏️ Du befindest dich im Bearbeitungsmodus. Nur du kannst Änderungen vornehmen.
@@ -522,8 +522,8 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             )}
 
             {/* ── Persistenter Header mit Structural-Lock-Control ─────────── */}
-            <div className="px-4 sm:px-6 lg:px-8 py-2 border-b border-border bg-muted/40 shrink-0 flex items-center gap-3 flex-wrap">
-              <span className="text-2xl font-bold text-foreground truncate flex-1 min-w-0 leading-snug">{einheit.titel_der_einheit}</span>
+            <div className="px-4 sm:px-6 lg:px-8 py-1.5 border-b border-border bg-muted/40 shrink-0 flex items-center gap-3 flex-wrap">
+              <span className="text-lg font-bold text-foreground truncate flex-1 min-w-0 leading-snug">{einheit.titel_der_einheit}</span>
               <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full shrink-0">{einheit.fach}</span>
 
               {/* Status-Badge + Lock-Button – NUR in Tab 2 (Struktur) sichtbar */}
@@ -570,7 +570,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             </div>
 
             {/* 6-Step Navigation */}
-            <div className="px-4 sm:px-6 lg:px-8 py-3 border-b border-border bg-card shrink-0">
+            <div className="px-4 sm:px-6 lg:px-8 py-1.5 border-b border-border bg-card shrink-0">
               <WorkspaceTabs activeTab={activeTab} onTabChange={handleTabChange} />
             </div>
 
