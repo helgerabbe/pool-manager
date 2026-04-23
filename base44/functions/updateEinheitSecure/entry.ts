@@ -113,7 +113,10 @@ Deno.serve(async (req) => {
     let allowed = false;
     let rbacReason = '';
 
-    if (role === 'Administrator') {
+    // System-level admin (base44 role) always has full access
+    if (user.role === 'admin') {
+      allowed = true;
+    } else if (role === 'Administrator') {
       allowed = true;
     } else if (role === 'Fachschaftsleitung') {
       const subjects = benutzer?.fachbereich_zustaendigkeit || [];
