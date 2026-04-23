@@ -727,6 +727,20 @@ export default function StrukturBoardEmbedded({
               const result = await updateLernpaket(paket.id, updateData);
               console.log(`[StrukturBoard] ✏️ PHASE4[${paketCounter}] ✓ Fertig. Result:`, result);
               if (!result) throw new Error(`Fehler: Paket ${paket.id} konnte nicht aktualisiert werden`);
+
+              // NEU: Neue Lernziele für bestehende Pakete speichern
+              if (paket.lernziele && paket.lernziele.length > 0) {
+                for (const lz of paket.lernziele) {
+                  if (lz.isNew && lz.formulierung_fachsprache?.trim()) {
+                    console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}] Erstelle neues Lernziel für existierendes Paket: "${lz.formulierung_fachsprache.substring(0, 40)}..."`);
+                    await createLernziel({
+                      lernpaket_id: paket.id,
+                      formulierung_fachsprache: lz.formulierung_fachsprache.trim(),
+                      kategorie: lz.kategorie || 'Fachwissen',
+                    });
+                  }
+                }
+              }
             }
           } catch (err) {
             console.error(`[StrukturBoard] ❌ PHASE4[${paketCounter}] FEHLER:`, err);
