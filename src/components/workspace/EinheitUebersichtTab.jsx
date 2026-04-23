@@ -497,7 +497,8 @@ export default function EinheitUebersichtTab({
                     einheitId={einheit.id}
                     gesamtziele={einheit.gesamtziele || []}
                     onUpdate={() => {
-                      queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+                      queryClient.refetchQueries({ queryKey: ['workspace-data', einheit.id] });
+                      queryClient.refetchQueries({ queryKey: ['einheiten-list-secure'] });
                     }}
                   />
                 </div>
