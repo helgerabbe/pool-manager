@@ -123,9 +123,12 @@ export default function EinheitUebersichtTab({
 
   const [form, setForm] = useState(() => buildForm(einheit));
 
-  // Immer wenn sich die Einheit vom Backend ändert, Form-State aktualisieren
+  // Form-State nur aktualisieren wenn NICHT im aktiven Bearbeitungsmodus
+  // (verhindert, dass Hintergrund-Refetches den laufenden Edit überschreiben)
   useEffect(() => {
-    setForm(buildForm(einheit));
+    if (!isEditingActive) {
+      setForm(buildForm(einheit));
+    }
   }, [
     einheit.id,
     einheit.titel_der_einheit,
@@ -133,6 +136,7 @@ export default function EinheitUebersichtTab({
     einheit.jahrgangsstufe,
     einheit.zeit_phase_id,
     einheit.bearbeitungsmodus,
+    isEditingActive,
   ]);
 
   const [isLocking, setIsLocking] = useState(false);
