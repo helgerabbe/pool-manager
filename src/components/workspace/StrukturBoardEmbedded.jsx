@@ -10,7 +10,7 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { createThemenfeld, updateThemenfeld, deleteThemenfeld } from '@/services/ThemenfeldService';
-import { createLernziel } from '@/services/LernzielService';
+import { createLernziel, deleteLernziel } from '@/services/LernzielService';
 import { createLernpaket, updateLernpaket, deleteLernpaket } from '@/services/LernpaketService';
 import { useRBAC } from '@/hooks/useRBAC';
 import { hasUnitLevelAccess } from '@/lib/rbac';
@@ -739,14 +739,29 @@ export default function StrukturBoardEmbedded({
               console.log(`[StrukturBoard] ✏️ PHASE4[${paketCounter}] ✓ Fertig. Result:`, result);
               if (!result) throw new Error(`Fehler: Paket ${paket.id} konnte nicht aktualisiert werden`);
 
-              // NEU: Neue Lernziele für bestehende Pakete speichern
-              // Ein Lernziel ist "neu", wenn es isNew=true hat ODER eine Temp-ID (startet mit 'lz-')
-              console.log(`[StrukturBoard] 🔍 PHASE4[${paketCounter}] paket.lernziele:`, paket.lernziele);
-              if (Array.isArray(paket.lernziele) && paket.lernziele.length > 0) {
-                const neueLernziele = paket.lernziele.filter(lz =>
-                  (lz.isNew === true || (typeof lz.id === 'string' && lz.id.startsWith('lz-')))
-                  && lz.formulierung_fachsprache?.trim()
-                );
+              // Lernziele synchronisieren: Neue anlegen, entfernte löschen
+              const aktuelleLernziele = Array.isArray(paket.lernziele) ? paket.lernziele : [];
+              const originalLernziele = (remoteLernziele || []).filter(lz => lz.lernpaket_id === paket.id);
+              console.log(`[StrukturBoard] 🔍 PHASE4[${paketCounter}] Lernziele: ${originalLernziele.length} original, ${aktuelleLernziele.length} aktuell`);
+
+              // 1) Gelöschte Lernziele finden (waren in DB, sind jetzt nicht mehr in der Liste)
+              const aktuelleIds = new Set(aktuelleLernziele.map(lz => lz.id));
+              const zuLoeschen = originalLernziele.filter(lz => !aktuelleIds.has(lz.id));
+              if (zuLoeschen.length > 0) {
+                console.log(`[StrukturBoard] 🗑️ PHASE4[${paketCounter}] Lösche ${zuLoeschen.length} Lernziele...`);
+                for (const lz of zuLoeschen) {
+                  console.log(`[StrukturBoard] 🗑️ PHASE4[${paketCounter}]   → deleteLernziel(${lz.id})...`);
+                  await deleteLernziel(lz.id);
+                  console.log(`[StrukturBoard] 🗑️ PHASE4[${paketCounter}]   ✓ Gelöscht`);
+                }
+              }
+
+              // 2) Neue Lernziele anlegen (isNew=true ODER Temp-ID 'lz-...')
+              const neueLernziele = aktuelleLernziele.filter(lz =>
+                (lz.isNew === true || (typeof lz.id === 'string' && lz.id.startsWith('lz-')))
+                && lz.formulierung_fachsprache?.trim()
+              );
+              if (neueLernziele.length > 0) {
                 console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}] Erstelle ${neueLernziele.length} neue Lernziele für Paket ${paket.id}...`);
                 for (const lz of neueLernziele) {
                   console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}]   → LZ: "${lz.formulierung_fachsprache.substring(0, 40)}..."`);
