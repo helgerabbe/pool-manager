@@ -7,7 +7,7 @@
  * Release-Toggle für content_status.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertCircle, Trash2, Crown } from 'lucide-react';
@@ -36,8 +36,10 @@ export default function MatchTermsModal({
     distractors: initialData?.distractors || [],
   });
 
+  // Nur beim ÖFFNEN des Modals Initialwerte laden (nicht bei jedem Re-render)
+  const prevOpenRef = useRef(false);
   useEffect(() => {
-    if (open) {
+    if (open && !prevOpenRef.current) {
       setIsReleased(initialData?.content_status === 'approved');
       setExportLockedWasEnabled(exportLocked);
       setEditorData({
@@ -46,7 +48,8 @@ export default function MatchTermsModal({
         distractors: initialData?.distractors || [],
       });
     }
-  }, [open, initialData]);
+    prevOpenRef.current = open;
+  }, [open]);
 
   useEffect(() => {
     if (exportLocked && !exportLockedWasEnabled) {
