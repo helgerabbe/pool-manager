@@ -11,6 +11,8 @@ import { useQuery } from '@tanstack/react-query';
 import { getAllEinheiten } from '@/services/EinheitenService';
 import { usePresence } from '@/hooks/usePresence';
 import { useRealtimeUpdates } from '@/hooks/useRealtimeUpdates';
+import { useQueryClient } from '@tanstack/react-query';
+import { handleRealtimeUpdate } from '@/utils/realtimeCacheManager';
 
 // Wiederverwendbarer Icon-Nav-Link mit sofortigem Tooltip
 function NavIconLink({ to, icon: Icon, label, isActive }) {
@@ -83,11 +85,11 @@ function GlobalPresenceHeartbeat() {
 }
 
 // Globaler SSE-Hook: baut beim Mount eine authentifizierte Echtzeit-Verbindung auf.
-// Phase 1: Events werden nur geloggt. Cache-Patching folgt in Phase 2.
+// Phase 2: Eingehende Payloads patchen direkt den React Query Cache → Zero-Latency-UI-Updates.
 function GlobalRealtimeUpdates() {
+  const queryClient = useQueryClient();
   useRealtimeUpdates((payload) => {
-    // Phase 1 Ziel: nur loggen
-    console.log('[AppLayout] SSE payload:', payload);
+    handleRealtimeUpdate(queryClient, payload);
   });
   return null;
 }
