@@ -33,17 +33,27 @@ function SternRating({ value, onChange }) {
 }
 
 // ── Aufgabenstellung: Text + optionales Bild ───────────────────────────────────
-function AufgabenstellungSection({ text, onTextChange, bildUrl, onBildUrlChange }) {
+function AufgabenstellungSection({ text, onTextChange, bildUrl, onBildUrlChange, onUploadingChange }) {
   const [uploading, setUploading] = useState(false);
+
+  // Upload-Status nach oben durchreichen, damit der Speichern-Button sauber gesperrt werden kann.
+  useEffect(() => {
+    onUploadingChange?.(uploading);
+  }, [uploading, onUploadingChange]);
 
   const handleBildUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const { file_url } = await uploadFile(file);
-    onBildUrlChange(file_url);
-    setUploading(false);
-    toast.success('Bild hochgeladen');
+    try {
+      const { file_url } = await uploadFile(file);
+      onBildUrlChange(file_url);
+      toast.success('Bild hochgeladen');
+    } catch (err) {
+      toast.error('Bild-Upload fehlgeschlagen: ' + (err?.message || 'Unbekannter Fehler'));
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -99,10 +109,15 @@ function AufgabenstellungSection({ text, onTextChange, bildUrl, onBildUrlChange 
 }
 
 // ── Zusätzliches Material ──────────────────────────────────────────────────────
-function ZusaetzlichesMaterialSection({ materials, onMaterialsChange }) {
+function ZusaetzlichesMaterialSection({ materials, onMaterialsChange, onUploadingChange }) {
   const [activeTab, setActiveTab] = useState('freitext');
   const [newMaterial, setNewMaterial] = useState({ type: 'freitext', content: '', label: '', file: null });
   const [uploading, setUploading] = useState(false);
+
+  // Upload-Status nach oben durchreichen, damit der Speichern-Button sauber gesperrt werden kann.
+  useEffect(() => {
+    onUploadingChange?.(uploading);
+  }, [uploading, onUploadingChange]);
 
   const typeFromTab = (tab) => tab === 'freitext' ? 'free_text' : tab;
 
@@ -247,6 +262,10 @@ const EMPTY_FORM = {
 export default function AufgabeCreateView({ open, onOpenChange, einheitId, themenfelder = [], onSuccess, initialData = null, defaultAnforderungsebene = '2 - Transfer' }) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState(EMPTY_FORM);
+  // Aktive Uploads (Bild oder Material) – sperren den Speichern-Button.
+  const [bildUploading, setBildUploading] = useState(false);
+  const [materialUploading, setMaterialUploading] = useState(false);
+  const isUploading = bildUploading || materialUploading;
 
   React.useEffect(() => {
     if (open) {
@@ -354,6 +373,7 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
             onTextChange={val => set('aufgabenstellung', val)}
             bildUrl={formData.aufgaben_bild_url}
             onBildUrlChange={val => set('aufgaben_bild_url', val)}
+            onUploadingChange={setBildUploading}
           />
 
           {/* Schwierigkeitsgrad */}
@@ -412,11 +432,18 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
           <ZusaetzlichesMaterialSection
             materials={formData.materialien}
             onMaterialsChange={mats => set('materialien', mats)}
+            onUploadingChange={setMaterialUploading}
           />
 
           <DialogFooter>
+            {isUploading && (
+              <span className="text-xs text-muted-foreground flex items-center gap-1.5 mr-auto">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Datei wird hochgeladen – bitte warten…
+              </span>
+            )}
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
-            <Button type="submit" disabled={isSaving || !isValid} className="gap-2">
+            <Button type="submit" disabled={isSaving || !isValid || isUploading} className="gap-2">
               {isSaving
                 ? <><Loader2 className="w-4 h-4 animate-spin" />Wird gespeichert…</>
                 : initialData

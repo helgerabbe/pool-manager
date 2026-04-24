@@ -2,47 +2,58 @@
  * FileService.js
  *
  * Abstraktionsschicht für alle Datei-Upload-Operationen.
- * Einzige Datei, die base44.integrations.Core.UploadFile aufrufen darf.
+ *
+ * ⚠️ Phase 2 (2026-04-24): Diese Datei delegiert intern an `storageService`,
+ * damit es nur noch EINEN zentralen Upload-Pfad in der App gibt. Die
+ * öffentlichen Funktions-Signaturen und Rückgabewerte bleiben identisch,
+ * sodass bestehende Komponenten (AufgabeCreateView, ProjektCreateView, …)
+ * NICHT angefasst werden müssen.
  *
  * MIGRATIONSHINWEIS:
- * - `uploadFile(file)` → supabase.storage.from('bucket').upload(path, file)
- *   Rückgabe-Shape bleibt identisch: { file_url: string }
- *   Supabase-Äquivalent:
- *     const { data, error } = await supabase.storage.from('uploads').upload(path, file);
- *     const { data: { publicUrl } } = supabase.storage.from('uploads').getPublicUrl(data.path);
- *     return { file_url: publicUrl };
+ * - `uploadFile(file)`        → Public Storage  (gibt { file_url } zurück)
+ * - `uploadPrivateFile(file)` → Private Storage (gibt { file_uri } zurück)
+ * - `createSignedUrl(uri)`    → temporär signierte URL für private Dateien
  *
- * - `uploadPrivateFile(file)` → supabase.storage.from('private-bucket').upload(path, file)
- *   Rückgabe: { file_uri: string } (signierte URL über separaten Call generieren)
+ * Spätere Provider-Migration (z.B. Supabase) muss nur noch in
+ * `services/storageService.js` erfolgen.
  */
 
 import { base44 } from '@/api/base44Client';
+import { storageService } from '@/services/storageService';
 
 /**
- * Lädt eine Datei hoch und gibt die öffentliche URL zurück.
+ * Lädt eine Datei in den öffentlichen Storage hoch.
  *
- * @param {File} file - Das hochzuladende File-Objekt
+ * @param {File} file
  * @returns {Promise<{ file_url: string }>}
  */
 export async function uploadFile(file) {
-  return base44.integrations.Core.UploadFile({ file });
+  const result = await storageService.upload(file, false);
+  // storageService gibt entweder einen String oder das Original-Objekt zurück.
+  // Wir normalisieren das gewohnte Shape { file_url }.
+  if (typeof result === 'string') return { file_url: result };
+  if (result && typeof result === 'object' && 'file_url' in result) return result;
+  // Fallback (sollte nicht passieren – defensiv für unerwartete Provider-Antworten)
+  return { file_url: result };
 }
 
 /**
  * Lädt eine Datei in den privaten Storage hoch.
- * Gibt eine nicht-öffentliche URI zurück (für signierte URLs via createSignedUrl).
  *
- * @param {File} file - Das hochzuladende File-Objekt
+ * @param {File} file
  * @returns {Promise<{ file_uri: string }>}
  */
 export async function uploadPrivateFile(file) {
-  return base44.integrations.Core.UploadPrivateFile({ file });
+  const result = await storageService.upload(file, true);
+  if (typeof result === 'string') return { file_uri: result };
+  if (result && typeof result === 'object' && 'file_uri' in result) return result;
+  return { file_uri: result };
 }
 
 /**
  * Erstellt eine zeitlich begrenzte signierte URL für eine private Datei.
  *
- * @param {string} fileUri - URI aus uploadPrivateFile
+ * @param {string} fileUri
  * @param {number} expiresIn - Sekunden bis zum Ablauf (Standard: 300)
  * @returns {Promise<{ signed_url: string }>}
  */
