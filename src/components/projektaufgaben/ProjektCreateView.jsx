@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createProjectTask, updateProjectTask, uploadMaterialFile } from '@/services/ProjektaufgabeService';
 import { Button } from '@/components/ui/button';
@@ -48,10 +49,15 @@ function SternRating({ value, onChange }) {
 }
 
 // ── Material-Uploader ──
-function MaterialUploader({ materials, onMaterialsChange }) {
+function MaterialUploader({ materials, onMaterialsChange, onUploadingChange }) {
   const [activeTab, setActiveTab] = useState('freitext');
   const [newMaterial, setNewMaterial] = useState({ type: 'freitext', content: '', label: '', file: null });
   const [uploading, setUploading] = useState(false);
+
+  // Upload-Status nach oben durchreichen, damit der Speichern-Button sauber gesperrt werden kann.
+  useEffect(() => {
+    onUploadingChange?.(uploading);
+  }, [uploading, onUploadingChange]);
 
   const addMaterial = async () => {
     let finalMaterial = { ...newMaterial };
@@ -237,6 +243,8 @@ export default function ProjektCreateView({ open, onOpenChange, einheitId, theme
     anforderungsebene: '3 - Projekt',
     materialien: [],
   });
+  // Aktiver Material-Upload sperrt den Speichern-Button.
+  const [materialUploading, setMaterialUploading] = useState(false);
 
   // Reset formData wenn initialData sich ändert (für Bearbeitung)
   React.useEffect(() => {
@@ -355,9 +363,16 @@ export default function ProjektCreateView({ open, onOpenChange, einheitId, theme
           <MaterialUploader
             materials={formData.materialien}
             onMaterialsChange={(mats) => setFormData({ ...formData, materialien: mats })}
+            onUploadingChange={setMaterialUploading}
           />
 
           <DialogFooter>
+            {materialUploading && (
+              <span className="text-xs text-muted-foreground flex items-center gap-1.5 mr-auto">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Datei wird hochgeladen – bitte warten…
+              </span>
+            )}
             <Button
               type="button"
               variant="outline"
@@ -367,7 +382,7 @@ export default function ProjektCreateView({ open, onOpenChange, einheitId, theme
             </Button>
             <Button
               type="submit"
-              disabled={(createProjekt.isPending || updateProjekt.isPending) || !formData.aufgabenstellung.trim()}
+              disabled={(createProjekt.isPending || updateProjekt.isPending) || !formData.aufgabenstellung.trim() || materialUploading}
               className="gap-2"
             >
               {createProjekt.isPending || updateProjekt.isPending ? (

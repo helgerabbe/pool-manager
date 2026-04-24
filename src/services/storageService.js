@@ -12,6 +12,16 @@ export const storageService = {
    * @returns {Promise<string>} Public URL oder Private URI ('private://...')
    */
   async upload(file, isPrivate = false) {
+    // ── Vorab-Check: Dateigröße (max. 10 MB) ────────────────────────────
+    const MAX_FILE_SIZE_MB = 10;
+    const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
+    if (file && typeof file.size === 'number' && file.size > MAX_FILE_SIZE_BYTES) {
+      const errorMsg = `Die Datei ist zu groß. Bitte lade maximal ${MAX_FILE_SIZE_MB} MB hoch.`;
+      console.warn(`[StorageService] Upload blockiert: ${errorMsg} (Größe: ${(file.size / 1024 / 1024).toFixed(1)} MB)`);
+      throw new Error(errorMsg);
+    }
+
     try {
       if (isPrivate) {
         return await base44.integrations.Core.UploadPrivateFile(file);
@@ -19,7 +29,8 @@ export const storageService = {
       return await base44.integrations.Core.UploadFile(file);
     } catch (error) {
       console.error('[StorageService] Upload fehlgeschlagen:', error);
-      throw new Error('Datei konnte nicht hochgeladen werden.');
+      // Original-Message erhalten, damit z.B. das Größen-Limit klar im Toast erscheint.
+      throw new Error(error?.message || 'Datei konnte nicht hochgeladen werden.');
     }
   },
 
