@@ -16,7 +16,10 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
-const LOCK_TIMEOUT_MS = 2 * 60 * 1000; // 2 Minuten
+// Phase 3: Lock Reaper
+// Timeout für verwaiste Sperren. 30 Min entspricht der Anforderung aus Phase 3.
+const LOCK_TIMEOUT_MINUTES = 30;
+const LOCK_TIMEOUT_MS = LOCK_TIMEOUT_MINUTES * 60 * 1000;
 const BATCH_SIZE = 50; // Parallele Updates in Batches
 
 // Flexibles Config-Array mit Lock-Feldnamen & Owner-Information

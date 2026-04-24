@@ -14,6 +14,9 @@ import { createLernziel, deleteLernziel } from '@/services/LernzielService';
 import { createLernpaket, updateLernpaket, deleteLernpaket } from '@/services/LernpaketService';
 import { useRBAC } from '@/hooks/useRBAC';
 import { hasUnitLevelAccess } from '@/lib/rbac';
+import { useVersionConflict, isVersionConflictError } from '@/hooks/useVersionConflict';
+import VersionConflictDialog from '@/components/ui/VersionConflictDialog';
+import { ROLLEN } from '@/lib/rbac';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -368,7 +371,24 @@ export default function StrukturBoardEmbedded({
   isStructuralEditingActive = false, // ← NEU: Expliziter Lock-Status von Workspace
   isLockedByOther = false, // ← GLOBALE SPERRE: Wenn true, dann ist gesamte Einheit read-only
 }) {
-  const { permissions, authUser } = useRBAC();
+  const { permissions, authUser, rolle } = useRBAC();
+
+  // ── Versionskonflikt-Handling (Phase 3) ────────────────────────────────
+  // Fachschaftsleitung & Admin dürfen ggf. force-overwriten.
+  const canForceOverwrite = rolle === ROLLEN.ADMIN || rolle === ROLLEN.FACHSCHAFT;
+  const versionConflict = useVersionConflict({
+    invalidateKeys: [
+      ['lernpakete'],
+      ['themenfelder'],
+      ['lernziele'],
+      ['einheit', einheitId],
+      ['workspace-data', einheitId],
+    ],
+    canForceOverwrite,
+    // forceOverwriteFn wird in Phase 3.x aktiviert, sobald das Backend
+    // einen `force: true`-Pfad akzeptiert. Bis dahin bleibt nur "neu laden".
+    forceOverwriteFn: null,
+  });
 
   const [spalten, setSpalten]         = useState([]);
   const [paketeMap, setPaketeMap]     = useState({});
@@ -824,6 +844,16 @@ export default function StrukturBoardEmbedded({
     } catch (error) {
       // ── FEHLERBEHANDLUNG (HART) ───────────────────────────────────────────
       clearTimeout(timeoutId);
+
+      // Phase 3: Versionskonflikt → eigenen Dialog statt generischem Toast
+      if (isVersionConflictError(error)) {
+        console.warn('[StrukturBoard] ⚠️ Versionskonflikt erkannt – Dialog öffnen.');
+        setSaving(false);
+        setSaveOverlayOpen(false);
+        versionConflict.handle(error);
+        return;
+      }
+
       console.error('[StrukturBoard] ❌ KRITISCHER FEHLER beim Speichern:', error);
       console.error('[StrukturBoard] Error Name:', error?.name);
       console.error('[StrukturBoard] Error Stack:', error?.stack);
@@ -1024,6 +1054,9 @@ export default function StrukturBoardEmbedded({
           </div>
         </div>
       )}
+
+      {/* Versionskonflikt-Dialog (Phase 3) */}
+      <VersionConflictDialog {...versionConflict.dialogProps} />
 
       {/* Bestätigungsdialog */}
       <AlertDialog open={!!deleteConfirm} onOpenChange={open => !open && setDeleteConfirm(null)}>
