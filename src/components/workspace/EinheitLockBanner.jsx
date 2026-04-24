@@ -12,7 +12,7 @@ export default function EinheitLockBanner({ isUnitLocked, lockedByEmail }) {
       <Lock className="w-5 h-5 shrink-0" />
       <div className="flex-1">
         <p className="text-sm font-medium">
-          🔒 Die Struktur dieser Einheit wird aktuell von <strong>{lockedByEmail}</strong> bearbeitet. Sie können momentan keine Inhalte ändern.
+          🔒 Wird gerade von <strong>{lockedByEmail}</strong> bearbeitet. Sobald der Bearbeitungsmodus beendet ist, wird dieser Bereich automatisch wieder freigegeben – kein Neuladen erforderlich.
         </p>
       </div>
     </div>

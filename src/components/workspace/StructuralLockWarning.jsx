@@ -20,8 +20,8 @@ export default function StructuralLockWarning({ einheit, currentUserEmail }) {
       <div className="flex-1">
         <p className="font-semibold text-sm text-amber-900">Struktur wird gerade bearbeitet</p>
         <p className="text-xs text-amber-700 mt-1">
-          {lockOwner && `${lockOwner} `}bearbeitet gerade die Struktur dieser Einheit.
-          {remainingMinutes > 0 && ` Der Lock läuft in ~${remainingMinutes} Minute${remainingMinutes !== 1 ? 'n' : ''} ab.`}
+          {lockOwner && `${lockOwner} `}bearbeitet gerade die Struktur dieser Einheit. Sobald die Bearbeitung beendet ist, wird dieser Bereich automatisch wieder freigegeben – kein Neuladen erforderlich.
+          {remainingMinutes > 0 && ` (Spätester Auto-Release in ~${remainingMinutes} Minute${remainingMinutes !== 1 ? 'n' : ''}.)`}
         </p>
         <p className="text-xs text-amber-600 mt-2">
           ⚠️ Strukturelle Änderungen (Themenfelder, Lernpakete verschieben) sind derzeit nicht möglich.

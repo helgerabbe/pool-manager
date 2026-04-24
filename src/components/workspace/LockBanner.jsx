@@ -16,7 +16,7 @@ export default function LockBanner({ lockedByUser }) {
       <div>
         <p className="font-semibold">Wird gerade bearbeitet</p>
         <p className="text-xs mt-0.5 text-amber-700">
-          <strong>{lockedByUser}</strong> bearbeitet diese Aufgabe gerade. Du kannst den Inhalt lesen, aber nicht bearbeiten.
+          <strong>{lockedByUser}</strong> bearbeitet diese Aufgabe gerade. Du kannst den Inhalt lesen – sobald die Bearbeitung beendet ist, wird der Bereich automatisch wieder freigegeben.
         </p>
       </div>
     </div>

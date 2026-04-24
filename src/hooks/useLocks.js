@@ -151,6 +151,7 @@ function useGenericLock({
 // ============================================================================
 
 export function useLernpaketLock(lernpaketId) {
+   // Phase 3 Cleanup: Kein Polling mehr – Lock-Status wird per SSE in den Query-Cache gepatcht.
    const lock = useGenericLock({
      resourceId: lernpaketId,
      checkFn: async (id) => {
@@ -161,7 +162,7 @@ export function useLernpaketLock(lernpaketId) {
      releaseFn: async (id) => base44.functions.invoke('releaseLernpaketLockSecure', { lernpaketId: id }),
      heartbeatFn: async (id) => base44.entities.Lernpakete.update(id, { locked_at: new Date().toISOString() }),
      heartbeatIntervalMs: 25000,
-     pollIntervalMs: 8000,
+     // pollIntervalMs: ENTFERNT – SSE übernimmt Realtime-Updates.
    });
 
   return {
@@ -176,13 +177,14 @@ export function useLernpaketLock(lernpaketId) {
 }
 
 export function useEinheitLock(einheitId) {
+  // Phase 3 Cleanup: Kein Polling mehr – Unit-Lock-Status kommt per SSE.
   const lock = useGenericLock({
     resourceId: einheitId,
     checkFn: async (id) => {
       const e = await base44.entities.Einheiten.get(id);
       return { isLocked: e?.is_unit_locked, lockedByEmail: e?.unit_locked_by_email };
     },
-    pollIntervalMs: 5000,
+    // pollIntervalMs: ENTFERNT – SSE übernimmt Realtime-Updates.
   });
 
   return {

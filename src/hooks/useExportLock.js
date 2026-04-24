@@ -10,32 +10,25 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 
 export function useExportLock(einheitId) {
-  // Alle Lernpakete der Einheit
+  // Phase 3 Cleanup: refetchInterval entfernt – Export-Status wird per SSE in den Cache gepatcht.
   const { data: lernpakete = [] } = useQuery({
     queryKey: ['lernpakete', einheitId, 'export-lock'],
     queryFn: () => base44.entities.Lernpakete.filter({ einheit_id: einheitId }),
-    refetchInterval: 3000, // Aktualisiere alle 3 Sekunden während Export lädt
   });
 
-  // Alle Aktivitäten (filtern dann auf diese Einheit)
   const { data: activities = [] } = useQuery({
     queryKey: ['lernpaketPhaseAktivitaeten', 'export-lock'],
     queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list(),
-    refetchInterval: 3000,
   });
 
-  // Alle Masters
   const { data: masters = [] } = useQuery({
     queryKey: ['masterAufgaben', 'export-lock'],
     queryFn: () => base44.entities.MasterAufgabe.list(),
-    refetchInterval: 3000,
   });
 
-  // Alle Klone
   const { data: klone = [] } = useQuery({
     queryKey: ['aufgabenbausteine', 'export-lock'],
     queryFn: () => base44.entities.Aufgabenbausteine.list(),
-    refetchInterval: 3000,
   });
 
   // ──────────────────────────────────────────────────────────────────────────────

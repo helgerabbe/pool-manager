@@ -135,7 +135,7 @@ export default function LernpaketPanel({
         <div className="flex items-center gap-2 p-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-900">
           <Lock className="w-4 h-4 shrink-0" />
           <span className="text-sm">
-            🔒 Dieses Lernpaket wird aktuell bearbeitet von <strong>{lockedByEmail}</strong>.
+            🔒 Wird gerade von <strong>{lockedByEmail}</strong> bearbeitet. Sobald die Bearbeitung beendet ist, wird dieses Lernpaket automatisch wieder freigegeben.
           </span>
         </div>
       )}
