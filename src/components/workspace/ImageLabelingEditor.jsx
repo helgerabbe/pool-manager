@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { storageService } from '@/services/storageService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +26,7 @@ export default function ImageLabelingEditor({
   onCancel,
   onChange,
   readOnly = false,
+  hideInternalFooter = false, // ← NEU: Ausblenden, wenn das Modal seinen eigenen Footer liefert
 }) {
   const [data, setData] = useState(() => ({
     aufgabenstellung: initialData?.aufgabenstellung || '',
@@ -58,65 +59,79 @@ export default function ImageLabelingEditor({
 
     setUploading(true);
     try {
-      const result = await base44.integrations.Core.UploadFile({ file });
-      setData(d => ({ ...d, backgroundImage: result.file_url }));
-      onChange?.();
+      // Zentraler Upload-Pfad: erzwingt storageService (inkl. 10 MB-Limit).
+      const result = await storageService.upload(file, false);
+      const fileUrl = typeof result === 'string' ? result : (result?.file_url || result);
+
+      if (!fileUrl || typeof fileUrl !== 'string') {
+        throw new Error('Upload lieferte keine gültige URL zurück.');
+      }
+
+      setData(d => {
+        const next = { ...d, backgroundImage: fileUrl };
+        // Änderung nach oben melden, damit Modal-State synchron bleibt.
+        onChange?.(next);
+        return next;
+      });
       toast.success('Bild hochgeladen.');
     } catch (err) {
-      toast.error('Fehler beim Bild-Upload: ' + (err.message || 'Unbekannt'));
+      toast.error('Fehler beim Bild-Upload: ' + (err?.message || 'Unbekannt'));
     } finally {
       setUploading(false);
     }
   };
 
+  // Helfer: State setzen UND den neuen Wert synchron nach oben melden.
+  const applyChange = (updater) => {
+    setData(d => {
+      const next = updater(d);
+      onChange?.(next);
+      return next;
+    });
+  };
+
   const addDropZone = (label) => {
-    setData(d => ({
+    applyChange(d => ({
       ...d,
       dropZones: [...d.dropZones, { label, x_percent: 50, y_percent: 50, width: DEFAULT_BADGE_WIDTH, height: DEFAULT_BADGE_HEIGHT }],
     }));
-    onChange?.();
   };
 
   const updateDropZone = (idx, updates) => {
-    setData(d => ({
+    applyChange(d => ({
       ...d,
       dropZones: d.dropZones.map((z, i) =>
         i === idx ? { ...z, ...updates } : z
       ),
     }));
-    onChange?.();
   };
 
   const removeDropZone = (idx) => {
-    setData(d => ({
+    applyChange(d => ({
       ...d,
       dropZones: d.dropZones.filter((_, i) => i !== idx),
     }));
-    onChange?.();
   };
 
   const addDistractor = () => {
-    setData(d => ({
+    applyChange(d => ({
       ...d,
       distractors: [...d.distractors, ''],
     }));
-    onChange?.();
   };
 
   const updateDistractor = (idx, val) => {
-    setData(d => ({
+    applyChange(d => ({
       ...d,
       distractors: d.distractors.map((v, i) => i === idx ? val : v),
     }));
-    onChange?.();
   };
 
   const removeDistractor = (idx) => {
-    setData(d => ({
+    applyChange(d => ({
       ...d,
       distractors: d.distractors.filter((_, i) => i !== idx),
     }));
-    onChange?.();
   };
 
   // ── Unplaced Terms Drag & Drop (externe Begriffe auf Bild) ──
@@ -145,18 +160,17 @@ export default function ImageLabelingEditor({
     if (existingIdx >= 0) {
       updateDropZone(existingIdx, { x_percent, y_percent });
     } else {
-      addDropZone(draggedLabel);
-      // Aktualisierende Koordinate für den gerade hinzugefügten Eintrag
-      setData(d => ({
+      // Kombiniert: Zone hinzufügen MIT Zielkoordinaten – in einem State-Update.
+      applyChange(d => ({
         ...d,
-        dropZones: d.dropZones.map((z, i) =>
-          i === d.dropZones.length - 1 ? { ...z, x_percent, y_percent } : z
-        ),
+        dropZones: [
+          ...d.dropZones,
+          { label: draggedLabel, x_percent, y_percent, width: DEFAULT_BADGE_WIDTH, height: DEFAULT_BADGE_HEIGHT },
+        ],
       }));
     }
 
     setDraggedLabel(null);
-    onChange?.();
   };
 
   // ── Box-Drag Handler (bereits platzierte Zonen verschieben) ──
@@ -196,7 +210,6 @@ export default function ImageLabelingEditor({
     
     updateDropZone(draggingZoneIdx, { x_percent, y_percent });
     setDragStart({ x: currentX, y: currentY });
-    onChange?.();
   };
 
   const handleBoxMouseUp = () => {
@@ -231,7 +244,6 @@ export default function ImageLabelingEditor({
     
     updateDropZone(resizingZoneIdx, { width: newWidth, height: newHeight });
     setDragStart({ x: e.clientX, y: e.clientY });
-    onChange?.();
   };
 
   const handleResizeMouseUp = () => {
@@ -272,8 +284,8 @@ export default function ImageLabelingEditor({
           <Textarea
             value={data.aufgabenstellung}
             onChange={e => {
-              setData(d => ({ ...d, aufgabenstellung: e.target.value }));
-              onChange?.();
+              const val = e.target.value;
+              applyChange(d => ({ ...d, aufgabenstellung: val }));
             }}
             placeholder="Beschreibe, was die Schüler machen sollen..."
             rows={3}
@@ -291,23 +303,23 @@ export default function ImageLabelingEditor({
               <div className="flex-1 px-3 py-2 rounded-lg bg-green-50 border border-green-200 text-xs text-green-700 flex items-center justify-between">
                 <span className="truncate">✓ Bild hochgeladen</span>
                 <button
-                  onClick={() => setData(d => ({ ...d, backgroundImage: '' }))}
+                  onClick={() => applyChange(d => ({ ...d, backgroundImage: '' }))}
                   className="text-green-600 hover:text-green-800"
                 >
                   ✕
                 </button>
               </div>
             ) : (
-              <label className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-input hover:border-primary/50 cursor-pointer transition-colors">
+              <label className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-input transition-colors ${uploading ? 'opacity-60 cursor-not-allowed' : 'hover:border-primary/50 cursor-pointer'}`}>
                 {uploading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="text-xs text-muted-foreground">Lädt...</span>
+                    <span className="text-xs text-muted-foreground">Lädt hoch…</span>
                   </>
                 ) : (
                   <>
                     <Upload className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">JPG, PNG – bis 5MB</span>
+                    <span className="text-xs text-muted-foreground">JPG, PNG – bis 10 MB</span>
                   </>
                 )}
                 <input
@@ -344,13 +356,12 @@ export default function ImageLabelingEditor({
                   value={zone.label}
                   onChange={e => {
                     const newLabel = e.target.value;
-                    setData(d => ({
+                    applyChange(d => ({
                       ...d,
                       dropZones: d.dropZones.map((z, i) =>
                         i === idx ? { ...z, label: newLabel } : z
                       ),
                     }));
-                    onChange?.();
                   }}
                   placeholder="z.B. Mitochondrium"
                   className="text-xs flex-1"
@@ -527,8 +538,8 @@ export default function ImageLabelingEditor({
 
 
 
-      {/* Speichern / Abbrechen (nur im Edit-Modus) */}
-      {!readOnly && (
+      {/* Speichern / Abbrechen – NUR wenn kein Modal-Footer darum herum liegt */}
+      {!readOnly && !hideInternalFooter && (
         <div className="flex gap-2 border-t pt-3">
           <Button variant="ghost" onClick={onCancel}>
             Abbrechen

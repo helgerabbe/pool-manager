@@ -98,19 +98,11 @@ export default function ImageLabelingModalDetail({
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 min-h-0">
           <ImageLabelingEditor
             initialData={fieldValues}
-            onSave={(data) => {
-              const payload = {
-                ...data,
-                content_status: isReleased ? 'approved' : 'draft',
-              };
-              if (initialData?.moodle_sync_status === 'synced') {
-                payload.moodle_sync_status = 'modified';
-                payload.is_dirty_since_export = true;
-              }
-              onSave?.(payload);
-            }}
+            // Editor meldet jede Änderung nach oben → Modal-State bleibt synchron.
+            onChange={(newData) => setFieldValues(prev => ({ ...prev, ...newData }))}
             onCancel={handleCancel}
-            onChange={() => {}}
+            // Interner Footer wird durch den Modal-Footer ersetzt (siehe unten).
+            hideInternalFooter
             readOnly={false}
           />
         </div>
