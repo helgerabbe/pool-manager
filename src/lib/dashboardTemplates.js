@@ -54,27 +54,30 @@ const B = Object.freeze({
 });
 
 // ── Template: Minimalist ────────────────────────────────────────────────
-// Fokus: kleinschrittig, viel Handlung. Wenige Sektoren, niedrige
-// kognitive Eintrittshürde. Sektor 1 startet mit einer Infoseite zur
-// Orientierung; Sektor 3 schließt mit einer Reflexionsaufgabe ab.
+// Fokus: kleinschrittig, viel Handlung. Drei sequenzielle Sektoren mit
+// klaren Haltepunkten (Lehrer-Checks) und reflexivem Abschluss.
+//
+// Wichtig: Alle Sektoren sind im Modus 'sequenziell' definiert. Die
+// Lehrkraft kann diesen Modus nach Anwenden des Rasters frei ändern;
+// das Template setzt nur den initialen Zustand.
 const MINIMALIST = [
   {
     sektor_id: 'tpl_min_sec1',
-    titel: 'Einstieg & Zielklärung',
+    titel: '1. Einstieg & Zielklärung',
     modus: 'sequenziell',
     items: [sys(B.diagnose), sys(B.pInfo), sys(B.pHandlung)],
   },
   {
     sektor_id: 'tpl_min_sec2',
-    titel: 'Inhalt: Grundlagen festigen',
+    titel: '2. Erste Erarbeitungsphase',
     modus: 'sequenziell',
-    items: [sys(B.pEbene2), sys(B.pBasispaket), sys(B.lehrerCheck)],
+    items: [sys(B.pBasispaket), sys(B.lehrerCheck)],
   },
   {
     sektor_id: 'tpl_min_sec3',
-    titel: 'Vertiefung & Abschluss',
+    titel: '3. Vertiefung & Abschluss',
     modus: 'sequenziell',
-    items: [sys(B.pReflexion)],
+    items: [sys(B.pBasispaket), sys(B.pReflexion), sys(B.lehrerCheck)],
   },
 ];
 
