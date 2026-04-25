@@ -22,13 +22,13 @@ function NavIconLink({ to, icon: Icon, label, isActive }) {
         to={to}
         aria-label={label}
         className={cn(
-          'flex items-center justify-center w-10 h-10 rounded-xl transition-all',
+          'flex items-center justify-center w-8 h-8 rounded-lg transition-all',
           isActive
             ? 'bg-primary text-primary-foreground shadow-sm'
             : 'text-muted-foreground hover:text-foreground hover:bg-muted'
         )}
       >
-        <Icon className="w-5 h-5" />
+        <Icon className="w-4 h-4" />
       </Link>
     </NavigationTooltip>
   );
@@ -127,7 +127,7 @@ export default function AppLayout() {
       {/* ═══════════════════════════════════════════════════════════════════════════ */}
       <header className="shrink-0 bg-card/80 backdrop-blur-xl border-b border-border z-50">
         <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-12">
 
             {/* Links: Logo + (auf Workspace-Pfaden) Titel der aktiven Einheit.
                 Das Icon dient gleichzeitig als Home-Link und ersetzt zusammen mit
@@ -138,12 +138,12 @@ export default function AppLayout() {
                 <img
                   src="https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/84d10855a_image.png"
                   alt="Pool-Manager"
-                  className="w-10 h-10 rounded-xl object-cover"
+                  className="w-7 h-7 rounded-lg object-cover"
                 />
               </Link>
               {activeEinheit ? (
                 <h1
-                  className="text-lg font-bold text-primary tracking-tight truncate min-w-0"
+                  className="text-xl font-extrabold tracking-tight truncate min-w-0 text-red-800"
                   title={activeEinheit.titel_der_einheit}
                 >
                   {activeEinheit.titel_der_einheit}
@@ -200,9 +200,9 @@ export default function AppLayout() {
                 <button
                   aria-label="Abmelden"
                   onClick={() => logout(false)}
-                  className="flex items-center justify-center w-10 h-10 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                  className="flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
                 >
-                  <LogOut className="w-5 h-5" />
+                  <LogOut className="w-4 h-4" />
                 </button>
               </NavigationTooltip>
 
