@@ -10,7 +10,7 @@
  */
 
 import React from 'react';
-import { DragDropContext, Droppable } from '@hello-pangea/dnd';
+import { Droppable } from '@hello-pangea/dnd';
 import { Sparkles, Layers, Trophy, Star, GripVertical } from 'lucide-react';
 
 export const LERN_TYPEN = [
@@ -99,11 +99,6 @@ export default function LernpfadeArchitekt({
 }) {
   const sektoren = konfiguration?.[activeLernTyp] || [];
 
-  // Phase 2: D&D-Gerüst nur initialisieren – Reorder-Logik kommt in Phase 3.
-  const handleDragEnd = (_result) => {
-    // Intentionally empty: Phase 3 implementiert Reorder + Cross-Drop.
-  };
-
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header: 4 Lerntyp-Tabs */}
@@ -121,52 +116,50 @@ export default function LernpfadeArchitekt({
         </div>
       </div>
 
-      {/* Canvas */}
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="flex-1 overflow-y-auto p-4 bg-muted/20 min-h-0">
-          <Droppable droppableId={`canvas-${activeLernTyp}`} type="SEKTOR">
-            {(provided, snapshot) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className={`min-h-full rounded-xl border-2 border-dashed transition-colors ${
-                  snapshot.isDraggingOver
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border bg-card/60'
-                }`}
-              >
-                {sektoren.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full min-h-[300px] p-6 text-center">
-                    <GripVertical className="w-8 h-8 text-muted-foreground/30 mb-2" />
-                    <p className="text-sm font-medium text-foreground/70">
-                      Noch kein Pfad für „{LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label}" angelegt.
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1 max-w-md">
-                      In den nächsten Schritten kannst du hier Sektoren anlegen und Aufgaben aus dem Pool per
-                      Drag &amp; Drop einsortieren.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="p-3 space-y-2">
-                    {sektoren.map((sektor, idx) => (
-                      <div
-                        key={sektor.sektor_id || idx}
-                        className="rounded-lg border border-border bg-card p-3"
-                      >
-                        <p className="text-sm font-semibold">{sektor.titel || `Sektor ${idx + 1}`}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {(sektor.aufgaben_ids || []).length} Aufgaben · Modus: {sektor.modus || '—'}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </div>
-      </DragDropContext>
+      {/* Canvas (DragDropContext liegt im LernpfadeCockpit – damit Cross-Pane-Drag aus dem Pool möglich ist) */}
+      <div className="flex-1 overflow-y-auto p-4 bg-muted/20 min-h-0">
+        <Droppable droppableId={`canvas-${activeLernTyp}`} type="AUFGABE" isDropDisabled={readOnly}>
+          {(provided, snapshot) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className={`min-h-full rounded-xl border-2 border-dashed transition-colors ${
+                snapshot.isDraggingOver
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border bg-card/60'
+              }`}
+            >
+              {sektoren.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full min-h-[300px] p-6 text-center">
+                  <GripVertical className="w-8 h-8 text-muted-foreground/30 mb-2" />
+                  <p className="text-sm font-medium text-foreground/70">
+                    Noch kein Pfad für „{LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label}" angelegt.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-md">
+                    In den nächsten Schritten kannst du hier Sektoren anlegen und Aufgaben aus dem Pool per
+                    Drag &amp; Drop einsortieren.
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3 space-y-2">
+                  {sektoren.map((sektor, idx) => (
+                    <div
+                      key={sektor.sektor_id || idx}
+                      className="rounded-lg border border-border bg-card p-3"
+                    >
+                      <p className="text-sm font-semibold">{sektor.titel || `Sektor ${idx + 1}`}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(sektor.aufgaben_ids || []).length} Aufgaben · Modus: {sektor.modus || '—'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </div>
 
       {readOnly && (
         <div className="shrink-0 px-4 py-2 border-t border-border bg-amber-50 text-xs text-amber-800">

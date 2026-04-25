@@ -13,13 +13,15 @@
  *   - Bei Unmount/Lock-Verlust: pending Save sofort flushen.
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { DragDropContext } from '@hello-pangea/dnd';
 import { base44 } from '@/api/base44Client';
 import { Loader2, Lock, PenLine, Unlock, Cloud, CloudOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import LernpfadeAufgabenPool from '@/components/lernpfade/LernpfadeAufgabenPool';
 import LernpfadeArchitekt from '@/components/lernpfade/LernpfadeArchitekt';
+import { getUsedAufgabenIds } from '@/lib/lernpfadeUtils';
 
 const DEFAULT_KONFIG = { minimalist: [], pragmatiker: [], ehrgeizig: [], passioniert: [] };
 const DEBOUNCE_MS = 800;
@@ -117,6 +119,38 @@ export default function LernpfadeCockpit({
   // ── Render-Helfer ──────────────────────────────────────────────────
   const readOnly = !isStructuralEditingActive || isLockedByOther;
 
+  // Set aller Aufgaben-IDs, die im aktuell aktiven Lerntyp bereits in einem Sektor stecken.
+  // Wird an den Pool gereicht (visuelle Sperre) UND als Fallback im onDragEnd geprüft.
+  const usedAufgabenIds = useMemo(
+    () => getUsedAufgabenIds(konfiguration, activeLernTyp),
+    [konfiguration, activeLernTyp]
+  );
+
+  // ── Drag & Drop ────────────────────────────────────────────────────
+  // Phase 2-Update: Duplikat-Blockade.
+  // Reorder/echtes Einfügen in Sektoren erfolgt in Phase 3 – hier wird der Drop derzeit nur validiert.
+  const handleDragEnd = useCallback(
+    (result) => {
+      const { destination, draggableId, source } = result;
+      // Kein Drop-Target → nichts zu tun.
+      if (!destination) return;
+      // Drop innerhalb des Pools (Quelle == Ziel) → ignorieren.
+      if (destination.droppableId === 'pool') return;
+
+      // Sicherheits-Fallback: Aufgabe schon im aktiven Pfad? → blocken.
+      if (usedAufgabenIds.has(draggableId)) {
+        toast.info('Diese Aufgabe ist bereits in diesem Lernpfad vorhanden.');
+        return;
+      }
+
+      // Phase 3: hier wird die Aufgabe in den Ziel-Sektor eingefügt
+      // (über updateKonfiguration). Aktuell bewusst No-Op, damit Phase-2-Verhalten stabil bleibt.
+      // eslint-disable-next-line no-unused-vars
+      const _src = source;
+    },
+    [usedAufgabenIds]
+  );
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Top-Bar: Lock-Status + Save-Indicator */}
@@ -183,23 +217,29 @@ export default function LernpfadeCockpit({
         </div>
       </div>
 
-      {/* Layout: 30/70-Split */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
-        {/* Pool (links, ca. 30%) */}
-        <aside className="w-full lg:w-[30%] lg:min-w-[280px] lg:max-w-[420px] border-b lg:border-b-0 lg:border-r border-border bg-card flex flex-col overflow-hidden h-72 lg:h-auto shrink-0">
-          <LernpfadeAufgabenPool einheitId={einheit?.id} />
-        </aside>
+      {/* Layout: 30/70-Split – DragDropContext umschließt beide Spalten,
+          damit Aufgaben aus dem Pool in die rechten Sektoren gezogen werden können. */}
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
+          {/* Pool (links, ca. 30%) */}
+          <aside className="w-full lg:w-[30%] lg:min-w-[280px] lg:max-w-[420px] border-b lg:border-b-0 lg:border-r border-border bg-card flex flex-col overflow-hidden h-72 lg:h-auto shrink-0">
+            <LernpfadeAufgabenPool
+              einheitId={einheit?.id}
+              usedAufgabenIds={usedAufgabenIds}
+            />
+          </aside>
 
-        {/* Architekt (rechts, ca. 70%) */}
-        <main className="flex-1 overflow-hidden min-h-0">
-          <LernpfadeArchitekt
-            konfiguration={konfiguration}
-            activeLernTyp={activeLernTyp}
-            onActiveLernTypChange={setActiveLernTyp}
-            readOnly={readOnly}
-          />
-        </main>
-      </div>
+          {/* Architekt (rechts, ca. 70%) */}
+          <main className="flex-1 overflow-hidden min-h-0">
+            <LernpfadeArchitekt
+              konfiguration={konfiguration}
+              activeLernTyp={activeLernTyp}
+              onActiveLernTypChange={setActiveLernTyp}
+              readOnly={readOnly}
+            />
+          </main>
+        </div>
+      </DragDropContext>
     </div>
   );
 }

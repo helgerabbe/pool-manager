@@ -9,9 +9,10 @@
 
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { AUFGABEN_TYPEN, AUFGABEN_TYPEN_ORDER, getAufgabenTyp } from '@/lib/aufgabenTypen';
-import { Loader2, Inbox, Eye, MousePointerClick } from 'lucide-react';
+import { Loader2, Inbox, Eye, MousePointerClick, CheckCircle2 } from 'lucide-react';
 
 // ── Helfer ──────────────────────────────────────────────────────────────
 function MonitorPanel({ aufgabe }) {
@@ -88,46 +89,70 @@ function FilterChip({ typKey, active, count, onClick }) {
   );
 }
 
-function AufgabeListItem({ aufgabe, isSelected, onClick }) {
+/**
+ * Eine Aufgaben-Karte im Pool.
+ * - Wenn `isUsed` true ist: visuell abgegraut, Checkmark sichtbar, Drag deaktiviert.
+ * - Sonst: voll greifbar (DnD-Quelle).
+ */
+function AufgabeListItem({ aufgabe, index, isSelected, isUsed, onClick }) {
   const typMeta = getAufgabenTyp(aufgabe.aufgaben_typ);
   const Icon = typMeta.icon;
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`w-full text-left rounded-lg p-2.5 border transition-all flex items-start gap-2 ${
-        isSelected
-          ? `${typMeta.color.border} ${typMeta.color.bg} shadow-sm`
-          : 'border-border bg-card hover:border-primary/30 hover:bg-muted/30'
-      }`}
-    >
-      <div className={`w-7 h-7 rounded-md ${typMeta.color.iconBg} flex items-center justify-center shrink-0`}>
-        <Icon className={`w-3.5 h-3.5 ${typMeta.color.iconText}`} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium text-foreground truncate leading-snug">
-          {aufgabe.titel || 'Ohne Titel'}
-        </p>
-        <div className="flex items-center gap-1.5 mt-0.5">
-          <span className={`text-[10px] font-semibold ${typMeta.color.text}`}>
-            {typMeta.short}
-          </span>
-          {aufgabe.anforderungsebene && (
-            <>
-              <span className="text-muted-foreground/40 text-[10px]">·</span>
-              <span className="text-[10px] text-muted-foreground">
-                {aufgabe.anforderungsebene.replace(' - ', ' ')}
+    <Draggable draggableId={aufgabe.id} index={index} isDragDisabled={isUsed}>
+      {(provided, snapshot) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          {...provided.dragHandleProps}
+          onClick={onClick}
+          title={isUsed ? 'Bereits in diesem Lernpfad' : 'Ziehen, um in den Pfad einzusortieren'}
+          className={`w-full text-left rounded-lg p-2.5 border transition-all flex items-start gap-2 cursor-pointer ${
+            isUsed
+              ? 'border-border bg-muted/40 opacity-50 cursor-not-allowed'
+              : isSelected
+                ? `${typMeta.color.border} ${typMeta.color.bg} shadow-sm`
+                : 'border-border bg-card hover:border-primary/30 hover:bg-muted/30'
+          } ${snapshot.isDragging ? 'shadow-lg ring-2 ring-primary/40 bg-card' : ''}`}
+        >
+          <div className={`w-7 h-7 rounded-md ${typMeta.color.iconBg} flex items-center justify-center shrink-0 ${isUsed ? 'grayscale' : ''}`}>
+            <Icon className={`w-3.5 h-3.5 ${typMeta.color.iconText}`} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium text-foreground truncate leading-snug">
+              {aufgabe.titel || 'Ohne Titel'}
+            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className={`text-[10px] font-semibold ${typMeta.color.text}`}>
+                {typMeta.short}
               </span>
-            </>
+              {aufgabe.anforderungsebene && (
+                <>
+                  <span className="text-muted-foreground/40 text-[10px]">·</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {aufgabe.anforderungsebene.replace(' - ', ' ')}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+          {isUsed && (
+            <div
+              className="shrink-0 flex items-center gap-1 text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0.5"
+              title="Bereits im Pfad"
+            >
+              <CheckCircle2 className="w-3 h-3" />
+              <span className="hidden sm:inline">Im Pfad</span>
+            </div>
           )}
         </div>
-      </div>
-    </button>
+      )}
+    </Draggable>
   );
 }
 
 // ── Hauptkomponente ──────────────────────────────────────────────────────
-export default function LernpfadeAufgabenPool({ einheitId }) {
+export default function LernpfadeAufgabenPool({ einheitId, usedAufgabenIds = new Set() }) {
   const [activeFilters, setActiveFilters] = useState(new Set(AUFGABEN_TYPEN_ORDER));
   const [selectedAufgabeId, setSelectedAufgabeId] = useState(null);
 
@@ -203,32 +228,43 @@ export default function LernpfadeAufgabenPool({ einheitId }) {
         </div>
       </div>
 
-      {/* Liste (scrollbar) */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-1.5 min-h-0">
-        {isLoading ? (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground py-6 justify-center">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Lade Aufgaben…
+      {/* Liste (scrollbar) – Droppable als Drag-Quelle */}
+      <Droppable droppableId="pool" type="AUFGABE" isDropDisabled>
+        {(provided) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className="flex-1 overflow-y-auto p-3 space-y-1.5 min-h-0"
+          >
+            {isLoading ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground py-6 justify-center">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Lade Aufgaben…
+              </div>
+            ) : filteredAufgaben.length === 0 ? (
+              <div className="flex flex-col items-center justify-center text-center py-8 px-2">
+                <Inbox className="w-7 h-7 text-muted-foreground/40 mb-2" />
+                <p className="text-xs text-muted-foreground">
+                  {poolAufgaben.length === 0
+                    ? 'Keine Aufgaben in Ebene 2/3 vorhanden.'
+                    : 'Kein Treffer – passe die Filter an.'}
+                </p>
+              </div>
+            ) : (
+              filteredAufgaben.map((a, idx) => (
+                <AufgabeListItem
+                  key={a.id}
+                  aufgabe={a}
+                  index={idx}
+                  isSelected={selectedAufgabeId === a.id}
+                  isUsed={usedAufgabenIds.has(a.id)}
+                  onClick={() => setSelectedAufgabeId(a.id)}
+                />
+              ))
+            )}
+            {provided.placeholder}
           </div>
-        ) : filteredAufgaben.length === 0 ? (
-          <div className="flex flex-col items-center justify-center text-center py-8 px-2">
-            <Inbox className="w-7 h-7 text-muted-foreground/40 mb-2" />
-            <p className="text-xs text-muted-foreground">
-              {poolAufgaben.length === 0
-                ? 'Keine Aufgaben in Ebene 2/3 vorhanden.'
-                : 'Kein Treffer – passe die Filter an.'}
-            </p>
-          </div>
-        ) : (
-          filteredAufgaben.map((a) => (
-            <AufgabeListItem
-              key={a.id}
-              aufgabe={a}
-              isSelected={selectedAufgabeId === a.id}
-              onClick={() => setSelectedAufgabeId(a.id)}
-            />
-          ))
         )}
-      </div>
+      </Droppable>
     </div>
   );
 }
