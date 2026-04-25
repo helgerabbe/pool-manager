@@ -100,7 +100,14 @@ export default function LernpfadeSektor({
   onSelectAufgabe,
   selectedAufgabeId,
 }) {
-  const aufgabenIds = sektor.aufgaben_ids || [];
+  // Lazy-kompatibel: bevorzugt das neue items-Array, fällt auf das alte
+  // aufgaben_ids-String-Array zurück. System-Bausteine werden hier in Phase 1
+  // noch wie Aufgaben-Items gerendert (Pool-Tab + dediziertes Card-Design folgen
+  // in Phase 2). Wichtig: Wir reduzieren auf reine ref_id-Strings, damit die
+  // bestehende Pill-Komponente nicht angetastet werden muss.
+  const itemRefIds = Array.isArray(sektor.items)
+    ? sektor.items.map((it) => (typeof it === 'string' ? it : it?.ref_id)).filter(Boolean)
+    : (sektor.aufgaben_ids || []);
 
   return (
     <div className="rounded-lg border border-border bg-card/80 p-3 space-y-2">
@@ -147,13 +154,13 @@ export default function LernpfadeSektor({
                 : 'border-border bg-muted/30'
             }`}
           >
-            {aufgabenIds.length === 0 && (
+            {itemRefIds.length === 0 && (
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground py-1 px-1">
                 <Plus className="w-3 h-3" />
                 Aufgaben aus dem Pool hierher ziehen.
               </div>
             )}
-            {aufgabenIds.map((aId, idx) => (
+            {itemRefIds.map((aId, idx) => (
               <AufgabePill
                 key={aId}
                 aufgabeId={aId}

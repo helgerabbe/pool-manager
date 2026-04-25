@@ -107,3 +107,14 @@ export const META_AUFGABEN_TYPEN = ['buendel', 'prozess', 'projekt_anker'];
 export function isMetaAufgabenTyp(value) {
   return META_AUFGABEN_TYPEN.includes(value);
 }
+
+// ── Item-Typen im Lernpfad-Sektor ────────────────────────────────────────────
+// Ein Item im items-Array kann entweder eine reguläre Aufgabe (UUID) oder
+// ein globaler System-Baustein (z. B. "sys_diagnose") sein. Single Source of
+// Truth für die Anti-Duplikat-Logik & das Rendering – Magic Strings vermeiden.
+export const ITEM_TYPE = Object.freeze({
+  AUFGABE: 'aufgabe',
+  SYSTEM: 'system',
+});
+
+export const ITEM_TYPES = Object.freeze([ITEM_TYPE.AUFGABE, ITEM_TYPE.SYSTEM]);
