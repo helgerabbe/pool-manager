@@ -15,13 +15,25 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { DragDropContext } from '@hello-pangea/dnd';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Loader2, Lock, PenLine, Unlock, Cloud, CloudOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import LernpfadeAufgabenPool from '@/components/lernpfade/LernpfadeAufgabenPool';
 import LernpfadeArchitekt from '@/components/lernpfade/LernpfadeArchitekt';
-import { getUsedAufgabenIds } from '@/lib/lernpfadeUtils';
+import LernpfadeQuickAddModal from '@/components/lernpfade/LernpfadeQuickAddModal';
+import {
+  getUsedAufgabenIds,
+  createNewSektor,
+  addSektor,
+  patchSektor,
+  removeSektor,
+  insertAufgabeInSektor,
+  removeAufgabeFromLernTyp,
+  moveAufgabe,
+} from '@/lib/lernpfadeUtils';
+import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 
 const DEFAULT_KONFIG = { minimalist: [], pragmatiker: [], ehrgeizig: [], passioniert: [] };
 const DEBOUNCE_MS = 800;
@@ -42,6 +54,21 @@ export default function LernpfadeCockpit({
   );
   const [activeLernTyp, setActiveLernTyp] = useState('pragmatiker');
   const [saveState, setSaveState] = useState('idle'); // 'idle' | 'pending' | 'saving' | 'saved' | 'error'
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+
+  const queryClient = useQueryClient();
+
+  // Aufgaben dieser Einheit – nötig, um IDs in den Sektoren zu echten Karten aufzulösen.
+  const { data: aufgaben = [] } = useQuery({
+    queryKey: ['allgemeineAufgaben', einheit?.id],
+    queryFn: () => (einheit?.id ? getAufgabenByEinheit(einheit.id) : Promise.resolve([])),
+    enabled: !!einheit?.id,
+  });
+  const aufgabenById = useMemo(() => {
+    const map = new Map();
+    (aufgaben || []).forEach((a) => map.set(a.id, a));
+    return map;
+  }, [aufgaben]);
 
   // Re-Sync, wenn der Einheit-Snapshot sich ändert (z.B. nach Tab-Wechsel)
   // ABER NUR im Lesemodus – im Edit-Modus ist der lokale State führend.
@@ -103,8 +130,6 @@ export default function LernpfadeCockpit({
   }, [isStructuralEditingActive, flushSave]);
 
   // ── Update-API für die Architekt-Subkomponente ────────────────────
-  // (Phase 3 wird sie via DnD aufrufen; aktuell noch ungenutzt – aber bereits angebunden.)
-  // eslint-disable-next-line no-unused-vars
   const updateKonfiguration = useCallback(
     (updater) => {
       setKonfiguration((prev) => {
@@ -126,29 +151,99 @@ export default function LernpfadeCockpit({
     [konfiguration, activeLernTyp]
   );
 
+  // ── Sektor-Handler ─────────────────────────────────────────────────
+  const handleAddSektor = useCallback(() => {
+    if (readOnly) return;
+    updateKonfiguration((prev) => addSektor(prev, activeLernTyp, createNewSektor()));
+  }, [readOnly, activeLernTyp, updateKonfiguration]);
+
+  const handlePatchSektor = useCallback(
+    (sektorId, patch) => {
+      if (readOnly) return;
+      updateKonfiguration((prev) => patchSektor(prev, activeLernTyp, sektorId, patch));
+    },
+    [readOnly, activeLernTyp, updateKonfiguration]
+  );
+
+  const handleRemoveSektor = useCallback(
+    (sektorId) => {
+      if (readOnly) return;
+      updateKonfiguration((prev) => removeSektor(prev, activeLernTyp, sektorId));
+    },
+    [readOnly, activeLernTyp, updateKonfiguration]
+  );
+
+  const handleRemoveAufgabeFromPath = useCallback(
+    (aufgabeId) => {
+      if (readOnly) return;
+      updateKonfiguration((prev) => removeAufgabeFromLernTyp(prev, activeLernTyp, aufgabeId));
+    },
+    [readOnly, activeLernTyp, updateKonfiguration]
+  );
+
   // ── Drag & Drop ────────────────────────────────────────────────────
-  // Phase 2-Update: Duplikat-Blockade.
-  // Reorder/echtes Einfügen in Sektoren erfolgt in Phase 3 – hier wird der Drop derzeit nur validiert.
+  // Pool → Sektor (neu hinzufügen), Sektor → Sektor (verschieben), innerhalb eines Sektors (reorder).
   const handleDragEnd = useCallback(
     (result) => {
-      const { destination, draggableId, source } = result;
-      // Kein Drop-Target → nichts zu tun.
+      const { destination, source, draggableId } = result;
       if (!destination) return;
-      // Drop innerhalb des Pools (Quelle == Ziel) → ignorieren.
-      if (destination.droppableId === 'pool') return;
+      if (readOnly) return;
 
-      // Sicherheits-Fallback: Aufgabe schon im aktiven Pfad? → blocken.
-      if (usedAufgabenIds.has(draggableId)) {
-        toast.info('Diese Aufgabe ist bereits in diesem Lernpfad vorhanden.');
+      const srcId = source.droppableId;
+      const dstId = destination.droppableId;
+
+      // Drop zurück in den Pool → keine Aktion (Aufgaben werden über X-Button entfernt).
+      if (dstId === 'pool') return;
+
+      // Quelle: Pool → Aufgabe neu in einen Sektor einfügen.
+      if (srcId === 'pool' && dstId.startsWith('sektor-')) {
+        const sektorId = dstId.replace('sektor-', '');
+
+        // Sicherheits-Check (Fallback zur visuellen Drag-Sperre).
+        if (usedAufgabenIds.has(draggableId)) {
+          toast.error('Diese Aufgabe ist bereits in diesem Lernpfad vorhanden.');
+          return;
+        }
+        updateKonfiguration((prev) =>
+          insertAufgabeInSektor(prev, activeLernTyp, sektorId, draggableId, destination.index)
+        );
         return;
       }
 
-      // Phase 3: hier wird die Aufgabe in den Ziel-Sektor eingefügt
-      // (über updateKonfiguration). Aktuell bewusst No-Op, damit Phase-2-Verhalten stabil bleibt.
-      // eslint-disable-next-line no-unused-vars
-      const _src = source;
+      // Quelle: Sektor → Sektor (oder gleicher Sektor = Reorder).
+      if (srcId.startsWith('sektor-') && dstId.startsWith('sektor-')) {
+        const fromSektorId = srcId.replace('sektor-', '');
+        const toSektorId = dstId.replace('sektor-', '');
+        // Identische Position → nichts tun.
+        if (fromSektorId === toSektorId && source.index === destination.index) return;
+        updateKonfiguration((prev) =>
+          moveAufgabe(prev, activeLernTyp, fromSektorId, source.index, toSektorId, destination.index)
+        );
+        return;
+      }
     },
-    [usedAufgabenIds]
+    [readOnly, activeLernTyp, usedAufgabenIds, updateKonfiguration]
+  );
+
+  // ── Quick-Add ──────────────────────────────────────────────────────
+  // Nach erfolgreicher Erstellung: ID in den letzten Sektor einfügen
+  // (oder einen neuen Sektor anlegen, falls noch keiner existiert) und Pool-Cache invalidieren.
+  const handleQuickAddCreated = useCallback(
+    (created) => {
+      if (!created?.id) return;
+      updateKonfiguration((prev) => {
+        const sektoren = prev?.[activeLernTyp] || [];
+        if (sektoren.length === 0) {
+          const sek = createNewSektor({ aufgaben_ids: [created.id] });
+          return addSektor(prev, activeLernTyp, sek);
+        }
+        const lastSektor = sektoren[sektoren.length - 1];
+        return insertAufgabeInSektor(prev, activeLernTyp, lastSektor.sektor_id, created.id, undefined);
+      });
+      // Re-Fetch der Pool-Liste, damit die neue Aufgabe dort (direkt als "verwendet") erscheint.
+      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheit?.id] });
+    },
+    [activeLernTyp, updateKonfiguration, queryClient, einheit?.id]
   );
 
   return (
@@ -157,7 +252,7 @@ export default function LernpfadeCockpit({
       <div className="shrink-0 px-4 py-2 border-b border-border bg-muted/40 flex items-center gap-3 flex-wrap">
         <h2 className="text-sm font-semibold text-foreground">Lernpfad-Architekt</h2>
         <span className="text-[10px] text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
-          Phase 2 – Basis-Layout
+          Phase 3 – Sektoren &amp; D&amp;D
         </span>
 
         {/* Save-Indicator */}
@@ -236,10 +331,23 @@ export default function LernpfadeCockpit({
               activeLernTyp={activeLernTyp}
               onActiveLernTypChange={setActiveLernTyp}
               readOnly={readOnly}
+              aufgabenById={aufgabenById}
+              onAddSektor={handleAddSektor}
+              onPatchSektor={handlePatchSektor}
+              onRemoveSektor={handleRemoveSektor}
+              onRemoveAufgabeFromPath={handleRemoveAufgabeFromPath}
+              onQuickAddOpen={() => setQuickAddOpen(true)}
             />
           </main>
         </div>
       </DragDropContext>
+
+      <LernpfadeQuickAddModal
+        open={quickAddOpen}
+        onOpenChange={setQuickAddOpen}
+        einheitId={einheit?.id}
+        onCreated={handleQuickAddCreated}
+      />
     </div>
   );
 }
