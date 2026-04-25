@@ -43,7 +43,9 @@ import {
   removeAufgabeFromLernTyp,
   moveAufgabe,
   copySektorenBetweenLernTypen,
+  applyDashboardTemplate,
 } from '@/lib/lernpfadeUtils';
+import { DASHBOARD_TEMPLATES } from '@/lib/dashboardTemplates';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { getAmpelStatus } from '@/lib/ampelLogic';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
@@ -375,6 +377,81 @@ export default function LernpfadeCockpit({
       setStatusBusy(false);
     }
   }, [einheit?.id, darfEntsperren, istPfadGesperrt, statusBusy, activeLernTyp, queryClient]);
+
+  // ── Magic-Raster Phase 4: Template anwenden ────────────────────────
+  // Pre-Flight-Check schließt die Race Condition zwischen "Pfad ist im
+  // Cockpit als 'draft' bekannt" und "ein anderer User hat soeben
+  // freigegeben". Wir bypassen daher den Cache und holen die Memberships
+  // frisch via queryClient.fetchQuery — exakt mit derselben queryFn wie
+  // useLernpfadStatus, damit die Logik konsistent bleibt.
+  const handleApplyTemplate = useCallback(async () => {
+    if (!einheit?.id || !activeLernTyp) return;
+
+    // 1. Pre-Flight: frischen Status laden, niemals aus Cache.
+    let liveStatus = PFAD_STATUS.EMPTY;
+    try {
+      const fresh = await queryClient.fetchQuery({
+        queryKey: ['lernpfadStatus', einheit.id, activeLernTyp],
+        queryFn: async () => {
+          const list = await base44.entities.LernpfadAufgabeMembership.filter({
+            einheit_id: einheit.id,
+            lerntyp: activeLernTyp,
+          });
+          if (!list || list.length === 0) {
+            return { status: PFAD_STATUS.EMPTY, count: 0 };
+          }
+          const hasLocked = list.some((m) => m.pfad_status === 'locked_for_export');
+          return {
+            status: hasLocked ? PFAD_STATUS.LOCKED : PFAD_STATUS.DRAFT,
+            count: list.length,
+          };
+        },
+        staleTime: 0,
+      });
+      liveStatus = fresh?.status || PFAD_STATUS.EMPTY;
+    } catch (err) {
+      console.error('[handleApplyTemplate] Status-Refetch fehlgeschlagen:', err);
+      toast.error('Pfad-Status konnte nicht geprüft werden. Bitte erneut versuchen.');
+      return;
+    }
+
+    // 2. Race Condition: in der Zwischenzeit gesperrt → Abbruch.
+    if (liveStatus === PFAD_STATUS.LOCKED) {
+      toast.error(
+        'Abbruch: Der Lernpfad wurde in der Zwischenzeit freigegeben und gesperrt.'
+      );
+      setIsGuideOpen(false);
+      return;
+    }
+
+    // 3. Bestätigungsdialog (nativ – wir wollen keinen weiteren Modal-Stack).
+    const ok = window.confirm(
+      'Achtung: Dies überschreibt den kompletten aktuellen Aufbau dieses Dashboards. ' +
+      'Bestehende Aufgaben werden aus den Sektoren entfernt. Fortfahren?'
+    );
+    if (!ok) return;
+
+    // 4. Template laden und anwenden. scheduleSave (in updateKonfiguration)
+    //    übernimmt automatisch Persistierung + Junction-Sync.
+    const template = DASHBOARD_TEMPLATES[activeLernTyp];
+    if (!Array.isArray(template)) {
+      toast.error(`Für „${activeLernTyp}" ist kein Standard-Raster definiert.`);
+      return;
+    }
+
+    updateKonfiguration((prev) => applyDashboardTemplate(prev, activeLernTyp, template));
+    setSelectedAufgabeId(null);
+    setSelectedSystemBausteinId(null);
+    setIsGuideOpen(false);
+    toast.success('Standard-Raster geladen.');
+  }, [
+    einheit?.id,
+    activeLernTyp,
+    queryClient,
+    updateKonfiguration,
+    setSelectedAufgabeId,
+    setSelectedSystemBausteinId,
+  ]);
 
   // ── Render-Helfer ──────────────────────────────────────────────────
   // Phase 4A: Wenn der Pfad freigegeben ist (locked_for_export), wird der
@@ -763,10 +840,7 @@ export default function LernpfadeCockpit({
         onClose={() => setIsGuideOpen(false)}
         lerntyp={activeLernTyp}
         isLocked={istPfadGesperrt}
-        onApplyClick={() => {
-          // eslint-disable-next-line no-console
-          console.log('Apply Template geklickt', { lerntyp: activeLernTyp });
-        }}
+        onApplyClick={handleApplyTemplate}
       />
 
       {/* Inline-Editor: Klick auf rotes Ampel-Badge öffnet die Aufgabe direkt zur Korrektur.

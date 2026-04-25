@@ -255,6 +255,49 @@ export function copySektorenBetweenLernTypen(konfig, fromLernTyp, toLernTyp) {
 }
 
 /**
+ * Wendet ein statisches Dashboard-Template (siehe lib/dashboardTemplates.js)
+ * auf den Lernpfad eines bestimmten Lerntyps an.
+ *
+ * Verhalten:
+ *   - Überschreibt das Sektor-Array des angegebenen Lerntyps KOMPLETT.
+ *   - Andere Lerntypen bleiben unangetastet.
+ *   - Jeder Sektor erhält eine FRISCHE UUID (kritisch für DnD- und
+ *     React-Key-Stabilität — Templates haben statische Demo-IDs wie
+ *     "tpl_min_sec1", die sonst zwischen Lerntypen kollidieren würden).
+ *   - Items werden flach geklont (frische Referenzen) und durch
+ *     `normalizeItem` geschickt — schützt vor Tippfehlern in Templates.
+ *
+ * Bewusst NICHT in dieser Funktion:
+ *   - Persistenz / Junction-Sync: Übernimmt der scheduleSave-Mechanismus
+ *     im Cockpit nach setKonfiguration().
+ *   - Lock-Pre-Flight: Liegt beim Aufrufer (Cockpit), weil er Zugriff
+ *     auf den queryClient hat und Toasts triggern muss.
+ *
+ * @param {object} aktuelleKonfig - Die komplette lernpfade_konfiguration.
+ * @param {string} lerntyp - 'minimalist' | 'pragmatiker' | 'ehrgeizig' | 'passioniert'.
+ * @param {Array}  templateData - Array of Sektoren aus DASHBOARD_TEMPLATES[lerntyp].
+ * @returns {object} Neue Konfiguration (immutable) mit überschriebenem Lerntyp.
+ */
+export function applyDashboardTemplate(aktuelleKonfig, lerntyp, templateData) {
+  if (!lerntyp) return aktuelleKonfig;
+  if (!Array.isArray(templateData)) return aktuelleKonfig;
+
+  const freshSektoren = templateData.map((sektor) => {
+    const items = Array.isArray(sektor?.items)
+      ? sektor.items.map(normalizeItem).filter(Boolean)
+      : [];
+    return {
+      sektor_id: `sec_${uuid()}`,
+      titel: sektor?.titel || 'Neuer Sektor',
+      modus: sektor?.modus === 'frei' ? 'frei' : 'sequenziell',
+      items,
+    };
+  });
+
+  return setSektoren(aktuelleKonfig || {}, lerntyp, freshSektoren);
+}
+
+/**
  * Item innerhalb eines Sektors umsortieren oder zwischen zwei Sektoren des
  * gleichen Lerntyps verschieben. Reine Reihenfolge-Operation – führt keine
  * Duplikat-Prüfung durch (es wird ja kein neues Item hinzugefügt).
