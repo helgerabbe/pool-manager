@@ -30,7 +30,7 @@ import { deleteLernpaket as deleteLernpaketService } from '@/services/LernpaketS
 import { deleteLernziel as deleteLernzielService } from '@/services/LernzielService';
 import { deleteAufgabenbaustein } from '@/services/AufgabenbausteinService';
 import ProjektaufgabenView from '@/components/projektaufgaben/ProjektaufgabenView';
-import LernpfadeCockpit from '@/components/lernpfade/LernpfadeCockpit.jsx';
+import LernpfadeCockpit from '@/components/lernpfade/LernpfadeCockpit';
 
 export default function Workspace({ initialEinheitId: initialEinheitIdProp = null }) {
   const [searchParams, setSearchParams] = useSearchParams();
