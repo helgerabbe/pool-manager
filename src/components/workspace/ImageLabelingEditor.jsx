@@ -43,6 +43,7 @@ export default function ImageLabelingEditor({
 
   const [draggedLabel, setDraggedLabel] = useState(null);
   const imageRef = useRef(null);
+  const fileInputRef = useRef(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [uploading, setUploading] = useState(false);
   
@@ -298,40 +299,70 @@ export default function ImageLabelingEditor({
       {!readOnly && (
         <div className="space-y-1.5">
           <Label className="text-sm font-medium">Hintergrundbild</Label>
-          <div className="flex items-center gap-3">
-            {data.backgroundImage ? (
-              <div className="flex-1 px-3 py-2 rounded-lg bg-green-50 border border-green-200 text-xs text-green-700 flex items-center justify-between">
-                <span className="truncate">✓ Bild hochgeladen</span>
-                <button
-                  onClick={() => applyChange(d => ({ ...d, backgroundImage: '' }))}
-                  className="text-green-600 hover:text-green-800"
-                >
-                  ✕
-                </button>
-              </div>
-            ) : (
-              <label className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-input transition-colors ${uploading ? 'opacity-60 cursor-not-allowed' : 'hover:border-primary/50 cursor-pointer'}`}>
-                {uploading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="text-xs text-muted-foreground">Lädt hoch…</span>
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">JPG, PNG – bis 10 MB</span>
-                  </>
-                )}
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png"
-                  onChange={handleImageUpload}
-                  className="hidden"
+
+          {/* Versteckter File-Input – wird per Button-Klick getriggert */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png"
+            onChange={handleImageUpload}
+            className="hidden"
+            disabled={uploading}
+          />
+
+          {data.backgroundImage ? (
+            <div className="px-3 py-2.5 rounded-lg bg-green-50 border border-green-200 text-sm text-green-800 flex items-center justify-between gap-3">
+              <span className="truncate flex items-center gap-2">
+                <span>✓</span>
+                <span className="truncate">Bild hochgeladen</span>
+              </span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                />
-              </label>
-            )}
-          </div>
+                  className="h-7 text-xs"
+                >
+                  Ersetzen
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => applyChange(d => ({ ...d, backgroundImage: '' }))}
+                  className="h-7 text-xs text-green-700 hover:text-green-900"
+                >
+                  Entfernen
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => !uploading && fileInputRef.current?.click()}
+              disabled={uploading}
+              className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed transition-colors ${
+                uploading
+                  ? 'border-input opacity-60 cursor-not-allowed'
+                  : 'border-input hover:border-primary hover:bg-primary/5 cursor-pointer'
+              }`}
+            >
+              {uploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                  <span className="text-sm text-muted-foreground">Lädt hoch…</span>
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium text-foreground">Bild auswählen</span>
+                  <span className="text-xs text-muted-foreground">(JPG, PNG – bis 10 MB)</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       )}
 
