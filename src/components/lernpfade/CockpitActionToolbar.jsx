@@ -26,28 +26,38 @@ export default function CockpitActionToolbar({
   onOpenGuide,
   onReleasePath,
   onUnlockPath,
+  saveIcon: SaveIcon,
+  saveIconCls,
+  saveTitle,
 }) {
   return (
-    <div className="shrink-0 px-4 py-2 border-b border-border bg-card flex items-center gap-3 flex-wrap">
+    <div className="shrink-0 px-4 py-1 border-b border-border bg-card flex items-center gap-2 flex-wrap">
       <Button
         size="sm"
         variant="outline"
         onClick={onOpenGuide}
-        className="gap-1.5 h-7 text-xs"
+        className="gap-1.5 h-6 text-[11px] px-2"
         title="Didaktische Erklärung & Standard-Raster für diesen Lerntyp"
       >
         <BookOpen className="w-3 h-3" />
-        Didaktischer Guide
+        Guide
       </Button>
+
+      {/* Kompakter Save-Indicator als reines Icon (Tooltip via title). */}
+      {SaveIcon && (
+        <span title={saveTitle} className="inline-flex items-center">
+          <SaveIcon className={`w-3.5 h-3.5 ${saveIconCls || ''}`} />
+        </span>
+      )}
 
       {istPfadGesperrt ? (
         <>
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+          <span
+            className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0.5"
+            title={`Pfad „${lerntypLabel}" freigegeben & gesperrt – Aufgaben in Tab 5 sind read-only`}
+          >
             <ShieldCheck className="w-3 h-3" />
-            Pfad „{lerntypLabel}" freigegeben &amp; gesperrt
-          </span>
-          <span className="text-[11px] text-muted-foreground">
-            Aufgaben sind in Tab 5 read-only.
+            {lerntypLabel} · gesperrt
           </span>
           {darfEntsperren && (
             <Button
@@ -55,24 +65,24 @@ export default function CockpitActionToolbar({
               variant="outline"
               onClick={onUnlockPath}
               disabled={statusBusy}
-              className="ml-auto gap-1.5 h-7 text-xs border-red-300 text-red-700 hover:bg-red-50"
+              className="ml-auto gap-1.5 h-6 text-[11px] px-2 border-red-300 text-red-700 hover:bg-red-50"
             >
               {statusBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldOff className="w-3 h-3" />}
-              Lernpfad entsperren
+              Entsperren
             </Button>
           )}
         </>
       ) : (
         <>
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5">
-            Pfad „{lerntypLabel}" – Entwurf
+          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-full px-1.5 py-0.5">
+            {lerntypLabel} · Entwurf
           </span>
           {darfFreigeben && (
             <Button
               size="sm"
               onClick={onReleasePath}
               disabled={statusBusy || !isStructuralEditingActive || isLockedByOther}
-              className="ml-auto gap-1.5 h-7 text-xs"
+              className="ml-auto gap-1.5 h-6 text-[11px] px-2"
               title={
                 !isStructuralEditingActive
                   ? 'Bitte zuerst Bearbeiten starten'
@@ -80,7 +90,7 @@ export default function CockpitActionToolbar({
               }
             >
               {statusBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
-              Lernpfad prüfen &amp; freigeben
+              Prüfen & freigeben
             </Button>
           )}
         </>

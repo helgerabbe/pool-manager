@@ -241,21 +241,21 @@ export default function WorkspaceTabs({ activeTab, onTabChange }) {
                   <button
                     onClick={() => onTabChange(tab.value)}
                     className={cn(
-                      'flex items-center gap-2 py-2 rounded-lg border-2 transition-all font-medium',
+                      'flex items-center gap-1.5 py-1 rounded-md border transition-all font-medium',
                       isActive
-                        ? 'bg-primary text-primary-foreground border-primary shadow-md px-6 justify-start'
-                        : 'bg-card border-border text-muted-foreground hover:border-primary/50 hover:bg-muted/50 px-2.5 justify-center'
+                        ? 'bg-primary text-primary-foreground border-primary shadow-sm px-3 justify-start'
+                        : 'bg-card border-border text-muted-foreground hover:border-primary/50 hover:bg-muted/50 px-2 justify-center'
                     )}
                   >
                     <span className={cn(
-                      'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold shrink-0 transition-all',
-                      isActive 
-                        ? 'bg-primary-foreground text-primary scale-110' 
+                      'flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold shrink-0 transition-all',
+                      isActive
+                        ? 'bg-primary-foreground text-primary'
                         : 'bg-muted text-muted-foreground'
                     )}>
                       {tab.step}
                     </span>
-                    <Icon className={cn('w-4 h-4 shrink-0 transition-all', isActive && 'scale-110')} />
+                    <Icon className="w-3.5 h-3.5 shrink-0" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-medium">

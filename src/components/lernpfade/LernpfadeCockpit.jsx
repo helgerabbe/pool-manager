@@ -14,12 +14,12 @@
  *   - Bei Unmount/Lock-Verlust: pending Save sofort flushen.
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { DragDropContext } from '@hello-pangea/dnd';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Loader2, Lock, PenLine, Unlock, Cloud, CloudOff } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Loader2, Cloud, CloudOff, Check } from 'lucide-react';
+import { useScrollDirection } from '@/hooks/useScrollDirection';
 import LernpfadeAufgabenPool from '@/components/lernpfade/LernpfadeAufgabenPool';
 import LernpfadeArchitekt, { LERN_TYPEN } from '@/components/lernpfade/LernpfadeArchitekt';
 import LernpfadeQuickAddModal from '@/components/lernpfade/LernpfadeQuickAddModal';
@@ -331,83 +331,48 @@ export default function LernpfadeCockpit({
     [activeLernTyp, updateKonfiguration, queryClient, einheit?.id]
   );
 
+  // Save-Indicator als kompaktes Icon (statt eigener Zeile).
+  const saveIndicator = (() => {
+    if (saveState === 'pending') return { icon: Cloud, cls: 'text-muted-foreground', title: 'Änderung registriert…' };
+    if (saveState === 'saving') return { icon: Loader2, cls: 'text-muted-foreground animate-spin', title: 'Speichere…' };
+    if (saveState === 'saved') return { icon: Check, cls: 'text-emerald-600', title: 'Gespeichert' };
+    if (saveState === 'error') return { icon: CloudOff, cls: 'text-destructive', title: 'Fehler beim Speichern' };
+    return null;
+  })();
+  const SaveIcon = saveIndicator?.icon;
+
+  // Auto-Hide: scrollbarer Container ist der DnD-Main-Bereich. Beim Scrollen
+  // nach unten klappt die schmale Header-Region (Action-Toolbar + Lerntyp-Pills)
+  // weg; beim Scrollen nach oben wird sie wieder eingeblendet.
+  const scrollRef = useRef(null);
+  const { hidden: headerHidden } = useScrollDirection(scrollRef, { threshold: 32 });
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Top-Bar: Save-Indicator + Strukturlock-Steuerung */}
-      <div className="shrink-0 px-4 py-2 border-b border-border bg-muted/40 flex items-center gap-3 flex-wrap">
-        <h2 className="text-sm font-semibold text-foreground">Lernpfad-Architekt</h2>
-        <span className="text-[10px] text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
-          Phase 4 – Vorschau &amp; Kopie
-        </span>
-
-        <div className="ml-auto flex items-center gap-2">
-          {saveState === 'pending' && (
-            <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-              <Cloud className="w-3 h-3" /> Änderung registriert…
-            </span>
-          )}
-          {saveState === 'saving' && (
-            <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-              <Loader2 className="w-3 h-3 animate-spin" /> Speichere…
-            </span>
-          )}
-          {saveState === 'saved' && (
-            <span className="text-[11px] text-emerald-700 flex items-center gap-1">
-              <Cloud className="w-3 h-3" /> Gespeichert
-            </span>
-          )}
-          {saveState === 'error' && (
-            <span className="text-[11px] text-destructive flex items-center gap-1">
-              <CloudOff className="w-3 h-3" /> Fehler
-            </span>
-          )}
-
-          {kannBearbeiten && !isLockedByOther && (
-            isStructuralEditingActive ? (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={onReleaseLock}
-                disabled={releasingStructLock}
-                className="gap-1.5 h-7 text-xs"
-              >
-                {releasingStructLock ? <Loader2 className="w-3 h-3 animate-spin" /> : <Unlock className="w-3 h-3" />}
-                Bearbeitung beenden
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                onClick={onAcquireLock}
-                disabled={acquiringStructLock}
-                className="gap-1.5 h-7 text-xs"
-              >
-                {acquiringStructLock ? <Loader2 className="w-3 h-3 animate-spin" /> : <PenLine className="w-3 h-3" />}
-                Bearbeiten starten
-              </Button>
-            )
-          )}
-
-          {isLockedByOther && (
-            <span className="text-[11px] text-orange-700 flex items-center gap-1 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200">
-              <Lock className="w-3 h-3" /> Gesperrt von {einheit?.structural_lock}
-            </span>
-          )}
-        </div>
+      {/* Kollabierbarer Header-Bereich (Action-Toolbar + Lerntyp-Pills).
+          Wird per max-height + opacity weggeklappt, um dem Arbeitsbereich
+          maximalen Platz zu geben. */}
+      <div
+        className={`shrink-0 overflow-hidden transition-all duration-200 ease-out ${
+          headerHidden ? 'max-h-0 opacity-0' : 'max-h-40 opacity-100'
+        }`}
+      >
+        <CockpitActionToolbar
+          lerntypLabel={lerntypLabel}
+          istPfadGesperrt={istPfadGesperrt}
+          darfFreigeben={darfFreigeben}
+          darfEntsperren={darfEntsperren}
+          statusBusy={statusBusy}
+          isStructuralEditingActive={isStructuralEditingActive}
+          isLockedByOther={isLockedByOther}
+          onOpenGuide={() => setIsGuideOpen(true)}
+          onReleasePath={handleReleasePath}
+          onUnlockPath={handleUnlockPath}
+          saveIcon={SaveIcon}
+          saveIconCls={saveIndicator?.cls}
+          saveTitle={saveIndicator?.title}
+        />
       </div>
-
-      {/* Aktionsleiste: Guide-Trigger, Status-Badge, Freigabe/Entsperren */}
-      <CockpitActionToolbar
-        lerntypLabel={lerntypLabel}
-        istPfadGesperrt={istPfadGesperrt}
-        darfFreigeben={darfFreigeben}
-        darfEntsperren={darfEntsperren}
-        statusBusy={statusBusy}
-        isStructuralEditingActive={isStructuralEditingActive}
-        isLockedByOther={isLockedByOther}
-        onOpenGuide={() => setIsGuideOpen(true)}
-        onReleasePath={handleReleasePath}
-        onUnlockPath={handleUnlockPath}
-      />
 
       {/* 30/70-Layout mit DnD-Kontext */}
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -445,6 +410,7 @@ export default function LernpfadeCockpit({
               onCopyFromLernTyp={handleCopyFromLernTyp}
               getAmpelStatusForItem={getAmpelStatusForItem}
               onOpenAufgabeEditor={handleOpenAufgabeEditor}
+              canvasScrollRef={scrollRef}
             />
           </main>
         </div>
