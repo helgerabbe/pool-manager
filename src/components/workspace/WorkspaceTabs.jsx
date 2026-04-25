@@ -7,7 +7,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { BookOpen, LayoutGrid, Zap, Wand2, ClipboardList, Target, CheckSquare, Rocket, ExternalLink } from 'lucide-react';
+import { BookOpen, LayoutGrid, Zap, Wand2, ClipboardList, Target, CheckSquare, Rocket, ExternalLink, Compass } from 'lucide-react';
 import HelpDialog from '@/components/ui/HelpDialog';
 import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
@@ -135,7 +135,26 @@ const getVisibleTabs = (rolle) => {
     },
   },
   {
-    value: 'cockpit', label: 'Freigabe-Cockpit (Moodle)', icon: CheckSquare, step: 7,
+    value: 'dashboards', label: 'Dashboards (Lernpfade)', icon: Compass, step: 7,
+    help: {
+      title: 'Dashboards – Lernpfad-Architekt',
+      description: 'Hier stellen Sie aus den Aufgaben der Ebenen 2 und 3 individuelle Lernpfade für vier Lerntypen zusammen: Minimalist, Pragmatiker, Ehrgeizig, Passioniert.',
+      features: [
+        'Material-Pool: Aufgaben aus Ebene 2 und 3, gefiltert nach Aufgaben-Typ',
+        'Vier Lerntyp-Spuren: Minimalist, Pragmatiker, Ehrgeizig, Passioniert',
+        'Drag & Drop: Aufgaben in Sektoren für jeden Lerntyp einsortieren (folgt in Phase 3)',
+        'Strukturelle Sperre: nur ein Bearbeiter gleichzeitig – andere sehen den Stand schreibgeschützt',
+        'Auto-Save: Änderungen werden mit kurzer Verzögerung im Hintergrund gespeichert',
+      ],
+      faqs: [
+        { question: 'Was sind die vier Lerntypen?', answer: 'Lerntypen sind unterschiedliche Schülerprofile: Minimalist (Wesentliches), Pragmatiker (Standard), Ehrgeizig (zusätzliche Herausforderungen), Passioniert (Tiefer Tauchgang in Projekten).' },
+        { question: 'Warum kann ich nicht bearbeiten?', answer: 'Der Tab nutzt dieselbe strukturelle Sperre wie Tab 2. Wenn jemand anderes gerade strukturell bearbeitet, ist der Tab für Sie nur lesbar.' },
+        { question: 'Was passiert mit den Aufgaben aus Ebene 2/3?', answer: 'Die Aufgaben selbst bleiben unverändert. Hier definieren Sie nur, in welcher Reihenfolge und Sektoren sie für jeden Lerntyp angeboten werden.' },
+      ],
+    },
+  },
+  {
+    value: 'cockpit', label: 'Freigabe-Cockpit (Moodle)', icon: CheckSquare, step: 8,
     help: {
       title: 'Freigabe-Cockpit – Moodle-Export vorbereiten',
       description: 'Übersicht aller Inhalte dieser Einheit mit ihrem aktuellen Status. Hier selektieren Sie, was für den nächsten Moodle-Export übergeben werden soll.',
@@ -154,7 +173,7 @@ const getVisibleTabs = (rolle) => {
     },
   },
   {
-    value: 'export', label: 'Moodle-Export', icon: Rocket, step: 8,
+    value: 'export', label: 'Moodle-Export', icon: Rocket, step: 9,
     help: {
       title: 'Moodle-Export – Bestätigung & Status',
       description: 'Hier bestätigt das Export-Team, welche Inhalte erfolgreich nach Moodle übertragen wurden, und setzt den finalen Sync-Status.',
@@ -172,7 +191,7 @@ const getVisibleTabs = (rolle) => {
     },
   },
   {
-    value: 'brian', label: 'Brian.study Export', icon: ExternalLink, step: 9,
+    value: 'brian', label: 'Brian.study Export', icon: ExternalLink, step: 10,
     help: {
       title: 'Brian.study Export – Cockpit',
       description: 'Generieren Sie strukturierte Prompts für Brian.study und markieren Sie Aufgaben als exportiert. Erst wenn Moodle UND Brian bestätigt sind, wird die Bearbeitungssperre vollständig aufgehoben (Dual-Lock).',
@@ -194,10 +213,12 @@ const getVisibleTabs = (rolle) => {
   ];
 
   return allTabs.filter(tab => {
-    // Export-Tabs (7, 8 & 9) nur für Admin und Moodle-Designer
+    // Export-Tabs (8, 9, 10) nur für Admin und Moodle-Designer
     if (['cockpit', 'export', 'brian'].includes(tab.value)) {
       return showExportTabs;
     }
+    // Tab 7 (Dashboards): für alle Lehrkräfte/Admins sichtbar
+    if (tab.value === 'dashboards') return true;
     // Tabs 1 & 2 (Einheit verwalten, Struktur) sind für ALLE sichtbar (auch Fachlehrkräfte)
     // Tabs 3-6 sind für alle Lehrkräfte sichtbar
     return true;

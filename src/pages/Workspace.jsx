@@ -30,6 +30,7 @@ import { deleteLernpaket as deleteLernpaketService } from '@/services/LernpaketS
 import { deleteLernziel as deleteLernzielService } from '@/services/LernzielService';
 import { deleteAufgabenbaustein } from '@/services/AufgabenbausteinService';
 import ProjektaufgabenView from '@/components/projektaufgaben/ProjektaufgabenView';
+import LernpfadeCockpit from '@/components/lernpfade/LernpfadeCockpit';
 
 export default function Workspace({ initialEinheitId: initialEinheitIdProp = null }) {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -42,7 +43,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const [selectedEinheitId, setSelectedEinheitId] = useState(initialEinheitId);
   const [selectedThemenfeldId, setSelectedThemenfeldId] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
-  const VALID_TABS = ['einheit', 'struktur', 'aktivitaeten', 'aufgaben', 'ebene2', 'ebene3', 'cockpit', 'export', 'brian'];
+  const VALID_TABS = ['einheit', 'struktur', 'aktivitaeten', 'aufgaben', 'ebene2', 'ebene3', 'dashboards', 'cockpit', 'export', 'brian'];
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'einheit');
   const [highlightedAtomIds, setHighlightedAtomIds] = useState(new Set());
@@ -148,9 +149,10 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
   // ── Structural-Lock (explizit per Button) ─────────────────────────────────
 
-  // Lock freigeben wenn Einheit gewechselt wird ODER Tab gewechselt wird
+  // Lock freigeben wenn Einheit gewechselt wird ODER Tab gewechselt wird.
+  // Hinweis: Tab 7 "dashboards" recycelt den Structural Lock – daher hier ebenfalls erlaubt.
   useEffect(() => {
-    if (isStructuralEditingActive && activeTab !== 'struktur') {
+    if (isStructuralEditingActive && activeTab !== 'struktur' && activeTab !== 'dashboards') {
       handleReleaseStructLock();
     }
     if (isTab1EditingActive && activeTab !== 'einheit') {
@@ -755,7 +757,23 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               </div>
             </TabsContent>
 
-            {/* ── Tab 7: Freigabe-Cockpit ──────────────────────────────────────── */}
+            {/* ── Tab 7: Dashboards (Lernpfad-Architekt) ────────────────────── */}
+            <TabsContent value="dashboards" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
+              <ErrorBoundary label="Lernpfad-Architekt">
+                <LernpfadeCockpit
+                  einheit={einheit}
+                  isStructuralEditingActive={isStructuralEditingActive}
+                  isLockedByOther={isLockedByOther}
+                  acquiringStructLock={acquiringStructLock}
+                  releasingStructLock={releasingStructLock}
+                  onAcquireLock={handleAcquireStructLock}
+                  onReleaseLock={handleReleaseStructLock}
+                  kannBearbeiten={kannDieseEinheitBearbeiten}
+                />
+              </ErrorBoundary>
+            </TabsContent>
+
+            {/* ── Tab 8: Freigabe-Cockpit ──────────────────────────────────────── */}
             <TabsContent value="cockpit" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
               <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6">
                 <ErrorBoundary label="Freigabe-Cockpit">
