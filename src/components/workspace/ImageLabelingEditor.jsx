@@ -28,18 +28,28 @@ export default function ImageLabelingEditor({
   readOnly = false,
   hideInternalFooter = false, // ← NEU: Ausblenden, wenn das Modal seinen eigenen Footer liefert
 }) {
-  const [data, setData] = useState(() => ({
-    aufgabenstellung: initialData?.aufgabenstellung || '',
-    backgroundImage: initialData?.backgroundImage || '',
-    dropZones: (initialData?.dropZones || []).map(z => ({
+  const normalizeData = (raw) => ({
+    aufgabenstellung: raw?.aufgabenstellung || '',
+    backgroundImage: raw?.backgroundImage || '',
+    dropZones: (raw?.dropZones || []).map(z => ({
       label: z.label || '',
       x_percent: z.x_percent ?? 50,
       y_percent: z.y_percent ?? 50,
       width: z.width ?? DEFAULT_BADGE_WIDTH,
       height: z.height ?? DEFAULT_BADGE_HEIGHT,
     })),
-    distractors: (initialData?.distractors || []).map(d => typeof d === 'string' ? d : d),
-  }));
+    distractors: (raw?.distractors || []).map(d => typeof d === 'string' ? d : d),
+  });
+
+  const [data, setData] = useState(() => normalizeData(initialData));
+
+  // Im Read-Only-Modus: bei externen initialData-Änderungen State neu syncen,
+  // damit die Vorschau nach Speichern sofort die neueste Version zeigt.
+  useEffect(() => {
+    if (readOnly) {
+      setData(normalizeData(initialData));
+    }
+  }, [readOnly, initialData?.backgroundImage, initialData?.aufgabenstellung, JSON.stringify(initialData?.dropZones), JSON.stringify(initialData?.distractors)]);
 
   const [draggedLabel, setDraggedLabel] = useState(null);
   const imageRef = useRef(null);

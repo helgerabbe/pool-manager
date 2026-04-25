@@ -249,8 +249,13 @@ export default function ActivityMasterPanel({
     onEditModeChange?.(false, null);
   };
 
+  // Loading-State während des Refetchs nach dem Speichern
+  const [isRefreshingAfterSave, setIsRefreshingAfterSave] = useState(false);
+
   // Modal speichern: Daten persistieren, Lock freigeben, Modal schließen
   // AUTO-RESET: Wenn bereits exportiert, markiere als needs_reexport
+  // Nach dem Speichern: aktiv auf neue Server-Daten warten, damit die
+  // Inhaltsansicht sofort die aktuellste Version zeigt.
   const handleModalSave = async (values) => {
     // Wenn Aktivität bereits exportiert ist (synced) und jetzt geändert wird,
     // setze moodle_sync_status auf 'modified' für Re-Export-Anforderung
@@ -260,16 +265,20 @@ export default function ActivityMasterPanel({
       enrichedValues.is_dirty_since_export = true;
     }
 
-    await saveFieldsMutation.mutateAsync(enrichedValues, {
-      onSuccess: async () => {
-        // content_status nicht in lokalem fieldValues-State speichern
-        const { content_status, ...fieldOnly } = enrichedValues;
-        setFieldValues(fieldOnly);
-        setEditModalOpen(false);
-        await releaseLock();
-        onEditModeChange?.(false, null);
-      },
-    });
+    await saveFieldsMutation.mutateAsync(enrichedValues);
+
+    // Modal sofort schließen, dann aktiv auf frische Server-Daten warten.
+    const { content_status, ...fieldOnly } = enrichedValues;
+    setFieldValues(fieldOnly);
+    setEditModalOpen(false);
+    setIsRefreshingAfterSave(true);
+    try {
+      await queryClient.refetchQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+    } finally {
+      setIsRefreshingAfterSave(false);
+      await releaseLock();
+      onEditModeChange?.(false, null);
+    }
   };
 
   // Alle MasterAufgaben für diese Aktivität
@@ -440,11 +449,19 @@ export default function ActivityMasterPanel({
 
             {/* Spezielle Vorschau für Bildbeschriftung */}
             {isImageLabeling ? (
-              <div className="rounded-xl border border-border bg-card p-5">
+              <div className="rounded-xl border border-border bg-card p-5 relative">
                 <ImageLabelingEditor
                   initialData={fieldValues}
                   readOnly={true}
                 />
+                {isRefreshingAfterSave && (
+                  <div className="absolute inset-0 rounded-xl bg-background/80 backdrop-blur-sm flex items-center justify-center z-10">
+                    <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-card border border-border shadow-sm">
+                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                      <span className="text-sm font-medium text-foreground">Aktivität wird in der DB aktualisiert…</span>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : catalogEntry?.name?.toLowerCase().includes('offene') ? (
               <>
