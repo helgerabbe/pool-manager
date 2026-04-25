@@ -27,7 +27,8 @@ import AufgabePreviewDialog from '@/components/lernpfade/AufgabePreviewDialog';
 import ReleaseBlockerModal from '@/components/lernpfade/ReleaseBlockerModal';
 import DidaktischerGuidePanel from '@/components/lernpfade/DidaktischerGuidePanel';
 import { LERN_TYPEN } from '@/components/lernpfade/LernpfadeArchitekt';
-import { useLernpfadStatus, PFAD_STATUS } from '@/hooks/useLernpfadStatus';
+import { useLernpfadStatus } from '@/hooks/useLernpfadStatus';
+import { PFAD_STATUS } from '@/lib/pfadStatus';
 import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
 import { AMPEL } from '@/lib/ampelLogic';
@@ -208,9 +209,14 @@ export default function LernpfadeCockpit({
       try {
         await base44.functions.invoke('syncLernpfadMembership', { einheitId: einheit.id });
         // Ampel- und Lock-Daten könnten sich geändert haben.
-        queryClient.invalidateQueries({ queryKey: ['aufgabeLock'] });
+        // exact: false → invalidiert ALLE ['aufgabeLock', <id>]-Queries,
+        // damit ein in einem anderen Tab offener Editor frisch lädt.
+        queryClient.invalidateQueries({ queryKey: ['aufgabeLock'], exact: false });
       } catch (syncErr) {
         console.warn('[LernpfadeCockpit] Membership-Sync fehlgeschlagen:', syncErr);
+        toast.warning(
+          'Echtzeit-Sync der Aufgaben-Sperre verzögert. Status in der Bearbeitungsansicht könnte abweichen.'
+        );
       }
       setSaveState('saved');
       // Nach 1.5s zurück auf 'idle' – nur visuelles Feedback.
@@ -320,13 +326,14 @@ export default function LernpfadeCockpit({
       const res = await base44.functions.invoke('setLernpfadStatus', {
         einheitId: einheit.id,
         lerntyp: activeLernTyp,
-        newStatus: 'locked_for_export',
+        newStatus: PFAD_STATUS.LOCKED,
       });
       if (res?.data?.ok) {
         const label = LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label || activeLernTyp;
         toast.success(`Lernpfad „${label}" erfolgreich freigegeben und gesperrt.`);
         queryClient.invalidateQueries({ queryKey: ['lernpfadStatus', einheit.id, activeLernTyp] });
-        queryClient.invalidateQueries({ queryKey: ['aufgabeLock'] });
+        // exact: false → trifft alle Aufgaben-Lock-Queries (auch in anderen Tabs/Editoren).
+        queryClient.invalidateQueries({ queryKey: ['aufgabeLock'], exact: false });
       } else {
         toast.error(res?.data?.error || 'Freigabe fehlgeschlagen.');
       }
@@ -361,12 +368,13 @@ export default function LernpfadeCockpit({
       const res = await base44.functions.invoke('setLernpfadStatus', {
         einheitId: einheit.id,
         lerntyp: activeLernTyp,
-        newStatus: 'draft',
+        newStatus: PFAD_STATUS.DRAFT,
       });
       if (res?.data?.ok) {
         toast.success(`Lernpfad „${label}" entsperrt.`);
         queryClient.invalidateQueries({ queryKey: ['lernpfadStatus', einheit.id, activeLernTyp] });
-        queryClient.invalidateQueries({ queryKey: ['aufgabeLock'] });
+        // exact: false → trifft alle Aufgaben-Lock-Queries (auch in anderen Tabs/Editoren).
+        queryClient.invalidateQueries({ queryKey: ['aufgabeLock'], exact: false });
       } else {
         toast.error(res?.data?.error || 'Entsperren fehlgeschlagen.');
       }
@@ -400,7 +408,7 @@ export default function LernpfadeCockpit({
           if (!list || list.length === 0) {
             return { status: PFAD_STATUS.EMPTY, count: 0 };
           }
-          const hasLocked = list.some((m) => m.pfad_status === 'locked_for_export');
+          const hasLocked = list.some((m) => m.pfad_status === PFAD_STATUS.LOCKED);
           return {
             status: hasLocked ? PFAD_STATUS.LOCKED : PFAD_STATUS.DRAFT,
             count: list.length,

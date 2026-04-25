@@ -14,8 +14,9 @@
  */
 
 import { base44 } from '@/api/base44Client';
+import { PFAD_STATUS } from '@/lib/pfadStatus';
 
-const LOCK_STATUS = 'locked_for_export';
+const LOCK_STATUS = PFAD_STATUS.LOCKED;
 
 /**
  * Lock-Status für eine einzelne Aufgabe.

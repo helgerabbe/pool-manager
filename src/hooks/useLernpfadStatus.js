@@ -2,25 +2,27 @@
  * useLernpfadStatus.js
  *
  * Liefert für eine (einheitId, lerntyp)-Kombination den aktuellen Pfad-Status:
- *   - 'locked_for_export'  → freigegeben/gesperrt
- *   - 'draft'              → editierbar
- *   - 'empty'              → noch keine Memberships vorhanden (z.B. leerer Pfad)
+ *   - PFAD_STATUS.LOCKED  → freigegeben/gesperrt
+ *   - PFAD_STATUS.DRAFT   → editierbar
+ *   - PFAD_STATUS.EMPTY   → noch keine Memberships vorhanden (z.B. leerer Pfad)
  *
  * Implementierung: Liest die LernpfadAufgabeMembership-Einträge dieser
  * Kombination und reduziert sie auf einen einzelnen Status.
- * Regel: sobald MIND. EIN Membership 'locked_for_export' ist, gilt der
- * gesamte Pfad als gesperrt. Das deckt sowohl den normalen Fall (alle gleich)
- * als auch potentielle Inkonsistenzen sicher ab.
+ * Regel: sobald MIND. EIN Membership LOCKED ist, gilt der gesamte Pfad als
+ * gesperrt. Das deckt sowohl den normalen Fall (alle gleich) als auch
+ * potentielle Inkonsistenzen sicher ab.
+ *
+ * Status-Werte: siehe lib/pfadStatus.js (Single Source of Truth).
  */
 
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { PFAD_STATUS } from '@/lib/pfadStatus';
 
-export const PFAD_STATUS = Object.freeze({
-  LOCKED: 'locked_for_export',
-  DRAFT: 'draft',
-  EMPTY: 'empty',
-});
+// Re-Export für Backwards-Compat: Bestehende Imports `import { PFAD_STATUS }
+// from '@/hooks/useLernpfadStatus'` funktionieren weiter, neue Aufrufer
+// sollten direkt aus '@/lib/pfadStatus' importieren.
+export { PFAD_STATUS };
 
 export function useLernpfadStatus(einheitId, lerntyp) {
   return useQuery({
@@ -34,7 +36,7 @@ export function useLernpfadStatus(einheitId, lerntyp) {
       if (!list || list.length === 0) {
         return { status: PFAD_STATUS.EMPTY, count: 0 };
       }
-      const hasLocked = list.some((m) => m.pfad_status === 'locked_for_export');
+      const hasLocked = list.some((m) => m.pfad_status === PFAD_STATUS.LOCKED);
       return {
         status: hasLocked ? PFAD_STATUS.LOCKED : PFAD_STATUS.DRAFT,
         count: list.length,

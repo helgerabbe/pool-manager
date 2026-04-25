@@ -17,7 +17,11 @@ export function useAufgabeLock(aufgabeId) {
     queryKey: ['aufgabeLock', aufgabeId],
     queryFn: () => isAufgabeLocked(aufgabeId),
     enabled: !!aufgabeId,
-    // Kurze Cache-Zeit, damit das Schließen/Öffnen des Editors einen frischen Stand zeigt.
-    staleTime: 10_000,
+    // staleTime: 0 + refetchOnWindowFocus: garantiert, dass nach einer
+    // Pfad-Freigabe in Tab 7 (Cockpit) der Editor in Tab 5 beim nächsten
+    // Fokus-Wechsel den frischen Lock-Status zieht. Andernfalls könnte ein
+    // bereits offener Editor stale „nicht gelockt" anzeigen.
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 }

@@ -51,8 +51,11 @@ async function logAuditEvent(base44, event) {
   }
 }
 
+// Synchron halten mit src/lib/pfadStatus.js (NO LOCAL IMPORTS in Backend-Functions).
 const VALID_LERNTYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
-const VALID_STATUS = ['locked_for_export', 'draft'];
+const PFAD_STATUS_LOCKED = 'locked_for_export';
+const PFAD_STATUS_DRAFT = 'draft';
+const VALID_STATUS = [PFAD_STATUS_LOCKED, PFAD_STATUS_DRAFT];
 
 // In Deno gibt es kein Path-Alias '@/...'. Wir duplizieren die wenigen
 // RBAC-Konstanten lokal, damit die Function ohne lokale Imports auskommt
@@ -122,7 +125,7 @@ Deno.serve(async (req) => {
     const fachschaft = isFachschaftFuerFach(profil, fach);
     let allowed = admin || fachschaft;
 
-    if (!allowed && newStatus === 'locked_for_export') {
+    if (!allowed && newStatus === PFAD_STATUS_LOCKED) {
       // LEITUNG darf zusätzlich nur LOCK ausführen, nicht UNLOCK.
       allowed = await isUnitLeitung(base44, einheitId, user.email);
     }
@@ -156,7 +159,7 @@ Deno.serve(async (req) => {
       resource: 'LernpfadAufgabeMembership',
       resourceId: `${einheitId}:${lerntyp}`,
       changes: {
-        event: newStatus === 'locked_for_export' ? 'pfad_locked' : 'pfad_unlocked',
+        event: newStatus === PFAD_STATUS_LOCKED ? 'pfad_locked' : 'pfad_unlocked',
         lerntyp,
         einheit_id: einheitId,
         fach,
