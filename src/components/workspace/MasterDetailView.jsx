@@ -26,6 +26,7 @@ import TestModal from '@/components/workspace/TestModal';
 import MultipleChoiceModalDetail from '@/components/workspace/MultipleChoiceModalDetail';
 import KITutorModalDetail from '@/components/workspace/KITutorModalDetail';
 import ImageLabelingModalDetail from '@/components/workspace/ImageLabelingModalDetail';
+import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import { toast } from 'sonner';
 
@@ -227,6 +228,14 @@ function MasterContentReadOnly({ master, catalogName }) {
         )}
       </div>
     );
+  }
+
+  // Bildbeschriftung
+  if (isImageLabeling(catalogName)) {
+    const hasContent = fv.backgroundImage || fv.aufgabenstellung || (fv.dropZones?.length > 0);
+    return hasContent
+      ? <ImageLabelingEditor initialData={fv} readOnly onSave={() => {}} onCancel={() => {}} />
+      : <p className="text-sm text-muted-foreground italic">Noch kein Inhalt vorhanden.</p>;
   }
 
   // KI-Tutor
