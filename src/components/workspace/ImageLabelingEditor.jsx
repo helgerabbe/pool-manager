@@ -397,9 +397,6 @@ export default function ImageLabelingEditor({
                   placeholder="z.B. Mitochondrium"
                   className="text-xs flex-1"
                 />
-                <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                  {zone.x_percent.toFixed(1)}% / {zone.y_percent.toFixed(1)}%
-                </span>
                 <button
                   onClick={() => removeDropZone(idx)}
                   className="p-1 text-muted-foreground hover:text-destructive"
