@@ -14,6 +14,7 @@ import React from 'react';
 import { Sparkles, Layers, Trophy, Star, Plus, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import LernpfadeSektor from '@/components/lernpfade/LernpfadeSektor';
+import PfadKopierenMenu from '@/components/lernpfade/PfadKopierenMenu';
 
 export const LERN_TYPEN = [
   {
@@ -104,6 +105,9 @@ export default function LernpfadeArchitekt({
   onRemoveSektor,
   onRemoveAufgabeFromPath,
   onQuickAddOpen,
+  onSelectAufgabe,
+  selectedAufgabeId,
+  onCopyFromLernTyp,
 }) {
   const sektoren = konfiguration?.[activeLernTyp] || [];
   const aktivLabel = LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label;
@@ -124,7 +128,13 @@ export default function LernpfadeArchitekt({
           ))}
         </div>
         {!readOnly && (
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <PfadKopierenMenu
+              lernTypen={LERN_TYPEN}
+              activeLernTyp={activeLernTyp}
+              konfiguration={konfiguration}
+              onCopyFrom={onCopyFromLernTyp}
+            />
             <Button
               type="button"
               size="sm"
@@ -166,6 +176,8 @@ export default function LernpfadeArchitekt({
                 onPatch={onPatchSektor}
                 onRemove={onRemoveSektor}
                 onRemoveAufgabe={(aufgabeId) => onRemoveAufgabeFromPath?.(aufgabeId)}
+                onSelectAufgabe={onSelectAufgabe}
+                selectedAufgabeId={selectedAufgabeId}
               />
             ))}
             {!readOnly && (

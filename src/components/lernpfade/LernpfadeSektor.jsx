@@ -46,7 +46,7 @@ function ModusToggle({ modus, onChange, disabled }) {
   );
 }
 
-function AufgabePill({ aufgabe, aufgabeId, index, onRemove, disabled }) {
+function AufgabePill({ aufgabe, aufgabeId, index, onRemove, onSelect, isSelected, disabled }) {
   // Fallback, falls die Aufgabe (noch) nicht im Cache ist.
   const titel = aufgabe?.titel || 'Aufgabe';
   const typMeta = getAufgabenTyp(aufgabe?.aufgaben_typ);
@@ -59,9 +59,12 @@ function AufgabePill({ aufgabe, aufgabeId, index, onRemove, disabled }) {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={`flex items-center gap-2 rounded-md border bg-card px-2 py-1.5 text-xs ${
-            snapshot.isDragging ? 'shadow-lg ring-2 ring-primary/40' : 'border-border'
-          }`}
+          onClick={() => onSelect?.(aufgabeId)}
+          className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs cursor-pointer transition-colors ${
+            isSelected
+              ? `${typMeta.color.border} ${typMeta.color.bg} shadow-sm`
+              : 'border-border bg-card hover:border-primary/30'
+          } ${snapshot.isDragging ? 'shadow-lg ring-2 ring-primary/40' : ''}`}
         >
           <GripVertical className="w-3 h-3 text-muted-foreground/60 shrink-0" />
           <div className={`w-5 h-5 rounded ${typMeta.color.iconBg} flex items-center justify-center shrink-0`}>
@@ -73,7 +76,7 @@ function AufgabePill({ aufgabe, aufgabeId, index, onRemove, disabled }) {
           {!disabled && (
             <button
               type="button"
-              onClick={() => onRemove?.(aufgabeId)}
+              onClick={(e) => { e.stopPropagation(); onRemove?.(aufgabeId); }}
               title="Aus Pfad entfernen"
               className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"
             >
@@ -94,6 +97,8 @@ export default function LernpfadeSektor({
   onPatch,
   onRemove,
   onRemoveAufgabe,
+  onSelectAufgabe,
+  selectedAufgabeId,
 }) {
   const aufgabenIds = sektor.aufgaben_ids || [];
 
@@ -155,6 +160,8 @@ export default function LernpfadeSektor({
                 aufgabe={aufgabenById?.get(aId)}
                 index={idx}
                 onRemove={onRemoveAufgabe}
+                onSelect={onSelectAufgabe}
+                isSelected={selectedAufgabeId === aId}
                 disabled={readOnly}
               />
             ))}

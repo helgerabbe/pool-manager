@@ -127,6 +127,24 @@ export function removeAufgabeFromLernTyp(konfig, lernTyp, aufgabeId) {
 }
 
 /**
+ * Sektoren von einem Lerntyp in einen anderen kopieren (Deep Clone).
+ * - Generiert frische sektor_id pro Sektor (verhindert React-Key-Kollisionen).
+ * - Übernimmt nur titel, modus, aufgaben_ids (keine internen Flags).
+ * - Überschreibt die Sektor-Liste des Ziel-Lerntyps komplett.
+ */
+export function copySektorenBetweenLernTypen(konfig, fromLernTyp, toLernTyp) {
+  if (fromLernTyp === toLernTyp) return konfig;
+  const source = getSektoren(konfig, fromLernTyp);
+  const cloned = source.map((s) => ({
+    sektor_id: `sec_${uuid()}`,
+    titel: s.titel || 'Neuer Sektor',
+    modus: s.modus || 'sequenziell',
+    aufgaben_ids: [...(s.aufgaben_ids || [])],
+  }));
+  return setSektoren(konfig, toLernTyp, cloned);
+}
+
+/**
  * Aufgabe innerhalb eines Sektors umsortieren oder zwischen zwei Sektoren des
  * gleichen Lerntyps verschieben. Reine Reihenfolge-Operation – führt keine
  * Duplikat-Prüfung durch (es wird ja keine neue ID hinzugefügt).

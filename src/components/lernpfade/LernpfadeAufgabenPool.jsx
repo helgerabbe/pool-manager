@@ -12,61 +12,10 @@ import { useQuery } from '@tanstack/react-query';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { AUFGABEN_TYPEN, AUFGABEN_TYPEN_ORDER, getAufgabenTyp } from '@/lib/aufgabenTypen';
-import { Loader2, Inbox, Eye, MousePointerClick, CheckCircle2 } from 'lucide-react';
+import { Loader2, Inbox, Eye, CheckCircle2 } from 'lucide-react';
+import MonitorPanel from '@/components/lernpfade/MonitorPanel';
 
 // ── Helfer ──────────────────────────────────────────────────────────────
-function MonitorPanel({ aufgabe }) {
-  if (!aufgabe) {
-    return (
-      <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-center">
-        <MousePointerClick className="w-5 h-5 mx-auto text-muted-foreground/60 mb-1.5" />
-        <p className="text-xs text-muted-foreground">
-          Wähle eine Aufgabe aus der Liste, um Details zu sehen.
-        </p>
-      </div>
-    );
-  }
-  const typMeta = getAufgabenTyp(aufgabe.aufgaben_typ);
-  const Icon = typMeta.icon;
-  return (
-    <div className={`rounded-xl border-2 ${typMeta.color.border}/30 ${typMeta.color.bg}/40 p-3 space-y-2`}>
-      <div className="flex items-center gap-2">
-        <div className={`w-7 h-7 rounded-lg ${typMeta.color.iconBg} flex items-center justify-center shrink-0`}>
-          <Icon className={`w-3.5 h-3.5 ${typMeta.color.iconText}`} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className={`text-[10px] font-semibold uppercase ${typMeta.color.text} tracking-wide`}>{typMeta.label}</p>
-          <p className="text-xs font-semibold text-foreground truncate">
-            {aufgabe.titel || 'Ohne Titel'}
-          </p>
-        </div>
-      </div>
-      {aufgabe.aufgabenstellung && (
-        <p className="text-[11px] text-foreground/70 leading-relaxed line-clamp-3">
-          {aufgabe.aufgabenstellung}
-        </p>
-      )}
-      <div className="flex items-center gap-1.5 flex-wrap pt-1">
-        {aufgabe.anforderungsebene && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/60 border border-border/40 text-foreground/70">
-            {aufgabe.anforderungsebene}
-          </span>
-        )}
-        {aufgabe.aufgaben_typ === 'buendel' && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/60 border border-border/40 text-foreground/70">
-            {(aufgabe.verlinkte_lernpaket_ids || []).length} Pakete
-          </span>
-        )}
-        {aufgabe.aufgaben_typ === 'projekt_anker' && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/60 border border-border/40 text-foreground/70">
-            {(aufgabe.verlinkte_projekt_ids || []).length} Projekte
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function FilterChip({ typKey, active, count, onClick }) {
   const meta = AUFGABEN_TYPEN[typKey];
   const Icon = meta.icon;
@@ -152,9 +101,14 @@ function AufgabeListItem({ aufgabe, index, isSelected, isUsed, onClick }) {
 }
 
 // ── Hauptkomponente ──────────────────────────────────────────────────────
-export default function LernpfadeAufgabenPool({ einheitId, usedAufgabenIds = new Set() }) {
+export default function LernpfadeAufgabenPool({
+  einheitId,
+  usedAufgabenIds = new Set(),
+  selectedAufgabe = null,
+  onSelectAufgabe,
+  onPreviewAufgabe,
+}) {
   const [activeFilters, setActiveFilters] = useState(new Set(AUFGABEN_TYPEN_ORDER));
-  const [selectedAufgabeId, setSelectedAufgabeId] = useState(null);
 
   const { data: alleAufgaben = [], isLoading } = useQuery({
     queryKey: ['allgemeineAufgaben', einheitId],
@@ -184,10 +138,7 @@ export default function LernpfadeAufgabenPool({ einheitId, usedAufgabenIds = new
     return poolAufgaben.filter((a) => activeFilters.has(a.aufgaben_typ || 'inhalt'));
   }, [poolAufgaben, activeFilters]);
 
-  const selectedAufgabe = useMemo(
-    () => poolAufgaben.find((a) => a.id === selectedAufgabeId) || null,
-    [poolAufgaben, selectedAufgabeId]
-  );
+  const selectedAufgabeId = selectedAufgabe?.id || null;
 
   const toggleFilter = (typKey) => {
     setActiveFilters((prev) => {
@@ -206,7 +157,7 @@ export default function LernpfadeAufgabenPool({ einheitId, usedAufgabenIds = new
           <Eye className="w-3.5 h-3.5 text-muted-foreground" />
           <h3 className="text-xs font-semibold text-foreground uppercase tracking-wide">Monitor</h3>
         </div>
-        <MonitorPanel aufgabe={selectedAufgabe} />
+        <MonitorPanel aufgabe={selectedAufgabe} onPreviewClick={onPreviewAufgabe} />
       </div>
 
       {/* Filter-Chips */}
@@ -257,7 +208,7 @@ export default function LernpfadeAufgabenPool({ einheitId, usedAufgabenIds = new
                   index={idx}
                   isSelected={selectedAufgabeId === a.id}
                   isUsed={usedAufgabenIds.has(a.id)}
-                  onClick={() => setSelectedAufgabeId(a.id)}
+                  onClick={() => onSelectAufgabe?.(a.id)}
                 />
               ))
             )}

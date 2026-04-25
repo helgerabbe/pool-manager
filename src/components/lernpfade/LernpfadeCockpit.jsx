@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import LernpfadeAufgabenPool from '@/components/lernpfade/LernpfadeAufgabenPool';
 import LernpfadeArchitekt from '@/components/lernpfade/LernpfadeArchitekt';
 import LernpfadeQuickAddModal from '@/components/lernpfade/LernpfadeQuickAddModal';
+import AufgabePreviewDialog from '@/components/lernpfade/AufgabePreviewDialog';
 import {
   getUsedAufgabenIds,
   createNewSektor,
@@ -32,6 +33,7 @@ import {
   insertAufgabeInSektor,
   removeAufgabeFromLernTyp,
   moveAufgabe,
+  copySektorenBetweenLernTypen,
 } from '@/lib/lernpfadeUtils';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 
@@ -55,6 +57,16 @@ export default function LernpfadeCockpit({
   const [activeLernTyp, setActiveLernTyp] = useState('pragmatiker');
   const [saveState, setSaveState] = useState('idle'); // 'idle' | 'pending' | 'saving' | 'saved' | 'error'
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+
+  // Monitor-Selection: zentral – wird sowohl vom Pool (links) als auch vom Architekt (rechts) gesetzt.
+  const [selectedAufgabeId, setSelectedAufgabeId] = useState(null);
+  const [previewAufgabe, setPreviewAufgabe] = useState(null);
+
+  // Tab-Wechsel: Monitor leeren (Aufgabe gehört evtl. nicht mehr zum sichtbaren Pfad).
+  const handleActiveLernTypChange = useCallback((typKey) => {
+    setActiveLernTyp(typKey);
+    setSelectedAufgabeId(null);
+  }, []);
 
   const queryClient = useQueryClient();
 
@@ -181,6 +193,31 @@ export default function LernpfadeCockpit({
     [readOnly, activeLernTyp, updateKonfiguration]
   );
 
+  // ── Pfad kopieren ──────────────────────────────────────────────────
+  // Tiefe Kopie von Quell-Lerntyp → aktuellem Lerntyp; jeder Sektor erhält neue UUID.
+  // Geht ganz normal durch updateKonfiguration → Debounce-Save triggert automatisch.
+  const handleCopyFromLernTyp = useCallback(
+    (sourceLernTyp) => {
+      if (readOnly || !sourceLernTyp || sourceLernTyp === activeLernTyp) return;
+      const sourceCount = (konfiguration?.[sourceLernTyp] || []).length;
+      if (sourceCount === 0) {
+        toast.info('Der gewählte Lerntyp enthält keine Sektoren.');
+        return;
+      }
+      const targetCount = (konfiguration?.[activeLernTyp] || []).length;
+      if (targetCount > 0) {
+        const ok = window.confirm(
+          `Aktuelle Struktur (${targetCount} Sektor${targetCount === 1 ? '' : 'en'}) wird durch ${sourceCount} Sektor${sourceCount === 1 ? '' : 'en'} ersetzt. Fortfahren?`
+        );
+        if (!ok) return;
+      }
+      updateKonfiguration((prev) => copySektorenBetweenLernTypen(prev, sourceLernTyp, activeLernTyp));
+      setSelectedAufgabeId(null);
+      toast.success('Pfad kopiert.');
+    },
+    [readOnly, activeLernTyp, konfiguration, updateKonfiguration]
+  );
+
   // ── Drag & Drop ────────────────────────────────────────────────────
   // Pool → Sektor (neu hinzufügen), Sektor → Sektor (verschieben), innerhalb eines Sektors (reorder).
   const handleDragEnd = useCallback(
@@ -225,6 +262,12 @@ export default function LernpfadeCockpit({
     [readOnly, activeLernTyp, usedAufgabenIds, updateKonfiguration]
   );
 
+  // ── Monitor-Selection ──────────────────────────────────────────────
+  const selectedAufgabe = useMemo(
+    () => (selectedAufgabeId ? aufgabenById.get(selectedAufgabeId) || null : null),
+    [aufgabenById, selectedAufgabeId]
+  );
+
   // ── Quick-Add ──────────────────────────────────────────────────────
   // Nach erfolgreicher Erstellung: ID in den letzten Sektor einfügen
   // (oder einen neuen Sektor anlegen, falls noch keiner existiert) und Pool-Cache invalidieren.
@@ -252,7 +295,7 @@ export default function LernpfadeCockpit({
       <div className="shrink-0 px-4 py-2 border-b border-border bg-muted/40 flex items-center gap-3 flex-wrap">
         <h2 className="text-sm font-semibold text-foreground">Lernpfad-Architekt</h2>
         <span className="text-[10px] text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
-          Phase 3 – Sektoren &amp; D&amp;D
+          Phase 4 – Vorschau &amp; Kopie
         </span>
 
         {/* Save-Indicator */}
@@ -321,6 +364,9 @@ export default function LernpfadeCockpit({
             <LernpfadeAufgabenPool
               einheitId={einheit?.id}
               usedAufgabenIds={usedAufgabenIds}
+              selectedAufgabe={selectedAufgabe}
+              onSelectAufgabe={setSelectedAufgabeId}
+              onPreviewAufgabe={setPreviewAufgabe}
             />
           </aside>
 
@@ -329,7 +375,7 @@ export default function LernpfadeCockpit({
             <LernpfadeArchitekt
               konfiguration={konfiguration}
               activeLernTyp={activeLernTyp}
-              onActiveLernTypChange={setActiveLernTyp}
+              onActiveLernTypChange={handleActiveLernTypChange}
               readOnly={readOnly}
               aufgabenById={aufgabenById}
               onAddSektor={handleAddSektor}
@@ -337,6 +383,9 @@ export default function LernpfadeCockpit({
               onRemoveSektor={handleRemoveSektor}
               onRemoveAufgabeFromPath={handleRemoveAufgabeFromPath}
               onQuickAddOpen={() => setQuickAddOpen(true)}
+              onSelectAufgabe={setSelectedAufgabeId}
+              selectedAufgabeId={selectedAufgabeId}
+              onCopyFromLernTyp={handleCopyFromLernTyp}
             />
           </main>
         </div>
@@ -347,6 +396,12 @@ export default function LernpfadeCockpit({
         onOpenChange={setQuickAddOpen}
         einheitId={einheit?.id}
         onCreated={handleQuickAddCreated}
+      />
+
+      <AufgabePreviewDialog
+        open={!!previewAufgabe}
+        onOpenChange={(v) => !v && setPreviewAufgabe(null)}
+        aufgabe={previewAufgabe}
       />
     </div>
   );
