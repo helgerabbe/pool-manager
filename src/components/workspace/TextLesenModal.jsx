@@ -106,20 +106,9 @@ export default function TextLesenModal({
            {catalogEntry?.name?.toLowerCase().includes('bildbeschriftung') && (
              <ImageLabelingEditor
                initialData={fieldValues}
-               onSave={(data) => {
-                 const payload = {
-                   ...data,
-                   content_status: isReleased ? 'approved' : 'draft',
-                 };
-                 if (initialFieldValues.moodle_sync_status === 'synced') {
-                   payload.moodle_sync_status = 'modified';
-                   payload.is_dirty_since_export = true;
-                 }
-                 onSave?.(payload);
-               }}
-               onCancel={() => { /* do nothing, close button handles it */ }}
-               onChange={() => {}}
+               onChange={(newData) => setFieldValues(prev => ({ ...prev, ...newData }))}
                readOnly={false}
+               hideInternalFooter
              />
            )}
 
