@@ -60,6 +60,54 @@ const PFLICHT_BAUSTEINE = [
     ist_aktiv: true,
     reihenfolge: 40,
   },
+  // ── Magic-Raster Platzhalter (Phase 1) ───────────────────────────────
+  // Diese vier Bausteine fungieren als Drop-Zonen-Erinnerungen in
+  // Standard-Vorlagen. Sie werden vor dem Export entfernt und tragen
+  // deshalb eine warnende export_instruktion.
+  {
+    baustein_id: 'sys_platzhalter_handlung',
+    titel: 'Platzhalter: Handlungsorientierte Aufgabe',
+    icon: 'hand',
+    admin_beschreibung:
+      'Drop-Zone-Erinnerung: Hier soll später eine handlungsorientierte Aufgabe (z. B. Prozess-Aufgabe) eingefügt werden.',
+    export_instruktion:
+      'PLATZHALTER – muss durch eine echte handlungsorientierte Aufgabe ersetzt werden, bevor der Pfad freigegeben wird.',
+    ist_aktiv: true,
+    reihenfolge: 100,
+  },
+  {
+    baustein_id: 'sys_platzhalter_basispaket',
+    titel: 'Platzhalter: Basispaket / Bündel',
+    icon: 'layers',
+    admin_beschreibung:
+      'Drop-Zone-Erinnerung: Hier soll später ein Bündel (mehrere Lernpakete der Ebene 1) eingefügt werden.',
+    export_instruktion:
+      'PLATZHALTER – muss durch eine echte Bündel-Aufgabe ersetzt werden, bevor der Pfad freigegeben wird.',
+    ist_aktiv: true,
+    reihenfolge: 110,
+  },
+  {
+    baustein_id: 'sys_platzhalter_ebene2',
+    titel: 'Platzhalter: Inhaltliche Aufgabe (Ebene 2)',
+    icon: 'file-text',
+    admin_beschreibung:
+      'Drop-Zone-Erinnerung: Hier soll später eine inhaltliche Transfer-Aufgabe (Ebene 2) eingefügt werden.',
+    export_instruktion:
+      'PLATZHALTER – muss durch eine echte Ebene-2-Aufgabe ersetzt werden, bevor der Pfad freigegeben wird.',
+    ist_aktiv: true,
+    reihenfolge: 120,
+  },
+  {
+    baustein_id: 'sys_platzhalter_projekt',
+    titel: 'Platzhalter: Projekt-Aufgabe (Ebene 3)',
+    icon: 'star',
+    admin_beschreibung:
+      'Drop-Zone-Erinnerung: Hier soll später ein Projekt-Anker auf eine Ebene-3-Projektaufgabe eingefügt werden.',
+    export_instruktion:
+      'PLATZHALTER – muss durch eine echte Projekt-Aufgabe ersetzt werden, bevor der Pfad freigegeben wird.',
+    ist_aktiv: true,
+    reihenfolge: 130,
+  },
 ];
 
 Deno.serve(async (req) => {

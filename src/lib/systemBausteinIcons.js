@@ -18,6 +18,10 @@ import {
   Flag,
   HelpCircle,
   Compass,
+  Hand,
+  Layers,
+  FileText,
+  Star,
 } from 'lucide-react';
 
 const ICONS = {
@@ -29,6 +33,11 @@ const ICONS = {
   flag: Flag,
   'help-circle': HelpCircle,
   compass: Compass,
+  // Magic-Raster Platzhalter-Icons
+  hand: Hand,
+  layers: Layers,
+  'file-text': FileText,
+  star: Star,
 };
 
 export function getSystemBausteinIcon(iconKey) {

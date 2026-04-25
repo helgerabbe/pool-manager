@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/tooltip';
 import { GripVertical, X } from 'lucide-react';
 import { getSystemBausteinIcon } from '@/lib/systemBausteinIcons';
+import { isPlatzhalterBaustein, PLATZHALTER_CLASSES } from '@/lib/platzhalterUtils';
 
 export default function SystemBausteinPill({
   baustein,
@@ -38,6 +39,21 @@ export default function SystemBausteinPill({
   const titel = baustein?.titel || refId;
   const draggableId = `pfaditem-system-${sektorId}-${index}-${refId}`;
 
+  // Magic-Raster (Phase 1): Wenn der Baustein-Datensatz fehlt (z.B. weil er
+  // erst geseedet werden muss), prüfen wir defensiv die ref_id selbst.
+  const isPlatzhalter = isPlatzhalterBaustein(baustein) || isPlatzhalterBaustein(refId);
+
+  let containerClasses;
+  if (isPlatzhalter) {
+    containerClasses = isSelected
+      ? PLATZHALTER_CLASSES.containerSelected
+      : PLATZHALTER_CLASSES.container;
+  } else {
+    containerClasses = isSelected
+      ? 'border-slate-400 bg-slate-100 shadow-sm'
+      : 'border-slate-200 bg-slate-50 hover:border-slate-300';
+  }
+
   return (
     <Draggable draggableId={draggableId} index={index} isDragDisabled={disabled}>
       {(provided, snapshot) => (
@@ -49,17 +65,29 @@ export default function SystemBausteinPill({
                 {...provided.draggableProps}
                 {...provided.dragHandleProps}
                 onClick={() => onSelect?.(refId)}
-                className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs cursor-pointer transition-colors ${
-                  isSelected
-                    ? 'border-slate-400 bg-slate-100 shadow-sm'
-                    : 'border-slate-200 bg-slate-50 hover:border-slate-300'
-                } ${snapshot.isDragging ? 'shadow-lg ring-2 ring-slate-400 bg-white' : ''}`}
+                data-platzhalter={isPlatzhalter ? 'true' : 'false'}
+                className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs cursor-pointer transition-colors ${containerClasses} ${
+                  snapshot.isDragging ? 'shadow-lg ring-2 ring-slate-400 bg-white' : ''
+                }`}
               >
                 <GripVertical className="w-3 h-3 text-muted-foreground/60 shrink-0" />
-                <div className="w-5 h-5 rounded bg-slate-200 flex items-center justify-center shrink-0">
-                  <Icon strokeWidth={2.5} className="w-3 h-3 text-slate-700" />
+                <div
+                  className={`w-5 h-5 rounded flex items-center justify-center shrink-0 ${
+                    isPlatzhalter ? PLATZHALTER_CLASSES.iconBox : 'bg-slate-200'
+                  }`}
+                >
+                  <Icon
+                    strokeWidth={2.5}
+                    className={`w-3 h-3 ${
+                      isPlatzhalter ? PLATZHALTER_CLASSES.icon : 'text-slate-700'
+                    }`}
+                  />
                 </div>
-                <span className="flex-1 min-w-0 truncate font-medium text-slate-800">
+                <span
+                  className={`flex-1 min-w-0 truncate font-medium ${
+                    isPlatzhalter ? PLATZHALTER_CLASSES.title : 'text-slate-800'
+                  }`}
+                >
                   {titel}
                   {!baustein && (
                     <span className="ml-1 italic text-muted-foreground">(unbekannt)</span>
