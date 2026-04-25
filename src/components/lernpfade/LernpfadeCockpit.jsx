@@ -17,7 +17,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { DragDropContext } from '@hello-pangea/dnd';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Loader2, Lock, PenLine, Unlock, Cloud, CloudOff, ShieldCheck, ShieldOff } from 'lucide-react';
+import { Loader2, Lock, PenLine, Unlock, Cloud, CloudOff, ShieldCheck, ShieldOff, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import LernpfadeAufgabenPool from '@/components/lernpfade/LernpfadeAufgabenPool';
@@ -25,6 +25,7 @@ import LernpfadeArchitekt from '@/components/lernpfade/LernpfadeArchitekt';
 import LernpfadeQuickAddModal from '@/components/lernpfade/LernpfadeQuickAddModal';
 import AufgabePreviewDialog from '@/components/lernpfade/AufgabePreviewDialog';
 import ReleaseBlockerModal from '@/components/lernpfade/ReleaseBlockerModal';
+import DidaktischerGuidePanel from '@/components/lernpfade/DidaktischerGuidePanel';
 import { LERN_TYPEN } from '@/components/lernpfade/LernpfadeArchitekt';
 import { useLernpfadStatus, PFAD_STATUS } from '@/hooks/useLernpfadStatus';
 import { useRBAC } from '@/hooks/useRBAC';
@@ -72,6 +73,8 @@ export default function LernpfadeCockpit({
   const [activeLernTyp, setActiveLernTyp] = useState('pragmatiker');
   const [saveState, setSaveState] = useState('idle'); // 'idle' | 'pending' | 'saving' | 'saved' | 'error'
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  // Magic-Raster Phase 3: Slide-Over für den Didaktischen Guide.
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   // Monitor-Selection: zentral – wird sowohl vom Pool (links) als auch vom Architekt (rechts) gesetzt.
   // Genau eins von beidem ist gesetzt; das jeweils andere wird beim Setzen geleert.
@@ -621,8 +624,21 @@ export default function LernpfadeCockpit({
         </div>
       </div>
 
-      {/* Freigabe-Bar (Phase 4A): zeigt Status des aktiven Lerntyps + CTA. */}
+      {/* Freigabe-Bar (Phase 4A): zeigt Status des aktiven Lerntyps + CTA.
+          Magic-Raster Phase 3: Trigger-Button für den Didaktischen Guide
+          links, damit er auch im Lese-Modus jederzeit erreichbar ist. */}
       <div className="shrink-0 px-4 py-2 border-b border-border bg-card flex items-center gap-3 flex-wrap">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setIsGuideOpen(true)}
+          className="gap-1.5 h-7 text-xs"
+          title="Didaktische Erklärung & Standard-Raster für diesen Lerntyp"
+        >
+          <BookOpen className="w-3 h-3" />
+          Didaktischer Guide
+        </Button>
+
         {istPfadGesperrt ? (
           <>
             <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
@@ -736,6 +752,20 @@ export default function LernpfadeCockpit({
         onOpenEditor={(aufgabe) => {
           setBlockerOpen(false);
           handleOpenAufgabeEditor(aufgabe);
+        }}
+      />
+
+      {/* Magic-Raster Phase 3: Didaktischer Guide. Apply-Click ist hier
+          bewusst eine Dummy-Funktion — die echte Template-Apply-Logik
+          folgt in Phase 4 und wird dann unter onApplyClick verkabelt. */}
+      <DidaktischerGuidePanel
+        isOpen={isGuideOpen}
+        onClose={() => setIsGuideOpen(false)}
+        lerntyp={activeLernTyp}
+        isLocked={istPfadGesperrt}
+        onApplyClick={() => {
+          // eslint-disable-next-line no-console
+          console.log('Apply Template geklickt', { lerntyp: activeLernTyp });
         }}
       />
 
