@@ -38,24 +38,46 @@ export function useRealtimeUpdates(onUpdate) {
           signal: abortController.signal,
           openWhenHidden: true,
 
-          // Frischer Token bei JEDEM (Re-)Connect – kein Closure-Caching
+          // Frischer Token bei JEDEM (Re-)Connect – kein Closure-Caching.
+          // Wir kombinieren drei Auth-Pfade, weil die Base44-SDK je nach
+          // Version Token entweder in localStorage hält oder über Cookies
+          // arbeitet:
+          //   1. Token aus localStorage (Base44-Konvention),
+          //   2. SDK-Methoden falls vorhanden (getToken / me),
+          //   3. credentials:'include' für Cookie-basierte Sessions.
           fetch: async (url, init) => {
             let token = null;
+
+            // 1) localStorage: Suche nach base44-Token-Keys.
             try {
-              // Base44 SDK: Token aus aktueller Session ziehen
-              token = await base44.auth.getToken?.();
-              if (!token) {
-                // Fallback: Wenn kein getToken existiert, me() triggert Refresh
-                await base44.auth.me();
-                token = await base44.auth.getToken?.();
+              const keys = Object.keys(localStorage);
+              const tokenKey = keys.find(
+                (k) => k.startsWith('base44_') && k.endsWith('_token')
+              );
+              if (tokenKey) token = localStorage.getItem(tokenKey);
+            } catch { /* SSR / Storage gesperrt */ }
+
+            // 2) SDK-Fallback: getToken() ODER me() um Session aufzufrischen.
+            if (!token) {
+              try {
+                if (typeof base44.auth?.getToken === 'function') {
+                  token = await base44.auth.getToken();
+                }
+                if (!token && typeof base44.auth?.me === 'function') {
+                  await base44.auth.me();
+                  if (typeof base44.auth?.getToken === 'function') {
+                    token = await base44.auth.getToken();
+                  }
+                }
+              } catch (err) {
+                console.warn('[useRealtimeUpdates] SDK-Token-Abruf fehlgeschlagen:', err?.message);
               }
-            } catch (err) {
-              console.warn('[useRealtimeUpdates] Token-Abruf fehlgeschlagen:', err?.message);
             }
 
             const headers = new Headers(init?.headers || {});
             if (token) headers.set('Authorization', `Bearer ${token}`);
-            return fetch(url, { ...init, headers });
+            // 3) Cookies mitsenden (Cookie-basierte Sessions).
+            return fetch(url, { ...init, headers, credentials: 'include' });
           },
 
           onopen: async (response) => {
@@ -108,7 +130,11 @@ export function useRealtimeUpdates(onUpdate) {
         });
       } catch (err) {
         if (err instanceof FatalSSEError) {
-          console.error('[useRealtimeUpdates] Fatal, kein Reconnect:', err.message);
+          // 401/403: Session-Token wird im SSE-Stream nicht erkannt.
+          // Realtime-Updates fallen aus, die App funktioniert weiter über
+          // normale Polling-Queries. Bewusst nur Warn-Level, kein Error,
+          // damit die Konsole nicht zugespammt wird.
+          console.warn('[useRealtimeUpdates] Realtime deaktiviert –', err.message);
         } else if (!abortController.signal.aborted) {
           console.error('[useRealtimeUpdates] Unerwarteter Fehler:', err?.message);
         }
