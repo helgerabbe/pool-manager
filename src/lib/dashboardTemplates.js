@@ -82,32 +82,32 @@ const MINIMALIST = [
 ];
 
 // ── Template: Pragmatiker ───────────────────────────────────────────────
-// Fokus: Effizienz, Fast-Track. Klarer Zielpfad mit Diagnose,
-// Schnellüberblick, Übungs-Cluster und Zwischentest.
+// Fokus: Effizienz, Fast-Track. Vier Sektoren mit klarer Trennung
+// zwischen sequenzieller Grundlagen-Führung und freier Trainingsphase.
 const PRAGMATIKER = [
   {
     sektor_id: 'tpl_prag_sec1',
-    titel: 'Start: Diagnose & Lernlandkarte',
+    titel: '1. Start & Orientierung',
     modus: 'sequenziell',
-    items: [sys(B.diagnose), sys(B.landkarte)],
+    items: [sys(B.diagnose), sys(B.landkarte), sys(B.pInfo)],
   },
   {
     sektor_id: 'tpl_prag_sec2',
-    titel: 'Grundlagen: Fast-Track',
+    titel: '2. Grundlagen',
     modus: 'sequenziell',
     items: [sys(B.pBasispaket), sys(B.lehrerCheck)],
   },
   {
     sektor_id: 'tpl_prag_sec3',
-    titel: 'Training: 3 Inhaltsaufgaben (Ebene 2)',
+    titel: '3. Anwendung & Training',
     modus: 'frei',
     items: [sys(B.pEbene2), sys(B.pEbene2), sys(B.pEbene2)],
   },
   {
     sektor_id: 'tpl_prag_sec4',
-    titel: 'Abschluss: Zwischentest',
+    titel: '4. Checkpoint & Abschluss',
     modus: 'sequenziell',
-    items: [sys(B.zwischentest)],
+    items: [sys(B.zwischentest), sys(B.pInfo)],
   },
 ];
 
