@@ -112,6 +112,8 @@ export default function LernpfadeArchitekt({
   selectedAufgabeId,
   selectedSystemBausteinId,
   onCopyFromLernTyp,
+  getAmpelStatusForItem,
+  onOpenAufgabeEditor,
 }) {
   const sektoren = konfiguration?.[activeLernTyp] || [];
   const aktivLabel = LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label;
@@ -186,6 +188,8 @@ export default function LernpfadeArchitekt({
                 onSelectSystemBaustein={onSelectSystemBaustein}
                 selectedAufgabeId={selectedAufgabeId}
                 selectedSystemBausteinId={selectedSystemBausteinId}
+                getAmpelStatusForItem={getAmpelStatusForItem}
+                onOpenAufgabeEditor={onOpenAufgabeEditor}
               />
             ))}
             {!readOnly && (

@@ -12,6 +12,8 @@ import { toast } from 'sonner';
 import { AUFGABEN_TYPEN, getAufgabenTyp } from '@/lib/aufgabenTypen';
 import LernpaketMultiSelect from '@/components/allgemeineAufgaben/LernpaketMultiSelect';
 import ProjektAufgabenMultiSelect from '@/components/allgemeineAufgaben/ProjektAufgabenMultiSelect';
+import AufgabeLockBanner from '@/components/allgemeineAufgaben/AufgabeLockBanner';
+import { useAufgabeLock } from '@/hooks/useAufgabeLock';
 
 // ── Sterne-Rating ──────────────────────────────────────────────────────────────
 function SternRating({ value, onChange }) {
@@ -355,6 +357,10 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isReadOnly) {
+      toast.error('Diese Aufgabe ist gesperrt – bitte den Pfad zuerst entsperren.');
+      return;
+    }
     if (!isValid) {
       const msg = isBuendel
         ? 'Bitte mindestens ein Lernpaket auswählen.'
@@ -371,6 +377,14 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
   };
 
   const isSaving = createAufgabe.isPending || updateAufgabe.isPending;
+
+  // ── Lock-Check (Phase 4B) ─────────────────────────────────────────────
+  // Wenn die Aufgabe Teil eines „locked_for_export"-Pfads ist, wird der
+  // Editor read-only geschaltet und ein Banner angezeigt. Greift nur bei
+  // bestehenden Aufgaben (initialData?.id) – neue Aufgaben können nie gelockt sein.
+  const { data: lockInfo } = useAufgabeLock(initialData?.id);
+  const isLocked = !!lockInfo?.locked;
+  const isReadOnly = isLocked;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -392,6 +406,13 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-5">
+
+          {/* Lock-Banner (Phase 4B) – sichtbar, wenn Aufgabe in einem freigegebenen Pfad ist. */}
+          {isLocked && <AufgabeLockBanner byPfade={lockInfo.by_pfade} />}
+
+          {/* Alle Eingabefelder + Speichern-Button werden über fieldset[disabled] gesperrt,
+              wenn isReadOnly === true. So bleibt Abbrechen weiterhin nutzbar. */}
+          <fieldset disabled={isReadOnly} className="space-y-5 disabled:opacity-70">
 
           {/* Themenfeld */}
           {themenfelder.length > 0 && (
@@ -537,6 +558,8 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
             />
           )}
 
+          </fieldset>
+
           <DialogFooter>
             {isUploading && (
               <span className="text-xs text-muted-foreground flex items-center gap-1.5 mr-auto">
@@ -544,8 +567,10 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
                 Datei wird hochgeladen – bitte warten…
               </span>
             )}
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
-            <Button type="submit" disabled={isSaving || !isValid || isUploading} className="gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              {isReadOnly ? 'Schließen' : 'Abbrechen'}
+            </Button>
+            <Button type="submit" disabled={isSaving || !isValid || isUploading || isReadOnly} className="gap-2">
               {isSaving
                 ? <><Loader2 className="w-4 h-4 animate-spin" />Wird gespeichert…</>
                 : initialData

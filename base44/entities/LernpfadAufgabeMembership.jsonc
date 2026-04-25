@@ -1,0 +1,50 @@
+{
+  "name": "LernpfadAufgabeMembership",
+  "type": "object",
+  "description": "Junction-Table: ordnet Aufgaben einem Lernpfad-Sektor (innerhalb einer Einheit + Lerntyp) zu. Wird nach jedem Save in Tab 7 idempotent vom Cockpit synchronisiert. Tr\u00e4gt den pfad_status, der bestimmt, ob die Aufgabe in Tab 5 read-only sein soll. CASCADE DELETE-Verhalten ist applikationsseitig gesichert (siehe Cockpit-Sync + zuk\u00fcnftige Delete-Hooks).",
+  "properties": {
+    "einheit_id": {
+      "type": "string",
+      "description": "FK zur Einheit"
+    },
+    "lerntyp": {
+      "type": "string",
+      "enum": [
+        "minimalist",
+        "pragmatiker",
+        "ehrgeizig",
+        "passioniert"
+      ],
+      "description": "Welcher der vier Lernpfade die Aufgabe enth\u00e4lt"
+    },
+    "aufgabe_id": {
+      "type": "string",
+      "description": "FK zu AllgemeineAufgabe"
+    },
+    "sektor_id": {
+      "type": "string",
+      "description": "Sektor, in dem die Aufgabe gerade einsortiert ist (kann sich \u00e4ndern)"
+    },
+    "pfad_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "locked_for_export"
+      ],
+      "default": "draft",
+      "description": "draft: Pfad ist editierbar. locked_for_export: Pfad wurde freigegeben \u2192 Aufgabe ist in Tab 5 read-only."
+    }
+  },
+  "required": [
+    "einheit_id",
+    "lerntyp",
+    "aufgabe_id",
+    "sektor_id"
+  ],
+  "rls": {
+    "read": {},
+    "create": {},
+    "update": {},
+    "delete": {}
+  }
+}

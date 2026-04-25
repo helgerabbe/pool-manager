@@ -37,6 +37,8 @@ import {
   copySektorenBetweenLernTypen,
 } from '@/lib/lernpfadeUtils';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
+import { getAmpelStatus } from '@/lib/ampelLogic';
+import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 
 // Drag-IDs aus dem Pool:
 //   • Aufgabe-Pool   → draggableId = <aufgabe.id>            (UUID)
@@ -112,6 +114,39 @@ export default function LernpfadeCockpit({
     return map;
   }, [systemBausteine]);
 
+  // Lernpakete dieser Einheit – nur für die Ampel-Aggregation (Bündel-Rekursion).
+  // Wird einmalig geladen, vermeidet so N+1-Queries pro Sektor-Item.
+  const { data: lernpakete = [] } = useQuery({
+    queryKey: ['lernpakete-by-einheit', einheit?.id],
+    queryFn: () =>
+      einheit?.id
+        ? base44.entities.Lernpakete.filter({ einheit_id: einheit.id })
+        : Promise.resolve([]),
+    enabled: !!einheit?.id,
+  });
+  const lernpaketeById = useMemo(() => {
+    const map = new Map();
+    (lernpakete || []).forEach((p) => map.set(p.id, p));
+    return map;
+  }, [lernpakete]);
+
+  // Memoisierter Status-Resolver. Wird an LernpfadeArchitekt → LernpfadeSektor → AufgabePill
+  // weitergereicht und liefert pro Item synchron 'green' | 'yellow' | 'red'.
+  const ampelCtx = useMemo(
+    () => ({ aufgabenById, lernpaketeById }),
+    [aufgabenById, lernpaketeById]
+  );
+  const getAmpelStatusForItem = useCallback(
+    (item) => getAmpelStatus(item, ampelCtx),
+    [ampelCtx]
+  );
+
+  // Editor-Modal für „Klick auf rotes Badge → schnell ergänzen".
+  const [editorAufgabe, setEditorAufgabe] = useState(null);
+  const handleOpenAufgabeEditor = useCallback((aufgabe) => {
+    if (aufgabe) setEditorAufgabe(aufgabe);
+  }, []);
+
   // Re-Sync, wenn der Einheit-Snapshot sich ändert (z.B. nach Tab-Wechsel)
   // ABER NUR im Lesemodus – im Edit-Modus ist der lokale State führend.
   useEffect(() => {
@@ -131,6 +166,16 @@ export default function LernpfadeCockpit({
     setSaveState('saving');
     try {
       await base44.entities.Einheiten.update(einheit.id, { lernpfade_konfiguration: payload });
+      // Junction-Table synchron halten (idempotent, fire-and-forget Logging).
+      // Wenn der Sync fehlschlägt, ist das KEIN Save-Fehler – die Konfiguration
+      // selbst liegt schon korrekt in der DB. Wir loggen nur und cachen invalidieren.
+      try {
+        await base44.functions.invoke('syncLernpfadMembership', { einheitId: einheit.id });
+        // Ampel- und Lock-Daten könnten sich geändert haben.
+        queryClient.invalidateQueries({ queryKey: ['aufgabeLock'] });
+      } catch (syncErr) {
+        console.warn('[LernpfadeCockpit] Membership-Sync fehlgeschlagen:', syncErr);
+      }
       setSaveState('saved');
       // Nach 1.5s zurück auf 'idle' – nur visuelles Feedback.
       setTimeout(() => setSaveState((s) => (s === 'saved' ? 'idle' : s)), 1500);
@@ -139,7 +184,7 @@ export default function LernpfadeCockpit({
       toast.error('Lernpfad-Konfiguration konnte nicht gespeichert werden.');
       console.error('[LernpfadeCockpit] Save-Fehler:', err);
     }
-  }, [einheit?.id]);
+  }, [einheit?.id, queryClient]);
 
   const scheduleSave = useCallback(
     (next) => {
@@ -464,6 +509,8 @@ export default function LernpfadeCockpit({
               selectedAufgabeId={selectedAufgabeId}
               selectedSystemBausteinId={selectedSystemBausteinId}
               onCopyFromLernTyp={handleCopyFromLernTyp}
+              getAmpelStatusForItem={getAmpelStatusForItem}
+              onOpenAufgabeEditor={handleOpenAufgabeEditor}
             />
           </main>
         </div>
@@ -480,6 +527,19 @@ export default function LernpfadeCockpit({
         open={!!previewAufgabe}
         onOpenChange={(v) => !v && setPreviewAufgabe(null)}
         aufgabe={previewAufgabe}
+      />
+
+      {/* Inline-Editor: Klick auf rotes Ampel-Badge öffnet die Aufgabe direkt zur Korrektur.
+          Greift dieselbe Lock-Logik wie Tab 5. */}
+      <AufgabeCreateView
+        open={!!editorAufgabe}
+        onOpenChange={(v) => !v && setEditorAufgabe(null)}
+        einheitId={einheit?.id}
+        themenfelder={[]}
+        initialData={editorAufgabe}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheit?.id] });
+        }}
       />
     </div>
   );

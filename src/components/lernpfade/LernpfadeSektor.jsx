@@ -24,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { getAufgabenTyp, ITEM_TYPE } from '@/lib/aufgabenTypen';
 import SystemBausteinPill from '@/components/lernpfade/SystemBausteinPill';
+import AmpelBadge from '@/components/lernpfade/AmpelBadge';
 
 function ModusToggle({ modus, onChange, disabled }) {
   return (
@@ -56,7 +57,7 @@ function ModusToggle({ modus, onChange, disabled }) {
   );
 }
 
-function AufgabePill({ aufgabe, refId, sektorId, index, onRemove, onSelect, isSelected, disabled }) {
+function AufgabePill({ aufgabe, refId, sektorId, index, onRemove, onSelect, isSelected, disabled, ampelStatus, onOpenEditor }) {
   // Fallback, falls die Aufgabe (noch) nicht im Cache ist.
   const titel = aufgabe?.titel || 'Aufgabe';
   const typMeta = getAufgabenTyp(aufgabe?.aufgaben_typ);
@@ -84,6 +85,12 @@ function AufgabePill({ aufgabe, refId, sektorId, index, onRemove, onSelect, isSe
           <span className="flex-1 min-w-0 truncate">
             {aufgabe ? titel : <span className="italic text-muted-foreground">Unbekannte Aufgabe</span>}
           </span>
+          {ampelStatus && (
+            <AmpelBadge
+              status={ampelStatus}
+              onFix={onOpenEditor && aufgabe ? () => onOpenEditor(aufgabe) : undefined}
+            />
+          )}
           {!disabled && (
             <button
               type="button"
@@ -114,6 +121,8 @@ export default function LernpfadeSektor({
   onSelectSystemBaustein,
   selectedAufgabeId,
   selectedSystemBausteinId,
+  getAmpelStatusForItem,
+  onOpenAufgabeEditor,
 }) {
   const items = Array.isArray(sektor.items) ? sektor.items : [];
 
@@ -195,6 +204,8 @@ export default function LernpfadeSektor({
                   onSelect={onSelectAufgabe}
                   isSelected={selectedAufgabeId === item.ref_id}
                   disabled={readOnly}
+                  ampelStatus={getAmpelStatusForItem ? getAmpelStatusForItem(item) : undefined}
+                  onOpenEditor={onOpenAufgabeEditor}
                 />
               );
             })}
