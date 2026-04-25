@@ -68,12 +68,7 @@ export default function ImageLabelingEditor({
         throw new Error('Upload lieferte keine gültige URL zurück.');
       }
 
-      setData(d => {
-        const next = { ...d, backgroundImage: fileUrl };
-        // Änderung nach oben melden, damit Modal-State synchron bleibt.
-        onChange?.(next);
-        return next;
-      });
+      setData(d => ({ ...d, backgroundImage: fileUrl }));
       toast.success('Bild hochgeladen.');
     } catch (err) {
       toast.error('Fehler beim Bild-Upload: ' + (err?.message || 'Unbekannt'));
@@ -82,14 +77,21 @@ export default function ImageLabelingEditor({
     }
   };
 
-  // Helfer: State setzen UND den neuen Wert synchron nach oben melden.
+  // Helfer: State setzen. onChange wird via useEffect synchron gemeldet,
+  // um setState-in-render Warnings zu vermeiden.
   const applyChange = (updater) => {
-    setData(d => {
-      const next = updater(d);
-      onChange?.(next);
-      return next;
-    });
+    setData(updater);
   };
+
+  // Initialer Render-Snapshot, damit onChange nicht beim Mount feuert.
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    onChange?.(data);
+  }, [data]);
 
   const addDropZone = (label) => {
     applyChange(d => ({
