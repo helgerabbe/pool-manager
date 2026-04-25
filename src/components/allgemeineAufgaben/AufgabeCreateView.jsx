@@ -7,8 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, Save, FileUp, BookMarked, Type, ImagePlus, X, Loader2 } from 'lucide-react';
+import { AlertCircle, Save, FileUp, BookMarked, Type, ImagePlus, X, Loader2, Info } from 'lucide-react';
 import { toast } from 'sonner';
+import { AUFGABEN_TYPEN, getAufgabenTyp } from '@/lib/aufgabenTypen';
+import LernpaketMultiSelect from '@/components/allgemeineAufgaben/LernpaketMultiSelect';
+import ProjektAufgabenMultiSelect from '@/components/allgemeineAufgaben/ProjektAufgabenMultiSelect';
 
 // ── Sterne-Rating ──────────────────────────────────────────────────────────────
 function SternRating({ value, onChange }) {
@@ -257,9 +260,12 @@ const EMPTY_FORM = {
   ergebnis_form: '',
   ergebnis_dateiformat: '',
   erwartungshorizont: '',
+  aufgaben_typ: 'inhalt',
+  verlinkte_lernpaket_ids: [],
+  verlinkte_projekt_ids: [],
 };
 
-export default function AufgabeCreateView({ open, onOpenChange, einheitId, themenfelder = [], onSuccess, initialData = null, defaultAnforderungsebene = '2 - Transfer' }) {
+export default function AufgabeCreateView({ open, onOpenChange, einheitId, themenfelder = [], onSuccess, initialData = null, defaultAnforderungsebene = '2 - Transfer', defaultAufgabenTyp = 'inhalt' }) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState(EMPTY_FORM);
   // Aktive Uploads (Bild oder Material) – sperren den Speichern-Button.
@@ -270,20 +276,40 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
   React.useEffect(() => {
     if (open) {
       setFormData(initialData
-        ? { ...EMPTY_FORM, ...initialData }
-        : { ...EMPTY_FORM }
+        ? { ...EMPTY_FORM, ...initialData, aufgaben_typ: initialData.aufgaben_typ || 'inhalt' }
+        : { ...EMPTY_FORM, aufgaben_typ: defaultAufgabenTyp || 'inhalt' }
       );
     }
-  }, [open, initialData]);
+  }, [open, initialData, defaultAufgabenTyp]);
 
   const set = (field, val) => setFormData(p => ({ ...p, [field]: val }));
 
-  const isValid = !!(formData.aufgabenstellung?.trim() || formData.aufgaben_bild_url);
+  // Validierung je Aufgaben-Typ:
+  //  - inhalt: Text ODER Bild Pflicht (wie bisher)
+  //  - buendel: mind. ein verlinktes Lernpaket
+  //  - projekt_anker: mind. ein verlinktes Ebene-3-Projekt
+  //  - prozess: nur Titel + Aufgabentext (Aufgabentext Pflicht)
+  const isValid = (() => {
+    const typ = formData.aufgaben_typ || 'inhalt';
+    if (typ === 'buendel') return (formData.verlinkte_lernpaket_ids || []).length > 0;
+    if (typ === 'projekt_anker') return (formData.verlinkte_projekt_ids || []).length > 0;
+    if (typ === 'prozess') return !!formData.aufgabenstellung?.trim();
+    return !!(formData.aufgabenstellung?.trim() || formData.aufgaben_bild_url);
+  })();
+
+  const aufgabenTypMeta = getAufgabenTyp(formData.aufgaben_typ);
+  const isInhalt = formData.aufgaben_typ === 'inhalt' || !formData.aufgaben_typ;
+  const isBuendel = formData.aufgaben_typ === 'buendel';
+  const isProjektAnker = formData.aufgaben_typ === 'projekt_anker';
+  const isProzess = formData.aufgaben_typ === 'prozess';
 
   const createAufgabe = useMutation({
     mutationFn: (data) => createAllgemeineAufgabe({
       einheit_id: einheitId,
       anforderungsebene: defaultAnforderungsebene,
+      aufgaben_typ: data.aufgaben_typ || 'inhalt',
+      verlinkte_lernpaket_ids: data.verlinkte_lernpaket_ids || [],
+      verlinkte_projekt_ids: data.verlinkte_projekt_ids || [],
       themenfeld_id: data.themenfeld_id || null,
       titel: data.titel || null,
       aufgabenstellung: data.aufgabenstellung || '',
@@ -305,6 +331,9 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
 
   const updateAufgabe = useMutation({
     mutationFn: (data) => updateAllgemeineAufgabe(initialData.id, {
+      aufgaben_typ: data.aufgaben_typ || 'inhalt',
+      verlinkte_lernpaket_ids: data.verlinkte_lernpaket_ids || [],
+      verlinkte_projekt_ids: data.verlinkte_projekt_ids || [],
       themenfeld_id: data.themenfeld_id || null,
       titel: data.titel || null,
       aufgabenstellung: data.aufgabenstellung || '',
@@ -326,7 +355,17 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!isValid) { toast.error('Bitte Text eingeben oder Bild hochladen'); return; }
+    if (!isValid) {
+      const msg = isBuendel
+        ? 'Bitte mindestens ein Lernpaket auswählen.'
+        : isProjektAnker
+          ? 'Bitte mindestens ein Ebene-3-Projekt auswählen.'
+          : isProzess
+            ? 'Bitte einen Aufgabentext eingeben.'
+            : 'Bitte Text eingeben oder Bild hochladen.';
+      toast.error(msg);
+      return;
+    }
     if (initialData) updateAufgabe.mutate(formData);
     else createAufgabe.mutate(formData);
   };
@@ -337,7 +376,19 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{initialData ? 'Aufgabe bearbeiten' : 'Neue Allgemeine Aufgabe'}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <span>{initialData ? 'Aufgabe bearbeiten' : 'Neue Aufgabe'}</span>
+            <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${aufgabenTypMeta.color.bg} ${aufgabenTypMeta.color.text} border ${aufgabenTypMeta.color.border}/40`}>
+              <aufgabenTypMeta.icon className="w-3 h-3" />
+              {aufgabenTypMeta.label}
+            </span>
+          </DialogTitle>
+          {isProjektAnker && (
+            <p className="text-xs text-muted-foreground mt-1 flex items-start gap-1.5">
+              <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-violet-600" />
+              <span>Tipp: Projekt-Anker liegen kognitiv meist auf Ebene 2 (Transfer), verweisen aber auf Projekte der Ebene 3.</span>
+            </p>
+          )}
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -367,73 +418,124 @@ export default function AufgabeCreateView({ open, onOpenChange, einheitId, theme
             />
           </div>
 
-          {/* Aufgabenstellung (Text + Bild) */}
-          <AufgabenstellungSection
-            text={formData.aufgabenstellung}
-            onTextChange={val => set('aufgabenstellung', val)}
-            bildUrl={formData.aufgaben_bild_url}
-            onBildUrlChange={val => set('aufgaben_bild_url', val)}
-            onUploadingChange={setBildUploading}
-          />
-
-          {/* Schwierigkeitsgrad */}
-          <div className="space-y-2">
-            <Label>Schwierigkeitsgrad</Label>
-            <SternRating value={formData.schwierigkeitsgrad} onChange={val => set('schwierigkeitsgrad', val)} />
-          </div>
-
-          {/* Ergebnis-Angaben */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Erwartete Form des Ergebnisses</Label>
-              <select
-                value={formData.ergebnis_form || ''}
-                onChange={e => set('ergebnis_form', e.target.value)}
-                className="w-full h-9 px-3 border border-border rounded-lg text-sm bg-white"
-              >
-                <option value="">-- Bitte wählen --</option>
-                <option>Fließtext / Essay</option>
-                <option>Tabelle / Matrix</option>
-                <option>Präsentation / Folien</option>
-                <option>Schema / Konzept-Map / Zeichnung</option>
-                <option>Stichpunktartige Übersicht</option>
-                <option>Mischform / Offen</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label>Erwartetes Dateiformat</Label>
-              <select
-                value={formData.ergebnis_dateiformat || ''}
-                onChange={e => set('ergebnis_dateiformat', e.target.value)}
-                className="w-full h-9 px-3 border border-border rounded-lg text-sm bg-white"
-              >
-                <option value="">-- Bitte wählen --</option>
-                <option>Textdokument (Word/PDF)</option>
-                <option>Bilddatei (JPG/PNG)</option>
-                <option>Präsentationsdatei (PowerPoint/PDF)</option>
-                <option>Offen / Beliebig</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Erwartungshorizont (für Ebene 3) */}
-          <div className="space-y-2">
-            <Label>Erwartungshorizont / Zielvorgaben (optional)</Label>
-            <textarea
-              value={formData.erwartungshorizont}
-              onChange={e => set('erwartungshorizont', e.target.value)}
-              placeholder="Definieren Sie, wie ein erfolgreiches Ergebnis aussieht: inhaltliche Kriterien, Umfang, Lösungsansätze, Qualitätsmerkmale…"
-              className="w-full px-3 py-2 border border-border rounded-lg min-h-32 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+          {/* ── Bündel-Picker (nur bei aufgaben_typ === 'buendel') ── */}
+          {isBuendel && (
+            <LernpaketMultiSelect
+              einheitId={einheitId}
+              selectedIds={formData.verlinkte_lernpaket_ids || []}
+              onChange={(ids) => set('verlinkte_lernpaket_ids', ids)}
             />
-            <p className="text-xs text-muted-foreground">Dieses Feld dient als Leitplanke für den KI-Tutor bei der Lernbegleitung.</p>
-          </div>
+          )}
 
-          {/* Zusätzliches Material */}
-          <ZusaetzlichesMaterialSection
-            materials={formData.materialien}
-            onMaterialsChange={mats => set('materialien', mats)}
-            onUploadingChange={setMaterialUploading}
-          />
+          {/* ── Projekt-Anker-Picker (nur bei aufgaben_typ === 'projekt_anker') ── */}
+          {isProjektAnker && (
+            <ProjektAufgabenMultiSelect
+              einheitId={einheitId}
+              selectedIds={formData.verlinkte_projekt_ids || []}
+              onChange={(ids) => set('verlinkte_projekt_ids', ids)}
+              excludeAufgabeId={initialData?.id || null}
+            />
+          )}
+
+          {/* ── Aufgabenstellung (Text + optional Bild) ──
+              - inhalt:   Text + Bild (wie bisher)
+              - prozess:  nur Text
+              - buendel/projekt_anker: optionale Beschreibung als Text */}
+          {isInhalt ? (
+            <AufgabenstellungSection
+              text={formData.aufgabenstellung}
+              onTextChange={val => set('aufgabenstellung', val)}
+              bildUrl={formData.aufgaben_bild_url}
+              onBildUrlChange={val => set('aufgaben_bild_url', val)}
+              onUploadingChange={setBildUploading}
+            />
+          ) : (
+            <div className="space-y-2">
+              <Label>
+                {isProzess ? 'Aufgabentext / Anleitung' : 'Beschreibung (optional)'}
+                {isProzess && <span className="text-destructive ml-1">*</span>}
+              </Label>
+              <textarea
+                value={formData.aufgabenstellung}
+                onChange={e => set('aufgabenstellung', e.target.value)}
+                placeholder={
+                  isProzess
+                    ? 'z.B. Halte einen kurzen Zwischenstand fest – was hast du bis hier gelernt?'
+                    : isBuendel
+                      ? 'z.B. Bearbeite die folgenden Pakete in eigenem Tempo.'
+                      : 'z.B. Wähle ein Projekt aus, das dich besonders interessiert.'
+                }
+                className="w-full px-3 py-2 border border-border rounded-lg min-h-24 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+          )}
+
+          {/* ── Schwierigkeitsgrad (für inhalt + projekt_anker) ── */}
+          {(isInhalt || isProjektAnker) && (
+            <div className="space-y-2">
+              <Label>Schwierigkeitsgrad</Label>
+              <SternRating value={formData.schwierigkeitsgrad} onChange={val => set('schwierigkeitsgrad', val)} />
+            </div>
+          )}
+
+          {/* ── Ergebnis-Angaben (NUR für aufgaben_typ === 'inhalt') ── */}
+          {isInhalt && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Erwartete Form des Ergebnisses</Label>
+                <select
+                  value={formData.ergebnis_form || ''}
+                  onChange={e => set('ergebnis_form', e.target.value)}
+                  className="w-full h-9 px-3 border border-border rounded-lg text-sm bg-white"
+                >
+                  <option value="">-- Bitte wählen --</option>
+                  <option>Fließtext / Essay</option>
+                  <option>Tabelle / Matrix</option>
+                  <option>Präsentation / Folien</option>
+                  <option>Schema / Konzept-Map / Zeichnung</option>
+                  <option>Stichpunktartige Übersicht</option>
+                  <option>Mischform / Offen</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label>Erwartetes Dateiformat</Label>
+                <select
+                  value={formData.ergebnis_dateiformat || ''}
+                  onChange={e => set('ergebnis_dateiformat', e.target.value)}
+                  className="w-full h-9 px-3 border border-border rounded-lg text-sm bg-white"
+                >
+                  <option value="">-- Bitte wählen --</option>
+                  <option>Textdokument (Word/PDF)</option>
+                  <option>Bilddatei (JPG/PNG)</option>
+                  <option>Präsentationsdatei (PowerPoint/PDF)</option>
+                  <option>Offen / Beliebig</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* ── Erwartungshorizont (NUR für aufgaben_typ === 'inhalt') ── */}
+          {isInhalt && (
+            <div className="space-y-2">
+              <Label>Erwartungshorizont / Zielvorgaben (optional)</Label>
+              <textarea
+                value={formData.erwartungshorizont}
+                onChange={e => set('erwartungshorizont', e.target.value)}
+                placeholder="Definieren Sie, wie ein erfolgreiches Ergebnis aussieht: inhaltliche Kriterien, Umfang, Lösungsansätze, Qualitätsmerkmale…"
+                className="w-full px-3 py-2 border border-border rounded-lg min-h-32 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+              <p className="text-xs text-muted-foreground">Dieses Feld dient als Leitplanke für den KI-Tutor bei der Lernbegleitung.</p>
+            </div>
+          )}
+
+          {/* ── Zusätzliches Material (NUR für aufgaben_typ === 'inhalt') ── */}
+          {isInhalt && (
+            <ZusaetzlichesMaterialSection
+              materials={formData.materialien}
+              onMaterialsChange={mats => set('materialien', mats)}
+              onUploadingChange={setMaterialUploading}
+            />
+          )}
 
           <DialogFooter>
             {isUploading && (

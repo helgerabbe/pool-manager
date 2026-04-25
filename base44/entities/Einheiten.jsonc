@@ -111,12 +111,23 @@
     },
     "structural_lock": {
       "type": "string",
-      "description": "E-Mail des Nutzers, der gerade die Struktur bearbeitet (Structural Lock)"
+      "description": "E-Mail des Nutzers, der gerade die Struktur bearbeitet (Structural Lock). Wird auch f\u00fcr Tab 7 (Lernpfad-Architekt) recycelt."
     },
     "structural_locked_at": {
       "type": "string",
       "format": "date-time",
       "description": "Zeitstempel des Structural Locks (Auto-Timeout nach 60 Min)"
+    },
+    "lernpfade_konfiguration": {
+      "type": "object",
+      "description": "JSON-Mapping der Lernpfade f\u00fcr die vier Lerntypen. Speichert nur Sektoren + IDs, nicht die Aufgaben selbst. Struktur: { minimalist: [{sektor_id, titel, modus, aufgaben_ids}], pragmatiker: [...], ehrgeizig: [...], passioniert: [...] }",
+      "additionalProperties": true,
+      "default": {
+        "minimalist": [],
+        "pragmatiker": [],
+        "ehrgeizig": [],
+        "passioniert": []
+      }
     },
     "version": {
       "type": "integer",

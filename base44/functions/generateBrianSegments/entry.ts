@@ -36,6 +36,20 @@ Deno.serve(async (req) => {
   }
   if (!task) return Response.json({ error: 'aufgabe oder aufgabe_id erforderlich' }, { status: 400 });
 
+  // Phase-1 Lernpfad-Architekt: Brian-Generierung nur für Inhalts-Aktivitäten.
+  // Meta-Typen (Bündel, Prozess, Projekt-Anker) sind reine Steuerungs-Wrapper ohne KI-Tutor-Dialog.
+  const META_TYPEN = ['buendel', 'prozess', 'projekt_anker'];
+  if (task.aufgaben_typ && META_TYPEN.includes(task.aufgaben_typ)) {
+    return Response.json(
+      {
+        error: `Brian-Segmente können nur für Inhalts-Aktivitäten generiert werden. Diese Aufgabe ist vom Typ '${task.aufgaben_typ}' und benötigt keinen KI-Tutor-Dialog.`,
+        skipped: true,
+        aufgaben_typ: task.aufgaben_typ,
+      },
+      { status: 400 }
+    );
+  }
+
   const fach = einheit?.fach || 'unbekanntes Fach';
   const jahrgang = einheit?.jahrgangsstufe || 'unbekannte Jahrgangsstufe';
   const einheitTitel = einheit?.titel_der_einheit || '';

@@ -14,6 +14,7 @@ import { Plus, Star, FileText, ChevronRight, Edit, Trash2, CheckCircle2, PenLine
 import TaskStatusBadge from '@/components/ui/TaskStatusBadge';
 import TaskLockBar from '@/components/ui/TaskLockBar';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
+import AufgabenTypPicker from '@/components/allgemeineAufgaben/AufgabenTypPicker';
 import AufgabeKompetenzMapping from '@/components/allgemeineAufgaben/AufgabeKompetenzMapping';
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
 import InlineBasisLernzielSelector from '@/components/allgemeineAufgaben/InlineBasisLernzielSelector';
@@ -241,6 +242,10 @@ export default function AllgemeineAufgabenView({
   const [editingAufgabe, setEditingAufgabe] = useState(null);
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
   const [wizardOpen, setWizardOpen] = useState(false);
+  // Phase-1 Lernpfad-Architekt: Picker für Aufgaben-Typ vor dem Editor (nur in Ebene 2).
+  const [typPickerOpen, setTypPickerOpen] = useState(false);
+  const [pendingAufgabenTyp, setPendingAufgabenTyp] = useState('inhalt');
+  const isEbene3 = anforderungsebene === '3 - Projekt';
 
   // Aktuellen Nutzer laden
   React.useEffect(() => {
@@ -372,7 +377,14 @@ export default function AllgemeineAufgabenView({
                 size="sm"
                 onClick={() => {
                   setEditingAufgabe(null);
-                  setCreateFormOpen(true);
+                  if (isEbene3) {
+                    // Ebene 3: Picker überspringen, Typ zwingend 'inhalt'.
+                    setPendingAufgabenTyp('inhalt');
+                    setCreateFormOpen(true);
+                  } else {
+                    // Ebene 2: 4-Kacheln-Picker vorschalten.
+                    setTypPickerOpen(true);
+                  }
                 }}
                 className="gap-2 w-full"
               >
@@ -505,7 +517,7 @@ export default function AllgemeineAufgabenView({
         )}
       </div>
 
-      {/* KI-Wizard */}
+      {/* KI-Wizard – erstellt immer Inhalts-Aktivitäten (aufgaben_typ='inhalt'). */}
       <AiTaskWizardModal
         open={wizardOpen}
         onOpenChange={setWizardOpen}
@@ -514,11 +526,22 @@ export default function AllgemeineAufgabenView({
           await createAllgemeineAufgabe({
             einheit_id: einheitId,
             anforderungsebene,
+            aufgaben_typ: 'inhalt',
             titel,
             aufgabenstellung,
             ki_kompetenz_tags,
           });
           queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheitId] });
+        }}
+      />
+
+      {/* Aufgaben-Typ-Picker (nur in Ebene 2) */}
+      <AufgabenTypPicker
+        open={typPickerOpen}
+        onOpenChange={setTypPickerOpen}
+        onSelect={(typ) => {
+          setPendingAufgabenTyp(typ);
+          setCreateFormOpen(true);
         }}
       />
 
@@ -530,9 +553,11 @@ export default function AllgemeineAufgabenView({
         themenfelder={themenfelder}
         initialData={editingAufgabe}
         defaultAnforderungsebene={anforderungsebene}
+        defaultAufgabenTyp={pendingAufgabenTyp}
         onSuccess={() => {
           setCreateFormOpen(false);
           setEditingAufgabe(null);
+          setPendingAufgabenTyp('inhalt');
           queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
         }}
       />

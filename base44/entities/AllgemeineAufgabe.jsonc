@@ -18,7 +18,34 @@
         "3 - Projekt"
       ],
       "default": "1 - Basis",
-      "description": "Anforderungsebene der Aufgabe"
+      "description": "Anforderungsebene der Aufgabe (kognitive Komplexit\u00e4t)"
+    },
+    "aufgaben_typ": {
+      "type": "string",
+      "enum": [
+        "inhalt",
+        "buendel",
+        "prozess",
+        "projekt_anker"
+      ],
+      "default": "inhalt",
+      "description": "Funktionale/p\u00e4dagogische Rolle der Aufgabe im Lernpfad-System (orthogonal zur anforderungsebene). 'inhalt' = klassische Fachaufgabe, 'buendel' = Verlinkt mehrere Lernpakete, 'prozess' = Lernorganisations-Meilenstein, 'projekt_anker' = Tor zu Ebene-3-Projekten."
+    },
+    "verlinkte_lernpaket_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "F\u00fcr aufgaben_typ='buendel': Array von Lernpaket-IDs (Ebene 1), die durch dieses B\u00fcndel zusammengefasst werden."
+    },
+    "verlinkte_projekt_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "F\u00fcr aufgaben_typ='projekt_anker': Array von AllgemeineAufgabe-IDs mit anforderungsebene='3 - Projekt', die durch diesen Anker angeboten werden."
     },
     "aufgabentyp_projekt": {
       "type": "string",
