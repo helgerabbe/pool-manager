@@ -31,11 +31,17 @@ import {
   patchSektor,
   removeSektor,
   insertAufgabeInSektor,
+  insertSystemBausteinInSektor,
   removeAufgabeFromLernTyp,
   moveAufgabe,
   copySektorenBetweenLernTypen,
 } from '@/lib/lernpfadeUtils';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
+
+// Drag-IDs aus dem Pool:
+//   • Aufgabe-Pool   → draggableId = <aufgabe.id>            (UUID)
+//   • System-Pool    → draggableId = "system-<baustein_id>"  (Präfix)
+const SYSTEM_DRAG_PREFIX = 'system-';
 
 const DEFAULT_KONFIG = { minimalist: [], pragmatiker: [], ehrgeizig: [], passioniert: [] };
 const DEBOUNCE_MS = 800;
@@ -59,13 +65,25 @@ export default function LernpfadeCockpit({
   const [quickAddOpen, setQuickAddOpen] = useState(false);
 
   // Monitor-Selection: zentral – wird sowohl vom Pool (links) als auch vom Architekt (rechts) gesetzt.
-  const [selectedAufgabeId, setSelectedAufgabeId] = useState(null);
+  // Genau eins von beidem ist gesetzt; das jeweils andere wird beim Setzen geleert.
+  const [selectedAufgabeId, setSelectedAufgabeIdState] = useState(null);
+  const [selectedSystemBausteinId, setSelectedSystemBausteinIdState] = useState(null);
   const [previewAufgabe, setPreviewAufgabe] = useState(null);
 
-  // Tab-Wechsel: Monitor leeren (Aufgabe gehört evtl. nicht mehr zum sichtbaren Pfad).
+  const setSelectedAufgabeId = useCallback((id) => {
+    setSelectedAufgabeIdState(id);
+    if (id) setSelectedSystemBausteinIdState(null);
+  }, []);
+  const setSelectedSystemBausteinId = useCallback((id) => {
+    setSelectedSystemBausteinIdState(id);
+    if (id) setSelectedAufgabeIdState(null);
+  }, []);
+
+  // Tab-Wechsel: Monitor leeren (Item gehört evtl. nicht mehr zum sichtbaren Pfad).
   const handleActiveLernTypChange = useCallback((typKey) => {
     setActiveLernTyp(typKey);
-    setSelectedAufgabeId(null);
+    setSelectedAufgabeIdState(null);
+    setSelectedSystemBausteinIdState(null);
   }, []);
 
   const queryClient = useQueryClient();
@@ -81,6 +99,18 @@ export default function LernpfadeCockpit({
     (aufgaben || []).forEach((a) => map.set(a.id, a));
     return map;
   }, [aufgaben]);
+
+  // System-Bausteine (global) – inkl. inaktiver, damit alte Pfade bei deaktiviertem
+  // Baustein noch eine Beschriftung im Sektor zeigen.
+  const { data: systemBausteine = [] } = useQuery({
+    queryKey: ['systemBausteine', 'all'],
+    queryFn: () => base44.entities.SystemBausteine.list('reihenfolge'),
+  });
+  const systemBausteineById = useMemo(() => {
+    const map = new Map();
+    (systemBausteine || []).forEach((b) => map.set(b.baustein_id, b));
+    return map;
+  }, [systemBausteine]);
 
   // Re-Sync, wenn der Einheit-Snapshot sich ändert (z.B. nach Tab-Wechsel)
   // ABER NUR im Lesemodus – im Edit-Modus ist der lokale State führend.
@@ -193,6 +223,27 @@ export default function LernpfadeCockpit({
     [readOnly, activeLernTyp, updateKonfiguration]
   );
 
+  // System-Bausteine werden POSITIONS-genau entfernt (nicht per ref_id), weil
+  // derselbe Baustein mehrfach in einem Sektor vorkommen darf.
+  const handleRemoveSystemItem = useCallback(
+    (sektorId, itemIndex) => {
+      if (readOnly) return;
+      updateKonfiguration((prev) => {
+        const sektoren = prev?.[activeLernTyp] || [];
+        const next = sektoren.map((s) => {
+          if (s.sektor_id !== sektorId) return s;
+          const items = [...(s.items || [])];
+          if (itemIndex < 0 || itemIndex >= items.length) return s;
+          if (items[itemIndex]?.type !== 'system') return s; // safety: nicht versehentlich Aufgaben löschen
+          items.splice(itemIndex, 1);
+          return { ...s, items };
+        });
+        return { ...prev, [activeLernTyp]: next };
+      });
+    },
+    [readOnly, activeLernTyp, updateKonfiguration]
+  );
+
   // ── Pfad kopieren ──────────────────────────────────────────────────
   // Tiefe Kopie von Quell-Lerntyp → aktuellem Lerntyp; jeder Sektor erhält neue UUID.
   // Geht ganz normal durch updateKonfiguration → Debounce-Save triggert automatisch.
@@ -219,7 +270,7 @@ export default function LernpfadeCockpit({
   );
 
   // ── Drag & Drop ────────────────────────────────────────────────────
-  // Pool → Sektor (neu hinzufügen), Sektor → Sektor (verschieben), innerhalb eines Sektors (reorder).
+  // Pool → Sektor (Aufgabe ODER System-Baustein), Sektor → Sektor (Reorder/Move).
   const handleDragEnd = useCallback(
     (result) => {
       const { destination, source, draggableId } = result;
@@ -229,29 +280,41 @@ export default function LernpfadeCockpit({
       const srcId = source.droppableId;
       const dstId = destination.droppableId;
 
-      // Drop zurück in den Pool → keine Aktion (Aufgaben werden über X-Button entfernt).
-      if (dstId === 'pool') return;
+      // Drop zurück in einen Pool → keine Aktion (Items werden über X-Button entfernt).
+      if (dstId === 'pool' || dstId === 'pool-system') return;
 
-      // Quelle: Pool → Aufgabe neu in einen Sektor einfügen.
-      if (srcId === 'pool' && dstId.startsWith('sektor-')) {
+      // ── Pool → Sektor ──
+      if ((srcId === 'pool' || srcId === 'pool-system') && dstId.startsWith('sektor-')) {
         const sektorId = dstId.replace('sektor-', '');
 
-        // Sicherheits-Check (Fallback zur visuellen Drag-Sperre).
-        if (usedAufgabenIds.has(draggableId)) {
-          toast.error('Diese Aufgabe ist bereits in diesem Lernpfad vorhanden.');
+        // System-Baustein: kein Duplikat-Check, kein Limit.
+        if (srcId === 'pool-system' && draggableId.startsWith(SYSTEM_DRAG_PREFIX)) {
+          const bausteinId = draggableId.slice(SYSTEM_DRAG_PREFIX.length);
+          updateKonfiguration((prev) =>
+            insertSystemBausteinInSektor(prev, activeLernTyp, sektorId, bausteinId, destination.index)
+          );
           return;
         }
-        updateKonfiguration((prev) =>
-          insertAufgabeInSektor(prev, activeLernTyp, sektorId, draggableId, destination.index)
-        );
-        return;
+
+        // Reguläre Aufgabe: Anti-Duplikat (Sicherheits-Check zur visuellen Drag-Sperre).
+        if (srcId === 'pool') {
+          if (usedAufgabenIds.has(draggableId)) {
+            toast.error('Diese Aufgabe ist bereits in diesem Lernpfad vorhanden.');
+            return;
+          }
+          updateKonfiguration((prev) =>
+            insertAufgabeInSektor(prev, activeLernTyp, sektorId, draggableId, destination.index)
+          );
+          return;
+        }
       }
 
-      // Quelle: Sektor → Sektor (oder gleicher Sektor = Reorder).
+      // ── Sektor → Sektor (oder gleicher Sektor = Reorder) ──
+      // Funktioniert für Aufgaben- UND System-Items gleichermaßen, weil moveAufgabe
+      // rein index-basiert das gesamte Item (inkl. type) verschiebt.
       if (srcId.startsWith('sektor-') && dstId.startsWith('sektor-')) {
         const fromSektorId = srcId.replace('sektor-', '');
         const toSektorId = dstId.replace('sektor-', '');
-        // Identische Position → nichts tun.
         if (fromSektorId === toSektorId && source.index === destination.index) return;
         updateKonfiguration((prev) =>
           moveAufgabe(prev, activeLernTyp, fromSektorId, source.index, toSektorId, destination.index)
@@ -267,6 +330,13 @@ export default function LernpfadeCockpit({
     () => (selectedAufgabeId ? aufgabenById.get(selectedAufgabeId) || null : null),
     [aufgabenById, selectedAufgabeId]
   );
+  const selectedSystemBaustein = useMemo(
+    () =>
+      selectedSystemBausteinId
+        ? systemBausteineById.get(selectedSystemBausteinId) || null
+        : null,
+    [systemBausteineById, selectedSystemBausteinId]
+  );
 
   // ── Quick-Add ──────────────────────────────────────────────────────
   // Nach erfolgreicher Erstellung: ID in den letzten Sektor einfügen
@@ -277,8 +347,10 @@ export default function LernpfadeCockpit({
       updateKonfiguration((prev) => {
         const sektoren = prev?.[activeLernTyp] || [];
         if (sektoren.length === 0) {
-          const sek = createNewSektor({ aufgaben_ids: [created.id] });
-          return addSektor(prev, activeLernTyp, sek);
+          // Neuer Sektor wird leer angelegt, dann via Util um die Aufgabe ergänzt.
+          const sek = createNewSektor();
+          const withSektor = addSektor(prev, activeLernTyp, sek);
+          return insertAufgabeInSektor(withSektor, activeLernTyp, sek.sektor_id, created.id, undefined);
         }
         const lastSektor = sektoren[sektoren.length - 1];
         return insertAufgabeInSektor(prev, activeLernTyp, lastSektor.sektor_id, created.id, undefined);
@@ -365,7 +437,9 @@ export default function LernpfadeCockpit({
               einheitId={einheit?.id}
               usedAufgabenIds={usedAufgabenIds}
               selectedAufgabe={selectedAufgabe}
+              selectedSystemBaustein={selectedSystemBaustein}
               onSelectAufgabe={setSelectedAufgabeId}
+              onSelectSystemBaustein={setSelectedSystemBausteinId}
               onPreviewAufgabe={setPreviewAufgabe}
             />
           </aside>
@@ -378,13 +452,17 @@ export default function LernpfadeCockpit({
               onActiveLernTypChange={handleActiveLernTypChange}
               readOnly={readOnly}
               aufgabenById={aufgabenById}
+              systemBausteineById={systemBausteineById}
               onAddSektor={handleAddSektor}
               onPatchSektor={handlePatchSektor}
               onRemoveSektor={handleRemoveSektor}
               onRemoveAufgabeFromPath={handleRemoveAufgabeFromPath}
+              onRemoveSystemItem={handleRemoveSystemItem}
               onQuickAddOpen={() => setQuickAddOpen(true)}
               onSelectAufgabe={setSelectedAufgabeId}
+              onSelectSystemBaustein={setSelectedSystemBausteinId}
               selectedAufgabeId={selectedAufgabeId}
+              selectedSystemBausteinId={selectedSystemBausteinId}
               onCopyFromLernTyp={handleCopyFromLernTyp}
             />
           </main>

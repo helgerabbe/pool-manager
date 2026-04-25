@@ -186,8 +186,7 @@ export function removeSektor(konfig, lernTyp, sektorId) {
  * (Anti-Duplikat) → unverändert zurückgeben.
  *
  * NB: Diese Funktion arbeitet ausschließlich mit Aufgaben-Items.
- * Für System-Bausteine wird in Phase 2 ein `insertSystemBausteinInSektor`
- * ergänzt – aktuell nicht im Scope.
+ * Für System-Bausteine siehe `insertSystemBausteinInSektor`.
  */
 export function insertAufgabeInSektor(konfig, lernTyp, sektorId, aufgabeId, index) {
   if (!aufgabeId) return konfig;
@@ -198,6 +197,26 @@ export function insertAufgabeInSektor(konfig, lernTyp, sektorId, aufgabeId, inde
     const items = [...s.items];
     const insertAt = typeof index === 'number' && index >= 0 && index <= items.length ? index : items.length;
     items.splice(insertAt, 0, { type: ITEM_TYPE.AUFGABE, ref_id: aufgabeId });
+    return { ...s, items };
+  });
+  return setSektoren(konfig, lernTyp, next);
+}
+
+/**
+ * System-Baustein an einer bestimmten Position in einen Sektor einfügen.
+ *
+ * WICHTIG: Hier greift die Anti-Duplikat-Sperre ABSICHTLICH NICHT.
+ * System-Bausteine sind globale Platzhalter (z. B. „Lehrer-Check") und dürfen
+ * mehrfach in beliebig vielen Sektoren des gleichen Lerntyps vorkommen.
+ */
+export function insertSystemBausteinInSektor(konfig, lernTyp, sektorId, bausteinId, index) {
+  if (!bausteinId) return konfig;
+
+  const next = getSektoren(konfig, lernTyp).map((s) => {
+    if (s.sektor_id !== sektorId) return s;
+    const items = [...s.items];
+    const insertAt = typeof index === 'number' && index >= 0 && index <= items.length ? index : items.length;
+    items.splice(insertAt, 0, { type: ITEM_TYPE.SYSTEM, ref_id: bausteinId });
     return { ...s, items };
   });
   return setSektoren(konfig, lernTyp, next);

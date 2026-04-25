@@ -4,8 +4,17 @@
  * Eine Sektor-Karte im Lernpfad-Architekt.
  * - Bearbeitbarer Titel.
  * - Toggle für Modus ("sequenziell" ↔ "frei").
- * - Droppable-Bereich für Aufgaben (per @hello-pangea/dnd).
- * - Pro Aufgabe ein "X"-Button zum Entfernen.
+ * - Droppable-Bereich für Items (per @hello-pangea/dnd).
+ * - Item-Rendering ist typgesteuert:
+ *     • type === 'aufgabe' → AufgabePill
+ *     • type === 'system'  → SystemBausteinPill
+ *
+ * Hinweis (Phase 2): Der Legacy-Fallback auf `sektor.aufgaben_ids` wurde
+ * planmäßig entfernt — die Lazy-Migration in `lernpfadeUtils` stellt sicher,
+ * dass beim Lesen UND Schreiben ausschließlich das `items`-Array verwendet
+ * wird. Falls in der DB noch alte Datensätze liegen, werden sie beim ersten
+ * Zugriff durch `normalizeSektor` transparent migriert, bevor sie hier
+ * ankommen.
  */
 
 import React from 'react';
@@ -13,7 +22,8 @@ import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { GripVertical, Trash2, X, ListOrdered, Shuffle, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { getAufgabenTyp } from '@/lib/aufgabenTypen';
+import { getAufgabenTyp, ITEM_TYPE } from '@/lib/aufgabenTypen';
+import SystemBausteinPill from '@/components/lernpfade/SystemBausteinPill';
 
 function ModusToggle({ modus, onChange, disabled }) {
   return (
@@ -46,20 +56,21 @@ function ModusToggle({ modus, onChange, disabled }) {
   );
 }
 
-function AufgabePill({ aufgabe, aufgabeId, index, onRemove, onSelect, isSelected, disabled }) {
+function AufgabePill({ aufgabe, refId, sektorId, index, onRemove, onSelect, isSelected, disabled }) {
   // Fallback, falls die Aufgabe (noch) nicht im Cache ist.
   const titel = aufgabe?.titel || 'Aufgabe';
   const typMeta = getAufgabenTyp(aufgabe?.aufgaben_typ);
   const Icon = typMeta.icon;
+  const draggableId = `pfaditem-aufgabe-${sektorId}-${index}-${refId}`;
 
   return (
-    <Draggable draggableId={`pfad-${aufgabeId}`} index={index} isDragDisabled={disabled}>
+    <Draggable draggableId={draggableId} index={index} isDragDisabled={disabled}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          onClick={() => onSelect?.(aufgabeId)}
+          onClick={() => onSelect?.(refId)}
           className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs cursor-pointer transition-colors ${
             isSelected
               ? `${typMeta.color.border} ${typMeta.color.bg} shadow-sm`
@@ -76,7 +87,7 @@ function AufgabePill({ aufgabe, aufgabeId, index, onRemove, onSelect, isSelected
           {!disabled && (
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); onRemove?.(aufgabeId); }}
+              onClick={(e) => { e.stopPropagation(); onRemove?.(refId); }}
               title="Aus Pfad entfernen"
               className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"
             >
@@ -93,21 +104,18 @@ export default function LernpfadeSektor({
   sektor,
   index,
   aufgabenById,
+  systemBausteineById,
   readOnly,
   onPatch,
   onRemove,
   onRemoveAufgabe,
+  onRemoveSystemItem,
   onSelectAufgabe,
+  onSelectSystemBaustein,
   selectedAufgabeId,
+  selectedSystemBausteinId,
 }) {
-  // Lazy-kompatibel: bevorzugt das neue items-Array, fällt auf das alte
-  // aufgaben_ids-String-Array zurück. System-Bausteine werden hier in Phase 1
-  // noch wie Aufgaben-Items gerendert (Pool-Tab + dediziertes Card-Design folgen
-  // in Phase 2). Wichtig: Wir reduzieren auf reine ref_id-Strings, damit die
-  // bestehende Pill-Komponente nicht angetastet werden muss.
-  const itemRefIds = Array.isArray(sektor.items)
-    ? sektor.items.map((it) => (typeof it === 'string' ? it : it?.ref_id)).filter(Boolean)
-    : (sektor.aufgaben_ids || []);
+  const items = Array.isArray(sektor.items) ? sektor.items : [];
 
   return (
     <div className="rounded-lg border border-border bg-card/80 p-3 space-y-2">
@@ -142,8 +150,8 @@ export default function LernpfadeSektor({
         )}
       </div>
 
-      {/* Droppable Aufgaben-Liste */}
-      <Droppable droppableId={`sektor-${sektor.sektor_id}`} type="AUFGABE" isDropDisabled={readOnly}>
+      {/* Droppable Item-Liste */}
+      <Droppable droppableId={`sektor-${sektor.sektor_id}`} type="LERNPFAD_ITEM" isDropDisabled={readOnly}>
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
@@ -154,24 +162,42 @@ export default function LernpfadeSektor({
                 : 'border-border bg-muted/30'
             }`}
           >
-            {itemRefIds.length === 0 && (
+            {items.length === 0 && (
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground py-1 px-1">
                 <Plus className="w-3 h-3" />
-                Aufgaben aus dem Pool hierher ziehen.
+                Aufgaben oder Standard-Elemente hierher ziehen.
               </div>
             )}
-            {itemRefIds.map((aId, idx) => (
-              <AufgabePill
-                key={aId}
-                aufgabeId={aId}
-                aufgabe={aufgabenById?.get(aId)}
-                index={idx}
-                onRemove={onRemoveAufgabe}
-                onSelect={onSelectAufgabe}
-                isSelected={selectedAufgabeId === aId}
-                disabled={readOnly}
-              />
-            ))}
+            {items.map((item, idx) => {
+              if (item.type === ITEM_TYPE.SYSTEM) {
+                return (
+                  <SystemBausteinPill
+                    key={`sys-${idx}-${item.ref_id}`}
+                    baustein={systemBausteineById?.get(item.ref_id)}
+                    refId={item.ref_id}
+                    sektorId={sektor.sektor_id}
+                    index={idx}
+                    isSelected={selectedSystemBausteinId === item.ref_id}
+                    disabled={readOnly}
+                    onSelect={onSelectSystemBaustein}
+                    onRemove={(itemIndex) => onRemoveSystemItem?.(sektor.sektor_id, itemIndex)}
+                  />
+                );
+              }
+              return (
+                <AufgabePill
+                  key={`auf-${idx}-${item.ref_id}`}
+                  aufgabe={aufgabenById?.get(item.ref_id)}
+                  refId={item.ref_id}
+                  sektorId={sektor.sektor_id}
+                  index={idx}
+                  onRemove={onRemoveAufgabe}
+                  onSelect={onSelectAufgabe}
+                  isSelected={selectedAufgabeId === item.ref_id}
+                  disabled={readOnly}
+                />
+              );
+            })}
             {provided.placeholder}
           </div>
         )}

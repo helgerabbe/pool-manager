@@ -100,13 +100,17 @@ export default function LernpfadeArchitekt({
   onActiveLernTypChange,
   readOnly = false,
   aufgabenById,
+  systemBausteineById,
   onAddSektor,
   onPatchSektor,
   onRemoveSektor,
   onRemoveAufgabeFromPath,
+  onRemoveSystemItem,
   onQuickAddOpen,
   onSelectAufgabe,
+  onSelectSystemBaustein,
   selectedAufgabeId,
+  selectedSystemBausteinId,
   onCopyFromLernTyp,
 }) {
   const sektoren = konfiguration?.[activeLernTyp] || [];
@@ -172,12 +176,16 @@ export default function LernpfadeArchitekt({
                 sektor={sektor}
                 index={idx}
                 aufgabenById={aufgabenById}
+                systemBausteineById={systemBausteineById}
                 readOnly={readOnly}
                 onPatch={onPatchSektor}
                 onRemove={onRemoveSektor}
                 onRemoveAufgabe={(aufgabeId) => onRemoveAufgabeFromPath?.(aufgabeId)}
+                onRemoveSystemItem={onRemoveSystemItem}
                 onSelectAufgabe={onSelectAufgabe}
+                onSelectSystemBaustein={onSelectSystemBaustein}
                 selectedAufgabeId={selectedAufgabeId}
+                selectedSystemBausteinId={selectedSystemBausteinId}
               />
             ))}
             {!readOnly && (

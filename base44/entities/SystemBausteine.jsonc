@@ -1,0 +1,58 @@
+{
+  "name": "SystemBausteine",
+  "type": "object",
+  "properties": {
+    "baustein_id": {
+      "type": "string",
+      "description": "Stabiler, semantischer Identifier (z. B. 'sys_diagnose'). Wird als ref_id im Lernpfad-Items-Array verwendet. Muss systemweit eindeutig sein."
+    },
+    "titel": {
+      "type": "string",
+      "description": "Anzeigetitel im Lernpfad-Architekt und in den Sch\u00fcler-Pfaden."
+    },
+    "icon": {
+      "type": "string",
+      "description": "Icon-Identifier (Lucide-React-kompatibel, z. B. 'message-circle', 'map', 'stop-circle', 'clipboard-check')."
+    },
+    "admin_beschreibung": {
+      "type": "string",
+      "description": "Kurze Erkl\u00e4rung f\u00fcr Lehrkr\u00e4fte (Tooltip im Pool)."
+    },
+    "export_instruktion": {
+      "type": "string",
+      "description": "Klartext-Anweisung, die beim Moodle-/Brian-Export 1:1 als Inhalt dieses Bausteins ausgegeben wird."
+    },
+    "ist_aktiv": {
+      "type": "boolean",
+      "default": true,
+      "description": "Inaktive Bausteine erscheinen nicht im Pool."
+    },
+    "reihenfolge": {
+      "type": "number",
+      "default": 100,
+      "description": "Sortierreihenfolge im Standard-Elemente-Tab."
+    }
+  },
+  "required": [
+    "baustein_id",
+    "titel"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

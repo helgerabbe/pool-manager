@@ -5,7 +5,7 @@ import { ROLLEN } from '@/lib/rbac';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ShieldCheck, BookOpen, GraduationCap, Puzzle, CalendarRange, Settings2, RotateCcw, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, BookOpen, GraduationCap, Puzzle, CalendarRange, Settings2, RotateCcw, AlertTriangle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -23,6 +23,7 @@ import LookupTable from '@/components/admin/LookupTable';
 import PhasenTable from '@/components/admin/PhasenTable';
 import WartungsmodusToggle from '@/components/admin/WartungsmodusToggle';
 import AktivitaetenKatalog from '@/components/admin/AktivitaetenKatalog';
+import SystemBausteineTable from '@/components/admin/SystemBausteineTable';
 
 const KATEGORIEN = ['Diagnostik', 'Input', 'Übung', 'Projekt', 'Prüfung'];
 
@@ -130,7 +131,7 @@ export default function AdminSettings() {
 
       {/* Lookup-Tabellen */}
       <Tabs defaultValue="faecher">
-        <TabsList className="bg-muted grid w-full grid-cols-2 sm:grid-cols-4">
+        <TabsList className="bg-muted grid w-full grid-cols-2 sm:grid-cols-5">
           <TabsTrigger value="faecher" className="gap-1.5 text-xs">
             <BookOpen className="w-3.5 h-3.5" />Fächer
           </TabsTrigger>
@@ -142,6 +143,9 @@ export default function AdminSettings() {
           </TabsTrigger>
           <TabsTrigger value="aktivitaeten" className="gap-1.5 text-xs">
             <Puzzle className="w-3.5 h-3.5" />Aktivitäten
+          </TabsTrigger>
+          <TabsTrigger value="systembausteine" className="gap-1.5 text-xs">
+            <Sparkles className="w-3.5 h-3.5" />System-Bausteine
           </TabsTrigger>
         </TabsList>
 
@@ -218,6 +222,23 @@ export default function AdminSettings() {
         {/* Aktivitäten-Katalog */}
         <TabsContent value="aktivitaeten" className="mt-4">
           <AktivitaetenKatalog />
+        </TabsContent>
+
+        {/* System-Bausteine (globale Standard-Elemente für Tab 7) */}
+        <TabsContent value="systembausteine" className="mt-4">
+          <Card className="border shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-base">System-Bausteine verwalten</CardTitle>
+              <CardDescription>
+                Globale Standard-Elemente, die im Lernpfad-Architekt (Tab „Dashboards") als Standard-Elemente
+                angeboten werden. Sie können beliebig oft in Sektoren gezogen werden und tragen einen
+                klartext-basierten Export-Hinweis für Moodle/Brian.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SystemBausteineTable />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 

@@ -2,22 +2,66 @@
  * MonitorPanel.jsx
  *
  * Eigenständiges Monitor-Panel für den Lernpfad-Architekt (Tab 7).
- * Zeigt Light-Preview (Titel, Typ-Badge, Aufgabentext) der aktuell selektierten
- * Aufgabe und bietet einen Button für die ausführliche Schülermodus-Vorschau.
+ * - Aufgabe selektiert → Light-Preview + Button "Vorschau (Schülermodus)".
+ * - System-Baustein selektiert → Titel, Icon, Beschreibung, Export-Instruktion.
+ *   (Kein Schülermodus-Preview – System-Bausteine sind reine Strukturmarker.)
+ * - Nichts selektiert → Hinweistext.
  */
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Eye, MousePointerClick } from 'lucide-react';
+import { Eye, MousePointerClick, Sparkles } from 'lucide-react';
 import { getAufgabenTyp } from '@/lib/aufgabenTypen';
+import { getSystemBausteinIcon } from '@/lib/systemBausteinIcons';
 
-export default function MonitorPanel({ aufgabe, onPreviewClick }) {
+function SystemBausteinView({ baustein }) {
+  const Icon = getSystemBausteinIcon(baustein.icon);
+  return (
+    <div className="rounded-xl border-2 border-slate-300 bg-slate-50 p-3 space-y-2">
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center shrink-0">
+          <Icon strokeWidth={2.5} className="w-4 h-4 text-slate-700" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <span className="inline-block text-[10px] font-semibold uppercase text-slate-600 tracking-wide">
+            Standard-Element
+          </span>
+          <p className="text-xs font-semibold text-slate-900 truncate">{baustein.titel}</p>
+        </div>
+      </div>
+
+      {baustein.admin_beschreibung && (
+        <p className="text-[11px] text-slate-700 leading-relaxed">{baustein.admin_beschreibung}</p>
+      )}
+
+      {baustein.export_instruktion && (
+        <div className="rounded-md bg-white border border-slate-200 p-2 space-y-0.5">
+          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-1">
+            <Sparkles className="w-2.5 h-2.5" /> Export-Instruktion
+          </p>
+          <p className="text-[11px] text-slate-700 leading-relaxed whitespace-pre-wrap">
+            {baustein.export_instruktion}
+          </p>
+        </div>
+      )}
+
+      <p className="text-[10px] text-slate-500 font-mono">{baustein.baustein_id}</p>
+    </div>
+  );
+}
+
+export default function MonitorPanel({ aufgabe, systemBaustein, onPreviewClick }) {
+  // System-Baustein hat Vorrang in der Anzeige, falls beide gesetzt wären.
+  if (systemBaustein) {
+    return <SystemBausteinView baustein={systemBaustein} />;
+  }
+
   if (!aufgabe) {
     return (
       <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-center">
         <MousePointerClick className="w-5 h-5 mx-auto text-muted-foreground/60 mb-1.5" />
         <p className="text-xs text-muted-foreground">
-          Klicke auf eine Aufgabe (links oder rechts), um Details zu sehen.
+          Klicke auf eine Aufgabe oder ein Standard-Element, um Details zu sehen.
         </p>
       </div>
     );

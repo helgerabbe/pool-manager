@@ -2,18 +2,27 @@
  * LernpfadeAufgabenPool.jsx
  *
  * Linke Spalte des Lernpfad-Cockpits (Tab 7).
- * - Oben: Monitor-Panel (fixiert, zeigt später Detail-Infos zur ausgewählten Aufgabe).
- * - Unten: Scrollbare Liste der Aufgaben aus Ebene 2 + 3, gefiltert nach aufgaben_typ.
- *   sync_status === 'to_delete' wird ausgeblendet.
+ * - Oben: Monitor-Panel (fixiert, zeigt Detail-Infos zum aktuell selektierten Item).
+ * - Mitte: Zwei Reiter
+ *     • "Einheit-Aufgaben": gefilterte AllgemeineAufgabe-Liste (Ebene 2/3).
+ *     • "Standard-Elemente": globale System-Bausteine.
+ * - Unten (jeweils): Filter-Chips bzw. Liste der Items.
+ *
+ * Quellen:
+ *   • Aufgaben → AllgemeineAufgabeService (gefiltert per einheitId).
+ *   • System-Bausteine → SystemBausteine-Entität (global, ist_aktiv === true).
  */
 
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
+import { base44 } from '@/api/base44Client';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { AUFGABEN_TYPEN, AUFGABEN_TYPEN_ORDER, getAufgabenTyp } from '@/lib/aufgabenTypen';
-import { Loader2, Inbox, Eye, CheckCircle2 } from 'lucide-react';
+import { Loader2, Inbox, Eye, CheckCircle2, BookOpen, Sparkles } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import MonitorPanel from '@/components/lernpfade/MonitorPanel';
+import SystemBausteinPoolItem from '@/components/lernpfade/SystemBausteinPoolItem';
 
 // ── Helfer ──────────────────────────────────────────────────────────────
 function FilterChip({ typKey, active, count, onClick }) {
@@ -105,15 +114,26 @@ export default function LernpfadeAufgabenPool({
   einheitId,
   usedAufgabenIds = new Set(),
   selectedAufgabe = null,
+  selectedSystemBaustein = null,
   onSelectAufgabe,
+  onSelectSystemBaustein,
   onPreviewAufgabe,
 }) {
   const [activeFilters, setActiveFilters] = useState(new Set(AUFGABEN_TYPEN_ORDER));
+  const [activeTab, setActiveTab] = useState('aufgaben');
 
-  const { data: alleAufgaben = [], isLoading } = useQuery({
+  const { data: alleAufgaben = [], isLoading: loadingAufgaben } = useQuery({
     queryKey: ['allgemeineAufgaben', einheitId],
     queryFn: () => (einheitId ? getAufgabenByEinheit(einheitId) : Promise.resolve([])),
     enabled: !!einheitId,
+  });
+
+  const { data: systemBausteine = [], isLoading: loadingBausteine } = useQuery({
+    queryKey: ['systemBausteine', 'aktiv'],
+    queryFn: async () => {
+      const list = await base44.entities.SystemBausteine.list('reihenfolge');
+      return (list || []).filter((b) => b.ist_aktiv !== false);
+    },
   });
 
   // Pool: Ebene 2 + 3, ohne Tombstones.
@@ -139,6 +159,7 @@ export default function LernpfadeAufgabenPool({
   }, [poolAufgaben, activeFilters]);
 
   const selectedAufgabeId = selectedAufgabe?.id || null;
+  const selectedBausteinId = selectedSystemBaustein?.baustein_id || null;
 
   const toggleFilter = (typKey) => {
     setActiveFilters((prev) => {
@@ -157,65 +178,133 @@ export default function LernpfadeAufgabenPool({
           <Eye className="w-3.5 h-3.5 text-muted-foreground" />
           <h3 className="text-xs font-semibold text-foreground uppercase tracking-wide">Monitor</h3>
         </div>
-        <MonitorPanel aufgabe={selectedAufgabe} onPreviewClick={onPreviewAufgabe} />
+        <MonitorPanel
+          aufgabe={selectedAufgabe}
+          systemBaustein={selectedSystemBaustein}
+          onPreviewClick={onPreviewAufgabe}
+        />
       </div>
 
-      {/* Filter-Chips */}
-      <div className="shrink-0 p-3 border-b border-border bg-card">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-xs font-semibold text-foreground uppercase tracking-wide">Material-Pool</h3>
-          <span className="text-[10px] text-muted-foreground">{filteredAufgaben.length} sichtbar</span>
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+        <div className="shrink-0 px-3 pt-2 border-b border-border bg-card">
+          <TabsList className="grid w-full grid-cols-2 h-8">
+            <TabsTrigger value="aufgaben" className="text-xs gap-1.5">
+              <BookOpen className="w-3 h-3" /> Einheit-Aufgaben
+            </TabsTrigger>
+            <TabsTrigger value="system" className="text-xs gap-1.5">
+              <Sparkles className="w-3 h-3" /> Standard-Elemente
+            </TabsTrigger>
+          </TabsList>
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {AUFGABEN_TYPEN_ORDER.map((typKey) => (
-            <FilterChip
-              key={typKey}
-              typKey={typKey}
-              active={activeFilters.has(typKey)}
-              count={counts[typKey] || 0}
-              onClick={() => toggleFilter(typKey)}
-            />
-          ))}
-        </div>
-      </div>
 
-      {/* Liste (scrollbar) – Droppable als Drag-Quelle */}
-      <Droppable droppableId="pool" type="AUFGABE" isDropDisabled>
-        {(provided) => (
-          <div
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-            className="flex-1 overflow-y-auto p-3 space-y-1.5 min-h-0"
-          >
-            {isLoading ? (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground py-6 justify-center">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Lade Aufgaben…
-              </div>
-            ) : filteredAufgaben.length === 0 ? (
-              <div className="flex flex-col items-center justify-center text-center py-8 px-2">
-                <Inbox className="w-7 h-7 text-muted-foreground/40 mb-2" />
-                <p className="text-xs text-muted-foreground">
-                  {poolAufgaben.length === 0
-                    ? 'Keine Aufgaben in Ebene 2/3 vorhanden.'
-                    : 'Kein Treffer – passe die Filter an.'}
-                </p>
-              </div>
-            ) : (
-              filteredAufgaben.map((a, idx) => (
-                <AufgabeListItem
-                  key={a.id}
-                  aufgabe={a}
-                  index={idx}
-                  isSelected={selectedAufgabeId === a.id}
-                  isUsed={usedAufgabenIds.has(a.id)}
-                  onClick={() => onSelectAufgabe?.(a.id)}
+        {/* Tab 1: Einheit-Aufgaben */}
+        <TabsContent value="aufgaben" className="flex-1 flex flex-col overflow-hidden m-0 data-[state=inactive]:hidden">
+          {/* Filter-Chips */}
+          <div className="shrink-0 p-3 border-b border-border bg-card">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xs font-semibold text-foreground uppercase tracking-wide">Material-Pool</h3>
+              <span className="text-[10px] text-muted-foreground">{filteredAufgaben.length} sichtbar</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {AUFGABEN_TYPEN_ORDER.map((typKey) => (
+                <FilterChip
+                  key={typKey}
+                  typKey={typKey}
+                  active={activeFilters.has(typKey)}
+                  count={counts[typKey] || 0}
+                  onClick={() => toggleFilter(typKey)}
                 />
-              ))
-            )}
-            {provided.placeholder}
+              ))}
+            </div>
           </div>
-        )}
-      </Droppable>
+
+          {/* Liste – Droppable als Drag-Quelle */}
+          <Droppable droppableId="pool" type="LERNPFAD_ITEM" isDropDisabled>
+            {(provided) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className="flex-1 overflow-y-auto p-3 space-y-1.5 min-h-0"
+              >
+                {loadingAufgaben ? (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground py-6 justify-center">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Lade Aufgaben…
+                  </div>
+                ) : filteredAufgaben.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center text-center py-8 px-2">
+                    <Inbox className="w-7 h-7 text-muted-foreground/40 mb-2" />
+                    <p className="text-xs text-muted-foreground">
+                      {poolAufgaben.length === 0
+                        ? 'Keine Aufgaben in Ebene 2/3 vorhanden.'
+                        : 'Kein Treffer – passe die Filter an.'}
+                    </p>
+                  </div>
+                ) : (
+                  filteredAufgaben.map((a, idx) => (
+                    <AufgabeListItem
+                      key={a.id}
+                      aufgabe={a}
+                      index={idx}
+                      isSelected={selectedAufgabeId === a.id}
+                      isUsed={usedAufgabenIds.has(a.id)}
+                      onClick={() => onSelectAufgabe?.(a.id)}
+                    />
+                  ))
+                )}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </TabsContent>
+
+        {/* Tab 2: Standard-Elemente (System-Bausteine) */}
+        <TabsContent value="system" className="flex-1 flex flex-col overflow-hidden m-0 data-[state=inactive]:hidden">
+          <div className="shrink-0 p-3 border-b border-border bg-card">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-semibold text-foreground uppercase tracking-wide">Standard-Elemente</h3>
+              <span className="text-[10px] text-muted-foreground">{systemBausteine.length} verfügbar</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Globale Bausteine. Können beliebig oft gezogen werden.
+            </p>
+          </div>
+
+          <Droppable droppableId="pool-system" type="LERNPFAD_ITEM" isDropDisabled>
+            {(provided) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className="flex-1 overflow-y-auto p-3 space-y-1.5 min-h-0"
+              >
+                {loadingBausteine ? (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground py-6 justify-center">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Lade Bausteine…
+                  </div>
+                ) : systemBausteine.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center text-center py-8 px-2">
+                    <Sparkles className="w-7 h-7 text-muted-foreground/40 mb-2" />
+                    <p className="text-xs text-muted-foreground">
+                      Keine System-Bausteine vorhanden. Lege sie im Admin-Bereich an.
+                    </p>
+                  </div>
+                ) : (
+                  systemBausteine.map((b, idx) => (
+                    <SystemBausteinPoolItem
+                      key={b.id}
+                      baustein={b}
+                      index={idx}
+                      isSelected={selectedBausteinId === b.baustein_id}
+                      onClick={() => onSelectSystemBaustein?.(b.baustein_id)}
+                    />
+                  ))
+                )}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
