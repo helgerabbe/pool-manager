@@ -10,6 +10,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { storageService } from '@/services/storageService';
+import { trackOrphanedFile } from '@/lib/orphanedFileTracker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,6 +28,8 @@ export default function ImageLabelingEditor({
   onChange,
   readOnly = false,
   hideInternalFooter = false, // ← NEU: Ausblenden, wenn das Modal seinen eigenen Footer liefert
+  // ── Optionale Kontext-Infos für OrphanedFile-Tracking ──
+  trackingContext = null, // { sourceEntity, sourceRecordId, einheitId?, lernpaketId? }
 }) {
   const normalizeData = (raw) => ({
     aufgabenstellung: raw?.aufgabenstellung || '',
@@ -76,6 +79,19 @@ export default function ImageLabelingEditor({
 
       if (!fileUrl || typeof fileUrl !== 'string') {
         throw new Error('Upload lieferte keine gültige URL zurück.');
+      }
+
+      // Wenn ein altes Bild ersetzt wird, alte URL in OrphanedFile protokollieren.
+      const previousUrl = data.backgroundImage;
+      if (previousUrl && previousUrl !== fileUrl && trackingContext?.sourceEntity && trackingContext?.sourceRecordId) {
+        trackOrphanedFile({
+          fileUrl: previousUrl,
+          sourceEntity: trackingContext.sourceEntity,
+          sourceRecordId: trackingContext.sourceRecordId,
+          fieldName: 'backgroundImage',
+          contextEinheitId: trackingContext.einheitId,
+          contextLernpaketId: trackingContext.lernpaketId,
+        });
       }
 
       setData(d => ({ ...d, backgroundImage: fileUrl }));
@@ -343,7 +359,20 @@ export default function ImageLabelingEditor({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => applyChange(d => ({ ...d, backgroundImage: '' }))}
+                  onClick={() => {
+                    const previousUrl = data.backgroundImage;
+                    if (previousUrl && trackingContext?.sourceEntity && trackingContext?.sourceRecordId) {
+                      trackOrphanedFile({
+                        fileUrl: previousUrl,
+                        sourceEntity: trackingContext.sourceEntity,
+                        sourceRecordId: trackingContext.sourceRecordId,
+                        fieldName: 'backgroundImage',
+                        contextEinheitId: trackingContext.einheitId,
+                        contextLernpaketId: trackingContext.lernpaketId,
+                      });
+                    }
+                    applyChange(d => ({ ...d, backgroundImage: '' }));
+                  }}
                   className="h-7 text-xs text-green-700 hover:text-green-900"
                 >
                   Entfernen

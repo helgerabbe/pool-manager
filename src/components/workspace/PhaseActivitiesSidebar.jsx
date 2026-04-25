@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Plus, Edit, Trash2, AlertTriangle, GripVertical, ArrowRight, X, Menu } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import DeleteActivityConfirmDialog from '@/components/workspace/DeleteActivityConfirmDialog';
 
 export default function PhaseActivitiesSidebar({
   paket,
@@ -22,6 +23,7 @@ export default function PhaseActivitiesSidebar({
 }) {
   const queryClient = useQueryClient();
   const [newActivityId, setNewActivityId] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null); // { id, name }
 
   const { data: aktivitaeten = [] } = useQuery({
     queryKey: ['lernpaketPhaseAktivitaeten', paket.id, phase],
@@ -58,15 +60,30 @@ export default function PhaseActivitiesSidebar({
   });
 
   const deleteAktivitaet = useMutation({
-   mutationFn: (id) =>
-     base44.entities.LernpaketPhaseAktivitaet.delete(id),
-   onSuccess: () => {
-     queryClient.invalidateQueries({
-       queryKey: ['lernpaketPhaseAktivitaeten'],
-     });
-     toast.success('Aktivität entfernt.');
-   },
-   onError: () => toast.error('Fehler beim Löschen.'),
+    mutationFn: async (id) => {
+      const res = await base44.functions.invoke('deleteActivityWithTombstoneAndCascade', {
+        activity_id: id,
+      });
+      if (res?.data?.error) throw new Error(res.data.error);
+      return res?.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+      queryClient.invalidateQueries({ queryKey: ['klone'] });
+      const stats = data?.stats;
+      if (stats && (stats.master_deleted || stats.klone_deleted || stats.orphans_logged)) {
+        toast.success(
+          `Aktivität gelöscht (${stats.master_deleted} Master, ${stats.klone_deleted} Klone, ${stats.orphans_logged} Dateien protokolliert).`
+        );
+      } else {
+        toast.success('Aktivität gelöscht.');
+      }
+      setDeleteTarget(null);
+    },
+    onError: (err) => {
+      toast.error(err?.message || 'Fehler beim Löschen.');
+    },
   });
 
   // Nur aktive Aktivitäten für die aktuelle Phase aus dem Katalog
@@ -202,7 +219,13 @@ export default function PhaseActivitiesSidebar({
                                   variant="ghost"
                                   size="icon"
                                   className="h-7 w-7"
-                                  onClick={() => deleteAktivitaet.mutate(activity.id)}
+                                  title="Aktivität löschen"
+                                  onClick={() =>
+                                    setDeleteTarget({
+                                      id: activity.id,
+                                      name: katalog?.name || 'Aktivität',
+                                    })
+                                  }
                                 >
                                   <Trash2 className="w-3.5 h-3.5 text-destructive" />
                                 </Button>
@@ -240,6 +263,14 @@ export default function PhaseActivitiesSidebar({
           </div>
         </div>
       </aside>
+
+      <DeleteActivityConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        onConfirm={() => deleteTarget && deleteAktivitaet.mutate(deleteTarget.id)}
+        isDeleting={deleteAktivitaet.isPending}
+        activityName={deleteTarget?.name}
+      />
     </>
   );
 }

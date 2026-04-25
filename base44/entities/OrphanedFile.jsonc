@@ -1,0 +1,60 @@
+{
+  "name": "OrphanedFile",
+  "type": "object",
+  "properties": {
+    "file_url": {
+      "type": "string",
+      "description": "URL oder URI der verwaisten Datei im Base44 Storage"
+    },
+    "source_entity": {
+      "type": "string",
+      "description": "Name der Quell-Entit\u00e4t (z.B. 'LernpaketPhaseAktivitaet', 'MasterAufgabe', 'Aufgabenbausteine')"
+    },
+    "source_record_id": {
+      "type": "string",
+      "description": "ID des Datensatzes, aus dem die Datei verwaist ist"
+    },
+    "field_name": {
+      "type": "string",
+      "description": "Name des Feldes (innerhalb field_values), aus dem die Datei stammt \u2013 n\u00fctzlich f\u00fcr Debugging"
+    },
+    "context_einheit_id": {
+      "type": "string",
+      "description": "Optionaler Einheit-Kontext f\u00fcr Nachverfolgung"
+    },
+    "context_lernpaket_id": {
+      "type": "string",
+      "description": "Optionaler Lernpaket-Kontext f\u00fcr Nachverfolgung"
+    },
+    "deleted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitpunkt der Protokollierung als verwaist"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "deleted",
+        "failed",
+        "skipped"
+      ],
+      "default": "pending",
+      "description": "Status der GC-Verarbeitung: pending=wartet, deleted=physisch entfernt, failed=Fehler beim L\u00f6schen, skipped=\u00fcbersprungen"
+    },
+    "gc_attempted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitpunkt des letzten GC-Versuchs (nullable)"
+    },
+    "gc_error_message": {
+      "type": "string",
+      "description": "Fehlermeldung beim letzten GC-Versuch (nullable)"
+    }
+  },
+  "required": [
+    "file_url",
+    "source_entity",
+    "source_record_id"
+  ]
+}
