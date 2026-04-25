@@ -566,17 +566,6 @@ export default function ImageLabelingEditor({
 
 
 
-      {/* Speichern / Abbrechen – NUR wenn kein Modal-Footer darum herum liegt */}
-      {!readOnly && !hideInternalFooter && (
-        <div className="flex gap-2 border-t pt-3">
-          <Button variant="ghost" onClick={onCancel}>
-            Abbrechen
-          </Button>
-          <Button onClick={() => onSave(data)} className="ml-auto gap-1.5">
-            Speichern & schließen
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
