@@ -674,6 +674,17 @@ export default function MasterDetailView({
                   onDelete={editingKlonId ? undefined : handleDelete}
                   onSave={handleModalSave}
                   onCancel={handleCloseModal}
+                  trackingContext={editingKlonId
+                    ? {
+                        sourceEntity: 'Aufgabenbausteine',
+                        sourceRecordId: editingKlonId,
+                        lernpaketId: master?.lernpaket_id,
+                      }
+                    : {
+                        sourceEntity: 'MasterAufgabe',
+                        sourceRecordId: master?.id,
+                        lernpaketId: master?.lernpaket_id,
+                      }}
                 />
               )}
 

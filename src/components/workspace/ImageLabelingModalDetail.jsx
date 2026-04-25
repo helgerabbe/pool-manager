@@ -23,6 +23,7 @@ export default function ImageLabelingModalDetail({
   onDelete,
   isSaving = false,
   exportLocked = false,
+  trackingContext = null, // { sourceEntity, sourceRecordId, einheitId?, lernpaketId? }
 }) {
   const [fieldValues, setFieldValues] = useState(initialData);
   const [isReleased, setIsReleased] = useState(initialData?.content_status === 'approved');
@@ -104,6 +105,7 @@ export default function ImageLabelingModalDetail({
             // Interner Footer wird durch den Modal-Footer ersetzt (siehe unten).
             hideInternalFooter
             readOnly={false}
+            trackingContext={trackingContext}
           />
         </div>
 
