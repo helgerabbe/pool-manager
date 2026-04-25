@@ -520,57 +520,29 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               </div>
             )}
 
-            {/* ── Persistenter Header mit Structural-Lock-Control ─────────── */}
-            <div className="px-4 sm:px-6 lg:px-8 py-1.5 border-b border-border bg-muted/40 shrink-0 flex items-center gap-3 flex-wrap">
-              <span className="text-lg font-bold text-foreground truncate flex-1 min-w-0 leading-snug">{einheit.titel_der_einheit}</span>
-              <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full shrink-0">{einheit.fach}</span>
-
-              {/* Status-Badge + Lock-Button – NUR in Tab 2 (Struktur) sichtbar */}
-              {(permissions.kannStrukturBearbeiten(einheit?.fach) || unitAccess.hasFullAccess) && activeTab === 'struktur' ? (
-                <div className="flex items-center gap-2 shrink-0">
-                  {/* Status-Badge */}
-                  {isStructuralEditingActive ? (
-                    <span className="flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20">
-                      <PenLine className="w-3.5 h-3.5" /> Bearbeitungsmodus
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-muted px-2.5 py-1 rounded-full border border-border">
-                      <Lock className="w-3.5 h-3.5" /> Lesemodus
-                    </span>
-                  )}
-
-                  {/* Action-Button */}
-                  {isStructuralEditingActive ? (
-                    <button
-                      onClick={handleReleaseStructLock}
-                      disabled={releasingStructLock}
-                      className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted transition-colors disabled:opacity-50"
-                    >
-                      {releasingStructLock
-                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        : <Unlock className="w-3.5 h-3.5" />}
-                      Bearbeitung beenden
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleAcquireStructLock}
-                      disabled={acquiringStructLock || structLocked}
-                      title={structLocked ? `Gesperrt von ${einheit?.structural_lock}` : 'Strukturbearbeitung starten'}
-                      className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {acquiringStructLock
-                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        : <PenLine className="w-3.5 h-3.5" />}
-                      Einheit Struktur bearbeiten
-                    </button>
-                  )}
-                </div>
-              ) : null}
-            </div>
-
-            {/* 6-Step Navigation */}
-            <div className="px-4 sm:px-6 lg:px-8 py-1.5 border-b border-border bg-card shrink-0">
-              <WorkspaceTabs activeTab={activeTab} onTabChange={handleTabChange} />
+            {/* 10-Step Navigation – der Einheits-Titel wird global im AppLayout-Header
+                angezeigt, daher ist hier keine separate Titel-Zeile mehr nötig.
+                Der Strukturlock-„Bearbeiten starten"-Button (Tab 2) wird kompakt
+                rechts neben der Tab-Leiste eingeblendet, wenn er aktivierbar ist. */}
+            <div className="px-4 sm:px-6 lg:px-8 py-1.5 border-b border-border bg-card shrink-0 flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <WorkspaceTabs activeTab={activeTab} onTabChange={handleTabChange} />
+              </div>
+              {activeTab === 'struktur' &&
+                !isStructuralEditingActive &&
+                (permissions.kannStrukturBearbeiten(einheit?.fach) || unitAccess.hasFullAccess) && (
+                  <button
+                    onClick={handleAcquireStructLock}
+                    disabled={acquiringStructLock || structLocked}
+                    title={structLocked ? `Gesperrt von ${einheit?.structural_lock}` : 'Strukturbearbeitung starten'}
+                    className="shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {acquiringStructLock
+                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      : <PenLine className="w-3.5 h-3.5" />}
+                    Struktur bearbeiten
+                  </button>
+                )}
             </div>
 
             {/* ── Tab 1: Einheit anlegen ───────────────────────────────────────── */}

@@ -36,21 +36,33 @@ function NavIconLink({ to, icon: Icon, label, isActive }) {
 
 // ── Breadcrumb-Logik ─────────────────────────────────────────────────────────
 
-function useBreadcrumb(location) {
+// Liefert den aktuell aktiven Einheits-Datensatz, sofern wir uns auf einem
+// Workspace-Pfad befinden (für die Header-Titel-Anzeige). Wir akzeptieren
+// sowohl /workspace?einheit=… als auch /einheiten/:id und /einheit/…
+function useActiveEinheit(location) {
   const urlParams = new URLSearchParams(location.search);
-  const einheitId = urlParams.get('einheit');
+  const einheitFromQuery = urlParams.get('einheit');
+  // /einheiten/:id  → letzten Pfad-Abschnitt nutzen
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  const einheitFromPath =
+    pathParts[0] === 'einheiten' && pathParts[1] && pathParts[1] !== 'create'
+      ? pathParts[1]
+      : null;
+  const einheitId = einheitFromQuery || einheitFromPath;
+
+  const isWorkspace =
+    location.pathname === '/workspace' ||
+    location.pathname.startsWith('/einheiten/') ||
+    location.pathname.startsWith('/einheit/');
 
   const { data: einheiten = [] } = useQuery({
     queryKey: ['einheiten'],
     queryFn: () => getAllEinheiten(),
-    enabled: !!einheitId,
+    enabled: !!einheitId && isWorkspace,
   });
 
-  const isWorkspace = location.pathname === '/workspace' || location.pathname.startsWith('/einheit/');
-  const einheit = einheiten.find(e => e.id === einheitId);
-
-  if (!isWorkspace) return null;
-  return einheit ? `${einheit.fach} – ${einheit.titel_der_einheit}` : 'Arbeitsbereich';
+  if (!isWorkspace || !einheitId) return null;
+  return einheiten.find((e) => e.id === einheitId) || null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -97,6 +109,7 @@ function GlobalRealtimeUpdates() {
 export default function AppLayout() {
   const location = useLocation();
   const { realRolle, permissions } = useRBAC();
+  const activeEinheit = useActiveEinheit(location);
 
   const isActive = (path) =>
     path === '/'
@@ -116,16 +129,33 @@ export default function AppLayout() {
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
 
-            {/* Links: Logo */}
-            <div className="flex items-center gap-2.5 shrink-0">
-              <Link to="/" className="flex items-center gap-2.5 shrink-0">
+            {/* Links: Logo + (auf Workspace-Pfaden) Titel der aktiven Einheit.
+                Das Icon dient gleichzeitig als Home-Link und ersetzt zusammen mit
+                dem hier eingeblendeten Einheits-Titel die alte separate
+                Titel-Zeile im Workspace-Sub-Header. */}
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <Link to="/" className="shrink-0" title="Pool-Manager – Startseite">
                 <img
-                   src="https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/84d10855a_image.png"
-                   alt="Pool-Manager Icon"
-                   className="w-10 h-10 rounded-xl object-cover"
-                 />
-                <span className="text-base font-bold text-foreground tracking-tight hidden sm:inline">Pool-Manager</span>
+                  src="https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/84d10855a_image.png"
+                  alt="Pool-Manager"
+                  className="w-10 h-10 rounded-xl object-cover"
+                />
               </Link>
+              {activeEinheit ? (
+                <h1
+                  className="text-lg font-bold text-primary tracking-tight truncate min-w-0"
+                  title={activeEinheit.titel_der_einheit}
+                >
+                  {activeEinheit.titel_der_einheit}
+                </h1>
+              ) : (
+                <Link
+                  to="/"
+                  className="text-base font-bold text-foreground tracking-tight hidden sm:inline"
+                >
+                  Pool-Manager
+                </Link>
+              )}
             </div>
 
             {/* Rechts: NUR globale Icons (Home, Einheiten, Admin, Profil) */}
