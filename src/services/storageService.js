@@ -24,9 +24,9 @@ export const storageService = {
 
     try {
       if (isPrivate) {
-        return await base44.integrations.Core.UploadPrivateFile(file);
+        return await base44.integrations.Core.UploadPrivateFile({ file });
       }
-      return await base44.integrations.Core.UploadFile(file);
+      return await base44.integrations.Core.UploadFile({ file });
     } catch (error) {
       console.error('[StorageService] Upload fehlgeschlagen:', error);
       // Original-Message erhalten, damit z.B. das Größen-Limit klar im Toast erscheint.
