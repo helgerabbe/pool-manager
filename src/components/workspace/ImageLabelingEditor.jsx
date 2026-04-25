@@ -448,7 +448,7 @@ export default function ImageLabelingEditor({
       )}
 
       {/* Drag & Drop Editor (nur im Edit-Modus) / Read-Only Ansicht */}
-      {data.backgroundImage && data.dropZones.length > 0 && (
+      {data.backgroundImage && (
         <div className="space-y-2 border-t pt-4">
           {!readOnly && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 text-xs">
