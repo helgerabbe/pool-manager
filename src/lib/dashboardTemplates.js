@@ -48,23 +48,33 @@ const B = Object.freeze({
   pBasispaket: 'sys_platzhalter_basispaket',
   pEbene2: 'sys_platzhalter_ebene2',
   pProjekt: 'sys_platzhalter_projekt',
+  // Platzhalter (Magic-Raster Erweiterung)
+  pInfo: 'sys_platzhalter_info',
+  pReflexion: 'sys_platzhalter_reflexion',
 });
 
 // ── Template: Minimalist ────────────────────────────────────────────────
 // Fokus: kleinschrittig, viel Handlung. Wenige Sektoren, niedrige
-// kognitive Eintrittshürde.
+// kognitive Eintrittshürde. Sektor 1 startet mit einer Infoseite zur
+// Orientierung; Sektor 3 schließt mit einer Reflexionsaufgabe ab.
 const MINIMALIST = [
   {
     sektor_id: 'tpl_min_sec1',
-    titel: 'Start: Einstieg & erste Handlung',
+    titel: 'Einstieg & Zielklärung',
     modus: 'sequenziell',
-    items: [sys(B.diagnose), sys(B.pHandlung)],
+    items: [sys(B.diagnose), sys(B.pInfo), sys(B.pHandlung)],
   },
   {
     sektor_id: 'tpl_min_sec2',
     titel: 'Inhalt: Grundlagen festigen',
     modus: 'sequenziell',
     items: [sys(B.pEbene2), sys(B.pBasispaket), sys(B.lehrerCheck)],
+  },
+  {
+    sektor_id: 'tpl_min_sec3',
+    titel: 'Vertiefung & Abschluss',
+    modus: 'sequenziell',
+    items: [sys(B.pReflexion)],
   },
 ];
 

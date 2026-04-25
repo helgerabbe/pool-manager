@@ -22,6 +22,7 @@ import {
   Layers,
   FileText,
   Star,
+  Info,
 } from 'lucide-react';
 
 const ICONS = {
@@ -38,6 +39,7 @@ const ICONS = {
   layers: Layers,
   'file-text': FileText,
   star: Star,
+  info: Info,
 };
 
 export function getSystemBausteinIcon(iconKey) {

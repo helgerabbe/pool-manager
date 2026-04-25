@@ -40,6 +40,10 @@ describe('isPlatzhalterBaustein – ID-basierte Erkennung', () => {
     expect(isPlatzhalterBaustein('sys_platzhalter_basispaket')).toBe(true);
     expect(isPlatzhalterBaustein('sys_platzhalter_ebene2')).toBe(true);
     expect(isPlatzhalterBaustein('sys_platzhalter_projekt')).toBe(true);
+    // Magic-Raster-Erweiterung: neue Platzhalter-IDs müssen ebenfalls
+    // automatisch durch das Präfix erkannt werden (border-dashed).
+    expect(isPlatzhalterBaustein('sys_platzhalter_info')).toBe(true);
+    expect(isPlatzhalterBaustein('sys_platzhalter_reflexion')).toBe(true);
   });
 
   it('liefert false für reguläre System-Bausteine', () => {

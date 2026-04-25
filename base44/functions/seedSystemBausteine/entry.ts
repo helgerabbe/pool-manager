@@ -108,6 +108,28 @@ const PFLICHT_BAUSTEINE = [
     ist_aktiv: true,
     reihenfolge: 130,
   },
+  {
+    baustein_id: 'sys_platzhalter_info',
+    titel: 'Platzhalter: Infoseite / Prozess-Aufgabe',
+    icon: 'info',
+    admin_beschreibung:
+      'Drop-Zone-Erinnerung: Hier soll später eine reine Infoseite oder eine Prozess-Aufgabe (Orientierung, Anleitung) eingefügt werden.',
+    export_instruktion:
+      'PLATZHALTER – muss durch eine echte Infoseite oder Prozess-Aufgabe ersetzt werden, bevor der Pfad freigegeben wird.',
+    ist_aktiv: true,
+    reihenfolge: 140,
+  },
+  {
+    baustein_id: 'sys_platzhalter_reflexion',
+    titel: 'Platzhalter: Reflexionsaufgabe',
+    icon: 'message-circle',
+    admin_beschreibung:
+      'Drop-Zone-Erinnerung: Hier soll später eine Reflexionsaufgabe (Selbsteinschätzung, Lernrückblick) eingefügt werden.',
+    export_instruktion:
+      'PLATZHALTER – muss durch eine echte Reflexionsaufgabe ersetzt werden, bevor der Pfad freigegeben wird.',
+    ist_aktiv: true,
+    reihenfolge: 150,
+  },
 ];
 
 Deno.serve(async (req) => {
