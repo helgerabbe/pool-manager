@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Loader2, Trash2, AlertCircle } from 'lucide-react';
 import ReleaseStatusToggle from '@/components/workspace/ReleaseStatusToggle';
+import ActivityResetButton from '@/components/workspace/ActivityResetButton';
 
 export default function BaseActivityModal({ 
   open, 
@@ -11,6 +12,7 @@ export default function BaseActivityModal({
   initialData = {}, 
   onSave, 
   onDelete, 
+  onReset,        // Optional: setzt Aktivitäts-Inhalte zurück (Aktivität bleibt erhalten)
   isSaving = false, 
   isCopy = false, 
   exportLocked = false,
@@ -64,7 +66,7 @@ export default function BaseActivityModal({
           />
 
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {onDelete && !deleteConfirm && (
                 <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(true)} disabled={isSaving || isDeleting || exportLocked} className="gap-1.5 text-destructive hover:bg-red-50 hover:text-destructive">
                   <Trash2 className="w-4 h-4" />
@@ -81,6 +83,12 @@ export default function BaseActivityModal({
                     Abbrechen
                   </Button>
                 </>
+              )}
+              {onReset && !deleteConfirm && (
+                <ActivityResetButton
+                  onReset={onReset}
+                  disabled={isSaving || isDeleting || exportLocked}
+                />
               )}
             </div>
 

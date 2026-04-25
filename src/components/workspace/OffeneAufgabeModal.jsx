@@ -15,6 +15,7 @@ export default function OffeneAufgabeModal({
   initialData = {},
   onSave,
   onDelete,
+  onReset,
   isSaving = false,
   isCopy = false,
   exportLocked = false,
@@ -31,6 +32,7 @@ export default function OffeneAufgabeModal({
       isCopy={isCopy}
       exportLocked={exportLocked}
       onDelete={onDelete}
+      onReset={onReset}
       onSave={(baseData) => {
         onSave?.({ ...editorData, ...baseData });
       }}

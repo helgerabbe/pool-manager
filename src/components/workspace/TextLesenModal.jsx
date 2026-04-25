@@ -14,6 +14,7 @@ import { Loader2, AlertCircle } from 'lucide-react';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import ReleaseStatusToggle from '@/components/workspace/ReleaseStatusToggle';
+import ActivityResetButton from '@/components/workspace/ActivityResetButton';
 
 export default function TextLesenModal({
   open,
@@ -22,6 +23,7 @@ export default function TextLesenModal({
   initialFieldValues = {},
   onSave,        // (fieldValues) => Promise — speichert + gibt Lock frei
   onCancel,      // () => Promise — gibt Lock frei ohne zu speichern
+  onReset,       // () => Promise — setzt Aktivitäts-Inhalte zurück (Aktivität bleibt erhalten)
   isSaving = false,
   exportLocked = false,  // Wird bei Export-Lock deaktiviert
 }) {
@@ -174,20 +176,30 @@ export default function TextLesenModal({
           />
 
           {/* Action Buttons */}
-           <div className="flex items-center justify-between gap-3">
-             <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
-               Abbrechen
-             </Button>
-            <Button
-              onClick={handleSave}
-              disabled={isSaving || exportLocked}
-              title={exportLocked ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
-              className="gap-2"
-            >
-              {isSaving
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
-                : 'Speichern'}
-            </Button>
+           <div className="flex items-center justify-between gap-3 flex-wrap">
+             <div className="flex items-center gap-2">
+               {onReset && (
+                 <ActivityResetButton
+                   onReset={onReset}
+                   disabled={isSaving || exportLocked}
+                 />
+               )}
+             </div>
+             <div className="flex items-center gap-2">
+               <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
+                 Abbrechen
+               </Button>
+              <Button
+                onClick={handleSave}
+                disabled={isSaving || exportLocked}
+                title={exportLocked ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
+                className="gap-2"
+              >
+                {isSaving
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
+                  : 'Speichern'}
+              </Button>
+             </div>
           </div>
         </div>
       </DialogContent>

@@ -249,6 +249,31 @@ export default function ActivityMasterPanel({
     onEditModeChange?.(false, null);
   };
 
+  // Reset: Setzt alle Eingaben dieser Aktivität zurück.
+  // Die LernpaketPhaseAktivitaet selbst bleibt erhalten (in der Phase),
+  // nur field_values werden geleert und der Status auf "draft" gesetzt.
+  const handleModalReset = async () => {
+    await base44.entities.LernpaketPhaseAktivitaet.update(activityRecord.id, {
+      field_values: {},
+      is_complete: false,
+      content_status: 'draft',
+      ...(activityRecord?.moodle_sync_status === 'synced'
+        ? { moodle_sync_status: 'modified', is_dirty_since_export: true }
+        : {}),
+    });
+    setFieldValues({});
+    setEditModalOpen(false);
+    setIsRefreshingAfterSave(true);
+    try {
+      await queryClient.refetchQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+    } finally {
+      setIsRefreshingAfterSave(false);
+      await releaseLock();
+      onEditModeChange?.(false, null);
+      toast.success('Aktivitäts-Inhalte zurückgesetzt.');
+    }
+  };
+
   // Loading-State während des Refetchs nach dem Speichern
   const [isRefreshingAfterSave, setIsRefreshingAfterSave] = useState(false);
 
@@ -484,6 +509,7 @@ export default function ActivityMasterPanel({
                   isSaving={saveFieldsMutation.isPending}
                   onSave={handleModalSave}
                   onCancel={handleModalCancel}
+                  onReset={handleModalReset}
                   exportLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
                 />
               </>
@@ -524,6 +550,7 @@ export default function ActivityMasterPanel({
               initialFieldValues={{ ...fieldValues, content_status: activityRecord?.content_status, moodle_sync_status: activityRecord?.moodle_sync_status }}
               onSave={handleModalSave}
               onCancel={handleModalCancel}
+              onReset={handleModalReset}
               isSaving={saveFieldsMutation.isPending}
               exportLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
             />
