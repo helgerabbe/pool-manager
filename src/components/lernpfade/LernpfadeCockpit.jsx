@@ -17,13 +17,20 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { DragDropContext } from '@hello-pangea/dnd';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Loader2, Lock, PenLine, Unlock, Cloud, CloudOff } from 'lucide-react';
+import { Loader2, Lock, PenLine, Unlock, Cloud, CloudOff, ShieldCheck, ShieldOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import LernpfadeAufgabenPool from '@/components/lernpfade/LernpfadeAufgabenPool';
 import LernpfadeArchitekt from '@/components/lernpfade/LernpfadeArchitekt';
 import LernpfadeQuickAddModal from '@/components/lernpfade/LernpfadeQuickAddModal';
 import AufgabePreviewDialog from '@/components/lernpfade/AufgabePreviewDialog';
+import ReleaseBlockerModal from '@/components/lernpfade/ReleaseBlockerModal';
+import { LERN_TYPEN } from '@/components/lernpfade/LernpfadeArchitekt';
+import { useLernpfadStatus, PFAD_STATUS } from '@/hooks/useLernpfadStatus';
+import { useRBAC } from '@/hooks/useRBAC';
+import { ROLLEN } from '@/lib/rbac';
+import { AMPEL } from '@/lib/ampelLogic';
+import { ITEM_TYPE } from '@/lib/aufgabenTypen';
 import {
   getUsedAufgabenIds,
   createNewSektor,
@@ -147,6 +154,30 @@ export default function LernpfadeCockpit({
     if (aufgabe) setEditorAufgabe(aufgabe);
   }, []);
 
+  // ── Phase 4A: Lernpfad-Status (locked_for_export ↔ draft) ─────────────
+  // Status-Read + Berechtigungsableitung. Die Action-Handler (Lock/Unlock)
+  // werden unten — nach flushSave — definiert, weil sie diesen referenzieren.
+  const { data: pfadStatusData } = useLernpfadStatus(einheit?.id, activeLernTyp);
+  const pfadStatus = pfadStatusData?.status || PFAD_STATUS.EMPTY;
+  const istPfadGesperrt = pfadStatus === PFAD_STATUS.LOCKED;
+
+  // RBAC: Wer darf freigeben/entsperren?
+  // - Freigabe: Administrator, FACHSCHAFT (im Fach), LEHRKRAFT (im Fach – Unit-LEITUNG wird
+  //   zusätzlich serverseitig akzeptiert; clientseitig genügt 'kannBearbeiten' als Proxy).
+  // - Entsperren: STRENGER – nur Administrator + FACHSCHAFT (im Fach).
+  const { rolle, faecher } = useRBAC();
+  const istAdmin = rolle === ROLLEN.ADMIN;
+  const istFachschaftFuerFach =
+    rolle === ROLLEN.FACHSCHAFT &&
+    Array.isArray(faecher) && einheit?.fach && faecher.includes(einheit.fach);
+  const darfFreigeben = kannBearbeiten === true; // identisch mit Edit-Berechtigung
+  const darfEntsperren = istAdmin || istFachschaftFuerFach;
+
+  // ── Pre-Flight Check + Blocker-Modal ──────────────────────────────────
+  const [blockerOpen, setBlockerOpen] = useState(false);
+  const [blockers, setBlockers] = useState([]);
+  const [statusBusy, setStatusBusy] = useState(false);
+
   // Re-Sync, wenn der Einheit-Snapshot sich ändert (z.B. nach Tab-Wechsel)
   // ABER NUR im Lesemodus – im Edit-Modus ist der lokale State führend.
   useEffect(() => {
@@ -228,8 +259,126 @@ export default function LernpfadeCockpit({
     [scheduleSave]
   );
 
+  // ── Phase 4A: Lock/Unlock-Aktionen ─────────────────────────────────
+  // Sammelt alle Items des aktiven Lerntyps, die NICHT grün sind. System-Bausteine
+  // sind per Definition immer grün und werden nicht aufgenommen.
+  const collectBlockers = useCallback(() => {
+    const sektoren = konfiguration?.[activeLernTyp] || [];
+    const result = [];
+    sektoren.forEach((sektor, sektorIndex) => {
+      const items = Array.isArray(sektor.items) ? sektor.items : [];
+      items.forEach((item) => {
+        if (!item || item.type !== ITEM_TYPE.AUFGABE) return;
+        const status = getAmpelStatusForItem(item);
+        if (status === AMPEL.GREEN) return;
+        result.push({
+          aufgabe: aufgabenById.get(item.ref_id) || { id: item.ref_id, titel: 'Unbekannte Aufgabe' },
+          status,
+          sektorTitel: sektor.titel,
+          sektorIndex,
+        });
+      });
+    });
+    return result;
+  }, [konfiguration, activeLernTyp, aufgabenById, getAmpelStatusForItem]);
+
+  const handleReleasePath = useCallback(async () => {
+    if (!einheit?.id || !darfFreigeben || istPfadGesperrt || statusBusy) return;
+
+    // 1. Pre-Flight: alle Items grün?
+    const sektoren = konfiguration?.[activeLernTyp] || [];
+    const totalItems = sektoren.reduce(
+      (acc, s) => acc + (Array.isArray(s.items) ? s.items.length : 0),
+      0
+    );
+    if (totalItems === 0) {
+      toast.error('Der Lernpfad ist leer und kann nicht freigegeben werden.');
+      return;
+    }
+
+    const found = collectBlockers();
+    if (found.length > 0) {
+      setBlockers(found);
+      setBlockerOpen(true);
+      return;
+    }
+
+    // 2. Vor dem Lock: pending Save flushen, damit die Junction-Table garantiert aktuell ist.
+    if (pendingPayloadRef.current) {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      await flushSave();
+    }
+
+    // 3. Lock-Aufruf
+    setStatusBusy(true);
+    try {
+      const res = await base44.functions.invoke('setLernpfadStatus', {
+        einheitId: einheit.id,
+        lerntyp: activeLernTyp,
+        newStatus: 'locked_for_export',
+      });
+      if (res?.data?.ok) {
+        const label = LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label || activeLernTyp;
+        toast.success(`Lernpfad „${label}" erfolgreich freigegeben und gesperrt.`);
+        queryClient.invalidateQueries({ queryKey: ['lernpfadStatus', einheit.id, activeLernTyp] });
+        queryClient.invalidateQueries({ queryKey: ['aufgabeLock'] });
+      } else {
+        toast.error(res?.data?.error || 'Freigabe fehlgeschlagen.');
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.error || 'Freigabe fehlgeschlagen.');
+      console.error('[setLernpfadStatus] lock', err);
+    } finally {
+      setStatusBusy(false);
+    }
+  }, [
+    einheit?.id,
+    darfFreigeben,
+    istPfadGesperrt,
+    statusBusy,
+    konfiguration,
+    activeLernTyp,
+    collectBlockers,
+    queryClient,
+    flushSave,
+  ]);
+
+  const handleUnlockPath = useCallback(async () => {
+    if (!einheit?.id || !darfEntsperren || !istPfadGesperrt || statusBusy) return;
+    const label = LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label || activeLernTyp;
+    const ok = window.confirm(
+      `Lernpfad „${label}" wirklich entsperren? Aufgaben werden in Tab 5 wieder bearbeitbar.`
+    );
+    if (!ok) return;
+
+    setStatusBusy(true);
+    try {
+      const res = await base44.functions.invoke('setLernpfadStatus', {
+        einheitId: einheit.id,
+        lerntyp: activeLernTyp,
+        newStatus: 'draft',
+      });
+      if (res?.data?.ok) {
+        toast.success(`Lernpfad „${label}" entsperrt.`);
+        queryClient.invalidateQueries({ queryKey: ['lernpfadStatus', einheit.id, activeLernTyp] });
+        queryClient.invalidateQueries({ queryKey: ['aufgabeLock'] });
+      } else {
+        toast.error(res?.data?.error || 'Entsperren fehlgeschlagen.');
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.error || 'Entsperren fehlgeschlagen.');
+      console.error('[setLernpfadStatus] unlock', err);
+    } finally {
+      setStatusBusy(false);
+    }
+  }, [einheit?.id, darfEntsperren, istPfadGesperrt, statusBusy, activeLernTyp, queryClient]);
+
   // ── Render-Helfer ──────────────────────────────────────────────────
-  const readOnly = !isStructuralEditingActive || isLockedByOther;
+  // Phase 4A: Wenn der Pfad freigegeben ist (locked_for_export), wird der
+  // gesamte Canvas dieses Lerntyps read-only – auch wenn der User den
+  // Strukturlock hält. Drag&Drop/Sektor-Editieren sind dann unmöglich,
+  // bis ein Berechtigter den Pfad explizit entsperrt.
+  const readOnly = !isStructuralEditingActive || isLockedByOther || istPfadGesperrt;
 
   // Set aller Aufgaben-IDs, die im aktuell aktiven Lerntyp bereits in einem Sektor stecken.
   // Wird an den Pool gereicht (visuelle Sperre) UND als Fallback im onDragEnd geprüft.
@@ -472,6 +621,55 @@ export default function LernpfadeCockpit({
         </div>
       </div>
 
+      {/* Freigabe-Bar (Phase 4A): zeigt Status des aktiven Lerntyps + CTA. */}
+      <div className="shrink-0 px-4 py-2 border-b border-border bg-card flex items-center gap-3 flex-wrap">
+        {istPfadGesperrt ? (
+          <>
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+              <ShieldCheck className="w-3 h-3" />
+              Pfad „{LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label}" freigegeben &amp; gesperrt
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              Aufgaben sind in Tab 5 read-only.
+            </span>
+            {darfEntsperren && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleUnlockPath}
+                disabled={statusBusy}
+                className="ml-auto gap-1.5 h-7 text-xs border-red-300 text-red-700 hover:bg-red-50"
+              >
+                {statusBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldOff className="w-3 h-3" />}
+                Lernpfad entsperren
+              </Button>
+            )}
+          </>
+        ) : (
+          <>
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5">
+              Pfad „{LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label}" – Entwurf
+            </span>
+            {darfFreigeben && (
+              <Button
+                size="sm"
+                onClick={handleReleasePath}
+                disabled={statusBusy || !isStructuralEditingActive || isLockedByOther}
+                className="ml-auto gap-1.5 h-7 text-xs"
+                title={
+                  !isStructuralEditingActive
+                    ? 'Bitte zuerst Bearbeiten starten'
+                    : 'Validieren und freigeben'
+                }
+              >
+                {statusBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
+                Lernpfad prüfen &amp; freigeben
+              </Button>
+            )}
+          </>
+        )}
+      </div>
+
       {/* Layout: 30/70-Split – DragDropContext umschließt beide Spalten,
           damit Aufgaben aus dem Pool in die rechten Sektoren gezogen werden können. */}
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -527,6 +725,18 @@ export default function LernpfadeCockpit({
         open={!!previewAufgabe}
         onOpenChange={(v) => !v && setPreviewAufgabe(null)}
         aufgabe={previewAufgabe}
+      />
+
+      {/* Pre-Flight-Blocker (Phase 4A): listet rote/gelbe Items mit Quick-Fix. */}
+      <ReleaseBlockerModal
+        open={blockerOpen}
+        onOpenChange={setBlockerOpen}
+        blockers={blockers}
+        lerntypLabel={LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label}
+        onOpenEditor={(aufgabe) => {
+          setBlockerOpen(false);
+          handleOpenAufgabeEditor(aufgabe);
+        }}
       />
 
       {/* Inline-Editor: Klick auf rotes Ampel-Badge öffnet die Aufgabe direkt zur Korrektur.
