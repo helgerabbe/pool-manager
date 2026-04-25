@@ -27,18 +27,16 @@ import SystemBausteinPoolItem from '@/components/lernpfade/SystemBausteinPoolIte
 // ── Helfer ──────────────────────────────────────────────────────────────
 function FilterChip({ typKey, active, count, onClick }) {
   const meta = AUFGABEN_TYPEN[typKey];
-  const Icon = meta.icon;
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-medium border transition-all ${
+      className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium border transition-all ${
         active
           ? `${meta.color.bgSolid} ${meta.color.textOn} border-transparent shadow-sm`
           : `bg-white ${meta.color.text} ${meta.color.border}/40 hover:${meta.color.bg}`
       }`}
     >
-      <Icon className="w-3 h-3" />
       <span>{meta.short}</span>
       <span className={`text-[10px] px-1 rounded-full ${active ? 'bg-white/30' : 'bg-muted'}`}>
         {count}

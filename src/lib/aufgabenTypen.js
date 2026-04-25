@@ -75,7 +75,7 @@ export const AUFGABEN_TYPEN = {
   projekt_anker: {
     value: 'projekt_anker',
     label: 'Projekt-Anker',
-    short: 'Projekt-Anker',
+    short: 'Projekt',
     description:
       'Das Tor zur Ebene 3. Hier bietest du Schülern komplexe Anwendungsaufgaben zur Auswahl an, sobald sie bereit dafür sind.',
     icon: Rocket,
