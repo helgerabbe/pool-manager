@@ -21,14 +21,12 @@ import { base44 } from '@/api/base44Client';
 import { Cloud, CloudOff, Check, Loader2 } from 'lucide-react';
 // Loader2 wird im Save-Indicator (saving-State) als animiertes Spinner-Icon
 // genutzt – siehe `saveIndicator` weiter unten. Nicht entfernen.
-import { useScrollDirection } from '@/hooks/useScrollDirection';
 import LernpfadeAufgabenPool from '@/components/lernpfade/LernpfadeAufgabenPool';
 import LernpfadeArchitekt, { LERN_TYPEN } from '@/components/lernpfade/LernpfadeArchitekt';
 import LernpfadeQuickAddModal from '@/components/lernpfade/LernpfadeQuickAddModal';
 import AufgabePreviewDialog from '@/components/lernpfade/AufgabePreviewDialog';
 import ReleaseBlockerModal from '@/components/lernpfade/ReleaseBlockerModal';
 import DidaktischerGuidePanel from '@/components/lernpfade/DidaktischerGuidePanel';
-import CockpitActionToolbar from '@/components/lernpfade/CockpitActionToolbar';
 import { useLernpfadStatus } from '@/hooks/useLernpfadStatus';
 import { useDashboardSync } from '@/hooks/useDashboardSync';
 import { useDashboardDragAndDrop } from '@/hooks/useDashboardDragAndDrop';
@@ -348,38 +346,13 @@ export default function LernpfadeCockpit({
   })();
   const SaveIcon = saveIndicator?.icon;
 
-  // Auto-Hide: scrollbarer Container ist der DnD-Main-Bereich. Beim Scrollen
-  // nach unten klappt die schmale Header-Region (Action-Toolbar + Lerntyp-Pills)
-  // weg; beim Scrollen nach oben wird sie wieder eingeblendet.
+  // Scroll-Ref für Auto-Hide-Verhalten in Sub-Komponenten (z. B. zukünftige
+  // Header-Auto-Hide-Logik). Aktuell nicht aktiv, bleibt aber als stabiler Ref
+  // erhalten, falls der Architekt ihn nutzen will.
   const scrollRef = useRef(null);
-  const { hidden: headerHidden } = useScrollDirection(scrollRef, { threshold: 32 });
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Kollabierbarer Header-Bereich (Action-Toolbar + Lerntyp-Pills).
-          Wird per max-height + opacity weggeklappt, um dem Arbeitsbereich
-          maximalen Platz zu geben. */}
-      <div
-        className={`shrink-0 overflow-hidden transition-all duration-200 ease-out ${
-          headerHidden ? 'max-h-0 opacity-0' : 'max-h-40 opacity-100'
-        }`}
-      >
-        <CockpitActionToolbar
-          lerntypLabel={lerntypLabel}
-          istPfadGesperrt={istPfadGesperrt}
-          darfFreigeben={darfFreigeben}
-          darfEntsperren={darfEntsperren}
-          statusBusy={statusBusy}
-          isStructuralEditingActive={isStructuralEditingActive}
-          isLockedByOther={isLockedByOther}
-          onReleasePath={handleReleasePath}
-          onUnlockPath={handleUnlockPath}
-          saveIcon={SaveIcon}
-          saveIconCls={saveIndicator?.cls}
-          saveTitle={saveIndicator?.title}
-        />
-      </div>
-
       {/* 30/70-Layout mit DnD-Kontext */}
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
@@ -418,6 +391,15 @@ export default function LernpfadeCockpit({
               onOpenAufgabeEditor={handleOpenAufgabeEditor}
               onOpenGuide={() => setIsGuideOpen(true)}
               canvasScrollRef={scrollRef}
+              istPfadGesperrt={istPfadGesperrt}
+              darfFreigeben={darfFreigeben}
+              darfEntsperren={darfEntsperren}
+              statusBusy={statusBusy}
+              onReleasePath={handleReleasePath}
+              onUnlockPath={handleUnlockPath}
+              saveIcon={SaveIcon}
+              saveIconCls={saveIndicator?.cls}
+              saveTitle={saveIndicator?.title}
             />
           </main>
         </div>

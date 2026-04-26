@@ -528,19 +528,23 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               <div className="flex-1 min-w-0">
                 <WorkspaceTabs activeTab={activeTab} onTabChange={handleTabChange} />
               </div>
-              {activeTab === 'struktur' &&
+              {(activeTab === 'struktur' || activeTab === 'dashboards') &&
                 !isStructuralEditingActive &&
                 (permissions.kannStrukturBearbeiten(einheit?.fach) || unitAccess.hasFullAccess) && (
                   <button
                     onClick={handleAcquireStructLock}
                     disabled={acquiringStructLock || structLocked}
-                    title={structLocked ? `Gesperrt von ${einheit?.structural_lock}` : 'Strukturbearbeitung starten'}
+                    title={
+                      structLocked
+                        ? `Gesperrt von ${einheit?.structural_lock}`
+                        : (activeTab === 'dashboards' ? 'Dashboard-Bearbeitung starten' : 'Strukturbearbeitung starten')
+                    }
                     className="shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {acquiringStructLock
                       ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       : <PenLine className="w-3.5 h-3.5" />}
-                    Struktur bearbeiten
+                    {activeTab === 'dashboards' ? 'Dashboard bearbeiten' : 'Struktur bearbeiten'}
                   </button>
                 )}
             </div>

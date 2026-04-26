@@ -11,7 +11,7 @@
  */
 
 import React from 'react';
-import { Sparkles, Layers, Trophy, Star, Plus, Zap, BookOpen } from 'lucide-react';
+import { Sparkles, Layers, Trophy, Star, Plus, Zap, BookOpen, ShieldCheck, ShieldOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import LernpfadeSektor from '@/components/lernpfade/LernpfadeSektor';
 import PfadKopierenMenu from '@/components/lernpfade/PfadKopierenMenu';
@@ -115,6 +115,16 @@ export default function LernpfadeArchitekt({
   onOpenAufgabeEditor,
   onOpenGuide,
   canvasScrollRef,
+  // Status-Bereich (rechts) – ehemals CockpitActionToolbar
+  istPfadGesperrt = false,
+  darfFreigeben = false,
+  darfEntsperren = false,
+  statusBusy = false,
+  onReleasePath,
+  onUnlockPath,
+  saveIcon: SaveIcon,
+  saveIconCls,
+  saveTitle,
 }) {
   const sektoren = konfiguration?.[activeLernTyp] || [];
   const aktivLabel = LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label;
@@ -146,26 +156,74 @@ export default function LernpfadeArchitekt({
               Guide
             </Button>
           )}
+
+          {/* Status-Badge + Save-Indicator direkt neben Guide */}
+          {istPfadGesperrt ? (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0.5"
+              title={`Pfad „${aktivLabel}" freigegeben & gesperrt`}
+            >
+              <ShieldCheck className="w-3 h-3" />
+              {aktivLabel} · gesperrt
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-full px-1.5 py-0.5">
+              {aktivLabel} · Entwurf
+            </span>
+          )}
+          {SaveIcon && (
+            <span title={saveTitle} className="inline-flex items-center">
+              <SaveIcon className={`w-3.5 h-3.5 ${saveIconCls || ''}`} />
+            </span>
+          )}
         </div>
-        {!readOnly && (
-          <div className="ml-auto flex items-center gap-1.5">
-            <PfadKopierenMenu
-              lernTypen={LERN_TYPEN}
-              activeLernTyp={activeLernTyp}
-              konfiguration={konfiguration}
-              onCopyFrom={onCopyFromLernTyp}
-            />
+
+        <div className="ml-auto flex items-center gap-1.5">
+          {/* Freigabe / Entsperren */}
+          {istPfadGesperrt && darfEntsperren && (
             <Button
-              type="button"
               size="sm"
               variant="outline"
-              onClick={onQuickAddOpen}
-              className="gap-1.5 h-6 text-[11px] px-2"
+              onClick={onUnlockPath}
+              disabled={statusBusy}
+              className="gap-1.5 h-7 text-[11px] px-2.5 border-red-300 text-red-700 hover:bg-red-50"
             >
-              <Zap className="w-3 h-3" /> Quick-Add
+              {statusBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldOff className="w-3 h-3" />}
+              Entsperren
             </Button>
-          </div>
-        )}
+          )}
+          {!istPfadGesperrt && darfFreigeben && (
+            <Button
+              size="sm"
+              onClick={onReleasePath}
+              disabled={statusBusy || readOnly}
+              className="gap-1.5 h-7 text-[11px] px-2.5"
+              title={readOnly ? 'Bitte zuerst Bearbeiten starten' : 'Validieren und freigeben'}
+            >
+              {statusBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
+              Prüfen & freigeben
+            </Button>
+          )}
+          {!readOnly && (
+            <>
+              <PfadKopierenMenu
+                lernTypen={LERN_TYPEN}
+                activeLernTyp={activeLernTyp}
+                konfiguration={konfiguration}
+                onCopyFrom={onCopyFromLernTyp}
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={onQuickAddOpen}
+                className="gap-1.5 h-7 text-[11px] px-2.5"
+              >
+                <Zap className="w-3 h-3" /> Quick-Add
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Canvas */}
