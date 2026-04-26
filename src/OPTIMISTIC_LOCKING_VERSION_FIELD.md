@@ -882,3 +882,89 @@ ALTER TABLE allgemeine_aufgabe DROP COLUMN sync_status;
       `forceReleaseTaskLockAdmin`-Function.
 - [ ] Audit-Trigger schreibt sowohl reguläre Auto-Releases als auch
       Force-Releases automatisch.
+
+---
+
+## 16. Batch-Limits für Bulk-Operationen (2026-04-26)
+
+### Hintergrund
+
+`confirmExportCompletion` akzeptiert zwei Listen (`successfulIds`,
+`failedIds`) und feuert pro ID ein parallelisiertes `update()` über
+`Promise.allSettled`. Das ist robust gegen einzelne Fehler, aber ohne
+Obergrenze ergeben sich drei reale Risiken:
+
+1. **DB-Sturm.** Ein einzelner Aufruf mit z. B. 10 000 IDs erzeugt
+   10 000 parallele `update()`-Calls und blockiert andere Operationen.
+2. **Unhandlicher Audit-Eintrag.** Der Dual-Lock-Audit aus §15 nutzt
+   `bulkCreate` über alle freigegebenen Aufgaben. Bei vielen Tausend
+   Einträgen in einem Zug verliert der Audit-Trail seine Lesbarkeit.
+3. **UX-Inkonsistenz.** Der Admin im Cockpit erwartet ein klares
+   "Erfolg / Fehler"-Feedback. Sehr große Batches verlängern die
+   Antwortzeit ohne Mehrwert – und sind ein Indiz für einen ungesund
+   gewachsenen Backlog.
+
+### Implementierung
+
+Hartes Limit von **200 IDs** (`successfulIds.length + failedIds.length`)
+direkt nach der Eingangsvalidierung. Überschreitungen werden mit
+**HTTP 413 Payload Too Large** beantwortet:
+
+```json
+{
+  "error": "Batch-Limit überschritten: 350 IDs übergeben, max. 200 pro Aufruf. …",
+  "code": "BATCH_TOO_LARGE",
+  "max_batch": 200,
+  "received": 350
+}
+```
+
+Damit kann das Frontend pre-emptiv splitten oder dem Admin einen
+sinnvollen Hinweis geben, wenn er versucht, einen riesigen Backlog auf
+einmal zu bestätigen.
+
+### Warum 200?
+
+- Deckt praktisch alle realen Cockpit-Szenarien ab (eine Einheit hat
+  selten mehr als ~50 freigegebene Aufgaben gleichzeitig pending).
+- Matcht das Pagination-Limit aus Phase 6.5 – konsistente Obergrenze
+  über das gesamte Backend.
+- Ein einzelner `bulkCreate`-Audit über 200 Einträge bleibt
+  performant und im Log-Viewer noch lesbar.
+
+### Andere Bulk-Endpunkte
+
+`approvePackageActivities` (§12) und `assignActivityToLernpaket` (§13)
+arbeiten heute auf naturgemäß kleinen Mengen (Activities pro
+Lernpaket, einzelne Zuordnung). Ein explizites Limit ist dort aktuell
+nicht nötig, sollte aber bei der nächsten größeren Erweiterung
+mitgedacht werden – einheitlich auf 200, um eine systemweite Konvention
+zu etablieren.
+
+### @MIGRATION_NOTE (Supabase)
+
+Postgres erlaubt prinzipiell deutlich größere Bulk-Updates per
+einzelnem `UPDATE … WHERE id = ANY($1)`. Das Limit bleibt trotzdem
+sinnvoll – aber als **API-Gateway-Regel**, nicht als DB-Constraint:
+
+```js
+// Edge-Function bleibt der API-Layer, der das Limit erzwingt.
+// Die eigentliche DB-Operation wird in EINEN UPDATE-Call zusammengezogen:
+UPDATE allgemeine_aufgabe
+   SET moodle_sync_status = 'synced',
+       last_synced_at     = NOW()
+ WHERE id = ANY($1::uuid[]);
+```
+
+Damit fällt die JS-Schleife komplett weg, die Audit-Einträge erzeugt
+ein `AFTER UPDATE`-Trigger – und das 200-Limit sorgt weiterhin für
+saubere Cockpit-UX.
+
+### Definition of Done für die Migration
+
+- [ ] Hard-Limit (200) als API-Gateway-Regel in der Edge-Function
+      erhalten.
+- [ ] DB-Updates auf Set-Based SQL umgestellt (`id = ANY($1)`).
+- [ ] Audit-Einträge per Trigger statt App-Code.
+- [ ] Frontend-Code splittet pre-emptiv bei > 200 IDs (statt erst auf
+      413 zu reagieren).

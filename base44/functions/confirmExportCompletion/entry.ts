@@ -70,6 +70,24 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'No IDs provided' }, { status: 400 });
     }
 
+    // ── Batch-Limit (siehe Logbuch §16) ─────────────────────────────────
+    // Schützt DB vor Update-Stürmen, hält Audit-Logs lesbar und gibt dem
+    // Frontend ein klares Feedback-Fenster (200 IDs ≈ realistischer
+    // Maximalwert für eine Cockpit-Bestätigung).
+    const MAX_BATCH = 200;
+    const totalIds = successfulIds.length + failedIds.length;
+    if (totalIds > MAX_BATCH) {
+      return Response.json(
+        {
+          error: `Batch-Limit überschritten: ${totalIds} IDs übergeben, max. ${MAX_BATCH} pro Aufruf. Bitte in mehrere Aufrufe aufteilen.`,
+          code: 'BATCH_TOO_LARGE',
+          max_batch: MAX_BATCH,
+          received: totalIds,
+        },
+        { status: 413 }
+      );
+    }
+
     // ── Einheit-Kontext laden (Tenant-Isolation für Masters/Klone) ──────
     const lernpakete = await base44.asServiceRole.entities.Lernpakete.filter({ einheit_id });
     const paketIds = new Set(lernpakete.map((lp) => lp.id));
