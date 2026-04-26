@@ -89,6 +89,49 @@ Defensive Defaultwerte (`?? 1`) decken historische Records ab, bei denen
 
 ---
 
+## 4b. Zentrale OCC-Hilfsfunktion (2026-04-26)
+
+Um Code-Duplikate zu vermeiden, wurde der Read-Bump-ReRead-Verify-Pass
+in eine zentrale Hilfsfunktion ausgelagert:
+
+**Datei:** `functions/utils/occLockUtils.js`
+**Export:** `acquireLockWithVersion(base44, config)`
+
+Konfiguration:
+```js
+{
+  entityName,    // "Lernpakete" | "Einheiten" | …
+  entityId,      // UUID
+  lockField,     // "locked_by_email" | "structural_lock"
+  timeField,     // "locked_at" | "structural_locked_at"
+  userEmail,     // user.email
+  timeoutMs,     // 30 Min / 60 Min …
+  extraUpdate?,  // optional zusätzliche Felder fürs Update
+                 // (z.B. is_locked: true bei Lernpaketen)
+}
+```
+
+Rückgabe: `{ ok: true, version, lockedAt }` oder
+`{ ok: false, reason: 'busy' | 'race_lost' | 'not_found', lockedByEmail, lockedAt }`.
+
+### Deployment-Constraint („NO LOCAL IMPORTS")
+
+Backend-Functions auf Base44/Deno-Deploy dürfen aktuell nicht aus anderen
+Dateien im `functions/`-Ordner importieren. Deshalb wird
+`acquireLockWithVersion` in jede konsumierende Function **inline kopiert**.
+`occLockUtils.js` selbst hat einen Deno.serve-Stub mit `410 Gone`, damit
+sie deploybar bleibt, aber nicht versehentlich aufgerufen wird.
+
+**Single Source of Truth:** `functions/utils/occLockUtils.js`
+**Inline-Kopien:**
+- `functions/acquireDashboardLockSecure` (Einheiten / structural_lock)
+- `functions/acquireLockSecure` (Lernpakete / locked_by_email)
+
+**Regel:** Wer den Wrapper ändert, muss den Code-Block in ALLEN
+Inline-Kopien synchron mitziehen (Suche nach `acquireLockWithVersion`).
+
+Nach der Supabase-Migration entfällt die Verdopplung – siehe §5.
+
 ## 5. Migrations-Pfad nach Supabase
 
 Das App-Level-Inkrement ist ein **Übergangs-Konstrukt**. Sobald die

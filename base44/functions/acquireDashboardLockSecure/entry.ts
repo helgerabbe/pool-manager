@@ -9,62 +9,20 @@
  *     - Aktive `Lernpakete`-Locks  (is_locked + locked_by_email + locked_at < 30 Min)
  *     - Aktive `AllgemeineAufgabe`-Locks (locked_by + locked_at < 60 Min)
  *
- *   Sobald irgendein anderer Nutzer in der Einheit aktiv arbeitet, wird der
- *   Lock-Erwerb verweigert und der konkrete Name (vorname + nachname, Fallback:
- *   E-Mail) zurückgegeben.
+ * Race-Condition-Schutz:
+ *   Der eigentliche Read-Bump-ReRead-Verify-Pass für den Struktur-Lock
+ *   nutzt die zentrale Hilfsfunktion `acquireLockWithVersion` aus
+ *   `functions/utils/occLockUtils.js`. Wegen der „NO LOCAL IMPORTS"-Regel
+ *   ist der Wrapper unten **inline kopiert**. Bei Änderungen MUSS die
+ *   Quelle in occLockUtils.js mitgepflegt werden.
  *
- * Erfolgreich → setzt `structural_lock` + `structural_locked_at` auf der Einheit.
- *
- * Race-Condition-Schutz (siehe Review §2):
- *   Da das Base44-SDK kein konditionales Update kennt, nutzen wir
- *   Optimistic Concurrency Control (OCC) über das `version`-Feld:
- *     1. READ:    Einheit + aktuelle `version` laden.
- *     2. CHECK:   Lock frei oder abgelaufen?
- *     3. WRITE:   structural_lock + structural_locked_at + version+1 setzen.
- *     4. RE-READ: asServiceRole.get() (frisch vom Server, kein Cache).
- *     5. VERIFY:  Steht dort jetzt eine andere E-Mail → race_lost, 409.
- *                 KEIN Rollback! Der Gewinner-Lock muss erhalten bleiben.
- *
- *   ⚠️ TECH-DEBT / FIRST-MOVER-WARNUNG:
- *   Diese Funktion ist die ERSTE im System, die `version` aktiv nutzt.
- *   Andere Schreibpfade auf `Einheiten` (updateEinheitSecure,
- *   saveEinheitStruktur, releaseStructuralLockSecure, publishEinheitSecure,
- *   deleteEinheitSecure, lockEinheit/unlockEinheit, ...) ignorieren das
- *   Feld derzeit und überschreiben es im Zweifel stumpf mit dem alten Wert.
- *
- *   Konsequenzen:
- *     - Verlass dich beim Re-Read NIEMALS darauf, dass `version` jetzt
- *       höher steht als vorher – ein paralleler updateEinheitSecure-Call
- *       könnte den Bump bereits zurückgesetzt haben.
- *     - Einziges verlässliches Erfolgs-Kriterium ist daher exklusiv:
- *           verify.structural_lock === user.email
- *       Genau das prüft der Verify-Block weiter unten – `version` dient
- *       hier nur als zusätzliches Forensik-Signal, nicht als Gate.
- *
- *   FOLGE-TICKET (zwingend, kurzfristig):
- *     Alle Schreibzugriffe auf `Einheiten` müssen `version` ebenfalls
- *     inkrementieren (oder zumindest unangetastet durchreichen), damit
- *     OCC systemweit greift. Bis dahin ist nur das Lock-vs-Lock-Rennen
- *     hier wirklich abgesichert.
- *
- *   Forensik: Sowohl erfolgreiche als auch abgelehnte Lock-Versuche
- *   (unit_busy / race_lost) werden im AuditLog persistiert, damit später
- *   unterschieden werden kann, ob das System hakt oder Lehrkräfte sich
- *   real gegenseitig blockieren.
- *
- * Performance (siehe Review §1):
- *   Lernpaket- und Aufgaben-Locks werden DB-seitig vorgefiltert
- *   (`is_locked: true` bzw. nur Inhaber-Felder), nicht mehr per
- *   In-Memory-`.find()` über alle Datensätze der Einheit.
- *
- * Fail-Safe (siehe Review §3):
- *   Datenbank-Fehler bei der Lock-Prüfung führen zu 500 – niemals zur
- *   stillen Lock-Vergabe trotz aktiver Bearbeitung.
- *
- * @MIGRATION_NOTE (Supabase, Review §4):
- *   `structural_lock` / `locked_by` halten aktuell user.email. Bei der
- *   Supabase-Migration zwingend auf user_id (UUID) als FK umstellen –
- *   E-Mails sind veränderliche PII und ungeeignet als Lock-Identifier.
+ * @MIGRATION_NOTE (Supabase):
+ *   Sobald lokale Imports möglich sind, wird der Inline-Block durch
+ *   `import { acquireLockWithVersion } from './utils/occLockUtils.js'`
+ *   ersetzt. Außerdem wandert das `version`-Inkrement in einen
+ *   BEFORE-UPDATE-Trigger; die Funktion ruft dann nur noch ein konditionales
+ *   Update („WHERE structural_lock IS NULL OR locked_at < now() - 60min")
+ *   auf und entfällt das Re-Read-Verify-Konstrukt.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
@@ -73,14 +31,59 @@ const STRUCT_LOCK_TIMEOUT_MS = 60 * 60 * 1000; // 60 Min
 const PAKET_LOCK_TIMEOUT_MS = 30 * 60 * 1000;  // 30 Min
 const AUFGABE_LOCK_TIMEOUT_MS = 60 * 60 * 1000; // 60 Min
 
+// ──────────────────────────────────────────────────────────────────────
+// Inline-Kopie aus functions/utils/occLockUtils.js (Single Source of Truth).
+// NICHT divergieren lassen!
+// ──────────────────────────────────────────────────────────────────────
+async function acquireLockWithVersion(base44, config) {
+  const {
+    entityName, entityId, lockField, timeField,
+    userEmail, timeoutMs, extraUpdate = {},
+  } = config;
+  if (!entityName || !entityId || !lockField || !timeField || !userEmail || !timeoutMs) {
+    throw new Error('acquireLockWithVersion: missing required config field');
+  }
+  const record = await base44.entities[entityName].get(entityId);
+  if (!record) {
+    return { ok: false, reason: 'not_found', lockedByEmail: null, lockedAt: null };
+  }
+  const now = Date.now();
+  const currentLockOwner = record[lockField];
+  const currentLockedAt = record[timeField];
+  if (currentLockOwner && currentLockOwner !== userEmail) {
+    const lockAge = currentLockedAt ? now - new Date(currentLockedAt).getTime() : Infinity;
+    if (lockAge < timeoutMs) {
+      return {
+        ok: false, reason: 'busy',
+        lockedByEmail: currentLockOwner, lockedAt: currentLockedAt,
+        currentRecord: record,
+      };
+    }
+  }
+  const currentVersion = Number.isFinite(record?.version) ? record.version : 1;
+  const nextVersion = currentVersion + 1;
+  const isoNow = new Date().toISOString();
+  await base44.entities[entityName].update(entityId, {
+    ...extraUpdate,
+    [lockField]: userEmail,
+    [timeField]: isoNow,
+    version: nextVersion,
+  });
+  const verify = await base44.asServiceRole.entities[entityName].get(entityId);
+  if (verify?.[lockField] !== userEmail) {
+    return {
+      ok: false, reason: 'race_lost',
+      lockedByEmail: verify?.[lockField] || null,
+      lockedAt: verify?.[timeField] || null,
+      currentRecord: verify,
+    };
+  }
+  return { ok: true, version: nextVersion, lockedAt: isoNow };
+}
+
 /**
  * Forensik: Lock-Konflikte (409) im AuditLog protokollieren, ohne den
  * Request-Pfad zu bremsen oder bei Logger-Fehlern abzubrechen.
- * (Local-Imports sind in Backend-Functions nicht erlaubt → inline.)
- *
- * `action: UPDATE` (Versuch eines Locks), `status: failed`,
- * `error_message: dashboard_lock_<reason>` macht die Einträge in den
- * Reports leicht filterbar.
  */
 async function logLockConflict(base44, { user, einheit_id, reason, scope, lockedByEmail }) {
   try {
@@ -149,41 +152,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Einheit laden ─────────────────────────────────────────────────
-    const einheit = await base44.entities.Einheiten.get(einheit_id);
-    if (!einheit) {
-      return Response.json({ error: 'Einheit not found' }, { status: 404 });
-    }
-
     const now = Date.now();
 
-    // ── 1. Struktur-Lock (Tab 2 / Tab 7) ──────────────────────────────
-    if (einheit.structural_lock && einheit.structural_lock !== user.email) {
-      const lockAge = einheit.structural_locked_at
-        ? now - new Date(einheit.structural_locked_at).getTime()
-        : Infinity;
-      if (lockAge < STRUCT_LOCK_TIMEOUT_MS) {
-        const displayName = await resolveDisplayName(base44, einheit.structural_lock);
-        await logLockConflict(base44, {
-          user, einheit_id, reason: 'unit_busy', scope: 'struktur',
-          lockedByEmail: einheit.structural_lock,
-        });
-        return Response.json(
-          {
-            success: false,
-            reason: 'unit_busy',
-            scope: 'struktur',
-            lockedByEmail: einheit.structural_lock,
-            lockedByName: displayName,
-          },
-          { status: 409 }
-        );
-      }
-    }
-
-    // ── 2. Aktive Lernpaket-Locks anderer User (DB-seitig gefiltert) ──
-    // FAIL-SAFE: Bei DB-Fehler propagieren wir den Fehler nach außen –
-    // niemals leeres Array → falscher "alles frei"-Schluss.
+    // ── 1. Aktive Lernpaket-Locks anderer User (DB-seitig gefiltert) ──
     const aktiveLernpakete = await base44.asServiceRole.entities.Lernpakete.filter({
       einheit_id,
       is_locked: true,
@@ -203,22 +174,14 @@ Deno.serve(async (req) => {
       });
       return Response.json(
         {
-          success: false,
-          reason: 'unit_busy',
-          scope: 'lernpaket',
-          lockedByEmail: aktivesPaket.locked_by_email,
-          lockedByName: displayName,
+          success: false, reason: 'unit_busy', scope: 'lernpaket',
+          lockedByEmail: aktivesPaket.locked_by_email, lockedByName: displayName,
         },
         { status: 409 }
       );
     }
 
-    // ── 3. Aktive AllgemeineAufgabe-Locks anderer User ────────────────
-    // Wir filtern DB-seitig auf "locked_by gesetzt UND nicht ich selbst".
-    // Falls das SDK den $ne-Operator hier nicht unterstützt, erkennt der
-    // try/catch das und wir fallen auf das Inhaber-Filter zurück + filtern
-    // den eigenen User in JS heraus. KEIN stilles Verschlucken: bei
-    // Datenbank-Fehlern werfen wir nach außen (Fail-Safe).
+    // ── 2. Aktive AllgemeineAufgabe-Locks anderer User ────────────────
     let aktiveAufgaben;
     try {
       aktiveAufgaben = await base44.asServiceRole.entities.AllgemeineAufgabe.filter({
@@ -226,8 +189,6 @@ Deno.serve(async (req) => {
         locked_by: { $ne: null },
       });
     } catch (_e) {
-      // Fallback ohne $ne-Operator – immer noch DB-seitig stark eingeschränkt
-      // gegenüber dem alten "alle Aufgaben der Einheit laden".
       aktiveAufgaben = await base44.asServiceRole.entities.AllgemeineAufgabe.filter({
         einheit_id,
       });
@@ -247,68 +208,50 @@ Deno.serve(async (req) => {
       });
       return Response.json(
         {
-          success: false,
-          reason: 'unit_busy',
-          scope: 'aufgabe',
-          lockedByEmail: aktiveAufgabe.locked_by,
-          lockedByName: displayName,
+          success: false, reason: 'unit_busy', scope: 'aufgabe',
+          lockedByEmail: aktiveAufgabe.locked_by, lockedByName: displayName,
         },
         { status: 409 }
       );
     }
 
-    // ── Lock setzen + Verify (Race-Condition-Schutz, OCC) ─────────────
-    // Schritt A: schreiben mit Versions-Bump. Der Bump signalisiert eine
-    // bewusste Zustandsänderung der Einheit; gleichzeitige Lock-Versuche
-    // führen zu einem späteren version-Sprung, den wir im Re-Read sehen.
-    const currentVersion = Number.isFinite(einheit?.version) ? einheit.version : 1;
-    const nextVersion = currentVersion + 1;
-    const isoNow = new Date().toISOString();
-    await base44.entities.Einheiten.update(einheit_id, {
-      structural_lock: user.email,
-      structural_locked_at: isoNow,
-      version: nextVersion,
+    // ── 3. Struktur-Lock setzen via OCC-Wrapper ───────────────────────
+    const result = await acquireLockWithVersion(base44, {
+      entityName: 'Einheiten',
+      entityId: einheit_id,
+      lockField: 'structural_lock',
+      timeField: 'structural_locked_at',
+      userEmail: user.email,
+      timeoutMs: STRUCT_LOCK_TIMEOUT_MS,
     });
 
-    // Schritt B: frischer Re-Read (asServiceRole = kein End-User-Cache).
-    //
-    // ⚠️ FIRST-MOVER-DISZIPLIN: Wir prüfen NUR `structural_lock === user.email`.
-    // Wir vergleichen explizit NICHT `verify.version > currentVersion`, weil
-    // andere Schreibpfade `version` heute noch ignorieren oder zurücksetzen
-    // (siehe Header-Kommentar / Folgeticket). Ein Versions-Check würde uns
-    // false-positives bescheren. Die E-Mail ist hier die alleinige Wahrheit.
-    //
-    // Steht eine andere E-Mail im Feld, war ein paralleler Lock-Request
-    // schneller. KEIN Rollback – das würde den rechtmäßigen Gewinner
-    // kaputt machen. Stattdessen 409 + Forensik-Eintrag.
-    const verify = await base44.asServiceRole.entities.Einheiten.get(einheit_id);
-    if (verify?.structural_lock !== user.email) {
-      const winnerEmail = verify?.structural_lock || null;
-      const displayName = await resolveDisplayName(base44, winnerEmail);
+    if (!result.ok) {
+      if (result.reason === 'not_found') {
+        return Response.json({ error: 'Einheit not found' }, { status: 404 });
+      }
+      const reason = result.reason === 'busy' ? 'unit_busy' : 'race_lost';
+      const displayName = await resolveDisplayName(base44, result.lockedByEmail);
       await logLockConflict(base44, {
-        user, einheit_id, reason: 'race_lost', scope: 'struktur',
-        lockedByEmail: winnerEmail,
+        user, einheit_id, reason, scope: 'struktur',
+        lockedByEmail: result.lockedByEmail,
       });
       return Response.json(
         {
-          success: false,
-          reason: 'race_lost',
-          scope: 'struktur',
-          lockedByEmail: winnerEmail,
-          lockedByName: displayName,
+          success: false, reason, scope: 'struktur',
+          lockedByEmail: result.lockedByEmail, lockedByName: displayName,
         },
         { status: 409 }
       );
     }
 
-    // Erfolg – auch im AuditLog dokumentieren (für Hak-vs-Real-Kollision).
+    // Erfolg – auch im AuditLog dokumentieren.
     try {
       await base44.asServiceRole.entities.AuditLog.create({
         user_email: user.email,
         action: 'UPDATE',
         resource_type: 'Einheiten',
         resource_id: einheit_id,
-        changes: { dashboard_lock_acquired: true, version: nextVersion },
+        changes: { dashboard_lock_acquired: true, version: result.version },
         affected_count: 1,
         status: 'success',
       });
@@ -319,8 +262,8 @@ Deno.serve(async (req) => {
     return Response.json({
       success: true,
       lockedBy: user.email,
-      lockedAt: isoNow,
-      version: nextVersion,
+      lockedAt: result.lockedAt,
+      version: result.version,
     });
   } catch (error) {
     console.error('[acquireDashboardLockSecure] Error:', error);
