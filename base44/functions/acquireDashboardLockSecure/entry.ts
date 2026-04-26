@@ -25,10 +25,27 @@
  *     5. VERIFY:  Steht dort jetzt eine andere E-Mail → race_lost, 409.
  *                 KEIN Rollback! Der Gewinner-Lock muss erhalten bleiben.
  *
- *   ⚠️ Anmerkung: Andere Schreibpfade auf `Einheiten` (updateEinheitSecure,
- *   saveEinheitStruktur, ...) inkrementieren `version` aktuell NICHT.
- *   Solange das so bleibt, schützt das OCC-Feld nur Lock-vs-Lock-Rennen.
- *   Nachzug für andere Schreibpfade: separates Ticket.
+ *   ⚠️ TECH-DEBT / FIRST-MOVER-WARNUNG:
+ *   Diese Funktion ist die ERSTE im System, die `version` aktiv nutzt.
+ *   Andere Schreibpfade auf `Einheiten` (updateEinheitSecure,
+ *   saveEinheitStruktur, releaseStructuralLockSecure, publishEinheitSecure,
+ *   deleteEinheitSecure, lockEinheit/unlockEinheit, ...) ignorieren das
+ *   Feld derzeit und überschreiben es im Zweifel stumpf mit dem alten Wert.
+ *
+ *   Konsequenzen:
+ *     - Verlass dich beim Re-Read NIEMALS darauf, dass `version` jetzt
+ *       höher steht als vorher – ein paralleler updateEinheitSecure-Call
+ *       könnte den Bump bereits zurückgesetzt haben.
+ *     - Einziges verlässliches Erfolgs-Kriterium ist daher exklusiv:
+ *           verify.structural_lock === user.email
+ *       Genau das prüft der Verify-Block weiter unten – `version` dient
+ *       hier nur als zusätzliches Forensik-Signal, nicht als Gate.
+ *
+ *   FOLGE-TICKET (zwingend, kurzfristig):
+ *     Alle Schreibzugriffe auf `Einheiten` müssen `version` ebenfalls
+ *     inkrementieren (oder zumindest unangetastet durchreichen), damit
+ *     OCC systemweit greift. Bis dahin ist nur das Lock-vs-Lock-Rennen
+ *     hier wirklich abgesichert.
  *
  *   Forensik: Sowohl erfolgreiche als auch abgelehnte Lock-Versuche
  *   (unit_busy / race_lost) werden im AuditLog persistiert, damit später
@@ -254,7 +271,14 @@ Deno.serve(async (req) => {
     });
 
     // Schritt B: frischer Re-Read (asServiceRole = kein End-User-Cache).
-    // Steht hier eine andere E-Mail, war ein paralleler Lock-Request
+    //
+    // ⚠️ FIRST-MOVER-DISZIPLIN: Wir prüfen NUR `structural_lock === user.email`.
+    // Wir vergleichen explizit NICHT `verify.version > currentVersion`, weil
+    // andere Schreibpfade `version` heute noch ignorieren oder zurücksetzen
+    // (siehe Header-Kommentar / Folgeticket). Ein Versions-Check würde uns
+    // false-positives bescheren. Die E-Mail ist hier die alleinige Wahrheit.
+    //
+    // Steht eine andere E-Mail im Feld, war ein paralleler Lock-Request
     // schneller. KEIN Rollback – das würde den rechtmäßigen Gewinner
     // kaputt machen. Stattdessen 409 + Forensik-Eintrag.
     const verify = await base44.asServiceRole.entities.Einheiten.get(einheit_id);
