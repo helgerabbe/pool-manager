@@ -5,6 +5,15 @@
  *   successfulIds → sync_status = 'synced', last_synced_at = now
  *   failedIds     → sync_status = 'error'  (content_status bleibt 'approved' für Retry)
  *
+ * @DEPRECATED-FELD `sync_status` (siehe Logbuch §15)
+ *   Für `AllgemeineAufgabe` ist `moodle_sync_status` das kanonische
+ *   Feld. `sync_status` wird hier aus historischen Gründen parallel
+ *   gepflegt, damit Frontend-Code, der noch `sync_status` liest,
+ *   konsistent bleibt. Die Migration entfernt `sync_status` für
+ *   `AllgemeineAufgabe` zugunsten von `moodle_sync_status` /
+ *   `brian_sync_status`. Andere Entitäten (Lernpakete, Master, …)
+ *   behalten `sync_status` als ihr einziges Feld.
+ *
  * Zusätzlich: **Dual-Lock-Release inline** (siehe Logbuch §14)
  * ───────────────────────────────────────────────────────────────────────
  * Wann immer eine `AllgemeineAufgabe` durch DIESEN Aufruf auf 'synced'
@@ -97,7 +106,7 @@ Deno.serve(async (req) => {
 
     // ── successfulIds-Updates parallel zusammenstellen ──────────────────
     const successUpdatePromises = [];
-    let dualLockReleased = 0;
+    const dualLockReleasedIds = []; // für Audit-Log
 
     for (const id of successfulIds) {
       const resolved = resolve(id);
@@ -110,14 +119,14 @@ Deno.serve(async (req) => {
 
       // Spezial-Behandlung AllgemeineAufgabe: Dual-Lock-Release inline,
       // wenn Brian bereits synced ist. Auch moodle_sync_status mitziehen,
-      // damit das Schema-Feld konsistent zum sync_status bleibt (Frontend
-      // liest beide Felder).
+      // damit das Schema-Feld konsistent zum @DEPRECATED sync_status
+      // bleibt (siehe Header).
       if (resolved.type === 'AllgemeineAufgabe') {
         updatePayload.moodle_sync_status = 'synced';
         if (resolved.record.brian_sync_status === 'synced') {
           updatePayload.locked_by = null;
           updatePayload.locked_at = null;
-          dualLockReleased += 1;
+          dualLockReleasedIds.push(id);
         }
       }
 
@@ -172,13 +181,33 @@ Deno.serve(async (req) => {
     const successCount = successUpdatePromises.length - rejected.filter((_, i) => i < successUpdatePromises.length).length;
     const errorCount = failedUpdatePromises.length;
 
+    // ── Audit-Trail für jeden automatisch gefallenen Dual-Lock ──────────
+    // Dual-Lock-Release ist ein impliziter Lock-Bruch (Lehrkräfte können
+    // die Aufgabe danach wieder bearbeiten). Forensik-relevant.
+    if (dualLockReleasedIds.length > 0) {
+      try {
+        const entries = dualLockReleasedIds.map((id) => ({
+          user_email: user.email,
+          action: 'UPDATE',
+          resource_type: 'AllgemeineAufgabe',
+          resource_id: id,
+          changes: { dual_lock_released: true, trigger: 'confirmExportCompletion' },
+          affected_count: 1,
+          status: 'success',
+        }));
+        await base44.asServiceRole.entities.AuditLog.bulkCreate(entries);
+      } catch (auditErr) {
+        console.error('[confirmExportCompletion][AUDIT_ERROR]', auditErr.message);
+      }
+    }
+
     return Response.json({
       success: true,
       message: `Export bestätigt: ${successCount} erfolgreich, ${errorCount} fehlgeschlagen.`,
       synced_count: successCount,
       error_count: errorCount,
       klone_synced: kloneSynced,
-      dual_lock_released: dualLockReleased,
+      dual_lock_released: dualLockReleasedIds.length,
       failed_updates: rejected.length,
       timestamp: now,
     });

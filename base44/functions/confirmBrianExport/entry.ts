@@ -108,6 +108,23 @@ Deno.serve(async (req) => {
 
     await base44.asServiceRole.entities.AllgemeineAufgabe.update(aufgabe_id, updatePayload);
 
+    // Audit-Trail bei automatischem Dual-Lock-Release (siehe Logbuch §15).
+    if (lockReleased) {
+      try {
+        await base44.asServiceRole.entities.AuditLog.create({
+          user_email: user.email,
+          action: 'UPDATE',
+          resource_type: 'AllgemeineAufgabe',
+          resource_id: aufgabe_id,
+          changes: { dual_lock_released: true, trigger: 'confirmBrianExport' },
+          affected_count: 1,
+          status: 'success',
+        });
+      } catch (auditErr) {
+        console.error('[confirmBrianExport][AUDIT_ERROR]', auditErr.message);
+      }
+    }
+
     return Response.json({
       success: true,
       lock_released: lockReleased,

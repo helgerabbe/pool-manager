@@ -742,3 +742,143 @@ API-Pfad das Update kommt. Die JS-Inline-Blöcke in
 - [ ] `confirmBrianExport` zu schlankem RPC reduziert (nur
       `brian_sync_status` setzen, Trigger erledigt den Rest).
 - [ ] RLS-Policy auf `allgemeine_aufgabe` deckt die RBAC-Prüfung ab.
+
+---
+
+## 15. Manueller Export-Workflow: Notfall-Override + sync_status-Deprecation (2026-04-26)
+
+### Hintergrund: "Human-in-the-loop"-Risiko
+
+Moodle und Brian schicken **keine Webhooks** zurück ins System. Der
+Status-Wechsel auf `synced` wird **manuell von einem Admin** im UI
+bestätigt (`confirmExportCompletion`, `confirmBrianExport`). Wird
+diese Bestätigung vergessen ("Verpennen"), bleibt die zugehörige
+`AllgemeineAufgabe` für ALLE Lehrkräfte gesperrt – ohne Heilung.
+
+### Lösung: dedizierter Notfall-Endpunkt
+
+Statt das `force`-Flag in die regulären Endpunkte zu mischen, gibt es
+einen klar abgegrenzten Notfall-Pfad:
+
+**`functions/forceReleaseTaskLockAdmin`**
+
+| Eigenschaft | Wert |
+|---|---|
+| Berechtigung | NUR globaler Admin (`User.role === 'admin'` oder `Benutzer.rolle === 'Administrator'`). Kein Fachschafts-/EinheitMembers-Fallback. |
+| Pflichtparameter | `aufgabe_id`, `reason` (min. 5 Zeichen). |
+| Was wird verändert | NUR `locked_by = null`, `locked_at = null`. |
+| Was wird NICHT verändert | `moodle_sync_status`, `brian_sync_status`, `last_synced_at`. |
+| Audit | `UPDATE`-Eintrag mit `force_release: true`, `reason`, `previous_locked_by`, `lock_age_hours`. |
+
+**Begründung der Trennung.** Würde der Notfall-Pfad den Sync-Status
+"synced" setzen, ohne dass tatsächlich exportiert wurde, würde die
+Export-Wahrheit verfälscht. Ein Admin, der nur den Lock brechen will,
+darf nichts an der Sync-Wahrheit verändern. Die Trennung ist auch
+forensisch sauber: Audit-Logs zeigen, ob ein Lock regulär (`trigger:
+'confirmExportCompletion'` / `'confirmBrianExport'`) oder per Override
+(`force_release: true`) gefallen ist.
+
+### Stale-Lock-Hinweis (UI-Empfehlung)
+
+Der Server prüft das Lock-Alter NICHT als blockierende Bedingung,
+liefert es aber im Audit-Log mit (`lock_age_hours`). Das Frontend soll
+den "Force-Release"-Button bevorzugt sichtbar machen, wenn der Lock
+älter als **24 h** ist – damit ist dem Admin signalisiert, dass es
+sich vermutlich um einen vergessenen Bestätigungs-Klick handelt.
+Frühere Eingriffe bleiben möglich (z. B. direkt nach manuellem
+Moodle-Upload), erfordern aber bewusste Begründung im `reason`-Feld.
+
+### Audit-Erweiterungen (regulärer Pfad)
+
+Beide regulären Bestätigungs-Endpunkte schreiben jetzt zusätzlich
+einen Audit-Eintrag, sobald der Dual-Lock-Release greift:
+
+- `confirmExportCompletion`: `bulkCreate` über alle Aufgaben, deren
+  Lock durch DIESEN Aufruf fällt (`trigger:
+  'confirmExportCompletion'`).
+- `confirmBrianExport`: einzelner `create` pro Aufgabe (`trigger:
+  'confirmBrianExport'`).
+
+Damit ist jeder Lock-Bruch im System lückenlos attribuierbar.
+
+### Deprecation: `sync_status` auf `AllgemeineAufgabe`
+
+**Problem.** Auf `AllgemeineAufgabe` existieren historisch DREI
+Sync-Felder:
+
+| Feld | Status |
+|---|---|
+| `sync_status` | **DEPRECATED** – nur noch für Frontend-Backward-Compat parallel gepflegt. |
+| `moodle_sync_status` | **Kanonisch** für den Moodle-Pfad. |
+| `brian_sync_status` | **Kanonisch** für den Brian-Pfad. |
+
+`confirmExportCompletion` setzt `sync_status` und `moodle_sync_status`
+parallel, damit alter Frontend-Code (z. B. `MoodleExportView.stats`,
+das `sync_status === 'pending'` filtert) konsistent bleibt.
+`confirmBrianExport` toleriert beim Pre-Check ebenfalls beide Felder
+(`moodle_sync_status === 'synced' || sync_status === 'synced'`).
+
+**Plan:**
+
+1. **Kurzfristig (Bestand):** Beide Felder werden in `confirmExportCompletion` synchron geschrieben. Read-Pfade müssen beide tolerieren.
+2. **Mittelfristig (Cleanup-PR):** Frontend-Konsumenten von `AllgemeineAufgabe.sync_status` (Suche im Repo: `MoodleExportView`, evtl. `ExportCockpitView`) auf `moodle_sync_status` umstellen.
+3. **Migration (Supabase):** `sync_status`-Spalte aus `allgemeine_aufgabe` entfernen, sobald Schritt 2 abgeschlossen ist. Andere Entitäten (`lernpakete`, `master_aufgabe`, `aufgabenbausteine`, `lernpaket_phase_aktivitaet`, `einheiten`) behalten `sync_status` weiter – dort gibt es nur EINEN Export-Pfad.
+
+### @MIGRATION_NOTE (Supabase) – Auto-Release + Notfall-RPC
+
+```sql
+-- 1) Trigger-basierter Auto-Release (vgl. §14):
+CREATE OR REPLACE FUNCTION release_dual_lock_when_synced()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.moodle_sync_status = 'synced'
+     AND NEW.brian_sync_status = 'synced'
+     AND (OLD.moodle_sync_status <> 'synced' OR OLD.brian_sync_status <> 'synced')
+  THEN
+    NEW.locked_by := NULL;
+    NEW.locked_at := NULL;
+    -- Audit via separater INSERT in audit_log (AFTER UPDATE):
+  END IF;
+  RETURN NEW;
+END $$;
+
+-- 2) Notfall-RPC bleibt erhalten (Admin-only, SECURITY DEFINER):
+CREATE OR REPLACE FUNCTION force_release_task_lock(
+  task_id UUID,
+  reason TEXT
+) RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  IF NOT user_is_admin(auth.uid()) THEN
+    RAISE EXCEPTION 'admin only' USING ERRCODE = 'P0001';
+  END IF;
+  IF reason IS NULL OR length(trim(reason)) < 5 THEN
+    RAISE EXCEPTION 'reason required (min 5 chars)' USING ERRCODE = 'P0001';
+  END IF;
+
+  UPDATE allgemeine_aufgabe
+     SET locked_by = NULL,
+         locked_at = NULL
+   WHERE id = task_id;
+
+  INSERT INTO audit_log (
+    user_email, action, resource_type, resource_id, changes, status
+  ) VALUES (
+    auth.jwt() ->> 'email', 'UPDATE', 'AllgemeineAufgabe', task_id,
+    jsonb_build_object('force_release', true, 'reason', reason),
+    'success'
+  );
+END $$;
+
+-- 3) sync_status-Spalte droppen (NACH Frontend-Cleanup):
+ALTER TABLE allgemeine_aufgabe DROP COLUMN sync_status;
+```
+
+### Definition of Done für die Migration
+
+- [ ] Frontend-Read-Pfade auf `moodle_sync_status` umgestellt.
+- [ ] `sync_status`-Spalte auf `allgemeine_aufgabe` gedroppt.
+- [ ] `release_dual_lock_when_synced`-Trigger aktiv (vgl. §14).
+- [ ] `force_release_task_lock`-RPC ersetzt
+      `forceReleaseTaskLockAdmin`-Function.
+- [ ] Audit-Trigger schreibt sowohl reguläre Auto-Releases als auch
+      Force-Releases automatisch.
