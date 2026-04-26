@@ -25,6 +25,7 @@
  */
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -33,7 +34,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Lock, Sparkles, Layers, Trophy, Star } from 'lucide-react';
+import { BookOpen, Lock, Sparkles, Layers, Trophy, Star, Info } from 'lucide-react';
 
 // ── Mapping: Lerntyp → Anzeigeinhalte ──────────────────────────────────
 // Der Erklärungstext ist bewusst als Dummy ausgelegt (Phase 3); finale
@@ -47,36 +48,36 @@ const LERNTYP_INFO = {
     icon: Sparkles,
     accent: 'text-slate-700 bg-slate-50 border-slate-200',
     description:
-      'Hier entsteht die didaktische Erklärung für den Minimalisten. ' +
-      'Das Raster ist kleinschrittig, mit hohem Handlungsanteil und einer ' +
-      'niedrigen kognitiven Eintrittshürde aufgebaut.',
+      'Fokussiert auf das Wesentliche. Kleinschrittiger Aufbau mit hohem ' +
+      'Handlungsanteil und einer niedrigen kognitiven Einstiegshürde für ' +
+      'einen sicheren Basis-Lernerfolg.',
   },
   pragmatiker: {
     label: 'Pragmatiker',
     icon: Layers,
     accent: 'text-blue-700 bg-blue-50 border-blue-200',
     description:
-      'Hier entsteht die didaktische Erklärung für den Pragmatiker. ' +
-      'Das Raster bietet einen effizienten Fast-Track durch die Grundlagen, ' +
-      'gefolgt von gezielten Übungs-Clustern und einem Zwischentest.',
+      'Effizienz im Fokus. Nutzt Vorab-Tests (Fast-Track), um Lernpfade ' +
+      'abzukürzen und Zeit für gezielte Übungen in Transfer-Aufgaben ' +
+      '(Level 2) zu gewinnen.',
   },
   ehrgeizig: {
-    label: 'Ehrgeizig',
+    label: 'Ehrgeizige',
     icon: Trophy,
     accent: 'text-amber-700 bg-amber-50 border-amber-200',
     description:
-      'Hier entsteht die didaktische Erklärung für den Ehrgeizigen. ' +
-      'Das Raster setzt auf Tiefe und Umfang: mehr Übungsaufgaben und einen ' +
-      'expliziten Sektor zur Prüfungsvorbereitung.',
+      'Maximaler Erfolg. Strukturierte Vorbereitung auf Prüfungen mit ' +
+      'vollständiger Abdeckung aller Lernziele und systematischer Anmeldung ' +
+      'zur schriftlichen Arbeit.',
   },
   passioniert: {
-    label: 'Passioniert',
+    label: 'Passionierte',
     icon: Star,
     accent: 'text-violet-700 bg-violet-50 border-violet-200',
     description:
-      'Hier entsteht die didaktische Erklärung für den Passionierten. ' +
-      'Das Raster fördert Autonomie und Projektarbeit — Direkteinstieg in ' +
-      'Ebene 2, Basispaket nur als Backup, abschließend ein eigenes Projekt.',
+      'Maximale Freiheit. Projektorientierter Ansatz mit freiem Zugriff auf ' +
+      'alle Inhalte für eigenständiges, forschendes Lernen und kreative ' +
+      'Projektarbeit.',
   },
 };
 
@@ -125,10 +126,20 @@ export default function DidaktischerGuidePanel({
           </div>
         </div>
 
-        {/* Erklärungstext (Dummy in Phase 3) */}
+        {/* Erklärungstext (profil-spezifisch) */}
         <p className="text-sm leading-relaxed text-foreground/80">
           {info.description}
         </p>
+
+        {/* Doku-Absprung – führt zur ausführlichen Lerntypen-Doku */}
+        <Link
+          to="/docs/dashboards-v2"
+          onClick={() => onClose?.()}
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors w-fit"
+        >
+          <Info className="w-3.5 h-3.5" />
+          Mehr über die Lerntypen und den Aufbau der Dashboards erfahren
+        </Link>
 
         {/* Sperr-Hinweis – nur sichtbar, wenn der Pfad freigegeben/gesperrt ist */}
         {isLocked && (

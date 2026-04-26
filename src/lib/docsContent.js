@@ -32,6 +32,12 @@ export const DOC_GROUPS = [
     ],
   },
   {
+    label: 'Didaktik',
+    items: [
+      { slug: 'dashboards-v2', label: 'Dashboards V2 & Lerntypen' },
+    ],
+  },
+  {
     label: 'System',
     items: [
       { slug: 'administration', label: 'Administration' },
@@ -787,6 +793,136 @@ Im Wartungsmodus können sich nur Administratoren anmelden. Alle anderen Nutzer 
 ## Daten zurücksetzen
 
 Im Admin-Bereich können Test- und Sandbox-Daten zurückgesetzt werden. **Achtung:** Diese Aktion ist nicht rückgängig zu machen.
+`,
+
+  'dashboards-v2': `# Dashboards V2 & Lerntypen
+
+Dieses Kapitel beschreibt das Modul **Dashboards V2** (Sprint H): die didaktische Vision, die vier Lerntypen-Profile, die Sektor- und Bündel-Logik sowie die technischen Bausteine, die im Hintergrund die Pfade zusammensetzen, bewerten und exportieren.
+
+## 1. Einführung: Vision der Dashboards V2
+
+Dashboards V2 lösen das Versprechen ein, **Binnendifferenzierung skalierbar** in den Pool-Manager zu bringen. Statt einer einzigen, linearen Pfad-Struktur erhält jede Einheit **vier parallele Dashboard-Raster** – eines pro Lerntyp. Lehrkräfte konfigurieren diese Raster nicht mehr manuell von Grund auf, sondern stützen sich auf:
+
+* **automatisierte Standard-Raster** ("Magic Raster"), die je Profil eine didaktisch erprobte Grundstruktur laden,
+* **wiederverwendbare Aufgaben** aus dem Pool der Einheit (Ebene 2 & 3),
+* **System-Bausteine** (z. B. Pre-Test, Wissensspeicher, Reflexion), die als Platzhalter oder fertige Module gesetzt werden können.
+
+Ziel ist ein **Pfad pro Sitzung in 5 Minuten** statt einer Stunde – bei gleichzeitig pädagogisch fundierten Vorlagen.
+
+## 2. Detaillierte Profil-Analyse
+
+### 2.1 Die vier Lerntypen
+
+| Profil | Pädagogische Herleitung | Kennzeichen im Raster |
+|--------|-------------------------|------------------------|
+| **Minimalist** | Schüler:innen mit niedriger Selbstwirksamkeitserwartung brauchen schnelle Erfolge. Der Pfad senkt die kognitive Einstiegshürde, baut über kleine Handlungsschritte Sicherheit auf und sichert das Basis-Lernziel ab. | Kleinschrittige Sektoren, hoher Handlungsanteil, keine Transfer-Aufgaben in den ersten Sektoren. |
+| **Pragmatiker** | Effiziente Lerner:innen wollen Zeit nicht in bereits Verstandenes investieren. Ein Vorab-Test (Fast-Track) erlaubt das Überspringen gesicherter Inhalte; gewonnene Zeit fließt in Transfer (Ebene 2). | Pre-Test als Eingangstor, Fast-Track-Logik in den Lernpaket-Bündeln, mehr Ebene-2-Aufgaben. |
+| **Ehrgeizige** | Prüfungsorientierte Lerner:innen brauchen vollständige Abdeckung aller Lernziele plus klare Vorbereitung auf die schriftliche Arbeit. | Vollständige Pfad-Abdeckung, Prüfungs-Sektor mit Anmeldung zur schriftlichen Arbeit, hoher Anteil systematischer Übungen. |
+| **Passionierte** | Forschend-entdeckende Lerner:innen profitieren von Autonomie. Der Pfad öffnet alle Inhalte parallel und verlagert den Schwerpunkt auf Projektarbeit (Ebene 3). | Freier Sektor-Modus, Projektanker als Hauptsektoren, Ebene 1 nur als Backup-Wissensspeicher. |
+
+### 2.2 Sektor-Logiken: sequenziell vs. frei
+
+Sektoren steuern, **wie** der Lerner einen Block bearbeitet:
+
+| Modus | Verhalten | Wann sinnvoll? |
+|-------|-----------|----------------|
+| **sequenziell** | Items werden in der gesetzten Reihenfolge freigeschaltet. Erst wenn ein Item grün ist, öffnet sich das nächste. | Wenn Inhalte aufeinander aufbauen (Minimalist-Pfad, Prüfungs-Sektor der Ehrgeizigen). |
+| **frei** | Alle Items im Sektor sind sofort sichtbar; der Lerner wählt selbst die Reihenfolge. | Wenn Autonomie pädagogisch gewollt ist (Passionierte, Wissensspeicher als Nachschlagewerk). |
+
+Der Modus wird **pro Sektor** gesetzt – ein Pfad kann sequenzielle und freie Sektoren mischen.
+
+### 2.3 Bündel-Typen: Brian-Auswahl-Bündel vs. Moodle-Logik
+
+Bündel fassen mehrere Items unter einer übergeordneten Aufgabe zusammen. Sprint G/H unterscheidet zwei fundamentale Bündel-Arten:
+
+#### Moodle-Bündel (\`aufgaben_typ='buendel'\`)
+
+* Verlinkt **Lernpakete (Ebene 1)**.
+* Steuerung über das Feld \`lernpaket_logik\`:
+  * \`standard\` – Input → Übung → Test (klassisch)
+  * \`fast_track\` – Input → Test → Übung (Pragmatiker)
+  * \`wissensspeicher\` – Input fix, Übung/Test frei (Nachschlagewerk)
+  * \`test_only\` – nur das Test-Modul ist aktiv
+* Dient als **didaktischer Container** im Moodle-Export: aus dem Bündel werden im Zielsystem mehrere zusammenhängende Aktivitäten generiert.
+
+#### Brian-Auswahl-Bündel (\`aufgaben_typ='auswahl_buendel'\`)
+
+* Verlinkt **Aufgaben der Ebene 2** (\`AllgemeineAufgabe\`).
+* Steuerung über zwei Felder:
+  * \`erforderliche_anzahl\` – wie viele der verlinkten Aufgaben muss der Lerner abschließen (\`0\` = alle).
+  * \`interne_reihenfolge\` – \`frei\` oder \`sequenziell\` für den Bündel-Inhalt.
+* Live-Bewertung: das Bündel ist erst grün, wenn die geforderte Anzahl an Kindern grün ist (siehe Ampel-Aggregation).
+* Pädagogischer Zweck: **Wahlpflicht** – der Lerner entscheidet, welche Transfer-Aufgaben er bearbeitet, ohne dass der Pfad-Status verlorengeht.
+
+> Faustregel: **Moodle-Bündel** strukturieren *Lernen*, **Brian-Bündel** strukturieren *Wahlfreiheit innerhalb des Transfers*.
+
+## 3. Technische Umsetzung
+
+### 3.1 Template-Logik (\`lib/dashboardTemplates.js\`)
+
+Die Magic-Raster sind als versionierte, eingefrorene Konstanten in \`lib/dashboardTemplates.js\` hinterlegt. Pro Lerntyp definiert das Template eine Liste von **Sektor-Objekten** mit folgender Struktur:
+
+\`\`\`
+{
+  titel: 'Basis sichern',
+  modus: 'sequenziell',
+  items: [
+    { type: 'system', ref_id: 'sys_pre_test' },
+    { type: 'system', ref_id: 'sys_platzhalter_input' },
+    { type: 'system', ref_id: 'sys_exit_check' },
+  ],
+}
+\`\`\`
+
+* **\`type='system'\`** – ein System-Baustein. Platzhalter (\`sys_platzhalter_*\`) zählen in der Fortschrittsberechnung **nicht** mit; "echte" System-Bausteine (z. B. \`sys_pre_test\`) zählen wie eine erledigte Aufgabe.
+* **\`type='aufgabe'\`** – eine konkrete Aufgabe aus dem Pool der Einheit. Im Template kommen diese in der Regel **nicht** vor – sie werden von der Lehrkraft beim Befüllen ergänzt.
+* **Legacy-Mapping** – ältere Bausteine werden über eine Mapping-Tabelle auf aktuelle IDs umgeschrieben, damit existierende Pfade nach Template-Updates konsistent bleiben.
+
+Templates werden über \`useDashboardRelease\` angewandt: vor dem Apply wird der Live-Status geladen (Race-Condition-Schutz), danach ersetzt das Template die Konfiguration des aktiven Lerntyps.
+
+### 3.2 Ampel-Aggregation: "at least N green"
+
+Die Status-Ampel kennt drei Stufen: \`red\` < \`yellow\` < \`green\`. Für aggregierte Container (Bündel, Sektoren) werden zwei Aggregationsregeln benutzt:
+
+#### \`aggregateMin\` (Standard)
+
+Der Container ist nur so grün wie sein **schwächstes Kind**:
+
+* Alle grün → grün
+* Mindestens ein gelb → gelb
+* Mindestens ein rot → rot
+
+Wird verwendet für **Moodle-Bündel** (\`buendel\`) und **Projektanker** (\`projekt_anker\`) – jedes verlinkte Element muss approved sein.
+
+#### \`aggregateAtLeastNGreen\` (Brian-Bündel)
+
+Für \`auswahl_buendel\` greift eine schwächere Regel, weil der Lerner nicht alle Kinder bearbeiten muss:
+
+* **\`green\`**, sobald \`required\` Kinder grün sind.
+* **\`yellow\`**, falls \`green + yellow >= required\` (Ziel theoretisch erreichbar, aber noch Modifikationen offen).
+* **\`red\`**, sonst.
+
+Bei \`required = 0\` fällt die Logik auf \`aggregateMin\` zurück (alle Kinder erforderlich).
+
+Diese Logik ist gespiegelt im Backend (\`functions/getEinheitenMetricsSecure.js\`) und im Frontend (\`lib/ampelLogic.js\`), damit Dashboard-Karten und Cockpit immer dieselbe Wahrheit zeigen.
+
+### 3.3 Export-Verhalten: Delta-Payloads
+
+Beim Moodle/Brian-Export werden **nicht alle** Entitäten erneut übertragen, sondern nur die seit dem letzten erfolgreichen Export geänderten. Diese Logik liegt in \`lib/deltaPayloadGenerator.js\`:
+
+1. **Filter nach Timestamp** – jede Entity (Themenfeld, Lernpaket, Lernziel, Aufgabe) wird mit \`last_synced_at\` verglichen.
+2. **Transitive Expansion** – bei Brian-Bündeln und Projektankern werden referenzierte Kinder zwingend mitexportiert, auch wenn sie selbst nicht modifiziert wurden. So bleiben referenzielle Beziehungen im Zielsystem konsistent.
+3. **Schema-Mapping** – pro Aufgabentyp werden nur die relevanten Felder serialisiert (\`buendel\` braucht \`lernpaket_logik\`, \`auswahl_buendel\` braucht \`erforderliche_anzahl\` und \`interne_reihenfolge\` etc.).
+4. **Validierung** – vor dem Versand prüft der Generator, dass keine FK-Pointer ins Leere zeigen. Broken Links werden als Audit-Eintrag protokolliert und blockieren den Export.
+
+Das Ergebnis ist ein kompakter JSON-Payload mit Header, Statistik und Audit-Log – ideal für inkrementelle Sync-Zyklen und nachvollziehbare Re-Runs.
+
+## 4. Weiterführende Kapitel
+
+* [Lernpakete & Aktivitäten](/docs/lernpakete-aktivitaeten) – Bausteine, aus denen die Dashboards befüllt werden.
+* [Ebene 2: Allgemeine Aufgaben](/docs/ebene-2-allgemeine-aufgaben) – Hauptquelle für Brian-Bündel.
+* [Ebene 3: Projektaufgaben](/docs/ebene-3-projektaufgaben) – Hauptquelle für Projektanker im Passionierten-Pfad.
+* [Export-Workflow](/docs/export-workflow) – wie Delta-Payloads in Moodle und Brian.study landen.
 `,
 
   'erste-hilfe-faq': `# Erste Hilfe / FAQ
