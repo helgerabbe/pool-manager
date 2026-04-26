@@ -194,6 +194,7 @@ export default function LernpfadeArchitekt({
                 aufgabenById={aufgabenById}
                 systemBausteineById={systemBausteineById}
                 readOnly={readOnly}
+                activeLernTyp={activeLernTyp}
                 onPatch={onPatchSektor}
                 onRemove={onRemoveSektor}
                 onRemoveAufgabe={(aufgabeId) => onRemoveAufgabeFromPath?.(aufgabeId)}

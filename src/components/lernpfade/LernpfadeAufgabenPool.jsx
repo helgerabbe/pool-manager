@@ -92,6 +92,7 @@ function AufgabeListItem({ aufgabe, index, isSelected, isUsed, onClick }) {
   const typMeta = getAufgabenTyp(aufgabe.aufgaben_typ);
   const Icon = typMeta.icon;
   const isBuendel = aufgabe.aufgaben_typ === 'buendel';
+  const isZwischentest = isBuendel && aufgabe.lernpaket_logik === 'test_only';
   const logikLabel = isBuendel
     ? (LERNPAKET_LOGIK_LABELS[aufgabe.lernpaket_logik] || LERNPAKET_LOGIK_LABELS.standard)
     : null;
@@ -126,7 +127,13 @@ function AufgabeListItem({ aufgabe, index, isSelected, isUsed, onClick }) {
                 {subtitle}
               </span>
               {isBuendel && logikLabel && (
-                <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 border border-blue-200">
+                <span
+                  className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border ${
+                    isZwischentest
+                      ? 'bg-rose-500 text-white border-rose-600 shadow-sm'
+                      : 'bg-blue-100 text-blue-700 border-blue-200'
+                  }`}
+                >
                   {logikLabel}
                 </span>
               )}
@@ -182,14 +189,21 @@ export default function LernpfadeAufgabenPool({
     },
   });
 
-  // Pool: Ebene 2 + 3, ohne Tombstones.
+  // Pool: alle für die Filtergruppen relevanten Typen, ohne Tombstones.
+  // Wir filtern primär TYP-basiert (buendel, inhalt, handlung, auswahl_buendel,
+  // projekt_anker), damit Lernpakete auch dann erscheinen, wenn deren
+  // anforderungsebene nicht gesetzt oder von der Norm abweicht.
+  const allowedTypes = useMemo(() => {
+    const set = new Set();
+    FILTER_GROUPS.forEach((g) => g.types.forEach((t) => set.add(t)));
+    return set;
+  }, []);
   const poolAufgaben = useMemo(() => {
     return (alleAufgaben || []).filter((a) => {
       if (a.sync_status === 'to_delete') return false;
-      const ebene = a.anforderungsebene;
-      return ebene === '2 - Transfer' || ebene === '3 - Projekt';
+      return allowedTypes.has(a.aufgaben_typ || 'inhalt');
     });
-  }, [alleAufgaben]);
+  }, [alleAufgaben, allowedTypes]);
 
   // Hilfs-Map: DB-Typ → Filter-Gruppen-Key
   const typeToGroup = useMemo(() => {

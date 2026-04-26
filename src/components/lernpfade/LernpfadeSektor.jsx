@@ -57,12 +57,26 @@ function ModusToggle({ modus, onChange, disabled }) {
   );
 }
 
-function AufgabePill({ aufgabe, refId, sektorId, index, onRemove, onSelect, isSelected, disabled, ampelStatus, onOpenEditor }) {
+// Dynamische Lernpaket-Variante je nach Lerntyp ("Chamäleon-Logik").
+// Nur reguläre Lernpakete (buendel) zeigen ein Varianten-Label;
+// Zwischentests (test_only) sind statisch und bekommen keines.
+const LERNTYP_VARIANTE = {
+  minimalist: { label: 'Standard', cls: 'bg-slate-100 text-slate-700 border-slate-200' },
+  pragmatiker: { label: 'Fast-Track', cls: 'bg-blue-100 text-blue-700 border-blue-200' },
+  ehrgeizig: { label: 'Fast-Track', cls: 'bg-amber-100 text-amber-700 border-amber-200' },
+  passioniert: { label: 'Wissensspeicher', cls: 'bg-violet-100 text-violet-700 border-violet-200' },
+};
+
+function AufgabePill({ aufgabe, refId, sektorId, index, onRemove, onSelect, isSelected, disabled, ampelStatus, onOpenEditor, activeLernTyp }) {
   // Fallback, falls die Aufgabe (noch) nicht im Cache ist.
   const titel = aufgabe?.titel || 'Aufgabe';
   const typMeta = getAufgabenTyp(aufgabe?.aufgaben_typ);
   const Icon = typMeta.icon;
   const draggableId = `pfaditem-aufgabe-${sektorId}-${index}-${refId}`;
+
+  const isBuendel = aufgabe?.aufgaben_typ === 'buendel';
+  const isZwischentest = isBuendel && aufgabe?.lernpaket_logik === 'test_only';
+  const variante = isBuendel && !isZwischentest ? LERNTYP_VARIANTE[activeLernTyp] : null;
 
   return (
     <Draggable draggableId={draggableId} index={index} isDragDisabled={disabled}>
@@ -85,6 +99,22 @@ function AufgabePill({ aufgabe, refId, sektorId, index, onRemove, onSelect, isSe
           <span className="flex-1 min-w-0 truncate">
             {aufgabe ? titel : <span className="italic text-muted-foreground">Unbekannte Aufgabe</span>}
           </span>
+          {variante && (
+            <span
+              className={`shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border ${variante.cls}`}
+              title={`Variante: ${variante.label}`}
+            >
+              {variante.label}
+            </span>
+          )}
+          {isZwischentest && (
+            <span
+              className="shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border bg-rose-500 text-white border-rose-600"
+              title="Statischer Zwischentest"
+            >
+              Zwischentest
+            </span>
+          )}
           {ampelStatus && (
             <AmpelBadge
               status={ampelStatus}
@@ -113,6 +143,7 @@ export default function LernpfadeSektor({
   aufgabenById,
   systemBausteineById,
   readOnly,
+  activeLernTyp,
   onPatch,
   onRemove,
   onRemoveAufgabe,
@@ -206,6 +237,7 @@ export default function LernpfadeSektor({
                   disabled={readOnly}
                   ampelStatus={getAmpelStatusForItem ? getAmpelStatusForItem(item) : undefined}
                   onOpenEditor={onOpenAufgabeEditor}
+                  activeLernTyp={activeLernTyp}
                 />
               );
             })}
