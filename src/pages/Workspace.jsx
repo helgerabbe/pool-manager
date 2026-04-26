@@ -211,25 +211,27 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     if (!einheit) return;
     setAcquiringStructLock(true);
     try {
-      const res = await invokeFunction('acquireStructuralLockSecure', {
+      const res = await invokeFunction('acquireUnitLockSecure', {
         einheit_id: einheit.id,
+        scope: 'structure',
       });
       if (res.data?.success) {
         setIsStructuralEditingActive(true);
         queryClient.invalidateQueries({ queryKey: ['einheiten'] });
         toast.success('✅ Strukturbearbeitung aktiviert. Andere Nutzer können jetzt keine Änderungen mehr vornehmen.');
       } else {
-        const lockOwner = res.data?.lockedByEmail;
+        const name = res.data?.lockedByName || res.data?.lockedByEmail;
         toast.error(
-          lockOwner
-            ? `🔒 Struktur wird gerade von ${lockOwner} bearbeitet. Bitte warten Sie bis die Bearbeitung abgeschlossen ist.`
+          name
+            ? `🔒 Struktur wird gerade von ${name} bearbeitet. Bitte warten Sie bis die Bearbeitung abgeschlossen ist.`
             : 'Structural Lock konnte nicht erworben werden.'
         );
       }
     } catch (err) {
-      const lockOwner = err?.response?.data?.lockedByEmail;
+      const data = err?.response?.data;
+      const name = data?.lockedByName || data?.lockedByEmail;
       if (err?.response?.status === 409) {
-        toast.error(lockOwner ? `🔒 Struktur wird von ${lockOwner} bearbeitet.` : 'Struktur ist gesperrt.');
+        toast.error(name ? `🔒 Struktur wird von ${name} bearbeitet.` : 'Struktur ist gesperrt.');
       } else {
         toast.error('Fehler beim Erwerben der Structural-Sperre.');
       }
@@ -247,8 +249,9 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     if (!einheit) return;
     setAcquiringStructLock(true);
     try {
-      const res = await invokeFunction('acquireDashboardLockSecure', {
+      const res = await invokeFunction('acquireUnitLockSecure', {
         einheit_id: einheit.id,
+        scope: 'dashboard',
       });
       if (res.data?.success) {
         setIsStructuralEditingActive(true);
@@ -334,25 +337,27 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     if (!einheit) return;
     setAcquiringTab1Lock(true);
     try {
-      const res = await invokeFunction('acquireStructuralLockSecure', {
+      const res = await invokeFunction('acquireUnitLockSecure', {
         einheit_id: einheit.id,
+        scope: 'structure',
       });
       if (res.data?.success) {
         setIsTab1EditingActive(true);
         queryClient.invalidateQueries({ queryKey: ['einheiten'] });
         toast.success('✅ Bearbeitungsmodus aktiviert.');
       } else {
-        const lockOwner = res.data?.lockedByEmail || res.data?.locked_by_email;
+        const name = res.data?.lockedByName || res.data?.lockedByEmail;
         toast.error(
-          lockOwner
-            ? `🔒 Einheit wird gerade von ${lockOwner} bearbeitet. Bitte warten Sie bis die Bearbeitung abgeschlossen ist.`
+          name
+            ? `🔒 Einheit wird gerade von ${name} bearbeitet. Bitte warten Sie bis die Bearbeitung abgeschlossen ist.`
             : 'Bearbeitungsmodus konnte nicht aktiviert werden. Bitte laden Sie die Seite neu.'
         );
       }
     } catch (err) {
-      const lockOwner = err?.response?.data?.lockedByEmail || err?.response?.data?.locked_by_email;
+      const data = err?.response?.data;
+      const name = data?.lockedByName || data?.lockedByEmail;
       if (err?.response?.status === 409) {
-        toast.error(lockOwner ? `🔒 Einheit wird von ${lockOwner} bearbeitet.` : '🔒 Einheit ist gerade gesperrt. Bitte versuchen Sie es erneut.');
+        toast.error(name ? `🔒 Einheit wird von ${name} bearbeitet.` : '🔒 Einheit ist gerade gesperrt. Bitte versuchen Sie es erneut.');
       } else {
         toast.error(`Bearbeitungsmodus konnte nicht gestartet werden: ${err?.message || 'Unbekannter Fehler'}`);
       }
