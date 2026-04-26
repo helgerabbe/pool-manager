@@ -7,7 +7,6 @@ const STEPS = [
   { id: 2, label: 'Struktur-Entwurf', desc: 'KI-gestützte Strukturierung' },
   { id: 3, label: 'Werkbank', desc: 'Lernpakete arrangieren' },
   { id: 4, label: 'Lernziele', desc: 'KI-Vorschlag oder manuell' },
-  { id: 5, label: 'Basis-Befüllung', desc: 'Phasenzuordnung & Export' },
 ];
 
 export default function WizardStepper({ currentStep, onStepClick, completedSteps = [] }) {
