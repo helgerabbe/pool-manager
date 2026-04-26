@@ -1,20 +1,80 @@
 /**
  * approveMasterAufgabe.js
  *
- * Setzt content_status auf einer MasterAufgabe auf 'approved' oder 'draft'.
+ * Setzt content_status auf einer MasterAufgabe auf 'approved' oder 'draft'
+ * und synchronisiert daraus den Aggregat-Status der übergeordneten
+ * `LernpaketPhaseAktivitaet`.
  *
- * Sicherheit & Architektur:
- * - Vollständige Tenant-Isolation: Prüft, dass die Aufgabe zur Einheit des Users gehört
- * - Lock-Prüfung: User muss den Bearbeitungs-Lock halten
- * - Klon-Schutz: Klone (is_master: false) dürfen nicht approved werden
- * - Sync-Status: Bei Approval wird sync_status auf 'pending' gesetzt
+ * Sicherheit & Architektur
+ * ────────────────────────
+ *  - Tenant-Isolation: Aufgabe → Activity → Lernpaket → Einheit-Kette wird
+ *    sequenziell aufgelöst, damit ein Master nicht aus fremden Einheiten
+ *    geändert werden kann.
+ *  - **RBAC** (entspricht `acquireUnitLockSecure.checkUnifiedPermission`):
+ *      Administrator                                   → frei
+ *      Fachschaftsleitung MIT Fach in fachbereich_zustaendigkeit   → frei
+ *      Sonst: explizite EinheitMembers-Mitgliedschaft (LEITUNG/EDITOR)
+ *    Damit können globale Admins/zuständige Fachschaften approven, ohne
+ *    in jeder Einheit einzeln Mitglied sein zu müssen.
+ *  - Klon-Schutz: Klone (is_master=false) dürfen nicht approved werden.
+ *  - Lock-Philosophie: Schreiben ist erlaubt, solange kein FREMDER Lock
+ *    aktiv ist. Eigene Schreibrennen werden über `version`-OCC bei den
+ *    eigentlichen Locks (acquireLockSecure / acquireUnitLockSecure) abgefangen.
+ *  - Sync-Status: Bei `approve` → `sync_status='pending'` (Moodle-Trigger).
+ *    Bei `unapprove` bleibt der bisherige sync_status unverändert (z. B.
+ *    'synced' bei einem bereits exportierten Master, der nur lokal in
+ *    den Entwurfsmodus zurückgesetzt wird).
+ *
+ * @MIGRATION_NOTE (Supabase) – siehe OPTIMISTIC_LOCKING_VERSION_FIELD.md §11
+ *  - Die Wasserfall-Reads (MasterAufgabe → Activity → Lernpaket → Einheit
+ *    → EinheitMembers/Benutzer) verschwinden vollständig. RLS-Policies
+ *    auf MasterAufgabe + Aggregat-Trigger auf LernpaketPhaseAktivitaet
+ *    übernehmen das.
+ *  - Schritt 7 (Activity-Aggregat) MUSS in einen
+ *    `AFTER UPDATE ON MasterAufgabe`-Trigger wandern, damit das
+ *    Aggregat atomar zu jedem einzelnen Master-Update läuft. Bis dahin
+ *    bleibt eine Race Condition bestehen, wenn zwei User exakt
+ *    gleichzeitig zwei verschiedene Masters approven.
  *
  * Parameter:
- * - masterId: MasterAufgabe ID
- * - action: 'approve' | 'unapprove'
+ *  - masterId: MasterAufgabe ID
+ *  - action:   'approve' | 'unapprove'
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+
+/**
+ * Einheitliche RBAC-Prüfung – konsistent zu acquireUnitLockSecure.
+ *   - Admin                                          → erlaubt
+ *   - Fachschaftsleitung MIT Fachzuständigkeit       → erlaubt
+ *   - Sonst: explizite EinheitMembers-Mitgliedschaft → erlaubt
+ */
+async function checkApprovalPermission(base44, user, einheit) {
+  if (user.role === 'admin') return { allowed: true };
+
+  const benutzerList = await base44.asServiceRole.entities.Benutzer.filter({
+    user_id: user.email,
+  });
+  const benutzer = benutzerList?.[0];
+  const rolle = benutzer?.rolle;
+
+  if (rolle === 'Administrator') return { allowed: true };
+
+  if (rolle === 'Fachschaftsleitung') {
+    const fachzustaendig =
+      benutzer?.fachbereich_zustaendigkeit?.includes(einheit.fach) || false;
+    if (fachzustaendig) return { allowed: true };
+  }
+
+  // Fallback: jede Form von Mitgliedschaft (LEITUNG oder EDITOR).
+  const members = await base44.asServiceRole.entities.EinheitMembers.filter({
+    einheit_id: einheit.id,
+    user_email: user.email,
+  });
+  if (members.length > 0) return { allowed: true };
+
+  return { allowed: false, reason: 'Sie haben keinen Zugriff auf diese Einheit' };
+}
 
 Deno.serve(async (req) => {
   try {
@@ -42,7 +102,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'MasterAufgabe nicht gefunden' }, { status: 404 });
     }
 
-    // ── 2. Klon-Schutz: Klone (is_master=false) dürfen nicht approved werden ───
+    // ── 2. Klon-Schutz ─────────────────────────────────────────────────────────
     if (aufgabe.is_master === false) {
       return Response.json(
         { error: 'Klone können nicht direkt approved werden. Befördern Sie den Klon zuerst zur Masteraufgabe.' },
@@ -50,7 +110,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ── 3. Activity auslesen (für Lock-Prüfung) ───────────────────────────────
+    // ── 3. Activity auslesen (für Lock-Prüfung + Aggregat) ─────────────────────
     if (!aufgabe.activity_id) {
       return Response.json(
         { error: 'MasterAufgabe hat keine verknüpfte Activity' },
@@ -68,7 +128,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Lernpaket-Referenz fehlt' }, { status: 400 });
     }
 
-    // ── 4. Lock-Prüfung: User muss den Bearbeitungs-Lock halten ────────────────
+    // ── 4. Fremd-Lock-Prüfung ──────────────────────────────────────────────────
+    // Architektur-Entscheidung: Schreiben ist erlaubt, solange kein
+    // FREMDER Lock aktiv ist. Eigene Race-Conditions werden über das
+    // version-OCC der zugrunde liegenden Lock-Endpunkte abgefangen.
     const lernpaket = await base44.asServiceRole.entities.Lernpakete.read(lernpaketId);
     if (!lernpaket) {
       return Response.json({ error: 'Lernpaket nicht gefunden' }, { status: 404 });
@@ -84,8 +147,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ⛔ PHASE 2: Export-Lock-Enforcement (KRITISCH!)
-    // Blockiert alle Updates während eines aktiven Moodle-Exports
+    // ⛔ Export-Lock-Enforcement
     if (lernpaket.export_locked === true || lernpaket.moodle_sync_status === 'locked') {
       console.warn(
         `[approveMasterAufgabe] BLOCKED by export lock - ${user.email} tried to update ${masterId} ` +
@@ -98,14 +160,14 @@ Deno.serve(async (req) => {
           details: {
             export_locked: lernpaket.export_locked,
             moodle_sync_status: lernpaket.moodle_sync_status,
-            lernpaketId: lernpaket.id
-          }
+            lernpaketId: lernpaket.id,
+          },
         },
         { status: 423, headers: { 'Retry-After': '5' } }
       );
     }
 
-    // ── 5. Einheit-Zugehörigkeit prüfen (Tenant-Isolation) ────────────────────
+    // ── 5. Einheit + RBAC ─────────────────────────────────────────────────────
     if (!lernpaket.einheit_id) {
       return Response.json({ error: 'Lernpaket hat keine Einheit' }, { status: 400 });
     }
@@ -115,35 +177,35 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
     }
 
-    // Prüfe, ob der User auf diese Einheit Zugriff hat (via EinheitMembers)
-    const memberAccess = await base44.asServiceRole.entities.EinheitMembers.filter({
-      einheit_id: lernpaket.einheit_id,
-      user_email: user.email,
-    });
-
-    if (memberAccess.length === 0) {
-      return Response.json(
-        { error: 'Sie haben keinen Zugriff auf diese Einheit' },
-        { status: 403 }
-      );
+    const perm = await checkApprovalPermission(base44, user, einheit);
+    if (!perm.allowed) {
+      return Response.json({ error: perm.reason }, { status: 403 });
     }
 
-    // ── 6. content_status aktualisieren ─────────────────────────────────────
+    // ── 6. content_status + sync_status aktualisieren ─────────────────────────
+    // Bei 'approve': sync_status auf 'pending' setzen, damit der
+    // Moodle-Export-Pfad erkennt, dass dieser Master neu/geändert
+    // exportiert werden muss. Bei 'unapprove' lassen wir den
+    // bisherigen sync_status bewusst unangetastet – ein bereits
+    // synchronisierter Master, der temporär in den Entwurf zurück
+    // geht, soll nicht fälschlich als „pending" markiert werden.
     const newContentStatus = action === 'approve' ? 'approved' : 'draft';
+    const masterUpdate = { content_status: newContentStatus };
+    if (action === 'approve') {
+      masterUpdate.sync_status = 'pending';
+    }
 
-    await base44.asServiceRole.entities.MasterAufgabe.update(masterId, {
-      content_status: newContentStatus,
-    });
+    await base44.asServiceRole.entities.MasterAufgabe.update(masterId, masterUpdate);
 
-    // ── 7. LernpaketPhaseAktivitaet content_status synchronisieren ───────────
-    // Lade alle Masters dieser Activity und prüfe ob alle approved sind.
-    // Wenn ja → Activity auf 'approved' setzen; wenn mindestens einer 'draft' → 'draft'.
+    // ── 7. Activity-Aggregat synchronisieren ──────────────────────────────────
+    // ACHTUNG (siehe Logbuch §11): Read-then-write Race Condition möglich,
+    // wenn zwei User gleichzeitig zwei verschiedene Masters derselben
+    // Activity approven. Migration → DB-Trigger.
     const allMasters = await base44.asServiceRole.entities.MasterAufgabe.filter({
       activity_id: aufgabe.activity_id,
     });
 
-    // Berücksichtige den neuen Status des gerade geänderten Masters
-    const allApproved = allMasters.every(m =>
+    const allApproved = allMasters.every((m) =>
       m.id === masterId ? newContentStatus === 'approved' : m.content_status === 'approved'
     );
 
@@ -156,10 +218,12 @@ Deno.serve(async (req) => {
       success: true,
       masterId,
       newContentStatus,
+      newSyncStatus: masterUpdate.sync_status || aufgabe.sync_status || null,
       activityContentStatus,
-      message: action === 'approve'
-        ? 'MasterAufgabe freigegeben'
-        : 'MasterAufgabe zu Entwurf zurückgesetzt',
+      message:
+        action === 'approve'
+          ? 'MasterAufgabe freigegeben'
+          : 'MasterAufgabe zu Entwurf zurückgesetzt',
     });
   } catch (error) {
     console.error('[approveMasterAufgabe] Error:', error);

@@ -357,3 +357,87 @@ nicht verlässlich:
 - [ ] Alle Inline-Kopien aus den Functions entfernt.
 - [ ] `@MIGRATION_BLOCKER`-Suche im Repo findet keine Treffer mehr
       für den Rate-Limiter.
+
+---
+
+## 11. approveMasterAufgabe – RBAC, sync_status, Race Condition (2026-04-26)
+
+Beim Code-Review von `functions/approveMasterAufgabe` wurden vier
+Themen adressiert:
+
+1. **sync_status beim Approve.** Header und Implementierung lagen
+   auseinander – jetzt setzt `action === 'approve'` zusätzlich
+   `sync_status = 'pending'`, damit die Moodle-Pipeline den Master
+   als „neu zu exportieren" erkennt. Beim `unapprove` bleibt der
+   bisherige `sync_status` bewusst unangetastet.
+
+2. **RBAC-Lücke (Admin-Aussperrer).** Die alte Implementierung prüfte
+   ausschließlich `EinheitMembers` – globale Admins und zuständige
+   Fachschaftsleitungen konnten kein Approval setzen, wenn sie nicht
+   explizit Mitglied der Einheit waren. Behoben durch
+   `checkApprovalPermission`, die exakt der Logik aus
+   `acquireUnitLockSecure.checkUnifiedPermission` folgt:
+   - Administrator (global oder via Benutzer.rolle) → frei
+   - Fachschaftsleitung MIT Fachzuständigkeit       → frei
+   - Sonst: jede Mitgliedschaft in `EinheitMembers` → frei
+
+3. **Lock-Philosophie (bewusst behalten).** Schritt 4 prüft NUR
+   gegen FREMDE Locks. Eigenes Schreiben ohne aktiven Lock bleibt
+   erlaubt – das matcht die Restarchitektur (Approval ist ein
+   Status-Switch, kein Inhalts-Edit). Eigene Race-Conditions werden
+   durch die `version`-OCC-Felder der eigentlichen Lock-Endpunkte
+   (`acquireLockSecure`, `acquireUnitLockSecure`) abgesichert; eine
+   zusätzliche OCC-Spalte auf `MasterAufgabe` lohnt sich erst, wenn
+   dort eigene Concurrent-Edits möglich werden.
+
+4. **Race Condition im Activity-Aggregat (Schritt 7) – akzeptiert.**
+   Wenn zwei Lehrkräfte exakt gleichzeitig zwei verschiedene Masters
+   derselben Activity approven, lesen beide den jeweils alten
+   Aggregat-Zustand. Ohne native Transaktionen im Base44-SDK ist
+   das nur durch ein DB-seitiges Aggregat sauber lösbar.
+
+### @MIGRATION_NOTE (Supabase) – Aggregat per Trigger
+
+Bei der Supabase-Migration wandern die Schritte 4–7 dieses Skripts
+komplett aus dem JavaScript heraus:
+
+```sql
+-- 1. RLS auf MasterAufgabe regelt, wer überhaupt updaten darf.
+-- 2. AFTER UPDATE-Trigger auf MasterAufgabe synchronisiert das
+--    Aggregat in LernpaketPhaseAktivitaet atomar – ohne
+--    Read-Modify-Write-Race im Application-Code.
+
+CREATE OR REPLACE FUNCTION sync_activity_content_status()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  UPDATE lernpaket_phase_aktivitaet a
+     SET content_status = CASE
+       WHEN NOT EXISTS (
+         SELECT 1 FROM master_aufgabe m
+         WHERE m.activity_id = a.id
+           AND m.content_status <> 'approved'
+       ) THEN 'approved'
+       ELSE 'draft'
+     END
+   WHERE a.id = NEW.activity_id;
+  RETURN NEW;
+END $$;
+
+CREATE TRIGGER master_aufgabe_aggregate
+AFTER UPDATE OF content_status ON master_aufgabe
+FOR EACH ROW EXECUTE FUNCTION sync_activity_content_status();
+```
+
+Damit läuft das Aggregat exakt einmal pro Master-Update und ist
+durch die DB-interne Sperre serialisiert – keine Race Condition mehr.
+
+### @MIGRATION_NOTE (Supabase) – Validierungs-Wasserfall via RLS
+
+Die heutige Read-Kette
+`MasterAufgabe → Activity → Lernpakete → Einheiten → EinheitMembers/Benutzer`
+(5 sequenzielle Roundtrips, jeweils mit Netzwerklatenz) entfällt
+vollständig. Stattdessen prüft eine RLS-Policy auf `master_aufgabe`
+direkt in der DB (auth.uid() + JOINs auf Einheiten/EinheitMembers/
+Benutzer). Die Function schrumpft auf einen einzigen
+`UPDATE master_aufgabe SET … WHERE id = $1`. Erwartete Latenz:
+~5–15 ms statt ~150–300 ms heute.
