@@ -177,3 +177,162 @@ describe('Sprint G – Delta-Export für AllgemeineAufgabe', () => {
     expect(ids).toEqual(['d2']);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────
+// Sprint G – Folge-Audit: Validierung & Auto-Include referenzierter Kinder
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('Sprint G – validateDeltaDependencies (erweitert)', () => {
+  function callGenerator({
+    pakete = [],
+    allgemeine = [],
+    deltaOnly = false,
+    lastExportedAt = null,
+  } = {}) {
+    return generateDeltaPayload(
+      EINHEIT,
+      pakete,
+      [], // lernziele
+      [], // aufgabenbausteine
+      [], // themenfelder
+      lastExportedAt,
+      deltaOnly,
+      allgemeine
+    );
+  }
+
+  // ── Validierung neuer Referenzen ───────────────────────────────────────
+
+  it('wirft, wenn ein Brian-Bündel auf eine nicht existierende Aufgabe zeigt', () => {
+    expect(() =>
+      callGenerator({
+        allgemeine: [
+          baseAufgabe({
+            id: 'ab1',
+            aufgaben_typ: 'auswahl_buendel',
+            erforderliche_anzahl: 1,
+            verlinkte_aufgaben_ids: ['ghost'],
+          }),
+        ],
+      })
+    ).toThrow(/Brian-Bündel.*ghost/);
+  });
+
+  it('wirft, wenn ein Moodle-Bündel auf ein nicht existierendes Lernpaket zeigt', () => {
+    expect(() =>
+      callGenerator({
+        allgemeine: [
+          baseAufgabe({
+            id: 'b1',
+            aufgaben_typ: 'buendel',
+            verlinkte_lernpaket_ids: ['lp_ghost'],
+          }),
+        ],
+      })
+    ).toThrow(/Moodle-Bündel.*lp_ghost/);
+  });
+
+  it('wirft, wenn ein Projekt-Anker auf eine nicht existierende Projekt-Aufgabe zeigt', () => {
+    expect(() =>
+      callGenerator({
+        allgemeine: [
+          baseAufgabe({
+            id: 'pa1',
+            aufgaben_typ: 'projekt_anker',
+            verlinkte_projekt_ids: ['proj_ghost'],
+          }),
+        ],
+      })
+    ).toThrow(/Projekt-Anker.*proj_ghost/);
+  });
+
+  it('wirft NICHT, wenn alle Referenzen aufgelöst werden können', () => {
+    const child = baseAufgabe({ id: 'c1', aufgaben_typ: 'inhalt' });
+    const buendel = baseAufgabe({
+      id: 'ab1',
+      aufgaben_typ: 'auswahl_buendel',
+      erforderliche_anzahl: 1,
+      verlinkte_aufgaben_ids: ['c1'],
+    });
+    expect(() =>
+      callGenerator({ allgemeine: [child, buendel] })
+    ).not.toThrow();
+  });
+
+  // ── Auto-Include unveränderter Kinder im Delta ────────────────────────
+
+  it('zieht unveränderte Brian-Bündel-Kinder bei Delta-Export mit hinein', () => {
+    const lastExport = '2026-04-20T00:00:00Z';
+    // Kind ist VOR dem letzten Export verändert worden → würde im Delta normal nicht auftauchen.
+    const child = baseAufgabe({
+      id: 'c1',
+      aufgaben_typ: 'inhalt',
+      updated_date: '2026-04-19T00:00:00Z',
+    });
+    // Bündel selbst ist neu/geändert.
+    const buendel = baseAufgabe({
+      id: 'ab1',
+      aufgaben_typ: 'auswahl_buendel',
+      erforderliche_anzahl: 1,
+      verlinkte_aufgaben_ids: ['c1'],
+      updated_date: '2026-04-25T00:00:00Z',
+    });
+    const payload = generateDeltaPayload(
+      EINHEIT, [], [], [], [],
+      lastExport,
+      true, // deltaOnly!
+      [child, buendel]
+    );
+    const ids = payload.delta.allgemeine_aufgaben.map((a) => a.id).sort();
+    expect(ids).toEqual(['ab1', 'c1']);
+  });
+
+  it('zieht unveränderte Lernpakete bei Moodle-Bündel-Export mit hinein', () => {
+    const lastExport = '2026-04-20T00:00:00Z';
+    const paket = {
+      id: 'lp1',
+      einheit_id: 'e1',
+      titel_des_pakets: 'Altes Paket',
+      reihenfolge_nummer: 1,
+      updated_date: '2026-04-10T00:00:00Z', // alt – würde im Delta entfallen
+    };
+    const buendel = baseAufgabe({
+      id: 'b1',
+      aufgaben_typ: 'buendel',
+      verlinkte_lernpaket_ids: ['lp1'],
+      updated_date: '2026-04-25T00:00:00Z',
+    });
+    const payload = generateDeltaPayload(
+      EINHEIT, [paket], [], [], [],
+      lastExport,
+      true, // deltaOnly
+      [buendel]
+    );
+    const ids = payload.delta.lernpakete.map((p) => p.id);
+    expect(ids).toContain('lp1');
+  });
+
+  it('dupliziert mitgezogene Kinder nicht im Slot', () => {
+    const lastExport = '2026-04-20T00:00:00Z';
+    // Beide Items sind nach dem letzten Export geändert → tauchen ohnehin auf.
+    const child = baseAufgabe({
+      id: 'c1',
+      updated_date: '2026-04-25T00:00:00Z',
+    });
+    const buendel = baseAufgabe({
+      id: 'ab1',
+      aufgaben_typ: 'auswahl_buendel',
+      erforderliche_anzahl: 1,
+      verlinkte_aufgaben_ids: ['c1'],
+      updated_date: '2026-04-25T00:00:00Z',
+    });
+    const payload = generateDeltaPayload(
+      EINHEIT, [], [], [], [],
+      lastExport,
+      true,
+      [child, buendel]
+    );
+    const c1Count = payload.delta.allgemeine_aufgaben.filter((a) => a.id === 'c1').length;
+    expect(c1Count).toBe(1);
+  });
+});

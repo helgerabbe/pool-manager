@@ -97,7 +97,55 @@ export function generateDeltaPayload(
   const allgemeineFuerEinheit = (allAllgemeineAufgaben || []).filter(
     (a) => a.einheit_id === einheit.id && a.sync_status !== 'to_delete'
   );
-  const changedAllgemeineAufgaben = filterItems(allgemeineFuerEinheit);
+  const allgemeineById = new Map(allgemeineFuerEinheit.map((a) => [a.id, a]));
+
+  // 5a. Erst die per Delta-Filter geänderten Aufgaben sammeln …
+  const changedAllgemeineCore = filterItems(allgemeineFuerEinheit);
+
+  // 5b. … dann referenzierte Kinder von Bündel-/Auswahl-/Anker-Aufgaben
+  //      transitiv mit hineinziehen, auch wenn sie selbst unverändert sind.
+  //      Hintergrund: Wird ein `auswahl_buendel` exportiert, MUSS jede
+  //      referenzierte Ebene-2-Aufgabe im selben Payload mitkommen, sonst
+  //      ist das Brian-Bündel im Zielsystem nicht zusammensetzbar.
+  //      Lernpaket-Referenzen aus `buendel.verlinkte_lernpaket_ids` werden
+  //      analog ergänzend in den lernpakete-Slot gehoben.
+  const expandedAllgemeineMap = new Map(changedAllgemeineCore.map((a) => [a.id, a]));
+  const additionalLernpaketIds = new Set();
+
+  changedAllgemeineCore.forEach((a) => {
+    const typ = a.aufgaben_typ || 'inhalt';
+
+    // Brian-Bündel und Projekt-Anker referenzieren weitere AllgemeineAufgaben.
+    if (typ === 'auswahl_buendel' || typ === 'projekt_anker') {
+      const refField =
+        typ === 'auswahl_buendel' ? 'verlinkte_aufgaben_ids' : 'verlinkte_projekt_ids';
+      const refIds = Array.isArray(a[refField]) ? a[refField] : [];
+      refIds.forEach((id) => {
+        if (!expandedAllgemeineMap.has(id) && allgemeineById.has(id)) {
+          expandedAllgemeineMap.set(id, allgemeineById.get(id));
+        }
+      });
+    }
+
+    // Moodle-Bündel referenziert Lernpakete – diese ggf. zusätzlich exportieren.
+    if (typ === 'buendel') {
+      const refIds = Array.isArray(a.verlinkte_lernpaket_ids) ? a.verlinkte_lernpaket_ids : [];
+      refIds.forEach((id) => additionalLernpaketIds.add(id));
+    }
+  });
+
+  const changedAllgemeineAufgaben = Array.from(expandedAllgemeineMap.values());
+
+  // 5c. Zusätzliche Lernpakete aus Bündel-Referenzen einreihen, sofern sie
+  //     zur Einheit gehören und nicht ohnehin schon im changedPakete-Set sind.
+  if (additionalLernpaketIds.size > 0) {
+    const alreadyIn = new Set(changedPakete.map((p) => p.id));
+    paketeFuerEinheit.forEach((p) => {
+      if (additionalLernpaketIds.has(p.id) && !alreadyIn.has(p.id)) {
+        changedPakete.push(p);
+      }
+    });
+  }
 
   // ── Abhängigkeitsprüfung ──────────────────────────────────────────────
 
@@ -107,8 +155,11 @@ export function generateDeltaPayload(
     pakete: changedPakete,
     ziele: changedZiele,
     aufgaben: changedAufgaben,
+    allgemeineAufgaben: changedAllgemeineAufgaben,
     allPakete: paketeFuerEinheit,
     allZiele: zieleAusAllenPaketen,
+    allAllgemeineIds: new Set(allgemeineFuerEinheit.map((a) => a.id)),
+    allPaketIds: new Set(paketeFuerEinheit.map((p) => p.id)),
   });
 
   // ── Generiere Payload ─────────────────────────────────────────────────
@@ -276,7 +327,18 @@ function mapAllgemeineAufgabeForExport(a) {
 }
 
 /**
- * Validiert Delta-Export auf Abhängigkeitsprobleme
+ * Validiert Delta-Export auf Abhängigkeitsprobleme.
+ *
+ * Sprint G – erweitert um die drei neuen Referenz-Beziehungen aus
+ * AllgemeineAufgabe:
+ *   - buendel.verlinkte_lernpaket_ids       (Moodle-Bündel)
+ *   - auswahl_buendel.verlinkte_aufgaben_ids (Brian-Bündel)
+ *   - projekt_anker.verlinkte_projekt_ids   (Projekt-Anker)
+ *
+ * Auflösungsstrategie für Bündel-Auswahl: Auto-Include passiert bereits
+ * im Generator (siehe Schritt 5b). Hier prüfen wir defensiv, dass alle
+ * Referenz-IDs in der Einheit überhaupt existieren – also keine toten
+ * Pointer auf gelöschte oder fremde Datensätze.
  */
 function validateDeltaDependencies({
   einheit,
@@ -284,8 +346,11 @@ function validateDeltaDependencies({
   pakete,
   ziele,
   aufgaben,
+  allgemeineAufgaben = [],
   allPakete,
   allZiele,
+  allAllgemeineIds = new Set(),
+  allPaketIds = new Set(),
 }) {
   const issues = [];
 
@@ -317,6 +382,45 @@ function validateDeltaDependencies({
       issues.push(
         `Themenfeld "${tf.titel}" gehört zu anderer Einheit: ${tf.einheit_id}`
       );
+    }
+  });
+
+  // Prüfung 4 (Sprint G): AllgemeineAufgabe-Referenzen prüfen.
+  allgemeineAufgaben.forEach((a) => {
+    const typ = a.aufgaben_typ || 'inhalt';
+    const label = a.titel || a.id;
+
+    if (typ === 'buendel') {
+      const refIds = Array.isArray(a.verlinkte_lernpaket_ids) ? a.verlinkte_lernpaket_ids : [];
+      refIds.forEach((id) => {
+        if (!allPaketIds.has(id)) {
+          issues.push(
+            `Moodle-Bündel "${label}" referenziert nicht existierendes Lernpaket ${id}`
+          );
+        }
+      });
+    }
+
+    if (typ === 'auswahl_buendel') {
+      const refIds = Array.isArray(a.verlinkte_aufgaben_ids) ? a.verlinkte_aufgaben_ids : [];
+      refIds.forEach((id) => {
+        if (!allAllgemeineIds.has(id)) {
+          issues.push(
+            `Brian-Bündel "${label}" referenziert nicht existierende Aufgabe ${id}`
+          );
+        }
+      });
+    }
+
+    if (typ === 'projekt_anker') {
+      const refIds = Array.isArray(a.verlinkte_projekt_ids) ? a.verlinkte_projekt_ids : [];
+      refIds.forEach((id) => {
+        if (!allAllgemeineIds.has(id)) {
+          issues.push(
+            `Projekt-Anker "${label}" referenziert nicht existierende Projekt-Aufgabe ${id}`
+          );
+        }
+      });
     }
   });
 
