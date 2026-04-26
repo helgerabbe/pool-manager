@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { invokeFunction } from '@/utils/functionsHelper';
 import { useRBAC } from '@/hooks/useRBAC';
@@ -61,6 +61,13 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const [acquiringStructLock, setAcquiringStructLock] = useState(false);
   const [releasingStructLock, setReleasingStructLock] = useState(false);
   const [strukturBoardKey, setStrukturBoardKey] = useState(0); // ← Key-Remount-Counter
+
+  // Dashboard-Tab (Tab 7) hat eine eigene "Bearbeitung beenden"-Sequenz, die VOR
+  // dem Lock-Release einen Save erzwingt. Das Cockpit liefert per Ref eine
+  // flush-Funktion, die wir hier aufrufen, bevor `releaseStructuralLockSecure`
+  // läuft. Siehe `handleEndDashboardEditing`.
+  const dashboardFlushRef = useRef(null);
+  const [endingDashboardEdit, setEndingDashboardEdit] = useState(false);
 
   // ── Tab-1-Bearbeitungsmodus State ────────────────────────────────────────────
   const [isTab1EditingActive, setIsTab1EditingActive] = useState(false);
@@ -228,6 +235,77 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
       }
     } finally {
       setAcquiringStructLock(false);
+    }
+  };
+
+  // Dashboards (Tab 7): Pre-Flight-Check über alle Locks der Einheit
+  // (Struktur, Lernpakete, Aufgaben). Bei Konflikt → blockierende Toast-
+  // Meldung mit Klartext-Namen, kein Lock-Erwerb. Bei Erfolg → harter
+  // Struktur-Lock auf der gesamten Einheit (gleiche DB-Felder, daher
+  // kompatibel zu allen anderen Tabs, die den Lock auswerten).
+  const handleAcquireDashboardLock = async () => {
+    if (!einheit) return;
+    setAcquiringStructLock(true);
+    try {
+      const res = await invokeFunction('acquireDashboardLockSecure', {
+        einheit_id: einheit.id,
+      });
+      if (res.data?.success) {
+        setIsStructuralEditingActive(true);
+        queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+        toast.success('✅ Dashboards-Bearbeitung aktiviert. Die gesamte Einheit ist jetzt für andere gesperrt.');
+        return;
+      }
+      const name = res.data?.lockedByName || res.data?.lockedByEmail;
+      toast.error(
+        name
+          ? `Diese Einheit wird aktuell von ${name} bearbeitet. Bitte kontaktiere die Person, um die Bearbeitung freizugeben.`
+          : 'Dashboard-Bearbeitung konnte nicht gestartet werden.'
+      );
+    } catch (err) {
+      const data = err?.response?.data;
+      const name = data?.lockedByName || data?.lockedByEmail;
+      if (err?.response?.status === 409 && name) {
+        toast.error(
+          `Diese Einheit wird aktuell von ${name} bearbeitet. Bitte kontaktiere die Person, um die Bearbeitung freizugeben.`
+        );
+      } else {
+        toast.error('Fehler beim Starten der Dashboards-Bearbeitung.');
+      }
+    } finally {
+      setAcquiringStructLock(false);
+    }
+  };
+
+  // Dashboards: Save → Wait → Unlock → Exit (strikt synchron).
+  // Das Cockpit registriert über `dashboardFlushRef` eine flush-Funktion
+  // (`useDashboardSync.flushSave`), die alle ausstehenden Änderungen
+  // synchron persistiert. Erst nach erfolgreichem Save wird der Lock
+  // freigegeben und der Edit-Modus beendet. Schlägt der Save fehl,
+  // bleibt der Lock bestehen, damit nichts verloren geht.
+  const handleEndDashboardEditing = async () => {
+    if (!einheit) return;
+    setEndingDashboardEdit(true);
+    try {
+      // Schritt 1+2: Save + auf 200 OK warten.
+      const flush = dashboardFlushRef.current;
+      if (typeof flush === 'function') {
+        try {
+          await flush();
+        } catch (saveErr) {
+          console.error('[handleEndDashboardEditing] Save fehlgeschlagen:', saveErr);
+          toast.error(
+            'Speichern fehlgeschlagen. Die Bearbeitung bleibt aktiv, damit nichts verloren geht. Bitte erneut versuchen.'
+          );
+          setEndingDashboardEdit(false);
+          return;
+        }
+      }
+      // Schritt 3: Lock freigeben.
+      await handleReleaseStructLock();
+      // Schritt 4: handleReleaseStructLock setzt isStructuralEditingActive=false.
+    } finally {
+      setEndingDashboardEdit(false);
     }
   };
 
@@ -534,19 +612,19 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                 !isStructuralEditingActive &&
                 (permissions.kannStrukturBearbeiten(einheit?.fach) || unitAccess.hasFullAccess) && (
                   <button
-                    onClick={handleAcquireStructLock}
+                    onClick={activeTab === 'dashboards' ? handleAcquireDashboardLock : handleAcquireStructLock}
                     disabled={acquiringStructLock || structLocked}
                     title={
                       structLocked
                         ? `Gesperrt von ${einheit?.structural_lock}`
-                        : (activeTab === 'dashboards' ? 'Dashboard-Bearbeitung starten' : 'Strukturbearbeitung starten')
+                        : (activeTab === 'dashboards' ? 'Dashboards-Bearbeitung starten' : 'Strukturbearbeitung starten')
                     }
                     className="shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {acquiringStructLock
                       ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       : <PenLine className="w-3.5 h-3.5" />}
-                    {activeTab === 'dashboards' ? 'Dashboard bearbeiten' : 'Struktur bearbeiten'}
+                    {activeTab === 'dashboards' ? 'Dashboards bearbeiten' : 'Struktur bearbeiten'}
                   </button>
                 )}
             </div>
@@ -743,8 +821,9 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                   isStructuralEditingActive={isStructuralEditingActive}
                   isLockedByOther={isLockedByOther}
                   kannBearbeiten={kannDieseEinheitBearbeiten}
-                  isEndingEdit={releasingStructLock}
-                  onEndEditing={handleReleaseStructLock}
+                  isEndingEdit={endingDashboardEdit || releasingStructLock}
+                  onEndEditing={handleEndDashboardEditing}
+                  flushRef={dashboardFlushRef}
                 />
               </ErrorBoundary>
             </TabsContent>

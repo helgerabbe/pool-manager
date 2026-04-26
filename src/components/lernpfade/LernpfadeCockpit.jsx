@@ -56,6 +56,7 @@ export default function LernpfadeCockpit({
   kannBearbeiten,
   onEndEditing,
   isEndingEdit = false,
+  flushRef,
 }) {
   // Hinweis: Lock-Acquire/Release wird vom Parent (`Workspace`) gehandhabt
   // und betrifft das Cockpit nur indirekt über `isStructuralEditingActive` /
@@ -181,6 +182,16 @@ export default function LernpfadeCockpit({
     einheitId: einheit?.id,
     isStructuralEditingActive,
   });
+
+  // Parent (Workspace) kann via flushRef synchron einen Save erzwingen,
+  // bevor er den Struktur-Lock freigibt. Siehe Workspace.handleEndDashboardEditing.
+  useEffect(() => {
+    if (!flushRef) return undefined;
+    flushRef.current = flushSave;
+    return () => {
+      if (flushRef.current === flushSave) flushRef.current = null;
+    };
+  }, [flushRef, flushSave]);
 
   const updateKonfiguration = useCallback(
     (updater) => {
