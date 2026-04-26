@@ -18,6 +18,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { base44 } from '@/api/base44Client';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
+import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
 import { getAufgabenTyp } from '@/lib/aufgabenTypen';
 import { adaptLernpaketToPoolItem } from '@/lib/lernpaketAdapter';
 import { Loader2, Inbox, CheckCircle2, BookOpen, Sparkles, Folder, Pencil, Rocket } from 'lucide-react';
@@ -135,7 +136,7 @@ function AufgabeListItem({ aufgabe, index, isSelected, isUsed, onClick }) {
           {...provided.dragHandleProps}
           onClick={onClick}
           title={isUsed ? 'Bereits in diesem Lernpfad' : 'Ziehen, um in den Pfad einzusortieren'}
-          className={`w-full text-left rounded-lg py-2 px-2.5 border transition-all flex items-center gap-2 cursor-pointer ${
+          className={`w-full text-left rounded-lg py-1.5 px-2 border transition-all flex items-center gap-2 cursor-pointer ${
             isUsed
               ? 'border-border bg-muted/40 opacity-50 cursor-not-allowed'
               : isSelected
@@ -143,8 +144,8 @@ function AufgabeListItem({ aufgabe, index, isSelected, isUsed, onClick }) {
                 : `border-border ${buendelTint || 'bg-card'} hover:border-primary/30 hover:bg-muted/30`
           } ${snapshot.isDragging ? 'shadow-lg ring-2 ring-primary/40 bg-card' : ''}`}
         >
-          <div className={`w-7 h-7 rounded-md ${isBuendel ? buendelIconBox : typMeta.color.iconBg} flex items-center justify-center shrink-0 ${isUsed ? 'grayscale' : ''}`}>
-            <Icon className={`w-3.5 h-3.5 ${isBuendel ? buendelIconColor : typMeta.color.iconText}`} />
+          <div className={`w-6 h-6 rounded ${isBuendel ? buendelIconBox : typMeta.color.iconBg} flex items-center justify-center shrink-0 ${isUsed ? 'grayscale' : ''}`}>
+            <Icon className={`w-3 h-3 ${isBuendel ? buendelIconColor : typMeta.color.iconText}`} />
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium text-foreground truncate leading-snug">
@@ -201,6 +202,13 @@ export default function LernpfadeAufgabenPool({
     enabled: !!einheitId,
   });
 
+  // Themenfelder dieser Einheit (nur für Gruppierungs-Reihenfolge + Titel).
+  const { data: themenfelder = [] } = useQuery({
+    queryKey: ['themenfelder-by-einheit', einheitId],
+    queryFn: () => (einheitId ? getThemenfelderByEinheit(einheitId) : Promise.resolve([])),
+    enabled: !!einheitId,
+  });
+
   const { data: systemBausteine = [], isLoading: loadingBausteine } = useQuery({
     queryKey: ['systemBausteine', 'aktiv'],
     queryFn: async () => {
@@ -233,6 +241,34 @@ export default function LernpfadeAufgabenPool({
   const filteredAufgaben = useMemo(() => {
     return poolAufgaben.filter((a) => getGroupKeyForItem(a) === activeFilter);
   }, [poolAufgaben, activeFilter]);
+
+  // Themenfeld-Gruppierung für „Lernpakete" und „Aufgaben". „Projekte" bleibt
+  // bewusst flach (siehe Spec). Reihenfolge der Gruppen folgt den Themenfeldern
+  // der Einheit; Items ohne themenfeld_id landen in einer Sammelgruppe am Ende.
+  const groupedAufgaben = useMemo(() => {
+    if (activeFilter === 'projekte') return null;
+
+    const sortedTfs = [...themenfelder].sort(
+      (a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)
+    );
+    const groups = sortedTfs.map((tf) => ({
+      id: tf.id,
+      titel: tf.titel || 'Themenfeld',
+      items: [],
+    }));
+    const groupById = new Map(groups.map((g) => [g.id, g]));
+    const ungrouped = { id: '__none__', titel: 'Nicht zugeordnet', items: [] };
+
+    filteredAufgaben.forEach((a) => {
+      const tfId = a.themenfeld_id;
+      const target = (tfId && groupById.get(tfId)) || ungrouped;
+      target.items.push(a);
+    });
+
+    const result = groups.filter((g) => g.items.length > 0);
+    if (ungrouped.items.length > 0) result.push(ungrouped);
+    return result;
+  }, [filteredAufgaben, themenfelder, activeFilter]);
 
   const selectedAufgabeId = selectedAufgabe?.id || null;
   const selectedBausteinId = selectedSystemBaustein?.baustein_id || null;
@@ -305,7 +341,40 @@ export default function LernpfadeAufgabenPool({
                         : 'Kein Treffer – passe die Filter an.'}
                     </p>
                   </div>
+                ) : groupedAufgaben ? (
+                  // Gruppierte Darstellung (Lernpakete & Aufgaben).
+                  // WICHTIG: Draggable-Indizes müssen über das gesamte Droppable
+                  // fortlaufend sein – wir zählen daher global durch.
+                  (() => {
+                    let runningIdx = 0;
+                    return groupedAufgaben.map((group) => (
+                      <div key={group.id} className="space-y-1">
+                        <div className="sticky top-0 z-10 -mx-3 px-3 py-1 bg-muted/60 backdrop-blur-sm border-y border-border/50">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            {group.titel}
+                            <span className="ml-1.5 font-normal opacity-70">({group.items.length})</span>
+                          </p>
+                        </div>
+                        <div className="space-y-1">
+                          {group.items.map((a) => {
+                            const idx = runningIdx++;
+                            return (
+                              <AufgabeListItem
+                                key={a.id}
+                                aufgabe={a}
+                                index={idx}
+                                isSelected={selectedAufgabeId === a.id}
+                                isUsed={usedAufgabenIds.has(a.id)}
+                                onClick={() => onSelectAufgabe?.(a.id)}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ));
+                  })()
                 ) : (
+                  // Flache Darstellung (nur Projekte).
                   filteredAufgaben.map((a, idx) => (
                     <AufgabeListItem
                       key={a.id}
