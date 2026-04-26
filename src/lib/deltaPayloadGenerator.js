@@ -17,6 +17,11 @@
  * @param {Array} allThemenfelder - Alle Themenfelder
  * @param {string|null} lastExportedAt - Timestamp des letzten Exports
  * @param {boolean} deltaOnly - Wenn true, nur geänderte Items; wenn false, alles
+ * @param {Array} [allAllgemeineAufgaben=[]] - Alle AllgemeineAufgabe-Datensätze
+ *        (optional). Wenn übergeben, werden die einheit-zugehörigen Aufgaben
+ *        in den Slot `delta.allgemeine_aufgaben` aufgenommen. Sprint G
+ *        ergänzt dort die typ-spezifischen Felder (lernpaket_logik,
+ *        erforderliche_anzahl, interne_reihenfolge, hinweise_zum_material).
  * @returns {Object} Export-Payload mit Delta-Struktur
  * @throws {Error} Bei Validierungsfehlern
  */
@@ -27,7 +32,8 @@ export function generateDeltaPayload(
   allAufgaben,
   allThemenfelder,
   lastExportedAt,
-  deltaOnly = true
+  deltaOnly = true,
+  allAllgemeineAufgaben = []
 ) {
   if (!einheit?.id) {
     throw new Error('Einheit ist erforderlich');
@@ -86,6 +92,12 @@ export function generateDeltaPayload(
     (a) => allPaketIds.has(a.lernpaket_id)
   );
   const changedAufgaben = filterItems(aufgabenAusAllenZielen);
+
+  // 5. AllgemeineAufgaben dieser Einheit (Sprint G – Brian-Anschluss)
+  const allgemeineFuerEinheit = (allAllgemeineAufgaben || []).filter(
+    (a) => a.einheit_id === einheit.id && a.sync_status !== 'to_delete'
+  );
+  const changedAllgemeineAufgaben = filterItems(allgemeineFuerEinheit);
 
   // ── Abhängigkeitsprüfung ──────────────────────────────────────────────
 
@@ -167,6 +179,15 @@ export function generateDeltaPayload(
         schwierigkeitsgrad: a.schwierigkeitsgrad,
         updated_date: a.updated_date,
       })),
+
+      // AllgemeineAufgabe (Sprint G – Brian-Anschluss).
+      // Die typ-spezifischen Felder (lernpaket_logik, erforderliche_anzahl,
+      // interne_reihenfolge, hinweise_zum_material) werden NUR dann ins
+      // Export-Objekt aufgenommen, wenn sie auf der Aufgabe befüllt sind –
+      // als flache Key-Value-Paare gemäß Sprint-G-Vorgabe.
+      allgemeine_aufgaben: changedAllgemeineAufgaben.map((a) =>
+        mapAllgemeineAufgabeForExport(a)
+      ),
     },
 
     // Statistik
@@ -176,11 +197,13 @@ export function generateDeltaPayload(
       lernpakete_count: changedPakete.length,
       lernziele_count: changedZiele.length,
       aufgabenbausteine_count: changedAufgaben.length,
+      allgemeine_aufgaben_count: changedAllgemeineAufgaben.length,
       total_changed_count:
         changedThemenfelder.length +
         changedPakete.length +
         changedZiele.length +
-        changedAufgaben.length,
+        changedAufgaben.length +
+        changedAllgemeineAufgaben.length,
     },
 
     // Audit-Info
@@ -193,6 +216,63 @@ export function generateDeltaPayload(
   };
 
   return payload;
+}
+
+/**
+ * Mapped einen AllgemeineAufgabe-Datensatz auf das Brian-/Moodle-Export-Format.
+ *
+ * Sprint G: Die typ-spezifischen Felder werden ausschließlich dann
+ * ausgegeben, wenn sie für den jeweiligen aufgaben_typ relevant UND
+ * tatsächlich befüllt sind. So bleibt das Export-JSON für nicht-relevante
+ * Typen sauber (kein `interne_reihenfolge` auf einem `inhalt`-Task).
+ */
+function mapAllgemeineAufgabeForExport(a) {
+  const typ = a.aufgaben_typ || 'inhalt';
+  const out = {
+    id: a.id,
+    einheit_id: a.einheit_id,
+    themenfeld_id: a.themenfeld_id || null,
+    aufgaben_typ: typ,
+    anforderungsebene: a.anforderungsebene,
+    titel: a.titel || null,
+    aufgabenstellung: a.aufgabenstellung || null,
+    content_status: a.content_status,
+    moodle_sync_status: a.moodle_sync_status,
+    brian_sync_status: a.brian_sync_status,
+    updated_date: a.updated_date,
+  };
+
+  // Typ-spezifische Felder als flache Key-Value-Paare (nur wenn befüllt).
+  if (typ === 'buendel') {
+    if (a.lernpaket_logik) out.lernpaket_logik = a.lernpaket_logik;
+    if (Array.isArray(a.verlinkte_lernpaket_ids) && a.verlinkte_lernpaket_ids.length > 0) {
+      out.verlinkte_lernpaket_ids = a.verlinkte_lernpaket_ids;
+    }
+  }
+
+  if (typ === 'auswahl_buendel') {
+    if (Number.isFinite(a.erforderliche_anzahl)) {
+      out.erforderliche_anzahl = a.erforderliche_anzahl;
+    }
+    if (a.interne_reihenfolge) out.interne_reihenfolge = a.interne_reihenfolge;
+    if (Array.isArray(a.verlinkte_aufgaben_ids) && a.verlinkte_aufgaben_ids.length > 0) {
+      out.verlinkte_aufgaben_ids = a.verlinkte_aufgaben_ids;
+    }
+  }
+
+  if (typ === 'handlung') {
+    if (a.hinweise_zum_material) {
+      out.hinweise_zum_material = a.hinweise_zum_material;
+    }
+  }
+
+  if (typ === 'projekt_anker') {
+    if (Array.isArray(a.verlinkte_projekt_ids) && a.verlinkte_projekt_ids.length > 0) {
+      out.verlinkte_projekt_ids = a.verlinkte_projekt_ids;
+    }
+  }
+
+  return out;
 }
 
 /**
@@ -256,5 +336,6 @@ export function getPayloadEntityIds(payload) {
     paketIds: payload.delta.lernpakete.map((p) => p.id),
     zielIds: payload.delta.lernziele.map((z) => z.id),
     aufgabenIds: payload.delta.aufgabenbausteine.map((a) => a.id),
+    allgemeineAufgabenIds: (payload.delta.allgemeine_aufgaben || []).map((a) => a.id),
   };
 }

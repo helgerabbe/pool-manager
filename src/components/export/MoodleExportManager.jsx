@@ -214,6 +214,15 @@ export default function MoodleExportManager({ open, onOpenChange }) {
     queryFn: () => base44.entities.Themenfeld.list(),
   });
 
+  // Sprint G: AllgemeineAufgabe wird in das Brian-/Moodle-Export-Payload
+  // aufgenommen, damit die typ-spezifischen Felder (lernpaket_logik,
+  // erforderliche_anzahl, interne_reihenfolge, hinweise_zum_material) für
+  // die KI-Pipeline verfügbar sind.
+  const { data: allAllgemeineAufgaben = [] } = useQuery({
+    queryKey: ['allgemeineAufgaben'],
+    queryFn: () => base44.entities.AllgemeineAufgabe.list(),
+  });
+
   // Mutations für Sync-Bestätigung
   const confirmEinheitSync = useMutation({
     mutationFn: (einheitId) =>
@@ -335,7 +344,8 @@ export default function MoodleExportManager({ open, onOpenChange }) {
             allAufgaben,
             allThemenfelder,
             einheit.last_exported_at,
-            deltaMode // true = nur Delta, false = alles
+            deltaMode, // true = nur Delta, false = alles
+            allAllgemeineAufgaben // Sprint G: Brian-Anschluss
           );
 
           einheitPayloads.push(deltaPayload);
