@@ -66,7 +66,7 @@ const LERNTYP_INFO = {
     icon: Trophy,
     accent: 'text-amber-700 bg-amber-50 border-amber-200',
     description:
-      'Viel erreichen. Strukturierte Vorbereitung auf Prüfungen mit ' +
+      'Will viel erreichen. Strukturierte Vorbereitung auf Prüfungen mit ' +
       'vollständiger Abdeckung aller Lernziele und systematischer Anmeldung ' +
       'zur schriftlichen Arbeit.',
   },
