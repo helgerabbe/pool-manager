@@ -15,6 +15,51 @@ import { Sparkles, Layers, Trophy, Star, Plus, BookOpen, ShieldCheck, ShieldOff,
 import { Button } from '@/components/ui/button';
 import LernpfadeSektor from '@/components/lernpfade/LernpfadeSektor';
 import InfoHint from '@/components/lernpfade/InfoHint';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+function StatusBadge({ aktivLabel, istPfadGesperrt }) {
+  const tooltipContent = (
+    <div className="max-w-xs space-y-2 text-xs leading-snug">
+      <p className="font-semibold">Status des Lernpfads</p>
+      <p>
+        Hier siehst du, in welchem Zustand sich der Pfad <strong>„{aktivLabel}"</strong> aktuell befindet.
+      </p>
+      <ul className="space-y-1 list-disc list-inside">
+        <li>
+          <strong>Entwurf:</strong> Der Pfad wird noch geplant. Sektoren und Aufgaben können frei verändert werden. Schüler sehen ihn noch nicht.
+        </li>
+        <li>
+          <strong>Gesperrt:</strong> Der Pfad wurde geprüft, freigegeben und ist für Schüler sichtbar. Änderungen sind erst nach „Entsperren" wieder möglich.
+        </li>
+      </ul>
+      <p className="text-muted-foreground">
+        Künftig kommen weitere Zustände hinzu (z. B. „In Prüfung" oder „Archiviert").
+      </p>
+    </div>
+  );
+
+  return (
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {istPfadGesperrt ? (
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0.5 cursor-help">
+              <ShieldCheck className="w-3 h-3" />
+              {aktivLabel} · gesperrt
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-full px-1.5 py-0.5 cursor-help">
+              {aktivLabel} · Entwurf
+            </span>
+          )}
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="bg-card text-card-foreground border border-border shadow-md p-3">
+          {tooltipContent}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 
 export const LERN_TYPEN = [
   {
@@ -139,19 +184,7 @@ export default function LernpfadeArchitekt({
           „Bearbeitung beenden". */}
       {showActionRow && (
         <div className="shrink-0 px-3 py-1.5 border-b border-border bg-muted/30 flex items-center gap-1.5 flex-wrap">
-          {istPfadGesperrt ? (
-            <span
-              className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0.5"
-              title={`Pfad „${aktivLabel}" freigegeben & gesperrt`}
-            >
-              <ShieldCheck className="w-3 h-3" />
-              {aktivLabel} · gesperrt
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-full px-1.5 py-0.5">
-              {aktivLabel} · Entwurf
-            </span>
-          )}
+          <StatusBadge aktivLabel={aktivLabel} istPfadGesperrt={istPfadGesperrt} />
 
           <div className="ml-auto flex items-center gap-1.5 flex-wrap">
             {istPfadGesperrt && darfEntsperren && (
