@@ -26,10 +26,12 @@
         "inhalt",
         "buendel",
         "prozess",
-        "projekt_anker"
+        "projekt_anker",
+        "handlung",
+        "auswahl_buendel"
       ],
       "default": "inhalt",
-      "description": "Funktionale/p\u00e4dagogische Rolle der Aufgabe im Lernpfad-System (orthogonal zur anforderungsebene). 'inhalt' = klassische Fachaufgabe, 'buendel' = Verlinkt mehrere Lernpakete, 'prozess' = Lernorganisations-Meilenstein, 'projekt_anker' = Tor zu Ebene-3-Projekten."
+      "description": "Funktionale/p\u00e4dagogische Rolle der Aufgabe im Lernpfad-System (orthogonal zur anforderungsebene). 'inhalt' = klassische Fachaufgabe, 'buendel' = Verlinkt mehrere Lernpakete (Moodle-B\u00fcndel), 'prozess' = digitaler Lernorganisations-Meilenstein mit Texteingabe, 'projekt_anker' = Tor zu Ebene-3-Projekten, 'handlung' = handlungsorientierte Aufgabe mit physischem Material (digitale Best\u00e4tigung per Checkbox), 'auswahl_buendel' = Brian-B\u00fcndel mit X-von-Y-Auswahl auf Aufgaben-Ebene."
     },
     "verlinkte_lernpaket_ids": {
       "type": "array",
@@ -37,7 +39,7 @@
         "type": "string"
       },
       "default": [],
-      "description": "F\u00fcr aufgaben_typ='buendel': Array von Lernpaket-IDs (Ebene 1), die durch dieses B\u00fcndel zusammengefasst werden."
+      "description": "F\u00fcr aufgaben_typ='buendel' (Moodle-B\u00fcndel): Array von Lernpaket-IDs (Ebene 1), die durch dieses B\u00fcndel zusammengefasst werden."
     },
     "verlinkte_projekt_ids": {
       "type": "array",
@@ -46,6 +48,35 @@
       },
       "default": [],
       "description": "F\u00fcr aufgaben_typ='projekt_anker': Array von AllgemeineAufgabe-IDs mit anforderungsebene='3 - Projekt', die durch diesen Anker angeboten werden."
+    },
+    "verlinkte_aufgaben_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "F\u00fcr aufgaben_typ='auswahl_buendel' (Brian-B\u00fcndel): Array von AllgemeineAufgabe-IDs (Ebene 2), aus denen der Sch\u00fcler erforderliche_anzahl ausw\u00e4hlen muss."
+    },
+    "lernpaket_logik": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "fast_track",
+        "wissensspeicher",
+        "test_only"
+      ],
+      "default": "standard",
+      "description": "F\u00fcr aufgaben_typ='buendel' (Moodle-B\u00fcndel): didaktische Reihenfolge-Logik im Export. standard = Input\u2192\u00dcbung\u2192Test, fast_track = Input\u2192Test\u2192\u00dcbung, wissensspeicher = Input fix, Rest frei, test_only = nur Test-Modul aktiv."
+    },
+    "erforderliche_anzahl": {
+      "type": "integer",
+      "default": 0,
+      "minimum": 0,
+      "description": "F\u00fcr aufgaben_typ='auswahl_buendel': Anzahl der Aufgaben aus verlinkte_aufgaben_ids, die der Sch\u00fcler mindestens bearbeiten muss. 0 = alle verlinkten Aufgaben sind Pflicht."
+    },
+    "hinweise_zum_material": {
+      "type": "string",
+      "description": "F\u00fcr aufgaben_typ='handlung': Freitext-Hinweise zum ben\u00f6tigten physischen Material (z. B. 'Schere, Klebstoff, Tonpapier')."
     },
     "aufgabentyp_projekt": {
       "type": "string",
