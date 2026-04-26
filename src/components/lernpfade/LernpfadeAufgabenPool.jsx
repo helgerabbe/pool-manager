@@ -20,7 +20,7 @@ import { base44 } from '@/api/base44Client';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { getAufgabenTyp } from '@/lib/aufgabenTypen';
 import { adaptLernpaketToPoolItem } from '@/lib/lernpaketAdapter';
-import { Loader2, Inbox, Eye, CheckCircle2, BookOpen, Sparkles, Folder, Pencil, Rocket } from 'lucide-react';
+import { Loader2, Inbox, CheckCircle2, BookOpen, Sparkles, Folder, Pencil, Rocket } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import MonitorPanel from '@/components/lernpfade/MonitorPanel';
 import SystemBausteinPoolItem from '@/components/lernpfade/SystemBausteinPoolItem';
@@ -265,16 +265,11 @@ export default function LernpfadeAufgabenPool({
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Monitor (oben, fixiert) */}
+      {/* Monitor (oben, fixiert; eigene max-Höhe + internes Scrolling im Panel) */}
       <div className="shrink-0 p-3 border-b border-border bg-muted/30">
-        <div className="flex items-center gap-1.5 mb-2">
-          <Eye className="w-3.5 h-3.5 text-muted-foreground" />
-          <h3 className="text-xs font-semibold text-foreground uppercase tracking-wide">Monitor</h3>
-        </div>
         <MonitorPanel
           aufgabe={selectedAufgabe}
           systemBaustein={selectedSystemBaustein}
-          onPreviewClick={onPreviewAufgabe}
         />
       </div>
 
