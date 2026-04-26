@@ -189,9 +189,9 @@ describe('DASHBOARD_TEMPLATES – V2-Spezifikation', () => {
     ]);
   });
 
-  it('pragmatiker Sektor 2: Grundlagen und Training (Info → Handlung → Lernpaket → Brian-Bündel)', () => {
+  it('pragmatiker Sektor 2: Erarbeitungs- und Trainingsphase (Info → Handlung → Lernpaket → Brian-Bündel)', () => {
     const sec = DASHBOARD_TEMPLATES.pragmatiker[2];
-    expect(sec.titel).toBe('2. Grundlagen und Training');
+    expect(sec.titel).toBe('2. Erarbeitungs- und Trainingsphase');
     expect(sec.items.map((i) => i.ref_id)).toEqual([
       'sys_platzhalter_info',
       'sys_platzhalter_handlung',
@@ -234,9 +234,9 @@ describe('DASHBOARD_TEMPLATES – V2-Spezifikation', () => {
     ]);
   });
 
-  it('ehrgeizig Sektor 2: Grundlagen und Training (Info → Handlung → Lernpaket → Brian-Bündel)', () => {
+  it('ehrgeizig Sektor 2: Erarbeitungs- und Trainingsphase (Info → Handlung → Lernpaket → Brian-Bündel)', () => {
     const sec = DASHBOARD_TEMPLATES.ehrgeizig[2];
-    expect(sec.titel).toBe('2. Grundlagen und Training');
+    expect(sec.titel).toBe('2. Erarbeitungs- und Trainingsphase');
     expect(sec.items.map((i) => i.ref_id)).toEqual([
       'sys_platzhalter_info',
       'sys_platzhalter_handlung',

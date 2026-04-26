@@ -52,7 +52,7 @@ export function getSektorTemplate(key) {
       };
     case SEKTOR_TEMPLATE_KEYS.ERARBEITUNG_TRAINING:
       return {
-        titel: 'Grundlagen und Training',
+        titel: 'Erarbeitungs- und Trainingsphase',
         modus: 'sequenziell',
         items: [
           sys('sys_platzhalter_info'),

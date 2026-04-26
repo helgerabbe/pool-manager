@@ -115,7 +115,7 @@ const PRAGMATIKER = [
   },
   {
     sektor_id: 'tpl_prag_sec2',
-    titel: '2. Grundlagen und Training',
+    titel: '2. Erarbeitungs- und Trainingsphase',
     modus: 'sequenziell',
     items: [sys(B.pInfo), sys(B.pHandlung), sys(B.pMoodleBuendel), sys(B.pBrianBuendel)],
   },
@@ -151,7 +151,7 @@ const EHRGEIZIG = [
   },
   {
     sektor_id: 'tpl_ehr_sec2',
-    titel: '2. Grundlagen und Training',
+    titel: '2. Erarbeitungs- und Trainingsphase',
     modus: 'sequenziell',
     items: [sys(B.pInfo), sys(B.pHandlung), sys(B.pMoodleBuendel), sys(B.pBrianBuendel)],
   },
