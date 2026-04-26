@@ -507,3 +507,105 @@ sobald die `force`-Felder als generated columns abgebildet sind.
       Approval-Berechtigung ab (Admin / Fachschaft / EinheitMembers).
 - [ ] Master-Aggregat-Trigger aus §11 ist aktiv – damit greift die
       Master-Synchronisation auch automatisch für diesen Pfad.
+
+---
+
+## 13. assignActivityToLernpaket – Tenant-Isolation + FK-Härtung (2026-04-26)
+
+Beim Code-Review von `functions/assignActivityToLernpaket` wurden vier
+Blocker behoben:
+
+1. **Fehlendes RBAC.** Der alte Code prüfte nur `auth.me()` – jeder
+   eingeloggte User konnte fremde Lernpakete mit Aktivitäten
+   "zumüllen". Neu: `checkAssignPermission` lädt
+   Lernpaket → Einheit → Benutzer/EinheitMembers und folgt der
+   gleichen Logik wie alle anderen geschützten Endpunkte
+   (Admin / Fachschaft-mit-Fach / EinheitMembers).
+
+2. **Lock-Architektur respektieren.** Hält ein anderer User einen
+   nicht-stale Lernpaket-Lock, schlägt das Anlegen mit 409 fehl.
+   Eigener Lock oder fehlender Lock bleiben erlaubt – konsistent
+   zur Lock-Philosophie aus §11.
+
+3. **Foreign-Key-Existenz.** `lernpaket_id` und `aktivitaet_id`
+   werden vor dem `create` parallel via `Promise.all` aus der DB
+   geprüft (`Lernpakete.get` + `AktivitaetenKatalog.get`).
+   Phase-Werte werden gegen ein Whitelist-Set validiert. Damit
+   landet kein Datenmüll mehr in `LernpaketPhaseAktivitaet`, der
+   später den Lernpfad-Architekten beim Render-Versuch crasht.
+
+4. **Audit-Trail.** Erfolgreiche Zuordnungen werden via Inline-
+   Kopie des `auditLogger`-Patterns als `CREATE` auf
+   `LernpaketPhaseAktivitaet` protokolliert – inklusive
+   `aktivitaet_name`, `phase` und `einheit_id` für die Forensik.
+   Inline-Kopie folgt der NO-LOCAL-IMPORTS-Regel aus §10.
+
+### @MIGRATION_NOTE (Supabase) – Defense-in-DB
+
+Bei der Supabase-Migration übernimmt die Datenbank alle vier
+Schutzschichten:
+
+```sql
+-- 1) Foreign Keys verhindern Müll-Inserts (Punkt 3):
+ALTER TABLE lernpaket_phase_aktivitaet
+  ADD CONSTRAINT fk_lernpaket
+    FOREIGN KEY (lernpaket_id)  REFERENCES lernpakete(id)         ON DELETE CASCADE,
+  ADD CONSTRAINT fk_aktivitaet
+    FOREIGN KEY (aktivitaet_id) REFERENCES aktivitaeten_katalog(id) ON DELETE RESTRICT;
+
+ALTER TABLE lernpaket_phase_aktivitaet
+  ADD CONSTRAINT chk_phase CHECK (phase IN ('Input', 'Übung', 'Abschluss'));
+
+-- 2) RLS regelt Punkt 1 (Tenant-Isolation):
+CREATE POLICY assign_activity_write
+  ON lernpaket_phase_aktivitaet FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM lernpakete p
+      JOIN einheiten e ON e.id = p.einheit_id
+      WHERE p.id = lernpaket_id
+        AND user_can_write_einheit(auth.uid(), e.id)  -- helper function
+    )
+  );
+
+-- 3) Lock-Check als CHECK-Constraint oder als Trigger
+--    (BEFORE INSERT auf lernpaket_phase_aktivitaet):
+CREATE OR REPLACE FUNCTION reject_if_locked_by_other()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+DECLARE p lernpakete%ROWTYPE;
+BEGIN
+  SELECT * INTO p FROM lernpakete WHERE id = NEW.lernpaket_id;
+  IF p.is_locked
+     AND p.locked_by_email IS NOT NULL
+     AND p.locked_by_email <> auth.jwt() ->> 'email'
+     AND p.locked_at > NOW() - INTERVAL '30 minutes'
+  THEN
+    RAISE EXCEPTION 'lernpaket locked by %', p.locked_by_email
+      USING ERRCODE = 'P0001';
+  END IF;
+  RETURN NEW;
+END $$;
+
+CREATE TRIGGER assign_activity_lock_check
+BEFORE INSERT ON lernpaket_phase_aktivitaet
+FOR EACH ROW EXECUTE FUNCTION reject_if_locked_by_other();
+
+-- 4) Audit-Trail per AFTER INSERT-Trigger (vgl. §11/§12):
+CREATE TRIGGER assign_activity_audit
+AFTER INSERT ON lernpaket_phase_aktivitaet
+FOR EACH ROW EXECUTE FUNCTION write_audit_log();
+```
+
+Damit schrumpft der gesamte JS-Endpunkt auf einen einzigen
+`INSERT INTO lernpaket_phase_aktivitaet …`-Call – die DB blockt
+fehlende RBAC, ungültige Phasen, kaputte FKs und Lock-Verstöße
+selbständig ab.
+
+### Definition of Done für die Migration
+
+- [ ] Foreign Keys + CHECK-Constraint auf `phase` aktiv.
+- [ ] RLS-Policy `assign_activity_write` deckt Tenant-Isolation ab.
+- [ ] Trigger `assign_activity_lock_check` verhindert Schreiben über
+      fremde Locks.
+- [ ] Audit-Trigger ersetzt den Inline-`logAudit`-Call.
