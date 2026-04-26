@@ -168,25 +168,39 @@ describe('DASHBOARD_TEMPLATES – V2-Spezifikation', () => {
     ]);
   });
 
-  // ── Pragmatiker ───────────────────────────────────────────────────────
-  it('pragmatiker hat 4 Sektoren mit erwartetem Modus-Muster', () => {
+  // ── Pragmatiker (V2.2) ────────────────────────────────────────────────
+  it('pragmatiker hat 4 Sektoren, alle sequenziell', () => {
     const t = DASHBOARD_TEMPLATES.pragmatiker;
     expect(t).toHaveLength(4);
-    expect(t.map((s) => s.modus)).toEqual([
-      'sequenziell',
-      'sequenziell',
-      'frei',
-      'sequenziell',
+    t.forEach((s) => expect(s.modus).toBe('sequenziell'));
+  });
+
+  it('pragmatiker Sektor 0: Overview → Frageblock → Einstiegsdiagnose', () => {
+    expect(DASHBOARD_TEMPLATES.pragmatiker[0].items.map((i) => i.ref_id)).toEqual([
+      'sys_sec0_overview',
+      'sys_sec0_qblock',
+      'sys_diagnose_entry',
     ]);
   });
 
-  it('pragmatiker Sektor 3 (frei) ist der Brian-Bündel-Platzhalter', () => {
-    const sec = DASHBOARD_TEMPLATES.pragmatiker[2];
-    expect(sec.modus).toBe('frei');
-    expect(sec.items.map((i) => i.ref_id)).toEqual(['sys_platzhalter_brian_buendel']);
+  it('pragmatiker Sektor 1: nur reduzierte Lernlandkarte', () => {
+    expect(DASHBOARD_TEMPLATES.pragmatiker[1].items.map((i) => i.ref_id)).toEqual([
+      'sys_map_reduced',
+    ]);
   });
 
-  it('pragmatiker Sektor 4 ist der externe Abschlusstest', () => {
+  it('pragmatiker Sektor 2: Grundlagen und Training (Info → Handlung → Lernpaket → Brian-Bündel)', () => {
+    const sec = DASHBOARD_TEMPLATES.pragmatiker[2];
+    expect(sec.titel).toBe('2. Grundlagen und Training');
+    expect(sec.items.map((i) => i.ref_id)).toEqual([
+      'sys_platzhalter_info',
+      'sys_platzhalter_handlung',
+      'sys_platzhalter_moodle_buendel',
+      'sys_platzhalter_brian_buendel',
+    ]);
+  });
+
+  it('pragmatiker Sektor 3 ist der externe Abschlusstest', () => {
     expect(DASHBOARD_TEMPLATES.pragmatiker[3].items.map((i) => i.ref_id)).toEqual([
       'sys_external_test',
     ]);
