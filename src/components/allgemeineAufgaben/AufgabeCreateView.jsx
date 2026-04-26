@@ -151,14 +151,25 @@ export default function AufgabeCreateView({
   const [materialUploading, setMaterialUploading] = useState(false);
   const isUploading = bildUploading || materialUploading;
 
-  // Form bei Öffnen/Initial-Daten neu aufsetzen
+  // Form bei Öffnen/Initial-Daten neu aufsetzen.
+  // Wichtig: `initialData` aus der DB kann typ-fremde Felder als `null`
+  // enthalten (z. B. `aufgabenstellung: null` bei einem Buendel). Damit
+  // controlled <textarea>/<input>-Felder nicht in den uncontrolled-Modus
+  // rutschen, mergen wir nicht-leere Felder über die EMPTY_FORM-Defaults
+  // (die garantiert Strings/Arrays liefern).
   useEffect(() => {
-    if (open) {
-      setFormData(
-        initialData
-          ? { ...EMPTY_FORM, ...initialData, aufgaben_typ: initialData.aufgaben_typ || 'inhalt' }
-          : { ...EMPTY_FORM, aufgaben_typ: defaultAufgabenTyp || 'inhalt' }
+    if (!open) return;
+    if (initialData) {
+      const sanitized = Object.fromEntries(
+        Object.entries(initialData).filter(([, v]) => v !== null && v !== undefined)
       );
+      setFormData({
+        ...EMPTY_FORM,
+        ...sanitized,
+        aufgaben_typ: initialData.aufgaben_typ || 'inhalt',
+      });
+    } else {
+      setFormData({ ...EMPTY_FORM, aufgaben_typ: defaultAufgabenTyp });
     }
   }, [open, initialData, defaultAufgabenTyp]);
 
