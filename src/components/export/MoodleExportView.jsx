@@ -119,20 +119,15 @@ export default function MoodleExportView({ einheitId, userRole, isAdmin }) {
      const successfulIds = pendingAufgaben.filter(a => confirmedIds.has(a.id)).map(a => a.id);
      const failedIds = pendingAufgaben.filter(a => !confirmedIds.has(a.id)).map(a => a.id);
 
-     // Bestätige Export-Abschluss
+     // Server bestätigt den Export UND löst den Dual-Lock im selben
+     // Atomzug auf (siehe OPTIMISTIC_LOCKING_VERSION_FIELD.md §14).
+     // Kein separater checkAndReleaseDualLock-Call mehr nötig.
      await base44.functions.invoke('confirmExportCompletion', { einheit_id: einheitId, successfulIds, failedIds });
-
-     // Prüfe Dual-Lock für alle erfolgreich exportierten Aufgaben
-     await Promise.all(
-       successfulIds.map(id =>
-         base44.functions.invoke('checkAndReleaseDualLock', { aufgabe_id: id }).catch(() => {})
-       )
-     );
    },
    onSuccess: () => {
      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
-     toast.success('Export bestätigt! Dual-Lock geprüft und aktualisiert.');
+     toast.success('Export bestätigt.');
    },
    onError: (err) => toast.error('Fehler beim Bestätigen: ' + err.message),
   });

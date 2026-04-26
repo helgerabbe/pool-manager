@@ -195,30 +195,24 @@ export default function BrianExportCockpitView() {
   const pending  = allAufgaben.filter(a => a.content_status === 'approved' && a.brian_sync_status !== 'synced' && (a.anforderungsebene === '2 - Transfer' || a.anforderungsebene === '3 - Projekt')).length;
 
   const handleMarkAsSynced = async (aufgabeId) => {
-    const aufgabe = allAufgaben.find(a => a.id === aufgabeId);
-    const now = new Date().toISOString();
-
     try {
-      // Markiere als Brian-synced
-      await base44.entities.AllgemeineAufgabe.update(aufgabeId, {
-        brian_sync_status: 'synced',
-        brian_synced_at: now,
-      });
-
-      // Prüfe Dual-Lock: Darf Lock aufgehoben werden?
-      const checkResult = await base44.functions.invoke('checkAndReleaseDualLock', {
+      // Atomarer Server-Call: setzt brian_sync_status='synced' und löst
+      // im selben Update den Dual-Lock auf, falls Moodle bereits synced
+      // ist. Verhindert Zombie-Locks bei Tab-/Verbindungsabbrüchen
+      // (siehe OPTIMISTIC_LOCKING_VERSION_FIELD.md §14).
+      const result = await base44.functions.invoke('confirmBrianExport', {
         aufgabe_id: aufgabeId,
       });
 
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
 
-      if (checkResult.data?.locked === false) {
+      if (result.data?.lock_released) {
         toast.success('Als "In Brian" markiert – Dual-Lock aufgehoben (Moodle + Brian beide synced).');
       } else {
         toast.success('Als "In Brian" markiert. Bearbeitungssperre bleibt bis Moodle-Export bestätigt.');
       }
     } catch (error) {
-      toast.error('Fehler: ' + error.message);
+      toast.error('Fehler: ' + (error?.response?.data?.error || error.message));
     }
   };
 

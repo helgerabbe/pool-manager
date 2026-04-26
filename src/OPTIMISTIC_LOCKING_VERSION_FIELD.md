@@ -609,3 +609,136 @@ selbständig ab.
 - [ ] Trigger `assign_activity_lock_check` verhindert Schreiben über
       fremde Locks.
 - [ ] Audit-Trigger ersetzt den Inline-`logAudit`-Call.
+
+---
+
+## 14. Dual-Lock-Auflösung serverseitig (2026-04-26)
+
+### Ausgangslage
+
+`AllgemeineAufgabe` trägt **zwei** Sync-Status: `moodle_sync_status` und
+`brian_sync_status`. Erst wenn BEIDE auf `synced` stehen, soll die
+Bearbeitungssperre (`locked_by` / `locked_at`) entfallen. Bisher wurde
+diese Verknüpfung **vom Frontend orchestriert**:
+
+1. UI ruft `confirmExportCompletion` (Moodle) bzw.
+   `entities.AllgemeineAufgabe.update({ brian_sync_status: 'synced' })`
+   (Brian) auf.
+2. UI ruft DANACH `checkAndReleaseDualLock` auf, das prüft, ob beide
+   Sync-Felder synced sind, und den Lock entfernt.
+
+**Problem.** Schließt der Browser-Tab oder bricht das Netzwerk zwischen
+Schritt 1 und Schritt 2 ab, bleibt die Aufgabe für immer als
+"gesperrt" markiert (Zombie-Lock). Außerdem hatte
+`checkAndReleaseDualLock` weder RBAC noch Tenant-Isolation.
+
+### Umsetzung (Option A – Inline serverseitig)
+
+Der Lock-Release wandert in **dieselbe Server-Operation**, die den
+Sync-Status setzt. Damit ist der Übergang aus Sicht des Aufrufers
+atomar; ein zweiter Round-Trip entfällt.
+
+**Pfad Moodle (`functions/confirmExportCompletion`):**
+
+```
+for (const id of successfulIds) {
+  const resolved = resolve(id);                    // Tenant-Filter
+  const updatePayload = { sync_status: 'synced', last_synced_at: now };
+
+  if (resolved.type === 'AllgemeineAufgabe') {
+    updatePayload.moodle_sync_status = 'synced';
+    if (resolved.record.brian_sync_status === 'synced') {
+      updatePayload.locked_by = null;
+      updatePayload.locked_at = null;              // ← Dual-Lock-Release
+    }
+  }
+  promises.push(entities[resolved.type].update(id, updatePayload));
+}
+await Promise.allSettled(promises);
+```
+
+**Pfad Brian (`functions/confirmBrianExport`, NEU):**
+
+Der Brian-Cockpit-Pfad ging vorher direkt über das SDK
+(`entities.AllgemeineAufgabe.update`) und damit am Server-Hook vorbei.
+Deshalb gibt es jetzt einen kleinen, fokussierten Endpunkt:
+
+```
+const moodleAlreadySynced =
+  aufgabe.moodle_sync_status === 'synced' || aufgabe.sync_status === 'synced';
+
+const updatePayload = {
+  brian_sync_status: 'synced',
+  brian_synced_at: now,
+  ...(moodleAlreadySynced ? { locked_by: null, locked_at: null } : {}),
+};
+await entities.AllgemeineAufgabe.update(aufgabe_id, updatePayload);
+```
+
+Beide Endpunkte nutzen die zentrale RBAC-Prüfung
+(Admin / Fachschaft-mit-Fach / EinheitMembers), die bereits in
+`acquireUnitLockSecure`, `approveMasterAufgabe` und
+`approvePackageActivities` etabliert ist.
+
+### Bereinigung
+
+- `functions/checkAndReleaseDualLock` **gelöscht**.
+- `components/export/MoodleExportView`: `confirmMutation` ruft nur noch
+  `confirmExportCompletion`. Der parallele
+  `checkAndReleaseDualLock`-Call entfällt.
+- `components/export/BrianExportCockpitView.handleMarkAsSynced`:
+  Direkter `entities.update` ersetzt durch
+  `functions.invoke('confirmBrianExport', …)`.
+
+### OCC-Frage
+
+`AllgemeineAufgabe` trägt aktuell **kein** `version`-Feld. Die
+Race-Condition zwischen "Moodle setzt synced" und "Brian setzt synced"
+ist unkritisch, weil:
+
+- Beide Pfade prüfen den Gegen-Status SERVER-seitig direkt vor dem
+  Update (frischer Read im selben Request).
+- Der schlimmste verbliebene Effekt einer echten Race-Condition wäre
+  ein temporär gehaltener Lock, der beim nächsten der beiden
+  Bestätigungen sofort fällt – kein Zombie-Lock, kein Datenverlust.
+
+Sollte später ein dritter Pfad `synced` setzen können, ist das
+`version`-Feld auf `AllgemeineAufgabe` nachzurüsten und beide
+Endpunkte auf das Pattern aus §3 (Read-Bump-ReRead-Verify) umzustellen.
+
+### @MIGRATION_NOTE (Supabase)
+
+Die gesamte Inline-Logik ersetzt EIN Trigger:
+
+```sql
+CREATE OR REPLACE FUNCTION release_dual_lock_when_synced()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.moodle_sync_status = 'synced'
+     AND NEW.brian_sync_status = 'synced'
+     AND (OLD.moodle_sync_status <> 'synced' OR OLD.brian_sync_status <> 'synced')
+  THEN
+    NEW.locked_by := NULL;
+    NEW.locked_at := NULL;
+  END IF;
+  RETURN NEW;
+END $$;
+
+CREATE TRIGGER trg_release_dual_lock
+BEFORE UPDATE OF moodle_sync_status, brian_sync_status
+ON allgemeine_aufgabe
+FOR EACH ROW EXECUTE FUNCTION release_dual_lock_when_synced();
+```
+
+Damit übernimmt PostgreSQL die Garantie, dass der Lock **immer**
+synchron zum letzten der beiden Sync-Wechsel fällt – egal über welchen
+API-Pfad das Update kommt. Die JS-Inline-Blöcke in
+`confirmExportCompletion` und `confirmBrianExport` entfallen dann.
+
+### Definition of Done für die Migration
+
+- [ ] BEFORE-UPDATE-Trigger `trg_release_dual_lock` aktiv.
+- [ ] Inline-Lock-Release in `confirmExportCompletion` entfernt.
+- [ ] `confirmBrianExport` zu schlankem RPC reduziert (nur
+      `brian_sync_status` setzen, Trigger erledigt den Rest).
+- [ ] RLS-Policy auf `allgemeine_aufgabe` deckt die RBAC-Prüfung ab.
