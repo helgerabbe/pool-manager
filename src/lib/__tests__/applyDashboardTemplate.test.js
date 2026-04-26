@@ -19,8 +19,8 @@ import { ITEM_TYPE } from '@/lib/aufgabenTypen';
 const makeKonfig = (overrides = {}) => ({
   minimalist: [],
   pragmatiker: [],
-  ehrgeizige: [],
-  passionierte: [],
+  ehrgeizig: [],
+  passioniert: [],
   ...overrides,
 });
 
@@ -46,9 +46,9 @@ describe('applyDashboardTemplate – frische Sektor-IDs', () => {
 
   it('zweimaliges Anwenden desselben Templates erzeugt unterschiedliche IDs', () => {
     const konfig = makeKonfig();
-    const a = applyDashboardTemplate(konfig, 'ehrgeizige', DASHBOARD_TEMPLATES.ehrgeizige);
-    const b = applyDashboardTemplate(konfig, 'ehrgeizige', DASHBOARD_TEMPLATES.ehrgeizige);
-    expect(a.ehrgeizige[0].sektor_id).not.toBe(b.ehrgeizige[0].sektor_id);
+    const a = applyDashboardTemplate(konfig, 'ehrgeizig', DASHBOARD_TEMPLATES.ehrgeizig);
+    const b = applyDashboardTemplate(konfig, 'ehrgeizig', DASHBOARD_TEMPLATES.ehrgeizig);
+    expect(a.ehrgeizig[0].sektor_id).not.toBe(b.ehrgeizig[0].sektor_id);
   });
 });
 
@@ -78,14 +78,14 @@ describe('applyDashboardTemplate – Überschreiben & Isolation', () => {
 
     const next = applyDashboardTemplate(konfig, 'minimalist', DASHBOARD_TEMPLATES.minimalist);
     expect(next.pragmatiker).toBe(fremder);
-    expect(next.ehrgeizige).toBe(konfig.ehrgeizige);
-    expect(next.passionierte).toBe(konfig.passionierte);
+    expect(next.ehrgeizig).toBe(konfig.ehrgeizig);
+    expect(next.passioniert).toBe(konfig.passioniert);
   });
 
   it('liefert IMMUTABLE: Eingangs-Konfig wird nicht mutiert', () => {
     const konfig = makeKonfig();
     const snapshot = JSON.stringify(konfig);
-    applyDashboardTemplate(konfig, 'passionierte', DASHBOARD_TEMPLATES.passionierte);
+    applyDashboardTemplate(konfig, 'passioniert', DASHBOARD_TEMPLATES.passioniert);
     expect(JSON.stringify(konfig)).toBe(snapshot);
   });
 });
@@ -107,10 +107,10 @@ describe('applyDashboardTemplate – Items werden korrekt übernommen', () => {
 
   it('titel und modus werden 1:1 übernommen', () => {
     const konfig = makeKonfig();
-    const next = applyDashboardTemplate(konfig, 'ehrgeizige', DASHBOARD_TEMPLATES.ehrgeizige);
-    DASHBOARD_TEMPLATES.ehrgeizige.forEach((tplSektor, idx) => {
-      expect(next.ehrgeizige[idx].titel).toBe(tplSektor.titel);
-      expect(next.ehrgeizige[idx].modus).toBe(tplSektor.modus);
+    const next = applyDashboardTemplate(konfig, 'ehrgeizig', DASHBOARD_TEMPLATES.ehrgeizig);
+    DASHBOARD_TEMPLATES.ehrgeizig.forEach((tplSektor, idx) => {
+      expect(next.ehrgeizig[idx].titel).toBe(tplSektor.titel);
+      expect(next.ehrgeizig[idx].modus).toBe(tplSektor.modus);
     });
   });
 });

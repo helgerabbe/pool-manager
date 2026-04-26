@@ -13,7 +13,9 @@
  *
  * Format-Vertrag (validiert durch dashboardTemplates.test.js):
  * - DASHBOARD_TEMPLATES ist ein Objekt mit den vier Lerntyp-Schlüsseln
- *   `minimalist`, `pragmatiker`, `ehrgeizige`, `passionierte`.
+ *   `minimalist`, `pragmatiker`, `ehrgeizig`, `passioniert`.
+ *   (Schlüssel sind bewusst die im restlichen System genutzten Keys –
+ *   DB-Konfigurationen, UI-Tabs und Hooks setzen darauf auf.)
  * - Jeder Schlüssel hält ein Array von Sektor-Objekten.
  * - Sektor: { sektor_id: string, titel: string, modus: 'sequenziell'|'frei',
  *   items: Array<{ type: 'system', ref_id: string }> }
@@ -114,9 +116,9 @@ const PRAGMATIKER = [
   },
 ];
 
-// ── Template: Ehrgeizige ────────────────────────────────────────────────
+// ── Template: Ehrgeizig ─────────────────────────────────────────────────
 // Alle Sektoren initial 'sequenziell'.
-const EHRGEIZIGE = [
+const EHRGEIZIG = [
   {
     sektor_id: 'tpl_ehr_sec1',
     titel: '1. Einstieg & Diagnose',
@@ -148,9 +150,9 @@ const EHRGEIZIGE = [
   },
 ];
 
-// ── Template: Passionierte ──────────────────────────────────────────────
+// ── Template: Passioniert ───────────────────────────────────────────────
 // Alle Sektoren initial 'frei'.
-const PASSIONIERTE = [
+const PASSIONIERT = [
   {
     sektor_id: 'tpl_pass_sec1',
     titel: '1. Lernlandkarte',
@@ -174,15 +176,15 @@ const PASSIONIERTE = [
 export const DASHBOARD_TEMPLATES = Object.freeze({
   minimalist: MINIMALIST,
   pragmatiker: PRAGMATIKER,
-  ehrgeizige: EHRGEIZIGE,
-  passionierte: PASSIONIERTE,
+  ehrgeizig: EHRGEIZIG,
+  passioniert: PASSIONIERT,
 });
 
 export const TEMPLATE_LERN_TYPEN = Object.freeze([
   'minimalist',
   'pragmatiker',
-  'ehrgeizige',
-  'passionierte',
+  'ehrgeizig',
+  'passioniert',
 ]);
 
 /**

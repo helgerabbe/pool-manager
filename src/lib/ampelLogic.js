@@ -38,6 +38,38 @@ function aggregateMin(statuses, fallback = AMPEL.GREEN) {
 }
 
 /**
+ * "At-least-N-green"-Aggregation für `auswahl_buendel` (Brian-Bündel mit
+ * X-von-Y-Auswahl).
+ *
+ * Logik:
+ *   - requiredGreen <= 0 → wie aggregateMin (alle Kinder zählen → MIN-Regel).
+ *   - Anzahl grüner Kinder >= requiredGreen → green.
+ *   - Sonst, wenn (grün + gelb) >= requiredGreen → yellow
+ *     (es gibt genug Kandidaten, aber mindestens einer wurde nach Export
+ *     verändert; Lehrkraft soll noch einmal prüfen).
+ *   - Andernfalls → red (zu wenig auswählbare Aufgaben fertig).
+ *
+ * Leere Kinderliste mit requiredGreen > 0 → red.
+ */
+function aggregateAtLeastNGreen(statuses, requiredGreen) {
+  if (!Number.isFinite(requiredGreen) || requiredGreen <= 0) {
+    return aggregateMin(statuses, AMPEL.RED);
+  }
+  const list = statuses || [];
+  if (list.length === 0) return AMPEL.RED;
+
+  let green = 0;
+  let yellow = 0;
+  for (const s of list) {
+    if (s === AMPEL.GREEN) green += 1;
+    else if (s === AMPEL.YELLOW) yellow += 1;
+  }
+  if (green >= requiredGreen) return AMPEL.GREEN;
+  if (green + yellow >= requiredGreen) return AMPEL.YELLOW;
+  return AMPEL.RED;
+}
+
+/**
  * Flacher Status einer einzelnen Aufgabe (ohne Rekursion).
  * Regeln:
  *   - content_status === 'approved' && sync_status === 'modified' → yellow
@@ -92,8 +124,10 @@ export function getAmpelStatus(item, ctx = {}) {
 
   const typ = aufgabe.aufgaben_typ || 'inhalt';
 
-  // Inhalt / Prozess: flache Prüfung.
-  if (typ === 'inhalt' || typ === 'prozess') {
+  // Inhalt / Prozess / Handlung: flache Prüfung.
+  // Handlung ist eine handlungsorientierte Aufgabe ohne digitale Children
+  // → identische Aggregation wie Inhalt/Prozess.
+  if (typ === 'inhalt' || typ === 'prozess' || typ === 'handlung') {
     return getFlatAufgabeStatus(aufgabe);
   }
 
@@ -105,6 +139,20 @@ export function getAmpelStatus(item, ctx = {}) {
     const childrenMin = aggregateMin(childStatuses);
     // Eigener Status der Bündel-Aufgabe darf nicht besser sein als Kinder.
     return minStatus(getFlatAufgabeStatus(aufgabe), childrenMin);
+  }
+
+  // Auswahl-Bündel (Brian-Bündel, X-von-Y): "at-least-N-green"-Aggregation.
+  // erforderliche_anzahl === 0 ⇒ alle Kinder sind Pflicht (MIN-Regel).
+  if (typ === 'auswahl_buendel') {
+    const ids = aufgabe.verlinkte_aufgaben_ids || [];
+    if (ids.length === 0) return AMPEL.RED; // leeres Bündel = unvollständig
+    const required = Number.isFinite(aufgabe.erforderliche_anzahl)
+      ? aufgabe.erforderliche_anzahl
+      : 0;
+    const childStatuses = ids.map((id) => getFlatAufgabeStatus(aufgabenById.get(id)));
+    const childrenAgg = aggregateAtLeastNGreen(childStatuses, required);
+    // Eigener Status der Bündel-Aufgabe darf nicht besser sein als Kinder-Aggregat.
+    return minStatus(getFlatAufgabeStatus(aufgabe), childrenAgg);
   }
 
   // Projekt-Anker: rekursive Prüfung über verlinkte Ebene-3-Aufgaben.

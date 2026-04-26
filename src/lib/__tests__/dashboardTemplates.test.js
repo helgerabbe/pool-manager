@@ -31,7 +31,7 @@ const VALID_MODI = ['sequenziell', 'frei'];
 describe('DASHBOARD_TEMPLATES – Top-Level-Struktur', () => {
   it('exportiert genau die vier V2-Lerntyp-Schlüssel', () => {
     const keys = Object.keys(DASHBOARD_TEMPLATES).sort();
-    expect(keys).toEqual(['ehrgeizige', 'minimalist', 'passionierte', 'pragmatiker']);
+    expect(keys).toEqual(['ehrgeizig', 'minimalist', 'passioniert', 'pragmatiker']);
   });
 
   it('TEMPLATE_LERN_TYPEN deckt sich mit den Schlüsseln des Templates', () => {
@@ -150,14 +150,14 @@ describe('DASHBOARD_TEMPLATES – V2-Spezifikation', () => {
     ]);
   });
 
-  it('ehrgeizige hat 4 Sektoren, alle sequenziell', () => {
-    const t = DASHBOARD_TEMPLATES.ehrgeizige;
+  it('ehrgeizig hat 4 Sektoren, alle sequenziell', () => {
+    const t = DASHBOARD_TEMPLATES.ehrgeizig;
     expect(t).toHaveLength(4);
     t.forEach((s) => expect(s.modus).toBe('sequenziell'));
   });
 
-  it('passionierte hat 2 Sektoren, alle frei', () => {
-    const t = DASHBOARD_TEMPLATES.passionierte;
+  it('passioniert hat 2 Sektoren, alle frei', () => {
+    const t = DASHBOARD_TEMPLATES.passioniert;
     expect(t).toHaveLength(2);
     t.forEach((s) => expect(s.modus).toBe('frei'));
   });
@@ -182,8 +182,8 @@ describe('DASHBOARD_TEMPLATES – V2-Spezifikation', () => {
     expect(sec.items.map((i) => i.ref_id)).toEqual(['sys_platzhalter_brian_buendel']);
   });
 
-  it('ehrgeizige Sektor 4 hat die volle Prüfungssequenz', () => {
-    const sec = DASHBOARD_TEMPLATES.ehrgeizige[3];
+  it('ehrgeizig Sektor 4 hat die volle Prüfungssequenz', () => {
+    const sec = DASHBOARD_TEMPLATES.ehrgeizig[3];
     expect(sec.items.map((i) => i.ref_id)).toEqual([
       'sys_platzhalter_moodle_buendel',
       'sys_zwischentest',
@@ -192,14 +192,14 @@ describe('DASHBOARD_TEMPLATES – V2-Spezifikation', () => {
     ]);
   });
 
-  it('passionierte Sektor 1 enthält ausschließlich die volle Karte', () => {
-    expect(DASHBOARD_TEMPLATES.passionierte[0].items.map((i) => i.ref_id)).toEqual([
+  it('passioniert Sektor 1 enthält ausschließlich die volle Karte', () => {
+    expect(DASHBOARD_TEMPLATES.passioniert[0].items.map((i) => i.ref_id)).toEqual([
       'sys_map_full',
     ]);
   });
 
-  it('passionierte Sektor 2 enthält Moodle-Bündel + 2× Ebene-2 + Projekt', () => {
-    expect(DASHBOARD_TEMPLATES.passionierte[1].items.map((i) => i.ref_id)).toEqual([
+  it('passioniert Sektor 2 enthält Moodle-Bündel + 2× Ebene-2 + Projekt', () => {
+    expect(DASHBOARD_TEMPLATES.passioniert[1].items.map((i) => i.ref_id)).toEqual([
       'sys_platzhalter_moodle_buendel',
       'sys_platzhalter_ebene2',
       'sys_platzhalter_ebene2',
