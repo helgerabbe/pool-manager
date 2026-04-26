@@ -23,6 +23,11 @@ import {
   FileText,
   Star,
   Info,
+  BookOpen,
+  Pencil,
+  ExternalLink,
+  Package,
+  PackageCheck,
 } from 'lucide-react';
 
 const ICONS = {
@@ -40,6 +45,12 @@ const ICONS = {
   'file-text': FileText,
   star: Star,
   info: Info,
+  // Dashboards V2 – Sektion 0, Map-Varianten, Prüfung, Bündel-Platzhalter
+  'book-open': BookOpen,
+  pencil: Pencil,
+  'external-link': ExternalLink,
+  package: Package,
+  'package-check': PackageCheck,
 };
 
 export function getSystemBausteinIcon(iconKey) {

@@ -130,6 +130,98 @@ const PFLICHT_BAUSTEINE = [
     ist_aktiv: true,
     reihenfolge: 150,
   },
+  // ── Dashboards V2: Sektion-0-Bausteine ───────────────────────────────
+  {
+    baustein_id: 'sys_sec0_overview',
+    titel: 'Sektion 0 – Übersicht',
+    icon: 'book-open',
+    admin_beschreibung:
+      'Einfache Sprache: Schüler bekommt eine kompakte Übersicht der Einheit. Bestätigung per Button („Verstanden").',
+    export_instruktion:
+      'Zeige dem Schüler eine kurze Übersicht der Einheit in einfacher Sprache. Der Schüler bestätigt das Lesen per Klick auf den „Verstanden"-Button, bevor es weitergeht.',
+    ist_aktiv: true,
+    reihenfolge: 5,
+  },
+  {
+    baustein_id: 'sys_sec0_qblock',
+    titel: 'Sektion 0 – Freiwilliger Fragenblock',
+    icon: 'help-circle',
+    admin_beschreibung:
+      'Optionale Eingangsfragen, die der Schüler an die KI stellen kann, bevor er mit der Einheit beginnt.',
+    export_instruktion:
+      'Biete dem Schüler einen freiwilligen Fragenblock an. Er darf offene Fragen zur Einheit stellen; die KI beantwortet sie kurz und verständlich. Überspringbar.',
+    ist_aktiv: true,
+    reihenfolge: 7,
+  },
+  // ── Dashboards V2: Lernlandkarten-Varianten ──────────────────────────
+  {
+    baustein_id: 'sys_map_reduced',
+    titel: 'Lernlandkarte (verringerte Version)',
+    icon: 'map',
+    admin_beschreibung:
+      'Reduzierte Lernlandkarte – nur die wichtigsten Lernziele und Themen werden angezeigt. Wird später per KI dynamisch generiert.',
+    export_instruktion:
+      'Zeige eine reduzierte Version der Lernlandkarte mit den Kern-Lernzielen der Einheit. Der Schüler verschafft sich einen Überblick.',
+    ist_aktiv: true,
+    reihenfolge: 22,
+  },
+  {
+    baustein_id: 'sys_map_full',
+    titel: 'Lernlandkarte (vollständige Version)',
+    icon: 'map',
+    admin_beschreibung:
+      'Vollständige Lernlandkarte mit allen Lernzielen, Themen und Verknüpfungen. Wird später per KI dynamisch generiert.',
+    export_instruktion:
+      'Zeige die vollständige Lernlandkarte mit allen Lernzielen und Themenfeldern der Einheit. Der Schüler verschafft sich einen detaillierten Überblick.',
+    ist_aktiv: true,
+    reihenfolge: 24,
+  },
+  // ── Dashboards V2: Prüfungs-/Test-Bausteine ──────────────────────────
+  {
+    baustein_id: 'sys_exam_register',
+    titel: 'Anmeldung zur schriftlichen Arbeit',
+    icon: 'pencil',
+    admin_beschreibung:
+      'Anmelde-Hinweis: Schüler bestätigt seine Bereitschaft für die schriftliche Arbeit.',
+    export_instruktion:
+      'Fordere den Schüler auf, sich zur schriftlichen Arbeit anzumelden, sobald er sich bereit fühlt. Die Anmeldung erfolgt per Bestätigung.',
+    ist_aktiv: true,
+    reihenfolge: 50,
+  },
+  {
+    baustein_id: 'sys_external_test',
+    titel: 'Externer Test (z. B. Classtime)',
+    icon: 'external-link',
+    admin_beschreibung:
+      'Hinweis auf einen externen Test (z. B. Classtime, Kahoot). Der eigentliche Test findet außerhalb der App statt.',
+    export_instruktion:
+      'Verweise den Schüler auf einen externen Test (z. B. Classtime). Die Bearbeitung erfolgt außerhalb der Plattform; nach Abschluss kehrt der Schüler hierher zurück.',
+    ist_aktiv: true,
+    reihenfolge: 55,
+  },
+  // ── Dashboards V2: Bündel-Platzhalter ────────────────────────────────
+  {
+    baustein_id: 'sys_platzhalter_moodle_buendel',
+    titel: 'Platzhalter: Moodle-Bündel',
+    icon: 'package',
+    admin_beschreibung:
+      'Drop-Zone-Erinnerung: Hier soll später ein Moodle-Bündel (aufgaben_typ=buendel mit lernpaket_logik) eingefügt werden.',
+    export_instruktion:
+      'PLATZHALTER – muss durch ein echtes Moodle-Bündel ersetzt werden, bevor der Pfad freigegeben wird.',
+    ist_aktiv: true,
+    reihenfolge: 160,
+  },
+  {
+    baustein_id: 'sys_platzhalter_brian_buendel',
+    titel: 'Platzhalter: Brian-Bündel (X von Y)',
+    icon: 'package-check',
+    admin_beschreibung:
+      'Drop-Zone-Erinnerung: Hier soll später ein Brian-Bündel (aufgaben_typ=auswahl_buendel mit erforderliche_anzahl) eingefügt werden.',
+    export_instruktion:
+      'PLATZHALTER – muss durch ein echtes Brian-Bündel mit X-von-Y-Auswahl ersetzt werden, bevor der Pfad freigegeben wird.',
+    ist_aktiv: true,
+    reihenfolge: 170,
+  },
 ];
 
 Deno.serve(async (req) => {
