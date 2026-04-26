@@ -35,7 +35,7 @@ const INDICATORS = [
   {
     key: 'level2',
     icon: ClipboardList,
-    label: 'Lvl 2',
+    label: 'Aufgaben',
     tab: 'ebene2',
     tooltip: (n) => `${n} Aufgabe${n === 1 ? '' : 'n'} der Ebene 2 – zum Aufgabenpool`,
   },
