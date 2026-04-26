@@ -126,12 +126,12 @@ function LernTypTab({ typ, active, count, onClick }) {
       className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-all font-medium text-xs ${
         active
           ? `${typ.color.bgSolid} ${typ.color.textOn} border-transparent shadow-sm`
-          : `${typ.color.bg} ${typ.color.text} ${typ.color.border}/50 hover:shadow-sm`
+          : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
       }`}
     >
       <Icon className="w-3.5 h-3.5 shrink-0" />
       <span className="font-semibold leading-tight">{typ.label}</span>
-      <span className={`text-[10px] leading-none px-1.5 py-0.5 rounded-full ${active ? 'bg-white/25' : 'bg-white/60 border border-current/10'}`}>
+      <span className={`text-[10px] leading-none px-1.5 py-0.5 rounded-full ${active ? 'bg-white/25' : 'bg-white/80 border border-slate-200'}`}>
         {count}
       </span>
     </button>
