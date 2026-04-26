@@ -19,6 +19,7 @@ import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { base44 } from '@/api/base44Client';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { getAufgabenTyp } from '@/lib/aufgabenTypen';
+import { adaptLernpaketToPoolItem } from '@/lib/lernpaketAdapter';
 import { Loader2, Inbox, Eye, CheckCircle2, BookOpen, Sparkles, Folder, Pencil, Rocket } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import MonitorPanel from '@/components/lernpfade/MonitorPanel';
@@ -211,6 +212,18 @@ export default function LernpfadeAufgabenPool({
     enabled: !!einheitId,
   });
 
+  // Lernpakete sind eine eigenständige Collection. Wir laden sie zusätzlich und
+  // adaptieren sie über `adaptLernpaketToPoolItem` auf das Aufgaben-Shape, damit
+  // sie überall im Pool/Sektor identisch wie buendel-Aufgaben verarbeitet werden.
+  const { data: lernpakete = [], isLoading: loadingLernpakete } = useQuery({
+    queryKey: ['lernpakete-by-einheit', einheitId],
+    queryFn: () =>
+      einheitId
+        ? base44.entities.Lernpakete.filter({ einheit_id: einheitId })
+        : Promise.resolve([]),
+    enabled: !!einheitId,
+  });
+
   const { data: systemBausteine = [], isLoading: loadingBausteine } = useQuery({
     queryKey: ['systemBausteine', 'aktiv'],
     queryFn: async () => {
@@ -219,15 +232,17 @@ export default function LernpfadeAufgabenPool({
     },
   });
 
-  // Pool: alle Items, die in mind. eine Filtergruppe fallen, ohne Tombstones.
-  // Dadurch erscheinen auch Lernpakete (buendel) sowie unsauber getaggte
-  // Projekt-Aufgaben (z. B. aufgaben_typ='inhalt' + anforderungsebene='3 - Projekt').
+  // Pool: Aufgaben + adaptierte Lernpakete in eine gemeinsame Liste mischen.
+  // Tombstones (sync_status === 'to_delete') werden in beiden Quellen gefiltert.
   const poolAufgaben = useMemo(() => {
-    return (alleAufgaben || []).filter((a) => {
-      if (a.sync_status === 'to_delete') return false;
-      return getGroupKeyForItem(a) !== null;
-    });
-  }, [alleAufgaben]);
+    const adaptedLernpakete = (lernpakete || [])
+      .filter((lp) => lp.sync_status !== 'to_delete')
+      .map(adaptLernpaketToPoolItem);
+    const aufgabenItems = (alleAufgaben || []).filter(
+      (a) => a.sync_status !== 'to_delete' && getGroupKeyForItem(a) !== null
+    );
+    return [...adaptedLernpakete, ...aufgabenItems];
+  }, [alleAufgaben, lernpakete]);
 
   const counts = useMemo(() => {
     const c = Object.fromEntries(FILTER_GROUP_KEYS.map((k) => [k, 0]));
@@ -305,9 +320,9 @@ export default function LernpfadeAufgabenPool({
                 {...provided.droppableProps}
                 className="flex-1 overflow-y-auto p-3 space-y-1.5 min-h-0"
               >
-                {loadingAufgaben ? (
+                {(loadingAufgaben || loadingLernpakete) ? (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground py-6 justify-center">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Lade Aufgaben…
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Lade Material…
                   </div>
                 ) : filteredAufgaben.length === 0 ? (
                   <div className="flex flex-col items-center justify-center text-center py-8 px-2">

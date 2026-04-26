@@ -43,6 +43,7 @@ import {
 } from '@/lib/lernpfadeUtils';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { getAmpelStatus } from '@/lib/ampelLogic';
+import { adaptLernpaketToPoolItem } from '@/lib/lernpaketAdapter';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 
 const DEFAULT_KONFIG = { minimalist: [], pragmatiker: [], ehrgeizig: [], passioniert: [] };
@@ -100,11 +101,18 @@ export default function LernpfadeCockpit({
     queryFn: () => (einheit?.id ? getAufgabenByEinheit(einheit.id) : Promise.resolve([])),
     enabled: !!einheit?.id,
   });
+  // aufgabenById enthält BEIDE Quellen (AllgemeineAufgabe + Lernpakete-Collection
+  // adaptiert auf Aufgaben-Shape), damit Sektor-Pills, MonitorPanel und Ampel-
+  // Logik Lernpakete genauso behandeln wie reguläre buendel-Aufgaben.
   const aufgabenById = useMemo(() => {
     const map = new Map();
     (aufgaben || []).forEach((a) => map.set(a.id, a));
+    (lernpakete || []).forEach((lp) => {
+      const adapted = adaptLernpaketToPoolItem(lp);
+      if (adapted) map.set(adapted.id, adapted);
+    });
     return map;
-  }, [aufgaben]);
+  }, [aufgaben, lernpakete]);
 
   const { data: systemBausteine = [] } = useQuery({
     queryKey: ['systemBausteine', 'all'],
