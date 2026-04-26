@@ -132,6 +132,42 @@ FOR EACH ROW EXECUTE FUNCTION bump_einheiten_version();
   (v. a. `EinheitFormWithValidation`), sollten nach Server-Antworten
   den neuen Versions-Wert übernehmen, um unnötige 409-Konflikte beim
   nächsten Save zu vermeiden.
-- **Lernpakete / Aufgabenbausteine**: aktuell ohne `version`-Feld.
-  Falls dort später ähnliche Race-Conditions auftreten, separates
-  Schema- + Function-Ticket aufmachen.
+- **Lernpakete**: ✅ `version`-Feld ergänzt (2026-04-26). Erster
+  Schreibpfad mit OCC: `acquireLockSecure`. Folgepfade, die noch ohne
+  Bump arbeiten und nachgezogen werden müssen:
+  - `releaseLernpaketLockSecure`, `releaseLockSecure`, `releaseLockSimple`,
+    `acquireLockSimple` (Lock-Lifecycle)
+  - `updateLernpaketSecure`, `updateLernpaketWithStatusManagement`,
+    `createLernpaketWithAutoApproval`
+  - `deleteLernpaketWithTombstone`, `forceReleaseLockAdmin` (Lernpakete-Branch)
+  - `saveEinheitStruktur` (Lernpaket-Updates innerhalb der Struktur)
+  Bis diese mitziehen, ist auch hier nur das Lock-vs-Lock-Rennen in
+  `acquireLockSecure` selbst abgesichert (E-Mail im Re-Read = Wahrheit).
+- **Aufgabenbausteine**: aktuell ohne `version`-Feld. Falls dort später
+  ähnliche Race-Conditions auftreten, separates Schema- + Function-Ticket
+  aufmachen.
+
+---
+
+## 7. RBAC-Hardening Begleitnotiz (2026-04-26)
+
+Beim OCC-Rollout in `acquireLockSecure` wurde zusätzlich die
+Fachschafts-Berechtigung enger gefasst, um die dokumentierte
+RBAC-Matrix (`BACKEND_SECURITY_ARCHITECTURE.md` §1.2:
+Fachschaftsleitung → `mustOwnSubject: true`) tatsächlich abzubilden:
+
+**Vorher (zu lasch):**
+```
+if (!istFachschaft && !fachzustaendig) { /* deny */ }
+// → Fachschaftsleitung durfte ALLE Pakete sperren, fachunabhängig.
+```
+
+**Nachher (RBAC-konform):**
+```
+const istFachschaftFuerFach = rolle === 'Fachschaftsleitung' && fachzustaendig;
+if (!istFachschaftFuerFach && !fachzustaendig) { /* fallback: EinheitMembers */ }
+```
+
+Bitte beim nächsten RBAC-Sweep prüfen, ob andere Funktionen
+(`updateLernpaketSecure`, `lockTaskSecure`, …) dasselbe lasche Pattern
+nutzen und ebenfalls verschärft werden müssen.

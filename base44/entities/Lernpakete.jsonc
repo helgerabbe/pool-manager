@@ -61,6 +61,11 @@
       "type": "string",
       "format": "date-time",
       "description": "Zeitstempel des letzten erfolgreichen Moodle-Exports (nullable)"
+    },
+    "version": {
+      "type": "integer",
+      "default": 1,
+      "description": "Optimistic Locking Version (inkrementiert bei jedem Update). Wird im App-Code via Read-Bump-ReRead-Verify-Pattern genutzt; nach Supabase-Migration durch BEFORE-UPDATE-Trigger ersetzbar."
     }
   },
   "required": [
