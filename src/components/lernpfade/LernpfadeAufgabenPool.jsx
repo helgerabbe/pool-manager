@@ -18,26 +18,64 @@ import { useQuery } from '@tanstack/react-query';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { base44 } from '@/api/base44Client';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
-import { AUFGABEN_TYPEN, AUFGABEN_TYPEN_ORDER, getAufgabenTyp } from '@/lib/aufgabenTypen';
-import { Loader2, Inbox, Eye, CheckCircle2, BookOpen, Sparkles } from 'lucide-react';
+import { getAufgabenTyp } from '@/lib/aufgabenTypen';
+import { Loader2, Inbox, Eye, CheckCircle2, BookOpen, Sparkles, Folder, Pencil, Rocket } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import MonitorPanel from '@/components/lernpfade/MonitorPanel';
 import SystemBausteinPoolItem from '@/components/lernpfade/SystemBausteinPoolItem';
 
-// ── Helfer ──────────────────────────────────────────────────────────────
-function FilterChip({ typKey, active, count, onClick }) {
-  const meta = AUFGABEN_TYPEN[typKey];
+// ── Filter-Gruppen (Pool-UI) ──────────────────────────────────────────────
+// Mapping didaktischer Gruppen → DB-Typen (aufgaben_typ).
+// Entfernt das tote Konzept "prozess" und ersetzt die rohen DB-Labels durch
+// die mentale Sortierung der Lehrkraft.
+const FILTER_GROUPS = [
+  {
+    key: 'lernpakete',
+    label: 'Lernpakete',
+    icon: Folder,
+    types: ['buendel'],
+    color: 'bg-blue-500 text-white border-blue-500',
+    inactive: 'bg-white text-blue-700 border-blue-200 hover:bg-blue-50',
+  },
+  {
+    key: 'aufgaben',
+    label: 'Aufgaben',
+    icon: Pencil,
+    types: ['inhalt', 'handlung', 'auswahl_buendel'],
+    color: 'bg-amber-500 text-white border-amber-500',
+    inactive: 'bg-white text-amber-700 border-amber-200 hover:bg-amber-50',
+  },
+  {
+    key: 'projekte',
+    label: 'Projekte',
+    icon: Rocket,
+    types: ['projekt_anker'],
+    color: 'bg-violet-500 text-white border-violet-500',
+    inactive: 'bg-white text-violet-700 border-violet-200 hover:bg-violet-50',
+  },
+];
+const FILTER_GROUP_KEYS = FILTER_GROUPS.map((g) => g.key);
+
+// Lesbares Label für das Lernpaket-Logik-Badge auf buendel-Karten.
+const LERNPAKET_LOGIK_LABELS = {
+  standard: 'Standard',
+  fast_track: 'Fast-Track',
+  wissensspeicher: 'Wissensspeicher',
+  test_only: 'Zwischentest',
+};
+
+function FilterChip({ group, active, count, onClick }) {
+  const Icon = group.icon;
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium border transition-all ${
-        active
-          ? `${meta.color.bgSolid} ${meta.color.textOn} border-transparent shadow-sm`
-          : `bg-white ${meta.color.text} ${meta.color.border}/40 hover:${meta.color.bg}`
+      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
+        active ? `${group.color} shadow-sm` : group.inactive
       }`}
     >
-      <span>{meta.short}</span>
+      <Icon className="w-3 h-3" />
+      <span>{group.label}</span>
       <span className={`text-[10px] px-1 rounded-full ${active ? 'bg-white/30' : 'bg-muted'}`}>
         {count}
       </span>
@@ -53,6 +91,11 @@ function FilterChip({ typKey, active, count, onClick }) {
 function AufgabeListItem({ aufgabe, index, isSelected, isUsed, onClick }) {
   const typMeta = getAufgabenTyp(aufgabe.aufgaben_typ);
   const Icon = typMeta.icon;
+  const isBuendel = aufgabe.aufgaben_typ === 'buendel';
+  const logikLabel = isBuendel
+    ? (LERNPAKET_LOGIK_LABELS[aufgabe.lernpaket_logik] || LERNPAKET_LOGIK_LABELS.standard)
+    : null;
+  const subtitle = isBuendel ? `Lernpaket · ${logikLabel}` : typMeta.short;
 
   return (
     <Draggable draggableId={aufgabe.id} index={index} isDragDisabled={isUsed}>
@@ -78,11 +121,16 @@ function AufgabeListItem({ aufgabe, index, isSelected, isUsed, onClick }) {
             <p className="text-xs font-medium text-foreground truncate leading-snug">
               {aufgabe.titel || 'Ohne Titel'}
             </p>
-            <div className="flex items-center gap-1.5 mt-0.5">
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
               <span className={`text-[10px] font-semibold ${typMeta.color.text}`}>
-                {typMeta.short}
+                {subtitle}
               </span>
-              {aufgabe.anforderungsebene && (
+              {isBuendel && logikLabel && (
+                <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 border border-blue-200">
+                  {logikLabel}
+                </span>
+              )}
+              {!isBuendel && aufgabe.anforderungsebene && (
                 <>
                   <span className="text-muted-foreground/40 text-[10px]">·</span>
                   <span className="text-[10px] text-muted-foreground">
@@ -117,7 +165,7 @@ export default function LernpfadeAufgabenPool({
   onSelectSystemBaustein,
   onPreviewAufgabe,
 }) {
-  const [activeFilters, setActiveFilters] = useState(new Set(AUFGABEN_TYPEN_ORDER));
+  const [activeFilters, setActiveFilters] = useState(new Set(FILTER_GROUP_KEYS));
   const [activeTab, setActiveTab] = useState('aufgaben');
 
   const { data: alleAufgaben = [], isLoading: loadingAufgaben } = useQuery({
@@ -143,27 +191,37 @@ export default function LernpfadeAufgabenPool({
     });
   }, [alleAufgaben]);
 
+  // Hilfs-Map: DB-Typ → Filter-Gruppen-Key
+  const typeToGroup = useMemo(() => {
+    const map = {};
+    FILTER_GROUPS.forEach((g) => g.types.forEach((t) => { map[t] = g.key; }));
+    return map;
+  }, []);
+
   const counts = useMemo(() => {
-    const c = { inhalt: 0, buendel: 0, prozess: 0, projekt_anker: 0 };
+    const c = Object.fromEntries(FILTER_GROUP_KEYS.map((k) => [k, 0]));
     poolAufgaben.forEach((a) => {
-      const typ = a.aufgaben_typ || 'inhalt';
-      if (c[typ] !== undefined) c[typ] += 1;
+      const groupKey = typeToGroup[a.aufgaben_typ || 'inhalt'];
+      if (groupKey) c[groupKey] += 1;
     });
     return c;
-  }, [poolAufgaben]);
+  }, [poolAufgaben, typeToGroup]);
 
   const filteredAufgaben = useMemo(() => {
-    return poolAufgaben.filter((a) => activeFilters.has(a.aufgaben_typ || 'inhalt'));
-  }, [poolAufgaben, activeFilters]);
+    return poolAufgaben.filter((a) => {
+      const groupKey = typeToGroup[a.aufgaben_typ || 'inhalt'];
+      return groupKey && activeFilters.has(groupKey);
+    });
+  }, [poolAufgaben, activeFilters, typeToGroup]);
 
   const selectedAufgabeId = selectedAufgabe?.id || null;
   const selectedBausteinId = selectedSystemBaustein?.baustein_id || null;
 
-  const toggleFilter = (typKey) => {
+  const toggleFilter = (groupKey) => {
     setActiveFilters((prev) => {
       const next = new Set(prev);
-      if (next.has(typKey)) next.delete(typKey);
-      else next.add(typKey);
+      if (next.has(groupKey)) next.delete(groupKey);
+      else next.add(groupKey);
       return next;
     });
   };
@@ -205,13 +263,13 @@ export default function LernpfadeAufgabenPool({
               <span className="text-[10px] text-muted-foreground">{filteredAufgaben.length} sichtbar</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {AUFGABEN_TYPEN_ORDER.map((typKey) => (
+              {FILTER_GROUPS.map((group) => (
                 <FilterChip
-                  key={typKey}
-                  typKey={typKey}
-                  active={activeFilters.has(typKey)}
-                  count={counts[typKey] || 0}
-                  onClick={() => toggleFilter(typKey)}
+                  key={group.key}
+                  group={group}
+                  active={activeFilters.has(group.key)}
+                  count={counts[group.key] || 0}
+                  onClick={() => toggleFilter(group.key)}
                 />
               ))}
             </div>

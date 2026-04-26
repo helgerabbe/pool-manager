@@ -11,13 +11,13 @@
  *   Beide Felder sind orthogonal — siehe Spec.
  */
 
-import { Pencil, Folder, Compass, Rocket } from 'lucide-react';
+import { Pencil, Folder, Compass, Rocket, Hand, ListChecks } from 'lucide-react';
 
 export const AUFGABEN_TYPEN = {
   inhalt: {
     value: 'inhalt',
     label: 'Inhalts-Aktivität',
-    short: 'Inhalt',
+    short: 'Transferaufgabe',
     description:
       'Erstelle klassische Aufgaben (z. B. Lückentexte). Der Schüler bearbeitet die Aufgabe und gibt ein Ergebnis ab, das Brian (KI) direkt mit ihm prüft.',
     icon: Pencil,
@@ -37,7 +37,7 @@ export const AUFGABEN_TYPEN = {
   buendel: {
     value: 'buendel',
     label: 'Paket-Bündel',
-    short: 'Bündel',
+    short: 'Lernpaket',
     description:
       'Fasse mehrere Lernpakete aus der Ebene 1 zusammen. Ideal, um Schülern einen klaren Weg durch das Fundamentum vorzugeben.',
     icon: Folder,
@@ -70,6 +70,44 @@ export const AUFGABEN_TYPEN = {
       iconBg: 'bg-emerald-100',
       iconText: 'text-emerald-700',
       hover: 'hover:border-emerald-500 hover:bg-emerald-50',
+    },
+  },
+  handlung: {
+    value: 'handlung',
+    label: 'Handlungsaufgabe',
+    short: 'Handlungsorientiert',
+    description:
+      'Aufgabe mit physischem Material – die Lehrkraft begleitet, der Schüler bestätigt die Erledigung digital.',
+    icon: Hand,
+    color: {
+      ring: 'ring-amber-400',
+      border: 'border-amber-400',
+      bg: 'bg-amber-50',
+      bgSolid: 'bg-amber-500',
+      text: 'text-amber-700',
+      textOn: 'text-white',
+      iconBg: 'bg-amber-100',
+      iconText: 'text-amber-700',
+      hover: 'hover:border-amber-500 hover:bg-amber-50',
+    },
+  },
+  auswahl_buendel: {
+    value: 'auswahl_buendel',
+    label: 'Auswahl-Bündel',
+    short: 'Auswahl-Bündel',
+    description:
+      'Brian-Bündel mit Wahlpflicht – der Schüler bearbeitet eine vorgegebene Anzahl aus mehreren Aufgaben.',
+    icon: ListChecks,
+    color: {
+      ring: 'ring-amber-400',
+      border: 'border-amber-400',
+      bg: 'bg-amber-50',
+      bgSolid: 'bg-amber-500',
+      text: 'text-amber-700',
+      textOn: 'text-white',
+      iconBg: 'bg-amber-100',
+      iconText: 'text-amber-700',
+      hover: 'hover:border-amber-500 hover:bg-amber-50',
     },
   },
   projekt_anker: {
