@@ -58,18 +58,18 @@ export default function SystemBausteinPoolItem({
                 {...provided.dragHandleProps}
                 onClick={onClick}
                 data-platzhalter={isPlatzhalter ? 'true' : 'false'}
-                className={`w-full text-left rounded-lg p-2.5 border transition-all flex items-center gap-2 cursor-grab active:cursor-grabbing ${containerClasses} ${
+                className={`w-full text-left rounded-lg py-1.5 px-2 border transition-all flex items-center gap-2 cursor-grab active:cursor-grabbing ${containerClasses} ${
                   snapshot.isDragging ? 'shadow-lg ring-2 ring-slate-400 bg-white' : ''
                 }`}
               >
                 <div
-                  className={`w-8 h-8 rounded-md flex items-center justify-center shrink-0 ${
+                  className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${
                     isPlatzhalter ? PLATZHALTER_CLASSES.iconBox : 'bg-slate-200'
                   }`}
                 >
                   <Icon
                     strokeWidth={2.5}
-                    className={`w-4 h-4 ${
+                    className={`w-3 h-3 ${
                       isPlatzhalter ? PLATZHALTER_CLASSES.icon : 'text-slate-700'
                     }`}
                   />
