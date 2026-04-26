@@ -50,6 +50,11 @@ function aggregateMin(statuses, fallback = AMPEL.GREEN) {
  *   - Andernfalls → red (zu wenig auswählbare Aufgaben fertig).
  *
  * Leere Kinderliste mit requiredGreen > 0 → red.
+ *
+ * Defensive Hinweis: Diese Funktion ist rein numerisch und damit
+ * zyklus-immun. Sie erhält bereits aufgelöste Status-Werte und keine
+ * Aufgaben-Referenzen. Die Zyklus-Erkennung passiert eine Ebene höher
+ * in `getAmpelStatus` über `visitedIds`.
  */
 function aggregateAtLeastNGreen(statuses, requiredGreen) {
   if (!Number.isFinite(requiredGreen) || requiredGreen <= 0) {
@@ -108,9 +113,16 @@ function getFlatLernpaketStatus(lernpaket) {
  * @param {object} ctx                          - Vorab geladene Maps.
  * @param {Map} ctx.aufgabenById                - Alle Aufgaben der Einheit.
  * @param {Map} ctx.lernpaketeById              - Alle Lernpakete der Einheit.
+ * @param {Set<string>} [visitedIds]            - Interne Zyklus-Erkennung.
+ *        Bei Bündel-/Auswahl-/Anker-Auflösung tragen wir die ID der gerade
+ *        besuchten Aufgabe ein. Wenn ein Kind später mit der gleichen ID
+ *        auftaucht (Aufgabe A → B → A), brechen wir defensiv mit RED ab,
+ *        statt in eine Endlosschleife zu laufen. Das ist heute nur ein
+ *        theoretisches Risiko (Kinder werden flach bewertet), schützt
+ *        aber zukünftige Erweiterungen, die Bündel-in-Bündel zulassen.
  * @returns {'green'|'yellow'|'red'}
  */
-export function getAmpelStatus(item, ctx = {}) {
+export function getAmpelStatus(item, ctx = {}, visitedIds = new Set()) {
   if (!item) return AMPEL.RED;
 
   // System-Bausteine sind reine Strukturmarker → immer grün.
@@ -122,6 +134,11 @@ export function getAmpelStatus(item, ctx = {}) {
   const aufgabe = aufgabenById.get(item.ref_id);
   if (!aufgabe) return AMPEL.RED;
 
+  // Zyklus-Schutz: ID schon im aktuellen Auflösungs-Pfad? → RED + abbrechen.
+  if (visitedIds.has(aufgabe.id)) return AMPEL.RED;
+  const nextVisited = new Set(visitedIds);
+  nextVisited.add(aufgabe.id);
+
   const typ = aufgabe.aufgaben_typ || 'inhalt';
 
   // Inhalt / Prozess / Handlung: flache Prüfung.
@@ -132,6 +149,9 @@ export function getAmpelStatus(item, ctx = {}) {
   }
 
   // Bündel: rekursive Prüfung über verlinkte Lernpakete (Ebene 1).
+  // Lernpakete sind Container ohne weitere Aufgaben-Referenzen → flache
+  // Auswertung; visitedIds werden hier nicht weitergereicht, weil die
+  // Auflösung an dieser Stelle abbricht.
   if (typ === 'buendel') {
     const ids = aufgabe.verlinkte_lernpaket_ids || [];
     if (ids.length === 0) return AMPEL.RED; // leeres Bündel = unvollständig
@@ -143,23 +163,31 @@ export function getAmpelStatus(item, ctx = {}) {
 
   // Auswahl-Bündel (Brian-Bündel, X-von-Y): "at-least-N-green"-Aggregation.
   // erforderliche_anzahl === 0 ⇒ alle Kinder sind Pflicht (MIN-Regel).
+  // Kinder sind selbst Aufgaben → Zyklus-Set muss propagiert werden.
   if (typ === 'auswahl_buendel') {
     const ids = aufgabe.verlinkte_aufgaben_ids || [];
     if (ids.length === 0) return AMPEL.RED; // leeres Bündel = unvollständig
     const required = Number.isFinite(aufgabe.erforderliche_anzahl)
       ? aufgabe.erforderliche_anzahl
       : 0;
-    const childStatuses = ids.map((id) => getFlatAufgabeStatus(aufgabenById.get(id)));
+    const childStatuses = ids.map((id) => {
+      if (nextVisited.has(id)) return AMPEL.RED; // direkter Selbst-/Rückverweis
+      return getFlatAufgabeStatus(aufgabenById.get(id));
+    });
     const childrenAgg = aggregateAtLeastNGreen(childStatuses, required);
     // Eigener Status der Bündel-Aufgabe darf nicht besser sein als Kinder-Aggregat.
     return minStatus(getFlatAufgabeStatus(aufgabe), childrenAgg);
   }
 
   // Projekt-Anker: rekursive Prüfung über verlinkte Ebene-3-Aufgaben.
+  // Kinder sind Aufgaben (Ebene 3) → Zyklus-Set propagieren.
   if (typ === 'projekt_anker') {
     const ids = aufgabe.verlinkte_projekt_ids || [];
     if (ids.length === 0) return AMPEL.RED;
-    const childStatuses = ids.map((id) => getFlatAufgabeStatus(aufgabenById.get(id)));
+    const childStatuses = ids.map((id) => {
+      if (nextVisited.has(id)) return AMPEL.RED;
+      return getFlatAufgabeStatus(aufgabenById.get(id));
+    });
     const childrenMin = aggregateMin(childStatuses);
     return minStatus(getFlatAufgabeStatus(aufgabe), childrenMin);
   }
