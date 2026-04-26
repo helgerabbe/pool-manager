@@ -28,7 +28,7 @@ import { getAktivitaetenByLernpaket, getAktivitaetenKatalog } from '@/services/A
 // Layout-Shifts darunter, wenn der Inhalt unterschiedlich lang ist.
 function MonitorContainer({ children, className = '' }) {
   return (
-    <div className={`h-48 overflow-y-auto rounded-xl ${className}`}>
+    <div className={`h-36 overflow-y-auto rounded-xl ${className}`}>
       {children}
     </div>
   );
