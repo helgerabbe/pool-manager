@@ -37,10 +37,20 @@ export function useDashboardSync({ einheitId, isStructuralEditingActive, debounc
   const debounceTimerRef = useRef(null);
   const pendingPayloadRef = useRef(null);
 
-  const flushSave = useCallback(async () => {
-    if (!einheitId || !pendingPayloadRef.current) return;
-    const payload = pendingPayloadRef.current;
+  // Optionaler `forcePayload`: erlaubt dem Aufrufer (z. B.
+  // `handleEndDashboardEditing` im Workspace), den aktuellen lokalen State
+  // explizit zu übergeben — auch wenn aktuell kein pending Save vorgemerkt
+  // ist. Das ist ein Sicherheitsnetz gegen verlorene Schreibvorgänge bei
+  // Race-Conditions zwischen Debounce-Timer, React-Render und Lock-Release.
+  const flushSave = useCallback(async (forcePayload = null) => {
+    if (!einheitId) return;
+    const payload = forcePayload ?? pendingPayloadRef.current;
+    if (!payload) return;
     pendingPayloadRef.current = null;
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
     setSaveState('saving');
     try {
       await base44.entities.Einheiten.update(einheitId, { lernpfade_konfiguration: payload });

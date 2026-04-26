@@ -171,12 +171,34 @@ export default function LernpfadeCockpit({
   );
 
   // ── Re-Sync der Konfiguration aus dem Einheit-Snapshot ──
-  // ABER NUR im Lesemodus – im Edit-Modus ist der lokale State führend.
+  // Greift nur:
+  //   (a) bei Wechsel der Einheit (einheit.id) – initial laden,
+  //   (b) bei Wechsel von Edit ↔ Lesemodus – nach „Bearbeitung beenden"
+  //       den frisch persistierten Stand übernehmen.
+  // NICHT bei jedem Re-Render im Edit-Modus, weil sonst der lokale,
+  // gerade frisch eingefügte Standard-Raster-State von einem stale
+  // Server-Snapshot überschrieben werden könnte (Race mit dem Save).
+  const lastSyncedEinheitId = useRef(null);
   useEffect(() => {
-    if (!isStructuralEditingActive) {
-      setKonfiguration(einheit?.lernpfade_konfiguration || DEFAULT_KONFIG);
+    if (isStructuralEditingActive) return; // Edit-Modus: lokaler State ist führend.
+    if (lastSyncedEinheitId.current === einheit?.id) return; // gleiche Einheit, kein Re-Sync.
+    lastSyncedEinheitId.current = einheit?.id;
+    const serverKonfig = einheit?.lernpfade_konfiguration || DEFAULT_KONFIG;
+    setKonfiguration(serverKonfig);
+    konfigurationRef.current = serverKonfig;
+  }, [einheit?.id, einheit?.lernpfade_konfiguration, isStructuralEditingActive]);
+
+  // Beim Beenden des Edit-Modus: einmalig den Server-Snapshot übernehmen,
+  // damit der Lese-Modus den persistierten Stand zeigt.
+  const wasEditingActive = useRef(false);
+  useEffect(() => {
+    if (wasEditingActive.current && !isStructuralEditingActive) {
+      const serverKonfig = einheit?.lernpfade_konfiguration || DEFAULT_KONFIG;
+      setKonfiguration(serverKonfig);
+      konfigurationRef.current = serverKonfig;
     }
-  }, [einheit?.lernpfade_konfiguration, isStructuralEditingActive]);
+    wasEditingActive.current = isStructuralEditingActive;
+  }, [isStructuralEditingActive, einheit?.lernpfade_konfiguration]);
 
   // ── Sync-Hook (debounced Save + Junction-Sync + Toasts) ─────────────
   const { saveState, scheduleSave, flushSave, hasPending } = useDashboardSync({
@@ -185,22 +207,42 @@ export default function LernpfadeCockpit({
   });
 
   // Parent (Workspace) kann via flushRef synchron einen Save erzwingen,
-  // bevor er den Struktur-Lock freigibt. Siehe Workspace.handleEndDashboardEditing.
+  // bevor er den Struktur-Lock freigibt. Wir geben hier eine Wrapper-Funktion
+  // weiter, die IMMER den aktuellen lokalen State (alle 4 Lerntypen!) als
+  // forcePayload mitschickt — egal ob pendingPayloadRef gerade gefüllt ist
+  // oder nicht. Das schützt vor Datenverlust, wenn z. B. der Standard-
+  // Raster-Apply zwar `setKonfiguration` aufgerufen, aber der Debounce-
+  // Timer schon abgelaufen war oder ein anderer Save in flight ist.
   useEffect(() => {
     if (!flushRef) return undefined;
-    flushRef.current = flushSave;
+    const wrappedFlush = async () => {
+      // Snapshot des aktuellen lokalen States als Sicherheitsnetz.
+      const snapshot = konfigurationRef.current || DEFAULT_KONFIG;
+      await flushSave(snapshot);
+    };
+    flushRef.current = wrappedFlush;
     return () => {
-      if (flushRef.current === flushSave) flushRef.current = null;
+      if (flushRef.current === wrappedFlush) flushRef.current = null;
     };
   }, [flushRef, flushSave]);
 
+  // konfigurationRef hält den aktuellen State synchron lesbar – wichtig, weil
+  // der setState-Updater nur LESEN darf (keine Side-Effects). Wir berechnen
+  // also `next` synchron, setzen den State UND rufen scheduleSave separat auf.
+  // Damit ist garantiert, dass JEDE Mutation (auch reine Hüllen-Erstellung
+  // ohne Aufgaben-IDs) zuverlässig zum Save geschickt wird.
+  const konfigurationRef = useRef(konfiguration);
+  useEffect(() => {
+    konfigurationRef.current = konfiguration;
+  }, [konfiguration]);
+
   const updateKonfiguration = useCallback(
     (updater) => {
-      setKonfiguration((prev) => {
-        const next = typeof updater === 'function' ? updater(prev) : updater;
-        scheduleSave(next);
-        return next;
-      });
+      const prev = konfigurationRef.current;
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      konfigurationRef.current = next;
+      setKonfiguration(next);
+      scheduleSave(next);
     },
     [scheduleSave]
   );
