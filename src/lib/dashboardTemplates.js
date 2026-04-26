@@ -189,9 +189,21 @@ export const TEMPLATE_LERN_TYPEN = Object.freeze([
  * Greift in `applyDashboardTemplate` für Items, die per Template kommen.
  *
  * Hinweis: Die Konstante wird auch von Tests genutzt.
+ *
+ * @legacy DO NOT REMOVE without a full data migration.
+ * ⚠️  Bestandspfade von Lehrkräften enthalten unter Umständen noch die
+ *     alte ID `sys_landkarte`. Der Eintrag wird beim Render NICHT durch
+ *     einen Fehler ersetzt – aber das Re-Apply eines V2-Templates erwartet
+ *     dieses Mapping, um den Sektor sauber auf `sys_map_reduced`
+ *     umzuschreiben. Wer den Alias entfernt, muss vorher per
+ *     Daten-Migration alle `lernpfade_konfiguration`-Snapshots in der DB
+ *     bereinigen, sonst entstehen "weiße Karten"-Renderings im Schüler-Pfad.
+ *     Geplanter Cut-over: nach Sprint H (Big-Bang-Migration der
+ *     Bestandspfade), bis dahin BLEIBT diese Map zwingend bestehen.
  */
 export const LEGACY_BAUSTEIN_ALIAS = Object.freeze({
-  // Default-Mapping für die alte, eindeutige Karte: Reduced ist der
-  // konservativere Default (V1 hatte nur eine Karte für alle Lerntypen).
+  // @legacy V1 → V2: Default-Mapping für die alte, eindeutige Karte.
+  // Reduced ist der konservativere Default (V1 hatte nur eine Karte für
+  // alle Lerntypen, V2 unterscheidet zwischen reduced und full).
   sys_landkarte: 'sys_map_reduced',
 });
