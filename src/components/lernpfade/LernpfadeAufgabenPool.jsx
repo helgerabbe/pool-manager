@@ -25,36 +25,55 @@ import MonitorPanel from '@/components/lernpfade/MonitorPanel';
 import SystemBausteinPoolItem from '@/components/lernpfade/SystemBausteinPoolItem';
 
 // ── Filter-Gruppen (Pool-UI) ──────────────────────────────────────────────
-// Mapping didaktischer Gruppen → DB-Typen (aufgaben_typ).
-// Entfernt das tote Konzept "prozess" und ersetzt die rohen DB-Labels durch
-// die mentale Sortierung der Lehrkraft.
+// Hybrid-Filterlogik: Wir prüfen NICHT mehr nur den DB-Typ, sondern verwenden
+// für jede Gruppe einen Prädikat-Match. So fallen auch unsaubere Datensätze
+// (z. B. aufgaben_typ='inhalt' MIT anforderungsebene='3 - Projekt') in den
+// richtigen Tab.
+const isProjekt = (item) =>
+  item.aufgaben_typ === 'projekt_anker' ||
+  String(item.anforderungsebene || '').includes('Projekt');
+
 const FILTER_GROUPS = [
   {
     key: 'lernpakete',
     label: 'Lernpakete',
     icon: Folder,
-    types: ['buendel'],
     color: 'bg-blue-500 text-white border-blue-500',
     inactive: 'bg-white text-blue-700 border-blue-200 hover:bg-blue-50',
+    matches: (item) => item.aufgaben_typ === 'buendel' || item.typ === 'buendel',
   },
   {
     key: 'aufgaben',
     label: 'Aufgaben',
     icon: Pencil,
-    types: ['inhalt', 'handlung', 'auswahl_buendel'],
     color: 'bg-amber-500 text-white border-amber-500',
     inactive: 'bg-white text-amber-700 border-amber-200 hover:bg-amber-50',
+    matches: (item) =>
+      ['inhalt', 'handlung', 'auswahl_buendel'].includes(item.aufgaben_typ) &&
+      !isProjekt(item),
   },
   {
     key: 'projekte',
     label: 'Projekte',
     icon: Rocket,
-    types: ['projekt_anker'],
     color: 'bg-violet-500 text-white border-violet-500',
     inactive: 'bg-white text-violet-700 border-violet-200 hover:bg-violet-50',
+    matches: isProjekt,
   },
 ];
 const FILTER_GROUP_KEYS = FILTER_GROUPS.map((g) => g.key);
+
+/**
+ * Liefert den FILTER_GROUPS-Key, in den ein Item gehört, oder null.
+ * Reihenfolge ist relevant: zuerst Lernpaket, dann Projekt, dann Aufgaben.
+ * Damit verhalten sich der Counter, der Filter und das Label exakt gleich.
+ */
+function getGroupKeyForItem(item) {
+  for (const g of FILTER_GROUPS) {
+    if (g.matches(item)) return g.key;
+  }
+  return null;
+}
 
 // Lesbares Label für das Lernpaket-Logik-Badge auf buendel-Karten.
 const LERNPAKET_LOGIK_LABELS = {
@@ -96,7 +115,17 @@ function AufgabeListItem({ aufgabe, index, isSelected, isUsed, onClick }) {
   const logikLabel = isBuendel
     ? (LERNPAKET_LOGIK_LABELS[aufgabe.lernpaket_logik] || LERNPAKET_LOGIK_LABELS.standard)
     : null;
-  const subtitle = isBuendel ? `Lernpaket · ${logikLabel}` : typMeta.short;
+  // Subtitle MUSS dem Tab folgen, in dem das Item landet — sonst zeigen
+  // Ebene-3-Aufgaben mit aufgaben_typ='inhalt' fälschlich "Transferaufgabe".
+  // Quelle der Wahrheit: getGroupKeyForItem (siehe FILTER_GROUPS).
+  let subtitle;
+  if (isBuendel) {
+    subtitle = `Lernpaket · ${logikLabel}`;
+  } else if (getGroupKeyForItem(aufgabe) === 'projekte') {
+    subtitle = 'Projekt';
+  } else {
+    subtitle = typMeta.short;
+  }
 
   return (
     <Draggable draggableId={aufgabe.id} index={index} isDragDisabled={isUsed}>
@@ -189,44 +218,31 @@ export default function LernpfadeAufgabenPool({
     },
   });
 
-  // Pool: alle für die Filtergruppen relevanten Typen, ohne Tombstones.
-  // Wir filtern primär TYP-basiert (buendel, inhalt, handlung, auswahl_buendel,
-  // projekt_anker), damit Lernpakete auch dann erscheinen, wenn deren
-  // anforderungsebene nicht gesetzt oder von der Norm abweicht.
-  const allowedTypes = useMemo(() => {
-    const set = new Set();
-    FILTER_GROUPS.forEach((g) => g.types.forEach((t) => set.add(t)));
-    return set;
-  }, []);
+  // Pool: alle Items, die in mind. eine Filtergruppe fallen, ohne Tombstones.
+  // Dadurch erscheinen auch Lernpakete (buendel) sowie unsauber getaggte
+  // Projekt-Aufgaben (z. B. aufgaben_typ='inhalt' + anforderungsebene='3 - Projekt').
   const poolAufgaben = useMemo(() => {
     return (alleAufgaben || []).filter((a) => {
       if (a.sync_status === 'to_delete') return false;
-      return allowedTypes.has(a.aufgaben_typ || 'inhalt');
+      return getGroupKeyForItem(a) !== null;
     });
-  }, [alleAufgaben, allowedTypes]);
-
-  // Hilfs-Map: DB-Typ → Filter-Gruppen-Key
-  const typeToGroup = useMemo(() => {
-    const map = {};
-    FILTER_GROUPS.forEach((g) => g.types.forEach((t) => { map[t] = g.key; }));
-    return map;
-  }, []);
+  }, [alleAufgaben]);
 
   const counts = useMemo(() => {
     const c = Object.fromEntries(FILTER_GROUP_KEYS.map((k) => [k, 0]));
     poolAufgaben.forEach((a) => {
-      const groupKey = typeToGroup[a.aufgaben_typ || 'inhalt'];
+      const groupKey = getGroupKeyForItem(a);
       if (groupKey) c[groupKey] += 1;
     });
     return c;
-  }, [poolAufgaben, typeToGroup]);
+  }, [poolAufgaben]);
 
   const filteredAufgaben = useMemo(() => {
     return poolAufgaben.filter((a) => {
-      const groupKey = typeToGroup[a.aufgaben_typ || 'inhalt'];
+      const groupKey = getGroupKeyForItem(a);
       return groupKey && activeFilters.has(groupKey);
     });
-  }, [poolAufgaben, activeFilters, typeToGroup]);
+  }, [poolAufgaben, activeFilters]);
 
   const selectedAufgabeId = selectedAufgabe?.id || null;
   const selectedBausteinId = selectedSystemBaustein?.baustein_id || null;
