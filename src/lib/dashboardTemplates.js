@@ -128,34 +128,42 @@ const PRAGMATIKER = [
 ];
 
 // ── Template: Ehrgeizig ─────────────────────────────────────────────────
+//
+// Aufbau (V2.2):
+//   Sektor 0 – Orientierung                       : Einführung, Frageblock, Einstiegsdiagnose
+//   Sektor 1 – Einstieg & Anmeldung               : volle Karte + Anmeldung
+//   Sektor 2 – Grundlagen und Training            : Info, Handlung, Lernpaket, Brian-Bündel
+//   Sektor 3 – Vorbereitung auf die schriftliche
+//              Arbeit                             : Zwischenprüfung / Diagnosetest
+//   Sektor 4 – Projekt                            : Projekt-Platzhalter
 const EHRGEIZIG = [
+  {
+    sektor_id: 'tpl_ehr_sec0',
+    titel: '0. Orientierung',
+    modus: 'sequenziell',
+    items: [sys(B.sec0Overview), sys(B.sec0Qblock), sys(B.diagnoseEntry)],
+  },
   {
     sektor_id: 'tpl_ehr_sec1',
     titel: '1. Einstieg & Anmeldung',
     modus: 'sequenziell',
-    items: [sys(B.sec0Overview), sys(B.mapFull), sys(B.examRegister)],
+    items: [sys(B.mapFull), sys(B.examRegister)],
   },
   {
     sektor_id: 'tpl_ehr_sec2',
-    titel: '2. Grundlagen',
+    titel: '2. Grundlagen und Training',
     modus: 'sequenziell',
-    items: [sys(B.pInfo), sys(B.pHandlung), sys(B.pMoodleBuendel)],
+    items: [sys(B.pInfo), sys(B.pHandlung), sys(B.pMoodleBuendel), sys(B.pBrianBuendel)],
   },
   {
     sektor_id: 'tpl_ehr_sec3',
-    titel: '3. Anwendung & Training',
-    modus: 'frei',
-    items: [sys(B.pBrianBuendel)],
-  },
-  {
-    sektor_id: 'tpl_ehr_sec4',
-    titel: '4. Zwischentest',
+    titel: '3. Vorbereitung auf die schriftliche Arbeit',
     modus: 'sequenziell',
     items: [sys(B.zwischentest)],
   },
   {
-    sektor_id: 'tpl_ehr_sec5',
-    titel: '5. Projekt',
+    sektor_id: 'tpl_ehr_sec4',
+    titel: '4. Projekt',
     modus: 'frei',
     items: [sys(B.pProjekt)],
   },

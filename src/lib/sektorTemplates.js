@@ -83,7 +83,7 @@ export function getSektorTemplate(key) {
  * Andere Lerntypen: Standard-Set (Erarbeitung, Zwischentest, Leer).
  */
 export function getSektorTemplateOptionsForLerntyp(lerntyp) {
-  if (lerntyp === 'pragmatiker') {
+  if (lerntyp === 'pragmatiker' || lerntyp === 'ehrgeizig') {
     return [
       {
         key: SEKTOR_TEMPLATE_KEYS.ERARBEITUNG_TRAINING,

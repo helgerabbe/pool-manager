@@ -206,28 +206,52 @@ describe('DASHBOARD_TEMPLATES – V2-Spezifikation', () => {
     ]);
   });
 
-  // ── Ehrgeizig ─────────────────────────────────────────────────────────
+  // ── Ehrgeizig (V2.2) ──────────────────────────────────────────────────
   it('ehrgeizig hat 5 Sektoren mit erwartetem Modus-Muster', () => {
     const t = DASHBOARD_TEMPLATES.ehrgeizig;
     expect(t).toHaveLength(5);
     expect(t.map((s) => s.modus)).toEqual([
       'sequenziell',
       'sequenziell',
-      'frei',
+      'sequenziell',
       'sequenziell',
       'frei',
     ]);
   });
 
-  it('ehrgeizig Sektor 1: Overview → volle Karte → Anmeldung', () => {
+  it('ehrgeizig Sektor 0: Overview → Frageblock → Einstiegsdiagnose', () => {
     expect(DASHBOARD_TEMPLATES.ehrgeizig[0].items.map((i) => i.ref_id)).toEqual([
       'sys_sec0_overview',
+      'sys_sec0_qblock',
+      'sys_diagnose_entry',
+    ]);
+  });
+
+  it('ehrgeizig Sektor 1: volle Karte + Anmeldung', () => {
+    expect(DASHBOARD_TEMPLATES.ehrgeizig[1].items.map((i) => i.ref_id)).toEqual([
       'sys_map_full',
       'sys_exam_register',
     ]);
   });
 
-  it('ehrgeizig Sektor 5 (frei) ist der Projekt-Platzhalter', () => {
+  it('ehrgeizig Sektor 2: Grundlagen und Training (Info → Handlung → Lernpaket → Brian-Bündel)', () => {
+    const sec = DASHBOARD_TEMPLATES.ehrgeizig[2];
+    expect(sec.titel).toBe('2. Grundlagen und Training');
+    expect(sec.items.map((i) => i.ref_id)).toEqual([
+      'sys_platzhalter_info',
+      'sys_platzhalter_handlung',
+      'sys_platzhalter_moodle_buendel',
+      'sys_platzhalter_brian_buendel',
+    ]);
+  });
+
+  it('ehrgeizig Sektor 3: Vorbereitung auf die schriftliche Arbeit', () => {
+    const sec = DASHBOARD_TEMPLATES.ehrgeizig[3];
+    expect(sec.titel).toBe('3. Vorbereitung auf die schriftliche Arbeit');
+    expect(sec.items.map((i) => i.ref_id)).toEqual(['sys_zwischentest']);
+  });
+
+  it('ehrgeizig Sektor 4 (frei) ist der Projekt-Platzhalter', () => {
     const sec = DASHBOARD_TEMPLATES.ehrgeizig[4];
     expect(sec.modus).toBe('frei');
     expect(sec.items.map((i) => i.ref_id)).toEqual(['sys_platzhalter_projekt']);
