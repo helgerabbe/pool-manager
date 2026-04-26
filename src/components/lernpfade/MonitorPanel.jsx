@@ -19,7 +19,7 @@
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { MousePointerClick, Sparkles } from 'lucide-react';
+import { MousePointerClick } from 'lucide-react';
 import { getAufgabenTyp } from '@/lib/aufgabenTypen';
 import { getSystemBausteinIcon } from '@/lib/systemBausteinIcons';
 import { getAktivitaetenByLernpaket, getAktivitaetenKatalog } from '@/services/AktivitaetService';
@@ -53,17 +53,6 @@ function SystemBausteinView({ baustein }) {
 
         {baustein.admin_beschreibung && (
           <p className="text-[11px] text-slate-700 leading-relaxed">{baustein.admin_beschreibung}</p>
-        )}
-
-        {baustein.export_instruktion && (
-          <div className="rounded-md bg-white border border-slate-200 p-2 space-y-0.5">
-            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-1">
-              <Sparkles className="w-2.5 h-2.5" /> Export-Instruktion
-            </p>
-            <p className="text-[11px] text-slate-700 leading-relaxed whitespace-pre-wrap">
-              {baustein.export_instruktion}
-            </p>
-          </div>
         )}
       </div>
     </MonitorContainer>
