@@ -204,3 +204,31 @@ export function getAmpelLabel(status) {
   if (status === AMPEL.YELLOW) return 'Geändert seit letztem Export';
   return 'Noch nicht bereit (Entwurf)';
 }
+
+// ── Export-Freigabe & Vollständigkeit (Lightweight, flach) ──────────────────
+// Quelle der Wahrheit für den "blauen Haken" auf Dashboard-Karten.
+// Performance-Garantie: ausschließlich flache Feldlesung — kein Tree-Walk,
+// keine zusätzlichen Queries.
+//
+// Ein Element gilt als EXPORT-FREIGEGEBEN, wenn es bereits erfolgreich an
+// Moodle ODER Brian.study synchronisiert wurde (sync_status === 'synced').
+// System-Bausteine sind keine Inhaltselemente → niemals "freigegeben".
+export function isExportFreigegeben(item, ctx = {}) {
+  if (!item || item.type === ITEM_TYPE.SYSTEM) return false;
+  const aufgabe = (ctx.aufgabenById || new Map()).get(item.ref_id);
+  if (!aufgabe) return false;
+  return (
+    aufgabe.moodle_sync_status === 'synced' ||
+    aufgabe.brian_sync_status === 'synced' ||
+    aufgabe.sync_status === 'synced'
+  );
+}
+
+// Lightweight-Vollständigkeit: nur das flache `content_status`-Feld.
+// Kein rekursives Nachladen — wenn der Wert nicht im Payload steht, false.
+export function isContentApproved(item, ctx = {}) {
+  if (!item || item.type === ITEM_TYPE.SYSTEM) return true; // Strukturmarker zählen als ok
+  const aufgabe = (ctx.aufgabenById || new Map()).get(item.ref_id);
+  if (!aufgabe) return false;
+  return aufgabe.content_status === 'approved';
+}

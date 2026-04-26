@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { getAufgabenTyp, ITEM_TYPE } from '@/lib/aufgabenTypen';
 import SystemBausteinPill from '@/components/lernpfade/SystemBausteinPill';
 import AmpelBadge from '@/components/lernpfade/AmpelBadge';
+import { isExportFreigegeben, isContentApproved } from '@/lib/ampelLogic';
 
 function ModusToggle({ modus, onChange, disabled }) {
   return (
@@ -67,7 +68,7 @@ const LERNTYP_VARIANTE = {
   passioniert: { label: 'Wissensspeicher', cls: 'bg-violet-100 text-violet-700 border-violet-200' },
 };
 
-function AufgabePill({ aufgabe, refId, sektorId, index, onRemove, onSelect, isSelected, disabled, ampelStatus, onOpenEditor, activeLernTyp }) {
+function AufgabePill({ aufgabe, refId, sektorId, index, onRemove, onSelect, isSelected, disabled, ampelStatus, exportReady, contentApproved, onOpenEditor, activeLernTyp }) {
   // Fallback, falls die Aufgabe (noch) nicht im Cache ist.
   const titel = aufgabe?.titel || 'Aufgabe';
   const typMeta = getAufgabenTyp(aufgabe?.aufgaben_typ);
@@ -118,6 +119,8 @@ function AufgabePill({ aufgabe, refId, sektorId, index, onRemove, onSelect, isSe
           {ampelStatus && (
             <AmpelBadge
               status={ampelStatus}
+              exportReady={exportReady}
+              contentApproved={contentApproved}
               onFix={onOpenEditor && aufgabe ? () => onOpenEditor(aufgabe) : undefined}
             />
           )}
@@ -154,8 +157,9 @@ export default function LernpfadeSektor({
   selectedSystemBausteinId,
   getAmpelStatusForItem,
   onOpenAufgabeEditor,
-}) {
+  }) {
   const items = Array.isArray(sektor.items) ? sektor.items : [];
+
 
   return (
     <div className="rounded-lg border border-border bg-card/80 p-3 space-y-2">
@@ -224,6 +228,7 @@ export default function LernpfadeSektor({
                   />
                 );
               }
+              const ctx = { aufgabenById };
               return (
                 <AufgabePill
                   key={`auf-${idx}-${item.ref_id}`}
@@ -236,6 +241,8 @@ export default function LernpfadeSektor({
                   isSelected={selectedAufgabeId === item.ref_id}
                   disabled={readOnly}
                   ampelStatus={getAmpelStatusForItem ? getAmpelStatusForItem(item) : undefined}
+                  exportReady={isExportFreigegeben(item, ctx)}
+                  contentApproved={isContentApproved(item, ctx)}
                   onOpenEditor={onOpenAufgabeEditor}
                   activeLernTyp={activeLernTyp}
                 />

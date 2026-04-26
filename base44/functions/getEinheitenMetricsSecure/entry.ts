@@ -24,12 +24,16 @@
  *     }
  *   }
  *
- * Punkte-Regeln (Workstream 3):
- *   - System-Baustein, der KEIN Platzhalter ist  → 1 Punkt
- *   - Platzhalter (sys_platzhalter_*)           → 0 Punkte
- *   - Aufgaben-Item mit Ampel GREEN              → 1 Punkt
- *   - Aufgaben-Item mit Ampel YELLOW/RED         → 0 Punkte
- *   - Leeres Sektor-Array → 0%
+ * Punkte-Regeln (Workstream 3 – verschärft):
+ *   - System-Baustein, der KEIN Platzhalter ist        → 1 Punkt
+ *   - Platzhalter (sys_platzhalter_*)                  → 0 Punkte
+ *   - Aufgaben-Item mit Ampel GREEN UND Export-freigegeben (sync_status === 'synced')
+ *                                                       → 1 Punkt
+ *   - Alle anderen Aufgaben-Items                      → 0 Punkte
+ *   - Leeres Sektor-Array                              → 0%
+ *
+ * "Export-freigegeben" = sync_status, moodle_sync_status oder brian_sync_status
+ * der Aufgabe steht auf 'synced' (= bereits live in Moodle/Brian).
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
@@ -142,11 +146,16 @@ function calcProgressForLerntyp(sektoren, ctx) {
         continue;
       }
 
-      // Aufgabe → Ampel auswerten
+      // Aufgabe → Ampel auswerten + Export-Freigabe prüfen.
+      // Nur wenn BEIDE Bedingungen erfüllt sind, gibt es 1 Punkt.
       const aufgabe = ctx.aufgabenById.get(item.ref_id);
       if (!aufgabe) continue; // unbekannt → 0
       const ampel = getAmpelForAufgabe(aufgabe, ctx);
-      if (ampel === AMPEL_GREEN) earned += 1;
+      const exportReady =
+        aufgabe.moodle_sync_status === 'synced' ||
+        aufgabe.brian_sync_status === 'synced' ||
+        aufgabe.sync_status === 'synced';
+      if (ampel === AMPEL_GREEN && exportReady) earned += 1;
     }
   }
 
