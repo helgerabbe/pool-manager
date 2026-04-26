@@ -322,3 +322,38 @@ Die heutige 3-Tabellen-Rechteprüfung (User-Auth → `Benutzer` →
 abgelöst. Die Funktion selbst schrumpft auf einen einzigen
 `INSERT … ON CONFLICT … DO UPDATE`, der durch RLS-Policies abgesichert
 ist. Audit-Logging wandert in einen `AFTER INSERT`-Trigger.
+
+---
+
+## 10. Konsolidierung der Backend-Utilities: Rate-Limiter (2026-04-26)
+
+**Status Quo.** Die Sliding-Window-Logik liegt zentral in
+`functions/utils/rateLimiter.js`. Konsumierende Functions importieren
+sie nicht direkt (Deno-Deploy-Constraint „NO LOCAL IMPORTS" – siehe §4b),
+sondern halten eine **Inline-Kopie** des Limiters; jede Kopie trägt den
+Header-Kommentar `@MIGRATION_BLOCKER: IN-MEMORY STATE`.
+
+**Aktuelle Inline-Kopien:**
+- `functions/addEinheitMemberSecure`
+
+**Herausforderung.** Eine prozess-lokale `Map` ist auf Edge-Functions
+nicht verlässlich:
+- Cold-Starts setzen den Speicher zurück → Limit wirkungslos.
+- Mehrere Isolates pro Region → jeder Worker hat seine eigene Map,
+  ein Angreifer kann Limits durch Sticky-Session-Bypass umgehen.
+
+**Lösung nach Migration (Supabase / Edge-Functions):**
+1. `functions/utils/rateLimiter.js` wird auf einen externen
+   Redis-Provider umgestellt (Upstash oder Supabase-eigener KV-Store).
+   Sliding-Window per `INCR` + `EXPIRE` oder `ZADD` + `ZREMRANGEBYSCORE`.
+2. Sobald lokale Imports zwischen Functions möglich sind (Supabase
+   Edge Runtime erlaubt das), entfallen alle Inline-Kopien – jede
+   Function importiert nur noch `isRateLimited` aus der Utility.
+3. Damit muss bei Tarif-/Limit-Änderungen nur **eine** Datei angefasst
+   werden; das gesamte System ist konsistent abgesichert.
+
+**Definition of Done für die Migration.**
+- [ ] `rateLimiter.js` nutzt Redis statt `Map` (Upstash-Client).
+- [ ] Alle Inline-Kopien aus den Functions entfernt.
+- [ ] `@MIGRATION_BLOCKER`-Suche im Repo findet keine Treffer mehr
+      für den Rate-Limiter.
