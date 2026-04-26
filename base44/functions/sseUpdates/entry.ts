@@ -24,7 +24,7 @@
  * ──────────────────────────────────────────────────────────────────────────
  */
 
-import { createClientFromRequest, createClient } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const WATCHED_ENTITIES = ['Einheiten', 'Lernpakete'];
 const HEARTBEAT_INTERVAL_MS = 15_000;
@@ -116,8 +116,9 @@ function listenToChanges(serviceClient, entityName, callback) {
 Deno.serve(async (req) => {
   // ── Auth ─────────────────────────────────────────────────────────────────
   let user;
+  let base44;
   try {
-    const base44 = createClientFromRequest(req);
+    base44 = createClientFromRequest(req);
     user = await base44.auth.me();
   } catch (err) {
     console.warn('[sseUpdates] Auth-Fehler:', err?.message);
@@ -137,10 +138,9 @@ Deno.serve(async (req) => {
   console.log(`[sseUpdates] Stream gestartet für ${user.email}`);
 
   // ── Service-Client für Subscriptions (Whitelist filtert Inhalte) ─────────
-  const serviceClient = createClient({
-    appId: Deno.env.get('BASE44_APP_ID'),
-    requiresAuth: false,
-  });
+  // Wir verwenden den bereits authentifizierten Request-Client; sein
+  // `asServiceRole` greift den platform-internen Service-Token automatisch.
+  const serviceClient = base44;
 
   // ── Stream-Setup ─────────────────────────────────────────────────────────
   const encoder = new TextEncoder();
