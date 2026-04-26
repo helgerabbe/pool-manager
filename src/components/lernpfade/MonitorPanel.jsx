@@ -24,10 +24,11 @@ import { getAufgabenTyp } from '@/lib/aufgabenTypen';
 import { getSystemBausteinIcon } from '@/lib/systemBausteinIcons';
 import { getAktivitaetenByLernpaket, getAktivitaetenKatalog } from '@/services/AktivitaetService';
 
-// Gemeinsamer Container: feste Maximalhöhe + internes Scrolling.
+// Gemeinsamer Container: FESTE Höhe + internes Scrolling. Verhindert
+// Layout-Shifts darunter, wenn der Inhalt unterschiedlich lang ist.
 function MonitorContainer({ children, className = '' }) {
   return (
-    <div className={`max-h-48 overflow-y-auto rounded-xl ${className}`}>
+    <div className={`h-48 overflow-y-auto rounded-xl ${className}`}>
       {children}
     </div>
   );
