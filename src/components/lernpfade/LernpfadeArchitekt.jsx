@@ -11,10 +11,9 @@
  */
 
 import React from 'react';
-import { Sparkles, Layers, Trophy, Star, Plus, Zap, BookOpen, ShieldCheck, ShieldOff, Loader2, PenLine } from 'lucide-react';
+import { Sparkles, Layers, Trophy, Star, Plus, BookOpen, ShieldCheck, ShieldOff, Loader2, PenLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import LernpfadeSektor from '@/components/lernpfade/LernpfadeSektor';
-import PfadKopierenMenu from '@/components/lernpfade/PfadKopierenMenu';
 import InfoHint from '@/components/lernpfade/InfoHint';
 
 export const LERN_TYPEN = [
@@ -106,12 +105,10 @@ export default function LernpfadeArchitekt({
   onRemoveSektor,
   onRemoveAufgabeFromPath,
   onRemoveSystemItem,
-  onQuickAddOpen,
   onSelectAufgabe,
   onSelectSystemBaustein,
   selectedAufgabeId,
   selectedSystemBausteinId,
-  onCopyFromLernTyp,
   getAmpelStatusForItem,
   onOpenAufgabeEditor,
   onOpenGuide,
@@ -134,47 +131,14 @@ export default function LernpfadeArchitekt({
   const sektoren = konfiguration?.[activeLernTyp] || [];
   const aktivLabel = LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label;
 
+  const showActionRow = darfFreigeben || darfEntsperren || isStructuralEditingActive;
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Zeile 1: Lerntyp-Pills + Guide (links). Save-Indicator rechts. */}
-      <div className="shrink-0 px-3 py-1.5 border-b border-border bg-card flex items-center gap-2 flex-wrap">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {LERN_TYPEN.map((typ) => (
-            <LernTypTab
-              key={typ.key}
-              typ={typ}
-              active={activeLernTyp === typ.key}
-              count={(konfiguration?.[typ.key] || []).length}
-              onClick={() => onActiveLernTypChange?.(typ.key)}
-            />
-          ))}
-          {onOpenGuide && (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={onOpenGuide}
-              className="gap-1.5 h-7 text-[11px] px-2.5"
-              title="Didaktische Erklärung & Standard-Raster für diesen Lerntyp"
-            >
-              <BookOpen className="w-3 h-3" />
-              Guide
-            </Button>
-          )}
-        </div>
-
-        {SaveIcon && (
-          <span title={saveTitle} className="ml-auto inline-flex items-center">
-            <SaveIcon className={`w-3.5 h-3.5 ${saveIconCls || ''}`} />
-          </span>
-        )}
-      </div>
-
-      {/* Zeile 2: Status-Badge + Aktionen (Prüfen/Entsperren, Pfad kopieren,
-          Quick-Add) und ggf. „Bearbeitung beenden". */}
-      {(darfFreigeben || darfEntsperren || !readOnly || isStructuralEditingActive) && (
+      {/* Zeile 1 (oben): Status-Badge + Aktionen (Prüfen/Entsperren) und
+          „Bearbeitung beenden". */}
+      {showActionRow && (
         <div className="shrink-0 px-3 py-1.5 border-b border-border bg-muted/30 flex items-center gap-1.5 flex-wrap">
-          {/* Status-Badge ganz links in der Aktionszeile */}
           {istPfadGesperrt ? (
             <span
               className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0.5"
@@ -190,7 +154,6 @@ export default function LernpfadeArchitekt({
           )}
 
           <div className="ml-auto flex items-center gap-1.5 flex-wrap">
-            {/* Freigabe / Entsperren */}
             {istPfadGesperrt && darfEntsperren && (
               <div className="inline-flex items-center gap-1">
                 <Button
@@ -226,38 +189,6 @@ export default function LernpfadeArchitekt({
               </div>
             )}
 
-            {!readOnly && (
-              <>
-                <div className="inline-flex items-center gap-1">
-                  <PfadKopierenMenu
-                    lernTypen={LERN_TYPEN}
-                    activeLernTyp={activeLernTyp}
-                    konfiguration={konfiguration}
-                    onCopyFrom={onCopyFromLernTyp}
-                  />
-                  <InfoHint title="Pfad kopieren">
-                    Übernimmt die komplette Sektor-Struktur eines anderen Lerntyps (z. B. „Pragmatiker") in den aktuellen Pfad. Vorhandene Sektoren werden dabei überschrieben.
-                  </InfoHint>
-                </div>
-
-                <div className="inline-flex items-center gap-1">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={onQuickAddOpen}
-                    className="gap-1.5 h-7 text-[11px] px-2.5"
-                  >
-                    <Zap className="w-3 h-3" /> Quick-Add
-                  </Button>
-                  <InfoHint title="Quick-Add">
-                    Legt direkt eine neue Meta-Aufgabe (z. B. Lernpaket-Bündel, Projekt-Anker) an und hängt sie an den aktuellen Pfad – ohne Umweg über den Material-Pool.
-                  </InfoHint>
-                </div>
-              </>
-            )}
-
-            {/* Bearbeitung beenden – ersetzt den globalen Banner */}
             {isStructuralEditingActive && onEndEditing && (
               <Button
                 size="sm"
@@ -273,6 +204,40 @@ export default function LernpfadeArchitekt({
           </div>
         </div>
       )}
+
+      {/* Zeile 2 (unten): Lerntyp-Pills + Guide (links). Save-Indicator rechts. */}
+      <div className="shrink-0 px-3 py-1.5 border-b border-border bg-card flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {LERN_TYPEN.map((typ) => (
+            <LernTypTab
+              key={typ.key}
+              typ={typ}
+              active={activeLernTyp === typ.key}
+              count={(konfiguration?.[typ.key] || []).length}
+              onClick={() => onActiveLernTypChange?.(typ.key)}
+            />
+          ))}
+          {onOpenGuide && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={onOpenGuide}
+              className="gap-1.5 h-7 text-[11px] px-2.5"
+              title="Didaktische Erklärung & Standard-Raster für diesen Lerntyp"
+            >
+              <BookOpen className="w-3 h-3" />
+              Guide
+            </Button>
+          )}
+        </div>
+
+        {SaveIcon && (
+          <span title={saveTitle} className="ml-auto inline-flex items-center">
+            <SaveIcon className={`w-3.5 h-3.5 ${saveIconCls || ''}`} />
+          </span>
+        )}
+      </div>
 
       {/* Canvas */}
       <div ref={canvasScrollRef} className="flex-1 overflow-y-auto p-4 bg-muted/20 min-h-0">

@@ -23,7 +23,6 @@ import { Cloud, CloudOff, Check, Loader2 } from 'lucide-react';
 // genutzt – siehe `saveIndicator` weiter unten. Nicht entfernen.
 import LernpfadeAufgabenPool from '@/components/lernpfade/LernpfadeAufgabenPool';
 import LernpfadeArchitekt, { LERN_TYPEN } from '@/components/lernpfade/LernpfadeArchitekt';
-import LernpfadeQuickAddModal from '@/components/lernpfade/LernpfadeQuickAddModal';
 import AufgabePreviewDialog from '@/components/lernpfade/AufgabePreviewDialog';
 import ReleaseBlockerModal from '@/components/lernpfade/ReleaseBlockerModal';
 import DidaktischerGuidePanel from '@/components/lernpfade/DidaktischerGuidePanel';
@@ -40,9 +39,7 @@ import {
   addSektor,
   patchSektor,
   removeSektor,
-  insertAufgabeInSektor,
   removeAufgabeFromLernTyp,
-  copySektorenBetweenLernTypen,
 } from '@/lib/lernpfadeUtils';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { getAmpelStatus } from '@/lib/ampelLogic';
@@ -70,7 +67,6 @@ export default function LernpfadeCockpit({
     () => einheit?.lernpfade_konfiguration || DEFAULT_KONFIG
   );
   const [activeLernTyp, setActiveLernTyp] = useState('pragmatiker');
-  const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [previewAufgabe, setPreviewAufgabe] = useState(null);
   const [editorAufgabe, setEditorAufgabe] = useState(null);
@@ -284,28 +280,6 @@ export default function LernpfadeCockpit({
     [readOnly, activeLernTyp, updateKonfiguration]
   );
 
-  const handleCopyFromLernTyp = useCallback(
-    (sourceLernTyp) => {
-      if (readOnly || !sourceLernTyp || sourceLernTyp === activeLernTyp) return;
-      const sourceCount = (konfiguration?.[sourceLernTyp] || []).length;
-      if (sourceCount === 0) return;
-      const targetCount = (konfiguration?.[activeLernTyp] || []).length;
-      if (targetCount > 0) {
-        const ok = window.confirm(
-          `Aktuelle Struktur (${targetCount} Sektor${targetCount === 1 ? '' : 'en'}) wird durch ${sourceCount} Sektor${sourceCount === 1 ? '' : 'en'} ersetzt. Fortfahren?`
-        );
-        if (!ok) return;
-      }
-      updateKonfiguration((prev) => copySektorenBetweenLernTypen(prev, sourceLernTyp, activeLernTyp));
-      // Beide Selections leeren – nach einem Pfad-Kopiervorgang können sowohl
-      // ausgewählte Aufgaben als auch System-Bausteine im Pfad nicht mehr
-      // existieren. Vorher wurde nur die Aufgabe zurückgesetzt → Inkonsistenz.
-      setSelectedAufgabeIdState(null);
-      setSelectedSystemBausteinIdState(null);
-    },
-    [readOnly, activeLernTyp, konfiguration, updateKonfiguration]
-  );
-
   // ── Monitor-Selection ──────────────────────────────────────────────
   const selectedAufgabe = useMemo(
     () => (selectedAufgabeId ? aufgabenById.get(selectedAufgabeId) || null : null),
@@ -317,25 +291,6 @@ export default function LernpfadeCockpit({
         ? systemBausteineById.get(selectedSystemBausteinId) || null
         : null,
     [systemBausteineById, selectedSystemBausteinId]
-  );
-
-  // ── Quick-Add ──────────────────────────────────────────────────────
-  const handleQuickAddCreated = useCallback(
-    (created) => {
-      if (!created?.id) return;
-      updateKonfiguration((prev) => {
-        const sektoren = prev?.[activeLernTyp] || [];
-        if (sektoren.length === 0) {
-          const sek = createNewSektor();
-          const withSektor = addSektor(prev, activeLernTyp, sek);
-          return insertAufgabeInSektor(withSektor, activeLernTyp, sek.sektor_id, created.id, undefined);
-        }
-        const lastSektor = sektoren[sektoren.length - 1];
-        return insertAufgabeInSektor(prev, activeLernTyp, lastSektor.sektor_id, created.id, undefined);
-      });
-      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheit?.id] });
-    },
-    [activeLernTyp, updateKonfiguration, queryClient, einheit?.id]
   );
 
   // Save-Indicator als kompaktes Icon (statt eigener Zeile).
@@ -383,12 +338,10 @@ export default function LernpfadeCockpit({
               onRemoveSektor={handleRemoveSektor}
               onRemoveAufgabeFromPath={handleRemoveAufgabeFromPath}
               onRemoveSystemItem={handleRemoveSystemItem}
-              onQuickAddOpen={() => setQuickAddOpen(true)}
               onSelectAufgabe={setSelectedAufgabeId}
               onSelectSystemBaustein={setSelectedSystemBausteinId}
               selectedAufgabeId={selectedAufgabeId}
               selectedSystemBausteinId={selectedSystemBausteinId}
-              onCopyFromLernTyp={handleCopyFromLernTyp}
               getAmpelStatusForItem={getAmpelStatusForItem}
               onOpenAufgabeEditor={handleOpenAufgabeEditor}
               onOpenGuide={() => setIsGuideOpen(true)}
@@ -409,13 +362,6 @@ export default function LernpfadeCockpit({
           </main>
         </div>
       </DragDropContext>
-
-      <LernpfadeQuickAddModal
-        open={quickAddOpen}
-        onOpenChange={setQuickAddOpen}
-        einheitId={einheit?.id}
-        onCreated={handleQuickAddCreated}
-      />
 
       <AufgabePreviewDialog
         open={!!previewAufgabe}
