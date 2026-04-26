@@ -201,7 +201,8 @@ export default function LernpfadeAufgabenPool({
   onSelectSystemBaustein,
   onPreviewAufgabe,
 }) {
-  const [activeFilters, setActiveFilters] = useState(new Set(FILTER_GROUP_KEYS));
+  // Reiter-Verhalten: genau eine Gruppe ist aktiv.
+  const [activeFilter, setActiveFilter] = useState('aufgaben');
   const [activeTab, setActiveTab] = useState('aufgaben');
 
   const { data: alleAufgaben = [], isLoading: loadingAufgaben } = useQuery({
@@ -238,23 +239,14 @@ export default function LernpfadeAufgabenPool({
   }, [poolAufgaben]);
 
   const filteredAufgaben = useMemo(() => {
-    return poolAufgaben.filter((a) => {
-      const groupKey = getGroupKeyForItem(a);
-      return groupKey && activeFilters.has(groupKey);
-    });
-  }, [poolAufgaben, activeFilters]);
+    return poolAufgaben.filter((a) => getGroupKeyForItem(a) === activeFilter);
+  }, [poolAufgaben, activeFilter]);
 
   const selectedAufgabeId = selectedAufgabe?.id || null;
   const selectedBausteinId = selectedSystemBaustein?.baustein_id || null;
 
-  const toggleFilter = (groupKey) => {
-    setActiveFilters((prev) => {
-      const next = new Set(prev);
-      if (next.has(groupKey)) next.delete(groupKey);
-      else next.add(groupKey);
-      return next;
-    });
-  };
+  // Reiter-Klick: setzt die aktive Gruppe (kein Toggle-Off).
+  const selectFilter = (groupKey) => setActiveFilter(groupKey);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -297,9 +289,9 @@ export default function LernpfadeAufgabenPool({
                 <FilterChip
                   key={group.key}
                   group={group}
-                  active={activeFilters.has(group.key)}
+                  active={activeFilter === group.key}
                   count={counts[group.key] || 0}
-                  onClick={() => toggleFilter(group.key)}
+                  onClick={() => selectFilter(group.key)}
                 />
               ))}
             </div>
