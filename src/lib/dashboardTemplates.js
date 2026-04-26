@@ -38,18 +38,19 @@ const sys = (refId) => ({ type: ITEM_TYPE.SYSTEM, ref_id: refId });
 const B = Object.freeze({
   // Sektion 0
   sec0Overview: 'sys_sec0_overview',
-  // Diagnose & Karte
-  diagnose: 'sys_diagnose',
+  // Karte
   mapReduced: 'sys_map_reduced',
   mapFull: 'sys_map_full',
   // Stoppschild & Tests
   lehrerCheck: 'sys_lehrer_check',
   zwischentest: 'sys_zwischentest',
   examRegister: 'sys_exam_register',
+  externalTest: 'sys_external_test',
   // Platzhalter
+  pInfo: 'sys_platzhalter_info',
+  pHandlung: 'sys_platzhalter_handlung',
   pMoodleBuendel: 'sys_platzhalter_moodle_buendel',
   pBrianBuendel: 'sys_platzhalter_brian_buendel',
-  pEbene2: 'sys_platzhalter_ebene2',
   pProjekt: 'sys_platzhalter_projekt',
 });
 
@@ -58,27 +59,21 @@ const B = Object.freeze({
 const MINIMALIST = [
   {
     sektor_id: 'tpl_min_sec1',
-    titel: '1. Einstieg & Diagnose',
+    titel: '1. Einstieg & Lernlandkarte',
     modus: 'sequenziell',
-    items: [sys(B.sec0Overview), sys(B.diagnose)],
+    items: [sys(B.sec0Overview), sys(B.mapReduced)],
   },
   {
     sektor_id: 'tpl_min_sec2',
-    titel: '2. Lernlandkarte',
+    titel: '2. Erste Erarbeitungsphase',
     modus: 'sequenziell',
-    items: [sys(B.mapReduced)],
+    items: [sys(B.pInfo), sys(B.pHandlung), sys(B.pMoodleBuendel), sys(B.lehrerCheck)],
   },
   {
     sektor_id: 'tpl_min_sec3',
-    titel: '3. Erste Erarbeitungsphase',
+    titel: '3. Zwischentest',
     modus: 'sequenziell',
-    items: [sys(B.pMoodleBuendel), sys(B.lehrerCheck)],
-  },
-  {
-    sektor_id: 'tpl_min_sec4',
-    titel: '4. Vertiefung',
-    modus: 'sequenziell',
-    items: [sys(B.pMoodleBuendel)],
+    items: [sys(B.pInfo), sys(B.pMoodleBuendel)],
   },
 ];
 
@@ -86,67 +81,61 @@ const MINIMALIST = [
 const PRAGMATIKER = [
   {
     sektor_id: 'tpl_prag_sec1',
-    titel: '1. Einstieg & Diagnose',
+    titel: '1. Einstieg & Lernlandkarte',
     modus: 'sequenziell',
-    items: [sys(B.sec0Overview), sys(B.diagnose)],
+    items: [sys(B.sec0Overview), sys(B.mapReduced)],
   },
   {
     sektor_id: 'tpl_prag_sec2',
-    titel: '2. Lernlandkarte',
+    titel: '2. Grundlagen',
     modus: 'sequenziell',
-    items: [sys(B.mapReduced)],
+    items: [sys(B.pInfo), sys(B.pHandlung), sys(B.pMoodleBuendel)],
   },
   {
     sektor_id: 'tpl_prag_sec3',
-    titel: '3. Grundlagen',
-    modus: 'sequenziell',
-    items: [sys(B.pMoodleBuendel), sys(B.lehrerCheck)],
-  },
-  {
-    sektor_id: 'tpl_prag_sec4',
-    titel: '4. Anwendung & Training',
+    titel: '3. Anwendung & Training',
     modus: 'frei',
     items: [sys(B.pBrianBuendel)],
   },
   {
-    sektor_id: 'tpl_prag_sec5',
-    titel: '5. Vertiefung',
+    sektor_id: 'tpl_prag_sec4',
+    titel: '4. Abschlusstest',
     modus: 'sequenziell',
-    items: [sys(B.pMoodleBuendel)],
+    items: [sys(B.externalTest)],
   },
 ];
 
 // ── Template: Ehrgeizig ─────────────────────────────────────────────────
-// Alle Sektoren initial 'sequenziell'.
 const EHRGEIZIG = [
   {
     sektor_id: 'tpl_ehr_sec1',
-    titel: '1. Einstieg & Diagnose',
+    titel: '1. Einstieg & Anmeldung',
     modus: 'sequenziell',
-    items: [sys(B.sec0Overview), sys(B.diagnose)],
+    items: [sys(B.sec0Overview), sys(B.mapFull), sys(B.examRegister)],
   },
   {
     sektor_id: 'tpl_ehr_sec2',
-    titel: '2. Lernlandkarte',
+    titel: '2. Grundlagen',
     modus: 'sequenziell',
-    items: [sys(B.mapFull)],
+    items: [sys(B.pInfo), sys(B.pHandlung), sys(B.pMoodleBuendel)],
   },
   {
     sektor_id: 'tpl_ehr_sec3',
-    titel: '3. Grundlagen',
-    modus: 'sequenziell',
-    items: [sys(B.pMoodleBuendel)],
+    titel: '3. Anwendung & Training',
+    modus: 'frei',
+    items: [sys(B.pBrianBuendel)],
   },
   {
     sektor_id: 'tpl_ehr_sec4',
-    titel: '4. Prüfungsvorbereitung',
+    titel: '4. Zwischentest',
     modus: 'sequenziell',
-    items: [
-      sys(B.pMoodleBuendel),
-      sys(B.zwischentest),
-      sys(B.examRegister),
-      sys(B.pProjekt),
-    ],
+    items: [sys(B.zwischentest)],
+  },
+  {
+    sektor_id: 'tpl_ehr_sec5',
+    titel: '5. Projekt',
+    modus: 'frei',
+    items: [sys(B.pProjekt)],
   },
 ];
 
@@ -155,20 +144,27 @@ const EHRGEIZIG = [
 const PASSIONIERT = [
   {
     sektor_id: 'tpl_pass_sec1',
-    titel: '1. Lernlandkarte',
+    titel: '1. Einstieg & Anmeldung',
     modus: 'frei',
-    items: [sys(B.mapFull)],
+    items: [sys(B.sec0Overview), sys(B.mapFull), sys(B.examRegister)],
   },
   {
     sektor_id: 'tpl_pass_sec2',
-    titel: '2. Eigenständige Vertiefung',
+    titel: '2. Anwendung & Training',
     modus: 'frei',
-    items: [
-      sys(B.pMoodleBuendel),
-      sys(B.pEbene2),
-      sys(B.pEbene2),
-      sys(B.pProjekt),
-    ],
+    items: [sys(B.pBrianBuendel)],
+  },
+  {
+    sektor_id: 'tpl_pass_sec3',
+    titel: '3. Projekt',
+    modus: 'frei',
+    items: [sys(B.pProjekt)],
+  },
+  {
+    sektor_id: 'tpl_pass_sec4',
+    titel: '4. Abschlusstest',
+    modus: 'frei',
+    items: [sys(B.externalTest)],
   },
 ];
 
