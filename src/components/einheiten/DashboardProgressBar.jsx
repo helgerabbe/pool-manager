@@ -25,7 +25,7 @@ export default function DashboardProgressBar({ einheitId, progress }) {
 
   return (
     <TooltipProvider delayDuration={150}>
-      <div className="grid grid-cols-4 gap-1">
+      <div className="rounded-md bg-slate-50 border border-slate-100 p-2 grid grid-cols-4 gap-1.5">
         {LERN_TYPEN.map((lt) => {
           const value = Math.max(0, Math.min(100, Math.round(safeProgress[lt.key] || 0)));
           return (
@@ -34,14 +34,14 @@ export default function DashboardProgressBar({ einheitId, progress }) {
                 <Link
                   to={`/workspace?einheit=${einheitId}&tab=dashboards&lerntyp=${lt.key}`}
                   onClick={(e) => e.stopPropagation()}
-                  className="group flex flex-col gap-0.5 px-1 py-1 rounded hover:bg-muted/60 transition-colors"
+                  className="cursor-pointer group flex flex-col gap-1 px-1.5 py-1 rounded hover:bg-white active:bg-white/80 transition-colors"
                   aria-label={`${lt.label}: ${value}% konfiguriert`}
                 >
-                  <div className="flex items-center justify-between text-[10px] font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
+                  <div className="flex items-baseline justify-between gap-1 text-[10px] font-semibold leading-none text-muted-foreground group-hover:text-foreground transition-colors">
                     <span>{lt.short}</span>
                     <span className="tabular-nums">{value}%</span>
                   </div>
-                  <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                  <div className="h-1.5 w-full rounded-full bg-slate-200 overflow-hidden">
                     <div
                       className={`h-full ${lt.barClass} transition-all`}
                       style={{ width: `${value}%` }}

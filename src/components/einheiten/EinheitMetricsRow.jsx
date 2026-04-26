@@ -21,7 +21,7 @@ const INDICATORS = [
   {
     key: 'themenfelder',
     icon: LayoutGrid,
-    label: 'Themenfelder',
+    label: 'Themen',
     tab: 'struktur',
     tooltip: (n) => `${n} Themenfeld${n === 1 ? '' : 'er'} – zum Strukturboard`,
   },
@@ -35,14 +35,14 @@ const INDICATORS = [
   {
     key: 'level2',
     icon: ClipboardList,
-    label: 'L2',
+    label: 'Lvl 2',
     tab: 'ebene2',
     tooltip: (n) => `${n} Aufgabe${n === 1 ? '' : 'n'} der Ebene 2 – zum Aufgabenpool`,
   },
   {
     key: 'level3',
     icon: Target,
-    label: 'L3',
+    label: 'Projekte',
     tab: 'ebene3',
     tooltip: (n) => `${n} Projekt${n === 1 ? '' : 'e'} der Ebene 3 – zu Projektaufgaben`,
   },
@@ -53,7 +53,7 @@ export default function EinheitMetricsRow({ einheitId, volume }) {
 
   return (
     <TooltipProvider delayDuration={150}>
-      <div className="grid grid-cols-4 gap-1">
+      <div className="grid grid-cols-4 gap-1.5">
         {INDICATORS.map((ind) => {
           const Icon = ind.icon;
           const value = safe[ind.key] || 0;
@@ -63,11 +63,12 @@ export default function EinheitMetricsRow({ einheitId, volume }) {
                 <Link
                   to={`/workspace?einheit=${einheitId}&tab=${ind.tab}`}
                   onClick={(e) => e.stopPropagation()}
-                  className="flex items-center justify-center gap-1 px-1.5 py-1 rounded-md text-xs font-medium text-muted-foreground hover:text-primary hover:bg-muted/60 transition-colors"
+                  className="cursor-pointer flex flex-col items-center justify-center gap-0.5 py-1.5 px-1 rounded-md text-muted-foreground hover:text-primary hover:bg-muted active:bg-muted/80 transition-colors"
                   aria-label={ind.tooltip(value)}
                 >
-                  <Icon className="w-3.5 h-3.5 shrink-0" />
-                  <span className="tabular-nums font-semibold">{value}</span>
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className="tabular-nums font-semibold text-sm leading-none">{value}</span>
+                  <span className="text-[10px] leading-none mt-0.5">{ind.label}</span>
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">

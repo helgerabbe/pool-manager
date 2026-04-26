@@ -104,12 +104,18 @@ export default function EinheitCard({
             </Link>
 
             {/* ── Mittlerer Bereich: Volumen-Metriken (eigene Klick-Zonen) ── */}
-            <div className="px-3 pt-1 pb-2 border-t border-border/60">
+            <div className="px-4 pt-3 pb-3 border-t border-border/60">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
+                Inhalte
+              </p>
               <EinheitMetricsRow einheitId={einheit.id} volume={volume} />
             </div>
 
             {/* ── Unterer Bereich: Dashboard-Fortschritt (eigene Klick-Zonen) ── */}
-            <div className="px-3 pb-3">
+            <div className="px-4 pb-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
+                Dashboards
+              </p>
               <DashboardProgressBar einheitId={einheit.id} progress={progress} />
             </div>
 
