@@ -110,6 +110,19 @@ export function isAufgabeInLernpfad(konfiguration, lernTyp, aufgabeId) {
   return getUsedAufgabenIds(konfiguration, lernTyp).has(aufgabeId);
 }
 
+/**
+ * Liefert true, wenn die Konfiguration komplett leer ist – also für
+ * KEINEN der vier Lerntypen Sektoren existieren. Wird vom Frontend für
+ * den Lazy-Init-Pfad genutzt: Bestandseinheiten ohne Default-Dashboards
+ * (vor dem Eager-Init-Rollout angelegt) werden beim ersten Aufruf
+ * organisch mit den Standard-Templates befüllt.
+ */
+export function isKonfigurationEmpty(konfiguration) {
+  if (!konfiguration || typeof konfiguration !== 'object') return true;
+  const keys = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
+  return keys.every((k) => !Array.isArray(konfiguration[k]) || konfiguration[k].length === 0);
+}
+
 // ── Sektor-Helfer ──────────────────────────────────────────────────────────
 
 /**
@@ -306,6 +319,26 @@ export function applyDashboardTemplate(aktuelleKonfig, lerntyp, templateData) {
   });
 
   return setSektoren(aktuelleKonfig || {}, lerntyp, freshSektoren);
+}
+
+/**
+ * Wendet die kompletten Default-Dashboards (alle vier Lerntypen) auf
+ * eine Konfiguration an. Wird sowohl für den Lazy-Init-Pfad genutzt
+ * (Bestandseinheiten ohne `lernpfade_konfiguration`) als auch theoretisch
+ * für einen "Alle Dashboards zurücksetzen"-Button (aktuell nicht im UI).
+ *
+ * Erwartet ein `templates`-Objekt mit Keys minimalist/pragmatiker/
+ * ehrgeizig/passioniert (z. B. `DASHBOARD_TEMPLATES`).
+ */
+export function applyAllDashboardTemplates(aktuelleKonfig, templates) {
+  if (!templates || typeof templates !== 'object') return aktuelleKonfig;
+  let next = aktuelleKonfig || {};
+  for (const lerntyp of ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert']) {
+    if (Array.isArray(templates[lerntyp])) {
+      next = applyDashboardTemplate(next, lerntyp, templates[lerntyp]);
+    }
+  }
+  return next;
 }
 
 /**

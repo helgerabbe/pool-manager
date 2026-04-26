@@ -50,6 +50,12 @@ export function useDashboardRelease({
     itemCount: 0,
     aufgabenCount: 0,
   });
+  // Reset-Confirm-Dialog: Da neue Einheiten dank Default-Templates schon
+  // mit befüllten Dashboards starten, ist der Guide-Button keine reine
+  // „Raster laden"-Aktion mehr, sondern überschreibt potenziell bereits
+  // vorgenommene Zuweisungen. Wir öffnen daher einen expliziten
+  // Bestätigungsdialog statt eines stillen window.confirm.
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
   // Sammelt alle Items des aktiven Lerntyps, die NICHT grün sind. System-Bausteine
   // sind per Definition immer grün und werden nicht aufgenommen.
@@ -194,10 +200,12 @@ export function useDashboardRelease({
     }
   }, [einheitId, darfEntsperren, istPfadGesperrt, statusBusy, activeLernTyp, queryClient, lerntypLabel]);
 
-  // Magic-Raster Phase 4: Standard-Raster anwenden.
-  // Pre-Flight-Check schließt die Race Condition zwischen "Pfad ist im Cockpit
-  // als 'draft' bekannt" und "ein anderer User hat soeben freigegeben". Wir
-  // bypassen daher den Cache und holen die Memberships frisch via fetchQuery.
+  // „Auf Standard zurücksetzen" – Schritt 1 (Trigger):
+  // Pre-Flight-Check schließt die Race Condition zwischen „Pfad ist im
+  // Cockpit als 'draft' bekannt" und „ein anderer User hat soeben
+  // freigegeben". Wir bypassen daher den Cache und holen die
+  // Memberships frisch via fetchQuery. Bei Erfolg öffnet sich der
+  // Reset-Confirm-Dialog (eigentliches Anwenden in `confirmResetTemplate`).
   const handleApplyTemplate = useCallback(async () => {
     if (!einheitId || !activeLernTyp) return;
 
@@ -238,25 +246,28 @@ export function useDashboardRelease({
       return;
     }
 
-    // 3. Bestätigungsdialog.
-    const ok = window.confirm(
-      'Achtung: Dies überschreibt den kompletten aktuellen Aufbau dieses Dashboards. ' +
-      'Bestehende Aufgaben werden aus den Sektoren entfernt. Fortfahren?'
-    );
-    if (!ok) return;
+    // 3. Reset-Confirm-Dialog öffnen. Eigentliches Anwenden geschieht
+    //    im `confirmResetTemplate`-Handler nach Nutzer-Bestätigung.
+    setResetConfirmOpen(true);
+  }, [einheitId, activeLernTyp, queryClient, onTemplateApplied]);
 
-    // 4. Template laden und anwenden. scheduleSave (in updateKonfiguration)
-    //    übernimmt automatisch Persistierung + Junction-Sync.
+  // „Auf Standard zurücksetzen" – Schritt 2 (Anwenden nach Bestätigung):
+  // Lädt das Template für den aktiven Lerntyp und schreibt es über
+  // `updateKonfiguration` in den State. scheduleSave kümmert sich um
+  // Persistierung + Junction-Sync.
+  const confirmResetTemplate = useCallback(() => {
+    if (!activeLernTyp) return;
     const template = DASHBOARD_TEMPLATES[activeLernTyp];
     if (!Array.isArray(template)) {
       toast.error(`Für „${activeLernTyp}" ist kein Standard-Raster definiert.`);
+      setResetConfirmOpen(false);
       return;
     }
-
     updateKonfiguration((prev) => applyDashboardTemplate(prev, activeLernTyp, template));
+    setResetConfirmOpen(false);
     onTemplateApplied?.();
-    toast.success('Standard-Raster geladen.');
-  }, [einheitId, activeLernTyp, queryClient, updateKonfiguration, onTemplateApplied]);
+    toast.success(`Dashboard „${lerntypLabel || activeLernTyp}" auf Standard zurückgesetzt.`);
+  }, [activeLernTyp, updateKonfiguration, onTemplateApplied, lerntypLabel]);
 
   return {
     statusBusy,
@@ -271,5 +282,9 @@ export function useDashboardRelease({
     setConfirmOpen,
     confirmSummary,
     confirmReleasePath,
+    // Reset-Confirm-Dialog (Guide-Button → „Auf Standard zurücksetzen")
+    resetConfirmOpen,
+    setResetConfirmOpen,
+    confirmResetTemplate,
   };
 }

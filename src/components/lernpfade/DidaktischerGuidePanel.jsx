@@ -34,7 +34,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Lock, Sparkles, Layers, Trophy, Star, Info } from 'lucide-react';
+import { BookOpen, Lock, Sparkles, Layers, Trophy, Star, Info, RotateCcw } from 'lucide-react';
 
 // ── Mapping: Lerntyp → Anzeigeinhalte ──────────────────────────────────
 // Der Erklärungstext ist bewusst als Dummy ausgelegt (Phase 3); finale
@@ -166,12 +166,12 @@ export default function DidaktischerGuidePanel({
             title={
               isLocked
                 ? 'Pfad ist freigegeben und gesperrt – bitte zuerst entsperren.'
-                : undefined
+                : `Setzt das Dashboard „${info.label}" auf das didaktische Standard-Raster zurück.`
             }
             className="gap-1.5"
           >
-            <BookOpen className="w-3.5 h-3.5" />
-            {`Standard-Raster für ${info.label} laden`}
+            <RotateCcw className="w-3.5 h-3.5" />
+            {`Auf Standard zurücksetzen (${info.label})`}
           </Button>
         </DialogFooter>
       </DialogContent>

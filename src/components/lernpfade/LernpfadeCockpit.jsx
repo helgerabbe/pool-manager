@@ -41,8 +41,12 @@ import {
   patchSektor,
   removeSektor,
   removeAufgabeFromLernTyp,
+  isKonfigurationEmpty,
+  applyAllDashboardTemplates,
 } from '@/lib/lernpfadeUtils';
+import { DASHBOARD_TEMPLATES } from '@/lib/dashboardTemplates';
 import { getSektorTemplate, SEKTOR_TEMPLATE_KEYS } from '@/lib/sektorTemplates';
+import ResetDashboardConfirmDialog from '@/components/lernpfade/ResetDashboardConfirmDialog';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { getAmpelStatus } from '@/lib/ampelLogic';
 import { adaptLernpaketToPoolItem } from '@/lib/lernpaketAdapter';
@@ -247,6 +251,33 @@ export default function LernpfadeCockpit({
     [scheduleSave]
   );
 
+  // ── Lazy-Init für Bestandseinheiten ────────────────────────────────
+  // Neue Einheiten werden serverseitig (createEinheitMitDefaults /
+  // createEinheitSecure) bereits mit den Default-Templates gespeichert.
+  // Bestandseinheiten, die vor dem Rollout angelegt wurden, haben eine
+  // leere lernpfade_konfiguration. Diese werden beim ersten Aufruf
+  // organisch mit den Standard-Rastern befüllt und persistiert.
+  // Läuft NUR ein einziges Mal pro Einheit (lazyInitDoneRef) und nur,
+  // wenn die Konfiguration tatsächlich leer ist.
+  const lazyInitDoneRef = useRef(null);
+  useEffect(() => {
+    if (!einheit?.id) return;
+    if (lazyInitDoneRef.current === einheit.id) return;
+    if (!isKonfigurationEmpty(einheit.lernpfade_konfiguration)) {
+      lazyInitDoneRef.current = einheit.id;
+      return;
+    }
+    lazyInitDoneRef.current = einheit.id;
+    const filled = applyAllDashboardTemplates({}, DASHBOARD_TEMPLATES);
+    setKonfiguration(filled);
+    konfigurationRef.current = filled;
+    // Direkter Save via flushSave(forcePayload) — kein Edit-Lock erforderlich,
+    // weil die Einheit vorher schlicht keine Konfiguration hatte.
+    flushSave(filled).catch((err) => {
+      console.warn('[LernpfadeCockpit] Lazy-Init Save fehlgeschlagen:', err);
+    });
+  }, [einheit?.id, einheit?.lernpfade_konfiguration, flushSave]);
+
   // ── Read-Only-Ableitung ─────────────────────────────────────────────
   const readOnly = !isStructuralEditingActive || isLockedByOther || istPfadGesperrt;
 
@@ -274,6 +305,9 @@ export default function LernpfadeCockpit({
     setConfirmOpen,
     confirmSummary,
     confirmReleasePath,
+    resetConfirmOpen,
+    setResetConfirmOpen,
+    confirmResetTemplate,
   } = useDashboardRelease({
     einheitId: einheit?.id,
     activeLernTyp,
@@ -473,6 +507,14 @@ export default function LernpfadeCockpit({
         lerntyp={activeLernTyp}
         isLocked={istPfadGesperrt}
         onApplyClick={handleApplyTemplate}
+      />
+
+      <ResetDashboardConfirmDialog
+        open={resetConfirmOpen}
+        onOpenChange={setResetConfirmOpen}
+        lerntypLabel={lerntypLabel}
+        busy={statusBusy}
+        onConfirm={confirmResetTemplate}
       />
 
       <AufgabeCreateView
