@@ -124,7 +124,9 @@ sie deploybar bleibt, aber nicht versehentlich aufgerufen wird.
 
 **Single Source of Truth:** `functions/utils/occLockUtils.js`
 **Inline-Kopien:**
-- `functions/acquireDashboardLockSecure` (Einheiten / structural_lock)
+- `functions/acquireUnitLockSecure` (Einheiten / structural_lock; ersetzt
+  seit 2026-04-26 die früheren `acquireStructuralLockSecure` und
+  `acquireDashboardLockSecure` – beide Endpunkte wurden gelöscht).
 - `functions/acquireLockSecure` (Lernpakete / locked_by_email)
 
 **Regel:** Wer den Wrapper ändert, muss den Code-Block in ALLEN
@@ -162,7 +164,7 @@ FOR EACH ROW EXECUTE FUNCTION bump_einheiten_version();
 **Migrations-Schritt:**
 1. Trigger anlegen.
 2. App-Code: alle `version: current + 1`-Zeilen entfernen (Cleanup-PR).
-3. `acquireDashboardLockSecure`: First-Mover-Kommentar entfernen,
+3. `acquireUnitLockSecure`: First-Mover-Kommentar entfernen,
    Re-Read kann dann optional auf `verify.version > currentVersion`
    prüfen (zusätzliche Sicherheit).
 
@@ -214,3 +216,70 @@ if (!istFachschaftFuerFach && !fachzustaendig) { /* fallback: EinheitMembers */ 
 Bitte beim nächsten RBAC-Sweep prüfen, ob andere Funktionen
 (`updateLernpaketSecure`, `lockTaskSecure`, …) dasselbe lasche Pattern
 nutzen und ebenfalls verschärft werden müssen.
+
+---
+
+## 8. Unified Unit Lock (2026-04-26)
+
+Die bisherigen Endpunkte `acquireStructuralLockSecure` (Tab 2) und
+`acquireDashboardLockSecure` (Tab 7) wurden zu **einem** kugelsicheren
+Endpunkt zusammengeführt: `functions/acquireUnitLockSecure`.
+
+Eingangs-Parameter:
+```
+{ einheit_id, scope: 'structure' | 'dashboard' }
+```
+
+Beide Scopes laufen durch dieselbe RBAC-Prüfung (`checkUnifiedPermission`)
+und denselben OCC-Wrapper (`acquireLockWithVersion`). Der Unterschied
+liegt ausschließlich in **Phase 2 (Deep Scan)**: `dashboard` prüft
+zusätzlich aktive Lernpaket- und AllgemeineAufgabe-Locks innerhalb der
+Einheit, bevor der Struktur-Lock gesetzt wird.
+
+### Frontend-Migration
+
+`pages/Workspace` ruft seit 2026-04-26 ausschließlich
+`acquireUnitLockSecure` auf:
+- Tab 1 + Tab 2 (`handleAcquireStructLock`, `handleAcquireTab1Lock`) →
+  `scope: 'structure'`
+- Tab 7 (`handleAcquireDashboardLock`) → `scope: 'dashboard'`
+
+Die alten Endpunkte sind aus dem Repository entfernt – es gibt keine
+„Geister-Endpunkte" im Backend mehr.
+
+### Phase-2b-Workaround (Aufgaben-Filter)
+
+In Phase 2b (Tiefen-Scan auf `AllgemeineAufgabe`) versucht der Code
+zuerst eine `$ne: null`-Query auf das Feld `locked_by`. Schlägt das
+fehl (Limitierung des Base44-SDKs auf bestimmten Operatoren), fällt
+er auf einen JS-seitigen Filter zurück:
+
+```js
+aktiveAufgaben = await base44.asServiceRole.entities.AllgemeineAufgabe.filter({ einheit_id });
+aktiveAufgaben = (aktiveAufgaben || []).filter((a) => !!a.locked_by);
+```
+
+Bewusst akzeptiertes Risiko: Bei sehr großen Einheiten lädt der
+Fallback **alle** Aufgaben einer Einheit in den Speicher.
+
+### @MIGRATION_NOTE (Supabase) – Phase 2b
+
+Bei der Migration zu Supabase MUSS dieser Fallback durch eine
+performante Datenbank-Abfrage ersetzt werden, um Out-of-Memory-
+Risiken bei großen Einheiten zu vermeiden. Empfehlung:
+
+```sql
+-- Statt "alle Aufgaben laden + JS-filter":
+SELECT 1
+FROM allgemeine_aufgabe
+WHERE einheit_id = $1
+  AND locked_by IS NOT NULL
+  AND locked_by <> $2
+  AND locked_at > NOW() - INTERVAL '60 minutes'
+LIMIT 1;
+```
+
+Oder als `EXISTS`-Klausel im Lock-RPC. Sobald Supabase aktiv ist,
+fällt sowohl der `$ne: null`-Versuch als auch die JS-Filter-Schleife
+weg; der Lock-Pfad bleibt damit auch bei mehreren tausend Aufgaben
+pro Einheit konstant in der Laufzeit.
