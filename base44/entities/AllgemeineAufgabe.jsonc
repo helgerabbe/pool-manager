@@ -74,6 +74,15 @@
       "minimum": 0,
       "description": "F\u00fcr aufgaben_typ='auswahl_buendel': Anzahl der Aufgaben aus verlinkte_aufgaben_ids, die der Sch\u00fcler mindestens bearbeiten muss. 0 = alle verlinkten Aufgaben sind Pflicht."
     },
+    "interne_reihenfolge": {
+      "type": "string",
+      "enum": [
+        "frei",
+        "sequenziell"
+      ],
+      "default": "frei",
+      "description": "F\u00fcr aufgaben_typ='auswahl_buendel' (Brian-B\u00fcndel): Bearbeitungsreihenfolge der enthaltenen Aufgaben. 'frei' = Sch\u00fcler w\u00e4hlt Reihenfolge selbst, 'sequenziell' = Aufgaben m\u00fcssen in der Listenreihenfolge abgearbeitet werden."
+    },
     "hinweise_zum_material": {
       "type": "string",
       "description": "F\u00fcr aufgaben_typ='handlung': Freitext-Hinweise zum ben\u00f6tigten physischen Material (z. B. 'Schere, Klebstoff, Tonpapier')."
