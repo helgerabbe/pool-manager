@@ -156,15 +156,19 @@ function calcProgressForLerntyp(sektoren, ctx) {
 
 // ── Volumen-Metriken pro Einheit ──
 function calcVolume(themenfelderForEinheit, lernpaketeForEinheit, aufgabenForEinheit) {
-  // Level 2: inhalt + handlung + auswahl_buendel
-  // Level 3: projekt_anker
+  // Level 3: projekt_anker ODER anforderungsebene='3 - Projekt'
+  // Level 2: alle anderen sichtbaren Aufgaben (inhalt, handlung, auswahl_buendel, buendel)
   let level2 = 0;
   let level3 = 0;
   for (const a of aufgabenForEinheit) {
     if (a.sync_status === 'to_delete') continue;
     const typ = a.aufgaben_typ || 'inhalt';
-    if (typ === 'inhalt' || typ === 'handlung' || typ === 'auswahl_buendel') level2 += 1;
-    else if (typ === 'projekt_anker') level3 += 1;
+    const isProjekt = typ === 'projekt_anker' || a.anforderungsebene === '3 - Projekt';
+    if (isProjekt) {
+      level3 += 1;
+    } else if (typ === 'inhalt' || typ === 'handlung' || typ === 'auswahl_buendel') {
+      level2 += 1;
+    }
   }
   return {
     themenfelder: themenfelderForEinheit.length,
