@@ -76,9 +76,11 @@ function getGroupKeyForItem(item) {
   return null;
 }
 
-// Lesbares Label für das Lernpaket-Logik-Badge auf buendel-Karten.
-const LERNPAKET_LOGIK_LABELS = {
-  standard: 'Standard',
+// Inline-Suffix für Lernpaket-Sondervarianten. `standard` bleibt bewusst leer
+// (Standard-Pakete benötigen keine Auszeichnung). Die übrigen Varianten werden
+// als dezenter Klammerzusatz an den Titel gehängt – ohne Extra-Zeile.
+const LERNPAKET_LOGIK_INLINE = {
+  standard: null,
   fast_track: 'Fast-Track',
   wissensspeicher: 'Wissensspeicher',
   test_only: 'Zwischentest',
@@ -113,20 +115,18 @@ function AufgabeListItem({ aufgabe, index, isSelected, isUsed, onClick }) {
   const Icon = typMeta.icon;
   const isBuendel = aufgabe.aufgaben_typ === 'buendel';
   const isZwischentest = isBuendel && aufgabe.lernpaket_logik === 'test_only';
-  const logikLabel = isBuendel
-    ? (LERNPAKET_LOGIK_LABELS[aufgabe.lernpaket_logik] || LERNPAKET_LOGIK_LABELS.standard)
-    : null;
-  // Subtitle MUSS dem Tab folgen, in dem das Item landet — sonst zeigen
-  // Ebene-3-Aufgaben mit aufgaben_typ='inhalt' fälschlich "Transferaufgabe".
-  // Quelle der Wahrheit: getGroupKeyForItem (siehe FILTER_GROUPS).
-  let subtitle;
-  if (isBuendel) {
-    subtitle = `Lernpaket · ${logikLabel}`;
-  } else if (getGroupKeyForItem(aufgabe) === 'projekte') {
-    subtitle = 'Projekt';
-  } else {
-    subtitle = typMeta.short;
-  }
+  const inlineSuffix = isBuendel ? LERNPAKET_LOGIK_INLINE[aufgabe.lernpaket_logik] : null;
+
+  // Aufgaben/Projekte: zweite Zeile mit Kategorie + Anforderungsebene bleibt
+  // erhalten. Lernpakete: einzeilig (Icon + Titel, optional Inline-Suffix).
+  const isProjekt = !isBuendel && getGroupKeyForItem(aufgabe) === 'projekte';
+  const subtitle = isBuendel ? null : (isProjekt ? 'Projekt' : typMeta.short);
+
+  // Zwischentests: Icon-Box dezent rosa (statt Standard-Blau) + sehr leichte
+  // Karten-Tönung. Höhe bleibt identisch.
+  const buendelIconBox = isZwischentest ? 'bg-rose-100' : typMeta.color.iconBg;
+  const buendelIconColor = isZwischentest ? 'text-rose-600' : typMeta.color.iconText;
+  const buendelTint = isZwischentest && !isUsed && !isSelected ? 'bg-rose-50/60' : '';
 
   return (
     <Draggable draggableId={aufgabe.id} index={index} isDragDisabled={isUsed}>
@@ -137,45 +137,39 @@ function AufgabeListItem({ aufgabe, index, isSelected, isUsed, onClick }) {
           {...provided.dragHandleProps}
           onClick={onClick}
           title={isUsed ? 'Bereits in diesem Lernpfad' : 'Ziehen, um in den Pfad einzusortieren'}
-          className={`w-full text-left rounded-lg p-2.5 border transition-all flex items-start gap-2 cursor-pointer ${
+          className={`w-full text-left rounded-lg ${isBuendel ? 'py-2 px-2.5' : 'p-2.5'} border transition-all flex items-center gap-2 cursor-pointer ${
             isUsed
               ? 'border-border bg-muted/40 opacity-50 cursor-not-allowed'
               : isSelected
                 ? `${typMeta.color.border} ${typMeta.color.bg} shadow-sm`
-                : 'border-border bg-card hover:border-primary/30 hover:bg-muted/30'
+                : `border-border ${buendelTint || 'bg-card'} hover:border-primary/30 hover:bg-muted/30`
           } ${snapshot.isDragging ? 'shadow-lg ring-2 ring-primary/40 bg-card' : ''}`}
         >
-          <div className={`w-7 h-7 rounded-md ${typMeta.color.iconBg} flex items-center justify-center shrink-0 ${isUsed ? 'grayscale' : ''}`}>
-            <Icon className={`w-3.5 h-3.5 ${typMeta.color.iconText}`} />
+          <div className={`w-7 h-7 rounded-md ${isBuendel ? buendelIconBox : typMeta.color.iconBg} flex items-center justify-center shrink-0 ${isUsed ? 'grayscale' : ''}`}>
+            <Icon className={`w-3.5 h-3.5 ${isBuendel ? buendelIconColor : typMeta.color.iconText}`} />
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium text-foreground truncate leading-snug">
               {aufgabe.titel || 'Ohne Titel'}
+              {inlineSuffix && (
+                <span className="ml-1 text-muted-foreground font-normal">({inlineSuffix})</span>
+              )}
             </p>
-            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-              <span className={`text-[10px] font-semibold ${typMeta.color.text}`}>
-                {subtitle}
-              </span>
-              {isBuendel && logikLabel && (
-                <span
-                  className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border ${
-                    isZwischentest
-                      ? 'bg-rose-500 text-white border-rose-600 shadow-sm'
-                      : 'bg-blue-100 text-blue-700 border-blue-200'
-                  }`}
-                >
-                  {logikLabel}
+            {subtitle && (
+              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                <span className={`text-[10px] font-semibold ${typMeta.color.text}`}>
+                  {subtitle}
                 </span>
-              )}
-              {!isBuendel && aufgabe.anforderungsebene && (
-                <>
-                  <span className="text-muted-foreground/40 text-[10px]">·</span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {aufgabe.anforderungsebene.replace(' - ', ' ')}
-                  </span>
-                </>
-              )}
-            </div>
+                {aufgabe.anforderungsebene && (
+                  <>
+                    <span className="text-muted-foreground/40 text-[10px]">·</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {aufgabe.anforderungsebene.replace(' - ', ' ')}
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
           </div>
           {isUsed && (
             <div
