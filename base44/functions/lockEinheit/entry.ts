@@ -55,11 +55,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Setze Structural Lock
+    // Setze Structural Lock + version-Bump (OCC-Signal).
+    // @MIGRATION_NOTE (Supabase): Inkrement wandert in einen BEFORE-UPDATE-Trigger.
     const now = new Date().toISOString();
+    const currentEinheitVersion = Number.isFinite(einheit?.version) ? einheit.version : 1;
     await base44.entities.Einheiten.update(einheitId, {
       structural_lock: user.email,
       structural_locked_at: now,
+      version: currentEinheitVersion + 1,
     });
 
     return Response.json({ success: true });

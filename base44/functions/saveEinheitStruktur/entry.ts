@@ -67,6 +67,22 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ── Optimistic Locking: version-Feld der Einheit hochzählen ──────────────
+    // Hintergrund: acquireDashboardLockSecure nutzt seit April 2026 das
+    // `version`-Feld als OCC-Signal. Damit der dortige Re-Read andere
+    // Schreibzugriffe nicht ignoriert, MUSS jeder Einheiten-Update-Pfad
+    // `version` ebenfalls inkrementieren. Da diese Funktion zusätzlich
+    // Themenfelder/Lernpakete schreibt (nicht atomar), ist der Bump hier
+    // ein bewusst grobes Signal "Struktur dieser Einheit hat sich verändert".
+    //
+    // @MIGRATION_NOTE (Supabase): Beim Wechsel auf Postgres wird dieses
+    // manuelle Inkrement durch einen BEFORE-UPDATE-Trigger auf der
+    // einheiten-Tabelle ersetzt — die App-Logik fällt dann weg.
+    const currentEinheitVersion = Number.isFinite(einheitRecord?.version) ? einheitRecord.version : 1;
+    await base44.asServiceRole.entities.Einheiten.update(einheit_id, {
+      version: currentEinheitVersion + 1,
+    });
+
     // ── Schritt 1: Themenfelder speichern/aktualisieren ──────────────────────
     const themenfeldMap = {};
 

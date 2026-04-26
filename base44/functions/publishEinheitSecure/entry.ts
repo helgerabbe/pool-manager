@@ -111,8 +111,14 @@ Deno.serve(async (req) => {
     }
 
     // 7. Update Einheit status
+    //
+    // Optimistic Locking: version inkrementieren, damit
+    // acquireDashboardLockSecure den Statuswechsel im Re-Read mitbekommt.
+    // @MIGRATION_NOTE (Supabase): Wird durch BEFORE-UPDATE-Trigger ersetzt.
+    const currentEinheitVersion = Number.isFinite(einheit?.version) ? einheit.version : 1;
     const updatedEinheit = await base44.entities.Einheiten.update(einheitId, {
       freigabe_status: newStatus,
+      version: currentEinheitVersion + 1,
     });
 
     // 8. Log Success

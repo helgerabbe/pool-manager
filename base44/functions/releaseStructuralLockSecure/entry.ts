@@ -41,10 +41,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Entferne Lock
+    // Entferne Lock + version-Bump (OCC-Signal für acquireDashboardLockSecure).
+    // @MIGRATION_NOTE (Supabase): Inkrement wandert in einen BEFORE-UPDATE-Trigger.
+    const currentEinheitVersion = Number.isFinite(einheit?.version) ? einheit.version : 1;
     await base44.entities.Einheiten.update(einheit_id, {
       structural_lock: null,
       structural_locked_at: null,
+      version: currentEinheitVersion + 1,
     });
 
     return Response.json({ success: true });

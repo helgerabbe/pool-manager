@@ -76,6 +76,15 @@ Deno.serve(async (req) => {
       updatePayload[ownerField] = null;
     }
 
+    // Optimistic Locking: nur für Einheiten-Schreibzugriffe `version` bumpen.
+    // Lernpakete/Aufgabenbausteine haben (Stand 04/2026) noch kein
+    // OCC-Feld; dort bleibt das Update unverändert.
+    // @MIGRATION_NOTE (Supabase): Inkrement wandert in BEFORE-UPDATE-Trigger.
+    if (entityName === 'Einheiten') {
+      const currentEinheitVersion = Number.isFinite(entity?.version) ? entity.version : 1;
+      updatePayload.version = currentEinheitVersion + 1;
+    }
+
     // Update via Service Role (RLS-sicher)
     await base44.asServiceRole.entities[entityName].update(entityId, updatePayload);
 
