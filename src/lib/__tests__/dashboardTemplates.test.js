@@ -191,7 +191,7 @@ describe('DASHBOARD_TEMPLATES – V2-Spezifikation', () => {
 
   it('pragmatiker Sektor 2: Erarbeitungs- und Trainingsphase (Info → Handlung → Lernpaket → Brian-Bündel)', () => {
     const sec = DASHBOARD_TEMPLATES.pragmatiker[2];
-    expect(sec.titel).toBe('2. Erarbeitungs- und Trainingsphase');
+    expect(sec.titel).toBe('Erarbeitungs- und Trainingsphase');
     expect(sec.items.map((i) => i.ref_id)).toEqual([
       'sys_platzhalter_info',
       'sys_platzhalter_handlung',
@@ -236,7 +236,7 @@ describe('DASHBOARD_TEMPLATES – V2-Spezifikation', () => {
 
   it('ehrgeizig Sektor 2: Erarbeitungs- und Trainingsphase (Info → Handlung → Lernpaket → Brian-Bündel)', () => {
     const sec = DASHBOARD_TEMPLATES.ehrgeizig[2];
-    expect(sec.titel).toBe('2. Erarbeitungs- und Trainingsphase');
+    expect(sec.titel).toBe('Erarbeitungs- und Trainingsphase');
     expect(sec.items.map((i) => i.ref_id)).toEqual([
       'sys_platzhalter_info',
       'sys_platzhalter_handlung',
@@ -247,7 +247,7 @@ describe('DASHBOARD_TEMPLATES – V2-Spezifikation', () => {
 
   it('ehrgeizig Sektor 3: Vorbereitung auf die schriftliche Arbeit', () => {
     const sec = DASHBOARD_TEMPLATES.ehrgeizig[3];
-    expect(sec.titel).toBe('3. Vorbereitung auf die schriftliche Arbeit');
+    expect(sec.titel).toBe('Vorbereitung auf die schriftliche Arbeit');
     expect(sec.items.map((i) => i.ref_id)).toEqual(['sys_zwischentest']);
   });
 

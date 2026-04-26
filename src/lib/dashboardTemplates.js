@@ -68,25 +68,25 @@ const B = Object.freeze({
 const MINIMALIST = [
   {
     sektor_id: 'tpl_min_sec0',
-    titel: '0. Orientierung',
+    titel: 'Orientierung',
     modus: 'sequenziell',
     items: [sys(B.sec0Overview), sys(B.sec0Qblock), sys(B.diagnoseEntry)],
   },
   {
     sektor_id: 'tpl_min_sec1',
-    titel: '1. Lernlandkarte',
+    titel: 'Lernlandkarte',
     modus: 'sequenziell',
     items: [sys(B.mapReduced)],
   },
   {
     sektor_id: 'tpl_min_sec2',
-    titel: '2. Erste Erarbeitungsphase',
+    titel: 'Erste Erarbeitungsphase',
     modus: 'sequenziell',
     items: [sys(B.pInfo), sys(B.pHandlung), sys(B.pMoodleBuendel)],
   },
   {
     sektor_id: 'tpl_min_sec3',
-    titel: '3. Zwischentest',
+    titel: 'Zwischentest',
     modus: 'sequenziell',
     items: [sys(B.pInfo), sys(B.pZwischentest)],
   },
@@ -103,25 +103,25 @@ const MINIMALIST = [
 const PRAGMATIKER = [
   {
     sektor_id: 'tpl_prag_sec0',
-    titel: '0. Orientierung',
+    titel: 'Orientierung',
     modus: 'sequenziell',
     items: [sys(B.sec0Overview), sys(B.sec0Qblock), sys(B.diagnoseEntry)],
   },
   {
     sektor_id: 'tpl_prag_sec1',
-    titel: '1. Lernlandkarte',
+    titel: 'Lernlandkarte',
     modus: 'sequenziell',
     items: [sys(B.mapReduced)],
   },
   {
     sektor_id: 'tpl_prag_sec2',
-    titel: '2. Erarbeitungs- und Trainingsphase',
+    titel: 'Erarbeitungs- und Trainingsphase',
     modus: 'sequenziell',
     items: [sys(B.pInfo), sys(B.pHandlung), sys(B.pMoodleBuendel), sys(B.pBrianBuendel)],
   },
   {
     sektor_id: 'tpl_prag_sec3',
-    titel: '3. Abschlusstest',
+    titel: 'Abschlusstest',
     modus: 'sequenziell',
     items: [sys(B.externalTest)],
   },
@@ -139,31 +139,31 @@ const PRAGMATIKER = [
 const EHRGEIZIG = [
   {
     sektor_id: 'tpl_ehr_sec0',
-    titel: '0. Orientierung',
+    titel: 'Orientierung',
     modus: 'sequenziell',
     items: [sys(B.sec0Overview), sys(B.sec0Qblock), sys(B.diagnoseEntry)],
   },
   {
     sektor_id: 'tpl_ehr_sec1',
-    titel: '1. Einstieg & Anmeldung',
+    titel: 'Einstieg & Anmeldung',
     modus: 'sequenziell',
     items: [sys(B.mapFull), sys(B.examRegister)],
   },
   {
     sektor_id: 'tpl_ehr_sec2',
-    titel: '2. Erarbeitungs- und Trainingsphase',
+    titel: 'Erarbeitungs- und Trainingsphase',
     modus: 'sequenziell',
     items: [sys(B.pInfo), sys(B.pHandlung), sys(B.pMoodleBuendel), sys(B.pBrianBuendel)],
   },
   {
     sektor_id: 'tpl_ehr_sec3',
-    titel: '3. Vorbereitung auf die schriftliche Arbeit',
+    titel: 'Vorbereitung auf die schriftliche Arbeit',
     modus: 'sequenziell',
     items: [sys(B.zwischentest)],
   },
   {
     sektor_id: 'tpl_ehr_sec4',
-    titel: '4. Projekt',
+    titel: 'Projekt',
     modus: 'frei',
     items: [sys(B.pProjekt)],
   },
@@ -180,31 +180,31 @@ const EHRGEIZIG = [
 const PASSIONIERT = [
   {
     sektor_id: 'tpl_pass_sec0',
-    titel: '0. Orientierung',
+    titel: 'Orientierung',
     modus: 'sequenziell',
     items: [sys(B.sec0Overview), sys(B.sec0Qblock), sys(B.diagnoseEntry)],
   },
   {
     sektor_id: 'tpl_pass_sec1',
-    titel: '1. Einstieg & Anmeldung',
+    titel: 'Einstieg & Anmeldung',
     modus: 'frei',
     items: [sys(B.mapFull), sys(B.examRegister)],
   },
   {
     sektor_id: 'tpl_pass_sec2',
-    titel: '2. Anwendung & Training',
+    titel: 'Anwendung & Training',
     modus: 'frei',
     items: [sys(B.pBrianBuendel)],
   },
   {
     sektor_id: 'tpl_pass_sec3',
-    titel: '3. Projekt',
+    titel: 'Projekt',
     modus: 'frei',
     items: [sys(B.pProjekt)],
   },
   {
     sektor_id: 'tpl_pass_sec4',
-    titel: '4. Abschlusstest',
+    titel: 'Abschlusstest',
     modus: 'frei',
     items: [sys(B.externalTest)],
   },

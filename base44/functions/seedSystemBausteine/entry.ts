@@ -133,7 +133,7 @@ const PFLICHT_BAUSTEINE = [
   // ── Dashboards V2: Sektion-0-Bausteine ───────────────────────────────
   {
     baustein_id: 'sys_sec0_overview',
-    titel: 'Sektion 0 – Übersicht',
+    titel: 'Kurze Einführung in die Einheit',
     icon: 'book-open',
     admin_beschreibung:
       'Einfache Sprache: Schüler bekommt eine kompakte Übersicht der Einheit. Bestätigung per Button („Verstanden").',
@@ -144,7 +144,7 @@ const PFLICHT_BAUSTEINE = [
   },
   {
     baustein_id: 'sys_sec0_qblock',
-    titel: 'Sektion 0 – Freiwilliger Fragenblock',
+    titel: 'Freiwilliger Fragenblock für die Einstiegsdiagnose',
     icon: 'help-circle',
     admin_beschreibung:
       'Optionale Eingangsfragen, die der Schüler an die KI stellen kann, bevor er mit der Einheit beginnt.',
