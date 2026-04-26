@@ -117,10 +117,8 @@ function AufgabeListItem({ aufgabe, index, isSelected, isUsed, onClick }) {
   const isZwischentest = isBuendel && aufgabe.lernpaket_logik === 'test_only';
   const inlineSuffix = isBuendel ? LERNPAKET_LOGIK_INLINE[aufgabe.lernpaket_logik] : null;
 
-  // Aufgaben/Projekte: zweite Zeile mit Kategorie + Anforderungsebene bleibt
-  // erhalten. Lernpakete: einzeilig (Icon + Titel, optional Inline-Suffix).
-  const isProjekt = !isBuendel && getGroupKeyForItem(aufgabe) === 'projekte';
-  const subtitle = isBuendel ? null : (isProjekt ? 'Projekt' : typMeta.short);
+  // Alle Pool-Karten sind ab jetzt einzeilig: [Icon] Titel. Untertitel
+  // (Aufgabentyp / Anforderungsebene / "Lernpaket") werden nicht mehr gerendert.
 
   // Zwischentests: Icon-Box dezent rosa (statt Standard-Blau) + sehr leichte
   // Karten-Tönung. Höhe bleibt identisch.
@@ -137,7 +135,7 @@ function AufgabeListItem({ aufgabe, index, isSelected, isUsed, onClick }) {
           {...provided.dragHandleProps}
           onClick={onClick}
           title={isUsed ? 'Bereits in diesem Lernpfad' : 'Ziehen, um in den Pfad einzusortieren'}
-          className={`w-full text-left rounded-lg ${isBuendel ? 'py-2 px-2.5' : 'p-2.5'} border transition-all flex items-center gap-2 cursor-pointer ${
+          className={`w-full text-left rounded-lg py-2 px-2.5 border transition-all flex items-center gap-2 cursor-pointer ${
             isUsed
               ? 'border-border bg-muted/40 opacity-50 cursor-not-allowed'
               : isSelected
@@ -155,21 +153,6 @@ function AufgabeListItem({ aufgabe, index, isSelected, isUsed, onClick }) {
                 <span className="ml-1 text-muted-foreground font-normal">({inlineSuffix})</span>
               )}
             </p>
-            {subtitle && (
-              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                <span className={`text-[10px] font-semibold ${typMeta.color.text}`}>
-                  {subtitle}
-                </span>
-                {aufgabe.anforderungsebene && (
-                  <>
-                    <span className="text-muted-foreground/40 text-[10px]">·</span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {aufgabe.anforderungsebene.replace(' - ', ' ')}
-                    </span>
-                  </>
-                )}
-              </div>
-            )}
           </div>
           {isUsed && (
             <div
