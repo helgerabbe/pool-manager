@@ -14,6 +14,9 @@ import { cn } from '@/lib/utils';
 import NavigationTooltip from '@/components/layout/NavigationTooltip';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import { getFachFarbe } from '@/lib/fachFarben';
 
 export default function UnitToolbar({
   einheit,
@@ -27,6 +30,14 @@ export default function UnitToolbar({
   onSaveStructure = null,
 }) {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+  // Fach-Farbe aus dem Lookup für die Einheitstitel-Färbung
+  const { data: faecher = [] } = useQuery({
+    queryKey: ['lookupFaecher'],
+    queryFn: () => base44.entities.LookupFaecher.list(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const fachHex = einheit ? getFachFarbe(einheit.fach, faecher) : null;
 
   // Auto-fade Success-Message nach 5 Sekunden
   useEffect(() => {
@@ -86,7 +97,7 @@ export default function UnitToolbar({
           {/* ════════════════════════════════════════════════════════════════════════ */}
           <div className="flex-1 flex flex-col items-center justify-center text-center">
             <div className="flex items-center gap-2 justify-center">
-              <h2 className="text-lg font-bold text-foreground">
+              <h2 className="text-lg font-bold" style={fachHex ? { color: fachHex } : undefined}>
                 {einheit.titel_der_einheit}
               </h2>
               

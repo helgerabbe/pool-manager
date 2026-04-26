@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import { Loader2, BookOpen, ShieldCheck, ShieldOff } from 'lucide-react';
+import { Loader2, ShieldCheck, ShieldOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function CockpitActionToolbar({
@@ -23,7 +23,6 @@ export default function CockpitActionToolbar({
   statusBusy,
   isStructuralEditingActive,
   isLockedByOther,
-  onOpenGuide,
   onReleasePath,
   onUnlockPath,
   saveIcon: SaveIcon,
@@ -32,17 +31,6 @@ export default function CockpitActionToolbar({
 }) {
   return (
     <div className="shrink-0 px-4 py-1 border-b border-border bg-card flex items-center gap-2 flex-wrap">
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={onOpenGuide}
-        className="gap-1.5 h-6 text-[11px] px-2"
-        title="Didaktische Erklärung & Standard-Raster für diesen Lerntyp"
-      >
-        <BookOpen className="w-3 h-3" />
-        Guide
-      </Button>
-
       {/* Kompakter Save-Indicator als reines Icon (Tooltip via title). */}
       {SaveIcon && (
         <span title={saveTitle} className="inline-flex items-center">

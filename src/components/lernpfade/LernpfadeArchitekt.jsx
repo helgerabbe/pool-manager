@@ -11,7 +11,7 @@
  */
 
 import React from 'react';
-import { Sparkles, Layers, Trophy, Star, Plus, Zap } from 'lucide-react';
+import { Sparkles, Layers, Trophy, Star, Plus, Zap, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import LernpfadeSektor from '@/components/lernpfade/LernpfadeSektor';
 import PfadKopierenMenu from '@/components/lernpfade/PfadKopierenMenu';
@@ -113,6 +113,7 @@ export default function LernpfadeArchitekt({
   onCopyFromLernTyp,
   getAmpelStatusForItem,
   onOpenAufgabeEditor,
+  onOpenGuide,
   canvasScrollRef,
 }) {
   const sektoren = konfiguration?.[activeLernTyp] || [];
@@ -132,6 +133,19 @@ export default function LernpfadeArchitekt({
               onClick={() => onActiveLernTypChange?.(typ.key)}
             />
           ))}
+          {onOpenGuide && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={onOpenGuide}
+              className="gap-1.5 h-7 text-[11px] px-2.5"
+              title="Didaktische Erklärung & Standard-Raster für diesen Lerntyp"
+            >
+              <BookOpen className="w-3 h-3" />
+              Guide
+            </Button>
+          )}
         </div>
         {!readOnly && (
           <div className="ml-auto flex items-center gap-1.5">

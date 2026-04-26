@@ -82,13 +82,6 @@ export default function SystemBausteinPoolItem({
                   >
                     {baustein.titel}
                   </p>
-                  <p
-                    className={`text-[10px] font-mono truncate ${
-                      isPlatzhalter ? PLATZHALTER_CLASSES.subtitle : 'text-slate-500'
-                    }`}
-                  >
-                    {baustein.baustein_id}
-                  </p>
                 </div>
               </div>
             </TooltipTrigger>

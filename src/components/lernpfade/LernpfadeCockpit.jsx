@@ -372,7 +372,6 @@ export default function LernpfadeCockpit({
           statusBusy={statusBusy}
           isStructuralEditingActive={isStructuralEditingActive}
           isLockedByOther={isLockedByOther}
-          onOpenGuide={() => setIsGuideOpen(true)}
           onReleasePath={handleReleasePath}
           onUnlockPath={handleUnlockPath}
           saveIcon={SaveIcon}
@@ -417,6 +416,7 @@ export default function LernpfadeCockpit({
               onCopyFromLernTyp={handleCopyFromLernTyp}
               getAmpelStatusForItem={getAmpelStatusForItem}
               onOpenAufgabeEditor={handleOpenAufgabeEditor}
+              onOpenGuide={() => setIsGuideOpen(true)}
               canvasScrollRef={scrollRef}
             />
           </main>
