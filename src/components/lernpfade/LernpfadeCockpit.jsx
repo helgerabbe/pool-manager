@@ -41,6 +41,7 @@ import {
   removeSektor,
   removeAufgabeFromLernTyp,
 } from '@/lib/lernpfadeUtils';
+import { getSektorTemplate, SEKTOR_TEMPLATE_KEYS } from '@/lib/sektorTemplates';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { getAmpelStatus } from '@/lib/ampelLogic';
 import { adaptLernpaketToPoolItem } from '@/lib/lernpaketAdapter';
@@ -240,10 +241,17 @@ export default function LernpfadeCockpit({
   });
 
   // ── Sektor-Handler ──────────────────────────────────────────────────
-  const handleAddSektor = useCallback(() => {
-    if (readOnly) return;
-    updateKonfiguration((prev) => addSektor(prev, activeLernTyp, createNewSektor()));
-  }, [readOnly, activeLernTyp, updateKonfiguration]);
+  // `templateKey` ist optional: 'erarbeitung' | 'zwischentest' | 'leer'.
+  // Ohne Key (Legacy-Aufruf) → leerer Sektor.
+  const handleAddSektor = useCallback(
+    (templateKey = SEKTOR_TEMPLATE_KEYS.LEER) => {
+      if (readOnly) return;
+      const tpl = getSektorTemplate(templateKey);
+      const sektor = createNewSektor({ titel: tpl.titel, modus: tpl.modus, items: tpl.items });
+      updateKonfiguration((prev) => addSektor(prev, activeLernTyp, sektor));
+    },
+    [readOnly, activeLernTyp, updateKonfiguration]
+  );
 
   const handlePatchSektor = useCallback(
     (sektorId, patch) => {

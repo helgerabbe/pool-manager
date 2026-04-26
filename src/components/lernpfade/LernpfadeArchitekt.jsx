@@ -11,11 +11,20 @@
  */
 
 import React from 'react';
-import { Sparkles, Layers, Trophy, Star, Plus, BookOpen, ShieldCheck, ShieldOff, Loader2, PenLine } from 'lucide-react';
+import { Sparkles, Layers, Trophy, Star, Plus, BookOpen, ShieldCheck, ShieldOff, Loader2, PenLine, ClipboardCheck, FilePlus, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import LernpfadeSektor from '@/components/lernpfade/LernpfadeSektor';
 import InfoHint from '@/components/lernpfade/InfoHint';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { SEKTOR_TEMPLATE_KEYS } from '@/lib/sektorTemplates';
 
 function StatusBadge({ aktivLabel, istPfadGesperrt }) {
   const tooltipContent = (
@@ -115,6 +124,45 @@ export const LERN_TYPEN = [
     },
   },
 ];
+
+function AddSektorMenu({ onAddSektor, variant = 'default', size = 'sm', className = '' }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button type="button" variant={variant} size={size} className={`gap-1.5 ${className}`}>
+          <Plus className="w-3.5 h-3.5" /> Sektor hinzufügen
+          <ChevronDown className="w-3 h-3 opacity-70" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-64">
+        <DropdownMenuLabel>Vorlage auswählen</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => onAddSektor?.(SEKTOR_TEMPLATE_KEYS.ERARBEITUNG)}>
+          <BookOpen className="w-4 h-4 text-blue-600" />
+          <div className="flex flex-col">
+            <span className="font-medium">Erarbeitungsphase</span>
+            <span className="text-[11px] text-muted-foreground">Einführung · ggf. Handlung · Lernpakete</span>
+          </div>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onAddSektor?.(SEKTOR_TEMPLATE_KEYS.ZWISCHENTEST)}>
+          <ClipboardCheck className="w-4 h-4 text-rose-600" />
+          <div className="flex flex-col">
+            <span className="font-medium">Zwischentest</span>
+            <span className="text-[11px] text-muted-foreground">Einstiegsseite · Zwischentest-Platzhalter</span>
+          </div>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => onAddSektor?.(SEKTOR_TEMPLATE_KEYS.LEER)}>
+          <FilePlus className="w-4 h-4 text-muted-foreground" />
+          <div className="flex flex-col">
+            <span className="font-medium">Leerer Sektor</span>
+            <span className="text-[11px] text-muted-foreground">Ohne vordefinierte Platzhalter</span>
+          </div>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 function LernTypTab({ typ, active, count, onClick }) {
   const Icon = typ.icon;
@@ -284,9 +332,7 @@ export default function LernpfadeArchitekt({
             </p>
             {!readOnly && (
               <div className="inline-flex items-center gap-1.5">
-                <Button type="button" size="sm" onClick={onAddSektor} className="gap-1.5">
-                  <Plus className="w-3.5 h-3.5" /> Sektor hinzufügen
-                </Button>
+                <AddSektorMenu onAddSektor={onAddSektor} />
                 <InfoHint title="Was ist ein Sektor?" side="top">
                   Ein Sektor ist ein Abschnitt im Lernpfad – eine Art Kapitel. Schüler arbeiten ihn entweder „sequenziell" (Aufgabe für Aufgabe) oder „frei" (Reihenfolge offen) ab. Pro Lerntyp lassen sich beliebig viele Sektoren anlegen.
                 </InfoHint>
@@ -318,15 +364,7 @@ export default function LernpfadeArchitekt({
             ))}
             {!readOnly && (
               <div className="flex items-center gap-1.5">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={onAddSektor}
-                  className="gap-1.5 flex-1"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Sektor hinzufügen
-                </Button>
+                <AddSektorMenu onAddSektor={onAddSektor} variant="outline" className="flex-1" />
                 <InfoHint title="Was ist ein Sektor?" side="top">
                   Ein Sektor ist ein Abschnitt im Lernpfad – eine Art Kapitel. Schüler arbeiten ihn entweder „sequenziell" (Aufgabe für Aufgabe) oder „frei" (Reihenfolge offen) ab. Pro Lerntyp lassen sich beliebig viele Sektoren anlegen.
                 </InfoHint>

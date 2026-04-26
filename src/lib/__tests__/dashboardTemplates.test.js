@@ -132,33 +132,39 @@ describe('DASHBOARD_TEMPLATES – Item-Schema', () => {
 // V2-Spezifikation: konkrete Sektor-Längen, Modi und Schlüssel-Items
 // ─────────────────────────────────────────────────────────────────────────
 describe('DASHBOARD_TEMPLATES – V2-Spezifikation', () => {
-  // ── Minimalist ────────────────────────────────────────────────────────
-  it('minimalist hat 3 Sektoren, alle sequenziell', () => {
+  // ── Minimalist (V2.1) ─────────────────────────────────────────────────
+  it('minimalist hat 4 Sektoren, alle sequenziell', () => {
     const t = DASHBOARD_TEMPLATES.minimalist;
-    expect(t).toHaveLength(3);
+    expect(t).toHaveLength(4);
     t.forEach((s) => expect(s.modus).toBe('sequenziell'));
   });
 
-  it('minimalist Sektor 1: Overview → reduzierte Karte', () => {
+  it('minimalist Sektor 0: Overview → freiwilliger Frageblock → Einstiegsdiagnose', () => {
     expect(DASHBOARD_TEMPLATES.minimalist[0].items.map((i) => i.ref_id)).toEqual([
       'sys_sec0_overview',
+      'sys_sec0_qblock',
+      'sys_diagnose_entry',
+    ]);
+  });
+
+  it('minimalist Sektor 1: nur reduzierte Lernlandkarte', () => {
+    expect(DASHBOARD_TEMPLATES.minimalist[1].items.map((i) => i.ref_id)).toEqual([
       'sys_map_reduced',
     ]);
   });
 
-  it('minimalist Sektor 2: Info → Handlung → Moodle-Bündel → Lehrer-Check', () => {
-    expect(DASHBOARD_TEMPLATES.minimalist[1].items.map((i) => i.ref_id)).toEqual([
+  it('minimalist Sektor 2: Einführung → optionale Handlung → Lernpaket-Platzhalter (kein Lehrer-Check)', () => {
+    expect(DASHBOARD_TEMPLATES.minimalist[2].items.map((i) => i.ref_id)).toEqual([
       'sys_platzhalter_info',
       'sys_platzhalter_handlung',
       'sys_platzhalter_moodle_buendel',
-      'sys_lehrer_check',
     ]);
   });
 
-  it('minimalist Sektor 3: Info → Moodle-Bündel (Zwischentest)', () => {
-    expect(DASHBOARD_TEMPLATES.minimalist[2].items.map((i) => i.ref_id)).toEqual([
+  it('minimalist Sektor 3: Einstiegsseite → Zwischentest-Platzhalter', () => {
+    expect(DASHBOARD_TEMPLATES.minimalist[3].items.map((i) => i.ref_id)).toEqual([
       'sys_platzhalter_info',
-      'sys_platzhalter_moodle_buendel',
+      'sys_platzhalter_zwischentest',
     ]);
   });
 

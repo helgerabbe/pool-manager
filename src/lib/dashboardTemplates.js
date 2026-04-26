@@ -38,6 +38,8 @@ const sys = (refId) => ({ type: ITEM_TYPE.SYSTEM, ref_id: refId });
 const B = Object.freeze({
   // Sektion 0
   sec0Overview: 'sys_sec0_overview',
+  sec0Qblock: 'sys_sec0_qblock',
+  diagnoseEntry: 'sys_diagnose_entry',
   // Karte
   mapReduced: 'sys_map_reduced',
   mapFull: 'sys_map_full',
@@ -50,30 +52,43 @@ const B = Object.freeze({
   pInfo: 'sys_platzhalter_info',
   pHandlung: 'sys_platzhalter_handlung',
   pMoodleBuendel: 'sys_platzhalter_moodle_buendel',
+  pZwischentest: 'sys_platzhalter_zwischentest',
   pBrianBuendel: 'sys_platzhalter_brian_buendel',
   pProjekt: 'sys_platzhalter_projekt',
 });
 
 // ── Template: Minimalist ────────────────────────────────────────────────
 // Alle Sektoren initial 'sequenziell'.
+//
+// Aufbau (V2.1):
+//   Sektor 0  – Orientierung   : Einführung, Freiwilliger Frageblock, Einstiegsdiagnose
+//   Sektor 1  – Lernlandkarte  : nur die verringerte Karte
+//   Sektor 2  – Erarbeitung    : Einführung, ggf. Handlung, Lernpaket-Platzhalter
+//   Sektor 3  – Zwischentest   : Einstiegsseite, Zwischentest-Platzhalter
 const MINIMALIST = [
   {
-    sektor_id: 'tpl_min_sec1',
-    titel: '1. Einstieg & Lernlandkarte',
+    sektor_id: 'tpl_min_sec0',
+    titel: '0. Orientierung',
     modus: 'sequenziell',
-    items: [sys(B.sec0Overview), sys(B.mapReduced)],
+    items: [sys(B.sec0Overview), sys(B.sec0Qblock), sys(B.diagnoseEntry)],
+  },
+  {
+    sektor_id: 'tpl_min_sec1',
+    titel: '1. Lernlandkarte',
+    modus: 'sequenziell',
+    items: [sys(B.mapReduced)],
   },
   {
     sektor_id: 'tpl_min_sec2',
     titel: '2. Erste Erarbeitungsphase',
     modus: 'sequenziell',
-    items: [sys(B.pInfo), sys(B.pHandlung), sys(B.pMoodleBuendel), sys(B.lehrerCheck)],
+    items: [sys(B.pInfo), sys(B.pHandlung), sys(B.pMoodleBuendel)],
   },
   {
     sektor_id: 'tpl_min_sec3',
     titel: '3. Zwischentest',
     modus: 'sequenziell',
-    items: [sys(B.pInfo), sys(B.pMoodleBuendel)],
+    items: [sys(B.pInfo), sys(B.pZwischentest)],
   },
 ];
 

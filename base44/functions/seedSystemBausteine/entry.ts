@@ -66,12 +66,12 @@ const PFLICHT_BAUSTEINE = [
   // deshalb eine warnende export_instruktion.
   {
     baustein_id: 'sys_platzhalter_handlung',
-    titel: 'Platzhalter: Handlungsorientierte Aufgabe',
+    titel: 'Ggf. handlungsorientierte Aufgabe (optional)',
     icon: 'hand',
     admin_beschreibung:
-      'Drop-Zone-Erinnerung: Hier soll später eine handlungsorientierte Aufgabe (z. B. Prozess-Aufgabe) eingefügt werden.',
+      'Optionaler Platzhalter: Hier kann – muss aber nicht – eine handlungsorientierte Aufgabe eingefügt werden. Visuell als fakultativ gekennzeichnet.',
     export_instruktion:
-      'PLATZHALTER – muss durch eine echte handlungsorientierte Aufgabe ersetzt werden, bevor der Pfad freigegeben wird.',
+      'OPTIONALER PLATZHALTER – kann durch eine handlungsorientierte Aufgabe ersetzt werden. Wenn nicht benötigt, vor Freigabe entfernen.',
     ist_aktiv: true,
     reihenfolge: 100,
   },
@@ -110,12 +110,12 @@ const PFLICHT_BAUSTEINE = [
   },
   {
     baustein_id: 'sys_platzhalter_info',
-    titel: 'Platzhalter: Infoseite / Prozess-Aufgabe',
+    titel: 'Einführung in das Themenfeld',
     icon: 'info',
     admin_beschreibung:
-      'Drop-Zone-Erinnerung: Hier soll später eine reine Infoseite oder eine Prozess-Aufgabe (Orientierung, Anleitung) eingefügt werden.',
+      'Drop-Zone-Erinnerung: Hier soll später eine Einführung in das Themenfeld (Infoseite oder Prozess-Aufgabe) eingefügt werden.',
     export_instruktion:
-      'PLATZHALTER – muss durch eine echte Infoseite oder Prozess-Aufgabe ersetzt werden, bevor der Pfad freigegeben wird.',
+      'PLATZHALTER – muss durch eine echte Einführung (Infoseite oder Prozess-Aufgabe) ersetzt werden, bevor der Pfad freigegeben wird.',
     ist_aktiv: true,
     reihenfolge: 140,
   },
@@ -202,14 +202,25 @@ const PFLICHT_BAUSTEINE = [
   // ── Dashboards V2: Bündel-Platzhalter ────────────────────────────────
   {
     baustein_id: 'sys_platzhalter_moodle_buendel',
-    titel: 'Platzhalter: Moodle-Bündel',
+    titel: 'Platzhalter für ein oder mehrere Lernpakete',
     icon: 'package',
     admin_beschreibung:
-      'Drop-Zone-Erinnerung: Hier soll später ein Moodle-Bündel (aufgaben_typ=buendel mit lernpaket_logik) eingefügt werden.',
+      'Drop-Zone-Erinnerung: Hier soll später ein oder mehrere Lernpakete (aufgaben_typ=buendel mit lernpaket_logik) eingefügt werden.',
     export_instruktion:
-      'PLATZHALTER – muss durch ein echtes Moodle-Bündel ersetzt werden, bevor der Pfad freigegeben wird.',
+      'PLATZHALTER – muss durch ein oder mehrere echte Lernpakete ersetzt werden, bevor der Pfad freigegeben wird.',
     ist_aktiv: true,
     reihenfolge: 160,
+  },
+  {
+    baustein_id: 'sys_platzhalter_zwischentest',
+    titel: 'Platzhalter für einen Zwischentest',
+    icon: 'clipboard-check',
+    admin_beschreibung:
+      'Drop-Zone-Erinnerung: Hier soll später ein Lernpaket eingefügt werden, das als Zwischentest (test_only) dient.',
+    export_instruktion:
+      'PLATZHALTER – muss durch ein echtes Zwischentest-Lernpaket ersetzt werden, bevor der Pfad freigegeben wird.',
+    ist_aktiv: true,
+    reihenfolge: 165,
   },
   {
     baustein_id: 'sys_platzhalter_brian_buendel',
@@ -221,6 +232,18 @@ const PFLICHT_BAUSTEINE = [
       'PLATZHALTER – muss durch ein echtes Brian-Bündel mit X-von-Y-Auswahl ersetzt werden, bevor der Pfad freigegeben wird.',
     ist_aktiv: true,
     reihenfolge: 170,
+  },
+  // ── Sektor 0: Einstiegsdiagnose ──────────────────────────────────────
+  {
+    baustein_id: 'sys_diagnose_entry',
+    titel: 'Einstiegsdiagnose',
+    icon: 'clipboard-check',
+    admin_beschreibung:
+      'Kurze Eingangsdiagnose zur Bestimmung des individuellen Startpunkts in der Einheit. Ergebnisse fließen in die Pfad-Empfehlung ein.',
+    export_instruktion:
+      'Bearbeite eine kurze Einstiegsdiagnose, um deinen Startpunkt in der Einheit zu bestimmen.',
+    ist_aktiv: true,
+    reihenfolge: 8,
   },
 ];
 
