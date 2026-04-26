@@ -86,12 +86,20 @@ export function useDashboardRelease({
       return;
     }
 
-    // 2. Vor dem Lock: pending Save flushen, damit die Junction-Table garantiert aktuell ist.
+    // 2. Sicherheitsabfrage: Lehrkräfte sollen sich nicht versehentlich aussperren.
+    const label = lerntypLabel || activeLernTyp;
+    const ok = window.confirm(
+      `Lernpfad „${label}" jetzt freigeben und sperren?\n\n` +
+      'Die Schüler sehen den Pfad danach. Änderungen sind erst nach „Entsperren" wieder möglich.'
+    );
+    if (!ok) return;
+
+    // 3. Vor dem Lock: pending Save flushen, damit die Junction-Table garantiert aktuell ist.
     if (hasPendingSave?.()) {
       await flushSave();
     }
 
-    // 3. Lock-Aufruf
+    // 4. Lock-Aufruf
     setStatusBusy(true);
     try {
       const res = await base44.functions.invoke('setLernpfadStatus', {
@@ -100,7 +108,6 @@ export function useDashboardRelease({
         newStatus: PFAD_STATUS.LOCKED,
       });
       if (res?.data?.ok) {
-        const label = lerntypLabel || activeLernTyp;
         toast.success(`Lernpfad „${label}" erfolgreich freigegeben und gesperrt.`);
         queryClient.invalidateQueries({ queryKey: ['lernpfadStatus', einheitId, activeLernTyp] });
         // exact: false → trifft alle Aufgaben-Lock-Queries (auch in anderen Tabs/Editoren).

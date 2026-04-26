@@ -248,7 +248,7 @@ export default function LernpfadeArchitekt({
   // Inline Status- + Freigabe-Zeile, die direkt über dem ersten Sektor
   // im Canvas erscheint (rechtsbündig, kompakt).
   const inlineReleaseRow = showInlineReleaseRow ? (
-    <div className="flex items-center gap-1.5 flex-wrap justify-end mb-2">
+    <div className="flex items-center gap-1.5 flex-wrap justify-start mb-2">
       <StatusBadge aktivLabel={aktivLabel} istPfadGesperrt={istPfadGesperrt} />
       {istPfadGesperrt && darfEntsperren && (
         <div className="inline-flex items-center gap-1">
@@ -273,7 +273,7 @@ export default function LernpfadeArchitekt({
             size="sm"
             onClick={onReleasePath}
             disabled={statusBusy || readOnly}
-            className="gap-1.5 h-7 text-[11px] px-2.5"
+            className="gap-1.5 h-7 text-[11px] px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white border-transparent"
             title={readOnly ? 'Bitte zuerst Bearbeiten starten' : `„${aktivLabel}" validieren und freigeben`}
           >
             {statusBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
