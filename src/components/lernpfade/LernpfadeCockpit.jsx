@@ -18,7 +18,9 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { DragDropContext } from '@hello-pangea/dnd';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Loader2, Cloud, CloudOff, Check } from 'lucide-react';
+import { Cloud, CloudOff, Check, Loader2 } from 'lucide-react';
+// Loader2 wird im Save-Indicator (saving-State) als animiertes Spinner-Icon
+// genutzt – siehe `saveIndicator` weiter unten. Nicht entfernen.
 import { useScrollDirection } from '@/hooks/useScrollDirection';
 import LernpfadeAufgabenPool from '@/components/lernpfade/LernpfadeAufgabenPool';
 import LernpfadeArchitekt, { LERN_TYPEN } from '@/components/lernpfade/LernpfadeArchitekt';
@@ -54,12 +56,13 @@ export default function LernpfadeCockpit({
   einheit,
   isStructuralEditingActive,
   isLockedByOther,
-  acquiringStructLock,
-  releasingStructLock,
-  onAcquireLock,
-  onReleaseLock,
   kannBearbeiten,
 }) {
+  // Hinweis: Lock-Acquire/Release wird vom Parent (`Workspace`) gehandhabt
+  // und betrifft das Cockpit nur indirekt über `isStructuralEditingActive` /
+  // `isLockedByOther`. Die früher hier durchgereichten Props
+  // (acquiringStructLock, releasingStructLock, onAcquireLock, onReleaseLock)
+  // wurden im Body nie konsumiert und sind daher entfernt worden.
   const queryClient = useQueryClient();
 
   // ── State ───────────────────────────────────────────────────────────
@@ -294,9 +297,13 @@ export default function LernpfadeCockpit({
         if (!ok) return;
       }
       updateKonfiguration((prev) => copySektorenBetweenLernTypen(prev, sourceLernTyp, activeLernTyp));
-      setSelectedAufgabeId(null);
+      // Beide Selections leeren – nach einem Pfad-Kopiervorgang können sowohl
+      // ausgewählte Aufgaben als auch System-Bausteine im Pfad nicht mehr
+      // existieren. Vorher wurde nur die Aufgabe zurückgesetzt → Inkonsistenz.
+      setSelectedAufgabeIdState(null);
+      setSelectedSystemBausteinIdState(null);
     },
-    [readOnly, activeLernTyp, konfiguration, updateKonfiguration, setSelectedAufgabeId]
+    [readOnly, activeLernTyp, konfiguration, updateKonfiguration]
   );
 
   // ── Monitor-Selection ──────────────────────────────────────────────

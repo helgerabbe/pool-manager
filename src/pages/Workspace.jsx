@@ -736,10 +736,6 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                   einheit={einheit}
                   isStructuralEditingActive={isStructuralEditingActive}
                   isLockedByOther={isLockedByOther}
-                  acquiringStructLock={acquiringStructLock}
-                  releasingStructLock={releasingStructLock}
-                  onAcquireLock={handleAcquireStructLock}
-                  onReleaseLock={handleReleaseStructLock}
                   kannBearbeiten={kannDieseEinheitBearbeiten}
                 />
               </ErrorBoundary>
