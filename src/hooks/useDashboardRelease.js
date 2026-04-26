@@ -42,6 +42,14 @@ export function useDashboardRelease({
   const [statusBusy, setStatusBusy] = useState(false);
   const [blockerOpen, setBlockerOpen] = useState(false);
   const [blockers, setBlockers] = useState([]);
+  // Confirm-Dialog (Erfolgsfall): wird geöffnet, wenn die Pre-Flight-Prüfung
+  // sauber durchläuft. Nutzer sieht das Prüfergebnis und bestätigt explizit.
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmSummary, setConfirmSummary] = useState({
+    sektorCount: 0,
+    itemCount: 0,
+    aufgabenCount: 0,
+  });
 
   // Sammelt alle Items des aktiven Lerntyps, die NICHT grün sind. System-Bausteine
   // sind per Definition immer grün und werden nicht aufgenommen.
@@ -86,20 +94,43 @@ export function useDashboardRelease({
       return;
     }
 
-    // 2. Sicherheitsabfrage: Lehrkräfte sollen sich nicht versehentlich aussperren.
-    const label = lerntypLabel || activeLernTyp;
-    const ok = window.confirm(
-      `Lernpfad „${label}" jetzt freigeben und sperren?\n\n` +
-      'Die Schüler sehen den Pfad danach. Änderungen sind erst nach „Entsperren" wieder möglich.'
-    );
-    if (!ok) return;
+    // 2. Pre-Flight ok → Confirm-Dialog mit Prüfergebnis öffnen.
+    let aufgabenCount = 0;
+    let itemCount = 0;
+    sektoren.forEach((s) => {
+      const items = Array.isArray(s.items) ? s.items : [];
+      itemCount += items.length;
+      items.forEach((it) => {
+        if (it?.type === ITEM_TYPE.AUFGABE) aufgabenCount += 1;
+      });
+    });
+    setConfirmSummary({
+      sektorCount: sektoren.length,
+      itemCount,
+      aufgabenCount,
+    });
+    setConfirmOpen(true);
+  }, [
+    einheitId,
+    darfFreigeben,
+    istPfadGesperrt,
+    statusBusy,
+    konfiguration,
+    activeLernTyp,
+    collectBlockers,
+  ]);
 
-    // 3. Vor dem Lock: pending Save flushen, damit die Junction-Table garantiert aktuell ist.
+  // Wird vom Confirm-Dialog ausgelöst, nachdem der Nutzer das Prüfergebnis
+  // gesehen und „Jetzt freigeben & sperren" gedrückt hat.
+  const confirmReleasePath = useCallback(async () => {
+    if (!einheitId || statusBusy) return;
+    const label = lerntypLabel || activeLernTyp;
+
+    // Vor dem Lock: pending Save flushen, damit die Junction-Table garantiert aktuell ist.
     if (hasPendingSave?.()) {
       await flushSave();
     }
 
-    // 4. Lock-Aufruf
     setStatusBusy(true);
     try {
       const res = await base44.functions.invoke('setLernpfadStatus', {
@@ -112,6 +143,7 @@ export function useDashboardRelease({
         queryClient.invalidateQueries({ queryKey: ['lernpfadStatus', einheitId, activeLernTyp] });
         // exact: false → trifft alle Aufgaben-Lock-Queries (auch in anderen Tabs/Editoren).
         queryClient.invalidateQueries({ queryKey: ['aufgabeLock'], exact: false });
+        setConfirmOpen(false);
       } else {
         toast.error(res?.data?.error || 'Freigabe fehlgeschlagen.');
       }
@@ -123,12 +155,8 @@ export function useDashboardRelease({
     }
   }, [
     einheitId,
-    darfFreigeben,
-    istPfadGesperrt,
     statusBusy,
-    konfiguration,
     activeLernTyp,
-    collectBlockers,
     queryClient,
     flushSave,
     hasPendingSave,
@@ -238,5 +266,10 @@ export function useDashboardRelease({
     handleReleasePath,
     handleUnlockPath,
     handleApplyTemplate,
+    // Confirm-Dialog (Erfolgsfall der Pre-Flight-Prüfung)
+    confirmOpen,
+    setConfirmOpen,
+    confirmSummary,
+    confirmReleasePath,
   };
 }

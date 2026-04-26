@@ -25,6 +25,7 @@ import LernpfadeAufgabenPool from '@/components/lernpfade/LernpfadeAufgabenPool'
 import LernpfadeArchitekt, { LERN_TYPEN } from '@/components/lernpfade/LernpfadeArchitekt';
 import AufgabePreviewDialog from '@/components/lernpfade/AufgabePreviewDialog';
 import ReleaseBlockerModal from '@/components/lernpfade/ReleaseBlockerModal';
+import ReleaseConfirmDialog from '@/components/lernpfade/ReleaseConfirmDialog';
 import DidaktischerGuidePanel from '@/components/lernpfade/DidaktischerGuidePanel';
 import { useLernpfadStatus } from '@/hooks/useLernpfadStatus';
 import { useDashboardSync } from '@/hooks/useDashboardSync';
@@ -227,6 +228,10 @@ export default function LernpfadeCockpit({
     handleReleasePath,
     handleUnlockPath,
     handleApplyTemplate,
+    confirmOpen,
+    setConfirmOpen,
+    confirmSummary,
+    confirmReleasePath,
   } = useDashboardRelease({
     einheitId: einheit?.id,
     activeLernTyp,
@@ -407,6 +412,17 @@ export default function LernpfadeCockpit({
           setBlockerOpen(false);
           handleOpenAufgabeEditor(aufgabe);
         }}
+      />
+
+      <ReleaseConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        lerntypLabel={lerntypLabel}
+        sektorCount={confirmSummary.sektorCount}
+        itemCount={confirmSummary.itemCount}
+        aufgabenCount={confirmSummary.aufgabenCount}
+        busy={statusBusy}
+        onConfirm={confirmReleasePath}
       />
 
       <DidaktischerGuidePanel
