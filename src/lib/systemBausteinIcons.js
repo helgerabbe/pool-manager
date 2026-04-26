@@ -28,6 +28,7 @@ import {
   ExternalLink,
   Package,
   PackageCheck,
+  Calendar,
 } from 'lucide-react';
 
 const ICONS = {
@@ -51,6 +52,9 @@ const ICONS = {
   'external-link': ExternalLink,
   package: Package,
   'package-check': PackageCheck,
+  calendar: Calendar,
+  // info-circle existiert nicht in lucide-react – auf vorhandenes Info-Icon mappen
+  'info-circle': Info,
 };
 
 export function getSystemBausteinIcon(iconKey) {
