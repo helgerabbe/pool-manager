@@ -101,18 +101,6 @@ export default function LernpfadeCockpit({
     queryFn: () => (einheit?.id ? getAufgabenByEinheit(einheit.id) : Promise.resolve([])),
     enabled: !!einheit?.id,
   });
-  // aufgabenById enthält BEIDE Quellen (AllgemeineAufgabe + Lernpakete-Collection
-  // adaptiert auf Aufgaben-Shape), damit Sektor-Pills, MonitorPanel und Ampel-
-  // Logik Lernpakete genauso behandeln wie reguläre buendel-Aufgaben.
-  const aufgabenById = useMemo(() => {
-    const map = new Map();
-    (aufgaben || []).forEach((a) => map.set(a.id, a));
-    (lernpakete || []).forEach((lp) => {
-      const adapted = adaptLernpaketToPoolItem(lp);
-      if (adapted) map.set(adapted.id, adapted);
-    });
-    return map;
-  }, [aufgaben, lernpakete]);
 
   const { data: systemBausteine = [] } = useQuery({
     queryKey: ['systemBausteine', 'all'],
@@ -137,6 +125,20 @@ export default function LernpfadeCockpit({
     (lernpakete || []).forEach((p) => map.set(p.id, p));
     return map;
   }, [lernpakete]);
+
+  // aufgabenById enthält BEIDE Quellen (AllgemeineAufgabe + Lernpakete-Collection
+  // adaptiert auf Aufgaben-Shape), damit Sektor-Pills, MonitorPanel und Ampel-
+  // Logik Lernpakete genauso behandeln wie reguläre buendel-Aufgaben.
+  // WICHTIG: Muss NACH der lernpakete-Query stehen (TDZ).
+  const aufgabenById = useMemo(() => {
+    const map = new Map();
+    (aufgaben || []).forEach((a) => map.set(a.id, a));
+    (lernpakete || []).forEach((lp) => {
+      const adapted = adaptLernpaketToPoolItem(lp);
+      if (adapted) map.set(adapted.id, adapted);
+    });
+    return map;
+  }, [aufgaben, lernpakete]);
 
   const ampelCtx = useMemo(
     () => ({ aufgabenById, lernpaketeById }),
