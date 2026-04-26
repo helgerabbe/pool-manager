@@ -244,6 +244,8 @@ export default function AufgabeCreateView({
       case 'auswahl_buendel':
         return (
           <AuswahlBuendelSection
+            einheitId={einheitId}
+            excludeAufgabeId={initialData?.id || null}
             formData={formData}
             set={set}
             beschreibung={formData.aufgabenstellung}

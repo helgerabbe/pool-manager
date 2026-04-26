@@ -28,6 +28,7 @@
  */
 
 import { ITEM_TYPE } from '@/lib/aufgabenTypen';
+import { LEGACY_BAUSTEIN_ALIAS } from '@/lib/dashboardTemplates';
 
 // ── Normalisierung (Lazy Migration) ─────────────────────────────────────────
 
@@ -282,9 +283,19 @@ export function applyDashboardTemplate(aktuelleKonfig, lerntyp, templateData) {
   if (!lerntyp) return aktuelleKonfig;
   if (!Array.isArray(templateData)) return aktuelleKonfig;
 
+  // Legacy-Alias: alte Baustein-IDs (z. B. `sys_landkarte`) werden auf
+  // ihre V2-Entsprechung gemappt, sobald sie via Template einlaufen.
+  // Bestehende Pfade von Lehrkräften werden hier NICHT verändert –
+  // diese Funktion überschreibt nur den Ziel-Lerntyp mit dem Template.
+  const aliasItem = (it) => {
+    if (!it || it.type !== ITEM_TYPE.SYSTEM) return it;
+    const mapped = LEGACY_BAUSTEIN_ALIAS[it.ref_id];
+    return mapped ? { ...it, ref_id: mapped } : it;
+  };
+
   const freshSektoren = templateData.map((sektor) => {
     const items = Array.isArray(sektor?.items)
-      ? sektor.items.map(normalizeItem).filter(Boolean)
+      ? sektor.items.map(normalizeItem).filter(Boolean).map(aliasItem)
       : [];
     return {
       sektor_id: `sec_${uuid()}`,

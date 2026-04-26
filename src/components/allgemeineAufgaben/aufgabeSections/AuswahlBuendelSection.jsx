@@ -1,6 +1,7 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import AuswahlAufgabenMultiSelect from '@/components/allgemeineAufgaben/AuswahlAufgabenMultiSelect';
 
 /**
  * AuswahlBuendelSection
@@ -24,12 +25,26 @@ const REIHENFOLGE_OPTIONEN = [
   },
 ];
 
-export default function AuswahlBuendelSection({ formData, set, beschreibung, onBeschreibung }) {
+export default function AuswahlBuendelSection({
+  einheitId,
+  excludeAufgabeId = null,
+  formData,
+  set,
+  beschreibung,
+  onBeschreibung,
+}) {
   const reihenfolge = formData.interne_reihenfolge || 'frei';
   const anzahl = Number.isFinite(formData.erforderliche_anzahl) ? formData.erforderliche_anzahl : 0;
 
   return (
     <>
+      <AuswahlAufgabenMultiSelect
+        einheitId={einheitId}
+        excludeAufgabeId={excludeAufgabeId}
+        selectedIds={formData.verlinkte_aufgaben_ids || []}
+        onChange={(ids) => set('verlinkte_aufgaben_ids', ids)}
+      />
+
       <div className="space-y-2">
         <Label htmlFor="erforderliche_anzahl">
           Wie viele Aufgaben müssen mindestens erledigt werden?

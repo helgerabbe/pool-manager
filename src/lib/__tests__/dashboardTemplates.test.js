@@ -3,17 +3,18 @@
 /**
  * dashboardTemplates.test.js
  *
- * Schema-Validierung für das statische Template-Repository (Phase 2 des
- * Magic-Raster-Epics). Diese Tests sind reine Struktur-Checks – keine
- * Komponenten- oder DB-Tests – und stellen sicher, dass:
+ * Schema-Validierung für das statische Template-Repository ("Dashboards V2").
+ * Reine Struktur-Checks – keine Komponenten- oder DB-Tests:
  *
- *   1. Alle vier Lerntypen vorhanden sind und ein Array liefern.
- *   2. Jeder Sektor ein valides Schema hat (sektor_id, titel, modus, items).
- *   3. Jedes Item exakt das Format { type: 'system', ref_id: <string> } hat.
- *   4. Keine Inhaltsaufgaben (`type: 'aufgabe'`) hartcodiert sind.
- *   5. Sektor-IDs eindeutig sind und das `tpl_`-Präfix tragen
- *      (Konvention, damit sie beim Anwenden in echte UUIDs umgeschrieben
- *      werden können).
+ *   1. Alle vier Lerntypen vorhanden und nicht-leere Arrays.
+ *   2. Jeder Sektor hat ein valides Schema (sektor_id, titel, modus, items).
+ *   3. Items haben das Format { type: 'system', ref_id: <string> }.
+ *   4. Keine Inhaltsaufgaben (`type: 'aufgabe'`) hartcodiert.
+ *   5. Sektor-IDs sind global eindeutig und tragen `tpl_`-Präfix.
+ *   6. Konkrete V2-Sektor-Längen pro Lerntyp passen.
+ *   7. Modi pro Lerntyp entsprechen der V2-Spezifikation.
+ *   8. Erste Items der V2-Templates entsprechen der Spezifikation
+ *      (Smoke-Tests, damit Tippfehler in den Bezeichnern auffallen).
  */
 
 import {
@@ -25,12 +26,12 @@ import { ITEM_TYPE } from '@/lib/aufgabenTypen';
 const VALID_MODI = ['sequenziell', 'frei'];
 
 // ─────────────────────────────────────────────────────────────────────────
-// Top-Level: Lerntypen vollständig
+// Top-Level
 // ─────────────────────────────────────────────────────────────────────────
 describe('DASHBOARD_TEMPLATES – Top-Level-Struktur', () => {
-  it('exportiert genau die vier Lerntyp-Schlüssel', () => {
+  it('exportiert genau die vier V2-Lerntyp-Schlüssel', () => {
     const keys = Object.keys(DASHBOARD_TEMPLATES).sort();
-    expect(keys).toEqual(['ehrgeizig', 'minimalist', 'passioniert', 'pragmatiker']);
+    expect(keys).toEqual(['ehrgeizige', 'minimalist', 'passionierte', 'pragmatiker']);
   });
 
   it('TEMPLATE_LERN_TYPEN deckt sich mit den Schlüsseln des Templates', () => {
@@ -54,21 +55,12 @@ describe('DASHBOARD_TEMPLATES – Sektor-Schema', () => {
       const sektoren = DASHBOARD_TEMPLATES[lerntyp];
       sektoren.forEach((sektor, idx) => {
         const ctx = `[${lerntyp}][${idx}]`;
-
-        // sektor_id: nicht-leerer String, Konvention "tpl_*".
         expect(typeof sektor.sektor_id, `${ctx}.sektor_id`).toBe('string');
         expect(sektor.sektor_id.length, `${ctx}.sektor_id leer`).toBeGreaterThan(0);
         expect(sektor.sektor_id.startsWith('tpl_'), `${ctx} Präfix tpl_`).toBe(true);
-
-        // titel: nicht-leerer String.
         expect(typeof sektor.titel, `${ctx}.titel`).toBe('string');
         expect(sektor.titel.trim().length, `${ctx}.titel leer`).toBeGreaterThan(0);
-
-        // modus: in der Whitelist.
         expect(VALID_MODI, `${ctx}.modus`).toContain(sektor.modus);
-
-        // items: Array (auch leer ist erlaubt; wir prüfen weiter unten,
-        // dass Templates praktisch immer Items haben).
         expect(Array.isArray(sektor.items), `${ctx}.items kein Array`).toBe(true);
       });
     }
@@ -86,7 +78,7 @@ describe('DASHBOARD_TEMPLATES – Sektor-Schema', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────
-// Item-Schema: ausschließlich System-Bausteine
+// Item-Schema
 // ─────────────────────────────────────────────────────────────────────────
 describe('DASHBOARD_TEMPLATES – Item-Schema', () => {
   it('jedes Item hat genau das Format { type: "system", ref_id: <string> }', () => {
@@ -97,12 +89,7 @@ describe('DASHBOARD_TEMPLATES – Item-Schema', () => {
           const ctx = `[${lerntyp}][sec ${sIdx}][item ${iIdx}]`;
           expect(item, `${ctx} kein Objekt`).toBeTruthy();
           expect(typeof item, `${ctx} kein Objekt`).toBe('object');
-
-          // type === 'system' (über die Konstante, damit ein Refactor
-          // der Konstante diesen Test automatisch mitnimmt).
           expect(item.type, `${ctx}.type`).toBe(ITEM_TYPE.SYSTEM);
-
-          // ref_id: nicht-leerer String.
           expect(typeof item.ref_id, `${ctx}.ref_id`).toBe('string');
           expect(item.ref_id.length, `${ctx}.ref_id leer`).toBeGreaterThan(0);
         });
@@ -121,9 +108,6 @@ describe('DASHBOARD_TEMPLATES – Item-Schema', () => {
   });
 
   it('alle ref_ids verweisen auf bekannte System-Baustein-IDs (Präfix sys_)', () => {
-    // Defensive Konvention: System-Bausteine haben das Präfix `sys_`.
-    // Falls irgendwo eine UUID statt einer Baustein-ID landet, schlägt
-    // dieser Test sofort an.
     for (const lerntyp of TEMPLATE_LERN_TYPEN) {
       for (const sektor of DASHBOARD_TEMPLATES[lerntyp]) {
         for (const item of sektor.items) {
@@ -131,5 +115,95 @@ describe('DASHBOARD_TEMPLATES – Item-Schema', () => {
         }
       }
     }
+  });
+
+  it('die alte Karte sys_landkarte ist NICHT mehr in den V2-Templates enthalten', () => {
+    for (const lerntyp of TEMPLATE_LERN_TYPEN) {
+      for (const sektor of DASHBOARD_TEMPLATES[lerntyp]) {
+        for (const item of sektor.items) {
+          expect(item.ref_id).not.toBe('sys_landkarte');
+        }
+      }
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// V2-Spezifikation: konkrete Sektor-Längen, Modi und Schlüssel-Items
+// ─────────────────────────────────────────────────────────────────────────
+describe('DASHBOARD_TEMPLATES – V2-Spezifikation', () => {
+  it('minimalist hat 4 Sektoren, alle sequenziell', () => {
+    const t = DASHBOARD_TEMPLATES.minimalist;
+    expect(t).toHaveLength(4);
+    t.forEach((s) => expect(s.modus).toBe('sequenziell'));
+  });
+
+  it('pragmatiker hat 5 Sektoren mit erwartetem Modus-Muster', () => {
+    const t = DASHBOARD_TEMPLATES.pragmatiker;
+    expect(t).toHaveLength(5);
+    expect(t.map((s) => s.modus)).toEqual([
+      'sequenziell',
+      'sequenziell',
+      'sequenziell',
+      'frei',
+      'sequenziell',
+    ]);
+  });
+
+  it('ehrgeizige hat 4 Sektoren, alle sequenziell', () => {
+    const t = DASHBOARD_TEMPLATES.ehrgeizige;
+    expect(t).toHaveLength(4);
+    t.forEach((s) => expect(s.modus).toBe('sequenziell'));
+  });
+
+  it('passionierte hat 2 Sektoren, alle frei', () => {
+    const t = DASHBOARD_TEMPLATES.passionierte;
+    expect(t).toHaveLength(2);
+    t.forEach((s) => expect(s.modus).toBe('frei'));
+  });
+
+  it('minimalist Sektor 1 startet mit sec0_overview → diagnose', () => {
+    const sec = DASHBOARD_TEMPLATES.minimalist[0];
+    expect(sec.items.map((i) => i.ref_id)).toEqual([
+      'sys_sec0_overview',
+      'sys_diagnose',
+    ]);
+  });
+
+  it('minimalist Sektor 2 enthält nur die reduzierte Karte', () => {
+    expect(DASHBOARD_TEMPLATES.minimalist[1].items.map((i) => i.ref_id)).toEqual([
+      'sys_map_reduced',
+    ]);
+  });
+
+  it('pragmatiker Sektor 4 (frei) ist der Brian-Bündel-Platzhalter', () => {
+    const sec = DASHBOARD_TEMPLATES.pragmatiker[3];
+    expect(sec.modus).toBe('frei');
+    expect(sec.items.map((i) => i.ref_id)).toEqual(['sys_platzhalter_brian_buendel']);
+  });
+
+  it('ehrgeizige Sektor 4 hat die volle Prüfungssequenz', () => {
+    const sec = DASHBOARD_TEMPLATES.ehrgeizige[3];
+    expect(sec.items.map((i) => i.ref_id)).toEqual([
+      'sys_platzhalter_moodle_buendel',
+      'sys_zwischentest',
+      'sys_exam_register',
+      'sys_platzhalter_projekt',
+    ]);
+  });
+
+  it('passionierte Sektor 1 enthält ausschließlich die volle Karte', () => {
+    expect(DASHBOARD_TEMPLATES.passionierte[0].items.map((i) => i.ref_id)).toEqual([
+      'sys_map_full',
+    ]);
+  });
+
+  it('passionierte Sektor 2 enthält Moodle-Bündel + 2× Ebene-2 + Projekt', () => {
+    expect(DASHBOARD_TEMPLATES.passionierte[1].items.map((i) => i.ref_id)).toEqual([
+      'sys_platzhalter_moodle_buendel',
+      'sys_platzhalter_ebene2',
+      'sys_platzhalter_ebene2',
+      'sys_platzhalter_projekt',
+    ]);
   });
 });

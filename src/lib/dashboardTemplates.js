@@ -1,16 +1,9 @@
 /**
  * dashboardTemplates.js
  *
- * Statisches Template-Repository für das Magic-Raster (Phase 2).
- *
- * Dieses Modul ist die Single Source of Truth für die didaktischen
- * V1-Standardvorlagen pro Lerntyp. Die Templates dienen später als
- * Blaupause, die in eine leere `lernpfade_konfiguration` geladen werden
- * kann (Phase 3 / 4). Sie enthalten ausschließlich System-Bausteine –
- * inhaltliche Aufgaben (`type: 'aufgabe'`) werden NIE hartcodiert,
- * sondern müssen von der Lehrkraft per Drag & Drop aus dem Pool ergänzt
- * werden. Stellen, an denen später eine echte Aufgabe rein muss, werden
- * mit Platzhalter-Bausteinen (`sys_platzhalter_*`) markiert.
+ * Single Source of Truth für die didaktischen V2-Standardvorlagen pro
+ * Lerntyp ("Dashboards V2"). Wird vom Cockpit per
+ * `applyDashboardTemplate` in `lernpfade_konfiguration` geschrieben.
  *
  * Versionierung:
  * - Diese Datei ist Teil des Quellcodes (kein DB-State). Änderungen an
@@ -20,167 +13,160 @@
  *
  * Format-Vertrag (validiert durch dashboardTemplates.test.js):
  * - DASHBOARD_TEMPLATES ist ein Objekt mit den vier Lerntyp-Schlüsseln
- *   `minimalist`, `pragmatiker`, `ehrgeizig`, `passioniert`.
+ *   `minimalist`, `pragmatiker`, `ehrgeizige`, `passionierte`.
  * - Jeder Schlüssel hält ein Array von Sektor-Objekten.
  * - Sektor: { sektor_id: string, titel: string, modus: 'sequenziell'|'frei',
  *   items: Array<{ type: 'system', ref_id: string }> }
  * - sektor_id ist im Template statisch (Präfix `tpl_`), wird beim
- *   Anwenden des Templates in eine UUID umgeschrieben (Phase 3).
+ *   Anwenden des Templates in eine UUID umgeschrieben.
+ *
+ * WICHTIG (Legacy-Support):
+ * - Der alte Baustein `sys_landkarte` ist in V2 entfernt. Bestehende
+ *   Pfade von Lehrkräften, die `sys_landkarte` enthalten, werden NICHT
+ *   verändert – nur das Einspielen neuer Templates ersetzt ihn durch
+ *   `sys_map_reduced` bzw. `sys_map_full`. Siehe `applyDashboardTemplate`.
  */
 
 import { ITEM_TYPE } from '@/lib/aufgabenTypen';
 
-// ── Helper: System-Item bauen ───────────────────────────────────────────
-// Kleiner Builder, der Tippfehler im `type`-Feld ausschließt und die
-// Templates unten lesbarer macht.
+// ── Helper ──────────────────────────────────────────────────────────────
 const sys = (refId) => ({ type: ITEM_TYPE.SYSTEM, ref_id: refId });
 
-// Die in den Templates verwendeten Baustein-IDs. Werden in Phase 1 vom
-// `seedSystemBausteine`-Endpoint angelegt; sind hier nur als Konstanten
-// gespiegelt, damit sich Tippfehler statisch finden lassen.
+// Spiegel-Konstanten der genutzten System-Bausteine (Tippfehler-Schutz).
 const B = Object.freeze({
+  // Sektion 0
+  sec0Overview: 'sys_sec0_overview',
+  // Diagnose & Karte
   diagnose: 'sys_diagnose',
-  landkarte: 'sys_landkarte',
+  mapReduced: 'sys_map_reduced',
+  mapFull: 'sys_map_full',
+  // Stoppschild & Tests
   lehrerCheck: 'sys_lehrer_check',
   zwischentest: 'sys_zwischentest',
-  // Platzhalter (Phase 1)
-  pHandlung: 'sys_platzhalter_handlung',
-  pBasispaket: 'sys_platzhalter_basispaket',
+  examRegister: 'sys_exam_register',
+  // Platzhalter
+  pMoodleBuendel: 'sys_platzhalter_moodle_buendel',
+  pBrianBuendel: 'sys_platzhalter_brian_buendel',
   pEbene2: 'sys_platzhalter_ebene2',
   pProjekt: 'sys_platzhalter_projekt',
-  // Platzhalter (Magic-Raster Erweiterung)
-  pInfo: 'sys_platzhalter_info',
-  pReflexion: 'sys_platzhalter_reflexion',
 });
 
 // ── Template: Minimalist ────────────────────────────────────────────────
-// Fokus: kleinschrittig, viel Handlung. Drei sequenzielle Sektoren mit
-// klaren Haltepunkten (Lehrer-Checks) und reflexivem Abschluss.
-//
-// Wichtig: Alle Sektoren sind im Modus 'sequenziell' definiert. Die
-// Lehrkraft kann diesen Modus nach Anwenden des Rasters frei ändern;
-// das Template setzt nur den initialen Zustand.
+// Alle Sektoren initial 'sequenziell'.
 const MINIMALIST = [
   {
     sektor_id: 'tpl_min_sec1',
-    titel: '1. Einstieg & Zielklärung',
+    titel: '1. Einstieg & Diagnose',
     modus: 'sequenziell',
-    items: [sys(B.diagnose), sys(B.pInfo), sys(B.pHandlung)],
+    items: [sys(B.sec0Overview), sys(B.diagnose)],
   },
   {
     sektor_id: 'tpl_min_sec2',
-    titel: '2. Erste Erarbeitungsphase',
+    titel: '2. Lernlandkarte',
     modus: 'sequenziell',
-    items: [sys(B.pBasispaket), sys(B.lehrerCheck)],
+    items: [sys(B.mapReduced)],
   },
   {
     sektor_id: 'tpl_min_sec3',
-    titel: '3. Vertiefung & Abschluss',
+    titel: '3. Erste Erarbeitungsphase',
     modus: 'sequenziell',
-    items: [sys(B.pBasispaket), sys(B.pReflexion), sys(B.lehrerCheck)],
+    items: [sys(B.pMoodleBuendel), sys(B.lehrerCheck)],
+  },
+  {
+    sektor_id: 'tpl_min_sec4',
+    titel: '4. Vertiefung',
+    modus: 'sequenziell',
+    items: [sys(B.pMoodleBuendel)],
   },
 ];
 
 // ── Template: Pragmatiker ───────────────────────────────────────────────
-// Fokus: Effizienz, Fast-Track. Vier Sektoren mit klarer Trennung
-// zwischen sequenzieller Grundlagen-Führung und freier Trainingsphase.
 const PRAGMATIKER = [
   {
     sektor_id: 'tpl_prag_sec1',
-    titel: '1. Start & Orientierung',
+    titel: '1. Einstieg & Diagnose',
     modus: 'sequenziell',
-    items: [sys(B.diagnose), sys(B.landkarte), sys(B.pInfo)],
+    items: [sys(B.sec0Overview), sys(B.diagnose)],
   },
   {
     sektor_id: 'tpl_prag_sec2',
-    titel: '2. Grundlagen',
+    titel: '2. Lernlandkarte',
     modus: 'sequenziell',
-    items: [sys(B.pBasispaket), sys(B.lehrerCheck)],
+    items: [sys(B.mapReduced)],
   },
   {
     sektor_id: 'tpl_prag_sec3',
-    titel: '3. Anwendung & Training',
-    modus: 'frei',
-    items: [sys(B.pEbene2), sys(B.pEbene2), sys(B.pEbene2)],
+    titel: '3. Grundlagen',
+    modus: 'sequenziell',
+    items: [sys(B.pMoodleBuendel), sys(B.lehrerCheck)],
   },
   {
     sektor_id: 'tpl_prag_sec4',
-    titel: '4. Checkpoint & Abschluss',
+    titel: '4. Anwendung & Training',
+    modus: 'frei',
+    items: [sys(B.pBrianBuendel)],
+  },
+  {
+    sektor_id: 'tpl_prag_sec5',
+    titel: '5. Vertiefung',
     modus: 'sequenziell',
-    items: [sys(B.zwischentest), sys(B.pInfo)],
+    items: [sys(B.pMoodleBuendel)],
   },
 ];
 
-// ── Template: Ehrgeizig ─────────────────────────────────────────────────
-// Fokus: Tiefe, Umfang, Prüfungsvorbereitung. Mehr Übungsaufgaben als
-// Pragmatiker, expliziter Vorbereitungssektor.
-//
-// Hinweis zum letzten Sektor: Für die "Vorbereitung auf die schriftliche
-// Arbeit" gibt es (noch) keinen eigenen System-Baustein. Wir verwenden
-// daher den Standard-Platzhalter `sys_platzhalter_ebene2`. Eine
-// Titel-Anpassung kann erst beim Anwenden des Templates erfolgen, weil
-// System-Bausteine ihren Titel aus der Entität ziehen – Items selbst
-// haben kein eigenes Titel-Feld. Das ist als Folgeticket dokumentiert.
-const EHRGEIZIG = [
+// ── Template: Ehrgeizige ────────────────────────────────────────────────
+// Alle Sektoren initial 'sequenziell'.
+const EHRGEIZIGE = [
   {
     sektor_id: 'tpl_ehr_sec1',
-    titel: 'Start: Diagnose & Lernlandkarte',
+    titel: '1. Einstieg & Diagnose',
     modus: 'sequenziell',
-    items: [sys(B.diagnose), sys(B.landkarte)],
+    items: [sys(B.sec0Overview), sys(B.diagnose)],
   },
   {
     sektor_id: 'tpl_ehr_sec2',
-    titel: 'Grundlagen: Fast-Track',
+    titel: '2. Lernlandkarte',
     modus: 'sequenziell',
-    items: [sys(B.pBasispaket), sys(B.lehrerCheck)],
+    items: [sys(B.mapFull)],
   },
   {
     sektor_id: 'tpl_ehr_sec3',
-    titel: 'Training: 5 Inhaltsaufgaben (Ebene 2)',
-    modus: 'frei',
-    items: [
-      sys(B.pEbene2),
-      sys(B.pEbene2),
-      sys(B.pEbene2),
-      sys(B.pEbene2),
-      sys(B.pEbene2),
-    ],
+    titel: '3. Grundlagen',
+    modus: 'sequenziell',
+    items: [sys(B.pMoodleBuendel)],
   },
   {
     sektor_id: 'tpl_ehr_sec4',
-    titel: 'Prüfungsvorbereitung',
-    // Zwischentest + Vorbereitung-Aufgabe (s. Hinweis oben).
+    titel: '4. Prüfungsvorbereitung',
     modus: 'sequenziell',
-    items: [sys(B.zwischentest), sys(B.pEbene2)],
+    items: [
+      sys(B.pMoodleBuendel),
+      sys(B.zwischentest),
+      sys(B.examRegister),
+      sys(B.pProjekt),
+    ],
   },
 ];
 
-// ── Template: Passioniert ───────────────────────────────────────────────
-// Fokus: Autonomie, Projekte. Direkteinstieg in Ebene 2, Basispaket nur
-// als Backup, abschließend ein Projekt.
-const PASSIONIERT = [
+// ── Template: Passionierte ──────────────────────────────────────────────
+// Alle Sektoren initial 'frei'.
+const PASSIONIERTE = [
   {
     sektor_id: 'tpl_pass_sec1',
-    titel: 'Start: Orientierung & Direkteinstieg',
-    modus: 'sequenziell',
-    items: [sys(B.landkarte), sys(B.pEbene2)],
+    titel: '1. Lernlandkarte',
+    modus: 'frei',
+    items: [sys(B.mapFull)],
   },
   {
     sektor_id: 'tpl_pass_sec2',
-    titel: 'Vertiefung: Eigenes Tempo',
+    titel: '2. Eigenständige Vertiefung',
     modus: 'frei',
     items: [
-      sys(B.pBasispaket),
+      sys(B.pMoodleBuendel),
       sys(B.pEbene2),
       sys(B.pEbene2),
-      sys(B.pEbene2),
+      sys(B.pProjekt),
     ],
-  },
-  {
-    sektor_id: 'tpl_pass_sec3',
-    titel: 'Exzellenz: Projekt-Aufgabe',
-    modus: 'sequenziell',
-    items: [sys(B.pProjekt)],
   },
 ];
 
@@ -188,15 +174,26 @@ const PASSIONIERT = [
 export const DASHBOARD_TEMPLATES = Object.freeze({
   minimalist: MINIMALIST,
   pragmatiker: PRAGMATIKER,
-  ehrgeizig: EHRGEIZIG,
-  passioniert: PASSIONIERT,
+  ehrgeizige: EHRGEIZIGE,
+  passionierte: PASSIONIERTE,
 });
 
-// Liste der unterstützten Lerntyp-Schlüssel – nützlich für Tests und
-// spätere UI-Logik, die über alle Templates iteriert.
 export const TEMPLATE_LERN_TYPEN = Object.freeze([
   'minimalist',
   'pragmatiker',
-  'ehrgeizig',
-  'passioniert',
+  'ehrgeizige',
+  'passionierte',
 ]);
+
+/**
+ * Legacy-Alias-Tabelle: Bestandseinträge der alten Bezeichner werden
+ * beim Einspielen eines V2-Templates auf die neuen IDs gemappt.
+ * Greift in `applyDashboardTemplate` für Items, die per Template kommen.
+ *
+ * Hinweis: Die Konstante wird auch von Tests genutzt.
+ */
+export const LEGACY_BAUSTEIN_ALIAS = Object.freeze({
+  // Default-Mapping für die alte, eindeutige Karte: Reduced ist der
+  // konservativere Default (V1 hatte nur eine Karte für alle Lerntypen).
+  sys_landkarte: 'sys_map_reduced',
+});
