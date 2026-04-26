@@ -11,7 +11,7 @@
  */
 
 import React from 'react';
-import { Sparkles, Layers, Trophy, Star, Plus, BookOpen, ShieldCheck, ShieldOff, Loader2, PenLine, ClipboardCheck, FilePlus, ChevronDown, GraduationCap } from 'lucide-react';
+import { Sparkles, Layers, Trophy, Star, Plus, BookOpen, ShieldCheck, ShieldOff, Loader2, PenLine, ClipboardCheck, FilePlus, ChevronDown, GraduationCap, Dumbbell, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import LernpfadeSektor from '@/components/lernpfade/LernpfadeSektor';
 import InfoHint from '@/components/lernpfade/InfoHint';
@@ -129,6 +129,8 @@ export const LERN_TYPEN = [
 const SEKTOR_TEMPLATE_ICONS = {
   erarbeitung: { Icon: BookOpen, cls: 'text-blue-600' },
   erarbeitung_training: { Icon: GraduationCap, cls: 'text-blue-600' },
+  anwendung_training: { Icon: Dumbbell, cls: 'text-violet-600' },
+  projekt: { Icon: Lightbulb, cls: 'text-amber-600' },
   zwischentest: { Icon: ClipboardCheck, cls: 'text-rose-600' },
   leer: { Icon: FilePlus, cls: 'text-muted-foreground' },
 };

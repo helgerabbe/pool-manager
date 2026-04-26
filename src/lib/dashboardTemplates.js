@@ -170,13 +170,25 @@ const EHRGEIZIG = [
 ];
 
 // ── Template: Passioniert ───────────────────────────────────────────────
-// Alle Sektoren initial 'frei'.
+//
+// Aufbau (V2.2):
+//   Sektor 0 – Orientierung      : Einführung, Frageblock, Einstiegsdiagnose
+//   Sektor 1 – Einstieg & Anmeldung : volle Karte + Anmeldung
+//   Sektor 2 – Anwendung & Training : Brian-Bündel
+//   Sektor 3 – Projekt           : Projekt-Platzhalter
+//   Sektor 4 – Abschlusstest     : externer Test
 const PASSIONIERT = [
+  {
+    sektor_id: 'tpl_pass_sec0',
+    titel: '0. Orientierung',
+    modus: 'sequenziell',
+    items: [sys(B.sec0Overview), sys(B.sec0Qblock), sys(B.diagnoseEntry)],
+  },
   {
     sektor_id: 'tpl_pass_sec1',
     titel: '1. Einstieg & Anmeldung',
     modus: 'frei',
-    items: [sys(B.sec0Overview), sys(B.mapFull), sys(B.examRegister)],
+    items: [sys(B.mapFull), sys(B.examRegister)],
   },
   {
     sektor_id: 'tpl_pass_sec2',

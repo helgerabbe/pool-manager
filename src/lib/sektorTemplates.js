@@ -28,6 +28,8 @@ const sys = (refId) => ({ type: ITEM_TYPE.SYSTEM, ref_id: refId });
 export const SEKTOR_TEMPLATE_KEYS = Object.freeze({
   ERARBEITUNG: 'erarbeitung',
   ERARBEITUNG_TRAINING: 'erarbeitung_training',
+  ANWENDUNG_TRAINING: 'anwendung_training',
+  PROJEKT: 'projekt',
   ZWISCHENTEST: 'zwischentest',
   LEER: 'leer',
 });
@@ -58,6 +60,18 @@ export function getSektorTemplate(key) {
           sys('sys_platzhalter_moodle_buendel'),
           sys('sys_platzhalter_brian_buendel'),
         ],
+      };
+    case SEKTOR_TEMPLATE_KEYS.ANWENDUNG_TRAINING:
+      return {
+        titel: 'Anwendung & Training',
+        modus: 'frei',
+        items: [sys('sys_platzhalter_brian_buendel')],
+      };
+    case SEKTOR_TEMPLATE_KEYS.PROJEKT:
+      return {
+        titel: 'Projekt',
+        modus: 'frei',
+        items: [sys('sys_platzhalter_projekt')],
       };
     case SEKTOR_TEMPLATE_KEYS.ZWISCHENTEST:
       return {
@@ -90,6 +104,29 @@ export function getSektorTemplateOptionsForLerntyp(lerntyp) {
         label: 'Erarbeitungs- und Trainingsphase',
         hint: 'Einführung · ggf. Handlung · Lernpakete · Brian-Bündel',
         iconKey: 'erarbeitung_training',
+      },
+      {
+        key: SEKTOR_TEMPLATE_KEYS.LEER,
+        label: 'Leerer Sektor',
+        hint: 'Ohne vordefinierte Platzhalter',
+        iconKey: 'leer',
+      },
+    ];
+  }
+
+  if (lerntyp === 'passioniert') {
+    return [
+      {
+        key: SEKTOR_TEMPLATE_KEYS.ANWENDUNG_TRAINING,
+        label: 'Anwendungs- und Trainingsphase',
+        hint: 'Brian-Bündel als Übungs-Pool',
+        iconKey: 'anwendung_training',
+      },
+      {
+        key: SEKTOR_TEMPLATE_KEYS.PROJEKT,
+        label: 'Projekt-Sektor',
+        hint: 'Platzhalter für eine Projekt-Aufgabe (Ebene 3)',
+        iconKey: 'projekt',
       },
       {
         key: SEKTOR_TEMPLATE_KEYS.LEER,

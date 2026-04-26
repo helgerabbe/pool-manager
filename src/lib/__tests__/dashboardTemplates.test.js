@@ -257,23 +257,48 @@ describe('DASHBOARD_TEMPLATES – V2-Spezifikation', () => {
     expect(sec.items.map((i) => i.ref_id)).toEqual(['sys_platzhalter_projekt']);
   });
 
-  // ── Passioniert ───────────────────────────────────────────────────────
-  it('passioniert hat 4 Sektoren, alle frei', () => {
+  // ── Passioniert (V2.2) ────────────────────────────────────────────────
+  it('passioniert hat 5 Sektoren mit erwartetem Modus-Muster', () => {
     const t = DASHBOARD_TEMPLATES.passioniert;
-    expect(t).toHaveLength(4);
-    t.forEach((s) => expect(s.modus).toBe('frei'));
+    expect(t).toHaveLength(5);
+    expect(t.map((s) => s.modus)).toEqual([
+      'sequenziell',
+      'frei',
+      'frei',
+      'frei',
+      'frei',
+    ]);
   });
 
-  it('passioniert Sektor 1: Overview → volle Karte → Anmeldung', () => {
+  it('passioniert Sektor 0: Overview → Frageblock → Einstiegsdiagnose', () => {
     expect(DASHBOARD_TEMPLATES.passioniert[0].items.map((i) => i.ref_id)).toEqual([
       'sys_sec0_overview',
+      'sys_sec0_qblock',
+      'sys_diagnose_entry',
+    ]);
+  });
+
+  it('passioniert Sektor 1: volle Karte + Anmeldung', () => {
+    expect(DASHBOARD_TEMPLATES.passioniert[1].items.map((i) => i.ref_id)).toEqual([
       'sys_map_full',
       'sys_exam_register',
     ]);
   });
 
-  it('passioniert Sektor 4 ist der externe Abschlusstest', () => {
+  it('passioniert Sektor 2 ist das Brian-Bündel', () => {
+    expect(DASHBOARD_TEMPLATES.passioniert[2].items.map((i) => i.ref_id)).toEqual([
+      'sys_platzhalter_brian_buendel',
+    ]);
+  });
+
+  it('passioniert Sektor 3 ist der Projekt-Platzhalter', () => {
     expect(DASHBOARD_TEMPLATES.passioniert[3].items.map((i) => i.ref_id)).toEqual([
+      'sys_platzhalter_projekt',
+    ]);
+  });
+
+  it('passioniert Sektor 4 ist der externe Abschlusstest', () => {
+    expect(DASHBOARD_TEMPLATES.passioniert[4].items.map((i) => i.ref_id)).toEqual([
       'sys_external_test',
     ]);
   });
