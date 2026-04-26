@@ -9,6 +9,63 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
+// ── Default-Dashboards (Spiegel von src/lib/dashboardTemplates.js) ─────
+// Eager init: Neue Einheiten bekommen sofort die Standard-Raster für
+// alle vier Lerntypen. Bei Änderungen an der Spec auch
+// `createEinheitMitDefaults.js` und `src/lib/dashboardTemplates.js`
+// synchron halten (NO_LOCAL_IMPORTS-Regel verbietet Re-Use).
+const _sys = (refId) => ({ type: 'system', ref_id: refId });
+const _uid = () => 'sec_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+
+function buildDefaultLernpfadKonfiguration() {
+  return {
+    minimalist: [
+      { sektor_id: _uid(), titel: 'Orientierung', modus: 'sequenziell',
+        items: [_sys('sys_sec0_overview'), _sys('sys_sec0_qblock'), _sys('sys_diagnose_entry')] },
+      { sektor_id: _uid(), titel: 'Lernlandkarte', modus: 'sequenziell',
+        items: [_sys('sys_map_reduced')] },
+      { sektor_id: _uid(), titel: 'Erste Erarbeitungsphase', modus: 'sequenziell',
+        items: [_sys('sys_platzhalter_info'), _sys('sys_platzhalter_handlung'), _sys('sys_platzhalter_moodle_buendel')] },
+      { sektor_id: _uid(), titel: 'Zwischentest', modus: 'sequenziell',
+        items: [_sys('sys_platzhalter_info'), _sys('sys_platzhalter_zwischentest')] },
+    ],
+    pragmatiker: [
+      { sektor_id: _uid(), titel: 'Orientierung', modus: 'sequenziell',
+        items: [_sys('sys_sec0_overview'), _sys('sys_sec0_qblock'), _sys('sys_diagnose_entry')] },
+      { sektor_id: _uid(), titel: 'Lernlandkarte', modus: 'sequenziell',
+        items: [_sys('sys_map_reduced')] },
+      { sektor_id: _uid(), titel: 'Erarbeitungs- und Trainingsphase', modus: 'sequenziell',
+        items: [_sys('sys_platzhalter_info'), _sys('sys_platzhalter_handlung'), _sys('sys_platzhalter_moodle_buendel'), _sys('sys_platzhalter_brian_buendel')] },
+      { sektor_id: _uid(), titel: 'Abschlusstest', modus: 'sequenziell',
+        items: [_sys('sys_external_test')] },
+    ],
+    ehrgeizig: [
+      { sektor_id: _uid(), titel: 'Orientierung', modus: 'sequenziell',
+        items: [_sys('sys_sec0_overview'), _sys('sys_sec0_qblock'), _sys('sys_diagnose_entry')] },
+      { sektor_id: _uid(), titel: 'Einstieg & Anmeldung', modus: 'sequenziell',
+        items: [_sys('sys_map_full'), _sys('sys_exam_register')] },
+      { sektor_id: _uid(), titel: 'Erarbeitungs- und Trainingsphase', modus: 'sequenziell',
+        items: [_sys('sys_platzhalter_info'), _sys('sys_platzhalter_handlung'), _sys('sys_platzhalter_moodle_buendel'), _sys('sys_platzhalter_brian_buendel')] },
+      { sektor_id: _uid(), titel: 'Vorbereitung auf die schriftliche Arbeit', modus: 'sequenziell',
+        items: [_sys('sys_zwischentest')] },
+      { sektor_id: _uid(), titel: 'Projekt', modus: 'frei',
+        items: [_sys('sys_platzhalter_projekt')] },
+    ],
+    passioniert: [
+      { sektor_id: _uid(), titel: 'Orientierung', modus: 'sequenziell',
+        items: [_sys('sys_sec0_overview'), _sys('sys_sec0_qblock'), _sys('sys_diagnose_entry')] },
+      { sektor_id: _uid(), titel: 'Einstieg & Anmeldung', modus: 'frei',
+        items: [_sys('sys_map_full'), _sys('sys_exam_register')] },
+      { sektor_id: _uid(), titel: 'Anwendung & Training', modus: 'frei',
+        items: [_sys('sys_platzhalter_brian_buendel')] },
+      { sektor_id: _uid(), titel: 'Projekt', modus: 'frei',
+        items: [_sys('sys_platzhalter_projekt')] },
+      { sektor_id: _uid(), titel: 'Abschlusstest', modus: 'frei',
+        items: [_sys('sys_external_test')] },
+    ],
+  };
+}
+
 /**
  * STRICT SCHEMA VALIDATION (Mirror of Frontend Zod Schemas)
  * Phase 6.6: Backend-seitige Validierung analog zu Frontend
@@ -137,13 +194,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 5. Create Einheit
+    // 5. Create Einheit (mit Default-Dashboards via eager init).
+    //    lernpfade_konfiguration wird mit den Standard-Rastern aller
+    //    vier Lerntypen vorbefüllt – kein leeres Dashboard mehr.
+    //    Die Default-Struktur ist 1:1 ein Spiegel von
+    //    `src/lib/dashboardTemplates.js`. Bei Änderungen beide Stellen
+    //    synchron halten.
     const newEinheit = await base44.entities.Einheiten.create({
       titel_der_einheit,
       gesamtziel: gesamtziel || '',
       fach,
       jahrgangsstufe,
       freigabe_status: freigabe_status || 'In Planung',
+      lernpfade_konfiguration: buildDefaultLernpfadKonfiguration(),
     });
 
     // 6. Log Success
