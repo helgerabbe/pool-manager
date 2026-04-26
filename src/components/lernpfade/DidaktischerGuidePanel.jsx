@@ -75,9 +75,9 @@ const LERNTYP_INFO = {
     icon: Star,
     accent: 'text-violet-700 bg-violet-50 border-violet-200',
     description:
-      'Maximale Freiheit. Projektorientierter Ansatz mit freiem Zugriff auf ' +
-      'alle Inhalte für eigenständiges, forschendes Lernen und kreative ' +
-      'Projektarbeit.',
+      'Große Freiheit in der Gestaltung des Arbeitsprozesses. ' +
+      'Projektorientierter Ansatz mit freiem Zugriff auf alle Inhalte für ' +
+      'eigenständiges, forschendes Lernen und kreative Projektarbeit.',
   },
 };
 
