@@ -441,3 +441,69 @@ direkt in der DB (auth.uid() + JOINs auf Einheiten/EinheitMembers/
 Benutzer). Die Function schrumpft auf einen einzigen
 `UPDATE master_aufgabe SET … WHERE id = $1`. Erwartete Latenz:
 ~5–15 ms statt ~150–300 ms heute.
+
+---
+
+## 12. approvePackageActivities – Bulk-Approve hardening (2026-04-26)
+
+Beim Code-Review von `functions/approvePackageActivities` wurden vier
+Blocker behoben:
+
+1. **Fehlendes RBAC.** Der alte Code prüfte nur `auth.me()` – jeder
+   eingeloggte User konnte fremde Lernpakete zwangs-freigeben. Neu:
+   `checkApprovalPermission` (identisch zu `approveMasterAufgabe`
+   und `acquireUnitLockSecure`) lädt Lernpaket → Einheit und prüft
+   Admin / Fachschaft-mit-Fach / EinheitMembers.
+
+2. **Lock-Architektur respektieren.** Hält ein anderer User einen
+   nicht-stale Lernpaket-Lock, schlägt der Bulk-Approve mit 403 fehl.
+   Eigener Lock oder fehlender Lock bleiben erlaubt – Approve ist
+   ein Status-Switch, kein Inhalts-Edit (Lock-Philosophie aus §11).
+
+3. **N+1-Update-Schleife.** `for…await` ersetzt durch
+   `Promise.allSettled([...activityUpdates, ...masterUpdates])`.
+   Damit bricht der Endpunkt auf Edge-Functions auch bei 30+
+   Activities nicht mehr im Timeout zusammen. Fehlgeschlagene
+   Updates werden geloggt und als `partial: true` an den Client
+   zurückgegeben statt verschluckt.
+
+4. **Master-Konsistenz.** Sobald eine Activity (force-)approved
+   wird, ziehen alle ihre `MasterAufgabe`-Kinder mit:
+   `content_status='approved'`, `sync_status='pending'`. Klone
+   (`is_master === false`) bleiben unangetastet. Das deckt sich mit
+   dem Aggregat-Modell aus §11 und verhindert den Geister-Zustand
+   "Activity grün, Masters rot".
+
+### @MIGRATION_NOTE (Supabase) – Bulk per SQL
+
+Bei der Supabase-Migration entfällt die JS-Schleife komplett:
+
+```sql
+-- 1) Activities setzen
+UPDATE lernpaket_phase_aktivitaet
+   SET content_status = 'approved',
+       is_complete    = TRUE  -- nur bei force; sonst weglassen
+ WHERE lernpaket_id = $1;
+
+-- 2) Master-Konsistenz: über JOIN, nicht 30 Einzel-Calls
+UPDATE master_aufgabe m
+   SET content_status = 'approved',
+       sync_status    = 'pending'
+  FROM lernpaket_phase_aktivitaet a
+ WHERE m.activity_id = a.id
+   AND a.lernpaket_id = $1
+   AND m.is_master IS NOT FALSE;
+```
+
+Der `AktivitaetenKatalog`-Lookup für Platzhalter-Defaults wird zum
+LEFT JOIN, oder – noch besser – zur DB-seitigen DEFAULT-Funktion,
+sobald die `force`-Felder als generated columns abgebildet sind.
+
+### Definition of Done für die Migration
+
+- [ ] Function deletet, ersetzt durch RPC oder direkt durch
+      `UPDATE … WHERE …`.
+- [ ] RLS-Policy auf `lernpaket_phase_aktivitaet` deckt die
+      Approval-Berechtigung ab (Admin / Fachschaft / EinheitMembers).
+- [ ] Master-Aggregat-Trigger aus §11 ist aktiv – damit greift die
+      Master-Synchronisation auch automatisch für diesen Pfad.
