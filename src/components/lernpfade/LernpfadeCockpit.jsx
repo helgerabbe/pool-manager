@@ -55,6 +55,8 @@ export default function LernpfadeCockpit({
   isStructuralEditingActive,
   isLockedByOther,
   kannBearbeiten,
+  onEndEditing,
+  isEndingEdit = false,
 }) {
   // Hinweis: Lock-Acquire/Release wird vom Parent (`Workspace`) gehandhabt
   // und betrifft das Cockpit nur indirekt über `isStructuralEditingActive` /
@@ -400,6 +402,9 @@ export default function LernpfadeCockpit({
               saveIcon={SaveIcon}
               saveIconCls={saveIndicator?.cls}
               saveTitle={saveIndicator?.title}
+              isStructuralEditingActive={isStructuralEditingActive}
+              isEndingEdit={isEndingEdit}
+              onEndEditing={onEndEditing}
             />
           </main>
         </div>

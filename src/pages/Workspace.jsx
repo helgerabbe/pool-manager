@@ -502,8 +502,10 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
            onValueChange={handleTabChange}
            className="flex flex-col flex-1 overflow-hidden m-0 p-0">
 
-            {/* ── PERSISTENTER LOCK-STATUS-BANNER (über allen Tabs) ──────────── */}
-            {(isStructuralEditingActive || isTab1EditingActive) && (
+            {/* ── PERSISTENTER LOCK-STATUS-BANNER (alle Tabs außer Dashboards) ──
+                In Tab 7 (dashboards) wird der Beenden-Button platzsparend in
+                der Aktionszeile des Architekten angezeigt – kein Banner. */}
+            {(isStructuralEditingActive || isTab1EditingActive) && activeTab !== 'dashboards' && (
               <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-1.5 bg-blue-50 border-b border-blue-200 flex items-center gap-3">
                 <PenLine className="w-4 h-4 text-blue-600 animate-pulse shrink-0" />
                 <span className="text-sm font-semibold text-blue-900 flex-1">
@@ -741,6 +743,8 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                   isStructuralEditingActive={isStructuralEditingActive}
                   isLockedByOther={isLockedByOther}
                   kannBearbeiten={kannDieseEinheitBearbeiten}
+                  isEndingEdit={releasingStructLock}
+                  onEndEditing={handleReleaseStructLock}
                 />
               </ErrorBoundary>
             </TabsContent>
