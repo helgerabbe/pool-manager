@@ -349,7 +349,7 @@ export default function LernpfadeAufgabenPool({
                     let runningIdx = 0;
                     return groupedAufgaben.map((group) => (
                       <div key={group.id} className="space-y-1">
-                        <div className="sticky top-0 z-10 -mx-3 px-3 py-1 bg-muted/60 backdrop-blur-sm border-y border-border/50">
+                        <div className="-mx-3 px-3 py-1 bg-muted/60 border-y border-border/50">
                           <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                             {group.titel}
                             <span className="ml-1.5 font-normal opacity-70">({group.items.length})</span>
