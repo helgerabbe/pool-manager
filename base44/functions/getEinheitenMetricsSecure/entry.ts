@@ -215,26 +215,46 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.AllgemeineAufgabe.filter({ einheit_id: { $in: einheitIds } }),
     ]);
 
+    // Aktivitäten werden über die Lernpakete dieser Einheiten gezogen.
+    const lernpaketIds = lernpakete.map((lp) => lp.id);
+    const aktivitaeten = lernpaketIds.length > 0
+      ? await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
+          lernpaket_id: { $in: lernpaketIds },
+        })
+      : [];
+
     // Gruppieren pro Einheit.
     const themenfelderByEinheit = new Map();
     const lernpaketeByEinheit = new Map();
     const aufgabenByEinheit = new Map();
+    const aktivitaetenByEinheit = new Map();
     for (const id of einheitIds) {
       themenfelderByEinheit.set(id, []);
       lernpaketeByEinheit.set(id, []);
       aufgabenByEinheit.set(id, []);
+      aktivitaetenByEinheit.set(id, 0);
     }
     for (const t of themenfelder) {
       const arr = themenfelderByEinheit.get(t.einheit_id);
       if (arr) arr.push(t);
     }
+    // Lookup: lernpaket_id → einheit_id
+    const lernpaketToEinheit = new Map();
     for (const lp of lernpakete) {
       const arr = lernpaketeByEinheit.get(lp.einheit_id);
       if (arr) arr.push(lp);
+      lernpaketToEinheit.set(lp.id, lp.einheit_id);
     }
     for (const a of allgemeineAufgaben) {
       const arr = aufgabenByEinheit.get(a.einheit_id);
       if (arr) arr.push(a);
+    }
+    for (const akt of aktivitaeten) {
+      if (akt.sync_status === 'to_delete') continue;
+      const einheitId = lernpaketToEinheit.get(akt.lernpaket_id);
+      if (einheitId && aktivitaetenByEinheit.has(einheitId)) {
+        aktivitaetenByEinheit.set(einheitId, aktivitaetenByEinheit.get(einheitId) + 1);
+      }
     }
 
     // Pro Einheit Metriken berechnen.
@@ -256,17 +276,16 @@ Deno.serve(async (req) => {
         progress[lt] = calcProgressForLerntyp(konfig[lt], ctx);
       }
 
-      metrics[id] = {
-        volume: calcVolume(tfs, lps, aufs),
-        progress,
-      };
+      const volume = calcVolume(tfs, lps, aufs);
+      volume.aktivitaeten = aktivitaetenByEinheit.get(id) || 0;
+      metrics[id] = { volume, progress };
     }
 
     // Für nicht aufgelöste IDs (z.B. RBAC-blockiert) leere Metrik liefern.
     for (const id of einheitIds) {
       if (!metrics[id]) {
         metrics[id] = {
-          volume: { themenfelder: 0, lernpakete: 0, level2: 0, level3: 0 },
+          volume: { themenfelder: 0, lernpakete: 0, aktivitaeten: 0, level2: 0, level3: 0 },
           progress: { minimalist: 0, pragmatiker: 0, ehrgeizig: 0, passioniert: 0 },
         };
       }

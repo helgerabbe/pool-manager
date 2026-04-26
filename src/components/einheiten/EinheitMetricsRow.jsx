@@ -14,7 +14,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutGrid, Package, ClipboardList, Target } from 'lucide-react';
+import { LayoutGrid, Package, Zap, ClipboardList, Target } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const INDICATORS = [
@@ -33,6 +33,13 @@ const INDICATORS = [
     tooltip: (n) => `${n} Lernpaket${n === 1 ? '' : 'e'} – zu Aktivitäten & Lernzielen`,
   },
   {
+    key: 'aktivitaeten',
+    icon: Zap,
+    label: 'Aktiv.',
+    tab: 'aktivitaeten',
+    tooltip: (n) => `${n} Aktivität${n === 1 ? '' : 'en'} – zu Aktivitäten & Lernzielen`,
+  },
+  {
     key: 'level2',
     icon: ClipboardList,
     label: 'Aufgaben',
@@ -49,11 +56,11 @@ const INDICATORS = [
 ];
 
 export default function EinheitMetricsRow({ einheitId, volume }) {
-  const safe = volume || { themenfelder: 0, lernpakete: 0, level2: 0, level3: 0 };
+  const safe = volume || { themenfelder: 0, lernpakete: 0, aktivitaeten: 0, level2: 0, level3: 0 };
 
   return (
     <TooltipProvider delayDuration={150}>
-      <div className="grid grid-cols-4 gap-1.5">
+      <div className="grid grid-cols-5 gap-1">
         {INDICATORS.map((ind) => {
           const Icon = ind.icon;
           const value = safe[ind.key] || 0;
