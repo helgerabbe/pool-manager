@@ -1,62 +1,114 @@
 /**
  * addEinheitMemberSecure.js
- * 
+ *
  * Sichere Backend-Funktion zum Hinzufügen/Aktualisieren von Einheit-Mitgliedern.
- * 
+ *
  * Validiert:
- * 1. Current User hat Berechtigung (Global Admin/Fachschaft ODER Delegierte LEITUNG)
- * 2. Target User existiert
- * 3. Role ist valid (LEITUNG, EDITOR, READER)
- * 4. Audit-Log wird immer geschrieben
- * 
- * Rückgabe: { success: boolean, message: string, grantedBy: string }
+ *  1. Authentifizierung
+ *  2. Rate-Limiting (siehe @MIGRATION_BLOCKER unten)
+ *  3. Eingabe-Parameter + Rolle aus VALID_ROLES
+ *  4. Existenz der Einheit
+ *  5. RBAC: Globale Admin-/Fachschaftsrolle ODER delegierte Unit-LEITUNG.
+ *     Eine delegierte LEITUNG darf KEINE weiteren LEITUNGen vergeben –
+ *     nur EDITOR/READER (kein Self-Service-Privilege-Escalation).
+ *  6. Existenz des Ziel-Benutzers über die `Benutzer`-Tabelle
+ *     (Fallback: User-Auth-Tabelle für `full_name`-Auflösung).
+ *  7. Audit-Log für SUCCESS und DENIED.
+ *
+ * Rückgabe: { success, message, membershipId, operation, grantedBy }
+ *
+ * ─── @MIGRATION_NOTE (Supabase) ───────────────────────────────────────
+ *  • E-Mails als Schlüssel (`user_email`, `user_id`-FK in `Benutzer`)
+ *    werden auf UUID umgestellt.
+ *  • Die manuelle 3-Tabellen-Rechteprüfung (User-Auth → Benutzer →
+ *    EinheitMembers) entfällt komplett zugunsten von RLS-Policies
+ *    auf `EinheitMembers`.
+ *  • Die Inline-Kopie des Rate-Limiters (siehe unten) wird durch einen
+ *    Redis/Upstash-basierten Limiter ersetzt – Single Source of Truth
+ *    bleibt `functions/utils/rateLimiter.js`.
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-// Konstanten
 const VALID_ROLES = ['LEITUNG', 'EDITOR', 'READER'];
+const DELEGABLE_ROLES_BY_UNIT_LEITUNG = ['EDITOR', 'READER']; // anti-privilege-escalation
 
-// ✅ Rate-Limiter: In-Memory Tracking mit Timestamps
+// ──────────────────────────────────────────────────────────────────────
+// Inline-Kopie aus functions/utils/rateLimiter.js (Single Source of Truth).
+// Begründung: Base44/Deno-Deploy erlaubt aktuell keine lokalen Imports
+// zwischen Functions. Bei Änderungen an der Quelle MUSS dieser Block
+// synchron mitgepflegt werden (Suche nach `isRateLimited`).
+//
+// @MIGRATION_BLOCKER: IN-MEMORY STATE — siehe Header von rateLimiter.js.
+// In horizontal skalierten/Edge-Deployments NICHT verlässlich; Migration
+// auf Redis (Upstash) ist Teil des Supabase-Schwenks.
+// ──────────────────────────────────────────────────────────────────────
 const requestLog = new Map();
+const CLEANUP_EVERY_N_REQUESTS = 500;
+const CLEANUP_MAX_MAP_SIZE = 5000;
+const DEFAULT_ENTRY_TTL_MS = 5 * 60 * 1000;
+let _requestCounter = 0;
 
-function isRateLimited(userEmail, functionName, maxRequests = 10, windowMs = 60000) {
-  const key = `${userEmail}::${functionName}`;
+function isRateLimited(userIdentifier, functionName, maxRequests = 20, windowMs = 60000) {
+  if (!userIdentifier) {
+    console.warn('[rateLimiter] called without userIdentifier – treating as limited');
+    return true;
+  }
+  const key = `${userIdentifier}::${functionName}`;
   const now = Date.now();
-  
-  if (!requestLog.has(key)) {
-    requestLog.set(key, []);
+  let timestamps = requestLog.get(key);
+  if (!timestamps) {
+    timestamps = [];
+    requestLog.set(key, timestamps);
   }
-  
-  const timestamps = requestLog.get(key);
-  const validTimestamps = timestamps.filter(ts => now - ts < windowMs);
-  requestLog.set(key, validTimestamps);
-  
-  if (validTimestamps.length >= maxRequests) {
-    return true; // Limit überschritten
+  while (timestamps.length > 0 && now - timestamps[0] >= windowMs) {
+    timestamps.shift();
   }
-  
-  validTimestamps.push(now);
-  requestLog.set(key, validTimestamps);
+  if (timestamps.length >= maxRequests) {
+    _maybeRunCleanup();
+    return true;
+  }
+  timestamps.push(now);
+  _maybeRunCleanup();
   return false;
+}
+
+function _maybeRunCleanup() {
+  _requestCounter += 1;
+  if (_requestCounter >= CLEANUP_EVERY_N_REQUESTS || requestLog.size >= CLEANUP_MAX_MAP_SIZE) {
+    _requestCounter = 0;
+    const now = Date.now();
+    for (const [key, timestamps] of requestLog.entries()) {
+      while (timestamps.length > 0 && now - timestamps[0] >= DEFAULT_ENTRY_TTL_MS) {
+        timestamps.shift();
+      }
+      if (timestamps.length === 0) requestLog.delete(key);
+    }
+  }
 }
 
 /**
  * Prüft, ob ein User die Berechtigung hat, Mitglieder zur Einheit hinzuzufügen.
- * Akzeptiert EITHER globale Rolle ODER delegierte Leitung.
- * 
+ *
  * RBAC-Regeln:
- * 1. Administrator: Darf JEDER Einheit Mitarbeiter hinzufügen
- * 2. Fachschaftsleitung: Darf Einheiten im eigenen Fach Mitarbeiter hinzufügen
- * 3. Fachlehrkraft mit LEITUNG-Rolle: Darf NUR dieser einen Einheit Mitarbeiter hinzufügen (Unit-Level FSL)
+ *  1. Administrator: darf jeder Einheit Mitglieder hinzufügen, jede Rolle.
+ *  2. Fachschaftsleitung MIT Fachzuständigkeit für `einheit.fach`:
+ *     darf jede Rolle vergeben.
+ *  3. Beliebige globale Rolle MIT delegierter Unit-LEITUNG:
+ *     darf NUR EDITOR/READER vergeben (kein LEITUNG → anti-Privilege-Escalation).
+ *
+ * Hinweis: Die delegierte Unit-LEITUNG überstimmt also die globale Rolle.
+ * Auch ein „Betrachter", der für genau diese Einheit zur LEITUNG ernannt
+ * wurde, darf einladen (aber nur eingeschränkt). Das deckt den im
+ * Code-Review bemängelten Referendar-/Vertretungsfall sauber ab.
  */
-function canUserAddMembers(rolle, faecher, einheitFach, delegatedMembership) {
-  // 1. Admin: immer erlaubt
+function canUserAddMembers({ rolle, faecher, einheitFach, delegatedRole, requestedRole }) {
+  // 1. Administrator
   if (rolle === 'Administrator') {
     return { allowed: true, reason: 'admin_global' };
   }
 
-  // 2. Fachschaftsleitung: nur im eigenen Fach
+  // 2. Fachschaftsleitung im eigenen Fach
   if (rolle === 'Fachschaftsleitung') {
     if (Array.isArray(faecher) && faecher.includes(einheitFach)) {
       return { allowed: true, reason: 'fachschaft_fach' };
@@ -64,12 +116,17 @@ function canUserAddMembers(rolle, faecher, einheitFach, delegatedMembership) {
     return { allowed: false, reason: 'fachschaft_wrong_fach' };
   }
 
-  // 3. Fachlehrkraft mit delegierter LEITUNG: nur diese Einheit (Unit-Level FSL)
-  if (rolle === 'Fachlehrkraft' && delegatedMembership?.unit_role === 'LEITUNG') {
-    return { allowed: true, reason: 'lehrkraft_delegated_leitung' };
+  // 3. Delegierte Unit-LEITUNG – egal welche globale Rolle.
+  if (delegatedRole === 'LEITUNG') {
+    if (!DELEGABLE_ROLES_BY_UNIT_LEITUNG.includes(requestedRole)) {
+      return {
+        allowed: false,
+        reason: 'unit_leitung_cannot_delegate_leitung',
+      };
+    }
+    return { allowed: true, reason: 'unit_leitung_delegated' };
   }
 
-  // Alle anderen: nicht erlaubt
   return { allowed: false, reason: 'insufficient_role' };
 }
 
@@ -78,16 +135,11 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
-    // 1. Authentifizierung prüfen
     if (!user) {
       console.warn('[addEinheitMemberSecure] Unauthorized access attempt');
-      return Response.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // ✅ Rate-Limiting: 10 Requests pro Minute pro User
     if (isRateLimited(user.email, 'addEinheitMemberSecure', 10, 60000)) {
       console.warn(`[addEinheitMemberSecure] Rate limit exceeded for ${user.email}`);
       return Response.json(
@@ -96,7 +148,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 2. Request-Parameter validieren
     const { einheitId, targetEmail, newRole } = await req.json();
 
     if (!einheitId || !targetEmail || !newRole) {
@@ -107,62 +158,52 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 3. Role ist valid
     if (!VALID_ROLES.includes(newRole)) {
-      console.warn(
-        `[addEinheitMemberSecure] Invalid role ${newRole} from ${user.email}`
-      );
+      console.warn(`[addEinheitMemberSecure] Invalid role ${newRole} from ${user.email}`);
       return Response.json(
         { error: `Invalid role. Must be one of: ${VALID_ROLES.join(', ')}` },
         { status: 400 }
       );
     }
 
-    // 4. Einheit existiert
-    const einheiten = await base44.asServiceRole.entities.Einheiten.filter({
-      id: einheitId
-    });
-    const einheit = einheiten[0];
-
+    // Einheit existiert?
+    const einheit = await base44.asServiceRole.entities.Einheiten.get(einheitId);
     if (!einheit) {
-      console.warn(
-        `[addEinheitMemberSecure] Einheit ${einheitId} not found (requested by ${user.email})`
-      );
-      return Response.json(
-        { error: 'Einheit not found' },
-        { status: 404 }
-      );
+      console.warn(`[addEinheitMemberSecure] Einheit ${einheitId} not found (requested by ${user.email})`);
+      return Response.json({ error: 'Einheit not found' }, { status: 404 });
     }
 
-    // 5. Benutzer-Profil laden (Current User)
-    // ✅ WICHTIG: Base44-Admin-Rolle priorisieren (authUser.role kommt von Base44-Auth)
-    const benutzer = await base44.asServiceRole.entities.Benutzer.filter({
-      user_id: user.email
+    // Current-User-Profil (Benutzer ist Single Source of Truth, User-Auth nur für admin-Flag).
+    const benutzerArr = await base44.asServiceRole.entities.Benutzer.filter({
+      user_id: user.email,
     });
-    const profil = benutzer[0];
-    
-    // ✅ Admin-Rolle von Base44-Auth übernehmen, auch wenn kein Benutzer-Profil existiert
+    const profil = benutzerArr[0];
     const istBase44Admin = user.role === 'Administrator' || user.role === 'admin';
     const rolle = istBase44Admin ? 'Administrator' : (profil?.rolle || 'Betrachter');
     const faecher = profil?.fachbereich_zustaendigkeit || [];
 
-    // 6. Delegierte Berechtigung prüfen (Current User)
+    // Delegierte Unit-Rolle des Current Users.
     const myMembership = await base44.asServiceRole.entities.EinheitMembers.filter({
       einheit_id: einheitId,
-      user_email: user.email
+      user_email: user.email,
     });
-    const delegatedMembership = myMembership[0];
+    const delegatedRole = myMembership[0]?.unit_role || null;
 
-    // 7. Berechtigung validieren
-    const authCheck = canUserAddMembers(rolle, faecher, einheit.fach, delegatedMembership);
+    // Berechtigung prüfen.
+    const authCheck = canUserAddMembers({
+      rolle,
+      faecher,
+      einheitFach: einheit.fach,
+      delegatedRole,
+      requestedRole: newRole,
+    });
 
     if (!authCheck.allowed) {
       console.warn(
-        `[addEinheitMemberSecure] DENIED - ${user.email} (role: ${rolle}, delegated: ${delegatedMembership?.unit_role || 'none'}) ` +
-        `tried to add member to ${einheitId} (${einheit.fach}). Reason: ${authCheck.reason}`
+        `[addEinheitMemberSecure] DENIED - ${user.email} (role: ${rolle}, delegated: ${delegatedRole || 'none'}) ` +
+        `tried to add member to ${einheitId} (${einheit.fach}) as ${newRole}. Reason: ${authCheck.reason}`
       );
 
-      // Audit-Log für BLOCKED Attempt
       try {
         await base44.asServiceRole.entities.AuditLog.create({
           user_email: user.email,
@@ -171,12 +212,14 @@ Deno.serve(async (req) => {
           resource_id: einheitId,
           changes: {
             attempt: 'add_member',
-            targetEmail: targetEmail,
-            requestedRole: newRole
+            targetEmail,
+            requestedRole: newRole,
+            globalRole: rolle,
+            delegatedRole,
           },
           affected_count: 0,
           status: 'failed',
-          error_message: `Permission denied: ${authCheck.reason}`
+          error_message: `Permission denied: ${authCheck.reason}`,
         });
       } catch (auditErr) {
         console.error('[addEinheitMemberSecure] Failed to write audit log:', auditErr);
@@ -190,63 +233,73 @@ Deno.serve(async (req) => {
             userRole: rolle,
             userFaecher: faecher,
             einheitFach: einheit.fach,
-            delegatedRole: delegatedMembership?.unit_role || null
-          }
+            delegatedRole,
+            requestedRole: newRole,
+            denyReason: authCheck.reason,
+          },
         },
         { status: 403 }
       );
     }
 
-    // 8. Target User existiert
-    const targetUsers = await base44.asServiceRole.entities.User.filter({
-      email: targetEmail
+    // Ziel-Benutzer existiert? — primäre Quelle: Benutzer-Tabelle (konsistent mit
+    // dem Rest des Skripts). Display-Name wird aus Benutzer.vorname/nachname
+    // gebildet; falls kein Benutzer-Profil existiert, fällt der Code auf die
+    // User-Auth-Tabelle (`full_name`) zurück.
+    const targetBenutzerArr = await base44.asServiceRole.entities.Benutzer.filter({
+      user_id: targetEmail,
     });
+    let targetDisplayName = null;
 
-    if (targetUsers.length === 0) {
-      console.warn(
-        `[addEinheitMemberSecure] Target user ${targetEmail} not found (requested by ${user.email})`
-      );
-      return Response.json(
-        { error: 'Target user not found' },
-        { status: 404 }
-      );
+    if (targetBenutzerArr.length > 0) {
+      const tb = targetBenutzerArr[0];
+      targetDisplayName = `${tb.vorname || ''} ${tb.nachname || ''}`.trim() || null;
+    } else {
+      const targetUserArr = await base44.asServiceRole.entities.User.filter({
+        email: targetEmail,
+      });
+      if (targetUserArr.length === 0) {
+        console.warn(
+          `[addEinheitMemberSecure] Target user ${targetEmail} not found (requested by ${user.email})`
+        );
+        return Response.json({ error: 'Target user not found' }, { status: 404 });
+      }
+      targetDisplayName = targetUserArr[0].full_name || null;
     }
 
-    const targetUser = targetUsers[0];
-
-    // 9. Existierende Membership prüfen
+    // Existierende Membership prüfen.
     const existingMembers = await base44.asServiceRole.entities.EinheitMembers.filter({
       einheit_id: einheitId,
-      user_email: targetEmail
+      user_email: targetEmail,
     });
 
     let operation = 'created';
     let membershipId = null;
 
     if (existingMembers.length > 0) {
-      // Update existierenden Member
       const existingMember = existingMembers[0];
       membershipId = existingMember.id;
       operation = 'updated';
 
-      // Nur updaten, wenn Rolle unterschiedlich ist
+      // Beim Updaten greift dieselbe Privilege-Escalation-Regel: ein
+      // delegierter LEITUNG-User darf eine fremde LEITUNG-Membership
+      // nicht heimlich auf LEITUNG halten/setzen. Dies ist bereits
+      // durch canUserAddMembers (oben) abgedeckt.
       if (existingMember.unit_role !== newRole) {
         await base44.asServiceRole.entities.EinheitMembers.update(membershipId, {
-          unit_role: newRole
+          unit_role: newRole,
         });
       }
     } else {
-      // Neuen Member erstellen
       const newMember = await base44.asServiceRole.entities.EinheitMembers.create({
         einheit_id: einheitId,
         user_email: targetEmail,
-        user_name: targetUser.full_name || targetEmail,
-        unit_role: newRole
+        user_name: targetDisplayName || targetEmail,
+        unit_role: newRole,
       });
       membershipId = newMember.id;
     }
 
-    // 10. ✅ Audit-Log schreiben (SUCCESS)
     try {
       await base44.asServiceRole.entities.AuditLog.create({
         user_email: user.email,
@@ -256,16 +309,15 @@ Deno.serve(async (req) => {
         changes: {
           targetUser: targetEmail,
           role: newRole,
-          operation: operation,
+          operation,
           grantedBy: authCheck.reason,
-          membershipId: membershipId
+          membershipId,
         },
         affected_count: 1,
-        status: 'success'
+        status: 'success',
       });
     } catch (auditErr) {
       console.error('[addEinheitMemberSecure] Failed to write audit log:', auditErr);
-      // Audit failure sollte nicht die Mutation blockieren, aber logged werden
     }
 
     console.info(
@@ -278,17 +330,15 @@ Deno.serve(async (req) => {
       message: `Member ${targetEmail} successfully ${operation} with role ${newRole}`,
       membershipId,
       operation,
-      grantedBy: authCheck.reason
+      grantedBy: authCheck.reason,
     });
-
   } catch (error) {
     console.error('[addEinheitMemberSecure] Unexpected error:', error);
-
     return Response.json(
       {
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
-        message: error.message
+        message: error.message,
       },
       { status: 500 }
     );

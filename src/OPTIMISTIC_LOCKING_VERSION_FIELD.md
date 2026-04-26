@@ -283,3 +283,42 @@ Oder als `EXISTS`-Klausel im Lock-RPC. Sobald Supabase aktiv ist,
 fällt sowohl der `$ne: null`-Versuch als auch die JS-Filter-Schleife
 weg; der Lock-Pfad bleibt damit auch bei mehreren tausend Aufgaben
 pro Einheit konstant in der Laufzeit.
+
+---
+
+## 9. RBAC-Hardening: addEinheitMemberSecure (2026-04-26)
+
+Beim Code-Review von `functions/addEinheitMemberSecure` wurden vier
+Themen adressiert, die für die Supabase-Migration relevant bleiben:
+
+1. **Rate-Limiter:** Eigenbau ersetzt durch Inline-Kopie aus
+   `functions/utils/rateLimiter.js` (gleiche „NO LOCAL IMPORTS"-Regel
+   wie bei `occLockUtils.js`). Beim Wechsel auf Redis (Upstash) muss
+   nur die zentrale Datei umgestellt werden – jede Inline-Kopie
+   trägt einen `@MIGRATION_BLOCKER`-Hinweis.
+
+2. **Datenmodell-Konsistenz (User vs. Benutzer):** Ziel-User wird
+   primär über `Benutzer.user_id` aufgelöst (konsistent zum Rest des
+   Skripts, sauberer Display-Name aus `vorname`/`nachname`). Die
+   eingebaute `User`-Auth-Tabelle bleibt nur als Fallback, um den
+   `full_name` zu erhalten, falls kein `Benutzer`-Profil existiert.
+
+3. **RBAC: lokale LEITUNG überstimmt globale Rolle.** Vorher durfte
+   nur eine `Fachlehrkraft` mit delegierter LEITUNG einladen – das
+   schloss Vertretungs-/Referendars-Konstellationen mit globaler Rolle
+   `Betrachter` aus. Neu: jede globale Rolle, die für genau diese
+   Einheit als LEITUNG eingetragen ist, darf einladen.
+
+4. **Anti-Privilege-Escalation:** Eine delegierte Unit-LEITUNG darf
+   ausschließlich `EDITOR` und `READER` einladen, KEINE weiteren
+   `LEITUNG`-Rollen. Damit kann sich eine einzelne ernannte LEITUNG
+   nicht beliebig viele Co-Owner installieren. `Administrator` und
+   `Fachschaftsleitung` (im eigenen Fach) bleiben unbeschränkt.
+
+### @MIGRATION_NOTE (Supabase) – RBAC-Endspiel
+
+Die heutige 3-Tabellen-Rechteprüfung (User-Auth → `Benutzer` →
+`EinheitMembers`) wird durch Postgres-RLS auf `EinheitMembers`
+abgelöst. Die Funktion selbst schrumpft auf einen einzigen
+`INSERT … ON CONFLICT … DO UPDATE`, der durch RLS-Policies abgesichert
+ist. Audit-Logging wandert in einen `AFTER INSERT`-Trigger.
