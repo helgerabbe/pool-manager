@@ -33,11 +33,11 @@
     --chart-5: 12 76% 61%;
     --radius: 0.75rem;
     /* Bündel-Container im Lernpfad-Dashboard (Epic Dashboard-Architektur Phase 1).
-       Indigo-basiert, signalisiert Pool-Modus (1:n Container). */
-    --bundle: 239 84% 67%;
+       Lila/Purple, klar abgegrenzt von blauen Platzhaltern (1:n Container). */
+    --bundle: 270 70% 55%;
     --bundle-foreground: 0 0% 100%;
-    --bundle-soft: 226 100% 97%;
-    --bundle-border: 234 89% 74%;
+    --bundle-soft: 270 80% 96%;
+    --bundle-border: 270 60% 75%;
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 220 30% 20%;
     --sidebar-primary: 222 47% 31%;
@@ -73,11 +73,11 @@
     --chart-3: 152 60% 45%;
     --chart-4: 280 55% 60%;
     --chart-5: 12 76% 61%;
-    /* Bündel im Dark-Mode: dunklerer Indigo-Wash, gleiche Akzentfarbe. */
-    --bundle: 234 89% 74%;
+    /* Bündel im Dark-Mode: dunkler Lila-Wash, gleiche Akzentfarbe. */
+    --bundle: 270 75% 70%;
     --bundle-foreground: 0 0% 100%;
-    --bundle-soft: 234 30% 18%;
-    --bundle-border: 234 60% 45%;
+    --bundle-soft: 270 30% 20%;
+    --bundle-border: 270 50% 45%;
     --sidebar-background: 222 25% 10%;
     --sidebar-foreground: 220 14% 92%;
     --sidebar-primary: 217 80% 60%;

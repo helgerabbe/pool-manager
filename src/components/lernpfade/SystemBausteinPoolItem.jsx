@@ -33,10 +33,18 @@ export default function SystemBausteinPoolItem({
   // klar von regulären System-Bausteinen abzugrenzen.
   const isPlatzhalter = isPlatzhalterBaustein(baustein);
 
-  // Container-Stil je nach Typ + Zustand. Reguläre Bausteine: solides
-  // Slate-Grau (wie bisher). Platzhalter: blaues Dashed-Border-Design.
+  // Bündel (baustein_modus='bundle_1ton') bekommt den Lila-Look – konsistent
+  // zur Sektor-Pill (siehe Logbuch §18, Phase 2). Vorrang vor Platzhalter-Style,
+  // weil Bündel zwar 1:n-Container sind, optisch aber als eigene Klasse
+  // erkennbar bleiben müssen.
+  const isBundle = baustein?.baustein_modus === 'bundle_1ton';
+
   let containerClasses;
-  if (isPlatzhalter) {
+  if (isBundle) {
+    containerClasses = isSelected
+      ? 'border-dashed border-2 border-bundle bg-bundle-soft shadow-sm'
+      : 'border-dashed border-2 border-bundle-border bg-bundle-soft hover:border-bundle';
+  } else if (isPlatzhalter) {
     containerClasses = isSelected
       ? PLATZHALTER_CLASSES.containerSelected
       : PLATZHALTER_CLASSES.container;
@@ -64,20 +72,32 @@ export default function SystemBausteinPoolItem({
               >
                 <div
                   className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${
-                    isPlatzhalter ? PLATZHALTER_CLASSES.iconBox : 'bg-slate-200'
+                    isBundle
+                      ? 'bg-bundle text-bundle-foreground'
+                      : isPlatzhalter
+                      ? PLATZHALTER_CLASSES.iconBox
+                      : 'bg-slate-200'
                   }`}
                 >
                   <Icon
                     strokeWidth={2.5}
                     className={`w-3 h-3 ${
-                      isPlatzhalter ? PLATZHALTER_CLASSES.icon : 'text-slate-700'
+                      isBundle
+                        ? 'text-bundle-foreground'
+                        : isPlatzhalter
+                        ? PLATZHALTER_CLASSES.icon
+                        : 'text-slate-700'
                     }`}
                   />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p
                     className={`text-xs font-semibold truncate leading-snug ${
-                      isPlatzhalter ? PLATZHALTER_CLASSES.title : 'text-slate-800'
+                      isBundle
+                        ? 'text-bundle'
+                        : isPlatzhalter
+                        ? PLATZHALTER_CLASSES.title
+                        : 'text-slate-800'
                     }`}
                   >
                     {baustein.titel}
