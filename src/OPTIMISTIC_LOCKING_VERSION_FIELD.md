@@ -1213,6 +1213,113 @@ FOR EACH ROW EXECUTE FUNCTION enforce_master_existence_on_complete();
       `paket.is_complete`, nur die Quelle des Schreibens wandert von
       App-Code in DB-Trigger.
 
+## 18. Dashboard-Architektur Phase 1: Bündel + Strict-Drop (2026-04-27)
+
+### Hintergrund
+
+Das Lernpfad-Dashboard (Tab 7) hatte bisher nur **flache** Sektoren mit
+einer eindimensionalen Item-Liste. Aus didaktischer Sicht fehlte:
+
+- Unterscheidung zwischen reinen Info-Ankern, 1:1-Platzhaltern und
+  echten Containern (1:n-Bündel) — alle drei sahen im UI gleich aus.
+- Ein Strict-Drop-Mechanismus, der verhindert, dass z. B. eine
+  Inhaltsaufgabe in einen „Brian-Bündel"-Platzhalter gezogen wird.
+- Die Information für den Export, ob ein Sektor-Abschnitt sequenziell
+  oder im Pool-Modus auszuliefern ist.
+
+### Entscheidungen (Planungsrunde 2026-04-27)
+
+Siehe Chat-Verlauf zum Epic „Refactoring der Dashboard-Architektur".
+Final festgehalten:
+
+1. **Drei Bausteintypen** auf `SystemBausteine.baustein_modus`:
+   `static` (Info-Anker, keine Drop-Zone) /
+   `placeholder_1to1` (blau, ersetzt sich beim Drop) /
+   `bundle_1ton` (lila, dauerhafter Container).
+2. **`accepted_types`** als Array auf `SystemBausteine` — feines
+   Vokabular: `lernpaket`, `inhalt`, `prozess`, `handlung`,
+   `auswahl_buendel`, `projekt`. Single Source of Truth für den
+   Strict-Drop-Validator.
+3. **Instanz-IDs** in `lernpfade_konfiguration`: jedes Item bekommt
+   eine eigene `instance_id`, dazu `parent_instance_id` für die
+   1-Ebene-Hierarchie (Bündel → Children).
+4. **1:1 pro Lerntyp**: dieselbe `aufgabe_id` darf pro Lerntyp nur
+   einmal im Dashboard liegen — egal ob Root oder in einem Bündel.
+   Vereinfacht die Anti-Duplikat-Logik massiv.
+5. **Max. 1 Ebene Tiefe**: Bündel-in-Bündel ist verboten.
+6. **Cascade-Delete** beim Bündel-Löschen: Children fallen zurück in
+   den Pool (linke Sidebar), Aufgabe selbst bleibt in der DB
+   erhalten — nur das Membership-Record wird entfernt.
+7. **Lock-Pflicht**: Alle Bündel-Operationen laufen über
+   `acquireUnitLockSecure (scope='dashboard')`.
+8. **Export bleibt out-of-scope** in diesem Epic. Der Export-Pfad
+   zieht erst in einem separaten Folge-Ticket nach.
+
+### Phase 1 — Was in diesem Commit passiert
+
+- `entities/SystemBausteine.json` + Felder `baustein_modus` (Enum)
+  und `accepted_types` (String-Array, Default `[]`).
+- `entities/Einheiten.json` + Feld `lernpfade_schema_version` (Default
+  `1`, vom Backfill auf `2` gesetzt) und erweiterte Schema-Doku der
+  `lernpfade_konfiguration`.
+- `index.css` + `tailwind.config.js`: neue Token-Familie
+  `--bundle` / `--bundle-foreground` / `--bundle-soft` /
+  `--bundle-border` (Indigo-basiert, Light + Dark).
+- `functions/migrateLernpfadeToInstanceIds`: One-shot Backfill,
+  admin-only, idempotent. Macht zwei Dinge:
+  1. Setzt `baustein_modus` + `accepted_types` auf allen bekannten
+     `SystemBausteine` nach dem M4-Mapping (siehe Chat) und seedet
+     den neuen Baustein `sys_themenfeld_intro`.
+  2. Migriert jede `Einheiten.lernpfade_konfiguration` aufs v2-Schema
+     (Instanz-IDs + `parent_instance_id: null`). Schema-Version wird
+     dabei auf `2` gehoben.
+- `lib/lernpfadeUtils.js#normalizeItem`: erkennt v1- UND v2-Items,
+  ergänzt fehlende `instance_id` live (Edge-Case-Schutz, falls eine
+  Einheit den Backfill noch nicht durchlaufen hat).
+
+### Was in Phase 1 NICHT passiert
+
+- Render-Logik für Bündel-Container (lila Box) — kommt in Phase 2.
+- Verschachtelte `Droppable`s, Strict-Drop-Validator — Phase 3.
+- Cascade-Delete-Modal + Membership-Cleanup — Phase 4.
+- Anpassung von `exportMoodlePlan` / Pool-vs-Sequenziell — separates
+  Folge-Epic.
+
+### M4-Mapping (initial gepflegt)
+
+| baustein_id | baustein_modus | accepted_types |
+|---|---|---|
+| `sys_sec0_overview`, `sys_sec0_qblock`, `sys_diagnose_entry`, `sys_map_reduced`, `sys_map_full`, `sys_external_test`, `sys_exam_register`, `sys_themenfeld_intro` | `static` | `[]` |
+| `sys_platzhalter_brian_buendel` | `placeholder_1to1` | `['auswahl_buendel']` |
+| `sys_platzhalter_reflexion` | `placeholder_1to1` | `['prozess', 'handlung']` |
+| `sys_platzhalter_zwischentest` | `placeholder_1to1` | `['lernpaket']` |
+| `sys_platzhalter_moodle_buendel` | `bundle_1ton` | `['lernpaket']` |
+
+Bausteine, die nicht im Mapping stehen, werden vom Backfill
+übersprungen — sicherer Default ist `baustein_modus: 'static'`,
+`accepted_types: []` (im Schema-Default verankert).
+
+### Aufruf des Backfills
+
+Admin (UI oder direkt per `functions.invoke`):
+```js
+await base44.functions.invoke('migrateLernpfadeToInstanceIds', { dryRun: true });
+// → liefert ein Ergebnis-Objekt mit { bausteine: {…}, einheiten: {…} }
+//   ohne tatsächlich zu schreiben. Erst nach Sichtprüfung mit dryRun=false.
+```
+
+### @MIGRATION_NOTE (Supabase)
+
+- `baustein_modus` wird ein Postgres-ENUM, `accepted_types` ein
+  `text[]` mit CHECK-Constraint auf das erlaubte Vokabular.
+- `lernpfade_konfiguration` bleibt JSONB, das Schema v2 wird per
+  CHECK-Constraint validiert (z. B. „jedes Item hat instance_id").
+- Der Backfill wird zu einem einmaligen SQL-Skript; die JS-Function
+  kann nach erfolgreicher Migration als `410 Gone`-Stub stehen
+  bleiben oder gelöscht werden.
+
+---
+
 ### Folge-Ticket: `updateActivitySecure` aufräumen
 
 Audit 2026-04-27: Das Frontend ruft `updateActivitySecure` an keiner

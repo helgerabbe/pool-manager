@@ -34,19 +34,41 @@ import { LEGACY_BAUSTEIN_ALIAS } from '@/lib/dashboardTemplates';
 
 /**
  * Normalisiert einen einzelnen Item-Eintrag.
- * - String → { type: 'aufgabe', ref_id: <string> }   (Legacy)
- * - Objekt → unverändert (sofern Felder vorhanden)
- * - Ungültiges → null (vom Aufrufer zu filtern)
+ *
+ * Schema-Versionen (siehe Einheiten.json / Logbuch §18):
+ *   - v1 (Legacy):  String oder { type, ref_id }
+ *   - v2 (Phase 1): { instance_id, type, ref_id, parent_instance_id }
+ *
+ * Diese Funktion akzeptiert beide Formen und liefert IMMER ein v2-Objekt
+ * zurück. Fehlende instance_id wird live ergänzt (Lazy-Migration im
+ * Frontend für Edge-Cases, in denen der One-shot Backfill noch nicht
+ * gelaufen ist). Fehlendes parent_instance_id wird auf null gesetzt.
  */
+function freshInstanceId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `inst_${crypto.randomUUID()}`;
+  }
+  return `inst_${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export function normalizeItem(item) {
   if (item == null) return null;
   if (typeof item === 'string') {
-    return item ? { type: ITEM_TYPE.AUFGABE, ref_id: item } : null;
+    return item
+      ? {
+          instance_id: freshInstanceId(),
+          type: ITEM_TYPE.AUFGABE,
+          ref_id: item,
+          parent_instance_id: null,
+        }
+      : null;
   }
   if (typeof item === 'object' && item.ref_id) {
     return {
+      instance_id: item.instance_id || freshInstanceId(),
       type: item.type === ITEM_TYPE.SYSTEM ? ITEM_TYPE.SYSTEM : ITEM_TYPE.AUFGABE,
       ref_id: item.ref_id,
+      parent_instance_id: item.parent_instance_id ?? null,
     };
   }
   return null;

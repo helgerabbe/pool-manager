@@ -31,6 +31,24 @@
       "type": "number",
       "default": 100,
       "description": "Sortierreihenfolge im Standard-Elemente-Tab."
+    },
+    "baustein_modus": {
+      "type": "string",
+      "enum": [
+        "static",
+        "placeholder_1to1",
+        "bundle_1ton"
+      ],
+      "default": "static",
+      "description": "Verhalten im Dashboard (siehe Epic Dashboard-Architektur, Phase 1): 'static' = reiner Informations-Anker ohne Drop-Zone (z. B. 'Kurze Einf\u00fchrung'). 'placeholder_1to1' = blauer Platzhalter, der beim Drop einer passenden Aufgabe durch diese ersetzt wird (1:1). 'bundle_1ton' = lila Container, der dauerhaft bleibt und beliebig viele Children der erlaubten Typen aufnimmt (1:n, signalisiert dem Export Pool-Modus)."
+    },
+    "accepted_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Welche Item-Typen darf dieser Baustein im Drag&Drop annehmen? Wird vom Strict-Drop-Validator im Lernpfad-Architekt ausgelesen. Erlaubtes Vokabular: 'lernpaket' (AllgemeineAufgabe.aufgaben_typ='buendel'), 'inhalt', 'prozess', 'handlung', 'auswahl_buendel', 'projekt' (AllgemeineAufgabe.aufgaben_typ='projekt_anker' oder anforderungsebene='3 - Projekt'). Leeres Array = keine Drop-Zone (gilt f\u00fcr baustein_modus='static')."
     }
   },
   "required": [

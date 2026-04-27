@@ -53,6 +53,12 @@ module.exports = {
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
   			},
+  			bundle: {
+  				DEFAULT: 'hsl(var(--bundle))',
+  				foreground: 'hsl(var(--bundle-foreground))',
+  				soft: 'hsl(var(--bundle-soft))',
+  				border: 'hsl(var(--bundle-border))'
+  			},
   			sidebar: {
   				DEFAULT: 'hsl(var(--sidebar-background))',
   				foreground: 'hsl(var(--sidebar-foreground))',

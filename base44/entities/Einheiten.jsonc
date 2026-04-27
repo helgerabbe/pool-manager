@@ -120,7 +120,7 @@
     },
     "lernpfade_konfiguration": {
       "type": "object",
-      "description": "JSON-Mapping der Lernpfade f\u00fcr die vier Lerntypen. Speichert nur Sektoren + IDs, nicht die Aufgaben selbst. Struktur: { minimalist: [{sektor_id, titel, modus, aufgaben_ids}], pragmatiker: [...], ehrgeizig: [...], passioniert: [...] }",
+      "description": "JSON-Mapping der Lernpfade f\u00fcr die vier Lerntypen. Struktur ab Dashboard-Epic Phase 1: { <lerntyp>: [ { sektor_id, titel, modus, items: [ { instance_id, type: 'aufgabe'|'system', ref_id, parent_instance_id?: string|null } ] } ] }. instance_id = stabile UUID pro Dashboard-Eintrag (kein Atom!), parent_instance_id verweist auf das B\u00fcndel-Item (System-Baustein mit baustein_modus='bundle_1ton'), in dem das Item als Child liegt. Root-Items haben parent_instance_id=null. Max. 1 Ebene Verschachtelung (B\u00fcndel-in-B\u00fcndel verboten). 1:1-Zuordnung pro Lerntyp: dieselbe aufgabe_id darf pro Lerntyp nur einmal im Dashboard liegen (egal ob Root oder Child). Legacy-Format ohne instance_id wird durch migrateLernpfadeToInstanceIds einmalig gebackfilled.",
       "additionalProperties": true,
       "default": {
         "minimalist": [],
@@ -128,6 +128,11 @@
         "ehrgeizig": [],
         "passioniert": []
       }
+    },
+    "lernpfade_schema_version": {
+      "type": "integer",
+      "default": 1,
+      "description": "Schema-Version der lernpfade_konfiguration. 1 = legacy (items ohne instance_id). 2 = Phase 1 Dashboard-Epic (Instanz-IDs, parent_instance_id, B\u00fcndel-Hierarchie). Wird vom Backfill migrateLernpfadeToInstanceIds auf 2 gesetzt; das Frontend kann anhand dieses Felds erkennen, ob die Migration f\u00fcr eine Einheit bereits gelaufen ist."
     },
     "version": {
       "type": "integer",
