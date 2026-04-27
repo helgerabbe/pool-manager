@@ -157,6 +157,7 @@ export default function LernpfadeSektor({
   onRemoveSystemItem,
   onRemoveBundle,
   onSetBundleConfig,
+  onSetBundleModus,
   getIsDropDisabled,
   onSelectAufgabe,
   onSelectSystemBaustein,
@@ -208,6 +209,11 @@ export default function LernpfadeSektor({
           onSetBundleConfig={
             onSetBundleConfig
               ? (val) => onSetBundleConfig(sektor.sektor_id, item.instance_id, val)
+              : undefined
+          }
+          onSetBundleModus={
+            onSetBundleModus
+              ? (val) => onSetBundleModus(sektor.sektor_id, item.instance_id, val)
               : undefined
           }
         />

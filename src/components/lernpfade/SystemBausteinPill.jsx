@@ -25,6 +25,7 @@ import { GripVertical, X } from 'lucide-react';
 import { getSystemBausteinIcon } from '@/lib/systemBausteinIcons';
 import { isPlatzhalterBaustein, PLATZHALTER_CLASSES } from '@/lib/platzhalterUtils';
 import BundleErforderlichControl from '@/components/lernpfade/BundleErforderlichControl';
+import BundleModusToggle from '@/components/lernpfade/BundleModusToggle';
 
 // Phase 4: Nur das Aufgabenbündel zeigt das "X von Y"-Control. Lernpaket-
 // und Projektbündel haben andere Semantik (alle Pflicht / freiwillig).
@@ -44,6 +45,8 @@ export default function SystemBausteinPill({
   bundleConfig,
   bundleChildCount = 0,
   onSetBundleConfig,
+  // Phase C: Modus-Toggle an allen Bündel-Typen.
+  onSetBundleModus,
 }) {
   const Icon = getSystemBausteinIcon(baustein?.icon);
   const titel = baustein?.titel || refId;
@@ -130,6 +133,14 @@ export default function SystemBausteinPill({
                     <span className="ml-1 italic text-muted-foreground">(unbekannt)</span>
                   )}
                 </span>
+                {isBundle && (
+                  <BundleModusToggle
+                    acceptedTypes={baustein?.accepted_types}
+                    modus={bundleConfig?.modus}
+                    disabled={disabled}
+                    onChange={onSetBundleModus}
+                  />
+                )}
                 {isAufgabenBuendel && (
                   <BundleErforderlichControl
                     childCount={bundleChildCount}

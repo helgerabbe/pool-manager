@@ -44,6 +44,7 @@ import {
   isKonfigurationEmpty,
   applyAllDashboardTemplates,
   setBundleConfig,
+  setBundleModus,
   removeBundleAndCascade,
   getBundleChildren,
 } from '@/lib/lernpfadeUtils';
@@ -587,6 +588,19 @@ export default function LernpfadeCockpit({
     [readOnly, activeLernTyp, updateKonfiguration]
   );
 
+  // Phase C: Bündel-Modus (sequenziell|frei) am Bündel-Header umschalten.
+  // setBundleModus resettet erforderliche_anzahl bei Wechsel auf 'sequenziell'
+  // automatisch, damit "X von Y in fester Reihenfolge" nicht entstehen kann.
+  const handleSetBundleModus = useCallback(
+    (sektorId, bundleInstanceId, modus) => {
+      if (readOnly) return;
+      updateKonfiguration((prev) =>
+        setBundleModus(prev, activeLernTyp, sektorId, bundleInstanceId, modus)
+      );
+    },
+    [readOnly, activeLernTyp, updateKonfiguration]
+  );
+
   // System-Bausteine werden POSITIONS-genau entfernt (nicht per ref_id), weil
   // derselbe Baustein mehrfach in einem Sektor vorkommen darf.
   const handleRemoveSystemItem = useCallback(
@@ -672,6 +686,7 @@ export default function LernpfadeCockpit({
               onRemoveSystemItem={handleRemoveSystemItem}
               onRemoveBundle={handleRemoveBundle}
               onSetBundleConfig={handleSetBundleConfig}
+              onSetBundleModus={handleSetBundleModus}
               getIsDropDisabled={getIsDropDisabled}
               onSelectAufgabe={setSelectedAufgabeId}
               onSelectSystemBaustein={setSelectedSystemBausteinId}
