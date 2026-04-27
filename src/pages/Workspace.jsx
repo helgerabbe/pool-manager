@@ -304,9 +304,23 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
           return;
         }
       }
-      // Schritt 3: Lock freigeben.
+      // Schritt 3: KRITISCH — Workspace-Daten frisch aus DB laden, BEVOR
+      // wir den Edit-Modus beenden. Sonst sieht das Cockpit beim Wechsel
+      // auf Read-Only noch den ALTEN `einheit.lernpfade_konfiguration`-Prop
+      // und überschreibt den lokalen State (frisch gespeichert!) mit dem
+      // veralteten Server-Snapshot. Ergebnis: Dashboards erscheinen leer,
+      // obwohl die DB die korrekten Daten hält.
+      try {
+        await Promise.all([
+          queryClient.refetchQueries({ queryKey: ['einheiten-list-secure'], type: 'all' }),
+          queryClient.refetchQueries({ queryKey: ['workspace-data', selectedEinheitId], type: 'all' }),
+        ]);
+      } catch (refetchErr) {
+        console.warn('[handleEndDashboardEditing] Refetch fehlgeschlagen:', refetchErr);
+      }
+      // Schritt 4: Lock freigeben.
       await handleReleaseStructLock();
-      // Schritt 4: handleReleaseStructLock setzt isStructuralEditingActive=false.
+      // Schritt 5: handleReleaseStructLock setzt isStructuralEditingActive=false.
     } finally {
       setEndingDashboardEdit(false);
     }

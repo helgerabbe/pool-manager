@@ -224,14 +224,30 @@ export default function LernpfadeCockpit({
     konfigurationRef.current = serverKonfig;
   }, [einheit?.id, einheit?.lernpfade_konfiguration, isStructuralEditingActive]);
 
-  // Beim Beenden des Edit-Modus: einmalig den Server-Snapshot übernehmen,
-  // damit der Lese-Modus den persistierten Stand zeigt.
+  // Beim Beenden des Edit-Modus: den Server-Snapshot übernehmen, damit der
+  // Lese-Modus den persistierten Stand zeigt — ABER NUR, wenn der Server-
+  // Snapshot tatsächlich frischer/vollständiger ist. Schutz vor dem Race:
+  // Wenn der Workspace-Parent den Refetch noch nicht durch hat, sehen wir
+  // hier u. U. die ALTE einheit.lernpfade_konfiguration als Prop. Würden
+  // wir die einfach übernehmen, ginge der gerade frisch gespeicherte State
+  // verloren ("Dashboards komplett leer"-Bug). Heuristik: Wenn der lokale
+  // State nicht-leer ist und mehr Sektoren enthält als der Server-Prop,
+  // behalten wir den lokalen Stand. Sobald der Refetch greift, bringt der
+  // erste useEffect oben (lastSyncedEinheitId-Path) ohnehin den Sync.
   const wasEditingActive = useRef(false);
   useEffect(() => {
     if (wasEditingActive.current && !isStructuralEditingActive) {
       const serverKonfig = einheit?.lernpfade_konfiguration || DEFAULT_KONFIG;
-      setKonfiguration(serverKonfig);
-      konfigurationRef.current = serverKonfig;
+      const local = konfigurationRef.current || DEFAULT_KONFIG;
+      const sumSektoren = (k) =>
+        ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert']
+          .reduce((acc, lt) => acc + (Array.isArray(k?.[lt]) ? k[lt].length : 0), 0);
+      const serverHasMoreOrEqual = sumSektoren(serverKonfig) >= sumSektoren(local);
+      if (serverHasMoreOrEqual) {
+        setKonfiguration(serverKonfig);
+        konfigurationRef.current = serverKonfig;
+      }
+      // Sonst: lokal behalten — der nächste Refetch synchronisiert.
     }
     wasEditingActive.current = isStructuralEditingActive;
   }, [isStructuralEditingActive, einheit?.lernpfade_konfiguration]);
