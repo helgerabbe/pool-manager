@@ -29,6 +29,11 @@
 
 import { ITEM_TYPE } from '@/lib/aufgabenTypen';
 import { LEGACY_BAUSTEIN_ALIAS } from '@/lib/dashboardTemplates';
+import {
+  DEFAULT_SEKTOR_TYP,
+  isValidSektorTyp,
+  SEKTOR_TYP,
+} from '@/lib/sektorTypen';
 
 // ── Normalisierung (Lazy Migration) ─────────────────────────────────────────
 
@@ -70,18 +75,25 @@ export function normalizeItem(item) {
       ref_id: item.ref_id,
       parent_instance_id: item.parent_instance_id ?? null,
     };
-    // Phase 4: bundle_config darf nur an System-Items existieren (am Bündel-
-    // Header). Für andere Items still verwerfen, um Drift zu vermeiden.
-    if (
-      normalized.type === ITEM_TYPE.SYSTEM &&
-      item.bundle_config &&
-      typeof item.bundle_config === 'object' &&
-      typeof item.bundle_config.erforderliche_anzahl === 'number' &&
-      item.bundle_config.erforderliche_anzahl >= 1
-    ) {
-      normalized.bundle_config = {
-        erforderliche_anzahl: Math.floor(item.bundle_config.erforderliche_anzahl),
-      };
+    // Phase 4 + Phase A (Epic „Semantische Sektoren"): bundle_config darf nur
+    // an System-Items existieren (am Bündel-Header). Für andere Items still
+    // verwerfen, um Drift zu vermeiden.
+    //
+    // bundle_config.erforderliche_anzahl: optional (Phase 4)
+    // bundle_config.modus:                'sequenziell' | 'frei' (Phase A)
+    if (normalized.type === ITEM_TYPE.SYSTEM && item.bundle_config && typeof item.bundle_config === 'object') {
+      const bc = {};
+      const num = Number(item.bundle_config.erforderliche_anzahl);
+      if (Number.isFinite(num) && num >= 1) {
+        bc.erforderliche_anzahl = Math.floor(num);
+      }
+      const m = item.bundle_config.modus;
+      if (m === 'sequenziell' || m === 'frei') {
+        bc.modus = m;
+      }
+      if (Object.keys(bc).length > 0) {
+        normalized.bundle_config = bc;
+      }
     }
     return normalized;
   }
@@ -91,6 +103,13 @@ export function normalizeItem(item) {
 /**
  * Normalisiert einen Sektor: bevorzugt `items`, fällt sonst auf `aufgaben_ids`
  * zurück. Liefert IMMER ein Objekt mit `items` und OHNE `aufgaben_ids`.
+ *
+ * Phase A (Epic „Semantische Sektoren"):
+ *   - `sektor_typ` wird sicher gesetzt (Default: 'individuell').
+ *   - `themenfeld_id` und `titel_snapshot` werden durchgereicht (default null).
+ *   - `modus` wird HART auf 'sequenziell' fixiert. Das Feld bleibt im Schema
+ *     für Export-Konsistenz, ist aber UI-seitig nicht mehr veränderbar.
+ *     Bündel-Modus lebt jetzt in `item.bundle_config.modus`.
  */
 export function normalizeSektor(sektor) {
   const safe = sektor || {};
@@ -103,8 +122,25 @@ export function normalizeSektor(sektor) {
   // aufgaben_ids gezielt droppen – beim nächsten Save wandert nur noch `items` in die DB.
   const { aufgaben_ids: _legacy, ...rest } = safe;
 
+  const sektorTyp = isValidSektorTyp(rest.sektor_typ) ? rest.sektor_typ : DEFAULT_SEKTOR_TYP;
+  // themenfeld_id ist nur bei Arbeitsphase semantisch sinnvoll. Für andere Typen
+  // wird es defensiv weggekürzt, damit kein Drift entsteht.
+  const themenfeldId =
+    sektorTyp === SEKTOR_TYP.ARBEITSPHASE && typeof rest.themenfeld_id === 'string' && rest.themenfeld_id
+      ? rest.themenfeld_id
+      : null;
+  // titel_snapshot ebenfalls nur bei Arbeitsphase relevant (Lock-Snapshot).
+  const titelSnapshot =
+    sektorTyp === SEKTOR_TYP.ARBEITSPHASE && typeof rest.titel_snapshot === 'string'
+      ? rest.titel_snapshot
+      : null;
+
   return {
     ...rest,
+    sektor_typ: sektorTyp,
+    themenfeld_id: themenfeldId,
+    titel_snapshot: titelSnapshot,
+    modus: 'sequenziell', // Phase A: hart fixiert.
     items: rawItems.map(normalizeItem).filter(Boolean),
   };
 }
@@ -177,12 +213,18 @@ function uuid() {
  *
  * Backwards-Compat: Wenn ein Aufrufer noch `aufgaben_ids` als Override mitgibt
  * (z. B. Quick-Add-Pfad), wird das beim Anlegen sofort zu `items` normalisiert.
+ *
+ * Phase A: Default-Sektortyp ist 'individuell', kann aber per Override
+ * überschrieben werden (z. B. von der "Sektor hinzufügen"-UI in Phase B).
  */
 export function createNewSektor(overrides = {}) {
   const base = {
     sektor_id: `sec_${uuid()}`,
     titel: 'Neuer Sektor',
     modus: 'sequenziell',
+    sektor_typ: DEFAULT_SEKTOR_TYP,
+    themenfeld_id: null,
+    titel_snapshot: null,
     items: [],
   };
   return normalizeSektor({ ...base, ...overrides });
@@ -536,6 +578,86 @@ export function setBundleConfig(konfig, lernTyp, sektorId, bundleInstanceId, erf
 }
 
 /**
+ * Phase A (Epic „Semantische Sektoren"): Setzt `bundle_config.modus` an einem
+ * Bündel-Item (System-Baustein mit baustein_modus='bundle_1ton').
+ *
+ * Pädagogisches Constraint (Frage 11):
+ *   - Wenn auf 'sequenziell' gewechselt wird UND das Bündel hat eine
+ *     erforderliche_anzahl < childCount, wird die erforderliche_anzahl
+ *     automatisch resettet (entfernt → Default = "alle Pflicht").
+ *     Begründung: "Mach 2 von 5 in fester Reihenfolge" ist didaktisch
+ *     widersinnig.
+ *   - 'frei' belässt die erforderliche_anzahl unangetastet.
+ *
+ * Operiert idempotent und immutable. Ungültige Modus-Werte werden ignoriert.
+ */
+export function setBundleModus(konfig, lernTyp, sektorId, bundleInstanceId, modus) {
+  if (!bundleInstanceId) return konfig;
+  if (modus !== 'sequenziell' && modus !== 'frei') return konfig;
+
+  const next = getSektoren(konfig, lernTyp).map((s) => {
+    if (s.sektor_id !== sektorId) return s;
+
+    const items = s.items.map((it) => {
+      if (it.instance_id !== bundleInstanceId) return it;
+      if (it.type !== ITEM_TYPE.SYSTEM) return it; // safety
+
+      const prevConfig = it.bundle_config || {};
+      const nextConfig = { ...prevConfig, modus };
+
+      // Auto-Reset: bei sequenziell macht erforderliche_anzahl < childCount keinen Sinn.
+      if (modus === 'sequenziell' && nextConfig.erforderliche_anzahl != null) {
+        delete nextConfig.erforderliche_anzahl;
+      }
+
+      // Wenn nichts mehr drin ist → bundle_config komplett weg.
+      if (Object.keys(nextConfig).length === 0) {
+        const { bundle_config: _ignored, ...rest } = it;
+        return rest;
+      }
+      return { ...it, bundle_config: nextConfig };
+    });
+    return { ...s, items };
+  });
+  return setSektoren(konfig, lernTyp, next);
+}
+
+/**
+ * Phase A: Friert beim Lock den aktuellen Themenfeld-Titel als
+ * `titel_snapshot` an allen Arbeitsphase-Sektoren ein, damit ein nachträgliches
+ * Umbenennen des Themenfelds den Schüler-Pfad nicht rückwirkend ändert.
+ *
+ * Wird vom Lock-Hook (Phase B) vor dem Setzen von pfad_status='locked_for_export'
+ * aufgerufen. Operiert immutable und idempotent — hat ein Sektor bereits einen
+ * Snapshot, bleibt er unangetastet.
+ *
+ * @param {object} konfig                Konfiguration der Einheit.
+ * @param {string} lernTyp               Lerntyp, für den gelockt wird.
+ * @param {Map|object} themenfeldTitelById  Map<themenfeld_id, titel>.
+ */
+export function freezeThemenfeldSnapshot(konfig, lernTyp, themenfeldTitelById) {
+  const lookup = (id) => {
+    if (!id) return null;
+    if (themenfeldTitelById && typeof themenfeldTitelById.get === 'function') {
+      return themenfeldTitelById.get(id) || null;
+    }
+    if (themenfeldTitelById && typeof themenfeldTitelById === 'object') {
+      return themenfeldTitelById[id] || null;
+    }
+    return null;
+  };
+
+  const next = getSektoren(konfig, lernTyp).map((s) => {
+    if (s.sektor_typ !== SEKTOR_TYP.ARBEITSPHASE) return s;
+    if (s.titel_snapshot) return s; // schon eingefroren
+    const titel = lookup(s.themenfeld_id);
+    if (!titel) return s;
+    return { ...s, titel_snapshot: titel };
+  });
+  return setSektoren(konfig, lernTyp, next);
+}
+
+/**
  * Sektoren von einem Lerntyp in einen anderen kopieren (Deep Clone).
  * - Generiert frische sektor_id pro Sektor (verhindert React-Key-Kollisionen).
  * - Übernimmt nur titel, modus, items (keine internen Flags).
@@ -548,7 +670,10 @@ export function copySektorenBetweenLernTypen(konfig, fromLernTyp, toLernTyp) {
   const cloned = source.map((s) => ({
     sektor_id: `sec_${uuid()}`,
     titel: s.titel || 'Neuer Sektor',
-    modus: s.modus || 'sequenziell',
+    modus: 'sequenziell', // Phase A: hart fixiert.
+    sektor_typ: s.sektor_typ || DEFAULT_SEKTOR_TYP,
+    themenfeld_id: s.themenfeld_id || null,
+    titel_snapshot: null, // Snapshot wird im Ziel-Lerntyp neu erzeugt.
     items: s.items.map((it) => ({ type: it.type, ref_id: it.ref_id })),
   }));
   return setSektoren(konfig, toLernTyp, cloned);
@@ -599,7 +724,14 @@ export function applyDashboardTemplate(aktuelleKonfig, lerntyp, templateData) {
     return {
       sektor_id: `sec_${uuid()}`,
       titel: sektor?.titel || 'Neuer Sektor',
-      modus: sektor?.modus === 'frei' ? 'frei' : 'sequenziell',
+      // Phase A: Sektor-Modus ist nicht mehr nutzerveränderlich. Wir
+      // schreiben hart 'sequenziell' — auch wenn das Template 'frei' sagt,
+      // weil der Sektor-Modus für den Export-Generator irrelevant geworden
+      // ist (Bündel-Modus übernimmt diese Rolle).
+      modus: 'sequenziell',
+      sektor_typ: isValidSektorTyp(sektor?.sektor_typ) ? sektor.sektor_typ : DEFAULT_SEKTOR_TYP,
+      themenfeld_id: null, // Templates haben keine Themenfeld-Bindung.
+      titel_snapshot: null,
       items,
     };
   });

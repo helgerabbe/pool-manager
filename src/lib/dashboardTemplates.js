@@ -30,6 +30,7 @@
  */
 
 import { ITEM_TYPE } from '@/lib/aufgabenTypen';
+import { SEKTOR_TYP } from '@/lib/sektorTypen';
 
 // ── Helper ──────────────────────────────────────────────────────────────
 const sys = (refId) => ({ type: ITEM_TYPE.SYSTEM, ref_id: refId });
@@ -73,24 +74,28 @@ const MINIMALIST = [
     sektor_id: 'tpl_min_sec0',
     titel: 'Orientierung',
     modus: 'sequenziell',
+    sektor_typ: SEKTOR_TYP.ONBOARDING,
     items: [sys(B.sec0Overview), sys(B.sec0Qblock), sys(B.diagnoseEntry)],
   },
   {
     sektor_id: 'tpl_min_sec1',
     titel: 'Lernlandkarte',
     modus: 'sequenziell',
+    sektor_typ: SEKTOR_TYP.UEBERBLICK,
     items: [sys(B.mapReduced)],
   },
   {
     sektor_id: 'tpl_min_sec2',
     titel: 'Erste Erarbeitungsphase',
     modus: 'sequenziell',
+    sektor_typ: SEKTOR_TYP.ARBEITSPHASE,
     items: [sys(B.pInfo), sys(B.pHandlung), sys(B.pMoodleBuendel)],
   },
   {
     sektor_id: 'tpl_min_sec3',
     titel: 'Zwischentest',
     modus: 'sequenziell',
+    sektor_typ: SEKTOR_TYP.ZWISCHENTEST,
     items: [sys(B.pInfo), sys(B.pZwischentest)],
   },
 ];
@@ -108,24 +113,28 @@ const PRAGMATIKER = [
     sektor_id: 'tpl_prag_sec0',
     titel: 'Orientierung',
     modus: 'sequenziell',
+    sektor_typ: SEKTOR_TYP.ONBOARDING,
     items: [sys(B.sec0Overview), sys(B.sec0Qblock), sys(B.diagnoseEntry)],
   },
   {
     sektor_id: 'tpl_prag_sec1',
     titel: 'Lernlandkarte',
     modus: 'sequenziell',
+    sektor_typ: SEKTOR_TYP.UEBERBLICK,
     items: [sys(B.mapReduced)],
   },
   {
     sektor_id: 'tpl_prag_sec2',
     titel: 'Erarbeitungs- und Trainingsphase',
     modus: 'sequenziell',
+    sektor_typ: SEKTOR_TYP.ARBEITSPHASE,
     items: [sys(B.pInfo), sys(B.pHandlung), sys(B.pMoodleBuendel), sys(B.pBrianBuendel)],
   },
   {
     sektor_id: 'tpl_prag_sec3',
     titel: 'Abschlusstest',
     modus: 'sequenziell',
+    sektor_typ: SEKTOR_TYP.ABSCHLUSSTEST,
     items: [sys(B.externalTest)],
   },
 ];
@@ -144,30 +153,35 @@ const EHRGEIZIG = [
     sektor_id: 'tpl_ehr_sec0',
     titel: 'Orientierung',
     modus: 'sequenziell',
+    sektor_typ: SEKTOR_TYP.ONBOARDING,
     items: [sys(B.sec0Overview), sys(B.sec0Qblock), sys(B.diagnoseEntry)],
   },
   {
     sektor_id: 'tpl_ehr_sec1',
     titel: 'Einstieg & Anmeldung',
     modus: 'sequenziell',
+    sektor_typ: SEKTOR_TYP.UEBERBLICK,
     items: [sys(B.mapFull), sys(B.examRegister)],
   },
   {
     sektor_id: 'tpl_ehr_sec2',
     titel: 'Erarbeitungs- und Trainingsphase',
     modus: 'sequenziell',
+    sektor_typ: SEKTOR_TYP.ARBEITSPHASE,
     items: [sys(B.pInfo), sys(B.pHandlung), sys(B.pMoodleBuendel), sys(B.pBrianBuendel)],
   },
   {
     sektor_id: 'tpl_ehr_sec3',
     titel: 'Vorbereitung auf die schriftliche Arbeit',
     modus: 'sequenziell',
+    sektor_typ: SEKTOR_TYP.ZWISCHENTEST,
     items: [sys(B.zwischentest)],
   },
   {
     sektor_id: 'tpl_ehr_sec4',
     titel: 'Projekt',
-    modus: 'frei',
+    modus: 'sequenziell', // Phase A: Sektor-Modus immer sequenziell.
+    sektor_typ: SEKTOR_TYP.PROJEKTE,
     items: [sys(B.projektBuendel)],
   },
 ];
@@ -185,30 +199,35 @@ const PASSIONIERT = [
     sektor_id: 'tpl_pass_sec0',
     titel: 'Orientierung',
     modus: 'sequenziell',
+    sektor_typ: SEKTOR_TYP.ONBOARDING,
     items: [sys(B.sec0Overview), sys(B.sec0Qblock), sys(B.diagnoseEntry)],
   },
   {
     sektor_id: 'tpl_pass_sec1',
     titel: 'Einstieg & Anmeldung',
-    modus: 'frei',
+    modus: 'sequenziell',
+    sektor_typ: SEKTOR_TYP.UEBERBLICK,
     items: [sys(B.mapFull), sys(B.examRegister)],
   },
   {
     sektor_id: 'tpl_pass_sec2',
     titel: 'Anwendung & Training',
-    modus: 'frei',
+    modus: 'sequenziell',
+    sektor_typ: SEKTOR_TYP.ARBEITSPHASE,
     items: [sys(B.pBrianBuendel)],
   },
   {
     sektor_id: 'tpl_pass_sec3',
     titel: 'Projekt',
-    modus: 'frei',
+    modus: 'sequenziell',
+    sektor_typ: SEKTOR_TYP.PROJEKTE,
     items: [sys(B.projektBuendel)],
   },
   {
     sektor_id: 'tpl_pass_sec4',
     titel: 'Abschlusstest',
-    modus: 'frei',
+    modus: 'sequenziell',
+    sektor_typ: SEKTOR_TYP.ABSCHLUSSTEST,
     items: [sys(B.externalTest)],
   },
 ];
