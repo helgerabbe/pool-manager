@@ -446,7 +446,7 @@ export default function EinheitUebersichtTab({
                   <Label className="text-muted-foreground">Titel der Einheit</Label>
                   <p className="text-sm font-medium">{form.titel_der_einheit || '—'}</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-1.5">
                     <Label className="text-muted-foreground">Fach</Label>
                     <p className="text-sm font-medium">{form.fach || '—'}</p>
@@ -455,10 +455,10 @@ export default function EinheitUebersichtTab({
                     <Label className="text-muted-foreground">Jahrgangsstufe</Label>
                     <p className="text-sm font-medium">{form.jahrgangsstufe || '—'}</p>
                   </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-muted-foreground">Planungsphase</Label>
-                  <p className="text-sm font-medium">{phasen.find(p => p.id === form.zeit_phase_id)?.bezeichnung || '—'}</p>
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground">Halbjahr</Label>
+                    <p className="text-sm font-medium">{phasen.find(p => p.id === form.zeit_phase_id)?.bezeichnung || '—'}</p>
+                  </div>
                 </div>
 
                 {/* Gesamtziele im Lesemodus */}
@@ -532,7 +532,7 @@ export default function EinheitUebersichtTab({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-1.5">
                     <Label>Fach *</Label>
                     <Select value={form.fach} onValueChange={v => set('fach', v)}>
@@ -551,17 +551,16 @@ export default function EinheitUebersichtTab({
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label>Planungsphase (Halbjahr)</Label>
-                  <Select value={form.zeit_phase_id || ''} onValueChange={v => set('zeit_phase_id', v || null)}>
-                    <SelectTrigger><SelectValue placeholder="Phase wählen…" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={null}>– Keine Zuordnung –</SelectItem>
-                      {phasen.map(p => <SelectItem key={p.id} value={p.id}>{p.bezeichnung}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-1.5">
+                    <Label>Halbjahr</Label>
+                    <Select value={form.zeit_phase_id || ''} onValueChange={v => set('zeit_phase_id', v || null)}>
+                      <SelectTrigger><SelectValue placeholder="Phase wählen…" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={null}>– Keine Zuordnung –</SelectItem>
+                        {phasen.map(p => <SelectItem key={p.id} value={p.id}>{p.bezeichnung}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="flex justify-between pt-1">
