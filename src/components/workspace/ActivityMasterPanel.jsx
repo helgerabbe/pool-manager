@@ -360,10 +360,10 @@ export default function ActivityMasterPanel({
   // Prüfe ob das Parent-Lernpaket von anderem User gesperrt ist
   const isParentPaketLockedByOther = lernpaket?.is_locked && lernpaket?.locked_by_email !== currentUserEmail;
 
-  // Für supports_master: Aktivität gilt als vollständig wenn mindestens 1 Masteraufgabe vorhanden
-  const effectivelyComplete = supportsMaster
-    ? masterAufgaben.length > 0
-    : activityRecord.is_complete;
+  // Single Source of Truth: DB-Aggregat `is_complete` (vom
+  // lernpaketAggregateGuardian aktiv berechnet). Damit zeigen Inhaltsbereich
+  // und Sidebar denselben Wert.
+  const effectivelyComplete = activityRecord.is_complete === true;
 
   // Aufgabentext-State (für supports_master Block)
   const [aufgabentext, setAufgabentext] = useState(activityRecord?.field_values?.aufgabentext || '');
