@@ -30,7 +30,6 @@ function AktivitaetSubNode({ activity, aktivitaetName, isSelected, onSelect, pak
   // Single Source of Truth: Vertraue dem is_complete Flag aus der Datenbank
   // supportsMaster wird nur für die Anzeige (z.B. "1M") genutzt
   const masterAufgabenCount = masterAufgabenList.length;
-  const isIncomplete = !activity.is_complete;
   const isReleased = activity.content_status === 'approved';
   
   // Farben nach Freigabe-Status:
@@ -68,10 +67,15 @@ const PHASES = [
 
 function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseActivities, aktivitaetenMap, masterAufgabenMap = {}, aktivitaetSupportsMasterMap = {} }) {
   const activities = paketPhaseActivities.filter(a => a.phase === phase);
-  
-  // Single Source of Truth: Warn-Icon nur wenn Datenbank is_complete === false
-  const hasIncompleteActivity = activities.some(a => !a.is_complete);
-  
+
+  // Einheitliche Count-Pille: grau=leer, grün=alle vollständig, gelb=teilweise
+  const completeCount = activities.filter(a => a.is_complete).length;
+  const total = activities.length;
+  const countPillClass =
+    total === 0 ? 'bg-slate-200 text-slate-700'
+    : completeCount === total ? 'bg-green-500 text-white'
+    : 'bg-amber-400 text-white';
+
   const [open, setOpen] = useState(false);
 
   return (
@@ -86,11 +90,9 @@ function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseA
             {phase === 'Input' && '📚'}{phase === 'Übung' && '✏️'}{phase === 'Abschluss' && '🎯'}
           </span>
           <span className="truncate flex-1">{phaseLabel}</span>
-          {activities.length > 0 && (
-            <span className={`w-5 h-5 flex items-center justify-center rounded-full text-white text-[10px] font-bold shrink-0 ${
-              hasIncompleteActivity ? 'bg-amber-400' : 'bg-green-500'
-            }`}>{activities.length}</span>
-          )}
+          <span className={cn('w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold shrink-0', countPillClass)}>
+            {total}
+          </span>
         </div>
       </div>
       {open && (
@@ -122,19 +124,20 @@ function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseA
 function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenzielleUndGesperrt, aktivitaetenMap, paketPhaseActivities, showNumber = false, phaseAktivitaeten = [], isEditingActive = false, masterAufgabenMap = {}, aktivitaetSupportsMasterMap = {} }) {
    const [open, setOpen] = useState(false); // Geschlossen am Anfang
   const isSelected = selectedId === paket.id;
-  const status = getLernpaketStatus(paket, lernziele, aufgaben, userEmail, mappings, phaseAktivitaeten);
   const paketLockedBy = paket.locked_by_user || paket.locked_by;
   const lockedByOther = isPaketLocked(paket) && paketLockedBy !== userEmail;
   const lockedByMe = isPaketLocked(paket) && paketLockedBy === userEmail;
   const isActiveEditPaket = isEditingActive && lockedByMe;
 
   // Single Source of Truth (siehe Logbuch §17): das vom Backend
-  // materialisierte Aggregat-Feld `paket.is_complete`. Frühere
-  // clientseitige `paketPhaseActivities.some(...)`-Logik litt unter
-  // Stale-Cache (Tab 4 zeigt grün, weil die Aktivität gerade gespeichert
-  // wurde, das Paket hier oben noch alt) – das Backend pflegt das Flag
-  // jetzt nach jedem Speichern/Approve/Delete.
-  const hatUnvollstaendigeAktivitaet = paket.is_complete !== true;
+  // materialisierte Aggregat-Feld `paket.is_complete`.
+  const completeCount = paketPhaseActivities.filter(a => a.is_complete).length;
+  const totalCount = paketPhaseActivities.length;
+  // Farbige Pille: grau=leer, grün=alle vollständig, gelb=teilweise
+  const countPillClass =
+    totalCount === 0 ? 'bg-slate-200 text-slate-700'
+    : paket.is_complete === true ? 'bg-green-500 text-white'
+    : 'bg-amber-400 text-white';
 
   return (
     <div className={cn(isActiveEditPaket && "rounded-lg ring-2 ring-orange-400 bg-orange-50/50 ml-1 mr-0.5")}>
@@ -173,13 +176,10 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
           {isActiveEditPaket && (
             <PenLine className="w-3.5 h-3.5 text-orange-500 shrink-0 animate-pulse" />
           )}
-          {!isSelected && !lockedByOther && !lockedByMe && <AmpelDot status={status === 'yellow' ? 'red' : status} size="md" />}
 
-          {paketPhaseActivities.length >= 0 && (
-            <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-slate-200 text-slate-700">
-              {paketPhaseActivities.length}
-            </div>
-          )}
+          <div className={cn('w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0', countPillClass)}>
+            {totalCount}
+          </div>
           </button>
       </div>
       {open && (
@@ -240,7 +240,9 @@ function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedI
         >
           <FolderOpen className={cn('w-3.5 h-3.5 shrink-0', isSammelbecken ? 'text-slate-500' : 'text-amber-500')} />
           <span className="truncate flex-1">{themenfeld.titel}</span>
-          {!isSelected && !isSammelbecken && <AmpelDot status={themenfeldStatus} size="md" />}
+          {!isSelected && !isSammelbecken && (
+            <AmpelDot status={hatUnvollstaendigeAktivitaet ? 'red' : 'green'} size="md" />
+          )}
 
         </button>
       </div>
@@ -280,13 +282,23 @@ function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedI
 
 function AmpelLegende() {
   return (
-    <div className="flex items-center justify-center gap-4 py-2 px-3 bg-muted/50 rounded-lg text-[10px] text-muted-foreground">
-      {Object.entries(AMPEL).map(([key, cfg]) => (
-        <span key={key} className="flex items-center gap-1.5">
-          <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
-          {cfg.label}
-        </span>
-      ))}
+    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-2 px-3 bg-muted/50 rounded-lg text-[10px] text-muted-foreground">
+      <span className="flex items-center gap-1.5">
+        <span className="w-4 h-4 rounded-full bg-green-500" />
+        Vollständig
+      </span>
+      <span className="flex items-center gap-1.5">
+        <span className="w-4 h-4 rounded-full bg-amber-400" />
+        Teilweise
+      </span>
+      <span className="flex items-center gap-1.5">
+        <span className="w-4 h-4 rounded-full bg-slate-200" />
+        Leer
+      </span>
+      <span className="flex items-center gap-1.5">
+        <span className="w-2 h-2 rounded-full bg-red-500 ring-2 ring-red-200" />
+        Themenfeld unvollständig
+      </span>
     </div>
   );
 }
