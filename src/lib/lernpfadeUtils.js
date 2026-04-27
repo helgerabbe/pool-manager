@@ -64,12 +64,26 @@ export function normalizeItem(item) {
       : null;
   }
   if (typeof item === 'object' && item.ref_id) {
-    return {
+    const normalized = {
       instance_id: item.instance_id || freshInstanceId(),
       type: item.type === ITEM_TYPE.SYSTEM ? ITEM_TYPE.SYSTEM : ITEM_TYPE.AUFGABE,
       ref_id: item.ref_id,
       parent_instance_id: item.parent_instance_id ?? null,
     };
+    // Phase 4: bundle_config darf nur an System-Items existieren (am Bündel-
+    // Header). Für andere Items still verwerfen, um Drift zu vermeiden.
+    if (
+      normalized.type === ITEM_TYPE.SYSTEM &&
+      item.bundle_config &&
+      typeof item.bundle_config === 'object' &&
+      typeof item.bundle_config.erforderliche_anzahl === 'number' &&
+      item.bundle_config.erforderliche_anzahl >= 1
+    ) {
+      normalized.bundle_config = {
+        erforderliche_anzahl: Math.floor(item.bundle_config.erforderliche_anzahl),
+      };
+    }
+    return normalized;
   }
   return null;
 }
@@ -476,6 +490,49 @@ export function getBundleChildren(konfig, lernTyp, sektorId, bundleInstanceId) {
   const sektor = getSektoren(konfig, lernTyp).find((s) => s.sektor_id === sektorId);
   if (!sektor) return [];
   return sektor.items.filter((it) => it.parent_instance_id === bundleInstanceId);
+}
+
+/**
+ * Phase 4: Setzt/löscht `bundle_config.erforderliche_anzahl` an einem Bündel-
+ * Item (System-Baustein mit baustein_modus='bundle_1ton').
+ *
+ * - `erforderlicheAnzahl = null` ODER fehlend → bundle_config wird entfernt
+ *   (Default-Verhalten "alle Children müssen bearbeitet werden" greift).
+ * - Wert wird auf [1, childCount] geclamped, damit der User-Wert immer sinnvoll
+ *   bleibt — auch wenn nachträglich Children entfernt werden.
+ * - Wenn das Bündel keine Children hat, wird bundle_config entfernt (sinnlos).
+ *
+ * Operiert idempotent und immutable.
+ */
+export function setBundleConfig(konfig, lernTyp, sektorId, bundleInstanceId, erforderlicheAnzahl) {
+  if (!bundleInstanceId) return konfig;
+
+  const next = getSektoren(konfig, lernTyp).map((s) => {
+    if (s.sektor_id !== sektorId) return s;
+    const childCount = s.items.filter(
+      (it) => it.parent_instance_id === bundleInstanceId
+    ).length;
+
+    const items = s.items.map((it) => {
+      if (it.instance_id !== bundleInstanceId) return it;
+      if (it.type !== ITEM_TYPE.SYSTEM) return it; // safety
+
+      const { bundle_config: _ignored, ...rest } = it;
+      const num = Number(erforderlicheAnzahl);
+      if (
+        erforderlicheAnzahl == null ||
+        !Number.isFinite(num) ||
+        num < 1 ||
+        childCount === 0
+      ) {
+        return rest; // bundle_config entfernen → Default
+      }
+      const clamped = Math.min(Math.max(1, Math.floor(num)), childCount);
+      return { ...rest, bundle_config: { erforderliche_anzahl: clamped } };
+    });
+    return { ...s, items };
+  });
+  return setSektoren(konfig, lernTyp, next);
 }
 
 /**

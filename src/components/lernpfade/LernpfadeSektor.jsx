@@ -155,6 +155,7 @@ export default function LernpfadeSektor({
   onRemove,
   onRemoveAufgabe,
   onRemoveSystemItem,
+  onSetBundleConfig,
   getIsDropDisabled,
   onSelectAufgabe,
   onSelectSystemBaustein,
@@ -179,7 +180,7 @@ export default function LernpfadeSektor({
   //   - Children → Index innerhalb des jeweiligen Bündel-Droppables
   // originalIndex (Position in sektor.items) wird weiterhin für die bestehenden
   // Remove-Callbacks gebraucht, damit die Cockpit-Logik unverändert bleibt.
-  const renderItem = ({ item, originalIndex }, dndIndex) => {
+  const renderItem = ({ item, originalIndex, children }, dndIndex) => {
     if (item.type === ITEM_TYPE.SYSTEM) {
       return (
         <SystemBausteinPill
@@ -193,6 +194,13 @@ export default function LernpfadeSektor({
           disabled={readOnly}
           onSelect={onSelectSystemBaustein}
           onRemove={() => onRemoveSystemItem?.(sektor.sektor_id, originalIndex)}
+          bundleConfig={item.bundle_config}
+          bundleChildCount={Array.isArray(children) ? children.length : 0}
+          onSetBundleConfig={
+            onSetBundleConfig
+              ? (val) => onSetBundleConfig(sektor.sektor_id, item.instance_id, val)
+              : undefined
+          }
         />
       );
     }

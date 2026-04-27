@@ -43,6 +43,7 @@ import {
   removeAufgabeFromLernTyp,
   isKonfigurationEmpty,
   applyAllDashboardTemplates,
+  setBundleConfig,
 } from '@/lib/lernpfadeUtils';
 import { DASHBOARD_TEMPLATES } from '@/lib/dashboardTemplates';
 import { getSektorTemplate, SEKTOR_TEMPLATE_KEYS } from '@/lib/sektorTemplates';
@@ -378,6 +379,18 @@ export default function LernpfadeCockpit({
     [readOnly, activeLernTyp, updateKonfiguration]
   );
 
+  // Phase 4: Erforderliche-Anzahl am Aufgabenbündel ändern.
+  // erforderlicheAnzahl=null setzt die Konfig zurück (Default = "alle Pflicht").
+  const handleSetBundleConfig = useCallback(
+    (sektorId, bundleInstanceId, erforderlicheAnzahl) => {
+      if (readOnly) return;
+      updateKonfiguration((prev) =>
+        setBundleConfig(prev, activeLernTyp, sektorId, bundleInstanceId, erforderlicheAnzahl)
+      );
+    },
+    [readOnly, activeLernTyp, updateKonfiguration]
+  );
+
   // System-Bausteine werden POSITIONS-genau entfernt (nicht per ref_id), weil
   // derselbe Baustein mehrfach in einem Sektor vorkommen darf.
   const handleRemoveSystemItem = useCallback(
@@ -461,6 +474,7 @@ export default function LernpfadeCockpit({
               onRemoveSektor={handleRemoveSektor}
               onRemoveAufgabeFromPath={handleRemoveAufgabeFromPath}
               onRemoveSystemItem={handleRemoveSystemItem}
+              onSetBundleConfig={handleSetBundleConfig}
               getIsDropDisabled={getIsDropDisabled}
               onSelectAufgabe={setSelectedAufgabeId}
               onSelectSystemBaustein={setSelectedSystemBausteinId}

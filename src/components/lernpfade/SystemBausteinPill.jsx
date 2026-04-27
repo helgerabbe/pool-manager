@@ -24,6 +24,11 @@ import {
 import { GripVertical, X } from 'lucide-react';
 import { getSystemBausteinIcon } from '@/lib/systemBausteinIcons';
 import { isPlatzhalterBaustein, PLATZHALTER_CLASSES } from '@/lib/platzhalterUtils';
+import BundleErforderlichControl from '@/components/lernpfade/BundleErforderlichControl';
+
+// Phase 4: Nur das Aufgabenbündel zeigt das "X von Y"-Control. Lernpaket-
+// und Projektbündel haben andere Semantik (alle Pflicht / freiwillig).
+const AUFGABEN_BUENDEL_REF_ID = 'sys_platzhalter_brian_buendel';
 
 export default function SystemBausteinPill({
   baustein,
@@ -35,6 +40,10 @@ export default function SystemBausteinPill({
   disabled,
   onSelect,
   onRemove,
+  // Phase 4: nur am Aufgabenbündel relevant.
+  bundleConfig,
+  bundleChildCount = 0,
+  onSetBundleConfig,
 }) {
   const Icon = getSystemBausteinIcon(baustein?.icon);
   const titel = baustein?.titel || refId;
@@ -51,6 +60,9 @@ export default function SystemBausteinPill({
   // generischen Platzhalter-Style, weil ein Bündel zwar technisch ein
   // Platzhalter ist, aber visuell als Container erkennbar sein muss.
   const isBundle = baustein?.baustein_modus === 'bundle_1ton';
+
+  // Nur am Aufgabenbündel zeigen wir den X-von-Y-Stepper (Phase 4).
+  const isAufgabenBuendel = isBundle && refId === AUFGABEN_BUENDEL_REF_ID;
 
   let containerClasses;
   if (isBundle) {
@@ -118,6 +130,14 @@ export default function SystemBausteinPill({
                     <span className="ml-1 italic text-muted-foreground">(unbekannt)</span>
                   )}
                 </span>
+                {isAufgabenBuendel && (
+                  <BundleErforderlichControl
+                    childCount={bundleChildCount}
+                    erforderlicheAnzahl={bundleConfig?.erforderliche_anzahl}
+                    disabled={disabled}
+                    onChange={onSetBundleConfig}
+                  />
+                )}
                 {!disabled && (
                   <button
                     type="button"
