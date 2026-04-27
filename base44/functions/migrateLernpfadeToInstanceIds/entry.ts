@@ -66,6 +66,16 @@ const BAUSTEIN_MAPPING = {
 
   // ── 1:n-Bündel (lila Container, Pool-Modus für Export) ───────────────────
   sys_platzhalter_moodle_buendel: { baustein_modus: 'bundle_1ton', accepted_types: ['lernpaket'] },
+
+  // ── M4-Addendum (2026-04-27): Legacy-IDs, die aus historischen Sektor-
+  //    Templates noch aktiv referenziert werden, im Erst-Backfill aber
+  //    ungemappt blieben.
+  sys_platzhalter_info:      { baustein_modus: 'static',           accepted_types: [] },
+  sys_platzhalter_handlung:  { baustein_modus: 'placeholder_1to1', accepted_types: ['handlung'] },
+  sys_platzhalter_projekt:   { baustein_modus: 'placeholder_1to1', accepted_types: ['projekt_anker'] },
+  // Legacy-Alias für sys_platzhalter_zwischentest. Cleanup (alle ref_ids
+  // umschreiben + Eintrag deaktivieren) ist ein separates Folge-Ticket.
+  sys_zwischentest:          { baustein_modus: 'placeholder_1to1', accepted_types: ['lernpaket'] },
 };
 
 // Neu zu seedende Bausteine, die bisher nicht in der DB liegen.
