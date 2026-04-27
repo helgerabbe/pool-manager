@@ -70,12 +70,14 @@ const LERNTYP_VARIANTE = {
   passioniert: { label: 'Wissensspeicher', cls: 'bg-violet-100 text-violet-700 border-violet-200' },
 };
 
-function AufgabePill({ aufgabe, refId, sektorId, index, onRemove, onSelect, isSelected, disabled, ampelStatus, exportReady, contentApproved, onOpenEditor, activeLernTyp }) {
+function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, onRemove, onSelect, isSelected, disabled, ampelStatus, exportReady, contentApproved, onOpenEditor, activeLernTyp }) {
   // Fallback, falls die Aufgabe (noch) nicht im Cache ist.
   const titel = aufgabe?.titel || 'Aufgabe';
   const typMeta = getAufgabenTyp(aufgabe?.aufgaben_typ);
   const Icon = typMeta.icon;
-  const draggableId = `pfaditem-aufgabe-${sektorId}-${index}-${refId}`;
+  // Phase 3: Draggable-IDs müssen über Sektor- und Bündel-Droppables eindeutig
+  // sein. Wir nehmen die instance_id als stabilen Anker (vorhanden seit Phase 1).
+  const draggableId = `pfaditem-aufgabe-${instanceId || `${sektorId}-${index}-${refId}`}`;
 
   const isBuendel = aufgabe?.aufgaben_typ === 'buendel';
   const isZwischentest = isBuendel && aufgabe?.lernpaket_logik === 'test_only';
@@ -171,32 +173,37 @@ export default function LernpfadeSektor({
     systemBausteineById?.get?.(refId)?.baustein_modus === 'bundle_1ton';
   const grouped = groupItemsByParent(items, isBundleRefId);
 
-  // Render-Helper: ein einzelnes Item (Aufgabe oder System) am ORIGINAL-Index.
-  // Wird sowohl für Root- als auch für Child-Items genutzt.
-  const renderItem = ({ item, originalIndex }) => {
+  // Phase 3: DnD-Index ist jetzt LOKAL pro Droppable.
+  //   - Roots → Index innerhalb des Sektor-Droppables
+  //   - Children → Index innerhalb des jeweiligen Bündel-Droppables
+  // originalIndex (Position in sektor.items) wird weiterhin für die bestehenden
+  // Remove-Callbacks gebraucht, damit die Cockpit-Logik unverändert bleibt.
+  const renderItem = ({ item, originalIndex }, dndIndex) => {
     if (item.type === ITEM_TYPE.SYSTEM) {
       return (
         <SystemBausteinPill
-          key={`sys-${originalIndex}-${item.ref_id}`}
+          key={`sys-${item.instance_id || originalIndex}-${item.ref_id}`}
           baustein={systemBausteineById?.get(item.ref_id)}
           refId={item.ref_id}
           sektorId={sektor.sektor_id}
-          index={originalIndex}
+          index={dndIndex}
+          instanceId={item.instance_id}
           isSelected={selectedSystemBausteinId === item.ref_id}
           disabled={readOnly}
           onSelect={onSelectSystemBaustein}
-          onRemove={(itemIndex) => onRemoveSystemItem?.(sektor.sektor_id, itemIndex)}
+          onRemove={() => onRemoveSystemItem?.(sektor.sektor_id, originalIndex)}
         />
       );
     }
     const ctx = { aufgabenById };
     return (
       <AufgabePill
-        key={`auf-${originalIndex}-${item.ref_id}`}
+        key={`auf-${item.instance_id || originalIndex}-${item.ref_id}`}
         aufgabe={aufgabenById?.get(item.ref_id)}
         refId={item.ref_id}
         sektorId={sektor.sektor_id}
-        index={originalIndex}
+        index={dndIndex}
+        instanceId={item.instance_id}
         onRemove={onRemoveAufgabe}
         onSelect={onSelectAufgabe}
         isSelected={selectedAufgabeId === item.ref_id}
@@ -261,21 +268,23 @@ export default function LernpfadeSektor({
                 Aufgaben oder Standard-Elemente hierher ziehen.
               </div>
             )}
-            {grouped.map((entry) => {
-              // Bündel mit potenziellen Children → in BundleContainer wrappen.
+            {grouped.map((entry, rootIdx) => {
+              // Bündel mit eigenem Children-Droppable.
               if (entry.children) {
                 return (
                   <BundleContainer
                     key={`bundle-${entry.item.instance_id || entry.originalIndex}`}
-                    headerSlot={renderItem(entry)}
+                    bundleInstanceId={entry.item.instance_id}
+                    headerSlot={renderItem(entry, rootIdx)}
                     isEmpty={entry.children.length === 0}
+                    isDropDisabled={readOnly}
                   >
-                    {entry.children.map((child) => renderItem(child))}
+                    {entry.children.map((child, childIdx) => renderItem(child, childIdx))}
                   </BundleContainer>
                 );
               }
               // Reguläres Root-Item (Aufgabe oder Nicht-Bündel-System-Baustein).
-              return renderItem(entry);
+              return renderItem(entry, rootIdx);
             })}
             {provided.placeholder}
           </div>

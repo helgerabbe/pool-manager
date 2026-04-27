@@ -30,6 +30,7 @@ export default function SystemBausteinPill({
   refId,
   sektorId,
   index,
+  instanceId,
   isSelected,
   disabled,
   onSelect,
@@ -37,7 +38,9 @@ export default function SystemBausteinPill({
 }) {
   const Icon = getSystemBausteinIcon(baustein?.icon);
   const titel = baustein?.titel || refId;
-  const draggableId = `pfaditem-system-${sektorId}-${index}-${refId}`;
+  // Phase 3: Draggable-IDs müssen über Sektor- UND Bündel-Droppables hinweg
+  // eindeutig sein. Wir nehmen die instance_id als stabilen Anker.
+  const draggableId = `pfaditem-system-${instanceId || `${sektorId}-${index}-${refId}`}`;
 
   // Magic-Raster (Phase 1): Wenn der Baustein-Datensatz fehlt (z.B. weil er
   // erst geseedet werden muss), prüfen wir defensiv die ref_id selbst.
@@ -120,7 +123,7 @@ export default function SystemBausteinPill({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onRemove?.(index);
+                      onRemove?.();
                     }}
                     title="Aus Pfad entfernen"
                     className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"
