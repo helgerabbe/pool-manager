@@ -24,143 +24,42 @@
  *     }
  *   }
  *
- * Punkte-Regeln (Workstream 3 – verschärft):
- *   - System-Baustein, der KEIN Platzhalter ist        → 1 Punkt
- *   - Platzhalter (sys_platzhalter_*)                  → 0 Punkte
- *   - Aufgaben-Item mit Ampel GREEN UND Export-freigegeben (sync_status === 'synced')
- *                                                       → 1 Punkt
- *   - Alle anderen Aufgaben-Items                      → 0 Punkte
- *   - Leeres Sektor-Array                              → 0%
+ * Progress-Regel (vereinfacht):
+ *   Prozent = (Anzahl der Einheits-Inhalte, die im Pfad platziert sind)
+ *           / (Gesamtzahl der Einheits-Inhalte)
  *
- * "Export-freigegeben" = sync_status, moodle_sync_status oder brian_sync_status
- * der Aufgabe steht auf 'synced' (= bereits live in Moodle/Brian).
+ *   Einheits-Inhalte = Lernpakete (Collection) + AllgemeineAufgabe-Datensätze
+ *   (alle Typen außer Tombstones), inkl. Ebene-3-Projekte.
+ *
+ *   Platziert = die ref_id taucht mindestens einmal in einem Aufgaben-Item
+ *   (type='aufgabe') irgendeines Sektors des jeweiligen Lerntyps auf.
+ *   System-Bausteine/Platzhalter zählen nicht – nur "echte Inhalte" der Einheit.
+ *
+ *   Leere Einheit (keine Inhalte) → 0%.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-const PLATZHALTER_PREFIX = 'sys_platzhalter_';
 const LERN_TYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 
-// ── Ampel-Logik (gespiegelt von lib/ampelLogic.js, da functions keine lokalen Imports erlauben) ──
-const AMPEL_GREEN = 'green';
-const AMPEL_YELLOW = 'yellow';
-const AMPEL_RED = 'red';
-const RANK = { red: 0, yellow: 1, green: 2 };
-const minStatus = (a, b) => (RANK[a] <= RANK[b] ? a : b);
-
-function aggregateMin(statuses, fallback = AMPEL_GREEN) {
-  if (!statuses || statuses.length === 0) return fallback;
-  return statuses.reduce((acc, s) => minStatus(acc, s), AMPEL_GREEN);
-}
-
-function aggregateAtLeastNGreen(statuses, requiredGreen) {
-  if (!Number.isFinite(requiredGreen) || requiredGreen <= 0) {
-    return aggregateMin(statuses, AMPEL_RED);
-  }
-  if (!statuses || statuses.length === 0) return AMPEL_RED;
-  let green = 0;
-  let yellow = 0;
-  for (const s of statuses) {
-    if (s === AMPEL_GREEN) green += 1;
-    else if (s === AMPEL_YELLOW) yellow += 1;
-  }
-  if (green >= requiredGreen) return AMPEL_GREEN;
-  if (green + yellow >= requiredGreen) return AMPEL_YELLOW;
-  return AMPEL_RED;
-}
-
-function getFlatAufgabeStatus(aufgabe) {
-  if (!aufgabe) return AMPEL_RED;
-  if (aufgabe.content_status !== 'approved') return AMPEL_RED;
-  const isModified =
-    aufgabe.moodle_sync_status === 'modified' ||
-    aufgabe.brian_sync_status === 'modified' ||
-    aufgabe.sync_status === 'modified';
-  return isModified ? AMPEL_YELLOW : AMPEL_GREEN;
-}
-
-function getFlatLernpaketStatus(lp) {
-  if (!lp) return AMPEL_RED;
-  if (lp.sync_status === 'modified') return AMPEL_YELLOW;
-  if (lp.content_status === 'approved' || !lp.content_status) return AMPEL_GREEN;
-  return AMPEL_RED;
-}
-
-function getAmpelForAufgabe(aufgabe, ctx, visitedIds = new Set()) {
-  if (!aufgabe) return AMPEL_RED;
-  if (visitedIds.has(aufgabe.id)) return AMPEL_RED;
-  const next = new Set(visitedIds);
-  next.add(aufgabe.id);
-
-  const typ = aufgabe.aufgaben_typ || 'inhalt';
-  if (typ === 'inhalt' || typ === 'prozess' || typ === 'handlung') {
-    return getFlatAufgabeStatus(aufgabe);
-  }
-  if (typ === 'buendel') {
-    const ids = aufgabe.verlinkte_lernpaket_ids || [];
-    if (ids.length === 0) return AMPEL_RED;
-    const childStatuses = ids.map((id) => getFlatLernpaketStatus(ctx.lernpaketeById.get(id)));
-    return minStatus(getFlatAufgabeStatus(aufgabe), aggregateMin(childStatuses));
-  }
-  if (typ === 'auswahl_buendel') {
-    const ids = aufgabe.verlinkte_aufgaben_ids || [];
-    if (ids.length === 0) return AMPEL_RED;
-    const required = Number.isFinite(aufgabe.erforderliche_anzahl) ? aufgabe.erforderliche_anzahl : 0;
-    const childStatuses = ids.map((id) => {
-      if (next.has(id)) return AMPEL_RED;
-      return getFlatAufgabeStatus(ctx.aufgabenById.get(id));
-    });
-    return minStatus(getFlatAufgabeStatus(aufgabe), aggregateAtLeastNGreen(childStatuses, required));
-  }
-  if (typ === 'projekt_anker') {
-    const ids = aufgabe.verlinkte_projekt_ids || [];
-    if (ids.length === 0) return AMPEL_RED;
-    const childStatuses = ids.map((id) => {
-      if (next.has(id)) return AMPEL_RED;
-      return getFlatAufgabeStatus(ctx.aufgabenById.get(id));
-    });
-    return minStatus(getFlatAufgabeStatus(aufgabe), aggregateMin(childStatuses));
-  }
-  return getFlatAufgabeStatus(aufgabe);
-}
-
 // ── Progress-Berechnung pro Lerntyp ──
-function calcProgressForLerntyp(sektoren, ctx) {
+// Einfache Coverage-Logik: Wie viele der "echten Inhalte" der Einheit
+// (Lernpakete + Aufgaben + Projekte, ohne Tombstones) tauchen mindestens
+// einmal als Aufgaben-Item in irgendeinem Sektor des Lerntyps auf?
+function calcProgressForLerntyp(sektoren, totalContentIds) {
+  if (totalContentIds.size === 0) return 0;
   if (!Array.isArray(sektoren) || sektoren.length === 0) return 0;
 
-  let totalItems = 0;
-  let earned = 0;
-
+  const placedIds = new Set();
   for (const sektor of sektoren) {
     const items = Array.isArray(sektor?.items) ? sektor.items : [];
     for (const item of items) {
-      if (!item || !item.ref_id) continue;
-      totalItems += 1;
-
-      if (item.type === 'system') {
-        // Platzhalter zählen nicht.
-        if (typeof item.ref_id === 'string' && item.ref_id.startsWith(PLATZHALTER_PREFIX)) {
-          continue;
-        }
-        earned += 1;
-        continue;
-      }
-
-      // Aufgabe → Ampel auswerten + Export-Freigabe prüfen.
-      // Nur wenn BEIDE Bedingungen erfüllt sind, gibt es 1 Punkt.
-      const aufgabe = ctx.aufgabenById.get(item.ref_id);
-      if (!aufgabe) continue; // unbekannt → 0
-      const ampel = getAmpelForAufgabe(aufgabe, ctx);
-      const exportReady =
-        aufgabe.moodle_sync_status === 'synced' ||
-        aufgabe.brian_sync_status === 'synced' ||
-        aufgabe.sync_status === 'synced';
-      if (ampel === AMPEL_GREEN && exportReady) earned += 1;
+      if (!item || item.type !== 'aufgabe' || !item.ref_id) continue;
+      if (totalContentIds.has(item.ref_id)) placedIds.add(item.ref_id);
     }
   }
 
-  if (totalItems === 0) return 0;
-  return Math.round((earned / totalItems) * 100);
+  return Math.round((placedIds.size / totalContentIds.size) * 100);
 }
 
 // ── Volumen-Metriken pro Einheit ──
@@ -274,15 +173,22 @@ Deno.serve(async (req) => {
       const lps = lernpaketeByEinheit.get(id) || [];
       const aufs = aufgabenByEinheit.get(id) || [];
 
-      const ctx = {
-        aufgabenById: new Map(aufs.map((a) => [a.id, a])),
-        lernpaketeById: new Map(lps.map((p) => [p.id, p])),
-      };
+      // Set aller "echten Inhalte" der Einheit (Lernpakete + Aufgaben),
+      // gegen das wir die Pfad-Items abgleichen. Tombstones zählen nicht.
+      const totalContentIds = new Set();
+      for (const lp of lps) {
+        if (lp.sync_status === 'to_delete') continue;
+        totalContentIds.add(lp.id);
+      }
+      for (const a of aufs) {
+        if (a.sync_status === 'to_delete') continue;
+        totalContentIds.add(a.id);
+      }
 
       const konfig = einheit.lernpfade_konfiguration || {};
       const progress = {};
       for (const lt of LERN_TYPEN) {
-        progress[lt] = calcProgressForLerntyp(konfig[lt], ctx);
+        progress[lt] = calcProgressForLerntyp(konfig[lt], totalContentIds);
       }
 
       const volume = calcVolume(tfs, lps, aufs);
