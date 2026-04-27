@@ -2,7 +2,11 @@
 import { useState, useEffect } from "react";
 
 const TOAST_LIMIT = 20;
-const TOAST_REMOVE_DELAY = 1000000;
+// Wie lange ein Toast sichtbar ist, bevor er automatisch dismissed wird.
+const TOAST_AUTO_DISMISS_MS = 4000;
+// Da unser <Toast> ein simpler <div> ohne Exit-Animation ist, kann der
+// Eintrag direkt nach dem Dismiss aus dem State entfernt werden.
+const TOAST_REMOVE_DELAY = 0;
 
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
@@ -134,6 +138,10 @@ function toast({ ...props }) {
     },
   });
 
+  // Auto-Dismiss nach festem Timeout, damit Toasts ohne User-Interaktion
+  // verschwinden (unser <Toast> ist ein einfacher <div> ohne Radix-Auto-Close).
+  setTimeout(dismiss, TOAST_AUTO_DISMISS_MS);
+
   return {
     id,
     dismiss,
@@ -161,4 +169,4 @@ function useToast() {
   };
 }
 
-export { useToast, toast }; 
+export { useToast, toast };
