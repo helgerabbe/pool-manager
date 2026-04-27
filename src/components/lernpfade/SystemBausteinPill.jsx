@@ -43,8 +43,18 @@ export default function SystemBausteinPill({
   // erst geseedet werden muss), prüfen wir defensiv die ref_id selbst.
   const isPlatzhalter = isPlatzhalterBaustein(baustein) || isPlatzhalterBaustein(refId);
 
+  // Bündel (baustein_modus='bundle_1ton') bekommt den dedizierten Indigo-Look
+  // aus den Tailwind-Tokens (siehe Phase 1, Logbuch §18). Hat Vorrang vor dem
+  // generischen Platzhalter-Style, weil ein Bündel zwar technisch ein
+  // Platzhalter ist, aber visuell als Container erkennbar sein muss.
+  const isBundle = baustein?.baustein_modus === 'bundle_1ton';
+
   let containerClasses;
-  if (isPlatzhalter) {
+  if (isBundle) {
+    containerClasses = isSelected
+      ? 'border-bundle bg-bundle-soft shadow-sm'
+      : 'border-bundle-border bg-bundle-soft hover:border-bundle';
+  } else if (isPlatzhalter) {
     containerClasses = isSelected
       ? PLATZHALTER_CLASSES.containerSelected
       : PLATZHALTER_CLASSES.container;
@@ -73,19 +83,31 @@ export default function SystemBausteinPill({
                 <GripVertical className="w-3 h-3 text-muted-foreground/60 shrink-0" />
                 <div
                   className={`w-5 h-5 rounded flex items-center justify-center shrink-0 ${
-                    isPlatzhalter ? PLATZHALTER_CLASSES.iconBox : 'bg-slate-200'
+                    isBundle
+                      ? 'bg-bundle text-bundle-foreground'
+                      : isPlatzhalter
+                      ? PLATZHALTER_CLASSES.iconBox
+                      : 'bg-slate-200'
                   }`}
                 >
                   <Icon
                     strokeWidth={2.5}
                     className={`w-3 h-3 ${
-                      isPlatzhalter ? PLATZHALTER_CLASSES.icon : 'text-slate-700'
+                      isBundle
+                        ? 'text-bundle-foreground'
+                        : isPlatzhalter
+                        ? PLATZHALTER_CLASSES.icon
+                        : 'text-slate-700'
                     }`}
                   />
                 </div>
                 <span
                   className={`flex-1 min-w-0 truncate font-medium ${
-                    isPlatzhalter ? PLATZHALTER_CLASSES.title : 'text-slate-800'
+                    isBundle
+                      ? 'text-bundle'
+                      : isPlatzhalter
+                      ? PLATZHALTER_CLASSES.title
+                      : 'text-slate-800'
                   }`}
                 >
                   {titel}

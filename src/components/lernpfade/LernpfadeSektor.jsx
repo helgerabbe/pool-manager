@@ -24,8 +24,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { getAufgabenTyp, ITEM_TYPE } from '@/lib/aufgabenTypen';
 import SystemBausteinPill from '@/components/lernpfade/SystemBausteinPill';
+import BundleContainer from '@/components/lernpfade/BundleContainer';
 import AmpelBadge from '@/components/lernpfade/AmpelBadge';
 import { isExportFreigegeben, isContentApproved } from '@/lib/ampelLogic';
+import { groupItemsByParent } from '@/lib/lernpfadeUtils';
 
 function ModusToggle({ modus, onChange, disabled }) {
   return (
@@ -160,6 +162,53 @@ export default function LernpfadeSektor({
   }) {
   const items = Array.isArray(sektor.items) ? sektor.items : [];
 
+  // Phase 2 (Logbuch §18): Hierarchisches Rendering.
+  // Wir gruppieren die Items nach parent_instance_id, behalten aber die
+  // Original-Indizes von sektor.items bei – die @hello-pangea/dnd-Engine
+  // rechnet weiterhin gegen die flache Liste, sodass DnD bis Phase 3
+  // unverändert funktioniert.
+  const isBundleRefId = (refId) =>
+    systemBausteineById?.get?.(refId)?.baustein_modus === 'bundle_1ton';
+  const grouped = groupItemsByParent(items, isBundleRefId);
+
+  // Render-Helper: ein einzelnes Item (Aufgabe oder System) am ORIGINAL-Index.
+  // Wird sowohl für Root- als auch für Child-Items genutzt.
+  const renderItem = ({ item, originalIndex }) => {
+    if (item.type === ITEM_TYPE.SYSTEM) {
+      return (
+        <SystemBausteinPill
+          key={`sys-${originalIndex}-${item.ref_id}`}
+          baustein={systemBausteineById?.get(item.ref_id)}
+          refId={item.ref_id}
+          sektorId={sektor.sektor_id}
+          index={originalIndex}
+          isSelected={selectedSystemBausteinId === item.ref_id}
+          disabled={readOnly}
+          onSelect={onSelectSystemBaustein}
+          onRemove={(itemIndex) => onRemoveSystemItem?.(sektor.sektor_id, itemIndex)}
+        />
+      );
+    }
+    const ctx = { aufgabenById };
+    return (
+      <AufgabePill
+        key={`auf-${originalIndex}-${item.ref_id}`}
+        aufgabe={aufgabenById?.get(item.ref_id)}
+        refId={item.ref_id}
+        sektorId={sektor.sektor_id}
+        index={originalIndex}
+        onRemove={onRemoveAufgabe}
+        onSelect={onSelectAufgabe}
+        isSelected={selectedAufgabeId === item.ref_id}
+        disabled={readOnly}
+        ampelStatus={getAmpelStatusForItem ? getAmpelStatusForItem(item) : undefined}
+        exportReady={isExportFreigegeben(item, ctx)}
+        contentApproved={isContentApproved(item, ctx)}
+        onOpenEditor={onOpenAufgabeEditor}
+        activeLernTyp={activeLernTyp}
+      />
+    );
+  };
 
   return (
     <div className="rounded-lg border border-border bg-card/80 p-3 space-y-2">
@@ -212,41 +261,21 @@ export default function LernpfadeSektor({
                 Aufgaben oder Standard-Elemente hierher ziehen.
               </div>
             )}
-            {items.map((item, idx) => {
-              if (item.type === ITEM_TYPE.SYSTEM) {
+            {grouped.map((entry) => {
+              // Bündel mit potenziellen Children → in BundleContainer wrappen.
+              if (entry.children) {
                 return (
-                  <SystemBausteinPill
-                    key={`sys-${idx}-${item.ref_id}`}
-                    baustein={systemBausteineById?.get(item.ref_id)}
-                    refId={item.ref_id}
-                    sektorId={sektor.sektor_id}
-                    index={idx}
-                    isSelected={selectedSystemBausteinId === item.ref_id}
-                    disabled={readOnly}
-                    onSelect={onSelectSystemBaustein}
-                    onRemove={(itemIndex) => onRemoveSystemItem?.(sektor.sektor_id, itemIndex)}
-                  />
+                  <BundleContainer
+                    key={`bundle-${entry.item.instance_id || entry.originalIndex}`}
+                    headerSlot={renderItem(entry)}
+                    isEmpty={entry.children.length === 0}
+                  >
+                    {entry.children.map((child) => renderItem(child))}
+                  </BundleContainer>
                 );
               }
-              const ctx = { aufgabenById };
-              return (
-                <AufgabePill
-                  key={`auf-${idx}-${item.ref_id}`}
-                  aufgabe={aufgabenById?.get(item.ref_id)}
-                  refId={item.ref_id}
-                  sektorId={sektor.sektor_id}
-                  index={idx}
-                  onRemove={onRemoveAufgabe}
-                  onSelect={onSelectAufgabe}
-                  isSelected={selectedAufgabeId === item.ref_id}
-                  disabled={readOnly}
-                  ampelStatus={getAmpelStatusForItem ? getAmpelStatusForItem(item) : undefined}
-                  exportReady={isExportFreigegeben(item, ctx)}
-                  contentApproved={isContentApproved(item, ctx)}
-                  onOpenEditor={onOpenAufgabeEditor}
-                  activeLernTyp={activeLernTyp}
-                />
-              );
+              // Reguläres Root-Item (Aufgabe oder Nicht-Bündel-System-Baustein).
+              return renderItem(entry);
             })}
             {provided.placeholder}
           </div>

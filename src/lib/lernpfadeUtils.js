@@ -175,6 +175,62 @@ export function createNewSektor(overrides = {}) {
 }
 
 /**
+ * Gruppiert die items eines Sektors für das Phase-2-Rendering nach Hierarchie.
+ *
+ * Liefert eine flache, render-fertige Liste aus Root-Items in Originalreihenfolge.
+ * Jedes Root-Item bekommt zusätzlich `originalIndex` (Position in sektor.items,
+ * stabil für DnD) und – falls baustein_modus='bundle_1ton' – `children`, das
+ * dieselbe Struktur für seine Kinder enthält.
+ *
+ * Wichtig:
+ *   - Reihenfolge bleibt strikt sektor.items-basiert. Innerhalb der Children
+ *     wird ebenfalls die Original-Reihenfolge bewahrt.
+ *   - Items mit parent_instance_id, deren Eltern nicht (mehr) existieren, werden
+ *     defensiv als Root behandelt (Datendrift-Schutz, kein Verlust).
+ *   - Ein Bündel kann theoretisch Children haben, auch wenn der Strict-Drop
+ *     in Phase 3 das später erst hart durchsetzt. Das ist Absicht – Phase 2
+ *     soll bestehende Daten korrekt anzeigen.
+ *
+ * @param {Array}    items                 Items eines Sektors (bereits normalisiert).
+ * @param {Function} isBundleByRefId       Map/Funktion (ref_id) → bool.
+ * @returns {Array<{item, originalIndex, children?}>}
+ */
+export function groupItemsByParent(items, isBundleByRefId) {
+  const list = Array.isArray(items) ? items : [];
+  const isBundle = (refId) => {
+    if (typeof isBundleByRefId === 'function') return !!isBundleByRefId(refId);
+    if (isBundleByRefId && typeof isBundleByRefId.get === 'function') return !!isBundleByRefId.get(refId);
+    return false;
+  };
+
+  // Set aller existierenden instance_ids für Datendrift-Schutz.
+  const knownInstanceIds = new Set(list.map((it) => it?.instance_id).filter(Boolean));
+
+  const roots = [];
+  const childrenByParent = new Map();
+
+  list.forEach((item, originalIndex) => {
+    if (!item) return;
+    const parentId = item.parent_instance_id ?? null;
+    if (parentId && knownInstanceIds.has(parentId)) {
+      if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, []);
+      childrenByParent.get(parentId).push({ item, originalIndex });
+    } else {
+      // Root oder Waise → als Root rendern.
+      roots.push({ item, originalIndex });
+    }
+  });
+
+  return roots.map((root) => {
+    const isBundleRoot =
+      root.item.type === ITEM_TYPE.SYSTEM && isBundle(root.item.ref_id);
+    if (!isBundleRoot) return root;
+    const children = childrenByParent.get(root.item.instance_id) || [];
+    return { ...root, children };
+  });
+}
+
+/**
  * Liefert die normalisierte Sektor-Liste eines Lerntyps.
  */
 function getSektoren(konfig, lernTyp) {
