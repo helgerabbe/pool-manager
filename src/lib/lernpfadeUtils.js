@@ -759,6 +759,125 @@ export function applyAllDashboardTemplates(aktuelleKonfig, templates) {
   return next;
 }
 
+// ── Phase D: Auto-Befüllen von Bündeln ──────────────────────────────────────
+
+/**
+ * Liefert Auto-Befüll-Kandidaten für ein Bündel.
+ *
+ * Filterregeln (siehe Phase D des Epic „Semantische Dashboard-Sektoren"):
+ *   - Lernpakete-Bündel  → Lernpakete der Einheit, gefiltert nach themenfeld_id
+ *                          des Sektors. Aufgaben-IDs sind hier die Lernpaket-IDs
+ *                          (siehe lernpaketAdapter).
+ *   - Aufgaben-Bündel    → AllgemeineAufgabe mit aufgaben_typ ∈ {inhalt, prozess,
+ *                          handlung, auswahl_buendel}, gefiltert nach themenfeld_id.
+ *   - Projekt-Bündel     → AllgemeineAufgabe mit anforderungsebene='3 - Projekt'
+ *                          ODER aufgaben_typ='projekt_anker', themenfeld-unabhängig.
+ *
+ * Bereits im Lerntyp platzierte Aufgaben werden immer ausgeschlossen
+ * (Anti-Duplikat).
+ *
+ * @param {object} args
+ * @param {string} args.bundleKind         'lernpakete' | 'aufgaben' | 'projekte'
+ * @param {string|null} args.themenfeldId  Sektor.themenfeld_id (für Lernpakete/Aufgaben)
+ * @param {Array}  args.aufgaben           AllgemeineAufgabe-Records der Einheit
+ * @param {Array}  args.lernpakete         Lernpakete-Records der Einheit
+ * @param {Set<string>} args.usedAufgabenIds  ref_ids, die im aktiven Lerntyp bereits
+ *                                            platziert sind (siehe getUsedAufgabenIds)
+ * @returns {string[]} Array von ref_ids, die in das Bündel eingefügt werden können.
+ */
+export function getAutoFillCandidates({
+  bundleKind,
+  themenfeldId,
+  aufgaben = [],
+  lernpakete = [],
+  usedAufgabenIds = new Set(),
+}) {
+  if (!bundleKind) return [];
+
+  if (bundleKind === 'lernpakete') {
+    if (!themenfeldId) return [];
+    return lernpakete
+      .filter((lp) => lp.themenfeld_id === themenfeldId && !usedAufgabenIds.has(lp.id))
+      .map((lp) => lp.id);
+  }
+
+  if (bundleKind === 'aufgaben') {
+    if (!themenfeldId) return [];
+    const ALLOWED_TYPEN = new Set(['inhalt', 'prozess', 'handlung', 'auswahl_buendel']);
+    return aufgaben
+      .filter((a) => {
+        if (a.themenfeld_id !== themenfeldId) return false;
+        if (a.anforderungsebene === '3 - Projekt') return false;
+        if (!ALLOWED_TYPEN.has(a.aufgaben_typ || 'inhalt')) return false;
+        return !usedAufgabenIds.has(a.id);
+      })
+      .map((a) => a.id);
+  }
+
+  if (bundleKind === 'projekte') {
+    return aufgaben
+      .filter((a) => {
+        const isProjekt =
+          a.anforderungsebene === '3 - Projekt' || a.aufgaben_typ === 'projekt_anker';
+        if (!isProjekt) return false;
+        return !usedAufgabenIds.has(a.id);
+      })
+      .map((a) => a.id);
+  }
+
+  return [];
+}
+
+/**
+ * Fügt mehrere Aufgaben-refs als Children eines Bündels in einen Sektor ein.
+ *
+ * Verhalten:
+ *   - Items werden ans Ende der Children-Liste des Bündels angehängt
+ *     (nach Reihenfolge in `aufgabeIds`).
+ *   - parent_instance_id wird auf bundleInstanceId gesetzt.
+ *   - Bereits platzierte Aufgaben (im selben Lerntyp) werden defensiv
+ *     übersprungen — der Aufrufer hat das normalerweise schon via
+ *     `getAutoFillCandidates` gefiltert.
+ *
+ * @returns {{konfig: object, addedCount: number, skippedCount: number}}
+ */
+export function bulkAddItemsToBundle(konfig, lernTyp, sektorId, bundleInstanceId, aufgabeIds) {
+  if (!bundleInstanceId || !Array.isArray(aufgabeIds) || aufgabeIds.length === 0) {
+    return { konfig, addedCount: 0, skippedCount: 0 };
+  }
+  const used = getUsedAufgabenIds(konfig, lernTyp);
+  const toAdd = [];
+  let skippedCount = 0;
+  for (const id of aufgabeIds) {
+    if (!id || used.has(id)) {
+      skippedCount += 1;
+      continue;
+    }
+    used.add(id); // dedupliziere innerhalb des Batches
+    toAdd.push(id);
+  }
+  if (toAdd.length === 0) {
+    return { konfig, addedCount: 0, skippedCount };
+  }
+
+  const next = getSektoren(konfig, lernTyp).map((s) => {
+    if (s.sektor_id !== sektorId) return s;
+    const newChildren = toAdd.map((refId) =>
+      normalizeItem({
+        type: ITEM_TYPE.AUFGABE,
+        ref_id: refId,
+        parent_instance_id: bundleInstanceId,
+      })
+    );
+    return { ...s, items: [...s.items, ...newChildren] };
+  });
+  return {
+    konfig: setSektoren(konfig, lernTyp, next),
+    addedCount: toAdd.length,
+    skippedCount,
+  };
+}
+
 /**
  * Phase 3.4: Index-Translation zwischen lokalem DnD-Index und absolutem
  * Index in `sektor.items`.

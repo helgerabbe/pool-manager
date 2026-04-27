@@ -216,6 +216,7 @@ export default function LernpfadeArchitekt({
   onRemoveBundle,
   onSetBundleConfig,
   onSetBundleModus,
+  onAutoFillBundle,
   getIsDropDisabled,
   onSelectAufgabe,
   onSelectSystemBaustein,
@@ -382,6 +383,7 @@ export default function LernpfadeArchitekt({
                 onRemoveBundle={onRemoveBundle}
                 onSetBundleConfig={onSetBundleConfig}
                 onSetBundleModus={onSetBundleModus}
+                onAutoFillBundle={onAutoFillBundle}
                 getIsDropDisabled={getIsDropDisabled}
                 onSelectAufgabe={onSelectAufgabe}
                 onSelectSystemBaustein={onSelectSystemBaustein}

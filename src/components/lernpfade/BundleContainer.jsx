@@ -24,6 +24,7 @@
 
 import React from 'react';
 import { Droppable } from '@hello-pangea/dnd';
+import BundleAutoFillButton from '@/components/lernpfade/BundleAutoFillButton';
 
 export default function BundleContainer({
   bundleInstanceId,
@@ -31,6 +32,8 @@ export default function BundleContainer({
   children,
   isEmpty,
   isDropDisabled = false,
+  onAutoFill,
+  autoFillDisabled = false,
 }) {
   return (
     <div
@@ -58,8 +61,16 @@ export default function BundleContainer({
             }`}
           >
             {isEmpty && !snapshot.isDraggingOver ? (
-              <div className="text-[10px] italic text-muted-foreground/70 py-0.5">
-                Bündel ist leer – passende Aufgaben hierher ziehen.
+              <div className="space-y-1">
+                <div className="text-[10px] italic text-muted-foreground/70 py-0.5">
+                  Bündel ist leer – passende Aufgaben hierher ziehen.
+                </div>
+                {onAutoFill && (
+                  <BundleAutoFillButton
+                    onAutoFill={onAutoFill}
+                    disabled={autoFillDisabled}
+                  />
+                )}
               </div>
             ) : (
               children

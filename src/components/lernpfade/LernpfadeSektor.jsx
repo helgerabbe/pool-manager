@@ -158,6 +158,7 @@ export default function LernpfadeSektor({
   onRemoveBundle,
   onSetBundleConfig,
   onSetBundleModus,
+  onAutoFillBundle,
   getIsDropDisabled,
   onSelectAufgabe,
   onSelectSystemBaustein,
@@ -299,6 +300,7 @@ export default function LernpfadeSektor({
             {grouped.map((entry, rootIdx) => {
               // Bündel mit eigenem Children-Droppable.
               if (entry.children) {
+                const bundleBaustein = systemBausteineById?.get(entry.item.ref_id);
                 return (
                   <BundleContainer
                     key={`bundle-${entry.item.instance_id || entry.originalIndex}`}
@@ -309,6 +311,17 @@ export default function LernpfadeSektor({
                       readOnly ||
                       (getIsDropDisabled?.(`bundle-${entry.item.instance_id}`) ?? false)
                     }
+                    onAutoFill={
+                      !readOnly && onAutoFillBundle && entry.children.length === 0
+                        ? () =>
+                            onAutoFillBundle(
+                              sektor.sektor_id,
+                              entry.item.instance_id,
+                              bundleBaustein
+                            )
+                        : undefined
+                    }
+                    autoFillDisabled={readOnly}
                   >
                     {entry.children.map((child, childIdx) => renderItem(child, childIdx))}
                   </BundleContainer>

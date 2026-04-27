@@ -47,7 +47,10 @@ import {
   setBundleModus,
   removeBundleAndCascade,
   getBundleChildren,
+  getAutoFillCandidates,
+  bulkAddItemsToBundle,
 } from '@/lib/lernpfadeUtils';
+import { getBundleKindByAcceptedTypes } from '@/lib/sektorTypen';
 import CascadeDeleteDialog from '@/components/lernpfade/CascadeDeleteDialog';
 import ArbeitsphaseModal from '@/components/lernpfade/ArbeitsphaseModal.jsx';
 import { DASHBOARD_TEMPLATES } from '@/lib/dashboardTemplates';
@@ -601,6 +604,76 @@ export default function LernpfadeCockpit({
     [readOnly, activeLernTyp, updateKonfiguration]
   );
 
+  // Phase D: Auto-Befüllen leerer Bündel.
+  // Verantwortung: BundleKind ableiten, Kandidaten filtern, bulk einfügen,
+  // Toast zeigen. Filter-Logik: siehe getAutoFillCandidates in lernpfadeUtils.
+  const handleAutoFillBundle = useCallback(
+    (sektorId, bundleInstanceId, bundleBaustein) => {
+      if (readOnly) return;
+      const bundleKind = getBundleKindByAcceptedTypes(bundleBaustein?.accepted_types);
+      if (!bundleKind) {
+        toast({
+          variant: 'destructive',
+          title: 'Auto-Befüllen nicht möglich',
+          description: 'Dieses Bündel hat keinen erkennbaren Typ.',
+        });
+        return;
+      }
+      const sektor = (konfigurationRef.current?.[activeLernTyp] || []).find(
+        (s) => s.sektor_id === sektorId
+      );
+      const themenfeldId = sektor?.themenfeld_id || null;
+      const usedAufgabenIds = getUsedAufgabenIds(konfigurationRef.current, activeLernTyp);
+      const candidates = getAutoFillCandidates({
+        bundleKind,
+        themenfeldId,
+        aufgaben,
+        lernpakete,
+        usedAufgabenIds,
+      });
+
+      if (candidates.length === 0) {
+        toast({
+          title: 'Keine passenden Elemente gefunden',
+          description:
+            bundleKind === 'projekte'
+              ? 'In dieser Einheit gibt es noch keine unzugewiesenen Projekte.'
+              : !themenfeldId
+                ? 'Dieses Bündel ist keinem Themenfeld zugeordnet.'
+                : 'Alle passenden Elemente sind bereits in diesem Lernpfad platziert.',
+        });
+        return;
+      }
+
+      let added = 0;
+      let skipped = 0;
+      updateKonfiguration((prev) => {
+        const result = bulkAddItemsToBundle(prev, activeLernTyp, sektorId, bundleInstanceId, candidates);
+        added = result.addedCount;
+        skipped = result.skippedCount;
+        return result.konfig;
+      });
+
+      if (added > 0 && skipped === 0) {
+        toast({
+          title: `${added} ${added === 1 ? 'Element' : 'Elemente'} hinzugefügt`,
+          description: 'Das Bündel wurde automatisch befüllt.',
+        });
+      } else if (added > 0 && skipped > 0) {
+        toast({
+          title: `${added} hinzugefügt, ${skipped} übersprungen`,
+          description: 'Übersprungene Elemente waren bereits im Pfad.',
+        });
+      } else {
+        toast({
+          title: 'Keine Elemente hinzugefügt',
+          description: 'Alle Kandidaten waren bereits platziert.',
+        });
+      }
+    },
+    [readOnly, activeLernTyp, aufgaben, lernpakete, updateKonfiguration, toast]
+  );
+
   // System-Bausteine werden POSITIONS-genau entfernt (nicht per ref_id), weil
   // derselbe Baustein mehrfach in einem Sektor vorkommen darf.
   const handleRemoveSystemItem = useCallback(
@@ -687,6 +760,7 @@ export default function LernpfadeCockpit({
               onRemoveBundle={handleRemoveBundle}
               onSetBundleConfig={handleSetBundleConfig}
               onSetBundleModus={handleSetBundleModus}
+              onAutoFillBundle={handleAutoFillBundle}
               getIsDropDisabled={getIsDropDisabled}
               onSelectAufgabe={setSelectedAufgabeId}
               onSelectSystemBaustein={setSelectedSystemBausteinId}
