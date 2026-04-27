@@ -190,6 +190,14 @@ Deno.serve(async (req) => {
         created_date: einheit.created_date,
         updated_date: einheit.updated_date,
         version: einheit.version,
+        structural_lock: einheit.structural_lock,
+        structural_locked_at: einheit.structural_locked_at,
+        // ✅ KRITISCH: Lernpfad-Konfiguration für Tab 7 (Dashboards).
+        // Wird vom LernpfadeCockpit gelesen, um den letzten gespeicherten
+        // Stand aus der DB zu rekonstruieren. Ohne diese Felder verliert
+        // das Cockpit den Stand bei jedem Tab-Wechsel.
+        lernpfade_konfiguration: einheit.lernpfade_konfiguration,
+        lernpfade_schema_version: einheit.lernpfade_schema_version,
         // ✅ Unit-Level-Mitglieder für RBAC-Prüfung
         members: members.map(m => ({
           user_email: m.user_email,

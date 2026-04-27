@@ -235,6 +235,11 @@ Deno.serve(async (req) => {
           version: einheit.version,
           created_date: einheit.created_date,
           updated_date: einheit.updated_date,
+          // ✅ KRITISCH: Lernpfad-Konfiguration für Tab 7 (Dashboards).
+          // Ohne diese Felder fällt das Cockpit auf einen leeren DEFAULT_KONFIG
+          // zurück und überschreibt beim Lazy-Init die DB mit Templates.
+          lernpfade_konfiguration: einheit.lernpfade_konfiguration,
+          lernpfade_schema_version: einheit.lernpfade_schema_version,
           // ✅ Members für Unit-Level RBAC
           members: einheitMembers || [],
         },
