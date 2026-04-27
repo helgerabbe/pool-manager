@@ -28,6 +28,24 @@ function useGenericLock({
   const heldRef = useRef(false);
   const intervalRef = useRef(null); // Nutzt ein Intervall für Polling ODER Heartbeat
 
+  // ⚠️ Rate-Limit-Fix (2026-04-27):
+  // Die Funktions-Props (checkFn, acquireFn, releaseFn, heartbeatFn) werden
+  // von den konsumierenden Hooks (useLernpaketLock etc.) als INLINE-Lambdas
+  // übergeben und damit bei JEDEM Render neu erzeugt. Wenn sie als
+  // useCallback/useEffect-Dependencies gehalten werden, feuert der Initial-
+  // Check pro Render – das hat das globale Base44-API-Rate-Limit für
+  // checkLockSecure ausgelöst. Wir halten die jeweils aktuellste Funktion
+  // in einem Ref, sodass der Check-Effekt nur noch von `resourceId` und
+  // `userEmail` abhängt.
+  const checkFnRef = useRef(checkFn);
+  const acquireFnRef = useRef(acquireFn);
+  const releaseFnRef = useRef(releaseFn);
+  const heartbeatFnRef = useRef(heartbeatFn);
+  useEffect(() => { checkFnRef.current = checkFn; }, [checkFn]);
+  useEffect(() => { acquireFnRef.current = acquireFn; }, [acquireFn]);
+  useEffect(() => { releaseFnRef.current = releaseFn; }, [releaseFn]);
+  useEffect(() => { heartbeatFnRef.current = heartbeatFn; }, [heartbeatFn]);
+
   // 1. User initialisieren
   useEffect(() => {
     mountedRef.current = true;
@@ -48,46 +66,50 @@ function useGenericLock({
   }, []);
 
   // 2. Status prüfen (Polling) mit Retry-Logic für Rate Limits
-   const checkStatus = useCallback(async (retryCount = 0) => {
-     if (!resourceId || !checkFn) return;
-     try {
-       const { isLocked, lockedByEmail: byEmail, lockedAt } = await checkFn(resourceId);
-       if (!mountedRef.current) return;
+  const checkStatus = useCallback(async (retryCount = 0) => {
+    const cFn = checkFnRef.current;
+    if (!resourceId || !cFn) return;
+    try {
+      const { isLocked, lockedByEmail: byEmail, lockedAt } = await cFn(resourceId);
+      if (!mountedRef.current) return;
 
-       const expired = isExpired(lockedAt);
-       if (isLocked && !expired) {
-         const isMine = byEmail === userEmail;
-         setIsLockedByOther(!isMine);
-         setLockedByEmail(byEmail);
-         // Setze canEdit nur, wenn wir nicht explizit acquireFn nutzen müssen (wie bei Einheit)
-         if (!acquireFn) setCanEdit(isMine); 
-       } else {
-         setIsLockedByOther(false);
-         setLockedByEmail(null);
-         if (!acquireFn) setCanEdit(false);
-       }
-     } catch (e) {
-       // Rate limit (429) mit Exponential Backoff retry
-       if (e?.status === 429 && retryCount < 2) {
-         const delay = Math.pow(2, retryCount + 1) * 1000; // 2s, 4s
-         setTimeout(() => checkStatus(retryCount + 1), delay);
-         return;
-       }
-       console.warn('[useLocks] Check failed:', e.message);
-     } finally {
-       if (mountedRef.current) setIsLoading(false);
-     }
-   }, [resourceId, userEmail, checkFn, isExpired, acquireFn]);
+      const expired = isExpired(lockedAt);
+      if (isLocked && !expired) {
+        const isMine = byEmail === userEmail;
+        setIsLockedByOther(!isMine);
+        setLockedByEmail(byEmail);
+        // Setze canEdit nur, wenn wir nicht explizit acquireFn nutzen müssen (wie bei Einheit)
+        if (!acquireFnRef.current) setCanEdit(isMine);
+      } else {
+        setIsLockedByOther(false);
+        setLockedByEmail(null);
+        if (!acquireFnRef.current) setCanEdit(false);
+      }
+    } catch (e) {
+      // Rate limit (429) mit Exponential Backoff retry
+      if (e?.status === 429 && retryCount < 2) {
+        const delay = Math.pow(2, retryCount + 1) * 1000; // 2s, 4s
+        setTimeout(() => checkStatus(retryCount + 1), delay);
+        return;
+      }
+      console.warn('[useLocks] Check failed:', e.message);
+    } finally {
+      if (mountedRef.current) setIsLoading(false);
+    }
+  }, [resourceId, userEmail, isExpired]);
 
   // 3. Heartbeat oder Polling starten
   const startTimer = useCallback(() => {
     clearTimer();
-    if (heartbeatIntervalMs && heartbeatFn && heldRef.current) {
-      intervalRef.current = setInterval(() => heartbeatFn(resourceId).catch(()=>{}), heartbeatIntervalMs);
-    } else if (pollIntervalMs && checkFn) {
+    if (heartbeatIntervalMs && heartbeatFnRef.current && heldRef.current) {
+      intervalRef.current = setInterval(
+        () => heartbeatFnRef.current(resourceId).catch(() => {}),
+        heartbeatIntervalMs
+      );
+    } else if (pollIntervalMs && checkFnRef.current) {
       intervalRef.current = setInterval(checkStatus, pollIntervalMs);
     }
-  }, [resourceId, heartbeatFn, heartbeatIntervalMs, pollIntervalMs, checkFn, checkStatus, clearTimer]);
+  }, [resourceId, heartbeatIntervalMs, pollIntervalMs, checkStatus, clearTimer]);
 
   // 4. Initialer Aufruf & Polling Setup
   useEffect(() => {
@@ -96,14 +118,15 @@ function useGenericLock({
       if (pollIntervalMs && !heldRef.current) startTimer();
     }
     return clearTimer;
-  }, [userEmail, resourceId, checkStatus, startTimer, pollIntervalMs, clearTimer]);
+  }, [userEmail, resourceId, pollIntervalMs, checkStatus, startTimer, clearTimer]);
 
   // 5. Sperre erwerben
   const acquire = useCallback(async () => {
-    if (!resourceId || !userEmail || !acquireFn) return false;
+    const aFn = acquireFnRef.current;
+    if (!resourceId || !userEmail || !aFn) return false;
     setErrorMessage(null);
     try {
-      await acquireFn(resourceId, userEmail);
+      await aFn(resourceId, userEmail);
       heldRef.current = true;
       setCanEdit(true);
       setIsLockedByOther(false);
@@ -117,23 +140,24 @@ function useGenericLock({
       setLockedByEmail(error?.response?.data?.locked_by_email);
       return false;
     }
-  }, [resourceId, userEmail, acquireFn, startTimer]);
+  }, [resourceId, userEmail, startTimer]);
 
   // 6. Sperre freigeben
   const release = useCallback(async () => {
-    if (!resourceId || !releaseFn) return;
+    const rFn = releaseFnRef.current;
+    if (!resourceId || !rFn) return;
     clearTimer();
     heldRef.current = false;
     setCanEdit(false);
     try {
-      await releaseFn(resourceId);
+      await rFn(resourceId);
       setIsLockedByOther(false);
       setLockedByEmail(null);
       if (pollIntervalMs) startTimer(); // Zurück zum Polling
     } catch (e) {
       console.warn('[useLocks] Release failed');
     }
-  }, [resourceId, releaseFn, clearTimer, pollIntervalMs, startTimer]);
+  }, [resourceId, clearTimer, pollIntervalMs, startTimer]);
 
   // 7. Sicherheitsnetz: Tab-Close (beforeunload)
   useEffect(() => {
