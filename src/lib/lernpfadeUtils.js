@@ -327,6 +327,157 @@ export function removeAufgabeFromLernTyp(konfig, lernTyp, aufgabeId) {
   return setSektoren(konfig, lernTyp, next);
 }
 
+// ── Strict-Drop-Validator (Phase 3) ────────────────────────────────────────
+
+/**
+ * Bildet eine `AllgemeineAufgabe` auf das Vokabular von `accepted_types` ab.
+ * Vokabular: 'lernpaket' | 'inhalt' | 'prozess' | 'handlung' | 'auswahl_buendel' | 'projekt'
+ *
+ * Logik (siehe Logbuch §18, M4):
+ *   - aufgaben_typ='buendel'         → 'lernpaket'
+ *   - aufgaben_typ='projekt_anker'   → 'projekt'
+ *   - anforderungsebene='3 - Projekt'→ 'projekt' (Fallback, wenn aufgaben_typ
+ *                                                 nicht explizit gesetzt ist)
+ *   - sonst: aufgaben_typ direkt (inhalt | prozess | handlung | auswahl_buendel)
+ *
+ * Liefert null, wenn die Aufgabe nicht klassifizierbar ist.
+ */
+export function getAcceptedTypeForAufgabe(aufgabe) {
+  if (!aufgabe || typeof aufgabe !== 'object') return null;
+  const typ = aufgabe.aufgaben_typ;
+  if (typ === 'buendel') return 'lernpaket';
+  if (typ === 'projekt_anker') return 'projekt';
+  if (aufgabe.anforderungsebene === '3 - Projekt') return 'projekt';
+  if (typ === 'inhalt' || typ === 'prozess' || typ === 'handlung' || typ === 'auswahl_buendel') {
+    return typ;
+  }
+  return null;
+}
+
+/**
+ * Strict-Drop-Validator: darf das gezogene Item an der Ziel-Position abgelegt werden?
+ *
+ * @param {object}   args
+ * @param {object}   args.draggedItem          - Item-Objekt (mit type='aufgabe'|'system', ref_id)
+ *                                                ODER pseudo-Item für Pool-Drags:
+ *                                                { type: 'aufgabe', ref_id, isFromPool: true }
+ * @param {string}   args.lernTyp              - aktiver Lerntyp (für Duplikat-Check)
+ * @param {object}   args.konfiguration        - aktuelle lernpfade_konfiguration
+ * @param {string|null} args.targetParentRefId - ref_id des Ziel-Bündels, oder null für Sektor-Root
+ * @param {Map}      args.systemBausteineById  - Map<baustein_id, SystemBaustein>
+ * @param {Map}      args.aufgabenById         - Map<aufgabe_id, AllgemeineAufgabe>
+ *
+ * @returns {{ ok: true } | { ok: false, reason: string, expected?: string[], actual?: string|null }}
+ */
+export function canDrop({
+  draggedItem,
+  lernTyp,
+  konfiguration,
+  targetParentRefId,
+  systemBausteineById,
+  aufgabenById,
+}) {
+  if (!draggedItem) return { ok: false, reason: 'invalid_item' };
+
+  const isDroppingIntoBundle = !!targetParentRefId;
+  const targetBundle = isDroppingIntoBundle
+    ? systemBausteineById?.get?.(targetParentRefId)
+    : null;
+
+  // ── Regel 1: Bündel-in-Bündel verboten ───────────────────────────────────
+  if (isDroppingIntoBundle && draggedItem.type === ITEM_TYPE.SYSTEM) {
+    const draggedBaustein = systemBausteineById?.get?.(draggedItem.ref_id);
+    if (draggedBaustein?.baustein_modus === 'bundle_1ton') {
+      return { ok: false, reason: 'bundle_in_bundle' };
+    }
+  }
+
+  // ── Regel 2: Duplikat-Check (nur Aufgaben, nur bei Pool-Drag) ────────────
+  // Existierende Items werden NUR umsortiert, kein neuer Eintrag → kein Duplikat.
+  if (draggedItem.type === ITEM_TYPE.AUFGABE && draggedItem.isFromPool) {
+    const used = getUsedAufgabenIds(konfiguration, lernTyp);
+    if (used.has(draggedItem.ref_id)) {
+      return { ok: false, reason: 'duplicate_in_lerntyp' };
+    }
+  }
+
+  // ── Regel 3: accepted_types des Ziel-Bündels respektieren ────────────────
+  if (isDroppingIntoBundle) {
+    const accepted = Array.isArray(targetBundle?.accepted_types) ? targetBundle.accepted_types : [];
+    if (accepted.length === 0) {
+      // Ziel-Bündel akzeptiert NICHTS (defensives Default)
+      return { ok: false, reason: 'wrong_type', expected: [], actual: null };
+    }
+
+    let actualType = null;
+    if (draggedItem.type === ITEM_TYPE.AUFGABE) {
+      const aufgabe = aufgabenById?.get?.(draggedItem.ref_id);
+      actualType = getAcceptedTypeForAufgabe(aufgabe);
+    } else {
+      // System-Baustein in Bündel: aktuell nicht vorgesehen.
+      return { ok: false, reason: 'wrong_type', expected: accepted, actual: 'system' };
+    }
+
+    if (!actualType || !accepted.includes(actualType)) {
+      return { ok: false, reason: 'wrong_type', expected: accepted, actual: actualType };
+    }
+  }
+
+  return { ok: true };
+}
+
+/**
+ * Cascade-Delete: Entfernt ein Bündel UND alle seine Children aus dem Sektor.
+ *
+ * Phase 3 (siehe Logbuch §18). Die Junction-Tabelle `LernpfadAufgabeMembership`
+ * wird NICHT in dieser reinen Helper-Funktion gepflegt — das übernimmt der
+ * scheduleSave-/Sync-Pfad im Cockpit (entfernte Child-Aufgaben werden dort
+ * automatisch erkannt, weil ihre ref_id nicht mehr in items vorkommt).
+ *
+ * @param {object} konfig          - aktuelle lernpfade_konfiguration
+ * @param {string} lernTyp         - aktiver Lerntyp
+ * @param {string} sektorId        - betroffener Sektor
+ * @param {string} bundleInstanceId - instance_id des zu löschenden Bündels
+ * @returns {{ konfig: object, removedChildAufgabenIds: string[] }}
+ *          - konfig: neue lernpfade_konfiguration (immutable)
+ *          - removedChildAufgabenIds: Aufgaben-ref_ids der entfernten Kinder
+ *            (für optionalen Membership-Cleanup im Aufrufer)
+ */
+export function removeBundleAndCascade(konfig, lernTyp, sektorId, bundleInstanceId) {
+  if (!bundleInstanceId) return { konfig, removedChildAufgabenIds: [] };
+
+  const removedChildAufgabenIds = [];
+  const next = getSektoren(konfig, lernTyp).map((s) => {
+    if (s.sektor_id !== sektorId) return s;
+
+    const items = s.items.filter((it) => {
+      if (it.instance_id === bundleInstanceId) return false; // Bündel selbst raus
+      if (it.parent_instance_id === bundleInstanceId) {
+        if (it.type === ITEM_TYPE.AUFGABE && it.ref_id) {
+          removedChildAufgabenIds.push(it.ref_id);
+        }
+        return false; // Children raus
+      }
+      return true;
+    });
+    return { ...s, items };
+  });
+
+  return {
+    konfig: setSektoren(konfig, lernTyp, next),
+    removedChildAufgabenIds,
+  };
+}
+
+/**
+ * Liefert die Children eines Bündels in einem Sektor (für Confirm-Dialoge).
+ */
+export function getBundleChildren(konfig, lernTyp, sektorId, bundleInstanceId) {
+  const sektor = getSektoren(konfig, lernTyp).find((s) => s.sektor_id === sektorId);
+  if (!sektor) return [];
+  return sektor.items.filter((it) => it.parent_instance_id === bundleInstanceId);
+}
+
 /**
  * Sektoren von einem Lerntyp in einen anderen kopieren (Deep Clone).
  * - Generiert frische sektor_id pro Sektor (verhindert React-Key-Kollisionen).
