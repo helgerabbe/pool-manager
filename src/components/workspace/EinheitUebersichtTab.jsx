@@ -37,10 +37,6 @@ const EINHEIT_HELP = {
       question: 'Was bedeutet "Einheit gesperrt"?',
       answer: 'Wenn eine Einheit gesperrt ist, können normale Lehrkräfte keine Inhalte mehr bearbeiten. Nur Fachschaftsleitungen und Administratoren haben weiterhin Schreibzugriff. So können Sie eine fertige Einheit vor versehentlichen Änderungen schützen.',
     },
-    {
-      question: 'Was ist der Unterschied zwischen "offen" und "sequenziell"?',
-      answer: 'Der Modus bezieht sich auf die Themenfelder – nicht auf einzelne Lernpakete. Im offenen Modus können Schüler die Themenfelder in beliebiger Reihenfolge bearbeiten. Im sequenziellen Modus sind die Themenfelder nummeriert und müssen der Reihe nach durchgearbeitet werden. Lernpakete innerhalb eines Themenfelds sind immer frei zugänglich.',
-    },
   ],
   docsSlug: 'einheiten-struktur',
 };
@@ -118,7 +114,6 @@ export default function EinheitUebersichtTab({
     fach:              e.fach || '',
     jahrgangsstufe:    e.jahrgangsstufe || '',
     zeit_phase_id:     e.zeit_phase_id || '',
-    bearbeitungsmodus: e.bearbeitungsmodus || 'offen',
   });
 
   const [form, setForm] = useState(() => buildForm(einheit));
@@ -135,7 +130,6 @@ export default function EinheitUebersichtTab({
     einheit.fach,
     einheit.jahrgangsstufe,
     einheit.zeit_phase_id,
-    einheit.bearbeitungsmodus,
     isEditingActive,
   ]);
 
@@ -347,7 +341,6 @@ export default function EinheitUebersichtTab({
         fach: form.fach,
         jahrgangsstufe: form.jahrgangsstufe,
         zeit_phase_id: form.zeit_phase_id || null,
-        bearbeitungsmodus: form.bearbeitungsmodus,
         version: einheit.version,
       });
 
@@ -458,15 +451,9 @@ export default function EinheitUebersichtTab({
                     <p className="text-sm font-medium">{form.jahrgangsstufe || '—'}</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-muted-foreground">Planungsphase</Label>
-                    <p className="text-sm font-medium">{phasen.find(p => p.id === form.zeit_phase_id)?.bezeichnung || '—'}</p>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-muted-foreground">Bearbeitungsmodus</Label>
-                    <p className="text-sm font-medium">{form.bearbeitungsmodus === 'sequenziell' ? 'Sequenziell' : 'Offen'}</p>
-                  </div>
+                <div className="space-y-1.5">
+                  <Label className="text-muted-foreground">Planungsphase</Label>
+                  <p className="text-sm font-medium">{phasen.find(p => p.id === form.zeit_phase_id)?.bezeichnung || '—'}</p>
                 </div>
 
                 {/* Gesamtziele im Lesemodus */}
@@ -561,27 +548,15 @@ export default function EinheitUebersichtTab({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label>Planungsphase (Halbjahr)</Label>
-                    <Select value={form.zeit_phase_id || ''} onValueChange={v => set('zeit_phase_id', v || null)}>
-                      <SelectTrigger><SelectValue placeholder="Phase wählen…" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={null}>– Keine Zuordnung –</SelectItem>
-                        {phasen.map(p => <SelectItem key={p.id} value={p.id}>{p.bezeichnung}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Bearbeitungsmodus</Label>
-                    <Select value={form.bearbeitungsmodus || 'offen'} onValueChange={v => set('bearbeitungsmodus', v)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="offen">Offen (freie Reihenfolge)</SelectItem>
-                        <SelectItem value="sequenziell">Sequenziell (feste Reihenfolge)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-1.5">
+                  <Label>Planungsphase (Halbjahr)</Label>
+                  <Select value={form.zeit_phase_id || ''} onValueChange={v => set('zeit_phase_id', v || null)}>
+                    <SelectTrigger><SelectValue placeholder="Phase wählen…" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={null}>– Keine Zuordnung –</SelectItem>
+                      {phasen.map(p => <SelectItem key={p.id} value={p.id}>{p.bezeichnung}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="flex justify-between pt-1">
