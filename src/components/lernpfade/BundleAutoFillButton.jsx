@@ -30,7 +30,7 @@ export default function BundleAutoFillButton({ onAutoFill, disabled = false }) {
         className="h-7 text-[11px] px-2.5 gap-1.5 border-bundle-border text-bundle hover:bg-bundle/10"
         title="Bündel automatisch mit passenden Elementen aus der Einheit befüllen"
       >
-        <Sparkles className="w-3 h-3" />
+        <Sparkles className="w-3 h-3 animate-sparkle" />
         Automatisch befüllen
       </Button>
     </div>

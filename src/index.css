@@ -120,6 +120,24 @@
     overscroll-behavior: none;
     -webkit-overflow-scrolling: touch;
   }
+
+  /* Auto-Fill-Button-Sparkle (Phase E Polish):
+     Dezente Pulsation des Sparkles-Icons, um die "Magic"-Aktion
+     visuell zu unterstreichen, ohne aufdringlich zu wirken. */
+  .animate-sparkle {
+    animation: sparkle 2s ease-in-out infinite;
+  }
+
+  @keyframes sparkle {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.7;
+      transform: scale(1.15);
+    }
+  }
 }
 
 /* Print Media Queries für Bauplan-Export */

@@ -133,35 +133,37 @@ export default function SystemBausteinPill({
                     <span className="ml-1 italic text-muted-foreground">(unbekannt)</span>
                   )}
                 </span>
-                {isBundle && (
-                  <BundleModusToggle
-                    acceptedTypes={baustein?.accepted_types}
-                    modus={bundleConfig?.modus}
-                    disabled={disabled}
-                    onChange={onSetBundleModus}
-                  />
-                )}
-                {isAufgabenBuendel && (
-                  <BundleErforderlichControl
-                    childCount={bundleChildCount}
-                    erforderlicheAnzahl={bundleConfig?.erforderliche_anzahl}
-                    disabled={disabled}
-                    onChange={onSetBundleConfig}
-                  />
-                )}
-                {!disabled && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRemove?.();
-                    }}
-                    title="Aus Pfad entfernen"
-                    className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
+                <div className="ml-auto flex items-center gap-1.5 shrink-0">
+                  {isBundle && (
+                    <BundleModusToggle
+                      acceptedTypes={baustein?.accepted_types}
+                      modus={bundleConfig?.modus}
+                      disabled={disabled}
+                      onChange={onSetBundleModus}
+                    />
+                  )}
+                  {isAufgabenBuendel && (
+                    <BundleErforderlichControl
+                      childCount={bundleChildCount}
+                      erforderlicheAnzahl={bundleConfig?.erforderliche_anzahl}
+                      disabled={disabled}
+                      onChange={onSetBundleConfig}
+                    />
+                  )}
+                  {!disabled && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemove?.();
+                      }}
+                      title="Aus Pfad entfernen"
+                      className="text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
             </TooltipTrigger>
             {baustein?.admin_beschreibung && (

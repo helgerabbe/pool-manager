@@ -11,7 +11,7 @@
  */
 
 import React from 'react';
-import { Sparkles, Layers, Trophy, Star, Plus, BookOpen, ShieldCheck, ShieldOff, Loader2, PenLine, ClipboardCheck, FilePlus, ChevronDown, GraduationCap, Dumbbell, Lightbulb } from 'lucide-react';
+import { Sparkles, Layers, Trophy, Star, Plus, BookOpen, ShieldCheck, ShieldOff, Loader2, PenLine, ClipboardCheck, FilePlus, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import LernpfadeSektor from '@/components/lernpfade/LernpfadeSektor';
 import InfoHint from '@/components/lernpfade/InfoHint';
@@ -24,7 +24,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { SEKTOR_TEMPLATE_KEYS, getSektorTemplateOptionsForLerntyp } from '@/lib/sektorTemplates';
+import { SEKTOR_TYP } from '@/lib/sektorTypen';
 
 function StatusBadge({ aktivLabel, istPfadGesperrt }) {
   const tooltipContent = (
@@ -125,29 +125,40 @@ export const LERN_TYPEN = [
   },
 ];
 
-// Icon-Mapping für die Vorlagen im AddSektor-Dropdown.
-const SEKTOR_TEMPLATE_ICONS = {
-  erarbeitung: { Icon: BookOpen, cls: 'text-blue-600' },
-  erarbeitung_training: { Icon: GraduationCap, cls: 'text-blue-600' },
-  anwendung_training: { Icon: Dumbbell, cls: 'text-violet-600' },
-  projekt: { Icon: Lightbulb, cls: 'text-amber-600' },
-  zwischentest: { Icon: ClipboardCheck, cls: 'text-rose-600' },
-  leer: { Icon: FilePlus, cls: 'text-muted-foreground' },
-};
+// Phase E: Statisches Drei-Optionen-Menü. Übergibt direkt die SEKTOR_TYP-
+// Werte, die handleAddSektor im Cockpit erwartet (Arbeitsphase öffnet
+// ein Modal, Zwischentest wird mit Template befüllt, Individuell legt
+// einen leeren Sektor an).
+const ADD_SEKTOR_OPTIONS = [
+  {
+    key: SEKTOR_TYP.ARBEITSPHASE,
+    label: 'Arbeitsphase Themenfeld',
+    hint: 'Verknüpfung mit einem Themenfeld der Einheit',
+    Icon: BookOpen,
+    cls: 'text-blue-600',
+  },
+  {
+    key: SEKTOR_TYP.ZWISCHENTEST,
+    label: 'Zwischentest',
+    hint: 'Einstiegsseite · Zwischentest-Platzhalter',
+    Icon: ClipboardCheck,
+    cls: 'text-rose-600',
+  },
+  {
+    key: SEKTOR_TYP.INDIVIDUELL,
+    label: 'Leerer Sektor',
+    hint: 'Ohne vordefinierte Bausteine',
+    Icon: FilePlus,
+    cls: 'text-muted-foreground',
+  },
+];
 
-function AddSektorMenu({ onAddSektor, lerntyp, variant = 'default', size = 'sm', className = '' }) {
-  const options = getSektorTemplateOptionsForLerntyp(lerntyp);
-  // „Leer" optisch absetzen.
-  const leerKey = SEKTOR_TEMPLATE_KEYS.LEER;
-  const primaryOptions = options.filter((o) => o.key !== leerKey);
-  const leerOption = options.find((o) => o.key === leerKey);
-
+function AddSektorMenu({ onAddSektor, variant = 'default', size = 'sm', className = '' }) {
   const renderItem = (opt) => {
-    const meta = SEKTOR_TEMPLATE_ICONS[opt.iconKey] || SEKTOR_TEMPLATE_ICONS.leer;
-    const Icon = meta.Icon;
+    const Icon = opt.Icon;
     return (
       <DropdownMenuItem key={opt.key} onClick={() => onAddSektor?.(opt.key)}>
-        <Icon className={`w-4 h-4 ${meta.cls}`} />
+        <Icon className={`w-4 h-4 ${opt.cls}`} />
         <div className="flex flex-col">
           <span className="font-medium">{opt.label}</span>
           <span className="text-[11px] text-muted-foreground">{opt.hint}</span>
@@ -155,6 +166,10 @@ function AddSektorMenu({ onAddSektor, lerntyp, variant = 'default', size = 'sm',
       </DropdownMenuItem>
     );
   };
+
+  // „Leerer Sektor" optisch absetzen.
+  const primary = ADD_SEKTOR_OPTIONS.filter((o) => o.key !== SEKTOR_TYP.INDIVIDUELL);
+  const leer = ADD_SEKTOR_OPTIONS.find((o) => o.key === SEKTOR_TYP.INDIVIDUELL);
 
   return (
     <DropdownMenu>
@@ -165,13 +180,13 @@ function AddSektorMenu({ onAddSektor, lerntyp, variant = 'default', size = 'sm',
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64">
-        <DropdownMenuLabel>Vorlage auswählen</DropdownMenuLabel>
+        <DropdownMenuLabel>Sektor-Typ wählen</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {primaryOptions.map(renderItem)}
-        {leerOption && (
+        {primary.map(renderItem)}
+        {leer && (
           <>
             <DropdownMenuSeparator />
-            {renderItem(leerOption)}
+            {renderItem(leer)}
           </>
         )}
       </DropdownMenuContent>
@@ -358,7 +373,7 @@ export default function LernpfadeArchitekt({
             </p>
             {!readOnly && (
               <div className="inline-flex items-center gap-1.5">
-                <AddSektorMenu onAddSektor={onAddSektor} lerntyp={activeLernTyp} />
+                <AddSektorMenu onAddSektor={onAddSektor} />
                 <InfoHint title="Was ist ein Sektor?" side="top">
                   Ein Sektor ist ein Abschnitt im Lernpfad – eine Art Kapitel. Schüler arbeiten ihn entweder „sequenziell" (Aufgabe für Aufgabe) oder „frei" (Reihenfolge offen) ab. Pro Lerntyp lassen sich beliebig viele Sektoren anlegen.
                 </InfoHint>
@@ -395,7 +410,7 @@ export default function LernpfadeArchitekt({
             ))}
             {!readOnly && (
               <div className="flex items-center gap-1.5">
-                <AddSektorMenu onAddSektor={onAddSektor} lerntyp={activeLernTyp} variant="outline" className="flex-1" />
+                <AddSektorMenu onAddSektor={onAddSektor} variant="outline" className="flex-1" />
                 <InfoHint title="Was ist ein Sektor?" side="top">
                   Ein Sektor ist ein Abschnitt im Lernpfad – eine Art Kapitel. Schüler arbeiten ihn entweder „sequenziell" (Aufgabe für Aufgabe) oder „frei" (Reihenfolge offen) ab. Pro Lerntyp lassen sich beliebig viele Sektoren anlegen.
                 </InfoHint>
