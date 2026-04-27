@@ -13,10 +13,13 @@
  *
  *   A) Masterfähige Aktivitäten (Katalog.supports_master === true):
  *        is_complete = (≥1 MasterAufgabe existiert)
- *                       UND (field_values.aufgabentext ist nicht leer)
- *      Hinweis: Standardtext zählt als "nicht leer". Das Frontend persistiert
- *      den Default beim ersten Save automatisch (saveFieldsMutation /
- *      saveAufgabentextMutation füllen den Standardtext nach).
+ *      Begründung: Sobald die Lehrkraft eine Masteraufgabe angelegt hat, ist
+ *      die Aktivität inhaltlich gefüllt. Die Aufgabenstellung wird im UI als
+ *      Standardtext angezeigt und ist optional – sie zählt für die
+ *      Vollständigkeitsprüfung NICHT als zusätzliches Pflichtfeld.
+ *      (Frühere Variante prüfte zusätzlich field_values.aufgabentext, was zu
+ *      Drift führte, weil das Frontend den Default-Text nicht zuverlässig
+ *      persistiert hat.)
  *
  *   B) Nicht-masterfähige Aktivitäten (z. B. "Text lesen"):
  *        is_complete bleibt das, was das Frontend geschrieben hat
@@ -79,16 +82,12 @@ Deno.serve(async (req) => {
       }
 
       if (katalog?.supports_master === true) {
-        // Masterfähig → ≥1 Master UND Aufgabentext nicht leer
+        // Masterfähig → ≥1 MasterAufgabe genügt (Aufgabenstellung ist optional,
+        // siehe Doku am Anfang der Datei).
         const masters = await base44.asServiceRole.entities.MasterAufgabe.filter({
           activity_id: entityId,
         });
-        const hasMaster = Array.isArray(masters) && masters.length > 0;
-
-        const aufgabentext = data?.field_values?.aufgabentext;
-        const hasAufgabentext = typeof aufgabentext === 'string' && aufgabentext.trim().length > 0;
-
-        computedIsComplete = hasMaster && hasAufgabentext;
+        computedIsComplete = Array.isArray(masters) && masters.length > 0;
       }
       // Sonst: Frontend-Wert übernehmen (Pflichtfeld-Prüfung läuft dort).
     }
@@ -104,12 +103,26 @@ Deno.serve(async (req) => {
     }
 
     // ── Schritt 2: Roll-up auf Lernpakete.is_complete ────────────────────────
-    const [siblings, paket] = await Promise.all([
-      base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
-        lernpaket_id: data.lernpaket_id,
-      }),
-      base44.asServiceRole.entities.Lernpakete.get(data.lernpaket_id),
-    ]);
+    // Tote Lernpaket-Referenzen (z. B. nach Cascade-Delete) sollen den
+    // Guardian NICHT abbrechen lassen — Schritt 1 (Activity-Korrektur) ist
+    // bereits durch und soll erhalten bleiben. Wir behandeln 404 deshalb
+    // defensiv und überspringen das Roll-up.
+    const siblings = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
+      lernpaket_id: data.lernpaket_id,
+    });
+
+    let paket = null;
+    let paketMissing = false;
+    try {
+      paket = await base44.asServiceRole.entities.Lernpakete.get(data.lernpaket_id);
+    } catch (e) {
+      if (String(e?.status || e?.message || '').includes('404') ||
+          String(e?.message || '').toLowerCase().includes('not found')) {
+        paketMissing = true;
+      } else {
+        throw e;
+      }
+    }
 
     const living = (siblings || []).filter((a) => a.sync_status !== 'to_delete');
     // Stale-Read-Schutz: gerade korrigierten Wert dieser Activity im Set spiegeln.
@@ -124,6 +137,9 @@ Deno.serve(async (req) => {
         is_complete: newPaketIsComplete,
       });
       paketCorrected = true;
+    }
+    if (paketMissing) {
+      console.warn('[aggregateGuardian] Lernpaket nicht gefunden, Roll-up übersprungen:', data.lernpaket_id);
     }
 
     return Response.json({
