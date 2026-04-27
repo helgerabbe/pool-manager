@@ -155,6 +155,7 @@ export default function LernpfadeSektor({
   onRemove,
   onRemoveAufgabe,
   onRemoveSystemItem,
+  onRemoveBundle,
   onSetBundleConfig,
   getIsDropDisabled,
   onSelectAufgabe,
@@ -182,10 +183,18 @@ export default function LernpfadeSektor({
   // Remove-Callbacks gebraucht, damit die Cockpit-Logik unverändert bleibt.
   const renderItem = ({ item, originalIndex, children }, dndIndex) => {
     if (item.type === ITEM_TYPE.SYSTEM) {
+      // Bündel werden über onRemoveBundle (Cascade-Delete mit optionalem
+      // Confirm-Modal) gelöscht, alle anderen System-Items über
+      // onRemoveSystemItem (positions-genau, ohne Cascade).
+      const baustein = systemBausteineById?.get(item.ref_id);
+      const isBundle = baustein?.baustein_modus === 'bundle_1ton';
+      const handleRemove = isBundle && onRemoveBundle
+        ? () => onRemoveBundle(sektor.sektor_id, item.instance_id)
+        : () => onRemoveSystemItem?.(sektor.sektor_id, originalIndex);
       return (
         <SystemBausteinPill
           key={`sys-${item.instance_id || originalIndex}-${item.ref_id}`}
-          baustein={systemBausteineById?.get(item.ref_id)}
+          baustein={baustein}
           refId={item.ref_id}
           sektorId={sektor.sektor_id}
           index={dndIndex}
@@ -193,7 +202,7 @@ export default function LernpfadeSektor({
           isSelected={selectedSystemBausteinId === item.ref_id}
           disabled={readOnly}
           onSelect={onSelectSystemBaustein}
-          onRemove={() => onRemoveSystemItem?.(sektor.sektor_id, originalIndex)}
+          onRemove={handleRemove}
           bundleConfig={item.bundle_config}
           bundleChildCount={Array.isArray(children) ? children.length : 0}
           onSetBundleConfig={

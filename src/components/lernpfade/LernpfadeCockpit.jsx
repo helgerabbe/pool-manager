@@ -44,7 +44,10 @@ import {
   isKonfigurationEmpty,
   applyAllDashboardTemplates,
   setBundleConfig,
+  removeBundleAndCascade,
+  getBundleChildren,
 } from '@/lib/lernpfadeUtils';
+import CascadeDeleteDialog from '@/components/lernpfade/CascadeDeleteDialog';
 import { DASHBOARD_TEMPLATES } from '@/lib/dashboardTemplates';
 import { getSektorTemplate, SEKTOR_TEMPLATE_KEYS } from '@/lib/sektorTemplates';
 import ResetDashboardConfirmDialog from '@/components/lernpfade/ResetDashboardConfirmDialog';
@@ -79,6 +82,11 @@ export default function LernpfadeCockpit({
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [previewAufgabe, setPreviewAufgabe] = useState(null);
   const [editorAufgabe, setEditorAufgabe] = useState(null);
+
+  // Phase 3.5: Cascade-Delete-Dialog State.
+  // Wird nur gefüllt, wenn ein Bündel mit Kindern gelöscht werden soll.
+  // Leere Bündel werden ohne Modal direkt entfernt.
+  const [cascadeDialog, setCascadeDialog] = useState(null); // {sektorId, bundleInstanceId, bundleTitle, childCount}
 
   // Monitor-Selection: zentral – Pool und Architekt setzen wechselseitig.
   const [selectedAufgabeId, setSelectedAufgabeIdState] = useState(null);
@@ -379,6 +387,50 @@ export default function LernpfadeCockpit({
     [readOnly, activeLernTyp, updateKonfiguration]
   );
 
+  // Phase 3.5/3.6: Cascade-Delete eines Bündel-Containers.
+  // - Bei leerem Bündel: direkt löschen (kein Modal).
+  // - Bei Bündel mit Children: Modal öffnen, Confirm löst Delete aus.
+  // Die DB-Bereinigung (Junction-Cleanup für die entfernten Children) erledigt
+  // der bestehende `syncLernpfadMembership`-Aufruf im scheduleSave-Pfad
+  // automatisch — er gleicht die Junction-Tabelle gegen den neuen Soll-Zustand
+  // der `lernpfade_konfiguration` ab und löscht dabei nur die Memberships der
+  // Aufgaben, die im aktuellen Lerntyp nicht mehr vorkommen. Andere Lerntypen
+  // und Root-Aufgaben des gleichen Lerntyps bleiben unangetastet.
+  const handleRemoveBundle = useCallback(
+    (sektorId, bundleInstanceId) => {
+      if (readOnly) return;
+      const children = getBundleChildren(konfigurationRef.current, activeLernTyp, sektorId, bundleInstanceId);
+      if (children.length === 0) {
+        updateKonfiguration((prev) => {
+          const { konfig } = removeBundleAndCascade(prev, activeLernTyp, sektorId, bundleInstanceId);
+          return konfig;
+        });
+        return;
+      }
+      // Children vorhanden → Modal öffnen.
+      const sektor = (konfigurationRef.current?.[activeLernTyp] || []).find((s) => s.sektor_id === sektorId);
+      const bundleItem = sektor?.items?.find((it) => it.instance_id === bundleInstanceId);
+      const bundleTitle = systemBausteineById?.get(bundleItem?.ref_id)?.titel || 'Bündel';
+      setCascadeDialog({
+        sektorId,
+        bundleInstanceId,
+        bundleTitle,
+        childCount: children.length,
+      });
+    },
+    [readOnly, activeLernTyp, updateKonfiguration, systemBausteineById]
+  );
+
+  const confirmCascadeDelete = useCallback(() => {
+    if (!cascadeDialog) return;
+    const { sektorId, bundleInstanceId } = cascadeDialog;
+    updateKonfiguration((prev) => {
+      const { konfig } = removeBundleAndCascade(prev, activeLernTyp, sektorId, bundleInstanceId);
+      return konfig;
+    });
+    setCascadeDialog(null);
+  }, [cascadeDialog, activeLernTyp, updateKonfiguration]);
+
   // Phase 4: Erforderliche-Anzahl am Aufgabenbündel ändern.
   // erforderlicheAnzahl=null setzt die Konfig zurück (Default = "alle Pflicht").
   const handleSetBundleConfig = useCallback(
@@ -474,6 +526,7 @@ export default function LernpfadeCockpit({
               onRemoveSektor={handleRemoveSektor}
               onRemoveAufgabeFromPath={handleRemoveAufgabeFromPath}
               onRemoveSystemItem={handleRemoveSystemItem}
+              onRemoveBundle={handleRemoveBundle}
               onSetBundleConfig={handleSetBundleConfig}
               getIsDropDisabled={getIsDropDisabled}
               onSelectAufgabe={setSelectedAufgabeId}
@@ -543,6 +596,14 @@ export default function LernpfadeCockpit({
         lerntypLabel={lerntypLabel}
         busy={statusBusy}
         onConfirm={confirmResetTemplate}
+      />
+
+      <CascadeDeleteDialog
+        open={!!cascadeDialog}
+        onOpenChange={(v) => { if (!v) setCascadeDialog(null); }}
+        bundleTitle={cascadeDialog?.bundleTitle}
+        childCount={cascadeDialog?.childCount || 0}
+        onConfirm={confirmCascadeDelete}
       />
 
       <AufgabeCreateView
