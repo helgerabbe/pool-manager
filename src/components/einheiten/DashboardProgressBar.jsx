@@ -25,7 +25,7 @@ export default function DashboardProgressBar({ einheitId, progress }) {
 
   return (
     <TooltipProvider delayDuration={150}>
-      <div className="rounded-md bg-slate-50 border border-slate-100 p-2 grid grid-cols-4 gap-1.5">
+      <div className="rounded-md bg-slate-150 border border-slate-200 p-2 grid grid-cols-4 gap-1.5" style={{ backgroundColor: 'hsl(220 14% 90%)' }}>
         {LERN_TYPEN.map((lt) => {
           const value = Math.max(0, Math.min(100, Math.round(safeProgress[lt.key] || 0)));
           return (
