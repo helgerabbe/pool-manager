@@ -325,8 +325,13 @@ export default function LernpfadeCockpit({
       lazyInitDoneRef.current = einheit.id;
       return;
     }
+    // Phase E: warten, bis die Themenfeld-Query mindestens einmal geantwortet
+    // hat — sonst würden wir nur einen einzigen Arbeitsphase-Sektor anlegen,
+    // obwohl die Einheit schon Themenfelder hat. Wenn die Einheit keine
+    // Themenfelder hat, läuft der Init mit leerem Array → Fallback auf 1 Sektor.
+    if (!themenfelder) return;
     lazyInitDoneRef.current = einheit.id;
-    const filled = applyAllDashboardTemplates({}, DASHBOARD_TEMPLATES);
+    const filled = applyAllDashboardTemplates({}, DASHBOARD_TEMPLATES, themenfelder);
     setKonfiguration(filled);
     konfigurationRef.current = filled;
     // Direkter Save via flushSave(forcePayload) — kein Edit-Lock erforderlich,
@@ -334,7 +339,7 @@ export default function LernpfadeCockpit({
     flushSave(filled).catch((err) => {
       console.warn('[LernpfadeCockpit] Lazy-Init Save fehlgeschlagen:', err);
     });
-  }, [einheit?.id, einheit?.lernpfade_konfiguration, flushSave]);
+  }, [einheit?.id, einheit?.lernpfade_konfiguration, flushSave, themenfelder]);
 
   // ── Read-Only-Ableitung ─────────────────────────────────────────────
   const readOnly = !isStructuralEditingActive || isLockedByOther || istPfadGesperrt;
@@ -393,6 +398,9 @@ export default function LernpfadeCockpit({
     updateKonfiguration,
     onTemplateApplied,
     lerntypLabel,
+    // Phase E: durchreichen, damit „Standard zurücksetzen" pro Themenfeld
+    // einen eigenen Arbeitsphase-Sektor anlegt.
+    themenfelder,
   });
 
   // ── DnD-Hook (Phase 3.4) ────────────────────────────────────────────

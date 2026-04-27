@@ -37,6 +37,10 @@ export function useDashboardRelease({
   updateKonfiguration,
   onTemplateApplied,
   lerntypLabel,
+  // Phase E: Themenfelder der Einheit – werden an applyDashboardTemplate
+  // durchgereicht, damit Arbeitsphase-Sektoren pro Themenfeld expandiert
+  // werden. Optional, leeres Array => Fallback auf 1 Arbeitsphase-Sektor.
+  themenfelder = [],
 }) {
   const queryClient = useQueryClient();
   const [statusBusy, setStatusBusy] = useState(false);
@@ -263,11 +267,13 @@ export function useDashboardRelease({
       setResetConfirmOpen(false);
       return;
     }
-    updateKonfiguration((prev) => applyDashboardTemplate(prev, activeLernTyp, template));
+    updateKonfiguration((prev) =>
+      applyDashboardTemplate(prev, activeLernTyp, template, themenfelder)
+    );
     setResetConfirmOpen(false);
     onTemplateApplied?.();
     toast.success(`Dashboard „${lerntypLabel || activeLernTyp}" auf Standard zurückgesetzt.`);
-  }, [activeLernTyp, updateKonfiguration, onTemplateApplied, lerntypLabel]);
+  }, [activeLernTyp, updateKonfiguration, onTemplateApplied, lerntypLabel, themenfelder]);
 
   return {
     statusBusy,

@@ -698,12 +698,24 @@ export function copySektorenBetweenLernTypen(konfig, fromLernTyp, toLernTyp) {
  *   - Lock-Pre-Flight: Liegt beim Aufrufer (Cockpit), weil er Zugriff
  *     auf den queryClient hat und Toasts triggern muss.
  *
+ * Phase E: Wenn `themenfelder` mitgegeben wird, expandiert die Funktion
+ * jeden Arbeitsphase-Template-Sektor in N parallele Arbeitsphase-Sektoren —
+ * einen pro Themenfeld der Einheit. Jeder dieser Sektoren bekommt
+ *   - `themenfeld_id` direkt gesetzt,
+ *   - `titel` = Themenfeld-Titel (Live-Titel-Binding übernimmt das Cockpit),
+ *   - dieselben Bausteine (z. B. Themenfeld-Intro + Lernpaketebündel) wie das
+ *     Template-Sektor — nur mit frischen instance_ids.
+ * Ohne Themenfeld-Liste oder bei leerer Liste fällt das Verhalten auf den
+ * alten Pfad zurück (1 Arbeitsphase-Sektor ohne themenfeld_id).
+ *
  * @param {object} aktuelleKonfig - Die komplette lernpfade_konfiguration.
  * @param {string} lerntyp - 'minimalist' | 'pragmatiker' | 'ehrgeizig' | 'passioniert'.
  * @param {Array}  templateData - Array of Sektoren aus DASHBOARD_TEMPLATES[lerntyp].
+ * @param {Array}  [themenfelder] - Optionale Liste {id, titel, reihenfolge}
+ *                                  zur Expansion der Arbeitsphase-Sektoren.
  * @returns {object} Neue Konfiguration (immutable) mit überschriebenem Lerntyp.
  */
-export function applyDashboardTemplate(aktuelleKonfig, lerntyp, templateData) {
+export function applyDashboardTemplate(aktuelleKonfig, lerntyp, templateData, themenfelder = null) {
   if (!lerntyp) return aktuelleKonfig;
   if (!Array.isArray(templateData)) return aktuelleKonfig;
 
@@ -717,24 +729,56 @@ export function applyDashboardTemplate(aktuelleKonfig, lerntyp, templateData) {
     return mapped ? { ...it, ref_id: mapped } : it;
   };
 
-  const freshSektoren = templateData.map((sektor) => {
-    const items = Array.isArray(sektor?.items)
+  // Themenfelder sortiert (per reihenfolge, dann titel) — bestimmt die
+  // Reihenfolge der Arbeitsphase-Sektoren im Lernpfad.
+  const sortedTfs = Array.isArray(themenfelder) && themenfelder.length > 0
+    ? [...themenfelder].sort((a, b) => {
+        const ra = Number.isFinite(a?.reihenfolge) ? a.reihenfolge : 9999;
+        const rb = Number.isFinite(b?.reihenfolge) ? b.reihenfolge : 9999;
+        if (ra !== rb) return ra - rb;
+        return String(a?.titel || '').localeCompare(String(b?.titel || ''));
+      })
+    : null;
+
+  const buildItemsFromTemplate = (sektor) =>
+    Array.isArray(sektor?.items)
       ? sektor.items.map(normalizeItem).filter(Boolean).map(aliasItem)
       : [];
-    return {
-      sektor_id: `sec_${uuid()}`,
-      titel: sektor?.titel || 'Neuer Sektor',
-      // Phase A: Sektor-Modus ist nicht mehr nutzerveränderlich. Wir
-      // schreiben hart 'sequenziell' — auch wenn das Template 'frei' sagt,
-      // weil der Sektor-Modus für den Export-Generator irrelevant geworden
-      // ist (Bündel-Modus übernimmt diese Rolle).
-      modus: 'sequenziell',
-      sektor_typ: isValidSektorTyp(sektor?.sektor_typ) ? sektor.sektor_typ : DEFAULT_SEKTOR_TYP,
-      themenfeld_id: null, // Templates haben keine Themenfeld-Bindung.
-      titel_snapshot: null,
-      items,
-    };
+
+  const buildSektor = (sektor, overrides = {}) => ({
+    sektor_id: `sec_${uuid()}`,
+    titel: sektor?.titel || 'Neuer Sektor',
+    // Phase A: Sektor-Modus ist nicht mehr nutzerveränderlich. Wir
+    // schreiben hart 'sequenziell' — auch wenn das Template 'frei' sagt,
+    // weil der Sektor-Modus für den Export-Generator irrelevant geworden
+    // ist (Bündel-Modus übernimmt diese Rolle).
+    modus: 'sequenziell',
+    sektor_typ: isValidSektorTyp(sektor?.sektor_typ) ? sektor.sektor_typ : DEFAULT_SEKTOR_TYP,
+    themenfeld_id: null, // Templates haben keine Themenfeld-Bindung.
+    titel_snapshot: null,
+    items: buildItemsFromTemplate(sektor),
+    ...overrides,
   });
+
+  const freshSektoren = [];
+  for (const sektor of templateData) {
+    const isArbeitsphase = sektor?.sektor_typ === SEKTOR_TYP.ARBEITSPHASE;
+    if (isArbeitsphase && sortedTfs) {
+      // Phase E: pro Themenfeld einen eigenen Arbeitsphase-Sektor erzeugen.
+      // Items werden pro Klon frisch gebaut (frische instance_ids).
+      for (const tf of sortedTfs) {
+        freshSektoren.push(
+          buildSektor(sektor, {
+            titel: tf?.titel || sektor?.titel || 'Themenfeld',
+            themenfeld_id: tf?.id || null,
+            items: buildItemsFromTemplate(sektor),
+          })
+        );
+      }
+    } else {
+      freshSektoren.push(buildSektor(sektor));
+    }
+  }
 
   return setSektoren(aktuelleKonfig || {}, lerntyp, freshSektoren);
 }
@@ -748,12 +792,12 @@ export function applyDashboardTemplate(aktuelleKonfig, lerntyp, templateData) {
  * Erwartet ein `templates`-Objekt mit Keys minimalist/pragmatiker/
  * ehrgeizig/passioniert (z. B. `DASHBOARD_TEMPLATES`).
  */
-export function applyAllDashboardTemplates(aktuelleKonfig, templates) {
+export function applyAllDashboardTemplates(aktuelleKonfig, templates, themenfelder = null) {
   if (!templates || typeof templates !== 'object') return aktuelleKonfig;
   let next = aktuelleKonfig || {};
   for (const lerntyp of ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert']) {
     if (Array.isArray(templates[lerntyp])) {
-      next = applyDashboardTemplate(next, lerntyp, templates[lerntyp]);
+      next = applyDashboardTemplate(next, lerntyp, templates[lerntyp], themenfelder);
     }
   }
   return next;

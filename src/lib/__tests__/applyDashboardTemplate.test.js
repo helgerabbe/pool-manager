@@ -185,3 +185,76 @@ describe('applyDashboardTemplate – Defensive Inputs', () => {
     expect(next.minimalist).toEqual([]);
   });
 });
+
+describe('applyDashboardTemplate – Themenfeld-Expansion (Phase E)', () => {
+  // Ein minimales Test-Template mit GENAU einer Arbeitsphase. So können wir
+  // verifizieren, dass diese pro Themenfeld dupliziert wird, ohne von der
+  // konkreten Standard-Template-Struktur abhängig zu sein.
+  const makeArbeitsphaseTemplate = () => [
+    {
+      sektor_id: 'tpl_orient',
+      titel: 'Orientierung',
+      modus: 'sequenziell',
+      sektor_typ: 'onboarding',
+      items: [{ type: ITEM_TYPE.SYSTEM, ref_id: 'sys_sec0_overview' }],
+    },
+    {
+      sektor_id: 'tpl_arbeit',
+      titel: 'Erarbeitung',
+      modus: 'sequenziell',
+      sektor_typ: 'arbeitsphase_themenfeld',
+      items: [
+        { type: ITEM_TYPE.SYSTEM, ref_id: 'sys_themenfeld_intro' },
+        { type: ITEM_TYPE.SYSTEM, ref_id: 'sys_platzhalter_moodle_buendel' },
+      ],
+    },
+    {
+      sektor_id: 'tpl_test',
+      titel: 'Abschlusstest',
+      modus: 'sequenziell',
+      sektor_typ: 'abschlusstest',
+      items: [{ type: ITEM_TYPE.SYSTEM, ref_id: 'sys_external_test' }],
+    },
+  ];
+
+  const themenfelder = [
+    { id: 'tf_2', titel: 'Was bedeutet Gesundheit?', reihenfolge: 2 },
+    { id: 'tf_1', titel: 'Wie ernähre ich mich?', reihenfolge: 1 },
+  ];
+
+  it('dupliziert die Arbeitsphase pro Themenfeld in der reihenfolge-Sortierung', () => {
+    const next = applyDashboardTemplate({}, 'pragmatiker', makeArbeitsphaseTemplate(), themenfelder);
+    // 1 Onboarding + 2 Arbeitsphasen + 1 Abschlusstest = 4 Sektoren.
+    expect(next.pragmatiker).toHaveLength(4);
+    const arbeit = next.pragmatiker.filter((s) => s.sektor_typ === 'arbeitsphase_themenfeld');
+    expect(arbeit).toHaveLength(2);
+    // Reihenfolge: tf_1 (reihenfolge 1) vor tf_2 (reihenfolge 2).
+    expect(arbeit[0].themenfeld_id).toBe('tf_1');
+    expect(arbeit[0].titel).toBe('Wie ernähre ich mich?');
+    expect(arbeit[1].themenfeld_id).toBe('tf_2');
+    expect(arbeit[1].titel).toBe('Was bedeutet Gesundheit?');
+  });
+
+  it('jeder Arbeitsphase-Klon hat eigene sektor_id und eigene item-instance_ids', () => {
+    const next = applyDashboardTemplate({}, 'pragmatiker', makeArbeitsphaseTemplate(), themenfelder);
+    const arbeit = next.pragmatiker.filter((s) => s.sektor_typ === 'arbeitsphase_themenfeld');
+    expect(arbeit[0].sektor_id).not.toBe(arbeit[1].sektor_id);
+    const ids0 = arbeit[0].items.map((i) => i.instance_id);
+    const ids1 = arbeit[1].items.map((i) => i.instance_id);
+    ids0.forEach((id) => expect(ids1).not.toContain(id));
+  });
+
+  it('ohne themenfelder bleibt das alte Verhalten (1 Arbeitsphase ohne themenfeld_id)', () => {
+    const next = applyDashboardTemplate({}, 'pragmatiker', makeArbeitsphaseTemplate());
+    const arbeit = next.pragmatiker.filter((s) => s.sektor_typ === 'arbeitsphase_themenfeld');
+    expect(arbeit).toHaveLength(1);
+    expect(arbeit[0].themenfeld_id).toBeNull();
+  });
+
+  it('leeres Themenfeld-Array fällt auf 1-Sektor-Fallback zurück', () => {
+    const next = applyDashboardTemplate({}, 'pragmatiker', makeArbeitsphaseTemplate(), []);
+    const arbeit = next.pragmatiker.filter((s) => s.sektor_typ === 'arbeitsphase_themenfeld');
+    expect(arbeit).toHaveLength(1);
+    expect(arbeit[0].themenfeld_id).toBeNull();
+  });
+});

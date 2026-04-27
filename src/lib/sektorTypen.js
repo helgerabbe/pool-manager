@@ -49,6 +49,26 @@ export const isSingletonSektorTyp = (typ) => SINGLETON_SEKTOR_TYPEN.includes(typ
 export const isValidSektorTyp = (typ) => ALL_SEKTOR_TYPEN.includes(typ);
 
 /**
+ * Anzeige-Label für jeden Sektor-Typ. Wird im Sektor-Header der Canvas-
+ * Karten verwendet (statt des früheren generischen „SEKTOR n"). Für
+ * Arbeitsphasen ergänzt der Aufrufer den Themenfeld-Titel separat —
+ * dieses Lookup liefert nur den Sektor-Typ-Namen.
+ */
+export const SEKTOR_TYP_LABELS = Object.freeze({
+  [SEKTOR_TYP.ONBOARDING]: 'Onboarding',
+  [SEKTOR_TYP.UEBERBLICK]: 'Überblick',
+  [SEKTOR_TYP.ARBEITSPHASE]: 'Arbeitsphase',
+  [SEKTOR_TYP.ZWISCHENTEST]: 'Zwischentest',
+  [SEKTOR_TYP.ABSCHLUSSTEST]: 'Abschlusstest',
+  [SEKTOR_TYP.PROJEKTE]: 'Projekte',
+  [SEKTOR_TYP.INDIVIDUELL]: 'Individueller Sektor',
+});
+
+export function getSektorTypLabel(typ) {
+  return SEKTOR_TYP_LABELS[typ] || SEKTOR_TYP_LABELS[DEFAULT_SEKTOR_TYP];
+}
+
+/**
  * Default-Typ für unklassifizierte Sektoren (Backfill-Fallback und
  * Default für `createNewSektor`, wenn der Aufrufer keinen Typ angibt).
  */

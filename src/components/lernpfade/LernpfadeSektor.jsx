@@ -19,7 +19,7 @@
 
 import React from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
-import { GripVertical, Trash2, X, ListOrdered, Shuffle, Plus } from 'lucide-react';
+import { GripVertical, Trash2, X, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { getAufgabenTyp, ITEM_TYPE } from '@/lib/aufgabenTypen';
@@ -28,37 +28,7 @@ import BundleContainer from '@/components/lernpfade/BundleContainer';
 import AmpelBadge from '@/components/lernpfade/AmpelBadge';
 import { isExportFreigegeben, isContentApproved } from '@/lib/ampelLogic';
 import { groupItemsByParent } from '@/lib/lernpfadeUtils';
-
-function ModusToggle({ modus, onChange, disabled }) {
-  return (
-    <div className="inline-flex rounded-md border border-border bg-card p-0.5 text-[11px]">
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => onChange?.('sequenziell')}
-        className={`flex items-center gap-1 px-2 py-0.5 rounded transition-colors ${
-          modus === 'sequenziell'
-            ? 'bg-primary text-primary-foreground'
-            : 'text-muted-foreground hover:text-foreground'
-        } ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
-      >
-        <ListOrdered className="w-3 h-3" /> Sequenziell
-      </button>
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => onChange?.('frei')}
-        className={`flex items-center gap-1 px-2 py-0.5 rounded transition-colors ${
-          modus === 'frei'
-            ? 'bg-primary text-primary-foreground'
-            : 'text-muted-foreground hover:text-foreground'
-        } ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
-      >
-        <Shuffle className="w-3 h-3" /> Frei
-      </button>
-    </div>
-  );
-}
+import { getSektorTypLabel, SEKTOR_TYP } from '@/lib/sektorTypen';
 
 // Dynamische Lernpaket-Variante je nach Lerntyp ("Chamäleon-Logik").
 // Nur reguläre Lernpakete (buendel) zeigen ein Varianten-Label;
@@ -242,12 +212,30 @@ export default function LernpfadeSektor({
     );
   };
 
+  // Sektor-Header (Phase E):
+  //   - Statt „SEKTOR n" zeigen wir das Typ-Label („Onboarding", „Überblick" …).
+  //   - Bei Arbeitsphase Themenfeld hängen wir den (live-gebundenen oder
+  //     gelockten) Themenfeld-Titel als Suffix an: „Arbeitsphase · <Titel>".
+  //   - Der Modus-Toggle (sequenziell/frei) ist auf Sektor-Ebene weggefallen
+  //     (siehe Phase A des Epic „Semantische Sektoren") — Modus wandert ans
+  //     Bündel.
+  //   - Das Title-Input bleibt als Override (z. B. für Onboarding/Individuell).
+  const typLabel = getSektorTypLabel(sektor.sektor_typ);
+  const isArbeitsphase = sektor.sektor_typ === SEKTOR_TYP.ARBEITSPHASE;
+  const themenfeldTitel = sektor.titel_snapshot || sektor.titel;
+  const headerLabel = isArbeitsphase && themenfeldTitel
+    ? `${typLabel} · ${themenfeldTitel}`
+    : typLabel;
+
   return (
     <div className="rounded-lg border border-border bg-card/80 p-3 space-y-2">
       {/* Header */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">
-          Sektor {index + 1}
+        <span
+          className="text-[11px] font-semibold uppercase tracking-wide text-foreground bg-secondary px-2 py-0.5 rounded shrink-0"
+          title={typLabel}
+        >
+          {headerLabel}
         </span>
         <Input
           value={sektor.titel || ''}
@@ -255,11 +243,6 @@ export default function LernpfadeSektor({
           onChange={(e) => onPatch?.(sektor.sektor_id, { titel: e.target.value })}
           disabled={readOnly}
           className="h-7 text-sm flex-1 min-w-[140px]"
-        />
-        <ModusToggle
-          modus={sektor.modus || 'sequenziell'}
-          onChange={(m) => onPatch?.(sektor.sektor_id, { modus: m })}
-          disabled={readOnly}
         />
         {!readOnly && (
           <Button
