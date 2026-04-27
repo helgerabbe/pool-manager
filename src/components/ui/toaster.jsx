@@ -16,7 +16,10 @@ export function Toaster() {
       {toasts.map(function ({ id, title, description, action, open, onOpenChange, ...props }) {
         // `open` und `onOpenChange` sind interne Felder des useToast-State und
         // dürfen nicht ans DOM-`<div>` durchgereicht werden (sonst React-Warnung
-        // "Unknown event handler property `onOpenChange`").
+        // "Unknown event handler property `onOpenChange`"). Toasts mit
+        // open=false (gerade dismissed) werden ausgeblendet, bis sie aus dem
+        // State entfernt werden.
+        if (open === false) return null;
         return (
           <Toast key={id} {...props}>
             <div className="grid gap-1">
@@ -26,7 +29,7 @@ export function Toaster() {
               )}
             </div>
             {action}
-            <ToastClose />
+            <ToastClose onClick={() => onOpenChange?.(false)} />
           </Toast>
         );
       })}
