@@ -62,6 +62,11 @@
       "format": "date-time",
       "description": "Zeitstempel des letzten erfolgreichen Moodle-Exports (nullable)"
     },
+    "is_complete": {
+      "type": "boolean",
+      "default": false,
+      "description": "Aggregat-Flag (siehe Logbuch \u00a717): true \u21d4 alle aktiven Phasen-Aktivit\u00e4ten haben is_complete=true UND alle zugeh\u00f6rigen MasterAufgaben haben content_status='approved'. Wird ausschlie\u00dflich serverseitig in updateActivitySecure / approveMasterAufgabe / deleteActivityWithTombstoneAndCascade gesetzt \u2013 Frontend liest nur."
+    },
     "version": {
       "type": "integer",
       "default": 1,

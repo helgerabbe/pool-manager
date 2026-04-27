@@ -128,8 +128,13 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
   const lockedByMe = isPaketLocked(paket) && paketLockedBy === userEmail;
   const isActiveEditPaket = isEditingActive && lockedByMe;
 
-  // Single Source of Truth: Warn-Icon nur wenn Datenbank is_complete === false
-  const hatUnvollstaendigeAktivitaet = paketPhaseActivities.some(a => !a.is_complete);
+  // Single Source of Truth (siehe Logbuch §17): das vom Backend
+  // materialisierte Aggregat-Feld `paket.is_complete`. Frühere
+  // clientseitige `paketPhaseActivities.some(...)`-Logik litt unter
+  // Stale-Cache (Tab 4 zeigt grün, weil die Aktivität gerade gespeichert
+  // wurde, das Paket hier oben noch alt) – das Backend pflegt das Flag
+  // jetzt nach jedem Speichern/Approve/Delete.
+  const hatUnvollstaendigeAktivitaet = paket.is_complete !== true;
 
   return (
     <div className={cn(isActiveEditPaket && "rounded-lg ring-2 ring-orange-400 bg-orange-50/50 ml-1 mr-0.5")}>

@@ -309,6 +309,44 @@ Deno.serve(async (req) => {
       is_complete: true
     });
 
+    // 8b. ✅ Roll-up auf `Lernpakete.is_complete` (siehe Logbuch §17).
+    // Inline-Kopie aus functions/utils/lernpaketRollup.js – Single Source
+    // of Truth liegt dort, NO-LOCAL-IMPORTS-Regel verbietet den Import.
+    // Bei Änderungen MUSS die Utility-Datei mitgepflegt werden.
+    try {
+      const [siblingActivities, masters, paket] = await Promise.all([
+        base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
+          lernpaket_id: aktivitaet.lernpaket_id,
+        }),
+        base44.asServiceRole.entities.MasterAufgabe.filter({
+          lernpaket_id: aktivitaet.lernpaket_id,
+        }),
+        base44.asServiceRole.entities.Lernpakete.get(aktivitaet.lernpaket_id),
+      ]);
+      const living = (siblingActivities || []).filter(
+        (a) => a.sync_status !== 'to_delete'
+      );
+      // `is_complete` der gerade gespeicherten Activity ist garantiert
+      // `true` (siehe Schritt 8) – ggf. älterer Listen-Stand korrigieren.
+      const allActivitiesComplete = living.every((a) =>
+        a.id === activityId ? true : a.is_complete === true
+      );
+      const allMastersApproved =
+        (masters || []).length === 0 ||
+        masters.every((m) => m.content_status === 'approved');
+      const isComplete =
+        living.length > 0 && allActivitiesComplete && allMastersApproved;
+      if (paket && paket.is_complete !== isComplete) {
+        await base44.asServiceRole.entities.Lernpakete.update(
+          aktivitaet.lernpaket_id,
+          { is_complete: isComplete }
+        );
+      }
+    } catch (rollupErr) {
+      // Roll-up-Fehler sollen das Activity-Update nicht zurückrollen.
+      console.error('[updateActivitySecure] Lernpaket roll-up failed:', rollupErr?.message);
+    }
+
     // 9. ✅ Audit-Log schreiben (SUCCESS)
     try {
       await base44.asServiceRole.entities.AuditLog.create({

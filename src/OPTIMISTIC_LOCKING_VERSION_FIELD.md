@@ -968,3 +968,142 @@ saubere Cockpit-UX.
 - [ ] Audit-Einträge per Trigger statt App-Code.
 - [ ] Frontend-Code splittet pre-emptiv bei > 200 IDs (statt erst auf
       413 zu reagieren).
+
+---
+
+## 17. Lernpaket-Vollständigkeits-Aggregat (`is_complete`) (2026-04-27)
+
+### Problem
+
+Tab 4 zeigt für eine einzelne Aktivität "Vollständig", aber das
+übergeordnete Lernpaket (Tab 3, Sidebar, Übersichts-Badge) bleibt rot.
+Klassische Zustands-Desynchronisation: das Frontend hat den Status
+clientseitig aus den Aktivitäten aggregiert, der lokale Cache wurde
+nach dem Save nicht invalidiert, das Backend kannte gar kein
+Aggregat-Feld.
+
+### Verbindliche Definition of Done
+
+Ein Lernpaket gilt als **vollständig** (`Lernpakete.is_complete = true`)
+genau dann, wenn:
+
+1. **Alle aktiven Phasen-Aktivitäten** des Pakets haben
+   `is_complete: true` und sind keine Tombstones
+   (`sync_status !== 'to_delete'`).
+2. **Alle zugehörigen MasterAufgaben** (sofern vorhanden) haben
+   `content_status: 'approved'`. Ein Paket ohne Master ist auf dieser
+   Achse automatisch erfüllt.
+3. **Phasen ohne Aktivitäten** zählen nicht (irrelevant, blockieren nicht).
+4. Ein Paket **ohne jegliche lebende Aktivität** ist `is_complete = false`
+   (es gibt nichts, was abgeschlossen wäre).
+
+### Implementierung
+
+#### Schema
+
+`Lernpakete.is_complete` (Boolean, default `false`) ergänzt. Frontend
+liest ausschließlich aus diesem Feld – keine clientseitige Aggregation
+mehr.
+
+#### Backend-Roll-up
+
+Die Aggregat-Berechnung lebt zentral in
+`functions/utils/lernpaketRollup.js` (Single Source of Truth, `recalculateLernpaketComplete`).
+Wegen der NO-LOCAL-IMPORTS-Regel (siehe §4b) wird der Block INLINE in
+jeden konsumierenden Endpunkt kopiert. Aktuelle Inline-Kopien:
+
+| Endpunkt | Auslöser |
+|---|---|
+| `updateActivitySecure` | Tab 4 "Speichern & Fertig" auf einer Aktivität |
+| `approveMasterAufgabe` | Master wird approved/unapproved (Tab 4 / Aufgaben-Werkstatt) |
+| `deleteActivityWithTombstoneAndCascade` | Tab 3 löscht eine Aktivität (Tombstone) |
+
+Eigenschaften des Roll-ups:
+
+- **Idempotent.** Schreibt nur, wenn sich `is_complete` tatsächlich
+  ändert – kein unnötiger Audit-/Version-Bump.
+- **Fail-soft.** Roll-up-Fehler werden geloggt, brechen aber den
+  Hauptpfad nicht ab. Wenn das Aggregat einmal driftet, repariert es
+  sich beim nächsten Save automatisch.
+- **Stale-Read-Schutz.** Jeder Endpunkt überschreibt im frisch geladenen
+  Geschwister-Set den eigenen, gerade gesetzten Wert manuell, statt
+  einen zweiten Roundtrip zu riskieren.
+
+#### Frontend
+
+`components/workspace/SidebarTree.jsx` (`LernpaketNode.hatUnvollstaendigeAktivitaet`)
+liest ab sofort `paket.is_complete !== true`, NICHT mehr
+`paketPhaseActivities.some(a => !a.is_complete)`. Damit ist der Stale-
+Cache-Effekt aus Tab 3 verschwunden – sobald `Lernpakete` invalidiert
+wird (was nach jedem `updateActivitySecure`-Erfolg ohnehin passiert),
+zieht der Badge nach.
+
+### Bekannte Race Conditions
+
+- Zwei User speichern parallel zwei Aktivitäten desselben Pakets:
+  Beide lesen das Geschwister-Set, beide rechnen, beide schreiben.
+  Das Ergebnis ist deterministisch (Zielwert = derselbe), aber der
+  letzte Schreiber gewinnt. Falls dazwischen ein dritter Pfad das
+  Aggregat verändert, korrigiert sich der Wert beim nächsten Save.
+- `bulkApprove`-Pfade (`approvePackageActivities`) rufen den Roll-up
+  HEUTE NICHT auf – sie setzen Activities und Master in einem Schwung
+  auf `approved`, das Aggregat zieht erst beim nächsten Einzel-Save
+  nach. Akzeptiertes Risiko, weil Bulk-Approve ohnehin nur erlaubt
+  ist, wenn alle Activities bereits vollständig sind.
+
+### @MIGRATION_NOTE (Supabase)
+
+Die JS-Aggregation entfällt komplett. Ein einziger Trigger ersetzt
+alle drei Inline-Blöcke:
+
+```sql
+CREATE OR REPLACE FUNCTION recalc_lernpaket_is_complete()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+DECLARE
+  pkg_id uuid;
+  living_count int;
+  unfinished_count int;
+  master_unapproved_count int;
+BEGIN
+  pkg_id := COALESCE(NEW.lernpaket_id, OLD.lernpaket_id);
+  IF pkg_id IS NULL THEN RETURN COALESCE(NEW, OLD); END IF;
+
+  SELECT COUNT(*) FILTER (WHERE sync_status <> 'to_delete'),
+         COUNT(*) FILTER (WHERE sync_status <> 'to_delete' AND is_complete IS NOT TRUE)
+    INTO living_count, unfinished_count
+    FROM lernpaket_phase_aktivitaet
+   WHERE lernpaket_id = pkg_id;
+
+  SELECT COUNT(*) FILTER (WHERE content_status <> 'approved')
+    INTO master_unapproved_count
+    FROM master_aufgabe
+   WHERE lernpaket_id = pkg_id;
+
+  UPDATE lernpakete
+     SET is_complete = (living_count > 0
+                        AND unfinished_count = 0
+                        AND master_unapproved_count = 0)
+   WHERE id = pkg_id;
+
+  RETURN COALESCE(NEW, OLD);
+END $$;
+
+CREATE TRIGGER trg_recalc_lernpaket_aktivitaet
+AFTER INSERT OR UPDATE OR DELETE ON lernpaket_phase_aktivitaet
+FOR EACH ROW EXECUTE FUNCTION recalc_lernpaket_is_complete();
+
+CREATE TRIGGER trg_recalc_lernpaket_master
+AFTER INSERT OR UPDATE OR DELETE ON master_aufgabe
+FOR EACH ROW EXECUTE FUNCTION recalc_lernpaket_is_complete();
+```
+
+### Definition of Done für die Migration
+
+- [ ] Trigger `recalc_lernpaket_is_complete` aktiv, beide Auslöser
+      (`lernpaket_phase_aktivitaet` + `master_aufgabe`) verdrahtet.
+- [ ] Inline-Kopien aus `updateActivitySecure`, `approveMasterAufgabe`,
+      `deleteActivityWithTombstoneAndCascade` entfernt.
+- [ ] `functions/utils/lernpaketRollup.js` gelöscht.
+- [ ] Frontend bleibt unverändert – liest weiterhin
+      `paket.is_complete`, nur die Quelle des Schreibens wandert von
+      App-Code in DB-Trigger.

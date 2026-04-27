@@ -249,6 +249,42 @@ Deno.serve(async (req) => {
       is_dirty_since_export: true,
     });
 
+    // ── 8b. Roll-up auf `Lernpakete.is_complete` (siehe Logbuch §17) ──
+    // Tombstones zählen nicht mehr als "lebende" Aktivität. Wenn die
+    // gelöschte Aktivität die letzte unvollständige war, kann das Paket
+    // jetzt grün sein – und umgekehrt. Inline-Kopie aus
+    // functions/utils/lernpaketRollup.js (NO-LOCAL-IMPORTS).
+    try {
+      const [siblingActivities, paketMasters, paketRecord] = await Promise.all([
+        base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
+          lernpaket_id: lernpaketId,
+        }),
+        base44.asServiceRole.entities.MasterAufgabe.filter({
+          lernpaket_id: lernpaketId,
+        }),
+        base44.asServiceRole.entities.Lernpakete.get(lernpaketId),
+      ]);
+      // Eigene Tombstone-Markierung sofort spiegeln (kein Stale-Read).
+      const living = (siblingActivities || []).filter(
+        (a) => a.id !== activity_id && a.sync_status !== 'to_delete'
+      );
+      const allActivitiesComplete = living.every((a) => a.is_complete === true);
+      // Master der HARD-gelöschten Aufgabe sind aus dem Filter-Ergebnis
+      // bereits raus – die zurückgegebene Liste ist die Wahrheit.
+      const allMastersApproved =
+        (paketMasters || []).length === 0 ||
+        paketMasters.every((m) => m.content_status === 'approved');
+      const isComplete =
+        living.length > 0 && allActivitiesComplete && allMastersApproved;
+      if (paketRecord && paketRecord.is_complete !== isComplete) {
+        await base44.asServiceRole.entities.Lernpakete.update(lernpaketId, {
+          is_complete: isComplete,
+        });
+      }
+    } catch (rollupErr) {
+      console.error('[deleteActivityWithTombstoneAndCascade] Lernpaket roll-up failed:', rollupErr?.message);
+    }
+
     console.info(
       `[deleteActivityWithTombstoneAndCascade] Activity ${activity_id} tombstoned. ` +
       `Master deleted: ${masterDeleted}, Klone deleted: ${klonDeleted}, Orphans logged: ${orphansLogged}`
