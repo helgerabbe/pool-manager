@@ -241,6 +241,7 @@ export default function LernpfadeArchitekt({
   onOpenAufgabeEditor,
   onOpenGuide,
   canvasScrollRef,
+  themenfeldTitelById,
   // Status-Bereich (rechts) – ehemals CockpitActionToolbar
   istPfadGesperrt = false,
   darfFreigeben = false,
@@ -406,6 +407,7 @@ export default function LernpfadeArchitekt({
                 selectedSystemBausteinId={selectedSystemBausteinId}
                 getAmpelStatusForItem={getAmpelStatusForItem}
                 onOpenAufgabeEditor={onOpenAufgabeEditor}
+                themenfeldTitelById={themenfeldTitelById}
               />
             ))}
             {!readOnly && (

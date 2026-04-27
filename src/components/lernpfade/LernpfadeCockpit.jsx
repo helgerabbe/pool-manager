@@ -794,6 +794,7 @@ export default function LernpfadeCockpit({
               onOpenAufgabeEditor={handleOpenAufgabeEditor}
               onOpenGuide={() => setIsGuideOpen(true)}
               canvasScrollRef={scrollRef}
+              themenfeldTitelById={themenfeldTitelById}
               istPfadGesperrt={istPfadGesperrt}
               darfFreigeben={darfFreigeben}
               darfEntsperren={darfEntsperren}

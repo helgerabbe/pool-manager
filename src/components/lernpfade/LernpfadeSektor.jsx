@@ -39,7 +39,7 @@ const LERNTYP_VARIANTE = {
   passioniert: { label: 'Wissensspeicher', cls: 'bg-violet-100 text-violet-700 border-violet-200' },
 };
 
-function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, onRemove, onSelect, isSelected, disabled, ampelStatus, exportReady, contentApproved, onOpenEditor, activeLernTyp }) {
+function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, onRemove, onSelect, isSelected, disabled, ampelStatus, exportReady, contentApproved, onOpenEditor, activeLernTyp, fremdesThemenfeldTitel }) {
   // Fallback, falls die Aufgabe (noch) nicht im Cache ist.
   const titel = aufgabe?.titel || 'Aufgabe';
   const typMeta = getAufgabenTyp(aufgabe?.aufgaben_typ);
@@ -73,6 +73,14 @@ function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, onRemove, on
           <span className="flex-1 min-w-0 truncate">
             {aufgabe ? titel : <span className="italic text-muted-foreground">Unbekannte Aufgabe</span>}
           </span>
+          {fremdesThemenfeldTitel && (
+            <span
+              className="shrink-0 inline-flex items-center gap-0.5 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border bg-amber-50 text-amber-800 border-amber-300"
+              title={`Diese Aufgabe gehört eigentlich zum Themenfeld „${fremdesThemenfeldTitel}". Du kannst sie hier liegen lassen, falls das beabsichtigt ist.`}
+            >
+              ⚠ Anderes Themenfeld
+            </span>
+          )}
           {variante && (
             <span
               className={`shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border ${variante.cls}`}
@@ -135,6 +143,7 @@ export default function LernpfadeSektor({
   selectedSystemBausteinId,
   getAmpelStatusForItem,
   onOpenAufgabeEditor,
+  themenfeldTitelById,
   }) {
   const items = Array.isArray(sektor.items) ? sektor.items : [];
 
@@ -190,6 +199,22 @@ export default function LernpfadeSektor({
       );
     }
     const ctx = { aufgabenById };
+    // Themenfeld-Mismatch-Hinweis: Nur in Arbeitsphase-Sektoren prüfen.
+    // Wenn die Aufgabe einer anderen themenfeld_id zugeordnet ist als der
+    // umgebende Sektor, zeigen wir am Pill ein dezentes "⚠ Anderes Themenfeld"-
+    // Badge. Verbieten tun wir das Drop NICHT — Lehrkräfte wissen manchmal,
+    // warum sie eine Aufgabe themenfeld-fremd platzieren.
+    const aufgabeForBadge = aufgabenById?.get(item.ref_id);
+    let fremdesThemenfeldTitel = null;
+    if (
+      aufgabeForBadge?.themenfeld_id &&
+      sektor.sektor_typ === 'arbeitsphase_themenfeld' &&
+      sektor.themenfeld_id &&
+      aufgabeForBadge.themenfeld_id !== sektor.themenfeld_id
+    ) {
+      fremdesThemenfeldTitel =
+        themenfeldTitelById?.get?.(aufgabeForBadge.themenfeld_id) || 'anderes Themenfeld';
+    }
     return (
       <AufgabePill
         key={`auf-${item.instance_id || originalIndex}-${item.ref_id}`}
@@ -207,6 +232,7 @@ export default function LernpfadeSektor({
         contentApproved={isContentApproved(item, ctx)}
         onOpenEditor={onOpenAufgabeEditor}
         activeLernTyp={activeLernTyp}
+        fremdesThemenfeldTitel={fremdesThemenfeldTitel}
       />
     );
   };
