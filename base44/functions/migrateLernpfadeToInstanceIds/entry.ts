@@ -57,15 +57,18 @@ const BAUSTEIN_MAPPING = {
   sys_themenfeld_intro:    { baustein_modus: 'static', accepted_types: [] },
 
   // ── 1:1-Platzhalter ──────────────────────────────────────────────────────
-  // Brian-Bündel: nur auswahl_buendel-Aufgaben.
-  sys_platzhalter_brian_buendel:  { baustein_modus: 'placeholder_1to1', accepted_types: ['auswahl_buendel'] },
   // Reflexion: prozess- oder handlungsorientierte Aufgaben.
   sys_platzhalter_reflexion:      { baustein_modus: 'placeholder_1to1', accepted_types: ['prozess', 'handlung'] },
   // Zwischentest: ein einzelnes Lernpaket (test_only-Logik).
   sys_platzhalter_zwischentest:   { baustein_modus: 'placeholder_1to1', accepted_types: ['lernpaket'] },
 
   // ── 1:n-Bündel (lila Container, Pool-Modus für Export) ───────────────────
+  // Lernpakete-Bündel (Moodle-Bündel).
   sys_platzhalter_moodle_buendel: { baustein_modus: 'bundle_1ton', accepted_types: ['lernpaket'] },
+  // Aufgabenbündel (ehem. Brian-Bündel) – nimmt mehrere auswahl_buendel-Aufgaben auf.
+  sys_platzhalter_brian_buendel:  { baustein_modus: 'bundle_1ton', accepted_types: ['auswahl_buendel'] },
+  // Projektbündel – nimmt mehrere Projekt-Aufgaben (Ebene 3) auf.
+  sys_projektbuendel:             { baustein_modus: 'bundle_1ton', accepted_types: ['projekt'] },
 
   // ── M4-Addendum (2026-04-27): Legacy-IDs, die aus historischen Sektor-
   //    Templates noch aktiv referenziert werden, im Erst-Backfill aber
