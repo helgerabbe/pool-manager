@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import {
   ChevronRight, ChevronLeft, CheckCircle2,
   Users, Star, Trophy, LayoutGrid, ArrowRight,
-  FolderOpen, Target, Layers, HelpCircle
+  FolderOpen, Target, Layers, HelpCircle, Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -56,6 +56,12 @@ const SLIDES = [
     color: 'bg-sky-100 text-sky-600',
     title: 'Der Workflow zu Moodle',
     text: 'Wir planen hier die fachliche Logik. Ein Experten-Team baut daraus den Moodle-Kurs. Änderungen hier fließen direkt nach Moodle zurück.',
+  },
+  {
+    icon: Sparkles,
+    color: 'bg-fuchsia-100 text-fuchsia-600',
+    title: 'Das Ziel: Dashboards für Moodle',
+    text: 'Am Ende entsteht hier für jedes Lernprofil ein eigenes Dashboard – also der konkrete Lernpfad, den die Schüler später in Moodle sehen. Du planst die Struktur einmal in dieser App, und sie wird automatisch nach Moodle übertragen.',
   },
   {
     icon: FolderOpen,
