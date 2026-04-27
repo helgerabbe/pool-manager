@@ -155,6 +155,7 @@ export default function LernpfadeSektor({
   onRemove,
   onRemoveAufgabe,
   onRemoveSystemItem,
+  getIsDropDisabled,
   onSelectAufgabe,
   onSelectSystemBaustein,
   selectedAufgabeId,
@@ -251,7 +252,11 @@ export default function LernpfadeSektor({
       </div>
 
       {/* Droppable Item-Liste */}
-      <Droppable droppableId={`sektor-${sektor.sektor_id}`} type="LERNPFAD_ITEM" isDropDisabled={readOnly}>
+      <Droppable
+        droppableId={`sektor-${sektor.sektor_id}`}
+        type="LERNPFAD_ITEM"
+        isDropDisabled={readOnly || (getIsDropDisabled?.(`sektor-${sektor.sektor_id}`) ?? false)}
+      >
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
@@ -277,7 +282,10 @@ export default function LernpfadeSektor({
                     bundleInstanceId={entry.item.instance_id}
                     headerSlot={renderItem(entry, rootIdx)}
                     isEmpty={entry.children.length === 0}
-                    isDropDisabled={readOnly}
+                    isDropDisabled={
+                      readOnly ||
+                      (getIsDropDisabled?.(`bundle-${entry.item.instance_id}`) ?? false)
+                    }
                   >
                     {entry.children.map((child, childIdx) => renderItem(child, childIdx))}
                   </BundleContainer>

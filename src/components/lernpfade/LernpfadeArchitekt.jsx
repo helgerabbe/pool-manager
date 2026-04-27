@@ -213,6 +213,7 @@ export default function LernpfadeArchitekt({
   onRemoveSektor,
   onRemoveAufgabeFromPath,
   onRemoveSystemItem,
+  getIsDropDisabled,
   onSelectAufgabe,
   onSelectSystemBaustein,
   selectedAufgabeId,
@@ -375,6 +376,7 @@ export default function LernpfadeArchitekt({
                 onRemove={onRemoveSektor}
                 onRemoveAufgabe={(aufgabeId) => onRemoveAufgabeFromPath?.(aufgabeId)}
                 onRemoveSystemItem={onRemoveSystemItem}
+                getIsDropDisabled={getIsDropDisabled}
                 onSelectAufgabe={onSelectAufgabe}
                 onSelectSystemBaustein={onSelectSystemBaustein}
                 selectedAufgabeId={selectedAufgabeId}

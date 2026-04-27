@@ -324,11 +324,20 @@ export default function LernpfadeCockpit({
     lerntypLabel,
   });
 
-  // ── DnD-Hook ────────────────────────────────────────────────────────
-  const { handleDragEnd } = useDashboardDragAndDrop({
+  // ── DnD-Hook (Phase 3.4) ────────────────────────────────────────────
+  // `usedAufgabenIds` wird nicht mehr durchgereicht – der canDrop-Validator
+  // im Hook berechnet das Duplikat-Verbot selbst aus der aktuellen Konfig.
+  const {
+    handleDragStart,
+    handleDragUpdate,
+    handleDragEnd,
+    getIsDropDisabled,
+  } = useDashboardDragAndDrop({
     activeLernTyp,
     readOnly,
-    usedAufgabenIds,
+    konfiguration,
+    systemBausteineById,
+    aufgabenById,
     updateKonfiguration,
   });
 
@@ -421,7 +430,11 @@ export default function LernpfadeCockpit({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* 30/70-Layout mit DnD-Kontext */}
-      <DragDropContext onDragEnd={handleDragEnd}>
+      <DragDropContext
+        onDragStart={handleDragStart}
+        onDragUpdate={handleDragUpdate}
+        onDragEnd={handleDragEnd}
+      >
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
           <aside className="w-full lg:w-[30%] lg:min-w-[280px] lg:max-w-[420px] border-b lg:border-b-0 lg:border-r border-border bg-card flex flex-col overflow-hidden h-72 lg:h-auto shrink-0">
             <LernpfadeAufgabenPool
@@ -448,6 +461,7 @@ export default function LernpfadeCockpit({
               onRemoveSektor={handleRemoveSektor}
               onRemoveAufgabeFromPath={handleRemoveAufgabeFromPath}
               onRemoveSystemItem={handleRemoveSystemItem}
+              getIsDropDisabled={getIsDropDisabled}
               onSelectAufgabe={setSelectedAufgabeId}
               onSelectSystemBaustein={setSelectedSystemBausteinId}
               selectedAufgabeId={selectedAufgabeId}

@@ -571,11 +571,135 @@ export function applyAllDashboardTemplates(aktuelleKonfig, templates) {
 }
 
 /**
+ * Phase 3.4: Index-Translation zwischen lokalem DnD-Index und absolutem
+ * Index in `sektor.items`.
+ *
+ * - Root-Drop:  rootDndIndex   → absoluter Index NACH dem rootDndIndex-ten Root-Item
+ *               (oder ans Ende, wenn es so viele Roots nicht gibt).
+ * - Bündel-Drop: childDndIndex → absoluter Index NACH dem childDndIndex-ten Child
+ *                des Ziel-Bündels (oder direkt nach dem Bündel selbst, falls leer).
+ *
+ * Wichtig: Wenn das gezogene Item in derselben Liste umsortiert wird, gibt
+ * @hello-pangea/dnd `destination.index` BEZOGEN AUF DIE LISTE OHNE das gezogene
+ * Item zurück (Standardverhalten). Der Aufrufer muss vor der Translation das
+ * Item also noch im Array haben — wir errechnen den Ziel-Index unter der
+ * Annahme, dass das Item gleich entfernt und neu eingefügt wird.
+ */
+export function resolveAbsoluteInsertIndex(items, targetParentInstanceId, localIndex) {
+  const list = Array.isArray(items) ? items : [];
+  if (targetParentInstanceId) {
+    // Bündel-Drop: zähle Children dieses Bündels in Original-Reihenfolge.
+    const childPositions = [];
+    list.forEach((it, idx) => {
+      if (it?.parent_instance_id === targetParentInstanceId) childPositions.push(idx);
+    });
+    if (localIndex <= 0 || childPositions.length === 0) {
+      // Vor das erste Child – also direkt hinter den Bündel-Header.
+      const bundlePos = list.findIndex((it) => it?.instance_id === targetParentInstanceId);
+      return bundlePos === -1 ? list.length : bundlePos + 1;
+    }
+    if (localIndex >= childPositions.length) {
+      // Hinter das letzte Child.
+      return childPositions[childPositions.length - 1] + 1;
+    }
+    // Vor das localIndex-te Child.
+    return childPositions[localIndex];
+  }
+
+  // Root-Drop: Roots sind Items mit parent_instance_id == null.
+  const rootPositions = [];
+  list.forEach((it, idx) => {
+    if (!it?.parent_instance_id) rootPositions.push(idx);
+  });
+  if (localIndex <= 0 || rootPositions.length === 0) return 0;
+  if (localIndex >= rootPositions.length) return list.length;
+  return rootPositions[localIndex];
+}
+
+/**
+ * Phase 3.4: Item an absoluter Position einfügen. Setzt parent_instance_id
+ * konsistent (null für Sektor-Root, bundleInstanceId für Bündel-Children).
+ *
+ * Anti-Duplikat NICHT in dieser Funktion — die Validierung läuft schon im
+ * canDrop-Validator vor dem Drop.
+ */
+export function insertItemInSektorAtAbsolute(konfig, lernTyp, sektorId, item, absoluteIndex) {
+  const next = getSektoren(konfig, lernTyp).map((s) => {
+    if (s.sektor_id !== sektorId) return s;
+    const items = [...s.items];
+    const insertAt = Math.max(0, Math.min(absoluteIndex ?? items.length, items.length));
+    items.splice(insertAt, 0, normalizeItem(item));
+    return { ...s, items };
+  });
+  return setSektoren(konfig, lernTyp, next);
+}
+
+/**
+ * Phase 3.4: Bestehendes Item innerhalb des Sektors verschieben (DnD-Reorder
+ * inkl. Bündel-Wechsel im selben Sektor) oder zwischen Sektoren mit Update der
+ * parent_instance_id.
+ *
+ * @param {string|null} newParentInstanceId - null für Sektor-Root, sonst Bündel-instance_id
+ * @param {number} absoluteToIndex          - Ziel-Index im flachen Array des Ziel-Sektors,
+ *                                            BEREITS unter der Annahme errechnet, dass das
+ *                                            Item zuerst aus dem Quell-Sektor entfernt wird
+ *                                            (wenn fromSektorId === toSektorId).
+ */
+export function moveItemAbsolute(
+  konfig,
+  lernTyp,
+  fromSektorId,
+  fromAbsoluteIndex,
+  toSektorId,
+  absoluteToIndex,
+  newParentInstanceId
+) {
+  const sektoren = getSektoren(konfig, lernTyp);
+  const fromSektor = sektoren.find((s) => s.sektor_id === fromSektorId);
+  if (!fromSektor) return konfig;
+  const movedItem = fromSektor.items[fromAbsoluteIndex];
+  if (!movedItem) return konfig;
+
+  const repositioned = {
+    ...movedItem,
+    parent_instance_id: newParentInstanceId ?? null,
+  };
+
+  const next = sektoren.map((s) => {
+    if (fromSektorId === toSektorId && s.sektor_id === fromSektorId) {
+      const items = [...s.items];
+      items.splice(fromAbsoluteIndex, 1);
+      const insertAt = Math.max(0, Math.min(absoluteToIndex ?? items.length, items.length));
+      items.splice(insertAt, 0, repositioned);
+      return { ...s, items };
+    }
+    if (s.sektor_id === fromSektorId) {
+      const items = [...s.items];
+      items.splice(fromAbsoluteIndex, 1);
+      return { ...s, items };
+    }
+    if (s.sektor_id === toSektorId) {
+      const items = [...s.items];
+      const insertAt = Math.max(0, Math.min(absoluteToIndex ?? items.length, items.length));
+      items.splice(insertAt, 0, repositioned);
+      return { ...s, items };
+    }
+    return s;
+  });
+  return setSektoren(konfig, lernTyp, next);
+}
+
+/**
  * Item innerhalb eines Sektors umsortieren oder zwischen zwei Sektoren des
  * gleichen Lerntyps verschieben. Reine Reihenfolge-Operation – führt keine
  * Duplikat-Prüfung durch (es wird ja kein neues Item hinzugefügt).
  *
  * Funktioniert für Aufgaben- UND System-Items gleichermaßen.
+ *
+ * Phase 3.4-Hinweis: Diese Funktion arbeitet noch auf flachen Indizes ohne
+ * parent_instance_id-Update. Für Bündel-DnD nutzt das Cockpit jetzt
+ * `moveItemAbsolute`. `moveAufgabe` bleibt für Legacy-Reorder ohne Hierarchie
+ * erhalten (z. B. wenn nur Roots umsortiert werden, ohne Bündel-Wechsel).
  */
 export function moveAufgabe(konfig, lernTyp, fromSektorId, fromIndex, toSektorId, toIndex) {
   const sektoren = getSektoren(konfig, lernTyp);
