@@ -49,7 +49,7 @@ import {
   getBundleChildren,
 } from '@/lib/lernpfadeUtils';
 import CascadeDeleteDialog from '@/components/lernpfade/CascadeDeleteDialog';
-import ArbeitsphaseModal from '@/components/lernpfade/ArbeitsphaseModal';
+import ArbeitsphaseModal from '@/components/lernpfade/ArbeitsphaseModal.jsx';
 import { DASHBOARD_TEMPLATES } from '@/lib/dashboardTemplates';
 import { getSektorTemplate, SEKTOR_TEMPLATE_KEYS } from '@/lib/sektorTemplates';
 import { SEKTOR_TYP } from '@/lib/sektorTypen';
