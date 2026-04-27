@@ -254,12 +254,14 @@ Deno.serve(async (req) => {
     // gelöschte Aktivität die letzte unvollständige war, kann das Paket
     // jetzt grün sein – und umgekehrt. Inline-Kopie aus
     // functions/utils/lernpaketRollup.js (NO-LOCAL-IMPORTS).
+    //
+    // WICHTIG: Master-Approval-Status ist hier KEINE Bedingung mehr
+    // (DoD-Korrektur 2026-04-27 in §17). Vollständigkeit und Export-
+    // Freigabe sind getrennte Konzepte – die Vollständigkeitsprüfung
+    // sitzt vollständig auf Aktivitäts-Ebene (`is_complete`).
     try {
-      const [siblingActivities, paketMasters, paketRecord] = await Promise.all([
+      const [siblingActivities, paketRecord] = await Promise.all([
         base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
-          lernpaket_id: lernpaketId,
-        }),
-        base44.asServiceRole.entities.MasterAufgabe.filter({
           lernpaket_id: lernpaketId,
         }),
         base44.asServiceRole.entities.Lernpakete.get(lernpaketId),
@@ -269,13 +271,7 @@ Deno.serve(async (req) => {
         (a) => a.id !== activity_id && a.sync_status !== 'to_delete'
       );
       const allActivitiesComplete = living.every((a) => a.is_complete === true);
-      // Master der HARD-gelöschten Aufgabe sind aus dem Filter-Ergebnis
-      // bereits raus – die zurückgegebene Liste ist die Wahrheit.
-      const allMastersApproved =
-        (paketMasters || []).length === 0 ||
-        paketMasters.every((m) => m.content_status === 'approved');
-      const isComplete =
-        living.length > 0 && allActivitiesComplete && allMastersApproved;
+      const isComplete = living.length > 0 && allActivitiesComplete;
       if (paketRecord && paketRecord.is_complete !== isComplete) {
         await base44.asServiceRole.entities.Lernpakete.update(lernpaketId, {
           is_complete: isComplete,

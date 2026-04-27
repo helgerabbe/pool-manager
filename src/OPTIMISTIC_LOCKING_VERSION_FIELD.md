@@ -990,12 +990,56 @@ genau dann, wenn:
 1. **Alle aktiven Phasen-Aktivitäten** des Pakets haben
    `is_complete: true` und sind keine Tombstones
    (`sync_status !== 'to_delete'`).
-2. **Alle zugehörigen MasterAufgaben** (sofern vorhanden) haben
-   `content_status: 'approved'`. Ein Paket ohne Master ist auf dieser
-   Achse automatisch erfüllt.
-3. **Phasen ohne Aktivitäten** zählen nicht (irrelevant, blockieren nicht).
-4. Ein Paket **ohne jegliche lebende Aktivität** ist `is_complete = false`
+2. **Phasen ohne Aktivitäten** zählen nicht (irrelevant, blockieren nicht).
+3. Ein Paket **ohne jegliche lebende Aktivität** ist `is_complete = false`
    (es gibt nichts, was abgeschlossen wäre).
+
+#### DoD-Korrektur (2026-04-27) – Master-Approval ist KEINE Bedingung
+
+Ursprünglich war zusätzlich `MasterAufgabe.content_status === 'approved'`
+als harte Bedingung definiert. Das war falsch:
+
+- **Vollständigkeit** ("Inhalt steht, Lehrkraft hat alles befüllt") und
+- **Export-Freigabe** ("darf nach Moodle raus")
+
+sind getrennte Konzepte. Ein Paket konnte mit der alten Regel niemals
+grün werden, solange auch nur ein Master noch im Entwurfsmodus war –
+selbst wenn alle Aktivitäten inhaltlich fertig waren. Approve/Unapprove
+auf einem Master ändert das Aggregat seitdem nicht mehr direkt
+(`approveMasterAufgabe` enthält keinen Roll-up mehr).
+
+Die Master-Existenz wird stattdessen auf **Aktivitäts-Ebene** geprüft
+(siehe „Server-seitige Wahrheitsprüfung" unten).
+
+#### Server-seitige Wahrheitsprüfung in `updateActivitySecure`
+
+Das Frontend (`ActivityContentForm.handleSaveComplete`) schickt
+`is_complete: true`, sobald die clientseitige Formvalidierung grün ist.
+Bei masterfähigen Aktivitäten (Katalog-Eintrag mit
+`AktivitaetenKatalog.supports_master === true`) reicht das aber nicht –
+der eigentliche Inhalt sitzt in den `MasterAufgabe`-Datensätzen, die der
+User in Tab 4 separat anlegt. Ohne serverseitige Korrektur würde der
+Standardtext im Aufgabenstellungs-Feld fälschlich die ganze Aktivität
+auf grün schalten.
+
+Der Server überschreibt das Frontend-Signal deshalb nach folgender Regel:
+
+```
+katalog = AktivitaetenKatalog.get(aktivitaet.aktivitaet_id)
+if katalog.supports_master === true:
+    masters = MasterAufgabe.filter({ activity_id: aktivitaet.id })
+    if masters.length === 0:
+        is_complete := false   # Frontend-Wert wird überschrieben
+```
+
+Damit kann eine masterfähige Aktivität erst grün werden, wenn
+**physisch** mindestens eine MasterAufgabe in der Datenbank liegt.
+
+Das Flag `supports_master` lebt im **Katalog** (`AktivitaetenKatalog`),
+nicht direkt auf `LernpaketPhaseAktivitaet`. `updateActivitySecure`
+muss daher pro Save einen zusätzlichen `Katalog.get(...)`-Read machen.
+Bei Supabase-Migration entfällt das durch einen JOIN bzw. einen
+generated-column-Spiegel auf `lernpaket_phase_aktivitaet`.
 
 ### Implementierung
 
@@ -1014,9 +1058,9 @@ jeden konsumierenden Endpunkt kopiert. Aktuelle Inline-Kopien:
 
 | Endpunkt | Auslöser |
 |---|---|
-| `updateActivitySecure` | Tab 4 "Speichern & Fertig" auf einer Aktivität |
-| `approveMasterAufgabe` | Master wird approved/unapproved (Tab 4 / Aufgaben-Werkstatt) |
+| `updateActivitySecure` | Tab 4 "Speichern & Fertig" auf einer Aktivität – inkl. Server-seitiger Wahrheitsprüfung (`supports_master`) |
 | `deleteActivityWithTombstoneAndCascade` | Tab 3 löscht eine Aktivität (Tombstone) |
+| ~~`approveMasterAufgabe`~~ | Bewusst KEIN Roll-up mehr (DoD-Korrektur 2026-04-27) |
 
 Eigenschaften des Roll-ups:
 
@@ -1057,13 +1101,13 @@ Die JS-Aggregation entfällt komplett. Ein einziger Trigger ersetzt
 alle drei Inline-Blöcke:
 
 ```sql
+-- Aggregat: rein über die Aktivitäten (Master spielen keine Rolle).
 CREATE OR REPLACE FUNCTION recalc_lernpaket_is_complete()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
 DECLARE
   pkg_id uuid;
   living_count int;
   unfinished_count int;
-  master_unapproved_count int;
 BEGIN
   pkg_id := COALESCE(NEW.lernpaket_id, OLD.lernpaket_id);
   IF pkg_id IS NULL THEN RETURN COALESCE(NEW, OLD); END IF;
@@ -1074,15 +1118,8 @@ BEGIN
     FROM lernpaket_phase_aktivitaet
    WHERE lernpaket_id = pkg_id;
 
-  SELECT COUNT(*) FILTER (WHERE content_status <> 'approved')
-    INTO master_unapproved_count
-    FROM master_aufgabe
-   WHERE lernpaket_id = pkg_id;
-
   UPDATE lernpakete
-     SET is_complete = (living_count > 0
-                        AND unfinished_count = 0
-                        AND master_unapproved_count = 0)
+     SET is_complete = (living_count > 0 AND unfinished_count = 0)
    WHERE id = pkg_id;
 
   RETURN COALESCE(NEW, OLD);
@@ -1092,16 +1129,46 @@ CREATE TRIGGER trg_recalc_lernpaket_aktivitaet
 AFTER INSERT OR UPDATE OR DELETE ON lernpaket_phase_aktivitaet
 FOR EACH ROW EXECUTE FUNCTION recalc_lernpaket_is_complete();
 
-CREATE TRIGGER trg_recalc_lernpaket_master
-AFTER INSERT OR UPDATE OR DELETE ON master_aufgabe
-FOR EACH ROW EXECUTE FUNCTION recalc_lernpaket_is_complete();
+-- Server-seitige Wahrheitsprüfung in der DB: BEFORE UPDATE auf
+-- lernpaket_phase_aktivitaet erzwingt is_complete=false, wenn die
+-- Aktivität masterfähig ist, aber kein Master existiert.
+CREATE OR REPLACE FUNCTION enforce_master_existence_on_complete()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+DECLARE
+  needs_master bool;
+  master_count int;
+BEGIN
+  IF NEW.is_complete IS NOT TRUE THEN RETURN NEW; END IF;
+
+  SELECT COALESCE(supports_master, false)
+    INTO needs_master
+    FROM aktivitaeten_katalog
+   WHERE id = NEW.aktivitaet_id;
+
+  IF needs_master THEN
+    SELECT COUNT(*) INTO master_count
+      FROM master_aufgabe
+     WHERE activity_id = NEW.id;
+    IF master_count = 0 THEN
+      NEW.is_complete := false;
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END $$;
+
+CREATE TRIGGER trg_enforce_master_existence
+BEFORE INSERT OR UPDATE OF is_complete ON lernpaket_phase_aktivitaet
+FOR EACH ROW EXECUTE FUNCTION enforce_master_existence_on_complete();
 ```
 
 ### Definition of Done für die Migration
 
-- [ ] Trigger `recalc_lernpaket_is_complete` aktiv, beide Auslöser
-      (`lernpaket_phase_aktivitaet` + `master_aufgabe`) verdrahtet.
-- [ ] Inline-Kopien aus `updateActivitySecure`, `approveMasterAufgabe`,
+- [ ] Trigger `recalc_lernpaket_is_complete` aktiv (nur auf
+      `lernpaket_phase_aktivitaet`, NICHT auf `master_aufgabe`).
+- [ ] Trigger `enforce_master_existence_on_complete` aktiv – ersetzt
+      die Inline-Wahrheitsprüfung in `updateActivitySecure`.
+- [ ] Inline-Kopien aus `updateActivitySecure` und
       `deleteActivityWithTombstoneAndCascade` entfernt.
 - [ ] `functions/utils/lernpaketRollup.js` gelöscht.
 - [ ] Frontend bleibt unverändert – liest weiterhin

@@ -303,22 +303,53 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 8. ✅ Berechtigung OK: Aktivität aktualisieren
+    // 8. ✅ Server-seitige Wahrheitsprüfung für `is_complete` (siehe Logbuch §17).
+    //
+    // Das Frontend schickt aus Tab 4 ein hartes `is_complete: true`,
+    // sobald die clientseitige Formvalidierung grün ist. Bei Aktivitäts-
+    // typen, die `supports_master === true` haben (Katalog), reicht das
+    // Ausfüllen des Standardtextfelds aber NICHT – der eigentliche
+    // Inhalt sitzt in den `MasterAufgabe`-Datensätzen, die der User in
+    // Tab 4 separat anlegen muss. Wir überschreiben das Frontend-Signal
+    // serverseitig, wenn die Aktivität masterfähig ist, aber kein
+    // einziger Master existiert.
+    let effectiveIsComplete = true;
+    let katalog = null;
+    try {
+      katalog = aktivitaet.aktivitaet_id
+        ? await base44.asServiceRole.entities.AktivitaetenKatalog.get(aktivitaet.aktivitaet_id)
+        : null;
+    } catch (katErr) {
+      // Kein Katalog-Eintrag erreichbar → konservativ: keine Master-Prüfung.
+      console.warn('[updateActivitySecure] Katalog-Read fehlgeschlagen:', katErr?.message);
+    }
+    if (katalog?.supports_master === true) {
+      const masters = await base44.asServiceRole.entities.MasterAufgabe.filter({
+        activity_id: activityId,
+      });
+      if (!masters || masters.length === 0) {
+        effectiveIsComplete = false;
+      }
+    }
+
     await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(activityId, {
       field_values: fieldValues,
-      is_complete: true
+      is_complete: effectiveIsComplete
     });
 
     // 8b. ✅ Roll-up auf `Lernpakete.is_complete` (siehe Logbuch §17).
     // Inline-Kopie aus functions/utils/lernpaketRollup.js – Single Source
     // of Truth liegt dort, NO-LOCAL-IMPORTS-Regel verbietet den Import.
     // Bei Änderungen MUSS die Utility-Datei mitgepflegt werden.
+    //
+    // WICHTIG: Master-Approval-Status (`content_status === 'approved'`)
+    // ist hier KEINE Bedingung mehr. Vollständigkeit und Export-Freigabe
+    // sind getrennte Konzepte (siehe DoD-Korrektur 2026-04-27 in §17).
+    // Die Vollständigkeitsprüfung sitzt jetzt vollständig in der
+    // Aktivitäts-Ebene oben (`effectiveIsComplete`).
     try {
-      const [siblingActivities, masters, paket] = await Promise.all([
+      const [siblingActivities, paket] = await Promise.all([
         base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
-          lernpaket_id: aktivitaet.lernpaket_id,
-        }),
-        base44.asServiceRole.entities.MasterAufgabe.filter({
           lernpaket_id: aktivitaet.lernpaket_id,
         }),
         base44.asServiceRole.entities.Lernpakete.get(aktivitaet.lernpaket_id),
@@ -326,16 +357,12 @@ Deno.serve(async (req) => {
       const living = (siblingActivities || []).filter(
         (a) => a.sync_status !== 'to_delete'
       );
-      // `is_complete` der gerade gespeicherten Activity ist garantiert
-      // `true` (siehe Schritt 8) – ggf. älterer Listen-Stand korrigieren.
+      // Frisch geschriebenen Wert dieser Activity im Set spiegeln
+      // (kein Stale-Read).
       const allActivitiesComplete = living.every((a) =>
-        a.id === activityId ? true : a.is_complete === true
+        a.id === activityId ? effectiveIsComplete === true : a.is_complete === true
       );
-      const allMastersApproved =
-        (masters || []).length === 0 ||
-        masters.every((m) => m.content_status === 'approved');
-      const isComplete =
-        living.length > 0 && allActivitiesComplete && allMastersApproved;
+      const isComplete = living.length > 0 && allActivitiesComplete;
       if (paket && paket.is_complete !== isComplete) {
         await base44.asServiceRole.entities.Lernpakete.update(
           aktivitaet.lernpaket_id,

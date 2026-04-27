@@ -12,12 +12,19 @@
  *   1. Alle `LernpaketPhaseAktivitaet`-Einträge des Pakets haben
  *      `is_complete: true` (und sind nicht als Tombstone markiert,
  *      `sync_status !== 'to_delete'`).
- *   2. Alle `MasterAufgabe`-Einträge des Pakets (sofern vorhanden)
- *      haben `content_status: 'approved'`.
- *   3. Phasen ohne Aktivitäten gelten als irrelevant (sie blockieren
+ *   2. Phasen ohne Aktivitäten gelten als irrelevant (sie blockieren
  *      den Status nicht). Ein Paket OHNE jegliche Aktivitäten ist
  *      `is_complete = false` (es gibt nichts, was abgeschlossen sein
  *      könnte).
+ *
+ * NICHT Bedingung (DoD-Korrektur 2026-04-27):
+ *   `MasterAufgabe.content_status === 'approved'` ist KEINE Bedingung.
+ *   Vollständigkeit (= "Inhalt steht") und Export-Freigabe (= "darf
+ *   raus nach Moodle") sind getrennte Konzepte. Die fehlende Master-
+ *   Existenz wird auf Aktivitäts-Ebene in `updateActivitySecure`
+ *   abgefangen (Server überschreibt `is_complete=true` zu `false`,
+ *   wenn `AktivitaetenKatalog.supports_master === true` ist und kein
+ *   Master existiert).
  *
  * Idempotenz:
  *   Schreibt nur, wenn sich der Wert tatsächlich ändert. Verhindert
@@ -25,8 +32,7 @@
  *
  * @MIGRATION_NOTE (Supabase) – siehe Logbuch §17
  *   Diese Funktion wird durch einen `AFTER UPDATE/INSERT/DELETE`-
- *   Trigger auf `lernpaket_phase_aktivitaet` UND `master_aufgabe`
- *   ersetzt. Damit fällt die JS-Aggregation komplett weg.
+ *   Trigger auf `lernpaket_phase_aktivitaet` ersetzt.
  *
  * @param {object} base44     - SDK-Client (mit asServiceRole)
  * @param {string} lernpaketId - ID des Lernpakets
@@ -37,44 +43,29 @@ export async function recalculateLernpaketComplete(base44, lernpaketId) {
     return { changed: false, isComplete: false };
   }
 
-  // Parallel laden: Aktivitäten, Master, aktuelles Paket.
-  const [activities, masters, paket] = await Promise.all([
+  // Parallel laden: Aktivitäten, aktuelles Paket.
+  const [activities, paket] = await Promise.all([
     base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
-      lernpaket_id: lernpaketId,
-    }),
-    base44.asServiceRole.entities.MasterAufgabe.filter({
       lernpaket_id: lernpaketId,
     }),
     base44.asServiceRole.entities.Lernpakete.get(lernpaketId),
   ]);
 
   if (!paket) {
-    // Paket existiert nicht (mehr) – nichts zu tun.
     return { changed: false, isComplete: false };
   }
 
-  // Tombstones ausfiltern (zur Löschung markierte Aktivitäten zählen
-  // nicht mehr in die Vollständigkeitsrechnung – sie sind effektiv weg).
   const livingActivities = (activities || []).filter(
     (a) => a.sync_status !== 'to_delete'
   );
 
   let isComplete;
   if (livingActivities.length === 0) {
-    // Keine Aktivitäten ⇒ es gibt nichts zu vervollständigen.
     isComplete = false;
   } else {
-    const allActivitiesComplete = livingActivities.every(
-      (a) => a.is_complete === true
-    );
-    // Master sind optional – nur prüfen, wenn vorhanden.
-    const allMastersApproved =
-      (masters || []).length === 0 ||
-      masters.every((m) => m.content_status === 'approved');
-    isComplete = allActivitiesComplete && allMastersApproved;
+    isComplete = livingActivities.every((a) => a.is_complete === true);
   }
 
-  // Idempotenz: nur schreiben, wenn sich der Wert ändert.
   if (paket.is_complete === isComplete) {
     return { changed: false, isComplete };
   }

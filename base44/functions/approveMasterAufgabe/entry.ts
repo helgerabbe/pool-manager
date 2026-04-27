@@ -215,42 +215,12 @@ Deno.serve(async (req) => {
     });
 
     // ── 8. Roll-up auf `Lernpakete.is_complete` (siehe Logbuch §17) ──
-    // Inline-Kopie aus functions/utils/lernpaketRollup.js (NO-LOCAL-
-    // IMPORTS). Bei Änderungen Utility synchron mitziehen.
-    try {
-      const [siblingActivities, paketMasters, paketRecord] = await Promise.all([
-        base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
-          lernpaket_id: lernpaketId,
-        }),
-        base44.asServiceRole.entities.MasterAufgabe.filter({
-          lernpaket_id: lernpaketId,
-        }),
-        base44.asServiceRole.entities.Lernpakete.get(lernpaketId),
-      ]);
-      const living = (siblingActivities || []).filter(
-        (a) => a.sync_status !== 'to_delete'
-      );
-      const allActivitiesComplete = living.every((a) => a.is_complete === true);
-      // Soeben approveter Master spiegeln: aus dem frisch geladenen Set
-      // den eigenen Wert mit `newContentStatus` überschreiben, damit wir
-      // keinen Stale-Read riskieren.
-      const allMastersApproved =
-        (paketMasters || []).length === 0 ||
-        paketMasters.every((m) =>
-          m.id === masterId
-            ? newContentStatus === 'approved'
-            : m.content_status === 'approved'
-        );
-      const isComplete =
-        living.length > 0 && allActivitiesComplete && allMastersApproved;
-      if (paketRecord && paketRecord.is_complete !== isComplete) {
-        await base44.asServiceRole.entities.Lernpakete.update(lernpaketId, {
-          is_complete: isComplete,
-        });
-      }
-    } catch (rollupErr) {
-      console.error('[approveMasterAufgabe] Lernpaket roll-up failed:', rollupErr?.message);
-    }
+    // DoD-Korrektur 2026-04-27: Master-Approval ist KEINE Bedingung
+    // mehr für die Lernpaket-Vollständigkeit (siehe §17). Approve/
+    // Unapprove eines Masters ändert das Paket-Aggregat damit nicht
+    // direkt – das `LernpaketPhaseAktivitaet.is_complete`-Aggregat
+    // (wird in updateActivitySecure gepflegt) bleibt die einzige Quelle.
+    // Diese Funktion belässt den Roll-up bewusst leer.
 
     return Response.json({
       success: true,
