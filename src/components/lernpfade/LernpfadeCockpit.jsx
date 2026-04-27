@@ -17,6 +17,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { DragDropContext } from '@hello-pangea/dnd';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Cloud, CloudOff, Check, Loader2 } from 'lucide-react';
 // Loader2 wird im Save-Indicator (saving-State) als animiertes Spinner-Icon
@@ -87,7 +88,26 @@ export default function LernpfadeCockpit({
   const [konfiguration, setKonfiguration] = useState(
     () => einheit?.lernpfade_konfiguration || DEFAULT_KONFIG
   );
-  const [activeLernTyp, setActiveLernTyp] = useState('pragmatiker');
+  // Deep-Link-Support: Wenn die URL `?lerntyp=...` mitbringt (z. B. von der
+  // Einheiten-Übersicht via DashboardProgressBar), öffnen wir direkt diesen
+  // Lerntyp-Tab. Param wird danach aus der URL entfernt, damit eigene Klicks
+  // im Cockpit nicht überschrieben werden.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const VALID_LERNTYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
+  const initialLernTyp = (() => {
+    const p = searchParams.get('lerntyp');
+    return VALID_LERNTYPEN.includes(p) ? p : 'pragmatiker';
+  })();
+  const [activeLernTyp, setActiveLernTyp] = useState(initialLernTyp);
+
+  useEffect(() => {
+    if (searchParams.get('lerntyp')) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('lerntyp');
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [previewAufgabe, setPreviewAufgabe] = useState(null);
   const [editorAufgabe, setEditorAufgabe] = useState(null);
