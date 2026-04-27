@@ -55,6 +55,9 @@ const B = Object.freeze({
   pZwischentest: 'sys_platzhalter_zwischentest',
   pBrianBuendel: 'sys_platzhalter_brian_buendel',
   pProjekt: 'sys_platzhalter_projekt',
+  // Phase 2: Projektaufgaben-Bündel (1:n-Container) – ersetzt im Ehrgeizig-/
+  // Passioniert-Template den alten 1:1-Platzhalter `sys_platzhalter_projekt`.
+  projektBuendel: 'sys_projektbuendel',
 });
 
 // ── Template: Minimalist ────────────────────────────────────────────────
@@ -165,7 +168,7 @@ const EHRGEIZIG = [
     sektor_id: 'tpl_ehr_sec4',
     titel: 'Projekt',
     modus: 'frei',
-    items: [sys(B.pProjekt)],
+    items: [sys(B.projektBuendel)],
   },
 ];
 
@@ -200,7 +203,7 @@ const PASSIONIERT = [
     sektor_id: 'tpl_pass_sec3',
     titel: 'Projekt',
     modus: 'frei',
-    items: [sys(B.pProjekt)],
+    items: [sys(B.projektBuendel)],
   },
   {
     sektor_id: 'tpl_pass_sec4',
