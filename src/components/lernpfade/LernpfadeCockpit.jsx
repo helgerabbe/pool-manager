@@ -48,8 +48,12 @@ import {
   getBundleChildren,
 } from '@/lib/lernpfadeUtils';
 import CascadeDeleteDialog from '@/components/lernpfade/CascadeDeleteDialog';
+import ArbeitsphaseModal from '@/components/lernpfade/ArbeitsphaseModal';
 import { DASHBOARD_TEMPLATES } from '@/lib/dashboardTemplates';
 import { getSektorTemplate, SEKTOR_TEMPLATE_KEYS } from '@/lib/sektorTemplates';
+import { SEKTOR_TYP } from '@/lib/sektorTypen';
+import { getThemenfelderByEinheit, createThemenfeld } from '@/services/ThemenfeldService';
+import { useToast } from '@/components/ui/use-toast';
 import ResetDashboardConfirmDialog from '@/components/lernpfade/ResetDashboardConfirmDialog';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { getAmpelStatus } from '@/lib/ampelLogic';
@@ -73,6 +77,7 @@ export default function LernpfadeCockpit({
   // (acquiringStructLock, releasingStructLock, onAcquireLock, onReleaseLock)
   // wurden im Body nie konsumiert und sind daher entfernt worden.
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // ── State ───────────────────────────────────────────────────────────
   const [konfiguration, setKonfiguration] = useState(
@@ -82,6 +87,8 @@ export default function LernpfadeCockpit({
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [previewAufgabe, setPreviewAufgabe] = useState(null);
   const [editorAufgabe, setEditorAufgabe] = useState(null);
+  const [arbeitsphaseModalOpen, setArbeitsphaseModalOpen] = useState(false);
+  const [arbeitsphaseModalBusy, setArbeitsphaseModalBusy] = useState(false);
 
   // Phase 3.5: Cascade-Delete-Dialog State.
   // Wird nur gefüllt, wenn ein Bündel mit Kindern gelöscht werden soll.
@@ -136,6 +143,18 @@ export default function LernpfadeCockpit({
         : Promise.resolve([]),
     enabled: !!einheit?.id,
   });
+
+  // Phase B: Themenfelder für Arbeitsphase-Modal und Live-Titel-Binding.
+  const { data: themenfelder = [] } = useQuery({
+    queryKey: ['themenfelder-by-einheit', einheit?.id],
+    queryFn: () => (einheit?.id ? getThemenfelderByEinheit(einheit.id) : Promise.resolve([])),
+    enabled: !!einheit?.id,
+  });
+  const themenfeldTitelById = useMemo(() => {
+    const map = new Map();
+    (themenfelder || []).forEach((tf) => map.set(tf.id, tf.titel));
+    return map;
+  }, [themenfelder]);
   const lernpaketeById = useMemo(() => {
     const map = new Map();
     (lernpakete || []).forEach((p) => map.set(p.id, p));
@@ -260,6 +279,32 @@ export default function LernpfadeCockpit({
     [scheduleSave]
   );
 
+  // ── Phase B: Live-Titel-Binding für Arbeitsphase-Sektoren ──────────
+  // Bei Änderung der Themenfeld-Titel werden alle Arbeitsphase-Sektoren
+  // (über alle Lerntypen) aktualisiert. Snapshot hat Vorrang — gelockte
+  // Pfade bleiben stabil, auch wenn das Themenfeld später umbenannt wird.
+  // Läuft nur im Edit-Modus, damit der Save nicht aus reinen Lese-Sessions
+  // getriggert wird.
+  useEffect(() => {
+    if (!isStructuralEditingActive) return;
+    if (!themenfeldTitelById || themenfeldTitelById.size === 0) return;
+    const current = konfigurationRef.current || DEFAULT_KONFIG;
+    let changed = false;
+    const next = {};
+    for (const lt of ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert']) {
+      const sektoren = Array.isArray(current[lt]) ? current[lt] : [];
+      next[lt] = sektoren.map((s) => {
+        if (s.sektor_typ !== SEKTOR_TYP.ARBEITSPHASE) return s;
+        if (s.titel_snapshot) return s; // gelockt
+        const tfTitel = themenfeldTitelById.get(s.themenfeld_id);
+        if (!tfTitel || s.titel === tfTitel) return s;
+        changed = true;
+        return { ...s, titel: tfTitel };
+      });
+    }
+    if (changed) updateKonfiguration(() => next);
+  }, [themenfeldTitelById, isStructuralEditingActive, updateKonfiguration]);
+
   // ── Lazy-Init für Bestandseinheiten ────────────────────────────────
   // Neue Einheiten werden serverseitig (createEinheitMitDefaults /
   // createEinheitSecure) bereits mit den Default-Templates gespeichert.
@@ -294,6 +339,19 @@ export default function LernpfadeCockpit({
     () => getUsedAufgabenIds(konfiguration, activeLernTyp),
     [konfiguration, activeLernTyp]
   );
+
+  // Phase B: bereits im aktiven Lerntyp verknüpfte Themenfeld-IDs für den
+  // ArbeitsphaseModal-Picker (ausgrauen).
+  const belegteThemenfeldIds = useMemo(() => {
+    const set = new Set();
+    const sektoren = konfiguration?.[activeLernTyp] || [];
+    for (const s of sektoren) {
+      if (s.sektor_typ === SEKTOR_TYP.ARBEITSPHASE && s.themenfeld_id) {
+        set.add(s.themenfeld_id);
+      }
+    }
+    return set;
+  }, [konfiguration, activeLernTyp]);
 
   // ── Release-Hook (Lock/Unlock + Template + Blocker-Modal) ───────────
   const onTemplateApplied = useCallback(() => {
@@ -351,24 +409,110 @@ export default function LernpfadeCockpit({
   });
 
   // ── Sektor-Handler ──────────────────────────────────────────────────
-  // `templateKey` ist optional: 'erarbeitung' | 'zwischentest' | 'leer'.
-  // Ohne Key (Legacy-Aufruf) → leerer Sektor.
+  // Phase B: AddSektor bekommt direkt einen `sektor_typ` (siehe AddSektorMenu).
+  // - SEKTOR_TYP.ARBEITSPHASE → Modal öffnen, Themenfeld wählen
+  // - SEKTOR_TYP.ZWISCHENTEST → Sektor mit Zwischentest-Template anlegen
+  // - SEKTOR_TYP.INDIVIDUELL  → leerer Sektor
   const handleAddSektor = useCallback(
-    (templateKey = SEKTOR_TEMPLATE_KEYS.LEER) => {
+    (sektorTyp = SEKTOR_TYP.INDIVIDUELL) => {
       if (readOnly) return;
-      const tpl = getSektorTemplate(templateKey);
-      const sektor = createNewSektor({ titel: tpl.titel, modus: tpl.modus, items: tpl.items });
+      if (sektorTyp === SEKTOR_TYP.ARBEITSPHASE) {
+        setArbeitsphaseModalOpen(true);
+        return;
+      }
+      if (sektorTyp === SEKTOR_TYP.ZWISCHENTEST) {
+        const tpl = getSektorTemplate(SEKTOR_TEMPLATE_KEYS.ZWISCHENTEST);
+        const sektor = createNewSektor({
+          titel: tpl.titel,
+          items: tpl.items,
+          sektor_typ: SEKTOR_TYP.ZWISCHENTEST,
+        });
+        updateKonfiguration((prev) => addSektor(prev, activeLernTyp, sektor));
+        return;
+      }
+      // Default: leerer Sektor (individuell).
+      const sektor = createNewSektor({
+        titel: 'Neuer Sektor',
+        items: [],
+        sektor_typ: SEKTOR_TYP.INDIVIDUELL,
+      });
       updateKonfiguration((prev) => addSektor(prev, activeLernTyp, sektor));
     },
     [readOnly, activeLernTyp, updateKonfiguration]
   );
 
+  // Confirm aus dem ArbeitsphaseModal: legt ggf. eine Themenfeld-Hülle an
+  // (wenn die Einheit noch keine Themenfelder hat) und erzeugt anschließend
+  // den Arbeitsphase-Sektor mit Live-Titel-Binding.
+  const handleConfirmArbeitsphase = useCallback(
+    async ({ themenfeldId, themenfeldTitel }) => {
+      if (readOnly) return;
+      setArbeitsphaseModalBusy(true);
+      try {
+        let tfId = themenfeldId;
+        let tfTitel = themenfeldTitel;
+        if (!tfId && einheit?.id) {
+          // Auto-Hülle anlegen.
+          const created = await createThemenfeld({
+            einheitId: einheit.id,
+            titel: 'Themenfeld Platzhalter',
+            reihenfolge: (themenfelder?.length || 0) + 1,
+          });
+          tfId = created.id;
+          tfTitel = created.titel || 'Themenfeld Platzhalter';
+          queryClient.invalidateQueries({ queryKey: ['themenfelder-by-einheit', einheit.id] });
+          toast({
+            title: 'Themenfeld-Hülle angelegt',
+            description: 'Du kannst sie später im Strukturboard umbenennen.',
+          });
+        }
+        const sektor = createNewSektor({
+          titel: tfTitel || 'Themenfeld',
+          items: [],
+          sektor_typ: SEKTOR_TYP.ARBEITSPHASE,
+          themenfeld_id: tfId,
+        });
+        updateKonfiguration((prev) => addSektor(prev, activeLernTyp, sektor));
+        setArbeitsphaseModalOpen(false);
+      } catch (err) {
+        console.error('[Cockpit] Arbeitsphase-Sektor anlegen fehlgeschlagen:', err);
+        toast({
+          variant: 'destructive',
+          title: 'Anlegen fehlgeschlagen',
+          description: err?.message || 'Bitte erneut versuchen.',
+        });
+      } finally {
+        setArbeitsphaseModalBusy(false);
+      }
+    },
+    [readOnly, einheit?.id, themenfelder, queryClient, toast, updateKonfiguration, activeLernTyp]
+  );
+
+  // Phase B: Typ-Wechsel auf leeren Sektoren.
+  // - Wechsel auf ARBEITSPHASE wird hier NICHT direkt erlaubt — der Sektor
+  //   müsste ja zwingend ein Themenfeld bekommen. Da wir den Wechsel nur
+  //   für leere Sektoren anbieten und die UI Arbeitsphase im Switch-Menu
+  //   listet, leiten wir auf "Sektor löschen + neu via Modal" um, indem
+  //   wir das Modal öffnen und nach Confirm den alten Sektor patchen.
+  //   Pragmatischere Lösung: Wechsel auf ARBEITSPHASE schlicht blockieren,
+  //   damit bleibt der Code einfach und konsistent (Lehrkraft löscht den
+  //   leeren Sektor und legt eine Arbeitsphase neu an).
   const handlePatchSektor = useCallback(
     (sektorId, patch) => {
       if (readOnly) return;
+      // Typ-Wechsel auf Arbeitsphase: in Phase B nicht über Patch erlaubt –
+      // bitte Sektor löschen und neu anlegen.
+      if (patch?.sektor_typ === SEKTOR_TYP.ARBEITSPHASE) {
+        toast({
+          title: 'Bitte neu anlegen',
+          description:
+            'Eine Arbeitsphase muss mit einem Themenfeld verknüpft werden – lege sie über „Sektor hinzufügen" → „Arbeitsphase Themenfeld" neu an.',
+        });
+        return;
+      }
       updateKonfiguration((prev) => patchSektor(prev, activeLernTyp, sektorId, patch));
     },
-    [readOnly, activeLernTyp, updateKonfiguration]
+    [readOnly, activeLernTyp, updateKonfiguration, toast]
   );
 
   const handleRemoveSektor = useCallback(
@@ -604,6 +748,15 @@ export default function LernpfadeCockpit({
         bundleTitle={cascadeDialog?.bundleTitle}
         childCount={cascadeDialog?.childCount || 0}
         onConfirm={confirmCascadeDelete}
+      />
+
+      <ArbeitsphaseModal
+        open={arbeitsphaseModalOpen}
+        onOpenChange={setArbeitsphaseModalOpen}
+        themenfelder={themenfelder}
+        belegteThemenfeldIds={belegteThemenfeldIds}
+        busy={arbeitsphaseModalBusy}
+        onConfirm={handleConfirmArbeitsphase}
       />
 
       <AufgabeCreateView
