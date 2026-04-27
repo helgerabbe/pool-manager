@@ -31,6 +31,7 @@ import { deleteLernziel as deleteLernzielService } from '@/services/LernzielServ
 import { deleteAufgabenbaustein } from '@/services/AufgabenbausteinService';
 import ProjektaufgabenView from '@/components/projektaufgaben/ProjektaufgabenView';
 import LernpfadeCockpit from '@/components/lernpfade/LernpfadeCockpit';
+import LoadingOverlay from '@/components/workspace/LoadingOverlay';
 
 export default function Workspace({ initialEinheitId: initialEinheitIdProp = null }) {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -539,8 +540,15 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const istMoodleDesigner = rolle === ROLLEN.MOODLE_DESIGNER;
   const showExportTabs = istAdmin || istMoodleDesigner; // Nur Admin und Moodle-Designer sehen Export-Tabs
 
+  // Während des Dashboard-Edit-Beenden-Vorgangs (Save → Refetch → Lock-Release)
+  // ein blockierendes Overlay zeigen, damit der User in den ~10 Sekunden nicht
+  // weiterklicken und damit Race-Conditions oder verlorene Änderungen erzeugen
+  // kann. Analog zum Strukturboard-Verhalten.
+  const showDashboardEndOverlay = endingDashboardEdit || (activeTab === 'dashboards' && releasingStructLock);
+
   return (
     <ErrorBoundary label="Workspace">
+      <LoadingOverlay isVisible={showDashboardEndOverlay} />
       <div className="flex flex-col h-full w-full bg-background overflow-hidden">
 
         {/* ── Einheit-Gesperrt-Banner ─────────────────────────────────────────── */}
