@@ -13,7 +13,10 @@ export function Toaster() {
 
   return (
     <ToastProvider>
-      {toasts.map(function ({ id, title, description, action, ...props }) {
+      {toasts.map(function ({ id, title, description, action, open, onOpenChange, ...props }) {
+        // `open` und `onOpenChange` sind interne Felder des useToast-State und
+        // dürfen nicht ans DOM-`<div>` durchgereicht werden (sonst React-Warnung
+        // "Unknown event handler property `onOpenChange`").
         return (
           <Toast key={id} {...props}>
             <div className="grid gap-1">
@@ -30,4 +33,4 @@ export function Toaster() {
       <ToastViewport />
     </ToastProvider>
   );
-} 
+}

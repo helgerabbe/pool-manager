@@ -88,8 +88,18 @@ export const DEFAULT_SEKTOR_TYP = SEKTOR_TYP.INDIVIDUELL;
 export function getBundleKindByAcceptedTypes(acceptedTypes) {
   if (!Array.isArray(acceptedTypes) || acceptedTypes.length === 0) return null;
   if (acceptedTypes.includes('lernpaket')) return 'lernpakete';
-  if (acceptedTypes.includes('auswahl_buendel')) return 'aufgaben';
   if (acceptedTypes.includes('projekt')) return 'projekte';
+  // Aufgabenbündel: deckt sowohl Brian-Auswahlbündel ('auswahl_buendel') als
+  // auch klassische Aufgabenbündel mit normalen Aufgabentypen
+  // ('inhalt'|'prozess'|'handlung') ab.
+  if (
+    acceptedTypes.includes('auswahl_buendel') ||
+    acceptedTypes.includes('inhalt') ||
+    acceptedTypes.includes('prozess') ||
+    acceptedTypes.includes('handlung')
+  ) {
+    return 'aufgaben';
+  }
   return null;
 }
 
