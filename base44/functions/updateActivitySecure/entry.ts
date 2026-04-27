@@ -303,76 +303,18 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 8. ✅ Server-seitige Wahrheitsprüfung für `is_complete` (siehe Logbuch §17).
+    // 8. Activity-Update.
     //
-    // Das Frontend schickt aus Tab 4 ein hartes `is_complete: true`,
-    // sobald die clientseitige Formvalidierung grün ist. Bei Aktivitäts-
-    // typen, die `supports_master === true` haben (Katalog), reicht das
-    // Ausfüllen des Standardtextfelds aber NICHT – der eigentliche
-    // Inhalt sitzt in den `MasterAufgabe`-Datensätzen, die der User in
-    // Tab 4 separat anlegen muss. Wir überschreiben das Frontend-Signal
-    // serverseitig, wenn die Aktivität masterfähig ist, aber kein
-    // einziger Master existiert.
-    let effectiveIsComplete = true;
-    let katalog = null;
-    try {
-      katalog = aktivitaet.aktivitaet_id
-        ? await base44.asServiceRole.entities.AktivitaetenKatalog.get(aktivitaet.aktivitaet_id)
-        : null;
-    } catch (katErr) {
-      // Kein Katalog-Eintrag erreichbar → konservativ: keine Master-Prüfung.
-      console.warn('[updateActivitySecure] Katalog-Read fehlgeschlagen:', katErr?.message);
-    }
-    if (katalog?.supports_master === true) {
-      const masters = await base44.asServiceRole.entities.MasterAufgabe.filter({
-        activity_id: activityId,
-      });
-      if (!masters || masters.length === 0) {
-        effectiveIsComplete = false;
-      }
-    }
-
+    // Wahrheitsprüfung (`supports_master` → MasterAufgabe-Existenz) und
+    // Roll-up auf `Lernpakete.is_complete` laufen ab Variante C (§17)
+    // ZENTRAL in der Entity-Automation `lernpaketAggregateGuardian` –
+    // unabhängig davon, ob das Update über diese Function oder direkt
+    // über das SDK reinkommt. Diese Function reicht den Frontend-Wert
+    // 1:1 durch; die Automation überschreibt ihn ggf. mit `false`.
     await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(activityId, {
       field_values: fieldValues,
-      is_complete: effectiveIsComplete
+      is_complete: true,
     });
-
-    // 8b. ✅ Roll-up auf `Lernpakete.is_complete` (siehe Logbuch §17).
-    // Inline-Kopie aus functions/utils/lernpaketRollup.js – Single Source
-    // of Truth liegt dort, NO-LOCAL-IMPORTS-Regel verbietet den Import.
-    // Bei Änderungen MUSS die Utility-Datei mitgepflegt werden.
-    //
-    // WICHTIG: Master-Approval-Status (`content_status === 'approved'`)
-    // ist hier KEINE Bedingung mehr. Vollständigkeit und Export-Freigabe
-    // sind getrennte Konzepte (siehe DoD-Korrektur 2026-04-27 in §17).
-    // Die Vollständigkeitsprüfung sitzt jetzt vollständig in der
-    // Aktivitäts-Ebene oben (`effectiveIsComplete`).
-    try {
-      const [siblingActivities, paket] = await Promise.all([
-        base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
-          lernpaket_id: aktivitaet.lernpaket_id,
-        }),
-        base44.asServiceRole.entities.Lernpakete.get(aktivitaet.lernpaket_id),
-      ]);
-      const living = (siblingActivities || []).filter(
-        (a) => a.sync_status !== 'to_delete'
-      );
-      // Frisch geschriebenen Wert dieser Activity im Set spiegeln
-      // (kein Stale-Read).
-      const allActivitiesComplete = living.every((a) =>
-        a.id === activityId ? effectiveIsComplete === true : a.is_complete === true
-      );
-      const isComplete = living.length > 0 && allActivitiesComplete;
-      if (paket && paket.is_complete !== isComplete) {
-        await base44.asServiceRole.entities.Lernpakete.update(
-          aktivitaet.lernpaket_id,
-          { is_complete: isComplete }
-        );
-      }
-    } catch (rollupErr) {
-      // Roll-up-Fehler sollen das Activity-Update nicht zurückrollen.
-      console.error('[updateActivitySecure] Lernpaket roll-up failed:', rollupErr?.message);
-    }
 
     // 9. ✅ Audit-Log schreiben (SUCCESS)
     try {

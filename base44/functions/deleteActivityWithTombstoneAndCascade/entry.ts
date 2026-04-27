@@ -249,37 +249,12 @@ Deno.serve(async (req) => {
       is_dirty_since_export: true,
     });
 
-    // ── 8b. Roll-up auf `Lernpakete.is_complete` (siehe Logbuch §17) ──
-    // Tombstones zählen nicht mehr als "lebende" Aktivität. Wenn die
-    // gelöschte Aktivität die letzte unvollständige war, kann das Paket
-    // jetzt grün sein – und umgekehrt. Inline-Kopie aus
-    // functions/utils/lernpaketRollup.js (NO-LOCAL-IMPORTS).
-    //
-    // WICHTIG: Master-Approval-Status ist hier KEINE Bedingung mehr
-    // (DoD-Korrektur 2026-04-27 in §17). Vollständigkeit und Export-
-    // Freigabe sind getrennte Konzepte – die Vollständigkeitsprüfung
-    // sitzt vollständig auf Aktivitäts-Ebene (`is_complete`).
-    try {
-      const [siblingActivities, paketRecord] = await Promise.all([
-        base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
-          lernpaket_id: lernpaketId,
-        }),
-        base44.asServiceRole.entities.Lernpakete.get(lernpaketId),
-      ]);
-      // Eigene Tombstone-Markierung sofort spiegeln (kein Stale-Read).
-      const living = (siblingActivities || []).filter(
-        (a) => a.id !== activity_id && a.sync_status !== 'to_delete'
-      );
-      const allActivitiesComplete = living.every((a) => a.is_complete === true);
-      const isComplete = living.length > 0 && allActivitiesComplete;
-      if (paketRecord && paketRecord.is_complete !== isComplete) {
-        await base44.asServiceRole.entities.Lernpakete.update(lernpaketId, {
-          is_complete: isComplete,
-        });
-      }
-    } catch (rollupErr) {
-      console.error('[deleteActivityWithTombstoneAndCascade] Lernpaket roll-up failed:', rollupErr?.message);
-    }
+    // ── 8b. Roll-up auf `Lernpakete.is_complete` ──
+    // Ab Variante C (§17) erledigt das die Entity-Automation
+    // `lernpaketAggregateGuardian`. Das `update`-Call oben (Schritt 8,
+    // sync_status='to_delete') triggert die Automation, die dann das
+    // Paket-Aggregat neu rechnet (Tombstones werden gefiltert). Kein
+    // Inline-Roll-up mehr nötig.
 
     console.info(
       `[deleteActivityWithTombstoneAndCascade] Activity ${activity_id} tombstoned. ` +

@@ -973,6 +973,21 @@ saubere Cockpit-UX.
 
 ## 17. Lernpaket-Vollständigkeits-Aggregat (`is_complete`) (2026-04-27)
 
+> **Status-Update 2026-04-27 (Variante C):** Die in den folgenden
+> Abschnitten beschriebene Inline-Logik in `updateActivitySecure` und
+> `deleteActivityWithTombstoneAndCascade` ist OBSOLET. Sie wurde
+> komplett in eine zentrale Entity-Automation
+> (`functions/lernpaketAggregateGuardian` auf
+> `LernpaketPhaseAktivitaet` für `create` + `update`) verschoben.
+> Grund: Das Frontend ruft `updateActivitySecure` faktisch nicht mehr
+> auf, sondern speichert direkt über das SDK. Inline-Roll-ups in
+> einzelnen Endpunkten sind damit blind. Variante C ist die
+> Übergangs-Form des in §17 skizzierten DB-Trigger-Modells und gilt
+> für ALLE Save-Pfade (SDK-direct, secure-Endpunkte, zukünftige
+> Imports). Der ursprüngliche Abschnitt bleibt aus Forensik-Gründen
+> unten erhalten – mit dem Wissen, dass Schritte 1–4 nun in der
+> Automation leben, nicht mehr inline.
+
 ### Problem
 
 Tab 4 zeigt für eine einzelne Aktivität "Vollständig", aber das
@@ -1049,18 +1064,38 @@ generated-column-Spiegel auf `lernpaket_phase_aktivitaet`.
 liest ausschließlich aus diesem Feld – keine clientseitige Aggregation
 mehr.
 
-#### Backend-Roll-up
+#### Backend-Roll-up (Variante C, ab 2026-04-27)
 
-Die Aggregat-Berechnung lebt zentral in
-`functions/utils/lernpaketRollup.js` (Single Source of Truth, `recalculateLernpaketComplete`).
-Wegen der NO-LOCAL-IMPORTS-Regel (siehe §4b) wird der Block INLINE in
-jeden konsumierenden Endpunkt kopiert. Aktuelle Inline-Kopien:
+Die Aggregat-Berechnung lebt in einer **Entity-Automation** auf
+`LernpaketPhaseAktivitaet (create + update)`, die die Function
+`functions/lernpaketAggregateGuardian` triggert. Die Automation läuft
+unabhängig davon, auf welchem Pfad der Frontend-Save kommt
+(SDK-direct, `updateActivitySecure`, Tombstone-Update aus
+`deleteActivityWithTombstoneAndCascade`, Bulk-Imports …).
 
-| Endpunkt | Auslöser |
+| Trigger | Auslöser |
 |---|---|
-| `updateActivitySecure` | Tab 4 "Speichern & Fertig" auf einer Aktivität – inkl. Server-seitiger Wahrheitsprüfung (`supports_master`) |
-| `deleteActivityWithTombstoneAndCascade` | Tab 3 löscht eine Aktivität (Tombstone) |
-| ~~`approveMasterAufgabe`~~ | Bewusst KEIN Roll-up mehr (DoD-Korrektur 2026-04-27) |
+| `LernpaketPhaseAktivitaet.create` | Neue Aktivität wird einer Phase zugeordnet |
+| `LernpaketPhaseAktivitaet.update` | Speichern, Tombstone, jeder andere Update-Pfad |
+| ~~`approveMasterAufgabe`~~ | Kein Aggregat-Effekt (DoD-Korrektur, §11) |
+| `MasterAufgabe.create / .delete` | **Bekannte Lücke**, siehe unten |
+
+**Vorherige Inline-Kopien (entfernt 2026-04-27):**
+- `functions/updateActivitySecure` – Wahrheitsprüfung + Roll-up entfernt.
+- `functions/deleteActivityWithTombstoneAndCascade` – Roll-up entfernt
+  (das `update`-Call mit `sync_status='to_delete'` triggert die
+  Automation, die das Paket-Aggregat neu rechnet).
+- `functions/utils/lernpaketRollup.js` – Datei gelöscht.
+
+**Bekannte Lücke (akzeptiert):** Wird eine MasterAufgabe direkt
+erstellt oder gelöscht (z. B. „Erste Aufgabe erstellen" in Tab 4),
+ohne dass auch die zugehörige Activity ein `update` bekommt, läuft die
+Automation NICHT. Die Wahrheitsprüfung greift erst beim nächsten
+Activity-Save. In der Praxis unkritisch, weil das Anlegen einer
+MasterAufgabe in Tab 4 typischerweise direkt von einem
+Activity-Update begleitet wird (Aufgabentext-Save, Lock-Release etc.).
+Bei Bedarf zusätzliche Automation auf `MasterAufgabe (create + delete)`
+ergänzen, die das jeweilige `activity_id`-Paket touched.
 
 Eigenschaften des Roll-ups:
 
@@ -1167,10 +1202,32 @@ FOR EACH ROW EXECUTE FUNCTION enforce_master_existence_on_complete();
 - [ ] Trigger `recalc_lernpaket_is_complete` aktiv (nur auf
       `lernpaket_phase_aktivitaet`, NICHT auf `master_aufgabe`).
 - [ ] Trigger `enforce_master_existence_on_complete` aktiv – ersetzt
-      die Inline-Wahrheitsprüfung in `updateActivitySecure`.
-- [ ] Inline-Kopien aus `updateActivitySecure` und
-      `deleteActivityWithTombstoneAndCascade` entfernt.
-- [ ] `functions/utils/lernpaketRollup.js` gelöscht.
+      die Wahrheitsprüfung aus `lernpaketAggregateGuardian`.
+- [x] Inline-Kopien aus `updateActivitySecure` und
+      `deleteActivityWithTombstoneAndCascade` entfernt (2026-04-27).
+- [x] `functions/utils/lernpaketRollup.js` gelöscht (2026-04-27).
+- [x] Variante C: Entity-Automation `lernpaketAggregateGuardian`
+      übernimmt Wahrheitsprüfung + Roll-up zentral (2026-04-27).
+- [ ] Entity-Automation entfernt, sobald die DB-Trigger live sind.
 - [ ] Frontend bleibt unverändert – liest weiterhin
       `paket.is_complete`, nur die Quelle des Schreibens wandert von
       App-Code in DB-Trigger.
+
+### Folge-Ticket: `updateActivitySecure` aufräumen
+
+Audit 2026-04-27: Das Frontend ruft `updateActivitySecure` an keiner
+Stelle mehr auf (alle Save-Pfade gehen direkt über
+`base44.entities.LernpaketPhaseAktivitaet.update(...)`). Damit hat
+die Function aktuell keinen Konsumenten. Sie wurde NICHT entfernt,
+weil sie ggf. extern (Webhooks, Skripte) referenziert sein könnte und
+weil die enthaltene RBAC-Logik als Referenz für eine spätere
+Hardening-Welle nützlich bleibt. Empfohlenes Vorgehen für das
+Folge-Ticket:
+
+1. Repo-weite Suche `invoke('updateActivitySecure'` / `"updateActivitySecure"`.
+2. Logs prüfen, ob die Function in den letzten 30 Tagen aufgerufen wurde.
+3. Bei null Treffern: Function löschen und diesen Abschnitt entfernen.
+4. Falls externe Konsumenten: nur die Function als `410 Gone` markieren
+   und die RBAC-Logik in einen Utility-Block extrahieren, den
+   `lernpaketAggregateGuardian` (oder ein zukünftiger zentraler
+   Save-Endpunkt) inline mitbringt.
