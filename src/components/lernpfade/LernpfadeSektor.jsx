@@ -20,7 +20,6 @@
 import React from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { GripVertical, Trash2, X, Plus } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { getAufgabenTyp, ITEM_TYPE } from '@/lib/aufgabenTypen';
 import SystemBausteinPill from '@/components/lernpfade/SystemBausteinPill';
@@ -229,7 +228,9 @@ export default function LernpfadeSektor({
 
   return (
     <div className="rounded-lg border border-border bg-card/80 p-3 space-y-2">
-      {/* Header */}
+      {/* Header — Sektor-Titel wird automatisch aus Einheit/Lerntyp/Typ
+          abgeleitet und nicht mehr per Input editiert. Bei Arbeitsphasen
+          steht der Themenfeld-Titel bereits im headerLabel. */}
       <div className="flex items-center gap-2 flex-wrap">
         <span
           className="text-[11px] font-semibold uppercase tracking-wide text-foreground bg-secondary px-2 py-0.5 rounded shrink-0"
@@ -237,13 +238,7 @@ export default function LernpfadeSektor({
         >
           {headerLabel}
         </span>
-        <Input
-          value={sektor.titel || ''}
-          placeholder="Titel des Sektors"
-          onChange={(e) => onPatch?.(sektor.sektor_id, { titel: e.target.value })}
-          disabled={readOnly}
-          className="h-7 text-sm flex-1 min-w-[140px]"
-        />
+        <div className="flex-1" />
         {!readOnly && (
           <Button
             type="button"
