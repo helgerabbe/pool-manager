@@ -126,11 +126,6 @@ function MasterSubItem({ master, index, klone, selectedItem, onSelect, catalogEn
            {isReleased && (
              <CheckCircle2 className="w-3 h-3 shrink-0 text-green-600" title="Freigegeben" />
            )}
-           {klone.length > 0 && (
-             <span className="text-[10px] bg-primary/10 text-primary px-1 py-0.5 rounded shrink-0">
-               {klone.length}
-             </span>
-           )}
          </button>
        </div>
 
@@ -170,9 +165,11 @@ function ActivitySidebarItem({
     const lockedByOther = isActivityLockedByOther(activity, myEmail);
     const showChildren = isActivitySelected || hasSelectedDescendant;
 
-    // Konsistente Farb-Logik: Grün wenn freigegeben, Orange wenn Entwurf
-    const isReleased = activity.content_status === 'approved';
-    const textColor = isReleased ? 'text-green-600' : 'text-orange-600';
+    // Farb-Logik: Aktivitätsname grün, wenn die Aktivität vollständig ist,
+    // sonst orange (= unfertig). Maßgeblich ist das vom Backend gepflegte
+    // Aggregat-Flag `is_complete` (siehe Logbuch §17).
+    const isComplete = activity.is_complete === true;
+    const textColor = isComplete ? 'text-green-600' : 'text-orange-600';
 
     return (
       <div>
@@ -189,11 +186,6 @@ function ActivitySidebarItem({
           <span className="flex-1 truncate">{aktivitaetName}</span>
           {lockedByOther && !isActivitySelected && (
             <Lock className="w-3 h-3 text-amber-500 shrink-0" title={`Gesperrt von ${activity.locked_by_user}`} />
-          )}
-          {masterAufgaben.length > 0 && (
-            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded shrink-0">
-              {masterAufgaben.length}M
-            </span>
           )}
         </button>
 
@@ -261,13 +253,21 @@ function SidebarLernpaketFolder({
          <Package className={cn("w-4 h-4 shrink-0", isActiveLocked ? "text-orange-500" : "text-amber-500")} />
          <span className="flex-1 truncate">{lernpaket.titel_des_pakets}</span>
          {isActiveLocked && <PenLine className="w-3.5 h-3.5 text-orange-500 shrink-0 animate-pulse" />}
-         <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-           paketActivities.length === 0 ? 'bg-red-100 text-red-700' : 
-           paketActivities.length <= 2 ? 'bg-amber-100 text-amber-700' : 
-           'bg-green-100 text-green-700'
-         }`}>
-           {paketActivities.length}
-         </div>
+         {/* Einheitliches Farbschema (analog Tab 3 SidebarTree):
+             grau = leer, grün = alle Aktivitäten vollständig, gelb = teilweise. */}
+         {(() => {
+           const total = paketActivities.length;
+           const completeCount = paketActivities.filter(a => a.is_complete === true).length;
+           const pillClass =
+             total === 0 ? 'bg-slate-200 text-slate-700'
+             : completeCount === total ? 'bg-green-500 text-white'
+             : 'bg-amber-400 text-white';
+           return (
+             <div className={cn('w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0', pillClass)}>
+               {total}
+             </div>
+           );
+         })()}
        </button>
 
       {isOpen && (
