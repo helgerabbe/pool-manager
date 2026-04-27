@@ -239,11 +239,16 @@ function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedI
           )}
         >
           <FolderOpen className={cn('w-3.5 h-3.5 shrink-0', isSammelbecken ? 'text-slate-500' : 'text-amber-500')} />
-          <span className="truncate flex-1">{themenfeld.titel}</span>
-          {!isSelected && !isSammelbecken && (
-            <AmpelDot status={hatUnvollstaendigeAktivitaet ? 'red' : 'green'} size="md" />
-          )}
-
+          <span
+            className={cn(
+              'truncate flex-1',
+              !isSelected && !isSammelbecken && lernpakete.length > 0 && (
+                hatUnvollstaendigeAktivitaet ? 'text-red-600' : 'text-green-600'
+              )
+            )}
+          >
+            {themenfeld.titel}
+          </span>
         </button>
       </div>
 
@@ -296,8 +301,9 @@ function AmpelLegende() {
         Leer
       </span>
       <span className="flex items-center gap-1.5">
-        <span className="w-2 h-2 rounded-full bg-red-500 ring-2 ring-red-200" />
-        Themenfeld unvollständig
+        <span className="font-semibold text-red-600">Themenfeld</span>
+        <span className="text-muted-foreground">/</span>
+        <span className="font-semibold text-green-600">Themenfeld</span>
       </span>
     </div>
   );
