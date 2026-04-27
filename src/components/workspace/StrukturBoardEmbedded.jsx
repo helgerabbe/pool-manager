@@ -327,7 +327,7 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
            <div
              ref={provided.innerRef}
              {...provided.droppableProps}
-             className={cn('flex-1 p-2 space-y-1.5 min-h-[120px] transition-colors overflow-hidden', snapshot.isDraggingOver && 'bg-primary/5')}
+             className={cn('flex-1 p-2 space-y-1.5 min-h-[120px] transition-colors overflow-y-auto', snapshot.isDraggingOver && 'bg-primary/5')}
            >
             {pakete.map((paket, index) => (
               <PaketKarte key={paket.id} paket={paket} index={index} onDelete={onDeletePaket} onEdit={onEditPaket} compact={compact} readOnly={readOnly} istLesemodus={istLesemodus} />
