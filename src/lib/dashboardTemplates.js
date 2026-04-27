@@ -49,6 +49,8 @@ const B = Object.freeze({
   zwischentest: 'sys_zwischentest',
   examRegister: 'sys_exam_register',
   externalTest: 'sys_external_test',
+  // Standard-Anker (statisch, keine Drop-Zone)
+  themenfeldIntro: 'sys_themenfeld_intro',
   // Platzhalter
   pInfo: 'sys_platzhalter_info',
   pHandlung: 'sys_platzhalter_handlung',
@@ -89,14 +91,14 @@ const MINIMALIST = [
     titel: 'Erste Erarbeitungsphase',
     modus: 'sequenziell',
     sektor_typ: SEKTOR_TYP.ARBEITSPHASE,
-    items: [sys(B.pInfo), sys(B.pHandlung), sys(B.pMoodleBuendel)],
+    items: [sys(B.themenfeldIntro), sys(B.pHandlung), sys(B.pMoodleBuendel)],
   },
   {
     sektor_id: 'tpl_min_sec3',
     titel: 'Zwischentest',
     modus: 'sequenziell',
     sektor_typ: SEKTOR_TYP.ZWISCHENTEST,
-    items: [sys(B.pInfo), sys(B.pZwischentest)],
+    items: [sys(B.themenfeldIntro), sys(B.pZwischentest)],
   },
 ];
 
@@ -128,7 +130,7 @@ const PRAGMATIKER = [
     titel: 'Erarbeitungs- und Trainingsphase',
     modus: 'sequenziell',
     sektor_typ: SEKTOR_TYP.ARBEITSPHASE,
-    items: [sys(B.pInfo), sys(B.pHandlung), sys(B.pMoodleBuendel), sys(B.pBrianBuendel)],
+    items: [sys(B.themenfeldIntro), sys(B.pHandlung), sys(B.pMoodleBuendel), sys(B.pBrianBuendel)],
   },
   {
     sektor_id: 'tpl_prag_sec3',
@@ -168,7 +170,7 @@ const EHRGEIZIG = [
     titel: 'Erarbeitungs- und Trainingsphase',
     modus: 'sequenziell',
     sektor_typ: SEKTOR_TYP.ARBEITSPHASE,
-    items: [sys(B.pInfo), sys(B.pHandlung), sys(B.pMoodleBuendel), sys(B.pBrianBuendel)],
+    items: [sys(B.themenfeldIntro), sys(B.pHandlung), sys(B.pMoodleBuendel), sys(B.pBrianBuendel)],
   },
   {
     sektor_id: 'tpl_ehr_sec3',
