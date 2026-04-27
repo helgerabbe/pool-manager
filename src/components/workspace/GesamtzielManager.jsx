@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Plus, Trash2, Loader2, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import HelpBadge from '@/components/ui/HelpBadge';
 
 export default function GesamtzielManager({ einheitId, gesamtziele = [], onUpdate }) {
   const [ziele, setZiele] = useState(gesamtziele);
@@ -65,7 +66,12 @@ export default function GesamtzielManager({ einheitId, gesamtziele = [], onUpdat
 
   return (
     <div className="space-y-3">
-      <Label>Gesamtziele der Einheit</Label>
+      <Label className="flex items-center gap-1.5">
+        Gesamtziele der Einheit
+        <HelpBadge
+          text="Gesamtziele sind die großen Grobziele dieser Einheit – nicht alle einzelnen Lernziele, die in der Einheit vorkommen. Sie bilden später die Kompetenzkarte und beschreiben in wenigen Sätzen, was Schüler nach Abschluss der Einheit übergreifend können."
+        />
+      </Label>
       
       {/* Bestehende Ziele */}
       {ziele.length > 0 && (

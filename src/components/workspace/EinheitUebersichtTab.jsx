@@ -464,7 +464,12 @@ export default function EinheitUebersichtTab({
                 {/* Gesamtziele im Lesemodus */}
                 {einheit.gesamtziele?.length > 0 && (
                   <div className="space-y-2 pt-3 mt-1 border-t">
-                    <Label className="text-muted-foreground">Gesamtziele</Label>
+                    <Label className="text-muted-foreground flex items-center gap-1.5">
+                      Gesamtziele
+                      <HelpBadge
+                        text="Gesamtziele sind die großen Grobziele dieser Einheit – nicht alle einzelnen Lernziele, die in der Einheit vorkommen. Sie bilden später die Kompetenzkarte und beschreiben in wenigen Sätzen, was Schüler nach Abschluss der Einheit übergreifend können."
+                      />
+                    </Label>
                     <div className="space-y-1.5">
                       {einheit.gesamtziele.map((ziel, idx) => (
                         <div key={idx} className="flex items-start gap-2.5 p-2.5 rounded-lg border bg-blue-50 border-blue-200">
