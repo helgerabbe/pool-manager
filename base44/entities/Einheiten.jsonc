@@ -120,7 +120,7 @@
     },
     "lernpfade_konfiguration": {
       "type": "object",
-      "description": "JSON-Mapping der Lernpfade f\u00fcr die vier Lerntypen. Struktur ab Dashboard-Epic Phase 1: { <lerntyp>: [ { sektor_id, titel, modus, items: [ { instance_id, type: 'aufgabe'|'system', ref_id, parent_instance_id?: string|null } ] } ] }. instance_id = stabile UUID pro Dashboard-Eintrag (kein Atom!), parent_instance_id verweist auf das B\u00fcndel-Item (System-Baustein mit baustein_modus='bundle_1ton'), in dem das Item als Child liegt. Root-Items haben parent_instance_id=null. Max. 1 Ebene Verschachtelung (B\u00fcndel-in-B\u00fcndel verboten). 1:1-Zuordnung pro Lerntyp: dieselbe aufgabe_id darf pro Lerntyp nur einmal im Dashboard liegen (egal ob Root oder Child). Legacy-Format ohne instance_id wird durch migrateLernpfadeToInstanceIds einmalig gebackfilled.",
+      "description": "JSON-Mapping der Lernpfade f\u00fcr die vier Lerntypen. Struktur: { <lerntyp>: [ { sektor_id, titel, modus, items: [ { instance_id, type: 'aufgabe'|'system', ref_id, parent_instance_id?: string|null, bundle_config?: { erforderliche_anzahl: number } } ] } ] }. instance_id = stabile UUID pro Dashboard-Eintrag. parent_instance_id verweist auf das B\u00fcndel-Item. Root-Items haben parent_instance_id=null. Max. 1 Ebene Verschachtelung. bundle_config existiert NUR an B\u00fcndel-Items des Aufgabenb\u00fcndels (sys_platzhalter_brian_buendel) und steuert dort die geforderte Mindest-Bearbeitungsanzahl. Fehlt bundle_config oder erforderliche_anzahl, gilt als Default 'alle Children m\u00fcssen bearbeitet werden'. 1:1-Zuordnung pro Lerntyp: dieselbe aufgabe_id darf pro Lerntyp nur einmal vorkommen.",
       "additionalProperties": true,
       "default": {
         "minimalist": [],

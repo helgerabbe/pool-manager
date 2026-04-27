@@ -91,12 +91,21 @@ export const AUFGABEN_TYPEN = {
       hover: 'hover:border-amber-500 hover:bg-amber-50',
     },
   },
+  // ⚠️ DEPRECATED (Phase 4, 2026-04-27):
+  // Die Auswahl-Logik ("X von Y Aufgaben bearbeiten") wandert vom Aufgabentyp
+  // ans Bündel-Item im Lernpfad (siehe Einheiten.json: items[].bundle_config).
+  // Dieser Aufgabentyp wird NICHT mehr im Picker angeboten (nicht in
+  // AUFGABEN_TYPEN_ORDER), bleibt aber im Schema, damit bestehende Aufgaben
+  // dieses Typs nicht kaputt gehen. Sie werden vom canDrop-Validator nicht
+  // mehr in Bündel akzeptiert (kein accepted_type passt) und können von der
+  // Lehrkraft nur noch gelöscht oder in 'inhalt' migriert werden.
   auswahl_buendel: {
     value: 'auswahl_buendel',
-    label: 'Auswahl-Bündel',
+    label: 'Auswahl-Bündel (veraltet)',
     short: 'Auswahl-Bündel',
+    deprecated: true,
     description:
-      'Brian-Bündel mit Wahlpflicht – der Schüler bearbeitet eine vorgegebene Anzahl aus mehreren Aufgaben.',
+      'VERALTET: Die Auswahl-Logik (X von Y) lebt jetzt am Aufgabenbündel im Lernpfad. Bestehende Aufgaben dieses Typs sollten gelöscht oder in eine normale Inhalts-Aktivität umgewandelt werden.',
     icon: ListChecks,
     color: {
       ring: 'ring-amber-400',
