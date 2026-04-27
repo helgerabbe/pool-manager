@@ -335,13 +335,18 @@ export default function EinheitUebersichtTab({
 
     setIsSaving(true);
     try {
+      // Hinweis: Wir schicken bewusst KEIN `version`-Feld mit.
+      // Tab 1 ist bereits durch den Edit-Lock (acquireUnitLockSecure)
+      // gegen parallele Bearbeitung geschützt – der Lock-Acquire bumpt
+      // die DB-Version aber, sodass der hier im Frontend gehaltene
+      // einheit.version-Wert garantiert veraltet wäre und einen
+      // unnötigen 409 Version-Conflict erzeugen würde.
       const result = await invokeFunction('updateEinheitSecure', {
         einheit_id: einheit.id,
         titel_der_einheit: form.titel_der_einheit,
         fach: form.fach,
         jahrgangsstufe: form.jahrgangsstufe,
         zeit_phase_id: form.zeit_phase_id || null,
-        version: einheit.version,
       });
 
       console.log('[Tab 1 Save] DB Antwort:', result?.data);
