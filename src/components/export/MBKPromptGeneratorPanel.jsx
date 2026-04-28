@@ -107,10 +107,10 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
 
   const { prompts, isLoading: promptsLoading, upsert } = useExportPrompts(einheitId);
 
-  // ── Bulk-Generate-Hook (kapselt auch Lookup, Sync-Check und Block-Check) ─
+  // ── Bulk-Generator + Helper-Funktionen ──────────────────────────────────
   const {
     bulkRunning,
-    runBulk: handleBulkGenerate,
+    runBulk,
     lookupPrompt,
     computeMaxTs,
     isPromptOutOfSync,
@@ -128,28 +128,6 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
     prompts,
     upsert,
   });
-
-  // ── Sektion 4: Lernpakete nach Themenfeld gruppiert + sortiert. ─────────
-  // MUSS vor dem Early-Return stehen (Hook-Order-Regel).
-  const themenfelderSorted = useMemo(
-    () => [...themenfelder].sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)),
-    [themenfelder]
-  );
-  const lernpaketeSorted = useMemo(
-    () => [...lernpakete].sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0)),
-    [lernpakete]
-  );
-  const lernpaketGroups = useMemo(() => {
-    const groups = themenfelderSorted.map((tf) => ({
-      themenfeld: tf,
-      pakete: lernpaketeSorted.filter((lp) => lp.themenfeld_id === tf.id),
-    }));
-    const orphans = lernpaketeSorted.filter((lp) => !lp.themenfeld_id || !themenfelderSorted.some((tf) => tf.id === lp.themenfeld_id));
-    if (orphans.length > 0) {
-      groups.push({ themenfeld: null, pakete: orphans });
-    }
-    return groups.filter((g) => g.pakete.length > 0);
-  }, [themenfelderSorted, lernpaketeSorted]);
 
   if (!einheitId || !einheit) {
     return (
@@ -211,7 +189,28 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
     );
   });
 
-  // ── Sektion 4: Erstellungspakete (Render-Helfer) ─────────────────────────
+  // ── Sektion 4: Erstellungspakete ────────────────────────────────────────
+  // Lernpakete nach Themenfeld gruppiert + sortiert.
+  const themenfelderSorted = useMemo(
+    () => [...themenfelder].sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)),
+    [themenfelder]
+  );
+  const lernpaketeSorted = useMemo(
+    () => [...lernpakete].sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0)),
+    [lernpakete]
+  );
+  const lernpaketGroups = useMemo(() => {
+    const groups = themenfelderSorted.map((tf) => ({
+      themenfeld: tf,
+      pakete: lernpaketeSorted.filter((lp) => lp.themenfeld_id === tf.id),
+    }));
+    const orphans = lernpaketeSorted.filter((lp) => !lp.themenfeld_id || !themenfelderSorted.some((tf) => tf.id === lp.themenfeld_id));
+    if (orphans.length > 0) {
+      groups.push({ themenfeld: null, pakete: orphans });
+    }
+    return groups.filter((g) => g.pakete.length > 0);
+  }, [themenfelderSorted, lernpaketeSorted]);
+
   const renderLernpaketItem = (lp) => {
     const existing = lookupPrompt('erstellungspaket', lp.id);
     const maxTs = computeMaxTs('erstellungspaket', lp.id);
@@ -297,7 +296,7 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
           <Button
             size="sm"
             variant="default"
-            onClick={handleBulkGenerate}
+            onClick={runBulk}
             disabled={bulkRunning}
             className="gap-1.5"
             title="Generiert alle Standard-Prompts neu (überspringt manuell angepasste und blockierte)."
