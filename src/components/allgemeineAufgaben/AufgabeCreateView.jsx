@@ -14,19 +14,18 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Save, Loader2, Info } from 'lucide-react';
+import { Save, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAufgabenTyp } from '@/lib/aufgabenTypen';
 import AufgabeLockBanner from '@/components/allgemeineAufgaben/AufgabeLockBanner';
 import { useAufgabeLock } from '@/hooks/useAufgabeLock';
 
-// Typ-spezifische Sub-Komponenten (Sprint C – DRY-Refactoring)
+// Typ-spezifische Sub-Komponenten — die App reduziert die Aufgaben-Typen in
+// Ebene 2 auf 'inhalt' (Brian-Aufgabe) und 'handlung' (Handlungsaufgabe);
+// die früheren Typen Bündel/Prozess/Projekt-Anker leben jetzt im
+// Lernpfad-Dashboard als System-Bausteine bzw. Bündel-Items.
 import InhaltSection from '@/components/allgemeineAufgaben/aufgabeSections/InhaltSection';
-import ProzessSection from '@/components/allgemeineAufgaben/aufgabeSections/ProzessSection';
-import BuendelSection from '@/components/allgemeineAufgaben/aufgabeSections/BuendelSection';
-import AuswahlBuendelSection from '@/components/allgemeineAufgaben/aufgabeSections/AuswahlBuendelSection';
 import HandlungSection from '@/components/allgemeineAufgaben/aufgabeSections/HandlungSection';
-import ProjektAnkerSection from '@/components/allgemeineAufgaben/aufgabeSections/ProjektAnkerSection';
 
 // ── Default-Form ──────────────────────────────────────────────────────────────
 const EMPTY_FORM = {
@@ -40,48 +39,30 @@ const EMPTY_FORM = {
   ergebnis_dateiformat: '',
   erwartungshorizont: '',
   aufgaben_typ: 'inhalt',
-  verlinkte_lernpaket_ids: [],
-  verlinkte_projekt_ids: [],
-  verlinkte_aufgaben_ids: [],
-  lernpaket_logik: 'standard',
-  erforderliche_anzahl: 0,
-  interne_reihenfolge: 'frei',
   hinweise_zum_material: '',
 };
 
 // ── Validierung pro Aufgaben-Typ ──────────────────────────────────────────────
 function validateForm(formData) {
   const typ = formData.aufgaben_typ || 'inhalt';
-  if (typ === 'buendel') return (formData.verlinkte_lernpaket_ids || []).length > 0;
-  if (typ === 'projekt_anker') return (formData.verlinkte_projekt_ids || []).length > 0;
-  if (typ === 'prozess') return !!formData.aufgabenstellung?.trim();
   if (typ === 'handlung') return !!formData.aufgabenstellung?.trim();
-  if (typ === 'auswahl_buendel') return Number.isFinite(formData.erforderliche_anzahl);
   // 'inhalt' (default): Text ODER Bild
   return !!(formData.aufgabenstellung?.trim() || formData.aufgaben_bild_url);
 }
 
 function invalidMessageForType(typ) {
-  switch (typ) {
-    case 'buendel':
-      return 'Bitte mindestens ein Lernpaket auswählen.';
-    case 'projekt_anker':
-      return 'Bitte mindestens ein Ebene-3-Projekt auswählen.';
-    case 'prozess':
-      return 'Bitte einen Aufgabentext eingeben.';
-    case 'handlung':
-      return 'Bitte einen Aufgabentext / Auftrag eingeben.';
-    case 'auswahl_buendel':
-      return 'Bitte eine Mindestanzahl angeben (0 = alle).';
-    default:
-      return 'Bitte Text eingeben oder Bild hochladen.';
-  }
+  if (typ === 'handlung') return 'Bitte einen Aufgabentext / Auftrag eingeben.';
+  return 'Bitte Text eingeben oder Bild hochladen.';
 }
 
 // ── Payload-Builder: nur die für den Typ relevanten Felder ────────────────────
 function buildPayload(formData, einheitId, defaultAnforderungsebene, isUpdate) {
+  // Legacy-Typen (buendel/prozess/projekt_anker/auswahl_buendel) werden beim
+  // Bearbeiten transparent auf 'inhalt' migriert — der Picker bietet sie
+  // nicht mehr an.
+  const typ = formData.aufgaben_typ === 'handlung' ? 'handlung' : 'inhalt';
   const base = {
-    aufgaben_typ: formData.aufgaben_typ || 'inhalt',
+    aufgaben_typ: typ,
     themenfeld_id: formData.themenfeld_id || null,
     titel: formData.titel || null,
     aufgabenstellung: formData.aufgabenstellung || '',
@@ -91,47 +72,22 @@ function buildPayload(formData, einheitId, defaultAnforderungsebene, isUpdate) {
     base.anforderungsebene = defaultAnforderungsebene;
   }
 
-  switch (formData.aufgaben_typ) {
-    case 'buendel':
-      return {
-        ...base,
-        verlinkte_lernpaket_ids: formData.verlinkte_lernpaket_ids || [],
-        lernpaket_logik: formData.lernpaket_logik || 'standard',
-      };
-    case 'projekt_anker':
-      return {
-        ...base,
-        verlinkte_projekt_ids: formData.verlinkte_projekt_ids || [],
-        schwierigkeitsgrad: formData.schwierigkeitsgrad || null,
-      };
-    case 'auswahl_buendel':
-      return {
-        ...base,
-        verlinkte_aufgaben_ids: formData.verlinkte_aufgaben_ids || [],
-        erforderliche_anzahl: Number.isFinite(formData.erforderliche_anzahl)
-          ? formData.erforderliche_anzahl
-          : 0,
-        interne_reihenfolge: formData.interne_reihenfolge || 'frei',
-      };
-    case 'handlung':
-      return {
-        ...base,
-        hinweise_zum_material: formData.hinweise_zum_material || '',
-      };
-    case 'prozess':
-      return base;
-    case 'inhalt':
-    default:
-      return {
-        ...base,
-        aufgaben_bild_url: formData.aufgaben_bild_url || null,
-        schwierigkeitsgrad: formData.schwierigkeitsgrad || null,
-        materialien: formData.materialien || [],
-        ergebnis_form: formData.ergebnis_form || null,
-        ergebnis_dateiformat: formData.ergebnis_dateiformat || null,
-        erwartungshorizont: formData.erwartungshorizont || null,
-      };
+  if (typ === 'handlung') {
+    return {
+      ...base,
+      hinweise_zum_material: formData.hinweise_zum_material || '',
+    };
   }
+  // 'inhalt'
+  return {
+    ...base,
+    aufgaben_bild_url: formData.aufgaben_bild_url || null,
+    schwierigkeitsgrad: formData.schwierigkeitsgrad || null,
+    materialien: formData.materialien || [],
+    ergebnis_form: formData.ergebnis_form || null,
+    ergebnis_dateiformat: formData.ergebnis_dateiformat || null,
+    erwartungshorizont: formData.erwartungshorizont || null,
+  };
 }
 
 // ── Haupt-Komponente ──────────────────────────────────────────────────────────
@@ -163,13 +119,19 @@ export default function AufgabeCreateView({
       const sanitized = Object.fromEntries(
         Object.entries(initialData).filter(([, v]) => v !== null && v !== undefined)
       );
+      // Legacy-Typen transparent als 'inhalt' behandeln — alte Datensätze
+      // verlieren so im Editor nichts, werden beim nächsten Speichern aber
+      // als 'inhalt' abgelegt (Migrationsfunktion existiert zusätzlich).
+      const rawTyp = initialData.aufgaben_typ;
+      const safeTyp = rawTyp === 'handlung' ? 'handlung' : 'inhalt';
       setFormData({
         ...EMPTY_FORM,
         ...sanitized,
-        aufgaben_typ: initialData.aufgaben_typ || 'inhalt',
+        aufgaben_typ: safeTyp,
       });
     } else {
-      setFormData({ ...EMPTY_FORM, aufgaben_typ: defaultAufgabenTyp });
+      const safeDefault = defaultAufgabenTyp === 'handlung' ? 'handlung' : 'inhalt';
+      setFormData({ ...EMPTY_FORM, aufgaben_typ: safeDefault });
     }
   }, [open, initialData, defaultAufgabenTyp]);
 
@@ -230,62 +192,24 @@ export default function AufgabeCreateView({
 
   // ── Dispatcher: typ-spezifische Section rendern ─────────────────────────────
   const renderTypSection = () => {
-    switch (typ) {
-      case 'inhalt':
-        return (
-          <InhaltSection
-            formData={formData}
-            set={set}
-            onBildUploadingChange={setBildUploading}
-            onMaterialUploadingChange={setMaterialUploading}
-          />
-        );
-      case 'prozess':
-        return <ProzessSection formData={formData} set={set} />;
-      case 'buendel':
-        return (
-          <BuendelSection
-            einheitId={einheitId}
-            formData={formData}
-            set={set}
-            beschreibung={formData.aufgabenstellung}
-            onBeschreibung={(val) => set('aufgabenstellung', val)}
-          />
-        );
-      case 'auswahl_buendel':
-        return (
-          <AuswahlBuendelSection
-            einheitId={einheitId}
-            excludeAufgabeId={initialData?.id || null}
-            formData={formData}
-            set={set}
-            beschreibung={formData.aufgabenstellung}
-            onBeschreibung={(val) => set('aufgabenstellung', val)}
-          />
-        );
-      case 'handlung':
-        return (
-          <HandlungSection
-            formData={formData}
-            set={set}
-            beschreibung={formData.aufgabenstellung}
-            onBeschreibung={(val) => set('aufgabenstellung', val)}
-          />
-        );
-      case 'projekt_anker':
-        return (
-          <ProjektAnkerSection
-            einheitId={einheitId}
-            excludeAufgabeId={initialData?.id || null}
-            formData={formData}
-            set={set}
-            beschreibung={formData.aufgabenstellung}
-            onBeschreibung={(val) => set('aufgabenstellung', val)}
-          />
-        );
-      default:
-        return null;
+    if (typ === 'handlung') {
+      return (
+        <HandlungSection
+          formData={formData}
+          set={set}
+          beschreibung={formData.aufgabenstellung}
+          onBeschreibung={(val) => set('aufgabenstellung', val)}
+        />
+      );
     }
+    return (
+      <InhaltSection
+        formData={formData}
+        set={set}
+        onBildUploadingChange={setBildUploading}
+        onMaterialUploadingChange={setMaterialUploading}
+      />
+    );
   };
 
   return (
@@ -301,15 +225,6 @@ export default function AufgabeCreateView({
               {aufgabenTypMeta.label}
             </span>
           </DialogTitle>
-          {typ === 'projekt_anker' && (
-            <p className="text-xs text-muted-foreground mt-1 flex items-start gap-1.5">
-              <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-violet-600" />
-              <span>
-                Tipp: Projekt-Anker liegen kognitiv meist auf Ebene 2 (Transfer), verweisen aber auf
-                Projekte der Ebene 3.
-              </span>
-            </p>
-          )}
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-5">

@@ -1,12 +1,13 @@
 /**
  * AufgabenTypPicker.jsx
  *
- * Modaler 4-Kacheln-Picker: vorgeschaltet vor "+ Neue Aufgabe" in Tab 5 (Ebene 2).
- * Wählt den aufgaben_typ (inhalt | buendel | prozess | projekt_anker) und übergibt
- * ihn als Initial-State an AufgabeCreateView.
+ * Modaler Picker (2 Kacheln): vorgeschaltet vor "+ Neue Aufgabe" in Tab 5
+ * (Ebene 2). Wählt den aufgaben_typ ('inhalt' = Brian-Aufgabe, 'handlung' =
+ * Handlungsaufgabe mit physischem Material) und übergibt ihn als
+ * Initial-State an AufgabeCreateView.
  *
- * Wird in Ebene 3 NICHT angezeigt – dort wird aufgaben_typ automatisch auf 'inhalt'
- * gesetzt (siehe AllgemeineAufgabenView).
+ * Wird in Ebene 3 NICHT angezeigt – dort wird aufgaben_typ automatisch auf
+ * 'inhalt' gesetzt (siehe AllgemeineAufgabenView).
  */
 
 import React from 'react';
@@ -47,7 +48,7 @@ export default function AufgabenTypPicker({ open, onOpenChange, onSelect }) {
         <DialogHeader>
           <DialogTitle>Welche Art von Aufgabe möchten Sie erstellen?</DialogTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            Wählen Sie eine Kategorie. Die kognitive Anforderungsebene legen Sie anschließend im Editor fest.
+            Brauchen die Schüler dafür physisches Material in der Realität? Dann „Handlungsaufgabe". Sonst „Brian-Aufgabe" (rein digital).
           </p>
         </DialogHeader>
 

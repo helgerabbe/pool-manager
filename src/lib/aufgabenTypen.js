@@ -1,9 +1,17 @@
 /**
  * aufgabenTypen.js
  *
- * Single Source of Truth für die vier Aufgaben-Typen einer AllgemeineAufgabe.
- * Wird in Phase 1 (Picker, Editor, Migration) und Phase 3 (Lernpfad-Dashboard, Pool, Filter-Chips)
- * gemeinsam genutzt.
+ * Single Source of Truth für die Aufgaben-Typen einer AllgemeineAufgabe.
+ *
+ * Hintergrund (April 2026): Ursprünglich gab es vier Typen
+ * (inhalt | buendel | prozess | projekt_anker), die als Workaround dienten,
+ * solange das Lernpfad-Dashboard noch nicht voll funktional war. Mit dem
+ * neuen Dashboard sind Bündel, Prozess-Guides und Projekt-Anker dort als
+ * System-Bausteine bzw. Bündel-Items abgebildet — die Aufgaben-Typ-Auswahl
+ * in Ebene 2 reduziert sich daher auf zwei intuitive Optionen für die
+ * Lehrkraft: Brian-Aufgabe (rein digital) vs. Handlungsaufgabe (mit
+ * physischem Material). Bestehende Records mit den Legacy-Typen werden via
+ * functions/migrateLegacyAufgabenTypen einmalig auf 'inhalt' gehoben.
  *
  * Achsen-Trennung:
  *   - aufgaben_typ        = funktionale/pädagogische Rolle  (diese Datei)
@@ -11,15 +19,15 @@
  *   Beide Felder sind orthogonal — siehe Spec.
  */
 
-import { Pencil, Folder, Compass, Rocket, Hand, ListChecks } from 'lucide-react';
+import { Pencil, Hand } from 'lucide-react';
 
 export const AUFGABEN_TYPEN = {
   inhalt: {
     value: 'inhalt',
-    label: 'Inhalts-Aktivität',
-    short: 'Transferaufgabe',
+    label: 'Brian-Aufgabe',
+    short: 'Brian-Aufgabe',
     description:
-      'Erstelle klassische Aufgaben (z. B. Lückentexte). Der Schüler bearbeitet die Aufgabe und gibt ein Ergebnis ab, das Brian (KI) direkt mit ihm prüft.',
+      'Rein digitale Aufgabe (z. B. Lückentext, Texteingabe). Der Schüler bearbeitet sie am Computer, Brian (KI) prüft das Ergebnis direkt.',
     icon: Pencil,
     // Tailwind-Tokens (Amber/Gold)
     color: {
@@ -34,32 +42,13 @@ export const AUFGABEN_TYPEN = {
       hover: 'hover:border-amber-500 hover:bg-amber-50',
     },
   },
-  buendel: {
-    value: 'buendel',
-    label: 'Paket-Bündel',
-    short: 'Lernpaket',
+  handlung: {
+    value: 'handlung',
+    label: 'Handlungsaufgabe',
+    short: 'Handlungsorientiert',
     description:
-      'Fasse mehrere Lernpakete aus der Ebene 1 zusammen. Ideal, um Schülern einen klaren Weg durch das Fundamentum vorzugeben.',
-    icon: Folder,
-    color: {
-      ring: 'ring-blue-400',
-      border: 'border-blue-400',
-      bg: 'bg-blue-50',
-      bgSolid: 'bg-blue-500',
-      text: 'text-blue-700',
-      textOn: 'text-white',
-      iconBg: 'bg-blue-100',
-      iconText: 'text-blue-700',
-      hover: 'hover:border-blue-500 hover:bg-blue-50',
-    },
-  },
-  prozess: {
-    value: 'prozess',
-    label: 'Prozess-Guide',
-    short: 'Prozess',
-    description:
-      'Steuere den Lernfluss mit Checkpoints oder Meilensteinen. Hier geht es nicht um Fachwissen, sondern um die Organisation des Lernens.',
-    icon: Compass,
+      'Aufgabe mit physischem Material in der Realität (z. B. Experiment, Modell). Die Lehrkraft hinterlegt Hinweise zum Material; der Schüler bestätigt die Erledigung digital.',
+    icon: Hand,
     color: {
       ring: 'ring-emerald-400',
       border: 'border-emerald-400',
@@ -72,87 +61,14 @@ export const AUFGABEN_TYPEN = {
       hover: 'hover:border-emerald-500 hover:bg-emerald-50',
     },
   },
-  handlung: {
-    value: 'handlung',
-    label: 'Handlungsaufgabe',
-    short: 'Handlungsorientiert',
-    description:
-      'Aufgabe mit physischem Material – die Lehrkraft begleitet, der Schüler bestätigt die Erledigung digital.',
-    icon: Hand,
-    color: {
-      ring: 'ring-amber-400',
-      border: 'border-amber-400',
-      bg: 'bg-amber-50',
-      bgSolid: 'bg-amber-500',
-      text: 'text-amber-700',
-      textOn: 'text-white',
-      iconBg: 'bg-amber-100',
-      iconText: 'text-amber-700',
-      hover: 'hover:border-amber-500 hover:bg-amber-50',
-    },
-  },
-  // ⚠️ DEPRECATED (Phase 4, 2026-04-27):
-  // Die Auswahl-Logik ("X von Y Aufgaben bearbeiten") wandert vom Aufgabentyp
-  // ans Bündel-Item im Lernpfad (siehe Einheiten.json: items[].bundle_config).
-  // Dieser Aufgabentyp wird NICHT mehr im Picker angeboten (nicht in
-  // AUFGABEN_TYPEN_ORDER), bleibt aber im Schema, damit bestehende Aufgaben
-  // dieses Typs nicht kaputt gehen. Sie werden vom canDrop-Validator nicht
-  // mehr in Bündel akzeptiert (kein accepted_type passt) und können von der
-  // Lehrkraft nur noch gelöscht oder in 'inhalt' migriert werden.
-  auswahl_buendel: {
-    value: 'auswahl_buendel',
-    label: 'Auswahl-Bündel (veraltet)',
-    short: 'Auswahl-Bündel',
-    deprecated: true,
-    description:
-      'VERALTET: Die Auswahl-Logik (X von Y) lebt jetzt am Aufgabenbündel im Lernpfad. Bestehende Aufgaben dieses Typs sollten gelöscht oder in eine normale Inhalts-Aktivität umgewandelt werden.',
-    icon: ListChecks,
-    color: {
-      ring: 'ring-amber-400',
-      border: 'border-amber-400',
-      bg: 'bg-amber-50',
-      bgSolid: 'bg-amber-500',
-      text: 'text-amber-700',
-      textOn: 'text-white',
-      iconBg: 'bg-amber-100',
-      iconText: 'text-amber-700',
-      hover: 'hover:border-amber-500 hover:bg-amber-50',
-    },
-  },
-  projekt_anker: {
-    value: 'projekt_anker',
-    label: 'Projekt-Anker',
-    short: 'Projekt',
-    description:
-      'Das Tor zur Ebene 3. Hier bietest du Schülern komplexe Anwendungsaufgaben zur Auswahl an, sobald sie bereit dafür sind.',
-    icon: Rocket,
-    color: {
-      ring: 'ring-violet-400',
-      border: 'border-violet-400',
-      bg: 'bg-violet-50',
-      bgSolid: 'bg-violet-500',
-      text: 'text-violet-700',
-      textOn: 'text-white',
-      iconBg: 'bg-violet-100',
-      iconText: 'text-violet-700',
-      hover: 'hover:border-violet-500 hover:bg-violet-50',
-    },
-  },
 };
 
-// Geordnete Liste in der gewünschten Anzeigereihenfolge (Picker, Filter-Chips).
-export const AUFGABEN_TYPEN_ORDER = ['inhalt', 'buendel', 'prozess', 'projekt_anker'];
+// Geordnete Liste in der Anzeigereihenfolge (Picker, Filter-Chips).
+export const AUFGABEN_TYPEN_ORDER = ['inhalt', 'handlung'];
 
 // Convenience-Getter mit sauberem Fallback auf 'inhalt'.
 export function getAufgabenTyp(value) {
   return AUFGABEN_TYPEN[value] || AUFGABEN_TYPEN.inhalt;
-}
-
-// Welche Typen sind „Meta" (= keine echten Inhaltsaufgaben)?
-export const META_AUFGABEN_TYPEN = ['buendel', 'prozess', 'projekt_anker'];
-
-export function isMetaAufgabenTyp(value) {
-  return META_AUFGABEN_TYPEN.includes(value);
 }
 
 // ── Item-Typen im Lernpfad-Sektor ────────────────────────────────────────────
