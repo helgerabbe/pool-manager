@@ -303,10 +303,32 @@ function setSektoren(konfig, lernTyp, sektoren) {
 // ── Schreibende Operationen ────────────────────────────────────────────────
 
 /**
- * Sektor anhängen.
+ * Stellt sicher, dass ein eventuell vorhandener Feedback-Sektor (sektor_typ='feedback')
+ * IMMER an letzter Stelle einer Sektor-Liste steht. Reine Sortier-Operation –
+ * berührt keine anderen Sektoren in ihrer relativen Reihenfolge.
+ *
+ * Wird von addSektor und moveSektor aufgerufen, sodass:
+ *   - neue Sektoren immer VOR Feedback eingefügt werden,
+ *   - Feedback nicht über andere Sektoren bewegt werden kann (no-op),
+ *   - andere Sektoren nicht hinter Feedback rutschen können.
+ */
+function pinFeedbackSektorToEnd(sektoren) {
+  const list = Array.isArray(sektoren) ? sektoren : [];
+  const feedbackIdx = list.findIndex((s) => s?.sektor_typ === SEKTOR_TYP.FEEDBACK);
+  if (feedbackIdx === -1 || feedbackIdx === list.length - 1) return list;
+  const next = [...list];
+  const [feedback] = next.splice(feedbackIdx, 1);
+  next.push(feedback);
+  return next;
+}
+
+/**
+ * Sektor anhängen. Feedback-Sektor wird automatisch ans Ende gepinnt –
+ * neue Sektoren landen also immer DAVOR, falls ein Feedback existiert.
  */
 export function addSektor(konfig, lernTyp, sektor = createNewSektor()) {
-  return setSektoren(konfig, lernTyp, [...getSektoren(konfig, lernTyp), normalizeSektor(sektor)]);
+  const next = [...getSektoren(konfig, lernTyp), normalizeSektor(sektor)];
+  return setSektoren(konfig, lernTyp, pinFeedbackSektorToEnd(next));
 }
 
 /**
@@ -340,9 +362,13 @@ export function moveSektor(konfig, lernTyp, sektorId, direction) {
   if (idx === -1) return konfig;
   const target = idx + direction;
   if (target < 0 || target >= sektoren.length) return konfig;
+  // Feedback-Sektor selbst darf nicht bewegt werden, und kein anderer Sektor
+  // darf über einen Feedback-Sektor hinaus tauschen.
+  if (sektoren[idx]?.sektor_typ === SEKTOR_TYP.FEEDBACK) return konfig;
+  if (sektoren[target]?.sektor_typ === SEKTOR_TYP.FEEDBACK) return konfig;
   const next = [...sektoren];
   [next[idx], next[target]] = [next[target], next[idx]];
-  return setSektoren(konfig, lernTyp, next);
+  return setSektoren(konfig, lernTyp, pinFeedbackSektorToEnd(next));
 }
 
 /**

@@ -21,6 +21,7 @@ export const SEKTOR_TYP = Object.freeze({
   ABSCHLUSSTEST: 'abschlusstest',
   PROJEKTE: 'projekte',
   INDIVIDUELL: 'individuell',
+  FEEDBACK: 'feedback',
 });
 
 export const ALL_SEKTOR_TYPEN = Object.freeze([
@@ -31,17 +32,23 @@ export const ALL_SEKTOR_TYPEN = Object.freeze([
   SEKTOR_TYP.ABSCHLUSSTEST,
   SEKTOR_TYP.PROJEKTE,
   SEKTOR_TYP.INDIVIDUELL,
+  SEKTOR_TYP.FEEDBACK,
 ]);
 
 /**
  * Singleton-Typen: dürfen pro Lerntyp nur einmal vorkommen.
  * Wird in Phase B von der "Sektor hinzufügen"-UI hart durchgesetzt.
+ *
+ * FEEDBACK ist ebenfalls Singleton: pro Lerntyp gibt es genau einen
+ * Feedback-Sektor, der zudem immer ganz am Ende des Pfads steht
+ * (siehe pinFeedbackSektorToEnd in lernpfadeUtils).
  */
 export const SINGLETON_SEKTOR_TYPEN = Object.freeze([
   SEKTOR_TYP.ONBOARDING,
   SEKTOR_TYP.UEBERBLICK,
   SEKTOR_TYP.ABSCHLUSSTEST,
   SEKTOR_TYP.PROJEKTE,
+  SEKTOR_TYP.FEEDBACK,
 ]);
 
 export const isSingletonSektorTyp = (typ) => SINGLETON_SEKTOR_TYPEN.includes(typ);
@@ -62,6 +69,7 @@ export const SEKTOR_TYP_LABELS = Object.freeze({
   [SEKTOR_TYP.ABSCHLUSSTEST]: 'Abschlusstest',
   [SEKTOR_TYP.PROJEKTE]: 'Projekte',
   [SEKTOR_TYP.INDIVIDUELL]: 'Individueller Sektor',
+  [SEKTOR_TYP.FEEDBACK]: 'Feedback',
 });
 
 export function getSektorTypLabel(typ) {

@@ -245,6 +245,21 @@ const PFLICHT_BAUSTEINE = [
     ist_aktiv: true,
     reihenfolge: 8,
   },
+  // ── Feedback-Sektor (Schüler-Rückmeldung am Ende der Einheit) ────────
+  // Statischer Anker, kein Drop-Target. Wird im Schüler-Frontend zu einem
+  // kleinen Ticketing-Formular: „Was war gut, was nicht, was können wir
+  // besser machen?" Antworten fließen ins Feedback-Postfach der Lehrkraft.
+  {
+    baustein_id: 'sys_feedback',
+    titel: 'Schüler-Feedback zur Einheit',
+    icon: 'message-square',
+    admin_beschreibung:
+      'Ticketing-Formular am Ende der Einheit: Schüler melden zurück, was gut lief, was nicht und was verbessert werden kann. Lehrkraft erhält die Tickets im Feedback-Postfach.',
+    export_instruktion:
+      'Biete dem Schüler ein kurzes Feedback-Formular an: 1) Was lief gut? 2) Was lief nicht so gut? 3) Was können wir verbessern? Die Antworten werden als Feedback-Ticket an die Lehrkraft übermittelt.',
+    ist_aktiv: true,
+    reihenfolge: 999,
+  },
 ];
 
 Deno.serve(async (req) => {

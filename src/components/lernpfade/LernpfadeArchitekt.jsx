@@ -11,7 +11,7 @@
  */
 
 import React from 'react';
-import { Sparkles, Layers, Trophy, Star, Plus, BookOpen, ShieldCheck, ShieldOff, Loader2, PenLine, ClipboardCheck, FilePlus, ChevronDown } from 'lucide-react';
+import { Sparkles, Layers, Trophy, Star, Plus, BookOpen, ShieldCheck, ShieldOff, Loader2, PenLine, ClipboardCheck, FilePlus, ChevronDown, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import LernpfadeSektor from '@/components/lernpfade/LernpfadeSektor';
 import InfoHint from '@/components/lernpfade/InfoHint';
@@ -143,6 +143,13 @@ const ADD_SEKTOR_OPTIONS = [
     hint: 'Einstiegsseite · Zwischentest-Platzhalter',
     Icon: ClipboardCheck,
     cls: 'text-rose-600',
+  },
+  {
+    key: SEKTOR_TYP.FEEDBACK,
+    label: 'Feedback',
+    hint: 'Schüler-Rückmeldung am Ende der Einheit (immer letzter Sektor)',
+    Icon: MessageSquare,
+    cls: 'text-emerald-600',
   },
   {
     key: SEKTOR_TYP.INDIVIDUELL,

@@ -479,6 +479,28 @@ export default function LernpfadeCockpit({
         updateKonfiguration((prev) => addSektor(prev, activeLernTyp, sektor));
         return;
       }
+      if (sektorTyp === SEKTOR_TYP.FEEDBACK) {
+        // Singleton-Check: pro Lerntyp nur ein Feedback-Sektor.
+        const existing = (konfigurationRef.current?.[activeLernTyp] || []).some(
+          (s) => s?.sektor_typ === SEKTOR_TYP.FEEDBACK
+        );
+        if (existing) {
+          toast({
+            title: 'Feedback-Sektor existiert bereits',
+            description: 'Pro Lerntyp gibt es genau einen Feedback-Sektor – er steht immer am Ende.',
+          });
+          return;
+        }
+        const sektor = createNewSektor({
+          titel: 'Feedback',
+          sektor_typ: SEKTOR_TYP.FEEDBACK,
+          items: [
+            { type: 'system', ref_id: 'sys_feedback' },
+          ],
+        });
+        updateKonfiguration((prev) => addSektor(prev, activeLernTyp, sektor));
+        return;
+      }
       // Default: leerer Sektor (individuell).
       const sektor = createNewSektor({
         titel: 'Neuer Sektor',
