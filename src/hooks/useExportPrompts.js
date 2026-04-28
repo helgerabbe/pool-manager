@@ -27,31 +27,23 @@ export function useExportPrompts(einheitId) {
   // Rolle des aufrufenden Users selbst.
   const upsert = useMutation({
     mutationFn: async ({ promptType, referenceId = null, content, isCustomized = false, sourceUpdatedAt }) => {
-      console.log('[useExportPrompts] upsert START', { einheitId, promptType, referenceId, contentLen: content?.length });
-      try {
-        const res = await base44.functions.invoke('bulkUpsertExportPrompts', {
-          einheit_id: einheitId,
-          items: [{
-            prompt_type: promptType,
-            reference_id: referenceId,
-            content,
-            is_customized: isCustomized,
-            source_updated_at: sourceUpdatedAt || new Date().toISOString(),
-            template_version: MBK_TEMPLATE_VERSION,
-          }],
-        });
-        console.log('[useExportPrompts] upsert RAW RESPONSE', res);
-        const data = res?.data || res;
-        console.log('[useExportPrompts] upsert PARSED DATA', data);
-        if (data?.error) throw new Error(data.error);
-        if (Array.isArray(data?.errors) && data.errors.length > 0) {
-          throw new Error(data.errors[0]?.reason || 'Fehler beim Speichern');
-        }
-        return data;
-      } catch (err) {
-        console.error('[useExportPrompts] upsert FAILED', err);
-        throw err;
+      const res = await base44.functions.invoke('bulkUpsertExportPrompts', {
+        einheit_id: einheitId,
+        items: [{
+          prompt_type: promptType,
+          reference_id: referenceId,
+          content,
+          is_customized: isCustomized,
+          source_updated_at: sourceUpdatedAt || new Date().toISOString(),
+          template_version: MBK_TEMPLATE_VERSION,
+        }],
+      });
+      const data = res?.data || res;
+      if (data?.error) throw new Error(data.error);
+      if (Array.isArray(data?.errors) && data.errors.length > 0) {
+        throw new Error(data.errors[0]?.reason || 'Fehler beim Speichern');
       }
+      return data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['exportPrompts', einheitId] }),
   });
