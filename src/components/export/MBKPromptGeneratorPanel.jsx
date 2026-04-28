@@ -19,16 +19,12 @@ import { base44 } from '@/api/base44Client';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Sparkles, FileText, Users, Layers, Package } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Sparkles, FileText, Users, Layers, Package, RefreshCw, Loader2 } from 'lucide-react';
 import { useSchulStammdaten } from '@/hooks/useSchulStammdaten';
 import { useExportPrompts } from '@/hooks/useExportPrompts';
-import {
-  computeSourceMaxTimestamp,
-  isPromptOutOfSync,
-  isErstellungspaketBlocked,
-  findExistingPrompt,
-  LERNTYP_KEYS,
-} from '@/lib/exportPromptSync';
+import { useMBKBulkGenerate } from '@/hooks/useMBKBulkGenerate';
+import { LERNTYP_KEYS } from '@/lib/exportPromptSync';
 import {
   buildNucleusPrompt,
   buildPersonaPrompt,
@@ -111,21 +107,27 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
 
   const { prompts, isLoading: promptsLoading, upsert } = useExportPrompts(einheitId);
 
-  // ── Helper: Prompt-Lookup + Sync-Check ──────────────────────────────────
-  const lookupPrompt = (promptType, referenceId = null) =>
-    findExistingPrompt(prompts, { einheitId, promptType, referenceId });
-
-  const computeMaxTs = (promptType, referenceId = null) =>
-    computeSourceMaxTimestamp({
-      promptType,
-      referenceId,
-      einheit,
-      themenfelder,
-      lernpakete,
-      lernziele,
-      aufgabenbausteine,
-      allgemeineAufgaben,
-    });
+  // ── Bulk-Generate-Hook (kapselt auch Lookup, Sync-Check und Block-Check) ─
+  const {
+    bulkRunning,
+    runBulk: handleBulkGenerate,
+    lookupPrompt,
+    computeMaxTs,
+    isPromptOutOfSync,
+    isErstellungspaketBlocked,
+  } = useMBKBulkGenerate({
+    einheitId,
+    einheit,
+    stammdaten,
+    themenfelder,
+    lernpakete,
+    lernziele,
+    aufgabenbausteine,
+    allgemeineAufgaben,
+    allgemeineAufgabenEbene23,
+    prompts,
+    upsert,
+  });
 
   if (!einheitId || !einheit) {
     return (
@@ -188,7 +190,28 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
   });
 
   // ── Sektion 4: Erstellungspakete ────────────────────────────────────────
-  const lernpaketItems = lernpakete.map((lp) => {
+  // Lernpakete nach Themenfeld gruppiert + sortiert.
+  const themenfelderSorted = useMemo(
+    () => [...themenfelder].sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)),
+    [themenfelder]
+  );
+  const lernpaketeSorted = useMemo(
+    () => [...lernpakete].sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0)),
+    [lernpakete]
+  );
+  const lernpaketGroups = useMemo(() => {
+    const groups = themenfelderSorted.map((tf) => ({
+      themenfeld: tf,
+      pakete: lernpaketeSorted.filter((lp) => lp.themenfeld_id === tf.id),
+    }));
+    const orphans = lernpaketeSorted.filter((lp) => !lp.themenfeld_id || !themenfelderSorted.some((tf) => tf.id === lp.themenfeld_id));
+    if (orphans.length > 0) {
+      groups.push({ themenfeld: null, pakete: orphans });
+    }
+    return groups.filter((g) => g.pakete.length > 0);
+  }, [themenfelderSorted, lernpaketeSorted]);
+
+  const renderLernpaketItem = (lp) => {
     const existing = lookupPrompt('erstellungspaket', lp.id);
     const maxTs = computeMaxTs('erstellungspaket', lp.id);
     const blockReason = isErstellungspaketBlocked({
@@ -220,7 +243,7 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
         onUpsert={upsert}
       />
     );
-  });
+  };
 
   const aufgabenItems = allgemeineAufgabenEbene23.map((aa) => {
     const existing = lookupPrompt('erstellungspaket', aa.id);
@@ -249,7 +272,7 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
     );
   });
 
-  const erstellungspaketCount = lernpaketItems.length + aufgabenItems.length;
+  const erstellungspaketCount = lernpakete.length + aufgabenItems.length;
 
   return (
     <div className="space-y-4">
@@ -269,15 +292,28 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-card shrink-0">
-          <Switch
-            id="mbk-edit-toggle"
-            checked={editingMode}
-            onCheckedChange={setEditingMode}
-          />
-          <Label htmlFor="mbk-edit-toggle" className="text-xs cursor-pointer">
-            Bearbeitungsmodus
-          </Label>
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          <Button
+            size="sm"
+            variant="default"
+            onClick={handleBulkGenerate}
+            disabled={bulkRunning}
+            className="gap-1.5"
+            title="Generiert alle Standard-Prompts neu (überspringt manuell angepasste und blockierte)."
+          >
+            {bulkRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            Alle aktualisieren
+          </Button>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-card">
+            <Switch
+              id="mbk-edit-toggle"
+              checked={editingMode}
+              onCheckedChange={setEditingMode}
+            />
+            <Label htmlFor="mbk-edit-toggle" className="text-xs cursor-pointer">
+              Bearbeitungsmodus
+            </Label>
+          </div>
         </div>
       </div>
 
@@ -339,12 +375,23 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
               </p>
             ) : (
               <>
-                {lernpaketItems.length > 0 && (
-                  <div className="space-y-3">
+                {lernpaketGroups.length > 0 && (
+                  <div className="space-y-4">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                      Lernpakete
+                      Lernpakete (nach Themenfeld)
                     </p>
-                    {lernpaketItems}
+                    {lernpaketGroups.map((group, idx) => (
+                      <div key={group.themenfeld?.id || `orphan-${idx}`} className="space-y-2">
+                        <p className="text-xs font-medium text-foreground/70 pl-1">
+                          {group.themenfeld
+                            ? `Themenfeld: ${group.themenfeld.titel}`
+                            : 'Ohne Themenfeld'}
+                        </p>
+                        <div className="space-y-3 pl-3 border-l-2 border-muted">
+                          {group.pakete.map(renderLernpaketItem)}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
                 {aufgabenItems.length > 0 && (
