@@ -33,6 +33,10 @@
       "type": "string",
       "format": "date-time",
       "description": "Zeitstempel der zugrundeliegenden Quelldaten zum Zeitpunkt der Generierung. Wird beim Out-of-Sync-Vergleich gegen das Maximum der aktuellen Quell-updated_dates gepr\u00fcft."
+    },
+    "template_version": {
+      "type": "string",
+      "description": "Version der Template-Engine (lib/exportPromptTemplates.js \u2192 MBK_TEMPLATE_VERSION) zum Zeitpunkt der Generierung. Wird beim Out-of-Sync-Vergleich zus\u00e4tzlich zur source_updated_at-Pr\u00fcfung herangezogen: weicht die Version ab, gilt der Prompt als veraltet, auch wenn die Quelldaten unver\u00e4ndert sind. Sch\u00fctzt davor, dass nach Template-\u00c4nderungen alle Prompts irrt\u00fcmlich als 'aktuell' angezeigt werden."
     }
   },
   "required": [
@@ -42,68 +46,27 @@
   "rls": {
     "read": {
       "user_condition": {
-        "$or": [
-          {
-            "role": "admin"
-          },
-          {
-            "role": "Administrator"
-          },
-          {
-            "role": "Fachschaftsleitung"
-          },
-          {
-            "role": "Fachlehrkraft"
-          },
-          {
-            "role": "Moodle-Designer"
-          }
-        ]
+        "role": {
+          "$in": [
+            "admin",
+            "user"
+          ]
+        }
       }
     },
     "create": {
       "user_condition": {
-        "$or": [
-          {
-            "role": "admin"
-          },
-          {
-            "role": "Administrator"
-          },
-          {
-            "role": "Moodle-Designer"
-          }
-        ]
+        "role": "admin"
       }
     },
     "update": {
       "user_condition": {
-        "$or": [
-          {
-            "role": "admin"
-          },
-          {
-            "role": "Administrator"
-          },
-          {
-            "role": "Moodle-Designer"
-          }
-        ]
+        "role": "admin"
       }
     },
     "delete": {
       "user_condition": {
-        "$or": [
-          {
-            "role": "admin"
-          },
-          {
-            "role": "Administrator"
-          },
-          {
-            "role": "Moodle-Designer"
-          }
-        ]
+        "role": "admin"
       }
     }
   }
