@@ -53,16 +53,26 @@ export default function PhaseActivitiesList({
     onError: () => toast.error('Fehler beim Hinzufügen.'),
   });
 
+  // Lösch-Cascade läuft über die Backend-Funktion: setzt Tombstone auf der
+  // Aktivität (Moodle-Sync braucht das), löscht zugehörige MasterAufgaben +
+  // Klone hart und prüft Lock/Export-Lock serverseitig. Direkter
+  // `.delete()` über die Entity-API scheitert an RLS/Aggregat-Guardian.
   const deleteAktivitaet = useMutation({
-   mutationFn: (id) =>
-     base44.entities.LernpaketPhaseAktivitaet.delete(id),
-   onSuccess: () => {
-     queryClient.invalidateQueries({
-       queryKey: ['lernpaketPhaseAktivitaeten'],
-     });
-     toast.success('Aktivität entfernt.');
-   },
-   onError: () => toast.error('Fehler beim Löschen.'),
+    mutationFn: async (id) => {
+      const res = await base44.functions.invoke('deleteActivityWithTombstoneAndCascade', {
+        activity_id: id,
+      });
+      const data = res?.data || res;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['lernpaketPhaseAktivitaeten'],
+      });
+      toast.success('Aktivität entfernt.');
+    },
+    onError: (err) => toast.error('Fehler beim Löschen: ' + (err?.message || 'unbekannt')),
   });
 
   // Nur aktive Aktivitäten für die aktuelle Phase aus dem Katalog
