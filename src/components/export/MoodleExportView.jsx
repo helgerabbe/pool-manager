@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { CheckCircle2, Clock, AlertCircle, Zap, Send } from 'lucide-react';
+import MBKPromptGeneratorPanel from './MBKPromptGeneratorPanel';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -337,6 +338,10 @@ export default function MoodleExportView({ einheitId, userRole, isAdmin }) {
           </CardContent>
         </Card>
       )}
+
+      {/* MBK-Prompt-Generator (Moodle-Builder-KI) */}
+      <Separator className="my-2" />
+      <MBKPromptGeneratorPanel einheitId={einheitId} />
 
       {/* Info Footer */}
       <div className="p-4 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-800">
