@@ -89,6 +89,11 @@ export function useRealtimeUpdates(onUpdate) {
             if (response.status === 401 || response.status === 403) {
               throw new FatalSSEError(`Auth-Fehler: ${response.status}`);
             }
+            // 404 = SSE-Endpoint nicht deployed → kein Retry-Sturm.
+            // Realtime fällt aus, die App läuft über normale Queries weiter.
+            if (response.status === 404) {
+              throw new FatalSSEError('SSE-Endpoint nicht verfügbar (404)');
+            }
             throw new Error(`Unerwarteter Status: ${response.status}`);
           },
 
