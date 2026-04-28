@@ -841,7 +841,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             </TabsContent>
 
             {/* ── Tab 7: Dashboards (Lernpfad-Architekt) ────────────────────── */}
-            <TabsContent value="dashboards" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
+            <TabsContent value="dashboards" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0 min-h-0">
               <ErrorBoundary label="Lernpfad-Architekt">
                 <LernpfadeCockpit
                   einheit={einheit}
