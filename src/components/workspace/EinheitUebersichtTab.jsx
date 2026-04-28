@@ -208,7 +208,12 @@ export default function EinheitUebersichtTab({
   
   const kannEinheitBearbeiten = unitAccess.hasFullAccess && !isLockedByOther && isEditingActive;
   const kannSperrenToggle = unitAccess.hasFullAccess && !isLockedByOther && isEditingActive;
-  const kannMitarbeiterHinzufuegen = unitAccess.hasFullAccess && !isLockedByOther && isEditingActive;
+  // Mitarbeiter-Verwaltung ist bewusst NICHT an isEditingActive gekoppelt:
+  // sie ist eine eigene Domäne (EinheitMembers-Tabelle) und soll für Admin/
+  // Fachschaftsleitung/Unit-LEITUNG immer möglich sein – ohne den Edit-Lock
+  // der Einheits-Metadaten erst aktivieren zu müssen. Der Backend-Endpoint
+  // `addEinheitMemberSecure` prüft die Rechte ohnehin serverseitig.
+  const kannMitarbeiterHinzufuegen = unitAccess.hasFullAccess && !isLockedByOther;
   const kannBearbeitungsstartButton = unitAccess.hasFullAccess && !isLockedByOther && onAcquireLock;
 
   // ✅ Normalisierter E-Mail-Vergleich (case-insensitive, ohne Leerzeichen)
