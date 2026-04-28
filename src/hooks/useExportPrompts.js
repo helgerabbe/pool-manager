@@ -42,6 +42,7 @@ export function useExportPrompts(einheitId) {
         });
         console.log('[useExportPrompts] upsert RAW RESPONSE', res);
         const data = res?.data || res;
+        console.log('[useExportPrompts] upsert PARSED DATA', data);
         if (data?.error) throw new Error(data.error);
         if (Array.isArray(data?.errors) && data.errors.length > 0) {
           throw new Error(data.errors[0]?.reason || 'Fehler beim Speichern');
