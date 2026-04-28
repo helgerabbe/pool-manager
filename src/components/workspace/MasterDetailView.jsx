@@ -424,13 +424,30 @@ export default function MasterDetailView({
   });
 
   const handleDelete = async () => {
-    for (const k of klone) await base44.entities.Aufgabenbausteine.delete(k.id);
-    await base44.entities.MasterAufgabe.delete(master.id);
-    queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
-    queryClient.invalidateQueries({ queryKey: ['klone'] });
-    await releaseLock();
-    onEditModeChange?.(false);
-    onDeleted?.();
+    // Bisher schluckte diese Funktion stillschweigend alle Fehler — wenn
+    // RLS, Lock-Check oder die Aggregat-Automation den Delete blockierten,
+    // sah der User nichts. Daher jetzt mit Try/Catch + Toast.
+    try {
+      // Klone zuerst (referenzieren den Master).
+      const klonResults = await Promise.allSettled(
+        klone.map((k) => base44.entities.Aufgabenbausteine.delete(k.id))
+      );
+      const klonFailed = klonResults.filter((r) => r.status === 'rejected');
+      if (klonFailed.length > 0) {
+        const reason = klonFailed[0].reason?.message || 'unbekannt';
+        throw new Error(`${klonFailed.length} Kopie(n) konnten nicht gelöscht werden: ${reason}`);
+      }
+      await base44.entities.MasterAufgabe.delete(master.id);
+      queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+      queryClient.invalidateQueries({ queryKey: ['klone'] });
+      queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine'] });
+      toast.success('Masteraufgabe gelöscht.');
+      await releaseLock();
+      onEditModeChange?.(false);
+      onDeleted?.();
+    } catch (err) {
+      toast.error('Löschen fehlgeschlagen: ' + (err?.message || 'unbekannt'));
+    }
   };
 
   return (
