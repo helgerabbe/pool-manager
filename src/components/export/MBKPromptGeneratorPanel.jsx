@@ -13,7 +13,8 @@
  * und können von der Lehrkraft kopiert oder im Bearbeitungsmodus manuell
  * angepasst werden.
  */
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useCallback } from 'react';
+import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -50,6 +51,30 @@ const LERNTYP_LABELS = {
 export default function MBKPromptGeneratorPanel({ einheitId }) {
   const [editingMode, setEditingMode] = useState(false);
   const { permissions } = useRBAC();
+
+  // Sammelt eine Ref pro Prompt-Item, damit wir beim Ausschalten des
+  // Bearbeitungsmodus alle offenen Drafts synchron flushen können.
+  const itemRefs = useRef(new Map());
+  const registerItemRef = useCallback((key) => (instance) => {
+    if (instance) itemRefs.current.set(key, instance);
+    else itemRefs.current.delete(key);
+  }, []);
+
+  const handleEditingModeChange = useCallback(async (next) => {
+    // Nur beim Ausschalten flushen.
+    if (!next && editingMode) {
+      const flushes = [];
+      for (const item of itemRefs.current.values()) {
+        if (item?.flush) flushes.push(item.flush().catch(() => false));
+      }
+      const results = await Promise.all(flushes);
+      const savedCount = results.filter(Boolean).length;
+      if (savedCount > 0) {
+        toast.success(`${savedCount} offene Änderung${savedCount === 1 ? '' : 'en'} gespeichert.`);
+      }
+    }
+    setEditingMode(next);
+  }, [editingMode]);
 
   // ── Daten laden ─────────────────────────────────────────────────────────
   const { data: einheit } = useQuery({
@@ -198,6 +223,7 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
   const nucleusMaxTs = computeMaxTs('nucleus');
   const nucleusItem = (
     <MBKPromptItem
+      ref={registerItemRef('nucleus::null')}
       label="Nukleus (Kontext-Anker)"
       promptType="nucleus"
       existingPrompt={nucleusPrompt}
@@ -214,6 +240,7 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
   const personaMaxTs = computeMaxTs('persona');
   const personaItem = (
     <MBKPromptItem
+      ref={registerItemRef('persona::null')}
       label="Persona & Tonalität"
       promptType="persona"
       existingPrompt={personaPrompt}
@@ -232,6 +259,7 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
     return (
       <MBKPromptItem
         key={lerntyp}
+        ref={registerItemRef(`sektor_anweisung::${lerntyp}`)}
         label={`Sektoren · ${LERNTYP_LABELS[lerntyp]}`}
         promptType="sektor_anweisung"
         referenceId={lerntyp}
@@ -259,6 +287,7 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
     return (
       <MBKPromptItem
         key={`lp-${lp.id}`}
+        ref={registerItemRef(`erstellungspaket::${lp.id}`)}
         label={`📦 Lernpaket: ${lp.titel_des_pakets || '(ohne Titel)'}`}
         promptType="erstellungspaket"
         referenceId={lp.id}
@@ -292,6 +321,7 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
     return (
       <MBKPromptItem
         key={`aa-${aa.id}`}
+        ref={registerItemRef(`erstellungspaket::${aa.id}`)}
         label={`🎯 ${ebeneLabel}: ${aa.titel || '(ohne Titel)'}`}
         promptType="erstellungspaket"
         referenceId={aa.id}
@@ -354,7 +384,7 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
             <Switch
               id="mbk-edit-toggle"
               checked={editingMode}
-              onCheckedChange={setEditingMode}
+              onCheckedChange={handleEditingModeChange}
             />
             <Label htmlFor="mbk-edit-toggle" className="text-xs cursor-pointer">
               Bearbeitungsmodus

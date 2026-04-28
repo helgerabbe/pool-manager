@@ -12,7 +12,7 @@
  *   - blockiert (Workflow-Blocker, nur bei  → Generieren disabled + Erklärung
  *     erstellungspaket)
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useImperativeHandle, forwardRef, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,7 +20,7 @@ import { Sparkles, Copy, Check, AlertTriangle, Lock, PenSquare, Loader2 } from '
 import { toast } from 'sonner';
 import MBKPromptOverwriteDialog from './MBKPromptOverwriteDialog';
 
-export default function MBKPromptItem({
+const MBKPromptItem = forwardRef(function MBKPromptItem({
   label,
   promptType,
   referenceId = null,
@@ -32,11 +32,19 @@ export default function MBKPromptItem({
   buildContent,           // () => string  (deterministische Template-Funktion)
   sourceMaxTimestamp,     // number (ms)   für source_updated_at beim Speichern
   onUpsert,               // ({promptType, referenceId, content, isCustomized, sourceUpdatedAt}) => Promise
-}) {
+}, ref) {
   const [isOverwriteOpen, setIsOverwriteOpen] = useState(false);
   const [isWorking, setIsWorking] = useState(false);
   const [copied, setCopied] = useState(false);
   const [draft, setDraft] = useState(existingPrompt?.content || '');
+
+  // Refs für den Flush-Mechanismus: das Panel ruft beim Ausschalten des
+  // Bearbeitungsmodus flush() auf, das den letzten draft (falls geändert)
+  // synchron in die Datenbank schreibt.
+  const draftRef = useRef(draft);
+  const existingRef = useRef(existingPrompt);
+  useEffect(() => { draftRef.current = draft; }, [draft]);
+  useEffect(() => { existingRef.current = existingPrompt; }, [existingPrompt]);
 
   useEffect(() => {
     setDraft(existingPrompt?.content || '');
@@ -108,6 +116,24 @@ export default function MBKPromptItem({
       setIsWorking(false);
     }
   };
+
+  // Wird vom Panel beim Ausschalten des Bearbeitungsmodus aufgerufen.
+  // Liefert true, wenn tatsächlich gespeichert wurde (für Toast-Aggregation).
+  useImperativeHandle(ref, () => ({
+    async flush() {
+      const currentDraft = draftRef.current;
+      const currentExisting = existingRef.current;
+      if (currentDraft === (currentExisting?.content || '')) return false;
+      await onUpsert({
+        promptType,
+        referenceId,
+        content: currentDraft,
+        isCustomized: true,
+        sourceUpdatedAt: currentExisting?.source_updated_at || sourceUpdatedAt,
+      });
+      return true;
+    },
+  }), [onUpsert, promptType, referenceId, sourceUpdatedAt]);
 
   // ── Status-Badge ─────────────────────────────────────────────────────────
   let statusBadge = null;
@@ -205,4 +231,6 @@ export default function MBKPromptItem({
       />
     </div>
   );
-}
+});
+
+export default MBKPromptItem;
