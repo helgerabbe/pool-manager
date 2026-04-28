@@ -174,9 +174,9 @@ export default function MBKPromptItem({
           size="sm"
           variant={hasContent ? 'outline' : 'default'}
           onClick={handleGenerateClick}
-          disabled={isWorking || isBlocked}
+          disabled={isWorking || isBlocked || editingMode}
           className="gap-1.5"
-          title={isBlocked ? blockReason : undefined}
+          title={isBlocked ? blockReason : (editingMode ? 'Im Bearbeitungsmodus deaktiviert.' : undefined)}
         >
           {isWorking
             ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
