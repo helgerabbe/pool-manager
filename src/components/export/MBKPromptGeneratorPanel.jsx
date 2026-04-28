@@ -129,6 +129,30 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
     upsert,
   });
 
+  // ── Sortierung & Gruppierung der Erstellungspakete ──────────────────────
+  // Hooks müssen VOR dem Early-Return stehen (rules-of-hooks).
+  const themenfelderSorted = useMemo(
+    () => [...themenfelder].sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)),
+    [themenfelder]
+  );
+  const lernpaketeSorted = useMemo(
+    () => [...lernpakete].sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0)),
+    [lernpakete]
+  );
+  const lernpaketGroups = useMemo(() => {
+    const groups = themenfelderSorted.map((tf) => ({
+      themenfeld: tf,
+      pakete: lernpaketeSorted.filter((lp) => lp.themenfeld_id === tf.id),
+    }));
+    const orphans = lernpaketeSorted.filter(
+      (lp) => !lp.themenfeld_id || !themenfelderSorted.some((tf) => tf.id === lp.themenfeld_id)
+    );
+    if (orphans.length > 0) {
+      groups.push({ themenfeld: null, pakete: orphans });
+    }
+    return groups.filter((g) => g.pakete.length > 0);
+  }, [themenfelderSorted, lernpaketeSorted]);
+
   if (!einheitId || !einheit) {
     return (
       <div className="rounded-lg border bg-muted/30 p-6 text-center text-sm text-muted-foreground">
@@ -190,27 +214,6 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
   });
 
   // ── Sektion 4: Erstellungspakete ────────────────────────────────────────
-  // Lernpakete nach Themenfeld gruppiert + sortiert.
-  const themenfelderSorted = useMemo(
-    () => [...themenfelder].sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)),
-    [themenfelder]
-  );
-  const lernpaketeSorted = useMemo(
-    () => [...lernpakete].sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0)),
-    [lernpakete]
-  );
-  const lernpaketGroups = useMemo(() => {
-    const groups = themenfelderSorted.map((tf) => ({
-      themenfeld: tf,
-      pakete: lernpaketeSorted.filter((lp) => lp.themenfeld_id === tf.id),
-    }));
-    const orphans = lernpaketeSorted.filter((lp) => !lp.themenfeld_id || !themenfelderSorted.some((tf) => tf.id === lp.themenfeld_id));
-    if (orphans.length > 0) {
-      groups.push({ themenfeld: null, pakete: orphans });
-    }
-    return groups.filter((g) => g.pakete.length > 0);
-  }, [themenfelderSorted, lernpaketeSorted]);
-
   const renderLernpaketItem = (lp) => {
     const existing = lookupPrompt('erstellungspaket', lp.id);
     const maxTs = computeMaxTs('erstellungspaket', lp.id);
