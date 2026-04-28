@@ -1,0 +1,110 @@
+{
+  "name": "ExportPrompts",
+  "type": "object",
+  "properties": {
+    "einheit_id": {
+      "type": "string",
+      "description": "FK zur Einheit, zu der dieser Prompt geh\u00f6rt."
+    },
+    "prompt_type": {
+      "type": "string",
+      "enum": [
+        "nucleus",
+        "persona",
+        "sektor_anweisung",
+        "erstellungspaket"
+      ],
+      "description": "Typ des Prompts. nucleus = Context-Anchor mit Lernlandkarte; persona = Tonalit\u00e4t/Lerntypen; sektor_anweisung = Sektor-Reihenfolge pro Lerntyp; erstellungspaket = pro Lernpaket bzw. pro AllgemeineAufgabe (Ebene 2/3)."
+    },
+    "reference_id": {
+      "type": "string",
+      "description": "Verweis auf das spezifische Quell-Objekt. Bei nucleus/persona = null. Bei sektor_anweisung = Lerntyp-Schl\u00fcssel ('minimalist'|'pragmatiker'|'ehrgeizig'|'passioniert'). Bei erstellungspaket = Lernpaket-ID oder AllgemeineAufgabe-ID."
+    },
+    "content": {
+      "type": "string",
+      "description": "Der generierte oder manuell editierte Prompt-Text."
+    },
+    "is_customized": {
+      "type": "boolean",
+      "default": false,
+      "description": "true, sobald die Lehrkraft den Text im Bearbeitungsmodus ge\u00e4ndert hat. Sch\u00fctzt vor versehentlichem \u00dcberschreiben durch Neu-Generierung."
+    },
+    "source_updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel der zugrundeliegenden Quelldaten zum Zeitpunkt der Generierung. Wird beim Out-of-Sync-Vergleich gegen das Maximum der aktuellen Quell-updated_dates gepr\u00fcft."
+    }
+  },
+  "required": [
+    "einheit_id",
+    "prompt_type"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "$or": [
+          {
+            "role": "admin"
+          },
+          {
+            "role": "Administrator"
+          },
+          {
+            "role": "Fachschaftsleitung"
+          },
+          {
+            "role": "Fachlehrkraft"
+          },
+          {
+            "role": "Moodle-Designer"
+          }
+        ]
+      }
+    },
+    "create": {
+      "user_condition": {
+        "$or": [
+          {
+            "role": "admin"
+          },
+          {
+            "role": "Administrator"
+          },
+          {
+            "role": "Moodle-Designer"
+          }
+        ]
+      }
+    },
+    "update": {
+      "user_condition": {
+        "$or": [
+          {
+            "role": "admin"
+          },
+          {
+            "role": "Administrator"
+          },
+          {
+            "role": "Moodle-Designer"
+          }
+        ]
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "$or": [
+          {
+            "role": "admin"
+          },
+          {
+            "role": "Administrator"
+          },
+          {
+            "role": "Moodle-Designer"
+          }
+        ]
+      }
+    }
+  }
+}

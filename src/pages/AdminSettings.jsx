@@ -24,6 +24,7 @@ import PhasenTable from '@/components/admin/PhasenTable';
 import WartungsmodusToggle from '@/components/admin/WartungsmodusToggle';
 import AktivitaetenKatalog from '@/components/admin/AktivitaetenKatalog';
 import SystemBausteineTable from '@/components/admin/SystemBausteineTable';
+import SchulStammdatenCard from '@/components/admin/SchulStammdatenCard';
 
 const KATEGORIEN = ['Diagnostik', 'Input', 'Übung', 'Projekt', 'Prüfung'];
 
@@ -97,6 +98,9 @@ export default function AdminSettings() {
         onChange={setWartungsmodus}
         isPending={isWartungsmodusLoading}
       />
+
+      {/* Schul-Stammdaten (Land/Bundesland/Schulform für MBK-Nukleus-Prompt) */}
+      <SchulStammdatenCard />
 
       {/* Factory Reset */}
       <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-6">
