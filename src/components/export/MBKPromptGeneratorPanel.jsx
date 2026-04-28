@@ -20,11 +20,16 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Sparkles, FileText, Users, Layers, Package, RefreshCw, Loader2 } from 'lucide-react';
+import { Sparkles, FileText, Users, Layers, Package, RefreshCw, Loader2, Download } from 'lucide-react';
 import { useSchulStammdaten } from '@/hooks/useSchulStammdaten';
 import { useExportPrompts } from '@/hooks/useExportPrompts';
 import { useMBKBulkGenerate } from '@/hooks/useMBKBulkGenerate';
-import { LERNTYP_KEYS } from '@/lib/exportPromptSync';
+import { useRBAC } from '@/hooks/useRBAC';
+import {
+  LERNTYP_KEYS,
+  buildSourceTimestampIndex,
+  lookupSourceMaxTimestampFromIndex,
+} from '@/lib/exportPromptSync';
 import {
   buildNucleusPrompt,
   buildPersonaPrompt,
@@ -33,6 +38,7 @@ import {
   buildErstellungspaketForAufgabe,
 } from '@/lib/exportPromptTemplates';
 import MBKPromptItem from './MBKPromptItem';
+import MBKBulkPreviewDialog from './MBKBulkPreviewDialog';
 
 const LERNTYP_LABELS = {
   minimalist: 'Minimalist',
@@ -43,6 +49,7 @@ const LERNTYP_LABELS = {
 
 export default function MBKPromptGeneratorPanel({ einheitId }) {
   const [editingMode, setEditingMode] = useState(false);
+  const { permissions } = useRBAC();
 
   // ── Daten laden ─────────────────────────────────────────────────────────
   const { data: einheit } = useQuery({
@@ -107,12 +114,25 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
 
   const { prompts, isLoading: promptsLoading, upsert } = useExportPrompts(einheitId);
 
+  // Source-Timestamp-Index — einmal pro Render-Schub berechnen, statt bei
+  // jedem Item den ganzen Lernziele/Aufgaben-Array zu scannen.
+  const tsIndex = useMemo(
+    () => buildSourceTimestampIndex({
+      einheit, themenfelder, lernpakete, lernziele, aufgabenbausteine, allgemeineAufgaben,
+    }),
+    [einheit, themenfelder, lernpakete, lernziele, aufgabenbausteine, allgemeineAufgaben]
+  );
+
   // ── Bulk-Generator + Helper-Funktionen ──────────────────────────────────
   const {
     bulkRunning,
     runBulk,
+    previewOpen,
+    setPreviewOpen,
+    plan,
+    planSummary,
+    exportMarkdown,
     lookupPrompt,
-    computeMaxTs,
     isPromptOutOfSync,
     isErstellungspaketBlocked,
   } = useMBKBulkGenerate({
@@ -127,7 +147,12 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
     allgemeineAufgabenEbene23,
     prompts,
     upsert,
+    tsIndex,
   });
+
+  // Lookup gegen den vorberechneten Index — O(1) pro Item.
+  const computeMaxTs = (promptType, referenceId = null) =>
+    lookupSourceMaxTimestampFromIndex(tsIndex, promptType, referenceId);
 
   // ── Sortierung & Gruppierung der Erstellungspakete ──────────────────────
   // Hooks müssen VOR dem Early-Return stehen (rules-of-hooks).
@@ -152,6 +177,13 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
     }
     return groups.filter((g) => g.pakete.length > 0);
   }, [themenfelderSorted, lernpaketeSorted]);
+
+  // RBAC-Gate: Betrachter-Rollen sehen das Panel gar nicht erst — Lese-/
+  // Schreibrechte werden serverseitig durch die ExportPrompts-RLS erzwungen,
+  // hier vermeiden wir nur den 403-Klick aus der UI.
+  if (!permissions.kannExportLesen) {
+    return null;
+  }
 
   if (!einheitId || !einheit) {
     return (
@@ -298,14 +330,24 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
           <Button
             size="sm"
+            variant="outline"
+            onClick={exportMarkdown}
+            className="gap-1.5"
+            title="Lädt alle Prompts als nummerierte Markdown-Datei in der korrekten Reihenfolge."
+          >
+            <Download className="w-3.5 h-3.5" />
+            Als Markdown
+          </Button>
+          <Button
+            size="sm"
             variant="default"
-            onClick={runBulk}
+            onClick={() => setPreviewOpen(true)}
             disabled={bulkRunning}
             className="gap-1.5"
-            title="Generiert alle Standard-Prompts neu (überspringt manuell angepasste und blockierte)."
+            title="Zeigt eine Vorschau, welche Prompts neu/aktualisiert/übersprungen werden."
           >
             {bulkRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-            Alle aktualisieren
+            Alle aktualisieren…
           </Button>
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-card">
             <Switch
@@ -414,6 +456,15 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
       {promptsLoading && (
         <p className="text-xs text-muted-foreground">Prompts werden geladen…</p>
       )}
+
+      <MBKBulkPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        plan={plan}
+        summary={planSummary}
+        busy={bulkRunning}
+        onConfirm={runBulk}
+      />
     </div>
   );
 }
