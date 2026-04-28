@@ -25,6 +25,10 @@ export default function PhaseActivitiesList({
       base44.entities.LernpaketPhaseAktivitaet.filter({
         lernpaket_id: paket.id,
         phase,
+        // Tombstones ausblenden — sonst bleibt die Aktivität nach dem
+        // Cascade-Delete sichtbar, obwohl sie serverseitig bereits zur
+        // Löschung markiert ist.
+        sync_status: { $ne: 'to_delete' },
       }),
   });
 
