@@ -42,7 +42,11 @@ export default function LernpaketPanel({
 
   const { data: lernpaketAktivitaeten = [] } = useQuery({
     queryKey: ['lernpaketPhaseAktivitaeten'],
-    queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list(),
+    // Tombstones (sync_status='to_delete') ausblenden, sonst erscheinen
+    // gelöschte Aktivitäten weiterhin in der Inhaltsseite.
+    queryFn: () => base44.entities.LernpaketPhaseAktivitaet.filter({
+      sync_status: { $ne: 'to_delete' },
+    }),
   });
 
   const { data: aktivitaetenKatalog = [] } = useQuery({

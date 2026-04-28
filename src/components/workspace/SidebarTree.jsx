@@ -335,7 +335,11 @@ export default function SidebarTree({
 
   const { data: phaseActivities = [] } = useQuery({
     queryKey: ['lernpaketPhaseAktivitaeten'],
-    queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list(),
+    // Tombstones (sync_status='to_delete') hier ausblenden, sonst bleiben
+    // gelöschte Aktivitäten im Sidebar-Baum sichtbar.
+    queryFn: () => base44.entities.LernpaketPhaseAktivitaet.filter({
+      sync_status: { $ne: 'to_delete' },
+    }),
   });
 
   const { data: masterAufgaben = [] } = useQuery({
