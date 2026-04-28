@@ -332,8 +332,9 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
             size="sm"
             variant="outline"
             onClick={exportMarkdown}
+            disabled={!editingMode}
             className="gap-1.5"
-            title="Lädt alle Prompts als nummerierte Markdown-Datei in der korrekten Reihenfolge."
+            title={!editingMode ? 'Bearbeitungsmodus aktivieren, um zu exportieren.' : 'Lädt alle Prompts als nummerierte Markdown-Datei in der korrekten Reihenfolge.'}
           >
             <Download className="w-3.5 h-3.5" />
             Als Markdown
@@ -342,9 +343,9 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
             size="sm"
             variant="default"
             onClick={() => setPreviewOpen(true)}
-            disabled={bulkRunning}
+            disabled={bulkRunning || !editingMode}
             className="gap-1.5"
-            title="Zeigt eine Vorschau, welche Prompts neu/aktualisiert/übersprungen werden."
+            title={!editingMode ? 'Bearbeitungsmodus aktivieren, um zu aktualisieren.' : 'Zeigt eine Vorschau, welche Prompts neu/aktualisiert/übersprungen werden.'}
           >
             {bulkRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
             Alle aktualisieren…
