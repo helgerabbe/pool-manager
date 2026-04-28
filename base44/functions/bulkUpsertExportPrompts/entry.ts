@@ -71,7 +71,9 @@ Deno.serve(async (req) => {
 
     // Alle vorhandenen Prompts dieser Einheit einmal laden, damit wir pro Item
     // create vs. update entscheiden können — ohne pro Item einen filter().
-    const existing = await base44.asServiceRole.entities.ExportPrompts.filter({ einheit_id });
+    // Wir nutzen den User-Kontext (nicht Service-Role), damit die RLS-Policies
+    // der ExportPrompts-Entity gelten — die Rolle wurde oben bereits geprüft.
+    const existing = await base44.entities.ExportPrompts.filter({ einheit_id });
     const existingByKey = new Map();
     for (const p of existing) {
       const key = `${p.prompt_type}::${p.reference_id || 'null'}`;
@@ -103,10 +105,10 @@ Deno.serve(async (req) => {
         };
         const found = existingByKey.get(key);
         if (found) {
-          await base44.asServiceRole.entities.ExportPrompts.update(found.id, payload);
+          await base44.entities.ExportPrompts.update(found.id, payload);
           updated += 1;
         } else {
-          const newRec = await base44.asServiceRole.entities.ExportPrompts.create(payload);
+          const newRec = await base44.entities.ExportPrompts.create(payload);
           // damit ein nachfolgender Eintrag mit gleichem Key (sollte nicht
           // vorkommen, aber sicher ist sicher) geupdated wird:
           existingByKey.set(key, newRec);
