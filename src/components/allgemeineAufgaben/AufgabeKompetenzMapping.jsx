@@ -8,9 +8,8 @@ import { getAllBasisLernziele } from '@/services/BasisLernzielService';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Draggable, Droppable, DragDropContext } from '@hello-pangea/dnd';
-import { GripVertical, Trash2, CheckCircle, Search, Info } from 'lucide-react';
+import { GripVertical, Trash2, CheckCircle, Search } from 'lucide-react';
 import { toast } from 'sonner';
-import { isMetaAufgabenTyp, getAufgabenTyp } from '@/lib/aufgabenTypen';
 import { useDraftState, useDraftRestore } from '@/hooks/useDraftState';
 import { useSavedIndicator, SavedIndicator } from '@/hooks/useSavedIndicator.jsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -324,34 +323,6 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
       }),
     [lernzieleDeEinheit, lernpakete]
   );
-
-  // Phase-1 Lernpfad-Architekt: Lernziel-Mapping ist nur für Inhalts-Aktivitäten relevant.
-  // Bei Meta-Typen (Bündel, Prozess, Projekt-Anker) wird stattdessen ein Hinweis angezeigt –
-  // bestehende Mappings werden bewusst NICHT gelöscht (Datenkonservierung).
-  if (aufgabe?.aufgaben_typ && isMetaAufgabenTyp(aufgabe.aufgaben_typ)) {
-    const typMeta = getAufgabenTyp(aufgabe.aufgaben_typ);
-    const Icon = typMeta.icon;
-    return (
-      <div className="h-full flex items-center justify-center p-6">
-        <div className={`max-w-md text-center rounded-xl border-2 ${typMeta.color.border}/30 ${typMeta.color.bg}/40 p-6 space-y-3`}>
-          <div className={`mx-auto w-12 h-12 rounded-full ${typMeta.color.iconBg} flex items-center justify-center`}>
-            <Icon className={`w-6 h-6 ${typMeta.color.iconText}`} />
-          </div>
-          <h3 className={`text-sm font-semibold ${typMeta.color.text}`}>
-            Kompetenzzuordnung nicht erforderlich
-          </h3>
-          <p className="text-xs text-foreground/70 leading-relaxed flex items-start gap-1.5">
-            <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-muted-foreground" />
-            <span>
-              Diese Aufgabe ist vom Typ <strong>{typMeta.label}</strong> und dient der Lernpfad-Steuerung.
-              Lernziel-Zuordnungen werden hier nicht benötigt – sie erfolgen direkt in den
-              verknüpften Inhalts-Aufgaben oder Lernpaketen.
-            </span>
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <>
