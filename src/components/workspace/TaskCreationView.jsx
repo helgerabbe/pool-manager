@@ -457,7 +457,11 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
 
   const { data: allActivities = [] } = useQuery({
     queryKey: ['lernpaketPhaseAktivitaeten'],
-    queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list(),
+    // Tombstones (sync_status='to_delete') ausblenden, sonst bleiben gelöschte
+    // Aktivitäten im Sidebar-Baum von Tab 4 sichtbar.
+    queryFn: () => base44.entities.LernpaketPhaseAktivitaet.filter({
+      sync_status: { $ne: 'to_delete' },
+    }),
     enabled: !!einheitId,
   });
 
