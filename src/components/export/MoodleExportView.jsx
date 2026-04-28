@@ -38,28 +38,31 @@ export default function MoodleExportView({ einheitId, userRole, isAdmin }) {
   // Daten laden (alle Hooks ZUERST)
   // ──────────────────────────────────────────────────────────────────────────────
 
+  // ⚠️ Kein refetchInterval mehr — die früheren 3s-Polls produzierten 5
+  // gleichzeitige globale Listen-Calls und liefen direkt in die Server-
+  // Rate-Limits (429). React-Query-Invalidierung nach Mutationen reicht.
   const { data: lernpakete = [] } = useQuery({
     queryKey: ['lernpakete', einheitId],
     queryFn: () => base44.entities.Lernpakete.filter({ einheit_id: einheitId }),
-    refetchInterval: 3000,
+    staleTime: 30 * 1000,
   });
 
   const { data: activities = [] } = useQuery({
     queryKey: ['lernpaketPhaseAktivitaeten'],
     queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list(),
-    refetchInterval: 3000,
+    staleTime: 30 * 1000,
   });
 
   const { data: masters = [] } = useQuery({
     queryKey: ['masterAufgaben'],
     queryFn: () => base44.entities.MasterAufgabe.list(),
-    refetchInterval: 3000,
+    staleTime: 30 * 1000,
   });
 
   const { data: klone = [] } = useQuery({
     queryKey: ['aufgabenbausteine'],
     queryFn: () => base44.entities.Aufgabenbausteine.list(),
-    refetchInterval: 3000,
+    staleTime: 30 * 1000,
   });
 
   // ──────────────────────────────────────────────────────────────────────────────
@@ -96,7 +99,7 @@ export default function MoodleExportView({ einheitId, userRole, isAdmin }) {
   const { data: allgemeineAufgaben = [] } = useQuery({
     queryKey: ['allgemeineAufgaben'],
     queryFn: () => base44.entities.AllgemeineAufgabe.list(),
-    refetchInterval: 5000,
+    staleTime: 30 * 1000,
   });
 
   const pendingAufgaben = useMemo(() => {
