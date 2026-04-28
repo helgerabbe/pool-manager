@@ -19,7 +19,7 @@
 
 import React from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
-import { GripVertical, Trash2, X, Plus } from 'lucide-react';
+import { GripVertical, Trash2, X, Plus, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getAufgabenTyp, ITEM_TYPE } from '@/lib/aufgabenTypen';
 import SystemBausteinPill from '@/components/lernpfade/SystemBausteinPill';
@@ -124,12 +124,14 @@ function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, onRemove, on
 export default function LernpfadeSektor({
   sektor,
   index,
+  totalSektoren,
   aufgabenById,
   systemBausteineById,
   readOnly,
   activeLernTyp,
   onPatch,
   onRemove,
+  onMove,
   onRemoveAufgabe,
   onRemoveSystemItem,
   onRemoveBundle,
@@ -266,16 +268,40 @@ export default function LernpfadeSektor({
         </span>
         <div className="flex-1" />
         {!readOnly && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => onRemove?.(sektor.sektor_id)}
-            className="h-7 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-            title="Sektor löschen"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </Button>
+          <>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => onMove?.(sektor.sektor_id, -1)}
+              disabled={index === 0}
+              className="h-7 w-7 p-0"
+              title="Sektor nach oben verschieben"
+            >
+              <ChevronUp className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => onMove?.(sektor.sektor_id, 1)}
+              disabled={typeof totalSektoren === 'number' && index >= totalSektoren - 1}
+              className="h-7 w-7 p-0"
+              title="Sektor nach unten verschieben"
+            >
+              <ChevronDown className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => onRemove?.(sektor.sektor_id)}
+              className="h-7 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              title="Sektor löschen"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </>
         )}
       </div>
 

@@ -329,6 +329,23 @@ export function removeSektor(konfig, lernTyp, sektorId) {
 }
 
 /**
+ * Sektor in der Liste eines Lerntyps um eine Position nach oben oder unten
+ * verschieben. `direction` = -1 (hoch) | +1 (runter). Out-of-bounds wird
+ * defensiv ignoriert (no-op). Reine Reihenfolge-Operation.
+ */
+export function moveSektor(konfig, lernTyp, sektorId, direction) {
+  if (direction !== -1 && direction !== 1) return konfig;
+  const sektoren = getSektoren(konfig, lernTyp);
+  const idx = sektoren.findIndex((s) => s.sektor_id === sektorId);
+  if (idx === -1) return konfig;
+  const target = idx + direction;
+  if (target < 0 || target >= sektoren.length) return konfig;
+  const next = [...sektoren];
+  [next[idx], next[target]] = [next[target], next[idx]];
+  return setSektoren(konfig, lernTyp, next);
+}
+
+/**
  * Aufgabe an einer bestimmten Position in einen Sektor einfügen.
  * Falls aufgabeId bereits in irgendeinem Sektor des Lerntyps vorkommt
  * (Anti-Duplikat) → unverändert zurückgeben.

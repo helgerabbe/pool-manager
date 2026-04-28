@@ -41,6 +41,7 @@ import {
   addSektor,
   patchSektor,
   removeSektor,
+  moveSektor,
   removeAufgabeFromLernTyp,
   isKonfigurationEmpty,
   applyAllDashboardTemplates,
@@ -571,6 +572,15 @@ export default function LernpfadeCockpit({
     [readOnly, activeLernTyp, updateKonfiguration]
   );
 
+  // Sektor-Reihenfolge ändern (Hoch/Runter-Pfeile im Sektor-Header).
+  const handleMoveSektor = useCallback(
+    (sektorId, direction) => {
+      if (readOnly) return;
+      updateKonfiguration((prev) => moveSektor(prev, activeLernTyp, sektorId, direction));
+    },
+    [readOnly, activeLernTyp, updateKonfiguration]
+  );
+
   const handleRemoveAufgabeFromPath = useCallback(
     (aufgabeId) => {
       if (readOnly) return;
@@ -799,6 +809,7 @@ export default function LernpfadeCockpit({
               onAddSektor={handleAddSektor}
               onPatchSektor={handlePatchSektor}
               onRemoveSektor={handleRemoveSektor}
+              onMoveSektor={handleMoveSektor}
               onRemoveAufgabeFromPath={handleRemoveAufgabeFromPath}
               onRemoveSystemItem={handleRemoveSystemItem}
               onRemoveBundle={handleRemoveBundle}

@@ -226,6 +226,7 @@ export default function LernpfadeArchitekt({
   onAddSektor,
   onPatchSektor,
   onRemoveSektor,
+  onMoveSektor,
   onRemoveAufgabeFromPath,
   onRemoveSystemItem,
   onRemoveBundle,
@@ -388,12 +389,14 @@ export default function LernpfadeArchitekt({
                 key={sektor.sektor_id || idx}
                 sektor={sektor}
                 index={idx}
+                totalSektoren={sektoren.length}
                 aufgabenById={aufgabenById}
                 systemBausteineById={systemBausteineById}
                 readOnly={readOnly}
                 activeLernTyp={activeLernTyp}
                 onPatch={onPatchSektor}
                 onRemove={onRemoveSektor}
+                onMove={onMoveSektor}
                 onRemoveAufgabe={(aufgabeId) => onRemoveAufgabeFromPath?.(aufgabeId)}
                 onRemoveSystemItem={onRemoveSystemItem}
                 onRemoveBundle={onRemoveBundle}
