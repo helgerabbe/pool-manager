@@ -18,6 +18,21 @@
 
 import { getSektorTypLabel } from '@/lib/sektorTypen';
 
+/**
+ * Versionskennung der Template-Engine.
+ *
+ * Wird beim Generieren in jeden ExportPrompts-Record als `template_version`
+ * geschrieben. Der Out-of-Sync-Check vergleicht diese Version zusätzlich zur
+ * `source_updated_at`, sodass Wording-/Reihenfolge-Änderungen in dieser Datei
+ * automatisch alle Prompts als "veraltet" markieren — auch wenn die
+ * Quelldaten unverändert geblieben sind.
+ *
+ * **Wichtig:** Bei jeder inhaltlichen Änderung an den Build-Funktionen
+ * unten (Headings, Pflichtsätze, Reihenfolge, Halluzinations-Fallback)
+ * MUSS diese Version hochgezählt werden.
+ */
+export const MBK_TEMPLATE_VERSION = 'v1.0.0';
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const LERNTYP_LABELS = {

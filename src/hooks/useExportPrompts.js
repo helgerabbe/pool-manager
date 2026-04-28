@@ -9,6 +9,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { findExistingPrompt } from '@/lib/exportPromptSync';
+import { MBK_TEMPLATE_VERSION } from '@/lib/exportPromptTemplates';
 
 export function useExportPrompts(einheitId) {
   const queryClient = useQueryClient();
@@ -30,6 +31,7 @@ export function useExportPrompts(einheitId) {
         content,
         is_customized: isCustomized,
         source_updated_at: sourceUpdatedAt || new Date().toISOString(),
+        template_version: MBK_TEMPLATE_VERSION,
       };
       if (existing) {
         return base44.entities.ExportPrompts.update(existing.id, payload);
