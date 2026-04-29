@@ -24,10 +24,10 @@ import { Pencil, Hand } from 'lucide-react';
 export const AUFGABEN_TYPEN = {
   inhalt: {
     value: 'inhalt',
-    label: 'Brian-Aufgabe',
-    short: 'Brian-Aufgabe',
+    label: 'KI-Tutor-Aufgabe',
+    short: 'KI-Tutor-Aufgabe',
     description:
-      'Rein digitale Aufgabe (z. B. Lückentext, Texteingabe). Der Schüler bearbeitet sie am Computer, Brian (KI) prüft das Ergebnis direkt.',
+      'Rein digitale Aufgabe. Der Schüler bearbeitet sie am Computer, der KI-Tutor prüft das Ergebnis direkt und gibt Rückmeldung.',
     icon: Pencil,
     // Tailwind-Tokens (Amber/Gold)
     color: {

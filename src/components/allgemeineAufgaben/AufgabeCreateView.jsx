@@ -43,16 +43,26 @@ const EMPTY_FORM = {
 };
 
 // ── Validierung pro Aufgaben-Typ ──────────────────────────────────────────────
+// Mindestkriterium für jede Level-2-Aufgabe: Themenfeld + Aufgabenstellung.
+// Handlungsaufgaben brauchen zusätzlich Hinweise zum Material (wo findet der
+// Schüler was?). Alles andere ist optional.
 function validateForm(formData) {
-  const typ = formData.aufgaben_typ || 'inhalt';
-  if (typ === 'handlung') return !!formData.aufgabenstellung?.trim();
-  // 'inhalt' (default): Text ODER Bild
-  return !!(formData.aufgabenstellung?.trim() || formData.aufgaben_bild_url);
+  const hasThemenfeld = !!formData.themenfeld_id;
+  const hasAufgabenstellung = !!formData.aufgabenstellung?.trim();
+  if (!hasThemenfeld || !hasAufgabenstellung) return false;
+  if ((formData.aufgaben_typ || 'inhalt') === 'handlung') {
+    return !!formData.hinweise_zum_material?.trim();
+  }
+  return true;
 }
 
-function invalidMessageForType(typ) {
-  if (typ === 'handlung') return 'Bitte einen Aufgabentext / Auftrag eingeben.';
-  return 'Bitte Text eingeben oder Bild hochladen.';
+function invalidMessageForType(formData) {
+  if (!formData.themenfeld_id) return 'Bitte ein Themenfeld auswählen.';
+  if (!formData.aufgabenstellung?.trim()) return 'Bitte eine Aufgabenstellung eingeben.';
+  if ((formData.aufgaben_typ || 'inhalt') === 'handlung' && !formData.hinweise_zum_material?.trim()) {
+    return 'Bitte Hinweise zum Material angeben (wo findet der Schüler was?).';
+  }
+  return 'Bitte Pflichtfelder ausfüllen.';
 }
 
 // ── Payload-Builder: nur die für den Typ relevanten Felder ────────────────────
@@ -72,14 +82,10 @@ function buildPayload(formData, einheitId, defaultAnforderungsebene, isUpdate) {
     base.anforderungsebene = defaultAnforderungsebene;
   }
 
-  if (typ === 'handlung') {
-    return {
-      ...base,
-      hinweise_zum_material: formData.hinweise_zum_material || '',
-    };
-  }
-  // 'inhalt'
-  return {
+  // Beide Typen teilen jetzt denselben Funktionsumfang (Bild, Schwierigkeit,
+  // Ergebnisform, Erwartungshorizont, Zusatzmaterial). Handlung ergänzt nur
+  // die Material-Hinweise (wo findet der Schüler was?).
+  const shared = {
     ...base,
     aufgaben_bild_url: formData.aufgaben_bild_url || null,
     schwierigkeitsgrad: formData.schwierigkeitsgrad || null,
@@ -88,6 +94,10 @@ function buildPayload(formData, einheitId, defaultAnforderungsebene, isUpdate) {
     ergebnis_dateiformat: formData.ergebnis_dateiformat || null,
     erwartungshorizont: formData.erwartungshorizont || null,
   };
+  if (typ === 'handlung') {
+    return { ...shared, hinweise_zum_material: formData.hinweise_zum_material || '' };
+  }
+  return shared;
 }
 
 // ── Haupt-Komponente ──────────────────────────────────────────────────────────
@@ -180,7 +190,7 @@ export default function AufgabeCreateView({
       return;
     }
     if (!isValid) {
-      toast.error(invalidMessageForType(formData.aufgaben_typ));
+      toast.error(invalidMessageForType(formData));
       return;
     }
     if (initialData) updateAufgabe.mutate(formData);
@@ -197,8 +207,8 @@ export default function AufgabeCreateView({
         <HandlungSection
           formData={formData}
           set={set}
-          beschreibung={formData.aufgabenstellung}
-          onBeschreibung={(val) => set('aufgabenstellung', val)}
+          onBildUploadingChange={setBildUploading}
+          onMaterialUploadingChange={setMaterialUploading}
         />
       );
     }
@@ -231,16 +241,18 @@ export default function AufgabeCreateView({
           {isLocked && <AufgabeLockBanner byPfade={lockInfo.by_pfade} />}
 
           <fieldset disabled={isReadOnly} className="space-y-5 disabled:opacity-70">
-            {/* Themenfeld – für alle Typen */}
+            {/* Themenfeld – Pflichtfeld für alle Typen */}
             {themenfelder.length > 0 && (
               <div className="space-y-2">
-                <Label>Themenfeld (optional)</Label>
+                <Label>
+                  Themenfeld <span className="text-destructive">*</span>
+                </Label>
                 <select
                   value={formData.themenfeld_id || ''}
                   onChange={(e) => set('themenfeld_id', e.target.value || null)}
                   className="w-full h-9 px-3 border border-border rounded-lg text-sm bg-white"
                 >
-                  <option value="">-- Kein Themenfeld --</option>
+                  <option value="">-- Bitte wählen --</option>
                   {themenfelder.map((tf) => (
                     <option key={tf.id} value={tf.id}>
                       {tf.titel}
