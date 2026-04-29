@@ -10,7 +10,7 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { createThemenfeld, updateThemenfeld, deleteThemenfeld } from '@/services/ThemenfeldService';
-import { createLernziel, deleteLernziel } from '@/services/LernzielService';
+import { createLernziel, updateLernziel, deleteLernziel } from '@/services/LernzielService';
 import { createLernpaket, updateLernpaket, deleteLernpaket } from '@/services/LernpaketService';
 import { useRBAC } from '@/hooks/useRBAC';
 import { hasUnitLevelAccess } from '@/lib/rbac';
@@ -777,9 +777,9 @@ export default function StrukturBoardEmbedded({
               }
 
               // 2) Neue Lernziele anlegen (isNew=true ODER Temp-ID 'lz-...')
+              const istNeu = (lz) => lz.isNew === true || (typeof lz.id === 'string' && lz.id.startsWith('lz-'));
               const neueLernziele = aktuelleLernziele.filter(lz =>
-                (lz.isNew === true || (typeof lz.id === 'string' && lz.id.startsWith('lz-')))
-                && lz.formulierung_fachsprache?.trim()
+                istNeu(lz) && lz.formulierung_fachsprache?.trim()
               );
               if (neueLernziele.length > 0) {
                 console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}] Erstelle ${neueLernziele.length} neue Lernziele für Paket ${paket.id}...`);
@@ -792,6 +792,33 @@ export default function StrukturBoardEmbedded({
                   });
                   console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}]   ✓ Fertig`);
                 }
+              }
+
+              // 3) Bestehende Lernziele aktualisieren (echte DB-ID, nicht neu) –
+              //    nur wenn sich Formulierung, Kategorie oder Schüler-Übersetzung
+              //    tatsächlich geändert haben. Ohne diesen Pfad gingen
+              //    Inline-Edits (z. B. Tippfehler korrigieren) verloren, weil sie
+              //    weder in „neu" noch in „löschen" fielen.
+              const bestehendeLernziele = aktuelleLernziele.filter(lz => !istNeu(lz));
+              for (const lz of bestehendeLernziele) {
+                const original = originalLernziele.find(o => o.id === lz.id);
+                if (!original) continue;
+                const neueFormulierung = (lz.formulierung_fachsprache || '').trim();
+                if (!neueFormulierung) continue;
+                const neueKategorie = lz.kategorie || 'Fachwissen';
+                const neueUebersetzung = lz.schueler_uebersetzung ?? original.schueler_uebersetzung ?? '';
+                const titelGeandert = neueFormulierung !== (original.formulierung_fachsprache || '').trim();
+                const kategorieGeandert = neueKategorie !== (original.kategorie || 'Fachwissen');
+                const uebersetzungGeandert = (neueUebersetzung || '') !== (original.schueler_uebersetzung || '');
+                if (!titelGeandert && !kategorieGeandert && !uebersetzungGeandert) continue;
+
+                const lzUpdate = {};
+                if (titelGeandert) lzUpdate.formulierung_fachsprache = neueFormulierung;
+                if (kategorieGeandert) lzUpdate.kategorie = neueKategorie;
+                if (uebersetzungGeandert) lzUpdate.schueler_uebersetzung = neueUebersetzung;
+                console.log(`[StrukturBoard] ✏️ PHASE4[${paketCounter}] Update Lernziel ${lz.id}:`, lzUpdate);
+                await updateLernziel(lz.id, lzUpdate);
+                console.log(`[StrukturBoard] ✏️ PHASE4[${paketCounter}]   ✓ Lernziel aktualisiert`);
               }
             }
           } catch (err) {
