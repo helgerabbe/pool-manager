@@ -22,7 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, GripVertical, Clock, Trash2, FolderOpen, Layers, X, Save, Target, ChevronLeft, AlignJustify, LayoutList, ArrowRight } from 'lucide-react';
+import { Plus, GripVertical, Clock, Trash2, FolderOpen, Layers, X, Save, Target, ChevronLeft, ChevronRight, AlignJustify, LayoutList, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -213,7 +213,7 @@ function PaketKarte({ paket, index, onDelete, onEdit, compact = false, readOnly 
 
 // ── Spalte ────────────────────────────────────────────────────────────────────
 
-function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onDeleteSpalte, onTitelChange, isSammelbecken = false, compact = false, collapsed = false, onToggleCollapse, sequenzNummer = null, readOnly = false, istLesemodus = false }) {
+function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onDeleteSpalte, onTitelChange, isSammelbecken = false, compact = false, collapsed = false, onToggleCollapse, sequenzNummer = null, readOnly = false, istLesemodus = false, onMoveLeft, onMoveRight, canMoveLeft = false, canMoveRight = false }) {
   const [editingTitel, setEditingTitel]   = useState(false);
   const [titelDraft, setTitelDraft]       = useState(titel);
 
@@ -276,6 +276,20 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
     )}>
       {/* Header */}
       <div className={cn('flex items-center gap-2 px-3 py-3 rounded-t-xl border-b shrink-0', isSammelbecken ? 'border-slate-200 bg-slate-100/80' : 'border-border bg-muted/40')}>
+        {/* Pfeile zum Verschieben (nur Themenfelder, nur im Edit-Modus).
+            Tauschen die Spalte mit Vorgänger / Nachfolger; das Sammelbecken
+            ist von der Reorder-Logik ausgenommen (siehe StrukturBoard). */}
+        {!isSammelbecken && !readOnly && !istLesemodus && onMoveLeft && (
+          <button
+            onClick={onMoveLeft}
+            disabled={!canMoveLeft}
+            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Themenfeld nach links verschieben"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+        )}
+
         {isSammelbecken
           ? <Layers className="w-4 h-4 text-muted-foreground shrink-0" />
           : sequenzNummer !== null
@@ -302,6 +316,18 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
         )}
 
         <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">{pakete.length}</span>
+
+        {/* Pfeil nach rechts (nur Themenfelder, nur im Edit-Modus) */}
+        {!isSammelbecken && !readOnly && !istLesemodus && onMoveRight && (
+          <button
+            onClick={onMoveRight}
+            disabled={!canMoveRight}
+            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Themenfeld nach rechts verschieben"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        )}
 
         {/* Einklapp-Button (nur für Themenfelder) */}
         {!isSammelbecken && onToggleCollapse && (
@@ -533,6 +559,24 @@ export default function StrukturBoardEmbedded({
     if (istLesemodus) return;
     setIsDirty(true);
     setSpalten(prev => prev.map(s => s.id === spalteId ? { ...s, titel: neuerTitel } : s));
+  };
+
+  // Themenfeld eine Position nach links/rechts verschieben.
+  // Reihenfolge wird beim Speichern via Index → reihenfolge=i+1 persistiert
+  // (siehe PHASE 3 in handleSpeichern). Sammelbecken ist nicht Teil von
+  // `spalten` und damit automatisch ausgeschlossen.
+  const moveSpalte = (spalteId, direction) => {
+    if (istLesemodus) return;
+    setSpalten(prev => {
+      const idx = prev.findIndex(s => s.id === spalteId);
+      if (idx === -1) return prev;
+      const targetIdx = direction === 'left' ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= prev.length) return prev;
+      const next = [...prev];
+      [next[idx], next[targetIdx]] = [next[targetIdx], next[idx]];
+      return next;
+    });
+    setIsDirty(true);
   };
 
   const handleDeleteSpalteRequest = (spalteId) => {
@@ -1041,6 +1085,10 @@ export default function StrukturBoardEmbedded({
                 sequenzNummer={einheit?.bearbeitungsmodus === 'sequenziell' ? idx + 1 : null}
                 readOnly={readOnly || !isStructuralEditingActive}
                 istLesemodus={istLesemodus || !isStructuralEditingActive}
+                onMoveLeft={() => moveSpalte(spalte.id, 'left')}
+                onMoveRight={() => moveSpalte(spalte.id, 'right')}
+                canMoveLeft={idx > 0}
+                canMoveRight={idx < spalten.length - 1}
               />
             ))}
 
