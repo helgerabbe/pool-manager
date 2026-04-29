@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { useLernpaketLock } from '@/hooks/useLocks';
 import { StatusBadge, kategorieColors } from './SharedUI';
 import PhaseContent from './PhaseContent';
+import LernzielEditList from './LernzielEditList';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -368,6 +369,20 @@ export default function LernpaketPanel({
           </DialogHeader>
 
           <div className="space-y-6 py-4">
+            {/* Lernziele-Editor: Fachschaftsleitungen pflegen hier die offizielle
+                Formulierung + Schüler-Übersetzung jedes zugeordneten Ziels.
+                Anlegen/Löschen bleibt im Panel-Body (Edit-Icon je Zeile). */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-muted-foreground">Lernziele bearbeiten</h3>
+                <span className="text-xs text-muted-foreground">{paketZiele.length} Ziel{paketZiele.length !== 1 ? 'e' : ''}</span>
+              </div>
+              <LernzielEditList
+                lernziele={paketZiele}
+                onSaved={() => queryClient.invalidateQueries({ queryKey: ['lernziele'] })}
+              />
+            </div>
+
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-muted-foreground">Lernphasen</h3>
               {PHASES.map(phase => {
