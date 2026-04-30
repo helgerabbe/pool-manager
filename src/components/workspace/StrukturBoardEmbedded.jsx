@@ -19,6 +19,7 @@ import VersionConflictDialog from '@/components/ui/VersionConflictDialog';
 import { ROLLEN } from '@/lib/rbac';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -106,12 +107,29 @@ function LernpaketDialog({ open, onOpenChange, initialData, onSave }) {
                   <div className="flex items-start gap-2">
                     <Target className="w-4 h-4 text-green-600 shrink-0 mt-2" />
                     <div className="flex-1 space-y-2">
-                      <Input
-                        placeholder={`Lernziel ${idx + 1}: Ich kann…`}
-                        value={lz.formulierung_fachsprache}
-                        onChange={e => updateLernziel(lz.id, 'formulierung_fachsprache', e.target.value)}
-                        className="text-sm"
-                      />
+                      {/* Offizielle Formulierung – mehrzeilig, damit lange
+                          „Ich kann…"-Sätze vollständig sichtbar bleiben. */}
+                      <div className="space-y-1">
+                        <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">Offizielle Formulierung (Fachsprache)</Label>
+                        <Textarea
+                          placeholder={`Lernziel ${idx + 1}: Ich kann…`}
+                          value={lz.formulierung_fachsprache}
+                          onChange={e => updateLernziel(lz.id, 'formulierung_fachsprache', e.target.value)}
+                          rows={3}
+                          className="text-sm min-h-[72px] resize-y"
+                        />
+                      </div>
+                      {/* Schüler-Übersetzung – optional, ebenfalls mehrzeilig. */}
+                      <div className="space-y-1">
+                        <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">Schülergerechte Formulierung (optional)</Label>
+                        <Textarea
+                          placeholder="Wie würdest du das Lernziel einem Schüler erklären?"
+                          value={lz.schueler_uebersetzung || ''}
+                          onChange={e => updateLernziel(lz.id, 'schueler_uebersetzung', e.target.value)}
+                          rows={2}
+                          className="text-sm min-h-[56px] resize-y"
+                        />
+                      </div>
                       <div className="flex gap-2">
                         {['Fachwissen', 'Fähigkeit/Fertigkeit'].map(kat => (
                           <button
