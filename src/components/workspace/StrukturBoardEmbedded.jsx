@@ -1071,7 +1071,11 @@ export default function StrukturBoardEmbedded({
       {/* Board – EINZIGER Scroll-Container für DnD! */}
       <div className={cn('flex-1 overflow-x-auto overflow-y-auto min-h-0', readOnly && 'opacity-60')}>
         <DragDropContext onDragEnd={handleDragEnd}>
-          <div className={cn('flex gap-4 h-full p-4 min-w-max items-start', readOnly && 'pointer-events-none select-none')}>
+          {/* Hinweis: Im Lesemodus KEIN `pointer-events-none` setzen –
+              das würde das vertikale Scrolling innerhalb der Spalten blockieren.
+              DnD selbst ist im Lesemodus bereits durch readOnly/istLesemodus
+              an den Drag-Handles deaktiviert. */}
+          <div className="flex gap-4 h-full p-4 min-w-max items-start">
             {/* Sammelbecken */}
             <Spalte
               id={SAMMELBECKEN_ID}
