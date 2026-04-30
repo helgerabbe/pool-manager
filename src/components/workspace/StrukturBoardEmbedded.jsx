@@ -22,7 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, GripVertical, Clock, Trash2, FolderOpen, Layers, X, Save, Target, ChevronLeft, ChevronRight, AlignJustify, LayoutList, ArrowRight } from 'lucide-react';
+import { Plus, GripVertical, Clock, Trash2, FolderOpen, Layers, X, Save, Target, ChevronLeft, ChevronRight, ChevronsLeft, AlignJustify, LayoutList, ArrowLeft, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -276,17 +276,18 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
     )}>
       {/* Header */}
       <div className={cn('flex items-center gap-2 px-3 py-3 rounded-t-xl border-b shrink-0', isSammelbecken ? 'border-slate-200 bg-slate-100/80' : 'border-border bg-muted/40')}>
-        {/* Pfeile zum Verschieben (nur Themenfelder, nur im Edit-Modus).
-            Tauschen die Spalte mit Vorgänger / Nachfolger; das Sammelbecken
-            ist von der Reorder-Logik ausgenommen (siehe StrukturBoard). */}
+        {/* Reorder-Pfeil links (nur Themenfelder, nur im Edit-Modus).
+            Volle Pfeile mit Schaft (ArrowLeft) + dezenter Pill-Hintergrund,
+            damit sie sich klar vom dünnen Einklappen-Chevron unterscheiden.
+            Sammelbecken ist von der Reorder-Logik ausgenommen. */}
         {!isSammelbecken && !readOnly && !istLesemodus && onMoveLeft && (
           <button
             onClick={onMoveLeft}
             disabled={!canMoveLeft}
-            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="p-1 rounded-md bg-amber-100/60 hover:bg-amber-200 text-amber-700 hover:text-amber-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-amber-100/60"
             title="Themenfeld nach links verschieben"
           >
-            <ChevronLeft className="w-3.5 h-3.5" />
+            <ArrowLeft className="w-3.5 h-3.5" />
           </button>
         )}
 
@@ -317,26 +318,28 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
 
         <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">{pakete.length}</span>
 
-        {/* Pfeil nach rechts (nur Themenfelder, nur im Edit-Modus) */}
+        {/* Reorder-Pfeil rechts (gleicher Stil wie links: voller Pfeil + Pill). */}
         {!isSammelbecken && !readOnly && !istLesemodus && onMoveRight && (
           <button
             onClick={onMoveRight}
             disabled={!canMoveRight}
-            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="p-1 rounded-md bg-amber-100/60 hover:bg-amber-200 text-amber-700 hover:text-amber-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-amber-100/60"
             title="Themenfeld nach rechts verschieben"
           >
-            <ChevronRight className="w-3.5 h-3.5" />
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         )}
 
-        {/* Einklapp-Button (nur für Themenfelder) */}
+        {/* Einklapp-Button (nur für Themenfelder).
+            Doppel-Chevron + andere Farbe (slate), klar abgegrenzt von den
+            bernsteinfarbenen Reorder-Pfeilen oben. */}
         {!isSammelbecken && onToggleCollapse && (
           <button
             onClick={onToggleCollapse}
-            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            className="p-1 rounded hover:bg-muted text-slate-500 hover:text-slate-900 transition-colors"
             title="Spalte einklappen"
           >
-            <ChevronLeft className="w-3.5 h-3.5" />
+            <ChevronsLeft className="w-3.5 h-3.5" />
           </button>
         )}
 
