@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAllLernziele } from '@/services/LernzielService';
 import { getAllLernpakete } from '@/services/LernpaketService';
 import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
-import { getMappingsByAufgabe, createMapping, deleteMapping, getBasisMappingsByAufgabe } from '@/services/AllgemeineAufgabeService';
+import { getMappingsByAufgabe, createMapping, deleteMapping, getBasisMappingsByAufgabe, createBasisMapping, deleteBasisMapping } from '@/services/AllgemeineAufgabeService';
 import { getAllBasisLernziele } from '@/services/BasisLernzielService';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -213,13 +213,60 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
     },
   });
 
-  // Drag-Handler
+  // Basis-Mappings (Vorwissen) – analog zu den regulären Lernzielen.
+  const createBasisMappingMutation = useMutation({
+    mutationFn: ({ aufgabeId, basisLernzielId }) => createBasisMapping(aufgabeId, basisLernzielId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgabeBasisMappings'] });
+      triggerSaved();
+    },
+  });
+
+  const deleteBasisMappingMutation = useMutation({
+    mutationFn: (mappingId) => deleteBasisMapping(mappingId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgabeBasisMappings'] });
+      triggerSaved();
+    },
+  });
+
+  // Drag-Handler – unterstützt sowohl reguläre Lernziele (Präfix "lz-") als
+  // auch Basis-Lernziele (Präfix "basis-"). Die draggableId trägt das Präfix.
   const handleDragEnd = useCallback(
     async (result) => {
       if (!kannBearbeiten) return;
       const { destination, draggableId } = result;
       if (!destination || !destination.droppableId.startsWith('dropzone-')) return;
 
+      // ── Basis-Lernziel ──
+      if (draggableId.startsWith('basis-')) {
+        const basisId = draggableId.replace('basis-', '');
+        const basisLz = basisLernziele.find((lz) => lz.id === basisId);
+        if (!basisLz || mappedBasisLernziele.some((lz) => lz.id === basisLz.id)) {
+          toast.info('Basis-Vorwissen ist bereits zugeordnet');
+          return;
+        }
+        setMappedBasisLernziele((prev) => [...prev, basisLz]);
+        setSavingBasisIds((prev) => new Set([...prev, basisLz.id]));
+        try {
+          await createBasisMappingMutation.mutateAsync({
+            aufgabeId: aufgabe.id,
+            basisLernzielId: basisLz.id,
+          });
+        } catch (err) {
+          setMappedBasisLernziele((prev) => prev.filter((lz) => lz.id !== basisLz.id));
+          toast.error('Fehler beim Speichern');
+        } finally {
+          setSavingBasisIds((prev) => {
+            const next = new Set(prev);
+            next.delete(basisLz.id);
+            return next;
+          });
+        }
+        return;
+      }
+
+      // ── Reguläres Lernziel ──
       const lernzielId = draggableId.replace('lz-', '');
       const lernziel = alleLernziele.find((lz) => lz.id === lernzielId);
 
@@ -247,7 +294,7 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
         });
       }
     },
-    [alleLernziele, mappedLernziele, aufgabe.id, createMappingMutation, setMappedLernziele]
+    [alleLernziele, basisLernziele, mappedLernziele, mappedBasisLernziele, aufgabe.id, createMappingMutation, createBasisMappingMutation, kannBearbeiten]
   );
 
   const handleRemoveMapping = useCallback(
@@ -280,16 +327,30 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
   );
 
   const handleRemoveBasisMapping = useCallback(
-    (basisLernzielId) => {
-      // Handler wird direkt von InlineBasisLernzielSelector aufgerufen
+    async (basisLernzielId) => {
+      if (!kannBearbeiten) return;
+      const mapping = existingBasisMappings.find((m) => m.basislernziel_id === basisLernzielId);
+      const basisLz = basisLernziele.find((lz) => lz.id === basisLernzielId);
+
       setMappedBasisLernziele((prev) => prev.filter((lz) => lz.id !== basisLernzielId));
-      setSavingBasisIds((prev) => {
-        const next = new Set(prev);
-        next.delete(basisLernzielId);
-        return next;
-      });
+      setSavingBasisIds((prev) => new Set([...prev, basisLernzielId]));
+
+      try {
+        if (mapping) {
+          await deleteBasisMappingMutation.mutateAsync(mapping.id);
+        }
+      } catch (err) {
+        if (basisLz) setMappedBasisLernziele((prev) => [...prev, basisLz]);
+        toast.error('Fehler beim Löschen');
+      } finally {
+        setSavingBasisIds((prev) => {
+          const next = new Set(prev);
+          next.delete(basisLernzielId);
+          return next;
+        });
+      }
     },
-    []
+    [existingBasisMappings, basisLernziele, deleteBasisMappingMutation, kannBearbeiten]
   );
 
   // Gefilterte Listen (memoized)
@@ -384,18 +445,15 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
                       )}
                     </div>
 
-                    {/* Bereich 2: Basis-Vorwissen */}
+                    {/* Bereich 2: Basis-Vorwissen (per Drag & Drop). Das
+                        Index-Offset stellt sicher, dass die Draggable-Indizes
+                        innerhalb der gemeinsamen Source-Droppable eindeutig
+                        bleiben (oben bereits N reguläre Lernziele gerendert). */}
                     <div className="border-t pt-3">
-                      <InlineBasisLernzielSelector 
-                        aufgabeId={aufgabe?.id}
+                      <InlineBasisLernzielSelector
                         einheitFach={einheit?.fach}
-                        kannBearbeiten={kannBearbeiten}
-                        onLernzielAdded={() => {
-                          triggerSaved();
-                        }}
-                        onLernzielRemoved={() => {
-                          triggerSaved();
-                        }}
+                        mappedBasisIds={new Set(mappedBasisLernziele.map((lz) => lz.id))}
+                        draggableIndexOffset={lernzieleDeEinheit.length}
                       />
                     </div>
 

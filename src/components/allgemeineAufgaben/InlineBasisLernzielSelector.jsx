@@ -1,8 +1,7 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -10,31 +9,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ChevronRight } from 'lucide-react';
-import { toast } from 'sonner';
+import { Draggable, Droppable } from '@hello-pangea/dnd';
+import { GripVertical, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const FAECHER = [
-  'Deutsch', 'Mathematik', 'Englisch', 'Französisch', 'Latein',
-  'Biologie', 'Chemie', 'Physik', 'Geschichte', 'Geographie',
-  'Politik', 'Wirtschaft', 'Kunst', 'Musik', 'Sport', 'Religion', 'Ethik', 'Informatik',
-];
-
 /**
- * Inline Basis-Lernziel-Auswahl für die linke Spalte des Kompetenzen-Tabs
- * Filtert automatisch nach dem Fach der aktuellen Einheit
+ * Inline Basis-Lernziel-Auswahl für die linke Spalte des Kompetenzen-Tabs.
+ *
+ * Basis-Lernziele werden – wie die regulären Einheits-Lernziele – per Drag &
+ * Drop in die Dropzone gezogen. Die Drop-Logik liegt im Parent
+ * (AufgabeKompetenzMapping), der anhand des draggableId-Präfixes "basis-"
+ * erkennt, dass ein Basis-Mapping (statt eines normalen Lernziel-Mappings)
+ * angelegt werden muss.
+ *
+ * `mappedBasisIds` (vom Parent gepflegt) blendet bereits zugeordnete Ziele
+ * optisch aus, damit dieselbe Karte nicht zweimal in der Quell-Liste auftaucht.
  */
 export default function InlineBasisLernzielSelector({
-  aufgabeId,
   einheitFach,
-  onLernzielAdded,
-  onLernzielRemoved,
-  kannBearbeiten = false,
+  mappedBasisIds = new Set(),
+  draggableIndexOffset = 0,
 }) {
-  const queryClient = useQueryClient();
   const [selectedModul, setSelectedModul] = useState('');
   const [expandedPakete, setExpandedPakete] = useState(new Set());
-  const [checkedIds, setCheckedIds] = useState(new Set());
 
   // Daten laden
   const { data: basismodule = [] } = useQuery({
@@ -52,19 +49,6 @@ export default function InlineBasisLernzielSelector({
     queryFn: () => base44.entities.BasisLernziel.list(),
   });
 
-  const { data: existingMappings = [] } = useQuery({
-    queryKey: ['allgemeineAufgabeBasisMappings', aufgabeId],
-    queryFn: () =>
-      base44.entities.AllgemeineAufgabeBasisLernzielMapping.filter({
-        aufgabe_id: aufgabeId,
-      }),
-  });
-
-  // Sync mit DB auf Mount
-  useEffect(() => {
-    setCheckedIds(new Set(existingMappings.map((m) => m.basislernziel_id)));
-  }, [existingMappings]);
-
   // Gefilterte Module nach dem Fach der Einheit
   const filteredModule = useMemo(() => {
     if (!einheitFach) return [];
@@ -79,68 +63,15 @@ export default function InlineBasisLernzielSelector({
       .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
   }, [allPakete, selectedModul]);
 
-  // Lernziele für jedes Paket
+  // Lernziele für jedes Paket (bereits zugeordnete ausblenden)
   const paketMitLernzielen = useMemo(() => {
     return modulPakete.map((paket) => ({
       paket,
       lernziele: allLernziele
-        .filter((lz) => lz.basislernpaket_id === paket.id)
+        .filter((lz) => lz.basislernpaket_id === paket.id && !mappedBasisIds.has(lz.id))
         .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)),
     }));
-  }, [modulPakete, allLernziele]);
-
-  // Mutations
-  const createMapping = useMutation({
-    mutationFn: (data) =>
-      base44.entities.AllgemeineAufgabeBasisLernzielMapping.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['allgemeineAufgabeBasisMappings'],
-      });
-    },
-  });
-
-  const deleteMapping = useMutation({
-    mutationFn: (mappingId) =>
-      base44.entities.AllgemeineAufgabeBasisLernzielMapping.delete(mappingId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['allgemeineAufgabeBasisMappings'],
-      });
-    },
-  });
-
-  const handleCheckChange = useCallback(
-    async (lernzielId, checked) => {
-      if (!kannBearbeiten) return;
-      const newChecked = new Set(checkedIds);
-
-      try {
-        if (checked) {
-          newChecked.add(lernzielId);
-          await createMapping.mutateAsync({
-            aufgabe_id: aufgabeId,
-            basislernziel_id: lernzielId,
-          });
-          onLernzielAdded?.(lernzielId);
-        } else {
-          newChecked.delete(lernzielId);
-          const mapping = existingMappings.find(
-            (m) => m.basislernziel_id === lernzielId
-          );
-          if (mapping) {
-            await deleteMapping.mutateAsync(mapping.id);
-          }
-          onLernzielRemoved?.(lernzielId);
-        }
-        setCheckedIds(newChecked);
-      } catch (err) {
-        toast.error('Fehler beim Speichern');
-        console.error(err);
-      }
-    },
-    [checkedIds, existingMappings, aufgabeId, createMapping, deleteMapping, onLernzielAdded, onLernzielRemoved]
-  );
+  }, [modulPakete, allLernziele, mappedBasisIds]);
 
   const togglePaket = (paketId) => {
     const newExpanded = new Set(expandedPakete);
@@ -151,6 +82,10 @@ export default function InlineBasisLernzielSelector({
     }
     setExpandedPakete(newExpanded);
   };
+
+  // Globaler Index-Counter für Draggable-Indizes (muss innerhalb der Source-
+  // Droppable eindeutig sein – inkl. Offset für die regulären Lernziele oben).
+  let runningIndex = draggableIndexOffset;
 
   return (
     <div className="space-y-3">
@@ -182,7 +117,7 @@ export default function InlineBasisLernzielSelector({
         )}
       </div>
 
-      {/* Akkordeons mit Lernzielen */}
+      {/* Akkordeons mit draggable Lernzielen */}
       {selectedModul && (
         <div className="space-y-1.5">
           {paketMitLernzielen.length === 0 ? (
@@ -192,57 +127,64 @@ export default function InlineBasisLernzielSelector({
           ) : (
             paketMitLernzielen
               .filter((group) => group.lernziele.length > 0)
-              .map((group) => (
-              <div key={group.paket.id} className="border rounded-lg overflow-hidden">
-                <button
-                  onClick={() => togglePaket(group.paket.id)}
-                  className="w-full flex items-center justify-between px-3 py-2 bg-amber-50 border-b border-amber-200 hover:bg-amber-100 transition-colors"
-                >
-                  <span className="text-xs font-semibold text-amber-800 text-left">
-                    {group.paket.titel}
-                  </span>
-                  <ChevronRight
-                    className={cn(
-                      'w-3.5 h-3.5 text-amber-600 transition-transform shrink-0',
-                      expandedPakete.has(group.paket.id) && 'rotate-90'
-                    )}
-                  />
-                </button>
+              .map((group) => {
+                const isOpen = expandedPakete.has(group.paket.id);
+                return (
+                  <div key={group.paket.id} className="border rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => togglePaket(group.paket.id)}
+                      className="w-full flex items-center justify-between px-3 py-2 bg-blue-50 border-b border-blue-200 hover:bg-blue-100 transition-colors"
+                    >
+                      <span className="text-xs font-semibold text-blue-800 text-left">
+                        {group.paket.titel}
+                      </span>
+                      <ChevronRight
+                        className={cn(
+                          'w-3.5 h-3.5 text-blue-600 transition-transform shrink-0',
+                          isOpen && 'rotate-90'
+                        )}
+                      />
+                    </button>
 
-                {expandedPakete.has(group.paket.id) && (
-                  <div className="p-2 bg-white space-y-1.5">
-                    {group.lernziele.length === 0 ? (
-                      <p className="text-xs text-muted-foreground italic">
-                        Keine Lernziele in diesem Paket
-                      </p>
-                    ) : (
-                      group.lernziele.map((lz) => (
-                        <div
-                          key={lz.id}
-                          className="flex items-start gap-2.5 p-2 rounded hover:bg-muted/20 transition-colors"
-                        >
-                          <Checkbox
-                            id={`basis-${lz.id}`}
-                            checked={checkedIds.has(lz.id)}
-                            onCheckedChange={(checked) =>
-                              handleCheckChange(lz.id, checked)
-                            }
-                            disabled={!kannBearbeiten || createMapping.isPending || deleteMapping.isPending}
-                            className="mt-0.5 shrink-0"
-                          />
-                          <label
-                            htmlFor={`basis-${lz.id}`}
-                            className="text-xs leading-relaxed cursor-pointer flex-1 text-foreground/90"
-                          >
-                            {lz.text}
-                          </label>
-                        </div>
-                      ))
+                    {isOpen && (
+                      <div className="p-2 bg-white space-y-1.5">
+                        {group.lernziele.map((lz) => {
+                          const idx = runningIndex++;
+                          return (
+                            <Draggable
+                              key={lz.id}
+                              draggableId={`basis-${lz.id}`}
+                              index={idx}
+                            >
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={cn(
+                                    'flex items-start gap-2 p-2 rounded border cursor-grab active:cursor-grabbing transition-all',
+                                    snapshot.isDragging
+                                      ? 'opacity-50 ring-2 ring-primary bg-white'
+                                      : 'bg-white hover:bg-blue-50/50 border-blue-100'
+                                  )}
+                                >
+                                  <GripVertical className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                                  <div className="flex-1 min-w-0 text-xs">
+                                    <p className="font-medium leading-snug">{lz.text}</p>
+                                    <Badge variant="secondary" className="text-[10px] mt-1">
+                                      Vorwissen
+                                    </Badge>
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
-            ))
+                );
+              })
           )}
         </div>
       )}
