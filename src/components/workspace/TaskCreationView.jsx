@@ -450,7 +450,13 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
         //    Der Backend-Lock-Reaper räumt nach 30 Min. ohnehin auf.
         setIsEditingActive(false);
         releaseEditLockRef.current = null;
-        queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+        // Workspace-Daten frisch laden, damit der Edit-Banner (der sich aus
+        // is_locked/locked_by_email der Lernpakete im workspace-data-Query
+        // ableitet) NACH Tab-Wechsel nicht wieder erscheint.
+        await Promise.all([
+          queryClient.refetchQueries({ queryKey: ['workspace-data', einheitId], type: 'all' }),
+          queryClient.refetchQueries({ queryKey: ['lernpakete'], type: 'all' }),
+        ]);
       }
     };
 
