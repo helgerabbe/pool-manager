@@ -29,6 +29,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
+import { toast } from 'sonner';
 import { ChevronRight, Package, MousePointerClick, Lock, Crown, CheckCircle2, Menu, X, PenLine } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import ActivityMasterPanel from '@/components/workspace/ActivityMasterPanel';
@@ -391,12 +392,66 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
       if (!isEditing) releaseEditLockRef.current = null;
     }, []);
 
+   // Hart-Reset: Bricht den Bearbeitungsmodus immer ab, auch wenn nach einem
+   // Verbindungsabbruch / Reload der lokale releaseEditLockRef.current verloren
+   // ging. In diesem Fall ist der Paket-Lock noch in der DB, aber wir haben
+   // keinen Cleanup-Callback mehr im Speicher. Wir suchen daher das vom User
+   // selbst gehaltene Lernpaket direkt in der DB und geben es hart frei –
+   // releaseLernpaketLockSecure erlaubt das dem Lock-Besitzer.
    const handleGlobalExitEdit = async () => {
-      if (releaseEditLockRef.current) {
-        await releaseEditLockRef.current();
+      try {
+        // 1) Falls eine reguläre Release-Funktion registriert ist, diese
+        //    bevorzugt aufrufen (sie räumt zusätzlich Heartbeats auf).
+        if (releaseEditLockRef.current) {
+          try { await releaseEditLockRef.current(); } catch (e) { console.warn('[Tab4] regular release failed:', e); }
+        }
+
+        // 2) Fallback: Alle vom aktuellen User in dieser Einheit gehaltenen
+        //    Lernpaket-Locks hart freigeben (idempotent, deckt auch verwaiste
+        //    Locks nach Verbindungsabbruch ab).
+        const myLockedPakete = (lernpakete || []).filter(
+          (p) =>
+            p.einheit_id === einheitId &&
+            p.is_locked &&
+            p.locked_by_email === userEmail
+        );
+        if (myLockedPakete.length > 0) {
+          await Promise.all(
+            myLockedPakete.map((p) =>
+              base44.functions
+                .invoke('releaseLernpaketLockSecure', { lernpaketId: p.id })
+                .catch((err) => console.warn('[Tab4] release fallback failed:', p.id, err))
+            )
+          );
+        }
+
+        // 3) Auch den lokal gemerkten Lock-Ref (falls er von Punkt 2 nicht
+        //    erfasst wurde, z. B. weil noch nicht synchron gefetcht) sicher
+        //    freigeben.
+        if (currentPaketLockRef.current) {
+          try {
+            await base44.entities.Lernpakete.update(currentPaketLockRef.current, {
+              is_locked: false,
+              locked_by_email: null,
+              locked_at: null,
+            });
+          } catch (e) {
+            console.warn('[Tab4] direct ref release failed:', e);
+          }
+          currentPaketLockRef.current = null;
+        }
+
+        toast.success('✅ Bearbeitungsmodus beendet.');
+      } catch (err) {
+        console.error('[Tab4] handleGlobalExitEdit error:', err);
+        toast.error('Fehler beim Beenden des Bearbeitungsmodus – bitte Seite neu laden.');
+      } finally {
+        // 4) UI-State IMMER zurücksetzen – auch wenn DB-Calls fehlschlagen.
+        //    Der Backend-Lock-Reaper räumt nach 30 Min. ohnehin auf.
         setIsEditingActive(false);
+        releaseEditLockRef.current = null;
+        queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
       }
-      // Paket-Lock wird automatisch durch useEffect freigegeben
     };
 
    // ActivityID kann aus Props oder URL-Parametern kommen
