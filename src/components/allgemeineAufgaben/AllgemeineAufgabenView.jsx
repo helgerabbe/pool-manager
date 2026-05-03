@@ -140,153 +140,136 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
   const hatBild = !!aufgabe.aufgaben_bild_url;
   const materialienCount = Array.isArray(aufgabe.materialien) ? aufgabe.materialien.length : 0;
   const hatMaterialHinweise = !!aufgabe.hinweise_zum_material?.trim();
+  const isApproved = aufgabe.content_status === 'approved';
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-3 p-4">
 
-      {/* Header: Titel + Aufgaben-Typ-Badge nebeneinander */}
-      <div className="flex items-start gap-3 flex-wrap">
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-muted-foreground mb-1">Titel</p>
-          <h2 className={cn('text-lg font-semibold leading-tight', !hatTitel && 'italic text-muted-foreground font-normal')}>
-            {hatTitel ? aufgabe.titel : 'Kein Titel vergeben'}
-          </h2>
-        </div>
+      {/* Zeile 1: Titel + Freigabe-Status-Badge rechts */}
+      <div className="flex items-start gap-3">
+        <h2 className={cn(
+          'text-base font-semibold leading-snug flex-1 min-w-0',
+          !hatTitel && 'italic text-muted-foreground font-normal'
+        )}>
+          {hatTitel ? aufgabe.titel : 'Kein Titel vergeben'}
+        </h2>
+        <Badge className={cn('flex items-center gap-1 shrink-0',
+          isApproved
+            ? 'bg-green-100 text-green-700 border border-green-300'
+            : 'bg-amber-100 text-amber-700 border border-amber-300'
+        )}>
+          {isApproved
+            ? <><CheckCircle2 className="w-3 h-3" /> Freigegeben</>
+            : <><PenLine className="w-3 h-3" /> In Bearbeitung</>
+          }
+        </Badge>
+      </div>
+
+      {/* Zeile 2: Meta-Inline (Themenfeld · Typ · Mission · Schwierigkeit) */}
+      <div className="flex items-center gap-x-3 gap-y-1.5 flex-wrap text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1">
+          <Folder className="w-3.5 h-3.5" />
+          <span className={cn(!themenfeld && 'italic')}>
+            {themenfeld?.titel || 'Ohne Themenfeld'}
+          </span>
+        </span>
+        <span className="text-border">·</span>
         <span
           className={cn(
-            'inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border shrink-0',
+            'inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border',
             typMeta.color.bg, typMeta.color.text, typMeta.color.border
           )}
           title={typMeta.description}
         >
-          <TypIcon className="w-3.5 h-3.5" />
+          <TypIcon className="w-3 h-3" />
           {typMeta.label}
         </span>
-      </div>
-
-      {/* Themenfeld */}
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Folder className="w-3.5 h-3.5" />
-        <span className="font-medium">Themenfeld:</span>
-        <span className={cn(!themenfeld && 'italic')}>
-          {themenfeld?.titel || 'Ohne Themenfeld'}
+        {showMission && (
+          <>
+            <span className="text-border">·</span>
+            <MissionBadge missionId={aufgabe.mission_type} size="sm" showFallback />
+          </>
+        )}
+        <span className="text-border">·</span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="text-[11px]">Schwierigkeit:</span>
+          {aufgabe.schwierigkeitsgrad ? (
+            <SternDisplay grad={aufgabe.schwierigkeitsgrad} />
+          ) : (
+            <span className="italic text-[11px]">nicht definiert</span>
+          )}
         </span>
-      </div>
-
-      {/* Mission-Badge (nur Ebene-2-Aufgaben). Wenn keine Mission gesetzt:
-          dezenter "Mission fehlt"-Hinweis als sanfter Nudge zum Pflegen. */}
-      {showMission && (
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground mb-2">Mission</p>
-          <MissionBadge missionId={aufgabe.mission_type} showFallback />
-        </div>
-      )}
-
-      {/* Metadaten Schwierigkeit + Status */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-lg bg-muted/30 border border-border">
-        <div>
-          <p className="text-xs text-muted-foreground">Schwierigkeitsgrad</p>
-          <div className="mt-1">
-            {aufgabe.schwierigkeitsgrad ? (
-              <SternDisplay grad={aufgabe.schwierigkeitsgrad} />
-            ) : (
-              <span className="text-xs text-muted-foreground">Nicht gesetzt</span>
-            )}
-          </div>
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground">Freigabe-Status</p>
-          <Badge className={cn('mt-1 flex items-center gap-1 w-fit',
-            aufgabe.content_status === 'approved'
-              ? 'bg-green-100 text-green-700 border border-green-300'
-              : 'bg-amber-100 text-amber-700 border border-amber-300'
-          )}>
-            {aufgabe.content_status === 'approved'
-              ? <><CheckCircle2 className="w-3 h-3" /> Freigegeben</>
-              : <><PenLine className="w-3 h-3" /> In Bearbeitung</>
-            }
-          </Badge>
-        </div>
       </div>
 
       {/* Aufgabenstellung */}
-      <div>
-        <p className="text-xs font-semibold text-muted-foreground mb-2">Aufgabenstellung</p>
+      <div className="pt-1">
+        <p className="text-[11px] font-semibold text-muted-foreground mb-1 uppercase tracking-wide">Aufgabenstellung</p>
         <div className="p-3 rounded-lg bg-muted/20 border border-border text-sm whitespace-pre-wrap">
           {aufgabe.aufgabenstellung || <span className="text-muted-foreground italic">Nicht vorhanden</span>}
         </div>
       </div>
 
-      {/* Aufgaben-Bild (Screenshot/Foto der Aufgabe) */}
+      {/* Aufgaben-Bild (kompakter) */}
       {hatBild && (
         <div>
-          <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-            <ImageIcon className="w-3.5 h-3.5" />
+          <p className="text-[11px] font-semibold text-muted-foreground mb-1 uppercase tracking-wide flex items-center gap-1.5">
+            <ImageIcon className="w-3 h-3" />
             Aufgaben-Bild
           </p>
           <img
             src={aufgabe.aufgaben_bild_url}
             alt="Aufgaben-Bild"
-            className="max-h-64 rounded-lg border border-border object-contain bg-muted/20"
+            className="max-h-48 rounded-lg border border-border object-contain bg-muted/20"
           />
         </div>
       )}
 
-      {/* Erwartetes Ergebnis */}
-      {(aufgabe.ergebnis_form || aufgabe.ergebnis_dateiformat) && (
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground mb-2">Erwartetes Ergebnis</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {aufgabe.ergebnis_form && (
-              <div className="p-3 rounded-lg bg-muted/20 border border-border text-xs">
-                <p className="flex items-center gap-1.5 text-muted-foreground mb-1">
-                  <Tag className="w-3 h-3" />
-                  Ergebnisform
-                </p>
-                <p className="font-medium text-sm">{aufgabe.ergebnis_form}</p>
-              </div>
-            )}
-            {aufgabe.ergebnis_dateiformat && (
-              <div className="p-3 rounded-lg bg-muted/20 border border-border text-xs">
-                <p className="flex items-center gap-1.5 text-muted-foreground mb-1">
-                  <FileType2 className="w-3 h-3" />
-                  Dateiformat
-                </p>
-                <p className="font-medium text-sm">{aufgabe.ergebnis_dateiformat}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Erwartetes Ergebnis: Inline-Zeile mit explizitem "nicht definiert" */}
+      <div className="flex items-start gap-x-4 gap-y-1 flex-wrap text-xs px-3 py-2 rounded-lg bg-muted/20 border border-border">
+        <span className="inline-flex items-center gap-1.5">
+          <Tag className="w-3 h-3 text-muted-foreground" />
+          <span className="text-muted-foreground">Ergebnisform:</span>
+          <span className={cn('font-medium', !aufgabe.ergebnis_form && 'italic text-muted-foreground font-normal')}>
+            {aufgabe.ergebnis_form || 'nicht definiert'}
+          </span>
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <FileType2 className="w-3 h-3 text-muted-foreground" />
+          <span className="text-muted-foreground">Dateiformat:</span>
+          <span className={cn('font-medium', !aufgabe.ergebnis_dateiformat && 'italic text-muted-foreground font-normal')}>
+            {aufgabe.ergebnis_dateiformat || 'nicht definiert'}
+          </span>
+        </span>
+      </div>
 
       {/* Material-Hinweise (nur bei Handlungsaufgaben) */}
       {hatMaterialHinweise && (
         <div>
-          <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-            <Package className="w-3.5 h-3.5" />
+          <p className="text-[11px] font-semibold text-muted-foreground mb-1 uppercase tracking-wide flex items-center gap-1.5">
+            <Package className="w-3 h-3" />
             Hinweise zum physischen Material
           </p>
-          <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-sm text-emerald-900 whitespace-pre-wrap">
+          <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-sm text-emerald-900 whitespace-pre-wrap">
             {aufgabe.hinweise_zum_material}
           </div>
         </div>
       )}
 
-      {/* Zusätzliche Materialien */}
-      {materialienCount > 0 && (
+      {/* Zusätzliche Materialien — Status-Zeile, expandiert nur bei Vorhandensein */}
+      {materialienCount > 0 ? (
         <div>
-          <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-            <Package className="w-3.5 h-3.5" />
+          <p className="text-[11px] font-semibold text-muted-foreground mb-1 uppercase tracking-wide flex items-center gap-1.5">
+            <Package className="w-3 h-3" />
             Zusätzliche Materialien ({materialienCount})
           </p>
           <div className="space-y-2">
             {aufgabe.materialien.map((mat, idx) => (
               <div key={idx} className="p-2 rounded-lg bg-muted/20 border border-border text-xs">
                 {mat.type === 'image' && mat.url && (
-                  <img src={mat.url} alt={mat.label || 'Bild'} className="max-h-48 rounded border border-border object-contain mb-2" />
+                  <img src={mat.url} alt={mat.label || 'Bild'} className="max-h-40 rounded border border-border object-contain mb-2" />
                 )}
                 {mat.type === 'pdf' && mat.url && (
-                  <iframe src={mat.url} className="w-full h-56 rounded border border-border mb-2" title={mat.label || 'PDF'} />
+                  <iframe src={mat.url} className="w-full h-48 rounded border border-border mb-2" title={mat.label || 'PDF'} />
                 )}
                 <p className="font-medium mb-0.5">
                   {mat.type === 'freitext' && '📝'} {mat.type === 'pdf' && !mat.url && '📄'} {mat.type === 'image' && !mat.url && '🖼️'} {mat.type === 'book_ref' && '📚'}
@@ -297,16 +280,21 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
             ))}
           </div>
         </div>
+      ) : (
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground italic px-3 py-1.5 rounded-lg bg-muted/10 border border-dashed border-border">
+          <Package className="w-3 h-3" />
+          Keine zusätzlichen Materialien hochgeladen
+        </div>
       )}
 
       {/* Aktionen */}
       {kannBearbeiten && (
-        <div className="flex gap-2 pt-4 border-t border-border flex-wrap">
+        <div className="flex gap-2 pt-3 border-t border-border flex-wrap">
           {aufgabe.sync_status === 'pending' ? (
             <p className="text-xs text-orange-700 bg-orange-50 border border-orange-200 rounded px-2 py-1 flex items-center gap-1">
               🔒 Im Export – schreibgeschützt bis Moodle-Upload bestätigt
             </p>
-          ) : aufgabe.content_status === 'approved' ? (
+          ) : isApproved ? (
             <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1 flex items-center gap-1">
               🔒 Freigegeben – Freigabe aufheben um zu bearbeiten
             </p>
@@ -326,7 +314,7 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
             aufgabe={aufgabe}
             kannBearbeiten={kannBearbeiten}
           />
-          {aufgabe.content_status !== 'approved' && (
+          {!isApproved && (
             <Button
               variant="outline"
               size="sm"
