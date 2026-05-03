@@ -68,17 +68,36 @@ export default function HelpBadge({ text, docsSlug }) {
     document.body
   );
 
+  // WICHTIG: HelpBadge wird teils innerhalb von <button>-Komponenten gerendert
+  // (z. B. TabsTrigger). Deshalb darf der Trigger hier KEIN <button> sein —
+  // sonst meckert React mit „<button> cannot appear as a descendant of <button>".
+  // Ein <span> mit role="button" + Tastatur-Handler verhält sich identisch.
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      e.stopPropagation();
+      handleClick();
+    }
+  };
+  const handleSpanClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleClick();
+  };
+
   return (
     <span className="inline-flex items-center">
-      <button
+      <span
         ref={btnRef}
-        type="button"
-        onClick={handleClick}
-        className="inline-flex items-center justify-center w-4 h-4 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors focus:outline-none"
+        role="button"
+        tabIndex={0}
+        onClick={handleSpanClick}
+        onKeyDown={handleKeyDown}
+        className="inline-flex items-center justify-center w-4 h-4 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors focus:outline-none cursor-pointer"
         aria-label="Hilfe"
       >
         <HelpCircle className="w-3.5 h-3.5" />
-      </button>
+      </span>
       {popover}
     </span>
   );
