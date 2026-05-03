@@ -26,6 +26,8 @@ import { useAufgabeLock } from '@/hooks/useAufgabeLock';
 // Lernpfad-Dashboard als System-Bausteine bzw. Bündel-Items.
 import InhaltSection from '@/components/allgemeineAufgaben/aufgabeSections/InhaltSection';
 import HandlungSection from '@/components/allgemeineAufgaben/aufgabeSections/HandlungSection';
+import MissionPicker from '@/components/missionen/MissionPicker';
+import { isMissionApplicable } from '@/lib/missionen';
 
 // ── Default-Form ──────────────────────────────────────────────────────────────
 const EMPTY_FORM = {
@@ -40,6 +42,7 @@ const EMPTY_FORM = {
   erwartungshorizont: '',
   aufgaben_typ: 'inhalt',
   hinweise_zum_material: '',
+  mission_type: null,
 };
 
 // ── Validierung pro Aufgaben-Typ ──────────────────────────────────────────────
@@ -94,6 +97,12 @@ function buildPayload(formData, einheitId, defaultAnforderungsebene, isUpdate) {
     ergebnis_dateiformat: formData.ergebnis_dateiformat || null,
     erwartungshorizont: formData.erwartungshorizont || null,
   };
+  // Mission-Type nur für 'inhalt'/'handlung' persistieren (Scope-Regel aus
+  // lib/missionen.js → isMissionApplicable). Wir setzen das Feld explizit
+  // (auch auf null), damit ein Wechsel auf einen Typ ohne Mission das Feld
+  // beim Update zurücksetzt.
+  shared.mission_type = formData.mission_type || null;
+
   if (typ === 'handlung') {
     return { ...shared, hinweise_zum_material: formData.hinweise_zum_material || '' };
   }
@@ -149,6 +158,12 @@ export default function AufgabeCreateView({
 
   const isValid = validateForm(formData);
   const aufgabenTypMeta = getAufgabenTyp(formData.aufgaben_typ);
+  // Scope-Check für Mission-Picker: nur bei aufgaben_typ ∈ {inhalt, handlung}
+  // sichtbar (Lernpaket-/Projekt-/Container-Typen sind ausgeschlossen).
+  const showMissionPicker = isMissionApplicable({
+    aufgaben_typ: formData.aufgaben_typ,
+    anforderungsebene: defaultAnforderungsebene,
+  });
 
   // ── Lock-Check ──────────────────────────────────────────────────────────────
   const { data: lockInfo } = useAufgabeLock(initialData?.id);
@@ -274,6 +289,18 @@ export default function AufgabeCreateView({
 
             {/* Typ-spezifische Section */}
             {renderTypSection()}
+
+            {/* Mission-Picker — nur für Ebene-2-Aufgaben (inhalt/handlung).
+                Phase 1 des Missionen-Epics: optionale manuelle Auswahl. */}
+            {showMissionPicker && (
+              <div className="pt-2 border-t border-border">
+                <MissionPicker
+                  value={formData.mission_type}
+                  onChange={(id) => set('mission_type', id)}
+                  disabled={isReadOnly}
+                />
+              </div>
+            )}
           </fieldset>
 
           <DialogFooter>

@@ -17,6 +17,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { RotateCcw, AlertCircle, CheckCircle2, Clock, ShieldCheck, Info, Pencil, Upload, RefreshCw } from 'lucide-react';
 import HelpBadge from '@/components/ui/HelpBadge';
+import MissionBadge from '@/components/missionen/MissionBadge';
+import { isMissionApplicable } from '@/lib/missionen';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -228,6 +230,10 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                     const isPending = aufgabe.sync_status === 'pending';
                     const isApproved = aufgabe.content_status === 'approved';
                     const isSelectable = isApproved && !isPending;
+                    // Mission-Indikator: nur für Aufgaben im Mission-Scope
+                    // (inhalt/handlung). Zeigt Emoji+Label oder dezenten
+                    // "Mission fehlt"-Hinweis als Pflege-Nudge (Frage H).
+                    const showMission = isMissionApplicable(aufgabe);
                     return (
                       <div key={aufgabe.id} className={cn('flex items-center gap-2 p-1.5 rounded transition', isSelectable ? 'hover:bg-muted/20' : 'opacity-70')}>
                         <Checkbox checked={isSelected} onCheckedChange={() => toggleActivities([aufgabe])} disabled={!isSelectable} className="h-4 w-4 shrink-0" />
@@ -235,6 +241,9 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                           📝 {aufgabe.titel || 'Aufgabe ohne Titel'}
                           {aufgabe.anforderungsebene && <span className="ml-1 text-muted-foreground">({aufgabe.anforderungsebene})</span>}
                         </button>
+                        {showMission && (
+                          <MissionBadge missionId={aufgabe.mission_type} size="sm" showFallback />
+                        )}
                         {isPending && <UndoButton activityId={aufgabe.id} entityType="allgemein" />}
                         <AktivitaetStatusBadge activity={aufgabe} />
                       </div>

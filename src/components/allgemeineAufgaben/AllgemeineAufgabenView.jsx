@@ -24,6 +24,10 @@ import { useTaskLock } from '@/hooks/useLocks';
 import { base44 } from '@/api/base44Client';
 import AiTaskWizardModal from '@/components/ui/AiTaskWizardModal';
 import HelpBadge from '@/components/ui/HelpBadge';
+import MissionBadge from '@/components/missionen/MissionBadge';
+import MissionStripe from '@/components/missionen/MissionStripe';
+import MissionFilterChips, { FILTER_ALL, FILTER_NONE } from '@/components/missionen/MissionFilterChips';
+import { isMissionApplicable } from '@/lib/missionen';
 
 /**
  * Schwierigkeitsgrad-Anzeige (1-3 Sterne)
@@ -80,35 +84,44 @@ function ThemenfeldNode({ themenfeld, aufgaben, selectedId, onSelect }) {
 }
 
 /**
- * Einzelner Aufgaben-Node im Baum
+ * Einzelner Aufgaben-Node im Baum.
+ * Zeigt links einen 4px-Mission-Streifen (sofern die Aufgabe eine
+ * Mission haben kann – also nur bei aufgaben_typ ∈ {inhalt, handlung}).
  */
 function AufgabeNode({ aufgabe, isSelected, onSelect }) {
   const hatTitel = !!aufgabe.titel?.trim();
   const isPending = aufgabe.sync_status === 'pending';
+  const showMission = isMissionApplicable(aufgabe);
   return (
     <button
       onClick={() => onSelect(aufgabe)}
       className={cn(
-        'w-full flex flex-col px-2 py-1.5 rounded text-left text-xs transition-colors',
+        'w-full flex items-stretch gap-2 px-2 py-1.5 rounded text-left text-xs transition-colors',
         isSelected
           ? 'bg-primary/10 border border-primary/30'
           : 'hover:bg-muted/50'
       )}
     >
-      <div className="flex items-center gap-2 w-full">
-        {isPending
-          ? <Lock className="w-3 h-3 text-orange-500 shrink-0" />
-          : aufgabe.content_status === 'approved'
-            ? <CheckCircle2 className="w-3 h-3 text-green-600 shrink-0" />
-            : <PenLine className="w-3 h-3 text-amber-500 shrink-0" />
-        }
-        <span className={cn('truncate flex-1', !hatTitel && 'italic text-muted-foreground')}>
-          {hatTitel ? aufgabe.titel : 'Kein Titel'}
-        </span>
-        {aufgabe.schwierigkeitsgrad && <SternDisplay grad={aufgabe.schwierigkeitsgrad} />}
-      </div>
-      <div className="pl-5 mt-0.5">
-        <TaskStatusBadge content_status={aufgabe.content_status} sync_status={aufgabe.sync_status} />
+      {showMission && <MissionStripe missionId={aufgabe.mission_type} className="self-stretch" />}
+      <div className="flex flex-col flex-1 min-w-0">
+        <div className="flex items-center gap-2 w-full">
+          {isPending
+            ? <Lock className="w-3 h-3 text-orange-500 shrink-0" />
+            : aufgabe.content_status === 'approved'
+              ? <CheckCircle2 className="w-3 h-3 text-green-600 shrink-0" />
+              : <PenLine className="w-3 h-3 text-amber-500 shrink-0" />
+          }
+          <span className={cn('truncate flex-1', !hatTitel && 'italic text-muted-foreground')}>
+            {hatTitel ? aufgabe.titel : 'Kein Titel'}
+          </span>
+          {aufgabe.schwierigkeitsgrad && <SternDisplay grad={aufgabe.schwierigkeitsgrad} />}
+        </div>
+        <div className="pl-5 mt-0.5 flex items-center gap-1.5 flex-wrap">
+          <TaskStatusBadge content_status={aufgabe.content_status} sync_status={aufgabe.sync_status} />
+          {showMission && aufgabe.mission_type && (
+            <MissionBadge missionId={aufgabe.mission_type} size="sm" />
+          )}
+        </div>
       </div>
     </button>
   );
@@ -120,9 +133,19 @@ function AufgabeNode({ aufgabe, isSelected, onSelect }) {
 function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit, onDelete }) {
   const hatTitel = !!aufgabe.titel?.trim();
   const hatInhalt = !!aufgabe.aufgabenstellung?.trim();
+  const showMission = isMissionApplicable(aufgabe);
 
   return (
     <div className="space-y-6 p-6">
+
+      {/* Mission-Badge (nur Ebene-2-Aufgaben). Wenn keine Mission gesetzt:
+          dezenter "Mission fehlt"-Hinweis als sanfter Nudge zum Pflegen. */}
+      {showMission && (
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-2">Mission</p>
+          <MissionBadge missionId={aufgabe.mission_type} showFallback />
+        </div>
+      )}
 
       {/* Metadaten */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-lg bg-muted/30 border border-border">
@@ -246,6 +269,8 @@ export default function AllgemeineAufgabenView({
   const [typPickerOpen, setTypPickerOpen] = useState(false);
   const [pendingAufgabenTyp, setPendingAufgabenTyp] = useState('inhalt');
   const isEbene3 = anforderungsebene === '3 - Projekt';
+  // Mission-Filter für die Sidebar (nur in Ebene 2 sinnvoll). FILTER_ALL = alle.
+  const [missionFilter, setMissionFilter] = useState(FILTER_ALL);
 
   // Aktuellen Nutzer laden
   React.useEffect(() => {
@@ -339,6 +364,32 @@ export default function AllgemeineAufgabenView({
     invalidateKeys: [['allgemeineAufgaben', einheitId]],
   });
 
+  // Mission-Counts für die Filter-Chips (Anzahl-Badges).
+  // Wird über die UNGEFILTERTE Liste berechnet, damit die Zahlen stabil bleiben,
+  // egal welcher Filter gerade aktiv ist.
+  const missionCounts = useMemo(() => {
+    const counts = { all: 0, none: 0 };
+    allgemeineAufgaben.forEach((a) => {
+      if (!isMissionApplicable(a)) return;
+      counts.all += 1;
+      if (!a.mission_type) {
+        counts.none += 1;
+        return;
+      }
+      counts[a.mission_type] = (counts[a.mission_type] || 0) + 1;
+    });
+    return counts;
+  }, [allgemeineAufgaben]);
+
+  // Aufgaben nach Mission-Filter einschränken (vor der Themenfeld-Gruppierung).
+  const aufgabenNachFilter = useMemo(() => {
+    if (missionFilter === FILTER_ALL) return allgemeineAufgaben;
+    if (missionFilter === FILTER_NONE) {
+      return allgemeineAufgaben.filter((a) => isMissionApplicable(a) && !a.mission_type);
+    }
+    return allgemeineAufgaben.filter((a) => a.mission_type === missionFilter);
+  }, [allgemeineAufgaben, missionFilter]);
+
   // Gruppierung nach Themenfeld
   const gruppiertNachThemenfeld = useMemo(() => {
     const gruppen = {};
@@ -351,8 +402,8 @@ export default function AllgemeineAufgabenView({
     // Ohne Themenfeld
     gruppen['_none'] = { titel: 'Ohne Themenfeld', aufgaben: [], themenfeld: null };
 
-    // Aufgaben verteilen
-    allgemeineAufgaben.forEach(aufgabe => {
+    // Aufgaben verteilen (auf der gefilterten Liste)
+    aufgabenNachFilter.forEach(aufgabe => {
       const key = aufgabe.themenfeld_id || '_none';
       if (gruppen[key]) {
         gruppen[key].aufgaben.push(aufgabe);
@@ -360,7 +411,7 @@ export default function AllgemeineAufgabenView({
     });
 
     return Object.values(gruppen).filter(g => g.aufgaben.length > 0);
-  }, [allgemeineAufgaben, themenfelder]);
+  }, [aufgabenNachFilter, themenfelder]);
 
   const selectedAufgabe = allgemeineAufgaben.find(a => a.id === selectedAufgabeId);
 
@@ -403,10 +454,26 @@ export default function AllgemeineAufgabenView({
             </div>
           )}
 
+          {/* Mission-Filter-Leiste (nur sinnvoll in Ebene 2 — in Ebene 3
+              bleiben die Chips ausgeblendet, weil Projekte keine Mission haben). */}
+          {!isEbene3 && allgemeineAufgaben.length > 0 && (
+            <div className="shrink-0 px-3 py-2 border-b border-border bg-muted/30">
+              <MissionFilterChips
+                value={missionFilter}
+                onChange={setMissionFilter}
+                counts={missionCounts}
+              />
+            </div>
+          )}
+
           <div className="flex-1 overflow-y-auto p-4 space-y-1">
             {allgemeineAufgaben.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-8">
                 Noch keine Aufgaben
+              </p>
+            ) : aufgabenNachFilter.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-8">
+                Keine Aufgaben mit diesem Filter.
               </p>
             ) : (
               gruppiertNachThemenfeld.map(gruppe => (
