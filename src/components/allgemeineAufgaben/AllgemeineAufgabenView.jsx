@@ -130,7 +130,7 @@ function AufgabeNode({ aufgabe, isSelected, onSelect }) {
 /**
  * Detail-Panel: Allgemeine Angaben (Tab 1)
  */
-function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit, onDelete }) {
+function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, isEditMode = false, isLockedByOther = false, onEdit, onDelete }) {
   const hatTitel = !!aufgabe.titel?.trim();
   const hatInhalt = !!aufgabe.aufgabenstellung?.trim();
   const showMission = isMissionApplicable(aufgabe);
@@ -222,18 +222,21 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
               variant="outline"
               size="sm"
               onClick={() => onEdit(aufgabe)}
-              disabled={aufgabe.sync_status === 'pending'}
+              disabled={aufgabe.sync_status === 'pending' || isLockedByOther}
+              title={isLockedByOther ? 'Aufgabe wird gerade von einem anderen Nutzer bearbeitet' : 'Aufgabe in vollem Dialog bearbeiten'}
               className="gap-2"
             >
               <Edit className="w-4 h-4" />
               Bearbeiten
             </Button>
           )}
-          <PublishAllgemeineAufgabeButton 
-            aufgabe={aufgabe} 
-            kannBearbeiten={kannBearbeiten}
-          />
-          {aufgabe.content_status !== 'approved' && (
+          {isEditMode && (
+            <PublishAllgemeineAufgabeButton
+              aufgabe={aufgabe}
+              kannBearbeiten={kannBearbeiten}
+            />
+          )}
+          {isEditMode && aufgabe.content_status !== 'approved' && (
             <Button
               variant="outline"
               size="sm"
@@ -527,8 +530,21 @@ export default function AllgemeineAufgabenView({
                 <AllgemeineAngabenPanel
                   aufgabe={selectedAufgabe}
                   themenfelder={themenfelder}
-                  kannBearbeiten={kannBearbeiten && lock.isEditMode}
-                  onEdit={(a) => {
+                  kannBearbeiten={kannBearbeiten}
+                  isEditMode={lock.isEditMode}
+                  isLockedByOther={lock.isLockedByOther}
+                  onEdit={async (a) => {
+                    // Lock automatisch holen, falls noch nicht im Edit-Modus.
+                    // So braucht der Nutzer nicht erst „Bearbeiten" oben in der
+                    // Lock-Bar klicken, dann nochmal hier — ein Klick reicht.
+                    if (!lock.isEditMode && !lock.isLockedByOther) {
+                      try {
+                        await lock.enterEditMode();
+                      } catch {
+                        // Lock-Fehler bereits im Hook getoastet.
+                        return;
+                      }
+                    }
                     setEditingAufgabe(a);
                     setCreateFormOpen(true);
                   }}
