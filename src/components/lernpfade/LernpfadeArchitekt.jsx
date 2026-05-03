@@ -15,6 +15,7 @@ import { Sparkles, Layers, Trophy, Star, Plus, BookOpen, ShieldCheck, ShieldOff,
 import { Button } from '@/components/ui/button';
 import LernpfadeSektor from '@/components/lernpfade/LernpfadeSektor';
 import InfoHint from '@/components/lernpfade/InfoHint';
+import EinheitFreigabeBlock from '@/components/lernpfade/EinheitFreigabeBlock';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
@@ -224,6 +225,7 @@ function LernTypTab({ typ, active, count, onClick }) {
 }
 
 export default function LernpfadeArchitekt({
+  einheitId,
   konfiguration = {},
   activeLernTyp,
   onActiveLernTypChange,
@@ -318,6 +320,12 @@ export default function LernpfadeArchitekt({
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      {/* Schritt 3 des Freigabe-Workflows: Status-Block der gesamten Einheit
+          ganz oben. Zeigt 4-Dashboard-Übersicht und ggf. Final-Release-Button. */}
+      {einheitId && (
+        <EinheitFreigabeBlock einheitId={einheitId} darfFreigeben={darfFreigeben} />
+      )}
+
       {/* Zeile oben: nur „Bearbeitung beenden" (Status & Freigabe sind in den
           Canvas verschoben, siehe inlineReleaseRow). */}
       {showTopActionRow && (

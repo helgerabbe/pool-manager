@@ -822,6 +822,7 @@ export default function LernpfadeCockpit({
 
           <main className="flex-1 overflow-hidden min-h-0">
             <LernpfadeArchitekt
+              einheitId={einheit?.id}
               konfiguration={konfiguration}
               activeLernTyp={activeLernTyp}
               onActiveLernTypChange={handleActiveLernTypChange}

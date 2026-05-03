@@ -1,22 +1,21 @@
 /**
  * AufgabeLockBanner.jsx
  *
- * Prominentes Warn-Banner im Aufgaben-Editor (Tab 5), wenn die Aufgabe durch
- * einen oder mehrere freigegebene Lernpfade gesperrt ist.
+ * Prominentes Warn-Banner im Aufgaben-Editor (Tab 5), wenn die Inhalts-Sperre
+ * der Aufgabe greift.
+ *
+ * Schritt 3 des Freigabe-Workflows: Die Sperre kommt jetzt von der finalen
+ * Einheits-Freigabe (`einheit_freigabe_status === 'final_freigegeben'`),
+ * nicht mehr von einzelnen Lernpfaden. Das Banner-Prop `byPfade` bleibt aus
+ * Kompatibilitätsgründen erhalten, wird aktuell aber nicht mehr genutzt.
  *
  * Quelle: useAufgabeLock(aufgabeId) → { locked, by_pfade }
  */
 
 import React from 'react';
 import { Lock } from 'lucide-react';
-import { formatLerntypList } from '@/lib/lernpfadLockUtils';
 
-export default function AufgabeLockBanner({ byPfade = [] }) {
-  if (!byPfade || byPfade.length === 0) return null;
-
-  const liste = formatLerntypList(byPfade);
-  const ist = byPfade.length === 1 ? 'den Pfad' : 'die Pfade';
-
+export default function AufgabeLockBanner({ byPfade: _byPfade = [] }) {
   return (
     <div
       role="alert"
@@ -24,9 +23,10 @@ export default function AufgabeLockBanner({ byPfade = [] }) {
     >
       <Lock className="w-5 h-5 text-orange-700 shrink-0 mt-0.5" />
       <div className="text-sm text-orange-900 leading-snug">
-        <p className="font-semibold">Diese Aufgabe ist gesperrt durch {ist}: {liste}.</p>
+        <p className="font-semibold">Diese Einheit ist final freigegeben.</p>
         <p className="mt-1 text-xs text-orange-800">
-          Bitte den Pfad zuerst im Dashboard (Tab „Dashboards") entsperren, um Änderungen vorzunehmen.
+          Die Inhalte aller Aufgaben dieser Einheit sind gesperrt. Über den Tab „Dashboards"
+          → „Freigabe aufheben" lassen sich die Inhalte wieder bearbeiten.
         </p>
       </div>
     </div>

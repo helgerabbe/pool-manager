@@ -1,61 +1,76 @@
 /**
  * lernpfadLockUtils.js
  *
- * Lese-Helfer rund um die Junction-Table `LernpfadAufgabeMembership`.
+ * Lese-Helfer für die Inhalts-Sperre einer Aufgabe.
  *
- * SCHRITT 2 (3-stufiger Freigabe-Workflow): Die Inhalts-Sperre einer Aufgabe
- * ist NICHT mehr an `pfad_status === 'locked_for_export'` gekoppelt. Ein
- * geprüftes Dashboard sperrt nur noch die Komposition (im Architekt selbst),
- * NICHT die enthaltenen Inhalte. Das ist nötig, weil bis zur finalen
- * Einheits-Freigabe (Schritt 3) noch die anderen drei Lerntyp-Dashboards
- * komponiert werden müssen, was jederzeit Inhaltsänderungen erfordern kann.
+ * Schritt 3 des dreistufigen Freigabe-Workflows:
+ * Die Inhalts-Sperre einer Aufgabe ist NICHT mehr an den Pfad-Status
+ * (`LernpfadAufgabeMembership.pfad_status`) gekoppelt, sondern an den finalen
+ * Einheits-Status (`Einheiten.einheit_freigabe_status === 'final_freigegeben'`).
  *
- * Folge: `isAufgabeLocked` und `getLockStatusBatchByEinheit` liefern aktuell
- * KEINE Sperre mehr (leeres Ergebnis). Sie bleiben als API erhalten, damit
- * Schritt 3 sie nahtlos auf die neue Einheits-Sperre umstellen kann, ohne
- * dass alle Aufrufer angefasst werden müssen.
+ * Konsequenzen:
+ *   - Schritt 1 (Aufgabe approved)         → kein Lock; nur sync-relevant.
+ *   - Schritt 2 (Dashboard locked_for_export) → kein Inhalts-Lock; nur Komposition.
+ *   - Schritt 3 (Einheit final_freigegeben) → ALLE Aufgaben dieser Einheit
+ *     sind read-only (Tab 5 wird gesperrt).
+ *
+ * Die API der beiden Funktionen bleibt stabil (`{ locked, by_pfade }`),
+ * damit alle Aufrufer (AufgabeCreateView, Cockpit-Ampel etc.) ohne Eingriff
+ * weiter funktionieren. `by_pfade` ist seit Schritt 3 leer, weil der Lock
+ * die ganze Einheit betrifft und nicht mehr an einzelne Lerntypen gebunden ist.
  */
 
+import { base44 } from '@/api/base44Client';
 import { PFAD_STATUS } from '@/lib/pfadStatus';
 
-// Bewusst exportiert, damit Schritt 3 sie für die Einheits-Sperre wiederverwenden
-// kann, ohne dass die Konstante neu definiert wird.
+// Bewusst exportiert für Cockpit-Tooling, das den DB-Wert braucht.
 export const LOCK_STATUS = PFAD_STATUS.LOCKED;
+
+const EINHEIT_FINAL = 'final_freigegeben';
+
+async function isEinheitFinalFreigegeben(einheitId) {
+  if (!einheitId) return false;
+  const einheit = await base44.entities.Einheiten.get(einheitId);
+  return einheit?.einheit_freigabe_status === EINHEIT_FINAL;
+}
 
 /**
  * Lock-Status für eine einzelne Aufgabe.
  *
- * Phase 1 (Schritt 2): liefert immer `{ locked: false, by_pfade: [] }`,
- * weil die Inhalts-Sperre vom Dashboard-Lock entkoppelt wurde.
+ * Liefert `locked: true`, sobald die zugehörige Einheit final freigegeben
+ * wurde. `by_pfade` bleibt leer, weil die Sperre die Einheit als Ganzes
+ * betrifft (siehe Datei-Header).
  *
- * @param {string} _aufgabeId
+ * @param {string} aufgabeId
  * @returns {Promise<{ locked: boolean, by_pfade: string[] }>}
  */
-export async function isAufgabeLocked(_aufgabeId) {
-  return { locked: false, by_pfade: [] };
+export async function isAufgabeLocked(aufgabeId) {
+  if (!aufgabeId) return { locked: false, by_pfade: [] };
+  const aufgabe = await base44.entities.AllgemeineAufgabe.get(aufgabeId);
+  if (!aufgabe?.einheit_id) return { locked: false, by_pfade: [] };
+  const locked = await isEinheitFinalFreigegeben(aufgabe.einheit_id);
+  return { locked, by_pfade: [] };
 }
 
 /**
- * Batched Lock-Status für mehrere Aufgaben.
+ * Batched Lock-Status für alle Aufgaben einer Einheit.
  *
- * Phase 1 (Schritt 2): liefert eine leere Map. Aufrufer dürfen sich darauf
- * verlassen, dass „nicht in der Map" weiterhin „ungelockt" bedeutet.
+ * Bei einer final freigegebenen Einheit gelten alle Aufgaben als gesperrt;
+ * wir markieren sie hier alle einheitlich. Bei einer Draft-Einheit ist die
+ * Map leer ("nicht in der Map" = "ungelockt").
  *
- * @param {string} _einheitId
+ * @param {string} einheitId
  * @returns {Promise<Map<string, { locked: boolean, by_pfade: string[] }>>}
  */
-export async function getLockStatusBatchByEinheit(_einheitId) {
-  return new Map();
-}
+export async function getLockStatusBatchByEinheit(einheitId) {
+  const result = new Map();
+  if (!einheitId) return result;
+  const final = await isEinheitFinalFreigegeben(einheitId);
+  if (!final) return result;
 
-// Lerntyp-Keys → menschlich lesbare Labels (für die Editor-Warnmeldung).
-export const LERNTYP_LABELS = {
-  minimalist: 'Minimalist',
-  pragmatiker: 'Pragmatiker',
-  ehrgeizig: 'Ehrgeizig',
-  passioniert: 'Passioniert',
-};
-
-export function formatLerntypList(lerntypKeys = []) {
-  return lerntypKeys.map((k) => LERNTYP_LABELS[k] || k).join(', ');
+  const aufgaben = await base44.entities.AllgemeineAufgabe.filter({ einheit_id: einheitId });
+  for (const a of aufgaben || []) {
+    if (a?.id) result.set(a.id, { locked: true, by_pfade: [] });
+  }
+  return result;
 }

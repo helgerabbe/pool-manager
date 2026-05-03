@@ -134,6 +134,24 @@
       "default": 1,
       "description": "Schema-Version der lernpfade_konfiguration. 1 = legacy (items ohne instance_id). 2 = Phase 1 Dashboard-Epic (Instanz-IDs, parent_instance_id, B\u00fcndel-Hierarchie). 3 = Epic Semantische Sektoren (sektor_typ, themenfeld_id, titel_snapshot; bundle_config.modus). Wird vom Backfill backfillSemantischeSektoren auf 3 gesetzt; das Frontend kann anhand dieses Felds erkennen, ob die Migration f\u00fcr eine Einheit bereits gelaufen ist."
     },
+    "einheit_freigabe_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "final_freigegeben"
+      ],
+      "default": "draft",
+      "description": "Schritt 3 des dreistufigen Freigabe-Workflows: 'draft' = Einheit noch in Bearbeitung. 'final_freigegeben' = alle 4 Dashboards wurden gepr\u00fcft (locked_for_export) und die Einheit als Ganzes freigegeben. Erst dieser Status sperrt die Inhalte (Tab 5 wird read-only). Die Lernpfad-Locks (LernpfadAufgabeMembership.pfad_status) bleiben davon unber\u00fchrt."
+    },
+    "einheit_freigegeben_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel der finalen Einheits-Freigabe (Schritt 3). Wird beim \u00dcbergang draft \u2192 final_freigegeben gesetzt und beim Entsperren wieder geleert."
+    },
+    "einheit_freigegeben_by": {
+      "type": "string",
+      "description": "E-Mail der Person, die die Einheit final freigegeben hat (Schritt 3)."
+    },
     "version": {
       "type": "integer",
       "default": 1,
