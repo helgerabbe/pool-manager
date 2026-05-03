@@ -87,9 +87,10 @@ export default function TaskLockBar({
           onClick={onCancel}
           className="gap-1.5 h-7 text-xs"
           disabled={isSaving}
+          title="Beendet nur den Bearbeitungsmodus – bereits gespeicherte Änderungen bleiben erhalten."
         >
           <X className="w-3.5 h-3.5" />
-          Abbrechen
+          Bearbeitungsmodus beenden
         </Button>
         {onSave && (
           <Button
