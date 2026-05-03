@@ -33,6 +33,18 @@
       "default": "inhalt",
       "description": "Funktionale/p\u00e4dagogische Rolle der Aufgabe im Lernpfad-System (orthogonal zur anforderungsebene). 'inhalt' = klassische Fachaufgabe, 'buendel' = Verlinkt mehrere Lernpakete (Moodle-B\u00fcndel), 'prozess' = digitaler Lernorganisations-Meilenstein mit Texteingabe, 'projekt_anker' = Tor zu Ebene-3-Projekten, 'handlung' = handlungsorientierte Aufgabe mit physischem Material (digitale Best\u00e4tigung per Checkbox), 'auswahl_buendel' = Brian-B\u00fcndel mit X-von-Y-Auswahl auf Aufgaben-Ebene."
     },
+    "mission_type": {
+      "type": "string",
+      "enum": [
+        "problem",
+        "entdeckung",
+        "recherche",
+        "anwendung",
+        "transfer",
+        "kreativitaet"
+      ],
+      "description": "Didaktische Mission der Aufgabe (Epic 'Intelligentes Aufgaben-Management'). Gilt ausschlie\u00dflich f\u00fcr aufgaben_typ \u2208 {inhalt, handlung} mit anforderungsebene \u2208 {'1 - Basis', '2 - Transfer'}. Bei allen anderen Typen bleibt das Feld null und wird im UI ausgeblendet. Werte: 'problem' = Den Funken z\u00fcnden (Alltagsbezug & Motivation), 'entdeckung' = Selber rausfinden lassen (Induktion & Regelbildung), 'recherche' = Informationen checken (Informationsbeschaffung & Quellen), 'anwendung' = Zeigen, was man kann (Wissen im bekannten Kontext festigen), 'transfer' = In neue Welten \u00fcbertragen (Wissen im neuen Kontext anwenden), 'kreativitaet' = Etwas Eigenes erschaffen (Sch\u00f6pferische Gestaltung & Deep Dive). Single Source of Truth f\u00fcr Labels/Farben/Emojis: lib/missionen.js."
+    },
     "verlinkte_lernpaket_ids": {
       "type": "array",
       "items": {
