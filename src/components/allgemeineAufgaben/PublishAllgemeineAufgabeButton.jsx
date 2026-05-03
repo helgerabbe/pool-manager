@@ -84,14 +84,21 @@ export default function PublishAllgemeineAufgabeButton({ aufgabe, kannBearbeiten
 
   if (isApproved) {
     if (!canRevoke) return null;
-    const isPendingExport = aufgabe.sync_status === 'pending';
+    // Eine Aufgabe darf NICHT mehr aus der Freigabe gezogen werden, sobald sie
+    // im Export-Cockpit für einen Export-Lauf vorgemerkt ist – egal ob Moodle
+    // oder Brian. Der Status 'pending' bedeutet "wartet auf Bestätigung des
+    // Export-Teams". Solange er anliegt, bleibt die Aufgabe schreibgeschützt.
+    const isPendingExport =
+      aufgabe.sync_status === 'pending' ||
+      aufgabe.moodle_sync_status === 'pending' ||
+      aufgabe.brian_sync_status === 'pending';
     return (
       <Button
         variant="outline"
         size="sm"
         onClick={() => revokeMutation.mutate()}
         disabled={revokeMutation.isPending || isPendingExport}
-        title={isPendingExport ? 'Nicht möglich: Aufgabe wird gerade exportiert' : undefined}
+        title={isPendingExport ? 'Nicht möglich: Aufgabe wartet auf Export-Bestätigung (Moodle oder Brian)' : undefined}
         className="gap-2 text-green-700 border-green-300 hover:bg-green-50"
       >
         {revokeMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCw className="w-3.5 h-3.5" />}
