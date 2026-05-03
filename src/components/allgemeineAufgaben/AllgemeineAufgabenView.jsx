@@ -589,7 +589,7 @@ export default function AllgemeineAufgabenView({
         open={wizardOpen}
         onOpenChange={setWizardOpen}
         taskType={anforderungsebene === '3 - Projekt' ? 'Projektaufgabe' : 'Allgemeine Aufgabe (Transfer)'}
-        onSave={async ({ titel, aufgabenstellung, ki_kompetenz_tags }) => {
+        onSave={async ({ titel, aufgabenstellung, ki_kompetenz_tags, mission_type }) => {
           await createAllgemeineAufgabe({
             einheit_id: einheitId,
             anforderungsebene,
@@ -597,6 +597,9 @@ export default function AllgemeineAufgabenView({
             titel,
             aufgabenstellung,
             ki_kompetenz_tags,
+            // Mission nur für Ebene 2 sinnvoll — bei Ebene 3 (Projekt) wird das
+            // Feld vom Schema ohnehin nicht gepflegt.
+            mission_type: anforderungsebene === '3 - Projekt' ? null : (mission_type || null),
           });
           queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheitId] });
         }}

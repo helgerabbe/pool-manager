@@ -2,8 +2,14 @@
  * AiTaskWizardModal.jsx
  *
  * Zweistufiger KI-Assistent:
- * Schritt 1 – Idee eingeben → KI generiert Vorschlag
- * Schritt 2 – Vorschlag prüfen/bearbeiten → Als Aufgabe übernehmen
+ * Schritt 1 – Briefing eingeben (Idee + Mission + Material-Einsatz)
+ *             → KI generiert Vorschlag.
+ * Schritt 2 – Vorschlag prüfen/bearbeiten → Als Aufgabe übernehmen.
+ *
+ * Idee, Mission und Material-Einsatz werden zusammen als Briefing an
+ * `generateTaskProposal` geschickt. Die im Briefing gewählte Mission
+ * wird auch in den Save-Payload übernommen, damit die fertige Aufgabe
+ * direkt korrekt klassifiziert ist.
  */
 
 import React, { useState } from 'react';
@@ -16,9 +22,17 @@ import { Loader2, Wand2, Sparkles, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import SpeechInputButton from '@/components/ui/SpeechInputButton';
+import MissionPicker from '@/components/missionen/MissionPicker';
+import { Slider } from '@/components/ui/slider';
+import { MATERIAL_LEVELS, DEFAULT_MATERIAL_LEVEL, getMaterialLevel } from '@/lib/inspirationConstants';
 
-async function generateTaskIdea(idee, task_type) {
-  const response = await base44.functions.invoke('generateTaskProposal', { idee, task_type });
+async function generateTaskIdea({ idee, task_type, mission_type, material_level }) {
+  const response = await base44.functions.invoke('generateTaskProposal', {
+    idee,
+    task_type,
+    mission_type,
+    material_level,
+  });
   return response.data;
 }
 
@@ -26,10 +40,12 @@ export default function AiTaskWizardModal({
   open,
   onOpenChange,
   taskType = 'Allgemeine Aufgabe',
-  onSave,          // async fn({ titel, aufgabenstellung, ki_kompetenz_tags })
+  onSave,          // async fn({ titel, aufgabenstellung, ki_kompetenz_tags, mission_type })
 }) {
   const [step, setStep] = useState(1);
   const [idee, setIdee] = useState('');
+  const [missionType, setMissionType] = useState(null);
+  const [materialLevel, setMaterialLevel] = useState(DEFAULT_MATERIAL_LEVEL);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -45,6 +61,8 @@ export default function AiTaskWizardModal({
     setTimeout(() => {
       setStep(1);
       setIdee('');
+      setMissionType(null);
+      setMaterialLevel(DEFAULT_MATERIAL_LEVEL);
       setTitel('');
       setAufgabenstellung('');
       setKompetenzen([]);
@@ -60,7 +78,12 @@ export default function AiTaskWizardModal({
     setIsGenerating(true);
     setErrorMsg('');
     try {
-      const result = await generateTaskIdea(idee.trim(), taskType);
+      const result = await generateTaskIdea({
+        idee: idee.trim(),
+        task_type: taskType,
+        mission_type: missionType,
+        material_level: materialLevel,
+      });
       setTitel(result.titel || '');
       setAufgabenstellung(result.aufgabenstellung || '');
       setKompetenzen(result.kompetenzen || []);
@@ -87,6 +110,7 @@ export default function AiTaskWizardModal({
         titel: titel.trim(),
         aufgabenstellung: aufgabenstellung.trim(),
         ki_kompetenz_tags: kompetenzen,
+        mission_type: missionType || null,
       });
       toast.success('Aufgabe wurde übernommen.');
       handleClose();
@@ -96,6 +120,8 @@ export default function AiTaskWizardModal({
       setIsSaving(false);
     }
   };
+
+  const currentMaterial = getMaterialLevel(materialLevel);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -111,9 +137,9 @@ export default function AiTaskWizardModal({
 
         {/* ── Scrollbarer Body ── */}
         <div className="flex-1 overflow-y-auto min-h-0 px-6 py-4">
-          {/* ── Schritt 1: Idee eingeben ── */}
+          {/* ── Schritt 1: Briefing eingeben ── */}
           {step === 1 && (
-            <div className="space-y-4">
+            <div className="space-y-5">
               {errorMsg && (
                 <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-800">
                   <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
@@ -121,8 +147,11 @@ export default function AiTaskWizardModal({
                 </div>
               )}
               <p className="text-sm text-muted-foreground">
-                Beschreibe kurz deine Idee für eine Aufgabe. Die KI erstellt daraus einen vollständigen Entwurf.
+                Beschreibe kurz deine Idee, wähle die Art der Aufgabe und den Material-Einsatz.
+                Die KI baut daraus einen vollständigen Entwurf.
               </p>
+
+              {/* Idee */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -137,6 +166,43 @@ export default function AiTaskWizardModal({
                   className="w-full h-32 p-3 border border-border rounded-lg text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring"
                   autoFocus
                 />
+              </div>
+
+              {/* Mission */}
+              <div className="pt-2 border-t border-border">
+                <MissionPicker
+                  value={missionType}
+                  onChange={setMissionType}
+                  disabled={isGenerating}
+                />
+              </div>
+
+              {/* Material-Einsatz */}
+              <div className="pt-2 border-t border-border space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">
+                    Material-Einsatz
+                    <span className="text-xs font-normal text-muted-foreground ml-1.5">(optional)</span>
+                  </label>
+                  <span className="text-xs font-medium text-muted-foreground inline-flex items-center gap-1">
+                    <span aria-hidden="true">{currentMaterial.emoji}</span>
+                    {currentMaterial.label} · {currentMaterial.short}
+                  </span>
+                </div>
+                <Slider
+                  min={0}
+                  max={3}
+                  step={1}
+                  value={[materialLevel]}
+                  onValueChange={(v) => setMaterialLevel(v[0])}
+                  disabled={isGenerating}
+                />
+                <div className="flex justify-between text-[10px] text-muted-foreground px-0.5">
+                  {MATERIAL_LEVELS.map((m) => (
+                    <span key={m.value}>{m.emoji}</span>
+                  ))}
+                </div>
+                <p className="text-[11px] text-muted-foreground">{currentMaterial.hint}</p>
               </div>
             </div>
           )}
@@ -199,7 +265,7 @@ export default function AiTaskWizardModal({
                 onClick={() => setStep(1)}
                 className="text-xs text-muted-foreground hover:text-foreground underline"
               >
-                ← Idee erneut eingeben
+                ← Briefing erneut anpassen
               </button>
             </div>
           )}

@@ -28,18 +28,6 @@ import InhaltSection from '@/components/allgemeineAufgaben/aufgabeSections/Inhal
 import HandlungSection from '@/components/allgemeineAufgaben/aufgabeSections/HandlungSection';
 import MissionPicker from '@/components/missionen/MissionPicker';
 import { isMissionApplicable } from '@/lib/missionen';
-import InspirationModal from '@/components/missionen/InspirationModal';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Sparkles } from 'lucide-react';
 
 // ── Default-Form ──────────────────────────────────────────────────────────────
 const EMPTY_FORM = {
@@ -138,13 +126,6 @@ export default function AufgabeCreateView({
   const [materialUploading, setMaterialUploading] = useState(false);
   const isUploading = bildUploading || materialUploading;
 
-  // Inspiration-Engine (Phase 2 / PR5):
-  // - inspirationOpen: Modal sichtbar ja/nein.
-  // - pendingProposal: vom Modal akzeptierter Vorschlag, der noch auf
-  //   Bestätigung wartet (nur wenn der Editor bereits Inhalt enthält).
-  const [inspirationOpen, setInspirationOpen] = useState(false);
-  const [pendingProposal, setPendingProposal] = useState(null);
-
   // Form bei Öffnen/Initial-Daten neu aufsetzen.
   // Wichtig: `initialData` aus der DB kann typ-fremde Felder als `null`
   // enthalten (z. B. `aufgabenstellung: null` bei einem Buendel). Damit
@@ -216,65 +197,6 @@ export default function AufgabeCreateView({
     },
     onError: () => toast.error('Fehler beim Aktualisieren'),
   });
-
-  // ── Inspiration-Übernahme ──────────────────────────────────────────────
-  // Mapping eines Inspiration-Proposals in den Editor-State. Wird sowohl
-  // direkt (leerer Editor) als auch nach Bestätigung des Überschreib-
-  // Dialogs aufgerufen.
-  const applyProposal = ({ proposal, materialLevel }) => {
-    if (!proposal) return;
-    setFormData((prev) => {
-      const next = {
-        ...prev,
-        titel: proposal.titel || '',
-        aufgabenstellung: proposal.aufgabenstellung || '',
-        schwierigkeitsgrad: proposal.schwierigkeitsgrad || null,
-        mission_type: proposal.mission_type || null,
-      };
-
-      // Mapping der Material-Checkliste je nach Aufgaben-Typ:
-      // - handlung: in 'hinweise_zum_material' (Pflichtfeld der Sektion).
-      // - inhalt: als zusätzlicher 'free_text'-Eintrag in 'materialien',
-      //   damit der Lehrer ihn weiter bearbeiten oder löschen kann.
-      const mats = proposal.required_materials;
-      if (mats && materialLevel > 0) {
-        if ((prev.aufgaben_typ || 'inhalt') === 'handlung') {
-          next.hinweise_zum_material = mats;
-        } else {
-          const materialien = Array.isArray(prev.materialien) ? [...prev.materialien] : [];
-          materialien.push({
-            type: 'free_text',
-            label: 'Benötigtes Material',
-            content: mats,
-          });
-          next.materialien = materialien;
-        }
-      }
-      return next;
-    });
-    toast.success('Vorschlag in den Editor übernommen.');
-  };
-
-  // Schutz-Logik: Hat der Editor bereits Inhalt, der durch Übernahme
-  // verloren ginge? Wir prüfen die Felder, die der Vorschlag schreibt.
-  const hasEditorContent = () => {
-    if (formData.titel?.trim()) return true;
-    if (formData.aufgabenstellung?.trim()) return true;
-    if (formData.schwierigkeitsgrad) return true;
-    if (formData.mission_type) return true;
-    if ((formData.aufgaben_typ || 'inhalt') === 'handlung' && formData.hinweise_zum_material?.trim()) return true;
-    return false;
-  };
-
-  // Wird vom InspirationModal aufgerufen, wenn der Lehrer "Übernehmen"
-  // klickt. Bei vorhandenem Inhalt: Bestätigung erforderlich; sonst direkt.
-  const handleInspirationAccept = (payload) => {
-    if (hasEditorContent()) {
-      setPendingProposal(payload);
-    } else {
-      applyProposal(payload);
-    }
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -368,27 +290,6 @@ export default function AufgabeCreateView({
             {/* Typ-spezifische Section */}
             {renderTypSection()}
 
-            {/* Inspiration-Engine (Phase 2): nur für Ebene-2-Aufgaben
-                (inhalt/handlung) sinnvoll — gleiche Scope-Regel wie
-                der Mission-Picker. */}
-            {showMissionPicker && (
-              <div className="pt-2 border-t border-border">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setInspirationOpen(true)}
-                  disabled={isReadOnly}
-                  className="gap-2 border-amber-300 bg-amber-50/50 text-amber-900 hover:bg-amber-50 hover:text-amber-900"
-                >
-                  <Sparkles className="w-4 h-4 text-amber-500" />
-                  ✨ Inspiration holen
-                </Button>
-                <p className="text-[11px] text-muted-foreground mt-1.5">
-                  Du brichst auf, hast aber keine konkrete Idee? Lass dir vom KI-Tutor einen Vorschlag bauen.
-                </p>
-              </div>
-            )}
-
             {/* Mission-Picker — nur für Ebene-2-Aufgaben (inhalt/handlung).
                 Phase 1 des Missionen-Epics: optionale manuelle Auswahl. */}
             {showMissionPicker && (
@@ -436,50 +337,6 @@ export default function AufgabeCreateView({
             </Button>
           </DialogFooter>
         </form>
-
-        {/* Inspiration-Modal (Phase 2 / PR5) */}
-        {showMissionPicker && (
-          <InspirationModal
-            open={inspirationOpen}
-            onOpenChange={setInspirationOpen}
-            aufgabenTyp={formData.aufgaben_typ || 'inhalt'}
-            einheitId={einheitId}
-            initialMission={formData.mission_type}
-            onAccept={handleInspirationAccept}
-          />
-        )}
-
-        {/* Schutz-Logik: Bestätigungsdialog fürs Überschreiben */}
-        <AlertDialog
-          open={!!pendingProposal}
-          onOpenChange={(open) => { if (!open) setPendingProposal(null); }}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Bestehenden Inhalt überschreiben?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Im Editor sind bereits Inhalte vorhanden. Wenn du den Vorschlag übernimmst,
-                werden <strong>Titel, Aufgabenstellung, Schwierigkeitsgrad und Mission</strong> ersetzt.
-                {(formData.aufgaben_typ || 'inhalt') === 'handlung'
-                  ? ' Die Materialhinweise werden ebenfalls überschrieben.'
-                  : ' Die Materialliste wird zusätzlich als Eintrag angehängt (nicht überschrieben).'}
-                <br /><br />
-                Möchtest du fortfahren?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  if (pendingProposal) applyProposal(pendingProposal);
-                  setPendingProposal(null);
-                }}
-              >
-                Ja, überschreiben
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </DialogContent>
     </Dialog>
   );
