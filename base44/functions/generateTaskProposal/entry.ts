@@ -57,14 +57,14 @@ Die Lehrkraft hat folgende grobe Idee eingegeben:
 Erstelle daraus einen vollständigen Aufgabenentwurf, der zur gewählten Mission und zum Material-Einsatz passt:
 1. Einem prägnanten Titel (max. 80 Zeichen)
 2. Einer klar formulierten, vollständigen Aufgabenstellung (2-5 Sätze, direkt an Schüler gerichtet)
-3. 3-5 Kompetenz-Schlagworten (z.B. "Analyse", "Vergleich", "Argumentation", "Kreativität")
+3. Einer Liste der konkret benötigten Materialien, die die LEHRKRAFT für diese Aufgabe bereitstellen oder besorgen muss (z. B. "Zeitungsartikel zum Thema Zufall", "Würfel (mind. 2 pro Gruppe)", "Anleitung zum Würfeln als Handout"). 1–6 Einträge, jeweils kurz und konkret. WICHTIG: Wenn der Material-Einsatz "Kein zusätzliches Material" ist, gib ein leeres Array zurück.
 4. Falls oben keine Mission vorgegeben wurde: schlage eine passende Mission vor (einer der Slugs: problem, entdeckung, recherche, anwendung, transfer, kreativitaet). Falls eine Mission vorgegeben war, gib genau diese zurück.
 
 Antworte ausschließlich im folgenden JSON-Format, ohne Markdown oder weitere Erklärungen:
 {
   "titel": "...",
   "aufgabenstellung": "...",
-  "kompetenzen": ["...", "...", "..."],
+  "materialien": ["...", "...", "..."],
   "mission_type": "..."
 }`;
 
@@ -75,10 +75,10 @@ Antworte ausschließlich im folgenden JSON-Format, ohne Markdown oder weitere Er
         properties: {
           titel: { type: 'string' },
           aufgabenstellung: { type: 'string' },
-          kompetenzen: { type: 'array', items: { type: 'string' } },
+          materialien: { type: 'array', items: { type: 'string' } },
           mission_type: { type: 'string' },
         },
-        required: ['titel', 'aufgabenstellung', 'kompetenzen'],
+        required: ['titel', 'aufgabenstellung', 'materialien'],
       },
     });
 

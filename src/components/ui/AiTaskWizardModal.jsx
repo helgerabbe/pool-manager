@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Wand2, Sparkles, Info } from 'lucide-react';
+import { Loader2, Wand2, Sparkles, Package, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import SpeechInputButton from '@/components/ui/SpeechInputButton';
@@ -53,7 +53,7 @@ export default function AiTaskWizardModal({
   // Bearbeitbare Felder nach KI-Antwort
   const [titel, setTitel] = useState('');
   const [aufgabenstellung, setAufgabenstellung] = useState('');
-  const [kompetenzen, setKompetenzen] = useState([]);
+  const [materialien, setMaterialien] = useState([]);
 
   const handleClose = () => {
     onOpenChange(false);
@@ -65,7 +65,7 @@ export default function AiTaskWizardModal({
       setMaterialLevel(DEFAULT_MATERIAL_LEVEL);
       setTitel('');
       setAufgabenstellung('');
-      setKompetenzen([]);
+      setMaterialien([]);
       setErrorMsg('');
     }, 300);
   };
@@ -86,7 +86,7 @@ export default function AiTaskWizardModal({
       });
       setTitel(result.titel || '');
       setAufgabenstellung(result.aufgabenstellung || '');
-      setKompetenzen(result.kompetenzen || []);
+      setMaterialien(Array.isArray(result.materialien) ? result.materialien : []);
       setStep(2);
     } catch (err) {
       const msg = err.message?.includes('429') || err.message?.includes('Rate limit')
@@ -109,7 +109,6 @@ export default function AiTaskWizardModal({
       await onSave({
         titel: titel.trim(),
         aufgabenstellung: aufgabenstellung.trim(),
-        ki_kompetenz_tags: kompetenzen,
         mission_type: missionType || null,
       });
       toast.success('Aufgabe wurde übernommen.');
@@ -239,26 +238,26 @@ export default function AiTaskWizardModal({
                 />
               </div>
 
-              {/* Kompetenz-Chips */}
+              {/* Benötigte Materialien */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Benötigte Kompetenzen (KI-Vorschlag)
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <Package className="w-3.5 h-3.5" />
+                  Benötigte Materialien (KI-Vorschlag)
                 </label>
-                <div className="flex flex-wrap gap-2">
-                  {kompetenzen.map((k, i) => (
-                    <Badge key={i} className="bg-primary/10 text-primary border border-primary/20 text-xs">
-                      <Sparkles className="w-3 h-3 mr-1" />
-                      {k}
-                    </Badge>
-                  ))}
-                </div>
-                {/* Hinweis-Banner */}
-                <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
-                  <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                  <span>
-                    <strong>Hinweis:</strong> Dies sind KI-Vorschläge. Bitte verknüpfe später die entsprechenden Lernpakete (Ebene&nbsp;1) manuell im Tab „Kompetenzzuordnung".
-                  </span>
-                </div>
+                {materialien.length > 0 ? (
+                  <ul className="space-y-1.5 rounded-lg border border-border bg-muted/40 p-3">
+                    {materialien.map((m, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm">
+                        <span className="mt-1 w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                        <span>{m}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-muted-foreground italic px-1">
+                    Kein zusätzliches Material nötig — die Aufgabe steht für sich.
+                  </p>
+                )}
               </div>
 
               {/* Zurück-Link */}
