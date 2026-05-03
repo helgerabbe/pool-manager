@@ -10,7 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { Plus, Star, FileText, ChevronRight, Edit, Trash2, CheckCircle2, PenLine, Lock, Wand2 } from 'lucide-react';
+import { Plus, Star, FileText, ChevronRight, Edit, Trash2, CheckCircle2, PenLine, Lock, Wand2, Image as ImageIcon, Package, Tag, Folder, FileType2 } from 'lucide-react';
+import { getAufgabenTyp } from '@/lib/aufgabenTypen';
 import TaskStatusBadge from '@/components/ui/TaskStatusBadge';
 import TaskLockBar from '@/components/ui/TaskLockBar';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
@@ -132,11 +133,45 @@ function AufgabeNode({ aufgabe, isSelected, onSelect }) {
  */
 function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit, onDelete }) {
   const hatTitel = !!aufgabe.titel?.trim();
-  const hatInhalt = !!aufgabe.aufgabenstellung?.trim();
   const showMission = isMissionApplicable(aufgabe);
+  const themenfeld = themenfelder.find((tf) => tf.id === aufgabe.themenfeld_id);
+  const typMeta = getAufgabenTyp(aufgabe.aufgaben_typ);
+  const TypIcon = typMeta.icon;
+  const hatBild = !!aufgabe.aufgaben_bild_url;
+  const materialienCount = Array.isArray(aufgabe.materialien) ? aufgabe.materialien.length : 0;
+  const hatMaterialHinweise = !!aufgabe.hinweise_zum_material?.trim();
 
   return (
     <div className="space-y-6 p-6">
+
+      {/* Header: Titel + Aufgaben-Typ-Badge nebeneinander */}
+      <div className="flex items-start gap-3 flex-wrap">
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-muted-foreground mb-1">Titel</p>
+          <h2 className={cn('text-lg font-semibold leading-tight', !hatTitel && 'italic text-muted-foreground font-normal')}>
+            {hatTitel ? aufgabe.titel : 'Kein Titel vergeben'}
+          </h2>
+        </div>
+        <span
+          className={cn(
+            'inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border shrink-0',
+            typMeta.color.bg, typMeta.color.text, typMeta.color.border
+          )}
+          title={typMeta.description}
+        >
+          <TypIcon className="w-3.5 h-3.5" />
+          {typMeta.label}
+        </span>
+      </div>
+
+      {/* Themenfeld */}
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Folder className="w-3.5 h-3.5" />
+        <span className="font-medium">Themenfeld:</span>
+        <span className={cn(!themenfeld && 'italic')}>
+          {themenfeld?.titel || 'Ohne Themenfeld'}
+        </span>
+      </div>
 
       {/* Mission-Badge (nur Ebene-2-Aufgaben). Wenn keine Mission gesetzt:
           dezenter "Mission fehlt"-Hinweis als sanfter Nudge zum Pflegen. */}
@@ -147,7 +182,7 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
         </div>
       )}
 
-      {/* Metadaten */}
+      {/* Metadaten Schwierigkeit + Status */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-lg bg-muted/30 border border-border">
         <div>
           <p className="text-xs text-muted-foreground">Schwierigkeitsgrad</p>
@@ -182,10 +217,68 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
         </div>
       </div>
 
-      {/* Materialien */}
-      {aufgabe.materialien && aufgabe.materialien.length > 0 && (
+      {/* Aufgaben-Bild (Screenshot/Foto der Aufgabe) */}
+      {hatBild && (
         <div>
-          <p className="text-xs font-semibold text-muted-foreground mb-2">Materialien ({aufgabe.materialien.length})</p>
+          <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+            <ImageIcon className="w-3.5 h-3.5" />
+            Aufgaben-Bild
+          </p>
+          <img
+            src={aufgabe.aufgaben_bild_url}
+            alt="Aufgaben-Bild"
+            className="max-h-64 rounded-lg border border-border object-contain bg-muted/20"
+          />
+        </div>
+      )}
+
+      {/* Erwartetes Ergebnis */}
+      {(aufgabe.ergebnis_form || aufgabe.ergebnis_dateiformat) && (
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-2">Erwartetes Ergebnis</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {aufgabe.ergebnis_form && (
+              <div className="p-3 rounded-lg bg-muted/20 border border-border text-xs">
+                <p className="flex items-center gap-1.5 text-muted-foreground mb-1">
+                  <Tag className="w-3 h-3" />
+                  Ergebnisform
+                </p>
+                <p className="font-medium text-sm">{aufgabe.ergebnis_form}</p>
+              </div>
+            )}
+            {aufgabe.ergebnis_dateiformat && (
+              <div className="p-3 rounded-lg bg-muted/20 border border-border text-xs">
+                <p className="flex items-center gap-1.5 text-muted-foreground mb-1">
+                  <FileType2 className="w-3 h-3" />
+                  Dateiformat
+                </p>
+                <p className="font-medium text-sm">{aufgabe.ergebnis_dateiformat}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Material-Hinweise (nur bei Handlungsaufgaben) */}
+      {hatMaterialHinweise && (
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+            <Package className="w-3.5 h-3.5" />
+            Hinweise zum physischen Material
+          </p>
+          <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-sm text-emerald-900 whitespace-pre-wrap">
+            {aufgabe.hinweise_zum_material}
+          </div>
+        </div>
+      )}
+
+      {/* Zusätzliche Materialien */}
+      {materialienCount > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+            <Package className="w-3.5 h-3.5" />
+            Zusätzliche Materialien ({materialienCount})
+          </p>
           <div className="space-y-2">
             {aufgabe.materialien.map((mat, idx) => (
               <div key={idx} className="p-2 rounded-lg bg-muted/20 border border-border text-xs">
