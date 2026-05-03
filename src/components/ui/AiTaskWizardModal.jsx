@@ -177,12 +177,13 @@ export default function AiTaskWizardModal({
                 />
               </div>
 
-              {/* Material-Einsatz */}
+              {/* Material-Einsatz (aus Lehrer-Sicht: was muss zusätzlich
+                  bereitgestellt werden?). Bewusst OHNE "(optional)", damit
+                  klar wird: dieser Wert wird immer in den Vorschlag einbezogen. */}
               <div className="pt-2 border-t border-border space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium">
-                    Material-Einsatz
-                    <span className="text-xs font-normal text-muted-foreground ml-1.5">(optional)</span>
+                    Material-Einsatz <span className="text-xs font-normal text-muted-foreground">(durch die Lehrkraft)</span>
                   </label>
                   <span className="text-xs font-medium text-muted-foreground inline-flex items-center gap-1">
                     <span aria-hidden="true">{currentMaterial.emoji}</span>

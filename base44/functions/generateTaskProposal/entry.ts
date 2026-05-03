@@ -12,11 +12,14 @@ const MISSIONS = {
   kreativitaet:{ label: 'Etwas Eigenes erschaffen', hint: 'Schöpferische Gestaltung & Deep Dive — offenes Produkt/Output.' },
 };
 
+// Material-Einsatz IMMER aus Lehrer-Sicht: wie viel zusätzliches Material
+// muss die LEHRKRAFT beschaffen/erstellen, damit die Schüler die Aufgabe
+// bearbeiten können (NICHT was die Schüler dabeihaben müssen).
 const MATERIAL_HINTS = {
-  0: 'Kein Material — rein kognitiv (Denken, Sprechen, Schreiben). Kein Verweis auf Gegenstände.',
-  1: 'Minimal — nur Stift & Heft / 1–2 alltägliche Dinge.',
-  2: 'Moderat — mehrere Schul-/Haushaltsmaterialien, ein wenig Vorbereitung.',
-  3: 'Aufwändig — mehrteiliger Versuchsaufbau, klassenraum-tauglich.',
+  0: 'Kein zusätzliches Material — die Aufgabe steht für sich. Die Aufgabenstellung enthält alle nötigen Informationen; KEIN zusätzlicher Text, KEINE Grafik, KEIN Zeitungsartikel, KEINE Tabelle erforderlich. Die Schüler lösen die Aufgabe rein aus der Aufgabenstellung heraus.',
+  1: 'Minimal — die Lehrkraft muss EINE Kleinigkeit zusätzlich bereitstellen, die schnell zu beschaffen ist (z. B. einen passenden Zeitungsartikel, eine Grafik aus dem Netz, ein einzelnes Bild). Erwähne dieses eine Material in der Aufgabenstellung („Lest den beigefügten Artikel..." o. ä.).',
+  2: 'Moderat — die Lehrkraft muss MEHRERE unterschiedliche Materialien zusammenstellen (z. B. 1–2 Texte PLUS eine Grafik PLUS einen Originalauszug). Die Aufgabenstellung soll explizit auf mehrere Materialien verweisen, die zur Bearbeitung herangezogen werden.',
+  3: 'Aufwändig — die Lehrkraft muss reale, physische Materialien besorgen (z. B. Versuchsmaterial, Bastelutensilien, Modelle, Duplo-Steine, Kochlöffel). Die Aufgabe ist handlungsorientiert und nutzt diese Gegenstände aktiv.',
 };
 
 Deno.serve(async (req) => {
