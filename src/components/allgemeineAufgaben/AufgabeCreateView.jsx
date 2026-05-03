@@ -21,11 +21,11 @@ import AufgabeLockBanner from '@/components/allgemeineAufgaben/AufgabeLockBanner
 import { useAufgabeLock } from '@/hooks/useAufgabeLock';
 
 // Typ-spezifische Sub-Komponenten — die App reduziert die Aufgaben-Typen in
-// Ebene 2 auf 'inhalt' (Brian-Aufgabe) und 'handlung' (Handlungsaufgabe);
-// die früheren Typen Bündel/Prozess/Projekt-Anker leben jetzt im
-// Lernpfad-Dashboard als System-Bausteine bzw. Bündel-Items.
+// Ebene 2 auf 'inhalt' (Brian-Aufgabe) und 'handlung' (Handlungsaufgabe).
+// Beide teilen denselben Funktionsumfang; der Unterschied (Material-Hinweis)
+// wird über `MaterialToggleSection` direkt im Dialog umgeschaltet.
 import InhaltSection from '@/components/allgemeineAufgaben/aufgabeSections/InhaltSection';
-import HandlungSection from '@/components/allgemeineAufgaben/aufgabeSections/HandlungSection';
+import MaterialToggleSection from '@/components/allgemeineAufgaben/aufgabeSections/MaterialToggleSection';
 import MissionPicker from '@/components/missionen/MissionPicker';
 import { isMissionApplicable } from '@/lib/missionen';
 
@@ -213,29 +213,6 @@ export default function AufgabeCreateView({
   };
 
   const isSaving = createAufgabe.isPending || updateAufgabe.isPending;
-  const typ = formData.aufgaben_typ || 'inhalt';
-
-  // ── Dispatcher: typ-spezifische Section rendern ─────────────────────────────
-  const renderTypSection = () => {
-    if (typ === 'handlung') {
-      return (
-        <HandlungSection
-          formData={formData}
-          set={set}
-          onBildUploadingChange={setBildUploading}
-          onMaterialUploadingChange={setMaterialUploading}
-        />
-      );
-    }
-    return (
-      <InhaltSection
-        formData={formData}
-        set={set}
-        onBildUploadingChange={setBildUploading}
-        onMaterialUploadingChange={setMaterialUploading}
-      />
-    );
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -287,8 +264,23 @@ export default function AufgabeCreateView({
               />
             </div>
 
-            {/* Typ-spezifische Section */}
-            {renderTypSection()}
+            {/* Einheitliche Eingabe-Section (Inhalt). Über den Material-Toggle
+                darunter kann die Lehrkraft jederzeit zu einer Handlungsaufgabe
+                wechseln, ohne den Dialog zu verlassen. */}
+            <InhaltSection
+              formData={formData}
+              set={set}
+              onBildUploadingChange={setBildUploading}
+              onMaterialUploadingChange={setMaterialUploading}
+            />
+
+            {/* Material-Toggle: schaltet aufgaben_typ und blendet das Hinweis-
+                feld ein/aus. */}
+            <MaterialToggleSection
+              formData={formData}
+              set={set}
+              disabled={isReadOnly}
+            />
 
             {/* Mission-Picker — nur für Ebene-2-Aufgaben (inhalt/handlung).
                 Phase 1 des Missionen-Epics: optionale manuelle Auswahl. */}
