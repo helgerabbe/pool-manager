@@ -33,10 +33,11 @@ export default function InlineBasisLernzielSelector({
   const [selectedModul, setSelectedModul] = useState('');
   const [expandedPakete, setExpandedPakete] = useState(new Set());
 
-  // Daten laden
+  // Daten laden – Entity heißt 'Basismodule' (Plural). Singular 'Basismodul'
+  // existiert NICHT in der DB und führt zu 404.
   const { data: basismodule = [] } = useQuery({
     queryKey: ['basismodule'],
-    queryFn: () => base44.entities.Basismodul.list(),
+    queryFn: () => base44.entities.Basismodule.list(),
   });
 
   const { data: allPakete = [] } = useQuery({
