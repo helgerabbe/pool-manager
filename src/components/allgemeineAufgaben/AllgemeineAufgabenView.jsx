@@ -21,6 +21,7 @@ import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPan
 import InlineBasisLernzielSelector from '@/components/allgemeineAufgaben/InlineBasisLernzielSelector';
 import PublishAllgemeineAufgabeButton from '@/components/allgemeineAufgaben/PublishAllgemeineAufgabeButton';
 import { AufgabeExportStatusInline } from '@/components/allgemeineAufgaben/AufgabeExportStatusRow';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ErwartungshorizontTab from '@/components/allgemeineAufgaben/ErwartungshorizontTab';
 import { useTaskLock } from '@/hooks/useLocks';
 import { base44 } from '@/api/base44Client';
@@ -143,47 +144,43 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
   const hatMaterialHinweise = !!aufgabe.hinweise_zum_material?.trim();
   const isApproved = aufgabe.content_status === 'approved';
 
+  // Tooltip-Text für das Schwierigkeits-Badge (1-3 Sterne).
+  const schwierigkeitTooltip = aufgabe.schwierigkeitsgrad
+    ? `Schwierigkeit: ${aufgabe.schwierigkeitsgrad} von 3 Sternen`
+    : 'Schwierigkeit ist noch nicht definiert.';
+
   return (
+    <TooltipProvider>
     <div className="space-y-3 p-4">
 
-      {/* Zeile 1: Zustand der Aufgabe auf einen Blick.
-          Themenfeld · Aufgabentyp · Freigabe-Status · Moodle/Brian-Status.
-          Diese Zeile beantwortet: Wo gehört die Aufgabe hin, was für eine
-          Aufgabe ist es, ist sie freigegeben und ist sie schon exportiert? */}
+      {/* ── Zeile 1: Status-Header ──
+          Links das Themenfeld (Wo gehört die Aufgabe hin?), rechtsbündig
+          die Zustands-Badges: Freigabe-Status + Moodle/Brian-Export.
+          Alle Badges teilen die gleiche Pillen-Optik. */}
       <div className="flex items-center gap-x-3 gap-y-1.5 flex-wrap text-xs text-muted-foreground">
-        <span className="inline-flex items-center gap-1">
-          <Folder className="w-3.5 h-3.5" />
-          <span className={cn(!themenfeld && 'italic')}>
+        <span className="inline-flex items-center gap-1 min-w-0">
+          <Folder className="w-3.5 h-3.5 shrink-0" />
+          <span className={cn('truncate', !themenfeld && 'italic')}>
             {themenfeld?.titel || 'Ohne Themenfeld'}
           </span>
         </span>
-        <span className="text-border">·</span>
-        <span
-          className={cn(
-            'inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border',
-            typMeta.color.bg, typMeta.color.text, typMeta.color.border
-          )}
-          title={typMeta.description}
-        >
-          <TypIcon className="w-3 h-3" />
-          {typMeta.label}
-        </span>
-        <span className="text-border">·</span>
-        <Badge className={cn('flex items-center gap-1 shrink-0',
-          isApproved
-            ? 'bg-green-100 text-green-700 border border-green-300'
-            : 'bg-amber-100 text-amber-700 border border-amber-300'
-        )}>
-          {isApproved
-            ? <><CheckCircle2 className="w-3 h-3" /> Freigegeben</>
-            : <><PenLine className="w-3 h-3" /> In Bearbeitung</>
-          }
-        </Badge>
-        <span className="text-border">·</span>
-        <AufgabeExportStatusInline aufgabe={aufgabe} />
+        <div className="flex items-center gap-1.5 flex-wrap ml-auto">
+          <span className={cn(
+            'inline-flex items-center gap-1 h-5 px-2 rounded-full border text-[11px] font-semibold',
+            isApproved
+              ? 'bg-green-100 text-green-700 border-green-300'
+              : 'bg-amber-100 text-amber-700 border-amber-300'
+          )}>
+            {isApproved
+              ? <><CheckCircle2 className="w-3 h-3" /> Freigegeben</>
+              : <><PenLine className="w-3 h-3" /> In Bearbeitung</>
+            }
+          </span>
+          <AufgabeExportStatusInline aufgabe={aufgabe} />
+        </div>
       </div>
 
-      {/* Zeile 2: Titel */}
+      {/* ── Zeile 2: Titel ── */}
       <h2 className={cn(
         'text-base font-semibold leading-snug',
         !hatTitel && 'italic text-muted-foreground font-normal'
@@ -191,22 +188,41 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
         {hatTitel ? aufgabe.titel : 'Kein Titel vergeben'}
       </h2>
 
-      {/* Zeile 3: Didaktische Meta unter dem Titel (Mission + Schwierigkeit) */}
-      <div className="flex items-center gap-x-3 gap-y-1.5 flex-wrap text-xs text-muted-foreground -mt-1">
+      {/* ── Zeile 3: Didaktische Klassifikation ──
+          Drei gleich hohe Badges (Aufgabentyp · Mission · Schwierigkeit).
+          Jedes hat einen Tooltip mit Klartext-Erklärung. */}
+      <div className="flex items-center gap-1.5 flex-wrap -mt-1">
+        <Tooltip delayDuration={150}>
+          <TooltipTrigger asChild>
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 h-5 px-2 rounded-full border text-[11px] font-semibold cursor-help',
+                typMeta.color.bg, typMeta.color.text, typMeta.color.border
+              )}
+            >
+              <TypIcon className="w-3 h-3" />
+              {typMeta.label}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-xs text-left leading-snug">
+            {typMeta.description}
+          </TooltipContent>
+        </Tooltip>
+
         {showMission && (
-          <>
-            <MissionBadge missionId={aufgabe.mission_type} size="sm" showFallback />
-            <span className="text-border">·</span>
-          </>
+          <MissionBadge missionId={aufgabe.mission_type} size="sm" showFallback />
         )}
-        <span className="inline-flex items-center gap-1.5">
-          <span className="text-[11px]">Schwierigkeit:</span>
-          {aufgabe.schwierigkeitsgrad ? (
-            <SternDisplay grad={aufgabe.schwierigkeitsgrad} />
-          ) : (
-            <span className="italic text-[11px]">nicht definiert</span>
-          )}
-        </span>
+
+        <Tooltip delayDuration={150}>
+          <TooltipTrigger asChild>
+            <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full border border-amber-200 bg-amber-50 cursor-help">
+              <SternDisplay grad={aufgabe.schwierigkeitsgrad || 0} />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-xs text-left leading-snug">
+            {schwierigkeitTooltip}
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Aufgabenstellung */}
@@ -337,6 +353,7 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
         </div>
       )}
     </div>
+    </TooltipProvider>
   );
 }
 
