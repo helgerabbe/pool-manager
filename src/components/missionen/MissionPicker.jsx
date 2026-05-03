@@ -36,8 +36,7 @@ export default function MissionPicker({ value, onChange, disabled = false }) {
       </div>
 
       <p className="text-[11px] text-muted-foreground">
-        Welches Gefühl soll die Aufgabe bei den Lernenden auslösen? Du kannst die Auswahl auch leer lassen
-        – die KI macht dir später beim Speichern einen Vorschlag.
+        Welches Gefühl soll die Aufgabe bei den Lernenden auslösen?
       </p>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
