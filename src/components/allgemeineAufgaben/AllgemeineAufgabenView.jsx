@@ -30,7 +30,7 @@ import HelpBadge from '@/components/ui/HelpBadge';
 import MissionBadge from '@/components/missionen/MissionBadge';
 import MissionStripe from '@/components/missionen/MissionStripe';
 import MissionFilterSelect, { FILTER_ALL, FILTER_NONE } from '@/components/missionen/MissionFilterSelect';
-import { isMissionApplicable } from '@/lib/missionen';
+import { isMissionApplicable, getMission } from '@/lib/missionen';
 
 /**
  * Schwierigkeitsgrad-Anzeige (1-3 Sterne)
@@ -88,44 +88,54 @@ function ThemenfeldNode({ themenfeld, aufgaben, selectedId, onSelect }) {
 
 /**
  * Einzelner Aufgaben-Node im Baum.
- * Zeigt links einen 4px-Mission-Streifen (sofern die Aufgabe eine
- * Mission haben kann – also nur bei aufgaben_typ ∈ {inhalt, handlung}).
+ *
+ * Kompakte einzeilige Karte: Status-Icon · Titel · ggf. Lock-Icon.
+ * Mission wird über die Hintergrundfarbe der Karte signalisiert
+ * (gleiche Farbpalette wie das Detail-Badge), damit kein zusätzliches
+ * Mission-Badge nötig ist und die Sidebar bei vielen Aufgaben übersichtlich
+ * bleibt. Tooltip am ganzen Eintrag erklärt Status + Mission im Klartext.
  */
 function AufgabeNode({ aufgabe, isSelected, onSelect }) {
   const hatTitel = !!aufgabe.titel?.trim();
   const isPending = aufgabe.sync_status === 'pending';
+  const isApproved = aufgabe.content_status === 'approved';
   const showMission = isMissionApplicable(aufgabe);
+  const mission = showMission ? getMission(aufgabe.mission_type) : null;
+
+  // Mission-Farbe als Karten-Hintergrund. Fällt auf neutrale Optik zurück,
+  // wenn die Aufgabe (noch) keine Mission hat oder der Mission-Scope nicht
+  // greift. Im selektierten Zustand übersteuert Primary-Tinting die Farbe,
+  // damit die Auswahl klar erkennbar bleibt.
+  const baseBg = mission
+    ? mission.classes.badge // bg-*-50 text-*-800 border-*-200
+    : 'bg-muted/40 text-foreground border-transparent';
+
+  const statusIcon = isApproved
+    ? <CheckCircle2 className="w-3 h-3 text-green-600 shrink-0" />
+    : <PenLine className="w-3 h-3 text-amber-500 shrink-0" />;
+
+  const tooltipParts = [
+    isApproved ? 'Freigegeben' : 'In Bearbeitung',
+    mission ? `Mission: ${mission.label}` : null,
+    isPending ? 'Wartet auf Export' : null,
+  ].filter(Boolean).join(' · ');
+
   return (
     <button
       onClick={() => onSelect(aufgabe)}
+      title={tooltipParts}
       className={cn(
-        'w-full flex items-stretch gap-2 px-2 py-1.5 rounded text-left text-xs transition-colors',
+        'w-full flex items-center gap-1.5 px-2 py-1 rounded border text-left text-xs transition-colors',
         isSelected
-          ? 'bg-primary/10 border border-primary/30'
-          : 'hover:bg-muted/50'
+          ? 'bg-primary/10 border-primary/40 ring-1 ring-primary/20'
+          : cn(baseBg, 'hover:brightness-95')
       )}
     >
-      {showMission && <MissionStripe missionId={aufgabe.mission_type} className="self-stretch" />}
-      <div className="flex flex-col flex-1 min-w-0">
-        <div className="flex items-center gap-2 w-full">
-          {isPending
-            ? <Lock className="w-3 h-3 text-orange-500 shrink-0" />
-            : aufgabe.content_status === 'approved'
-              ? <CheckCircle2 className="w-3 h-3 text-green-600 shrink-0" />
-              : <PenLine className="w-3 h-3 text-amber-500 shrink-0" />
-          }
-          <span className={cn('truncate flex-1', !hatTitel && 'italic text-muted-foreground')}>
-            {hatTitel ? aufgabe.titel : 'Kein Titel'}
-          </span>
-          {aufgabe.schwierigkeitsgrad && <SternDisplay grad={aufgabe.schwierigkeitsgrad} />}
-        </div>
-        <div className="pl-5 mt-0.5 flex items-center gap-1.5 flex-wrap">
-          <TaskStatusBadge content_status={aufgabe.content_status} sync_status={aufgabe.sync_status} />
-          {showMission && aufgabe.mission_type && (
-            <MissionBadge missionId={aufgabe.mission_type} size="sm" />
-          )}
-        </div>
-      </div>
+      {statusIcon}
+      <span className={cn('truncate flex-1', !hatTitel && 'italic opacity-70')}>
+        {hatTitel ? aufgabe.titel : 'Kein Titel'}
+      </span>
+      {isPending && <Lock className="w-3 h-3 text-orange-500 shrink-0" />}
     </button>
   );
 }
