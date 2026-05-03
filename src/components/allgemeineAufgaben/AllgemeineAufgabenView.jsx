@@ -20,7 +20,7 @@ import AufgabeKompetenzMapping from '@/components/allgemeineAufgaben/AufgabeKomp
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
 import InlineBasisLernzielSelector from '@/components/allgemeineAufgaben/InlineBasisLernzielSelector';
 import PublishAllgemeineAufgabeButton from '@/components/allgemeineAufgaben/PublishAllgemeineAufgabeButton';
-import AufgabeExportStatusRow from '@/components/allgemeineAufgaben/AufgabeExportStatusRow';
+import { AufgabeExportStatusInline } from '@/components/allgemeineAufgaben/AufgabeExportStatusRow';
 import ErwartungshorizontTab from '@/components/allgemeineAufgaben/ErwartungshorizontTab';
 import { useTaskLock } from '@/hooks/useLocks';
 import { base44 } from '@/api/base44Client';
@@ -146,27 +146,10 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
   return (
     <div className="space-y-3 p-4">
 
-      {/* Zeile 1: Titel + Freigabe-Status-Badge rechts */}
-      <div className="flex items-start gap-3">
-        <h2 className={cn(
-          'text-base font-semibold leading-snug flex-1 min-w-0',
-          !hatTitel && 'italic text-muted-foreground font-normal'
-        )}>
-          {hatTitel ? aufgabe.titel : 'Kein Titel vergeben'}
-        </h2>
-        <Badge className={cn('flex items-center gap-1 shrink-0',
-          isApproved
-            ? 'bg-green-100 text-green-700 border border-green-300'
-            : 'bg-amber-100 text-amber-700 border border-amber-300'
-        )}>
-          {isApproved
-            ? <><CheckCircle2 className="w-3 h-3" /> Freigegeben</>
-            : <><PenLine className="w-3 h-3" /> In Bearbeitung</>
-          }
-        </Badge>
-      </div>
-
-      {/* Zeile 2: Meta-Inline (Themenfeld · Typ · Mission · Schwierigkeit) */}
+      {/* Zeile 1: Zustand der Aufgabe auf einen Blick.
+          Themenfeld · Aufgabentyp · Freigabe-Status · Moodle/Brian-Status.
+          Diese Zeile beantwortet: Wo gehört die Aufgabe hin, was für eine
+          Aufgabe ist es, ist sie freigegeben und ist sie schon exportiert? */}
       <div className="flex items-center gap-x-3 gap-y-1.5 flex-wrap text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1">
           <Folder className="w-3.5 h-3.5" />
@@ -185,13 +168,37 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
           <TypIcon className="w-3 h-3" />
           {typMeta.label}
         </span>
+        <span className="text-border">·</span>
+        <Badge className={cn('flex items-center gap-1 shrink-0',
+          isApproved
+            ? 'bg-green-100 text-green-700 border border-green-300'
+            : 'bg-amber-100 text-amber-700 border border-amber-300'
+        )}>
+          {isApproved
+            ? <><CheckCircle2 className="w-3 h-3" /> Freigegeben</>
+            : <><PenLine className="w-3 h-3" /> In Bearbeitung</>
+          }
+        </Badge>
+        <span className="text-border">·</span>
+        <AufgabeExportStatusInline aufgabe={aufgabe} />
+      </div>
+
+      {/* Zeile 2: Titel */}
+      <h2 className={cn(
+        'text-base font-semibold leading-snug',
+        !hatTitel && 'italic text-muted-foreground font-normal'
+      )}>
+        {hatTitel ? aufgabe.titel : 'Kein Titel vergeben'}
+      </h2>
+
+      {/* Zeile 3: Didaktische Meta unter dem Titel (Mission + Schwierigkeit) */}
+      <div className="flex items-center gap-x-3 gap-y-1.5 flex-wrap text-xs text-muted-foreground -mt-1">
         {showMission && (
           <>
-            <span className="text-border">·</span>
             <MissionBadge missionId={aufgabe.mission_type} size="sm" showFallback />
+            <span className="text-border">·</span>
           </>
         )}
-        <span className="text-border">·</span>
         <span className="inline-flex items-center gap-1.5">
           <span className="text-[11px]">Schwierigkeit:</span>
           {aufgabe.schwierigkeitsgrad ? (
@@ -201,11 +208,6 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
           )}
         </span>
       </div>
-
-      {/* Export-Status: zwei Dots (Moodle + Brian) mit Tooltip-Hilfe.
-          Auf den ersten Blick erkennbar, ob die Aufgabe schon im Zielsystem
-          ist, gerade exportiert wird oder eine erneute Freigabe braucht. */}
-      <AufgabeExportStatusRow aufgabe={aufgabe} />
 
       {/* Aufgabenstellung */}
       <div className="pt-1">

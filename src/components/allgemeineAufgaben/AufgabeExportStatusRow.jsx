@@ -126,3 +126,23 @@ export default function AufgabeExportStatusRow({ aufgabe }) {
     </TooltipProvider>
   );
 }
+
+/**
+ * Inline-Variante: gibt nur die beiden Dots (Moodle + Brian) ohne
+ * eigenen Container/Label aus. Gedacht für die oberste Status-Zeile
+ * im Detail-Panel, die schon den Freigabe-Badge enthält.
+ */
+export function AufgabeExportStatusInline({ aufgabe }) {
+  if (!aufgabe) return null;
+  const moodleStatus = resolveMoodleStatus(aufgabe);
+  const brianStatus = aufgabe.brian_sync_status || 'new';
+  return (
+    <TooltipProvider>
+      <div className="flex items-center gap-2 flex-wrap">
+        <StatusDot system="Moodle" status={moodleStatus} />
+        <span className="text-border">·</span>
+        <StatusDot system="Brian" status={brianStatus} />
+      </div>
+    </TooltipProvider>
+  );
+}
