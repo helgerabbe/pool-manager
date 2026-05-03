@@ -27,7 +27,7 @@ import AiTaskWizardModal from '@/components/ui/AiTaskWizardModal';
 import HelpBadge from '@/components/ui/HelpBadge';
 import MissionBadge from '@/components/missionen/MissionBadge';
 import MissionStripe from '@/components/missionen/MissionStripe';
-import MissionFilterChips, { FILTER_ALL, FILTER_NONE } from '@/components/missionen/MissionFilterChips';
+import MissionFilterSelect, { FILTER_ALL, FILTER_NONE } from '@/components/missionen/MissionFilterSelect';
 import { isMissionApplicable } from '@/lib/missionen';
 
 /**
@@ -547,11 +547,12 @@ export default function AllgemeineAufgabenView({
             </div>
           )}
 
-          {/* Mission-Filter-Leiste (nur sinnvoll in Ebene 2 — in Ebene 3
-              bleiben die Chips ausgeblendet, weil Projekte keine Mission haben). */}
+          {/* Mission-Filter (nur sinnvoll in Ebene 2 — in Ebene 3 ausgeblendet,
+              weil Projekte keine Mission haben). Kompaktes Dropdown, damit die
+              Sidebar in der Höhe nicht überläuft. */}
           {!isEbene3 && allgemeineAufgaben.length > 0 && (
             <div className="shrink-0 px-3 py-2 border-b border-border bg-muted/30">
-              <MissionFilterChips
+              <MissionFilterSelect
                 value={missionFilter}
                 onChange={setMissionFilter}
                 counts={missionCounts}
