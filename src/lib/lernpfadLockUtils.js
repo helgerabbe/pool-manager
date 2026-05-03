@@ -3,69 +3,49 @@
  *
  * Lese-Helfer rund um die Junction-Table `LernpfadAufgabeMembership`.
  *
- * Zweck:
- *   - In Tab 5 (Aufgaben-Editor) beantworten: „Ist diese Aufgabe gerade durch
- *     einen freigegebenen Lernpfad gesperrt? Wenn ja, durch welche?"
- *   - In Tab 7 (Cockpit) batched bestimmen: Welche Aufgaben sind aktuell
- *     für den Export gelockt?
+ * SCHRITT 2 (3-stufiger Freigabe-Workflow): Die Inhalts-Sperre einer Aufgabe
+ * ist NICHT mehr an `pfad_status === 'locked_for_export'` gekoppelt. Ein
+ * geprüftes Dashboard sperrt nur noch die Komposition (im Architekt selbst),
+ * NICHT die enthaltenen Inhalte. Das ist nötig, weil bis zur finalen
+ * Einheits-Freigabe (Schritt 3) noch die anderen drei Lerntyp-Dashboards
+ * komponiert werden müssen, was jederzeit Inhaltsänderungen erfordern kann.
  *
- * Sperrkriterium ist EXPLIZIT `pfad_status === 'locked_for_export'` —
- * `'draft'` führt nicht zur Sperre, sondern markiert nur die Zugehörigkeit.
+ * Folge: `isAufgabeLocked` und `getLockStatusBatchByEinheit` liefern aktuell
+ * KEINE Sperre mehr (leeres Ergebnis). Sie bleiben als API erhalten, damit
+ * Schritt 3 sie nahtlos auf die neue Einheits-Sperre umstellen kann, ohne
+ * dass alle Aufrufer angefasst werden müssen.
  */
 
-import { base44 } from '@/api/base44Client';
 import { PFAD_STATUS } from '@/lib/pfadStatus';
 
-const LOCK_STATUS = PFAD_STATUS.LOCKED;
+// Bewusst exportiert, damit Schritt 3 sie für die Einheits-Sperre wiederverwenden
+// kann, ohne dass die Konstante neu definiert wird.
+export const LOCK_STATUS = PFAD_STATUS.LOCKED;
 
 /**
  * Lock-Status für eine einzelne Aufgabe.
  *
- * @param {string} aufgabeId
+ * Phase 1 (Schritt 2): liefert immer `{ locked: false, by_pfade: [] }`,
+ * weil die Inhalts-Sperre vom Dashboard-Lock entkoppelt wurde.
+ *
+ * @param {string} _aufgabeId
  * @returns {Promise<{ locked: boolean, by_pfade: string[] }>}
- *   - locked   : true, wenn ≥ 1 Membership-Eintrag mit pfad_status='locked_for_export' existiert.
- *   - by_pfade : Liste der Lerntyp-Keys (z.B. ['minimalist', 'ehrgeizig']) – dedupliziert.
  */
-export async function isAufgabeLocked(aufgabeId) {
-  if (!aufgabeId) return { locked: false, by_pfade: [] };
-
-  const memberships = await base44.entities.LernpfadAufgabeMembership.filter({
-    aufgabe_id: aufgabeId,
-    pfad_status: LOCK_STATUS,
-  });
-
-  const lerntypen = Array.from(
-    new Set((memberships || []).map((m) => m.lerntyp).filter(Boolean))
-  );
-
-  return { locked: lerntypen.length > 0, by_pfade: lerntypen };
+export async function isAufgabeLocked(_aufgabeId) {
+  return { locked: false, by_pfade: [] };
 }
 
 /**
  * Batched Lock-Status für mehrere Aufgaben.
- * Lädt alle Memberships einer Einheit auf einen Schlag und gruppiert sie clientseitig.
  *
- * @param {string} einheitId
+ * Phase 1 (Schritt 2): liefert eine leere Map. Aufrufer dürfen sich darauf
+ * verlassen, dass „nicht in der Map" weiterhin „ungelockt" bedeutet.
+ *
+ * @param {string} _einheitId
  * @returns {Promise<Map<string, { locked: boolean, by_pfade: string[] }>>}
- *   Key = aufgabe_id, Wert = wie isAufgabeLocked.
- *   Aufgaben ohne Eintrag sind NICHT in der Map enthalten (= ungelockt).
  */
-export async function getLockStatusBatchByEinheit(einheitId) {
-  const result = new Map();
-  if (!einheitId) return result;
-
-  const memberships = await base44.entities.LernpfadAufgabeMembership.filter({
-    einheit_id: einheitId,
-    pfad_status: LOCK_STATUS,
-  });
-
-  for (const m of memberships || []) {
-    if (!m.aufgabe_id || !m.lerntyp) continue;
-    const entry = result.get(m.aufgabe_id) || { locked: true, by_pfade: [] };
-    if (!entry.by_pfade.includes(m.lerntyp)) entry.by_pfade.push(m.lerntyp);
-    result.set(m.aufgabe_id, entry);
-  }
-  return result;
+export async function getLockStatusBatchByEinheit(_einheitId) {
+  return new Map();
 }
 
 // Lerntyp-Keys → menschlich lesbare Labels (für die Editor-Warnmeldung).

@@ -230,6 +230,9 @@ export default function AufgabeCreateView({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Schritt 2 des Freigabe-Workflows: Pfad-Lock blockiert keine
+              Inhalts-Edits mehr. Banner bleibt als no-op-Komponente erhalten,
+              sodass Schritt 3 (Einheits-Sperre) sie wiederverwenden kann. */}
           {isLocked && <AufgabeLockBanner byPfade={lockInfo.by_pfade} />}
 
           <fieldset disabled={isReadOnly} className="space-y-5 disabled:opacity-70">

@@ -66,6 +66,13 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Hinweis (Schritt 2 des 3-stufigen Freigabe-Workflows):
+    // Hier wurde früher der Pfad-Status (LernpfadAufgabeMembership.pfad_status)
+    // geprüft, um Inhalts-Edits an Aufgaben in einem geprüften Dashboard zu
+    // blockieren. Diese Sperre ist jetzt vom Dashboard-Lock entkoppelt –
+    // die finale Inhalts-Sperre kommt erst mit der Einheits-Freigabe
+    // (Schritt 3) und wird dort an dieser Stelle re-implementiert.
+
     // Prüfe bestehenden Lock
     if (aufgabe.locked_by && aufgabe.locked_by !== user.email) {
       const lockAge = aufgabe.locked_at
