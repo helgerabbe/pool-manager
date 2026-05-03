@@ -27,6 +27,7 @@ export default function TaskLockBar({
   isSaving = false,
   canEdit = true,
   isAdmin = false,
+  editButtonLabel = 'Aufgabe bearbeiten',
 }) {
   // Berechne ob Lock älter als 60 Min ist (MUSS vor allen bedingten returns aufgerufen werden)
   const isLockStale = useMemo(() => {
@@ -124,7 +125,7 @@ export default function TaskLockBar({
         ) : (
           <Edit className="w-3.5 h-3.5" />
         )}
-        Aufgabe bearbeiten
+        {editButtonLabel}
       </Button>
     </div>
   );
