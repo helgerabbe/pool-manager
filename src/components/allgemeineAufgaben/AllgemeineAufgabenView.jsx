@@ -20,6 +20,7 @@ import AufgabeKompetenzMapping from '@/components/allgemeineAufgaben/AufgabeKomp
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
 import InlineBasisLernzielSelector from '@/components/allgemeineAufgaben/InlineBasisLernzielSelector';
 import PublishAllgemeineAufgabeButton from '@/components/allgemeineAufgaben/PublishAllgemeineAufgabeButton';
+import AufgabeExportStatusRow from '@/components/allgemeineAufgaben/AufgabeExportStatusRow';
 import ErwartungshorizontTab from '@/components/allgemeineAufgaben/ErwartungshorizontTab';
 import { useTaskLock } from '@/hooks/useLocks';
 import { base44 } from '@/api/base44Client';
@@ -200,6 +201,11 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
           )}
         </span>
       </div>
+
+      {/* Export-Status: zwei Dots (Moodle + Brian) mit Tooltip-Hilfe.
+          Auf den ersten Blick erkennbar, ob die Aufgabe schon im Zielsystem
+          ist, gerade exportiert wird oder eine erneute Freigabe braucht. */}
+      <AufgabeExportStatusRow aufgabe={aufgabe} />
 
       {/* Aufgabenstellung */}
       <div className="pt-1">
