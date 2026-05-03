@@ -115,60 +115,29 @@ export async function deleteMapping(mappingId) {
  * @param {string[]} lernzielIds - IDs der zu verknüpfenden Lernziele
  */
 // ── AllgemeineAufgabeBasisLernzielMapping ────────────────────────────────────
-//
-// HINWEIS: Die Entity `AllgemeineAufgabeBasisLernzielMapping` existiert
-// aktuell NICHT in der DB-Schemata-Liste (404 beim Aufruf). Damit die App
-// nicht crasht, sind die folgenden Funktionen tolerant: Lese-Operationen
-// liefern ein leeres Array, Schreib-Operationen werden still ignoriert.
-// Sobald die Entity (re-)angelegt wurde, kann der ursprüngliche Code
-// reaktiviert werden.
-
-const BASIS_MAPPING_ENTITY = 'AllgemeineAufgabeBasisLernzielMapping';
-
-function hasBasisMappingEntity() {
-  return !!base44.entities[BASIS_MAPPING_ENTITY];
-}
 
 /**
  * Basis-Lernziel-Mappings einer Aufgabe laden.
  */
 export async function getBasisMappingsByAufgabe(aufgabeId) {
-  if (!hasBasisMappingEntity()) return [];
-  try {
-    return await base44.entities[BASIS_MAPPING_ENTITY].filter({ aufgabe_id: aufgabeId });
-  } catch (err) {
-    if (err?.response?.status === 404) return [];
-    throw err;
-  }
+  return base44.entities.AllgemeineAufgabeBasisLernzielMapping.filter({ aufgabe_id: aufgabeId });
 }
 
 /**
  * Basis-Lernziel-Mapping anlegen.
  */
 export async function createBasisMapping(aufgabeId, basisLernzielId) {
-  if (!hasBasisMappingEntity()) return null;
-  try {
-    return await base44.entities[BASIS_MAPPING_ENTITY].create({
-      aufgabe_id: aufgabeId,
-      basislernziel_id: basisLernzielId,
-    });
-  } catch (err) {
-    if (err?.response?.status === 404) return null;
-    throw err;
-  }
+  return base44.entities.AllgemeineAufgabeBasisLernzielMapping.create({
+    aufgabe_id: aufgabeId,
+    basislernziel_id: basisLernzielId,
+  });
 }
 
 /**
  * Basis-Lernziel-Mapping löschen.
  */
 export async function deleteBasisMapping(mappingId) {
-  if (!hasBasisMappingEntity()) return null;
-  try {
-    return await base44.entities[BASIS_MAPPING_ENTITY].delete(mappingId);
-  } catch (err) {
-    if (err?.response?.status === 404) return null;
-    throw err;
-  }
+  return base44.entities.AllgemeineAufgabeBasisLernzielMapping.delete(mappingId);
 }
 
 // ── Komposit-Operationen (Supabase-Transaktions-Kandidaten) ───────────────────
