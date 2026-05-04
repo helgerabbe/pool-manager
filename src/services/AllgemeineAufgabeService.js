@@ -71,10 +71,80 @@ export async function updateAllgemeineAufgabe(id, data) {
 }
 
 /**
- * Aufgabe löschen.
+ * Aufgabe löschen + Anti-Drift-Cleanup (Etappe 4).
+ *
+ * Nach dem Delete werden alle Verweise auf die soeben gelöschte Aufgabe aus
+ * der `lernpfade_konfiguration` der Einheit entfernt (Items mit
+ * ref_id===id, egal ob Root- oder Bündel-Children). Zusätzlich werden
+ * passende `LernpfadAufgabeMembership`-Einträge aufgeräumt, damit kein
+ * pfad_status='locked_for_export' für ein nicht mehr existierendes Item
+ * stehen bleibt.
+ *
+ * Sektoren bleiben stehen — die invalidieren sich durch ein Aufgaben-Delete
+ * nicht. Cleanup-Fehler brechen die Operation nicht ab; das Delete selbst
+ * ist die Hauptaktion.
  */
 export async function deleteAllgemeineAufgabe(id) {
-  return base44.entities.AllgemeineAufgabe.delete(id);
+  // Einheit-ID vor dem Delete merken (sonst nicht mehr abrufbar).
+  let einheitId = null;
+  try {
+    const aufgabe = await base44.entities.AllgemeineAufgabe.get(id);
+    einheitId = aufgabe?.einheit_id || null;
+  } catch {
+    // Aufgabe nicht ladbar → Delete trotzdem versuchen, Cleanup entfällt.
+  }
+
+  const result = await base44.entities.AllgemeineAufgabe.delete(id);
+
+  if (einheitId) {
+    // Dashboard-Cleanup: Items mit ref_id === id aus allen 4 Lerntypen entfernen.
+    try {
+      const einheit = await base44.entities.Einheiten.get(einheitId);
+      const konfig = einheit?.lernpfade_konfiguration || null;
+      if (konfig && typeof konfig === 'object') {
+        let changed = false;
+        const next = {};
+        for (const lt of ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert']) {
+          const sektoren = Array.isArray(konfig[lt]) ? konfig[lt] : [];
+          next[lt] = sektoren.map((s) => {
+            const items = Array.isArray(s?.items) ? s.items : [];
+            const filtered = items.filter(
+              (it) => !(it?.type === 'aufgabe' && it.ref_id === id)
+            );
+            if (filtered.length !== items.length) {
+              changed = true;
+              return { ...s, items: filtered };
+            }
+            return s;
+          });
+        }
+        if (changed) {
+          await base44.entities.Einheiten.update(einheitId, {
+            lernpfade_konfiguration: next,
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('[deleteAllgemeineAufgabe] Dashboard-Cleanup fehlgeschlagen:', err?.message);
+    }
+
+    // Junction-Cleanup: alle Memberships zu dieser Aufgabe entfernen.
+    try {
+      const memberships = await base44.entities.LernpfadAufgabeMembership.filter({
+        einheit_id: einheitId,
+        aufgabe_id: id,
+      });
+      if (memberships.length > 0) {
+        await Promise.allSettled(
+          memberships.map((m) => base44.entities.LernpfadAufgabeMembership.delete(m.id))
+        );
+      }
+    } catch (err) {
+      console.warn('[deleteAllgemeineAufgabe] Membership-Cleanup fehlgeschlagen:', err?.message);
+    }
+  }
+
+  return result;
 }
 
 // ── AllgemeineAufgabeLernzielMapping ──────────────────────────────────────────
