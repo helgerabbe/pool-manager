@@ -108,9 +108,17 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const profil = (await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email }))?.[0];
-    const rolle = profil?.rolle;
-    if (rolle !== ROLLE_ADMIN && rolle !== ROLLE_MOODLE) {
+    // Autorisierung: Plattform-Admin (user.role==='admin') ODER App-Rolle
+    // Administrator/Moodle-Designer aus dem Benutzer-Profil. Plattform-Admins
+    // dürfen den Seed auch ohne Benutzer-Eintrag ausführen — analog zum
+    // Muster in seedSystemBausteine.
+    let darfSeeden = user.role === 'admin';
+    if (!darfSeeden) {
+      const profil = (await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email }))?.[0];
+      const rolle = profil?.rolle;
+      darfSeeden = rolle === ROLLE_ADMIN || rolle === ROLLE_MOODLE;
+    }
+    if (!darfSeeden) {
       return Response.json(
         { error: 'Forbidden: Nur Administrator oder Moodle-Designer dürfen den Seed ausführen.' },
         { status: 403 }

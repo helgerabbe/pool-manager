@@ -42,9 +42,14 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const profil = (await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email }))?.[0];
-    const rolle = profil?.rolle;
-    if (rolle !== ROLLE_ADMIN && rolle !== ROLLE_MOODLE) {
+    // Autorisierung: Plattform-Admin ODER App-Rolle Administrator/Moodle-Designer.
+    let darfPflegen = user.role === 'admin';
+    if (!darfPflegen) {
+      const profil = (await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email }))?.[0];
+      const rolle = profil?.rolle;
+      darfPflegen = rolle === ROLLE_ADMIN || rolle === ROLLE_MOODLE;
+    }
+    if (!darfPflegen) {
       return Response.json(
         { error: 'Forbidden: Nur Administrator oder Moodle-Designer dürfen MBK-Prompts pflegen.' },
         { status: 403 }
