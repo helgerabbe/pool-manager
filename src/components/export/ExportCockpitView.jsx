@@ -29,7 +29,7 @@ import { Separator } from '@/components/ui/separator';
 import { RotateCcw, AlertCircle, CheckCircle2, Clock, ShieldCheck, Info, Pencil, Upload, RefreshCw, ChevronDown } from 'lucide-react';
 import HelpBadge from '@/components/ui/HelpBadge';
 import MissionBadge from '@/components/missionen/MissionBadge';
-import ExportErrorBadge from '@/components/exportcenter/ExportErrorBadge';
+import ExportErrorBadge from '@/components/exportcenter/ExportErrorBadge.jsx';
 import { isMissionApplicable } from '@/lib/missionen';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
