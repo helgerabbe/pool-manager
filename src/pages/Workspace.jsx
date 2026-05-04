@@ -23,8 +23,6 @@ import TaskCreationView from '@/components/workspace/TaskCreationView.jsx';
 import EinheitUebersichtTab from '@/components/workspace/EinheitUebersichtTab';
 import MoodleExportTab from '@/components/workspace/MoodleExportTab';
 import ExportCockpitView from '@/components/export/ExportCockpitView';
-import MoodleExportView from '@/components/export/MoodleExportView';
-import BrianExportCockpitView from '@/components/export/BrianExportCockpitView';
 import AllgemeineAufgabenView from '@/components/allgemeineAufgaben/AllgemeineAufgabenView';
 import { deleteLernpaket as deleteLernpaketService } from '@/services/LernpaketService';
 import { deleteLernziel as deleteLernzielService } from '@/services/LernzielService';
@@ -44,7 +42,10 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const [selectedEinheitId, setSelectedEinheitId] = useState(initialEinheitId);
   const [selectedThemenfeldId, setSelectedThemenfeldId] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
-  const VALID_TABS = ['einheit', 'struktur', 'aktivitaeten', 'aufgaben', 'ebene2', 'ebene3', 'dashboards', 'cockpit', 'export', 'brian'];
+  // Phase H Cleanup: Tabs 9 ('export'/Moodle-Export) und 10 ('brian'/Brian-
+  // Export) sind aus der Einheitenansicht entfernt. Beide Workflows laufen
+  // jetzt zentral im eigenständigen Export-Center (Hauptmenü).
+  const VALID_TABS = ['einheit', 'struktur', 'aktivitaeten', 'aufgaben', 'ebene2', 'ebene3', 'dashboards', 'cockpit'];
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'einheit');
   const [highlightedAtomIds, setHighlightedAtomIds] = useState(new Set());
@@ -890,31 +891,9 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               </div>
             </TabsContent>
 
-            {/* ── Tab 8: Moodle-Export & Admin-Freigabe ────────────────────────── */}
-            {!showExportTabs ? null : (
-              <TabsContent value="export" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
-                <div className="flex-1 overflow-y-auto">
-                  <ErrorBoundary label="Moodle Export">
-                    <MoodleExportView 
-                      einheitId={selectedEinheitId} 
-                      userRole={rolle}
-                      isAdmin={istAdmin}
-                    />
-                  </ErrorBoundary>
-                </div>
-              </TabsContent>
-            )}
-
-            {/* ── Tab 9: Brian.study Export ─────────────────────────────────────── */}
-            {!showExportTabs ? null : (
-              <TabsContent value="brian" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
-                <div className="flex-1 overflow-y-auto">
-                  <ErrorBoundary label="Brian Export">
-                    <BrianExportCockpitView />
-                  </ErrorBoundary>
-                </div>
-              </TabsContent>
-            )}
+            {/* Phase H Cleanup: Tabs 9 (Moodle-Export) und 10 (Brian.study
+                Export) wurden aus der Einheitenansicht entfernt. Beide
+                Workflows laufen jetzt zentral im Export-Center (Hauptmenü). */}
 
           </Tabs>
         )}

@@ -3,11 +3,17 @@
  *
  * 8-Stufen Workflow für den Workspace einer Einheit.
  * Nur Icons mit sofortigem Tooltip bei Mouse-Over.
+ *
+ * Hinweis (Phase H Cleanup): Die ehemaligen Tabs 9 (Moodle-Export) und 10
+ * (Brian.study Export) wurden aus der Einheitenansicht entfernt — beide
+ * Workflows laufen jetzt zentral im eigenständigen Export-Center
+ * (Hauptmenü). Tab 8 („Freigabe-Cockpit") bleibt als Übergabepunkt der
+ * Einheit erhalten.
  */
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { BookOpen, LayoutGrid, Zap, Wand2, ClipboardList, Target, CheckSquare, Rocket, ExternalLink, Compass } from 'lucide-react';
+import { BookOpen, LayoutGrid, Zap, Wand2, ClipboardList, Target, CheckSquare, Compass } from 'lucide-react';
 import HelpDialog from '@/components/ui/HelpDialog';
 import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
@@ -163,64 +169,27 @@ const getVisibleTabs = (rolle) => {
     value: 'cockpit', label: 'Freigabe-Cockpit (Moodle)', icon: CheckSquare, step: 8,
     help: {
       title: 'Freigabe-Cockpit – Moodle-Export vorbereiten',
-      description: 'Übersicht aller Inhalte dieser Einheit mit ihrem aktuellen Status. Hier selektieren Sie, was für den nächsten Moodle-Export übergeben werden soll.',
+      description: 'Übersicht aller Inhalte dieser Einheit mit ihrem aktuellen Status. Hier selektieren Sie, was für den nächsten Moodle-Export übergeben werden soll. Den eigentlichen Upload nach Moodle bzw. Brian.study erledigt das Export-Team im zentralen Export-Center (Hauptmenü).',
       features: [
         'Status aller Aktivitäten und Aufgaben auf einen Blick',
-        'Freigegebene Inhalte für den Moodle-Export vormerken ("pending")',
+        'Freigegebene Inhalte für den nächsten Export vormerken ("pending")',
         'Inhalte mit Export-Fehler erneut einplanen',
         'Per Klick direkt zum entsprechenden Inhalt springen und korrigieren',
         'Übergabe einzelner Elemente rückgängig machen',
+        'Finale Einheits-Freigabe für den Export auslösen',
       ],
       faqs: [
         { question: 'Was bedeutet "Wird exportiert 🔒"?', answer: 'Das Export-Team hat diesen Inhalt gezogen. Er ist für Lehrkräfte schreibgeschützt, bis der Export vom Admin als erfolgreich oder fehlgeschlagen bestätigt wird.' },
         { question: 'Kann ich die Vorauswahl rückgängig machen?', answer: 'Ja, über das Pfeil-zurück-Symbol neben einem "pending"-Eintrag können Sie die Übergabe wieder zurücksetzen.' },
-        { question: 'Was exportiert dieses Cockpit?', answer: 'Nur den Moodle-Export. Für Brian.study gibt es ein separates Cockpit in Tab 9.' },
-      ],
-    },
-  },
-  {
-    value: 'export', label: 'Moodle-Export', icon: Rocket, step: 9,
-    help: {
-      title: 'Moodle-Export – Bestätigung & Status',
-      description: 'Hier bestätigt das Export-Team, welche Inhalte erfolgreich nach Moodle übertragen wurden, und setzt den finalen Sync-Status.',
-      features: [
-        'Synchronisationsstatus aller Inhalte einsehen (synced, pending, error)',
-        'Export-Paket herunterladen (JSON/Bauplan)',
-        'Erfolgreich exportierte Elemente bestätigen → Status "synced"',
-        'Fehlgeschlagene Elemente als "error" markieren → Sperre wird aufgehoben',
-      ],
-      faqs: [
-        { question: 'Wer darf den Export bestätigen?', answer: 'Nur Administratoren und Moodle-Designer können den finalen Export bestätigen und den Status setzen.' },
-        { question: 'Was passiert nach der Bestätigung?', answer: 'Erfolgreich exportierte Elemente erhalten den Status "synced" und sind live in Moodle. Bei Änderungen danach werden sie als "modified" markiert und müssen erneut exportiert werden.' },
-        { question: 'Was ist der Unterschied zu Tab 7 (Cockpit)?', answer: 'Tab 7 ist für Lehrkräfte: Inhalte auswählen und übergeben. Tab 8 ist für das Export-Team: den tatsächlichen Upload nach Moodle bestätigen.' },
-      ],
-    },
-  },
-  {
-    value: 'brian', label: 'Brian.study Export', icon: ExternalLink, step: 10,
-    help: {
-      title: 'Brian.study Export – Cockpit',
-      description: 'Generieren Sie strukturierte Prompts für Brian.study und markieren Sie Aufgaben als exportiert. Erst wenn Moodle UND Brian bestätigt sind, wird die Bearbeitungssperre vollständig aufgehoben (Dual-Lock).',
-      features: [
-        'Globale Parameter festlegen: Antwortstrenge, Sprachschwierigkeit, Kursniveau',
-        'Für jede freigegebene Ebene-2- und Ebene-3-Aufgabe einen Brian-Prompt generieren',
-        'Prompt enthält: Parameter, Aufgabenstellung, Materialien und Bewertungsrubriken',
-        'Prompt in die Zwischenablage kopieren und direkt in Brian.study einfügen',
-        'Aufgabe als "In Brian integriert" markieren → brian_sync_status = synced',
-        'Dual-Lock: Bearbeitungssperre wird erst aufgehoben wenn Moodle + Brian beide synced',
-      ],
-      faqs: [
-        { question: 'Was ist der Dual-Lock?', answer: 'Eine freigegebene Aufgabe bleibt für Lehrkräfte gesperrt, bis sie in BEIDE Systeme exportiert wurde: Moodle (Tab 8) UND Brian.study (Tab 9). Erst dann wird die Bearbeitungssperre automatisch aufgehoben.' },
-        { question: 'Was sind Bewertungsrubriken?', answer: 'Im Tab "Abgabe & Gütekriterien" (bei Ebene-3-Aufgaben) können thematische Kategorien mit Punktzahl und Kriterientext hinterlegt werden. Die KI schlägt 2–3 passende Kategorien vor. Diese erscheinen automatisch im generierten Brian-Prompt.' },
-        { question: 'Wo lege ich die Rubriken für eine Aufgabe fest?', answer: 'Im Workspace-Tab 6 (Ebene 3), dann die Aufgabe auswählen → Tab "Abgabe & Gütekriterien". Dort können Sie Rubriken manuell anlegen oder per KI generieren lassen.' },
+        { question: 'Wo wird der eigentliche Upload nach Moodle / Brian.study bestätigt?', answer: 'Im zentralen Export-Center, das im Hauptmenü erreichbar ist. Dort liegen sowohl die Moodle- als auch die Brian.study-Bestätigungen für alle Einheiten gebündelt.' },
       ],
     },
   },
   ];
 
   return allTabs.filter(tab => {
-    // Export-Tabs (8, 9, 10) nur für Admin und Moodle-Designer
-    if (['cockpit', 'export', 'brian'].includes(tab.value)) {
+    // Tab 8 (Freigabe-Cockpit) nur für Admin und Moodle-Designer
+    if (tab.value === 'cockpit') {
       return showExportTabs;
     }
     // Tab 7 (Dashboards): für alle Lehrkräfte/Admins sichtbar
