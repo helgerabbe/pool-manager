@@ -17,6 +17,7 @@
  */
 
 import { getSektorTypLabel } from '@/lib/sektorTypen';
+import { formatMissionLabel } from '@/lib/missionen';
 
 /**
  * Versionskennung der Template-Engine.
@@ -31,7 +32,7 @@ import { getSektorTypLabel } from '@/lib/sektorTypen';
  * unten (Headings, Pflichtsätze, Reihenfolge, Halluzinations-Fallback)
  * MUSS diese Version hochgezählt werden.
  */
-export const MBK_TEMPLATE_VERSION = 'v1.1.0';
+export const MBK_TEMPLATE_VERSION = 'v1.2.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -249,8 +250,44 @@ function hasAufgabeContent(aufgabe) {
   return hasText || hasImage || hasMaterials;
 }
 
+// Mapping der internen output_formats-Slugs auf lesbare Labels für die KI.
+// Quelle: components/projektaufgaben/AbgabeDefinitionSection. Unbekannte
+// Slugs werden 1:1 durchgereicht, damit eigene Werte der Lehrkraft erhalten
+// bleiben.
+const OUTPUT_FORMAT_LABELS = {
+  presentation: 'Präsentation',
+  document: 'Schriftliches Dokument',
+  timeline: 'Zeitstrahl',
+  poster: 'Poster',
+  video: 'Video',
+  podcast: 'Podcast / Audio',
+  website: 'Website',
+  model: 'Modell / Objekt',
+  experiment: 'Experiment / Demonstration',
+  performance: 'Aufführung / Performance',
+};
+
+function formatOutputFormat(slug) {
+  return OUTPUT_FORMAT_LABELS[slug] || slug;
+}
+
 /**
  * Erstellungspaket für eine AllgemeineAufgabe (Ebene 2 oder Ebene 3).
+ *
+ * Rendert alle didaktisch relevanten Felder, sofern gesetzt:
+ *   - Mission (nur Ebene 1/2 mit aufgaben_typ inhalt|handlung)
+ *   - Schwierigkeitsgrad (1–3)
+ *   - Aufgabenstellung + Bild + Materialien
+ *   - Ebene-3-spezifisch: aufgabentyp_projekt, ergebnis_form,
+ *     ergebnis_dateiformat, output_formats, custom_format, quality_focus,
+ *     rubric_criteria
+ *   - Erwartungshorizont, Musterlösung
+ *   - Brian-Dialog (sofern konfiguriert)
+ *
+ * Hinweise zum Mapping:
+ *   Im Datenmodell speichern wir output_formats als Slug-Array (z. B.
+ *   ['presentation','timeline']). Für die MBK übersetzen wir die Slugs in
+ *   lesbare Labels — Slugs sind interne Sache und für die KI nicht hilfreich.
  *
  * @param {object} args
  * @param {object} args.aufgabe
@@ -266,9 +303,12 @@ export function buildErstellungspaketForAufgabe({ aufgabe }) {
     `- Titel: ${titel}`,
     `- Anforderungsebene: ${ebene}`,
     `- Aufgaben-Typ: ${typ}`,
+    aufgabe?.aufgabentyp_projekt ? `- Projekt-Variante: ${safeText(aufgabe.aufgabentyp_projekt)}` : null,
+    aufgabe?.mission_type ? `- Mission: ${formatMissionLabel(aufgabe.mission_type)}` : null,
+    aufgabe?.schwierigkeitsgrad ? `- Schwierigkeitsgrad: ${aufgabe.schwierigkeitsgrad} / 3` : null,
     `- Quelle-ID: ${aufgabe?.id || '(unbekannt)'}`,
     '',
-  ].join('\n');
+  ].filter(Boolean).join('\n');
 
   if (!hasContent) {
     return [
@@ -288,6 +328,15 @@ export function buildErstellungspaketForAufgabe({ aufgabe }) {
   const aufgabentext = trimMultiline(aufgabe?.aufgabenstellung);
   const erwartung = trimMultiline(aufgabe?.erwartungshorizont);
   const muster = trimMultiline(aufgabe?.musterloesung);
+  const hinweiseMaterial = trimMultiline(aufgabe?.hinweise_zum_material);
+  const qualityFocus = trimMultiline(aufgabe?.quality_focus);
+  const customFormat = trimMultiline(aufgabe?.custom_format);
+  const ergebnisForm = trimMultiline(aufgabe?.ergebnis_form);
+  const ergebnisDateiformat = trimMultiline(aufgabe?.ergebnis_dateiformat);
+  const outputFormats = Array.isArray(aufgabe?.output_formats) ? aufgabe.output_formats.filter(Boolean) : [];
+  const rubricCriteria = Array.isArray(aufgabe?.rubric_criteria)
+    ? aufgabe.rubric_criteria.filter((r) => r && (r.title || r.criteria_text || r.points != null))
+    : [];
 
   const sections = [header];
 
@@ -305,6 +354,44 @@ export function buildErstellungspaketForAufgabe({ aufgabe }) {
     sections.push(bulletList(textHinweise));
     sections.push('');
   }
+  if (hinweiseMaterial) {
+    sections.push(blockHeading('Hinweise zum physischen Material'));
+    sections.push(hinweiseMaterial);
+    sections.push('');
+  }
+
+  // Abgabe-Spezifikation (überwiegend Ebene 3, aber auch Ebene 2 möglich).
+  const hatAbgabeBlock =
+    ergebnisForm || ergebnisDateiformat || outputFormats.length > 0 || customFormat;
+  if (hatAbgabeBlock) {
+    sections.push(blockHeading('Abgabeformat'));
+    if (ergebnisForm) sections.push(`- Ergebnis-Form: ${ergebnisForm}`);
+    if (ergebnisDateiformat) sections.push(`- Dateiformat: ${ergebnisDateiformat}`);
+    if (outputFormats.length > 0) {
+      sections.push(`- Erlaubte Abgabeformen: ${outputFormats.map(formatOutputFormat).join(', ')}`);
+    }
+    if (customFormat) sections.push(`- Eigenes Format: ${customFormat}`);
+    sections.push('');
+  }
+
+  if (qualityFocus) {
+    sections.push(blockHeading('Bewertungsschwerpunkt'));
+    sections.push(qualityFocus);
+    sections.push('');
+  }
+
+  if (rubricCriteria.length > 0) {
+    sections.push(blockHeading('Bewertungskriterien (Rubrik)'));
+    const lines = rubricCriteria.map((r, idx) => {
+      const titleLine = `${idx + 1}. **${safeText(r.title, '(ohne Titel)')}**` +
+        (r.points != null ? ` _(${r.points} Punkte)_` : '');
+      const desc = trimMultiline(r.criteria_text);
+      return desc ? `${titleLine}\n   ${desc}` : titleLine;
+    });
+    sections.push(lines.join('\n'));
+    sections.push('');
+  }
+
   if (erwartung) {
     sections.push(blockHeading('Erwartungshorizont'));
     sections.push(erwartung);
@@ -313,6 +400,30 @@ export function buildErstellungspaketForAufgabe({ aufgabe }) {
   if (muster) {
     sections.push(blockHeading('Musterlösung'));
     sections.push(muster);
+    sections.push('');
+  }
+
+  // Brian-Dialog (KI-Tutor-Anweisung) — nur wenn konfiguriert.
+  const brianName = trimMultiline(aufgabe?.brian_dialog_name);
+  const brianLearner = trimMultiline(aufgabe?.brian_learner_instruction);
+  const brianSystem = trimMultiline(aufgabe?.brian_system_instruction);
+  const brianCompletion = trimMultiline(aufgabe?.brian_completion_rule);
+  const hatBrian = brianName || brianLearner || brianSystem || brianCompletion;
+  if (hatBrian) {
+    sections.push(blockHeading('Brian-Dialog (KI-Tutor)'));
+    if (brianName) sections.push(`- Dialog-Name: ${brianName}`);
+    if (brianLearner) {
+      sections.push('- Anweisung für Lernende:');
+      sections.push(brianLearner);
+    }
+    if (brianSystem) {
+      sections.push('- System-Anweisung / Tutor-Persona:');
+      sections.push(brianSystem);
+    }
+    if (brianCompletion) {
+      sections.push('- Abbruchbedingung:');
+      sections.push(brianCompletion);
+    }
     sections.push('');
   }
 
