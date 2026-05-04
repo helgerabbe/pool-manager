@@ -21,7 +21,7 @@ import { Loader2, RefreshCw, Sparkles, Lock, PenSquare, FilePlus2, RotateCw, Wan
 const SECTION_LABELS = {
   nucleus: '1. Nukleus',
   persona: '2. Persona',
-  sektoren: '3. Sektor-Anweisungen',
+  sektoren: '3. Sektoren-Struktur & Lerntyp-Anweisungen',
   erstellungspakete: '4. Erstellungspakete',
 };
 

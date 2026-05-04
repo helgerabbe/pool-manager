@@ -20,6 +20,7 @@ import { MBK_TEMPLATE_VERSION } from '@/lib/exportPromptTemplates';
 const PROMPT_TYPES = {
   NUCLEUS: 'nucleus',
   PERSONA: 'persona',
+  SEKTOR_STRUKTUR: 'sektor_struktur',
   SEKTOR: 'sektor_anweisung',
   ERSTELLUNGSPAKET: 'erstellungspaket',
 };
@@ -60,8 +61,12 @@ export function computeSourceMaxTimestamp({ promptType, referenceId, einheit, th
       );
     case PROMPT_TYPES.PERSONA:
       return ts(einheit);
-    case PROMPT_TYPES.SEKTOR:
+    case PROMPT_TYPES.SEKTOR_STRUKTUR:
       return Math.max(ts(einheit), maxTimestamp(themenfelder));
+    case PROMPT_TYPES.SEKTOR:
+      // Schlanke Lerntyp-Anweisung — hängt nur an der Einheit (Lerntyp-Konfig).
+      // Die eigentliche Sektoren-Struktur liegt in SEKTOR_STRUKTUR.
+      return ts(einheit);
     case PROMPT_TYPES.ERSTELLUNGSPAKET: {
       // referenceId kann eine Lernpaket-ID oder eine AllgemeineAufgabe-ID sein.
       const lp = lernpakete.find((p) => p.id === referenceId);
@@ -229,7 +234,14 @@ export function buildSourceTimestampIndex({
     // Manager-Änderung die einheits-spezifische Persona als „veraltet"
     // markiert, fließt globalPromptsTs hier mit ein.
     personaTs: Math.max(ts(einheit), globalPromptsTs),
-    sektorTs: Math.max(ts(einheit), themenfelderTs, globalPromptsTs),
+    // Sektoren-Struktur (v1.9.0): vollständige Sektoren-/Item-Liste,
+    // hängt von Einheit (lernpfade_konfiguration), Themenfeld-Titeln und
+    // globalen System-Bausteinen-Texten ab.
+    sektorStrukturTs: Math.max(ts(einheit), themenfelderTs, globalPromptsTs),
+    // Schlanke Lerntyp-Anweisung — hängt nur an der Einheit + globalen
+    // Prompts (für die generischen Tonalitätsregeln). Themenfelder fließen
+    // hier nicht mehr ein, weil die Struktur in sektorStruktur lebt.
+    sektorTs: Math.max(ts(einheit), globalPromptsTs),
     lernpaketTs,
     allgemeineAufgabeTs,
   };
@@ -246,6 +258,8 @@ export function lookupSourceMaxTimestampFromIndex(index, promptType, referenceId
       return index.nucleusTs;
     case PROMPT_TYPES.PERSONA:
       return index.personaTs;
+    case PROMPT_TYPES.SEKTOR_STRUKTUR:
+      return index.sektorStrukturTs;
     case PROMPT_TYPES.SEKTOR:
       return index.sektorTs;
     case PROMPT_TYPES.ERSTELLUNGSPAKET: {

@@ -34,6 +34,7 @@ import {
 import {
   buildNucleusPrompt,
   buildPersonaPrompt,
+  buildSektorStrukturPrompt,
   buildSektorPrompt,
   buildErstellungspaketForLernpaket,
   buildErstellungspaketForAufgabe,
@@ -327,7 +328,31 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
     />
   );
 
-  // ── Sektion 3: Sektor-Anweisungen pro Lerntyp ──────────────────────────
+  // ── Sektion 3a: Sektoren-Struktur (lerntyp-unabhängig, ab v1.9.0) ──────
+  const sektorStrukturPrompt = lookupPrompt('sektor_struktur');
+  const sektorStrukturMaxTs = computeMaxTs('sektor_struktur');
+  const sektorStrukturItem = (
+    <MBKPromptItem
+      ref={registerItemRef('sektor_struktur::null')}
+      label="Sektoren-Struktur (lerntyp-unabhängig)"
+      promptType="sektor_struktur"
+      existingPrompt={sektorStrukturPrompt}
+      isOutOfSync={isPromptOutOfSync(sektorStrukturPrompt, sektorStrukturMaxTs)}
+      editingMode={editingMode}
+      buildContent={() => buildSektorStrukturPrompt({
+        einheit,
+        themenfelder,
+        lernpakete,
+        allgemeineAufgaben,
+        systemBausteine,
+        globalPrompts,
+      })}
+      sourceMaxTimestamp={sektorStrukturMaxTs}
+      onUpsert={upsert}
+    />
+  );
+
+  // ── Sektion 3b: Schlanke Lerntyp-Anweisungen (verweisen auf 3a) ────────
   const sektorItems = LERNTYP_KEYS.map((lerntyp) => {
     const existing = lookupPrompt('sektor_anweisung', lerntyp);
     const maxTs = computeMaxTs('sektor_anweisung', lerntyp);
@@ -335,21 +360,13 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
       <MBKPromptItem
         key={lerntyp}
         ref={registerItemRef(`sektor_anweisung::${lerntyp}`)}
-        label={`Sektoren · ${LERNTYP_LABELS[lerntyp]}`}
+        label={`Lerntyp-Anweisung · ${LERNTYP_LABELS[lerntyp]}`}
         promptType="sektor_anweisung"
         referenceId={lerntyp}
         existingPrompt={existing}
         isOutOfSync={isPromptOutOfSync(existing, maxTs)}
         editingMode={editingMode}
-        buildContent={() => buildSektorPrompt({
-          einheit,
-          lerntyp,
-          themenfelder,
-          lernpakete,
-          allgemeineAufgaben,
-          systemBausteine,
-          globalPrompts,
-        })}
+        buildContent={() => buildSektorPrompt({ lerntyp })}
         sourceMaxTimestamp={maxTs}
         onUpsert={upsert}
       />
@@ -513,12 +530,18 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
           <AccordionTrigger className="px-4 hover:no-underline">
             <div className="flex items-center gap-2">
               <Layers className="w-4 h-4 text-primary" />
-              <span className="font-semibold">3. Sektor-Anweisungen</span>
-              <span className="text-xs text-muted-foreground">(4 Lerntypen)</span>
+              <span className="font-semibold">3. Sektoren-Struktur & Lerntyp-Anweisungen</span>
+              <span className="text-xs text-muted-foreground">(1 Struktur + 4 Lerntypen)</span>
             </div>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4 space-y-3">
-            {sektorItems}
+            {sektorStrukturItem}
+            <div className="pt-2 border-t border-dashed">
+              <p className="text-xs text-muted-foreground mb-2 mt-1">
+                Schlanke Lerntyp-Anweisungen — verweisen auf die Struktur oben.
+              </p>
+              {sektorItems}
+            </div>
           </AccordionContent>
         </AccordionItem>
 

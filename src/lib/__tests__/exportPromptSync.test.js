@@ -97,8 +97,14 @@ describe('buildSourceTimestampIndex / lookupSourceMaxTimestampFromIndex', () => 
     expect(index.personaTs).toBe(ts('2026-01-01T00:00:00.000Z'));
   });
 
-  it('berechnet sektorTs aus Einheit + Themenfeldern', () => {
-    expect(index.sektorTs).toBe(ts('2026-01-03T00:00:00.000Z'));
+  it('berechnet sektorStrukturTs aus Einheit + Themenfeldern', () => {
+    // Sektor-Struktur hängt an Einheit + Themenfeldern (deren max ist tf2 = 01-03).
+    expect(index.sektorStrukturTs).toBe(ts('2026-01-03T00:00:00.000Z'));
+  });
+
+  it('berechnet sektorTs nur aus Einheit (schlanke Lerntyp-Anweisung)', () => {
+    // Schlanke Sektor-Anweisung hängt nur an der Einheit, NICHT mehr an Themenfeldern.
+    expect(index.sektorTs).toBe(ts('2026-01-01T00:00:00.000Z'));
   });
 
   it('liefert pro Lernpaket den max-Timestamp seiner abhängigen Daten', () => {

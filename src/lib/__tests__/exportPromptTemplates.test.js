@@ -16,6 +16,7 @@ import {
   MBK_TEMPLATE_VERSION,
   buildNucleusPrompt,
   buildPersonaPrompt,
+  buildSektorStrukturPrompt,
   buildSektorPrompt,
   buildErstellungspaketForLernpaket,
   buildErstellungspaketForAufgabe,
@@ -95,19 +96,15 @@ describe('MBK Template Engine', () => {
   });
 
   describe('buildPersonaPrompt', () => {
-    it('listet alle 4 Lerntypen auf', () => {
+    it('enthält fach- und jahrgangs-spezifischen Erzeugungs-Auftrag', () => {
       const out = buildPersonaPrompt({ einheit: { fach: 'Bio', jahrgangsstufe: '8' } });
-      expect(out).toContain('Minimalist');
-      expect(out).toContain('Pragmatiker');
-      expect(out).toContain('Ehrgeizig');
-      expect(out).toContain('Passioniert');
-      expect(out).toContain('Persona & Tonalität');
-      expect(out).toContain('Jahrgangsstufe 8');
+      expect(out).toContain('Fachliche Persona');
       expect(out).toContain('Bio');
+      expect(out).toContain('8');
     });
   });
 
-  describe('buildSektorPrompt', () => {
+  describe('buildSektorStrukturPrompt (v1.9.0)', () => {
     const einheit = {
       lernpfade_konfiguration: {
         pragmatiker: [
@@ -122,27 +119,43 @@ describe('MBK Template Engine', () => {
       },
     };
 
-    it('gibt nummerierte Sektor-Liste in Eingabereihenfolge aus', () => {
-      const out = buildSektorPrompt({
+    it('gibt die vollständige Sektoren-Liste pro Lerntyp aus', () => {
+      const out = buildSektorStrukturPrompt({
         einheit,
-        lerntyp: 'pragmatiker',
         themenfelder: [{ id: 'tf1', titel: 'Grundlagen' }],
       });
-      expect(out).toContain('Pragmatiker');
-      expect(out).toMatch(/1\. \*\*Start\*\*/);
-      // Arbeitsphase nutzt Themenfeld-Titel
+      expect(out).toContain('Sektoren-Struktur (lerntyp-unabhängig)');
+      // Alle 4 Lerntyp-Pfade müssen als Header auftauchen
+      expect(out).toContain('Lerntyp-Pfad: Minimalist');
+      expect(out).toContain('Lerntyp-Pfad: Pragmatiker');
+      expect(out).toContain('Lerntyp-Pfad: Ehrgeizig');
+      expect(out).toContain('Lerntyp-Pfad: Passioniert');
+      // Pragmatiker-Pfad enthält Items
+      expect(out).toMatch(/Sektor 1: Start/);
       expect(out).toMatch(/Arbeitsphase · Grundlagen/);
-      // Item-Count
       expect(out).toMatch(/2 Elemente/);
     });
 
-    it('zeigt Fallback bei leerer Konfiguration', () => {
-      const out = buildSektorPrompt({
+    it('zeigt Fallback bei leerer Konfiguration pro Lerntyp', () => {
+      const out = buildSektorStrukturPrompt({
         einheit: { lernpfade_konfiguration: {} },
-        lerntyp: 'minimalist',
         themenfelder: [],
       });
-      expect(out).toContain('noch keine Sektoren konfiguriert');
+      // Jeder Lerntyp-Pfad bekommt den Fallback-Hinweis
+      const matches = out.match(/noch keine Sektoren konfiguriert/g) || [];
+      expect(matches.length).toBe(4);
+    });
+  });
+
+  describe('buildSektorPrompt (v1.9.0 — schlanke Lerntyp-Anweisung)', () => {
+    it('enthält Bearbeitungsregel + Verweis auf Struktur-Prompt', () => {
+      const out = buildSektorPrompt({ lerntyp: 'pragmatiker' });
+      expect(out).toContain('Pragmatiker');
+      expect(out).toContain('Bearbeitungsregel');
+      // Verweis auf den separaten Struktur-Prompt
+      expect(out).toContain('Sektoren-Struktur');
+      // Schlank: KEINE vollständige Sektor-Liste mehr
+      expect(out).not.toMatch(/Sektor 1:/);
     });
   });
 

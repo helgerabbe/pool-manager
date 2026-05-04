@@ -12,6 +12,7 @@
 import {
   buildNucleusPrompt,
   buildPersonaPrompt,
+  buildSektorStrukturPrompt,
   buildSektorPrompt,
   buildErstellungspaketForLernpaket,
   buildErstellungspaketForAufgabe,
@@ -122,27 +123,44 @@ export function buildBulkPlan({
     });
   }
 
-  // 3. Sektoren
-  for (const lerntyp of LERNTYP_KEYS) {
-    const existing = lookup('sektor_anweisung', lerntyp);
+  // 3a. Sektoren-Struktur (lerntyp-unabhängig, ab v1.9.0)
+  {
+    const existing = lookup('sektor_struktur');
     const { status, skipReason } = classify(existing);
     items.push({
-      key: `sektor::${lerntyp}`,
-      label: `Sektoren · ${LERNTYP_LABELS[lerntyp]}`,
+      key: 'sektor_struktur',
+      label: 'Sektoren-Struktur (lerntyp-unabhängig)',
       section: 'sektoren',
-      promptType: 'sektor_anweisung',
-      referenceId: lerntyp,
+      promptType: 'sektor_struktur',
+      referenceId: null,
       status,
       skipReason,
-      buildContent: () => buildSektorPrompt({
+      buildContent: () => buildSektorStrukturPrompt({
         einheit,
-        lerntyp,
         themenfelder,
         lernpakete,
         allgemeineAufgaben,
         systemBausteine,
         globalPrompts,
       }),
+      sourceMaxTs: tsFor('sektor_struktur'),
+      existing,
+    });
+  }
+
+  // 3b. Sektor-Anweisungen pro Lerntyp (schlank, verweist auf 3a)
+  for (const lerntyp of LERNTYP_KEYS) {
+    const existing = lookup('sektor_anweisung', lerntyp);
+    const { status, skipReason } = classify(existing);
+    items.push({
+      key: `sektor::${lerntyp}`,
+      label: `Lerntyp-Anweisung · ${LERNTYP_LABELS[lerntyp]}`,
+      section: 'sektoren',
+      promptType: 'sektor_anweisung',
+      referenceId: lerntyp,
+      status,
+      skipReason,
+      buildContent: () => buildSektorPrompt({ lerntyp }),
       sourceMaxTs: tsFor('sektor_anweisung', lerntyp),
       existing,
     });

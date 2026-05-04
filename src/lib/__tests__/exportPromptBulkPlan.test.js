@@ -54,17 +54,23 @@ const baseSetup = () => {
 };
 
 describe('buildBulkPlan', () => {
-  it('plant alle 7 Standard-Prompts (1+1+4+2 LPs+2 AAs - 1 unfertig - 1 draft = nicht skip-blocked, sondern in Liste)', () => {
+  it('plant alle Standard-Prompts inkl. neuer Sektoren-Struktur (v1.9.0)', () => {
     const setup = baseSetup();
     const plan = buildBulkPlan({ ...setup, prompts: [] });
-    // Erwartung: nucleus(1) + persona(1) + sektoren(4) + lp1+lp2(2) + aa1+aa2(2) = 10 Items
-    expect(plan).toHaveLength(10);
+    // Erwartung: nucleus(1) + persona(1) + sektor_struktur(1) + sektor_anweisung(4) + lp1+lp2(2) + aa1+aa2(2) = 11 Items
+    expect(plan).toHaveLength(11);
 
     const sectionOrder = plan.map((it) => it.section);
-    // Reihenfolge: nucleus, persona, dann sektoren, dann erstellungspakete
+    // Reihenfolge: nucleus, persona, dann sektoren (5 Items), dann erstellungspakete
     expect(sectionOrder.indexOf('nucleus')).toBeLessThan(sectionOrder.indexOf('persona'));
     expect(sectionOrder.indexOf('persona')).toBeLessThan(sectionOrder.indexOf('sektoren'));
     expect(sectionOrder.lastIndexOf('sektoren')).toBeLessThan(sectionOrder.indexOf('erstellungspakete'));
+
+    // Innerhalb der Sektoren: Struktur kommt VOR den Lerntyp-Anweisungen.
+    const strukturIdx = plan.findIndex((it) => it.key === 'sektor_struktur');
+    const ersteLerntypAnweisung = plan.findIndex((it) => it.key.startsWith('sektor::'));
+    expect(strukturIdx).toBeGreaterThanOrEqual(0);
+    expect(strukturIdx).toBeLessThan(ersteLerntypAnweisung);
   });
 
   it('markiert blockierte Erstellungspakete (Lernpaket nicht complete)', () => {
@@ -136,7 +142,8 @@ describe('buildMarkdownBundle', () => {
     expect(md).toMatch(/Fach: Mathematik/);
     expect(md).toMatch(/Jahrgang: 7/);
     expect(md).toContain('# 1. Nukleus (Kontext-Anker)');
-    expect(md).toContain('# 2. Persona & Tonalität');
+    expect(md).toContain('Fachliche Persona');
+    expect(md).toContain('Sektoren-Struktur');
     expect(md).toContain('---');
   });
 

@@ -11,14 +11,15 @@
       "enum": [
         "nucleus",
         "persona",
+        "sektor_struktur",
         "sektor_anweisung",
         "erstellungspaket"
       ],
-      "description": "Typ des Prompts. nucleus = Context-Anchor mit Lernlandkarte; persona = Tonalit\u00e4t/Lerntypen; sektor_anweisung = Sektor-Reihenfolge pro Lerntyp; erstellungspaket = pro Lernpaket bzw. pro AllgemeineAufgabe (Ebene 2/3)."
+      "description": "Typ des Prompts. nucleus = Context-Anchor mit Lernlandkarte; persona = Tonalit\u00e4t/Lerntypen; sektor_struktur = lerntyp-unabh\u00e4ngige Sektoren-/Item-Struktur (1\u00d7 pro Einheit, ab v1.9.0 als geteilte Single Source of Truth, auf die die schlanken sektor_anweisung-Prompts verweisen); sektor_anweisung = lerntyp-spezifische Bearbeitungsregel (4\u00d7 pro Einheit, schlank); erstellungspaket = pro Lernpaket bzw. pro AllgemeineAufgabe (Ebene 2/3)."
     },
     "reference_id": {
       "type": "string",
-      "description": "Verweis auf das spezifische Quell-Objekt. Bei nucleus/persona = null. Bei sektor_anweisung = Lerntyp-Schl\u00fcssel ('minimalist'|'pragmatiker'|'ehrgeizig'|'passioniert'). Bei erstellungspaket = Lernpaket-ID oder AllgemeineAufgabe-ID."
+      "description": "Verweis auf das spezifische Quell-Objekt. Bei nucleus/persona/sektor_struktur = null. Bei sektor_anweisung = Lerntyp-Schl\u00fcssel ('minimalist'|'pragmatiker'|'ehrgeizig'|'passioniert'). Bei erstellungspaket = Lernpaket-ID oder AllgemeineAufgabe-ID."
     },
     "content": {
       "type": "string",

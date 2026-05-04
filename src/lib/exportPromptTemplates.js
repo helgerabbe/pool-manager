@@ -32,9 +32,11 @@ import { formatMissionLabel } from '@/lib/missionen';
  * unten (Headings, Pflichtsätze, Reihenfolge, Halluzinations-Fallback)
  * MUSS diese Version hochgezählt werden.
  */
-export const MBK_TEMPLATE_VERSION = 'v1.8.0';
+export const MBK_TEMPLATE_VERSION = 'v1.9.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 
 const LERNTYP_LABELS = {
   minimalist: 'Minimalist',
@@ -349,109 +351,142 @@ function renderSektorItem(item, idx, indent, ctx) {
 }
 
 /**
- * Sektor-Anweisungen für einen Lerntyp.
+ * Lerntyp-unabhängige Sektoren-/Item-Struktur (ab v1.9.0).
  *
- * Pro Sektor wird ausgegeben:
- *   - Titel + semantischer Typ
- *   - Themenfeld-ID (bei Arbeitsphasen)
- *   - vollständige Item-Liste mit Quell-IDs und Bündel-Hierarchie
+ * Wird **einmal** pro Einheit erzeugt und enthält die vollständige Reihenfolge
+ * der Sektoren und Items für ALLE vier Lerntypen — als geteilte Referenz, auf
+ * die die schlanken `sektor_anweisung`-Prompts (Bearbeitungsregel pro Lerntyp)
+ * verweisen. Damit entfällt die 4-fache Wiederholung derselben Struktur und
+ * spart ~60–70 % Tokens bei den Sektor-Anweisungen.
  *
- * Dazu kommt eine lerntyp-spezifische Bearbeitungsregel
- * (siehe LERNTYP_BEARBEITUNGSREGEL), damit die MBK das gleiche Lernpaket
- * für Minimalist, Pragmatiker, Ehrgeizig und Passioniert unterschiedlich
- * ausarbeitet.
- *
- * @param {object} args
- * @param {object} args.einheit
- * @param {string} args.lerntyp                 — 'minimalist'|'pragmatiker'|'ehrgeizig'|'passioniert'
- * @param {Array}  args.themenfelder            — für Arbeitsphase-Titel-Auflösung
- * @param {Array}  args.lernpakete              — alle Lernpakete der Einheit (für Bündel-Verlinkungen)
- * @param {Array}  args.allgemeineAufgaben      — alle AllgemeineAufgabe-Records der Einheit
- * @param {Array}  args.systemBausteine         — alle SystemBausteine (für System-Item-Titel)
+ * Da die Sektoren-Konfiguration heute pro Lerntyp in `lernpfade_konfiguration`
+ * gespeichert ist, geben wir sie hier blockweise nach Lerntyp aus — die
+ * MBK liest sie 1× und referenziert sie dann pro Lerntyp-Anweisung.
  */
-export function buildSektorPrompt({
+export function buildSektorStrukturPrompt({
   einheit,
-  lerntyp,
   themenfelder = [],
   lernpakete = [],
   allgemeineAufgaben = [],
   systemBausteine = [],
   globalPrompts = [],
 }) {
-  const label = LERNTYP_LABELS[lerntyp] || lerntyp;
-  const beschreibung = LERNTYP_BESCHREIBUNGEN[lerntyp] || '';
-  const sektoren = einheit?.lernpfade_konfiguration?.[lerntyp] || [];
-
   const tfTitel = new Map(themenfelder.map((tf) => [tf.id, tf.titel]));
   const lernpaketById = new Map(lernpakete.map((lp) => [lp.id, lp]));
   const aufgabeById = new Map(allgemeineAufgaben.map((a) => [a.id, a]));
   const systemBausteinById = new Map(systemBausteine.map((sb) => [sb.baustein_id, sb]));
   const ctx = { lernpaketById, aufgabeById, systemBausteinById, globalPrompts };
 
-  const sektorBloecke = sektoren.map((s, idx) => {
-    const typLabel = getSektorTypLabel(s.sektor_typ);
-    let titel = s.titel || typLabel;
-    if (s.sektor_typ === 'arbeitsphase_themenfeld') {
-      const tf = s.titel_snapshot || tfTitel.get(s.themenfeld_id) || s.titel;
-      titel = `Arbeitsphase · ${tf || '(Themenfeld unbenannt)'}`;
-    }
+  const renderSektorenForLerntyp = (lerntyp) => {
+    const sektoren = einheit?.lernpfade_konfiguration?.[lerntyp] || [];
+    if (sektoren.length === 0) return '_(noch keine Sektoren konfiguriert)_';
 
-    const items = Array.isArray(s.items) ? s.items : [];
-    const headerLine = `### Sektor ${idx + 1}: ${titel}`;
-    const metaLines = [
-      `- Typ: ${typLabel}`,
-      s.sektor_typ === 'arbeitsphase_themenfeld' && s.themenfeld_id
-        ? `- Themenfeld-ID: ${s.themenfeld_id}`
-        : null,
-      `- Anzahl Elemente: ${items.length}`,
-    ].filter(Boolean);
-
-    // Items hierarchisch rendern: Root-Items + ihre Children (max. 1 Ebene Bündel).
-    const rootItems = items.filter((it) => !it?.parent_instance_id);
-    const childrenByParent = new Map();
-    for (const it of items) {
-      if (it?.parent_instance_id) {
-        if (!childrenByParent.has(it.parent_instance_id)) childrenByParent.set(it.parent_instance_id, []);
-        childrenByParent.get(it.parent_instance_id).push(it);
+    return sektoren.map((s, idx) => {
+      const typLabel = getSektorTypLabel(s.sektor_typ);
+      let titel = s.titel || typLabel;
+      if (s.sektor_typ === 'arbeitsphase_themenfeld') {
+        const tf = s.titel_snapshot || tfTitel.get(s.themenfeld_id) || s.titel;
+        titel = `Arbeitsphase · ${tf || '(Themenfeld unbenannt)'}`;
       }
-    }
 
-    const itemLines = [];
-    rootItems.forEach((root, rIdx) => {
-      itemLines.push(renderSektorItem(root, rIdx, '', ctx));
-      const children = childrenByParent.get(root.instance_id) || [];
-      children.forEach((child, cIdx) => {
-        itemLines.push(renderSektorItem(child, cIdx, '    ', ctx));
+      const items = Array.isArray(s.items) ? s.items : [];
+      const headerLine = `#### Sektor ${idx + 1}: ${titel}`;
+      const metaLines = [
+        `- Typ: ${typLabel}`,
+        s.sektor_typ === 'arbeitsphase_themenfeld' && s.themenfeld_id
+          ? `- Themenfeld-ID: ${s.themenfeld_id}`
+          : null,
+        `- Anzahl Elemente: ${items.length}`,
+      ].filter(Boolean);
+
+      // Items hierarchisch rendern: Root-Items + ihre Children (max. 1 Ebene Bündel).
+      const rootItems = items.filter((it) => !it?.parent_instance_id);
+      const childrenByParent = new Map();
+      for (const it of items) {
+        if (it?.parent_instance_id) {
+          if (!childrenByParent.has(it.parent_instance_id)) childrenByParent.set(it.parent_instance_id, []);
+          childrenByParent.get(it.parent_instance_id).push(it);
+        }
+      }
+
+      const itemLines = [];
+      rootItems.forEach((root, rIdx) => {
+        itemLines.push(renderSektorItem(root, rIdx, '', ctx));
+        const children = childrenByParent.get(root.instance_id) || [];
+        children.forEach((child, cIdx) => {
+          itemLines.push(renderSektorItem(child, cIdx, '    ', ctx));
+        });
       });
-    });
 
+      return [
+        headerLine,
+        metaLines.join('\n'),
+        '',
+        itemLines.length > 0 ? itemLines.join('\n') : '_(keine Elemente in diesem Sektor)_',
+      ].join('\n');
+    }).join('\n\n');
+  };
+
+  const lerntypBloecke = LERNTYP_KEYS.map((lt) => {
+    const label = LERNTYP_LABELS[lt] || lt;
     return [
-      headerLine,
-      metaLines.join('\n'),
+      `### Lerntyp-Pfad: ${label}`,
       '',
-      itemLines.length > 0 ? itemLines.join('\n') : '_(keine Elemente in diesem Sektor)_',
+      renderSektorenForLerntyp(lt),
     ].join('\n');
-  });
+  }).join('\n\n');
 
+  return [
+    blockHeading('Sektoren-Struktur (lerntyp-unabhängig)'),
+    'Dieser Prompt definiert die vollständige Sektoren- und Item-Reihenfolge der Einheit für alle vier Lerntyp-Pfade.',
+    'Die separaten Lerntyp-Anweisungen (Minimalist, Pragmatiker, Ehrgeizig, Passioniert) verweisen auf diese Struktur und ergänzen sie ausschließlich um eine lerntyp-spezifische **Bearbeitungsregel** — sie wiederholen die Struktur nicht.',
+    '',
+    blockHeading('Anweisung an die Moodle-Builder-KI'),
+    '- Lies diese Sektoren-Struktur EINMAL ein und behalte sie als Referenz für die nachfolgenden Lerntyp-Anweisungen.',
+    '- Verwende die unten angegebenen Quell-IDs, um die jeweils passenden „Erstellungspakete" zuzuordnen — die ID im Erstellungspaket-Header (Quelle-ID) entspricht 1:1 der hier genannten Quell-ID.',
+    '- Bei Bündel-Aufgaben (Lernpaket-Bündel oder Auswahl-Bündel) folge der dort angegebenen Bearbeitungs-Anweisung (Reihenfolge, X-von-Y).',
+    '',
+    lerntypBloecke,
+  ].join('\n');
+}
+
+/**
+ * Schlanke Sektor-Anweisung pro Lerntyp (ab v1.9.0).
+ *
+ * Enthält NUR noch:
+ *   - Tonalität (Kurzbeschreibung des Lerntyps)
+ *   - Bearbeitungsregel (4–6 Bullets aus LERNTYP_BEARBEITUNGSREGEL)
+ *   - Verweis auf `sektor_struktur`-Prompt als Single Source of Truth
+ *
+ * Die vollständige Sektoren-/Item-Liste wandert in `buildSektorStrukturPrompt`
+ * (1× pro Einheit, lerntyp-unabhängig). Damit sparen wir ~60–70 % Tokens
+ * gegenüber der bisherigen 4-fachen Wiederholung.
+ *
+ * @param {object} args
+ * @param {string} args.lerntyp — 'minimalist'|'pragmatiker'|'ehrgeizig'|'passioniert'
+ */
+export function buildSektorPrompt({ lerntyp }) {
+  const label = LERNTYP_LABELS[lerntyp] || lerntyp;
+  const beschreibung = LERNTYP_BESCHREIBUNGEN[lerntyp] || '';
   const bearbeitungsRegel = LERNTYP_BEARBEITUNGSREGEL[lerntyp] || [];
 
   return [
-    blockHeading(`Sektor-Anweisungen für Lerntyp „${label}"`),
+    blockHeading(`Sektor-Anweisung für Lerntyp „${label}"`),
     `Tonalität: ${beschreibung}.`,
+    '',
+    blockHeading('Bezug zur Sektoren-Struktur'),
+    'Die vollständige Sektoren- und Item-Reihenfolge findest du im separaten Prompt **„Sektoren-Struktur (lerntyp-unabhängig)"**. Dieser Prompt hier wiederholt die Struktur NICHT — er ergänzt sie nur um die Bearbeitungsregel für diesen Lerntyp.',
     '',
     blockHeading('Bearbeitungsregel für diesen Lerntyp'),
     bearbeitungsRegel.length > 0
       ? bearbeitungsRegel.map((r) => `- ${r}`).join('\n')
       : '(keine speziellen Bearbeitungsregeln definiert)',
     '',
-    blockHeading('Reihenfolge und Inhalte der Sektoren'),
-    sektorBloecke.length > 0 ? sektorBloecke.join('\n\n') : '(noch keine Sektoren konfiguriert)',
-    '',
     blockHeading('Anweisung an die Moodle-Builder-KI'),
-    '- Erstelle die Moodle-Kursstruktur in genau der oben angegebenen Reihenfolge der Sektoren.',
-    '- Verwende die oben gelisteten Quell-IDs, um die jeweils passenden „Erstellungspakete" zuzuordnen — die ID im Erstellungspaket-Header (Quelle-ID) entspricht 1:1 der hier genannten Quell-ID.',
-    `- Wende die oben definierte Bearbeitungsregel für „${label}" auf JEDES Lernpaket und JEDE Aufgabe an, sodass dasselbe Lernpaket für unterschiedliche Lerntypen unterschiedlich aufbereitet wird.`,
-    '- Bei Bündel-Aufgaben (Lernpaket-Bündel oder Auswahl-Bündel) folge der dort angegebenen Bearbeitungs-Anweisung (Reihenfolge, X-von-Y).',
+    `- Wende die obige Bearbeitungsregel für „${label}" auf JEDES Lernpaket und JEDE Aufgabe an, das/die im Sektoren-Struktur-Prompt aufgeführt ist.`,
+    '- Halte die im Sektoren-Struktur-Prompt definierte Reihenfolge der Sektoren strikt ein.',
+    '- Bei Bündel-Aufgaben folge zusätzlich der dort angegebenen Bündel-Bearbeitungs-Anweisung.',
+    `- Sodass dasselbe Lernpaket für „${label}" anders aufbereitet wird als für die anderen drei Lerntypen.`,
   ].join('\n');
 }
 
