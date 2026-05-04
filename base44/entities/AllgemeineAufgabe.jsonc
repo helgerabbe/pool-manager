@@ -78,13 +78,13 @@
         "test_only"
       ],
       "default": "standard",
-      "description": "F\u00fcr aufgaben_typ='buendel' (Moodle-B\u00fcndel): didaktische Reihenfolge-Logik im Export. standard = Input\u2192\u00dcbung\u2192Test, fast_track = Input\u2192Test\u2192\u00dcbung, wissensspeicher = Input fix, Rest frei, test_only = nur Test-Modul aktiv."
+      "description": "F\u00fcr aufgaben_typ='buendel' (Moodle-B\u00fcndel): didaktische Reihenfolge-Logik im Export."
     },
     "erforderliche_anzahl": {
       "type": "integer",
       "default": 0,
       "minimum": 0,
-      "description": "F\u00fcr aufgaben_typ='auswahl_buendel': Anzahl der Aufgaben aus verlinkte_aufgaben_ids, die der Sch\u00fcler mindestens bearbeiten muss. 0 = alle verlinkten Aufgaben sind Pflicht."
+      "description": "F\u00fcr aufgaben_typ='auswahl_buendel': Anzahl der Aufgaben, die der Sch\u00fcler mindestens bearbeiten muss. 0 = alle verlinkten Aufgaben sind Pflicht."
     },
     "interne_reihenfolge": {
       "type": "string",
@@ -93,11 +93,11 @@
         "sequenziell"
       ],
       "default": "frei",
-      "description": "F\u00fcr aufgaben_typ='auswahl_buendel' (Brian-B\u00fcndel): Bearbeitungsreihenfolge der enthaltenen Aufgaben. 'frei' = Sch\u00fcler w\u00e4hlt Reihenfolge selbst, 'sequenziell' = Aufgaben m\u00fcssen in der Listenreihenfolge abgearbeitet werden."
+      "description": "F\u00fcr aufgaben_typ='auswahl_buendel': Bearbeitungsreihenfolge der enthaltenen Aufgaben."
     },
     "hinweise_zum_material": {
       "type": "string",
-      "description": "F\u00fcr aufgaben_typ='handlung': Freitext-Hinweise zum ben\u00f6tigten physischen Material (z. B. 'Schere, Klebstoff, Tonpapier')."
+      "description": "F\u00fcr aufgaben_typ='handlung': Freitext-Hinweise zum ben\u00f6tigten physischen Material."
     },
     "aufgabentyp_projekt": {
       "type": "string",
@@ -206,7 +206,7 @@
     },
     "rubric_criteria": {
       "type": "array",
-      "description": "Brian-kompatible Bewertungsrubriken: Array von {title, points, criteria_text}",
+      "description": "Brian-kompatible Bewertungsrubriken",
       "items": {
         "type": "object",
         "properties": {
@@ -225,19 +225,19 @@
     },
     "brian_dialog_name": {
       "type": "string",
-      "description": "Brian.study: Name des Dialogs (entspricht dem Aufgabentitel)"
+      "description": "Brian.study: Name des Dialogs"
     },
     "brian_learner_instruction": {
       "type": "string",
-      "description": "Brian.study: Anweisung f\u00fcr Lernende (sichtbar f\u00fcr Sch\u00fcler)"
+      "description": "Brian.study: Anweisung f\u00fcr Lernende"
     },
     "brian_system_instruction": {
       "type": "string",
-      "description": "Brian.study: Interne System-Anweisung / Tutor-Persona (nicht f\u00fcr Sch\u00fcler sichtbar)"
+      "description": "Brian.study: Interne System-Anweisung / Tutor-Persona"
     },
     "brian_completion_rule": {
       "type": "string",
-      "description": "Brian.study: Abbruchbedingung \u2013 wann ist der Dialog beendet?"
+      "description": "Brian.study: Abbruchbedingung"
     },
     "prioritaete_lernziele": {
       "type": "array",
@@ -252,7 +252,7 @@
       "items": {
         "type": "string"
       },
-      "description": "Von der KI vorgeschlagene Kompetenz-Schlagworte (tempor\u00e4rer Hinweis f\u00fcr die Lehrkraft)",
+      "description": "Von der KI vorgeschlagene Kompetenz-Schlagworte",
       "default": []
     },
     "content_status": {
@@ -308,6 +308,11 @@
       "type": "string",
       "format": "date-time",
       "description": "Zeitstempel des letzten erfolgreichen Brian-Exports (nullable)"
+    },
+    "export_error": {
+      "type": "boolean",
+      "default": false,
+      "description": "Phase G: Wird vom Export-Center auf true gesetzt, wenn der Moodle-Spezialist diese Aufgabe im Abschluss-Dialog als 'fehlgeschlagen' markiert. Lehrkr\u00e4fte sehen das im Cockpit/Pool als rotes 'Export fehlgeschlagen'-Badge. Das Flag wird automatisch beim n\u00e4chsten Save (updateActivitySecure / updateLernpaketSecure / syncLernpfadMembership) auf false zur\u00fcckgesetzt, weil der Save ohnehin einen neuen Draft-Zustand erzeugt, der beim n\u00e4chsten Export neu bewertet wird."
     },
     "locked_by": {
       "type": "string",

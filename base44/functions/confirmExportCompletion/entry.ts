@@ -133,6 +133,9 @@ Deno.serve(async (req) => {
       const updatePayload = {
         sync_status: 'synced',
         last_synced_at: now,
+        // Phase G: Erfolgreich exportiert → ein eventuell altes
+        // export_error-Flag wird mit dieser Bestätigung gelöscht.
+        export_error: false,
       };
 
       // Spezial-Behandlung AllgemeineAufgabe: Dual-Lock-Release inline,
@@ -172,11 +175,16 @@ Deno.serve(async (req) => {
     }
 
     // ── failedIds-Updates ───────────────────────────────────────────────
+    // Phase G: Zusätzlich zum sync_status='error' setzen wir das neue
+    // boolean Feld export_error=true. Lehrkräfte sehen daran im Pool/
+    // Cockpit ein rotes Badge „Export fehlgeschlagen". Sobald die
+    // Lehrkraft das Item bearbeitet, setzen die jeweiligen Schreibe-
+    // Funktionen das Flag automatisch wieder auf false zurück.
     const failedUpdatePromises = [];
     for (const id of failedIds) {
       const resolved = resolve(id);
       if (!resolved) continue;
-      const failPayload = { sync_status: 'error' };
+      const failPayload = { sync_status: 'error', export_error: true };
       if (resolved.type === 'AllgemeineAufgabe') {
         failPayload.moodle_sync_status = 'error';
       }

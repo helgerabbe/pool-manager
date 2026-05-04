@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import TutorialSlideshow from '@/components/onboarding/TutorialSlideshow';
-import { Layers, Home, ShieldCheck, LogOut, ChevronRight, BookOpen, Settings, FileText } from 'lucide-react';
+import { Layers, Home, ShieldCheck, LogOut, ChevronRight, BookOpen, Settings, FileText, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
 import WartungsBanner from '@/components/layout/WartungsBanner';
@@ -171,6 +171,13 @@ export default function AppLayout() {
 
               {/* Basismodule */}
               <NavIconLink to="/basismodule" icon={BookOpen} label="Basismodule" isActive={isActive('/basismodule')} />
+
+              {/* Phase G: Export-Center (eigenständiger Hauptmenüpunkt
+                  zwischen Basismodule und Dokumentation, nur sichtbar
+                  für Rollen mit Export-Berechtigung). */}
+              {permissions.kannExportBedienen && (
+                <NavIconLink to="/export-center" icon={Send} label="Export-Center" isActive={isActive('/export-center')} />
+              )}
 
               {/* Dokumentation */}
               <NavIconLink to="/docs" icon={FileText} label="Dokumentation" isActive={isActive('/docs')} />

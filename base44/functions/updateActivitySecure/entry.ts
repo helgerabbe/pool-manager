@@ -311,9 +311,14 @@ Deno.serve(async (req) => {
     // unabhängig davon, ob das Update über diese Function oder direkt
     // über das SDK reinkommt. Diese Function reicht den Frontend-Wert
     // 1:1 durch; die Automation überschreibt ihn ggf. mit `false`.
+    // Phase G: Auto-Reset des export_error-Flags. Sobald die Lehrkraft
+    // den fehlerhaft exportierten Inhalt bearbeitet, verschwindet das
+    // rote Badge im Pool/Cockpit automatisch — der nächste Export-Lauf
+    // wertet das Item neu aus.
     await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(activityId, {
       field_values: fieldValues,
       is_complete: true,
+      export_error: false,
     });
 
     // 9. ✅ Audit-Log schreiben (SUCCESS)

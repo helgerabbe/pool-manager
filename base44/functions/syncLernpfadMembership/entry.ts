@@ -194,9 +194,12 @@ Deno.serve(async (req) => {
       }
 
       // Eintrag bleibt – ggf. sektor_id anpassen, pfad_status NIEMALS verändern.
+      // Phase G: Wenn die Aufgabe in einen anderen Sektor wandert, gilt das
+      // als "Lehrkraft hat den Pfad überarbeitet" → export_error zurücksetzen.
       if (m.sektor_id !== desiredSektor) {
         await base44.asServiceRole.entities.LernpfadAufgabeMembership.update(m.id, {
           sektor_id: desiredSektor,
+          export_error: false,
         });
         summary.updated += 1;
       }

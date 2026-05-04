@@ -32,21 +32,26 @@
         "locked_for_export"
       ],
       "default": "draft",
-      "description": "draft: Pfad ist editierbar. locked_for_export: Dashboard wurde als 'gepr\u00fcft' markiert (Schritt 1 des dreistufigen Freigabe-Workflows). Die Komposition ist gesperrt; Inhalte bleiben so lange editierbar, bis die gesamte Einheit final freigegeben wird (Schritt 3, kommt sp\u00e4ter)."
+      "description": "draft: Pfad ist editierbar. locked_for_export: Dashboard wurde als 'gepr\u00fcft' markiert."
     },
     "geprueft_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Zeitstempel, wann das Dashboard zuletzt als gepr\u00fcft markiert wurde. Wird beim \u00dcbergang draft \u2192 locked_for_export gesetzt."
+      "description": "Zeitstempel, wann das Dashboard zuletzt als gepr\u00fcft markiert wurde."
     },
     "geprueft_snapshot_updated_date": {
       "type": "string",
       "format": "date-time",
-      "description": "Snapshot der updated_date der referenzierten Aufgabe (oder des Lernpakets) zum Zeitpunkt der Pr\u00fcfung. Wird beim Drift-Vergleich genutzt: ist die aktuelle updated_date neuer, gilt das Item als ver\u00e4ndert und das Dashboard zeigt eine Drift-Warnung."
+      "description": "Snapshot der updated_date der referenzierten Aufgabe (oder des Lernpakets) zum Zeitpunkt der Pr\u00fcfung."
     },
     "last_export_signature": {
       "type": "string",
-      "description": "Phase E: Eingefrorener 16-Zeichen-Hex-Hash (FNV-1a-64) der exportrelevanten Sektor-Inhalte zum Zeitpunkt des Locks (pfad_status='locked_for_export'). Wird ausschlie\u00dflich beim Lock gesetzt und beim Unlock (zur\u00fcck auf 'draft') NICHT gel\u00f6scht \u2014 so bleibt die letzte freigegebene Signatur als Vergleichsanker erhalten. Die Drift-Erkennung in syncLernpfadMembership vergleicht diesen Wert gegen die aktuelle Sektor-Signatur (siehe lib/sektorSignature.js: computeSektorSignature). Bei Abweichung gilt der Sektor als 'modified seit letzter Freigabe' und triggert die UI-Badges in Tab 7 sowie das Cockpit-Drift-Display in Tab 8."
+      "description": "Phase E: Eingefrorener 16-Zeichen-Hex-Hash (FNV-1a-64) der exportrelevanten Sektor-Inhalte zum Zeitpunkt des Locks."
+    },
+    "export_error": {
+      "type": "boolean",
+      "default": false,
+      "description": "Phase G: Wird vom Export-Center auf true gesetzt, wenn der Moodle-Spezialist im Abschluss-Dialog den zugeh\u00f6rigen Sektor als 'fehlgeschlagen' markiert. Wird beim n\u00e4chsten syncLernpfadMembership-Aufruf automatisch auf false zur\u00fcckgesetzt, sobald der Sektor erneut bearbeitet wurde."
     }
   },
   "required": [

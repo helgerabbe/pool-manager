@@ -65,12 +65,17 @@
     "is_complete": {
       "type": "boolean",
       "default": false,
-      "description": "Aggregat-Flag (siehe Logbuch \u00a717): true \u21d4 alle aktiven Phasen-Aktivit\u00e4ten haben is_complete=true UND alle zugeh\u00f6rigen MasterAufgaben haben content_status='approved'. Wird ausschlie\u00dflich serverseitig in updateActivitySecure / approveMasterAufgabe / deleteActivityWithTombstoneAndCascade gesetzt \u2013 Frontend liest nur."
+      "description": "Aggregat-Flag: true \u21d4 alle aktiven Phasen-Aktivit\u00e4ten sind komplett UND alle MasterAufgaben sind 'approved'."
     },
     "version": {
       "type": "integer",
       "default": 1,
-      "description": "Optimistic Locking Version (inkrementiert bei jedem Update). Wird im App-Code via Read-Bump-ReRead-Verify-Pattern genutzt; nach Supabase-Migration durch BEFORE-UPDATE-Trigger ersetzbar."
+      "description": "Optimistic Locking Version (inkrementiert bei jedem Update)."
+    },
+    "export_error": {
+      "type": "boolean",
+      "default": false,
+      "description": "Phase G: Vom Export-Center auf true gesetzt, wenn der Moodle-Spezialist dieses Lernpaket im Abschluss-Dialog als 'fehlgeschlagen' markiert. Wird automatisch beim n\u00e4chsten Save (updateLernpaketSecure) auf false zur\u00fcckgesetzt."
     }
   },
   "required": [

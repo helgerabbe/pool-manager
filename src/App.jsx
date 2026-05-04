@@ -94,6 +94,19 @@ const AuthenticatedApp = () => {
           <Route path="/workspace" element={<ErrorBoundary fallback="Workspace konnte nicht geladen werden."><Workspace /></ErrorBoundary>} />
           <Route path="/einheit/create" element={<ErrorBoundary fallback="Erstellungsassistent konnte nicht geladen werden."><EinheitCreateWizard /></ErrorBoundary>} />
           <Route path="/einheit/export" element={<ErrorBoundary fallback="Export-Center konnte nicht geladen werden."><ExportCenter /></ErrorBoundary>} />
+          {/* Phase G: Eigenständiges Export-Center auf Hauptmenü-Ebene */}
+          <Route
+            path="/export-center"
+            element={
+              <ErrorBoundary fallback="Export-Center konnte nicht geladen werden.">
+                <ProtectedRoute
+                  component={ExportCenter}
+                  requiredPermission="kannExportBedienen"
+                  redirectTo="/"
+                />
+              </ErrorBoundary>
+            }
+          />
           
           {/* ✅ GESCHÜTZT: Admin-Einstellungen */}
           <Route

@@ -156,9 +156,15 @@ Deno.serve(async (req) => {
       Object.entries(updates).filter(([key]) => ALLOWED_FIELDS.includes(key))
     );
 
-    if (Object.keys(filteredUpdates).length > 0) {
-      await base44.asServiceRole.entities.Lernpakete.update(paketId, filteredUpdates);
-    }
+    // Phase G: Auto-Reset des export_error-Flags am Lernpaket beim
+    // nächsten Save. Selbst wenn keine fachlichen Felder geändert
+    // wurden (z.B. nur Lernziele), zählt der Save-Klick als
+    // "Lehrkraft hat sich des Items angenommen" — damit verschwindet
+    // das rote Badge sofort.
+    await base44.asServiceRole.entities.Lernpakete.update(paketId, {
+      ...filteredUpdates,
+      export_error: false,
+    });
 
     // 9. Lernziel-Updates (sicher, Lock-geschützt durch diesen Aufruf)
     const lernzielErrors = [];

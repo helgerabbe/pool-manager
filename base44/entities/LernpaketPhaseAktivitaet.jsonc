@@ -63,6 +63,11 @@
       "type": "string",
       "format": "date-time",
       "description": "Zeitstempel des letzten erfolgreichen Moodle-Exports"
+    },
+    "export_error": {
+      "type": "boolean",
+      "default": false,
+      "description": "Phase G: Vom Export-Center auf true gesetzt, wenn der Moodle-Spezialist diese Aktivit\u00e4t im Abschluss-Dialog als 'fehlgeschlagen' markiert. Wird automatisch beim n\u00e4chsten Save (updateActivitySecure) auf false zur\u00fcckgesetzt."
     }
   },
   "required": [
