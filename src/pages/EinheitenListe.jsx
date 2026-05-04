@@ -19,6 +19,7 @@ import { getExportPendingCount } from '@/lib/deltaExportLogic';
 import { useNavigate } from 'react-router-dom';
 import HelpBadge from '@/components/ui/HelpBadge';
 import { useEinheitenMetrics } from '@/hooks/useEinheitenMetrics';
+import { EXPORT_LIFECYCLE_STATUS, EXPORT_LIFECYCLE_LABELS } from '@/lib/exportLifecycle';
 
 function SchnellErstellenModal({ open, onOpenChange, onCreated }) {
   const [form, setForm] = useState({ titel_der_einheit: '', fach: '', jahrgangsstufe: '' });
@@ -121,6 +122,8 @@ export default function EinheitenListe() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterFach, setFilterFach] = useState('all');
   const [filterJahrgang, setFilterJahrgang] = useState('all');
+  // Phase D: Filter nach Export-Lifecycle (draft / final_freigegeben / export_running / published / 'all').
+  const [filterLifecycle, setFilterLifecycle] = useState('all');
   const [showOnlyChanged, setShowOnlyChanged] = useState(false);
   const [schnellErstellen, setSchnellErstellen] = useState(false);
   const [isDeletingAny, setIsDeletingAny] = useState(false);
@@ -175,8 +178,10 @@ export default function EinheitenListe() {
     const matchJahrgang = filterJahrgang === 'all' || String(e.jahrgangsstufe) === String(filterJahrgang);
     const matchRBAC = kannEinheitSehen(rolle, e.freigabe_status);
     const matchChanged = !showOnlyChanged || (e.sync_status === 'modified' || e.sync_status === 'new' || !e.last_synced_at);
+    const lifecycleStatus = e.export_lifecycle_status || EXPORT_LIFECYCLE_STATUS.DRAFT;
+    const matchLifecycle = filterLifecycle === 'all' || lifecycleStatus === filterLifecycle;
 
-    return matchSearch && matchFach && matchJahrgang && matchRBAC && matchChanged;
+    return matchSearch && matchFach && matchJahrgang && matchRBAC && matchChanged && matchLifecycle;
   });
 
   const faecher = [...new Set(einheiten.map(e => e.fach).filter(Boolean))];
@@ -269,6 +274,27 @@ export default function EinheitenListe() {
                     Jg. {j.bezeichnung}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+            {/* Phase D: Filter nach Export-Lifecycle. */}
+            <Select value={filterLifecycle} onValueChange={setFilterLifecycle}>
+              <SelectTrigger className="w-full sm:w-52">
+                <SelectValue placeholder="Alle Export-Stati" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle Export-Stati</SelectItem>
+                <SelectItem value={EXPORT_LIFECYCLE_STATUS.DRAFT}>
+                  {EXPORT_LIFECYCLE_LABELS[EXPORT_LIFECYCLE_STATUS.DRAFT]}
+                </SelectItem>
+                <SelectItem value={EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN}>
+                  {EXPORT_LIFECYCLE_LABELS[EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN]}
+                </SelectItem>
+                <SelectItem value={EXPORT_LIFECYCLE_STATUS.EXPORT_RUNNING}>
+                  {EXPORT_LIFECYCLE_LABELS[EXPORT_LIFECYCLE_STATUS.EXPORT_RUNNING]}
+                </SelectItem>
+                <SelectItem value={EXPORT_LIFECYCLE_STATUS.PUBLISHED}>
+                  {EXPORT_LIFECYCLE_LABELS[EXPORT_LIFECYCLE_STATUS.PUBLISHED]}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>

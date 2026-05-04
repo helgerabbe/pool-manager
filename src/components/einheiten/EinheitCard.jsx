@@ -14,6 +14,7 @@ import { getFachFarbe, getFachBadgeStyle } from '@/lib/fachFarben';
 import EinheitAccessBadge from '@/components/ui/EinheitAccessBadge';
 import EinheitMetricsRow from '@/components/einheiten/EinheitMetricsRow';
 import DashboardProgressBar from '@/components/einheiten/DashboardProgressBar';
+import EinheitExportLifecycleBadge from '@/components/einheiten/EinheitExportLifecycleBadge';
 
 export default function EinheitCard({
   einheit,
@@ -86,6 +87,7 @@ export default function EinheitCard({
                   </span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
+                  <EinheitExportLifecycleBadge status={einheit.export_lifecycle_status} />
                   {einheit.freigabe_status === 'Gesperrt' && (
                     <Badge className="bg-red-100 text-red-700 border border-red-200 gap-1">
                       <Lock className="w-3 h-3" />

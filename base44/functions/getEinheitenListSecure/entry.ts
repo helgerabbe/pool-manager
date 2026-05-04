@@ -198,6 +198,8 @@ Deno.serve(async (req) => {
         // das Cockpit den Stand bei jedem Tab-Wechsel.
         lernpfade_konfiguration: einheit.lernpfade_konfiguration,
         lernpfade_schema_version: einheit.lernpfade_schema_version,
+        // ✅ Phase D: Export-Lifecycle für Status-Badges + Filter in der Übersicht.
+        export_lifecycle_status: einheit.export_lifecycle_status || 'draft',
         // ✅ Unit-Level-Mitglieder für RBAC-Prüfung
         members: members.map(m => ({
           user_email: m.user_email,
