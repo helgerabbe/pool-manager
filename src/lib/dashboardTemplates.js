@@ -250,6 +250,34 @@ export const TEMPLATE_LERN_TYPEN = Object.freeze([
 ]);
 
 /**
+ * Liefert die Standard-Items für einen NEU angelegten Arbeitsphase-Sektor
+ * eines bestimmten Lerntyps.
+ *
+ * Hintergrund: Wenn die Lehrkraft – egal ob über das ArbeitsphaseModal,
+ * den Drift-Banner („+ Sektor anlegen") oder eine zukünftige Quelle –
+ * einen Themenfeld-Sektor anlegt, soll dieser nicht leer sein, sondern
+ * mit demselben pädagogischen Standardraster vorbefüllt werden, das
+ * auch im Default-Dashboard-Template für diesen Lerntyp definiert ist
+ * (Einführung, Handlungsplatzhalter, Lernpaket-/Brian-Bündel etc.).
+ *
+ * Implementierung: Wir suchen im Lerntyp-Template das erste Sektor-Objekt
+ * mit `sektor_typ === SEKTOR_TYP.ARBEITSPHASE` und kopieren dessen
+ * `items`-Array. Das hält die Source-of-Truth zentral – pädagogische
+ * Änderungen am Standard wirken automatisch überall.
+ *
+ * @param {string} lernTyp – 'minimalist'|'pragmatiker'|'ehrgeizig'|'passioniert'
+ * @returns {Array<{type:'system', ref_id:string}>} Frische Kopie der Items.
+ */
+export function getArbeitsphaseDefaultItems(lernTyp) {
+  const sektoren = DASHBOARD_TEMPLATES?.[lernTyp];
+  if (!Array.isArray(sektoren)) return [];
+  const arbeitsphase = sektoren.find((s) => s.sektor_typ === SEKTOR_TYP.ARBEITSPHASE);
+  if (!arbeitsphase || !Array.isArray(arbeitsphase.items)) return [];
+  // Defensive Kopie, damit Aufrufer die Templates nicht mutieren können.
+  return arbeitsphase.items.map((it) => ({ ...it }));
+}
+
+/**
  * Legacy-Alias-Tabelle: Bestandseinträge der alten Bezeichner werden
  * beim Einspielen eines V2-Templates auf die neuen IDs gemappt.
  * Greift in `applyDashboardTemplate` für Items, die per Template kommen.

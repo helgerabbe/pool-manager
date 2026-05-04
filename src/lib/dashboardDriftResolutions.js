@@ -39,6 +39,7 @@ import {
   addSektor,
   removeSektor,
 } from '@/lib/lernpfadeUtils';
+import { getArbeitsphaseDefaultItems } from '@/lib/dashboardTemplates';
 
 /**
  * Aktion 1: Fehlenden Arbeitsphase-Sektor für ein Themenfeld nachziehen.
@@ -53,9 +54,13 @@ import {
  */
 export function addArbeitsphaseSektorForThemenfeld(konfig, lernTyp, themenfeld) {
   if (!themenfeld?.id) return konfig;
+  // Standardraster für diesen Lerntyp übernehmen (Einführung,
+  // Handlungs-Platzhalter, Lernpaket-/Brian-Bündel etc.). So bekommt der
+  // Drift-„+ Sektor"-Pfad denselben Aufbau wie ein frisch initialisiertes
+  // Dashboard – Source of Truth bleibt DASHBOARD_TEMPLATES.
   const sektor = createNewSektor({
     titel: themenfeld.titel || 'Themenfeld',
-    items: [],
+    items: getArbeitsphaseDefaultItems(lernTyp),
     sektor_typ: SEKTOR_TYP.ARBEITSPHASE,
     themenfeld_id: themenfeld.id,
   });

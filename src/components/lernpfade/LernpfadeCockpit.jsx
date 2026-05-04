@@ -65,7 +65,7 @@ import {
 import { getBundleKindByAcceptedTypes } from '@/lib/sektorTypen';
 import CascadeDeleteDialog from '@/components/lernpfade/CascadeDeleteDialog';
 import ArbeitsphaseModal from '@/components/lernpfade/ArbeitsphaseModal.jsx';
-import { DASHBOARD_TEMPLATES } from '@/lib/dashboardTemplates';
+import { DASHBOARD_TEMPLATES, getArbeitsphaseDefaultItems } from '@/lib/dashboardTemplates';
 import { getSektorTemplate, SEKTOR_TEMPLATE_KEYS } from '@/lib/sektorTemplates';
 import { SEKTOR_TYP } from '@/lib/sektorTypen';
 import { getThemenfelderByEinheit, createThemenfeld } from '@/services/ThemenfeldService';
@@ -560,7 +560,9 @@ export default function LernpfadeCockpit({
         }
         const sektor = createNewSektor({
           titel: tfTitel || 'Themenfeld',
-          items: [],
+          // Standardraster für diesen Lerntyp übernehmen (analog zum
+          // Default-Dashboard-Template und zur Drift-Resolution).
+          items: getArbeitsphaseDefaultItems(activeLernTyp),
           sektor_typ: SEKTOR_TYP.ARBEITSPHASE,
           themenfeld_id: tfId,
         });
