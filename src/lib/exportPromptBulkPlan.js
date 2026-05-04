@@ -61,6 +61,7 @@ export function buildBulkPlan({
   allgemeineAufgaben,
   allgemeineAufgabenEbene23,
   systemBausteine = [],
+  globalPrompts = [],
   prompts,
   tsIndex,
 }) {
@@ -92,7 +93,7 @@ export function buildBulkPlan({
       referenceId: null,
       status,
       skipReason,
-      buildContent: () => buildNucleusPrompt({ einheit, stammdaten, themenfelder, lernpakete, lernziele }),
+      buildContent: () => buildNucleusPrompt({ einheit, stammdaten, themenfelder, lernpakete, lernziele, globalPrompts }),
       sourceMaxTs: tsFor('nucleus'),
       existing,
     });
@@ -135,6 +136,7 @@ export function buildBulkPlan({
         lernpakete,
         allgemeineAufgaben,
         systemBausteine,
+        globalPrompts,
       }),
       sourceMaxTs: tsFor('sektor_anweisung', lerntyp),
       existing,

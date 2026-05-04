@@ -1,0 +1,60 @@
+{
+  "name": "MBKGlobalPrompt",
+  "type": "object",
+  "description": "Globale, einheits-\u00fcbergreifende KI-Anweisungen f\u00fcr die Moodle-Builder-KI (MBK). Wird im Export-Center \u2192 Tab 'MBK-Prompt-Manager' gepflegt und beim Generieren der Einheiten-Prompts (Nukleus, Sektor-Anweisungen) als statische 'Compiler-Regeln' eingewoben. Eindeutigkeit: pro `schluessel` existiert genau ein Datensatz (anwendungsseitig sichergestellt durch updateMBKGlobalPromptSecure + Seed-Function).",
+  "properties": {
+    "kategorie": {
+      "type": "string",
+      "enum": [
+        "global",
+        "systembaustein"
+      ],
+      "description": "Logische Gruppe f\u00fcr die Sidebar-Navigation. 'global' = Mission Statement + strukturelle/lerntypen-Definitionen, die in den System-Prompt einer Einheit flie\u00dfen. 'systembaustein' = Standard-Bauteile (Einf\u00fchrung, Diagnose, Lernlandkarte, Exit-Ticket etc.), die als direkte Instruktion an die KI ausgegeben werden, sobald in einem Sektor ein System-Item vom passenden Schl\u00fcssel vorkommt."
+    },
+    "schluessel": {
+      "type": "string",
+      "description": "Stabiler, semantischer Identifier (z. B. 'global_mission_statement', 'def_lerntypen', 'sys_einfuehrung'). Wird systemweit als eindeutiger Lookup-Key verwendet \u2014 der Compiler in lib/exportPromptTemplates.js zieht den Text genau \u00fcber diesen Schl\u00fcssel. Bei Systembausteinen entspricht der Schl\u00fcssel dem `baustein_id` der SystemBausteine-Entity, sodass der Sektor-Compiler die Instruktion automatisch finden kann."
+    },
+    "anzeigename": {
+      "type": "string",
+      "description": "Klartextlicher Name f\u00fcr die Sidebar im MBK-Prompt-Manager (z. B. 'Mission Statement (System Prompt)')."
+    },
+    "prompt_text": {
+      "type": "string",
+      "description": "Der eigentliche KI-Prompt-Text. Reines Markdown, kein Templating \u2014 wird vom Compiler 1:1 als Block in den finalen Prompt eingesetzt."
+    },
+    "ist_aktiv": {
+      "type": "boolean",
+      "default": true,
+      "description": "Inaktive Eintr\u00e4ge werden vom Compiler ignoriert. Erlaubt Soft-Disable ohne Datenverlust."
+    },
+    "sort_order": {
+      "type": "integer",
+      "default": 100,
+      "description": "Sortierreihenfolge innerhalb der Kategorie in der Sidebar."
+    }
+  },
+  "required": [
+    "kategorie",
+    "schluessel",
+    "anzeigename"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

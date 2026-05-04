@@ -32,7 +32,7 @@ import { formatMissionLabel } from '@/lib/missionen';
  * unten (Headings, Pflichtsätze, Reihenfolge, Halluzinations-Fallback)
  * MUSS diese Version hochgezählt werden.
  */
-export const MBK_TEMPLATE_VERSION = 'v1.3.0';
+export const MBK_TEMPLATE_VERSION = 'v1.4.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -67,6 +67,22 @@ function safeText(s, fallback = '—') {
   return t.length > 0 ? t : fallback;
 }
 
+/**
+ * Lookup für globale Prompts aus dem MBK-Prompt-Manager (Tab 2 im Export-
+ * Center). Aufrufer übergeben das Array als `globalPrompts` an die Build-
+ * Funktionen. Inaktive Einträge werden ignoriert. Liefert `null`, wenn
+ * der Schlüssel nicht (mehr) gepflegt ist — Aufrufer fallen dann auf die
+ * fest verdrahteten Default-Texte zurück.
+ */
+function lookupGlobal(globalPrompts, schluessel) {
+  if (!Array.isArray(globalPrompts) || !schluessel) return null;
+  const found = globalPrompts.find(
+    (p) => p?.schluessel === schluessel && p?.ist_aktiv !== false
+  );
+  const text = found?.prompt_text;
+  return text && text.trim() ? text.trim() : null;
+}
+
 // ── 1. Nukleus ───────────────────────────────────────────────────────────────
 
 /**
@@ -80,7 +96,7 @@ function safeText(s, fallback = '—') {
  * @param {Array}  args.lernpakete        — alle Lernpakete dieser Einheit
  * @param {Array}  args.lernziele         — alle Lernziele zu diesen Lernpaketen
  */
-export function buildNucleusPrompt({ einheit, stammdaten, themenfelder = [], lernpakete = [], lernziele = [] }) {
+export function buildNucleusPrompt({ einheit, stammdaten, themenfelder = [], lernpakete = [], lernziele = [], globalPrompts = [] }) {
   const land = safeText(stammdaten?.land, '(Land nicht gesetzt)');
   const bundesland = safeText(stammdaten?.bundesland, '(Bundesland nicht gesetzt)');
   const schulform = safeText(stammdaten?.schulform, '(Schulform nicht gesetzt)');
@@ -131,10 +147,28 @@ export function buildNucleusPrompt({ einheit, stammdaten, themenfelder = [], ler
     ? `### Lernpakete ohne Themenfeld\n${orphanPakete.map(renderPaketBlock).join('\n')}`
     : '';
 
+  // Compiler-Schritt: globale Definitionen aus dem MBK-Prompt-Manager
+  // werden vor den dynamischen Inhalten als „System-Prompt"-Block injiziert.
+  // Reihenfolge: Mission Statement → Definition Lerntypen → Definition Struktur.
+  // Falls einer der Schlüssel nicht gepflegt ist, wird der Block ausgelassen
+  // (kein Hardcoded-Fallback hier, weil das Manager-System die Single Source
+  // of Truth ist und ein leerer Block die Lücke sichtbar macht).
+  const missionText = lookupGlobal(globalPrompts, 'global_mission_statement');
+  const defLerntypen = lookupGlobal(globalPrompts, 'def_lerntypen');
+  const defStruktur = lookupGlobal(globalPrompts, 'def_struktur');
+
+  const systemBlocks = [];
+  if (missionText) systemBlocks.push(missionText);
+  if (defLerntypen) systemBlocks.push(defLerntypen);
+  if (defStruktur) systemBlocks.push(defStruktur);
+
   return [
     blockHeading('Kontext-Anker (Nukleus)'),
     'Du bist die Moodle-Builder-KI. Erstelle den Moodle-Kurs für folgende Unterrichtseinheit.',
     '',
+    ...(systemBlocks.length > 0
+      ? [blockHeading('Globale Anweisungen (System-Prompt)'), systemBlocks.join('\n\n'), '']
+      : []),
     blockHeading('Schul-Stammdaten'),
     `- Land: ${land}`,
     `- Bundesland: ${bundesland}`,
@@ -223,7 +257,7 @@ const LERNTYP_BEARBEITUNGSREGEL = {
  * mit derselben ID referenziert — siehe `buildErstellungspaketFor*`).
  */
 function renderSektorItem(item, idx, indent, ctx) {
-  const { lernpaketById, aufgabeById, systemBausteinById } = ctx;
+  const { lernpaketById, aufgabeById, systemBausteinById, globalPrompts } = ctx;
   const refId = item?.ref_id || '(unbekannt)';
   let bezeichnung = '(unbekanntes Element)';
   let elementTyp = item?.type || 'unbekannt';
@@ -239,6 +273,20 @@ function renderSektorItem(item, idx, indent, ctx) {
       if (cfg.erforderliche_anzahl) teile.push(`${cfg.erforderliche_anzahl} von n erforderlich`);
       if (cfg.modus) teile.push(`Bearbeitung: ${cfg.modus}`);
       if (teile.length > 0) extra = ` _(${teile.join(', ')})_`;
+    }
+    // Compiler-Schritt: Wenn im MBK-Prompt-Manager ein Eintrag mit dem
+    // gleichen Schlüssel wie der baustein_id existiert (z. B. 'sys_einfuehrung'),
+    // injizieren wir den dort gepflegten Text als direkte KI-Instruktion in
+    // den Sektor-Block. Damit übersteuert der Manager die `export_instruktion`
+    // aus der SystemBausteine-Entity. Fallback ist `sb.export_instruktion`.
+    const managerInstr = lookupGlobal(globalPrompts, refId);
+    const fallbackInstr = trimMultiline(sb?.export_instruktion);
+    const instruktion = managerInstr || fallbackInstr;
+    if (instruktion) {
+      // Mehrzeilige Instruktion sauber einrücken, damit sie als Block unter
+      // dem Listen-Item steht.
+      const indented = instruktion.split('\n').map((l) => `${indent}    > ${l}`).join('\n');
+      extra = `${extra}\n${indent}    → KI-Instruktion:\n${indented}`;
     }
   } else {
     // Reguläre Aufgabe: kann Lernpaket-Bündel (AllgemeineAufgabe.aufgaben_typ='buendel'),
@@ -305,6 +353,7 @@ export function buildSektorPrompt({
   lernpakete = [],
   allgemeineAufgaben = [],
   systemBausteine = [],
+  globalPrompts = [],
 }) {
   const label = LERNTYP_LABELS[lerntyp] || lerntyp;
   const beschreibung = LERNTYP_BESCHREIBUNGEN[lerntyp] || '';
@@ -314,7 +363,7 @@ export function buildSektorPrompt({
   const lernpaketById = new Map(lernpakete.map((lp) => [lp.id, lp]));
   const aufgabeById = new Map(allgemeineAufgaben.map((a) => [a.id, a]));
   const systemBausteinById = new Map(systemBausteine.map((sb) => [sb.baustein_id, sb]));
-  const ctx = { lernpaketById, aufgabeById, systemBausteinById };
+  const ctx = { lernpaketById, aufgabeById, systemBausteinById, globalPrompts };
 
   const sektorBloecke = sektoren.map((s, idx) => {
     const typLabel = getSektorTypLabel(s.sektor_typ);

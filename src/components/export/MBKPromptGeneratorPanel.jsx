@@ -157,6 +157,16 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
     queryFn: () => base44.entities.SystemBausteine.list(),
   });
 
+  // Globale MBK-Prompts (Manager im Export-Center, Tab 2). Werden vom
+  // Compiler in Nukleus + Sektor-Anweisungen eingewoben. Wir teilen den
+  // Cache-Key mit dem Hook `useMBKGlobalPrompts`, damit ein Edit im Manager
+  // automatisch hier propagiert.
+  const { data: globalPrompts = [] } = useQuery({
+    queryKey: ['mbkGlobalPrompts'],
+    queryFn: () => base44.entities.MBKGlobalPrompt.list('-created_date', 200),
+    staleTime: 60_000,
+  });
+
   // Nur Ebene 2 + Ebene 3 für Erstellungspakete
   const allgemeineAufgabenEbene23 = useMemo(
     () => allgemeineAufgaben.filter(
@@ -172,11 +182,13 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
 
   // Source-Timestamp-Index — einmal pro Render-Schub berechnen, statt bei
   // jedem Item den ganzen Lernziele/Aufgaben-Array zu scannen.
+  // Globale Prompts fließen mit ein: ein Edit im Manager soll Nukleus +
+  // Sektor-Anweisungen als „veraltet" markieren.
   const tsIndex = useMemo(
     () => buildSourceTimestampIndex({
-      einheit, themenfelder, lernpakete, lernziele, aufgabenbausteine, phaseAktivitaeten, allgemeineAufgaben,
+      einheit, themenfelder, lernpakete, lernziele, aufgabenbausteine, phaseAktivitaeten, allgemeineAufgaben, globalPrompts,
     }),
-    [einheit, themenfelder, lernpakete, lernziele, aufgabenbausteine, phaseAktivitaeten, allgemeineAufgaben]
+    [einheit, themenfelder, lernpakete, lernziele, aufgabenbausteine, phaseAktivitaeten, allgemeineAufgaben, globalPrompts]
   );
 
   // ── Bulk-Generator + Helper-Funktionen ──────────────────────────────────
@@ -204,6 +216,7 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
     allgemeineAufgaben,
     allgemeineAufgabenEbene23,
     systemBausteine,
+    globalPrompts,
     prompts,
     upsert,
     tsIndex,
@@ -263,7 +276,7 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
       existingPrompt={nucleusPrompt}
       isOutOfSync={isPromptOutOfSync(nucleusPrompt, nucleusMaxTs)}
       editingMode={editingMode}
-      buildContent={() => buildNucleusPrompt({ einheit, stammdaten, themenfelder, lernpakete, lernziele })}
+      buildContent={() => buildNucleusPrompt({ einheit, stammdaten, themenfelder, lernpakete, lernziele, globalPrompts })}
       sourceMaxTimestamp={nucleusMaxTs}
       onUpsert={upsert}
     />
@@ -307,6 +320,7 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
           lernpakete,
           allgemeineAufgaben,
           systemBausteine,
+          globalPrompts,
         })}
         sourceMaxTimestamp={maxTs}
         onUpsert={upsert}

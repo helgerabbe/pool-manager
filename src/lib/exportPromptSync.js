@@ -162,6 +162,7 @@ export function buildSourceTimestampIndex({
   aufgabenbausteine = [],
   phaseAktivitaeten = [],
   allgemeineAufgaben = [],
+  globalPrompts = [],
 }) {
   const ts = (rec) => (rec?.updated_date ? new Date(rec.updated_date).getTime() : 0);
 
@@ -170,6 +171,10 @@ export function buildSourceTimestampIndex({
   const lernzieleTs = maxTimestamp(lernziele);
   const aufgabenbausteineTs = maxTimestamp(aufgabenbausteine);
   const phaseAktivitaetenTs = maxTimestamp(phaseAktivitaeten);
+  // MBKGlobalPrompt.updated_date fließt in Nukleus + Sektor-Anweisungen ein,
+  // weil beide Compiler-Aufrufe den Manager-Text einweben. Erstellungspakete
+  // bleiben davon unberührt.
+  const globalPromptsTs = maxTimestamp(globalPrompts);
 
   // Pro Lernpaket: ts(LP) ⊕ max(zugehörige LZ) ⊕ max(zugehörige AB) ⊕
   // max(zugehörige LernpaketPhaseAktivitaet). Damit zählen Edits in den
@@ -208,9 +213,9 @@ export function buildSourceTimestampIndex({
   }
 
   return {
-    nucleusTs: Math.max(ts(einheit), themenfelderTs, lernpaketeTs, lernzieleTs, aufgabenbausteineTs, phaseAktivitaetenTs),
+    nucleusTs: Math.max(ts(einheit), themenfelderTs, lernpaketeTs, lernzieleTs, aufgabenbausteineTs, phaseAktivitaetenTs, globalPromptsTs),
     personaTs: ts(einheit),
-    sektorTs: Math.max(ts(einheit), themenfelderTs),
+    sektorTs: Math.max(ts(einheit), themenfelderTs, globalPromptsTs),
     lernpaketTs,
     allgemeineAufgabeTs,
   };
