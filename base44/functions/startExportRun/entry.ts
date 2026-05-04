@@ -28,7 +28,26 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 const STATUS_FINAL = 'final_freigegeben';
 const STATUS_EXPORT_RUNNING = 'export_running';
 
-const ALLOWED_ROLES = ['Administrator', 'Fachschaftsleitung', 'Moodle-Designer'];
+// Globale Rollen mit fachübergreifendem Zugriff. Fachschaftsleitung wird
+// zusätzlich auf das Fach der Einheit eingegrenzt (siehe isAllowedForFach
+// unten), damit niemand fremde Fächer in den Export schicken kann —
+// analog zu setEinheitFreigabeStatus.
+const ROLE_ADMIN = 'Administrator';
+const ROLE_FACHSCHAFT = 'Fachschaftsleitung';
+const ROLE_MOODLE_DESIGNER = 'Moodle-Designer';
+const GLOBAL_ROLES = [ROLE_ADMIN, ROLE_MOODLE_DESIGNER];
+
+function isAllowedForFach(profil, fach) {
+  if (!profil?.rolle) return false;
+  if (GLOBAL_ROLES.includes(profil.rolle)) return true;
+  if (profil.rolle === ROLE_FACHSCHAFT) {
+    const faecher = Array.isArray(profil.fachbereich_zustaendigkeit)
+      ? profil.fachbereich_zustaendigkeit
+      : [];
+    return faecher.includes(fach);
+  }
+  return false;
+}
 
 async function logAuditEvent(base44, event) {
   try {
@@ -59,16 +78,7 @@ Deno.serve(async (req) => {
     const { einheitId } = await req.json();
     if (!einheitId) return Response.json({ error: 'einheitId required' }, { status: 400 });
 
-    // RBAC.
-    const profil = (await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email }))?.[0];
-    if (!profil || !ALLOWED_ROLES.includes(profil.rolle)) {
-      return Response.json(
-        { error: 'Forbidden: Admin, Fachschaftsleitung oder Moodle-Designer erforderlich.' },
-        { status: 403 }
-      );
-    }
-
-    // Einheit laden.
+    // Einheit laden — wird für die Fach-Prüfung benötigt.
     let einheit;
     try {
       einheit = await base44.asServiceRole.entities.Einheiten.get(einheitId);
@@ -76,6 +86,19 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
     }
     if (!einheit) return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
+
+    // RBAC: Admin und Moodle-Designer dürfen alle Fächer starten.
+    // Fachschaftsleitung nur das eigene Fach der Einheit.
+    const profil = (await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email }))?.[0];
+    if (!isAllowedForFach(profil, einheit.fach)) {
+      return Response.json(
+        {
+          error:
+            'Forbidden: Nur Administrator, Moodle-Designer oder die Fachschaftsleitung des betreffenden Fachs darf den Export starten.',
+        },
+        { status: 403 }
+      );
+    }
 
     const currentStatus = einheit.export_lifecycle_status || 'draft';
 
