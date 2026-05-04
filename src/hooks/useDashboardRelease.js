@@ -151,6 +151,10 @@ export function useDashboardRelease({
       if (res?.data?.ok) {
         toast.success(`Lernpfad „${label}" erfolgreich freigegeben und gesperrt.`);
         queryClient.invalidateQueries({ queryKey: ['lernpfadStatus', einheitId, activeLernTyp] });
+        // Toolbar-Pills (Dot grün/grau) + „Einheit final freigeben"-Button hängen
+        // am einheitFreigabeStatus-Hook → unbedingt mit-invalidieren, sonst
+        // aktualisiert sich die UI erst nach Tab-Wechsel/Reload.
+        queryClient.invalidateQueries({ queryKey: ['einheitFreigabeStatus', einheitId] });
         // exact: false → trifft alle Aufgaben-Lock-Queries (auch in anderen Tabs/Editoren).
         queryClient.invalidateQueries({ queryKey: ['aufgabeLock'], exact: false });
         setConfirmOpen(false);
@@ -191,6 +195,8 @@ export function useDashboardRelease({
       if (res?.data?.ok) {
         toast.success(`Lernpfad „${label}" entsperrt.`);
         queryClient.invalidateQueries({ queryKey: ['lernpfadStatus', einheitId, activeLernTyp] });
+        // Pill-Dot + „Einheit final freigeben"-Button aktuell halten.
+        queryClient.invalidateQueries({ queryKey: ['einheitFreigabeStatus', einheitId] });
         // exact: false → trifft alle Aufgaben-Lock-Queries (auch in anderen Tabs/Editoren).
         queryClient.invalidateQueries({ queryKey: ['aufgabeLock'], exact: false });
       } else {
