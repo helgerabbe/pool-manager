@@ -37,6 +37,7 @@ import { useDashboardSync } from '@/hooks/useDashboardSync';
 import { useDashboardDragAndDrop } from '@/hooks/useDashboardDragAndDrop';
 import { useDashboardRelease } from '@/hooks/useDashboardRelease';
 import { useDashboardDrift } from '@/hooks/useDashboardDrift';
+import { useLernpfadDriftReport } from '@/hooks/useLernpfadDriftReport';
 import { PFAD_STATUS } from '@/lib/pfadStatus';
 import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
@@ -294,10 +295,21 @@ export default function LernpfadeCockpit({
     wasEditingActive.current = isStructuralEditingActive;
   }, [isStructuralEditingActive, einheit?.lernpfade_konfiguration]);
 
+  // ── Phase E.4: Drift-Report (Sektor-Badges) ─────────────────────────
+  // Initial-Load + manueller Refresh; wird auch direkt aus der
+  // syncLernpfadMembership-Response gespeist (siehe `applyDriftReport`
+  // unten via `onDriftReport`-Callback in useDashboardSync).
+  const {
+    isLoading: driftReportLoading,
+    applyDriftReport,
+    getStatus: getDriftStatus,
+  } = useLernpfadDriftReport(einheit?.id);
+
   // ── Sync-Hook (debounced Save + Junction-Sync + Toasts) ─────────────
   const { saveState, scheduleSave, flushSave, hasPending } = useDashboardSync({
     einheitId: einheit?.id,
     isStructuralEditingActive,
+    onDriftReport: applyDriftReport,
   });
 
   // Parent (Workspace) kann via flushRef synchron einen Save erzwingen,
@@ -1033,6 +1045,8 @@ export default function LernpfadeCockpit({
                 onOpenGuide={() => setIsGuideOpen(true)}
                 canvasScrollRef={scrollRef}
                 themenfeldTitelById={themenfeldTitelById}
+                getDriftStatus={getDriftStatus}
+                driftReportLoading={driftReportLoading}
               />
             </div>
           </main>

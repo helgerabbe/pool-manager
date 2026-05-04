@@ -30,9 +30,23 @@ import { toast } from 'sonner';
 
 const DEFAULT_DEBOUNCE_MS = 800;
 
-export function useDashboardSync({ einheitId, isStructuralEditingActive, debounceMs = DEFAULT_DEBOUNCE_MS }) {
+export function useDashboardSync({
+  einheitId,
+  isStructuralEditingActive,
+  debounceMs = DEFAULT_DEBOUNCE_MS,
+  // Phase E.4: Optionaler Callback, dem wir den frischen drift_report aus
+  // der `syncLernpfadMembership`-Response übergeben. Spart einen Extra-
+  // Roundtrip auf `getLernpfadDriftReport` nach jedem Save.
+  onDriftReport,
+}) {
   const queryClient = useQueryClient();
   const [saveState, setSaveState] = useState('idle');
+  // Aktuellen Callback in Ref halten, damit Änderungen den memoisierten
+  // flushSave nicht neu erzeugen müssen.
+  const onDriftReportRef = useRef(onDriftReport);
+  useEffect(() => {
+    onDriftReportRef.current = onDriftReport;
+  }, [onDriftReport]);
 
   const debounceTimerRef = useRef(null);
   const pendingPayloadRef = useRef(null);
@@ -58,7 +72,14 @@ export function useDashboardSync({ einheitId, isStructuralEditingActive, debounc
       // Wenn der Sync fehlschlägt, ist das KEIN Save-Fehler – die Konfiguration
       // selbst liegt schon korrekt in der DB. Wir warnen nur und cachen invalidieren.
       try {
-        await base44.functions.invoke('syncLernpfadMembership', { einheitId });
+        const syncRes = await base44.functions.invoke('syncLernpfadMembership', { einheitId });
+        // Phase E.4: Drift-Report direkt an UI weiterreichen, falls der
+        // Aufrufer interessiert ist. `data.drift_report` wird seit E.3
+        // immer mitgeliefert.
+        const driftReport = syncRes?.data?.drift_report;
+        if (driftReport && onDriftReportRef.current) {
+          onDriftReportRef.current(driftReport);
+        }
         // Ampel- und Lock-Daten könnten sich geändert haben.
         // exact: false → invalidiert ALLE ['aufgabeLock', <id>]-Queries,
         // damit ein in einem anderen Tab offener Editor frisch lädt.

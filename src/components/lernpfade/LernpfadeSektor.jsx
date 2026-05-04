@@ -28,6 +28,7 @@ import AmpelBadge from '@/components/lernpfade/AmpelBadge';
 import { isExportFreigegeben, isContentApproved } from '@/lib/ampelLogic';
 import { groupItemsByParent } from '@/lib/lernpfadeUtils';
 import { getSektorTypLabel, SEKTOR_TYP } from '@/lib/sektorTypen';
+import SektorDriftBadge from '@/components/lernpfade/SektorDriftBadge';
 
 // Dynamische Lernpaket-Variante je nach Lerntyp ("Chamäleon-Logik").
 // Nur reguläre Lernpakete (buendel) zeigen ein Varianten-Label;
@@ -146,6 +147,7 @@ export default function LernpfadeSektor({
   getAmpelStatusForItem,
   onOpenAufgabeEditor,
   themenfeldTitelById,
+  driftStatus,
   }) {
   const items = Array.isArray(sektor.items) ? sektor.items : [];
 
@@ -266,6 +268,9 @@ export default function LernpfadeSektor({
         >
           {headerLabel}
         </span>
+        {/* Phase E.4: Drift-Badge — zeigt nur bei 'drifted' bzw. 'loading'
+            etwas an. Bei clean/never_locked/unknown bleibt der Header ruhig. */}
+        <SektorDriftBadge status={driftStatus} />
         <div className="flex-1" />
         {!readOnly && (
           <>
