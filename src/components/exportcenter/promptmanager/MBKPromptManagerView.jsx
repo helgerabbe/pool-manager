@@ -6,9 +6,11 @@
  * (siehe ExportCenter.jsx).
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Loader2 } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
 import { useMBKGlobalPrompts } from '@/hooks/useMBKGlobalPrompts';
 import MBKPromptManagerSidebar from './MBKPromptManagerSidebar';
 import MBKPromptManagerEditor from './MBKPromptManagerEditor';
@@ -17,16 +19,43 @@ export default function MBKPromptManagerView() {
   const { prompts, isLoading, update, isUpdating, seed, isSeeding } = useMBKGlobalPrompts();
   const [selectedId, setSelectedId] = useState(null);
 
-  // Beim ersten Laden den ersten Eintrag auswählen.
+  // Erlaubte Systembausteine: nur die in der Verwaltung gepflegten
+  // statischen Bausteine (keine Platzhalter / Bündel) und nur, wenn sie
+  // dort als aktiv markiert sind.
+  const { data: systemBausteine = [] } = useQuery({
+    queryKey: ['systemBausteine'],
+    queryFn: () => base44.entities.SystemBausteine.list(),
+    staleTime: 60_000,
+  });
+  const allowedSystemBausteinIds = useMemo(() => {
+    const set = new Set();
+    for (const sb of systemBausteine) {
+      if (sb?.ist_aktiv !== false && sb?.baustein_modus === 'static' && sb?.baustein_id) {
+        set.add(sb.baustein_id);
+      }
+    }
+    return set;
+  }, [systemBausteine]);
+
+  // Sichtbare Prompts: globale Definitionen unverändert; Systembausteine
+  // nur, wenn ihr Schlüssel in `allowedSystemBausteinIds` enthalten ist.
+  const visiblePrompts = useMemo(
+    () => prompts.filter((p) =>
+      p.kategorie !== 'systembaustein' || allowedSystemBausteinIds.has(p.schluessel)
+    ),
+    [prompts, allowedSystemBausteinIds]
+  );
+
+  // Beim ersten Laden den ersten sichtbaren Eintrag auswählen.
   useEffect(() => {
-    if (!selectedId && prompts.length > 0) {
-      const sorted = [...prompts].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    if (!selectedId && visiblePrompts.length > 0) {
+      const sorted = [...visiblePrompts].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
       setSelectedId(sorted[0].id);
     }
-  }, [prompts, selectedId]);
+  }, [visiblePrompts, selectedId]);
 
-  const selectedPrompt = prompts.find((p) => p.id === selectedId) || null;
-  const isEmpty = !isLoading && prompts.length === 0;
+  const selectedPrompt = visiblePrompts.find((p) => p.id === selectedId) || null;
+  const isEmpty = !isLoading && visiblePrompts.length === 0;
 
   return (
     <div className="flex h-full overflow-hidden min-h-0">
@@ -53,7 +82,7 @@ export default function MBKPromptManagerView() {
           </div>
         ) : (
           <MBKPromptManagerSidebar
-            prompts={prompts}
+            prompts={visiblePrompts}
             selectedId={selectedId}
             onSelect={setSelectedId}
           />
