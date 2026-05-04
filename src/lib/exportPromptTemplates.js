@@ -32,7 +32,7 @@ import { formatMissionLabel } from '@/lib/missionen';
  * unten (Headings, Pflichtsätze, Reihenfolge, Halluzinations-Fallback)
  * MUSS diese Version hochgezählt werden.
  */
-export const MBK_TEMPLATE_VERSION = 'v1.7.0';
+export const MBK_TEMPLATE_VERSION = 'v1.8.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
