@@ -870,6 +870,21 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                       handleTabChange(ebene === 'ebene12' ? 'ebene2' : 'ebene3');
                       handleSelect({ type: 'allgemein-aufgabe', id: taskId });
                     }}
+                    onOpenDashboardArchitekt={(lerntyp, sektorId) => {
+                      // Phase F.2: Deep-Link Tab 8 → Tab 7. Wir schreiben die
+                      // Ziel-Parameter als URL-Params; das LernpfadeCockpit
+                      // liest sie beim Mount aus und scrollt zum Sektor.
+                      const next = new URLSearchParams(searchParams);
+                      if (selectedEinheitId) next.set('einheit', selectedEinheitId);
+                      if (lerntyp) next.set('lerntyp', lerntyp);
+                      if (sektorId) {
+                        next.set('sektor', sektorId);
+                      } else {
+                        next.delete('sektor');
+                      }
+                      setSearchParams(next);
+                      handleTabChange('dashboards');
+                    }}
                   />
                 </ErrorBoundary>
               </div>

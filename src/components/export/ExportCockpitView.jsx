@@ -33,6 +33,9 @@ import { isMissionApplicable } from '@/lib/missionen';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import ExportLifecycleHeaderCard from '@/components/export/ExportLifecycleHeaderCard';
+import LerntypDashboardCard from '@/components/export/LerntypDashboardCard';
+
+const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 
 // ── Status-Badge für eine Aktivität (alle 6 Zustände) ───────────────────────
 
@@ -330,6 +333,9 @@ export default function ExportCockpitView({
   initialEinheitId = null,
   onNavigateToActivity: onNavCallback = null,
   onNavigateToTask = null,
+  // Phase F.2: Tab-8 → Tab-7-Deep-Link. Wird vom Workspace bereitgestellt
+  // (setzt URL-Params + ruft handleTabChange('dashboards') auf).
+  onOpenDashboardArchitekt = null,
 }) {
   const queryClient = useQueryClient();
   const { permissions, rolle, faecher } = useRBAC();
@@ -473,9 +479,23 @@ export default function ExportCockpitView({
         darfFreigeben={darfFreigeben}
       />
 
-      {/* Inhalts-Sektion: vorerst (F.1) bleibt die bestehende Themenfeld-
-          Hierarchie. In F.2 ersetzen wir den oberen Bereich durch vier
-          Lerntyp-Karten mit aggregierter Drift-Anzeige. */}
+      {/* Phase F.2: Vier Lerntyp-Karten mit aggregierter Drift-Anzeige.
+          Jede Karte zeigt Pfad-Status, Drift-Counter und ein klickbares
+          Sektoren-Grid. Klick → Tab 7 + Sprung zum jeweiligen Sektor. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {LERNTYP_KEYS.map((lt) => (
+          <LerntypDashboardCard
+            key={lt}
+            lerntyp={lt}
+            einheitId={selectedUnitId}
+            konfiguration={einheit?.lernpfade_konfiguration}
+            onOpenInArchitekt={onOpenDashboardArchitekt || undefined}
+          />
+        ))}
+      </div>
+
+      {/* Inhalts-Sektion: das Detail-Akkordeon mit der vollen Themenfeld-
+          Hierarchie für die manuelle Selektion vor der Übergabe. */}
       <div className="rounded-xl border border-border bg-card shadow-sm p-5 space-y-4">
         <div>
           <h3 className="text-sm font-semibold">Inhalte zur Übergabe</h3>

@@ -112,14 +112,30 @@ export default function LernpfadeCockpit({
   })();
   const [activeLernTyp, setActiveLernTyp] = useState(initialLernTyp);
 
+  // Phase F.2: Deep-Link-Sektor. Tab 7 wird im Workspace nicht unmountet,
+  // wenn der User von Tab 8 herübernavigiert — daher reagieren wir REAKTIV
+  // auf Änderungen der `?lerntyp`- und `?sektor`-Params (nicht nur beim
+  // ersten Mount). Sobald wir die Werte gelesen haben, leeren wir sie aus
+  // der URL, damit eigene Klicks im Cockpit nicht überschrieben werden.
+  const pendingScrollSektorRef = useRef(null);
   useEffect(() => {
-    if (searchParams.get('lerntyp')) {
-      const next = new URLSearchParams(searchParams);
-      next.delete('lerntyp');
-      setSearchParams(next, { replace: true });
+    const lerntypParam = searchParams.get('lerntyp');
+    const sektorParam = searchParams.get('sektor');
+    if (!lerntypParam && !sektorParam) return;
+    if (lerntypParam && VALID_LERNTYPEN.includes(lerntypParam)) {
+      setActiveLernTyp(lerntypParam);
+      setSelectedAufgabeIdState(null);
+      setSelectedSystemBausteinIdState(null);
     }
+    if (sektorParam) {
+      pendingScrollSektorRef.current = sektorParam;
+    }
+    const next = new URLSearchParams(searchParams);
+    next.delete('lerntyp');
+    next.delete('sektor');
+    setSearchParams(next, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchParams]);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [previewAufgabe, setPreviewAufgabe] = useState(null);
   const [editorAufgabe, setEditorAufgabe] = useState(null);
@@ -963,6 +979,40 @@ export default function LernpfadeCockpit({
   // Header-Auto-Hide-Logik). Aktuell nicht aktiv, bleibt aber als stabiler Ref
   // erhalten, falls der Architekt ihn nutzen will.
   const scrollRef = useRef(null);
+
+  // Phase F.2: Deep-Link-Scroll. Wenn beim Mount eine `?sektor=...`-ID
+  // mitgegeben wurde, scrollen wir den passenden Sektor sanft ins Bild,
+  // sobald (a) der richtige Lerntyp aktiv ist und (b) die DOM-Knoten
+  // gerendert sind. Das LernpfadeSektor markiert seinen Container mit
+  // `data-sektor-id`, daher reicht ein `querySelector`. Nach Erfolg leeren
+  // wir die Ref, damit der Effekt nicht in Schleife scrollt.
+  useEffect(() => {
+    const targetId = pendingScrollSektorRef.current;
+    if (!targetId) return;
+    if (!scrollRef.current) return;
+    // Kurzes Polling: das Cockpit braucht einen Render-Tick, bevor die
+    // Sektor-Liste tatsächlich im DOM steht (besonders nach Tab-Wechsel
+    // mit `?lerntyp=`-Sync).
+    let attempts = 0;
+    const tryScroll = () => {
+      const root = scrollRef.current;
+      if (!root) return;
+      const el = root.querySelector(`[data-sektor-id="${targetId}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Visuell kurz hervorheben, damit klar wird, „hier bin ich gelandet".
+        el.classList.add('ring-2', 'ring-primary/60', 'ring-offset-2');
+        setTimeout(() => {
+          el.classList.remove('ring-2', 'ring-primary/60', 'ring-offset-2');
+        }, 1800);
+        pendingScrollSektorRef.current = null;
+        return;
+      }
+      attempts += 1;
+      if (attempts < 10) setTimeout(tryScroll, 80);
+    };
+    tryScroll();
+  }, [activeLernTyp, konfiguration]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">

@@ -257,7 +257,10 @@ export default function LernpfadeSektor({
     : typLabel;
 
   return (
-    <div className="rounded-lg border border-border bg-card/80 p-3 space-y-2">
+    <div
+      data-sektor-id={sektor.sektor_id}
+      className="rounded-lg border border-border bg-card/80 p-3 space-y-2 transition-shadow"
+    >
       {/* Header — Sektor-Titel wird automatisch aus Einheit/Lerntyp/Typ
           abgeleitet und nicht mehr per Input editiert. Bei Arbeitsphasen
           steht der Themenfeld-Titel bereits im headerLabel. */}
