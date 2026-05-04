@@ -32,7 +32,7 @@ import { formatMissionLabel } from '@/lib/missionen';
  * unten (Headings, Pflichtsätze, Reihenfolge, Halluzinations-Fallback)
  * MUSS diese Version hochgezählt werden.
  */
-export const MBK_TEMPLATE_VERSION = 'v1.6.0';
+export const MBK_TEMPLATE_VERSION = 'v1.7.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -670,40 +670,71 @@ export function buildErstellungspaketForAufgabe({ aufgabe }) {
 const PHASEN_REIHENFOLGE = ['Input', 'Übung', 'Abschluss'];
 
 /**
- * Rendert eine einzelne LernpaketPhaseAktivitaet inkl. ihrer field_values
- * als Markdown-Block. Die field_values sind das eigentliche „Inhaltliche"
- * (URL, Text, Begriffspaare, Anweisungstext, …) — wir geben sie als
- * Key-Value-Liste aus, damit die MBK alle Felder unverändert sieht.
+ * Rendert die field_values eines Records (Phase-Aktivität ODER Master-Aufgabe)
+ * als Markdown-Key-Value-Liste. Labels werden — wo möglich — aus dem
+ * AktivitaetenKatalog-form_schema aufgelöst.
  */
-function renderPhaseAktivitaet(pa, idx, katalogById) {
-  const katalog = katalogById?.get(pa?.aktivitaet_id) || null;
-  const name = safeText(katalog?.name, '(unbekannte Aktivität)');
-  const lines = [`### Aktivität ${idx + 1}: ${name}`];
-
-  const fv = pa?.field_values && typeof pa.field_values === 'object' ? pa.field_values : {};
-  const fieldEntries = Object.entries(fv).filter(([, v]) => {
+function renderFieldValues(fv, katalog) {
+  const fieldEntries = Object.entries(fv || {}).filter(([, v]) => {
     if (v === null || v === undefined) return false;
     if (typeof v === 'string' && v.trim() === '') return false;
     if (Array.isArray(v) && v.length === 0) return false;
     return true;
   });
-
-  if (fieldEntries.length === 0) {
-    lines.push('_(noch keine Inhalte konfiguriert)_');
-  } else {
-    for (const [key, value] of fieldEntries) {
-      // Label aus dem Katalog-form_schema, falls vorhanden — sonst field_name.
-      const fieldDef = (katalog?.form_schema || []).find((f) => f.field_name === key);
-      const label = fieldDef?.label || key;
-      let rendered;
-      if (typeof value === 'string') {
-        rendered = value.includes('\n') ? `\n${value}` : value;
-      } else {
-        rendered = `\n\`\`\`json\n${JSON.stringify(value, null, 2)}\n\`\`\``;
-      }
-      lines.push(`- **${label}:** ${rendered}`);
+  if (fieldEntries.length === 0) return null;
+  const lines = [];
+  for (const [key, value] of fieldEntries) {
+    const fieldDef = (katalog?.form_schema || []).find((f) => f.field_name === key);
+    const label = fieldDef?.label || key;
+    let rendered;
+    if (typeof value === 'string') {
+      rendered = value.includes('\n') ? `\n${value}` : value;
+    } else {
+      rendered = `\n\`\`\`json\n${JSON.stringify(value, null, 2)}\n\`\`\``;
     }
+    lines.push(`- **${label}:** ${rendered}`);
   }
+  return lines.join('\n');
+}
+
+/**
+ * Rendert eine einzelne LernpaketPhaseAktivitaet inkl. ihrer field_values
+ * als Markdown-Block.
+ *
+ * Bei Aktivitäten mit `supports_master=true` (z. B. Miniquiz, Lückentext,
+ * Test, Begriffe zuordnen) liegen die eigentlichen Inhalte NICHT in
+ * `pa.field_values`, sondern in 1..n `MasterAufgabe`-Records, die über
+ * `activity_id` an die Phase-Aktivität gekoppelt sind. Diese Master-
+ * Aufgaben werden als Untervarianten ausgegeben, damit die MBK sie
+ * korrekt klonen / als Pool anbieten kann.
+ */
+function renderPhaseAktivitaet(pa, idx, katalogById, masterAufgabenByActivityId) {
+  const katalog = katalogById?.get(pa?.aktivitaet_id) || null;
+  const name = safeText(katalog?.name, '(unbekannte Aktivität)');
+  const lines = [`### Aktivität ${idx + 1}: ${name}`];
+
+  const ownFields = renderFieldValues(pa?.field_values, katalog);
+  const masters = masterAufgabenByActivityId?.get(pa?.id) || [];
+  const sortedMasters = [...masters].sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
+
+  if (ownFields) {
+    lines.push(ownFields);
+  }
+
+  if (sortedMasters.length > 0) {
+    lines.push('');
+    lines.push(`_Mastervorlagen (${sortedMasters.length}):_`);
+    sortedMasters.forEach((m, mIdx) => {
+      const mTitel = safeText(m?.titel, `Mastervorlage ${mIdx + 1}`);
+      lines.push('');
+      lines.push(`#### ${mIdx + 1}. ${mTitel}`);
+      const masterFields = renderFieldValues(m?.field_values, katalog);
+      lines.push(masterFields || '_(noch keine Inhalte konfiguriert)_');
+    });
+  } else if (!ownFields) {
+    lines.push('_(noch keine Inhalte konfiguriert)_');
+  }
+
   return lines.join('\n');
 }
 
@@ -722,6 +753,7 @@ function renderPhaseAktivitaet(pa, idx, katalogById) {
  * @param {Array}  args.lernziele         — gefiltert auf dieses Lernpaket
  * @param {Array}  args.phaseAktivitaeten — LernpaketPhaseAktivitaet[] dieses Pakets
  * @param {Map}    args.katalogById       — Map<aktivitaet_id, AktivitaetenKatalog-Record>
+ * @param {Array}  args.masterAufgaben    — MasterAufgabe[] dieses Pakets (für supports_master-Aktivitäten)
  * @param {Array}  args.aufgaben          — (Legacy) Aufgabenbausteine, optional
  */
 export function buildErstellungspaketForLernpaket({
@@ -729,6 +761,7 @@ export function buildErstellungspaketForLernpaket({
   lernziele = [],
   phaseAktivitaeten = [],
   katalogById,
+  masterAufgaben = [],
   aufgaben = [],
 }) {
   const titel = safeText(lernpaket?.titel_des_pakets, '(ohne Titel)');
@@ -765,6 +798,14 @@ export function buildErstellungspaketForLernpaket({
 
   const totalPhasenItems = Array.from(phasenMap.values()).reduce((acc, arr) => acc + arr.length, 0);
 
+  // MasterAufgaben pro Phase-Aktivität gruppieren (Lookup für renderPhaseAktivitaet).
+  const masterByActivityId = new Map();
+  for (const m of masterAufgaben || []) {
+    if (!m?.activity_id) continue;
+    if (!masterByActivityId.has(m.activity_id)) masterByActivityId.set(m.activity_id, []);
+    masterByActivityId.get(m.activity_id).push(m);
+  }
+
   if (totalPhasenItems > 0) {
     for (const phaseName of PHASEN_REIHENFOLGE) {
       const items = phasenMap.get(phaseName) || [];
@@ -774,7 +815,7 @@ export function buildErstellungspaketForLernpaket({
         sections.push('_(keine Aktivitäten in dieser Phase)_');
         continue;
       }
-      const rendered = items.map((pa, idx) => renderPhaseAktivitaet(pa, idx, katalogById));
+      const rendered = items.map((pa, idx) => renderPhaseAktivitaet(pa, idx, katalogById, masterByActivityId));
       sections.push(rendered.join('\n\n'));
     }
   } else if (Array.isArray(aufgaben) && aufgaben.length > 0) {

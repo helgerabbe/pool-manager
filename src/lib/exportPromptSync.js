@@ -161,6 +161,7 @@ export function buildSourceTimestampIndex({
   lernziele = [],
   aufgabenbausteine = [],
   phaseAktivitaeten = [],
+  masterAufgaben = [],
   allgemeineAufgaben = [],
   globalPrompts = [],
 }) {
@@ -171,6 +172,7 @@ export function buildSourceTimestampIndex({
   const lernzieleTs = maxTimestamp(lernziele);
   const aufgabenbausteineTs = maxTimestamp(aufgabenbausteine);
   const phaseAktivitaetenTs = maxTimestamp(phaseAktivitaeten);
+  const masterAufgabenTs = maxTimestamp(masterAufgaben);
   // MBKGlobalPrompt.updated_date fließt in Nukleus + Sektor-Anweisungen ein,
   // weil beide Compiler-Aufrufe den Manager-Text einweben. Erstellungspakete
   // bleiben davon unberührt.
@@ -203,6 +205,14 @@ export function buildSourceTimestampIndex({
     const t = ts(pa);
     if (t > cur) lernpaketTs.set(pa.lernpaket_id, t);
   }
+  // MasterAufgaben tragen die eigentlichen Inhalte (Miniquiz, Lückentext, …);
+  // ein Edit dort muss das zugehörige Erstellungspaket als veraltet markieren.
+  for (const m of masterAufgaben) {
+    if (!m?.lernpaket_id) continue;
+    const cur = lernpaketTs.get(m.lernpaket_id) || 0;
+    const t = ts(m);
+    if (t > cur) lernpaketTs.set(m.lernpaket_id, t);
+  }
   // Falls ein Lernziel/AB ohne zugehöriges Lernpaket existiert, ignorieren wir
   // es bewusst — es taucht ohnehin in keinem Erstellungspaket auf.
   void lpById; // (Map nur zur Validierung; aktuell nicht weiter verwendet)
@@ -213,7 +223,7 @@ export function buildSourceTimestampIndex({
   }
 
   return {
-    nucleusTs: Math.max(ts(einheit), themenfelderTs, lernpaketeTs, lernzieleTs, aufgabenbausteineTs, phaseAktivitaetenTs, globalPromptsTs),
+    nucleusTs: Math.max(ts(einheit), themenfelderTs, lernpaketeTs, lernzieleTs, aufgabenbausteineTs, phaseAktivitaetenTs, masterAufgabenTs, globalPromptsTs),
     // Fachliche Persona (v1.5.0): selbst quellen-arm, aber abhängig von der
     // globalen Persona-Definition aus dem Prompt-Manager. Damit eine
     // Manager-Änderung die einheits-spezifische Persona als „veraltet"

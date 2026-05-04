@@ -137,6 +137,19 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
     queryKey: ['aktivitaetenKatalog'],
     queryFn: () => base44.entities.AktivitaetenKatalog.list(),
   });
+
+  // MasterAufgaben enthalten die eigentlichen Inhalte für Aktivitäten mit
+  // supports_master=true (Miniquiz, Lückentext, Test, Begriffe zuordnen, …).
+  // Sie sind über activity_id an LernpaketPhaseAktivitaet gekoppelt und
+  // müssen daher mit-rendern + im Out-of-Sync-Check berücksichtigt werden.
+  const { data: masterAufgaben = [] } = useQuery({
+    queryKey: ['masterAufgaben-by-pakete', paketIds.join(',')],
+    queryFn: async () => {
+      if (paketIds.length === 0) return [];
+      return base44.entities.MasterAufgabe.filter({ lernpaket_id: { $in: paketIds } });
+    },
+    enabled: paketIds.length > 0,
+  });
   const katalogById = useMemo(() => {
     const m = new Map();
     for (const k of aktivitaetenKatalog) m.set(k.id, k);
@@ -186,9 +199,9 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
   // Sektor-Anweisungen als „veraltet" markieren.
   const tsIndex = useMemo(
     () => buildSourceTimestampIndex({
-      einheit, themenfelder, lernpakete, lernziele, aufgabenbausteine, phaseAktivitaeten, allgemeineAufgaben, globalPrompts,
+      einheit, themenfelder, lernpakete, lernziele, aufgabenbausteine, phaseAktivitaeten, masterAufgaben, allgemeineAufgaben, globalPrompts,
     }),
-    [einheit, themenfelder, lernpakete, lernziele, aufgabenbausteine, phaseAktivitaeten, allgemeineAufgaben, globalPrompts]
+    [einheit, themenfelder, lernpakete, lernziele, aufgabenbausteine, phaseAktivitaeten, masterAufgaben, allgemeineAufgaben, globalPrompts]
   );
 
   // ── Bulk-Generator + Helper-Funktionen ──────────────────────────────────
@@ -213,6 +226,7 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
     aufgabenbausteine,
     phaseAktivitaeten,
     katalogById,
+    masterAufgaben,
     allgemeineAufgaben,
     allgemeineAufgabenEbene23,
     systemBausteine,
@@ -354,6 +368,7 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
     const zieleDesPakets = lernziele.filter((z) => z.lernpaket_id === lp.id);
     const aufgabenDesPakets = aufgabenbausteine.filter((a) => a.lernpaket_id === lp.id);
     const phasenDesPakets = phaseAktivitaeten.filter((pa) => pa.lernpaket_id === lp.id);
+    const masterDesPakets = masterAufgaben.filter((m) => m.lernpaket_id === lp.id);
     return (
       <MBKPromptItem
         key={`lp-${lp.id}`}
@@ -372,6 +387,7 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
             lernziele: zieleDesPakets,
             phaseAktivitaeten: phasenDesPakets,
             katalogById,
+            masterAufgaben: masterDesPakets,
             aufgaben: aufgabenDesPakets,
           })
         }

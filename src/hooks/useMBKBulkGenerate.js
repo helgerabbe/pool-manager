@@ -36,6 +36,7 @@ export function useMBKBulkGenerate({
   aufgabenbausteine,
   phaseAktivitaeten = [],
   katalogById,
+  masterAufgaben = [],
   allgemeineAufgaben,
   allgemeineAufgabenEbene23,
   systemBausteine = [],
@@ -65,6 +66,7 @@ export function useMBKBulkGenerate({
         aufgabenbausteine,
         phaseAktivitaeten,
         katalogById,
+        masterAufgaben,
         allgemeineAufgaben,
         allgemeineAufgabenEbene23,
         systemBausteine,
@@ -73,7 +75,7 @@ export function useMBKBulkGenerate({
         tsIndex,
       });
     },
-    [einheitId, einheit, stammdaten, themenfelder, lernpakete, lernziele, aufgabenbausteine, phaseAktivitaeten, katalogById, allgemeineAufgaben, allgemeineAufgabenEbene23, systemBausteine, globalPrompts, prompts, tsIndex]
+    [einheitId, einheit, stammdaten, themenfelder, lernpakete, lernziele, aufgabenbausteine, phaseAktivitaeten, katalogById, masterAufgaben, allgemeineAufgaben, allgemeineAufgabenEbene23, systemBausteine, globalPrompts, prompts, tsIndex]
   );
 
   const planSummary = useMemo(() => {
