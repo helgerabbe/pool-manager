@@ -53,6 +53,11 @@ import {
   getAutoFillCandidates,
   bulkAddItemsToBundle,
 } from '@/lib/lernpfadeUtils';
+import {
+  addArbeitsphaseSektorForThemenfeld,
+  removeOrphanedSektor,
+  removeGhostItem,
+} from '@/lib/dashboardDriftResolutions';
 import { getBundleKindByAcceptedTypes } from '@/lib/sektorTypen';
 import CascadeDeleteDialog from '@/components/lernpfade/CascadeDeleteDialog';
 import ArbeitsphaseModal from '@/components/lernpfade/ArbeitsphaseModal.jsx';
@@ -623,6 +628,56 @@ export default function LernpfadeCockpit({
     [readOnly, activeLernTyp, updateKonfiguration]
   );
 
+  // ── Etappe 3: Drift-Resolutions ────────────────────────────────────
+  // Inline-Aktionen im DashboardDriftBanner. Alle drei Handler arbeiten
+  // immutable über `updateKonfiguration` und nutzen damit dieselbe Save-/
+  // Junction-Sync-Pipeline wie reguläre Edits. Toasts geben kurzes Feedback.
+  const handleDriftAddSektor = useCallback(
+    (themenfeld) => {
+      if (readOnly) return;
+      if (!themenfeld?.id) return;
+      updateKonfiguration((prev) =>
+        addArbeitsphaseSektorForThemenfeld(prev, activeLernTyp, themenfeld)
+      );
+      toast({
+        title: 'Sektor angelegt',
+        description: `Arbeitsphase „${themenfeld.titel}" wurde dem Dashboard hinzugefügt.`,
+      });
+    },
+    [readOnly, activeLernTyp, updateKonfiguration, toast]
+  );
+
+  const handleDriftRemoveSektor = useCallback(
+    (drift) => {
+      if (readOnly) return;
+      if (!drift?.sektor_id) return;
+      updateKonfiguration((prev) =>
+        removeOrphanedSektor(prev, activeLernTyp, drift.sektor_id)
+      );
+      toast({
+        title: 'Sektor entfernt',
+        description:
+          'Aufgaben und Lernpakete bleiben erhalten – sie tauchen wieder im Pool auf.',
+      });
+    },
+    [readOnly, activeLernTyp, updateKonfiguration, toast]
+  );
+
+  const handleDriftRemoveItem = useCallback(
+    (drift) => {
+      if (readOnly) return;
+      if (!drift?.sektor_id || !drift?.instance_id) return;
+      updateKonfiguration((prev) =>
+        removeGhostItem(prev, activeLernTyp, drift.sektor_id, drift.instance_id)
+      );
+      toast({
+        title: 'Verweis entfernt',
+        description: 'Der verwaiste Eintrag wurde aus dem Pfad entfernt.',
+      });
+    },
+    [readOnly, activeLernTyp, updateKonfiguration, toast]
+  );
+
   // Phase 3.5/3.6: Cascade-Delete eines Bündel-Containers.
   // - Bei leerem Bündel: direkt löschen (kein Modal).
   // - Bei Bündel mit Children: Modal öffnen, Confirm löst Delete aus.
@@ -874,6 +929,9 @@ export default function LernpfadeCockpit({
               isEndingEdit={isEndingEdit}
               onEndEditing={onEndEditing}
               driftForActiveLerntyp={driftForActiveLerntyp}
+              onDriftAddSektor={handleDriftAddSektor}
+              onDriftRemoveSektor={handleDriftRemoveSektor}
+              onDriftRemoveItem={handleDriftRemoveItem}
             />
           </main>
         </div>

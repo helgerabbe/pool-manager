@@ -1,13 +1,23 @@
 /**
  * DashboardDriftBanner.jsx
  *
- * Kollapsibles Hinweis-Panel über dem Architekt-Canvas (Etappe 2).
+ * Kollapsibles Hinweis-Panel über dem Architekt-Canvas.
  *
- * Zeigt für den AKTUELL aktiven Lerntyp die erkannten Inkonsistenzen
- * zwischen Strukturdaten und Dashboard-Konfiguration. Verändert NICHTS —
- * pure Anzeige + Counter. Auflösungs-Buttons folgen in Etappe 3.
+ * Etappe 1+2: pure Diagnose-Anzeige.
+ * Etappe 3: Inline-Aktionsbuttons pro Drift-Eintrag, damit die Lehrkraft
+ *           Inkonsistenzen sofort am Ort der Erkennung beheben kann.
+ *           Aktionen werden über Callback-Props nach oben (Cockpit)
+ *           gereicht; der Banner selbst hält keinen State.
  *
- * Banner erscheint nur, wenn der Lerntyp Drifts hat (totalDrifts > 0).
+ * Aktionen pro Drift-Klasse:
+ *   - missing_themenfelder  → „Sektor anlegen"   (onAddSektor)
+ *   - orphaned_sektoren     → „Sektor entfernen" (onRemoveSektor)
+ *   - ghost_items           → „Aus Pfad entfernen" (onRemoveItem)
+ *   - misplaced_aufgaben    → KEIN Auto-Fix, nur Hinweis (Lehrkraft entscheidet)
+ *
+ * Aktionen sind deaktiviert, wenn `disabled === true` (z. B. bei Read-Only,
+ * Pfad-Lock oder finaler Einheits-Freigabe). Banner bleibt dennoch sichtbar,
+ * damit das Problem nicht versteckt wird.
  */
 
 import React, { useState } from 'react';
@@ -19,6 +29,8 @@ import {
   Trash2,
   Ghost,
   ArrowRightLeft,
+  Plus,
+  X,
 } from 'lucide-react';
 
 const SECTION_META = {
@@ -44,6 +56,23 @@ const SECTION_META = {
   },
 };
 
+// Kleiner, dezenter Inline-Action-Button. Bewusst klein gehalten, damit der
+// Banner nicht zur Symbolleiste wird. Icon + Text, deaktivierbar.
+function ActionButton({ onClick, disabled, icon: Icon, children, title }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className="ml-2 inline-flex items-center gap-1 h-5 px-1.5 rounded border border-amber-400/60 bg-white/70 text-[10px] font-medium text-amber-900 hover:bg-white hover:border-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+    >
+      {Icon && <Icon className="w-3 h-3" />}
+      {children}
+    </button>
+  );
+}
+
 function DriftSection({ kind, items, renderItem }) {
   if (!items || items.length === 0) return null;
   const meta = SECTION_META[kind];
@@ -66,12 +95,25 @@ function DriftSection({ kind, items, renderItem }) {
   );
 }
 
-export default function DashboardDriftBanner({ lerntypReport, lerntypLabel }) {
+export default function DashboardDriftBanner({
+  lerntypReport,
+  lerntypLabel,
+  // Etappe 3: Aktions-Callbacks (optional). Werden vom Cockpit verdrahtet.
+  onAddSektor,
+  onRemoveSektor,
+  onRemoveItem,
+  // Read-only / Lock-Status: deaktiviert die Aktionsbuttons, ohne den
+  // Banner zu verstecken.
+  disabled = false,
+}) {
   const [expanded, setExpanded] = useState(false);
 
   if (!lerntypReport || lerntypReport.totalDrifts === 0) return null;
 
   const total = lerntypReport.totalDrifts;
+  const disabledTitle = disabled
+    ? 'Bearbeitung erforderlich – starte den Bearbeitungsmodus oder hebe die Sperre auf.'
+    : undefined;
 
   return (
     <div className="mb-3 rounded-lg border border-amber-300 bg-amber-50 overflow-hidden">
@@ -104,6 +146,16 @@ export default function DashboardDriftBanner({ lerntypReport, lerntypLabel }) {
               <span>
                 Themenfeld <strong>„{it.titel}"</strong> hat noch keinen Sektor in diesem
                 Dashboard.
+                {onAddSektor && (
+                  <ActionButton
+                    icon={Plus}
+                    onClick={() => onAddSektor(it)}
+                    disabled={disabled}
+                    title={disabledTitle || 'Arbeitsphase-Sektor für dieses Themenfeld anlegen'}
+                  >
+                    Sektor anlegen
+                  </ActionButton>
+                )}
               </span>
             )}
           />
@@ -114,6 +166,19 @@ export default function DashboardDriftBanner({ lerntypReport, lerntypLabel }) {
               <span>
                 Sektor <strong>„{it.titel}"</strong> verweist auf ein Themenfeld, das nicht
                 mehr existiert.
+                {onRemoveSektor && (
+                  <ActionButton
+                    icon={Trash2}
+                    onClick={() => onRemoveSektor(it)}
+                    disabled={disabled}
+                    title={
+                      disabledTitle ||
+                      'Sektor entfernen. Aufgaben und Lernpakete bleiben erhalten und tauchen wieder im Pool auf.'
+                    }
+                  >
+                    Sektor entfernen
+                  </ActionButton>
+                )}
               </span>
             )}
           />
@@ -124,6 +189,16 @@ export default function DashboardDriftBanner({ lerntypReport, lerntypLabel }) {
               <span>
                 In Sektor <strong>„{it.sektor_titel}"</strong>: Item verweist auf eine
                 gelöschte Aufgabe oder ein gelöschtes Lernpaket.
+                {onRemoveItem && (
+                  <ActionButton
+                    icon={X}
+                    onClick={() => onRemoveItem(it)}
+                    disabled={disabled}
+                    title={disabledTitle || 'Verweis aus dem Pfad entfernen'}
+                  >
+                    Aus Pfad entfernen
+                  </ActionButton>
+                )}
               </span>
             )}
           />
@@ -137,11 +212,11 @@ export default function DashboardDriftBanner({ lerntypReport, lerntypLabel }) {
               </span>
             )}
           />
-          <p className="text-[10px] text-amber-800/70 pt-1 italic">
-            Auflösungs-Buttons folgen im nächsten Schritt — bis dahin lassen sich diese
-            Inkonsistenzen über die normalen Sektor-/Item-Aktionen oder den Guide
-            („Standard zurücksetzen") manuell beheben.
-          </p>
+          {disabled && (
+            <p className="text-[10px] text-amber-800/70 pt-1 italic">
+              Aktionen sind deaktiviert, weil dieser Pfad gerade nicht bearbeitet werden kann.
+            </p>
+          )}
         </div>
       )}
     </div>

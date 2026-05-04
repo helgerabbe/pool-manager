@@ -269,6 +269,10 @@ export default function LernpfadeArchitekt({
   onEndEditing,
   // Etappe 1+2: Drift-Report für den aktuell aktiven Lerntyp.
   driftForActiveLerntyp = null,
+  // Etappe 3: Inline-Aktionen aus dem Drift-Banner.
+  onDriftAddSektor,
+  onDriftRemoveSektor,
+  onDriftRemoveItem,
 }) {
   const sektoren = konfiguration?.[activeLernTyp] || [];
   const aktivLabel = LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label;
@@ -386,6 +390,10 @@ export default function LernpfadeArchitekt({
         <DashboardDriftBanner
           lerntypReport={driftForActiveLerntyp}
           lerntypLabel={aktivLabel}
+          onAddSektor={onDriftAddSektor}
+          onRemoveSektor={onDriftRemoveSektor}
+          onRemoveItem={onDriftRemoveItem}
+          disabled={readOnly}
         />
         {sektoren.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full min-h-[260px] p-6 text-center rounded-xl border-2 border-dashed border-border bg-card/60">
