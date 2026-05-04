@@ -119,8 +119,12 @@ Deno.serve(async (req) => {
       darfSeeden = rolle === ROLLE_ADMIN || rolle === ROLLE_MOODLE;
     }
     if (!darfSeeden) {
+      console.log('[seedMBKGlobalPrompts] DENY', { email: user.email, platformRole: user.role });
       return Response.json(
-        { error: 'Forbidden: Nur Administrator oder Moodle-Designer dürfen den Seed ausführen.' },
+        {
+          error: 'Forbidden: Nur Administrator oder Moodle-Designer dürfen den Seed ausführen.',
+          debug: { platformRole: user.role || null, email: user.email },
+        },
         { status: 403 }
       );
     }
