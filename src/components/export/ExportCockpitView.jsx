@@ -1,8 +1,19 @@
 /**
  * ExportCockpitView.jsx
  *
- * Freigabe-Cockpit für Moodle-Export.
- * Eine Einheit wählen → Inhalte selektieren → Übergeben
+ * Freigabe-Cockpit für Moodle-Export (Tab 8 im Workspace).
+ *
+ * Phase F.1 — Redesign:
+ *   - KEIN Einheiten-Selector mehr: das Cockpit bezieht sich immer auf die
+ *     aktuell geöffnete Einheit (Prop `einheitId`, vom Workspace gesetzt).
+ *   - Neue Header-Karte (`ExportLifecycleHeaderCard`) mit prominentem
+ *     Lifecycle-Status und „Freigabe aufheben"-Button für Admin/Fachschaft.
+ *   - Workflow-Hilfe wandert in einen aufklappbaren <details>-Block am Ende
+ *     der Seite — sie bleibt auffindbar, blockiert aber nicht mehr den Blick
+ *     auf die Inhalte.
+ *   - Die vier Lerntyp-Karten + aggregierte Drift-Anzeige folgen in F.2;
+ *     vorerst bleibt die bestehende Themenfeld-Hierarchie unten erhalten,
+ *     damit das Selektieren & Übergeben weiter funktioniert.
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
@@ -10,17 +21,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useRBAC } from '@/hooks/useRBAC';
+import { ROLLEN } from '@/lib/rbac';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { RotateCcw, AlertCircle, CheckCircle2, Clock, ShieldCheck, Info, Pencil, Upload, RefreshCw } from 'lucide-react';
+import { RotateCcw, AlertCircle, CheckCircle2, Clock, ShieldCheck, Info, Pencil, Upload, RefreshCw, ChevronDown } from 'lucide-react';
 import HelpBadge from '@/components/ui/HelpBadge';
 import MissionBadge from '@/components/missionen/MissionBadge';
 import { isMissionApplicable } from '@/lib/missionen';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import ExportLifecycleHeaderCard from '@/components/export/ExportLifecycleHeaderCard';
 
 // ── Status-Badge für eine Aktivität (alle 6 Zustände) ───────────────────────
 
@@ -309,11 +321,20 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
 
 // ── Main Component ──────────────────────────────────────────────────
 
-export default function ExportCockpitView({ initialEinheitId = null, onNavigateToActivity: onNavCallback = null, onNavigateToTask = null }) {
+export default function ExportCockpitView({
+  // Phase F.1: Tab 8 ist immer im Kontext einer Einheit. Der Workspace
+  // reicht `einheitId` durch — kein interner Selector mehr. `initialEinheitId`
+  // bleibt als Alias akzeptiert, falls Alt-Aufrufer (z. B. Standalone-Routen)
+  // es noch setzen.
+  einheitId = null,
+  initialEinheitId = null,
+  onNavigateToActivity: onNavCallback = null,
+  onNavigateToTask = null,
+}) {
   const queryClient = useQueryClient();
-  const { permissions } = useRBAC();
+  const { permissions, rolle, faecher } = useRBAC();
   const navigate = useNavigate();
-  const [selectedUnitId, setSelectedUnitId] = useState(initialEinheitId);
+  const selectedUnitId = einheitId || initialEinheitId || null;
   const [selectedIds, setSelectedIds] = useState([]);
 
   const onNavigateToActivity = (activityId, paketId) => {
@@ -324,13 +345,14 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
     }
   };
 
-  const { data: einheiten = [], isLoading: einheitenLoading } = useQuery({ 
-    queryKey: ['einheiten'], 
-    queryFn: async () => {
-      const response = await base44.functions.invoke('getEinheitenListSecure', { page: 1, limit: 100 });
-      return response.data?.data || [];
-    }
+  // Aktuell geöffnete Einheit (für Titel im Header und Fach-Check beim
+  // Aufheben-Recht). Nur eine Einheit, kein Listen-Fetch mehr nötig.
+  const { data: einheit, isLoading: einheitLoading } = useQuery({
+    queryKey: ['einheit', selectedUnitId],
+    queryFn: () => base44.entities.Einheiten.get(selectedUnitId),
+    enabled: !!selectedUnitId,
   });
+
   const { data: lernpakete = [], isLoading: lernpaketeLoading } = useQuery({ queryKey: ['lernpakete'], queryFn: () => base44.entities.Lernpakete.list() });
   const { data: themenfelder = [], isLoading: themenfelderLoading } = useQuery({ queryKey: ['themenfelder'], queryFn: () => base44.entities.Themenfeld.list() });
   const { data: aktivitaeten = [], isLoading: aktivitaetenLoading } = useQuery({ queryKey: ['lernpaketPhaseAktivitaeten'], queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list() });
@@ -338,7 +360,17 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
   const { data: allgemeineAufgaben = [], isLoading: allgemeineLoading } = useQuery({ queryKey: ['allgemeineAufgaben'], queryFn: () => base44.entities.AllgemeineAufgabe.list() });
   const { data: masterAufgaben = [], isLoading: masterLoading } = useQuery({ queryKey: ['masterAufgaben'], queryFn: () => base44.entities.MasterAufgabe.list() });
 
-  const isInitialLoading = einheitenLoading || lernpaketeLoading || themenfelderLoading || aktivitaetenLoading || katalogLoading || allgemeineLoading || masterLoading;
+  const isInitialLoading = einheitLoading || lernpaketeLoading || themenfelderLoading || aktivitaetenLoading || katalogLoading || allgemeineLoading || masterLoading;
+
+  // RBAC-Ableitung für die „Freigabe aufheben"-Aktion. Server prüft das
+  // ohnehin nochmal hart — hier nur fürs UI.
+  const istAdmin = rolle === ROLLEN.ADMIN;
+  const istFachschaftFuerFach =
+    rolle === ROLLEN.FACHSCHAFT &&
+    Array.isArray(faecher) &&
+    einheit?.fach &&
+    faecher.includes(einheit.fach);
+  const darfFreigeben = istAdmin || istFachschaftFuerFach;
 
   useEffect(() => {
     if (!selectedUnitId) return;
@@ -381,7 +413,7 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
 
   if (!permissions.kannExportBedienen) {
     return (
-      <div className="min-h-screen bg-muted/20 p-6 flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <div className="text-center">
           <ShieldCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground">Kein Zugriff. Nur Moodle-Designer dürfen den Export bedienen.</p>
@@ -390,9 +422,25 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
     );
   }
 
+  // Tab 8 wird ausschließlich im Workspace-Kontext geöffnet — ohne Einheit
+  // ist die Seite sinnlos. Statt eines Selectors zeigen wir einen klaren
+  // Hinweis, falls die ID einmal fehlt.
+  if (!selectedUnitId) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center max-w-md">
+          <Info className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">
+            Keine Einheit ausgewählt. Bitte öffne das Cockpit aus dem Workspace einer Einheit.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (isInitialLoading) {
     return (
-      <div className="min-h-screen bg-muted/20 p-6 flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-4 border-muted border-t-primary rounded-full animate-spin" />
           <p className="text-sm text-muted-foreground font-medium">Cockpit-Daten werden geladen, bitte einen Moment Geduld...</p>
@@ -402,30 +450,81 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
   }
 
   return (
-    <div className="min-h-screen bg-muted/20 p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Seitentitel — kompakter als zuvor, weil der eigentliche Status
+          jetzt prominent in der Header-Karte sitzt. */}
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+          Freigabe-Cockpit
+          <HelpBadge
+            text="Übersicht und Steuerung des Export-Lebenszyklus dieser Einheit. Selektiere freigegebene Inhalte und übergib sie an das Moodle-Export-Team."
+            docsSlug="export-workflow"
+          />
+        </h2>
+        <p className="text-muted-foreground mt-1 text-sm">
+          Status der Einheit, Dashboard-Übersicht und Übergabe an den Moodle-Export.
+        </p>
+      </div>
+
+      {/* Phase F.1: Neue Header-Karte mit Lifecycle-Status & Aufheben-Button. */}
+      <ExportLifecycleHeaderCard
+        einheitId={selectedUnitId}
+        einheitTitel={einheit?.titel_der_einheit}
+        darfFreigeben={darfFreigeben}
+      />
+
+      {/* Inhalts-Sektion: vorerst (F.1) bleibt die bestehende Themenfeld-
+          Hierarchie. In F.2 ersetzen wir den oberen Bereich durch vier
+          Lerntyp-Karten mit aggregierter Drift-Anzeige. */}
+      <div className="rounded-xl border border-border bg-card shadow-sm p-5 space-y-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            Freigabe-Cockpit
-            <HelpBadge
-              text="Hier siehst du alle von Lehrkräften freigegebenen Inhalte. Wähle Elemente aus und übergebe sie für den Moodle-Export."
-              docsSlug="export-workflow"
-            />
-          </h2>
-          <p className="text-muted-foreground mt-2">
-            Wähle eine Einheit, selektiere freigegebene Inhalte und übergebe sie an das Moodle-Export-Team.
+          <h3 className="text-sm font-semibold">Inhalte zur Übergabe</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Freigegebene Aktivitäten und Aufgaben dieser Einheit. Häkchen setzen → unten übergeben.
           </p>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Info className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-semibold">Status-Workflow im Überblick</span>
-            <HelpBadge
-              text="Jede Aktivität durchläuft diesen Lebenszyklus: Entwurf → Freigegeben → In Übertragung → Live. Mehr Details in der Dokumentation."
-              docsSlug="export-workflow"
-            />
-          </div>
+        <EinheitHierarchy
+          unitId={selectedUnitId}
+          selectedIds={selectedIds}
+          setSelectedIds={setSelectedIds}
+          lernpakete={lernpakete}
+          themenfelder={themenfelder}
+          aktivitaeten={aktivitaeten.filter(a => a.sync_status !== 'to_delete')}
+          aktivitaetenKatalog={aktivitaetenKatalog}
+          allgemeineAufgaben={allgemeineAufgaben}
+          masterAufgaben={masterAufgaben.filter(m => m.sync_status !== 'to_delete')}
+          onNavigateToActivity={onNavigateToActivity}
+          onNavigateToTask={onNavigateToTask}
+        />
+
+        <div className="pt-4 border-t">
+          <Button
+            onClick={() => exportMutation.mutate()}
+            disabled={selectedIds.length === 0 || exportMutation.isPending}
+            className="w-full font-semibold"
+          >
+            {exportMutation.isPending
+              ? 'Wird übergeben...'
+              : `🚀 ${selectedIds.length} Aktivität${selectedIds.length !== 1 ? 'en' : ''} übergeben`}
+          </Button>
+        </div>
+      </div>
+
+      {/* Workflow-Hilfe — wandert in einen aufklappbaren Block am Ende der
+          Seite. Damit bleibt sie für Neulinge auffindbar, raubt aber im
+          Alltag keinen Platz mehr. */}
+      <details className="group rounded-xl border border-border bg-card">
+        <summary className="cursor-pointer list-none p-4 flex items-center gap-2 text-sm font-semibold hover:bg-muted/40 rounded-xl">
+          <Info className="w-4 h-4 text-muted-foreground" />
+          <span>Status-Workflow im Überblick</span>
+          <HelpBadge
+            text="Jede Aktivität durchläuft diesen Lebenszyklus: Entwurf → Freigegeben → In Übertragung → Live. Mehr Details in der Dokumentation."
+            docsSlug="export-workflow"
+          />
+          <ChevronDown className="w-4 h-4 ml-auto text-muted-foreground transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="px-4 pb-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {[
               { icon: <Pencil className="w-3.5 h-3.5" />, color: 'text-slate-600 bg-slate-50 border-slate-200', label: 'Entwurf', desc: 'Wird von der Lehrkraft bearbeitet. Nicht im Export sichtbar.' },
@@ -445,59 +544,7 @@ export default function ExportCockpitView({ initialEinheitId = null, onNavigateT
             ))}
           </div>
         </div>
-
-        <div className="rounded-xl border border-border bg-card shadow-sm p-5 space-y-4">
-          <div>
-            <label className="text-sm font-semibold text-muted-foreground mb-1.5 block">Einheit auswählen</label>
-            <Select value={selectedUnitId || ''} onValueChange={(val) => setSelectedUnitId(val)}>
-              <SelectTrigger className="h-10 text-sm font-semibold bg-background">
-                <SelectValue placeholder="Einheit wählen..." />
-              </SelectTrigger>
-              <SelectContent>
-                {einheiten.map(e => (
-                  <SelectItem key={e.id} value={e.id} className="text-sm">
-                    {e.titel_der_einheit}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {!selectedUnitId ? (
-            <div className="flex items-center justify-center text-center py-10 text-muted-foreground text-sm">
-              Bitte wähle eine Einheit, um die Struktur zu laden.
-            </div>
-          ) : (
-            <>
-              <EinheitHierarchy
-                unitId={selectedUnitId}
-                selectedIds={selectedIds}
-                setSelectedIds={setSelectedIds}
-                lernpakete={lernpakete}
-                themenfelder={themenfelder}
-                aktivitaeten={aktivitaeten.filter(a => a.sync_status !== 'to_delete')}
-                aktivitaetenKatalog={aktivitaetenKatalog}
-                allgemeineAufgaben={allgemeineAufgaben}
-                masterAufgaben={masterAufgaben.filter(m => m.sync_status !== 'to_delete')}
-                onNavigateToActivity={onNavigateToActivity}
-                onNavigateToTask={onNavigateToTask}
-              />
-
-              <div className="pt-4 border-t">
-                <Button
-                  onClick={() => exportMutation.mutate()}
-                  disabled={selectedIds.length === 0 || exportMutation.isPending}
-                  className="w-full font-semibold"
-                >
-                  {exportMutation.isPending
-                    ? 'Wird übergeben...'
-                    : `🚀 ${selectedIds.length} Aktivität${selectedIds.length !== 1 ? 'en' : ''} übergeben`}
-                </Button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+      </details>
     </div>
   );
 }
