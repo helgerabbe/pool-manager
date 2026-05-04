@@ -120,6 +120,29 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
     enabled: paketIds.length > 0,
   });
 
+  // Echte Aufgabeninhalte eines Lernpakets liegen in LernpaketPhaseAktivitaet
+  // (gegliedert nach Phase Input → Übung → Abschluss). Diese Records werden
+  // im Erstellungspaket zusammen mit dem AktivitaetenKatalog (für die
+  // Aktivitäts-Namen + Feldlabel) gerendert.
+  const { data: phaseAktivitaeten = [] } = useQuery({
+    queryKey: ['lernpaketPhaseAktivitaeten-by-pakete', paketIds.join(',')],
+    queryFn: async () => {
+      if (paketIds.length === 0) return [];
+      return base44.entities.LernpaketPhaseAktivitaet.filter({ lernpaket_id: { $in: paketIds } });
+    },
+    enabled: paketIds.length > 0,
+  });
+
+  const { data: aktivitaetenKatalog = [] } = useQuery({
+    queryKey: ['aktivitaetenKatalog'],
+    queryFn: () => base44.entities.AktivitaetenKatalog.list(),
+  });
+  const katalogById = useMemo(() => {
+    const m = new Map();
+    for (const k of aktivitaetenKatalog) m.set(k.id, k);
+    return m;
+  }, [aktivitaetenKatalog]);
+
   const { data: allgemeineAufgaben = [] } = useQuery({
     queryKey: ['allgemeineAufgaben', einheitId],
     queryFn: () => base44.entities.AllgemeineAufgabe.filter({ einheit_id: einheitId }),
@@ -143,9 +166,9 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
   // jedem Item den ganzen Lernziele/Aufgaben-Array zu scannen.
   const tsIndex = useMemo(
     () => buildSourceTimestampIndex({
-      einheit, themenfelder, lernpakete, lernziele, aufgabenbausteine, allgemeineAufgaben,
+      einheit, themenfelder, lernpakete, lernziele, aufgabenbausteine, phaseAktivitaeten, allgemeineAufgaben,
     }),
-    [einheit, themenfelder, lernpakete, lernziele, aufgabenbausteine, allgemeineAufgaben]
+    [einheit, themenfelder, lernpakete, lernziele, aufgabenbausteine, phaseAktivitaeten, allgemeineAufgaben]
   );
 
   // ── Bulk-Generator + Helper-Funktionen ──────────────────────────────────
@@ -168,6 +191,8 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
     lernpakete,
     lernziele,
     aufgabenbausteine,
+    phaseAktivitaeten,
+    katalogById,
     allgemeineAufgaben,
     allgemeineAufgabenEbene23,
     prompts,
@@ -284,6 +309,7 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
     });
     const zieleDesPakets = lernziele.filter((z) => z.lernpaket_id === lp.id);
     const aufgabenDesPakets = aufgabenbausteine.filter((a) => a.lernpaket_id === lp.id);
+    const phasenDesPakets = phaseAktivitaeten.filter((pa) => pa.lernpaket_id === lp.id);
     return (
       <MBKPromptItem
         key={`lp-${lp.id}`}
@@ -300,6 +326,8 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
           buildErstellungspaketForLernpaket({
             lernpaket: lp,
             lernziele: zieleDesPakets,
+            phaseAktivitaeten: phasenDesPakets,
+            katalogById,
             aufgaben: aufgabenDesPakets,
           })
         }

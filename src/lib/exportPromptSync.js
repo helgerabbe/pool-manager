@@ -160,6 +160,7 @@ export function buildSourceTimestampIndex({
   lernpakete = [],
   lernziele = [],
   aufgabenbausteine = [],
+  phaseAktivitaeten = [],
   allgemeineAufgaben = [],
 }) {
   const ts = (rec) => (rec?.updated_date ? new Date(rec.updated_date).getTime() : 0);
@@ -168,8 +169,12 @@ export function buildSourceTimestampIndex({
   const lernpaketeTs = maxTimestamp(lernpakete);
   const lernzieleTs = maxTimestamp(lernziele);
   const aufgabenbausteineTs = maxTimestamp(aufgabenbausteine);
+  const phaseAktivitaetenTs = maxTimestamp(phaseAktivitaeten);
 
-  // Pro Lernpaket: ts(LP) ⊕ max(zugehörige LZ) ⊕ max(zugehörige AB).
+  // Pro Lernpaket: ts(LP) ⊕ max(zugehörige LZ) ⊕ max(zugehörige AB) ⊕
+  // max(zugehörige LernpaketPhaseAktivitaet). Damit zählen Edits in den
+  // Phasen-Aktivitäten (die eigentlichen Aufgabeninhalte) korrekt zur
+  // Out-of-Sync-Erkennung des Erstellungspakets.
   const lernpaketTs = new Map();
   const lpById = new Map(lernpakete.map((lp) => [lp.id, lp]));
   for (const lp of lernpakete) {
@@ -187,6 +192,12 @@ export function buildSourceTimestampIndex({
     const t = ts(ab);
     if (t > cur) lernpaketTs.set(ab.lernpaket_id, t);
   }
+  for (const pa of phaseAktivitaeten) {
+    if (!pa?.lernpaket_id) continue;
+    const cur = lernpaketTs.get(pa.lernpaket_id) || 0;
+    const t = ts(pa);
+    if (t > cur) lernpaketTs.set(pa.lernpaket_id, t);
+  }
   // Falls ein Lernziel/AB ohne zugehöriges Lernpaket existiert, ignorieren wir
   // es bewusst — es taucht ohnehin in keinem Erstellungspaket auf.
   void lpById; // (Map nur zur Validierung; aktuell nicht weiter verwendet)
@@ -197,7 +208,7 @@ export function buildSourceTimestampIndex({
   }
 
   return {
-    nucleusTs: Math.max(ts(einheit), themenfelderTs, lernpaketeTs, lernzieleTs, aufgabenbausteineTs),
+    nucleusTs: Math.max(ts(einheit), themenfelderTs, lernpaketeTs, lernzieleTs, aufgabenbausteineTs, phaseAktivitaetenTs),
     personaTs: ts(einheit),
     sektorTs: Math.max(ts(einheit), themenfelderTs),
     lernpaketTs,

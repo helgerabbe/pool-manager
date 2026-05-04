@@ -56,6 +56,8 @@ export function buildBulkPlan({
   lernpakete,
   lernziele,
   aufgabenbausteine,
+  phaseAktivitaeten = [],
+  katalogById,
   allgemeineAufgaben,
   allgemeineAufgabenEbene23,
   prompts,
@@ -143,6 +145,7 @@ export function buildBulkPlan({
     const { status, skipReason } = classify(existing, blockReason);
     const zieleDesPakets = lernziele.filter((z) => z.lernpaket_id === lp.id);
     const aufgabenDesPakets = aufgabenbausteine.filter((a) => a.lernpaket_id === lp.id);
+    const phasenDesPakets = phaseAktivitaeten.filter((pa) => pa.lernpaket_id === lp.id);
     items.push({
       key: `lp::${lp.id}`,
       label: `📦 Lernpaket: ${lp.titel_des_pakets || '(ohne Titel)'}`,
@@ -152,7 +155,11 @@ export function buildBulkPlan({
       status,
       skipReason,
       buildContent: () => buildErstellungspaketForLernpaket({
-        lernpaket: lp, lernziele: zieleDesPakets, aufgaben: aufgabenDesPakets,
+        lernpaket: lp,
+        lernziele: zieleDesPakets,
+        phaseAktivitaeten: phasenDesPakets,
+        katalogById,
+        aufgaben: aufgabenDesPakets,
       }),
       sourceMaxTs: tsFor('erstellungspaket', lp.id),
       existing,

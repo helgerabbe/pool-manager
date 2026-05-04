@@ -31,7 +31,7 @@ import { getSektorTypLabel } from '@/lib/sektorTypen';
  * unten (Headings, Pflichtsätze, Reihenfolge, Halluzinations-Fallback)
  * MUSS diese Version hochgezählt werden.
  */
-export const MBK_TEMPLATE_VERSION = 'v1.0.0';
+export const MBK_TEMPLATE_VERSION = 'v1.1.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -319,15 +319,71 @@ export function buildErstellungspaketForAufgabe({ aufgabe }) {
   return sections.join('\n');
 }
 
+// Reihenfolge der Phasen im Erstellungspaket. Identisch zum UI in Tab 4.
+const PHASEN_REIHENFOLGE = ['Input', 'Übung', 'Abschluss'];
+
+/**
+ * Rendert eine einzelne LernpaketPhaseAktivitaet inkl. ihrer field_values
+ * als Markdown-Block. Die field_values sind das eigentliche „Inhaltliche"
+ * (URL, Text, Begriffspaare, Anweisungstext, …) — wir geben sie als
+ * Key-Value-Liste aus, damit die MBK alle Felder unverändert sieht.
+ */
+function renderPhaseAktivitaet(pa, idx, katalogById) {
+  const katalog = katalogById?.get(pa?.aktivitaet_id) || null;
+  const name = safeText(katalog?.name, '(unbekannte Aktivität)');
+  const lines = [`### Aktivität ${idx + 1}: ${name}`];
+
+  const fv = pa?.field_values && typeof pa.field_values === 'object' ? pa.field_values : {};
+  const fieldEntries = Object.entries(fv).filter(([, v]) => {
+    if (v === null || v === undefined) return false;
+    if (typeof v === 'string' && v.trim() === '') return false;
+    if (Array.isArray(v) && v.length === 0) return false;
+    return true;
+  });
+
+  if (fieldEntries.length === 0) {
+    lines.push('_(noch keine Inhalte konfiguriert)_');
+  } else {
+    for (const [key, value] of fieldEntries) {
+      // Label aus dem Katalog-form_schema, falls vorhanden — sonst field_name.
+      const fieldDef = (katalog?.form_schema || []).find((f) => f.field_name === key);
+      const label = fieldDef?.label || key;
+      let rendered;
+      if (typeof value === 'string') {
+        rendered = value.includes('\n') ? `\n${value}` : value;
+      } else {
+        rendered = `\n\`\`\`json\n${JSON.stringify(value, null, 2)}\n\`\`\``;
+      }
+      lines.push(`- **${label}:** ${rendered}`);
+    }
+  }
+  return lines.join('\n');
+}
+
 /**
  * Erstellungspaket für ein Lernpaket (Ebene 1).
  *
+ * Inhaltliche Quelle für die Aufgabenbausteine sind die `LernpaketPhaseAktivitaet`-
+ * Records (gegliedert nach Phase Input → Übung → Abschluss). Für die Aktivitäts-
+ * Namen wird der `AktivitaetenKatalog` über `katalogById` aufgelöst.
+ *
+ * Der frühere Parameter `aufgaben` (Legacy-Entity `Aufgabenbausteine`) wird
+ * nur noch als Fallback gerendert, wenn keine Phase-Aktivitäten existieren.
+ *
  * @param {object} args
  * @param {object} args.lernpaket
- * @param {Array}  args.lernziele       — gefiltert auf dieses Lernpaket
- * @param {Array}  args.aufgaben        — Aufgabenbausteine dieses Lernpakets
+ * @param {Array}  args.lernziele         — gefiltert auf dieses Lernpaket
+ * @param {Array}  args.phaseAktivitaeten — LernpaketPhaseAktivitaet[] dieses Pakets
+ * @param {Map}    args.katalogById       — Map<aktivitaet_id, AktivitaetenKatalog-Record>
+ * @param {Array}  args.aufgaben          — (Legacy) Aufgabenbausteine, optional
  */
-export function buildErstellungspaketForLernpaket({ lernpaket, lernziele = [], aufgaben = [] }) {
+export function buildErstellungspaketForLernpaket({
+  lernpaket,
+  lernziele = [],
+  phaseAktivitaeten = [],
+  katalogById,
+  aufgaben = [],
+}) {
   const titel = safeText(lernpaket?.titel_des_pakets, '(ohne Titel)');
   const dauer = lernpaket?.geschaetzte_dauer_minuten;
 
@@ -340,17 +396,50 @@ export function buildErstellungspaketForLernpaket({ lernpaket, lernziele = [], a
   ].filter(Boolean).join('\n');
 
   const zielLines = lernziele.map((lz) => `- ${safeText(lz.formulierung_fachsprache)}`);
-  const aufgabenLines = aufgaben.map((a, idx) => {
-    const text = trimMultiline(a.aufgabentext_inhalt) || '(kein Aufgabentext)';
-    return `### Baustein ${idx + 1}: ${safeText(a.baustein_typ)}\n${text}`;
-  });
 
-  return [
+  // Phasen-Bausteine aus LernpaketPhaseAktivitaet aufbauen.
+  const sections = [
     header,
     blockHeading('Lernziele'),
     zielLines.length > 0 ? zielLines.join('\n') : '- (keine Lernziele)',
     '',
     blockHeading('Aufgabenbausteine'),
-    aufgabenLines.length > 0 ? aufgabenLines.join('\n\n') : '(keine Aufgabenbausteine)',
-  ].join('\n');
+  ];
+
+  const phasenMap = new Map(PHASEN_REIHENFOLGE.map((p) => [p, []]));
+  for (const pa of phaseAktivitaeten || []) {
+    if (!phasenMap.has(pa?.phase)) continue;
+    phasenMap.get(pa.phase).push(pa);
+  }
+  // Innerhalb der Phase: stabile Reihenfolge.
+  for (const arr of phasenMap.values()) {
+    arr.sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
+  }
+
+  const totalPhasenItems = Array.from(phasenMap.values()).reduce((acc, arr) => acc + arr.length, 0);
+
+  if (totalPhasenItems > 0) {
+    for (const phaseName of PHASEN_REIHENFOLGE) {
+      const items = phasenMap.get(phaseName) || [];
+      sections.push('');
+      sections.push(`#### Phase: ${phaseName}`);
+      if (items.length === 0) {
+        sections.push('_(keine Aktivitäten in dieser Phase)_');
+        continue;
+      }
+      const rendered = items.map((pa, idx) => renderPhaseAktivitaet(pa, idx, katalogById));
+      sections.push(rendered.join('\n\n'));
+    }
+  } else if (Array.isArray(aufgaben) && aufgaben.length > 0) {
+    // Legacy-Fallback (alte Aufgabenbausteine-Entity).
+    const aufgabenLines = aufgaben.map((a, idx) => {
+      const text = trimMultiline(a.aufgabentext_inhalt) || '(kein Aufgabentext)';
+      return `### Baustein ${idx + 1}: ${safeText(a.baustein_typ)}\n${text}`;
+    });
+    sections.push(aufgabenLines.join('\n\n'));
+  } else {
+    sections.push('(keine Aufgabenbausteine)');
+  }
+
+  return sections.join('\n');
 }
