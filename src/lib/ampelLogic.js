@@ -139,6 +139,16 @@ export function getAmpelStatus(item, ctx = {}, visitedIds = new Set()) {
   const nextVisited = new Set(visitedIds);
   nextVisited.add(aufgabe.id);
 
+  // Sonderfall Lernpaket: kommt über lernpaketAdapter mit `_isLernpaket: true`
+  // ins aufgabenById-Set. Lernpakete kennen KEINE separate Freigabe –
+  // sie sind „grün", sobald sie vollständig (is_complete === true) sind.
+  // Änderungen nach erfolgreichem Moodle-Sync zeigen wir als gelb an.
+  if (aufgabe._isLernpaket === true) {
+    if (!aufgabe.is_complete) return AMPEL.RED;
+    if (aufgabe.sync_status === 'modified') return AMPEL.YELLOW;
+    return AMPEL.GREEN;
+  }
+
   const typ = aufgabe.aufgaben_typ || 'inhalt';
 
   // Inhalt / Prozess / Handlung: flache Prüfung.
