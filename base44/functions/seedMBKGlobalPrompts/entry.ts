@@ -45,6 +45,14 @@ const SEED = [
     sort_order: 30,
   },
   {
+    kategorie: 'global',
+    schluessel: 'global_persona',
+    anzeigename: 'Globale Persona (Tonalität & Lerntypen-Anpassung)',
+    prompt_text:
+      "Globale Persona-Regel: Sprich die Schülerinnen und Schüler immer altersgerecht an — klar, freundlich, ermutigend. Keine Fachjargon-Floskeln, erkläre Fachbegriffe beim ersten Auftreten kurz in eigenen Worten. Passe Tonalität, Anzahl der Aufgaben und Tiefe der Erklärungen strikt an den jeweiligen Lerntyp an, sobald du in den Sektor-Anweisungen einen Lerntyp-Pfad bekommst — die Lerntypen-Definition findest du im Block 'Definition: Die 4 Lerntypen'. Zusätzlich liefert jede Einheit eine 'Fachliche Persona' mit fach- und jahrgangsspezifischen Konkretisierungen (typische Anforderungsbereiche, geeignete Aufgabenformate, Sprache pro Lerntyp im Fach). Wende diese fachliche Konkretisierung immer ZUSÄTZLICH zur globalen Lerntypen-Definition an.",
+    sort_order: 40,
+  },
+  {
     kategorie: 'systembaustein',
     schluessel: 'sys_einfuehrung',
     anzeigename: 'Systembaustein: Einführung in die Einheit',

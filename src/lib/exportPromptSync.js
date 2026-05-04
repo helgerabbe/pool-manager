@@ -214,7 +214,11 @@ export function buildSourceTimestampIndex({
 
   return {
     nucleusTs: Math.max(ts(einheit), themenfelderTs, lernpaketeTs, lernzieleTs, aufgabenbausteineTs, phaseAktivitaetenTs, globalPromptsTs),
-    personaTs: ts(einheit),
+    // Fachliche Persona (v1.5.0): selbst quellen-arm, aber abhängig von der
+    // globalen Persona-Definition aus dem Prompt-Manager. Damit eine
+    // Manager-Änderung die einheits-spezifische Persona als „veraltet"
+    // markiert, fließt globalPromptsTs hier mit ein.
+    personaTs: Math.max(ts(einheit), globalPromptsTs),
     sektorTs: Math.max(ts(einheit), themenfelderTs, globalPromptsTs),
     lernpaketTs,
     allgemeineAufgabeTs,

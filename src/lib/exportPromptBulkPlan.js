@@ -105,7 +105,7 @@ export function buildBulkPlan({
     const { status, skipReason } = classify(existing);
     items.push({
       key: 'persona',
-      label: 'Persona & Tonalität',
+      label: 'Fachliche Persona',
       section: 'persona',
       promptType: 'persona',
       referenceId: null,

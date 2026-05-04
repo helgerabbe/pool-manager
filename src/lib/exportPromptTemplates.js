@@ -32,7 +32,7 @@ import { formatMissionLabel } from '@/lib/missionen';
  * unten (Headings, Pflichtsätze, Reihenfolge, Halluzinations-Fallback)
  * MUSS diese Version hochgezählt werden.
  */
-export const MBK_TEMPLATE_VERSION = 'v1.4.0';
+export const MBK_TEMPLATE_VERSION = 'v1.5.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -156,11 +156,15 @@ export function buildNucleusPrompt({ einheit, stammdaten, themenfelder = [], ler
   const missionText = lookupGlobal(globalPrompts, 'global_mission_statement');
   const defLerntypen = lookupGlobal(globalPrompts, 'def_lerntypen');
   const defStruktur = lookupGlobal(globalPrompts, 'def_struktur');
+  // v1.5.0: globale Persona (Tonalitätsregel + generische Lerntypen-Definition)
+  // wandert aus dem einheits-spezifischen Persona-Prompt in den System-Prompt.
+  const globalPersona = lookupGlobal(globalPrompts, 'global_persona');
 
   const systemBlocks = [];
   if (missionText) systemBlocks.push(missionText);
   if (defLerntypen) systemBlocks.push(defLerntypen);
   if (defStruktur) systemBlocks.push(defStruktur);
+  if (globalPersona) systemBlocks.push(globalPersona);
 
   return [
     blockHeading('Kontext-Anker (Nukleus)'),
@@ -187,28 +191,42 @@ export function buildNucleusPrompt({ einheit, stammdaten, themenfelder = [], ler
   ].join('\n');
 }
 
-// ── 2. Persona ───────────────────────────────────────────────────────────────
+// ── 2. Fachliche Persona ─────────────────────────────────────────────────────
+//
+// Seit MBK_TEMPLATE_VERSION v1.5.0 ist die generische Lerntypen- und
+// Tonalitätsdefinition in den MBK-Prompt-Manager (globaler Schlüssel
+// 'global_persona') ausgelagert. Dieser Prompt liefert nur noch die
+// fach- und jahrgangsspezifische Konkretisierung pro Einheit. Die KI
+// bekommt im Nukleus die globale Persona als System-Prompt-Block; die
+// fachliche Persona ergänzt sie dann konkret pro Einheit.
 
 export function buildPersonaPrompt({ einheit }) {
   const fach = safeText(einheit?.fach);
   const jahrgang = safeText(einheit?.jahrgangsstufe);
 
-  const lerntypen = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert']
-    .map((k) => `- **${LERNTYP_LABELS[k]}**: ${LERNTYP_BESCHREIBUNGEN[k]}`)
-    .join('\n');
-
   return [
-    blockHeading('Persona & Tonalität'),
-    `Sprich die Schülerinnen und Schüler der Jahrgangsstufe ${jahrgang} im Fach ${fach} altersgerecht an.`,
-    'Verwende eine klare, freundliche und ermutigende Sprache. Keine Fachjargon-Floskeln.',
-    'Erkläre Fachbegriffe beim ersten Auftreten kurz in eigenen Worten.',
+    blockHeading('Fachliche Persona'),
+    `Diese Anweisung ergänzt die globale Persona-Definition (siehe Nukleus → System-Prompt) um fach- und jahrgangsspezifische Hinweise für **${fach}, Jahrgangsstufe ${jahrgang}**.`,
     '',
-    blockHeading('Lerntypen'),
-    'Die Einheit existiert in vier Varianten — je nach Lerntyp anders gewichtet:',
-    lerntypen,
+    blockHeading('Allgemeine Tonalität in diesem Fach'),
+    `_Hier eintragen: Welche Tonalität ist für ${fach} in Jahrgang ${jahrgang} angemessen? Wie viel Fachsprache, wie viele Beispiele, wie viel Alltagsbezug?_`,
     '',
-    'Passe Tonalität, Anzahl der Aufgaben und Tiefe der Erklärungen an den jeweiligen Lerntyp an,',
-    'wenn du in den Sektor-Anweisungen den entsprechenden Pfad bekommst.',
+    blockHeading('Lerntypen-Konkretisierung im Fach'),
+    'Beschreibe pro Lerntyp, was die generische Definition (aus der globalen Persona) für **dieses konkrete Fach** bedeutet — z. B. typische Anforderungsbereiche, geeignete Aufgaben-/Übungsformate, Sprache, Beispieldichte.',
+    '',
+    `### Minimalist (${fach})`,
+    '_Hier eintragen: Welche Anforderungsbereiche, welche Aufgabenformate, welche Sprache?_',
+    '',
+    `### Pragmatiker (${fach})`,
+    '_Hier eintragen: Welche Anforderungsbereiche, welche Aufgabenformate, welche Sprache?_',
+    '',
+    `### Ehrgeizig (${fach})`,
+    '_Hier eintragen: Welche Anforderungsbereiche, welche Aufgabenformate, welche Sprache?_',
+    '',
+    `### Passioniert (${fach})`,
+    '_Hier eintragen: Welche Anforderungsbereiche, welche Aufgabenformate, welche Sprache?_',
+    '',
+    'Hinweis an die Lehrkraft: Aktivieren Sie den Bearbeitungsmodus und ersetzen Sie die _Platzhalter-Texte_ durch Ihre fachspezifischen Konkretisierungen. Die generische Definition der vier Lerntypen wird automatisch aus dem globalen Prompt-Manager ergänzt — hier nicht wiederholen.',
   ].join('\n');
 }
 

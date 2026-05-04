@@ -282,13 +282,16 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
     />
   );
 
-  // ── Sektion 2: Persona ──────────────────────────────────────────────────
+  // ── Sektion 2: Fachliche Persona ───────────────────────────────────────
+  // Generische Lerntypen-Definition + Tonalitätsregel sind seit v1.5.0 im
+  // globalen Prompt-Manager (Schlüssel 'global_persona'). Hier nur noch die
+  // fach-/jahrgangsspezifische Konkretisierung.
   const personaPrompt = lookupPrompt('persona');
   const personaMaxTs = computeMaxTs('persona');
   const personaItem = (
     <MBKPromptItem
       ref={registerItemRef('persona::null')}
-      label="Persona & Tonalität"
+      label="Fachliche Persona"
       promptType="persona"
       existingPrompt={personaPrompt}
       isOutOfSync={isPromptOutOfSync(personaPrompt, personaMaxTs)}
@@ -470,8 +473,8 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
           <AccordionTrigger className="px-4 hover:no-underline">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-primary" />
-              <span className="font-semibold">2. Persona</span>
-              <span className="text-xs text-muted-foreground">(Tonalität & Lerntypen)</span>
+              <span className="font-semibold">2. Fachliche Persona</span>
+              <span className="text-xs text-muted-foreground">(Fach-/Jahrgangs-spezifische Konkretisierung)</span>
             </div>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4 space-y-3">
