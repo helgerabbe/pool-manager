@@ -54,6 +54,16 @@ export default function ResetDashboardConfirmDialog({
           </p>
         </div>
 
+        <div className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2.5 text-xs leading-relaxed text-blue-900">
+          <p className="font-medium mb-1">💡 Geht es um Inkonsistenzen mit der Struktur?</p>
+          <p>
+            Wenn das gelbe Hinweis-Banner oben im Architekt Drift-Probleme meldet
+            (verwaiste Sektoren, fehlende Themenfelder, gelöschte Aufgaben), nutze
+            besser die Inline-Aktionen direkt im Banner – sie beheben gezielt nur
+            die betroffenen Stellen und behalten deine individuelle Sortierung.
+          </p>
+        </div>
+
         <DialogFooter className="gap-2">
           <Button
             type="button"
