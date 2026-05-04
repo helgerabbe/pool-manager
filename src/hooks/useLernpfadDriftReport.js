@@ -32,8 +32,11 @@ import { base44 } from '@/api/base44Client';
 export function useLernpfadDriftReport(einheitId) {
   const [driftReport, setDriftReport] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  // In-Flight-Schutz, damit gleichzeitige refresh-Aufrufe (z. B. nach
-  // mehreren schnellen Saves hintereinander) sich nicht doppeln.
+  // In-Flight-Schutz für manuelle refresh-Aufrufe (z. B. mehrere schnelle
+  // Saves hintereinander). Der Initial-Load bei Einheit-Wechsel hat einen
+  // eigenen Stale-Schutz im useEffect (ignore-Flag) und wird hiervon NICHT
+  // blockiert — sonst würde ein Wechsel von Einheit A → B ignoriert, falls
+  // ein Save-Refresh aus Einheit A noch im Flug ist.
   const inFlightRef = useRef(false);
 
   const refresh = useCallback(async () => {
@@ -56,14 +59,33 @@ export function useLernpfadDriftReport(einheitId) {
     }
   }, [einheitId]);
 
-  // Initial-Load bei Einheit-Wechsel.
+  // Initial-Load bei Einheit-Wechsel. Eigene Fetch-Logik mit ignore-Flag,
+  // damit ein schneller Wechsel A → B nicht den State der neuen Einheit
+  // mit der Antwort der alten überschreibt.
   useEffect(() => {
     if (!einheitId) {
       setDriftReport(null);
-      return;
+      return undefined;
     }
-    refresh();
-  }, [einheitId, refresh]);
+    let ignore = false;
+    setIsLoading(true);
+    (async () => {
+      try {
+        const res = await base44.functions.invoke('getLernpfadDriftReport', { einheitId });
+        if (ignore) return;
+        setDriftReport(res?.data?.drift_report || null);
+      } catch (err) {
+        if (ignore) return;
+        console.warn('[useLernpfadDriftReport] Fehler beim Laden:', err);
+        setDriftReport(null);
+      } finally {
+        if (!ignore) setIsLoading(false);
+      }
+    })();
+    return () => {
+      ignore = true;
+    };
+  }, [einheitId]);
 
   // Direkt-Setter für Reports, die `useDashboardSync` aus der
   // syncLernpfadMembership-Response bekommt — vermeidet einen
