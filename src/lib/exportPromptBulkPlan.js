@@ -111,7 +111,7 @@ export function buildBulkPlan({
       referenceId: null,
       status,
       skipReason,
-      buildContent: () => buildPersonaPrompt({ einheit }),
+      buildContent: () => buildPersonaPrompt({ einheit, globalPrompts }),
       sourceMaxTs: tsFor('persona'),
       existing,
     });

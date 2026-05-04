@@ -32,7 +32,7 @@ import { formatMissionLabel } from '@/lib/missionen';
  * unten (Headings, Pflichtsätze, Reihenfolge, Halluzinations-Fallback)
  * MUSS diese Version hochgezählt werden.
  */
-export const MBK_TEMPLATE_VERSION = 'v1.5.0';
+export const MBK_TEMPLATE_VERSION = 'v1.6.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -193,41 +193,46 @@ export function buildNucleusPrompt({ einheit, stammdaten, themenfelder = [], ler
 
 // ── 2. Fachliche Persona ─────────────────────────────────────────────────────
 //
-// Seit MBK_TEMPLATE_VERSION v1.5.0 ist die generische Lerntypen- und
-// Tonalitätsdefinition in den MBK-Prompt-Manager (globaler Schlüssel
-// 'global_persona') ausgelagert. Dieser Prompt liefert nur noch die
-// fach- und jahrgangsspezifische Konkretisierung pro Einheit. Die KI
-// bekommt im Nukleus die globale Persona als System-Prompt-Block; die
-// fachliche Persona ergänzt sie dann konkret pro Einheit.
+// Seit MBK_TEMPLATE_VERSION v1.6.0 wird die fachliche Persona NICHT mehr
+// als Platzhalter-Template ausgegeben, das die Lehrkraft selbst füllen
+// muss. Stattdessen liefert dieser Prompt eine klare Erzeugungs-Anweisung
+// an die KI: Sie soll die fachliche Persona für das konkrete Fach +
+// Jahrgang selbstständig formulieren. Die didaktischen Regeln dafür
+// kommen aus dem MBK-Prompt-Manager (globaler Schlüssel
+// 'persona_generator_anweisung'), sodass die Lehrkraft die Regeln
+// zentral pflegen kann, ohne pro Einheit etwas eintragen zu müssen.
 
-export function buildPersonaPrompt({ einheit }) {
+export function buildPersonaPrompt({ einheit, globalPrompts = [] }) {
   const fach = safeText(einheit?.fach);
   const jahrgang = safeText(einheit?.jahrgangsstufe);
 
-  return [
-    blockHeading('Fachliche Persona'),
-    `Diese Anweisung ergänzt die globale Persona-Definition (siehe Nukleus → System-Prompt) um fach- und jahrgangsspezifische Hinweise für **${fach}, Jahrgangsstufe ${jahrgang}**.`,
+  const generatorAnweisung = lookupGlobal(globalPrompts, 'persona_generator_anweisung');
+
+  const sections = [
+    blockHeading('Fachliche Persona — Erzeugungs-Auftrag an die KI'),
+    `Erzeuge für die folgende Einheit selbstständig eine fachliche Persona, die die globale Persona-Definition (siehe Nukleus → System-Prompt) um fach- und jahrgangsspezifische Hinweise ergänzt.`,
     '',
-    blockHeading('Allgemeine Tonalität in diesem Fach'),
-    `_Hier eintragen: Welche Tonalität ist für ${fach} in Jahrgang ${jahrgang} angemessen? Wie viel Fachsprache, wie viele Beispiele, wie viel Alltagsbezug?_`,
+    `- Fach: **${fach}**`,
+    `- Jahrgangsstufe: **${jahrgang}**`,
     '',
-    blockHeading('Lerntypen-Konkretisierung im Fach'),
-    'Beschreibe pro Lerntyp, was die generische Definition (aus der globalen Persona) für **dieses konkrete Fach** bedeutet — z. B. typische Anforderungsbereiche, geeignete Aufgaben-/Übungsformate, Sprache, Beispieldichte.',
-    '',
-    `### Minimalist (${fach})`,
-    '_Hier eintragen: Welche Anforderungsbereiche, welche Aufgabenformate, welche Sprache?_',
-    '',
-    `### Pragmatiker (${fach})`,
-    '_Hier eintragen: Welche Anforderungsbereiche, welche Aufgabenformate, welche Sprache?_',
-    '',
-    `### Ehrgeizig (${fach})`,
-    '_Hier eintragen: Welche Anforderungsbereiche, welche Aufgabenformate, welche Sprache?_',
-    '',
-    `### Passioniert (${fach})`,
-    '_Hier eintragen: Welche Anforderungsbereiche, welche Aufgabenformate, welche Sprache?_',
-    '',
-    'Hinweis an die Lehrkraft: Aktivieren Sie den Bearbeitungsmodus und ersetzen Sie die _Platzhalter-Texte_ durch Ihre fachspezifischen Konkretisierungen. Die generische Definition der vier Lerntypen wird automatisch aus dem globalen Prompt-Manager ergänzt — hier nicht wiederholen.',
-  ].join('\n');
+    blockHeading('Erzeugungs-Regeln (aus dem MBK-Prompt-Manager)'),
+  ];
+
+  if (generatorAnweisung) {
+    sections.push(generatorAnweisung);
+  } else {
+    sections.push(
+      '⚠️ Im MBK-Prompt-Manager ist kein Eintrag mit dem Schlüssel `persona_generator_anweisung` aktiv. Bitte legen Sie ihn an, damit die KI weiß, nach welchen didaktischen Regeln die fachliche Persona erzeugt werden soll.'
+    );
+  }
+
+  sections.push('');
+  sections.push(blockHeading('Anweisung an die Moodle-Builder-KI'));
+  sections.push(
+    `Formuliere die fachliche Persona für **${fach}, Jahrgangsstufe ${jahrgang}** vollständig aus. Nutze die oben genannten Regeln. Frage die Lehrkraft nicht zurück und gib KEINE Platzhalter aus.`
+  );
+
+  return sections.join('\n');
 }
 
 // ── 3. Sektor-Anweisungen pro Lerntyp ────────────────────────────────────────

@@ -296,7 +296,7 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
       existingPrompt={personaPrompt}
       isOutOfSync={isPromptOutOfSync(personaPrompt, personaMaxTs)}
       editingMode={editingMode}
-      buildContent={() => buildPersonaPrompt({ einheit })}
+      buildContent={() => buildPersonaPrompt({ einheit, globalPrompts })}
       sourceMaxTimestamp={personaMaxTs}
       onUpsert={upsert}
     />
