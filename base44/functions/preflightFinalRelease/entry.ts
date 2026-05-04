@@ -103,17 +103,24 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 2) Lernpakete (Lernpakete.locked_by_email/locked_at; gefiltert über Themenfeld → Einheit).
+    // 2) Lernpakete (Lernpakete.locked_by_email/locked_at; gefiltert über
+    //    die zwei möglichen FK-Pfade — direkt an der Einheit oder via
+    //    Themenfeld → Einheit). DB-seitig laden, nicht global per .list().
     const themenfelder = await base44.asServiceRole.entities.Themenfeld.filter({
       einheit_id: einheitId,
     });
-    const themenfeldIds = new Set((themenfelder || []).map((t) => t.id));
-    const allLernpakete = await base44.asServiceRole.entities.Lernpakete.list();
-    const lernpakete = (allLernpakete || []).filter(
-      (lp) =>
-        lp.einheit_id === einheitId ||
-        (lp.themenfeld_id && themenfeldIds.has(lp.themenfeld_id))
-    );
+    const themenfeldIdsArr = (themenfelder || []).map((t) => t.id);
+    const [lpByEinheit, lpByThemenfeld] = await Promise.all([
+      base44.asServiceRole.entities.Lernpakete.filter({ einheit_id: einheitId }),
+      themenfeldIdsArr.length > 0
+        ? base44.asServiceRole.entities.Lernpakete.filter({ themenfeld_id: { $in: themenfeldIdsArr } })
+        : Promise.resolve([]),
+    ]);
+    const lernpaketeMap = new Map();
+    for (const lp of [...(lpByEinheit || []), ...(lpByThemenfeld || [])]) {
+      lernpaketeMap.set(lp.id, lp);
+    }
+    const lernpakete = Array.from(lernpaketeMap.values());
     const lernpaketIds = new Set(lernpakete.map((lp) => lp.id));
     for (const lp of lernpakete) {
       if (lp.is_locked && lp.locked_by_email && isLockActive(lp.locked_at)) {
@@ -127,12 +134,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 3) Master-Aufgaben (MasterAufgabe.lock_status + locked_by_user; nur die Pakete dieser Einheit).
+    // 3) Master-Aufgaben (MasterAufgabe.lock_status + locked_by_user;
+    //    DB-seitig auf die Pakete dieser Einheit eingrenzen).
     if (lernpaketIds.size > 0) {
-      const allMasters = await base44.asServiceRole.entities.MasterAufgabe.list();
-      for (const m of allMasters || []) {
+      const masters = await base44.asServiceRole.entities.MasterAufgabe.filter({
+        lernpaket_id: { $in: Array.from(lernpaketIds) },
+      });
+      for (const m of masters || []) {
         if (!m.lock_status || !m.locked_by_user) continue;
-        if (!lernpaketIds.has(m.lernpaket_id)) continue;
         if (!isLockActive(m.locked_at)) continue;
         activeLocks.push({
           scope: 'master_aufgabe',

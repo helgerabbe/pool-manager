@@ -101,16 +101,24 @@ async function collectActiveLocks(base44, einheit, currentUserEmail) {
     }
   }
 
+  // Lernpakete: DB-seitig über die zwei möglichen FK-Pfade laden, statt
+  // alle Lernpakete der Instanz zu materialisieren. Das alte `Lernpakete.list()`
+  // skalierte mit der Gesamtmenge — neu skaliert es mit der Einheit selbst.
   const themenfelder = await base44.asServiceRole.entities.Themenfeld.filter({
     einheit_id: einheit.id,
   });
-  const themenfeldIds = new Set((themenfelder || []).map((t) => t.id));
-  const allLernpakete = await base44.asServiceRole.entities.Lernpakete.list();
-  const lernpakete = (allLernpakete || []).filter(
-    (lp) =>
-      lp.einheit_id === einheit.id ||
-      (lp.themenfeld_id && themenfeldIds.has(lp.themenfeld_id))
-  );
+  const themenfeldIds = (themenfelder || []).map((t) => t.id);
+  const [lpByEinheit, lpByThemenfeld] = await Promise.all([
+    base44.asServiceRole.entities.Lernpakete.filter({ einheit_id: einheit.id }),
+    themenfeldIds.length > 0
+      ? base44.asServiceRole.entities.Lernpakete.filter({ themenfeld_id: { $in: themenfeldIds } })
+      : Promise.resolve([]),
+  ]);
+  const lernpaketeMap = new Map();
+  for (const lp of [...(lpByEinheit || []), ...(lpByThemenfeld || [])]) {
+    lernpaketeMap.set(lp.id, lp);
+  }
+  const lernpakete = Array.from(lernpaketeMap.values());
   const lernpaketIds = new Set(lernpakete.map((lp) => lp.id));
   for (const lp of lernpakete) {
     if (lp.is_locked && lp.locked_by_email && isLockActive(lp.locked_at)) {
@@ -125,10 +133,14 @@ async function collectActiveLocks(base44, einheit, currentUserEmail) {
   }
 
   if (lernpaketIds.size > 0) {
-    const allMasters = await base44.asServiceRole.entities.MasterAufgabe.list();
-    for (const m of allMasters || []) {
+    // MasterAufgaben: DB-seitig auf die Pakete dieser Einheit eingrenzen
+    // statt globaler Liste — vermeidet Speicher- und Latenz-Spitzen bei
+    // wachsender Master-Anzahl.
+    const masters = await base44.asServiceRole.entities.MasterAufgabe.filter({
+      lernpaket_id: { $in: Array.from(lernpaketIds) },
+    });
+    for (const m of masters || []) {
       if (!m.lock_status || !m.locked_by_user) continue;
-      if (!lernpaketIds.has(m.lernpaket_id)) continue;
       if (!isLockActive(m.locked_at)) continue;
       activeLocks.push({
         scope: 'master_aufgabe',
