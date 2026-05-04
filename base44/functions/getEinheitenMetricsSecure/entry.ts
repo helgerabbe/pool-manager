@@ -24,18 +24,22 @@
  *     }
  *   }
  *
- * Progress-Regel (vereinfacht):
- *   Prozent = (Anzahl der Einheits-Inhalte, die im Pfad platziert sind)
- *           / (Gesamtzahl der Einheits-Inhalte)
+ * Progress-Regel:
+ *   1. Sobald der Pfad eines Lerntyps formal freigegeben ist
+ *      (alle Memberships in LernpfadAufgabeMembership für diese (einheit_id,
+ *      lerntyp) haben pfad_status='locked_for_export' UND es gibt
+ *      mindestens eine Membership), ist der Fortschritt **100 %** —
+ *      unabhängig davon, ob alle Einheits-Inhalte im Pfad platziert sind.
+ *      Begründung: Die didaktische Auswahl pro Lerntyp ist bewusst
+ *      kuratiert; der Minimalist nutzt z. B. absichtlich weniger Aufgaben
+ *      als der Passionierte. Ein freigegebener Pfad ist „fertig".
  *
- *   Einheits-Inhalte = Lernpakete (Collection) + AllgemeineAufgabe-Datensätze
- *   (alle Typen außer Tombstones), inkl. Ebene-3-Projekte.
- *
- *   Platziert = die ref_id taucht mindestens einmal in einem Aufgaben-Item
- *   (type='aufgabe') irgendeines Sektors des jeweiligen Lerntyps auf.
- *   System-Bausteine/Platzhalter zählen nicht – nur "echte Inhalte" der Einheit.
- *
- *   Leere Einheit (keine Inhalte) → 0%.
+ *   2. Andernfalls (Pfad noch DRAFT / EMPTY): Coverage als Orientierung —
+ *      Prozent = (platzierte Einheits-Inhalte) / (Gesamtzahl Einheits-Inhalte).
+ *      Einheits-Inhalte = Lernpakete + AllgemeineAufgabe-Datensätze
+ *      (ohne Tombstones), inkl. Ebene-3-Projekte. Platziert = ref_id taucht
+ *      mindestens einmal in einem Aufgaben-Item irgendeines Sektors auf.
+ *      Leere Einheit → 0 %.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
@@ -125,11 +129,35 @@ Deno.serve(async (req) => {
 
     // Aktivitäten werden über die Lernpakete dieser Einheiten gezogen.
     const lernpaketIds = lernpakete.map((lp) => lp.id);
-    const aktivitaeten = lernpaketIds.length > 0
-      ? await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
-          lernpaket_id: { $in: lernpaketIds },
-        })
-      : [];
+    const [aktivitaeten, memberships] = await Promise.all([
+      lernpaketIds.length > 0
+        ? base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
+            lernpaket_id: { $in: lernpaketIds },
+          })
+        : Promise.resolve([]),
+      // Pfad-Status pro (einheit_id, lerntyp) ableitbar aus den Memberships.
+      // Solange irgendeine Membership einer Kombi noch 'draft' ist (oder
+      // gar keine existiert), gilt der Pfad nicht als final freigegeben.
+      base44.asServiceRole.entities.LernpfadAufgabeMembership.filter({
+        einheit_id: { $in: einheitIds },
+      }),
+    ]);
+
+    // Aggregat: hat jede (einheit_id, lerntyp)-Kombi mind. 1 Membership UND
+    // sind ALLE auf 'locked_for_export'? Wenn ja → Pfad ist freigegeben.
+    // Map<einheitId, Map<lerntyp, { total, locked }>>
+    const lockedPathsByEinheit = new Map();
+    for (const id of einheitIds) {
+      lockedPathsByEinheit.set(id, new Map());
+    }
+    for (const m of memberships) {
+      const map = lockedPathsByEinheit.get(m.einheit_id);
+      if (!map) continue;
+      const cur = map.get(m.lerntyp) || { total: 0, locked: 0 };
+      cur.total += 1;
+      if (m.pfad_status === 'locked_for_export') cur.locked += 1;
+      map.set(m.lerntyp, cur);
+    }
 
     // Gruppieren pro Einheit.
     const themenfelderByEinheit = new Map();
@@ -186,8 +214,17 @@ Deno.serve(async (req) => {
       }
 
       const konfig = einheit.lernpfade_konfiguration || {};
+      const lockedMap = lockedPathsByEinheit.get(id) || new Map();
       const progress = {};
       for (const lt of LERN_TYPEN) {
+        // Regel 1: Pfad formal freigegeben → 100 %.
+        const lock = lockedMap.get(lt);
+        const isPathLocked = lock && lock.total > 0 && lock.locked === lock.total;
+        if (isPathLocked) {
+          progress[lt] = 100;
+          continue;
+        }
+        // Regel 2: Coverage-Fallback.
         progress[lt] = calcProgressForLerntyp(konfig[lt], totalContentIds);
       }
 
