@@ -32,7 +32,7 @@ import { formatMissionLabel } from '@/lib/missionen';
  * unten (Headings, Pflichtsätze, Reihenfolge, Halluzinations-Fallback)
  * MUSS diese Version hochgezählt werden.
  */
-export const MBK_TEMPLATE_VERSION = 'v1.2.0';
+export const MBK_TEMPLATE_VERSION = 'v1.3.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -181,41 +181,205 @@ export function buildPersonaPrompt({ einheit }) {
 // ── 3. Sektor-Anweisungen pro Lerntyp ────────────────────────────────────────
 
 /**
+ * Pro Lerntyp: konkrete Bearbeitungs-Pädagogik. Sagt der MBK explizit, wie
+ * dasselbe Lernpaket je nach Lerntyp anders durchlaufen werden soll —
+ * weniger/mehr Aufgaben, andere Tonalität, andere Pflicht-/Kürtfelder.
+ *
+ * Diese Texte sind die zweite Hälfte der "Persona": die erste Hälfte (Tonalität)
+ * steht im Persona-Prompt, hier kommt die didaktische Bearbeitungsregel pro
+ * Sektor-Lauf dazu.
+ */
+const LERNTYP_BEARBEITUNGSREGEL = {
+  minimalist: [
+    'Konzentriere dich auf den Pflichtkern jedes Lernpakets: nur die zentralen Lernziele und die Aufgaben mit Schwierigkeitsgrad 1.',
+    'Aufgaben mit Schwierigkeitsgrad 2 oder 3 werden weggelassen, ebenso optionale Vertiefungs-Aktivitäten in der Phase „Abschluss".',
+    'Brian-Dialoge und ausführliche Erklärtexte werden auf das Nötigste gekürzt; keine zusätzlichen Beispiele erfinden.',
+    'In Arbeitsphasen mit Bündel-Aufgaben (X-von-Y) wird nur die Mindestanzahl angeboten.',
+  ],
+  pragmatiker: [
+    'Vollständige Bearbeitung aller Pflichtinhalte des Lernpakets. Aufgaben mit Schwierigkeitsgrad 1 + 2 sind enthalten, Schwierigkeitsgrad 3 nur, wenn sie didaktisch zwingend sind.',
+    'Stil: kurz, lösungsorientiert, mit klaren Anwendungs-Beispielen. Keine theoretischen Exkurse.',
+    'Brian-Dialoge werden nur dort eingesetzt, wo die Aufgabe explizit einen Tutor-Dialog vorsieht.',
+    'Bei Bündel-Aufgaben werden alle als Pflicht markierten Items übernommen.',
+  ],
+  ehrgeizig: [
+    'Vollständige Bearbeitung aller Aufgaben (Schwierigkeitsgrade 1, 2 und 3). Zusätzliche Knobel-/Vertiefungsaufgaben in der Phase „Abschluss" werden bevorzugt eingebaut.',
+    'Stil: anspruchsvoll, fordernd, mit Verknüpfungen zu weiterführenden Themen.',
+    'Brian-Dialoge werden vollständig konfiguriert (Tutor-Persona, Erwartungshorizont, Abbruchbedingung) — Brian fordert hier aktiv heraus statt nur zu erklären.',
+    'Bei Bündel-Aufgaben werden alle Items angeboten; die Reihenfolge bleibt sequenziell, falls so konfiguriert.',
+  ],
+  passioniert: [
+    'Vollständige Bearbeitung aller Aufgaben + alle als „Mission Kreativität" markierten Aktivitäten werden ausgebaut.',
+    'Stil: tiefgehend, vernetzt, mit Querbezügen zu Alltag, Forschung oder anderen Fächern. Erklärtexte ausführlich.',
+    'Brian-Dialoge werden zu echten Sokratischen Dialogen ausgebaut — Brian stellt Rückfragen, fordert Begründungen, bietet Alternativwege.',
+    'Bei Bündel-Aufgaben werden alle Items angeboten; zusätzlich werden — wo vorhanden — Projekt-Anker-Aufgaben (Ebene 3) prominent verlinkt.',
+  ],
+};
+
+/**
+ * Erzeugt für ein einzelnes Sektor-Item eine Markdown-Zeile mit Titel,
+ * Element-Typ und Quell-ID. Die Quell-ID ist für die MBK essenziell, damit
+ * sie das passende Erstellungspaket finden kann (das Erstellungspaket wird
+ * mit derselben ID referenziert — siehe `buildErstellungspaketFor*`).
+ */
+function renderSektorItem(item, idx, indent, ctx) {
+  const { lernpaketById, aufgabeById, systemBausteinById } = ctx;
+  const refId = item?.ref_id || '(unbekannt)';
+  let bezeichnung = '(unbekanntes Element)';
+  let elementTyp = item?.type || 'unbekannt';
+  let extra = '';
+
+  if (item?.type === 'system') {
+    const sb = systemBausteinById.get(refId);
+    bezeichnung = sb?.titel || `System-Baustein ${refId}`;
+    elementTyp = 'System-Baustein';
+    if (sb?.baustein_modus === 'bundle_1ton') {
+      const cfg = item?.bundle_config || {};
+      const teile = [];
+      if (cfg.erforderliche_anzahl) teile.push(`${cfg.erforderliche_anzahl} von n erforderlich`);
+      if (cfg.modus) teile.push(`Bearbeitung: ${cfg.modus}`);
+      if (teile.length > 0) extra = ` _(${teile.join(', ')})_`;
+    }
+  } else {
+    // Reguläre Aufgabe: kann Lernpaket-Bündel (AllgemeineAufgabe.aufgaben_typ='buendel'),
+    // Inhalts-/Handlungs-/Prozess-Aufgabe oder Projekt-Anker sein.
+    const aufgabe = aufgabeById.get(refId);
+    if (aufgabe) {
+      bezeichnung = aufgabe.titel || '(Aufgabe ohne Titel)';
+      const ebene = aufgabe.anforderungsebene ? ` · ${aufgabe.anforderungsebene}` : '';
+      elementTyp = `Aufgabe (${aufgabe.aufgaben_typ || 'inhalt'}${ebene})`;
+      // Wenn die Aufgabe ein Lernpaket-Bündel ist, listen wir die enthaltenen
+      // Lernpaket-IDs mit, damit die KI die zugehörigen Erstellungspakete findet.
+      if (aufgabe.aufgaben_typ === 'buendel' && Array.isArray(aufgabe.verlinkte_lernpaket_ids)) {
+        const ids = aufgabe.verlinkte_lernpaket_ids;
+        if (ids.length > 0) {
+          const lpRefs = ids.map((lpId) => {
+            const lp = lernpaketById.get(lpId);
+            return lp ? `${lp.titel_des_pakets || '(ohne Titel)'} [${lpId}]` : `[${lpId}]`;
+          });
+          extra = `\n${indent}    → enthält Lernpakete: ${lpRefs.join('; ')}`;
+        }
+      } else if (aufgabe.aufgaben_typ === 'auswahl_buendel' && Array.isArray(aufgabe.verlinkte_aufgaben_ids)) {
+        const ids = aufgabe.verlinkte_aufgaben_ids;
+        if (ids.length > 0) {
+          extra = `\n${indent}    → Auswahl-Bündel über Aufgaben: ${ids.join(', ')}` +
+            (aufgabe.erforderliche_anzahl ? ` (${aufgabe.erforderliche_anzahl} von ${ids.length} erforderlich)` : '');
+        }
+      } else if (aufgabe.aufgaben_typ === 'projekt_anker' && Array.isArray(aufgabe.verlinkte_projekt_ids)) {
+        const ids = aufgabe.verlinkte_projekt_ids;
+        if (ids.length > 0) {
+          extra = `\n${indent}    → Projekte: ${ids.join(', ')}`;
+        }
+      }
+    }
+  }
+
+  return `${indent}${idx + 1}. **${bezeichnung}** _(${elementTyp}, Quell-ID: ${refId})_${extra}`;
+}
+
+/**
  * Sektor-Anweisungen für einen Lerntyp.
- * Reihenfolge und semantischer Typ stammen aus einheit.lernpfade_konfiguration[lerntyp].
+ *
+ * Pro Sektor wird ausgegeben:
+ *   - Titel + semantischer Typ
+ *   - Themenfeld-ID (bei Arbeitsphasen)
+ *   - vollständige Item-Liste mit Quell-IDs und Bündel-Hierarchie
+ *
+ * Dazu kommt eine lerntyp-spezifische Bearbeitungsregel
+ * (siehe LERNTYP_BEARBEITUNGSREGEL), damit die MBK das gleiche Lernpaket
+ * für Minimalist, Pragmatiker, Ehrgeizig und Passioniert unterschiedlich
+ * ausarbeitet.
  *
  * @param {object} args
  * @param {object} args.einheit
- * @param {string} args.lerntyp           — 'minimalist'|'pragmatiker'|'ehrgeizig'|'passioniert'
- * @param {Array}  args.themenfelder      — für Arbeitsphase-Titel-Auflösung
+ * @param {string} args.lerntyp                 — 'minimalist'|'pragmatiker'|'ehrgeizig'|'passioniert'
+ * @param {Array}  args.themenfelder            — für Arbeitsphase-Titel-Auflösung
+ * @param {Array}  args.lernpakete              — alle Lernpakete der Einheit (für Bündel-Verlinkungen)
+ * @param {Array}  args.allgemeineAufgaben      — alle AllgemeineAufgabe-Records der Einheit
+ * @param {Array}  args.systemBausteine         — alle SystemBausteine (für System-Item-Titel)
  */
-export function buildSektorPrompt({ einheit, lerntyp, themenfelder = [] }) {
+export function buildSektorPrompt({
+  einheit,
+  lerntyp,
+  themenfelder = [],
+  lernpakete = [],
+  allgemeineAufgaben = [],
+  systemBausteine = [],
+}) {
   const label = LERNTYP_LABELS[lerntyp] || lerntyp;
   const beschreibung = LERNTYP_BESCHREIBUNGEN[lerntyp] || '';
   const sektoren = einheit?.lernpfade_konfiguration?.[lerntyp] || [];
 
   const tfTitel = new Map(themenfelder.map((tf) => [tf.id, tf.titel]));
+  const lernpaketById = new Map(lernpakete.map((lp) => [lp.id, lp]));
+  const aufgabeById = new Map(allgemeineAufgaben.map((a) => [a.id, a]));
+  const systemBausteinById = new Map(systemBausteine.map((sb) => [sb.baustein_id, sb]));
+  const ctx = { lernpaketById, aufgabeById, systemBausteinById };
 
-  const sektorLines = sektoren.map((s, idx) => {
+  const sektorBloecke = sektoren.map((s, idx) => {
     const typLabel = getSektorTypLabel(s.sektor_typ);
     let titel = s.titel || typLabel;
     if (s.sektor_typ === 'arbeitsphase_themenfeld') {
       const tf = s.titel_snapshot || tfTitel.get(s.themenfeld_id) || s.titel;
       titel = `Arbeitsphase · ${tf || '(Themenfeld unbenannt)'}`;
     }
-    const itemCount = Array.isArray(s.items) ? s.items.length : 0;
-    return `${idx + 1}. **${titel}** _(Typ: ${typLabel}, ${itemCount} Element${itemCount === 1 ? '' : 'e'})_`;
+
+    const items = Array.isArray(s.items) ? s.items : [];
+    const headerLine = `### Sektor ${idx + 1}: ${titel}`;
+    const metaLines = [
+      `- Typ: ${typLabel}`,
+      s.sektor_typ === 'arbeitsphase_themenfeld' && s.themenfeld_id
+        ? `- Themenfeld-ID: ${s.themenfeld_id}`
+        : null,
+      `- Anzahl Elemente: ${items.length}`,
+    ].filter(Boolean);
+
+    // Items hierarchisch rendern: Root-Items + ihre Children (max. 1 Ebene Bündel).
+    const rootItems = items.filter((it) => !it?.parent_instance_id);
+    const childrenByParent = new Map();
+    for (const it of items) {
+      if (it?.parent_instance_id) {
+        if (!childrenByParent.has(it.parent_instance_id)) childrenByParent.set(it.parent_instance_id, []);
+        childrenByParent.get(it.parent_instance_id).push(it);
+      }
+    }
+
+    const itemLines = [];
+    rootItems.forEach((root, rIdx) => {
+      itemLines.push(renderSektorItem(root, rIdx, '', ctx));
+      const children = childrenByParent.get(root.instance_id) || [];
+      children.forEach((child, cIdx) => {
+        itemLines.push(renderSektorItem(child, cIdx, '    ', ctx));
+      });
+    });
+
+    return [
+      headerLine,
+      metaLines.join('\n'),
+      '',
+      itemLines.length > 0 ? itemLines.join('\n') : '_(keine Elemente in diesem Sektor)_',
+    ].join('\n');
   });
+
+  const bearbeitungsRegel = LERNTYP_BEARBEITUNGSREGEL[lerntyp] || [];
 
   return [
     blockHeading(`Sektor-Anweisungen für Lerntyp „${label}"`),
     `Tonalität: ${beschreibung}.`,
     '',
-    blockHeading('Reihenfolge der Sektoren'),
-    sektorLines.length > 0 ? sektorLines.join('\n') : '(noch keine Sektoren konfiguriert)',
+    blockHeading('Bearbeitungsregel für diesen Lerntyp'),
+    bearbeitungsRegel.length > 0
+      ? bearbeitungsRegel.map((r) => `- ${r}`).join('\n')
+      : '(keine speziellen Bearbeitungsregeln definiert)',
     '',
-    'Erstelle die Moodle-Kursstruktur in genau dieser Reihenfolge.',
-    'Detaillierte Inhalte zu den einzelnen Lernpaketen und Aufgaben folgen separat als „Erstellungspakete".',
+    blockHeading('Reihenfolge und Inhalte der Sektoren'),
+    sektorBloecke.length > 0 ? sektorBloecke.join('\n\n') : '(noch keine Sektoren konfiguriert)',
+    '',
+    blockHeading('Anweisung an die Moodle-Builder-KI'),
+    '- Erstelle die Moodle-Kursstruktur in genau der oben angegebenen Reihenfolge der Sektoren.',
+    '- Verwende die oben gelisteten Quell-IDs, um die jeweils passenden „Erstellungspakete" zuzuordnen — die ID im Erstellungspaket-Header (Quelle-ID) entspricht 1:1 der hier genannten Quell-ID.',
+    `- Wende die oben definierte Bearbeitungsregel für „${label}" auf JEDES Lernpaket und JEDE Aufgabe an, sodass dasselbe Lernpaket für unterschiedliche Lerntypen unterschiedlich aufbereitet wird.`,
+    '- Bei Bündel-Aufgaben (Lernpaket-Bündel oder Auswahl-Bündel) folge der dort angegebenen Bearbeitungs-Anweisung (Reihenfolge, X-von-Y).',
   ].join('\n');
 }
 

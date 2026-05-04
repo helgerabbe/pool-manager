@@ -60,6 +60,7 @@ export function buildBulkPlan({
   katalogById,
   allgemeineAufgaben,
   allgemeineAufgabenEbene23,
+  systemBausteine = [],
   prompts,
   tsIndex,
 }) {
@@ -127,7 +128,14 @@ export function buildBulkPlan({
       referenceId: lerntyp,
       status,
       skipReason,
-      buildContent: () => buildSektorPrompt({ einheit, lerntyp, themenfelder }),
+      buildContent: () => buildSektorPrompt({
+        einheit,
+        lerntyp,
+        themenfelder,
+        lernpakete,
+        allgemeineAufgaben,
+        systemBausteine,
+      }),
       sourceMaxTs: tsFor('sektor_anweisung', lerntyp),
       existing,
     });

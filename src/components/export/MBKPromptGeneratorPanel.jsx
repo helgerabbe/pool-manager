@@ -149,6 +149,14 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
     enabled: !!einheitId,
   });
 
+  // SystemBausteine werden in den Sektor-Anweisungen referenziert (Onboarding,
+  // Lernlandkarte, Tests etc.). Wir laden den globalen Pool einmal — er ist
+  // klein und systemweit konstant.
+  const { data: systemBausteine = [] } = useQuery({
+    queryKey: ['systemBausteine'],
+    queryFn: () => base44.entities.SystemBausteine.list(),
+  });
+
   // Nur Ebene 2 + Ebene 3 für Erstellungspakete
   const allgemeineAufgabenEbene23 = useMemo(
     () => allgemeineAufgaben.filter(
@@ -195,6 +203,7 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
     katalogById,
     allgemeineAufgaben,
     allgemeineAufgabenEbene23,
+    systemBausteine,
     prompts,
     upsert,
     tsIndex,
@@ -291,7 +300,14 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
         existingPrompt={existing}
         isOutOfSync={isPromptOutOfSync(existing, maxTs)}
         editingMode={editingMode}
-        buildContent={() => buildSektorPrompt({ einheit, lerntyp, themenfelder })}
+        buildContent={() => buildSektorPrompt({
+          einheit,
+          lerntyp,
+          themenfelder,
+          lernpakete,
+          allgemeineAufgaben,
+          systemBausteine,
+        })}
         sourceMaxTimestamp={maxTs}
         onUpsert={upsert}
       />
