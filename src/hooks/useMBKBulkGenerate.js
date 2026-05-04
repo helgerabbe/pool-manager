@@ -77,13 +77,14 @@ export function useMBKBulkGenerate({
   );
 
   const planSummary = useMemo(() => {
-    let willWrite = 0, skipCustomized = 0, skipBlocked = 0;
+    let willWrite = 0, skipCustomized = 0, skipBlocked = 0, skipManual = 0;
     for (const it of plan) {
       if (it.status === 'new' || it.status === 'update') willWrite += 1;
       else if (it.status === 'skip-customized') skipCustomized += 1;
       else if (it.status === 'skip-blocked') skipBlocked += 1;
+      else if (it.status === 'skip-manual') skipManual += 1;
     }
-    return { willWrite, skipCustomized, skipBlocked, total: plan.length };
+    return { willWrite, skipCustomized, skipBlocked, skipManual, total: plan.length };
   }, [plan]);
 
   // Bulk-Run via Backend-Funktion (1 Roundtrip).

@@ -30,6 +30,7 @@ const MBKPromptItem = forwardRef(function MBKPromptItem({
   blockReason = '',
   editingMode = false,
   buildContent,           // () => string  (deterministische Template-Funktion)
+  asyncBuildContent,      // optional: () => Promise<string>. Wenn gesetzt, hat Vorrang vor buildContent (z. B. LLM-Aufruf für Persona).
   sourceMaxTimestamp,     // number (ms)   für source_updated_at beim Speichern
   onUpsert,               // ({promptType, referenceId, content, isCustomized, sourceUpdatedAt}) => Promise
 }, ref) {
@@ -60,7 +61,12 @@ const MBKPromptItem = forwardRef(function MBKPromptItem({
   const doGenerate = async () => {
     setIsWorking(true);
     try {
-      const content = buildContent();
+      // Async-Build (z. B. LLM-Call für die Fachliche Persona) hat Vorrang
+      // vor der deterministischen Build-Funktion. Wirft die Promise eine
+      // Fehlermeldung, fangen wir sie unten ab.
+      const content = asyncBuildContent
+        ? await asyncBuildContent()
+        : buildContent();
       await onUpsert({
         promptType,
         referenceId,

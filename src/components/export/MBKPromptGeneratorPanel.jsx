@@ -288,6 +288,10 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
   // fach-/jahrgangsspezifische Konkretisierung.
   const personaPrompt = lookupPrompt('persona');
   const personaMaxTs = computeMaxTs('persona');
+  // Fachliche Persona: anders als die übrigen Prompts wird hier ein echter
+  // LLM-Call ausgelöst. Die Generator-Anweisung kommt aus dem MBK-Prompt-
+  // Manager (Schlüssel 'persona_generator_anweisung'), die KI liefert den
+  // fertig formulierten Persona-Text zurück, der direkt gespeichert wird.
   const personaItem = (
     <MBKPromptItem
       ref={registerItemRef('persona::null')}
@@ -297,6 +301,13 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
       isOutOfSync={isPromptOutOfSync(personaPrompt, personaMaxTs)}
       editingMode={editingMode}
       buildContent={() => buildPersonaPrompt({ einheit, globalPrompts })}
+      asyncBuildContent={async () => {
+        const res = await base44.functions.invoke('generateFachlichePersona', { einheitId });
+        if (res?.data?.error) throw new Error(res.data.error);
+        const content = res?.data?.content;
+        if (!content) throw new Error('Keine Antwort von der KI erhalten.');
+        return content;
+      }}
       sourceMaxTimestamp={personaMaxTs}
       onUpsert={upsert}
     />

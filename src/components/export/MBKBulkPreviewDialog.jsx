@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, RefreshCw, Sparkles, Lock, PenSquare, FilePlus2, RotateCw } from 'lucide-react';
+import { Loader2, RefreshCw, Sparkles, Lock, PenSquare, FilePlus2, RotateCw, Wand2 } from 'lucide-react';
 
 const SECTION_LABELS = {
   nucleus: '1. Nukleus',
@@ -51,6 +51,12 @@ function StatusBadge({ status }) {
           <Lock className="w-3 h-3" /> Blockiert — übersprungen
         </Badge>
       );
+    case 'skip-manual':
+      return (
+        <Badge className="bg-amber-100 text-amber-800 border-amber-200 gap-1">
+          <Wand2 className="w-3 h-3" /> Einzeln per KI
+        </Badge>
+      );
     default:
       return null;
   }
@@ -60,7 +66,7 @@ export default function MBKBulkPreviewDialog({
   open,
   onOpenChange,
   plan = [],
-  summary = { willWrite: 0, skipCustomized: 0, skipBlocked: 0, total: 0 },
+  summary = { willWrite: 0, skipCustomized: 0, skipBlocked: 0, skipManual: 0, total: 0 },
   busy = false,
   onConfirm,
 }) {
@@ -101,6 +107,12 @@ export default function MBKBulkPreviewDialog({
             <Badge className="bg-slate-100 text-slate-600 border-slate-200 gap-1">
               <Lock className="w-3 h-3" />
               {summary.skipBlocked} blockiert
+            </Badge>
+          )}
+          {summary.skipManual > 0 && (
+            <Badge className="bg-amber-100 text-amber-800 border-amber-200 gap-1">
+              <Wand2 className="w-3 h-3" />
+              {summary.skipManual} einzeln per KI
             </Badge>
           )}
           <Badge variant="outline" className="text-muted-foreground">

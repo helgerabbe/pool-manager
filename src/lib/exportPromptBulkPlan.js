@@ -99,17 +99,21 @@ export function buildBulkPlan({
     });
   }
 
-  // 2. Persona
+  // 2. Persona — wird per LLM-Call im Frontend separat erzeugt und daher
+  // im Bulk-Lauf grundsätzlich übersprungen. Verhindert ungewollte
+  // Credit-Kosten bei "Alle aktualisieren".
   {
     const existing = lookup('persona');
-    const { status, skipReason } = classify(existing);
+    const skipReason = existing?.is_customized
+      ? 'Manuell angepasst — nicht überschrieben.'
+      : "Wird per KI erzeugt — bitte einzeln über 'Neu generieren' aktualisieren.";
     items.push({
       key: 'persona',
       label: 'Fachliche Persona',
       section: 'persona',
       promptType: 'persona',
       referenceId: null,
-      status,
+      status: 'skip-manual',
       skipReason,
       buildContent: () => buildPersonaPrompt({ einheit, globalPrompts }),
       sourceMaxTs: tsFor('persona'),
