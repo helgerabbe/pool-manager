@@ -9,9 +9,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, Download } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useMBKGlobalPrompts } from '@/hooks/useMBKGlobalPrompts';
+import { buildMarkdownForKategorie, downloadMarkdown } from '@/lib/mbkGlobalPromptsMarkdown';
 import MBKPromptManagerSidebar from './MBKPromptManagerSidebar';
 import MBKPromptManagerEditor from './MBKPromptManagerEditor';
 
@@ -57,16 +58,51 @@ export default function MBKPromptManagerView() {
   const selectedPrompt = visiblePrompts.find((p) => p.id === selectedId) || null;
   const isEmpty = !isLoading && visiblePrompts.length === 0;
 
+  const handleExportGlobal = () => {
+    const md = buildMarkdownForKategorie(visiblePrompts, 'global');
+    downloadMarkdown('mbk-globale-definitionen.md', md);
+  };
+  const handleExportSysteme = () => {
+    const md = buildMarkdownForKategorie(visiblePrompts, 'systembaustein');
+    downloadMarkdown('mbk-systembausteine.md', md);
+  };
+
   return (
     <div className="flex h-full overflow-hidden min-h-0">
       <aside className="w-[320px] shrink-0 border-r border-border bg-muted/20 overflow-y-auto min-h-0 h-full">
-        <div className="p-3 border-b border-border bg-card flex items-center justify-between sticky top-0 z-10">
-          <div className="text-sm font-semibold">Bibliothek</div>
-          {isEmpty && (
-            <Button size="sm" onClick={() => seed()} disabled={isSeeding} className="gap-1.5">
-              {isSeeding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-              Seed
-            </Button>
+        <div className="p-3 border-b border-border bg-card sticky top-0 z-10 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-semibold">Bibliothek</div>
+            {isEmpty && (
+              <Button size="sm" onClick={() => seed()} disabled={isSeeding} className="gap-1.5">
+                {isSeeding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                Seed
+              </Button>
+            )}
+          </div>
+          {!isEmpty && (
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 flex-1"
+                onClick={handleExportGlobal}
+                title="Lädt alle aktiven globalen Definitionen als Markdown-Datei."
+              >
+                <Download className="w-3.5 h-3.5" />
+                Global
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 flex-1"
+                onClick={handleExportSysteme}
+                title="Lädt alle sichtbaren, aktiven Systembausteine als Markdown-Datei."
+              >
+                <Download className="w-3.5 h-3.5" />
+                Bausteine
+              </Button>
+            </div>
           )}
         </div>
 
