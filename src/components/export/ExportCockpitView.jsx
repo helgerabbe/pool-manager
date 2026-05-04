@@ -29,6 +29,7 @@ import { Separator } from '@/components/ui/separator';
 import { RotateCcw, AlertCircle, CheckCircle2, Clock, ShieldCheck, Info, Pencil, Upload, RefreshCw, ChevronDown } from 'lucide-react';
 import HelpBadge from '@/components/ui/HelpBadge';
 import MissionBadge from '@/components/missionen/MissionBadge';
+import ExportErrorBadge from '@/components/exportcenter/ExportErrorBadge';
 import { isMissionApplicable } from '@/lib/missionen';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -183,6 +184,7 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                                       >
                                         {act.phase === 'Input' ? '📚' : act.phase === 'Übung' ? '✏️' : '🎯'} {actName}
                                       </button>
+                                      <ExportErrorBadge show={!!act.export_error} size="xs" />
                                       {isPending && <UndoButton activityId={act.id} />}
                                       <AktivitaetStatusBadge activity={act} />
                                     </div>
@@ -208,6 +210,7 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                                               <span className="text-muted-foreground flex-1 truncate">
                                                 👤 {master.titel || 'Master ohne Titel'}
                                               </span>
+                                              <ExportErrorBadge show={!!master.export_error} size="xs" />
                                               {masterPending && <UndoButton activityId={master.id} />}
                                               <AktivitaetStatusBadge activity={master} />
                                             </div>
@@ -259,6 +262,7 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                         {showMission && (
                           <MissionBadge missionId={aufgabe.mission_type} size="sm" showFallback />
                         )}
+                        <ExportErrorBadge show={!!aufgabe.export_error} size="xs" />
                         {isPending && <UndoButton activityId={aufgabe.id} entityType="allgemein" />}
                         <AktivitaetStatusBadge activity={aufgabe} />
                       </div>
@@ -308,6 +312,7 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                     🎯 {aufgabe.titel || 'Projektaufgabe ohne Titel'}
                     {aufgabe.aufgabentyp_projekt && <span className="ml-1 text-muted-foreground">({aufgabe.aufgabentyp_projekt})</span>}
                   </button>
+                  <ExportErrorBadge show={!!aufgabe.export_error} size="xs" />
                   {isPending && <UndoButton activityId={aufgabe.id} entityType="allgemein" />}
                   <AktivitaetStatusBadge activity={aufgabe} />
                 </div>
