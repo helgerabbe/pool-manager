@@ -134,23 +134,43 @@
       "default": 1,
       "description": "Schema-Version der lernpfade_konfiguration. 1 = legacy (items ohne instance_id). 2 = Phase 1 Dashboard-Epic (Instanz-IDs, parent_instance_id, B\u00fcndel-Hierarchie). 3 = Epic Semantische Sektoren (sektor_typ, themenfeld_id, titel_snapshot; bundle_config.modus). Wird vom Backfill backfillSemantischeSektoren auf 3 gesetzt; das Frontend kann anhand dieses Felds erkennen, ob die Migration f\u00fcr eine Einheit bereits gelaufen ist."
     },
-    "einheit_freigabe_status": {
+    "export_lifecycle_status": {
       "type": "string",
       "enum": [
         "draft",
-        "final_freigegeben"
+        "final_freigegeben",
+        "export_running",
+        "published"
       ],
       "default": "draft",
-      "description": "Schritt 3 des dreistufigen Freigabe-Workflows: 'draft' = Einheit noch in Bearbeitung. 'final_freigegeben' = alle 4 Dashboards wurden gepr\u00fcft (locked_for_export) und die Einheit als Ganzes freigegeben. Erst dieser Status sperrt die Inhalte (Tab 5 wird read-only). Die Lernpfad-Locks (LernpfadAufgabeMembership.pfad_status) bleiben davon unber\u00fchrt."
+      "description": "Single Source of Truth f\u00fcr den vierstufigen Export-Workflow einer Einheit. 'draft' = in Bearbeitung. 'final_freigegeben' = Schritt 3: alle 4 Dashboards gepr\u00fcft + Pre-Flight bestanden + Inhalte gesperrt; Aufhebung durch Admin/Fachschaftsleitung m\u00f6glich, solange das Export-Team noch nicht 'Export starten' geklickt hat. 'export_running' = Schritt 4a: Export-Center hat 'Export starten' ausgel\u00f6st; Aufhebung in der Einheit nicht mehr m\u00f6glich. 'published' = Schritt 4b: Export-Team hat 'In Moodle/Brian ver\u00f6ffentlicht' best\u00e4tigt \u2192 Versionierung der Einheit beginnt (ge\u00e4nderte Items erhalten 'modified'-Flags)."
     },
-    "einheit_freigegeben_at": {
+    "export_lifecycle_changed_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Zeitstempel der finalen Einheits-Freigabe (Schritt 3). Wird beim \u00dcbergang draft \u2192 final_freigegeben gesetzt und beim Entsperren wieder geleert."
+      "description": "Zeitstempel des letzten \u00dcbergangs in export_lifecycle_status."
     },
-    "einheit_freigegeben_by": {
+    "export_lifecycle_changed_by": {
       "type": "string",
-      "description": "E-Mail der Person, die die Einheit final freigegeben hat (Schritt 3)."
+      "description": "E-Mail der Person, die den letzten \u00dcbergang in export_lifecycle_status ausgel\u00f6st hat."
+    },
+    "export_started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel, an dem das Export-Team 'Export starten' geklickt hat (Schritt 4a)."
+    },
+    "export_started_by": {
+      "type": "string",
+      "description": "E-Mail des Export-Team-Mitglieds, das den Export gestartet hat."
+    },
+    "export_published_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel der manuellen Ver\u00f6ffentlichungs-Best\u00e4tigung (Schritt 4b). Markiert den Beginn der Versionierung."
+    },
+    "export_published_by": {
+      "type": "string",
+      "description": "E-Mail des Export-Team-Mitglieds, das die Ver\u00f6ffentlichung best\u00e4tigt hat."
     },
     "version": {
       "type": "integer",

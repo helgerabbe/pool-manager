@@ -1,27 +1,33 @@
 /**
  * EinheitFreigabeBlock.jsx
  *
- * Schritt 3 des dreistufigen Freigabe-Workflows.
+ * Schritt 3 des vierstufigen Export-Workflows.
  *
- * Kompakter Status-Block, der oben im Lernpfad-Architekt (Tab 7) angezeigt
- * wird. Visualisiert pro Lerntyp, ob das Dashboard bereits geprüft (gesperrt)
- * ist, und stellt — sobald alle 4 grün sind — den Button „Einheit final
- * freigeben" bereit. Im finalisierten Zustand zeigt der Block stattdessen
- * den „Freigabe aufheben"-Button an (nur für Admin/Fachschaft).
+ * Kompakter Status-Block oben im Lernpfad-Architekt (Tab 7). Zeigt:
+ *  - Status-Badge der Einheit (export_lifecycle_status).
+ *  - Übersicht der vier Dashboard-Pills (geprüft / nicht geprüft).
+ *  - Aktions-Buttons rechts:
+ *      • „Einheit final freigeben"  (im Status 'draft' aktiv, sobald 4/4 grün)
+ *      • „Freigabe aufheben"        (im Status 'final_freigegeben' aktiv;
+ *                                    nicht mehr nach 'export_running')
  *
- * Business-Logik bewusst klein gehalten: Der Block ruft nur die Backend-
- * Function `setEinheitFreigabeStatus` auf und invalidiert die relevanten
- * Queries — alle Folgewirkungen (Read-Only in Tab 5 etc.) ergeben sich aus
- * dem geänderten `einheit_freigabe_status` der Einheit.
+ * Pre-Flight (Phase B): vor dem Final-Release läuft `preflightFinalRelease`.
+ * Findet er aktive Bearbeitungs-Locks, zeigt der Confirm-Dialog die
+ * Bearbeiter-Liste und blockiert hart. Auch der eigentliche Server-Call
+ * antwortet mit 409 + Lock-Liste — beide Pfade landen im selben UI-State.
  */
 
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, Circle, Loader2, ShieldCheck, ShieldOff, Lock } from 'lucide-react';
+import { CheckCircle2, Circle, Loader2, ShieldCheck, ShieldOff, Lock, Truck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { useEinheitFreigabeStatus, EINHEIT_FREIGABE_STATUS } from '@/hooks/useEinheitFreigabeStatus';
+import { useEinheitFreigabeStatus } from '@/hooks/useEinheitFreigabeStatus';
+import {
+  EXPORT_LIFECYCLE_STATUS,
+  EXPORT_LIFECYCLE_LABELS,
+} from '@/lib/exportLifecycle';
 import EinheitFreigabeConfirmDialog from '@/components/lernpfade/EinheitFreigabeConfirmDialog';
 import InfoHint from '@/components/lernpfade/InfoHint';
 
@@ -48,38 +54,101 @@ function DashboardPill({ label, locked }) {
   );
 }
 
+function StatusBadge({ status }) {
+  const label = EXPORT_LIFECYCLE_LABELS[status] || EXPORT_LIFECYCLE_LABELS.draft;
+  const cls =
+    status === EXPORT_LIFECYCLE_STATUS.PUBLISHED
+      ? 'bg-blue-600 text-white border-transparent'
+      : status === EXPORT_LIFECYCLE_STATUS.EXPORT_RUNNING
+        ? 'bg-orange-500 text-white border-transparent'
+        : status === EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN
+          ? 'bg-emerald-600 text-white border-transparent'
+          : 'bg-slate-100 text-slate-700 border-slate-200';
+  const Icon =
+    status === EXPORT_LIFECYCLE_STATUS.EXPORT_RUNNING
+      ? Truck
+      : status === EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN ||
+          status === EXPORT_LIFECYCLE_STATUS.PUBLISHED
+        ? Lock
+        : ShieldOff;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 h-6 px-2 rounded-full border text-[11px] font-semibold ${cls}`}
+    >
+      <Icon className="w-3 h-3" />
+      {label}
+    </span>
+  );
+}
+
 export default function EinheitFreigabeBlock({ einheitId, darfFreigeben = false }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data, isLoading } = useEinheitFreigabeStatus(einheitId);
-  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const mutation = useMutation({
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [activeLocks, setActiveLocks] = useState([]);
+
+  // Pre-Flight (Lese-Endpoint, idempotent).
+  const preflightMutation = useMutation({
+    mutationFn: async () => {
+      const res = await base44.functions.invoke('preflightFinalRelease', { einheitId });
+      if (res?.data?.error) throw new Error(res.data.error);
+      return res?.data;
+    },
+    onSuccess: (result) => {
+      setActiveLocks(result?.activeLocks || []);
+      setConfirmOpen(true);
+    },
+    onError: (err) => {
+      toast({
+        variant: 'destructive',
+        title: 'Pre-Flight fehlgeschlagen',
+        description: err?.message || 'Bitte erneut versuchen.',
+      });
+    },
+  });
+
+  // Schreib-Aktion (Lock/Unlock).
+  const writeMutation = useMutation({
     mutationFn: async (newStatus) => {
       const res = await base44.functions.invoke('setEinheitFreigabeStatus', {
         einheitId,
         newStatus,
       });
-      if (res?.data?.error) throw new Error(res.data.error);
+      // Backend liefert 409 mit JSON-Body (code='ACTIVE_LOCKS' u. a.).
+      if (res?.data?.error) {
+        const err = new Error(res.data.error);
+        err.code = res.data.code;
+        err.activeLocks = res.data.activeLocks;
+        throw err;
+      }
       return res?.data;
     },
     onSuccess: (_res, newStatus) => {
       queryClient.invalidateQueries({ queryKey: ['einheitFreigabeStatus', einheitId] });
-      // Tab-5-Lock-Stati neu lesen: Inhalts-Sperre hängt jetzt am
-      // Einheit-Status und muss nach Lock/Unlock sofort greifen.
+      // Inhalts-Sperre der Aufgaben hängt jetzt an export_lifecycle_status.
       queryClient.invalidateQueries({ queryKey: ['aufgabeLock'] });
+      setConfirmOpen(false);
+      setActiveLocks([]);
       toast({
         title:
-          newStatus === EINHEIT_FREIGABE_STATUS.FINAL
+          newStatus === EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN
             ? 'Einheit final freigegeben'
             : 'Freigabe aufgehoben',
         description:
-          newStatus === EINHEIT_FREIGABE_STATUS.FINAL
+          newStatus === EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN
             ? 'Die Inhalte aller Aufgaben sind jetzt gesperrt.'
             : 'Die Inhalte können wieder bearbeitet werden.',
       });
     },
     onError: (err) => {
+      // Hard-Block-Fall: Server hat Live-Edits gefunden → in den Dialog überführen.
+      if (err.code === 'ACTIVE_LOCKS' && Array.isArray(err.activeLocks)) {
+        setActiveLocks(err.activeLocks);
+        setConfirmOpen(true);
+        return;
+      }
       toast({
         variant: 'destructive',
         title: 'Aktion fehlgeschlagen',
@@ -90,31 +159,30 @@ export default function EinheitFreigabeBlock({ einheitId, darfFreigeben = false 
 
   if (isLoading || !data) return null;
 
-  const isFinal = data.status === EINHEIT_FREIGABE_STATUS.FINAL;
-  const canRelease = darfFreigeben && data.allDashboardsLocked && !isFinal;
-  const canUnlock = darfFreigeben && isFinal;
+  const status = data.status;
+  const isFinal = data.isFinal;
+  const isContentLocked = data.isContentLocked;
+  const canEnterFinal =
+    darfFreigeben &&
+    status === EXPORT_LIFECYCLE_STATUS.DRAFT &&
+    data.allDashboardsLocked;
+  const canUndo = darfFreigeben && data.canUndoInUnit;
+
+  const handleOpenConfirm = () => {
+    setActiveLocks([]);
+    preflightMutation.mutate();
+  };
 
   return (
     <>
       <div
         className={`shrink-0 px-3 py-2 border-b border-border ${
-          isFinal ? 'bg-emerald-50/60' : 'bg-card'
+          isContentLocked ? 'bg-emerald-50/60' : 'bg-card'
         }`}
       >
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Status-Badge */}
-          <span
-            className={`inline-flex items-center gap-1 h-6 px-2 rounded-full border text-[11px] font-semibold ${
-              isFinal
-                ? 'bg-emerald-600 text-white border-transparent'
-                : 'bg-slate-100 text-slate-700 border-slate-200'
-            }`}
-          >
-            {isFinal ? <Lock className="w-3 h-3" /> : <ShieldOff className="w-3 h-3" />}
-            {isFinal ? 'Einheit final freigegeben' : 'Einheit in Bearbeitung'}
-          </span>
+          <StatusBadge status={status} />
 
-          {/* Dashboard-Übersicht (4 Pills) */}
           <span className="text-[11px] text-muted-foreground ml-1">Dashboards:</span>
           <div className="flex items-center gap-1 flex-wrap">
             {Object.entries(data.dashboards).map(([lt, locked]) => (
@@ -125,21 +193,21 @@ export default function EinheitFreigabeBlock({ einheitId, darfFreigeben = false 
             {data.lockedCount} / 4 geprüft
           </span>
 
-          <InfoHint title="Was passiert bei der finalen Freigabe?">
-            Die finale Einheits-Freigabe ist Schritt 3 des Workflows. Sie ist erst möglich,
-            wenn alle 4 Lerntyp-Dashboards geprüft (gesperrt) sind. Mit der Freigabe werden
-            zusätzlich die <strong>Inhalte aller Aufgaben</strong> gesperrt – Tab 5 wird
-            dann read-only. Über „Freigabe aufheben" lässt sich der Zustand wieder lösen,
-            ohne dass die Dashboards selbst entsperrt werden.
+          <InfoHint title="Wie funktioniert die finale Freigabe?">
+            Die finale Einheits-Freigabe ist erst möglich, wenn alle 4 Lerntyp-Dashboards
+            geprüft sind UND aktuell niemand mehr in einer Aufgabe oder einem Lernpaket
+            aktiv arbeitet. Mit der Freigabe werden die <strong>Inhalte aller Aufgaben,
+            Lernpakete und Aktivitäten</strong> gesperrt – Tabs 3, 4, 5 und 6 werden
+            read-only. „Freigabe aufheben" ist möglich, solange das Export-Team noch nicht
+            „Export starten" geklickt hat.
           </InfoHint>
 
-          {/* Aktions-Buttons rechts */}
           <div className="ml-auto flex items-center gap-1.5">
-            {!isFinal && (
+            {status === EXPORT_LIFECYCLE_STATUS.DRAFT && (
               <Button
                 size="sm"
-                onClick={() => setConfirmOpen(true)}
-                disabled={!canRelease || mutation.isPending}
+                onClick={handleOpenConfirm}
+                disabled={!canEnterFinal || preflightMutation.isPending || writeMutation.isPending}
                 className="gap-1.5 h-7 text-[11px] px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white border-transparent"
                 title={
                   !darfFreigeben
@@ -149,7 +217,7 @@ export default function EinheitFreigabeBlock({ einheitId, darfFreigeben = false 
                       : 'Einheit final freigeben'
                 }
               >
-                {mutation.isPending ? (
+                {preflightMutation.isPending ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
                 ) : (
                   <ShieldCheck className="w-3 h-3" />
@@ -161,8 +229,8 @@ export default function EinheitFreigabeBlock({ einheitId, darfFreigeben = false 
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => mutation.mutate(EINHEIT_FREIGABE_STATUS.DRAFT)}
-                disabled={!canUnlock || mutation.isPending}
+                onClick={() => writeMutation.mutate(EXPORT_LIFECYCLE_STATUS.DRAFT)}
+                disabled={!canUndo || writeMutation.isPending}
                 className="gap-1.5 h-7 text-[11px] px-2.5 border-red-300 text-red-700 hover:bg-red-50"
                 title={
                   !darfFreigeben
@@ -170,7 +238,7 @@ export default function EinheitFreigabeBlock({ einheitId, darfFreigeben = false 
                     : 'Finale Einheits-Freigabe aufheben'
                 }
               >
-                {mutation.isPending ? (
+                {writeMutation.isPending ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
                 ) : (
                   <ShieldOff className="w-3 h-3" />
@@ -178,14 +246,20 @@ export default function EinheitFreigabeBlock({ einheitId, darfFreigeben = false 
                 Freigabe aufheben
               </Button>
             )}
+            {(status === EXPORT_LIFECYCLE_STATUS.EXPORT_RUNNING ||
+              status === EXPORT_LIFECYCLE_STATUS.PUBLISHED) && (
+              <span className="text-[11px] text-muted-foreground italic">
+                Aufhebung nur über das Export-Center
+              </span>
+            )}
           </div>
         </div>
 
-        {isFinal && data.freigegeben_by && (
+        {(isFinal || isContentLocked) && data.changed_by && (
           <div className="mt-1 text-[11px] text-emerald-800/80">
-            Freigegeben von <strong>{data.freigegeben_by}</strong>
-            {data.freigegeben_at
-              ? ` am ${new Date(data.freigegeben_at).toLocaleString('de-DE')}`
+            Freigegeben von <strong>{data.changed_by}</strong>
+            {data.changed_at
+              ? ` am ${new Date(data.changed_at).toLocaleString('de-DE')}`
               : ''}
             .
           </div>
@@ -194,12 +268,15 @@ export default function EinheitFreigabeBlock({ einheitId, darfFreigeben = false 
 
       <EinheitFreigabeConfirmDialog
         open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        busy={mutation.isPending}
-        onConfirm={() => {
-          setConfirmOpen(false);
-          mutation.mutate(EINHEIT_FREIGABE_STATUS.FINAL);
+        onOpenChange={(v) => {
+          setConfirmOpen(v);
+          if (!v) setActiveLocks([]);
         }}
+        busy={writeMutation.isPending}
+        preflightBusy={preflightMutation.isPending}
+        activeLocks={activeLocks}
+        onRecheck={() => preflightMutation.mutate()}
+        onConfirm={() => writeMutation.mutate(EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN)}
       />
     </>
   );

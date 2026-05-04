@@ -1,24 +1,28 @@
 /**
  * setEinheitFreigabeStatus
  *
- * Schritt 3 des dreistufigen Freigabe-Workflows: setzt den finalen Status der
- * gesamten Einheit (`einheit_freigabe_status`).
+ * Phase A+B: schaltet das neue Feld `export_lifecycle_status` einer Einheit
+ * zwischen 'draft' ↔ 'final_freigegeben' um.
  *
  * Payload:
- *   { einheitId: string,
- *     newStatus: 'final_freigegeben' | 'draft' }
+ *   { einheitId: string, newStatus: 'final_freigegeben' | 'draft' }
  *
  * Verhalten:
  *   - newStatus === 'final_freigegeben' (LOCK):
- *       Server prüft, dass ALLE 4 Lerntyp-Dashboards mindestens eine
- *       Membership mit pfad_status='locked_for_export' haben (= geprüft).
- *       Erlaubt für Administrator + Fachschaftsleitung (im Fach der Einheit).
- *   - newStatus === 'draft' (UNLOCK):
- *       Hebt die finale Freigabe auf. Dashboards bleiben unverändert
- *       (sie verlieren ihren locked_for_export-Status NICHT).
- *       Erlaubt für Administrator + Fachschaftsleitung (im Fach).
+ *       * Alle 4 Lerntyp-Dashboards müssen mindestens einen Membership-Eintrag
+ *         mit pfad_status='locked_for_export' haben.
+ *       * Pre-Flight: KEINE aktiven Edit-Locks (Aufgaben, Lernpakete,
+ *         Master-Aufgaben, Structural-Lock) — sonst 409 mit Bearbeiter-Liste.
+ *       * Erlaubt für Administrator + Fachschaftsleitung (Fach der Einheit).
+ *   - newStatus === 'draft' (UNDO):
+ *       * Nur erlaubt, solange aktueller Status 'final_freigegeben' ist —
+ *         sobald das Export-Center 'Export starten' geklickt hat
+ *         (export_lifecycle_status='export_running'), ist das Aufheben in
+ *         der Einheit gesperrt (409 EXPORT_ALREADY_STARTED).
+ *       * Erlaubt für Administrator + Fachschaftsleitung (Fach der Einheit).
  *
- * Antwort: { ok: true, newStatus, freigegeben_at, freigegeben_by }
+ * Antwort: { ok: true, newStatus, changed_at, changed_by }
+ * Fehler:  { error, code?, ... }   (Status 400/403/404/409/500)
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
@@ -26,7 +30,6 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 async function logAuditEvent(base44, event) {
   try {
     if (!event.user || !event.action || !event.resource || !event.resourceId || !event.status) {
-      console.warn('[AUDIT] incomplete event', event);
       return;
     }
     await base44.asServiceRole.entities.AuditLog.create({
@@ -45,24 +48,113 @@ async function logAuditEvent(base44, event) {
   }
 }
 
-const VALID_LERNTYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
-const STATUS_FINAL = 'final_freigegeben';
+// Synchron halten mit src/lib/exportLifecycle.js (NO LOCAL IMPORTS).
 const STATUS_DRAFT = 'draft';
-const VALID_STATUS = [STATUS_FINAL, STATUS_DRAFT];
+const STATUS_FINAL = 'final_freigegeben';
+const STATUS_EXPORT_RUNNING = 'export_running';
+const STATUS_PUBLISHED = 'published';
+const VALID_TARGET_STATUS = [STATUS_FINAL, STATUS_DRAFT];
+
+const VALID_LERNTYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
+const PFAD_LOCKED = 'locked_for_export';
+const STALE_LOCK_MINUTES = 60;
 
 const ROLLEN = { ADMIN: 'Administrator', FACHSCHAFT: 'Fachschaftsleitung' };
-
 function isAdmin(authUser, profil) {
   if (authUser?.role === 'Administrator' || authUser?.role === 'admin') return true;
   return profil?.rolle === ROLLEN.ADMIN;
 }
-
 function isFachschaftFuerFach(profil, fach) {
   if (profil?.rolle !== ROLLEN.FACHSCHAFT) return false;
   const faecher = Array.isArray(profil.fachbereich_zustaendigkeit)
     ? profil.fachbereich_zustaendigkeit
     : [];
   return faecher.includes(fach);
+}
+
+function isLockActive(lockedAt) {
+  if (!lockedAt) return false;
+  const ts = new Date(lockedAt).getTime();
+  if (isNaN(ts)) return false;
+  return Date.now() - ts < STALE_LOCK_MINUTES * 60 * 1000;
+}
+
+/**
+ * Sammelt alle aktiven Edit-Locks einer Einheit. Identisch zu
+ * preflightFinalRelease — bewusst dupliziert (NO LOCAL IMPORTS).
+ */
+async function collectActiveLocks(base44, einheit, currentUserEmail) {
+  const activeLocks = [];
+
+  const aufgaben = await base44.asServiceRole.entities.AllgemeineAufgabe.filter({
+    einheit_id: einheit.id,
+  });
+  for (const a of aufgaben || []) {
+    if (a.locked_by && isLockActive(a.locked_at)) {
+      activeLocks.push({
+        scope: 'aufgabe',
+        id: a.id,
+        titel: a.titel || '(ohne Titel)',
+        user_email: a.locked_by,
+        locked_at: a.locked_at || null,
+      });
+    }
+  }
+
+  const themenfelder = await base44.asServiceRole.entities.Themenfeld.filter({
+    einheit_id: einheit.id,
+  });
+  const themenfeldIds = new Set((themenfelder || []).map((t) => t.id));
+  const allLernpakete = await base44.asServiceRole.entities.Lernpakete.list();
+  const lernpakete = (allLernpakete || []).filter(
+    (lp) =>
+      lp.einheit_id === einheit.id ||
+      (lp.themenfeld_id && themenfeldIds.has(lp.themenfeld_id))
+  );
+  const lernpaketIds = new Set(lernpakete.map((lp) => lp.id));
+  for (const lp of lernpakete) {
+    if (lp.is_locked && lp.locked_by_email && isLockActive(lp.locked_at)) {
+      activeLocks.push({
+        scope: 'lernpaket',
+        id: lp.id,
+        titel: lp.titel_des_pakets || '(unbenanntes Paket)',
+        user_email: lp.locked_by_email,
+        locked_at: lp.locked_at || null,
+      });
+    }
+  }
+
+  if (lernpaketIds.size > 0) {
+    const allMasters = await base44.asServiceRole.entities.MasterAufgabe.list();
+    for (const m of allMasters || []) {
+      if (!m.lock_status || !m.locked_by_user) continue;
+      if (!lernpaketIds.has(m.lernpaket_id)) continue;
+      if (!isLockActive(m.locked_at)) continue;
+      activeLocks.push({
+        scope: 'master_aufgabe',
+        id: m.id,
+        titel: m.titel || '(Master-Aufgabe)',
+        user_email: m.locked_by_user,
+        locked_at: m.locked_at || null,
+      });
+    }
+  }
+
+  if (
+    einheit.structural_lock &&
+    einheit.structural_lock !== currentUserEmail &&
+    isLockActive(einheit.structural_locked_at)
+  ) {
+    activeLocks.push({
+      scope: 'structural',
+      id: einheit.id,
+      titel: 'Strukturbearbeitung der Einheit',
+      user_email: einheit.structural_lock,
+      locked_at: einheit.structural_locked_at || null,
+    });
+  }
+
+  return activeLocks;
 }
 
 Deno.serve(async (req) => {
@@ -73,7 +165,7 @@ Deno.serve(async (req) => {
 
     const { einheitId, newStatus } = await req.json();
     if (!einheitId) return Response.json({ error: 'einheitId required' }, { status: 400 });
-    if (!VALID_STATUS.includes(newStatus)) {
+    if (!VALID_TARGET_STATUS.includes(newStatus)) {
       return Response.json({ error: 'invalid newStatus' }, { status: 400 });
     }
 
@@ -85,7 +177,7 @@ Deno.serve(async (req) => {
     }
     if (!einheit) return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
 
-    // RBAC: nur Admin oder Fachschaft (im Fach).
+    // RBAC: Admin oder Fachschaft im Fach.
     const profile = await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email });
     const profil = profile?.[0] || null;
     const allowed = isAdmin(user, profil) || isFachschaftFuerFach(profil, einheit.fach);
@@ -96,15 +188,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Pre-Flight für LOCK: alle 4 Lerntypen müssen mindestens einen LOCKED-Eintrag haben.
+    const currentStatus = einheit.export_lifecycle_status || STATUS_DRAFT;
+
     if (newStatus === STATUS_FINAL) {
+      // 1) Pre-Flight: alle 4 Dashboards geprüft?
       const memberships = await base44.asServiceRole.entities.LernpfadAufgabeMembership.filter({
         einheit_id: einheitId,
       });
       const lockedLerntypen = new Set(
-        (memberships || [])
-          .filter((m) => m.pfad_status === 'locked_for_export')
-          .map((m) => m.lerntyp)
+        (memberships || []).filter((m) => m.pfad_status === PFAD_LOCKED).map((m) => m.lerntyp)
       );
       const fehlend = VALID_LERNTYPEN.filter((lt) => !lockedLerntypen.has(lt));
       if (fehlend.length > 0) {
@@ -117,22 +209,69 @@ Deno.serve(async (req) => {
           { status: 409 }
         );
       }
+
+      // 2) Pre-Flight: keine aktiven Live-Edits.
+      const activeLocks = await collectActiveLocks(base44, einheit, user.email);
+      if (activeLocks.length > 0) {
+        return Response.json(
+          {
+            error: 'Die Einheit wird gerade von anderen Personen bearbeitet.',
+            code: 'ACTIVE_LOCKS',
+            activeLocks,
+          },
+          { status: 409 }
+        );
+      }
+
+      // 3) State-Übergang nur aus 'draft' erlaubt.
+      if (currentStatus !== STATUS_DRAFT) {
+        return Response.json(
+          {
+            error:
+              currentStatus === STATUS_FINAL
+                ? 'Die Einheit ist bereits final freigegeben.'
+                : 'Die Einheit befindet sich bereits im Export — Aufhebung nur über das Export-Center.',
+            code:
+              currentStatus === STATUS_FINAL
+                ? 'ALREADY_FINAL'
+                : 'EXPORT_ALREADY_STARTED',
+            currentStatus,
+          },
+          { status: 409 }
+        );
+      }
+    } else if (newStatus === STATUS_DRAFT) {
+      // Aufheben: nur, solange Einheit in 'final_freigegeben' ist.
+      if (currentStatus === STATUS_EXPORT_RUNNING || currentStatus === STATUS_PUBLISHED) {
+        return Response.json(
+          {
+            error:
+              'Der Export wurde bereits gestartet. Aufhebung nur über das Export-Center möglich.',
+            code: 'EXPORT_ALREADY_STARTED',
+            currentStatus,
+          },
+          { status: 409 }
+        );
+      }
+      if (currentStatus !== STATUS_FINAL) {
+        // Idempotent: bereits draft → no-op, aber kein Fehler.
+        return Response.json({
+          ok: true,
+          newStatus: STATUS_DRAFT,
+          changed_at: einheit.export_lifecycle_changed_at || null,
+          changed_by: einheit.export_lifecycle_changed_by || null,
+          noop: true,
+        });
+      }
     }
 
+    // ── Update ──────────────────────────────────────────────────────────
     const nowIso = new Date().toISOString();
-    const update =
-      newStatus === STATUS_FINAL
-        ? {
-            einheit_freigabe_status: STATUS_FINAL,
-            einheit_freigegeben_at: nowIso,
-            einheit_freigegeben_by: user.email,
-          }
-        : {
-            einheit_freigabe_status: STATUS_DRAFT,
-            einheit_freigegeben_at: null,
-            einheit_freigegeben_by: null,
-          };
-
+    const update = {
+      export_lifecycle_status: newStatus,
+      export_lifecycle_changed_at: nowIso,
+      export_lifecycle_changed_by: user.email,
+    };
     await base44.asServiceRole.entities.Einheiten.update(einheitId, update);
 
     await logAuditEvent(base44, {
@@ -141,9 +280,13 @@ Deno.serve(async (req) => {
       resource: 'Einheiten',
       resourceId: einheitId,
       changes: {
-        event: newStatus === STATUS_FINAL ? 'einheit_final_freigegeben' : 'einheit_freigabe_aufgehoben',
+        event:
+          newStatus === STATUS_FINAL
+            ? 'einheit_final_freigegeben'
+            : 'einheit_freigabe_aufgehoben',
         fach: einheit.fach,
-        einheit_freigabe_status: newStatus,
+        from: currentStatus,
+        to: newStatus,
       },
       status: 'success',
     });
@@ -151,8 +294,8 @@ Deno.serve(async (req) => {
     return Response.json({
       ok: true,
       newStatus,
-      freigegeben_at: update.einheit_freigegeben_at,
-      freigegeben_by: update.einheit_freigegeben_by,
+      changed_at: nowIso,
+      changed_by: user.email,
     });
   } catch (error) {
     console.error('[setEinheitFreigabeStatus] Fehler:', error);
