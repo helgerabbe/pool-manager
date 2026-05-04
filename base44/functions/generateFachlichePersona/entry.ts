@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'einheitId fehlt' }, { status: 400 });
     }
 
-    // Einheit laden (Fach + Jahrgang).
+    // Einheit laden (Fach + Jahrgang + Lernlandkarte).
     const einheiten = await base44.asServiceRole.entities.Einheiten.filter({ id: einheitId });
     const einheit = einheiten?.[0];
     if (!einheit) {
@@ -39,6 +39,39 @@ Deno.serve(async (req) => {
     }
     const fach = einheit.fach || '(Fach unbekannt)';
     const jahrgang = einheit.jahrgangsstufe || '(Jahrgang unbekannt)';
+    const titel = einheit.titel_der_einheit || '(ohne Titel)';
+    const gesamtziele = Array.isArray(einheit.gesamtziele) ? einheit.gesamtziele.filter(Boolean) : [];
+
+    // Lernlandkarte zusammenstellen: Themenfelder + Lernpakete + Lernziele.
+    // Die KI braucht das, um sich auf die konkreten Inhalte DIESER Einheit
+    // beziehen zu können (statt allgemein über das Fach zu schwadronieren).
+    const [themenfelder, lernpakete] = await Promise.all([
+      base44.asServiceRole.entities.Themenfeld.filter({ einheit_id: einheitId }),
+      base44.asServiceRole.entities.Lernpakete.filter({ einheit_id: einheitId }),
+    ]);
+    const paketIds = (lernpakete || []).map((p) => p.id);
+    const lernziele = paketIds.length > 0
+      ? await base44.asServiceRole.entities.Lernziele.filter({ lernpaket_id: { $in: paketIds } })
+      : [];
+
+    const tfSorted = [...(themenfelder || [])].sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
+    const lpSorted = [...(lernpakete || [])].sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0));
+    const lernlandkarteLines = [];
+    for (const tf of tfSorted) {
+      lernlandkarteLines.push(`### Themenfeld: ${tf.titel || '(ohne Titel)'}`);
+      const paketeDesTF = lpSorted.filter((lp) => lp.themenfeld_id === tf.id);
+      for (const lp of paketeDesTF) {
+        lernlandkarteLines.push(`  - Lernpaket: ${lp.titel_des_pakets || '(ohne Titel)'}`);
+        const ziele = lernziele.filter((z) => z.lernpaket_id === lp.id);
+        for (const z of ziele) {
+          const text = z.schueler_uebersetzung || z.formulierung_fachsprache || '';
+          if (text) lernlandkarteLines.push(`    • ${text}`);
+        }
+      }
+    }
+    const lernlandkarteBlock = lernlandkarteLines.length > 0
+      ? lernlandkarteLines.join('\n')
+      : '(noch keine Lernlandkarte vorhanden)';
 
     // Generator-Anweisung aus dem MBK-Prompt-Manager laden.
     const globalPrompts = await base44.asServiceRole.entities.MBKGlobalPrompt.filter({
@@ -51,15 +84,28 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Prompt für die KI zusammenbauen: Generator-Regeln + konkrete Einheit.
+    // Prompt für die KI zusammenbauen: Generator-Regeln + konkrete Einheit
+    // inkl. Lernlandkarte, damit der Persona-Text sich auf DIESE Einheit
+    // bezieht (und nicht generisch auf "Mathematik in Klasse 9").
+    const gesamtzieleBlock = gesamtziele.length > 0
+      ? gesamtziele.map((g) => `- ${g}`).join('\n')
+      : '(keine Gesamtziele formuliert)';
+
     const fullPrompt = [
       generatorPrompt.prompt_text,
       '',
       '---',
       '',
-      `Konkrete Einheit, für die du die Fachliche Persona jetzt vollständig ausformulieren sollst:`,
+      'Konkrete Einheit, für die du die Fachliche Persona jetzt vollständig ausformulieren sollst:',
       `- Fach: ${fach}`,
       `- Jahrgangsstufe: ${jahrgang}`,
+      `- Titel der Einheit: ${titel}`,
+      '',
+      'Gesamtziele dieser Einheit:',
+      gesamtzieleBlock,
+      '',
+      'Lernlandkarte dieser Einheit (Themenfelder → Lernpakete → Lernziele):',
+      lernlandkarteBlock,
       '',
       'Liefere den Persona-Text exakt im oben spezifizierten Markdown-Ausgabeformat. Keine Vorrede, keine Rückfragen, keine Platzhalter — nur den fertigen Persona-Text.',
     ].join('\n');
