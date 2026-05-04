@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import LernpfadeSektor from '@/components/lernpfade/LernpfadeSektor';
 import InfoHint from '@/components/lernpfade/InfoHint';
 import EinheitFreigabeBlock from '@/components/lernpfade/EinheitFreigabeBlock';
+import DashboardDriftBanner from '@/components/lernpfade/DashboardDriftBanner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
@@ -266,6 +267,8 @@ export default function LernpfadeArchitekt({
   isStructuralEditingActive = false,
   isEndingEdit = false,
   onEndEditing,
+  // Etappe 1+2: Drift-Report für den aktuell aktiven Lerntyp.
+  driftForActiveLerntyp = null,
 }) {
   const sektoren = konfiguration?.[activeLernTyp] || [];
   const aktivLabel = LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label;
@@ -380,6 +383,10 @@ export default function LernpfadeArchitekt({
       {/* Canvas */}
       <div ref={canvasScrollRef} className="flex-1 overflow-y-auto p-4 bg-muted/20 min-h-0">
         {inlineReleaseRow}
+        <DashboardDriftBanner
+          lerntypReport={driftForActiveLerntyp}
+          lerntypLabel={aktivLabel}
+        />
         {sektoren.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full min-h-[260px] p-6 text-center rounded-xl border-2 border-dashed border-border bg-card/60">
             <p className="text-sm font-medium text-foreground/70">

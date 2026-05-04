@@ -32,6 +32,7 @@ import { useLernpfadStatus } from '@/hooks/useLernpfadStatus';
 import { useDashboardSync } from '@/hooks/useDashboardSync';
 import { useDashboardDragAndDrop } from '@/hooks/useDashboardDragAndDrop';
 import { useDashboardRelease } from '@/hooks/useDashboardRelease';
+import { useDashboardDrift } from '@/hooks/useDashboardDrift';
 import { PFAD_STATUS } from '@/lib/pfadStatus';
 import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
@@ -204,6 +205,17 @@ export default function LernpfadeCockpit({
     () => ({ aufgabenById, lernpaketeById }),
     [aufgabenById, lernpaketeById]
   );
+
+  // Etappe 1+2: Drift-Detector — pure Diagnose über die Dashboard-Konfiguration
+  // gegen die aktuelle Strukturwirklichkeit (Themenfelder, Aufgaben, Lernpakete).
+  // Banner-Anzeige im Architekt; keine Schreibaktionen in dieser Etappe.
+  const driftReport = useDashboardDrift({
+    konfiguration,
+    themenfelder,
+    aufgaben,
+    lernpakete,
+  });
+  const driftForActiveLerntyp = driftReport?.[activeLernTyp] || null;
   const getAmpelStatusForItem = useCallback(
     (item) => getAmpelStatus(item, ampelCtx),
     [ampelCtx]
@@ -861,6 +873,7 @@ export default function LernpfadeCockpit({
               isStructuralEditingActive={isStructuralEditingActive}
               isEndingEdit={isEndingEdit}
               onEndEditing={onEndEditing}
+              driftForActiveLerntyp={driftForActiveLerntyp}
             />
           </main>
         </div>
