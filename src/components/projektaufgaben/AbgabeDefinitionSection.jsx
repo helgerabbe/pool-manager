@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Sparkles, Loader2, Save, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
+import { updateAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
 
 // ── Verfügbare Standardformate ──
 const STANDARD_FORMATE = [
@@ -80,6 +82,7 @@ function RubrikRow({ rubrik, index, onChange, onDelete, kannBearbeiten }) {
 
 // ── Haupt-Komponente ──
 export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
+  const queryClient = useQueryClient();
   const [outputFormats, setOutputFormats] = useState([]);
   const [customFormat, setCustomFormat]   = useState('');
   const [qualityFocus, setQualityFocus]   = useState('');
@@ -139,7 +142,8 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
       const result = response.data;
       if (result?.rubrics && Array.isArray(result.rubrics)) {
         setRubrics(result.rubrics);
-        await base44.entities.AllgemeineAufgabe.update(aufgabe.id, { rubric_criteria: result.rubrics });
+        await updateAllgemeineAufgabe(aufgabe.id, { rubric_criteria: result.rubrics });
+        queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
         toast.success('Rubriken generiert und gespeichert!');
       } else {
         toast.error('KI hat kein gültiges Format zurückgegeben.');
@@ -156,13 +160,17 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
     try {
       // Validierung: rubric_criteria muss immer ein Array sein
       const rubricsToSave = Array.isArray(rubrics) ? rubrics : [];
-      
-      await base44.entities.AllgemeineAufgabe.update(aufgabe.id, {
+
+      // Wichtig: Über den Service (updateActivitySecure) speichern, NICHT direkt
+      // via SDK – sonst greift der Bearbeitungs-Lock der Projektaufgabe nicht
+      // und das Backend lehnt das Update ab.
+      await updateAllgemeineAufgabe(aufgabe.id, {
         output_formats: outputFormats,
         custom_format:  customFormat,
         quality_focus:  qualityFocus,
         rubric_criteria: rubricsToSave,
       });
+      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
       toast.success('Gespeichert');
     } catch (err) {
       toast.error('Fehler beim Speichern: ' + err.message);
