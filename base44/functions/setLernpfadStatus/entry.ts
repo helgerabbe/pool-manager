@@ -57,6 +57,61 @@ const PFAD_STATUS_LOCKED = 'locked_for_export';
 const PFAD_STATUS_DRAFT = 'draft';
 const VALID_STATUS = [PFAD_STATUS_LOCKED, PFAD_STATUS_DRAFT];
 
+// ── Phase E.1/E.2: Sektor-Signature-Hash (inline) ──────────────────
+// Synchron halten mit src/lib/sektorSignature.js. Backend-Functions
+// dürfen keine lokalen Imports verwenden (siehe Coding-Instruktionen),
+// daher liegt hier eine bewusste Duplikation der Hash-Logik. Änderungen
+// IMMER an beiden Stellen vornehmen, sonst driften die Hashes auseinander
+// und alle bestehenden Locks würden False-Positive-Drift melden.
+function _canonicalize(value) {
+  if (value === null || value === undefined) return 'null';
+  if (typeof value === 'number') return Number.isFinite(value) ? String(value) : 'null';
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'string') return JSON.stringify(value);
+  if (Array.isArray(value)) return '[' + value.map(_canonicalize).join(',') + ']';
+  if (typeof value === 'object') {
+    const keys = Object.keys(value).sort();
+    return '{' + keys.map((k) => JSON.stringify(k) + ':' + _canonicalize(value[k])).join(',') + '}';
+  }
+  return 'null';
+}
+function _fnv1a64Hex(str) {
+  let hash = 0xcbf29ce484222325n;
+  const prime = 0x100000001b3n;
+  const mask = 0xffffffffffffffffn;
+  for (let i = 0; i < str.length; i += 1) {
+    hash ^= BigInt(str.charCodeAt(i));
+    hash = (hash * prime) & mask;
+  }
+  return hash.toString(16).padStart(16, '0');
+}
+function _normalizeItem(item) {
+  if (!item || typeof item !== 'object') return null;
+  const out = {
+    type: item.type ?? null,
+    ref_id: item.ref_id ?? null,
+    parent_instance_id: item.parent_instance_id ?? null,
+  };
+  const bc = item.bundle_config;
+  if (bc && typeof bc === 'object') {
+    const bcOut = {};
+    if (typeof bc.erforderliche_anzahl === 'number') bcOut.erforderliche_anzahl = bc.erforderliche_anzahl;
+    if (typeof bc.modus === 'string') bcOut.modus = bc.modus;
+    if (Object.keys(bcOut).length > 0) out.bundle_config = bcOut;
+  }
+  return out;
+}
+function computeSektorSignature(sektor) {
+  if (!sektor || typeof sektor !== 'object') return _fnv1a64Hex('null');
+  const items = Array.isArray(sektor.items) ? sektor.items : [];
+  const normalized = {
+    sektor_typ: sektor.sektor_typ ?? null,
+    themenfeld_id: sektor.themenfeld_id ?? null,
+    items: items.map(_normalizeItem).filter(Boolean),
+  };
+  return _fnv1a64Hex(_canonicalize(normalized));
+}
+
 // In Deno gibt es kein Path-Alias '@/...'. Wir duplizieren die wenigen
 // RBAC-Konstanten lokal, damit die Function ohne lokale Imports auskommt
 // (siehe Backend-Coding-Instruktionen: NO LOCAL IMPORTS).
@@ -137,18 +192,46 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ── Phase E.2: Sektor-Signaturen für den Lerntyp einfrieren ────────
+    // Wir berechnen sie nur beim LOCK-Übergang. Beim UNLOCK bleibt die
+    // last_export_signature absichtlich erhalten — sie ist der Anker
+    // für den späteren Drift-Vergleich nach erneuter Bearbeitung.
+    let sektorSignatureMap = null;
+    if (newStatus === PFAD_STATUS_LOCKED) {
+      const konfig = einheit.lernpfade_konfiguration || {};
+      const sektoren = Array.isArray(konfig[lerntyp]) ? konfig[lerntyp] : [];
+      sektorSignatureMap = new Map();
+      for (const sektor of sektoren) {
+        if (!sektor?.sektor_id) continue;
+        sektorSignatureMap.set(sektor.sektor_id, computeSektorSignature(sektor));
+      }
+    }
+
     // ── Update ──────────────────────────────────────────────────────────
     const memberships = await base44.asServiceRole.entities.LernpfadAufgabeMembership.filter({
       einheit_id: einheitId,
       lerntyp,
     });
 
+    const nowIso = new Date().toISOString();
     let updated = 0;
     for (const m of memberships || []) {
-      if (m.pfad_status === newStatus) continue;
-      await base44.asServiceRole.entities.LernpfadAufgabeMembership.update(m.id, {
-        pfad_status: newStatus,
-      });
+      const patch = {};
+      if (m.pfad_status !== newStatus) {
+        patch.pfad_status = newStatus;
+      }
+      if (newStatus === PFAD_STATUS_LOCKED) {
+        // Beim Lock: Signatur des Sektors einfrieren + geprueft_at setzen.
+        const sig = sektorSignatureMap?.get(m.sektor_id) || null;
+        if (sig && m.last_export_signature !== sig) {
+          patch.last_export_signature = sig;
+        }
+        if (!m.geprueft_at) {
+          patch.geprueft_at = nowIso;
+        }
+      }
+      if (Object.keys(patch).length === 0) continue;
+      await base44.asServiceRole.entities.LernpfadAufgabeMembership.update(m.id, patch);
       updated += 1;
     }
 
