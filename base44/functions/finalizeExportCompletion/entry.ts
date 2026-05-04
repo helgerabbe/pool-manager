@@ -78,6 +78,16 @@ Deno.serve(async (req) => {
 
     const now = new Date().toISOString();
 
+    // Aktuellen Lifecycle-Status der Einheit für sauberes from→to-Logging
+    // erfassen, BEVOR wir den Reset auf 'draft' schreiben.
+    let einheitVorReset;
+    try {
+      einheitVorReset = await base44.asServiceRole.entities.Einheiten.get(einheitId);
+    } catch (_err) {
+      einheitVorReset = null;
+    }
+    const lifecycleFrom = einheitVorReset?.export_lifecycle_status || 'draft';
+
     // ── Items resolven (Tenant-Isolation auf einheit_id) ──────────────
     const lernpakete = await base44.asServiceRole.entities.Lernpakete.filter({
       einheit_id: einheitId,
@@ -173,15 +183,21 @@ Deno.serve(async (req) => {
       last_synced_at: now,
     });
 
-    // Audit
+    // Audit — inkl. expliziter Lifecycle-Transition (from/to), damit der
+    // Übergang `export_running → draft` (bzw. `final_freigegeben → draft`)
+    // im AuditLog genauso nachvollziehbar ist wie die Übergänge in
+    // setEinheitFreigabeStatus / startExportRun / confirmExportPublished.
     try {
       await base44.asServiceRole.entities.AuditLog.create({
         user_email: user.email,
-        action: 'UPDATE',
+        action: 'PUBLISH',
         resource_type: 'Einheiten',
         resource_id: einheitId,
         changes: {
+          event: 'export_finalized',
           finalize_export: true,
+          from: lifecycleFrom,
+          to: 'draft',
           synced_count: syncedCount,
           error_count: errorCount,
           sektor_error_count: sektorErrorCount,
