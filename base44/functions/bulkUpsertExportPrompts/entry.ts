@@ -33,7 +33,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const ALLOWED_ROLES = new Set(['admin', 'Administrator', 'Moodle-Designer']);
-const ALLOWED_PROMPT_TYPES = new Set(['nucleus', 'persona', 'sektor_anweisung', 'erstellungspaket']);
+const ALLOWED_PROMPT_TYPES = new Set(['nucleus', 'persona', 'sektor_struktur', 'sektor_anweisung', 'erstellungspaket']);
 
 Deno.serve(async (req) => {
   try {
