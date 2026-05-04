@@ -72,9 +72,72 @@ Deno.serve(async (req) => {
       locked_at: null,
     });
 
+    // ── 7. Etappe 4: Anti-Drift-Cleanup in lernpfade_konfiguration ───────
+    // Verhindert Ghost-Items: alle Verweise auf das soeben getombsteinte
+    // Lernpaket aus den vier Dashboards entfernen (Items mit ref_id ===
+    // lernpaket_id, egal ob Root- oder Bündel-Children). Sektoren bleiben
+    // stehen – die werden nicht durch das Lernpaket-Delete invalidiert.
+    let dashboardCleanup = { removedItemCount: 0, persisted: false };
+    try {
+      const konfig = einheit.lernpfade_konfiguration || null;
+      if (konfig && typeof konfig === 'object') {
+        let changed = false;
+        let removed = 0;
+        const next = {};
+        for (const lt of ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert']) {
+          const sektoren = Array.isArray(konfig[lt]) ? konfig[lt] : [];
+          next[lt] = sektoren.map((s) => {
+            const items = Array.isArray(s?.items) ? s.items : [];
+            const filtered = items.filter((it) => {
+              if (it?.type === 'aufgabe' && it.ref_id === lernpaket_id) {
+                removed += 1;
+                return false;
+              }
+              return true;
+            });
+            if (filtered.length !== items.length) {
+              changed = true;
+              return { ...s, items: filtered };
+            }
+            return s;
+          });
+        }
+        if (changed) {
+          await base44.entities.Einheiten.update(einheit.id, {
+            lernpfade_konfiguration: next,
+          });
+          dashboardCleanup = { removedItemCount: removed, persisted: true };
+        }
+      }
+    } catch (err) {
+      // Nicht abbrechen – Hauptaktion (Tombstone) ist erfolgreich.
+      console.warn('[deleteLernpaketWithTombstone] Dashboard-Cleanup fehlgeschlagen:', err?.message);
+    }
+
+    // ── 8. Junction-Cleanup ──────────────────────────────────────────────
+    // LernpfadAufgabeMembership-Einträge, die auf dieses Lernpaket zeigen,
+    // entfernen. Sonst zeigt der pfad_status weiter „locked_for_export" für
+    // ein nicht mehr existierendes Item.
+    let membershipDeleted = 0;
+    try {
+      const memberships = await base44.entities.LernpfadAufgabeMembership.filter({
+        einheit_id: einheit.id,
+        aufgabe_id: lernpaket_id,
+      });
+      if (memberships.length > 0) {
+        const results = await Promise.allSettled(
+          memberships.map((m) => base44.entities.LernpfadAufgabeMembership.delete(m.id))
+        );
+        membershipDeleted = results.filter((r) => r.status === 'fulfilled').length;
+      }
+    } catch (err) {
+      console.warn('[deleteLernpaketWithTombstone] Membership-Cleanup fehlgeschlagen:', err?.message);
+    }
+
     console.info(
       `[deleteLernpaketWithTombstone] Marked Lernpaket ${lernpaket_id} as to_delete ` +
-      `(${lernziele.length} Lernziele, ${aufgabenbausteine.length} Aufgabenbausteine cascaded)`
+      `(${lernziele.length} Lernziele, ${aufgabenbausteine.length} Aufgabenbausteine cascaded; ` +
+      `${dashboardCleanup.removedItemCount} dashboard items removed, ${membershipDeleted} memberships deleted)`
     );
 
     return Response.json({
@@ -84,6 +147,8 @@ Deno.serve(async (req) => {
       cascaded: {
         lernziele_count: lernziele.length,
         aufgabenbausteine_count: aufgabenbausteine.length,
+        dashboard_items_removed: dashboardCleanup.removedItemCount,
+        memberships_deleted: membershipDeleted,
       },
     });
   } catch (error) {
