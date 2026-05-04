@@ -5,7 +5,7 @@
  * Prompt. Speichert via `updateMBKGlobalPromptSecure` (RBAC-Wrapper).
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
@@ -27,12 +27,22 @@ export default function MBKPromptManagerEditor({ prompt, onSave, isSaving }) {
   const [text, setText] = useState('');
   const [istAktiv, setIstAktiv] = useState(true);
   const [dirty, setDirty] = useState(false);
+  const textareaRef = useRef(null);
 
   useEffect(() => {
     setText(prompt?.prompt_text || '');
     setIstAktiv(prompt?.ist_aktiv !== false);
     setDirty(false);
   }, [prompt?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-resize: Textarea wächst exakt mit ihrem Inhalt, sodass der
+  // Footer (Speichern-Button) unmittelbar darunter sitzt.
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [text, prompt?.id]);
 
   if (!prompt) {
     return (
@@ -62,8 +72,8 @@ export default function MBKPromptManagerEditor({ prompt, onSave, isSaving }) {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      <div className="shrink-0 border-b border-border p-4 bg-card">
+    <div className="flex flex-col min-h-full">
+      <div className="shrink-0 border-b border-border p-4 bg-card sticky top-0 z-10">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-lg font-bold truncate">{prompt.anzeigename}</h2>
@@ -91,16 +101,17 @@ export default function MBKPromptManagerEditor({ prompt, onSave, isSaving }) {
         </p>
       </div>
 
-      <div className="flex-1 overflow-hidden p-4">
+      <div className="p-4">
         <Textarea
+          ref={textareaRef}
           value={text}
           onChange={(e) => { setText(e.target.value); setDirty(true); }}
           placeholder="Prompt-Text als Markdown …"
-          className="h-full min-h-[300px] resize-none font-mono text-sm"
+          className="min-h-[200px] resize-none font-mono text-sm overflow-hidden"
         />
       </div>
 
-      <div className="shrink-0 border-t border-border p-3 bg-card flex items-center justify-between gap-2">
+      <div className="shrink-0 border-t border-border p-3 bg-card flex items-center justify-between gap-2 sticky bottom-0 z-10">
         <div className="text-xs text-muted-foreground">
           {dirty ? 'Ungespeicherte Änderungen' : 'Alle Änderungen gespeichert'}
         </div>

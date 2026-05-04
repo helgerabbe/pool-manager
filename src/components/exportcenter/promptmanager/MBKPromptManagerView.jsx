@@ -29,9 +29,9 @@ export default function MBKPromptManagerView() {
   const isEmpty = !isLoading && prompts.length === 0;
 
   return (
-    <div className="flex h-full overflow-hidden">
-      <aside className="w-[320px] shrink-0 border-r border-border bg-muted/20 overflow-y-auto">
-        <div className="p-3 border-b border-border bg-card flex items-center justify-between">
+    <div className="flex h-full overflow-hidden min-h-0">
+      <aside className="w-[320px] shrink-0 border-r border-border bg-muted/20 overflow-y-auto min-h-0 h-full">
+        <div className="p-3 border-b border-border bg-card flex items-center justify-between sticky top-0 z-10">
           <div className="text-sm font-semibold">Bibliothek</div>
           {isEmpty && (
             <Button size="sm" onClick={() => seed()} disabled={isSeeding} className="gap-1.5">
@@ -60,7 +60,7 @@ export default function MBKPromptManagerView() {
         )}
       </aside>
 
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 overflow-y-auto min-h-0 h-full">
         <MBKPromptManagerEditor
           prompt={selectedPrompt}
           onSave={update}
