@@ -27,7 +27,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, CheckCircle2, Loader2, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, Loader2, Info } from 'lucide-react';
 
 export default function ReleaseConfirmDialog({
   open,
@@ -71,14 +71,25 @@ export default function ReleaseConfirmDialog({
           </div>
         </div>
 
-        {/* Folgenhinweis */}
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-900 leading-relaxed">
-            Nach der Freigabe ist der Pfad <strong>für Schüler sichtbar</strong> und{' '}
-            <strong>gesperrt</strong>. Änderungen an Aufgaben sind erst nach
-            „Entsperren" wieder möglich.
-          </p>
+        {/* Folgenhinweis – Einordnung in den Gesamt-Workflow.
+            Wichtig: Die Pfad-Freigabe ist NICHT die Veröffentlichung an Schüler,
+            sondern ein Zwischenschritt. Schüler sehen den Pfad erst, wenn das
+            Export-Team die Einheit später ins LMS exportiert. Bis dahin ist
+            jede Pfad-Freigabe per „Entsperren" reversibel. */}
+        <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 flex items-start gap-2">
+          <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+          <div className="text-xs text-blue-900 leading-relaxed space-y-1.5">
+            <p>
+              Das ist ein <strong>Zwischenschritt zur Einheits-Freigabe</strong> –
+              Schüler sehen den Pfad <strong>noch nicht</strong>. Die Komposition
+              wird gesperrt, damit alle 4 Dashboards geprüft werden können.
+            </p>
+            <p>
+              <strong>Rückgängig machen ist jederzeit möglich</strong>, solange
+              die Einheit noch nicht final exportiert wurde. Erst wenn das
+              Export-Team die Einheit ins LMS überträgt, wird der Pfad endgültig.
+            </p>
+          </div>
         </div>
 
         <DialogFooter className="gap-2">
