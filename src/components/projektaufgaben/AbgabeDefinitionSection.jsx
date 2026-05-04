@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Sparkles, Loader2, Save, Plus, Trash2 } from 'lucide-react';
+import { Sparkles, Loader2, Save, Plus, Trash2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { updateAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
@@ -89,6 +89,9 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
   const [rubrics, setRubrics]             = useState([]);
   const [generating, setGenerating]       = useState(false);
   const [saving, setSaving]               = useState(false);
+  // Erfolgs-Zustand: Button zeigt 2s lang „Gespeichert ✓" an, damit der
+  // Speichern-Erfolg nicht nur über den Toast sichtbar ist.
+  const [justSaved, setJustSaved]         = useState(false);
 
   useEffect(() => {
     if (!aufgabe) return;
@@ -171,7 +174,11 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
         rubric_criteria: rubricsToSave,
       });
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
-      toast.success('Gespeichert');
+      toast.success('Bewertungsrubriken gespeichert', {
+        description: `${rubricsToSave.length} ${rubricsToSave.length === 1 ? 'Kategorie' : 'Kategorien'} · ${rubricsToSave.reduce((s, r) => s + (r.points || 0), 0)} Punkte gesamt`,
+      });
+      setJustSaved(true);
+      setTimeout(() => setJustSaved(false), 2000);
     } catch (err) {
       toast.error('Fehler beim Speichern: ' + err.message);
     } finally {
@@ -281,18 +288,32 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
         )}
 
         {kannBearbeiten && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSave}
-            disabled={saving}
-            className="gap-2"
-          >
-            {saving
-              ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
-              : <><Save className="w-4 h-4" /> Änderungen speichern</>
-            }
-          </Button>
+          <div className="flex items-center gap-3 pt-2 border-t border-border">
+            <Button
+              size="default"
+              onClick={handleSave}
+              disabled={saving}
+              className={cn(
+                'gap-2 transition-colors',
+                justSaved
+                  ? 'bg-green-600 hover:bg-green-600 text-white'
+                  : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+              )}
+            >
+              {saving ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
+              ) : justSaved ? (
+                <><CheckCircle2 className="w-4 h-4" /> Gespeichert</>
+              ) : (
+                <><Save className="w-4 h-4" /> Änderungen speichern</>
+              )}
+            </Button>
+            {justSaved && (
+              <span className="text-xs text-green-700 font-medium">
+                Alle Änderungen wurden übernommen.
+              </span>
+            )}
+          </div>
         )}
       </section>
     </div>
