@@ -15,6 +15,7 @@ import StandardInput from '@/components/workspace/inputs/StandardInput';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import ReleaseStatusToggle from '@/components/workspace/ReleaseStatusToggle';
 import ActivityResetButton from '@/components/workspace/ActivityResetButton';
+import TranskriptField, { shouldShowTranskript } from '@/components/workspace/ki/TranskriptField';
 
 export default function TextLesenModal({
   open,
@@ -129,6 +130,15 @@ export default function TextLesenModal({
                 className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm resize-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
             </div>
+          )}
+
+          {/* AP2 §1.4: Transkript-Feld nur bei Medien-Aktivitäten */}
+          {shouldShowTranskript(catalogEntry?.name) && (
+            <TranskriptField
+              value={fieldValues.transkript || ''}
+              onChange={(val) => handleFieldChange('transkript', val)}
+              disabled={isSaving || exportLocked}
+            />
           )}
 
           {/* Alle anderen Felder aus dem Schema */}

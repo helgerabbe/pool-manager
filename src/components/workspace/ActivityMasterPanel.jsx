@@ -175,8 +175,10 @@ export default function ActivityMasterPanel({
   const saveFieldsMutation = useMutation({
     mutationFn: (values) => {
       const formSchema = catalogEntry?.form_schema || [];
-      // content_status aus values extrahieren (nicht in field_values speichern)
-      const { content_status, moodle_sync_status, is_dirty_since_export, ...rest } = values;
+      // AP2 §1.4: `transkript` ist Top-Level auf LernpaketPhaseAktivitaet,
+      // nicht in field_values. UI führt es aus UX-Gründen im selben State,
+      // wir entpacken es hier vor dem Persist.
+      const { content_status, moodle_sync_status, is_dirty_since_export, transkript, ...rest } = values;
       const enrichedValues = { ...rest };
       
       formSchema.forEach(f => {
@@ -194,6 +196,7 @@ export default function ActivityMasterPanel({
         ...(content_status ? { content_status } : {}),
         ...(moodle_sync_status ? { moodle_sync_status } : {}),
         ...(is_dirty_since_export !== undefined ? { is_dirty_since_export } : {}),
+        ...(transkript !== undefined ? { transkript } : {}),
       };
       
       return base44.entities.LernpaketPhaseAktivitaet.update(activityRecord.id, updatePayload);
@@ -607,7 +610,7 @@ export default function ActivityMasterPanel({
               open={editModalOpen && !catalogEntry?.name?.toLowerCase().includes('offene')}
               onOpenChange={(isOpen) => { if (!isOpen) handleModalCancel(); }}
               catalogEntry={catalogEntry}
-              initialFieldValues={{ ...fieldValues, content_status: activityRecord?.content_status, moodle_sync_status: activityRecord?.moodle_sync_status }}
+              initialFieldValues={{ ...fieldValues, transkript: activityRecord?.transkript || '', content_status: activityRecord?.content_status, moodle_sync_status: activityRecord?.moodle_sync_status }}
               onSave={handleModalSave}
               onCancel={handleModalCancel}
               onReset={handleModalReset}
