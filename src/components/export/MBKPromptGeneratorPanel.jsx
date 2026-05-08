@@ -22,10 +22,12 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Sparkles, FileText, Users, Layers, Package, RefreshCw, Loader2, Download } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useSchulStammdaten } from '@/hooks/useSchulStammdaten';
 import { useExportPrompts } from '@/hooks/useExportPrompts';
 import { useMBKBulkGenerate } from '@/hooks/useMBKBulkGenerate';
 import { useRBAC } from '@/hooks/useRBAC';
+import MBKAirGapPanel from './airgap/MBKAirGapPanel';
 import {
   LERNTYP_KEYS,
   buildSourceTimestampIndex,
@@ -51,6 +53,9 @@ const LERNTYP_LABELS = {
 
 export default function MBKPromptGeneratorPanel({ einheitId }) {
   const [editingMode, setEditingMode] = useState(false);
+  // Modus-Switch: 'airgap' = neuer 4-Block-Workflow (Default ab Phase 2),
+  // 'legacy' = bisherige Markdown-Prompt-Welt für Chat-UIs.
+  const [mode, setMode] = useState('airgap');
   const { permissions } = useRBAC();
 
   // Sammelt eine Ref pro Prompt-Item, damit wir beim Ausschalten des
@@ -445,7 +450,23 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
   const erstellungspaketCount = lernpakete.length + aufgabenItems.length;
 
   return (
-    <div className="space-y-4">
+    <Tabs value={mode} onValueChange={setMode} className="space-y-4">
+      <TabsList className="grid grid-cols-2 w-full max-w-md">
+        <TabsTrigger value="airgap" className="gap-1.5">
+          <Sparkles className="w-3.5 h-3.5" />
+          Air-Gap-Übergabe (neu)
+        </TabsTrigger>
+        <TabsTrigger value="legacy" className="gap-1.5">
+          <FileText className="w-3.5 h-3.5" />
+          Markdown-Prompts (Legacy)
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="airgap" className="mt-0">
+        <MBKAirGapPanel einheitId={einheitId} />
+      </TabsContent>
+
+      <TabsContent value="legacy" className="mt-0 space-y-4">
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-start gap-3">
@@ -607,6 +628,7 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
         busy={bulkRunning}
         onConfirm={runBulk}
       />
-    </div>
+      </TabsContent>
+    </Tabs>
   );
 }
