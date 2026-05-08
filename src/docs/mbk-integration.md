@@ -3,6 +3,7 @@
 **Ticket:** Folge-Ticket zu #SCORM-INT-001
 **Status:** Schema-Entwurf zur gemeinsamen Abnahme
 **Stand:** 2026-05-08
+**Schema-Version:** 1.0.1 (Patch: Alt-Texte + Sandwich-Notiz, durch MBK-Abnahme ergänzt)
 **Geltungsbereich:** Datenübergabe vom Planungstool (Pool-Manager) an die
 Moodle-Builder-KI (MBK) für die **Generierung** von didaktischen Inhalten
 (Lückenfüller, Aufgaben-Generierung, interaktive Elemente).
@@ -278,8 +279,15 @@ hier nur als Schlüssel/Verweis erscheint** (kein Volltext mehr).
   "blueprint": {
     "aktivitaets_typ": "Lückentext",              // aus AktivitaetenKatalog.name
     "aktivitaet_id": "aktivitaet:<uuid>",
-    "lehrer_notiz": "Lass die Schüler m verändern, bis die Linie durch (2|4) geht.",
-    "visuelle_vorgabe": "Erstelle eine interaktive SVG-Grafik für das Koordinatensystem.",
+    "lehrer_notiz": {                             // "Sandwich-Notiz" (s. §4.1)
+      "anweisung": "Erstelle 5 Fragen zum Steigungsdreieck.",
+      "beispiel":  "So wie in der letzten Einheit zu Funktionen."
+    },                                            // beide Felder optional, beide null = kein Briefing
+    "visuelle_vorgabe": {
+      "beschreibung": "Interaktive SVG-Grafik für das Koordinatensystem.",
+      "format": "svg",                            // svg | canvas | image | none
+      "alt_text_required": true                   // MBK liefert beim Rückgabe-Payload Alt-Text mit (s. §4.2)
+    },
     "feldwerte_vorab": { /* aus LernpaketPhaseAktivitaet.field_values */ }
   },
 
@@ -304,8 +312,11 @@ hier nur als Schlüssel/Verweis erscheint** (kein Volltext mehr).
 | `source_of_truth.vorhandener_input[].transkript` | 🔴 **NEU** `LernpaketPhaseAktivitaet.field_values.transkript` (oder analog für AllgemeineAufgabe.materialien) | optional |
 | `source_of_truth.erlaubter_loesungsraum` | aus C-Global (Schul-Nomenklatur) ODER 🟡 lokales Override-Feld | optional |
 | `blueprint.aktivitaets_typ` | `AktivitaetenKatalog.name` | ✅ |
-| `blueprint.lehrer_notiz` | 🔴 **NEU** `…ki_notiz` (auf Aktivität + Aufgabe) | optional |
-| `blueprint.visuelle_vorgabe` | 🔴 **NEU** `…visuelle_vorgabe` (auf Aktivität + Aufgabe) | optional |
+| `blueprint.lehrer_notiz.anweisung` | 🔴 **NEU** `…ki_notiz_anweisung` (auf Aktivität + Aufgabe) | optional |
+| `blueprint.lehrer_notiz.beispiel` | 🔴 **NEU** `…ki_notiz_beispiel` (auf Aktivität + Aufgabe) | optional |
+| `blueprint.visuelle_vorgabe.beschreibung` | 🔴 **NEU** `…visuelle_vorgabe_text` | optional |
+| `blueprint.visuelle_vorgabe.format` | 🔴 **NEU** `…visuelle_vorgabe_format` (Enum) | optional |
+| `blueprint.visuelle_vorgabe.alt_text_required` | hartkodiert auf `true` wenn `format ∈ {svg, canvas, image}` | abgeleitet |
 | `blueprint.feldwerte_vorab` | `LernpaketPhaseAktivitaet.field_values` | ✅ |
 | `lokale_guardrails.ist_letztes_element_der_phase` | berechnet | ✅ |
 | `lokale_guardrails.tagebuch_trigger` | abgeleitet (wenn `ist_letztes_element_der_phase`) | ✅ |
@@ -313,6 +324,55 @@ hier nur als Schlüssel/Verweis erscheint** (kein Volltext mehr).
 
 > 🔴 = neue Datenfelder, die im AP2-Schritt im Pool-Manager-Datenmodell und
 > in der UI ergänzt werden.
+
+### 4.1 Die „Sandwich-Notiz" (Pro-Tipp aus der MBK-Abnahme)
+
+Die `lehrer_notiz` ist bewusst **strukturiert** in zwei Felder, statt einem
+einzelnen Freitext:
+
+- **`anweisung`** — was die KI tun soll. *Beispiel: „Erstelle 5 Fragen zum
+  Steigungsdreieck."*
+- **`beispiel`** — wie das Ergebnis aussehen / klingen soll. *Beispiel: „So
+  wie in der letzten Einheit zu Funktionen."*
+
+**Warum diese Struktur?** Anweisung allein lässt der KI zu viel Spielraum
+beim Tonfall/Format. Beispiel allein erklärt nicht, was zu tun ist. Beides
+kombiniert (das „Sandwich") erhöht laut MBK-Entwicklung die Treffsicherheit
+spürbar.
+
+**UI-Konsequenz für AP3:** Im Aktivitäts-/Aufgaben-Editor erscheinen zwei
+separate Felder mit Hilfstexten („Was soll die KI tun?" / „Wie soll es
+aussehen? Optional ein Beispiel."). Beide sind optional. Wenn beide leer
+sind, wird `lehrer_notiz` im Payload als `null` ausgegeben.
+
+### 4.2 Alt-Texte für visuelle Inhalte (Barrierefreiheit)
+
+Wenn die MBK auf Basis von `visuelle_vorgabe` einen visuellen Inhalt
+generiert (SVG, Canvas, Bild), liefert sie im **Rückgabe-Payload an das
+Planungstool** zwingend einen Alt-Text mit, sofern
+`alt_text_required === true` ist.
+
+**Rückgabe-Format der MBK** (zur Information — wird vom Planungstool
+gespeichert, nicht erneut an die MBK übergeben):
+
+```jsonc
+{
+  "generated_visual": {
+    "format": "svg",
+    "content": "<svg>...</svg>",
+    "alt_text": "Koordinatensystem mit einer fallenden Geraden, die die y-Achse bei +3 schneidet."
+  }
+}
+```
+
+**Logik:** Das Feld `alt_text_required` wird automatisch auf `true` gesetzt,
+wenn `format ∈ {svg, canvas, image}`. Bei `format: "none"` (kein visueller
+Inhalt gewünscht) ist es `false`. Lehrkräfte sehen diesen Schalter nicht im
+UI — er wird vom Backend abgeleitet.
+
+**Speicherort der Alt-Texte:** Die Alt-Texte landen am gleichen Anker wie
+der visuelle Inhalt (z. B. `LernpaketPhaseAktivitaet.field_values.alt_text`).
+Details werden in AP2 finalisiert.
 
 ---
 
@@ -421,9 +481,24 @@ Damit ihr seht, was im Pool-Manager UI-seitig passiert (Details kommen in AP3):
 
 | Rolle | Name | Datum | Status |
 |---|---|---|---|
-| App-Team | _(zu ergänzen)_ |  | ☐ |
-| MBK-Entwicklung | _(zu ergänzen)_ |  | ☐ |
+| App-Team | App-Team-Lead | 2026-05-08 | ✅ |
+| MBK-Entwicklung | MBK-Entwicklungsleitung | 2026-05-08 | ✅ |
 | Planungs-/Didaktik-Lead | _(zu ergänzen)_ |  | ☐ |
 
-> Sobald alle drei Häkchen gesetzt sind, gilt das Schema als final und AP2
-> (Datenmodell-Erweiterung im Pool-Manager) startet.
+**Abnahme-Statement der MBK-Entwicklung (2026-05-08):**
+
+> „Hiermit bestätige ich die technische und didaktische Vollständigkeit des
+> Schemas v1.0.1. Die MBK ist bereit für die Implementierung auf Basis
+> dieser Briefings."
+
+Sobald die didaktische Abnahme gesetzt ist, gilt das Schema als final und
+AP2 (Datenmodell-Erweiterung im Pool-Manager) startet.
+
+---
+
+## 11. Änderungshistorie
+
+| Version | Datum | Änderung |
+|---|---|---|
+| 1.0.0 | 2026-05-08 | Initiale Spezifikation (Vier-Payload-Trennung, System-Context-Hash) |
+| 1.0.1 | 2026-05-08 | Patch nach MBK-Abnahme: `lehrer_notiz` strukturiert als „Sandwich" (anweisung + beispiel); `visuelle_vorgabe` strukturiert (beschreibung + format + alt_text_required) für Barrierefreiheit |
