@@ -186,6 +186,16 @@ export default function MBKAirGapPanel({ einheitId }) {
   // Persistierte Air-Gap-Records aus der DB.
   const { prompts: dbPrompts = [] } = useExportPrompts(einheitId);
 
+  // Muss VOR dem Bulk-Hook stehen, der diese Variable als Argument liest
+  // (TDZ-Falle, sonst „Cannot access before initialization").
+  const allgemeineAufgabenEbene23 = useMemo(
+    () =>
+      allgemeineAufgaben.filter(
+        (a) => a.anforderungsebene === '2 - Transfer' || a.anforderungsebene === '3 - Projekt'
+      ),
+    [allgemeineAufgaben]
+  );
+
   // Air-Gap-Bulk-Hook: Plan, Schreibaktion, aggregierter Block-Status.
   const {
     summary: bulkSummary,
@@ -246,14 +256,6 @@ export default function MBKAirGapPanel({ einheitId }) {
       allgemeineAufgaben,
       systemContextHash: currentHash,
     });
-
-  const allgemeineAufgabenEbene23 = useMemo(
-    () =>
-      allgemeineAufgaben.filter(
-        (a) => a.anforderungsebene === '2 - Transfer' || a.anforderungsebene === '3 - Projekt'
-      ),
-    [allgemeineAufgaben]
-  );
 
   const taskBundle = useMemo(
     () =>
