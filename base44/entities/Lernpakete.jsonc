@@ -22,6 +22,14 @@
       "type": "number",
       "description": "Gesch\u00e4tzte Bearbeitungsdauer in Minuten"
     },
+    "kernbegriffe": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "AP2 / MBK-Integration: Verpflichtende Begriffe, die in jeder \u00dcbung dieses Pakets vorkommen m\u00fcssen. Werden in den C-Local-Payload (Micro-Briefing) der MBK eingewoben, damit die KI z. B. 'Steigung' und 'Y-Achsenabschnitt' garantiert in der Aufgabenstellung verwendet. Tag-Input im Lernpaket-Editor."
+    },
     "is_locked": {
       "type": "boolean",
       "default": false,

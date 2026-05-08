@@ -38,6 +38,49 @@
       "type": "number",
       "description": "Sortierreihenfolge innerhalb der Phase"
     },
+    "ki_notiz": {
+      "type": "object",
+      "description": "AP2 / MBK-Integration \u00a74.1 ('Sandwich-Notiz'): Strukturiertes Briefing der Lehrkraft an die KI. `anweisung` = was die KI tun soll; `beispiel` = wie das Ergebnis aussehen/klingen soll. SPEICHERREGEL: Wenn beide Felder leer w\u00e4ren, wird das ganze Objekt NICHT gesetzt (statt `{anweisung:'',beispiel:''}`), damit der Out-of-Sync-Check der MBK-Prompts nicht f\u00e4lschlich anschl\u00e4gt.",
+      "properties": {
+        "anweisung": {
+          "type": "string",
+          "description": "Was soll die KI tun? Beispiel: 'Erstelle 5 Fragen zum Steigungsdreieck.'"
+        },
+        "beispiel": {
+          "type": "string",
+          "description": "Wie soll das Ergebnis aussehen? Beispiel: 'So wie in der letzten Einheit zu Funktionen.'"
+        }
+      }
+    },
+    "visuelle_vorgabe": {
+      "type": "object",
+      "description": "AP2 / MBK-Integration \u00a74.2: Anweisung an die MBK, welcher visuelle Inhalt erzeugt werden soll. `alt_text_required` wird im Backend abgeleitet (true wenn format \u2208 {svg, canvas, image}) und nicht gespeichert.",
+      "properties": {
+        "beschreibung": {
+          "type": "string",
+          "description": "Freitext-Beschreibung des gew\u00fcnschten visuellen Inhalts. Beispiel: 'Koordinatensystem mit fallender Geraden, Steigung -2.'"
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "svg",
+            "canvas",
+            "image",
+            "none"
+          ],
+          "default": "none",
+          "description": "Erwartetes Ausgabeformat. 'none' = kein visueller Inhalt gew\u00fcnscht."
+        }
+      }
+    },
+    "transkript": {
+      "type": "string",
+      "description": "AP2 / MBK-Integration \u00a71.4: Transkript des Medieninhalts (Video/Audio/Podcast/H\u00f6rverstehen) als Textbasis f\u00fcr KI-Fragegenerierung. Sichtbar nur bei Aktivit\u00e4ten mit entsprechendem `katalog.name`. Max. 50.000 Zeichen. Kann manuell gepflegt oder per generateMediaTranscript automatisch bef\u00fcllt werden (separater Sprint)."
+    },
+    "alt_text": {
+      "type": "string",
+      "description": "AP2 / MBK-Integration \u00a71.5: Von der MBK beim R\u00fcckgabe-Payload mitgelieferter Alt-Text f\u00fcr Barrierefreiheit (zu visuelle_vorgabe). Read-Only-Anzeige im UI mit optionaler Lehrkraft-Korrektur. Max. 1000 Zeichen."
+    },
     "content_status": {
       "type": "string",
       "enum": [

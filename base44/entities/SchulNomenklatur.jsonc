@@ -1,0 +1,63 @@
+{
+  "name": "SchulNomenklatur",
+  "type": "object",
+  "description": "Schulweit g\u00fcltige Konventionen pro Fach (Notation, Terminologie, Stilregeln). Wird in jedem C-Global-Payload an die Moodle-Builder-KI als 'Sprache der Schule' eingewoben \u2014 siehe docs/ap2-nomenklatur-manager.md und docs/mbk-integration.md \u00a73. Eindeutigkeit: pro `fach` existiert genau ein Datensatz (anwendungsseitig durch updateSchulNomenklaturSecure sichergestellt).",
+  "properties": {
+    "fach": {
+      "type": "string",
+      "description": "Fach-Name aus LookupFaecher (z. B. 'Mathematik'). Pro Fach existiert genau ein Datensatz."
+    },
+    "conventions": {
+      "type": "array",
+      "description": "Schl\u00fcssel-Wert-Paare f\u00fcr schulweite Schreibweisen. Beispiel: { key: 'Y-Achsenabschnitt', value: 'Variable n (nicht b)' }.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Lesbarer Begriff, 1\u2013200 Zeichen."
+          },
+          "value": {
+            "type": "string",
+            "description": "Schulweite Schreibweise/Konvention, 1\u2013200 Zeichen."
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ]
+      },
+      "default": []
+    },
+    "global_style": {
+      "type": "string",
+      "description": "\u00dcbergreifende Stilregel f\u00fcr dieses Fach (Markdown, max. 2000 Zeichen). Beispiel Mathe: 'Ergebnisse auf 2 Nachkommastellen runden. Br\u00fcche gek\u00fcrzt.'"
+    },
+    "ist_aktiv": {
+      "type": "boolean",
+      "default": true,
+      "description": "Inaktive Fach-Datens\u00e4tze werden nicht in den C-Global-Payload geschrieben."
+    }
+  },
+  "required": [
+    "fach"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
