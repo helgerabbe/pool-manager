@@ -23,6 +23,8 @@ import TextLesenModal from '@/components/workspace/TextLesenModal';
 import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import MoodleSyncStatusBadge from '@/components/workspace/MoodleSyncStatusBadge';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
+import ModusAuswahlBox from '@/components/workspace/ki/ModusAuswahlBox';
+import KiBriefingForm from '@/components/workspace/ki/KiBriefingForm';
 import { toast } from 'sonner';
 
 // Inline-editierbares Aufgabentext-Feld mit Standardtext
@@ -406,6 +408,64 @@ export default function ActivityMasterPanel({
   // Bestimme ob aktueller Aktivitätstyp KI-Tutor ist
   const isKITutor = catalogEntry?.name?.toLowerCase().includes('ki-tutor');
 
+  // ── AP2 / MBK-Schema v1.1.0 §3: Erstellungs-Modus-Switch ──────────────
+  // Modus kommt 1:1 aus dem Activity-Record. Default ist 'manuell'.
+  // Gespeichert wird via `updateActivitySecure` (Backend-Function), das den
+  // konsistenten Switch zwischen field_values ↔ ki_briefing übernimmt.
+  const erstellungsModus = activityRecord?.erstellungs_modus || 'manuell';
+  const istKiModus = erstellungsModus === 'ki';
+  // KI-Modus zeigen wir nur für Aktivitäten, die supports_master haben.
+  // Bei „Text lesen", „Bildbeschriftung" etc. (supportsMaster=false) bleibt
+  // alles wie bisher — diese werden per Modal erfasst, der KI-Modus hätte
+  // dort keinen sinnvollen Briefing-Katalog. KI-Tutor bleibt ebenfalls außen
+  // vor (eigene Spezialform).
+  const showModusSwitch = supportsMaster && !isKITutor;
+  const [savingModusBriefing, setSavingModusBriefing] = useState(false);
+
+  // Modus-Wechsel: ruft updateActivitySecure mit erstellungsModus + ggf.
+  // bestehendem ki_briefing. Backend nullt jeweils die andere Seite.
+  const handleModusChange = async (newModus) => {
+    if (newModus === erstellungsModus) return;
+    setSavingModusBriefing(true);
+    try {
+      await base44.functions.invoke('updateActivitySecure', {
+        activityId: activityRecord.id,
+        einheitId,
+        targetFach: catalogEntry?.fach || activityRecord?.fach,
+        erstellungsModus: newModus,
+        kiBriefing: newModus === 'ki' ? activityRecord?.ki_briefing || null : null,
+        fieldValues: newModus === 'manuell' ? activityRecord?.field_values || {} : {},
+      });
+      await queryClient.refetchQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      toast.success(newModus === 'ki' ? 'KI-Modus aktiviert.' : 'Manueller Modus aktiviert.');
+    } catch (err) {
+      toast.error('Modus-Wechsel fehlgeschlagen: ' + (err?.message || 'unbekannt'));
+    } finally {
+      setSavingModusBriefing(false);
+    }
+  };
+
+  // Briefing speichern: ebenfalls über updateActivitySecure mit erstellungsModus='ki'.
+  const handleBriefingSave = async (briefing) => {
+    setSavingModusBriefing(true);
+    try {
+      await base44.functions.invoke('updateActivitySecure', {
+        activityId: activityRecord.id,
+        einheitId,
+        targetFach: catalogEntry?.fach || activityRecord?.fach,
+        erstellungsModus: 'ki',
+        kiBriefing: briefing,
+        fieldValues: {},
+      });
+      await queryClient.refetchQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      toast.success('KI-Briefing gespeichert.');
+    } catch (err) {
+      toast.error('Speichern fehlgeschlagen: ' + (err?.message || 'unbekannt'));
+    } finally {
+      setSavingModusBriefing(false);
+    }
+  };
+
   return (
     <div className="space-y-6 overflow-visible h-auto">
       {/* ── Aktivitäts-Header (Tab 4: nur Info, KEIN Lock-Toggle-Button) ──────── */}
@@ -560,8 +620,41 @@ export default function ActivityMasterPanel({
 
       {/* ── Edit-Mode Banner entfernt — wird global in TaskCreationView gerendert ── */}
 
+      {/* ── AP2 §3: Modus-Switch (nur supports_master & nicht KI-Tutor) ─────── */}
+      {showModusSwitch && (
+        <ModusAuswahlBox
+          value={erstellungsModus}
+          onChange={handleModusChange}
+          disabled={
+            !kannBearbeiten ||
+            savingModusBriefing ||
+            isParentPaketLockedByOther ||
+            lernpaket?.moodle_sync_status === 'locked' ||
+            lernpaket?.export_locked
+          }
+          disabledReason={
+            isParentPaketLockedByOther
+              ? `Wird von ${lernpaket?.locked_by_email} bearbeitet`
+              : lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked
+              ? 'Export läuft'
+              : null
+          }
+        />
+      )}
+
+      {/* ── KI-Modus: Briefing-Formular statt Aufgabenstellung + Master-Sektion ── */}
+      {showModusSwitch && istKiModus && (
+        <KiBriefingForm
+          aktivitaetName={catalogEntry?.name || ''}
+          initialBriefing={activityRecord?.ki_briefing}
+          onSave={handleBriefingSave}
+          isSaving={savingModusBriefing}
+          readOnly={!kannBearbeiten}
+        />
+      )}
+
       {/* ── Aufgabentext-Block (für supports_master Aktivitäten, NOT für KI-Tutor) ─ */}
-      {supportsMaster && !isKITutor && (
+      {supportsMaster && !isKITutor && !istKiModus && (
         <div className="rounded-xl border border-border bg-card p-4">
           {/* Aufgabenstellung-Header mit dezent-Stift-Icon statt großem Button */}
           <div className="flex items-center gap-2 mb-2">
@@ -613,8 +706,8 @@ export default function ActivityMasterPanel({
         </div>
       )}
 
-      {/* ── Masteraufgaben-Bereich (immer sichtbar wenn supports_master) ───────── */}
-      {supportsMaster && (
+      {/* ── Masteraufgaben-Bereich (nur im manuellen Modus) ───────── */}
+      {supportsMaster && !istKiModus && (
         <div className="space-y-4">
 
           {/* Sektion-Header */}
