@@ -138,6 +138,7 @@ export default function TextLesenModal({
               value={fieldValues.transkript || ''}
               onChange={(val) => handleFieldChange('transkript', val)}
               disabled={isSaving || exportLocked}
+              sourceUrl={fieldValues.url || ''}
             />
           )}
 
