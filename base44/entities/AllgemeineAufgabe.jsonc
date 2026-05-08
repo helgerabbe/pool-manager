@@ -31,7 +31,7 @@
         "auswahl_buendel"
       ],
       "default": "inhalt",
-      "description": "Funktionale/p\u00e4dagogische Rolle der Aufgabe im Lernpfad-System (orthogonal zur anforderungsebene). 'inhalt' = klassische Fachaufgabe, 'buendel' = Verlinkt mehrere Lernpakete (Moodle-B\u00fcndel), 'prozess' = digitaler Lernorganisations-Meilenstein mit Texteingabe, 'projekt_anker' = Tor zu Ebene-3-Projekten, 'handlung' = handlungsorientierte Aufgabe mit physischem Material (digitale Best\u00e4tigung per Checkbox), 'auswahl_buendel' = Brian-B\u00fcndel mit X-von-Y-Auswahl auf Aufgaben-Ebene."
+      "description": "Funktionale/p\u00e4dagogische Rolle der Aufgabe im Lernpfad-System (orthogonal zur anforderungsebene)."
     },
     "mission_type": {
       "type": "string",
@@ -43,7 +43,7 @@
         "transfer",
         "kreativitaet"
       ],
-      "description": "Didaktische Mission der Aufgabe (Epic 'Intelligentes Aufgaben-Management'). Gilt ausschlie\u00dflich f\u00fcr aufgaben_typ \u2208 {inhalt, handlung} mit anforderungsebene \u2208 {'1 - Basis', '2 - Transfer'}. Bei allen anderen Typen bleibt das Feld null und wird im UI ausgeblendet. Werte: 'problem' = Den Funken z\u00fcnden (Alltagsbezug & Motivation), 'entdeckung' = Selber rausfinden lassen (Induktion & Regelbildung), 'recherche' = Informationen checken (Informationsbeschaffung & Quellen), 'anwendung' = Zeigen, was man kann (Wissen im bekannten Kontext festigen), 'transfer' = In neue Welten \u00fcbertragen (Wissen im neuen Kontext anwenden), 'kreativitaet' = Etwas Eigenes erschaffen (Sch\u00f6pferische Gestaltung & Deep Dive). Single Source of Truth f\u00fcr Labels/Farben/Emojis: lib/missionen.js."
+      "description": "Didaktische Mission der Aufgabe (Epic 'Intelligentes Aufgaben-Management'). Single Source of Truth f\u00fcr Labels/Farben/Emojis: lib/missionen.js."
     },
     "verlinkte_lernpaket_ids": {
       "type": "array",
@@ -51,7 +51,7 @@
         "type": "string"
       },
       "default": [],
-      "description": "F\u00fcr aufgaben_typ='buendel' (Moodle-B\u00fcndel): Array von Lernpaket-IDs (Ebene 1), die durch dieses B\u00fcndel zusammengefasst werden."
+      "description": "F\u00fcr aufgaben_typ='buendel' (Moodle-B\u00fcndel)."
     },
     "verlinkte_projekt_ids": {
       "type": "array",
@@ -59,7 +59,7 @@
         "type": "string"
       },
       "default": [],
-      "description": "F\u00fcr aufgaben_typ='projekt_anker': Array von AllgemeineAufgabe-IDs mit anforderungsebene='3 - Projekt', die durch diesen Anker angeboten werden."
+      "description": "F\u00fcr aufgaben_typ='projekt_anker'."
     },
     "verlinkte_aufgaben_ids": {
       "type": "array",
@@ -67,7 +67,7 @@
         "type": "string"
       },
       "default": [],
-      "description": "F\u00fcr aufgaben_typ='auswahl_buendel' (Brian-B\u00fcndel): Array von AllgemeineAufgabe-IDs (Ebene 2), aus denen der Sch\u00fcler erforderliche_anzahl ausw\u00e4hlen muss."
+      "description": "F\u00fcr aufgaben_typ='auswahl_buendel' (Brian-B\u00fcndel)."
     },
     "lernpaket_logik": {
       "type": "string",
@@ -78,13 +78,13 @@
         "test_only"
       ],
       "default": "standard",
-      "description": "F\u00fcr aufgaben_typ='buendel' (Moodle-B\u00fcndel): didaktische Reihenfolge-Logik im Export."
+      "description": "F\u00fcr aufgaben_typ='buendel': didaktische Reihenfolge-Logik im Export."
     },
     "erforderliche_anzahl": {
       "type": "integer",
       "default": 0,
       "minimum": 0,
-      "description": "F\u00fcr aufgaben_typ='auswahl_buendel': Anzahl der Aufgaben, die der Sch\u00fcler mindestens bearbeiten muss. 0 = alle verlinkten Aufgaben sind Pflicht."
+      "description": "F\u00fcr aufgaben_typ='auswahl_buendel': X-von-Y."
     },
     "interne_reihenfolge": {
       "type": "string",
@@ -93,7 +93,7 @@
         "sequenziell"
       ],
       "default": "frei",
-      "description": "F\u00fcr aufgaben_typ='auswahl_buendel': Bearbeitungsreihenfolge der enthaltenen Aufgaben."
+      "description": "F\u00fcr aufgaben_typ='auswahl_buendel'."
     },
     "hinweise_zum_material": {
       "type": "string",
@@ -113,11 +113,11 @@
     },
     "aufgabenstellung": {
       "type": "string",
-      "description": "Aufgabenstellung als Text (optional wenn aufgaben_bild_url gesetzt)"
+      "description": "Aufgabenstellung als Text (manueller Modus)."
     },
     "aufgaben_bild_url": {
       "type": "string",
-      "description": "URL zu einem hochgeladenen Bild/Screenshot der Aufgabe (optional)"
+      "description": "URL zu einem hochgeladenen Bild/Screenshot der Aufgabe (optional, manueller Modus)"
     },
     "schwierigkeitsgrad": {
       "type": "integer",
@@ -158,40 +158,68 @@
       "type": "string",
       "description": "Musterl\u00f6sung / Erwartungshorizont als Rich-Text"
     },
-    "ki_notiz": {
+    "erstellungs_modus": {
+      "type": "string",
+      "enum": [
+        "manuell",
+        "ki"
+      ],
+      "default": "manuell",
+      "description": "AP2 / MBK-Schema v1.1.0 \u00a73: 'manuell' = Lehrkraft hat aufgabenstellung/Material selbst ausgearbeitet. 'ki' = MBK soll die Aufgabe auf Basis von `ki_briefing` erzeugen."
+    },
+    "ki_briefing": {
       "type": "object",
-      "description": "AP2 / MBK-Integration \u00a74.1 ('Sandwich-Notiz'): Strukturiertes Briefing der Lehrkraft an die KI. `anweisung` = was die KI tun soll; `beispiel` = wie das Ergebnis aussehen/klingen soll. SPEICHERREGEL: Wenn beide Felder leer w\u00e4ren, wird das ganze Objekt NICHT gesetzt (statt `{anweisung:'',beispiel:''}`), damit der Out-of-Sync-Check der MBK-Prompts nicht f\u00e4lschlich anschl\u00e4gt.",
+      "description": "AP2 / MBK-Schema v1.1.0 \u00a75: Strukturiertes Briefing f\u00fcr die MBK, wenn `erstellungs_modus='ki'`. F\u00fcr AllgemeineAufgaben standardm\u00e4\u00dfig variant='offen' (drei feste Felder), f\u00fcr aufgaben_typ='inhalt' mit standardisierten Aktivit\u00e4ts-Vorlagen kann auch variant='standard' verwendet werden.",
       "properties": {
-        "anweisung": {
+        "variant": {
           "type": "string",
-          "description": "Was soll die KI tun? Beispiel: 'Erstelle 5 Fragen zum Steigungsdreieck.'"
+          "enum": [
+            "standard",
+            "offen"
+          ],
+          "description": "Diskriminator analog zu LernpaketPhaseAktivitaet."
         },
-        "beispiel": {
-          "type": "string",
-          "description": "Wie soll das Ergebnis aussehen? Beispiel: 'So wie in der letzten Einheit zu Funktionen.'"
+        "standard": {
+          "type": "object",
+          "properties": {
+            "schwerpunkt": {
+              "type": "string"
+            },
+            "parameter": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        },
+        "offen": {
+          "type": "object",
+          "properties": {
+            "lernziel": {
+              "type": "string",
+              "description": "Pflichtfeld: Was sollen die Sch\u00fcler lernen?"
+            },
+            "funktionsweise": {
+              "type": "string",
+              "description": "Pflichtfeld: Wie soll die Aufgabe funktionieren?"
+            },
+            "visuelle_vorlage": {
+              "type": "object",
+              "properties": {
+                "bild_url": {
+                  "type": "string"
+                },
+                "beschreibung": {
+                  "type": "string"
+                }
+              }
+            }
+          }
         }
       }
     },
-    "visuelle_vorgabe": {
-      "type": "object",
-      "description": "AP2 / MBK-Integration \u00a74.2: Anweisung an die MBK, welcher visuelle Inhalt erzeugt werden soll. `alt_text_required` wird im Backend abgeleitet (true wenn format \u2208 {svg, canvas, image}) und nicht gespeichert.",
-      "properties": {
-        "beschreibung": {
-          "type": "string",
-          "description": "Freitext-Beschreibung des gew\u00fcnschten visuellen Inhalts."
-        },
-        "format": {
-          "type": "string",
-          "enum": [
-            "svg",
-            "canvas",
-            "image",
-            "none"
-          ],
-          "default": "none",
-          "description": "Erwartetes Ausgabeformat. 'none' = kein visueller Inhalt gew\u00fcnscht."
-        }
-      }
+    "alt_text": {
+      "type": "string",
+      "description": "Von der MBK gelieferter Alt-Text f\u00fcr visuelle Inhalte (Barrierefreiheit). Max. 1000 Zeichen."
     },
     "materialien": {
       "type": "array",
@@ -259,27 +287,22 @@
       "default": []
     },
     "brian_dialog_name": {
-      "type": "string",
-      "description": "Brian.study: Name des Dialogs"
+      "type": "string"
     },
     "brian_learner_instruction": {
-      "type": "string",
-      "description": "Brian.study: Anweisung f\u00fcr Lernende"
+      "type": "string"
     },
     "brian_system_instruction": {
-      "type": "string",
-      "description": "Brian.study: Interne System-Anweisung / Tutor-Persona"
+      "type": "string"
     },
     "brian_completion_rule": {
-      "type": "string",
-      "description": "Brian.study: Abbruchbedingung"
+      "type": "string"
     },
     "prioritaete_lernziele": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "Array von Lernziel-IDs, die als hochpriorit\u00e4r markiert sind",
       "default": []
     },
     "ki_kompetenz_tags": {
@@ -287,7 +310,6 @@
       "items": {
         "type": "string"
       },
-      "description": "Von der KI vorgeschlagene Kompetenz-Schlagworte",
       "default": []
     },
     "content_status": {
@@ -296,8 +318,7 @@
         "draft",
         "approved"
       ],
-      "default": "draft",
-      "description": "P\u00e4dagogischer Status: draft (in Bearbeitung) oder approved (fertig f\u00fcr Export)"
+      "default": "draft"
     },
     "sync_status": {
       "type": "string",
@@ -309,8 +330,7 @@
         "to_delete",
         "error"
       ],
-      "default": "new",
-      "description": "Legacy Moodle-Sync-Status"
+      "default": "new"
     },
     "moodle_sync_status": {
       "type": "string",
@@ -320,8 +340,7 @@
         "synced",
         "error"
       ],
-      "default": "new",
-      "description": "Moodle-Export-Status: new, pending, synced, error"
+      "default": "new"
     },
     "brian_sync_status": {
       "type": "string",
@@ -331,32 +350,26 @@
         "synced",
         "error"
       ],
-      "default": "new",
-      "description": "Brian.study-Export-Status: new, pending, synced, error"
+      "default": "new"
     },
     "last_synced_at": {
       "type": "string",
-      "format": "date-time",
-      "description": "Zeitstempel des letzten erfolgreichen Moodle-Exports (nullable)"
+      "format": "date-time"
     },
     "brian_synced_at": {
       "type": "string",
-      "format": "date-time",
-      "description": "Zeitstempel des letzten erfolgreichen Brian-Exports (nullable)"
+      "format": "date-time"
     },
     "export_error": {
       "type": "boolean",
-      "default": false,
-      "description": "Phase G: Wird vom Export-Center auf true gesetzt, wenn der Moodle-Spezialist diese Aufgabe im Abschluss-Dialog als 'fehlgeschlagen' markiert. Lehrkr\u00e4fte sehen das im Cockpit/Pool als rotes 'Export fehlgeschlagen'-Badge. Das Flag wird automatisch beim n\u00e4chsten Save (updateActivitySecure / updateLernpaketSecure / syncLernpfadMembership) auf false zur\u00fcckgesetzt, weil der Save ohnehin einen neuen Draft-Zustand erzeugt, der beim n\u00e4chsten Export neu bewertet wird."
+      "default": false
     },
     "locked_by": {
-      "type": "string",
-      "description": "E-Mail des Nutzers, der die Aufgabe gerade bearbeitet (Bearbeitungssperre)"
+      "type": "string"
     },
     "locked_at": {
       "type": "string",
-      "format": "date-time",
-      "description": "Zeitstempel wann die Bearbeitungssperre gesetzt wurde (Auto-Timeout nach 60 Min)"
+      "format": "date-time"
     }
   },
   "required": [

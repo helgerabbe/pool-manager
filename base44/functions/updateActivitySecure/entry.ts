@@ -112,11 +112,18 @@ Deno.serve(async (req) => {
     }
 
     // 2. Request-Parameter validieren
-    const { 
-      activityId, 
+    const {
+      activityId,
       fieldValues = {},
-      einheitId, 
-      targetFach
+      einheitId,
+      targetFach,
+      // AP2 / MBK-Schema v1.1.0 §3: optionale Felder. Wenn der Aufrufer sie
+      // setzt, durchläuft das Update den Modus-Switch (Konsistenz: bei
+      // erstellungs_modus='ki' werden field_values geleert; bei 'manuell'
+      // wird ki_briefing genullt). Bleibt erstellungs_modus undefined,
+      // verhält sich die Function exakt wie vorher (Rückwärtskompat).
+      erstellungsModus,
+      kiBriefing,
     } = await req.json();
 
     if (!activityId || !einheitId || !targetFach) {
@@ -315,11 +322,43 @@ Deno.serve(async (req) => {
     // den fehlerhaft exportierten Inhalt bearbeitet, verschwindet das
     // rote Badge im Pool/Cockpit automatisch — der nächste Export-Lauf
     // wertet das Item neu aus.
-    await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(activityId, {
-      field_values: fieldValues,
+    //
+    // AP2 / MBK-Schema v1.1.0 §3 (Modus-Switch):
+    // Wenn der Frontend-Aufruf `erstellungs_modus` mitliefert, sorgen wir
+    // serverseitig für die Konsistenz zwischen den beiden Welten —
+    // unabhängig davon, was das Frontend in field_values/kiBriefing
+    // mitschickt. So kann es zu KEINEM gemischten Zustand kommen, in dem
+    // die MBK gleichzeitig auf manuelle Inhalte UND ein Briefing zugreift.
+    //
+    // Reihenfolge ist wichtig: Erst die "andere Seite" auf null setzen,
+    // dann die "aktive Seite" schreiben. Damit ist die Datenbank zu
+    // keinem Zeitpunkt in einem Zustand, in dem beide Seiten gleichzeitig
+    // gefüllt wären — ein evtl. parallel lesender MBK-Job sieht entweder
+    // den alten oder den neuen Stand, nie eine Mischung.
+    const updatePayload = {
       is_complete: true,
       export_error: false,
-    });
+    };
+
+    if (erstellungsModus === 'ki') {
+      // KI-Modus: Briefing setzen, manuelle Inhalte leeren.
+      updatePayload.erstellungs_modus = 'ki';
+      updatePayload.field_values = null;
+      updatePayload.ki_briefing = kiBriefing ?? null;
+    } else if (erstellungsModus === 'manuell') {
+      // Manueller Modus: Inhalte setzen, Briefing leeren.
+      updatePayload.erstellungs_modus = 'manuell';
+      updatePayload.field_values = fieldValues;
+      updatePayload.ki_briefing = null;
+    } else {
+      // Backward-Compat: kein Modus mitgegeben → klassisches field_values-Update.
+      updatePayload.field_values = fieldValues;
+    }
+
+    await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(
+      activityId,
+      updatePayload
+    );
 
     // 9. ✅ Audit-Log schreiben (SUCCESS)
     try {
@@ -333,7 +372,10 @@ Deno.serve(async (req) => {
           einheitId: einheitId,
           targetFach: targetFach,
           grantedBy: authCheck.reason,
-          delegatedRole: delegatedMembership?.unit_role || null
+          delegatedRole: delegatedMembership?.unit_role || null,
+          // AP2: Modus-Wechsel im Audit-Log sichtbar machen.
+          erstellungs_modus: erstellungsModus || null,
+          ki_briefing_variant: kiBriefing?.variant || null
         },
         affected_count: 1,
         status: 'success'

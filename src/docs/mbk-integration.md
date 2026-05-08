@@ -502,3 +502,4 @@ AP2 (Datenmodell-Erweiterung im Pool-Manager) startet.
 |---|---|---|
 | 1.0.0 | 2026-05-08 | Initiale Spezifikation (Vier-Payload-Trennung, System-Context-Hash) |
 | 1.0.1 | 2026-05-08 | Patch nach MBK-Abnahme: `lehrer_notiz` strukturiert als „Sandwich" (anweisung + beispiel); `visuelle_vorgabe` strukturiert (beschreibung + format + alt_text_required) für Barrierefreiheit |
+| 1.1.0 | 2026-05-08 | **Schritt 5a Fundament:** `lehrer_notiz` + `visuelle_vorgabe` durch konsolidiertes `ki_briefing`-Objekt (variant: standard / offen) ersetzt; expliziter `erstellungs_modus`-Marker (manuell / ki) eingeführt; typabhängige Mini-Fragenkataloge in `lib/kiBriefingKatalog.js` als Single Source of Truth; Backend `updateActivitySecure` setzt beim Modus-Wechsel die jeweils andere Seite konsistent auf null. Details: `docs/mbk-abstimmung-schritt5.md`. |

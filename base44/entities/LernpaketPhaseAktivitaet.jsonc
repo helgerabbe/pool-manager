@@ -21,7 +21,7 @@
     },
     "field_values": {
       "type": "object",
-      "description": "Konfigurierte Feldwerte f\u00fcr diese Aktivit\u00e4t",
+      "description": "Konfigurierte Feldwerte f\u00fcr diese Aktivit\u00e4t (manueller Modus). Bei erstellungs_modus='ki' typischerweise leer / null.",
       "additionalProperties": true
     },
     "is_complete": {
@@ -38,48 +38,77 @@
       "type": "number",
       "description": "Sortierreihenfolge innerhalb der Phase"
     },
-    "ki_notiz": {
-      "type": "object",
-      "description": "AP2 / MBK-Integration \u00a74.1 ('Sandwich-Notiz'): Strukturiertes Briefing der Lehrkraft an die KI. `anweisung` = was die KI tun soll; `beispiel` = wie das Ergebnis aussehen/klingen soll. SPEICHERREGEL: Wenn beide Felder leer w\u00e4ren, wird das ganze Objekt NICHT gesetzt (statt `{anweisung:'',beispiel:''}`), damit der Out-of-Sync-Check der MBK-Prompts nicht f\u00e4lschlich anschl\u00e4gt.",
-      "properties": {
-        "anweisung": {
-          "type": "string",
-          "description": "Was soll die KI tun? Beispiel: 'Erstelle 5 Fragen zum Steigungsdreieck.'"
-        },
-        "beispiel": {
-          "type": "string",
-          "description": "Wie soll das Ergebnis aussehen? Beispiel: 'So wie in der letzten Einheit zu Funktionen.'"
-        }
-      }
+    "erstellungs_modus": {
+      "type": "string",
+      "enum": [
+        "manuell",
+        "ki"
+      ],
+      "default": "manuell",
+      "description": "AP2 / MBK-Schema v1.1.0 \u00a73: Steuert, ob diese Aktivit\u00e4t von der Lehrkraft selbst ausgearbeitet (manuell) oder von der MBK auf Basis eines strukturierten Briefings generiert (ki) werden soll. Im Modus 'manuell' liegen die Inhalte in `field_values` (bzw. in den zugeh\u00f6rigen MasterAufgaben), `ki_briefing` ist null. Im Modus 'ki' liegt die Anweisung in `ki_briefing`, `field_values` ist null/leer."
     },
-    "visuelle_vorgabe": {
+    "ki_briefing": {
       "type": "object",
-      "description": "AP2 / MBK-Integration \u00a74.2: Anweisung an die MBK, welcher visuelle Inhalt erzeugt werden soll. `alt_text_required` wird im Backend abgeleitet (true wenn format \u2208 {svg, canvas, image}) und nicht gespeichert.",
+      "description": "AP2 / MBK-Schema v1.1.0 \u00a74\u2013\u00a75: Strukturiertes Briefing an die MBK, wenn `erstellungs_modus='ki'`. Diskriminator `variant` unterscheidet Standard-Aktivit\u00e4t (typabh\u00e4ngiger Mini-Fragenkatalog) und offene Aufgabe (drei feste Felder). Die konkreten Parameter pro Aktivit\u00e4tstyp sind in `lib/kiBriefingKatalog.js` definiert.",
       "properties": {
-        "beschreibung": {
-          "type": "string",
-          "description": "Freitext-Beschreibung des gew\u00fcnschten visuellen Inhalts. Beispiel: 'Koordinatensystem mit fallender Geraden, Steigung -2.'"
-        },
-        "format": {
+        "variant": {
           "type": "string",
           "enum": [
-            "svg",
-            "canvas",
-            "image",
-            "none"
+            "standard",
+            "offen"
           ],
-          "default": "none",
-          "description": "Erwartetes Ausgabeformat. 'none' = kein visueller Inhalt gew\u00fcnscht."
+          "description": "Diskriminator: 'standard' = typabh\u00e4ngiger Mini-Fragenkatalog (Miniquiz, L\u00fcckentext, \u2026). 'offen' = Sandbox mit drei festen Feldern (Lernziel, Funktionsweise, visuelle Vorlage)."
+        },
+        "standard": {
+          "type": "object",
+          "description": "Felder f\u00fcr variant='standard'.",
+          "properties": {
+            "schwerpunkt": {
+              "type": "string",
+              "description": "Pflichtfeld: Worauf zielt die Aktivit\u00e4t ab? Beispiel: 'Steigung in Linearen Funktionen ablesen und berechnen.'"
+            },
+            "parameter": {
+              "type": "object",
+              "description": "Typspezifische optionale Parameter (z. B. anzahl_fragen, schwierigkeit, quiz_typ, wortarten_fokus). Welche Felder pro Aktivit\u00e4tstyp gerendert werden, regelt `lib/kiBriefingKatalog.js`.",
+              "additionalProperties": true
+            }
+          }
+        },
+        "offen": {
+          "type": "object",
+          "description": "Felder f\u00fcr variant='offen' (AllgemeineAufgaben/Sandbox-Aktivit\u00e4ten).",
+          "properties": {
+            "lernziel": {
+              "type": "string",
+              "description": "Pflichtfeld: Was sollen die Sch\u00fcler lernen?"
+            },
+            "funktionsweise": {
+              "type": "string",
+              "description": "Pflichtfeld: Wie soll die Aufgabe funktionieren?"
+            },
+            "visuelle_vorlage": {
+              "type": "object",
+              "description": "Optionale visuelle Vorlage (Bild + Beschreibung). Ersetzt das alte `visuelle_vorgabe`-Objekt aus Schema v1.0.1.",
+              "properties": {
+                "bild_url": {
+                  "type": "string"
+                },
+                "beschreibung": {
+                  "type": "string"
+                }
+              }
+            }
+          }
         }
       }
     },
     "transkript": {
       "type": "string",
-      "description": "AP2 / MBK-Integration \u00a71.4: Transkript des Medieninhalts (Video/Audio/Podcast/H\u00f6rverstehen) als Textbasis f\u00fcr KI-Fragegenerierung. Sichtbar nur bei Aktivit\u00e4ten mit entsprechendem `katalog.name`. Max. 50.000 Zeichen. Kann manuell gepflegt oder per generateMediaTranscript automatisch bef\u00fcllt werden (separater Sprint)."
+      "description": "AP2 / MBK-Integration \u00a71.4: Transkript des Medieninhalts (Video/Audio/Podcast/H\u00f6rverstehen) als Textbasis f\u00fcr KI-Fragegenerierung. Sichtbar nur bei Aktivit\u00e4ten mit entsprechendem `katalog.name`. Max. 50.000 Zeichen."
     },
     "alt_text": {
       "type": "string",
-      "description": "AP2 / MBK-Integration \u00a71.5: Von der MBK beim R\u00fcckgabe-Payload mitgelieferter Alt-Text f\u00fcr Barrierefreiheit (zu visuelle_vorgabe). Read-Only-Anzeige im UI mit optionaler Lehrkraft-Korrektur. Max. 1000 Zeichen."
+      "description": "AP2 / MBK-Integration \u00a71.5: Von der MBK beim R\u00fcckgabe-Payload mitgelieferter Alt-Text f\u00fcr Barrierefreiheit. Read-Only-Anzeige im UI mit optionaler Lehrkraft-Korrektur. Max. 1000 Zeichen."
     },
     "content_status": {
       "type": "string",

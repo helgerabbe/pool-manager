@@ -176,6 +176,47 @@ describe('MBK Template Engine', () => {
       expect(out).toContain('Aufgabe noch nicht ausgearbeitet');
     });
 
+    it('rendert KI-Briefing-Block bei erstellungs_modus="ki" (offen) und ignoriert manuelle Felder', () => {
+      const out = buildErstellungspaketForAufgabe({
+        aufgabe: {
+          id: 'aa-ki-1',
+          titel: 'Steigung ablesen',
+          anforderungsebene: '2 - Transfer',
+          aufgaben_typ: 'inhalt',
+          erstellungs_modus: 'ki',
+          // Diese Felder sollten ignoriert werden, weil KI-Modus aktiv ist:
+          aufgabenstellung: 'IGNORIEREN — alter manueller Text',
+          ki_briefing: {
+            variant: 'offen',
+            offen: {
+              lernziel: 'Steigungsdreieck aus Graph ablesen.',
+              funktionsweise: 'Graph zeigen, Schüler zeichnet Steigungsdreieck ein.',
+              visuelle_vorlage: { bild_url: 'https://x/y.png', beschreibung: 'wichtige y-Achse' },
+            },
+          },
+        },
+      });
+      expect(out).toContain('Erstellungs-Modus: KI');
+      expect(out).toContain('KI-Auftrag (offene Aufgabe)');
+      expect(out).toContain('Steigungsdreieck aus Graph ablesen.');
+      expect(out).toContain('https://x/y.png');
+      expect(out).not.toContain('IGNORIEREN');
+    });
+
+    it('warnt, wenn KI-Modus aktiv ist aber Briefing leer ist', () => {
+      const out = buildErstellungspaketForAufgabe({
+        aufgabe: {
+          id: 'aa-ki-2',
+          titel: 'Leerer KI-Auftrag',
+          anforderungsebene: '2 - Transfer',
+          aufgaben_typ: 'inhalt',
+          erstellungs_modus: 'ki',
+          ki_briefing: { variant: 'offen', offen: {} },
+        },
+      });
+      expect(out).toMatch(/Briefing ist leer|Briefing leer/);
+    });
+
     it('rendert Aufgabentext, Materialien und Erwartungshorizont', () => {
       const out = buildErstellungspaketForAufgabe({
         aufgabe: {

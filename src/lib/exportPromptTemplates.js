@@ -32,7 +32,7 @@ import { formatMissionLabel } from '@/lib/missionen';
  * unten (Headings, Pflichtsätze, Reihenfolge, Halluzinations-Fallback)
  * MUSS diese Version hochgezählt werden.
  */
-export const MBK_TEMPLATE_VERSION = 'v1.9.0';
+export const MBK_TEMPLATE_VERSION = 'v1.10.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -67,6 +67,71 @@ function trimMultiline(s) {
 function safeText(s, fallback = '—') {
   const t = trimMultiline(s);
   return t.length > 0 ? t : fallback;
+}
+
+/**
+ * AP2 / MBK-Schema v1.1.0 §3+§4: Rendert ein `ki_briefing`-Objekt als
+ * Markdown-Block für das Erstellungspaket. Wird sowohl von
+ * `buildErstellungspaketForAufgabe` (offen + standard) als auch von
+ * `renderPhaseAktivitaet` (standard) verwendet, damit beide Seiten
+ * IDENTISCH formatiert in den Prompt fließen.
+ *
+ * Liefert `null`, wenn das Briefing leer/unvollständig ist — Aufrufer
+ * entscheiden dann selbst, welcher Fallback-Text ausgegeben wird.
+ */
+function renderKiBriefingBlock(kiBriefing) {
+  if (!kiBriefing || typeof kiBriefing !== 'object') return null;
+
+  if (kiBriefing.variant === 'offen') {
+    const o = kiBriefing.offen || {};
+    const lernziel = trimMultiline(o.lernziel);
+    const funktionsweise = trimMultiline(o.funktionsweise);
+    const bildUrl = trimMultiline(o.visuelle_vorlage?.bild_url);
+    const bildBeschreibung = trimMultiline(o.visuelle_vorlage?.beschreibung);
+    if (!lernziel && !funktionsweise && !bildUrl && !bildBeschreibung) return null;
+
+    const lines = [
+      '🤖 **KI-Auftrag (offene Aufgabe)** — Erstelle die Aufgabe vollständig auf Basis der folgenden Vorgaben.',
+      '',
+      `- **Lernziel:** ${lernziel || '(nicht angegeben)'}`,
+      `- **Funktionsweise:** ${funktionsweise || '(nicht angegeben)'}`,
+    ];
+    if (bildUrl || bildBeschreibung) {
+      lines.push('- **Visuelle Vorlage:**');
+      if (bildUrl) lines.push(`  - Bild-URL: ${bildUrl}`);
+      if (bildBeschreibung) lines.push(`  - Beschreibung: ${bildBeschreibung}`);
+    }
+    return lines.join('\n');
+  }
+
+  if (kiBriefing.variant === 'standard') {
+    const s = kiBriefing.standard || {};
+    const schwerpunkt = trimMultiline(s.schwerpunkt);
+    const params = s.parameter && typeof s.parameter === 'object' ? s.parameter : {};
+    const paramEntries = Object.entries(params).filter(([, v]) => {
+      if (v === null || v === undefined) return false;
+      if (typeof v === 'string' && v.trim() === '') return false;
+      if (Array.isArray(v) && v.length === 0) return false;
+      return true;
+    });
+    if (!schwerpunkt && paramEntries.length === 0) return null;
+
+    const lines = [
+      '🤖 **KI-Auftrag (Standard-Aktivität)** — Erzeuge den Inhalt selbstständig nach folgendem Briefing.',
+      '',
+      `- **Schwerpunkt:** ${schwerpunkt || '(nicht angegeben)'}`,
+    ];
+    if (paramEntries.length > 0) {
+      lines.push('- **Parameter:**');
+      for (const [k, v] of paramEntries) {
+        const rendered = Array.isArray(v) ? v.join(', ') : String(v);
+        lines.push(`  - ${k}: ${rendered}`);
+      }
+    }
+    return lines.join('\n');
+  }
+
+  return null;
 }
 
 /**
@@ -568,6 +633,9 @@ export function buildErstellungspaketForAufgabe({ aufgabe }) {
   const ebene = safeText(aufgabe?.anforderungsebene);
   const typ = safeText(aufgabe?.aufgaben_typ);
   const hasContent = hasAufgabeContent(aufgabe);
+  // AP2 / MBK-Schema v1.1.0 §3: KI-Modus hat Vorrang vor manuellem Inhalt.
+  const istKiModus = aufgabe?.erstellungs_modus === 'ki';
+  const kiBriefingBlock = istKiModus ? renderKiBriefingBlock(aufgabe?.ki_briefing) : null;
 
   const header = [
     blockHeading('Erstellungspaket: AllgemeineAufgabe'),
@@ -577,9 +645,23 @@ export function buildErstellungspaketForAufgabe({ aufgabe }) {
     aufgabe?.aufgabentyp_projekt ? `- Projekt-Variante: ${safeText(aufgabe.aufgabentyp_projekt)}` : null,
     aufgabe?.mission_type ? `- Mission: ${formatMissionLabel(aufgabe.mission_type)}` : null,
     aufgabe?.schwierigkeitsgrad ? `- Schwierigkeitsgrad: ${aufgabe.schwierigkeitsgrad} / 3` : null,
+    `- Erstellungs-Modus: ${istKiModus ? 'KI (Briefing folgt)' : 'manuell'}`,
     `- Quelle-ID: ${aufgabe?.id || '(unbekannt)'}`,
     '',
   ].filter(Boolean).join('\n');
+
+  // KI-Modus: Briefing-Block ist der einzige Inhalt — manuelle Felder werden
+  // ignoriert, weil das Backend sie beim Modus-Wechsel auf null gesetzt hat.
+  if (istKiModus) {
+    if (kiBriefingBlock) {
+      return [header, kiBriefingBlock].join('\n');
+    }
+    return [
+      header,
+      blockHeading('Inhaltsstand'),
+      '⚠️ Diese Aufgabe ist auf KI-Modus gesetzt, aber das Briefing ist leer. Bitte ergänze die Lehrkraft-Vorgaben — sonst kann die MBK keine sinnvolle Aufgabe erzeugen.',
+    ].join('\n');
+  }
 
   if (!hasContent) {
     return [
@@ -747,6 +829,18 @@ function renderPhaseAktivitaet(pa, idx, katalogById, masterAufgabenByActivityId)
   const katalog = katalogById?.get(pa?.aktivitaet_id) || null;
   const name = safeText(katalog?.name, '(unbekannte Aktivität)');
   const lines = [`### Aktivität ${idx + 1}: ${name}`];
+
+  // AP2 / MBK-Schema v1.1.0 §3: KI-Modus hat Vorrang. In diesem Fall geben
+  // wir AUSSCHLIESSLICH den Briefing-Block aus — manuelle Inhalte und
+  // Master-Aufgaben werden ignoriert, weil das Backend sie beim Modus-Wechsel
+  // genullt hat. Damit kann die MBK auf einen Blick erkennen, was sie zu
+  // tun hat.
+  if (pa?.erstellungs_modus === 'ki') {
+    lines.push('_Erstellungs-Modus: **KI**_');
+    const briefing = renderKiBriefingBlock(pa.ki_briefing);
+    lines.push(briefing || '⚠️ KI-Modus aktiv, aber Briefing leer — bitte Lehrkraft-Vorgaben ergänzen.');
+    return lines.join('\n');
+  }
 
   const ownFields = renderFieldValues(pa?.field_values, katalog);
   const masters = masterAufgabenByActivityId?.get(pa?.id) || [];
