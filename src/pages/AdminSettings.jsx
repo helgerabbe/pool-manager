@@ -5,7 +5,7 @@ import { ROLLEN } from '@/lib/rbac';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ShieldCheck, BookOpen, GraduationCap, Puzzle, CalendarRange, Settings2, RotateCcw, AlertTriangle, Sparkles } from 'lucide-react';
+import { ShieldCheck, BookOpen, GraduationCap, Puzzle, CalendarRange, Settings2, RotateCcw, AlertTriangle, Sparkles, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -25,6 +25,7 @@ import WartungsmodusToggle from '@/components/admin/WartungsmodusToggle';
 import AktivitaetenKatalog from '@/components/admin/AktivitaetenKatalog';
 import SystemBausteineTable from '@/components/admin/SystemBausteineTable';
 import SchulStammdatenCard from '@/components/admin/SchulStammdatenCard';
+import NomenklaturManagerView from '@/components/admin/nomenklatur/NomenklaturManagerView';
 
 const KATEGORIEN = ['Diagnostik', 'Input', 'Übung', 'Projekt', 'Prüfung'];
 
@@ -135,7 +136,7 @@ export default function AdminSettings() {
 
       {/* Lookup-Tabellen */}
       <Tabs defaultValue="faecher">
-        <TabsList className="bg-muted grid w-full grid-cols-2 sm:grid-cols-5">
+        <TabsList className="bg-muted grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
           <TabsTrigger value="faecher" className="gap-1.5 text-xs">
             <BookOpen className="w-3.5 h-3.5" />Fächer
           </TabsTrigger>
@@ -150,6 +151,9 @@ export default function AdminSettings() {
           </TabsTrigger>
           <TabsTrigger value="systembausteine" className="gap-1.5 text-xs">
             <Sparkles className="w-3.5 h-3.5" />System-Bausteine
+          </TabsTrigger>
+          <TabsTrigger value="nomenklatur" className="gap-1.5 text-xs">
+            <Languages className="w-3.5 h-3.5" />Nomenklatur
           </TabsTrigger>
         </TabsList>
 
@@ -226,6 +230,11 @@ export default function AdminSettings() {
         {/* Aktivitäten-Katalog */}
         <TabsContent value="aktivitaeten" className="mt-4">
           <AktivitaetenKatalog />
+        </TabsContent>
+
+        {/* Nomenklatur-Manager (AP2) — Sprache der Schule pro Fach */}
+        <TabsContent value="nomenklatur" className="mt-4">
+          <NomenklaturManagerView />
         </TabsContent>
 
         {/* System-Bausteine (globale Standard-Elemente für Tab 7) */}
