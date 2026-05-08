@@ -108,11 +108,34 @@ export function useAirGapHandoverState({ einheitId, currentHash }) {
     writeState(einheitId, {});
   }, [einheitId]);
 
+  /**
+   * Invalidiert den localStorage-Haken eines Blocks, ohne den State komplett
+   * zu löschen. Wird vom Panel aufgerufen, sobald die DB-Drift-Erkennung
+   * meldet, dass eine Quelle in diesem Block out-of-sync ist (Spec §5.3:
+   * „bei System-Änderung Haken automatisch entfernen").
+   */
+  const invalidateBlock = useCallback(
+    (blockKey) => {
+      if (!einheitId || !AIR_GAP_BLOCKS.includes(blockKey)) return;
+      setState((prev) => {
+        if (!prev[blockKey]?.delivered) return prev;
+        const next = {
+          ...prev,
+          [blockKey]: { delivered: false, hash: null, timestamp: null },
+        };
+        writeState(einheitId, next);
+        return next;
+      });
+    },
+    [einheitId]
+  );
+
   return {
     blockStatus,
     deliveredCount,
     totalBlocks: AIR_GAP_BLOCKS.length,
     setDelivered,
+    invalidateBlock,
     reset,
   };
 }

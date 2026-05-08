@@ -10,7 +10,7 @@
  * Datenshape und Builder kommen aus lib/mbkAirGapPayloads.js.
  * Hash-Berechnung aus lib/systemContextHash.js.
  */
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -21,8 +21,13 @@ import {
   Sparkles,
   CheckCircle2,
   RotateCcw,
+  RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useExportPrompts } from '@/hooks/useExportPrompts';
+import { useAirGapBulk } from '@/hooks/useAirGapBulk';
+import { buildSourceTimestampIndex } from '@/lib/exportPromptSync';
 
 import {
   buildSystemContextPayload,
@@ -143,8 +148,83 @@ export default function MBKAirGapPanel({ einheitId }) {
     deliveredCount,
     totalBlocks,
     setDelivered,
+    invalidateBlock,
     reset,
   } = useAirGapHandoverState({ einheitId, currentHash });
+
+  // ── Aufgabenbausteine (Legacy) für tsIndex — wir lassen die Air-Gap-Welt
+  // bewusst auch deren Timestamps mitlaufen, weil das Lernpaket-Erstellungs-
+  // paket im Index dieselbe Logik teilt. Kein Render-Effekt im UI.
+  const { data: aufgabenbausteine = [] } = useQuery({
+    queryKey: ['aufgabenbausteine-by-pakete', paketIds.join(',')],
+    queryFn: async () => {
+      if (paketIds.length === 0) return [];
+      const all = await base44.entities.Aufgabenbausteine.list();
+      return all.filter((a) => paketIds.includes(a.lernpaket_id));
+    },
+    enabled: paketIds.length > 0,
+  });
+
+  // Source-Timestamp-Index — geteilt mit der Drift-Logik in
+  // exportPromptSync.js. Air-Gap-Felder wurden in Schritt 4 ergänzt.
+  const tsIndex = useMemo(
+    () =>
+      buildSourceTimestampIndex({
+        einheit,
+        themenfelder,
+        lernpakete,
+        lernziele,
+        aufgabenbausteine,
+        phaseAktivitaeten,
+        masterAufgaben,
+        allgemeineAufgaben,
+        globalPrompts,
+      }),
+    [einheit, themenfelder, lernpakete, lernziele, aufgabenbausteine, phaseAktivitaeten, masterAufgaben, allgemeineAufgaben, globalPrompts]
+  );
+
+  // Persistierte Air-Gap-Records aus der DB.
+  const { prompts: dbPrompts = [] } = useExportPrompts(einheitId);
+
+  // Air-Gap-Bulk-Hook: Plan, Schreibaktion, aggregierter Block-Status.
+  const {
+    summary: bulkSummary,
+    blockAggregate,
+    running: bulkRunning,
+    runBulk,
+  } = useAirGapBulk({
+    einheitId,
+    einheit,
+    stammdaten,
+    schulNomenklatur,
+    globalPrompts,
+    themenfelder,
+    lernpakete,
+    lernziele,
+    phaseAktivitaeten,
+    katalogById,
+    masterAufgaben,
+    allgemeineAufgaben,
+    allgemeineAufgabenEbene23,
+    prompts: dbPrompts,
+    tsIndex,
+    systemContextHash: currentHash,
+  });
+
+  // Spec §5.3: Sobald die DB-Drift-Erkennung in einem Block einen Stale-
+  // Record meldet, wird der lokale "Hab ich's übergeben?"-Haken automatisch
+  // invalidiert. So sieht der Operator sofort: erneut rüberschieben.
+  useEffect(() => {
+    if (!einheitId) return;
+    for (const blockKey of Object.keys(blockAggregate)) {
+      if (blockAggregate[blockKey].hasAnyStale && blockStatus[blockKey]?.rawDelivered) {
+        invalidateBlock(blockKey);
+      }
+    }
+    // Wir hängen NICHT an blockStatus, sonst würde der Effekt bei jeder
+    // Status-Änderung (auch durch invalidate selbst) erneut feuern.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blockAggregate, einheitId]);
 
   // ── Payload-Builder ────────────────────────────────────────────────────
   const buildSysCtx = () =>
@@ -361,12 +441,33 @@ export default function MBKAirGapPanel({ einheitId }) {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-background text-sm">
             <CheckCircle2 className="w-4 h-4 text-green-600" />
             <span className="font-medium tabular-nums">{deliveredCount}/{totalBlocks}</span>
             <span className="text-muted-foreground text-xs">übergeben</span>
           </div>
+          <Button
+            size="sm"
+            variant="default"
+            onClick={runBulk}
+            disabled={bulkRunning || bulkSummary.willWrite === 0}
+            className="gap-1.5"
+            title={
+              bulkSummary.willWrite === 0
+                ? 'Alle Air-Gap-Payloads sind aktuell — kein Re-Write nötig.'
+                : `${bulkSummary.willWrite} Payload(s) werden in die DB geschrieben.`
+            }
+          >
+            {bulkRunning ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="w-3.5 h-3.5" />
+            )}
+            {bulkSummary.willWrite === 0
+              ? 'Alle aktuell'
+              : `${bulkSummary.willWrite} regenerieren`}
+          </Button>
           <Button size="sm" variant="ghost" onClick={reset} className="gap-1.5">
             <RotateCcw className="w-3.5 h-3.5" />
             Zurücksetzen
@@ -382,7 +483,7 @@ export default function MBKAirGapPanel({ einheitId }) {
         description="Stammdaten, Schul-Nomenklatur und globale MBK-Prompts. Wird einmalig pro Sitzung an die MBK übergeben."
         delivered={blockStatus.system_context.delivered}
         rawDelivered={blockStatus.system_context.rawDelivered}
-        isStale={blockStatus.system_context.isStale}
+        isStale={blockStatus.system_context.isStale || blockAggregate.mbk_system_context.hasAnyStale}
         onToggleDelivered={(v) => setDelivered('system_context', v)}
         onCopy={() => handleCopy(buildSysCtx())}
         onDownload={() => handleDownload(buildSysCtx(), `mbk-system-context_${baseSlug}.json`)}
@@ -396,7 +497,7 @@ export default function MBKAirGapPanel({ einheitId }) {
         description='Themenfelder, Lernpakete, Lernziele, Aktivitäts-Slots und alle vier Lernpfade — als "Inhaltsverzeichnis" für die MBK.'
         delivered={blockStatus.structure.delivered}
         rawDelivered={blockStatus.structure.rawDelivered}
-        isStale={blockStatus.structure.isStale}
+        isStale={blockStatus.structure.isStale || blockAggregate.mbk_structure_payload.hasAnyStale}
         onToggleDelivered={(v) => setDelivered('structure', v)}
         dePrioritized={!block1Done}
         onCopy={() => handleCopy(buildStructure())}
@@ -412,7 +513,7 @@ export default function MBKAirGapPanel({ einheitId }) {
         itemCount={taskItems.length}
         delivered={blockStatus.task_content.delivered}
         rawDelivered={blockStatus.task_content.rawDelivered}
-        isStale={blockStatus.task_content.isStale}
+        isStale={blockStatus.task_content.isStale || blockAggregate.mbk_task_content_payload.hasAnyStale}
         onToggleDelivered={(v) => setDelivered('task_content', v)}
         dePrioritized={!block2Done}
         onCopy={() => handleCopy(taskBundle)}
@@ -449,7 +550,7 @@ export default function MBKAirGapPanel({ einheitId }) {
         itemCount={microItems.length}
         delivered={blockStatus.micro.delivered}
         rawDelivered={blockStatus.micro.rawDelivered}
-        isStale={blockStatus.micro.isStale}
+        isStale={blockStatus.micro.isStale || blockAggregate.mbk_micro_payload.hasAnyStale}
         onToggleDelivered={(v) => setDelivered('micro', v)}
         dePrioritized={!block2Done}
         onCopy={() => handleCopy(microBundle)}

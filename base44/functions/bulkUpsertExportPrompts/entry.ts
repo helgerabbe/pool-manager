@@ -33,7 +33,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const ALLOWED_ROLES = new Set(['admin', 'Administrator', 'Moodle-Designer']);
-const ALLOWED_PROMPT_TYPES = new Set(['nucleus', 'persona', 'sektor_struktur', 'sektor_anweisung', 'erstellungspaket']);
+const ALLOWED_PROMPT_TYPES = new Set([
+  // Legacy / Markdown-Welt
+  'nucleus', 'persona', 'sektor_struktur', 'sektor_anweisung', 'erstellungspaket',
+  // Air-Gap-Welt (siehe docs/mbk-air-gap-uebergabe.md)
+  'mbk_system_context', 'mbk_structure_payload', 'mbk_task_content_payload', 'mbk_micro_payload',
+]);
 
 Deno.serve(async (req) => {
   try {
@@ -103,6 +108,9 @@ Deno.serve(async (req) => {
           is_customized: !!item.is_customized,
           source_updated_at: item.source_updated_at || new Date().toISOString(),
           template_version: item.template_version || null,
+          // Air-Gap: Hash zum Zeitpunkt der Generierung. Bei Legacy-Typen
+          // bleibt das Feld leer/null — die Entity-Definition lässt das zu.
+          system_context_hash_at_generation: item.system_context_hash_at_generation || null,
         };
         const found = existingByKey.get(key);
         if (found) {

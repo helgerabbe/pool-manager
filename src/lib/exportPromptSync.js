@@ -16,6 +16,7 @@
  */
 
 import { MBK_TEMPLATE_VERSION } from '@/lib/exportPromptTemplates';
+import { MBK_AIRGAP_VERSION } from '@/lib/mbkAirGapPayloads';
 
 const PROMPT_TYPES = {
   NUCLEUS: 'nucleus',
@@ -23,7 +24,21 @@ const PROMPT_TYPES = {
   SEKTOR_STRUKTUR: 'sektor_struktur',
   SEKTOR: 'sektor_anweisung',
   ERSTELLUNGSPAKET: 'erstellungspaket',
+  // Air-Gap-Welt
+  MBK_SYSTEM_CONTEXT: 'mbk_system_context',
+  MBK_STRUCTURE: 'mbk_structure_payload',
+  MBK_TASK_CONTENT: 'mbk_task_content_payload',
+  MBK_MICRO: 'mbk_micro_payload',
 };
+
+// Set der Air-Gap-Prompt-Types — wird in isPromptOutOfSync für den
+// zusätzlichen Hash-Vergleich genutzt.
+const AIRGAP_PROMPT_TYPES = new Set([
+  PROMPT_TYPES.MBK_SYSTEM_CONTEXT,
+  PROMPT_TYPES.MBK_STRUCTURE,
+  PROMPT_TYPES.MBK_TASK_CONTENT,
+  PROMPT_TYPES.MBK_MICRO,
+]);
 
 export const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 
@@ -94,14 +109,36 @@ export function computeSourceMaxTimestamp({ promptType, referenceId, einheit, th
  * markiert (sonst würden alle Bestandsprompts beim ersten Deploy schlagartig
  * gelb leuchten). Erst sobald ein Record neu geschrieben wird, bekommt er
  * eine Version und nimmt am Versionsvergleich teil.
+ *
+ * Air-Gap-spezifisch: Zusätzlich wird der `system_context_hash_at_generation`
+ * gegen den aktuellen `currentSystemContextHash` geprüft. Ein Mismatch
+ * bedeutet, dass globale Regeln (Stammdaten, Schul-Nomenklatur, MBK-Global-
+ * Prompts) sich seit der Generierung geändert haben — die MBK würde den
+ * Payload ablehnen, weil ihr Cache-Key nicht mehr passt.
  */
-export function isPromptOutOfSync(prompt, sourceMaxTs) {
+export function isPromptOutOfSync(prompt, sourceMaxTs, currentSystemContextHash = null) {
   if (!prompt || !prompt.source_updated_at) return false;
   const generatedTs = new Date(prompt.source_updated_at).getTime();
   if (sourceMaxTs > generatedTs) return true;
-  if (prompt.template_version && prompt.template_version !== MBK_TEMPLATE_VERSION) {
+
+  const isAirGap = AIRGAP_PROMPT_TYPES.has(prompt.prompt_type);
+  const expectedTemplateVersion = isAirGap ? MBK_AIRGAP_VERSION : MBK_TEMPLATE_VERSION;
+  if (prompt.template_version && prompt.template_version !== expectedTemplateVersion) {
     return true;
   }
+
+  // Air-Gap: Hash-Vergleich. Nur prüfen, wenn beide Seiten einen Hash haben —
+  // sonst würde ein noch nicht gepflegter Hash alle Records als veraltet
+  // markieren.
+  if (
+    isAirGap &&
+    currentSystemContextHash &&
+    prompt.system_context_hash_at_generation &&
+    prompt.system_context_hash_at_generation !== currentSystemContextHash
+  ) {
+    return true;
+  }
+
   return false;
 }
 
@@ -227,6 +264,32 @@ export function buildSourceTimestampIndex({
     allgemeineAufgabeTs.set(aa.id, ts(aa));
   }
 
+  // ── Air-Gap-Indizes ───────────────────────────────────────────────────
+  // mbk_system_context: hängt an globalen Regeln. Stammdaten haben kein
+  // updated_date — Drift wird zusätzlich über system_context_hash erkannt
+  // (siehe isPromptOutOfSync). Hier reicht der Manager-Timestamp als Proxy.
+  const mbkSystemContextTs = globalPromptsTs;
+
+  // mbk_structure_payload: gesamte Strukturschicht der Einheit.
+  const mbkStructureTs = Math.max(
+    ts(einheit), themenfelderTs, lernpaketeTs, phaseAktivitaetenTs,
+    // AllgemeineAufgaben fließen ein, weil sie in der Struktur als Sektor-Items auftauchen.
+    Array.from(allgemeineAufgabeTs.values()).reduce((m, t) => Math.max(m, t), 0),
+  );
+
+  // mbk_task_content_payload pro reference_id (Lernpaket oder Allg. Aufgabe).
+  // Re-use des Lernpaket-Index, der bereits LP+LZ+AB+Phasen+Master abdeckt.
+  const mbkTaskContentLernpaketTs = lernpaketTs;
+  const mbkTaskContentAufgabeTs = allgemeineAufgabeTs;
+
+  // mbk_micro_payload pro reference_id (Phase-Aktivität ODER Allg. Aufgabe).
+  // Da ki_briefing und transkript Felder dieser Records sind, reicht ts(record).
+  const mbkMicroPhaseAktivitaetTs = new Map();
+  for (const pa of phaseAktivitaeten) {
+    if (pa?.id) mbkMicroPhaseAktivitaetTs.set(pa.id, ts(pa));
+  }
+  const mbkMicroAufgabeTs = allgemeineAufgabeTs;
+
   return {
     nucleusTs: Math.max(ts(einheit), themenfelderTs, lernpaketeTs, lernzieleTs, aufgabenbausteineTs, phaseAktivitaetenTs, masterAufgabenTs, globalPromptsTs),
     // Fachliche Persona (v1.5.0): selbst quellen-arm, aber abhängig von der
@@ -244,6 +307,13 @@ export function buildSourceTimestampIndex({
     sektorTs: Math.max(ts(einheit), globalPromptsTs),
     lernpaketTs,
     allgemeineAufgabeTs,
+    // Air-Gap
+    mbkSystemContextTs,
+    mbkStructureTs,
+    mbkTaskContentLernpaketTs,
+    mbkTaskContentAufgabeTs,
+    mbkMicroPhaseAktivitaetTs,
+    mbkMicroAufgabeTs,
   };
 }
 
@@ -266,6 +336,22 @@ export function lookupSourceMaxTimestampFromIndex(index, promptType, referenceId
       if (!referenceId) return 0;
       if (index.lernpaketTs.has(referenceId)) return index.lernpaketTs.get(referenceId);
       if (index.allgemeineAufgabeTs.has(referenceId)) return index.allgemeineAufgabeTs.get(referenceId);
+      return 0;
+    }
+    case PROMPT_TYPES.MBK_SYSTEM_CONTEXT:
+      return index.mbkSystemContextTs || 0;
+    case PROMPT_TYPES.MBK_STRUCTURE:
+      return index.mbkStructureTs || 0;
+    case PROMPT_TYPES.MBK_TASK_CONTENT: {
+      if (!referenceId) return 0;
+      if (index.mbkTaskContentLernpaketTs?.has(referenceId)) return index.mbkTaskContentLernpaketTs.get(referenceId);
+      if (index.mbkTaskContentAufgabeTs?.has(referenceId)) return index.mbkTaskContentAufgabeTs.get(referenceId);
+      return 0;
+    }
+    case PROMPT_TYPES.MBK_MICRO: {
+      if (!referenceId) return 0;
+      if (index.mbkMicroPhaseAktivitaetTs?.has(referenceId)) return index.mbkMicroPhaseAktivitaetTs.get(referenceId);
+      if (index.mbkMicroAufgabeTs?.has(referenceId)) return index.mbkMicroAufgabeTs.get(referenceId);
       return 0;
     }
     default:
