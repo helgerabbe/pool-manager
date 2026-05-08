@@ -132,47 +132,85 @@ export default function TextLesenModal({
             </div>
           )}
 
-          {/* AP2 §1.4: Transkript-Feld nur bei Medien-Aktivitäten */}
-          {shouldShowTranskript(catalogEntry?.name) && (
-            <TranskriptField
-              value={fieldValues.transkript || ''}
-              onChange={(val) => handleFieldChange('transkript', val)}
-              disabled={isSaving || exportLocked}
-              sourceUrl={fieldValues.url || ''}
-            />
-          )}
-
-          {/* Alle anderen Felder aus dem Schema */}
-          {formSchema.map(field => {
-            if (field.field_name === 'aufgabentext') return null;
-
-            // Bedingte Anzeige: inhalt nur wenn inhalt_typ === 'text', dokument_url nur wenn 'datei'
+          {/* Reihenfolge: Aufgabenstellung (oben) → Medientyp → Link/URL → Transkript → Rest.
+              Wir sortieren das form_schema dafür hier um, damit die didaktische Logik
+              (erst die Auswahl der Medienart, dann die Quelle, dann das Transkript dazu)
+              für die Lehrkraft sichtbar wird. */}
+          {(() => {
             const inhaltTyp = fieldValues?.inhalt_typ;
-            if (field.field_name === 'inhalt' && inhaltTyp && inhaltTyp !== 'text') return null;
-            if (field.field_name === 'dokument_url' && inhaltTyp !== 'datei') return null;
+            const isFieldVisible = (f) => {
+              if (f.field_name === 'aufgabentext') return false; // schon oben gerendert
+              if (f.field_name === 'inhalt' && inhaltTyp && inhaltTyp !== 'text') return false;
+              if (f.field_name === 'dokument_url' && inhaltTyp !== 'datei') return false;
+              return true;
+            };
 
-            if (field.type === 'info') {
-              return (
-                <div key={field.field_name} className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm text-blue-800">
-                  {field.label}
-                </div>
+            const ORDER_PREFIX = ['medientyp', 'url'];
+            const sortedFields = [...formSchema].filter(isFieldVisible).sort((a, b) => {
+              const ai = ORDER_PREFIX.indexOf(a.field_name);
+              const bi = ORDER_PREFIX.indexOf(b.field_name);
+              const aRank = ai === -1 ? ORDER_PREFIX.length : ai;
+              const bRank = bi === -1 ? ORDER_PREFIX.length : bi;
+              return aRank - bRank;
+            });
+
+            const showTranskript = shouldShowTranskript(catalogEntry?.name);
+            const transkriptInserted = !showTranskript;
+            const out = [];
+
+            sortedFields.forEach((field) => {
+              if (field.type === 'info') {
+                out.push(
+                  <div key={field.field_name} className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm text-blue-800">
+                    {field.label}
+                  </div>
+                );
+              } else {
+                out.push(
+                  <div key={field.field_name} className="space-y-1.5">
+                    <Label>
+                      {field.label}
+                      {field.required && <span className="text-destructive ml-1">*</span>}
+                    </Label>
+                    <StandardInput
+                      field={field}
+                      value={fieldValues[field.field_name] || ''}
+                      onChange={(val) => handleFieldChange(field.field_name, val)}
+                    />
+                  </div>
+                );
+              }
+
+              // Transkript direkt NACH dem url-Feld einfügen — dann steht es
+              // unter Medientyp + Link/URL und vor allen sonstigen Feldern.
+              if (showTranskript && field.field_name === 'url') {
+                out.push(
+                  <TranskriptField
+                    key="__transkript__"
+                    value={fieldValues.transkript || ''}
+                    onChange={(val) => handleFieldChange('transkript', val)}
+                    disabled={isSaving || exportLocked}
+                    sourceUrl={fieldValues.url || ''}
+                  />
+                );
+              }
+            });
+
+            // Fallback: wenn die Aktivität kein url-Feld hat, Transkript ans Ende.
+            if (showTranskript && !sortedFields.some(f => f.field_name === 'url')) {
+              out.push(
+                <TranskriptField
+                  key="__transkript_fallback__"
+                  value={fieldValues.transkript || ''}
+                  onChange={(val) => handleFieldChange('transkript', val)}
+                  disabled={isSaving || exportLocked}
+                  sourceUrl={fieldValues.url || ''}
+                />
               );
             }
 
-            return (
-              <div key={field.field_name} className="space-y-1.5">
-                <Label>
-                  {field.label}
-                  {field.required && <span className="text-destructive ml-1">*</span>}
-                </Label>
-                <StandardInput
-                  field={field}
-                  value={fieldValues[field.field_name] || ''}
-                  onChange={(val) => handleFieldChange(field.field_name, val)}
-                />
-              </div>
-            );
-            })}
+            return out;
+          })()}
              </>
             )}
             </div>
