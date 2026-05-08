@@ -57,10 +57,22 @@ export default function TranskriptField({
   // Studyflix-Auto-Import-State
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState(null);
-  const canImport = isStudyflixUrl(sourceUrl) && !disabled && !importing;
+  const [showManualHint, setShowManualHint] = useState(false);
+
+  const isStudyflix = isStudyflixUrl(sourceUrl);
+  const buttonEnabled = !disabled && !importing;
 
   const handleStudyflixImport = async () => {
     setImportError(null);
+    setShowManualHint(false);
+
+    // Bei Nicht-Studyflix-URLs: kein API-Call, sondern klarer Warnhinweis,
+    // dass das Transkript manuell beschafft werden muss.
+    if (!isStudyflix) {
+      setShowManualHint(true);
+      return;
+    }
+
     setImporting(true);
     try {
       const res = await base44.functions.invoke('extractStudyflixText', { url: sourceUrl });
@@ -84,9 +96,9 @@ export default function TranskriptField({
   // Tooltip-Text je nach Zustand
   const buttonTooltip = importing
     ? 'Lade Text von Studyflix…'
-    : isStudyflixUrl(sourceUrl)
+    : isStudyflix
     ? 'Text aus der Studyflix-URL automatisch laden'
-    : 'Automatischer Text-Import aktuell nur für Studyflix verfügbar.';
+    : 'Nur für Studyflix-URLs. Bei anderen Quellen erscheint ein Hinweis zum manuellen Vorgehen.';
 
   return (
     <div className="space-y-1.5">
@@ -112,10 +124,12 @@ export default function TranskriptField({
                   <button
                     type="button"
                     onClick={handleStudyflixImport}
-                    disabled={!canImport}
+                    disabled={!buttonEnabled}
                     className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium border transition-colors ${
-                      canImport
+                      isStudyflix && buttonEnabled
                         ? 'border-accent/40 bg-accent/10 text-accent-foreground hover:bg-accent/20'
+                        : buttonEnabled
+                        ? 'border-border bg-background text-muted-foreground hover:bg-muted'
                         : 'border-border bg-muted text-muted-foreground cursor-not-allowed opacity-60'
                     }`}
                   >
@@ -146,6 +160,17 @@ export default function TranskriptField({
       />
       {importError && (
         <p className="text-[11px] text-destructive">⚠️ {importError}</p>
+      )}
+      {showManualHint && !isStudyflix && (
+        <div className="px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-900 leading-relaxed">
+          <p className="font-semibold">Automatischer Import nicht möglich</p>
+          <p className="mt-0.5">
+            Diese URL stammt nicht von Studyflix. Bitte beschaffe das Transkript selbst (z.&nbsp;B. über
+            YouTube → „Transkript anzeigen", einer Audio-Software oder durch Abtippen der wesentlichen
+            Inhalte) und füge es unten ins Feld ein. Ohne Transkript kann die KI keine Fragen zum
+            Medieninhalt erzeugen.
+          </p>
+        </div>
       )}
       <p className="text-[11px] text-muted-foreground/80">
         Tipp: Bei Studyflix-URLs lädt der Sparkles-Button den Artikeltext automatisch. Bei anderen Quellen bitte manuell einfügen.

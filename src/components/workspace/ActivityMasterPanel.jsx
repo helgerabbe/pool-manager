@@ -25,6 +25,8 @@ import MoodleSyncStatusBadge from '@/components/workspace/MoodleSyncStatusBadge'
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import ModusAuswahlBox from '@/components/workspace/ki/ModusAuswahlBox';
 import KiBriefingForm from '@/components/workspace/ki/KiBriefingForm';
+import TranskriptStatusBadge from '@/components/workspace/ki/TranskriptStatusBadge';
+import { shouldShowTranskript } from '@/components/workspace/ki/TranskriptField';
 import { toast } from 'sonner';
 
 // Inline-editierbares Aufgabentext-Feld mit Standardtext
@@ -589,6 +591,13 @@ export default function ActivityMasterPanel({
                         ? <p className="whitespace-pre-wrap leading-relaxed">{fieldValues.aufgabentext}</p>
                         : <span className="italic text-blue-600/60">Noch nicht ausgefüllt.</span>}
                     </div>
+                  </div>
+                )}
+                {/* AP2 §1.4: Transkript-Status für Medien-Aktivitäten in der Read-Only-Ansicht */}
+                {shouldShowTranskript(catalogEntry?.name) && (
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Transkript</p>
+                    <TranskriptStatusBadge transkript={activityRecord?.transkript || ''} />
                   </div>
                 )}
                 {schema.map(field => {
