@@ -1,10 +1,10 @@
 # MBK-Abstimmung · Schema-Erweiterung für Schritt 5 (Lehrkraft-UX)
 
-**Status:** 🟡 Entwurf zur Abstimmung mit der MBK-Entwicklung
+**Status:** ✅ Von der MBK-Entwicklung freigegeben (2026-05-08)
 **Stand:** 2026-05-08
-**Vorgeschlagene Schema-Version:** **1.1.0** (Minor-Bump — additive + ablösende Änderung)
+**Schema-Version:** **1.1.0** (Minor-Bump — additive + ablösende Änderung)
 **Vorgänger:** `docs/mbk-integration.md` (v1.0.1, abgenommen 2026-05-08)
-**Antwortfrist (Vorschlag):** _zu vereinbaren_
+**Implementierungsstart:** Schritt 5 (Pool-Manager-UI) kann beginnen.
 
 ---
 
@@ -123,11 +123,19 @@ unter `ki_briefing.standard` an die MBK geliefert.
     "parameter": {
       "anzahl_fragen": 5,                // optional, sonst entscheidet MBK
       "schwierigkeit": "mittel",         // "leicht" | "mittel" | "schwer" | "gemischt"
+      "quiz_typ": "single_choice",       // optional: "true_false" | "single_choice" | "multiple_choice"
+                                         // hilft der MBK, Distraktoren passend zu bauen
       "schwerpunktbereich": null         // optional, freier Text für Eingrenzung
     }
   }
 }
 ```
+
+> **Hinweis zum Parameter `quiz_typ`** (auf Wunsch der MBK-Entwicklung
+> ergänzt, Freigabe-Feedback 2026-05-08): Steuert die Aufgabenform und die
+> Konstruktion der Distraktoren. Wird das Feld leer gelassen, entscheidet
+> die MBK selbst — bevorzugt typischerweise `single_choice` als didaktischen
+> Default für Jahrgangsstufen 5–10.
 
 #### Lückentext
 
@@ -375,8 +383,16 @@ Pool-Manager-UI auf dem Stand vor Schritt 5.
 | Rolle | Name | Datum | Status |
 |---|---|---|---|
 | App-Team | App-Team-Lead | 2026-05-08 | ✅ (Vorschlag eingereicht) |
-| MBK-Entwicklung | MBK-Entwicklungsleitung |  | ☐ |
+| MBK-Entwicklung | MBK-Entwicklungsleitung | 2026-05-08 | ✅ (Freigabe mit Ergänzung `quiz_typ`) |
 | Planungs-/Didaktik-Lead | _(zu ergänzen)_ |  | ☐ |
+
+**Abnahme-Statement der MBK-Entwicklung (2026-05-08):**
+
+> „Aus Sicht der MBK-Entwicklung ist das Schema v1.1.0 hiermit freigegeben.
+> Die Umstellung von ‚Sandwich' auf ‚Struktur-Briefing' macht das System
+> robuster gegenüber unklaren Lehrkraft-Eingaben. Einzige Ergänzung: ein
+> optionaler Parameter `quiz_typ` für Miniquiz/MC/Test, damit Distraktoren
+> gezielter gebaut werden können."
 
 ---
 
@@ -385,3 +401,4 @@ Pool-Manager-UI auf dem Stand vor Schritt 5.
 | Version | Datum | Änderung |
 |---|---|---|
 | 0.1 | 2026-05-08 | Initialer Entwurf zur MBK-Abstimmung (Schritt 5) |
+| 1.0 | 2026-05-08 | Freigabe durch MBK-Entwicklung; Parameter `quiz_typ` in den Miniquiz-Katalog ergänzt; Status auf „freigegeben" gesetzt — Implementierung Schritt 5 kann starten. |
