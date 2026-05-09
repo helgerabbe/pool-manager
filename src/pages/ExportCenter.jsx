@@ -3,104 +3,46 @@
  *
  * Phase G + Phase I — Hauptarbeitsplatz des Moodle-Spezialisten.
  *
- * Aufbau:
- *   - Header mit Titel + zwei Tabs:
- *       Tab 1 „Einheiten-Export": bestehender Split-Screen
- *         (Einheiten-Liste + Arbeitsbereich pro Einheit)
- *       Tab 2 „MBK-Prompt-Manager": globale Prompt-Bibliothek
- *         (Sidebar + Editor)
+ * Nach der Air-Gap-Konsolidierung gibt es nur noch eine Ansicht:
+ * den Einheiten-Export (Split-Screen mit Einheiten-Liste links + Air-Gap-
+ * Tabs-Panel rechts). Der frühere „MBK-Prompt-Manager"-Tab ist entfallen,
+ * weil seine Inhalte (globale KI-Prompts) vollständig im Tab „3 · Globale
+ * KI" des Air-Gap-Workflows abgedeckt sind.
  *
- *   - Der Manager (Tab 2) ist nur für Administrator und Moodle-Designer
- *     überhaupt sichtbar — siehe useRBAC().rolle. Fachschaftsleitung sieht
- *     den Tab gar nicht. Schreibrechte werden zusätzlich serverseitig in
- *     `updateMBKGlobalPromptSecure` geprüft.
- *
- *   - State des aktiven Tabs wird im URL-Param `tab` gespiegelt, damit
- *     Refreshs / Deep-Links den Bereich behalten.
+ * Die Anleitung samt kontextspezifischem Operator Action Plan liegt
+ * weiterhin im Header-Button → AnleitungModal.
  */
 
-import React, { useState, useEffect } from 'react';
-import { Send, Library, BookOpen } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import React, { useState } from 'react';
+import { Send, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import HelpBadge from '@/components/ui/HelpBadge';
 import ExportCenterEinheitenList from '@/components/exportcenter/ExportCenterEinheitenList';
 import ExportCenterArbeitsbereich from '@/components/exportcenter/ExportCenterArbeitsbereich';
-import MBKPromptManagerView from '@/components/exportcenter/promptmanager/MBKPromptManagerView';
 import AnleitungModal from '@/components/exportcenter/v2/AnleitungModal';
-import { useRBAC } from '@/hooks/useRBAC';
-import { ROLLEN } from '@/lib/rbac';
-
-const TABS = {
-  EINHEITEN: 'einheiten',
-  MANAGER: 'manager',
-};
-
-function readInitialTab() {
-  if (typeof window === 'undefined') return TABS.EINHEITEN;
-  const params = new URLSearchParams(window.location.search);
-  const t = params.get('tab');
-  return t === TABS.MANAGER ? TABS.MANAGER : TABS.EINHEITEN;
-}
 
 export default function ExportCenter() {
-  const { rolle } = useRBAC();
   const [selectedEinheitId, setSelectedEinheitId] = useState(null);
-  const [activeTab, setActiveTab] = useState(readInitialTab);
   const [anleitungOpen, setAnleitungOpen] = useState(false);
-
-  // RBAC: Manager nur für Admin + Moodle-Designer.
-  const darfManagerSehen = rolle === ROLLEN.ADMIN || rolle === ROLLEN.MOODLE;
-
-  // Falls Tab-Param auf 'manager' steht, der Nutzer aber kein Recht hat:
-  // freundlich auf 'einheiten' zurückfallen.
-  useEffect(() => {
-    if (activeTab === TABS.MANAGER && !darfManagerSehen) {
-      setActiveTab(TABS.EINHEITEN);
-    }
-  }, [activeTab, darfManagerSehen]);
-
-  // Tab-Wechsel im URL spiegeln — ohne Browser-History zu fluten.
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    if (activeTab === TABS.MANAGER) params.set('tab', TABS.MANAGER);
-    else params.delete('tab');
-    const next = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
-    window.history.replaceState(null, '', next);
-  }, [activeTab]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Header + Tabs */}
-      <div className="shrink-0 px-6 pt-4 border-b border-border bg-card">
-        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <Send className="w-5 h-5 text-primary" />
-          Export-Center
-          <HelpBadge
-            text="Arbeitsplatz für den Moodle-Spezialisten: Einheiten exportieren und globale KI-Anweisungen pflegen."
-            docsSlug="export-workflow"
-          />
-        </h1>
-        <p className="text-muted-foreground text-sm mt-0.5">
-          Übergabe an Moodle und Brian.study sowie Pflege der MBK-Prompt-Bibliothek.
-        </p>
-
-        <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
-              <TabsTrigger value={TABS.EINHEITEN} className="gap-1.5">
-                <Send className="w-3.5 h-3.5" />
-                Einheiten-Export
-              </TabsTrigger>
-              {darfManagerSehen && (
-                <TabsTrigger value={TABS.MANAGER} className="gap-1.5">
-                  <Library className="w-3.5 h-3.5" />
-                  MBK-Prompt-Manager
-                </TabsTrigger>
-              )}
-            </TabsList>
-          </Tabs>
+      {/* Header */}
+      <div className="shrink-0 px-6 pt-4 pb-3 border-b border-border bg-card">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <Send className="w-5 h-5 text-primary" />
+              Export-Center
+              <HelpBadge
+                text="Arbeitsplatz für den Moodle-Spezialisten: Einheiten an die MBK übergeben."
+                docsSlug="export-workflow"
+              />
+            </h1>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              Übergabe an Moodle und Brian.study via Air-Gap-Payloads.
+            </p>
+          </div>
           <Button
             variant="outline"
             size="sm"
@@ -120,26 +62,19 @@ export default function ExportCenter() {
         einheitId={selectedEinheitId}
       />
 
-      {/* Inhalte — wir rendern nur den aktiven Tab, damit Querys nicht
-          unnötig parallel laufen. */}
+      {/* Split-Screen: Einheiten-Liste + Arbeitsbereich */}
       <div className="flex-1 overflow-hidden min-h-0">
-        {activeTab === TABS.EINHEITEN && (
-          <div className="flex h-full overflow-hidden min-h-0">
-            <aside className="w-[380px] shrink-0 border-r border-border bg-card overflow-hidden flex flex-col">
-              <ExportCenterEinheitenList
-                selectedEinheitId={selectedEinheitId}
-                onSelect={setSelectedEinheitId}
-              />
-            </aside>
-            <main className="flex-1 overflow-y-auto bg-muted/20">
-              <ExportCenterArbeitsbereich einheitId={selectedEinheitId} />
-            </main>
-          </div>
-        )}
-
-        {activeTab === TABS.MANAGER && darfManagerSehen && (
-          <MBKPromptManagerView />
-        )}
+        <div className="flex h-full overflow-hidden min-h-0">
+          <aside className="w-[380px] shrink-0 border-r border-border bg-card overflow-hidden flex flex-col">
+            <ExportCenterEinheitenList
+              selectedEinheitId={selectedEinheitId}
+              onSelect={setSelectedEinheitId}
+            />
+          </aside>
+          <main className="flex-1 overflow-y-auto bg-muted/20">
+            <ExportCenterArbeitsbereich einheitId={selectedEinheitId} />
+          </main>
+        </div>
       </div>
     </div>
   );
