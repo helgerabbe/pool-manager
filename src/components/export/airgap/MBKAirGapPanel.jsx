@@ -51,7 +51,10 @@ import { useAirGapHandoverState } from '@/hooks/useAirGapHandoverState';
 
 import AirGapBlockCard from './AirGapBlockCard';
 import AirGapBundleGroup from './AirGapBundleGroup';
+import OperatorActionPlanCard from './OperatorActionPlanCard';
 import { groupTaskItems, groupMicroItems } from '@/lib/airGapBundleGroups';
+import { buildOperatorActionPlan } from '@/lib/operatorActionPlan';
+import { META_SYSTEM_PROMPT } from '@/lib/operatorMetaSystemPrompt';
 
 export default function MBKAirGapPanel({ einheitId }) {
   const { land, bundesland, schulform } = useSchulStammdaten();
@@ -199,6 +202,7 @@ export default function MBKAirGapPanel({ einheitId }) {
 
   // Air-Gap-Bulk-Hook: Plan, Schreibaktion, aggregierter Block-Status.
   const {
+    plan: bulkPlan,
     summary: bulkSummary,
     blockAggregate,
     running: bulkRunning,
@@ -436,6 +440,30 @@ export default function MBKAirGapPanel({ einheitId }) {
       `mbk-${blockSlug}_${baseSlug}_${group.key.replace('::', '-')}.zip`
     );
 
+  // ── Operator Action Plan (Ticket 3) ───────────────────────────────────
+  // Schritt-für-Schritt-Anleitung für den Menschen zwischen Pool-Manager
+  // und MBK. Nutzt den flachen bulkPlan + die DB-Records für die
+  // Tombstone-Heuristik.
+  const actionPlan = useMemo(
+    () =>
+      buildOperatorActionPlan({
+        plan: bulkPlan || [],
+        existingPrompts: dbPrompts || [],
+        einheitId,
+        lernpakete,
+        allgemeineAufgaben,
+        phaseAktivitaeten,
+        katalogById,
+      }),
+    [bulkPlan, dbPrompts, einheitId, lernpakete, allgemeineAufgaben, phaseAktivitaeten, katalogById]
+  );
+
+  const handleCopyMetaPrompt = () =>
+    safeAction(
+      () => navigator.clipboard.writeText(META_SYSTEM_PROMPT),
+      'Meta-System-Prompt in Zwischenablage kopiert.'
+    );
+
   // ── Empty-State ────────────────────────────────────────────────────────
   if (!einheitId || !einheit) {
     return (
@@ -499,6 +527,12 @@ export default function MBKAirGapPanel({ einheitId }) {
           </Button>
         </div>
       </div>
+
+      {/* Operator Action Plan — zeigt, welche Schritte konkret nötig sind */}
+      <OperatorActionPlanCard
+        actionPlan={actionPlan}
+        onCopyMetaPrompt={handleCopyMetaPrompt}
+      />
 
       {/* Block 1 — System-Kontext */}
       <AirGapBlockCard
