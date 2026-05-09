@@ -221,21 +221,26 @@ Deno.serve(async (req) => {
       );
     }
 
-    const paketLockHeldByUser = lernpaket.lock_status && lernpaket.locked_by_user === user.email;
+    // Schema-Feldnamen: Lernpakete benutzt `is_locked` + `locked_by_email`
+    // (nicht `lock_status`/`locked_by_user`). Wir lesen beide Varianten,
+    // damit ältere/neuere Records gleichermaßen funktionieren.
+    const paketIsLocked = lernpaket.is_locked === true || lernpaket.lock_status === true;
+    const paketLockOwner = lernpaket.locked_by_email || lernpaket.locked_by_user || null;
+    const paketLockHeldByUser = paketIsLocked && paketLockOwner === user.email;
     if (!paketLockHeldByUser) {
       console.warn(
-        `[updateActivitySecure] DENIED - ${user.email} tried to save activity but parent paket lock_status=${lernpaket.lock_status}, locked_by_user=${lernpaket.locked_by_user}`
+        `[updateActivitySecure] DENIED - ${user.email} tried to save activity but parent paket is_locked=${paketIsLocked}, owner=${paketLockOwner}`
       );
       return Response.json(
         {
           error: 'Das übergeordnete Lernpaket ist nicht für Sie gesperrt. Speichern nicht erlaubt.',
           code: 'PARENT_LOCK_NOT_OWNED',
           paketId: lernpaket.id,
-          paketLockStatus: lernpaket.lock_status,
-          currentPaketLockOwner: lernpaket.locked_by_user ?? null,
+          paketLockStatus: paketIsLocked,
+          currentPaketLockOwner: paketLockOwner,
           details: {
             expectedOwner: user.email,
-            actualOwner: lernpaket.locked_by_user ?? null,
+            actualOwner: paketLockOwner,
             timestamp: new Date().toISOString(),
           }
         },
