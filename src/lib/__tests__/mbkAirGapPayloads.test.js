@@ -117,6 +117,27 @@ describe('MBK Air-Gap Payloads', () => {
       // Nicht gepflegte Schlüssel sind null, nicht undefined.
       expect(out.direct_lookups.lerntypen_definition).toBeNull();
     });
+
+    // ── Ticket 2: SCORM-Modularitäts-Vertrag ────────────────────────────
+    it('liefert generischen SCORM-Vertrag mit filename_pattern', () => {
+      const out = buildSystemContextPayload(baseArgs);
+      expect(out.scorm_delivery_contract).toBeDefined();
+      expect(out.scorm_delivery_contract.rule).toBe('modular_per_task');
+      expect(out.scorm_delivery_contract.filename_pattern).toBe('task-<reference_id>.html');
+      expect(out.scorm_delivery_contract.manifest_filename).toBe('imsmanifest.xml');
+      expect(typeof out.scorm_delivery_contract.description).toBe('string');
+      expect(out.scorm_delivery_contract.description.length).toBeGreaterThan(50);
+    });
+
+    it('SCORM-Vertrag ist inhalts-unabhängig (Hash-Stabilität)', () => {
+      // Zwei Aufrufe mit identischen Stammdaten/Nomenklatur/Prompts müssen
+      // einen byte-identischen scorm_delivery_contract liefern. Damit kann
+      // sich der system_context_hash nie durch Aufgaben-Änderungen kippen.
+      const a = buildSystemContextPayload(baseArgs);
+      const b = buildSystemContextPayload(baseArgs);
+      expect(JSON.stringify(a.scorm_delivery_contract))
+        .toBe(JSON.stringify(b.scorm_delivery_contract));
+    });
   });
 
   // ── Payload 2: Struktur ────────────────────────────────────────────────────
@@ -208,6 +229,66 @@ describe('MBK Air-Gap Payloads', () => {
       expect(out.allgemeine_aufgaben).toHaveLength(1);
       expect(out.allgemeine_aufgaben[0].aufgabe_id).toBe('aa1');
       expect(out.allgemeine_aufgaben[0].verlinkte_lernpaket_ids).toEqual(['lp1']);
+    });
+
+    // ── Ticket 2: scorm_file_mapping ─────────────────────────────────────
+    describe('scorm_file_mapping', () => {
+      const phasenMix = [
+        { id: 'pa-manual', lernpaket_id: 'lp1', aktivitaet_id: 'kat1', erstellungs_modus: 'manuell', phase: 'Übung', reihenfolge: 1 },
+        { id: 'pa-ki',     lernpaket_id: 'lp1', aktivitaet_id: 'kat1', erstellungs_modus: 'ki',      phase: 'Übung', reihenfolge: 2 },
+      ];
+
+      it('enthält pro Lernpaket genau einen Eintrag mit task-<id>.html', () => {
+        const out = buildStructurePayload({
+          einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById, allgemeineAufgaben,
+        });
+        const lpEntries = out.scorm_file_mapping.filter((m) => m.kind === 'lernpaket');
+        expect(lpEntries).toHaveLength(2); // lp1 + lp2 (orphan)
+        const lp1 = lpEntries.find((e) => e.reference_id === 'lp1');
+        expect(lp1.filename).toBe('task-lp1.html');
+        expect(lp1.titel).toBe('P1');
+      });
+
+      it('mappt jede AllgemeineAufgabe auf eine eigene Datei', () => {
+        const out = buildStructurePayload({
+          einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById, allgemeineAufgaben,
+        });
+        const aaEntries = out.scorm_file_mapping.filter((m) => m.kind === 'allgemeine_aufgabe');
+        expect(aaEntries).toHaveLength(1);
+        expect(aaEntries[0]).toEqual(
+          expect.objectContaining({ reference_id: 'aa1', filename: 'task-aa1.html' })
+        );
+      });
+
+      it('mappt nur KI-Aktivitäten (nicht manuelle) auf eigene Dateien', () => {
+        const out = buildStructurePayload({
+          einheit, themenfelder, lernpakete, lernziele,
+          phaseAktivitaeten: phasenMix,
+          katalogById, allgemeineAufgaben,
+        });
+        const kiEntries = out.scorm_file_mapping.filter((m) => m.kind === 'ki_aktivitaet');
+        expect(kiEntries).toHaveLength(1);
+        expect(kiEntries[0].reference_id).toBe('pa-ki');
+        expect(kiEntries[0].filename).toBe('task-pa-ki.html');
+        // Manuelle Aktivität bekommt KEINEN eigenen Eintrag.
+        expect(out.scorm_file_mapping.find((m) => m.reference_id === 'pa-manual')).toBeUndefined();
+      });
+
+      it('Dateinamen-Pattern stimmt mit Payload 1 überein', () => {
+        const sys = buildSystemContextPayload({
+          stammdaten: {}, schulNomenklatur: [], globalPrompts: [],
+          systemContextHash: FIXED_HASH, nowIso: FIXED_NOW,
+        });
+        const struct = buildStructurePayload({
+          einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById, allgemeineAufgaben,
+        });
+        // Generisches Pattern aus Payload 1 muss auf jeden konkreten Eintrag aus Payload 2 passen.
+        const pattern = sys.scorm_delivery_contract.filename_pattern; // 'task-<reference_id>.html'
+        for (const entry of struct.scorm_file_mapping) {
+          const expected = pattern.replace('<reference_id>', entry.reference_id);
+          expect(entry.filename).toBe(expected);
+        }
+      });
     });
   });
 

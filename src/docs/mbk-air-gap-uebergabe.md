@@ -408,3 +408,81 @@ Secrets. Alles client-seitig + DB-seitig.
 | Version | Datum | Änderung |
 |---|---|---|
 | 1.0.0 | 2026-05-08 | Initiale Spezifikation der Air-Gap-Auslieferung (4 Payloads, JSON+Markdown-Fence, Datei-Download, Hash-Anzeige, Persistenz in `ExportPrompts`, UI-Reihenfolge ohne Hard-Lock) |
+| 1.1.0 | 2026-05-09 | Ticket 2 (Air-Gap 2.0): SCORM-Modularitäts-Vertrag in Payload 1 + `scorm_file_mapping` in Payload 2. `MBK_AIRGAP_VERSION` → `airgap-1.1.0`. |
+
+---
+
+## 11. SCORM-Modularitäts-Vertrag (ab Schema 1.1.0)
+
+**Hintergrund:** Damit nachträgliche Änderungen an einer einzelnen Aufgabe
+(Tippfehler-Korrektur, Material-Tausch) nicht das komplette SCORM-Paket
+neu generieren, arbeitet die MBK nach dem **Ersatzteil-Prinzip**: ein
+SCORM-ZIP enthält **eine isolierte HTML-Datei pro Aufgabe**, die
+Operator und KI gezielt austauschen können. Der Pool-Manager zwingt diese
+Modularität über zwei komplementäre Felder in Payload 1 + Payload 2 auf.
+
+### 11.1 Payload 1: `scorm_delivery_contract` (generisch, hash-stabil)
+
+In jedem System-Kontext-Payload steckt:
+
+```jsonc
+"scorm_delivery_contract": {
+  "rule": "modular_per_task",
+  "filename_pattern": "task-<reference_id>.html",
+  "manifest_filename": "imsmanifest.xml",
+  "description": "Generiere pro Aufgabe genau eine isolierte Datei … niemals einen HTML-Monolithen … die zentrale imsmanifest.xml ist der einzige Index aller Tasks und muss bei jeder Strukturänderung neu generiert werden."
+}
+```
+
+**Architektur-Garantie:** Dieser Block ist **inhalts-unabhängig** — er
+ändert sich nur, wenn das Pool-Manager-Schema selbst die Modularitäts-
+Regel ändert. Der `system_context_hash` bleibt damit stabil, auch wenn
+Aufgaben in der Einheit hinzugefügt, geändert oder gelöscht werden. Die
+MBK kann Payload 1 dauerhaft cachen.
+
+### 11.2 Payload 2: `scorm_file_mapping` (einheits-spezifisch)
+
+In jedem Struktur-Payload steckt zusätzlich:
+
+```jsonc
+"scorm_file_mapping": [
+  { "kind": "lernpaket",         "reference_id": "lp-abc", "filename": "task-lp-abc.html", "titel": "Brüche addieren" },
+  { "kind": "allgemeine_aufgabe","reference_id": "aa-xyz", "filename": "task-aa-xyz.html", "titel": "Photosynthese-Transfer" },
+  { "kind": "ki_aktivitaet",     "reference_id": "pa-123", "filename": "task-pa-123.html", "titel": "Miniquiz" }
+]
+```
+
+**Quellen:**
+
+| `kind`              | Quell-Entity                      | Aufgenommen |
+|---------------------|-----------------------------------|-------------|
+| `lernpaket`         | `Lernpakete`                      | immer       |
+| `allgemeine_aufgabe`| `AllgemeineAufgabe`               | immer       |
+| `ki_aktivitaet`     | `LernpaketPhaseAktivitaet`        | nur wenn `erstellungs_modus === 'ki'` |
+
+Manuelle Aktivitäten innerhalb von Lernpaketen erhalten **keinen eigenen
+Eintrag** — sie werden von der MBK direkt in die Lernpaket-HTML eingebettet.
+
+### 11.3 Konsistenz-Garantie
+
+Die Tests in `lib/__tests__/mbkAirGapPayloads.test.js` prüfen, dass für
+jeden Eintrag aus `scorm_file_mapping` gilt:
+
+```
+filename === pattern.replace('<reference_id>', reference_id)
+```
+
+Damit ist sichergestellt, dass die generische Regel aus Payload 1 und
+die konkrete Tabelle aus Payload 2 niemals auseinanderdriften können.
+
+### 11.4 Verwendung durch die MBK / den Operator
+
+- **Erstexport:** MBK generiert für jeden Mapping-Eintrag eine eigene
+  HTML-Datei und eine zentrale `imsmanifest.xml`, die alle Dateien indiziert.
+- **Einzeländerung:** Operator pasted nur den geänderten Payload 3 / 4 +
+  ersetzt die zugehörige `task-<reference_id>.html` im SCORM-ZIP.
+- **Strukturänderung:** Operator pasted neuen Payload 2 + ersetzt die
+  `imsmanifest.xml` im SCORM-ZIP. Die einzelnen Task-HTMLs bleiben unangetastet,
+  solange ihre Inhalte sich nicht geändert haben.
+- **Löschung:** Operator entfernt die zugehörige `task-<reference_id>.html`
+  manuell aus dem ZIP (Drift-Erkennung kommt mit Ticket 3).

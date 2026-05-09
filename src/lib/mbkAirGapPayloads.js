@@ -36,11 +36,45 @@ import { getSektorTypLabel } from '@/lib/sektorTypen';
  * Wird bei jedem Build in `meta.schema_version` geschrieben und beim
  * Persistieren als `template_version` der ExportPrompts-Records.
  */
-export const MBK_AIRGAP_VERSION = 'airgap-1.0.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.1.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
+
+/**
+ * SCORM-Modularitäts-Vertrag (Ticket 2 / Air-Gap 2.0).
+ *
+ * Wird von Payload 1 als FESTE, einheits-/inhalts-UNABHÄNGIGE Anweisung an
+ * die MBK übergeben. Inhalt darf den system_context_hash NICHT kippen, wenn
+ * sich Aufgaben ändern — deshalb steht hier nur die generische Regel,
+ * niemals konkrete IDs.
+ *
+ * Die einheits-spezifische Mapping-Tabelle (welche ID → welcher Dateiname)
+ * lebt in Payload 2 (`scorm_file_mapping`) und ändert sich mit der Einheit.
+ */
+const SCORM_DELIVERY_CONTRACT = {
+  rule: 'modular_per_task',
+  filename_pattern: 'task-<reference_id>.html',
+  manifest_filename: 'imsmanifest.xml',
+  description:
+    'Generiere pro Aufgabe genau eine isolierte Datei nach dem Muster '
+    + 'task-<reference_id>.html. Die <reference_id> ist die ID des '
+    + 'Aufgaben-Records (Lernpaket-ID, AllgemeineAufgabe-ID oder '
+    + 'Aktivitäts-ID) aus dem Pool-Manager. Erstelle niemals einen '
+    + 'HTML-Monolithen, der mehrere Aufgaben zusammenführt. Die zentrale '
+    + 'imsmanifest.xml ist der einzige Index aller Tasks und muss bei '
+    + 'jeder Strukturänderung neu generiert und im SCORM-ZIP ersetzt werden.',
+};
+
+/**
+ * Erzeugt den `scorm_file_mapping`-Eintrag für eine Reference-ID.
+ * Reines String-Kompositum — keine Validierung. Nutzt die DB-ID 1:1, damit
+ * Mapping stabil bleibt, wenn Titel umbenannt werden.
+ */
+function buildScormFilenameForReference(referenceId) {
+  return `task-${referenceId}.html`;
+}
 
 /**
  * Liefert `null` statt leerer Strings, damit das JSON-Schema
@@ -190,6 +224,9 @@ export function buildSystemContextPayload({
     schul_nomenklatur: nomenklatur,
     global_prompts: globalPromptsOut,
     direct_lookups: directLookups,
+    // Generische SCORM-Modularitäts-Anweisung. Bewusst inhalts-unabhängig,
+    // damit der system_context_hash bei Aufgaben-Änderungen nicht kippt.
+    scorm_delivery_contract: SCORM_DELIVERY_CONTRACT,
   };
 }
 
@@ -387,6 +424,43 @@ export function buildStructurePayload({
     lernpfade[lt] = sektoren.map((s) => summarizeSektor(s, themenfelderById));
   }
 
+  // ── SCORM-Mapping (Ticket 2): ID → Dateiname ────────────────────────────
+  // Konkrete einheits-spezifische Tabelle, mit der die MBK die in Payload 1
+  // gegebene generische Regel (`task-<reference_id>.html`) physisch umsetzt.
+  // Drei Quellen:
+  //   1. Lernpakete (jedes Paket = ein Task im SCORM)
+  //   2. AllgemeineAufgaben (Ebene 2/3)
+  //   3. KI-Aktivitäten innerhalb von Lernpaketen (eigene HTML pro Briefing)
+  // Manuelle Aktivitäten innerhalb von Lernpaketen erhalten KEINE eigene
+  // Datei — sie werden von der MBK in die Lernpaket-HTML eingebettet.
+  const scormFileMapping = [];
+  for (const lp of lernpakete) {
+    scormFileMapping.push({
+      kind: 'lernpaket',
+      reference_id: lp.id,
+      filename: buildScormFilenameForReference(lp.id),
+      titel: nullable(lp.titel_des_pakets),
+    });
+  }
+  for (const aa of allgemeineAufgaben || []) {
+    scormFileMapping.push({
+      kind: 'allgemeine_aufgabe',
+      reference_id: aa.id,
+      filename: buildScormFilenameForReference(aa.id),
+      titel: nullable(aa.titel),
+    });
+  }
+  for (const pa of phaseAktivitaeten || []) {
+    if (pa?.erstellungs_modus !== 'ki') continue;
+    const katalog = katalogById?.get?.(pa.aktivitaet_id) || null;
+    scormFileMapping.push({
+      kind: 'ki_aktivitaet',
+      reference_id: pa.id,
+      filename: buildScormFilenameForReference(pa.id),
+      titel: nullable(katalog?.name),
+    });
+  }
+
   return {
     meta,
     einheit: {
@@ -400,6 +474,9 @@ export function buildStructurePayload({
     lernpakete_ohne_themenfeld: orphans.map(renderLernpaketEntry),
     allgemeine_aufgaben: allgemeineAufgabenOut,
     lernpfade,
+    // Konkrete Aufgaben-ID → SCORM-Dateiname-Tabelle. Komplementär zu
+    // Payload 1 → scorm_delivery_contract (generische Regel).
+    scorm_file_mapping: scormFileMapping,
   };
 }
 
