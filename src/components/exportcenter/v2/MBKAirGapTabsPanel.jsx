@@ -57,6 +57,7 @@ import { useSchulStammdaten } from '@/hooks/useSchulStammdaten';
 import { useAirGapHandoverState } from '@/hooks/useAirGapHandoverState';
 import { groupTaskItems, groupMicroItems } from '@/lib/airGapBundleGroups';
 
+import InfoTab from './tabs/InfoTab';
 import MetaPromptTab from './tabs/MetaPromptTab';
 import StrukturTab from './tabs/StrukturTab';
 import AufgabenTab from './tabs/AufgabenTab';
@@ -66,7 +67,7 @@ import KiAufgabenTab from './tabs/KiAufgabenTab';
 import TabDriftIndicator from './shared/TabDriftIndicator';
 
 export default function MBKAirGapTabsPanel({ einheitId }) {
-  const [activeTab, setActiveTab] = useState('meta');
+  const [activeTab, setActiveTab] = useState('info');
 
   const { land, bundesland, schulform } = useSchulStammdaten();
   const stammdaten = { land, bundesland, schulform };
@@ -461,9 +462,11 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
 
       {/* Tab-Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-6 w-full">
+        <TabsList className="grid grid-cols-7 w-full">
+          <TabsTrigger value="info" className="text-xs">
+            Info
+          </TabsTrigger>
           <TabsTrigger value="meta" className="text-xs">
-            <span className="font-mono mr-1 opacity-60">0·</span>
             Meta
           </TabsTrigger>
           <TabsTrigger value="struktur" className="text-xs">
@@ -491,6 +494,10 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
             <TabDriftIndicator {...tabCounts.mbk_micro_payload} />
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="info" className="mt-4">
+          <InfoTab einheit={einheit} />
+        </TabsContent>
 
         <TabsContent value="meta" className="mt-4">
           <MetaPromptTab />

@@ -3,14 +3,10 @@
  *
  * Rechte Spalte des Export-Centers (Phase G).
  *
- * Drei Zonen:
- *   A) Status-Header  →  ExportCenterStatusHeader
- *   B) Delta-Analyse   →  ExportCenterDeltaPanel
- *   C) MBK-Prompts     →  bestehendes MBKPromptGeneratorPanel
- *
- * Diese Komponente lädt die ausgewählte Einheit und reicht sie an die
- * Sub-Panels weiter. Geschäftslogik (Mutationen) bleibt in den jeweiligen
- * Sub-Komponenten und Backend-Funktionen.
+ * Nach dem Air-Gap-Refactor wird hier nur noch das 7-Tab-Panel gerendert.
+ * Status-Header und Delta-Analyse leben jetzt im ersten Tab „Info"
+ * (siehe components/exportcenter/v2/tabs/InfoTab.jsx), damit der
+ * eigentliche Übergabe-Workflow nicht mehr nach unten gedrückt wird.
  */
 
 import React from 'react';
@@ -18,8 +14,6 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Send } from 'lucide-react';
 import MBKPromptGeneratorPanel from '@/components/export/MBKPromptGeneratorPanel';
-import ExportCenterStatusHeader from '@/components/exportcenter/ExportCenterStatusHeader';
-import ExportCenterDeltaPanel from '@/components/exportcenter/ExportCenterDeltaPanel';
 
 export default function ExportCenterArbeitsbereich({ einheitId }) {
   const { data: einheit, isLoading } = useQuery({
@@ -37,7 +31,7 @@ export default function ExportCenterArbeitsbereich({ einheitId }) {
         </p>
         <p className="text-sm text-muted-foreground/70 mt-1 max-w-sm">
           Sobald du eine Einheit anklickst, erscheinen hier Status,
-          Delta-Analyse und die MBK-Prompts.
+          Delta-Analyse und die MBK-Payloads.
         </p>
       </div>
     );
@@ -52,17 +46,8 @@ export default function ExportCenterArbeitsbereich({ einheitId }) {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
-      {/* Zone A: Status & Abschluss */}
-      <ExportCenterStatusHeader einheit={einheit} />
-
-      {/* Zone B: Delta-Analyse */}
-      <ExportCenterDeltaPanel einheit={einheit} />
-
-      {/* Zone C: MBK-Prompts (bestehendes Panel wiederverwenden) */}
-      <div className="rounded-xl border border-border bg-card p-5">
-        <MBKPromptGeneratorPanel einheitId={einheitId} />
-      </div>
+    <div className="p-6 max-w-5xl mx-auto">
+      <MBKPromptGeneratorPanel einheitId={einheitId} />
     </div>
   );
 }
