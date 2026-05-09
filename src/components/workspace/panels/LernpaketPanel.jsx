@@ -122,6 +122,11 @@ export default function LernpaketPanel({
       }
       await Promise.all(updates);
 
+      // Lernpakete kommen aus dem Workspace-Bundle (`getWorkspaceEinheitDataSecure`),
+      // nicht aus einer eigenen ['lernpakete']-Query — daher MUSS hier die
+      // 'workspace-data'-Query invalidiert werden, sonst wird beim nächsten
+      // Öffnen des Dialogs der alte phasen_konfiguration-Wert angezeigt.
+      queryClient.invalidateQueries({ queryKey: ['workspace-data'] });
       queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
       queryClient.invalidateQueries({ queryKey: ['lernziele'] });
       toast.success('Änderungen gespeichert.');
@@ -140,8 +145,13 @@ export default function LernpaketPanel({
 
   React.useEffect(() => {
     setLocalTitel(paket.titel_des_pakets || '');
-    setLocalPhasenConfig(paket.phasen_konfiguration || {});
-  }, [paket.titel_des_pakets, paket.phasen_konfiguration]);
+    // localPhasenConfig wird NUR beim Öffnen des Dialogs aus paket geseedet
+    // (siehe handleOpenEditDialog). Hintergrund-Refetches dürfen die laufende
+    // User-Eingabe nicht überschreiben.
+    if (!editDialogOpen) {
+      setLocalPhasenConfig(paket.phasen_konfiguration || {});
+    }
+  }, [paket.titel_des_pakets, paket.phasen_konfiguration, editDialogOpen]);
 
   const PHASES = [
     { key: 'Input', label: 'Input (Erarbeitung)', icon: '📚', defaultDisabled: false },
