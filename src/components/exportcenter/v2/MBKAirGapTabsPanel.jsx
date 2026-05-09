@@ -466,6 +466,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
             blockStatus={blockStatus}
             blockAggregate={blockAggregate}
             planItem={structurePlanItem}
+            payload={buildStructure()}
             onToggleDelivered={(v) => setDelivered('structure', v)}
             onCopy={() => handleCopy(buildStructure())}
             onDownload={() => handleDownload(buildStructure(), `mbk-structure_${baseSlug}.json`)}

@@ -4,8 +4,12 @@
  * Payload 2 (Struktur der Einheit). Ein einziger Block mit
  * Copy/Download und Übergabe-Haken. Drift-Status kommt aus dem
  * bulkPlan + Block-Aggregat.
+ *
+ * Zusätzlich: Vorschau des generierten JSON-Payloads (analog zur
+ * Meta-Prompt-Vorschau), damit der Operator vor der Übergabe sieht,
+ * was tatsächlich an die MBK geht.
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { LayoutList } from 'lucide-react';
 import AirGapBlockCard from '@/components/export/airgap/AirGapBlockCard';
 import SyncStatusBadge, { planStatusToUiStatus } from '../shared/SyncStatusBadge';
@@ -14,11 +18,21 @@ export default function StrukturTab({
   blockStatus,
   blockAggregate,
   planItem,
+  payload,
   onToggleDelivered,
   onCopy,
   onDownload,
 }) {
   const uiStatus = planItem ? planStatusToUiStatus(planItem.status) : 'in_sync';
+
+  const payloadJson = useMemo(() => {
+    try {
+      return payload ? JSON.stringify(payload, null, 2) : '';
+    } catch {
+      return '';
+    }
+  }, [payload]);
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -37,6 +51,17 @@ export default function StrukturTab({
         onCopy={onCopy}
         onDownload={onDownload}
       />
+
+      {payloadJson && (
+        <div className="space-y-1.5">
+          <p className="text-xs text-muted-foreground px-1">
+            Vorschau des generierten Payloads (wird so an die MBK übergeben):
+          </p>
+          <pre className="rounded-lg border bg-muted/40 p-4 text-xs whitespace-pre-wrap font-mono max-h-[60vh] overflow-y-auto">
+            {payloadJson}
+          </pre>
+        </div>
+      )}
     </div>
   );
 }
