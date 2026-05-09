@@ -82,12 +82,24 @@ Deno.serve(async (req) => {
       }
 
       if (katalog?.supports_master === true) {
-        // Masterfähig → ≥1 MasterAufgabe genügt (Aufgabenstellung ist optional,
-        // siehe Doku am Anfang der Datei).
-        const masters = await base44.asServiceRole.entities.MasterAufgabe.filter({
-          activity_id: entityId,
-        });
-        computedIsComplete = Array.isArray(masters) && masters.length > 0;
+        // AP2 §3 / KI-Modus: Wenn die Aktivität auf erstellungs_modus='ki'
+        // steht, gibt es bewusst KEINE MasterAufgaben — die Aufgabe wird
+        // später von der MBK aus dem ki_briefing erzeugt. Sobald ein
+        // (nicht-leeres) Briefing gespeichert ist, gilt die Aktivität als
+        // vollständig. Im manuellen Modus bleibt es bei der bisherigen
+        // Regel (≥1 MasterAufgabe).
+        if (data.erstellungs_modus === 'ki') {
+          const briefing = data.ki_briefing;
+          computedIsComplete =
+            !!briefing &&
+            typeof briefing === 'object' &&
+            Object.keys(briefing).length > 0;
+        } else {
+          const masters = await base44.asServiceRole.entities.MasterAufgabe.filter({
+            activity_id: entityId,
+          });
+          computedIsComplete = Array.isArray(masters) && masters.length > 0;
+        }
       }
       // Sonst: Frontend-Wert übernehmen (Pflichtfeld-Prüfung läuft dort).
     }
