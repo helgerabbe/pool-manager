@@ -21,7 +21,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Send, AlertTriangle, CheckCircle2, Clock, Pencil } from 'lucide-react';
+import { Search, Send, AlertTriangle, CheckCircle2, Clock, Pencil, Sparkles, RefreshCw } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +32,29 @@ import {
   EXPORT_LIFECYCLE_STATUS,
   EXPORT_LIFECYCLE_LABELS,
 } from '@/lib/exportLifecycle';
+import { useEinheitenMoodleSyncStatus } from '@/hooks/useEinheitenMoodleSyncStatus';
+
+// Visuelle Map für den Moodle-Sync-Status (zweites Badge je Einheit).
+const SYNC_STATUS_META = {
+  new: {
+    icon: Sparkles,
+    label: 'Neu',
+    cls: 'bg-blue-100 text-blue-800 border-blue-300',
+    title: 'Diese Einheit wurde noch nie nach Moodle exportiert.',
+  },
+  in_sync: {
+    icon: CheckCircle2,
+    label: 'In Sync',
+    cls: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+    title: 'Letzter Moodle-Export ist aktuell — keine Änderungen seither.',
+  },
+  out_of_sync: {
+    icon: RefreshCw,
+    label: 'Out of Sync',
+    cls: 'bg-amber-100 text-amber-800 border-amber-300',
+    title: 'Seit dem letzten Moodle-Export wurde im Pool-Manager etwas geändert.',
+  },
+};
 
 // Visuelle Map für die vier Lifecycle-States.
 const STATUS_META = {
@@ -84,6 +107,9 @@ export default function ExportCenterEinheitenList({ selectedEinheitId, onSelect 
         );
       });
   }, [einheiten, query]);
+
+  // Moodle-Sync-Status pro Einheit (new / in_sync / out_of_sync).
+  const syncStatusMap = useEinheitenMoodleSyncStatus(filtered);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -150,6 +176,20 @@ export default function ExportCenterEinheitenList({ selectedEinheitId, onSelect 
                           e.export_lifecycle_status || EXPORT_LIFECYCLE_STATUS.DRAFT
                         ] || 'Entwurf'}
                       </Badge>
+                      {(() => {
+                        const syncStatus = syncStatusMap.get(e.id) || 'new';
+                        const sMeta = SYNC_STATUS_META[syncStatus];
+                        const SIcon = sMeta.icon;
+                        return (
+                          <Badge
+                            className={cn('text-[10px] gap-1 border', sMeta.cls)}
+                            title={sMeta.title}
+                          >
+                            <SIcon className="w-3 h-3" />
+                            {sMeta.label}
+                          </Badge>
+                        );
+                      })()}
                       {lastExport && (
                         <span className="text-[10px] text-muted-foreground">
                           zuletzt: {lastExport}
