@@ -429,9 +429,34 @@ export default function ActivityMasterPanel({
 
   // Modus-Wechsel: ruft updateActivitySecure mit erstellungsModus + ggf.
   // bestehendem ki_briefing. Backend nullt jeweils die andere Seite.
+  //
+  // WICHTIG: updateActivitySecure verlangt einen aktiven Lernpaket-Lock auf
+  // den aufrufenden User (Hierarchical Locking, §8 dort). Wenn der Lock
+  // noch nicht aktiv ist (User hat z. B. „Inhalt bearbeiten" nicht geklickt),
+  // erwerben wir ihn hier still für die Dauer des Modus-Wechsels und geben
+  // ihn danach wieder frei — wie bei `handleAddMaster`.
   const handleModusChange = async (newModus) => {
     if (newModus === erstellungsModus) return;
+
+    if (isParentPaketLockedByOther) {
+      toast.error(`🔒 Dieses Lernpaket wird gerade von ${lernpaket?.locked_by_email} bearbeitet.`);
+      return;
+    }
+    if (lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked) {
+      toast.error('Einheit ist zur Moodle-Synchronisation gesperrt.');
+      return;
+    }
+
     setSavingModusBriefing(true);
+    const lockOk = await acquireLock();
+    if (!lockOk) {
+      setSavingModusBriefing(false);
+      const msg = lernpaket?.locked_by_email
+        ? `🔒 Dieses Lernpaket wird gerade von ${lernpaket.locked_by_email} bearbeitet.`
+        : 'Bearbeitungsmodus konnte nicht gestartet werden. Bitte laden Sie die Seite neu.';
+      toast.error(msg);
+      return;
+    }
     try {
       await base44.functions.invoke('updateActivitySecure', {
         activityId: activityRecord.id,
@@ -446,13 +471,25 @@ export default function ActivityMasterPanel({
     } catch (err) {
       toast.error('Modus-Wechsel fehlgeschlagen: ' + (err?.message || 'unbekannt'));
     } finally {
+      await releaseLock();
       setSavingModusBriefing(false);
     }
   };
 
   // Briefing speichern: ebenfalls über updateActivitySecure mit erstellungsModus='ki'.
+  // Lock-Pattern identisch zum Modus-Wechsel.
   const handleBriefingSave = async (briefing) => {
+    if (isParentPaketLockedByOther) {
+      toast.error(`🔒 Dieses Lernpaket wird gerade von ${lernpaket?.locked_by_email} bearbeitet.`);
+      return;
+    }
     setSavingModusBriefing(true);
+    const lockOk = await acquireLock();
+    if (!lockOk) {
+      setSavingModusBriefing(false);
+      toast.error('Bearbeitungsmodus konnte nicht gestartet werden.');
+      return;
+    }
     try {
       await base44.functions.invoke('updateActivitySecure', {
         activityId: activityRecord.id,
@@ -467,6 +504,7 @@ export default function ActivityMasterPanel({
     } catch (err) {
       toast.error('Speichern fehlgeschlagen: ' + (err?.message || 'unbekannt'));
     } finally {
+      await releaseLock();
       setSavingModusBriefing(false);
     }
   };
