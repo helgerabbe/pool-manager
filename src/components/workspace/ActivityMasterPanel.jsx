@@ -479,7 +479,14 @@ export default function ActivityMasterPanel({
         kiBriefing: newModus === 'ki' ? activityRecord?.ki_briefing || null : null,
         fieldValues: newModus === 'manuell' ? activityRecord?.field_values || {} : {},
       });
-      await queryClient.refetchQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      // Guardian-Automation aktualisiert nach dem Activity-Update auch das
+      // Lernpakete.is_complete-Aggregat. Damit die Sidebar-Roll-up-Pille
+      // (gelb→grün am Lernpaket "Baumdiagramme" etc.) sofort nachzieht,
+      // müssen wir BEIDE Caches invalidieren.
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] }),
+        queryClient.refetchQueries({ queryKey: ['lernpakete'] }),
+      ]);
       toast.success(newModus === 'ki' ? 'KI-Modus aktiviert.' : 'Manueller Modus aktiviert.');
     } catch (err) {
       toast.error('Modus-Wechsel fehlgeschlagen: ' + (err?.message || 'unbekannt'));
@@ -512,7 +519,13 @@ export default function ActivityMasterPanel({
         kiBriefing: briefing,
         fieldValues: {},
       });
-      await queryClient.refetchQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      // Siehe handleModusChange: nach dem Briefing-Save zieht der Guardian
+      // das Lernpakete.is_complete-Roll-up nach — Cache muss mitgezogen
+      // werden, sonst bleibt die Sidebar-Pille gelb hängen.
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] }),
+        queryClient.refetchQueries({ queryKey: ['lernpakete'] }),
+      ]);
       toast.success('KI-Briefing gespeichert.');
     } catch (err) {
       toast.error('Speichern fehlgeschlagen: ' + (err?.message || 'unbekannt'));
