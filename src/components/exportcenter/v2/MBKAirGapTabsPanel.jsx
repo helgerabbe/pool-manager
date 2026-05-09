@@ -25,12 +25,10 @@ import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
-  Sparkles,
   CheckCircle2,
   RotateCcw,
   RefreshCw,
   Loader2,
-  BookOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -70,11 +68,9 @@ import GlobaleKiTab from './tabs/GlobaleKiTab';
 import SystembausteineTab from './tabs/SystembausteineTab';
 import KiAufgabenTab from './tabs/KiAufgabenTab';
 import TabDriftIndicator from './shared/TabDriftIndicator';
-import AnleitungModal from './AnleitungModal';
 
 export default function MBKAirGapTabsPanel({ einheitId }) {
   const [activeTab, setActiveTab] = useState('meta');
-  const [anleitungOpen, setAnleitungOpen] = useState(false);
 
   const { land, bundesland, schulform } = useSchulStammdaten();
   const stammdaten = { land, bundesland, schulform };
@@ -449,61 +445,39 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
   // ── Render ───────────────────────────────────────────────────────────
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-            <Sparkles className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold">Air-Gap-Übergabe an die MBK</h2>
-            <p className="text-sm text-muted-foreground mt-0.5 max-w-2xl">
-              Sechs Reiter führen dich Schritt für Schritt durch die Übergabe.
-              Drift-Indikatoren zeigen, wo Handlungsbedarf besteht.
-            </p>
-          </div>
+      {/* Kompakte Aktionsleiste — kein eigener Karten-Header mehr,
+          die globale Anleitung sitzt im Export-Center-Header. */}
+      <div className="flex items-center justify-end gap-2 flex-wrap">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border bg-background text-sm">
+          <CheckCircle2 className="w-4 h-4 text-green-600" />
+          <span className="font-medium tabular-nums">{deliveredCount}/{totalBlocks}</span>
+          <span className="text-muted-foreground text-xs">übergeben</span>
         </div>
-        <div className="flex items-center gap-2 shrink-0 flex-wrap">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-background text-sm">
-            <CheckCircle2 className="w-4 h-4 text-green-600" />
-            <span className="font-medium tabular-nums">{deliveredCount}/{totalBlocks}</span>
-            <span className="text-muted-foreground text-xs">übergeben</span>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setAnleitungOpen(true)}
-            className="gap-1.5"
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            Anleitung
-          </Button>
-          <Button
-            size="sm"
-            variant="default"
-            onClick={runBulk}
-            disabled={bulkRunning || bulkSummary.willWrite === 0}
-            className="gap-1.5"
-            title={
-              bulkSummary.willWrite === 0
-                ? 'Alle Air-Gap-Payloads sind aktuell — kein Re-Write nötig.'
-                : `${bulkSummary.willWrite} Payload(s) werden in die DB geschrieben.`
-            }
-          >
-            {bulkRunning ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <RefreshCw className="w-3.5 h-3.5" />
-            )}
-            {bulkSummary.willWrite === 0
-              ? 'Alle aktuell'
-              : `${bulkSummary.willWrite} regenerieren`}
-          </Button>
-          <Button size="sm" variant="ghost" onClick={reset} className="gap-1.5">
-            <RotateCcw className="w-3.5 h-3.5" />
-            Zurücksetzen
-          </Button>
-        </div>
+        <Button
+          size="sm"
+          variant="default"
+          onClick={runBulk}
+          disabled={bulkRunning || bulkSummary.willWrite === 0}
+          className="gap-1.5"
+          title={
+            bulkSummary.willWrite === 0
+              ? 'Alle Air-Gap-Payloads sind aktuell — kein Re-Write nötig.'
+              : `${bulkSummary.willWrite} Payload(s) werden in die DB geschrieben.`
+          }
+        >
+          {bulkRunning ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <RefreshCw className="w-3.5 h-3.5" />
+          )}
+          {bulkSummary.willWrite === 0
+            ? 'Alle aktuell'
+            : `${bulkSummary.willWrite} regenerieren`}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={reset} className="gap-1.5">
+          <RotateCcw className="w-3.5 h-3.5" />
+          Zurücksetzen
+        </Button>
       </div>
 
       {/* Operator Action Plan (kontextspezifisch) */}
@@ -630,8 +604,6 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
           />
         </TabsContent>
       </Tabs>
-
-      <AnleitungModal open={anleitungOpen} onOpenChange={setAnleitungOpen} />
     </div>
   );
 }

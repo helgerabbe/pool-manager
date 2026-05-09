@@ -20,12 +20,14 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Send, Library } from 'lucide-react';
+import { Send, Library, BookOpen } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import HelpBadge from '@/components/ui/HelpBadge';
 import ExportCenterEinheitenList from '@/components/exportcenter/ExportCenterEinheitenList';
 import ExportCenterArbeitsbereich from '@/components/exportcenter/ExportCenterArbeitsbereich';
 import MBKPromptManagerView from '@/components/exportcenter/promptmanager/MBKPromptManagerView';
+import AnleitungModal from '@/components/exportcenter/v2/AnleitungModal';
 import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
 
@@ -45,6 +47,7 @@ export default function ExportCenter() {
   const { rolle } = useRBAC();
   const [selectedEinheitId, setSelectedEinheitId] = useState(null);
   const [activeTab, setActiveTab] = useState(readInitialTab);
+  const [anleitungOpen, setAnleitungOpen] = useState(false);
 
   // RBAC: Manager nur für Admin + Moodle-Designer.
   const darfManagerSehen = rolle === ROLLEN.ADMIN || rolle === ROLLEN.MOODLE;
@@ -83,21 +86,35 @@ export default function ExportCenter() {
           Übergabe an Moodle und Brian.study sowie Pflege der MBK-Prompt-Bibliothek.
         </p>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList>
-            <TabsTrigger value={TABS.EINHEITEN} className="gap-1.5">
-              <Send className="w-3.5 h-3.5" />
-              Einheiten-Export
-            </TabsTrigger>
-            {darfManagerSehen && (
-              <TabsTrigger value={TABS.MANAGER} className="gap-1.5">
-                <Library className="w-3.5 h-3.5" />
-                MBK-Prompt-Manager
+        <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList>
+              <TabsTrigger value={TABS.EINHEITEN} className="gap-1.5">
+                <Send className="w-3.5 h-3.5" />
+                Einheiten-Export
               </TabsTrigger>
-            )}
-          </TabsList>
-        </Tabs>
+              {darfManagerSehen && (
+                <TabsTrigger value={TABS.MANAGER} className="gap-1.5">
+                  <Library className="w-3.5 h-3.5" />
+                  MBK-Prompt-Manager
+                </TabsTrigger>
+              )}
+            </TabsList>
+          </Tabs>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setAnleitungOpen(true)}
+            className="gap-1.5"
+            title="Nachschlagewerk: Was tun bei welchem Drift-Szenario?"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            Anleitung
+          </Button>
+        </div>
       </div>
+
+      <AnleitungModal open={anleitungOpen} onOpenChange={setAnleitungOpen} />
 
       {/* Inhalte — wir rendern nur den aktiven Tab, damit Querys nicht
           unnötig parallel laufen. */}
