@@ -50,7 +50,8 @@ import { useSchulStammdaten } from '@/hooks/useSchulStammdaten';
 import { useAirGapHandoverState } from '@/hooks/useAirGapHandoverState';
 
 import AirGapBlockCard from './AirGapBlockCard';
-import AirGapItemList from './AirGapItemList';
+import AirGapBundleGroup from './AirGapBundleGroup';
+import { groupTaskItems, groupMicroItems } from '@/lib/airGapBundleGroups';
 
 export default function MBKAirGapPanel({ einheitId }) {
   const { land, bundesland, schulform } = useSchulStammdaten();
@@ -413,6 +414,28 @@ export default function MBKAirGapPanel({ einheitId }) {
   const handleDownloadZip = (files, name) =>
     safeAction(() => downloadZip(files, name), null);
 
+  // ── UI-Bundles (Ticket 1): Gruppierung pro Block ──────────────────────
+  // Reine Präsentations-Schicht — die Plan-/DB-Logik bleibt flach pro Item.
+  // Regeln A (Lernpaket) / C (Projekt-Anker) / B (Themenfeld) / B-Fallback
+  // (Orphan) liegen in lib/airGapBundleGroups.js.
+  const taskGroups = useMemo(
+    () => groupTaskItems(taskItems, { themenfelder, lernpakete, allgemeineAufgaben }),
+    [taskItems, themenfelder, lernpakete, allgemeineAufgaben]
+  );
+  const microGroups = useMemo(
+    () => groupMicroItems(microItems, {
+      themenfelder, lernpakete, allgemeineAufgaben, phaseAktivitaeten,
+    }),
+    [microItems, themenfelder, lernpakete, allgemeineAufgaben, phaseAktivitaeten]
+  );
+
+  // Pro Gruppe ein Mini-ZIP (nur die Items dieser Gruppe).
+  const handleDownloadGroupZip = (group, blockSlug) =>
+    handleDownloadZip(
+      group.items.map((it) => ({ name: `${it.slug}.json`, content: it.build() })),
+      `mbk-${blockSlug}_${baseSlug}_${group.key.replace('::', '-')}.zip`
+    );
+
   // ── Empty-State ────────────────────────────────────────────────────────
   if (!einheitId || !einheit) {
     return (
@@ -533,14 +556,25 @@ export default function MBKAirGapPanel({ einheitId }) {
                 )
         }
       >
-        <AirGapItemList
-          items={taskItems}
-          emptyHint="Keine Lernpakete oder Allgemeine Aufgaben (Ebene 2/3) vorhanden."
-          onCopyItem={(it) => handleCopy(it.build())}
-          onDownloadItem={(it) =>
-            handleDownload(it.build(), `mbk-task-content_${baseSlug}_${it.slug}.json`)
-          }
-        />
+        {taskGroups.length === 0 ? (
+          <p className="text-xs text-muted-foreground italic px-2">
+            Keine Lernpakete oder Allgemeine Aufgaben (Ebene 2/3) vorhanden.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {taskGroups.map((group) => (
+              <AirGapBundleGroup
+                key={group.key}
+                group={group}
+                onCopyItem={(it) => handleCopy(it.build())}
+                onDownloadItem={(it) =>
+                  handleDownload(it.build(), `mbk-task-content_${baseSlug}_${it.slug}.json`)
+                }
+                onDownloadGroupZip={(g) => handleDownloadGroupZip(g, 'task-content')}
+              />
+            ))}
+          </div>
+        )}
       </AirGapBlockCard>
 
       {/* Block 4 — Micro-Briefings */}
@@ -570,14 +604,25 @@ export default function MBKAirGapPanel({ einheitId }) {
                 )
         }
       >
-        <AirGapItemList
-          items={microItems}
-          emptyHint='Keine KI-Aktivitäten/KI-Aufgaben in dieser Einheit. (Items im KI-Modus erscheinen hier automatisch.)'
-          onCopyItem={(it) => handleCopy(it.build())}
-          onDownloadItem={(it) =>
-            handleDownload(it.build(), `mbk-micro_${baseSlug}_${it.slug}.json`)
-          }
-        />
+        {microGroups.length === 0 ? (
+          <p className="text-xs text-muted-foreground italic px-2">
+            Keine KI-Aktivitäten/KI-Aufgaben in dieser Einheit. (Items im KI-Modus erscheinen hier automatisch.)
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {microGroups.map((group) => (
+              <AirGapBundleGroup
+                key={group.key}
+                group={group}
+                onCopyItem={(it) => handleCopy(it.build())}
+                onDownloadItem={(it) =>
+                  handleDownload(it.build(), `mbk-micro_${baseSlug}_${it.slug}.json`)
+                }
+                onDownloadGroupZip={(g) => handleDownloadGroupZip(g, 'micro')}
+              />
+            ))}
+          </div>
+        )}
       </AirGapBlockCard>
     </div>
   );
