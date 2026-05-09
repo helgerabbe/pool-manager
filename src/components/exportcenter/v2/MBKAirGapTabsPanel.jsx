@@ -146,6 +146,16 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
     staleTime: 60_000,
   });
 
+  // System-Bausteine: deduplizierte Quellen für die `system-<baustein_id>.html`-
+  // Dateien im SCORM-Mapping. Werden vom Lernpfad-Architekten referenziert
+  // (`{ type: 'system', ref_id: '<baustein_id>' }`) und dürfen NICHT pro
+  // Einheit erneut gepflegt werden — daher app-weiter Cache.
+  const { data: systemBausteine = [] } = useQuery({
+    queryKey: ['systemBausteine'],
+    queryFn: () => base44.entities.SystemBausteine.list('-created_date', 200),
+    staleTime: 60_000,
+  });
+
   const { data: aufgabenbausteine = [] } = useQuery({
     queryKey: ['aufgabenbausteine-by-pakete', paketIds.join(',')],
     queryFn: async () => {
@@ -200,6 +210,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
     einheitId, einheit, stammdaten, schulNomenklatur, globalPrompts,
     themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById,
     masterAufgaben, allgemeineAufgaben, allgemeineAufgabenEbene23,
+    systemBausteine,
     prompts: dbPrompts, tsIndex, systemContextHash: currentHash,
   });
 
@@ -221,7 +232,8 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
   const buildStructure = () =>
     buildStructurePayload({
       einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten,
-      katalogById, allgemeineAufgaben, systemContextHash: currentHash,
+      katalogById, allgemeineAufgaben, systemBausteine,
+      systemContextHash: currentHash,
     });
 
   const taskBundle = useMemo(

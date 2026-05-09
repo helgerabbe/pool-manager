@@ -409,80 +409,122 @@ Secrets. Alles client-seitig + DB-seitig.
 |---|---|---|
 | 1.0.0 | 2026-05-08 | Initiale Spezifikation der Air-Gap-Auslieferung (4 Payloads, JSON+Markdown-Fence, Datei-Download, Hash-Anzeige, Persistenz in `ExportPrompts`, UI-Reihenfolge ohne Hard-Lock) |
 | 1.1.0 | 2026-05-09 | Ticket 2 (Air-Gap 2.0): SCORM-Modularitäts-Vertrag in Payload 1 + `scorm_file_mapping` in Payload 2. `MBK_AIRGAP_VERSION` → `airgap-1.1.0`. |
+| 1.2.0 | 2026-05-09 | **Bündel-Modell + Platzhalter-Vertrag.** SCORM-Auslieferung wechselt von `task-<reference_id>.html` pro Aufgabe auf vier Bündel-Typen: Lernpaket-Monolith, Themenfeld-Bündel, Projekt-Bündel, deduplizierte System-Bausteine. KI-Aktivitäten werden NICHT mehr als eigenständige Tasks ausgegeben, sondern als HTML-Fragmente (`fragment-<activity_id>.html`) mit UUID-Marker und `system-context-hash`. Operator-Skript (Stufe 2) merged Fragmente in Hüllen. `MBK_AIRGAP_VERSION` → `airgap-1.2.0`, `META_SYSTEM_PROMPT_VERSION` → `2.2`. |
 
 ---
 
-## 11. SCORM-Modularitäts-Vertrag (ab Schema 1.1.0)
+## 11. SCORM-Bündel-Vertrag (ab Schema 1.2.0)
 
-**Hintergrund:** Damit nachträgliche Änderungen an einer einzelnen Aufgabe
-(Tippfehler-Korrektur, Material-Tausch) nicht das komplette SCORM-Paket
-neu generieren, arbeitet die MBK nach dem **Ersatzteil-Prinzip**: ein
-SCORM-ZIP enthält **eine isolierte HTML-Datei pro Aufgabe**, die
-Operator und KI gezielt austauschen können. Der Pool-Manager zwingt diese
-Modularität über zwei komplementäre Felder in Payload 1 + Payload 2 auf.
+**Hintergrund:** Das ursprüngliche „eine HTML pro Aufgabe"-Modell aus 1.1.0
+führte bei Lernpaketen mit vielen kleinen Aktivitäten zu unübersichtlichen
+SCORM-Inhaltsverzeichnissen (n × Phasen × Aktivitäten). Ab 1.2.0 arbeiten
+wir nach dem **Bündel-Prinzip**: didaktisch zusammengehörige Inhalte landen
+in einer Datei. Einzelne KI-Aufgaben bleiben über das **Fragment-Prinzip**
+trotzdem separat updatebar.
 
 ### 11.1 Payload 1: `scorm_delivery_contract` (generisch, hash-stabil)
 
-In jedem System-Kontext-Payload steckt:
-
 ```jsonc
 "scorm_delivery_contract": {
-  "rule": "modular_per_task",
-  "filename_pattern": "task-<reference_id>.html",
+  "rule": "bundle_per_kind",
+  "filename_patterns": {
+    "lernpaket":                 "task-<lernpaket_id>.html",
+    "themenfeld_bundle":         "tasks-themenfeld-<themenfeld_id>.html",
+    "themenfeld_bundle_orphan":  "tasks-themenfeld-orphan.html",
+    "projekt_bundle":            "projekte-einheit-<einheit_id>.html",
+    "system_baustein":           "system-<baustein_id>.html",
+    "fragment":                  "fragment-<activity_id>.html"
+  },
   "manifest_filename": "imsmanifest.xml",
-  "description": "Generiere pro Aufgabe genau eine isolierte Datei … niemals einen HTML-Monolithen … die zentrale imsmanifest.xml ist der einzige Index aller Tasks und muss bei jeder Strukturänderung neu generiert werden."
+  "description": "..."
 }
 ```
 
-**Architektur-Garantie:** Dieser Block ist **inhalts-unabhängig** — er
-ändert sich nur, wenn das Pool-Manager-Schema selbst die Modularitäts-
-Regel ändert. Der `system_context_hash` bleibt damit stabil, auch wenn
-Aufgaben in der Einheit hinzugefügt, geändert oder gelöscht werden. Die
-MBK kann Payload 1 dauerhaft cachen.
+Inhalts-unabhängig → `system_context_hash` bleibt stabil auch wenn
+Aufgaben hinzukommen oder gelöscht werden. MBK kann Payload 1 cachen.
 
 ### 11.2 Payload 2: `scorm_file_mapping` (einheits-spezifisch)
 
-In jedem Struktur-Payload steckt zusätzlich:
-
 ```jsonc
 "scorm_file_mapping": [
-  { "kind": "lernpaket",         "reference_id": "lp-abc", "filename": "task-lp-abc.html", "titel": "Brüche addieren" },
-  { "kind": "allgemeine_aufgabe","reference_id": "aa-xyz", "filename": "task-aa-xyz.html", "titel": "Photosynthese-Transfer" },
-  { "kind": "ki_aktivitaet",     "reference_id": "pa-123", "filename": "task-pa-123.html", "titel": "Miniquiz" }
+  { "kind": "lernpaket",        "source_id": "lp-abc", "filename": "task-lp-abc.html",          "contains_placeholders": true,  "placeholder_activity_ids": ["pa-1","pa-2"] },
+  { "kind": "themenfeld_bundle","source_id": "tf-1",   "filename": "tasks-themenfeld-tf-1.html", "contained_aufgabe_ids": ["aa-x","aa-y"], "contains_placeholders": false, "placeholder_activity_ids": [] },
+  { "kind": "projekt_bundle",   "source_id": "e-1",    "filename": "projekte-einheit-e-1.html",  "contained_aufgabe_ids": ["aa-pr"], "contains_placeholders": false, "placeholder_activity_ids": [] },
+  { "kind": "system_baustein",  "source_id": "sys_diagnose", "filename": "system-sys_diagnose.html", "contains_placeholders": false, "placeholder_activity_ids": [] }
 ]
 ```
 
-**Quellen:**
+**Bündel-Regeln:**
 
-| `kind`              | Quell-Entity                      | Aufgenommen |
-|---------------------|-----------------------------------|-------------|
-| `lernpaket`         | `Lernpakete`                      | immer       |
-| `allgemeine_aufgabe`| `AllgemeineAufgabe`               | immer       |
-| `ki_aktivitaet`     | `LernpaketPhaseAktivitaet`        | nur wenn `erstellungs_modus === 'ki'` |
+| `kind` | Quelle | Anlage-Regel |
+|---|---|---|
+| `lernpaket` | `Lernpakete` | immer (1 pro Paket) |
+| `themenfeld_bundle` | `Themenfeld` + Ebene-2-`AllgemeineAufgabe` | nur wenn TF mind. eine Ebene-2-Aufgabe enthält |
+| `themenfeld_bundle` (Orphan) | Ebene-2-Aufgaben ohne `themenfeld_id` | nur wenn solche Aufgaben existieren |
+| `projekt_bundle` | Ebene-3-/Projekt-Anker-`AllgemeineAufgabe` | nur wenn Ebene-3-Aufgaben existieren (1 pro Einheit) |
+| `system_baustein` | `SystemBausteine`, im Lernpfad referenziert | dedupliziert über alle 4 Lernpfade |
 
-Manuelle Aktivitäten innerhalb von Lernpaketen erhalten **keinen eigenen
-Eintrag** — sie werden von der MBK direkt in die Lernpaket-HTML eingebettet.
+KI-Aktivitäten erhalten **keinen** Mapping-Eintrag. Sie sind Fragmente und
+werden vom Merger in die Hülle eingesetzt, deren Eintrag
+`contains_placeholders: true` und die UUID in `placeholder_activity_ids`
+trägt.
 
-### 11.3 Konsistenz-Garantie
+### 11.3 Platzhalter-Vertrag (Hülle ↔ Fragment)
 
-Die Tests in `lib/__tests__/mbkAirGapPayloads.test.js` prüfen, dass für
-jeden Eintrag aus `scorm_file_mapping` gilt:
+In Bündeln/Monolithen setzt die MBK an jeder KI-Aufgaben-Stelle exakt:
+
+```html
+<div data-mbk-placeholder="activity" data-activity-id="<UUID>"></div>
+```
+
+Das Micro-Briefing (Tab 5) liefert dazu pro KI-Item ein Fragment:
 
 ```
-filename === pattern.replace('<reference_id>', reference_id)
+=== FILE: fragment-<UUID>.html ===
+<!-- mbk:fragment activity-id="<UUID>" system-context-hash="<HASH>" -->
+…HTML…
+<!-- /mbk:fragment -->
+=== END ===
 ```
 
-Damit ist sichergestellt, dass die generische Regel aus Payload 1 und
-die konkrete Tabelle aus Payload 2 niemals auseinanderdriften können.
+Das `system-context-hash`-Attribut erlaubt dem Merger zu validieren, dass
+Hülle + Fragment aus derselben Sitzung stammen. Mismatch → Abbruch.
 
-### 11.4 Verwendung durch die MBK / den Operator
+### 11.4 Output-Contract im Micro-Briefing
 
-- **Erstexport:** MBK generiert für jeden Mapping-Eintrag eine eigene
-  HTML-Datei und eine zentrale `imsmanifest.xml`, die alle Dateien indiziert.
-- **Einzeländerung:** Operator pasted nur den geänderten Payload 3 / 4 +
-  ersetzt die zugehörige `task-<reference_id>.html` im SCORM-ZIP.
-- **Strukturänderung:** Operator pasted neuen Payload 2 + ersetzt die
-  `imsmanifest.xml` im SCORM-ZIP. Die einzelnen Task-HTMLs bleiben unangetastet,
-  solange ihre Inhalte sich nicht geändert haben.
-- **Löschung:** Operator entfernt die zugehörige `task-<reference_id>.html`
-  manuell aus dem ZIP (Drift-Erkennung kommt mit Ticket 3).
+Jedes Micro-Briefing trägt einen `output_contract`-Block:
+
+```jsonc
+"output_contract": {
+  "format": "fragment",
+  "filename": "fragment-<UUID>.html",
+  "placeholder_target": "task-<lernpaket_id>.html",   // oder tasks-themenfeld-<id>.html / projekte-einheit-<id>.html
+  "marker_format": "<!-- mbk:fragment activity-id=\"{{id}}\" system-context-hash=\"{{hash}}\" -->...HTML...<!-- /mbk:fragment -->"
+}
+```
+
+`placeholder_target` sagt dem Operator (und einem späteren Merger-Skript),
+in welche Hülle das Fragment gehört.
+
+### 11.5 Bündel-Regeneration (kein Patching)
+
+Bei jeder Änderung an einem Bündel-Inhalt wird das **gesamte Bündel** neu
+generiert. Die MBK darf niemals eine bestehende Datei einlesen und partiell
+ersetzen — Stateless-Modus garantiert das Verhalten.
+
+### 11.6 Operator-Workflow (manuell, vor Stufe 2)
+
+- **Erstexport:** MBK liefert pro Mapping-Eintrag eine HTML + pro KI-Item
+  ein Fragment + die `imsmanifest.xml`. Operator setzt die Fragmente
+  manuell in die Hüllen ein (suchen nach `data-activity-id="<UUID>"`,
+  Inhalt zwischen `<!-- mbk:fragment ... -->` ersetzt das leere Div).
+- **Einzeländerung an manuellem Inhalt:** Operator pasted neuen Payload 3 →
+  MBK regeneriert das betroffene Bündel komplett → Datei im SCORM-ZIP austauschen.
+- **Einzeländerung an KI-Aufgabe:** Operator pasted neues Micro-Briefing →
+  MBK liefert neues Fragment → Operator ersetzt es in der Hülle.
+- **Strukturänderung:** Payload 2 + neue Manifest-Datei. Bündel werden nur
+  dann neu generiert, wenn ihr Inhalt sich tatsächlich geändert hat.
+
+Stufe 2 (Folge-Auftrag): Ein Node-CLI-Skript `tools/scorm-merge` automatisiert
+das Einsetzen der Fragmente in die Hüllen — UUID + Hash-Match wird
+deterministisch geprüft.

@@ -36,14 +36,14 @@ import { getSektorTypLabel } from '@/lib/sektorTypen';
  * Wird bei jedem Build in `meta.schema_version` geschrieben und beim
  * Persistieren als `template_version` der ExportPrompts-Records.
  */
-export const MBK_AIRGAP_VERSION = 'airgap-1.1.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.2.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 
 /**
- * SCORM-Modularitäts-Vertrag (Ticket 2 / Air-Gap 2.0).
+ * SCORM-Modularitäts-Vertrag (airgap-1.2.0 / Bündel-Modell).
  *
  * Wird von Payload 1 als FESTE, einheits-/inhalts-UNABHÄNGIGE Anweisung an
  * die MBK übergeben. Inhalt darf den system_context_hash NICHT kippen, wenn
@@ -54,26 +54,49 @@ const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
  * lebt in Payload 2 (`scorm_file_mapping`) und ändert sich mit der Einheit.
  */
 const SCORM_DELIVERY_CONTRACT = {
-  rule: 'modular_per_task',
-  filename_pattern: 'task-<reference_id>.html',
+  rule: 'bundle_per_kind',
+  filename_patterns: {
+    lernpaket: 'task-<lernpaket_id>.html',
+    themenfeld_bundle: 'tasks-themenfeld-<themenfeld_id>.html',
+    themenfeld_bundle_orphan: 'tasks-themenfeld-orphan.html',
+    projekt_bundle: 'projekte-einheit-<einheit_id>.html',
+    system_baustein: 'system-<baustein_id>.html',
+    fragment: 'fragment-<activity_id>.html',
+  },
   manifest_filename: 'imsmanifest.xml',
   description:
-    'Generiere pro Aufgabe genau eine isolierte Datei nach dem Muster '
-    + 'task-<reference_id>.html. Die <reference_id> ist die ID des '
-    + 'Aufgaben-Records (Lernpaket-ID, AllgemeineAufgabe-ID oder '
-    + 'Aktivitäts-ID) aus dem Pool-Manager. Erstelle niemals einen '
-    + 'HTML-Monolithen, der mehrere Aufgaben zusammenführt. Die zentrale '
-    + 'imsmanifest.xml ist der einzige Index aller Tasks und muss bei '
-    + 'jeder Strukturänderung neu generiert und im SCORM-ZIP ersetzt werden.',
+    'Bündel-Vertrag: Pro Lernpaket genau eine Monolith-HTML. Allgemeine '
+    + 'Aufgaben Ebene 2 werden pro Themenfeld in einer HTML gebündelt; '
+    + 'Aufgaben ohne Themenfeld landen in der Orphan-Datei. Allgemeine '
+    + 'Aufgaben Ebene 3 (Projekte) werden pro Einheit in einer einzigen '
+    + 'HTML zusammengefasst. System-Bausteine werden pro baustein_id '
+    + 'einmal generiert (deduplizierte Datei). KI-Aktivitäten werden '
+    + 'NICHT als eigenständige Tasks ausgegeben, sondern als HTML-Fragmente '
+    + '(fragment-<activity_id>.html), die ein nachgelagerter Merger in die '
+    + 'deterministischen Hüllen einsetzt. Bei jeder Änderung an einem '
+    + 'Bündel-Element wird das gesamte Bündel neu generiert (kein '
+    + 'Patching). Die zentrale imsmanifest.xml ist der einzige Index und '
+    + 'muss bei jeder Strukturänderung neu generiert werden.',
 };
 
-/**
- * Erzeugt den `scorm_file_mapping`-Eintrag für eine Reference-ID.
- * Reines String-Kompositum — keine Validierung. Nutzt die DB-ID 1:1, damit
- * Mapping stabil bleibt, wenn Titel umbenannt werden.
- */
-function buildScormFilenameForReference(referenceId) {
-  return `task-${referenceId}.html`;
+/** Filename-Builder pro Datei-Typ. Reine String-Kompositoren — keine Validierung. */
+function fnLernpaket(lernpaketId) {
+  return `task-${lernpaketId}.html`;
+}
+function fnThemenfeldBundle(themenfeldId) {
+  return `tasks-themenfeld-${themenfeldId}.html`;
+}
+function fnThemenfeldBundleOrphan() {
+  return `tasks-themenfeld-orphan.html`;
+}
+function fnProjektBundle(einheitId) {
+  return `projekte-einheit-${einheitId}.html`;
+}
+function fnSystemBaustein(bausteinId) {
+  return `system-${bausteinId}.html`;
+}
+function fnFragment(activityId) {
+  return `fragment-${activityId}.html`;
 }
 
 /**
@@ -341,6 +364,7 @@ export function buildStructurePayload({
   phaseAktivitaeten = [],
   katalogById = new Map(),
   allgemeineAufgaben = [],
+  systemBausteine = [],
   systemContextHash = null,
   nowIso = null,
 }) {
@@ -424,40 +448,150 @@ export function buildStructurePayload({
     lernpfade[lt] = sektoren.map((s) => summarizeSektor(s, themenfelderById));
   }
 
-  // ── SCORM-Mapping (Ticket 2): ID → Dateiname ────────────────────────────
-  // Konkrete einheits-spezifische Tabelle, mit der die MBK die in Payload 1
-  // gegebene generische Regel (`task-<reference_id>.html`) physisch umsetzt.
-  // Drei Quellen:
-  //   1. Lernpakete (jedes Paket = ein Task im SCORM)
-  //   2. AllgemeineAufgaben (Ebene 2/3)
-  //   3. KI-Aktivitäten innerhalb von Lernpaketen (eigene HTML pro Briefing)
-  // Manuelle Aktivitäten innerhalb von Lernpaketen erhalten KEINE eigene
-  // Datei — sie werden von der MBK in die Lernpaket-HTML eingebettet.
+  // ── SCORM-Mapping (airgap-1.2.0 / Bündel-Modell) ─────────────────────────
+  // Vier Datei-Typen:
+  //   1. lernpaket           → eine Monolith-HTML pro Lernpaket
+  //   2. themenfeld_bundle   → eine HTML pro Themenfeld mit Ebene-2-Aufgaben
+  //                            (+ Orphan-Sammeldatei für Aufgaben ohne TF)
+  //   3. projekt_bundle      → eine HTML pro Einheit mit allen Ebene-3-Aufgaben
+  //   4. system_baustein     → eine HTML pro im Lernpfad genutztem Baustein
+  //                            (deduplizierte Datei, mehrfach im Manifest verlinkbar)
+  //
+  // KI-Aktivitäten erhalten KEINEN eigenen Mapping-Eintrag — sie werden als
+  // HTML-Fragmente (fragment-<id>.html) ausgeliefert und vom Merger in die
+  // jeweilige Hülle eingesetzt. Im Mapping-Eintrag der Hülle markieren wir
+  // mit `contains_placeholders=true`, dass der Merger dort aktiv werden muss.
   const scormFileMapping = [];
+
+  // Helper: für eine gegebene Liste von Aufgaben-IDs → Liste der placeholder-
+  // pflichtigen IDs (nur KI-Modus).
+  const collectPlaceholderActivityIdsForLernpaket = (lpId) =>
+    (phaseAktivitaeten || [])
+      .filter((pa) => pa?.lernpaket_id === lpId && pa?.erstellungs_modus === 'ki')
+      .map((pa) => pa.id);
+
+  const collectPlaceholderAaIds = (aaList) =>
+    (aaList || [])
+      .filter((aa) => aa?.erstellungs_modus === 'ki')
+      .map((aa) => aa.id);
+
+  // 1. Lernpakete (immer, eines pro Paket).
   for (const lp of lernpakete) {
+    const placeholderIds = collectPlaceholderActivityIdsForLernpaket(lp.id);
     scormFileMapping.push({
       kind: 'lernpaket',
-      reference_id: lp.id,
-      filename: buildScormFilenameForReference(lp.id),
+      source_id: lp.id,
+      filename: fnLernpaket(lp.id),
       titel: nullable(lp.titel_des_pakets),
+      contains_placeholders: placeholderIds.length > 0,
+      placeholder_activity_ids: placeholderIds,
     });
   }
+
+  // 2. Themenfeld-Bündel (Ebene 2 — also alles, was NICHT Ebene 3 ist).
+  //    Pro Themenfeld eine Datei, sofern dort tatsächlich Ebene-2-Aufgaben
+  //    liegen. Aufgaben mit aufgaben_typ='projekt_anker' gehen nicht ins
+  //    Themenfeld-Bündel — sie wandern ins Projekt-Bündel.
+  const isEbene3 = (aa) => aa?.anforderungsebene === '3 - Projekt';
+  const isProjektAnker = (aa) => aa?.aufgaben_typ === 'projekt_anker';
+  const isEbene2 = (aa) => !isEbene3(aa) && !isProjektAnker(aa);
+
+  const ebene2ByTf = new Map();
+  const orphanEbene2 = [];
   for (const aa of allgemeineAufgaben || []) {
+    if (!isEbene2(aa)) continue;
+    if (aa.themenfeld_id && themenfelderById.has(aa.themenfeld_id)) {
+      if (!ebene2ByTf.has(aa.themenfeld_id)) ebene2ByTf.set(aa.themenfeld_id, []);
+      ebene2ByTf.get(aa.themenfeld_id).push(aa);
+    } else {
+      orphanEbene2.push(aa);
+    }
+  }
+
+  for (const tf of themenfelderSorted) {
+    const aaList = ebene2ByTf.get(tf.id) || [];
+    if (aaList.length === 0) continue; // keine Leichen im Manifest
+    const placeholderIds = collectPlaceholderAaIds(aaList);
     scormFileMapping.push({
-      kind: 'allgemeine_aufgabe',
-      reference_id: aa.id,
-      filename: buildScormFilenameForReference(aa.id),
-      titel: nullable(aa.titel),
+      kind: 'themenfeld_bundle',
+      source_id: tf.id,
+      filename: fnThemenfeldBundle(tf.id),
+      titel: nullable(tf.titel),
+      contained_aufgabe_ids: aaList.map((aa) => aa.id),
+      contains_placeholders: placeholderIds.length > 0,
+      placeholder_activity_ids: placeholderIds,
     });
   }
-  for (const pa of phaseAktivitaeten || []) {
-    if (pa?.erstellungs_modus !== 'ki') continue;
-    const katalog = katalogById?.get?.(pa.aktivitaet_id) || null;
+
+  // Orphan-Sammeleintrag NUR wenn auch wirklich Aufgaben ohne TF existieren.
+  if (orphanEbene2.length > 0) {
+    const placeholderIds = collectPlaceholderAaIds(orphanEbene2);
     scormFileMapping.push({
-      kind: 'ki_aktivitaet',
-      reference_id: pa.id,
-      filename: buildScormFilenameForReference(pa.id),
-      titel: nullable(katalog?.name),
+      kind: 'themenfeld_bundle',
+      source_id: 'orphan',
+      filename: fnThemenfeldBundleOrphan(),
+      titel: 'Allgemeine Aufgaben ohne Themenfeld',
+      contained_aufgabe_ids: orphanEbene2.map((aa) => aa.id),
+      contains_placeholders: placeholderIds.length > 0,
+      placeholder_activity_ids: placeholderIds,
+    });
+  }
+
+  // 3. Projekt-Bündel (Ebene 3 + Projekt-Anker) — eines pro Einheit.
+  const ebene3 = (allgemeineAufgaben || []).filter(
+    (aa) => isEbene3(aa) || isProjektAnker(aa)
+  );
+  if (ebene3.length > 0 && einheit?.id) {
+    const placeholderIds = collectPlaceholderAaIds(ebene3);
+    scormFileMapping.push({
+      kind: 'projekt_bundle',
+      source_id: einheit.id,
+      filename: fnProjektBundle(einheit.id),
+      titel: 'Projekte der Einheit',
+      contained_aufgabe_ids: ebene3.map((aa) => aa.id),
+      contains_placeholders: placeholderIds.length > 0,
+      placeholder_activity_ids: placeholderIds,
+    });
+  }
+
+  // 4. System-Bausteine — deduplizieren über alle vier Lernpfade.
+  //    Ein Baustein, der mehrfach im Pfad referenziert wird, wird trotzdem
+  //    nur EINMAL als HTML generiert; das imsmanifest.xml verlinkt ihn an
+  //    allen Stellen.
+  const usedBausteinIds = new Set();
+  for (const lt of LERNTYP_KEYS) {
+    const sektoren = einheit?.lernpfade_konfiguration?.[lt] || [];
+    for (const sektor of sektoren) {
+      for (const item of sektor?.items || []) {
+        if (item?.type === 'system' && item?.ref_id) {
+          usedBausteinIds.add(item.ref_id);
+        }
+      }
+    }
+  }
+  const bausteinByKey = new Map(
+    (systemBausteine || []).map((b) => [b.baustein_id, b])
+  );
+  const systemBausteineOut = [];
+  for (const bausteinId of [...usedBausteinIds].sort()) {
+    const baustein = bausteinByKey.get(bausteinId);
+    // Auch wenn der Baustein in der DB (noch) nicht angelegt ist, behalten
+    // wir den Mapping-Eintrag — sonst entsteht eine Lücke zwischen Pfad
+    // und Manifest. Die MBK erkennt fehlende export_instruktion und stoppt.
+    scormFileMapping.push({
+      kind: 'system_baustein',
+      source_id: bausteinId,
+      filename: fnSystemBaustein(bausteinId),
+      titel: nullable(baustein?.titel) || bausteinId,
+      contains_placeholders: false,
+      placeholder_activity_ids: [],
+    });
+    systemBausteineOut.push({
+      baustein_id: bausteinId,
+      titel: nullable(baustein?.titel),
+      icon: nullable(baustein?.icon),
+      export_instruktion: nullable(baustein?.export_instruktion),
+      ist_aktiv: baustein ? baustein.ist_aktiv !== false : null,
     });
   }
 
@@ -474,7 +608,9 @@ export function buildStructurePayload({
     lernpakete_ohne_themenfeld: orphans.map(renderLernpaketEntry),
     allgemeine_aufgaben: allgemeineAufgabenOut,
     lernpfade,
-    // Konkrete Aufgaben-ID → SCORM-Dateiname-Tabelle. Komplementär zu
+    // Deduplizierte Bausteine, die im Lernpfad referenziert werden.
+    system_bausteine: systemBausteineOut,
+    // Konkrete Quell-ID → SCORM-Dateiname-Tabelle. Komplementär zu
     // Payload 1 → scorm_delivery_contract (generische Regel).
     scorm_file_mapping: scormFileMapping,
   };
@@ -543,6 +679,14 @@ export function buildTaskContentItemForLernpaket({
     (a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)
   );
 
+  // Liste der KI-Aktivitäten, an deren Position die Hülle Platzhalter
+  // (`<div data-mbk-placeholder="activity" data-activity-id="...">`) setzen
+  // muss. Reine UUID-Liste — die MBK weiß so, wo der Merger Fragmente
+  // einsetzen wird.
+  const placeholderActivityIds = phasenSorted
+    .filter((pa) => pa?.erstellungs_modus === 'ki')
+    .map((pa) => pa.id);
+
   return {
     item_type: 'lernpaket',
     reference_id: lernpaket?.id || null,
@@ -558,6 +702,7 @@ export function buildTaskContentItemForLernpaket({
       schueler_uebersetzung: nullable(lz.schueler_uebersetzung),
     })),
     aktivitaeten: phasenSorted.map(renderActivity),
+    placeholder_activity_ids: placeholderActivityIds,
   };
 }
 
@@ -776,6 +921,15 @@ export function buildMicroPayloadForActivity({
     blueprint: {
       ki_briefing: briefing,
     },
+    output_contract: {
+      format: 'fragment',
+      filename: fnFragment(aktivitaet.id),
+      placeholder_target: lernpaket?.id ? fnLernpaket(lernpaket.id) : null,
+      marker_format:
+        '<!-- mbk:fragment activity-id="{{id}}" system-context-hash="{{hash}}" -->'
+        + '...HTML...'
+        + '<!-- /mbk:fragment -->',
+    },
   };
 }
 
@@ -795,6 +949,20 @@ export function buildMicroPayloadForAllgemeineAufgabe({
   const briefing = aufgabe.ki_briefing && typeof aufgabe.ki_briefing === 'object'
     ? aufgabe.ki_briefing
     : null;
+
+  // Placeholder-Target ist das Bündel, in das die Aufgabe später eingewoben
+  // wird: Ebene-3-/Projekt-Anker → Projekt-Bündel; sonst das Themenfeld-
+  // Bündel (oder Orphan, wenn kein TF gesetzt ist).
+  const istEbene3 = aufgabe.anforderungsebene === '3 - Projekt';
+  const istProjektAnker = aufgabe.aufgaben_typ === 'projekt_anker';
+  let placeholderTarget = null;
+  if ((istEbene3 || istProjektAnker) && einheit?.id) {
+    placeholderTarget = fnProjektBundle(einheit.id);
+  } else if (themenfeld?.id) {
+    placeholderTarget = fnThemenfeldBundle(themenfeld.id);
+  } else {
+    placeholderTarget = fnThemenfeldBundleOrphan();
+  }
 
   return {
     meta: makeMeta({
@@ -830,6 +998,15 @@ export function buildMicroPayloadForAllgemeineAufgabe({
     },
     blueprint: {
       ki_briefing: briefing,
+    },
+    output_contract: {
+      format: 'fragment',
+      filename: fnFragment(aufgabe.id),
+      placeholder_target: placeholderTarget,
+      marker_format:
+        '<!-- mbk:fragment activity-id="{{id}}" system-context-hash="{{hash}}" -->'
+        + '...HTML...'
+        + '<!-- /mbk:fragment -->',
     },
   };
 }

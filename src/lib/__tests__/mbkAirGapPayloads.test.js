@@ -118,21 +118,21 @@ describe('MBK Air-Gap Payloads', () => {
       expect(out.direct_lookups.lerntypen_definition).toBeNull();
     });
 
-    // ── Ticket 2: SCORM-Modularitäts-Vertrag ────────────────────────────
-    it('liefert generischen SCORM-Vertrag mit filename_pattern', () => {
+    // ── airgap-1.2.0: Bündel-Vertrag ────────────────────────────────────
+    it('liefert Bündel-basierten SCORM-Vertrag mit filename_patterns', () => {
       const out = buildSystemContextPayload(baseArgs);
       expect(out.scorm_delivery_contract).toBeDefined();
-      expect(out.scorm_delivery_contract.rule).toBe('modular_per_task');
-      expect(out.scorm_delivery_contract.filename_pattern).toBe('task-<reference_id>.html');
+      expect(out.scorm_delivery_contract.rule).toBe('bundle_per_kind');
+      expect(out.scorm_delivery_contract.filename_patterns.lernpaket).toBe('task-<lernpaket_id>.html');
+      expect(out.scorm_delivery_contract.filename_patterns.themenfeld_bundle).toBe('tasks-themenfeld-<themenfeld_id>.html');
+      expect(out.scorm_delivery_contract.filename_patterns.themenfeld_bundle_orphan).toBe('tasks-themenfeld-orphan.html');
+      expect(out.scorm_delivery_contract.filename_patterns.projekt_bundle).toBe('projekte-einheit-<einheit_id>.html');
+      expect(out.scorm_delivery_contract.filename_patterns.system_baustein).toBe('system-<baustein_id>.html');
+      expect(out.scorm_delivery_contract.filename_patterns.fragment).toBe('fragment-<activity_id>.html');
       expect(out.scorm_delivery_contract.manifest_filename).toBe('imsmanifest.xml');
-      expect(typeof out.scorm_delivery_contract.description).toBe('string');
-      expect(out.scorm_delivery_contract.description.length).toBeGreaterThan(50);
     });
 
     it('SCORM-Vertrag ist inhalts-unabhängig (Hash-Stabilität)', () => {
-      // Zwei Aufrufe mit identischen Stammdaten/Nomenklatur/Prompts müssen
-      // einen byte-identischen scorm_delivery_contract liefern. Damit kann
-      // sich der system_context_hash nie durch Aufgaben-Änderungen kippen.
       const a = buildSystemContextPayload(baseArgs);
       const b = buildSystemContextPayload(baseArgs);
       expect(JSON.stringify(a.scorm_delivery_contract))
@@ -231,50 +231,125 @@ describe('MBK Air-Gap Payloads', () => {
       expect(out.allgemeine_aufgaben[0].verlinkte_lernpaket_ids).toEqual(['lp1']);
     });
 
-    // ── Ticket 2: scorm_file_mapping ─────────────────────────────────────
+    // ── airgap-1.2.0: scorm_file_mapping (Bündel-Modell) ────────────────
     describe('scorm_file_mapping', () => {
       const phasenMix = [
         { id: 'pa-manual', lernpaket_id: 'lp1', aktivitaet_id: 'kat1', erstellungs_modus: 'manuell', phase: 'Übung', reihenfolge: 1 },
         { id: 'pa-ki',     lernpaket_id: 'lp1', aktivitaet_id: 'kat1', erstellungs_modus: 'ki',      phase: 'Übung', reihenfolge: 2 },
       ];
 
-      it('enthält pro Lernpaket genau einen Eintrag mit task-<id>.html', () => {
+      it('enthält pro Lernpaket einen Eintrag mit task-<lernpaket_id>.html', () => {
         const out = buildStructurePayload({
           einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById, allgemeineAufgaben,
         });
         const lpEntries = out.scorm_file_mapping.filter((m) => m.kind === 'lernpaket');
         expect(lpEntries).toHaveLength(2); // lp1 + lp2 (orphan)
-        const lp1 = lpEntries.find((e) => e.reference_id === 'lp1');
+        const lp1 = lpEntries.find((e) => e.source_id === 'lp1');
         expect(lp1.filename).toBe('task-lp1.html');
         expect(lp1.titel).toBe('P1');
+        expect(lp1.contains_placeholders).toBe(false);
+        expect(lp1.placeholder_activity_ids).toEqual([]);
       });
 
-      it('mappt jede AllgemeineAufgabe auf eine eigene Datei', () => {
+      it('bündelt Ebene-2-Aufgaben pro Themenfeld in eine Datei', () => {
         const out = buildStructurePayload({
           einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById, allgemeineAufgaben,
         });
-        const aaEntries = out.scorm_file_mapping.filter((m) => m.kind === 'allgemeine_aufgabe');
-        expect(aaEntries).toHaveLength(1);
-        expect(aaEntries[0]).toEqual(
-          expect.objectContaining({ reference_id: 'aa1', filename: 'task-aa1.html' })
+        const tfEntries = out.scorm_file_mapping.filter((m) => m.kind === 'themenfeld_bundle');
+        expect(tfEntries).toHaveLength(1);
+        expect(tfEntries[0]).toEqual(
+          expect.objectContaining({
+            source_id: 'tf1',
+            filename: 'tasks-themenfeld-tf1.html',
+          })
         );
+        expect(tfEntries[0].contained_aufgabe_ids).toContain('aa1');
       });
 
-      it('mappt nur KI-Aktivitäten (nicht manuelle) auf eigene Dateien', () => {
+      it('legt Orphan-Bundle nur an, wenn auch Orphan-Aufgaben existieren', () => {
+        const ohneOrphans = buildStructurePayload({
+          einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById, allgemeineAufgaben,
+        });
+        expect(
+          ohneOrphans.scorm_file_mapping.find((m) => m.source_id === 'orphan')
+        ).toBeUndefined();
+
+        const mitOrphans = buildStructurePayload({
+          einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById,
+          allgemeineAufgaben: [
+            ...allgemeineAufgaben,
+            { id: 'aa-orphan', titel: 'Orphan-Aufg', anforderungsebene: '2 - Transfer', aufgaben_typ: 'inhalt', themenfeld_id: null },
+          ],
+        });
+        const orph = mitOrphans.scorm_file_mapping.find((m) => m.source_id === 'orphan');
+        expect(orph).toBeDefined();
+        expect(orph.filename).toBe('tasks-themenfeld-orphan.html');
+        expect(orph.contained_aufgabe_ids).toEqual(['aa-orphan']);
+      });
+
+      it('legt Projekt-Bundle pro Einheit an, wenn Ebene-3-Aufgaben existieren', () => {
+        const out = buildStructurePayload({
+          einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById,
+          allgemeineAufgaben: [
+            { id: 'aa-pr', titel: 'Klima', anforderungsebene: '3 - Projekt', aufgaben_typ: 'projekt_anker' },
+          ],
+        });
+        const projektEntries = out.scorm_file_mapping.filter((m) => m.kind === 'projekt_bundle');
+        expect(projektEntries).toHaveLength(1);
+        expect(projektEntries[0].filename).toBe('projekte-einheit-e1.html');
+        expect(projektEntries[0].contained_aufgabe_ids).toEqual(['aa-pr']);
+      });
+
+      it('erzeugt KEIN ki_aktivitaet-Mapping mehr (Fragmente sind kein SCORM-File)', () => {
         const out = buildStructurePayload({
           einheit, themenfelder, lernpakete, lernziele,
-          phaseAktivitaeten: phasenMix,
-          katalogById, allgemeineAufgaben,
+          phaseAktivitaeten: phasenMix, katalogById, allgemeineAufgaben,
         });
-        const kiEntries = out.scorm_file_mapping.filter((m) => m.kind === 'ki_aktivitaet');
-        expect(kiEntries).toHaveLength(1);
-        expect(kiEntries[0].reference_id).toBe('pa-ki');
-        expect(kiEntries[0].filename).toBe('task-pa-ki.html');
-        // Manuelle Aktivität bekommt KEINEN eigenen Eintrag.
-        expect(out.scorm_file_mapping.find((m) => m.reference_id === 'pa-manual')).toBeUndefined();
+        expect(
+          out.scorm_file_mapping.find((m) => m.kind === 'ki_aktivitaet')
+        ).toBeUndefined();
       });
 
-      it('Dateinamen-Pattern stimmt mit Payload 1 überein', () => {
+      it('markiert contains_placeholders nur, wenn KI-Aktivitäten existieren', () => {
+        const out = buildStructurePayload({
+          einheit, themenfelder, lernpakete, lernziele,
+          phaseAktivitaeten: phasenMix, katalogById, allgemeineAufgaben,
+        });
+        const lp1 = out.scorm_file_mapping.find((m) => m.source_id === 'lp1');
+        expect(lp1.contains_placeholders).toBe(true);
+        expect(lp1.placeholder_activity_ids).toEqual(['pa-ki']);
+        // Manuelle Aktivität taucht NICHT in der Liste auf.
+        expect(lp1.placeholder_activity_ids).not.toContain('pa-manual');
+      });
+
+      it('dedupliziert System-Bausteine über alle Lernpfade', () => {
+        const einheitMitBausteinen = {
+          ...einheit,
+          lernpfade_konfiguration: {
+            minimalist: [{ items: [{ type: 'system', ref_id: 'sys_diagnose' }] }],
+            pragmatiker: [{ items: [{ type: 'system', ref_id: 'sys_diagnose' }, { type: 'system', ref_id: 'sys_exit' }] }],
+            ehrgeizig: [],
+            passioniert: [{ items: [{ type: 'system', ref_id: 'sys_exit' }] }],
+          },
+        };
+        const out = buildStructurePayload({
+          einheit: einheitMitBausteinen, themenfelder, lernpakete, lernziele,
+          phaseAktivitaeten, katalogById, allgemeineAufgaben,
+          systemBausteine: [
+            { baustein_id: 'sys_diagnose', titel: 'Diagnose', export_instruktion: 'Diagnose-Anweisung' },
+            { baustein_id: 'sys_exit', titel: 'Exit-Ticket', export_instruktion: 'Exit-Anweisung' },
+          ],
+        });
+        const sysEntries = out.scorm_file_mapping.filter((m) => m.kind === 'system_baustein');
+        expect(sysEntries).toHaveLength(2);
+        expect(sysEntries.map((e) => e.source_id).sort()).toEqual(['sys_diagnose', 'sys_exit']);
+        expect(sysEntries.find((e) => e.source_id === 'sys_diagnose').filename).toBe('system-sys_diagnose.html');
+        // system_bausteine-Top-Level-Block enthält export_instruktion.
+        const diag = out.system_bausteine.find((b) => b.baustein_id === 'sys_diagnose');
+        expect(diag.export_instruktion).toBe('Diagnose-Anweisung');
+      });
+
+      it('Filename folgt dem Pattern aus Payload 1 (pro Bündel-Typ)', () => {
         const sys = buildSystemContextPayload({
           stammdaten: {}, schulNomenklatur: [], globalPrompts: [],
           systemContextHash: FIXED_HASH, nowIso: FIXED_NOW,
@@ -282,11 +357,19 @@ describe('MBK Air-Gap Payloads', () => {
         const struct = buildStructurePayload({
           einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById, allgemeineAufgaben,
         });
-        // Generisches Pattern aus Payload 1 muss auf jeden konkreten Eintrag aus Payload 2 passen.
-        const pattern = sys.scorm_delivery_contract.filename_pattern; // 'task-<reference_id>.html'
+        const patterns = sys.scorm_delivery_contract.filename_patterns;
         for (const entry of struct.scorm_file_mapping) {
-          const expected = pattern.replace('<reference_id>', entry.reference_id);
-          expect(entry.filename).toBe(expected);
+          if (entry.kind === 'lernpaket') {
+            expect(entry.filename).toBe(patterns.lernpaket.replace('<lernpaket_id>', entry.source_id));
+          } else if (entry.kind === 'themenfeld_bundle' && entry.source_id !== 'orphan') {
+            expect(entry.filename).toBe(patterns.themenfeld_bundle.replace('<themenfeld_id>', entry.source_id));
+          } else if (entry.kind === 'themenfeld_bundle' && entry.source_id === 'orphan') {
+            expect(entry.filename).toBe(patterns.themenfeld_bundle_orphan);
+          } else if (entry.kind === 'projekt_bundle') {
+            expect(entry.filename).toBe(patterns.projekt_bundle.replace('<einheit_id>', entry.source_id));
+          } else if (entry.kind === 'system_baustein') {
+            expect(entry.filename).toBe(patterns.system_baustein.replace('<baustein_id>', entry.source_id));
+          }
         }
       });
     });
@@ -346,6 +429,19 @@ describe('MBK Air-Gap Payloads', () => {
       });
       expect(item.aktivitaeten[0].transkript).toBe('Heute geht es um Brüche…');
       expect(item.aktivitaeten[0].alt_text).toBe('Erklärvideo');
+    });
+
+    it('listet placeholder_activity_ids nur für KI-Aktivitäten', () => {
+      const item = buildTaskContentItemForLernpaket({
+        lernpaket,
+        phaseAktivitaeten: [
+          { id: 'pa-manual', lernpaket_id: 'lp1', aktivitaet_id: 'kat1', phase: 'Übung', reihenfolge: 1, erstellungs_modus: 'manuell' },
+          { id: 'pa-ki', lernpaket_id: 'lp1', aktivitaet_id: 'kat2', phase: 'Übung', reihenfolge: 2, erstellungs_modus: 'ki' },
+        ],
+        katalogById,
+      });
+      expect(item.placeholder_activity_ids).toEqual(['pa-ki']);
+      expect(item.placeholder_activity_ids).not.toContain('pa-manual');
     });
   });
 
@@ -467,6 +563,26 @@ describe('MBK Air-Gap Payloads', () => {
       expect(out.blueprint.ki_briefing.variant).toBe('standard');
       expect(out.blueprint.ki_briefing.standard.schwerpunkt).toBe('Brüche kürzen');
     });
+
+    it('liefert output_contract mit Fragment-Filename und Marker-Template', () => {
+      const out = buildMicroPayloadForActivity({
+        einheit,
+        aktivitaet: {
+          id: 'pa-ki',
+          aktivitaet_id: 'kat1',
+          erstellungs_modus: 'ki',
+          ki_briefing: { variant: 'standard', standard: { schwerpunkt: 'X' } },
+        },
+        lernpaket, themenfeld, lernziele, katalogById,
+        systemContextHash: FIXED_HASH,
+      });
+      expect(out.output_contract.format).toBe('fragment');
+      expect(out.output_contract.filename).toBe('fragment-pa-ki.html');
+      expect(out.output_contract.placeholder_target).toBe('task-lp1.html');
+      expect(out.output_contract.marker_format).toContain('mbk:fragment');
+      expect(out.output_contract.marker_format).toContain('{{id}}');
+      expect(out.output_contract.marker_format).toContain('{{hash}}');
+    });
   });
 
   describe('buildMicroPayloadForAllgemeineAufgabe', () => {
@@ -496,6 +612,52 @@ describe('MBK Air-Gap Payloads', () => {
       expect(out.gps.themenfeld.titel).toBe('Zellbio');
       expect(out.gps.lernpaket).toBeNull();
       expect(out.blueprint.ki_briefing.variant).toBe('offen');
+    });
+
+    it('output_contract zeigt für Ebene-3-Aufgabe auf das Projekt-Bundle', () => {
+      const out = buildMicroPayloadForAllgemeineAufgabe({
+        einheit: { id: 'e1' },
+        aufgabe: {
+          id: 'aa-pr',
+          anforderungsebene: '3 - Projekt',
+          aufgaben_typ: 'projekt_anker',
+          erstellungs_modus: 'ki',
+          ki_briefing: { variant: 'offen' },
+        },
+        themenfeld: { id: 'tf1', titel: 'TF' },
+      });
+      expect(out.output_contract.placeholder_target).toBe('projekte-einheit-e1.html');
+      expect(out.output_contract.filename).toBe('fragment-aa-pr.html');
+    });
+
+    it('output_contract zeigt für Ebene-2-Aufgabe auf das Themenfeld-Bundle', () => {
+      const out = buildMicroPayloadForAllgemeineAufgabe({
+        einheit: { id: 'e1' },
+        aufgabe: {
+          id: 'aa-tf',
+          anforderungsebene: '2 - Transfer',
+          aufgaben_typ: 'inhalt',
+          erstellungs_modus: 'ki',
+          ki_briefing: { variant: 'offen' },
+        },
+        themenfeld: { id: 'tf1', titel: 'TF' },
+      });
+      expect(out.output_contract.placeholder_target).toBe('tasks-themenfeld-tf1.html');
+    });
+
+    it('output_contract zeigt für Orphan-Aufgabe auf die Orphan-Datei', () => {
+      const out = buildMicroPayloadForAllgemeineAufgabe({
+        einheit: { id: 'e1' },
+        aufgabe: {
+          id: 'aa-orph',
+          anforderungsebene: '2 - Transfer',
+          aufgaben_typ: 'inhalt',
+          erstellungs_modus: 'ki',
+          ki_briefing: { variant: 'offen' },
+        },
+        themenfeld: null,
+      });
+      expect(out.output_contract.placeholder_target).toBe('tasks-themenfeld-orphan.html');
     });
   });
 
