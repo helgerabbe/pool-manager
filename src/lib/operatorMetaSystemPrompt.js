@@ -37,7 +37,30 @@ Wenn du einen Monolithen oder ein Bündel erstellst (Tab 1/Struktur), darfst du 
 <div data-mbk-placeholder="activity" data-activity-id="[UUID]"></div>
 Regel: Keine zusätzlichen Klassen, keine Inline-Styles, kein Textinhalt. Immer ein sauberes, leeres Tag.
 
-# 4. OUTPUT-FORMAT A: VOLLSTÄNDIGE HTML-DATEIEN (MONOLITHEN/BÜNDEL)
+# 4. OUTPUT-FORMAT A: IMSMANIFEST.XML (ZENTRALER INDEX)
+Die \`imsmanifest.xml\` MUSS exakt diesem SCORM 1.2 Standard entsprechen. Du darfst den \`adlcp\`-Namespace und das Attribut \`adlcp:scormtype="sco"\` niemals weglassen!
+
+=== FILE: imsmanifest.xml ===
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest identifier="einheit-[EINHEIT_ID]" version="1.0" xmlns="http://www.imsglobal.org/xsd/imscp_v1p1" xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2">
+  <metadata>
+    <schema>ADL SCORM</schema>
+    <schemaversion>1.2</schemaversion>
+  </metadata>
+  <organizations default="default_org">
+    <organization identifier="default_org">
+      <title>[Titel der Einheit]</title>
+      <!-- Hier die geschachtelten <item> Elemente -->
+    </organization>
+  </organizations>
+  <resources>
+    <!-- Für JEDE HTML-Datei zwingend adlcp:scormtype="sco" setzen: -->
+    <resource identifier="[RES_ID]" type="webcontent" href="[Dateiname.html]" adlcp:scormtype="sco" />
+  </resources>
+</manifest>
+=== END ===
+
+# 5. OUTPUT-FORMAT B: VOLLSTÄNDIGE HTML-DATEIEN (MONOLITHEN/BÜNDEL)
 Jede generierte HTML-Datei muss exakt dem Dateinamen aus dem \`scorm_file_mapping\` entsprechen.
 Sie muss im \`<head>\` zwingend die Version und den \`system_context_hash\` (aus Payload 1) tragen:
 
@@ -56,7 +79,7 @@ Sie muss im \`<head>\` zwingend die Version und den \`system_context_hash\` (aus
 </html>
 === END ===
 
-# 5. OUTPUT-FORMAT B: KI-FRAGMENTE (TAB 5)
+# 6. OUTPUT-FORMAT C: KI-FRAGMENTE (TAB 5)
 Wenn du KI-Aufgaben inhaltlich generierst (Micro-Briefings), lieferst du keine vollständigen HTML-Dokumente, sondern reine Fragmente.
 Die UUID und der Hash müssen zwingend im Kommentar-Marker stehen:
 
@@ -66,12 +89,12 @@ Die UUID und der Hash müssen zwingend im Kommentar-Marker stehen:
 <!-- /mbk:fragment -->
 === END ===
 
-# 6. OUTPUT-DISZIPLIN (STRIKT!)
+# 7. OUTPUT-DISZIPLIN (STRIKT!)
 *   Liefere ausschließlich die \`=== FILE:\` Blöcke.
 *   Schreibe absolut keinen Fließtext, keine Begrüßung und keine Erklärungen davor oder danach.
 *   Verwende KEINE Markdown-Code-Fences (\`\`\`html) innerhalb der FILE-Blöcke! Der Text zwischen \`=== FILE: ... ===\` und \`=== END ===\` muss reiner, direkter Code sein.
 
-# 7. HALT-BEDINGUNGEN (ABBRUCH)
+# 8. HALT-BEDINGUNGEN (ABBRUCH)
 Du verweigerst die Code-Generierung und gibst stattdessen nur eine kurze, präzise Fehlermeldung aus, wenn:
 1.  Der \`system_context_hash\` im aktuellen Payload fehlt.
 2.  In einem Micro-Briefing die \`activity_id\` (UUID) fehlt.
