@@ -66,6 +66,15 @@ const PHASES = [
 ];
 
 function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseActivities, aktivitaetenMap, masterAufgabenMap = {}, aktivitaetSupportsMasterMap = {} }) {
+  const [open, setOpen] = useState(false);
+
+  // Phasen, die im Lernpaket-Editor explizit deaktiviert wurden, sollen
+  // weder im Sidebar-Tree erscheinen noch beim Roll-up zählen.
+  // Hinweis: Early-Return MUSS nach allen Hook-Calls erfolgen, sonst
+  // verletzt das die Rules of Hooks.
+  const phaseConfig = paket?.phasen_konfiguration?.[phase] || {};
+  if (phaseConfig.disabled === true) return null;
+
   const activities = paketPhaseActivities.filter(a => a.phase === phase);
 
   // Einheitliche Count-Pille: grau=leer, grün=alle vollständig, gelb=teilweise
@@ -75,8 +84,6 @@ function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseA
     total === 0 ? 'bg-slate-200 text-slate-700'
     : completeCount === total ? 'bg-green-500 text-white'
     : 'bg-amber-400 text-white';
-
-  const [open, setOpen] = useState(false);
 
   return (
     <div>
@@ -131,8 +138,14 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
 
   // Single Source of Truth (siehe Logbuch §17): das vom Backend
   // materialisierte Aggregat-Feld `paket.is_complete`.
-  const completeCount = paketPhaseActivities.filter(a => a.is_complete).length;
-  const totalCount = paketPhaseActivities.length;
+  // Die Anzeige zählt jedoch nur Activities aus AKTIVEN Phasen — sonst
+  // bleibt eine deaktivierte Phase mit Leichen-Activities ewig „gelb".
+  const phasenConfig = paket?.phasen_konfiguration || {};
+  const activeActivities = paketPhaseActivities.filter(
+    a => phasenConfig[a.phase]?.disabled !== true
+  );
+  const completeCount = activeActivities.filter(a => a.is_complete).length;
+  const totalCount = activeActivities.length;
   // Farbige Pille: grau=leer, grün=alle vollständig, gelb=teilweise
   const countPillClass =
     totalCount === 0 ? 'bg-slate-200 text-slate-700'

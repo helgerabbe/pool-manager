@@ -136,7 +136,18 @@ Deno.serve(async (req) => {
       }
     }
 
-    const living = (siblings || []).filter((a) => a.sync_status !== 'to_delete');
+    // Activities aus DEAKTIVIERTEN Phasen werden beim Roll-up komplett
+    // ignoriert — wenn die Lehrkraft z. B. die "Abschluss"-Phase per Toggle
+    // ausgeschaltet hat, dürfen dort schlummernde Activities das Lernpaket
+    // nicht künstlich auf gelb halten. (paket?.phasen_konfiguration
+    // existiert evtl. noch nicht — dann gilt: nichts ausgeklammert.)
+    const phasenConfig = paket?.phasen_konfiguration || {};
+    const isPhaseActive = (phaseKey) =>
+      phasenConfig[phaseKey]?.disabled !== true;
+
+    const living = (siblings || []).filter(
+      (a) => a.sync_status !== 'to_delete' && isPhaseActive(a.phase)
+    );
     // Stale-Read-Schutz: gerade korrigierten Wert dieser Activity im Set spiegeln.
     const allComplete = living.every((a) =>
       a.id === entityId ? computedIsComplete === true : a.is_complete === true
