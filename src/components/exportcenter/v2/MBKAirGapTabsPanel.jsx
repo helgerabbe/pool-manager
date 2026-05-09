@@ -56,10 +56,6 @@ import {
 import { useSchulStammdaten } from '@/hooks/useSchulStammdaten';
 import { useAirGapHandoverState } from '@/hooks/useAirGapHandoverState';
 import { groupTaskItems, groupMicroItems } from '@/lib/airGapBundleGroups';
-import { buildOperatorActionPlan } from '@/lib/operatorActionPlan';
-
-import OperatorActionPlanCard from '@/components/export/airgap/OperatorActionPlanCard';
-import { META_SYSTEM_PROMPT } from '@/lib/operatorMetaSystemPrompt';
 
 import MetaPromptTab from './tabs/MetaPromptTab';
 import StrukturTab from './tabs/StrukturTab';
@@ -382,23 +378,6 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
       `mbk-${blockSlug}_${baseSlug}_${group.key.replace('::', '-')}.zip`
     );
 
-  // ── Action Plan ──────────────────────────────────────────────────────
-  const actionPlan = useMemo(
-    () =>
-      buildOperatorActionPlan({
-        plan: bulkPlan || [],
-        existingPrompts: dbPrompts || [],
-        einheitId, lernpakete, allgemeineAufgaben, phaseAktivitaeten, katalogById,
-      }),
-    [bulkPlan, dbPrompts, einheitId, lernpakete, allgemeineAufgaben, phaseAktivitaeten, katalogById]
-  );
-
-  const handleCopyMetaPrompt = () =>
-    safeAction(
-      () => navigator.clipboard.writeText(META_SYSTEM_PROMPT),
-      'Meta-System-Prompt in Zwischenablage kopiert.'
-    );
-
   // Plan-Lookup pro Item-Key → für SyncStatusBadge in den Listen.
   const itemPlanByKey = useMemo(() => {
     const m = new Map();
@@ -479,12 +458,6 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
           Zurücksetzen
         </Button>
       </div>
-
-      {/* Operator Action Plan (kontextspezifisch) */}
-      <OperatorActionPlanCard
-        actionPlan={actionPlan}
-        onCopyMetaPrompt={handleCopyMetaPrompt}
-      />
 
       {/* Tab-Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

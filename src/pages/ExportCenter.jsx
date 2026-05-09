@@ -114,7 +114,11 @@ export default function ExportCenter() {
         </div>
       </div>
 
-      <AnleitungModal open={anleitungOpen} onOpenChange={setAnleitungOpen} />
+      <AnleitungModal
+        open={anleitungOpen}
+        onOpenChange={setAnleitungOpen}
+        einheitId={selectedEinheitId}
+      />
 
       {/* Inhalte — wir rendern nur den aktiven Tab, damit Querys nicht
           unnötig parallel laufen. */}

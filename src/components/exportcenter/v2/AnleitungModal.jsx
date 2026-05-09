@@ -18,6 +18,44 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { ScrollText, FileCode, Trash2, Sparkles, ListChecks } from 'lucide-react';
+import { toast } from 'sonner';
+import OperatorActionPlanCard from '@/components/export/airgap/OperatorActionPlanCard';
+import { useOperatorActionPlan } from '@/hooks/useOperatorActionPlan';
+import { META_SYSTEM_PROMPT } from '@/lib/operatorMetaSystemPrompt';
+
+/**
+ * Lädt + rendert den kontextspezifischen Action Plan für eine konkrete
+ * Einheit. Eigene Sub-Komponente, damit der Hook nur dann läuft, wenn
+ * tatsächlich eine Einheit ausgewählt ist (Empty-State sonst).
+ */
+function ActionPlanSection({ einheitId }) {
+  const { actionPlan, einheit } = useOperatorActionPlan(einheitId);
+  const handleCopyMetaPrompt = async () => {
+    try {
+      await navigator.clipboard.writeText(META_SYSTEM_PROMPT);
+      toast.success('Meta-System-Prompt in Zwischenablage kopiert.');
+    } catch {
+      toast.error('Kopieren fehlgeschlagen.');
+    }
+  };
+  return (
+    <section className="space-y-2">
+      <h3 className="text-sm font-semibold flex items-center gap-2">
+        <ListChecks className="w-4 h-4 text-primary" />
+        Aktueller Action Plan
+        {einheit?.titel_der_einheit && (
+          <span className="text-xs font-normal text-muted-foreground">
+            · {einheit.titel_der_einheit}
+          </span>
+        )}
+      </h3>
+      <OperatorActionPlanCard
+        actionPlan={actionPlan}
+        onCopyMetaPrompt={handleCopyMetaPrompt}
+      />
+    </section>
+  );
+}
 
 const SCENARIOS = [
   {
@@ -99,7 +137,7 @@ const SCENARIOS = [
   },
 ];
 
-export default function AnleitungModal({ open, onOpenChange }) {
+export default function AnleitungModal({ open, onOpenChange, einheitId = null }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
@@ -109,13 +147,15 @@ export default function AnleitungModal({ open, onOpenChange }) {
             Anleitung — Export-Szenarien
           </DialogTitle>
           <DialogDescription>
-            Nachschlagewerk für das Export-Team. Wähle das Szenario, das gerade
-            zutrifft. Die kontextspezifische Schritt-für-Schritt-Anleitung für
-            die aktuelle Einheit findest du oben im Operator Action Plan.
+            Nachschlagewerk für das Export-Team. Oben findest du den
+            kontextspezifischen Action Plan für die aktuell ausgewählte
+            Einheit, darunter die allgemeinen Drift-Szenarien zum Nachschlagen.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5 mt-2">
+          {einheitId && open && <ActionPlanSection einheitId={einheitId} />}
+
           {SCENARIOS.map((s) => {
             const Icon = s.icon;
             return (
