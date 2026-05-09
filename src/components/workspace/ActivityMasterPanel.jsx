@@ -147,6 +147,19 @@ export default function ActivityMasterPanel({
     refetchInterval: 5000,
   });
 
+  // Einheit laden — wir brauchen `einheit.fach` für `targetFach` beim
+  // Aufruf von `updateActivitySecure` (Backend prüft Scope-Match).
+  // Weder `catalogEntry` noch `activityRecord` führen das Fach.
+  const { data: einheit } = useQuery({
+    queryKey: ['einheit', einheitId],
+    queryFn: async () => {
+      const list = await base44.entities.Einheiten.filter({ id: einheitId });
+      return list?.[0] || null;
+    },
+    enabled: !!einheitId,
+    staleTime: 60_000,
+  });
+
   const LOCK_TIMEOUT_MS = 30 * 60 * 1000;
   const lernpaketLockActive =
     lernpaket?.is_locked &&
@@ -461,7 +474,7 @@ export default function ActivityMasterPanel({
       await base44.functions.invoke('updateActivitySecure', {
         activityId: activityRecord.id,
         einheitId,
-        targetFach: catalogEntry?.fach || activityRecord?.fach,
+        targetFach: einheit?.fach,
         erstellungsModus: newModus,
         kiBriefing: newModus === 'ki' ? activityRecord?.ki_briefing || null : null,
         fieldValues: newModus === 'manuell' ? activityRecord?.field_values || {} : {},
@@ -494,7 +507,7 @@ export default function ActivityMasterPanel({
       await base44.functions.invoke('updateActivitySecure', {
         activityId: activityRecord.id,
         einheitId,
-        targetFach: catalogEntry?.fach || activityRecord?.fach,
+        targetFach: einheit?.fach,
         erstellungsModus: 'ki',
         kiBriefing: briefing,
         fieldValues: {},
