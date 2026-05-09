@@ -128,8 +128,16 @@ export function groupTaskItems(items, ctx = {}) {
   for (const item of items) {
     if (typeof item?.key !== 'string') continue;
 
-    if (item.key.startsWith('lp-')) {
-      const lpId = item.key.slice(3);
+    // Item-Keys aus dem Panel: 'mbk-task-lp::<id>' bzw. 'mbk-task-aa::<id>'.
+    // Wir extrahieren die ID nach dem '::' und leiten den Typ aus dem
+    // Präfix vor dem '::' ab.
+    const parts = item.key.split('::');
+    if (parts.length < 2) continue;
+    const prefix = parts[0]; // z. B. 'mbk-task-lp' oder 'mbk-task-aa'
+    const refId = parts.slice(1).join('::');
+
+    if (prefix.endsWith('-lp')) {
+      const lpId = refId;
       const lp = lernpaketById.get(lpId);
       if (!lpGroups.has(lpId)) {
         lpGroups.set(lpId, {
@@ -144,8 +152,8 @@ export function groupTaskItems(items, ctx = {}) {
       continue;
     }
 
-    if (item.key.startsWith('aa-')) {
-      const aaId = item.key.slice(3);
+    if (prefix.endsWith('-aa')) {
+      const aaId = refId;
       const aa = allgemeineAufgabeById.get(aaId);
 
       // Regel C: Projekt-Anker hat Vorrang vor B/Fallback.
@@ -225,8 +233,14 @@ export function groupMicroItems(items, ctx = {}) {
   for (const item of items) {
     if (typeof item?.key !== 'string') continue;
 
-    if (item.key.startsWith('pa-')) {
-      const paId = item.key.slice(3);
+    // Item-Keys aus dem Panel: 'mbk-micro-pa::<id>' bzw. 'mbk-micro-aa::<id>'.
+    const parts = item.key.split('::');
+    if (parts.length < 2) continue;
+    const prefix = parts[0];
+    const refId = parts.slice(1).join('::');
+
+    if (prefix.endsWith('-pa')) {
+      const paId = refId;
       const pa = phaseAktivitaetById.get(paId);
       const lpId = pa?.lernpaket_id || null;
       if (lpId) {
@@ -248,8 +262,8 @@ export function groupMicroItems(items, ctx = {}) {
       continue;
     }
 
-    if (item.key.startsWith('aa-')) {
-      const aaId = item.key.slice(3);
+    if (prefix.endsWith('-aa')) {
+      const aaId = refId;
       const aa = allgemeineAufgabeById.get(aaId);
 
       if (aa?.aufgaben_typ === 'projekt_anker') {

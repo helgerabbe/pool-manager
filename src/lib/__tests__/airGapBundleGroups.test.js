@@ -25,13 +25,15 @@ const allgemeineAufgaben = [
   { id: 'aa-orphan',   titel: 'Aufgabe ohne TF', aufgaben_typ: 'inhalt', themenfeld_id: null },
 ];
 
+// Item-Keys spiegeln das Format wider, das das Panel tatsächlich erzeugt:
+// 'mbk-task-lp::<lernpaketId>' bzw. 'mbk-task-aa::<aufgabeId>'.
 const taskItems = [
-  { key: 'lp-lpA', label: 'Paket A' },
-  { key: 'lp-lpB', label: 'Paket B' },
-  { key: 'aa-aa-projekt1', label: 'Klima-Projekt' },
-  { key: 'aa-aa-tf1', label: 'TF1-Aufgabe' },
-  { key: 'aa-aa-tf2', label: 'TF2-Aufgabe' },
-  { key: 'aa-aa-orphan', label: 'Orphan' },
+  { key: 'mbk-task-lp::lpA', label: 'Paket A' },
+  { key: 'mbk-task-lp::lpB', label: 'Paket B' },
+  { key: 'mbk-task-aa::aa-projekt1', label: 'Klima-Projekt' },
+  { key: 'mbk-task-aa::aa-tf1', label: 'TF1-Aufgabe' },
+  { key: 'mbk-task-aa::aa-tf2', label: 'TF2-Aufgabe' },
+  { key: 'mbk-task-aa::aa-orphan', label: 'Orphan' },
 ];
 
 describe('groupTaskItems (Block 3)', () => {
@@ -49,10 +51,10 @@ describe('groupTaskItems (Block 3)', () => {
     const groups = groupTaskItems(taskItems, { themenfelder, lernpakete, allgemeineAufgaben });
     const projekt = groups.filter((g) => g.kind === AIR_GAP_BUNDLE_KIND.PROJEKT);
     expect(projekt).toHaveLength(1);
-    expect(projekt[0].items[0].key).toBe('aa-aa-projekt1');
+    expect(projekt[0].items[0].key).toBe('mbk-task-aa::aa-projekt1');
     // Der Projekt-Anker darf NICHT zusätzlich im TF1-Bundle landen.
     const tf1 = groups.find((g) => g.key === 'tf::tf1');
-    expect(tf1.items.find((i) => i.key === 'aa-aa-projekt1')).toBeUndefined();
+    expect(tf1.items.find((i) => i.key === 'mbk-task-aa::aa-projekt1')).toBeUndefined();
   });
 
   it('bündelt restliche Aufgaben pro Themenfeld (Regel B), sortiert nach themenfeld.reihenfolge', () => {
@@ -61,14 +63,14 @@ describe('groupTaskItems (Block 3)', () => {
     expect(tfGroups).toHaveLength(2);
     expect(tfGroups[0].key).toBe('tf::tf1');
     expect(tfGroups[1].key).toBe('tf::tf2');
-    expect(tfGroups[0].items.map((i) => i.key)).toEqual(['aa-aa-tf1']);
+    expect(tfGroups[0].items.map((i) => i.key)).toEqual(['mbk-task-aa::aa-tf1']);
   });
 
   it('sammelt themenfeldlose Aufgaben in einem Orphan-Bundle (Regel B-Fallback)', () => {
     const groups = groupTaskItems(taskItems, { themenfelder, lernpakete, allgemeineAufgaben });
     const orphan = groups.find((g) => g.kind === AIR_GAP_BUNDLE_KIND.ORPHAN);
     expect(orphan).toBeDefined();
-    expect(orphan.items.map((i) => i.key)).toEqual(['aa-aa-orphan']);
+    expect(orphan.items.map((i) => i.key)).toEqual(['mbk-task-aa::aa-orphan']);
   });
 
   it('liefert Gruppen in der Reihenfolge: Lernpakete → Projekte → Themenfelder → Orphans', () => {
@@ -83,7 +85,7 @@ describe('groupTaskItems (Block 3)', () => {
 
   it('lässt leere Gruppen weg', () => {
     const groups = groupTaskItems(
-      [{ key: 'lp-lpA', label: 'Paket A' }],
+      [{ key: 'mbk-task-lp::lpA', label: 'Paket A' }],
       { themenfelder, lernpakete, allgemeineAufgaben }
     );
     // Nur das eine Lernpaket-Bundle.
@@ -92,7 +94,7 @@ describe('groupTaskItems (Block 3)', () => {
   });
 
   it('reicht Items unverändert durch (kein Mutate)', () => {
-    const original = [{ key: 'lp-lpA', label: 'Paket A', custom: 42 }];
+    const original = [{ key: 'mbk-task-lp::lpA', label: 'Paket A', custom: 42 }];
     const groups = groupTaskItems(original, { themenfelder, lernpakete, allgemeineAufgaben });
     expect(groups[0].items[0]).toBe(original[0]); // gleiche Referenz
     expect(groups[0].items[0].custom).toBe(42);
@@ -108,21 +110,24 @@ describe('groupMicroItems (Block 4)', () => {
 
   it('mappt KI-Aktivitäten via lernpaket_id auf das Lernpaket-Bundle (Regel A)', () => {
     const groups = groupMicroItems(
-      [{ key: 'pa-paA1', label: 'Aktivität in A' }, { key: 'pa-paB1', label: 'Aktivität in B' }],
+      [
+        { key: 'mbk-micro-pa::paA1', label: 'Aktivität in A' },
+        { key: 'mbk-micro-pa::paB1', label: 'Aktivität in B' },
+      ],
       { themenfelder, lernpakete, allgemeineAufgaben, phaseAktivitaeten }
     );
     const lpGroups = groups.filter((g) => g.kind === AIR_GAP_BUNDLE_KIND.LERNPAKET);
     expect(lpGroups).toHaveLength(2);
     const lpA = lpGroups.find((g) => g.key === 'lp::lpA');
-    expect(lpA.items[0].key).toBe('pa-paA1');
+    expect(lpA.items[0].key).toBe('mbk-micro-pa::paA1');
   });
 
   it('packt KI-AllgemeineAufgaben analog zu Block 3 in Projekt/Themenfeld/Orphan', () => {
     const groups = groupMicroItems(
       [
-        { key: 'aa-aa-projekt1', label: 'Projekt-Briefing' },
-        { key: 'aa-aa-tf1', label: 'TF1-Briefing' },
-        { key: 'aa-aa-orphan', label: 'Orphan-Briefing' },
+        { key: 'mbk-micro-aa::aa-projekt1', label: 'Projekt-Briefing' },
+        { key: 'mbk-micro-aa::aa-tf1', label: 'TF1-Briefing' },
+        { key: 'mbk-micro-aa::aa-orphan', label: 'Orphan-Briefing' },
       ],
       { themenfelder, lernpakete, allgemeineAufgaben, phaseAktivitaeten: [] }
     );
@@ -133,11 +138,11 @@ describe('groupMicroItems (Block 4)', () => {
 
   it('packt Aktivitäten ohne lernpaket_id ins Orphan-Bundle', () => {
     const groups = groupMicroItems(
-      [{ key: 'pa-paOrphan', label: 'verwaiste Aktivität' }],
+      [{ key: 'mbk-micro-pa::paOrphan', label: 'verwaiste Aktivität' }],
       { themenfelder, lernpakete, allgemeineAufgaben, phaseAktivitaeten }
     );
     expect(groups).toHaveLength(1);
     expect(groups[0].kind).toBe(AIR_GAP_BUNDLE_KIND.ORPHAN);
-    expect(groups[0].items[0].key).toBe('pa-paOrphan');
+    expect(groups[0].items[0].key).toBe('mbk-micro-pa::paOrphan');
   });
 });
