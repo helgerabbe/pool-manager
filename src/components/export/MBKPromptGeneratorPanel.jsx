@@ -27,7 +27,7 @@ import { useSchulStammdaten } from '@/hooks/useSchulStammdaten';
 import { useExportPrompts } from '@/hooks/useExportPrompts';
 import { useMBKBulkGenerate } from '@/hooks/useMBKBulkGenerate';
 import { useRBAC } from '@/hooks/useRBAC';
-import MBKAirGapPanel from './airgap/MBKAirGapPanel';
+import MBKAirGapTabsPanel from '@/components/exportcenter/v2/MBKAirGapTabsPanel';
 import {
   LERNTYP_KEYS,
   buildSourceTimestampIndex,
@@ -463,7 +463,7 @@ export default function MBKPromptGeneratorPanel({ einheitId }) {
       </TabsList>
 
       <TabsContent value="airgap" className="mt-0">
-        <MBKAirGapPanel einheitId={einheitId} />
+        <MBKAirGapTabsPanel einheitId={einheitId} />
       </TabsContent>
 
       <TabsContent value="legacy" className="mt-0 space-y-4">
