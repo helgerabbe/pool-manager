@@ -2,61 +2,22 @@
  * LernzielEditList.jsx
  *
  * Inline-Editor für die Lernziele eines Lernpakets im Tab-3-Bearbeitungs-
- * dialog. Erlaubt es Fachschaftsleitungen (und allen, die `kannBearbeiten`
- * haben), sowohl die offizielle Formulierung (Fachsprache) als auch die
- * Schüler-Übersetzung jedes Ziels direkt aus dem Lernpaket-Edit-Dialog
- * heraus zu pflegen — bis dato gab es dort nur den Phasen-Editor.
+ * dialog. Pflegt offizielle Formulierung + Schüler-Übersetzung.
  *
- * Das Anlegen/Löschen neuer Lernziele bleibt bewusst im Panel (Edit-Icon
- * je Zeile / „+ Hinzufügen"-Button), damit dieser Editor nur eine
- * Aufgabe hat: bestehende Texte in-place korrigieren.
+ * Controlled-Komponente: Der Parent hält den Bearbeitungs-State (`drafts`)
+ * und persistiert beim globalen "Speichern"-Button im Dialog-Footer.
+ * Damit gibt es nur noch EINEN Save-Button im Dialog.
  */
 
-import React, { useEffect, useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
+import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Save, Loader2, Target } from 'lucide-react';
+import { Target } from 'lucide-react';
 import { kategorieColors } from './SharedUI';
 
-function LernzielRow({ lernziel, onSaved }) {
-  const [formulierung, setFormulierung] = useState(lernziel.formulierung_fachsprache || '');
-  const [uebersetzung, setUebersetzung] = useState(lernziel.schueler_uebersetzung || '');
-
-  // Beim Wechsel auf ein anderes Lernziel die lokalen Felder neu seeden.
-  useEffect(() => {
-    setFormulierung(lernziel.formulierung_fachsprache || '');
-    setUebersetzung(lernziel.schueler_uebersetzung || '');
-  }, [lernziel.id, lernziel.formulierung_fachsprache, lernziel.schueler_uebersetzung]);
-
-  const update = useMutation({
-    mutationFn: (data) => base44.entities.Lernziele.update(lernziel.id, data),
-    onSuccess: () => {
-      toast.success('Lernziel gespeichert.');
-      onSaved?.();
-    },
-    onError: () => toast.error('Fehler beim Speichern des Lernziels.'),
-  });
-
-  const trimmedFormulierung = formulierung.trim();
-  const trimmedUebersetzung = uebersetzung.trim();
-  const isDirty =
-    trimmedFormulierung !== (lernziel.formulierung_fachsprache || '').trim() ||
-    trimmedUebersetzung !== (lernziel.schueler_uebersetzung || '').trim();
-
-  const handleSave = () => {
-    if (!trimmedFormulierung) {
-      toast.error('Die offizielle Formulierung darf nicht leer sein.');
-      return;
-    }
-    update.mutate({
-      formulierung_fachsprache: trimmedFormulierung,
-      schueler_uebersetzung: trimmedUebersetzung,
-    });
-  };
+function LernzielRow({ lernziel, draft, onChange }) {
+  const formulierung = draft?.formulierung_fachsprache ?? lernziel.formulierung_fachsprache ?? '';
+  const uebersetzung = draft?.schueler_uebersetzung ?? lernziel.schueler_uebersetzung ?? '';
 
   return (
     <div className="p-3 rounded-lg border bg-card space-y-2.5">
@@ -76,7 +37,7 @@ function LernzielRow({ lernziel, onSaved }) {
             <input
               type="text"
               value={formulierung}
-              onChange={(e) => setFormulierung(e.target.value)}
+              onChange={(e) => onChange(lernziel.id, { ...draft, formulierung_fachsprache: e.target.value })}
               placeholder="Ich kann..."
               className="w-full px-3 py-2 rounded-lg border border-input text-sm"
             />
@@ -87,24 +48,10 @@ function LernzielRow({ lernziel, onSaved }) {
             <input
               type="text"
               value={uebersetzung}
-              onChange={(e) => setUebersetzung(e.target.value)}
+              onChange={(e) => onChange(lernziel.id, { ...draft, schueler_uebersetzung: e.target.value })}
               placeholder="Schülergerechte Formulierung..."
               className="w-full px-3 py-2 rounded-lg border border-input text-sm"
             />
-          </div>
-
-          <div className="flex justify-end">
-            <Button
-              size="sm"
-              onClick={handleSave}
-              disabled={!isDirty || update.isPending}
-              className="gap-1.5"
-            >
-              {update.isPending
-                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                : <Save className="w-3.5 h-3.5" />}
-              Speichern
-            </Button>
           </div>
         </div>
       </div>
@@ -112,7 +59,7 @@ function LernzielRow({ lernziel, onSaved }) {
   );
 }
 
-export default function LernzielEditList({ lernziele, onSaved }) {
+export default function LernzielEditList({ lernziele, drafts, onChangeDraft }) {
   if (!lernziele || lernziele.length === 0) {
     return (
       <div className="p-3 rounded-lg border border-dashed text-center text-sm text-muted-foreground">
@@ -124,7 +71,12 @@ export default function LernzielEditList({ lernziele, onSaved }) {
   return (
     <div className="space-y-2">
       {lernziele.map((lz) => (
-        <LernzielRow key={lz.id} lernziel={lz} onSaved={onSaved} />
+        <LernzielRow
+          key={lz.id}
+          lernziel={lz}
+          draft={drafts?.[lz.id]}
+          onChange={onChangeDraft}
+        />
       ))}
     </div>
   );

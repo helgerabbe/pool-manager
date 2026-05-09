@@ -15,7 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import {
-  Lock, Plus, Edit, Trash2, Clock, AlertTriangle, PenLine, Loader2, ChevronRight, Menu, Target
+  Lock, Plus, Edit, Trash2, Clock, AlertTriangle, PenLine, Loader2, ChevronRight, Menu, Target, Save
 } from 'lucide-react';
 
 export default function LernpaketPanel({
@@ -37,6 +37,9 @@ export default function LernpaketPanel({
   const [expandedPhase, setExpandedPhase] = useState(null);
   const [localTitel, setLocalTitel] = useState(paket.titel_des_pakets || '');
   const [localPhasenConfig, setLocalPhasenConfig] = useState(paket.phasen_konfiguration || {});
+  // Drafts für Lernziele im Bearbeiten-Dialog: { [lernzielId]: { formulierung_fachsprache, schueler_uebersetzung } }
+  const [lernzielDrafts, setLernzielDrafts] = useState({});
+  const [isSavingDialog, setIsSavingDialog] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -67,6 +70,9 @@ export default function LernpaketPanel({
         setIsAcquiringLock(false);
         return;
       }
+      // Drafts aus aktuellem DB-Stand initialisieren
+      setLocalPhasenConfig(paket.phasen_konfiguration || {});
+      setLernzielDrafts({});
       setEditDialogOpen(true);
     } catch (err) {
       toast.error('Fehler beim Sperren des Lernpakets.');
@@ -74,10 +80,62 @@ export default function LernpaketPanel({
     }
   };
 
-  const handleCloseEditDialog = async () => {
+  // Abbrechen: Drafts verwerfen, Lock freigeben.
+  const handleCancelEditDialog = async () => {
     setEditDialogOpen(false);
     setIsAcquiringLock(false);
+    setLocalPhasenConfig(paket.phasen_konfiguration || {});
+    setLernzielDrafts({});
     await releaseLock();
+  };
+
+  // Speichern: phasen_konfiguration + alle dirty Lernziele persistieren, dann Lock freigeben.
+  const handleSaveEditDialog = async () => {
+    setIsSavingDialog(true);
+    try {
+      // 1) Lernpaket-Update (phasen_konfiguration)
+      await base44.entities.Lernpakete.update(paket.id, {
+        phasen_konfiguration: localPhasenConfig,
+      });
+
+      // 2) Lernziel-Drafts: nur die ändern, die wirklich dirty sind und nicht-leere Pflichtfelder haben.
+      const updates = [];
+      for (const [lzId, draft] of Object.entries(lernzielDrafts)) {
+        const original = paketZiele.find((lz) => lz.id === lzId);
+        if (!original) continue;
+        const newFach = (draft.formulierung_fachsprache ?? '').trim();
+        const newUe = (draft.schueler_uebersetzung ?? '').trim();
+        const oldFach = (original.formulierung_fachsprache ?? '').trim();
+        const oldUe = (original.schueler_uebersetzung ?? '').trim();
+        if (newFach === oldFach && newUe === oldUe) continue;
+        if (!newFach) {
+          toast.error('Die offizielle Formulierung darf nicht leer sein.');
+          setIsSavingDialog(false);
+          return;
+        }
+        updates.push(
+          base44.entities.Lernziele.update(lzId, {
+            formulierung_fachsprache: newFach,
+            schueler_uebersetzung: newUe,
+          })
+        );
+      }
+      await Promise.all(updates);
+
+      queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+      queryClient.invalidateQueries({ queryKey: ['lernziele'] });
+      toast.success('Änderungen gespeichert.');
+
+      setEditDialogOpen(false);
+      setIsAcquiringLock(false);
+      setLernzielDrafts({});
+      await releaseLock();
+    } catch (err) {
+      console.error('[LernpaketPanel] Save failed:', err);
+      toast.error('Fehler beim Speichern.');
+    } finally {
+      setIsSavingDialog(false);
+    }
   };
 
   React.useEffect(() => {
@@ -91,24 +149,19 @@ export default function LernpaketPanel({
     { key: 'Abschluss', label: 'Abschluss', icon: '🎯', defaultDisabled: false },
   ];
 
+  // Toggle nur lokal; Persistenz erfolgt erst beim "Speichern"-Button im Dialog-Footer.
   const handlePhaseToggle = (phaseKey) => {
-    const phaseConfig = localPhasenConfig[phaseKey] || {};
-    const newDisabledState = !phaseConfig.disabled;
-    const updatedPhaseConfig = {
-      ...phaseConfig,
-      disabled: newDisabledState,
-    };
-    const newConfig = {
-      ...localPhasenConfig,
-      [phaseKey]: updatedPhaseConfig,
-    };
-    setLocalPhasenConfig(newConfig);
-    base44.entities.Lernpakete.update(paket.id, { phasen_konfiguration: newConfig }).then(() => {
-      queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-    }).catch(() => {
-      setLocalPhasenConfig(localPhasenConfig);
-      toast.error('Fehler beim Speichern der Phasenkonfiguration.');
+    setLocalPhasenConfig((prev) => {
+      const phaseConfig = prev[phaseKey] || {};
+      return {
+        ...prev,
+        [phaseKey]: { ...phaseConfig, disabled: !phaseConfig.disabled },
+      };
     });
+  };
+
+  const handleLernzielDraftChange = (lzId, draft) => {
+    setLernzielDrafts((prev) => ({ ...prev, [lzId]: draft }));
   };
 
   const handleEditLernziel = (lz) => {
@@ -362,16 +415,14 @@ export default function LernpaketPanel({
         })()}
       </div>
 
-      <Dialog open={editDialogOpen} onOpenChange={handleCloseEditDialog}>
+      <Dialog open={editDialogOpen} onOpenChange={(open) => { if (!open) handleCancelEditDialog(); }}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>📦 {paket.titel_des_pakets} bearbeiten</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-6 py-4">
-            {/* Lernziele-Editor: Fachschaftsleitungen pflegen hier die offizielle
-                Formulierung + Schüler-Übersetzung jedes zugeordneten Ziels.
-                Anlegen/Löschen bleibt im Panel-Body (Edit-Icon je Zeile). */}
+            {/* Lernziele-Editor: controlled, persistiert erst beim globalen "Speichern". */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-muted-foreground">Lernziele bearbeiten</h3>
@@ -379,7 +430,8 @@ export default function LernpaketPanel({
               </div>
               <LernzielEditList
                 lernziele={paketZiele}
-                onSaved={() => queryClient.invalidateQueries({ queryKey: ['lernziele'] })}
+                drafts={lernzielDrafts}
+                onChangeDraft={handleLernzielDraftChange}
               />
             </div>
 
@@ -448,7 +500,7 @@ export default function LernpaketPanel({
                           }}
                           onGoToTaskWorkshop={(activityId) => {
                             onNavigate({ type: 'goto-task-workshop', activityId });
-                            handleCloseEditDialog();
+                            handleCancelEditDialog();
                           }}
                         />
                       </div>
@@ -460,8 +512,12 @@ export default function LernpaketPanel({
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={handleCloseEditDialog}>
-              Schließen
+            <Button variant="outline" onClick={handleCancelEditDialog} disabled={isSavingDialog}>
+              Abbrechen
+            </Button>
+            <Button onClick={handleSaveEditDialog} disabled={isSavingDialog} className="gap-1.5">
+              {isSavingDialog ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              Speichern
             </Button>
           </DialogFooter>
         </DialogContent>
