@@ -30,6 +30,12 @@
       "default": [],
       "description": "AP2 / MBK-Integration: Verpflichtende Begriffe, die in jeder \u00dcbung dieses Pakets vorkommen m\u00fcssen. Werden in den C-Local-Payload (Micro-Briefing) der MBK eingewoben, damit die KI z. B. 'Steigung' und 'Y-Achsenabschnitt' garantiert in der Aufgabenstellung verwendet. Tag-Input im Lernpaket-Editor."
     },
+    "phasen_konfiguration": {
+      "type": "object",
+      "description": "Pro Phase ('Input', '\u00dcbung', 'Abschluss') ein Konfigurations-Objekt. Aktuell relevant: { disabled: boolean }. Wenn `disabled === true`, blendet die Sidebar diese Phase aus und der lernpaketAggregateGuardian klammert ihre Activities beim Roll-up auf `Lernpakete.is_complete` aus. Wird im Lernpaket-Editor (Toggle pro Phase) gepflegt.",
+      "additionalProperties": true,
+      "default": {}
+    },
     "is_locked": {
       "type": "boolean",
       "default": false,

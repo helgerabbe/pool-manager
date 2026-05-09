@@ -31,13 +31,22 @@ function AktivitaetSubNode({ activity, aktivitaetName, isSelected, onSelect, pak
   // supportsMaster wird nur für die Anzeige (z.B. "1M") genutzt
   const masterAufgabenCount = masterAufgabenList.length;
   const isReleased = activity.content_status === 'approved';
-  
-  // Farben nach Freigabe-Status:
-  // - Freigegeben (approved) → Grün
-  // - Nicht freigegeben (draft) → Orange/Gelb
-  // Warn-Symbol: AUSSCHLIESSLICH wenn unvollständig (is_complete === false)
-  // Der Freigabe-Status hat keinen Einfluss auf die Warn-Logik!
-  const textColor = isReleased ? 'text-green-600' : 'text-orange-600';
+  // KI-Modus mit gespeichertem Briefing → Aktivität ist fertig zur Übergabe
+  // an die MBK; es gibt KEINEN manuellen Approve-Schritt. Damit die Sidebar
+  // nicht dauerhaft rot bleibt, behandeln wir „KI-Briefing vorhanden" wie
+  // einen Approve. Single Source of Truth für „inhaltlich fertig" bleibt
+  // weiterhin `is_complete` (vom Guardian gesetzt).
+  const isKiBriefed =
+    activity.erstellungs_modus === 'ki' &&
+    !!activity.ki_briefing &&
+    typeof activity.ki_briefing === 'object' &&
+    Object.keys(activity.ki_briefing).length > 0;
+  const showAsComplete = isReleased || (isKiBriefed && activity.is_complete === true);
+
+  // Farben nach Status:
+  // - Freigegeben (approved) ODER KI-Briefing fertig → Grün
+  // - Sonst → Orange/Gelb
+  const textColor = showAsComplete ? 'text-green-600' : 'text-orange-600';
   
   // Debug: Zeige Masteraufgaben-Status wenn supportsMaster
   const masterInfo = supportsMaster && masterAufgabenCount > 0 ? `${masterAufgabenCount}M` : null;
