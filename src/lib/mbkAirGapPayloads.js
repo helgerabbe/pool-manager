@@ -36,7 +36,7 @@ import { getSektorTypLabel } from '@/lib/sektorTypen';
  * Wird bei jedem Build in `meta.schema_version` geschrieben und beim
  * Persistieren als `template_version` der ExportPrompts-Records.
  */
-export const MBK_AIRGAP_VERSION = 'airgap-1.5.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.6.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -79,8 +79,11 @@ const SCORM_DELIVERY_CONTRACT = {
     + 'Aufgaben Ebene 2 werden pro Themenfeld in einer HTML gebündelt; '
     + 'Aufgaben ohne Themenfeld landen in der Orphan-Datei. Allgemeine '
     + 'Aufgaben Ebene 3 (Projekte) werden pro Einheit in einer einzigen '
-    + 'HTML zusammengefasst. System-Bausteine werden pro baustein_id '
-    + 'einmal generiert (deduplizierte Datei). Zusätzlich MÜSSEN immer '
+    + 'HTML zusammengefasst. System-Bausteine werden ab airgap-1.6.0 PRO '
+    + 'LERNTYP-PFAD individuell generiert (Pattern '
+    + '`system-<lerntyp>-<baustein_id>.html`); ein Briefing in Payload 5 '
+    + '(`mbk_systembaustein_payload`) liefert pro Pfad-Referenz die '
+    + 'persona-spezifischen Inhalte. Zusätzlich MÜSSEN immer '
     + 'die vier Pflicht-Dashboards (dashboard-<lerntyp>.html) als '
     + 'Differenzierungs-Einstiegspunkte erzeugt werden. KI-Aktivitäten '
     + 'werden NICHT als eigenständige Tasks ausgegeben, sondern als '
@@ -104,14 +107,44 @@ function fnThemenfeldBundleOrphan() {
 function fnProjektBundle(einheitId) {
   return `projekte-einheit-${einheitId}.html`;
 }
-function fnSystemBaustein(bausteinId) {
-  return `system-${bausteinId}.html`;
+/**
+ * airgap-1.6.0: System-Baustein-HTMLs sind ab dieser Version pro Lerntyp
+ * eindeutig — derselbe Baustein wird in Deutsch/Minimalist anders gefüllt
+ * als in Mathe/Passioniert. Das SCORM-Mapping referenziert pro Lerntyp-Pfad
+ * exakt eine Datei mit diesem Pattern; die MBK generiert pro Pfad-Referenz
+ * einen eigenen Inhalt aus dem zugehörigen mbk_systembaustein_payload.
+ */
+function fnSystemBaustein(bausteinId, lerntyp) {
+  return `system-${lerntyp}-${bausteinId}.html`;
 }
 function fnFragment(activityId) {
   return `fragment-${activityId}.html`;
 }
 function fnDashboard(lerntyp) {
   return `dashboard-${lerntyp}.html`;
+}
+
+/**
+ * Composite-Key für Payload-5-Items (mbk_systembaustein_payload).
+ * Wird als reference_id in ExportPrompts persistiert und identifiziert
+ * eindeutig die Kombination Baustein × Lerntyp innerhalb einer Einheit.
+ */
+export function makeSystembausteinReferenceId(lerntyp, bausteinId) {
+  return `${lerntyp}::${bausteinId}`;
+}
+
+/**
+ * Inverse zu makeSystembausteinReferenceId — splittet eine reference_id
+ * in { lerntyp, bausteinId }. Liefert null bei ungültigem Format.
+ */
+export function parseSystembausteinReferenceId(refId) {
+  if (typeof refId !== 'string') return null;
+  const idx = refId.indexOf('::');
+  if (idx <= 0) return null;
+  return {
+    lerntyp: refId.slice(0, idx),
+    bausteinId: refId.slice(idx + 2),
+  };
 }
 
 /**
@@ -704,40 +737,57 @@ export function buildStructurePayload({
     });
   }
 
-  // 4. System-Bausteine — deduplizieren über alle vier Lernpfade.
-  //    Ein Baustein, der mehrfach im Pfad referenziert wird, wird trotzdem
-  //    nur EINMAL als HTML generiert; das imsmanifest.xml verlinkt ihn an
-  //    allen Stellen.
-  const usedBausteinIds = new Set();
-  for (const lt of LERNTYP_KEYS) {
-    const sektoren = einheit?.lernpfade_konfiguration?.[lt] || [];
-    for (const sektor of sektoren) {
-      for (const item of sektor?.items || []) {
-        if (item?.type === 'system' && item?.ref_id) {
-          usedBausteinIds.add(item.ref_id);
-        }
-      }
-    }
-  }
+  // 4. System-Bausteine (airgap-1.6.0 / pro-Lerntyp-Modell):
+  //    Pro Lerntyp-Pfad bekommt jeder dort referenzierte Baustein einen
+  //    EIGENEN Mapping-Eintrag — derselbe baustein_id in Deutsch/Minimalist
+  //    erhält andere Inhalte als in Mathe/Passioniert. Filename-Pattern:
+  //    `system-<lerntyp>-<baustein_id>.html`. Strikte 1:1-Zuordnung
+  //    zwischen Lernpfad-Referenz und SCORM-Datei — keine toten Files,
+  //    keine doppelten Generierungen für nicht-referenzierte Lerntypen.
+  //
+  //    `system_bausteine` (Top-Level-Block) bleibt deduplizierte Quelle
+  //    für die Stamm-Definitionen (titel, icon, export_instruktion). Der
+  //    eigentliche persona-spezifische Inhalt entsteht erst über
+  //    Payload 5 (mbk_systembaustein_payload).
   const bausteinByKey = new Map(
     (systemBausteine || []).map((b) => [b.baustein_id, b])
   );
+  const usedBausteinIds = new Set();
+  // Stabile Reihenfolge: erst lerntyp-Reihenfolge, dann baustein_id
+  // alphabetisch — wichtig für deterministische Test-Outputs und Hashes.
+  for (const lt of LERNTYP_KEYS) {
+    const sektoren = einheit?.lernpfade_konfiguration?.[lt] || [];
+    const seenInLerntyp = new Set();
+    for (const sektor of sektoren) {
+      for (const item of sektor?.items || []) {
+        if (item?.type !== 'system' || !item?.ref_id) continue;
+        // Innerhalb eines Lerntyps deduplizieren: kommt derselbe Baustein
+        // zweimal im Pfad vor, gibt es trotzdem nur eine HTML-Datei.
+        if (seenInLerntyp.has(item.ref_id)) continue;
+        seenInLerntyp.add(item.ref_id);
+        usedBausteinIds.add(item.ref_id);
+        const baustein = bausteinByKey.get(item.ref_id);
+        scormFileMapping.push({
+          kind: 'system_baustein',
+          source_id: makeSystembausteinReferenceId(lt, item.ref_id),
+          baustein_id: item.ref_id,
+          lerntyp: lt,
+          filename: fnSystemBaustein(item.ref_id, lt),
+          titel: nullable(baustein?.titel) || item.ref_id,
+          contains_placeholders: false,
+          placeholder_activity_ids: [],
+          is_hidden_in_moodle: true,
+          // Für System-Bausteine ist der nav-Context immer genau das
+          // zugehörige Lerntyp-Dashboard — der Baustein steht nur in
+          // diesem einen Pfad.
+          navigation_context: [fnDashboard(lt)],
+        });
+      }
+    }
+  }
   const systemBausteineOut = [];
   for (const bausteinId of [...usedBausteinIds].sort()) {
     const baustein = bausteinByKey.get(bausteinId);
-    // Auch wenn der Baustein in der DB (noch) nicht angelegt ist, behalten
-    // wir den Mapping-Eintrag — sonst entsteht eine Lücke zwischen Pfad
-    // und Manifest. Die MBK erkennt fehlende export_instruktion und stoppt.
-    scormFileMapping.push({
-      kind: 'system_baustein',
-      source_id: bausteinId,
-      filename: fnSystemBaustein(bausteinId),
-      titel: nullable(baustein?.titel) || bausteinId,
-      contains_placeholders: false,
-      placeholder_activity_ids: [],
-      is_hidden_in_moodle: true,
-      navigation_context: navContextFor(bausteinId),
-    });
     systemBausteineOut.push({
       baustein_id: bausteinId,
       titel: nullable(baustein?.titel),
@@ -795,6 +845,210 @@ export function extractNavigationContextByRefId(scormFileMapping = []) {
     }
   }
   return m;
+}
+
+// ── 5. Payload 5: Systembaustein-Briefings (airgap-1.6.0) ───────────────────
+
+/**
+ * Liefert für einen Lerntyp-Pfad eine kompakte Item-Liste, in der die
+ * MBK den Kontext rund um einen Baustein findet (welcher Sektor, welche
+ * Geschwister, welche Themenfelder etc.).
+ *
+ * Output ist bewusst schlank — die ausführliche Lernlandkarte ist Teil
+ * des Strukturpayloads (Payload 2). Hier reichen die Header-Felder, damit
+ * die MBK pro Baustein × Lerntyp gezielt ein passendes Briefing schreiben
+ * kann (z.B. „nenne in der Einführung die drei Themenfelder X, Y, Z").
+ */
+function summarizeLerntypPfad(sektoren, themenfelderById) {
+  return (sektoren || []).map((sektor) => {
+    const themenfeldTitel = sektor?.themenfeld_id
+      ? nullable(sektor?.titel_snapshot)
+        || nullable(themenfelderById.get(sektor.themenfeld_id)?.titel)
+      : null;
+    return {
+      sektor_id: sektor?.sektor_id || null,
+      sektor_typ: sektor?.sektor_typ || null,
+      sektor_typ_label: getSektorTypLabel(sektor?.sektor_typ),
+      titel: nullable(sektor?.titel),
+      themenfeld_id: sektor?.themenfeld_id || null,
+      themenfeld_titel: themenfeldTitel,
+      items: (sektor?.items || []).map((it) => ({
+        instance_id: it?.instance_id || null,
+        type: it?.type || null,
+        ref_id: it?.ref_id || null,
+        parent_instance_id: it?.parent_instance_id || null,
+      })),
+    };
+  });
+}
+
+/**
+ * Payload 5 (Single Item): Briefing für EINEN Baustein × Lerntyp.
+ *
+ * Enthält:
+ *   - GPS (Einheit-Meta, Fach, Jahrgang)
+ *   - Lerntyp-Schlüssel
+ *   - Baustein-Definition (id, titel, icon, export_instruktion)
+ *   - Den vollständigen Lernpfad dieses Lerntyps (alle Sektoren + Items)
+ *   - Eine reduzierte Lernlandkarte (Themenfelder + Lernpaket-Titel)
+ *
+ * Auf Basis dieses Briefings erzeugt die MBK eine HTML-Datei
+ * `system-<lerntyp>-<baustein_id>.html`, die im Lernpfad an genau dieser
+ * Stelle vom Merger eingehängt wird.
+ */
+export function buildSystembausteinPayloadItem({
+  einheit,
+  lerntyp,
+  bausteinId,
+  systemBaustein,
+  lerntypPfad = [],
+  themenfelderById = new Map(),
+  lernpakete = [],
+  lernziele = [],
+  navigationContext = [],
+  systemContextHash = null,
+  uiConfigHash = null,
+  nowIso = null,
+}) {
+  if (!bausteinId || !lerntyp) return null;
+
+  // Reduzierte Lernlandkarte für Bausteine wie sys_map_full / sys_map_reduced.
+  const zieleByPaket = new Map();
+  for (const lz of lernziele) {
+    if (!zieleByPaket.has(lz.lernpaket_id)) zieleByPaket.set(lz.lernpaket_id, []);
+    zieleByPaket.get(lz.lernpaket_id).push(lz);
+  }
+  const lernlandkarte = (lernpakete || [])
+    .slice()
+    .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0))
+    .map((lp) => ({
+      lernpaket_id: lp.id,
+      titel: nullable(lp.titel_des_pakets),
+      themenfeld_id: lp.themenfeld_id || null,
+      themenfeld_titel: lp.themenfeld_id
+        ? nullable(themenfelderById.get(lp.themenfeld_id)?.titel)
+        : null,
+      lernziele: (zieleByPaket.get(lp.id) || []).map((lz) =>
+        nullable(lz.formulierung_fachsprache)
+      ).filter(Boolean),
+    }));
+
+  return {
+    meta: makeMeta({
+      payloadType: 'mbk_systembaustein_payload',
+      einheitId: einheit?.id || null,
+      systemContextHash,
+      uiConfigHash,
+      nowIso,
+    }),
+    target: {
+      kind: 'systembaustein',
+      reference_id: makeSystembausteinReferenceId(lerntyp, bausteinId),
+      lerntyp,
+      baustein_id: bausteinId,
+    },
+    gps: {
+      fach: nullable(einheit?.fach),
+      jahrgangsstufe: nullable(einheit?.jahrgangsstufe),
+      titel_einheit: nullable(einheit?.titel_der_einheit),
+      gesamtziele: Array.isArray(einheit?.gesamtziele) ? einheit.gesamtziele : [],
+    },
+    baustein: systemBaustein
+      ? {
+        baustein_id: bausteinId,
+        titel: nullable(systemBaustein.titel),
+        icon: nullable(systemBaustein.icon),
+        admin_beschreibung: nullable(systemBaustein.admin_beschreibung),
+        export_instruktion: nullable(systemBaustein.export_instruktion),
+      }
+      : {
+        baustein_id: bausteinId,
+        titel: null,
+        icon: null,
+        admin_beschreibung: null,
+        export_instruktion: null,
+      },
+    lerntyp_pfad: summarizeLerntypPfad(lerntypPfad, themenfelderById),
+    lernlandkarte,
+    output_contract: {
+      format: 'full_html',
+      filename: fnSystemBaustein(bausteinId, lerntyp),
+    },
+    injection_points: {
+      title: nullable(systemBaustein?.titel) || bausteinId,
+      back_targets: Array.isArray(navigationContext) ? [...navigationContext].sort() : [fnDashboard(lerntyp)],
+    },
+  };
+}
+
+/**
+ * Payload 5 als BUNDLE: alle Baustein × Lerntyp-Briefings einer Einheit.
+ *
+ * Strikte Regel (Spec): Pro Lerntyp wird nur dann ein Briefing erzeugt,
+ * wenn der Baustein im jeweiligen Lernpfad tatsächlich referenziert ist
+ * (1:1-Zuordnung Pfad ↔ Briefing ↔ SCORM-Datei).
+ */
+export function buildSystembausteinPayloadBundle({
+  einheit,
+  themenfelder = [],
+  lernpakete = [],
+  lernziele = [],
+  systemBausteine = [],
+  navigationContextByRefId = new Map(),
+  systemContextHash = null,
+  uiConfigHash = null,
+  nowIso = null,
+}) {
+  const themenfelderById = new Map((themenfelder || []).map((tf) => [tf.id, tf]));
+  const bausteinByKey = new Map((systemBausteine || []).map((b) => [b.baustein_id, b]));
+  const items = [];
+
+  const navFor = (refId) => {
+    const v = navigationContextByRefId?.get
+      ? navigationContextByRefId.get(refId)
+      : null;
+    return Array.isArray(v) ? v : [];
+  };
+
+  for (const lt of LERNTYP_KEYS) {
+    const sektoren = einheit?.lernpfade_konfiguration?.[lt] || [];
+    const seenInLerntyp = new Set();
+    for (const sektor of sektoren) {
+      for (const item of sektor?.items || []) {
+        if (item?.type !== 'system' || !item?.ref_id) continue;
+        if (seenInLerntyp.has(item.ref_id)) continue;
+        seenInLerntyp.add(item.ref_id);
+        const refId = makeSystembausteinReferenceId(lt, item.ref_id);
+        const briefing = buildSystembausteinPayloadItem({
+          einheit,
+          lerntyp: lt,
+          bausteinId: item.ref_id,
+          systemBaustein: bausteinByKey.get(item.ref_id) || null,
+          lerntypPfad: sektoren,
+          themenfelderById,
+          lernpakete,
+          lernziele,
+          navigationContext: navFor(refId),
+          systemContextHash,
+          uiConfigHash,
+          nowIso,
+        });
+        if (briefing) items.push(briefing);
+      }
+    }
+  }
+
+  return {
+    meta: makeMeta({
+      payloadType: 'mbk_systembaustein_payload',
+      einheitId: einheit?.id || null,
+      systemContextHash,
+      uiConfigHash,
+      itemCount: items.length,
+      nowIso,
+    }),
+    items,
+  };
 }
 
 // ── 3. Payload 3: Aufgabeninhalte (pro Lernpaket / pro Aufgabe) ─────────────

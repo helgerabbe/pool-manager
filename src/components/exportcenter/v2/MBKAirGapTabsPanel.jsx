@@ -39,7 +39,10 @@ import {
   buildMicroPayloadBundle,
   buildMicroPayloadForActivity,
   buildMicroPayloadForAllgemeineAufgabe,
+  buildSystembausteinPayloadBundle,
+  buildSystembausteinPayloadItem,
   extractNavigationContextByRefId,
+  makeSystembausteinReferenceId,
 } from '@/lib/mbkAirGapPayloads';
 import { computeSystemContextHash, computeUiConfigHash } from '@/lib/systemContextHash';
 import {
@@ -50,7 +53,7 @@ import {
 } from '@/lib/airGapClipboard';
 import { useSchulStammdaten } from '@/hooks/useSchulStammdaten';
 import { useAirGapHandoverState } from '@/hooks/useAirGapHandoverState';
-import { groupTaskItems, groupMicroItems } from '@/lib/airGapBundleGroups';
+import { groupTaskItems, groupMicroItems, groupSystembausteinItems } from '@/lib/airGapBundleGroups';
 
 import InfoTab from './tabs/InfoTab';
 import MetaPromptTab from './tabs/MetaPromptTab';
@@ -292,6 +295,18 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
     [einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById, allgemeineAufgaben, navigationContextByRefId, currentHash, currentUiHash]
   );
 
+  // airgap-1.6.0: Systembaustein-Bundle (Payload 5).
+  const systembausteinBundle = useMemo(
+    () =>
+      buildSystembausteinPayloadBundle({
+        einheit, themenfelder, lernpakete, lernziele, systemBausteine,
+        navigationContextByRefId,
+        systemContextHash: currentHash,
+        uiConfigHash: currentUiHash,
+      }),
+    [einheit, themenfelder, lernpakete, lernziele, systemBausteine, navigationContextByRefId, currentHash, currentUiHash]
+  );
+
   // Item-Listen analog zum alten Panel.
   const taskItems = useMemo(() => {
     const zieleByPaket = new Map();
@@ -405,6 +420,53 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
     return items;
   }, [einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, allgemeineAufgaben, katalogById, currentHash, currentUiHash, navigationContextByRefId]);
 
+  // airgap-1.6.0: Systembaustein-Items (Payload 5) — pro Lerntyp × baustein_id
+  // genau ein Item, sofern der Baustein im jeweiligen Lernpfad referenziert ist.
+  const systembausteinItems = useMemo(() => {
+    if (!einheit) return [];
+    const themenfelderById = new Map(themenfelder.map((tf) => [tf.id, tf]));
+    const bausteinByKey = new Map(systemBausteine.map((b) => [b.baustein_id, b]));
+    const navFor = (refId) => navigationContextByRefId.get(refId) || [];
+    const out = [];
+    for (const lt of ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert']) {
+      const sektoren = einheit?.lernpfade_konfiguration?.[lt] || [];
+      const seen = new Set();
+      for (const sektor of sektoren) {
+        for (const item of sektor?.items || []) {
+          if (item?.type !== 'system' || !item?.ref_id) continue;
+          if (seen.has(item.ref_id)) continue;
+          seen.add(item.ref_id);
+          const bausteinId = item.ref_id;
+          const refId = makeSystembausteinReferenceId(lt, bausteinId);
+          const baustein = bausteinByKey.get(bausteinId);
+          out.push({
+            key: `mbk-sysbaustein::${refId}`,
+            label: `🧩 ${baustein?.titel || bausteinId}`,
+            subLabel: lt,
+            slug: slugify(`${lt}-${bausteinId}`, refId),
+            lerntyp: lt,
+            bausteinId,
+            build: () =>
+              buildSystembausteinPayloadItem({
+                einheit,
+                lerntyp: lt,
+                bausteinId,
+                systemBaustein: baustein || null,
+                lerntypPfad: sektoren,
+                themenfelderById,
+                lernpakete,
+                lernziele,
+                navigationContext: navFor(refId),
+                systemContextHash: currentHash,
+                uiConfigHash: currentUiHash,
+              }),
+          });
+        }
+      }
+    }
+    return out;
+  }, [einheit, themenfelder, lernpakete, lernziele, systemBausteine, navigationContextByRefId, currentHash, currentUiHash]);
+
   // ── Aktion-Helfer ────────────────────────────────────────────────────
   const baseSlug = slugify(einheit?.titel_der_einheit, einheitId || 'einheit');
 
@@ -431,6 +493,10 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
     }),
     [microItems, themenfelder, lernpakete, allgemeineAufgaben, phaseAktivitaeten]
   );
+  const systembausteinGroups = useMemo(
+    () => groupSystembausteinItems(systembausteinItems),
+    [systembausteinItems]
+  );
 
   const handleDownloadGroupZip = (group, blockSlug) =>
     handleDownloadZip(
@@ -454,6 +520,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
       'mbk_task_content_payload': { newCount: 0, staleCount: 0 },
       'mbk_system_context': { newCount: 0, staleCount: 0 },
       'mbk_micro_payload': { newCount: 0, staleCount: 0 },
+      'mbk_systembaustein_payload': { newCount: 0, staleCount: 0 },
     };
     for (const it of bulkPlan || []) {
       const c = counts[it.section];
@@ -521,6 +588,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
           <TabsTrigger value="systembausteine" className="text-xs">
             <span className="font-mono mr-1 opacity-60">4·</span>
             Systembausteine
+            <TabDriftIndicator {...tabCounts.mbk_systembaustein_payload} />
           </TabsTrigger>
           <TabsTrigger value="ki-aufgaben" className="text-xs">
             <span className="font-mono mr-1 opacity-60">5·</span>
@@ -601,7 +669,30 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
         </TabsContent>
 
         <TabsContent value="systembausteine" className="mt-4">
-          <SystembausteineTab />
+          <SystembausteineTab
+            blockStatus={blockStatus}
+            blockAggregate={blockAggregate}
+            systembausteinItems={systembausteinItems}
+            systembausteinGroups={systembausteinGroups}
+            itemPlanLookup={itemPlanLookup}
+            onToggleDelivered={(v) => setDelivered('systembausteine', v)}
+            onCopy={() => handleCopy(systembausteinBundle)}
+            onDownload={() => handleDownload(systembausteinBundle, `mbk-systembausteine_${baseSlug}.json`)}
+            onDownloadBundle={() =>
+              handleDownloadZip(
+                [
+                  { name: `_bundle.json`, content: systembausteinBundle },
+                  ...systembausteinItems.map((it) => ({ name: `${it.slug}.json`, content: it.build() })),
+                ],
+                `mbk-systembausteine_${baseSlug}.zip`
+              )
+            }
+            onCopyItem={(it) => handleCopy(it.build())}
+            onDownloadItem={(it) =>
+              handleDownload(it.build(), `mbk-systembausteine_${baseSlug}_${it.slug}.json`)
+            }
+            onDownloadGroupZip={(g) => handleDownloadGroupZip(g, 'systembausteine')}
+          />
         </TabsContent>
 
         <TabsContent value="ki-aufgaben" className="mt-4">

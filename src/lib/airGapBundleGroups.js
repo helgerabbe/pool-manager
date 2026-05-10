@@ -308,4 +308,53 @@ export function groupMicroItems(items, ctx = {}) {
   ]);
 }
 
+/**
+ * Groupiert Systembaustein-Items (Block 4 / airgap-1.6.0) PRO LERNTYP.
+ *
+ * Erwartete Item-Shape (aus dem Panel):
+ *   {
+ *     key: 'mbk-sysbaustein::<lerntyp>::<bausteinId>',
+ *     lerntyp: 'minimalist' | 'pragmatiker' | 'ehrgeizig' | 'passioniert',
+ *     bausteinId: string,
+ *     label, subLabel, slug, build()
+ *   }
+ *
+ * Pro Lerntyp eine Gruppe; Lerntyp-Reihenfolge:
+ *   minimalist → pragmatiker → ehrgeizig → passioniert.
+ *
+ * Innerhalb der Gruppe: alphabetisch nach baustein_id (deterministisch).
+ */
+const LERNTYP_LABELS = {
+  minimalist: '🟦 Minimalist',
+  pragmatiker: '🟩 Pragmatiker',
+  ehrgeizig: '🟨 Ehrgeizig',
+  passioniert: '🟥 Passioniert',
+};
+const LERNTYP_ORDER = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
+
+export function groupSystembausteinItems(items) {
+  const groups = new Map();
+  for (const item of items || []) {
+    const lerntyp = item?.lerntyp;
+    if (!lerntyp || !LERNTYP_ORDER.includes(lerntyp)) continue;
+    if (!groups.has(lerntyp)) {
+      groups.set(lerntyp, {
+        key: `lerntyp::${lerntyp}`,
+        label: LERNTYP_LABELS[lerntyp] || lerntyp,
+        kind: 'lerntyp',
+        items: [],
+      });
+    }
+    groups.get(lerntyp).items.push(item);
+  }
+  // Innerhalb jeder Gruppe: alphabetisch nach baustein_id.
+  for (const g of groups.values()) {
+    g.items.sort((a, b) => String(a.bausteinId || '').localeCompare(String(b.bausteinId || '')));
+  }
+  // Gruppen in Lerntyp-Reihenfolge zurückgeben, leere weglassen.
+  return LERNTYP_ORDER
+    .map((lt) => groups.get(lt))
+    .filter((g) => g && g.items.length > 0);
+}
+
 export const AIR_GAP_BUNDLE_KIND = KIND;

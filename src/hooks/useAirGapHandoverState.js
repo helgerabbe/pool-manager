@@ -19,7 +19,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-export const AIR_GAP_BLOCKS = ['ui_config', 'system_context', 'structure', 'task_content', 'micro'];
+export const AIR_GAP_BLOCKS = ['ui_config', 'system_context', 'structure', 'task_content', 'micro', 'systembausteine'];
 
 const storageKey = (einheitId) => `mbk-airgap-handover:${einheitId}`;
 

@@ -27,7 +27,9 @@ import {
   buildTaskContentItemForAllgemeineAufgabe,
   buildMicroPayloadForActivity,
   buildMicroPayloadForAllgemeineAufgabe,
+  buildSystembausteinPayloadItem,
   extractNavigationContextByRefId,
+  makeSystembausteinReferenceId,
   MBK_AIRGAP_VERSION,
 } from '@/lib/mbkAirGapPayloads';
 import {
@@ -43,7 +45,10 @@ const TYPES = {
   STRUCT: 'mbk_structure_payload',
   TASK: 'mbk_task_content_payload',
   MICRO: 'mbk_micro_payload',
+  SYSBAUSTEIN: 'mbk_systembaustein_payload',
 };
+
+const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 
 /**
  * Status-Werte (kompatibel mit dem MBKBulkPreviewDialog):
@@ -111,6 +116,9 @@ export function buildAirGapBulkPlan({
     masterByPaket.get(m.lernpaket_id).push(m);
   }
   const themenfeldById = new Map(themenfelder.map((tf) => [tf.id, tf]));
+  // Alias für die Systembaustein-Builder, die `themenfelderById` als
+  // Parameter erwarten — semantisch identisch zu themenfeldById.
+  const themenfelderById = themenfeldById;
   const lernpaketById = new Map(lernpakete.map((lp) => [lp.id, lp]));
 
   // airgap-1.4.0: nav-Context-Map einmal aus dem Strukturpayload ableiten
@@ -330,6 +338,60 @@ export function buildAirGapBulkPlan({
     });
   }
 
+  // ── 5. Systembaustein-Briefings (airgap-1.6.0) ───────────────────────
+  // Pro Lerntyp × baustein_id genau ein Item, sofern der Baustein im
+  // jeweiligen Lernpfad referenziert ist (strikte 1:1-Zuordnung Pfad ↔
+  // Briefing ↔ SCORM-Datei).
+  const bausteinByKey = new Map(
+    (systemBausteine || []).map((b) => [b.baustein_id, b])
+  );
+  for (const lt of LERNTYP_KEYS) {
+    const sektoren = einheit?.lernpfade_konfiguration?.[lt] || [];
+    const seenInLerntyp = new Set();
+    for (const sektor of sektoren) {
+      for (const item of sektor?.items || []) {
+        if (item?.type !== 'system' || !item?.ref_id) continue;
+        if (seenInLerntyp.has(item.ref_id)) continue;
+        seenInLerntyp.add(item.ref_id);
+        const bausteinId = item.ref_id;
+        const refId = makeSystembausteinReferenceId(lt, bausteinId);
+        const existing = lookup(TYPES.SYSBAUSTEIN, refId);
+        const sourceMaxTs = tsFor(TYPES.SYSBAUSTEIN, refId);
+        const isOoS = isOoSFor(existing, sourceMaxTs);
+        const { status, skipReason } = classify({ existing, isOutOfSync: isOoS });
+        const baustein = bausteinByKey.get(bausteinId);
+        items.push({
+          key: `mbk-sysbaustein::${refId}`,
+          label: `🧩 ${baustein?.titel || bausteinId} · ${lt}`,
+          section: 'mbk_systembaustein_payload',
+          promptType: TYPES.SYSBAUSTEIN,
+          referenceId: refId,
+          // Zusatzfelder für die UI-Gruppierung pro Lerntyp.
+          lerntyp: lt,
+          bausteinId,
+          status,
+          skipReason,
+          buildPayload: () =>
+            buildSystembausteinPayloadItem({
+              einheit,
+              lerntyp: lt,
+              bausteinId,
+              systemBaustein: baustein || null,
+              lerntypPfad: sektoren,
+              themenfelderById,
+              lernpakete,
+              lernziele,
+              navigationContext: navFor(refId),
+              systemContextHash,
+              uiConfigHash,
+            }),
+          sourceMaxTs,
+          existing,
+        });
+      }
+    }
+  }
+
   return items;
 }
 
@@ -372,6 +434,7 @@ export function aggregateAirGapPlanByBlock(plan) {
     mbk_structure_payload: { dbDeliveredCount: 0, dbStaleCount: 0, dbMissingCount: 0, hasAnyStale: false, total: 0 },
     mbk_task_content_payload: { dbDeliveredCount: 0, dbStaleCount: 0, dbMissingCount: 0, hasAnyStale: false, total: 0 },
     mbk_micro_payload: { dbDeliveredCount: 0, dbStaleCount: 0, dbMissingCount: 0, hasAnyStale: false, total: 0 },
+    mbk_systembaustein_payload: { dbDeliveredCount: 0, dbStaleCount: 0, dbMissingCount: 0, hasAnyStale: false, total: 0 },
   };
   for (const it of plan) {
     const b = blocks[it.section];

@@ -23,7 +23,11 @@ import {
   buildMicroPayloadForActivity,
   buildMicroPayloadForAllgemeineAufgabe,
   buildMicroPayloadBundle,
+  buildSystembausteinPayloadItem,
+  buildSystembausteinPayloadBundle,
   extractNavigationContextByRefId,
+  makeSystembausteinReferenceId,
+  parseSystembausteinReferenceId,
 } from '../mbkAirGapPayloads';
 
 const FIXED_NOW = '2026-05-08T14:30:00.000Z';
@@ -36,11 +40,11 @@ describe('MBK Air-Gap Payloads', () => {
       expect(MBK_AIRGAP_VERSION).toMatch(/^airgap-\d+\.\d+\.\d+$/);
     });
 
-    it('ist mindestens airgap-1.5.0 (Trennung UI vs. System-Kontext)', () => {
-      // Air-Gap-Version 1.5.0 hat ui_global_config aus dem System-Kontext
-      // in einen eigenen Payload 0 (mbk_ui_config) ausgelagert und führt
-      // beide Hashes (system_context_hash + ui_config_hash) parallel.
-      expect(MBK_AIRGAP_VERSION >= 'airgap-1.5.0').toBe(true);
+    it('ist mindestens airgap-1.6.0 (Pro-Lerntyp-Systembausteine)', () => {
+      // Air-Gap-Version 1.6.0 ergänzt Payload 5 (mbk_systembaustein_payload)
+      // und stellt das SCORM-Filename-Pattern für Systembausteine auf
+      // `system-<lerntyp>-<baustein_id>.html` um.
+      expect(MBK_AIRGAP_VERSION >= 'airgap-1.6.0').toBe(true);
     });
   });
 
@@ -196,7 +200,7 @@ describe('MBK Air-Gap Payloads', () => {
       expect(out.scorm_delivery_contract.filename_patterns.themenfeld_bundle).toBe('tasks-themenfeld-<themenfeld_id>.html');
       expect(out.scorm_delivery_contract.filename_patterns.themenfeld_bundle_orphan).toBe('tasks-themenfeld-orphan.html');
       expect(out.scorm_delivery_contract.filename_patterns.projekt_bundle).toBe('projekte-einheit-<einheit_id>.html');
-      expect(out.scorm_delivery_contract.filename_patterns.system_baustein).toBe('system-<baustein_id>.html');
+      expect(out.scorm_delivery_contract.filename_patterns.system_baustein).toBe('system-<lerntyp>-<baustein_id>.html');
       expect(out.scorm_delivery_contract.filename_patterns.fragment).toBe('fragment-<activity_id>.html');
       expect(out.scorm_delivery_contract.manifest_filename).toBe('imsmanifest.xml');
     });
@@ -419,7 +423,7 @@ describe('MBK Air-Gap Payloads', () => {
         expect(lp1.placeholder_activity_ids).not.toContain('pa-manual');
       });
 
-      it('dedupliziert System-Bausteine über alle Lernpfade', () => {
+      it('erzeugt System-Bausteine 1:1 pro Lerntyp-Pfad-Referenz (airgap-1.6.0)', () => {
         const einheitMitBausteinen = {
           ...einheit,
           lernpfade_konfiguration: {
@@ -438,12 +442,53 @@ describe('MBK Air-Gap Payloads', () => {
           ],
         });
         const sysEntries = out.scorm_file_mapping.filter((m) => m.kind === 'system_baustein');
-        expect(sysEntries).toHaveLength(2);
-        expect(sysEntries.map((e) => e.source_id).sort()).toEqual(['sys_diagnose', 'sys_exit']);
-        expect(sysEntries.find((e) => e.source_id === 'sys_diagnose').filename).toBe('system-sys_diagnose.html');
-        // system_bausteine-Top-Level-Block enthält export_instruktion.
+        // 4 Pfad-Referenzen → 4 Mapping-Einträge (keine Deduplizierung
+        // mehr über Pfade hinweg).
+        expect(sysEntries).toHaveLength(4);
+        const filenames = sysEntries.map((e) => e.filename).sort();
+        expect(filenames).toEqual([
+          'system-minimalist-sys_diagnose.html',
+          'system-passioniert-sys_exit.html',
+          'system-pragmatiker-sys_diagnose.html',
+          'system-pragmatiker-sys_exit.html',
+        ]);
+        // source_id ist der Composite-Key <lerntyp>::<baustein_id>.
+        expect(sysEntries.map((e) => e.source_id).sort()).toEqual([
+          'minimalist::sys_diagnose',
+          'passioniert::sys_exit',
+          'pragmatiker::sys_diagnose',
+          'pragmatiker::sys_exit',
+        ]);
+        // navigation_context jedes Eintrags ist genau das Lerntyp-Dashboard.
+        const minDiag = sysEntries.find((e) => e.source_id === 'minimalist::sys_diagnose');
+        expect(minDiag.navigation_context).toEqual(['dashboard-minimalist.html']);
+        // Top-Level system_bausteine bleibt deduplizierte Quelle (2 Einträge).
+        expect(out.system_bausteine).toHaveLength(2);
         const diag = out.system_bausteine.find((b) => b.baustein_id === 'sys_diagnose');
         expect(diag.export_instruktion).toBe('Diagnose-Anweisung');
+      });
+
+      it('dedupliziert mehrfach-Referenzen INNERHALB eines Lerntyps', () => {
+        const einheitMitBausteinen = {
+          ...einheit,
+          lernpfade_konfiguration: {
+            pragmatiker: [
+              { items: [{ type: 'system', ref_id: 'sys_diagnose' }] },
+              // Zweiter Sektor referenziert denselben Baustein erneut →
+              // soll trotzdem nur EINEN Mapping-Eintrag ergeben.
+              { items: [{ type: 'system', ref_id: 'sys_diagnose' }] },
+            ],
+            minimalist: [], ehrgeizig: [], passioniert: [],
+          },
+        };
+        const out = buildStructurePayload({
+          einheit: einheitMitBausteinen, themenfelder, lernpakete, lernziele,
+          phaseAktivitaeten, katalogById, allgemeineAufgaben,
+          systemBausteine: [{ baustein_id: 'sys_diagnose', titel: 'Diagnose' }],
+        });
+        const sysEntries = out.scorm_file_mapping.filter((m) => m.kind === 'system_baustein');
+        expect(sysEntries).toHaveLength(1);
+        expect(sysEntries[0].filename).toBe('system-pragmatiker-sys_diagnose.html');
       });
 
       // ── airgap-1.4.0: Standalone-App-Vertrag ──────────────────────
@@ -527,7 +572,11 @@ describe('MBK Air-Gap Payloads', () => {
           } else if (entry.kind === 'projekt_bundle') {
             expect(entry.filename).toBe(patterns.projekt_bundle.replace('<einheit_id>', entry.source_id));
           } else if (entry.kind === 'system_baustein') {
-            expect(entry.filename).toBe(patterns.system_baustein.replace('<baustein_id>', entry.source_id));
+            // airgap-1.6.0: Pattern enthält ZWEI Variablen.
+            const expected = patterns.system_baustein
+              .replace('<lerntyp>', entry.lerntyp)
+              .replace('<baustein_id>', entry.baustein_id);
+            expect(entry.filename).toBe(expected);
           }
         }
       });
@@ -1007,6 +1056,179 @@ describe('MBK Air-Gap Payloads', () => {
       });
       expect(out.meta.system_context_hash).toBe('sys123');
       expect(out.meta.ui_config_hash).toBe('ui456');
+    });
+
+    // ── airgap-1.6.0: Payload 5 (Systembausteine) ─────────────────────
+    describe('makeSystembausteinReferenceId / parseSystembausteinReferenceId', () => {
+      it('rundtrip: lerntyp + bausteinId → composite-key → zurück', () => {
+        const id = makeSystembausteinReferenceId('pragmatiker', 'sys_einfuehrung');
+        expect(id).toBe('pragmatiker::sys_einfuehrung');
+        expect(parseSystembausteinReferenceId(id)).toEqual({
+          lerntyp: 'pragmatiker',
+          bausteinId: 'sys_einfuehrung',
+        });
+      });
+
+      it('parser liefert null bei ungültigem Format', () => {
+        expect(parseSystembausteinReferenceId(null)).toBeNull();
+        expect(parseSystembausteinReferenceId('ohne_separator')).toBeNull();
+        expect(parseSystembausteinReferenceId('::startet_falsch')).toBeNull();
+      });
+    });
+
+    describe('buildSystembausteinPayloadItem', () => {
+      const baseEinheit = {
+        id: 'e1', fach: 'Mathematik', jahrgangsstufe: '9',
+        titel_der_einheit: 'Funktionen', gesamtziele: ['Lineare Funktionen'],
+      };
+
+      it('liefert null ohne lerntyp oder bausteinId', () => {
+        expect(buildSystembausteinPayloadItem({
+          einheit: baseEinheit, lerntyp: null, bausteinId: 'sys_x',
+        })).toBeNull();
+        expect(buildSystembausteinPayloadItem({
+          einheit: baseEinheit, lerntyp: 'pragmatiker', bausteinId: null,
+        })).toBeNull();
+      });
+
+      it('rendert vollständiges Briefing mit GPS, Baustein, Pfad und Lernlandkarte', () => {
+        const out = buildSystembausteinPayloadItem({
+          einheit: baseEinheit,
+          lerntyp: 'pragmatiker',
+          bausteinId: 'sys_einfuehrung',
+          systemBaustein: {
+            baustein_id: 'sys_einfuehrung',
+            titel: 'Einführung',
+            icon: 'sparkles',
+            export_instruktion: 'Schreibe eine kurze Einführung in die Einheit.',
+          },
+          lerntypPfad: [
+            {
+              sektor_id: 's1', sektor_typ: 'onboarding', titel: 'Start',
+              items: [
+                { instance_id: 'i1', type: 'system', ref_id: 'sys_einfuehrung' },
+              ],
+            },
+          ],
+          themenfelderById: new Map([['tf1', { id: 'tf1', titel: 'Grundlagen' }]]),
+          lernpakete: [
+            { id: 'lp1', titel_des_pakets: 'Steigung', themenfeld_id: 'tf1', reihenfolge_nummer: 1 },
+          ],
+          lernziele: [
+            { lernpaket_id: 'lp1', formulierung_fachsprache: 'Steigung berechnen' },
+          ],
+          systemContextHash: FIXED_HASH, uiConfigHash: 'ui1', nowIso: FIXED_NOW,
+        });
+        expect(out.meta.payload_type).toBe('mbk_systembaustein_payload');
+        expect(out.meta.system_context_hash).toBe(FIXED_HASH);
+        expect(out.meta.ui_config_hash).toBe('ui1');
+        expect(out.target).toEqual({
+          kind: 'systembaustein',
+          reference_id: 'pragmatiker::sys_einfuehrung',
+          lerntyp: 'pragmatiker',
+          baustein_id: 'sys_einfuehrung',
+        });
+        expect(out.gps.fach).toBe('Mathematik');
+        expect(out.gps.titel_einheit).toBe('Funktionen');
+        expect(out.baustein.titel).toBe('Einführung');
+        expect(out.baustein.export_instruktion).toContain('Einführung');
+        expect(out.lerntyp_pfad).toHaveLength(1);
+        expect(out.lerntyp_pfad[0].sektor_id).toBe('s1');
+        expect(out.lerntyp_pfad[0].items[0].ref_id).toBe('sys_einfuehrung');
+        expect(out.lernlandkarte).toHaveLength(1);
+        expect(out.lernlandkarte[0].titel).toBe('Steigung');
+        expect(out.lernlandkarte[0].themenfeld_titel).toBe('Grundlagen');
+        expect(out.lernlandkarte[0].lernziele).toEqual(['Steigung berechnen']);
+        expect(out.output_contract.format).toBe('full_html');
+        expect(out.output_contract.filename).toBe('system-pragmatiker-sys_einfuehrung.html');
+        expect(out.injection_points.back_targets).toEqual(['dashboard-pragmatiker.html']);
+      });
+
+      it('toleriert fehlenden SystemBaustein-Stammsatz (null-Felder)', () => {
+        const out = buildSystembausteinPayloadItem({
+          einheit: baseEinheit,
+          lerntyp: 'minimalist',
+          bausteinId: 'sys_unknown',
+          systemBaustein: null,
+        });
+        expect(out.baustein.baustein_id).toBe('sys_unknown');
+        expect(out.baustein.titel).toBeNull();
+        expect(out.baustein.export_instruktion).toBeNull();
+      });
+
+      it('respektiert custom navigationContext', () => {
+        const out = buildSystembausteinPayloadItem({
+          einheit: baseEinheit,
+          lerntyp: 'ehrgeizig',
+          bausteinId: 'sys_x',
+          systemBaustein: { baustein_id: 'sys_x', titel: 'X' },
+          navigationContext: ['dashboard-ehrgeizig.html'],
+        });
+        expect(out.injection_points.back_targets).toEqual(['dashboard-ehrgeizig.html']);
+      });
+    });
+
+    describe('buildSystembausteinPayloadBundle', () => {
+      it('erzeugt 1 Item pro Lerntyp-Pfad-Referenz (strikte 1:1-Zuordnung)', () => {
+        const einheit = {
+          id: 'e1', fach: 'D', jahrgangsstufe: '9', titel_der_einheit: 'Lyrik',
+          lernpfade_konfiguration: {
+            minimalist: [{ items: [{ type: 'system', ref_id: 'sys_einfuehrung' }] }],
+            pragmatiker: [{ items: [{ type: 'system', ref_id: 'sys_einfuehrung' }, { type: 'system', ref_id: 'sys_exit' }] }],
+            ehrgeizig: [],
+            passioniert: [{ items: [{ type: 'system', ref_id: 'sys_exit' }] }],
+          },
+        };
+        const bundle = buildSystembausteinPayloadBundle({
+          einheit,
+          systemBausteine: [
+            { baustein_id: 'sys_einfuehrung', titel: 'Einführung' },
+            { baustein_id: 'sys_exit', titel: 'Exit' },
+          ],
+          systemContextHash: FIXED_HASH, uiConfigHash: 'ui1', nowIso: FIXED_NOW,
+        });
+        expect(bundle.meta.payload_type).toBe('mbk_systembaustein_payload');
+        expect(bundle.meta.item_count).toBe(4);
+        const refIds = bundle.items.map((i) => i.target.reference_id).sort();
+        expect(refIds).toEqual([
+          'minimalist::sys_einfuehrung',
+          'passioniert::sys_exit',
+          'pragmatiker::sys_einfuehrung',
+          'pragmatiker::sys_exit',
+        ]);
+      });
+
+      it('liefert leeres Bundle, wenn kein System-Item in einem Pfad referenziert ist', () => {
+        const bundle = buildSystembausteinPayloadBundle({
+          einheit: {
+            id: 'e1',
+            lernpfade_konfiguration: {
+              minimalist: [{ items: [{ type: 'aufgabe', ref_id: 'aa1' }] }],
+              pragmatiker: [], ehrgeizig: [], passioniert: [],
+            },
+          },
+        });
+        expect(bundle.items).toEqual([]);
+        expect(bundle.meta.item_count).toBe(0);
+      });
+
+      it('dedupliziert mehrfach-Referenzen innerhalb eines Lerntyps', () => {
+        const bundle = buildSystembausteinPayloadBundle({
+          einheit: {
+            id: 'e1',
+            lernpfade_konfiguration: {
+              pragmatiker: [
+                { items: [{ type: 'system', ref_id: 'sys_x' }] },
+                { items: [{ type: 'system', ref_id: 'sys_x' }] },
+              ],
+              minimalist: [], ehrgeizig: [], passioniert: [],
+            },
+          },
+          systemBausteine: [{ baustein_id: 'sys_x', titel: 'X' }],
+        });
+        expect(bundle.items).toHaveLength(1);
+        expect(bundle.items[0].target.reference_id).toBe('pragmatiker::sys_x');
+      });
     });
 
     it('Micro-Bundle propagiert back_targets über navigationContextByRefId', () => {

@@ -8,7 +8,7 @@
  * werden.
  */
 import { describe, it, expect } from 'vitest';
-import { groupTaskItems, groupMicroItems, AIR_GAP_BUNDLE_KIND } from '../airGapBundleGroups';
+import { groupTaskItems, groupMicroItems, groupSystembausteinItems, AIR_GAP_BUNDLE_KIND } from '../airGapBundleGroups';
 
 const themenfelder = [
   { id: 'tf1', titel: 'Grundlagen', reihenfolge: 1 },
@@ -144,5 +144,44 @@ describe('groupMicroItems (Block 4)', () => {
     expect(groups).toHaveLength(1);
     expect(groups[0].kind).toBe(AIR_GAP_BUNDLE_KIND.ORPHAN);
     expect(groups[0].items[0].key).toBe('mbk-micro-pa::paOrphan');
+  });
+});
+
+describe('groupSystembausteinItems (Tab 4 / airgap-1.6.0)', () => {
+  const items = [
+    { key: 'mbk-sysbaustein::pragmatiker::sys_einfuehrung', lerntyp: 'pragmatiker', bausteinId: 'sys_einfuehrung', label: '🧩 Einführung' },
+    { key: 'mbk-sysbaustein::minimalist::sys_einfuehrung', lerntyp: 'minimalist', bausteinId: 'sys_einfuehrung', label: '🧩 Einführung' },
+    { key: 'mbk-sysbaustein::passioniert::sys_exit', lerntyp: 'passioniert', bausteinId: 'sys_exit', label: '🧩 Exit' },
+    { key: 'mbk-sysbaustein::pragmatiker::sys_exit', lerntyp: 'pragmatiker', bausteinId: 'sys_exit', label: '🧩 Exit' },
+  ];
+
+  it('gruppiert pro Lerntyp und sortiert deterministisch (min → prag → ehr → pass)', () => {
+    const groups = groupSystembausteinItems(items);
+    expect(groups.map((g) => g.key)).toEqual([
+      'lerntyp::minimalist',
+      'lerntyp::pragmatiker',
+      'lerntyp::passioniert',
+    ]);
+  });
+
+  it('sortiert Items innerhalb einer Gruppe alphabetisch nach bausteinId', () => {
+    const groups = groupSystembausteinItems(items);
+    const prag = groups.find((g) => g.key === 'lerntyp::pragmatiker');
+    expect(prag.items.map((i) => i.bausteinId)).toEqual(['sys_einfuehrung', 'sys_exit']);
+  });
+
+  it('lässt leere Lerntypen weg', () => {
+    const groups = groupSystembausteinItems([
+      { key: 'x', lerntyp: 'pragmatiker', bausteinId: 'sys_x' },
+    ]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].key).toBe('lerntyp::pragmatiker');
+  });
+
+  it('ignoriert Items ohne lerntyp', () => {
+    const groups = groupSystembausteinItems([
+      { key: 'kaputt', bausteinId: 'sys_x' },
+    ]);
+    expect(groups).toEqual([]);
   });
 });

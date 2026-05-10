@@ -30,6 +30,7 @@ const PROMPT_TYPES = {
   MBK_STRUCTURE: 'mbk_structure_payload',
   MBK_TASK_CONTENT: 'mbk_task_content_payload',
   MBK_MICRO: 'mbk_micro_payload',
+  MBK_SYSTEMBAUSTEIN: 'mbk_systembaustein_payload',
 };
 
 // Set der Air-Gap-Prompt-Types — wird in isPromptOutOfSync für den
@@ -40,23 +41,26 @@ const AIRGAP_PROMPT_TYPES = new Set([
   PROMPT_TYPES.MBK_STRUCTURE,
   PROMPT_TYPES.MBK_TASK_CONTENT,
   PROMPT_TYPES.MBK_MICRO,
+  PROMPT_TYPES.MBK_SYSTEMBAUSTEIN,
 ]);
 
-// airgap-1.5.0: Welche Hashes sind pro Air-Gap-Type relevant?
-//   - mbk_ui_config       → nur ui_config_hash
-//   - alle anderen        → BEIDE (system_context_hash + ui_config_hash),
+// airgap-1.5.0+: Welche Hashes sind pro Air-Gap-Type relevant?
+//   - mbk_ui_config           → nur ui_config_hash
+//   - alle anderen            → BEIDE (system_context_hash + ui_config_hash),
 //     weil die generierten HTML-Dateien beide <meta>-Tags tragen müssen.
 const REQUIRES_SYS_HASH = new Set([
   PROMPT_TYPES.MBK_SYSTEM_CONTEXT,
   PROMPT_TYPES.MBK_STRUCTURE,
   PROMPT_TYPES.MBK_TASK_CONTENT,
   PROMPT_TYPES.MBK_MICRO,
+  PROMPT_TYPES.MBK_SYSTEMBAUSTEIN,
 ]);
 const REQUIRES_UI_HASH = new Set([
   PROMPT_TYPES.MBK_UI_CONFIG,
   PROMPT_TYPES.MBK_STRUCTURE,
   PROMPT_TYPES.MBK_TASK_CONTENT,
   PROMPT_TYPES.MBK_MICRO,
+  PROMPT_TYPES.MBK_SYSTEMBAUSTEIN,
 ]);
 
 export const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
@@ -323,6 +327,15 @@ export function buildSourceTimestampIndex({
   }
   const mbkMicroAufgabeTs = allgemeineAufgabeTs;
 
+  // mbk_systembaustein_payload (airgap-1.6.0): Quelle ist die Einheit
+  // (Lernpfad-Konfiguration entscheidet, welche Bausteine in welchem Pfad
+  // referenziert sind) plus die globalen Bausteindefinitionen (export_
+  // instruktion etc.) — die liegen in MBKGlobalPrompt-fremden Tabellen,
+  // werden aber über globalPromptsTs als Proxy mitgezogen, damit Manager-
+  // Edits den Baustein invalidieren. Strikter Drift-Check läuft zusätzlich
+  // über die beiden Hashes in isPromptOutOfSync.
+  const mbkSystembausteinTs = Math.max(ts(einheit), globalPromptsTs);
+
   return {
     nucleusTs: Math.max(ts(einheit), themenfelderTs, lernpaketeTs, lernzieleTs, aufgabenbausteineTs, phaseAktivitaetenTs, masterAufgabenTs, globalPromptsTs),
     // Fachliche Persona (v1.5.0): selbst quellen-arm, aber abhängig von der
@@ -348,6 +361,7 @@ export function buildSourceTimestampIndex({
     mbkTaskContentAufgabeTs,
     mbkMicroPhaseAktivitaetTs,
     mbkMicroAufgabeTs,
+    mbkSystembausteinTs,
   };
 }
 
@@ -390,6 +404,8 @@ export function lookupSourceMaxTimestampFromIndex(index, promptType, referenceId
       if (index.mbkMicroAufgabeTs?.has(referenceId)) return index.mbkMicroAufgabeTs.get(referenceId);
       return 0;
     }
+    case PROMPT_TYPES.MBK_SYSTEMBAUSTEIN:
+      return index.mbkSystembausteinTs || 0;
     default:
       return 0;
   }
