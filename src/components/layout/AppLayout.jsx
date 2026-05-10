@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import TutorialSlideshow from '@/components/onboarding/TutorialSlideshow';
-import { Layers, Home, ShieldCheck, LogOut, ChevronRight, BookOpen, Settings, FileText, Send } from 'lucide-react';
+import { Layers, Home, ShieldCheck, LogOut, ChevronRight, BookOpen, Settings, FileText, Send, Cpu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
 import WartungsBanner from '@/components/layout/WartungsBanner';
@@ -177,6 +177,11 @@ export default function AppLayout() {
                   für Rollen mit Export-Berechtigung). */}
               {permissions.kannExportBedienen && (
                 <NavIconLink to="/export-center" icon={Send} label="Export-Center" isActive={isActive('/export-center')} />
+              )}
+
+              {/* Interne MBK-Konsole (paralleler Pfad zum Export-Center). */}
+              {permissions.kannExportBedienen && (
+                <NavIconLink to="/mbk" icon={Cpu} label="MBK – Interne Builder-KI" isActive={isActive('/mbk')} />
               )}
 
               {/* Dokumentation */}

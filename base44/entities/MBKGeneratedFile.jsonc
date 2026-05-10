@@ -1,0 +1,61 @@
+{
+  "name": "MBKGeneratedFile",
+  "type": "object",
+  "description": "Eine von der internen MBK (Generator-Pipeline) erzeugte Datei (HTML, XML, \u2026) f\u00fcr eine Einheit. Wird als reiner Quelltext im Feld `content` gespeichert. Eindeutigkeit pro (einheit_id, filename) ist applikationsseitig sichergestellt: ein Re-Generieren \u00fcberschreibt den vorhandenen Datensatz, statt einen zweiten anzulegen.",
+  "properties": {
+    "einheit_id": {
+      "type": "string",
+      "description": "FK zur Einheit, f\u00fcr die diese Datei generiert wurde."
+    },
+    "filename": {
+      "type": "string",
+      "description": "Vollst\u00e4ndiger Dateiname inkl. Endung (z. B. 'imsmanifest.xml', 'dashboard-pragmatiker.html', 'task-lp-123.html', 'system-minimalist-sys_einfuehrung.html', 'fragment-abc123.html'). Identisch mit dem Eintrag im `scorm_file_mapping` aus dem Strukturpayload."
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "manifest",
+        "dashboard",
+        "lernpaket",
+        "themenfeld_bundle",
+        "projekt_bundle",
+        "system_baustein",
+        "fragment"
+      ],
+      "description": "Logischer Datei-Typ. Spiegelt die Kategorien aus `scorm_file_mapping`. Erleichtert Filtern in der UI."
+    },
+    "source_id": {
+      "type": "string",
+      "description": "Referenz auf das Quell-Objekt, aus dem die Datei generiert wurde (z. B. lernpaket_id, themenfeld_id, einheit_id f\u00fcr Projekt-B\u00fcndel, '<lerntyp>::<baustein_id>' f\u00fcr Systembausteine, activity_id f\u00fcr Fragmente). null f\u00fcr Manifest und Dashboards (die nur an die Einheit h\u00e4ngen)."
+    },
+    "content": {
+      "type": "string",
+      "description": "Der vollst\u00e4ndige Quelltext der Datei (HTML, XML). Wird vom Operator per Copy-Paste oder vom sp\u00e4teren ZIP-Builder direkt in die finale SCORM-Datei \u00fcbernommen."
+    },
+    "generator": {
+      "type": "string",
+      "enum": [
+        "scaffold",
+        "task",
+        "system_baustein",
+        "ki_fragment"
+      ],
+      "description": "Welcher Generator hat die Datei erzeugt? scaffold = Architekt (Manifest + Dashboards). task = Aufgaben-Bauer (deterministische Aufgaben). system_baustein = Systembaustein-Autor. ki_fragment = KI-Aufgaben-Autor."
+    },
+    "model": {
+      "type": "string",
+      "description": "Welches LLM-Modell wurde verwendet (z. B. 'claude_sonnet_4_6')? Pure Audit-Information."
+    },
+    "input_hash": {
+      "type": "string",
+      "description": "16-Zeichen-Hex-Hash der Quell-Inputs zum Zeitpunkt der Generierung. Erlaubt Drift-Erkennung gegen die aktuellen Payloads, ohne Re-Generierung."
+    }
+  },
+  "required": [
+    "einheit_id",
+    "filename",
+    "kind",
+    "generator",
+    "content"
+  ]
+}

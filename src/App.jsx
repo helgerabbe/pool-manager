@@ -19,6 +19,7 @@ import Workspace from '@/pages/Workspace';
 import AdminSettings from '@/pages/AdminSettings';
 import EinheitCreateWizard from '@/pages/EinheitCreateWizard';
 import ExportCenter from '@/pages/ExportCenter';
+import MBKConsole from '@/pages/MBKConsole';
 import EinheitViewManager from '@/components/workspace/EinheitViewManager';
 import BasismoduleOverview from '@/pages/BasismoduleOverview';
 import BasismoduleView from '@/components/basismodule/BasismoduleView';
@@ -101,6 +102,20 @@ const AuthenticatedApp = () => {
               <ErrorBoundary fallback="Export-Center konnte nicht geladen werden.">
                 <ProtectedRoute
                   component={ExportCenter}
+                  requiredPermission="kannExportBedienen"
+                  redirectTo="/"
+                />
+              </ErrorBoundary>
+            }
+          />
+
+          {/* Interne MBK-Konsole (Proof-of-Concept, Stufe 1: Architekt) */}
+          <Route
+            path="/mbk"
+            element={
+              <ErrorBoundary fallback="MBK-Konsole konnte nicht geladen werden.">
+                <ProtectedRoute
+                  component={MBKConsole}
                   requiredPermission="kannExportBedienen"
                   redirectTo="/"
                 />
