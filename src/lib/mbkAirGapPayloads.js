@@ -122,6 +122,30 @@ const SCORM_DELIVERY_CONTRACT = {
     + 'muss bei jeder Strukturänderung neu generiert werden.',
 };
 
+/**
+ * Erkennt Platzhalter-System-Bausteine (`sys_platzhalter_*`).
+ *
+ * Platzhalter sind reine Arbeitshilfen im Lernpfad-Architekt (Tab 7) — sie
+ * markieren „hier kommt später noch eine echte Aufgabe rein". Beim Export
+ * sollen sie GAR NICHT auftauchen: weder als sichtbare Karte im Dashboard
+ * noch als eigene SCORM-Datei. Sobald die Lehrkraft die Einheit final
+ * freigibt, gilt der inhaltliche Stand — fehlende Aufgaben fehlen dann
+ * eben, anstatt durch Platzhalter „aufgefüllt" zu werden.
+ *
+ * Konvention: Alle Platzhalter-Bausteine haben das ID-Präfix
+ * `sys_platzhalter_` (siehe seedSystemBausteine). Diese Funktion ist die
+ * Single Source of Truth für den Filter — sowohl summarizeSektor als auch
+ * das SCORM-File-Mapping in buildStructurePayload nutzen sie.
+ */
+function isPlatzhalterItem(item) {
+  return !!(
+    item
+    && item.type === 'system'
+    && typeof item.ref_id === 'string'
+    && item.ref_id.startsWith('sys_platzhalter_')
+  );
+}
+
 /** Filename-Builder pro Datei-Typ. Reine String-Kompositoren — keine Validierung. */
 function fnLernpaket(lernpaketId) {
   return `task-${lernpaketId}.html`;
@@ -445,7 +469,12 @@ function summarizeLernpaket(lp, phasenDesPakets, katalogById) {
  * gerendert, damit Bündel-Verschachtelungen klar bleiben.
  */
 function summarizeSektor(sektor, themenfelderById) {
-  const items = Array.isArray(sektor?.items) ? sektor.items : [];
+  // Platzhalter-Bausteine bleiben in der DB-Konfiguration als Arbeitshilfe
+  // für Tab 7 erhalten, fließen aber NICHT in den Export. Wir filtern sie
+  // hier ein einziges Mal raus — alles weiter unten arbeitet auf der
+  // bereinigten Liste.
+  const allItems = Array.isArray(sektor?.items) ? sektor.items : [];
+  const items = allItems.filter((it) => !isPlatzhalterItem(it));
   const rootItems = items.filter((it) => !it?.parent_instance_id);
   const childrenByParent = new Map();
   for (const it of items) {
@@ -615,6 +644,8 @@ export function buildStructurePayload({
     const dashboardFile = fnDashboard(lt);
     for (const sektor of sektoren) {
       for (const item of sektor?.items || []) {
+        // Platzhalter werden niemals im Export verlinkt → kein nav-Context.
+        if (isPlatzhalterItem(item)) continue;
         if (item?.ref_id) addNavContext(item.ref_id, dashboardFile);
       }
     }
@@ -797,6 +828,8 @@ export function buildStructurePayload({
     for (const sektor of sektoren) {
       for (const item of sektor?.items || []) {
         if (item?.type !== 'system' || !item?.ref_id) continue;
+        // Platzhalter werden NIE als eigene SCORM-Datei generiert.
+        if (isPlatzhalterItem(item)) continue;
         // Innerhalb eines Lerntyps deduplizieren: kommt derselbe Baustein
         // zweimal im Pfad vor, gibt es trotzdem nur eine HTML-Datei.
         if (seenInLerntyp.has(item.ref_id)) continue;
