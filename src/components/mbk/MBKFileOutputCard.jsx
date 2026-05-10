@@ -9,7 +9,7 @@
  */
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Copy, FileText, Hash, Sparkles, Loader2 } from 'lucide-react';
+import { Copy, FileText, Hash, Sparkles, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function MBKFileOutputCard({
@@ -27,6 +27,12 @@ export default function MBKFileOutputCard({
   displayTitle = null,
   subtitle = null,
 }) {
+  // Quelltext-Bereich ist standardmäßig eingeklappt — der Operator öffnet
+  // ihn nur, wenn er wirklich reinschauen will. Spart Scrollerei bei vielen
+  // Karten und macht die Liste übersichtlicher.
+  const [expanded, setExpanded] = React.useState(false);
+  const hasContent = !isEmpty && !!content;
+
   const handleCopy = async () => {
     if (!content) return;
     try {
@@ -95,15 +101,37 @@ export default function MBKFileOutputCard({
           </Button>
         </div>
       </div>
-      {isEmpty || !content ? (
+      {!hasContent ? (
         <div className="px-3 py-8 text-center text-xs text-muted-foreground italic">
           <Hash className="w-4 h-4 mx-auto mb-2 opacity-40" />
           Noch nicht generiert.
         </div>
       ) : (
-        <pre className="px-3 py-2 text-[11px] font-mono whitespace-pre-wrap max-h-[60vh] overflow-y-auto bg-background">
-          {content}
-        </pre>
+        <>
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="flex w-full items-center justify-between gap-2 px-3 py-2 text-xs text-muted-foreground hover:bg-muted/40 transition-colors"
+            aria-expanded={expanded}
+          >
+            <span className="flex items-center gap-2">
+              {expanded ? (
+                <ChevronDown className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronRight className="w-3.5 h-3.5" />
+              )}
+              Quelltext {expanded ? 'ausblenden' : 'anzeigen'}
+            </span>
+            <span className="text-[10px] tabular-nums">
+              {content.length.toLocaleString('de-DE')} Zeichen
+            </span>
+          </button>
+          {expanded && (
+            <pre className="px-3 py-2 text-[11px] font-mono whitespace-pre-wrap max-h-[60vh] overflow-y-auto bg-background border-t">
+              {content}
+            </pre>
+          )}
+        </>
       )}
     </div>
   );
