@@ -12,30 +12,55 @@
  *   - Die Runtime macht den Rest: Drag&Drop, Live-Check, Score-Anzeige,
  *     Flow-Steuerung, Persistenz im localStorage.
  *
- * Diese Datei exportiert die beiden Quelltexte als String-Konstanten,
- * damit:
- *   - die Versionierung der Runtime im Source-Tree liegt,
- *   - der ZIP-Builder sie als statische Dateien in jedes Paket legt,
- *   - die Air-Gap-Welt sie über ein Meta-Tag versioniert kennt.
+ * Architektur:
+ *   - Der Runtime-Kern (Plugin-Registry, SCORM-Bridge, Helper-Funktionen)
+ *     lebt in dieser Datei.
+ *   - Pro Aktivitätstyp gibt es ein eigenes Modul in `lib/runtime/`, das
+ *     CSS- und JS-Snippets als Strings exportiert. Hier werden sie zu
+ *     den finalen Datei-Inhalten zusammengesetzt.
  *
- * Aktivitäts-Typen (Version 0.2.0):
- *   - lueckentext   → Drag&Drop, alle Lücken müssen richtig sein
- *   - match_terms   → Begriffe zuordnen (Definition → Begriff per D&D/Klick)
- *
- * Weitere Typen werden in folgenden Iterationen ergänzt (Sortieren,
- * Miniquiz/MultipleChoice, Bildbeschriftung, Link/URL, Video, Audio,
- * Text lesen, Lehrwerk, Bestätigen, KI-Tutor, KI-Check). Jeder neue
- * Typ ist ein Plugin in derselben Runtime.
+ * Aktivitäts-Typen (Version 0.3.0):
+ *   - lueckentext      → Drag&Drop, alle Lücken müssen richtig sein
+ *   - match_terms      → Begriffe zuordnen (Definition → Begriff)
+ *   - sortable         → Reihenfolge / Sortierung (Drag-Reorder)
+ *   - quiz             → Miniquiz / Multiple Choice (Single + Multi)
+ *   - image_labeling   → Bildbeschriftung (Begriffe auf Bild ziehen)
+ *   - test             → Abschluss-Test mit globalem Score + Pass/Fail
+ *   - media_link       → externer Link / URL
+ *   - media_video      → Video-Embed (YouTube/Vimeo/iframe)
+ *   - media_audio      → Audio-Player
+ *   - text_read        → Reiner Lesetext
+ *   - textbook         → Lehrwerk-Verweis (Buch, Seiten, Aufgabe)
+ *   - confirm          → "Bearbeitung bestätigen"
+ *   - ki_tutor         → KI-Tutor-Platzhalter (LLM-Anbindung extern)
+ *   - ki_check         → KI-Check-Platzhalter (LLM-Anbindung extern)
+ *   - open_task        → Offene Aufgabe ohne Auto-Korrektur
  */
 
-export const MBK_ACTIVITY_RUNTIME_VERSION = '0.2.0';
+import {
+  PLUGIN_SORTABLE_CSS, PLUGIN_SORTABLE_JS,
+} from '@/lib/runtime/plugin_sortable';
+import {
+  PLUGIN_QUIZ_CSS, PLUGIN_QUIZ_JS,
+} from '@/lib/runtime/plugin_quiz';
+import {
+  PLUGIN_IMAGE_LABELING_CSS, PLUGIN_IMAGE_LABELING_JS,
+} from '@/lib/runtime/plugin_image_labeling';
+import {
+  PLUGIN_STATIC_MEDIA_CSS, PLUGIN_STATIC_MEDIA_JS,
+} from '@/lib/runtime/plugin_static_media';
+import {
+  PLUGIN_TEST_CSS, PLUGIN_TEST_JS,
+} from '@/lib/runtime/plugin_test';
+
+export const MBK_ACTIVITY_RUNTIME_VERSION = '0.3.0';
 
 // ─────────────────────────────────────────────────────────────────────────
 //  CSS — Visuelle Sprache der Runtime. Reine Klassen-Selektoren, keine
 //  IDs, keine !important. Alles ist scoped unter .mbk-activity, damit die
 //  Runtime weder das umgebende SCORM-Theme noch andere Aufgaben zerstört.
 // ─────────────────────────────────────────────────────────────────────────
-export const MBK_ACTIVITY_RUNTIME_CSS = `/* mbk-activity-runtime ${MBK_ACTIVITY_RUNTIME_VERSION} */
+const CORE_CSS = `/* mbk-activity-runtime ${MBK_ACTIVITY_RUNTIME_VERSION} */
 .mbk-activity {
   --mbk-accent: #2563eb;
   --mbk-accent-soft: #dbeafe;
@@ -64,12 +89,34 @@ export const MBK_ACTIVITY_RUNTIME_CSS = `/* mbk-activity-runtime ${MBK_ACTIVITY_
   color: var(--mbk-danger);
   font-size: 0.875rem;
 }
+@keyframes mbk-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+.mbk-btn {
+  display: inline-block;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--mbk-border);
+  background: #fff;
+  border-radius: 0.4rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+.mbk-btn:hover:not(:disabled) { background: var(--mbk-bg); }
+.mbk-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.mbk-btn--primary {
+  background: var(--mbk-accent);
+  color: #fff;
+  border-color: var(--mbk-accent);
+}
+.mbk-btn--primary:hover:not(:disabled) { background: #1d4ed8; }
 
 /* ── Lückentext ──────────────────────────────────────────── */
-.mbk-lt__instruction {
-  margin: 0 0 0.75rem 0;
-  font-weight: 500;
-}
+.mbk-lt__instruction { margin: 0 0 0.75rem 0; font-weight: 500; }
 .mbk-lt__text {
   background: var(--mbk-bg);
   border: 1px solid var(--mbk-border);
@@ -93,46 +140,13 @@ export const MBK_ACTIVITY_RUNTIME_CSS = `/* mbk-activity-runtime ${MBK_ACTIVITY_
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
-.mbk-lt__gap.is-over {
-  background: var(--mbk-accent-soft);
-  border-style: solid;
-}
-.mbk-lt__gap.is-filled {
-  border-style: solid;
-  border-color: var(--mbk-muted);
-  background: #fff;
-}
-.mbk-lt__gap.is-correct {
-  border-color: var(--mbk-success);
-  background: var(--mbk-success-soft);
-  color: var(--mbk-success);
-  cursor: default;
-}
-.mbk-lt__gap.is-wrong {
-  border-color: var(--mbk-danger);
-  background: var(--mbk-danger-soft);
-  color: var(--mbk-danger);
-}
-.mbk-lt__gap.is-hint-wrong {
-  animation: mbk-shake 0.3s ease-in-out;
-}
-@keyframes mbk-shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-3px); }
-  75% { transform: translateX(3px); }
-}
-.mbk-lt__pool {
-  margin-top: 1rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-.mbk-lt__pool-label {
-  width: 100%;
-  font-size: 0.85rem;
-  color: var(--mbk-muted);
-  margin-bottom: 0.25rem;
-}
+.mbk-lt__gap.is-over { background: var(--mbk-accent-soft); border-style: solid; }
+.mbk-lt__gap.is-filled { border-style: solid; border-color: var(--mbk-muted); background: #fff; }
+.mbk-lt__gap.is-correct { border-color: var(--mbk-success); background: var(--mbk-success-soft); color: var(--mbk-success); cursor: default; }
+.mbk-lt__gap.is-wrong { border-color: var(--mbk-danger); background: var(--mbk-danger-soft); color: var(--mbk-danger); }
+.mbk-lt__gap.is-hint-wrong { animation: mbk-shake 0.3s ease-in-out; }
+.mbk-lt__pool { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.mbk-lt__pool-label { width: 100%; font-size: 0.85rem; color: var(--mbk-muted); margin-bottom: 0.25rem; }
 .mbk-lt__chip {
   display: inline-block;
   padding: 0.4rem 0.85rem;
@@ -144,65 +158,13 @@ export const MBK_ACTIVITY_RUNTIME_CSS = `/* mbk-activity-runtime ${MBK_ACTIVITY_
   user-select: none;
   transition: transform 0.1s, box-shadow 0.1s;
 }
-.mbk-lt__chip:hover {
-  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-}
-.mbk-lt__chip.is-dragging {
-  opacity: 0.5;
-  cursor: grabbing;
-}
-.mbk-lt__chip.is-used {
-  opacity: 0.3;
-  pointer-events: none;
-  text-decoration: line-through;
-}
-.mbk-lt__status {
-  margin-top: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  font-size: 0.875rem;
-}
-.mbk-lt__status-text {
-  color: var(--mbk-muted);
-}
-.mbk-lt__status-text.is-done {
-  color: var(--mbk-success);
-  font-weight: 600;
-}
-.mbk-lt__actions {
-  display: flex;
-  gap: 0.5rem;
-}
-.mbk-btn {
-  display: inline-block;
-  padding: 0.4rem 0.9rem;
-  border: 1px solid var(--mbk-border);
-  background: #fff;
-  border-radius: 0.4rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  font-family: inherit;
-  font-weight: 500;
-  transition: background 0.15s;
-}
-.mbk-btn:hover:not(:disabled) {
-  background: var(--mbk-bg);
-}
-.mbk-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.mbk-btn--primary {
-  background: var(--mbk-accent);
-  color: #fff;
-  border-color: var(--mbk-accent);
-}
-.mbk-btn--primary:hover:not(:disabled) {
-  background: #1d4ed8;
-}
+.mbk-lt__chip:hover { box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+.mbk-lt__chip.is-dragging { opacity: 0.5; cursor: grabbing; }
+.mbk-lt__chip.is-used { opacity: 0.3; pointer-events: none; text-decoration: line-through; }
+.mbk-lt__status { margin-top: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; font-size: 0.875rem; }
+.mbk-lt__status-text { color: var(--mbk-muted); }
+.mbk-lt__status-text.is-done { color: var(--mbk-success); font-weight: 600; }
+.mbk-lt__actions { display: flex; gap: 0.5rem; }
 .mbk-lt__done-banner {
   margin-top: 1rem;
   padding: 0.75rem 1rem;
@@ -217,10 +179,7 @@ export const MBK_ACTIVITY_RUNTIME_CSS = `/* mbk-activity-runtime ${MBK_ACTIVITY_
 }
 
 /* ── Begriffe zuordnen (Match Terms) ──────────────────────── */
-.mbk-mt__instruction {
-  margin: 0 0 0.75rem 0;
-  font-weight: 500;
-}
+.mbk-mt__instruction { margin: 0 0 0.75rem 0; font-weight: 500; }
 .mbk-mt__board {
   display: grid;
   grid-template-columns: 1fr;
@@ -231,20 +190,10 @@ export const MBK_ACTIVITY_RUNTIME_CSS = `/* mbk-activity-runtime ${MBK_ACTIVITY_
   padding: 1rem;
 }
 @media (min-width: 640px) {
-  .mbk-mt__board {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
-  }
+  .mbk-mt__board { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); }
 }
-.mbk-mt__col-label {
-  font-size: 0.85rem;
-  color: var(--mbk-muted);
-  margin-bottom: 0.5rem;
-}
-.mbk-mt__terms {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
+.mbk-mt__col-label { font-size: 0.85rem; color: var(--mbk-muted); margin-bottom: 0.5rem; }
+.mbk-mt__terms { display: flex; flex-direction: column; gap: 0.5rem; }
 .mbk-mt__term {
   display: flex;
   align-items: center;
@@ -256,11 +205,7 @@ export const MBK_ACTIVITY_RUNTIME_CSS = `/* mbk-activity-runtime ${MBK_ACTIVITY_
   border-radius: 0.5rem;
   font-weight: 500;
 }
-.mbk-mt__term.is-correct {
-  border-color: var(--mbk-success);
-  background: var(--mbk-success-soft);
-  color: var(--mbk-success);
-}
+.mbk-mt__term.is-correct { border-color: var(--mbk-success); background: var(--mbk-success-soft); color: var(--mbk-success); }
 .mbk-mt__term-slot {
   flex: 1;
   min-height: 1.75rem;
@@ -275,36 +220,12 @@ export const MBK_ACTIVITY_RUNTIME_CSS = `/* mbk-activity-runtime ${MBK_ACTIVITY_
   transition: background 0.15s, border-color 0.15s;
   font-size: 0.9rem;
 }
-.mbk-mt__term-slot.is-over {
-  background: var(--mbk-accent-soft);
-  border-style: solid;
-}
-.mbk-mt__term-slot.is-filled {
-  border-style: solid;
-  border-color: var(--mbk-muted);
-  color: inherit;
-}
-.mbk-mt__term-slot.is-correct {
-  border-color: var(--mbk-success);
-  background: var(--mbk-success-soft);
-  color: var(--mbk-success);
-  cursor: default;
-}
-.mbk-mt__term-slot.is-wrong {
-  border-color: var(--mbk-danger);
-  background: var(--mbk-danger-soft);
-  color: var(--mbk-danger);
-}
-.mbk-mt__term-slot.is-hint-wrong {
-  animation: mbk-shake 0.3s ease-in-out;
-}
-.mbk-mt__pool {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-content: flex-start;
-  min-height: 3rem;
-}
+.mbk-mt__term-slot.is-over { background: var(--mbk-accent-soft); border-style: solid; }
+.mbk-mt__term-slot.is-filled { border-style: solid; border-color: var(--mbk-muted); color: inherit; }
+.mbk-mt__term-slot.is-correct { border-color: var(--mbk-success); background: var(--mbk-success-soft); color: var(--mbk-success); cursor: default; }
+.mbk-mt__term-slot.is-wrong { border-color: var(--mbk-danger); background: var(--mbk-danger-soft); color: var(--mbk-danger); }
+.mbk-mt__term-slot.is-hint-wrong { animation: mbk-shake 0.3s ease-in-out; }
+.mbk-mt__pool { display: flex; flex-wrap: wrap; gap: 0.5rem; align-content: flex-start; min-height: 3rem; }
 .mbk-mt__chip {
   display: inline-block;
   padding: 0.5rem 0.9rem;
@@ -317,38 +238,13 @@ export const MBK_ACTIVITY_RUNTIME_CSS = `/* mbk-activity-runtime ${MBK_ACTIVITY_
   transition: transform 0.1s, box-shadow 0.1s;
   max-width: 100%;
 }
-.mbk-mt__chip:hover {
-  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-}
-.mbk-mt__chip.is-dragging {
-  opacity: 0.5;
-  cursor: grabbing;
-}
-.mbk-mt__chip.is-used {
-  opacity: 0.3;
-  pointer-events: none;
-  text-decoration: line-through;
-}
-.mbk-mt__status {
-  margin-top: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  font-size: 0.875rem;
-}
-.mbk-mt__status-text {
-  color: var(--mbk-muted);
-}
-.mbk-mt__status-text.is-done {
-  color: var(--mbk-success);
-  font-weight: 600;
-}
-.mbk-mt__actions {
-  display: flex;
-  gap: 0.5rem;
-}
+.mbk-mt__chip:hover { box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+.mbk-mt__chip.is-dragging { opacity: 0.5; cursor: grabbing; }
+.mbk-mt__chip.is-used { opacity: 0.3; pointer-events: none; text-decoration: line-through; }
+.mbk-mt__status { margin-top: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; font-size: 0.875rem; }
+.mbk-mt__status-text { color: var(--mbk-muted); }
+.mbk-mt__status-text.is-done { color: var(--mbk-success); font-weight: 600; }
+.mbk-mt__actions { display: flex; gap: 0.5rem; }
 .mbk-mt__done-banner {
   margin-top: 1rem;
   padding: 0.75rem 1rem;
@@ -363,12 +259,23 @@ export const MBK_ACTIVITY_RUNTIME_CSS = `/* mbk-activity-runtime ${MBK_ACTIVITY_
 }
 `;
 
+export const MBK_ACTIVITY_RUNTIME_CSS = [
+  CORE_CSS,
+  PLUGIN_SORTABLE_CSS,
+  PLUGIN_QUIZ_CSS,
+  PLUGIN_IMAGE_LABELING_CSS,
+  PLUGIN_STATIC_MEDIA_CSS,
+  PLUGIN_TEST_CSS,
+].join('\n');
+
 // ─────────────────────────────────────────────────────────────────────────
 //  JS — Plugin-Architektur. Pro Aktivitäts-Typ ein Initialisierer.
 //  Beim DOMContentLoaded sucht die Runtime alle `[data-mbk-activity]` und
-//  ruft den passenden Initialisierer auf.
+//  ruft den passenden Initialisierer auf. Die einzelnen Plugin-JS-Snippets
+//  werden VOR dem Boot-Aufruf eingefügt — sie hängen sich via
+//  `registerPlugin(name, init)` in die Registry.
 // ─────────────────────────────────────────────────────────────────────────
-export const MBK_ACTIVITY_RUNTIME_JS = `/* mbk-activity-runtime ${MBK_ACTIVITY_RUNTIME_VERSION} */
+const CORE_JS_HEAD = `/* mbk-activity-runtime ${MBK_ACTIVITY_RUNTIME_VERSION} */
 (function () {
   'use strict';
 
@@ -503,24 +410,6 @@ export const MBK_ACTIVITY_RUNTIME_JS = `/* mbk-activity-runtime ${MBK_ACTIVITY_R
   }
 
   // ── Plugin: Lückentext ───────────────────────────────────
-  //
-  // Erwartetes Config-Schema:
-  //   {
-  //     "instruction": "Fülle die Lücken …",          // optional
-  //     "segments": [
-  //       { "type": "text", "value": "Bei der relativen " },
-  //       { "type": "gap",  "answer": "Häufigkeit" },
-  //       { "type": "text", "value": " vergleicht man …" }
-  //     ],
-  //     "distractors": ["Studio"]                       // optional
-  //   }
-  //
-  // - Schüler zieht Chips aus dem Pool in die Lücken (Drag&Drop ODER Klick).
-  // - Pro Lücke wird sofort geprüft; falsche Antworten färben sich rot,
-  //   richtige grün und werden gelockt.
-  // - Live-Counter "X von Y noch falsch/leer".
-  // - Button "Falsche markieren" hebt falsche kurz hervor (Hilfsfunktion).
-  // - Wenn alle Lücken richtig → Done-Banner + SCORM-Completion.
   registerPlugin('lueckentext', function (host, config) {
     host.innerHTML = '';
     host.classList.add('mbk-activity');
@@ -536,12 +425,10 @@ export const MBK_ACTIVITY_RUNTIME_JS = `/* mbk-activity-runtime ${MBK_ACTIVITY_R
       return;
     }
 
-    // Instruction
     if (config.instruction) {
       host.appendChild(el('p', { className: 'mbk-lt__instruction', text: config.instruction }));
     }
 
-    // Text-Bereich
     var textBox = el('div', { className: 'mbk-lt__text' });
     var gapNodes = [];
     for (var s = 0; s < segments.length; s++) {
@@ -561,15 +448,11 @@ export const MBK_ACTIVITY_RUNTIME_JS = `/* mbk-activity-runtime ${MBK_ACTIVITY_R
     }
     host.appendChild(textBox);
 
-    // Pool
     var poolWrap = el('div', { className: 'mbk-lt__pool' });
     poolWrap.appendChild(el('div', { className: 'mbk-lt__pool-label', text: 'Wortliste' }));
     var poolWords = [];
     for (var g = 0; g < gaps.length; g++) poolWords.push(gaps[g].answer);
     for (var d = 0; d < distractors.length; d++) poolWords.push(distractors[d]);
-    // Deterministische Shuffle: gleicher Seed → gleicher Output.
-    // Wir nutzen die Position im Original-Array als Tiebreaker, damit die
-    // Schüler-Erfahrung stabil ist (kein neues Mischen bei Reload).
     var seed = 0;
     for (var x = 0; x < poolWords.length; x++) {
       var w = poolWords[x];
@@ -593,7 +476,6 @@ export const MBK_ACTIVITY_RUNTIME_JS = `/* mbk-activity-runtime ${MBK_ACTIVITY_R
     }
     host.appendChild(poolWrap);
 
-    // Status + Aktionen
     var statusRow = el('div', { className: 'mbk-lt__status' });
     var statusText = el('span', { className: 'mbk-lt__status-text', text: '' });
     var actions = el('div', { className: 'mbk-lt__actions' });
@@ -606,16 +488,11 @@ export const MBK_ACTIVITY_RUNTIME_JS = `/* mbk-activity-runtime ${MBK_ACTIVITY_R
     host.appendChild(statusRow);
 
     var doneBanner = null;
-
-    // ── State: pro Gap-Index der eingefüllte String (oder null). ──
     var filled = gaps.map(function () { return null; });
 
     function refreshChips() {
       for (var i = 0; i < chipNodes.length; i++) {
         var w = chipNodes[i].dataset.word;
-        // Ein Chip ist "verbraucht", wenn ein passender Gap ihn als
-        // korrekt akzeptiert hat. Wir zählen die noch benötigten
-        // Verwendungen, weil Antworten doppelt vorkommen können.
         var neededCount = 0, usedCount = 0;
         for (var g = 0; g < gaps.length; g++) {
           if (normalizeAnswer(gaps[g].answer) === normalizeAnswer(w)) {
@@ -660,7 +537,7 @@ export const MBK_ACTIVITY_RUNTIME_JS = `/* mbk-activity-runtime ${MBK_ACTIVITY_R
 
     function placeIntoGap(gapIndex, word) {
       var gNode = gapNodes[gapIndex];
-      if (gNode.classList.contains('is-correct')) return; // gesperrt
+      if (gNode.classList.contains('is-correct')) return;
       var expected = gNode.dataset.answer;
       var isRight = normalizeAnswer(expected) === normalizeAnswer(word);
       gNode.textContent = word;
@@ -681,7 +558,6 @@ export const MBK_ACTIVITY_RUNTIME_JS = `/* mbk-activity-runtime ${MBK_ACTIVITY_R
       updateStatus();
     }
 
-    // ── Drag&Drop (Desktop) ───────────────────────────────
     var draggedWord = null;
     chipNodes.forEach(function (chip) {
       chip.addEventListener('dragstart', function (ev) {
@@ -695,10 +571,8 @@ export const MBK_ACTIVITY_RUNTIME_JS = `/* mbk-activity-runtime ${MBK_ACTIVITY_R
         draggedWord = null;
         chip.classList.remove('is-dragging');
       });
-      // Klick-Alternative: tap Chip → tap Gap.
       chip.addEventListener('click', function () {
         if (chip.classList.contains('is-used')) return;
-        // Erste leere oder falsche Lücke füllen.
         for (var g = 0; g < gapNodes.length; g++) {
           if (!gapNodes[g].classList.contains('is-correct')) {
             placeIntoGap(g, chip.dataset.word);
@@ -713,9 +587,7 @@ export const MBK_ACTIVITY_RUNTIME_JS = `/* mbk-activity-runtime ${MBK_ACTIVITY_R
         ev.preventDefault();
         gNode.classList.add('is-over');
       });
-      gNode.addEventListener('dragleave', function () {
-        gNode.classList.remove('is-over');
-      });
+      gNode.addEventListener('dragleave', function () { gNode.classList.remove('is-over'); });
       gNode.addEventListener('drop', function (ev) {
         ev.preventDefault();
         if (gNode.classList.contains('is-correct')) return;
@@ -726,12 +598,10 @@ export const MBK_ACTIVITY_RUNTIME_JS = `/* mbk-activity-runtime ${MBK_ACTIVITY_R
       });
       gNode.addEventListener('click', function () {
         if (gNode.classList.contains('is-correct')) return;
-        // Klick auf gefüllte (falsche) Lücke leert sie.
         if (gNode.classList.contains('is-filled')) clearGap(idx);
       });
     });
 
-    // ── Aktionen ─────────────────────────────────────────
     hintBtn.addEventListener('click', function () {
       gapNodes.forEach(function (gNode) {
         if (gNode.classList.contains('is-wrong')) {
@@ -754,23 +624,6 @@ export const MBK_ACTIVITY_RUNTIME_JS = `/* mbk-activity-runtime ${MBK_ACTIVITY_R
   });
 
   // ── Plugin: Begriffe zuordnen (Match Terms) ──────────────
-  //
-  // Erwartetes Config-Schema:
-  //   {
-  //     "instruction": "Ordne die Begriffe ihren Definitionen zu.",
-  //     "pairs": [
-  //       { "term": "Mitose",   "definition": "Zellteilung mit identischem Erbgut" },
-  //       { "term": "Meiose",   "definition": "Reifeteilung der Keimzellen" }
-  //     ],
-  //     "distractors": ["Photosynthese"]
-  //   }
-  //
-  // - Links: Pool mit allen Definitionen + Distraktoren (gemischt).
-  // - Rechts: pro Begriff eine Drop-Zone.
-  // - Schüler zieht eine Definition zum passenden Begriff (oder Klick:
-  //   Definition antippen → erste leere Drop-Zone wird befüllt).
-  // - Sofortige Prüfung; richtige Paare werden grün + gesperrt, falsche rot.
-  // - Wenn alle richtig → Done-Banner + SCORM-Completion.
   registerPlugin('match_terms', function (host, config) {
     host.innerHTML = '';
     host.classList.add('mbk-activity');
@@ -952,9 +805,7 @@ export const MBK_ACTIVITY_RUNTIME_JS = `/* mbk-activity-runtime ${MBK_ACTIVITY_R
         ev.preventDefault();
         slot.classList.add('is-over');
       });
-      slot.addEventListener('dragleave', function () {
-        slot.classList.remove('is-over');
-      });
+      slot.addEventListener('dragleave', function () { slot.classList.remove('is-over'); });
       slot.addEventListener('drop', function (ev) {
         ev.preventDefault();
         if (slot.classList.contains('is-correct')) return;
@@ -988,7 +839,9 @@ export const MBK_ACTIVITY_RUNTIME_JS = `/* mbk-activity-runtime ${MBK_ACTIVITY_R
 
     updateStatusMt();
   });
+`;
 
+const CORE_JS_TAIL = `
   // ── Boot ─────────────────────────────────────────────────
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
@@ -997,6 +850,16 @@ export const MBK_ACTIVITY_RUNTIME_JS = `/* mbk-activity-runtime ${MBK_ACTIVITY_R
   }
 })();
 `;
+
+export const MBK_ACTIVITY_RUNTIME_JS = [
+  CORE_JS_HEAD,
+  PLUGIN_SORTABLE_JS,
+  PLUGIN_QUIZ_JS,
+  PLUGIN_IMAGE_LABELING_JS,
+  PLUGIN_STATIC_MEDIA_JS,
+  PLUGIN_TEST_JS,
+  CORE_JS_TAIL,
+].join('\n');
 
 /**
  * Liefert die beiden Runtime-Dateien als Array `{filename, content}`,
