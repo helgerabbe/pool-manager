@@ -36,7 +36,7 @@ import { getSektorTypLabel } from '@/lib/sektorTypen';
  * Wird bei jedem Build in `meta.schema_version` geschrieben und beim
  * Persistieren als `template_version` der ExportPrompts-Records.
  */
-export const MBK_AIRGAP_VERSION = 'airgap-1.2.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.3.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -61,20 +61,32 @@ const SCORM_DELIVERY_CONTRACT = {
     themenfeld_bundle_orphan: 'tasks-themenfeld-orphan.html',
     projekt_bundle: 'projekte-einheit-<einheit_id>.html',
     system_baustein: 'system-<baustein_id>.html',
+    dashboard: 'dashboard-<lerntyp>.html',
     fragment: 'fragment-<activity_id>.html',
   },
   manifest_filename: 'imsmanifest.xml',
+  // Pflicht-Dashboards (airgap-1.3.0): Vier Differenzierungs-Einstiegs-
+  // punkte, die in JEDER Einheit existieren MÜSSEN, unabhängig vom
+  // Inhalt der Lernpfade. Sie sind die ersten Items im SCORM-Manifest.
+  mandatory_dashboards: [
+    'dashboard-minimalist.html',
+    'dashboard-pragmatiker.html',
+    'dashboard-ehrgeizig.html',
+    'dashboard-passioniert.html',
+  ],
   description:
     'Bündel-Vertrag: Pro Lernpaket genau eine Monolith-HTML. Allgemeine '
     + 'Aufgaben Ebene 2 werden pro Themenfeld in einer HTML gebündelt; '
     + 'Aufgaben ohne Themenfeld landen in der Orphan-Datei. Allgemeine '
     + 'Aufgaben Ebene 3 (Projekte) werden pro Einheit in einer einzigen '
     + 'HTML zusammengefasst. System-Bausteine werden pro baustein_id '
-    + 'einmal generiert (deduplizierte Datei). KI-Aktivitäten werden '
-    + 'NICHT als eigenständige Tasks ausgegeben, sondern als HTML-Fragmente '
-    + '(fragment-<activity_id>.html), die ein nachgelagerter Merger in die '
-    + 'deterministischen Hüllen einsetzt. Bei jeder Änderung an einem '
-    + 'Bündel-Element wird das gesamte Bündel neu generiert (kein '
+    + 'einmal generiert (deduplizierte Datei). Zusätzlich MÜSSEN immer '
+    + 'die vier Pflicht-Dashboards (dashboard-<lerntyp>.html) als '
+    + 'Differenzierungs-Einstiegspunkte erzeugt werden. KI-Aktivitäten '
+    + 'werden NICHT als eigenständige Tasks ausgegeben, sondern als '
+    + 'HTML-Fragmente (fragment-<activity_id>.html), die ein nachgelagerter '
+    + 'Merger in die deterministischen Hüllen einsetzt. Bei jeder Änderung '
+    + 'an einem Bündel-Element wird das gesamte Bündel neu generiert (kein '
     + 'Patching). Die zentrale imsmanifest.xml ist der einzige Index und '
     + 'muss bei jeder Strukturänderung neu generiert werden.',
 };
@@ -97,6 +109,9 @@ function fnSystemBaustein(bausteinId) {
 }
 function fnFragment(activityId) {
   return `fragment-${activityId}.html`;
+}
+function fnDashboard(lerntyp) {
+  return `dashboard-${lerntyp}.html`;
 }
 
 /**
@@ -448,8 +463,11 @@ export function buildStructurePayload({
     lernpfade[lt] = sektoren.map((s) => summarizeSektor(s, themenfelderById));
   }
 
-  // ── SCORM-Mapping (airgap-1.2.0 / Bündel-Modell) ─────────────────────────
-  // Vier Datei-Typen:
+  // ── SCORM-Mapping (airgap-1.3.0 / Bündel-Modell) ─────────────────────────
+  // Fünf Datei-Typen:
+  //   0. dashboard           → vier Pflicht-HTMLs pro Einheit (eine pro Lerntyp)
+  //                            als Differenzierungs-Einstiegspunkte. IMMER
+  //                            präsent, auch wenn der jeweilige Pfad leer ist.
   //   1. lernpaket           → eine Monolith-HTML pro Lernpaket
   //   2. themenfeld_bundle   → eine HTML pro Themenfeld mit Ebene-2-Aufgaben
   //                            (+ Orphan-Sammeldatei für Aufgaben ohne TF)
@@ -462,6 +480,20 @@ export function buildStructurePayload({
   // jeweilige Hülle eingesetzt. Im Mapping-Eintrag der Hülle markieren wir
   // mit `contains_placeholders=true`, dass der Merger dort aktiv werden muss.
   const scormFileMapping = [];
+
+  // 0. Pflicht-Dashboards (eines pro Lerntyp). Immer alle vier — auch bei
+  //    leerem Lernpfad, damit der MBK-Vertrag „4 Dashboards pro Einheit"
+  //    erfüllt bleibt. Quelle der Items ist `lernpfade[lerntyp]` (oben).
+  for (const lt of LERNTYP_KEYS) {
+    scormFileMapping.push({
+      kind: 'dashboard',
+      source_id: lt,
+      filename: fnDashboard(lt),
+      titel: `Dashboard – ${lt}`,
+      contains_placeholders: false,
+      placeholder_activity_ids: [],
+    });
+  }
 
   // Helper: für eine gegebene Liste von Aufgaben-IDs → Liste der placeholder-
   // pflichtigen IDs (nur KI-Modus).

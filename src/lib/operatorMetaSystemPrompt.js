@@ -69,7 +69,7 @@ Sie muss im \`<head>\` zwingend die Version und den \`system_context_hash\` (aus
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="mbk-airgap-version" content="airgap-1.2.0" />
+  <meta name="mbk-airgap-version" content="airgap-1.3.0" />
   <meta name="mbk-system-context-hash" content="[HASH]" />
   <title>...</title>
 </head>
@@ -94,7 +94,14 @@ Die UUID und der Hash müssen zwingend im Kommentar-Marker stehen:
 *   Schreibe absolut keinen Fließtext, keine Begrüßung und keine Erklärungen davor oder danach.
 *   Verwende KEINE Markdown-Code-Fences (\`\`\`html) innerhalb der FILE-Blöcke! Der Text zwischen \`=== FILE: ... ===\` und \`=== END ===\` muss reiner, direkter Code sein.
 
-# 8. HALT-BEDINGUNGEN (ABBRUCH)
+# 8. DIE VIER PFLICHT-DASHBOARDS (DIFFERENZIERUNG)
+Jede Einheit MUSS zwingend vier Dashboard-HTML-Dateien enthalten, die als erste Einstiegspunkte im SCORM-Manifest fungieren.
+*   **Dateinamen:** \`dashboard-minimalist.html\`, \`dashboard-pragmatiker.html\`, \`dashboard-ehrgeizig.html\`, \`dashboard-passioniert.html\`.
+*   **Inhalt:** Diese Dateien visualisieren den jeweiligen Lernpfad aus dem \`lernpfade\`-Objekt des Payloads.
+*   **Struktur:** Sie müssen die Sektoren und Items des jeweiligen Pfades als klickbare Übersicht darstellen.
+*   **Pflicht:** Auch wenn diese Dateien nicht explizit im \`scorm_file_mapping\` stehen sollten (Fehler im Payload), musst du sie generieren, sobald das \`lernpfade\`-Objekt Daten enthält.
+
+# 9. HALT-BEDINGUNGEN (ABBRUCH)
 Du verweigerst die Code-Generierung und gibst stattdessen nur eine kurze, präzise Fehlermeldung aus, wenn:
 1.  Der \`system_context_hash\` im aktuellen Payload fehlt.
 2.  In einem Micro-Briefing die \`activity_id\` (UUID) fehlt.
