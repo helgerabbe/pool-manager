@@ -38,6 +38,7 @@ const ARCHITEKT_SLOTS = [
 export default function ArchitektTab({ einheitId }) {
   const queryClient = useQueryClient();
   const [running, setRunning] = useState(false);
+  const [runningSingle, setRunningSingle] = useState(null); // filename oder null
   const [showPayloads, setShowPayloads] = useState(false);
 
   // ── Payloads on-the-fly bauen (ohne ExportPrompts-Lookup). ──
@@ -59,28 +60,52 @@ export default function ArchitektTab({ einheitId }) {
   });
 
   const fileByFilename = new Map(generatedFiles.map((f) => [f.filename, f]));
-  const canGenerate = missingPrereqs.length === 0 && !running && !loadingPayloads;
+  const isAnyRunning = running || !!runningSingle;
+  const canGenerate = missingPrereqs.length === 0 && !isAnyRunning && !loadingPayloads;
 
-  const handleGenerate = async () => {
+  // Gemeinsamer Aufruf für "alle 5" und "nur eine Datei". targetFilename=null
+  // → komplettes Gerüst; sonst single-file-Modus.
+  const invokeScaffold = async (targetFilename) => {
+    const res = await base44.functions.invoke('mbkGenerateScaffold', {
+      einheitId,
+      uiConfigPayload,
+      structurePayload,
+      targetFilename: targetFilename || undefined,
+    });
+    if (res?.data?.success) {
+      const count = res.data.file_count;
+      toast.success(
+        targetFilename
+          ? `${targetFilename} generiert.`
+          : `Gerüst generiert: ${count} Dateien.`
+      );
+      queryClient.invalidateQueries({ queryKey: ['mbk-generated-files', einheitId] });
+    } else {
+      toast.error(res?.data?.error || 'Generierung fehlgeschlagen.');
+    }
+  };
+
+  const handleGenerateAll = async () => {
     if (!canGenerate) return;
     setRunning(true);
     try {
-      const res = await base44.functions.invoke('mbkGenerateScaffold', {
-        einheitId,
-        uiConfigPayload,
-        structurePayload,
-      });
-
-      if (res?.data?.success) {
-        toast.success(`Gerüst generiert: ${res.data.file_count} Dateien.`);
-        queryClient.invalidateQueries({ queryKey: ['mbk-generated-files', einheitId] });
-      } else {
-        toast.error(res?.data?.error || 'Generierung fehlgeschlagen.');
-      }
+      await invokeScaffold(null);
     } catch (err) {
       toast.error(err?.message || 'Unbekannter Fehler bei der Generierung.');
     } finally {
       setRunning(false);
+    }
+  };
+
+  const handleGenerateSingle = async (filename) => {
+    if (!canGenerate) return;
+    setRunningSingle(filename);
+    try {
+      await invokeScaffold(filename);
+    } catch (err) {
+      toast.error(err?.message || 'Unbekannter Fehler bei der Generierung.');
+    } finally {
+      setRunningSingle(null);
     }
   };
 
@@ -118,18 +143,29 @@ export default function ArchitektTab({ einheitId }) {
               Payloads anzeigen
             </Button>
             <Button
-              onClick={handleGenerate}
+              onClick={handleGenerateAll}
               disabled={!canGenerate || loadingFiles}
               className="gap-1.5"
+              title="Erzeugt alle 5 Dateien in einem KI-Aufruf — kann eine Weile dauern."
             >
               {running ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Sparkles className="w-4 h-4" />
               )}
-              {generatedFiles.length > 0 ? 'Erneut generieren' : 'Gerüst generieren'}
+              {generatedFiles.length > 0 ? 'Alle neu generieren' : 'Alle generieren'}
             </Button>
           </div>
+        </div>
+
+        <div className="flex items-start gap-2 rounded-md bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-900">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+          <span>
+            <strong>Tipp:</strong> "Alle generieren" macht einen einzigen großen
+            KI-Aufruf für alle 5 Dateien und kann ein bis zwei Minuten dauern.
+            Schneller und zuverlässiger ist es, die Dateien einzeln über den
+            "Generieren"-Button an jeder Karte zu erzeugen.
+          </span>
         </div>
 
         {missingPrereqs.length > 0 && (
@@ -182,6 +218,9 @@ export default function ArchitektTab({ einheitId }) {
               kind={slot.kind}
               content={file?.content || ''}
               isEmpty={!file}
+              onGenerate={() => handleGenerateSingle(slot.filename)}
+              isGenerating={runningSingle === slot.filename}
+              canGenerate={canGenerate && !loadingFiles}
             />
           );
         })}

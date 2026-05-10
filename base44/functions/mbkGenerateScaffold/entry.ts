@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { einheitId, uiConfigPayload, structurePayload, model } = body;
+    const { einheitId, uiConfigPayload, structurePayload, model, targetFilename } = body;
 
     if (!einheitId || !uiConfigPayload || !structurePayload) {
       return Response.json(
@@ -144,9 +144,23 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ── Erlaubte Einzeldateien für targetFilename. Alles andere → "alle 5". ──
+    const SINGLE_FILE_WHITELIST = new Set([
+      'imsmanifest.xml',
+      'dashboard-minimalist.html',
+      'dashboard-pragmatiker.html',
+      'dashboard-ehrgeizig.html',
+      'dashboard-passioniert.html',
+    ]);
+    const isSingle = typeof targetFilename === 'string' && SINGLE_FILE_WHITELIST.has(targetFilename);
+
     // ── User-Prompt zusammenbauen — kompakt: nur die zwei Payloads + klarer Auftrag. ──
+    const auftragsZeile = isSingle
+      ? `Liefere GENAU EINEN FILE-Block für die Datei "${targetFilename}". Erzeuge keine weiteren Dateien.`
+      : 'Liefere genau 5 FILE-Blöcke in dieser Reihenfolge: imsmanifest.xml, dashboard-minimalist.html, dashboard-pragmatiker.html, dashboard-ehrgeizig.html, dashboard-passioniert.html.';
+
     const userPrompt = [
-      'Erzeuge das vollständige statische SCORM-Gerüst gemäß den Regeln im System-Prompt.',
+      'Erzeuge das statische SCORM-Gerüst gemäß den Regeln im System-Prompt.',
       '',
       '## UI-Config (Payload 1)',
       '```json',
@@ -158,7 +172,7 @@ Deno.serve(async (req) => {
       JSON.stringify(structurePayload, null, 2),
       '```',
       '',
-      'Liefere genau 5 FILE-Blöcke in dieser Reihenfolge: imsmanifest.xml, dashboard-minimalist.html, dashboard-pragmatiker.html, dashboard-ehrgeizig.html, dashboard-passioniert.html.',
+      auftragsZeile,
     ].join('\n');
 
     const fullPrompt = `${ARCHITEKT_SYSTEM_PROMPT}\n\n---\n\n${userPrompt}`;
@@ -195,6 +209,10 @@ Deno.serve(async (req) => {
       const kind = classifyFilename(block.filename);
       if (!kind) {
         // Architekt soll nichts anderes liefern — wenn doch, ignorieren.
+        continue;
+      }
+      // Im Single-File-Modus alles ignorieren, was nicht das angeforderte File ist.
+      if (isSingle && block.filename !== targetFilename) {
         continue;
       }
 

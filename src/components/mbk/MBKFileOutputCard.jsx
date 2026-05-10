@@ -9,10 +9,18 @@
  */
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Copy, FileText, Hash } from 'lucide-react';
+import { Copy, FileText, Hash, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function MBKFileOutputCard({ filename, content, kind = null, isEmpty = false }) {
+export default function MBKFileOutputCard({
+  filename,
+  content,
+  kind = null,
+  isEmpty = false,
+  onGenerate = null,
+  isGenerating = false,
+  canGenerate = true,
+}) {
   const handleCopy = async () => {
     if (!content) return;
     try {
@@ -35,16 +43,35 @@ export default function MBKFileOutputCard({ filename, content, kind = null, isEm
             </span>
           )}
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleCopy}
-          disabled={isEmpty || !content}
-          className="gap-1.5 h-7"
-        >
-          <Copy className="w-3.5 h-3.5" />
-          Kopieren
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          {onGenerate && (
+            <Button
+              size="sm"
+              variant={isEmpty ? 'default' : 'outline'}
+              onClick={onGenerate}
+              disabled={!canGenerate || isGenerating}
+              className="gap-1.5 h-7"
+              title={isEmpty ? 'Diese Datei generieren' : 'Diese Datei neu generieren'}
+            >
+              {isGenerating ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="w-3.5 h-3.5" />
+              )}
+              {isEmpty ? 'Generieren' : 'Neu'}
+            </Button>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleCopy}
+            disabled={isEmpty || !content}
+            className="gap-1.5 h-7"
+          >
+            <Copy className="w-3.5 h-3.5" />
+            Kopieren
+          </Button>
+        </div>
       </div>
       {isEmpty || !content ? (
         <div className="px-3 py-8 text-center text-xs text-muted-foreground italic">
