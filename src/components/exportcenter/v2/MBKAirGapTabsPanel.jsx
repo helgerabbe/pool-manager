@@ -30,6 +30,7 @@ import { useExportPrompts } from '@/hooks/useExportPrompts';
 import { useAirGapBulk } from '@/hooks/useAirGapBulk';
 import { buildSourceTimestampIndex } from '@/lib/exportPromptSync';
 import {
+  buildUiConfigPayload,
   buildSystemContextPayload,
   buildStructurePayload,
   buildTaskContentBundle,
@@ -40,7 +41,7 @@ import {
   buildMicroPayloadForAllgemeineAufgabe,
   extractNavigationContextByRefId,
 } from '@/lib/mbkAirGapPayloads';
-import { computeSystemContextHash } from '@/lib/systemContextHash';
+import { computeSystemContextHash, computeUiConfigHash } from '@/lib/systemContextHash';
 import {
   copyAsMarkdownFence,
   downloadJson,
@@ -53,6 +54,7 @@ import { groupTaskItems, groupMicroItems } from '@/lib/airGapBundleGroups';
 
 import InfoTab from './tabs/InfoTab';
 import MetaPromptTab from './tabs/MetaPromptTab';
+import UiConfigTab from './tabs/UiConfigTab';
 import StrukturTab from './tabs/StrukturTab';
 import AufgabenTab from './tabs/AufgabenTab';
 import GlobaleKiTab from './tabs/GlobaleKiTab';
@@ -167,10 +169,22 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
     enabled: paketIds.length > 0,
   });
 
-  // ── Hash & Handover-State ────────────────────────────────────────────
+  // ── Hashes & Handover-State (airgap-1.5.0: zwei separate Hashes) ────
   const currentHash = useMemo(
     () => computeSystemContextHash({ stammdaten, schulNomenklatur, globalPrompts }),
     [stammdaten, schulNomenklatur, globalPrompts]
+  );
+  const currentUiHash = useMemo(
+    () => computeUiConfigHash({ globalPrompts }),
+    [globalPrompts]
+  );
+
+  // Der Handover-State invalidiert „übergeben"-Haken bei Hash-Drift.
+  // Wir kombinieren beide Hashes zu einem Composite, damit ein Edit
+  // an EINEM von beiden alle „übergeben"-Haken sauber zurücksetzt.
+  const compositeHash = useMemo(
+    () => `${currentHash}::${currentUiHash}`,
+    [currentHash, currentUiHash]
   );
 
   const {
@@ -180,7 +194,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
     setDelivered,
     invalidateBlock,
     reset,
-  } = useAirGapHandoverState({ einheitId, currentHash });
+  } = useAirGapHandoverState({ einheitId, currentHash: compositeHash });
 
   const tsIndex = useMemo(
     () =>
@@ -212,7 +226,9 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
     themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById,
     masterAufgaben, allgemeineAufgaben, allgemeineAufgabenEbene23,
     systemBausteine,
-    prompts: dbPrompts, tsIndex, systemContextHash: currentHash,
+    prompts: dbPrompts, tsIndex,
+    systemContextHash: currentHash,
+    uiConfigHash: currentUiHash,
   });
 
   // Stale-Auto-Invalidate (analog zum alten Panel).
@@ -227,6 +243,8 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
   }, [blockAggregate, einheitId]);
 
   // ── Payload-Builder ──────────────────────────────────────────────────
+  const buildUi = () =>
+    buildUiConfigPayload({ globalPrompts, uiConfigHash: currentUiHash });
   const buildSysCtx = () =>
     buildSystemContextPayload({ stammdaten, schulNomenklatur, globalPrompts, systemContextHash: currentHash });
 
@@ -239,8 +257,9 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
         einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten,
         katalogById, allgemeineAufgaben, systemBausteine,
         systemContextHash: currentHash,
+        uiConfigHash: currentUiHash,
       }),
-    [einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById, allgemeineAufgaben, systemBausteine, currentHash]
+    [einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById, allgemeineAufgaben, systemBausteine, currentHash, currentUiHash]
   );
   const buildStructure = () => structurePayload;
 
@@ -256,8 +275,9 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
         masterAufgaben, allgemeineAufgabenEbene23,
         navigationContextByRefId,
         systemContextHash: currentHash,
+        uiConfigHash: currentUiHash,
       }),
-    [einheit, lernpakete, lernziele, phaseAktivitaeten, katalogById, masterAufgaben, allgemeineAufgabenEbene23, navigationContextByRefId, currentHash]
+    [einheit, lernpakete, lernziele, phaseAktivitaeten, katalogById, masterAufgaben, allgemeineAufgabenEbene23, navigationContextByRefId, currentHash, currentUiHash]
   );
 
   const microBundle = useMemo(
@@ -267,8 +287,9 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
         katalogById, allgemeineAufgaben,
         navigationContextByRefId,
         systemContextHash: currentHash,
+        uiConfigHash: currentUiHash,
       }),
-    [einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById, allgemeineAufgaben, navigationContextByRefId, currentHash]
+    [einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById, allgemeineAufgaben, navigationContextByRefId, currentHash, currentUiHash]
   );
 
   // Item-Listen analog zum alten Panel.
@@ -360,6 +381,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
             // Fragment erbt nav-Context von der Hülle (= Lernpaket).
             navigationContext: lp ? navFor(lp.id) : [],
             systemContextHash: currentHash,
+            uiConfigHash: currentUiHash,
           }),
       });
     }
@@ -376,11 +398,12 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
             einheit, aufgabe: aa, themenfeld: tf,
             navigationContext: navFor(aa.id),
             systemContextHash: currentHash,
+            uiConfigHash: currentUiHash,
           }),
       });
     }
     return items;
-  }, [einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, allgemeineAufgaben, katalogById, currentHash, navigationContextByRefId]);
+  }, [einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, allgemeineAufgaben, katalogById, currentHash, currentUiHash, navigationContextByRefId]);
 
   // ── Aktion-Helfer ────────────────────────────────────────────────────
   const baseSlug = slugify(einheit?.titel_der_einheit, einheitId || 'einheit');
@@ -426,6 +449,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
   // Plan-Items pro Tab → für Reiter-Indikatoren.
   const tabCounts = useMemo(() => {
     const counts = {
+      'mbk_ui_config': { newCount: 0, staleCount: 0 },
       'mbk_structure_payload': { newCount: 0, staleCount: 0 },
       'mbk_task_content_payload': { newCount: 0, staleCount: 0 },
       'mbk_system_context': { newCount: 0, staleCount: 0 },
@@ -440,6 +464,10 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
     return counts;
   }, [bulkPlan]);
 
+  const uiPlanItem = useMemo(
+    () => (bulkPlan || []).find((it) => it.section === 'mbk_ui_config') || null,
+    [bulkPlan]
+  );
   const structurePlanItem = useMemo(
     () => (bulkPlan || []).find((it) => it.section === 'mbk_structure_payload') || null,
     [bulkPlan]
@@ -463,12 +491,17 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
     <div className="space-y-4">
       {/* Tab-Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-7 w-full">
+        <TabsList className="grid grid-cols-8 w-full">
           <TabsTrigger value="info" className="text-xs">
             Info
           </TabsTrigger>
           <TabsTrigger value="meta" className="text-xs">
             Meta
+          </TabsTrigger>
+          <TabsTrigger value="ui-config" className="text-xs">
+            <span className="font-mono mr-1 opacity-60">0·</span>
+            🎨 UI
+            <TabDriftIndicator {...tabCounts.mbk_ui_config} />
           </TabsTrigger>
           <TabsTrigger value="struktur" className="text-xs">
             <span className="font-mono mr-1 opacity-60">1·</span>
@@ -502,6 +535,17 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
 
         <TabsContent value="meta" className="mt-4">
           <MetaPromptTab />
+        </TabsContent>
+
+        <TabsContent value="ui-config" className="mt-4">
+          <UiConfigTab
+            blockStatus={blockStatus}
+            blockAggregate={blockAggregate}
+            planItem={uiPlanItem}
+            onToggleDelivered={(v) => setDelivered('ui_config', v)}
+            onCopy={() => handleCopy(buildUi())}
+            onDownload={() => handleDownload(buildUi(), `mbk-ui-config_${baseSlug}.json`)}
+          />
         </TabsContent>
 
         <TabsContent value="struktur" className="mt-4">

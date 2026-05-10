@@ -37,6 +37,7 @@ export function useAirGapBulk({
   prompts,
   tsIndex,
   systemContextHash,
+  uiConfigHash,
 }) {
   const queryClient = useQueryClient();
   const [running, setRunning] = useState(false);
@@ -61,12 +62,13 @@ export function useAirGapBulk({
         prompts,
         tsIndex,
         systemContextHash,
+        uiConfigHash,
       }),
     [
       einheitId, einheit, stammdaten, schulNomenklatur, globalPrompts,
       themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById,
       masterAufgaben, allgemeineAufgaben, allgemeineAufgabenEbene23,
-      systemBausteine, prompts, tsIndex, systemContextHash,
+      systemBausteine, prompts, tsIndex, systemContextHash, uiConfigHash,
     ]
   );
 
@@ -87,7 +89,7 @@ export function useAirGapBulk({
     if (running) return;
     setRunning(true);
     try {
-      const items = airGapPlanToWritePayload(plan, { systemContextHash });
+      const items = airGapPlanToWritePayload(plan, { systemContextHash, uiConfigHash });
       if (items.length === 0) {
         toast.info('Nichts zu tun: alle Air-Gap-Payloads sind aktuell.');
         return;

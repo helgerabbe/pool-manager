@@ -14,6 +14,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   MBK_AIRGAP_VERSION,
+  buildUiConfigPayload,
   buildSystemContextPayload,
   buildStructurePayload,
   buildTaskContentItemForLernpaket,
@@ -35,11 +36,71 @@ describe('MBK Air-Gap Payloads', () => {
       expect(MBK_AIRGAP_VERSION).toMatch(/^airgap-\d+\.\d+\.\d+$/);
     });
 
-    it('ist mindestens airgap-1.4.0 (Standalone-App-Schema)', () => {
-      // Air-Gap-Version 1.4.0 hat is_hidden_in_moodle, navigation_context,
-      // injection_points und ui_global_config eingeführt. Ein Downgrade
-      // unter 1.4.0 würde alle diese Felder verlieren.
-      expect(MBK_AIRGAP_VERSION >= 'airgap-1.4.0').toBe(true);
+    it('ist mindestens airgap-1.5.0 (Trennung UI vs. System-Kontext)', () => {
+      // Air-Gap-Version 1.5.0 hat ui_global_config aus dem System-Kontext
+      // in einen eigenen Payload 0 (mbk_ui_config) ausgelagert und führt
+      // beide Hashes (system_context_hash + ui_config_hash) parallel.
+      expect(MBK_AIRGAP_VERSION >= 'airgap-1.5.0').toBe(true);
+    });
+  });
+
+  // ── Payload 0: UI-Config (airgap-1.5.0) ───────────────────────────────
+  describe('buildUiConfigPayload', () => {
+    const FIXED_UI_HASH = 'b3c4d5e6f7a8b9c0';
+    const argsWithUi = {
+      globalPrompts: [
+        { schluessel: 'ui_css_variables', prompt_text: ':root { --x: 1; }', ist_aktiv: true },
+        { schluessel: 'ui_tab_bar_html', prompt_text: '<nav class="mbk-tab-bar"></nav>', ist_aktiv: true },
+        { schluessel: 'ui_default_header_html', prompt_text: '<header>{{title}}</header>', ist_aktiv: true },
+        // Nicht-UI-Prompt → MUSS ignoriert werden
+        { schluessel: 'global_mission_statement', prompt_text: 'Wir bilden …', ist_aktiv: true },
+      ],
+      uiConfigHash: FIXED_UI_HASH,
+      nowIso: FIXED_NOW,
+    };
+
+    it('liefert meta-Block mit ui_config_hash und payload_type=mbk_ui_config', () => {
+      const out = buildUiConfigPayload(argsWithUi);
+      expect(out.meta.payload_type).toBe('mbk_ui_config');
+      expect(out.meta.schema_version).toBe(MBK_AIRGAP_VERSION);
+      expect(out.meta.ui_config_hash).toBe(FIXED_UI_HASH);
+      // KEIN system_context_hash in Payload 0.
+      expect(out.meta.system_context_hash).toBeUndefined();
+    });
+
+    it('enthält nur die drei UI-Bausteine als ui_global_config', () => {
+      const out = buildUiConfigPayload(argsWithUi);
+      expect(out.ui_global_config).toEqual({
+        css_variables: ':root { --x: 1; }',
+        tab_bar_html: '<nav class="mbk-tab-bar"></nav>',
+        default_header_html: '<header>{{title}}</header>',
+      });
+    });
+
+    it('liefert null pro fehlendem UI-Schlüssel', () => {
+      const out = buildUiConfigPayload({ globalPrompts: [], uiConfigHash: FIXED_UI_HASH });
+      expect(out.ui_global_config.css_variables).toBeNull();
+      expect(out.ui_global_config.tab_bar_html).toBeNull();
+      expect(out.ui_global_config.default_header_html).toBeNull();
+    });
+
+    it('ignoriert inaktive UI-Prompts', () => {
+      const out = buildUiConfigPayload({
+        globalPrompts: [
+          { schluessel: 'ui_css_variables', prompt_text: ':root { --x: 1; }', ist_aktiv: false },
+        ],
+        uiConfigHash: FIXED_UI_HASH,
+      });
+      expect(out.ui_global_config.css_variables).toBeNull();
+    });
+
+    it('liefert expected_keys-Liste für die MBK', () => {
+      const out = buildUiConfigPayload(argsWithUi);
+      expect(out.expected_keys).toEqual([
+        'ui_css_variables',
+        'ui_tab_bar_html',
+        'ui_default_header_html',
+      ]);
     });
   });
 
@@ -140,41 +201,32 @@ describe('MBK Air-Gap Payloads', () => {
       expect(out.scorm_delivery_contract.manifest_filename).toBe('imsmanifest.xml');
     });
 
-    // ── airgap-1.4.0: ui_global_config (Standalone-App / Moodle-Bypass) ─
-    describe('ui_global_config (airgap-1.4.0)', () => {
-      it('liefert ui_global_config mit allen drei Feldern, wenn UI-Schlüssel gepflegt sind', () => {
-        const out = buildSystemContextPayload({
-          ...baseArgs,
-          globalPrompts: [
-            ...baseArgs.globalPrompts,
-            { schluessel: 'ui_css_variables', prompt_text: ':root { --x: 1; }', ist_aktiv: true },
-            { schluessel: 'ui_tab_bar_html', prompt_text: '<nav class="mbk-tab-bar"></nav>', ist_aktiv: true },
-            { schluessel: 'ui_default_header_html', prompt_text: '<header>{{title}}</header>', ist_aktiv: true },
-          ],
-        });
-        expect(out.ui_global_config).toBeDefined();
-        expect(out.ui_global_config.css_variables).toContain(':root');
-        expect(out.ui_global_config.tab_bar_html).toContain('mbk-tab-bar');
-        expect(out.ui_global_config.default_header_html).toContain('{{title}}');
+    // ── airgap-1.5.0: ui_global_config wurde aus Payload 1 entfernt ─────
+    it('enthält KEIN ui_global_config mehr (ab airgap-1.5.0)', () => {
+      const out = buildSystemContextPayload({
+        ...baseArgs,
+        globalPrompts: [
+          ...baseArgs.globalPrompts,
+          { schluessel: 'ui_css_variables', prompt_text: ':root { --x: 1; }', ist_aktiv: true },
+        ],
       });
+      expect(out.ui_global_config).toBeUndefined();
+    });
 
-      it('liefert null pro fehlendem UI-Schlüssel (kein Hartcodieren)', () => {
-        const out = buildSystemContextPayload(baseArgs);
-        // baseArgs hat keine ui_*-Schlüssel
-        expect(out.ui_global_config.css_variables).toBeNull();
-        expect(out.ui_global_config.tab_bar_html).toBeNull();
-        expect(out.ui_global_config.default_header_html).toBeNull();
+    it('filtert UI-Schlüssel aus den global_prompts heraus', () => {
+      const out = buildSystemContextPayload({
+        ...baseArgs,
+        globalPrompts: [
+          ...baseArgs.globalPrompts,
+          { schluessel: 'ui_css_variables', prompt_text: ':root { --x: 1; }', ist_aktiv: true },
+          { schluessel: 'ui_tab_bar_html', prompt_text: '<nav></nav>', ist_aktiv: true },
+        ],
       });
-
-      it('ignoriert inaktive UI-Prompts', () => {
-        const out = buildSystemContextPayload({
-          ...baseArgs,
-          globalPrompts: [
-            { schluessel: 'ui_css_variables', prompt_text: ':root { --x: 1; }', ist_aktiv: false },
-          ],
-        });
-        expect(out.ui_global_config.css_variables).toBeNull();
-      });
+      const keys = out.global_prompts.map((p) => p.schluessel);
+      expect(keys).not.toContain('ui_css_variables');
+      expect(keys).not.toContain('ui_tab_bar_html');
+      // Nicht-UI-Prompts bleiben weiterhin enthalten.
+      expect(keys).toContain('global_mission_statement');
     });
 
     it('SCORM-Vertrag ist inhalts-unabhängig (Hash-Stabilität)', () => {
@@ -921,6 +973,40 @@ describe('MBK Air-Gap Payloads', () => {
       const aaItem = taskBundle.items.find((i) => i.reference_id === 'aa-pr');
       expect(lpItem.injection_points.back_targets).toEqual(['dashboard-pragmatiker.html']);
       expect(aaItem.injection_points.back_targets).toEqual(['dashboard-passioniert.html']);
+    });
+
+    // ── airgap-1.5.0: ui_config_hash propagiert in Struktur/Task/Micro ─
+    it('Strukturpayload trägt beide Hashes parallel im meta-Block', () => {
+      const out = buildStructurePayload({
+        einheit: { id: 'e1' },
+        systemContextHash: 'sys123',
+        uiConfigHash: 'ui456',
+      });
+      expect(out.meta.system_context_hash).toBe('sys123');
+      expect(out.meta.ui_config_hash).toBe('ui456');
+    });
+
+    it('Task-Bundle trägt beide Hashes parallel', () => {
+      const out = buildTaskContentBundle({
+        einheit: { id: 'e1' }, lernpakete: [], allgemeineAufgabenEbene23: [],
+        systemContextHash: 'sys123', uiConfigHash: 'ui456',
+      });
+      expect(out.meta.system_context_hash).toBe('sys123');
+      expect(out.meta.ui_config_hash).toBe('ui456');
+    });
+
+    it('Micro-Payload (Activity) trägt beide Hashes parallel', () => {
+      const out = buildMicroPayloadForActivity({
+        einheit: { id: 'e1' },
+        aktivitaet: {
+          id: 'pa-ki', aktivitaet_id: 'kat1', erstellungs_modus: 'ki',
+          ki_briefing: { variant: 'standard', standard: { schwerpunkt: 'X' } },
+        },
+        lernpaket: { id: 'lp1' },
+        systemContextHash: 'sys123', uiConfigHash: 'ui456',
+      });
+      expect(out.meta.system_context_hash).toBe('sys123');
+      expect(out.meta.ui_config_hash).toBe('ui456');
     });
 
     it('Micro-Bundle propagiert back_targets über navigationContextByRefId', () => {

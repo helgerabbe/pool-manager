@@ -36,7 +36,7 @@ import { getSektorTypLabel } from '@/lib/sektorTypen';
  * Wird bei jedem Build in `meta.schema_version` geschrieben und beim
  * Persistieren als `template_version` der ExportPrompts-Records.
  */
-export const MBK_AIRGAP_VERSION = 'airgap-1.4.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.5.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -157,11 +157,17 @@ function normalizeConventions(conventions) {
 /**
  * Erzeugt einen meta-Block mit den festen Pflichtfeldern.
  * `nowIso` ist parametrisierbar, damit Tests deterministisch bleiben können.
+ *
+ * airgap-1.5.0: Beide Hashes (system_context_hash + ui_config_hash) werden
+ * in jedem nachgelagerten Payload (Struktur, Task-Content, Micro) parallel
+ * geführt, damit die MBK pro generierter HTML-Datei beide `<meta>`-Tags
+ * setzen und beim Drift-Check beide validieren kann.
  */
 function makeMeta({
   payloadType,
   einheitId = null,
   systemContextHash = null,
+  uiConfigHash = null,
   itemCount = null,
   nowIso = null,
 }) {
@@ -173,8 +179,66 @@ function makeMeta({
   };
   if (einheitId !== null) meta.einheit_id = einheitId;
   if (systemContextHash !== null) meta.system_context_hash = systemContextHash;
+  if (uiConfigHash !== null) meta.ui_config_hash = uiConfigHash;
   if (itemCount !== null) meta.item_count = itemCount;
   return meta;
+}
+
+// ── 0. Payload 0: UI-Config (airgap-1.5.0) ─────────────────────────────────
+
+/**
+ * Schlüssel-Set der UI-Bausteine. Single Source of Truth — auch in
+ * lib/systemContextHash.js gepflegt; bewusst dupliziert, damit dieser
+ * Builder keine Hash-Logik importieren muss.
+ */
+const UI_CONFIG_PROMPT_KEYS = [
+  'ui_css_variables',
+  'ui_tab_bar_html',
+  'ui_default_header_html',
+];
+
+/**
+ * Payload 0: rein darstellungsbezogene UI-Bausteine (airgap-1.5.0).
+ *
+ * Trennt Inhalt (Payload 1: System-Kontext) von Darstellung (Payload 0:
+ * UI-Config), damit eine Grafikabteilung am CSS arbeiten kann, ohne den
+ * didaktischen System-Prompt zu invalidieren. Beide Hashes werden in
+ * jeder generierten HTML-Datei als `<meta>`-Tag mitgeliefert.
+ *
+ * Enthält:
+ *   - css_variables       (Inline-CSS-Block für jeden HTML-`<head>`)
+ *   - tab_bar_html        (HTML-Snippet der Dashboard-Tab-Bar)
+ *   - default_header_html (Header-Template mit {{title}}/{{back_targets}})
+ *
+ * @param {object} args
+ * @param {Array}  args.globalPrompts  — MBKGlobalPrompt[] (alle, gefiltert wird intern)
+ * @param {string} args.uiConfigHash   — vorberechneter UI-Config-Hash
+ * @param {string} [args.nowIso]
+ */
+export function buildUiConfigPayload({
+  globalPrompts = [],
+  uiConfigHash,
+  nowIso = null,
+}) {
+  const meta = makeMeta({
+    payloadType: 'mbk_ui_config',
+    uiConfigHash: uiConfigHash || null,
+    nowIso,
+  });
+
+  const ui = {
+    css_variables: lookupGlobal(globalPrompts, 'ui_css_variables'),
+    tab_bar_html: lookupGlobal(globalPrompts, 'ui_tab_bar_html'),
+    default_header_html: lookupGlobal(globalPrompts, 'ui_default_header_html'),
+  };
+
+  return {
+    meta,
+    ui_global_config: ui,
+    // Spiegel der Schlüssel-Liste für die MBK — erlaubt der KI, fehlende
+    // Bausteine eindeutig zu benennen, ohne die Halt-Bedingung 4a zu raten.
+    expected_keys: UI_CONFIG_PROMPT_KEYS,
+  };
 }
 
 // ── 1. Payload 1: System-Kontext ────────────────────────────────────────────
@@ -186,6 +250,7 @@ function makeMeta({
  *   - Stammdaten (Land, Bundesland, Schulform)
  *   - Schul-Nomenklatur (pro Fach: conventions + global_style)
  *   - aktive globale MBK-Prompts (Mission, Lerntypen, Operatoren, …)
+ *     OHNE die UI-Bausteine (die wandern ab airgap-1.5.0 in Payload 0).
  *
  * @param {object} args
  * @param {object} args.stammdaten           — { land, bundesland, schulform }
@@ -233,9 +298,12 @@ export function buildSystemContextPayload({
 
   // Globale MBK-Prompts: nur die hash-relevanten Felder, sortiert nach Schlüssel
   // damit der Output stabil ist (Reorder im Manager-Tab darf den Payload nicht
-  // verändern).
+  // verändern). airgap-1.5.0: UI-Bausteine werden ausgeschlossen — sie
+  // gehören in Payload 0 (UI-Config).
+  const uiKeySet = new Set(UI_CONFIG_PROMPT_KEYS);
   const globalPromptsOut = (globalPrompts || [])
     .filter((p) => p && p.ist_aktiv !== false)
+    .filter((p) => !uiKeySet.has(p?.schluessel))
     .map((p) => ({
       schluessel: nullable(p.schluessel),
       kategorie: nullable(p.kategorie),
@@ -256,16 +324,9 @@ export function buildSystemContextPayload({
     persona_generator_anweisung: lookupGlobal(globalPrompts, 'persona_generator_anweisung'),
   };
 
-  // ── airgap-1.4.0: ui_global_config (Standalone-App / Moodle-Bypass) ──────
-  // Drei UI-Bausteine für die MBK, gepflegt im MBK-Prompt-Manager unter den
-  // Schlüsseln `ui_css_variables`, `ui_tab_bar_html`, `ui_default_header_html`.
-  // Wenn ein Schlüssel nicht (mehr) gepflegt ist, liefern wir `null` — die
-  // MBK fällt dann auf ihre eingebauten Defaults zurück (siehe Meta-Prompt).
-  const uiGlobalConfig = {
-    css_variables: lookupGlobal(globalPrompts, 'ui_css_variables'),
-    tab_bar_html: lookupGlobal(globalPrompts, 'ui_tab_bar_html'),
-    default_header_html: lookupGlobal(globalPrompts, 'ui_default_header_html'),
-  };
+  // airgap-1.5.0: ui_global_config wurde nach Payload 0 (mbk_ui_config)
+  // ausgelagert. Der System-Kontext enthält ab dieser Version nur noch
+  // die didaktischen Regeln + den SCORM-Vertrag.
 
   return {
     meta,
@@ -273,7 +334,6 @@ export function buildSystemContextPayload({
     schul_nomenklatur: nomenklatur,
     global_prompts: globalPromptsOut,
     direct_lookups: directLookups,
-    ui_global_config: uiGlobalConfig,
     // Generische SCORM-Modularitäts-Anweisung. Bewusst inhalts-unabhängig,
     // damit der system_context_hash bei Aufgaben-Änderungen nicht kippt.
     scorm_delivery_contract: SCORM_DELIVERY_CONTRACT,
@@ -393,12 +453,14 @@ export function buildStructurePayload({
   allgemeineAufgaben = [],
   systemBausteine = [],
   systemContextHash = null,
+  uiConfigHash = null,
   nowIso = null,
 }) {
   const meta = makeMeta({
     payloadType: 'mbk_structure_payload',
     einheitId: einheit?.id || null,
     systemContextHash,
+    uiConfigHash,
     nowIso,
   });
 
@@ -904,6 +966,7 @@ export function buildTaskContentBundle({
   // back_targets.
   navigationContextByRefId = new Map(),
   systemContextHash = null,
+  uiConfigHash = null,
   nowIso = null,
 }) {
   // Nach Lernpaket gruppieren.
@@ -958,6 +1021,7 @@ export function buildTaskContentBundle({
       payloadType: 'mbk_task_content_payload',
       einheitId: einheit?.id || null,
       systemContextHash,
+      uiConfigHash,
       itemCount: items.length,
       nowIso,
     }),
@@ -1023,6 +1087,7 @@ export function buildMicroPayloadForActivity({
   katalogById = new Map(),
   navigationContext = [],
   systemContextHash = null,
+  uiConfigHash = null,
   nowIso = null,
 }) {
   if (!aktivitaet || aktivitaet.erstellungs_modus !== 'ki') return null;
@@ -1037,6 +1102,7 @@ export function buildMicroPayloadForActivity({
       payloadType: 'mbk_micro_payload',
       einheitId: einheit?.id || null,
       systemContextHash,
+      uiConfigHash,
       nowIso,
     }),
     target: {
@@ -1096,6 +1162,7 @@ export function buildMicroPayloadForAllgemeineAufgabe({
   themenfeld = null,
   navigationContext = [],
   systemContextHash = null,
+  uiConfigHash = null,
   nowIso = null,
 }) {
   if (!aufgabe || aufgabe.erstellungs_modus !== 'ki') return null;
@@ -1123,6 +1190,7 @@ export function buildMicroPayloadForAllgemeineAufgabe({
       payloadType: 'mbk_micro_payload',
       einheitId: einheit?.id || null,
       systemContextHash,
+      uiConfigHash,
       nowIso,
     }),
     target: {
@@ -1187,6 +1255,7 @@ export function buildMicroPayloadBundle({
   // KI-AllgemeineAufgaben verwenden ihre eigene aufgabe_id.
   navigationContextByRefId = new Map(),
   systemContextHash = null,
+  uiConfigHash = null,
   nowIso = null,
 }) {
   const themenfeldById = new Map((themenfelder || []).map((tf) => [tf.id, tf]));
@@ -1227,6 +1296,7 @@ export function buildMicroPayloadBundle({
       // Fragment erbt nav-Context von der Hülle (= Lernpaket).
       navigationContext: lp ? navFor(lp.id) : [],
       systemContextHash,
+      uiConfigHash,
       nowIso,
     });
     if (item) items.push(item);
@@ -1242,6 +1312,7 @@ export function buildMicroPayloadBundle({
       themenfeld: tf,
       navigationContext: navFor(aa.id),
       systemContextHash,
+      uiConfigHash,
       nowIso,
     });
     if (item) items.push(item);
@@ -1252,6 +1323,7 @@ export function buildMicroPayloadBundle({
       payloadType: 'mbk_micro_payload',
       einheitId: einheit?.id || null,
       systemContextHash,
+      uiConfigHash,
       itemCount: items.length,
       nowIso,
     }),

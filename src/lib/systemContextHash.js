@@ -1,16 +1,23 @@
 /**
  * systemContextHash.js
  *
- * Berechnet einen deterministischen 16-Zeichen-Fingerprint über das gesamte
- * C-Global-Regelwerk der MBK-Integration:
- *   - Schul-Stammdaten (Land, Bundesland, Schulform)
- *   - Schul-Nomenklatur (pro Fach: conventions + global_style)
- *   - aktive globale MBK-Prompts (Mission, Lerntypen, Operatoren, Wortlimits, Guardrails …)
+ * Berechnet zwei deterministische 16-Zeichen-Fingerprints für die MBK-
+ * Integration (airgap-1.5.0 / Trennung Inhalt vs. Darstellung):
  *
- * Verwendung im exportierten C-Global-Payload als `meta.system_context_hash`.
- * Sobald sich irgendetwas am Regelwerk ändert (Convention bearbeitet,
- * Prompt deaktiviert, Stammdaten geändert), kippt der Hash → die MBK
- * verwirft ihren gecachten System-Prompt und lädt neu.
+ *   1. computeSystemContextHash → didaktisches Regelwerk
+ *      - Schul-Stammdaten (Land, Bundesland, Schulform)
+ *      - Schul-Nomenklatur (pro Fach: conventions + global_style)
+ *      - aktive globale MBK-Prompts OHNE die UI-Bausteine
+ *
+ *   2. computeUiConfigHash → Darstellungs-Schicht
+ *      - die drei UI-Schlüssel aus dem Prompt-Manager:
+ *        ui_css_variables, ui_tab_bar_html, ui_default_header_html
+ *
+ * Beide Hashes werden in der Air-Gap-Welt parallel geführt (Payload 0
+ * = UI-Config, Payload 1 = System-Kontext) und in jeder generierten
+ * HTML-Datei als `<meta>`-Tag mitgeliefert. Drift im einen kippt den
+ * anderen NICHT — Grafikabteilung kann am CSS arbeiten, ohne die
+ * Inhalts-Payloads zu invalidieren.
  *
  * Designprinzipien:
  *  - **Reine Funktion.** Keine I/O, keine Side-Effects, deterministisch.
@@ -97,18 +104,47 @@ function normalizeNomenklatur(records) {
 }
 
 /**
+ * Schlüssel der UI-Bausteine, die aus dem System-Kontext-Hash AUSGESCHLOSSEN
+ * sind und stattdessen in den UI-Config-Hash einfließen. airgap-1.5.0:
+ * Trennung von Inhalt (System-Kontext) und Darstellung (UI-Config).
+ */
+const UI_CONFIG_KEYS = new Set([
+  'ui_css_variables',
+  'ui_tab_bar_html',
+  'ui_default_header_html',
+]);
+
+/**
  * Normalisiert die aktiven globalen MBK-Prompts: filtert Inaktive raus,
+ * filtert UI-Schlüssel raus (die wandern in den UI-Config-Hash),
  * extrahiert nur die hash-relevanten Felder, sortiert nach Schlüssel.
  */
 function normalizeGlobalPrompts(prompts) {
   if (!Array.isArray(prompts)) return [];
   return prompts
     .filter((p) => p && p.ist_aktiv !== false)
+    .filter((p) => !UI_CONFIG_KEYS.has(p?.schluessel))
     .map((p) => ({
       schluessel: typeof p.schluessel === 'string' ? p.schluessel : '',
       prompt_text: typeof p.prompt_text === 'string' ? p.prompt_text : '',
     }))
     .filter((p) => p.schluessel)
+    .sort((a, b) => a.schluessel.localeCompare(b.schluessel));
+}
+
+/**
+ * Normalisiert die UI-Bausteine für den UI-Config-Hash: nur die drei
+ * hart definierten Schlüssel, nur aktive Einträge, sortiert.
+ */
+function normalizeUiConfigPrompts(prompts) {
+  if (!Array.isArray(prompts)) return [];
+  return prompts
+    .filter((p) => p && p.ist_aktiv !== false)
+    .filter((p) => UI_CONFIG_KEYS.has(p?.schluessel))
+    .map((p) => ({
+      schluessel: p.schluessel,
+      prompt_text: typeof p.prompt_text === 'string' ? p.prompt_text : '',
+    }))
     .sort((a, b) => a.schluessel.localeCompare(b.schluessel));
 }
 
@@ -142,6 +178,32 @@ export function computeSystemContextHash({ stammdaten, schulNomenklatur, globalP
   return fnv1a64Hex(stableStringify(normalized));
 }
 
+/**
+ * Berechnet den 16-stelligen Hex-Hash NUR über die UI-Bausteine
+ * (ui_css_variables, ui_tab_bar_html, ui_default_header_html).
+ * Wird in airgap-1.5.0 als `meta.ui_config_hash` ausgegeben und
+ * unabhängig vom System-Kontext-Hash invalidiert.
+ *
+ * Designprinzip: ein Edit am Didaktik-Prompt darf den UI-Hash NICHT
+ * kippen, ein Edit am CSS darf den System-Kontext-Hash NICHT kippen.
+ *
+ * @param {object} input
+ * @param {Array}  input.globalPrompts — MBKGlobalPrompt[]
+ * @returns {string} 16-Zeichen-Hex-Hash
+ */
+export function computeUiConfigHash({ globalPrompts } = {}) {
+  const normalized = {
+    ui_prompts: normalizeUiConfigPrompts(globalPrompts),
+  };
+  return fnv1a64Hex(stableStringify(normalized));
+}
+
+/**
+ * Schlüssel-Set der UI-Bausteine — exportiert für Konsumenten, die
+ * dieselbe Filter-Logik brauchen (z. B. der UI-Config-Builder).
+ */
+export const UI_CONFIG_PROMPT_KEYS = Array.from(UI_CONFIG_KEYS);
+
 // Interne Helpers werden für Tests exportiert. Nicht für Anwendungscode.
 export const __test__ = {
   fnv1a64Hex,
@@ -150,4 +212,6 @@ export const __test__ = {
   normalizeNomenklatur,
   normalizeGlobalPrompts,
   normalizeStammdaten,
+  normalizeUiConfigPrompts,
+  UI_CONFIG_KEYS,
 };

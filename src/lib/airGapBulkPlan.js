@@ -20,6 +20,7 @@
  *   (system_context_hash_at_generation vs. currentSystemContextHash).
  */
 import {
+  buildUiConfigPayload,
   buildSystemContextPayload,
   buildStructurePayload,
   buildTaskContentItemForLernpaket,
@@ -37,6 +38,7 @@ import {
 } from '@/lib/exportPromptSync';
 
 const TYPES = {
+  UI: 'mbk_ui_config',
   SYS: 'mbk_system_context',
   STRUCT: 'mbk_structure_payload',
   TASK: 'mbk_task_content_payload',
@@ -79,6 +81,7 @@ export function buildAirGapBulkPlan({
   prompts,
   tsIndex,
   systemContextHash,
+  uiConfigHash,
 }) {
   if (!einheit) return [];
 
@@ -87,6 +90,9 @@ export function buildAirGapBulkPlan({
     findExistingPrompt(prompts, { einheitId, promptType, referenceId });
   const tsFor = (promptType, referenceId = null) =>
     lookupSourceMaxTimestampFromIndex(tsIndex, promptType, referenceId);
+  // airgap-1.5.0: zentraler Drift-Check mit beiden Hashes parallel.
+  const isOoSFor = (existing, sourceMaxTs) =>
+    isPromptOutOfSync(existing, sourceMaxTs, systemContextHash, uiConfigHash);
 
   // Lookup-Maps für effiziente Item-Builds (analog zum UI-Panel).
   const zieleByPaket = new Map();
@@ -112,18 +118,40 @@ export function buildAirGapBulkPlan({
   // Records `injection_points.back_targets` tragen.
   const structurePayloadForNav = buildStructurePayload({
     einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten,
-    katalogById, allgemeineAufgaben, systemBausteine, systemContextHash,
+    katalogById, allgemeineAufgaben, systemBausteine,
+    systemContextHash, uiConfigHash,
   });
   const navigationContextByRefId = extractNavigationContextByRefId(
     structurePayloadForNav?.scorm_file_mapping || []
   );
   const navFor = (refId) => navigationContextByRefId.get(refId) || [];
 
+  // ── 0. UI-Config (airgap-1.5.0) ──────────────────────────────────────
+  {
+    const existing = lookup(TYPES.UI);
+    const sourceMaxTs = tsFor(TYPES.UI);
+    const isOoS = isOoSFor(existing, sourceMaxTs);
+    const { status, skipReason } = classify({ existing, isOutOfSync: isOoS });
+    items.push({
+      key: 'mbk-ui',
+      label: 'UI-Config',
+      section: 'mbk_ui_config',
+      promptType: TYPES.UI,
+      referenceId: null,
+      status,
+      skipReason,
+      buildPayload: () =>
+        buildUiConfigPayload({ globalPrompts, uiConfigHash }),
+      sourceMaxTs,
+      existing,
+    });
+  }
+
   // ── 1. System-Kontext ────────────────────────────────────────────────
   {
     const existing = lookup(TYPES.SYS);
     const sourceMaxTs = tsFor(TYPES.SYS);
-    const isOoS = isPromptOutOfSync(existing, sourceMaxTs, systemContextHash);
+    const isOoS = isOoSFor(existing, sourceMaxTs);
     const { status, skipReason } = classify({ existing, isOutOfSync: isOoS });
     items.push({
       key: 'mbk-sys',
@@ -149,7 +177,7 @@ export function buildAirGapBulkPlan({
   {
     const existing = lookup(TYPES.STRUCT);
     const sourceMaxTs = tsFor(TYPES.STRUCT);
-    const isOoS = isPromptOutOfSync(existing, sourceMaxTs, systemContextHash);
+    const isOoS = isOoSFor(existing, sourceMaxTs);
     const { status, skipReason } = classify({ existing, isOutOfSync: isOoS });
     items.push({
       key: 'mbk-struct',
@@ -170,6 +198,7 @@ export function buildAirGapBulkPlan({
           allgemeineAufgaben,
           systemBausteine,
           systemContextHash,
+          uiConfigHash,
         }),
       sourceMaxTs,
       existing,
@@ -186,7 +215,7 @@ export function buildAirGapBulkPlan({
       referenceId: lp.id, lernpakete, allgemeineAufgaben,
     });
     const sourceMaxTs = tsFor(TYPES.TASK, lp.id);
-    const isOoS = isPromptOutOfSync(existing, sourceMaxTs, systemContextHash);
+    const isOoS = isOoSFor(existing, sourceMaxTs);
     const { status, skipReason } = classify({ existing, blockReason, isOutOfSync: isOoS });
     items.push({
       key: `mbk-task-lp::${lp.id}`,
@@ -215,7 +244,7 @@ export function buildAirGapBulkPlan({
       referenceId: aa.id, lernpakete, allgemeineAufgaben,
     });
     const sourceMaxTs = tsFor(TYPES.TASK, aa.id);
-    const isOoS = isPromptOutOfSync(existing, sourceMaxTs, systemContextHash);
+    const isOoS = isOoSFor(existing, sourceMaxTs);
     const { status, skipReason } = classify({ existing, blockReason, isOutOfSync: isOoS });
     const ebeneLabel = aa.anforderungsebene === '3 - Projekt' ? 'Ebene 3' : 'Ebene 2';
     items.push({
@@ -243,7 +272,7 @@ export function buildAirGapBulkPlan({
     const tf = lp?.themenfeld_id ? themenfeldById.get(lp.themenfeld_id) || null : null;
     const existing = lookup(TYPES.MICRO, pa.id);
     const sourceMaxTs = tsFor(TYPES.MICRO, pa.id);
-    const isOoS = isPromptOutOfSync(existing, sourceMaxTs, systemContextHash);
+    const isOoS = isOoSFor(existing, sourceMaxTs);
     const { status, skipReason } = classify({ existing, isOutOfSync: isOoS });
     const katalog = katalogById?.get?.(pa.aktivitaet_id);
     items.push({
@@ -266,6 +295,7 @@ export function buildAirGapBulkPlan({
           // Fragment erbt nav-Context von der Hülle (= Lernpaket).
           navigationContext: lp ? navFor(lp.id) : [],
           systemContextHash,
+          uiConfigHash,
         }),
       sourceMaxTs,
       existing,
@@ -276,7 +306,7 @@ export function buildAirGapBulkPlan({
     const tf = aa.themenfeld_id ? themenfeldById.get(aa.themenfeld_id) || null : null;
     const existing = lookup(TYPES.MICRO, aa.id);
     const sourceMaxTs = tsFor(TYPES.MICRO, aa.id);
-    const isOoS = isPromptOutOfSync(existing, sourceMaxTs, systemContextHash);
+    const isOoS = isOoSFor(existing, sourceMaxTs);
     const { status, skipReason } = classify({ existing, isOutOfSync: isOoS });
     items.push({
       key: `mbk-micro-aa::${aa.id}`,
@@ -293,6 +323,7 @@ export function buildAirGapBulkPlan({
           themenfeld: tf,
           navigationContext: navFor(aa.id),
           systemContextHash,
+          uiConfigHash,
         }),
       sourceMaxTs,
       existing,
@@ -308,7 +339,7 @@ export function buildAirGapBulkPlan({
  * "Air-Gap: stringified JSON, das beim Copy/Paste in Markdown-Codefences
  * gewickelt wird").
  */
-export function airGapPlanToWritePayload(plan, { systemContextHash } = {}) {
+export function airGapPlanToWritePayload(plan, { systemContextHash, uiConfigHash } = {}) {
   return plan
     .filter((it) => it.status === 'new' || it.status === 'update')
     .map((it) => ({
@@ -319,6 +350,7 @@ export function airGapPlanToWritePayload(plan, { systemContextHash } = {}) {
       source_updated_at: new Date(it.sourceMaxTs || Date.now()).toISOString(),
       template_version: MBK_AIRGAP_VERSION,
       system_context_hash_at_generation: systemContextHash || null,
+      ui_config_hash_at_generation: uiConfigHash || null,
     }));
 }
 
@@ -335,6 +367,7 @@ export function airGapPlanToWritePayload(plan, { systemContextHash } = {}) {
  */
 export function aggregateAirGapPlanByBlock(plan) {
   const blocks = {
+    mbk_ui_config: { dbDeliveredCount: 0, dbStaleCount: 0, dbMissingCount: 0, hasAnyStale: false, total: 0 },
     mbk_system_context: { dbDeliveredCount: 0, dbStaleCount: 0, dbMissingCount: 0, hasAnyStale: false, total: 0 },
     mbk_structure_payload: { dbDeliveredCount: 0, dbStaleCount: 0, dbMissingCount: 0, hasAnyStale: false, total: 0 },
     mbk_task_content_payload: { dbDeliveredCount: 0, dbStaleCount: 0, dbMissingCount: 0, hasAnyStale: false, total: 0 },

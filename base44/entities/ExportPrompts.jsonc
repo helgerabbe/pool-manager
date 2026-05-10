@@ -14,16 +14,17 @@
         "sektor_struktur",
         "sektor_anweisung",
         "erstellungspaket",
+        "mbk_ui_config",
         "mbk_system_context",
         "mbk_structure_payload",
         "mbk_task_content_payload",
         "mbk_micro_payload"
       ],
-      "description": "Typ des Prompts. \u2500\u2500 Legacy/Markdown-Welt (f\u00fcr Copy-Paste in Chat-UIs): nucleus = Context-Anchor mit Lernlandkarte; persona = Tonalit\u00e4t/Lerntypen; sektor_struktur = lerntyp-unabh\u00e4ngige Sektoren-/Item-Struktur (1\u00d7 pro Einheit, ab v1.9.0 als geteilte Single Source of Truth, auf die die schlanken sektor_anweisung-Prompts verweisen); sektor_anweisung = lerntyp-spezifische Bearbeitungsregel (4\u00d7 pro Einheit, schlank); erstellungspaket = pro Lernpaket bzw. pro AllgemeineAufgabe (Ebene 2/3). \u2500\u2500 Air-Gap-Welt (strukturierte JSON-Payloads f\u00fcr mensch-vermittelte \u00dcbergabe an die MBK; siehe docs/mbk-air-gap-uebergabe.md): mbk_system_context = Payload 1 (1\u00d7 pro Einheit, cachebar via Hash); mbk_structure_payload = Payload 2 (1\u00d7 pro Einheit); mbk_task_content_payload = Payload 3 (n\u00d7 pro Einheit, reference_id=Lernpaket- oder AllgemeineAufgabe-ID); mbk_micro_payload = Payload 4 (n\u00d7 pro Einheit, reference_id=Aktivit\u00e4ts- oder AllgemeineAufgabe-ID). content enth\u00e4lt in der Air-Gap-Welt einen JSON-String (stringified)."
+      "description": "Typ des Prompts. \u2500\u2500 Legacy/Markdown-Welt (f\u00fcr Copy-Paste in Chat-UIs): nucleus = Context-Anchor mit Lernlandkarte; persona = Tonalit\u00e4t/Lerntypen; sektor_struktur = lerntyp-unabh\u00e4ngige Sektoren-/Item-Struktur (1\u00d7 pro Einheit, ab v1.9.0 als geteilte Single Source of Truth, auf die die schlanken sektor_anweisung-Prompts verweisen); sektor_anweisung = lerntyp-spezifische Bearbeitungsregel (4\u00d7 pro Einheit, schlank); erstellungspaket = pro Lernpaket bzw. pro AllgemeineAufgabe (Ebene 2/3). \u2500\u2500 Air-Gap-Welt (strukturierte JSON-Payloads f\u00fcr mensch-vermittelte \u00dcbergabe an die MBK; siehe docs/mbk-air-gap-uebergabe.md): mbk_ui_config = Payload 0 (1\u00d7 pro Einheit, airgap-1.5.0+ \u2014 enth\u00e4lt die drei UI-Bausteine css_variables/tab_bar_html/default_header_html, eigener ui_config_hash); mbk_system_context = Payload 1 (1\u00d7 pro Einheit, cachebar via system_context_hash, OHNE UI-Bausteine ab airgap-1.5.0); mbk_structure_payload = Payload 2 (1\u00d7 pro Einheit); mbk_task_content_payload = Payload 3 (n\u00d7 pro Einheit, reference_id=Lernpaket- oder AllgemeineAufgabe-ID); mbk_micro_payload = Payload 4 (n\u00d7 pro Einheit, reference_id=Aktivit\u00e4ts- oder AllgemeineAufgabe-ID). content enth\u00e4lt in der Air-Gap-Welt einen JSON-String (stringified)."
     },
     "reference_id": {
       "type": "string",
-      "description": "Verweis auf das spezifische Quell-Objekt. \u2500\u2500 Legacy: nucleus/persona/sektor_struktur = null; sektor_anweisung = Lerntyp-Schl\u00fcssel ('minimalist'|'pragmatiker'|'ehrgeizig'|'passioniert'); erstellungspaket = Lernpaket-ID oder AllgemeineAufgabe-ID. \u2500\u2500 Air-Gap: mbk_system_context/mbk_structure_payload = null; mbk_task_content_payload = Lernpaket-ID oder AllgemeineAufgabe-ID (Ebene 2/3); mbk_micro_payload = Aktivit\u00e4ts-ID (LernpaketPhaseAktivitaet) oder AllgemeineAufgabe-ID."
+      "description": "Verweis auf das spezifische Quell-Objekt. \u2500\u2500 Legacy: nucleus/persona/sektor_struktur = null; sektor_anweisung = Lerntyp-Schl\u00fcssel ('minimalist'|'pragmatiker'|'ehrgeizig'|'passioniert'); erstellungspaket = Lernpaket-ID oder AllgemeineAufgabe-ID. \u2500\u2500 Air-Gap: mbk_ui_config/mbk_system_context/mbk_structure_payload = null; mbk_task_content_payload = Lernpaket-ID oder AllgemeineAufgabe-ID (Ebene 2/3); mbk_micro_payload = Aktivit\u00e4ts-ID (LernpaketPhaseAktivitaet) oder AllgemeineAufgabe-ID."
     },
     "content": {
       "type": "string",
@@ -41,11 +42,15 @@
     },
     "template_version": {
       "type": "string",
-      "description": "Version der Template-Engine zum Zeitpunkt der Generierung. Legacy: MBK_TEMPLATE_VERSION aus lib/exportPromptTemplates.js. Air-Gap: MBK_AIRGAP_VERSION aus lib/mbkAirGapPayloads.js (z. B. 'airgap-1.0.0'). Wird beim Out-of-Sync-Vergleich zus\u00e4tzlich zur source_updated_at-Pr\u00fcfung herangezogen: weicht die Version ab, gilt der Prompt als veraltet, auch wenn die Quelldaten unver\u00e4ndert sind. Sch\u00fctzt davor, dass nach Template-\u00c4nderungen alle Prompts irrt\u00fcmlich als 'aktuell' angezeigt werden."
+      "description": "Version der Template-Engine zum Zeitpunkt der Generierung. Legacy: MBK_TEMPLATE_VERSION aus lib/exportPromptTemplates.js. Air-Gap: MBK_AIRGAP_VERSION aus lib/mbkAirGapPayloads.js (z. B. 'airgap-1.5.0'). Wird beim Out-of-Sync-Vergleich zus\u00e4tzlich zur source_updated_at-Pr\u00fcfung herangezogen: weicht die Version ab, gilt der Prompt als veraltet, auch wenn die Quelldaten unver\u00e4ndert sind. Sch\u00fctzt davor, dass nach Template-\u00c4nderungen alle Prompts irrt\u00fcmlich als 'aktuell' angezeigt werden."
     },
     "system_context_hash_at_generation": {
       "type": "string",
       "description": "Air-Gap-spezifisch: 16-Zeichen-Hex (FNV-1a-64) des system_context_hash zum Zeitpunkt der Generierung. Erlaubt der UI zu erkennen, ob ein Air-Gap-Payload mit dem aktuellen System-Kontext konsistent ist (Mismatch \u2192 MBK w\u00fcrde den Payload ablehnen, weil Cache-Key veraltet). Bei Legacy-prompt_types null/leer."
+    },
+    "ui_config_hash_at_generation": {
+      "type": "string",
+      "description": "Air-Gap-spezifisch (airgap-1.5.0+): 16-Zeichen-Hex (FNV-1a-64) des ui_config_hash zum Zeitpunkt der Generierung. Trennt Drift-Erkennung der UI-Schicht (CSS, Tab-Bar, Header-Template) vom didaktischen Regelwerk. Mismatch \u2192 MBK w\u00fcrde den Payload ablehnen, weil das Darstellungs-Layer veraltet ist. Bei Legacy-prompt_types null/leer; bei mbk_ui_config selbst stets gesetzt; bei mbk_system_context/structure/task/micro ebenfalls gesetzt, damit beide Hashes parallel validiert werden k\u00f6nnen."
     }
   },
   "required": [

@@ -12,11 +12,21 @@ import { Badge } from '@/components/ui/badge';
 import { Globe, Boxes } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// airgap-1.5.0: UI-Bausteine bekommen eine eigene visuelle Sektion in der
+// Sidebar, damit eine Grafikabteilung sie auf einen Blick findet.
+// Bleiben technisch in der Kategorie 'global' — wir filtern nur per Schlüssel.
+const UI_PROMPT_KEYS = new Set(['ui_css_variables', 'ui_tab_bar_html', 'ui_default_header_html']);
+
 const KATEGORIE_META = {
   global: {
     label: 'Globale Definitionen',
     icon: Globe,
     hint: 'Mission Statement & strukturelle Begriffe — fließen in den System-Prompt jeder Einheit.',
+  },
+  ui_bausteine: {
+    label: '🎨 UI-Bausteine',
+    icon: Globe,
+    hint: 'CSS, Tab-Bar und Header-Template für die generierten HTML-Dateien (Payload 0). Pflege durch die Grafikabteilung — Edits invalidieren NICHT die didaktischen Inhalte.',
   },
   systembaustein: {
     label: 'Systembausteine',
@@ -51,8 +61,13 @@ function PromptListItem({ prompt, isActive, onSelect }) {
 }
 
 export default function MBKPromptManagerSidebar({ prompts, selectedId, onSelect }) {
-  const grouped = { global: [], systembaustein: [] };
+  const grouped = { global: [], ui_bausteine: [], systembaustein: [] };
   for (const p of prompts) {
+    // UI-Bausteine eigener visueller Bucket — ändert nichts am DB-Datensatz.
+    if (UI_PROMPT_KEYS.has(p.schluessel)) {
+      grouped.ui_bausteine.push(p);
+      continue;
+    }
     if (grouped[p.kategorie]) grouped[p.kategorie].push(p);
   }
   for (const arr of Object.values(grouped)) {
@@ -62,7 +77,7 @@ export default function MBKPromptManagerSidebar({ prompts, selectedId, onSelect 
   return (
     <Accordion
       type="multiple"
-      defaultValue={['global', 'systembaustein']}
+      defaultValue={['global', 'ui_bausteine', 'systembaustein']}
       className="space-y-2 p-3"
     >
       {Object.entries(KATEGORIE_META).map(([key, meta]) => {

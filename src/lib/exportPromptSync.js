@@ -25,6 +25,7 @@ const PROMPT_TYPES = {
   SEKTOR: 'sektor_anweisung',
   ERSTELLUNGSPAKET: 'erstellungspaket',
   // Air-Gap-Welt
+  MBK_UI_CONFIG: 'mbk_ui_config',
   MBK_SYSTEM_CONTEXT: 'mbk_system_context',
   MBK_STRUCTURE: 'mbk_structure_payload',
   MBK_TASK_CONTENT: 'mbk_task_content_payload',
@@ -34,7 +35,25 @@ const PROMPT_TYPES = {
 // Set der Air-Gap-Prompt-Types — wird in isPromptOutOfSync für den
 // zusätzlichen Hash-Vergleich genutzt.
 const AIRGAP_PROMPT_TYPES = new Set([
+  PROMPT_TYPES.MBK_UI_CONFIG,
   PROMPT_TYPES.MBK_SYSTEM_CONTEXT,
+  PROMPT_TYPES.MBK_STRUCTURE,
+  PROMPT_TYPES.MBK_TASK_CONTENT,
+  PROMPT_TYPES.MBK_MICRO,
+]);
+
+// airgap-1.5.0: Welche Hashes sind pro Air-Gap-Type relevant?
+//   - mbk_ui_config       → nur ui_config_hash
+//   - alle anderen        → BEIDE (system_context_hash + ui_config_hash),
+//     weil die generierten HTML-Dateien beide <meta>-Tags tragen müssen.
+const REQUIRES_SYS_HASH = new Set([
+  PROMPT_TYPES.MBK_SYSTEM_CONTEXT,
+  PROMPT_TYPES.MBK_STRUCTURE,
+  PROMPT_TYPES.MBK_TASK_CONTENT,
+  PROMPT_TYPES.MBK_MICRO,
+]);
+const REQUIRES_UI_HASH = new Set([
+  PROMPT_TYPES.MBK_UI_CONFIG,
   PROMPT_TYPES.MBK_STRUCTURE,
   PROMPT_TYPES.MBK_TASK_CONTENT,
   PROMPT_TYPES.MBK_MICRO,
@@ -116,7 +135,7 @@ export function computeSourceMaxTimestamp({ promptType, referenceId, einheit, th
  * Prompts) sich seit der Generierung geändert haben — die MBK würde den
  * Payload ablehnen, weil ihr Cache-Key nicht mehr passt.
  */
-export function isPromptOutOfSync(prompt, sourceMaxTs, currentSystemContextHash = null) {
+export function isPromptOutOfSync(prompt, sourceMaxTs, currentSystemContextHash = null, currentUiConfigHash = null) {
   if (!prompt || !prompt.source_updated_at) return false;
   const generatedTs = new Date(prompt.source_updated_at).getTime();
   if (sourceMaxTs > generatedTs) return true;
@@ -127,16 +146,26 @@ export function isPromptOutOfSync(prompt, sourceMaxTs, currentSystemContextHash 
     return true;
   }
 
-  // Air-Gap: Hash-Vergleich. Nur prüfen, wenn beide Seiten einen Hash haben —
-  // sonst würde ein noch nicht gepflegter Hash alle Records als veraltet
-  // markieren.
-  if (
-    isAirGap &&
-    currentSystemContextHash &&
-    prompt.system_context_hash_at_generation &&
-    prompt.system_context_hash_at_generation !== currentSystemContextHash
-  ) {
-    return true;
+  // Air-Gap: Hash-Vergleich (airgap-1.5.0 — zwei Hashes parallel).
+  // Pro Type ist nur das relevante Hash-Set zwingend; der jeweils andere
+  // wird übersprungen, wenn er nicht gepflegt ist.
+  if (isAirGap) {
+    if (
+      REQUIRES_SYS_HASH.has(prompt.prompt_type) &&
+      currentSystemContextHash &&
+      prompt.system_context_hash_at_generation &&
+      prompt.system_context_hash_at_generation !== currentSystemContextHash
+    ) {
+      return true;
+    }
+    if (
+      REQUIRES_UI_HASH.has(prompt.prompt_type) &&
+      currentUiConfigHash &&
+      prompt.ui_config_hash_at_generation &&
+      prompt.ui_config_hash_at_generation !== currentUiConfigHash
+    ) {
+      return true;
+    }
   }
 
   return false;
@@ -265,6 +294,10 @@ export function buildSourceTimestampIndex({
   }
 
   // ── Air-Gap-Indizes ───────────────────────────────────────────────────
+  // mbk_ui_config: hängt nur an den drei UI-Schlüsseln im Prompt-Manager.
+  // Wir verwenden globalPromptsTs als Proxy (Manager-Edit-Timestamp); der
+  // exakte Drift-Check läuft über den ui_config_hash.
+  const mbkUiConfigTs = globalPromptsTs;
   // mbk_system_context: hängt an globalen Regeln. Stammdaten haben kein
   // updated_date — Drift wird zusätzlich über system_context_hash erkannt
   // (siehe isPromptOutOfSync). Hier reicht der Manager-Timestamp als Proxy.
@@ -308,6 +341,7 @@ export function buildSourceTimestampIndex({
     lernpaketTs,
     allgemeineAufgabeTs,
     // Air-Gap
+    mbkUiConfigTs,
     mbkSystemContextTs,
     mbkStructureTs,
     mbkTaskContentLernpaketTs,
@@ -338,6 +372,8 @@ export function lookupSourceMaxTimestampFromIndex(index, promptType, referenceId
       if (index.allgemeineAufgabeTs.has(referenceId)) return index.allgemeineAufgabeTs.get(referenceId);
       return 0;
     }
+    case PROMPT_TYPES.MBK_UI_CONFIG:
+      return index.mbkUiConfigTs || 0;
     case PROMPT_TYPES.MBK_SYSTEM_CONTEXT:
       return index.mbkSystemContextTs || 0;
     case PROMPT_TYPES.MBK_STRUCTURE:
