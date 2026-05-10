@@ -18,16 +18,17 @@
  *   - der ZIP-Builder sie als statische Dateien in jedes Paket legt,
  *   - die Air-Gap-Welt sie über ein Meta-Tag versioniert kennt.
  *
- * Aktivitäts-Typen (Version 0.1.0):
+ * Aktivitäts-Typen (Version 0.2.0):
  *   - lueckentext   → Drag&Drop, alle Lücken müssen richtig sein
+ *   - match_terms   → Begriffe zuordnen (Definition → Begriff per D&D/Klick)
  *
- * Weitere Typen werden in folgenden Iterationen ergänzt (Miniquiz,
- * MultipleChoice, Sortieren, Begriffe zuordnen, Bildbeschriftung,
- * Link/URL, Video, Audio, Text lesen, Lehrwerk, Bestätigen, KI-Tutor,
- * KI-Check). Jeder neue Typ ist ein Plugin in derselben Runtime.
+ * Weitere Typen werden in folgenden Iterationen ergänzt (Sortieren,
+ * Miniquiz/MultipleChoice, Bildbeschriftung, Link/URL, Video, Audio,
+ * Text lesen, Lehrwerk, Bestätigen, KI-Tutor, KI-Check). Jeder neue
+ * Typ ist ein Plugin in derselben Runtime.
  */
 
-export const MBK_ACTIVITY_RUNTIME_VERSION = '0.1.0';
+export const MBK_ACTIVITY_RUNTIME_VERSION = '0.2.0';
 
 // ─────────────────────────────────────────────────────────────────────────
 //  CSS — Visuelle Sprache der Runtime. Reine Klassen-Selektoren, keine
@@ -203,6 +204,152 @@ export const MBK_ACTIVITY_RUNTIME_CSS = `/* mbk-activity-runtime ${MBK_ACTIVITY_
   background: #1d4ed8;
 }
 .mbk-lt__done-banner {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--mbk-success-soft);
+  border: 1px solid var(--mbk-success);
+  color: var(--mbk-success);
+  border-radius: 0.5rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ── Begriffe zuordnen (Match Terms) ──────────────────────── */
+.mbk-mt__instruction {
+  margin: 0 0 0.75rem 0;
+  font-weight: 500;
+}
+.mbk-mt__board {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  background: var(--mbk-bg);
+  border: 1px solid var(--mbk-border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+@media (min-width: 640px) {
+  .mbk-mt__board {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  }
+}
+.mbk-mt__col-label {
+  font-size: 0.85rem;
+  color: var(--mbk-muted);
+  margin-bottom: 0.5rem;
+}
+.mbk-mt__terms {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.mbk-mt__term {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  background: #fff;
+  border: 2px solid var(--mbk-border);
+  border-radius: 0.5rem;
+  font-weight: 500;
+}
+.mbk-mt__term.is-correct {
+  border-color: var(--mbk-success);
+  background: var(--mbk-success-soft);
+  color: var(--mbk-success);
+}
+.mbk-mt__term-slot {
+  flex: 1;
+  min-height: 1.75rem;
+  margin-left: 0.5rem;
+  padding: 0.2rem 0.6rem;
+  background: #fff;
+  border: 2px dashed var(--mbk-accent);
+  border-radius: 0.4rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  font-size: 0.9rem;
+}
+.mbk-mt__term-slot.is-over {
+  background: var(--mbk-accent-soft);
+  border-style: solid;
+}
+.mbk-mt__term-slot.is-filled {
+  border-style: solid;
+  border-color: var(--mbk-muted);
+  color: inherit;
+}
+.mbk-mt__term-slot.is-correct {
+  border-color: var(--mbk-success);
+  background: var(--mbk-success-soft);
+  color: var(--mbk-success);
+  cursor: default;
+}
+.mbk-mt__term-slot.is-wrong {
+  border-color: var(--mbk-danger);
+  background: var(--mbk-danger-soft);
+  color: var(--mbk-danger);
+}
+.mbk-mt__term-slot.is-hint-wrong {
+  animation: mbk-shake 0.3s ease-in-out;
+}
+.mbk-mt__pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-content: flex-start;
+  min-height: 3rem;
+}
+.mbk-mt__chip {
+  display: inline-block;
+  padding: 0.5rem 0.9rem;
+  background: #fff;
+  border: 1px solid var(--mbk-border);
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: grab;
+  user-select: none;
+  transition: transform 0.1s, box-shadow 0.1s;
+  max-width: 100%;
+}
+.mbk-mt__chip:hover {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+.mbk-mt__chip.is-dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+.mbk-mt__chip.is-used {
+  opacity: 0.3;
+  pointer-events: none;
+  text-decoration: line-through;
+}
+.mbk-mt__status {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.875rem;
+}
+.mbk-mt__status-text {
+  color: var(--mbk-muted);
+}
+.mbk-mt__status-text.is-done {
+  color: var(--mbk-success);
+  font-weight: 600;
+}
+.mbk-mt__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+.mbk-mt__done-banner {
   margin-top: 1rem;
   padding: 0.75rem 1rem;
   background: var(--mbk-success-soft);
@@ -604,6 +751,242 @@ export const MBK_ACTIVITY_RUNTIME_JS = `/* mbk-activity-runtime ${MBK_ACTIVITY_R
     });
 
     updateStatus();
+  });
+
+  // ── Plugin: Begriffe zuordnen (Match Terms) ──────────────
+  //
+  // Erwartetes Config-Schema:
+  //   {
+  //     "instruction": "Ordne die Begriffe ihren Definitionen zu.",
+  //     "pairs": [
+  //       { "term": "Mitose",   "definition": "Zellteilung mit identischem Erbgut" },
+  //       { "term": "Meiose",   "definition": "Reifeteilung der Keimzellen" }
+  //     ],
+  //     "distractors": ["Photosynthese"]
+  //   }
+  //
+  // - Links: Pool mit allen Definitionen + Distraktoren (gemischt).
+  // - Rechts: pro Begriff eine Drop-Zone.
+  // - Schüler zieht eine Definition zum passenden Begriff (oder Klick:
+  //   Definition antippen → erste leere Drop-Zone wird befüllt).
+  // - Sofortige Prüfung; richtige Paare werden grün + gesperrt, falsche rot.
+  // - Wenn alle richtig → Done-Banner + SCORM-Completion.
+  registerPlugin('match_terms', function (host, config) {
+    host.innerHTML = '';
+    host.classList.add('mbk-activity');
+
+    var pairs = Array.isArray(config.pairs) ? config.pairs : [];
+    pairs = pairs.filter(function (p) { return p && p.term && p.definition; });
+    if (pairs.length === 0) {
+      host.innerHTML = '<div class="mbk-activity__error">Keine Begriffspaare definiert.</div>';
+      return;
+    }
+    var distractors = (Array.isArray(config.distractors) ? config.distractors : [])
+      .map(function (d) { return (d && typeof d === 'object' && 'value' in d) ? d.value : d; })
+      .filter(function (d) { return d != null && String(d).trim() !== ''; });
+
+    if (config.instruction) {
+      host.appendChild(el('p', { className: 'mbk-mt__instruction', text: config.instruction }));
+    }
+
+    var board = el('div', { className: 'mbk-mt__board' });
+    var leftCol = el('div', {});
+    leftCol.appendChild(el('div', { className: 'mbk-mt__col-label', text: 'Definitionen' }));
+    var poolWrap = el('div', { className: 'mbk-mt__pool' });
+    leftCol.appendChild(poolWrap);
+
+    var rightCol = el('div', {});
+    rightCol.appendChild(el('div', { className: 'mbk-mt__col-label', text: 'Begriffe' }));
+    var termsWrap = el('div', { className: 'mbk-mt__terms' });
+    rightCol.appendChild(termsWrap);
+
+    board.appendChild(leftCol);
+    board.appendChild(rightCol);
+    host.appendChild(board);
+
+    var slotNodes = [];
+    for (var i = 0; i < pairs.length; i++) {
+      var row = el('div', { className: 'mbk-mt__term', dataset: { pairIndex: String(i) } });
+      var termLabel = el('span', { className: 'mbk-mt__term-label', text: pairs[i].term });
+      var slot = el('div', {
+        className: 'mbk-mt__term-slot',
+        dataset: { pairIndex: String(i), answer: pairs[i].definition },
+      });
+      slot.textContent = '\\u00a0';
+      slotNodes.push(slot);
+      row.appendChild(termLabel);
+      row.appendChild(slot);
+      termsWrap.appendChild(row);
+    }
+
+    var poolWords = [];
+    for (var pp = 0; pp < pairs.length; pp++) poolWords.push(pairs[pp].definition);
+    for (var dd = 0; dd < distractors.length; dd++) poolWords.push(distractors[dd]);
+    var mtSeed = 0;
+    for (var xx = 0; xx < poolWords.length; xx++) {
+      var ww = poolWords[xx];
+      for (var cc = 0; cc < ww.length; cc++) mtSeed = (mtSeed * 31 + ww.charCodeAt(cc)) & 0xffffffff;
+    }
+    function mtRng() { mtSeed = (mtSeed * 1664525 + 1013904223) & 0xffffffff; return ((mtSeed >>> 0) % 1000) / 1000; }
+    poolWords = poolWords.map(function (w, i) { return { w: w, k: mtRng() + i * 0.0001 }; })
+      .sort(function (a, b) { return a.k - b.k; })
+      .map(function (o) { return o.w; });
+
+    var chipNodes = [];
+    for (var kk = 0; kk < poolWords.length; kk++) {
+      var chip = el('span', {
+        className: 'mbk-mt__chip',
+        dataset: { word: poolWords[kk] },
+        text: poolWords[kk],
+        draggable: 'true',
+      });
+      chipNodes.push(chip);
+      poolWrap.appendChild(chip);
+    }
+
+    var statusRow = el('div', { className: 'mbk-mt__status' });
+    var statusText = el('span', { className: 'mbk-mt__status-text', text: '' });
+    var actions = el('div', { className: 'mbk-mt__actions' });
+    var hintBtn = el('button', { className: 'mbk-btn', text: 'Falsche markieren', type: 'button' });
+    var resetBtn = el('button', { className: 'mbk-btn', text: 'Zur\\u00fccksetzen', type: 'button' });
+    actions.appendChild(hintBtn);
+    actions.appendChild(resetBtn);
+    statusRow.appendChild(statusText);
+    statusRow.appendChild(actions);
+    host.appendChild(statusRow);
+
+    var doneBanner = null;
+
+    function refreshChipsMt() {
+      for (var i = 0; i < chipNodes.length; i++) {
+        var w = chipNodes[i].dataset.word;
+        var usedSomewhere = false;
+        for (var s = 0; s < slotNodes.length; s++) {
+          if (slotNodes[s].classList.contains('is-correct')
+              && normalizeAnswer(slotNodes[s].dataset.answer) === normalizeAnswer(w)) {
+            usedSomewhere = true; break;
+          }
+        }
+        chipNodes[i].classList.toggle('is-used', usedSomewhere);
+      }
+    }
+
+    function updateStatusMt() {
+      var correct = 0, wrong = 0, empty = 0;
+      for (var s = 0; s < slotNodes.length; s++) {
+        if (slotNodes[s].classList.contains('is-correct')) correct += 1;
+        else if (slotNodes[s].classList.contains('is-wrong')) wrong += 1;
+        else empty += 1;
+      }
+      if (correct === slotNodes.length) {
+        statusText.textContent = 'Super, alle ' + slotNodes.length + ' Begriffe sind richtig zugeordnet!';
+        statusText.classList.add('is-done');
+        if (!doneBanner) {
+          doneBanner = el('div', { className: 'mbk-mt__done-banner', text: '\\u2705 Aufgabe abgeschlossen.' });
+          host.appendChild(doneBanner);
+          scorm.setScore(1);
+          scorm.setCompleted();
+        }
+        hintBtn.disabled = true;
+      } else {
+        statusText.classList.remove('is-done');
+        var parts = [];
+        if (wrong > 0) parts.push(wrong + ' falsch');
+        if (empty > 0) parts.push(empty + ' noch leer');
+        statusText.textContent = parts.length > 0
+          ? 'Noch ' + parts.join(', ') + '.'
+          : 'Ziehe die Definitionen zu den passenden Begriffen.';
+        if (doneBanner) { doneBanner.remove(); doneBanner = null; }
+        hintBtn.disabled = wrong === 0;
+      }
+      refreshChipsMt();
+    }
+
+    function placeIntoSlot(slotIdx, word) {
+      var slot = slotNodes[slotIdx];
+      if (slot.classList.contains('is-correct')) return;
+      var expected = slot.dataset.answer;
+      var isRight = normalizeAnswer(expected) === normalizeAnswer(word);
+      slot.textContent = word;
+      slot.classList.remove('is-over');
+      slot.classList.add('is-filled');
+      slot.classList.toggle('is-correct', isRight);
+      slot.classList.toggle('is-wrong', !isRight);
+      updateStatusMt();
+    }
+
+    function clearSlot(slotIdx) {
+      var slot = slotNodes[slotIdx];
+      if (slot.classList.contains('is-correct')) return;
+      slot.textContent = '\\u00a0';
+      slot.classList.remove('is-filled', 'is-wrong');
+      updateStatusMt();
+    }
+
+    var mtDragged = null;
+    chipNodes.forEach(function (chip) {
+      chip.addEventListener('dragstart', function (ev) {
+        if (chip.classList.contains('is-used')) { ev.preventDefault(); return; }
+        mtDragged = chip.dataset.word;
+        chip.classList.add('is-dragging');
+        try { ev.dataTransfer.setData('text/plain', mtDragged); } catch (e) {}
+        ev.dataTransfer.effectAllowed = 'move';
+      });
+      chip.addEventListener('dragend', function () {
+        mtDragged = null;
+        chip.classList.remove('is-dragging');
+      });
+      chip.addEventListener('click', function () {
+        if (chip.classList.contains('is-used')) return;
+        for (var s = 0; s < slotNodes.length; s++) {
+          if (!slotNodes[s].classList.contains('is-correct')) {
+            placeIntoSlot(s, chip.dataset.word);
+            return;
+          }
+        }
+      });
+    });
+    slotNodes.forEach(function (slot, idx) {
+      slot.addEventListener('dragover', function (ev) {
+        if (slot.classList.contains('is-correct')) return;
+        ev.preventDefault();
+        slot.classList.add('is-over');
+      });
+      slot.addEventListener('dragleave', function () {
+        slot.classList.remove('is-over');
+      });
+      slot.addEventListener('drop', function (ev) {
+        ev.preventDefault();
+        if (slot.classList.contains('is-correct')) return;
+        var w = mtDragged;
+        if (!w) { try { w = ev.dataTransfer.getData('text/plain'); } catch (e) {} }
+        if (!w) return;
+        placeIntoSlot(idx, w);
+      });
+      slot.addEventListener('click', function () {
+        if (slot.classList.contains('is-correct')) return;
+        if (slot.classList.contains('is-filled')) clearSlot(idx);
+      });
+    });
+
+    hintBtn.addEventListener('click', function () {
+      slotNodes.forEach(function (slot) {
+        if (slot.classList.contains('is-wrong')) {
+          slot.classList.add('is-hint-wrong');
+          setTimeout(function () { slot.classList.remove('is-hint-wrong'); }, 600);
+        }
+      });
+    });
+    resetBtn.addEventListener('click', function () {
+      slotNodes.forEach(function (slot) {
+        slot.textContent = '\\u00a0';
+        slot.classList.remove('is-filled', 'is-correct', 'is-wrong');
+      });
+      if (doneBanner) { doneBanner.remove(); doneBanner = null; }
+      updateStatusMt();
+    });
+
+    updateStatusMt();
   });
 
   // ── Boot ─────────────────────────────────────────────────

@@ -79,11 +79,44 @@ export const AKTIVITAETSTYP_ANWEISUNGEN = [
     ].join('\n'),
   },
 
+  {
+    schluessel: 'aktivitaet_begriffe_zuordnen',
+    aktivitaet_name: 'Begriffe zuordnen',
+    anzeigename: 'Aktivität: Begriffe zuordnen',
+    sort_order: 310,
+    prompt_text: [
+      '## Begriffe-zuordnen-Aktivität (aktivitaet_name === "Begriffe zuordnen")',
+      '',
+      'Statt einer statischen Anzeige rendere NUR diesen Container (die Activity-Runtime macht alles andere):',
+      '',
+      '```html',
+      '<div class="mbk-activity"',
+      '     data-mbk-activity="match_terms"',
+      `     data-mbk-config='{"instruction":"…","pairs":[{"term":"…","definition":"…"},…],"distractors":["…"]}'></div>`,
+      '```',
+      '',
+      'Regeln für die Config:',
+      '- `instruction`: die Arbeitsanweisung (aus `field_values.instruction` oder `master_aufgaben[0].field_values.instruction`).',
+      '- `pairs`: Array aus `{"term": "…", "definition": "…"}`. Quelle: `field_values.pairs` bzw. `master_aufgaben[].field_values.pairs`. Diese Liste hat im Datenmodell die Schlüssel **`begriff`** und **`definition`** — beim Schreiben der Config heißt das Feld aber **`term`** (Mapping: `begriff` → `term`, `definition` → `definition`). Reihenfolge 1:1 übernehmen.',
+      '- `distractors`: optionale zusätzliche Definitionen, die zu keinem Begriff passen. Quelle: `field_values.distractors` (entweder Liste von Strings ODER Liste von Objekten `{value: "…"}` — beides erlaubt, einfach den jeweiligen Text in einen flachen String-Array überführen).',
+      '- **JSON muss valide sein**. Anführungszeichen innerhalb von Strings escapen.',
+      '- Wenn es **mehrere Master-Aufgaben** gibt: rendere pro Master einen eigenen Container hintereinander.',
+      '',
+      'KEINE eigene Spalten-Logik, KEIN Drag&Drop-Code, KEIN `<script>`, KEIN eigenes CSS — die Runtime macht das alles (Pool links mit Definitionen, Begriffe rechts mit Drop-Zonen, sofortige Prüfung, SCORM-Completion).',
+      '',
+      'Beispiel (zur Veranschaulichung, NICHT 1:1 kopieren):',
+      '```html',
+      '<div class="mbk-activity"',
+      '     data-mbk-activity="match_terms"',
+      `     data-mbk-config='{"instruction":"Ordne die Begriffe ihren Definitionen zu.","pairs":[{"term":"Mitose","definition":"Zellteilung mit identischem Erbgut"},{"term":"Meiose","definition":"Reifeteilung der Keimzellen"}],"distractors":["Photosynthese"]}'></div>`,
+      '```',
+    ].join('\n'),
+  },
+
   // ── Platzhalter für weitere Typen ──────────────────────────────
   // Sobald wir einen weiteren Typ auf die Activity-Runtime umstellen,
-  // kommt hier ein Eintrag analog zum Lückentext rein. Bis dahin
-  // gilt der Fallback-Hinweis im Master-System-Prompt ("rendere statisch
-  // wie bisher").
+  // kommt hier ein Eintrag analog rein. Bis dahin gilt der Fallback-
+  // Hinweis im Master-System-Prompt ("rendere statisch wie bisher").
 ];
 
 /**
