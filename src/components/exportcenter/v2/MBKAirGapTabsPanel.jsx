@@ -662,6 +662,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
             blockStatus={blockStatus}
             blockAggregate={blockAggregate}
             planItem={systemPlanItem}
+            payload={buildSysCtx()}
             onToggleDelivered={(v) => setDelivered('system_context', v)}
             onCopy={() => handleCopy(buildSysCtx())}
             onDownload={() => handleDownload(buildSysCtx(), `mbk-system-context_${baseSlug}.json`)}
