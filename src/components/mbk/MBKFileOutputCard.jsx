@@ -20,6 +20,12 @@ export default function MBKFileOutputCard({
   onGenerate = null,
   isGenerating = false,
   canGenerate = true,
+  // Optionaler menschen-lesbarer Titel ("Themenfeld X · Lernpaket Y"). Wenn
+  // gesetzt, wird er prominent angezeigt; der technische Dateiname rutscht
+  // als kleine Mono-Zeile darunter. Ohne displayTitle bleibt das alte
+  // Layout (nur Dateiname) erhalten — wichtig für ArchitektTab.
+  displayTitle = null,
+  subtitle = null,
 }) {
   const handleCopy = async () => {
     if (!content) return;
@@ -34,14 +40,30 @@ export default function MBKFileOutputCard({
   return (
     <div className="rounded-lg border bg-card overflow-hidden">
       <div className="flex items-center justify-between gap-2 px-3 py-2 border-b bg-muted/30">
-        <div className="flex items-center gap-2 min-w-0">
-          <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
-          <code className="text-xs font-mono font-semibold truncate">{filename}</code>
-          {kind && (
-            <span className="text-[10px] uppercase tracking-wide text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">
-              {kind}
-            </span>
-          )}
+        <div className="flex items-start gap-2 min-w-0">
+          <FileText className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 min-w-0 flex-wrap">
+              {displayTitle ? (
+                <span className="text-sm font-semibold truncate">{displayTitle}</span>
+              ) : (
+                <code className="text-xs font-mono font-semibold truncate">{filename}</code>
+              )}
+              {kind && (
+                <span className="text-[10px] uppercase tracking-wide text-muted-foreground bg-secondary px-1.5 py-0.5 rounded shrink-0">
+                  {kind}
+                </span>
+              )}
+            </div>
+            {subtitle && (
+              <p className="text-[11px] text-muted-foreground truncate mt-0.5">{subtitle}</p>
+            )}
+            {displayTitle && (
+              <code className="text-[10px] font-mono text-muted-foreground/70 truncate block mt-0.5">
+                {filename}
+              </code>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {onGenerate && (

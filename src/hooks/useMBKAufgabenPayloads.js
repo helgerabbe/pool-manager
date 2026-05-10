@@ -189,19 +189,54 @@ export function useMBKAufgabenPayloads(einheitId) {
   ]);
 
   // ── Slots ableiten: alle Aufgaben-Hüllen aus dem scorm_file_mapping. ──
+  //
+  // Pro Slot werden ein menschenlesbarer Titel (displayTitle) und ein
+  // Untertitel (subtitle) berechnet, damit die UI nicht nur die kryptische
+  // task-<uuid>.html anzeigt. Lernpakete bekommen "Themenfeld X · Paket Y",
+  // Bündel zeigen das Themenfeld bzw. die Einheit + Aufgaben-Anzahl.
   const taskSlots = useMemo(() => {
     const mapping = structurePayload?.scorm_file_mapping || [];
+    const themenfeldById = new Map((themenfelder || []).map((tf) => [tf.id, tf]));
+    const lernpaketById = new Map((lernpakete || []).map((lp) => [lp.id, lp]));
     return mapping
       .filter((e) => TASK_KINDS.has(e.kind))
-      .map((e) => ({
-        filename: e.filename,
-        kind: e.kind,
-        title: e.titel || e.filename,
-        sourceId: e.source_id,
-        containsPlaceholders: !!e.contains_placeholders,
-        placeholderActivityIds: e.placeholder_activity_ids || [],
-      }));
-  }, [structurePayload]);
+      .map((e) => {
+        let displayTitle = e.titel || e.filename;
+        let subtitle = null;
+
+        if (e.kind === 'lernpaket') {
+          const lp = lernpaketById.get(e.source_id);
+          const tf = lp?.themenfeld_id ? themenfeldById.get(lp.themenfeld_id) : null;
+          displayTitle = lp?.titel_des_pakets || e.titel || 'Lernpaket';
+          subtitle = tf?.titel
+            ? `Themenfeld: ${tf.titel}`
+            : 'Ohne Themenfeld';
+        } else if (e.kind === 'themenfeld_bundle') {
+          const isOrphan = e.source_id === 'orphan';
+          const tf = isOrphan ? null : themenfeldById.get(e.source_id);
+          displayTitle = isOrphan
+            ? 'Allgemeine Aufgaben ohne Themenfeld'
+            : (tf?.titel || e.titel || 'Themenfeld-Bündel');
+          const count = (e.contained_aufgabe_ids || []).length;
+          subtitle = `${count} Aufgabe${count === 1 ? '' : 'n'} (Ebene 2)`;
+        } else if (e.kind === 'projekt_bundle') {
+          displayTitle = e.titel || 'Projekte der Einheit';
+          const count = (e.contained_aufgabe_ids || []).length;
+          subtitle = `${count} Projekt${count === 1 ? '' : 'e'} (Ebene 3)`;
+        }
+
+        return {
+          filename: e.filename,
+          kind: e.kind,
+          title: e.titel || e.filename,
+          displayTitle,
+          subtitle,
+          sourceId: e.source_id,
+          containsPlaceholders: !!e.contains_placeholders,
+          placeholderActivityIds: e.placeholder_activity_ids || [],
+        };
+      });
+  }, [structurePayload, themenfelder, lernpakete]);
 
   // ── Voraussetzungen. ──
   const missingPrereqs = useMemo(() => {

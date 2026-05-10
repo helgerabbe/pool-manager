@@ -283,6 +283,8 @@ export default function AufgabenTab({ einheitId }) {
               <MBKFileOutputCard
                 key={slot.filename}
                 filename={slot.filename}
+                displayTitle={slot.displayTitle}
+                subtitle={slot.subtitle}
                 kind={kindLabel}
                 content={file?.content || ''}
                 isEmpty={!file}
