@@ -2,21 +2,30 @@
  * TabDriftIndicator.jsx
  *
  * Kleiner Punkt + Zähler am Tab-Trigger, damit der Operator auf einen
- * Blick sieht, in welchen Tabs Drift-Items liegen.
+ * Blick sieht, in welchen Tabs Items zur Generierung anstehen.
  *
  * Drei Zustände:
  *   - count = 0             → nichts
  *   - count > 0, hasNew     → blauer Punkt (neue Items)
- *   - count > 0, hasStale   → amber Punkt (out of sync)
+ *   - count > 0, hasStale   → amber Punkt (Payload veraltet, neu generieren)
  *   - hasNew + hasStale     → amber Punkt (Drift gewinnt vor Neu)
+ *
+ * Initial-Export-Sonderfall: Wenn `treatStaleAsNew === true`, werden
+ * Drift-Items als „neu" behandelt (vor dem ersten Moodle-Export ist
+ * „veraltet" semantisch sinnlos).
  */
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export default function TabDriftIndicator({ newCount = 0, staleCount = 0 }) {
+export default function TabDriftIndicator({ newCount = 0, staleCount = 0, treatStaleAsNew = false }) {
   const total = newCount + staleCount;
   if (total === 0) return null;
-  const isStale = staleCount > 0;
+
+  // Initial-Export: Stale-Items werden zu New-Items.
+  const effectiveNew = treatStaleAsNew ? newCount + staleCount : newCount;
+  const effectiveStale = treatStaleAsNew ? 0 : staleCount;
+  const isStale = effectiveStale > 0;
+
   return (
     <span
       className={cn(
@@ -27,8 +36,8 @@ export default function TabDriftIndicator({ newCount = 0, staleCount = 0 }) {
       )}
       title={
         isStale
-          ? `${staleCount} Out-of-Sync${newCount > 0 ? ` · ${newCount} neu` : ''}`
-          : `${newCount} neu`
+          ? `${effectiveStale} neu generieren${effectiveNew > 0 ? ` · ${effectiveNew} neu` : ''}`
+          : `${effectiveNew} neu`
       }
     >
       {total}

@@ -18,6 +18,7 @@ export default function AufgabenTab({
   taskGroups,
   taskBundle,
   itemPlanLookup,
+  isInitialExport = false,
   onToggleDelivered,
   onCopy,
   onDownload,
@@ -47,6 +48,7 @@ export default function AufgabenTab({
             <span className="text-foreground/80">{it.subLabel}</span>
             <SyncStatusBadge
               status={planStatusToUiStatus(itemPlanLookup(it.key)?.status)}
+              treatStaleAsNew={isInitialExport}
             />
             {it.kiHint && (
               <span
@@ -80,6 +82,7 @@ export default function AufgabenTab({
         delivered={blockStatus.task_content.delivered}
         rawDelivered={blockStatus.task_content.rawDelivered}
         isStale={blockStatus.task_content.isStale || blockAggregate.mbk_task_content_payload.hasAnyStale}
+        treatStaleAsNew={isInitialExport}
         onToggleDelivered={onToggleDelivered}
         onCopy={onCopy}
         onDownload={onDownload}

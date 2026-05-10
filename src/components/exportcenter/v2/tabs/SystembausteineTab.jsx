@@ -20,6 +20,7 @@ export default function SystembausteineTab({
   systembausteinItems,
   systembausteinGroups,
   itemPlanLookup,
+  isInitialExport = false,
   onToggleDelivered,
   onCopy,
   onDownload,
@@ -36,6 +37,7 @@ export default function SystembausteineTab({
           <span>{it.subLabel}</span>
           <SyncStatusBadge
             status={planStatusToUiStatus(itemPlanLookup(it.key)?.status)}
+            treatStaleAsNew={isInitialExport}
           />
           <code className="text-[10px] text-muted-foreground/70 font-mono">
             {it.bausteinId}
@@ -55,6 +57,7 @@ export default function SystembausteineTab({
         delivered={blockStatus.systembausteine.delivered}
         rawDelivered={blockStatus.systembausteine.rawDelivered}
         isStale={blockStatus.systembausteine.isStale || blockAggregate.mbk_systembaustein_payload.hasAnyStale}
+        treatStaleAsNew={isInitialExport}
         onToggleDelivered={onToggleDelivered}
         onCopy={onCopy}
         onDownload={onDownload}

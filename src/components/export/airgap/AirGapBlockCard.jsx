@@ -8,7 +8,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Copy, Download, FileArchive, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Copy, Download, FileArchive, CheckCircle2, RotateCcw } from 'lucide-react';
 
 export default function AirGapBlockCard({
   index,
@@ -19,6 +19,11 @@ export default function AirGapBlockCard({
   delivered,
   isStale,
   rawDelivered,
+  // Initial-Export (Einheit noch nie exportiert): Stale-Indikator wird
+  // als „Neu generieren" entschärft — vor dem ersten Export ist
+  // „veraltet" semantisch ohnehin sinnlos. Default false = bestehende
+  // UX bleibt erhalten.
+  treatStaleAsNew = false,
   onToggleDelivered,
   // Aktionen für das Bundle/Haupt-Payload:
   onCopy,
@@ -59,9 +64,12 @@ export default function AirGapBlockCard({
                   <CheckCircle2 className="w-3.5 h-3.5" /> übergeben
                 </span>
               )}
-              {isStale && (
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700">
-                  <AlertTriangle className="w-3.5 h-3.5" /> System-Kontext geändert
+              {isStale && !treatStaleAsNew && (
+                <span
+                  className="inline-flex items-center gap-1 text-xs font-medium text-amber-700"
+                  title="Globale Regeln (UI-Bausteine, Mission-Statement, Lerntypen-Definitionen) wurden seit der letzten Generierung geändert."
+                >
+                  <RotateCcw className="w-3.5 h-3.5" /> Neu generieren empfohlen
                 </span>
               )}
             </h3>
@@ -111,10 +119,11 @@ export default function AirGapBlockCard({
         </div>
       </div>
 
-      {isStale && rawDelivered && (
+      {isStale && rawDelivered && !treatStaleAsNew && (
         <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-900">
-          Du hast diesen Block schon einmal als übergeben markiert, aber der
-          System-Kontext-Hash hat sich seitdem geändert. Bitte erneut kopieren
+          Du hast diesen Block schon einmal als übergeben markiert, aber
+          globale Regeln (UI-Bausteine, Mission-Statement, Lerntypen-
+          Definitionen) wurden seitdem geändert. Bitte erneut generieren
           und das Häkchen neu setzen.
         </div>
       )}

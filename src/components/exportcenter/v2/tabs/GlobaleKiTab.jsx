@@ -14,6 +14,7 @@ export default function GlobaleKiTab({
   blockAggregate,
   planItem,
   payload,
+  isInitialExport = false,
   onToggleDelivered,
   onCopy,
   onDownload,
@@ -32,7 +33,7 @@ export default function GlobaleKiTab({
     <div className="space-y-3">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <span>Status dieses Payloads:</span>
-        <SyncStatusBadge status={uiStatus} />
+        <SyncStatusBadge status={uiStatus} treatStaleAsNew={isInitialExport} />
       </div>
       <AirGapBlockCard
         index={3}
@@ -42,6 +43,7 @@ export default function GlobaleKiTab({
         delivered={blockStatus.system_context.delivered}
         rawDelivered={blockStatus.system_context.rawDelivered}
         isStale={blockStatus.system_context.isStale || blockAggregate.mbk_system_context.hasAnyStale}
+        treatStaleAsNew={isInitialExport}
         onToggleDelivered={onToggleDelivered}
         onCopy={onCopy}
         onDownload={onDownload}

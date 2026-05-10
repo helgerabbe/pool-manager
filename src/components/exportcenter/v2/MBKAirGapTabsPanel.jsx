@@ -557,6 +557,17 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
     return counts;
   }, [bulkPlan]);
 
+  // Initial-Export-Flag: Die Einheit wurde noch nie nach Moodle exportiert.
+  // Vor dem ersten Export ist „Out of Sync" semantisch sinnlos — Hash-
+  // Drifts werden in der UI deshalb als „Neu" entschärft. Sobald der
+  // Spezialist im Export-Center „Export beendet & Freigeben" geklickt
+  // hat (`export_published_at` gesetzt), greift wieder die strenge
+  // Drift-Erkennung.
+  const isInitialExport = useMemo(() => {
+    if (!einheit) return false;
+    return !einheit.last_synced_at && !einheit.export_published_at;
+  }, [einheit]);
+
   const uiPlanItem = useMemo(
     () => (bulkPlan || []).find((it) => it.section === 'mbk_ui_config') || null,
     [bulkPlan]
@@ -594,32 +605,32 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
           <TabsTrigger value="ui-config" className="text-xs">
             <span className="font-mono mr-1 opacity-60">0·</span>
             🎨 UI
-            <TabDriftIndicator {...tabCounts.mbk_ui_config} />
+            <TabDriftIndicator {...tabCounts.mbk_ui_config} treatStaleAsNew={isInitialExport} />
           </TabsTrigger>
           <TabsTrigger value="struktur" className="text-xs">
             <span className="font-mono mr-1 opacity-60">1·</span>
             Struktur
-            <TabDriftIndicator {...tabCounts.mbk_structure_payload} />
+            <TabDriftIndicator {...tabCounts.mbk_structure_payload} treatStaleAsNew={isInitialExport} />
           </TabsTrigger>
           <TabsTrigger value="aufgaben" className="text-xs">
             <span className="font-mono mr-1 opacity-60">2·</span>
             Aufgaben
-            <TabDriftIndicator {...tabCounts.mbk_task_content_payload} />
+            <TabDriftIndicator {...tabCounts.mbk_task_content_payload} treatStaleAsNew={isInitialExport} />
           </TabsTrigger>
           <TabsTrigger value="globale-ki" className="text-xs">
             <span className="font-mono mr-1 opacity-60">3·</span>
             Globale KI
-            <TabDriftIndicator {...tabCounts.mbk_system_context} />
+            <TabDriftIndicator {...tabCounts.mbk_system_context} treatStaleAsNew={isInitialExport} />
           </TabsTrigger>
           <TabsTrigger value="systembausteine" className="text-xs">
             <span className="font-mono mr-1 opacity-60">4·</span>
             Systembausteine
-            <TabDriftIndicator {...tabCounts.mbk_systembaustein_payload} />
+            <TabDriftIndicator {...tabCounts.mbk_systembaustein_payload} treatStaleAsNew={isInitialExport} />
           </TabsTrigger>
           <TabsTrigger value="ki-aufgaben" className="text-xs">
             <span className="font-mono mr-1 opacity-60">5·</span>
             KI-Aufgaben
-            <TabDriftIndicator {...tabCounts.mbk_micro_payload} />
+            <TabDriftIndicator {...tabCounts.mbk_micro_payload} treatStaleAsNew={isInitialExport} />
           </TabsTrigger>
         </TabsList>
 
@@ -637,6 +648,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
             blockAggregate={blockAggregate}
             planItem={uiPlanItem}
             payload={buildUi()}
+            isInitialExport={isInitialExport}
             onToggleDelivered={(v) => setDelivered('ui_config', v)}
             onCopy={() => handleCopy(buildUi())}
             onDownload={() => handleDownload(buildUi(), `mbk-ui-config_${baseSlug}.json`)}
@@ -649,6 +661,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
             blockAggregate={blockAggregate}
             planItem={structurePlanItem}
             payload={buildStructure()}
+            isInitialExport={isInitialExport}
             onToggleDelivered={(v) => setDelivered('structure', v)}
             onCopy={() => handleCopy(buildStructure())}
             onDownload={() => handleDownload(buildStructure(), `mbk-structure_${baseSlug}.json`)}
@@ -663,6 +676,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
             taskGroups={taskGroups}
             taskBundle={taskBundle}
             itemPlanLookup={itemPlanLookup}
+            isInitialExport={isInitialExport}
             onToggleDelivered={(v) => setDelivered('task_content', v)}
             onCopy={() => handleCopy(taskBundle)}
             onDownload={() => handleDownload(taskBundle, `mbk-task-content_${baseSlug}.json`)}
@@ -689,6 +703,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
             blockAggregate={blockAggregate}
             planItem={systemPlanItem}
             payload={buildSysCtx()}
+            isInitialExport={isInitialExport}
             onToggleDelivered={(v) => setDelivered('system_context', v)}
             onCopy={() => handleCopy(buildSysCtx())}
             onDownload={() => handleDownload(buildSysCtx(), `mbk-system-context_${baseSlug}.json`)}
@@ -702,6 +717,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
             systembausteinItems={systembausteinItems}
             systembausteinGroups={systembausteinGroups}
             itemPlanLookup={itemPlanLookup}
+            isInitialExport={isInitialExport}
             onToggleDelivered={(v) => setDelivered('systembausteine', v)}
             onCopy={() => handleCopy(systembausteinBundle)}
             onDownload={() => handleDownload(systembausteinBundle, `mbk-systembausteine_${baseSlug}.json`)}
@@ -729,6 +745,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
             microItems={microItems}
             microGroups={microGroups}
             itemPlanLookup={itemPlanLookup}
+            isInitialExport={isInitialExport}
             onToggleDelivered={(v) => setDelivered('micro', v)}
             onCopy={() => handleCopy(microBundle)}
             onDownload={() => handleDownload(microBundle, `mbk-micro_${baseSlug}.json`)}

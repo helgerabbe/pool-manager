@@ -20,6 +20,7 @@ export default function UiConfigTab({
   blockAggregate,
   planItem,
   payload,
+  isInitialExport = false,
   onToggleDelivered,
   onCopy,
   onDownload,
@@ -38,7 +39,7 @@ export default function UiConfigTab({
     <div className="space-y-3">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <span>Status dieses Payloads:</span>
-        <SyncStatusBadge status={uiStatus} />
+        <SyncStatusBadge status={uiStatus} treatStaleAsNew={isInitialExport} />
       </div>
       <AirGapBlockCard
         index={0}
@@ -48,6 +49,7 @@ export default function UiConfigTab({
         delivered={blockStatus.ui_config.delivered}
         rawDelivered={blockStatus.ui_config.rawDelivered}
         isStale={blockStatus.ui_config.isStale || blockAggregate.mbk_ui_config.hasAnyStale}
+        treatStaleAsNew={isInitialExport}
         onToggleDelivered={onToggleDelivered}
         onCopy={onCopy}
         onDownload={onDownload}

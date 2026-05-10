@@ -16,6 +16,7 @@ export default function KiAufgabenTab({
   microItems,
   microGroups,
   itemPlanLookup,
+  isInitialExport = false,
   onToggleDelivered,
   onCopy,
   onDownload,
@@ -32,6 +33,7 @@ export default function KiAufgabenTab({
           <span>{it.subLabel}</span>
           <SyncStatusBadge
             status={planStatusToUiStatus(itemPlanLookup(it.key)?.status)}
+            treatStaleAsNew={isInitialExport}
           />
           <code className="text-[10px] text-muted-foreground/70 font-mono">
             {it.key.split('::').pop()}
@@ -51,6 +53,7 @@ export default function KiAufgabenTab({
         delivered={blockStatus.micro.delivered}
         rawDelivered={blockStatus.micro.rawDelivered}
         isStale={blockStatus.micro.isStale || blockAggregate.mbk_micro_payload.hasAnyStale}
+        treatStaleAsNew={isInitialExport}
         onToggleDelivered={onToggleDelivered}
         onCopy={onCopy}
         onDownload={onDownload}
