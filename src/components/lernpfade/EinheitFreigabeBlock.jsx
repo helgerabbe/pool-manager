@@ -246,10 +246,19 @@ export default function EinheitFreigabeBlock({ einheitId, darfFreigeben = false 
                 Freigabe aufheben
               </Button>
             )}
-            {(status === EXPORT_LIFECYCLE_STATUS.EXPORT_RUNNING ||
-              status === EXPORT_LIFECYCLE_STATUS.PUBLISHED) && (
+            {status === EXPORT_LIFECYCLE_STATUS.EXPORT_RUNNING && (
+              <span
+                className="text-[11px] text-orange-700 italic max-w-[28rem] text-right"
+                title="Das Moodle-Team hat die Einheit für den Export gesperrt. Bitte mit dem Export-Team Kontakt aufnehmen, falls noch Korrekturen nötig sind."
+              >
+                🔒 Diese Einheit wird gerade nach Moodle exportiert. Die
+                Freigabe kann nicht aufgehoben werden — bitte mit dem
+                Moodle-Team Kontakt aufnehmen.
+              </span>
+            )}
+            {status === EXPORT_LIFECYCLE_STATUS.PUBLISHED && (
               <span className="text-[11px] text-muted-foreground italic">
-                Aufhebung nur über das Export-Center
+                Bereits in Moodle veröffentlicht — Aufhebung nur über das Export-Center.
               </span>
             )}
           </div>

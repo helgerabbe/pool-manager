@@ -17,7 +17,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Loader2, AlertTriangle, CheckCircle2, Sparkles, Rocket } from 'lucide-react';
+import { Loader2, AlertTriangle, CheckCircle2, Sparkles, Rocket, Lock, Unlock } from 'lucide-react';
 import { toast } from 'sonner';
 import EinheitExportLifecycleBadge from '@/components/einheiten/EinheitExportLifecycleBadge';
 import { EXPORT_LIFECYCLE_STATUS, EXPORT_LIFECYCLE_LABELS } from '@/lib/exportLifecycle';
@@ -44,6 +44,7 @@ const SYNC_META = {
 export default function MBKEinheitStatusCard({ einheitId }) {
   const queryClient = useQueryClient();
   const [marking, setMarking] = React.useState(false);
+  const [toggling, setToggling] = React.useState(false);
 
   const { data: einheit, isLoading } = useQuery({
     queryKey: ['mbk-einheit-status', einheitId],
@@ -55,6 +56,15 @@ export default function MBKEinheitStatusCard({ einheitId }) {
     staleTime: 15_000,
   });
 
+  const invalidateLifecycle = () => {
+    // Sync-, Lifecycle-, Cockpit- und Listen-Anzeigen neu laden, damit der
+    // Lock-Status auch im Lernpfad-Architekt sofort sichtbar ist.
+    queryClient.invalidateQueries({ queryKey: ['mbk-einheit-status', einheitId] });
+    queryClient.invalidateQueries({ queryKey: ['mbk-einheiten-list'] });
+    queryClient.invalidateQueries({ queryKey: ['einheitensync'] });
+    queryClient.invalidateQueries({ queryKey: ['einheitFreigabeStatus', einheitId] });
+  };
+
   const handleMarkPublished = async () => {
     if (!einheitId || marking) return;
     setMarking(true);
@@ -62,10 +72,7 @@ export default function MBKEinheitStatusCard({ einheitId }) {
       const res = await base44.functions.invoke('mbkMarkEinheitPublished', { einheitId });
       if (res?.data?.ok) {
         toast.success('Einheit ist jetzt als in Moodle aktiv markiert.');
-        // Sync- und Lifecycle-Anzeigen sowie Einheitenlisten neu laden.
-        queryClient.invalidateQueries({ queryKey: ['mbk-einheit-status', einheitId] });
-        queryClient.invalidateQueries({ queryKey: ['mbk-einheiten-list'] });
-        queryClient.invalidateQueries({ queryKey: ['einheitensync'] });
+        invalidateLifecycle();
       } else {
         toast.error(res?.data?.error || 'Markieren fehlgeschlagen.');
       }
@@ -73,6 +80,30 @@ export default function MBKEinheitStatusCard({ einheitId }) {
       toast.error(err?.message || 'Unbekannter Fehler.');
     } finally {
       setMarking(false);
+    }
+  };
+
+  // Export-Lock toggeln (final_freigegeben ↔ export_running). Verhindert,
+  // dass die Fachschaftsleitung mitten im Export die Freigabe zurücknimmt.
+  const handleToggleExportLock = async (action) => {
+    if (!einheitId || toggling) return;
+    setToggling(true);
+    try {
+      const res = await base44.functions.invoke('mbkToggleExportLock', { einheitId, action });
+      if (res?.data?.ok) {
+        toast.success(
+          action === 'lock'
+            ? 'Einheit für den Export gesperrt. Die Freigabe kann jetzt nicht mehr aufgehoben werden.'
+            : 'Export-Sperre aufgehoben. Die Fachschaftsleitung kann die Freigabe jetzt wieder zurücknehmen.'
+        );
+        invalidateLifecycle();
+      } else {
+        toast.error(res?.data?.error || 'Aktion fehlgeschlagen.');
+      }
+    } catch (err) {
+      toast.error(err?.message || 'Unbekannter Fehler.');
+    } finally {
+      setToggling(false);
     }
   };
 
@@ -97,6 +128,8 @@ export default function MBKEinheitStatusCard({ einheitId }) {
 
   const lifecycle = einheit.export_lifecycle_status || EXPORT_LIFECYCLE_STATUS.DRAFT;
   const isDraft = lifecycle === EXPORT_LIFECYCLE_STATUS.DRAFT;
+  const isFinal = lifecycle === EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN;
+  const isExportRunning = lifecycle === EXPORT_LIFECYCLE_STATUS.EXPORT_RUNNING;
   const isPublished = lifecycle === EXPORT_LIFECYCLE_STATUS.PUBLISHED;
   const lifecycleLabel = EXPORT_LIFECYCLE_LABELS[lifecycle] || lifecycle;
 
@@ -125,6 +158,103 @@ export default function MBKEinheitStatusCard({ einheitId }) {
             </Badge>
           )}
         </div>
+
+        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+        {/* Export-Lock — verhindert, dass die Fachschaftsleitung die Freigabe
+            zurücknimmt, während das Moodle-Team gerade exportiert. Nur
+            sichtbar bei final_freigegeben oder export_running. */}
+        {(isFinal || isExportRunning) && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                size="sm"
+                variant={isExportRunning ? 'default' : 'outline'}
+                disabled={toggling}
+                className={`gap-1.5 ${isExportRunning ? 'bg-orange-600 hover:bg-orange-700 text-white border-transparent' : ''}`}
+                title={
+                  isExportRunning
+                    ? 'Export-Sperre aufheben — Fachschaftsleitung kann die Freigabe wieder zurücknehmen.'
+                    : 'Einheit für den Export sperren — Fachschaftsleitung kann die Freigabe nicht mehr aufheben.'
+                }
+              >
+                {toggling ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : isExportRunning ? (
+                  <Unlock className="w-3.5 h-3.5" />
+                ) : (
+                  <Lock className="w-3.5 h-3.5" />
+                )}
+                {isExportRunning ? 'Sperre aufheben' : 'Für Export sperren'}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  {isExportRunning ? (
+                    <>
+                      <Unlock className="w-5 h-5 text-emerald-600" />
+                      Export-Sperre aufheben?
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-5 h-5 text-orange-600" />
+                      Einheit für den Export sperren?
+                    </>
+                  )}
+                </AlertDialogTitle>
+                <AlertDialogDescription asChild>
+                  <div className="space-y-3 text-sm">
+                    {isExportRunning ? (
+                      <>
+                        <p>
+                          Mit dieser Aktion gibst du die Einheit wieder frei für die
+                          Fachschaftsleitung — sie kann die finale Freigabe dann zurücknehmen
+                          und Inhalte erneut bearbeiten.
+                        </p>
+                        <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900">
+                          <strong>Wichtig:</strong> Wenn die Einheit anschließend erneut
+                          freigegeben wird, musst du den Export <strong>von vorne beginnen</strong> —
+                          alle bisher generierten Dateien sind dann nicht mehr garantiert
+                          aktuell.
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <p>
+                          Mit dieser Aktion sperrst du die Einheit für den laufenden
+                          Moodle-Export. Solange die Sperre aktiv ist, kann die
+                          Fachschaftsleitung die finale Freigabe <strong>nicht mehr
+                          aufheben</strong> — sie sieht stattdessen im Lernpfad-Architekt einen
+                          Hinweis, dass die Einheit gerade exportiert wird.
+                        </p>
+                        <div className="rounded-md border border-blue-300 bg-blue-50 p-3 text-blue-900">
+                          <strong>So geht's weiter:</strong> Wenn die Fachschaftsleitung
+                          während deines Exports doch noch eine Korrektur wünscht, soll sie
+                          dich kontaktieren. Du hebst die Sperre dann hier manuell auf
+                          („Sperre aufheben"), die Korrektur wird vorgenommen, und ihr
+                          startet den Export anschließend von vorne.
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => handleToggleExportLock(isExportRunning ? 'unlock' : 'lock')}
+                  className={
+                    isExportRunning
+                      ? 'bg-emerald-600 hover:bg-emerald-700 focus-visible:ring-emerald-600'
+                      : 'bg-orange-600 hover:bg-orange-700 focus-visible:ring-orange-600'
+                  }
+                >
+                  {isExportRunning ? 'Ja, Sperre aufheben' : 'Ja, Einheit sperren'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
 
         {/* "In Moodle aktiv markieren" — bestätigt manuell, dass die Einheit
             erfolgreich in Moodle hochgeladen wurde. Setzt Lifecycle auf
@@ -202,6 +332,7 @@ export default function MBKEinheitStatusCard({ einheitId }) {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        </div>
       </div>
 
       {isDraft && (
