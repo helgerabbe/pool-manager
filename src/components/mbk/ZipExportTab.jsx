@@ -80,6 +80,61 @@ export default function ZipExportTab({ einheitId }) {
     enabled: !!einheitId,
   });
 
+  // Themenfelder + Lernpakete laden, damit wir pro Datei einen
+  // menschen-lesbaren Sub-Titel ("Lernpaket · Themenfeld X · Paket Y")
+  // anzeigen können — die source_id allein ist eine kryptische UUID.
+  const { data: themenfelder = [] } = useQuery({
+    queryKey: ['mbk-zip-tf', einheitId],
+    queryFn: () => base44.entities.Themenfeld.filter({ einheit_id: einheitId }),
+    enabled: !!einheitId,
+    staleTime: 30_000,
+  });
+  const { data: lernpakete = [] } = useQuery({
+    queryKey: ['mbk-zip-lp', einheitId],
+    queryFn: () => base44.entities.Lernpakete.filter({ einheit_id: einheitId }),
+    enabled: !!einheitId,
+    staleTime: 30_000,
+  });
+
+  const themenfeldById = useMemo(
+    () => new Map((themenfelder || []).map((tf) => [tf.id, tf])),
+    [themenfelder]
+  );
+  const lernpaketById = useMemo(
+    () => new Map((lernpakete || []).map((lp) => [lp.id, lp])),
+    [lernpakete]
+  );
+
+  // Liefert die Klartext-Beschreibung für die zweite Zeile in der Liste.
+  // Beispiele:
+  //   - Lernpaket · Themenfeld: Baumdiagramme · Paket: Zweistufige Bäume
+  //   - Themenfeld-Bündel · Themenfeld: Stochastik
+  //   - Dashboard · Pragmatiker
+  const describeFile = (f) => {
+    const kindLabel = KIND_LABELS[f.kind] || f.kind;
+    if (f.kind === 'lernpaket') {
+      const lp = lernpaketById.get(f.source_id);
+      const tf = lp?.themenfeld_id ? themenfeldById.get(lp.themenfeld_id) : null;
+      const tfPart = tf?.titel ? `Themenfeld: ${tf.titel}` : 'Ohne Themenfeld';
+      const lpPart = lp?.titel_des_pakets ? `Paket: ${lp.titel_des_pakets}` : null;
+      return [kindLabel, tfPart, lpPart].filter(Boolean);
+    }
+    if (f.kind === 'themenfeld_bundle') {
+      if (f.source_id === 'orphan') {
+        return [kindLabel, 'Aufgaben ohne Themenfeld'];
+      }
+      const tf = themenfeldById.get(f.source_id);
+      return [kindLabel, tf?.titel ? `Themenfeld: ${tf.titel}` : 'Themenfeld'];
+    }
+    if (f.kind === 'projekt_bundle') {
+      return [kindLabel, 'Projekte der Einheit'];
+    }
+    if (f.kind === 'dashboard') {
+      return [kindLabel, f.source_id || ''];
+    }
+    return [kindLabel];
+  };
+
   // Sortierte Liste + Default-Auswahl: alles ist initial ausgewählt.
   const sortedFiles = useMemo(() => {
     const arr = [...files];
@@ -275,7 +330,12 @@ export default function ZipExportTab({ einheitId }) {
                       {f.filename}
                     </code>
                     <div className="text-[11px] text-muted-foreground flex items-center gap-2 flex-wrap">
-                      <span>{KIND_LABELS[f.kind] || f.kind}</span>
+                      {describeFile(f).map((part, idx, arr) => (
+                        <React.Fragment key={`d-${idx}`}>
+                          <span className="truncate max-w-[260px]">{part}</span>
+                          {idx < arr.length - 1 && <span>·</span>}
+                        </React.Fragment>
+                      ))}
                       <span>·</span>
                       <span>{GENERATOR_LABELS[f.generator] || f.generator}</span>
                       <span>·</span>
