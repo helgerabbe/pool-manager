@@ -175,7 +175,24 @@ Deno.serve(async (req) => {
       auftragsZeile,
     ].join('\n');
 
-    const fullPrompt = `${ARCHITEKT_SYSTEM_PROMPT}\n\n---\n\n${userPrompt}`;
+    // Override-Prompt aus MBKGlobalPrompt (Schlüssel `mbk_architekt_system_prompt`)
+    // — wenn vorhanden und aktiv, ersetzt er den eingebauten Default. So kann
+    // der Operator den Architekten-Prompt in der MBK-Konsole live anpassen,
+    // ohne dass ein Re-Deploy nötig ist.
+    let systemPrompt = ARCHITEKT_SYSTEM_PROMPT;
+    try {
+      const overrides = await base44.asServiceRole.entities.MBKGlobalPrompt.filter({
+        schluessel: 'mbk_architekt_system_prompt',
+      });
+      const ov = overrides?.[0];
+      if (ov && ov.ist_aktiv !== false && typeof ov.prompt_text === 'string' && ov.prompt_text.trim().length > 0) {
+        systemPrompt = ov.prompt_text;
+      }
+    } catch (_err) {
+      // Fallback auf Default reicht — Override ist optional.
+    }
+
+    const fullPrompt = `${systemPrompt}\n\n---\n\n${userPrompt}`;
     const usedModel = model || 'claude_sonnet_4_6';
 
     // ── LLM-Call ──

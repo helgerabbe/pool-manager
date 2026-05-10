@@ -24,7 +24,8 @@ import { toast } from 'sonner';
 import MBKFileOutputCard from './MBKFileOutputCard';
 import MBKPayloadsDialog from './MBKPayloadsDialog';
 import { useMBKArchitektPayloads } from '@/hooks/useMBKArchitektPayloads';
-import { ARCHITEKT_SYSTEM_PROMPT, ARCHITEKT_PROMPT_VERSION } from '@/lib/mbkArchitektPrompt';
+import { useMBKEditablePrompts } from '@/hooks/useMBKEditablePrompts';
+import { ARCHITEKT_PROMPT_VERSION } from '@/lib/mbkArchitektPrompt';
 
 // Slots in der gewünschten Anzeige-Reihenfolge.
 const ARCHITEKT_SLOTS = [
@@ -48,6 +49,9 @@ export default function ArchitektTab({ einheitId }) {
     structurePayload,
     missingPrereqs,
   } = useMBKArchitektPayloads(einheitId);
+
+  // ── Editor-States für die bearbeitbaren Bausteine. ──
+  const editable = useMBKEditablePrompts();
 
   // ── Bereits generierte Files laden. ──
   const { data: generatedFiles = [], isLoading: loadingFiles } = useQuery({
@@ -198,12 +202,49 @@ export default function ArchitektTab({ einheitId }) {
         payloads={[
           {
             label: 'Master-System-Prompt (Architekt)',
-            payload: ARCHITEKT_SYSTEM_PROMPT,
+            payload: editable.architekt.value,
             format: 'text',
             subLabel: `Version ${ARCHITEKT_PROMPT_VERSION} · wird als System-Anweisung an die KI übergeben`,
+            editConfig: { editable: true, ...editable.architekt },
           },
-          { label: 'UI-Config (Payload 1)', payload: uiConfigPayload },
-          { label: 'Strukturpayload (Payload 2)', payload: structurePayload },
+          {
+            label: 'UI-Baustein: CSS-Variablen',
+            payload: editable.uiCss.value,
+            format: 'text',
+            subLabel: 'ui_css_variables · Inline-CSS für jede generierte HTML-Datei',
+            editConfig: { editable: true, ...editable.uiCss },
+          },
+          {
+            label: 'UI-Baustein: Tab-Bar HTML',
+            payload: editable.uiTabBar.value,
+            format: 'text',
+            subLabel: 'ui_tab_bar_html · Tab-Navigation in den vier Dashboards',
+            editConfig: { editable: true, ...editable.uiTabBar },
+          },
+          {
+            label: 'UI-Baustein: Header-Template',
+            payload: editable.uiHeader.value,
+            format: 'text',
+            subLabel: 'ui_default_header_html · Header mit Back-Button für Aufgaben/Bündel',
+            editConfig: { editable: true, ...editable.uiHeader },
+          },
+          {
+            label: 'UI-Config (Payload 1, generiert)',
+            payload: uiConfigPayload,
+            subLabel: 'Wird automatisch aus den UI-Bausteinen oben gebaut',
+            editConfig: {
+              editable: false,
+              readOnlyReason: 'Wird automatisch aus den drei UI-Bausteinen oben gebaut.',
+            },
+          },
+          {
+            label: 'Strukturpayload (Payload 2)',
+            payload: structurePayload,
+            editConfig: {
+              editable: false,
+              readOnlyReason: 'Wird deterministisch aus den Rohdaten der Einheit erzeugt und kann nicht direkt bearbeitet werden.',
+            },
+          },
         ]}
       />
 
