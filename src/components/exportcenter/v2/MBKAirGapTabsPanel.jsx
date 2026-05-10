@@ -55,6 +55,7 @@ import {
 import { useSchulStammdaten } from '@/hooks/useSchulStammdaten';
 import { useAirGapHandoverState } from '@/hooks/useAirGapHandoverState';
 import { groupTaskItems, groupMicroItems, groupSystembausteinItems } from '@/lib/airGapBundleGroups';
+import { buildLernpaketSubLabel, buildAllgemeineAufgabeSubLabel } from '@/lib/airGapTaskItemSubLabel';
 
 import InfoTab from './tabs/InfoTab';
 import MetaPromptTab from './tabs/MetaPromptTab';
@@ -330,33 +331,47 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
 
     const lpItems = [...lernpakete]
       .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0))
-      .map((lp) => ({
-        key: `mbk-task-lp::${lp.id}`,
-        label: `📦 ${lp.titel_des_pakets || '(ohne Titel)'}`,
-        subLabel: 'Lernpaket',
-        build: () =>
-          buildTaskContentItemForLernpaket({
-            lernpaket: lp,
-            lernziele: zieleByPaket.get(lp.id) || [],
-            phaseAktivitaeten: phasenByPaket.get(lp.id) || [],
-            katalogById,
-            masterAufgaben: masterByPaket.get(lp.id) || [],
-            navigationContext: navFor(lp.id),
-          }),
-        slug: slugify(lp.titel_des_pakets, lp.id),
-      }));
+      .map((lp) => {
+        const phasen = phasenByPaket.get(lp.id) || [];
+        const sub = buildLernpaketSubLabel({
+          phaseAktivitaetenInPaket: phasen,
+          katalogById,
+        });
+        return {
+          key: `mbk-task-lp::${lp.id}`,
+          label: `📦 ${lp.titel_des_pakets || '(ohne Titel)'}`,
+          subLabel: sub.text,
+          kiHint: sub.kiHint,
+          kiSeverity: sub.kiSeverity,
+          build: () =>
+            buildTaskContentItemForLernpaket({
+              lernpaket: lp,
+              lernziele: zieleByPaket.get(lp.id) || [],
+              phaseAktivitaeten: phasen,
+              katalogById,
+              masterAufgaben: masterByPaket.get(lp.id) || [],
+              navigationContext: navFor(lp.id),
+            }),
+          slug: slugify(lp.titel_des_pakets, lp.id),
+        };
+      });
 
-    const aaItems = allgemeineAufgabenEbene23.map((aa) => ({
-      key: `mbk-task-aa::${aa.id}`,
-      label: `🎯 ${aa.titel || '(ohne Titel)'}`,
-      subLabel: aa.anforderungsebene,
-      build: () =>
-        buildTaskContentItemForAllgemeineAufgabe({
-          aufgabe: aa,
-          navigationContext: navFor(aa.id),
-        }),
-      slug: slugify(aa.titel, aa.id),
-    }));
+    const aaItems = allgemeineAufgabenEbene23.map((aa) => {
+      const sub = buildAllgemeineAufgabeSubLabel(aa);
+      return {
+        key: `mbk-task-aa::${aa.id}`,
+        label: `🎯 ${aa.titel || '(ohne Titel)'}`,
+        subLabel: sub.text,
+        kiHint: sub.kiHint,
+        kiSeverity: sub.kiSeverity,
+        build: () =>
+          buildTaskContentItemForAllgemeineAufgabe({
+            aufgabe: aa,
+            navigationContext: navFor(aa.id),
+          }),
+        slug: slugify(aa.titel, aa.id),
+      };
+    });
 
     return [...lpItems, ...aaItems];
   }, [lernpakete, lernziele, phaseAktivitaeten, masterAufgaben, allgemeineAufgabenEbene23, katalogById, navigationContextByRefId]);
