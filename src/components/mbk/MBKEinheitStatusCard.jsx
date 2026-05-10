@@ -152,18 +152,52 @@ export default function MBKEinheitStatusCard({ einheitId }) {
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Einheit als veröffentlicht markieren?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Bestätige nur, wenn die Einheit als SCORM-Paket erfolgreich in
-                Moodle hochgeladen und dort live ist. Danach gilt sie als „in Sync"
-                — spätere Änderungen an Aufgaben/Lernpaketen werden ab jetzt als
-                „modified" markiert.
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+                Achtung: Einheit endgültig als „in Moodle aktiv" markieren?
+              </AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-3 text-sm">
+                  <p>
+                    Bestätige <strong>nur dann</strong>, wenn die Einheit als
+                    SCORM-Paket <strong>tatsächlich vollständig in Moodle
+                    hochgeladen</strong> und dort live verfügbar ist.
+                  </p>
+                  <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900 space-y-2">
+                    <p className="font-semibold">Was passiert beim Klick:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>
+                        Die Einheit gilt ab sofort systemweit als
+                        <strong> „in Moodle aktiv"</strong> und wird überall so
+                        angezeigt.
+                      </li>
+                      <li>
+                        Sie wird <strong>wieder zur Bearbeitung freigegeben</strong> —
+                        spätere Änderungen werden ab jetzt als
+                        <em> „modified"</em> markiert und müssen erneut
+                        exportiert werden.
+                      </li>
+                      <li>
+                        <strong>Diese Aktion lässt sich aktuell nicht
+                        rückgängig machen.</strong> Wenn du irrtümlich klickst,
+                        muss ein Admin den Lifecycle manuell zurücksetzen.
+                      </li>
+                    </ul>
+                  </div>
+                  <p className="text-muted-foreground">
+                    Im Zweifel: <strong>Abbrechen</strong> und nochmal prüfen,
+                    ob das ZIP wirklich in Moodle steht.
+                  </p>
+                </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-              <AlertDialogAction onClick={handleMarkPublished}>
-                Ja, jetzt markieren
+              <AlertDialogAction
+                onClick={handleMarkPublished}
+                className="bg-amber-600 hover:bg-amber-700 focus-visible:ring-amber-600"
+              >
+                Ja, ich habe in Moodle geprüft – jetzt markieren
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
