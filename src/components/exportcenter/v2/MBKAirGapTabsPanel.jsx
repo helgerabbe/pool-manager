@@ -460,6 +460,12 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
       for (const sektor of sektoren) {
         for (const item of sektor?.items || []) {
           if (item?.type !== 'system' || !item?.ref_id) continue;
+          // Platzhalter (`sys_platzhalter_*`) sind reine Architekt-Drop-Zonen
+          // (z. B. „Platzhalter: handlungsorientierte Aufgabe", „Platzhalter:
+          // Brian-Bündel"). Sie werden nicht exportiert und dürfen daher auch
+          // nicht in der Liste der Systembaustein-Items im Export-Center
+          // auftauchen — konsistent mit dem Filter in lib/mbkAirGapPayloads.js.
+          if (typeof item.ref_id === 'string' && item.ref_id.startsWith('sys_platzhalter_')) continue;
           if (seen.has(item.ref_id)) continue;
           seen.add(item.ref_id);
           const bausteinId = item.ref_id;

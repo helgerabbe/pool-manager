@@ -1085,6 +1085,13 @@ export function buildSystembausteinPayloadBundle({
     for (const sektor of sektoren) {
       for (const item of sektor?.items || []) {
         if (item?.type !== 'system' || !item?.ref_id) continue;
+        // Platzhalter-Bausteine (`sys_platzhalter_*`) sind reine Arbeitshilfen
+        // im Lernpfad-Architekt — sie kennzeichnen Drop-Zonen für später noch
+        // einzufügende echte Aufgaben/Bündel. Sie dürfen NIEMALS als eigenes
+        // KI-Briefing exportiert werden, weil sonst die MBK „Container-Karten"
+        // erfindet, die im Schülerpfad gar nicht erscheinen sollen. Konsistent
+        // mit dem Filter in summarizeSektor und scormFileMapping.
+        if (isPlatzhalterItem(item)) continue;
         if (seenInLerntyp.has(item.ref_id)) continue;
         seenInLerntyp.add(item.ref_id);
         const refId = makeSystembausteinReferenceId(lt, item.ref_id);
