@@ -35,6 +35,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import ExportLifecycleHeaderCard from '@/components/export/ExportLifecycleHeaderCard';
 import LerntypDashboardCard from '@/components/export/LerntypDashboardCard';
+import { useEinheitFreigabeStatus } from '@/hooks/useEinheitFreigabeStatus';
 
 const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 
@@ -383,6 +384,12 @@ export default function ExportCockpitView({
     faecher.includes(einheit.fach);
   const darfFreigeben = istAdmin || istFachschaftFuerFach;
 
+  // Ring der Macht: Bei final_freigegeben/export_running darf nichts mehr
+  // an den Moodle-Export übergeben werden. Sobald die Einheit final ist,
+  // ist die Selektion eingefroren und der Übergabe-Button verschwindet.
+  const { data: einheitFreigabe } = useEinheitFreigabeStatus(selectedUnitId);
+  const isEinheitContentLocked = einheitFreigabe?.isContentLocked === true;
+
   useEffect(() => {
     if (!selectedUnitId) return;
     setSelectedIds([]);
@@ -524,15 +531,21 @@ export default function ExportCockpitView({
         />
 
         <div className="pt-4 border-t">
-          <Button
-            onClick={() => exportMutation.mutate()}
-            disabled={selectedIds.length === 0 || exportMutation.isPending}
-            className="w-full font-semibold"
-          >
-            {exportMutation.isPending
-              ? 'Wird übergeben...'
-              : `🚀 ${selectedIds.length} Aktivität${selectedIds.length !== 1 ? 'en' : ''} übergeben`}
-          </Button>
+          {isEinheitContentLocked ? (
+            <div className="w-full text-center px-3 py-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-900">
+              🔒 <strong>Einheit final freigegeben</strong> – Es können keine Aktivitäten mehr übergeben werden. Die Einheit ist gesperrt.
+            </div>
+          ) : (
+            <Button
+              onClick={() => exportMutation.mutate()}
+              disabled={selectedIds.length === 0 || exportMutation.isPending}
+              className="w-full font-semibold"
+            >
+              {exportMutation.isPending
+                ? 'Wird übergeben...'
+                : `🚀 ${selectedIds.length} Aktivität${selectedIds.length !== 1 ? 'en' : ''} übergeben`}
+            </Button>
+          )}
         </div>
       </div>
 
