@@ -36,7 +36,7 @@ import { getSektorTypLabel } from '@/lib/sektorTypen';
  * Wird bei jedem Build in `meta.schema_version` geschrieben und beim
  * Persistieren als `template_version` der ExportPrompts-Records.
  */
-export const MBK_AIRGAP_VERSION = 'airgap-1.3.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.4.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -256,12 +256,24 @@ export function buildSystemContextPayload({
     persona_generator_anweisung: lookupGlobal(globalPrompts, 'persona_generator_anweisung'),
   };
 
+  // ── airgap-1.4.0: ui_global_config (Standalone-App / Moodle-Bypass) ──────
+  // Drei UI-Bausteine für die MBK, gepflegt im MBK-Prompt-Manager unter den
+  // Schlüsseln `ui_css_variables`, `ui_tab_bar_html`, `ui_default_header_html`.
+  // Wenn ein Schlüssel nicht (mehr) gepflegt ist, liefern wir `null` — die
+  // MBK fällt dann auf ihre eingebauten Defaults zurück (siehe Meta-Prompt).
+  const uiGlobalConfig = {
+    css_variables: lookupGlobal(globalPrompts, 'ui_css_variables'),
+    tab_bar_html: lookupGlobal(globalPrompts, 'ui_tab_bar_html'),
+    default_header_html: lookupGlobal(globalPrompts, 'ui_default_header_html'),
+  };
+
   return {
     meta,
     stammdaten: stammdatenOut,
     schul_nomenklatur: nomenklatur,
     global_prompts: globalPromptsOut,
     direct_lookups: directLookups,
+    ui_global_config: uiGlobalConfig,
     // Generische SCORM-Modularitäts-Anweisung. Bewusst inhalts-unabhängig,
     // damit der system_context_hash bei Aufgaben-Änderungen nicht kippt.
     scorm_delivery_contract: SCORM_DELIVERY_CONTRACT,
@@ -458,10 +470,36 @@ export function buildStructurePayload({
 
   // Lernpfade pro Lerntyp (Sektoren + Items).
   const lernpfade = {};
+  // airgap-1.4.0: Index ref_id → Set<dashboardFilename>, damit jedes Mapping-
+  // Item weiß, in welchen Dashboard(s) ein "Zurück"-Button gesetzt werden muss.
+  const navContextByRefId = new Map();
+  const addNavContext = (refId, dashboardFile) => {
+    if (!refId) return;
+    if (!navContextByRefId.has(refId)) navContextByRefId.set(refId, new Set());
+    navContextByRefId.get(refId).add(dashboardFile);
+  };
   for (const lt of LERNTYP_KEYS) {
     const sektoren = einheit?.lernpfade_konfiguration?.[lt] || [];
     lernpfade[lt] = sektoren.map((s) => summarizeSektor(s, themenfelderById));
+    const dashboardFile = fnDashboard(lt);
+    for (const sektor of sektoren) {
+      for (const item of sektor?.items || []) {
+        if (item?.ref_id) addNavContext(item.ref_id, dashboardFile);
+      }
+    }
   }
+  // navContextByRefId enthält Aufgabe-/Lernpaket-/System-Bausteine-IDs.
+  // Themenfeld-Bündel und Projekt-Bündel sind Aggregate — ihr nav_context
+  // ergibt sich aus der Vereinigung aller enthaltenen Items.
+  const navContextFor = (refId) =>
+    Array.from(navContextByRefId.get(refId) || []).sort();
+  const navContextForAggregate = (refIds) => {
+    const merged = new Set();
+    for (const id of refIds || []) {
+      for (const dash of navContextByRefId.get(id) || []) merged.add(dash);
+    }
+    return Array.from(merged).sort();
+  };
 
   // ── SCORM-Mapping (airgap-1.3.0 / Bündel-Modell) ─────────────────────────
   // Fünf Datei-Typen:
@@ -484,6 +522,11 @@ export function buildStructurePayload({
   // 0. Pflicht-Dashboards (eines pro Lerntyp). Immer alle vier — auch bei
   //    leerem Lernpfad, damit der MBK-Vertrag „4 Dashboards pro Einheit"
   //    erfüllt bleibt. Quelle der Items ist `lernpfade[lerntyp]` (oben).
+  //    airgap-1.4.0: Dashboards sind die EINZIGEN Items mit
+  //    `is_hidden_in_moodle: false`. Ihr `navigation_context` ist die
+  //    vollständige Tab-Bar (alle vier Dashboards), damit die MBK in
+  //    jedem Dashboard die Geschwister verlinken kann.
+  const allDashboards = LERNTYP_KEYS.map((lt) => fnDashboard(lt));
   for (const lt of LERNTYP_KEYS) {
     scormFileMapping.push({
       kind: 'dashboard',
@@ -492,6 +535,8 @@ export function buildStructurePayload({
       titel: `Dashboard – ${lt}`,
       contains_placeholders: false,
       placeholder_activity_ids: [],
+      is_hidden_in_moodle: false,
+      navigation_context: allDashboards,
     });
   }
 
@@ -517,6 +562,8 @@ export function buildStructurePayload({
       titel: nullable(lp.titel_des_pakets),
       contains_placeholders: placeholderIds.length > 0,
       placeholder_activity_ids: placeholderIds,
+      is_hidden_in_moodle: true,
+      navigation_context: navContextFor(lp.id),
     });
   }
 
@@ -544,28 +591,34 @@ export function buildStructurePayload({
     const aaList = ebene2ByTf.get(tf.id) || [];
     if (aaList.length === 0) continue; // keine Leichen im Manifest
     const placeholderIds = collectPlaceholderAaIds(aaList);
+    const aufgabeIds = aaList.map((aa) => aa.id);
     scormFileMapping.push({
       kind: 'themenfeld_bundle',
       source_id: tf.id,
       filename: fnThemenfeldBundle(tf.id),
       titel: nullable(tf.titel),
-      contained_aufgabe_ids: aaList.map((aa) => aa.id),
+      contained_aufgabe_ids: aufgabeIds,
       contains_placeholders: placeholderIds.length > 0,
       placeholder_activity_ids: placeholderIds,
+      is_hidden_in_moodle: true,
+      navigation_context: navContextForAggregate(aufgabeIds),
     });
   }
 
   // Orphan-Sammeleintrag NUR wenn auch wirklich Aufgaben ohne TF existieren.
   if (orphanEbene2.length > 0) {
     const placeholderIds = collectPlaceholderAaIds(orphanEbene2);
+    const aufgabeIds = orphanEbene2.map((aa) => aa.id);
     scormFileMapping.push({
       kind: 'themenfeld_bundle',
       source_id: 'orphan',
       filename: fnThemenfeldBundleOrphan(),
       titel: 'Allgemeine Aufgaben ohne Themenfeld',
-      contained_aufgabe_ids: orphanEbene2.map((aa) => aa.id),
+      contained_aufgabe_ids: aufgabeIds,
       contains_placeholders: placeholderIds.length > 0,
       placeholder_activity_ids: placeholderIds,
+      is_hidden_in_moodle: true,
+      navigation_context: navContextForAggregate(aufgabeIds),
     });
   }
 
@@ -575,14 +628,17 @@ export function buildStructurePayload({
   );
   if (ebene3.length > 0 && einheit?.id) {
     const placeholderIds = collectPlaceholderAaIds(ebene3);
+    const aufgabeIds = ebene3.map((aa) => aa.id);
     scormFileMapping.push({
       kind: 'projekt_bundle',
       source_id: einheit.id,
       filename: fnProjektBundle(einheit.id),
       titel: 'Projekte der Einheit',
-      contained_aufgabe_ids: ebene3.map((aa) => aa.id),
+      contained_aufgabe_ids: aufgabeIds,
       contains_placeholders: placeholderIds.length > 0,
       placeholder_activity_ids: placeholderIds,
+      is_hidden_in_moodle: true,
+      navigation_context: navContextForAggregate(aufgabeIds),
     });
   }
 
@@ -617,6 +673,8 @@ export function buildStructurePayload({
       titel: nullable(baustein?.titel) || bausteinId,
       contains_placeholders: false,
       placeholder_activity_ids: [],
+      is_hidden_in_moodle: true,
+      navigation_context: navContextFor(bausteinId),
     });
     systemBausteineOut.push({
       baustein_id: bausteinId,
@@ -648,6 +706,35 @@ export function buildStructurePayload({
   };
 }
 
+/**
+ * Helper: Extrahiert aus einem `scorm_file_mapping`-Array (wie es
+ * `buildStructurePayload` liefert) eine Map<refId, string[]>, die die
+ * `navigation_context`-Liste pro Quell-ID bereitstellt.
+ *
+ * Wird vom UI-Layer benötigt, um beim Bauen von Payload 3/4 die `back_targets`
+ * jedem Item beizugeben — ohne Cross-Lookup auf das Strukturpayload.
+ *
+ * Eingang: Array von Mapping-Einträgen mit `source_id` und `navigation_context`.
+ *          `kind: 'dashboard'` wird übersprungen (Dashboards sind selbst die
+ *          back-targets, sie werden niemals als refId in Payload 3/4 referenziert).
+ */
+export function extractNavigationContextByRefId(scormFileMapping = []) {
+  const m = new Map();
+  for (const entry of scormFileMapping) {
+    if (!entry || entry.kind === 'dashboard') continue;
+    if (!entry.source_id || !Array.isArray(entry.navigation_context)) continue;
+    m.set(entry.source_id, entry.navigation_context);
+    // Themenfeld-Bündel und Projekt-Bündel werden über die enthaltenen
+    // Aufgabe-IDs aufgelöst — diese erben den nav-Context des Bündels.
+    if (Array.isArray(entry.contained_aufgabe_ids)) {
+      for (const aaId of entry.contained_aufgabe_ids) {
+        m.set(aaId, entry.navigation_context);
+      }
+    }
+  }
+  return m;
+}
+
 // ── 3. Payload 3: Aufgabeninhalte (pro Lernpaket / pro Aufgabe) ─────────────
 
 /**
@@ -663,6 +750,7 @@ export function buildTaskContentItemForLernpaket({
   phaseAktivitaeten = [],
   katalogById = new Map(),
   masterAufgaben = [],
+  navigationContext = [],
 }) {
   // MasterAufgaben pro activity_id gruppieren.
   const masterByActivity = new Map();
@@ -735,6 +823,12 @@ export function buildTaskContentItemForLernpaket({
     })),
     aktivitaeten: phasenSorted.map(renderActivity),
     placeholder_activity_ids: placeholderActivityIds,
+    // airgap-1.4.0: Reine Metadaten, die MBK kombiniert sie mit
+    // ui_default_header_html aus Payload 1 zu Header/Footer.
+    injection_points: {
+      title: nullable(lernpaket?.titel_des_pakets),
+      back_targets: Array.isArray(navigationContext) ? [...navigationContext].sort() : [],
+    },
   };
 }
 
@@ -743,7 +837,7 @@ export function buildTaskContentItemForLernpaket({
  * (Ebene 2 oder 3). Im KI-Modus reichen wir nur Header + Briefing-Marker
  * durch — das eigentliche Briefing kommt in Payload 4.
  */
-export function buildTaskContentItemForAllgemeineAufgabe({ aufgabe }) {
+export function buildTaskContentItemForAllgemeineAufgabe({ aufgabe, navigationContext = [] }) {
   const istKi = aufgabe?.erstellungs_modus === 'ki';
   return {
     item_type: 'allgemeine_aufgabe',
@@ -783,6 +877,11 @@ export function buildTaskContentItemForAllgemeineAufgabe({ aufgabe }) {
       : null,
 
     alt_text: nullable(aufgabe?.alt_text),
+    // airgap-1.4.0: Metadaten für Header/Footer-Injection.
+    injection_points: {
+      title: nullable(aufgabe?.titel),
+      back_targets: Array.isArray(navigationContext) ? [...navigationContext].sort() : [],
+    },
   };
 }
 
@@ -799,6 +898,11 @@ export function buildTaskContentBundle({
   katalogById = new Map(),
   masterAufgaben = [],
   allgemeineAufgabenEbene23 = [],
+  // airgap-1.4.0: Map<refId, string[]> mit Dashboard-Filenames pro Item.
+  // Wird typischerweise aus dem `navigation_context` der Payload-2-Einträge
+  // abgeleitet (siehe buildStructurePayload). Default = leere Map → keine
+  // back_targets.
+  navigationContextByRefId = new Map(),
   systemContextHash = null,
   nowIso = null,
 }) {
@@ -819,6 +923,13 @@ export function buildTaskContentBundle({
     masterByPaket.get(m.lernpaket_id).push(m);
   }
 
+  const navFor = (refId) => {
+    const v = navigationContextByRefId?.get
+      ? navigationContextByRefId.get(refId)
+      : null;
+    return Array.isArray(v) ? v : [];
+  };
+
   const lernpaketItems = (lernpakete || [])
     .slice()
     .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0))
@@ -829,11 +940,15 @@ export function buildTaskContentBundle({
         phaseAktivitaeten: phasenByPaket.get(lp.id) || [],
         katalogById,
         masterAufgaben: masterByPaket.get(lp.id) || [],
+        navigationContext: navFor(lp.id),
       })
     );
 
   const aufgabeItems = (allgemeineAufgabenEbene23 || []).map((aa) =>
-    buildTaskContentItemForAllgemeineAufgabe({ aufgabe: aa })
+    buildTaskContentItemForAllgemeineAufgabe({
+      aufgabe: aa,
+      navigationContext: navFor(aa.id),
+    })
   );
 
   const items = [...lernpaketItems, ...aufgabeItems];
@@ -906,6 +1021,7 @@ export function buildMicroPayloadForActivity({
   phaseAktivitaetenInPaket = [],
   lernziele = [],
   katalogById = new Map(),
+  navigationContext = [],
   systemContextHash = null,
   nowIso = null,
 }) {
@@ -962,6 +1078,11 @@ export function buildMicroPayloadForActivity({
         + '...HTML...'
         + '<!-- /mbk:fragment -->',
     },
+    // airgap-1.4.0: Fragmente erben den nav-Context ihrer Hülle (= Lernpaket).
+    injection_points: {
+      title: nullable(lernpaket?.titel_des_pakets),
+      back_targets: Array.isArray(navigationContext) ? [...navigationContext].sort() : [],
+    },
   };
 }
 
@@ -973,6 +1094,7 @@ export function buildMicroPayloadForAllgemeineAufgabe({
   einheit,
   aufgabe,
   themenfeld = null,
+  navigationContext = [],
   systemContextHash = null,
   nowIso = null,
 }) {
@@ -1040,6 +1162,11 @@ export function buildMicroPayloadForAllgemeineAufgabe({
         + '...HTML...'
         + '<!-- /mbk:fragment -->',
     },
+    // airgap-1.4.0: Metadaten für Header/Footer-Injection.
+    injection_points: {
+      title: nullable(aufgabe?.titel),
+      back_targets: Array.isArray(navigationContext) ? [...navigationContext].sort() : [],
+    },
   };
 }
 
@@ -1055,6 +1182,10 @@ export function buildMicroPayloadBundle({
   phaseAktivitaeten = [],
   katalogById = new Map(),
   allgemeineAufgaben = [],
+  // airgap-1.4.0: siehe buildTaskContentBundle. Map<refId, string[]>.
+  // KI-Aktivitäten erben über lernpaket_id den Context ihres Lernpakets;
+  // KI-AllgemeineAufgaben verwenden ihre eigene aufgabe_id.
+  navigationContextByRefId = new Map(),
   systemContextHash = null,
   nowIso = null,
 }) {
@@ -1071,6 +1202,13 @@ export function buildMicroPayloadBundle({
     zieleByPaket.get(lz.lernpaket_id).push(lz);
   }
 
+  const navFor = (refId) => {
+    const v = navigationContextByRefId?.get
+      ? navigationContextByRefId.get(refId)
+      : null;
+    return Array.isArray(v) ? v : [];
+  };
+
   const items = [];
 
   // KI-Aktivitäten aus Lernpaketen.
@@ -1086,6 +1224,8 @@ export function buildMicroPayloadBundle({
       phaseAktivitaetenInPaket: phasenByPaket.get(pa.lernpaket_id) || [],
       lernziele: zieleByPaket.get(pa.lernpaket_id) || [],
       katalogById,
+      // Fragment erbt nav-Context von der Hülle (= Lernpaket).
+      navigationContext: lp ? navFor(lp.id) : [],
       systemContextHash,
       nowIso,
     });
@@ -1100,6 +1240,7 @@ export function buildMicroPayloadBundle({
       einheit,
       aufgabe: aa,
       themenfeld: tf,
+      navigationContext: navFor(aa.id),
       systemContextHash,
       nowIso,
     });

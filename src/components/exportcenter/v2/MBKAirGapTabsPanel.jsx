@@ -38,6 +38,7 @@ import {
   buildMicroPayloadBundle,
   buildMicroPayloadForActivity,
   buildMicroPayloadForAllgemeineAufgabe,
+  extractNavigationContextByRefId,
 } from '@/lib/mbkAirGapPayloads';
 import { computeSystemContextHash } from '@/lib/systemContextHash';
 import {
