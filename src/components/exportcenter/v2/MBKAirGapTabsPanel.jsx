@@ -542,6 +542,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
             blockStatus={blockStatus}
             blockAggregate={blockAggregate}
             planItem={uiPlanItem}
+            payload={buildUi()}
             onToggleDelivered={(v) => setDelivered('ui_config', v)}
             onCopy={() => handleCopy(buildUi())}
             onDownload={() => handleDownload(buildUi(), `mbk-ui-config_${baseSlug}.json`)}
