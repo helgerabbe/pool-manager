@@ -33,7 +33,7 @@ export default function MetaPromptTab() {
               <p className="text-xs text-muted-foreground mt-0.5 max-w-2xl">
                 Erweckt eine frische KI-Sitzung zur Moodle-Builder-KI.
                 Kopiere diesen Text als <strong>allerersten</strong> Prompt
-                in die MBK und warte auf die Bestätigung {'„MBK v'}{META_SYSTEM_PROMPT_VERSION}{' bereit."'},
+                in die MBK und warte auf die Bestätigung {`„MBK v${META_SYSTEM_PROMPT_VERSION} bereit."`},
                 bevor du Payload 1 sendest.
               </p>
             </div>
