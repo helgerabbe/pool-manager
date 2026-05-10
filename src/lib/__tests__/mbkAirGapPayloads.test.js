@@ -22,6 +22,7 @@ import {
   buildMicroPayloadForActivity,
   buildMicroPayloadForAllgemeineAufgabe,
   buildMicroPayloadBundle,
+  extractNavigationContextByRefId,
 } from '../mbkAirGapPayloads';
 
 const FIXED_NOW = '2026-05-08T14:30:00.000Z';
@@ -32,6 +33,13 @@ describe('MBK Air-Gap Payloads', () => {
     it('exportiert eine konkrete airgap-Version', () => {
       expect(typeof MBK_AIRGAP_VERSION).toBe('string');
       expect(MBK_AIRGAP_VERSION).toMatch(/^airgap-\d+\.\d+\.\d+$/);
+    });
+
+    it('ist mindestens airgap-1.4.0 (Standalone-App-Schema)', () => {
+      // Air-Gap-Version 1.4.0 hat is_hidden_in_moodle, navigation_context,
+      // injection_points und ui_global_config eingeführt. Ein Downgrade
+      // unter 1.4.0 würde alle diese Felder verlieren.
+      expect(MBK_AIRGAP_VERSION >= 'airgap-1.4.0').toBe(true);
     });
   });
 
@@ -130,6 +138,43 @@ describe('MBK Air-Gap Payloads', () => {
       expect(out.scorm_delivery_contract.filename_patterns.system_baustein).toBe('system-<baustein_id>.html');
       expect(out.scorm_delivery_contract.filename_patterns.fragment).toBe('fragment-<activity_id>.html');
       expect(out.scorm_delivery_contract.manifest_filename).toBe('imsmanifest.xml');
+    });
+
+    // ── airgap-1.4.0: ui_global_config (Standalone-App / Moodle-Bypass) ─
+    describe('ui_global_config (airgap-1.4.0)', () => {
+      it('liefert ui_global_config mit allen drei Feldern, wenn UI-Schlüssel gepflegt sind', () => {
+        const out = buildSystemContextPayload({
+          ...baseArgs,
+          globalPrompts: [
+            ...baseArgs.globalPrompts,
+            { schluessel: 'ui_css_variables', prompt_text: ':root { --x: 1; }', ist_aktiv: true },
+            { schluessel: 'ui_tab_bar_html', prompt_text: '<nav class="mbk-tab-bar"></nav>', ist_aktiv: true },
+            { schluessel: 'ui_default_header_html', prompt_text: '<header>{{title}}</header>', ist_aktiv: true },
+          ],
+        });
+        expect(out.ui_global_config).toBeDefined();
+        expect(out.ui_global_config.css_variables).toContain(':root');
+        expect(out.ui_global_config.tab_bar_html).toContain('mbk-tab-bar');
+        expect(out.ui_global_config.default_header_html).toContain('{{title}}');
+      });
+
+      it('liefert null pro fehlendem UI-Schlüssel (kein Hartcodieren)', () => {
+        const out = buildSystemContextPayload(baseArgs);
+        // baseArgs hat keine ui_*-Schlüssel
+        expect(out.ui_global_config.css_variables).toBeNull();
+        expect(out.ui_global_config.tab_bar_html).toBeNull();
+        expect(out.ui_global_config.default_header_html).toBeNull();
+      });
+
+      it('ignoriert inaktive UI-Prompts', () => {
+        const out = buildSystemContextPayload({
+          ...baseArgs,
+          globalPrompts: [
+            { schluessel: 'ui_css_variables', prompt_text: ':root { --x: 1; }', ist_aktiv: false },
+          ],
+        });
+        expect(out.ui_global_config.css_variables).toBeNull();
+      });
     });
 
     it('SCORM-Vertrag ist inhalts-unabhängig (Hash-Stabilität)', () => {
@@ -347,6 +392,68 @@ describe('MBK Air-Gap Payloads', () => {
         // system_bausteine-Top-Level-Block enthält export_instruktion.
         const diag = out.system_bausteine.find((b) => b.baustein_id === 'sys_diagnose');
         expect(diag.export_instruktion).toBe('Diagnose-Anweisung');
+      });
+
+      // ── airgap-1.4.0: Standalone-App-Vertrag ──────────────────────
+      describe('Standalone-App-Vertrag (airgap-1.4.0)', () => {
+        const args = {
+          einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten,
+          katalogById, allgemeineAufgaben,
+        };
+
+        it('legt für jeden Lerntyp ein Dashboard mit is_hidden_in_moodle=false an', () => {
+          const out = buildStructurePayload(args);
+          const dashboards = out.scorm_file_mapping.filter((m) => m.kind === 'dashboard');
+          expect(dashboards).toHaveLength(4);
+          for (const d of dashboards) {
+            expect(d.is_hidden_in_moodle).toBe(false);
+            expect(d.filename).toMatch(/^dashboard-(minimalist|pragmatiker|ehrgeizig|passioniert)\.html$/);
+          }
+        });
+
+        it('navigation_context jedes Dashboards listet alle vier Geschwister-Dashboards', () => {
+          const out = buildStructurePayload(args);
+          const dashboards = out.scorm_file_mapping.filter((m) => m.kind === 'dashboard');
+          const expected = [
+            'dashboard-ehrgeizig.html',
+            'dashboard-minimalist.html',
+            'dashboard-passioniert.html',
+            'dashboard-pragmatiker.html',
+          ];
+          for (const d of dashboards) {
+            expect([...d.navigation_context].sort()).toEqual(expected);
+          }
+        });
+
+        it('alle Nicht-Dashboard-Items haben is_hidden_in_moodle=true', () => {
+          const out = buildStructurePayload(args);
+          const others = out.scorm_file_mapping.filter((m) => m.kind !== 'dashboard');
+          expect(others.length).toBeGreaterThan(0);
+          for (const m of others) {
+            expect(m.is_hidden_in_moodle).toBe(true);
+          }
+        });
+
+        it('navigation_context einer Aufgabe enthält das Dashboard, in dem sie referenziert wird', () => {
+          // einheit.lernpfade_konfiguration.pragmatiker referenziert aa1 und aa2.
+          const out = buildStructurePayload(args);
+          // aa1 ist ein Bündel im Themenfeld tf1 → Themenfeld-Bündel-Eintrag
+          // erbt das Dashboard via contained_aufgabe_ids.
+          const tfBundle = out.scorm_file_mapping.find(
+            (m) => m.kind === 'themenfeld_bundle' && m.source_id === 'tf1'
+          );
+          expect(tfBundle.navigation_context).toContain('dashboard-pragmatiker.html');
+        });
+
+        it('navigation_context ist deterministisch sortiert', () => {
+          // Mehrfach bauen → Reihenfolge identisch.
+          const a = buildStructurePayload(args);
+          const b = buildStructurePayload(args);
+          for (const ea of a.scorm_file_mapping) {
+            const eb = b.scorm_file_mapping.find((x) => x.source_id === ea.source_id && x.kind === ea.kind);
+            expect(ea.navigation_context).toEqual(eb.navigation_context);
+          }
+        });
       });
 
       it('Filename folgt dem Pattern aus Payload 1 (pro Bündel-Typ)', () => {
@@ -689,6 +796,156 @@ describe('MBK Air-Gap Payloads', () => {
       });
       expect(bundle.items).toEqual([]);
       expect(bundle.meta.item_count).toBe(0);
+    });
+  });
+
+  // ── airgap-1.4.0: extractNavigationContextByRefId + injection_points ────
+  describe('extractNavigationContextByRefId', () => {
+    it('liefert leere Map, wenn das Mapping leer ist', () => {
+      expect(extractNavigationContextByRefId([]).size).toBe(0);
+    });
+
+    it('überspringt Dashboard-Einträge', () => {
+      const m = extractNavigationContextByRefId([
+        { kind: 'dashboard', source_id: 'minimalist', navigation_context: ['dashboard-minimalist.html'] },
+      ]);
+      expect(m.has('minimalist')).toBe(false);
+    });
+
+    it('mappt source_id eines Lernpakets/Bausteins direkt', () => {
+      const m = extractNavigationContextByRefId([
+        { kind: 'lernpaket', source_id: 'lp1', navigation_context: ['dashboard-pragmatiker.html'] },
+        { kind: 'system_baustein', source_id: 'sys_diagnose', navigation_context: ['dashboard-minimalist.html'] },
+      ]);
+      expect(m.get('lp1')).toEqual(['dashboard-pragmatiker.html']);
+      expect(m.get('sys_diagnose')).toEqual(['dashboard-minimalist.html']);
+    });
+
+    it('löst contained_aufgabe_ids von Themenfeld-/Projekt-Bündeln auf', () => {
+      const m = extractNavigationContextByRefId([
+        {
+          kind: 'themenfeld_bundle',
+          source_id: 'tf1',
+          contained_aufgabe_ids: ['aa1', 'aa2'],
+          navigation_context: ['dashboard-pragmatiker.html'],
+        },
+        {
+          kind: 'projekt_bundle',
+          source_id: 'e1',
+          contained_aufgabe_ids: ['aa-pr'],
+          navigation_context: ['dashboard-passioniert.html'],
+        },
+      ]);
+      expect(m.get('aa1')).toEqual(['dashboard-pragmatiker.html']);
+      expect(m.get('aa2')).toEqual(['dashboard-pragmatiker.html']);
+      expect(m.get('aa-pr')).toEqual(['dashboard-passioniert.html']);
+    });
+  });
+
+  describe('injection_points (airgap-1.4.0)', () => {
+    it('Lernpaket-Item: title + sortierte back_targets', () => {
+      const item = buildTaskContentItemForLernpaket({
+        lernpaket: { id: 'lp1', titel_des_pakets: 'P1' },
+        navigationContext: ['dashboard-pragmatiker.html', 'dashboard-ehrgeizig.html'],
+      });
+      expect(item.injection_points).toBeDefined();
+      expect(item.injection_points.title).toBe('P1');
+      expect(item.injection_points.back_targets).toEqual([
+        'dashboard-ehrgeizig.html',
+        'dashboard-pragmatiker.html',
+      ]);
+    });
+
+    it('Lernpaket-Item: leere back_targets, wenn navigationContext fehlt', () => {
+      const item = buildTaskContentItemForLernpaket({
+        lernpaket: { id: 'lp1', titel_des_pakets: 'P1' },
+      });
+      expect(item.injection_points.back_targets).toEqual([]);
+    });
+
+    it('AllgemeineAufgabe-Item: title + back_targets', () => {
+      const item = buildTaskContentItemForAllgemeineAufgabe({
+        aufgabe: { id: 'aa1', titel: 'Bündel-Aufg' },
+        navigationContext: ['dashboard-minimalist.html'],
+      });
+      expect(item.injection_points.title).toBe('Bündel-Aufg');
+      expect(item.injection_points.back_targets).toEqual(['dashboard-minimalist.html']);
+    });
+
+    it('Micro-Payload für KI-Aktivität: erbt nav-Context der Hülle', () => {
+      const out = buildMicroPayloadForActivity({
+        einheit: { id: 'e1' },
+        aktivitaet: {
+          id: 'pa-ki',
+          aktivitaet_id: 'kat1',
+          erstellungs_modus: 'ki',
+          ki_briefing: { variant: 'standard', standard: { schwerpunkt: 'X' } },
+        },
+        lernpaket: { id: 'lp1', titel_des_pakets: 'Hülle-Paket' },
+        navigationContext: ['dashboard-pragmatiker.html'],
+      });
+      expect(out.injection_points.title).toBe('Hülle-Paket');
+      expect(out.injection_points.back_targets).toEqual(['dashboard-pragmatiker.html']);
+    });
+
+    it('Micro-Payload für KI-AllgemeineAufgabe: nutzt eigene back_targets', () => {
+      const out = buildMicroPayloadForAllgemeineAufgabe({
+        einheit: { id: 'e1' },
+        aufgabe: {
+          id: 'aa-ki',
+          titel: 'Sandbox',
+          erstellungs_modus: 'ki',
+          ki_briefing: { variant: 'offen' },
+        },
+        themenfeld: { id: 'tf1', titel: 'TF' },
+        navigationContext: ['dashboard-passioniert.html'],
+      });
+      expect(out.injection_points.title).toBe('Sandbox');
+      expect(out.injection_points.back_targets).toEqual(['dashboard-passioniert.html']);
+    });
+
+    it('Bundles propagieren back_targets über navigationContextByRefId', () => {
+      const navMap = new Map([
+        ['lp1', ['dashboard-pragmatiker.html']],
+        ['aa-pr', ['dashboard-passioniert.html']],
+      ]);
+      const taskBundle = buildTaskContentBundle({
+        einheit: { id: 'e1' },
+        lernpakete: [{ id: 'lp1', titel_des_pakets: 'P1', reihenfolge_nummer: 1 }],
+        allgemeineAufgabenEbene23: [
+          { id: 'aa-pr', titel: 'Projekt', anforderungsebene: '3 - Projekt', erstellungs_modus: 'manuell' },
+        ],
+        navigationContextByRefId: navMap,
+      });
+      const lpItem = taskBundle.items.find((i) => i.reference_id === 'lp1');
+      const aaItem = taskBundle.items.find((i) => i.reference_id === 'aa-pr');
+      expect(lpItem.injection_points.back_targets).toEqual(['dashboard-pragmatiker.html']);
+      expect(aaItem.injection_points.back_targets).toEqual(['dashboard-passioniert.html']);
+    });
+
+    it('Micro-Bundle propagiert back_targets über navigationContextByRefId', () => {
+      const navMap = new Map([
+        ['lp1', ['dashboard-pragmatiker.html']],
+        ['aa-ki', ['dashboard-minimalist.html']],
+      ]);
+      const microBundle = buildMicroPayloadBundle({
+        einheit: { id: 'e1' },
+        lernpakete: [{ id: 'lp1', titel_des_pakets: 'P1' }],
+        phaseAktivitaeten: [
+          {
+            id: 'pa-ki', lernpaket_id: 'lp1', erstellungs_modus: 'ki',
+            ki_briefing: { variant: 'standard', standard: { schwerpunkt: 'X' } },
+          },
+        ],
+        allgemeineAufgaben: [
+          { id: 'aa-ki', erstellungs_modus: 'ki', ki_briefing: { variant: 'offen' } },
+        ],
+        navigationContextByRefId: navMap,
+      });
+      const paItem = microBundle.items.find((i) => i.target.reference_id === 'pa-ki');
+      const aaItem = microBundle.items.find((i) => i.target.reference_id === 'aa-ki');
+      expect(paItem.injection_points.back_targets).toEqual(['dashboard-pragmatiker.html']);
+      expect(aaItem.injection_points.back_targets).toEqual(['dashboard-minimalist.html']);
     });
   });
 });

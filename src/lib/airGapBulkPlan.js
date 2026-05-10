@@ -26,6 +26,7 @@ import {
   buildTaskContentItemForAllgemeineAufgabe,
   buildMicroPayloadForActivity,
   buildMicroPayloadForAllgemeineAufgabe,
+  extractNavigationContextByRefId,
   MBK_AIRGAP_VERSION,
 } from '@/lib/mbkAirGapPayloads';
 import {
@@ -105,6 +106,18 @@ export function buildAirGapBulkPlan({
   }
   const themenfeldById = new Map(themenfelder.map((tf) => [tf.id, tf]));
   const lernpaketById = new Map(lernpakete.map((lp) => [lp.id, lp]));
+
+  // airgap-1.4.0: nav-Context-Map einmal aus dem Strukturpayload ableiten
+  // und an alle Item-Builder durchreichen, damit auch die DB-persistierten
+  // Records `injection_points.back_targets` tragen.
+  const structurePayloadForNav = buildStructurePayload({
+    einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten,
+    katalogById, allgemeineAufgaben, systemBausteine, systemContextHash,
+  });
+  const navigationContextByRefId = extractNavigationContextByRefId(
+    structurePayloadForNav?.scorm_file_mapping || []
+  );
+  const navFor = (refId) => navigationContextByRefId.get(refId) || [];
 
   // ── 1. System-Kontext ────────────────────────────────────────────────
   {
@@ -190,6 +203,7 @@ export function buildAirGapBulkPlan({
           phaseAktivitaeten: phasenByPaket.get(lp.id) || [],
           katalogById,
           masterAufgaben: masterByPaket.get(lp.id) || [],
+          navigationContext: navFor(lp.id),
         }),
       sourceMaxTs,
       existing,
@@ -212,7 +226,11 @@ export function buildAirGapBulkPlan({
       referenceId: aa.id,
       status,
       skipReason,
-      buildPayload: () => buildTaskContentItemForAllgemeineAufgabe({ aufgabe: aa }),
+      buildPayload: () =>
+        buildTaskContentItemForAllgemeineAufgabe({
+          aufgabe: aa,
+          navigationContext: navFor(aa.id),
+        }),
       sourceMaxTs,
       existing,
     });
@@ -245,6 +263,8 @@ export function buildAirGapBulkPlan({
           phaseAktivitaetenInPaket: phasenByPaket.get(pa.lernpaket_id) || [],
           lernziele: zieleByPaket.get(pa.lernpaket_id) || [],
           katalogById,
+          // Fragment erbt nav-Context von der Hülle (= Lernpaket).
+          navigationContext: lp ? navFor(lp.id) : [],
           systemContextHash,
         }),
       sourceMaxTs,
@@ -271,6 +291,7 @@ export function buildAirGapBulkPlan({
           einheit,
           aufgabe: aa,
           themenfeld: tf,
+          navigationContext: navFor(aa.id),
           systemContextHash,
         }),
       sourceMaxTs,

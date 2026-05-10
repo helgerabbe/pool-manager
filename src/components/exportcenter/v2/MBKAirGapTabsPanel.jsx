@@ -230,29 +230,45 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
   const buildSysCtx = () =>
     buildSystemContextPayload({ stammdaten, schulNomenklatur, globalPrompts, systemContextHash: currentHash });
 
-  const buildStructure = () =>
-    buildStructurePayload({
-      einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten,
-      katalogById, allgemeineAufgaben, systemBausteine,
-      systemContextHash: currentHash,
-    });
+  // airgap-1.4.0: Strukturpayload einmal memoisieren — die navigation_context-
+  // Map daraus brauchen wir auch beim Bauen von Payload 3/4, damit jeder
+  // Item-Eintrag seine `back_targets` (injection_points) bekommt.
+  const structurePayload = useMemo(
+    () =>
+      buildStructurePayload({
+        einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten,
+        katalogById, allgemeineAufgaben, systemBausteine,
+        systemContextHash: currentHash,
+      }),
+    [einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById, allgemeineAufgaben, systemBausteine, currentHash]
+  );
+  const buildStructure = () => structurePayload;
+
+  const navigationContextByRefId = useMemo(
+    () => extractNavigationContextByRefId(structurePayload?.scorm_file_mapping || []),
+    [structurePayload]
+  );
 
   const taskBundle = useMemo(
     () =>
       buildTaskContentBundle({
         einheit, lernpakete, lernziele, phaseAktivitaeten, katalogById,
-        masterAufgaben, allgemeineAufgabenEbene23, systemContextHash: currentHash,
+        masterAufgaben, allgemeineAufgabenEbene23,
+        navigationContextByRefId,
+        systemContextHash: currentHash,
       }),
-    [einheit, lernpakete, lernziele, phaseAktivitaeten, katalogById, masterAufgaben, allgemeineAufgabenEbene23, currentHash]
+    [einheit, lernpakete, lernziele, phaseAktivitaeten, katalogById, masterAufgaben, allgemeineAufgabenEbene23, navigationContextByRefId, currentHash]
   );
 
   const microBundle = useMemo(
     () =>
       buildMicroPayloadBundle({
         einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten,
-        katalogById, allgemeineAufgaben, systemContextHash: currentHash,
+        katalogById, allgemeineAufgaben,
+        navigationContextByRefId,
+        systemContextHash: currentHash,
       }),
-    [einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById, allgemeineAufgaben, currentHash]
+    [einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById, allgemeineAufgaben, navigationContextByRefId, currentHash]
   );
 
   // Item-Listen analog zum alten Panel.
@@ -273,6 +289,8 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
       masterByPaket.get(m.lernpaket_id).push(m);
     }
 
+    const navFor = (refId) => navigationContextByRefId.get(refId) || [];
+
     const lpItems = [...lernpakete]
       .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0))
       .map((lp) => ({
@@ -286,6 +304,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
             phaseAktivitaeten: phasenByPaket.get(lp.id) || [],
             katalogById,
             masterAufgaben: masterByPaket.get(lp.id) || [],
+            navigationContext: navFor(lp.id),
           }),
         slug: slugify(lp.titel_des_pakets, lp.id),
       }));
@@ -294,12 +313,16 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
       key: `mbk-task-aa::${aa.id}`,
       label: `🎯 ${aa.titel || '(ohne Titel)'}`,
       subLabel: aa.anforderungsebene,
-      build: () => buildTaskContentItemForAllgemeineAufgabe({ aufgabe: aa }),
+      build: () =>
+        buildTaskContentItemForAllgemeineAufgabe({
+          aufgabe: aa,
+          navigationContext: navFor(aa.id),
+        }),
       slug: slugify(aa.titel, aa.id),
     }));
 
     return [...lpItems, ...aaItems];
-  }, [lernpakete, lernziele, phaseAktivitaeten, masterAufgaben, allgemeineAufgabenEbene23, katalogById]);
+  }, [lernpakete, lernziele, phaseAktivitaeten, masterAufgaben, allgemeineAufgabenEbene23, katalogById, navigationContextByRefId]);
 
   const microItems = useMemo(() => {
     const themenfeldById = new Map(themenfelder.map((tf) => [tf.id, tf]));
@@ -314,6 +337,8 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
       if (!zieleByPaket.has(lz.lernpaket_id)) zieleByPaket.set(lz.lernpaket_id, []);
       zieleByPaket.get(lz.lernpaket_id).push(lz);
     }
+
+    const navFor = (refId) => navigationContextByRefId.get(refId) || [];
 
     const items = [];
     for (const pa of phaseAktivitaeten) {
@@ -331,7 +356,10 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
             einheit, aktivitaet: pa, lernpaket: lp, themenfeld: tf,
             phaseAktivitaetenInPaket: phasenByPaket.get(pa.lernpaket_id) || [],
             lernziele: zieleByPaket.get(pa.lernpaket_id) || [],
-            katalogById, systemContextHash: currentHash,
+            katalogById,
+            // Fragment erbt nav-Context von der Hülle (= Lernpaket).
+            navigationContext: lp ? navFor(lp.id) : [],
+            systemContextHash: currentHash,
           }),
       });
     }
@@ -345,12 +373,14 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
         slug: slugify(aa.titel, aa.id),
         build: () =>
           buildMicroPayloadForAllgemeineAufgabe({
-            einheit, aufgabe: aa, themenfeld: tf, systemContextHash: currentHash,
+            einheit, aufgabe: aa, themenfeld: tf,
+            navigationContext: navFor(aa.id),
+            systemContextHash: currentHash,
           }),
       });
     }
     return items;
-  }, [einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, allgemeineAufgaben, katalogById, currentHash]);
+  }, [einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, allgemeineAufgaben, katalogById, currentHash, navigationContextByRefId]);
 
   // ── Aktion-Helfer ────────────────────────────────────────────────────
   const baseSlug = slugify(einheit?.titel_der_einheit, einheitId || 'einheit');
