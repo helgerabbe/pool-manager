@@ -78,33 +78,10 @@ Du musst NUR diese eine Datei erzeugen. Keine zusätzlichen Files, keine Vorab-K
 # AKTIVITÄTS-RUNTIME (WICHTIG)
 Es gibt eine vorgefertigte, statische **Activity-Runtime** (\`mbk-activity-runtime.js\` + \`mbk-activity-runtime.css\`), die im SCORM-ZIP mitgeliefert wird. Sie macht aus deklarativen Containern interaktive Übungen (Drag&Drop, Live-Check, Score-Meldung an Moodle). **Du erfindest KEINE Interaktivität — du schreibst nur den passenden Container mit JSON-Config**.
 
-## Lückentext-Aktivität (aktivitaet_name === "Lückentext")
-Statt einer statischen Anzeige rendere NUR diesen Container:
+Die konkreten Render-Anweisungen pro Aktivitätstyp werden vom Aufruf-System dynamisch an diesen System-Prompt angehängt — du findest sie weiter unten im Abschnitt **"AKTIVITÄTSTYP-SPEZIFISCHE ANWEISUNGEN"**. Nur die Typen, die im aktuellen Auftrag tatsächlich vorkommen, werden dort eingewoben.
 
-\`\`\`html
-<div class="mbk-activity"
-     data-mbk-activity="lueckentext"
-     data-mbk-config='{"instruction":"…","segments":[{"type":"text","value":"…"},{"type":"gap","answer":"…"},…],"distractors":["…"]}'></div>
-\`\`\`
-
-Regeln für die Config:
-- \`instruction\`: die Arbeitsanweisung (aus \`field_values.instruction\` oder \`master_aufgaben[0].field_values.instruction\`).
-- \`segments\`: Array aus \`text\`-Blöcken (\`value\`) und \`gap\`-Blöcken (\`answer\`), in genau der Reihenfolge des Lückentexts. Die Quelldaten findest du in \`field_values.lueckentext_data\` bzw. den \`master_aufgaben[].field_values.lueckentext_data\`. Falls dort eine Text-Vorlage mit Platzhaltern wie \`{{1}}\`, \`[Begriff]\` oder \`____\` steht: zerlege sie in die segments-Liste. Falls eine Liste \`gaps\`/\`answers\` mitgeliefert ist, nimm diese als Lücken-Antworten in genau der Reihenfolge ihres Auftretens.
-- \`distractors\`: optionale zusätzliche Wörter, die nicht in den Text gehören (aus den Quelldaten, z.B. \`distractors\`/\`falsche_woerter\`).
-- **JSON muss valide sein**. Anführungszeichen innerhalb von Strings escapen.
-- Wenn es **mehrere Master-Aufgaben** für die Lückentext-Aktivität gibt: rendere pro Master einen eigenen Container hintereinander.
-
-KEINE eigene Wortliste, kein eigener Drag&Drop-Code, KEIN \`<script>\`, KEIN eigenes CSS für die Lücken — die Runtime macht das alles.
-
-Beispiel (zur Veranschaulichung, NICHT 1:1 kopieren):
-\`\`\`html
-<div class="mbk-activity"
-     data-mbk-activity="lueckentext"
-     data-mbk-config='{"instruction":"Fülle die Lücken aus.","segments":[{"type":"text","value":"Bei der relativen "},{"type":"gap","answer":"Häufigkeit"},{"type":"text","value":" vergleicht man, wie oft …"}],"distractors":["Studio"]}'></div>
-\`\`\`
-
-## Andere Aktivitäts-Typen (noch nicht über Runtime)
-Für alle anderen Aktivitäts-Typen (Miniquiz, Multiple Choice, Sortieren, Begriffe zuordnen, Bildbeschriftung, Link/URL, Video, Audio, Text lesen, Lehrwerk, Bearbeitung bestätigen, KI-Tutor, KI-Check, Test, Offene Aufgabe) **rendere weiterhin wie bisher** die statische Darstellung gemäß den Regeln in Abschnitt "WAS DU GENAU ERZEUGST" weiter unten. Sie werden in späteren Iterationen ebenfalls auf die Runtime umgestellt.
+## Aktivitäts-Typen ohne spezifische Anweisung
+Wenn ein Aktivitätstyp im Abschnitt "AKTIVITÄTSTYP-SPEZIFISCHE ANWEISUNGEN" NICHT auftaucht, **rendere ihn statisch** gemäß den Regeln in Abschnitt "WAS DU GENAU ERZEUGST" weiter unten: Karte mit Titel, \`field_values\` als Definition-List (\`<dl>\`), optional \`master_aufgaben[].field_values\` als verschachtelte \`<dl>\` darunter.
 
 ## A · Lernpaket-Monolith (kind: "lernpaket")
 Filename: \`task-<lernpaket_id>.html\`. Genau 1 Item in \`targetTaskContentItems\` mit \`item_type === "lernpaket"\`.
@@ -266,6 +243,58 @@ Deno.serve(async (req) => {
       }
     } catch (_err) {
       // Default reicht — Override ist optional.
+    }
+
+    // ── Aktivitätstyp-spezifische Anweisungen einweben. ──
+    // Pro Aktivitätstyp gibt es einen eigenen, im AufgabenTab editierbaren
+    // Datensatz (Kategorie 'aktivitaetstyp'). Wir laden alle aktiven
+    // Einträge und weben nur die ein, deren `aktivitaet_name` im aktuellen
+    // Auftrag wirklich vorkommt — das hält den Prompt fokussiert und spart
+    // Tokens.
+    let activityInstructionsBlock = '';
+    try {
+      const typAnweisungen = await base44.asServiceRole.entities.MBKGlobalPrompt.filter({
+        kategorie: 'aktivitaetstyp',
+      });
+      // Welche aktivitaet_names kommen im aktuellen Auftrag vor?
+      const namesInTask = new Set();
+      for (const item of ctx.targetItems) {
+        for (const a of item?.aktivitaeten || []) {
+          if (a?.aktivitaet_name) namesInTask.add(a.aktivitaet_name);
+        }
+      }
+      // Match: schluessel === 'aktivitaet_<slug>' UND der zugehörige
+      // anzeigename enthält den Aktivitäts-Namen ODER schluessel matcht
+      // einen normalisierten Namen. Wir nehmen den einfachsten Weg: der
+      // anzeigename folgt der Konvention "Aktivität: <Name>".
+      const relevant = (typAnweisungen || [])
+        .filter((t) => t && t.ist_aktiv !== false && typeof t.prompt_text === 'string')
+        .filter((t) => {
+          const an = String(t.anzeigename || '');
+          // "Aktivität: Lückentext" → "Lückentext"
+          const namePart = an.replace(/^Aktivit[äa]t:\s*/, '').trim();
+          return namesInTask.has(namePart);
+        })
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+      if (relevant.length > 0) {
+        activityInstructionsBlock = [
+          '',
+          '---',
+          '',
+          '# AKTIVITÄTSTYP-SPEZIFISCHE ANWEISUNGEN',
+          '',
+          'Die folgenden Render-Anweisungen gelten für die Aktivitätstypen, die im aktuellen Auftrag vorkommen. Wende sie strikt an — sie haben Vorrang vor der statischen Default-Darstellung.',
+          '',
+          ...relevant.map((t) => t.prompt_text.trim()),
+        ].join('\n');
+      }
+    } catch (_err) {
+      // Wenn das Laden scheitert, fallen wir auf die statische Default-
+      // Darstellung zurück — kein Hard-Fail.
+    }
+    if (activityInstructionsBlock) {
+      systemPrompt = systemPrompt + '\n' + activityInstructionsBlock;
     }
 
     // ── User-Prompt zusammenbauen. ──

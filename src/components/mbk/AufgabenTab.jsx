@@ -219,6 +219,16 @@ export default function AufgabenTab({ einheitId }) {
             subLabel: `Version ${AUFGABEN_PROMPT_VERSION} · wird als System-Anweisung an die KI übergeben`,
             editConfig: { editable: true, ...editable.aufgaben },
           },
+          // Pro Aktivitätstyp ein eigener editierbarer Block.
+          // Beim Generieren werden nur die Anweisungen der Typen eingewoben,
+          // die im aktuellen Lernpaket tatsächlich vorkommen.
+          ...editable.aktivitaetstypen.map((t) => ({
+            label: t.anzeigename,
+            payload: t.value,
+            format: 'text',
+            subLabel: `Wird nur eingewoben, wenn eine Aktivität "${t.aktivitaet_name}" im Auftrag vorkommt`,
+            editConfig: { editable: true, ...t },
+          })),
           {
             label: 'UI-Baustein: CSS-Variablen',
             payload: editable.uiCss.value,

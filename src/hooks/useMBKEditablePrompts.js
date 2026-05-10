@@ -22,6 +22,7 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { ARCHITEKT_SYSTEM_PROMPT } from '@/lib/mbkArchitektPrompt';
 import { AUFGABEN_SYSTEM_PROMPT } from '@/lib/mbkAufgabenPrompt';
+import { AKTIVITAETSTYP_ANWEISUNGEN } from '@/lib/aktivitaetstypAnweisungen';
 
 const ARCHITEKT_KEY = 'mbk_architekt_system_prompt';
 const AUFGABEN_KEY = 'mbk_aufgaben_system_prompt';
@@ -70,12 +71,29 @@ export function useMBKEditablePrompts() {
   const tabBarStored = findBySchluessel(globalPrompts, 'ui_tab_bar_html')?.prompt_text || '';
   const headerStored = findBySchluessel(globalPrompts, 'ui_default_header_html')?.prompt_text || '';
 
+  // Aktivitätstyp-spezifische Anweisungen (Kategorie 'aktivitaetstyp').
+  // Wir bauen pro bekanntem Typ aus dem Katalog einen eigenen Edit-State.
+  // Falls der DB-Record (noch) nicht existiert, gilt der Code-Default als
+  // gespeicherter Stand — beim ersten Save wird der Record automatisch
+  // angelegt.
+  const aktivitaetstypStored = React.useMemo(() => {
+    const m = {};
+    for (const entry of AKTIVITAETSTYP_ANWEISUNGEN) {
+      const rec = findBySchluessel(globalPrompts, entry.schluessel);
+      m[entry.schluessel] = rec?.prompt_text ?? entry.prompt_text;
+    }
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [globalPrompts]);
+  const aktivitaetstypStoredKey = JSON.stringify(aktivitaetstypStored);
+
   // Lokale Editor-Zustände.
   const [draftArchitekt, setDraftArchitekt] = React.useState(architektStored);
   const [draftAufgaben, setDraftAufgaben] = React.useState(aufgabenStored);
   const [draftCss, setDraftCss] = React.useState(cssStored);
   const [draftTabBar, setDraftTabBar] = React.useState(tabBarStored);
   const [draftHeader, setDraftHeader] = React.useState(headerStored);
+  const [draftAktivitaetstyp, setDraftAktivitaetstyp] = React.useState(aktivitaetstypStored);
   const [savingKey, setSavingKey] = React.useState(null);
 
   // Wenn DB-Daten reinkommen, lokale Zustände initialisieren / synchronisieren.
@@ -85,8 +103,9 @@ export function useMBKEditablePrompts() {
     setDraftCss(cssStored);
     setDraftTabBar(tabBarStored);
     setDraftHeader(headerStored);
+    setDraftAktivitaetstyp(aktivitaetstypStored);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [architektStored, aufgabenStored, cssStored, tabBarStored, headerStored]);
+  }, [architektStored, aufgabenStored, cssStored, tabBarStored, headerStored, aktivitaetstypStoredKey]);
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ['mbk-architekt-globalprompts'] });
@@ -167,6 +186,41 @@ export function useMBKEditablePrompts() {
     }
   };
 
+  // Speichert eine Aktivitätstyp-Anweisung. Wenn der Record noch nicht
+  // existiert, legen wir ihn auf Basis des Code-Defaults an — analog
+  // zum Pattern bei Architekt/Aufgaben.
+  const saveAktivitaetstyp = async (schluessel) => {
+    const entry = AKTIVITAETSTYP_ANWEISUNGEN.find((e) => e.schluessel === schluessel);
+    if (!entry) throw new Error(`Unbekannter Aktivitätstyp-Schlüssel: ${schluessel}`);
+    const draft = draftAktivitaetstyp[schluessel] ?? entry.prompt_text;
+    const rec = findBySchluessel(globalPrompts, schluessel);
+    setSavingKey(schluessel);
+    try {
+      if (!rec?.id) {
+        await base44.entities.MBKGlobalPrompt.create({
+          kategorie: 'aktivitaetstyp',
+          schluessel: entry.schluessel,
+          anzeigename: entry.anzeigename,
+          prompt_text: draft,
+          ist_aktiv: true,
+          sort_order: entry.sort_order || 300,
+        });
+      } else {
+        const res = await base44.functions.invoke('updateMBKGlobalPromptSecure', {
+          id: rec.id, prompt_text: draft,
+        });
+        if (!res?.data?.ok) throw new Error(res?.data?.error || 'Update fehlgeschlagen.');
+      }
+      toast.success(`${entry.anzeigename} gespeichert.`);
+      invalidateAll();
+    } catch (err) {
+      toast.error(err?.message || 'Speichern fehlgeschlagen.');
+      throw err;
+    } finally {
+      setSavingKey(null);
+    }
+  };
+
   return {
     isLoading,
     architekt: {
@@ -214,5 +268,26 @@ export function useMBKEditablePrompts() {
       onSave: () => saveUiBlock('ui_default_header_html', draftHeader, 'Header-Template'),
       onReset: () => setDraftHeader(headerStored),
     },
+    /**
+     * Liste der Aktivitätstyp-Edit-Bundles (eines pro Eintrag im
+     * Katalog). Das AufgabenTab kann darüber iterieren und für jeden
+     * Typ einen eigenen editierbaren Block im Payloads-Dialog rendern.
+     */
+    aktivitaetstypen: AKTIVITAETSTYP_ANWEISUNGEN.map((entry) => ({
+      schluessel: entry.schluessel,
+      anzeigename: entry.anzeigename,
+      aktivitaet_name: entry.aktivitaet_name,
+      value: draftAktivitaetstyp[entry.schluessel] ?? entry.prompt_text,
+      stored: aktivitaetstypStored[entry.schluessel] ?? entry.prompt_text,
+      dirty: (draftAktivitaetstyp[entry.schluessel] ?? entry.prompt_text)
+        !== (aktivitaetstypStored[entry.schluessel] ?? entry.prompt_text),
+      saving: savingKey === entry.schluessel,
+      onChange: (v) => setDraftAktivitaetstyp((prev) => ({ ...prev, [entry.schluessel]: v })),
+      onSave: () => saveAktivitaetstyp(entry.schluessel),
+      onReset: () => setDraftAktivitaetstyp((prev) => ({
+        ...prev,
+        [entry.schluessel]: aktivitaetstypStored[entry.schluessel] ?? entry.prompt_text,
+      })),
+    })),
   };
 }

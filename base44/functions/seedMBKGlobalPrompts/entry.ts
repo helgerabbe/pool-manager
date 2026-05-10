@@ -392,6 +392,37 @@ const SEED = [
     ].join('\n'),
     sort_order: 220,
   },
+  // ── Aktivitätstyp-Render-Anweisungen ───────────────────────────────────
+  // Pro Aktivitätstyp ein eigener, im AufgabenTab editierbarer Datensatz.
+  // Der Aufgaben-Bauer webt zur Laufzeit nur die Anweisungen der Typen ein,
+  // die im aktuellen Lernpaket tatsächlich vorkommen — siehe
+  // lib/aktivitaetstypAnweisungen.js für den Code-Default.
+  {
+    kategorie: 'aktivitaetstyp',
+    schluessel: 'aktivitaet_lueckentext',
+    anzeigename: 'Aktivität: Lückentext',
+    prompt_text: [
+      '## Lückentext-Aktivität (aktivitaet_name === "Lückentext")',
+      '',
+      'Statt einer statischen Anzeige rendere NUR diesen Container (die Activity-Runtime macht alles andere):',
+      '',
+      '```html',
+      '<div class="mbk-activity"',
+      '     data-mbk-activity="lueckentext"',
+      `     data-mbk-config='{"instruction":"…","segments":[{"type":"text","value":"…"},{"type":"gap","answer":"…"},…],"distractors":["…"]}'></div>`,
+      '```',
+      '',
+      'Regeln für die Config:',
+      '- `instruction`: die Arbeitsanweisung (aus `field_values.instruction` oder `master_aufgaben[0].field_values.instruction`).',
+      '- `segments`: Array aus `text`-Blöcken (`value`) und `gap`-Blöcken (`answer`), in genau der Reihenfolge des Lückentexts. Die Quelldaten findest du in `field_values.lueckentext_data` bzw. den `master_aufgaben[].field_values.lueckentext_data`. Falls dort eine Text-Vorlage mit Platzhaltern wie `{{1}}`, `[Begriff]` oder `____` steht: zerlege sie in die segments-Liste. Falls eine Liste `gaps`/`answers` mitgeliefert ist, nimm diese als Lücken-Antworten in genau der Reihenfolge ihres Auftretens.',
+      '- `distractors`: optionale zusätzliche Wörter, die nicht in den Text gehören (aus den Quelldaten, z.B. `distractors`/`falsche_woerter`).',
+      '- **JSON muss valide sein**. Anführungszeichen innerhalb von Strings escapen.',
+      '- Wenn es **mehrere Master-Aufgaben** für die Lückentext-Aktivität gibt: rendere pro Master einen eigenen Container hintereinander.',
+      '',
+      'KEINE eigene Wortliste, kein eigener Drag&Drop-Code, KEIN `<script>`, KEIN eigenes CSS für die Lücken — die Runtime macht das alles.',
+    ].join('\n'),
+    sort_order: 300,
+  },
   {
     kategorie: 'systembaustein',
     schluessel: 'sys_einfuehrung',
