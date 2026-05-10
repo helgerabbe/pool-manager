@@ -43,6 +43,34 @@ export const MBK_AIRGAP_VERSION = 'airgap-1.6.0';
 const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 
 /**
+ * Erkennt, ob eine LernpaketPhaseAktivitaet didaktisch eine
+ * "Offene Aufgabe" ist. Diese Aktivitäten sind per Design IMMER ein
+ * KI-Briefing für die MBK (auch wenn `erstellungs_modus !== 'ki'`),
+ * weil ihre einzige Datenquelle eine freie Beschreibung in
+ * `field_values.description` (bzw. den zugehörigen MasterAufgaben) ist.
+ *
+ * Wird sowohl von buildMicroPayloadForActivity als auch vom Bulk-Plan
+ * verwendet, damit offene Aufgaben in Tab 5 (KI-Aufgaben) zuverlässig
+ * als Micro-Briefing auftauchen.
+ */
+export function isOffeneAufgabeActivity(aktivitaet, katalogById) {
+  if (!aktivitaet) return false;
+  const katalog = katalogById?.get?.(aktivitaet.aktivitaet_id);
+  const name = (katalog?.name || '').toLowerCase();
+  return name.includes('offene aufgabe');
+}
+
+/**
+ * Liefert true, wenn eine LernpaketPhaseAktivitaet ein Micro-Briefing
+ * für die MBK erzeugen soll (KI-Modus ODER offene Aufgabe).
+ */
+export function isMicroBriefingActivity(aktivitaet, katalogById) {
+  if (!aktivitaet) return false;
+  if (aktivitaet.erstellungs_modus === 'ki') return true;
+  return isOffeneAufgabeActivity(aktivitaet, katalogById);
+}
+
+/**
  * SCORM-Modularitäts-Vertrag (airgap-1.2.0 / Bündel-Modell).
  *
  * Wird von Payload 1 als FESTE, einheits-/inhalts-UNABHÄNGIGE Anweisung an
@@ -1339,17 +1367,51 @@ export function buildMicroPayloadForActivity({
   phaseAktivitaetenInPaket = [],
   lernziele = [],
   katalogById = new Map(),
+  masterAufgabenForActivity = [],
   navigationContext = [],
   systemContextHash = null,
   uiConfigHash = null,
   nowIso = null,
 }) {
-  if (!aktivitaet || aktivitaet.erstellungs_modus !== 'ki') return null;
+  if (!aktivitaet) return null;
+  const istOffene = isOffeneAufgabeActivity(aktivitaet, katalogById);
+  // Ein Micro-Briefing wird erzeugt, wenn die Aktivität entweder explizit
+  // im KI-Modus läuft oder strukturell eine "Offene Aufgabe" ist.
+  if (aktivitaet.erstellungs_modus !== 'ki' && !istOffene) return null;
 
   const katalog = katalogById?.get(aktivitaet.aktivitaet_id) || null;
-  const briefing = aktivitaet.ki_briefing && typeof aktivitaet.ki_briefing === 'object'
-    ? aktivitaet.ki_briefing
-    : null;
+
+  // Briefing-Auflösung:
+  //   - KI-Modus: explizites ki_briefing-Objekt (Standard- oder Offen-Variante)
+  //   - Offene Aufgabe: aus field_values.description bzw. den
+  //     MasterAufgaben.field_values.description ein virtuelles
+  //     "offen"-Briefing zusammensetzen, damit die MBK genau weiß, wie
+  //     die Aufgabe zu erzeugen ist.
+  let briefing = null;
+  if (aktivitaet.ki_briefing && typeof aktivitaet.ki_briefing === 'object') {
+    briefing = aktivitaet.ki_briefing;
+  } else if (istOffene) {
+    const fvDescription = nullable(aktivitaet?.field_values?.description);
+    const masterDescriptions = (masterAufgabenForActivity || [])
+      .slice()
+      .sort((a, b) => (a?.reihenfolge || 0) - (b?.reihenfolge || 0))
+      .map((m) => nullable(m?.field_values?.description))
+      .filter(Boolean);
+    const funktionsweise = fvDescription
+      || masterDescriptions[0]
+      || null;
+    briefing = {
+      variant: 'offen',
+      offen: {
+        lernziel: null,
+        funktionsweise,
+        visuelle_vorlage: null,
+      },
+      // Liste aller Master-Varianten als Zusatzkontext, falls die
+      // Lehrkraft mehrere Master-Varianten gepflegt hat.
+      master_descriptions: masterDescriptions,
+    };
+  }
 
   return {
     meta: makeMeta({
@@ -1503,6 +1565,7 @@ export function buildMicroPayloadBundle({
   lernziele = [],
   phaseAktivitaeten = [],
   katalogById = new Map(),
+  masterAufgaben = [],
   allgemeineAufgaben = [],
   // airgap-1.4.0: siehe buildTaskContentBundle. Map<refId, string[]>.
   // KI-Aktivitäten erben über lernpaket_id den Context ihres Lernpakets;
@@ -1524,6 +1587,15 @@ export function buildMicroPayloadBundle({
     if (!zieleByPaket.has(lz.lernpaket_id)) zieleByPaket.set(lz.lernpaket_id, []);
     zieleByPaket.get(lz.lernpaket_id).push(lz);
   }
+  // MasterAufgaben pro activity_id gruppieren — für offene Aufgaben, deren
+  // didaktischer Inhalt häufig nicht direkt auf der Aktivität, sondern in
+  // den zugehörigen MasterAufgaben (field_values.description) liegt.
+  const masterByActivity = new Map();
+  for (const m of masterAufgaben) {
+    if (!m?.activity_id) continue;
+    if (!masterByActivity.has(m.activity_id)) masterByActivity.set(m.activity_id, []);
+    masterByActivity.get(m.activity_id).push(m);
+  }
 
   const navFor = (refId) => {
     const v = navigationContextByRefId?.get
@@ -1534,9 +1606,9 @@ export function buildMicroPayloadBundle({
 
   const items = [];
 
-  // KI-Aktivitäten aus Lernpaketen.
+  // KI-Aktivitäten + offene Aufgaben aus Lernpaketen.
   for (const pa of phaseAktivitaeten) {
-    if (pa.erstellungs_modus !== 'ki') continue;
+    if (!isMicroBriefingActivity(pa, katalogById)) continue;
     const lp = lernpaketById.get(pa.lernpaket_id) || null;
     const tf = lp?.themenfeld_id ? themenfeldById.get(lp.themenfeld_id) || null : null;
     const item = buildMicroPayloadForActivity({
@@ -1547,6 +1619,7 @@ export function buildMicroPayloadBundle({
       phaseAktivitaetenInPaket: phasenByPaket.get(pa.lernpaket_id) || [],
       lernziele: zieleByPaket.get(pa.lernpaket_id) || [],
       katalogById,
+      masterAufgabenForActivity: masterByActivity.get(pa.id) || [],
       // Fragment erbt nav-Context von der Hülle (= Lernpaket).
       navigationContext: lp ? navFor(lp.id) : [],
       systemContextHash,

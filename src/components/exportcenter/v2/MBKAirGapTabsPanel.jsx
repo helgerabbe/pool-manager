@@ -42,6 +42,7 @@ import {
   buildSystembausteinPayloadBundle,
   buildSystembausteinPayloadItem,
   extractNavigationContextByRefId,
+  isMicroBriefingActivity,
   makeSystembausteinReferenceId,
 } from '@/lib/mbkAirGapPayloads';
 import { computeSystemContextHash, computeUiConfigHash } from '@/lib/systemContextHash';
@@ -287,12 +288,12 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
     () =>
       buildMicroPayloadBundle({
         einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten,
-        katalogById, allgemeineAufgaben,
+        katalogById, masterAufgaben, allgemeineAufgaben,
         navigationContextByRefId,
         systemContextHash: currentHash,
         uiConfigHash: currentUiHash,
       }),
-    [einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById, allgemeineAufgaben, navigationContextByRefId, currentHash, currentUiHash]
+    [einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById, masterAufgaben, allgemeineAufgaben, navigationContextByRefId, currentHash, currentUiHash]
   );
 
   // airgap-1.6.0: Systembaustein-Bundle (Payload 5).
@@ -376,9 +377,18 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
 
     const navFor = (refId) => navigationContextByRefId.get(refId) || [];
 
+    // MasterAufgaben pro Aktivität — für offene Aufgaben, die ihren
+    // Aufgaben-Inhalt typischerweise erst in den Mastern pflegen.
+    const masterByActivity = new Map();
+    for (const m of masterAufgaben) {
+      if (!m?.activity_id) continue;
+      if (!masterByActivity.has(m.activity_id)) masterByActivity.set(m.activity_id, []);
+      masterByActivity.get(m.activity_id).push(m);
+    }
+
     const items = [];
     for (const pa of phaseAktivitaeten) {
-      if (pa.erstellungs_modus !== 'ki') continue;
+      if (!isMicroBriefingActivity(pa, katalogById)) continue;
       const lp = lernpaketById.get(pa.lernpaket_id) || null;
       const tf = lp?.themenfeld_id ? themenfeldById.get(lp.themenfeld_id) || null : null;
       const katalog = katalogById.get(pa.aktivitaet_id);
@@ -393,6 +403,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
             phaseAktivitaetenInPaket: phasenByPaket.get(pa.lernpaket_id) || [],
             lernziele: zieleByPaket.get(pa.lernpaket_id) || [],
             katalogById,
+            masterAufgabenForActivity: masterByActivity.get(pa.id) || [],
             // Fragment erbt nav-Context von der Hülle (= Lernpaket).
             navigationContext: lp ? navFor(lp.id) : [],
             systemContextHash: currentHash,
@@ -418,7 +429,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
       });
     }
     return items;
-  }, [einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, allgemeineAufgaben, katalogById, currentHash, currentUiHash, navigationContextByRefId]);
+  }, [einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, masterAufgaben, allgemeineAufgaben, katalogById, currentHash, currentUiHash, navigationContextByRefId]);
 
   // airgap-1.6.0: Systembaustein-Items (Payload 5) — pro Lerntyp × baustein_id
   // genau ein Item, sofern der Baustein im jeweiligen Lernpfad referenziert ist.

@@ -898,6 +898,61 @@ describe('MBK Air-Gap Payloads', () => {
       expect(bundle.items).toEqual([]);
       expect(bundle.meta.item_count).toBe(0);
     });
+
+    it('erfasst offene Aufgaben (auch ohne erstellungs_modus="ki") als Micro-Briefing', () => {
+      const katalogById = new Map([
+        ['kat-offen', { id: 'kat-offen', name: 'Offene Aufgabe' }],
+      ]);
+      const bundle = buildMicroPayloadBundle({
+        einheit: { id: 'e1' },
+        lernpakete: [{ id: 'lp1', titel_des_pakets: 'P1' }],
+        phaseAktivitaeten: [
+          {
+            id: 'pa-offen',
+            lernpaket_id: 'lp1',
+            aktivitaet_id: 'kat-offen',
+            erstellungs_modus: 'manuell',
+            field_values: { description: 'Erstelle ein Plakat zur Photosynthese.' },
+          },
+        ],
+        katalogById,
+      });
+      expect(bundle.meta.item_count).toBe(1);
+      const item = bundle.items[0];
+      expect(item.target.reference_id).toBe('pa-offen');
+      expect(item.target.aktivitaet_name).toBe('Offene Aufgabe');
+      expect(item.blueprint.ki_briefing.variant).toBe('offen');
+      expect(item.blueprint.ki_briefing.offen.funktionsweise)
+        .toBe('Erstelle ein Plakat zur Photosynthese.');
+    });
+
+    it('zieht Funktionsweise einer offenen Aufgabe aus den MasterAufgaben, wenn field_values leer sind', () => {
+      const katalogById = new Map([
+        ['kat-offen', { id: 'kat-offen', name: 'Offene Aufgabe' }],
+      ]);
+      const bundle = buildMicroPayloadBundle({
+        einheit: { id: 'e1' },
+        lernpakete: [{ id: 'lp1', titel_des_pakets: 'P1' }],
+        phaseAktivitaeten: [
+          {
+            id: 'pa-offen',
+            lernpaket_id: 'lp1',
+            aktivitaet_id: 'kat-offen',
+            erstellungs_modus: 'manuell',
+            field_values: {},
+          },
+        ],
+        masterAufgaben: [
+          { id: 'm1', activity_id: 'pa-offen', reihenfolge: 1, field_values: { description: 'Master-Beschreibung' } },
+        ],
+        katalogById,
+      });
+      expect(bundle.items).toHaveLength(1);
+      expect(bundle.items[0].blueprint.ki_briefing.offen.funktionsweise)
+        .toBe('Master-Beschreibung');
+      expect(bundle.items[0].blueprint.ki_briefing.master_descriptions)
+        .toEqual(['Master-Beschreibung']);
+    });
   });
 
   // ── airgap-1.4.0: extractNavigationContextByRefId + injection_points ────

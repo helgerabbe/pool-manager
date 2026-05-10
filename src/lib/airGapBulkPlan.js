@@ -29,6 +29,7 @@ import {
   buildMicroPayloadForAllgemeineAufgabe,
   buildSystembausteinPayloadItem,
   extractNavigationContextByRefId,
+  isMicroBriefingActivity,
   makeSystembausteinReferenceId,
   MBK_AIRGAP_VERSION,
 } from '@/lib/mbkAirGapPayloads';
@@ -273,9 +274,20 @@ export function buildAirGapBulkPlan({
     });
   }
 
-  // ── 4. Micro-Briefings (nur KI-Modus) ────────────────────────────────
+  // ── 4. Micro-Briefings (KI-Aktivitäten + offene Aufgaben) ────────────
+  // Offene Aufgaben tragen ihren didaktischen Auftrag in
+  // `field_values.description` (oder den MasterAufgaben) und erfordern
+  // ebenfalls ein Briefing an die MBK — sie laufen daher hier mit, auch
+  // wenn `erstellungs_modus !== 'ki'`.
+  // MasterAufgaben pro activity_id gruppieren (für offene Aufgaben).
+  const masterByActivity = new Map();
+  for (const m of masterAufgaben) {
+    if (!m?.activity_id) continue;
+    if (!masterByActivity.has(m.activity_id)) masterByActivity.set(m.activity_id, []);
+    masterByActivity.get(m.activity_id).push(m);
+  }
   for (const pa of phaseAktivitaeten) {
-    if (pa.erstellungs_modus !== 'ki') continue;
+    if (!isMicroBriefingActivity(pa, katalogById)) continue;
     const lp = lernpaketById.get(pa.lernpaket_id) || null;
     const tf = lp?.themenfeld_id ? themenfeldById.get(lp.themenfeld_id) || null : null;
     const existing = lookup(TYPES.MICRO, pa.id);
@@ -300,6 +312,7 @@ export function buildAirGapBulkPlan({
           phaseAktivitaetenInPaket: phasenByPaket.get(pa.lernpaket_id) || [],
           lernziele: zieleByPaket.get(pa.lernpaket_id) || [],
           katalogById,
+          masterAufgabenForActivity: masterByActivity.get(pa.id) || [],
           // Fragment erbt nav-Context von der Hülle (= Lernpaket).
           navigationContext: lp ? navFor(lp.id) : [],
           systemContextHash,
