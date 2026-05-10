@@ -63,14 +63,48 @@ Du musst NUR diese eine Datei erzeugen. Keine zusätzlichen Files, keine Vorab-K
     \`<meta name="mbk-airgap-version" content="airgap-1.6.0" />\`
     \`<meta name="mbk-system-context-hash" content="[meta.system_context_hash aus structurePayload]" />\`
     \`<meta name="mbk-ui-config-hash" content="[meta.ui_config_hash aus uiConfigPayload]" />\`
+- Im \`<head>\` außerdem die Einbindung der Activity-Runtime (statisch im SCORM-ZIP):
+    \`<link rel="stylesheet" href="mbk-activity-runtime.css" />\`
+    \`<script defer src="mbk-activity-runtime.js"></script>\`
 - Ein \`<style>\`-Block mit dem **vollständigen Inhalt von \`uiConfigPayload.ui_global_config.css_variables\`** (1:1 inline, kein Link, keine Auslassungen).
 - Direkt nach \`<body>\`: die Tab-Bar aus \`uiConfigPayload.ui_global_config.tab_bar_html\` (1:1 übernehmen).
 - Direkt danach: das Header-Template aus \`uiConfigPayload.ui_global_config.default_header_html\` (1:1 übernehmen). Ersetze:
     * \`{{title}}\` durch \`targetMappingEntry.titel\` (Fallback: \`item_type\`-spezifisch sinnvoll, z.B. "Aufgaben des Themenfelds").
     * \`{{back_targets}}\` durch eine Liste von Back-Links zu allen Dateinamen in \`targetMappingEntry.navigation_context\`. Wenn das Header-Template keine Logik dafür enthält, rendere stattdessen einen einfachen \`<nav class="back-links">\` mit \`<a href="<filename>">← <Lerntyp-Label></a>\` pro Eintrag (Lerntyp-Label aus Filename ableiten: "dashboard-pragmatiker.html" → "Pragmatiker").
 - Hauptbereich (\`<main>\`): siehe pro Datei-Typ unten.
-- **Verboten**: \`<script>\`, \`history.back()\`, externe Stylesheets, externe Schriften, eigene Inline-CSS-Blöcke außerhalb des Style-Tags.
-- **Erlaubt**: nur Selektoren, die in \`css_variables\` oder \`tab_bar_html\` definiert sind.
+- **Verboten** (eigener Code): EIGENE \`<script>\`-Blöcke mit JavaScript-Logik, \`history.back()\`, externe Stylesheets, externe Schriften, eigene Inline-CSS-Blöcke außerhalb des Style-Tags.
+- **Erlaubt**: der bereits oben spezifizierte \`<script defer src="mbk-activity-runtime.js">\`-Tag, sowie nur Selektoren, die in \`css_variables\`, \`tab_bar_html\` oder der Activity-Runtime definiert sind.
+
+# AKTIVITÄTS-RUNTIME (WICHTIG)
+Es gibt eine vorgefertigte, statische **Activity-Runtime** (\`mbk-activity-runtime.js\` + \`mbk-activity-runtime.css\`), die im SCORM-ZIP mitgeliefert wird. Sie macht aus deklarativen Containern interaktive Übungen (Drag&Drop, Live-Check, Score-Meldung an Moodle). **Du erfindest KEINE Interaktivität — du schreibst nur den passenden Container mit JSON-Config**.
+
+## Lückentext-Aktivität (aktivitaet_name === "Lückentext")
+Statt einer statischen Anzeige rendere NUR diesen Container:
+
+\`\`\`html
+<div class="mbk-activity"
+     data-mbk-activity="lueckentext"
+     data-mbk-config='{"instruction":"…","segments":[{"type":"text","value":"…"},{"type":"gap","answer":"…"},…],"distractors":["…"]}'></div>
+\`\`\`
+
+Regeln für die Config:
+- \`instruction\`: die Arbeitsanweisung (aus \`field_values.instruction\` oder \`master_aufgaben[0].field_values.instruction\`).
+- \`segments\`: Array aus \`text\`-Blöcken (\`value\`) und \`gap\`-Blöcken (\`answer\`), in genau der Reihenfolge des Lückentexts. Die Quelldaten findest du in \`field_values.lueckentext_data\` bzw. den \`master_aufgaben[].field_values.lueckentext_data\`. Falls dort eine Text-Vorlage mit Platzhaltern wie \`{{1}}\`, \`[Begriff]\` oder \`____\` steht: zerlege sie in die segments-Liste. Falls eine Liste \`gaps\`/\`answers\` mitgeliefert ist, nimm diese als Lücken-Antworten in genau der Reihenfolge ihres Auftretens.
+- \`distractors\`: optionale zusätzliche Wörter, die nicht in den Text gehören (aus den Quelldaten, z.B. \`distractors\`/\`falsche_woerter\`).
+- **JSON muss valide sein**. Anführungszeichen innerhalb von Strings escapen.
+- Wenn es **mehrere Master-Aufgaben** für die Lückentext-Aktivität gibt: rendere pro Master einen eigenen Container hintereinander.
+
+KEINE eigene Wortliste, kein eigener Drag&Drop-Code, KEIN \`<script>\`, KEIN eigenes CSS für die Lücken — die Runtime macht das alles.
+
+Beispiel (zur Veranschaulichung, NICHT 1:1 kopieren):
+\`\`\`html
+<div class="mbk-activity"
+     data-mbk-activity="lueckentext"
+     data-mbk-config='{"instruction":"Fülle die Lücken aus.","segments":[{"type":"text","value":"Bei der relativen "},{"type":"gap","answer":"Häufigkeit"},{"type":"text","value":" vergleicht man, wie oft …"}],"distractors":["Studio"]}'></div>
+\`\`\`
+
+## Andere Aktivitäts-Typen (noch nicht über Runtime)
+Für alle anderen Aktivitäts-Typen (Miniquiz, Multiple Choice, Sortieren, Begriffe zuordnen, Bildbeschriftung, Link/URL, Video, Audio, Text lesen, Lehrwerk, Bearbeitung bestätigen, KI-Tutor, KI-Check, Test, Offene Aufgabe) **rendere weiterhin wie bisher** die statische Darstellung gemäß den Regeln in Abschnitt "WAS DU GENAU ERZEUGST" weiter unten. Sie werden in späteren Iterationen ebenfalls auf die Runtime umgestellt.
 
 ## A · Lernpaket-Monolith (kind: "lernpaket")
 Filename: \`task-<lernpaket_id>.html\`. Genau 1 Item in \`targetTaskContentItems\` mit \`item_type === "lernpaket"\`.

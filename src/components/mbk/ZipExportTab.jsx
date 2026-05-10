@@ -22,6 +22,7 @@ import {
   Download, FileArchive, Loader2, FileText, AlertTriangle, RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getActivityRuntimeFiles, MBK_ACTIVITY_RUNTIME_VERSION } from '@/lib/mbkActivityRuntime';
 
 const KIND_LABELS = {
   manifest: 'Manifest',
@@ -195,6 +196,12 @@ export default function ZipExportTab({ einheitId }) {
       for (const f of filesToInclude) {
         zip.file(f.filename, f.content || '');
       }
+      // Activity-Runtime IMMER mit reinpacken — sie wird von den generierten
+      // HTML-Dateien per <script src="mbk-activity-runtime.js"> referenziert
+      // und macht aus den deklarativen Containern interaktive Aufgaben.
+      for (const rt of getActivityRuntimeFiles()) {
+        zip.file(rt.filename, rt.content);
+      }
       const blob = await zip.generateAsync({ type: 'blob' });
       const slug = slugifyForFilename(einheit?.titel_der_einheit);
       const ts = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '');
@@ -209,7 +216,7 @@ export default function ZipExportTab({ einheitId }) {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      toast.success(`ZIP erstellt: ${filesToInclude.length} Dateien.`);
+      toast.success(`ZIP erstellt: ${filesToInclude.length} Dateien + Activity-Runtime ${MBK_ACTIVITY_RUNTIME_VERSION}.`);
     } catch (err) {
       toast.error(err?.message || 'ZIP-Erstellung fehlgeschlagen.');
     } finally {
