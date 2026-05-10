@@ -96,6 +96,9 @@ export default function EinheitUebersichtTab({
   onReleaseLock = null,
   isAcquiring = false,
   isReleasing = false,
+  // Ring der Macht: bei final_freigegeben/export_running werden alle
+  // Bearbeitungs- und Mitarbeiter-Aktionen ausgeblendet.
+  isEinheitContentLocked = false,
 }) {
   const queryClient = useQueryClient();
   const { faecher, jahrgaenge, phasen } = useSystemSettings();
@@ -206,15 +209,16 @@ export default function EinheitUebersichtTab({
     [currentUserRole, currentUserFaecher, einheit.fach, members, currentUserEmail]
   );
   
-  const kannEinheitBearbeiten = unitAccess.hasFullAccess && !isLockedByOther && isEditingActive;
-  const kannSperrenToggle = unitAccess.hasFullAccess && !isLockedByOther && isEditingActive;
+  const kannEinheitBearbeiten = unitAccess.hasFullAccess && !isLockedByOther && isEditingActive && !isEinheitContentLocked;
+  const kannSperrenToggle = unitAccess.hasFullAccess && !isLockedByOther && isEditingActive && !isEinheitContentLocked;
   // Mitarbeiter-Verwaltung ist bewusst NICHT an isEditingActive gekoppelt:
   // sie ist eine eigene Domäne (EinheitMembers-Tabelle) und soll für Admin/
-  // Fachschaftsleitung/Unit-LEITUNG immer möglich sein – ohne den Edit-Lock
-  // der Einheits-Metadaten erst aktivieren zu müssen. Der Backend-Endpoint
-  // `addEinheitMemberSecure` prüft die Rechte ohnehin serverseitig.
-  const kannMitarbeiterHinzufuegen = unitAccess.hasFullAccess && !isLockedByOther;
-  const kannBearbeitungsstartButton = unitAccess.hasFullAccess && !isLockedByOther && onAcquireLock;
+  // Fachschaftsleitung/Unit-LEITUNG immer möglich sein – ABER: bei final
+  // freigegebener Einheit ist auch das Hinzufügen von Mitarbeitern eine
+  // strukturelle Veränderung, daher zusätzlich durch den Ring der Macht
+  // gesperrt.
+  const kannMitarbeiterHinzufuegen = unitAccess.hasFullAccess && !isLockedByOther && !isEinheitContentLocked;
+  const kannBearbeitungsstartButton = unitAccess.hasFullAccess && !isLockedByOther && onAcquireLock && !isEinheitContentLocked;
 
   // ✅ Normalisierter E-Mail-Vergleich (case-insensitive, ohne Leerzeichen)
   const normalizedEmail = currentUserEmail?.toLowerCase()?.trim() || '';
@@ -489,7 +493,12 @@ export default function EinheitUebersichtTab({
                 )}
 
                 <div className="pt-3 mt-3 border-t">
-                  {isEditingActive ? (
+                  {isEinheitContentLocked ? (
+                    <p className="text-xs text-emerald-800 flex items-center gap-1.5 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200">
+                      <Lock className="w-3 h-3" />
+                      Einheit final freigegeben – Bearbeitung in allen Tabs gesperrt.
+                    </p>
+                  ) : isEditingActive ? (
                     <p className="text-xs text-green-700 flex items-center gap-1.5 bg-green-50 px-2.5 py-1.5 rounded-lg border border-green-200">
                       <Edit className="w-3 h-3" />
                       Bearbeitungsmodus aktiv – Du kannst Änderungen vornehmen.

@@ -41,7 +41,12 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
   });
 
   const catalog = aktivitaetenKatalog?.find(a => a.id === activityRecord?.aktivitaet_id);
-  const kannInhalteBearbeiten = (permissions?.istAdmin || kannBearbeiten) && !isUnitLocked;
+  // Ring der Macht: `kannBearbeiten` kommt vom Workspace und ist bei
+  // final freigegebener Einheit bereits false. Der frühere Admin-Bypass
+  // (`permissions?.istAdmin || kannBearbeiten`) hat den Lifecycle-Lock
+  // umgangen — entfernt. Admins haben weiterhin volle Rechte, aber NUR
+  // wenn die Einheit nicht final ist.
+  const kannInhalteBearbeiten = kannBearbeiten && !isUnitLocked;
 
   // Edit-Mode nach oben melden (für globales Banner in TaskCreationView)
   useEffect(() => {

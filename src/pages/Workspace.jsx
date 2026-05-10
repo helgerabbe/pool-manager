@@ -11,6 +11,8 @@ import WorkspaceDetailPanel from '@/components/workspace/WorkspaceDetailPanel';
 import ActivityDetailView from '@/components/workspace/ActivityDetailView';
 import { usePresence } from '@/hooks/usePresence';
 import { isStructurallyLocked } from '@/hooks/useStructuralLock';
+import { useEinheitFreigabeStatus } from '@/hooks/useEinheitFreigabeStatus';
+import { EXPORT_LIFECYCLE_LABELS, EXPORT_LIFECYCLE_STATUS } from '@/lib/exportLifecycle';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { BookOpen, Lock, ArrowRight, PenLine, Unlock, Loader2 } from 'lucide-react';
@@ -149,8 +151,19 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
   // Einheit gesperrt? → normale Lehrkräfte dürfen nicht bearbeiten
   const einheitGesperrt = einheit?.freigabe_status === 'Gesperrt';
+
+  // ── Ring der Macht: Lifecycle-Hard-Lock ─────────────────────────────────
+  // Sobald die Einheit final freigegeben oder im Export ist, sind ALLE
+  // Bearbeitungsknöpfe in jedem Tab weg — keine „Bearbeiten"-Buttons,
+  // kein „Bearbeitungsmodus aktivieren", kein „Mit KI entwerfen", nichts.
+  // Aufhebung läuft ausschließlich über das Freigabe-Cockpit (Tab 8) bzw.
+  // das Export-Center (Moodle-Team).
+  const { data: einheitFreigabe } = useEinheitFreigabeStatus(einheit?.id);
+  const isEinheitContentLocked = einheitFreigabe?.isContentLocked === true;
+  const lifecycleStatus = einheitFreigabe?.status || EXPORT_LIFECYCLE_STATUS.DRAFT;
+
   const kannDieseEinheitBearbeiten = einheit
-    ? (permissions.kannEinheitBearbeiten(einheit.fach) || unitAccess.hasFullAccess) && (!einheitGesperrt || kannSperreIgnorieren)
+    ? (permissions.kannEinheitBearbeiten(einheit.fach) || unitAccess.hasFullAccess) && (!einheitGesperrt || kannSperreIgnorieren) && !isEinheitContentLocked
     : false;
 
   // ── Präsenz ──────────────────────────────────────────────────────────────────
@@ -552,6 +565,19 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
       <LoadingOverlay isVisible={showDashboardEndOverlay} />
       <div className="flex flex-col h-full w-full bg-background overflow-hidden">
 
+        {/* ── Lifecycle-Lock-Banner (Ring der Macht) ───────────────────────── */}
+        {isEinheitContentLocked && (
+          <div className="shrink-0 px-4 py-2.5 bg-emerald-50 border-b border-emerald-200 text-xs text-emerald-900 flex items-center gap-2">
+            <Lock className="w-3.5 h-3.5 shrink-0 text-emerald-700" />
+            <span>
+              <strong>{EXPORT_LIFECYCLE_LABELS[lifecycleStatus] || 'Einheit final freigegeben'}</strong> – Alle Bearbeitungsfunktionen in allen Tabs sind gesperrt.{' '}
+              {lifecycleStatus === EXPORT_LIFECYCLE_STATUS.EXPORT_RUNNING
+                ? 'Die Einheit wird gerade vom Moodle-Team exportiert. Aufhebung nur über das Export-Center.'
+                : 'Hebe die Freigabe im Freigabe-Cockpit (Tab 8) auf, um wieder zu bearbeiten.'}
+            </span>
+          </div>
+        )}
+
         {/* ── Einheit-Gesperrt-Banner ─────────────────────────────────────────── */}
         {einheitGesperrt && !kannSperreIgnorieren && (
           <div className="shrink-0 px-4 py-2.5 bg-red-50 border-b border-red-200 text-xs text-red-800 flex items-center gap-2">
@@ -638,6 +664,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               </div>
               {(activeTab === 'struktur' || activeTab === 'dashboards') &&
                 !isStructuralEditingActive &&
+                !isEinheitContentLocked &&
                 (permissions.kannStrukturBearbeiten(einheit?.fach) || unitAccess.hasFullAccess) && (
                   <button
                     onClick={activeTab === 'dashboards' ? handleAcquireDashboardLock : handleAcquireStructLock}
@@ -673,6 +700,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                        onReleaseLock={handleReleaseTab1Lock}
                        isAcquiring={acquiringTab1Lock}
                        isReleasing={releasingTab1Lock}
+                       isEinheitContentLocked={isEinheitContentLocked}
                      />
                    )}
                  </ErrorBoundary>
@@ -691,8 +719,8 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                             lernziele={zieleFuerEinheit}
                             themenfelder={themenfelder}
                             queryClient={queryClient}
-                            readOnly={!isStructuralEditingActive || isLockedByOther}
-                            isStructuralEditingActive={isStructuralEditingActive}
+                            readOnly={!isStructuralEditingActive || isLockedByOther || isEinheitContentLocked}
+                            isStructuralEditingActive={isStructuralEditingActive && !isEinheitContentLocked}
                             isLockedByOther={isLockedByOther}
                             onSaved={async () => {
                               // 🔄 PHASE 1: Key-Remount erzwingt kompletten Neustart der Komponente
