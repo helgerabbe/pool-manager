@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import MBKFileOutputCard from './MBKFileOutputCard';
 import MBKPayloadsDialog from './MBKPayloadsDialog';
 import { useMBKArchitektPayloads } from '@/hooks/useMBKArchitektPayloads';
+import { ARCHITEKT_SYSTEM_PROMPT, ARCHITEKT_PROMPT_VERSION } from '@/lib/mbkArchitektPrompt';
 
 // Slots in der gewünschten Anzeige-Reihenfolge.
 const ARCHITEKT_SLOTS = [
@@ -159,6 +160,12 @@ export default function ArchitektTab({ einheitId }) {
         open={showPayloads}
         onOpenChange={setShowPayloads}
         payloads={[
+          {
+            label: 'Master-System-Prompt (Architekt)',
+            payload: ARCHITEKT_SYSTEM_PROMPT,
+            format: 'text',
+            subLabel: `Version ${ARCHITEKT_PROMPT_VERSION} · wird als System-Anweisung an die KI übergeben`,
+          },
           { label: 'UI-Config (Payload 1)', payload: uiConfigPayload },
           { label: 'Strukturpayload (Payload 2)', payload: structurePayload },
         ]}
