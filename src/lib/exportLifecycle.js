@@ -81,7 +81,7 @@ export function canEnterFinalFreigabe(status) {
  */
 export const EXPORT_LIFECYCLE_LABELS = Object.freeze({
   [EXPORT_LIFECYCLE_STATUS.DRAFT]: 'In Bearbeitung',
-  [EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN]: 'Final freigegeben',
+  [EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN]: 'Einheit final freigegeben',
   [EXPORT_LIFECYCLE_STATUS.EXPORT_RUNNING]: 'Im Export',
-  [EXPORT_LIFECYCLE_STATUS.PUBLISHED]: 'Veröffentlicht',
+  [EXPORT_LIFECYCLE_STATUS.PUBLISHED]: 'In Moodle veröffentlicht',
 });

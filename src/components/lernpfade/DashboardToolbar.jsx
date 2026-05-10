@@ -189,6 +189,12 @@ export default function DashboardToolbar({
   const canEnterFinal = darfFreigeben && status === EXPORT_LIFECYCLE_STATUS.DRAFT && einheitFreigabe?.allDashboardsLocked;
   const canUndoFinal = darfFreigeben && einheitFreigabe?.canUndoInUnit;
 
+  // Killer-Switch: Sobald die Einheit final freigegeben oder im Export ist,
+  // werden ALLE Sektor-Pfad-Aktionen UND alle Dashboard-Reset-Aktionen
+  // ausgeblendet. Stattdessen ein klarer Read-Only-Hinweis.
+  const isEinheitContentLocked = einheitFreigabe?.isContentLocked === true;
+  const isExportRunning = status === EXPORT_LIFECYCLE_STATUS.EXPORT_RUNNING;
+
   const lerntypLabel = LERNTYP_META[activeLernTyp]?.label || activeLernTyp;
 
   return (
@@ -207,8 +213,23 @@ export default function DashboardToolbar({
         />
 
         <div className="ml-auto flex items-center gap-1.5 flex-wrap">
-          {/* Aktiver Pfad: Prüfen & freigeben / Entsperren */}
-          {!istPfadGesperrt && darfFreigeben && (
+          {/* ── Killer-Switch: Lifecycle-Lock-Hinweis ────────────────────
+              Sobald die Einheit final freigegeben oder im Export ist,
+              werden ALLE Sektor-Pfad-Buttons ausgeblendet. Nur die
+              „Freigabe aufheben"-Aktion bleibt zugänglich (und nur dann,
+              wenn nicht 'export_running'). */}
+          {isEinheitContentLocked && (
+            <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-emerald-50 border border-emerald-300 text-[11px] text-emerald-900 font-medium">
+              <Lock className="w-3 h-3" />
+              {isExportRunning
+                ? 'Im Export – alle Bearbeitungen gesperrt'
+                : 'Final freigegeben – alle Bearbeitungen gesperrt'}
+            </span>
+          )}
+
+          {/* Aktiver Pfad: Prüfen & freigeben / Entsperren — NUR sichtbar,
+              solange die Einheit nicht final ist. */}
+          {!isEinheitContentLocked && !istPfadGesperrt && darfFreigeben && (
             <div className="inline-flex items-center gap-1">
               <Button
                 size="sm"
@@ -225,7 +246,7 @@ export default function DashboardToolbar({
               </InfoHint>
             </div>
           )}
-          {istPfadGesperrt && darfEntsperren && (
+          {!isEinheitContentLocked && istPfadGesperrt && darfEntsperren && (
             <Button
               size="sm"
               variant="outline"
@@ -273,6 +294,15 @@ export default function DashboardToolbar({
               {finalReleaseBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldOff className="w-3 h-3" />}
               Freigabe aufheben
             </Button>
+          )}
+          {/* Im Export gibt es keine Aufhebung in der Einheit. */}
+          {isExportRunning && (
+            <span
+              className="inline-flex items-center gap-1 h-7 px-2 text-[11px] text-orange-800 italic"
+              title="Das Moodle-Team hat die Einheit gesperrt. Bitte mit dem Export-Team Kontakt aufnehmen."
+            >
+              🔒 Aufhebung nur über das Moodle-Team
+            </span>
           )}
 
           {/* Bearbeitung beenden */}

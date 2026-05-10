@@ -170,6 +170,25 @@ Deno.serve(async (req) => {
     }
     if (!einheit) return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
 
+    // ── Lifecycle Hard-Lock ────────────────────────────────────────────
+    // Sobald die Einheit final freigegeben oder im Export ist, dürfen
+    // einzelne Sektor-Pfade nicht mehr ent-/gesperrt werden — sonst
+    // entstünden Inkonsistenzen mit dem Einheits-Status (z. B. Aufhebung
+    // einzelner Dashboards trotz finaler Freigabe).
+    // Synchron halten mit src/lib/exportLifecycle.js#isContentLocked.
+    const lifecycleStatus = einheit.export_lifecycle_status || 'draft';
+    if (lifecycleStatus === 'final_freigegeben' || lifecycleStatus === 'export_running') {
+      return Response.json(
+        {
+          error:
+            'Die Einheit ist final freigegeben und gesperrt. Einzelne Dashboards können nicht entsperrt werden, solange die Einheit-Freigabe aktiv ist.',
+          code: 'EINHEIT_FINAL_LOCKED',
+          lifecycleStatus,
+        },
+        { status: 423 }
+      );
+    }
+
     // Profil des Users laden (für rolle/faecher).
     const profile = await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email });
     const profil = profile?.[0] || null;

@@ -41,6 +41,11 @@ export function useDashboardRelease({
   // durchgereicht, damit Arbeitsphase-Sektoren pro Themenfeld expandiert
   // werden. Optional, leeres Array => Fallback auf 1 Arbeitsphase-Sektor.
   themenfelder = [],
+  // Killer-Switch: sobald die Einheit `final_freigegeben` oder
+  // `export_running` ist, sind ALLE Schreibaktionen aus diesem Hook
+  // gesperrt — auch für Admin/Fachschaft. Aufhebung nur über das
+  // Freigabe-Cockpit (oder das MBK-Lock, falls 'export_running').
+  isEinheitContentLocked = false,
 }) {
   const queryClient = useQueryClient();
   const [statusBusy, setStatusBusy] = useState(false);
@@ -85,6 +90,10 @@ export function useDashboardRelease({
 
   const handleReleasePath = useCallback(async () => {
     if (!einheitId || !darfFreigeben || istPfadGesperrt || statusBusy) return;
+    if (isEinheitContentLocked) {
+      toast.error('Die Einheit ist final freigegeben — einzelne Dashboards können nicht mehr verändert werden.');
+      return;
+    }
 
     // 1. Pre-Flight: alle Items grün?
     const sektoren = konfiguration?.[activeLernTyp] || [];
@@ -128,12 +137,17 @@ export function useDashboardRelease({
     konfiguration,
     activeLernTyp,
     collectBlockers,
+    isEinheitContentLocked,
   ]);
 
   // Wird vom Confirm-Dialog ausgelöst, nachdem der Nutzer das Prüfergebnis
   // gesehen und „Jetzt freigeben & sperren" gedrückt hat.
   const confirmReleasePath = useCallback(async () => {
     if (!einheitId || statusBusy) return;
+    if (isEinheitContentLocked) {
+      toast.error('Die Einheit ist final freigegeben — einzelne Dashboards können nicht mehr verändert werden.');
+      return;
+    }
     const label = lerntypLabel || activeLernTyp;
 
     // Vor dem Lock: pending Save flushen, damit die Junction-Table garantiert aktuell ist.
@@ -175,10 +189,15 @@ export function useDashboardRelease({
     flushSave,
     hasPendingSave,
     lerntypLabel,
+    isEinheitContentLocked,
   ]);
 
   const handleUnlockPath = useCallback(async () => {
     if (!einheitId || !darfEntsperren || !istPfadGesperrt || statusBusy) return;
+    if (isEinheitContentLocked) {
+      toast.error('Die Einheit ist final freigegeben — einzelne Dashboards können nicht mehr entsperrt werden. Bitte zuerst die Einheit-Freigabe im Freigabe-Cockpit aufheben.');
+      return;
+    }
     const label = lerntypLabel || activeLernTyp;
     const ok = window.confirm(
       `Lernpfad „${label}" wirklich entsperren? Aufgaben werden in Tab 5 wieder bearbeitbar.`
@@ -208,7 +227,7 @@ export function useDashboardRelease({
     } finally {
       setStatusBusy(false);
     }
-  }, [einheitId, darfEntsperren, istPfadGesperrt, statusBusy, activeLernTyp, queryClient, lerntypLabel]);
+  }, [einheitId, darfEntsperren, istPfadGesperrt, statusBusy, activeLernTyp, queryClient, lerntypLabel, isEinheitContentLocked]);
 
   // „Auf Standard zurücksetzen" – Schritt 1 (Trigger):
   // Pre-Flight-Check schließt die Race Condition zwischen „Pfad ist im
@@ -218,6 +237,10 @@ export function useDashboardRelease({
   // Reset-Confirm-Dialog (eigentliches Anwenden in `confirmResetTemplate`).
   const handleApplyTemplate = useCallback(async () => {
     if (!einheitId || !activeLernTyp) return;
+    if (isEinheitContentLocked) {
+      toast.error('Die Einheit ist final freigegeben — Standard-Raster können nicht mehr angewendet werden.');
+      return;
+    }
 
     // 1. Pre-Flight: frischen Status laden, niemals aus Cache.
     let liveStatus = PFAD_STATUS.EMPTY;
@@ -259,7 +282,7 @@ export function useDashboardRelease({
     // 3. Reset-Confirm-Dialog öffnen. Eigentliches Anwenden geschieht
     //    im `confirmResetTemplate`-Handler nach Nutzer-Bestätigung.
     setResetConfirmOpen(true);
-  }, [einheitId, activeLernTyp, queryClient, onTemplateApplied]);
+  }, [einheitId, activeLernTyp, queryClient, onTemplateApplied, isEinheitContentLocked]);
 
   // „Auf Standard zurücksetzen" – Schritt 2 (Anwenden nach Bestätigung):
   // Lädt das Template für den aktiven Lerntyp und schreibt es über

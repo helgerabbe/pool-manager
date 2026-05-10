@@ -189,6 +189,25 @@ Deno.serve(async (req) => {
       return Response.json({ error: perm.reason }, { status: 403 });
     }
 
+    // ── Lifecycle Hard-Lock ────────────────────────────────────────────
+    // Final freigegebene oder im Export befindliche Einheiten dürfen
+    // gar nicht erst zur Bearbeitung gelockt werden — weder Tab 2 noch
+    // Tab 7. Damit ist auch garantiert, dass keine Folge-UI (DnD, Save,
+    // Sektor-Patches) anlaufen kann.
+    const lifecycleStatus = einheit.export_lifecycle_status || 'draft';
+    if (lifecycleStatus === 'final_freigegeben' || lifecycleStatus === 'export_running') {
+      return Response.json(
+        {
+          success: false,
+          reason: 'einheit_final_locked',
+          lifecycleStatus,
+          error:
+            'Die Einheit ist final freigegeben und gesperrt. Die Bearbeitung kann erst nach Aufhebung der Freigabe wieder gestartet werden.',
+        },
+        { status: 423 }
+      );
+    }
+
     const now = Date.now();
 
     // ── PHASE 2: Deep Scan ─────────────────────────────────────────

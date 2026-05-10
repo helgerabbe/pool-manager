@@ -120,6 +120,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Einheit not found' }, { status: 404 });
     }
 
+    // ── Lifecycle Hard-Lock ────────────────────────────────────────────
+    // Final freigegebene oder im Export befindliche Einheiten dürfen
+    // keine Lernpaket-Locks mehr vergeben — auch nicht für Admins.
+    const lifecycleStatus = einheit.export_lifecycle_status || 'draft';
+    if (lifecycleStatus === 'final_freigegeben' || lifecycleStatus === 'export_running') {
+      return Response.json(
+        {
+          error: 'Die Einheit ist final freigegeben und gesperrt. Lernpakete können nicht bearbeitet werden, solange die Einheit-Freigabe aktiv ist.',
+          code: 'EINHEIT_FINAL_LOCKED',
+          lifecycleStatus,
+        },
+        { status: 423 }
+      );
+    }
+
     // ── RBAC ──────────────────────────────────────────────────────────
     const istAdmin = user.role === 'admin';
     if (!istAdmin) {

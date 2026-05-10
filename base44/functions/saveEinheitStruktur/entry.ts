@@ -51,6 +51,23 @@ Deno.serve(async (req) => {
     if (!einheitRecord) {
       return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
     }
+
+    // ── Lifecycle Hard-Lock ────────────────────────────────────────────
+    // Final freigegebene oder gerade exportierende Einheiten dürfen
+    // strukturell nicht mehr verändert werden. Auch nicht von Admins.
+    const lifecycleStatus = einheitRecord.export_lifecycle_status || 'draft';
+    if (lifecycleStatus === 'final_freigegeben' || lifecycleStatus === 'export_running') {
+      return Response.json(
+        {
+          error:
+            'Die Einheit ist final freigegeben und gesperrt. Die Struktur kann erst nach Aufhebung der Freigabe wieder bearbeitet werden.',
+          code: 'EINHEIT_FINAL_LOCKED',
+          lifecycleStatus,
+        },
+        { status: 423 }
+      );
+    }
+
     const STRUCT_LOCK_TIMEOUT_MS = 60 * 60 * 1000;
     const lockOwner = einheitRecord.structural_lock;
     const lockAt = einheitRecord.structural_locked_at ? new Date(einheitRecord.structural_locked_at).getTime() : 0;

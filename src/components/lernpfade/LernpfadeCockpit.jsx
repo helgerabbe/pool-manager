@@ -427,8 +427,19 @@ export default function LernpfadeCockpit({
     });
   }, [einheit?.id, einheit?.lernpfade_konfiguration, flushSave, themenfelder]);
 
+  // ── Einheit-Final-Release (vorher in EinheitFreigabeBlock) ──────────
+  // Vorgezogen, damit `isEinheitContentLocked` für den Read-Only-Wert
+  // verfügbar ist. Sobald die Einheit final freigegeben oder im Export
+  // ist, wirkt der Killer-Switch und sperrt das gesamte Tab 7 read-only.
+  const { data: einheitFreigabe } = useEinheitFreigabeStatus(einheit?.id);
+  const isEinheitContentLocked = einheitFreigabe?.isContentLocked === true;
+
   // ── Read-Only-Ableitung ─────────────────────────────────────────────
-  const readOnly = !isStructuralEditingActive || isLockedByOther || istPfadGesperrt;
+  const readOnly =
+    !isStructuralEditingActive ||
+    isLockedByOther ||
+    istPfadGesperrt ||
+    isEinheitContentLocked;
 
   const usedAufgabenIds = useMemo(
     () => getUsedAufgabenIds(konfiguration, activeLernTyp),
@@ -487,6 +498,8 @@ export default function LernpfadeCockpit({
     // Phase E: durchreichen, damit „Standard zurücksetzen" pro Themenfeld
     // einen eigenen Arbeitsphase-Sektor anlegt.
     themenfelder,
+    // Killer-Switch durchreichen.
+    isEinheitContentLocked,
   });
 
   // ── DnD-Hook (Phase 3.4) ────────────────────────────────────────────
@@ -885,9 +898,7 @@ export default function LernpfadeCockpit({
     [systemBausteineById, selectedSystemBausteinId]
   );
 
-  // ── Einheit-Final-Release (vorher in EinheitFreigabeBlock) ──────────
-  const { data: einheitFreigabe } = useEinheitFreigabeStatus(einheit?.id);
-
+  // einheitFreigabe wurde oben (vor readOnly) bereits gelesen.
   const [finalReleaseConfirmOpen, setFinalReleaseConfirmOpen] = useState(false);
   const [finalReleaseActiveLocks, setFinalReleaseActiveLocks] = useState([]);
 

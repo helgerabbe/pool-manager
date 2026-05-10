@@ -37,6 +37,23 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Einheit not found' }, { status: 404 });
     }
 
+    // ── Lifecycle Hard-Lock ────────────────────────────────────────────
+    // Final freigegebene oder im Export befindliche Einheiten dürfen
+    // gar keinen Edit-Lock mehr vergeben — auch nicht für Admins. Damit
+    // ist sichergestellt, dass der „Bearbeiten"-Pfad in Tab 5 frühzeitig
+    // hart blockt, statt am Ende beim Save zu kippen.
+    const lifecycleStatus = einheit.export_lifecycle_status || 'draft';
+    if (lifecycleStatus === 'final_freigegeben' || lifecycleStatus === 'export_running') {
+      return Response.json(
+        {
+          error: 'Die Einheit ist final freigegeben und gesperrt. Aufgaben können nicht bearbeitet werden, solange die Einheit-Freigabe aktiv ist.',
+          code: 'EINHEIT_FINAL_LOCKED',
+          lifecycleStatus,
+        },
+        { status: 423 }
+      );
+    }
+
     // RBAC: Prüfe Berechtigung für diese Einheit
     const istAdmin = user.role === 'admin';
     
