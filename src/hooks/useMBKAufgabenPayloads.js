@@ -25,6 +25,7 @@ import {
   buildStructurePayload,
   buildTaskContentBundle,
   extractNavigationContextByRefId,
+  isOffeneAufgabeActivity,
 } from '@/lib/mbkAirGapPayloads';
 import {
   computeUiConfigHash,
@@ -194,12 +195,56 @@ export function useMBKAufgabenPayloads(einheitId) {
   // Untertitel (subtitle) berechnet, damit die UI nicht nur die kryptische
   // task-<uuid>.html anzeigt. Lernpakete bekommen "Themenfeld X · Paket Y",
   // Bündel zeigen das Themenfeld bzw. die Einheit + Aufgaben-Anzahl.
+  //
+  // WICHTIG (Filter): Eine Hülle gehört NUR dann in Generator 2, wenn sie
+  // mindestens einen deterministischen (manuellen) Inhalt enthält.
+  //   - Lernpaket-Hülle: ≥1 Aktivität mit erstellungs_modus='manuell', die
+  //     NICHT didaktisch eine "Offene Aufgabe" ist.
+  //   - Themenfeld-/Projekt-Bündel: ≥1 AllgemeineAufgabe mit
+  //     erstellungs_modus='manuell'.
+  // Hüllen, die ausschließlich aus KI- oder offenen Aufgaben bestehen,
+  // erzeugen sonst leere "Beschreibungs-HTMLs" — die gehören in Generator 4.
+  //
+  // Vorgruppierung der Aktivitäten pro Lernpaket-ID für die Filter-Logik.
+  const phaseAktByPaket = useMemo(() => {
+    const m = new Map();
+    for (const pa of phaseAktivitaeten || []) {
+      if (!m.has(pa.lernpaket_id)) m.set(pa.lernpaket_id, []);
+      m.get(pa.lernpaket_id).push(pa);
+    }
+    return m;
+  }, [phaseAktivitaeten]);
+
+  const allgemeineAufgabeById = useMemo(
+    () => new Map((allgemeineAufgaben || []).map((aa) => [aa.id, aa])),
+    [allgemeineAufgaben]
+  );
+
   const taskSlots = useMemo(() => {
     const mapping = structurePayload?.scorm_file_mapping || [];
     const themenfeldById = new Map((themenfelder || []).map((tf) => [tf.id, tf]));
     const lernpaketById = new Map((lernpakete || []).map((lp) => [lp.id, lp]));
+
+    const hasDeterministicContent = (e) => {
+      if (e.kind === 'lernpaket') {
+        const aktivitaeten = phaseAktByPaket.get(e.source_id) || [];
+        return aktivitaeten.some(
+          (pa) => pa?.erstellungs_modus !== 'ki' && !isOffeneAufgabeActivity(pa, katalogById)
+        );
+      }
+      if (e.kind === 'themenfeld_bundle' || e.kind === 'projekt_bundle') {
+        const ids = e.contained_aufgabe_ids || [];
+        return ids.some((id) => {
+          const aa = allgemeineAufgabeById.get(id);
+          return aa && aa.erstellungs_modus !== 'ki';
+        });
+      }
+      return false;
+    };
+
     return mapping
       .filter((e) => TASK_KINDS.has(e.kind))
+      .filter(hasDeterministicContent)
       .map((e) => {
         let displayTitle = e.titel || e.filename;
         let subtitle = null;
@@ -236,7 +281,7 @@ export function useMBKAufgabenPayloads(einheitId) {
           placeholderActivityIds: e.placeholder_activity_ids || [],
         };
       });
-  }, [structurePayload, themenfelder, lernpakete]);
+  }, [structurePayload, themenfelder, lernpakete, phaseAktByPaket, allgemeineAufgabeById, katalogById]);
 
   // ── Voraussetzungen. ──
   const missingPrereqs = useMemo(() => {
