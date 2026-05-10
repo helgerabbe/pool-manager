@@ -19,9 +19,10 @@ import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Loader2, AlertTriangle, CheckCircle2, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import MBKFileOutputCard from './MBKFileOutputCard';
+import MBKPayloadsDialog from './MBKPayloadsDialog';
 import { useMBKArchitektPayloads } from '@/hooks/useMBKArchitektPayloads';
 
 // Slots in der gewünschten Anzeige-Reihenfolge.
@@ -36,6 +37,7 @@ const ARCHITEKT_SLOTS = [
 export default function ArchitektTab({ einheitId }) {
   const queryClient = useQueryClient();
   const [running, setRunning] = useState(false);
+  const [showPayloads, setShowPayloads] = useState(false);
 
   // ── Payloads on-the-fly bauen (ohne ExportPrompts-Lookup). ──
   const {
@@ -104,18 +106,29 @@ export default function ArchitektTab({ einheitId }) {
               Rohdaten der Einheit zusammengestellt.
             </p>
           </div>
-          <Button
-            onClick={handleGenerate}
-            disabled={!canGenerate || loadingFiles}
-            className="gap-1.5 shrink-0"
-          >
-            {running ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Sparkles className="w-4 h-4" />
-            )}
-            {generatedFiles.length > 0 ? 'Erneut generieren' : 'Gerüst generieren'}
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowPayloads(true)}
+              disabled={loadingPayloads}
+              className="gap-1.5"
+            >
+              <Eye className="w-4 h-4" />
+              Payloads anzeigen
+            </Button>
+            <Button
+              onClick={handleGenerate}
+              disabled={!canGenerate || loadingFiles}
+              className="gap-1.5"
+            >
+              {running ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+              {generatedFiles.length > 0 ? 'Erneut generieren' : 'Gerüst generieren'}
+            </Button>
+          </div>
         </div>
 
         {missingPrereqs.length > 0 && (
@@ -141,6 +154,15 @@ export default function ArchitektTab({ einheitId }) {
           </div>
         )}
       </div>
+
+      <MBKPayloadsDialog
+        open={showPayloads}
+        onOpenChange={setShowPayloads}
+        payloads={[
+          { label: 'UI-Config (Payload 1)', payload: uiConfigPayload },
+          { label: 'Strukturpayload (Payload 2)', payload: structurePayload },
+        ]}
+      />
 
       {/* ── Output-Karten in fester Reihenfolge ── */}
       <div className="space-y-3">
