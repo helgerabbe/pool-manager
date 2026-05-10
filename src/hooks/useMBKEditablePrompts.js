@@ -21,8 +21,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { ARCHITEKT_SYSTEM_PROMPT } from '@/lib/mbkArchitektPrompt';
+import { AUFGABEN_SYSTEM_PROMPT } from '@/lib/mbkAufgabenPrompt';
 
 const ARCHITEKT_KEY = 'mbk_architekt_system_prompt';
+const AUFGABEN_KEY = 'mbk_aufgaben_system_prompt';
 
 const ARCHITEKT_DEFAULTS = {
   schluessel: ARCHITEKT_KEY,
@@ -31,6 +33,15 @@ const ARCHITEKT_DEFAULTS = {
   prompt_text: ARCHITEKT_SYSTEM_PROMPT,
   ist_aktiv: true,
   sort_order: 100,
+};
+
+const AUFGABEN_DEFAULTS = {
+  schluessel: AUFGABEN_KEY,
+  kategorie: 'systembaustein',
+  anzeigename: 'Aufgaben-Bauer – System-Prompt',
+  prompt_text: AUFGABEN_SYSTEM_PROMPT,
+  ist_aktiv: true,
+  sort_order: 101,
 };
 
 function findBySchluessel(prompts, key) {
@@ -51,12 +62,17 @@ export function useMBKEditablePrompts() {
   const architektRecord = findBySchluessel(globalPrompts, ARCHITEKT_KEY);
   const architektStored = architektRecord?.prompt_text || ARCHITEKT_SYSTEM_PROMPT;
 
+  // Aufgaben-Bauer-Override (analog zum Architekten).
+  const aufgabenRecord = findBySchluessel(globalPrompts, AUFGABEN_KEY);
+  const aufgabenStored = aufgabenRecord?.prompt_text || AUFGABEN_SYSTEM_PROMPT;
+
   const cssStored = findBySchluessel(globalPrompts, 'ui_css_variables')?.prompt_text || '';
   const tabBarStored = findBySchluessel(globalPrompts, 'ui_tab_bar_html')?.prompt_text || '';
   const headerStored = findBySchluessel(globalPrompts, 'ui_default_header_html')?.prompt_text || '';
 
   // Lokale Editor-Zustände.
   const [draftArchitekt, setDraftArchitekt] = React.useState(architektStored);
+  const [draftAufgaben, setDraftAufgaben] = React.useState(aufgabenStored);
   const [draftCss, setDraftCss] = React.useState(cssStored);
   const [draftTabBar, setDraftTabBar] = React.useState(tabBarStored);
   const [draftHeader, setDraftHeader] = React.useState(headerStored);
@@ -65,11 +81,12 @@ export function useMBKEditablePrompts() {
   // Wenn DB-Daten reinkommen, lokale Zustände initialisieren / synchronisieren.
   React.useEffect(() => {
     setDraftArchitekt(architektStored);
+    setDraftAufgaben(aufgabenStored);
     setDraftCss(cssStored);
     setDraftTabBar(tabBarStored);
     setDraftHeader(headerStored);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [architektStored, cssStored, tabBarStored, headerStored]);
+  }, [architektStored, aufgabenStored, cssStored, tabBarStored, headerStored]);
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ['mbk-architekt-globalprompts'] });
@@ -93,6 +110,32 @@ export function useMBKEditablePrompts() {
         if (!res?.data?.ok) throw new Error(res?.data?.error || 'Update fehlgeschlagen.');
       }
       toast.success('Master-System-Prompt gespeichert.');
+      invalidateAll();
+    } catch (err) {
+      toast.error(err?.message || 'Speichern fehlgeschlagen.');
+      throw err;
+    } finally {
+      setSavingKey(null);
+    }
+  };
+
+  // Aufgaben-Bauer speichern (Pattern wie Architekt: bei fehlendem Record
+  // einmalig anlegen, sonst Update über updateMBKGlobalPromptSecure).
+  const saveAufgaben = async () => {
+    setSavingKey('aufgaben');
+    try {
+      if (!aufgabenRecord?.id) {
+        await base44.entities.MBKGlobalPrompt.create({
+          ...AUFGABEN_DEFAULTS,
+          prompt_text: draftAufgaben,
+        });
+      } else {
+        const res = await base44.functions.invoke('updateMBKGlobalPromptSecure', {
+          id: aufgabenRecord.id, prompt_text: draftAufgaben,
+        });
+        if (!res?.data?.ok) throw new Error(res?.data?.error || 'Update fehlgeschlagen.');
+      }
+      toast.success('Master-System-Prompt (Aufgaben-Bauer) gespeichert.');
       invalidateAll();
     } catch (err) {
       toast.error(err?.message || 'Speichern fehlgeschlagen.');
@@ -134,6 +177,15 @@ export function useMBKEditablePrompts() {
       onChange: setDraftArchitekt,
       onSave: saveArchitekt,
       onReset: () => setDraftArchitekt(architektStored),
+    },
+    aufgaben: {
+      value: draftAufgaben,
+      stored: aufgabenStored,
+      dirty: draftAufgaben !== aufgabenStored,
+      saving: savingKey === 'aufgaben',
+      onChange: setDraftAufgaben,
+      onSave: saveAufgaben,
+      onReset: () => setDraftAufgaben(aufgabenStored),
     },
     uiCss: {
       value: draftCss,

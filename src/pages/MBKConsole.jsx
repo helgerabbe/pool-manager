@@ -22,6 +22,7 @@ import { Cpu } from 'lucide-react';
 import MBKEinheitSelector from '@/components/mbk/MBKEinheitSelector';
 import MBKEinheitStatusCard from '@/components/mbk/MBKEinheitStatusCard';
 import ArchitektTab from '@/components/mbk/ArchitektTab';
+import AufgabenTab from '@/components/mbk/AufgabenTab';
 import ZipExportTab from '@/components/mbk/ZipExportTab';
 import PlaceholderTab from '@/components/mbk/PlaceholderTab';
 
@@ -90,10 +91,7 @@ export default function MBKConsole() {
         </TabsContent>
 
         <TabsContent value="aufgaben" className="mt-4">
-          <PlaceholderTab
-            title="Generator 2 – Aufgaben-Bauer"
-            description="Erzeugt die deterministischen Aufgaben (Lernpaket-Monolithe, Themenfeld-Bündel, Projekt-Bündel) auf Basis von Strukturpayload und Task-Content. Die Auswahl wird pro Lernpaket / Themenfeld / Projekt erfolgen, damit du kontrollieren kannst, was generiert wird."
-          />
+          <AufgabenTab einheitId={einheitId} />
         </TabsContent>
 
         <TabsContent value="systembausteine" className="mt-4">
