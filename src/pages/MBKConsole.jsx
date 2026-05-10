@@ -20,7 +20,9 @@ import React, { useState } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Cpu } from 'lucide-react';
 import MBKEinheitSelector from '@/components/mbk/MBKEinheitSelector';
+import MBKEinheitStatusCard from '@/components/mbk/MBKEinheitStatusCard';
 import ArchitektTab from '@/components/mbk/ArchitektTab';
+import ZipExportTab from '@/components/mbk/ZipExportTab';
 import PlaceholderTab from '@/components/mbk/PlaceholderTab';
 
 export default function MBKConsole() {
@@ -54,6 +56,9 @@ export default function MBKConsole() {
         </label>
         <MBKEinheitSelector value={einheitId} onChange={setEinheitId} />
       </div>
+
+      {/* ── Status der ausgewählten Einheit ── */}
+      {einheitId && <MBKEinheitStatusCard einheitId={einheitId} />}
 
       {/* ── Generator-Tabs ── */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -106,10 +111,7 @@ export default function MBKConsole() {
         </TabsContent>
 
         <TabsContent value="zip-export" className="mt-4">
-          <PlaceholderTab
-            title="Generator 5 – Packer (ZIP-Export)"
-            description="Sammelt alle generierten Dateien dieser Einheit und packt sie in eine fertige SCORM-ZIP-Datei, die direkt in Moodle hochgeladen werden kann."
-          />
+          <ZipExportTab einheitId={einheitId} />
         </TabsContent>
       </Tabs>
     </div>
