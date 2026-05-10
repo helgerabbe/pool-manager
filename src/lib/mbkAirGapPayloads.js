@@ -474,6 +474,13 @@ function summarizeSektor(sektor, themenfelderById) {
     ? nullable(sektor?.titel_snapshot) || nullable(themenfelderById.get(sektor.themenfeld_id)?.titel)
     : null;
 
+  // Schema v4: bearbeitungsmodus pro Sektor in den Strukturpayload
+  // ausliefern, damit der Architekt die Dashboards mit der richtigen
+  // Gating-Logik rendern kann.
+  const bearbeitungsmodus = (sektor?.bearbeitungsmodus === 'sequenziell' || sektor?.bearbeitungsmodus === 'frei')
+    ? sektor.bearbeitungsmodus
+    : 'sequenziell';
+
   return {
     sektor_id: sektor?.sektor_id || null,
     sektor_typ: sektor?.sektor_typ || null,
@@ -481,6 +488,7 @@ function summarizeSektor(sektor, themenfelderById) {
     titel: nullable(sektor?.titel),
     themenfeld_id: sektor?.themenfeld_id || null,
     themenfeld_titel: themenfeldTitel,
+    bearbeitungsmodus,
     items: itemsOut,
   };
 }

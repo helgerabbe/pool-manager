@@ -64,16 +64,53 @@ Regeln:
        \`<meta name="mbk-system-context-hash" content="[meta.system_context_hash aus structurePayload]" />\`
        \`<meta name="mbk-ui-config-hash" content="[meta.ui_config_hash aus uiConfigPayload]" />\`
    - Ein \`<style>\`-Block mit dem **vollständigen Inhalt von \`uiConfigPayload.ui_global_config.css_variables\`** (1:1 inline, kein Link, keine Auslassungen).
+   - **Zusätzliches Inline-CSS** (an css_variables anhängen, damit alles in einem \`<style>\` steht):
+       \`.sektor.locked { opacity: 0.45; pointer-events: none; filter: grayscale(0.4); }\`
+       \`.sektor.locked .sektor-lock-hint { display: block; font-size: 0.85em; color: #666; margin-top: 0.5em; }\`
+       \`.sektor:not(.locked) .sektor-lock-hint { display: none; }\`
    - Direkt nach \`<body>\`: die Tab-Bar aus \`uiConfigPayload.ui_global_config.tab_bar_html\` (1:1 übernehmen, KEINE eigene Tab-Bar erfinden).
    - Optional unmittelbar danach: das Header-Template aus \`uiConfigPayload.ui_global_config.default_header_html\`. Falls vorhanden, ersetze die Platzhalter \`{{title}}\` durch den Lerntyp-Titel (z. B. "Dashboard – Pragmatiker") und \`{{back_targets}}\` durch einen leeren String (Dashboards haben keinen Back-Link).
    - Hauptbereich (\`<main>\` oder \`<section>\`): visualisiert \`structurePayload.lernpfade.<lerntyp>\`:
-     * Pro Sektor eine Überschrift (\`<h2>\`) mit \`titel\`. Bei \`sektor_typ='arbeitsphase_themenfeld'\` wird \`themenfeld_titel\` als Untertitel/Badge mitgeführt.
+     * Pro Sektor ein \`<section class="sektor" data-sektor-id="<sektor.sektor_id>" data-bearbeitungsmodus="<sektor.bearbeitungsmodus>">\`-Block.
+     * Innerhalb davon eine Überschrift (\`<h2>\`) mit \`titel\`. Bei \`sektor_typ='arbeitsphase_themenfeld'\` wird \`themenfeld_titel\` als Untertitel/Badge mitgeführt.
+     * Direkt unter der \`<h2>\`: ein \`<p class="sektor-lock-hint">🔒 Dieser Abschnitt wird freigeschaltet, wenn du den vorherigen Abschnitt abgeschlossen hast.</p>\` — dieser Hinweis ist per CSS nur in gesperrten Sektoren sichtbar.
      * Pro Root-Item (\`parent_instance_id\` ist null) eine klickbare Karte mit \`href\` = der Dateiname, den du im \`scorm_file_mapping\` zur \`ref_id\` findest. Suche zuerst über \`source_id === ref_id\` (Lernpaket, Systembaustein), dann über \`contained_aufgabe_ids\` (für Aufgaben in Themenfeld-/Projekt-Bündeln).
      * Bündel-Children (Items mit \`parent_instance_id\`) werden als verschachtelte Liste unter ihrem Bundle-Container gerendert.
      * System-Items (\`type='system'\`): Filename ist \`system-<lerntyp>-<ref_id>.html\` (Pattern aus dem Mapping). Der Lerntyp ist der gerade gerenderte Pfad.
+   - **Sektor-Gating-Skript** (Schema v4): Direkt vor \`</body>\` ein einziges \`<script>\`-Block, EXAKT so:
+       \`\`\`
+       <script>
+       (function(){
+         var sektoren = document.querySelectorAll('.sektor');
+         var prevDone = true;
+         for (var i = 0; i < sektoren.length; i++) {
+           var s = sektoren[i];
+           var id = s.getAttribute('data-sektor-id');
+           var modus = s.getAttribute('data-bearbeitungsmodus');
+           var done = false;
+           try { done = localStorage.getItem('mbk_sektor_done_' + id) === 'true'; } catch(e) {}
+           if (modus === 'sequenziell' && !prevDone && !done) {
+             s.classList.add('locked');
+             // Karten wirklich nicht klickbar machen (Backup zu pointer-events).
+             var links = s.querySelectorAll('a');
+             for (var j = 0; j < links.length; j++) {
+               links[j].setAttribute('aria-disabled', 'true');
+               links[j].addEventListener('click', function(ev){ ev.preventDefault(); });
+             }
+           }
+           // Nur abgeschlossene oder freie Sektoren öffnen den nächsten.
+           prevDone = done || modus === 'frei' || prevDone === false ? (done || (modus === 'frei' && prevDone)) : true;
+           // Klar formuliert: Ein sequenzieller Sektor schaltet den Folge-Sektor erst frei, wenn er selbst abgeschlossen ist.
+           // Ein freier Sektor reicht den prevDone-Status seines Vorgängers durch.
+           if (modus === 'sequenziell') prevDone = done;
+         }
+       })();
+       </script>
+       \`\`\`
+     Dieses Skript ist die EINZIGE erlaubte Ausnahme von der „Verboten: \`<script>\`"-Regel. Keine anderen Skripte einbauen.
    - **Robuster Fallback**: Wenn eine \`ref_id\` im Mapping NICHT gefunden wird, setze \`href="#missing-<ref_id>"\` und labele die Karte mit dem Suffix " (noch nicht generiert)". NIEMALS deshalb abbrechen.
-   - **Verboten**: \`<script>\`, \`history.back()\`, externe Stylesheets, externe Schriften, Inline-Styles in Karten.
-   - **Erlaubt**: nur Selektoren, die in \`css_variables\` oder \`tab_bar_html\` definiert sind.
+   - **Verboten** (außer dem Gating-Skript oben): \`history.back()\`, externe Stylesheets, externe Schriften, Inline-Styles in Karten.
+   - **Erlaubt**: nur Selektoren, die in \`css_variables\` oder \`tab_bar_html\` definiert sind, plus die \`.sektor\`/\`.locked\`/\`.sektor-lock-hint\`-Klassen aus dem ergänzten Inline-CSS.
 
 # HALT-BEDINGUNGEN
 Falls eine der folgenden Bedingungen zutrifft, gib AUSSCHLIESSLICH eine einzige, kurze Fehlerzeile aus (kein FILE-Block, kein Markdown):

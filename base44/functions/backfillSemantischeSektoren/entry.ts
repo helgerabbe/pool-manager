@@ -1,36 +1,43 @@
 /**
  * backfillSemantischeSektoren
  *
- * One-shot Backfill für das Epic „Semantische Dashboard-Sektoren" (Phase A).
+ * Idempotenter Migrations-Endpoint für die Lernpfad-Konfigurationen.
+ * Re-run safe — kann mehrfach hintereinander ausgeführt werden, ohne
+ * Daten zu beschädigen.
  *
- * Drei Aufgaben (alle idempotent, re-run safe):
+ * Aufgaben:
  *
- *   1. Sektor-Felder ergänzen:
- *      - sektor_typ:      default 'individuell' (siehe Frage 13).
+ *   1. Sektor-Felder ergänzen (Phase A / Schema v3):
+ *      - sektor_typ:      default 'individuell'.
  *      - themenfeld_id:   default null.
  *      - titel_snapshot:  default null.
- *      - modus:           hart auf 'sequenziell' fixiert (siehe Frage 1).
  *
- *   2. Bündel-Modus migrieren (siehe §5 des Epics):
+ *   2. Bündel-Modus migrieren (Schema v3 / §5 des Epics):
  *      Jedes Item, dessen ref_id auf einen Baustein mit
  *      baustein_modus='bundle_1ton' zeigt, bekommt `bundle_config.modus`:
  *        - accepted_types ⊇ ['lernpaket']        → 'sequenziell' (Moodle)
  *        - accepted_types ⊇ ['auswahl_buendel'] → 'frei' (Aufgabenbündel)
  *        - accepted_types ⊇ ['projekt']          → 'frei' (Projektbündel)
- *      Bestehende bundle_config-Werte werden NICHT überschrieben (z. B.
- *      eine bereits gesetzte erforderliche_anzahl bleibt erhalten).
+ *      Bestehende bundle_config-Werte werden NICHT überschrieben.
  *
- *   3. Schema-Version auf 3 hochziehen.
+ *   3. Sektor-Gating (Schema v4):
+ *      - `bearbeitungsmodus` pro Sektor setzen, falls fehlend, anhand der
+ *        Default-Tabelle (Sektor-Typ × Lerntyp): Passioniert hat 'frei'
+ *        bei Arbeitsphase/Test/Projekt, alle anderen 'sequenziell'.
+ *      - Altes Feld `modus` wird entfernt (war hart auf 'sequenziell'
+ *        fixiert und ist seit v4 durch `bearbeitungsmodus` abgelöst).
+ *      - Bei `bearbeitungsmodus === 'sequenziell'` wird automatisch ein
+ *        sys_sektor_abschluss-Baustein als letztes Root-Item eingefügt,
+ *        falls noch keiner existiert (Variante A: immer wieder einfügen,
+ *        wenn fehlend).
+ *
+ *   4. Schema-Version auf 4 hochziehen.
  *
  * Sicherheit: Admin-only (User.role === 'admin' ODER Benutzer.rolle ===
- * 'Administrator'), analog zu migrateLernpfadeToInstanceIds.
+ * 'Administrator').
  *
- * Auch gesperrte Pfade werden migriert (Frage 14): es ist reines
- * Schema-Setting von Defaults, kein inhaltlicher Eingriff.
- *
- * @MIGRATION_NOTE (Supabase): Bei der Supabase-Migration entfällt diese
- * Function. Schema v3 wird DDL-mäßig erzwungen und ein einmaliges SQL-Skript
- * backfilled die JSON-Spalte.
+ * Auch gesperrte Pfade werden migriert: es ist reines Schema-Setting von
+ * Defaults, kein inhaltlicher Eingriff.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
@@ -45,9 +52,37 @@ const VALID_SEKTOR_TYPEN = new Set([
   'abschlusstest',
   'projekte',
   'individuell',
+  'feedback',
 ]);
 
 const DEFAULT_SEKTOR_TYP = 'individuell';
+
+// Schema v4: Spiegel von lib/sektorTypen.js (Deno hat keine src-Imports).
+const SEKTOR_ABSCHLUSS_BAUSTEIN_ID = 'sys_sektor_abschluss';
+const TARGET_SCHEMA_VERSION = 4;
+
+/**
+ * Default-bearbeitungsmodus pro Sektor-Typ × Lerntyp. Spiegelt
+ * lib/sektorTypen.js#getDefaultBearbeitungsmodus.
+ */
+function defaultBearbeitungsmodus(sektorTyp, lerntyp) {
+  const isPassioniert = lerntyp === 'passioniert';
+  switch (sektorTyp) {
+    case 'ueberblick':
+    case 'individuell':
+      return 'frei';
+    case 'onboarding':
+    case 'feedback':
+      return 'sequenziell';
+    case 'arbeitsphase_themenfeld':
+    case 'zwischentest':
+    case 'abschlusstest':
+    case 'projekte':
+      return isPassioniert ? 'frei' : 'sequenziell';
+    default:
+      return 'sequenziell';
+  }
+}
 
 /**
  * Bündel-Kind aus accepted_types ableiten — Spiegel von
@@ -87,7 +122,12 @@ async function isAdmin(base44, user) {
  */
 function migrateKonfig(konfig, bundleMetaById) {
   const next = {};
-  const stats = { sektorenTouched: 0, bundlesTouched: 0 };
+  const stats = {
+    sektorenTouched: 0,
+    bundlesTouched: 0,
+    abschlussInserted: 0,
+    legacyModusRemoved: 0,
+  };
   let changed = false;
 
   for (const lerntyp of LERN_TYPEN) {
@@ -114,13 +154,24 @@ function migrateKonfig(konfig, bundleMetaById) {
           : null;
       if ((safe.titel_snapshot ?? null) !== titelSnapshot) sektorChanged = true;
 
-      // Modus immer hart 'sequenziell'.
-      const modus = 'sequenziell';
-      if (safe.modus !== modus) sektorChanged = true;
+      // Schema v4: bearbeitungsmodus aus Default-Tabelle ableiten,
+      // falls fehlend / ungültig.
+      const bearbeitungsmodus = (safe.bearbeitungsmodus === 'sequenziell' || safe.bearbeitungsmodus === 'frei')
+        ? safe.bearbeitungsmodus
+        : defaultBearbeitungsmodus(sektorTyp, lerntyp);
+      if (bearbeitungsmodus !== safe.bearbeitungsmodus) sektorChanged = true;
+
+      // Altes Feld `modus` entfernen — wird seit v4 durch
+      // `bearbeitungsmodus` abgelöst.
+      const hasLegacyModus = 'modus' in safe;
+      if (hasLegacyModus) {
+        sektorChanged = true;
+        stats.legacyModusRemoved += 1;
+      }
 
       // 2. Bündel-Modus migrieren.
       const items = Array.isArray(safe.items) ? safe.items : [];
-      const newItems = items.map((it) => {
+      let newItems = items.map((it) => {
         if (!it || it.type !== 'system' || !it.ref_id) return it;
         const meta = bundleMetaById.get(it.ref_id);
         if (!meta || meta.baustein_modus !== 'bundle_1ton') return it;
@@ -139,17 +190,39 @@ function migrateKonfig(konfig, bundleMetaById) {
         };
       });
 
+      // 3. Schema v4 — Auto-Insert sys_sektor_abschluss bei
+      //    sequenziellen Sektoren (Variante A: immer einfügen, falls
+      //    fehlend; respektiert Lehrer-Vorrang nur, wenn der Baustein
+      //    schon irgendwo im Sektor steht).
+      if (bearbeitungsmodus === 'sequenziell') {
+        const hasAbschluss = newItems.some(
+          (it) => it && it.type === 'system'
+            && it.ref_id === SEKTOR_ABSCHLUSS_BAUSTEIN_ID
+            && !it.parent_instance_id
+        );
+        if (!hasAbschluss) {
+          newItems = [
+            ...newItems,
+            { type: 'system', ref_id: SEKTOR_ABSCHLUSS_BAUSTEIN_ID },
+          ];
+          sektorChanged = true;
+          stats.abschlussInserted += 1;
+        }
+      }
+
       if (sektorChanged) {
         changed = true;
         stats.sektorenTouched += 1;
       }
 
+      // Altes `modus`-Feld bewusst NICHT durchreichen.
+      const { modus: _legacyModus, ...withoutLegacy } = safe;
       return {
-        ...safe,
+        ...withoutLegacy,
         sektor_typ: sektorTyp,
         themenfeld_id: themenfeldId,
         titel_snapshot: titelSnapshot,
-        modus,
+        bearbeitungsmodus,
         items: newItems,
       };
     });
@@ -185,13 +258,16 @@ Deno.serve(async (req) => {
 
     const result = {
       dry_run: dryRun,
+      target_schema_version: TARGET_SCHEMA_VERSION,
       einheiten: {
         total: 0,
         migrated: 0,
-        already_v3: 0,
+        already_current: 0,
         no_konfig: 0,
         bundles_touched: 0,
         sektoren_touched: 0,
+        abschluss_inserted: 0,
+        legacy_modus_removed: 0,
         errors: [],
       },
     };
@@ -205,8 +281,8 @@ Deno.serve(async (req) => {
       for (const einheit of page) {
         result.einheiten.total += 1;
 
-        if (einheit.lernpfade_schema_version === 3) {
-          result.einheiten.already_v3 += 1;
+        if (einheit.lernpfade_schema_version === TARGET_SCHEMA_VERSION) {
+          result.einheiten.already_current += 1;
           continue;
         }
 
@@ -214,7 +290,7 @@ Deno.serve(async (req) => {
           if (!dryRun) {
             try {
               await base44.asServiceRole.entities.Einheiten.update(einheit.id, {
-                lernpfade_schema_version: 3,
+                lernpfade_schema_version: TARGET_SCHEMA_VERSION,
               });
             } catch (e) {
               result.einheiten.errors.push({ einheit_id: einheit.id, error: e?.message });
@@ -231,12 +307,14 @@ Deno.serve(async (req) => {
 
         result.einheiten.bundles_touched += stats.bundlesTouched;
         result.einheiten.sektoren_touched += stats.sektorenTouched;
+        result.einheiten.abschluss_inserted += stats.abschlussInserted;
+        result.einheiten.legacy_modus_removed += stats.legacyModusRemoved;
 
         if (!dryRun) {
           try {
             await base44.asServiceRole.entities.Einheiten.update(einheit.id, {
               lernpfade_konfiguration: konfiguration,
-              lernpfade_schema_version: 3,
+              lernpfade_schema_version: TARGET_SCHEMA_VERSION,
             });
           } catch (e) {
             result.einheiten.errors.push({ einheit_id: einheit.id, error: e?.message });
