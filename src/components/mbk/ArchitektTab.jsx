@@ -4,22 +4,25 @@
  * Tab 1 der MBK-Konsole — Generator 1 ("Architekt").
  *
  * Workflow:
- *   1. Einheit ausgewählt → Hook lädt aus ExportPrompts die UI-Config
- *      (Payload 1) und den Strukturpayload (Payload 2). Beides muss
- *      vorhanden sein, sonst ist der Button deaktiviert.
+ *   1. Einheit ausgewählt → useMBKArchitektPayloads baut UI-Config (Payload 1)
+ *      und Strukturpayload (Payload 2) ON-THE-FLY aus den Rohdaten
+ *      (Einheit, Themenfelder, Lernpakete, … + globale MBK-Prompts).
+ *      → KEIN Lookup in der ExportPrompts-Tabelle. Die interne MBK ist ein
+ *      eigenständiger Pfad parallel zum Air-Gap-Export-Center.
  *   2. Klick auf "Gerüst generieren" → Backend-Funktion mbkGenerateScaffold
  *      ruft Claude Sonnet, parst die FILE-Blöcke, persistiert sie als
  *      MBKGeneratedFile-Records.
  *   3. Output-Felder zeigen die fünf erzeugten Dateien (Manifest + 4 Dashboards).
  *      Re-Generieren überschreibt vorhandene Records.
  */
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MBKFileOutputCard from './MBKFileOutputCard';
+import { useMBKArchitektPayloads } from '@/hooks/useMBKArchitektPayloads';
 
 // Slots in der gewünschten Anzeige-Reihenfolge.
 const ARCHITEKT_SLOTS = [
@@ -34,21 +37,13 @@ export default function ArchitektTab({ einheitId }) {
   const queryClient = useQueryClient();
   const [running, setRunning] = useState(false);
 
-  // ── ExportPrompts laden: UI-Config (Payload 1) + Struktur (Payload 2). ──
-  const { data: exportPrompts = [], isLoading: loadingPrompts } = useQuery({
-    queryKey: ['mbk-export-prompts', einheitId],
-    queryFn: () => base44.entities.ExportPrompts.filter({ einheit_id: einheitId }),
-    enabled: !!einheitId,
-  });
-
-  const uiConfigRecord = useMemo(
-    () => exportPrompts.find((p) => p.prompt_type === 'mbk_ui_config') || null,
-    [exportPrompts]
-  );
-  const structureRecord = useMemo(
-    () => exportPrompts.find((p) => p.prompt_type === 'mbk_structure_payload') || null,
-    [exportPrompts]
-  );
+  // ── Payloads on-the-fly bauen (ohne ExportPrompts-Lookup). ──
+  const {
+    isLoading: loadingPayloads,
+    uiConfigPayload,
+    structurePayload,
+    missingPrereqs,
+  } = useMBKArchitektPayloads(einheitId);
 
   // ── Bereits generierte Files laden. ──
   const { data: generatedFiles = [], isLoading: loadingFiles } = useQuery({
@@ -60,36 +55,13 @@ export default function ArchitektTab({ einheitId }) {
     enabled: !!einheitId,
   });
 
-  const fileByFilename = useMemo(() => {
-    const m = new Map();
-    for (const f of generatedFiles) m.set(f.filename, f);
-    return m;
-  }, [generatedFiles]);
-
-  // ── Voraussetzungen prüfen. ──
-  const missingPrereqs = [];
-  if (!uiConfigRecord) missingPrereqs.push('UI-Config (Payload 1)');
-  if (!structureRecord) missingPrereqs.push('Strukturpayload (Payload 2)');
-  const canGenerate = missingPrereqs.length === 0 && !running;
+  const fileByFilename = new Map(generatedFiles.map((f) => [f.filename, f]));
+  const canGenerate = missingPrereqs.length === 0 && !running && !loadingPayloads;
 
   const handleGenerate = async () => {
     if (!canGenerate) return;
     setRunning(true);
     try {
-      // Die ExportPrompts speichern den Payload als JSON-String — parsen.
-      let uiConfigPayload = null;
-      let structurePayload = null;
-      try {
-        uiConfigPayload = JSON.parse(uiConfigRecord.content || '{}');
-      } catch (e) {
-        throw new Error('UI-Config-Payload konnte nicht geparst werden.');
-      }
-      try {
-        structurePayload = JSON.parse(structureRecord.content || '{}');
-      } catch (e) {
-        throw new Error('Strukturpayload konnte nicht geparst werden.');
-      }
-
       const res = await base44.functions.invoke('mbkGenerateScaffold', {
         einheitId,
         uiConfigPayload,
@@ -128,11 +100,13 @@ export default function ArchitektTab({ einheitId }) {
               Erzeugt das statische SCORM-Gerüst der Einheit: SCORM-Manifest und
               die vier Dashboards (Minimalist, Pragmatiker, Ehrgeizig, Passioniert).
               Inhalte werden noch nicht erfunden — nur Hüllen, Tabs und Navigation.
+              Die nötigen Daten (UI-Config + Struktur) werden hier direkt aus den
+              Rohdaten der Einheit zusammengestellt.
             </p>
           </div>
           <Button
             onClick={handleGenerate}
-            disabled={!canGenerate || loadingPrompts || loadingFiles}
+            disabled={!canGenerate || loadingFiles}
             className="gap-1.5 shrink-0"
           >
             {running ? (
@@ -148,9 +122,12 @@ export default function ArchitektTab({ einheitId }) {
           <div className="flex items-start gap-2 rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-900">
             <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
             <div>
-              <strong>Voraussetzungen fehlen:</strong>{' '}
-              {missingPrereqs.join(', ')}. Bitte zuerst im Export-Center die
-              entsprechenden Air-Gap-Payloads generieren lassen.
+              <strong>Voraussetzungen fehlen:</strong>
+              <ul className="list-disc list-inside mt-1 space-y-0.5">
+                {missingPrereqs.map((m) => (
+                  <li key={m}>{m}</li>
+                ))}
+              </ul>
             </div>
           </div>
         )}
