@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronRight, Loader2 } from 'lucide-react';
@@ -14,7 +15,8 @@ export default function WizardStep1Meta({ onDone }) {
     fach: '', 
     titel_der_einheit: '', 
     jahrgangsstufe: '', 
-    zeit_phase_id: ''
+    zeit_phase_id: '',
+    beschreibung: '',
   });
   const [saving, setSaving] = useState(false);
 
@@ -108,6 +110,22 @@ export default function WizardStep1Meta({ onDone }) {
               {phasen.map(p => <SelectItem key={p.id} value={p.id}>{p.bezeichnung}</SelectItem>)}
             </SelectContent>
           </Select>
+        </div>
+        {/* Optionales Briefing für die KI im Strukturentwurf (Schritt 2). Wird
+            NICHT in der Einheit gespeichert (kein Schema-Feld), sondern nur
+            durch den Wizard-State an generateUnitStructure weitergereicht. */}
+        <div className="space-y-2">
+          <Label>Was soll in dieser Einheit gelernt werden? <span className="text-muted-foreground font-normal">(optional)</span></Label>
+          <Textarea
+            placeholder="Stichpunkte oder kurzer Fließtext – z. B. „Lineare Gleichungen lösen, Textaufgaben modellieren, grafisch interpretieren.“ Diese Beschreibung wird der KI im nächsten Schritt als zusätzlicher Kontext für den Strukturentwurf mitgegeben."
+            value={form.beschreibung}
+            onChange={e => setForm({ ...form, beschreibung: e.target.value })}
+            rows={4}
+            className="resize-none text-sm"
+          />
+          <p className="text-xs text-muted-foreground">
+            Hilft der KI, einen passenderen Strukturentwurf zu erzeugen. Du kannst es auch leer lassen.
+          </p>
         </div>
         <div className="flex justify-end pt-2">
           <Button type="submit" disabled={!canSubmit || saving} className="gap-2">

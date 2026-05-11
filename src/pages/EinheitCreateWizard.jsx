@@ -74,8 +74,11 @@ export default function EinheitCreateWizard() {
   };
 
   const handleStep1Done = async (metaData) => {
-    // Atomare Erstellung: Einheit + Default-Themenfeld + Default-Lernpaket
-    const res = await base44.functions.invoke('createEinheitMitDefaults', { metaData });
+    // `beschreibung` ist nur ein Briefing für die Struktur-KI in Schritt 2 und
+    // KEIN Feld der Einheiten-Entity → vor dem Backend-Call rausfiltern, aber
+    // im Wizard-State behalten, damit es an WizardStepAssistenz weitergeht.
+    const { beschreibung, ...metaForDb } = metaData;
+    const res = await base44.functions.invoke('createEinheitMitDefaults', { metaData: metaForDb });
     const { einheit } = res.data;
     queryClient.invalidateQueries({ queryKey: ['einheiten'] });
     queryClient.invalidateQueries({ queryKey: ['themenfelder', einheit.id] });

@@ -39,6 +39,9 @@ Unterrichtseinheit:
 - Fach: ${stammdaten.fach}
 - Jahrgangsstufe: ${stammdaten.jahrgangsstufe}
 - Zeitraum: ${stammdaten.zeit_phase_id || '–'}
+${stammdaten.beschreibung && stammdaten.beschreibung.trim()
+  ? `\nBeschreibung der Lehrkraft, was in dieser Einheit gelernt werden soll (höchste Priorität — daraus ergibt sich der inhaltliche Schwerpunkt der Struktur):\n${stammdaten.beschreibung.trim()}\n`
+  : ''}
 ${documentUrls?.length > 0 ? `- Dokumente hochgeladen: ${documentUrls.length}` : ''}
 ${structureContext}
 ${conversationHistory}
