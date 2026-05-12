@@ -151,7 +151,16 @@ Deno.serve(async (req) => {
     }
 
     // 8. Lernpaket-Felder aktualisieren (nur erlaubte Felder)
-    const ALLOWED_FIELDS = ['titel_des_pakets', 'geschaetzte_dauer_minuten', 'themenfeld_id', 'reihenfolge_nummer'];
+    // phasen_konfiguration (siehe Lernpakete-Schema): pro Phase
+    // { disabled: boolean }. Wird vom LernpaketPanel-Edit-Dialog mit
+    // dem aktiven Lock gesetzt. Lock-Ownership ist oben bereits geprüft.
+    const ALLOWED_FIELDS = [
+      'titel_des_pakets',
+      'geschaetzte_dauer_minuten',
+      'themenfeld_id',
+      'reihenfolge_nummer',
+      'phasen_konfiguration',
+    ];
     const filteredUpdates = Object.fromEntries(
       Object.entries(updates).filter(([key]) => ALLOWED_FIELDS.includes(key))
     );

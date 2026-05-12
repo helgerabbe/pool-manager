@@ -65,13 +65,20 @@ export default function LernpaketPanel({
   const { canEdit, isLockedByOther, lockedByEmail, lockErrorMessage, isLoading: isLockLoading, acquireLock, releaseLock } = useLernpaketLock(paket.id);
   const [isAcquiringLock, setIsAcquiringLock] = useState(false);
 
+  // Lock-Lifecycle-Audit-Fix (2026-05-12):
+  // Der Dialog wird ERST geöffnet, wenn der Lock sicher erworben ist, und der
+  // Lock wird IMMER wieder freigegeben (Save-Erfolg, Save-Fehler, Cancel,
+  // Outside-Click). isAcquiringLock wird in allen Pfaden korrekt zurückgesetzt.
   const handleOpenEditDialog = async () => {
+    if (isAcquiringLock || canEdit || isLockedByOther) return;
     setIsAcquiringLock(true);
     try {
       const ok = await acquireLock();
       if (!ok) {
-        toast.error(`🔒 Dieses Lernpaket wird aktuell von ${lockedByEmail} bearbeitet.`);
-        setIsAcquiringLock(false);
+        const msg = lockErrorMessage || (lockedByEmail
+          ? `🔒 Dieses Lernpaket wird aktuell von ${lockedByEmail} bearbeitet.`
+          : 'Lock konnte nicht erworben werden.');
+        toast.error(msg);
         return;
       }
       // Drafts aus aktuellem DB-Stand initialisieren
@@ -79,31 +86,40 @@ export default function LernpaketPanel({
       setLernzielDrafts({});
       setEditDialogOpen(true);
     } catch (err) {
+      console.error('[LernpaketPanel] acquireLock failed:', err);
       toast.error('Fehler beim Sperren des Lernpakets.');
+    } finally {
+      // WICHTIG: in ALLEN Pfaden zurücksetzen, sonst bleibt der Button hängen.
       setIsAcquiringLock(false);
     }
   };
 
-  // Abbrechen: Drafts verwerfen, Lock freigeben.
+  // Abbrechen: Drafts verwerfen, Dialog schließen, Lock garantiert freigeben.
   const handleCancelEditDialog = async () => {
     setEditDialogOpen(false);
-    setIsAcquiringLock(false);
     setLocalPhasenConfig(paket.phasen_konfiguration || {});
     setLernzielDrafts({});
-    await releaseLock();
+    try {
+      await releaseLock();
+    } catch (err) {
+      console.warn('[LernpaketPanel] releaseLock on cancel failed:', err);
+    } finally {
+      setIsAcquiringLock(false);
+    }
   };
 
-  // Speichern: phasen_konfiguration + alle dirty Lernziele persistieren, dann Lock freigeben.
+  // Speichern: secure-Function nutzen, danach Lock garantiert freigeben –
+  // auch im Fehlerfall, sonst bleibt das Lernpaket für den User verriegelt
+  // und die OCC-Version ist beim nächsten Versuch veraltet.
   const handleSaveEditDialog = async () => {
+    if (isSavingDialog) return;
     setIsSavingDialog(true);
+    let saveSucceeded = false;
     try {
-      // 1) Lernpaket-Update (phasen_konfiguration)
-      await base44.entities.Lernpakete.update(paket.id, {
-        phasen_konfiguration: localPhasenConfig,
-      });
-
-      // 2) Lernziel-Drafts: nur die ändern, die wirklich dirty sind und nicht-leere Pflichtfelder haben.
-      const updates = [];
+      // 1) Lernziel-Drafts validieren & in das vom Backend erwartete Format
+      //    bringen ({ id, data }). So fährt alles atomar in EINEM Secure-Call
+      //    durch (Lock-Ownership, OCC und Audit werden serverseitig geprüft).
+      const lernzielUpdates = [];
       for (const [lzId, draft] of Object.entries(lernzielDrafts)) {
         const original = paketZiele.find((lz) => lz.id === lzId);
         if (!original) continue;
@@ -114,36 +130,43 @@ export default function LernpaketPanel({
         if (newFach === oldFach && newUe === oldUe) continue;
         if (!newFach) {
           toast.error('Die offizielle Formulierung darf nicht leer sein.');
-          setIsSavingDialog(false);
-          return;
+          return; // finally setzt isSavingDialog zurück
         }
-        updates.push(
-          base44.entities.Lernziele.update(lzId, {
-            formulierung_fachsprache: newFach,
-            schueler_uebersetzung: newUe,
-          })
-        );
+        lernzielUpdates.push({
+          id: lzId,
+          data: { formulierung_fachsprache: newFach, schueler_uebersetzung: newUe },
+        });
       }
-      await Promise.all(updates);
 
-      // Lernpakete kommen aus dem Workspace-Bundle (`getWorkspaceEinheitDataSecure`),
-      // nicht aus einer eigenen ['lernpakete']-Query — daher MUSS hier die
-      // 'workspace-data'-Query invalidiert werden, sonst wird beim nächsten
-      // Öffnen des Dialogs der alte phasen_konfiguration-Wert angezeigt.
+      // 2) Atomic Save via secure-Function (Lernpaket-Felder + Lernziele).
+      await base44.functions.invoke('updateLernpaketSecure', {
+        paketId: paket.id,
+        updates: { phasen_konfiguration: localPhasenConfig },
+        lernzielUpdates,
+      });
+
+      saveSucceeded = true;
       queryClient.invalidateQueries({ queryKey: ['workspace-data'] });
       queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
       queryClient.invalidateQueries({ queryKey: ['lernziele'] });
       toast.success('Änderungen gespeichert.');
-
-      setEditDialogOpen(false);
-      setIsAcquiringLock(false);
-      setLernzielDrafts({});
-      await releaseLock();
     } catch (err) {
       console.error('[LernpaketPanel] Save failed:', err);
-      toast.error('Fehler beim Speichern.');
+      const apiMsg = err?.response?.data?.error || err?.message;
+      toast.error(apiMsg ? `Fehler beim Speichern: ${apiMsg}` : 'Fehler beim Speichern.');
     } finally {
       setIsSavingDialog(false);
+      // Lock IMMER freigeben & UI sauber zurücksetzen – unabhängig vom Erfolg.
+      if (saveSucceeded) {
+        setEditDialogOpen(false);
+        setLernzielDrafts({});
+      }
+      try {
+        await releaseLock();
+      } catch (releaseErr) {
+        console.warn('[LernpaketPanel] releaseLock after save failed:', releaseErr);
+      }
+      setIsAcquiringLock(false);
     }
   };
 
