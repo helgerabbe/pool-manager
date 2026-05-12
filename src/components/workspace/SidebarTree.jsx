@@ -323,9 +323,9 @@ function AmpelLegende() {
         Leer
       </span>
       <span className="flex items-center gap-1.5">
-        <span className="font-semibold text-red-600">Themenfeld</span>
+        <span className="font-semibold text-red-600">Themenfeld noch unvollständig</span>
         <span className="text-muted-foreground">/</span>
-        <span className="font-semibold text-green-600">Themenfeld</span>
+        <span className="font-semibold text-green-600">Themenfeld komplett fertig</span>
       </span>
     </div>
   );
