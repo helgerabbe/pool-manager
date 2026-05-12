@@ -144,7 +144,17 @@ export default function LernpaketPanel({
   // auch im Fehlerfall, sonst bleibt das Lernpaket für den User verriegelt
   // und die OCC-Version ist beim nächsten Versuch veraltet.
   const handleSaveEditDialog = async () => {
-    if (isSavingDialog) return;
+    console.log('[LernpaketPanel] handleSaveEditDialog INVOKED', {
+      paketId: paket?.id,
+      isSavingDialog,
+      canEdit,
+      lernzielDraftsKeys: Object.keys(lernzielDrafts),
+      localPhasenConfig,
+    });
+    if (isSavingDialog) {
+      console.warn('[LernpaketPanel] Save already in progress – ignoring click.');
+      return;
+    }
     setIsSavingDialog(true);
     let saveSucceeded = false;
     try {
@@ -155,8 +165,8 @@ export default function LernpaketPanel({
       for (const [lzId, draft] of Object.entries(lernzielDrafts)) {
         const original = paketZiele.find((lz) => lz.id === lzId);
         if (!original) continue;
-        const newFach = (draft.formulierung_fachsprache ?? '').trim();
-        const newUe = (draft.schueler_uebersetzung ?? '').trim();
+        const newFach = (draft?.formulierung_fachsprache ?? '').trim();
+        const newUe = (draft?.schueler_uebersetzung ?? '').trim();
         const oldFach = (original.formulierung_fachsprache ?? '').trim();
         const oldUe = (original.schueler_uebersetzung ?? '').trim();
         if (newFach === oldFach && newUe === oldUe) continue;
@@ -170,12 +180,19 @@ export default function LernpaketPanel({
         });
       }
 
+      console.log('[LernpaketPanel] Calling updateLernpaketSecure', {
+        paketId: paket.id,
+        lernzielUpdatesCount: lernzielUpdates.length,
+      });
+
       // 2) Atomic Save via secure-Function (Lernpaket-Felder + Lernziele).
-      await base44.functions.invoke('updateLernpaketSecure', {
+      const response = await base44.functions.invoke('updateLernpaketSecure', {
         paketId: paket.id,
         updates: { phasen_konfiguration: localPhasenConfig },
         lernzielUpdates,
       });
+
+      console.log('[LernpaketPanel] updateLernpaketSecure response:', response);
 
       saveSucceeded = true;
       queryClient.invalidateQueries({ queryKey: ['workspace-data'] });
@@ -187,6 +204,7 @@ export default function LernpaketPanel({
       const apiMsg = err?.response?.data?.error || err?.message;
       toast.error(apiMsg ? `Fehler beim Speichern: ${apiMsg}` : 'Fehler beim Speichern.');
     } finally {
+      console.log('[LernpaketPanel] handleSaveEditDialog FINALLY', { saveSucceeded });
       setIsSavingDialog(false);
       // Lock IMMER freigeben & UI sauber zurücksetzen – unabhängig vom Erfolg.
       if (saveSucceeded) {
