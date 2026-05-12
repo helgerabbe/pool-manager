@@ -90,6 +90,15 @@
       "type": "boolean",
       "default": false,
       "description": "Phase G: Vom Export-Center auf true gesetzt, wenn der Moodle-Spezialist dieses Lernpaket im Abschluss-Dialog als 'fehlgeschlagen' markiert. Wird automatisch beim n\u00e4chsten Save (updateLernpaketSecure) auf false zur\u00fcckgesetzt."
+    },
+    "kreativ_briefing": {
+      "type": "string",
+      "description": "Lernpaket-Wizard (Tab 3, Konzept v0.2 \u00a74.1, \u00a74.6): Persistiertes Briefing der Lehrkraft f\u00fcr die KI-gest\u00fctzte Generierung von Aktivit\u00e4ts-H\u00fcllen. Wird beim Klick auf 'Lernpaket mit KI-Assistent f\u00fcllen' geladen, im Sandbox-Textfeld editiert und beim erfolgreichen '\u00dcbernehmen' gespeichert. Erlaubt iterative Verfeinerung \u00fcber mehrere Wizard-L\u00e4ufe, ohne dass die Lehrkraft das Briefing jedes Mal neu tippt. Bei Reset (z. B. fundamentale Neuausrichtung des Pakets) kann die Lehrkraft das Feld manuell leeren. Max. 5000 Zeichen. Null/leer = noch nie ausgef\u00fcllt."
+    },
+    "kreativ_briefing_updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Lernpaket-Wizard (Tab 3, Konzept v0.2 \u00a74.6): Zeitstempel des letzten gespeicherten Briefings. Wird in der Lernpaket-UI als 'Zuletzt mit KI gef\u00fcllt: <Datum>'-Hinweis angezeigt, damit die Lehrkraft erkennt, wann der Wizard zuletzt eingesetzt wurde. Bleibt null, solange `kreativ_briefing` leer ist."
     }
   },
   "required": [
