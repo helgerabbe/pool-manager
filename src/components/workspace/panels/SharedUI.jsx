@@ -39,8 +39,15 @@ export function StatusBadge({ status }) {
     green: 'bg-green-100 text-green-700',
     yellow: 'bg-amber-100 text-amber-700',
     red: 'bg-red-100 text-red-600',
+    // 'new' = noch nie Aktivitäten zugeordnet → neutral grau, nicht rot.
+    new: 'bg-slate-100 text-slate-600',
   };
-  const label = { green: 'Vollständig', yellow: 'In Bearbeitung', red: 'Unvollständig' };
+  const label = {
+    green: 'Vollständig',
+    yellow: 'In Bearbeitung',
+    red: 'Unvollständig',
+    new: 'Neu',
+  };
   return (
     <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${cfg[status] || ''}`}>
       {label[status]}

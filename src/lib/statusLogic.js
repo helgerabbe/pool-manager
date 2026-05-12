@@ -128,10 +128,14 @@ export function getLernpaketStatus(paket, lernziele, aufgaben, userEmail = '', m
   const config = paket.phasen_konfiguration || {};
   const PHASE_KEYS = ['Input', 'Übung', 'Abschluss'];
 
-  // Wenn phaseAktivitaeten vorhanden: nutze neue Logik (LernpaketPhaseAktivitaet)
+  // 'new': Es wurden noch nie Aktivitäten zugeordnet (komplett leer). In diesem
+  // Fall ist das Paket nicht "unvollständig", sondern schlicht frisch angelegt.
+  const paketAktivitaeten = phaseAktivitaeten.filter(pa => pa.lernpaket_id === paket.id);
+  if (paketAktivitaeten.length === 0) {
+    return 'new';
+  }
+
   if (phaseAktivitaeten.length > 0) {
-    const paketAktivitaeten = phaseAktivitaeten.filter(pa => pa.lernpaket_id === paket.id);
-    
     // Prüfe ob alle aktiven Phasen mindestens eine Aktivität haben
     const hatUnvollstaendigePhase = PHASE_KEYS.some(key => {
       const phase = config[key] || {};

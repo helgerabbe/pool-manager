@@ -94,6 +94,38 @@ export default function LernpaketPanel({
     }
   };
 
+  // Wizard: Lock erwerben, dann Modal öffnen. Beim Schließen Lock freigeben –
+  // gleicher Lifecycle wie Bearbeiten, damit kein Paralleledit möglich ist.
+  const handleOpenWizard = async () => {
+    if (isAcquiringLock || canEdit || isLockedByOther) return;
+    setIsAcquiringLock(true);
+    try {
+      const ok = await acquireLock();
+      if (!ok) {
+        const msg = lockErrorMessage || (lockedByEmail
+          ? `🔒 Dieses Lernpaket wird aktuell von ${lockedByEmail} bearbeitet.`
+          : 'Lock konnte nicht erworben werden.');
+        toast.error(msg);
+        return;
+      }
+      setWizardOpen(true);
+    } catch (err) {
+      console.error('[LernpaketPanel] acquireLock (wizard) failed:', err);
+      toast.error('Fehler beim Sperren des Lernpakets.');
+    } finally {
+      setIsAcquiringLock(false);
+    }
+  };
+
+  const handleCloseWizard = async () => {
+    setWizardOpen(false);
+    try {
+      await releaseLock();
+    } catch (err) {
+      console.warn('[LernpaketPanel] releaseLock (wizard) failed:', err);
+    }
+  };
+
   // Abbrechen: Drafts verwerfen, Dialog schließen, Lock garantiert freigeben.
   const handleCancelEditDialog = async () => {
     setEditDialogOpen(false);
@@ -248,91 +280,92 @@ export default function LernpaketPanel({
         </div>
       )}
 
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <div className="w-7 h-7 rounded bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-              {paket.reihenfolge_nummer}
-            </div>
-            <h2 className="text-xl font-bold">{paket.titel_des_pakets}</h2>
-            <StatusBadge status={pStatus} />
-            {isLockedByOther && (
-              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 border border-amber-200 text-amber-800 text-xs font-medium">
-                <Lock className="w-3 h-3" />
-                Gesperrt von {paket.locked_by_email}
-              </div>
+      {/* Aktions-Leiste (eigene Zeile über dem Titel, damit die Titel-Zeile
+          ruhig bleibt). Bearbeiten + Mit KI füllen stehen hier nebeneinander.
+          Der Löschen-Button wurde absichtlich entfernt: das Löschen von
+          Lernpaketen erfolgt zentral durch die Fachschaftsleitung im
+          Strukturboard. */}
+      {kannBearbeiten && (
+        <div className="flex items-center justify-end gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleOpenEditDialog}
+            disabled={isAcquiringLock || canEdit || isLockedByOther}
+            title={isLockedByOther ? `🔒 Wird gerade von ${paket.locked_by_email} bearbeitet` : ''}
+            className="gap-2"
+          >
+            {isAcquiringLock ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Öffne...
+              </>
+            ) : (
+              <>
+                <PenLine className="w-3.5 h-3.5" />
+                Bearbeiten
+              </>
             )}
-            {canEdit && (
-              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 border border-blue-200 text-blue-700 text-xs font-medium">
-                <PenLine className="w-3 h-3" />
-                In Bearbeitung
-              </div>
-            )}
-            {(() => {
-              const phasenConfig = paket.phasen_konfiguration || {};
-              const hasIncomplete = Object.values(phasenConfig).some(
-                phase => phase && phase.selected_aktivitaet_id && !phase.is_complete
-              );
-              return hasIncomplete ? (
-                <span title="Aktivität-Inhalte unvollständig" className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" /> Inhalt unvollständig
-                </span>
-              ) : null;
-            })()}
-          </div>
-          <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
-            <Clock className="w-3.5 h-3.5" />{paket.geschaetzte_dauer_minuten} Minuten
-            {paket.kreativ_briefing_updated_at && (
-              <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-50 border border-violet-200 text-violet-700 text-xs font-medium"
-                title={`Zuletzt mit KI-Assistent gefüllt: ${new Date(paket.kreativ_briefing_updated_at).toLocaleString('de-DE')}`}
-              >
-                <Wand2 className="w-3 h-3" />
-                KI-gefüllt
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {kannBearbeiten && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleOpenEditDialog}
-              disabled={isAcquiringLock || canEdit || isLockedByOther}
-              title={isLockedByOther ? `🔒 Wird gerade von ${paket.locked_by_email} bearbeitet` : ''}
-              className="gap-2"
-            >
-              {isAcquiringLock ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Öffne...
-                </>
-              ) : (
-                <>
-                  <PenLine className="w-3.5 h-3.5" />
-                  Bearbeiten
-                </>
-              )}
-            </Button>
-          )}
-          {kannBearbeiten && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={onDelete} 
-              disabled={isLockedByOther}
-              title={isLockedByOther ? `🔒 Wird gerade von ${paket.locked_by_email} bearbeitet` : 'Lernpaket löschen'}
-            >
-              <Trash2 className="w-4 h-4 text-destructive" />
-            </Button>
-          )}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleOpenWizard}
+            disabled={isAcquiringLock || canEdit || isLockedByOther}
+            title={isLockedByOther ? `🔒 Wird gerade von ${paket.locked_by_email} bearbeitet` : 'Lernpaket mit KI-Assistent füllen'}
+            className="gap-2"
+          >
+            <Wand2 className="w-3.5 h-3.5 text-primary" />
+            Mit KI füllen
+          </Button>
           {isLockedByOther && (
             <span className="text-xs px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 font-medium">
               🔒 Gesperrt
             </span>
           )}
         </div>
+      )}
+
+      <div>
+        <div className="flex items-center gap-2 mb-1 flex-wrap">
+          <h2 className="text-xl font-bold">{paket.titel_des_pakets}</h2>
+          <StatusBadge status={pStatus} />
+          {isLockedByOther && (
+            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 border border-amber-200 text-amber-800 text-xs font-medium">
+              <Lock className="w-3 h-3" />
+              Gesperrt von {paket.locked_by_email}
+            </div>
+          )}
+          {canEdit && (
+            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 border border-blue-200 text-blue-700 text-xs font-medium">
+              <PenLine className="w-3 h-3" />
+              In Bearbeitung
+            </div>
+          )}
+          {(() => {
+            const phasenConfig = paket.phasen_konfiguration || {};
+            const hasIncomplete = Object.values(phasenConfig).some(
+              phase => phase && phase.selected_aktivitaet_id && !phase.is_complete
+            );
+            return hasIncomplete ? (
+              <span title="Aktivität-Inhalte unvollständig" className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" /> Inhalt unvollständig
+              </span>
+            ) : null;
+          })()}
+        </div>
+        <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
+          <Clock className="w-3.5 h-3.5" />{paket.geschaetzte_dauer_minuten} Minuten
+          {paket.kreativ_briefing_updated_at && (
+            <span
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-50 border border-violet-200 text-violet-700 text-xs font-medium"
+              title={`Zuletzt mit KI-Assistent gefüllt: ${new Date(paket.kreativ_briefing_updated_at).toLocaleString('de-DE')}`}
+            >
+              <Wand2 className="w-3 h-3" />
+              KI-gefüllt
+            </span>
+          )}
+        </p>
       </div>
 
       <div className="space-y-2">
@@ -495,22 +528,7 @@ export default function LernpaketPanel({
             </div>
 
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-muted-foreground">Lernphasen</h3>
-                {canEdit && kannBearbeiten && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setWizardOpen(true)}
-                    className="gap-1.5 h-8 text-xs"
-                    title="Lernpaket mit KI-Assistent füllen"
-                  >
-                    <Wand2 className="w-3.5 h-3.5 text-primary" />
-                    Mit KI füllen
-                  </Button>
-                )}
-              </div>
+              <h3 className="text-sm font-semibold text-muted-foreground">Lernphasen</h3>
               {PHASES.map(phase => {
                 const phaseConfig = localPhasenConfig[phase.key] || {};
                 const isDisabled = phaseConfig.disabled === true;
@@ -599,7 +617,7 @@ export default function LernpaketPanel({
 
       <LernpaketWizardModal
         open={wizardOpen}
-        onClose={() => setWizardOpen(false)}
+        onClose={handleCloseWizard}
         paket={paket}
         existingActivityCount={lernpaketAktivitaeten.filter(a => a.lernpaket_id === paket.id).length}
       />
