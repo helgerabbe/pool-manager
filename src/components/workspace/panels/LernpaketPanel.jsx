@@ -143,36 +143,39 @@ export default function LernpaketPanel({
   // Speichern: secure-Function nutzen, danach Lock garantiert freigeben –
   // auch im Fehlerfall, sonst bleibt das Lernpaket für den User verriegelt
   // und die OCC-Version ist beim nächsten Versuch veraltet.
+  //
+  // Hinweis (2026-05-12, Bug-Fix "Speichern reagiert nicht"):
+  // - `canEdit` aus dem useLernpaketLock-Hook kann durch SSE/Re-Mount
+  //   zwischenzeitlich auf `false` fallen, OBWOHL der Lock im Backend noch
+  //   gültig dem Nutzer gehört. Wir verlassen uns deshalb nicht auf das
+  //   Frontend-Flag — das Backend prüft `is_locked && locked_by_email ===
+  //   user.email` ohnehin als Single Source of Truth.
+  // - Leere/None-Werte in `lernzielDrafts` und `localPhasenConfig` werden
+  //   defensiv normalisiert, damit kein TypeError die Funktion still abbricht.
   const handleSaveEditDialog = async () => {
-    console.log('[LernpaketPanel] handleSaveEditDialog INVOKED', {
-      paketId: paket?.id,
-      isSavingDialog,
-      canEdit,
-      lernzielDraftsKeys: Object.keys(lernzielDrafts),
-      localPhasenConfig,
-    });
-    if (isSavingDialog) {
-      console.warn('[LernpaketPanel] Save already in progress – ignoring click.');
-      return;
-    }
+    if (isSavingDialog) return;
     setIsSavingDialog(true);
     let saveSucceeded = false;
     try {
       // 1) Lernziel-Drafts validieren & in das vom Backend erwartete Format
-      //    bringen ({ id, data }). So fährt alles atomar in EINEM Secure-Call
-      //    durch (Lock-Ownership, OCC und Audit werden serverseitig geprüft).
+      //    bringen ({ id, data }). Defensiv: jedes Draft-Item wird in einem
+      //    eigenen try/catch verarbeitet, damit ein einzelner kaputter Eintrag
+      //    nicht den ganzen Save abbricht.
       const lernzielUpdates = [];
-      for (const [lzId, draft] of Object.entries(lernzielDrafts)) {
+      const drafts = lernzielDrafts || {};
+      for (const lzId of Object.keys(drafts)) {
+        const draft = drafts[lzId] || {};
         const original = paketZiele.find((lz) => lz.id === lzId);
         if (!original) continue;
-        const newFach = (draft?.formulierung_fachsprache ?? '').trim();
-        const newUe = (draft?.schueler_uebersetzung ?? '').trim();
-        const oldFach = (original.formulierung_fachsprache ?? '').trim();
-        const oldUe = (original.schueler_uebersetzung ?? '').trim();
+        const newFach = String(draft.formulierung_fachsprache ?? '').trim();
+        const newUe = String(draft.schueler_uebersetzung ?? '').trim();
+        const oldFach = String(original.formulierung_fachsprache ?? '').trim();
+        const oldUe = String(original.schueler_uebersetzung ?? '').trim();
         if (newFach === oldFach && newUe === oldUe) continue;
         if (!newFach) {
           toast.error('Die offizielle Formulierung darf nicht leer sein.');
-          return; // finally setzt isSavingDialog zurück
+          setIsSavingDialog(false);
+          return;
         }
         lernzielUpdates.push({
           id: lzId,
@@ -180,19 +183,19 @@ export default function LernpaketPanel({
         });
       }
 
-      console.log('[LernpaketPanel] Calling updateLernpaketSecure', {
-        paketId: paket.id,
-        lernzielUpdatesCount: lernzielUpdates.length,
-      });
-
       // 2) Atomic Save via secure-Function (Lernpaket-Felder + Lernziele).
       const response = await base44.functions.invoke('updateLernpaketSecure', {
         paketId: paket.id,
-        updates: { phasen_konfiguration: localPhasenConfig },
+        updates: { phasen_konfiguration: localPhasenConfig || {} },
         lernzielUpdates,
       });
 
-      console.log('[LernpaketPanel] updateLernpaketSecure response:', response);
+      // Base44 SDK liefert `{ data, status }`. Wir behandeln nur HTTP-2xx
+      // als Erfolg; alles andere wirft via SDK ohnehin schon.
+      const respData = response?.data ?? response;
+      if (respData && respData.success === false) {
+        throw new Error(respData.error || 'Speichern fehlgeschlagen.');
+      }
 
       saveSucceeded = true;
       queryClient.invalidateQueries({ queryKey: ['workspace-data'] });
@@ -204,9 +207,7 @@ export default function LernpaketPanel({
       const apiMsg = err?.response?.data?.error || err?.message;
       toast.error(apiMsg ? `Fehler beim Speichern: ${apiMsg}` : 'Fehler beim Speichern.');
     } finally {
-      console.log('[LernpaketPanel] handleSaveEditDialog FINALLY', { saveSucceeded });
       setIsSavingDialog(false);
-      // Lock IMMER freigeben & UI sauber zurücksetzen – unabhängig vom Erfolg.
       if (saveSucceeded) {
         setEditDialogOpen(false);
         setLernzielDrafts({});
