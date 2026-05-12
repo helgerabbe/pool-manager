@@ -35,9 +35,6 @@ export default function ThemenfeldPanel({ themenfeld, lernpakete }) {
 
       {paketeFuerThemenfeld.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-muted-foreground">
-            Lernpakete in diesem Themenfeld
-          </h3>
           <div className="space-y-2">
             {paketeFuerThemenfeld.map((paket) => (
               <div
