@@ -452,53 +452,76 @@ export default function LernpaketPanel({
         </div>
       </div>
 
-      {/* Zugeordnete Aktivitäten (informativ, nur lesend) */}
+      {/* Zugeordnete Aktivitäten (informativ, nur lesend).
+          Wir zeigen IMMER alle aktiven Phasen als Baum an — auch wenn sie noch
+          leer sind. So sieht die Lehrkraft sofort, welche Phasen für dieses
+          Lernpaket konfiguriert sind, und welche Phase noch Inhalt braucht.
+          Deaktivierte Phasen (phasen_konfiguration[phase].disabled === true)
+          werden ausgeblendet, damit der Baum die tatsächliche Konfiguration
+          widerspiegelt. */}
       <div className="space-y-2 border-t pt-6">
         <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Aktivitäten</h3>
         {(() => {
           const paketAktivitaeten = lernpaketAktivitaeten.filter(a => a.lernpaket_id === paket.id);
-          if (paketAktivitaeten.length === 0) {
-            return (
-              <div className="p-4 rounded-lg border border-dashed text-center text-sm text-muted-foreground">
-                Noch keine Aktivitäten zugeordnet.
-              </div>
-            );
-          }
-          
-          // Gruppiere nach Phase
+          const phasenConfig = paket.phasen_konfiguration || {};
+
+          // Gruppiere bestehende Aktivitäten nach Phase
           const byPhase = {};
           paketAktivitaeten.forEach(a => {
             if (!byPhase[a.phase]) byPhase[a.phase] = [];
             byPhase[a.phase].push(a);
           });
-          
+
+          const phaseMeta = {
+            'Input':     { icon: '📚', bg: 'bg-green-50 border-green-200' },
+            'Übung':     { icon: '✏️', bg: 'bg-pink-50 border-pink-200' },
+            'Abschluss': { icon: '🎯', bg: 'bg-blue-50 border-blue-200' },
+          };
+
+          const activePhases = ['Input', 'Übung', 'Abschluss'].filter(
+            phase => (phasenConfig[phase] || {}).disabled !== true
+          );
+
+          if (activePhases.length === 0) {
+            return (
+              <div className="p-4 rounded-lg border border-dashed text-center text-sm text-muted-foreground">
+                Alle Phasen wurden deaktiviert.
+              </div>
+            );
+          }
+
           return (
             <div className="space-y-3">
-              {['Input', 'Übung', 'Abschluss'].map(phase => {
+              {activePhases.map(phase => {
                 const activities = byPhase[phase] || [];
-                if (activities.length === 0) return null;
-                
+                const meta = phaseMeta[phase];
                 return (
-                  <div key={phase} className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground uppercase">{phase}</p>
-                    <div className="space-y-1.5">
-                      {activities.map(activity => {
-                        const katalogEntry = aktivitaetenKatalog.find(a => a.id === activity.aktivitaet_id);
-                        const aktivitaetName = katalogEntry?.name || 'Unbekannte Aktivität';
-                        const phaseColors = {
-                          'Input': 'bg-green-50 border-green-200',
-                          'Übung': 'bg-pink-50 border-pink-200',
-                          'Abschluss': 'bg-blue-50 border-blue-200',
-                        };
-                        const bgColor = phaseColors[activity.phase] || 'bg-muted/40 border-border/50';
-                        return (
-                          <div key={activity.id} className={`flex items-start gap-2 p-2 rounded border text-xs ${bgColor}`}>
-                            <span className="text-primary font-semibold shrink-0 mt-0.5">▸</span>
-                            <span className="flex-1 text-foreground">{aktivitaetName}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                  <div key={phase} className="space-y-1.5">
+                    <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1.5">
+                      <span>{meta.icon}</span>
+                      <span>{phase}</span>
+                      <span className="text-muted-foreground/60">
+                        ({activities.length})
+                      </span>
+                    </p>
+                    {activities.length === 0 ? (
+                      <div className="p-2.5 rounded border border-dashed border-border text-xs text-muted-foreground italic">
+                        Noch keine Aktivität zugeordnet
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {activities.map(activity => {
+                          const katalogEntry = aktivitaetenKatalog.find(a => a.id === activity.aktivitaet_id);
+                          const aktivitaetName = katalogEntry?.name || 'Unbekannte Aktivität';
+                          return (
+                            <div key={activity.id} className={`flex items-start gap-2 p-2 rounded border text-xs ${meta.bg}`}>
+                              <span className="text-primary font-semibold shrink-0 mt-0.5">▸</span>
+                              <span className="flex-1 text-foreground">{aktivitaetName}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })}
