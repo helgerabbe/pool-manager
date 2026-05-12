@@ -1,6 +1,6 @@
 # Lernpaket-Wizard · Konzeptpapier
 
-**Status:** Entwurf zur gemeinsamen Diskussion
+**Status:** Entwurf v0.2 (nach Review der Planungsabteilung)
 **Stand:** 2026-05-12
 **Geltungsbereich:** Neue „Wizard"-basierte Arbeitsweise in den Tabs 3
 (Lernpakete), 5 (Allgemeine Aufgaben) und 6 (Projekte) — als didaktisch
@@ -277,12 +277,34 @@ wird übersprungen, Übernahme erfolgt direkt.
   ],
 
   "verfuegbare_aktivitaetstypen": [            // 1:1 aus AktivitaetenKatalog (ist_active = true)
-    { "name": "Video anschauen", "phase": "Input" },
-    { "name": "Bild betrachten", "phase": "Input" },
-    { "name": "Lückentext", "phase": "Übung" },
-    { "name": "Sortieren", "phase": "Übung" },
-    { "name": "Miniquiz", "phase": "Abschluss" },
-    // …
+    {
+      "name": "Video anschauen",
+      "phase": "Input",
+      "description": "SuS schauen ein kurzes Erklärvideo, um einen ersten visuellen Zugang zum Thema zu bekommen."
+    },
+    {
+      "name": "Lückentext",
+      "phase": "Übung",
+      "description": "SuS füllen Lücken in einem vorgegebenen Text aus — geeignet für Wortschatz-/Begriffssicherung."
+    },
+    {
+      "name": "Miniquiz",
+      "phase": "Abschluss",
+      "description": "Kurzer Multiple-Choice-Test mit max. 5 Fragen zur reinen Wissensabfrage."
+    }
+    // … weitere Typen, 1:1 aus AktivitaetenKatalog
+  ],
+
+  // Vier-Lerntypen-Kontext (Variante β, s. §4.7).
+  // Wird der KI als reines Hintergrundwissen mitgegeben — die KI darf
+  // KEINE lerntyp-spezifische Differenzierung in die Aktivitäts-Struktur
+  // einbauen. Quelle: MBKGlobalPrompt(def_lerntypen) bzw. die vier
+  // Einzel-Schlüssel pro Lerntyp.
+  "lerntypen_kontext": [
+    { "key": "minimalist",  "kurzbeschreibung": "fokussiert auf das Wesentliche, …" },
+    { "key": "pragmatiker", "kurzbeschreibung": "…" },
+    { "key": "ehrgeizig",   "kurzbeschreibung": "…" },
+    { "key": "passioniert", "kurzbeschreibung": "…" }
   ],
 
   "constraints": {
@@ -293,10 +315,21 @@ wird übersprungen, Übernahme erfolgt direkt.
 }
 ```
 
-**Hinweis:** Wir packen den **System-Kontext der MBK (C-Global)** hier
-**nicht** rein. Dieser Wizard arbeitet auf Pool-Manager-Ebene, nicht auf
-MBK-Generierungs-Ebene. Er nutzt einen eigenen, schlanken LLM-Call (analog
-zu `generateUnitStructure`).
+**Wichtige Hinweise:**
+
+- **Aktivitätstyp-Beschreibungen (Punkt A der Review):** Jeder
+  Aktivitätstyp wird mit einer **1-Satz-Definition** an die KI übergeben.
+  Quelle ist dieselbe Konstante, die auch das Glossar-Tooltip (§6.3) speist
+  — Single Source of Truth, damit Lehrkraft und KI das gleiche Verständnis
+  haben.
+- **System-Kontext der MBK (C-Global):** Wir packen ihn **nicht komplett**
+  rein. Dieser Wizard arbeitet auf Pool-Manager-Ebene, nicht auf
+  MBK-Generierungs-Ebene. Er nutzt einen eigenen, schlanken LLM-Call
+  (analog zu `generateUnitStructure`).
+- **Vier-Lerntypen-Kontext (Variante β, Punkt 3 der Review, s. §4.7):**
+  Die **Kurzbeschreibungen aller vier Lerntypen** werden mitgegeben — als
+  Hintergrund, nicht als Differenzierungsauftrag. Detail-Begründung in
+  §4.7.
 
 ### 4.3 KI-Response-Schema
 
@@ -318,13 +351,21 @@ zu `generateUnitStructure`).
 }
 ```
 
-**Validierung im Backend:**
+**Validierung im Backend (überarbeitet nach Review-Punkt B):**
 
-- `phase ∈ {Input, Übung, Abschluss}`
+- `phase ∈ {Input, Übung, Abschluss}` — bei Verstoß: Item verwerfen.
 - `aktivitaetstyp_name` muss in `verfuegbare_aktivitaetstypen` existieren
-  und für die angegebene `phase` zugelassen sein
-- Bei Abweichungen → Backend filtert das Item raus und protokolliert
-  (kein Hard-Fail, lieber Teilergebnis ausliefern)
+  — bei Verstoß: Item verwerfen.
+- **Phase-Mismatch (Aktivitätstyp existiert, aber für eine andere Phase
+  gedacht):** Item wird **NICHT verworfen**, sondern die Phase wird
+  automatisch auf die im `AktivitaetenKatalog` hinterlegte Phase
+  korrigiert. Das Item landet damit in der für den Typ vorgesehenen Phase.
+- **Transparenz:** Jede Autokorrektur wird im Response-Objekt vermerkt
+  (`korrekturen: [{ aktivitaetstyp_name, von_phase, zu_phase }]`). Die
+  Vorschau-UI (§4.1, Schritt 3) zeigt dezent darüber „2 KI-Vorschläge
+  wurden phasenkorrigiert" mit Detail-Aufklapp.
+- Verworfene Items (echte Fehler) werden ebenfalls gemeldet, damit die
+  Lehrkraft nicht denkt, sie habe einen kompletten Bauplan bekommen.
 
 ### 4.4 Konflikt-Logik
 
@@ -368,6 +409,25 @@ for each item in vorschlag:
 - Wird **nicht** geleert, wenn Aktivitäten manuell hinzugefügt werden.
 - Wird beim Re-Öffnen des Wizards vorausgefüllt.
 
+### 4.6a Lock-Verhalten während des Wizards (Review-Punkt C)
+
+Der Wizard hält den bestehenden Lernpaket-Lock (`Lernpakete.is_locked`,
+`locked_by_email`, `locked_at`). Damit Tab-Crashs, geschlossene Browser
+oder Internet-Aussetzer kein Lernpaket dauerhaft blockieren:
+
+- **Heartbeat:** Solange der Wizard offen ist, sendet die Client-UI alle
+  ~60 Sekunden einen Lock-Refresh. Dadurch bleibt `locked_at` aktuell.
+- **Stale-Lock-Timeout:** Greift der bestehende `lockReaper` /
+  `STALE_LOCK_MINUTES`-Mechanismus (30 Min). Bleibt der Heartbeat aus,
+  wird der Lock automatisch freigegeben.
+- **LLM-Call läuft im Backend:** Selbst wenn die Lehrkraft den Tab
+  während des Calls schließt, schreibt das Backend `kreativ_briefing`
+  vor dem Call und liefert das Ergebnis nicht aus — kein
+  Datenverlust, keine halben Aktivitäten in der DB. Übernahme erfordert
+  immer eine bewusste Lehrkraft-Aktion in Schritt 3/4/5.
+
+Kein neuer Lock-Mechanismus nötig — bestehende Infrastruktur reicht.
+
 ### 4.6 Re-Edit-Modus
 
 Wenn ein Lernpaket schon ein `kreativ_briefing` hat:
@@ -376,6 +436,53 @@ Wenn ein Lernpaket schon ein `kreativ_briefing` hat:
 - Header zeigt ein dezentes Badge „Letzte Briefing-Generierung am *Datum*".
 - Workflow ist identisch — Lehrkraft kann das Briefing schärfen, neu
   generieren, übernehmen.
+
+### 4.7 Lerntyp-Kontext im Payload — Variante β (Review-Punkt 3)
+
+**Architektonischer Hintergrund:** Ein Lernpaket ist auf dieser Ebene
+ein **lerntyp-neutraler Container**. Die Differenzierung nach den vier
+Lerntypen (Minimalist, Pragmatiker, Ehrgeizig, Passioniert) passiert erst
+zwei Ebenen weiter:
+
+1. **Tab 7 (Lernpfad-Architekt):** Dieselben Aktivitäten werden in vier
+   unterschiedliche Sektor-Layouts pro Lerntyp einsortiert.
+2. **MBK-Inhaltsgenerierung:** Über `C-Local.lerntyp_schalter` (siehe
+   `docs/mbk-integration.md` §4) erhält die MBK den Lerntyp, für den
+   gerade gerendert wird.
+
+Eine Aktivität wie „Lückentext zum Steigungsdreieck" existiert in der DB
+**einmal** und wird vier Mal in unterschiedlicher Tiefe **ausgespielt**.
+
+**Konsequenz für den Wizard:** Wir übergeben der KI **die
+Kurzbeschreibungen aller vier Lerntypen** als reinen
+**Hintergrund-Kontext** — nicht als Differenzierungsauftrag. Der
+System-Prompt enthält wörtlich folgende Limitierung:
+
+> „Kontext: Die erstellten Aktivitäten werden später für vier
+> verschiedene Lerntypen (Minimalist, Pragmatiker, Ehrgeizig,
+> Passioniert) in unterschiedlicher Tiefe aufbereitet und ausgespielt.
+> Schlage eine **lerntyp-übergreifend tragfähige und vielfältige**
+> Aktivitätsfolge vor, die Basiswissen ebenso abdeckt wie optionale
+> Transferleistungen. Nimm **keine lerntyp-spezifische Differenzierung**
+> auf der Ebene dieser Aktivitäts-Strukturen vor."
+
+**Wirkung:** Die KI baut ein didaktisch ausgewogenes „Buffet" — z. B.
+einen niedrigschwelligen Video-Input, eine solide Basis-Übung und eine
+komplexere Transferaufgabe am Ende. Aus diesem Buffet kann Tab 7 später
+lerntypspezifisch schöpfen, ohne dass die Aktivitäts-Hüllen selbst
+Lerntyp-Stempel tragen.
+
+**Quelle der Kurzbeschreibungen:** `MBKGlobalPrompt(def_lerntypen)` bzw.
+die vier Einzel-Schlüssel pro Lerntyp im Prompt-Manager. Damit bleibt das
+Wording **einheitlich** mit dem, was die MBK selbst sieht — Single Source
+of Truth.
+
+**Verworfene Alternativen (zur Dokumentation):**
+
+| Variante | Warum verworfen |
+|---|---|
+| α: gar kein Lerntyp-Kontext | KI könnte zu einseitig vorschlagen (z. B. nur Wissensabfrage oder nur Transfer). |
+| γ: Lehrkraft wählt Lerntyp im Wizard | Bricht Lerntyp-Neutralität des Lernpakets, verkompliziert UX. |
 
 ---
 
@@ -444,8 +551,14 @@ Die Glossar-Sidebar verfolgt drei Ziele:
 - **Farbig codiert** pro Gruppe (zarte Background-Tints, keine schreienden
   Farben).
 - **Klick auf Chip** → fügt den Begriff an der Cursor-Position ein.
+- **Drag-and-Drop (Review-Punkt 6.3):** Chip kann zusätzlich per
+  Drag-and-Drop in die Textarea gezogen werden. Wird beim Drop an der
+  Cursor-Position eingefügt (gleiche Logik wie Klick, nur per Gesture).
+  Praktisch auf Tablets, wo der Klick-Workflow fummelig sein kann.
 - **Hover-Tooltip** zeigt eine 1-Satz-Beschreibung (z. B. „Lückentext —
-  SuS füllen Lücken in einem vorgegebenen Text aus.").
+  SuS füllen Lücken in einem vorgegebenen Text aus."). **Wichtig:** Diese
+  Beschreibung ist die **identische** Konstante, die auch ins KI-Payload
+  fließt (§4.2, Feld `description`) — Single Source of Truth.
 
 ### 6.4 Mini-Anleitung („Was macht eine gute Beschreibung aus?")
 
@@ -515,14 +628,15 @@ Button, LernpaketWizardRenderer für die Vorschau, etc.).
 
 | # | Frage / Risiko | Vorschlag (vorläufig) |
 |---|---|---|
-| 1 | **Was, wenn die KI eine Aktivität in der falschen Phase einsortiert?** (z. B. „Lückentext" als Input statt Übung) | Backend filtert solche Items raus, basierend auf `AktivitaetenKatalog.phase`. Ggf. UI-Hinweis „2 Vorschläge der KI wurden ignoriert, weil sie nicht zur Phase passten." |
+| 1 | **Was, wenn die KI eine Aktivität in der falschen Phase einsortiert?** | **Geklärt durch Review-Punkt B (§4.4):** Statt stumm zu filtern wird die Phase **automatisch korrigiert** auf die im `AktivitaetenKatalog` hinterlegte Phase. Korrekturen werden im Response transparent gemeldet und in der Vorschau-UI dezent angezeigt. |
 | 2 | **Wer darf den Wizard starten?** | Gleiche RBAC-Regeln wie für manuelles Anlegen von Aktivitäten (`kannAktivitaetErstellen`). Kein neues Recht nötig. |
 | 3 | **Sollen Audit-Logs unterscheiden zwischen „KI-erstellt" und „manuell erstellt"?** | Ja, via `LernpaketPhaseAktivitaet.erstellungs_modus = 'ki'` — schon vorhanden, kein Mehraufwand. |
 | 4 | **Was passiert mit `lernpaketAggregateGuardian` / `is_complete`-Flag?** | Neue Aktivitäten haben `content_status: 'draft'` → das Aggregat-Flag wird **nicht** auf `is_complete` gesetzt. Das ist korrekt: KI hat nur die Hüllen gebaut, die Inhalte fehlen noch. |
-| 5 | **Race Condition: Zwei Lehrkräfte im selben Lernpaket** | Bestehender Lock-Mechanismus (`Lernpakete.is_locked`) greift. Wizard-Button ist deaktiviert, wenn Lock aktiv. Während der Wizard offen ist, halten wir den Lock. |
-| 6 | **Wie viele Tokens kostet ein typischer Wizard-Lauf?** | Schätzung: ~2–3k Input + ~1k Output. Pro Lernpaket einmal — vertretbar. Telemetrie sollten wir mitloggen, um spätere Optimierung zu ermöglichen. |
+| 5 | **Race Condition / Tab-Crash während Wizard offen** | **Geklärt durch Review-Punkt C (§4.6a):** Bestehender Lock-Mechanismus (`Lernpakete.is_locked`) + Heartbeat alle ~60 Sek + Stale-Lock-Timeout via `lockReaper`. LLM-Call ist atomar: schließt der Browser, gehen keine halben Daten in die DB. |
+| 6 | **Wie viele Tokens kostet ein typischer Wizard-Lauf? Welches Modell?** | Schätzung: ~2–3k Input + ~1k Output. Pro Lernpaket einmal. Da nur **Strukturdaten** generiert werden und keine tiefgreifenden Texte: **Default-Modell `gpt_5_mini` (bzw. `gemini_3_flash` als günstige Alternative).** Komplexere Modelle nur, wenn Telemetrie zeigt, dass Qualität nicht reicht. Token-Verbrauch + Erfolgs-/Korrekturrate werden geloggt. |
 | 7 | **Soll der Wizard mehrere Vorschläge nebeneinander anbieten („A oder B")?** | Aus Komplexitätsgründen für den MVP: **nein**. „Anders versuchen" + Briefing nachschärfen ist der vorgesehene Weg. |
 | 8 | **Mehrsprachigkeit der Begriffsglossare?** | App ist aktuell DE-only — kein Issue. Bei späterem i18n ggf. nachziehen. |
+| 9 | **Lerntyp-Differenzierung im Wizard?** | **Geklärt durch Review-Punkt 3, Variante β (§4.7):** Vier Lerntyp-Kurzbeschreibungen werden als Hintergrund-Kontext mitgegeben, aber KI baut **keine** lerntyp-spezifische Differenzierung in die Aktivitäts-Hüllen — Lernpaket bleibt lerntyp-neutral. |
 
 ---
 
@@ -546,3 +660,4 @@ Button, LernpaketWizardRenderer für die Vorschau, etc.).
 | Version | Datum | Änderung |
 |---|---|---|
 | 0.1 | 2026-05-12 | Initialer Konzeptentwurf nach Klärungsgespräch (Geltungsbereich: pro Lernpaket; Glossar = Aktivitätstypen + Phasen; Konflikt-Dialog am Ende mit Anzeige des Ist-Zustands) |
+| 0.2 | 2026-05-12 | Eingearbeitete Review der Planungsabteilung: **(A)** Aktivitätstyp-`description` ins Payload (§4.2, §6.3 — Single Source of Truth Glossar/KI); **(B)** Phase-Mismatch wird auto-korrigiert statt verworfen, mit transparenter Meldung in der Vorschau (§4.3); **(C)** Lock-Heartbeat + Stale-Lock-Timeout während Wizard offen ist (§4.6a); **(β)** Vier-Lerntypen-Kontext als Hintergrund-Wissen mitgegeben, lerntyp-neutrale Aktivitäts-Hüllen bleiben erhalten (§4.2, §4.7 mit Begründung und verworfenen Alternativen α/γ); **(Glossar)** Drag-and-Drop zusätzlich zu Klick (§6.3); **(Telemetrie)** Default-Modell `gpt_5_mini`, Logging von Token-Verbrauch + Korrekturrate (§9.6). |
