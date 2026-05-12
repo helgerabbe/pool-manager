@@ -8,6 +8,7 @@ import { useLernpaketLock } from '@/hooks/useLocks';
 import { StatusBadge, kategorieColors } from './SharedUI';
 import PhaseContent from './PhaseContent';
 import LernzielEditList from './LernzielEditList';
+import LernpaketWizardModal from '@/components/workspace/lernpaketWizard/LernpaketWizardModal';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +16,7 @@ import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import {
-  Lock, Plus, Edit, Trash2, Clock, AlertTriangle, PenLine, Loader2, ChevronRight, Menu, Target, Save
+  Lock, Plus, Edit, Trash2, Clock, AlertTriangle, PenLine, Loader2, ChevronRight, Menu, Target, Save, Wand2
 } from 'lucide-react';
 
 export default function LernpaketPanel({
@@ -42,6 +43,9 @@ export default function LernpaketPanel({
   const [isSavingDialog, setIsSavingDialog] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  // Lernpaket-Wizard (Tab 3, Konzept v0.4 §4.1). Nur sichtbar, solange
+  // der Edit-Dialog offen ist UND der Nutzer den Lock hält.
+  const [wizardOpen, setWizardOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: lernpaketAktivitaeten = [] } = useQuery({
@@ -446,7 +450,22 @@ export default function LernpaketPanel({
             </div>
 
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-muted-foreground">Lernphasen</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-muted-foreground">Lernphasen</h3>
+                {canEdit && kannBearbeiten && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setWizardOpen(true)}
+                    className="gap-1.5 h-8 text-xs"
+                    title="Lernpaket mit KI-Assistent füllen"
+                  >
+                    <Wand2 className="w-3.5 h-3.5 text-primary" />
+                    Mit KI füllen
+                  </Button>
+                )}
+              </div>
               {PHASES.map(phase => {
                 const phaseConfig = localPhasenConfig[phase.key] || {};
                 const isDisabled = phaseConfig.disabled === true;
@@ -532,6 +551,13 @@ export default function LernpaketPanel({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <LernpaketWizardModal
+        open={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        paket={paket}
+        existingActivityCount={lernpaketAktivitaeten.filter(a => a.lernpaket_id === paket.id).length}
+      />
 
       <Dialog open={!!editLernzielId} onOpenChange={(open) => { if (!open) setEditLernzielId(null); }}>
         <DialogContent className="sm:max-w-md">
