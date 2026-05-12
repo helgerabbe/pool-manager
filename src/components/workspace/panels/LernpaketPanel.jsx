@@ -235,6 +235,19 @@ export default function LernpaketPanel({
         </div>
       )}
 
+      {/* Bearbeitungs-Banner: sichtbar, sobald der Nutzer den Lock hält
+          (Bearbeiten-Klick → Lock erworben → Dialog wird gleichzeitig
+          geöffnet). Bleibt sichtbar, bis der Save/Cancel den Lock
+          wieder freigibt. */}
+      {canEdit && (
+        <div className="flex items-center gap-2 p-3 rounded-lg border border-orange-300 bg-orange-50 text-orange-900">
+          <PenLine className="w-4 h-4 shrink-0" />
+          <span className="text-sm">
+            <strong>Bearbeitungsmodus aktiv.</strong> Du bearbeitest dieses Lernpaket gerade — andere können es solange nicht ändern.
+          </span>
+        </div>
+      )}
+
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2 mb-1 flex-wrap">

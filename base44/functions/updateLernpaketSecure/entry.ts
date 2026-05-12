@@ -68,9 +68,14 @@ Deno.serve(async (req) => {
     }
 
     // 3. Lock-Ownership prüfen (zwingend)
+    // Schema-Alignment-Fix (2026-05-12): Lernpakete-Entity verwendet
+    // `is_locked` / `locked_by_email` / `locked_at` (siehe acquireLockSecure
+    // und Entity-Schema). Die früheren Feldnamen lock_status/locked_by_user
+    // existieren nicht und führten dazu, dass JEDER Save mit LOCK_NOT_HELD
+    // scheiterte.
     const lockHeldByOther =
-      paket.lock_status &&
-      paket.locked_by_user !== user.email &&
+      paket.is_locked &&
+      paket.locked_by_email !== user.email &&
       !isLockExpired(paket.locked_at);
 
     if (lockHeldByOther) {
@@ -78,14 +83,14 @@ Deno.serve(async (req) => {
         {
           error: 'Lock wird von anderem Nutzer gehalten',
           code: 'LOCK_NOT_OWNED',
-          currentLockOwner: paket.locked_by_user,
+          currentLockOwner: paket.locked_by_email,
         },
         { status: 409 }
       );
     }
 
     // Nutzer hat keinen aktiven Lock → Save nicht erlaubt
-    if (!paket.lock_status || paket.locked_by_user !== user.email) {
+    if (!paket.is_locked || paket.locked_by_email !== user.email) {
       return Response.json(
         {
           error: 'Kein aktiver Lock vorhanden. Bitte Bearbeitungsmodus starten.',
@@ -95,18 +100,18 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 4. Race-Condition-Schutz: lock_version-Abgleich
-    if (expectedLockVersion !== undefined && paket.lock_version !== expectedLockVersion) {
+    // 4. Race-Condition-Schutz: version-Abgleich (Entity-Feld heißt `version`)
+    if (expectedLockVersion !== undefined && paket.version !== expectedLockVersion) {
       console.warn(
         `[updateLernpaketSecure] Version mismatch for paket ${paketId}: ` +
-        `expected=${expectedLockVersion}, actual=${paket.lock_version} (user: ${user.email})`
+        `expected=${expectedLockVersion}, actual=${paket.version} (user: ${user.email})`
       );
       return Response.json(
         {
           error: 'Versionskollision: Datensatz wurde zwischenzeitlich verändert',
           code: 'VERSION_MISMATCH',
           expectedVersion: expectedLockVersion,
-          actualVersion: paket.lock_version,
+          actualVersion: paket.version,
         },
         { status: 409 }
       );
@@ -208,7 +213,7 @@ Deno.serve(async (req) => {
           updatedFields: Object.keys(filteredUpdates),
           lernzielUpdates: lernzielUpdates.length,
           grantedBy: rolle,
-          lockVersion: paket.lock_version,
+          lockVersion: paket.version,
         },
         affected_count: 1 + lernzielUpdates.length,
         status: 'success',
