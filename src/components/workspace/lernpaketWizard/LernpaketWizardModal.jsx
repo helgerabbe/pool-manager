@@ -14,8 +14,8 @@
  * Voraussetzung: Aufrufer hat bereits einen aktiven Lernpaket-Lock
  * (sichergestellt durch den Trigger-Button in `LernpaketPanel`).
  */
-import React, { useState, useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import React, { useState, useEffect, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -25,6 +25,7 @@ import { Label } from '@/components/ui/label';
 import { Sparkles, Loader2, Wand2 } from 'lucide-react';
 import WizardProposalPreview from './WizardProposalPreview';
 import WizardConflictDialog from './WizardConflictDialog';
+import WizardGlossarSidebar from './WizardGlossarSidebar';
 
 const MAX_BRIEFING_LENGTH = 5000;
 
@@ -43,6 +44,37 @@ export default function LernpaketWizardModal({
 
   const [conflictOpen, setConflictOpen] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
+  const textareaRef = useRef(null);
+
+  // Aktivitäten-Katalog für die Glossar-Sidebar (gefiltert auf is_active).
+  const { data: aktivitaetenKatalog = [] } = useQuery({
+    queryKey: ['aktivitaetenKatalog'],
+    queryFn: () => base44.entities.AktivitaetenKatalog.list(),
+    enabled: open,
+  });
+
+  // Klick auf einen Glossar-Eintrag fügt den Typ-Namen am Cursor ein.
+  const handleInsertFromGlossar = (typName) => {
+    const ta = textareaRef.current;
+    if (!ta) {
+      setBriefing((prev) => (prev ? `${prev} ${typName}` : typName));
+      return;
+    }
+    const start = ta.selectionStart ?? briefing.length;
+    const end = ta.selectionEnd ?? briefing.length;
+    const before = briefing.slice(0, start);
+    const after = briefing.slice(end);
+    const needsLeadingSpace = before && !/\s$/.test(before);
+    const insert = `${needsLeadingSpace ? ' ' : ''}${typName}`;
+    const next = `${before}${insert}${after}`;
+    if (next.length > MAX_BRIEFING_LENGTH) return;
+    setBriefing(next);
+    requestAnimationFrame(() => {
+      const pos = before.length + insert.length;
+      ta.focus();
+      ta.setSelectionRange(pos, pos);
+    });
+  };
 
   // Beim Öffnen das gespeicherte Briefing seedet, beim Schließen reset.
   useEffect(() => {
@@ -171,7 +203,7 @@ export default function LernpaketWizardModal({
   return (
     <>
       <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); }}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wand2 className="w-5 h-5 text-primary" />
@@ -183,68 +215,80 @@ export default function LernpaketWizardModal({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-5 py-2">
-            {/* Schritt 1: Briefing-Sandbox */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="wizard-briefing" className="text-sm font-semibold">
-                  Dein Vorhaben
-                </Label>
-                <span className="text-xs text-muted-foreground">
-                  {briefing.length} / {MAX_BRIEFING_LENGTH}
-                </span>
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_240px] gap-5 py-2">
+            {/* Hauptspalte: Briefing + Vorschau */}
+            <div className="space-y-5 min-w-0">
+              {/* Schritt 1: Briefing-Sandbox */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="wizard-briefing" className="text-sm font-semibold">
+                    Dein Vorhaben
+                  </Label>
+                  <span className="text-xs text-muted-foreground">
+                    {briefing.length} / {MAX_BRIEFING_LENGTH}
+                  </span>
+                </div>
+                <Textarea
+                  ref={textareaRef}
+                  id="wizard-briefing"
+                  value={briefing}
+                  onChange={(e) => setBriefing(e.target.value)}
+                  placeholder="Beispiel: In diesem Lernpaket lernen die Schüler:innen, was Steigung und Y-Achsenabschnitt in einer linearen Funktion bedeuten. Einstieg über ein Video, dann mehrere Übungen, am Ende ein kombinierter Test."
+                  rows={6}
+                  maxLength={MAX_BRIEFING_LENGTH}
+                  disabled={isGenerating || isApplying}
+                  className="resize-none"
+                />
+                {paket?.kreativ_briefing_updated_at && (
+                  <p className="text-xs text-muted-foreground">
+                    Zuletzt mit KI gefüllt: {new Date(paket.kreativ_briefing_updated_at).toLocaleString('de-DE')}
+                  </p>
+                )}
               </div>
-              <Textarea
-                id="wizard-briefing"
-                value={briefing}
-                onChange={(e) => setBriefing(e.target.value)}
-                placeholder="Beispiel: In diesem Lernpaket lernen die Schüler:innen, was Steigung und Y-Achsenabschnitt in einer linearen Funktion bedeuten. Einstieg über ein Video, dann mehrere Übungen, am Ende ein kombinierter Test."
-                rows={6}
-                maxLength={MAX_BRIEFING_LENGTH}
-                disabled={isGenerating || isApplying}
-                className="resize-none"
-              />
-              {paket?.kreativ_briefing_updated_at && (
-                <p className="text-xs text-muted-foreground">
-                  Zuletzt mit KI gefüllt: {new Date(paket.kreativ_briefing_updated_at).toLocaleString('de-DE')}
-                </p>
+
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  onClick={handleGenerate}
+                  disabled={isGenerating || isApplying || !briefing.trim()}
+                  className="gap-2"
+                >
+                  {isGenerating ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Generiere…</>
+                  ) : (
+                    <><Sparkles className="w-4 h-4" /> Vorschlag generieren</>
+                  )}
+                </Button>
+              </div>
+
+              {/* Schritt 3: Vorschau */}
+              {proposal && (
+                <div className="space-y-3 border-t pt-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold">
+                      Vorschlag der KI ({totalProposalItems} Aktivität{totalProposalItems !== 1 ? 'en' : ''})
+                    </h3>
+                    {korrekturen.length > 0 && (
+                      <span className="text-xs text-amber-700">
+                        {korrekturen.length} Phase-Korrektur{korrekturen.length !== 1 ? 'en' : ''}
+                      </span>
+                    )}
+                  </div>
+                  <WizardProposalPreview
+                    proposal={proposal}
+                    onRemoveItem={handleRemoveItem}
+                  />
+                </div>
               )}
             </div>
 
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                onClick={handleGenerate}
-                disabled={isGenerating || isApplying || !briefing.trim()}
-                className="gap-2"
-              >
-                {isGenerating ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> Generiere…</>
-                ) : (
-                  <><Sparkles className="w-4 h-4" /> Vorschlag generieren</>
-                )}
-              </Button>
-            </div>
-
-            {/* Schritt 3: Vorschau */}
-            {proposal && (
-              <div className="space-y-3 border-t pt-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold">
-                    Vorschlag der KI ({totalProposalItems} Aktivität{totalProposalItems !== 1 ? 'en' : ''})
-                  </h3>
-                  {korrekturen.length > 0 && (
-                    <span className="text-xs text-amber-700">
-                      {korrekturen.length} Phase-Korrektur{korrekturen.length !== 1 ? 'en' : ''}
-                    </span>
-                  )}
-                </div>
-                <WizardProposalPreview
-                  proposal={proposal}
-                  onRemoveItem={handleRemoveItem}
-                />
-              </div>
-            )}
+            {/* Glossar-Sidebar (Konzept §6) */}
+            <aside className="md:border-l md:pl-5">
+              <WizardGlossarSidebar
+                katalog={aktivitaetenKatalog}
+                onInsert={handleInsertFromGlossar}
+              />
+            </aside>
           </div>
 
           <DialogFooter>
