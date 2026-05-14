@@ -643,30 +643,75 @@ export default function ActivityMasterPanel({
                 />
               </>
             ) : (
-              <div className="rounded-xl border border-border bg-card p-5 space-y-5">
+              <div className="rounded-xl border border-border bg-card p-5 space-y-4">
                 {schema.length === 0 && (
                   <p className="text-sm text-muted-foreground italic">Keine Felder konfiguriert.</p>
                 )}
-                {schema.find(f => f.field_name === 'aufgabentext') && (
-                  <div className="space-y-1.5">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aufgabenstellung</p>
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-900">
-                      {fieldValues.aufgabentext
-                        ? <p className="whitespace-pre-wrap leading-relaxed">{fieldValues.aufgabentext}</p>
-                        : <span className="italic text-blue-600/60">Noch nicht ausgefüllt.</span>}
-                    </div>
+                {/* Aufgabenstellung: blauer Kasten ohne Überschrift (selbsterklärend). */}
+                {schema.find(f => f.field_name === 'aufgabentext') && fieldValues.aufgabentext && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-900">
+                    <p className="whitespace-pre-wrap leading-relaxed">{fieldValues.aufgabentext}</p>
                   </div>
                 )}
-                {/* AP2 §1.4: Transkript-Status für Medien-Aktivitäten in der Read-Only-Ansicht */}
+
+                {/* Titel + Textinhalt kompakt: Titel fett, Inhalt direkt darunter — ohne Labels.
+                    Nur sichtbar, wenn Medientyp = „Text direkt eingeben" (sonst URL-Block unten). */}
+                {(!inhaltTyp || inhaltTyp === 'text') && (fieldValues.titel || fieldValues.inhalt) && (
+                  <div className="space-y-2">
+                    {fieldValues.titel && (
+                      <p className="text-base font-bold text-foreground leading-tight">
+                        {fieldValues.titel}
+                      </p>
+                    )}
+                    {fieldValues.inhalt && (
+                      <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                        {fieldValues.inhalt}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Bilder zum Text — nur in der „Text direkt eingeben"-Variante.
+                    Werden direkt im Inhaltsbereich gezeigt, damit die Lehrkraft sieht,
+                    was die Schüler:innen sehen werden. */}
+                {(!inhaltTyp || inhaltTyp === 'text') && Array.isArray(fieldValues.bilder) && fieldValues.bilder.length > 0 && (
+                  <div className={`grid gap-3 ${fieldValues.bilder.length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
+                    {fieldValues.bilder.map((bild, idx) => (
+                      <figure key={`${bild?.url}-${idx}`} className="rounded-lg border border-border overflow-hidden bg-muted/30">
+                        <img
+                          src={bild?.url}
+                          alt={bild?.caption || `Bild ${idx + 1}`}
+                          className="w-full h-auto object-contain max-h-72"
+                        />
+                        {bild?.caption && (
+                          <figcaption className="px-3 py-1.5 text-xs text-muted-foreground border-t border-border bg-background">
+                            {bild.caption}
+                          </figcaption>
+                        )}
+                      </figure>
+                    ))}
+                  </div>
+                )}
+
+                {/* AP2 §1.4: Transkript-Status für Medien-Aktivitäten */}
                 {shouldShowTranskript(catalogEntry?.name) && (
                   <div className="space-y-1.5">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Transkript</p>
                     <TranskriptStatusBadge transkript={activityRecord?.transkript || ''} />
                   </div>
                 )}
+
+                {/* Restliche Felder — aber:
+                    • aufgabentext schon oben gerendert
+                    • titel + inhalt schon kompakt oben gerendert (im Text-Modus)
+                    • medientyp wird im Inhalts-Tab nicht gezeigt (irrelevant für die Vorschau)
+                    • bilder schon oben als Grid gerendert */}
                 {schema.map(field => {
                   if (field.field_name === 'aufgabentext') return null;
                   if (field.type === 'info') return null;
+                  if (field.field_name === 'medientyp') return null;
+                  if (field.field_name === 'bilder') return null;
+                  if ((field.field_name === 'titel' || field.field_name === 'inhalt') && (!inhaltTyp || inhaltTyp === 'text')) return null;
                   if (field.field_name === 'inhalt' && inhaltTyp && inhaltTyp !== 'text') return null;
                   if (field.field_name === 'dokument_url' && inhaltTyp !== 'datei') return null;
                   return (
