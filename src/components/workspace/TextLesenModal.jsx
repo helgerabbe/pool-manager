@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Loader2, AlertCircle } from 'lucide-react';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
+import VideoUploadField from '@/components/workspace/VideoUploadField';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import ActivityResetButton from '@/components/workspace/ActivityResetButton';
 import TranskriptField, { shouldShowTranskript } from '@/components/workspace/ki/TranskriptField';
@@ -208,10 +209,15 @@ export default function TextLesenModal({
               für die Lehrkraft sichtbar wird. */}
           {(() => {
             const inhaltTyp = fieldValues?.inhalt_typ;
+            const medientyp = fieldValues?.medientyp;
+            const isUploadMode = medientyp === 'upload';
             const isFieldVisible = (f) => {
               if (f.field_name === 'aufgabentext') return false; // schon oben gerendert
               if (f.field_name === 'inhalt' && inhaltTyp && inhaltTyp !== 'text') return false;
               if (f.field_name === 'dokument_url' && inhaltTyp !== 'datei') return false;
+              // Im Upload-Modus zeigen wir kein URL-Textfeld mehr — der
+              // VideoUploadField übernimmt das Setzen der url komplett.
+              if (f.field_name === 'url' && isUploadMode) return false;
               return true;
             };
 
@@ -288,6 +294,35 @@ export default function TextLesenModal({
                     sourceUrl={fieldValues.url || ''}
                   />
                 );
+              }
+
+              // Im Upload-Modus rendern wir direkt nach dem medientyp-Select
+              // den Upload-Block ein — und davor/danach ggf. das Transkript.
+              if (isUploadMode && field.field_name === 'medientyp') {
+                out.push(
+                  <div key="__video_upload__" className="space-y-1.5">
+                    <Label>
+                      Eigenes Video
+                      <span className="text-destructive ml-1">*</span>
+                    </Label>
+                    <VideoUploadField
+                      value={fieldValues.url || ''}
+                      onChange={(val) => handleFieldChange('url', val)}
+                      disabled={isSaving || exportLocked}
+                    />
+                  </div>
+                );
+                if (showTranskript) {
+                  out.push(
+                    <TranskriptField
+                      key="__transkript_upload__"
+                      value={fieldValues.transkript || ''}
+                      onChange={(val) => handleFieldChange('transkript', val)}
+                      disabled={isSaving || exportLocked}
+                      sourceUrl={fieldValues.url || ''}
+                    />
+                  );
+                }
               }
             });
 
