@@ -184,10 +184,10 @@ function ActivitySidebarItem({
               : cn('hover:bg-muted', textColor)
           )}
         >
-          <span className="flex-1 truncate">{aktivitaetName}</span>
           {activity.content_status === 'approved' && !isActivitySelected && (
-            <Lock className="w-3 h-3 shrink-0 text-green-600" title="Aktivität ist freigegeben und gesperrt" />
+            <Lock className="w-3 h-3 shrink-0 text-green-600 mr-1" title="Aktivität ist freigegeben und gesperrt" />
           )}
+          <span className="flex-1 truncate">{aktivitaetName}</span>
           {lockedByOther && !isActivitySelected && (
             <Lock className="w-3 h-3 text-amber-500 shrink-0" title={`Gesperrt von ${activity.locked_by_user}`} />
           )}
