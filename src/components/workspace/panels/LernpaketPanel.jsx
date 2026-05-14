@@ -153,7 +153,18 @@ export default function LernpaketPanel({
   // - Leere/None-Werte in `lernzielDrafts` und `localPhasenConfig` werden
   //   defensiv normalisiert, damit kein TypeError die Funktion still abbricht.
   const handleSaveEditDialog = async () => {
-    if (isSavingDialog) return;
+    console.log('[LernpaketPanel] 🟢 handleSaveEditDialog called', {
+      paketId: paket?.id,
+      isSavingDialog,
+      canEdit,
+      isLockedByOther,
+      kannBearbeiten,
+      lernzielDraftsCount: Object.keys(lernzielDrafts || {}).length,
+    });
+    if (isSavingDialog) {
+      console.warn('[LernpaketPanel] Save already in progress, abort');
+      return;
+    }
     setIsSavingDialog(true);
     let saveSucceeded = false;
     try {
@@ -191,10 +202,29 @@ export default function LernpaketPanel({
       // zurück. Wir müssen den Status und ein eventuell vorhandenes
       // `error`-Feld im Body daher explizit auswerten — sonst landet der
       // Save in einem stummen "Erfolg ohne Wirkung".
-      const response = await base44.functions.invoke('updateLernpaketSecure', {
+      console.log('[LernpaketPanel] 📡 Calling updateLernpaketSecure', {
         paketId: paket.id,
-        updates: { phasen_konfiguration: localPhasenConfig || {} },
-        lernzielUpdates,
+        lernzielUpdatesCount: lernzielUpdates.length,
+      });
+      let response;
+      try {
+        response = await base44.functions.invoke('updateLernpaketSecure', {
+          paketId: paket.id,
+          updates: { phasen_konfiguration: localPhasenConfig || {} },
+          lernzielUpdates,
+        });
+      } catch (invokeErr) {
+        console.error('[LernpaketPanel] 🔴 invoke threw:', invokeErr);
+        const apiMsg =
+          invokeErr?.response?.data?.error ||
+          invokeErr?.response?.data?.message ||
+          invokeErr?.message ||
+          'Unbekannter Netzwerkfehler';
+        throw new Error(apiMsg);
+      }
+      console.log('[LernpaketPanel] 📨 Response received:', {
+        status: response?.status,
+        data: response?.data,
       });
 
       const respData = response?.data ?? response;
@@ -656,10 +686,25 @@ export default function LernpaketPanel({
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={handleCancelEditDialog} disabled={isSavingDialog}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancelEditDialog}
+              disabled={isSavingDialog}
+            >
               Abbrechen
             </Button>
-            <Button onClick={handleSaveEditDialog} disabled={isSavingDialog} className="gap-1.5">
+            <Button
+              type="button"
+              onClick={(e) => {
+                console.log('[LernpaketPanel] 🖱️ Speichern-Button onClick fired');
+                e.preventDefault();
+                e.stopPropagation();
+                handleSaveEditDialog();
+              }}
+              disabled={isSavingDialog}
+              className="gap-1.5"
+            >
               {isSavingDialog ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               Speichern
             </Button>
