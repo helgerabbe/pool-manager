@@ -403,15 +403,6 @@ export default function LernpaketPanel({
         </div>
         <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
           <Clock className="w-3.5 h-3.5" />{paket.geschaetzte_dauer_minuten} Minuten
-          {paket.kreativ_briefing_updated_at && (
-            <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-50 border border-violet-200 text-violet-700 text-xs font-medium"
-              title={`Zuletzt mit KI-Assistent gefüllt: ${new Date(paket.kreativ_briefing_updated_at).toLocaleString('de-DE')}`}
-            >
-              <Wand2 className="w-3 h-3" />
-              KI-gefüllt
-            </span>
-          )}
         </p>
       </div>
 
@@ -557,7 +548,9 @@ export default function LernpaketPanel({
                       </div>
                     ) : (
                       <div className="space-y-1.5">
-                        {activities.map(activity => {
+                        {[...activities]
+                          .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
+                          .map(activity => {
                           const katalogEntry = aktivitaetenKatalog.find(a => a.id === activity.aktivitaet_id);
                           const aktivitaetName = katalogEntry?.name || 'Unbekannte Aktivität';
                           return (
