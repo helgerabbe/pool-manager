@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2, AlertTriangle, GripVertical, ArrowRight, X, Menu } from 'lucide-react';
+import { Plus, Trash2, AlertTriangle, GripVertical, ArrowRight, ArrowUp, ArrowDown, X, Menu } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import DeleteActivityConfirmDialog from '@/components/workspace/DeleteActivityConfirmDialog';
@@ -61,6 +61,26 @@ export default function PhaseActivitiesSidebar({
       toast.success('Aktivität hinzugefügt.');
     },
     onError: () => toast.error('Fehler beim Hinzufügen.'),
+  });
+
+  // Reihenfolge ändern: tauscht die `reihenfolge`-Werte der beiden betroffenen
+  // Aktivitäten. Bewusst simpel gehalten — kein Drag&Drop, kein Bulk-Update.
+  const moveAktivitaet = useMutation({
+    mutationFn: async ({ current, neighbor }) => {
+      // Beide Datensätze atomar nacheinander updaten. Werte tauschen.
+      const curOrder = current.reihenfolge ?? 0;
+      const neighOrder = neighbor.reihenfolge ?? 0;
+      await base44.entities.LernpaketPhaseAktivitaet.update(current.id, {
+        reihenfolge: neighOrder,
+      });
+      await base44.entities.LernpaketPhaseAktivitaet.update(neighbor.id, {
+        reihenfolge: curOrder,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+    },
+    onError: () => toast.error('Reihenfolge konnte nicht geändert werden.'),
   });
 
   const deleteAktivitaet = useMutation({
@@ -167,10 +187,15 @@ export default function PhaseActivitiesSidebar({
               </div>
             ) : (
               <div className="ml-4 border-l-2 border-primary/30 pl-3 space-y-2">
-                {aktivitaeten
-                  .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
-                  .map((activity) => {
+                {(() => {
+                  const sorted = [...aktivitaeten].sort(
+                    (a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)
+                  );
+                  return sorted.map((activity, idx) => {
                     const katalog = aktivitaetenKatalog.find(a => a.id === activity.aktivitaet_id);
+                    const isFirst = idx === 0;
+                    const isLast = idx === sorted.length - 1;
+                    const isMoving = moveAktivitaet.isPending;
                     return (
                       <div
                         key={activity.id}
@@ -192,6 +217,38 @@ export default function PhaseActivitiesSidebar({
                           <div className="flex items-center gap-1 shrink-0">
                             {canEdit && (
                               <>
+                                {/* Reihenfolge: Auf/Ab. Tauscht die `reihenfolge`-
+                                    Werte der beiden betroffenen Aktivitäten. */}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  title="Nach oben verschieben"
+                                  disabled={isFirst || isMoving}
+                                  onClick={() => {
+                                    const neighbor = sorted[idx - 1];
+                                    if (neighbor) {
+                                      moveAktivitaet.mutate({ current: activity, neighbor });
+                                    }
+                                  }}
+                                >
+                                  <ArrowUp className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  title="Nach unten verschieben"
+                                  disabled={isLast || isMoving}
+                                  onClick={() => {
+                                    const neighbor = sorted[idx + 1];
+                                    if (neighbor) {
+                                      moveAktivitaet.mutate({ current: activity, neighbor });
+                                    }
+                                  }}
+                                >
+                                  <ArrowDown className="w-3.5 h-3.5" />
+                                </Button>
                                 {onGoToTaskWorkshop && (
                                   <Button
                                     variant="outline"
@@ -204,21 +261,6 @@ export default function PhaseActivitiesSidebar({
                                     Aufgaben
                                   </Button>
                                 )}
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7"
-                                  title="Bearbeiten"
-                                  onClick={() =>
-                                    onSelectActivity({
-                                      paketId: paket.id,
-                                      phaseKey: phase,
-                                      activityId: activity.id,
-                                    })
-                                  }
-                                >
-                                  <Edit className="w-3.5 h-3.5" />
-                                </Button>
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -239,7 +281,8 @@ export default function PhaseActivitiesSidebar({
                         </div>
                       </div>
                     );
-                  })}
+                  });
+                })()}
 
                 {canEdit && (
                   <div className="space-y-2">
