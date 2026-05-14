@@ -119,8 +119,36 @@ export default function TextLesenModal({
   };
 
   // Phase 6: Freigabe / Rücknahme via Backend-Function.
-  const handleToggleRelease = (next) => {
+  //
+  // Wichtig (Bugfix 2026-05-14): Beim Freigeben (next=true) muss der
+  // aktuelle Modal-State ZUERST persistiert werden, sonst liest das
+  // Backend (`setReleaseStatusSecure`) den alten `field_values`-Stand
+  // aus der DB, schlägt mit 422 NOT_COMPLETE fehl und der Toggle springt
+  // optisch zurück, obwohl die lokale Vollständigkeitsprüfung "ready"
+  // anzeigt. Bei Rücknahme (next=false) ist kein Speichern nötig.
+  const handleToggleRelease = async (next) => {
     if (!activity?.id) return;
+
+    if (next === true) {
+      try {
+        const payload = { ...fieldValues };
+        if (initialFieldValues?.moodle_sync_status === 'synced') {
+          payload.moodle_sync_status = 'modified';
+          payload.is_dirty_since_export = true;
+        }
+        // onSave ist als (values) => Promise<void> definiert (siehe
+        // ActivityMasterPanel.handleModalSave). Wir warten bewusst auf
+        // Abschluss, damit die DB-Werte vor dem Release-Call konsistent
+        // sind. onSave schließt das Modal — der Release-Call läuft dann
+        // im Hintergrund weiter und invalidiert die Caches.
+        await onSave?.(payload);
+      } catch {
+        // onSave zeigt bereits einen Toast im Fehlerfall — wir brechen
+        // den Freigabe-Versuch dann konsequent ab.
+        return;
+      }
+    }
+
     setReleaseStatus({
       targetType: 'activity',
       targetId: activity.id,
