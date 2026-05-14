@@ -24,7 +24,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Loader2, ChevronDown, ChevronUp, Wand2 } from 'lucide-react';
+import { Sparkles, Loader2, ChevronDown, ChevronUp, Wand2, CheckCircle2 } from 'lucide-react';
 import SpeechInputButton from '@/components/ui/SpeechInputButton';
 
 const MAX_BRIEFING = 4000;
@@ -53,8 +53,14 @@ export default function TextLesenAIGeneratorPanel({
   const [laenge, setLaenge] = useState('mittel');
   const [niveau, setNiveau] = useState('normal');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [proposal, setProposal] = useState(null); // { titel, text }
+  const [lastApplied, setLastApplied] = useState(false); // einfache Erfolgs-Markierung
 
+  // UX-Fix (2026-05-14): Der Nutzer hat bei der ersten Version den Zwei-
+  // Schritt-Workflow (Vorschau → "Übernehmen"-Button) übersehen und gedacht,
+  // der Text würde nicht ankommen. Jetzt schreiben wir das generierte
+  // Ergebnis sofort in das Textinhalt-Feld (und ggf. den Titel). Die
+  // Lehrkraft sieht das Resultat direkt unten und kann es 1:1 weiter
+  // bearbeiten.
   const handleGenerate = async () => {
     const trimmed = briefing.trim();
     if (!trimmed) {
@@ -62,7 +68,7 @@ export default function TextLesenAIGeneratorPanel({
       return;
     }
     setIsGenerating(true);
-    setProposal(null);
+    setLastApplied(false);
     try {
       const res = await base44.functions.invoke('generateLeseText', {
         briefing: trimmed,
@@ -81,25 +87,15 @@ export default function TextLesenAIGeneratorPanel({
         toast.error('KI hat keinen Text zurückgegeben.');
         return;
       }
-      setProposal({ titel: data.titel || '', text: data.text });
-      toast.success('Text generiert. Prüfe ihn und übernimm ihn bei Gefallen.');
+      onApply?.({ titel: data.titel || '', text: data.text });
+      setLastApplied(true);
+      toast.success('Text generiert und unten eingefügt.');
     } catch (err) {
       console.error('[TextLesenAIGeneratorPanel] generate failed', err);
       toast.error(err?.response?.data?.error || 'Fehler beim Generieren.');
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  const handleApply = () => {
-    if (!proposal) return;
-    onApply?.({ titel: proposal.titel, text: proposal.text });
-    toast.success('Text übernommen.');
-    // Vorschau leeren, damit der Block nicht weiter den Speichern-Bereich
-    // verdeckt. Briefing bleibt erhalten, falls die Lehrkraft erneut
-    // generieren will.
-    setProposal(null);
-    setExpanded(false);
   };
 
   return (
@@ -186,8 +182,11 @@ export default function TextLesenAIGeneratorPanel({
             </div>
           </div>
 
-          {/* Generieren-Button */}
-          <div className="flex justify-end">
+          {/* Generieren-Button + Hinweis */}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <p className="text-[11px] text-blue-800/70">
+              Der Text wird direkt in das Feld <strong>„Textinhalt"</strong> unten geschrieben.
+            </p>
             <Button
               type="button"
               onClick={handleGenerate}
@@ -201,35 +200,11 @@ export default function TextLesenAIGeneratorPanel({
             </Button>
           </div>
 
-          {/* Vorschau + Übernehmen */}
-          {proposal && (
-            <div className="rounded-md border border-blue-200 bg-white p-3 space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-xs font-semibold text-blue-900 uppercase tracking-wide">
-                  Vorschlag
-                </p>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleApply}
-                  disabled={disabled}
-                  className="gap-1.5 h-7 text-xs"
-                >
-                  Text übernehmen
-                </Button>
-              </div>
-              {proposal.titel && (
-                <div className="space-y-0.5">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Titel</p>
-                  <p className="text-sm font-semibold text-foreground">{proposal.titel}</p>
-                </div>
-              )}
-              <div className="space-y-0.5">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Text</p>
-                <div className="max-h-56 overflow-y-auto text-sm whitespace-pre-wrap leading-relaxed text-foreground bg-muted/30 rounded p-2 border border-border">
-                  {proposal.text}
-                </div>
-              </div>
+          {/* Erfolgs-Hinweis */}
+          {lastApplied && !isGenerating && (
+            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-green-50 border border-green-200 text-green-800 text-xs">
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+              <span>Text wurde unten eingefügt. Du kannst ihn dort direkt bearbeiten oder erneut generieren.</span>
             </div>
           )}
         </div>
