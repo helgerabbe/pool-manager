@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, AlertTriangle, GripVertical, ArrowRight, ArrowUp, ArrowDown, X, Menu } from 'lucide-react';
+import { Plus, Trash2, AlertTriangle, GripVertical, ArrowRight, ArrowUp, ArrowDown, X, Menu, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import DeleteActivityConfirmDialog from '@/components/workspace/DeleteActivityConfirmDialog';
@@ -206,7 +206,12 @@ export default function PhaseActivitiesSidebar({
                             <div className="flex items-center gap-2">
                               <GripVertical className="w-4 h-4 text-muted-foreground shrink-0" />
                               <p className="font-semibold text-sm">{katalog?.name || '…'}</p>
-                              {!activity.is_complete && (
+                              {activity.content_status === 'approved' ? (
+                                <span title="Aktivität ist freigegeben und gesperrt" className="flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full border border-green-300">
+                                  <Lock className="w-3 h-3" />
+                                  Freigegeben
+                                </span>
+                              ) : !activity.is_complete && (
                                 <span title="Inhalt unvollständig" className="flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">
                                   <AlertTriangle className="w-3 h-3" />
                                   Unvollständig
@@ -261,20 +266,22 @@ export default function PhaseActivitiesSidebar({
                                     Aufgaben
                                   </Button>
                                 )}
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7"
-                                  title="Aktivität löschen"
-                                  onClick={() =>
-                                    setDeleteTarget({
-                                      id: activity.id,
-                                      name: katalog?.name || 'Aktivität',
-                                    })
-                                  }
-                                >
-                                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                                </Button>
+                                {activity.content_status !== 'approved' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    title="Aktivität löschen"
+                                    onClick={() =>
+                                      setDeleteTarget({
+                                        id: activity.id,
+                                        name: katalog?.name || 'Aktivität',
+                                      })
+                                    }
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                                  </Button>
+                                )}
                               </>
                             )}
                           </div>

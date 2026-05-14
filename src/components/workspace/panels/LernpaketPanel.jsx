@@ -643,6 +643,11 @@ export default function LernpaketPanel({
                 const isDisabled = phaseConfig.disabled === true;
                 const isExpanded = expandedPhase === phase.key;
                 const phaseActivities = lernpaketAktivitaeten.filter(a => a.lernpaket_id === paket.id && a.phase === phase.key);
+                // Phase darf nicht deaktiviert werden, wenn sie freigegebene
+                // Aktivitäten enthält — sonst würde der Toggle die Aktivität
+                // (und damit eine freigegebene Inhaltseinheit) unsichtbar
+                // schalten.
+                const hasReleasedActivity = phaseActivities.some(a => a.content_status === 'approved');
 
                 return (
                   <div key={phase.key} className="space-y-0">
@@ -681,6 +686,8 @@ export default function LernpaketPanel({
                           checked={!isDisabled}
                           onCheckedChange={() => handlePhaseToggle(phase.key)}
                           onClick={e => e.stopPropagation()}
+                          disabled={hasReleasedActivity}
+                          title={hasReleasedActivity ? '🔒 Phase enthält freigegebene Aktivitäten und kann nicht deaktiviert werden.' : ''}
                           className="shrink-0"
                         />
                       )}
