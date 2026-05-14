@@ -340,7 +340,7 @@ export default function LernpaketPanel({
             onClick={handleOpenEditDialog}
             disabled={isAcquiringLock || canEdit || isLockedByOther}
             title={isLockedByOther ? `🔒 Wird gerade von ${paket.locked_by_email} bearbeitet` : ''}
-            className="gap-2"
+            className="gap-2 bg-green-50 border-green-200 text-green-800 hover:bg-green-100 hover:text-green-900"
           >
             {isAcquiringLock ? (
               <>
@@ -360,9 +360,9 @@ export default function LernpaketPanel({
             onClick={handleOpenWizard}
             disabled={isAcquiringLock || canEdit || isLockedByOther}
             title={isLockedByOther ? `🔒 Wird gerade von ${paket.locked_by_email} bearbeitet` : 'Lernpaket mit KI-Assistent füllen'}
-            className="gap-2"
+            className="gap-2 bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100 hover:text-blue-900"
           >
-            <Wand2 className="w-3.5 h-3.5 text-primary" />
+            <Wand2 className="w-3.5 h-3.5 text-blue-600" />
             Mit KI füllen
           </Button>
           {isLockedByOther && (
