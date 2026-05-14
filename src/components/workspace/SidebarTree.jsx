@@ -58,6 +58,12 @@ function AktivitaetSubNode({ activity, aktivitaetName, isSelected, onSelect, pak
     )}>
       <Puzzle className="w-3 h-3 shrink-0" />
       <span className="truncate flex-1">{aktivitaetName}</span>
+      {isReleased && (
+        <Lock
+          className="w-3 h-3 shrink-0 text-green-600"
+          title="Aktivität ist freigegeben und gesperrt"
+        />
+      )}
       {masterInfo && (
         <span className="text-[10px] font-semibold text-muted-foreground shrink-0" title={`${masterAufgabenCount} Masteraufgaben vorhanden`}>
           {masterInfo}

@@ -15,7 +15,7 @@ import { useLernpaketLock } from '@/hooks/useLocks';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Crown, Plus, Loader2, ChevronRight, Save, Pencil, Check, ExternalLink } from 'lucide-react';
+import { Crown, Plus, Loader2, ChevronRight, Save, Pencil, Check, ExternalLink, Lock } from 'lucide-react';
 import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
@@ -555,7 +555,11 @@ export default function ActivityMasterPanel({
             isDirtySinceExport={activityRecord?.is_dirty_since_export}
             exportLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
           />
-          {effectivelyComplete
+          {activityRecord?.content_status === 'approved'
+            ? <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 border border-green-300 px-2 py-0.5 rounded-full">
+                <Lock className="w-3 h-3" /> Freigegeben
+              </span>
+            : effectivelyComplete
             ? <span className="text-xs font-medium text-green-700 bg-green-100 border border-green-300 px-2 py-0.5 rounded-full">✓ Vollständig</span>
             : <span className="text-xs font-medium text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">Noch unvollständig</span>
           }
