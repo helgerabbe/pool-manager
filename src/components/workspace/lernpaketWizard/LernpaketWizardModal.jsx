@@ -22,10 +22,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Sparkles, Loader2, Wand2 } from 'lucide-react';
+import { Sparkles, Loader2, Wand2, Package, Target } from 'lucide-react';
 import WizardProposalPreview from './WizardProposalPreview';
 import WizardConflictDialog from './WizardConflictDialog';
 import WizardGlossarSidebar from './WizardGlossarSidebar';
+import SpeechInputButton from '@/components/ui/SpeechInputButton';
 
 const MAX_BRIEFING_LENGTH = 5000;
 
@@ -51,6 +52,14 @@ export default function LernpaketWizardModal({
     queryKey: ['aktivitaetenKatalog'],
     queryFn: () => base44.entities.AktivitaetenKatalog.list(),
     enabled: open,
+  });
+
+  // Lernziele zu diesem Paket — Anzeige oben im Dialog als Kontext-Anker,
+  // damit der Anwender sicher weiß, in welchem Paket er gerade arbeitet.
+  const { data: paketLernziele = [] } = useQuery({
+    queryKey: ['lernziele', 'paket', paket?.id],
+    queryFn: () => base44.entities.Lernziele.filter({ lernpaket_id: paket.id }),
+    enabled: open && !!paket?.id,
   });
 
   // Klick auf einen Glossar-Eintrag fügt den Typ-Namen am Cursor ein.
@@ -215,18 +224,57 @@ export default function LernpaketWizardModal({
             </DialogDescription>
           </DialogHeader>
 
+          {/* Kontext-Anker: zeigt Paket-Titel und zugeordnete Lernziele, damit
+              der Anwender sieht, in welchem Lernpaket der Wizard gerade läuft. */}
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
+            <div className="flex items-start gap-2">
+              <Package className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-wide font-medium text-primary/70">Lernpaket</p>
+                <p className="text-sm font-semibold text-foreground truncate">{paket?.titel_des_pakets || '—'}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <Target className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] uppercase tracking-wide font-medium text-primary/70">
+                  Lernziel{paketLernziele.length !== 1 ? 'e' : ''} ({paketLernziele.length})
+                </p>
+                {paketLernziele.length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic">Noch keine Lernziele zugeordnet.</p>
+                ) : (
+                  <ul className="text-sm text-foreground space-y-0.5 list-disc list-inside marker:text-green-600">
+                    {paketLernziele.map((lz) => (
+                      <li key={lz.id} className="leading-snug">
+                        {lz.formulierung_fachsprache}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-[1fr_240px] gap-5 py-2">
             {/* Hauptspalte: Briefing + Vorschau */}
             <div className="space-y-5 min-w-0">
               {/* Schritt 1: Briefing-Sandbox */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <Label htmlFor="wizard-briefing" className="text-sm font-semibold">
                     Dein Vorhaben
                   </Label>
-                  <span className="text-xs text-muted-foreground">
-                    {briefing.length} / {MAX_BRIEFING_LENGTH}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <SpeechInputButton
+                      value={briefing}
+                      onResult={(text) => setBriefing(text.slice(0, MAX_BRIEFING_LENGTH))}
+                      disabled={isGenerating || isApplying}
+                      maxSeconds={30}
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {briefing.length} / {MAX_BRIEFING_LENGTH}
+                    </span>
+                  </div>
                 </div>
                 <Textarea
                   ref={textareaRef}
