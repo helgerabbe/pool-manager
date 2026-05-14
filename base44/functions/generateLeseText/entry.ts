@@ -97,10 +97,25 @@ Liefere ein JSON-Objekt mit genau zwei Feldern:
       },
     });
 
-    const titel = String(result?.titel || '').trim();
-    const text = String(result?.text || '').trim();
+    // Robuste Extraktion: Claude Sonnet 4.6 liefert das geparste JSON-Objekt
+    // unter `result.response` zurück (statt direkt auf Root-Ebene). Manche
+    // Modelle wickeln den String zusätzlich in ```json ... ``` Codefences.
+    // Wir versuchen alle plausiblen Pfade, bevor wir aufgeben.
+    let parsed = result?.response ?? result;
+    if (typeof parsed === 'string') {
+      const cleaned = parsed.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+      try { parsed = JSON.parse(cleaned); } catch { /* belassen */ }
+    }
+
+    const titel = String(parsed?.titel || parsed?.title || '').trim();
+    const text = String(parsed?.text || parsed?.content || '').trim();
+
     if (!text) {
-      return Response.json({ error: 'KI hat keinen Text zurückgegeben.' }, { status: 502 });
+      console.error('[generateLeseText] Unverwertbares LLM-Ergebnis:', JSON.stringify(result).slice(0, 800));
+      return Response.json(
+        { error: 'KI hat keinen verwertbaren Text zurückgegeben. Bitte erneut versuchen.' },
+        { status: 502 }
+      );
     }
 
     return Response.json({ titel, text });
