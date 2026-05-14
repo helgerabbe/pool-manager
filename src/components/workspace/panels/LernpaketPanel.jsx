@@ -153,29 +153,16 @@ export default function LernpaketPanel({
   // - Leere/None-Werte in `lernzielDrafts` und `localPhasenConfig` werden
   //   defensiv normalisiert, damit kein TypeError die Funktion still abbricht.
   const handleSaveEditDialog = async () => {
-    console.log('[LernpaketPanel] 🟢 handleSaveEditDialog called', {
-      paketId: paket?.id,
-      isSavingDialog,
-      canEdit,
-      isLockedByOther,
-      kannBearbeiten,
-      lernzielDraftsCount: Object.keys(lernzielDrafts || {}).length,
-    });
-    if (isSavingDialog) {
-      console.warn('[LernpaketPanel] Save already in progress, abort');
-      return;
-    }
+    if (isSavingDialog) return;
     setIsSavingDialog(true);
     let saveSucceeded = false;
     try {
-      console.log('[LernpaketPanel] 🔵 Step A: entering try-block');
       // 1) Lernziel-Drafts validieren & in das vom Backend erwartete Format
-      //    bringen ({ id, data }). Defensiv: jedes Draft-Item wird in einem
-      //    eigenen try/catch verarbeitet, damit ein einzelner kaputter Eintrag
-      //    nicht den ganzen Save abbricht.
+      //    bringen ({ id, data }). Wenn ein Feld im Draft fehlt, gilt der
+      //    Original-Wert weiter — sonst würde z.B. das Tippen nur in der
+      //    Schüler-Übersetzung die Fachsprache fälschlich als "leer" werten.
       const lernzielUpdates = [];
       const drafts = lernzielDrafts || {};
-      console.log('[LernpaketPanel] 🔵 Step B: drafts prepared', { draftKeys: Object.keys(drafts) });
       for (const lzId of Object.keys(drafts)) {
         const draft = drafts[lzId] || {};
         const original = paketZiele.find((lz) => lz.id === lzId);
@@ -212,10 +199,6 @@ export default function LernpaketPanel({
       // zurück. Wir müssen den Status und ein eventuell vorhandenes
       // `error`-Feld im Body daher explizit auswerten — sonst landet der
       // Save in einem stummen "Erfolg ohne Wirkung".
-      console.log('[LernpaketPanel] 📡 Calling updateLernpaketSecure', {
-        paketId: paket.id,
-        lernzielUpdatesCount: lernzielUpdates.length,
-      });
       let response;
       try {
         response = await base44.functions.invoke('updateLernpaketSecure', {
@@ -224,7 +207,6 @@ export default function LernpaketPanel({
           lernzielUpdates,
         });
       } catch (invokeErr) {
-        console.error('[LernpaketPanel] 🔴 invoke threw:', invokeErr);
         const apiMsg =
           invokeErr?.response?.data?.error ||
           invokeErr?.response?.data?.message ||
@@ -232,10 +214,6 @@ export default function LernpaketPanel({
           'Unbekannter Netzwerkfehler';
         throw new Error(apiMsg);
       }
-      console.log('[LernpaketPanel] 📨 Response received:', {
-        status: response?.status,
-        data: response?.data,
-      });
 
       const respData = response?.data ?? response;
       const respStatus = response?.status;
@@ -253,12 +231,10 @@ export default function LernpaketPanel({
       queryClient.invalidateQueries({ queryKey: ['lernziele'] });
       toast.success('Änderungen gespeichert.');
     } catch (err) {
-      console.error('[LernpaketPanel] 🔴🔴🔴 Save failed (outer catch):', err);
-      console.error('[LernpaketPanel] Error stack:', err?.stack);
+      console.error('[LernpaketPanel] Save failed:', err);
       const apiMsg = err?.response?.data?.error || err?.message;
       toast.error(apiMsg ? `Fehler beim Speichern: ${apiMsg}` : 'Fehler beim Speichern.');
     } finally {
-      console.log('[LernpaketPanel] 🏁 finally block', { saveSucceeded });
       setIsSavingDialog(false);
       if (saveSucceeded) {
         setEditDialogOpen(false);
@@ -708,12 +684,7 @@ export default function LernpaketPanel({
             </Button>
             <Button
               type="button"
-              onClick={(e) => {
-                console.log('[LernpaketPanel] 🖱️ Speichern-Button onClick fired');
-                e.preventDefault();
-                e.stopPropagation();
-                handleSaveEditDialog();
-              }}
+              onClick={handleSaveEditDialog}
               disabled={isSavingDialog}
               className="gap-1.5"
             >
