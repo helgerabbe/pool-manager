@@ -17,6 +17,7 @@ import ReleaseStatusToggle from '@/components/workspace/ReleaseStatusToggle';
 import ActivityResetButton from '@/components/workspace/ActivityResetButton';
 import TranskriptField, { shouldShowTranskript } from '@/components/workspace/ki/TranskriptField';
 import TextLesenAIGeneratorPanel from '@/components/workspace/TextLesenAIGeneratorPanel';
+import TextLesenBilderUploader from '@/components/workspace/TextLesenBilderUploader';
 
 export default function TextLesenModal({
   open,
@@ -252,6 +253,19 @@ export default function TextLesenModal({
                   onChange={(val) => handleFieldChange('transkript', val)}
                   disabled={isSaving || exportLocked}
                   sourceUrl={fieldValues.url || ''}
+                />
+              );
+            }
+
+            // Bild-Uploader nur für „Text lesen" und ans Ende der Felder.
+            const isTextLesen = (catalogEntry?.name || '').toLowerCase().includes('text lesen');
+            if (isTextLesen) {
+              out.push(
+                <TextLesenBilderUploader
+                  key="__bilder_uploader__"
+                  value={fieldValues.bilder || []}
+                  onChange={(val) => handleFieldChange('bilder', val)}
+                  disabled={isSaving || exportLocked}
                 />
               );
             }
