@@ -16,7 +16,7 @@ import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import {
-  Lock, Plus, Edit, Trash2, Clock, AlertTriangle, PenLine, Loader2, ChevronRight, Menu, Target, Save, Wand2
+  Lock, Plus, Edit, Trash2, Clock, AlertTriangle, PenLine, Loader2, ChevronRight, Menu, Target, Save, Wand2, ArrowRight
 } from 'lucide-react';
 
 export default function LernpaketPanel({
@@ -553,11 +553,36 @@ export default function LernpaketPanel({
                           .map(activity => {
                           const katalogEntry = aktivitaetenKatalog.find(a => a.id === activity.aktivitaet_id);
                           const aktivitaetName = katalogEntry?.name || 'Unbekannte Aktivität';
+                          // Vollständig = is_complete; KI-Briefing zählt analog
+                          // zur Sidebar-Logik (SidebarTree.jsx) ebenfalls als
+                          // fertig zur Übergabe an die MBK.
+                          const isKiBriefed =
+                            activity.erstellungs_modus === 'ki' &&
+                            !!activity.ki_briefing &&
+                            typeof activity.ki_briefing === 'object' &&
+                            Object.keys(activity.ki_briefing).length > 0;
+                          const isComplete = activity.is_complete === true || (isKiBriefed && activity.is_complete === true);
                           return (
-                            <div key={activity.id} className={`flex items-start gap-2 p-2 rounded border text-xs ${meta.bg}`}>
-                              <span className="text-primary font-semibold shrink-0 mt-0.5">▸</span>
+                            <button
+                              key={activity.id}
+                              onClick={() => onNavigate({ type: 'goto-task-workshop', activityId: activity.id })}
+                              className={`group w-full flex items-center gap-2 p-2 rounded border text-xs text-left ${meta.bg} hover:ring-1 hover:ring-primary/40 hover:shadow-sm transition-all cursor-pointer`}
+                              title="Zur Aufgaben-Werkstatt (Tab 4) springen"
+                            >
+                              <span className="text-primary font-semibold shrink-0">▸</span>
                               <span className="flex-1 text-foreground">{aktivitaetName}</span>
-                            </div>
+                              {isComplete ? (
+                                <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">
+                                  Vollständig
+                                </span>
+                              ) : (
+                                <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                                  <AlertTriangle className="w-2.5 h-2.5" />
+                                  Unvollständig
+                                </span>
+                              )}
+                              <ArrowRight className="w-3 h-3 text-muted-foreground/50 group-hover:text-primary shrink-0 transition-colors" />
+                            </button>
                           );
                         })}
                       </div>
