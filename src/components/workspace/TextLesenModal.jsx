@@ -260,8 +260,12 @@ export default function TextLesenModal({
         )}
 
         {/* Scrollbarer Inhalt */}
-         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 min-h-0">
-           {/* Bildbeschriftungs-Editor (wenn Aktivität vom Typ ist) */}
+        {/* min-h: garantiert Mindesthöhe, damit der DialogContent auch dann
+            sichtbar bleibt, wenn das Schema (vorübergehend) keine Felder
+            rendert — sonst kann der Flex-Container auf 0 kollabieren und
+            der User sieht nur einen dunklen Backdrop. */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 min-h-[120px]">
+          {/* Bildbeschriftungs-Editor (wenn Aktivität vom Typ ist) */}
            {catalogEntry?.name?.toLowerCase().includes('bildbeschriftung') && (
              <ImageLabelingEditor
                initialData={fieldValues}

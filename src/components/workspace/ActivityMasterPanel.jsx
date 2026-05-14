@@ -647,7 +647,34 @@ export default function ActivityMasterPanel({
                   exportLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
                 />
               </>
-            ) : (
+            ) : (() => {
+              // Empty-State: Wenn noch GAR keine Inhalte für diese Aktivität
+              // existieren, zeigen wir statt eines fast-leeren weißen Kastens
+              // einen klaren Hinweis "Noch keine Inhalte" mit Aufzählung der
+              // erwarteten Pflichtfelder. Sonst wirkt der Inhalts-Bereich
+              // unmotiviert/leer (UX-Bugfix 2026-05-14).
+              const isEmpty = !Object.keys(fieldValues || {}).some(
+                k => fieldValues[k] !== '' && fieldValues[k] !== null && fieldValues[k] !== undefined
+              );
+              if (isEmpty) {
+                const expectedFields = schema
+                  .filter(f => f.type !== 'info' && f.field_name !== 'aufgabentext')
+                  .map(f => f.label)
+                  .filter(Boolean);
+                return (
+                  <div className="rounded-xl border border-dashed border-border bg-muted/30 p-5 text-center">
+                    <p className="text-sm font-semibold text-muted-foreground mb-1">
+                      Noch keine Inhalte eingetragen
+                    </p>
+                    <p className="text-xs text-muted-foreground/80">
+                      {expectedFields.length > 0
+                        ? <>Klicke auf <span className="font-medium">„Inhalt bearbeiten"</span>, um {expectedFields.join(', ')} zu ergänzen.</>
+                        : <>Klicke auf <span className="font-medium">„Inhalt bearbeiten"</span>, um Inhalte zu ergänzen.</>}
+                    </p>
+                  </div>
+                );
+              }
+              return (
               <div className="rounded-xl border border-border bg-card p-5 space-y-4">
                 {schema.length === 0 && (
                   <p className="text-sm text-muted-foreground italic">Keine Felder konfiguriert.</p>
@@ -746,7 +773,8 @@ export default function ActivityMasterPanel({
                   );
                 })}
               </div>
-            )}
+              );
+            })()}
 
               <TextLesenModal
               open={editModalOpen && !catalogEntry?.name?.toLowerCase().includes('offene')}
