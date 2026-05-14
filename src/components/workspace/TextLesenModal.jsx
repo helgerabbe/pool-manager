@@ -194,18 +194,13 @@ export default function TextLesenModal({
                     currentTitel={fieldValues?.titel || ''}
                     disabled={isSaving || exportLocked}
                     onApply={({ titel, text }) => {
-                      console.log('[TextLesenModal] onApply called', { titelLen: titel?.length, textLen: text?.length });
                       // Titel nur überschreiben, wenn er leer ist — sonst
                       // respektieren wir die manuelle Eingabe der Lehrkraft.
-                      setFieldValues((prev) => {
-                        const next = {
-                          ...prev,
-                          ...(prev?.titel ? {} : { titel }),
-                          inhalt: text,
-                        };
-                        console.log('[TextLesenModal] new fieldValues', { titel: next.titel, inhaltLen: next.inhalt?.length });
-                        return next;
-                      });
+                      setFieldValues((prev) => ({
+                        ...prev,
+                        ...(prev?.titel ? {} : { titel }),
+                        inhalt: text,
+                      }));
                     }}
                   />
                 );

@@ -97,21 +97,41 @@ Liefere ein JSON-Objekt mit genau zwei Feldern:
       },
     });
 
-    // Robuste Extraktion: Claude Sonnet 4.6 liefert das geparste JSON-Objekt
-    // unter `result.response` zurück (statt direkt auf Root-Ebene). Manche
-    // Modelle wickeln den String zusätzlich in ```json ... ``` Codefences.
-    // Wir versuchen alle plausiblen Pfade, bevor wir aufgeben.
+    // Robuste Extraktion: Claude Sonnet 4.6 liefert das Ergebnis als
+    //   { response: "<json-string>" }
+    // (response ist ein STRING, der das eigentliche JSON enthält).
+    // Andere Modelle legen das Objekt direkt auf Root-Ebene ab. Wir
+    // probieren beide Pfade und parsen den String-Fall robust.
+    // Claude Sonnet 4.6 liefert das Ergebnis als
+    //   { response: "<json-string>" }
+    // (response ist ein STRING, der das JSON enthält). Andere Modelle
+    // legen das Objekt direkt auf Root-Ebene ab. Wir probieren beide Pfade.
     let parsed = result?.response ?? result;
+    let rawString = '';
     if (typeof parsed === 'string') {
-      const cleaned = parsed.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
-      try { parsed = JSON.parse(cleaned); } catch { /* belassen */ }
+      rawString = parsed.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+      try {
+        parsed = JSON.parse(rawString);
+      } catch {
+        // JSON unvollständig (z.B. Token-Limit). Wir versuchen per Regex
+        // den text-Wert zu retten — besser als ein harter 502-Fehler.
+        const titelMatch = rawString.match(/"titel"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+        const textMatch = rawString.match(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+        if (titelMatch || textMatch) {
+          const unescape = (s) => s.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+          parsed = {
+            titel: titelMatch ? unescape(titelMatch[1]) : '',
+            text: textMatch ? unescape(textMatch[1]) : '',
+          };
+        }
+      }
     }
 
     const titel = String(parsed?.titel || parsed?.title || '').trim();
     const text = String(parsed?.text || parsed?.content || '').trim();
 
     if (!text) {
-      console.error('[generateLeseText] Unverwertbares LLM-Ergebnis:', JSON.stringify(result).slice(0, 800));
+      console.error('[generateLeseText] Unverwertbares LLM-Ergebnis. Raw (erste 400):', rawString.slice(0, 400));
       return Response.json(
         { error: 'KI hat keinen verwertbaren Text zurückgegeben. Bitte erneut versuchen.' },
         { status: 502 }
