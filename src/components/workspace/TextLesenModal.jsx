@@ -207,7 +207,7 @@ export default function TextLesenModal({
       // weiter und die Lehrkraft sieht 10–15 s lang nichts.
       if (!isOpen && !isReleasingFromToggle) handleCancel();
     }}>
-      <DialogContent className="max-w-2xl max-h-[90dvh] flex flex-col p-0 gap-0 relative">
+      <DialogContent className="max-w-2xl max-h-[90dvh] min-h-[400px] flex flex-col p-0 gap-0 relative">
         {/* UX-Overlay während Toggle-Release (Speichern + Freigabe + Refresh) */}
         {isReleasingFromToggle && (
           <div className="absolute inset-0 z-50 bg-white/85 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center gap-3">
