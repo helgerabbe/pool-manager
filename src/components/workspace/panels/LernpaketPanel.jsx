@@ -576,7 +576,12 @@ export default function LernpaketPanel({
                             >
                               <span className="text-primary font-semibold shrink-0">▸</span>
                               <span className="flex-1 text-foreground">{aktivitaetName}</span>
-                              {isComplete ? (
+                              {activity.content_status === 'approved' ? (
+                                <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-300">
+                                  <Lock className="w-2.5 h-2.5" />
+                                  Freigegeben
+                                </span>
+                              ) : isComplete ? (
                                 <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">
                                   Vollständig
                                 </span>
