@@ -108,22 +108,31 @@ Liefere ein JSON-Objekt mit genau zwei Feldern:
     // legen das Objekt direkt auf Root-Ebene ab. Wir probieren beide Pfade.
     let parsed = result?.response ?? result;
     let rawString = '';
+    let wasTruncated = false;
     if (typeof parsed === 'string') {
       rawString = parsed.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
       try {
         parsed = JSON.parse(rawString);
       } catch {
-        // JSON unvollständig (z.B. Token-Limit). Wir versuchen per Regex
-        // den text-Wert zu retten — besser als ein harter 502-Fehler.
+        // JSON unvollständig (z.B. Token-Limit erreicht → Claude stoppt
+        // mitten im String). Wir versuchen, den text-Wert zu retten.
+        // Strategie: alles ab `"text":"` bis zum Ende des Strings nehmen,
+        // dann trailing-`"`/`}`-Reste entfernen.
+        wasTruncated = true;
         const titelMatch = rawString.match(/"titel"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-        const textMatch = rawString.match(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-        if (titelMatch || textMatch) {
-          const unescape = (s) => s.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
-          parsed = {
-            titel: titelMatch ? unescape(titelMatch[1]) : '',
-            text: textMatch ? unescape(textMatch[1]) : '',
-          };
+        const textStartMatch = rawString.match(/"text"\s*:\s*"/);
+        let textVal = '';
+        if (textStartMatch) {
+          const startIdx = textStartMatch.index + textStartMatch[0].length;
+          textVal = rawString.slice(startIdx);
+          // Trailing-JSON-Reste entfernen (`"}`, `"`, `}`, Whitespace).
+          textVal = textVal.replace(/["}\s]+$/, '');
         }
+        const unescape = (s) => s.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+        parsed = {
+          titel: titelMatch ? unescape(titelMatch[1]) : '',
+          text: textVal ? unescape(textVal) : '',
+        };
       }
     }
 
@@ -136,6 +145,10 @@ Liefere ein JSON-Objekt mit genau zwei Feldern:
         { error: 'KI hat keinen verwertbaren Text zurückgegeben. Bitte erneut versuchen.' },
         { status: 502 }
       );
+    }
+
+    if (wasTruncated) {
+      console.warn('[generateLeseText] Antwort abgeschnitten — Text per Fallback gerettet. Länge:', text.length);
     }
 
     return Response.json({ titel, text });
