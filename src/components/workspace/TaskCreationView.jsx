@@ -233,8 +233,14 @@ function SidebarLernpaketFolder({
     );
   });
 
+  // Initial-Auto-Open: einmalig öffnen, wenn ein Kind dieses Pakets
+  // selektiert ist. KEIN permanenter Effekt — sonst würde das Akkordeon
+  // jeden manuellen Wechsel auf ein anderes Paket sofort revertieren,
+  // weil die Selection im alten Paket noch lebt (Bug 2026-05-14).
+  const didAutoOpenRef = React.useRef(false);
   useEffect(() => {
-    if (hasSelectedChild && !isOpen && onToggleOpen) {
+    if (hasSelectedChild && !isOpen && !didAutoOpenRef.current && onToggleOpen) {
+      didAutoOpenRef.current = true;
       onToggleOpen(lernpaket.id, true);
     }
   }, [hasSelectedChild, isOpen, lernpaket.id, onToggleOpen]);
