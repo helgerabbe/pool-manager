@@ -465,6 +465,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
 
    // selectedItem: null | { type: 'activity', activity } | { type: 'master', master } | { type: 'klon', klon }
    const [selectedItem, setSelectedItem] = useState(null);
+   // Akkordeon: immer nur EIN Lernpaket offen (analog Tab 3 SidebarTree).
    const [openPacketIds, setOpenPacketIds] = useState(new Set());
    const [expandedPhases, setExpandedPhases] = useState({});
 
@@ -632,8 +633,9 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
 
     console.log("📁 Öffne Ordner:", keysToExpand);
 
-    // Alle relevanten Ordner öffnen + Activity selektieren
-    setOpenPacketIds(prev => new Set([...prev, ...keysToExpand]));
+    // Akkordeon: nur das Lernpaket der angesprungenen Aktivität offen halten,
+    // alle anderen Pakete einklappen (analog Tab 3).
+    setOpenPacketIds(paket ? new Set([paket.id]) : new Set());
     setSelectedItem({ type: 'activity', activity });
 
     // Zum Element scrollen
@@ -795,15 +797,10 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
                     myEmail={userEmail}
                     isOpen={openPacketIds.has(lernpaket.id)}
                     onToggleOpen={(paketId, shouldOpen) => {
-                       setOpenPacketIds(prev => {
-                         const newSet = new Set(prev);
-                         if (shouldOpen) {
-                           newSet.add(paketId);
-                         } else {
-                           newSet.delete(paketId);
-                         }
-                         return newSet;
-                       });
+                       // Akkordeon-Verhalten: beim Öffnen wird das angeklickte
+                       // Paket zum einzigen offenen Knoten; beim Schließen
+                       // wird alles eingeklappt.
+                       setOpenPacketIds(shouldOpen ? new Set([paketId]) : new Set());
                      }}
                      aktivitaetenKatalog={aktivitaetenKatalog}
                      expandedPhases={expandedPhases}
