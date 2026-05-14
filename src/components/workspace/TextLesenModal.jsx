@@ -16,6 +16,7 @@ import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import ReleaseStatusToggle from '@/components/workspace/ReleaseStatusToggle';
 import ActivityResetButton from '@/components/workspace/ActivityResetButton';
 import TranskriptField, { shouldShowTranskript } from '@/components/workspace/ki/TranskriptField';
+import TextLesenAIGeneratorPanel from '@/components/workspace/TextLesenAIGeneratorPanel';
 
 export default function TextLesenModal({
   open,
@@ -27,6 +28,8 @@ export default function TextLesenModal({
   onReset,       // () => Promise — setzt Aktivitäts-Inhalte zurück (Aktivität bleibt erhalten)
   isSaving = false,
   exportLocked = false,  // Wird bei Export-Lock deaktiviert
+  einheitFach = 'unbekannt',         // für KI-Generator: Kontext-Anker
+  einheitJahrgangsstufe = 'unbekannt',
 }) {
   const [fieldValues, setFieldValues] = useState(initialFieldValues);
   const [isReleased, setIsReleased] = useState(initialFieldValues.content_status === 'approved');
@@ -159,6 +162,31 @@ export default function TextLesenModal({
             const out = [];
 
             sortedFields.forEach((field) => {
+              // KI-Generator-Panel direkt VOR dem Textinhalt-Feld einblenden,
+              // damit der Workflow optisch lautet: 1. Typ wählen → 2. KI nutzen
+              // (optional) → 3. fertigen Text prüfen / nachbearbeiten.
+              // Nur sichtbar bei „Text direkt eingeben".
+              if (field.field_name === 'inhalt' && inhaltTyp === 'text') {
+                out.push(
+                  <TextLesenAIGeneratorPanel
+                    key="__ai_generator__"
+                    fach={einheitFach}
+                    jahrgangsstufe={einheitJahrgangsstufe}
+                    currentTitel={fieldValues?.titel || ''}
+                    disabled={isSaving || exportLocked}
+                    onApply={({ titel, text }) => {
+                      // Titel nur überschreiben, wenn er leer ist — sonst
+                      // respektieren wir die manuelle Eingabe der Lehrkraft.
+                      setFieldValues((prev) => ({
+                        ...prev,
+                        ...(prev?.titel ? {} : { titel }),
+                        inhalt: text,
+                      }));
+                    }}
+                  />
+                );
+              }
+
               if (field.type === 'info') {
                 out.push(
                   <div key={field.field_name} className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm text-blue-800">

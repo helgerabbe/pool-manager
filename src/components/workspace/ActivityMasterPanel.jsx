@@ -689,6 +689,8 @@ export default function ActivityMasterPanel({
               onReset={handleModalReset}
               isSaving={saveFieldsMutation.isPending}
               exportLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
+              einheitFach={einheit?.fach || 'unbekannt'}
+              einheitJahrgangsstufe={einheit?.jahrgangsstufe || 'unbekannt'}
             />
           </>
         );
