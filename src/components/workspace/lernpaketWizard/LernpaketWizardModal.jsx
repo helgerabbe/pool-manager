@@ -22,7 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Sparkles, Loader2, Wand2, Package, Target } from 'lucide-react';
+import { Sparkles, Loader2, Wand2, Package, Target, Info } from 'lucide-react';
 import WizardProposalPreview from './WizardProposalPreview';
 import WizardConflictDialog from './WizardConflictDialog';
 import WizardGlossarSidebar from './WizardGlossarSidebar';
@@ -254,6 +254,24 @@ export default function LernpaketWizardModal({
               </div>
             </div>
           </div>
+
+          {/* Beruhigender Hinweis, wenn das Paket bereits Aktivitäten enthält.
+              Macht transparent, dass hier nichts versehentlich überschrieben
+              wird — die eigentliche Entscheidung (additiv vs. ersetzen) fällt
+              erst am Ende im WizardConflictDialog. */}
+          {existingActivityCount > 0 && (
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 flex items-start gap-2 text-sm text-blue-900">
+              <Info className="w-4 h-4 mt-0.5 shrink-0 text-blue-600" />
+              <div className="space-y-1">
+                <p className="font-medium">
+                  Dieses Lernpaket ist bereits mit {existingActivityCount} Aktivität{existingActivityCount !== 1 ? 'en' : ''} befüllt.
+                </p>
+                <p className="text-blue-800/90 leading-snug">
+                  Du kannst hier trotzdem in Ruhe weiter mit der KI experimentieren, um eine bessere Konstellation zu finden. Es wird nichts automatisch gelöscht — erst wenn du auf <strong>„Übernehmen"</strong> klickst, fragen wir dich, ob du die neuen Aktivitäten <strong>zusätzlich</strong> hinzufügen oder die bestehenden <strong>ersetzen</strong> möchtest.
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-[1fr_240px] gap-5 py-2">
             {/* Hauptspalte: Briefing + Vorschau */}
