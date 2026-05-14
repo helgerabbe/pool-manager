@@ -116,7 +116,7 @@ export default function BaseActivityModal({
         </div>
 
         <div className="px-6 py-5 border-t border-border shrink-0 space-y-3">
-          {hasReleaseControls && !isReleased && !lockState.locked && (
+          {hasReleaseControls && !isReleased && !lockState.locked && !completeness.isComplete && (
             <CompletenessIndicator result={completeness} />
           )}
 

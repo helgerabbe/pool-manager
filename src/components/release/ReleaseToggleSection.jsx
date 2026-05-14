@@ -13,7 +13,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Lock, Clock } from 'lucide-react';
+import { CheckCircle2, Lock, Clock, Sparkles } from 'lucide-react';
 
 export default function ReleaseToggleSection({
   isReleased,
@@ -105,19 +105,28 @@ export default function ReleaseToggleSection({
   }
 
   // ── Freigabe-bereit ────────────────────────────────────────────────────
+  // Wir packen "Vollständig"-Bestätigung + Toggle + Hinweistext in eine
+  // einzige grüne Box, damit das Modal-Footer nicht aus zwei separaten
+  // Bannern besteht (UX-Feedback 2026-05-14).
   return (
     <button
       type="button"
       onClick={handleClick}
-      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-slate-300 bg-white hover:border-green-400 hover:bg-green-50/40 transition-all cursor-pointer"
+      className="w-full flex items-start gap-3 px-3 py-2.5 rounded-lg border border-green-300 bg-green-50/70 hover:border-green-400 hover:bg-green-50 transition-all cursor-pointer text-left"
     >
-      <div className="shrink-0 p-1.5 rounded-full bg-slate-200 text-slate-600">
-        <Clock className="w-4 h-4" />
+      <div className="shrink-0 p-1.5 rounded-full bg-green-100 text-green-700 mt-0.5">
+        <CheckCircle2 className="w-4 h-4" />
       </div>
-      <p className="flex-1 text-left text-sm font-semibold text-slate-700">
-        Freigeben — sperrt diese Aufgabe für Bearbeitung
-      </p>
-      <div className="shrink-0 h-6 w-11 rounded-full bg-slate-400 flex items-center p-0.5">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-green-900 flex items-center gap-1.5">
+          <Sparkles className="w-3.5 h-3.5 text-green-700" />
+          Vollständig — bereit zur Freigabe
+        </p>
+        <p className="text-xs text-green-800/80 mt-0.5">
+          Freigabe sperrt diese Aufgabe für weitere Bearbeitung.
+        </p>
+      </div>
+      <div className="shrink-0 h-6 w-11 rounded-full bg-slate-400 flex items-center p-0.5 mt-1">
         <div className="h-5 w-5 rounded-full bg-white shadow-md" />
       </div>
     </button>

@@ -321,8 +321,10 @@ export default function TextLesenModal({
 
             {/* Footer */}
             <div className="px-6 py-5 border-t border-border shrink-0 space-y-3">
-          {/* Phase 6: Vollständigkeits-Indikator (nur sichtbar, wenn NICHT freigegeben). */}
-          {!isReleased && !lockState.locked && (
+          {/* Phase 6: Vollständigkeits-Indikator nur zeigen, wenn NICHT vollständig.
+              Bei vollständig integriert ReleaseToggleSection die Bestätigung
+              direkt in den Toggle-Button (eine Box statt zwei). */}
+          {!isReleased && !lockState.locked && !completeness.isComplete && (
             <CompletenessIndicator result={completeness} />
           )}
 

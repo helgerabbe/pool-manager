@@ -692,6 +692,13 @@ export default function ActivityMasterPanel({
               einheitFach={einheit?.fach || 'unbekannt'}
               einheitJahrgangsstufe={einheit?.jahrgangsstufe || 'unbekannt'}
               parentLernpaketName={parentLernpaketName || ''}
+              /* Phase 6 (Freigabe-Konzept 2026-05-14): Records für
+                 Vollständigkeits-/Sperr-Logik durchreichen, sonst bleibt
+                 der Toggle wirkungslos (activity=null → setReleaseStatus
+                 ruft mit targetId=undefined auf). */
+              activity={activityRecord}
+              parentLernpaket={lernpaket}
+              parentEinheit={einheit}
             />
           </>
         );
