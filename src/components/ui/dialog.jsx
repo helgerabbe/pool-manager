@@ -31,8 +31,7 @@ const DialogContent = React.forwardRef(({ className, children, ...props }, ref) 
     <DialogPrimitive.Content
       ref={ref}
       style={{ 
-        backgroundColor: 'white', 
-        border: '3px solid red',
+        backgroundColor: 'white',
         position: 'fixed',
         left: '50%',
         top: '50%',
@@ -42,7 +41,7 @@ const DialogContent = React.forwardRef(({ className, children, ...props }, ref) 
         minHeight: '400px'
       }}
       className={cn(
-        "grid w-full max-w-lg gap-4 p-6 shadow-lg",
+        "grid w-full max-w-lg gap-4 border border-border p-6 shadow-lg rounded-lg",
         className
       )}
       {...props}>
