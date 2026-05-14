@@ -124,6 +124,34 @@ Deno.serve(async (req) => {
       einheit = einheiten[0];
     }
 
+    // ⛔ Freigabe-Sperre (Phase 3, 2026-05-14):
+    // Wenn das Lernpaket freigegeben ist → kein Edit möglich, erst Freigabe
+    // zurücknehmen via setReleaseStatusSecure.
+    if (paket.content_status === 'approved' && paket.released_at) {
+      return Response.json(
+        {
+          error: 'Lernpaket ist freigegeben — bitte erst die Freigabe zurücknehmen',
+          code: 'LERNPAKET_RELEASED',
+        },
+        { status: 423 }
+      );
+    }
+    // Einheit-Final-Lock (Phase 11)
+    if (einheit && (
+      einheit.export_lifecycle_status === 'final_freigegeben' ||
+      einheit.export_lifecycle_status === 'export_running' ||
+      einheit.export_lifecycle_status === 'published'
+    )) {
+      return Response.json(
+        {
+          error: 'Einheit ist final freigegeben — Bearbeitung gesperrt',
+          code: 'EINHEIT_FINAL_LOCKED',
+          status: einheit.export_lifecycle_status,
+        },
+        { status: 423 }
+      );
+    }
+
     // 6. RBAC: Fachschaftsleitung muss das richtige Fach haben
     if (rolle === 'Fachschaftsleitung' && einheit?.fach) {
       if (!faecher.includes(einheit.fach)) {

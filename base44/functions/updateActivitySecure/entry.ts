@@ -88,6 +88,85 @@ function validateEditPermissionWithScope(
   return { allowed: false, reason: 'insufficient_role' };
 }
 
+// ---------------------------------------------------------------------------
+// Phase 3 (Freigabe-Konzept 2026-05-14): Inline-Validierung der Vollständigkeit.
+// Backend kann keine lokalen Imports — deshalb hier dupliziert.
+// Synchron halten mit lib/completenessValidation.js!
+// ---------------------------------------------------------------------------
+function _isEmpty(v) {
+  if (v === null || v === undefined) return true;
+  if (typeof v === 'string') return v.trim() === '';
+  if (Array.isArray(v)) return v.length === 0;
+  if (typeof v === 'object') return Object.keys(v).length === 0;
+  return false;
+}
+
+function _validateJsonStruct(fieldName, data) {
+  if (!data || typeof data !== 'object') return 'Inhalt fehlt';
+  switch (fieldName) {
+    case 'match_data': {
+      const pairs = Array.isArray(data.pairs) ? data.pairs : [];
+      const valid = pairs.filter(p => p && String(p.left || '').trim() !== '' && String(p.right || '').trim() !== '');
+      return valid.length < 3 ? `Mindestens 3 Paare (aktuell: ${valid.length})` : null;
+    }
+    case 'mc_data': {
+      const qs = Array.isArray(data.questions) ? data.questions : [];
+      if (qs.length < 1) return 'Mindestens 1 Frage';
+      for (let i = 0; i < qs.length; i++) {
+        const q = qs[i];
+        if (!q || _isEmpty(q.text)) return `Frage ${i + 1}: Text fehlt`;
+        const ans = Array.isArray(q.answers) ? q.answers.filter(a => a && !_isEmpty(a.text)) : [];
+        if (ans.length < 2) return `Frage ${i + 1}: Mindestens 2 Antworten`;
+        if (!ans.some(a => a.correct === true)) return `Frage ${i + 1}: Richtige Antwort markieren`;
+      }
+      return null;
+    }
+    case 'lueckentext_data': {
+      if (_isEmpty(data.text)) return 'Text fehlt';
+      const gaps = Array.isArray(data.gaps) ? data.gaps : [];
+      const valid = gaps.filter(g => g && !_isEmpty(g.correct));
+      return valid.length < 1 ? 'Mindestens 1 Lücke mit Lösung' : null;
+    }
+    case 'answer_data': {
+      const qs = Array.isArray(data.questions) ? data.questions : (Array.isArray(data.fragen) ? data.fragen : []);
+      const valid = qs.filter(q => q && !_isEmpty(q.frage || q.text) && !_isEmpty(q.antwort || q.korrekt));
+      return valid.length < 3 ? `Mindestens 3 Fragen (aktuell: ${valid.length})` : null;
+    }
+    case 'sort_data': {
+      const items = Array.isArray(data.items) ? data.items : [];
+      const valid = items.filter(it => it && !_isEmpty(it.text));
+      return valid.length < 3 ? `Mindestens 3 Sortier-Elemente (aktuell: ${valid.length})` : null;
+    }
+    case 'marker_data': {
+      const zones = Array.isArray(data.dropzones) ? data.dropzones : [];
+      const valid = zones.filter(z => z && !_isEmpty(z.label));
+      return valid.length < 2 ? `Mindestens 2 Drop-Zonen (aktuell: ${valid.length})` : null;
+    }
+    case 'test_data': {
+      const qs = Array.isArray(data.questions) ? data.questions : (Array.isArray(data.fragen) ? data.fragen : []);
+      return qs.length < 1 ? 'Mindestens 1 Frage' : null;
+    }
+    default:
+      return null;
+  }
+}
+
+function validateActivityCompletenessInline(catalog, fieldValues = {}) {
+  if (!catalog || !Array.isArray(catalog.form_schema)) return { isComplete: true, missingFields: [] };
+  const missing = [];
+  for (const field of catalog.form_schema) {
+    if (!field || !field.field_name || field.type === 'info' || !field.required) continue;
+    const value = fieldValues[field.field_name];
+    if (field.type === 'json') {
+      const reason = _validateJsonStruct(field.field_name, value);
+      if (reason) missing.push({ fieldName: field.field_name, label: field.label, reason });
+    } else if (_isEmpty(value)) {
+      missing.push({ fieldName: field.field_name, label: field.label, reason: 'Pflichtfeld leer' });
+    }
+  }
+  return { isComplete: missing.length === 0, missingFields: missing };
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -197,6 +276,45 @@ Deno.serve(async (req) => {
       return Response.json(
         { error: 'Parent Lernpaket not found' },
         { status: 404 }
+      );
+    }
+
+    // ⛔ Freigabe-Sperre (Phase 3 des Freigabe-Konzepts vom 2026-05-14):
+    // Eine freigegebene Aktivität ODER ein freigegebenes Lernpaket sperrt
+    // jede inhaltliche Bearbeitung. Die Lehrkraft muss erst die Freigabe
+    // zurücknehmen (setReleaseStatusSecure mit release=false).
+    if (aktivitaet.content_status === 'approved') {
+      return Response.json(
+        {
+          error: 'Aktivität ist freigegeben — bitte erst die Freigabe zurücknehmen',
+          code: 'ACTIVITY_RELEASED',
+        },
+        { status: 423 }
+      );
+    }
+    if (lernpaket.content_status === 'approved' && lernpaket.released_at) {
+      return Response.json(
+        {
+          error: 'Übergeordnetes Lernpaket ist freigegeben — bitte erst die Freigabe zurücknehmen',
+          code: 'PARENT_LERNPAKET_RELEASED',
+        },
+        { status: 423 }
+      );
+    }
+
+    // ⛔ Einheit-Final-Lock (Phase 11): Wenn die Einheit final freigegeben ist,
+    // sind alle untergeordneten Inhalte gesperrt — auch unabhängig vom
+    // Moodle-Export-Lifecycle. Spiegelt lib/releaseLockCheck.js.
+    if (einheit.export_lifecycle_status === 'final_freigegeben' ||
+        einheit.export_lifecycle_status === 'export_running' ||
+        einheit.export_lifecycle_status === 'published') {
+      return Response.json(
+        {
+          error: 'Einheit ist final freigegeben — Bearbeitung gesperrt',
+          code: 'EINHEIT_FINAL_LOCKED',
+          status: einheit.export_lifecycle_status,
+        },
+        { status: 423 }
       );
     }
 
@@ -340,8 +458,29 @@ Deno.serve(async (req) => {
     // keinem Zeitpunkt in einem Zustand, in dem beide Seiten gleichzeitig
     // gefüllt wären — ein evtl. parallel lesender MBK-Job sieht entweder
     // den alten oder den neuen Stand, nie eine Mischung.
+    // Phase 3 (Freigabe-Konzept 2026-05-14): `is_complete` wird AB JETZT
+    // ehrlich aus dem Katalog-Schema berechnet, nicht mehr blind auf true
+    // gesetzt. Die Validierungslogik ist als Inline-Funktion oben definiert
+    // (Backend-Isolation; synchron zu lib/completenessValidation.js halten).
+    let isCompleteHonest;
+    try {
+      const cat = await base44.asServiceRole.entities.AktivitaetenKatalog.filter({ id: aktivitaet.aktivitaet_id });
+      const catalog = cat[0];
+      // Wir prüfen gegen den TATSÄCHLICH gespeicherten Endzustand der
+      // Aktivität nach diesem Save. Im KI-Modus zählt das Briefing, sonst
+      // die field_values.
+      const effectiveValues = erstellungsModus === 'ki'
+        ? {} // Wir validieren KI-Aktivitäten nicht über field_values, sondern über ki_briefing (separater Pfad — nicht in dieser Function).
+        : (erstellungsModus === 'manuell' ? fieldValues : fieldValues);
+      const v = validateActivityCompletenessInline(catalog, effectiveValues);
+      isCompleteHonest = v.isComplete;
+    } catch (e) {
+      console.warn('[updateActivitySecure] Completeness check failed, defaulting to false:', e?.message);
+      isCompleteHonest = false;
+    }
+
     const updatePayload = {
-      is_complete: true,
+      is_complete: isCompleteHonest,
       export_error: false,
     };
 

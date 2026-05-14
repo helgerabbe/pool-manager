@@ -28,11 +28,11 @@
         "type": "string"
       },
       "default": [],
-      "description": "AP2 / MBK-Integration: Verpflichtende Begriffe, die in jeder \u00dcbung dieses Pakets vorkommen m\u00fcssen. Werden in den C-Local-Payload (Micro-Briefing) der MBK eingewoben, damit die KI z. B. 'Steigung' und 'Y-Achsenabschnitt' garantiert in der Aufgabenstellung verwendet. Tag-Input im Lernpaket-Editor."
+      "description": "AP2 / MBK-Integration: Verpflichtende Begriffe, die in jeder \u00dcbung dieses Pakets vorkommen m\u00fcssen."
     },
     "phasen_konfiguration": {
       "type": "object",
-      "description": "Pro Phase ('Input', '\u00dcbung', 'Abschluss') ein Konfigurations-Objekt. Aktuell relevant: { disabled: boolean }. Wenn `disabled === true`, blendet die Sidebar diese Phase aus und der lernpaketAggregateGuardian klammert ihre Activities beim Roll-up auf `Lernpakete.is_complete` aus. Wird im Lernpaket-Editor (Toggle pro Phase) gepflegt.",
+      "description": "Pro Phase ('Input', '\u00dcbung', 'Abschluss') ein Konfigurations-Objekt. { disabled: boolean }",
       "additionalProperties": true,
       "default": {}
     },
@@ -56,8 +56,17 @@
         "draft",
         "approved"
       ],
-      "default": "approved",
-      "description": "P\u00e4dagogischer Status: Struktur-Container sind immer 'approved' (Auto-Gr\u00fcn)"
+      "default": "draft",
+      "description": "Freigabe-Status (Phase 3 des Freigabe-Konzepts vom 2026-05-14): 'approved' + `released_at` gesetzt = Lernpaket ist von der Lehrkraft freigegeben \u2192 alle Activities + Master + Klone darin sind gesperrt (siehe `lib/releaseLockCheck.js`). 'draft' (default) = in Bearbeitung. Wechsel ausschlie\u00dflich \u00fcber `setReleaseStatusSecure`. ACHTUNG: Vor dem Konzeptwechsel war der Default 'approved' (Auto-Gr\u00fcn f\u00fcr Struktur-Container). Legacy-Pakete ohne `released_at` gelten als NICHT freigegeben \u2014 sicherer Default."
+    },
+    "released_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel der manuellen Lernpaket-Freigabe durch die Lehrkraft. Null wenn das Paket noch im Draft-Modus ist."
+    },
+    "released_by": {
+      "type": "string",
+      "description": "E-Mail der Lehrkraft, die das Lernpaket freigegeben hat. Null wenn Draft."
     },
     "sync_status": {
       "type": "string",
@@ -69,7 +78,7 @@
         "to_delete"
       ],
       "default": "new",
-      "description": "Moodle-Sync-Status: new, pending, synced, modified, to_delete"
+      "description": "Moodle-Sync-Status"
     },
     "last_synced_at": {
       "type": "string",
@@ -89,16 +98,16 @@
     "export_error": {
       "type": "boolean",
       "default": false,
-      "description": "Phase G: Vom Export-Center auf true gesetzt, wenn der Moodle-Spezialist dieses Lernpaket im Abschluss-Dialog als 'fehlgeschlagen' markiert. Wird automatisch beim n\u00e4chsten Save (updateLernpaketSecure) auf false zur\u00fcckgesetzt."
+      "description": "Phase G: Vom Export-Center auf true gesetzt, wenn das Lernpaket als 'fehlgeschlagen' markiert wurde."
     },
     "kreativ_briefing": {
       "type": "string",
-      "description": "Lernpaket-Wizard (Tab 3, Konzept v0.2 \u00a74.1, \u00a74.6): Persistiertes Briefing der Lehrkraft f\u00fcr die KI-gest\u00fctzte Generierung von Aktivit\u00e4ts-H\u00fcllen. Wird beim Klick auf 'Lernpaket mit KI-Assistent f\u00fcllen' geladen, im Sandbox-Textfeld editiert und beim erfolgreichen '\u00dcbernehmen' gespeichert. Erlaubt iterative Verfeinerung \u00fcber mehrere Wizard-L\u00e4ufe, ohne dass die Lehrkraft das Briefing jedes Mal neu tippt. Bei Reset (z. B. fundamentale Neuausrichtung des Pakets) kann die Lehrkraft das Feld manuell leeren. Max. 5000 Zeichen. Null/leer = noch nie ausgef\u00fcllt."
+      "description": "Lernpaket-Wizard: Persistiertes Briefing der Lehrkraft f\u00fcr die KI-gest\u00fctzte Generierung."
     },
     "kreativ_briefing_updated_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Lernpaket-Wizard (Tab 3, Konzept v0.2 \u00a74.6): Zeitstempel des letzten gespeicherten Briefings. Wird in der Lernpaket-UI als 'Zuletzt mit KI gef\u00fcllt: <Datum>'-Hinweis angezeigt, damit die Lehrkraft erkennt, wann der Wizard zuletzt eingesetzt wurde. Bleibt null, solange `kreativ_briefing` leer ist."
+      "description": "Zeitstempel des letzten gespeicherten Briefings."
     }
   },
   "required": [

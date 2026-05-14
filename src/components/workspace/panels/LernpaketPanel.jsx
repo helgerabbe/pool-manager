@@ -9,6 +9,8 @@ import { StatusBadge, kategorieColors } from './SharedUI';
 import PhaseContent from './PhaseContent';
 import LernzielEditList from './LernzielEditList';
 import LernpaketWizardModal from '@/components/workspace/lernpaketWizard/LernpaketWizardModal';
+// Phase 8 (Freigabe-Konzept 2026-05-14): Lernpaket-Freigabe-Block.
+import LernpaketReleaseSection from '@/components/release/LernpaketReleaseSection';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +31,9 @@ export default function LernpaketPanel({
   onNavigate: onNavigateRaw,
   onNewLernziel,
   onDelete,
+  // Phase 8: optional, für Hierarchie-Sperre. Wenn nicht übergeben, läuft
+  // alles wie vorher — die Sperre evaluiert dann „Einheit nicht final".
+  einheit = null,
 }) {
   const onNavigate = onNavigateRaw;
   const paketZiele = lernziele.filter(lz => lz.lernpaket_id === paket.id);
@@ -593,6 +598,17 @@ export default function LernpaketPanel({
             </div>
           );
         })()}
+      </div>
+
+      {/* Phase 8 (Freigabe-Konzept 2026-05-14): Lernpaket-Freigabe-Block
+          ganz unten im Panel — fasst den Hierarchie-Workflow visuell zusammen. */}
+      <div className="pt-6 border-t">
+        <LernpaketReleaseSection
+          lernpaket={paket}
+          activities={lernpaketAktivitaeten.filter(a => a.lernpaket_id === paket.id)}
+          einheit={einheit}
+          kannBearbeiten={kannBearbeiten}
+        />
       </div>
 
       <Dialog open={editDialogOpen} onOpenChange={(open) => { if (!open) handleCancelEditDialog(); }}>

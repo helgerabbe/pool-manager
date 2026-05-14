@@ -2,28 +2,61 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2, Trash2, AlertCircle } from 'lucide-react';
-import ReleaseStatusToggle from '@/components/workspace/ReleaseStatusToggle';
 import ActivityResetButton from '@/components/workspace/ActivityResetButton';
 
-export default function BaseActivityModal({ 
-  open, 
-  onOpenChange, 
-  title, 
-  initialData = {}, 
-  onSave, 
-  onDelete, 
-  onReset,        // Optional: setzt Aktivitäts-Inhalte zurück (Aktivität bleibt erhalten)
-  isSaving = false, 
-  isCopy = false, 
+// Phase 7 (Freigabe-Konzept 2026-05-14): Zentral im BaseActivityModal,
+// damit alle 8 Modal-Nutzer (MatchTerms, Lückentext, MC, Test, MiniQuiz,
+// Sorting, ImageLabeling, KITutor) den neuen Workflow auf einen Schlag bekommen.
+import CompletenessIndicator from '@/components/release/CompletenessIndicator';
+import ReleaseToggleSection from '@/components/release/ReleaseToggleSection';
+import ReleasedLockedBanner from '@/components/release/ReleasedLockedBanner';
+import { useActivityCompleteness } from '@/hooks/useCompleteness';
+import { useActivityLockState, useCanToggleActivityRelease } from '@/hooks/useReleaseLock';
+import useSetReleaseStatus from '@/hooks/useSetReleaseStatus';
+
+export default function BaseActivityModal({
+  open,
+  onOpenChange,
+  title,
+  initialData = {},
+  onSave,
+  onDelete,
+  onReset,
+  isSaving = false,
+  isCopy = false,
   exportLocked = false,
-  children 
+  children,
+  // Phase 7 — Freigabe-Konzept:
+  // Wenn diese Felder gesetzt sind, wird die Vollständigkeits- und
+  // Sperrlogik aktiviert. Bleiben sie undefined, verhält sich das Modal
+  // exakt wie vorher (Rückwärtskompat für ältere Aufrufer).
+  activity = null,                   // LernpaketPhaseAktivitaet-Record
+  catalogEntry = null,               // AktivitaetenKatalog-Record
+  parentLernpaket = null,
+  parentEinheit = null,
+  // Wenn das Modal mit „live"-fieldValues arbeitet (z.B. Editor-Drafts), kann
+  // der Parent sie hier durchreichen, damit die Vollständigkeitsanzeige live
+  // mitläuft. Andernfalls werden activity.field_values verwendet.
+  liveFieldValues = null,
 }) {
-  const [isReleased, setIsReleased] = useState(initialData.content_status === 'approved');
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Phase 7: Vollständigkeit & Sperre
+  const hasReleaseControls = !!activity && !!catalogEntry;
+  const completeness = useActivityCompleteness(
+    catalogEntry,
+    liveFieldValues ?? activity?.field_values ?? {}
+  );
+  const lockState = useActivityLockState(activity, parentLernpaket, parentEinheit);
+  const canToggle = useCanToggleActivityRelease(activity, parentLernpaket, parentEinheit);
+  const isReleased = activity?.content_status === 'approved';
+  const { setReleaseStatus, isPending: isReleasePending } = useSetReleaseStatus();
+
   const handleSave = () => {
-    onSave({ content_status: isReleased ? 'approved' : 'draft' });
+    // Phase 7: content_status wird NICHT mehr beim Speichern gesetzt —
+    // ausschließlich über setReleaseStatusSecure.
+    onSave({});
   };
 
   const handleDelete = async () => {
@@ -37,6 +70,15 @@ export default function BaseActivityModal({
     setDeleteConfirm(false);
     onOpenChange(false);
   };
+
+  const handleToggleRelease = (next) => {
+    if (!activity?.id) return;
+    setReleaseStatus({ targetType: 'activity', targetId: activity.id, release: next });
+  };
+
+  // Hard-Lock im Footer = Hierarchie blockiert ODER export-locked ODER speichert
+  const hardDisableSave =
+    isSaving || isDeleting || exportLocked || lockState.locked || isReleasePending;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -54,20 +96,52 @@ export default function BaseActivityModal({
           </div>
         )}
 
+        {hasReleaseControls && lockState.locked && (
+          <ReleasedLockedBanner
+            reason={lockState.reason}
+            releasedAt={activity?.released_at}
+            releasedBy={activity?.released_by}
+            onUnrelease={
+              lockState.reason === 'activity_released' && canToggle.allowed && !isReleasePending
+                ? () => handleToggleRelease(false)
+                : null
+            }
+            isUnreleasing={isReleasePending}
+            hardLocked={!canToggle.allowed}
+          />
+        )}
+
         <div className="flex-1 overflow-y-auto px-6 py-5 min-h-0">
           {children}
         </div>
 
-        <div className="px-6 py-5 border-t border-border shrink-0 space-y-4">
-          <ReleaseStatusToggle
-            isReleased={isReleased}
-            onToggle={setIsReleased}
-            disabled={isSaving || isDeleting}
-          />
+        <div className="px-6 py-5 border-t border-border shrink-0 space-y-3">
+          {hasReleaseControls && !isReleased && !lockState.locked && (
+            <CompletenessIndicator result={completeness} />
+          )}
+
+          {hasReleaseControls && !lockState.locked && (
+            <ReleaseToggleSection
+              isReleased={isReleased}
+              canRelease={completeness.isComplete}
+              hierarchyLocked={!canToggle.allowed}
+              hierarchyLockMessage={
+                canToggle.reason === 'einheit_final'
+                  ? 'Einheit ist final freigegeben — Freigaben gesperrt'
+                  : canToggle.reason === 'lernpaket_released'
+                  ? 'Lernpaket ist freigegeben — erst dort Freigabe zurücknehmen'
+                  : null
+              }
+              onToggle={handleToggleRelease}
+              releasedAt={activity?.released_at}
+              releasedBy={activity?.released_by}
+              disabled={isSaving || isReleasePending || exportLocked}
+            />
+          )}
 
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
-              {onDelete && !deleteConfirm && (
+              {onDelete && !deleteConfirm && !lockState.locked && (
                 <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(true)} disabled={isSaving || isDeleting || exportLocked} className="gap-1.5 text-destructive hover:bg-red-50 hover:text-destructive">
                   <Trash2 className="w-4 h-4" />
                   {isCopy ? 'Kopie löschen' : 'Aufgabe löschen'}
@@ -84,7 +158,7 @@ export default function BaseActivityModal({
                   </Button>
                 </>
               )}
-              {onReset && !deleteConfirm && (
+              {onReset && !deleteConfirm && !lockState.locked && (
                 <ActivityResetButton
                   onReset={onReset}
                   disabled={isSaving || isDeleting || exportLocked}
@@ -94,11 +168,13 @@ export default function BaseActivityModal({
 
             <div className="flex items-center gap-2">
               <Button variant="outline" onClick={handleClose} disabled={isSaving || isDeleting}>
-                Abbrechen
+                {lockState.locked ? 'Schließen' : 'Abbrechen'}
               </Button>
-              <Button onClick={handleSave} disabled={isSaving || isDeleting || exportLocked} className="gap-2">
-                {isSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</> : 'Speichern'}
-              </Button>
+              {!lockState.locked && (
+                <Button onClick={handleSave} disabled={hardDisableSave} className="gap-2">
+                  {isSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</> : 'Speichern'}
+                </Button>
+              )}
             </div>
           </div>
         </div>

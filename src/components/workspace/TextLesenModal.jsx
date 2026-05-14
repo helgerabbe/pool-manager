@@ -13,11 +13,18 @@ import { Label } from '@/components/ui/label';
 import { Loader2, AlertCircle } from 'lucide-react';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
-import ReleaseStatusToggle from '@/components/workspace/ReleaseStatusToggle';
 import ActivityResetButton from '@/components/workspace/ActivityResetButton';
 import TranskriptField, { shouldShowTranskript } from '@/components/workspace/ki/TranskriptField';
 import TextLesenAIGeneratorPanel from '@/components/workspace/TextLesenAIGeneratorPanel';
 import TextLesenBilderUploader from '@/components/workspace/TextLesenBilderUploader';
+
+// Phase 6 (Freigabe-Konzept 2026-05-14): Pilot-Integration.
+import CompletenessIndicator from '@/components/release/CompletenessIndicator';
+import ReleaseToggleSection from '@/components/release/ReleaseToggleSection';
+import ReleasedLockedBanner from '@/components/release/ReleasedLockedBanner';
+import { useActivityCompleteness } from '@/hooks/useCompleteness';
+import { useActivityLockState, useCanToggleActivityRelease } from '@/hooks/useReleaseLock';
+import useSetReleaseStatus from '@/hooks/useSetReleaseStatus';
 
 export default function TextLesenModal({
   open,
@@ -31,14 +38,25 @@ export default function TextLesenModal({
   exportLocked = false,  // Wird bei Export-Lock deaktiviert
   einheitFach = 'unbekannt',         // für KI-Generator: Kontext-Anker
   einheitJahrgangsstufe = 'unbekannt',
-  parentLernpaketName = '',          // wird als Untertitel im Header gezeigt
-                                     // UND als Default für „Titel des Textes"
-                                     // sowie als Kontext für die Standard-
-                                     // Aufgabenstellung verwendet.
+  parentLernpaketName = '',
+  // Phase 6 — Freigabe-Konzept:
+  // Vollständigkeits- und Sperr-Daten reicht der Parent-Container (Workspace
+  // bzw. ActivityContentEditor) als bereits aufgelöste Records durch. So bleibt
+  // das Modal frei von Netzwerk-Calls und arbeitet mit den exakt gleichen
+  // Objekten wie der Backend-Sperr-Check.
+  activity = null,                   // LernpaketPhaseAktivitaet-Record (für Freigabe-Status)
+  parentLernpaket = null,            // Lernpakete-Record (für Hierarchie-Sperre)
+  parentEinheit = null,              // Einheiten-Record (für Hierarchie-Sperre)
 }) {
   const [fieldValues, setFieldValues] = useState(initialFieldValues);
-  const [isReleased, setIsReleased] = useState(initialFieldValues.content_status === 'approved');
   const [exportLockedWasEnabled, setExportLockedWasEnabled] = useState(exportLocked);
+
+  // Phase 6: Live-Vollständigkeit + Sperrlogik
+  const completeness = useActivityCompleteness(catalogEntry, fieldValues);
+  const lockState = useActivityLockState(activity, parentLernpaket, parentEinheit);
+  const canToggle = useCanToggleActivityRelease(activity, parentLernpaket, parentEinheit);
+  const isReleased = activity?.content_status === 'approved';
+  const { setReleaseStatus, isPending: isReleasePending } = useSetReleaseStatus();
 
   // Nur beim ÖFFNEN des Modals Initialwerte laden (nicht bei jedem Re-render)
   // initialFieldValues NICHT als Dependency — das ist ein neues Objekt bei jedem Parent-Render
@@ -60,7 +78,6 @@ export default function TextLesenModal({
         }
       }
       setFieldValues(seeded);
-      setIsReleased(initialFieldValues?.content_status === 'approved');
       setExportLockedWasEnabled(exportLocked);
     }
     prevOpenRef.current = open;
@@ -82,11 +99,9 @@ export default function TextLesenModal({
   };
 
   const handleSave = () => {
-    // Auto-Reset bei Export: Wenn bereits synced, markiere als modified für Re-Export
-    const payload = {
-      ...fieldValues,
-      content_status: isReleased ? 'approved' : 'draft',
-    };
+    // Phase 6: Speichern überschreibt content_status NICHT mehr direkt —
+    // Freigabe wird ausschließlich über setReleaseStatusSecure gesetzt.
+    const payload = { ...fieldValues };
 
     // Wenn gerade aus 'synced' Status kommt und jetzt geändert wird,
     // markiere automatisch für Re-Export
@@ -96,6 +111,16 @@ export default function TextLesenModal({
     }
 
     onSave?.(payload);
+  };
+
+  // Phase 6: Freigabe / Rücknahme via Backend-Function.
+  const handleToggleRelease = (next) => {
+    if (!activity?.id) return;
+    setReleaseStatus({
+      targetType: 'activity',
+      targetId: activity.id,
+      release: next,
+    });
   };
 
   const formSchema = catalogEntry?.form_schema || [];
@@ -124,6 +149,24 @@ export default function TextLesenModal({
               <p className="text-xs text-red-700 mt-0.5">Speichern ist vorübergehend nicht möglich. Bitte warten Sie, bis der Export abgeschlossen ist.</p>
             </div>
           </div>
+        )}
+
+        {/* Phase 6: Freigabe-Sperre (Aktivität / Lernpaket / Einheit) */}
+        {lockState.locked && (
+          <ReleasedLockedBanner
+            reason={lockState.reason}
+            releasedAt={activity?.released_at}
+            releasedBy={activity?.released_by}
+            // Rücknahme nur erlaubt, wenn der Sperrgrund die Aktivität selbst
+            // ist UND die Hierarchie offen ist (canToggle).
+            onUnrelease={
+              lockState.reason === 'activity_released' && canToggle.allowed && !isReleasePending
+                ? () => handleToggleRelease(false)
+                : null
+            }
+            isUnreleasing={isReleasePending}
+            hardLocked={!canToggle.allowed}
+          />
         )}
 
         {/* Scrollbarer Inhalt */}
@@ -277,18 +320,37 @@ export default function TextLesenModal({
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-5 border-t border-border shrink-0 space-y-4">
-          {/* Premium Release-Toggle */}
-          <ReleaseStatusToggle
-            isReleased={isReleased}
-            onToggle={setIsReleased}
-            disabled={isSaving}
-          />
+            <div className="px-6 py-5 border-t border-border shrink-0 space-y-3">
+          {/* Phase 6: Vollständigkeits-Indikator (nur sichtbar, wenn NICHT freigegeben). */}
+          {!isReleased && !lockState.locked && (
+            <CompletenessIndicator result={completeness} />
+          )}
+
+          {/* Phase 6: Freigabe-Toggle. Versteckt im hart gesperrten Hierarchie-Fall
+              (dort übernimmt der ReleasedLockedBanner oben die Anzeige). */}
+          {!lockState.locked && (
+            <ReleaseToggleSection
+              isReleased={isReleased}
+              canRelease={completeness.isComplete}
+              hierarchyLocked={!canToggle.allowed}
+              hierarchyLockMessage={
+                canToggle.reason === 'einheit_final'
+                  ? 'Einheit ist final freigegeben — Freigaben gesperrt'
+                  : canToggle.reason === 'lernpaket_released'
+                  ? 'Lernpaket ist freigegeben — erst dort Freigabe zurücknehmen'
+                  : null
+              }
+              onToggle={handleToggleRelease}
+              releasedAt={activity?.released_at}
+              releasedBy={activity?.released_by}
+              disabled={isSaving || isReleasePending || exportLocked}
+            />
+          )}
 
           {/* Action Buttons */}
            <div className="flex items-center justify-between gap-3 flex-wrap">
              <div className="flex items-center gap-2">
-               {onReset && (
+               {onReset && !isReleased && !lockState.locked && (
                  <ActivityResetButton
                    onReset={onReset}
                    disabled={isSaving || exportLocked}
@@ -297,18 +359,20 @@ export default function TextLesenModal({
              </div>
              <div className="flex items-center gap-2">
                <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
-                 Abbrechen
+                 {lockState.locked ? 'Schließen' : 'Abbrechen'}
                </Button>
-              <Button
-                onClick={handleSave}
-                disabled={isSaving || exportLocked}
-                title={exportLocked ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
-                className="gap-2"
-              >
-                {isSaving
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
-                  : 'Speichern'}
-              </Button>
+              {!lockState.locked && (
+                <Button
+                  onClick={handleSave}
+                  disabled={isSaving || exportLocked}
+                  title={exportLocked ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
+                  className="gap-2"
+                >
+                  {isSaving
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
+                    : 'Speichern'}
+                </Button>
+              )}
              </div>
           </div>
         </div>

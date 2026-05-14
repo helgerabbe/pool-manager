@@ -27,7 +27,7 @@
     "is_complete": {
       "type": "boolean",
       "default": false,
-      "description": "Alle Pflichtfelder ausgef\u00fcllt?"
+      "description": "Alle Pflichtfelder ausgef\u00fcllt? Wird seit Phase 3 des Freigabe-Konzepts (2026-05-14) vom Backend ehrlich auf Basis von `lib/completenessValidation.js` berechnet und NICHT mehr blind auf true gesetzt."
     },
     "is_master": {
       "type": "boolean",
@@ -45,50 +45,42 @@
         "ki"
       ],
       "default": "manuell",
-      "description": "AP2 / MBK-Schema v1.1.0 \u00a73: Steuert, ob diese Aktivit\u00e4t von der Lehrkraft selbst ausgearbeitet (manuell) oder von der MBK auf Basis eines strukturierten Briefings generiert (ki) werden soll. Im Modus 'manuell' liegen die Inhalte in `field_values` (bzw. in den zugeh\u00f6rigen MasterAufgaben), `ki_briefing` ist null. Im Modus 'ki' liegt die Anweisung in `ki_briefing`, `field_values` ist null/leer."
+      "description": "AP2 / MBK-Schema v1.1.0 \u00a73: Steuert, ob diese Aktivit\u00e4t von der Lehrkraft selbst ausgearbeitet (manuell) oder von der MBK auf Basis eines strukturierten Briefings generiert (ki) werden soll."
     },
     "ki_briefing": {
       "type": "object",
-      "description": "AP2 / MBK-Schema v1.1.0 \u00a74\u2013\u00a75: Strukturiertes Briefing an die MBK, wenn `erstellungs_modus='ki'`. Diskriminator `variant` unterscheidet Standard-Aktivit\u00e4t (typabh\u00e4ngiger Mini-Fragenkatalog) und offene Aufgabe (drei feste Felder). Die konkreten Parameter pro Aktivit\u00e4tstyp sind in `lib/kiBriefingKatalog.js` definiert.",
+      "description": "AP2 / MBK-Schema v1.1.0 \u00a74\u2013\u00a75: Strukturiertes Briefing an die MBK, wenn `erstellungs_modus='ki'`.",
       "properties": {
         "variant": {
           "type": "string",
           "enum": [
             "standard",
             "offen"
-          ],
-          "description": "Diskriminator: 'standard' = typabh\u00e4ngiger Mini-Fragenkatalog (Miniquiz, L\u00fcckentext, \u2026). 'offen' = Sandbox mit drei festen Feldern (Lernziel, Funktionsweise, visuelle Vorlage)."
+          ]
         },
         "standard": {
           "type": "object",
-          "description": "Felder f\u00fcr variant='standard'.",
           "properties": {
             "schwerpunkt": {
-              "type": "string",
-              "description": "Pflichtfeld: Worauf zielt die Aktivit\u00e4t ab? Beispiel: 'Steigung in Linearen Funktionen ablesen und berechnen.'"
+              "type": "string"
             },
             "parameter": {
               "type": "object",
-              "description": "Typspezifische optionale Parameter (z. B. anzahl_fragen, schwierigkeit, quiz_typ, wortarten_fokus). Welche Felder pro Aktivit\u00e4tstyp gerendert werden, regelt `lib/kiBriefingKatalog.js`.",
               "additionalProperties": true
             }
           }
         },
         "offen": {
           "type": "object",
-          "description": "Felder f\u00fcr variant='offen' (AllgemeineAufgaben/Sandbox-Aktivit\u00e4ten).",
           "properties": {
             "lernziel": {
-              "type": "string",
-              "description": "Pflichtfeld: Was sollen die Sch\u00fcler lernen?"
+              "type": "string"
             },
             "funktionsweise": {
-              "type": "string",
-              "description": "Pflichtfeld: Wie soll die Aufgabe funktionieren?"
+              "type": "string"
             },
             "visuelle_vorlage": {
               "type": "object",
-              "description": "Optionale visuelle Vorlage (Bild + Beschreibung). Ersetzt das alte `visuelle_vorgabe`-Objekt aus Schema v1.0.1.",
               "properties": {
                 "bild_url": {
                   "type": "string"
@@ -104,11 +96,11 @@
     },
     "transkript": {
       "type": "string",
-      "description": "AP2 / MBK-Integration \u00a71.4: Transkript des Medieninhalts (Video/Audio/Podcast/H\u00f6rverstehen) als Textbasis f\u00fcr KI-Fragegenerierung. Sichtbar nur bei Aktivit\u00e4ten mit entsprechendem `katalog.name`. Max. 50.000 Zeichen."
+      "description": "AP2 / MBK-Integration \u00a71.4: Transkript des Medieninhalts."
     },
     "alt_text": {
       "type": "string",
-      "description": "AP2 / MBK-Integration \u00a71.5: Von der MBK beim R\u00fcckgabe-Payload mitgelieferter Alt-Text f\u00fcr Barrierefreiheit. Read-Only-Anzeige im UI mit optionaler Lehrkraft-Korrektur. Max. 1000 Zeichen."
+      "description": "AP2 / MBK-Integration \u00a71.5: Alt-Text f\u00fcr Barrierefreiheit."
     },
     "content_status": {
       "type": "string",
@@ -117,7 +109,16 @@
         "approved"
       ],
       "default": "draft",
-      "description": "P\u00e4dagogischer Status: draft (in Bearbeitung) oder approved (fertig f\u00fcr Export)"
+      "description": "Freigabe-Status (Phase 3 des Freigabe-Konzepts vom 2026-05-14): 'approved' = Lehrkraft hat die Aktivit\u00e4t bewusst und aktiv freigegeben \u2192 Bearbeitung gesperrt (siehe `lib/releaseLockCheck.js`). 'draft' = noch in Bearbeitung. Wechsel ausschlie\u00dflich \u00fcber `setReleaseStatusSecure`."
+    },
+    "released_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel der manuellen Freigabe durch die Lehrkraft. Null wenn die Aktivit\u00e4t im Draft-Modus ist. Wird ausschlie\u00dflich von `setReleaseStatusSecure` gesetzt."
+    },
+    "released_by": {
+      "type": "string",
+      "description": "E-Mail der Lehrkraft, die die Aktivit\u00e4t freigegeben hat. Null wenn Draft. Wird ausschlie\u00dflich von `setReleaseStatusSecure` gesetzt."
     },
     "sync_status": {
       "type": "string",
@@ -139,7 +140,7 @@
     "export_error": {
       "type": "boolean",
       "default": false,
-      "description": "Phase G: Vom Export-Center auf true gesetzt, wenn der Moodle-Spezialist diese Aktivit\u00e4t im Abschluss-Dialog als 'fehlgeschlagen' markiert. Wird automatisch beim n\u00e4chsten Save (updateActivitySecure) auf false zur\u00fcckgesetzt."
+      "description": "Phase G: Vom Export-Center auf true gesetzt, wenn der Moodle-Spezialist diese Aktivit\u00e4t im Abschluss-Dialog als 'fehlgeschlagen' markiert."
     }
   },
   "required": [

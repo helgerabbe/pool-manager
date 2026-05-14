@@ -17,8 +17,7 @@
         "2 - Transfer",
         "3 - Projekt"
       ],
-      "default": "1 - Basis",
-      "description": "Anforderungsebene der Aufgabe (kognitive Komplexit\u00e4t)"
+      "default": "1 - Basis"
     },
     "aufgaben_typ": {
       "type": "string",
@@ -30,8 +29,7 @@
         "handlung",
         "auswahl_buendel"
       ],
-      "default": "inhalt",
-      "description": "Funktionale/p\u00e4dagogische Rolle der Aufgabe im Lernpfad-System (orthogonal zur anforderungsebene)."
+      "default": "inhalt"
     },
     "mission_type": {
       "type": "string",
@@ -42,32 +40,28 @@
         "anwendung",
         "transfer",
         "kreativitaet"
-      ],
-      "description": "Didaktische Mission der Aufgabe (Epic 'Intelligentes Aufgaben-Management'). Single Source of Truth f\u00fcr Labels/Farben/Emojis: lib/missionen.js."
+      ]
     },
     "verlinkte_lernpaket_ids": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "default": [],
-      "description": "F\u00fcr aufgaben_typ='buendel' (Moodle-B\u00fcndel)."
+      "default": []
     },
     "verlinkte_projekt_ids": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "default": [],
-      "description": "F\u00fcr aufgaben_typ='projekt_anker'."
+      "default": []
     },
     "verlinkte_aufgaben_ids": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "default": [],
-      "description": "F\u00fcr aufgaben_typ='auswahl_buendel' (Brian-B\u00fcndel)."
+      "default": []
     },
     "lernpaket_logik": {
       "type": "string",
@@ -77,14 +71,12 @@
         "wissensspeicher",
         "test_only"
       ],
-      "default": "standard",
-      "description": "F\u00fcr aufgaben_typ='buendel': didaktische Reihenfolge-Logik im Export."
+      "default": "standard"
     },
     "erforderliche_anzahl": {
       "type": "integer",
       "default": 0,
-      "minimum": 0,
-      "description": "F\u00fcr aufgaben_typ='auswahl_buendel': X-von-Y."
+      "minimum": 0
     },
     "interne_reihenfolge": {
       "type": "string",
@@ -92,32 +84,26 @@
         "frei",
         "sequenziell"
       ],
-      "default": "frei",
-      "description": "F\u00fcr aufgaben_typ='auswahl_buendel'."
+      "default": "frei"
     },
     "hinweise_zum_material": {
-      "type": "string",
-      "description": "F\u00fcr aufgaben_typ='handlung': Freitext-Hinweise zum ben\u00f6tigten physischen Material."
+      "type": "string"
     },
     "aufgabentyp_projekt": {
       "type": "string",
       "enum": [
         "Anwendungsaufgabe",
         "Projektaufgabe"
-      ],
-      "description": "Typ der Aufgabe (nur bei anforderungsebene: '3 - Projekt')"
+      ]
     },
     "titel": {
-      "type": "string",
-      "description": "Titel der Aufgabe (optional)"
+      "type": "string"
     },
     "aufgabenstellung": {
-      "type": "string",
-      "description": "Aufgabenstellung als Text (manueller Modus)."
+      "type": "string"
     },
     "aufgaben_bild_url": {
-      "type": "string",
-      "description": "URL zu einem hochgeladenen Bild/Screenshot der Aufgabe (optional, manueller Modus)"
+      "type": "string"
     },
     "schwierigkeitsgrad": {
       "type": "integer",
@@ -125,8 +111,7 @@
         1,
         2,
         3
-      ],
-      "description": "Schwierigkeitsgrad (1=leicht, 2=mittel, 3=schwer, null=keine Angabe)"
+      ]
     },
     "ergebnis_form": {
       "type": "string",
@@ -137,8 +122,7 @@
         "Schema / Konzept-Map / Zeichnung",
         "Stichpunktartige \u00dcbersicht",
         "Mischform / Offen"
-      ],
-      "description": "Erwartete Form des Ergebnisses"
+      ]
     },
     "ergebnis_dateiformat": {
       "type": "string",
@@ -147,16 +131,13 @@
         "Bilddatei (JPG/PNG)",
         "Pr\u00e4sentationsdatei (PowerPoint/PDF)",
         "Offen / Beliebig"
-      ],
-      "description": "Erwartetes Dateiformat des Ergebnisses"
+      ]
     },
     "erwartungshorizont": {
-      "type": "string",
-      "description": "Strukturierter Erwartungshorizont f\u00fcr Ebene-3-Aufgaben"
+      "type": "string"
     },
     "musterloesung": {
-      "type": "string",
-      "description": "Musterl\u00f6sung / Erwartungshorizont als Rich-Text"
+      "type": "string"
     },
     "erstellungs_modus": {
       "type": "string",
@@ -164,20 +145,17 @@
         "manuell",
         "ki"
       ],
-      "default": "manuell",
-      "description": "AP2 / MBK-Schema v1.1.0 \u00a73: 'manuell' = Lehrkraft hat aufgabenstellung/Material selbst ausgearbeitet. 'ki' = MBK soll die Aufgabe auf Basis von `ki_briefing` erzeugen."
+      "default": "manuell"
     },
     "ki_briefing": {
       "type": "object",
-      "description": "AP2 / MBK-Schema v1.1.0 \u00a75: Strukturiertes Briefing f\u00fcr die MBK, wenn `erstellungs_modus='ki'`. F\u00fcr AllgemeineAufgaben standardm\u00e4\u00dfig variant='offen' (drei feste Felder), f\u00fcr aufgaben_typ='inhalt' mit standardisierten Aktivit\u00e4ts-Vorlagen kann auch variant='standard' verwendet werden.",
       "properties": {
         "variant": {
           "type": "string",
           "enum": [
             "standard",
             "offen"
-          ],
-          "description": "Diskriminator analog zu LernpaketPhaseAktivitaet."
+          ]
         },
         "standard": {
           "type": "object",
@@ -195,12 +173,10 @@
           "type": "object",
           "properties": {
             "lernziel": {
-              "type": "string",
-              "description": "Pflichtfeld: Was sollen die Sch\u00fcler lernen?"
+              "type": "string"
             },
             "funktionsweise": {
-              "type": "string",
-              "description": "Pflichtfeld: Wie soll die Aufgabe funktionieren?"
+              "type": "string"
             },
             "visuelle_vorlage": {
               "type": "object",
@@ -218,12 +194,10 @@
       }
     },
     "alt_text": {
-      "type": "string",
-      "description": "Von der MBK gelieferter Alt-Text f\u00fcr visuelle Inhalte (Barrierefreiheit). Max. 1000 Zeichen."
+      "type": "string"
     },
     "materialien": {
       "type": "array",
-      "description": "Zus\u00e4tzliche Materialien/Ressourcen zur Aufgabe",
       "items": {
         "type": "object",
         "properties": {
@@ -256,20 +230,16 @@
       "items": {
         "type": "string"
       },
-      "description": "Gew\u00e4hlte Abgabeformate (z.B. ['presentation', 'timeline'])",
       "default": []
     },
     "custom_format": {
-      "type": "string",
-      "description": "Manuell definiertes Abgabeformat (freier Text)"
+      "type": "string"
     },
     "quality_focus": {
-      "type": "string",
-      "description": "Optionaler Bewertungsschwerpunkt der Lehrkraft"
+      "type": "string"
     },
     "rubric_criteria": {
       "type": "array",
-      "description": "Brian-kompatible Bewertungsrubriken",
       "items": {
         "type": "object",
         "properties": {
@@ -312,13 +282,28 @@
       },
       "default": []
     },
+    "is_complete": {
+      "type": "boolean",
+      "default": false,
+      "description": "Vollst\u00e4ndigkeits-Flag (Phase 3 des Freigabe-Konzepts vom 2026-05-14): Wird vom Backend ehrlich auf Basis von `lib/completenessValidation.js` berechnet."
+    },
     "content_status": {
       "type": "string",
       "enum": [
         "draft",
         "approved"
       ],
-      "default": "draft"
+      "default": "draft",
+      "description": "Freigabe-Status (Phase 3): 'approved' = von Lehrkraft aktiv freigegeben \u2192 gesperrt. Wechsel nur \u00fcber `setReleaseStatusSecure`."
+    },
+    "released_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel der manuellen Freigabe."
+    },
+    "released_by": {
+      "type": "string",
+      "description": "E-Mail der freigebenden Lehrkraft."
     },
     "sync_status": {
       "type": "string",

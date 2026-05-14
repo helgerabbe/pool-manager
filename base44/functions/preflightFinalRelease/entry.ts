@@ -181,11 +181,35 @@ Deno.serve(async (req) => {
     }, {});
     const allDashboardsLocked = VALID_LERNTYPEN.every((lt) => dashboards[lt]);
 
+    // ── Phase 11 (Freigabe-Konzept 2026-05-14): Inhaltliche Freigabe-Prüfung
+    // Voraussetzung für `Einheit final freigeben`:
+    //   - Jedes Lernpaket muss freigegeben sein (content_status='approved'
+    //     + released_at gesetzt).
+    //   - Jede AllgemeineAufgabe (Ebene 2 + 3, inkl. Projekte) muss
+    //     ebenfalls freigegeben sein.
+    // Wird zusätzlich zu allDashboardsLocked verlangt, damit die hierarchische
+    // Freigabe konsistent bis zur Einheit hochpropagiert.
+    const unreleasedLernpakete = (lernpakete || [])
+      .filter((lp) => !(lp.content_status === 'approved' && !!lp.released_at))
+      .map((lp) => ({ id: lp.id, titel: lp.titel_des_pakets || '(unbenanntes Paket)' }));
+    const unreleasedAufgaben = (aufgaben || [])
+      .filter((a) => a.content_status !== 'approved')
+      .map((a) => ({ id: a.id, titel: a.titel || '(ohne Titel)' }));
+
+    const releaseHierarchyOk =
+      unreleasedLernpakete.length === 0 && unreleasedAufgaben.length === 0;
+
     return Response.json({
+      // Bisheriges `ok`-Kriterium (keine Live-Edits) bleibt für
+      // Rückwärtskompat erhalten — das ist die harte Vorbedingung.
       ok: activeLocks.length === 0,
       activeLocks,
       dashboards,
       allDashboardsLocked,
+      // Phase 11: zusätzliche Freigabe-Hierarchie-Anzeige
+      releaseHierarchyOk,
+      unreleasedLernpakete,
+      unreleasedAufgaben,
     });
   } catch (error) {
     console.error('[preflightFinalRelease] Fehler:', error);

@@ -17,6 +17,9 @@ import { toast } from 'sonner';
 import ApprovalStatusBadge from '@/components/workspace/ApprovalStatusBadge';
 import ApprovalActionButton from '@/components/workspace/ApprovalActionButton';
 import EinheitLockBanner from '@/components/workspace/EinheitLockBanner';
+// Phase 10 (Freigabe-Konzept 2026-05-14): neuer Sync-Badge + Lock-Indikator.
+import SyncStatusBadge from '@/components/release/SyncStatusBadge';
+import SidebarLockIcon from '@/components/release/SidebarLockIcon';
 
 export default function ActivityDetailView({ activityRecord, kannBearbeiten, queryClient, einheitFach, onEditModeChange }) {
   const { permissions } = useRBAC();
@@ -124,7 +127,13 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
                 In Bearbeitung
               </div>
             )}
-            {!activityRecord.is_complete && (
+            {/* Phase 10: Sync-Achse (Neu / In Sync / Out of Sync) — eigenständig
+                vom Freigabe-Status, der weiter über ApprovalStatusBadge läuft. */}
+            <SyncStatusBadge status={activityRecord.sync_status || 'new'} />
+            {/* Phase 10: Mini-Schloss neben dem Approval-Badge, wenn die
+                Aktivität freigegeben ist — symmetrisch zur Sidebar-Markierung. */}
+            <SidebarLockIcon released={activityRecord.content_status === 'approved'} />
+            {!activityRecord.is_complete && activityRecord.content_status !== 'approved' && (
               <div className="flex items-center gap-1 text-xs text-amber-600">
                 <AlertTriangle className="w-3.5 h-3.5" />
                 Inhalt unvollständig
