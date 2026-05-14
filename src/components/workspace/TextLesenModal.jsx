@@ -30,6 +30,10 @@ export default function TextLesenModal({
   exportLocked = false,  // Wird bei Export-Lock deaktiviert
   einheitFach = 'unbekannt',         // für KI-Generator: Kontext-Anker
   einheitJahrgangsstufe = 'unbekannt',
+  parentLernpaketName = '',          // wird als Untertitel im Header gezeigt
+                                     // UND als Default für „Titel des Textes"
+                                     // sowie als Kontext für die Standard-
+                                     // Aufgabenstellung verwendet.
 }) {
   const [fieldValues, setFieldValues] = useState(initialFieldValues);
   const [isReleased, setIsReleased] = useState(initialFieldValues.content_status === 'approved');
@@ -40,8 +44,21 @@ export default function TextLesenModal({
   const prevOpenRef = useRef(false);
   useEffect(() => {
     if (open && !prevOpenRef.current) {
-      // Modal wurde gerade geöffnet → Werte initialisieren
-      setFieldValues(JSON.parse(JSON.stringify(initialFieldValues || {})));
+      // Modal wurde gerade geöffnet → Werte initialisieren.
+      // UX-Defaults für "Text lesen": leere Pflichtfelder werden mit
+      // sinnvollen Vorbelegungen vorausgefüllt (Lehrkraft kann sie jederzeit
+      // überschreiben). Wir greifen NICHT in bereits gespeicherte Werte ein.
+      const seeded = JSON.parse(JSON.stringify(initialFieldValues || {}));
+      const isTextLesen = (catalogEntry?.name || '').toLowerCase().includes('text lesen');
+      if (isTextLesen) {
+        if (!seeded.aufgabentext) {
+          seeded.aufgabentext = 'Lies den folgenden Text aufmerksam durch.';
+        }
+        if (!seeded.titel && parentLernpaketName) {
+          seeded.titel = parentLernpaketName;
+        }
+      }
+      setFieldValues(seeded);
       setIsReleased(initialFieldValues?.content_status === 'approved');
       setExportLockedWasEnabled(exportLocked);
     }
@@ -90,9 +107,11 @@ export default function TextLesenModal({
           <DialogTitle className="text-lg font-semibold">
             {catalogEntry?.name || 'Inhalt bearbeiten'}
           </DialogTitle>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Inhalt wird nach dem Speichern automatisch freigegeben.
-          </p>
+          {parentLernpaketName && (
+            <p className="text-xs text-muted-foreground mt-0.5 truncate">
+              Lernpaket: <span className="font-medium text-foreground/80">{parentLernpaketName}</span>
+            </p>
+          )}
         </DialogHeader>
 
         {/* Export-Lock Warning Banner */}

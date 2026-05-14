@@ -691,6 +691,7 @@ export default function ActivityMasterPanel({
               exportLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
               einheitFach={einheit?.fach || 'unbekannt'}
               einheitJahrgangsstufe={einheit?.jahrgangsstufe || 'unbekannt'}
+              parentLernpaketName={parentLernpaketName || ''}
             />
           </>
         );
