@@ -30,10 +30,19 @@ const DialogContent = React.forwardRef(({ className, children, ...props }, ref) 
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
-      data-debug-dialog="visible"
-      style={{ backgroundColor: 'white', border: '3px solid red' }}
+      style={{ 
+        backgroundColor: 'white', 
+        border: '3px solid red',
+        position: 'fixed',
+        left: '50%',
+        top: '50%',
+        transform: 'translate(-50%, -50%)',
+        zIndex: 9999,
+        minWidth: '400px',
+        minHeight: '400px'
+      }}
       className={cn(
-        "fixed left-[50%] top-[50%] z-[9999] grid w-[95%] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 p-6 shadow-lg duration-200 min-h-[200px] max-h-[90dvh] overflow-y-auto sm:rounded-lg",
+        "grid w-full max-w-lg gap-4 p-6 shadow-lg",
         className
       )}
       {...props}>
