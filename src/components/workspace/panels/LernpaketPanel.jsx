@@ -168,12 +168,14 @@ export default function LernpaketPanel({
     setIsSavingDialog(true);
     let saveSucceeded = false;
     try {
+      console.log('[LernpaketPanel] 🔵 Step A: entering try-block');
       // 1) Lernziel-Drafts validieren & in das vom Backend erwartete Format
       //    bringen ({ id, data }). Defensiv: jedes Draft-Item wird in einem
       //    eigenen try/catch verarbeitet, damit ein einzelner kaputter Eintrag
       //    nicht den ganzen Save abbricht.
       const lernzielUpdates = [];
       const drafts = lernzielDrafts || {};
+      console.log('[LernpaketPanel] 🔵 Step B: drafts prepared', { draftKeys: Object.keys(drafts) });
       for (const lzId of Object.keys(drafts)) {
         const draft = drafts[lzId] || {};
         const original = paketZiele.find((lz) => lz.id === lzId);
@@ -243,10 +245,12 @@ export default function LernpaketPanel({
       queryClient.invalidateQueries({ queryKey: ['lernziele'] });
       toast.success('Änderungen gespeichert.');
     } catch (err) {
-      console.error('[LernpaketPanel] Save failed:', err);
+      console.error('[LernpaketPanel] 🔴🔴🔴 Save failed (outer catch):', err);
+      console.error('[LernpaketPanel] Error stack:', err?.stack);
       const apiMsg = err?.response?.data?.error || err?.message;
       toast.error(apiMsg ? `Fehler beim Speichern: ${apiMsg}` : 'Fehler beim Speichern.');
     } finally {
+      console.log('[LernpaketPanel] 🏁 finally block', { saveSucceeded });
       setIsSavingDialog(false);
       if (saveSucceeded) {
         setEditDialogOpen(false);
