@@ -19,8 +19,7 @@ import TextLesenAIGeneratorPanel from '@/components/workspace/TextLesenAIGenerat
 import TextLesenBilderUploader from '@/components/workspace/TextLesenBilderUploader';
 
 // Phase 6 (Freigabe-Konzept 2026-05-14): Pilot-Integration.
-import CompletenessIndicator from '@/components/release/CompletenessIndicator';
-import ReleaseToggleSection from '@/components/release/ReleaseToggleSection';
+import CompactReleaseRow from '@/components/release/CompactReleaseRow';
 import ReleasedLockedBanner from '@/components/release/ReleasedLockedBanner';
 import { useActivityCompleteness } from '@/hooks/useCompleteness';
 import { useActivityLockState, useCanToggleActivityRelease } from '@/hooks/useReleaseLock';
@@ -68,7 +67,9 @@ export default function TextLesenModal({
       // sinnvollen Vorbelegungen vorausgefüllt (Lehrkraft kann sie jederzeit
       // überschreiben). Wir greifen NICHT in bereits gespeicherte Werte ein.
       const seeded = JSON.parse(JSON.stringify(initialFieldValues || {}));
-      const isTextLesen = (catalogEntry?.name || '').toLowerCase().includes('text lesen');
+      const nameLower = (catalogEntry?.name || '').toLowerCase();
+      const isTextLesen = nameLower.includes('text lesen');
+      const isVideoAudio = nameLower.includes('video') || nameLower.includes('audio');
       if (isTextLesen) {
         if (!seeded.aufgabentext) {
           seeded.aufgabentext = 'Lies den folgenden Text aufmerksam durch.';
@@ -76,6 +77,9 @@ export default function TextLesenModal({
         if (!seeded.titel && parentLernpaketName) {
           seeded.titel = parentLernpaketName;
         }
+      }
+      if (isVideoAudio && !seeded.aufgabentext) {
+        seeded.aufgabentext = 'Schaue dir das Lernvideo aufmerksam an.';
       }
       setFieldValues(seeded);
       setExportLockedWasEnabled(exportLocked);
@@ -321,19 +325,15 @@ export default function TextLesenModal({
 
             {/* Footer */}
             <div className="px-6 py-5 border-t border-border shrink-0 space-y-3">
-          {/* Phase 6: Vollständigkeits-Indikator nur zeigen, wenn NICHT vollständig.
-              Bei vollständig integriert ReleaseToggleSection die Bestätigung
-              direkt in den Toggle-Button (eine Box statt zwei). */}
-          {!isReleased && !lockState.locked && !completeness.isComplete && (
-            <CompletenessIndicator result={completeness} />
-          )}
-
-          {/* Phase 6: Freigabe-Toggle. Versteckt im hart gesperrten Hierarchie-Fall
-              (dort übernimmt der ReleasedLockedBanner oben die Anzeige). */}
+          {/* UX-Iteration 2026-05-14: Vollständigkeit + Freigabe-Toggle in
+              EINER kompakten Zeile. Welche Pflichtfelder fehlen, sieht die
+              Lehrkraft oben an den roten Sternchen — wir wiederholen das
+              hier bewusst nicht mehr. */}
           {!lockState.locked && (
-            <ReleaseToggleSection
+            <CompactReleaseRow
               isReleased={isReleased}
               canRelease={completeness.isComplete}
+              missingCount={completeness?.missingFields?.length || 0}
               hierarchyLocked={!canToggle.allowed}
               hierarchyLockMessage={
                 canToggle.reason === 'einheit_final'
