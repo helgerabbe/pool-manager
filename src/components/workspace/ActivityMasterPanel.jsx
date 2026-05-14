@@ -27,6 +27,7 @@ import ModusAuswahlBox from '@/components/workspace/ki/ModusAuswahlBox';
 import KiBriefingForm from '@/components/workspace/ki/KiBriefingForm';
 import TranskriptStatusBadge from '@/components/workspace/ki/TranskriptStatusBadge';
 import { shouldShowTranskript } from '@/components/workspace/ki/TranskriptField';
+import VideoThumbnailPreview from '@/components/workspace/VideoThumbnailPreview';
 import { toast } from 'sonner';
 
 // Inline-editierbares Aufgabentext-Feld mit Standardtext
@@ -697,7 +698,22 @@ export default function ActivityMasterPanel({
                   </div>
                 )}
 
-                {/* AP2 §1.4: Transkript-Status für Medien-Aktivitäten */}
+                {/* Medien-Vorschau VOR dem Transkript: Bei Video/Audio-Aktivitäten
+                    ist die Quelle das Primärinformation — das Transkript dient
+                    nur als nachgelagerte Textgrundlage für die KI-Fragegenerierung.
+                    Bei eigenen Video-Uploads zeigen wir den ersten Frame
+                    (Poster-Frame) statt nur den Link. */}
+                {schema.find(f => f.field_name === 'url') && fieldValues.url && (
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      {schema.find(f => f.field_name === 'url')?.label || 'Link / URL'}
+                    </p>
+                    <VideoThumbnailPreview url={fieldValues.url} />
+                  </div>
+                )}
+
+                {/* AP2 §1.4: Transkript-Status für Medien-Aktivitäten —
+                    nachgeordnet, da inhaltlich auf die Medienquelle bezogen. */}
                 {shouldShowTranskript(catalogEntry?.name) && (
                   <div className="space-y-1.5">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Transkript</p>
@@ -709,7 +725,8 @@ export default function ActivityMasterPanel({
                     • aufgabentext schon oben gerendert
                     • titel + inhalt schon kompakt oben gerendert (im Text-Modus)
                     • medientyp wird im Inhalts-Tab nicht gezeigt (irrelevant für die Vorschau)
-                    • bilder schon oben als Grid gerendert */}
+                    • bilder schon oben als Grid gerendert
+                    • url schon oben als VideoThumbnailPreview gerendert */}
                 {schema.map(field => {
                   if (field.field_name === 'aufgabentext') return null;
                   if (field.type === 'info') return null;
@@ -717,6 +734,7 @@ export default function ActivityMasterPanel({
                   // in der Inhalts-Vorschau für die Lehrkraft irrelevant.
                   if (field.field_name === 'inhalt_typ' || field.field_name === 'medientyp') return null;
                   if (field.field_name === 'bilder') return null;
+                  if (field.field_name === 'url') return null;
                   if ((field.field_name === 'titel' || field.field_name === 'inhalt') && (!inhaltTyp || inhaltTyp === 'text')) return null;
                   if (field.field_name === 'inhalt' && inhaltTyp && inhaltTyp !== 'text') return null;
                   if (field.field_name === 'dokument_url' && inhaltTyp !== 'datei') return null;
