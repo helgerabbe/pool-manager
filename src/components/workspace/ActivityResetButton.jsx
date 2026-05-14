@@ -29,11 +29,11 @@ export default function ActivityResetButton({ onReset, disabled = false }) {
   if (!confirm) {
     return (
       <Button
-        variant="ghost"
+        variant="outline"
         size="sm"
         onClick={() => setConfirm(true)}
         disabled={disabled}
-        className="gap-1.5 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+        className="gap-1.5 bg-red-50 border-red-300 text-red-800 hover:bg-red-100 hover:text-red-900 hover:border-red-400"
         title="Setzt alle Eingaben dieser Aktivität zurück. Die Aktivität bleibt in der Phase erhalten."
       >
         <RotateCcw className="w-4 h-4" />
