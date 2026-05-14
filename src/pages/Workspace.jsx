@@ -108,10 +108,16 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
   // ── Lernpaket-Edit-Mode: persistiert über Tab-Wechsel ─────────────────────────
   // Abgeleitet aus DB-Daten: Hält der aktuelle User irgendeinen Lernpaket-Lock?
+  //
+  // Reload-Resilienz (2026-05-14): Wenn die Base44-Preview neu lädt, während
+  // der User im Edit-Dialog war, bleibt der DB-Lock hängen — der Cleanup-
+  // Pfad im Dialog kommt nicht mehr zum Zug. Damit der User aus diesem
+  // Zustand selbst rauskommt, exportieren wir die betroffenen Pakete und
+  // bieten einen "Bearbeitung beenden"-Button direkt im Banner an.
   const PAKET_LOCK_TIMEOUT_EDIT_MS = 30 * 60 * 1000;
-  const isLernpaketEditActive = useMemo(
+  const ownLockedPakete = useMemo(
     () =>
-      paketeFuerEinheit.some(
+      paketeFuerEinheit.filter(
         (p) =>
           p.is_locked &&
           p.locked_by_email === authUser?.email &&
@@ -120,6 +126,27 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
       ),
     [paketeFuerEinheit, authUser?.email]
   );
+  const isLernpaketEditActive = ownLockedPakete.length > 0;
+  const [releasingOwnLocks, setReleasingOwnLocks] = useState(false);
+
+  const handleReleaseOwnLernpaketLocks = useCallback(async () => {
+    if (ownLockedPakete.length === 0 || releasingOwnLocks) return;
+    setReleasingOwnLocks(true);
+    try {
+      await Promise.all(
+        ownLockedPakete.map((p) =>
+          invokeFunction('releaseLernpaketLockSecure', { lernpaketId: p.id }).catch((err) => {
+            console.warn('[Workspace] releaseLernpaketLockSecure failed for', p.id, err);
+          })
+        )
+      );
+      queryClient.invalidateQueries({ queryKey: ['workspace-data', selectedEinheitId] });
+      queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+      toast.success('Bearbeitungsmodus beendet.');
+    } finally {
+      setReleasingOwnLocks(false);
+    }
+  }, [ownLockedPakete, releasingOwnLocks, queryClient, selectedEinheitId]);
 
   const zieleFuerEinheit = useMemo(
     () => lernziele.filter((lz) => paketIds.includes(lz.lernpaket_id)),
@@ -748,11 +775,32 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             {/* ── Tab 3: Aktivitäten zuordnen → Sidebar-Baum + Detail-Panel ───── */}
             <TabsContent value="aktivitaeten" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
               <ErrorBoundary label="Aktivitäten-Struktur">
-                {/* Sticky Edit-Banner – direkt an globalem isLernpaketEditActive gebunden (Single Source of Truth) */}
+                {/* Sticky Edit-Banner – direkt an globalem isLernpaketEditActive gebunden (Single Source of Truth).
+                    Zeigt die konkret gesperrten Pakete an und erlaubt dem Lock-Inhaber, den Modus
+                    explizit zu beenden — wichtig nach Reload/Verbindungsabbruch, wo der Edit-Dialog
+                    nicht mehr offen ist, der DB-Lock aber noch lebt. */}
                 {isLernpaketEditActive && (
                   <div className="shrink-0 bg-orange-500 text-white px-6 py-2.5 flex items-center gap-3">
                     <PenLine className="w-4 h-4 shrink-0 animate-pulse" />
-                    <span className="text-sm font-semibold flex-1">✏️ Bearbeitungsmodus aktiv – ein Lernpaket ist für andere gesperrt</span>
+                    <div className="text-sm flex-1 min-w-0">
+                      <div className="font-semibold">
+                        ✏️ Bearbeitungsmodus aktiv – {ownLockedPakete.length === 1 ? '1 Lernpaket ist' : `${ownLockedPakete.length} Lernpakete sind`} für andere gesperrt
+                      </div>
+                      <div className="text-xs text-orange-50 truncate mt-0.5">
+                        {ownLockedPakete.map((p) => p.titel_des_pakets).join(' · ')}
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleReleaseOwnLernpaketLocks}
+                      disabled={releasingOwnLocks}
+                      className="shrink-0 inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-white text-orange-700 hover:bg-orange-50 transition-colors disabled:opacity-60"
+                      title="Hebt die Sperre auf allen oben genannten Lernpaketen auf"
+                    >
+                      {releasingOwnLocks
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        : <Unlock className="w-3.5 h-3.5" />}
+                      Bearbeitung beenden
+                    </button>
                   </div>
                 )}
                 <div className={cn(
