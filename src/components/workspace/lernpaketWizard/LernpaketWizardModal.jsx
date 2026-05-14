@@ -22,7 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Sparkles, Loader2, Wand2, Package, Target, Info } from 'lucide-react';
+import { Sparkles, Loader2, Wand2, Package, Target, Info, X } from 'lucide-react';
 import WizardProposalPreview from './WizardProposalPreview';
 import WizardConflictDialog from './WizardConflictDialog';
 import WizardGlossarSidebar from './WizardGlossarSidebar';
@@ -46,6 +46,25 @@ export default function LernpaketWizardModal({
   const [conflictOpen, setConflictOpen] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const textareaRef = useRef(null);
+
+  // Info-Banner "schon befüllt"-Hinweis. Dauerhaft pro Browser-Profil
+  // wegklickbar — sobald die Lehrkraft den Hinweis einmal zur Kenntnis
+  // genommen hat, taucht er nicht mehr auf. Wir nutzen localStorage,
+  // damit der Hinweis auch nach einem Page-Reload weg bleibt.
+  const INFO_DISMISS_KEY = 'lernpaketWizard.existingActivitiesInfoDismissed';
+  const [infoDismissed, setInfoDismissed] = useState(() => {
+    try {
+      return typeof window !== 'undefined' && window.localStorage.getItem(INFO_DISMISS_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const dismissInfo = () => {
+    setInfoDismissed(true);
+    try {
+      window.localStorage.setItem(INFO_DISMISS_KEY, '1');
+    } catch { /* ignore */ }
+  };
 
   // Aktivitäten-Katalog für die Glossar-Sidebar (gefiltert auf is_active).
   const { data: aktivitaetenKatalog = [] } = useQuery({
@@ -212,38 +231,58 @@ export default function LernpaketWizardModal({
   return (
     <>
       <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); }}>
-        <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Wand2 className="w-5 h-5 text-primary" />
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-5 gap-3">
+          {/* Kompakter Header: Titel + einzeilige Beschreibung. */}
+          <DialogHeader className="space-y-1">
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Wand2 className="w-4 h-4 text-primary" />
               Lernpaket mit KI-Assistent füllen
             </DialogTitle>
-            <DialogDescription>
-              Beschreibe in eigenen Worten, was die Schüler:innen in diesem Lernpaket lernen sollen.
-              Die KI schlägt dir passende Aktivitäts-Hüllen vor — die Inhalte füllst du anschließend selbst.
+            <DialogDescription className="text-xs leading-snug">
+              Beschreibe in eigenen Worten, was die Schüler:innen lernen sollen — die KI schlägt passende Aktivitäts-Hüllen vor.
             </DialogDescription>
           </DialogHeader>
 
-          {/* Kontext-Anker: zeigt Paket-Titel und zugeordnete Lernziele, damit
-              der Anwender sieht, in welchem Lernpaket der Wizard gerade läuft. */}
-          <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
-            <div className="flex items-start gap-2">
-              <Package className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-[11px] uppercase tracking-wide font-medium text-primary/70">Lernpaket</p>
-                <p className="text-sm font-semibold text-foreground truncate">{paket?.titel_des_pakets || '—'}</p>
-              </div>
+          {/* Wegklickbarer Info-Banner: steht ÜBER dem Kontext-Anker, weil er
+              nur einmal zur Kenntnis genommen werden muss. Persistiert in
+              localStorage, damit er nach Reload nicht wieder auftaucht. */}
+          {existingActivityCount > 0 && !infoDismissed && (
+            <div className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 flex items-start gap-2 text-xs text-blue-900">
+              <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-blue-600" />
+              <p className="flex-1 leading-snug">
+                <strong>Dieses Lernpaket ist bereits mit {existingActivityCount} Aktivität{existingActivityCount !== 1 ? 'en' : ''} befüllt.</strong>{' '}
+                Du kannst hier trotzdem in Ruhe weiter mit der KI experimentieren — es wird nichts automatisch gelöscht. Erst beim Klick auf <strong>„Übernehmen"</strong> fragen wir dich, ob du <strong>zusätzlich</strong> hinzufügen oder <strong>ersetzen</strong> möchtest.
+              </p>
+              <button
+                type="button"
+                onClick={dismissInfo}
+                className="shrink-0 p-0.5 rounded hover:bg-blue-100 text-blue-700"
+                title="Hinweis ausblenden"
+                aria-label="Hinweis ausblenden"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
-            <div className="flex items-start gap-2">
-              <Target className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+          )}
+
+          {/* Kompakter Kontext-Anker: Paket + Lernziele kombiniert in einer
+              zwei­spaltigen, dichten Anordnung — spart ~50% vertikalen Platz. */}
+          <div className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs space-y-1">
+            <div className="flex items-center gap-2 min-w-0">
+              <Package className="w-3.5 h-3.5 text-primary shrink-0" />
+              <span className="uppercase tracking-wide font-medium text-primary/70 text-[10px]">Lernpaket:</span>
+              <span className="font-semibold text-foreground truncate">{paket?.titel_des_pakets || '—'}</span>
+            </div>
+            <div className="flex items-start gap-2 min-w-0">
+              <Target className="w-3.5 h-3.5 text-green-600 shrink-0 mt-0.5" />
+              <span className="uppercase tracking-wide font-medium text-primary/70 text-[10px] mt-0.5 shrink-0">
+                Lernziel{paketLernziele.length !== 1 ? 'e' : ''} ({paketLernziele.length}):
+              </span>
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] uppercase tracking-wide font-medium text-primary/70">
-                  Lernziel{paketLernziele.length !== 1 ? 'e' : ''} ({paketLernziele.length})
-                </p>
                 {paketLernziele.length === 0 ? (
-                  <p className="text-sm text-muted-foreground italic">Noch keine Lernziele zugeordnet.</p>
+                  <span className="text-muted-foreground italic">Noch keine Lernziele zugeordnet.</span>
                 ) : (
-                  <ul className="text-sm text-foreground space-y-0.5 list-disc list-inside marker:text-green-600">
+                  <ul className="space-y-0 list-disc list-inside marker:text-green-600 text-foreground">
                     {paketLernziele.map((lz) => (
                       <li key={lz.id} className="leading-snug">
                         {lz.formulierung_fachsprache}
@@ -255,25 +294,7 @@ export default function LernpaketWizardModal({
             </div>
           </div>
 
-          {/* Beruhigender Hinweis, wenn das Paket bereits Aktivitäten enthält.
-              Macht transparent, dass hier nichts versehentlich überschrieben
-              wird — die eigentliche Entscheidung (additiv vs. ersetzen) fällt
-              erst am Ende im WizardConflictDialog. */}
-          {existingActivityCount > 0 && (
-            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 flex items-start gap-2 text-sm text-blue-900">
-              <Info className="w-4 h-4 mt-0.5 shrink-0 text-blue-600" />
-              <div className="space-y-1">
-                <p className="font-medium">
-                  Dieses Lernpaket ist bereits mit {existingActivityCount} Aktivität{existingActivityCount !== 1 ? 'en' : ''} befüllt.
-                </p>
-                <p className="text-blue-800/90 leading-snug">
-                  Du kannst hier trotzdem in Ruhe weiter mit der KI experimentieren, um eine bessere Konstellation zu finden. Es wird nichts automatisch gelöscht — erst wenn du auf <strong>„Übernehmen"</strong> klickst, fragen wir dich, ob du die neuen Aktivitäten <strong>zusätzlich</strong> hinzufügen oder die bestehenden <strong>ersetzen</strong> möchtest.
-                </p>
-              </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_240px] gap-5 py-2">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_240px] gap-5 py-1">
             {/* Hauptspalte: Briefing + Vorschau */}
             <div className="space-y-5 min-w-0">
               {/* Schritt 1: Briefing-Sandbox */}
