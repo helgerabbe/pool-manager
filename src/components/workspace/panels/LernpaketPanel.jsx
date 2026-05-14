@@ -184,17 +184,27 @@ export default function LernpaketPanel({
       }
 
       // 2) Atomic Save via secure-Function (Lernpaket-Felder + Lernziele).
+      //
+      // WICHTIG (Bug-Fix 2026-05-14, "Speichern reagiert nicht"):
+      // Das Base44-SDK wirft bei HTTP-Non-2xx-Antworten NICHT zuverlässig
+      // eine Exception, sondern liefert `{ data, status }` mit Status-Code
+      // zurück. Wir müssen den Status und ein eventuell vorhandenes
+      // `error`-Feld im Body daher explizit auswerten — sonst landet der
+      // Save in einem stummen "Erfolg ohne Wirkung".
       const response = await base44.functions.invoke('updateLernpaketSecure', {
         paketId: paket.id,
         updates: { phasen_konfiguration: localPhasenConfig || {} },
         lernzielUpdates,
       });
 
-      // Base44 SDK liefert `{ data, status }`. Wir behandeln nur HTTP-2xx
-      // als Erfolg; alles andere wirft via SDK ohnehin schon.
       const respData = response?.data ?? response;
-      if (respData && respData.success === false) {
-        throw new Error(respData.error || 'Speichern fehlgeschlagen.');
+      const respStatus = response?.status;
+      const hasError =
+        (respStatus !== undefined && respStatus >= 400) ||
+        (respData && (respData.success === false || respData.error));
+      if (hasError) {
+        const code = respData?.code ? ` (${respData.code})` : '';
+        throw new Error((respData?.error || 'Speichern fehlgeschlagen.') + code);
       }
 
       saveSucceeded = true;

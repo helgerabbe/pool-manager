@@ -121,12 +121,31 @@ function useGenericLock({
   }, [userEmail, resourceId, pollIntervalMs, checkStatus, startTimer, clearTimer]);
 
   // 5. Sperre erwerben
+  //
+  // Bug-Fix 2026-05-14: Das Base44-SDK wirft bei HTTP-409/423/500 NICHT
+  // immer eine Exception – stattdessen kommt `{ data, status }` zurück.
+  // Wir prüfen den Status und das `error`-Feld explizit, sonst würde
+  // `canEdit` fälschlich auf `true` springen, obwohl das Backend den
+  // Lock gar nicht vergeben hat. Folge: Save schlug serverseitig mit
+  // LOCK_NOT_HELD fehl und das UI blieb stumm.
   const acquire = useCallback(async () => {
     const aFn = acquireFnRef.current;
     if (!resourceId || !userEmail || !aFn) return false;
     setErrorMessage(null);
     try {
-      await aFn(resourceId, userEmail);
+      const res = await aFn(resourceId, userEmail);
+      const data = res?.data ?? res;
+      const status = res?.status;
+      const failed =
+        (status !== undefined && status >= 400) ||
+        (data && (data.success === false || data.error));
+      if (failed) {
+        const msg = data?.error || 'Lock konnte nicht erworben werden.';
+        setErrorMessage(msg);
+        setIsLockedByOther(true);
+        setLockedByEmail(data?.locked_by_email || null);
+        return false;
+      }
       heldRef.current = true;
       setCanEdit(true);
       setIsLockedByOther(false);
