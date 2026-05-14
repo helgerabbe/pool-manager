@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { ChevronRight, BookOpen, Layers, Puzzle, Lock, Edit, UserRound, FolderOpen, PenLine } from 'lucide-react';
 import {
@@ -94,14 +94,22 @@ function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseA
     : completeCount === total ? 'bg-green-500 text-white'
     : 'bg-amber-400 text-white';
 
+  // UX-Verbesserung 2026-05-14: Phase-Zeile ist jetzt klickbar und öffnet/
+  // schließt den Baum. Das Chevron-Icon bleibt visuell, der Klick wird aber
+  // von der gesamten Zeile getragen — vorher musste man pixelgenau auf den
+  // kleinen Pfeil treffen, was umständlich war. Es gibt bewusst keine
+  // separate Inhaltsansicht für Phasen rechts (Lernpaket-Panel zeigt bereits
+  // alle Phasen).
   return (
     <div>
-      <div className="flex items-center gap-0.5">
-        <button onClick={() => setOpen(o => !o)} className="p-0.5 text-muted-foreground hover:text-foreground shrink-0">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-0.5 text-left hover:bg-muted/50 rounded-md transition-colors"
+      >
+        <span className="p-0.5 text-muted-foreground shrink-0">
           <ChevronRight className={cn('w-3 h-3 transition-transform', open && 'rotate-90')} />
-        </button>
-        {/* Phase-Header: Nur visuell, keine Klick-Navigation */}
-        <div className="flex-1 flex items-center gap-2 px-2 py-1.5 text-left text-xs text-muted-foreground">
+        </span>
+        <div className="flex-1 flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground">
           <span className="w-3 h-3 shrink-0">
             {phase === 'Input' && '📚'}{phase === 'Übung' && '✏️'}{phase === 'Abschluss' && '🎯'}
           </span>
@@ -110,7 +118,7 @@ function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseA
             {total}
           </span>
         </div>
-      </div>
+      </button>
       {open && (
         <div className="ml-6 mt-0.5 border-l border-border pl-2 space-y-0.5">
           {activities.length === 0 ? (
@@ -137,8 +145,18 @@ function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseA
   );
 }
 
-function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenzielleUndGesperrt, aktivitaetenMap, paketPhaseActivities, showNumber = false, phaseAktivitaeten = [], isEditingActive = false, masterAufgabenMap = {}, aktivitaetSupportsMasterMap = {} }) {
-   const [open, setOpen] = useState(false); // Geschlossen am Anfang
+function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenzielleUndGesperrt, aktivitaetenMap, paketPhaseActivities, showNumber = false, phaseAktivitaeten = [], isEditingActive = false, masterAufgabenMap = {}, aktivitaetSupportsMasterMap = {}, openPaketId = null, onSetOpenPaketId }) {
+  // Akkordeon-Verhalten (UX-Verbesserung 2026-05-14):
+  // Der Auf/Zu-Zustand wird vom SidebarTree als single-value-State verwaltet,
+  // damit immer nur genau ein Lernpaket im Baum aufgeklappt ist. Beim Klick
+  // auf den Lernpaket-Namen (oder den Chevron) klappt das eigene Paket auf,
+  // alle anderen automatisch zu.
+  const open = openPaketId === paket.id;
+  const setOpen = (next) => {
+    if (typeof onSetOpenPaketId !== 'function') return;
+    const shouldOpen = typeof next === 'function' ? next(open) : next;
+    onSetOpenPaketId(shouldOpen ? paket.id : null);
+  };
   const isSelected = selectedId === paket.id;
   const paketLockedBy = paket.locked_by_user || paket.locked_by;
   const lockedByOther = isPaketLocked(paket) && paketLockedBy !== userEmail;
@@ -168,7 +186,13 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
           <ChevronRight className={cn('w-3.5 h-3.5 transition-transform', open && 'rotate-90')} />
         </button>
         <button
-          onClick={() => onSelect({ type: 'lernpaket', id: paket.id, data: paket })}
+          onClick={() => {
+            // UX-Verbesserung 2026-05-14: Klick auf den Lernpaket-Namen
+            // selektiert das Paket (Inhalt rechts) UND klappt es im Baum auf
+            // (Akkordeon: alle anderen Pakete klappen automatisch zu).
+            onSelect({ type: 'lernpaket', id: paket.id, data: paket });
+            if (typeof onSetOpenPaketId === 'function') onSetOpenPaketId(paket.id);
+          }}
           disabled={isSequenzielleUndGesperrt}
           title={isSequenzielleUndGesperrt ? 'Vorherige Pakete müssen vollständig sein' : undefined}
           className={cn(
@@ -226,7 +250,7 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
   );
 }
 
-function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenziell, aktivitaetenMap, paketPhaseActivitiesMap, isSammelbecken = false, phaseAktivitaeten = [], isEditingActive = false, masterAufgabenMap = {}, aktivitaetSupportsMasterMap = {} }) {
+function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedId, onSelect, kannBearbeiten, userEmail, mappings, isSequenziell, aktivitaetenMap, paketPhaseActivitiesMap, isSammelbecken = false, phaseAktivitaeten = [], isEditingActive = false, masterAufgabenMap = {}, aktivitaetSupportsMasterMap = {}, openPaketId = null, onSetOpenPaketId }) {
    const [open, setOpen] = useState(!isSammelbecken);
   const isSelected = selectedId === `themenfeld-${themenfeld.id}`;
 
@@ -298,6 +322,8 @@ function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedI
                   isEditingActive={isEditingActive}
                   masterAufgabenMap={masterAufgabenMap}
                   aktivitaetSupportsMasterMap={aktivitaetSupportsMasterMap}
+                  openPaketId={openPaketId}
+                  onSetOpenPaketId={onSetOpenPaketId}
                 />
             ))
           )}
@@ -348,6 +374,19 @@ export default function SidebarTree({
 }) {
   const selectedId = selectedNode?.id;
   const [mobileThemenfeldId, setMobileThemenfeldId] = useState(themenfelder[0]?.id || null);
+  // Akkordeon-State: nur EIN Lernpaket darf im Baum offen sein.
+  // Wenn das selektierte Item ein Lernpaket ist, übernehmen wir dessen ID
+  // als initialen offenen Knoten — sonst null (= alle eingeklappt).
+  const [openPaketId, setOpenPaketId] = useState(
+    selectedNode?.type === 'lernpaket' ? selectedNode?.id : null
+  );
+  // Wenn sich das selektierte Lernpaket extern ändert (z.B. Navigation aus
+  // einer anderen Quelle), klappen wir es automatisch auf.
+  useEffect(() => {
+    if (selectedNode?.type === 'lernpaket' && selectedNode?.id) {
+      setOpenPaketId(selectedNode.id);
+    }
+  }, [selectedNode?.type, selectedNode?.id]);
 
   const { data: aktivitaetenList = [] } = useQuery({
     queryKey: ['aktivitaetenKatalog'],
@@ -446,6 +485,8 @@ export default function SidebarTree({
               isEditingActive={isEditingActive}
               masterAufgabenMap={masterAufgabenMap}
               aktivitaetSupportsMasterMap={aktivitaetSupportsMasterMap}
+              openPaketId={openPaketId}
+              onSetOpenPaketId={setOpenPaketId}
             />
           </div>
         )}
@@ -471,6 +512,8 @@ export default function SidebarTree({
                 isEditingActive={isEditingActive}
                 masterAufgabenMap={masterAufgabenMap}
                 aktivitaetSupportsMasterMap={aktivitaetSupportsMasterMap}
+                openPaketId={openPaketId}
+                onSetOpenPaketId={setOpenPaketId}
               />
             ))}
           </div>
@@ -501,6 +544,8 @@ export default function SidebarTree({
                    isEditingActive={isEditingActive}
                    masterAufgabenMap={masterAufgabenMap}
                    aktivitaetSupportsMasterMap={aktivitaetSupportsMasterMap}
+                   openPaketId={openPaketId}
+                   onSetOpenPaketId={setOpenPaketId}
                  />
               ));
             })()}
