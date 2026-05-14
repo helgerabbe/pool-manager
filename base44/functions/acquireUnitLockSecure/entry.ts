@@ -34,9 +34,13 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-const STRUCT_LOCK_TIMEOUT_MS  = 60 * 60 * 1000; // 60 Min
-const PAKET_LOCK_TIMEOUT_MS   = 30 * 60 * 1000; // 30 Min
-const AUFGABE_LOCK_TIMEOUT_MS = 60 * 60 * 1000; // 60 Min
+// AFK-Polish 2026-05-14: Alle Lock-Timeouts auf 5 Min reduziert.
+// Aktive User halten ihre Locks über Heartbeats (alle 25 s, useLocks.js).
+// Im AFK-/Crash-Fall werden verwaiste Locks vom lockReaper damit nach
+// max. 5 Min weggeräumt statt nach 30–60 Min.
+const STRUCT_LOCK_TIMEOUT_MS  = 5 * 60 * 1000;
+const PAKET_LOCK_TIMEOUT_MS   = 5 * 60 * 1000;
+const AUFGABE_LOCK_TIMEOUT_MS = 5 * 60 * 1000;
 
 const VALID_SCOPES = new Set(['structure', 'dashboard']);
 
@@ -213,9 +217,19 @@ Deno.serve(async (req) => {
     // ── PHASE 2: Deep Scan ─────────────────────────────────────────
     // Hinweis: Der Struktur-Lock-Check selbst läuft erst in Phase 3 als
     // Teil des OCC-Wrappers (state-check). Stale Locks werden dort
-    // korrekt ignoriert. Phase 2 deckt hier zusätzlich für 'dashboard'
-    // den TIEF-SCAN auf Lernpaket- und Aufgabenbausteine ab.
-    if (scope === 'dashboard') {
+    // korrekt ignoriert.
+    //
+    // Konzept-Update 2026-05-14 (Schutz vor "Kick-Out durch Fachschaftsleitung"):
+    // Der TIEF-SCAN auf aktive Lernpaket- und AllgemeineAufgabe-Locks läuft
+    // jetzt für BEIDE Scopes ('structure' wie 'dashboard'). Begründung:
+    // Sowohl Tab 2 (Strukturbearbeitung) als auch Tab 7 (Lernpfad-Architekt)
+    // verändern Daten, die granular gesperrte Lernpakete/Aufgaben betreffen
+    // können (Themenfelder verschieben, Lernpakete umsortieren, Pfade neu
+    // legen). Wir lassen einen Unit-Lock-Erwerb daher nur zu, wenn keine
+    // andere Lehrkraft aktuell auf untergeordneten Entitäten arbeitet —
+    // sonst würde ihre Arbeit beim nächsten SSE-Update read-only und
+    // ungespeicherte Eingaben gingen verloren.
+    {
       // 2a. Aktive Lernpaket-Locks anderer User
       const aktiveLernpakete = await base44.asServiceRole.entities.Lernpakete.filter({
         einheit_id,
@@ -238,6 +252,7 @@ Deno.serve(async (req) => {
           {
             success: false, reason: 'unit_busy', scope: 'lernpaket',
             lockedByEmail: aktivesPaket.locked_by_email, lockedByName: displayName,
+            blockerTitle: aktivesPaket.titel_des_pakets || null,
           },
           { status: 409 }
         );
@@ -272,6 +287,7 @@ Deno.serve(async (req) => {
           {
             success: false, reason: 'unit_busy', scope: 'aufgabe',
             lockedByEmail: aktiveAufgabe.locked_by, lockedByName: displayName,
+            blockerTitle: aktiveAufgabe.titel || null,
           },
           { status: 409 }
         );

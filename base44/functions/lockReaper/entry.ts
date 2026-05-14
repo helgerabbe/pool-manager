@@ -16,9 +16,13 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
-// Phase 3: Lock Reaper
-// Timeout für verwaiste Sperren. 30 Min entspricht der Anforderung aus Phase 3.
-const LOCK_TIMEOUT_MINUTES = 30;
+// Lock Reaper – AFK-Polish 2026-05-14:
+// Timeout für verwaiste Sperren von 30 Min auf 5 Min reduziert. Aktive
+// User halten ihre Locks über das Frontend-Heartbeat (alle 25 s,
+// useLocks.js heartbeatIntervalMs), daher räumt der Reaper jetzt nur
+// noch wirklich verwaiste Locks (Tab geschlossen, Crash, AFK) weg —
+// und das deutlich schneller als bisher.
+const LOCK_TIMEOUT_MINUTES = 5;
 const LOCK_TIMEOUT_MS = LOCK_TIMEOUT_MINUTES * 60 * 1000;
 const BATCH_SIZE = 50; // Parallele Updates in Batches
 

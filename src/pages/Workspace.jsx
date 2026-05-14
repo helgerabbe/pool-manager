@@ -114,7 +114,9 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   // Pfad im Dialog kommt nicht mehr zum Zug. Damit der User aus diesem
   // Zustand selbst rauskommt, exportieren wir die betroffenen Pakete und
   // bieten einen "Bearbeitung beenden"-Button direkt im Banner an.
-  const PAKET_LOCK_TIMEOUT_EDIT_MS = 30 * 60 * 1000;
+  // AFK-Polish 2026-05-14: synchron zu Backend (acquireLockSecure / lockReaper),
+  // siehe dortige Kommentare. War 30 Min, jetzt 5 Min.
+  const PAKET_LOCK_TIMEOUT_EDIT_MS = 5 * 60 * 1000;
   const ownLockedPakete = useMemo(
     () =>
       paketeFuerEinheit.filter(
@@ -249,6 +251,28 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isStructuralEditingActive, einheit?.id]);
 
+  // Toast-Text-Helper: erzeugt aus einem 409-Response des Deep-Scans eine
+  // sprechende Meldung — abhängig davon, welche Ebene blockiert
+  // (struktur | lernpaket | aufgabe). Wird sowohl für 'structure' als
+  // auch 'dashboard' verwendet, damit Tab 2 und Tab 7 dasselbe sagen.
+  const buildUnitLockBlockerToast = (data) => {
+    const name = data?.lockedByName || data?.lockedByEmail;
+    const blocker = data?.scope; // 'struktur' | 'lernpaket' | 'aufgabe'
+    const title = data?.blockerTitle;
+    if (!name) return 'Diese Einheit ist gerade gesperrt. Bitte erneut versuchen.';
+    if (blocker === 'lernpaket') {
+      return title
+        ? `🔒 ${name} bearbeitet gerade das Lernpaket „${title}". Sobald die Bearbeitung abgeschlossen ist, kannst du loslegen.`
+        : `🔒 ${name} bearbeitet gerade ein Lernpaket in dieser Einheit. Bitte kurz warten oder Rücksprache halten.`;
+    }
+    if (blocker === 'aufgabe') {
+      return title
+        ? `🔒 ${name} bearbeitet gerade die Aufgabe „${title}". Sobald die Bearbeitung abgeschlossen ist, kannst du loslegen.`
+        : `🔒 ${name} bearbeitet gerade eine Aufgabe in dieser Einheit. Bitte kurz warten oder Rücksprache halten.`;
+    }
+    return `🔒 ${name} bearbeitet gerade die Struktur dieser Einheit. Bitte warten Sie, bis die Bearbeitung abgeschlossen ist.`;
+  };
+
   const handleAcquireStructLock = async () => {
     if (!einheit) return;
     setAcquiringStructLock(true);
@@ -262,18 +286,11 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
         queryClient.invalidateQueries({ queryKey: ['einheiten'] });
         toast.success('✅ Strukturbearbeitung aktiviert. Andere Nutzer können jetzt keine Änderungen mehr vornehmen.');
       } else {
-        const name = res.data?.lockedByName || res.data?.lockedByEmail;
-        toast.error(
-          name
-            ? `🔒 Struktur wird gerade von ${name} bearbeitet. Bitte warten Sie bis die Bearbeitung abgeschlossen ist.`
-            : 'Structural Lock konnte nicht erworben werden.'
-        );
+        toast.error(buildUnitLockBlockerToast(res.data));
       }
     } catch (err) {
-      const data = err?.response?.data;
-      const name = data?.lockedByName || data?.lockedByEmail;
       if (err?.response?.status === 409) {
-        toast.error(name ? `🔒 Struktur wird von ${name} bearbeitet.` : 'Struktur ist gesperrt.');
+        toast.error(buildUnitLockBlockerToast(err.response.data));
       } else {
         toast.error('Fehler beim Erwerben der Structural-Sperre.');
       }
@@ -301,19 +318,10 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
         toast.success('✅ Dashboards-Bearbeitung aktiviert. Die gesamte Einheit ist jetzt für andere gesperrt.');
         return;
       }
-      const name = res.data?.lockedByName || res.data?.lockedByEmail;
-      toast.error(
-        name
-          ? `Diese Einheit wird aktuell von ${name} bearbeitet. Bitte kontaktiere die Person, um die Bearbeitung freizugeben.`
-          : 'Dashboard-Bearbeitung konnte nicht gestartet werden.'
-      );
+      toast.error(buildUnitLockBlockerToast(res.data));
     } catch (err) {
-      const data = err?.response?.data;
-      const name = data?.lockedByName || data?.lockedByEmail;
-      if (err?.response?.status === 409 && name) {
-        toast.error(
-          `Diese Einheit wird aktuell von ${name} bearbeitet. Bitte kontaktiere die Person, um die Bearbeitung freizugeben.`
-        );
+      if (err?.response?.status === 409) {
+        toast.error(buildUnitLockBlockerToast(err.response.data));
       } else {
         toast.error('Fehler beim Starten der Dashboards-Bearbeitung.');
       }
@@ -456,7 +464,8 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   }, [selectedEinheitId]);
 
   // Bidirektionale Lock-Prüfung (memoisiert) – VOR Early Returns!
-  const PAKET_LOCK_TIMEOUT_MS = 30 * 60 * 1000;
+  // AFK-Polish 2026-05-14: synchron zu Backend, war 30 Min.
+  const PAKET_LOCK_TIMEOUT_MS = 5 * 60 * 1000;
   const aktivePaketLocks = useMemo(
     () =>
       paketeFuerEinheit.filter(

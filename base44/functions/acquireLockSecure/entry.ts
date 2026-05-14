@@ -31,7 +31,11 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-const PAKET_LOCK_TIMEOUT_MS = 30 * 60 * 1000;
+// AFK-Polish 2026-05-14: Timeout von 30 Min auf 5 Min reduziert.
+// Aktive User halten den Lock über Heartbeat (alle 25 s, useLocks.js).
+// Im AFK-/Crash-Fall fliegt der verwaiste Lock damit nach 5 Min weg
+// statt nach 30 Min, was die Frustration drastisch reduziert.
+const PAKET_LOCK_TIMEOUT_MS = 5 * 60 * 1000;
 
 // ──────────────────────────────────────────────────────────────────────
 // Inline-Kopie aus functions/utils/occLockUtils.js (Single Source of Truth).

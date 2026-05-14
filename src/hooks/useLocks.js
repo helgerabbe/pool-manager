@@ -15,7 +15,11 @@ function useGenericLock({
   heartbeatFn,      // () => Promise<void>
   pollIntervalMs = null,
   heartbeatIntervalMs = null,
-  timeoutMs = 60 * 60 * 1000, // Default 60 Minuten
+  // AFK-Polish 2026-05-14: Stale-Schwelle im Client von 60 auf 5 Min
+  // gesenkt — synchron zu den Backend-Konstanten in acquireLockSecure /
+  // acquireUnitLockSecure / lockReaper. Der Heartbeat alle 25 s hält
+  // aktive Sessions weiterhin sicher offen.
+  timeoutMs = 5 * 60 * 1000,
 }) {
   const [userEmail, setUserEmail] = useState(null);
   const [isLockedByOther, setIsLockedByOther] = useState(false);

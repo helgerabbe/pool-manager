@@ -427,18 +427,18 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
 
         // 3) Auch den lokal gemerkten Lock-Ref (falls er von Punkt 2 nicht
         //    erfasst wurde, z. B. weil noch nicht synchron gefetcht) sicher
-        //    freigeben.
+        //    freigeben. Härtung 2026-05-14: läuft jetzt über den
+        //    gesicherten Endpunkt statt direkter Entity-Mutation.
         if (currentPaketLockRef.current) {
+          const lockedPaketId = currentPaketLockRef.current;
+          currentPaketLockRef.current = null;
           try {
-            await base44.entities.Lernpakete.update(currentPaketLockRef.current, {
-              is_locked: false,
-              locked_by_email: null,
-              locked_at: null,
+            await base44.functions.invoke('releaseLernpaketLockSecure', {
+              lernpaketId: lockedPaketId,
             });
           } catch (e) {
             console.warn('[Tab4] direct ref release failed:', e);
           }
-          currentPaketLockRef.current = null;
         }
 
         toast.success('✅ Bearbeitungsmodus beendet.');
@@ -468,37 +468,61 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
    const [openPacketIds, setOpenPacketIds] = useState(new Set());
    const [expandedPhases, setExpandedPhases] = useState({});
 
-   // Paket-Lock auf DB setzen/freigeben wenn isEditingActive wechselt
+   // Paket-Lock auf DB setzen/freigeben wenn isEditingActive wechselt.
+   //
+   // Härtung 2026-05-14 (OCC-Lücke A schließen):
+   // Vorher hat dieser Effekt den Lernpaket-Lock direkt über
+   // `base44.entities.Lernpakete.update(...)` gesetzt. Damit war der
+   // OCC-Race-Schutz aus `acquireLockSecure` umgangen — zwei User konnten
+   // theoretisch zeitgleich in Tab 4 denselben Paket-Lock erwerben und
+   // sich gegenseitig überschreiben. Wir gehen jetzt zwingend über die
+   // gesicherten Backend-Endpunkte, die Read-Bump-ReRead-Verify nutzen
+   // und bei Konflikt einen Klartext-Namen zurückgeben.
    useEffect(() => {
      const selectedPaketId = selectedItem?.type === 'activity' ? selectedItem.activity?.lernpaket_id : null;
-     
+
      if (isEditingActive && selectedPaketId) {
-       // Lock setzen
        (async () => {
          try {
-           await base44.entities.Lernpakete.update(selectedPaketId, {
-             is_locked: true,
-             locked_by_email: userEmail,
-             locked_at: new Date().toISOString(),
+           const res = await base44.functions.invoke('acquireLockSecure', {
+             lernpaketId: selectedPaketId,
            });
+           const data = res?.data ?? res;
+           const status = res?.status;
+           const failed =
+             (status !== undefined && status >= 400) ||
+             (data && (data.success === false || data.error));
+           if (failed) {
+             // Lock konnte nicht erworben werden → Edit-Modus zurückrollen,
+             // damit das UI nicht in einem "ich darf bearbeiten"-Schein-
+             // zustand verbleibt.
+             const msg =
+               data?.error ||
+               'Lernpaket konnte nicht zur Bearbeitung gesperrt werden.';
+             toast.error(msg);
+             setIsEditingActive(false);
+             releaseEditLockRef.current = null;
+             return;
+           }
            currentPaketLockRef.current = selectedPaketId;
          } catch (err) {
-           console.warn('Fehler beim Setzen des Paket-Locks:', err.message);
+           const apiMsg =
+             err?.response?.data?.error || err?.message || 'Unbekannter Fehler';
+           toast.error(`Sperre konnte nicht gesetzt werden: ${apiMsg}`);
+           setIsEditingActive(false);
+           releaseEditLockRef.current = null;
          }
        })();
      } else if (!isEditingActive && currentPaketLockRef.current) {
-       // Lock freigeben
+       const lockedPaketId = currentPaketLockRef.current;
+       currentPaketLockRef.current = null;
        (async () => {
          try {
-           await base44.entities.Lernpakete.update(currentPaketLockRef.current, {
-             is_locked: false,
-             locked_by_email: null,
-             locked_at: null,
+           await base44.functions.invoke('releaseLernpaketLockSecure', {
+             lernpaketId: lockedPaketId,
            });
          } catch (err) {
-           console.warn('Fehler beim Freigeben des Paket-Locks:', err.message);
-         } finally {
-           currentPaketLockRef.current = null;
+           console.warn('Fehler beim Freigeben des Paket-Locks:', err?.message);
          }
        })();
      }
@@ -657,21 +681,19 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
   const getLernpaketName = (lernpaketId) =>
     lernpakete.find(lp => lp.id === lernpaketId)?.titel_des_pakets || null;
 
-  // Cleanup bei Unmount: Lock freigeben
+  // Cleanup bei Unmount: Lock freigeben.
+  // Härtung 2026-05-14: nutzt jetzt ebenfalls den gesicherten Endpunkt,
+  // damit Audit-Log und RBAC-Pfad konsistent bleiben.
   useEffect(() => {
     return () => {
       if (isEditingActive && currentPaketLockRef.current) {
-        (async () => {
-          try {
-            await base44.entities.Lernpakete.update(currentPaketLockRef.current, {
-              is_locked: false,
-              locked_by_email: null,
-              locked_at: null,
-            });
-          } catch (err) {
-            console.warn('Fehler beim Cleanup-Freigeben des Paket-Locks:', err.message);
-          }
-        })();
+        const lockedPaketId = currentPaketLockRef.current;
+        currentPaketLockRef.current = null;
+        base44.functions
+          .invoke('releaseLernpaketLockSecure', { lernpaketId: lockedPaketId })
+          .catch((err) =>
+            console.warn('Fehler beim Cleanup-Freigeben des Paket-Locks:', err?.message)
+          );
       }
     };
   }, [isEditingActive]);
