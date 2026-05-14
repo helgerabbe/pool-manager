@@ -297,7 +297,8 @@ export default function TextLesenModal({
               }
 
               // Im Upload-Modus rendern wir direkt nach dem medientyp-Select
-              // den Upload-Block ein — und davor/danach ggf. das Transkript.
+              // den Upload-Block ein. Das Transkript wird weiter unten über
+              // den Fallback-Pfad genau einmal eingefügt.
               if (isUploadMode && field.field_name === 'medientyp') {
                 out.push(
                   <div key="__video_upload__" className="space-y-1.5">
@@ -312,22 +313,14 @@ export default function TextLesenModal({
                     />
                   </div>
                 );
-                if (showTranskript) {
-                  out.push(
-                    <TranskriptField
-                      key="__transkript_upload__"
-                      value={fieldValues.transkript || ''}
-                      onChange={(val) => handleFieldChange('transkript', val)}
-                      disabled={isSaving || exportLocked}
-                      sourceUrl={fieldValues.url || ''}
-                    />
-                  );
-                }
               }
             });
 
-            // Fallback: wenn die Aktivität kein url-Feld hat, Transkript ans Ende.
-            if (showTranskript && !sortedFields.some(f => f.field_name === 'url')) {
+            // Fallback: Transkript ans Ende, wenn es oben noch nicht gerendert
+            // wurde — entweder weil die Aktivität gar kein url-Feld hat ODER
+            // weil der Upload-Modus das url-Feld ausblendet.
+            const urlFieldRendered = sortedFields.some(f => f.field_name === 'url');
+            if (showTranskript && !urlFieldRendered) {
               out.push(
                 <TranskriptField
                   key="__transkript_fallback__"
