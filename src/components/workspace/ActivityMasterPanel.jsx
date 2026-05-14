@@ -709,7 +709,9 @@ export default function ActivityMasterPanel({
                 {schema.map(field => {
                   if (field.field_name === 'aufgabentext') return null;
                   if (field.type === 'info') return null;
-                  if (field.field_name === 'medientyp') return null;
+                  // „Art des Textes" / Medientyp ist nur Eingabe-Steuerung —
+                  // in der Inhalts-Vorschau für die Lehrkraft irrelevant.
+                  if (field.field_name === 'inhalt_typ' || field.field_name === 'medientyp') return null;
                   if (field.field_name === 'bilder') return null;
                   if ((field.field_name === 'titel' || field.field_name === 'inhalt') && (!inhaltTyp || inhaltTyp === 'text')) return null;
                   if (field.field_name === 'inhalt' && inhaltTyp && inhaltTyp !== 'text') return null;
