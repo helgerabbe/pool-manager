@@ -180,10 +180,18 @@ export default function LernpaketPanel({
         const draft = drafts[lzId] || {};
         const original = paketZiele.find((lz) => lz.id === lzId);
         if (!original) continue;
-        const newFach = String(draft.formulierung_fachsprache ?? '').trim();
-        const newUe = String(draft.schueler_uebersetzung ?? '').trim();
+        // Wenn ein Feld im Draft fehlt, gilt der Original-Wert weiter — sonst
+        // würde z.B. das Tippen nur in der Schüler-Übersetzung die Fachsprache
+        // fälschlich als "leer" werten und den Save mit einer Pflichtfeld-
+        // Fehlermeldung blockieren.
         const oldFach = String(original.formulierung_fachsprache ?? '').trim();
         const oldUe = String(original.schueler_uebersetzung ?? '').trim();
+        const newFach = String(
+          draft.formulierung_fachsprache ?? original.formulierung_fachsprache ?? ''
+        ).trim();
+        const newUe = String(
+          draft.schueler_uebersetzung ?? original.schueler_uebersetzung ?? ''
+        ).trim();
         if (newFach === oldFach && newUe === oldUe) continue;
         if (!newFach) {
           toast.error('Die offizielle Formulierung darf nicht leer sein.');
