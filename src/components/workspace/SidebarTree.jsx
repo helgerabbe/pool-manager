@@ -26,8 +26,46 @@ function AmpelDot({ status, size = 'sm' }) {
   );
 }
 
-function AktivitaetSubNode({ activity, aktivitaetName, isSelected, onSelect, paketId, masterAufgabenList = [], supportsMaster = false }) {
-  // Single Source of Truth: Vertraue dem is_complete Flag aus der Datenbank
+// Vollständigkeit einer MasterAufgabe live aus field_values berechnen
+// (spiegelt die Backend-Logik, verhindert veraltete Cache-Werte)
+function computeMasterComplete(master, catalogName = '') {
+  const fv = master.field_values || {};
+  const name = catalogName.toLowerCase();
+  if (name.includes('lückentext') || name.includes('lueckentext') || name.includes('cloze')) {
+    const lt = fv.lueckentext;
+    if (!lt) return false;
+    if (typeof lt === 'object' && lt.text) {
+      const gaps = Array.isArray(lt.gaps) ? lt.gaps : [];
+      return String(lt.text).trim() !== '' && gaps.filter(g => g && g.correct && String(g.correct).trim() !== '').length >= 1;
+    }
+    if (typeof lt === 'string') return lt.trim().length > 10 && /\[[^\]]+\]/.test(lt);
+    return false;
+  }
+  if (name.includes('begriffe zuordnen') || name.includes('zuordnen') || name.includes('match')) {
+    return (Array.isArray(fv.pairs) ? fv.pairs : []).filter(p => p && String(p.left || '').trim() && String(p.right || '').trim()).length >= 3;
+  }
+  if (name.includes('reihenfolge') || name.includes('sortierung') || name.includes('sorting')) {
+    return (Array.isArray(fv.orderedItems) ? fv.orderedItems : []).filter(i => String(i || '').trim() !== '').length >= 2;
+  }
+  if (name.includes('quiz')) {
+    return (Array.isArray(fv.questions) ? fv.questions : []).length >= 1;
+  }
+  if (name.includes('bildbeschriftung') || name.includes('image labeling')) {
+    return !!(fv.backgroundImage && Array.isArray(fv.dropZones) && fv.dropZones.length >= 1);
+  }
+  if (name.includes('ki-tutor')) {
+    return !!(fv.aufgabenstellung && String(fv.aufgabenstellung).trim() !== '');
+  }
+  // Fallback: irgendein nicht-leerer Wert
+  return Object.values(fv).some(v => {
+    if (!v) return false;
+    if (typeof v === 'string') return v.trim() !== '';
+    if (Array.isArray(v)) return v.length > 0;
+    return true;
+  });
+}
+
+function AktivitaetSubNode({ activity, aktivitaetName, catalogName = '', isSelected, onSelect, paketId, masterAufgabenList = [], supportsMaster = false }) {
   const masterAufgabenCount = masterAufgabenList.length;
   const isReleased = activity.content_status === 'approved';
   const isKiBriefed =
@@ -35,13 +73,20 @@ function AktivitaetSubNode({ activity, aktivitaetName, isSelected, onSelect, pak
     !!activity.ki_briefing &&
     typeof activity.ki_briefing === 'object' &&
     Object.keys(activity.ki_briefing).length > 0;
-  const showAsComplete = isReleased || (isKiBriefed && activity.is_complete === true) || activity.is_complete === true;
+
+  // Live-Berechnung der Master-Vollständigkeit aus field_values
+  const showMasterStatus = supportsMaster && masterAufgabenCount > 0 && activity.erstellungs_modus !== 'ki';
+  const masterCompleteStates = masterAufgabenList.map(m => computeMasterComplete(m, catalogName));
+  const allMastersComplete = masterAufgabenCount === 0 || masterCompleteStates.every(Boolean);
+
+  // Aktivität gilt nur als vollständig wenn:
+  // - freigegeben ODER
+  // - KI-Briefing vollständig ODER
+  // - activity.is_complete UND (keine Masters vorhanden ODER alle Masters vollständig)
+  const showAsComplete = isReleased || (isKiBriefed && activity.is_complete === true) ||
+    (activity.is_complete === true && allMastersComplete);
 
   const textColor = showAsComplete ? 'text-green-600' : 'text-orange-600';
-
-  // MasterAufgaben-Status für Anzeige unter der Aktivität
-  const completeMasters = masterAufgabenList.filter(m => m.is_complete === true).length;
-  const showMasterStatus = supportsMaster && masterAufgabenCount > 0 && activity.erstellungs_modus !== 'ki';
 
   return (
     <div className={cn(
@@ -57,18 +102,21 @@ function AktivitaetSubNode({ activity, aktivitaetName, isSelected, onSelect, pak
           />
         )}
       </div>
-      {/* MasterAufgaben als Sub-Items mit Vollständigkeits-Indikator */}
+      {/* MasterAufgaben als Sub-Items mit live-berechneter Vollständigkeit */}
       {showMasterStatus && (
         <div className="ml-5 space-y-0.5">
-          {masterAufgabenList.map((master, idx) => (
-            <div key={master.id} className={cn(
-              'flex items-center gap-1.5 text-[10px]',
-              master.is_complete ? 'text-green-600' : 'text-orange-500'
-            )}>
-              <span className="w-2 h-2 rounded-full shrink-0 mt-px" style={{ background: master.is_complete ? '#16a34a' : '#f97316' }} />
-              <span className="truncate">{master.titel || `Master ${idx + 1}`}</span>
-            </div>
-          ))}
+          {masterAufgabenList.map((master, idx) => {
+            const isComplete = computeMasterComplete(master, catalogName);
+            return (
+              <div key={master.id} className={cn(
+                'flex items-center gap-1.5 text-[10px]',
+                isComplete ? 'text-green-600' : 'text-orange-500'
+              )}>
+                <span className="w-2 h-2 rounded-full shrink-0 mt-px" style={{ background: isComplete ? '#16a34a' : '#f97316' }} />
+                <span className="truncate">{master.titel || `Master ${idx + 1}`}</span>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -132,18 +180,19 @@ function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseA
             <p className="px-2 py-1.5 text-[11px] text-muted-foreground/50 italic">Keine Aktivitäten</p>
           ) : (
             activities
-              .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
-              .map(activity => (
-                <AktivitaetSubNode
-                  key={activity.id}
-                  activity={activity}
-                  aktivitaetName={aktivitaetenMap[activity.aktivitaet_id] || '…'}
-                  isSelected={selectedId === activity.id}
-                  onSelect={onSelect}
-                  paketId={paket.id}
-                  supportsMaster={aktivitaetSupportsMasterMap[activity.aktivitaet_id] || false}
-                  masterAufgabenList={masterAufgabenMap[activity.id] || []}
-                />
+            .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
+            .map(activity => (
+              <AktivitaetSubNode
+                key={activity.id}
+                activity={activity}
+                aktivitaetName={aktivitaetenMap[activity.aktivitaet_id] || '…'}
+                catalogName={aktivitaetenMap[activity.aktivitaet_id] || ''}
+                isSelected={selectedId === activity.id}
+                onSelect={onSelect}
+                paketId={paket.id}
+                supportsMaster={aktivitaetSupportsMasterMap[activity.aktivitaet_id] || false}
+                masterAufgabenList={masterAufgabenMap[activity.id] || []}
+              />
               ))
           )}
         </div>
