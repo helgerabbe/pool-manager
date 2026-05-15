@@ -29,6 +29,12 @@
  *
  * Antwort:
  *   { created: number, updated: number, skipped: number, errors: Array<{...}> }
+ *
+ * @MIGRATION_NOTE Supabase:
+ * Das vorherige Auslesen (filter), Vergleichen (existingByKey) und Trennen in
+ * create/update ist in Supabase ein Anti-Pattern. Dort sollte der gesamte
+ * items-Payload per nativer upsert-Funktion (SQL INSERT ... ON CONFLICT) in
+ * einem einzigen Datenbank-Aufruf verarbeitet werden.
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
@@ -39,6 +45,38 @@ const ALLOWED_PROMPT_TYPES = new Set([
   // Air-Gap-Welt (siehe docs/mbk-air-gap-uebergabe.md)
   'mbk_system_context', 'mbk_structure_payload', 'mbk_task_content_payload', 'mbk_micro_payload',
 ]);
+
+const PAGE_SIZE = 500;
+const WRITE_BATCH_SIZE = 25;
+const MAX_PAGES = 200;
+
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+async function loadAllExportPromptsForEinheit(base44, einheitId) {
+  const all = [];
+  let skip = 0;
+
+  for (let pageIndex = 0; pageIndex < MAX_PAGES; pageIndex += 1) {
+    const page = await base44.asServiceRole.entities.ExportPrompts.filter(
+      { einheit_id: einheitId },
+      'created_date',
+      PAGE_SIZE,
+      skip
+    );
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+
+  return all;
+}
 
 Deno.serve(async (req) => {
   try {
@@ -74,12 +112,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'items must be a non-empty array' }, { status: 400 });
     }
 
-    // Alle vorhandenen Prompts dieser Einheit einmal laden, damit wir pro Item
-    // create vs. update entscheiden können — ohne pro Item einen filter().
+    // Alle vorhandenen Prompts dieser Einheit vollständig laden, damit wir pro
+    // Item create vs. update entscheiden können — ohne pro Item einen filter().
     // Wir nutzen Service-Role, weil die Rollen-Autorisierung oben bereits
     // erfolgt ist und die Entity-RLS sonst je nach Rollen-Schreibweise
     // (admin/Administrator/Moodle-Designer) inkonsistent feuert.
-    const existing = await base44.asServiceRole.entities.ExportPrompts.filter({ einheit_id });
+    const existing = await loadAllExportPromptsForEinheit(base44, einheit_id);
     const existingByKey = new Map();
     for (const p of existing) {
       const key = `${p.prompt_type}::${p.reference_id || 'null'}`;
@@ -90,42 +128,62 @@ Deno.serve(async (req) => {
     let updated = 0;
     let skipped = 0;
     const errors = [];
+    const operations = [];
+    const plannedCreateKeys = new Set();
 
     for (const item of items) {
-      try {
-        if (!ALLOWED_PROMPT_TYPES.has(item.prompt_type)) {
-          skipped += 1;
-          errors.push({ item, reason: 'invalid prompt_type' });
-          continue;
-        }
-        const referenceId = item.reference_id || null;
-        const key = `${item.prompt_type}::${referenceId || 'null'}`;
-        const payload = {
-          einheit_id,
-          prompt_type: item.prompt_type,
-          reference_id: referenceId,
-          content: item.content || '',
-          is_customized: !!item.is_customized,
-          source_updated_at: item.source_updated_at || new Date().toISOString(),
-          template_version: item.template_version || null,
-          // Air-Gap: Hash zum Zeitpunkt der Generierung. Bei Legacy-Typen
-          // bleibt das Feld leer/null — die Entity-Definition lässt das zu.
-          system_context_hash_at_generation: item.system_context_hash_at_generation || null,
-        };
-        const found = existingByKey.get(key);
-        if (found) {
-          await base44.asServiceRole.entities.ExportPrompts.update(found.id, payload);
-          updated += 1;
-        } else {
-          const newRec = await base44.asServiceRole.entities.ExportPrompts.create(payload);
-          // damit ein nachfolgender Eintrag mit gleichem Key (sollte nicht
-          // vorkommen, aber sicher ist sicher) geupdated wird:
-          existingByKey.set(key, newRec);
-          created += 1;
-        }
-      } catch (e) {
-        errors.push({ item, reason: e?.message || 'unknown' });
+      if (!ALLOWED_PROMPT_TYPES.has(item.prompt_type)) {
+        skipped += 1;
+        errors.push({ item, reason: 'invalid prompt_type' });
+        continue;
       }
+
+      const referenceId = item.reference_id || null;
+      const key = `${item.prompt_type}::${referenceId || 'null'}`;
+      const payload = {
+        einheit_id,
+        prompt_type: item.prompt_type,
+        reference_id: referenceId,
+        content: item.content || '',
+        is_customized: !!item.is_customized,
+        source_updated_at: item.source_updated_at || new Date().toISOString(),
+        template_version: item.template_version || null,
+        // Air-Gap: Hash zum Zeitpunkt der Generierung. Bei Legacy-Typen
+        // bleibt das Feld leer/null — die Entity-Definition lässt das zu.
+        system_context_hash_at_generation: item.system_context_hash_at_generation || null,
+      };
+
+      const found = existingByKey.get(key);
+      if (found) {
+        operations.push({ type: 'update', item, id: found.id, payload });
+      } else if (plannedCreateKeys.has(key)) {
+        skipped += 1;
+        errors.push({ item, reason: 'duplicate prompt key in payload' });
+      } else {
+        plannedCreateKeys.add(key);
+        operations.push({ type: 'create', item, payload });
+      }
+    }
+
+    for (const batch of chunkArray(operations, WRITE_BATCH_SIZE)) {
+      const outcomes = await Promise.allSettled(
+        batch.map((op) => {
+          if (op.type === 'update') {
+            return base44.asServiceRole.entities.ExportPrompts.update(op.id, op.payload);
+          }
+          return base44.asServiceRole.entities.ExportPrompts.create(op.payload);
+        })
+      );
+
+      outcomes.forEach((outcome, index) => {
+        const op = batch[index];
+        if (outcome.status === 'fulfilled') {
+          if (op.type === 'update') updated += 1;
+          else created += 1;
+        } else {
+          errors.push({ item: op.item, reason: outcome.reason?.message || String(outcome.reason) });
+        }
+      });
     }
 
     return Response.json({ created, updated, skipped, errors });
