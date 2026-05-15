@@ -50,17 +50,15 @@ export default function TextLesenModal({
 }) {
   const [fieldValues, setFieldValues] = useState(initialFieldValues);
   const [exportLockedWasEnabled, setExportLockedWasEnabled] = useState(exportLocked);
+  // Lokaler Freigabe-State: null = unverändert, true = soll freigegeben werden, false = soll zurückgenommen werden
+  const [pendingRelease, setPendingRelease] = useState(null);
 
   // Phase 6: Live-Vollständigkeit + Sperrlogik
   const completeness = useActivityCompleteness(catalogEntry, fieldValues);
   const lockState = useActivityLockState(activity, parentLernpaket, parentEinheit);
   const canToggle = useCanToggleActivityRelease(activity, parentLernpaket, parentEinheit);
   const isReleased = activity?.content_status === 'approved';
-  const { setReleaseStatus, setReleaseStatusAsync, isPending: isReleasePending } = useSetReleaseStatus();
-  // UX-Bugfix 2026-05-14: Wenn die Lehrkraft den Toggle benutzt, läuft
-  // erst `onSave` (schließt das Modal) und dann der Release-Call. Damit
-  // das Modal NICHT vorzeitig zugeht und die Lehrkraft sieht, was passiert,
-  // sperren wir die UI lokal mit einem dedizierten "Wird freigegeben…"-State.
+  const { setReleaseStatusAsync, isPending: isReleasePending } = useSetReleaseStatus();
   const [isReleasingFromToggle, setIsReleasingFromToggle] = useState(false);
 
   // Nur beim ÖFFNEN des Modals Initialwerte laden (nicht bei jedem Re-render)
@@ -68,6 +66,7 @@ export default function TextLesenModal({
   const prevOpenRef = useRef(false);
   useEffect(() => {
     if (open && !prevOpenRef.current) {
+      setPendingRelease(null); // Reset beim Öffnen
       // Modal wurde gerade geöffnet → Werte initialisieren.
       // UX-Defaults für "Text lesen": leere Pflichtfelder werden mit
       // sinnvollen Vorbelegungen vorausgefüllt (Lehrkraft kann sie jederzeit
@@ -108,60 +107,18 @@ export default function TextLesenModal({
     onCancel?.();
   };
 
-  const handleSave = () => {
-    // Phase 6: Speichern überschreibt content_status NICHT mehr direkt —
-    // Freigabe wird ausschließlich über setReleaseStatusSecure gesetzt.
+  const handleSave = async () => {
     const payload = { ...fieldValues };
-
-    // Wenn gerade aus 'synced' Status kommt und jetzt geändert wird,
-    // markiere automatisch für Re-Export
     if (initialFieldValues?.moodle_sync_status === 'synced') {
       payload.moodle_sync_status = 'modified';
       payload.is_dirty_since_export = true;
     }
 
-    onSave?.(payload);
-  };
-
-  // Phase 6: Freigabe / Rücknahme via Backend-Function.
-  //
-  // UX-Anforderung 2026-05-14: Das Modal bleibt offen, bis BEIDE Schritte
-  // (Speichern + Freigabe + Cache-Refresh) durchgelaufen sind. Erst dann
-  // schließt onSave das Modal. Während des Vorgangs zeigt ein Overlay
-  // "Wird freigegeben…", damit die Lehrkraft eindeutiges Feedback hat
-  // statt eine bis zu 15 s lange "tote Phase" zu sehen.
-  //
-  // Reihenfolge:
-  //   1. setReleaseStatusAsync(release: true) → DB-Update läuft
-  //      Backend liest field_values aus der DB → wir müssen vorher
-  //      persistieren, sonst 422.
-  //   So wird daraus:
-  //   1. DB-Update über die Activity-Entity (Speichern)
-  //   2. setReleaseStatusAsync (Freigabe)
-  //   3. Cache-Invalidation + Modal-Schluss (passiert in onSave)
-  const handleToggleRelease = async (next) => {
-    if (!activity?.id) return;
-
-    setIsReleasingFromToggle(true);
-    try {
-      if (next === true) {
-        const payload = { ...fieldValues };
-        if (initialFieldValues?.moodle_sync_status === 'synced') {
-          payload.moodle_sync_status = 'modified';
-          payload.is_dirty_since_export = true;
-        }
-
-        // Schritt 1: Speichern. onSave persistiert die field_values, lädt
-        // den Cache neu und schließt das Modal (siehe ActivityMasterPanel
-        // .handleModalSave). Wir warten auf Abschluss, damit die DB-Daten
-        // beim Release-Call vorhanden sind.
-        // ABER: onSave schließt das Modal sofort nach dem DB-Update — der
-        // Release-Call würde dann im Hintergrund laufen. Genau das wollen
-        // wir hier verhindern. Trick: Wir rufen onSave erst NACH der
-        // Freigabe. Damit das Backend trotzdem die aktuellen Werte sieht,
-        // schreiben wir vorher direkt einmal über die Entity-API.
-        // Diese Direkt-Schreibvariante ist bewusst minimal — die volle
-        // Logik (Cache, Lock-Release) übernimmt onSave im zweiten Schritt.
+    // Wenn der Toggle auf "freigeben" gestellt ist, Release-Call VOR dem Schließen
+    if (pendingRelease === true && activity?.id) {
+      setIsReleasingFromToggle(true);
+      try {
+        // Erst Inhalte speichern (damit Backend die aktuellen field_values sieht)
         const { base44 } = await import('@/api/base44Client');
         const { content_status: _ignored, moodle_sync_status, is_dirty_since_export, transkript, ...rest } = payload;
         await base44.entities.LernpaketPhaseAktivitaet.update(activity.id, {
@@ -170,32 +127,41 @@ export default function TextLesenModal({
           ...(is_dirty_since_export !== undefined ? { is_dirty_since_export } : {}),
           ...(transkript !== undefined ? { transkript } : {}),
         });
-
-        // Schritt 2: Freigabe
-        await setReleaseStatusAsync({
-          targetType: 'activity',
-          targetId: activity.id,
-          release: true,
-        });
-
-        // Schritt 3: onSave aufrufen, damit Cache-Invalidation + Modal-
-        // Schluss durch den Parent-Container passieren — exakt wie beim
-        // normalen Speichern.
+        // Dann Freigabe setzen
+        await setReleaseStatusAsync({ targetType: 'activity', targetId: activity.id, release: true });
+        // Dann onSave für Lock-Release + Cache-Invalidation + Modal-Schluss
         await onSave?.(payload);
-      } else {
-        // Rücknahme: kein Speichern nötig, kein Modal-Schluss erzwingen.
-        await setReleaseStatusAsync({
-          targetType: 'activity',
-          targetId: activity.id,
-          release: false,
-        });
+      } catch {
+        // Fehler werden durch Toast im Hook sichtbar, Modal bleibt offen
+      } finally {
+        setIsReleasingFromToggle(false);
       }
-    } catch {
-      // Fehler werden bereits über Toasts (in onSave bzw. im Hook) sichtbar.
-      // Wir lassen das Modal offen, damit die Lehrkraft nachbessern kann.
-    } finally {
-      setIsReleasingFromToggle(false);
+      return;
     }
+
+    // Wenn Toggle auf "zurücknehmen" gestellt ist
+    if (pendingRelease === false && activity?.id && isReleased) {
+      setIsReleasingFromToggle(true);
+      try {
+        await setReleaseStatusAsync({ targetType: 'activity', targetId: activity.id, release: false });
+        await onSave?.(payload);
+      } catch {
+        // Fehler durch Toast sichtbar
+      } finally {
+        setIsReleasingFromToggle(false);
+      }
+      return;
+    }
+
+    // Normales Speichern ohne Freigabe-Änderung
+    onSave?.(payload);
+  };
+
+  // Toggle setzt nur lokalen State — kein API-Call, kein Modal-Schluss.
+  // Der eigentliche Release-Call passiert in handleSave.
+  const handleToggleRelease = (next) => {
+    if (!activity?.id) return;
+    setPendingRelease(next);
   };
 
   const formSchema = catalogEntry?.form_schema || [];
@@ -449,6 +415,7 @@ export default function TextLesenModal({
           {!lockState.locked && (
             <CompactReleaseRow
               isReleased={isReleased}
+              pendingRelease={pendingRelease}
               canRelease={completeness.isComplete}
               missingCount={completeness?.missingFields?.length || 0}
               hierarchyLocked={!canToggle.allowed}
@@ -462,7 +429,7 @@ export default function TextLesenModal({
               onToggle={handleToggleRelease}
               releasedAt={activity?.released_at}
               releasedBy={activity?.released_by}
-              disabled={isSaving || isReleasePending || isReleasingFromToggle || exportLocked}
+              disabled={isSaving || isReleasingFromToggle || exportLocked}
             />
           )}
 

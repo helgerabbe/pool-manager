@@ -47,27 +47,34 @@ function Toggle({ on, disabled, onClick, title }) {
 }
 
 export default function CompactReleaseRow({
-  isReleased,
+  isReleased,      // tatsächlicher DB-Status
+  pendingRelease,  // lokaler UI-State (null = unverändert, true/false = geändert)
   canRelease,
   hierarchyLocked,
   hierarchyLockMessage,
   missingCount = 0,
-  onToggle,
+  onToggle,        // (newValue: boolean) => void — nur lokaler State, kein API-Call
   disabled = false,
   releasedAt = null,
   releasedBy = null,
 }) {
+  // Angezeigter Status: pendingRelease überschreibt isReleased wenn gesetzt
+  const displayReleased = pendingRelease !== null && pendingRelease !== undefined
+    ? pendingRelease
+    : isReleased;
+
   const hardDisabled = disabled || hierarchyLocked;
-  const softDisabledForRelease = !isReleased && !canRelease;
+  const softDisabledForRelease = !displayReleased && !canRelease;
   const effectiveDisabled = hardDisabled || softDisabledForRelease;
 
   const handleClick = () => {
     if (effectiveDisabled) return;
-    onToggle?.(!isReleased);
+    onToggle?.(!displayReleased);
   };
 
-  // ── 1) Released ────────────────────────────────────────────────────────
-  if (isReleased) {
+  // ── 1) Released (oder pending-released) ───────────────────────────────
+  if (displayReleased) {
+    const isPending = pendingRelease === true && !isReleased;
     return (
       <div className={cn(
         'w-full rounded-lg border-2 px-3 py-2.5 flex items-center gap-3 transition-all',
@@ -77,12 +84,17 @@ export default function CompactReleaseRow({
           <CheckCircle2 className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-green-800">Freigegeben</p>
-          {releasedAt && (
+          <p className="text-sm font-semibold text-green-800">
+            {isPending ? 'Wird beim Speichern freigegeben' : 'Freigegeben'}
+          </p>
+          {!isPending && releasedAt && (
             <p className="text-[11px] text-green-700/80 truncate">
               {new Date(releasedAt).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })}
               {releasedBy && <> · {releasedBy}</>}
             </p>
+          )}
+          {isPending && (
+            <p className="text-[11px] text-green-700/80">Aufgabe wird beim Speichern gesperrt.</p>
           )}
         </div>
         <Toggle
@@ -133,10 +145,8 @@ export default function CompactReleaseRow({
 
   // ── 4) Bereit zur Freigabe ─────────────────────────────────────────────
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-green-300 bg-green-50/70 hover:border-green-400 hover:bg-green-50 transition-all cursor-pointer text-left"
+    <div
+      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-green-300 bg-green-50/70"
     >
       <div className="shrink-0 p-1.5 rounded-full bg-green-100 text-green-700">
         <CheckCircle2 className="w-4 h-4" />
@@ -151,6 +161,6 @@ export default function CompactReleaseRow({
         </p>
       </div>
       <Toggle on={false} disabled={false} onClick={handleClick} title="Jetzt freigeben" />
-    </button>
+    </div>
   );
 }
