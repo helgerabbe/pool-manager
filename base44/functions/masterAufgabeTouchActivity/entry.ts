@@ -54,8 +54,12 @@ Deno.serve(async (req) => {
       return Response.json({ skipped: 'activity_null', activityId }, { status: 200 });
     }
 
+    // Bei delete: is_complete pessimistisch auf false setzen, damit der Guardian
+    // IMMER feuert und den Wert aktiv neu berechnet (Idempotenz-Falle vermeiden:
+    // 1:1-Spiegelung würde den Guardian bei bereits=false überspringen).
+    // Bei create: ebenfalls false, damit der Guardian hochzählt.
     await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(activityId, {
-      is_complete: activity.is_complete === true,
+      is_complete: false,
     });
 
     return Response.json({ ok: true, eventType, activityId });
