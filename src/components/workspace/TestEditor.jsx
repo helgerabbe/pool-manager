@@ -12,7 +12,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Trash2, Plus, CheckCircle2, Circle, X } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const createDefaultQuestion = () => ({
   id: crypto.randomUUID(),
@@ -145,16 +144,15 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-2">
                   <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold">{index + 1}</span>
-                  <Select value={q.type || 'mc'} onValueChange={(val) => updateQuestion(q.id, normalizeQuestionForType(q, val))}>
-                    <SelectTrigger className="w-[180px] h-8 text-xs font-semibold">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="mc">Multiple Choice</SelectItem>
-                      <SelectItem value="true_false">Richtig / Falsch</SelectItem>
-                      <SelectItem value="solution_word">Lösungswort</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <select
+                    value={q.type || 'mc'}
+                    onChange={(e) => updateQuestion(q.id, normalizeQuestionForType(q, e.target.value))}
+                    className="h-8 w-[180px] rounded-md border border-input bg-background px-3 text-xs font-semibold shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    <option value="mc">Multiple Choice</option>
+                    <option value="true_false">Richtig / Falsch</option>
+                    <option value="solution_word">Lösungswort</option>
+                  </select>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
