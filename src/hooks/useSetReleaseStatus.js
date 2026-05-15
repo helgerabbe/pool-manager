@@ -37,6 +37,7 @@ export default function useSetReleaseStatus(options = {}) {
       queryClient.invalidateQueries({ queryKey: ['workspace'] });
       queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
       queryClient.invalidateQueries({ queryKey: ['einheit'] });
+      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
       // Benutzerdefinierte Keys
       const keys = options.invalidateKeys || [];
       for (const k of keys) {
