@@ -9,8 +9,8 @@
  *  3. Eingabe-Parameter + Rolle aus VALID_ROLES
  *  4. Existenz der Einheit
  *  5. RBAC: Globale Admin-/Fachschaftsrolle ODER delegierte Unit-LEITUNG.
- *     Eine delegierte LEITUNG darf KEINE weiteren LEITUNGen vergeben –
- *     nur EDITOR/READER (kein Self-Service-Privilege-Escalation).
+ *     Eine delegierte LEITUNG darf KEINE weiteren LEITUNGen vergeben und
+ *     bestehende LEITUNGen nicht herabstufen – nur EDITOR/READER verwalten.
  *  6. Existenz des Ziel-Benutzers über die `Benutzer`-Tabelle
  *     (Fallback: User-Auth-Tabelle für `full_name`-Auflösung).
  *  7. Audit-Log für SUCCESS und DENIED.
@@ -23,6 +23,10 @@
  *  • Die manuelle 3-Tabellen-Rechteprüfung (User-Auth → Benutzer →
  *    EinheitMembers) entfällt komplett zugunsten von RLS-Policies
  *    auf `EinheitMembers`.
+ *  • Rolle und Fachzuständigkeiten sollten als Custom JWT Claims gepflegt
+ *    werden, damit RLS ohne teure Cross-Table-Joins prüfen kann.
+ *  • Membership-Views/Queries müssen fehlende Benutzer-Profile als LEFT JOIN
+ *    behandeln, da Fallbacks auf die Auth-User-Tabelle möglich sind.
  *  • Die Inline-Kopie des Rate-Limiters (siehe unten) wird durch einen
  *    Redis/Upstash-basierten Limiter ersetzt – Single Source of Truth
  *    bleibt `functions/utils/rateLimiter.js`.
@@ -95,14 +99,15 @@ function _maybeRunCleanup() {
  *  2. Fachschaftsleitung MIT Fachzuständigkeit für `einheit.fach`:
  *     darf jede Rolle vergeben.
  *  3. Beliebige globale Rolle MIT delegierter Unit-LEITUNG:
- *     darf NUR EDITOR/READER vergeben (kein LEITUNG → anti-Privilege-Escalation).
+ *     darf NUR EDITOR/READER vergeben und darf bestehende LEITUNG-Rollen
+ *     nicht überschreiben/herabstufen.
  *
  * Hinweis: Die delegierte Unit-LEITUNG überstimmt also die globale Rolle.
  * Auch ein „Betrachter", der für genau diese Einheit zur LEITUNG ernannt
  * wurde, darf einladen (aber nur eingeschränkt). Das deckt den im
  * Code-Review bemängelten Referendar-/Vertretungsfall sauber ab.
  */
-function canUserAddMembers({ rolle, faecher, einheitFach, delegatedRole, requestedRole }) {
+function canUserAddMembers({ rolle, faecher, einheitFach, delegatedRole, requestedRole, existingRole }) {
   // 1. Administrator
   if (rolle === 'Administrator') {
     return { allowed: true, reason: 'admin_global' };
@@ -118,6 +123,12 @@ function canUserAddMembers({ rolle, faecher, einheitFach, delegatedRole, request
 
   // 3. Delegierte Unit-LEITUNG – egal welche globale Rolle.
   if (delegatedRole === 'LEITUNG') {
+    if (existingRole === 'LEITUNG') {
+      return {
+        allowed: false,
+        reason: 'unit_leitung_cannot_modify_existing_leitung',
+      };
+    }
     if (!DELEGABLE_ROLES_BY_UNIT_LEITUNG.includes(requestedRole)) {
       return {
         allowed: false,
@@ -189,6 +200,14 @@ Deno.serve(async (req) => {
     });
     const delegatedRole = myMembership[0]?.unit_role || null;
 
+    // Existierende Membership vor der Berechtigungsprüfung laden, damit
+    // delegierte LEITUNG-Nutzer bestehende LEITUNG-Rollen nicht herabstufen können.
+    const existingMembers = await base44.asServiceRole.entities.EinheitMembers.filter({
+      einheit_id: einheitId,
+      user_email: targetEmail,
+    });
+    const existingRole = existingMembers[0]?.unit_role || null;
+
     // Berechtigung prüfen.
     const authCheck = canUserAddMembers({
       rolle,
@@ -196,6 +215,7 @@ Deno.serve(async (req) => {
       einheitFach: einheit.fach,
       delegatedRole,
       requestedRole: newRole,
+      existingRole,
     });
 
     if (!authCheck.allowed) {
@@ -235,6 +255,7 @@ Deno.serve(async (req) => {
             einheitFach: einheit.fach,
             delegatedRole,
             requestedRole: newRole,
+            existingRole,
             denyReason: authCheck.reason,
           },
         },
@@ -267,12 +288,6 @@ Deno.serve(async (req) => {
       targetDisplayName = targetUserArr[0].full_name || null;
     }
 
-    // Existierende Membership prüfen.
-    const existingMembers = await base44.asServiceRole.entities.EinheitMembers.filter({
-      einheit_id: einheitId,
-      user_email: targetEmail,
-    });
-
     let operation = 'created';
     let membershipId = null;
 
@@ -281,10 +296,9 @@ Deno.serve(async (req) => {
       membershipId = existingMember.id;
       operation = 'updated';
 
-      // Beim Updaten greift dieselbe Privilege-Escalation-Regel: ein
-      // delegierter LEITUNG-User darf eine fremde LEITUNG-Membership
-      // nicht heimlich auf LEITUNG halten/setzen. Dies ist bereits
-      // durch canUserAddMembers (oben) abgedeckt.
+      // Beim Updaten greift dieselbe Privilege-Escalation-Regel:
+      // delegierte LEITUNG-Nutzer dürfen weder neue LEITUNGen setzen
+      // noch bestehende LEITUNGen herabstufen.
       if (existingMember.unit_role !== newRole) {
         await base44.asServiceRole.entities.EinheitMembers.update(membershipId, {
           unit_role: newRole,
@@ -311,6 +325,7 @@ Deno.serve(async (req) => {
           role: newRole,
           operation,
           grantedBy: authCheck.reason,
+          existingRole,
           membershipId,
         },
         affected_count: 1,
