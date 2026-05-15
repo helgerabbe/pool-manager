@@ -52,6 +52,11 @@ export default function Tab4LernpaketOverview({
     }),
   });
 
+  const { data: alleMasters = [] } = useQuery({
+    queryKey: ['masterAufgaben'],
+    queryFn: () => base44.entities.MasterAufgabe.list(),
+  });
+
   const paketAktivitaeten = alleAktivitaeten.filter(a => a.lernpaket_id === paket.id);
   const paketZiele = lernziele.filter(lz => lz.lernpaket_id === paket.id);
   const phasenConfig = paket.phasen_konfiguration || {};
@@ -179,42 +184,57 @@ export default function Tab4LernpaketOverview({
                     </div>
                   ) : (
                     <div className="space-y-1.5">
-                      {activities.map(activity => {
-                        const katalogEntry = aktivitaetenKatalog.find(a => a.id === activity.aktivitaet_id);
-                        const aktivitaetName = katalogEntry?.name || 'Unbekannte Aktivität';
-                        const isComplete = activity.is_complete === true;
-                        return (
-                          <button
-                            key={activity.id}
-                            onClick={() => onActivitySelect?.(activity)}
-                            className={cn(
-                              'group w-full flex items-center gap-2 p-2 rounded border text-xs text-left hover:ring-1 hover:ring-primary/40 hover:shadow-sm transition-all cursor-pointer',
-                              meta.bg
-                            )}
-                            title="Aktivität in Tab 4 öffnen"
-                          >
-                            <span className="text-primary font-semibold shrink-0">▸</span>
-                            <span className="flex-1 text-foreground">{aktivitaetName}</span>
-                            {activity.content_status === 'approved' ? (
-                              <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-300">
-                                <Lock className="w-2.5 h-2.5" />
-                                Freigegeben
-                              </span>
-                            ) : isComplete ? (
-                              <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">
-                                Vollständig
-                              </span>
-                            ) : (
-                              <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
-                                <AlertTriangle className="w-2.5 h-2.5" />
-                                Unvollständig
-                              </span>
-                            )}
-                            <ArrowRight className="w-3 h-3 text-muted-foreground/50 group-hover:text-primary shrink-0 transition-colors" />
-                          </button>
-                        );
-                      })}
-                    </div>
+                       {activities.map(activity => {
+                         const katalogEntry = aktivitaetenKatalog.find(a => a.id === activity.aktivitaet_id);
+                         const aktivitaetName = katalogEntry?.name || 'Unbekannte Aktivität';
+                         const isComplete = activity.is_complete === true;
+                         const activityMasters = alleMasters.filter(m => m.activity_id === activity.id);
+                         return (
+                           <div key={activity.id} className="space-y-1">
+                             <button
+                               onClick={() => onActivitySelect?.(activity)}
+                               className={cn(
+                                 'group w-full flex items-center gap-2 p-2 rounded border text-xs text-left hover:ring-1 hover:ring-primary/40 hover:shadow-sm transition-all cursor-pointer',
+                                 meta.bg
+                               )}
+                               title="Aktivität in Tab 4 öffnen"
+                             >
+                               <span className="text-primary font-semibold shrink-0">▸</span>
+                               <span className="flex-1 text-foreground">{aktivitaetName}</span>
+                               {activity.content_status === 'approved' ? (
+                                 <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-300">
+                                   <Lock className="w-2.5 h-2.5" />
+                                   Freigegeben
+                                 </span>
+                               ) : isComplete ? (
+                                 <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">
+                                   Vollständig
+                                 </span>
+                               ) : (
+                                 <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                                   <AlertTriangle className="w-2.5 h-2.5" />
+                                   Unvollständig
+                                 </span>
+                               )}
+                               <ArrowRight className="w-3 h-3 text-muted-foreground/50 group-hover:text-primary shrink-0 transition-colors" />
+                             </button>
+                             {activityMasters.length > 0 && (
+                               <div className="ml-6 space-y-0.5">
+                                 {activityMasters.map(master => (
+                                   <div key={master.id} className="flex items-center gap-1.5 text-xs text-muted-foreground pl-2 py-1">
+                                     <span className="text-primary/60">◆</span>
+                                     <span className="text-foreground">{master.titel || 'Master ' + (activityMasters.indexOf(master) + 1)}</span>
+                                     {master.content_status === 'approved' && (
+                                       <Lock className="w-2.5 h-2.5 text-green-600 shrink-0" />
+                                     )}
+                                   </div>
+                                 ))}
+                               </div>
+                             )}
+                           </div>
+                         );
+                       })}
+                     </div>
                   )}
                 </div>
               );
