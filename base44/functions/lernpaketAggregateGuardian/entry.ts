@@ -86,8 +86,8 @@ Deno.serve(async (req) => {
         // steht, gibt es bewusst KEINE MasterAufgaben — die Aufgabe wird
         // später von der MBK aus dem ki_briefing erzeugt. Sobald ein
         // (nicht-leeres) Briefing gespeichert ist, gilt die Aktivität als
-        // vollständig. Im manuellen Modus bleibt es bei der bisherigen
-        // Regel (≥1 MasterAufgabe).
+        // vollständig. Im manuellen Modus: alle MasterAufgaben müssen
+        // vollständig sein (is_complete=true), UND es muss ≥1 geben.
         if (data.erstellungs_modus === 'ki') {
           const briefing = data.ki_briefing;
           computedIsComplete =
@@ -98,7 +98,11 @@ Deno.serve(async (req) => {
           const masters = await base44.asServiceRole.entities.MasterAufgabe.filter({
             activity_id: entityId,
           });
-          computedIsComplete = Array.isArray(masters) && masters.length > 0;
+          const liveMasters = (masters || []).filter(m => m.sync_status !== 'to_delete');
+          // Aktivität vollständig = ≥1 Master AND alle Master vollständig
+          computedIsComplete =
+            liveMasters.length > 0 &&
+            liveMasters.every(m => m.is_complete === true);
         }
       }
       // Sonst: Frontend-Wert übernehmen (Pflichtfeld-Prüfung läuft dort).

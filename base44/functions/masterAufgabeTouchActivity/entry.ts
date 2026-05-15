@@ -1,31 +1,82 @@
 /**
  * masterAufgabeTouchActivity
  *
- * Entity-Automation-Handler auf MasterAufgabe (create + delete).
+ * Entity-Automation-Handler auf MasterAufgabe (create + update + delete).
  *
- * Zweck: Schließt die in §17 dokumentierte Aggregat-Lücke.
- * Wenn ein User eine MasterAufgabe direkt erstellt oder löscht, ohne dass
- * die Parent-Activity (LernpaketPhaseAktivitaet) ein eigenes update bekommt,
- * läuft `lernpaketAggregateGuardian` nicht – und das Aggregat-Flag
- * `Lernpakete.is_complete` driftet.
+ * Zweck: 
+ * 1. Bei create/delete: Touch der Parent-Activity, damit der Guardian
+ *    is_complete neu berechnet (Aggregat-Lücke schließen).
+ * 2. Bei update: Inhaltliche Vollständigkeitsprüfung der MasterAufgabe
+ *    (basierend auf catalogEntry.form_schema / Aktivitätstyp-Prüfung),
+ *    dann is_complete auf MasterAufgabe setzen UND Activity touchen.
  *
- * Lösung: Wir machen ein leichtes "Touch-Update" auf die Parent-Activity.
- * Wir setzen `updated_date` indirekt, indem wir das bestehende `is_complete`
- * 1:1 zurückschreiben. Das triggert die Activity-Automation (Guardian),
- * die dann is_complete aktiv neu berechnet und das Paket-Aggregat aktualisiert.
- *
- * Idempotenz: Der Guardian schreibt selbst nur, wenn sich der berechnete
- * Wert ändert. Doppel-Touches sind unkritisch.
- *
- * Events:
- *   - create: aktivität bekommt jetzt mind. 1 Master → kann grün werden
- *   - delete: aktivität verliert ggf. den letzten Master → muss rot werden
- *   - update: NICHT abonniert (Master-Inhaltsänderung beeinflusst Activity-
- *             Aggregat nach aktueller DoD nicht; Master-Approval landet eh
- *             nicht im Aggregat).
+ * Vollständigkeitsregeln pro Typ:
+ *   - Lückentext: field_values.lueckentext muss existieren mit text + ≥1 gap mit correct
+ *   - Begriffe zuordnen: field_values.pairs mit ≥3 vollständigen Paaren
+ *   - Sortierung: field_values.orderedItems mit ≥2 Items
+ *   - Mini-Quiz: field_values.questions mit ≥1 Frage
+ *   - Bildbeschriftung: field_values.backgroundImage + ≥1 dropZone
+ *   - KI-Tutor: field_values.aufgabenstellung muss vorhanden sein
+ *   - Fallback / Match-Terms: mindestens irgendein Inhalt vorhanden
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+
+// ── Vollständigkeitsprüfung pro Typ ──────────────────────────────────────────
+
+function isMasterComplete(catalogName = '', fieldValues = {}) {
+  const name = catalogName.toLowerCase();
+
+  // Lückentext
+  if (name.includes('lückentext') || name.includes('lueckentext') || name.includes('cloze')) {
+    const lt = fieldValues.lueckentext;
+    if (!lt || typeof lt !== 'object') return false;
+    if (!lt.text || String(lt.text).trim() === '') return false;
+    const gaps = Array.isArray(lt.gaps) ? lt.gaps : [];
+    const validGaps = gaps.filter(g => g && g.correct && String(g.correct).trim() !== '');
+    return validGaps.length >= 1;
+  }
+
+  // Begriffe zuordnen
+  if (name.includes('begriffe zuordnen') || name.includes('zuordnen') || name.includes('match')) {
+    const pairs = Array.isArray(fieldValues.pairs) ? fieldValues.pairs : [];
+    const valid = pairs.filter(p => p && String(p.left || '').trim() && String(p.right || '').trim());
+    return valid.length >= 3;
+  }
+
+  // Reihenfolge / Sortierung
+  if (name.includes('reihenfolge') || name.includes('sortierung') || name.includes('sorting')) {
+    const items = Array.isArray(fieldValues.orderedItems) ? fieldValues.orderedItems : [];
+    return items.filter(i => String(i || '').trim() !== '').length >= 2;
+  }
+
+  // Mini-Quiz
+  if (name.includes('quiz')) {
+    const questions = Array.isArray(fieldValues.questions) ? fieldValues.questions : [];
+    return questions.length >= 1;
+  }
+
+  // Bildbeschriftung
+  if (name.includes('bildbeschriftung') || name.includes('bildbeschreibung') || name.includes('image labeling')) {
+    return !!(fieldValues.backgroundImage && Array.isArray(fieldValues.dropZones) && fieldValues.dropZones.length >= 1);
+  }
+
+  // KI-Tutor
+  if (name.includes('ki-tutor') || name.includes('kitutor')) {
+    return !!(fieldValues.aufgabenstellung && String(fieldValues.aufgabenstellung).trim() !== '');
+  }
+
+  // Generischer Fallback: irgendeinen nicht-leeren Wert haben
+  return Object.values(fieldValues).some(v => {
+    if (v === null || v === undefined) return false;
+    if (typeof v === 'string') return v.trim() !== '';
+    if (Array.isArray(v)) return v.length > 0;
+    if (typeof v === 'object') return Object.keys(v).length > 0;
+    return true;
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
   try {
@@ -33,16 +84,41 @@ Deno.serve(async (req) => {
     const payload = await req.json();
 
     const event = payload?.event || {};
-    const eventType = event.type;
-    const data = payload?.data || payload?.old_data || null;
+    const eventType = event.type; // 'create' | 'update' | 'delete'
+    const masterData = payload?.data || payload?.old_data || null;
 
-    // activity_id steht auf MasterAufgabe (FK zu LernpaketPhaseAktivitaet).
-    const activityId = data?.activity_id;
+    const activityId = masterData?.activity_id;
     if (!activityId) {
       return Response.json({ skipped: 'no_activity_id', eventType }, { status: 200 });
     }
 
-    // Aktuelle Activity laden und 1:1 zurückschreiben → triggert Guardian.
+    // ── Bei update: inhaltliche Vollständigkeitsprüfung ────────────────────
+    if (eventType === 'update' && masterData) {
+      const masterId = event.entity_id || masterData.id;
+      if (masterId) {
+        // Katalog-Eintrag für die zugehörige Aktivität laden
+        let catalogName = '';
+        try {
+          const activity = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.get(activityId);
+          if (activity?.aktivitaet_id) {
+            const katalog = await base44.asServiceRole.entities.AktivitaetenKatalog.get(activity.aktivitaet_id);
+            catalogName = katalog?.name || '';
+          }
+        } catch (e) {
+          console.warn('[masterAufgabeTouchActivity] Katalog-Load fehlgeschlagen:', e?.message);
+        }
+
+        const fieldValues = masterData.field_values || {};
+        const isComplete = isMasterComplete(catalogName, fieldValues);
+
+        // Nur schreiben wenn sich der Wert ändert (Idempotenz)
+        if (masterData.is_complete !== isComplete) {
+          await base44.asServiceRole.entities.MasterAufgabe.update(masterId, { is_complete: isComplete });
+        }
+      }
+    }
+
+    // ── Aktuelle Activity touchen → triggert Guardian ──────────────────────
     let activity = null;
     try {
       activity = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.get(activityId);
@@ -54,10 +130,9 @@ Deno.serve(async (req) => {
       return Response.json({ skipped: 'activity_null', activityId }, { status: 200 });
     }
 
-    // Bei delete: is_complete pessimistisch auf false setzen, damit der Guardian
-    // IMMER feuert und den Wert aktiv neu berechnet (Idempotenz-Falle vermeiden:
-    // 1:1-Spiegelung würde den Guardian bei bereits=false überspringen).
-    // Bei create: ebenfalls false, damit der Guardian hochzählt.
+    // Bei delete/create: pessimistisch auf false setzen, damit Guardian immer feuert.
+    // Bei update: auch auf false setzen — Guardian berechnet aktiv neu anhand
+    // der aktuellen MasterAufgaben-Vollständigkeit.
     await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(activityId, {
       is_complete: false,
     });
@@ -65,7 +140,6 @@ Deno.serve(async (req) => {
     return Response.json({ ok: true, eventType, activityId });
   } catch (error) {
     console.error('[masterAufgabeTouchActivity] Error:', error);
-    // Nie hart fehlschlagen – das Aggregat heilt sich beim nächsten Save selbst.
     return Response.json(
       { ok: false, error: error?.message || String(error) },
       { status: 200 }

@@ -28,48 +28,49 @@ function AmpelDot({ status, size = 'sm' }) {
 
 function AktivitaetSubNode({ activity, aktivitaetName, isSelected, onSelect, paketId, masterAufgabenList = [], supportsMaster = false }) {
   // Single Source of Truth: Vertraue dem is_complete Flag aus der Datenbank
-  // supportsMaster wird nur für die Anzeige (z.B. "1M") genutzt
   const masterAufgabenCount = masterAufgabenList.length;
   const isReleased = activity.content_status === 'approved';
-  // KI-Modus mit gespeichertem Briefing → Aktivität ist fertig zur Übergabe
-  // an die MBK; es gibt KEINEN manuellen Approve-Schritt. Damit die Sidebar
-  // nicht dauerhaft rot bleibt, behandeln wir „KI-Briefing vorhanden" wie
-  // einen Approve. Single Source of Truth für „inhaltlich fertig" bleibt
-  // weiterhin `is_complete` (vom Guardian gesetzt).
   const isKiBriefed =
     activity.erstellungs_modus === 'ki' &&
     !!activity.ki_briefing &&
     typeof activity.ki_briefing === 'object' &&
     Object.keys(activity.ki_briefing).length > 0;
-  const showAsComplete = isReleased || (isKiBriefed && activity.is_complete === true);
+  const showAsComplete = isReleased || (isKiBriefed && activity.is_complete === true) || activity.is_complete === true;
 
-  // Farben nach Status:
-  // - Freigegeben (approved) ODER KI-Briefing fertig → Grün
-  // - Sonst → Orange/Gelb
   const textColor = showAsComplete ? 'text-green-600' : 'text-orange-600';
-  
-  // Debug: Zeige Masteraufgaben-Status wenn supportsMaster
-  const masterInfo = supportsMaster && masterAufgabenCount > 0 ? `${masterAufgabenCount}M` : null;
-  
+
+  // MasterAufgaben-Status für Anzeige unter der Aktivität
+  const completeMasters = masterAufgabenList.filter(m => m.is_complete === true).length;
+  const showMasterStatus = supportsMaster && masterAufgabenCount > 0 && activity.erstellungs_modus !== 'ki';
+
   return (
     <div className={cn(
-      'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-[11px]',
-      textColor
+      'w-full flex flex-col gap-0.5 px-2 py-1.5 rounded-md text-left',
     )}>
-      <Puzzle className="w-3 h-3 shrink-0" />
-      <span className="truncate flex-1">{aktivitaetName}</span>
-      {isReleased && (
-        <Lock
-          className="w-3 h-3 shrink-0 text-green-600"
-          title="Aktivität ist freigegeben und gesperrt"
-        />
+      <div className={cn('flex items-center gap-2 text-[11px]', textColor)}>
+        <Puzzle className="w-3 h-3 shrink-0" />
+        <span className="truncate flex-1">{aktivitaetName}</span>
+        {isReleased && (
+          <Lock
+            className="w-3 h-3 shrink-0 text-green-600"
+            title="Aktivität ist freigegeben und gesperrt"
+          />
+        )}
+      </div>
+      {/* MasterAufgaben als Sub-Items mit Vollständigkeits-Indikator */}
+      {showMasterStatus && (
+        <div className="ml-5 space-y-0.5">
+          {masterAufgabenList.map((master, idx) => (
+            <div key={master.id} className={cn(
+              'flex items-center gap-1.5 text-[10px]',
+              master.is_complete ? 'text-green-600' : 'text-orange-500'
+            )}>
+              <span className="w-2 h-2 rounded-full shrink-0 mt-px" style={{ background: master.is_complete ? '#16a34a' : '#f97316' }} />
+              <span className="truncate">{master.titel || `Master ${idx + 1}`}</span>
+            </div>
+          ))}
+        </div>
       )}
-      {masterInfo && (
-        <span className="text-[10px] font-semibold text-muted-foreground shrink-0" title={`${masterAufgabenCount} Masteraufgaben vorhanden`}>
-          {masterInfo}
-        </span>
-      )}
-
     </div>
   );
 }

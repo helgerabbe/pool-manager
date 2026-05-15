@@ -23,6 +23,11 @@
       "type": "number",
       "description": "Sortierreihenfolge der Master-Aufgaben innerhalb einer Aktivit\u00e4t"
     },
+    "is_complete": {
+      "type": "boolean",
+      "default": false,
+      "description": "Inhaltliche Vollst\u00e4ndigkeit: vom Backend (masterAufgabeTouchActivity) auf Basis der field_values berechnet. L\u00fcckentext: text + \u22651 gap; Match: \u22653 Paare; Sortierung: \u22652 Items; Quiz: \u22651 Frage; Bildbeschriftung: Bild + \u22651 Zone."
+    },
     "lock_status": {
       "type": "boolean",
       "default": false,
