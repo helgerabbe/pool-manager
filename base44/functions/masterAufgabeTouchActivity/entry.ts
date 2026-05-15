@@ -41,11 +41,11 @@ function isMasterComplete(catalogName = '', fieldValues = {}) {
     return false;
   }
 
-  // Begriffe zuordnen
+  // Begriffe zuordnen — 1 vollständiges Paar genügt
   if (name.includes('begriffe zuordnen') || name.includes('zuordnen') || name.includes('match')) {
     const pairs = Array.isArray(fieldValues.pairs) ? fieldValues.pairs : [];
     const valid = pairs.filter(p => p && String(p.left || '').trim() && String(p.right || '').trim());
-    return valid.length >= 3;
+    return valid.length >= 1;
   }
 
   // Reihenfolge / Sortierung

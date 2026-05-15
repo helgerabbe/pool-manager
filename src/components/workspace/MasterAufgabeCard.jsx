@@ -17,8 +17,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Crown, Trash2, Sparkles, Loader2, ChevronDown, ChevronUp, CheckCircle2, RotateCw, ChevronRight } from 'lucide-react';
 import KlonErstellenModal from '@/components/workspace/KlonErstellenModal';
 import LockBanner from '@/components/workspace/LockBanner';
-import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
-import MatchTermsGeneratorModal from '@/components/workspace/MatchTermsGeneratorModal';
+import MatchTermsModal from '@/components/workspace/MatchTermsModal';
 import LueckentextEditor, { LueckentextRenderer, validateBeforeSave } from '@/components/workspace/LueckentextEditor';
 import LueckentextWysiwygModal from '@/components/workspace/LueckentextWysiwygModal';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
@@ -225,15 +224,17 @@ export default function MasterAufgabeCard({
   const [hasPendingChanges, setHasPendingChanges] = useState(false);
 
   const [klonModalOpen, setKlonModalOpen] = useState(false);
-  const [generatorOpen, setGeneratorOpen] = useState(false);
   const [lueckentextModalOpen, setLueckentextModalOpen] = useState(false);
   const [sortingListModalOpen, setSortingListModalOpen] = useState(false);
   const [miniQuizModalOpen, setMiniQuizModalOpen] = useState(false);
   const [acquiringLock, setAcquiringLock] = useState(false);
 
-  // Implizites Locking für Lückentext (unabhängig vom globalen Bearbeitungsmodus)
+  // Implizites Locking für Lückentext + Begriffe zuordnen (unabhängig vom globalen Bearbeitungsmodus)
   const isLuecke = isLueckentext(catalogName);
-  const { acquireLock, releaseLock } = useLernpaketLock(isLuecke ? master.lernpaket_id : null);
+  const isMatchModal = isMatchTerms(catalogName);
+  const { acquireLock, releaseLock } = useLernpaketLock((isLuecke || isMatchModal) ? master.lernpaket_id : null);
+
+  const [matchTermsModalOpen, setMatchTermsModalOpen] = useState(false);
 
   const locked = isLockedByOther(master, userEmail);
   const activityType = getActivityType(catalogName);
@@ -258,7 +259,7 @@ export default function MasterAufgabeCard({
     }
     if (name.includes('begriffe zuordnen') || name.includes('zuordnen') || name.includes('match')) {
       const pairs = Array.isArray(fv.pairs) ? fv.pairs : [];
-      return pairs.filter(p => p && String(p.left || '').trim() && String(p.right || '').trim()).length >= 3;
+      return pairs.filter(p => p && String(p.left || '').trim() && String(p.right || '').trim()).length >= 1;
     }
     if (name.includes('reihenfolge') || name.includes('sortierung') || name.includes('sorting')) {
       return (Array.isArray(fv.orderedItems) ? fv.orderedItems : []).filter(i => String(i || '').trim() !== '').length >= 2;
@@ -390,6 +391,26 @@ export default function MasterAufgabeCard({
     onEditModeChange?.(false);
   };
 
+  const handleEditMatchTerms = async () => {
+    if (kannBearbeiten) {
+      onEditModeChange?.(true);
+      setMatchTermsModalOpen(true);
+      return;
+    }
+    setAcquiringLock(true);
+    const ok = await acquireLock();
+    setAcquiringLock(false);
+    if (!ok) return;
+    onEditModeChange?.(true);
+    setMatchTermsModalOpen(true);
+  };
+
+  const handleCloseMatchTermsModal = () => {
+    setMatchTermsModalOpen(false);
+    releaseLock();
+    onEditModeChange?.(false);
+  };
+
   // Auto-Modal öffnen nach Erstellung (Lock ist bereits vom Parent erworben)
   useEffect(() => {
     if (!autoOpenModal) return;
@@ -400,6 +421,9 @@ export default function MasterAufgabeCard({
         // Lock bereits aktiv vom Parent – direkt öffnen, kein zweiter acquireLock
         onEditModeChange?.(true);
         setLueckentextModalOpen(true);
+      } else if (isMatchModal) {
+        onEditModeChange?.(true);
+        setMatchTermsModalOpen(true);
       } else if (SORTING_NAMES.some(n => catalogName.toLowerCase().includes(n))) {
         onEditModeChange?.(true);
         setSortingListModalOpen(true);
@@ -467,16 +491,14 @@ export default function MasterAufgabeCard({
               variant="ghost"
               onClick={() => {
                 if (isLuecke) {
-                  // Lückentext: Implizites Locking über Modal
                   handleEditLueckentext();
+                } else if (isMatch) {
+                  handleEditMatchTerms();
                 } else if (isSort) {
-                  // Sortierung: Implizites Locking über Modal
                   handleEditSortierung();
                 } else if (isQuiz) {
-                  // Mini-Quiz: Modal öffnen
                   setMiniQuizModalOpen(true);
                 } else {
-                  // Alle anderen Typen: Direkter Edit-Mode
                   setEditMode(true);
                 }
               }}
@@ -530,110 +552,94 @@ export default function MasterAufgabeCard({
 
           {/* Formular */}
           {isMatch ? (
-            editMode ? (
-              <>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold">Begriffspaare & Distraktoren</h3>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setGeneratorOpen(true)}
-                    className="gap-1.5 text-primary text-xs h-7"
-                  >
-                    <Sparkles className="w-3 h-3" />
-                    KI: Generieren
-                  </Button>
+            /* ── Begriffe zuordnen: Modal-Flow (analog Lückentext) ── */
+            <div className="space-y-3">
+              {fieldValues.instruction && (
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Anweisung</p>
+                  <div className="bg-muted/50 rounded-lg p-3 text-sm">{fieldValues.instruction}</div>
                 </div>
-                <MatchTermsForm
-                  initialData={{
-                    instruction: fieldValues.instruction || '',
-                    pairs: fieldValues.pairs || [],
-                    distractors: (fieldValues.distractors || []).map(v => typeof v === 'string' ? { value: v } : v),
-                  }}
-                  onSave={(data) => {
-                    // Stelle sicher, dass Distraktoren als String-Array gespeichert werden
-                    const cleanedData = {
-                      instruction: data.instruction,
-                      pairs: data.pairs,
-                      distractors: (data.distractors || []).map(d => typeof d === 'string' ? d : d.value).filter(Boolean),
-                    };
-                    setFieldValues(cleanedData);
-                    handleSaveAndClose(cleanedData);
-                  }}
-                  onCancel={() => { setEditMode(false); setHasPendingChanges(false); }}
-                  onChange={() => setHasPendingChanges(true)}
-                />
-                {hasPendingChanges && (
-                  <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
-                    <span>Ungespeicherte Änderungen</span>
-                    <Button size="sm" variant="outline" onClick={() => handleSaveAndClose()} disabled={saveMutation.isPending}
-                      className="gap-1.5 border-amber-300 hover:bg-amber-100 text-amber-800 h-7 text-xs">
-                      {saveMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                      Speichern
-                    </Button>
+              )}
+              {fieldValues.pairs?.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                    Begriffspaare ({fieldValues.pairs.length})
+                  </p>
+                  <div className="bg-muted/30 rounded-lg p-3 space-y-1.5">
+                    {fieldValues.pairs.map((p, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm">
+                        <span className="flex-1 font-medium">{p.left}</span>
+                        <span className="text-muted-foreground/40">→</span>
+                        <span className="flex-1 text-muted-foreground">{p.right}</span>
+                      </div>
+                    ))}
                   </div>
-                )}
-                <MatchTermsGeneratorModal
-                  open={generatorOpen}
-                  onClose={() => setGeneratorOpen(false)}
-                  onGenerate={(data) => {
-                    setFieldValues(fv => ({
-                      ...fv,
-                      pairs: data.pairs,
-                      distractors: data.distractors,
-                    }));
-                    setHasPendingChanges(true);
-                  }}
-                />
-                </>
-                ) : (
-                <div className="space-y-3">
-                {fieldValues.instruction && (
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Anweisung</p>
-                    <div className="bg-muted/50 rounded-lg p-3 text-sm">{fieldValues.instruction}</div>
+                </div>
+              )}
+              {fieldValues.distractors?.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                    Distraktoren ({fieldValues.distractors.length})
+                  </p>
+                  <div className="bg-red-50/30 rounded-lg p-3 space-y-1 text-sm">
+                    {fieldValues.distractors.map((d, i) => (
+                      <div key={i} className="text-red-700/70 text-xs">× {typeof d === 'string' ? d : d?.value || d}</div>
+                    ))}
                   </div>
-                )}
-                {fieldValues.pairs?.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                      Begriffspaare ({fieldValues.pairs.length})
-                    </p>
-                    <div className="bg-muted/30 rounded-lg p-3 space-y-1.5">
-                      {fieldValues.pairs.map((p, i) => (
-                        <div key={i} className="flex items-center gap-2 text-sm">
-                          <span className="flex-1 font-medium">{p.left}</span>
-                          <span className="text-muted-foreground/40">→</span>
-                          <span className="flex-1 text-muted-foreground">{p.right}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {fieldValues.distractors?.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                      Distraktoren ({fieldValues.distractors.length})
-                    </p>
-                    <div className="bg-red-50/30 rounded-lg p-3 space-y-1 text-sm">
-                      {fieldValues.distractors.map((d, i) => (
-                        <div key={i} className="text-red-700/70 text-xs">
-                          × {d}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {kannBearbeiten && !locked && (
-                 <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
-                   Inhalt bearbeiten
-                 </Button>
-                )}
-                {!fieldValues.instruction && !fieldValues.pairs?.length && (
-                  <p className="text-sm text-muted-foreground italic">Noch kein Inhalt. Klicke „Inhalt bearbeiten".</p>
-                )}
-              </div>
-            )
+                </div>
+              )}
+              {!fieldValues.pairs?.length && (
+                <p className="text-sm text-muted-foreground italic">Noch kein Inhalt. Klicke „Inhalt bearbeiten".</p>
+              )}
+              {/* Button immer sichtbar – kein globaler Bearbeitungsmodus nötig */}
+              {!locked && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleEditMatchTerms}
+                  disabled={acquiringLock}
+                  className="gap-1.5"
+                >
+                  {acquiringLock ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sperren…</> : 'Inhalt bearbeiten'}
+                </Button>
+              )}
+              <MatchTermsModal
+                open={matchTermsModalOpen}
+                onOpenChange={(isOpen) => { if (!isOpen) handleCloseMatchTermsModal(); }}
+                initialData={{ ...fieldValues, content_status: master.content_status }}
+                isSaving={saveMutation.isPending}
+                exportLocked={false}
+                onSave={(data) => {
+                  const { content_status, ...fvData } = data;
+                  const newFv = { ...fieldValues, ...fvData };
+                  setFieldValues(newFv);
+                  saveMutation.mutate({ fv: newFv, closeEdit: false }, {
+                    onSuccess: async () => {
+                      if (content_status) {
+                        await base44.entities.MasterAufgabe.update(master.id, { content_status });
+                        queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+                        queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+                      }
+                      handleCloseMatchTermsModal();
+                    },
+                  });
+                }}
+                onDelete={async () => {
+                  for (const k of klone) await base44.entities.Aufgabenbausteine.delete(k.id);
+                  await base44.entities.MasterAufgabe.delete(master.id);
+                  queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+                  queryClient.invalidateQueries({ queryKey: ['klone'] });
+                  await releaseLock();
+                  onEditModeChange?.(false);
+                  onDeleted?.();
+                  setTimeout(() => {
+                    queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+                    queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+                  }, 1500);
+                }}
+                onCancel={handleCloseMatchTermsModal}
+              />
+            </div>
           ) : isImageLabeling ? (
             /* ── Bildbeschriftungs-Editor ── */
             <div className="space-y-3">
