@@ -76,7 +76,8 @@ function AktivitaetSubNode({ activity, aktivitaetName, catalogName = '', isSelec
 
   // Live-Berechnung der Master-Vollständigkeit aus field_values
   const showMasterStatus = supportsMaster && masterAufgabenCount > 0 && activity.erstellungs_modus !== 'ki';
-  const masterCompleteStates = masterAufgabenList.map(m => computeMasterComplete(m, catalogName));
+  // DB-Wert als primäre Quelle, Fallback auf live-Berechnung
+  const masterCompleteStates = masterAufgabenList.map(m => m.is_complete === true || computeMasterComplete(m, catalogName));
   const allMastersComplete = masterAufgabenCount === 0 || masterCompleteStates.every(Boolean);
 
   // Aktivität gilt nur als vollständig wenn:
@@ -102,11 +103,12 @@ function AktivitaetSubNode({ activity, aktivitaetName, catalogName = '', isSelec
           />
         )}
       </div>
-      {/* MasterAufgaben als Sub-Items mit live-berechneter Vollständigkeit */}
+      {/* MasterAufgaben als Sub-Items – is_complete aus DB als primäre Quelle,
+          Fallback auf live-Berechnung aus field_values */}
       {showMasterStatus && (
         <div className="ml-5 space-y-0.5">
           {masterAufgabenList.map((master, idx) => {
-            const isComplete = computeMasterComplete(master, catalogName);
+            const isComplete = master.is_complete === true || computeMasterComplete(master, catalogName);
             return (
               <div key={master.id} className={cn(
                 'flex items-center gap-1.5 text-[10px]',
