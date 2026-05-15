@@ -281,6 +281,12 @@ export default function MasterAufgabeCard({
       queryClient.invalidateQueries({ queryKey: ['klone'] });
       toast.success('Masteraufgabe gelöscht.');
       onDeleted?.();
+      // Guardian läuft asynchron nach dem Delete — nach kurzer Verzögerung
+      // Aktivitäts-Cache invalidieren damit Sidebar den neuen is_complete=false Wert zeigt.
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+        queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+      }, 1500);
     },
   });
 
@@ -860,6 +866,11 @@ export default function MasterAufgabeCard({
                   await releaseLock();
                   onEditModeChange?.(false);
                   onDeleted?.();
+                  // Guardian läuft asynchron — nach kurzer Verzögerung Sidebar-Cache aktualisieren
+                  setTimeout(() => {
+                    queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+                    queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+                  }, 1500);
                 }}
               />
             </div>
