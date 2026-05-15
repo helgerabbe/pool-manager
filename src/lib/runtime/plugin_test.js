@@ -30,7 +30,7 @@
  *   - MC-Fragen: jede Antwort kann genau eine oder mehrere richtige
  *     Optionen haben (analog zum quiz-Plugin).
  *   - Richtig/Falsch-Fragen werden automatisch gegen correctAnswer geprüft.
- *   - Lösungswort-Fragen werden exakt geprüft; Groß-/Kleinschreibung wird ignoriert.
+ *   - Lösungswort-Fragen werden gegen erlaubte Antworten geprüft; mehrere Varianten können mit Semikolon getrennt werden.
  *   - Pass/Fail wird gegen passingThreshold geprüft und in SCORM gemeldet.
  */
 
@@ -255,8 +255,11 @@ export const PLUGIN_TEST_JS = `
 
     function scoreSolutionWord(userText, expected) {
       var answer = (userText || '').trim().toLowerCase();
-      var solution = (expected || '').trim().toLowerCase();
-      return solution !== '' && answer === solution;
+      var solutions = String(expected || '')
+        .split(';')
+        .map(function (value) { return value.trim().toLowerCase(); })
+        .filter(function (value) { return value !== ''; });
+      return solutions.length > 0 && solutions.indexOf(answer) !== -1;
     }
 
     submitBtn.addEventListener('click', function () {
@@ -292,7 +295,7 @@ export const PLUGIN_TEST_JS = `
           if (verdict) score += state.points;
           var hint2 = el('div', {
             className: 'mbk-test__expect',
-            text: verdict ? '\\u2713 Lösungswort korrekt.' : 'Erwartet: ' + ref.expectedAnswer,
+            text: verdict ? '\\u2713 Lösungswort korrekt.' : 'Erwartet: ' + String(ref.expectedAnswer || '').split(';').map(function (value) { return value.trim(); }).filter(function (value) { return value !== ''; }).join(' / '),
           });
           ref.textarea.parentElement.appendChild(hint2);
         }

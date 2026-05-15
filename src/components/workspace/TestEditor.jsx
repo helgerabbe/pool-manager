@@ -133,9 +133,6 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">Fragen ({questions.length})</h3>
-          <Button onClick={addQuestion} size="sm" className="gap-2">
-            <Plus className="w-4 h-4" /> Frage hinzufügen
-          </Button>
         </div>
 
         <div className="space-y-4">
@@ -263,13 +260,13 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
               {/* Lösungswort */}
               {q.type === 'solution_word' && (
                 <div className="space-y-2 pl-2 border-l-2 border-primary/20">
-                  <Label className="text-xs text-muted-foreground">Korrektes Lösungswort</Label>
+                  <Label className="text-xs text-muted-foreground">Erlaubte Lösungswörter</Label>
                   <Input
                     value={q.expectedAnswer || ''}
                     onChange={(e) => updateQuestion(q.id, { expectedAnswer: e.target.value })}
-                    placeholder="z.B. Poolzeitraum"
+                    placeholder="z.B. Homepooling; Poolzeit; Zuhause"
                   />
-                  <p className="text-[11px] text-muted-foreground">Groß-/Kleinschreibung wird bei der Auswertung ignoriert.</p>
+                  <p className="text-[11px] text-muted-foreground">Mehrere erlaubte Antworten mit Semikolon trennen. Groß-/Kleinschreibung wird ignoriert.</p>
                 </div>
               )}
             </div>
@@ -281,6 +278,10 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
             <p>Noch keine Fragen. Erstelle jetzt die erste Frage für diesen Test.</p>
           </div>
         )}
+
+        <Button onClick={addQuestion} size="sm" className="gap-2 w-full sm:w-auto">
+          <Plus className="w-4 h-4" /> Frage hinzufügen
+        </Button>
       </div>
     </div>
   );
