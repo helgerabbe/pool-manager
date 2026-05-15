@@ -3,6 +3,7 @@
  *
  * Editor für die Aktivität "Test" mit globalem Scoring und Feedback-System.
  * Datenmodell: { instruction, passingThreshold, passFeedback, failFeedback, questions: [...] }
+ * Fragetypen: mc | true_false | solution_word
  */
 
 import React, { useState, useEffect } from 'react';
@@ -12,6 +13,46 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Trash2, Plus, CheckCircle2, Circle, X } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const createDefaultQuestion = () => ({
+  id: crypto.randomUUID(),
+  type: 'mc',
+  question: '',
+  points: 1,
+  options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }]
+});
+
+const normalizeQuestionForType = (question, type) => {
+  const base = {
+    id: question.id,
+    type,
+    question: question.question || '',
+    points: question.points || 1,
+  };
+
+  if (type === 'mc') {
+    return {
+      ...base,
+      options: question.options?.length ? question.options : [{ text: '', isCorrect: true }, { text: '', isCorrect: false }]
+    };
+  }
+
+  if (type === 'true_false') {
+    return {
+      ...base,
+      correctAnswer: typeof question.correctAnswer === 'boolean' ? question.correctAnswer : true
+    };
+  }
+
+  if (type === 'solution_word') {
+    return {
+      ...base,
+      expectedAnswer: question.expectedAnswer || ''
+    };
+  }
+
+  return base;
+};
 
 export default function TestEditor({ initialData = {}, onChange, readOnly = false }) {
   const [instruction, setInstruction] = useState(initialData.instruction || '');
@@ -28,13 +69,7 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
   }, [instruction, passingThreshold, passFeedback, failFeedback, questions]);
 
   const addQuestion = () => {
-    setQuestions([...questions, { 
-      id: crypto.randomUUID(), 
-      type: 'mc', 
-      question: '', 
-      points: 1, 
-      options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }] 
-    }]);
+    setQuestions([...questions, createDefaultQuestion()]);
   };
 
   const updateQuestion = (id, updates) => {
@@ -110,13 +145,14 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-2">
                   <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold">{index + 1}</span>
-                  <Select value={q.type} onValueChange={(val) => updateQuestion(q.id, { type: val })}>
+                  <Select value={q.type || 'mc'} onValueChange={(val) => updateQuestion(q.id, normalizeQuestionForType(q, val))}>
                     <SelectTrigger className="w-[180px] h-8 text-xs font-semibold">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="mc">Multiple Choice</SelectItem>
-                      <SelectItem value="text">Freitext-Eingabe</SelectItem>
+                      <SelectItem value="true_false">Richtig / Falsch</SelectItem>
+                      <SelectItem value="solution_word">Lösungswort</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -201,16 +237,41 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
                 </div>
               )}
 
-              {/* Freitext Musterlösung */}
-              {q.type === 'text' && (
+              {/* Richtig/Falsch */}
+              {q.type === 'true_false' && (
                 <div className="space-y-2 pl-2 border-l-2 border-primary/20">
-                  <Label className="text-xs text-muted-foreground">Erwartete Musterlösung / Stichworte (optional)</Label>
-                  <Textarea 
-                    value={q.expectedAnswer || ''} 
-                    onChange={(e) => updateQuestion(q.id, { expectedAnswer: e.target.value })} 
-                    placeholder="Was sollte der Schüler hier im Idealfall antworten?" 
-                    className="min-h-[80px]" 
+                  <Label className="text-xs text-muted-foreground">Korrekte Antwort</Label>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant={q.correctAnswer === true ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => updateQuestion(q.id, { correctAnswer: true })}
+                    >
+                      Richtig
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={q.correctAnswer === false ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => updateQuestion(q.id, { correctAnswer: false })}
+                    >
+                      Falsch
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Lösungswort */}
+              {q.type === 'solution_word' && (
+                <div className="space-y-2 pl-2 border-l-2 border-primary/20">
+                  <Label className="text-xs text-muted-foreground">Korrektes Lösungswort</Label>
+                  <Input
+                    value={q.expectedAnswer || ''}
+                    onChange={(e) => updateQuestion(q.id, { expectedAnswer: e.target.value })}
+                    placeholder="z.B. Poolzeitraum"
                   />
+                  <p className="text-[11px] text-muted-foreground">Groß-/Kleinschreibung wird bei der Auswertung ignoriert.</p>
                 </div>
               )}
             </div>

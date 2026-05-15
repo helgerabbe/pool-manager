@@ -186,11 +186,17 @@ function MasterContentReadOnly({ master, catalogName }) {
                   <div key={q.id || i} className="pb-2 border-b border-border/30 last:border-0 last:pb-0">
                     <p className="font-medium">{i + 1}. {q.question}</p>
                     <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-                      {answers.map((ans, ai) => (
-                        <div key={ai} className={ans.isCorrect || ans.correct ? 'text-green-600 font-medium' : ''}>
-                          {(ans.isCorrect || ans.correct) && '✓ '}{ans.text}
-                        </div>
-                      ))}
+                      {q.type === 'true_false' ? (
+                        <div className="text-green-600 font-medium">✓ {q.correctAnswer ? 'Richtig' : 'Falsch'}</div>
+                      ) : (q.type === 'solution_word' || q.type === 'text') ? (
+                        <div className="text-green-600 font-medium">✓ {q.expectedAnswer}</div>
+                      ) : (
+                        answers.map((ans, ai) => (
+                          <div key={ai} className={ans.isCorrect || ans.correct ? 'text-green-600 font-medium' : ''}>
+                            {(ans.isCorrect || ans.correct) && '✓ '}{ans.text}
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 );
@@ -350,7 +356,8 @@ export default function MasterDetailView({
       const questions = Array.isArray(fv.questions) ? fv.questions : [];
       return questions.some((q) => {
         if (!q || String(q.question || '').trim() === '') return false;
-        if (q.type === 'text') return String(q.expectedAnswer || '').trim() !== '';
+        if (q.type === 'solution_word' || q.type === 'text') return String(q.expectedAnswer || '').trim() !== '';
+        if (q.type === 'true_false') return typeof q.correctAnswer === 'boolean';
         const answers = Array.isArray(q.answers) ? q.answers : (Array.isArray(q.options) ? q.options : []);
         return answers.some((a) => (a?.isCorrect === true || a?.correct === true) && String(a.text || '').trim() !== '');
       });

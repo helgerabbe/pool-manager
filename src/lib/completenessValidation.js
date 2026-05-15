@@ -146,7 +146,8 @@ function validateTestData(data) {
     : (Array.isArray(data.fragen) ? data.fragen : []);
   const hasValidQuestion = qs.some((q) => {
     if (!q || String(q.question || q.text || '').trim() === '') return false;
-    if (q.type === 'text') return String(q.expectedAnswer || q.antwort || '').trim() !== '';
+    if (q.type === 'solution_word' || q.type === 'text') return String(q.expectedAnswer || q.antwort || '').trim() !== '';
+    if (q.type === 'true_false') return typeof q.correctAnswer === 'boolean';
     const answers = Array.isArray(q.answers) ? q.answers : (Array.isArray(q.options) ? q.options : []);
     return answers.some((a) => (a?.isCorrect === true || a?.correct === true) && String(a.text || '').trim() !== '');
   });

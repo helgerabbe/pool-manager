@@ -59,7 +59,8 @@ function isMasterComplete(catalogName = '', fieldValues = {}) {
     const questions = Array.isArray(fieldValues.questions) ? fieldValues.questions : [];
     return questions.some((q) => {
       if (!q || String(q.question || '').trim() === '') return false;
-      if (q.type === 'text') return String(q.expectedAnswer || '').trim() !== '';
+      if (q.type === 'solution_word' || q.type === 'text') return String(q.expectedAnswer || '').trim() !== '';
+      if (q.type === 'true_false') return typeof q.correctAnswer === 'boolean';
       const answers = Array.isArray(q.answers) ? q.answers : (Array.isArray(q.options) ? q.options : []);
       return answers.some((a) => (a?.isCorrect === true || a?.correct === true) && String(a.text || '').trim() !== '');
     });

@@ -10,14 +10,15 @@
  *     "failFeedback": "Bitte erneut versuchen.",
  *     "questions": [
  *       {
- *         "type": "mc",                   // "mc" | "text"
+ *         "type": "mc",                   // "mc" | "true_false" | "solution_word"
  *         "question": "…",
  *         "points": 2,
  *         "options": [                    // nur für type="mc"
  *           { "text": "…", "isCorrect": true },
  *           { "text": "…", "isCorrect": false }
  *         ],
- *         "expectedAnswer": "…"           // nur für type="text" (Stichworte)
+ *         "correctAnswer": true,           // nur für type="true_false"
+ *         "expectedAnswer": "…"           // nur für type="solution_word"
  *       }
  *     ]
  *   }
@@ -28,9 +29,8 @@
  *     Auswertung — kein Feedback pro Frage vorher.
  *   - MC-Fragen: jede Antwort kann genau eine oder mehrere richtige
  *     Optionen haben (analog zum quiz-Plugin).
- *   - Freitext-Fragen: simple Stichwort-Matching-Heuristik (richtig, wenn
- *     mindestens ein erwartetes Stichwort enthalten ist; sonst manuell zu
- *     bewerten — als "offen" markiert, zählt nicht zur Punktzahl).
+ *   - Richtig/Falsch-Fragen werden automatisch gegen correctAnswer geprüft.
+ *   - Lösungswort-Fragen werden exakt geprüft; Groß-/Kleinschreibung wird ignoriert.
  *   - Pass/Fail wird gegen passingThreshold geprüft und in SCORM gemeldet.
  */
 
@@ -161,8 +161,9 @@ export const PLUGIN_TEST_JS = `
     host.appendChild(list);
 
     var qStates = questions.map(function (q) {
+      var type = q.type === 'true_false' || q.type === 'solution_word' || q.type === 'text' ? q.type : 'mc';
       return {
-        type: q.type === 'text' ? 'text' : 'mc',
+        type: type,
         points: Number(q.points) || 1,
         selected: {},
         textValue: '',
@@ -211,14 +212,33 @@ export const PLUGIN_TEST_JS = `
         });
         card.appendChild(opts);
         optRefs.push({ type: 'mc', nodes: nodes });
-      } else {
-        var ta = el('textarea', { className: 'mbk-test__textarea', placeholder: 'Deine Antwort…' });
-        ta.addEventListener('input', function () {
-          if (state.locked) { ta.value = state.textValue; return; }
-          state.textValue = ta.value;
+      } else if (state.type === 'true_false') {
+        var tfOpts = el('div', { className: 'mbk-test__opts' });
+        var tfNodes = [];
+        ['Richtig', 'Falsch'].forEach(function (label, oIdx) {
+          var value = oIdx === 0;
+          var node = el('label', { className: 'mbk-test__opt' });
+          var input = el('input', { type: 'radio', name: 'mbk-test-' + qIdx });
+          node.appendChild(input);
+          node.appendChild(el('span', {}, [label]));
+          tfNodes.push({ node: node, input: input, value: value });
+          input.addEventListener('change', function () {
+            if (state.locked) return;
+            state.selected = { value: value };
+            tfNodes.forEach(function (n) { n.node.classList.toggle('is-checked', n.value === value); });
+          });
+          tfOpts.appendChild(node);
         });
-        card.appendChild(ta);
-        optRefs.push({ type: 'text', textarea: ta, expectedAnswer: q.expectedAnswer || '' });
+        card.appendChild(tfOpts);
+        optRefs.push({ type: 'true_false', nodes: tfNodes, correctAnswer: q.correctAnswer === true });
+      } else {
+        var inputText = el('input', { className: 'mbk-test__textarea', placeholder: 'Lösungswort eingeben…' });
+        inputText.addEventListener('input', function () {
+          if (state.locked) { inputText.value = state.textValue; return; }
+          state.textValue = inputText.value;
+        });
+        card.appendChild(inputText);
+        optRefs.push({ type: 'solution_word', textarea: inputText, expectedAnswer: q.expectedAnswer || '' });
       }
 
       list.appendChild(card);
@@ -233,13 +253,10 @@ export const PLUGIN_TEST_JS = `
     submitRow.appendChild(submitBtn);
     host.appendChild(submitRow);
 
-    function scoreTextAnswer(userText, expected) {
-      // Heuristik: zerlege erwartete Stichworte an Komma/Semikolon/Zeilen.
-      var clean = (expected || '').toLowerCase();
-      var words = clean.split(/[,;\\n]+/).map(function (w) { return w.trim(); }).filter(Boolean);
-      if (words.length === 0) return null; // keine Auto-Bewertung möglich
-      var hay = (userText || '').toLowerCase();
-      return words.some(function (w) { return hay.indexOf(w) !== -1; });
+    function scoreSolutionWord(userText, expected) {
+      var answer = (userText || '').trim().toLowerCase();
+      var solution = (expected || '').trim().toLowerCase();
+      return solution !== '' && answer === solution;
     }
 
     submitBtn.addEventListener('click', function () {
@@ -260,21 +277,24 @@ export const PLUGIN_TEST_JS = `
             else if (!picked && correct) { n.node.classList.add('is-missed'); allRight = false; }
           });
           if (allRight) score += state.points;
+        } else if (ref.type === 'true_false') {
+          var tfCorrect = state.selected && state.selected.value === ref.correctAnswer;
+          ref.nodes.forEach(function (n) {
+            n.input.disabled = true;
+            n.node.classList.remove('is-checked');
+            if (n.value === ref.correctAnswer) n.node.classList.add(tfCorrect ? 'is-correct' : 'is-missed');
+            else if (state.selected && n.value === state.selected.value) n.node.classList.add('is-wrong');
+          });
+          if (tfCorrect) score += state.points;
         } else {
           ref.textarea.disabled = true;
-          var verdict = scoreTextAnswer(state.textValue, ref.expectedAnswer);
-          if (verdict === null) {
-            openCount += 1;
-            var hint = el('div', { className: 'mbk-test__expect', text: 'Diese Frage wird manuell bewertet.' });
-            ref.textarea.parentElement.appendChild(hint);
-          } else {
-            if (verdict) score += state.points;
-            var hint2 = el('div', {
-              className: 'mbk-test__expect',
-              text: verdict ? '\\u2713 Stichworte erkannt.' : 'Erwartet: ' + ref.expectedAnswer,
-            });
-            ref.textarea.parentElement.appendChild(hint2);
-          }
+          var verdict = scoreSolutionWord(state.textValue, ref.expectedAnswer);
+          if (verdict) score += state.points;
+          var hint2 = el('div', {
+            className: 'mbk-test__expect',
+            text: verdict ? '\\u2713 Lösungswort korrekt.' : 'Erwartet: ' + ref.expectedAnswer,
+          });
+          ref.textarea.parentElement.appendChild(hint2);
         }
       });
 
