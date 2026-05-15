@@ -30,6 +30,11 @@
  *   - RBAC wandert in RLS-Policies.
  *   - `version`-Bump in BEFORE-UPDATE-Trigger.
  *   - Inline-Kopie wird durch Import aus occLockUtils.js ersetzt.
+ *   - Deep Scan und OCC-Update (Phase 2 & 3) müssen in einer
+ *     pl/pgsql-Stored-Procedure zusammengefasst werden, um Cross-Table
+ *     Race-Conditions auszuschließen.
+ *   - Display-Name-Auflösung (Phase 5) sollte über SQL-JOIN/View erfolgen,
+ *     statt als separater Call.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
@@ -41,6 +46,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 const STRUCT_LOCK_TIMEOUT_MS  = 5 * 60 * 1000;
 const PAKET_LOCK_TIMEOUT_MS   = 5 * 60 * 1000;
 const AUFGABE_LOCK_TIMEOUT_MS = 5 * 60 * 1000;
+const DEEP_SCAN_LIMIT = 1000;
 
 const VALID_SCOPES = new Set(['structure', 'dashboard']);
 
@@ -231,10 +237,12 @@ Deno.serve(async (req) => {
     // ungespeicherte Eingaben gingen verloren.
     {
       // 2a. Aktive Lernpaket-Locks anderer User
+      // Base44 filter()-Calls sind paginiert; daher explizit hoch limitiert,
+      // damit große Einheiten keine Locks auf späteren Seiten übersehen.
       const aktiveLernpakete = await base44.asServiceRole.entities.Lernpakete.filter({
         einheit_id,
         is_locked: true,
-      });
+      }, undefined, DEEP_SCAN_LIMIT);
       const aktivesPaket = (aktiveLernpakete || []).find(
         (p) =>
           p.locked_by_email &&
@@ -264,11 +272,11 @@ Deno.serve(async (req) => {
         aktiveAufgaben = await base44.asServiceRole.entities.AllgemeineAufgabe.filter({
           einheit_id,
           locked_by: { $ne: null },
-        });
+        }, undefined, DEEP_SCAN_LIMIT);
       } catch (_e) {
         aktiveAufgaben = await base44.asServiceRole.entities.AllgemeineAufgabe.filter({
           einheit_id,
-        });
+        }, undefined, DEEP_SCAN_LIMIT);
         aktiveAufgaben = (aktiveAufgaben || []).filter((a) => !!a.locked_by);
       }
       const aktiveAufgabe = (aktiveAufgaben || []).find(
