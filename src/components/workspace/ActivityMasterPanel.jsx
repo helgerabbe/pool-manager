@@ -937,17 +937,15 @@ export default function ActivityMasterPanel({
                 index={idx + 1}
                 catalogName={catalogEntry?.name || ''}
                 klone={kloneByMasterId[master.id] || []}
-                kannBearbeiten={isInEditMode && !isParentPaketLockedByOther || master.id === autoOpenModalForId}
+                kannBearbeiten={isInEditMode && !isParentPaketLockedByOther}
                 userEmail={userEmail}
                 userRole={userRole}
                 autoExpand={master.id === focusedMasterId}
                 autoOpenModal={master.id === autoOpenModalForId}
-                onAutoOpenModalDone={async () => {
+                onAutoOpenModalDone={() => {
                   setAutoOpenModalForId(null);
-                  // Lock freigeben nachdem das Modal geöffnet wurde –
-                  // MasterAufgabeCard hat beim Schließen seinen eigenen releaseLock
-                  await releaseLock();
-                  onEditModeChange?.(false);
+                  // Lock bleibt aktiv – MasterAufgabeCard gibt ihn beim
+                  // Schließen des Modals via handleCloseLueckentextModal frei.
                 }}
                 onDeleted={() => {
                   setFocusedMasterId(null);
