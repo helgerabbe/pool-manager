@@ -4,92 +4,183 @@
  * Bereinigt veraltete Wizard-Entwürfe (wizard_status === 'entwurf'),
  * die seit mehr als 30 Tagen nicht mehr bearbeitet wurden.
  *
- * Wird als geplante Automation (täglich) ausgeführt.
- * Nutzt Service-Role, da benutzerübergreifend.
+ * Sicherheit:
+ *   Der Endpoint ist für Scheduled Automation gedacht und akzeptiert daher
+ *   keine normale User-Session, sondern ausschließlich den Header:
+ *   Authorization: Bearer <CLEANUP_OLD_DRAFTS_SECRET>
+ *
+ * Architektur:
+ *   - Kein rekursives JavaScript-Cascade mehr.
+ *   - Alle abhängigen Records werden vollständig paginiert geladen.
+ *   - Deletes laufen in stabilen Batches statt als lange N+1-Kette.
+ *
+ * @MIGRATION_NOTE Supabase:
+ *   Das komplette Konstrukt cascadeDelete in JavaScript ist in relationalen
+ *   Datenbanken ein Anti-Pattern und wird ersatzlos gestrichen.
+ *   Die Tabellen in Supabase erhalten bei den Foreign Keys ON DELETE CASCADE.
+ *   Das Skript reduziert sich dann auf eine einzige SQL-Anweisung:
+ *   DELETE FROM einheiten
+ *   WHERE wizard_status = 'entwurf'
+ *     AND updated_date < NOW() - INTERVAL '30 days';
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-async function cascadeDelete(base44, entityName, id, currentDepth = 0) {
-  if (currentDepth >= 10) return 0;
+const PAGE_SIZE = 500;
+const DELETE_BATCH_SIZE = 25;
 
-  const dependencyMap = {
-    Einheiten: [
-      { entity: 'Themenfeld',     fk: 'einheit_id' },
-      { entity: 'Lernpakete',     fk: 'einheit_id' },
-      { entity: 'EinheitMembers', fk: 'einheit_id' },
-    ],
-    Themenfeld: [
-      { entity: 'Lernpakete', fk: 'themenfeld_id' },
-    ],
-    Lernpakete: [
-      { entity: 'Lernziele',            fk: 'lernpaket_id' },
-      { entity: 'Aufgabenbausteine',     fk: 'lernpaket_id' },
-      { entity: 'LernpaketAktivitaet',   fk: 'lernpaket_id' },
-    ],
-    Lernziele: [],
-    Aufgabenbausteine: [
-      { entity: 'MappingAufgabeBasisziel', fk: 'aufgabe_id' },
-    ],
-  };
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
 
-  let totalDeleted = 1;
-  const dependencies = dependencyMap[entityName] || [];
+function assertCronSecret(req) {
+  const expected = Deno.env.get('CLEANUP_OLD_DRAFTS_SECRET');
+  const header = req.headers.get('Authorization') || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
 
-  for (const dep of dependencies) {
-    const children = await base44.asServiceRole.entities[dep.entity].filter({ [dep.fk]: id });
-    for (const child of children) {
-      totalDeleted += await cascadeDelete(base44, dep.entity, child.id, currentDepth + 1);
-    }
+  if (!expected || token !== expected) {
+    return false;
+  }
+  return true;
+}
+
+async function listAll(entity, query) {
+  const all = [];
+  let skip = 0;
+
+  while (true) {
+    const page = await entity.filter(query, 'created_date', PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
   }
 
-  await base44.asServiceRole.entities[entityName].delete(id);
-  return totalDeleted;
+  return all;
+}
+
+async function deleteBatch(entity, records) {
+  let deleted = 0;
+
+  for (const batch of chunkArray(records, DELETE_BATCH_SIZE)) {
+    const outcomes = await Promise.allSettled(
+      batch.map((record) => entity.delete(record.id))
+    );
+    deleted += outcomes.filter((outcome) => outcome.status === 'fulfilled').length;
+  }
+
+  return deleted;
+}
+
+async function collectDraftCascadeRecords(base44, einheitId) {
+  const e = base44.asServiceRole.entities;
+
+  const [themenfelder, lernpaketeByEinheit, allgemeineAufgaben, einheitMembers, exportPrompts, memberships, generatedFiles, auditLogs] = await Promise.all([
+    listAll(e.Themenfeld, { einheit_id: einheitId }),
+    listAll(e.Lernpakete, { einheit_id: einheitId }),
+    listAll(e.AllgemeineAufgabe, { einheit_id: einheitId }),
+    listAll(e.EinheitMembers, { einheit_id: einheitId }),
+    listAll(e.ExportPrompts, { einheit_id: einheitId }),
+    listAll(e.LernpfadAufgabeMembership, { einheit_id: einheitId }),
+    listAll(e.MBKGeneratedFile, { einheit_id: einheitId }),
+    listAll(e.AuditLog, { resource_type: 'Einheiten', resource_id: einheitId }),
+  ]);
+
+  const lernpaketeByThemenfeldPages = await Promise.all(
+    themenfelder.map((themenfeld) => listAll(e.Lernpakete, { themenfeld_id: themenfeld.id }))
+  );
+  const lernpaketeById = new Map();
+  [...lernpaketeByEinheit, ...lernpaketeByThemenfeldPages.flat()].forEach((lernpaket) => {
+    lernpaketeById.set(lernpaket.id, lernpaket);
+  });
+  const lernpakete = Array.from(lernpaketeById.values());
+
+  const [lernzielePages, aufgabenbausteinePages, aktivitaetenPages, masterAufgabenPages] = await Promise.all([
+    Promise.all(lernpakete.map((lernpaket) => listAll(e.Lernziele, { lernpaket_id: lernpaket.id }))),
+    Promise.all(lernpakete.map((lernpaket) => listAll(e.Aufgabenbausteine, { lernpaket_id: lernpaket.id }))),
+    Promise.all(lernpakete.map((lernpaket) => listAll(e.LernpaketPhaseAktivitaet, { lernpaket_id: lernpaket.id }))),
+    Promise.all(lernpakete.map((lernpaket) => listAll(e.MasterAufgabe, { lernpaket_id: lernpaket.id }))),
+  ]);
+
+  const aufgabenbausteine = aufgabenbausteinePages.flat();
+  const mappingPages = await Promise.all(
+    aufgabenbausteine.map((baustein) => listAll(e.MappingAufgabeBasisziel, { aufgabe_id: baustein.id }))
+  );
+
+  return {
+    MappingAufgabeBasisziel: mappingPages.flat(),
+    MasterAufgabe: masterAufgabenPages.flat(),
+    LernpaketPhaseAktivitaet: aktivitaetenPages.flat(),
+    Aufgabenbausteine: aufgabenbausteine,
+    Lernziele: lernzielePages.flat(),
+    AllgemeineAufgabe: allgemeineAufgaben,
+    LernpfadAufgabeMembership: memberships,
+    MBKGeneratedFile: generatedFiles,
+    ExportPrompts: exportPrompts,
+    EinheitMembers: einheitMembers,
+    AuditLog: auditLogs,
+    Lernpakete: lernpakete,
+    Themenfeld: themenfelder,
+  };
+}
+
+async function deleteDraftCascade(base44, einheit) {
+  const e = base44.asServiceRole.entities;
+  const recordsByEntity = await collectDraftCascadeRecords(base44, einheit.id);
+  let totalDeleted = 0;
+  const details = {};
+
+  for (const entityName of Object.keys(recordsByEntity)) {
+    const count = await deleteBatch(e[entityName], recordsByEntity[entityName]);
+    details[entityName] = count;
+    totalDeleted += count;
+  }
+
+  await e.Einheiten.delete(einheit.id);
+  totalDeleted += 1;
+  details.Einheiten = 1;
+
+  return { totalDeleted, details };
 }
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
+    if (!assertCronSecret(req)) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    // Service-Role-Zugriff: kein User-Auth erforderlich (Scheduled Automation)
+    const base44 = createClientFromRequest(req);
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - 30);
     const cutoffIso = cutoffDate.toISOString();
 
-    // Alle Entwürfe laden
-    const allEinheiten = await base44.asServiceRole.entities.Einheiten.filter({
+    const allDrafts = await listAll(base44.asServiceRole.entities.Einheiten, {
       wizard_status: 'entwurf',
     });
 
-    // Filtern: updated_date (built-in) älter als 30 Tage
-    const expiredDrafts = allEinheiten.filter(e => {
-      const lastUpdated = e.updated_date || e.created_date;
+    const expiredDrafts = allDrafts.filter((einheit) => {
+      const lastUpdated = einheit.updated_date || einheit.created_date;
       return lastUpdated < cutoffIso;
     });
 
-    console.log(`[cleanupOldDrafts] Gefunden: ${expiredDrafts.length} veraltete Entwürfe (älter als 30 Tage).`);
+    console.log(`[cleanupOldDrafts] Gefunden: ${expiredDrafts.length} veraltete Entwürfe.`);
 
     let totalDeleted = 0;
-    let deletedIds = [];
-    let errors = [];
+    const deletedIds = [];
+    const errors = [];
+    const cleanupDetails = [];
 
     for (const entwurf of expiredDrafts) {
       try {
-        const count = await cascadeDelete(base44, 'Einheiten', entwurf.id);
-        totalDeleted += count;
+        const result = await deleteDraftCascade(base44, entwurf);
+        totalDeleted += result.totalDeleted;
         deletedIds.push(entwurf.id);
-        console.log(`[cleanupOldDrafts] Gelöscht: Einheit ${entwurf.id} ("${entwurf.titel_der_einheit}") — ${count} Einträge entfernt.`);
-
-        // Audit-Log
-        await base44.asServiceRole.entities.AuditLog.create({
-          user_email: 'system@cleanup',
-          action: 'DELETE',
-          resource_type: 'Einheiten',
-          resource_id: entwurf.id,
-          affected_count: count,
-          status: 'success',
-          changes: { reason: 'Automatische Bereinigung: Entwurf älter als 30 Tage' },
-        });
+        cleanupDetails.push({ einheit_id: entwurf.id, ...result });
+        console.log(`[cleanupOldDrafts] Gelöscht: Einheit ${entwurf.id} — ${result.totalDeleted} Einträge entfernt.`);
       } catch (err) {
         console.error(`[cleanupOldDrafts] Fehler bei Einheit ${entwurf.id}:`, err.message);
         errors.push({ id: entwurf.id, error: err.message });
@@ -101,7 +192,9 @@ Deno.serve(async (req) => {
     return Response.json({
       success: true,
       deleted_drafts: deletedIds.length,
+      deleted_ids: deletedIds,
       total_records_deleted: totalDeleted,
+      cleanup_details: cleanupDetails,
       errors,
     });
   } catch (error) {
