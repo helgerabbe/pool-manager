@@ -5,9 +5,15 @@
  * - RBAC Validation
  * - Input Validation
  * - Audit Logging
+ *
+ * @MIGRATION_NOTE (Supabase):
+ *   Die sequentiellen Schreibvorgänge Einheiten.create → EinheitMembers.create
+ *   sind in Base44/Node.js nicht atomar. In Supabase muss dieser Endpunkt als
+ *   pl/pgsql RPC/Stored Procedure mit echter Transaktion (BEGIN ... COMMIT)
+ *   umgesetzt werden, damit keine herrenlosen Einheiten entstehen können.
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 // ── Default-Dashboards (Spiegel von src/lib/dashboardTemplates.js) ─────
 // Eager init: Neue Einheiten bekommen sofort die Standard-Raster für
@@ -20,47 +26,47 @@ const _uid = () => 'sec_' + Math.random().toString(36).slice(2, 10) + Date.now()
 function buildDefaultLernpfadKonfiguration() {
   return {
     minimalist: [
-      { sektor_id: _uid(), titel: 'Orientierung', modus: 'sequenziell',
+      { sektor_id: _uid(), titel: 'Orientierung', bearbeitungsmodus: 'sequenziell',
         items: [_sys('sys_sec0_overview'), _sys('sys_sec0_qblock'), _sys('sys_diagnose_entry')] },
-      { sektor_id: _uid(), titel: 'Lernlandkarte', modus: 'sequenziell',
+      { sektor_id: _uid(), titel: 'Lernlandkarte', bearbeitungsmodus: 'sequenziell',
         items: [_sys('sys_map_reduced')] },
-      { sektor_id: _uid(), titel: 'Erste Erarbeitungsphase', modus: 'sequenziell',
+      { sektor_id: _uid(), titel: 'Erste Erarbeitungsphase', bearbeitungsmodus: 'sequenziell',
         items: [_sys('sys_platzhalter_info'), _sys('sys_platzhalter_handlung'), _sys('sys_platzhalter_moodle_buendel')] },
-      { sektor_id: _uid(), titel: 'Zwischentest', modus: 'sequenziell',
+      { sektor_id: _uid(), titel: 'Zwischentest', bearbeitungsmodus: 'sequenziell',
         items: [_sys('sys_platzhalter_info'), _sys('sys_platzhalter_zwischentest')] },
     ],
     pragmatiker: [
-      { sektor_id: _uid(), titel: 'Orientierung', modus: 'sequenziell',
+      { sektor_id: _uid(), titel: 'Orientierung', bearbeitungsmodus: 'sequenziell',
         items: [_sys('sys_sec0_overview'), _sys('sys_sec0_qblock'), _sys('sys_diagnose_entry')] },
-      { sektor_id: _uid(), titel: 'Lernlandkarte', modus: 'sequenziell',
+      { sektor_id: _uid(), titel: 'Lernlandkarte', bearbeitungsmodus: 'sequenziell',
         items: [_sys('sys_map_reduced')] },
-      { sektor_id: _uid(), titel: 'Erarbeitungs- und Trainingsphase', modus: 'sequenziell',
+      { sektor_id: _uid(), titel: 'Erarbeitungs- und Trainingsphase', bearbeitungsmodus: 'sequenziell',
         items: [_sys('sys_platzhalter_info'), _sys('sys_platzhalter_handlung'), _sys('sys_platzhalter_moodle_buendel'), _sys('sys_platzhalter_brian_buendel')] },
-      { sektor_id: _uid(), titel: 'Abschlusstest', modus: 'sequenziell',
+      { sektor_id: _uid(), titel: 'Abschlusstest', bearbeitungsmodus: 'sequenziell',
         items: [_sys('sys_external_test')] },
     ],
     ehrgeizig: [
-      { sektor_id: _uid(), titel: 'Orientierung', modus: 'sequenziell',
+      { sektor_id: _uid(), titel: 'Orientierung', bearbeitungsmodus: 'sequenziell',
         items: [_sys('sys_sec0_overview'), _sys('sys_sec0_qblock'), _sys('sys_diagnose_entry')] },
-      { sektor_id: _uid(), titel: 'Einstieg & Anmeldung', modus: 'sequenziell',
+      { sektor_id: _uid(), titel: 'Einstieg & Anmeldung', bearbeitungsmodus: 'sequenziell',
         items: [_sys('sys_map_full'), _sys('sys_exam_register')] },
-      { sektor_id: _uid(), titel: 'Erarbeitungs- und Trainingsphase', modus: 'sequenziell',
+      { sektor_id: _uid(), titel: 'Erarbeitungs- und Trainingsphase', bearbeitungsmodus: 'sequenziell',
         items: [_sys('sys_platzhalter_info'), _sys('sys_platzhalter_handlung'), _sys('sys_platzhalter_moodle_buendel'), _sys('sys_platzhalter_brian_buendel')] },
-      { sektor_id: _uid(), titel: 'Vorbereitung auf die schriftliche Arbeit', modus: 'sequenziell',
+      { sektor_id: _uid(), titel: 'Vorbereitung auf die schriftliche Arbeit', bearbeitungsmodus: 'sequenziell',
         items: [_sys('sys_zwischentest')] },
-      { sektor_id: _uid(), titel: 'Projekt', modus: 'frei',
+      { sektor_id: _uid(), titel: 'Projekt', bearbeitungsmodus: 'frei',
         items: [_sys('sys_platzhalter_projekt')] },
     ],
     passioniert: [
-      { sektor_id: _uid(), titel: 'Orientierung', modus: 'sequenziell',
+      { sektor_id: _uid(), titel: 'Orientierung', bearbeitungsmodus: 'sequenziell',
         items: [_sys('sys_sec0_overview'), _sys('sys_sec0_qblock'), _sys('sys_diagnose_entry')] },
-      { sektor_id: _uid(), titel: 'Einstieg & Anmeldung', modus: 'frei',
+      { sektor_id: _uid(), titel: 'Einstieg & Anmeldung', bearbeitungsmodus: 'frei',
         items: [_sys('sys_map_full'), _sys('sys_exam_register')] },
-      { sektor_id: _uid(), titel: 'Anwendung & Training', modus: 'frei',
+      { sektor_id: _uid(), titel: 'Anwendung & Training', bearbeitungsmodus: 'frei',
         items: [_sys('sys_platzhalter_brian_buendel')] },
-      { sektor_id: _uid(), titel: 'Projekt', modus: 'frei',
+      { sektor_id: _uid(), titel: 'Projekt', bearbeitungsmodus: 'frei',
         items: [_sys('sys_platzhalter_projekt')] },
-      { sektor_id: _uid(), titel: 'Abschlusstest', modus: 'frei',
+      { sektor_id: _uid(), titel: 'Abschlusstest', bearbeitungsmodus: 'frei',
         items: [_sys('sys_external_test')] },
     ],
   };
@@ -157,7 +163,7 @@ Deno.serve(async (req) => {
     let allowed = false;
     let rbacReason = '';
 
-    if (role === 'Administrator') {
+    if (role === 'Administrator' || user.role === 'admin') {
       allowed = true;
     } else if (role === 'Fachschaftsleitung') {
       // Can only create for their subject
@@ -200,13 +206,20 @@ Deno.serve(async (req) => {
     //    Die Default-Struktur ist 1:1 ein Spiegel von
     //    `src/lib/dashboardTemplates.js`. Bei Änderungen beide Stellen
     //    synchron halten.
-    const newEinheit = await base44.entities.Einheiten.create({
+    const newEinheit = await base44.asServiceRole.entities.Einheiten.create({
       titel_der_einheit,
       gesamtziel: gesamtziel || '',
       fach,
       jahrgangsstufe,
       freigabe_status: freigabe_status || 'In Planung',
       lernpfade_konfiguration: buildDefaultLernpfadKonfiguration(),
+      lernpfade_schema_version: 4,
+    });
+
+    const member = await base44.asServiceRole.entities.EinheitMembers.create({
+      einheit_id: newEinheit.id,
+      user_email: user.email,
+      unit_role: 'LEITUNG',
     });
 
     // 6. Log Success
@@ -227,6 +240,7 @@ Deno.serve(async (req) => {
       {
         success: true,
         data: newEinheit,
+        member,
         message: `Einheit "${titel_der_einheit}" created successfully`,
       },
       { status: 201 }
