@@ -803,6 +803,54 @@ export default function ActivityMasterPanel({
 
       {/* ── Edit-Mode Banner entfernt — wird global in TaskCreationView gerendert ── */}
 
+      {/* ── Aufgabentext-Block direkt unter Header (für supports_master, NOT KI-Tutor, NOT KI-Modus) ─ */}
+      {supportsMaster && !isKITutor && !istKiModus && (
+        <>
+          {isInEditMode ? (
+            <div>
+              <DefaultTextareaFieldInline
+                field={{
+                  field_name: 'aufgabentext',
+                  label: '',
+                  default_text: defaultAufgabentext,
+                }}
+                value={aufgabentext}
+                onChange={(val) => {
+                  setAufgabentext(val);
+                  setAufgabentextDirty(true);
+                }}
+                readOnly={false}
+              />
+              {aufgabentextDirty && (
+                <div className="flex justify-end gap-2 mt-2">
+                  <Button
+                    size="sm"
+                    onClick={() => saveAufgabentextMutation.mutate(aufgabentext)}
+                    disabled={saveAufgabentextMutation.isPending}
+                    className="gap-1.5 text-xs h-7"
+                  >
+                    {saveAufgabentextMutation.isPending
+                      ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Speichern…</>
+                      : <><Save className="w-3.5 h-3.5" /> Speichern</>}
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={kannBearbeiten && !isParentPaketLockedByOther && !lernpaket?.moodle_sync_status === 'locked' && !lernpaket?.export_locked && !globalEditActive && !acquiringLock
+                ? handleOpenEditModal
+                : undefined}
+              disabled={!kannBearbeiten || isParentPaketLockedByOther || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || globalEditActive || acquiringLock}
+              className="w-full text-left bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 text-sm text-blue-900 cursor-pointer hover:bg-blue-100 transition-colors disabled:cursor-default disabled:hover:bg-blue-50"
+              title={kannBearbeiten ? 'Klicken zum Bearbeiten' : ''}
+            >
+              <span className="leading-relaxed">{aufgabentext || defaultAufgabentext}</span>
+            </button>
+          )}
+        </>
+      )}
+
       {/* ── AP2 §3: Modus-Switch (nur supports_master & nicht KI-Tutor) ─────── */}
       {showModusSwitch && (
         <ModusAuswahlBox
@@ -836,61 +884,7 @@ export default function ActivityMasterPanel({
         />
       )}
 
-      {/* ── Aufgabentext-Block (für supports_master Aktivitäten, NOT für KI-Tutor) ─ */}
-      {supportsMaster && !isKITutor && !istKiModus && (
-        <>
-          {isInEditMode ? (
-            // Edit-Modus: inline editierbar
-            <div>
-              <DefaultTextareaFieldInline
-                field={{
-                  field_name: 'aufgabentext',
-                  label: '',
-                  default_text: defaultAufgabentext,
-                }}
-                value={aufgabentext}
-                onChange={(val) => {
-                  setAufgabentext(val);
-                  setAufgabentextDirty(true);
-                }}
-                readOnly={false}
-              />
-              {aufgabentextDirty && (
-                <div className="flex justify-end gap-2 mt-2">
-                  <Button
-                    size="sm"
-                    onClick={() => saveAufgabentextMutation.mutate(aufgabentext)}
-                    disabled={saveAufgabentextMutation.isPending}
-                    className="gap-1.5 text-xs h-7"
-                  >
-                    {saveAufgabentextMutation.isPending
-                      ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Speichern…</>
-                      : <><Save className="w-3.5 h-3.5" /> Speichern</>}
-                  </Button>
-                </div>
-              )}
-            </div>
-          ) : (
-            // Read-Modus: einfacher blauer Kasten, Klick öffnet Bearbeitungsmodus
-            <button
-              onClick={kannBearbeiten && !isParentPaketLockedByOther && !lernpaket?.moodle_sync_status === 'locked' && !lernpaket?.export_locked && !globalEditActive && !acquiringLock
-                ? handleOpenEditModal
-                : undefined}
-              disabled={!kannBearbeiten || isParentPaketLockedByOther || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || globalEditActive || acquiringLock}
-              className="w-full text-left bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 text-sm text-blue-900 cursor-pointer hover:bg-blue-100 transition-colors disabled:cursor-default disabled:hover:bg-blue-50"
-              title={kannBearbeiten ? 'Klicken zum Bearbeiten' : ''}
-            >
-              {aufgabentext
-                ? <span className="whitespace-pre-wrap leading-relaxed">{aufgabentext}</span>
-                : <>
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 block mb-0.5">Standardtext</span>
-                    <span className="italic leading-relaxed">{defaultAufgabentext}</span>
-                  </>
-              }
-            </button>
-          )}
-        </>
-      )}
+
 
       {/* ── Masteraufgaben-Bereich (nur im manuellen Modus) ───────── */}
       {supportsMaster && !istKiModus && (
