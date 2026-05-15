@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Crown, Trash2, Sparkles, Loader2, ChevronDown, ChevronUp, CheckCircle2, RotateCw, ChevronRight, Lock } from 'lucide-react';
+import { Crown, Trash2, Sparkles, Loader2, ChevronDown, ChevronUp, CheckCircle2, RotateCw, ChevronRight, Lock, Circle } from 'lucide-react';
 import KlonErstellenModal from '@/components/workspace/KlonErstellenModal';
 import LockBanner from '@/components/workspace/LockBanner';
 import MatchTermsModal from '@/components/workspace/MatchTermsModal';
@@ -306,6 +306,14 @@ export default function MasterAufgabeCard({
     });
   };
 
+  const masterIsComplete = master.is_complete === true || computeIsComplete(fieldValues);
+  const masterStatusBadge = master.content_status === 'approved'
+    ? { label: 'Freigegeben', className: 'bg-green-100 border-green-300 text-green-700', icon: Lock }
+    : masterIsComplete
+    ? { label: 'Vollständig', className: 'bg-green-100 border-green-300 text-green-700', icon: CheckCircle2 }
+    : { label: 'Unvollständig', className: 'bg-amber-100 border-amber-200 text-amber-700', icon: Circle };
+  const MasterStatusIcon = masterStatusBadge.icon;
+
   const saveMutation = useMutation({
     mutationFn: ({ fv, closeEdit }) => {
       const newSyncStatus = syncStatus.getSyncStatusForSave();
@@ -435,6 +443,36 @@ export default function MasterAufgabeCard({
     onEditModeChange?.(false);
   };
 
+  const handleEditTest = async () => {
+    if (kannBearbeiten) {
+      onEditModeChange?.(true);
+      setTestModalOpen(true);
+      return;
+    }
+    setAcquiringLock(true);
+    const ok = await acquireLock();
+    setAcquiringLock(false);
+    if (!ok) return;
+    onEditModeChange?.(true);
+    setTestModalOpen(true);
+  };
+
+  const handleOpenContentEditor = () => {
+    if (isLuecke) {
+      handleEditLueckentext();
+    } else if (isMatch) {
+      handleEditMatchTerms();
+    } else if (isSort) {
+      handleEditSortierung();
+    } else if (isTestType) {
+      handleEditTest();
+    } else if (isQuiz) {
+      setMiniQuizModalOpen(true);
+    } else {
+      setEditMode(true);
+    }
+  };
+
   // Auto-Modal öffnen nach Erstellung (Lock ist bereits vom Parent erworben)
   useEffect(() => {
     if (!autoOpenModal) return;
@@ -477,6 +515,10 @@ export default function MasterAufgabeCard({
         <Badge variant="default" className="text-[11px] font-bold tracking-wide shrink-0">
           MASTER {index}
         </Badge>
+        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-medium shrink-0 ${masterStatusBadge.className}`}>
+          <MasterStatusIcon className="w-3 h-3" />
+          {masterStatusBadge.label}
+        </span>
         {TASK_STATUS_CONFIG[syncStatus.currentStatus] && (
           <Badge variant="outline" className={`text-[10px] shrink-0 ${TASK_STATUS_CONFIG[syncStatus.currentStatus].color}`}>
             {TASK_STATUS_CONFIG[syncStatus.currentStatus].label}
@@ -504,43 +546,6 @@ export default function MasterAufgabeCard({
         )}
 
         <div className="flex items-center gap-2 ml-auto shrink-0">
-          {/* Freigabe-Badge wenn approved */}
-          {master.content_status === 'approved' && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 border border-green-300 text-green-700 text-[11px] font-medium shrink-0">
-              <Lock className="w-3 h-3" />
-              Freigegeben
-            </span>
-          )}
-          {/* Universal "Inhalt bearbeiten"-Button für alle Masteraufgaben-Typen */}
-          {kannBearbeiten && !editMode && !locked && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                if (isLuecke) {
-                  handleEditLueckentext();
-                } else if (isMatch) {
-                  handleEditMatchTerms();
-                } else if (isSort) {
-                  handleEditSortierung();
-                } else if (isTestType) {
-                  onEditModeChange?.(true);
-                  setTestModalOpen(true);
-                } else if (isQuiz) {
-                  setMiniQuizModalOpen(true);
-                } else {
-                  setEditMode(true);
-                }
-              }}
-              disabled={acquiringLock}
-              className="gap-1.5 text-xs h-7 text-primary border-primary/30 hover:bg-primary/5"
-              title="Inhalt dieser Masteraufgabe bearbeiten"
-            >
-              {acquiringLock
-                ? <><Loader2 className="w-3 h-3 animate-spin" /> Sperren…</>
-                : <>Inhalt bearbeiten</>}
-            </Button>
-          )}
           {/* Fertig markieren / Zurücksetzen Button – nur im aktiven Bearbeitungsmodus */}
           {kannBearbeiten && editMode && (
             <MasterApprovalButton 
@@ -577,6 +582,23 @@ export default function MasterAufgabeCard({
       {!collapsed && (
         <div className="p-4 space-y-4">
           <LockBanner lockedByUser={locked ? master.locked_by_user : null} />
+
+          {!editMode && !locked && (
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleOpenContentEditor}
+                disabled={acquiringLock}
+                className="gap-1.5"
+                title="Inhalt dieser Masteraufgabe bearbeiten"
+              >
+                {acquiringLock
+                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sperren…</>
+                  : 'Inhalt bearbeiten'}
+              </Button>
+            </div>
+          )}
 
 
 
