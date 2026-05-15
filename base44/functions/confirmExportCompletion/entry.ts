@@ -40,9 +40,41 @@
  *   `allgemeine_aufgabe`, der `locked_by = NULL` setzt, sobald
  *   `moodle_sync_status = 'synced'` UND `brian_sync_status = 'synced'`.
  *   Damit ist die Inline-Logik hier ein reines Übergangs-Konstrukt.
+ *
+ *   Zusätzlich entfällt in Supabase das JavaScript-Resolving mit vielen
+ *   einzelnen update()-Promises. Batch-Updates sollten atomar per RPC/
+ *   Stored Procedure oder per `.in('id', ids)` erfolgen, z. B.:
+ *   supabase.from('allgemeine_aufgabe')
+ *     .update({ sync_status: 'synced' })
+ *     .in('id', successfulIds)
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+
+const PAGE_SIZE = 500;
+
+async function listAllByFilter(entity, query) {
+  const all = [];
+  let skip = 0;
+
+  while (true) {
+    const page = await entity.filter(query, 'created_date', PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+
+  return all;
+}
+
+async function listAllForPaketIds(base44, entityName, paketIds) {
+  const entity = base44.asServiceRole.entities[entityName];
+  const pages = await Promise.all(
+    Array.from(paketIds).map((lernpaketId) => listAllByFilter(entity, { lernpaket_id: lernpaketId }))
+  );
+  return pages.flat();
+}
 
 Deno.serve(async (req) => {
   try {
@@ -88,23 +120,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ── Einheit-Kontext laden (Tenant-Isolation für Masters/Klone) ──────
-    const lernpakete = await base44.asServiceRole.entities.Lernpakete.filter({ einheit_id });
+    // ── Einheit-Kontext laden (Tenant-Isolation ohne globale .list()) ───
+    const lernpakete = await listAllByFilter(base44.asServiceRole.entities.Lernpakete, { einheit_id });
     const paketIds = new Set(lernpakete.map((lp) => lp.id));
 
     const [aktivitaeten, allgemeineAufgaben, masters] = await Promise.all([
-      base44.asServiceRole.entities.LernpaketPhaseAktivitaet.list(),
-      base44.asServiceRole.entities.AllgemeineAufgabe.filter({ einheit_id }),
-      base44.asServiceRole.entities.MasterAufgabe.list(),
+      listAllForPaketIds(base44, 'LernpaketPhaseAktivitaet', paketIds),
+      listAllByFilter(base44.asServiceRole.entities.AllgemeineAufgabe, { einheit_id }),
+      listAllForPaketIds(base44, 'MasterAufgabe', paketIds),
     ]);
 
-    const aktivitaetMap = new Map(
-      aktivitaeten.filter((a) => paketIds.has(a.lernpaket_id)).map((a) => [a.id, a])
-    );
+    const aktivitaetMap = new Map(aktivitaeten.map((a) => [a.id, a]));
     const aufgabeMap = new Map(allgemeineAufgaben.map((a) => [a.id, a]));
-    const masterMap = new Map(
-      masters.filter((m) => paketIds.has(m.lernpaket_id)).map((m) => [m.id, m])
-    );
+    const masterMap = new Map(masters.map((m) => [m.id, m]));
     const paketMap = new Map(lernpakete.map((lp) => [lp.id, lp]));
 
     /**
@@ -160,9 +188,14 @@ Deno.serve(async (req) => {
     const successMasterIds = successfulIds.filter((id) => masterMap.has(id));
     let kloneSynced = 0;
     if (successMasterIds.length > 0) {
-      const klone = await base44.asServiceRole.entities.Aufgabenbausteine.list();
+      const klonPages = await Promise.all(
+        successMasterIds.map((masterId) =>
+          listAllByFilter(base44.asServiceRole.entities.Aufgabenbausteine, { master_aufgabe_id: masterId })
+        )
+      );
+      const klone = klonPages.flat();
       for (const klon of klone) {
-        if (successMasterIds.includes(klon.master_aufgabe_id) && klon.sync_status === 'pending') {
+        if (klon.sync_status === 'pending') {
           successUpdatePromises.push(
             base44.asServiceRole.entities.Aufgabenbausteine.update(klon.id, {
               sync_status: 'synced',
@@ -204,8 +237,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    const successCount = successUpdatePromises.length - rejected.filter((_, i) => i < successUpdatePromises.length).length;
-    const errorCount = failedUpdatePromises.length;
+    const successResults = results.slice(0, successUpdatePromises.length);
+    const failedResults = results.slice(successUpdatePromises.length);
+    const successCount = successResults.filter((r) => r.status === 'fulfilled').length;
+    const errorCount = failedResults.filter((r) => r.status === 'fulfilled').length;
 
     // ── Audit-Trail für jeden automatisch gefallenen Dual-Lock ──────────
     // Dual-Lock-Release ist ein impliziter Lock-Bruch (Lehrkräfte können
@@ -221,7 +256,16 @@ Deno.serve(async (req) => {
           affected_count: 1,
           status: 'success',
         }));
-        await base44.asServiceRole.entities.AuditLog.bulkCreate(entries);
+        const auditResults = await Promise.allSettled(
+          entries.map((entry) => base44.asServiceRole.entities.AuditLog.create(entry))
+        );
+        const auditFailures = auditResults.filter((result) => result.status === 'rejected');
+        if (auditFailures.length > 0) {
+          console.error(
+            `[confirmExportCompletion][AUDIT_ERROR] ${auditFailures.length}/${entries.length} audit entries failed`,
+            auditFailures.slice(0, 3).map((result) => result.reason?.message || String(result.reason))
+          );
+        }
       } catch (auditErr) {
         console.error('[confirmExportCompletion][AUDIT_ERROR]', auditErr.message);
       }
