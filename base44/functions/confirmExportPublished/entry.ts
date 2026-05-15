@@ -29,6 +29,16 @@
  *           403 forbidden
  *           404 einheit nicht gefunden
  *           409 INVALID_TRANSITION (status ≠ 'export_running')
+ *
+ * @MIGRATION_NOTE (Supabase):
+ *   Der Lifecycle-Übergang darf nicht als Read-then-Write validiert werden.
+ *   Stattdessen muss das Update direkt an die Status-Bedingung geknüpft sein:
+ *   UPDATE einheiten
+ *   SET export_lifecycle_status = 'published'
+ *   WHERE id = :id AND export_lifecycle_status = 'export_running';
+ *   Wenn 0 Zeilen betroffen sind, liegt deterministisch ein
+ *   INVALID_TRANSITION-Konflikt vor. Das verhindert TOCTOU-Races atomar auf
+ *   Datenbankebene.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
@@ -82,7 +92,8 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { einheitId } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { einheitId } = body;
     if (!einheitId) return Response.json({ error: 'einheitId required' }, { status: 400 });
 
     // Einheit zuerst laden — wird für die Fach-Prüfung benötigt.
@@ -94,10 +105,12 @@ Deno.serve(async (req) => {
     }
     if (!einheit) return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
 
-    // RBAC: Admin und Moodle-Designer dürfen alle Fächer bestätigen.
+    // RBAC: Base44-Admin, Profil-Admin und Moodle-Designer dürfen alle Fächer bestätigen.
     // Fachschaftsleitung nur das eigene Fach der Einheit.
     const profil = (await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email }))?.[0];
-    if (!isAllowedForFach(profil, einheit.fach)) {
+    const isBase44Admin = user.role === 'admin';
+    const isProfileAdmin = profil?.rolle === ROLE_ADMIN;
+    if (!isBase44Admin && !isProfileAdmin && !isAllowedForFach(profil, einheit.fach)) {
       return Response.json(
         {
           error:
