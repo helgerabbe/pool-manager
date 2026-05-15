@@ -36,6 +36,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 // Im AFK-/Crash-Fall fliegt der verwaiste Lock damit nach 5 Min weg
 // statt nach 30 Min, was die Frustration drastisch reduziert.
 const PAKET_LOCK_TIMEOUT_MS = 5 * 60 * 1000;
+const STRUCTURAL_LOCK_TIMEOUT_MS = 60 * 60 * 1000;
 
 // ──────────────────────────────────────────────────────────────────────
 // Inline-Kopie aus functions/utils/occLockUtils.js (Single Source of Truth).
@@ -139,6 +140,32 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ── Structural Unit-Lock ──────────────────────────────────────────
+    // Solange die Einheit strukturell bearbeitet wird, dürfen keine
+    // untergeordneten Lernpaket-Locks vergeben werden.
+    if (einheit.structural_lock) {
+      const structuralLockedAt = einheit.structural_locked_at
+        ? new Date(einheit.structural_locked_at).getTime()
+        : null;
+      const structuralLockAge = structuralLockedAt ? Date.now() - structuralLockedAt : 0;
+      const structuralLockIsValid = !structuralLockedAt || structuralLockAge < STRUCTURAL_LOCK_TIMEOUT_MS;
+
+      if (structuralLockIsValid) {
+        const displayName =
+          (await resolveDisplayName(base44, einheit.structural_lock)) || 'einer anderen Person';
+        return Response.json(
+          {
+            error: `🔒 Die Einheit wird gerade strukturell von ${displayName} überarbeitet. Lernpakete können währenddessen nicht bearbeitet werden.`,
+            lockedByName: displayName,
+            locked_by_email: einheit.structural_lock,
+            locked_at: einheit.structural_locked_at,
+            code: 'UNIT_STRUCTURAL_LOCKED',
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     // ── RBAC ──────────────────────────────────────────────────────────
     const istAdmin = user.role === 'admin';
     if (!istAdmin) {
@@ -151,7 +178,7 @@ Deno.serve(async (req) => {
         benutzerRecord?.fachbereich_zustaendigkeit?.includes(einheit.fach) || false;
       const istFachschaftFuerFach = rolle === 'Fachschaftsleitung' && fachzustaendig;
 
-      if (!istFachschaftFuerFach && !fachzustaendig) {
+      if (!istFachschaftFuerFach) {
         const members = await base44.asServiceRole.entities.EinheitMembers.filter({
           einheit_id: einheit.id,
           user_email: user.email,
