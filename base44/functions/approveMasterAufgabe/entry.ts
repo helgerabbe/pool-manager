@@ -210,9 +210,19 @@ Deno.serve(async (req) => {
     );
 
     const activityContentStatus = allApproved ? 'approved' : 'draft';
-    await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(aufgabe.activity_id, {
-      content_status: activityContentStatus,
-    });
+    const activityUpdate = allApproved
+      ? {
+          content_status: 'approved',
+          released_at: activity.released_at || new Date().toISOString(),
+          released_by: activity.released_by || user.email,
+        }
+      : {
+          content_status: 'draft',
+          released_at: null,
+          released_by: null,
+        };
+
+    await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(aufgabe.activity_id, activityUpdate);
 
     // ── 8. Roll-up auf `Lernpakete.is_complete` (siehe Logbuch §17) ──
     // DoD-Korrektur 2026-04-27: Master-Approval ist KEINE Bedingung

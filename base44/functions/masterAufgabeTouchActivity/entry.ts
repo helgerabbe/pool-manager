@@ -134,11 +134,34 @@ Deno.serve(async (req) => {
       return Response.json({ skipped: 'activity_null', activityId }, { status: 200 });
     }
 
+    // Freigabe-Aggregat aus allen aktuellen MasterAufgaben berechnen.
+    // Eine Activity ist nur freigegeben, wenn mindestens ein Master existiert
+    // UND alle Master freigegeben sind. Create/Delete/Update ziehen damit
+    // den Parent-Status serverseitig zuverlässig nach.
+    const allMasters = await base44.asServiceRole.entities.MasterAufgabe.filter({
+      activity_id: activityId,
+    });
+    const allMastersApproved =
+      allMasters.length > 0 && allMasters.every((m) => m.content_status === 'approved');
+
+    const releaseUpdate = allMastersApproved
+      ? {
+          content_status: 'approved',
+          released_at: activity.released_at || new Date().toISOString(),
+          released_by: activity.released_by || 'system:master_aggregate',
+        }
+      : {
+          content_status: 'draft',
+          released_at: null,
+          released_by: null,
+        };
+
     // Bei delete/create: pessimistisch auf false setzen, damit Guardian immer feuert.
     // Bei update: auch auf false setzen — Guardian berechnet aktiv neu anhand
     // der aktuellen MasterAufgaben-Vollständigkeit.
     await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(activityId, {
       is_complete: false,
+      ...releaseUpdate,
     });
 
     return Response.json({ ok: true, eventType, activityId });

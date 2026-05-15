@@ -13,7 +13,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useLernpaketLock } from '@/hooks/useLocks';
 import { Button } from '@/components/ui/button';
-import { Crown, Plus, Loader2, Save, Pencil, Check, Lock, CheckCircle2 } from 'lucide-react';
+import { Crown, Plus, Loader2, Save, Pencil, Check, Lock } from 'lucide-react';
 import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
@@ -308,13 +308,9 @@ export default function ActivityMasterPanel({
     select: (data) => data.sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)),
   });
 
-  // Freigabe-Aggregat: Aktivität gilt als freigegeben wenn alle Master approved (min. 1)
-  const allMastersApproved =
-    supportsMaster &&
-    masterAufgaben.length > 0 &&
-    masterAufgaben.every(m => m.content_status === 'approved');
-  const activityIsReleased =
-    supportsMaster ? allMastersApproved : activityRecord?.content_status === 'approved';
+  // Freigabe-Status kommt aus der Datenbank. Bei masterfähigen Aktivitäten
+  // wird dieser serverseitig aus den Masteraufgaben aggregiert.
+  const activityIsReleased = activityRecord?.content_status === 'approved';
 
   // Alle Klone für diese Aktivität (gruppiert nach master_aufgabe_id)
   const { data: alleKlone = [] } = useQuery({
@@ -550,7 +546,7 @@ export default function ActivityMasterPanel({
           />
           {activityIsReleased
             ? <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 border border-green-300 px-2 py-0.5 rounded-full">
-                <CheckCircle2 className="w-3 h-3" /> Freigegeben
+                <Lock className="w-3 h-3" /> Freigegeben
               </span>
             : effectivelyComplete
             ? <span className="text-xs font-medium text-green-700 bg-green-100 border border-green-300 px-2 py-0.5 rounded-full">✓ Vollständig</span>

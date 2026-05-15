@@ -610,7 +610,7 @@ export default function MasterDetailView({
 
       {/* Helper: Aktuelle initialData für Modals (Master oder Klon) */}
       {(() => {
-        const activeData = editingKlonId ? klonFieldValues : fieldValues;
+        const activeData = editingKlonId ? klonFieldValues : { ...fieldValues, content_status: master.content_status };
         const isSavingAny = saveMutation.isPending || saveKlonMutation.isPending;
 
         const handleModalSave = (newData) => {
@@ -629,9 +629,14 @@ export default function MasterDetailView({
             saveMutation.mutate(updatedFv, {
               onSuccess: async () => {
                 if (content_status) {
-                  await base44.entities.MasterAufgabe.update(master.id, { content_status });
+                  await base44.functions.invoke('approveMasterAufgabe', {
+                    masterId: master.id,
+                    action: content_status === 'approved' ? 'approve' : 'unapprove',
+                  });
                 }
                 queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+                queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+                queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
                 handleCloseModal();
               },
             });
@@ -649,16 +654,30 @@ export default function MasterDetailView({
                 isSaving={isSavingAny}
                 isCopy={!!editingKlonId}
                 onSave={(newData) => {
+                  const { content_status, ...fvData } = newData;
                   if (editingKlonId) {
-                    const updatedKlonFv = { ...klonFieldValues, ...newData };
+                    const updatedKlonFv = { ...klonFieldValues, ...fvData };
                     setKlonFieldValues(updatedKlonFv);
                     saveKlonMutation.mutate({ id: editingKlonId, data: updatedKlonFv }, {
                       onSuccess: () => handleCloseModal(),
                     });
                   } else {
-                    const newFv = { ...fieldValues, ...newData };
+                    const newFv = { ...fieldValues, ...fvData };
                     setFieldValues(newFv);
-                    saveMutation.mutate(newFv, { onSuccess: () => handleCloseModal() });
+                    saveMutation.mutate(newFv, {
+                      onSuccess: async () => {
+                        if (content_status) {
+                          await base44.functions.invoke('approveMasterAufgabe', {
+                            masterId: master.id,
+                            action: content_status === 'approved' ? 'approve' : 'unapprove',
+                          });
+                        }
+                        queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+                        queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+                        queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+                        handleCloseModal();
+                      },
+                    });
                   }
                 }}
                 onDelete={editingKlonId ? undefined : handleDelete}

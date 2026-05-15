@@ -310,6 +310,18 @@ export default function MasterAufgabeCard({
     onError: (err) => toast.error(err.message || 'Fehler beim Speichern.'),
   });
 
+  const applyMasterReleaseStatus = async (contentStatus) => {
+    if (!contentStatus) return;
+    await base44.functions.invoke('approveMasterAufgabe', {
+      masterId: master.id,
+      action: contentStatus === 'approved' ? 'approve' : 'unapprove',
+    });
+    queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+    queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+    queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+    queryClient.invalidateQueries({ queryKey: ['workspace'] });
+  };
+
   // Speichern und Bearbeitung beenden (kein Zwischenspeichern mehr)
   const handleSaveAndClose = (fv) => {
     saveMutation.mutate({ fv: fv ?? fieldValues, closeEdit: true });
@@ -617,7 +629,7 @@ export default function MasterAufgabeCard({
                   saveMutation.mutate({ fv: newFv, closeEdit: false }, {
                     onSuccess: async () => {
                       if (content_status) {
-                        await base44.entities.MasterAufgabe.update(master.id, { content_status });
+                        await applyMasterReleaseStatus(content_status);
                         queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
                         queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
                       }
@@ -748,7 +760,7 @@ export default function MasterAufgabeCard({
                   saveMutation.mutate({ fv: newFv, closeEdit: false }, {
                     onSuccess: async () => {
                       if (content_status) {
-                        await base44.entities.MasterAufgabe.update(master.id, { content_status });
+                        await applyMasterReleaseStatus(content_status);
                         queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
                         queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
                       }
@@ -852,7 +864,7 @@ export default function MasterAufgabeCard({
                   saveMutation.mutate({ fv: newFv, closeEdit: false }, {
                     onSuccess: async () => {
                       if (content_status) {
-                        await base44.entities.MasterAufgabe.update(master.id, { content_status });
+                        await applyMasterReleaseStatus(content_status);
                         queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
                         queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
                       }
@@ -907,7 +919,7 @@ export default function MasterAufgabeCard({
                     onSuccess: async () => {
                       // content_status separat auf MasterAufgabe speichern
                       if (content_status) {
-                        await base44.entities.MasterAufgabe.update(master.id, { content_status });
+                        await applyMasterReleaseStatus(content_status);
                         queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
                         // Invalidiere auch Aktivitäts-Query damit Sidebar synchronisiert wird
                         queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
