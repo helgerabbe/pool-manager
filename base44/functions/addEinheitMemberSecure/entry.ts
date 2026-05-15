@@ -27,6 +27,8 @@
  *    werden, damit RLS ohne teure Cross-Table-Joins prüfen kann.
  *  • Membership-Views/Queries müssen fehlende Benutzer-Profile als LEFT JOIN
  *    behandeln, da Fallbacks auf die Auth-User-Tabelle möglich sind.
+ *  • E-Mail-Felder werden hier normalisiert gespeichert; in Supabase sollte
+ *    dies zusätzlich über citext oder lower(email)-Indexe abgesichert werden.
  *  • Die Inline-Kopie des Rate-Limiters (siehe unten) wird durch einen
  *    Redis/Upstash-basierten Limiter ersetzt – Single Source of Truth
  *    bleibt `functions/utils/rateLimiter.js`.
@@ -36,6 +38,10 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const VALID_ROLES = ['LEITUNG', 'EDITOR', 'READER'];
 const DELEGABLE_ROLES_BY_UNIT_LEITUNG = ['EDITOR', 'READER']; // anti-privilege-escalation
+
+function normalizeEmail(email) {
+  return String(email || '').trim().toLowerCase();
+}
 
 // ──────────────────────────────────────────────────────────────────────
 // Inline-Kopie aus functions/utils/rateLimiter.js (Single Source of Truth).
@@ -160,8 +166,10 @@ Deno.serve(async (req) => {
     }
 
     const { einheitId, targetEmail, newRole } = await req.json();
+    const normalizedTargetEmail = normalizeEmail(targetEmail);
+    const normalizedUserEmail = normalizeEmail(user.email);
 
-    if (!einheitId || !targetEmail || !newRole) {
+    if (!einheitId || !normalizedTargetEmail || !newRole) {
       console.warn(`[addEinheitMemberSecure] Missing parameters from ${user.email}`);
       return Response.json(
         { error: 'Missing required parameters: einheitId, targetEmail, newRole' },
@@ -186,7 +194,7 @@ Deno.serve(async (req) => {
 
     // Current-User-Profil (Benutzer ist Single Source of Truth, User-Auth nur für admin-Flag).
     const benutzerArr = await base44.asServiceRole.entities.Benutzer.filter({
-      user_id: user.email,
+      user_id: normalizedUserEmail,
     });
     const profil = benutzerArr[0];
     const istBase44Admin = user.role === 'Administrator' || user.role === 'admin';
@@ -194,19 +202,21 @@ Deno.serve(async (req) => {
     const faecher = profil?.fachbereich_zustaendigkeit || [];
 
     // Delegierte Unit-Rolle des Current Users.
-    const myMembership = await base44.asServiceRole.entities.EinheitMembers.filter({
+    const unitMemberships = await base44.asServiceRole.entities.EinheitMembers.filter({
       einheit_id: einheitId,
-      user_email: user.email,
-    });
-    const delegatedRole = myMembership[0]?.unit_role || null;
+    }, undefined, 1000);
+    const myMembership = (unitMemberships || []).find(
+      (member) => normalizeEmail(member.user_email) === normalizedUserEmail
+    );
+    const delegatedRole = myMembership?.unit_role || null;
 
     // Existierende Membership vor der Berechtigungsprüfung laden, damit
     // delegierte LEITUNG-Nutzer bestehende LEITUNG-Rollen nicht herabstufen können.
-    const existingMembers = await base44.asServiceRole.entities.EinheitMembers.filter({
-      einheit_id: einheitId,
-      user_email: targetEmail,
-    });
-    const existingRole = existingMembers[0]?.unit_role || null;
+    const existingMember = (unitMemberships || []).find(
+      (member) => normalizeEmail(member.user_email) === normalizedTargetEmail
+    );
+    const existingMembers = existingMember ? [existingMember] : [];
+    const existingRole = existingMember?.unit_role || null;
 
     // Berechtigung prüfen.
     const authCheck = canUserAddMembers({
@@ -232,7 +242,7 @@ Deno.serve(async (req) => {
           resource_id: einheitId,
           changes: {
             attempt: 'add_member',
-            targetEmail,
+            targetEmail: normalizedTargetEmail,
             requestedRole: newRole,
             globalRole: rolle,
             delegatedRole,
@@ -268,7 +278,7 @@ Deno.serve(async (req) => {
     // gebildet; falls kein Benutzer-Profil existiert, fällt der Code auf die
     // User-Auth-Tabelle (`full_name`) zurück.
     const targetBenutzerArr = await base44.asServiceRole.entities.Benutzer.filter({
-      user_id: targetEmail,
+      user_id: normalizedTargetEmail,
     });
     let targetDisplayName = null;
 
@@ -277,7 +287,7 @@ Deno.serve(async (req) => {
       targetDisplayName = `${tb.vorname || ''} ${tb.nachname || ''}`.trim() || null;
     } else {
       const targetUserArr = await base44.asServiceRole.entities.User.filter({
-        email: targetEmail,
+        email: normalizedTargetEmail,
       });
       if (targetUserArr.length === 0) {
         console.warn(
@@ -307,8 +317,8 @@ Deno.serve(async (req) => {
     } else {
       const newMember = await base44.asServiceRole.entities.EinheitMembers.create({
         einheit_id: einheitId,
-        user_email: targetEmail,
-        user_name: targetDisplayName || targetEmail,
+        user_email: normalizedTargetEmail,
+        user_name: targetDisplayName || normalizedTargetEmail,
         unit_role: newRole,
       });
       membershipId = newMember.id;
@@ -321,7 +331,7 @@ Deno.serve(async (req) => {
         resource_type: 'EinheitMembers',
         resource_id: einheitId,
         changes: {
-          targetUser: targetEmail,
+          targetUser: normalizedTargetEmail,
           role: newRole,
           operation,
           grantedBy: authCheck.reason,
@@ -336,13 +346,13 @@ Deno.serve(async (req) => {
     }
 
     console.info(
-      `[addEinheitMemberSecure] SUCCESS - ${user.email} ${operation} member ${targetEmail} ` +
+      `[addEinheitMemberSecure] SUCCESS - ${user.email} ${operation} member ${normalizedTargetEmail} ` +
       `to ${einheitId} with role ${newRole} (grantedBy: ${authCheck.reason})`
     );
 
     return Response.json({
       success: true,
-      message: `Member ${targetEmail} successfully ${operation} with role ${newRole}`,
+      message: `Member ${normalizedTargetEmail} successfully ${operation} with role ${newRole}`,
       membershipId,
       operation,
       grantedBy: authCheck.reason,

@@ -12,8 +12,9 @@
  *  4. Existenz der Einheit und Membership
  *  5. RBAC: Admin, zuständige Fachschaftsleitung oder delegierte Unit-LEITUNG
  *  6. Hierarchie-Schutz: delegierte LEITUNG darf keine LEITUNG entfernen
- *  7. Selbst-Entfernung: erlaubt, außer man ist die letzte LEITUNG
- *  8. Audit-Log für SUCCESS und DENIED
+ *  7. Globaler Last-LEITUNG-Schutz verhindert verwaiste Einheiten
+ *  8. Selbst-Entfernung: erlaubt, außer man ist die letzte LEITUNG
+ *  9. Audit-Log für SUCCESS und DENIED
  *
  * ─── @MIGRATION_NOTE (Supabase) ───────────────────────────────────────
  *  • E-Mails als Schlüssel werden auf UUID umgestellt.
@@ -21,6 +22,8 @@
  *    werden, damit RLS ohne teure Cross-Table-Joins prüfen kann.
  *  • Last-LEITUNG-Prüfung sollte in Supabase transaktional erfolgen
  *    (Stored Procedure), damit keine Einheit versehentlich verwaist.
+ *  • E-Mail-Vergleiche sollten in Supabase über citext oder lower(email)-
+ *    Indexe abgesichert werden.
  *  • Die Inline-Kopie des Rate-Limiters wird durch einen Redis/Upstash-
  *    basierten Limiter ersetzt.
  */
@@ -82,12 +85,13 @@ function isGlobalAdmin(user, profil) {
 }
 
 function canRemoveMember({ userEmail, targetEmail, rolle, faecher, einheitFach, delegatedRole, targetRole, isLastLeitung }) {
+  if (targetRole === 'LEITUNG' && isLastLeitung) {
+    return { allowed: false, reason: 'cannot_remove_last_leitung' };
+  }
+
   const isSelfRemoval = userEmail === targetEmail;
 
   if (isSelfRemoval) {
-    if (targetRole === 'LEITUNG' && isLastLeitung) {
-      return { allowed: false, reason: 'cannot_remove_last_leitung' };
-    }
     return { allowed: true, reason: 'self_removal' };
   }
 
@@ -165,11 +169,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Einheit not found' }, { status: 404 });
     }
 
-    const memberships = await base44.asServiceRole.entities.EinheitMembers.filter({
+    const unitMemberships = await base44.asServiceRole.entities.EinheitMembers.filter({
       einheit_id: einheitId,
-      user_email: normalizedTargetEmail,
-    });
-    const membership = memberships[0];
+    }, undefined, 1000);
+    const membership = (unitMemberships || []).find(
+      (member) => normalizeEmail(member.user_email) === normalizedTargetEmail
+    );
 
     if (!membership) {
       return Response.json({ error: 'Membership not found' }, { status: 404 });
@@ -184,17 +189,13 @@ Deno.serve(async (req) => {
     const rolle = isGlobalAdmin(user, profil) ? 'Administrator' : (profil?.rolle || 'Betrachter');
     const faecher = profil?.fachbereich_zustaendigkeit || [];
 
-    const myMembership = await base44.asServiceRole.entities.EinheitMembers.filter({
-      einheit_id: einheitId,
-      user_email: user.email,
-    });
-    const delegatedRole = myMembership[0]?.unit_role || null;
+    const myMembership = (unitMemberships || []).find(
+      (member) => normalizeEmail(member.user_email) === normalizedUserEmail
+    );
+    const delegatedRole = myMembership?.unit_role || null;
 
-    const leitungen = await base44.asServiceRole.entities.EinheitMembers.filter({
-      einheit_id: einheitId,
-      unit_role: 'LEITUNG',
-    });
-    const isLastLeitung = targetRole === 'LEITUNG' && (leitungen || []).length <= 1;
+    const leitungen = (unitMemberships || []).filter((member) => member.unit_role === 'LEITUNG');
+    const isLastLeitung = targetRole === 'LEITUNG' && leitungen.length <= 1;
 
     const authCheck = canRemoveMember({
       userEmail: normalizedUserEmail,
