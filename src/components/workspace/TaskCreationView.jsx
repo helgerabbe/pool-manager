@@ -35,6 +35,7 @@ import { Badge } from '@/components/ui/badge';
 import ActivityMasterPanel from '@/components/workspace/ActivityMasterPanel';
 import KlonDetailView from '@/components/workspace/KlonDetailView';
 import MasterDetailView from '@/components/workspace/MasterDetailView';
+import Tab4LernpaketOverview from '@/components/workspace/Tab4LernpaketOverview';
 import { isActivityLockedByOther, isLockExpired } from '@/hooks/useActivityLock';
 import { cn } from '@/lib/utils';
 
@@ -230,6 +231,7 @@ function SidebarLernpaketFolder({
   selectedItem, onSelect, defaultOpen = false, myEmail, isOpen = false, onToggleOpen, aktivitaetenKatalog,
   expandedPhases, setExpandedPhases, isEditingActive = false,
 }) {
+  const isLernpaketSelected = selectedItem?.type === 'lernpaket' && selectedItem?.lernpaket?.id === lernpaket.id;
   const paketActivities = allActivities.filter(a => a.lernpaket_id === lernpaket.id);
   const phasenConfig = lernpaket.phasen_konfiguration || {};
 
@@ -260,16 +262,21 @@ function SidebarLernpaketFolder({
   return (
     <div className={cn(isActiveLocked && "rounded-lg ring-2 ring-orange-400 bg-orange-50/50 ml-1 mr-0.5")}>
       <button
-         onClick={() => onToggleOpen?.(lernpaket.id, !isOpen)}
+         onClick={() => {
+           onToggleOpen?.(lernpaket.id, !isOpen);
+           onSelect?.({ type: 'lernpaket', lernpaket });
+         }}
          className={cn(
            "w-full flex items-center gap-2 px-2 py-2 rounded-lg text-left text-sm font-medium transition-colors",
            isActiveLocked
              ? "text-orange-800 hover:bg-orange-100"
+             : isLernpaketSelected
+             ? "bg-primary text-primary-foreground"
              : "text-foreground hover:bg-muted"
          )}
        >
          <ChevronRight className={cn('w-3.5 h-3.5 shrink-0 text-muted-foreground transition-transform', isOpen && 'rotate-90')} />
-         <Package className={cn("w-4 h-4 shrink-0", isActiveLocked ? "text-orange-500" : "text-amber-500")} />
+         <Package className={cn("w-4 h-4 shrink-0", isActiveLocked ? "text-orange-500" : isLernpaketSelected ? "text-primary-foreground" : "text-amber-500")} />
          <span className="flex-1 truncate">{lernpaket.titel_des_pakets}</span>
          {isActiveLocked && <PenLine className="w-3.5 h-3.5 text-orange-500 shrink-0 animate-pulse" />}
          {/* Einheitliches Farbschema (analog Tab 3 SidebarTree):
@@ -701,6 +708,11 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
   const getLernpaketName = (lernpaketId) =>
     lernpakete.find(lp => lp.id === lernpaketId)?.titel_des_pakets || null;
 
+  // Wenn man auf eine Aktivität aus der Tab4LernpaketOverview klickt
+  const handleActivitySelectFromOverview = (activity) => {
+    setSelectedItem({ type: 'activity', activity });
+  };
+
   // Cleanup bei Unmount: Lock freigeben.
   // Härtung 2026-05-14: nutzt jetzt ebenfalls den gesicherten Endpunkt,
   // damit Audit-Log und RBAC-Pfad konsistent bleiben.
@@ -860,6 +872,18 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
             <div className="flex-1 overflow-y-auto min-h-0">
         {!selectedItem && <EmptyState />}
 
+        {/* Ansicht LP: Lernpaket gewählt → Übersicht (Tab4LernpaketOverview) */}
+        {selectedItem?.type === 'lernpaket' && (
+          <div className="max-w-3xl mx-auto px-6 py-6">
+            <Tab4LernpaketOverview
+              paket={selectedItem.lernpaket}
+              einheit={null}
+              kannBearbeiten={kannBearbeiten}
+              onActivitySelect={handleActivitySelectFromOverview}
+            />
+          </div>
+        )}
+
         {/* Ansicht A: Aktivität gewählt → Übersicht (ActivityMasterPanel) */}
         {selectedItem?.type === 'activity' && selectedActivity && (
           <div className="max-w-3xl mx-auto px-6 py-6">
@@ -942,6 +966,18 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
         {!sidebarOpen && (
           <div className="h-full overflow-y-auto min-h-0">
             {!selectedItem && <EmptyState />}
+
+            {/* Ansicht LP: Lernpaket gewählt */}
+            {selectedItem?.type === 'lernpaket' && (
+              <div className="max-w-3xl mx-auto px-6 py-6">
+                <Tab4LernpaketOverview
+                  paket={selectedItem.lernpaket}
+                  einheit={null}
+                  kannBearbeiten={kannBearbeiten}
+                  onActivitySelect={handleActivitySelectFromOverview}
+                />
+              </div>
+            )}
 
             {/* Ansicht A: Aktivität */}
             {selectedItem?.type === 'activity' && selectedActivity && (
