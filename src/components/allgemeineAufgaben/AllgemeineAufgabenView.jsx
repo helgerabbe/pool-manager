@@ -111,7 +111,7 @@ function AufgabeNode({ aufgabe, isSelected, onSelect }) {
     : 'bg-muted/40 text-foreground border-transparent';
 
   const statusIcon = isApproved
-    ? <CheckCircle2 className="w-3 h-3 text-green-600 shrink-0" />
+    ? <Lock className="w-3 h-3 text-green-600 shrink-0" />
     : <PenLine className="w-3 h-3 text-amber-500 shrink-0" />;
 
   const tooltipParts = [

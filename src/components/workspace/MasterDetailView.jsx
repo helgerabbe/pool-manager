@@ -11,7 +11,7 @@ import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Pencil, Loader2, CheckCircle2, Sparkles } from 'lucide-react';
+import { Crown, Pencil, Loader2, CheckCircle2, Sparkles, Lock } from 'lucide-react';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { getFriendlyErrorMessage } from '@/lib/errorMapper';
 import { resolveStatus } from '@/lib/statusUtils';
@@ -514,8 +514,8 @@ export default function MasterDetailView({
             <div className="flex items-center gap-2 mt-0.5">
               <p className="text-xs text-muted-foreground">{catalogName}</p>
               {computeMasterIsComplete(fieldValues) ? (
-                <Badge className="text-[10px] bg-green-100 text-green-700 border-green-300">
-                  ✓ Vollständig
+                <Badge className="text-[10px] bg-green-100 text-green-700 border-green-300 gap-1">
+                  <Lock className="w-3 h-3" /> Freigegeben
                 </Badge>
               ) : (
                 <Badge className="text-[10px] bg-amber-100 text-amber-700 border-amber-300">
