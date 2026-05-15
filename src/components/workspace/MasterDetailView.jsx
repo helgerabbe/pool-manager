@@ -709,6 +709,7 @@ export default function MasterDetailView({
                 initialData={activeData}
                 isSaving={isSavingAny}
                 isCopy={!!editingKlonId}
+                readOnly={masterIsReleased}
                 onSave={(newData) => {
                   const { content_status, ...fvData } = newData;
                   if (editingKlonId) {
@@ -734,7 +735,7 @@ export default function MasterDetailView({
                     });
                   }
                 }}
-                onDelete={editingKlonId ? undefined : handleDelete}
+                onDelete={editingKlonId || masterIsReleased ? undefined : handleDelete}
               />
             )}
 

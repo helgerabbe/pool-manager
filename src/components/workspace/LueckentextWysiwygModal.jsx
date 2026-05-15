@@ -221,7 +221,7 @@ function DistraktorenInput({ distraktoren, onChange }) {
 
 // ── Haupt-Modal ──────────────────────────────────────────────────────────────────
 
-export default function LueckentextWysiwygModal({ open, onOpenChange, initialData = {}, onSave, onSaveAsNewMaster, onDelete, isSaving = false, isCopy = false, exportLocked = false }) {
+export default function LueckentextWysiwygModal({ open, onOpenChange, initialData = {}, onSave, onSaveAsNewMaster, onDelete, isSaving = false, isCopy = false, exportLocked = false, readOnly = false }) {
   // Freigabe-State: initial aus DB
   const [isReleased, setIsReleased] = useState(initialData.content_status === 'approved');
   const [exportLockedWasEnabled, setExportLockedWasEnabled] = useState(exportLocked);
@@ -279,6 +279,7 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
   }, [tokens, blankIds]);
 
   const handleToggle = useCallback((tokenId, word) => {
+    if (readOnly) return;
     setBlankIds(prev => {
       const next = new Set(prev);
       if (next.has(tokenId)) {
@@ -292,6 +293,7 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
 
   // Wenn der Rohtext sich ändert, Lücken zurücksetzen (Token-IDs sind jetzt anders)
   const handleRawTextChange = (newText) => {
+    if (readOnly) return;
     setRawText(newText);
     setBlankIds(new Set()); // Reset: Lücken müssen neu gesetzt werden
   };
@@ -304,6 +306,7 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
   }, [exportLocked, exportLockedWasEnabled]);
 
   const handleKIAccept = (generatedText) => {
+    if (readOnly) return;
     // KI liefert [Wort]-Format → Rohtext extrahieren + Lücken vormarkieren
     const plain = generatedText.replace(/\[([^\]]+)\]/g, '$1');
     const toks = tokenize(plain);
@@ -343,6 +346,7 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
   };
 
   const handleSave = () => {
+    if (readOnly) return;
     const payload = buildPayload();
     if (!payload) return;
     
@@ -356,6 +360,7 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
   };
 
   const handleSaveAsNewMaster = () => {
+    if (readOnly) return;
     const payload = buildPayload();
     if (payload) onSaveAsNewMaster?.(payload);
   };
@@ -402,7 +407,7 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6 min-h-0">
 
           {/* ── KI-Assistent Full-Width ── */}
-          <KIAssistentExpanded onAccept={handleKIAccept} />
+          {!readOnly && <KIAssistentExpanded onAccept={handleKIAccept} />}
 
           {/* ── Bereich A: Manuelle Texteingabe ── */}
           <div className="space-y-2">
@@ -410,6 +415,7 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
             <Textarea
               value={rawText}
               onChange={e => handleRawTextChange(e.target.value)}
+              disabled={readOnly}
               placeholder="Füge hier den vollständigen Text ein. Beispiel: Die Photosynthese findet in den Chloroplasten statt und erzeugt Glucose aus Kohlendioxid und Wasser."
               className="min-h-28 text-sm leading-relaxed"
             />
@@ -453,7 +459,7 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
             <p className="text-xs text-muted-foreground">
               Distraktoren erscheinen im Schüler-Schüttelkasten und machen die Aufgabe schwerer.
             </p>
-            <DistraktorenInput distraktoren={distraktoren} onChange={setDistraktoren} />
+            <DistraktorenInput distraktoren={distraktoren} onChange={readOnly ? () => {} : setDistraktoren} />
           </div>
 
           {/* ── Schüler-Vorschau ── */}
@@ -501,7 +507,7 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
           {/* Action Buttons */}
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">
-              {onDelete && !deleteConfirm && (
+              {onDelete && !readOnly && !deleteConfirm && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -513,7 +519,7 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
                   {isCopy ? 'Kopie löschen' : 'Aufgabe löschen'}
                 </Button>
               )}
-              {deleteConfirm && (
+              {!readOnly && deleteConfirm && (
                 <>
                   <span className="text-xs text-destructive font-medium">Wirklich löschen?</span>
                   <Button
@@ -541,9 +547,9 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
 
             <div className="flex items-center gap-2">
               <Button variant="outline" onClick={handleClose} disabled={isSaving || isDeleting}>
-                Abbrechen
+                {readOnly ? 'Schließen' : 'Abbrechen'}
               </Button>
-              {isCopy ? (
+              {!readOnly && (isCopy ? (
                 <>
                   <Button
                     variant="outline"
@@ -578,7 +584,7 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
                     ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
                     : 'Speichern'}
                 </Button>
-              )}
+              ))}
             </div>
           </div>
         </div>
