@@ -38,6 +38,7 @@ export default function BaseActivityModal({
   // der Parent sie hier durchreichen, damit die Vollständigkeitsanzeige live
   // mitläuft. Andernfalls werden activity.field_values verwendet.
   liveFieldValues = null,
+  footerExtra = null,
 }) {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -116,6 +117,8 @@ export default function BaseActivityModal({
         </div>
 
         <div className="px-6 py-5 border-t border-border shrink-0 space-y-3">
+          {footerExtra}
+
           {hasReleaseControls && !isReleased && !lockState.locked && !completeness.isComplete && (
             <CompletenessIndicator result={completeness} />
           )}

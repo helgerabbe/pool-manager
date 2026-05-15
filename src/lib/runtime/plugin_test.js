@@ -102,13 +102,22 @@ export const PLUGIN_TEST_CSS = `/* ── Test (Abschluss-Test mit globalem Scor
 }
 .mbk-test__textarea:focus { outline: 2px solid var(--mbk-accent); outline-offset: -1px; }
 .mbk-test__expect {
-  font-size: 0.8rem;
-  color: var(--mbk-muted);
-  margin-top: 0.4rem;
-  padding: 0.4rem 0.6rem;
-  background: #fff;
-  border: 1px dashed var(--mbk-border);
-  border-radius: 0.35rem;
+ font-size: 0.8rem;
+ color: var(--mbk-muted);
+ margin-top: 0.4rem;
+ padding: 0.4rem 0.6rem;
+ background: #fff;
+ border: 1px dashed var(--mbk-border);
+ border-radius: 0.35rem;
+}
+.mbk-test__explanation {
+ font-size: 0.82rem;
+ color: var(--mbk-danger);
+ margin-top: 0.45rem;
+ padding: 0.5rem 0.65rem;
+ background: var(--mbk-danger-soft);
+ border: 1px solid var(--mbk-danger);
+ border-radius: 0.4rem;
 }
 .mbk-test__submit-row {
   margin-top: 1rem;
@@ -230,7 +239,7 @@ export const PLUGIN_TEST_JS = `
           tfOpts.appendChild(node);
         });
         card.appendChild(tfOpts);
-        optRefs.push({ type: 'true_false', nodes: tfNodes, correctAnswer: q.correctAnswer === true });
+        optRefs.push({ type: 'true_false', nodes: tfNodes, correctAnswer: q.correctAnswer === true, explanation: q.explanation || '' });
       } else {
         var inputText = el('input', { className: 'mbk-test__textarea', placeholder: 'Lösungswort eingeben…' });
         inputText.addEventListener('input', function () {
@@ -289,6 +298,12 @@ export const PLUGIN_TEST_JS = `
             else if (state.selected && n.value === state.selected.value) n.node.classList.add('is-wrong');
           });
           if (tfCorrect) score += state.points;
+          else if (ref.explanation) {
+            ref.nodes[0].node.parentElement.appendChild(el('div', {
+              className: 'mbk-test__explanation',
+              text: ref.explanation,
+            }));
+          }
         } else {
           ref.textarea.disabled = true;
           var verdict = scoreSolutionWord(state.textValue, ref.expectedAnswer);

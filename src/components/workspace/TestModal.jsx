@@ -19,6 +19,7 @@ export default function TestModal({
   isSaving = false,
   isCopy = false,
   exportLocked = false,
+  footerExtra = null,
 }) {
   const [editorData, setEditorData] = useState(initialData);
 
@@ -35,6 +36,7 @@ export default function TestModal({
       isSaving={isSaving}
       isCopy={isCopy}
       exportLocked={exportLocked}
+      footerExtra={footerExtra}
       onDelete={onDelete}
       onSave={(baseData) => {
         const { content_status, ...cleanEditorData } = editorData || {};

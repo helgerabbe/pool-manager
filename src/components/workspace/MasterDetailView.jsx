@@ -12,6 +12,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Crown, Pencil, Loader2, CheckCircle2, Sparkles, Lock } from 'lucide-react';
+import ReleaseToggleSection from '@/components/release/ReleaseToggleSection';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { getFriendlyErrorMessage } from '@/lib/errorMapper';
 import { resolveStatus } from '@/lib/statusUtils';
@@ -484,6 +485,19 @@ export default function MasterDetailView({
     onError: (err) => toast.error(getFriendlyErrorMessage(err)),
   });
 
+  const masterReleaseMutation = useMutation({
+    mutationFn: (release) => base44.functions.invoke('approveMasterAufgabe', {
+      masterId: master.id,
+      action: release ? 'approve' : 'unapprove',
+    }),
+    onSuccess: () => {
+      refreshWorkspaceStatusQueries(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+      toast.success('Freigabe aktualisiert.');
+    },
+    onError: (err) => toast.error(getFriendlyErrorMessage(err)),
+  });
+
   const handleDelete = async () => {
     // Bisher schluckte diese Funktion stillschweigend alle Fehler — wenn
     // RLS, Lock-Check oder die Aggregat-Automation den Delete blockierten,
@@ -631,6 +645,20 @@ export default function MasterDetailView({
       {(() => {
         const activeData = editingKlonId ? klonFieldValues : { ...fieldValues, content_status: master.content_status };
         const isSavingAny = saveMutation.isPending || saveKlonMutation.isPending;
+
+        const canReleaseMaster = computeMasterIsComplete(fieldValues);
+        const testReleaseFooter = !editingKlonId && isTest ? (
+          <ReleaseToggleSection
+            isReleased={master.content_status === 'approved'}
+            canRelease={canReleaseMaster}
+            hierarchyLocked={false}
+            hierarchyLockMessage={null}
+            onToggle={(next) => masterReleaseMutation.mutate(next)}
+            disabled={isSavingAny || masterReleaseMutation.isPending}
+            releasedAt={master.released_at}
+            releasedBy={master.released_by}
+          />
+        ) : null;
 
         const handleModalSave = (newData) => {
           const { content_status, ...fvData } = newData;
@@ -796,6 +824,7 @@ export default function MasterDetailView({
                   onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
                   initialData={activeData}
                   isSaving={isSavingAny}
+                  footerExtra={testReleaseFooter}
                   onDelete={editingKlonId ? undefined : handleDelete}
                   onSave={handleModalSave}
                   onCancel={handleCloseModal}

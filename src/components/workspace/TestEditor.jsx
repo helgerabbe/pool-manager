@@ -39,7 +39,8 @@ const normalizeQuestionForType = (question, type) => {
   if (type === 'true_false') {
     return {
       ...base,
-      correctAnswer: typeof question.correctAnswer === 'boolean' ? question.correctAnswer : true
+      correctAnswer: typeof question.correctAnswer === 'boolean' ? question.correctAnswer : true,
+      explanation: question.explanation || ''
     };
   }
 
@@ -234,25 +235,38 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
 
               {/* Richtig/Falsch */}
               {q.type === 'true_false' && (
-                <div className="space-y-2 pl-2 border-l-2 border-primary/20">
-                  <Label className="text-xs text-muted-foreground">Korrekte Antwort</Label>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      variant={q.correctAnswer === true ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => updateQuestion(q.id, { correctAnswer: true })}
-                    >
-                      Richtig
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={q.correctAnswer === false ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => updateQuestion(q.id, { correctAnswer: false })}
-                    >
-                      Falsch
-                    </Button>
+                <div className="space-y-3 pl-2 border-l-2 border-primary/20">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Korrekte Antwort</Label>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant={q.correctAnswer === true ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => updateQuestion(q.id, { correctAnswer: true })}
+                      >
+                        Richtig
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={q.correctAnswer === false ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => updateQuestion(q.id, { correctAnswer: false })}
+                      >
+                        Falsch
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Erklärung bei falscher Antwort (optional)</Label>
+                    <Textarea
+                      value={q.explanation || ''}
+                      onChange={(e) => updateQuestion(q.id, { explanation: e.target.value })}
+                      placeholder="z.B. Warum ist die Aussage falsch bzw. wie lautet die richtige Einordnung?"
+                      rows={2}
+                      className="text-sm"
+                    />
                   </div>
                 </div>
               )}
