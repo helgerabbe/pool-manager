@@ -26,11 +26,18 @@ function AmpelDot({ status, size = 'sm' }) {
   );
 }
 
-// Vollständigkeit einer MasterAufgabe live aus field_values berechnen
-// (spiegelt die Backend-Logik, verhindert veraltete Cache-Werte)
+// Vollständigkeit einer MasterAufgabe bestimmen:
+// 1. DB-Wert is_complete hat Vorrang (wenn gesetzt)
+// 2. Fallback: live aus field_values berechnen
 function computeMasterComplete(master, catalogName = '') {
+  // DB-Wert ist die primäre Quelle der Wahrheit
+  if (master.is_complete === true) return true;
+  if (master.is_complete === false) return false;
+
+  // Fallback: live aus field_values berechnen (für frisch erstellte Masters ohne DB-Wert)
   const fv = master.field_values || {};
   const name = catalogName.toLowerCase();
+
   if (name.includes('lückentext') || name.includes('lueckentext') || name.includes('cloze')) {
     const lt = fv.lueckentext;
     if (!lt) return false;
@@ -38,7 +45,7 @@ function computeMasterComplete(master, catalogName = '') {
       const gaps = Array.isArray(lt.gaps) ? lt.gaps : [];
       return String(lt.text).trim() !== '' && gaps.filter(g => g && g.correct && String(g.correct).trim() !== '').length >= 1;
     }
-    if (typeof lt === 'string') return lt.trim().length > 10 && /\[[^\]]+\]/.test(lt);
+    if (typeof lt === 'string') return lt.trim().length > 10;
     return false;
   }
   if (name.includes('begriffe zuordnen') || name.includes('zuordnen') || name.includes('match')) {
@@ -56,7 +63,6 @@ function computeMasterComplete(master, catalogName = '') {
   if (name.includes('ki-tutor')) {
     return !!(fv.aufgabenstellung && String(fv.aufgabenstellung).trim() !== '');
   }
-  // Fallback: irgendein nicht-leerer Wert
   return Object.values(fv).some(v => {
     if (!v) return false;
     if (typeof v === 'string') return v.trim() !== '';
@@ -76,8 +82,7 @@ function AktivitaetSubNode({ activity, aktivitaetName, catalogName = '', isSelec
 
   // Live-Berechnung der Master-Vollständigkeit aus field_values
   const showMasterStatus = supportsMaster && masterAufgabenCount > 0 && activity.erstellungs_modus !== 'ki';
-  // DB-Wert als primäre Quelle, Fallback auf live-Berechnung
-  const masterCompleteStates = masterAufgabenList.map(m => m.is_complete === true || computeMasterComplete(m, catalogName));
+  const masterCompleteStates = masterAufgabenList.map(m => computeMasterComplete(m, catalogName));
   const allMastersComplete = masterAufgabenCount === 0 || masterCompleteStates.every(Boolean);
 
   // Aktivität gilt nur als vollständig wenn:
@@ -108,7 +113,7 @@ function AktivitaetSubNode({ activity, aktivitaetName, catalogName = '', isSelec
       {showMasterStatus && (
         <div className="ml-5 space-y-0.5">
           {masterAufgabenList.map((master, idx) => {
-            const isComplete = master.is_complete === true || computeMasterComplete(master, catalogName);
+            const isComplete = computeMasterComplete(master, catalogName);
             return (
               <div key={master.id} className={cn(
                 'flex items-center gap-1.5 text-[10px]',
@@ -449,6 +454,7 @@ export default function SidebarTree({
   const { data: aktivitaetenList = [] } = useQuery({
     queryKey: ['aktivitaetenKatalog'],
     queryFn: () => base44.entities.AktivitaetenKatalog.list(),
+    staleTime: 0,
   });
   const aktivitaetenMap = Object.fromEntries(aktivitaetenList.map(a => [a.id, a.name]));
 
@@ -464,6 +470,7 @@ export default function SidebarTree({
   const { data: masterAufgaben = [] } = useQuery({
     queryKey: ['masterAufgaben'],
     queryFn: () => base44.entities.MasterAufgabe.list(),
+    staleTime: 0,
   });
 
   const paketPhaseActivitiesMap = Object.fromEntries(
