@@ -114,25 +114,17 @@ export default function TextLesenModal({
       payload.is_dirty_since_export = true;
     }
 
-    // Wenn der Toggle auf "freigeben" gestellt ist, Release-Call VOR dem Schließen
+    // Wenn der Toggle auf "freigeben" gestellt ist
     if (pendingRelease === true && activity?.id) {
       setIsReleasingFromToggle(true);
       try {
-        // Erst Inhalte speichern (damit Backend die aktuellen field_values sieht)
-        const { base44 } = await import('@/api/base44Client');
-        const { content_status: _ignored, moodle_sync_status, is_dirty_since_export, transkript, ...rest } = payload;
-        await base44.entities.LernpaketPhaseAktivitaet.update(activity.id, {
-          field_values: rest,
-          ...(moodle_sync_status ? { moodle_sync_status } : {}),
-          ...(is_dirty_since_export !== undefined ? { is_dirty_since_export } : {}),
-          ...(transkript !== undefined ? { transkript } : {}),
-        });
-        // Dann Freigabe setzen
-        await setReleaseStatusAsync({ targetType: 'activity', targetId: activity.id, release: true });
-        // Dann onSave für Lock-Release + Cache-Invalidation + Modal-Schluss
+        // Erst Inhalte via onSave persistieren (inkl. Lock-Release + Cache)
         await onSave?.(payload);
-      } catch {
-        // Fehler werden durch Toast im Hook sichtbar, Modal bleibt offen
+        // Dann Freigabe setzen — DB hat jetzt die aktuellen field_values
+        await setReleaseStatusAsync({ targetType: 'activity', targetId: activity.id, release: true });
+      } catch (err) {
+        console.error('[TextLesenModal] Release fehlgeschlagen:', err);
+        // Fehler werden durch Toast im Hook sichtbar, Modal bereits geschlossen durch onSave
       } finally {
         setIsReleasingFromToggle(false);
       }
@@ -143,10 +135,10 @@ export default function TextLesenModal({
     if (pendingRelease === false && activity?.id && isReleased) {
       setIsReleasingFromToggle(true);
       try {
-        await setReleaseStatusAsync({ targetType: 'activity', targetId: activity.id, release: false });
         await onSave?.(payload);
-      } catch {
-        // Fehler durch Toast sichtbar
+        await setReleaseStatusAsync({ targetType: 'activity', targetId: activity.id, release: false });
+      } catch (err) {
+        console.error('[TextLesenModal] Unrelease fehlgeschlagen:', err);
       } finally {
         setIsReleasingFromToggle(false);
       }
@@ -450,13 +442,13 @@ export default function TextLesenModal({
               {!lockState.locked && (
                 <Button
                   onClick={handleSave}
-                  disabled={isSaving || exportLocked}
+                  disabled={isSaving || isReleasingFromToggle || exportLocked}
                   title={exportLocked ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
                   className="gap-2"
                 >
-                  {isSaving
-                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
-                    : 'Speichern'}
+                  {(isSaving || isReleasingFromToggle)
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> {pendingRelease === true ? 'Freigeben…' : 'Speichern…'}</>
+                    : pendingRelease === true ? 'Speichern & Freigeben' : 'Speichern'}
                 </Button>
               )}
              </div>
