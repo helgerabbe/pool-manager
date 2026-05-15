@@ -30,11 +30,15 @@ function isMasterComplete(catalogName = '', fieldValues = {}) {
   // Lückentext
   if (name.includes('lückentext') || name.includes('lueckentext') || name.includes('cloze')) {
     const lt = fieldValues.lueckentext;
-    if (!lt || typeof lt !== 'object') return false;
-    if (!lt.text || String(lt.text).trim() === '') return false;
-    const gaps = Array.isArray(lt.gaps) ? lt.gaps : [];
-    const validGaps = gaps.filter(g => g && g.correct && String(g.correct).trim() !== '');
-    return validGaps.length >= 1;
+    if (!lt) return false;
+    // Neues Format: { text, gaps }
+    if (typeof lt === 'object' && lt.text) {
+      const gaps = Array.isArray(lt.gaps) ? lt.gaps : [];
+      return String(lt.text).trim() !== '' && gaps.filter(g => g && g.correct && String(g.correct).trim() !== '').length >= 1;
+    }
+    // Altes Format: String mit [Lücken] in eckigen Klammern
+    if (typeof lt === 'string') return lt.trim().length > 10 && /\[[^\]]+\]/.test(lt);
+    return false;
   }
 
   // Begriffe zuordnen

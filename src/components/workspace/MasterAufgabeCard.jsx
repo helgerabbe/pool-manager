@@ -243,14 +243,52 @@ export default function MasterAufgabeCard({
   const isKITutor = activityType === 'kitutor';
   const isQuiz = activityType === 'miniquiz';
 
+  // Vollständigkeit der MasterAufgabe berechnen (Frontend-Spiegelung der Backend-Logik)
+  const computeIsComplete = (fv = {}) => {
+    const name = (catalogName || '').toLowerCase();
+    if (name.includes('lückentext') || name.includes('lueckentext') || name.includes('cloze')) {
+      const lt = fv.lueckentext;
+      if (!lt) return false;
+      if (typeof lt === 'object' && lt.text) {
+        const gaps = Array.isArray(lt.gaps) ? lt.gaps : [];
+        return String(lt.text).trim() !== '' && gaps.filter(g => g && g.correct && String(g.correct).trim() !== '').length >= 1;
+      }
+      if (typeof lt === 'string') return lt.trim().length > 10 && /\[[^\]]+\]/.test(lt);
+      return false;
+    }
+    if (name.includes('begriffe zuordnen') || name.includes('zuordnen') || name.includes('match')) {
+      const pairs = Array.isArray(fv.pairs) ? fv.pairs : [];
+      return pairs.filter(p => p && String(p.left || '').trim() && String(p.right || '').trim()).length >= 3;
+    }
+    if (name.includes('reihenfolge') || name.includes('sortierung') || name.includes('sorting')) {
+      return (Array.isArray(fv.orderedItems) ? fv.orderedItems : []).filter(i => String(i || '').trim() !== '').length >= 2;
+    }
+    if (name.includes('quiz')) {
+      return (Array.isArray(fv.questions) ? fv.questions : []).length >= 1;
+    }
+    if (name.includes('bildbeschriftung') || name.includes('image labeling')) {
+      return !!(fv.backgroundImage && Array.isArray(fv.dropZones) && fv.dropZones.length >= 1);
+    }
+    if (name.includes('ki-tutor')) {
+      return !!(fv.aufgabenstellung && String(fv.aufgabenstellung).trim() !== '');
+    }
+    return Object.values(fv).some(v => {
+      if (!v) return false;
+      if (typeof v === 'string') return v.trim() !== '';
+      if (Array.isArray(v)) return v.length > 0;
+      return true;
+    });
+  };
+
   const saveMutation = useMutation({
     mutationFn: ({ fv, closeEdit }) => {
-      // State Machine: exported + edit → modified, approved + edit → draft
       const newSyncStatus = syncStatus.getSyncStatusForSave();
+      const isComplete = computeIsComplete(fv);
       return base44.entities.MasterAufgabe.update(master.id, {
         field_values: fv,
         titel,
         sync_status: newSyncStatus,
+        is_complete: isComplete,
       });
     },
     onSuccess: (_, { closeEdit }) => {
@@ -260,6 +298,11 @@ export default function MasterAufgabeCard({
         setEditMode(false);
         setCollapsed(true);
       }
+      // Guardian läuft async — verzögert Activity + Lernpaket aktualisieren
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+        queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+      }, 1500);
       toast.success('Masteraufgabe gespeichert.');
     },
     onError: (err) => toast.error(err.message || 'Fehler beim Speichern.'),

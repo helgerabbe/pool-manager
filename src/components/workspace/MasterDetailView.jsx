@@ -322,10 +322,56 @@ export default function MasterDetailView({
     setFieldValues(master.field_values || {});
   }, [master.field_values]);
 
+  // Vollständigkeit der MasterAufgabe berechnen (Frontend-Spiegelung der Backend-Logik)
+  const computeMasterIsComplete = (fv = {}) => {
+    const name = catalogName.toLowerCase();
+    if (name.includes('lückentext') || name.includes('lueckentext') || name.includes('cloze')) {
+      const lt = fv.lueckentext;
+      if (!lt) return false;
+      if (typeof lt === 'object' && lt.text) {
+        const gaps = Array.isArray(lt.gaps) ? lt.gaps : [];
+        return String(lt.text).trim() !== '' && gaps.filter(g => g && g.correct && String(g.correct).trim() !== '').length >= 1;
+      }
+      if (typeof lt === 'string') return lt.trim().length > 10 && /\[[^\]]+\]/.test(lt);
+      return false;
+    }
+    if (name.includes('begriffe zuordnen') || name.includes('zuordnen') || name.includes('match')) {
+      const pairs = Array.isArray(fv.pairs) ? fv.pairs : [];
+      return pairs.filter(p => p && String(p.left || '').trim() && String(p.right || '').trim()).length >= 3;
+    }
+    if (name.includes('reihenfolge') || name.includes('sortierung') || name.includes('sorting')) {
+      const items = Array.isArray(fv.orderedItems) ? fv.orderedItems : [];
+      return items.filter(i => String(i || '').trim() !== '').length >= 2;
+    }
+    if (name.includes('quiz')) {
+      return (Array.isArray(fv.questions) ? fv.questions : []).length >= 1;
+    }
+    if (name.includes('bildbeschriftung') || name.includes('image labeling')) {
+      return !!(fv.backgroundImage && Array.isArray(fv.dropZones) && fv.dropZones.length >= 1);
+    }
+    if (name.includes('ki-tutor')) {
+      return !!(fv.aufgabenstellung && String(fv.aufgabenstellung).trim() !== '');
+    }
+    return Object.values(fv).some(v => {
+      if (!v) return false;
+      if (typeof v === 'string') return v.trim() !== '';
+      if (Array.isArray(v)) return v.length > 0;
+      return true;
+    });
+  };
+
   const saveMutation = useMutation({
-    mutationFn: (fv) => base44.entities.MasterAufgabe.update(master.id, { field_values: fv }),
+    mutationFn: (fv) => {
+      const isComplete = computeMasterIsComplete(fv);
+      return base44.entities.MasterAufgabe.update(master.id, { field_values: fv, is_complete: isComplete });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+      // Verzögert auch Activity + Lernpaket aktualisieren (Guardian läuft async)
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+        queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+      }, 1500);
       toast.success('Masteraufgabe gespeichert.');
     },
     onError: (err) => toast.error(getFriendlyErrorMessage(err)),
@@ -467,9 +513,13 @@ export default function MasterDetailView({
             <h2 className="text-base font-bold truncate">{master.titel || `Masteraufgabe ${index}`}</h2>
             <div className="flex items-center gap-2 mt-0.5">
               <p className="text-xs text-muted-foreground">{catalogName}</p>
-              {master.content_status && (
-                <Badge className={`text-[10px] ${resolveStatus(master).bgColor} ${resolveStatus(master).color} border-current`}>
-                  {resolveStatus(master).icon} {resolveStatus(master).label}
+              {master.is_complete === true ? (
+                <Badge className="text-[10px] bg-green-100 text-green-700 border-green-300">
+                  ✓ Vollständig
+                </Badge>
+              ) : (
+                <Badge className="text-[10px] bg-amber-100 text-amber-700 border-amber-300">
+                  Unvollständig
                 </Badge>
               )}
               {klone.length > 0 && (
