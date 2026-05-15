@@ -37,7 +37,8 @@ export default function TestModal({
       exportLocked={exportLocked}
       onDelete={onDelete}
       onSave={(baseData) => {
-        onSave?.({ ...editorData, ...baseData });
+        const { content_status, ...cleanEditorData } = editorData || {};
+        onSave?.({ ...cleanEditorData, ...baseData });
       }}
     >
       <TestEditor
