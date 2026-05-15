@@ -438,7 +438,8 @@ export default function ActivityMasterPanel({
   // alles wie bisher — diese werden per Modal erfasst, der KI-Modus hätte
   // dort keinen sinnvollen Briefing-Katalog. KI-Tutor bleibt ebenfalls außen
   // vor (eigene Spezialform).
-  const showModusSwitch = supportsMaster && !isKITutor;
+  const isLueckentext = catalogEntry?.name?.toLowerCase().includes('lückentext');
+  const showModusSwitch = supportsMaster && !isKITutor && !isLueckentext;
   const [savingModusBriefing, setSavingModusBriefing] = useState(false);
 
   // Modus-Wechsel: ruft updateActivitySecure mit erstellungsModus + ggf.
