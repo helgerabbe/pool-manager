@@ -323,6 +323,9 @@ export default function MasterDetailView({
   const [testModalOpen, setTestModalOpen] = useState(false);
   const [offeneAufgabeModalOpen, setOffeneAufgabeModalOpen] = useState(false);
   const [fieldValues, setFieldValues] = useState(master.field_values || {});
+  const [localContentStatus, setLocalContentStatus] = useState(master.content_status || 'draft');
+  const [localReleasedAt, setLocalReleasedAt] = useState(master.released_at || null);
+  const [localReleasedBy, setLocalReleasedBy] = useState(master.released_by || null);
 
   // Klon-Bearbeitung
   const [editingKlonId, setEditingKlonId] = useState(null);
@@ -331,7 +334,10 @@ export default function MasterDetailView({
   // Re-Hydration: fieldValues immer aktualisieren wenn master sich ändert
   useEffect(() => {
     setFieldValues(master.field_values || {});
-  }, [master.field_values]);
+    setLocalContentStatus(master.content_status || 'draft');
+    setLocalReleasedAt(master.released_at || null);
+    setLocalReleasedBy(master.released_by || null);
+  }, [master.field_values, master.content_status, master.released_at, master.released_by]);
 
   // Vollständigkeit der MasterAufgabe berechnen (Frontend-Spiegelung der Backend-Logik)
   const computeMasterIsComplete = (fv = {}) => {
@@ -490,7 +496,11 @@ export default function MasterDetailView({
       masterId: master.id,
       action: release ? 'approve' : 'unapprove',
     }),
-    onSuccess: () => {
+    onSuccess: (response) => {
+      const nextStatus = response?.data?.newContentStatus || 'draft';
+      setLocalContentStatus(nextStatus);
+      setLocalReleasedAt(nextStatus === 'approved' ? new Date().toISOString() : null);
+      setLocalReleasedBy(nextStatus === 'approved' ? userEmail : null);
       refreshWorkspaceStatusQueries(queryClient);
       queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
       toast.success('Freigabe aktualisiert.');
@@ -542,7 +552,7 @@ export default function MasterDetailView({
             <h2 className="text-base font-bold truncate">{master.titel || `Masteraufgabe ${index}`}</h2>
             <div className="flex items-center gap-2 mt-0.5">
               <p className="text-xs text-muted-foreground">{catalogName}</p>
-              {master.content_status === 'approved' ? (
+              {localContentStatus === 'approved' ? (
                 <Badge className="text-[10px] bg-green-100 text-green-700 border-green-300 gap-1">
                   <Lock className="w-3 h-3" /> Freigegeben
                 </Badge>
@@ -643,21 +653,21 @@ export default function MasterDetailView({
 
       {/* Helper: Aktuelle initialData für Modals (Master oder Klon) */}
       {(() => {
-        const activeData = editingKlonId ? klonFieldValues : { ...fieldValues, content_status: master.content_status };
+        const activeData = editingKlonId ? klonFieldValues : { ...fieldValues, content_status: localContentStatus };
         const isSavingAny = saveMutation.isPending || saveKlonMutation.isPending;
 
-        const masterIsReleased = !editingKlonId && master.content_status === 'approved';
+        const masterIsReleased = !editingKlonId && localContentStatus === 'approved';
         const canReleaseMaster = computeMasterIsComplete(fieldValues);
         const testReleaseFooter = !editingKlonId && isTest ? (
           <ReleaseToggleSection
-            isReleased={master.content_status === 'approved'}
+            isReleased={localContentStatus === 'approved'}
             canRelease={canReleaseMaster}
             hierarchyLocked={false}
             hierarchyLockMessage={null}
             onToggle={(next) => masterReleaseMutation.mutate(next)}
             disabled={isSavingAny || masterReleaseMutation.isPending}
-            releasedAt={master.released_at}
-            releasedBy={master.released_by}
+            releasedAt={localReleasedAt}
+            releasedBy={localReleasedBy}
           />
         ) : null;
 
