@@ -29,6 +29,7 @@ import ImageLabelingModalDetail from '@/components/workspace/ImageLabelingModalD
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import { toast } from 'sonner';
+import { syncMasterStatusNow, refreshWorkspaceStatusQueries } from '@/lib/workspaceStatusRefresh';
 
 const LUECKENTEXT_NAMES = ['lückentext', 'lücken', 'lueckentext', 'cloze', 'fill in'];
 function isLueckentext(name = '') {
@@ -384,13 +385,8 @@ export default function MasterDetailView({
       const isComplete = computeMasterIsComplete(fv);
       return base44.entities.MasterAufgabe.update(master.id, { field_values: fv, is_complete: isComplete });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
-      // Verzögert auch Activity + Lernpaket aktualisieren (Guardian läuft async)
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-        queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-      }, 1500);
+    onSuccess: async (_, fv) => {
+      await syncMasterStatusNow({ queryClient, master, fieldValues: fv });
       toast.success('Masteraufgabe gespeichert.');
     },
     onError: (err) => toast.error(getFriendlyErrorMessage(err)),
@@ -503,7 +499,7 @@ export default function MasterDetailView({
         throw new Error(`${klonFailed.length} Kopie(n) konnten nicht gelöscht werden: ${reason}`);
       }
       await base44.entities.MasterAufgabe.delete(master.id);
-      queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+      refreshWorkspaceStatusQueries(queryClient);
       queryClient.invalidateQueries({ queryKey: ['klone'] });
       queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine'] });
       toast.success('Masteraufgabe gelöscht.');
@@ -657,9 +653,7 @@ export default function MasterDetailView({
                     action: content_status === 'approved' ? 'approve' : 'unapprove',
                   });
                 }
-                queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
-                queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-                queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+                await syncMasterStatusNow({ queryClient, master, fieldValues: updatedFv });
                 handleCloseModal();
               },
             });
@@ -695,9 +689,7 @@ export default function MasterDetailView({
                             action: content_status === 'approved' ? 'approve' : 'unapprove',
                           });
                         }
-                        queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
-                        queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-                        queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+                        await syncMasterStatusNow({ queryClient, master, fieldValues: newFv });
                         handleCloseModal();
                       },
                     });

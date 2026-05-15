@@ -33,6 +33,7 @@ import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus';
 import { TASK_STATUS_CONFIG } from '@/lib/stateMachine';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { syncMasterStatusNow, refreshWorkspaceStatusQueries } from '@/lib/workspaceStatusRefresh';
 
 function isLockedByOther(master, myEmail) {
   if (!master?.lock_status) return false;
@@ -316,18 +317,13 @@ export default function MasterAufgabeCard({
         is_complete: isComplete,
       });
     },
-    onSuccess: (_, { closeEdit }) => {
-      queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+    onSuccess: async (_, { fv, closeEdit }) => {
+      await syncMasterStatusNow({ queryClient, master, fieldValues: fv });
       setHasPendingChanges(false);
       if (closeEdit) {
         setEditMode(false);
         setCollapsed(true);
       }
-      // Guardian läuft async — verzögert Activity + Lernpaket aktualisieren
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-        queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-      }, 1500);
       toast.success('Masteraufgabe gespeichert.');
     },
     onError: (err) => toast.error(err.message || 'Fehler beim Speichern.'),
@@ -339,10 +335,7 @@ export default function MasterAufgabeCard({
       masterId: master.id,
       action: contentStatus === 'approved' ? 'approve' : 'unapprove',
     });
-    queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
-    queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-    queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-    queryClient.invalidateQueries({ queryKey: ['workspace'] });
+    refreshWorkspaceStatusQueries(queryClient);
   };
 
   // Speichern und Bearbeitung beenden (kein Zwischenspeichern mehr)
@@ -361,12 +354,7 @@ export default function MasterAufgabeCard({
       queryClient.invalidateQueries({ queryKey: ['klone'] });
       toast.success('Masteraufgabe gelöscht.');
       onDeleted?.();
-      // Guardian läuft asynchron nach dem Delete — nach kurzer Verzögerung
-      // Aktivitäts-Cache invalidieren damit Sidebar den neuen is_complete=false Wert zeigt.
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-        queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-      }, 1500);
+      refreshWorkspaceStatusQueries(queryClient);
     },
   });
 
@@ -659,8 +647,7 @@ export default function MasterAufgabeCard({
                     onSuccess: async () => {
                       if (content_status) {
                         await applyMasterReleaseStatus(content_status);
-                        queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
-                        queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+                        await syncMasterStatusNow({ queryClient, master, fieldValues: newFv });
                       }
                       handleCloseMatchTermsModal();
                     },
@@ -790,8 +777,7 @@ export default function MasterAufgabeCard({
                     onSuccess: async () => {
                       if (content_status) {
                         await applyMasterReleaseStatus(content_status);
-                        queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
-                        queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+                        await syncMasterStatusNow({ queryClient, master, fieldValues: newFv });
                       }
                       handleCloseSortierungModal();
                     },
@@ -970,8 +956,7 @@ export default function MasterAufgabeCard({
                     onSuccess: async () => {
                       if (content_status) {
                         await applyMasterReleaseStatus(content_status);
-                        queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
-                        queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+                        await syncMasterStatusNow({ queryClient, master, fieldValues: newFv });
                       }
                       setMiniQuizModalOpen(false);
                     },
