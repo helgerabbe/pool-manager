@@ -13,9 +13,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useLernpaketLock } from '@/hooks/useLocks';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Crown, Plus, Loader2, ChevronRight, Save, Pencil, Check, ExternalLink, Lock } from 'lucide-react';
+import { Crown, Plus, Loader2, Save, Pencil, Check, Lock } from 'lucide-react';
 import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
@@ -30,51 +28,16 @@ import { shouldShowTranskript } from '@/components/workspace/ki/TranskriptField'
 import VideoThumbnailPreview from '@/components/workspace/VideoThumbnailPreview';
 import { toast } from 'sonner';
 
-// Inline-editierbares Aufgabentext-Feld mit Standardtext
+// Inline-editierbares Aufgabentext-Feld — gleicher Stil wie read-only (blauer Kasten, nicht kursiv)
 function DefaultTextareaFieldInline({ field, value, onChange, readOnly = false }) {
   const [editing, setEditing] = useState(false);
   const defaultText = field.default_text || 'Bearbeite die folgende Aufgabe sorgfältig.';
-  const displayValue = value || defaultText;
-  const isDefault = !value;
 
-  if (!editing) {
+  if (editing) {
     return (
       <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">{field.label}</Label>
-          {!readOnly && (
-            <button
-              onClick={() => setEditing(true)}
-              className="flex items-center gap-1 text-xs text-primary hover:underline"
-            >
-              <Pencil className="w-3 h-3" />
-              {isDefault ? 'Anpassen' : 'Bearbeiten'}
-            </button>
-          )}
-        </div>
-        <div
-          className={`rounded-lg border px-3 py-2 text-sm cursor-pointer hover:border-primary/50 transition-colors ${
-            isDefault ? 'bg-blue-50 border-blue-200 text-blue-800 italic' : 'bg-muted/40 border-border text-foreground'
-          }`}
-          onClick={() => setEditing(true)}
-        >
-          {isDefault && (
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 block mb-0.5 not-italic">
-              Standardtext
-            </span>
-          )}
-          {displayValue}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <Label className="text-sm font-medium">{field.label}</Label>
-        <div className="flex items-center gap-3">
-          {!isDefault && (
+        <div className="flex items-center justify-end gap-3">
+          {value && value !== defaultText && (
             <button
               onClick={() => { onChange(''); setEditing(false); }}
               className="text-xs text-muted-foreground hover:text-foreground"
@@ -90,18 +53,28 @@ function DefaultTextareaFieldInline({ field, value, onChange, readOnly = false }
             Fertig
           </button>
         </div>
+        <textarea
+          value={value || defaultText}
+          onChange={(e) => {
+            const newVal = e.target.value;
+            onChange(newVal === defaultText ? '' : newVal);
+          }}
+          rows={4}
+          className="w-full px-3 py-2 rounded-lg border border-input text-sm bg-blue-50 border-blue-200 text-blue-900"
+          autoFocus
+        />
       </div>
-      <textarea
-        value={value || field.default_text}
-        onChange={(e) => {
-          const newVal = e.target.value;
-          onChange(newVal === field.default_text ? '' : newVal);
-        }}
-        rows={4}
-        className="w-full px-3 py-2 rounded-lg border border-input text-sm"
-        autoFocus
-      />
-    </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={!readOnly ? () => setEditing(true) : undefined}
+      disabled={readOnly}
+      className="w-full text-left bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 text-sm text-blue-900 cursor-pointer hover:bg-blue-100 transition-colors disabled:cursor-default disabled:hover:bg-blue-50"
+    >
+      <span className="leading-relaxed whitespace-pre-wrap">{value || defaultText}</span>
+    </button>
   );
 }
 
