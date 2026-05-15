@@ -94,7 +94,8 @@ function MasterApprovalButton({ master, queryClient, catalogName, fieldValues, s
     },
     onSuccess: (_, action) => {
       queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
-      toast.success(action === 'approve' ? '✓ Als fertig markiert.' : 'Fertig-Markierung zurückgezogen.');
+      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      toast.success(action === 'approve' ? '✓ Masteraufgabe freigegeben.' : 'Freigabe zurückgezogen.');
       setConfirmDialog(false);
     },
     onError: (err) => {
@@ -139,7 +140,7 @@ function MasterApprovalButton({ master, queryClient, catalogName, fieldValues, s
         className="gap-1.5 text-green-700 border-green-300 hover:bg-green-50 text-xs h-7"
       >
         {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCw className="w-3 h-3" />}
-        Zurücksetzen
+        Freigabe zurückziehen
       </Button>
     );
   }
@@ -153,7 +154,7 @@ function MasterApprovalButton({ master, queryClient, catalogName, fieldValues, s
         className="gap-1.5 bg-green-600 hover:bg-green-700 text-white text-xs h-7"
       >
         {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
-        Als fertig markieren
+        Freigeben
       </Button>
 
       {/* Validierungs-Dialog für leere Mini-Quiz */}
@@ -477,11 +478,11 @@ export default function MasterAufgabeCard({
         )}
 
         <div className="flex items-center gap-2 ml-auto shrink-0">
-          {/* Fertig-Badge wenn approved */}
+          {/* Freigabe-Badge wenn approved */}
           {master.content_status === 'approved' && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 border border-green-300 text-green-700 text-[11px] font-medium shrink-0">
               <CheckCircle2 className="w-3 h-3" />
-              Fertig
+              Freigegeben
             </span>
           )}
           {/* Universal "Inhalt bearbeiten"-Button für alle Masteraufgaben-Typen */}
@@ -1070,7 +1071,7 @@ export default function MasterAufgabeCard({
                 </span>
                 {k.content_status === 'approved' && (
                   <span className="text-[10px] bg-green-200 text-green-800 px-1.5 py-0.5 rounded shrink-0 font-medium">
-                    Fertig
+                    Freigegeben
                   </span>
                 )}
               </div>

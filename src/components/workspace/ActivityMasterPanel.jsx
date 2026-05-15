@@ -13,7 +13,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useLernpaketLock } from '@/hooks/useLocks';
 import { Button } from '@/components/ui/button';
-import { Crown, Plus, Loader2, Save, Pencil, Check, Lock } from 'lucide-react';
+import { Crown, Plus, Loader2, Save, Pencil, Check, Lock, CheckCircle2 } from 'lucide-react';
 import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
@@ -308,6 +308,14 @@ export default function ActivityMasterPanel({
     select: (data) => data.sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)),
   });
 
+  // Freigabe-Aggregat: Aktivität gilt als freigegeben wenn alle Master approved (min. 1)
+  const allMastersApproved =
+    supportsMaster &&
+    masterAufgaben.length > 0 &&
+    masterAufgaben.every(m => m.content_status === 'approved');
+  const activityIsReleased =
+    supportsMaster ? allMastersApproved : activityRecord?.content_status === 'approved';
+
   // Alle Klone für diese Aktivität (gruppiert nach master_aufgabe_id)
   const { data: alleKlone = [] } = useQuery({
     queryKey: ['klone', activityRecord.id],
@@ -364,6 +372,9 @@ export default function ActivityMasterPanel({
   // lernpaketAggregateGuardian aktiv berechnet). Damit zeigen Inhaltsbereich
   // und Sidebar denselben Wert.
   const effectivelyComplete = activityRecord.is_complete === true;
+
+  // "Freigegeben"-Status wird weiter unten nach dem masterAufgaben-Query berechnet
+  // (siehe allMastersApproved / activityIsReleased)
 
   // Aufgabentext-State (für supports_master Block)
   const [aufgabentext, setAufgabentext] = useState(activityRecord?.field_values?.aufgabentext || '');
@@ -537,9 +548,9 @@ export default function ActivityMasterPanel({
             isDirtySinceExport={activityRecord?.is_dirty_since_export}
             exportLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
           />
-          {activityRecord?.content_status === 'approved'
+          {activityIsReleased
             ? <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 border border-green-300 px-2 py-0.5 rounded-full">
-                <Lock className="w-3 h-3" /> Freigegeben
+                <CheckCircle2 className="w-3 h-3" /> Freigegeben
               </span>
             : effectivelyComplete
             ? <span className="text-xs font-medium text-green-700 bg-green-100 border border-green-300 px-2 py-0.5 rounded-full">✓ Vollständig</span>
