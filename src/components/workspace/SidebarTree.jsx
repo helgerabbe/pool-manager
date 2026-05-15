@@ -57,6 +57,15 @@ function computeMasterComplete(master, catalogName = '') {
   if (name.includes('quiz')) {
     return (Array.isArray(fv.questions) ? fv.questions : []).length >= 1;
   }
+  if (name.includes('test')) {
+    return (Array.isArray(fv.questions) ? fv.questions : []).some(q => {
+      if (!q || String(q.question || q.text || '').trim() === '') return false;
+      if (q.type === 'solution_word' || q.type === 'text') return String(q.expectedAnswer || q.antwort || '').trim() !== '';
+      if (q.type === 'true_false') return typeof q.correctAnswer === 'boolean';
+      const answers = Array.isArray(q.answers) ? q.answers : (Array.isArray(q.options) ? q.options : []);
+      return answers.some(a => (a?.isCorrect === true || a?.correct === true) && String(a.text || '').trim() !== '');
+    });
+  }
   if (name.includes('bildbeschriftung') || name.includes('image labeling')) {
     return !!(fv.backgroundImage && Array.isArray(fv.dropZones) && fv.dropZones.length >= 1);
   }
@@ -69,6 +78,24 @@ function computeMasterComplete(master, catalogName = '') {
     if (Array.isArray(v)) return v.length > 0;
     return true;
   });
+}
+
+function computeActivityCompleteForTree(activity, catalogName = '', masterAufgabenList = [], supportsMaster = false) {
+  if (activity.content_status === 'approved') return true;
+
+  const isKiBriefed =
+    activity.erstellungs_modus === 'ki' &&
+    !!activity.ki_briefing &&
+    typeof activity.ki_briefing === 'object' &&
+    Object.keys(activity.ki_briefing).length > 0;
+
+  if (isKiBriefed && activity.is_complete === true) return true;
+
+  if (supportsMaster && masterAufgabenList.length > 0 && activity.erstellungs_modus !== 'ki') {
+    return masterAufgabenList.every(m => computeMasterComplete(m, catalogName));
+  }
+
+  return activity.is_complete === true;
 }
 
 function AktivitaetSubNode({ activity, aktivitaetName, catalogName = '', isSelected, onSelect, paketId, masterAufgabenList = [], supportsMaster = false }) {
@@ -85,12 +112,8 @@ function AktivitaetSubNode({ activity, aktivitaetName, catalogName = '', isSelec
   const masterCompleteStates = masterAufgabenList.map(m => computeMasterComplete(m, catalogName));
   const allMastersComplete = masterAufgabenCount === 0 || masterCompleteStates.every(Boolean);
 
-  // Aktivität gilt nur als vollständig wenn:
-  // - freigegeben ODER
-  // - KI-Briefing vollständig ODER
-  // - activity.is_complete UND (keine Masters vorhanden ODER alle Masters vollständig)
-  const showAsComplete = isReleased || (isKiBriefed && activity.is_complete === true) ||
-    (activity.is_complete === true && allMastersComplete);
+  // Aktivität gilt im Menübaum live als vollständig, sobald die sichtbaren Inhalte vollständig sind.
+  const showAsComplete = computeActivityCompleteForTree(activity, catalogName, masterAufgabenList, supportsMaster);
 
   const textColor = showAsComplete ? 'text-green-600' : 'text-orange-600';
 
@@ -153,8 +176,13 @@ function PhaseNode({ phase, phaseLabel, paket, selectedId, onSelect, paketPhaseA
 
   const activities = paketPhaseActivities.filter(a => a.phase === phase);
 
-  // Einheitliche Count-Pille: grau=leer, grün=alle vollständig, gelb=teilweise
-  const completeCount = activities.filter(a => a.is_complete).length;
+  // Einheitliche Count-Pille: grau=leer, grün=alle sichtbar vollständigen Aktivitäten, gelb=teilweise
+  const completeCount = activities.filter(a => computeActivityCompleteForTree(
+    a,
+    aktivitaetenMap[a.aktivitaet_id] || '',
+    masterAufgabenMap[a.id] || [],
+    aktivitaetSupportsMasterMap[a.aktivitaet_id] || false
+  )).length;
   const total = activities.length;
   const countPillClass =
     total === 0 ? 'bg-slate-200 text-slate-700'
@@ -239,12 +267,18 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
   const activeActivities = paketPhaseActivities.filter(
     a => phasenConfig[a.phase]?.disabled !== true
   );
-  const completeCount = activeActivities.filter(a => a.is_complete).length;
+  const completeCount = activeActivities.filter(a => computeActivityCompleteForTree(
+    a,
+    aktivitaetenMap[a.aktivitaet_id] || '',
+    masterAufgabenMap[a.id] || [],
+    aktivitaetSupportsMasterMap[a.aktivitaet_id] || false
+  )).length;
   const totalCount = activeActivities.length;
-  // Farbige Pille: grau=leer, grün=alle vollständig, gelb=teilweise
+  const isPaketLiveComplete = totalCount > 0 && completeCount === totalCount;
+  // Farbige Pille: grau=leer, grün=alle sichtbar vollständigen Aktivitäten, gelb=teilweise
   const countPillClass =
     totalCount === 0 ? 'bg-slate-200 text-slate-700'
-    : paket.is_complete === true ? 'bg-green-500 text-white'
+    : isPaketLiveComplete ? 'bg-green-500 text-white'
     : 'bg-amber-400 text-white';
 
   return (
@@ -328,10 +362,19 @@ function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedI
     paketStatuses.every(s => s === 'green') ? 'green' :
     paketStatuses.some(s => s === 'red') ? 'red' : 'yellow';
 
-  // Single Source of Truth: Warn-Icon nur wenn Datenbank is_complete === false
-  const hatUnvollstaendigeAktivitaet = lernpakete.some(paket =>
-    (paketPhaseActivitiesMap[paket.id] || []).some(a => !a.is_complete)
-  );
+  // Themenfeld-Farbe live aus den sichtbaren Aktivitäten berechnen, damit sie nicht auf verzögerte Aggregatwerte wartet.
+  const hatUnvollstaendigeAktivitaet = lernpakete.some(paket => {
+    const phasenConfig = paket?.phasen_konfiguration || {};
+    const activeActivities = (paketPhaseActivitiesMap[paket.id] || []).filter(
+      a => phasenConfig[a.phase]?.disabled !== true
+    );
+    return activeActivities.length === 0 || activeActivities.some(a => !computeActivityCompleteForTree(
+      a,
+      aktivitaetenMap[a.aktivitaet_id] || '',
+      masterAufgabenMap[a.id] || [],
+      aktivitaetSupportsMasterMap[a.aktivitaet_id] || false
+    ));
+  });
 
   const getPaketIsLocked = (paket) => {
     if (!isSequenziell) return false;
