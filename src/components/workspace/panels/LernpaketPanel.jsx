@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Lock, Plus, Edit, Trash2, Clock, AlertTriangle, PenLine, Loader2, ChevronRight, Menu, Target, Save, Wand2, ArrowRight, CheckCircle2
 } from 'lucide-react';
@@ -399,23 +400,31 @@ export default function LernpaketPanel({
               Freigegeben
             </Button>
           ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => releaseReadiness.isComplete && canToggleRelease.allowed && handleLernpaketRelease(true)}
-              disabled={!releaseReadiness.isComplete || !canToggleRelease.allowed || isReleasePending}
-              title={
-                !canToggleRelease.allowed
-                  ? 'Einheit ist final freigegeben — Freigabe gesperrt'
-                  : !releaseReadiness.isComplete
-                  ? `${releaseReadiness.blockingActivities?.length || 0} Aktivität(en) noch nicht freigegeben`
-                  : 'Lernpaket freigeben (sperrt alle Inhalte)'
-              }
-              className="gap-2"
-            >
-              {isReleasePending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-              Lernpaket freigeben
-            </Button>
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => releaseReadiness.isComplete && canToggleRelease.allowed && handleLernpaketRelease(true)}
+                      disabled={!releaseReadiness.isComplete || !canToggleRelease.allowed || isReleasePending}
+                      className="gap-2"
+                    >
+                      {isReleasePending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                      Lernpaket freigeben
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {(!releaseReadiness.isComplete || !canToggleRelease.allowed) && (
+                  <TooltipContent side="bottom">
+                    {!canToggleRelease.allowed
+                      ? 'Einheit ist final freigegeben — Freigabe gesperrt'
+                      : 'Lernpaket kann erst freigegeben werden, wenn alle Aktivitäten freigegeben sind.'}
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           )}
 
           {isLockedByOther && (
