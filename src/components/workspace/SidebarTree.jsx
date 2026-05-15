@@ -114,12 +114,17 @@ function AktivitaetSubNode({ activity, aktivitaetName, catalogName = '', isSelec
         <div className="ml-5 space-y-0.5">
           {masterAufgabenList.map((master, idx) => {
             const isComplete = computeMasterComplete(master, catalogName);
+            const isApproved = master.content_status === 'approved';
             return (
               <div key={master.id} className={cn(
                 'flex items-center gap-1.5 text-[10px]',
-                isComplete ? 'text-green-600' : 'text-orange-500'
+                isApproved ? 'text-green-600' : isComplete ? 'text-green-600' : 'text-orange-500'
               )}>
-                <span className="w-2 h-2 rounded-full shrink-0 mt-px" style={{ background: isComplete ? '#16a34a' : '#f97316' }} />
+                {isApproved ? (
+                  <Lock className="w-2.5 h-2.5 shrink-0 text-green-600" title="Freigegeben und gesperrt" />
+                ) : (
+                  <span className="w-2 h-2 rounded-full shrink-0 mt-px" style={{ background: isComplete ? '#16a34a' : '#f97316' }} />
+                )}
                 <span className="truncate">{master.titel || `Master ${idx + 1}`}</span>
               </div>
             );
