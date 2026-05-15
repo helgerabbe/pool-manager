@@ -365,7 +365,7 @@ export default function MasterAufgabeCard({
             className={cn('flex-1 text-xs text-left truncate', kannBearbeiten ? 'text-muted-foreground hover:text-foreground cursor-text' : 'text-muted-foreground cursor-default')}
             title={kannBearbeiten ? 'Klicken zum Bearbeiten' : undefined}
           >
-            {master.titel || `Masteraufgabe ${index}`}
+            {master.titel || ''}
           </button>
         )}
 

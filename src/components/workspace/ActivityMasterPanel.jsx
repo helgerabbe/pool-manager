@@ -839,14 +839,14 @@ export default function ActivityMasterPanel({
             </div>
           ) : (
             <button
-              onClick={kannBearbeiten && !isParentPaketLockedByOther && !lernpaket?.moodle_sync_status === 'locked' && !lernpaket?.export_locked && !globalEditActive && !acquiringLock
+              onClick={kannBearbeiten && !isParentPaketLockedByOther && !(lernpaket?.moodle_sync_status === 'locked') && !lernpaket?.export_locked && !globalEditActive && !acquiringLock
                 ? handleOpenEditModal
                 : undefined}
               disabled={!kannBearbeiten || isParentPaketLockedByOther || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || globalEditActive || acquiringLock}
-              className="w-full text-left bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 text-sm text-blue-900 cursor-pointer hover:bg-blue-100 transition-colors disabled:cursor-default disabled:hover:bg-blue-50"
+              className="w-full text-left bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 text-sm text-blue-900 cursor-pointer hover:bg-blue-100 transition-colors disabled:cursor-default disabled:hover:bg-blue-50 disabled:opacity-60"
               title={kannBearbeiten ? 'Klicken zum Bearbeiten' : ''}
             >
-              <span className="leading-relaxed">{aufgabentext || defaultAufgabentext}</span>
+              <span className="leading-relaxed whitespace-pre-wrap">{aufgabentext || defaultAufgabentext}</span>
             </button>
           )}
         </>
@@ -902,11 +902,7 @@ export default function ActivityMasterPanel({
                 Erstelle Vorlagen – die KI generiert daraus automatisch Aufgabenvarianten.
               </p>
             </div>
-            {masterAufgaben.length > 0 && (
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full shrink-0">
-                {masterAufgaben.length} Masteraufgabe{masterAufgaben.length !== 1 ? 'n' : ''}
-              </span>
-            )}
+
           </div>
 
           {/* Vorhandene Master-Karten */}
