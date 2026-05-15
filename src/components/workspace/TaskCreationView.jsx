@@ -94,9 +94,10 @@ function MasterSubItem({ master, index, klone, selectedItem, onSelect, catalogEn
 
    const isKITutor = catalogEntry?.name?.toLowerCase().includes('ki-tutor');
 
-   // Farb-Logik basierend auf content_status
+   // Farb-Logik: grün wenn freigegeben ODER vollständig, orange wenn unvollständig
    const isReleased = master.content_status === 'approved';
-   const textColor = isReleased ? 'text-green-600' : 'text-orange-600';
+   const isComplete = master.is_complete === true;
+   const textColor = (isReleased || isComplete) ? 'text-green-600' : 'text-orange-600';
 
    return (
      <div>

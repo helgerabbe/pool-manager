@@ -471,6 +471,8 @@ export default function SidebarTree({
     queryKey: ['masterAufgaben'],
     queryFn: () => base44.entities.MasterAufgabe.list(),
     staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
   const paketPhaseActivitiesMap = Object.fromEntries(
