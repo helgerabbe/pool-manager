@@ -6,10 +6,41 @@
  *
  * Regel: Eine masterfähige Activity ist genau dann freigegeben, wenn
  * mindestens eine MasterAufgabe existiert UND alle zugehörigen Master
- * content_status='approved' haben.
+ * content_status='approved' haben. Masterfähige Activities ohne Master
+ * werden explizit auf draft zurückgesetzt.
+ *
+ * @MIGRATION_NOTE Supabase:
+ * Dieses Backfill-Skript wird in PostgreSQL durch ein set-basiertes SQL-Update
+ * bzw. langfristig durch einen Trigger/View ersetzt. Beispiel-Grundidee:
+ * UPDATE lernpaket_phase_aktivitaet lpa
+ * SET content_status = CASE
+ *   WHEN m.approved_count = m.total_count AND m.total_count > 0 THEN 'approved'
+ *   ELSE 'draft'
+ * END
+ * FROM (
+ *   SELECT activity_id,
+ *          COUNT(*) AS total_count,
+ *          SUM(CASE WHEN content_status = 'approved' THEN 1 ELSE 0 END) AS approved_count
+ *   FROM master_aufgabe
+ *   GROUP BY activity_id
+ * ) m
+ * WHERE lpa.id = m.activity_id;
+ * Für Activities ohne Master braucht Supabase zusätzlich ein LEFT JOIN / NOT EXISTS,
+ * damit fälschlich freigegebene masterfähige Activities auf draft zurückfallen.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+
+const MAX_BACKFILL_LIMIT = 10000;
+const UPDATE_BATCH_SIZE = 10;
+
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
 
 Deno.serve(async (req) => {
   try {
@@ -24,7 +55,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const masters = await base44.asServiceRole.entities.MasterAufgabe.list();
+    const [masters, activities, katalogEntries] = await Promise.all([
+      base44.asServiceRole.entities.MasterAufgabe.list(undefined, MAX_BACKFILL_LIMIT),
+      base44.asServiceRole.entities.LernpaketPhaseAktivitaet.list(undefined, MAX_BACKFILL_LIMIT),
+      base44.asServiceRole.entities.AktivitaetenKatalog.list(undefined, MAX_BACKFILL_LIMIT),
+    ]);
+
+    const katalogById = new Map(katalogEntries.map((entry) => [entry.id, entry]));
     const mastersByActivity = masters.reduce((acc, master) => {
       if (!master.activity_id) return acc;
       if (!acc[master.activity_id]) acc[master.activity_id] = [];
@@ -32,18 +69,18 @@ Deno.serve(async (req) => {
       return acc;
     }, {});
 
-    const activityIds = Object.keys(mastersByActivity);
     const results = [];
+    const updates = [];
 
-    for (const activityId of activityIds) {
-      const activities = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({ id: activityId });
-      const activity = activities?.[0];
-      if (!activity) {
-        results.push({ activityId, status: 'skipped_missing_activity' });
+    for (const activity of activities) {
+      const katalogEntry = katalogById.get(activity.aktivitaet_id);
+      const isMasterCapable = activity.is_master || katalogEntry?.supports_master === true;
+
+      if (!isMasterCapable) {
         continue;
       }
 
-      const activityMasters = mastersByActivity[activityId];
+      const activityMasters = mastersByActivity[activity.id] || [];
       const allApproved =
         activityMasters.length > 0 && activityMasters.every((m) => m.content_status === 'approved');
 
@@ -65,11 +102,11 @@ Deno.serve(async (req) => {
         (updatePayload.content_status === 'approved' && (!activity.released_at || !activity.released_by));
 
       if (needsUpdate) {
-        await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(activityId, updatePayload);
+        updates.push({ activityId: activity.id, updatePayload });
       }
 
       results.push({
-        activityId,
+        activityId: activity.id,
         masterCount: activityMasters.length,
         allApproved,
         previousStatus: activity.content_status || 'draft',
@@ -78,10 +115,23 @@ Deno.serve(async (req) => {
       });
     }
 
+    for (const batch of chunkArray(updates, UPDATE_BATCH_SIZE)) {
+      await Promise.all(
+        batch.map(({ activityId, updatePayload }) =>
+          base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(activityId, updatePayload)
+        )
+      );
+    }
+
     return Response.json({
       success: true,
       checkedActivities: results.length,
-      updatedActivities: results.filter((r) => r.updated).length,
+      updatedActivities: updates.length,
+      loadedRecords: {
+        masters: masters.length,
+        activities: activities.length,
+        katalogEntries: katalogEntries.length,
+      },
       results,
     });
   } catch (error) {
