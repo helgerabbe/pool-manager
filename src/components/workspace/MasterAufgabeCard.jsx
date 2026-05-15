@@ -5,7 +5,7 @@
  * Enthält: Titel-Editor, MatchTermsForm/ActivityDetailView, KlonGenerator, Löschen-Button.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Badge } from '@/components/ui/badge';
@@ -202,6 +202,8 @@ export default function MasterAufgabeCard({
   onKlonSelected,
   onEditModeChange = null,
   autoExpand = false,
+  autoOpenModal = false,
+  onAutoOpenModalDone = null,
 }) {
   const queryClient = useQueryClient();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -330,6 +332,26 @@ export default function MasterAufgabeCard({
     releaseLock();
     onEditModeChange?.(false);
   };
+
+  // Auto-Modal öffnen nach Erstellung
+  useEffect(() => {
+    if (!autoOpenModal) return;
+    const timer = setTimeout(() => {
+      if (isLuecke) {
+        handleEditLueckentext();
+      } else if (SORTING_NAMES.some(n => catalogName.toLowerCase().includes(n))) {
+        handleEditSortierung();
+      } else if (MINIQUIZ_NAMES.some(n => catalogName.toLowerCase().includes(n))) {
+        setMiniQuizModalOpen(true);
+      } else {
+        setCollapsed(false);
+        setEditMode(true);
+      }
+      onAutoOpenModalDone?.();
+    }, 150);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpenModal]);
 
   // Zeige Klone wenn zugeklappt
   const showKloneWhenCollapsed = collapsed && klone.length > 0;
