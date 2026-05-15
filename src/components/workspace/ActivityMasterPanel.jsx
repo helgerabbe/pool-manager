@@ -96,6 +96,7 @@ export default function ActivityMasterPanel({
   const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
   const [focusedMasterId, setFocusedMasterId] = useState(selectedMasterId);
+  const [autoOpenModalForId, setAutoOpenModalForId] = useState(null);
   // Implizites Locking für "Neue Master-Aufgabe"
   const { acquireLock, releaseLock } = useLernpaketLock(activityRecord?.lernpaket_id);
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
@@ -340,13 +341,18 @@ export default function ActivityMasterPanel({
         lernpaket_id: activityRecord.lernpaket_id,
         reihenfolge: masterAufgaben.length + 1,
       });
-      await queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] }); // Invalidiert alle masterAufgaben-Queries (inkl. Sidebar)
-      setFocusedMasterId(neu.id); // direkt zur neuen Karte scrollen/fokussieren
+      await queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+      setFocusedMasterId(neu.id);
+      // Automatisch das Edit-Modal der neuen Karte öffnen.
+      // Lock wird NICHT hier freigegeben – MasterAufgabeCard gibt ihn
+      // beim Schließen des Modals über onAutoOpenModalDone frei.
+      setAutoOpenModalForId(neu.id);
       toast.success('Neue Masteraufgabe erstellt.');
-    } finally {
-      // Lock wieder freigeben – MasterAufgabeCard übernimmt beim Bearbeiten ihren eigenen Lock
+    } catch {
+      // Fehlerfall: Lock freigeben
       await releaseLock();
       onEditModeChange?.(false);
+    } finally {
       setCreating(false);
     }
   };
@@ -931,14 +937,23 @@ export default function ActivityMasterPanel({
                 index={idx + 1}
                 catalogName={catalogEntry?.name || ''}
                 klone={kloneByMasterId[master.id] || []}
-                kannBearbeiten={isInEditMode && !isParentPaketLockedByOther}
+                kannBearbeiten={isInEditMode && !isParentPaketLockedByOther || master.id === autoOpenModalForId}
                 userEmail={userEmail}
                 userRole={userRole}
                 autoExpand={master.id === focusedMasterId}
+                autoOpenModal={master.id === autoOpenModalForId}
+                onAutoOpenModalDone={async () => {
+                  setAutoOpenModalForId(null);
+                  // Lock freigeben nachdem das Modal geöffnet wurde –
+                  // MasterAufgabeCard hat beim Schließen seinen eigenen releaseLock
+                  await releaseLock();
+                  onEditModeChange?.(false);
+                }}
                 onDeleted={() => {
                   setFocusedMasterId(null);
+                  setAutoOpenModalForId(null);
                   queryClient.invalidateQueries({ queryKey: ['masterAufgaben', activityRecord.id] });
-      queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] }); // Global refresh für Sidebar
+                  queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
                 }}
                 onKlonesCreated={() => queryClient.invalidateQueries({ queryKey: ['klone', activityRecord.id] })}
                 onKlonSelected={(klonId) => {

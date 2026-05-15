@@ -336,17 +336,19 @@ export default function MasterAufgabeCard({
   // Auto-Modal öffnen nach Erstellung
   useEffect(() => {
     if (!autoOpenModal) return;
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       if (isLuecke) {
-        handleEditLueckentext();
+        await handleEditLueckentext();
       } else if (SORTING_NAMES.some(n => catalogName.toLowerCase().includes(n))) {
-        handleEditSortierung();
+        await handleEditSortierung();
       } else if (MINIQUIZ_NAMES.some(n => catalogName.toLowerCase().includes(n))) {
         setMiniQuizModalOpen(true);
       } else {
         setCollapsed(false);
         setEditMode(true);
       }
+      // onAutoOpenModalDone nach dem Lock-Erwerb aufrufen, damit
+      // ActivityMasterPanel den Parent-Lock korrekt freigibt.
       onAutoOpenModalDone?.();
     }, 150);
     return () => clearTimeout(timer);
