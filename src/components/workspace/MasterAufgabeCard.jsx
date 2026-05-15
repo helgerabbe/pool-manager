@@ -304,14 +304,18 @@ export default function MasterAufgabeCard({
   };
 
   // Implizites Locking: Lock erwerben → Modal öffnen → bei Schließen freigeben
+  // Wenn kannBearbeiten=true, ist der Lock bereits aktiv (vom Panel gehalten) → direkt öffnen
   const handleEditLueckentext = async () => {
+    if (kannBearbeiten) {
+      // Lock bereits vom Panel gehalten – direkt öffnen
+      onEditModeChange?.(true);
+      setLueckentextModalOpen(true);
+      return;
+    }
     setAcquiringLock(true);
     const ok = await acquireLock();
     setAcquiringLock(false);
-    if (!ok) {
-      // Lock konnte nicht erworben werden – Fehlermeldung bereits via useLernpaketLock
-      return;
-    }
+    if (!ok) return;
     onEditModeChange?.(true);
     setLueckentextModalOpen(true);
   };
@@ -323,12 +327,16 @@ export default function MasterAufgabeCard({
   };
 
   const handleEditSortierung = async () => {
+    if (kannBearbeiten) {
+      // Lock bereits vom Panel gehalten – direkt öffnen
+      onEditModeChange?.(true);
+      setSortingListModalOpen(true);
+      return;
+    }
     setAcquiringLock(true);
     const ok = await acquireLock();
     setAcquiringLock(false);
-    if (!ok) {
-      return;
-    }
+    if (!ok) return;
     onEditModeChange?.(true);
     setSortingListModalOpen(true);
   };
@@ -342,6 +350,8 @@ export default function MasterAufgabeCard({
   // Auto-Modal öffnen nach Erstellung (Lock ist bereits vom Parent erworben)
   useEffect(() => {
     if (!autoOpenModal) return;
+    // Erst aufklappen, dann mit kurzer Verzögerung Modal öffnen
+    setCollapsed(false);
     const timer = setTimeout(() => {
       if (isLuecke) {
         // Lock bereits aktiv vom Parent – direkt öffnen, kein zweiter acquireLock
@@ -353,11 +363,10 @@ export default function MasterAufgabeCard({
       } else if (MINIQUIZ_NAMES.some(n => catalogName.toLowerCase().includes(n))) {
         setMiniQuizModalOpen(true);
       } else {
-        setCollapsed(false);
         setEditMode(true);
       }
       onAutoOpenModalDone?.();
-    }, 150);
+    }, 200);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoOpenModal]);
