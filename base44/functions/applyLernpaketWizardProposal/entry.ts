@@ -24,8 +24,14 @@
  *
  * Persistenz-Reihenfolge (für saubere Roll-ups):
  *   1. (overwrite) bestehende Aktivitäten tombstonen
- *   2. neue Hüllen anlegen
+ *   2. neue KI-Hüllen inkl. ki_briefing anlegen
  *   3. Lernpaket-Felder updaten (kreativ_briefing, kreativ_briefing_updated_at)
+ *
+ * @MIGRATION_NOTE Supabase:
+ *   Overwrite + Tombstone + Neuanlage muss später als eine SQL-Transaktion
+ *   laufen: entweder alle alten Aktivitäten werden tombstoned und alle neuen
+ *   angelegt, oder nichts. Außerdem sollten Aktivitäts-Queries paginiert bzw.
+ *   mit ausreichenden Limits/Indexes abgesichert werden.
  *
  * Diese Funktion ruft KEINE LLM auf. Sie ist rein deterministisch.
  */
@@ -142,6 +148,7 @@ Deno.serve(async (req) => {
         phase: it.phase,
         aktivitaet_id: katalogEintrag.id,
         aktivitaet_name: katalogEintrag.name,
+        ki_briefing: it.ki_briefing_skizze || null,
       });
     });
 
@@ -157,17 +164,17 @@ Deno.serve(async (req) => {
     if (mode === 'overwrite') {
       const bestehende = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
         lernpaket_id: lernpaketId,
-      });
+      }, undefined, 1000);
       // Nur die, die noch nicht Tombstone sind
       const zuTombstonen = bestehende.filter((a) => a.sync_status !== 'to_delete');
-      const results = await Promise.allSettled(
+      await Promise.all(
         zuTombstonen.map((a) =>
           base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(a.id, {
             sync_status: 'to_delete',
           })
         )
       );
-      tombstonedCount = results.filter((r) => r.status === 'fulfilled').length;
+      tombstonedCount = zuTombstonen.length;
     }
 
     // ── 6. Reihenfolge-Basis pro Phase ermitteln ─────────────────────
@@ -177,7 +184,7 @@ Deno.serve(async (req) => {
     if (mode === 'additive') {
       const bestehende = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
         lernpaket_id: lernpaketId,
-      });
+      }, undefined, 1000);
       bestehende
         .filter((a) => a.sync_status !== 'to_delete')
         .forEach((a) => {
@@ -208,7 +215,8 @@ Deno.serve(async (req) => {
           is_complete: false,
           content_status: 'draft',
           sync_status: 'new',
-          erstellungs_modus: 'manuell',
+          erstellungs_modus: 'ki',
+          ki_briefing: r.ki_briefing,
         });
         createdActivities.push({ id: created.id, phase: r.phase, name: r.aktivitaet_name });
       } catch (err) {
