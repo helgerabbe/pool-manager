@@ -38,6 +38,12 @@
  *
  * Auch gesperrte Pfade werden migriert: es ist reines Schema-Setting von
  * Defaults, kein inhaltlicher Eingriff.
+ *
+ * @MIGRATION_NOTE Supabase:
+ * Clientseitiges Herunterladen, Parsen und Zurückschreiben komplexer JSON-
+ * Strukturen ist in PostgreSQL ein Anti-Pattern. Diese Migration sollte dort
+ * als set-basiertes SQL-/PLpgSQL-Update mit nativen JSONB-Funktionen wie
+ * jsonb_set und jsonb_build_object direkt auf Datenbankebene laufen.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
@@ -60,6 +66,32 @@ const DEFAULT_SEKTOR_TYP = 'individuell';
 // Schema v4: Spiegel von lib/sektorTypen.js (Deno hat keine src-Imports).
 const SEKTOR_ABSCHLUSS_BAUSTEIN_ID = 'sys_sektor_abschluss';
 const TARGET_SCHEMA_VERSION = 4;
+const PAGE_SIZE = 100;
+const UPDATE_BATCH_SIZE = 10;
+const MAX_PAGES = 200;
+
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+async function listAll(entitySdk, sort = 'created_date') {
+  const all = [];
+  let skip = 0;
+
+  for (let pageIndex = 0; pageIndex < MAX_PAGES; pageIndex += 1) {
+    const page = await entitySdk.list(sort, PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+
+  return all;
+}
 
 /**
  * Default-bearbeitungsmodus pro Sektor-Typ × Lerntyp. Spiegelt
@@ -246,8 +278,8 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const dryRun = body?.dryRun === true;
 
-    // Bündel-Metadaten laden, einmalig.
-    const allBausteine = await base44.asServiceRole.entities.SystemBausteine.list();
+    // Bündel-Metadaten vollständig laden, einmalig.
+    const allBausteine = await listAll(base44.asServiceRole.entities.SystemBausteine);
     const bundleMetaById = new Map();
     for (const b of allBausteine) {
       bundleMetaById.set(b.baustein_id, {
@@ -263,6 +295,7 @@ Deno.serve(async (req) => {
         total: 0,
         migrated: 0,
         already_current: 0,
+        already_current_json: 0,
         no_konfig: 0,
         bundles_touched: 0,
         sektoren_touched: 0,
@@ -273,10 +306,12 @@ Deno.serve(async (req) => {
     };
 
     let skip = 0;
-    const PAGE = 100;
     while (true) {
-      const page = await base44.asServiceRole.entities.Einheiten.list('-created_date', PAGE, skip);
+      // Stabilere Reihenfolge als -created_date: neue Einheiten werden ans Ende angehängt.
+      const page = await base44.asServiceRole.entities.Einheiten.list('created_date', PAGE_SIZE, skip);
       if (!page || page.length === 0) break;
+
+      const pageUpdates = [];
 
       for (const einheit of page) {
         result.einheiten.total += 1;
@@ -288,13 +323,10 @@ Deno.serve(async (req) => {
 
         if (!einheit.lernpfade_konfiguration) {
           if (!dryRun) {
-            try {
-              await base44.asServiceRole.entities.Einheiten.update(einheit.id, {
-                lernpfade_schema_version: TARGET_SCHEMA_VERSION,
-              });
-            } catch (e) {
-              result.einheiten.errors.push({ einheit_id: einheit.id, error: e?.message });
-            }
+            pageUpdates.push({
+              einheitId: einheit.id,
+              payload: { lernpfade_schema_version: TARGET_SCHEMA_VERSION },
+            });
           }
           result.einheiten.no_konfig += 1;
           continue;
@@ -311,22 +343,39 @@ Deno.serve(async (req) => {
         result.einheiten.legacy_modus_removed += stats.legacyModusRemoved;
 
         if (!dryRun) {
-          try {
-            await base44.asServiceRole.entities.Einheiten.update(einheit.id, {
+          pageUpdates.push({
+            einheitId: einheit.id,
+            payload: {
               lernpfade_konfiguration: konfiguration,
               lernpfade_schema_version: TARGET_SCHEMA_VERSION,
-            });
-          } catch (e) {
-            result.einheiten.errors.push({ einheit_id: einheit.id, error: e?.message });
-            continue;
-          }
+            },
+          });
         }
+
         if (changed) result.einheiten.migrated += 1;
-        else result.einheiten.no_konfig += 1;
+        else result.einheiten.already_current_json += 1;
       }
 
-      if (page.length < PAGE) break;
-      skip += PAGE;
+      for (const batch of chunkArray(pageUpdates, UPDATE_BATCH_SIZE)) {
+        const outcomes = await Promise.allSettled(
+          batch.map(({ einheitId, payload }) =>
+            base44.asServiceRole.entities.Einheiten.update(einheitId, payload)
+              .then(() => ({ einheitId }))
+          )
+        );
+
+        outcomes.forEach((outcome, index) => {
+          if (outcome.status === 'rejected') {
+            result.einheiten.errors.push({
+              einheit_id: batch[index].einheitId,
+              error: outcome.reason?.message || String(outcome.reason),
+            });
+          }
+        });
+      }
+
+      if (page.length < PAGE_SIZE) break;
+      skip += PAGE_SIZE;
     }
 
     return Response.json({ ok: true, ...result });
