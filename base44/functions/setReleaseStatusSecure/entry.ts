@@ -283,6 +283,25 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ---- Sperr-Check: Lernpaket darf nicht verändert werden, sobald es in einem gesperrten Dashboard liegt
+    if (targetType === 'lernpaket') {
+      const memberships = await base44.asServiceRole.entities.LernpfadAufgabeMembership.filter({
+        einheit_id: einheit.id,
+        aufgabe_id: target.id,
+      });
+      const lockedMembership = (memberships || []).find((m) => m.pfad_status === 'locked_for_export');
+      if (lockedMembership) {
+        return Response.json(
+          {
+            error: 'Lernpaket liegt in einem freigegebenen Dashboard — bitte erst das Dashboard entsperren',
+            code: 'DASHBOARD_LOCKED',
+            lerntyp: lockedMembership.lerntyp,
+          },
+          { status: 423 }
+        );
+      }
+    }
+
     // ---- Sperr-Check: bei Activity → Lernpaket-Parent muss offen sein
     if (targetType === 'activity' && lernpaket?.content_status === 'approved' && lernpaket?.released_at) {
       return Response.json(

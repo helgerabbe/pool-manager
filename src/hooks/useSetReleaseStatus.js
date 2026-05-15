@@ -65,6 +65,9 @@ export default function useSetReleaseStatus(options = {}) {
         if (code === 'PARENT_LERNPAKET_RELEASED') {
           return 'Parent-Lernpaket ist freigegeben — bitte erst dort die Freigabe zurücknehmen.';
         }
+        if (code === 'DASHBOARD_LOCKED') {
+          return 'Lernpaket liegt in einem freigegebenen Dashboard — bitte erst das Dashboard entsperren.';
+        }
         return data?.error || err?.message || 'Freigabe-Aktion fehlgeschlagen.';
       })();
       toast.error(msg);

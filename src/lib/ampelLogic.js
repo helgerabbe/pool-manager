@@ -96,14 +96,16 @@ export function getFlatAufgabeStatus(aufgabe) {
 
 /**
  * Flacher Status eines Lernpakets (Ebene 1).
- * Container-Entitäten haben in dieser App `content_status: 'approved'` per default,
- * spiegeln Änderungen aber über sync_status === 'modified'.
+ * Lernpakete zählen erst als grün, wenn sie vollständig UND bewusst manuell
+ * freigegeben wurden (`released_at` gesetzt). Legacy-`approved` ohne
+ * `released_at` reicht nicht.
  */
 function getFlatLernpaketStatus(lernpaket) {
   if (!lernpaket) return AMPEL.RED;
+  const isManuallyReleased = lernpaket.content_status === 'approved' && !!lernpaket.released_at;
+  if (!lernpaket.is_complete || !isManuallyReleased) return AMPEL.RED;
   if (lernpaket.sync_status === 'modified') return AMPEL.YELLOW;
-  if (lernpaket.content_status === 'approved') return AMPEL.GREEN;
-  return AMPEL.RED;
+  return AMPEL.GREEN;
 }
 
 /**
@@ -140,11 +142,12 @@ export function getAmpelStatus(item, ctx = {}, visitedIds = new Set()) {
   nextVisited.add(aufgabe.id);
 
   // Sonderfall Lernpaket: kommt über lernpaketAdapter mit `_isLernpaket: true`
-  // ins aufgabenById-Set. Lernpakete kennen KEINE separate Freigabe –
-  // sie sind „grün", sobald sie vollständig (is_complete === true) sind.
+  // ins aufgabenById-Set. Lernpakete werden erst grün, wenn sie vollständig
+  // UND bewusst manuell freigegeben wurden (`released_at` gesetzt).
   // Änderungen nach erfolgreichem Moodle-Sync zeigen wir als gelb an.
   if (aufgabe._isLernpaket === true) {
-    if (!aufgabe.is_complete) return AMPEL.RED;
+    const isManuallyReleased = aufgabe.content_status === 'approved' && !!aufgabe.released_at;
+    if (!aufgabe.is_complete || !isManuallyReleased) return AMPEL.RED;
     if (aufgabe.sync_status === 'modified') return AMPEL.YELLOW;
     return AMPEL.GREEN;
   }

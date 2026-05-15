@@ -77,6 +77,21 @@ export default function LernpaketPanel({
   const paketAktivitaetenForRelease = lernpaketAktivitaeten.filter(a => a.lernpaket_id === paket.id);
   const releaseReadiness = useLernpaketReleaseReadiness(paket, paketAktivitaetenForRelease);
   const canToggleRelease = useCanToggleLernpaketRelease(paket, einheit);
+  const { data: lockedDashboardMemberships = [] } = useQuery({
+    queryKey: ['lernpaket-dashboard-locks', paket.id],
+    queryFn: () => base44.entities.LernpfadAufgabeMembership.filter({
+      aufgabe_id: paket.id,
+      pfad_status: 'locked_for_export',
+    }),
+    enabled: !!paket?.id,
+  });
+  const isDashboardLocked = lockedDashboardMemberships.length > 0;
+  const canToggleLernpaketRelease = canToggleRelease.allowed && !isDashboardLocked;
+  const releaseLockTitle = isDashboardLocked
+    ? 'Lernpaket liegt in einem freigegebenen Dashboard — bitte erst das Dashboard entsperren'
+    : !canToggleRelease.allowed
+      ? 'Einheit ist final freigegeben — Freigabe gesperrt'
+      : '';
   const { setReleaseStatus, isPending: isReleasePending } = useSetReleaseStatus();
   const isReleased = paket.content_status === 'approved' && !!paket.released_at;
 
@@ -392,8 +407,8 @@ export default function LernpaketPanel({
               variant="outline"
               size="sm"
               onClick={() => handleLernpaketRelease(false)}
-              disabled={isReleasePending || !canToggleRelease.allowed}
-              title={!canToggleRelease.allowed ? 'Einheit ist final freigegeben — Freigabe gesperrt' : 'Freigabe zurücknehmen'}
+              disabled={isReleasePending || !canToggleLernpaketRelease}
+              title={releaseLockTitle || 'Freigabe zurücknehmen'}
               className="gap-2 bg-green-50 border-green-400 text-green-800 hover:bg-green-100"
             >
               {isReleasePending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Lock className="w-3.5 h-3.5" />}
@@ -407,8 +422,8 @@ export default function LernpaketPanel({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => releaseReadiness.isComplete && canToggleRelease.allowed && handleLernpaketRelease(true)}
-                      disabled={!releaseReadiness.isComplete || !canToggleRelease.allowed || isReleasePending}
+                      onClick={() => releaseReadiness.isComplete && canToggleLernpaketRelease && handleLernpaketRelease(true)}
+                      disabled={!releaseReadiness.isComplete || !canToggleLernpaketRelease || isReleasePending}
                       className="gap-2"
                     >
                       {isReleasePending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
@@ -416,11 +431,9 @@ export default function LernpaketPanel({
                     </Button>
                   </span>
                 </TooltipTrigger>
-                {(!releaseReadiness.isComplete || !canToggleRelease.allowed) && (
+                {(!releaseReadiness.isComplete || !canToggleLernpaketRelease) && (
                   <TooltipContent side="bottom">
-                    {!canToggleRelease.allowed
-                      ? 'Einheit ist final freigegeben — Freigabe gesperrt'
-                      : 'Lernpaket kann erst freigegeben werden, wenn alle Aktivitäten freigegeben sind.'}
+                    {releaseLockTitle || 'Lernpaket kann erst freigegeben werden, wenn alle Aktivitäten freigegeben sind.'}
                   </TooltipContent>
                 )}
               </Tooltip>

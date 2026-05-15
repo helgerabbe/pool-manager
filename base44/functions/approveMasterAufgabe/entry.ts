@@ -182,6 +182,27 @@ Deno.serve(async (req) => {
       return Response.json({ error: perm.reason }, { status: 403 });
     }
 
+    const lockingLifecycles = new Set(['final_freigegeben', 'export_running', 'published']);
+    if (lockingLifecycles.has(einheit.export_lifecycle_status)) {
+      return Response.json(
+        {
+          error: 'Einheit ist final freigegeben — Änderungen am Freigabe-Status nicht möglich',
+          code: 'EINHEIT_FINAL_LOCKED',
+        },
+        { status: 423 }
+      );
+    }
+
+    if (lernpaket.content_status === 'approved' && lernpaket.released_at) {
+      return Response.json(
+        {
+          error: 'Parent-Lernpaket ist freigegeben — bitte erst Lernpaket-Freigabe zurücknehmen',
+          code: 'PARENT_LERNPAKET_RELEASED',
+        },
+        { status: 423 }
+      );
+    }
+
     // ── 6. content_status + sync_status aktualisieren ─────────────────────────
     // Bei 'approve': sync_status auf 'pending' setzen, damit der
     // Moodle-Export-Pfad erkennt, dass dieser Master neu/geändert

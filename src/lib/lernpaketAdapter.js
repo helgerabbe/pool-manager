@@ -34,6 +34,8 @@ export function adaptLernpaketToPoolItem(lp) {
     themenfeld_id: lp.themenfeld_id,
     sync_status: lp.sync_status,
     content_status: lp.content_status,
+    released_at: lp.released_at,
+    released_by: lp.released_by,
     // Aggregat-Flag aus der Lernpakete-Entity. Quelle der Wahrheit für
     // „Lernpaket ist vollständig". Wird ausschließlich serverseitig
     // gesetzt (siehe Lernpakete-Schema, Feld `is_complete`).
@@ -44,8 +46,8 @@ export function adaptLernpaketToPoolItem(lp) {
     _source: 'lernpaket',
     // Eindeutiger Marker für die Ampel-Logik: Lernpakete werden NICHT wie
     // reguläre `buendel`-Aufgaben (AllgemeineAufgabe mit
-    // verlinkte_lernpaket_ids) bewertet, sondern flach über `is_complete`.
-    // Lernpakete kennen keine separate „Freigabe" — Vollständigkeit reicht.
+    // verlinkte_lernpaket_ids) bewertet, sondern flach über `is_complete`
+    // plus bewusste Lernpaket-Freigabe (`released_at`).
     _isLernpaket: true,
   };
 }
