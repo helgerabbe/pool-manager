@@ -147,8 +147,8 @@ export default function WorkspaceDetailPanel({
         <EinheitLockBanner isUnitLocked={isUnitLocked} lockedByEmail={lockedByEmail} />
         <StepEmptyState
           icon={BookOpen}
-          title="Wählen Sie einen Eintrag aus"
-          description="Klicken Sie links auf einen Eintrag in der Struktur, um hier die Details zu sehen."
+          title="Lernpaket auswählen"
+          description="Wähle links ein Lernpaket aus, um Aktivitäten zuzuordnen und Lernziele zu verwalten."
           status="yellow"
         />
       </div>
