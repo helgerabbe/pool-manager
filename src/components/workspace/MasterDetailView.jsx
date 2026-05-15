@@ -513,7 +513,7 @@ export default function MasterDetailView({
             <h2 className="text-base font-bold truncate">{master.titel || `Masteraufgabe ${index}`}</h2>
             <div className="flex items-center gap-2 mt-0.5">
               <p className="text-xs text-muted-foreground">{catalogName}</p>
-              {master.is_complete === true ? (
+              {computeMasterIsComplete(fieldValues) ? (
                 <Badge className="text-[10px] bg-green-100 text-green-700 border-green-300">
                   ✓ Vollständig
                 </Badge>
