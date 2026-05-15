@@ -14,7 +14,14 @@
  * - entityId: LernpaketPhaseAktivitaet ID
  * - action: 'approve' | 'unapprove'
  * - einheitId: Einheit ID (für Scope-Validierung)
- * - targetFach: Fachbereich (für globale Fachschafts-Validierung)
+ *
+ * @MIGRATION_NOTE Supabase:
+ * - Der Cascade von Aktivität → MasterAufgabe → Aufgabenbausteine darf später
+ *   nicht mehr als N+1-Schleife im Backend laufen. Stattdessen: Postgres Trigger
+ *   AFTER UPDATE OF content_status ON lernpaket_phase_aktivitaet, der alle
+ *   abhängigen Datensätze atomar in einer Transaktion aktualisiert.
+ * - Für Base44 werden explizite hohe Limits gesetzt; in Supabase über Indexe
+ *   und set-basierte UPDATEs lösen.
  * 
  * Rückgabe: { success: boolean, entityId, newStatus, grantedBy }
  */
@@ -24,27 +31,44 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 // Konstanten
 const VALID_ACTIONS = ['approve', 'unapprove'];
 
-// ✅ Rate-Limiter: In-Memory Tracking mit Timestamps
+// ✅ Rate-Limiter: In-Memory Tracking mit Timestamps + Cleanup
 const requestLog = new Map();
+const CLEANUP_EVERY_N_REQUESTS = 500;
+const CLEANUP_MAX_MAP_SIZE = 5000;
+const DEFAULT_ENTRY_TTL_MS = 5 * 60 * 1000;
+let requestCounter = 0;
+
+function maybeRunCleanup() {
+  requestCounter += 1;
+  if (requestCounter < CLEANUP_EVERY_N_REQUESTS && requestLog.size < CLEANUP_MAX_MAP_SIZE) return;
+
+  requestCounter = 0;
+  const now = Date.now();
+  for (const [key, timestamps] of requestLog.entries()) {
+    const validTimestamps = timestamps.filter((ts) => now - ts < DEFAULT_ENTRY_TTL_MS);
+    if (validTimestamps.length === 0) {
+      requestLog.delete(key);
+    } else {
+      requestLog.set(key, validTimestamps);
+    }
+  }
+}
 
 function isRateLimited(userEmail, functionName, maxRequests = 20, windowMs = 60000) {
   const key = `${userEmail}::${functionName}`;
   const now = Date.now();
-  
-  if (!requestLog.has(key)) {
-    requestLog.set(key, []);
-  }
-  
-  const timestamps = requestLog.get(key);
+  const timestamps = requestLog.get(key) || [];
   const validTimestamps = timestamps.filter(ts => now - ts < windowMs);
-  requestLog.set(key, validTimestamps);
-  
+
   if (validTimestamps.length >= maxRequests) {
+    requestLog.set(key, validTimestamps);
+    maybeRunCleanup();
     return true; // Limit überschritten
   }
   
   validTimestamps.push(now);
   requestLog.set(key, validTimestamps);
+  maybeRunCleanup();
   return false;
 }
 
@@ -85,12 +109,12 @@ function validateApprovalPermissionWithScope(
       return { allowed: true, reason: 'lehrkraft_delegated_leitung' };
     }
 
-    // Mit delegierter EDITOR/READER: nur Bearbeitung (kein Freigeben)
-    if (action === 'approve') {
-      return { allowed: false, reason: 'lehrkraft_no_approve_permission' };
+    // Mit delegierter EDITOR/READER: keine Publikations-Aktionen
+    if (action === 'approve' || action === 'unapprove') {
+      return { allowed: false, reason: 'lehrkraft_no_publish_permission' };
     }
 
-    // Für Bearbeitung: delegierte Berechtigung für diese Einheit reicht
+    // Für reine Bearbeitung: delegierte Berechtigung für diese Einheit reicht
     return { allowed: true, reason: 'lehrkraft_delegated_edit' };
   }
 
@@ -126,18 +150,17 @@ Deno.serve(async (req) => {
       entityId, 
       action = 'approve', 
       einheitId, 
-      targetFach,
       delegatedRole  // Nur zu Info-Zwecken
     } = await req.json();
 
-    if (!entityId || !einheitId || !targetFach) {
+    if (!entityId || !einheitId) {
       console.warn(
         `[approveActivitySecure] Missing parameters from ${user.email}: ` +
-        `entityId=${entityId}, einheitId=${einheitId}, targetFach=${targetFach}`
+        `entityId=${entityId}, einheitId=${einheitId}`
       );
       return Response.json(
         {
-          error: 'Missing required parameters: entityId, einheitId, targetFach'
+          error: 'Missing required parameters: entityId, einheitId'
         },
         { status: 400 }
       );
@@ -170,20 +193,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Scope-Check: targetFach stimmt mit einheit.fach überein
-    if (einheit.fach !== targetFach) {
-      console.warn(
-        `[approveActivitySecure] Scope mismatch: einheit.fach=${einheit.fach}, targetFach=${targetFach} ` +
-        `(requested by ${user.email})`
-      );
-      return Response.json(
-        {
-          error: 'Scope mismatch: targetFach does not match Einheit fach',
-          code: 'SCOPE_MISMATCH'
-        },
-        { status: 400 }
-      );
-    }
+    const targetFach = einheit.fach;
 
     // 5. Aktivität existiert
     const aktivitaeten = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
@@ -244,7 +254,7 @@ Deno.serve(async (req) => {
     const authCheck = validateApprovalPermissionWithScope(
       rolle,
       faecher,
-      targetFach,
+      einheit.fach,
       einheitId,
       delegatedMembership,
       action
@@ -355,7 +365,7 @@ Deno.serve(async (req) => {
     try {
       const masterAufgaben = await base44.asServiceRole.entities.MasterAufgabe.filter({
         activity_id: entityId
-      });
+      }, undefined, 1000);
 
       for (const master of masterAufgaben) {
         try {
@@ -368,7 +378,7 @@ Deno.serve(async (req) => {
           // Update alle Klone dieses Masters
           const klone = await base44.asServiceRole.entities.Aufgabenbausteine.filter({
             master_aufgabe_id: master.id
-          });
+          }, undefined, 1000);
 
           for (const klon of klone) {
             try {
