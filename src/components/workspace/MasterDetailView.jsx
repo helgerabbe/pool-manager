@@ -496,8 +496,18 @@ export default function MasterDetailView({
       masterId: master.id,
       action: release ? 'approve' : 'unapprove',
     }),
-    onSuccess: (response) => {
-      const nextStatus = response?.data?.newContentStatus || 'draft';
+    onMutate: (release) => {
+      const previousStatus = localContentStatus;
+      const previousReleasedAt = localReleasedAt;
+      const previousReleasedBy = localReleasedBy;
+      const nextStatus = release ? 'approved' : 'draft';
+      setLocalContentStatus(nextStatus);
+      setLocalReleasedAt(release ? new Date().toISOString() : null);
+      setLocalReleasedBy(release ? userEmail : null);
+      return { previousStatus, previousReleasedAt, previousReleasedBy };
+    },
+    onSuccess: (response, release) => {
+      const nextStatus = response?.data?.newContentStatus || (release ? 'approved' : 'draft');
       setLocalContentStatus(nextStatus);
       setLocalReleasedAt(nextStatus === 'approved' ? new Date().toISOString() : null);
       setLocalReleasedBy(nextStatus === 'approved' ? userEmail : null);
@@ -505,7 +515,14 @@ export default function MasterDetailView({
       queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
       toast.success('Freigabe aktualisiert.');
     },
-    onError: (err) => toast.error(getFriendlyErrorMessage(err)),
+    onError: (err, _release, context) => {
+      if (context) {
+        setLocalContentStatus(context.previousStatus);
+        setLocalReleasedAt(context.previousReleasedAt);
+        setLocalReleasedBy(context.previousReleasedBy);
+      }
+      toast.error(getFriendlyErrorMessage(err));
+    },
   });
 
   const handleDelete = async () => {

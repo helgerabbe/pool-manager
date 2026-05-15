@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
     }
 
     // ── 1. MasterAufgabe auslesen ──────────────────────────────────────────────
-    const aufgabe = await base44.asServiceRole.entities.MasterAufgabe.read(masterId);
+    const aufgabe = await base44.asServiceRole.entities.MasterAufgabe.get(masterId);
 
     if (!aufgabe) {
       return Response.json({ error: 'MasterAufgabe nicht gefunden' }, { status: 404 });
@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const activity = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.read(aufgabe.activity_id);
+    const activity = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.get(aufgabe.activity_id);
     if (!activity) {
       return Response.json({ error: 'Activity nicht gefunden' }, { status: 404 });
     }
@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
     // Architektur-Entscheidung: Schreiben ist erlaubt, solange kein
     // FREMDER Lock aktiv ist. Eigene Race-Conditions werden über das
     // version-OCC der zugrunde liegenden Lock-Endpunkte abgefangen.
-    const lernpaket = await base44.asServiceRole.entities.Lernpakete.read(lernpaketId);
+    const lernpaket = await base44.asServiceRole.entities.Lernpakete.get(lernpaketId);
     if (!lernpaket) {
       return Response.json({ error: 'Lernpaket nicht gefunden' }, { status: 404 });
     }
@@ -172,7 +172,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Lernpaket hat keine Einheit' }, { status: 400 });
     }
 
-    const einheit = await base44.asServiceRole.entities.Einheiten.read(lernpaket.einheit_id);
+    const einheit = await base44.asServiceRole.entities.Einheiten.get(lernpaket.einheit_id);
     if (!einheit) {
       return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
     }

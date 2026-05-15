@@ -43,13 +43,14 @@ export default function TestModal({
       lockedMessage={lockedMessage}
       onDelete={readOnly ? undefined : onDelete}
       onSave={(baseData) => {
+        if (readOnly) return;
         const { content_status, ...cleanEditorData } = editorData || {};
         onSave?.({ ...cleanEditorData, ...baseData });
       }}
     >
       <TestEditor
         initialData={initialData}
-        onChange={(data) => setEditorData(data)}
+        onChange={(data) => !readOnly && setEditorData(data)}
         readOnly={readOnly}
       />
     </BaseActivityModal>
