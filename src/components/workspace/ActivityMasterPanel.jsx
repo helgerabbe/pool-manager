@@ -838,55 +838,58 @@ export default function ActivityMasterPanel({
 
       {/* ── Aufgabentext-Block (für supports_master Aktivitäten, NOT für KI-Tutor) ─ */}
       {supportsMaster && !isKITutor && !istKiModus && (
-        <div className="rounded-xl border border-border bg-card p-4">
-          {/* Aufgabenstellung-Header mit dezent-Stift-Icon statt großem Button */}
-          <div className="flex items-center gap-2 mb-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Aufgabenstellung
-            </p>
-            {kannBearbeiten && !isInEditMode && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={handleOpenEditModal}
-                  disabled={acquiringLock || isParentPaketLockedByOther || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || globalEditActive}
-                  className="h-6 w-6 text-muted-foreground hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={isParentPaketLockedByOther ? `🔒 Lernpaket wird von ${lernpaket?.locked_by_email} bearbeitet` : globalEditActive ? 'Tab 4 ist in Bearbeitung – bitte warten bis diese abgeschlossen ist.' : 'Aufgabenstellung bearbeiten'}
-                >
-                  {acquiringLock
-                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    : <Pencil className="w-3.5 h-3.5" />}
-                </Button>
+        <>
+          {isInEditMode ? (
+            // Edit-Modus: inline editierbar
+            <div>
+              <DefaultTextareaFieldInline
+                field={{
+                  field_name: 'aufgabentext',
+                  label: '',
+                  default_text: defaultAufgabentext,
+                }}
+                value={aufgabentext}
+                onChange={(val) => {
+                  setAufgabentext(val);
+                  setAufgabentextDirty(true);
+                }}
+                readOnly={false}
+              />
+              {aufgabentextDirty && (
+                <div className="flex justify-end gap-2 mt-2">
+                  <Button
+                    size="sm"
+                    onClick={() => saveAufgabentextMutation.mutate(aufgabentext)}
+                    disabled={saveAufgabentextMutation.isPending}
+                    className="gap-1.5 text-xs h-7"
+                  >
+                    {saveAufgabentextMutation.isPending
+                      ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Speichern…</>
+                      : <><Save className="w-3.5 h-3.5" /> Speichern</>}
+                  </Button>
+                </div>
               )}
-          </div>
-          <DefaultTextareaFieldInline
-            field={{
-              field_name: 'aufgabentext',
-              label: '',
-              default_text: defaultAufgabentext,
-            }}
-            value={aufgabentext}
-            onChange={(val) => {
-              setAufgabentext(val);
-              setAufgabentextDirty(true);
-            }}
-            readOnly={!isInEditMode}
-          />
-          {aufgabentextDirty && isInEditMode && (
-            <div className="flex justify-end gap-2 mt-3 pt-3 border-t border-border">
-              <Button
-                size="sm"
-                onClick={() => saveAufgabentextMutation.mutate(aufgabentext)}
-                disabled={saveAufgabentextMutation.isPending}
-                className="gap-1.5 text-xs h-7"
-              >
-                {saveAufgabentextMutation.isPending
-                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Speichern…</>
-                  : <><Save className="w-3.5 h-3.5" /> Speichern</>}
-              </Button>
             </div>
+          ) : (
+            // Read-Modus: einfacher blauer Kasten, Klick öffnet Bearbeitungsmodus
+            <button
+              onClick={kannBearbeiten && !isParentPaketLockedByOther && !lernpaket?.moodle_sync_status === 'locked' && !lernpaket?.export_locked && !globalEditActive && !acquiringLock
+                ? handleOpenEditModal
+                : undefined}
+              disabled={!kannBearbeiten || isParentPaketLockedByOther || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || globalEditActive || acquiringLock}
+              className="w-full text-left bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 text-sm text-blue-900 cursor-pointer hover:bg-blue-100 transition-colors disabled:cursor-default disabled:hover:bg-blue-50"
+              title={kannBearbeiten ? 'Klicken zum Bearbeiten' : ''}
+            >
+              {aufgabentext
+                ? <span className="whitespace-pre-wrap leading-relaxed">{aufgabentext}</span>
+                : <>
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 block mb-0.5">Standardtext</span>
+                    <span className="italic leading-relaxed">{defaultAufgabentext}</span>
+                  </>
+              }
+            </button>
           )}
-        </div>
+        </>
       )}
 
       {/* ── Masteraufgaben-Bereich (nur im manuellen Modus) ───────── */}
