@@ -20,6 +20,8 @@ export default function TestModal({
   isCopy = false,
   exportLocked = false,
   footerExtra = null,
+  readOnly = false,
+  lockedMessage = null,
 }) {
   const [editorData, setEditorData] = useState(initialData);
 
@@ -37,7 +39,9 @@ export default function TestModal({
       isCopy={isCopy}
       exportLocked={exportLocked}
       footerExtra={footerExtra}
-      onDelete={onDelete}
+      readOnly={readOnly}
+      lockedMessage={lockedMessage}
+      onDelete={readOnly ? undefined : onDelete}
       onSave={(baseData) => {
         const { content_status, ...cleanEditorData } = editorData || {};
         onSave?.({ ...cleanEditorData, ...baseData });
@@ -46,6 +50,7 @@ export default function TestModal({
       <TestEditor
         initialData={initialData}
         onChange={(data) => setEditorData(data)}
+        readOnly={readOnly}
       />
     </BaseActivityModal>
   );

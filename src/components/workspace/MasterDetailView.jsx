@@ -646,6 +646,7 @@ export default function MasterDetailView({
         const activeData = editingKlonId ? klonFieldValues : { ...fieldValues, content_status: master.content_status };
         const isSavingAny = saveMutation.isPending || saveKlonMutation.isPending;
 
+        const masterIsReleased = !editingKlonId && master.content_status === 'approved';
         const canReleaseMaster = computeMasterIsComplete(fieldValues);
         const testReleaseFooter = !editingKlonId && isTest ? (
           <ReleaseToggleSection
@@ -825,6 +826,8 @@ export default function MasterDetailView({
                   initialData={activeData}
                   isSaving={isSavingAny}
                   footerExtra={testReleaseFooter}
+                  readOnly={masterIsReleased}
+                  lockedMessage="Diese Masteraufgabe ist freigegeben und kann nicht bearbeitet werden. Hebe die Freigabe unten auf, um Änderungen vorzunehmen."
                   onDelete={editingKlonId ? undefined : handleDelete}
                   onSave={handleModalSave}
                   onCancel={handleCloseModal}

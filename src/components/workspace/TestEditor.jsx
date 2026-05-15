@@ -80,9 +80,7 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
     setQuestions(questions.filter(q => q.id !== id));
   };
 
-  if (readOnly) {
-    return <div className="text-sm text-muted-foreground italic">Vorschau im Read-Only Modus noch nicht implementiert.</div>;
-  }
+  const disabled = readOnly;
 
   return (
     <div className="space-y-8">
@@ -95,6 +93,7 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
           <Textarea 
             value={instruction} 
             onChange={(e) => setInstruction(e.target.value)} 
+            disabled={disabled}
             placeholder="z.B. Du hast 30 Minuten Zeit für diesen Test..." 
             className="bg-background" 
           />
@@ -108,6 +107,7 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
               min="0" 
               value={passingThreshold} 
               onChange={(e) => setPassingThreshold(Number(e.target.value))} 
+              disabled={disabled}
               className="bg-background" 
             />
           </div>
@@ -116,6 +116,7 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
             <Input 
               value={passFeedback} 
               onChange={(e) => setPassFeedback(e.target.value)} 
+              disabled={disabled}
               className="bg-background" 
             />
           </div>
@@ -124,6 +125,7 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
             <Input 
               value={failFeedback} 
               onChange={(e) => setFailFeedback(e.target.value)} 
+              disabled={disabled}
               className="bg-background" 
             />
           </div>
@@ -145,7 +147,8 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
                   <select
                     value={q.type || 'mc'}
                     onChange={(e) => updateQuestion(q.id, normalizeQuestionForType(q, e.target.value))}
-                    className="h-8 w-[180px] rounded-md border border-input bg-background px-3 text-xs font-semibold shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                    disabled={disabled}
+                    className="h-8 w-[180px] rounded-md border border-input bg-background px-3 text-xs font-semibold shadow-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-60"
                   >
                     <option value="mc">Multiple Choice</option>
                     <option value="true_false">Richtig / Falsch</option>
@@ -160,6 +163,7 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
                       min="1" 
                       value={q.points} 
                       onChange={(e) => updateQuestion(q.id, { points: Number(e.target.value) })} 
+                      disabled={disabled}
                       className="w-16 h-8 text-center" 
                     />
                   </div>
@@ -167,6 +171,7 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
                     variant="ghost" 
                     size="sm" 
                     onClick={() => removeQuestion(q.id)} 
+                    disabled={disabled}
                     className="text-destructive hover:bg-red-50 hover:text-destructive h-8 px-2"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -179,6 +184,7 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
                 <Textarea 
                   value={q.question} 
                   onChange={(e) => updateQuestion(q.id, { question: e.target.value })} 
+                  disabled={disabled}
                   placeholder="Wie lautet die Frage?" 
                 />
               </div>
@@ -191,6 +197,7 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
                     <div key={optIdx} className="flex items-center gap-2">
                       <button 
                         onClick={() => {
+                          if (disabled) return;
                           const newOpts = [...q.options];
                           newOpts[optIdx].isCorrect = !newOpts[optIdx].isCorrect;
                           updateQuestion(q.id, { options: newOpts });
@@ -202,17 +209,20 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
                       <Input 
                         value={opt.text} 
                         onChange={(e) => {
+                          if (disabled) return;
                           const newOpts = [...q.options];
                           newOpts[optIdx].text = e.target.value;
                           updateQuestion(q.id, { options: newOpts });
                         }} 
                         placeholder={`Antwort ${optIdx + 1}`} 
+                        disabled={disabled}
                         className={opt.isCorrect ? 'border-green-200 bg-green-50/50' : ''} 
                       />
                       <Button 
                         variant="ghost" 
                         size="sm" 
                         onClick={() => {
+                          if (disabled) return;
                           const newOpts = q.options.filter((_, i) => i !== optIdx);
                           updateQuestion(q.id, { options: newOpts });
                         }} 
@@ -226,6 +236,7 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
                     variant="ghost" 
                     size="sm" 
                     onClick={() => updateQuestion(q.id, { options: [...(q.options || []), { text: '', isCorrect: false }] })} 
+                    disabled={disabled}
                     className="text-xs mt-1"
                   >
                     + Option hinzufügen
@@ -244,6 +255,7 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
                         variant={q.correctAnswer === true ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => updateQuestion(q.id, { correctAnswer: true })}
+                        disabled={disabled}
                       >
                         Richtig
                       </Button>
@@ -252,6 +264,7 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
                         variant={q.correctAnswer === false ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => updateQuestion(q.id, { correctAnswer: false })}
+                        disabled={disabled}
                       >
                         Falsch
                       </Button>
@@ -263,6 +276,7 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
                     <Textarea
                       value={q.explanation || ''}
                       onChange={(e) => updateQuestion(q.id, { explanation: e.target.value })}
+                      disabled={disabled}
                       placeholder="z.B. Warum ist die Aussage falsch bzw. wie lautet die richtige Einordnung?"
                       rows={2}
                       className="text-sm"
@@ -278,6 +292,7 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
                   <Input
                     value={q.expectedAnswer || ''}
                     onChange={(e) => updateQuestion(q.id, { expectedAnswer: e.target.value })}
+                    disabled={disabled}
                     placeholder="z.B. Homepooling; Poolzeit; Zuhause"
                   />
                   <p className="text-[11px] text-muted-foreground">Mehrere erlaubte Antworten mit Semikolon trennen. Groß-/Kleinschreibung wird ignoriert.</p>
@@ -293,9 +308,9 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
           </div>
         )}
 
-        <Button onClick={addQuestion} size="sm" className="gap-2 w-full sm:w-auto">
+        {!disabled && <Button onClick={addQuestion} size="sm" className="gap-2 w-full sm:w-auto">
           <Plus className="w-4 h-4" /> Frage hinzufügen
-        </Button>
+        </Button>}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, Trash2, AlertCircle } from 'lucide-react';
+import { Loader2, Trash2, AlertCircle, Lock } from 'lucide-react';
 import ActivityResetButton from '@/components/workspace/ActivityResetButton';
 
 // Phase 7 (Freigabe-Konzept 2026-05-14): Zentral im BaseActivityModal,
@@ -39,6 +39,8 @@ export default function BaseActivityModal({
   // mitläuft. Andernfalls werden activity.field_values verwendet.
   liveFieldValues = null,
   footerExtra = null,
+  readOnly = false,
+  lockedMessage = null,
 }) {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -55,6 +57,7 @@ export default function BaseActivityModal({
   const { setReleaseStatus, isPending: isReleasePending } = useSetReleaseStatus();
 
   const handleSave = () => {
+    if (readOnly) return;
     // Phase 7: content_status wird NICHT mehr beim Speichern gesetzt —
     // ausschließlich über setReleaseStatusSecure.
     onSave({});
@@ -79,7 +82,7 @@ export default function BaseActivityModal({
 
   // Hard-Lock im Footer = Hierarchie blockiert ODER export-locked ODER speichert
   const hardDisableSave =
-    isSaving || isDeleting || exportLocked || lockState.locked || isReleasePending;
+    readOnly || isSaving || isDeleting || exportLocked || lockState.locked || isReleasePending;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -93,6 +96,16 @@ export default function BaseActivityModal({
             <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-red-800">Einheit wurde für Moodle-Export gesperrt</p>
+            </div>
+          </div>
+        )}
+
+        {readOnly && lockedMessage && (
+          <div className="px-6 py-3 bg-green-50 border-b border-green-200 flex items-start gap-3">
+            <Lock className="w-5 h-5 text-green-700 shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-green-900">Masteraufgabe freigegeben</p>
+              <p className="text-xs text-green-800 mt-0.5">{lockedMessage}</p>
             </div>
           </div>
         )}
@@ -144,7 +157,7 @@ export default function BaseActivityModal({
 
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
-              {onDelete && !deleteConfirm && !lockState.locked && (
+              {onDelete && !readOnly && !deleteConfirm && !lockState.locked && (
                 <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(true)} disabled={isSaving || isDeleting || exportLocked} className="gap-1.5 text-destructive hover:bg-red-50 hover:text-destructive">
                   <Trash2 className="w-4 h-4" />
                   {isCopy ? 'Kopie löschen' : 'Aufgabe löschen'}
@@ -161,7 +174,7 @@ export default function BaseActivityModal({
                   </Button>
                 </>
               )}
-              {onReset && !deleteConfirm && !lockState.locked && (
+              {onReset && !readOnly && !deleteConfirm && !lockState.locked && (
                 <ActivityResetButton
                   onReset={onReset}
                   disabled={isSaving || isDeleting || exportLocked}
@@ -171,9 +184,9 @@ export default function BaseActivityModal({
 
             <div className="flex items-center gap-2">
               <Button variant="outline" onClick={handleClose} disabled={isSaving || isDeleting}>
-                {lockState.locked ? 'Schließen' : 'Abbrechen'}
+                {readOnly || lockState.locked ? 'Schließen' : 'Abbrechen'}
               </Button>
-              {!lockState.locked && (
+              {!readOnly && !lockState.locked && (
                 <Button onClick={handleSave} disabled={hardDisableSave} className="gap-2">
                   {isSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</> : 'Speichern'}
                 </Button>
