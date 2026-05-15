@@ -54,6 +54,17 @@ function isMasterComplete(catalogName = '', fieldValues = {}) {
     return items.filter(i => String(i || '').trim() !== '').length >= 2;
   }
 
+  // Test: mindestens 1 Frage mit mindestens 1 richtiger Antwort
+  if (name === 'test' || name.includes('abschlusstest')) {
+    const questions = Array.isArray(fieldValues.questions) ? fieldValues.questions : [];
+    return questions.some((q) => {
+      if (!q || String(q.question || '').trim() === '') return false;
+      if (q.type === 'text') return String(q.expectedAnswer || '').trim() !== '';
+      const answers = Array.isArray(q.answers) ? q.answers : (Array.isArray(q.options) ? q.options : []);
+      return answers.some((a) => (a?.isCorrect === true || a?.correct === true) && String(a.text || '').trim() !== '');
+    });
+  }
+
   // Mini-Quiz
   if (name.includes('quiz')) {
     const questions = Array.isArray(fieldValues.questions) ? fieldValues.questions : [];

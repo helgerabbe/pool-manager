@@ -389,6 +389,7 @@ export default function ActivityMasterPanel({
     'KI-Tutor Aufgabe': 'Bearbeite die folgende Aufgabe und erkläre deinen Lösungsweg.',
     'Bildbeschreibung': 'Beschreibe das Bild möglichst genau mit eigenen Worten.',
     'Quiz': 'Beantworte die Quiz-Fragen so vollständig wie möglich.',
+    'Test': 'Bearbeite den Test sorgfältig und markiere die richtigen Antworten.',
     'Begriffe zuordnen': 'Ordne jeden Begriff der richtigen Erklärung zu.',
     'Offene Aufgabe': 'Bearbeite die folgende Aufgabe detailliert und vollständig.',
   };
@@ -424,9 +425,11 @@ export default function ActivityMasterPanel({
   // alles wie bisher — diese werden per Modal erfasst, der KI-Modus hätte
   // dort keinen sinnvollen Briefing-Katalog. KI-Tutor bleibt ebenfalls außen
   // vor (eigene Spezialform).
-  const isLueckentext = catalogEntry?.name?.toLowerCase().includes('lückentext');
-  const isBegriffeZuordnen = ['begriffe zuordnen', 'zuordnen'].some(n => catalogEntry?.name?.toLowerCase().includes(n));
-  const showModusSwitch = supportsMaster && !isKITutor && !isLueckentext && !isBegriffeZuordnen;
+  const catalogNameLower = catalogEntry?.name?.toLowerCase() || '';
+  const isLueckentext = catalogNameLower.includes('lückentext');
+  const isBegriffeZuordnen = ['begriffe zuordnen', 'zuordnen'].some(n => catalogNameLower.includes(n));
+  const isTestActivity = catalogNameLower === 'test' || catalogNameLower.includes('abschlusstest');
+  const showModusSwitch = supportsMaster && !isKITutor && !isLueckentext && !isBegriffeZuordnen && !isTestActivity;
   const [savingModusBriefing, setSavingModusBriefing] = useState(false);
 
   // Modus-Wechsel: ruft updateActivitySecure mit erstellungsModus + ggf.

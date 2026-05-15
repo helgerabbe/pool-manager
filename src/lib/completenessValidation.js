@@ -144,7 +144,13 @@ function validateTestData(data) {
   const qs = Array.isArray(data.questions)
     ? data.questions
     : (Array.isArray(data.fragen) ? data.fragen : []);
-  if (qs.length < 1) return 'Mindestens eine Frage erforderlich';
+  const hasValidQuestion = qs.some((q) => {
+    if (!q || String(q.question || q.text || '').trim() === '') return false;
+    if (q.type === 'text') return String(q.expectedAnswer || q.antwort || '').trim() !== '';
+    const answers = Array.isArray(q.answers) ? q.answers : (Array.isArray(q.options) ? q.options : []);
+    return answers.some((a) => (a?.isCorrect === true || a?.correct === true) && String(a.text || '').trim() !== '');
+  });
+  if (!hasValidQuestion) return 'Mindestens eine Frage mit mindestens einer richtigen Antwort erforderlich';
   return null;
 }
 

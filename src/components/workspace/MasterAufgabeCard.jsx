@@ -26,6 +26,7 @@ import SortingListModal from '@/components/workspace/SortingListModal';
 import MiniQuizEditor from '@/components/workspace/MiniQuizEditor';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
 import MiniQuizModal from '@/components/workspace/MiniQuizModal';
+import TestModal from '@/components/workspace/TestModal';
 import { isLockExpired } from '@/hooks/useActivityLock';
 import { useLernpaketLock } from '@/hooks/useLocks';
 import { useSyncStatus, TASK_SYNC_STATUS } from '@/hooks/useSyncStatus';
@@ -45,6 +46,7 @@ const LUECKENTEXT_NAMES = ['lückentext', 'lücken', 'lueckentext', 'cloze', 'fi
 const IMAGE_LABELING_NAMES = ['bildbeschriftung', 'bildbeschreibung', 'image labeling'];
 const SORTING_NAMES = ['reihenfolge', 'sortierung', 'sequenzierung', 'sorting', 'sequence'];
 const MINIQUIZ_NAMES = ['miniquiz', 'mini-quiz', 'quiz', 'quizze'];
+const TEST_NAMES = ['test', 'abschlusstest'];
 
 function getActivityType(name = '') {
   const lowerName = name.toLowerCase();
@@ -52,6 +54,7 @@ function getActivityType(name = '') {
   if (LUECKENTEXT_NAMES.some(n => lowerName.includes(n))) return 'lueckentext';
   if (IMAGE_LABELING_NAMES.some(n => lowerName.includes(n))) return 'imagelabeling';
   if (SORTING_NAMES.some(n => lowerName.includes(n))) return 'sorting';
+  if (TEST_NAMES.some(n => lowerName === n || lowerName.includes(n))) return 'test';
   if (MINIQUIZ_NAMES.some(n => lowerName.includes(n))) return 'miniquiz';
   if (lowerName.includes('ki-tutor')) return 'kitutor';
   return null;
@@ -71,6 +74,19 @@ function isSorting(name = '') {
 }
 function isMiniQuiz(name = '') {
   return MINIQUIZ_NAMES.some(n => name.toLowerCase().includes(n));
+}
+function isTest(name = '') {
+  const lower = name.toLowerCase();
+  return TEST_NAMES.some(n => lower === n || lower.includes(n));
+}
+function hasValidTestQuestion(fv = {}) {
+  const questions = Array.isArray(fv.questions) ? fv.questions : [];
+  return questions.some((q) => {
+    if (!q || String(q.question || '').trim() === '') return false;
+    if (q.type === 'text') return String(q.expectedAnswer || '').trim() !== '';
+    const answers = Array.isArray(q.answers) ? q.answers : (Array.isArray(q.options) ? q.options : []);
+    return answers.some((a) => (a?.isCorrect === true || a?.correct === true) && String(a.text || '').trim() !== '');
+  });
 }
 
 // ── Master Approval Button ─────────────────────────────────────────────────────
@@ -228,12 +244,14 @@ export default function MasterAufgabeCard({
   const [lueckentextModalOpen, setLueckentextModalOpen] = useState(false);
   const [sortingListModalOpen, setSortingListModalOpen] = useState(false);
   const [miniQuizModalOpen, setMiniQuizModalOpen] = useState(false);
+  const [testModalOpen, setTestModalOpen] = useState(false);
   const [acquiringLock, setAcquiringLock] = useState(false);
 
   // Implizites Locking für Lückentext + Begriffe zuordnen (unabhängig vom globalen Bearbeitungsmodus)
   const isLuecke = isLueckentext(catalogName);
   const isMatchModal = isMatchTerms(catalogName);
-  const { acquireLock, releaseLock } = useLernpaketLock((isLuecke || isMatchModal) ? master.lernpaket_id : null);
+  const isTestModal = isTest(catalogName);
+  const { acquireLock, releaseLock } = useLernpaketLock((isLuecke || isMatchModal || isTestModal) ? master.lernpaket_id : null);
 
   const [matchTermsModalOpen, setMatchTermsModalOpen] = useState(false);
 
@@ -243,6 +261,7 @@ export default function MasterAufgabeCard({
   const isImageLabeling = activityType === 'imagelabeling';
   const isSort = activityType === 'sorting';
   const isKITutor = activityType === 'kitutor';
+  const isTestType = activityType === 'test';
   const isQuiz = activityType === 'miniquiz';
 
   // Vollständigkeit der MasterAufgabe berechnen (Frontend-Spiegelung der Backend-Logik)
@@ -264,6 +283,9 @@ export default function MasterAufgabeCard({
     }
     if (name.includes('reihenfolge') || name.includes('sortierung') || name.includes('sorting')) {
       return (Array.isArray(fv.orderedItems) ? fv.orderedItems : []).filter(i => String(i || '').trim() !== '').length >= 2;
+    }
+    if (name === 'test' || name.includes('abschlusstest')) {
+      return hasValidTestQuestion(fv);
     }
     if (name.includes('quiz')) {
       return (Array.isArray(fv.questions) ? fv.questions : []).length >= 1;
@@ -440,6 +462,9 @@ export default function MasterAufgabeCard({
       } else if (SORTING_NAMES.some(n => catalogName.toLowerCase().includes(n))) {
         onEditModeChange?.(true);
         setSortingListModalOpen(true);
+      } else if (isTestModal) {
+        onEditModeChange?.(true);
+        setTestModalOpen(true);
       } else if (MINIQUIZ_NAMES.some(n => catalogName.toLowerCase().includes(n))) {
         setMiniQuizModalOpen(true);
       } else {
@@ -509,6 +534,9 @@ export default function MasterAufgabeCard({
                   handleEditMatchTerms();
                 } else if (isSort) {
                   handleEditSortierung();
+                } else if (isTestType) {
+                  onEditModeChange?.(true);
+                  setTestModalOpen(true);
                 } else if (isQuiz) {
                   setMiniQuizModalOpen(true);
                 } else {
@@ -817,6 +845,76 @@ export default function MasterAufgabeCard({
                 )}
               </div>
             )
+          ) : isTestType ? (
+            /* ── Test-Editor (Modal mit Locking, analog Lückentext) ── */
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Fragen</p>
+                {fieldValues.questions?.length > 0 ? (
+                  <div className="bg-muted/30 rounded-lg p-3 space-y-2 text-sm max-h-48 overflow-y-auto">
+                    {fieldValues.questions.map((q, i) => {
+                      const answers = Array.isArray(q.answers) ? q.answers : (Array.isArray(q.options) ? q.options : []);
+                      return (
+                        <div key={q.id || i} className="pb-2 border-b border-border/30 last:border-0 last:pb-0">
+                          <p className="font-medium">{i + 1}. {q.question}</p>
+                          <div className="mt-1 space-y-0.5 text-xs">
+                            {answers.map((ans, ai) => (
+                              <div key={ai} className={ans.isCorrect || ans.correct ? 'text-green-600 font-medium' : 'text-muted-foreground'}>
+                                {(ans.isCorrect || ans.correct) && '✓ '}{ans.text}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="italic text-muted-foreground text-sm">Noch nicht ausgefüllt.</p>
+                )}
+              </div>
+              {kannBearbeiten && !locked && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setTestModalOpen(true)}
+                  className="gap-1.5"
+                >
+                  Inhalt bearbeiten
+                </Button>
+              )}
+              <TestModal
+                open={testModalOpen}
+                onOpenChange={(isOpen) => {
+                  if (!isOpen) {
+                    setTestModalOpen(false);
+                    releaseLock();
+                    onEditModeChange?.(false);
+                  }
+                }}
+                initialData={{ ...fieldValues, content_status: master.content_status }}
+                onSave={(data) => {
+                  const { content_status, ...fvData } = data;
+                  const newFv = { ...fieldValues, ...fvData };
+                  setFieldValues(newFv);
+                  saveMutation.mutate({ fv: newFv, closeEdit: false }, {
+                    onSuccess: async () => {
+                      if (content_status) {
+                        await applyMasterReleaseStatus(content_status);
+                      }
+                      setTestModalOpen(false);
+                      releaseLock();
+                      onEditModeChange?.(false);
+                    },
+                  });
+                }}
+                onCancel={() => {
+                  setTestModalOpen(false);
+                  releaseLock();
+                  onEditModeChange?.(false);
+                }}
+                isSaving={saveMutation.isPending}
+              />
+            </div>
           ) : isQuiz ? (
             /* ── Mini-Quiz-Editor (Modal mit Locking) ── */
             <div className="space-y-3">
@@ -1013,7 +1111,7 @@ export default function MasterAufgabeCard({
           )}
 
           {/* Klon erstellen – NICHT für KI-Tutor und Bildbeschriftung */}
-          {!isKITutor && !isImageLabeling && (master.field_values?.lueckentext || master.field_values?.pairs?.length > 0 || master.field_values?.orderedItems?.length > 0 || master.field_values?.task_description || master.field_values?.questions?.length > 0) && !editMode && (
+          {!isKITutor && !isImageLabeling && (master.field_values?.lueckentext || master.field_values?.pairs?.length > 0 || master.field_values?.orderedItems?.length > 0 || master.field_values?.task_description || master.field_values?.questions?.length > 0) && !editMode && !testModalOpen && (
             <div className="border-t border-border/60 pt-4">
               <Button
                 variant="ghost"

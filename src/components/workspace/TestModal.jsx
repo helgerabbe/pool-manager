@@ -6,7 +6,7 @@
  * Tests und Quizze sind vollständig getrennte Systeme.
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import BaseActivityModal from '@/components/workspace/BaseActivityModal';
 import TestEditor from '@/components/workspace/TestEditor';
 
@@ -21,6 +21,10 @@ export default function TestModal({
   exportLocked = false,
 }) {
   const [editorData, setEditorData] = useState(initialData);
+
+  useEffect(() => {
+    if (open) setEditorData(initialData);
+  }, [open, initialData]);
 
   return (
     <BaseActivityModal

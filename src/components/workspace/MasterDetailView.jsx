@@ -172,7 +172,7 @@ function MasterContentReadOnly({ master, catalogName }) {
     );
   }
 
-  // Test (eigenständig wie Quiz, nutzt aber gleiches Format)
+  // Test (eigenständig wie Quiz, nutzt aber eigenes Test-Format)
   if (['test'].some(n => catalogName.toLowerCase().includes(n))) {
     return (
       <div className="space-y-2">
@@ -180,18 +180,21 @@ function MasterContentReadOnly({ master, catalogName }) {
           <>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Fragen ({fv.questions.length})</p>
             <div className="bg-muted/30 rounded-lg p-3 space-y-2 text-sm max-h-64 overflow-y-auto">
-              {fv.questions.map((q, i) => (
-                <div key={i} className="pb-2 border-b border-border/30 last:border-0 last:pb-0">
-                  <p className="font-medium">{i + 1}. {q.question}</p>
-                  <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-                    {q.answers?.map((ans, ai) => (
-                      <div key={ai} className={ans.isCorrect ? 'text-green-600 font-medium' : ''}>
-                        {ans.isCorrect && '✓ '}{ans.text}
-                      </div>
-                    ))}
+              {fv.questions.map((q, i) => {
+                const answers = Array.isArray(q.answers) ? q.answers : (Array.isArray(q.options) ? q.options : []);
+                return (
+                  <div key={q.id || i} className="pb-2 border-b border-border/30 last:border-0 last:pb-0">
+                    <p className="font-medium">{i + 1}. {q.question}</p>
+                    <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                      {answers.map((ans, ai) => (
+                        <div key={ai} className={ans.isCorrect || ans.correct ? 'text-green-600 font-medium' : ''}>
+                          {(ans.isCorrect || ans.correct) && '✓ '}{ans.text}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </>
         ) : (
@@ -342,6 +345,15 @@ export default function MasterDetailView({
     if (name.includes('reihenfolge') || name.includes('sortierung') || name.includes('sorting')) {
       const items = Array.isArray(fv.orderedItems) ? fv.orderedItems : [];
       return items.filter(i => String(i || '').trim() !== '').length >= 2;
+    }
+    if (name === 'test' || name.includes('abschlusstest')) {
+      const questions = Array.isArray(fv.questions) ? fv.questions : [];
+      return questions.some((q) => {
+        if (!q || String(q.question || '').trim() === '') return false;
+        if (q.type === 'text') return String(q.expectedAnswer || '').trim() !== '';
+        const answers = Array.isArray(q.answers) ? q.answers : (Array.isArray(q.options) ? q.options : []);
+        return answers.some((a) => (a?.isCorrect === true || a?.correct === true) && String(a.text || '').trim() !== '');
+      });
     }
     if (name.includes('quiz')) {
       return (Array.isArray(fv.questions) ? fv.questions : []).length >= 1;
@@ -513,9 +525,13 @@ export default function MasterDetailView({
             <h2 className="text-base font-bold truncate">{master.titel || `Masteraufgabe ${index}`}</h2>
             <div className="flex items-center gap-2 mt-0.5">
               <p className="text-xs text-muted-foreground">{catalogName}</p>
-              {computeMasterIsComplete(fieldValues) ? (
+              {master.content_status === 'approved' ? (
                 <Badge className="text-[10px] bg-green-100 text-green-700 border-green-300 gap-1">
                   <Lock className="w-3 h-3" /> Freigegeben
+                </Badge>
+              ) : computeMasterIsComplete(fieldValues) ? (
+                <Badge className="text-[10px] bg-green-100 text-green-700 border-green-300">
+                  Vollständig
                 </Badge>
               ) : (
                 <Badge className="text-[10px] bg-amber-100 text-amber-700 border-amber-300">
