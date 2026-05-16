@@ -448,6 +448,10 @@ export default function ActivityMasterPanel({
   const isBegriffeZuordnen = ['begriffe zuordnen', 'zuordnen'].some(n => catalogNameLower.includes(n));
   const isTestActivity = catalogNameLower === 'test' || catalogNameLower.includes('abschlusstest');
   const showModusSwitch = supportsMaster && !isKITutor && !isLueckentext && !isBegriffeZuordnen && !isTestActivity;
+  const effectiveIstKiModus = showModusSwitch && istKiModus;
+  const emptyMasterHint = isBegriffeZuordnen
+    ? 'Es sind noch keine Begriffe oder Zuordnungen hinterlegt. Klicke auf „Erste Aufgabe erstellen“, um die Begriffe zu erfassen.'
+    : 'Erstelle jetzt die erste Masteraufgabe als Vorlage für KI-generierte Varianten.';
   const [savingModusBriefing, setSavingModusBriefing] = useState(false);
 
   // Modus-Wechsel: ruft updateActivitySecure mit erstellungsModus + ggf.
@@ -813,7 +817,7 @@ export default function ActivityMasterPanel({
       {/* ── Edit-Mode Banner entfernt — wird global in TaskCreationView gerendert ── */}
 
       {/* ── Aufgabentext-Block direkt unter Header (für supports_master, NOT KI-Tutor, NOT KI-Modus) ─ */}
-      {supportsMaster && !isKITutor && !istKiModus && (
+      {supportsMaster && !isKITutor && !effectiveIstKiModus && (
         <>
           {isInEditMode ? (
             <div>
@@ -883,7 +887,7 @@ export default function ActivityMasterPanel({
       )}
 
       {/* ── KI-Modus: Briefing-Formular statt Aufgabenstellung + Master-Sektion ── */}
-      {showModusSwitch && istKiModus && (
+      {showModusSwitch && effectiveIstKiModus && (
         <KiBriefingForm
           aktivitaetName={catalogEntry?.name || ''}
           initialBriefing={activityRecord?.ki_briefing}
@@ -896,7 +900,7 @@ export default function ActivityMasterPanel({
 
 
       {/* ── Masteraufgaben-Bereich (nur im manuellen Modus) ───────── */}
-      {supportsMaster && !istKiModus && (
+      {supportsMaster && !effectiveIstKiModus && (
         <div className="space-y-4">
 
           {/* Sektion-Header */}
@@ -1000,7 +1004,7 @@ export default function ActivityMasterPanel({
               <div>
                 <p className="font-semibold text-sm">Noch keine Aufgaben</p>
                 <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
-                  Erstelle jetzt die erste Masteraufgabe als Vorlage für KI-generierte Varianten.
+                  {emptyMasterHint}
                 </p>
               </div>
               <Button onClick={handleAddMaster} disabled={creating || isParentPaketLockedByOther} title={isParentPaketLockedByOther ? `🔒 Lernpaket wird gerade von ${lernpaket?.locked_by_email} bearbeitet` : ''} className="gap-2">
