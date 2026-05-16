@@ -7,22 +7,18 @@
  * Integriert Web Speech API für iterativen KI-Assistenten mit Spracheingabe.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Sparkles, Loader2, Mic, MicOff, AlertCircle } from 'lucide-react';
+import { Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
+import SpeechInputButton from '@/components/ui/SpeechInputButton';
 
 export default function OffeneAufgabeEditor({ initialData = {}, onChange, readOnly = false }) {
   const [description, setDescription] = useState(initialData.description || '');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState('');
-  const recognitionRef = useRef(null);
-  const finalTranscriptRef = useRef('');
-  const resultIndexRef = useRef(0);
 
   // DATENBRÜCKE ZUM MODAL
   useEffect(() => {
@@ -31,92 +27,6 @@ export default function OffeneAufgabeEditor({ initialData = {}, onChange, readOn
     }
   }, [description]);
 
-  // Initialisierung der Web Speech API
-  useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'de-DE';
-
-      recognition.onresult = (event) => {
-        // Sammle alle finalen Results (isFinal = true) akkumulativ
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          if (event.results[i].isFinal) {
-            finalTranscriptRef.current += event.results[i][0].transcript + ' ';
-          }
-        }
-
-        // Zeige aktuellen zusammengesetzten Text + interim Results
-        let currentInterim = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          if (!event.results[i].isFinal) {
-            currentInterim += event.results[i][0].transcript;
-          }
-        }
-
-        setTranscript((finalTranscriptRef.current + currentInterim).trim());
-      };
-
-      recognition.onerror = (event) => {
-        console.error('Speech recognition error', event.error);
-        setIsListening(false);
-        if (event.error !== 'aborted') {
-          toast.error('Fehler bei der Spracherkennung. Bitte Mikrofon-Berechtigungen prüfen.');
-        }
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
-      recognitionRef.current = recognition;
-    }
-  }, []);
-
-  // Mikrofon-Toggle
-  const toggleListening = () => {
-    if (isListening) {
-      recognitionRef.current?.stop();
-    } else {
-      setTranscript('');
-      finalTranscriptRef.current = '';
-      resultIndexRef.current = 0;
-      try {
-        recognitionRef.current?.start();
-        setIsListening(true);
-      } catch (err) {
-        toast.error('Spracherkennung konnte nicht gestartet werden.');
-      }
-    }
-  };
-
-  // KI-Generierung aus Sprachinput
-  const handleGenerateFromVoice = async () => {
-    if (!transcript.trim()) return;
-    
-    setIsGenerating(true);
-    try {
-      const basePrompt = description
-        ? `Aktueller Aufgabenentwurf:\n"${description}"\n\nBitte überarbeite ihn basierend auf diesem Feedback und mache ihn präziser und pädagogisch hilfreicher:\n"${transcript}"`
-        : `Erstelle eine professionelle, detaillierte Aufgabenbeschreibung für Schüler:innen basierend auf dieser Idee:\n"${transcript}"`;
-
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt: basePrompt,
-      });
-
-      if (result) {
-        setDescription(result);
-        setTranscript('');
-        toast.success('Aufgabenbeschreibung erfolgreich generiert.');
-      }
-    } catch (error) {
-      toast.error('Fehler bei der KI-Generierung: ' + error.message);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   const handleRefinement = async (action) => {
     if (!description.trim()) {
@@ -168,51 +78,19 @@ export default function OffeneAufgabeEditor({ initialData = {}, onChange, readOn
           <div>
             <h3 className="text-sm font-bold text-indigo-900">KI-Assistent für Aufgabenbeschreibungen</h3>
             <p className="text-xs text-indigo-700 mt-1">
-              Sprich deine Idee ein oder nenne Änderungswünsche zum bestehenden Text. Die KI formuliert daraus eine professionelle Beschreibung für den Moodle-Export.
+              Sprich deine Idee bis zu 60 Sekunden ein. Der erkannte Text erscheint direkt unten in der Aufgabenbeschreibung.
             </p>
           </div>
         </div>
 
-        <div className="flex flex-col gap-3">
-          {/* Sprachsteuerung */}
-          {recognitionRef.current ? (
-            <div className="flex items-center gap-3">
-              <Button 
-                onClick={toggleListening} 
-                variant={isListening ? "destructive" : "secondary"}
-                className={`gap-2 ${isListening ? 'animate-pulse' : ''}`}
-                disabled={isGenerating}
-              >
-                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                {isListening ? "Aufnahme stoppen" : "Idee einsprechen"}
-              </Button>
-              
-              {isListening && <span className="text-xs text-red-600 font-medium">Hört zu...</span>}
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
-              <AlertCircle className="w-4 h-4" />
-              Dein Browser unterstützt die Web Speech API leider nicht.
-            </div>
-          )}
-
-          {/* Transkript & Generieren-Button */}
-          {(transcript || isGenerating) && (
-            <div className="bg-white p-3 rounded-lg border border-indigo-100 shadow-sm space-y-3">
-              <div className="text-sm text-indigo-900 italic bg-indigo-50/50 p-2 rounded">
-                "{transcript || 'Verarbeite Audio...'}"
-              </div>
-              <Button 
-                onClick={handleGenerateFromVoice} 
-                disabled={isGenerating || !transcript}
-                className="w-full gap-2 bg-indigo-600 hover:bg-indigo-700 text-white"
-              >
-                {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                {isGenerating ? 'KI generiert...' : (description ? 'Text anpassen' : 'Entwurf generieren')}
-              </Button>
-            </div>
-          )}
-        </div>
+        <SpeechInputButton
+          value={description}
+          onResult={setDescription}
+          disabled={isGenerating}
+          maxSeconds={60}
+          label="Idee einsprechen"
+          listeningLabel="Aufnahme stoppen"
+        />
       </div>
 
       {/* Haupttextfeld */}

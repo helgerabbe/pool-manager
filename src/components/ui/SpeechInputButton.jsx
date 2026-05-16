@@ -30,6 +30,8 @@ export default function SpeechInputButton({
   disabled = false,
   maxSeconds = 20,
   className,
+  label = null,
+  listeningLabel = null,
 }) {
   const [isListening, setIsListening] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(maxSeconds);
@@ -203,7 +205,8 @@ export default function SpeechInputButton({
         aria-label={isListening ? 'Aufnahme stoppen' : 'Spracheingabe starten'}
         aria-pressed={isListening}
         className={cn(
-          'flex items-center justify-center w-7 h-7 rounded-full transition-colors shrink-0',
+          'flex items-center justify-center transition-colors shrink-0',
+          label ? 'h-9 px-3 rounded-md gap-2 text-sm font-medium' : 'w-7 h-7 rounded-full',
           isListening
             ? 'bg-red-100 text-red-600 animate-pulse ring-2 ring-red-400 ring-offset-1'
             : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground',
@@ -211,6 +214,7 @@ export default function SpeechInputButton({
         )}
       >
         {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+        {label && <span>{isListening ? (listeningLabel || 'Aufnahme stoppen') : label}</span>}
       </button>
     </div>
   );
