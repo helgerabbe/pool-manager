@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2, Trash2, AlertCircle, Lock } from 'lucide-react';
@@ -44,17 +44,22 @@ export default function BaseActivityModal({
 }) {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [localActivity, setLocalActivity] = useState(activity);
+
+  useEffect(() => {
+    setLocalActivity(activity);
+  }, [activity?.id, activity?.content_status, activity?.released_at, activity?.released_by]);
 
   // Phase 7: Vollständigkeit & Sperre
-  const hasReleaseControls = !!activity && !!catalogEntry;
+  const hasReleaseControls = !!localActivity && !!catalogEntry;
   const completeness = useActivityCompleteness(
     catalogEntry,
-    liveFieldValues ?? activity?.field_values ?? {}
+    liveFieldValues ?? localActivity?.field_values ?? {}
   );
-  const lockState = useActivityLockState(activity, parentLernpaket, parentEinheit);
-  const canToggle = useCanToggleActivityRelease(activity, parentLernpaket, parentEinheit);
-  const isReleased = activity?.content_status === 'approved';
-  const { setReleaseStatus, isPending: isReleasePending } = useSetReleaseStatus();
+  const lockState = useActivityLockState(localActivity, parentLernpaket, parentEinheit);
+  const canToggle = useCanToggleActivityRelease(localActivity, parentLernpaket, parentEinheit);
+  const isReleased = localActivity?.content_status === 'approved';
+  const { setReleaseStatusAsync, isPending: isReleasePending } = useSetReleaseStatus();
 
   const handleSave = () => {
     if (readOnly) return;
@@ -75,9 +80,15 @@ export default function BaseActivityModal({
     onOpenChange(false);
   };
 
-  const handleToggleRelease = (next) => {
-    if (!activity?.id) return;
-    setReleaseStatus({ targetType: 'activity', targetId: activity.id, release: next });
+  const handleToggleRelease = async (next) => {
+    if (!localActivity?.id) return;
+    await setReleaseStatusAsync({ targetType: 'activity', targetId: localActivity.id, release: next });
+    setLocalActivity(prev => prev ? {
+      ...prev,
+      content_status: next ? 'approved' : 'draft',
+      released_at: next ? (prev.released_at || new Date().toISOString()) : null,
+      released_by: next ? prev.released_by : null,
+    } : prev);
   };
 
   // Hard-Lock im Footer = Hierarchie blockiert ODER export-locked ODER speichert
@@ -113,8 +124,8 @@ export default function BaseActivityModal({
         {hasReleaseControls && lockState.locked && (
           <ReleasedLockedBanner
             reason={lockState.reason}
-            releasedAt={activity?.released_at}
-            releasedBy={activity?.released_by}
+            releasedAt={localActivity?.released_at}
+            releasedBy={localActivity?.released_by}
             onUnrelease={
               lockState.reason === 'activity_released' && canToggle.allowed && !isReleasePending
                 ? () => handleToggleRelease(false)

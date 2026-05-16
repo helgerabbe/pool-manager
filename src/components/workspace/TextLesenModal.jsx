@@ -50,14 +50,19 @@ export default function TextLesenModal({
 }) {
   const [fieldValues, setFieldValues] = useState(initialFieldValues);
   const [exportLockedWasEnabled, setExportLockedWasEnabled] = useState(exportLocked);
+  const [localActivity, setLocalActivity] = useState(activity);
   // Lokaler Freigabe-State: null = unverändert, true = soll freigegeben werden, false = soll zurückgenommen werden
   const [pendingRelease, setPendingRelease] = useState(null);
 
+  useEffect(() => {
+    setLocalActivity(activity);
+  }, [activity?.id, activity?.content_status, activity?.released_at, activity?.released_by]);
+
   // Phase 6: Live-Vollständigkeit + Sperrlogik
   const completeness = useActivityCompleteness(catalogEntry, fieldValues);
-  const lockState = useActivityLockState(activity, parentLernpaket, parentEinheit);
-  const canToggle = useCanToggleActivityRelease(activity, parentLernpaket, parentEinheit);
-  const isReleased = activity?.content_status === 'approved';
+  const lockState = useActivityLockState(localActivity, parentLernpaket, parentEinheit);
+  const canToggle = useCanToggleActivityRelease(localActivity, parentLernpaket, parentEinheit);
+  const isReleased = localActivity?.content_status === 'approved';
   const { setReleaseStatusAsync, isPending: isReleasePending } = useSetReleaseStatus();
   const [isReleasingFromToggle, setIsReleasingFromToggle] = useState(false);
 
@@ -115,13 +120,13 @@ export default function TextLesenModal({
     }
 
     // Wenn der Toggle auf "freigeben" gestellt ist
-    if (pendingRelease === true && activity?.id) {
+    if (pendingRelease === true && localActivity?.id) {
       setIsReleasingFromToggle(true);
       try {
         // Erst Inhalte via onSave persistieren (inkl. Lock-Release + Cache)
         await onSave?.(payload);
         // Dann Freigabe setzen — DB hat jetzt die aktuellen field_values
-        await setReleaseStatusAsync({ targetType: 'activity', targetId: activity.id, release: true });
+        await setReleaseStatusAsync({ targetType: 'activity', targetId: localActivity.id, release: true });
       } catch (err) {
         console.error('[TextLesenModal] Release fehlgeschlagen:', err);
         // Fehler werden durch Toast im Hook sichtbar, Modal bereits geschlossen durch onSave
@@ -132,11 +137,12 @@ export default function TextLesenModal({
     }
 
     // Wenn Toggle auf "zurücknehmen" gestellt ist
-    if (pendingRelease === false && activity?.id && isReleased) {
+    if (pendingRelease === false && localActivity?.id && isReleased) {
       setIsReleasingFromToggle(true);
       try {
         await onSave?.(payload);
-        await setReleaseStatusAsync({ targetType: 'activity', targetId: activity.id, release: false });
+        await setReleaseStatusAsync({ targetType: 'activity', targetId: localActivity.id, release: false });
+        setLocalActivity(prev => prev ? { ...prev, content_status: 'draft', released_at: null, released_by: null } : prev);
       } catch (err) {
         console.error('[TextLesenModal] Unrelease fehlgeschlagen:', err);
       } finally {
@@ -152,11 +158,12 @@ export default function TextLesenModal({
   // Toggle: Freigabe zurücknehmen muss im Sperr-Banner sofort wirken, weil
   // dort kein Speicherbutton sichtbar ist. Freigeben bleibt bewusst lokal bis „Speichern & Freigeben“.
   const handleToggleRelease = async (next) => {
-    if (!activity?.id) return;
+    if (!localActivity?.id) return;
     if (next === false && isReleased) {
       setIsReleasingFromToggle(true);
       try {
-        await setReleaseStatusAsync({ targetType: 'activity', targetId: activity.id, release: false });
+        await setReleaseStatusAsync({ targetType: 'activity', targetId: localActivity.id, release: false });
+        setLocalActivity(prev => prev ? { ...prev, content_status: 'draft', released_at: null, released_by: null } : prev);
         setPendingRelease(null);
       } finally {
         setIsReleasingFromToggle(false);
@@ -180,9 +187,9 @@ export default function TextLesenModal({
         {isReleasingFromToggle && (
           <div className="absolute inset-0 z-50 bg-white/85 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center gap-3">
             <Loader2 className="w-7 h-7 animate-spin text-primary" />
-            <p className="text-sm font-semibold text-foreground">Aufgabe wird freigegeben…</p>
+            <p className="text-sm font-semibold text-foreground">{isReleased ? 'Freigabe wird zurückgenommen…' : 'Aufgabe wird freigegeben…'}</p>
             <p className="text-xs text-muted-foreground max-w-xs text-center">
-              Inhalte werden gespeichert und gesperrt. Das kann bei großen Videos einen Moment dauern.
+              {isReleased ? 'Der Dialog wird gleich wieder zur Bearbeitung freigegeben.' : 'Inhalte werden gespeichert und gesperrt. Das kann bei großen Videos einen Moment dauern.'}
             </p>
           </div>
         )}
@@ -213,8 +220,8 @@ export default function TextLesenModal({
         {lockState.locked && (
           <ReleasedLockedBanner
             reason={lockState.reason}
-            releasedAt={activity?.released_at}
-            releasedBy={activity?.released_by}
+            releasedAt={localActivity?.released_at}
+            releasedBy={localActivity?.released_by}
             // Rücknahme nur erlaubt, wenn der Sperrgrund die Aktivität selbst
             // ist UND die Hierarchie offen ist (canToggle).
             onUnrelease={
