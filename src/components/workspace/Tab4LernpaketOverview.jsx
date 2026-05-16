@@ -61,8 +61,17 @@ export default function Tab4LernpaketOverview({
   const paketZiele = lernziele.filter(lz => lz.lernpaket_id === paket.id);
   const phasenConfig = paket.phasen_konfiguration || {};
 
-  // Release-Logik
+  // Release-Logik: Für Tab 4 zählt die bewusste Freigabe der Aktivitäten.
+  // Bei Master-Aktivitäten kann `is_complete` trotz freigegebener Master noch
+  // verzögert nachziehen; der Button darf deshalb nicht daran hängen bleiben.
   const releaseReadiness = useLernpaketReleaseReadiness(paket, paketAktivitaeten);
+  const activePaketAktivitaeten = paketAktivitaeten.filter(
+    a => (phasenConfig[a.phase] || {}).disabled !== true
+  );
+  const allActivitiesReleased = activePaketAktivitaeten.length > 0 && activePaketAktivitaeten.every(
+    a => a.content_status === 'approved'
+  );
+  const canReleasePackage = allActivitiesReleased || releaseReadiness.isComplete;
   const canToggleRelease = useCanToggleLernpaketRelease(paket, einheit);
   const { setReleaseStatus, isPending: isReleasePending } = useSetReleaseStatus();
   const isReleased = paket.content_status === 'approved' && !!paket.released_at;
@@ -109,8 +118,8 @@ export default function Tab4LernpaketOverview({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => releaseReadiness.isComplete && canToggleRelease.allowed && handleRelease(true)}
-                      disabled={!releaseReadiness.isComplete || !canToggleRelease.allowed || isReleasePending}
+                      onClick={() => canReleasePackage && canToggleRelease.allowed && handleRelease(true)}
+                      disabled={!canReleasePackage || !canToggleRelease.allowed || isReleasePending}
                       className="gap-2"
                     >
                       {isReleasePending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
@@ -118,7 +127,7 @@ export default function Tab4LernpaketOverview({
                     </Button>
                   </span>
                 </TooltipTrigger>
-                {(!releaseReadiness.isComplete || !canToggleRelease.allowed) && (
+                {(!canReleasePackage || !canToggleRelease.allowed) && (
                   <TooltipContent side="bottom">
                     {!canToggleRelease.allowed
                       ? 'Einheit ist final freigegeben — Freigabe gesperrt'

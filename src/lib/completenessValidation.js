@@ -352,11 +352,11 @@ export function validateLernpaketReleaseReadiness(lernpaket, activities = []) {
   });
 
   const blockingActivities = activeActivities.filter(
-    a => a.content_status !== 'approved' || a.is_complete !== true
+    a => a.content_status !== 'approved'
   );
 
   const missingFields = blockingActivities.map(a =>
-    miss(`activity:${a.id}`, a.titel || a.id, 'Aktivität noch nicht freigegeben oder unvollständig')
+    miss(`activity:${a.id}`, a.titel || a.id, 'Aktivität noch nicht freigegeben')
   );
 
   return {

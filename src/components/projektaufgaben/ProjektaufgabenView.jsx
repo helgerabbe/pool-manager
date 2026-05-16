@@ -411,7 +411,7 @@ export default function ProjektaufgabenView({
                 className="gap-2 w-full"
               >
                 <Plus className="w-4 h-4" />
-                Neue Aufgabe
+                Neues Projekt
               </Button>
               <Button
                 size="sm"
