@@ -1,0 +1,164 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+
+const MISSIONEN = {
+  problem: 'Den Funken zünden — Alltagsbezug, Motivation, echtes Problem',
+  entdeckung: 'Selber rausfinden lassen — Muster, Regeln oder Prinzipien selbst entdecken',
+  recherche: 'Informationen checken — Quellen finden, prüfen, vergleichen',
+  anwendung: 'Zeigen, was man kann — Wissen sicher in bekanntem Kontext anwenden',
+  transfer: 'In neue Welten übertragen — Wissen auf neue Kontexte übertragen',
+  kreativitaet: 'Etwas Eigenes erschaffen — offenes Produkt, Gestaltung, Deep Dive',
+};
+
+const RESPONSE_SCHEMA = {
+  type: 'object',
+  properties: {
+    ideen: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          titel: { type: 'string' },
+          aufgabenstellung: { type: 'string' },
+          mission_type: { type: 'string' },
+          schwierigkeitsgrad: { type: 'number', enum: [1, 2, 3] },
+          material_level: { type: 'number', enum: [0, 1, 2, 3] },
+          required_materials: { type: ['string', 'null'] },
+          didaktischer_hinweis: { type: 'string' },
+        },
+        required: ['titel', 'aufgabenstellung', 'mission_type', 'schwierigkeitsgrad', 'material_level', 'didaktischer_hinweis'],
+      },
+    },
+  },
+  required: ['ideen'],
+};
+
+function cleanList(items, mapper) {
+  return (Array.isArray(items) ? items : []).map(mapper).filter(Boolean);
+}
+
+function buildGrundgeruestBlock(einheit) {
+  const parts = [];
+  if (einheit?.grundgeruest_rohtext) {
+    parts.push(`Rohtext der Lehrkraft:\n${einheit.grundgeruest_rohtext}`);
+  }
+  if (einheit?.grundgeruest_strukturiert && typeof einheit.grundgeruest_strukturiert === 'object') {
+    parts.push(`Strukturierte KI-Auswertung:\n${JSON.stringify(einheit.grundgeruest_strukturiert, null, 2)}`);
+  }
+  return parts.join('\n\n') || '(Noch kein Grundgerüst gepflegt.)';
+}
+
+function normalizeIdeas(rawIdeas) {
+  const validMissions = new Set(Object.keys(MISSIONEN));
+  return (Array.isArray(rawIdeas) ? rawIdeas : []).slice(0, 5).map((idea) => {
+    const mission = validMissions.has(idea?.mission_type) ? idea.mission_type : 'transfer';
+    let schwierigkeit = parseInt(idea?.schwierigkeitsgrad, 10);
+    if (![1, 2, 3].includes(schwierigkeit)) schwierigkeit = 2;
+    let materialLevel = parseInt(idea?.material_level, 10);
+    if (![0, 1, 2, 3].includes(materialLevel)) materialLevel = 1;
+    return {
+      titel: String(idea?.titel || '').trim().slice(0, 120),
+      aufgabenstellung: String(idea?.aufgabenstellung || '').trim(),
+      mission_type: mission,
+      schwierigkeitsgrad: schwierigkeit,
+      material_level: materialLevel,
+      required_materials: materialLevel === 0 ? null : (idea?.required_materials ? String(idea.required_materials).trim() : null),
+      didaktischer_hinweis: String(idea?.didaktischer_hinweis || '').trim(),
+    };
+  }).filter((idea) => idea.titel && idea.aufgabenstellung);
+}
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { einheit_id, themenfeld_id, fokus = '', count = 3 } = body || {};
+
+    if (!einheit_id || !themenfeld_id) {
+      return Response.json({ error: 'Einheit und Themenfeld sind erforderlich.' }, { status: 400 });
+    }
+
+    const [einheit, themenfeld, lernpakete] = await Promise.all([
+      base44.asServiceRole.entities.Einheiten.get(einheit_id),
+      base44.asServiceRole.entities.Themenfeld.get(themenfeld_id),
+      base44.asServiceRole.entities.Lernpakete.filter({ themenfeld_id }),
+    ]);
+
+    if (!einheit || !themenfeld) {
+      return Response.json({ error: 'Einheit oder Themenfeld nicht gefunden.' }, { status: 404 });
+    }
+
+    const lernzielGruppen = await Promise.all(
+      (lernpakete || []).map(async (paket) => {
+        const lernziele = await base44.asServiceRole.entities.Lernziele.filter({ lernpaket_id: paket.id });
+        return { paket, lernziele };
+      })
+    );
+
+    const lernpaketBlock = lernzielGruppen.length > 0
+      ? lernzielGruppen.map(({ paket, lernziele }) => {
+          const ziele = cleanList(lernziele, (lz) => lz.titel || lz.beschreibung || lz.lernziel || lz.name).slice(0, 8);
+          return `- ${paket.titel_des_pakets || 'Unbenanntes Lernpaket'}${paket.kernbegriffe?.length ? `\n  Kernbegriffe: ${paket.kernbegriffe.join(', ')}` : ''}${ziele.length ? `\n  Lernziele:\n  - ${ziele.join('\n  - ')}` : ''}`;
+        }).join('\n')
+      : '(In diesem Themenfeld sind noch keine Lernpakete hinterlegt.)';
+
+    const gesamtziele = cleanList(einheit.gesamtziele, (z) => String(z)).join('\n- ') || '(Keine Gesamtziele gepflegt.)';
+    const missionBlock = Object.entries(MISSIONEN).map(([key, value]) => `- ${key}: ${value}`).join('\n');
+    const desiredCount = Math.max(1, Math.min(parseInt(count, 10) || 3, 5));
+
+    const prompt = `Du bist ein erfahrener Didaktiker. Du hilfst einer Lehrkraft NICHT beim finalen Ausformulieren perfekter Aufgaben, sondern als Ideenbox: Du schlägst starke, passende Aufgabenideen für Tab 5 vor.
+
+## Einheit
+Titel: ${einheit.titel_der_einheit || ''}
+Fach: ${einheit.fach || ''}
+Jahrgang: ${einheit.jahrgangsstufe || ''}
+Gesamtziele:\n- ${gesamtziele}
+
+## Grundgerüst der Einheit
+${buildGrundgeruestBlock(einheit)}
+
+## Gewähltes Themenfeld
+Titel: ${themenfeld.titel || ''}
+Beschreibung: ${themenfeld.beschreibung || '(keine Beschreibung)'}
+
+## Wissensspeicher in diesem Themenfeld
+${lernpaketBlock}
+
+## Mögliche Missionen
+${missionBlock}
+
+## Wunsch der Lehrkraft für diese Runde
+${fokus?.trim() ? fokus.trim() : '(kein besonderer Wunsch — bitte ausgewogene Ideen über verschiedene Missionen hinweg)'}
+
+## Aufgabe
+Generiere ${desiredCount} unterschiedliche Aufgabenideen. Jede Idee soll:
+- sichtbar aus dem Themenfeld und seinen Lernpaketen/Lernzielen entstehen,
+- Lernpakete als Wissensspeicher nutzen, aber eine echte Unterrichtsaufgabe für Schüler sein,
+- nicht nur Basiswissen abfragen, sondern Anwendung, Denken, Transfer oder Gestaltung anregen,
+- eine passende Mission wählen,
+- Schwierigkeit (1 leicht, 2 mittel, 3 anspruchsvoll) einschätzen,
+- Materialaufwand aus Lehrkraft-Sicht einschätzen (0 kein Zusatzmaterial, 1 minimal, 2 moderat, 3 aufwändig),
+- kurz begründen, warum die Idee didaktisch sinnvoll ist.
+
+Antworte ausschließlich als valides JSON im vorgegebenen Schema.`;
+
+    const result = await base44.integrations.Core.InvokeLLM({
+      prompt,
+      response_json_schema: RESPONSE_SCHEMA,
+    });
+
+    const ideen = normalizeIdeas(result?.ideen);
+    if (ideen.length === 0) {
+      return Response.json({ error: 'Die KI hat keine verwertbaren Ideen geliefert. Bitte erneut versuchen.' }, { status: 502 });
+    }
+
+    return Response.json({ ideen });
+  } catch (error) {
+    console.error('[generateThemenfeldTaskIdeas] Fehler:', error);
+    return Response.json({ error: error?.message || 'Fehler beim Generieren der Ideen.' }, { status: 500 });
+  }
+});

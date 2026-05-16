@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { Plus, Star, FileText, ChevronRight, Edit, Trash2, CheckCircle2, PenLine, Lock, Wand2, Image as ImageIcon, Package, Tag, Folder, FileType2 } from 'lucide-react';
+import { Plus, Star, FileText, ChevronRight, Edit, Trash2, CheckCircle2, PenLine, Lock, Wand2, Lightbulb, Image as ImageIcon, Package, Tag, Folder, FileType2 } from 'lucide-react';
 import { getAufgabenTyp } from '@/lib/aufgabenTypen';
 import TaskStatusBadge from '@/components/ui/TaskStatusBadge';
 import TaskLockBar from '@/components/ui/TaskLockBar';
@@ -26,6 +26,7 @@ import ErwartungshorizontTab from '@/components/allgemeineAufgaben/Erwartungshor
 import { useTaskLock } from '@/hooks/useLocks';
 import { base44 } from '@/api/base44Client';
 import AiTaskWizardModal from '@/components/ui/AiTaskWizardModal';
+import ThemenfeldIdeenModal from '@/components/missionen/ThemenfeldIdeenModal';
 import HelpBadge from '@/components/ui/HelpBadge';
 import MissionBadge from '@/components/missionen/MissionBadge';
 import MissionStripe from '@/components/missionen/MissionStripe';
@@ -135,6 +136,11 @@ function AufgabeNode({ aufgabe, isSelected, onSelect }) {
       <span className={cn('truncate flex-1', !hatTitel && 'italic opacity-70')}>
         {hatTitel ? aufgabe.titel : 'Kein Titel'}
       </span>
+      {!isApproved && (
+        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 shrink-0">
+          Entwurf
+        </span>
+      )}
       {isPending && <Lock className="w-3 h-3 text-orange-500 shrink-0" />}
     </button>
   );
@@ -381,6 +387,7 @@ export default function AllgemeineAufgabenView({
   const [editingAufgabe, setEditingAufgabe] = useState(null);
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [ideenboxOpen, setIdeenboxOpen] = useState(false);
   // Phase-1 Lernpfad-Architekt: Picker für Aufgaben-Typ vor dem Editor (nur in Ebene 2).
   const [typPickerOpen, setTypPickerOpen] = useState(false);
   const [pendingAufgabenTyp, setPendingAufgabenTyp] = useState('inhalt');
@@ -497,6 +504,30 @@ export default function AllgemeineAufgabenView({
     return counts;
   }, [allgemeineAufgaben]);
 
+  const handleSaveIdee = async (idea) => {
+    const materialHinweis = idea.required_materials
+      ? `Materialaufwand: ${idea.required_materials}`
+      : '';
+
+    await createAllgemeineAufgabe({
+      einheit_id: einheitId,
+      anforderungsebene,
+      aufgaben_typ: 'inhalt',
+      themenfeld_id: idea.themenfeld_id || null,
+      titel: idea.titel,
+      aufgabenstellung: idea.aufgabenstellung,
+      mission_type: anforderungsebene === '3 - Projekt' ? null : (idea.mission_type || null),
+      schwierigkeitsgrad: idea.schwierigkeitsgrad || null,
+      hinweise_zum_material: materialHinweis,
+      erwartungshorizont: idea.didaktischer_hinweis
+        ? `Ideen-Notiz der KI: ${idea.didaktischer_hinweis}`
+        : null,
+      content_status: 'draft',
+      sync_status: 'new',
+    });
+    queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheitId] });
+  };
+
   // Aufgaben nach Mission-Filter einschränken (vor der Themenfeld-Gruppierung).
   const aufgabenNachFilter = useMemo(() => {
     if (missionFilter === FILTER_ALL) return allgemeineAufgaben;
@@ -558,6 +589,17 @@ export default function AllgemeineAufgabenView({
                 <Plus className="w-4 h-4" />
                 Neue Aufgabe
               </Button>
+              {!isEbene3 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIdeenboxOpen(true)}
+                  className="gap-2 w-full border-amber-300 text-amber-700 hover:bg-amber-50"
+                >
+                  <Lightbulb className="w-4 h-4" />
+                  KI-Ideenbox öffnen
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="outline"
@@ -701,6 +743,15 @@ export default function AllgemeineAufgabenView({
           </main>
         )}
       </div>
+
+      <ThemenfeldIdeenModal
+        open={ideenboxOpen}
+        onOpenChange={setIdeenboxOpen}
+        einheitId={einheitId}
+        themenfelder={themenfelder}
+        anforderungsebene={anforderungsebene}
+        onSaveIdea={handleSaveIdee}
+      />
 
       {/* KI-Wizard – erstellt immer Inhalts-Aktivitäten (aufgaben_typ='inhalt'). */}
       <AiTaskWizardModal
