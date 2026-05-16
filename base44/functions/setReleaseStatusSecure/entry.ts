@@ -376,6 +376,31 @@ Deno.serve(async (req) => {
     };
     await base44.asServiceRole.entities[entityMap[targetType]].update(target.id, updatePayload);
 
+    // ---- Direkter Roll-up: Wenn eine Activity freigegeben/zurückgenommen wird,
+    // Lernpakete.is_complete sofort nachziehen. Sonst bleibt der Freigabe-Button
+    // bis zum nächsten Tab-Wechsel oder Automation-Refresh deaktiviert.
+    let paketIsComplete = null;
+    if (targetType === 'activity' && lernpaket?.id) {
+      const siblings = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
+        lernpaket_id: lernpaket.id,
+      });
+      const phasenConf = lernpaket.phasen_konfiguration || {};
+      const active = (siblings || []).filter((a) =>
+        a.sync_status !== 'to_delete' && phasenConf[a.phase]?.disabled !== true
+      );
+      paketIsComplete = active.length > 0 && active.every((a) => {
+        if (a.id === target.id) {
+          return target.is_complete === true && updatePayload.content_status === 'approved';
+        }
+        return a.is_complete === true && a.content_status === 'approved';
+      });
+      if (lernpaket.is_complete !== paketIsComplete) {
+        await base44.asServiceRole.entities.Lernpakete.update(lernpaket.id, {
+          is_complete: paketIsComplete,
+        });
+      }
+    }
+
     // ---- Audit-Log
     try {
       await base44.asServiceRole.entities.AuditLog.create({
@@ -403,6 +428,7 @@ Deno.serve(async (req) => {
       content_status: updatePayload.content_status,
       released_at: updatePayload.released_at,
       released_by: updatePayload.released_by,
+      paketIsComplete,
     });
   } catch (error) {
     console.error('[setReleaseStatusSecure] Unexpected error:', error);

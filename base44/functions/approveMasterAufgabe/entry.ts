@@ -226,32 +226,51 @@ Deno.serve(async (req) => {
       activity_id: aufgabe.activity_id,
     });
 
-    const allApproved = allMasters.every((m) =>
+    const liveMasters = (allMasters || []).filter((m) => m.sync_status !== 'to_delete');
+    const allApproved = liveMasters.length > 0 && liveMasters.every((m) =>
       m.id === masterId ? newContentStatus === 'approved' : m.content_status === 'approved'
     );
+    const allComplete = liveMasters.length > 0 && liveMasters.every((m) => m.is_complete === true);
 
     const activityContentStatus = allApproved ? 'approved' : 'draft';
+    const activityIsComplete = allComplete;
     const activityUpdate = allApproved
       ? {
           content_status: 'approved',
+          is_complete: activityIsComplete,
           released_at: activity.released_at || new Date().toISOString(),
           released_by: activity.released_by || user.email,
         }
       : {
           content_status: 'draft',
+          is_complete: activityIsComplete,
           released_at: null,
           released_by: null,
         };
 
     await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(aufgabe.activity_id, activityUpdate);
 
-    // ── 8. Roll-up auf `Lernpakete.is_complete` (siehe Logbuch §17) ──
-    // DoD-Korrektur 2026-04-27: Master-Approval ist KEINE Bedingung
-    // mehr für die Lernpaket-Vollständigkeit (siehe §17). Approve/
-    // Unapprove eines Masters ändert das Paket-Aggregat damit nicht
-    // direkt – das `LernpaketPhaseAktivitaet.is_complete`-Aggregat
-    // (wird in updateActivitySecure gepflegt) bleibt die einzige Quelle.
-    // Diese Funktion belässt den Roll-up bewusst leer.
+    // ── 8. Roll-up auf `Lernpakete.is_complete` direkt nachziehen ─────────────
+    // Damit der Lernpaket-Freigabe-Button sofort aktiv wird, nicht erst nach
+    // Tab-Wechsel oder nachlaufender Automation.
+    const siblingActivities = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
+      lernpaket_id: lernpaket.id,
+    });
+    const phasenConf = lernpaket.phasen_konfiguration || {};
+    const activeActivities = (siblingActivities || []).filter((a) =>
+      a.sync_status !== 'to_delete' && phasenConf[a.phase]?.disabled !== true
+    );
+    const paketIsComplete = activeActivities.length > 0 && activeActivities.every((a) => {
+      if (a.id === activity.id) {
+        return activityIsComplete === true && activityContentStatus === 'approved';
+      }
+      return a.is_complete === true && a.content_status === 'approved';
+    });
+    if (lernpaket.is_complete !== paketIsComplete) {
+      await base44.asServiceRole.entities.Lernpakete.update(lernpaket.id, {
+        is_complete: paketIsComplete,
+      });
+    }
 
     return Response.json({
       success: true,
@@ -259,6 +278,8 @@ Deno.serve(async (req) => {
       newContentStatus,
       newSyncStatus: masterUpdate.sync_status || aufgabe.sync_status || null,
       activityContentStatus,
+      activityIsComplete,
+      paketIsComplete,
       message:
         action === 'approve'
           ? 'MasterAufgabe freigegeben'

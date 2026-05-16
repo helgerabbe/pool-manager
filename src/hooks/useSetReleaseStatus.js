@@ -35,9 +35,11 @@ export default function useSetReleaseStatus(options = {}) {
       setMissingFields([]);
       // Sinnvolle Default-Invalidierungen
       queryClient.invalidateQueries({ queryKey: ['workspace'] });
+      queryClient.invalidateQueries({ queryKey: ['workspace-data'] });
       queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
       queryClient.invalidateQueries({ queryKey: ['einheit'] });
       queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
       // Benutzerdefinierte Keys
       const keys = options.invalidateKeys || [];
       for (const k of keys) {
