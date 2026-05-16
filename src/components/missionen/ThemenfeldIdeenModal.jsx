@@ -7,15 +7,10 @@ import { Loader2, Lightbulb, RefreshCw, Save, Sparkles, Wand2 } from 'lucide-rea
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import MissionBadge from '@/components/missionen/MissionBadge';
+import MissionTypeChoiceList from '@/components/missionen/MissionTypeChoiceList';
+import { getMission } from '@/lib/missionen';
 import { getMaterialLevel } from '@/lib/inspirationConstants';
 import { cn } from '@/lib/utils';
-
-const QUICK_PROMPTS = [
-  'kreativer und offener',
-  'einfacher und schneller umsetzbar',
-  'mehr Projektcharakter',
-  'weniger Materialaufwand',
-];
 
 function Stars({ value }) {
   const safe = [1, 2, 3].includes(value) ? value : 2;
@@ -70,6 +65,7 @@ export default function ThemenfeldIdeenModal({
   onSaveIdea,
 }) {
   const [themenfeldId, setThemenfeldId] = useState(defaultThemenfeldId || '');
+  const [selectedMissionType, setSelectedMissionType] = useState('');
   const [fokus, setFokus] = useState('');
   const [ideen, setIdeen] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -79,6 +75,7 @@ export default function ThemenfeldIdeenModal({
   useEffect(() => {
     if (!open) return;
     setThemenfeldId(defaultThemenfeldId || themenfelder[0]?.id || '');
+    setSelectedMissionType('');
     setFokus('');
     setIdeen([]);
     setSavedKeys(new Set());
@@ -90,17 +87,24 @@ export default function ThemenfeldIdeenModal({
     [themenfelder, themenfeldId]
   );
 
-  const generate = async (extraFokus = '') => {
+  const selectedMission = getMission(selectedMissionType);
+
+  const generate = async () => {
     if (!themenfeldId) {
       toast.error('Bitte zuerst ein Themenfeld auswählen.');
       return;
     }
+    if (!selectedMissionType) {
+      toast.error('Bitte zuerst eine Aufgabenart auswählen.');
+      return;
+    }
     setLoading(true);
-    const combinedFokus = [fokus.trim(), extraFokus].filter(Boolean).join(' — ');
+    const combinedFokus = fokus.trim();
     try {
       const { data } = await base44.functions.invoke('generateThemenfeldTaskIdeas', {
         einheit_id: einheitId,
         themenfeld_id: themenfeldId,
+        mission_type: selectedMissionType,
         fokus: combinedFokus,
         count: 3,
       });
@@ -108,7 +112,7 @@ export default function ThemenfeldIdeenModal({
         toast.error(data.error);
         return;
       }
-      setIdeen((prev) => [...prev, ...(Array.isArray(data?.ideen) ? data.ideen : [])]);
+      setIdeen(Array.isArray(data?.ideen) ? data.ideen : []);
     } catch (err) {
       toast.error(err?.response?.data?.error || err?.message || 'Fehler beim Generieren der Ideen.');
     } finally {
@@ -121,6 +125,7 @@ export default function ThemenfeldIdeenModal({
     try {
       await onSaveIdea?.({
         ...idea,
+        mission_type: selectedMissionType,
         themenfeld_id: themenfeldId,
         themenfeld_titel: selectedThemenfeld?.titel || '',
         anforderungsebene,
@@ -136,14 +141,14 @@ export default function ThemenfeldIdeenModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-5xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Lightbulb className="w-5 h-5 text-amber-500" />
             KI-Ideenbox für Aufgaben
           </DialogTitle>
           <DialogDescription>
-            Wähle ein Themenfeld. Die KI nutzt Grundgerüst, Gesamtziele, Lernpakete und Lernziele als Kontext und schlägt Aufgabenideen vor.
+            Wähle ein Themenfeld und eine Aufgabenart. Die KI nutzt Grundgerüst, Gesamtziele, Lernpakete und Lernziele als Kontext und schlägt gezielt drei Ideen vor.
           </DialogDescription>
         </DialogHeader>
 
@@ -169,37 +174,47 @@ export default function ThemenfeldIdeenModal({
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Wunsch für diese Runde</label>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aufgabenart</label>
+              <MissionTypeChoiceList
+                selectedMissionType={selectedMissionType}
+                onSelect={(missionType) => {
+                  setSelectedMissionType(missionType);
+                  setIdeen([]);
+                  setSavedKeys(new Set());
+                }}
+                disabled={loading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Zusätzliche Hinweise für die KI</label>
               <Textarea
                 value={fokus}
                 onChange={(e) => setFokus(e.target.value)}
-                placeholder="z.B. mehr kreative Aufgaben, weniger Material, stärkerer Alltagsbezug…"
+                placeholder="z.B. weniger Material, stärkerer Alltagsbezug, kurze Bearbeitungszeit…"
                 className="h-24 bg-white"
                 disabled={loading}
               />
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {QUICK_PROMPTS.map((prompt) => (
-                <Button key={prompt} type="button" size="sm" variant="outline" onClick={() => generate(prompt)} disabled={loading || !themenfeldId} className="text-xs">
-                  {prompt}
-                </Button>
-              ))}
-            </div>
-
-            <Button onClick={() => generate()} disabled={loading || !themenfeldId} className="gap-2 w-full">
+            <Button onClick={() => generate()} disabled={loading || !themenfeldId || !selectedMissionType} className="gap-2 w-full">
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : ideen.length ? <RefreshCw className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
-              {ideen.length ? 'Noch 3 Ideen' : '3 Ideen generieren'}
+              {ideen.length ? 'Neue 3 Ideen' : '3 Ideen zu dieser Aufgabenart'}
             </Button>
           </div>
 
           <div className="space-y-3">
+            {selectedMission && ideen.length > 0 && (
+              <div className="rounded-xl border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                Aktuelle Auswahl: <span className="font-semibold text-foreground">{selectedMission.emoji} {selectedMission.label}</span>
+              </div>
+            )}
             {ideen.length === 0 && !loading ? (
               <div className="min-h-72 rounded-xl border border-dashed bg-card flex flex-col items-center justify-center text-center p-8">
                 <Wand2 className="w-10 h-10 text-muted-foreground/30 mb-3" />
                 <p className="font-medium">Noch keine Ideen gesammelt</p>
                 <p className="text-sm text-muted-foreground max-w-md mt-1">
-                  Starte mit drei Vorschlägen oder gib links eine Richtung vor. Du kannst danach beliebig oft weitere Ideen erzeugen.
+                  Wähle links ein Themenfeld und eine Aufgabenart aus. Danach erzeugt die KI genau drei passende Ideen.
                 </p>
               </div>
             ) : (

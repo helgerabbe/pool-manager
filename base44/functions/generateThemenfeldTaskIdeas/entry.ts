@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { einheit_id, themenfeld_id, fokus = '', count = 3 } = body || {};
+    const { einheit_id, themenfeld_id, fokus = '', mission_type = '', count = 3 } = body || {};
 
     if (!einheit_id || !themenfeld_id) {
       return Response.json({ error: 'Einheit und Themenfeld sind erforderlich.' }, { status: 400 });
@@ -108,6 +108,7 @@ Deno.serve(async (req) => {
 
     const gesamtziele = cleanList(einheit.gesamtziele, (z) => String(z)).join('\n- ') || '(Keine Gesamtziele gepflegt.)';
     const missionBlock = Object.entries(MISSIONEN).map(([key, value]) => `- ${key}: ${value}`).join('\n');
+    const selectedMission = MISSIONEN[mission_type] ? `${mission_type}: ${MISSIONEN[mission_type]}` : '';
     const desiredCount = Math.max(1, Math.min(parseInt(count, 10) || 3, 5));
 
     const prompt = `Du bist ein erfahrener Didaktiker. Du hilfst einer Lehrkraft NICHT beim finalen Ausformulieren perfekter Aufgaben, sondern als Ideenbox: Du schlägst starke, passende Aufgabenideen für Tab 5 vor.
@@ -131,11 +132,15 @@ ${lernpaketBlock}
 ## Mögliche Missionen
 ${missionBlock}
 
-## Wunsch der Lehrkraft für diese Runde
-${fokus?.trim() ? fokus.trim() : '(kein besonderer Wunsch — bitte ausgewogene Ideen über verschiedene Missionen hinweg)'}
+## Bewusst gewählte Aufgabenart
+${selectedMission || '(keine Aufgabenart vorgegeben — bitte ausgewogene Ideen über verschiedene Missionen hinweg)'}
+
+## Zusätzliche Hinweise der Lehrkraft für diese Runde
+${fokus?.trim() ? fokus.trim() : '(keine zusätzlichen Hinweise)'}
 
 ## Aufgabe
-Generiere ${desiredCount} unterschiedliche Aufgabenideen. Jede Idee soll:
+Generiere ${desiredCount} unterschiedliche Aufgabenideen exakt für die gewählte Aufgabenart. Jede Idee soll:
+- im Feld mission_type genau die gewählte Aufgabenart verwenden, sofern eine gewählt wurde,
 - sichtbar aus dem Themenfeld und seinen Lernpaketen/Lernzielen entstehen,
 - Lernpakete als Wissensspeicher nutzen, aber eine echte Unterrichtsaufgabe für Schüler sein,
 - nicht nur Basiswissen abfragen, sondern Anwendung, Denken, Transfer oder Gestaltung anregen,
