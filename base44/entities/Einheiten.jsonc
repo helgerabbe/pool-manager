@@ -56,6 +56,30 @@
       "type": "string",
       "description": "FK zur Zeitphase (Halbjahr) aus LookupPhasen"
     },
+    "grundgeruest_rohtext": {
+      "type": "string",
+      "description": "Tab 1: Frei formulierter didaktischer Gesamtkontext der Einheit. Dient als Quelle der Wahrheit f\u00fcr sp\u00e4tere KI-Kontexte."
+    },
+    "grundgeruest_strukturiert": {
+      "type": "object",
+      "description": "Optionale strukturierte KI-Auswertung des Grundger\u00fcsts aus der Sandbox. Wird nur \u00fcbernommen, wenn die Lehrkraft dies bewusst best\u00e4tigt.",
+      "additionalProperties": true
+    },
+    "grundgeruest_status": {
+      "type": "string",
+      "enum": [
+        "leer",
+        "entwurf",
+        "analysiert"
+      ],
+      "default": "leer",
+      "description": "Status des Grundger\u00fcsts in Tab 1."
+    },
+    "grundgeruest_updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel der letzten Speicherung des Grundger\u00fcsts."
+    },
     "wizard_status": {
       "type": "string",
       "enum": [
@@ -120,7 +144,7 @@
     },
     "lernpfade_konfiguration": {
       "type": "object",
-      "description": "JSON-Mapping der Lernpfade f\u00fcr die vier Lerntypen. Struktur: { <lerntyp>: [ { sektor_id, titel, modus, sektor_typ, themenfeld_id, titel_snapshot, items: [ { instance_id, type: 'aufgabe'|'system', ref_id, parent_instance_id?: string|null, bundle_config?: { erforderliche_anzahl?: number, modus?: 'sequenziell'|'frei' } } ] } ] }. instance_id = stabile UUID pro Dashboard-Eintrag. parent_instance_id verweist auf das B\u00fcndel-Item. Root-Items haben parent_instance_id=null. Max. 1 Ebene Verschachtelung. bundle_config existiert NUR an B\u00fcndel-Items (System-Bausteine mit baustein_modus='bundle_1ton') und steuert dort: erforderliche_anzahl (X-von-Y, nur Aufgabenb\u00fcndel) und modus (Bearbeitungsreihenfolge). Sektor-modus ist seit Schema v3 hart auf 'sequenziell' fixiert (nicht mehr UI-ver\u00e4nderbar) und wandert in bundle_config.modus. sektor_typ ist die semantische Klassifikation ('onboarding'|'ueberblick'|'arbeitsphase_themenfeld'|'zwischentest'|'abschlusstest'|'projekte'|'individuell'). themenfeld_id ist nur bei sektor_typ='arbeitsphase_themenfeld' gesetzt. titel_snapshot friert beim Lock den Themenfeld-Titel ein, damit nachtr\u00e4gliche Umbenennungen den Sch\u00fcler-Pfad nicht r\u00fcckwirkend \u00e4ndern. 1:1-Zuordnung pro Lerntyp: dieselbe aufgabe_id darf pro Lerntyp nur einmal vorkommen.",
+      "description": "JSON-Mapping der Lernpfade f\u00fcr die vier Lerntypen. Struktur: { <lerntyp>: [ { sektor_id, titel, bearbeitungsmodus, sektor_typ, themenfeld_id, titel_snapshot, items: [ { instance_id, type: 'aufgabe'|'system', ref_id, parent_instance_id?: string|null, bundle_config?: { erforderliche_anzahl?: number, modus?: 'sequenziell'|'frei' } } ] } ] }. instance_id = stabile UUID pro Dashboard-Eintrag. parent_instance_id verweist auf das B\u00fcndel-Item. Root-Items haben parent_instance_id=null. Max. 1 Ebene Verschachtelung. bundle_config existiert NUR an B\u00fcndel-Items (System-Bausteine mit baustein_modus='bundle_1ton') und steuert dort: erforderliche_anzahl (X-von-Y, nur Aufgabenb\u00fcndel) und modus (Bearbeitungsreihenfolge). bearbeitungsmodus (Schema v4) regelt das Sektor-Gating im Sch\u00fcler-Dashboard: 'sequenziell' = Sektor wird erst eingeblendet, wenn der vorherige abgeschlossen ist, und ben\u00f6tigt am Ende einen sys_sektor_abschluss-Baustein; 'frei' = Sektor ist von Anfang an sichtbar. Einmal abgeschlossene Sektoren bleiben universell zug\u00e4nglich (keine Konfiguration). sektor_typ ist die semantische Klassifikation ('onboarding'|'ueberblick'|'arbeitsphase_themenfeld'|'zwischentest'|'abschlusstest'|'projekte'|'individuell'). themenfeld_id ist nur bei sektor_typ='arbeitsphase_themenfeld' gesetzt. titel_snapshot friert beim Lock den Themenfeld-Titel ein, damit nachtr\u00e4gliche Umbenennungen den Sch\u00fcler-Pfad nicht r\u00fcckwirkend \u00e4ndern. 1:1-Zuordnung pro Lerntyp: dieselbe aufgabe_id darf pro Lerntyp nur einmal vorkommen. Hinweis: Das alte Feld `modus` (Schema v1\u2013v3) wird seit v4 durch `bearbeitungsmodus` abgel\u00f6st und darf in neuen Records weggelassen werden.",
       "additionalProperties": true,
       "default": {
         "minimalist": [],
@@ -132,7 +156,7 @@
     "lernpfade_schema_version": {
       "type": "integer",
       "default": 1,
-      "description": "Schema-Version der lernpfade_konfiguration. 1 = legacy (items ohne instance_id). 2 = Phase 1 Dashboard-Epic (Instanz-IDs, parent_instance_id, B\u00fcndel-Hierarchie). 3 = Epic Semantische Sektoren (sektor_typ, themenfeld_id, titel_snapshot; bundle_config.modus). Wird vom Backfill backfillSemantischeSektoren auf 3 gesetzt; das Frontend kann anhand dieses Felds erkennen, ob die Migration f\u00fcr eine Einheit bereits gelaufen ist."
+      "description": "Schema-Version der lernpfade_konfiguration. 1 = legacy (items ohne instance_id). 2 = Phase 1 Dashboard-Epic (Instanz-IDs, parent_instance_id, B\u00fcndel-Hierarchie). 3 = Epic Semantische Sektoren (sektor_typ, themenfeld_id, titel_snapshot; bundle_config.modus). 4 = Sektor-Gating (Feld `bearbeitungsmodus` pro Sektor: 'sequenziell'|'frei'; bei sequenziellen Sektoren wird automatisch ein sys_sektor_abschluss-Baustein als letztes Item erzeugt). Backfill backfillSemantischeSektoren setzt die Version anhand der Default-Tabelle (Sektor-Typ \u00d7 Lerntyp) und erg\u00e4nzt fehlende Abschluss-Bausteine."
     },
     "export_lifecycle_status": {
       "type": "string",

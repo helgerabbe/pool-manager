@@ -62,6 +62,10 @@ Deno.serve(async (req) => {
       zeit_phase_id,
       bearbeitungsmodus,
       freigabe_status,
+      grundgeruest_rohtext,
+      grundgeruest_strukturiert,
+      grundgeruest_status,
+      grundgeruest_updated_at,
       version, // CRITICAL: Client-side version für Optimistic Locking
     } = payload;
 
@@ -174,6 +178,10 @@ Deno.serve(async (req) => {
     if (zeit_phase_id !== undefined) updateData.zeit_phase_id = zeit_phase_id;
     if (bearbeitungsmodus !== undefined) updateData.bearbeitungsmodus = bearbeitungsmodus;
     if (freigabe_status !== undefined) updateData.freigabe_status = freigabe_status;
+    if (grundgeruest_rohtext !== undefined) updateData.grundgeruest_rohtext = grundgeruest_rohtext;
+    if (grundgeruest_strukturiert !== undefined) updateData.grundgeruest_strukturiert = grundgeruest_strukturiert;
+    if (grundgeruest_status !== undefined) updateData.grundgeruest_status = grundgeruest_status;
+    if (grundgeruest_updated_at !== undefined) updateData.grundgeruest_updated_at = grundgeruest_updated_at;
 
     console.log('[updateEinheitSecure] Payload:', { einheit_id, updateData, version });
 

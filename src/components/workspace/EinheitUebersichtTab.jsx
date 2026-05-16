@@ -42,6 +42,7 @@ const EINHEIT_HELP = {
 };
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import GesamtzielManager from './GesamtzielManager';
+import EinheitGrundgeruestSection from './EinheitGrundgeruestSection';
 import { hasUnitLevelAccess } from '@/lib/rbac';
 
 const UNIT_ROLE_CONFIG = {
@@ -606,6 +607,15 @@ export default function EinheitUebersichtTab({
               </>
             )}
           </div>
+
+          <EinheitGrundgeruestSection
+            einheit={einheit}
+            canEdit={kannEinheitBearbeiten}
+            onSaved={async () => {
+              await queryClient.refetchQueries({ queryKey: ['workspace-data', einheit.id] });
+              await queryClient.refetchQueries({ queryKey: ['einheiten-list-secure'] });
+            }}
+          />
         </section>
 
         {/* ── Spalte 2: Bearbeitungsstatus + Mitarbeiter ───────────────────────── */}
