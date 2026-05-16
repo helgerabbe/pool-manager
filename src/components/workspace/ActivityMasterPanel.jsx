@@ -438,19 +438,21 @@ export default function ActivityMasterPanel({
   // konsistenten Switch zwischen field_values ↔ ki_briefing übernimmt.
   const erstellungsModus = activityRecord?.erstellungs_modus || 'manuell';
   const istKiModus = erstellungsModus === 'ki';
-  // KI-Modus zeigen wir nur für Aktivitäten, die supports_master haben.
-  // Bei „Text lesen", „Bildbeschriftung" etc. (supportsMaster=false) bleibt
-  // alles wie bisher — diese werden per Modal erfasst, der KI-Modus hätte
-  // dort keinen sinnvollen Briefing-Katalog. KI-Tutor bleibt ebenfalls außen
-  // vor (eigene Spezialform).
+  // KI-Modus zeigen wir nur für geeignete masterfähige Aktivitäten.
+  // Lückentext, Begriffe zuordnen und Reihenfolge/Sortierung laufen bereits
+  // über die neue Masteraufgaben-Logik; KI-Hilfe gehört dort in den Dialog.
+  // KI-Tutor bleibt ebenfalls außen vor (eigene Spezialform).
   const catalogNameLower = catalogEntry?.name?.toLowerCase() || '';
   const isLueckentext = catalogNameLower.includes('lückentext');
   const isBegriffeZuordnen = ['begriffe zuordnen', 'zuordnen'].some(n => catalogNameLower.includes(n));
+  const isReihenfolgeSortierung = catalogNameLower.includes('reihenfolge') || catalogNameLower.includes('sortierung');
   const isTestActivity = catalogNameLower === 'test' || catalogNameLower.includes('abschlusstest');
-  const showModusSwitch = supportsMaster && !isKITutor && !isLueckentext && !isBegriffeZuordnen && !isTestActivity;
+  const showModusSwitch = supportsMaster && !isKITutor && !isLueckentext && !isBegriffeZuordnen && !isReihenfolgeSortierung && !isTestActivity;
   const effectiveIstKiModus = showModusSwitch && istKiModus;
   const emptyMasterHint = isBegriffeZuordnen
     ? 'Es sind noch keine Begriffe oder Zuordnungen hinterlegt. Klicke auf „Erste Aufgabe erstellen“, um die Begriffe zu erfassen.'
+    : isReihenfolgeSortierung
+    ? 'Es sind noch keine Sortier-Elemente hinterlegt. Klicke auf „Erste Aufgabe erstellen“, um die Reihenfolge-Aufgabe zu erfassen.'
     : 'Erstelle jetzt die erste Masteraufgabe als Vorlage für KI-generierte Varianten.';
   const [savingModusBriefing, setSavingModusBriefing] = useState(false);
 
