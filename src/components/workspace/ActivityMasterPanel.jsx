@@ -184,7 +184,6 @@ export default function ActivityMasterPanel({
       const updatePayload = {
         field_values: enrichedValues,
         is_complete: requiredFilled,
-        ...(content_status ? { content_status } : {}),
         ...(moodle_sync_status ? { moodle_sync_status } : {}),
         ...(is_dirty_since_export !== undefined ? { is_dirty_since_export } : {}),
         ...(transkript !== undefined ? { transkript } : {}),
