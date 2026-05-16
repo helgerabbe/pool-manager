@@ -150,6 +150,7 @@ export default function ActivityMasterPanel({
   // Modal-State für "Text lesen" und ähnliche Aktivitäten
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [acquiringLock, setAcquiringLock] = useState(false);
+  const modalUsesExistingLockRef = React.useRef(false);
 
   // field_values neu laden NUR wenn sich die Aktivität selbst wechselt (ID-Wechsel)
   // NICHT bei field_values-Änderung – das würde Hintergrund-Refetches die lokale Eingabe überschreiben
@@ -221,6 +222,14 @@ export default function ActivityMasterPanel({
       return;
     }
 
+    if (lernpaketLockActive) {
+      modalUsesExistingLockRef.current = true;
+      onEditModeChange?.(true, releaseLock);
+      setEditModalOpen(true);
+      return;
+    }
+
+    modalUsesExistingLockRef.current = false;
     setAcquiringLock(true);
     const ok = await acquireLock();
     setAcquiringLock(false);
@@ -240,8 +249,11 @@ export default function ActivityMasterPanel({
   // Abbrechen bleibt immer enabled, da keine Daten verändert werden
   const handleModalCancel = async () => {
     setEditModalOpen(false);
-    await releaseLock();
-    onEditModeChange?.(false, null);
+    if (!modalUsesExistingLockRef.current) {
+      await releaseLock();
+      onEditModeChange?.(false, null);
+    }
+    modalUsesExistingLockRef.current = false;
   };
 
   // Reset: Setzt alle Eingaben dieser Aktivität zurück.
@@ -263,8 +275,11 @@ export default function ActivityMasterPanel({
       await queryClient.refetchQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
     } finally {
       setIsRefreshingAfterSave(false);
-      await releaseLock();
-      onEditModeChange?.(false, null);
+      if (!modalUsesExistingLockRef.current) {
+        await releaseLock();
+        onEditModeChange?.(false, null);
+      }
+      modalUsesExistingLockRef.current = false;
       toast.success('Aktivitäts-Inhalte zurückgesetzt.');
     }
   };
@@ -296,8 +311,11 @@ export default function ActivityMasterPanel({
       await queryClient.refetchQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
     } finally {
       setIsRefreshingAfterSave(false);
-      await releaseLock();
-      onEditModeChange?.(false, null);
+      if (!modalUsesExistingLockRef.current) {
+        await releaseLock();
+        onEditModeChange?.(false, null);
+      }
+      modalUsesExistingLockRef.current = false;
     }
   };
 
@@ -586,8 +604,8 @@ export default function ActivityMasterPanel({
               <div className="flex justify-end">
                 <Button
                   onClick={handleOpenEditModal}
-                  disabled={acquiringLock || isParentPaketLockedByOther || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || globalEditActive}
-                  title={isParentPaketLockedByOther ? `🔒 Lernpaket wird gerade von ${lernpaket?.locked_by_email} bearbeitet` : globalEditActive ? '🔒 Lernpaket wird gerade bearbeitet – bitte warten bis diese abgeschlossen ist.' : lernpaket?.moodle_sync_status === 'locked' ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
+                  disabled={acquiringLock || isParentPaketLockedByOther || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || (globalEditActive && !lernpaketLockActive)}
+                  title={isParentPaketLockedByOther ? `🔒 Lernpaket wird gerade von ${lernpaket?.locked_by_email} bearbeitet` : (globalEditActive && !lernpaketLockActive) ? '🔒 Ein anderes Lernpaket wird gerade bearbeitet.' : lernpaket?.moodle_sync_status === 'locked' ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
                   className="gap-2"
                 >
                     {acquiringLock
@@ -829,10 +847,10 @@ export default function ActivityMasterPanel({
             </div>
           ) : (
             <button
-              onClick={kannBearbeiten && !isParentPaketLockedByOther && !(lernpaket?.moodle_sync_status === 'locked') && !lernpaket?.export_locked && !globalEditActive && !acquiringLock
+              onClick={kannBearbeiten && !isParentPaketLockedByOther && !(lernpaket?.moodle_sync_status === 'locked') && !lernpaket?.export_locked && !(globalEditActive && !lernpaketLockActive) && !acquiringLock
                 ? handleOpenEditModal
                 : undefined}
-              disabled={!kannBearbeiten || isParentPaketLockedByOther || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || globalEditActive || acquiringLock}
+              disabled={!kannBearbeiten || isParentPaketLockedByOther || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || (globalEditActive && !lernpaketLockActive) || acquiringLock}
               className="w-full text-left bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 text-sm text-blue-900 cursor-pointer hover:bg-blue-100 transition-colors disabled:cursor-default disabled:hover:bg-blue-50 disabled:opacity-60"
               title={kannBearbeiten ? 'Klicken zum Bearbeiten' : ''}
             >
