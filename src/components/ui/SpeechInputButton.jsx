@@ -39,6 +39,8 @@ export default function SpeechInputButton({
   const shouldRestartRef = useRef(false);
   const tickIntervalRef = useRef(null);
   const hardStopTimeoutRef = useRef(null);
+  const sessionBaseRef = useRef('');
+  const finalTranscriptRef = useRef('');
 
   // Aktuellen value-Snapshot vorhalten, damit der Auto-Restart nicht gegen
   // einen veralteten Closure-Wert mergt.
@@ -65,34 +67,45 @@ export default function SpeechInputButton({
     const recognition = new SpeechRecognition();
     recognition.lang = 'de-DE';
     recognition.continuous = true;
-    recognition.interimResults = false;
+    recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
     recognition.onstart = () => setIsListening(true);
 
     recognition.onresult = (e) => {
-      let chunk = '';
+      let interimChunk = '';
+      let finalChunk = '';
+
       for (let i = e.resultIndex; i < e.results.length; i++) {
+        const transcript = e.results[i][0]?.transcript?.trim();
+        if (!transcript) continue;
         if (e.results[i].isFinal) {
-          chunk += (chunk ? ' ' : '') + e.results[i][0].transcript;
+          finalChunk += (finalChunk ? ' ' : '') + transcript;
+        } else {
+          interimChunk += (interimChunk ? ' ' : '') + transcript;
         }
       }
-      if (!chunk) return;
-      const current = valueRef.current || '';
-      const separator = current.trim() ? ' ' : '';
-      const next = current + separator + chunk;
-      valueRef.current = next; // Ref sofort updaten, damit folgende Chunks richtig anhängen
-      onResult(next);
+
+      if (finalChunk) {
+        finalTranscriptRef.current = [finalTranscriptRef.current, finalChunk].filter(Boolean).join(' ');
+      }
+
+      const next = [sessionBaseRef.current, finalTranscriptRef.current, interimChunk]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+
+      if (next) {
+        valueRef.current = next;
+        onResult(next);
+      }
     };
 
     recognition.onerror = (e) => {
-      // 'no-speech' und 'aborted' sind erwartbar bei continuous=true und
-      // sollen nicht als Fehler dem Nutzer gezeigt werden.
-      if (e.error === 'no-speech' || e.error === 'aborted') return;
+      // Diese Fehler treten bei continuous=true häufig nach kurzen Pausen auf.
+      // Sie dürfen die Aufnahme nicht beenden; onend startet automatisch neu.
+      if (['no-speech', 'aborted', 'network'].includes(e.error)) return;
       toast.error('Spracherkennung fehlgeschlagen: ' + e.error);
-      shouldRestartRef.current = false;
-      clearTimers();
-      setIsListening(false);
     };
 
     recognition.onend = () => {
@@ -139,6 +152,8 @@ export default function SpeechInputButton({
 
   const startListening = () => {
     shouldRestartRef.current = true;
+    sessionBaseRef.current = (value || '').trim();
+    finalTranscriptRef.current = '';
     valueRef.current = value;
     setSecondsLeft(maxSeconds);
 
