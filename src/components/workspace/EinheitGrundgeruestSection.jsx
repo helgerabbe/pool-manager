@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { invokeFunction } from '@/utils/functionsHelper';
 import { Brain, Loader2, Save, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
@@ -46,7 +45,6 @@ export default function EinheitGrundgeruestSection({ einheit, canEdit, onSaved }
             Didaktischer Gesamtkontext für spätere KI-Funktionen: Ziele, Material, Software, Grenzen und Besonderheiten.
           </p>
         </div>
-        <Badge variant="outline">{status}</Badge>
       </div>
 
       <Textarea
