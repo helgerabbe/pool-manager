@@ -29,7 +29,19 @@
  * }
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+
+const normalizeEntityRecord = (record) => {
+  if (!record) return null;
+  return {
+    ...record,
+    ...(record.data || {}),
+    id: record.id,
+    created_date: record.created_date,
+    updated_date: record.updated_date,
+    created_by: record.created_by,
+  };
+};
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -65,9 +77,10 @@ Deno.serve(async (req) => {
     }
 
     // 3. Fetch Einheit (RBAC Check)
-    const einheit = await base44.asServiceRole.entities.Einheiten.get(
+    const rawEinheit = await base44.asServiceRole.entities.Einheiten.get(
       einheit_id
     );
+    const einheit = normalizeEntityRecord(rawEinheit);
 
     if (!einheit) {
       return Response.json({ error: 'Einheit not found' }, { status: 404 });
