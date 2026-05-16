@@ -282,8 +282,19 @@ function SidebarLernpaketFolder({
          {/* Einheitliches Farbschema (analog Tab 3 SidebarTree):
              grau = leer, grün = alle Aktivitäten vollständig, gelb = teilweise. */}
          {(() => {
-           const total = paketActivities.length;
-           const completeCount = paketActivities.filter(a => a.is_complete === true).length;
+           const activePaketActivities = paketActivities.filter(
+             (a) => phasenConfig[a.phase]?.disabled !== true
+           );
+           const isReadyForRelease = (activity) => {
+             const actCatalog = aktivitaetenKatalog.find(c => c.id === activity.aktivitaet_id);
+             const masters = masterAufgabenByActivityId[activity.id] || [];
+             if (actCatalog?.supports_master === true) {
+               return activity.content_status === 'approved' || (masters.length > 0 && masters.every(m => m.content_status === 'approved'));
+             }
+             return activity.content_status === 'approved';
+           };
+           const total = activePaketActivities.length;
+           const completeCount = activePaketActivities.filter(isReadyForRelease).length;
            const pillClass =
              total === 0 ? 'bg-slate-200 text-slate-700'
              : completeCount === total ? 'bg-green-500 text-white'
