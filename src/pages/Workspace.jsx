@@ -33,9 +33,16 @@ import ProjektaufgabenView from '@/components/projektaufgaben/ProjektaufgabenVie
 import LernpfadeCockpit from '@/components/lernpfade/LernpfadeCockpit';
 import LoadingOverlay from '@/components/workspace/LoadingOverlay';
 
+const LAST_EINHEIT_STORAGE_KEY = 'poolmanager:lastEinheitId';
+
+const getStoredEinheitId = () => {
+  if (typeof window === 'undefined') return null;
+  return window.localStorage.getItem(LAST_EINHEIT_STORAGE_KEY);
+};
+
 export default function Workspace({ initialEinheitId: initialEinheitIdProp = null }) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialEinheitId = initialEinheitIdProp || searchParams.get('einheit') || null;
+  const initialEinheitId = initialEinheitIdProp || searchParams.get('einheit') || getStoredEinheitId() || null;
 
   const { permissions, authUser, rolle, isLoading: rbacLoading } = useRBAC();
   const queryClient = useQueryClient();
@@ -95,6 +102,21 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
   // ── Aktive Einheit + Memoisierte abgeleitete Daten ──────────────────────────────
   const einheit = einheiten.find((e) => e.id === selectedEinheitId) || null;
+
+  useEffect(() => {
+    if (selectedEinheitId || einheiten.length === 0) return;
+
+    const storedEinheitId = getStoredEinheitId();
+    const fallbackEinheit = einheiten.find((e) => e.id === storedEinheitId) || einheiten[0];
+    if (!fallbackEinheit?.id) return;
+
+    setSelectedEinheitId(fallbackEinheit.id);
+    setSelectedNode({ type: 'einheit', id: fallbackEinheit.id });
+    window.localStorage.setItem(LAST_EINHEIT_STORAGE_KEY, fallbackEinheit.id);
+    const next = new URLSearchParams(searchParams);
+    next.set('einheit', fallbackEinheit.id);
+    setSearchParams(next, { replace: true });
+  }, [selectedEinheitId, einheiten, searchParams, setSearchParams]);
 
   const paketeFuerEinheit = useMemo(
     () =>
@@ -507,6 +529,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     setSelectedThemenfeldId(null);
     setSelectedNode({ type: 'einheit', id });
     setHighlightedAtomIds(new Set());
+    window.localStorage.setItem(LAST_EINHEIT_STORAGE_KEY, id);
     setSearchParams({ einheit: id });
   };
 
