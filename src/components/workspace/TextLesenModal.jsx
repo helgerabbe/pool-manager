@@ -149,10 +149,20 @@ export default function TextLesenModal({
     onSave?.(payload);
   };
 
-  // Toggle setzt nur lokalen State — kein API-Call, kein Modal-Schluss.
-  // Der eigentliche Release-Call passiert in handleSave.
-  const handleToggleRelease = (next) => {
+  // Toggle: Freigabe zurücknehmen muss im Sperr-Banner sofort wirken, weil
+  // dort kein Speicherbutton sichtbar ist. Freigeben bleibt bewusst lokal bis „Speichern & Freigeben“.
+  const handleToggleRelease = async (next) => {
     if (!activity?.id) return;
+    if (next === false && isReleased) {
+      setIsReleasingFromToggle(true);
+      try {
+        await setReleaseStatusAsync({ targetType: 'activity', targetId: activity.id, release: false });
+        setPendingRelease(null);
+      } finally {
+        setIsReleasingFromToggle(false);
+      }
+      return;
+    }
     setPendingRelease(next);
   };
 
