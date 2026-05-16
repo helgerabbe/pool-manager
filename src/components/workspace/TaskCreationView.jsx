@@ -285,16 +285,17 @@ function SidebarLernpaketFolder({
            const activePaketActivities = paketActivities.filter(
              (a) => phasenConfig[a.phase]?.disabled !== true
            );
-           const isReadyForRelease = (activity) => {
+           const isActivityCompleteForTree = (activity) => {
              const actCatalog = aktivitaetenKatalog.find(c => c.id === activity.aktivitaet_id);
              const masters = masterAufgabenByActivityId[activity.id] || [];
+             if (activity.content_status === 'approved' || activity.is_complete === true) return true;
              if (actCatalog?.supports_master === true) {
-               return activity.content_status === 'approved' || (masters.length > 0 && masters.every(m => m.content_status === 'approved'));
+               return masters.length > 0 && masters.every(m => m.content_status === 'approved' || m.is_complete === true);
              }
-             return activity.content_status === 'approved';
+             return false;
            };
            const total = activePaketActivities.length;
-           const completeCount = activePaketActivities.filter(isReadyForRelease).length;
+           const completeCount = activePaketActivities.filter(isActivityCompleteForTree).length;
            const pillClass =
              total === 0 ? 'bg-slate-200 text-slate-700'
              : completeCount === total ? 'bg-green-500 text-white'
@@ -344,14 +345,10 @@ function SidebarLernpaketFolder({
                          const masters = masterAufgabenByActivityId[activity.id] || [];
                          const supportsMaster = actCatalog?.supports_master === true;
 
-                         // Completion-Logik unterscheidet zwischen Masters-Aktivitäten und normalen Aktivitäten
-                         let isComplete = false;
-                         if (supportsMaster) {
-                           // Für Master-Aktivitäten: Alle Masters müssen approved sein
-                           isComplete = masters.length > 0 && masters.every(m => m.content_status === 'approved');
-                         } else {
-                           // Für normale Aktivitäten (z.B. Text lesen): content_status === 'approved' ist ausreichend
-                           isComplete = activity.content_status === 'approved';
+                         // Anzeige-Logik: grün sobald die Aktivität vollständig ist; Freigabe ist dafür nicht nötig.
+                         let isComplete = activity.content_status === 'approved' || activity.is_complete === true;
+                         if (!isComplete && supportsMaster) {
+                           isComplete = masters.length > 0 && masters.every(m => m.content_status === 'approved' || m.is_complete === true);
                          }
 
                          return (
