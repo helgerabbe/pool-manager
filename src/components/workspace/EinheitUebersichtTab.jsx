@@ -155,7 +155,7 @@ export default function EinheitUebersichtTab({
       await queryClient.refetchQueries({ queryKey: ['workspace-data', einheit.id] });
       await queryClient.refetchQueries({ queryKey: ['einheiten-list-secure'] });
       toast.success(istGesperrt
-        ? 'Einheit ist jetzt für die Bearbeitung freigegeben.'
+        ? 'Einheit kann jetzt bearbeitet werden.'
         : 'Einheit wurde für die Bearbeitung gesperrt.'
       );
     } catch (error) {
@@ -647,7 +647,7 @@ export default function EinheitUebersichtTab({
               </div>
               <div className="flex-1">
                 <p className={cn('font-semibold text-sm', istGesperrt ? 'text-red-800' : 'text-green-800')}>
-                  {istGesperrt ? 'Einheit gesperrt' : 'Einheit freigegeben'}
+                  {istGesperrt ? 'Einheit gesperrt' : 'Einheit kann bearbeitet werden'}
                 </p>
                 <p className={cn('text-xs mt-1', istGesperrt ? 'text-red-600' : 'text-green-600')}>
                   {istGesperrt
