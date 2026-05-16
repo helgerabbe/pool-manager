@@ -18,7 +18,6 @@ import {
   Clock, Target, AlertTriangle, Lock, ArrowRight, CheckCircle2, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useLernpaketReleaseReadiness } from '@/hooks/useCompleteness';
 import { useCanToggleLernpaketRelease } from '@/hooks/useReleaseLock';
 import useSetReleaseStatus from '@/hooks/useSetReleaseStatus';
 import { kategorieColors } from '@/components/workspace/panels/SharedUI';
@@ -61,17 +60,13 @@ export default function Tab4LernpaketOverview({
   const paketZiele = lernziele.filter(lz => lz.lernpaket_id === paket.id);
   const phasenConfig = paket.phasen_konfiguration || {};
 
-  // Release-Logik: Für Tab 4 zählt die bewusste Freigabe der Aktivitäten.
-  // Bei Master-Aktivitäten kann `is_complete` trotz freigegebener Master noch
-  // verzögert nachziehen; der Button darf deshalb nicht daran hängen bleiben.
-  const releaseReadiness = useLernpaketReleaseReadiness(paket, paketAktivitaeten);
+  // Release-Logik: In Tab 4 zählt die tatsächliche Freigabe der aktiven Aktivitäten.
   const activePaketAktivitaeten = paketAktivitaeten.filter(
     a => (phasenConfig[a.phase] || {}).disabled !== true
   );
-  const allActivitiesReleased = activePaketAktivitaeten.length > 0 && activePaketAktivitaeten.every(
-    a => a.content_status === 'approved'
-  );
-  const canReleasePackage = allActivitiesReleased || releaseReadiness.isComplete;
+  const canReleaseLernpaket =
+    activePaketAktivitaeten.length > 0 &&
+    activePaketAktivitaeten.every(a => a.content_status === 'approved');
   const canToggleRelease = useCanToggleLernpaketRelease(paket, einheit);
   const { setReleaseStatus, isPending: isReleasePending } = useSetReleaseStatus();
   const isReleased = paket.content_status === 'approved' && !!paket.released_at;
@@ -118,8 +113,8 @@ export default function Tab4LernpaketOverview({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => canReleasePackage && canToggleRelease.allowed && handleRelease(true)}
-                      disabled={!canReleasePackage || !canToggleRelease.allowed || isReleasePending}
+                      onClick={() => canReleaseLernpaket && canToggleRelease.allowed && handleRelease(true)}
+                      disabled={!canReleaseLernpaket || !canToggleRelease.allowed || isReleasePending}
                       className="gap-2"
                     >
                       {isReleasePending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
@@ -127,7 +122,7 @@ export default function Tab4LernpaketOverview({
                     </Button>
                   </span>
                 </TooltipTrigger>
-                {(!canReleasePackage || !canToggleRelease.allowed) && (
+                {(!canReleaseLernpaket || !canToggleRelease.allowed) && (
                   <TooltipContent side="bottom">
                     {!canToggleRelease.allowed
                       ? 'Einheit ist final freigegeben — Freigabe gesperrt'
