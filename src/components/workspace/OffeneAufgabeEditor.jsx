@@ -36,9 +36,20 @@ export default function OffeneAufgabeEditor({ initialData = {}, onChange, readOn
 
     setIsGenerating(true);
     try {
+      const digitalSingleLearnerRules = `
+WICHTIGE RAHMENBEDINGUNGEN:
+- Es geht IMMER um eine rein digitale Aufgabe, die ein einzelner Schüler / eine einzelne Schülerin alleine am Computer bearbeitet.
+- Keine Gruppenarbeit, keine Partnerarbeit, keine Diskussionen, keine Rückfragen an Lehrkraft, Lerncoach oder Mitschüler:innen.
+- Keine echten Materialien, kein Basteln, kein Ausdrucken, kein Verhalten im realen Raum, keine Beobachtung im Klassenzimmer.
+- Beschreibe nur das, was später digital auf dem Bildschirm passiert: ansehen, lesen, anklicken, markieren, auswählen, schreiben, zuordnen, vergleichen oder abgeben.
+- Wenn Bilder, Texte, Fehler, Gegenstände oder Situationen genannt werden, sind sie digitale Inhalte innerhalb der Aufgabe.
+- Erfinde keine neuen Inhalte oder falschen Rahmenhandlungen. Präzisiere nur die vorhandene Idee.
+- Formuliere direkt als umsetzbare Aufgabenbeschreibung für die digitale Lernplattform.
+`.trim();
+
       const prompts = {
-        refine: `Verfeinere diese Aufgabenbeschreibung. Mache sie präziser, strukturierter und pädagogisch hilfreicher für Schüler:innen.\n\nAktueller Text:\n${description}`,
-        structure: `Strukturiere diese Aufgabenbeschreibung mit folgenden Abschnitten:\n1. Aufgabenstellung (was sollen die Schüler tun?)\n2. Materialien/Ressourcen\n3. Erwartete Ergebnisse\n4. Bewertungskriterien\n\nAktueller Text:\n${description}`,
+        refine: `${digitalSingleLearnerRules}\n\nVerfeinere die folgende Aufgabenidee zu einer klaren, kurzen und gut umsetzbaren digitalen Einzelaufgabe. Beschreibe konkret, was der einzelne Schüler am Computer sieht und was er dort tun soll.\n\nAktueller Text:\n${description}`,
+        structure: `${digitalSingleLearnerRules}\n\nStrukturiere die folgende Aufgabenidee in eine digitale Einzelaufgabe mit diesen Abschnitten:\n1. Ziel der Aufgabe\n2. Bildschirm-Inhalte / digitale Materialien\n3. Arbeitsauftrag für den einzelnen Schüler\n4. Digitale Interaktion (z.B. anklicken, markieren, auswählen, schreiben, zuordnen)\n5. Erwartetes Ergebnis\n\nAktueller Text:\n${description}`,
       };
 
       const result = await base44.integrations.Core.InvokeLLM({
