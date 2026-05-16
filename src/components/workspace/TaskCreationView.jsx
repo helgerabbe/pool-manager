@@ -168,10 +168,9 @@ function ActivitySidebarItem({
     const lockedByOther = isActivityLockedByOther(activity, myEmail);
     const showChildren = isActivitySelected || hasSelectedDescendant;
 
-    // Farb-Logik: Aktivitätsname grün, wenn die Aktivität vollständig ist,
-    // sonst orange (= unfertig). Maßgeblich ist das vom Backend gepflegte
-    // Aggregat-Flag `is_complete` (siehe Logbuch §17).
-    const isComplete = activity.is_complete === true;
+    // Farb-Logik: Bei Master-Aktivitäten kommt die Vollständigkeit aus den
+    // freigegebenen Masteraufgaben; bei normalen Aktivitäten aus dem Backend-Flag.
+    const isComplete = !isIncomplete || activity.content_status === 'approved';
     const textColor = isComplete ? 'text-green-600' : 'text-orange-600';
 
     return (
