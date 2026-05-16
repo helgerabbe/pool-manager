@@ -23,7 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, GripVertical, Clock, Trash2, FolderOpen, Layers, X, Save, Target, ChevronLeft, ChevronRight, ChevronsLeft, AlignJustify, LayoutList, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Plus, GripVertical, Clock, Trash2, FolderOpen, Layers, X, Save, Target, ChevronLeft, ChevronsLeft, ArrowLeft, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -351,7 +351,7 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
         {/* Einklapp-Button (nur für Themenfelder).
             Doppel-Chevron + andere Farbe (slate), klar abgegrenzt von den
             bernsteinfarbenen Reorder-Pfeilen oben. */}
-        {!isSammelbecken && onToggleCollapse && (
+        {onToggleCollapse && (
           <button
             onClick={onToggleCollapse}
             className="p-1 rounded hover:bg-muted text-slate-500 hover:text-slate-900 transition-colors"
@@ -417,6 +417,7 @@ export default function StrukturBoardEmbedded({
   readOnly = false, // ← Structural Lock nicht aktiv
   isStructuralEditingActive = false, // ← NEU: Expliziter Lock-Status von Workspace
   isLockedByOther = false, // ← GLOBALE SPERRE: Wenn true, dann ist gesamte Einheit read-only
+  compact = false,
 }) {
   const { permissions, authUser, rolle } = useRBAC();
 
@@ -448,8 +449,7 @@ export default function StrukturBoardEmbedded({
   const [originalSpaltenIds, setOriginalSpaltenIds] = useState(new Set());
   const [originalPaketIds, setOriginalPaketIds] = useState(new Set());
   // View options
-  const [compact, setCompact]                   = useState(false);
-  const [collapsedSpalten, setCollapsedSpalten] = useState(new Set());
+  const [collapsedSpalten, setCollapsedSpalten] = useState(new Set([SAMMELBECKEN_ID]));
   // Speicher-Overlay
   const [saveOverlayOpen, setSaveOverlayOpen] = useState(false);
 
@@ -984,6 +984,7 @@ export default function StrukturBoardEmbedded({
 
   const gesamtPakete = Object.values(paketeMap).flat().length;
   const zugeordnet   = spalten.reduce((n, s) => n + (paketeMap[s.id]?.length || 0), 0);
+  const sammelbeckenPakete = paketeMap[SAMMELBECKEN_ID] || [];
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
@@ -1011,52 +1012,9 @@ export default function StrukturBoardEmbedded({
               Ungespeicherte Änderungen – bitte speichern bevor du den Tab wechselst!
             </p>
           )}
-          <div className="ml-auto">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setCompact(c => !c)}
-              className="h-7 gap-1.5 text-xs"
-            >
-              {compact ? <AlignJustify className="w-3.5 h-3.5" /> : <LayoutList className="w-3.5 h-3.5" />}
-              {compact ? 'Normal' : 'Kompakt'}
-            </Button>
-          </div>
         </div>
       )}
 
-      {/* Lesemodus-Banner – wenn nicht im Edit-Modus */}
-      {(readOnly || !isStructuralEditingActive) && (
-        <div className="shrink-0 px-4 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-600 flex items-center gap-2">
-          <Save className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-          <span>
-            {isLockedByOther
-              ? 'Einheit wird gerade von einem anderen Nutzer bearbeitet. Bitte warten Sie.'
-              : !unitAccess.hasFullAccess
-                ? 'Bearbeitungsmodus für Struktur nicht verfügbar.'
-                : 'Bearbeitungsmodus beenden oben rechts'}
-          </span>
-          <div className="ml-auto">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setCompact(c => !c)}
-              className="h-7 gap-1.5 text-xs"
-            >
-              {compact ? <AlignJustify className="w-3.5 h-3.5" /> : <LayoutList className="w-3.5 h-3.5" />}
-              {compact ? 'Normal' : 'Kompakt'}
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Tipp */}
-      {!readOnly && isStructuralEditingActive && (
-        <div className="shrink-0 px-4 py-1.5 bg-amber-50 border-b border-amber-200 text-xs text-amber-800 flex items-center gap-2">
-          <FolderOpen className="w-3.5 h-3.5 shrink-0" />
-          Lernpakete per Drag & Drop in Themenfelder ziehen · Themenfeld-Titel anklicken zum Umbenennen
-        </div>
-      )}
 
       {/* Sequenziell-Banner */}
       {einheit?.bearbeitungsmodus === 'sequenziell' && (
@@ -1077,20 +1035,25 @@ export default function StrukturBoardEmbedded({
               an den Drag-Handles deaktiviert. */}
           <div className="flex gap-4 h-full p-4 min-w-max items-start">
             {/* Sammelbecken */}
-            <Spalte
-              id={SAMMELBECKEN_ID}
-              titel="Nicht zugeordnet"
-              pakete={paketeMap[SAMMELBECKEN_ID] || []}
-              onAddPaket={(spalteId) => openPaketDialog(spalteId)}
-              onDeletePaket={handleDeletePaket}
-              onEditPaket={(paket) => openPaketDialog(SAMMELBECKEN_ID, paket)}
-              isSammelbecken
-              compact={compact}
-              readOnly={readOnly || !isStructuralEditingActive}
-              istLesemodus={istLesemodus || !isStructuralEditingActive}
-            />
-
-            <div className="w-px bg-border shrink-0 self-stretch" />
+            {sammelbeckenPakete.length > 0 && (
+              <>
+                <Spalte
+                  id={SAMMELBECKEN_ID}
+                  titel="Nicht zugeordnet"
+                  pakete={sammelbeckenPakete}
+                  onAddPaket={(spalteId) => openPaketDialog(spalteId)}
+                  onDeletePaket={handleDeletePaket}
+                  onEditPaket={(paket) => openPaketDialog(SAMMELBECKEN_ID, paket)}
+                  isSammelbecken
+                  compact={compact}
+                  collapsed={collapsedSpalten.has(SAMMELBECKEN_ID)}
+                  onToggleCollapse={() => toggleCollapse(SAMMELBECKEN_ID)}
+                  readOnly={readOnly || !isStructuralEditingActive}
+                  istLesemodus={istLesemodus || !isStructuralEditingActive}
+                />
+                <div className="w-px bg-border shrink-0 self-stretch" />
+              </>
+            )}
 
             {/* Themenfeld-Spalten */}
             {spalten.map((spalte, idx) => (

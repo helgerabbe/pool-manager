@@ -15,7 +15,7 @@ import { useEinheitFreigabeStatus } from '@/hooks/useEinheitFreigabeStatus';
 import { EXPORT_LIFECYCLE_LABELS, EXPORT_LIFECYCLE_STATUS } from '@/lib/exportLifecycle';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { BookOpen, Lock, ArrowRight, PenLine, Unlock, Loader2 } from 'lucide-react';
+import { BookOpen, Lock, ArrowRight, PenLine, Unlock, Loader2, AlignJustify, LayoutList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -59,6 +59,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const [activeTab, setActiveTab] = useState(VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'einheit');
   const [highlightedAtomIds, setHighlightedAtomIds] = useState(new Set());
   const [taskWorkshopActivityId, setTaskWorkshopActivityId] = useState(null);
+  const [strukturCompact, setStrukturCompact] = useState(false);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -696,7 +697,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             {/* ── PERSISTENTER LOCK-STATUS-BANNER (alle Tabs außer Dashboards) ──
                 In Tab 7 (dashboards) wird der Beenden-Button platzsparend in
                 der Aktionszeile des Architekten angezeigt – kein Banner. */}
-            {(isStructuralEditingActive || isTab1EditingActive) && activeTab !== 'dashboards' && (
+            {(isStructuralEditingActive || isTab1EditingActive) && activeTab !== 'dashboards' && activeTab !== 'struktur' && (
               <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-1.5 bg-blue-50 border-b border-blue-200 flex items-center gap-3">
                 <PenLine className="w-4 h-4 text-blue-600 animate-pulse shrink-0" />
                 <span className="text-sm font-semibold text-blue-900 flex-1">
@@ -721,6 +722,27 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               <div className="flex-1 min-w-0">
                 <WorkspaceTabs activeTab={activeTab} onTabChange={handleTabChange} />
               </div>
+              {activeTab === 'struktur' && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setStrukturCompact(c => !c)}
+                  className="h-7 gap-1.5 text-xs shrink-0"
+                >
+                  {strukturCompact ? <AlignJustify className="w-3.5 h-3.5" /> : <LayoutList className="w-3.5 h-3.5" />}
+                  {strukturCompact ? 'Normal' : 'Kompakt'}
+                </Button>
+              )}
+              {activeTab === 'struktur' && isStructuralEditingActive && (
+                <button
+                  onClick={handleReleaseStructLock}
+                  disabled={releasingStructLock}
+                  className="shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50"
+                >
+                  {releasingStructLock ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unlock className="w-3.5 h-3.5" />}
+                  Bearbeitung beenden
+                </button>
+              )}
               {(activeTab === 'struktur' || activeTab === 'dashboards') &&
                 !isStructuralEditingActive &&
                 !isEinheitContentLocked &&
@@ -781,6 +803,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                             readOnly={!isStructuralEditingActive || isLockedByOther || isEinheitContentLocked}
                             isStructuralEditingActive={isStructuralEditingActive && !isEinheitContentLocked}
                             isLockedByOther={isLockedByOther}
+                            compact={strukturCompact}
                             onSaved={async () => {
                               // 🔄 PHASE 1: Key-Remount erzwingt kompletten Neustart der Komponente
                               console.log('[Workspace] 🔄 onSaved-Callback: Triggere Board-Remount via Key-Increment');
