@@ -1,7 +1,7 @@
 /**
  * ExportCockpitView.jsx
  *
- * Freigabe-Cockpit für Moodle-Export (Tab 8 im Workspace).
+ * Freigabe-Cockpit als Statusübersicht (Tab 8 im Workspace).
  *
  * Phase F.1 — Redesign:
  *   - KEIN Einheiten-Selector mehr: das Cockpit bezieht sich immer auf die
@@ -11,32 +11,26 @@
  *   - Workflow-Hilfe wandert in einen aufklappbaren <details>-Block am Ende
  *     der Seite — sie bleibt auffindbar, blockiert aber nicht mehr den Blick
  *     auf die Inhalte.
- *   - Die vier Lerntyp-Karten + aggregierte Drift-Anzeige folgen in F.2;
- *     vorerst bleibt die bestehende Themenfeld-Hierarchie unten erhalten,
- *     damit das Selektieren & Übergeben weiter funktioniert.
+ *   - Die vier Lerntyp-Karten + aggregierte Drift-Anzeige bleiben erhalten;
+ *     die Themenfeld-Hierarchie dient nur noch als Statusübersicht.
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { RotateCcw, AlertCircle, CheckCircle2, Clock, ShieldCheck, Info, Pencil, Upload, RefreshCw, ChevronDown } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, ShieldCheck, Info, Pencil, Upload, RefreshCw, ChevronDown } from 'lucide-react';
 import HelpBadge from '@/components/ui/HelpBadge';
 import MissionBadge from '@/components/missionen/MissionBadge';
 import ExportErrorBadge from '@/components/exportcenter/ExportErrorBadge';
 import { isMissionApplicable } from '@/lib/missionen';
-import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import ExportLifecycleHeaderCard from '@/components/export/ExportLifecycleHeaderCard';
 import LerntypDashboardCard from '@/components/export/LerntypDashboardCard';
-import { useEinheitFreigabeStatus } from '@/hooks/useEinheitFreigabeStatus';
-
 const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 
 // ── Status-Badge für eine Aktivität (alle 6 Zustände) ───────────────────────
@@ -62,48 +56,9 @@ function AktivitaetStatusBadge({ activity }) {
   return <Badge className="bg-slate-100 text-slate-600 border border-slate-300 text-xs whitespace-nowrap shrink-0"><Pencil className="w-3 h-3 mr-1" />Entwurf</Badge>;
 }
 
-// ── Undo-Button für "pending"-Status ────────────────────────────────────────
-
-function UndoButton({ activityId, entityType = 'activity' }) {
-  const queryClient = useQueryClient();
-  const [loading, setLoading] = useState(false);
-
-  const handleUndo = async () => {
-    setLoading(true);
-    if (entityType === 'allgemein') {
-      await base44.entities.AllgemeineAufgabe.update(activityId, { sync_status: 'modified' });
-      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
-    } else {
-      await base44.entities.LernpaketPhaseAktivitaet.update(activityId, { sync_status: 'modified' });
-      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-    }
-    toast.success('Übergabe zurückgesetzt.');
-    setLoading(false);
-  };
-
-  return (
-    <Button variant="ghost" size="icon" onClick={handleUndo} disabled={loading}
-      className="h-6 w-6 text-destructive hover:bg-destructive/10 shrink-0" title="Übergabe zurücksetzen">
-      <RotateCcw className={cn('w-3.5 h-3.5', loading && 'animate-spin')} />
-    </Button>
-  );
-}
-
 // ── Haupt-Hierarchie-Renderer ────────────────────────────────────────────────
 
-function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, themenfelder, aktivitaeten, aktivitaetenKatalog, allgemeineAufgaben, masterAufgaben = [], onNavigateToActivity, onNavigateToTask }) {
-
-  const toggleActivities = useCallback((itemArray) => {
-    const exportable = itemArray.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending' && a.sync_status !== 'synced');
-    if (exportable.length === 0) return;
-    const ids = exportable.map(a => a.id);
-    const allSelected = ids.every(id => selectedIds.includes(id));
-    if (allSelected) {
-      setSelectedIds(prev => prev.filter(id => !ids.includes(id)));
-    } else {
-      setSelectedIds(prev => [...new Set([...prev, ...ids])]);
-    }
-  }, [selectedIds, setSelectedIds]);
+function EinheitHierarchy({ unitId, lernpakete, themenfelder, aktivitaeten, aktivitaetenKatalog, allgemeineAufgaben, masterAufgaben = [], onNavigateToActivity, onNavigateToTask }) {
 
   const rows = themenfelder
     .filter(tf => tf.einheit_id === unitId)
@@ -125,9 +80,7 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
           <div className="pl-3 space-y-2 border-l-2 border-muted">
             {tfPakete.map(paket => {
               const paketAktivitaeten = aktivitaeten.filter(a => a.lernpaket_id === paket.id);
-              const exportable = paketAktivitaeten.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending' && a.sync_status !== 'synced');
-              const selectedCount = exportable.filter(a => selectedIds.includes(a.id)).length;
-              const allSelected = exportable.length > 0 && selectedCount === exportable.length;
+              const approvedCount = paketAktivitaeten.filter(a => a.content_status === 'approved').length;
 
               const phaseOrder = { 'Input': 0, 'Übung': 1, 'Abschluss': 2 };
               const sortedByPhase = paketAktivitaeten
@@ -145,10 +98,9 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
 
               return (
                 <div key={paket.id} className="space-y-1">
-                  <div className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-muted/30 transition">
-                    <Checkbox checked={allSelected} onCheckedChange={() => toggleActivities(paketAktivitaeten)} disabled={exportable.length === 0} className="h-4 w-4" />
+                  <div className="flex items-center gap-2 p-1.5 rounded-lg bg-muted/20">
                     <span className="text-sm font-semibold flex-1 truncate">{paket.titel_des_pakets}</span>
-                    {exportable.length > 0 && <span className="text-xs text-muted-foreground">{selectedCount}/{exportable.length}</span>}
+                    {paketAktivitaeten.length > 0 && <span className="text-xs text-muted-foreground">{approvedCount}/{paketAktivitaeten.length} freigegeben</span>}
                   </div>
                   <div className="pl-5 space-y-1.5 border-l border-muted/50">
                     {paketAktivitaeten.length === 0 ? (
@@ -161,24 +113,14 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                             <div className="space-y-1">
                               {activities.map(act => {
                                 const actName = aktivitaetenKatalog.find(k => k.id === act.aktivitaet_id)?.name || 'Aktivität';
-                                const isPending = act.sync_status === 'pending';
-                                const isSynced = act.sync_status === 'synced';
                                 const isApproved = act.content_status === 'approved';
 
                                 const actMasters = masterAufgaben.filter(m => m.lernpaket_phase_aktivitaet_id === act.id);
-                                const hasMasterChildren = actMasters.length > 0;
-                                const masterExportable = actMasters.filter(m => m.content_status === 'approved' && m.sync_status !== 'pending' && m.sync_status !== 'synced');
-                                const masterSelectedCount = masterExportable.filter(m => selectedIds.includes(m.id)).length;
-                                const allMastersSelected = masterExportable.length > 0 && masterSelectedCount === masterExportable.length;
-
-                                const isSelectable = !hasMasterChildren && isApproved && !isPending && !isSynced;
-                                const isSelected = selectedIds.includes(act.id);
+                                const masterApprovedCount = actMasters.filter(m => m.content_status === 'approved').length;
 
                                 return (
                                   <div key={act.id} className="space-y-0.5">
-                                    <div className={cn('flex items-center gap-2 p-1.5 rounded transition', isSelectable ? 'hover:bg-muted/20' : 'opacity-70')}>
-                                      {isSelectable && <Checkbox checked={isSelected} onCheckedChange={() => toggleActivities([act])} className="h-4 w-4 shrink-0" />}
-                                      {!isSelectable && <div className="h-4 w-4 shrink-0" />}
+                                    <div className={cn('flex items-center gap-2 p-1.5 rounded transition hover:bg-muted/20', !isApproved && 'opacity-70')}>
                                       <button
                                         onClick={() => onNavigateToActivity?.(act.id, paket.id)}
                                         className={cn('text-xs flex-1 truncate text-left transition', isApproved ? 'text-primary hover:underline' : 'text-muted-foreground')}
@@ -186,33 +128,26 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                                         {act.phase === 'Input' ? '📚' : act.phase === 'Übung' ? '✏️' : '🎯'} {actName}
                                       </button>
                                       <ExportErrorBadge show={!!act.export_error} size="xs" />
-                                      {isPending && <UndoButton activityId={act.id} />}
                                       <AktivitaetStatusBadge activity={act} />
                                     </div>
 
                                     {actMasters.length > 0 && (
                                       <div className="pl-5 space-y-0.5 border-l border-muted/30 ml-1">
-                                        {masterExportable.length > 0 && (
-                                          <div className="flex items-center gap-2 p-1 rounded transition hover:bg-muted/10">
-                                            <Checkbox checked={allMastersSelected} onCheckedChange={() => toggleActivities(masterExportable)} className="h-3.5 w-3.5 shrink-0" />
+                                        {actMasters.length > 0 && (
+                                          <div className="flex items-center gap-2 p-1 rounded bg-muted/10">
                                             <span className="text-[11px] font-medium text-muted-foreground flex-1 truncate">
-                                              Master ({masterSelectedCount}/{masterExportable.length})
+                                              Master ({masterApprovedCount}/{actMasters.length} freigegeben)
                                             </span>
                                           </div>
                                         )}
                                         {actMasters.map(master => {
-                                          const masterSelected = selectedIds.includes(master.id);
-                                          const masterPending = master.sync_status === 'pending';
                                           const masterApproved = master.content_status === 'approved';
-                                          const masterSelectable = masterApproved && !masterPending;
                                           return (
-                                            <div key={master.id} className={cn('flex items-center gap-2 p-1 rounded transition text-[11px]', masterSelectable ? 'hover:bg-muted/10' : 'opacity-60')}>
-                                              <Checkbox checked={masterSelected} onCheckedChange={() => toggleActivities([master])} disabled={!masterSelectable} className="h-3.5 w-3.5 shrink-0" />
+                                            <div key={master.id} className={cn('flex items-center gap-2 p-1 rounded transition text-[11px] hover:bg-muted/10', !masterApproved && 'opacity-60')}>
                                               <span className="text-muted-foreground flex-1 truncate">
                                                 👤 {master.titel || 'Master ohne Titel'}
                                               </span>
                                               <ExportErrorBadge show={!!master.export_error} size="xs" />
-                                              {masterPending && <UndoButton activityId={master.id} />}
                                               <AktivitaetStatusBadge activity={master} />
                                             </div>
                                           );
@@ -234,28 +169,19 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
 
             {tfAufgaben.length > 0 && (
               <div className="space-y-1">
-                <div className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-muted/30 transition">
-                  <Checkbox 
-                    checked={tfAufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending').length > 0 && tfAufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending').every(a => selectedIds.includes(a.id))} 
-                    onCheckedChange={() => toggleActivities(tfAufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending'))} 
-                    disabled={tfAufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending').length === 0} 
-                    className="h-4 w-4" 
-                  />
+                <div className="flex items-center gap-2 p-1.5 rounded-lg bg-muted/20">
                   <span className="text-sm font-semibold flex-1">Allgemeine Aufgaben (Ebene 1/2)</span>
+                  <span className="text-xs text-muted-foreground">{tfAufgaben.filter(a => a.content_status === 'approved').length}/{tfAufgaben.length} freigegeben</span>
                 </div>
                 <div className="pl-5 space-y-1 border-l border-muted/50">
                   {tfAufgaben.map(aufgabe => {
-                    const isSelected = selectedIds.includes(aufgabe.id);
-                    const isPending = aufgabe.sync_status === 'pending';
                     const isApproved = aufgabe.content_status === 'approved';
-                    const isSelectable = isApproved && !isPending;
                     // Mission-Indikator: nur für Aufgaben im Mission-Scope
                     // (inhalt/handlung). Zeigt Emoji+Label oder dezenten
                     // "Mission fehlt"-Hinweis als Pflege-Nudge (Frage H).
                     const showMission = isMissionApplicable(aufgabe);
                     return (
-                      <div key={aufgabe.id} className={cn('flex items-center gap-2 p-1.5 rounded transition', isSelectable ? 'hover:bg-muted/20' : 'opacity-70')}>
-                        <Checkbox checked={isSelected} onCheckedChange={() => toggleActivities([aufgabe])} disabled={!isSelectable} className="h-4 w-4 shrink-0" />
+                      <div key={aufgabe.id} className={cn('flex items-center gap-2 p-1.5 rounded transition hover:bg-muted/20', !isApproved && 'opacity-70')}>
                         <button onClick={() => onNavigateToTask?.('ebene12', aufgabe.id)} className={cn('text-xs flex-1 truncate text-left', isApproved ? 'text-primary hover:underline' : 'text-muted-foreground')}>
                           📝 {aufgabe.titel || 'Aufgabe ohne Titel'}
                           {aufgabe.anforderungsebene && <span className="ml-1 text-muted-foreground">({aufgabe.anforderungsebene})</span>}
@@ -264,7 +190,6 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
                           <MissionBadge missionId={aufgabe.mission_type} size="sm" showFallback />
                         )}
                         <ExportErrorBadge show={!!aufgabe.export_error} size="xs" />
-                        {isPending && <UndoButton activityId={aufgabe.id} entityType="allgemein" />}
                         <AktivitaetStatusBadge activity={aufgabe} />
                       </div>
                     );
@@ -287,34 +212,27 @@ function EinheitHierarchy({ unitId, selectedIds, setSelectedIds, lernpakete, the
     a => a.einheit_id === unitId && a.anforderungsebene === '3 - Projekt' && a.sync_status !== 'to_delete'
   );
   if (projektaufgaben.length > 0) {
-    const exportable = projektaufgaben.filter(a => a.content_status === 'approved' && a.sync_status !== 'pending');
-    const selectedCount = exportable.filter(a => selectedIds.includes(a.id)).length;
-    const allSelected = exportable.length > 0 && selectedCount === exportable.length;
+    const approvedCount = projektaufgaben.filter(a => a.content_status === 'approved').length;
     rows.push(
       <div key="_projektaufgaben" className="space-y-2">
         <div className="px-2 py-1">
           <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Projekt- & Anwendungsaufgaben (Ebene 3)</span>
         </div>
         <div className="pl-3 space-y-1 border-l-2 border-muted">
-          <div className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-muted/30 transition">
-            <Checkbox checked={allSelected} onCheckedChange={() => toggleActivities(projektaufgaben)} disabled={exportable.length === 0} className="h-4 w-4" />
+          <div className="flex items-center gap-2 p-1.5 rounded-lg bg-muted/20">
             <span className="text-sm font-semibold flex-1">Alle Projektaufgaben</span>
-            {exportable.length > 0 && <span className="text-xs text-muted-foreground">{selectedCount}/{exportable.length}</span>}
+            <span className="text-xs text-muted-foreground">{approvedCount}/{projektaufgaben.length} freigegeben</span>
           </div>
           <div className="pl-5 space-y-1 border-l border-muted/50">
             {projektaufgaben.map(aufgabe => {
-              const isSelected = selectedIds.includes(aufgabe.id);
-              const isPending = aufgabe.sync_status === 'pending';
               const isApproved = aufgabe.content_status === 'approved';
               return (
-                <div key={aufgabe.id} className={cn('flex items-center gap-2 p-1.5 rounded transition', isApproved ? 'hover:bg-muted/20' : 'opacity-70')}>
-                  <Checkbox checked={isSelected} onCheckedChange={() => toggleActivities([aufgabe])} disabled={!isApproved || isPending} className="h-4 w-4 shrink-0" />
+                <div key={aufgabe.id} className={cn('flex items-center gap-2 p-1.5 rounded transition hover:bg-muted/20', !isApproved && 'opacity-70')}>
                   <button onClick={() => onNavigateToTask?.('ebene3', aufgabe.id)} className={cn('text-xs flex-1 truncate text-left', isApproved ? 'text-primary hover:underline' : 'text-muted-foreground')}>
                     🎯 {aufgabe.titel || 'Projektaufgabe ohne Titel'}
                     {aufgabe.aufgabentyp_projekt && <span className="ml-1 text-muted-foreground">({aufgabe.aufgabentyp_projekt})</span>}
                   </button>
                   <ExportErrorBadge show={!!aufgabe.export_error} size="xs" />
-                  {isPending && <UndoButton activityId={aufgabe.id} entityType="allgemein" />}
                   <AktivitaetStatusBadge activity={aufgabe} />
                 </div>
               );
@@ -343,11 +261,9 @@ export default function ExportCockpitView({
   // (setzt URL-Params + ruft handleTabChange('dashboards') auf).
   onOpenDashboardArchitekt = null,
 }) {
-  const queryClient = useQueryClient();
   const { permissions, rolle, faecher } = useRBAC();
   const navigate = useNavigate();
   const selectedUnitId = einheitId || initialEinheitId || null;
-  const [selectedIds, setSelectedIds] = useState([]);
 
   const onNavigateToActivity = (activityId, paketId) => {
     if (onNavCallback) {
@@ -383,51 +299,6 @@ export default function ExportCockpitView({
     einheit?.fach &&
     faecher.includes(einheit.fach);
   const darfFreigeben = istAdmin || istFachschaftFuerFach;
-
-  // Ring der Macht: Bei final_freigegeben/export_running darf nichts mehr
-  // an den Moodle-Export übergeben werden. Sobald die Einheit final ist,
-  // ist die Selektion eingefroren und der Übergabe-Button verschwindet.
-  const { data: einheitFreigabe } = useEinheitFreigabeStatus(selectedUnitId);
-  const isEinheitContentLocked = einheitFreigabe?.isContentLocked === true;
-
-  useEffect(() => {
-    if (!selectedUnitId) return;
-    setSelectedIds([]);
-    const allItems = [
-      ...aktivitaeten.filter(a => {
-        const paket = lernpakete.find(lp => lp.id === a.lernpaket_id);
-        return paket && (paket.themenfeld_id
-          ? themenfelder.find(tf => tf.id === paket.themenfeld_id)?.einheit_id === selectedUnitId
-          : paket.einheit_id === selectedUnitId);
-      }),
-      ...allgemeineAufgaben.filter(a => a.einheit_id === selectedUnitId),
-    ];
-    const autoSelect = allItems
-      .filter(a => a.content_status === 'approved' && a.sync_status !== 'pending' && a.sync_status !== 'synced')
-      .map(a => a.id);
-    setSelectedIds(autoSelect);
-  }, [selectedUnitId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const exportMutation = useMutation({
-    mutationFn: async () => {
-      const allgemeineIds = new Set(allgemeineAufgaben.map(a => a.id));
-      for (const id of selectedIds) {
-        if (allgemeineIds.has(id)) {
-          await base44.entities.AllgemeineAufgabe.update(id, { sync_status: 'pending' });
-        } else {
-          await base44.entities.LernpaketPhaseAktivitaet.update(id, { sync_status: 'pending' });
-        }
-      }
-      return { count: selectedIds.length };
-    },
-    onSuccess: ({ count }) => {
-      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
-      setSelectedIds([]);
-      toast.success(`${count} Element${count !== 1 ? 'e' : ''} übergeben – jetzt im Moodle-Export sichtbar.`);
-    },
-    onError: () => toast.error('Fehler bei der Übergabe.'),
-  });
 
   if (!permissions.kannExportBedienen) {
     return (
@@ -475,12 +346,12 @@ export default function ExportCockpitView({
         <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
           Freigabe-Cockpit
           <HelpBadge
-            text="Übersicht und Steuerung des Export-Lebenszyklus dieser Einheit. Selektiere freigegebene Inhalte und übergib sie an das Moodle-Export-Team."
+            text="Übersicht über den Status der Einheit, Dashboards und Inhalte. Freigaben erfolgen direkt an den jeweiligen Inhalten und in den Dashboards."
             docsSlug="export-workflow"
           />
         </h2>
         <p className="text-muted-foreground mt-1 text-sm">
-          Status der Einheit, Dashboard-Übersicht und Übergabe an den Moodle-Export.
+          Status der Einheit, Dashboard-Übersicht und Inhaltsstatus auf einen Blick.
         </p>
       </div>
 
@@ -507,19 +378,17 @@ export default function ExportCockpitView({
       </div>
 
       {/* Inhalts-Sektion: das Detail-Akkordeon mit der vollen Themenfeld-
-          Hierarchie für die manuelle Selektion vor der Übergabe. */}
+          Hierarchie als reine Statusübersicht. */}
       <div className="rounded-xl border border-border bg-card shadow-sm p-5 space-y-4">
         <div>
-          <h3 className="text-sm font-semibold">Inhalte zur Übergabe</h3>
+          <h3 className="text-sm font-semibold">Inhalte der Einheit</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Freigegebene Aktivitäten und Aufgaben dieser Einheit. Häkchen setzen → unten übergeben.
+            Informative Übersicht aller Aktivitäten und Aufgaben dieser Einheit mit aktuellem Freigabe- und Exportstatus.
           </p>
         </div>
 
         <EinheitHierarchy
           unitId={selectedUnitId}
-          selectedIds={selectedIds}
-          setSelectedIds={setSelectedIds}
           lernpakete={lernpakete}
           themenfelder={themenfelder}
           aktivitaeten={aktivitaeten.filter(a => a.sync_status !== 'to_delete')}
@@ -531,21 +400,9 @@ export default function ExportCockpitView({
         />
 
         <div className="pt-4 border-t">
-          {isEinheitContentLocked ? (
-            <div className="w-full text-center px-3 py-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-900">
-              🔒 <strong>Einheit final freigegeben</strong> – Es können keine Aktivitäten mehr übergeben werden. Die Einheit ist gesperrt.
-            </div>
-          ) : (
-            <Button
-              onClick={() => exportMutation.mutate()}
-              disabled={selectedIds.length === 0 || exportMutation.isPending}
-              className="w-full font-semibold"
-            >
-              {exportMutation.isPending
-                ? 'Wird übergeben...'
-                : `🚀 ${selectedIds.length} Aktivität${selectedIds.length !== 1 ? 'en' : ''} übergeben`}
-            </Button>
-          )}
+          <div className="w-full text-center px-3 py-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-700">
+            Diese Ansicht ist rein informativ. Freigaben und Dashboard-Prüfungen erfolgen direkt in den jeweiligen Arbeitsbereichen.
+          </div>
         </div>
       </div>
 
@@ -557,7 +414,7 @@ export default function ExportCockpitView({
           <Info className="w-4 h-4 text-muted-foreground" />
           <span>Status-Workflow im Überblick</span>
           <HelpBadge
-            text="Jede Aktivität durchläuft diesen Lebenszyklus: Entwurf → Freigegeben → In Übertragung → Live. Mehr Details in der Dokumentation."
+            text="Jeder Inhalt durchläuft diesen Lebenszyklus: Entwurf → Freigegeben → In Übertragung → Live. Mehr Details in der Dokumentation."
             docsSlug="export-workflow"
           />
           <ChevronDown className="w-4 h-4 ml-auto text-muted-foreground transition-transform group-open:rotate-180" />
