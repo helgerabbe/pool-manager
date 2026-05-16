@@ -1,28 +1,14 @@
 /**
  * SpeechInputButton.jsx
  *
- * Mikrofon-Button mit Web-Speech-API.
- *
- * Verhalten:
- *  - Klick: startet die Aufnahme (rotes pulsierendes Mikro + Countdown).
- *  - Erneuter Klick: stoppt die Aufnahme manuell.
- *  - Hard-Cap: nach `maxSeconds` (Default 20 s) wird automatisch gestoppt.
- *  - Sprechpausen führen NICHT zum Abbruch: sobald Chrome `onend` feuert
- *    (was bei `continuous=true` nach jeder finalen Phrase passiert), wird
- *    eine FRISCHE Recognition-Instanz gestartet, solange der Nutzer nicht
- *    selbst gestoppt hat und das Zeitlimit nicht erreicht ist.
- *
- * Props:
- *   onResult(text) – wird mit dem neuen Gesamttext aufgerufen
- *   value          – aktueller Textwert (wird durch Sprache ergänzt)
- *   disabled       – deaktiviert den Button
- *   maxSeconds     – Hard-Cap in Sekunden (Default 20)
- *   className      – optionale extra CSS-Klassen
+ * Robuste Mikrofon-Aufnahme mit Base44-Transkription.
+ * Aufnahme endet nur durch Nutzer-Stop oder maxSeconds-Hard-Cap.
  */
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff } from 'lucide-react';
+import { Mic, MicOff, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { base44 } from '@/api/base44Client';
 
 export default function SpeechInputButton({
   onResult,
@@ -34,22 +20,16 @@ export default function SpeechInputButton({
   listeningLabel = null,
 }) {
   const [isListening, setIsListening] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(maxSeconds);
-  const recognitionRef = useRef(null);
-  const shouldRestartRef = useRef(false);
+  const recorderRef = useRef(null);
+  const streamRef = useRef(null);
+  const chunksRef = useRef([]);
   const tickIntervalRef = useRef(null);
   const hardStopTimeoutRef = useRef(null);
-  const sessionBaseRef = useRef('');
-  const finalTranscriptRef = useRef('');
+  const stoppedByUnmountRef = useRef(false);
 
-  // Aktuellen value-Snapshot vorhalten, damit der Auto-Restart nicht gegen
-  // einen veralteten Closure-Wert mergt.
-  const valueRef = useRef(value);
-  useEffect(() => { valueRef.current = value; }, [value]);
-
-  const isSupported = typeof window !== 'undefined' && (
-    'SpeechRecognition' in window || 'webkitSpeechRecognition' in window
-  );
+  const isSupported = typeof window !== 'undefined' && !!navigator.mediaDevices?.getUserMedia && typeof MediaRecorder !== 'undefined';
 
   const clearTimers = () => {
     if (tickIntervalRef.current) {
@@ -62,141 +42,113 @@ export default function SpeechInputButton({
     }
   };
 
-  const createRecognition = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'de-DE';
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.maxAlternatives = 1;
+  const cleanupStream = () => {
+    streamRef.current?.getTracks?.().forEach((track) => track.stop());
+    streamRef.current = null;
+  };
 
-    recognition.onstart = () => setIsListening(true);
+  const appendTranscript = (transcript) => {
+    const clean = String(transcript || '').trim();
+    if (!clean) {
+      toast.error('Es wurde kein Text erkannt. Bitte erneut versuchen und deutlich sprechen.');
+      return;
+    }
 
-    recognition.onresult = (e) => {
-      let interimChunk = '';
-      let finalChunk = '';
+    const current = String(value || '').trim();
+    onResult([current, clean].filter(Boolean).join(' '));
+  };
 
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const transcript = e.results[i][0]?.transcript?.trim();
-        if (!transcript) continue;
-        if (e.results[i].isFinal) {
-          finalChunk += (finalChunk ? ' ' : '') + transcript;
-        } else {
-          interimChunk += (interimChunk ? ' ' : '') + transcript;
-        }
-      }
+  const transcribeRecording = async () => {
+    const chunks = chunksRef.current;
+    chunksRef.current = [];
+    cleanupStream();
 
-      if (finalChunk) {
-        finalTranscriptRef.current = [finalTranscriptRef.current, finalChunk].filter(Boolean).join(' ');
-      }
+    if (stoppedByUnmountRef.current || chunks.length === 0) return;
 
-      const next = [sessionBaseRef.current, finalTranscriptRef.current, interimChunk]
-        .filter(Boolean)
-        .join(' ')
-        .trim();
-
-      if (next) {
-        valueRef.current = next;
-        onResult(next);
-      }
-    };
-
-    recognition.onerror = (e) => {
-      // Diese Fehler treten bei continuous=true häufig nach kurzen Pausen auf.
-      // Sie dürfen die Aufnahme nicht beenden; onend startet automatisch neu.
-      if (['no-speech', 'aborted', 'network'].includes(e.error)) return;
-      toast.error('Spracherkennung fehlgeschlagen: ' + e.error);
-    };
-
-    recognition.onend = () => {
-      // Nur stoppen, wenn der Nutzer das wollte oder das Zeitlimit erreicht ist.
-      // Sonst frische Instanz starten (Chrome beendet bei continuous=true
-      // gerne nach jeder finalen Phrase).
-      if (!shouldRestartRef.current) {
-        clearTimers();
-        setIsListening(false);
-        recognitionRef.current = null;
-        return;
-      }
-      // Kleine Pause, damit Chrome den alten Stream sauber freigibt.
-      setTimeout(() => {
-        if (!shouldRestartRef.current) {
-          setIsListening(false);
-          return;
-        }
-        try {
-          const next = createRecognition();
-          recognitionRef.current = next;
-          next.start();
-        } catch {
-          shouldRestartRef.current = false;
-          clearTimers();
-          setIsListening(false);
-        }
-      }, 80);
-    };
-
-    return recognition;
+    setIsTranscribing(true);
+    try {
+      const mimeType = recorderRef.current?.mimeType || 'audio/webm';
+      const extension = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+      const audioBlob = new Blob(chunks, { type: mimeType });
+      const audioFile = new File([audioBlob], `spracheingabe-${Date.now()}.${extension}`, { type: mimeType });
+      const { file_url } = await base44.integrations.Core.UploadFile({ file: audioFile });
+      const transcript = await base44.integrations.Core.TranscribeAudio({ audio_url: file_url });
+      appendTranscript(transcript);
+    } finally {
+      setIsTranscribing(false);
+      recorderRef.current = null;
+    }
   };
 
   const stopListening = () => {
-    shouldRestartRef.current = false;
     clearTimers();
-    try {
-      recognitionRef.current?.stop();
-    } catch {
-      /* ignore */
-    }
     setIsListening(false);
+
+    const recorder = recorderRef.current;
+    if (recorder && recorder.state !== 'inactive') {
+      recorder.stop();
+    } else {
+      cleanupStream();
+    }
   };
 
-  const startListening = () => {
-    shouldRestartRef.current = true;
-    sessionBaseRef.current = (value || '').trim();
-    finalTranscriptRef.current = '';
-    valueRef.current = value;
+  const startListening = async () => {
+    if (!isSupported) {
+      toast.error('Audioaufnahme wird von diesem Browser nicht unterstützt. Bitte Chrome oder Edge verwenden.');
+      return;
+    }
+
+    chunksRef.current = [];
+    stoppedByUnmountRef.current = false;
     setSecondsLeft(maxSeconds);
 
-    // Sekundengenauer Countdown fürs UI.
-    tickIntervalRef.current = setInterval(() => {
-      setSecondsLeft((s) => Math.max(0, s - 1));
-    }, 1000);
-
-    // Hard-Cap: spätestens nach maxSeconds automatisch stoppen.
-    hardStopTimeoutRef.current = setTimeout(() => {
-      stopListening();
-    }, maxSeconds * 1000);
-
     try {
-      const recognition = createRecognition();
-      recognitionRef.current = recognition;
-      recognition.start();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+          ? 'audio/webm'
+          : '';
+
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      recorderRef.current = recorder;
+
+      recorder.ondataavailable = (event) => {
+        if (event.data?.size > 0) chunksRef.current.push(event.data);
+      };
+      recorder.onstop = transcribeRecording;
+
+      recorder.start();
+      setIsListening(true);
+
+      tickIntervalRef.current = setInterval(() => {
+        setSecondsLeft((s) => Math.max(0, s - 1));
+      }, 1000);
+
+      hardStopTimeoutRef.current = setTimeout(stopListening, maxSeconds * 1000);
     } catch (err) {
-      shouldRestartRef.current = false;
-      clearTimers();
-      setIsListening(false);
-      toast.error('Spracherkennung konnte nicht gestartet werden.');
+      cleanupStream();
+      toast.error('Mikrofon konnte nicht gestartet werden. Bitte Berechtigung prüfen.');
     }
   };
 
   const handleToggle = () => {
-    if (!isSupported) {
-      toast.error('Spracherkennung wird von diesem Browser nicht unterstützt. Bitte Chrome oder Edge verwenden.');
-      return;
-    }
-    if (isListening) {
-      stopListening();
-    } else {
-      startListening();
-    }
+    if (disabled || isTranscribing) return;
+    if (isListening) stopListening();
+    else startListening();
   };
 
-  // Beim Unmount aufräumen, damit kein Stream im Hintergrund weiterläuft.
   useEffect(() => {
     return () => {
-      shouldRestartRef.current = false;
+      stoppedByUnmountRef.current = true;
       clearTimers();
-      try { recognitionRef.current?.stop(); } catch { /* ignore */ }
+      try {
+        if (recorderRef.current?.state !== 'inactive') recorderRef.current?.stop();
+      } catch {
+        cleanupStream();
+      }
     };
   }, []);
 
@@ -205,17 +157,14 @@ export default function SpeechInputButton({
   return (
     <div className={cn('inline-flex items-center gap-1.5', className)}>
       {isListening && (
-        <span
-          className="text-[11px] font-mono font-semibold text-red-600 tabular-nums"
-          aria-live="polite"
-        >
+        <span className="text-[11px] font-mono font-semibold text-red-600 tabular-nums" aria-live="polite">
           {secondsLeft}s
         </span>
       )}
       <button
         type="button"
         onClick={handleToggle}
-        disabled={disabled}
+        disabled={disabled || isTranscribing}
         title={isListening ? `Aufnahme stoppen (${secondsLeft}s übrig)` : 'Spracheingabe starten'}
         aria-label={isListening ? 'Aufnahme stoppen' : 'Spracheingabe starten'}
         aria-pressed={isListening}
@@ -225,11 +174,17 @@ export default function SpeechInputButton({
           isListening
             ? 'bg-red-100 text-red-600 animate-pulse ring-2 ring-red-400 ring-offset-1'
             : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground',
-          disabled && 'opacity-40 cursor-not-allowed'
+          (disabled || isTranscribing) && 'opacity-60 cursor-not-allowed'
         )}
       >
-        {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-        {label && <span>{isListening ? (listeningLabel || 'Aufnahme stoppen') : label}</span>}
+        {isTranscribing ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        ) : isListening ? (
+          <MicOff className="w-3.5 h-3.5" />
+        ) : (
+          <Mic className="w-3.5 h-3.5" />
+        )}
+        {label && <span>{isTranscribing ? 'Wird erkannt…' : isListening ? (listeningLabel || 'Aufnahme stoppen') : label}</span>}
       </button>
     </div>
   );
