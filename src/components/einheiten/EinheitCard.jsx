@@ -73,7 +73,7 @@ export default function EinheitCard({
           <CardContent className="p-0 flex flex-col flex-1">
             {/* ── Kopfbereich: Standard-Klickzone → Tab 1 (Strukturboard) ── */}
             <Link
-              to={`/workspace?einheit=${einheit.id}&tab=struktur`}
+              to={`/workspace?einheit=${einheit.id}&tab=einheit`}
               className="block p-5 hover:bg-muted/30 transition-colors cursor-pointer"
             >
               <div className="flex items-start justify-between mb-2 gap-2">
@@ -127,7 +127,7 @@ export default function EinheitCard({
                 {einheit.created_date && format(new Date(einheit.created_date), 'dd. MMM yyyy', { locale: de })}
               </span>
               <Link
-                to={`/workspace?einheit=${einheit.id}&tab=struktur`}
+                to={`/workspace?einheit=${einheit.id}&tab=einheit`}
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
               >
                 Öffnen
