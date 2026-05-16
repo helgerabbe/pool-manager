@@ -523,17 +523,19 @@ export default function SidebarTree({
     refetchOnWindowFocus: true,
   });
 
+  const effectivePhaseActivities = phaseAktivitaeten.length > 0 ? phaseAktivitaeten : phaseActivities;
+
   const paketPhaseActivitiesMap = Object.fromEntries(
     lernpakete.map(paket => [
       paket.id,
-      phaseActivities.filter(pa => pa.lernpaket_id === paket.id),
+      effectivePhaseActivities.filter(pa => pa.lernpaket_id === paket.id),
     ])
   );
 
   // Masteraufgaben gruppiert nach LernpaketPhaseAktivitaet.id
   // (Masteraufgaben verwenden activity_id, das ist die FK zur LernpaketPhaseAktivitaet)
   const masterAufgabenMap = Object.fromEntries(
-    phaseActivities.map(activity => [
+    effectivePhaseActivities.map(activity => [
       activity.id,
       masterAufgaben.filter(m => m.activity_id === activity.id),
     ])

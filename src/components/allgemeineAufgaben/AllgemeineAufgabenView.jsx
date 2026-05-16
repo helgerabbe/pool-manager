@@ -594,7 +594,7 @@ export default function AllgemeineAufgabenView({
                   size="sm"
                   variant="outline"
                   onClick={() => setIdeenboxOpen(true)}
-                  className="gap-2 w-full border-amber-300 text-amber-700 hover:bg-amber-50"
+                  className="gap-2 w-full border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-slate-950"
                 >
                   <Lightbulb className="w-4 h-4" />
                   KI-Ideenbox öffnen
@@ -604,7 +604,7 @@ export default function AllgemeineAufgabenView({
                 size="sm"
                 variant="outline"
                 onClick={() => setWizardOpen(true)}
-                className="gap-2 w-full border-primary/40 text-primary hover:bg-primary/5"
+                className="gap-2 w-full border-blue-300 text-blue-700 hover:bg-blue-50 hover:text-slate-950"
               >
                 <Wand2 className="w-4 h-4" />
                 Mit KI entwerfen
