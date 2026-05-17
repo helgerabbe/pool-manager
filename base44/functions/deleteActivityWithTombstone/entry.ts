@@ -9,6 +9,13 @@
  * - Kaskadierendes Tombstone auf untergeordnete Aufgabenbausteine
  * - UI filtert sync_status='to_delete' automatisch
  * - Export-Center kann Tombstones noch abrufen
+ *
+ * Supabase-Migrationsnotiz:
+ * Bei PostgreSQL/Supabase sollte diese Soft-Delete-Kaskade nicht in Node.js
+ * erfolgen, sondern transaktionssicher über einen Trigger:
+ * AFTER UPDATE OF sync_status ON lernpaket_phase_aktivitaet
+ * WHEN NEW.sync_status = 'to_delete'
+ * → setzt alle untergeordneten aufgabenbausteine automatisch auf to_delete.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
@@ -25,7 +32,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { activity_id } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { activity_id } = body;
 
     if (!activity_id) {
       return Response.json({ error: 'Missing activity_id' }, { status: 400 });
@@ -110,13 +118,18 @@ Deno.serve(async (req) => {
     // 5. Kaskadierendes Update: Untergeordnete Aufgabenbausteine (parallel)
     // ─────────────────────────────────────────────────────────────────
     let cascadedCount = 0;
+    let cascadeFailedCount = 0;
     try {
-      // Finde alle Aufgabenbausteine, die zu dieser Aktivität gehören
-      const childTasks = await base44.asServiceRole.entities.Aufgabenbausteine.filter({
-        aktivitaet_id: activity_id,
-      });
+      // Finde alle Aufgabenbausteine, die zu dieser Aktivität gehören.
+      // Explizites Limit verhindert, dass SDK-Defaults nur die ersten 50/100 Kinder liefern.
+      const childTasks = await base44.asServiceRole.entities.Aufgabenbausteine.filter(
+        { aktivitaet_id: activity_id },
+        undefined,
+        1000
+      );
 
-      // Paralleles Update: Alle Tasks gleichzeitig markieren + Lock-Felder zurücksetzen
+      // Paralleles Update: Alle Tasks markieren + Lock-Felder zurücksetzen.
+      // allSettled stellt sicher, dass ein einzelner Fehler die übrigen Updates nicht abbricht.
       if (childTasks.length > 0) {
         const updatePromises = childTasks.map(task =>
           base44.asServiceRole.entities.Aufgabenbausteine.update(task.id, {
@@ -126,12 +139,17 @@ Deno.serve(async (req) => {
             locked_at: null,
           })
         );
-        await Promise.all(updatePromises);
-        cascadedCount = childTasks.length;
+        const results = await Promise.allSettled(updatePromises);
+        cascadedCount = results.filter(result => result.status === 'fulfilled').length;
+        cascadeFailedCount = results.length - cascadedCount;
+
+        results
+          .filter(result => result.status === 'rejected')
+          .forEach(result => console.error('[deleteActivityWithTombstone] Child cascade update failed:', result.reason));
       }
 
       console.info(
-        `[deleteActivityWithTombstone] Cascaded to_delete: ${cascadedCount} tasks for activity ${activity_id} (Lock fields reset)`
+        `[deleteActivityWithTombstone] Cascaded to_delete: ${cascadedCount} tasks for activity ${activity_id} (failed: ${cascadeFailedCount}, Lock fields reset)`
       );
     } catch (cascadeError) {
       console.error(
@@ -142,12 +160,34 @@ Deno.serve(async (req) => {
       // Fehler wird in Response dokumentiert
     }
 
+    try {
+      await base44.asServiceRole.entities.AuditLog.create({
+        user_email: user.email,
+        action: 'DELETE',
+        resource_type: 'LernpaketPhaseAktivitaet',
+        resource_id: activity_id,
+        changes: {
+          tombstone: true,
+          sync_status: 'to_delete',
+          lernpaket_id: lernpaketId,
+          cascaded_tasks_marked: cascadedCount,
+          cascaded_tasks_failed: cascadeFailedCount,
+        },
+        affected_count: 1 + cascadedCount,
+        status: cascadeFailedCount > 0 ? 'failed' : 'success',
+        error_message: cascadeFailedCount > 0 ? `${cascadeFailedCount} Aufgabenbaustein(e) konnten nicht markiert werden` : null,
+      });
+    } catch (auditError) {
+      console.error('[deleteActivityWithTombstone] Audit log failed:', auditError);
+    }
+
     return Response.json({
       success: true,
       message: 'Aktivität und abhängige Aufgaben als "to_delete" markiert',
       activity: updated,
       cascaded: {
         tasksMarked: cascadedCount,
+        tasksFailed: cascadeFailedCount,
       },
     });
   } catch (error) {
