@@ -1,39 +1,42 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 /**
  * forceReleaseLockAdmin
- * 
- * Generische Admin-Funktion: Entsperrt Entities beliebiger Typen erzwungenermaßen.
- * 
- * Unterstützte Entity-Typen:
- *   - Lernpakete: is_locked, locked_by_email, locked_at
- *   - Einheiten: structural_lock, structural_locked_at
- *   - Aufgabenbausteine: lock_status, locked_by_user, locked_at
- * 
- * Payload: { entityName, entityId }
- * Nur Admins dürfen diese Funktion aufrufen.
+ *
+ * Generische Admin-Funktion: Entsperrt Entities erzwungenermaßen.
+ * Jeder erfolgreiche Eingriff wird revisionssicher im AuditLog protokolliert.
+ *
+ * Hinweis: AuditLog.action erlaubt aktuell nur feste Enum-Werte. Der konkrete
+ * FORCE_UNLOCK-Vorgang wird deshalb in changes.event gespeichert.
  */
 
-// Feld-Konfiguration für verschiedene Entity-Typen
 const LOCK_FIELD_MAP = {
-  'Lernpakete': {
+  Lernpakete: {
     lockField: 'is_locked',
+    lockValue: false,
     ownerField: 'locked_by_email',
     timeField: 'locked_at',
   },
-  'Einheiten': {
+  Einheiten: {
     lockField: 'structural_lock',
+    lockValue: null,
     ownerField: null,
+    ownerSourceField: 'structural_lock',
     timeField: 'structural_locked_at',
   },
-  'Aufgabenbausteine': {
+  Aufgabenbausteine: {
     lockField: 'lock_status',
+    lockValue: false,
     ownerField: 'locked_by_user',
     timeField: 'locked_at',
   },
 };
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method must be POST' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -42,51 +45,63 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Admin-Check
     if (user.role !== 'admin') {
       return Response.json({ error: 'Admin only' }, { status: 403 });
     }
 
-    const { entityName, entityId } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { entityName, entityId } = body;
 
-    // Validierung
     if (!entityName || !entityId) {
       return Response.json({ error: 'entityName and entityId required' }, { status: 400 });
     }
 
-    if (!LOCK_FIELD_MAP[entityName]) {
+    const config = LOCK_FIELD_MAP[entityName];
+    if (!config) {
       return Response.json({ error: `Unsupported entityName: ${entityName}` }, { status: 400 });
     }
 
-    // Entity abrufen (Prüfung ob vorhanden)
-    const entity = await base44.entities[entityName].get(entityId);
+    const entityApi = base44.asServiceRole.entities[entityName];
+    const entity = await entityApi.get(entityId);
     if (!entity) {
       return Response.json({ error: `${entityName} not found` }, { status: 404 });
     }
 
-    // Lock-Felder auslesen
-    const { lockField, ownerField, timeField } = LOCK_FIELD_MAP[entityName];
+    const previousLockOwner = config.ownerField
+      ? entity[config.ownerField]
+      : entity[config.ownerSourceField || config.lockField];
 
-    // Update-Payload dynamisch zusammenstellen (alle Felder auf null)
     const updatePayload = {
-      [lockField]: null,
-      [timeField]: null,
+      [config.lockField]: config.lockValue,
+      [config.timeField]: null,
     };
-    if (ownerField) {
-      updatePayload[ownerField] = null;
+
+    if (config.ownerField) {
+      updatePayload[config.ownerField] = null;
     }
 
-    // Optimistic Locking: nur für Einheiten-Schreibzugriffe `version` bumpen.
-    // Lernpakete/Aufgabenbausteine haben (Stand 04/2026) noch kein
-    // OCC-Feld; dort bleibt das Update unverändert.
-    // @MIGRATION_NOTE (Supabase): Inkrement wandert in BEFORE-UPDATE-Trigger.
     if (entityName === 'Einheiten') {
       const currentEinheitVersion = Number.isFinite(entity?.version) ? entity.version : 1;
       updatePayload.version = currentEinheitVersion + 1;
     }
 
-    // Update via Service Role (RLS-sicher)
-    await base44.asServiceRole.entities[entityName].update(entityId, updatePayload);
+    await entityApi.update(entityId, updatePayload);
+
+    await base44.asServiceRole.entities.AuditLog.create({
+      user_email: user.email,
+      action: 'UPDATE',
+      resource_type: entityName,
+      resource_id: entityId,
+      status: 'success',
+      affected_count: 1,
+      changes: {
+        event: 'FORCE_UNLOCK',
+        previous_lock_owner: previousLockOwner || 'unknown',
+        lock_field: config.lockField,
+        owner_field: config.ownerField || config.ownerSourceField || null,
+        time_field: config.timeField,
+      },
+    });
 
     console.info(
       `[forceReleaseLockAdmin] Released lock for ${entityName}/${entityId} by admin ${user.email}`
