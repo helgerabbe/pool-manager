@@ -1,18 +1,15 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const PAGE_SIZE = 500;
-const UPDATE_BATCH_SIZE = 40;
+const UPDATE_BATCH_SIZE = 30;
 
 /**
- * One-Off-Migration: supports_master aus der Phase ableiten.
- *
  * Supabase-Migrationsnotiz:
- * Dieses Skript wird nach der Migration auf PostgreSQL obsolet. Die gleiche
- * Korrektur läuft dort transaktional und ohne N+1-Requests als einzelnes SQL:
+ * Dieses One-Off-Skript wird später durch einen direkten SQL-Update ersetzt:
  * UPDATE aktivitaeten_katalog
  * SET supports_master = (phase IN ('Übung', 'Abschluss'));
  */
-async function listAllAktivitaeten(entity) {
+async function listAll(entity) {
   const all = [];
   let skip = 0;
 
@@ -27,12 +24,11 @@ async function listAllAktivitaeten(entity) {
   return all;
 }
 
-async function runInBatches(tasks, batchSize) {
+async function runInBatches(tasks, batchSize = UPDATE_BATCH_SIZE) {
   const results = [];
   for (let i = 0; i < tasks.length; i += batchSize) {
     const batch = tasks.slice(i, i + batchSize).map((task) => task());
-    const batchResults = await Promise.allSettled(batch);
-    results.push(...batchResults);
+    results.push(...await Promise.allSettled(batch));
   }
   return results;
 }
@@ -51,35 +47,29 @@ Deno.serve(async (req) => {
     }
 
     const entity = base44.asServiceRole.entities.AktivitaetenKatalog;
-    const aktivitaeten = await listAllAktivitaeten(entity);
+    const aktivitaeten = await listAll(entity);
     const updateTasks = [];
 
     for (const aktivitaet of aktivitaeten) {
       const supportsMaster = aktivitaet.phase === 'Übung' || aktivitaet.phase === 'Abschluss';
-
       if (aktivitaet.supports_master !== supportsMaster) {
         updateTasks.push(() => entity.update(aktivitaet.id, { supports_master: supportsMaster }));
       }
     }
 
-    const results = await runInBatches(updateTasks, UPDATE_BATCH_SIZE);
+    const results = await runInBatches(updateTasks);
     const failed = results.filter((result) => result.status === 'rejected');
 
     if (failed.length > 0) {
-      console.error(
-        `[fixAktivitaetenMasterSupport] ${failed.length}/${results.length} updates failed`,
-        failed.slice(0, 3).map((result) => result.reason?.message || String(result.reason))
-      );
+      console.error('[fixAktivitaetenMasterSupport] Update failures:', failed.map((f) => f.reason?.message || String(f.reason)).slice(0, 10));
     }
-
-    const updated = results.length - failed.length;
 
     return Response.json({
       success: failed.length === 0,
-      message: `${updated} Aktivitäten aktualisiert: Übung + Abschluss = Master-Aufgaben erlaubt`,
-      scanned: aktivitaeten.length,
-      updated,
+      message: `${results.length - failed.length} Aktivitäten aktualisiert: Übung + Abschluss = Master-Aufgaben erlaubt`,
+      updated: results.length - failed.length,
       failed: failed.length,
+      totalChecked: aktivitaeten.length,
     });
   } catch (error) {
     console.error('Fehler:', error);
