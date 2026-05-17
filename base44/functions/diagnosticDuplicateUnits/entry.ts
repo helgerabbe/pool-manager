@@ -1,11 +1,32 @@
 /**
  * diagnosticDuplicateUnits.js
  *
- * Diagnostiziert Duplicate Units und Lock-Issues
- * Hilft bei der Behebung von Duplicates und ungültigen Locks
+ * Admin-Diagnose für doppelte Einheiten inklusive verlässlicher Inhaltszähler.
+ *
+ * Supabase-Migrationsnotiz:
+ * Dieser Endpunkt sollte später durch ein einziges SQL-Query mit LEFT JOIN / COUNT()
+ * ersetzt werden. PostgreSQL kann die Metadaten direkt aggregieren, ohne mehrere
+ * HTTP-Requests und ohne Payload-Daten der Kind-Elemente zu übertragen.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+
+const PAGE_SIZE = 500;
+
+async function listAll(entity, query) {
+  const all = [];
+  let skip = 0;
+
+  while (true) {
+    const page = await entity.filter(query, 'created_date', PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+
+  return all;
+}
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') {
@@ -24,44 +45,41 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Admin only' }, { status: 403 });
     }
 
-    const payload = await req.json();
-    const { unitName } = payload;
+    const payload = await req.json().catch(() => ({}));
+    const unitName = typeof payload?.unitName === 'string' ? payload.unitName.trim() : '';
 
-    // Finde alle Einheiten mit diesem Namen
-    const allUnits = await base44.asServiceRole.entities.Einheiten.list();
-    const duplicates = allUnits.filter(u => u.titel_der_einheit === unitName);
+    if (!unitName) {
+      return Response.json({ error: 'unitName is required' }, { status: 400 });
+    }
 
-    // Detaillierte Infos zu jedem Duplicate
-    const details = duplicates.map(u => ({
-      id: u.id,
-      titel: u.titel_der_einheit,
-      fach: u.fach,
-      jahrgangsstufe: u.jahrgangsstufe,
-      created_by: u.created_by,
-      created_date: u.created_date,
-      updated_date: u.updated_date,
-      wizard_status: u.wizard_status,
-      wizard_max_step: u.wizard_max_step,
-      freigabe_status: u.freigabe_status,
-      structural_lock: u.structural_lock,
-      structural_locked_at: u.structural_locked_at,
-      version: u.version,
-    }));
+    const e = base44.asServiceRole.entities;
 
-    // Lade auch Lernpakete für jede Unit (um zu sehen, welche mehr Inhalte hat)
+    // Wichtig: Datenbank filtert nach Titel; kein vollständiger Tabellen-Scan im Speicher.
+    const duplicates = await listAll(e.Einheiten, { titel_der_einheit: unitName });
+
     const detailsWithContent = await Promise.all(
-      details.map(async (d) => {
-        const lernpakete = await base44.asServiceRole.entities.Lernpakete.filter({
-          einheit_id: d.id,
-        });
-        const themenfelder = await base44.asServiceRole.entities.Themenfeld.filter({
-          einheit_id: d.id,
-        });
-        const allgemeineAufgaben = await base44.asServiceRole.entities.AllgemeineAufgabe.filter({
-          einheit_id: d.id,
-        });
+      duplicates.map(async (unit) => {
+        const [lernpakete, themenfelder, allgemeineAufgaben] = await Promise.all([
+          listAll(e.Lernpakete, { einheit_id: unit.id }),
+          listAll(e.Themenfeld, { einheit_id: unit.id }),
+          listAll(e.AllgemeineAufgabe, { einheit_id: unit.id }),
+        ]);
+
         return {
-          ...d,
+          id: unit.id,
+          titel: unit.titel_der_einheit,
+          fach: unit.fach,
+          jahrgangsstufe: unit.jahrgangsstufe,
+          created_by: unit.created_by,
+          created_date: unit.created_date,
+          updated_date: unit.updated_date,
+          wizard_status: unit.wizard_status,
+          wizard_max_step: unit.wizard_max_step,
+          freigabe_status: unit.freigabe_status,
+          structural_lock: unit.structural_lock,
+          structural_locked_at: unit.structural_locked_at,
+          export_lifecycle_status: unit.export_lifecycle_status,
+          version: unit.version,
           lernpakete_count: lernpakete.length,
           themenfelder_count: themenfelder.length,
           aufgaben_count: allgemeineAufgaben.length,
@@ -79,7 +97,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('[DIAGNOSTIC_DUPLICATE_ERROR]', error);
     return Response.json(
-      { error: error.message || 'Internal server error' },
+      { error: error?.message || 'Internal server error' },
       { status: 500 }
     );
   }
