@@ -10,6 +10,9 @@
  * Sicherheits-/Hygienemaßnahmen:
  *   - Whitelist: nur studyflix.de-Hosts werden akzeptiert (kein SSRF).
  *   - Auth: nur eingeloggte Nutzer dürfen die Function aufrufen.
+ *   - Rate-Limiting: ausgehende Requests werden pro Nutzer gedrosselt.
+ *   - Timeout + HTML-/Größenprüfung: externe Requests dürfen nicht hängen
+ *     oder große Binärdateien in den Speicher laden.
  *   - Aggressiver Cleanup: Player-Artefakte, Werbe-Blöcke und Sprungmarken
  *     werden entfernt. H2/H3-Struktur bleibt erhalten (für die MBK).
  *
@@ -19,6 +22,57 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+
+const RATE_LIMIT_MAX_REQUESTS = 8;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const FETCH_TIMEOUT_MS = 8000;
+const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
+
+// ──────────────────────────────────────────────────────────────────────
+// Inline-Kopie aus functions/utils/rateLimiter.js.
+// Base44 Functions werden isoliert deployed; lokale Imports zwischen
+// Functions sind nicht verlässlich. Bei Änderungen an der Quelle synchron halten.
+// @MIGRATION_BLOCKER: IN-MEMORY STATE — für Supabase/Edge durch Redis/Postgres ersetzen.
+// ──────────────────────────────────────────────────────────────────────
+const requestLog = new Map();
+const CLEANUP_EVERY_N_REQUESTS = 500;
+const CLEANUP_MAX_MAP_SIZE = 5000;
+const DEFAULT_ENTRY_TTL_MS = 5 * 60 * 1000;
+let _requestCounter = 0;
+
+function isRateLimited(userIdentifier, functionName, maxRequests = 20, windowMs = 60000) {
+  if (!userIdentifier) return true;
+  const key = `${userIdentifier}::${functionName}`;
+  const now = Date.now();
+  let timestamps = requestLog.get(key);
+  if (!timestamps) {
+    timestamps = [];
+    requestLog.set(key, timestamps);
+  }
+  while (timestamps.length > 0 && now - timestamps[0] >= windowMs) {
+    timestamps.shift();
+  }
+  if (timestamps.length >= maxRequests) {
+    maybeRunRateLimitCleanup();
+    return true;
+  }
+  timestamps.push(now);
+  maybeRunRateLimitCleanup();
+  return false;
+}
+
+function maybeRunRateLimitCleanup() {
+  _requestCounter += 1;
+  if (_requestCounter < CLEANUP_EVERY_N_REQUESTS && requestLog.size < CLEANUP_MAX_MAP_SIZE) return;
+  _requestCounter = 0;
+  const now = Date.now();
+  for (const [key, timestamps] of requestLog.entries()) {
+    while (timestamps.length > 0 && now - timestamps[0] >= DEFAULT_ENTRY_TTL_MS) {
+      timestamps.shift();
+    }
+    if (timestamps.length === 0) requestLog.delete(key);
+  }
+}
 
 // ── Cleanup-Patterns ─────────────────────────────────────────────────────
 //
@@ -172,11 +226,22 @@ function isStudyflixUrl(rawUrl) {
 // ── Handler ──────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method must be POST' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (isRateLimited(user.email, 'extractStudyflixText', RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_MS)) {
+      return Response.json(
+        { error: 'Zu viele Import-Anfragen. Bitte warten Sie kurz.' },
+        { status: 429, headers: { 'Retry-After': '60' } }
+      );
     }
 
     const { url } = await req.json().catch(() => ({}));
@@ -191,15 +256,37 @@ Deno.serve(async (req) => {
     }
 
     // HTML laden mit User-Agent-Header (sonst antworten manche CDNs mit 403)
-    const upstream = await fetch(url, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (compatible; PoolManagerBot/1.0; +https://base44.app)',
-        Accept: 'text/html,application/xhtml+xml',
-        'Accept-Language': 'de-DE,de;q=0.9',
-      },
-      redirect: 'follow',
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    let upstream;
+
+    try {
+      upstream = await fetch(url, {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (compatible; PoolManagerBot/1.0; +https://base44.app)',
+          Accept: 'text/html,application/xhtml+xml',
+          'Accept-Language': 'de-DE,de;q=0.9',
+        },
+        redirect: 'follow',
+        signal: controller.signal,
+      });
+    } catch (error) {
+      if (error?.name === 'AbortError') {
+        return Response.json({ error: 'Studyflix antwortet nicht rechtzeitig.' }, { status: 504 });
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    const finalUrl = upstream.url || url;
+    if (!isStudyflixUrl(finalUrl)) {
+      return Response.json(
+        { error: 'Studyflix hat auf eine nicht erlaubte Zieladresse weitergeleitet.' },
+        { status: 400 }
+      );
+    }
 
     if (!upstream.ok) {
       return Response.json(
@@ -208,7 +295,29 @@ Deno.serve(async (req) => {
       );
     }
 
+    const contentType = upstream.headers.get('content-type') || '';
+    if (!contentType.toLowerCase().includes('text/html')) {
+      return Response.json(
+        { error: 'Die Studyflix-Antwort ist keine HTML-Seite.' },
+        { status: 502 }
+      );
+    }
+
+    const contentLength = Number(upstream.headers.get('content-length') || 0);
+    if (contentLength > MAX_RESPONSE_BYTES) {
+      return Response.json(
+        { error: 'Die Studyflix-Seite ist zu groß für den automatischen Import.' },
+        { status: 413 }
+      );
+    }
+
     const html = await upstream.text();
+    if (html.length > MAX_RESPONSE_BYTES) {
+      return Response.json(
+        { error: 'Die Studyflix-Seite ist zu groß für den automatischen Import.' },
+        { status: 413 }
+      );
+    }
 
     // Artikel extrahieren
     const { titel, articleHtml } = extractArticleSection(html);
