@@ -1,3 +1,14 @@
+/**
+ * Manuelle harte Löschung einer Einheit.
+ *
+ * Supabase-Migrationsnotiz:
+ * Diese JavaScript-Löschkaskade ist in PostgreSQL/Supabase ein Anti-Pattern.
+ * Zielarchitektur: alle abhängigen Tabellen erhalten Foreign Keys mit
+ * ON DELETE CASCADE. Dann reicht serverseitig ein einziger Befehl:
+ * DELETE FROM einheiten WHERE id = :einheitId;
+ * PostgreSQL löscht alle abhängigen Datensätze atomar und transaktionssicher.
+ */
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const ROLLEN = {
@@ -5,32 +16,36 @@ const ROLLEN = {
   FACHSCHAFT: 'Fachschaftsleitung',
 };
 
-// Löscht ein Array von IDs sequenziell in Batches um Rate-Limits zu vermeiden
-async function deleteInBatches(deleteFn, ids, batchSize = 3, delayMs = 300) {
-  let deleted = 0;
-  for (let i = 0; i < ids.length; i += batchSize) {
-    const batch = ids.slice(i, i + batchSize);
-    await Promise.all(batch.map(id => deleteFn(id)));
-    deleted += batch.length;
-    if (i + batchSize < ids.length) {
-      await new Promise(r => setTimeout(r, delayMs));
-    }
-  }
-  return deleted;
+const PAGE_SIZE = 500;
+const DELETE_BATCH_SIZE = 25;
+
+function uniqueById(records) {
+  return Array.from(new Map(records.map(record => [record.id, record])).values());
 }
 
-// Lädt IDs in Batches sequenziell
-async function filterInBatches(filterFn, ids, batchSize = 3, delayMs = 200) {
-  const results = [];
-  for (let i = 0; i < ids.length; i += batchSize) {
-    const batch = ids.slice(i, i + batchSize);
-    const batchResults = await Promise.all(batch.map(id => filterFn(id)));
-    results.push(...batchResults.flat());
-    if (i + batchSize < ids.length) {
-      await new Promise(r => setTimeout(r, delayMs));
-    }
+async function listAll(entity, query) {
+  const all = [];
+  let skip = 0;
+
+  while (true) {
+    const page = await entity.filter(query, 'created_date', PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
   }
-  return results;
+
+  return all;
+}
+
+async function deleteInBatches(entity, records) {
+  let deleted = 0;
+  for (let i = 0; i < records.length; i += DELETE_BATCH_SIZE) {
+    const batch = records.slice(i, i + DELETE_BATCH_SIZE);
+    const results = await Promise.allSettled(batch.map(record => entity.delete(record.id)));
+    deleted += results.filter(result => result.status === 'fulfilled').length;
+  }
+  return deleted;
 }
 
 Deno.serve(async (req) => {
@@ -71,133 +86,111 @@ Deno.serve(async (req) => {
 
     console.log('Lösche Einheit:', einheit.id, einheit.titel_der_einheit);
 
-    // ── Cascade: Daten sammeln ────────────────────────────────────────────────
+    // ── Cascade: Daten vollständig paginiert sammeln ─────────────────────────
+    const e = base44.asServiceRole.entities;
 
-    // 1. Lernpakete
-    const lernpakete = await base44.asServiceRole.entities.Lernpakete.filter({ einheit_id: einheitId });
-    const paketIds = lernpakete.map(p => p.id);
-    console.log(`Gefunden: ${lernpakete.length} Lernpakete`);
+    const [themenfelder, lernpaketeByEinheit, allgemeineAufgaben, members, exportPrompts, memberships, generatedFiles, auditLogs] = await Promise.all([
+      listAll(e.Themenfeld, { einheit_id: einheitId }),
+      listAll(e.Lernpakete, { einheit_id: einheitId }),
+      listAll(e.AllgemeineAufgabe, { einheit_id: einheitId }),
+      listAll(e.EinheitMembers, { einheit_id: einheitId }),
+      listAll(e.ExportPrompts, { einheit_id: einheitId }),
+      listAll(e.LernpfadAufgabeMembership, { einheit_id: einheitId }),
+      listAll(e.MBKGeneratedFile, { einheit_id: einheitId }),
+      listAll(e.AuditLog, { resource_type: 'Einheiten', resource_id: einheitId }),
+    ]);
 
-    // 2. Lernziele (sequenziell)
-    const lernziele = paketIds.length > 0
-      ? await filterInBatches(pid => base44.asServiceRole.entities.Lernziele.filter({ lernpaket_id: pid }), paketIds)
-      : [];
-    console.log(`Gefunden: ${lernziele.length} Lernziele`);
+    const lernpaketeByThemenfeldPages = await Promise.all(
+      themenfelder.map(themenfeld => listAll(e.Lernpakete, { themenfeld_id: themenfeld.id }))
+    );
+    const lernpakete = uniqueById([...lernpaketeByEinheit, ...lernpaketeByThemenfeldPages.flat()]);
 
-    // 3. Aufgabenbausteine (sequenziell)
-    const aufgaben = paketIds.length > 0
-      ? await filterInBatches(pid => base44.asServiceRole.entities.Aufgabenbausteine.filter({ lernpaket_id: pid }), paketIds)
-      : [];
-    console.log(`Gefunden: ${aufgaben.length} Aufgabenbausteine`);
+    const [lernzielePages, aufgabenPages, aktivitaetenPages, masterPages] = await Promise.all([
+      Promise.all(lernpakete.map(paket => listAll(e.Lernziele, { lernpaket_id: paket.id }))),
+      Promise.all(lernpakete.map(paket => listAll(e.Aufgabenbausteine, { lernpaket_id: paket.id }))),
+      Promise.all(lernpakete.map(paket => listAll(e.LernpaketPhaseAktivitaet, { lernpaket_id: paket.id }))),
+      Promise.all(lernpakete.map(paket => listAll(e.MasterAufgabe, { lernpaket_id: paket.id }))),
+    ]);
 
-    // 4. Mappings (sequenziell)
-    const aufgabenIds = aufgaben.map(a => a.id);
-    const mappings = aufgabenIds.length > 0
-      ? await filterInBatches(aid => base44.asServiceRole.entities.MappingAufgabeBasisziel.filter({ aufgabe_id: aid }), aufgabenIds)
-      : [];
-    console.log(`Gefunden: ${mappings.length} Mappings`);
+    const lernziele = lernzielePages.flat();
+    const aufgaben = aufgabenPages.flat();
+    const lernpaketAktivitaeten = aktivitaetenPages.flat();
+    const masterAufgaben = masterPages.flat();
 
-    // 5. Master-Aufgaben (sequenziell)
-    const masterAufgaben = paketIds.length > 0
-      ? await filterInBatches(pid => base44.asServiceRole.entities.MasterAufgabe.filter({ lernpaket_id: pid }), paketIds)
-      : [];
-    console.log(`Gefunden: ${masterAufgaben.length} Master-Aufgaben`);
+    const [mappingPages, allgMappingPages] = await Promise.all([
+      Promise.all(aufgaben.map(aufgabe => listAll(e.MappingAufgabeBasisziel, { aufgabe_id: aufgabe.id }))),
+      Promise.all(allgemeineAufgaben.map(aufgabe => listAll(e.AllgemeineAufgabeLernzielMapping, { aufgabe_id: aufgabe.id }))),
+    ]);
 
-    // 6. Lernpaket-Aktivitäten (sequenziell)
-    const lernpaketAktivitaeten = paketIds.length > 0
-      ? await filterInBatches(pid => base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({ lernpaket_id: pid }), paketIds)
-      : [];
-    console.log(`Gefunden: ${lernpaketAktivitaeten.length} Lernpaket-Aktivitäten`);
+    const mappings = mappingPages.flat();
+    const allgMappings = allgMappingPages.flat();
 
-    // 7. Themenfelder
-    const themenfelder = await base44.asServiceRole.entities.Themenfeld.filter({ einheit_id: einheitId });
-    console.log(`Gefunden: ${themenfelder.length} Themenfelder`);
+    const countsToDelete = {
+      auditLogs: auditLogs.length,
+      exportPrompts: exportPrompts.length,
+      memberships: memberships.length,
+      generatedFiles: generatedFiles.length,
+      mappings: mappings.length,
+      allgMappings: allgMappings.length,
+      aufgabenbausteine: aufgaben.length,
+      lernziele: lernziele.length,
+      masterAufgaben: masterAufgaben.length,
+      lernpaketAktivitaeten: lernpaketAktivitaeten.length,
+      allgemeineAufgaben: allgemeineAufgaben.length,
+      lernpakete: lernpakete.length,
+      themenfelder: themenfelder.length,
+      members: members.length,
+    };
 
-    // 8. AllgemeineAufgaben (über einheit_id)
-    const allgemeineAufgaben = await base44.asServiceRole.entities.AllgemeineAufgabe.filter({ einheit_id: einheitId });
-    console.log(`Gefunden: ${allgemeineAufgaben.length} Allgemeine Aufgaben`);
+    console.log('[deleteEinheit] Gefundene abhängige Datensätze:', countsToDelete);
 
-    // 9. AllgemeineAufgabe Lernziel-Mappings
-    const allgAufgabeIds = allgemeineAufgaben.map(a => a.id);
-    const allgMappings = allgAufgabeIds.length > 0
-      ? await filterInBatches(aid => base44.asServiceRole.entities.AllgemeineAufgabeLernzielMapping.filter({ aufgabe_id: aid }), allgAufgabeIds)
-      : [];
-    console.log(`Gefunden: ${allgMappings.length} AllgemeineAufgabe-Mappings`);
+    const deletedCounts = {};
+    deletedCounts.auditLogs = await deleteInBatches(e.AuditLog, auditLogs);
+    deletedCounts.exportPrompts = await deleteInBatches(e.ExportPrompts, exportPrompts);
+    deletedCounts.memberships = await deleteInBatches(e.LernpfadAufgabeMembership, memberships);
+    deletedCounts.generatedFiles = await deleteInBatches(e.MBKGeneratedFile, generatedFiles);
+    deletedCounts.mappings = await deleteInBatches(e.MappingAufgabeBasisziel, mappings);
+    deletedCounts.allgMappings = await deleteInBatches(e.AllgemeineAufgabeLernzielMapping, allgMappings);
+    deletedCounts.aufgabenbausteine = await deleteInBatches(e.Aufgabenbausteine, aufgaben);
+    deletedCounts.lernziele = await deleteInBatches(e.Lernziele, lernziele);
+    deletedCounts.masterAufgaben = await deleteInBatches(e.MasterAufgabe, masterAufgaben);
+    deletedCounts.lernpaketAktivitaeten = await deleteInBatches(e.LernpaketPhaseAktivitaet, lernpaketAktivitaeten);
+    deletedCounts.allgemeineAufgaben = await deleteInBatches(e.AllgemeineAufgabe, allgemeineAufgaben);
+    deletedCounts.lernpakete = await deleteInBatches(e.Lernpakete, lernpakete);
+    deletedCounts.themenfelder = await deleteInBatches(e.Themenfeld, themenfelder);
+    deletedCounts.members = await deleteInBatches(e.EinheitMembers, members);
 
-    // 10. EinheitMembers
-    const members = await base44.asServiceRole.entities.EinheitMembers.filter({ einheit_id: einheitId });
-    console.log(`Gefunden: ${members.length} EinheitMembers`);
+    const totalDeletedBeforeEinheit = Object.values(deletedCounts).reduce((sum, count) => sum + count, 0);
 
-    // ── Löschen in Reihenfolge (Foreign Keys beachten) ───────────────────────
-
-    if (mappings.length > 0) {
-      await deleteInBatches(id => base44.asServiceRole.entities.MappingAufgabeBasisziel.delete(id), mappings.map(m => m.id));
-      console.log(`✓ ${mappings.length} Mappings gelöscht`);
+    try {
+      await e.AuditLog.create({
+        user_email: user.email,
+        action: 'DELETE',
+        resource_type: 'Einheiten',
+        resource_id: einheitId,
+        changes: {
+          manual_delete: true,
+          action_code: 'DELETE_UNIT_MANUAL',
+          titel_der_einheit: einheit.titel_der_einheit,
+          planned_counts: countsToDelete,
+          deleted_counts: deletedCounts,
+        },
+        affected_count: totalDeletedBeforeEinheit + 1,
+        status: 'success',
+      });
+    } catch (auditError) {
+      console.error('[deleteEinheit] AuditLog konnte vor finalem Delete nicht geschrieben werden:', auditError?.message);
     }
 
-    if (aufgaben.length > 0) {
-      await deleteInBatches(id => base44.asServiceRole.entities.Aufgabenbausteine.delete(id), aufgaben.map(a => a.id));
-      console.log(`✓ ${aufgaben.length} Aufgabenbausteine gelöscht`);
-    }
-
-    if (lernziele.length > 0) {
-      await deleteInBatches(id => base44.asServiceRole.entities.Lernziele.delete(id), lernziele.map(lz => lz.id));
-      console.log(`✓ ${lernziele.length} Lernziele gelöscht`);
-    }
-
-    if (masterAufgaben.length > 0) {
-      await deleteInBatches(id => base44.asServiceRole.entities.MasterAufgabe.delete(id), masterAufgaben.map(ma => ma.id));
-      console.log(`✓ ${masterAufgaben.length} Master-Aufgaben gelöscht`);
-    }
-
-    if (lernpaketAktivitaeten.length > 0) {
-      await deleteInBatches(id => base44.asServiceRole.entities.LernpaketPhaseAktivitaet.delete(id), lernpaketAktivitaeten.map(lpa => lpa.id));
-      console.log(`✓ ${lernpaketAktivitaeten.length} Lernpaket-Aktivitäten gelöscht`);
-    }
-
-    if (lernpakete.length > 0) {
-      await deleteInBatches(id => base44.asServiceRole.entities.Lernpakete.delete(id), paketIds);
-      console.log(`✓ ${lernpakete.length} Lernpakete gelöscht`);
-    }
-
-    if (themenfelder.length > 0) {
-      await deleteInBatches(id => base44.asServiceRole.entities.Themenfeld.delete(id), themenfelder.map(tf => tf.id));
-      console.log(`✓ ${themenfelder.length} Themenfelder gelöscht`);
-    }
-
-    if (allgMappings.length > 0) {
-      await deleteInBatches(id => base44.asServiceRole.entities.AllgemeineAufgabeLernzielMapping.delete(id), allgMappings.map(m => m.id));
-      console.log(`✓ ${allgMappings.length} AllgemeineAufgabe-Mappings gelöscht`);
-    }
-
-    if (allgemeineAufgaben.length > 0) {
-      await deleteInBatches(id => base44.asServiceRole.entities.AllgemeineAufgabe.delete(id), allgAufgabeIds);
-      console.log(`✓ ${allgemeineAufgaben.length} Allgemeine Aufgaben gelöscht`);
-    }
-
-    if (members.length > 0) {
-      await deleteInBatches(id => base44.asServiceRole.entities.EinheitMembers.delete(id), members.map(m => m.id));
-      console.log(`✓ ${members.length} EinheitMembers gelöscht`);
-    }
-
-    // Einheit selbst löschen
-    await base44.asServiceRole.entities.Einheiten.delete(einheitId);
+    await e.Einheiten.delete(einheitId);
     console.log(`✓ Einheit gelöscht`);
 
     return Response.json({
       success: true,
       message: `Einheit und alle abhängigen Records wurden gelöscht`,
       deletedCounts: {
-        themenfelder: themenfelder.length,
-        lernpakete: lernpakete.length,
-        lernpaketAktivitaeten: lernpaketAktivitaeten.length,
-        lernziele: lernziele.length,
-        aufgabenbausteine: aufgaben.length,
-        masterAufgaben: masterAufgaben.length,
-        mappings: mappings.length,
-        allgemeineAufgaben: allgemeineAufgaben.length,
-        allgMappings: allgMappings.length,
-        members: members.length,
+        ...deletedCounts,
+        einheit: 1,
       },
     });
   } catch (err) {
