@@ -3,47 +3,58 @@
  *
  * Phase G — End-to-End-Abschluss eines Moodle-Exports vom Export-Center aus.
  *
- * Wird vom ExportCompletionDialog aufgerufen, NACHDEM der Spezialist die
- * fehlerhaften Items im Hierarchie-Picker markiert hat. Aufgaben dieser
- * Funktion:
+ * Wendet die vollständige confirmExportCompletion-Logik an:
+ *   successfulIds → sync_status='synced', export_error=false
+ *   failedIds     → sync_status='error',  export_error=true
+ *   AllgemeineAufgabe: moodle_sync_status wird parallel gepflegt.
+ *   Dual-Lock-Release: wenn brian_sync_status bereits 'synced' ist, werden
+ *   locked_by/locked_at entfernt.
+ *   MasterAufgabe: erfolgreiche Master setzen ihre Aufgabenbaustein-Klone
+ *   ebenfalls auf synced.
  *
- *   1. confirmExportCompletion-Logik anwenden:
- *        successfulIds → sync_status='synced', export_error=false
- *        failedIds     → sync_status='error',  export_error=true
- *      Wir rufen die bestehende Funktion NICHT als HTTP wieder auf, sondern
- *      duplizieren die Update-Logik kompakt hier (vermeidet Cross-Function-
- *      Auth-Komplikationen und behält einen einzigen Kontroll-Punkt für
- *      "Phase G fertig").
+ * Danach wird der Lifecycle der Einheit zurück auf 'draft' gesetzt und
+ * fehlerhafte Sektoren werden an LernpfadAufgabeMembership markiert.
  *
- *   2. Lifecycle der Einheit zurück auf 'draft' setzen:
- *        export_lifecycle_status      = 'draft'
- *        export_lifecycle_changed_at  = now
- *        export_lifecycle_changed_by  = user.email
- *        last_synced_at               = now (ISO)
- *
- *   3. Sektoren-Drift-Flag auf den betroffenen Memberships setzen:
- *      Wenn der Spezialist einen Sektor (sektor_id) als 'failed' meldet,
- *      setzen wir export_error=true an allen Memberships dieses Sektors.
- *
- * Payload:
- *   {
- *     einheitId: string,
- *     successfulIds: string[],   // Aufgaben/Pakete/Aktivitäten/Master IDs
- *     failedIds:    string[],
- *     failedSektors: { lerntyp: string, sektor_id: string }[]
- *   }
- *
- * RBAC:
- *   - Nur Admin / Fachschaftsleitung / Moodle-Designer.
- *
- * Rückgabe: { success, synced_count, error_count, sektor_error_count }.
+ * Supabase-Migrationsnotiz:
+ * Diese JavaScript-Auflösung und die vielen Einzelupdates sollten durch eine
+ * transaktionale RPC/Stored Procedure ersetzt werden, die Arrays direkt per
+ * `UPDATE ... WHERE id = ANY(successful_ids)` verarbeitet.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const ALLOWED_ROLES = ['Administrator', 'Fachschaftsleitung', 'Moodle-Designer'];
+const PAGE_SIZE = 500;
+const MAX_BATCH = 200;
+
+async function listAll(entity, query) {
+  const all = [];
+  let skip = 0;
+
+  while (true) {
+    const page = await entity.filter(query, 'created_date', PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+
+  return all;
+}
+
+async function listAllForPaketIds(entity, paketIds, fieldName = 'lernpaket_id') {
+  if (paketIds.length === 0) return [];
+  const pages = await Promise.all(
+    paketIds.map((paketId) => listAll(entity, { [fieldName]: paketId }))
+  );
+  return pages.flat();
+}
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method must be POST' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -51,20 +62,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Rolle prüfen.
-    const benutzer = await base44.asServiceRole.entities.Benutzer.filter({
-      user_id: user.email,
-    });
-    const profil = benutzer[0];
-    const rolle = profil?.rolle;
-    if (!ALLOWED_ROLES.includes(rolle)) {
-      return Response.json(
-        { error: 'Forbidden: Admin, Fachschaftsleitung oder Moodle-Designer erforderlich' },
-        { status: 403 }
-      );
-    }
-
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const {
       einheitId,
       successfulIds = [],
@@ -76,119 +74,176 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'einheitId required' }, { status: 400 });
     }
 
+    const totalIds = successfulIds.length + failedIds.length;
+    if (totalIds > MAX_BATCH) {
+      return Response.json(
+        {
+          error: `Batch-Limit überschritten: ${totalIds} IDs übergeben, max. ${MAX_BATCH} pro Aufruf.`,
+          code: 'BATCH_TOO_LARGE',
+          max_batch: MAX_BATCH,
+          received: totalIds,
+        },
+        { status: 413 }
+      );
+    }
+
+    const e = base44.asServiceRole.entities;
+    const isBase44Admin = user.role === 'admin' || user.role === 'Administrator';
+
+    if (!isBase44Admin) {
+      const benutzer = await listAll(e.Benutzer, { user_id: user.email });
+      const profil = benutzer[0];
+      const rolle = profil?.rolle;
+      if (!ALLOWED_ROLES.includes(rolle)) {
+        return Response.json(
+          { error: 'Forbidden: Admin, Fachschaftsleitung oder Moodle-Designer erforderlich' },
+          { status: 403 }
+        );
+      }
+    }
+
     const now = new Date().toISOString();
 
-    // Aktuellen Lifecycle-Status der Einheit für sauberes from→to-Logging
-    // erfassen, BEVOR wir den Reset auf 'draft' schreiben.
     let einheitVorReset;
     try {
-      einheitVorReset = await base44.asServiceRole.entities.Einheiten.get(einheitId);
+      einheitVorReset = await e.Einheiten.get(einheitId);
     } catch (_err) {
       einheitVorReset = null;
     }
     const lifecycleFrom = einheitVorReset?.export_lifecycle_status || 'draft';
 
-    // ── Items resolven (Tenant-Isolation auf einheit_id) ──────────────
-    const lernpakete = await base44.asServiceRole.entities.Lernpakete.filter({
-      einheit_id: einheitId,
-    });
-    const paketIds = new Set(lernpakete.map((lp) => lp.id));
+    const lernpakete = await listAll(e.Lernpakete, { einheit_id: einheitId });
+    const paketIds = lernpakete.map((lp) => lp.id);
     const [aktivitaeten, allgemeineAufgaben, masters] = await Promise.all([
-      base44.asServiceRole.entities.LernpaketPhaseAktivitaet.list(),
-      base44.asServiceRole.entities.AllgemeineAufgabe.filter({ einheit_id: einheitId }),
-      base44.asServiceRole.entities.MasterAufgabe.list(),
+      listAllForPaketIds(e.LernpaketPhaseAktivitaet, paketIds),
+      listAll(e.AllgemeineAufgabe, { einheit_id: einheitId }),
+      listAllForPaketIds(e.MasterAufgabe, paketIds),
     ]);
-    const aktivitaetMap = new Map(
-      aktivitaeten.filter((a) => paketIds.has(a.lernpaket_id)).map((a) => [a.id, a])
-    );
+
+    const aktivitaetMap = new Map(aktivitaeten.map((a) => [a.id, a]));
     const aufgabeMap = new Map(allgemeineAufgaben.map((a) => [a.id, a]));
-    const masterMap = new Map(
-      masters.filter((m) => paketIds.has(m.lernpaket_id)).map((m) => [m.id, m])
-    );
+    const masterMap = new Map(masters.map((m) => [m.id, m]));
     const paketMap = new Map(lernpakete.map((lp) => [lp.id, lp]));
 
     const resolve = (id) => {
-      if (aktivitaetMap.has(id)) return 'LernpaketPhaseAktivitaet';
-      if (aufgabeMap.has(id)) return 'AllgemeineAufgabe';
-      if (masterMap.has(id)) return 'MasterAufgabe';
-      if (paketMap.has(id)) return 'Lernpakete';
+      if (aktivitaetMap.has(id)) return { type: 'LernpaketPhaseAktivitaet', record: aktivitaetMap.get(id) };
+      if (aufgabeMap.has(id)) return { type: 'AllgemeineAufgabe', record: aufgabeMap.get(id) };
+      if (masterMap.has(id)) return { type: 'MasterAufgabe', record: masterMap.get(id) };
+      if (paketMap.has(id)) return { type: 'Lernpakete', record: paketMap.get(id) };
       return null;
     };
 
-    const updates = [];
-    let syncedCount = 0;
-    let errorCount = 0;
+    const itemUpdatePromises = [];
+    const dualLockReleasedIds = [];
 
     for (const id of successfulIds) {
-      const type = resolve(id);
-      if (!type) continue;
+      const resolved = resolve(id);
+      if (!resolved) continue;
       const payload = {
         sync_status: 'synced',
         last_synced_at: now,
         export_error: false,
       };
-      if (type === 'AllgemeineAufgabe') {
+      if (resolved.type === 'AllgemeineAufgabe') {
         payload.moodle_sync_status = 'synced';
+        if (resolved.record.brian_sync_status === 'synced') {
+          payload.locked_by = null;
+          payload.locked_at = null;
+          dualLockReleasedIds.push(id);
+        }
       }
-      updates.push(base44.asServiceRole.entities[type].update(id, payload));
-      syncedCount += 1;
+      itemUpdatePromises.push(e[resolved.type].update(id, payload));
+    }
+
+    const successMasterIds = successfulIds.filter((id) => masterMap.has(id));
+    let kloneSynced = 0;
+    if (successMasterIds.length > 0) {
+      const klonPages = await Promise.all(
+        successMasterIds.map((masterId) => listAll(e.Aufgabenbausteine, { master_aufgabe_id: masterId }))
+      );
+      const klone = klonPages.flat();
+      for (const klon of klone) {
+        if (klon.sync_status === 'pending') {
+          itemUpdatePromises.push(
+            e.Aufgabenbausteine.update(klon.id, {
+              sync_status: 'synced',
+              last_synced_at: now,
+            })
+          );
+          kloneSynced += 1;
+        }
+      }
     }
 
     for (const id of failedIds) {
-      const type = resolve(id);
-      if (!type) continue;
+      const resolved = resolve(id);
+      if (!resolved) continue;
       const payload = { sync_status: 'error', export_error: true };
-      if (type === 'AllgemeineAufgabe') {
+      if (resolved.type === 'AllgemeineAufgabe') {
         payload.moodle_sync_status = 'error';
       }
-      updates.push(base44.asServiceRole.entities[type].update(id, payload));
-      errorCount += 1;
+      itemUpdatePromises.push(e[resolved.type].update(id, payload));
     }
 
-    // ── Sektor-Fehler in Memberships markieren ────────────────────────
     let sektorErrorCount = 0;
+    const sektorUpdatePromises = [];
     if (Array.isArray(failedSektors) && failedSektors.length > 0) {
-      const memberships = await base44.asServiceRole.entities.LernpfadAufgabeMembership.filter({
-        einheit_id: einheitId,
-      });
+      const memberships = await listAll(e.LernpfadAufgabeMembership, { einheit_id: einheitId });
       for (const fs of failedSektors) {
         if (!fs?.sektor_id || !fs?.lerntyp) continue;
         const targets = memberships.filter(
           (m) => m.lerntyp === fs.lerntyp && m.sektor_id === fs.sektor_id
         );
-        for (const m of targets) {
-          updates.push(
-            base44.asServiceRole.entities.LernpfadAufgabeMembership.update(m.id, {
-              export_error: true,
-            })
+        for (const membership of targets) {
+          sektorUpdatePromises.push(
+            e.LernpfadAufgabeMembership.update(membership.id, { export_error: true })
           );
           sektorErrorCount += 1;
         }
       }
     }
 
-    const results = await Promise.allSettled(updates);
+    const itemResults = await Promise.allSettled(itemUpdatePromises);
+    const sektorResults = await Promise.allSettled(sektorUpdatePromises);
+    const results = [...itemResults, ...sektorResults];
     const rejected = results.filter((r) => r.status === 'rejected');
     if (rejected.length > 0) {
       console.error(
-        `[finalizeExportCompletion] ${rejected.length}/${results.length} updates failed`
+        `[finalizeExportCompletion] ${rejected.length}/${results.length} updates failed`,
+        rejected.slice(0, 3).map((r) => r.reason?.message || String(r.reason))
       );
     }
 
-    // ── Lifecycle der Einheit zurück auf 'draft' ─────────────────────
-    await base44.asServiceRole.entities.Einheiten.update(einheitId, {
+    await e.Einheiten.update(einheitId, {
       export_lifecycle_status: 'draft',
       export_lifecycle_changed_at: now,
       export_lifecycle_changed_by: user.email,
       last_synced_at: now,
     });
 
-    // Audit — inkl. expliziter Lifecycle-Transition (from/to), damit der
-    // Übergang `export_running → draft` (bzw. `final_freigegeben → draft`)
-    // im AuditLog genauso nachvollziehbar ist wie die Übergänge in
-    // setEinheitFreigabeStatus / startExportRun / confirmExportPublished.
+    if (dualLockReleasedIds.length > 0) {
+      const auditResults = await Promise.allSettled(
+        dualLockReleasedIds.map((id) => e.AuditLog.create({
+          user_email: user.email,
+          action: 'UPDATE',
+          resource_type: 'AllgemeineAufgabe',
+          resource_id: id,
+          changes: { dual_lock_released: true, trigger: 'finalizeExportCompletion' },
+          affected_count: 1,
+          status: 'success',
+        }))
+      );
+      const auditFailures = auditResults.filter((result) => result.status === 'rejected');
+      if (auditFailures.length > 0) {
+        console.error(`[finalizeExportCompletion][AUDIT_ERROR] ${auditFailures.length}/${auditResults.length} dual-lock audits failed`);
+      }
+    }
+
+    const syncedCount = successfulIds.filter((id) => resolve(id)).length;
+    const errorCount = failedIds.filter((id) => resolve(id)).length;
+
     try {
-      await base44.asServiceRole.entities.AuditLog.create({
+      await e.AuditLog.create({
         user_email: user.email,
         action: 'PUBLISH',
         resource_type: 'Einheiten',
@@ -201,6 +256,8 @@ Deno.serve(async (req) => {
           synced_count: syncedCount,
           error_count: errorCount,
           sektor_error_count: sektorErrorCount,
+          klone_synced: kloneSynced,
+          dual_lock_released: dualLockReleasedIds.length,
         },
         affected_count: syncedCount + errorCount,
         status: 'success',
@@ -214,6 +271,8 @@ Deno.serve(async (req) => {
       synced_count: syncedCount,
       error_count: errorCount,
       sektor_error_count: sektorErrorCount,
+      klone_synced: kloneSynced,
+      dual_lock_released: dualLockReleasedIds.length,
       failed_updates: rejected.length,
       timestamp: now,
     });
