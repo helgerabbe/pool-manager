@@ -65,7 +65,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { aufgabe_id, reason } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { aufgabe_id, reason } = body;
     if (!aufgabe_id) {
       return Response.json({ error: 'aufgabe_id erforderlich' }, { status: 400 });
     }
@@ -76,7 +77,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const aufgabe = await base44.asServiceRole.entities.AllgemeineAufgabe.read(aufgabe_id);
+    const aufgabe = await base44.asServiceRole.entities.AllgemeineAufgabe.get(aufgabe_id);
     if (!aufgabe) {
       return Response.json({ error: 'Aufgabe nicht gefunden' }, { status: 404 });
     }
