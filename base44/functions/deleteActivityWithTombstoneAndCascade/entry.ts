@@ -22,9 +22,32 @@
  *  - Auth erforderlich
  *  - Nutzer muss Bearbeitungs-Lock auf dem übergeordneten Lernpaket halten
  *  - Export-Lock blockiert die Löschung (423)
+ *
+ * Supabase-Migrationsnotiz:
+ *  - Harte Löschungen werden später über Foreign Keys mit ON DELETE CASCADE
+ *    gelöst: MappingAufgabeBasisziel → Aufgabenbausteine → MasterAufgabe.
+ *  - Orphaned Files und Tombstones sollten über PostgreSQL-Trigger erfasst werden,
+ *    z. B. AFTER UPDATE OF sync_status auf lernpaket_phase_aktivitaet.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+
+const PAGE_SIZE = 500;
+
+async function listAll(entity, query) {
+  const all = [];
+  let skip = 0;
+
+  while (true) {
+    const page = await entity.filter(query, 'created_date', PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+
+  return all;
+}
 
 // ── Helfer: Base44-Storage-URLs in einem Wert finden ──────────────────────
 // Eine Storage-URL ist typischerweise https://… mit "base44.app" oder
@@ -78,7 +101,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { activity_id } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { activity_id } = body;
     if (!activity_id) {
       return Response.json({ error: 'Missing activity_id' }, { status: 400 });
     }
@@ -153,8 +177,8 @@ Deno.serve(async (req) => {
       });
     });
 
-    // 4b) aus zugehörigen MasterAufgaben
-    const masterAufgaben = await base44.asServiceRole.entities.MasterAufgabe.filter({
+    // 4b) aus zugehörigen MasterAufgaben — vollständig paginiert laden
+    const masterAufgaben = await listAll(base44.asServiceRole.entities.MasterAufgabe, {
       activity_id: activity_id,
     });
     for (const master of masterAufgaben) {
@@ -180,7 +204,7 @@ Deno.serve(async (req) => {
       // Filter pro MasterID, da Base44 kein $in unterstützt → parallel
       const klonResults = await Promise.all(
         masterIds.map(mid =>
-          base44.asServiceRole.entities.Aufgabenbausteine.filter({ master_aufgabe_id: mid })
+          listAll(base44.asServiceRole.entities.Aufgabenbausteine, { master_aufgabe_id: mid })
         )
       );
       klone = klonResults.flat();
@@ -225,22 +249,43 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── 6. Klone HART löschen ────────────────────────────────────────────
+    // ── 6a. Mappings zu Klonen zuerst HART löschen ───────────────────────
+    let mappingsDeleted = 0;
+    let mappingsFailed = 0;
+    if (klone.length > 0) {
+      const mappingPages = await Promise.all(
+        klone.map(k => listAll(base44.asServiceRole.entities.MappingAufgabeBasisziel, { aufgabe_id: k.id }))
+      );
+      const mappings = mappingPages.flat();
+      if (mappings.length > 0) {
+        const mappingResults = await Promise.allSettled(
+          mappings.map(mapping => base44.asServiceRole.entities.MappingAufgabeBasisziel.delete(mapping.id))
+        );
+        mappingsDeleted = mappingResults.filter(r => r.status === 'fulfilled').length;
+        mappingsFailed = mappingResults.length - mappingsDeleted;
+      }
+    }
+
+    // ── 6b. Klone HART löschen ───────────────────────────────────────────
     let klonDeleted = 0;
+    let klonFailed = 0;
     if (klone.length > 0) {
       const results = await Promise.allSettled(
         klone.map(k => base44.asServiceRole.entities.Aufgabenbausteine.delete(k.id))
       );
       klonDeleted = results.filter(r => r.status === 'fulfilled').length;
+      klonFailed = results.length - klonDeleted;
     }
 
     // ── 7. MasterAufgaben HART löschen ──────────────────────────────────
     let masterDeleted = 0;
+    let masterFailed = 0;
     if (masterAufgaben.length > 0) {
       const results = await Promise.allSettled(
         masterAufgaben.map(m => base44.asServiceRole.entities.MasterAufgabe.delete(m.id))
       );
       masterDeleted = results.filter(r => r.status === 'fulfilled').length;
+      masterFailed = results.length - masterDeleted;
     }
 
     // ── 8. Aktivität auf Tombstone setzen (für Moodle-Sync) ─────────────
@@ -256,9 +301,37 @@ Deno.serve(async (req) => {
     // Paket-Aggregat neu rechnet (Tombstones werden gefiltert). Kein
     // Inline-Roll-up mehr nötig.
 
+    const failedDeletes = mappingsFailed + klonFailed + masterFailed;
+
+    try {
+      await base44.asServiceRole.entities.AuditLog.create({
+        user_email: user.email,
+        action: 'DELETE',
+        resource_type: 'LernpaketPhaseAktivitaet',
+        resource_id: activity_id,
+        changes: {
+          tombstone: true,
+          sync_status: 'to_delete',
+          lernpaket_id: lernpaketId,
+          master_deleted: masterDeleted,
+          master_failed: masterFailed,
+          klone_deleted: klonDeleted,
+          klone_failed: klonFailed,
+          mappings_deleted: mappingsDeleted,
+          mappings_failed: mappingsFailed,
+          orphans_logged: orphansLogged,
+        },
+        affected_count: 1 + masterDeleted + klonDeleted + mappingsDeleted,
+        status: failedDeletes > 0 ? 'failed' : 'success',
+        error_message: failedDeletes > 0 ? `${failedDeletes} abhängige Datensätze konnten nicht gelöscht werden` : null,
+      });
+    } catch (auditError) {
+      console.error('[deleteActivityWithTombstoneAndCascade] Audit log failed:', auditError);
+    }
+
     console.info(
       `[deleteActivityWithTombstoneAndCascade] Activity ${activity_id} tombstoned. ` +
-      `Master deleted: ${masterDeleted}, Klone deleted: ${klonDeleted}, Orphans logged: ${orphansLogged}`
+      `Master deleted: ${masterDeleted}, Klone deleted: ${klonDeleted}, Mappings deleted: ${mappingsDeleted}, Orphans logged: ${orphansLogged}`
     );
 
     return Response.json({
@@ -266,7 +339,11 @@ Deno.serve(async (req) => {
       activity: updated,
       stats: {
         master_deleted: masterDeleted,
+        master_failed: masterFailed,
         klone_deleted: klonDeleted,
+        klone_failed: klonFailed,
+        mappings_deleted: mappingsDeleted,
+        mappings_failed: mappingsFailed,
         orphans_logged: orphansLogged,
       },
     });
