@@ -23,7 +23,28 @@
  * }
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+
+async function getCountIfAvailable(entity, filterCriteria) {
+  if (typeof entity.count === 'function') {
+    return await entity.count(filterCriteria);
+  }
+  return null;
+}
+
+function emptyResponse(page, limit) {
+  return {
+    success: true,
+    data: [],
+    meta: {
+      total_count: 0,
+      current_page: page,
+      total_pages: 0,
+      page_size: limit,
+      has_next_page: false,
+    },
+  };
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -51,9 +72,9 @@ Deno.serve(async (req) => {
     }
 
     // 2. Parse Payload
-    const payload = await req.json();
-    const page = Math.max(1, payload.page || 1); // Min: 1
-    const limit = Math.min(Math.max(1, payload.limit || 15), 100); // Min: 1, Max: 100
+    const payload = await req.json().catch(() => ({}));
+    const page = Math.max(1, Number(payload.page) || 1); // Min: 1
+    const limit = Math.min(Math.max(1, Number(payload.limit) || 15), 100); // Min: 1, Max: 100
 
     const offset = (page - 1) * limit;
 
@@ -85,16 +106,7 @@ Deno.serve(async (req) => {
       if (subjects.length === 0) {
         // Keine Fächer zugeordnet → keine Einheiten
         return Response.json(
-          {
-            success: true,
-            data: [],
-            meta: {
-              total_count: 0,
-              current_page: page,
-              total_pages: 0,
-              page_size: limit,
-            },
-          },
+          emptyResponse(page, limit),
           {
             status: 200,
             headers: {
@@ -113,16 +125,7 @@ Deno.serve(async (req) => {
       if (subjects.length === 0) {
         // Keine Fächer zugeordnet → keine Einheiten
         return Response.json(
-          {
-            success: true,
-            data: [],
-            meta: {
-              total_count: 0,
-              current_page: page,
-              total_pages: 0,
-              page_size: limit,
-            },
-          },
+          emptyResponse(page, limit),
           {
             status: 200,
             headers: {
@@ -132,21 +135,24 @@ Deno.serve(async (req) => {
           }
         );
       }
-      // Fach muss in der Liste sein, und kein Entwurf
-      filterCriteria = { ...draftFilter, fach: { $in: subjects } };
+      const userMemberships = await base44.asServiceRole.entities.EinheitMembers.filter({
+        user_email: user.email,
+      });
+      const memberEinheitIds = (userMemberships || []).map(m => m.einheit_id).filter(Boolean);
+      if (memberEinheitIds.length === 0) {
+        return Response.json(emptyResponse(page, limit), {
+          status: 200,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json',
+          },
+        });
+      }
+      filterCriteria = { ...draftFilter, id: { $in: memberEinheitIds }, fach: { $in: subjects } };
     } else {
       // Unbekannte Rolle → keine Einheiten
       return Response.json(
-        {
-          success: true,
-          data: [],
-          meta: {
-            total_count: 0,
-            current_page: page,
-            total_pages: 0,
-            page_size: limit,
-          },
-        },
+        emptyResponse(page, limit),
         {
           status: 200,
           headers: {
@@ -157,26 +163,35 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 4. ZÄHLE GESAMT (für Pagination Metadata)
-    const allEinheiten = await base44.asServiceRole.entities.Einheiten.filter(
-      filterCriteria
-    );
-    const totalCount = allEinheiten.length;
-    const totalPages = Math.ceil(totalCount / limit);
+    // 4. ZÄHLE GESAMT (für Pagination Metadata), falls vom SDK unterstützt
+    const totalCountFromSdk = await getCountIfAvailable(base44.asServiceRole.entities.Einheiten, filterCriteria);
 
-    // 5. FETCH SEITE (mit Pagination)
-    // Hinweis: Base44 SDK hat kein built-in skip/limit, daher Client-Side pagination
-    // In Produktionssystem würde Backend-Query mit LIMIT/OFFSET optimiert
-    const pageData = allEinheiten.slice(offset, offset + limit);
+    // 5. FETCH SEITE mit SDK skip/limit statt In-Memory-Pagination
+    const pageData = await base44.asServiceRole.entities.Einheiten.filter(
+      filterCriteria,
+      '-updated_date',
+      limit + 1,
+      offset
+    );
+    const hasNextPage = pageData.length > limit;
+    const pageItems = pageData.slice(0, limit);
+    const totalCount = typeof totalCountFromSdk === 'number'
+      ? totalCountFromSdk
+      : offset + pageItems.length + (hasNextPage ? 1 : 0);
+    const totalPages = typeof totalCountFromSdk === 'number'
+      ? Math.ceil(totalCount / limit)
+      : null;
 
     // 6. LADE MITGLIEDER FÜR ALLE EINHEITEN (für Unit-Level RBAC)
-    const einheitIds = pageData.map(e => e.id);
-    const alleMembers = await base44.asServiceRole.entities.EinheitMembers.filter({
-      einheit_id: { $in: einheitIds }
-    });
+    const einheitIds = pageItems.map(e => e.id);
+    const alleMembers = einheitIds.length > 0
+      ? await base44.asServiceRole.entities.EinheitMembers.filter({
+          einheit_id: { $in: einheitIds }
+        })
+      : [];
 
     // 7. MAP SELECTIVE FIELDS (nur was die Liste braucht) + Members
-    const responseData = pageData.map((einheit) => {
+    const responseData = pageItems.map((einheit) => {
       const members = alleMembers.filter(m => m.einheit_id === einheit.id);
       return {
         id: einheit.id,
@@ -209,28 +224,7 @@ Deno.serve(async (req) => {
       };
     });
     
-    // 8. DEBUG: Logge RBAC-Filterung für Audit
-    console.log('[EINHEITEN_LIST_SECURE] RBAC-Filter:', {
-      user_email: user.email,
-      user_role_system: user.role,
-      user_role_resolved: role,
-      benutzer_rolle: benutzer?.rolle,
-      subjects: role === 'Fachlehrkraft' || role === 'Betrachter' ? benutzer?.fachbereich_zustaendigkeit : 'N/A',
-      filterCriteria: JSON.stringify(filterCriteria),
-      allEinheiten_count: allEinheiten.length,
-      filtered_count: responseData.length,
-      total_count: totalCount,
-    });
-    
-    // Zeige auch alle Einheiten die gefiltert wurden
-    console.log('[EINHEITEN_LIST_SECURE] Alle verfügbaren Einheiten:', allEinheiten.map(e => ({
-      id: e.id,
-      titel: e.titel_der_einheit,
-      fach: e.fach,
-      wizard_status: e.wizard_status,
-    })));
-
-    // 9. RESPONSE
+    // 8. RESPONSE
     const response = {
       success: true,
       data: responseData,
@@ -239,6 +233,7 @@ Deno.serve(async (req) => {
         current_page: page,
         total_pages: totalPages,
         page_size: limit,
+        has_next_page: hasNextPage,
       },
     };
 
