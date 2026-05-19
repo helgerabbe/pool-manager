@@ -22,6 +22,22 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const VALID_LERNTYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
+const PAGE_SIZE = 500;
+
+async function listAllByFilter(entity, query, sort = 'created_date') {
+  const all = [];
+  let skip = 0;
+
+  while (true) {
+    const page = await entity.filter(query, sort, PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+
+  return all;
+}
 
 // ── Sektor-Signature-Hash (inline) ─────────────────────────────────
 // Synchron halten mit src/lib/sektorSignature.js, functions/setLernpfadStatus
@@ -112,24 +128,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { einheitId } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { einheitId } = body;
     if (!einheitId) {
       return Response.json({ error: 'einheitId required' }, { status: 400 });
     }
 
-    let einheit;
-    try {
-      einheit = await base44.asServiceRole.entities.Einheiten.get(einheitId);
-    } catch (_err) {
-      return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
-    }
+    const einheit = await base44.entities.Einheiten.get(einheitId).catch(() => null);
     if (!einheit) {
       return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
     }
 
-    const memberships = await base44.asServiceRole.entities.LernpfadAufgabeMembership.filter({
-      einheit_id: einheitId,
-    });
+    const memberships = await listAllByFilter(
+      base44.asServiceRole.entities.LernpfadAufgabeMembership,
+      { einheit_id: einheit.id }
+    );
     const drift_report = buildDriftReport(einheit.lernpfade_konfiguration || {}, memberships);
 
     return Response.json({ ok: true, drift_report });

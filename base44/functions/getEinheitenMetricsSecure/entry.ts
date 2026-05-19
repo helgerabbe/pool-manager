@@ -45,6 +45,27 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const LERN_TYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
+const PAGE_SIZE = 500;
+const MAX_EINHEIT_IDS = 100;
+
+async function listAllByFilter(entity, query, sort = 'created_date') {
+  const all = [];
+  let skip = 0;
+
+  while (true) {
+    const page = await entity.filter(query, sort, PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+
+  return all;
+}
+
+function createEmptyVolume() {
+  return { themenfelder: 0, lernpakete: 0, aktivitaeten: 0, level2: 0, level3: 0 };
+}
 
 // ── Progress-Berechnung pro Lerntyp ──
 // Einfache Coverage-Logik: Wie viele der "echten Inhalte" der Einheit
@@ -111,7 +132,9 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const payload = await req.json().catch(() => ({}));
-    const einheitIds = Array.isArray(payload?.einheitIds) ? payload.einheitIds.filter(Boolean) : [];
+    const einheitIds = Array.isArray(payload?.einheitIds)
+      ? [...new Set(payload.einheitIds.filter((id) => typeof id === 'string' && id.trim()).map((id) => id.trim()))].slice(0, MAX_EINHEIT_IDS)
+      : [];
     if (einheitIds.length === 0) {
       return Response.json({ success: true, metrics: {} }, {
         status: 200,
