@@ -101,25 +101,22 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Einheit not found' }, { status: 404 });
     }
 
-    // 5. PARALLEL QUERIES: Hole alle Daten auf einmal (inkl. Members für RBAC)
-    const [themenfelder, lernpakete, lernziele, aufgaben, einheitMembers] = await Promise.all([
-      // Themenfelder mit nur benötigten Feldern
-      base44.asServiceRole.entities.Themenfeld.filter({
-        einheit_id: einheit_id,
-      }),
-      // Lernpakete
-      base44.asServiceRole.entities.Lernpakete.filter({
-        einheit_id: einheit_id,
-      }),
-      // Lernziele
-      base44.asServiceRole.entities.Lernziele.list(),
-      // Aufgaben
-      base44.asServiceRole.entities.Aufgabenbausteine.list(),
-      // ✅ Members für Unit-Level RBAC
-      base44.asServiceRole.entities.EinheitMembers.filter({
-        einheit_id: einheit_id,
-      }),
+    // 5. Gefilterte, paginierte Queries: nur Daten dieser Einheit laden.
+    const [themenfelder, lernpakete, einheitMembers] = await Promise.all([
+      listAllByFilter(base44.asServiceRole.entities.Themenfeld, { einheit_id }),
+      listAllByFilter(base44.asServiceRole.entities.Lernpakete, { einheit_id }),
+      listAllByFilter(base44.asServiceRole.entities.EinheitMembers, { einheit_id }),
     ]);
+
+    const lernpaketIds = lernpakete.map((paket) => paket.id).filter(Boolean);
+    const lernziele = lernpaketIds.length > 0
+      ? await listAllByFilter(base44.asServiceRole.entities.Lernziele, { lernpaket_id: { $in: lernpaketIds } })
+      : [];
+
+    const lernzielIds = lernziele.map((lernziel) => lernziel.id).filter(Boolean);
+    const aufgaben = lernzielIds.length > 0
+      ? await listAllByFilter(base44.asServiceRole.entities.Aufgabenbausteine, { lernziel_id: { $in: lernzielIds } })
+      : [];
 
     // 6. BUILD HIERARCHY: Frontend braucht nicht mehr zu filtern!
     // Gruppiere Lernziele nach Lernpaket
