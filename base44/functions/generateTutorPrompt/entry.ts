@@ -11,7 +11,53 @@
  * - Lernlandkarte für Projektaufgaben
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+
+const PAGE_SIZE = 500;
+
+function isAdmin(user, profile) {
+  return user?.role === 'admin' || user?.role === 'Administrator' || profile?.rolle === 'Administrator';
+}
+
+function isFachschaftForFach(profile, fach) {
+  if (profile?.rolle !== 'Fachschaftsleitung') return false;
+  const faecher = Array.isArray(profile.fachbereich_zustaendigkeit)
+    ? profile.fachbereich_zustaendigkeit
+    : [];
+  return faecher.includes(fach);
+}
+
+async function hasUnitReadAccess(base44, user, einheit) {
+  const [profiles, memberships] = await Promise.all([
+    base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email }),
+    einheit?.id
+      ? base44.asServiceRole.entities.EinheitMembers.filter({
+          einheit_id: einheit.id,
+          user_email: user.email,
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const profile = profiles?.[0] || null;
+  if (isAdmin(user, profile)) return true;
+  if (einheit && isFachschaftForFach(profile, einheit.fach)) return true;
+  return !!memberships?.[0];
+}
+
+async function listAllByFilter(entity, query, sort = 'created_date') {
+  const all = [];
+  let skip = 0;
+
+  while (true) {
+    const page = await entity.filter(query, sort, PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+
+  return all;
+}
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') {
@@ -26,7 +72,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { masterId } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { masterId } = body;
 
     if (!masterId) {
       return Response.json({ error: 'masterId is required' }, { status: 400 });
@@ -35,7 +82,7 @@ Deno.serve(async (req) => {
     // ─────────────────────────────────────────────────────────────────
     // 1. Aufgabe laden (Aufgabenbausteine statt MasterAufgabe)
     // ─────────────────────────────────────────────────────────────────
-    const master = await base44.asServiceRole.entities.Aufgabenbausteine.read(masterId);
+    const master = await base44.entities.Aufgabenbausteine.get(masterId).catch(() => null);
     if (!master) {
       return Response.json({ error: 'Aufgabenbaustein nicht gefunden' }, { status: 404 });
     }
@@ -57,10 +104,13 @@ Deno.serve(async (req) => {
     let einheitId = null;
 
     if (master.lernpaket_id) {
-      const lernpaket = await base44.asServiceRole.entities.Lernpakete.read(master.lernpaket_id).catch(() => null);
+      const lernpaket = await base44.asServiceRole.entities.Lernpakete.get(master.lernpaket_id).catch(() => null);
       if (lernpaket && lernpaket.einheit_id) {
         einheitId = lernpaket.einheit_id;
-        const einheit = await base44.asServiceRole.entities.Einheiten.read(einheitId).catch(() => null);
+        const einheit = await base44.asServiceRole.entities.Einheiten.get(einheitId).catch(() => null);
+        if (!(await hasUnitReadAccess(base44, user, einheit))) {
+          return Response.json({ error: 'Forbidden: keine Berechtigung für diese Einheit' }, { status: 403 });
+        }
         if (einheit) {
           fach = einheit.fach || 'unbekannt';
           jahrgangsstufe = einheit.jahrgangsstufe || 'unbekannt';
@@ -93,9 +143,10 @@ ${erwartungshorizont}
     // ─────────────────────────────────────────────────────────────────
     if (isProjectTask && einheitId) {
       // Ebene 3: Lade Lernziele der Einheit (Lernlandkarte)
-      const lernziele = await base44.asServiceRole.entities.Lernziele
-        .filter({ lernpaket_id: master.lernpaket_id })
-        .catch(() => []);
+      const lernziele = await listAllByFilter(
+        base44.asServiceRole.entities.Lernziele,
+        { lernpaket_id: master.lernpaket_id }
+      ).catch(() => []);
 
       const lernzieleString = lernziele
         .map(z => `- ${z.formulierung_fachsprache || z.schueler_uebersetzung || '(kein Titel)'}`)
