@@ -31,6 +31,8 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+const PAGE_SIZE = 500;
+
 const normalizeEntityRecord = (record) => {
   if (!record) return null;
   return {
@@ -42,6 +44,21 @@ const normalizeEntityRecord = (record) => {
     created_by: record.created_by,
   };
 };
+
+async function listAllByFilter(entity, query, sort = 'created_date') {
+  const all = [];
+  let skip = 0;
+
+  while (true) {
+    const page = await entity.filter(query, sort, PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+
+  return all;
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -69,58 +86,19 @@ Deno.serve(async (req) => {
     }
 
     // 2. Parse Payload
-    const payload = await req.json();
+    const payload = await req.json().catch(() => ({}));
     const { einheit_id } = payload;
 
     if (!einheit_id) {
       return Response.json({ error: 'Missing einheit_id' }, { status: 400 });
     }
 
-    // 3. Fetch Einheit (RBAC Check)
-    const rawEinheit = await base44.asServiceRole.entities.Einheiten.get(
-      einheit_id
-    );
+    // 3. Fetch Einheit im User-Kontext: RLS prüft Tenant-/Leserechte.
+    const rawEinheit = await base44.entities.Einheiten.get(einheit_id).catch(() => null);
     const einheit = normalizeEntityRecord(rawEinheit);
 
     if (!einheit) {
       return Response.json({ error: 'Einheit not found' }, { status: 404 });
-    }
-
-    // 4. RBAC: Read Permission Check
-    const benutzerList = await base44.asServiceRole.entities.Benutzer.filter({
-      user_id: user.email,
-    });
-
-    const benutzer = benutzerList?.[0];
-    const benutzerRolle = benutzer?.rolle;
-    
-    // ✅ Fallback auf auth user.role wenn kein Benutzer-Eintrag existiert
-    const role = benutzerRolle || user.role;
-
-    let hasReadAccess = false;
-
-    if (role === 'Administrator' || user.role === 'admin') {
-      hasReadAccess = true;
-    } else if (role === 'Fachschaftsleitung') {
-      const subjects = benutzer?.fachbereich_zustaendigkeit || [];
-      if (subjects.includes(einheit.fach)) {
-        hasReadAccess = true;
-      }
-    } else if (role === 'Fachlehrkraft') {
-      // ✅ Fachlehrkraft: Lesezugriff wenn Fach zuständig ist (auch ohne Unit-Level-Mitgliedschaft)
-      const subjects = benutzer?.fachbereich_zustaendigkeit || [];
-      if (subjects.includes(einheit.fach)) {
-        hasReadAccess = true;
-      }
-    } else if (role === 'Betrachter') {
-      hasReadAccess = true; // Betrachter können alles lesen
-    }
-
-    if (!hasReadAccess) {
-      return Response.json(
-        { error: 'No read permission for this Einheit' },
-        { status: 403 }
-      );
     }
 
     // 5. PARALLEL QUERIES: Hole alle Daten auf einmal (inkl. Members für RBAC)

@@ -56,6 +56,22 @@ const VALID_LERNTYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'
 const PFAD_STATUS_LOCKED = 'locked_for_export';
 const PFAD_STATUS_DRAFT = 'draft';
 const VALID_STATUS = [PFAD_STATUS_LOCKED, PFAD_STATUS_DRAFT];
+const PAGE_SIZE = 500;
+
+async function listAllByFilter(entity, query, sort = 'created_date') {
+  const all = [];
+  let skip = 0;
+
+  while (true) {
+    const page = await entity.filter(query, sort, PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+
+  return all;
+}
 
 // ── Phase E.1/E.2: Sektor-Signature-Hash (inline) ──────────────────
 // Synchron halten mit src/lib/sektorSignature.js. Backend-Functions
@@ -152,7 +168,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { einheitId, lerntyp, newStatus } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { einheitId, lerntyp, newStatus } = body;
     if (!einheitId) return Response.json({ error: 'einheitId required' }, { status: 400 });
     if (!VALID_LERNTYPEN.includes(lerntyp)) {
       return Response.json({ error: 'invalid lerntyp' }, { status: 400 });
@@ -227,13 +244,13 @@ Deno.serve(async (req) => {
     }
 
     // ── Update ──────────────────────────────────────────────────────────
-    const memberships = await base44.asServiceRole.entities.LernpfadAufgabeMembership.filter({
-      einheit_id: einheitId,
-      lerntyp,
-    });
+    const memberships = await listAllByFilter(
+      base44.asServiceRole.entities.LernpfadAufgabeMembership,
+      { einheit_id: einheitId, lerntyp }
+    );
 
     const nowIso = new Date().toISOString();
-    let updated = 0;
+    const updatePromises = [];
     for (const m of memberships || []) {
       const patch = {};
       if (m.pfad_status !== newStatus) {
@@ -250,9 +267,18 @@ Deno.serve(async (req) => {
         }
       }
       if (Object.keys(patch).length === 0) continue;
-      await base44.asServiceRole.entities.LernpfadAufgabeMembership.update(m.id, patch);
-      updated += 1;
+      updatePromises.push(base44.asServiceRole.entities.LernpfadAufgabeMembership.update(m.id, patch));
     }
+
+    const updateResults = await Promise.allSettled(updatePromises);
+    const failedUpdates = updateResults.filter((result) => result.status === 'rejected');
+    if (failedUpdates.length > 0) {
+      return Response.json(
+        { error: 'Nicht alle Memberships konnten aktualisiert werden', failed: failedUpdates.length },
+        { status: 500 }
+      );
+    }
+    const updated = updateResults.length;
 
     // ── Audit Log (non-blocking) ────────────────────────────────────────
     await logAuditEvent(base44, {

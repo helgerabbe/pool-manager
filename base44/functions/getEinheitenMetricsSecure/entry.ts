@@ -142,35 +142,52 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Bulk-Fetch in Parallel.
-    const [einheiten, themenfelder, lernpakete, allgemeineAufgaben] = await Promise.all([
-      base44.asServiceRole.entities.Einheiten.filter({ id: { $in: einheitIds } }),
-      base44.asServiceRole.entities.Themenfeld.filter({ einheit_id: { $in: einheitIds } }),
-      base44.asServiceRole.entities.Lernpakete.filter({ einheit_id: { $in: einheitIds } }),
-      base44.asServiceRole.entities.AllgemeineAufgabe.filter({ einheit_id: { $in: einheitIds } }),
+    // Einheiten zuerst im User-Kontext laden: RLS filtert unautorisierte IDs heraus.
+    const einheiten = await listAllByFilter(
+      base44.entities.Einheiten,
+      { id: { $in: einheitIds } }
+    );
+    const authorizedEinheitIds = einheiten.map((einheit) => einheit.id);
+
+    if (authorizedEinheitIds.length === 0) {
+      const metrics = {};
+      for (const id of einheitIds) {
+        metrics[id] = {
+          volume: createEmptyVolume(),
+          progress: { minimalist: 0, pragmatiker: 0, ehrgeizig: 0, passioniert: 0 },
+        };
+      }
+      return Response.json({ success: true, metrics }, {
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+
+    // Folgeabfragen nur für bereits autorisierte Einheiten; vollständig paginiert.
+    const [themenfelder, lernpakete, allgemeineAufgaben, memberships] = await Promise.all([
+      listAllByFilter(base44.asServiceRole.entities.Themenfeld, { einheit_id: { $in: authorizedEinheitIds } }),
+      listAllByFilter(base44.asServiceRole.entities.Lernpakete, { einheit_id: { $in: authorizedEinheitIds } }),
+      listAllByFilter(base44.asServiceRole.entities.AllgemeineAufgabe, { einheit_id: { $in: authorizedEinheitIds } }),
+      listAllByFilter(base44.asServiceRole.entities.LernpfadAufgabeMembership, { einheit_id: { $in: authorizedEinheitIds } }),
     ]);
 
-    // Aktivitäten werden über die Lernpakete dieser Einheiten gezogen.
+    // Aktivitäten werden über die Lernpakete dieser autorisierten Einheiten gezogen.
     const lernpaketIds = lernpakete.map((lp) => lp.id);
-    const [aktivitaeten, memberships] = await Promise.all([
-      lernpaketIds.length > 0
-        ? base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
-            lernpaket_id: { $in: lernpaketIds },
-          })
-        : Promise.resolve([]),
-      // Pfad-Status pro (einheit_id, lerntyp) ableitbar aus den Memberships.
-      // Solange irgendeine Membership einer Kombi noch 'draft' ist (oder
-      // gar keine existiert), gilt der Pfad nicht als final freigegeben.
-      base44.asServiceRole.entities.LernpfadAufgabeMembership.filter({
-        einheit_id: { $in: einheitIds },
-      }),
-    ]);
+    const aktivitaeten = lernpaketIds.length > 0
+      ? await listAllByFilter(
+          base44.asServiceRole.entities.LernpaketPhaseAktivitaet,
+          { lernpaket_id: { $in: lernpaketIds } }
+        )
+      : [];
 
     // Aggregat: hat jede (einheit_id, lerntyp)-Kombi mind. 1 Membership UND
     // sind ALLE auf 'locked_for_export'? Wenn ja → Pfad ist freigegeben.
     // Map<einheitId, Map<lerntyp, { total, locked }>>
     const lockedPathsByEinheit = new Map();
-    for (const id of einheitIds) {
+    for (const id of authorizedEinheitIds) {
       lockedPathsByEinheit.set(id, new Map());
     }
     for (const m of memberships) {
@@ -187,7 +204,7 @@ Deno.serve(async (req) => {
     const lernpaketeByEinheit = new Map();
     const aufgabenByEinheit = new Map();
     const aktivitaetenByEinheit = new Map();
-    for (const id of einheitIds) {
+    for (const id of authorizedEinheitIds) {
       themenfelderByEinheit.set(id, []);
       lernpaketeByEinheit.set(id, []);
       aufgabenByEinheit.set(id, []);
@@ -260,7 +277,7 @@ Deno.serve(async (req) => {
     for (const id of einheitIds) {
       if (!metrics[id]) {
         metrics[id] = {
-          volume: { themenfelder: 0, lernpakete: 0, aktivitaeten: 0, level2: 0, level3: 0 },
+          volume: createEmptyVolume(),
           progress: { minimalist: 0, pragmatiker: 0, ehrgeizig: 0, passioniert: 0 },
         };
       }
