@@ -12,7 +12,9 @@
  * Architektur:
  *   - Kein rekursives JavaScript-Cascade mehr.
  *   - Alle abhängigen Records werden vollständig paginiert geladen.
+ *   - Abhängige Reads laufen kontrolliert sequenziell, um Cron-Lastspitzen zu vermeiden.
  *   - Deletes laufen in stabilen Batches statt als lange N+1-Kette.
+ *   - AuditLog wird bewusst nicht gelöscht, damit Revisions- und Forensikdaten erhalten bleiben.
  *
  * @MIGRATION_NOTE Supabase:
  *   Das komplette Konstrukt cascadeDelete in JavaScript ist in relationalen
@@ -76,10 +78,20 @@ async function deleteBatch(entity, records) {
   return deleted;
 }
 
+async function listAllForRecords(records, loadForRecord) {
+  const pages = [];
+
+  for (const record of records) {
+    pages.push(await loadForRecord(record));
+  }
+
+  return pages;
+}
+
 async function collectDraftCascadeRecords(base44, einheitId) {
   const e = base44.asServiceRole.entities;
 
-  const [themenfelder, lernpaketeByEinheit, allgemeineAufgaben, einheitMembers, exportPrompts, memberships, generatedFiles, auditLogs] = await Promise.all([
+  const [themenfelder, lernpaketeByEinheit, allgemeineAufgaben, einheitMembers, exportPrompts, memberships, generatedFiles] = await Promise.all([
     listAll(e.Themenfeld, { einheit_id: einheitId }),
     listAll(e.Lernpakete, { einheit_id: einheitId }),
     listAll(e.AllgemeineAufgabe, { einheit_id: einheitId }),
@@ -87,11 +99,11 @@ async function collectDraftCascadeRecords(base44, einheitId) {
     listAll(e.ExportPrompts, { einheit_id: einheitId }),
     listAll(e.LernpfadAufgabeMembership, { einheit_id: einheitId }),
     listAll(e.MBKGeneratedFile, { einheit_id: einheitId }),
-    listAll(e.AuditLog, { resource_type: 'Einheiten', resource_id: einheitId }),
   ]);
 
-  const lernpaketeByThemenfeldPages = await Promise.all(
-    themenfelder.map((themenfeld) => listAll(e.Lernpakete, { themenfeld_id: themenfeld.id }))
+  const lernpaketeByThemenfeldPages = await listAllForRecords(
+    themenfelder,
+    (themenfeld) => listAll(e.Lernpakete, { themenfeld_id: themenfeld.id })
   );
   const lernpaketeById = new Map();
   [...lernpaketeByEinheit, ...lernpaketeByThemenfeldPages.flat()].forEach((lernpaket) => {
@@ -99,16 +111,27 @@ async function collectDraftCascadeRecords(base44, einheitId) {
   });
   const lernpakete = Array.from(lernpaketeById.values());
 
-  const [lernzielePages, aufgabenbausteinePages, aktivitaetenPages, masterAufgabenPages] = await Promise.all([
-    Promise.all(lernpakete.map((lernpaket) => listAll(e.Lernziele, { lernpaket_id: lernpaket.id }))),
-    Promise.all(lernpakete.map((lernpaket) => listAll(e.Aufgabenbausteine, { lernpaket_id: lernpaket.id }))),
-    Promise.all(lernpakete.map((lernpaket) => listAll(e.LernpaketPhaseAktivitaet, { lernpaket_id: lernpaket.id }))),
-    Promise.all(lernpakete.map((lernpaket) => listAll(e.MasterAufgabe, { lernpaket_id: lernpaket.id }))),
-  ]);
+  const lernzielePages = await listAllForRecords(
+    lernpakete,
+    (lernpaket) => listAll(e.Lernziele, { lernpaket_id: lernpaket.id })
+  );
+  const aufgabenbausteinePages = await listAllForRecords(
+    lernpakete,
+    (lernpaket) => listAll(e.Aufgabenbausteine, { lernpaket_id: lernpaket.id })
+  );
+  const aktivitaetenPages = await listAllForRecords(
+    lernpakete,
+    (lernpaket) => listAll(e.LernpaketPhaseAktivitaet, { lernpaket_id: lernpaket.id })
+  );
+  const masterAufgabenPages = await listAllForRecords(
+    lernpakete,
+    (lernpaket) => listAll(e.MasterAufgabe, { lernpaket_id: lernpaket.id })
+  );
 
   const aufgabenbausteine = aufgabenbausteinePages.flat();
-  const mappingPages = await Promise.all(
-    aufgabenbausteine.map((baustein) => listAll(e.MappingAufgabeBasisziel, { aufgabe_id: baustein.id }))
+  const mappingPages = await listAllForRecords(
+    aufgabenbausteine,
+    (baustein) => listAll(e.MappingAufgabeBasisziel, { aufgabe_id: baustein.id })
   );
 
   return {
@@ -122,7 +145,6 @@ async function collectDraftCascadeRecords(base44, einheitId) {
     MBKGeneratedFile: generatedFiles,
     ExportPrompts: exportPrompts,
     EinheitMembers: einheitMembers,
-    AuditLog: auditLogs,
     Lernpakete: lernpakete,
     Themenfeld: themenfelder,
   };
@@ -156,7 +178,6 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - 30);
-    const cutoffIso = cutoffDate.toISOString();
 
     const allDrafts = await listAll(base44.asServiceRole.entities.Einheiten, {
       wizard_status: 'entwurf',
@@ -164,7 +185,9 @@ Deno.serve(async (req) => {
 
     const expiredDrafts = allDrafts.filter((einheit) => {
       const lastUpdated = einheit.updated_date || einheit.created_date;
-      return lastUpdated < cutoffIso;
+      if (!lastUpdated) return false;
+
+      return new Date(lastUpdated) < cutoffDate;
     });
 
     console.log(`[cleanupOldDrafts] Gefunden: ${expiredDrafts.length} veraltete Entwürfe.`);
