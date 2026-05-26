@@ -37,6 +37,10 @@ async function logAuditEvent(base44, event) {
 }
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -56,7 +60,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { id, prompt_text, anzeigename, ist_aktiv } = await req.json();
+    const payload = await req.json().catch(() => ({}));
+    const { id, prompt_text, anzeigename, ist_aktiv } = payload;
     if (!id) return Response.json({ error: 'id required' }, { status: 400 });
 
     const existing = await base44.asServiceRole.entities.MBKGlobalPrompt.get(id);
@@ -71,8 +76,16 @@ Deno.serve(async (req) => {
       return Response.json({ ok: true, updated: existing, noop: true });
     }
 
+    const latest = await base44.asServiceRole.entities.MBKGlobalPrompt.get(id).catch(() => null);
+    if (!latest || latest.updated_date !== existing.updated_date) {
+      return Response.json(
+        { error: 'Prompt wurde zwischenzeitlich geändert. Bitte neu laden.', code: 'VERSION_CHANGED' },
+        { status: 409 }
+      );
+    }
+
     await base44.asServiceRole.entities.MBKGlobalPrompt.update(id, update);
-    const updated = await base44.asServiceRole.entities.MBKGlobalPrompt.get(id);
+    const updated = { ...existing, ...update, updated_date: new Date().toISOString() };
 
     await logAuditEvent(base44, {
       user: user.email,
