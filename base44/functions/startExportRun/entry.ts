@@ -70,22 +70,27 @@ async function logAuditEvent(base44, event) {
 }
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { einheitId } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { einheitId } = body;
     if (!einheitId) return Response.json({ error: 'einheitId required' }, { status: 400 });
 
-    // Einheit laden — wird für die Fach-Prüfung benötigt.
+    // Einheit im User-Kontext laden, damit RLS/Tenant-Isolation für die Fach-Prüfung greift.
     let einheit;
     try {
-      einheit = await base44.asServiceRole.entities.Einheiten.get(einheitId);
+      einheit = await base44.entities.Einheiten.get(einheitId);
     } catch (_err) {
-      return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
+      return Response.json({ error: 'Einheit nicht gefunden oder nicht zugänglich' }, { status: 404 });
     }
-    if (!einheit) return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
+    if (!einheit) return Response.json({ error: 'Einheit nicht gefunden oder nicht zugänglich' }, { status: 404 });
 
     // RBAC: Admin und Moodle-Designer dürfen alle Fächer starten.
     // Fachschaftsleitung nur das eigene Fach der Einheit.
@@ -128,6 +133,21 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Re-Read gegen TOCTOU: Status muss unmittelbar vor dem Schreiben noch final sein.
+    const latestEinheit = await base44.entities.Einheiten.get(einheitId).catch(() => null);
+    const latestStatus = latestEinheit?.export_lifecycle_status || 'draft';
+    if (!latestEinheit || latestStatus !== currentStatus) {
+      return Response.json(
+        {
+          error: 'Der Status wurde zwischenzeitlich geändert. Bitte neu laden.',
+          code: 'STATUS_CHANGED',
+          currentStatus: latestStatus,
+          expectedStatus: currentStatus,
+        },
+        { status: 409 }
+      );
+    }
+
     // Update.
     const nowIso = new Date().toISOString();
     const update = {
@@ -137,7 +157,7 @@ Deno.serve(async (req) => {
       export_started_at: nowIso,
       export_started_by: user.email,
     };
-    await base44.asServiceRole.entities.Einheiten.update(einheitId, update);
+    await base44.entities.Einheiten.update(einheitId, update);
 
     await logAuditEvent(base44, {
       user: user.email,

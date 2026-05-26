@@ -307,7 +307,7 @@ Deno.serve(async (req) => {
 
     // ---- Sperr-Check: Lernpaket darf nicht verändert werden, sobald es in einem gesperrten Dashboard liegt
     if (targetType === 'lernpaket') {
-      const memberships = await base44.asServiceRole.entities.LernpfadAufgabeMembership.filter({
+      const memberships = await listAllByFilter(base44.asServiceRole.entities.LernpfadAufgabeMembership, {
         einheit_id: einheit.id,
         aufgabe_id: target.id,
       });
@@ -365,7 +365,7 @@ Deno.serve(async (req) => {
       } else if (targetType === 'lernpaket') {
         // Alle aktiven Activities müssen freigegeben sein. Die inhaltliche Vollständigkeit
         // wurde bereits beim Freigeben der einzelnen Aktivität bzw. Master-Aufgabe geprüft.
-        const acts = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
+        const acts = await listAllByFilter(base44.asServiceRole.entities.LernpaketPhaseAktivitaet, {
           lernpaket_id: target.id,
         });
         const phasenConf = target.phasen_konfiguration || {};
@@ -397,14 +397,22 @@ Deno.serve(async (req) => {
       lernpaket: 'Lernpakete',
       allgemeine_aufgabe: 'AllgemeineAufgabe',
     };
-    await base44.asServiceRole.entities[entityMap[targetType]].update(target.id, updatePayload);
+    const latestEntity = await base44.entities[entityMap[targetType]].get(target.id).catch(() => null);
+    if (!latestEntity || latestEntity.updated_date !== target.updated_date) {
+      return Response.json(
+        { error: 'Der Inhalt wurde zwischenzeitlich geändert. Bitte neu prüfen.', code: 'TARGET_CHANGED' },
+        { status: 409 }
+      );
+    }
+
+    await base44.entities[entityMap[targetType]].update(target.id, updatePayload);
 
     // ---- Direkter Roll-up: Wenn eine Activity freigegeben/zurückgenommen wird,
     // Lernpakete.is_complete sofort nachziehen. Sonst bleibt der Freigabe-Button
     // bis zum nächsten Tab-Wechsel oder Automation-Refresh deaktiviert.
     let paketIsComplete = null;
     if (targetType === 'activity' && lernpaket?.id) {
-      const siblings = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
+      const siblings = await listAllByFilter(base44.asServiceRole.entities.LernpaketPhaseAktivitaet, {
         lernpaket_id: lernpaket.id,
       });
       const phasenConf = lernpaket.phasen_konfiguration || {};
@@ -418,7 +426,16 @@ Deno.serve(async (req) => {
         return a.is_complete === true && a.content_status === 'approved';
       });
       if (lernpaket.is_complete !== paketIsComplete) {
-        await base44.asServiceRole.entities.Lernpakete.update(lernpaket.id, {
+        const latestSiblings = await listAllByFilter(base44.asServiceRole.entities.LernpaketPhaseAktivitaet, {
+          lernpaket_id: lernpaket.id,
+        });
+        if (recordsSignature(latestSiblings) !== recordsSignature(siblings)) {
+          return Response.json(
+            { error: 'Aktivitäten wurden zwischenzeitlich geändert. Bitte neu prüfen.', code: 'SIBLINGS_CHANGED' },
+            { status: 409 }
+          );
+        }
+        await base44.entities.Lernpakete.update(lernpaket.id, {
           is_complete: paketIsComplete,
         });
       }
