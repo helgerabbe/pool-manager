@@ -160,6 +160,10 @@ async function isUnitLeitung(base44, einheitId, userEmail) {
 }
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
 
@@ -178,14 +182,15 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'invalid newStatus' }, { status: 400 });
     }
 
-    // Einheit laden, um das Fach für RBAC zu kennen.
+    // Einheit im User-Kontext laden, damit RLS/Tenant-Isolation für RBAC greift.
     let einheit;
     try {
-      einheit = await base44.asServiceRole.entities.Einheiten.get(einheitId);
+      einheit = await base44.entities.Einheiten.get(einheitId);
     } catch (_err) {
-      return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
+      return Response.json({ error: 'Einheit nicht gefunden oder nicht zugänglich' }, { status: 404 });
     }
-    if (!einheit) return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
+    if (!einheit) return Response.json({ error: 'Einheit nicht gefunden oder nicht zugänglich' }, { status: 404 });
+    const initialEinheitVersion = Number(einheit.version || 1);
 
     // ── Lifecycle Hard-Lock ────────────────────────────────────────────
     // Sobald die Einheit final freigegeben oder im Export ist, dürfen
@@ -249,6 +254,20 @@ Deno.serve(async (req) => {
       { einheit_id: einheitId, lerntyp }
     );
 
+    const latestEinheit = await base44.entities.Einheiten.get(einheitId).catch(() => null);
+    const latestEinheitVersion = Number(latestEinheit?.version || 1);
+    if (!latestEinheit || latestEinheitVersion !== initialEinheitVersion) {
+      return Response.json(
+        {
+          error: 'Die Struktur wurde zwischenzeitlich geändert. Bitte neu laden.',
+          code: 'VERSION_CHANGED',
+          expectedVersion: initialEinheitVersion,
+          currentVersion: latestEinheitVersion,
+        },
+        { status: 409 }
+      );
+    }
+
     const nowIso = new Date().toISOString();
     const updatePromises = [];
     for (const m of memberships || []) {
@@ -279,6 +298,10 @@ Deno.serve(async (req) => {
       );
     }
     const updated = updateResults.length;
+
+    await base44.entities.Einheiten.update(einheitId, {
+      version: initialEinheitVersion + 1,
+    });
 
     // ── Audit Log (non-blocking) ────────────────────────────────────────
     await logAuditEvent(base44, {

@@ -13,6 +13,9 @@
  *   - Heartbeat alle 15s (Kommentar `:heartbeat\n\n`, verhindert NAT-Timeouts).
  *   - Bei Disconnect (req.signal onabort) werden Subscriptions & Timer sauber beendet.
  *
+ * Skalierungshinweis: In Serverless-Umgebungen öffnet jeder Client eigene Subscriptions.
+ * Für Produktion sollte dies mittelfristig durch Frontend-Realtime oder einen echten Multiplexer ersetzt werden.
+ *
  * ─── ADAPTER-PATTERN-HINWEIS ──────────────────────────────────────────────
  * Backend-Functions in Deno Deploy können KEINE lokalen Module importieren
  * (jede Function wird isoliert deployt). Deshalb ist der Adapter-Code für
@@ -82,8 +85,8 @@ function transformEvent(entityName, event) {
 /**
  * Generische Subscribe-Abstraktion. Bei Provider-Wechsel nur hier tauschen.
  */
-function listenToChanges(serviceClient, entityName, callback) {
-  const entity = serviceClient.asServiceRole.entities[entityName];
+function listenToChanges(base44, entityName, callback) {
+  const entity = base44.entities[entityName];
   if (!entity || typeof entity.subscribe !== 'function') {
     console.error(`[sseUpdates] Entity "${entityName}" nicht subscribe-fähig.`);
     return () => {};
@@ -114,6 +117,16 @@ function listenToChanges(serviceClient, entityName, callback) {
 // ═════════════════════════════════════════════════════════════════════════
 
 Deno.serve(async (req) => {
+  if (req.method !== 'GET') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  }
+
   // ── Auth ─────────────────────────────────────────────────────────────────
   let user;
   let base44;
@@ -124,23 +137,21 @@ Deno.serve(async (req) => {
     console.warn('[sseUpdates] Auth-Fehler:', err?.message);
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
     });
   }
 
   if (!user) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
     });
   }
 
   console.log(`[sseUpdates] Stream gestartet für ${user.email}`);
 
-  // ── Service-Client für Subscriptions (Whitelist filtert Inhalte) ─────────
-  // Wir verwenden den bereits authentifizierten Request-Client; sein
-  // `asServiceRole` greift den platform-internen Service-Token automatisch.
-  const serviceClient = base44;
+  // ── User-Client für Subscriptions ─────────────────────────────────────────
+  // Wichtig: KEINE Service-Role, damit RLS/Tenant-Isolation für Realtime-Events greift.
 
   // ── Stream-Setup ─────────────────────────────────────────────────────────
   const encoder = new TextEncoder();
@@ -169,7 +180,7 @@ Deno.serve(async (req) => {
 
       // Subscriptions
       for (const entityName of WATCHED_ENTITIES) {
-        const unsub = listenToChanges(serviceClient, entityName, (payload) => {
+        const unsub = listenToChanges(base44, entityName, (payload) => {
           sendEvent(payload, 'entityUpdate');
         });
         unsubscribeFns.push(unsub);
@@ -215,6 +226,7 @@ Deno.serve(async (req) => {
       'Cache-Control': 'no-cache, no-transform',
       'Connection': 'keep-alive',
       'X-Accel-Buffering': 'no',
+      'Access-Control-Allow-Origin': '*',
     },
   });
 });
