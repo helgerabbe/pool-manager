@@ -57,21 +57,27 @@ async function logAuditEvent(base44, event) {
 }
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { einheitId } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { einheitId } = body;
     if (!einheitId) return Response.json({ error: 'einheitId required' }, { status: 400 });
 
     let einheit;
     try {
-      einheit = await base44.asServiceRole.entities.Einheiten.get(einheitId);
+      // RLS/Tenant-Isolation muss hier greifen: kein asServiceRole beim Laden der Ziel-Einheit.
+      einheit = await base44.entities.Einheiten.get(einheitId);
     } catch (_err) {
-      return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
+      return Response.json({ error: 'Einheit nicht gefunden oder keine Berechtigung' }, { status: 404 });
     }
-    if (!einheit) return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
+    if (!einheit) return Response.json({ error: 'Einheit nicht gefunden oder keine Berechtigung' }, { status: 404 });
 
     const profil = (await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email }))?.[0];
     if (!isAllowedForFach(profil, einheit.fach)) {
@@ -84,7 +90,7 @@ Deno.serve(async (req) => {
     const previousStatus = einheit.export_lifecycle_status || 'draft';
     const nowIso = new Date().toISOString();
 
-    await base44.asServiceRole.entities.Einheiten.update(einheitId, {
+    await base44.entities.Einheiten.update(einheitId, {
       export_lifecycle_status: STATUS_PUBLISHED,
       export_lifecycle_changed_at: nowIso,
       export_lifecycle_changed_by: user.email,
