@@ -113,3 +113,32 @@ export async function validateExportLockOrRespond(lernpaketId, base44) {
     throw err;
   }
 }
+
+Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const payload = await req.json().catch(() => ({}));
+    const { lernpaketId, entityId, entityType } = payload;
+    const resolvedLernpaketId = lernpaketId || (entityId && entityType
+      ? await resolveLernpaketId(entityId, entityType, base44)
+      : null);
+
+    if (!resolvedLernpaketId) {
+      return Response.json({ error: 'lernpaketId oder entityId/entityType erforderlich' }, { status: 400 });
+    }
+
+    const lockedResponse = await validateExportLockOrRespond(resolvedLernpaketId, base44);
+    if (lockedResponse) return lockedResponse;
+
+    return Response.json({ ok: true, locked: false });
+  } catch (error) {
+    return Response.json({ error: error.message || 'Unbekannter Fehler' }, { status: 500 });
+  }
+});
