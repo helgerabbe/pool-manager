@@ -123,7 +123,7 @@ async function filterInChunks(entity, fieldName, values, extraQuery = {}) {
 async function collectActiveLocks(base44, einheit, currentUserEmail) {
   const activeLocks = [];
 
-  const aufgaben = await base44.asServiceRole.entities.AllgemeineAufgabe.filter({
+  const aufgaben = await listAllByFilter(base44.asServiceRole.entities.AllgemeineAufgabe, {
     einheit_id: einheit.id,
   });
   for (const a of aufgaben || []) {
@@ -141,14 +141,14 @@ async function collectActiveLocks(base44, einheit, currentUserEmail) {
   // Lernpakete: DB-seitig über die zwei möglichen FK-Pfade laden, statt
   // alle Lernpakete der Instanz zu materialisieren. Das alte `Lernpakete.list()`
   // skalierte mit der Gesamtmenge — neu skaliert es mit der Einheit selbst.
-  const themenfelder = await base44.asServiceRole.entities.Themenfeld.filter({
+  const themenfelder = await listAllByFilter(base44.asServiceRole.entities.Themenfeld, {
     einheit_id: einheit.id,
   });
   const themenfeldIds = (themenfelder || []).map((t) => t.id);
   const [lpByEinheit, lpByThemenfeld] = await Promise.all([
-    base44.asServiceRole.entities.Lernpakete.filter({ einheit_id: einheit.id }),
+    listAllByFilter(base44.asServiceRole.entities.Lernpakete, { einheit_id: einheit.id }),
     themenfeldIds.length > 0
-      ? base44.asServiceRole.entities.Lernpakete.filter({ themenfeld_id: { $in: themenfeldIds } })
+      ? filterInChunks(base44.asServiceRole.entities.Lernpakete, 'themenfeld_id', themenfeldIds)
       : Promise.resolve([]),
   ]);
   const lernpaketeMap = new Map();
@@ -173,9 +173,11 @@ async function collectActiveLocks(base44, einheit, currentUserEmail) {
     // MasterAufgaben: DB-seitig auf die Pakete dieser Einheit eingrenzen
     // statt globaler Liste — vermeidet Speicher- und Latenz-Spitzen bei
     // wachsender Master-Anzahl.
-    const masters = await base44.asServiceRole.entities.MasterAufgabe.filter({
-      lernpaket_id: { $in: Array.from(lernpaketIds) },
-    });
+    const masters = await filterInChunks(
+      base44.asServiceRole.entities.MasterAufgabe,
+      'lernpaket_id',
+      Array.from(lernpaketIds)
+    );
     for (const m of masters || []) {
       if (!m.lock_status || !m.locked_by_user) continue;
       if (!isLockActive(m.locked_at)) continue;
@@ -320,14 +322,28 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Update ──────────────────────────────────────────────────────────
+    // ── Update mit Re-Read gegen TOCTOU ─────────────────────────────────
+    const latestEinheit = await base44.entities.Einheiten.get(einheitId).catch(() => null);
+    const latestStatus = latestEinheit?.export_lifecycle_status || STATUS_DRAFT;
+    if (!latestEinheit || latestStatus !== currentStatus) {
+      return Response.json(
+        {
+          error: 'Der Status wurde zwischenzeitlich geändert. Bitte neu laden.',
+          code: 'STATUS_CHANGED',
+          currentStatus: latestStatus,
+          expectedStatus: currentStatus,
+        },
+        { status: 409 }
+      );
+    }
+
     const nowIso = new Date().toISOString();
     const update = {
       export_lifecycle_status: newStatus,
       export_lifecycle_changed_at: nowIso,
       export_lifecycle_changed_by: user.email,
     };
-    await base44.asServiceRole.entities.Einheiten.update(einheitId, update);
+    await base44.entities.Einheiten.update(einheitId, update);
 
     await logAuditEvent(base44, {
       user: user.email,
