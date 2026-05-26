@@ -28,13 +28,37 @@
  *   400/403/404/422/423 mit Code + Details
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const EINHEIT_LOCKING_LIFECYCLES = new Set([
   'final_freigegeben',
   'export_running',
   'published',
 ]);
+
+const PAGE_SIZE = 500;
+
+async function listAllByFilter(entity, query, sort = 'created_date') {
+  const all = [];
+  let skip = 0;
+
+  while (true) {
+    const page = await entity.filter(query, sort, PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+
+  return all;
+}
+
+function recordsSignature(records) {
+  return (records || [])
+    .map((record) => `${record.id}:${record.updated_date || ''}:${record.content_status || ''}:${record.is_complete === true}`)
+    .sort()
+    .join('|');
+}
 
 // ---------------------------------------------------------------------------
 // Inline-Validierung (Kopie der Public-Lib für Backend-Isolation).
@@ -189,11 +213,11 @@ async function checkUserCanEditEinheit(base44, user, einheit) {
       : { allowed: false, rolle, reason: 'wrong_fach' };
   }
   if (rolle === 'Fachlehrkraft') {
-    const ms = await base44.asServiceRole.entities.EinheitMembers.filter({
-      einheit_id: einheit.id,
-      user_email: user.email,
-    });
-    const m = ms[0];
+  const ms = await listAllByFilter(base44.asServiceRole.entities.EinheitMembers, {
+    einheit_id: einheit.id,
+    user_email: user.email,
+  });
+  const m = ms[0];
     if (m && (m.unit_role === 'LEITUNG' || m.unit_role === 'EDITOR')) {
       return { allowed: true, rolle };
     }
@@ -207,12 +231,17 @@ async function checkUserCanEditEinheit(base44, user, einheit) {
 // ---------------------------------------------------------------------------
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { targetType, targetId, release } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { targetType, targetId, release } = body;
     if (!targetType || !targetId || typeof release !== 'boolean') {
       return Response.json(
         { error: 'targetType, targetId und release sind erforderlich' },
@@ -230,34 +259,27 @@ Deno.serve(async (req) => {
     let catalog = null;
 
     if (targetType === 'activity') {
-      const arr = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({ id: targetId });
-      target = arr[0];
-      if (!target) return Response.json({ error: 'Aktivität nicht gefunden' }, { status: 404 });
+      target = await base44.entities.LernpaketPhaseAktivitaet.get(targetId).catch(() => null);
+      if (!target) return Response.json({ error: 'Aktivität nicht gefunden oder nicht zugänglich' }, { status: 404 });
 
-      const lps = await base44.asServiceRole.entities.Lernpakete.filter({ id: target.lernpaket_id });
-      lernpaket = lps[0];
-      if (!lernpaket) return Response.json({ error: 'Parent-Lernpaket nicht gefunden' }, { status: 404 });
+      lernpaket = await base44.entities.Lernpakete.get(target.lernpaket_id).catch(() => null);
+      if (!lernpaket) return Response.json({ error: 'Parent-Lernpaket nicht gefunden oder nicht zugänglich' }, { status: 404 });
 
-      const eh = await base44.asServiceRole.entities.Einheiten.filter({ id: lernpaket.einheit_id });
-      einheit = eh[0];
+      einheit = await base44.entities.Einheiten.get(lernpaket.einheit_id).catch(() => null);
 
-      const cat = await base44.asServiceRole.entities.AktivitaetenKatalog.filter({ id: target.aktivitaet_id });
+      const cat = await listAllByFilter(base44.asServiceRole.entities.AktivitaetenKatalog, { id: target.aktivitaet_id });
       catalog = cat[0];
     } else if (targetType === 'lernpaket') {
-      const arr = await base44.asServiceRole.entities.Lernpakete.filter({ id: targetId });
-      target = arr[0];
-      if (!target) return Response.json({ error: 'Lernpaket nicht gefunden' }, { status: 404 });
+      target = await base44.entities.Lernpakete.get(targetId).catch(() => null);
+      if (!target) return Response.json({ error: 'Lernpaket nicht gefunden oder nicht zugänglich' }, { status: 404 });
 
-      const eh = await base44.asServiceRole.entities.Einheiten.filter({ id: target.einheit_id });
-      einheit = eh[0];
+      einheit = await base44.entities.Einheiten.get(target.einheit_id).catch(() => null);
     } else {
       // allgemeine_aufgabe (inkl. Projekt)
-      const arr = await base44.asServiceRole.entities.AllgemeineAufgabe.filter({ id: targetId });
-      target = arr[0];
-      if (!target) return Response.json({ error: 'Aufgabe nicht gefunden' }, { status: 404 });
+      target = await base44.entities.AllgemeineAufgabe.get(targetId).catch(() => null);
+      if (!target) return Response.json({ error: 'Aufgabe nicht gefunden oder nicht zugänglich' }, { status: 404 });
 
-      const eh = await base44.asServiceRole.entities.Einheiten.filter({ id: target.einheit_id });
-      einheit = eh[0];
+      einheit = await base44.entities.Einheiten.get(target.einheit_id).catch(() => null);
     }
 
     if (!einheit) return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
