@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 /**
  * releaseLockSimple
@@ -8,6 +8,10 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
  * Erfolg: {success: true}
  */
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -16,7 +20,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { lernpaketId } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { lernpaketId } = body;
 
     if (!lernpaketId) {
       return Response.json({ error: 'lernpaketId required' }, { status: 400 });
@@ -33,6 +38,20 @@ Deno.serve(async (req) => {
       return Response.json(
         { error: 'Lock does not belong to you' },
         { status: 403 }
+      );
+    }
+
+    const latestPaket = await base44.entities.Lernpakete.get(lernpaketId).catch(() => null);
+    if (!latestPaket) {
+      return Response.json({ error: 'Lernpaket not found' }, { status: 404 });
+    }
+
+    const sameLockOwner = (latestPaket.locked_by_email || null) === (paket.locked_by_email || null);
+    const sameLockTimestamp = (latestPaket.locked_at || null) === (paket.locked_at || null);
+    if (!sameLockOwner || !sameLockTimestamp) {
+      return Response.json(
+        { error: 'Der Lock wurde zwischenzeitlich geändert. Bitte neu laden.', code: 'LOCK_CHANGED' },
+        { status: 409 }
       );
     }
 
