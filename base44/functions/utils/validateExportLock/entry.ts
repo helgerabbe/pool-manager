@@ -4,11 +4,13 @@
  * Zentrale Guard-Funktion für Moodle-Export-Lock-Validierung.
  * Blockiert alle Schreib-Operationen (update/delete) während eines laufenden Exports.
  *
- * KRITISCH: Diese Funktion MUSS vor jeder Änderung an:
- * - LernpaketPhaseAktivitaet
- * - MasterAufgabe
- * - Aufgabenbausteine (Klone)
- * aufgerufen werden.
+ * WICHTIG: Diese Funktion ist nur eine Vorab-Prüfung für UI/Handler-Logik.
+ * Schreibende Endpunkte müssen unmittelbar vor dem finalen Update weiterhin
+ * per Re-Read/OCC prüfen, dass sich Export- und Sync-Status nicht geändert haben.
+ *
+ * Backend-Hinweis: Base44 Edge-Functions erlauben keine lokalen Imports zwischen
+ * Funktionsdateien. Bei Nutzung in anderen Funktionen muss die Logik inline
+ * übernommen oder über eine eigene Backend-Funktion aufgerufen werden.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
@@ -21,34 +23,38 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
  * @returns {Promise<void>} - Wirft einen Error, wenn Export läuft
  * @throws {Error} HTTP 423 Locked wenn export_locked === true oder moodle_sync_status === 'locked'
  */
+export class ExportLockError extends Error {
+  constructor(details) {
+    super('Einheit ist zur Moodle-Synchronisation gesperrt. Bitte versuchen Sie es später erneut.');
+    this.name = 'ExportLockError';
+    this.isExportLocked = true;
+    this.status = 423;
+    this.code = 'EXPORT_LOCKED';
+    this.details = details;
+  }
+}
+
 export async function validateExportLock(lernpaketId, base44) {
   if (!lernpaketId || !base44) {
     throw new Error('validateExportLock: lernpaketId und base44 sind erforderlich');
   }
 
-  // Lernpaket aus DB laden
-  const lernpakete = await base44.entities.Lernpakete.filter({ id: lernpaketId });
-  if (!lernpakete || lernpakete.length === 0) {
+  // Lernpaket gezielt per Primärschlüssel laden.
+  const lernpaket = await base44.entities.Lernpakete.get(lernpaketId).catch(() => null);
+  if (!lernpaket) {
     throw new Error(`validateExportLock: Lernpaket ${lernpaketId} nicht gefunden`);
   }
-
-  const lernpaket = lernpakete[0];
 
   // HARTE WEICHE: Export-Lock-Status prüfen
   // Zwei Bedingungen reichen aus, um zu blockieren:
   // 1. export_locked === true (explizit für Moodle-Synchronisation gesperrt)
   // 2. moodle_sync_status === 'locked' (im Sync-Prozess)
   if (lernpaket.export_locked === true || lernpaket.moodle_sync_status === 'locked') {
-    throw {
-      status: 423,
-      code: 'EXPORT_LOCKED',
-      message: 'Einheit ist zur Moodle-Synchronisation gesperrt. Bitte versuchen Sie es später erneut.',
-      details: {
-        lernpaketId,
-        export_locked: lernpaket.export_locked,
-        moodle_sync_status: lernpaket.moodle_sync_status,
-      },
-    };
+    throw new ExportLockError({
+      lernpaketId,
+      export_locked: lernpaket.export_locked,
+      moodle_sync_status: lernpaket.moodle_sync_status,
+    });
   }
 }
 
@@ -63,19 +69,19 @@ export async function validateExportLock(lernpaketId, base44) {
  */
 export async function resolveLernpaketId(entityId, entityType, base44) {
   if (entityType === 'activity') {
-    const activities = await base44.entities.LernpaketPhaseAktivitaet.filter({ id: entityId });
-    if (activities && activities.length > 0) {
-      return activities[0].lernpaket_id;
+    const activity = await base44.entities.LernpaketPhaseAktivitaet.get(entityId).catch(() => null);
+    if (activity) {
+      return activity.lernpaket_id;
     }
   } else if (entityType === 'task' || entityType === 'master') {
-    const tasks = await base44.entities.MasterAufgabe.filter({ id: entityId });
-    if (tasks && tasks.length > 0) {
-      return tasks[0].lernpaket_id;
+    const task = await base44.entities.MasterAufgabe.get(entityId).catch(() => null);
+    if (task) {
+      return task.lernpaket_id;
     }
   } else if (entityType === 'klon') {
-    const klone = await base44.entities.Aufgabenbausteine.filter({ id: entityId });
-    if (klone && klone.length > 0) {
-      return klone[0].lernpaket_id;
+    const klon = await base44.entities.Aufgabenbausteine.get(entityId).catch(() => null);
+    if (klon) {
+      return klon.lernpaket_id;
     }
   }
   throw new Error(`resolveLernpaketId: Konnte Lernpaket-ID nicht ermitteln für ${entityType}:${entityId}`);
