@@ -223,15 +223,17 @@ Deno.serve(async (req) => {
 
     const summary = { created: 0, updated: 0, deleted: 0 };
 
+    const deleteOps = [];
+    const updateOps = [];
+    const createOps = [];
+
     // 1. Bestehende durchgehen → entweder behalten/aktualisieren oder löschen.
     for (const m of existing || []) {
       const desiredForAufgabe = desired.get(m.aufgabe_id);
       const desiredSektor = desiredForAufgabe?.get(m.lerntyp);
 
       if (!desiredSektor) {
-        // Aufgabe ist in diesem Lerntyp nicht mehr enthalten → löschen.
-        await base44.asServiceRole.entities.LernpfadAufgabeMembership.delete(m.id);
-        summary.deleted += 1;
+        deleteOps.push(() => base44.asServiceRole.entities.LernpfadAufgabeMembership.delete(m.id));
         continue;
       }
 
@@ -239,11 +241,10 @@ Deno.serve(async (req) => {
       // Phase G: Wenn die Aufgabe in einen anderen Sektor wandert, gilt das
       // als "Lehrkraft hat den Pfad überarbeitet" → export_error zurücksetzen.
       if (m.sektor_id !== desiredSektor) {
-        await base44.asServiceRole.entities.LernpfadAufgabeMembership.update(m.id, {
+        updateOps.push(() => base44.asServiceRole.entities.LernpfadAufgabeMembership.update(m.id, {
           sektor_id: desiredSektor,
           export_error: false,
-        });
-        summary.updated += 1;
+        }));
       }
 
       // Aus desired entfernen, damit am Ende nur noch fehlende übrig bleiben.
@@ -254,16 +255,19 @@ Deno.serve(async (req) => {
     // 2. Restliche desired-Einträge sind neu anzulegen (immer als 'draft').
     for (const [aufgabe_id, lerntypMap] of desired.entries()) {
       for (const [lerntyp, sektor_id] of lerntypMap.entries()) {
-        await base44.asServiceRole.entities.LernpfadAufgabeMembership.create({
+        createOps.push(() => base44.asServiceRole.entities.LernpfadAufgabeMembership.create({
           einheit_id: einheitId,
           aufgabe_id,
           lerntyp,
           sektor_id,
           pfad_status: 'draft',
-        });
-        summary.created += 1;
+        }));
       }
     }
+
+    summary.deleted = await runBatched(deleteOps);
+    summary.updated = await runBatched(updateOps);
+    summary.created = await runBatched(createOps);
 
     // ── Phase E.3: Drift-Report ableiten ──────────────────────────────
     // Wir laden die Memberships nach dem Sync neu, damit auch frisch
