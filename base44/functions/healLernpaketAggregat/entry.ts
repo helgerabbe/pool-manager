@@ -31,51 +31,42 @@ Deno.serve(async (req) => {
     }
 
     const PAGE_SIZE = 200;
+    const UPDATE_CHUNK_SIZE = 10;
     let touched = 0;
     let skipped = 0;
     let errors = 0;
     let cursor = 0;
 
-    // Wir laden alle Activities seitenweise und touchen jede einmal.
-    // base44 SDK erlaubt skip/limit über filter-Parameter.
+    const touchActivity = async (activity) => {
+      if (!activity?.id) {
+        skipped += 1;
+        return;
+      }
+
+      try {
+        // 1:1 zurückschreiben → Update-Event triggert Guardian.
+        await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(activity.id, {
+          is_complete: activity.is_complete === true,
+        });
+        touched += 1;
+      } catch (e) {
+        console.warn('[healLernpaketAggregat] update failed', activity.id, e?.message);
+        errors += 1;
+      }
+    };
+
+    // Stabile, paginierte Verarbeitung: filter({}, 'id', limit, skip).
     while (true) {
-      const batch = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.list(
-        '-created_date',
+      const batch = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter(
+        {},
+        'id',
         PAGE_SIZE,
         cursor
       );
       if (!Array.isArray(batch) || batch.length === 0) break;
 
-      for (const activity of batch) {
-        if (!activity?.id) {
-          skipped += 1;
-          continue;
-        }
-        // Throttling: 150ms zwischen Updates, um Rate Limit zu respektieren.
-        await new Promise((r) => setTimeout(r, 150));
-        try {
-          // 1:1 zurückschreiben → Update-Event triggert Guardian.
-          await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(activity.id, {
-            is_complete: activity.is_complete === true,
-          });
-          touched += 1;
-        } catch (e) {
-          // Bei Rate Limit: kurz warten und einmal retryen.
-          if (String(e?.message || '').includes('Rate limit')) {
-            await new Promise((r) => setTimeout(r, 1500));
-            try {
-              await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(activity.id, {
-                is_complete: activity.is_complete === true,
-              });
-              touched += 1;
-              continue;
-            } catch (e2) {
-              console.warn('[healLernpaketAggregat] retry failed', activity.id, e2?.message);
-            }
-          }
-          console.warn('[healLernpaketAggregat] update failed', activity.id, e?.message);
-          errors += 1;
-        }
+      for (let i = 0; i < batch.length; i += UPDATE_CHUNK_SIZE) {
+        await Promise.all(batch.slice(i, i + UPDATE_CHUNK_SIZE).map(touchActivity));
       }
 
       if (batch.length < PAGE_SIZE) break;
