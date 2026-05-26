@@ -3,6 +3,14 @@
  *
  * Entity-Automation-Handler auf MasterAufgabe (create + update + delete).
  *
+ * ⚠️ ENDLOSSCHLEIFE-SCHUTZ:
+ *   Dieses Skript wird als Webhook-Handler getriggert und führt ein Update
+ *   auf MasterAufgabe durch (Zeile 132). Das Update könnte ein neues
+ *   Webhook-Event triggern. Schutz durch:
+ *   1. Idempotenz-Check in Zeile 131: if (masterData.is_complete !== isComplete)
+ *   2. Secure-Webhook-Token: Nur Base44-interne Automationen dürfen triggern
+ *   3. Datenbank-Trigger (Supabase-Zukunft): BEFORE UPDATE statt Webhook
+ *
  * Zweck: 
  * 1. Bei create/delete: Touch der Parent-Activity, damit der Guardian
  *    is_complete neu berechnet (Aggregat-Lücke schließen).
@@ -21,6 +29,31 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+
+const PAGE_SIZE = 500;
+
+async function listAllMasters(entity, query) {
+  const all = [];
+  let skip = 0;
+  while (true) {
+    const page = await entity.filter(query, 'reihenfolge', PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+  return all;
+}
+
+function validateWebhookSecret(req) {
+  const authHeader = req.headers.get('authorization') || '';
+  const token = authHeader.replace('Bearer ', '');
+  const expectedSecret = Deno.env.get('MASTER_AUFGABE_TOUCH_SECRET');
+  if (!expectedSecret || !token || token !== expectedSecret) {
+    return false;
+  }
+  return true;
+}
 
 // ── Vollständigkeitsprüfung pro Typ ──────────────────────────────────────────
 
@@ -96,8 +129,12 @@ function isMasterComplete(catalogName = '', fieldValues = {}) {
 
 Deno.serve(async (req) => {
   try {
+    if (!validateWebhookSecret(req)) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const base44 = createClientFromRequest(req);
-    const payload = await req.json();
+    const payload = await req.json().catch(() => ({}));
 
     const event = payload?.event || {};
     const eventType = event.type; // 'create' | 'update' | 'delete'
@@ -150,9 +187,11 @@ Deno.serve(async (req) => {
     // Eine Activity ist nur freigegeben, wenn mindestens ein Master existiert
     // UND alle Master freigegeben sind. Create/Delete/Update ziehen damit
     // den Parent-Status serverseitig zuverlässig nach.
-    const allMasters = await base44.asServiceRole.entities.MasterAufgabe.filter({
-      activity_id: activityId,
-    });
+    // Pagination: Alle Masters vollständig laden (Pagination-Falle vermeiden).
+    const allMasters = await listAllMasters(
+      base44.asServiceRole.entities.MasterAufgabe,
+      { activity_id: activityId }
+    );
     const allMastersApproved =
       allMasters.length > 0 && allMasters.every((m) => m.content_status === 'approved');
 
