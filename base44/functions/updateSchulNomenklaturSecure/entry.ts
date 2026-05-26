@@ -2,8 +2,8 @@
  * updateSchulNomenklaturSecure.js
  *
  * Upsert eines `SchulNomenklatur`-Datensatzes (pro Fach genau einer).
- * Schreibt mit Service-Role und umgeht damit die admin-only RLS auf der
- * Entity, prüft aber selbst hart, dass der Aufrufer berechtigt ist:
+ * Läuft für SchulNomenklatur im regulären User-Kontext, damit RLS und
+ * Mandantentrennung erhalten bleiben. Zusätzlich wird geprüft:
  *   - Plattform-Admin (user.role === 'admin'), oder
  *   - App-Rolle Administrator, oder
  *   - App-Rolle Fachschaftsleitung MIT `fach` in `fachbereich_zustaendigkeit`.
@@ -61,6 +61,10 @@ function normalizeConventions(input) {
 }
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST' && req.method !== 'PUT') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -109,7 +113,7 @@ Deno.serve(async (req) => {
     let rolleApp = null;
     let zustaendigkeit = [];
     if (!darfPflegen) {
-      const profil = (await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email }))?.[0];
+      const profil = (await base44.entities.Benutzer.filter({ user_id: user.email }))?.[0];
       rolleApp = profil?.rolle || null;
       zustaendigkeit = Array.isArray(profil?.fachbereich_zustaendigkeit) ? profil.fachbereich_zustaendigkeit : [];
 
@@ -131,8 +135,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ── Upsert über `fach` ──────────────────────────────────────────────
-    const existing = (await base44.asServiceRole.entities.SchulNomenklatur.filter({ fach: fachNorm }))?.[0] || null;
+    // ── RLS-sicherer Upsert über `fach` ─────────────────────────────────
+    const existing = (await base44.entities.SchulNomenklatur.filter({ fach: fachNorm }))?.[0] || null;
 
     const data = {
       fach: fachNorm,
@@ -144,11 +148,28 @@ Deno.serve(async (req) => {
     let record;
     let created = false;
     if (existing) {
-      await base44.asServiceRole.entities.SchulNomenklatur.update(existing.id, data);
-      record = await base44.asServiceRole.entities.SchulNomenklatur.get(existing.id);
+      const latest = await base44.entities.SchulNomenklatur.get(existing.id).catch(() => null);
+      if (!latest || latest.updated_date !== existing.updated_date) {
+        return Response.json(
+          { error: 'Nomenklatur wurde zwischenzeitlich geändert. Bitte neu laden.', code: 'VERSION_CHANGED' },
+          { status: 409 }
+        );
+      }
+      const updated = await base44.entities.SchulNomenklatur.update(existing.id, data);
+      record = updated || { ...existing, ...data };
     } else {
-      record = await base44.asServiceRole.entities.SchulNomenklatur.create(data);
-      created = true;
+      const createdMeanwhile = (await base44.entities.SchulNomenklatur.filter({ fach: fachNorm }))?.[0] || null;
+      if (createdMeanwhile) {
+        const updateData = {
+          ...data,
+          ist_aktiv: typeof ist_aktiv === 'boolean' ? ist_aktiv : (createdMeanwhile.ist_aktiv ?? true),
+        };
+        const updated = await base44.entities.SchulNomenklatur.update(createdMeanwhile.id, updateData);
+        record = updated || { ...createdMeanwhile, ...updateData };
+      } else {
+        record = await base44.entities.SchulNomenklatur.create(data);
+        created = true;
+      }
     }
 
     await logAuditEvent(base44, {

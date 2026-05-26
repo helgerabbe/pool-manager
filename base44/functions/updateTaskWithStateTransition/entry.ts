@@ -18,7 +18,7 @@
  *   to_delete     → blockiert (409 Conflict)
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 // State Machine Konstanten
 const TASK_SYNC_STATUS = {
@@ -137,6 +137,10 @@ function computeSyncStatusForSave(currentSyncStatus, isContentChange, isMaster =
  * Hauptfunktion: Task mit State-Machine-Validierung aktualisieren
  */
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
 
@@ -152,7 +156,9 @@ Deno.serve(async (req) => {
     }
 
     // Payload auslesen
-    const { taskId, updates } = await req.json();
+    const payload = await req.json().catch(() => ({}));
+    const { taskId } = payload;
+    const updates = payload?.updates && typeof payload.updates === 'object' ? payload.updates : {};
 
     if (!taskId) {
       return Response.json(
@@ -164,7 +170,7 @@ Deno.serve(async (req) => {
     // ─────────────────────────────────────────────────────────────────────
     // 2. Aktuellen Task laden (MasterAufgabe oder Klon)
     // ─────────────────────────────────────────────────────────────────────
-    const currentTask = await base44.asServiceRole.entities.Aufgabenbausteine.read(taskId);
+    const currentTask = await base44.entities.Aufgabenbausteine.get(taskId).catch(() => null);
 
     if (!currentTask) {
       return Response.json(
@@ -182,14 +188,30 @@ Deno.serve(async (req) => {
       updates.titel !== undefined;
 
     if (isContentChange && currentTask.lernpaket_id) {
-      const lernpaket = await base44.asServiceRole.entities.Lernpakete.read(
+      const lernpaket = await base44.entities.Lernpakete.get(
         currentTask.lernpaket_id
-      );
+      ).catch(() => null);
 
       if (!lernpaket) {
         return Response.json(
-          { error: 'Lernpaket nicht gefunden' },
+          { error: 'Lernpaket nicht gefunden oder nicht zugänglich' },
           { status: 404 }
+        );
+      }
+
+      const einheit = lernpaket.einheit_id
+        ? await base44.entities.Einheiten.get(lernpaket.einheit_id).catch(() => null)
+        : null;
+      if (lernpaket.einheit_id && !einheit) {
+        return Response.json(
+          { error: 'Einheit nicht gefunden oder nicht zugänglich' },
+          { status: 404 }
+        );
+      }
+      if (['final_freigegeben', 'export_running', 'published'].includes(einheit?.export_lifecycle_status)) {
+        return Response.json(
+          { error: 'Einheit ist final freigegeben — Bearbeitung gesperrt', code: 'EINHEIT_FINAL_LOCKED' },
+          { status: 423 }
         );
       }
 
@@ -230,7 +252,15 @@ Deno.serve(async (req) => {
       last_synced_at: currentTask.last_synced_at,
     };
 
-    const updatedTask = await base44.asServiceRole.entities.Aufgabenbausteine.update(
+    const latestTask = await base44.entities.Aufgabenbausteine.get(taskId).catch(() => null);
+    if (!latestTask || latestTask.updated_date !== currentTask.updated_date || latestTask.sync_status !== currentTask.sync_status) {
+      return Response.json(
+        { error: 'Aufgabe wurde zwischenzeitlich geändert. Bitte neu laden.', code: 'VERSION_CHANGED' },
+        { status: 409 }
+      );
+    }
+
+    const updatedTask = await base44.entities.Aufgabenbausteine.update(
       taskId,
       updatePayload
     );
