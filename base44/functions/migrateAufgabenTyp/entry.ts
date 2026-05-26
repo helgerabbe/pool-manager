@@ -13,6 +13,38 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+const PAGE_SIZE = 500;
+const UPDATE_BATCH_SIZE = 25;
+
+async function listAllCandidates(entity) {
+  const queries = [
+    { aufgaben_typ: null },
+    { aufgaben_typ: '' },
+  ];
+  const byId = new Map();
+
+  for (const query of queries) {
+    let skip = 0;
+    while (true) {
+      const page = await entity.filter(query, 'created_date', PAGE_SIZE, skip);
+      if (!page || page.length === 0) break;
+      for (const record of page) byId.set(record.id, record);
+      if (page.length < PAGE_SIZE) break;
+      skip += PAGE_SIZE;
+    }
+  }
+
+  return Array.from(byId.values());
+}
+
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
 Deno.serve(async (req) => {
   if (req.method !== 'POST') {
     return Response.json({ error: 'Method not allowed' }, { status: 405 });
@@ -37,16 +69,11 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const dryRun = body?.dryRun === true;
 
-    // Alle Aufgaben laden (Service-Role, damit auch Datensätze ohne RLS-Match erfasst werden)
-    const all = await base44.asServiceRole.entities.AllgemeineAufgabe.list();
-
-    // Kandidaten = aufgaben_typ ist leer / nicht gesetzt
-    const candidates = all.filter(
-      (a) => a.aufgaben_typ === undefined || a.aufgaben_typ === null || a.aufgaben_typ === ''
-    );
+    // Kandidaten direkt in der DB filtern und vollständig paginiert laden.
+    const candidates = await listAllCandidates(base44.asServiceRole.entities.AllgemeineAufgabe);
 
     const result = {
-      total: all.length,
+      total: candidates.length,
       candidates: candidates.length,
       updated: 0,
       failed: 0,
@@ -59,17 +86,27 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, ...result, mode: 'dry-run' });
     }
 
-    // Batch-Update sequentiell, um Rate-Limits zu schonen.
-    for (const aufgabe of candidates) {
-      try {
-        await base44.asServiceRole.entities.AllgemeineAufgabe.update(aufgabe.id, {
-          aufgaben_typ: 'inhalt',
-        });
-        result.updated++;
-      } catch (err) {
-        result.failed++;
-        result.failures.push({ id: aufgabe.id, error: err?.message || String(err) });
-      }
+    // Updates in kleinen parallelen Batches ausführen, damit die Function nicht in N+1-Latenz läuft.
+    for (const batch of chunkArray(candidates, UPDATE_BATCH_SIZE)) {
+      const settled = await Promise.allSettled(
+        batch.map((aufgabe) =>
+          base44.asServiceRole.entities.AllgemeineAufgabe.update(aufgabe.id, {
+            aufgaben_typ: 'inhalt',
+          })
+        )
+      );
+
+      settled.forEach((entry, index) => {
+        if (entry.status === 'fulfilled') {
+          result.updated++;
+        } else {
+          result.failed++;
+          result.failures.push({
+            id: batch[index]?.id,
+            error: entry.reason?.message || String(entry.reason),
+          });
+        }
+      });
     }
 
     // Audit-Log (best effort)
