@@ -14,7 +14,24 @@
  * Läuft alle 30 Sekunden via Automation (scheduled).
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+
+const PAGE_SIZE = 500;
+
+async function listAll(entity, query) {
+  const all = [];
+  let skip = 0;
+
+  while (true) {
+    const page = await entity.filter(query, 'created_date', PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+
+  return all;
+}
 
 // Lock Reaper – AFK-Polish 2026-05-14:
 // Timeout für verwaiste Sperren von 30 Min auf 5 Min reduziert. Aktive
@@ -119,24 +136,24 @@ Deno.serve(async (req) => {
 
       let staleLocks = [];
       try {
-        // Filter: Lock gesetzt UND älter als Threshold
-        staleLocks = await entity.filter({
-          [lockField]: { $ne: null }, // Lock ist gesetzt
-          [lockTimeField]: { $lt: staleThreshold }, // älter als Threshold
+        // Filter: Lock gesetzt UND älter als Threshold – vollständig paginiert.
+        staleLocks = await listAll(entity, {
+          [lockField]: { $ne: null },
+          [lockTimeField]: { $lt: staleThreshold },
         });
       } catch (filterError) {
-        // Fallback: Wenn komplexe Filter nicht unterstützt, laden und filtern
+        // Fallback: Wenn komplexe Filter nicht unterstützt, paginiert laden und clientseitig filtern.
         console.warn(
-          `[lockReaper] DB-level filtering failed for ${name}, using client-side filter`,
+          `[lockReaper] DB-level filtering failed for ${name}, using paginated client-side filter`,
           filterError.message
         );
         try {
-          const allWithLock = await entity.filter({
+          const allWithLock = await listAll(entity, {
             [lockField]: { $ne: null },
           });
           staleLocks = allWithLock.filter(record => {
             const lockTime = record[lockTimeField];
-            if (!lockTime) return true; // Kein Timestamp = veraltet
+            if (!lockTime) return true;
             return new Date(lockTime).getTime() < now - LOCK_TIMEOUT_MS;
           });
         } catch (fallbackError) {
@@ -166,12 +183,14 @@ Deno.serve(async (req) => {
       for (let i = 0; i < staleLocks.length; i += BATCH_SIZE) {
         const batch = staleLocks.slice(i, i + BATCH_SIZE);
         const batchPromise = Promise.all(
-          batch.map(record =>
-            entity.update(record.id, updatePayload).then(() => {
-              const owner = ownerField ? record[ownerField] : record[lockField];
+          batch.map(record => {
+            const ownerBeforeUpdate = ownerField ? record[ownerField] : record[lockField];
+            const lockedAtBeforeUpdate = record[lockTimeField];
+
+            return entity.update(record.id, updatePayload).then(() => {
               console.info(
                 `[lockReaper] Released stale lock: ${name}/${record.id} ` +
-                `(held by ${owner} since ${record[lockTimeField]})`
+                `(held by ${ownerBeforeUpdate || 'unknown'} since ${lockedAtBeforeUpdate || 'unknown'})`
               );
               return 1;
             }).catch(err => {
@@ -180,8 +199,8 @@ Deno.serve(async (req) => {
                 err.message
               );
               return 0;
-            })
-          )
+            });
+          })
         );
         batches.push(batchPromise);
       }

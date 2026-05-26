@@ -1,15 +1,81 @@
 /**
  * lockTaskSecure.js
- * 
- * Sperrt eine Aufgabe mit RBAC-Prüfung.
- * - Nutzer muss Berechtigung für die Einheit haben
+ *
+ * Sperrt eine Aufgabe im User-Kontext.
+ * - RLS/Tenant-Isolation greift über base44.entities.*
+ * - Lifecycle-Hard-Lock bleibt erhalten
  * - Lock läuft nach 60 Minuten automatisch ab
- * - Verhindert unbefugte Sperren
+ * - Best-effort OCC: Version-Bump + Re-Read-Verify
+ *
+ * Hinweis: Ohne echte bedingte DB-Updates bleibt vollständige Atomizität eine
+ * Aufgabe für DB-Trigger bzw. native OCC-Policies.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+const LOCK_TIMEOUT_MS = 60 * 60 * 1000;
+
+async function acquireTaskLock(base44, taskId, userEmail) {
+  const aufgabe = await base44.entities.AllgemeineAufgabe.get(taskId).catch(() => null);
+  if (!aufgabe) {
+    return { ok: false, reason: 'not_found' };
+  }
+
+  const einheit = await base44.entities.Einheiten.get(aufgabe.einheit_id).catch(() => null);
+  if (!einheit) {
+    return { ok: false, reason: 'einheit_not_found' };
+  }
+
+  const lifecycleStatus = einheit.export_lifecycle_status || 'draft';
+  if (lifecycleStatus === 'final_freigegeben' || lifecycleStatus === 'export_running') {
+    return { ok: false, reason: 'lifecycle_locked', lifecycleStatus };
+  }
+
+  const lockedByOther = aufgabe.locked_by && aufgabe.locked_by !== userEmail;
+  const lockAge = aufgabe.locked_at ? Date.now() - new Date(aufgabe.locked_at).getTime() : Infinity;
+  const isStale = lockAge > LOCK_TIMEOUT_MS;
+
+  if (lockedByOther && !isStale) {
+    return {
+      ok: false,
+      reason: 'busy',
+      lockedBy: aufgabe.locked_by,
+      lockedAt: aufgabe.locked_at,
+    };
+  }
+
+  if (aufgabe.locked_by && isStale) {
+    console.log('[lockTaskSecure] Stale lock detected, overriding');
+  }
+
+  const currentVersion = Number.isFinite(aufgabe.version) ? aufgabe.version : 1;
+  const nextVersion = currentVersion + 1;
+  const lockedAt = new Date().toISOString();
+
+  await base44.entities.AllgemeineAufgabe.update(taskId, {
+    locked_by: userEmail,
+    locked_at: lockedAt,
+    version: nextVersion,
+  });
+
+  const verify = await base44.asServiceRole.entities.AllgemeineAufgabe.get(taskId);
+  if (verify?.locked_by !== userEmail) {
+    return {
+      ok: false,
+      reason: 'race_lost',
+      lockedBy: verify?.locked_by || null,
+      lockedAt: verify?.locked_at || null,
+    };
+  }
+
+  return { ok: true, version: nextVersion, lockedAt };
+}
+
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -18,108 +84,47 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { taskId } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { taskId } = body;
 
     if (!taskId) {
       return Response.json({ error: 'taskId required' }, { status: 400 });
     }
 
-    // Hole Aufgabe + Einheit
-    const aufgabe = await base44.entities.AllgemeineAufgabe.get(taskId);
+    const result = await acquireTaskLock(base44, taskId, user.email);
 
-    if (!aufgabe) {
+    if (result.ok) {
+      return Response.json({ success: true, version: result.version, locked_at: result.lockedAt });
+    }
+
+    if (result.reason === 'not_found') {
       return Response.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    const einheit = await base44.entities.Einheiten.get(aufgabe.einheit_id);
-
-    if (!einheit) {
+    if (result.reason === 'einheit_not_found') {
       return Response.json({ error: 'Einheit not found' }, { status: 404 });
     }
 
-    // ── Lifecycle Hard-Lock ────────────────────────────────────────────
-    // Final freigegebene oder im Export befindliche Einheiten dürfen
-    // gar keinen Edit-Lock mehr vergeben — auch nicht für Admins. Damit
-    // ist sichergestellt, dass der „Bearbeiten"-Pfad in Tab 5 frühzeitig
-    // hart blockt, statt am Ende beim Save zu kippen.
-    const lifecycleStatus = einheit.export_lifecycle_status || 'draft';
-    if (lifecycleStatus === 'final_freigegeben' || lifecycleStatus === 'export_running') {
+    if (result.reason === 'lifecycle_locked') {
       return Response.json(
         {
           error: 'Die Einheit ist final freigegeben und gesperrt. Aufgaben können nicht bearbeitet werden, solange die Einheit-Freigabe aktiv ist.',
           code: 'EINHEIT_FINAL_LOCKED',
-          lifecycleStatus,
+          lifecycleStatus: result.lifecycleStatus,
         },
         { status: 423 }
       );
     }
 
-    // RBAC: Prüfe Berechtigung für diese Einheit
-    const istAdmin = user.role === 'admin';
-    
-    if (!istAdmin) {
-      // Prüfe Unit-Level-Mitgliedschaft oder Fach-Zugehörigkeit
-      const benutzer = await base44.asServiceRole.entities.Benutzer.filter({
-        user_id: user.email,
-      });
-      const benutzerRecord = benutzer?.[0];
-      const istFachschaft = benutzerRecord?.rolle === 'Fachschaftsleitung';
-      const fachzustaendig = benutzerRecord?.fachbereich_zustaendigkeit?.includes(einheit.fach) || false;
-
-      // Fachschaft oder zuständig für Fach → OK
-      if (!istFachschaft && !fachzustaendig) {
-        // Prüfe Unit-Level-Mitgliedschaft
-        const members = await base44.asServiceRole.entities.EinheitMembers.filter({
-          einheit_id: einheit.id,
-          user_email: user.email,
-        });
-
-        if (members.length === 0) {
-          return Response.json(
-            { error: 'Keine Berechtigung für diese Einheit' },
-            { status: 403 }
-          );
-        }
-      }
-    }
-
-    // Hinweis (Schritt 2 des 3-stufigen Freigabe-Workflows):
-    // Hier wurde früher der Pfad-Status (LernpfadAufgabeMembership.pfad_status)
-    // geprüft, um Inhalts-Edits an Aufgaben in einem geprüften Dashboard zu
-    // blockieren. Diese Sperre ist jetzt vom Dashboard-Lock entkoppelt –
-    // die finale Inhalts-Sperre kommt erst mit der Einheits-Freigabe
-    // (Schritt 3) und wird dort an dieser Stelle re-implementiert.
-
-    // Prüfe bestehenden Lock
-    if (aufgabe.locked_by && aufgabe.locked_by !== user.email) {
-      const lockAge = aufgabe.locked_at
-        ? Date.now() - new Date(aufgabe.locked_at).getTime()
-        : Infinity;
-      const sixtyMinutes = 60 * 60 * 1000;
-
-      if (lockAge < sixtyMinutes) {
-        // Lock ist noch aktiv → blockieren
-        return Response.json(
-          {
-            error: `Wird gerade von ${aufgabe.locked_by} bearbeitet.`,
-            locked_by: aufgabe.locked_by,
-            locked_at: aufgabe.locked_at,
-          },
-          { status: 409 }
-        );
-      }
-
-      // Stale lock → wird überschrieben
-      console.log('[lockTaskSecure] Stale lock detected, overriding');
-    }
-
-    // Sperre setzen
-    await base44.entities.AllgemeineAufgabe.update(taskId, {
-      locked_by: user.email,
-      locked_at: new Date().toISOString(),
-    });
-
-    return Response.json({ success: true });
+    return Response.json(
+      {
+        error: `Wird gerade von ${result.lockedBy || 'einer anderen Person'} bearbeitet.`,
+        locked_by: result.lockedBy,
+        locked_at: result.lockedAt,
+        code: result.reason === 'race_lost' ? 'RACE_LOST' : 'ALREADY_LOCKED',
+      },
+      { status: 409 }
+    );
   } catch (error) {
     console.error('[lockTaskSecure] Error:', error);
     return Response.json({ error: error.message }, { status: 500 });
