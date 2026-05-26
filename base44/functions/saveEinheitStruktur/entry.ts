@@ -1,10 +1,55 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+
+const PAGE_SIZE = 500;
+const WRITE_BATCH_SIZE = 50;
+
+async function filterAllRecords(entity, query, sort = 'created_date') {
+  const all = [];
+  let skip = 0;
+
+  while (true) {
+    const page = await entity.filter(query, sort, PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+
+  return all;
+}
+
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+async function runBatchedOperations(operations, label) {
+  const results = [];
+
+  for (const chunk of chunkArray(operations, WRITE_BATCH_SIZE)) {
+    const settled = await Promise.allSettled(chunk.map((operation) => operation()));
+    results.push(...settled);
+  }
+
+  const failed = results.filter((result) => result.status === 'rejected');
+  if (failed.length > 0) {
+    throw new Error(`${label}: ${failed.length} Operation(en) fehlgeschlagen.`);
+  }
+
+  return results.map((result) => result.value);
+}
 
 /**
  * saveEinheitStruktur
  * ─────────────────────────────────────────────────────────────────
- * Speichert die gesamte Struktur (Themenfelder + Lernpakete) einer Einheit
- * in einer Transaktion.
+ * Speichert die gesamte Struktur (Themenfelder + Lernpakete) einer Einheit.
+ *
+ * Hinweis: Das Base44-REST-SDK unterstützt hier keine echte Datenbank-Transaktion.
+ * Die Operationen werden deshalb defensiv gebündelt und parallelisiert.
+ * @MIGRATION_NOTE (Supabase): Später als eine transaktionale PostgreSQL-RPC umsetzen.
  *
  * Payload:
  * {
@@ -34,7 +79,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const { einheit_id, spalten, paketeMap, modesMap } = body;
 
     if (!einheit_id || !spalten || !paketeMap) {
@@ -46,10 +91,9 @@ Deno.serve(async (req) => {
 
     // ── Structural Lock Pflicht-Prüfung ──────────────────────────────────────
     // KEIN User (auch kein Admin) darf speichern, ohne den expliziten Lock zu halten.
-    const einheitRecords = await base44.asServiceRole.entities.Einheiten.filter({ id: einheit_id });
-    const einheitRecord = einheitRecords[0];
+    const einheitRecord = await base44.entities.Einheiten.get(einheit_id).catch(() => null);
     if (!einheitRecord) {
-      return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
+      return Response.json({ error: 'Einheit nicht gefunden oder nicht zugänglich' }, { status: 404 });
     }
 
     // ── Lifecycle Hard-Lock ────────────────────────────────────────────
@@ -96,80 +140,87 @@ Deno.serve(async (req) => {
     // manuelle Inkrement durch einen BEFORE-UPDATE-Trigger auf der
     // einheiten-Tabelle ersetzt — die App-Logik fällt dann weg.
     const currentEinheitVersion = Number.isFinite(einheitRecord?.version) ? einheitRecord.version : 1;
-    await base44.asServiceRole.entities.Einheiten.update(einheit_id, {
+    await base44.entities.Einheiten.update(einheit_id, {
       version: currentEinheitVersion + 1,
     });
 
     // ── Schritt 1: Themenfelder speichern/aktualisieren ──────────────────────
     const themenfeldMap = {};
+    const newSpalten = spalten.filter((spalte) => !spalte.themenfeldId);
+    const existingSpalten = spalten.filter((spalte) => !!spalte.themenfeldId);
 
-    for (let i = 0; i < spalten.length; i++) {
-      const spalte = spalten[i];
-      let themenfeldId = spalte.themenfeldId;
-      const bearbeitungsmodus = modesMap?.[spalte.id] || 'offen';
-
-      if (!themenfeldId) {
-        // Neues Themenfeld erstellen
-        const newTf = await base44.entities.Themenfeld.create({
+    const createdThemenfelder = await runBatchedOperations(
+      newSpalten.map((spalte) => {
+        const index = spalten.findIndex((item) => item.id === spalte.id);
+        const bearbeitungsmodus = modesMap?.[spalte.id] || 'offen';
+        return () => base44.entities.Themenfeld.create({
           einheit_id,
           titel: spalte.titel,
-          reihenfolge: i + 1,
+          reihenfolge: index + 1,
           bearbeitungsmodus,
         });
-        themenfeldId = newTf.id;
-      } else {
-        // Bestehendes Themenfeld aktualisieren
-        await base44.entities.Themenfeld.update(themenfeldId, {
-          titel: spalte.titel,
-          reihenfolge: i + 1,
-          bearbeitungsmodus,
-        });
-      }
+      }),
+      'Themenfelder erstellen'
+    );
 
-      themenfeldMap[spalte.id] = themenfeldId;
-    }
+    newSpalten.forEach((spalte, index) => {
+      themenfeldMap[spalte.id] = createdThemenfelder[index].id;
+    });
+
+    await runBatchedOperations(
+      existingSpalten.map((spalte) => {
+        const index = spalten.findIndex((item) => item.id === spalte.id);
+        const bearbeitungsmodus = modesMap?.[spalte.id] || 'offen';
+        themenfeldMap[spalte.id] = spalte.themenfeldId;
+        return () => base44.entities.Themenfeld.update(spalte.themenfeldId, {
+          titel: spalte.titel,
+          reihenfolge: index + 1,
+          bearbeitungsmodus,
+        });
+      }),
+      'Themenfelder aktualisieren'
+    );
 
     // ── Schritt 2: Lernpakete speichern/aktualisieren ──────────────────────
     const SAMMELBECKEN_ID = '__sammelbecken__';
-    const existingPackets = await base44.entities.Lernpakete.filter({
-      einheit_id,
-    });
-
+    const existingPackets = await filterAllRecords(base44.entities.Lernpakete, { einheit_id });
     const processedPacketIds = new Set();
+    const createPacketOps = [];
+    const updatePacketOps = [];
 
     for (const [spalteId, pakete] of Object.entries(paketeMap)) {
-      const themenfeldId =
-        spalteId === SAMMELBECKEN_ID ? null : themenfeldMap[spalteId];
+      const themenfeldId = spalteId === SAMMELBECKEN_ID ? null : themenfeldMap[spalteId];
 
       for (let i = 0; i < pakete.length; i++) {
         const paket = pakete[i];
-        processedPacketIds.add(paket.id);
 
         if (paket.isNew) {
-          // Neues Lernpaket erstellen
-          await base44.entities.Lernpakete.create({
+          createPacketOps.push(() => base44.entities.Lernpakete.create({
             einheit_id,
             themenfeld_id: themenfeldId,
             titel_des_pakets: paket.titel_des_pakets,
             geschaetzte_dauer_minuten: paket.geschaetzte_dauer_minuten || 45,
             reihenfolge_nummer: i + 1,
-          });
+          }));
         } else {
-          // Bestehendes Lernpaket aktualisieren
-          await base44.entities.Lernpakete.update(paket.id, {
+          processedPacketIds.add(paket.id);
+          updatePacketOps.push(() => base44.entities.Lernpakete.update(paket.id, {
             themenfeld_id: themenfeldId,
             reihenfolge_nummer: i + 1,
-          });
+          }));
         }
       }
     }
 
+    await runBatchedOperations(createPacketOps, 'Lernpakete erstellen');
+    await runBatchedOperations(updatePacketOps, 'Lernpakete aktualisieren');
+
     // ── Schritt 3: Gelöschte Pakete löschen ──────────────────────────────────
-    for (const packet of existingPackets) {
-      if (!processedPacketIds.has(packet.id)) {
-        await base44.entities.Lernpakete.delete(packet.id);
-      }
-    }
+    const deletePacketOps = existingPackets
+      .filter((packet) => !processedPacketIds.has(packet.id))
+      .map((packet) => () => base44.entities.Lernpakete.delete(packet.id));
+
+    await runBatchedOperations(deletePacketOps, 'Lernpakete löschen');
 
     return Response.json({
       success: true,

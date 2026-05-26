@@ -58,6 +58,8 @@ const VALID_TARGET_STATUS = [STATUS_FINAL, STATUS_DRAFT];
 const VALID_LERNTYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 const PFAD_LOCKED = 'locked_for_export';
 const STALE_LOCK_MINUTES = 60;
+const PAGE_SIZE = 500;
+const FILTER_CHUNK_SIZE = 50;
 
 const ROLLEN = { ADMIN: 'Administrator', FACHSCHAFT: 'Fachschaftsleitung' };
 function isAdmin(authUser, profil) {
@@ -77,6 +79,41 @@ function isLockActive(lockedAt) {
   const ts = new Date(lockedAt).getTime();
   if (isNaN(ts)) return false;
   return Date.now() - ts < STALE_LOCK_MINUTES * 60 * 1000;
+}
+
+async function listAllByFilter(entity, query, sort = 'created_date') {
+  const all = [];
+  let skip = 0;
+
+  while (true) {
+    const page = await entity.filter(query, sort, PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+
+  return all;
+}
+
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+async function filterInChunks(entity, fieldName, values, extraQuery = {}) {
+  const results = [];
+  for (const chunk of chunkArray(values, FILTER_CHUNK_SIZE)) {
+    const page = await listAllByFilter(entity, {
+      ...extraQuery,
+      [fieldName]: { $in: chunk },
+    });
+    results.push(...page);
+  }
+  return results;
 }
 
 /**
@@ -170,12 +207,17 @@ async function collectActiveLocks(base44, einheit, currentUserEmail) {
 }
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { einheitId, newStatus } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { einheitId, newStatus } = body;
     if (!einheitId) return Response.json({ error: 'einheitId required' }, { status: 400 });
     if (!VALID_TARGET_STATUS.includes(newStatus)) {
       return Response.json({ error: 'invalid newStatus' }, { status: 400 });
@@ -183,7 +225,7 @@ Deno.serve(async (req) => {
 
     let einheit;
     try {
-      einheit = await base44.asServiceRole.entities.Einheiten.get(einheitId);
+      einheit = await base44.entities.Einheiten.get(einheitId);
     } catch (_err) {
       return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
     }
@@ -204,9 +246,10 @@ Deno.serve(async (req) => {
 
     if (newStatus === STATUS_FINAL) {
       // 1) Pre-Flight: alle 4 Dashboards geprüft?
-      const memberships = await base44.asServiceRole.entities.LernpfadAufgabeMembership.filter({
-        einheit_id: einheitId,
-      });
+      const memberships = await listAllByFilter(
+        base44.asServiceRole.entities.LernpfadAufgabeMembership,
+        { einheit_id: einheitId }
+      );
       const lockedLerntypen = new Set(
         (memberships || []).filter((m) => m.pfad_status === PFAD_LOCKED).map((m) => m.lerntyp)
       );
