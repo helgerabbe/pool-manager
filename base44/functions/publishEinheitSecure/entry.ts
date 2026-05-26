@@ -31,15 +31,15 @@ Deno.serve(async (req) => {
     }
 
     // 2. Parse payload
-    const payload = await req.json();
+    const payload = await req.json().catch(() => ({}));
     const { id: einheitId, status: targetStatus } = payload;
 
     if (!einheitId) {
       return Response.json({ error: 'id is required' }, { status: 400 });
     }
 
-    // 3. Fetch existing Einheit
-    const einheit = await base44.asServiceRole.entities.Einheiten.get(einheitId);
+    // 3. Fetch existing Einheit im User-Kontext, damit RLS/Tenant-Isolation greift.
+    const einheit = await base44.entities.Einheiten.get(einheitId);
     if (!einheit) {
       return Response.json({ error: 'Einheit not found' }, { status: 404 });
     }
@@ -112,10 +112,22 @@ Deno.serve(async (req) => {
 
     // 7. Update Einheit status
     //
-    // Optimistic Locking: version inkrementieren, damit
-    // acquireDashboardLockSecure den Statuswechsel im Re-Read mitbekommt.
-    // @MIGRATION_NOTE (Supabase): Wird durch BEFORE-UPDATE-Trigger ersetzt.
+    // Best-effort Optimistic Locking: Das SDK unterstützt kein bedingtes
+    // update WHERE version = x. Daher direkt vor dem Schreiben erneut im
+    // User-Kontext lesen und abbrechen, falls Status/Version inzwischen
+    // verändert wurden. @MIGRATION_NOTE (Supabase): Durch atomisches
+    // UPDATE ... WHERE id = ? AND version = ? oder Trigger ersetzen.
     const currentEinheitVersion = Number.isFinite(einheit?.version) ? einheit.version : 1;
+    const latestEinheit = await base44.entities.Einheiten.get(einheitId);
+    const latestVersion = Number.isFinite(latestEinheit?.version) ? latestEinheit.version : 1;
+
+    if (latestEinheit.freigabe_status !== einheit.freigabe_status || latestVersion !== currentEinheitVersion) {
+      return Response.json(
+        { error: 'Die Einheit wurde zwischenzeitlich geändert. Bitte neu laden und erneut versuchen.' },
+        { status: 409 }
+      );
+    }
+
     const updatedEinheit = await base44.entities.Einheiten.update(einheitId, {
       freigabe_status: newStatus,
       version: currentEinheitVersion + 1,

@@ -29,8 +29,12 @@
  * Kompletter Backfill, Schema-Version wird auf 2 gesetzt. Re-runs überspringen
  * bereits migrierte Einheiten (lernpfade_schema_version === 2).
  *
- * Sicherheit: Admin-only (User.role === 'admin' ODER Benutzer.rolle ===
- * 'Administrator'). Kein anderer Pfad darf diese Function triggern.
+ * Sicherheit:
+ *   - POST-only (keine GET/PUT/DELETE)
+ *   - Admin-only (User.role === 'admin' ODER Benutzer.rolle ===
+ *     'Administrator'). Kein anderer Pfad darf diese Function triggern.
+ *   - DB-seitiges Filtern verhindert Datenverlust bei Pagination.
+ *   - Skip bleibt konstant, da die Filterliste bei jedem Update schrumpft.
  *
  * @MIGRATION_NOTE (Supabase): Bei der Supabase-Migration entfällt diese
  * Function vollständig. Schema v2 wird DDL-mäßig erzwungen, ein einmaliges
@@ -108,7 +112,6 @@ function uuid() {
 }
 
 const LERN_TYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
-const PAGE_SIZE = 100;
 
 /**
  * Migriert eine einzelne lernpfade_konfiguration auf Schema v2.
@@ -260,72 +263,57 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ── Phase B: Nur noch nicht migrierte Einheiten laden und pro Seite parallel aktualisieren.
+    // ── Phase B: Einheiten mit DB-Filter durchgehen ──────────────────────────
+    // Lade nur Einheiten mit Schema-Version < 2, um In-Memory-Filtering zu sparen.
     let skip = 0;
+    const PAGE = 100;
     while (true) {
       const page = await base44.asServiceRole.entities.Einheiten.filter(
-        { lernpfade_schema_version: { $ne: 2 } },
+        { lernpfade_schema_version: { $lt: 2 } },
         '-created_date',
-        PAGE_SIZE,
+        PAGE,
         skip
       );
       if (!page || page.length === 0) break;
 
-      result.einheiten.total += page.length;
+      for (const einheit of page) {
+        result.einheiten.total += 1;
 
-      const plannedUpdates = page.map((einheit) => {
         if (!einheit.lernpfade_konfiguration) {
-          return {
-            einheit,
-            changed: false,
-            update: { lernpfade_schema_version: 2 },
-          };
+          // Keine Konfiguration → nur Schema-Version markieren, kein Migrationsbedarf.
+          if (!dryRun) {
+            try {
+              await base44.asServiceRole.entities.Einheiten.update(einheit.id, {
+                lernpfade_schema_version: 2,
+              });
+            } catch (e) {
+              result.einheiten.errors.push({ einheit_id: einheit.id, error: e?.message });
+            }
+          }
+          result.einheiten.no_konfig += 1;
+          continue;
         }
 
         const { konfiguration, changed } = migrateKonfiguration(einheit.lernpfade_konfiguration);
-        return {
-          einheit,
-          changed,
-          update: {
-            lernpfade_konfiguration: konfiguration,
-            lernpfade_schema_version: 2,
-          },
-        };
-      });
 
-      if (dryRun) {
-        plannedUpdates.forEach(({ changed }) => {
-          if (changed) result.einheiten.migrated += 1;
-          else result.einheiten.no_konfig += 1;
-        });
-        if (page.length < PAGE_SIZE) break;
-        skip += PAGE_SIZE;
-        continue;
+        if (!dryRun) {
+          try {
+            await base44.asServiceRole.entities.Einheiten.update(einheit.id, {
+              lernpfade_konfiguration: konfiguration,
+              lernpfade_schema_version: 2,
+            });
+          } catch (e) {
+            result.einheiten.errors.push({ einheit_id: einheit.id, error: e?.message });
+            continue;
+          }
+        }
+        if (changed) result.einheiten.migrated += 1;
+        else result.einheiten.no_konfig += 1; // bereits leere/instanced Items
       }
 
-      const settled = await Promise.allSettled(
-        plannedUpdates.map(({ einheit, update }) =>
-          base44.asServiceRole.entities.Einheiten.update(einheit.id, update)
-        )
-      );
-
-      let successfulUpdates = 0;
-      settled.forEach((entry, index) => {
-        const plan = plannedUpdates[index];
-        if (entry.status === 'fulfilled') {
-          successfulUpdates += 1;
-          if (plan.changed) result.einheiten.migrated += 1;
-          else result.einheiten.no_konfig += 1;
-        } else {
-          result.einheiten.errors.push({
-            einheit_id: plan.einheit.id,
-            error: entry.reason?.message || String(entry.reason),
-          });
-        }
-      });
-
-      // Kein skip im Schreibmodus: erfolgreiche Updates fallen aus dem Filter heraus.
-      if (page.length < PAGE_SIZE || successfulUpdates === 0) break;
+      // Mit DB-Filter schrumpft die Liste bei jedem Update, skip erhöhen um PAGE.
+      if (page.length < PAGE) break;
+      skip += PAGE;
     }
 
     return Response.json({ ok: true, ...result });
