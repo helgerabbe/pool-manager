@@ -18,7 +18,7 @@
  * Rückgabe: { success: boolean, activityId, grantedBy }
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 // ✅ Rate-Limiter: In-Memory Tracking mit Timestamps
 const requestLog = new Map();
@@ -168,6 +168,10 @@ function validateActivityCompletenessInline(catalog, fieldValues = {}) {
 }
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -191,6 +195,7 @@ Deno.serve(async (req) => {
     }
 
     // 2. Request-Parameter validieren
+    const payload = await req.json().catch(() => ({}));
     const {
       activityId,
       fieldValues = {},
@@ -203,7 +208,7 @@ Deno.serve(async (req) => {
       // verhält sich die Function exakt wie vorher (Rückwärtskompat).
       erstellungsModus,
       kiBriefing,
-    } = await req.json();
+    } = payload;
 
     if (!activityId || !einheitId || !targetFach) {
       console.warn(
@@ -218,18 +223,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 3. Einheit existiert und gehört zu einheitId
-    const einheiten = await base44.asServiceRole.entities.Einheiten.filter({
-      id: einheitId
-    });
-    const einheit = einheiten[0];
+    // 3. Einheit im User-Kontext laden, damit RLS/Tenant-Isolation greift.
+    const einheit = await base44.entities.Einheiten.get(einheitId).catch(() => null);
 
     if (!einheit) {
       console.warn(
-        `[updateActivitySecure] Einheit ${einheitId} not found (requested by ${user.email})`
+        `[updateActivitySecure] Einheit ${einheitId} not found or inaccessible (requested by ${user.email})`
       );
       return Response.json(
-        { error: 'Einheit not found' },
+        { error: 'Einheit not found or inaccessible' },
         { status: 404 }
       );
     }
@@ -249,18 +251,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 4. Aktivität existiert
-    const aktivitaeten = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
-      id: activityId
-    });
-    const aktivitaet = aktivitaeten[0];
+    // 4. Aktivität im User-Kontext laden, damit RLS/Tenant-Isolation greift.
+    const aktivitaet = await base44.entities.LernpaketPhaseAktivitaet.get(activityId).catch(() => null);
 
     if (!aktivitaet) {
       console.warn(
-        `[updateActivitySecure] Aktivität ${activityId} not found (requested by ${user.email})`
+        `[updateActivitySecure] Aktivität ${activityId} not found or inaccessible (requested by ${user.email})`
       );
       return Response.json(
-        { error: 'Aktivität not found' },
+        { error: 'Aktivität not found or inaccessible' },
         { status: 404 }
       );
     }
@@ -268,7 +267,7 @@ Deno.serve(async (req) => {
     // ✅ Hierarchisches Lock-Validierung (kritisch!)
     // Prüfe: Hat der User einen Lock auf dem übergeordneten Lernpaket?
     // Die Aktivität erbt ihren Lock-Status vom Parent-Lernpaket.
-    const lernpaket = await base44.asServiceRole.entities.Lernpakete.get(aktivitaet.lernpaket_id);
+    const lernpaket = await base44.entities.Lernpakete.get(aktivitaet.lernpaket_id).catch(() => null);
     if (!lernpaket) {
       console.warn(
         `[updateActivitySecure] Lernpaket ${aktivitaet.lernpaket_id} for activity ${activityId} not found`
@@ -375,7 +374,7 @@ Deno.serve(async (req) => {
     const faecher = profil?.fachbereich_zustaendigkeit || [];
 
     // 6. Delegierte Berechtigung prüfen (Current User für diese Einheit)
-    const myMembership = await base44.asServiceRole.entities.EinheitMembers.filter({
+    const myMembership = await base44.entities.EinheitMembers.filter({
       einheit_id: einheitId,
       user_email: user.email
     });
@@ -499,7 +498,42 @@ Deno.serve(async (req) => {
       updatePayload.field_values = fieldValues;
     }
 
-    await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(
+    const [latestEinheit, latestAktivitaet, latestLernpaket] = await Promise.all([
+      base44.entities.Einheiten.get(einheitId).catch(() => null),
+      base44.entities.LernpaketPhaseAktivitaet.get(activityId).catch(() => null),
+      base44.entities.Lernpakete.get(lernpaket.id).catch(() => null),
+    ]);
+
+    if (!latestEinheit || !latestAktivitaet || !latestLernpaket) {
+      return Response.json(
+        { error: 'Datensatz wurde zwischenzeitlich entfernt oder ist nicht mehr zugänglich', code: 'TARGET_NOT_ACCESSIBLE' },
+        { status: 409 }
+      );
+    }
+
+    const latestPaketIsLocked = latestLernpaket.is_locked === true || latestLernpaket.lock_status === true;
+    const latestPaketLockOwner = latestLernpaket.locked_by_email || latestLernpaket.locked_by_user || null;
+    const statusChanged =
+      latestAktivitaet.updated_date !== aktivitaet.updated_date ||
+      latestAktivitaet.content_status !== aktivitaet.content_status ||
+      latestLernpaket.updated_date !== lernpaket.updated_date ||
+      latestLernpaket.content_status !== lernpaket.content_status ||
+      latestLernpaket.released_at !== lernpaket.released_at ||
+      latestLernpaket.export_locked !== lernpaket.export_locked ||
+      latestLernpaket.moodle_sync_status !== lernpaket.moodle_sync_status ||
+      latestPaketIsLocked !== paketIsLocked ||
+      latestPaketLockOwner !== paketLockOwner ||
+      latestEinheit.updated_date !== einheit.updated_date ||
+      latestEinheit.export_lifecycle_status !== einheit.export_lifecycle_status;
+
+    if (statusChanged) {
+      return Response.json(
+        { error: 'Der Inhalt oder Sperrstatus wurde zwischenzeitlich geändert. Bitte neu laden.', code: 'VERSION_CHANGED' },
+        { status: 409 }
+      );
+    }
+
+    await base44.entities.LernpaketPhaseAktivitaet.update(
       activityId,
       updatePayload
     );
