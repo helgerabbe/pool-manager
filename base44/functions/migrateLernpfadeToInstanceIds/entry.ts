@@ -108,6 +108,7 @@ function uuid() {
 }
 
 const LERN_TYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
+const PAGE_SIZE = 100;
 
 /**
  * Migriert eine einzelne lernpfade_konfiguration auf Schema v2.
@@ -185,6 +186,10 @@ async function isAdmin(base44, user) {
 }
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -255,54 +260,72 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ── Phase B: Einheiten in Batches durchgehen ─────────────────────────────
+    // ── Phase B: Nur noch nicht migrierte Einheiten laden und pro Seite parallel aktualisieren.
     let skip = 0;
-    const PAGE = 100;
     while (true) {
-      const page = await base44.asServiceRole.entities.Einheiten.list('-created_date', PAGE, skip);
+      const page = await base44.asServiceRole.entities.Einheiten.filter(
+        { lernpfade_schema_version: { $ne: 2 } },
+        '-created_date',
+        PAGE_SIZE,
+        skip
+      );
       if (!page || page.length === 0) break;
 
-      for (const einheit of page) {
-        result.einheiten.total += 1;
+      result.einheiten.total += page.length;
 
-        if (einheit.lernpfade_schema_version === 2) {
-          result.einheiten.already_v2 += 1;
-          continue;
-        }
+      const plannedUpdates = page.map((einheit) => {
         if (!einheit.lernpfade_konfiguration) {
-          // Keine Konfiguration → nur Schema-Version markieren, kein Migrationsbedarf.
-          if (!dryRun) {
-            try {
-              await base44.asServiceRole.entities.Einheiten.update(einheit.id, {
-                lernpfade_schema_version: 2,
-              });
-            } catch (e) {
-              result.einheiten.errors.push({ einheit_id: einheit.id, error: e?.message });
-            }
-          }
-          result.einheiten.no_konfig += 1;
-          continue;
+          return {
+            einheit,
+            changed: false,
+            update: { lernpfade_schema_version: 2 },
+          };
         }
 
         const { konfiguration, changed } = migrateKonfiguration(einheit.lernpfade_konfiguration);
+        return {
+          einheit,
+          changed,
+          update: {
+            lernpfade_konfiguration: konfiguration,
+            lernpfade_schema_version: 2,
+          },
+        };
+      });
 
-        if (!dryRun) {
-          try {
-            await base44.asServiceRole.entities.Einheiten.update(einheit.id, {
-              lernpfade_konfiguration: konfiguration,
-              lernpfade_schema_version: 2,
-            });
-          } catch (e) {
-            result.einheiten.errors.push({ einheit_id: einheit.id, error: e?.message });
-            continue;
-          }
-        }
-        if (changed) result.einheiten.migrated += 1;
-        else result.einheiten.no_konfig += 1; // bereits leere/instanced Items
+      if (dryRun) {
+        plannedUpdates.forEach(({ changed }) => {
+          if (changed) result.einheiten.migrated += 1;
+          else result.einheiten.no_konfig += 1;
+        });
+        if (page.length < PAGE_SIZE) break;
+        skip += PAGE_SIZE;
+        continue;
       }
 
-      if (page.length < PAGE) break;
-      skip += PAGE;
+      const settled = await Promise.allSettled(
+        plannedUpdates.map(({ einheit, update }) =>
+          base44.asServiceRole.entities.Einheiten.update(einheit.id, update)
+        )
+      );
+
+      let successfulUpdates = 0;
+      settled.forEach((entry, index) => {
+        const plan = plannedUpdates[index];
+        if (entry.status === 'fulfilled') {
+          successfulUpdates += 1;
+          if (plan.changed) result.einheiten.migrated += 1;
+          else result.einheiten.no_konfig += 1;
+        } else {
+          result.einheiten.errors.push({
+            einheit_id: plan.einheit.id,
+            error: entry.reason?.message || String(entry.reason),
+          });
+        }
+      });
+
+      // Kein skip im Schreibmodus: erfolgreiche Updates fallen aus dem Filter heraus.
+      if (page.length < PAGE_SIZE || successfulUpdates === 0) break;
     }
 
     return Response.json({ ok: true, ...result });

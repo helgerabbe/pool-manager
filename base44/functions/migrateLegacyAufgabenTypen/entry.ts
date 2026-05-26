@@ -19,8 +19,37 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const LEGACY_TYPEN = ['buendel', 'prozess', 'projekt_anker', 'auswahl_buendel'];
+const PAGE_SIZE = 500;
+const UPDATE_BATCH_SIZE = 25;
+
+async function listAllByTyp(entity, typ) {
+  const all = [];
+  let skip = 0;
+
+  while (true) {
+    const page = await entity.filter({ aufgaben_typ: typ }, 'created_date', PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+
+  return all;
+}
+
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -37,21 +66,30 @@ Deno.serve(async (req) => {
 
     const byTyp = { buendel: 0, prozess: 0, projekt_anker: 0, auswahl_buendel: 0 };
     let migrated = 0;
+    let failed = 0;
 
     for (const typ of LEGACY_TYPEN) {
-      const records = await base44.asServiceRole.entities.AllgemeineAufgabe.filter({ aufgaben_typ: typ });
-      for (const rec of records) {
-        try {
-          await base44.asServiceRole.entities.AllgemeineAufgabe.update(rec.id, { aufgaben_typ: 'inhalt' });
-          byTyp[typ] += 1;
-          migrated += 1;
-        } catch (e) {
-          console.warn('Konnte Aufgabe nicht migrieren', rec.id, e?.message);
-        }
+      const records = await listAllByTyp(base44.asServiceRole.entities.AllgemeineAufgabe, typ);
+      for (const batch of chunkArray(records, UPDATE_BATCH_SIZE)) {
+        const results = await Promise.allSettled(
+          batch.map((rec) =>
+            base44.asServiceRole.entities.AllgemeineAufgabe.update(rec.id, { aufgaben_typ: 'inhalt' })
+          )
+        );
+
+        results.forEach((result, index) => {
+          if (result.status === 'fulfilled') {
+            byTyp[typ] += 1;
+            migrated += 1;
+          } else {
+            failed += 1;
+            console.warn('Konnte Aufgabe nicht migrieren', batch[index]?.id, result.reason?.message);
+          }
+        });
       }
     }
 
-    return Response.json({ migrated, by_typ: byTyp });
+    return Response.json({ migrated, failed, by_typ: byTyp });
   } catch (error) {
     return Response.json({ error: error?.message || 'Internal error' }, { status: 500 });
   }
