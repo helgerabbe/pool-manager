@@ -16,6 +16,44 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const VALID_LERNTYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
+const PAGE_SIZE = 500;
+const WRITE_BATCH_SIZE = 50;
+
+async function listAllByFilter(entity, query, sort = 'created_date') {
+  const all = [];
+  let skip = 0;
+
+  while (true) {
+    const page = await entity.filter(query, sort, PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+
+  return all;
+}
+
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+async function runBatched(operations) {
+  let success = 0;
+  for (const chunk of chunkArray(operations, WRITE_BATCH_SIZE)) {
+    const results = await Promise.allSettled(chunk.map((operation) => operation()));
+    const failed = results.filter((result) => result.status === 'rejected');
+    if (failed.length > 0) {
+      throw new Error(`${failed.length} Membership-Operation(en) fehlgeschlagen.`);
+    }
+    success += results.length;
+  }
+  return success;
+}
 
 // ── Phase E.3: Sektor-Signature-Hash (inline) ──────────────────────
 // Synchron halten mit src/lib/sektorSignature.js und der Inline-Kopie
@@ -132,6 +170,10 @@ function buildDriftReport(konfiguration, memberships) {
 }
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
 
@@ -140,21 +182,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { einheitId } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { einheitId } = body;
     if (!einheitId) {
       return Response.json({ error: 'einheitId required' }, { status: 400 });
     }
 
-    // Aktuellen Stand der Einheit laden (asServiceRole, damit auch ohne RLS-Zugriff
-    // gelesen werden kann – die Schreibrechte werden ohnehin clientseitig durchs Lock geprüft).
+    // Aktuellen Stand der Einheit im User-Kontext laden, damit RLS/Tenant-Isolation greift.
     let einheit;
     try {
-      einheit = await base44.asServiceRole.entities.Einheiten.get(einheitId);
+      einheit = await base44.entities.Einheiten.get(einheitId);
     } catch (err) {
-      return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
+      return Response.json({ error: 'Einheit nicht gefunden oder nicht zugänglich' }, { status: 404 });
     }
     if (!einheit) {
-      return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
+      return Response.json({ error: 'Einheit nicht gefunden oder nicht zugänglich' }, { status: 404 });
     }
 
     const konfig = einheit.lernpfade_konfiguration || {};
@@ -175,7 +217,7 @@ Deno.serve(async (req) => {
     }
 
     // IST-Zustand: alle Memberships dieser Einheit laden.
-    const existing = await base44.asServiceRole.entities.LernpfadAufgabeMembership.filter({
+    const existing = await listAllByFilter(base44.asServiceRole.entities.LernpfadAufgabeMembership, {
       einheit_id: einheitId,
     });
 
@@ -227,7 +269,7 @@ Deno.serve(async (req) => {
     // Wir laden die Memberships nach dem Sync neu, damit auch frisch
     // angelegte Einträge im Report auftauchen. Reine Read-Operation,
     // keine zusätzlichen Mutationen.
-    const refreshedMemberships = await base44.asServiceRole.entities.LernpfadAufgabeMembership.filter({
+    const refreshedMemberships = await listAllByFilter(base44.asServiceRole.entities.LernpfadAufgabeMembership, {
       einheit_id: einheitId,
     });
     const drift_report = buildDriftReport(konfig, refreshedMemberships);
