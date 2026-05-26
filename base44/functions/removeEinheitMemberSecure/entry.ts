@@ -137,7 +137,26 @@ async function writeAudit(base44, { userEmail, einheitId, targetEmail, targetRol
   }
 }
 
+async function listAllByFilter(entity, query, sort = 'created_date', pageSize = 500) {
+  const all = [];
+  let skip = 0;
+
+  while (true) {
+    const page = await entity.filter(query, sort, pageSize, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < pageSize) break;
+    skip += pageSize;
+  }
+
+  return all;
+}
+
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -153,7 +172,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { einheitId, targetEmail } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { einheitId, targetEmail } = body;
     const normalizedTargetEmail = normalizeEmail(targetEmail);
     const normalizedUserEmail = normalizeEmail(user.email);
 
@@ -164,14 +184,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    const einheit = await base44.asServiceRole.entities.Einheiten.get(einheitId);
+    const einheit = await base44.entities.Einheiten.get(einheitId).catch(() => null);
     if (!einheit) {
-      return Response.json({ error: 'Einheit not found' }, { status: 404 });
+      return Response.json({ error: 'Einheit not found or not accessible' }, { status: 404 });
     }
 
-    const unitMemberships = await base44.asServiceRole.entities.EinheitMembers.filter({
-      einheit_id: einheitId,
-    }, undefined, 1000);
+    const unitMemberships = await listAllByFilter(
+      base44.asServiceRole.entities.EinheitMembers,
+      { einheit_id: einheitId }
+    );
     const membership = (unitMemberships || []).find(
       (member) => normalizeEmail(member.user_email) === normalizedTargetEmail
     );
@@ -234,7 +255,34 @@ Deno.serve(async (req) => {
       );
     }
 
-    await base44.asServiceRole.entities.EinheitMembers.delete(membership.id);
+    const latestMemberships = await listAllByFilter(
+      base44.asServiceRole.entities.EinheitMembers,
+      { einheit_id: einheitId }
+    );
+    const latestMembership = (latestMemberships || []).find(
+      (member) => normalizeEmail(member.user_email) === normalizedTargetEmail
+    );
+    const latestLeitungen = (latestMemberships || []).filter((member) => member.unit_role === 'LEITUNG');
+
+    if (!latestMembership) {
+      return Response.json({ error: 'Membership was already removed', code: 'MEMBERSHIP_CHANGED' }, { status: 409 });
+    }
+
+    if (latestMembership.unit_role !== targetRole) {
+      return Response.json(
+        { error: 'Membership role changed. Please reload.', code: 'MEMBERSHIP_CHANGED' },
+        { status: 409 }
+      );
+    }
+
+    if (targetRole === 'LEITUNG' && latestLeitungen.length <= 1) {
+      return Response.json(
+        { error: 'Cannot remove the last LEITUNG', code: 'LAST_LEITUNG_CONFLICT' },
+        { status: 409 }
+      );
+    }
+
+    await base44.asServiceRole.entities.EinheitMembers.delete(latestMembership.id);
 
     await writeAudit(base44, {
       userEmail: user.email,
