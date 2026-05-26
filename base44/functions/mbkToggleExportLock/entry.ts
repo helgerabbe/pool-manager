@@ -80,12 +80,17 @@ async function logAuditEvent(base44, event) {
 }
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { einheitId, action } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { einheitId, action } = body;
     if (!einheitId) return Response.json({ error: 'einheitId required' }, { status: 400 });
     if (action !== 'lock' && action !== 'unlock') {
       return Response.json({ error: "action muss 'lock' oder 'unlock' sein." }, { status: 400 });
@@ -168,7 +173,25 @@ Deno.serve(async (req) => {
       update.export_started_by = user.email;
     }
 
-    await base44.asServiceRole.entities.Einheiten.update(einheitId, update);
+    const versionBefore = Number.isFinite(einheit.version) ? einheit.version : 1;
+    await base44.asServiceRole.entities.Einheiten.update(einheitId, {
+      ...update,
+      version: versionBefore + 1,
+    });
+
+    const verify = await base44.asServiceRole.entities.Einheiten.get(einheitId);
+    const statusChangedAsExpected = verify?.export_lifecycle_status === targetStatus;
+    const versionChangedAsExpected = !Number.isFinite(einheit.version) || verify?.version === versionBefore + 1;
+    if (!statusChangedAsExpected || !versionChangedAsExpected) {
+      return Response.json(
+        {
+          error: 'Der Export-Status wurde zeitgleich geändert. Bitte neu laden und erneut versuchen.',
+          code: 'VERSION_CONFLICT',
+          currentStatus: verify?.export_lifecycle_status || null,
+        },
+        { status: 409 }
+      );
+    }
 
     await logAuditEvent(base44, {
       user: user.email,
