@@ -3,7 +3,7 @@
  * Validiert alle Entity Operations auf RBAC-Basis
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 // ── RBAC RULES ──────────────────────────────────────────────────────────
 
@@ -13,6 +13,33 @@ const RBAC_RULES = {
   Fachlehrkraft: ['UPDATE', 'CREATE'], // Mit Unit Lead Check
   Betrachter: [], // Keine Writes
 };
+
+// ── CONTEXT RESOLUTION ──────────────────────────────────────────────────
+
+function getTargetEinheitId(entityName, targetEntity) {
+  if (!targetEntity) return null;
+  if (targetEntity.einheit_id) return targetEntity.einheit_id;
+  if (entityName === 'Einheiten' && targetEntity.id) return targetEntity.id;
+  return null;
+}
+
+async function resolveEinheitContext(base44, entityName, targetEntity) {
+  const einheitId = getTargetEinheitId(entityName, targetEntity);
+
+  if (einheitId) {
+    const einheit = await base44.entities.Einheiten.get(einheitId).catch(() => null);
+    if (!einheit) {
+      return { ok: false, reason: 'Einheit not accessible' };
+    }
+    return { ok: true, einheitId: einheit.id, fach: einheit.fach };
+  }
+
+  if (targetEntity?.fach) {
+    return { ok: true, einheitId: null, fach: targetEntity.fach };
+  }
+
+  return { ok: false, reason: 'Missing unit or subject reference' };
+}
 
 // ── MAIN RBAC EVALUATION ────────────────────────────────────────────────
 
@@ -46,26 +73,31 @@ export async function evaluateRBAC(req, entityName, operation, targetEntity) {
       };
     }
 
-    // Subject checks für Fachschaftsleitung
+    const context = await resolveEinheitContext(base44, entityName, targetEntity);
+
+    // Subject checks für Fachschaftsleitung — fail-closed bei unbekanntem Fach.
     if (role === 'Fachschaftsleitung') {
-      const fach = targetEntity?.fach;
-      if (fach && !subjects.includes(fach)) {
-        return { allowed: false, reason: `Not responsible for subject: ${fach}` };
+      if (!context.ok || !context.fach || !subjects.includes(context.fach)) {
+        return {
+          allowed: false,
+          reason: context.reason || `Not responsible for subject: ${context.fach || 'unknown'}`,
+        };
       }
     }
 
-    // Unit Lead checks für Fachlehrkraft
+    // Unit Lead checks für Fachlehrkraft — fail-closed bei fehlender Einheit.
     if (role === 'Fachlehrkraft' && operation !== 'VIEW') {
-      const einheitId = targetEntity?.einheit_id;
-      if (einheitId) {
-        const membership = await base44.asServiceRole.entities.EinheitMembers.filter({
-          einheit_id: einheitId,
-          user_email: user.email,
-        });
+      if (!context.ok || !context.einheitId) {
+        return { allowed: false, reason: context.reason || 'Missing unit reference' };
+      }
 
-        if (!membership || membership.length === 0 || membership[0].unit_role !== 'LEITUNG') {
-          return { allowed: false, reason: 'Must be unit lead' };
-        }
+      const membership = await base44.asServiceRole.entities.EinheitMembers.filter({
+        einheit_id: context.einheitId,
+        user_email: user.email,
+      });
+
+      if (!membership || membership.length === 0 || membership[0].unit_role !== 'LEITUNG') {
+        return { allowed: false, reason: 'Must be unit lead' };
       }
     }
 
@@ -94,3 +126,10 @@ export async function logAuditEvent(base44, event) {
     console.error('Audit log error:', error);
   }
 }
+
+Deno.serve(async () => {
+  return Response.json(
+    { error: 'rbacMiddleware is an internal helper and cannot be invoked directly' },
+    { status: 405 }
+  );
+});

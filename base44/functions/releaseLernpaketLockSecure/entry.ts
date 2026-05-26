@@ -10,6 +10,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -18,7 +22,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { lernpaketId } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { lernpaketId } = body;
 
     if (!lernpaketId) {
       return Response.json({ error: 'lernpaketId required' }, { status: 400 });
@@ -33,7 +38,8 @@ Deno.serve(async (req) => {
 
     // Prüfe Besitz: Nur Lock-Besitzer oder Admin darf freigeben
     const isLockOwner = paket.is_locked && paket.locked_by_email === user.email;
-    const isAdmin = user.role === 'admin';
+    const profile = await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email });
+    const isAdmin = user.role === 'admin' || profile?.[0]?.rolle === 'Administrator';
 
     if (!isLockOwner && !isAdmin) {
       return Response.json(
@@ -43,6 +49,22 @@ Deno.serve(async (req) => {
           code: 'NOT_LOCK_OWNER',
         },
         { status: 403 }
+      );
+    }
+
+    // Best-effort OCC: Direkt vor dem Unlock erneut lesen und abbrechen,
+    // wenn der Lock seit der ersten Prüfung übernommen/geändert wurde.
+    const latestPaket = await base44.entities.Lernpakete.get(lernpaketId);
+    if (!latestPaket) {
+      return Response.json({ error: 'Lernpaket not found' }, { status: 404 });
+    }
+
+    const lockStillOwned = latestPaket.is_locked && latestPaket.locked_by_email === paket.locked_by_email;
+    const sameLockTimestamp = (latestPaket.locked_at || null) === (paket.locked_at || null);
+    if (!lockStillOwned || !sameLockTimestamp) {
+      return Response.json(
+        { error: 'Der Lock wurde zwischenzeitlich geändert. Bitte neu laden.', code: 'LOCK_CHANGED' },
+        { status: 409 }
       );
     }
 
