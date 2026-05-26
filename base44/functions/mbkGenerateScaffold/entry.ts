@@ -27,6 +27,25 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const RATE_LIMIT_MAX_REQUESTS = 3;
+const requestLog = new Map();
+
+function isRateLimited(userIdentifier) {
+  if (!userIdentifier) return true;
+  const now = Date.now();
+  const key = `${userIdentifier}::mbkGenerateScaffold`;
+  const timestamps = requestLog.get(key) || [];
+  const recent = timestamps.filter((ts) => now - ts < RATE_LIMIT_WINDOW_MS);
+  if (recent.length >= RATE_LIMIT_MAX_REQUESTS) {
+    requestLog.set(key, recent);
+    return true;
+  }
+  recent.push(now);
+  requestLog.set(key, recent);
+  return false;
+}
+
 // ── Mini-System-Prompt (modular, schlank — keine Operator-Nummerierung,
 //    kein Dialog-Skript, keine Phasen-Logik; das alles regelt die UI). ──
 const ARCHITEKT_SYSTEM_PROMPT = `# ROLLE
@@ -164,11 +183,22 @@ function classifyFilename(filename) {
 }
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (isRateLimited(user.id || user.email)) {
+      return Response.json(
+        { error: 'Zu viele Generierungsaufrufe. Bitte kurz warten und erneut versuchen.' },
+        { status: 429 }
+      );
     }
 
     const body = await req.json().catch(() => ({}));
@@ -179,6 +209,12 @@ Deno.serve(async (req) => {
         { error: 'einheitId, uiConfigPayload und structurePayload sind erforderlich.' },
         { status: 400 }
       );
+    }
+
+    // IDOR/RBAC: Zugriff im regulären User-Kontext prüfen, bevor ServiceRole schreibt.
+    const einheit = await base44.entities.Einheiten.get(einheitId).catch(() => null);
+    if (!einheit) {
+      return Response.json({ error: 'Keine Berechtigung für diese Einheit.' }, { status: 403 });
     }
 
     // ── Erlaubte Einzeldateien für targetFilename. Alles andere → "alle 5". ──
@@ -258,25 +294,10 @@ Deno.serve(async (req) => {
       mapLen: structurePayload?.scorm_file_mapping?.length || 0,
     }));
 
-    const persisted = [];
-    for (const block of blocks) {
-      const kind = classifyFilename(block.filename);
-      if (!kind) {
-        // Architekt soll nichts anderes liefern — wenn doch, ignorieren.
-        continue;
-      }
-      // Im Single-File-Modus alles ignorieren, was nicht das angeforderte File ist.
-      if (isSingle && block.filename !== targetFilename) {
-        continue;
-      }
-
-      // Existierenden Datensatz finden (max 1 pro (einheit_id, filename))
-      const existing = await base44.asServiceRole.entities.MBKGeneratedFile.filter({
-        einheit_id: einheitId,
-        filename: block.filename,
-      });
-
-      const data = {
+    const recordsToPersist = blocks
+      .map((block) => ({ block, kind: classifyFilename(block.filename) }))
+      .filter(({ block, kind }) => kind && (!isSingle || block.filename === targetFilename))
+      .map(({ block, kind }) => ({
         einheit_id: einheitId,
         filename: block.filename,
         kind,
@@ -285,16 +306,29 @@ Deno.serve(async (req) => {
         generator: 'scaffold',
         model: usedModel,
         input_hash: inputHash,
-      };
+      }));
 
-      if (existing && existing.length > 0) {
-        await base44.asServiceRole.entities.MBKGeneratedFile.update(existing[0].id, data);
-        persisted.push({ ...data, id: existing[0].id, action: 'updated' });
-      } else {
+    const existingResults = await Promise.all(
+      recordsToPersist.map((data) =>
+        base44.asServiceRole.entities.MBKGeneratedFile.filter({
+          einheit_id: einheitId,
+          filename: data.filename,
+        })
+      )
+    );
+
+    const persisted = await Promise.all(
+      recordsToPersist.map(async (data, index) => {
+        const existing = existingResults[index];
+        if (existing && existing.length > 0) {
+          await base44.asServiceRole.entities.MBKGeneratedFile.update(existing[0].id, data);
+          return { ...data, id: existing[0].id, action: 'updated' };
+        }
+
         const created = await base44.asServiceRole.entities.MBKGeneratedFile.create(data);
-        persisted.push({ ...data, id: created.id, action: 'created' });
-      }
-    }
+        return { ...data, id: created.id, action: 'created' };
+      })
+    );
 
     return Response.json({
       success: true,
