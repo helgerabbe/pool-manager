@@ -27,31 +27,63 @@
  * - AuditLog
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-// Rate-Limiter für Factory Resets
-const resetLog = new Map();
+const PAGE_SIZE = 500;
+const DELETE_BATCH_SIZE = 50;
 
-function isResetRateLimited(userEmail, maxPerMinute = 1) {
-  const key = `reset_${userEmail}`;
-  const now = Date.now();
-  const oneMinuteAgo = now - 60000;
+async function listAllRecords(entity, sort = 'created_date') {
+  const all = [];
+  let skip = 0;
 
-  if (!resetLog.has(key)) {
-    resetLog.set(key, []);
+  while (true) {
+    const page = await entity.list(sort, PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
   }
 
-  const timestamps = resetLog.get(key);
-  const recentResets = timestamps.filter(ts => ts > oneMinuteAgo);
-  resetLog.set(key, recentResets);
+  return all;
+}
 
-  if (recentResets.length >= maxPerMinute) {
-    return true;
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+async function deleteAllRecords(entity, records) {
+  let deleted = 0;
+  let failed = 0;
+
+  for (const chunk of chunkArray(records, DELETE_BATCH_SIZE)) {
+    const results = await Promise.allSettled(chunk.map((record) => entity.delete(record.id)));
+    deleted += results.filter((result) => result.status === 'fulfilled').length;
+    failed += results.filter((result) => result.status === 'rejected').length;
   }
 
-  recentResets.push(now);
-  resetLog.set(key, recentResets);
-  return false;
+  if (failed > 0) {
+    throw new Error(`${failed} Datensätze konnten nicht gelöscht werden.`);
+  }
+
+  return deleted;
+}
+
+async function isResetRateLimited(base44, userEmail) {
+  const recent = await base44.asServiceRole.entities.AuditLog.filter(
+    {
+      user_email: userEmail,
+      resource_type: 'SYSTEM',
+      resource_id: 'FACTORY_RESET',
+    },
+    '-created_date',
+    10
+  );
+  const oneMinuteAgo = Date.now() - 60000;
+  return (recent || []).some((entry) => new Date(entry.created_date).getTime() > oneMinuteAgo);
 }
 
 /**
@@ -89,6 +121,10 @@ async function createSampleUnit(base44) {
 }
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -124,8 +160,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 3. Rate-Limiting prüfen
-    if (isResetRateLimited(user.email, 1)) {
+    // 3. Rate-Limiting prüfen (persistenter AuditLog-basierter DB-Check)
+    if (await isResetRateLimited(base44, user.email)) {
       console.warn(
         `[resetSandboxData] Rate limit exceeded for ${user.email}`
       );
@@ -140,7 +176,8 @@ Deno.serve(async (req) => {
     }
 
     // 4. Bestätigung vom Request-Body prüfen (Doppel-Sicherheit)
-    const { confirmReset } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { confirmReset } = body;
     if (confirmReset !== true) {
       return Response.json(
         {
@@ -171,60 +208,21 @@ Deno.serve(async (req) => {
     try {
       // Löschen in Reihenfolge: Blätter zuerst, dann Wurzeln
 
-      // 1. EinheitMembers (FK zu Einheiten)
-      const members = await base44.asServiceRole.entities.EinheitMembers.list();
-      for (const member of members) {
-        await base44.asServiceRole.entities.EinheitMembers.delete(member.id);
-        deleteCounts.einheitMembers++;
-      }
+      const deletePlan = [
+        ['einheitMembers', base44.asServiceRole.entities.EinheitMembers],
+        ['masterAufgaben', base44.asServiceRole.entities.MasterAufgabe],
+        ['lernpaketPhaseAktivitaet', base44.asServiceRole.entities.LernpaketPhaseAktivitaet],
+        ['lernziele', base44.asServiceRole.entities.Lernziele],
+        ['aufgabenbausteine', base44.asServiceRole.entities.Aufgabenbausteine],
+        ['lernpakete', base44.asServiceRole.entities.Lernpakete],
+        ['themenfeldData', base44.asServiceRole.entities.Themenfeld],
+        ['einheiten', base44.asServiceRole.entities.Einheiten],
+      ];
 
-      // 2. Lernziele (FK zu Lernpakete)
-      const lernziele = await base44.asServiceRole.entities.Lernziele.list();
-      for (const ziel of lernziele) {
-        await base44.asServiceRole.entities.Lernziele.delete(ziel.id);
-        deleteCounts.lernziele++;
-      }
-
-      // 3. Aufgabenbausteine (FK zu Lernpakete)
-      const aufgaben = await base44.asServiceRole.entities.Aufgabenbausteine.list();
-      for (const auf of aufgaben) {
-        await base44.asServiceRole.entities.Aufgabenbausteine.delete(auf.id);
-        deleteCounts.aufgabenbausteine++;
-      }
-
-      // 4. MasterAufgabe (FK zu LernpaketPhaseAktivitaet)
-      const masters = await base44.asServiceRole.entities.MasterAufgabe.list();
-      for (const master of masters) {
-        await base44.asServiceRole.entities.MasterAufgabe.delete(master.id);
-        deleteCounts.masterAufgaben++;
-      }
-
-      // 5. LernpaketPhaseAktivitaet (FK zu Lernpakete)
-      const aktivitaeten = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.list();
-      for (const akt of aktivitaeten) {
-        await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.delete(akt.id);
-        deleteCounts.lernpaketPhaseAktivitaet++;
-      }
-
-      // 6. Lernpakete (FK zu Einheiten)
-      const lernpakete = await base44.asServiceRole.entities.Lernpakete.list();
-      for (const lp of lernpakete) {
-        await base44.asServiceRole.entities.Lernpakete.delete(lp.id);
-        deleteCounts.lernpakete++;
-      }
-
-      // 7. Themenfeld (FK zu Einheiten)
-      const themenfeldData = await base44.asServiceRole.entities.Themenfeld.list();
-      for (const tf of themenfeldData) {
-        await base44.asServiceRole.entities.Themenfeld.delete(tf.id);
-        deleteCounts.themenfeldData++;
-      }
-
-      // 8. Einheiten (Root Entity)
-      const einheiten = await base44.asServiceRole.entities.Einheiten.list();
-      for (const einheit of einheiten) {
-        await base44.asServiceRole.entities.Einheiten.delete(einheit.id);
-        deleteCounts.einheiten++;
+      for (const [countKey, entity] of deletePlan) {
+        const records = await listAllRecords(entity);
+        deleteCounts[countKey] = await deleteAllRecords(entity, records);
+        console.info(`[resetSandboxData] Deleted ${deleteCounts[countKey]} records from ${countKey}`);
       }
 
     } catch (deleteErr) {
