@@ -26,7 +26,7 @@ async function listAll(entity, query = {}) {
   let skip = 0;
 
   while (true) {
-    const page = await entity.filter(query, 'user_id', PAGE_SIZE, skip);
+    const page = await entity.filter(query, 'id', PAGE_SIZE, skip);
     if (!page || page.length === 0) break;
     all.push(...page);
     if (page.length < PAGE_SIZE) break;
@@ -37,6 +37,10 @@ async function listAll(entity, query = {}) {
 }
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   const base44 = createClientFromRequest(req);
 
   const user = await base44.auth.me();
@@ -64,7 +68,7 @@ Deno.serve(async (req) => {
       error: `Kein Zugriff. Keine Rolle gefunden. Deine E-Mail: ${user.email}`
     }, { status: 403 });
   }
-
+  
   if (!istAdmin) {
     return Response.json({ 
       error: `Kein Zugriff. Nur Administratoren dürfen Benutzer importieren. Benutzer-Rolle: ${benutzerRolle || 'nicht gesetzt'}, User-Rolle: ${userRolle || 'nicht gesetzt'}, E-Mail: ${user.email}`
@@ -72,8 +76,8 @@ Deno.serve(async (req) => {
   }
 
   const body = await req.json().catch(() => ({}));
-  const rows = Array.isArray(body.rows) ? body.rows : [];
-  if (rows.length === 0) {
+  const rows = body.rows || [];
+  if (!Array.isArray(rows) || rows.length === 0) {
     return Response.json({ error: 'Keine Daten übergeben.' }, { status: 400 });
   }
 
