@@ -32,6 +32,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const PAGE_SIZE = 500;
+const IN_FILTER_CHUNK_SIZE = 50;
 
 const normalizeEntityRecord = (record) => {
   if (!record) return null;
@@ -58,6 +59,27 @@ async function listAllByFilter(entity, query, sort = 'created_date') {
   }
 
   return all;
+}
+
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+async function listAllByFilterInChunks(entity, fieldName, values, sort = 'created_date') {
+  const uniqueValues = [...new Set(values.filter(Boolean))];
+  if (uniqueValues.length === 0) return [];
+
+  const pages = await Promise.all(
+    chunkArray(uniqueValues, IN_FILTER_CHUNK_SIZE).map((chunk) =>
+      listAllByFilter(entity, { [fieldName]: { $in: chunk } }, sort)
+    )
+  );
+
+  return pages.flat();
 }
 
 Deno.serve(async (req) => {
@@ -109,14 +131,18 @@ Deno.serve(async (req) => {
     ]);
 
     const lernpaketIds = lernpakete.map((paket) => paket.id).filter(Boolean);
-    const lernziele = lernpaketIds.length > 0
-      ? await listAllByFilter(base44.asServiceRole.entities.Lernziele, { lernpaket_id: { $in: lernpaketIds } })
-      : [];
+    const lernziele = await listAllByFilterInChunks(
+      base44.asServiceRole.entities.Lernziele,
+      'lernpaket_id',
+      lernpaketIds
+    );
 
     const lernzielIds = lernziele.map((lernziel) => lernziel.id).filter(Boolean);
-    const aufgaben = lernzielIds.length > 0
-      ? await listAllByFilter(base44.asServiceRole.entities.Aufgabenbausteine, { lernziel_id: { $in: lernzielIds } })
-      : [];
+    const aufgaben = await listAllByFilterInChunks(
+      base44.asServiceRole.entities.Aufgabenbausteine,
+      'lernziel_id',
+      lernzielIds
+    );
 
     // 6. BUILD HIERARCHY: Frontend braucht nicht mehr zu filtern!
     // Gruppiere Lernziele nach Lernpaket
@@ -194,14 +220,7 @@ Deno.serve(async (req) => {
           .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0)),
       }));
 
-    // 8. BUILD FLAT STRUCTURES für schnelle Lookups (optional, für Performance)
-    const flatStructures = {
-      lernpakete,
-      lernziele,
-      aufgaben,
-    };
-
-    // 9. RESPONSE
+    // 8. RESPONSE
     const response = {
       success: true,
       data: {
@@ -237,8 +256,6 @@ Deno.serve(async (req) => {
         },
         // Hierarchie: Themenfelder → Lernpakete → Lernziele → Aufgaben
         themenfelder: themenfeldWithPakete,
-        // Flat lookup tables für schnelle Suche (z.B. ein bestimmtes Lernpaket)
-        _flat: flatStructures,
       },
       statistics: {
         themenfelder_count: themenfelder.length,

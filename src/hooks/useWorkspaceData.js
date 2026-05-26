@@ -3,6 +3,25 @@ import { useQuery } from '@tanstack/react-query';
 import { invokeFunction } from '@/utils/functionsHelper';
 import { base44 } from '@/api/base44Client';
 
+function flattenWorkspaceTree(themenfelder = []) {
+  const lernpakete = [];
+  const lernziele = [];
+  const aufgaben = [];
+
+  for (const themenfeld of themenfelder) {
+    for (const lernpaket of themenfeld.lernpakete || []) {
+      lernpakete.push(lernpaket);
+
+      for (const lernziel of lernpaket.lernziele || []) {
+        lernziele.push(lernziel);
+        aufgaben.push(...(lernziel.aufgaben || []));
+      }
+    }
+  }
+
+  return { lernpakete, lernziele, aufgaben };
+}
+
 /**
  * useWorkspaceData – Custom Hook für Workspace-Daten
  * Lädt ALLE hierarchischen Daten einer Einheit inkl. Members für RBAC
@@ -73,14 +92,17 @@ export function useWorkspaceData(einheitId, isStructuralEditingActive = false) {
     }
   }, [einheitId, isStructuralEditingActive]);
 
+  const themenfelder = detailData?.data?.themenfelder || [];
+  const flatData = flattenWorkspaceTree(themenfelder);
+
   return {
     einheiten,
-    lernpakete: detailData?.data?._flat?.lernpakete || [],
-    lernziele: detailData?.data?._flat?.lernziele || [],
-    aufgaben: detailData?.data?._flat?.aufgaben || [],
+    lernpakete: flatData.lernpakete,
+    lernziele: flatData.lernziele,
+    aufgaben: flatData.aufgaben,
     allgemeineAufgabenData: [],
     mappings: [],
-    themenfelder: detailData?.data?.themenfelder || [],
+    themenfelder,
     lernpaketAktivitaeten: [],
     aktivitaetenKatalog: [],
     // ✅ KRITISCH: Trenne Initial Load (isLoading) von Hintergrund-Fetches (isFetching)
