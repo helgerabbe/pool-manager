@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 /**
  * POST /importBenutzer
@@ -19,6 +19,23 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
  *   fehler:      Array<{ zeile: number, email: string, grund: string }>
  * }
  */
+const PAGE_SIZE = 500;
+
+async function listAll(entity, query = {}) {
+  const all = [];
+  let skip = 0;
+
+  while (true) {
+    const page = await entity.filter(query, 'user_id', PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+
+  return all;
+}
+
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
 
@@ -44,25 +61,24 @@ Deno.serve(async (req) => {
   
   if (!benutzerRolle && !userRolle) {
     return Response.json({ 
-      error: `Kein Zugriff. Keine Rolle gefunden. Deine E-Mail: ${user.email}`, 
-      status: 403 
-    }, { status: 403 });
-  }
-  
-  if (!istAdmin) {
-    return Response.json({ 
-      error: `Kein Zugriff. Nur Administratoren dürfen Benutzer importieren. Benutzer-Rolle: ${benutzerRolle || 'nicht gesetzt'}, User-Rolle: ${userRolle || 'nicht gesetzt'}, E-Mail: ${user.email}`, 
-      status: 403 
+      error: `Kein Zugriff. Keine Rolle gefunden. Deine E-Mail: ${user.email}`
     }, { status: 403 });
   }
 
-  const { rows } = await req.json();
-  if (!Array.isArray(rows) || rows.length === 0) {
+  if (!istAdmin) {
+    return Response.json({ 
+      error: `Kein Zugriff. Nur Administratoren dürfen Benutzer importieren. Benutzer-Rolle: ${benutzerRolle || 'nicht gesetzt'}, User-Rolle: ${userRolle || 'nicht gesetzt'}, E-Mail: ${user.email}`
+    }, { status: 403 });
+  }
+
+  const body = await req.json().catch(() => ({}));
+  const rows = Array.isArray(body.rows) ? body.rows : [];
+  if (rows.length === 0) {
     return Response.json({ error: 'Keine Daten übergeben.' }, { status: 400 });
   }
 
-  // Alle existierenden Benutzer laden (für Duplicate-Check)
-  const existing = await base44.asServiceRole.entities.Benutzer.list();
+  // Alle existierenden Benutzer vollständig paginiert laden (für Duplicate-Check)
+  const existing = await listAll(base44.asServiceRole.entities.Benutzer);
   const existingByEmail = {};
   for (const b of existing) {
     if (b.user_id) existingByEmail[b.user_id.toLowerCase()] = b;
