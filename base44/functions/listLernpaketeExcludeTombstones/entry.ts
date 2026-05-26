@@ -1,13 +1,20 @@
 /**
  * listLernpaketeExcludeTombstones.js
- * 
- * Liefert alle Lernpakete, filtert aber Tombstones (sync_status='to_delete') aus.
+ *
+ * Liefert sichtbare Lernpakete für einen konkreten Scope und filtert
+ * Tombstones (sync_status='to_delete') direkt auf Datenbankebene aus.
  * Wird von der UI (Ebene 1-4) verwendet.
- * Das Export-Center ruft direkt die Base44-API auf, um Tombstones zu sehen.
  */
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+
+const DEFAULT_LIMIT = 100;
+const MAX_LIMIT = 200;
 
 Deno.serve(async (req) => {
+  if (req.method !== 'GET') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -16,20 +23,44 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Hole alle Lernpakete
-    const all = await base44.entities.Lernpakete.list();
+    const url = new URL(req.url);
+    const einheitId = String(url.searchParams.get('einheit_id') || '').trim();
+    const themenfeldId = String(url.searchParams.get('themenfeld_id') || '').trim();
+    const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || DEFAULT_LIMIT, 1), MAX_LIMIT);
+    const offset = Math.max(Number(url.searchParams.get('offset')) || 0, 0);
 
-    // Filtere Tombstones aus (nur für normale UI)
-    const visible = all.filter(lp => lp.sync_status !== 'to_delete');
+    if (!einheitId && !themenfeldId) {
+      return Response.json({ error: 'einheit_id oder themenfeld_id ist erforderlich.' }, { status: 400 });
+    }
+
+    const filterQuery = {
+      sync_status: { $ne: 'to_delete' },
+    };
+
+    if (themenfeldId) {
+      filterQuery.themenfeld_id = themenfeldId;
+    } else {
+      filterQuery.einheit_id = einheitId;
+    }
+
+    const lernpakete = await base44.entities.Lernpakete.filter(
+      filterQuery,
+      'reihenfolge_nummer',
+      limit,
+      offset
+    );
 
     return Response.json({
       success: true,
-      lernpakete: visible,
-      total: visible.length,
+      lernpakete,
+      count: lernpakete.length,
+      limit,
+      offset,
+      has_more: lernpakete.length === limit,
     });
   } catch (error) {
-    return Response.json({ 
-      error: error.message 
+    return Response.json({
+      error: error.message
     }, { status: 500 });
   }
 });
