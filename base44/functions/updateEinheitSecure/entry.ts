@@ -8,7 +8,7 @@
  * - RBAC + Audit Logging
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 /**
  * HTTP 409 Conflict Error für Versionskonflikte
@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
     }
 
     // 2. Parse Payload
-    const payload = await req.json();
+    const payload = await req.json().catch(() => ({}));
     const {
       einheit_id,
       titel_der_einheit,
@@ -76,10 +76,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 3. Fetch Current Entity
-    const currentEinheit = await base44.asServiceRole.entities.Einheiten.get(
+    // 3. Fetch Current Entity im User-Kontext, damit RLS/Tenant-Isolation greift.
+    const currentEinheit = await base44.entities.Einheiten.get(
       einheit_id
-    );
+    ).catch(() => null);
 
     if (!currentEinheit) {
       return Response.json({ error: 'Einheit not found' }, { status: 404 });
@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
         rbacReason = `Not responsible for subject: ${currentEinheit.fach}`;
       }
     } else if (role === 'Fachlehrkraft') {
-      const membership = await base44.asServiceRole.entities.EinheitMembers.filter({
+      const membership = await base44.entities.EinheitMembers.filter({
         einheit_id: einheit_id,
         user_email: user.email,
       });
@@ -188,13 +188,34 @@ Deno.serve(async (req) => {
     // 7. INCREMENT VERSION on successful update
     updateData.version = dbVersion + 1;
 
-    // 8. Execute Update
-    const updatedEinheit = await base44.asServiceRole.entities.Einheiten.update(
+    // 8. Re-Read direkt vor dem Schreiben gegen TOCTOU/Lost Updates.
+    const latestEinheit = await base44.entities.Einheiten.get(einheit_id).catch(() => null);
+    const latestVersion = latestEinheit?.version || 1;
+    if (!latestEinheit || latestVersion !== dbVersion) {
+      return Response.json(
+        {
+          error: 'Version conflict',
+          message: 'Speicherkonflikt: Ein anderer Nutzer hat diese Daten in der Zwischenzeit geändert. Aktualisieren Sie die Seite.',
+          current_version: latestVersion,
+          provided_version: dbVersion,
+        },
+        {
+          status: 409,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+
+    // 9. Execute Update im User-Kontext, damit RLS/Tenant-Isolation greift.
+    const updatedEinheit = await base44.entities.Einheiten.update(
       einheit_id,
       updateData
     );
 
-    // 9. Audit Log Success
+    // 10. Audit Log Success
     try {
       await base44.asServiceRole.entities.AuditLog.create({
         user_email: user.email,
@@ -208,7 +229,7 @@ Deno.serve(async (req) => {
       console.error('Audit log error:', logError.message);
     }
 
-    // 10. Return Success with new version
+    // 11. Return Success with new version
     return Response.json(
       {
         success: true,

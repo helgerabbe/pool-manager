@@ -21,7 +21,7 @@
  * Rückgabe: { success: boolean, paketId, grantedBy }
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const LOCK_TIMEOUT_MS = 30 * 60 * 1000; // 30 Min
 const SCHREIB_ROLLEN = ['Administrator', 'Fachschaftsleitung', 'Fachlehrkraft'];
@@ -32,6 +32,10 @@ function isLockExpired(lockedAt) {
 }
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -40,7 +44,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { paketId, updates = {}, expectedLockVersion, lernzielUpdates = [] } = await req.json();
+    const payload = await req.json().catch(() => ({}));
+    const { paketId, updates = {}, expectedLockVersion, lernzielUpdates = [] } = payload;
 
     if (!paketId) {
       return Response.json({ error: 'paketId ist erforderlich' }, { status: 400 });
@@ -59,12 +64,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 2. Paket laden
-    const pakete = await base44.asServiceRole.entities.Lernpakete.filter({ id: paketId });
-    const paket = pakete[0];
+    // 2. Paket im User-Kontext laden, damit RLS/Tenant-Isolation greift.
+    const paket = await base44.entities.Lernpakete.get(paketId).catch(() => null);
 
     if (!paket) {
-      return Response.json({ error: 'Lernpaket nicht gefunden' }, { status: 404 });
+      return Response.json({ error: 'Lernpaket nicht gefunden oder nicht zugänglich' }, { status: 404 });
     }
 
     // 3. Lock-Ownership prüfen (zwingend)
@@ -120,8 +124,10 @@ Deno.serve(async (req) => {
     // 5. Einheit laden für Fach-Scope-Validierung
     let einheit = null;
     if (paket.einheit_id) {
-      const einheiten = await base44.asServiceRole.entities.Einheiten.filter({ id: paket.einheit_id });
-      einheit = einheiten[0];
+      einheit = await base44.entities.Einheiten.get(paket.einheit_id).catch(() => null);
+      if (!einheit) {
+        return Response.json({ error: 'Einheit nicht gefunden oder nicht zugänglich' }, { status: 404 });
+      }
     }
 
     // ⛔ Freigabe-Sperre (Phase 3, 2026-05-14):
@@ -167,7 +173,7 @@ Deno.serve(async (req) => {
 
     // 7. Fachlehrkraft: delegierte Berechtigung prüfen
     if (rolle === 'Fachlehrkraft' && paket.einheit_id) {
-      const membership = await base44.asServiceRole.entities.EinheitMembers.filter({
+      const membership = await base44.entities.EinheitMembers.filter({
         einheit_id: paket.einheit_id,
         user_email: user.email,
       });
