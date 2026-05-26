@@ -37,6 +37,8 @@ const STALE_LOCK_MINUTES = 60;
 const VALID_LERNTYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 const PFAD_LOCKED = 'locked_for_export';
 const ROLLEN = { ADMIN: 'Administrator', FACHSCHAFT: 'Fachschaftsleitung' };
+const PAGE_SIZE = 500;
+const IN_FILTER_CHUNK_SIZE = 50;
 
 function isAdmin(authUser, profil) {
   if (authUser?.role === 'Administrator' || authUser?.role === 'admin') return true;
@@ -57,18 +59,58 @@ function isLockActive(lockedAt) {
   return Date.now() - ts < STALE_LOCK_MINUTES * 60 * 1000;
 }
 
+async function listAllByFilter(entity, query, sort = 'created_date') {
+  const all = [];
+  let skip = 0;
+
+  while (true) {
+    const page = await entity.filter(query, sort, PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+
+  return all;
+}
+
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+async function listAllByFilterInChunks(entity, fieldName, values, sort = 'created_date') {
+  const uniqueValues = [...new Set(values.filter(Boolean))];
+  if (uniqueValues.length === 0) return [];
+
+  const pages = await Promise.all(
+    chunkArray(uniqueValues, IN_FILTER_CHUNK_SIZE).map((chunk) =>
+      listAllByFilter(entity, { [fieldName]: { $in: chunk } }, sort)
+    )
+  );
+
+  return pages.flat();
+}
+
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { einheitId } = await req.json();
+    const { einheitId } = await req.json().catch(() => ({}));
     if (!einheitId) return Response.json({ error: 'einheitId required' }, { status: 400 });
 
     let einheit;
     try {
-      einheit = await base44.asServiceRole.entities.Einheiten.get(einheitId);
+      einheit = await base44.entities.Einheiten.get(einheitId);
     } catch (_err) {
       return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
     }
@@ -86,9 +128,10 @@ Deno.serve(async (req) => {
     const activeLocks = [];
 
     // 1) Aufgaben (AllgemeineAufgabe.locked_by/locked_at).
-    const aufgaben = await base44.asServiceRole.entities.AllgemeineAufgabe.filter({
-      einheit_id: einheitId,
-    });
+    const aufgaben = await listAllByFilter(
+      base44.asServiceRole.entities.AllgemeineAufgabe,
+      { einheit_id: einheitId }
+    );
     const aufgabenById = new Map();
     for (const a of aufgaben || []) {
       aufgabenById.set(a.id, a);
@@ -106,15 +149,18 @@ Deno.serve(async (req) => {
     // 2) Lernpakete (Lernpakete.locked_by_email/locked_at; gefiltert über
     //    die zwei möglichen FK-Pfade — direkt an der Einheit oder via
     //    Themenfeld → Einheit). DB-seitig laden, nicht global per .list().
-    const themenfelder = await base44.asServiceRole.entities.Themenfeld.filter({
-      einheit_id: einheitId,
-    });
+    const themenfelder = await listAllByFilter(
+      base44.asServiceRole.entities.Themenfeld,
+      { einheit_id: einheitId }
+    );
     const themenfeldIdsArr = (themenfelder || []).map((t) => t.id);
     const [lpByEinheit, lpByThemenfeld] = await Promise.all([
-      base44.asServiceRole.entities.Lernpakete.filter({ einheit_id: einheitId }),
-      themenfeldIdsArr.length > 0
-        ? base44.asServiceRole.entities.Lernpakete.filter({ themenfeld_id: { $in: themenfeldIdsArr } })
-        : Promise.resolve([]),
+      listAllByFilter(base44.asServiceRole.entities.Lernpakete, { einheit_id: einheitId }),
+      listAllByFilterInChunks(
+        base44.asServiceRole.entities.Lernpakete,
+        'themenfeld_id',
+        themenfeldIdsArr
+      ),
     ]);
     const lernpaketeMap = new Map();
     for (const lp of [...(lpByEinheit || []), ...(lpByThemenfeld || [])]) {
@@ -137,9 +183,11 @@ Deno.serve(async (req) => {
     // 3) Master-Aufgaben (MasterAufgabe.lock_status + locked_by_user;
     //    DB-seitig auf die Pakete dieser Einheit eingrenzen).
     if (lernpaketIds.size > 0) {
-      const masters = await base44.asServiceRole.entities.MasterAufgabe.filter({
-        lernpaket_id: { $in: Array.from(lernpaketIds) },
-      });
+      const masters = await listAllByFilterInChunks(
+        base44.asServiceRole.entities.MasterAufgabe,
+        'lernpaket_id',
+        Array.from(lernpaketIds)
+      );
       for (const m of masters || []) {
         if (!m.lock_status || !m.locked_by_user) continue;
         if (!isLockActive(m.locked_at)) continue;
@@ -169,9 +217,10 @@ Deno.serve(async (req) => {
     }
 
     // ── Dashboard-Status (für UI-Anzeige im Dialog) ───────────────────────
-    const memberships = await base44.asServiceRole.entities.LernpfadAufgabeMembership.filter({
-      einheit_id: einheitId,
-    });
+    const memberships = await listAllByFilter(
+      base44.asServiceRole.entities.LernpfadAufgabeMembership,
+      { einheit_id: einheitId }
+    );
     const lockedSet = new Set(
       (memberships || []).filter((m) => m.pfad_status === PFAD_LOCKED).map((m) => m.lerntyp)
     );

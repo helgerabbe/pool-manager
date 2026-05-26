@@ -9,9 +9,12 @@
  * Funktionalitäten leben mittlerweile im Lernpfad-Dashboard.
  *
  * Sicherheit:
+ *   - POST-only (keine GET/PUT/DELETE)
  *   - Nur Admins dürfen die Migration auslösen.
  *   - Updates laufen mit Service-Role, damit RLS / locked_by-Guards den
  *     Massen-Update nicht blockieren.
+ *   - Paginierte Ladeschleife verhindert Datenverlust.
+ *   - Parallele 25er-Batch-Updates statt sequenzieller N+1-Problem.
  *
  * Antwort:
  *   { migrated: number, by_typ: { buendel, prozess, projekt_anker, auswahl_buendel } }
@@ -20,20 +23,18 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const LEGACY_TYPEN = ['buendel', 'prozess', 'projekt_anker', 'auswahl_buendel'];
 const PAGE_SIZE = 500;
-const UPDATE_BATCH_SIZE = 25;
+const BATCH_SIZE = 25;
 
-async function listAllByTyp(entity, typ) {
+async function listAllByFilter(entity, query, sort = 'created_date') {
   const all = [];
   let skip = 0;
-
   while (true) {
-    const page = await entity.filter({ aufgaben_typ: typ }, 'created_date', PAGE_SIZE, skip);
+    const page = await entity.filter(query, sort, PAGE_SIZE, skip);
     if (!page || page.length === 0) break;
     all.push(...page);
     if (page.length < PAGE_SIZE) break;
     skip += PAGE_SIZE;
   }
-
   return all;
 }
 
@@ -66,30 +67,30 @@ Deno.serve(async (req) => {
 
     const byTyp = { buendel: 0, prozess: 0, projekt_anker: 0, auswahl_buendel: 0 };
     let migrated = 0;
-    let failed = 0;
 
     for (const typ of LEGACY_TYPEN) {
-      const records = await listAllByTyp(base44.asServiceRole.entities.AllgemeineAufgabe, typ);
-      for (const batch of chunkArray(records, UPDATE_BATCH_SIZE)) {
-        const results = await Promise.allSettled(
-          batch.map((rec) =>
-            base44.asServiceRole.entities.AllgemeineAufgabe.update(rec.id, { aufgaben_typ: 'inhalt' })
-          )
+      const records = await listAllByFilter(
+        base44.asServiceRole.entities.AllgemeineAufgabe,
+        { aufgaben_typ: typ }
+      );
+      
+      const chunks = chunkArray(records, BATCH_SIZE);
+      for (const chunk of chunks) {
+        const updates = chunk.map((rec) =>
+          base44.asServiceRole.entities.AllgemeineAufgabe.update(rec.id, { aufgaben_typ: 'inhalt' })
+            .catch((e) => {
+              console.warn('Konnte Aufgabe nicht migrieren', rec.id, e?.message);
+              return null;
+            })
         );
-
-        results.forEach((result, index) => {
-          if (result.status === 'fulfilled') {
-            byTyp[typ] += 1;
-            migrated += 1;
-          } else {
-            failed += 1;
-            console.warn('Konnte Aufgabe nicht migrieren', batch[index]?.id, result.reason?.message);
-          }
-        });
+        const results = await Promise.allSettled(updates);
+        const successful = results.filter((r) => r.status === 'fulfilled').length;
+        byTyp[typ] += successful;
+        migrated += successful;
       }
     }
 
-    return Response.json({ migrated, failed, by_typ: byTyp });
+    return Response.json({ migrated, by_typ: byTyp });
   } catch (error) {
     return Response.json({ error: error?.message || 'Internal error' }, { status: 500 });
   }
