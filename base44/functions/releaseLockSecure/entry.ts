@@ -1,6 +1,10 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -9,7 +13,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { entityName, entityId } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { entityName, entityId } = body;
 
     if (!entityName || !entityId) {
       return Response.json(
@@ -22,6 +27,40 @@ Deno.serve(async (req) => {
       return Response.json(
         { error: 'Only Einheiten entity is supported' },
         { status: 400 }
+      );
+    }
+
+    const einheit = await base44.entities.Einheiten.get(entityId).catch(() => null);
+    if (!einheit) {
+      return Response.json({ error: 'Einheit not found' }, { status: 404 });
+    }
+
+    const profile = await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email });
+    const isAdmin = user.role === 'admin' || profile?.[0]?.rolle === 'Administrator';
+    const isLockOwner = einheit.structural_lock === user.email;
+
+    if (einheit.structural_lock && !isLockOwner && !isAdmin) {
+      return Response.json(
+        {
+          error: `Sie haben diesen Lock nicht. Lock-Besitzer: ${einheit.structural_lock}`,
+          locked_by_email: einheit.structural_lock,
+          code: 'NOT_LOCK_OWNER',
+        },
+        { status: 403 }
+      );
+    }
+
+    const latestEinheit = await base44.entities.Einheiten.get(entityId).catch(() => null);
+    if (!latestEinheit) {
+      return Response.json({ error: 'Einheit not found' }, { status: 404 });
+    }
+
+    const sameLockOwner = (latestEinheit.structural_lock || null) === (einheit.structural_lock || null);
+    const sameLockTimestamp = (latestEinheit.structural_locked_at || null) === (einheit.structural_locked_at || null);
+    if (!sameLockOwner || !sameLockTimestamp) {
+      return Response.json(
+        { error: 'Der Lock wurde zwischenzeitlich geändert. Bitte neu laden.', code: 'LOCK_CHANGED' },
+        { status: 409 }
       );
     }
 
