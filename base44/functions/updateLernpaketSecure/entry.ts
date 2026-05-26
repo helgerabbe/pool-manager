@@ -209,32 +209,73 @@ Deno.serve(async (req) => {
     // wurden (z.B. nur Lernziele), zählt der Save-Klick als
     // "Lehrkraft hat sich des Items angenommen" — damit verschwindet
     // das rote Badge sofort.
-    await base44.asServiceRole.entities.Lernpakete.update(paketId, {
+    const [latestPaket, latestEinheit] = await Promise.all([
+      base44.entities.Lernpakete.get(paketId).catch(() => null),
+      paket.einheit_id ? base44.entities.Einheiten.get(paket.einheit_id).catch(() => null) : Promise.resolve(null),
+    ]);
+
+    if (!latestPaket || (paket.einheit_id && !latestEinheit)) {
+      return Response.json(
+        { error: 'Datensatz wurde zwischenzeitlich entfernt oder ist nicht mehr zugänglich', code: 'TARGET_NOT_ACCESSIBLE' },
+        { status: 409 }
+      );
+    }
+
+    const expectedVersion = expectedLockVersion !== undefined ? expectedLockVersion : paket.version;
+    const latestStatusChanged =
+      latestPaket.version !== expectedVersion ||
+      latestPaket.updated_date !== paket.updated_date ||
+      latestPaket.is_locked !== paket.is_locked ||
+      latestPaket.locked_by_email !== paket.locked_by_email ||
+      latestPaket.locked_at !== paket.locked_at ||
+      latestPaket.content_status !== paket.content_status ||
+      latestPaket.released_at !== paket.released_at ||
+      latestEinheit?.export_lifecycle_status !== einheit?.export_lifecycle_status;
+
+    if (latestStatusChanged) {
+      return Response.json(
+        {
+          error: 'Versionskollision: Datensatz oder Sperrstatus wurde zwischenzeitlich verändert',
+          code: 'VERSION_MISMATCH',
+          expectedVersion,
+          actualVersion: latestPaket.version,
+        },
+        { status: 409 }
+      );
+    }
+
+    await base44.entities.Lernpakete.update(paketId, {
       ...filteredUpdates,
       export_error: false,
+      version: expectedVersion + 1,
     });
 
     // 9. Lernziel-Updates (sicher, Lock-geschützt durch diesen Aufruf)
     const lernzielErrors = [];
-    for (const lzUpdate of lernzielUpdates) {
-      if (!lzUpdate.id || !lzUpdate.data) continue;
-      try {
-        // Sicherheitscheck: Lernziel gehört zu diesem Paket
-        const lernziele = await base44.asServiceRole.entities.Lernziele.filter({ id: lzUpdate.id });
-        const lernziel = lernziele[0];
-        if (!lernziel || lernziel.lernpaket_id !== paketId) {
-          lernzielErrors.push({ id: lzUpdate.id, error: 'Lernziel gehört nicht zu diesem Paket' });
-          continue;
-        }
-        const ALLOWED_LZ_FIELDS = ['formulierung_fachsprache', 'kategorie', 'schueler_uebersetzung'];
-        const filteredLzData = Object.fromEntries(
-          Object.entries(lzUpdate.data).filter(([key]) => ALLOWED_LZ_FIELDS.includes(key))
-        );
-        await base44.asServiceRole.entities.Lernziele.update(lzUpdate.id, filteredLzData);
-      } catch (e) {
-        lernzielErrors.push({ id: lzUpdate.id, error: e.message });
+    const validLernzielUpdates = (Array.isArray(lernzielUpdates) ? lernzielUpdates : [])
+      .filter((lzUpdate) => lzUpdate?.id && lzUpdate?.data);
+
+    const lernzieleResults = await Promise.allSettled(
+      validLernzielUpdates.map((lzUpdate) => base44.entities.Lernziele.get(lzUpdate.id))
+    );
+
+    const ALLOWED_LZ_FIELDS = ['formulierung_fachsprache', 'kategorie', 'schueler_uebersetzung'];
+    const updatePromises = [];
+    lernzieleResults.forEach((result, index) => {
+      const lzUpdate = validLernzielUpdates[index];
+      if (result.status !== 'fulfilled' || !result.value || result.value.lernpaket_id !== paketId) {
+        lernzielErrors.push({ id: lzUpdate.id, error: 'Lernziel gehört nicht zu diesem Paket' });
+        return;
       }
-    }
+      const filteredLzData = Object.fromEntries(
+        Object.entries(lzUpdate.data).filter(([key]) => ALLOWED_LZ_FIELDS.includes(key))
+      );
+      updatePromises.push(
+        base44.entities.Lernziele.update(lzUpdate.id, filteredLzData)
+          .catch((e) => lernzielErrors.push({ id: lzUpdate.id, error: e.message }))
+      );
+    });
+    await Promise.allSettled(updatePromises);
 
     // 10. Audit-Log
     try {
