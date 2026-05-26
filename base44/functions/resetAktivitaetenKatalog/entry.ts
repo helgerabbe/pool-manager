@@ -10,7 +10,7 @@
  * - Abschluss: Test, KI Check, Bearbeitung bestätigen
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 // Definiere die Kernaktivitäten mit korrekten Feldern
 const CORE_ACTIVITIES = [
@@ -345,7 +345,50 @@ const CORE_ACTIVITIES = [
   }
 ];
 
+const PAGE_SIZE = 500;
+const WRITE_BATCH_SIZE = 25;
+
+function activityKey(activity) {
+  return `${activity.name}::${activity.phase}`;
+}
+
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+async function listAllRecords(entity, sort = 'created_date') {
+  const all = [];
+  let skip = 0;
+
+  while (true) {
+    const page = await entity.list(sort, PAGE_SIZE, skip);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+
+  return all;
+}
+
+async function runInChunks(tasks) {
+  const results = [];
+  for (const chunk of chunkArray(tasks, WRITE_BATCH_SIZE)) {
+    const settled = await Promise.allSettled(chunk.map((task) => task()));
+    results.push(...settled);
+  }
+  return results;
+}
+
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -369,64 +412,66 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Alle vorhandenen Aktivitäten abrufen
-    const existingActivities = await base44.asServiceRole.entities.AktivitaetenKatalog.list();
+    // Alle vorhandenen Aktivitäten vollständig paginiert abrufen
+    const existingActivities = await listAllRecords(
+      base44.asServiceRole.entities.AktivitaetenKatalog
+    );
 
-    // Aktivitäten, die NICHT in CORE_ACTIVITIES sind, deaktivieren
-    for (const existing of existingActivities) {
-      const isCoreActivity = CORE_ACTIVITIES.some(
-        core => core.name === existing.name && core.phase === existing.phase
-      );
-      if (!isCoreActivity) {
-        // Statt zu löschen: auf is_active = false setzen
-        try {
-          await base44.asServiceRole.entities.AktivitaetenKatalog.update(existing.id, {
-            is_active: false
-          });
-          console.info(`[resetAktivitaetenKatalog] Deactivated: ${existing.name}`);
-        } catch (err) {
-          console.warn(`[resetAktivitaetenKatalog] Failed to deactivate ${existing.name}: ${err.message}`);
-        }
-      }
+    const coreKeys = new Set(CORE_ACTIVITIES.map(activityKey));
+    const existingByKey = new Map();
+    for (const activity of existingActivities) {
+      const key = activityKey(activity);
+      if (!existingByKey.has(key)) existingByKey.set(key, activity);
     }
 
+    // Aktivitäten, die NICHT in CORE_ACTIVITIES sind, deaktivieren
+    const deactivateTasks = existingActivities
+      .filter((existing) => !coreKeys.has(activityKey(existing)) && existing.is_active !== false)
+      .map((existing) => async () => {
+        await base44.asServiceRole.entities.AktivitaetenKatalog.update(existing.id, {
+          is_active: false,
+        });
+        console.info(`[resetAktivitaetenKatalog] Deactivated: ${existing.name}`);
+      });
+
+    const deactivateResults = await runInChunks(deactivateTasks);
+    const deactivatedCount = deactivateResults.filter((result) => result.status === 'fulfilled').length;
+    const deactivateFailedCount = deactivateResults.filter((result) => result.status === 'rejected').length;
+
     // Kern-Aktivitäten einfügen oder aktualisieren
-    let createdCount = 0;
-    let updatedCount = 0;
+    const updateTasks = [];
+    const createTasks = [];
 
     for (const coreActivity of CORE_ACTIVITIES) {
-      // Überprüfe, ob Aktivität bereits existiert
-      const existing = existingActivities.find(
-        a => a.name === coreActivity.name && a.phase === coreActivity.phase
-      );
+      const existing = existingByKey.get(activityKey(coreActivity));
 
       if (existing) {
-        // Update
-        try {
+        updateTasks.push(async () => {
           await base44.asServiceRole.entities.AktivitaetenKatalog.update(existing.id, {
             is_active: coreActivity.is_active,
             supports_master: coreActivity.supports_master,
-            form_schema: coreActivity.form_schema
+            form_schema: coreActivity.form_schema,
           });
-          updatedCount++;
           console.info(`[resetAktivitaetenKatalog] Updated: ${coreActivity.name}`);
-        } catch (err) {
-          console.error(`[resetAktivitaetenKatalog] Failed to update ${coreActivity.name}: ${err.message}`);
-        }
+        });
       } else {
-        // Create
-        try {
+        createTasks.push(async () => {
           await base44.asServiceRole.entities.AktivitaetenKatalog.create(coreActivity);
-          createdCount++;
           console.info(`[resetAktivitaetenKatalog] Created: ${coreActivity.name}`);
-        } catch (err) {
-          console.error(`[resetAktivitaetenKatalog] Failed to create ${coreActivity.name}: ${err.message}`);
-        }
+        });
       }
     }
 
+    const updateResults = await runInChunks(updateTasks);
+    const createResults = await runInChunks(createTasks);
+
+    const updatedCount = updateResults.filter((result) => result.status === 'fulfilled').length;
+    const createdCount = createResults.filter((result) => result.status === 'fulfilled').length;
+    const updateFailedCount = updateResults.filter((result) => result.status === 'rejected').length;
+    const createFailedCount = createResults.filter((result) => result.status === 'rejected').length;
+
     console.info(
-      `[resetAktivitaetenKatalog] Reset completed. Created: ${createdCount}, Updated: ${updatedCount}`
+      `[resetAktivitaetenKatalog] Reset completed. Created: ${createdCount}, Updated: ${updatedCount}, Deactivated: ${deactivatedCount}`
     );
 
     return Response.json({
@@ -434,6 +479,8 @@ Deno.serve(async (req) => {
       message: 'Aktivitätenkatalog zurückgesetzt',
       createdCount,
       updatedCount,
+      deactivatedCount,
+      failedCount: deactivateFailedCount + updateFailedCount + createFailedCount,
       totalCoreActivities: CORE_ACTIVITIES.length
     });
   } catch (error) {
