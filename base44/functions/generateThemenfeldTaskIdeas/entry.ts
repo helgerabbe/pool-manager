@@ -115,10 +115,13 @@ function buildGrundgeruestBlock(einheit) {
   return parts.join('\n\n') || '(Noch kein Grundgerüst gepflegt.)';
 }
 
-function normalizeIdeas(rawIdeas) {
+function normalizeIdeas(rawIdeas, forcedMission = null) {
   const validMissions = new Set(Object.keys(MISSIONEN));
+  const fallbackMission = validMissions.has(forcedMission) ? forcedMission : 'transfer';
   return (Array.isArray(rawIdeas) ? rawIdeas : []).slice(0, 5).map((idea) => {
-    const mission = validMissions.has(idea?.mission_type) ? idea.mission_type : 'transfer';
+    const mission = forcedMission && validMissions.has(forcedMission)
+      ? forcedMission
+      : (validMissions.has(idea?.mission_type) ? idea.mission_type : fallbackMission);
     let schwierigkeit = parseInt(idea?.schwierigkeitsgrad, 10);
     if (![1, 2, 3].includes(schwierigkeit)) schwierigkeit = 2;
     let materialLevel = parseInt(idea?.material_level, 10);
@@ -245,7 +248,7 @@ Antworte ausschließlich als valides JSON im vorgegebenen Schema.`;
       response_json_schema: RESPONSE_SCHEMA,
     });
 
-    const ideen = normalizeIdeas(result?.ideen);
+    const ideen = normalizeIdeas(result?.ideen, MISSIONEN[mission_type] ? mission_type : null);
     if (ideen.length === 0) {
       return Response.json({ error: 'Die KI hat keine verwertbaren Ideen geliefert. Bitte erneut versuchen.' }, { status: 502 });
     }
