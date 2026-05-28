@@ -65,19 +65,7 @@ export function useWorkspaceData(einheitId, isStructuralEditingActive = false) {
   const einheitData = detailData?.data?.einheit;
   const einheitenFromList = listData || [];
 
-  // eslint-disable-next-line no-console
-  console.log('[useWorkspaceData] state', {
-    einheitId,
-    listLoading,
-    detailLoading,
-    listLen: einheitenFromList.length,
-    listIds: einheitenFromList.map(e => e.id),
-    hasDetail: !!detailData,
-    detailKeys: detailData ? Object.keys(detailData) : null,
-    detailEinheitId: einheitData?.id,
-    detailHasRohtext: !!einheitData?.grundgeruest_rohtext,
-    detailRohtextLen: einheitData?.grundgeruest_rohtext?.length || 0,
-  });
+
   
   // ✅ WICHTIG: Merge members aus der Liste in die detailData
   const einheiten = einheitenFromList.map(e => {
