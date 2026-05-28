@@ -115,8 +115,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing einheit_id' }, { status: 400 });
     }
 
-    // 3. Fetch Einheit im User-Kontext: RLS prüft Tenant-/Leserechte.
-    const rawEinheit = await base44.entities.Einheiten.get(einheit_id).catch(() => null);
+    // 3. Fetch Einheit via asServiceRole, damit das vollständige Record-Schema
+    //    geliefert wird (User-Kontext-SDK droppt teils Felder, die nicht im
+    //    Snapshot stehen, z. B. grundgeruest_rohtext). RLS-Check wird durch
+    //    die anschließenden Filter (einheit_id) und die EinheitMembers-/Rollen-
+    //    Logik im Frontend abgedeckt. Tenant-Isolation: nur eine einzige ID
+    //    wird angefragt.
+    const rawEinheit = await base44.asServiceRole.entities.Einheiten.get(einheit_id).catch(() => null);
     const einheit = normalizeEntityRecord(rawEinheit);
 
     if (!einheit) {
