@@ -62,9 +62,9 @@ export const MISSION_TYPES = Object.freeze({
 export const MISSIONEN = Object.freeze([
   {
     id: MISSION_TYPES.PROBLEM,
-    label: 'Den Funken zünden',
+    label: 'Vorwissen aktivieren & Bedeutsamkeit erkennen',
     emoji: '💡',
-    kern: 'Alltagsbezug & Motivation',
+    kern: 'Schüler:innen begegnen dem Thema in einer Alltagssituation, bevor sie es gelernt haben. Sie entwickeln ein Verständnis für die Relevanz des Themas.',
     hex: '#F59E0B',
     colorName: 'amber',
     classes: {
@@ -78,9 +78,9 @@ export const MISSIONEN = Object.freeze([
   },
   {
     id: MISSION_TYPES.ENTDECKUNG,
-    label: 'Selber rausfinden lassen',
+    label: 'Induktive Erkundung',
     emoji: '🔍',
-    kern: 'Induktion & Regelbildung',
+    kern: 'Schüler:innen erarbeiten an Beispielen selbstständig eine Regel oder ein Prinzip — vom Einzelfall zur Verallgemeinerung.',
     hex: '#10B981',
     colorName: 'emerald',
     classes: {
@@ -94,9 +94,9 @@ export const MISSIONEN = Object.freeze([
   },
   {
     id: MISSION_TYPES.RECHERCHE,
-    label: 'Informationen checken',
+    label: 'Quellen erschließen',
     emoji: '🌐',
-    kern: 'Informationsbeschaffung & Quellen',
+    kern: 'Schüler:innen arbeiten mit Texten, Grafiken oder Videos und beantworten Leitfragen. Sie lernen, Informationen zu erschließen und zu ordnen.',
     hex: '#3B82F6',
     colorName: 'blue',
     classes: {
@@ -110,9 +110,9 @@ export const MISSIONEN = Object.freeze([
   },
   {
     id: MISSION_TYPES.ANWENDUNG,
-    label: 'Zeigen, was man kann',
+    label: 'Anwenden & Sichern',
     emoji: '✅',
-    kern: 'Wissen im bekannten Kontext festigen',
+    kern: 'Schüler:innen wenden Gelerntes routiniert im bekannten Kontext an und festigen ihr Wissen.',
     hex: '#8B5CF6',
     colorName: 'violet',
     classes: {
@@ -126,9 +126,9 @@ export const MISSIONEN = Object.freeze([
   },
   {
     id: MISSION_TYPES.TRANSFER,
-    label: 'In neue Welten übertragen',
+    label: 'Transfer & Vernetzung',
     emoji: '🚀',
-    kern: 'Wissen im neuen Kontext anwenden',
+    kern: 'Schüler:innen übertragen ihr Wissen auf einen neuen Kontext oder verknüpfen es mit anderen Inhalten — Flexibilität des Wissens zeigt sich.',
     hex: '#EC4899',
     colorName: 'pink',
     classes: {
@@ -142,9 +142,9 @@ export const MISSIONEN = Object.freeze([
   },
   {
     id: MISSION_TYPES.KREATIVITAET,
-    label: 'Etwas Eigenes erschaffen',
+    label: 'Kreative Gestaltung',
     emoji: '🎨',
-    kern: 'Schöpferische Gestaltung & Deep Dive',
+    kern: 'Schüler:innen erschaffen ein eigenes Produkt (Text, Modell, Präsentation, Video, Plakat) mit Gestaltungsspielraum.',
     hex: '#F97316',
     colorName: 'orange',
     classes: {
