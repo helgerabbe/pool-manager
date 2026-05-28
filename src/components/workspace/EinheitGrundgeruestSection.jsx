@@ -13,6 +13,13 @@ export default function EinheitGrundgeruestSection({ einheit, canEdit, onSaved }
   const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log('[GrundgeruestSection] einheit prop:', {
+      id: einheit?.id,
+      hat_rohtext: !!einheit?.grundgeruest_rohtext,
+      rohtext_laenge: einheit?.grundgeruest_rohtext?.length || 0,
+      preview: einheit?.grundgeruest_rohtext?.slice(0, 80),
+    });
     setText(einheit.grundgeruest_rohtext || '');
     setStructured(einheit.grundgeruest_strukturiert || null);
   }, [einheit.id, einheit.grundgeruest_rohtext, einheit.grundgeruest_strukturiert]);
