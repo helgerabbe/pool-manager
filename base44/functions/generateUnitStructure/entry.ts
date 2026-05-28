@@ -154,16 +154,32 @@ Regeln:
       },
     ];
 
-    const structure = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const rawStructure = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: JSON.stringify(modelMessages),
       model: 'claude_sonnet_4_6',
       file_urls: fileUrls.length > 0 ? fileUrls : undefined,
       response_json_schema: RESPONSE_JSON_SCHEMA,
     });
 
-    const aiResponse = messages.length === 0
-      ? 'Ich habe einen ersten Entwurf für die Einheit erstellt. Du siehst ihn links in der Vorschau. Was sollen wir anpassen?'
-      : 'Ich habe die Struktur entsprechend deinem Wunsch aktualisiert. Was möchtest du als nächstes ändern?';
+    // Manche Modelle (insb. Claude) verschachteln die Antwort in einen
+    // zusätzlichen `response`-Wrapper. Wir entpacken das hier robust, damit
+    // das Frontend immer `structure.themenfelder` direkt erhält.
+    let structure = rawStructure;
+    if (structure && !Array.isArray(structure.themenfelder)) {
+      if (structure.response && Array.isArray(structure.response.themenfelder)) {
+        structure = structure.response;
+      } else if (structure.data && Array.isArray(structure.data.themenfelder)) {
+        structure = structure.data;
+      }
+    }
+
+    const hasContent = Array.isArray(structure?.themenfelder) && structure.themenfelder.length > 0;
+
+    const aiResponse = !hasContent
+      ? 'Ich konnte leider keinen verwertbaren Struktur-Entwurf erzeugen. Bitte versuche es erneut oder formuliere deinen Wunsch konkreter.'
+      : messages.length === 0
+        ? 'Ich habe einen ersten Entwurf für die Einheit erstellt. Du siehst ihn links in der Vorschau. Was sollen wir anpassen?'
+        : 'Ich habe die Struktur entsprechend deinem Wunsch aktualisiert. Was möchtest du als nächstes ändern?';
 
     return Response.json({ aiResponse, structure });
   } catch (error) {
