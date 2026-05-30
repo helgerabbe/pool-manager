@@ -96,12 +96,21 @@ export default function KITutorPreviewModal({ open, onOpenChange, activityRecord
   // Aufgabenstellung kommt entweder aus der MasterAufgabe (falls masterfähig)
   // oder direkt aus den field_values der Aktivität (KI-Tutor ist standardmäßig
   // NICHT masterfähig – die Inhalte liegen dann auf der Activity selbst).
+  // Wir akzeptieren mehrere Feldnamen-Varianten, weil der Katalog je nach
+  // Konfiguration `aufgabenstellung`, `aufgabenstellung_schueler` o.ä. nutzt.
   const fv = master?.field_values || activityRecord?.field_values || {};
   const aufgabenstellung =
     fv.aufgabenstellung ||
+    fv.aufgabenstellung_schueler ||
+    fv.aufgabe_schueler ||
     fv.aufgabe ||
     fv.aufgabe_text ||
-    '';
+    (() => {
+      const k = Object.keys(fv).find((key) =>
+        key.toLowerCase().startsWith('aufgaben') && key !== 'aufgabentext' && typeof fv[key] === 'string' && fv[key].trim()
+      );
+      return k ? fv[k] : '';
+    })();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
