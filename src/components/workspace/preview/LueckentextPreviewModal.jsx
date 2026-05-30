@@ -185,6 +185,10 @@ export default function LueckentextPreviewModal({ open, onOpenChange, fieldValue
         <div className="pt-3" ref={containerRef}>
           <IPadFrame lernpaketTitel={catalogName} phaseLabel={phase}>
           <article className="bg-white h-full flex flex-col">
+            {/* Schlanker Phasen-Untertitel */}
+            <div className="px-4 py-1.5 bg-amber-50 border-b border-amber-100 text-[12px] text-amber-800 shrink-0">
+              <span className="font-semibold">Übung ·</span> Hier übst du, was du gelernt hast.
+            </div>
             {/* Wortbank — kompakt, inline */}
             <div className="px-3 py-2 bg-gradient-to-br from-blue-50 to-indigo-50 border-b border-blue-100 shrink-0">
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -215,7 +219,7 @@ export default function LueckentextPreviewModal({ open, onOpenChange, fieldValue
             </div>
 
             {/* Text mit Lücken — nimmt verbleibenden Platz */}
-            <div className="flex-1 min-h-0 overflow-auto px-4 py-3 leading-[1.7] text-[12.5px] text-slate-800">
+            <div className="flex-1 min-h-0 overflow-auto px-4 py-3 leading-[1.8] text-[14px] text-slate-800">
               {tokens.map((tok, i) => {
                 if (tok.type === 'text') {
                   return <span key={i} className="whitespace-pre-wrap">{tok.value}</span>;
@@ -239,7 +243,7 @@ export default function LueckentextPreviewModal({ open, onOpenChange, fieldValue
                     onDrop={(e) => onDropSlot(e, tok.slotId)}
                     onDragOver={onDragOver}
                     onClick={() => onSlotClick(tok.slotId)}
-                    className={`inline-flex items-center justify-center gap-0.5 mx-0.5 px-1.5 py-0 min-w-[64px] rounded border border-dashed text-[12px] font-semibold cursor-pointer transition-all ${stateClass}`}
+                    className={`inline-flex items-center justify-center gap-0.5 mx-0.5 px-2 py-0 min-w-[72px] rounded border border-dashed text-[13px] font-semibold cursor-pointer transition-all ${stateClass}`}
                   >
                     {word ? (
                       <>
