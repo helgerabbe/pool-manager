@@ -170,10 +170,7 @@ export default function LueckentextPreviewModal({ open, onOpenChange, fieldValue
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="max-h-[95vh] overflow-y-auto bg-slate-100 p-4"
-        style={{ maxWidth: '1280px', width: '95vw' }}
-      >
+      <DialogContent className="max-h-[95vh] w-[95vw] max-w-[1280px] overflow-y-auto bg-slate-100 p-4">
         <DialogHeader className="border-b border-slate-200 pb-3">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Eye className="w-4 h-4 text-violet-600" />
