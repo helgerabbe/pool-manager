@@ -21,6 +21,7 @@ import TextLesenModal from '@/components/workspace/TextLesenModal';
 import TextLesenPreviewModal from '@/components/workspace/preview/TextLesenPreviewModal';
 import VideoAudioPreviewModal from '@/components/workspace/preview/VideoAudioPreviewModal';
 import LinkUrlPreviewModal from '@/components/workspace/preview/LinkUrlPreviewModal';
+import KITutorPreviewModal from '@/components/workspace/preview/KITutorPreviewModal';
 import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import MoodleSyncStatusBadge from '@/components/workspace/MoodleSyncStatusBadge';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
@@ -156,6 +157,8 @@ export default function ActivityMasterPanel({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [videoAudioPreviewOpen, setVideoAudioPreviewOpen] = useState(false);
   const [linkUrlPreviewOpen, setLinkUrlPreviewOpen] = useState(false);
+  // KI-Tutor-Vorschau: Master, dessen Aufgabenstellung gerade angezeigt wird (oder null).
+  const [kiTutorPreviewMaster, setKiTutorPreviewMaster] = useState(null);
   const [acquiringLock, setAcquiringLock] = useState(false);
   const modalUsesExistingLockRef = React.useRef(false);
 
@@ -982,6 +985,16 @@ export default function ActivityMasterPanel({
                       </span>
                     )}
                   </div>
+                  <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setKiTutorPreviewMaster(master)}
+                    className="gap-1.5 text-xs h-7 border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100 hover:text-violet-900"
+                    title="Diese Aufgabe in der Schüler-Ansicht anzeigen"
+                  >
+                    <Eye className="w-3.5 h-3.5" /> Vorschau
+                  </Button>
                   {kannBearbeiten && !isParentPaketLockedByOther && (
                     <Button
                       variant="destructive"
@@ -1003,6 +1016,7 @@ export default function ActivityMasterPanel({
                       Löschen
                     </Button>
                     )}
+                  </div>
                 </div>
                 <KITutorMasterForm
                   master={master}
@@ -1065,6 +1079,16 @@ export default function ActivityMasterPanel({
               </Button>
             </div>
           )}
+
+          {/* KI-Tutor-Schüler-Vorschau */}
+          <KITutorPreviewModal
+            open={!!kiTutorPreviewMaster}
+            onOpenChange={(o) => { if (!o) setKiTutorPreviewMaster(null); }}
+            activityRecord={activityRecord}
+            master={kiTutorPreviewMaster}
+            catalogName={catalogEntry?.name}
+            phase={activityRecord?.phase}
+          />
 
           {/* Weitere Masteraufgabe hinzufügen */}
           {masterAufgaben.length > 0 && (
