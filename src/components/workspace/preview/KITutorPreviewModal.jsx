@@ -99,6 +99,7 @@ export default function KITutorPreviewModal({ open, onOpenChange, activityRecord
   const fv = master?.field_values || activityRecord?.field_values || {};
   const aufgabenstellung =
     fv.aufgabenstellung ||
+    fv.aufgabentext ||
     fv.aufgabe ||
     fv.aufgabe_text ||
     '';
