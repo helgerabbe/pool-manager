@@ -11,7 +11,7 @@ import { BookOpen, Dumbbell, Trophy } from 'lucide-react';
 const PHASE_CONFIG = {
   'Input': {
     label: 'Input',
-    subtitle: 'Hier erfährst du, worum es geht',
+    subtitle: 'Hier erklären wir dir, was du wissen und können sollst',
     icon: BookOpen,
     bg: 'bg-gradient-to-r from-blue-500 to-blue-600',
   },
@@ -42,10 +42,8 @@ export default function PhaseBadge({ phase }) {
           <Icon className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-base font-bold leading-tight">
-            {config.label}
-            <span className="font-normal opacity-90 ml-2 text-sm">· {config.subtitle}</span>
-          </div>
+        <div className="text-base font-bold leading-tight">{config.label}</div>
+        <div className="text-sm font-normal opacity-90 leading-snug">{config.subtitle}</div>
         </div>
       </div>
     </div>
