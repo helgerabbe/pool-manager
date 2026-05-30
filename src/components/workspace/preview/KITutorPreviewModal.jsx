@@ -31,32 +31,36 @@ function PhaseSubtitleBar({ phase }) {
   );
 }
 
-function StudentKITutorBody({ aufgabentext, aufgabenstellung }) {
-  // Wir hängen die Aufgabenstellung an die brian.study-URL, damit der Tutor
-  // (sofern unterstützt) bereits mit Kontext startet. Endgültige Integration
-  // wird mit brian.study abgestimmt – siehe Konzept-Entscheidung 2026-05-30.
-  const brianUrl = aufgabenstellung
-    ? `https://brian.study/?task=${encodeURIComponent(aufgabenstellung)}`
+// Brian-Logo (vom Nutzer bereitgestellt) – dient gleichzeitig als visuelle
+// Bestätigung, dass diese KI-Tutor-Vorschau wirklich geladen wurde.
+const BRIAN_LOGO_URL = 'https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/829f1dcc1_image.png';
+
+function StudentKITutorBody({ aufgabe }) {
+  const brianUrl = aufgabe
+    ? `https://brian.study/?task=${encodeURIComponent(aufgabe)}`
     : 'https://brian.study/';
 
-  const isEmpty = !aufgabentext && !aufgabenstellung;
+  const isEmpty = !aufgabe;
 
   return (
     <div className="h-full flex flex-col px-6 py-5 gap-4">
-      {aufgabentext && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-[14px] text-blue-900 leading-relaxed shrink-0">
-          {aufgabentext}
+      {/* Brian-Header – Logo + Titel, identifiziert die richtige Vorschau */}
+      <div className="flex items-center gap-3 shrink-0">
+        <img src={BRIAN_LOGO_URL} alt="Brian – KI-Tutor" className="w-12 h-12 object-contain shrink-0" />
+        <div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-violet-700">KI-Tutor</div>
+          <div className="text-base font-bold text-slate-900 leading-tight">Brian hilft dir bei dieser Aufgabe</div>
         </div>
-      )}
+      </div>
 
-      {aufgabenstellung && (
+      {aufgabe && (
         <div className="rounded-xl border-2 border-violet-200 bg-gradient-to-br from-violet-50 to-fuchsia-50 px-5 py-4 shrink-0">
           <div className="flex items-center gap-2 text-violet-700 text-[11px] font-bold uppercase tracking-wider mb-2">
             <Sparkles className="w-3.5 h-3.5" />
             Deine Aufgabe
           </div>
           <p className="text-[15px] text-slate-800 leading-relaxed whitespace-pre-wrap">
-            {aufgabenstellung}
+            {aufgabe}
           </p>
         </div>
       )}
@@ -90,18 +94,13 @@ function StudentKITutorBody({ aufgabentext, aufgabenstellung }) {
 }
 
 export default function KITutorPreviewModal({ open, onOpenChange, activityRecord, master, catalogName, phase }) {
-  // Aufgabenstellung kommt aus dem Master (KI-Tutor speichert sie dort);
-  // Aufgabentext (Anweisung) sitzt auf der Activity-Ebene.
-  const aufgabentext = activityRecord?.field_values?.aufgabentext || '';
-  // Aufgabenstellung kommt entweder aus der MasterAufgabe (falls masterfähig)
-  // oder direkt aus den field_values der Aktivität (KI-Tutor ist standardmäßig
-  // NICHT masterfähig – die Inhalte liegen dann auf der Activity selbst).
-  const fv = master?.field_values || activityRecord?.field_values || {};
-  const aufgabenstellung =
-    fv.aufgabenstellung ||
-    fv.aufgabentext ||
-    fv.aufgabe ||
-    fv.aufgabe_text ||
+  // KI-Tutor ist standardmäßig NICHT masterfähig – Aufgabe liegt dann
+  // direkt auf der Activity. Falls doch ein Master existiert, hat dieser Vorrang.
+  const masterFv = master?.field_values || {};
+  const actFv = activityRecord?.field_values || {};
+  const aufgabe =
+    masterFv.aufgabenstellung || masterFv.aufgabentext || masterFv.aufgabe || masterFv.aufgabe_text ||
+    actFv.aufgabenstellung || actFv.aufgabentext || actFv.aufgabe || actFv.aufgabe_text ||
     '';
 
   return (
@@ -123,7 +122,7 @@ export default function KITutorPreviewModal({ open, onOpenChange, activityRecord
             <div className="bg-white h-full flex flex-col">
               <PhaseSubtitleBar phase={phase} />
               <div className="flex-1 min-h-0">
-                <StudentKITutorBody aufgabentext={aufgabentext} aufgabenstellung={aufgabenstellung} />
+                <StudentKITutorBody aufgabe={aufgabe} />
               </div>
             </div>
           </IPadFrame>
