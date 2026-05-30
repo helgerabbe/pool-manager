@@ -11,7 +11,8 @@ import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Pencil, Loader2, CheckCircle2, Sparkles, Lock } from 'lucide-react';
+import { Crown, Pencil, Loader2, CheckCircle2, Sparkles, Lock, Eye } from 'lucide-react';
+import LueckentextPreviewModal from '@/components/workspace/preview/LueckentextPreviewModal';
 import ReleaseToggleSection from '@/components/release/ReleaseToggleSection';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { getFriendlyErrorMessage } from '@/lib/errorMapper';
@@ -322,6 +323,7 @@ export default function MasterDetailView({
   const [imageLabelingModalOpen, setImageLabelingModalOpen] = useState(false);
   const [testModalOpen, setTestModalOpen] = useState(false);
   const [offeneAufgabeModalOpen, setOffeneAufgabeModalOpen] = useState(false);
+  const [lueckentextPreviewOpen, setLueckentextPreviewOpen] = useState(false);
   const [fieldValues, setFieldValues] = useState(master.field_values || {});
   const [localContentStatus, setLocalContentStatus] = useState(master.content_status || 'draft');
   const [localReleasedAt, setLocalReleasedAt] = useState(master.released_at || null);
@@ -589,19 +591,34 @@ export default function MasterDetailView({
           </div>
         </div>
 
-        {/* Bearbeiten-Button */}
-        {kannBearbeiten && isSupportedType && (
-          <Button
-            onClick={handleEdit}
-            disabled={acquiringLock}
-            className="gap-2 shrink-0"
-          >
-            {acquiringLock
-              ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren…</>
-              : <><Pencil className="w-4 h-4" /> Inhalt bearbeiten</>}
-          </Button>
-        )}
       </div>
+
+      {/* ── Action-Reihe: Vorschau + Inhalt bearbeiten (unter der Infobox) ── */}
+      {(kannBearbeiten || (isLuecke && fieldValues.lueckentext)) && (
+        <div className="flex justify-end gap-2">
+          {isLuecke && fieldValues.lueckentext && (
+            <Button
+              variant="outline"
+              onClick={() => setLueckentextPreviewOpen(true)}
+              className="gap-2 border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100"
+              title="So bearbeiten Schüler:innen diese Aufgabe"
+            >
+              <Eye className="w-4 h-4" /> Vorschau
+            </Button>
+          )}
+          {kannBearbeiten && isSupportedType && (
+            <Button
+              onClick={handleEdit}
+              disabled={acquiringLock}
+              className="gap-2"
+            >
+              {acquiringLock
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren…</>
+                : <><Pencil className="w-4 h-4" /> Inhalt bearbeiten</>}
+            </Button>
+          )}
+        </div>
+      )}
 
 
 
@@ -877,6 +894,17 @@ export default function MasterDetailView({
             </>
             );
             })()}
+
+      {/* ── Schüler-Vorschau Modal (Lückentext) ── */}
+      {isLuecke && (
+        <LueckentextPreviewModal
+          open={lueckentextPreviewOpen}
+          onOpenChange={setLueckentextPreviewOpen}
+          fieldValues={fieldValues}
+          catalogName={catalogName}
+          phase={master?.phase}
+        />
+      )}
 
       {/* ── Klon-Modal ── */}
       <KlonErstellenModal
