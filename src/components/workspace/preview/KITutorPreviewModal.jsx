@@ -97,26 +97,11 @@ export default function KITutorPreviewModal({ open, onOpenChange, activityRecord
   // oder direkt aus den field_values der Aktivität (KI-Tutor ist standardmäßig
   // NICHT masterfähig – die Inhalte liegen dann auf der Activity selbst).
   const fv = master?.field_values || activityRecord?.field_values || {};
-  // Robuster Lookup: erst die bekannten Feldnamen, dann irgendein Feld,
-  // dessen Name auf eine Aufgabenstellung hindeutet (z. B. "aufgabenstellung_schueler").
-  // "aufgabentext" wird ausgeschlossen — das ist die kurze Anweisung oben.
-  // "erwartungshorizont" wird ausgeschlossen — das darf der Schüler NIE sehen.
-  const explicit =
+  const aufgabenstellung =
     fv.aufgabenstellung ||
     fv.aufgabe ||
     fv.aufgabe_text ||
-    fv.aufgabenstellung_schueler;
-  let aufgabenstellung = explicit || '';
-  if (!aufgabenstellung) {
-    const key = Object.keys(fv).find((k) => {
-      const lk = k.toLowerCase();
-      if (lk === 'aufgabentext') return false;
-      if (lk.includes('erwartungs') || lk.includes('musterloesung') || lk.includes('musterlösung')) return false;
-      if (lk.includes('tutor_prompt') || lk.includes('material')) return false;
-      return (lk.includes('aufgabe') || lk.includes('frage')) && typeof fv[k] === 'string' && fv[k].trim();
-    });
-    if (key) aufgabenstellung = fv[key];
-  }
+    '';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
