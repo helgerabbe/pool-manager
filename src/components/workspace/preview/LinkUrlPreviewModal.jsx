@@ -14,7 +14,12 @@ import PhaseBadge from '@/components/workspace/preview/PhaseBadge';
 function StudentLinkUrlBody({ fieldValues = {} }) {
   const aufgabentext = fieldValues?.aufgabentext;
   const titel = fieldValues?.titel;
-  const webadressen = Array.isArray(fieldValues?.webadressen) ? fieldValues.webadressen : [];
+  // Normalisierung: 'Link / URL'-Aktivitäten speichern den Link oft als einzelnes
+  // 'url'-Feld; ältere/neue Varianten ggf. als 'webadressen'-Array. Wir akzeptieren beides.
+  const rawList = Array.isArray(fieldValues?.webadressen) ? fieldValues.webadressen : [];
+  const webadressen = rawList.length > 0
+    ? rawList
+    : (fieldValues?.url ? [{ url: fieldValues.url, label: fieldValues?.titel || null }] : []);
 
   return (
     <article className="space-y-5 bg-white rounded-xl border border-slate-200 px-6 py-6 sm:px-8 sm:py-7 shadow-sm">
@@ -63,8 +68,8 @@ function LinkPreviewCard({ url, label }) {
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
 
-  // Microlink.io liefert kostenlos einen Screenshot der Zielseite als direktes Bild zurück.
-  const screenshotSrc = `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`;
+  // thum.io liefert kostenlos einen Screenshot direkt als Bild (zuverlässiger als microlink fallback).
+  const screenshotSrc = `https://image.thum.io/get/width/1200/crop/800/noanimate/${url}`;
 
   let hostname = url;
   try { hostname = new URL(url).hostname.replace(/^www\./, ''); } catch (_) { /* keep raw */ }
