@@ -13,11 +13,12 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useLernpaketLock } from '@/hooks/useLocks';
 import { Button } from '@/components/ui/button';
-import { Crown, Plus, Loader2, Save, Pencil, Check, Lock } from 'lucide-react';
+import { Crown, Plus, Loader2, Save, Pencil, Check, Lock, Eye } from 'lucide-react';
 import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
 import TextLesenModal from '@/components/workspace/TextLesenModal';
+import TextLesenPreviewModal from '@/components/workspace/preview/TextLesenPreviewModal';
 import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import MoodleSyncStatusBadge from '@/components/workspace/MoodleSyncStatusBadge';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
@@ -149,6 +150,8 @@ export default function ActivityMasterPanel({
   const [isDirty, setIsDirty] = useState(false);
   // Modal-State für "Text lesen" und ähnliche Aktivitäten
   const [editModalOpen, setEditModalOpen] = useState(false);
+  // Stufe-1-Pilot (2026-05-30): Schüler-Vorschau für "Text lesen".
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [acquiringLock, setAcquiringLock] = useState(false);
   const modalUsesExistingLockRef = React.useRef(false);
 
@@ -606,7 +609,18 @@ export default function ActivityMasterPanel({
         return (
           <>
             {kannBearbeiten && (
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-2">
+                {/* Schüler-Vorschau (Stufe-1-Pilot, nur für "Text lesen"). */}
+                {catalogEntry?.name?.toLowerCase().includes('text lesen') && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setPreviewOpen(true)}
+                    className="gap-2 border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100 hover:text-violet-900"
+                    title="Diese Aktivität in der Schüler-Ansicht anzeigen"
+                  >
+                    <Eye className="w-4 h-4" /> Vorschau
+                  </Button>
+                )}
                 <Button
                   onClick={handleOpenEditModal}
                   disabled={acquiringLock || isParentPaketLockedByOther || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || (globalEditActive && !lernpaketLockActive)}
@@ -619,6 +633,14 @@ export default function ActivityMasterPanel({
                   </Button>
                 </div>
               )}
+
+              {/* Stufe-1-Pilot: Schüler-Vorschau-Modal für "Text lesen". */}
+              <TextLesenPreviewModal
+                open={previewOpen}
+                onOpenChange={setPreviewOpen}
+                fieldValues={fieldValues}
+                catalogName={catalogEntry?.name}
+              />
 
             {/* Spezielle Vorschau für Bildbeschriftung */}
             {isImageLabeling ? (
