@@ -20,6 +20,7 @@ import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
 import TextLesenModal from '@/components/workspace/TextLesenModal';
 import TextLesenPreviewModal from '@/components/workspace/preview/TextLesenPreviewModal';
 import VideoAudioPreviewModal from '@/components/workspace/preview/VideoAudioPreviewModal';
+import LinkUrlPreviewModal from '@/components/workspace/preview/LinkUrlPreviewModal';
 import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import MoodleSyncStatusBadge from '@/components/workspace/MoodleSyncStatusBadge';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
@@ -151,9 +152,10 @@ export default function ActivityMasterPanel({
   const [isDirty, setIsDirty] = useState(false);
   // Modal-State für "Text lesen" und ähnliche Aktivitäten
   const [editModalOpen, setEditModalOpen] = useState(false);
-  // Stufe-1-Pilot (2026-05-30): Schüler-Vorschau für "Text lesen" und "Video / Audio".
+  // Stufe-1-Pilot (2026-05-30): Schüler-Vorschau für "Text lesen", "Video / Audio" und "Link / URL".
   const [previewOpen, setPreviewOpen] = useState(false);
   const [videoAudioPreviewOpen, setVideoAudioPreviewOpen] = useState(false);
+  const [linkUrlPreviewOpen, setLinkUrlPreviewOpen] = useState(false);
   const [acquiringLock, setAcquiringLock] = useState(false);
   const modalUsesExistingLockRef = React.useRef(false);
 
@@ -612,13 +614,15 @@ export default function ActivityMasterPanel({
           <>
             {kannBearbeiten && (
               <div className="flex justify-end gap-2">
-                {/* Schüler-Vorschau (Stufe-1-Pilot, für "Text lesen" und "Video / Audio"). */}
-                {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio')) && (
+                {/* Schüler-Vorschau (Stufe-1-Pilot, für "Text lesen", "Video / Audio" und "Link / URL"). */}
+                {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio') || catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url')) && (
                   <Button
                     variant="outline"
                     onClick={() => {
                       if (catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio')) {
                         setVideoAudioPreviewOpen(true);
+                      } else if (catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url')) {
+                        setLinkUrlPreviewOpen(true);
                       } else {
                         setPreviewOpen(true);
                       }
@@ -654,6 +658,12 @@ export default function ActivityMasterPanel({
                 onOpenChange={setVideoAudioPreviewOpen}
                 fieldValues={fieldValues}
                 activityRecord={activityRecord}
+                catalogName={catalogEntry?.name}
+              />
+              <LinkUrlPreviewModal
+                open={linkUrlPreviewOpen}
+                onOpenChange={setLinkUrlPreviewOpen}
+                fieldValues={fieldValues}
                 catalogName={catalogEntry?.name}
               />
 
