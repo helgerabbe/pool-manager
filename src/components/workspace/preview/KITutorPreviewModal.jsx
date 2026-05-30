@@ -14,7 +14,22 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Eye, ExternalLink, Sparkles, MessageCircle } from 'lucide-react';
 import IPadFrame from '@/components/workspace/preview/IPadFrame';
-import PhaseSubtitleBar from '@/components/workspace/preview/PhaseSubtitleBar';
+
+// Inline Phasen-Kopfleiste (schlanker Ersatz für PhaseBadge im 960×600-Slot).
+const PHASE_BAR = {
+  'Input':     { label: 'Input',     subtitle: 'Hier erklären wir dir, was du wissen und können sollst.', bg: 'bg-blue-50',    border: 'border-blue-100',    text: 'text-blue-900' },
+  'Übung':     { label: 'Übung',     subtitle: 'Hier übst du, was du gelernt hast.',                       bg: 'bg-amber-50',   border: 'border-amber-100',   text: 'text-amber-800' },
+  'Abschluss': { label: 'Abschluss', subtitle: 'Hier zeigst du, was du kannst.',                           bg: 'bg-emerald-50', border: 'border-emerald-100', text: 'text-emerald-800' },
+};
+function PhaseSubtitleBar({ phase }) {
+  const c = PHASE_BAR[phase];
+  if (!c) return null;
+  return (
+    <div className={`px-4 py-1.5 ${c.bg} border-b ${c.border} text-[12px] ${c.text} shrink-0`}>
+      <span className="font-semibold">{c.label} ·</span> {c.subtitle}
+    </div>
+  );
+}
 
 function StudentKITutorBody({ aufgabentext, aufgabenstellung }) {
   // Wir hängen die Aufgabenstellung an die brian.study-URL, damit der Tutor
