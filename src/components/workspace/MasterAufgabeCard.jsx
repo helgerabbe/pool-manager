@@ -587,7 +587,19 @@ export default function MasterAufgabeCard({
           <LockBanner lockedByUser={locked ? master.locked_by_user : null} />
 
           {!editMode && !locked && (
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+              {isLuecke && fieldValues.lueckentext && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setLueckentextPreviewOpen(true)}
+                  className="gap-1.5 border-violet-300 text-violet-700 hover:bg-violet-50"
+                  title="So bearbeiten Schüler:innen diese Aufgabe"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  Vorschau
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="outline"
