@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, RotateCcw, CheckCircle2, XCircle, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import PhaseBadge from '@/components/workspace/preview/PhaseBadge';
+import IPadFrame from '@/components/workspace/preview/IPadFrame';
 
 function shuffle(arr) {
   const a = [...arr];
@@ -41,7 +42,7 @@ function parseLueckentext(rawText) {
   return { tokens, slots };
 }
 
-export default function LueckentextPreviewModal({ open, onOpenChange, fieldValues = {} }) {
+export default function LueckentextPreviewModal({ open, onOpenChange, fieldValues = {}, catalogName = 'Lückentext', phase = 'Übung' }) {
   const rawText = fieldValues.lueckentext || '';
   const distraktoren = Array.isArray(fieldValues.distraktoren) ? fieldValues.distraktoren : [];
 
@@ -169,20 +170,25 @@ export default function LueckentextPreviewModal({ open, onOpenChange, fieldValue
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto bg-slate-50">
+      <DialogContent
+        className="max-h-[95vh] overflow-y-auto bg-slate-100 p-4"
+        style={{ maxWidth: '1280px', width: '95vw' }}
+      >
         <DialogHeader className="border-b border-slate-200 pb-3">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Eye className="w-4 h-4 text-violet-600" />
             Schüler-Vorschau
-            <span className="text-xs font-normal text-slate-500 ml-1">· Lückentext</span>
+            <span className="text-xs font-normal text-slate-500 ml-1">· {catalogName}</span>
           </DialogTitle>
           <p className="text-xs text-slate-500 mt-1">
-            So bearbeiten Schüler:innen diese Aufgabe. Wörter in die Lücken ziehen oder klicken.
+            So sehen Schüler:innen die Aufgabe auf dem iPad (960 × 600 px Slide). Erscheint hier ein Scrollbalken, passt der Inhalt nicht auf eine Seite.
           </p>
         </DialogHeader>
 
-        <div className="pt-3 space-y-3" ref={containerRef}>
-          <PhaseBadge phase="Übung" />
+        <div className="pt-3" ref={containerRef}>
+          <IPadFrame lernpaketTitel={catalogName} phaseLabel={phase}>
+          <div className="p-4 space-y-3">
+          <PhaseBadge phase={phase} />
 
           <article className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             {/* Wortbank */}
@@ -304,6 +310,8 @@ export default function LueckentextPreviewModal({ open, onOpenChange, fieldValue
               Diese Aufgabe enthält noch keine Lücken.
             </p>
           )}
+          </div>
+          </IPadFrame>
         </div>
       </DialogContent>
     </Dialog>
