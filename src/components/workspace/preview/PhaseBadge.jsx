@@ -11,19 +11,19 @@ import { BookOpen, Dumbbell, Trophy } from 'lucide-react';
 const PHASE_CONFIG = {
   'Input': {
     label: 'Input',
-    subtitle: 'Hier erklären wir dir, was du wissen und können sollst',
+    subtitle: 'Hier erklären wir dir, was du wissen und können sollst.',
     icon: BookOpen,
     bg: 'bg-gradient-to-r from-blue-500 to-blue-600',
   },
   'Übung': {
     label: 'Übung',
-    subtitle: 'Hier übst du, was du gelernt hast',
+    subtitle: 'Hier übst du, was du gelernt hast.',
     icon: Dumbbell,
     bg: 'bg-gradient-to-r from-amber-500 to-orange-500',
   },
   'Abschluss': {
     label: 'Abschluss',
-    subtitle: 'Hier zeigst du, was du kannst',
+    subtitle: 'Hier zeigst du, was du kannst.',
     icon: Trophy,
     bg: 'bg-gradient-to-r from-emerald-500 to-green-600',
   },
