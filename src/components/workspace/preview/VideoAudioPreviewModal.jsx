@@ -114,17 +114,6 @@ function StudentVideoAudioBody({ fieldValues = {}, activityRecord = {} }) {
         </div>
       )}
 
-      {/* Transkript (wenn vorhanden) */}
-      {transkript && (
-        <div className="space-y-2">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-            Transkript
-          </p>
-          <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">
-            {transkript}
-          </div>
-        </div>
-      )}
 
       {/* Leerzustand */}
       {!aufgabentext && !titel && !url && !transkript && (
