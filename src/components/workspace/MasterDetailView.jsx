@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Crown, Pencil, Loader2, CheckCircle2, Sparkles, Lock, Eye } from 'lucide-react';
 import LueckentextPreviewModal from '@/components/workspace/preview/LueckentextPreviewModal';
+import KITutorPreviewModal from '@/components/workspace/preview/KITutorPreviewModal';
 import ReleaseToggleSection from '@/components/release/ReleaseToggleSection';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { getFriendlyErrorMessage } from '@/lib/errorMapper';
@@ -324,6 +325,7 @@ export default function MasterDetailView({
   const [testModalOpen, setTestModalOpen] = useState(false);
   const [offeneAufgabeModalOpen, setOffeneAufgabeModalOpen] = useState(false);
   const [lueckentextPreviewOpen, setLueckentextPreviewOpen] = useState(false);
+  const [kiTutorPreviewOpen, setKiTutorPreviewOpen] = useState(false);
   const [fieldValues, setFieldValues] = useState(master.field_values || {});
   const [localContentStatus, setLocalContentStatus] = useState(master.content_status || 'draft');
   const [localReleasedAt, setLocalReleasedAt] = useState(master.released_at || null);
@@ -602,6 +604,16 @@ export default function MasterDetailView({
               onClick={() => setLueckentextPreviewOpen(true)}
               className="gap-2 border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100"
               title="So bearbeiten Schüler:innen diese Aufgabe"
+            >
+              <Eye className="w-4 h-4" /> Vorschau
+            </Button>
+          )}
+          {isKITutorType && fieldValues.aufgabenstellung && (
+            <Button
+              variant="outline"
+              onClick={() => setKiTutorPreviewOpen(true)}
+              className="gap-2 border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100"
+              title="So sieht der Schüler diese KI-Tutor-Aufgabe"
             >
               <Eye className="w-4 h-4" /> Vorschau
             </Button>
@@ -894,6 +906,18 @@ export default function MasterDetailView({
             </>
             );
             })()}
+
+      {/* ── Schüler-Vorschau Modal (KI-Tutor) ── */}
+      {isKITutorType && (
+        <KITutorPreviewModal
+          open={kiTutorPreviewOpen}
+          onOpenChange={setKiTutorPreviewOpen}
+          activityRecord={{ field_values: { aufgabentext: master?.field_values?.aufgabentext || '' }, phase: master?.phase }}
+          master={master}
+          catalogName={catalogName}
+          phase={master?.phase}
+        />
+      )}
 
       {/* ── Schüler-Vorschau Modal (Lückentext) ── */}
       {isLuecke && (
