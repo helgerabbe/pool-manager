@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Crown, Trash2, Sparkles, Loader2, ChevronDown, ChevronUp, CheckCircle2, RotateCw, ChevronRight, Lock, Circle } from 'lucide-react';
+import { Crown, Trash2, Sparkles, Loader2, ChevronDown, ChevronUp, CheckCircle2, RotateCw, ChevronRight, Lock, Circle, Pencil } from 'lucide-react';
 import KlonErstellenModal from '@/components/workspace/KlonErstellenModal';
 import LockBanner from '@/components/workspace/LockBanner';
 import MatchTermsModal from '@/components/workspace/MatchTermsModal';
@@ -586,34 +586,35 @@ export default function MasterAufgabeCard({
         <div className="p-4 space-y-4">
           <LockBanner lockedByUser={locked ? master.locked_by_user : null} />
 
-          {!editMode && !locked && (
-            <div className="flex justify-end gap-2">
-              {isLuecke && fieldValues.lueckentext && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setLueckentextPreviewOpen(true)}
-                  className="gap-1.5 border-violet-300 text-violet-700 hover:bg-violet-50"
-                  title="So bearbeiten Schüler:innen diese Aufgabe"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  Vorschau
-                </Button>
-              )}
+          {/* Action-Buttons als eigene Reihe — IMMER sichtbar (auch wenn freigegeben/gesperrt),
+             damit Lehrkraft jederzeit die Schüler-Vorschau öffnen kann. */}
+          <div className="flex justify-end gap-2">
+            {isLuecke && fieldValues.lueckentext && (
               <Button
                 size="sm"
                 variant="outline"
+                onClick={() => setLueckentextPreviewOpen(true)}
+                className="gap-1.5 border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100"
+                title="So bearbeiten Schüler:innen diese Aufgabe"
+              >
+                <Eye className="w-4 h-4" />
+                Vorschau
+              </Button>
+            )}
+            {!editMode && !locked && (
+              <Button
+                size="sm"
                 onClick={handleOpenContentEditor}
                 disabled={acquiringLock}
                 className="gap-1.5"
                 title="Inhalt dieser Masteraufgabe bearbeiten"
               >
                 {acquiringLock
-                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sperren…</>
-                  : 'Inhalt bearbeiten'}
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren…</>
+                  : <><Pencil className="w-4 h-4" /> Inhalt bearbeiten</>}
               </Button>
-            </div>
-          )}
+            )}
+          </div>
 
 
 
