@@ -159,6 +159,8 @@ export default function ActivityMasterPanel({
   const [linkUrlPreviewOpen, setLinkUrlPreviewOpen] = useState(false);
   // KI-Tutor-Vorschau: Master, dessen Aufgabenstellung gerade angezeigt wird (oder null).
   const [kiTutorPreviewMaster, setKiTutorPreviewMaster] = useState(null);
+  // KI-Tutor-Vorschau für Aktivitäten OHNE Masteraufgaben (Standardfall).
+  const [kiTutorActivityPreviewOpen, setKiTutorActivityPreviewOpen] = useState(false);
   const [acquiringLock, setAcquiringLock] = useState(false);
   const modalUsesExistingLockRef = React.useRef(false);
 
@@ -618,13 +620,16 @@ export default function ActivityMasterPanel({
             {kannBearbeiten && (
               <div className="flex justify-end gap-2">
                 {/* Schüler-Vorschau (Stufe-1-Pilot, für "Text lesen", "Video / Audio" und "Link / URL"). */}
-                {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio') || catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url')) && (
+                {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio') || catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url') || catalogEntry?.name?.toLowerCase().includes('ki-tutor')) && (
                   <Button
                     variant="outline"
                     onClick={() => {
-                      if (catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio')) {
+                      const n = catalogEntry?.name?.toLowerCase() || '';
+                      if (n.includes('ki-tutor')) {
+                        setKiTutorActivityPreviewOpen(true);
+                      } else if (n.includes('video') || n.includes('audio')) {
                         setVideoAudioPreviewOpen(true);
-                      } else if (catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url')) {
+                      } else if (n.includes('link') || n.includes('url')) {
                         setLinkUrlPreviewOpen(true);
                       } else {
                         setPreviewOpen(true);
@@ -669,6 +674,14 @@ export default function ActivityMasterPanel({
                 open={linkUrlPreviewOpen}
                 onOpenChange={setLinkUrlPreviewOpen}
                 fieldValues={fieldValues}
+                catalogName={catalogEntry?.name}
+                phase={activityRecord?.phase}
+              />
+              <KITutorPreviewModal
+                open={kiTutorActivityPreviewOpen}
+                onOpenChange={setKiTutorActivityPreviewOpen}
+                activityRecord={{ ...activityRecord, field_values: fieldValues }}
+                master={null}
                 catalogName={catalogEntry?.name}
                 phase={activityRecord?.phase}
               />

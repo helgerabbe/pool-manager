@@ -93,10 +93,14 @@ export default function KITutorPreviewModal({ open, onOpenChange, activityRecord
   // Aufgabenstellung kommt aus dem Master (KI-Tutor speichert sie dort);
   // Aufgabentext (Anweisung) sitzt auf der Activity-Ebene.
   const aufgabentext = activityRecord?.field_values?.aufgabentext || '';
+  // Aufgabenstellung kommt entweder aus der MasterAufgabe (falls masterfähig)
+  // oder direkt aus den field_values der Aktivität (KI-Tutor ist standardmäßig
+  // NICHT masterfähig – die Inhalte liegen dann auf der Activity selbst).
+  const fv = master?.field_values || activityRecord?.field_values || {};
   const aufgabenstellung =
-    master?.field_values?.aufgabenstellung ||
-    master?.field_values?.aufgabe ||
-    master?.field_values?.aufgabe_text ||
+    fv.aufgabenstellung ||
+    fv.aufgabe ||
+    fv.aufgabe_text ||
     '';
 
   return (
