@@ -8,6 +8,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Eye, ExternalLink, FileText } from 'lucide-react';
+import PhaseBadge from '@/components/workspace/preview/PhaseBadge';
 
 function StudentVideoAudioBody({ fieldValues = {}, activityRecord = {} }) {
   const url = fieldValues?.url;
@@ -135,7 +136,7 @@ function StudentVideoAudioBody({ fieldValues = {}, activityRecord = {} }) {
   );
 }
 
-export default function VideoAudioPreviewModal({ open, onOpenChange, fieldValues, activityRecord, catalogName }) {
+export default function VideoAudioPreviewModal({ open, onOpenChange, fieldValues, activityRecord, catalogName, phase }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto bg-slate-50">
@@ -152,7 +153,8 @@ export default function VideoAudioPreviewModal({ open, onOpenChange, fieldValues
           </p>
         </DialogHeader>
 
-        <div className="pt-3">
+        <div className="pt-3 space-y-3">
+          <PhaseBadge phase={phase} />
           <StudentVideoAudioBody fieldValues={fieldValues || {}} activityRecord={activityRecord || {}} />
         </div>
       </DialogContent>

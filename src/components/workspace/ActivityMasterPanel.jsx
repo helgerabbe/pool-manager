@@ -652,6 +652,7 @@ export default function ActivityMasterPanel({
                 onOpenChange={setPreviewOpen}
                 fieldValues={fieldValues}
                 catalogName={catalogEntry?.name}
+                phase={activityRecord?.phase}
               />
               <VideoAudioPreviewModal
                 open={videoAudioPreviewOpen}
@@ -659,12 +660,14 @@ export default function ActivityMasterPanel({
                 fieldValues={fieldValues}
                 activityRecord={activityRecord}
                 catalogName={catalogEntry?.name}
+                phase={activityRecord?.phase}
               />
               <LinkUrlPreviewModal
                 open={linkUrlPreviewOpen}
                 onOpenChange={setLinkUrlPreviewOpen}
                 fieldValues={fieldValues}
                 catalogName={catalogEntry?.name}
+                phase={activityRecord?.phase}
               />
 
             {/* Spezielle Vorschau für Bildbeschriftung */}

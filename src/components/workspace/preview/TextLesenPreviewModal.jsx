@@ -13,6 +13,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Eye, ExternalLink, FileText } from 'lucide-react';
+import PhaseBadge from '@/components/workspace/preview/PhaseBadge';
 
 function StudentTextBody({ fieldValues = {} }) {
   const inhaltTyp = fieldValues.inhalt_typ;
@@ -100,7 +101,7 @@ function StudentTextBody({ fieldValues = {} }) {
   );
 }
 
-export default function TextLesenPreviewModal({ open, onOpenChange, fieldValues, catalogName }) {
+export default function TextLesenPreviewModal({ open, onOpenChange, fieldValues, catalogName, phase }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto bg-slate-50">
@@ -117,7 +118,8 @@ export default function TextLesenPreviewModal({ open, onOpenChange, fieldValues,
           </p>
         </DialogHeader>
 
-        <div className="pt-3">
+        <div className="pt-3 space-y-3">
+          <PhaseBadge phase={phase} />
           <StudentTextBody fieldValues={fieldValues || {}} />
         </div>
       </DialogContent>
