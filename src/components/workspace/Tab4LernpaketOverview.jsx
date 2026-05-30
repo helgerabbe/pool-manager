@@ -8,15 +8,16 @@
  * Aktivitäten-Zeilen sind anklickbar und navigieren direkt zur Aktivität.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
-  Clock, Target, AlertTriangle, Lock, ArrowRight, CheckCircle2, Loader2
+  Clock, Target, AlertTriangle, Lock, ArrowRight, CheckCircle2, Loader2, Eye
 } from 'lucide-react';
+import LernpaketPreviewModal from '@/components/workspace/preview/LernpaketPreviewModal';
 import { cn } from '@/lib/utils';
 import { useCanToggleLernpaketRelease } from '@/hooks/useReleaseLock';
 import useSetReleaseStatus from '@/hooks/useSetReleaseStatus';
@@ -75,6 +76,8 @@ export default function Tab4LernpaketOverview({
     setReleaseStatus({ targetType: 'lernpaket', targetId: paket.id, release: next });
   };
 
+  const [previewOpen, setPreviewOpen] = useState(false);
+
   const activePhases = ['Input', 'Übung', 'Abschluss'].filter(
     phase => (phasenConfig[phase] || {}).disabled !== true
   );
@@ -90,6 +93,18 @@ export default function Tab4LernpaketOverview({
             {paket.geschaetzte_dauer_minuten} Minuten
           </p>
         </div>
+
+        <div className="flex items-center gap-2">
+        {/* Schüler-Vorschau für das ganze Lernpaket */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPreviewOpen(true)}
+          className="gap-2 border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100 hover:text-violet-900"
+          title="Das gesamte Lernpaket in der Schüler-Ansicht anzeigen"
+        >
+          <Eye className="w-3.5 h-3.5" /> Vorschau
+        </Button>
 
         {/* Freigabe-Button */}
         {kannBearbeiten && (
@@ -133,7 +148,18 @@ export default function Tab4LernpaketOverview({
             </TooltipProvider>
           )
         )}
+        </div>
       </div>
+
+      <LernpaketPreviewModal
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        paket={paket}
+        aktivitaeten={paketAktivitaeten}
+        katalog={aktivitaetenKatalog}
+        masters={alleMasters}
+        lernziele={paketZiele}
+      />
 
       {/* Zugeordnete Lernziele */}
       <div className="space-y-2">
