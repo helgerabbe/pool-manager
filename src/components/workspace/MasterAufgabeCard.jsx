@@ -20,6 +20,8 @@ import LockBanner from '@/components/workspace/LockBanner';
 import MatchTermsModal from '@/components/workspace/MatchTermsModal';
 import LueckentextEditor, { LueckentextRenderer, validateBeforeSave } from '@/components/workspace/LueckentextEditor';
 import LueckentextWysiwygModal from '@/components/workspace/LueckentextWysiwygModal';
+import LueckentextPreviewModal from '@/components/workspace/preview/LueckentextPreviewModal';
+import { Eye } from 'lucide-react';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import SortingListEditor from '@/components/workspace/SortingListEditor';
 import SortingListModal from '@/components/workspace/SortingListModal';
@@ -244,6 +246,7 @@ export default function MasterAufgabeCard({
 
   const [klonModalOpen, setKlonModalOpen] = useState(false);
   const [lueckentextModalOpen, setLueckentextModalOpen] = useState(false);
+  const [lueckentextPreviewOpen, setLueckentextPreviewOpen] = useState(false);
   const [sortingListModalOpen, setSortingListModalOpen] = useState(false);
   const [miniQuizModalOpen, setMiniQuizModalOpen] = useState(false);
   const [testModalOpen, setTestModalOpen] = useState(false);
@@ -1000,21 +1003,40 @@ export default function MasterAufgabeCard({
                   readOnly
                 />
               ) : (
-                <p className="text-sm text-muted-foreground italic">Noch kein Lückentext. Klicke „Inhalt bearbeiten".</p>
+                <p className="text-sm text-muted-foreground italic">Noch kein Lückentext. Klicke „Inhalt bearbeiten“.</p>
               )}
-              {/* Button immer sichtbar für berechtigte Nutzer – kein globaler Bearbeitungsmodus nötig */}
+              <LueckentextPreviewModal
+                open={lueckentextPreviewOpen}
+                onOpenChange={setLueckentextPreviewOpen}
+                fieldValues={fieldValues}
+              />
+              {/* Button-Leiste: Vorschau + Inhalt bearbeiten */}
               {!locked && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleEditLueckentext}
-                  disabled={acquiringLock}
-                  className="gap-1.5"
-                >
+                <div className="flex items-center gap-2">
+                  {fieldValues.lueckentext && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setLueckentextPreviewOpen(true)}
+                      className="gap-1.5 border-violet-300 text-violet-700 hover:bg-violet-50"
+                      title="So bearbeiten Schüler:innen diese Aufgabe"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      Vorschau
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleEditLueckentext}
+                    disabled={acquiringLock}
+                    className="gap-1.5"
+                  >
                   {acquiringLock
                     ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sperren…</>
                     : 'Inhalt bearbeiten'}
                 </Button>
+                </div>
               )}
               <LueckentextWysiwygModal
                 open={lueckentextModalOpen}
