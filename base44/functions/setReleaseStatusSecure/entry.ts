@@ -350,6 +350,39 @@ Deno.serve(async (req) => {
             { status: 422 }
           );
         }
+
+        // Aktivitäten mit Master-Vorlagen (KI-Tutor, Lückentext, Match, MiniQuiz,
+        // Sortierung, Bildbeschriftung, Test) tragen ihren Inhalt nicht in
+        // `field_values`, sondern in zugeordneten MasterAufgabe-Records.
+        // Ohne mindestens eine freigegebene Masteraufgabe ist die Aktivität
+        // inhaltlich leer und darf nicht freigegeben werden.
+        if (catalog?.supports_master === true) {
+          const masters = await listAllByFilter(
+            base44.asServiceRole.entities.MasterAufgabe,
+            { activity_id: target.id }
+          );
+          const approvedMasters = (masters || []).filter(
+            (m) => m.content_status === 'approved'
+          );
+          if (approvedMasters.length < 1) {
+            return Response.json(
+              {
+                error: 'Aktivität kann nicht freigegeben werden: mindestens eine freigegebene Masteraufgabe erforderlich',
+                code: 'NO_APPROVED_MASTER',
+                missingFields: [
+                  {
+                    fieldName: '_master',
+                    label: 'Masteraufgabe',
+                    reason: 'Mindestens 1 freigegebene Masteraufgabe erforderlich',
+                  },
+                ],
+                totalMasters: masters?.length || 0,
+                approvedMasters: approvedMasters.length,
+              },
+              { status: 422 }
+            );
+          }
+        }
       } else if (targetType === 'allgemeine_aufgabe') {
         const v = validateAllgemeineAufgabeCompleteness(target);
         if (!v.isComplete) {
