@@ -96,12 +96,31 @@ function StudentKITutorBody({ aufgabe }) {
 export default function KITutorPreviewModal({ open, onOpenChange, activityRecord, master, catalogName, phase }) {
   // KI-Tutor ist standardmäßig NICHT masterfähig – Aufgabe liegt dann
   // direkt auf der Activity. Falls doch ein Master existiert, hat dieser Vorrang.
-  const masterFv = master?.field_values || {};
-  const actFv = activityRecord?.field_values || {};
-  const aufgabe =
-    masterFv.aufgabenstellung || masterFv.aufgabentext || masterFv.aufgabe || masterFv.aufgabe_text ||
-    actFv.aufgabenstellung || actFv.aufgabentext || actFv.aufgabe || actFv.aufgabe_text ||
-    '';
+  // Da das Feld je nach Katalog-Schema unterschiedlich heisst, suchen wir
+  // den ersten nicht-leeren String aus field_values, der NICHT zu den
+  // KI-internen Feldern (Erwartungshorizont, Tutor-Prompt, Musterlösung)
+  // gehört — das ist robust gegen Schema-Umbenennungen.
+  const HIDDEN_KEYS = new Set([
+    'erwartungshorizont', 'erwartungs_horizont', 'erwartung',
+    'tutor_prompt', 'tutorprompt', 'hidden_prompt',
+    'musterloesung', 'musterlösung', 'loesung', 'lösung',
+    'kompetenz', 'kompetenzen', 'lernziel', 'lernziele',
+  ]);
+  const pickAufgabe = (fv) => {
+    if (!fv || typeof fv !== 'object') return '';
+    // Bevorzugte Feldnamen zuerst prüfen
+    for (const k of ['aufgabenstellung', 'aufgabentext', 'aufgabe', 'aufgabe_text', 'aufgabenstellung_schueler', 'schueler_aufgabe', 'task', 'frage', 'fragestellung']) {
+      const v = fv[k];
+      if (typeof v === 'string' && v.trim()) return v;
+    }
+    // Fallback: erster nicht-leerer String, der nicht in HIDDEN_KEYS liegt
+    for (const [k, v] of Object.entries(fv)) {
+      if (HIDDEN_KEYS.has(k.toLowerCase())) continue;
+      if (typeof v === 'string' && v.trim()) return v;
+    }
+    return '';
+  };
+  const aufgabe = pickAufgabe(master?.field_values) || pickAufgabe(activityRecord?.field_values);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
