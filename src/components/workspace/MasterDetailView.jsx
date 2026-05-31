@@ -777,13 +777,25 @@ export default function MasterDetailView({
             setFieldValues(updatedFv);
             saveMutation.mutate(updatedFv, {
               onSuccess: async () => {
-                if (content_status) {
-                  await base44.functions.invoke('approveMasterAufgabe', {
-                    masterId: master.id,
-                    action: content_status === 'approved' ? 'approve' : 'unapprove',
-                  });
+                // Freigabe-Status nur dann anfassen, wenn er sich wirklich
+                // geaendert hat. Ein unnoetiger approve/unapprove-Call (z. B.
+                // bei einem Entwurf, der Entwurf bleibt) konnte fehlschlagen
+                // und verhinderte dann das Schliessen des Dialogs.
+                if (content_status && content_status !== localContentStatus) {
+                  try {
+                    await base44.functions.invoke('approveMasterAufgabe', {
+                      masterId: master.id,
+                      action: content_status === 'approved' ? 'approve' : 'unapprove',
+                    });
+                  } catch (err) {
+                    toast.error(getFriendlyErrorMessage(err));
+                  }
                 }
-                await syncMasterStatusNow({ queryClient, master, fieldValues: updatedFv });
+                try {
+                  await syncMasterStatusNow({ queryClient, master, fieldValues: updatedFv });
+                } catch (err) {
+                  console.warn('[MasterDetailView] syncMasterStatusNow failed:', err?.message);
+                }
                 handleCloseModal();
               },
             });
