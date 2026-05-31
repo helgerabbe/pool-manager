@@ -155,6 +155,28 @@ function LeerHinweis({ text }) {
   );
 }
 
+function OffeneBody({ fv }) {
+  const html = fv?.approved_snapshot_html;
+  if (!html) {
+    return (
+      <div className="px-6 py-4 space-y-3">
+        {fv?.description && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-[14px] text-blue-900 whitespace-pre-wrap">{fv.description}</div>
+        )}
+        <p className="italic text-slate-500 text-sm">Noch keine Vorschau-Vorlage gespeichert. Öffne die Aufgabe und erstelle die Vorschau.</p>
+      </div>
+    );
+  }
+  return (
+    <iframe
+      title="Offene Aufgabe"
+      srcDoc={html}
+      sandbox="allow-scripts allow-same-origin"
+      className="w-full h-full border-0"
+    />
+  );
+}
+
 function DefaultBody({ fv }) {
   return (
     <div className="px-6 py-4">
@@ -206,6 +228,7 @@ function renderActivityBody(activity, katalogName, masters, variantIdx) {
   if (name.includes('bestätig') || name.includes('bestaetig') || name.includes('bearbeitung best')) {
     return <ConfirmationBody key={selectedMaster?.id || activity.id} fieldValues={(selectedMaster?.field_values) || fv} />;
   }
+  if (name.includes('offene')) return <OffeneBody fv={fv} />;
   return <DefaultBody fv={fv} />;
 }
 
