@@ -11,12 +11,14 @@ import React, { useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Eye, Home, ChevronLeft, ChevronRight, RotateCw, BookOpen,
-  ExternalLink, MessageCircle, Sparkles, Lock, Target, ImageOff,
+  ExternalLink, Target,
 } from 'lucide-react';
+import LueckentextBody from '@/components/workspace/preview/bodies/LueckentextBody';
+import TestBody from '@/components/workspace/preview/bodies/TestBody';
+import KITutorBody from '@/components/workspace/preview/bodies/KITutorBody';
 
 const SLIDE_W = 960;
 const SLIDE_H = 600;
-const BRIAN_LOGO_URL = 'https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/829f1dcc1_image.png';
 
 const PHASE_META = {
   'Input':     { label: 'Input',     subtitle: 'Hier erklären wir dir, was du wissen und können sollst.', bg: 'bg-blue-50',    border: 'border-blue-100',    text: 'text-blue-900',  pill: 'bg-emerald-100 text-emerald-700' },
@@ -139,102 +141,13 @@ function LinkBody({ fv }) {
   );
 }
 
-function KITutorBody({ fv, master }) {
-  const HIDDEN = new Set(['erwartungshorizont', 'tutor_prompt', 'musterloesung', 'kompetenz', 'lernziel']);
-  const pick = (o) => {
-    if (!o) return '';
-    for (const k of ['aufgabenstellung', 'aufgabentext', 'aufgabe', 'fragestellung']) {
-      if (typeof o[k] === 'string' && o[k].trim()) return o[k];
-    }
-    for (const [k, v] of Object.entries(o)) {
-      if (HIDDEN.has(k.toLowerCase())) continue;
-      if (typeof v === 'string' && v.trim()) return v;
-    }
-    return '';
-  };
-  const aufgabe = pick(master?.field_values) || pick(fv);
-  const brianUrl = aufgabe ? `https://brian.study/?task=${encodeURIComponent(aufgabe)}` : 'https://brian.study/';
-
+// Lückentext / Test / KI-Tutor werden über die importierten Body-Komponenten
+// gerendert (siehe components/workspace/preview/bodies/). Hier nur noch ein
+// kleiner Helper für leere Master-Listen.
+function LeerHinweis({ text }) {
   return (
-    <div className="px-6 py-5 flex flex-col gap-4 h-full">
-      <div className="flex items-center gap-3 shrink-0">
-        <img src={BRIAN_LOGO_URL} alt="Brian" className="w-12 h-12 object-contain" />
-        <div>
-          <div className="text-[11px] font-bold uppercase tracking-wider text-violet-700">KI-Tutor</div>
-          <div className="text-base font-bold text-slate-900">Brian hilft dir bei dieser Aufgabe</div>
-        </div>
-      </div>
-      {aufgabe && (
-        <div className="rounded-xl border-2 border-violet-200 bg-gradient-to-br from-violet-50 to-fuchsia-50 px-5 py-4 shrink-0">
-          <div className="flex items-center gap-2 text-violet-700 text-[11px] font-bold uppercase tracking-wider mb-2">
-            <Sparkles className="w-3.5 h-3.5" /> Deine Aufgabe
-          </div>
-          <p className="text-[15px] text-slate-800 whitespace-pre-wrap leading-relaxed">{aufgabe}</p>
-        </div>
-      )}
-      <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-3 text-center">
-        <a href={brianUrl} target="_blank" rel="noopener noreferrer"
-           className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-[15px] font-semibold shadow-lg hover:from-violet-700 hover:to-fuchsia-700">
-          <MessageCircle className="w-5 h-5" /> Mit dem KI-Tutor Brian besprechen
-          <ExternalLink className="w-4 h-4 opacity-80" />
-        </a>
-        <p className="text-[11px] text-slate-400">Öffnet brian.study in einem neuen Tab</p>
-      </div>
-    </div>
-  );
-}
-
-function LueckentextBody({ activity, masters }) {
-  return (
-    <div className="px-6 py-4 space-y-3 h-full overflow-y-auto">
-      {activity?.field_values?.aufgabentext && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-[14px] text-blue-900">{activity.field_values.aufgabentext}</div>
-      )}
-      {masters.length === 0 && <p className="italic text-slate-500 text-sm">Keine Aufgaben hinterlegt.</p>}
-      {masters.map((m, i) => {
-        const text = m?.field_values?.text || '';
-        const rendered = text.replace(/\[([^\]]+)\]/g, '____');
-        return (
-          <div key={m.id} className="rounded-lg border bg-white p-4">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Aufgabe {i + 1}</div>
-            <p className="text-[14px] text-slate-800 whitespace-pre-wrap leading-relaxed">{rendered || <span className="italic text-slate-400">Noch leer.</span>}</p>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function TestBody({ activity, masters }) {
-  return (
-    <div className="px-6 py-4 space-y-3 h-full overflow-y-auto">
-      {activity?.field_values?.aufgabentext && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-[14px] text-blue-900">{activity.field_values.aufgabentext}</div>
-      )}
-      {masters.length === 0 && <p className="italic text-slate-500 text-sm">Keine Fragen hinterlegt.</p>}
-      {masters.map((m, i) => {
-        const fragen = Array.isArray(m?.field_values?.fragen) ? m.field_values.fragen : [];
-        return (
-          <div key={m.id} className="rounded-lg border bg-white p-4 space-y-2">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Test {i + 1}</div>
-            {fragen.length === 0 && <p className="italic text-slate-400 text-sm">Keine Fragen.</p>}
-            {fragen.map((f, fi) => (
-              <div key={fi} className="border-t pt-2">
-                <p className="text-[14px] font-medium text-slate-800">{fi + 1}. {f?.frage || f?.text || ''}</p>
-                {Array.isArray(f?.optionen) && (
-                  <ul className="mt-1 space-y-1">
-                    {f.optionen.map((opt, oi) => (
-                      <li key={oi} className="text-[13px] text-slate-600 flex items-center gap-2">
-                        <span className="w-4 h-4 rounded-full border border-slate-300" /> {typeof opt === 'string' ? opt : opt?.text}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </div>
-        );
-      })}
+    <div className="h-full flex items-center justify-center px-6">
+      <p className="text-sm text-slate-500 italic">{text}</p>
     </div>
   );
 }
@@ -251,16 +164,58 @@ function DefaultBody({ fv }) {
   );
 }
 
-function renderActivityBody(activity, katalogName, masters) {
+// Welche Master-Variante ist aktuell für eine Activity ausgewählt?
+// state lebt in der Hauptkomponente, hier nur das Rendering.
+function renderActivityBody(activity, katalogName, masters, variantIdx) {
   const name = (katalogName || '').toLowerCase();
   const fv = activity?.field_values || {};
+  const selectedMaster = masters[variantIdx] || masters[0] || null;
+
   if (name.includes('text lesen')) return <TextLesenBody fv={fv} />;
   if (name.includes('video') || name.includes('audio')) return <VideoAudioBody fv={fv} />;
   if (name.includes('link') || name.includes('url')) return <LinkBody fv={fv} />;
-  if (name.includes('ki-tutor')) return <KITutorBody fv={fv} master={masters[0]} />;
-  if (name.includes('lückentext') || name.includes('lueckentext')) return <LueckentextBody activity={activity} masters={masters} />;
-  if (name === 'test' || name.includes('test')) return <TestBody activity={activity} masters={masters} />;
+
+  if (name.includes('ki-tutor')) {
+    return (
+      <KITutorBody
+        key={selectedMaster?.id || activity.id}
+        masterFieldValues={selectedMaster?.field_values}
+        activityFieldValues={fv}
+      />
+    );
+  }
+  if (name.includes('lückentext') || name.includes('lueckentext')) {
+    if (!selectedMaster) return <LeerHinweis text="Für diesen Lückentext sind noch keine Aufgaben hinterlegt." />;
+    return <LueckentextBody key={selectedMaster.id} fieldValues={selectedMaster.field_values || {}} />;
+  }
+  if (name === 'test' || name.includes('test')) {
+    if (!selectedMaster) return <LeerHinweis text="Für diesen Test sind noch keine Fragen hinterlegt." />;
+    return <TestBody key={selectedMaster.id} fieldValues={selectedMaster.field_values || {}} />;
+  }
   return <DefaultBody fv={fv} />;
+}
+
+// Tab-Leiste zum Umschalten zwischen mehreren Master-Varianten einer Aktivität.
+function MasterVariantTabs({ masters, selectedIdx, onSelect }) {
+  if (!masters || masters.length <= 1) return null;
+  return (
+    <div className="px-3 py-1.5 bg-slate-50 border-b border-slate-200 flex items-center gap-1.5 shrink-0 overflow-x-auto">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 shrink-0 mr-1">Varianten</span>
+      {masters.map((m, i) => (
+        <button
+          key={m.id}
+          onClick={() => onSelect(i)}
+          className={`px-2.5 py-1 rounded text-[11px] font-medium border transition-colors shrink-0 ${
+            i === selectedIdx
+              ? 'bg-blue-600 text-white border-blue-700 shadow-sm'
+              : 'bg-white text-slate-700 border-slate-200 hover:border-blue-300'
+          }`}
+        >
+          {m.titel || `Aufgabe ${i + 1}`}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 // ─── Lernpaket-Intro-Slide ─────────────────────────────────────────────
@@ -318,6 +273,14 @@ export default function LernpaketPreviewModal({ open, onOpenChange, paket, aktiv
   const selected = selectedId ? allActivities.find(a => a.id === selectedId) : null;
   const katalogName = selected ? katalog.find(k => k.id === selected.aktivitaet_id)?.name : null;
   const selectedMasters = selected ? (masters || []).filter(m => m.activity_id === selected.id) : [];
+
+  // Pro Aktivität merken, welche Master-Variante gerade gezeigt wird.
+  const [variantByActivity, setVariantByActivity] = useState({});
+  const variantIdx = selected ? (variantByActivity[selected.id] || 0) : 0;
+  const setVariantIdx = (idx) => {
+    if (!selected) return;
+    setVariantByActivity(prev => ({ ...prev, [selected.id]: idx }));
+  };
 
   // Fortschritts-Andeutung: 0 von N erledigt (rein visuell)
   const totalCount = allActivities.length;
@@ -432,8 +395,9 @@ export default function LernpaketPreviewModal({ open, onOpenChange, paket, aktiv
                     {selected ? (
                       <>
                         <PhaseBar phase={selected.phase} />
+                        <MasterVariantTabs masters={selectedMasters} selectedIdx={variantIdx} onSelect={setVariantIdx} />
                         <div className="flex-1 min-h-0 overflow-hidden">
-                          {renderActivityBody(selected, katalogName, selectedMasters)}
+                          {renderActivityBody(selected, katalogName, selectedMasters, variantIdx)}
                         </div>
                       </>
                     ) : (
