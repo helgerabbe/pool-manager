@@ -9,10 +9,10 @@ import { BookOpen } from 'lucide-react';
 
 export default function LehrwerkQuelleBody({ fieldValues = {} }) {
   const fv = fieldValues || {};
-  const quelle = fv.quelle || fv.titel || '';
-  const seite = fv.seite;
+  const quelle = fv.buchtitel || fv.quelle || fv.titel || '';
+  const seite = fv.seiten || fv.seite;
   const nummer = fv.nummer;
-  const beschreibung = fv.beschreibung || fv.inhalt || '';
+  const beschreibung = fv.beschreibung || '';
 
   return (
     <div className="px-6 py-5 h-full overflow-y-auto space-y-4">
@@ -39,7 +39,7 @@ export default function LehrwerkQuelleBody({ fieldValues = {} }) {
               <div className="flex flex-wrap gap-2">
                 {seite && (
                   <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-full px-3 py-1">
-                    Seite {seite}
+                    Seite(n) {seite}
                   </span>
                 )}
                 {nummer && (
