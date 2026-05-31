@@ -22,6 +22,15 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import ReleaseStatusToggle from '@/components/workspace/ReleaseStatusToggle';
 
+// Hard-Limit: längere Lückentexte passen nicht scrollfrei in den 960×600-Slide-Slot
+// (Stand 2026-05-31 nach Lehrkraft-Test). Zählt nur "echte" Wörter (keine reinen
+// Satzzeichen-Tokens), damit der Zähler intuitiv ist.
+const MAX_WORDS = 300;
+function countWords(text) {
+  if (!text) return 0;
+  return (text.match(/[\p{L}\p{N}][\p{L}\p{N}'\-]*/gu) || []).length;
+}
+
 // ── Hilfsfunktionen ─────────────────────────────────────────────────────────────
 
 /** Tokenisiert den Rohtext in Wörter + Whitespace/Satzzeichen */
@@ -127,7 +136,7 @@ function KIAssistentExpanded({ onAccept }) {
         >
           {generating
             ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generiere…</>
-            : <><Sparkles className="w-3.5 h-3.5" /> Generieren & übernehmen</>}
+            : <><Sparkles className="w-3.5 h-3.5" /> Generieren {'&'} übernehmen</>}
         </Button>
       </div>
     </div>
@@ -267,6 +276,10 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
   // Tokens aus Rohtext
   const tokens = useMemo(() => tokenize(rawText), [rawText]);
 
+  // Wort-Zähler für das 300-Wort-Limit (scrollfreie iPad-Darstellung).
+  const wordCount = useMemo(() => countWords(rawText), [rawText]);
+  const overLimit = wordCount > MAX_WORDS;
+
   // Lückenwörter (einzigartig, sortiert nach Reihenfolge im Text)
   const lueckenWoerter = useMemo(() => {
     const words = [];
@@ -335,6 +348,10 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
     }
     if (!rawText.trim()) {
       toast.error('Bitte einen Text eingeben.');
+      return null;
+    }
+    if (wordCount > MAX_WORDS) {
+      toast.error(`Maximal ${MAX_WORDS} Wörter erlaubt (aktuell ${wordCount}). Kürze den Text, damit die Aufgabe auf das iPad passt.`);
       return null;
     }
     return {
@@ -411,14 +428,34 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
 
           {/* ── Bereich A: Manuelle Texteingabe ── */}
           <div className="space-y-2">
-            <Label className="text-lg font-semibold">Schritt 1: Text eingeben oder manuell verfassen</Label>
+            <div className="flex items-end justify-between gap-3">
+              <Label className="text-lg font-semibold">Schritt 1: Text eingeben oder manuell verfassen</Label>
+              <span
+                className={[
+                  'text-xs font-medium tabular-nums shrink-0',
+                  overLimit ? 'text-red-600' : wordCount > MAX_WORDS * 0.9 ? 'text-amber-600' : 'text-muted-foreground',
+                ].join(' ')}
+                title={`Maximal ${MAX_WORDS} Wörter — sonst muss der Schüler auf dem iPad scrollen.`}
+              >
+                {wordCount} / {MAX_WORDS} Wörter
+              </span>
+            </div>
             <Textarea
               value={rawText}
               onChange={e => handleRawTextChange(e.target.value)}
               disabled={readOnly}
               placeholder="Füge hier den vollständigen Text ein. Beispiel: Die Photosynthese findet in den Chloroplasten statt und erzeugt Glucose aus Kohlendioxid und Wasser."
-              className="min-h-28 text-sm leading-relaxed"
+              className={[
+                'min-h-28 text-sm leading-relaxed',
+                overLimit ? 'border-red-400 focus-visible:ring-red-400' : '',
+              ].join(' ')}
             />
+            {overLimit && (
+              <p className="text-xs text-red-600 flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                Der Text ist zu lang. Maximal {MAX_WORDS} Wörter, damit die Lücken auf dem iPad ohne Scrollen erreichbar bleiben.
+              </p>
+            )}
           </div>
 
           {/* ── Bereich B: Interaktive Vorschau ── */}
@@ -576,8 +613,8 @@ export default function LueckentextWysiwygModal({ open, onOpenChange, initialDat
               ) : (
                 <Button
                   onClick={handleSave}
-                  disabled={isSaving || isDeleting || blankIds.size === 0 || exportLocked}
-                  title={exportLocked ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
+                  disabled={isSaving || isDeleting || blankIds.size === 0 || exportLocked || overLimit}
+                  title={exportLocked ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : overLimit ? `Text zu lang (${wordCount}/${MAX_WORDS} Wörter)` : ''}
                   className="gap-2"
                 >
                   {isSaving
