@@ -17,6 +17,8 @@ import LueckentextBody from '@/components/workspace/preview/bodies/LueckentextBo
 import TestBody from '@/components/workspace/preview/bodies/TestBody';
 import KITutorBody from '@/components/workspace/preview/bodies/KITutorBody';
 import MatchTermsBody from '@/components/workspace/preview/bodies/MatchTermsBody';
+import SortingListBody from '@/components/workspace/preview/bodies/SortingListBody';
+import ConfirmationBody from '@/components/workspace/preview/bodies/ConfirmationBody';
 
 const SLIDE_W = 960;
 const SLIDE_H = 600;
@@ -196,6 +198,13 @@ function renderActivityBody(activity, katalogName, masters, variantIdx) {
   if (name === 'test' || name.includes('test')) {
     if (!selectedMaster) return <LeerHinweis text="Für diesen Test sind noch keine Fragen hinterlegt." />;
     return <TestBody key={selectedMaster.id} fieldValues={selectedMaster.field_values || {}} />;
+  }
+  if (name.includes('reihenfolge') || name.includes('sortier')) {
+    if (!selectedMaster) return <LeerHinweis text="Für diese Sortieraufgabe sind noch keine Elemente hinterlegt." />;
+    return <SortingListBody key={selectedMaster.id} fieldValues={selectedMaster.field_values || {}} />;
+  }
+  if (name.includes('bestätig') || name.includes('bestaetig') || name.includes('bearbeitung best')) {
+    return <ConfirmationBody key={selectedMaster?.id || activity.id} fieldValues={(selectedMaster?.field_values) || fv} />;
   }
   return <DefaultBody fv={fv} />;
 }
