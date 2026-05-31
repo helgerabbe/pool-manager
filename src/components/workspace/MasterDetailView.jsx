@@ -16,6 +16,7 @@ import LueckentextPreviewModal from '@/components/workspace/preview/LueckentextP
 import KITutorPreviewModal from '@/components/workspace/preview/KITutorPreviewModal';
 import TestPreviewModal from '@/components/workspace/preview/TestPreviewModal';
 import MatchTermsPreviewModal from '@/components/workspace/preview/MatchTermsPreviewModal';
+import SortingListPreviewModal from '@/components/workspace/preview/SortingListPreviewModal';
 import ReleaseToggleSection from '@/components/release/ReleaseToggleSection';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { getFriendlyErrorMessage } from '@/lib/errorMapper';
@@ -330,6 +331,7 @@ export default function MasterDetailView({
   const [kiTutorPreviewOpen, setKiTutorPreviewOpen] = useState(false);
   const [testPreviewOpen, setTestPreviewOpen] = useState(false);
   const [matchTermsPreviewOpen, setMatchTermsPreviewOpen] = useState(false);
+  const [sortingPreviewOpen, setSortingPreviewOpen] = useState(false);
   const [fieldValues, setFieldValues] = useState(master.field_values || {});
   const [localContentStatus, setLocalContentStatus] = useState(master.content_status || 'draft');
   const [localReleasedAt, setLocalReleasedAt] = useState(master.released_at || null);
@@ -645,6 +647,16 @@ export default function MasterDetailView({
               onClick={() => setMatchTermsPreviewOpen(true)}
               className="gap-2 border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100"
               title="So bearbeitet der Schüler diese Zuordnungs-Aufgabe"
+            >
+              <Eye className="w-4 h-4" /> Vorschau
+            </Button>
+          )}
+          {isSort && Array.isArray(fieldValues.orderedItems) && fieldValues.orderedItems.length >= 2 && (
+            <Button
+              variant="outline"
+              onClick={() => setSortingPreviewOpen(true)}
+              className="gap-2 border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100"
+              title="So bearbeitet der Schüler diese Sortier-Aufgabe"
             >
               <Eye className="w-4 h-4" /> Vorschau
             </Button>
@@ -979,6 +991,17 @@ export default function MasterDetailView({
         <MatchTermsPreviewModal
           open={matchTermsPreviewOpen}
           onOpenChange={setMatchTermsPreviewOpen}
+          fieldValues={fieldValues}
+          catalogName={catalogName}
+          phase={master?.phase || 'Übung'}
+        />
+      )}
+
+      {/* ── Schüler-Vorschau Modal (Reihenfolge / Sortierung) ── */}
+      {isSort && (
+        <SortingListPreviewModal
+          open={sortingPreviewOpen}
+          onOpenChange={setSortingPreviewOpen}
           fieldValues={fieldValues}
           catalogName={catalogName}
           phase={master?.phase || 'Übung'}
