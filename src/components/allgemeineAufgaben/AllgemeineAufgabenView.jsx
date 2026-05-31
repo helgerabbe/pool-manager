@@ -10,11 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { Plus, Star, FileText, ChevronRight, Edit, Trash2, CheckCircle2, PenLine, Lock, Wand2, Lightbulb, Image as ImageIcon, Package, Tag, Folder, FileType2 } from 'lucide-react';
+import { Plus, Star, FileText, ChevronRight, Edit, Trash2, CheckCircle2, PenLine, Lock, Wand2, Lightbulb, Image as ImageIcon, Package, Tag, Folder, FileType2, Eye } from 'lucide-react';
 import { getAufgabenTyp } from '@/lib/aufgabenTypen';
 import TaskStatusBadge from '@/components/ui/TaskStatusBadge';
 import TaskLockBar from '@/components/ui/TaskLockBar';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
+import AufgabePreviewModal from '@/components/allgemeineAufgaben/AufgabePreviewModal';
 import AufgabenTypPicker from '@/components/allgemeineAufgaben/AufgabenTypPicker';
 import AufgabeKompetenzMapping from '@/components/allgemeineAufgaben/AufgabeKompetenzMapping';
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
@@ -149,7 +150,7 @@ function AufgabeNode({ aufgabe, isSelected, onSelect }) {
 /**
  * Detail-Panel: Allgemeine Angaben (Tab 1)
  */
-function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit, onDelete }) {
+function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit, onDelete, onPreview }) {
   const hatTitel = !!aufgabe.titel?.trim();
   const showMission = isMissionApplicable(aufgabe);
   const themenfeld = themenfelder.find((tf) => tf.id === aufgabe.themenfeld_id);
@@ -193,6 +194,15 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
             }
           </span>
           <AufgabeExportStatusInline aufgabe={aufgabe} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPreview?.(aufgabe)}
+            className="h-5 px-2 gap-1 text-[11px] border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100"
+            title="So sieht der Schüler diese Aufgabe auf dem iPad"
+          >
+            <Eye className="w-3 h-3" /> Vorschau
+          </Button>
         </div>
       </div>
 
@@ -388,6 +398,7 @@ export default function AllgemeineAufgabenView({
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [ideenboxOpen, setIdeenboxOpen] = useState(false);
+  const [previewAufgabe, setPreviewAufgabe] = useState(null);
   // Phase-1 Lernpfad-Architekt: Picker für Aufgaben-Typ vor dem Editor (nur in Ebene 2).
   const [typPickerOpen, setTypPickerOpen] = useState(false);
   const [pendingAufgabenTyp, setPendingAufgabenTyp] = useState('inhalt');
@@ -693,6 +704,7 @@ export default function AllgemeineAufgabenView({
                     setCreateFormOpen(true);
                   }}
                   onDelete={(id) => deleteAufgabe.mutate(id)}
+                  onPreview={(a) => setPreviewAufgabe(a)}
                 />
               </TabsContent>
 
@@ -782,6 +794,13 @@ export default function AllgemeineAufgabenView({
           setPendingAufgabenTyp(typ);
           setCreateFormOpen(true);
         }}
+      />
+
+      {/* Schüler-Vorschau (Tablet) */}
+      <AufgabePreviewModal
+        open={!!previewAufgabe}
+        onOpenChange={(o) => { if (!o) setPreviewAufgabe(null); }}
+        aufgabe={previewAufgabe}
       />
 
       {/* Create/Edit Dialog */}
