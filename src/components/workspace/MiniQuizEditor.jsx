@@ -24,6 +24,7 @@ export default function MiniQuizEditor({
   onChange,
   readOnly = false,
   hideActions = false,
+  kontext = '',
 }) {
   const [questions, setQuestions] = useState(initialData.questions || []);
   const [editingIndex, setEditingIndex] = useState(null);
@@ -363,6 +364,7 @@ export default function MiniQuizEditor({
       {/* KI-Generierungs-Modal */}
       <QuizGeneratorModal
         open={generatorOpen}
+        kontext={kontext}
         onClose={() => setGeneratorOpen(false)}
         onGenerate={handleGenerateQuestions}
       />

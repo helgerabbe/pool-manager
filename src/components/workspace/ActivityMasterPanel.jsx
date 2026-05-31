@@ -1181,6 +1181,7 @@ export default function ActivityMasterPanel({
                 master={master}
                 index={idx + 1}
                 catalogName={catalogEntry?.name || ''}
+                kontext={aufgabenKontext}
                 klone={kloneByMasterId[master.id] || []}
                 kannBearbeiten={isInEditMode && !isParentPaketLockedByOther}
                 userEmail={userEmail}

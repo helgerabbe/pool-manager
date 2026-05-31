@@ -19,6 +19,7 @@ export default function QuizGeneratorModal({
   open,
   onClose,
   onGenerate,
+  kontext = '',
 }) {
   const [topic, setTopic] = useState('');
   const [context, setContext] = useState('');
@@ -34,10 +35,11 @@ export default function QuizGeneratorModal({
     setLoading(true);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Du bist ein erfahrener Lehrer und Prüfer. Deine Aufgabe ist es, ${count} Multiple-Choice-Fragen mit Antwortoptionen zu einem bestimmten Thema zu erstellen.
+        prompt: `Du bist ein erfahrener Lehrer und Prüfer. Deine Aufgabe ist es, ${count} Multiple-Choice-Fragen zu erstellen, die von Schülerinnen und Schülern im Unterricht beantwortet werden. Die Fragen müssen sich auf das angegebene Schwerpunkt-Thema beziehen und didaktisch zum schulischen Rahmen passen.
 
-Thema: "${topic}"
-${context ? `Zusätzlicher Kontext: ${context}` : ''}
+Schwerpunkt / Hauptthema des Quiz: "${topic}"
+${context ? `Zusätzlicher Schwerpunkt-Hinweis der Lehrkraft: ${context}` : ''}
+${kontext ? `\nSchulischer Rahmen (Gesamtkontext der Einheit, Lernpaket, Lernziele und Schuljahr — die Fragen müssen inhaltlich und im Niveau dazu passen):\n${kontext}\n` : ''}
 
 Erstelle genau ${count} Quiz-Fragen im folgenden JSON-Format:
 {

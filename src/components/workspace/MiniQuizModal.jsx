@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import BaseActivityModal from '@/components/workspace/BaseActivityModal';
 import MiniQuizEditor from '@/components/workspace/MiniQuizEditor';
 
-export default function MiniQuizModal({ open, onOpenChange, initialData = {}, onSave, onDelete, isSaving = false, isCopy = false, exportLocked = false }) {
+export default function MiniQuizModal({ open, onOpenChange, initialData = {}, onSave, onDelete, isSaving = false, isCopy = false, exportLocked = false, kontext = '' }) {
   const [editorData, setEditorData] = useState({
     questions: initialData.questions || [],
     instruction: initialData.instruction || ''
@@ -24,6 +24,7 @@ export default function MiniQuizModal({ open, onOpenChange, initialData = {}, on
     >
       <MiniQuizEditor
         initialData={initialData}
+        kontext={kontext}
         onChange={(data) => setEditorData(data)}
       />
     </BaseActivityModal>

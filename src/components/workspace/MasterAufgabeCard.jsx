@@ -225,6 +225,7 @@ export default function MasterAufgabeCard({
   autoExpand = false,
   autoOpenModal = false,
   onAutoOpenModalDone = null,
+  kontext = '',
 }) {
   const queryClient = useQueryClient();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -1025,6 +1026,7 @@ export default function MasterAufgabeCard({
               )}
               <MiniQuizModal
                 open={miniQuizModalOpen}
+                kontext={kontext}
                 onOpenChange={(isOpen) => {
                   if (!isOpen) setMiniQuizModalOpen(false);
                 }}
