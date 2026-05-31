@@ -15,6 +15,7 @@ import { Crown, Pencil, Loader2, CheckCircle2, Sparkles, Lock, Eye } from 'lucid
 import LueckentextPreviewModal from '@/components/workspace/preview/LueckentextPreviewModal';
 import KITutorPreviewModal from '@/components/workspace/preview/KITutorPreviewModal';
 import TestPreviewModal from '@/components/workspace/preview/TestPreviewModal';
+import MatchTermsPreviewModal from '@/components/workspace/preview/MatchTermsPreviewModal';
 import ReleaseToggleSection from '@/components/release/ReleaseToggleSection';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { getFriendlyErrorMessage } from '@/lib/errorMapper';
@@ -328,6 +329,7 @@ export default function MasterDetailView({
   const [lueckentextPreviewOpen, setLueckentextPreviewOpen] = useState(false);
   const [kiTutorPreviewOpen, setKiTutorPreviewOpen] = useState(false);
   const [testPreviewOpen, setTestPreviewOpen] = useState(false);
+  const [matchTermsPreviewOpen, setMatchTermsPreviewOpen] = useState(false);
   const [fieldValues, setFieldValues] = useState(master.field_values || {});
   const [localContentStatus, setLocalContentStatus] = useState(master.content_status || 'draft');
   const [localReleasedAt, setLocalReleasedAt] = useState(master.released_at || null);
@@ -626,6 +628,16 @@ export default function MasterDetailView({
               onClick={() => setTestPreviewOpen(true)}
               className="gap-2 border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100"
               title="So sieht der Schüler diesen Test"
+            >
+              <Eye className="w-4 h-4" /> Vorschau
+            </Button>
+          )}
+          {matchTerms && Array.isArray(fieldValues.pairs) && fieldValues.pairs.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={() => setMatchTermsPreviewOpen(true)}
+              className="gap-2 border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100"
+              title="So bearbeitet der Schüler diese Zuordnungs-Aufgabe"
             >
               <Eye className="w-4 h-4" /> Vorschau
             </Button>
@@ -950,6 +962,17 @@ export default function MasterDetailView({
           fieldValues={fieldValues}
           catalogName={catalogName}
           phase={master?.phase || 'Abschluss'}
+        />
+      )}
+
+      {/* ── Schüler-Vorschau Modal (Begriffe zuordnen) ── */}
+      {matchTerms && (
+        <MatchTermsPreviewModal
+          open={matchTermsPreviewOpen}
+          onOpenChange={setMatchTermsPreviewOpen}
+          fieldValues={fieldValues}
+          catalogName={catalogName}
+          phase={master?.phase || 'Übung'}
         />
       )}
 
