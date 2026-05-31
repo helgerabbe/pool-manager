@@ -24,6 +24,7 @@ import LinkUrlPreviewModal from '@/components/workspace/preview/LinkUrlPreviewMo
 import KITutorPreviewModal from '@/components/workspace/preview/KITutorPreviewModal';
 import ConfirmationPreviewModal from '@/components/workspace/preview/ConfirmationPreviewModal';
 import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
+import OffeneAufgabePreviewModal from '@/components/workspace/preview/OffeneAufgabePreviewModal';
 import MoodleSyncStatusBadge from '@/components/workspace/MoodleSyncStatusBadge';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import ModusAuswahlBox from '@/components/workspace/ki/ModusAuswahlBox';
@@ -160,6 +161,8 @@ export default function ActivityMasterPanel({
   const [linkUrlPreviewOpen, setLinkUrlPreviewOpen] = useState(false);
   // Abschluss-Aktivität „Bearbeitung bestätigen": Schüler-Vorschau.
   const [confirmationPreviewOpen, setConfirmationPreviewOpen] = useState(false);
+  // Offene Aufgabe: Sandbox-Schüler-Vorschau (Snapshot-Prinzip).
+  const [offenePreviewOpen, setOffenePreviewOpen] = useState(false);
   // KI-Tutor-Vorschau: Master, dessen Aufgabenstellung gerade angezeigt wird (oder null).
   const [kiTutorPreviewMaster, setKiTutorPreviewMaster] = useState(null);
   // KI-Tutor-Vorschau für Aktivitäten OHNE Masteraufgaben (Standardfall).
@@ -331,6 +334,28 @@ export default function ActivityMasterPanel({
       }
       modalUsesExistingLockRef.current = false;
     }
+  };
+
+  // Offene Aufgabe: gerade in der Vorschau gezeigte Umsetzung als
+  // "Vorschau-Vorlage" (Snapshot) einfrieren und an der Aktivität ablegen.
+  const persistOffeneSnapshot = async (html) => {
+    const u = await base44.auth.me().catch(() => null);
+    const newFieldValues = {
+      ...fieldValues,
+      approved_snapshot_html: html,
+      snapshot_briefing: fieldValues.description || '',
+      snapshot_approved_at: new Date().toISOString(),
+      ...(u?.email ? { snapshot_approved_by: u.email } : {}),
+    };
+    const payload = { field_values: newFieldValues };
+    if (activityRecord?.moodle_sync_status === 'synced') {
+      payload.moodle_sync_status = 'modified';
+      payload.is_dirty_since_export = true;
+    }
+    await base44.entities.LernpaketPhaseAktivitaet.update(activityRecord.id, payload);
+    setFieldValues(newFieldValues);
+    await queryClient.refetchQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+    toast.success('Vorschau-Vorlage gespeichert.');
   };
 
   // Alle MasterAufgaben für diese Aktivität
@@ -719,12 +744,31 @@ export default function ActivityMasterPanel({
                 {/* Read-Only Preview für Offene Aufgabe */}
                 {!editModalOpen && (
                   <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Aufgabenbeschreibung</p>
-                      <div className="bg-muted/30 rounded-lg p-4 text-sm whitespace-pre-wrap leading-relaxed border border-border">
-                        {fieldValues.description || <span className="text-muted-foreground italic">Noch keine Beschreibung vorhanden.</span>}
-                      </div>
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aufgabenbeschreibung</p>
+                      {fieldValues.approved_snapshot_html && (
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-violet-800 bg-violet-100 border border-violet-300 px-2 py-0.5 rounded-full shrink-0">
+                          <Eye className="w-3 h-3" /> Vorschau-Vorlage gespeichert
+                        </span>
+                      )}
                     </div>
+                    <div className="bg-muted/30 rounded-lg p-4 text-sm whitespace-pre-wrap leading-relaxed border border-border">
+                      {fieldValues.description || <span className="text-muted-foreground italic">Noch keine Beschreibung vorhanden.</span>}
+                    </div>
+                    {fieldValues.snapshot_approved_at && (
+                      <p className="text-[11px] text-muted-foreground">
+                        Vorlage gestaltet am {new Date(fieldValues.snapshot_approved_at).toLocaleString('de-DE')}
+                      </p>
+                    )}
+                    {fieldValues.description && (
+                      <Button
+                        variant="outline"
+                        onClick={() => setOffenePreviewOpen(true)}
+                        className="gap-2 border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100 hover:text-violet-900"
+                      >
+                        <Eye className="w-4 h-4" /> Vorschau {fieldValues.approved_snapshot_html ? 'ansehen' : 'erstellen'}
+                      </Button>
+                    )}
                   </div>
                 )}
                 {/* Offene Aufgabe Modal */}
@@ -737,6 +781,18 @@ export default function ActivityMasterPanel({
                   onCancel={handleModalCancel}
                   onReset={handleModalReset}
                   exportLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
+                />
+                {/* Schüler-Vorschau (Sandbox-Snapshot) */}
+                <OffeneAufgabePreviewModal
+                  open={offenePreviewOpen}
+                  onOpenChange={setOffenePreviewOpen}
+                  description={fieldValues.description || ''}
+                  catalogName={catalogEntry?.name}
+                  phase={activityRecord?.phase}
+                  existingSnapshotHtml={fieldValues.approved_snapshot_html || ''}
+                  canApprove={kannBearbeiten && !activityIsReleased}
+                  isReleased={activityIsReleased}
+                  onApproveSnapshot={persistOffeneSnapshot}
                 />
               </>
             ) : (() => {
