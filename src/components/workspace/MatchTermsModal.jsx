@@ -31,8 +31,14 @@ function ManualEditor({ data, onChange }) {
   const [distractors, setDistractors] = useState(data.distractors || []);
   const [instruction, setInstruction] = useState(data.instruction || '');
 
-  // Propagate changes upward
+  // Propagate changes upward.
+  // WICHTIG: Der allererste (initiale) Aufruf wird übersprungen. Sonst meldet
+  // der frisch gemountete Editor seine LEEREN Anfangswerte nach oben und
+  // überschreibt damit die gerade geladenen DB-Inhalte (Race-Condition, die
+  // das „Inhalt bearbeiten zeigt leeres Formular"-Problem verursachte).
+  const isFirstChangeRef = useRef(true);
   useEffect(() => {
+    if (isFirstChangeRef.current) { isFirstChangeRef.current = false; return; }
     onChange({ instruction, pairs, distractors });
   }, [instruction, pairs, distractors]);
 
@@ -294,9 +300,22 @@ export default function MatchTermsModal({
   // Re-Init nicht nur beim Öffnen, sondern auch wenn die DB-Werte erst NACH dem
   // Öffnen eintreffen (z.B. nach Lock-Erwerb + Query-Refetch). Wir vergleichen
   // eine Signatur der relevanten Inhalte, damit echte Edits nicht überschrieben werden.
-  const initSigRef = useRef(null);
+  // Re-Init der Editor-Daten beim Öffnen.
+  //
+  // Früher wurde hier über eine Signatur-Gleichheit früh abgebrochen. Das war
+  // der eigentliche Bug: Wenn der ManualEditor beim Mounten seine leeren
+  // Anfangswerte nach oben meldete, wurde editorData auf leer zurückgesetzt,
+  // WÄHREND die Signatur bereits auf „befüllt" stand — dadurch konnte der
+  // Editor nie wieder mit den echten DB-Inhalten befüllt werden.
+  //
+  // Neue Strategie: genau EINMAL pro Öffnungs-Session mit echten Inhalten
+  // initialisieren, danach blockieren (schützt Nutzer-Eingaben). Trifft
+  // field_values verspätet ein (async nach dem Öffnen), wird nachbefüllt,
+  // solange noch keine echten Inhalte gesetzt wurden.
+  const wasOpenRef = useRef(false);
+  const populatedRef = useRef(false);
   useEffect(() => {
-    if (!open) { initSigRef.current = null; return; }
+    if (!open) { wasOpenRef.current = false; populatedRef.current = false; return; }
     const src = (initialData && initialData.field_values && typeof initialData.field_values === 'object')
       ? { ...initialData, ...initialData.field_values }
       : (initialData || {});
@@ -304,22 +323,11 @@ export default function MatchTermsModal({
     const distractors = (Array.isArray(src.distractors) ? src.distractors : [])
       .map(v => typeof v === 'string' ? v : v?.value || '')
       .filter(Boolean);
-    const sig = JSON.stringify({ i: src.instruction || '', p: pairs, d: distractors, c: src.content_status || '' });
-    // ── DIAGNOSE (Begriffe-zuordnen Debug 2026-05-31) ──
-    // Zeigt exakt, was beim Öffnen ankommt. Sobald der Bug gefunden ist,
-    // kann dieser Block wieder entfernt werden.
-    console.log('[MatchTermsModal] init', {
-      open,
-      initialDataKeys: initialData ? Object.keys(initialData) : null,
-      initialDataPairsLen: Array.isArray(initialData?.pairs) ? initialData.pairs.length : 'no-array',
-      srcPairsLen: pairs.length,
-      distractorsLen: distractors.length,
-      content_status: src.content_status,
-      sigChanged: initSigRef.current !== sig,
-      rawInitialData: initialData,
-    });
-    if (initSigRef.current === sig) return;
-    initSigRef.current = sig;
+    const justOpened = !wasOpenRef.current;
+    wasOpenRef.current = true;
+    // Bereits mit echten Inhalten befüllt → nicht erneut überschreiben.
+    if (!justOpened && populatedRef.current) return;
+    if (pairs.length > 0 || (src.instruction || '').trim()) populatedRef.current = true;
     setIsReleased(src.content_status === 'approved');
     setEditorData({ instruction: src.instruction || '', pairs, distractors });
     setActiveTab('manual');
