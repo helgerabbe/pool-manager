@@ -35,6 +35,7 @@ export default function OffeneAufgabePreviewModal({
   open,
   onOpenChange,
   description = '',
+  kontext = '',
   catalogName = 'Offene Aufgabe',
   phase = 'Übung',
   existingSnapshotHtml = '',
@@ -68,7 +69,7 @@ STRIKTE VORGABEN:
 - Die Aufgabe muss funktional sein: Eingaben/Auswahl möglich, Auswerten-Button, direktes Feedback (richtig/falsch), am Ende eine kurze Zusammenfassung.
 - Modernes, freundliches, gut lesbares Design. Schrift system-ui. Passend für ein iPad (Breite ~960px).
 - Sprache: Deutsch. Einzelarbeit, rein digital, keine Gruppen- oder Materialhinweise.
-
+${kontext ? `\nRAHMEN / KONTEXT DIESER AUFGABE (unbedingt beachten, aber NICHT wörtlich auf dem Bildschirm anzeigen):\n${kontext}\n\nWICHTIG: Schulische Begriffe (z. B. "Poolzeit" als Freiarbeits-/Lernzeit) beziehen sich auf diesen Kontext – nicht auf die wörtliche Alltagsbedeutung.\n` : ''}
 AUFGABENBESCHREIBUNG:
 ${description}`,
         model: 'claude_sonnet_4_6',

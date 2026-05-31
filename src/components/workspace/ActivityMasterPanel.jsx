@@ -141,6 +141,17 @@ export default function ActivityMasterPanel({
     staleTime: 60_000,
   });
 
+  // Themenfeld des Lernpakets – liefert Titel + Beschreibung als KI-Kontext.
+  const { data: themenfeld } = useQuery({
+    queryKey: ['themenfeld', lernpaket?.themenfeld_id],
+    queryFn: async () => {
+      const list = await base44.entities.Themenfeld.filter({ id: lernpaket.themenfeld_id });
+      return list?.[0] || null;
+    },
+    enabled: !!lernpaket?.themenfeld_id,
+    staleTime: 60_000,
+  });
+
   const LOCK_TIMEOUT_MS = 30 * 60 * 1000;
   const lernpaketLockActive =
     lernpaket?.is_locked &&
@@ -590,6 +601,21 @@ export default function ActivityMasterPanel({
     }
   };
 
+  // Schulischer Rahmen für die KI-Generierung der Offenen Aufgabe.
+  const aufgabenKontext = [
+    einheit?.fach && `Fach: ${einheit.fach}`,
+    einheit?.jahrgangsstufe && `Jahrgangsstufe: ${einheit.jahrgangsstufe}`,
+    einheit?.titel_der_einheit && `Unterrichtseinheit: ${einheit.titel_der_einheit}`,
+    (Array.isArray(einheit?.gesamtziele) && einheit.gesamtziele.length)
+      ? `Gesamtziele der Einheit:\n- ${einheit.gesamtziele.join('\n- ')}` : null,
+    einheit?.grundgeruest_rohtext && `Didaktischer Rahmen / Grundgerüst der Einheit:\n${einheit.grundgeruest_rohtext}`,
+    themenfeld?.titel && `Themenfeld: ${themenfeld.titel}`,
+    themenfeld?.beschreibung && `Beschreibung des Themenfelds: ${themenfeld.beschreibung}`,
+    lernpaket?.titel_des_pakets && `Lernpaket: ${lernpaket.titel_des_pakets}`,
+    (Array.isArray(lernpaket?.kernbegriffe) && lernpaket.kernbegriffe.length)
+      ? `Kernbegriffe: ${lernpaket.kernbegriffe.join(', ')}` : null,
+  ].filter(Boolean).join('\n\n');
+
   return (
     <div className="space-y-6 overflow-visible h-auto">
       {/* ── Aktivitäts-Header (Tab 4: nur Info, KEIN Lock-Toggle-Button) ──────── */}
@@ -780,6 +806,7 @@ export default function ActivityMasterPanel({
                   open={offenePreviewOpen}
                   onOpenChange={setOffenePreviewOpen}
                   description={fieldValues.description || ''}
+                  kontext={aufgabenKontext}
                   catalogName={catalogEntry?.name}
                   phase={activityRecord?.phase}
                   existingSnapshotHtml={fieldValues.approved_snapshot_html || ''}
