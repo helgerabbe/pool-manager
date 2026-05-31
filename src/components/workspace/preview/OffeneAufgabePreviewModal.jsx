@@ -14,40 +14,21 @@
  * KI-Generierung der interaktiven Aufgabe folgt in Schritt 2 — aktuell
  * wird ein Platzhalter-Fragment aus der Beschreibung gebaut.
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Eye, Sparkles, Loader2, Check, Clock, AlertTriangle, Lock } from 'lucide-react';
 import IPadFrame from '@/components/workspace/preview/IPadFrame';
+import { base44 } from '@/api/base44Client';
+import { toast } from 'sonner';
 
-function escapeHtml(str = '') {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-// SCHRITT 1: Platzhalter-Umsetzung. Baut ein eigenständiges, sandbox-fähiges
-// HTML-Dokument aus der Aufgabenbeschreibung. In Schritt 2 wird dies durch
-// eine echte, interaktive KI-Generierung (InvokeLLM) ersetzt.
-function buildPlaceholderDoc(description) {
-  const safe = escapeHtml(description).replace(/\n/g, '<br/>');
-  return `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"/>
-<style>
-  * { box-sizing: border-box; }
-  body { margin:0; font-family: 'Inter', system-ui, sans-serif; color:#1e293b; background:#fff; padding:28px 32px; }
-  .pill { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#7c3aed; background:#f5f3ff; border:1px solid #ddd6fe; padding:4px 10px; border-radius:999px; }
-  h1 { font-size:20px; margin:14px 0 10px; }
-  .task { background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:16px 18px; font-size:15px; line-height:1.6; color:#1e3a8a; }
-  .note { margin-top:20px; font-size:12px; color:#94a3b8; font-style:italic; border-top:1px dashed #e2e8f0; padding-top:14px; }
-</style></head>
-<body>
-  <span class="pill">Offene Aufgabe</span>
-  <h1>So könnte deine Aufgabe aussehen</h1>
-  <div class="task">${safe || 'Keine Beschreibung vorhanden.'}</div>
-  <p class="note">Hinweis: Dies ist eine erste, noch nicht interaktive Umsetzung deiner Beschreibung. Die voll funktionsfähige, KI-generierte Aufgabe folgt im nächsten Schritt.</p>
-</body></html>`;
+// Entfernt evtl. Markdown-Code-Fences, falls das Modell sie mitliefert,
+// und gibt das reine HTML-Dokument zurück.
+function extractHtml(raw = '') {
+  let s = String(raw).trim();
+  const fence = s.match(/```(?:html)?\s*([\s\S]*?)```/i);
+  if (fence) s = fence[1].trim();
+  return s;
 }
 
 export default function OffeneAufgabePreviewModal({
@@ -64,7 +45,6 @@ export default function OffeneAufgabePreviewModal({
   const [previewHtml, setPreviewHtml] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const timerRef = useRef(null);
 
   // Beim Öffnen: vorhandenen Snapshot laden (oder leeren Zustand zeigen).
   useEffect(() => {
@@ -72,18 +52,35 @@ export default function OffeneAufgabePreviewModal({
       setPreviewHtml(existingSnapshotHtml || '');
       setIsGenerating(false);
     }
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [open, existingSnapshotHtml]);
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
+    if (!description.trim()) return;
     setIsGenerating(true);
-    // SCHRITT 1: simulierte Generierung mit spürbarer Wartezeit, damit der
-    // Lade-/Geduld-Flow real getestet werden kann. Schritt 2 ersetzt dies
-    // durch einen echten InvokeLLM-Aufruf.
-    timerRef.current = setTimeout(() => {
-      setPreviewHtml(buildPlaceholderDoc(description));
+    try {
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `Du bist Entwickler interaktiver Lernaufgaben für eine digitale Lernplattform.
+Erzeuge aus der folgenden Aufgabenbeschreibung EINE vollständige, in sich geschlossene, interaktive HTML-Seite, die ein einzelner Schüler allein am Computer bearbeitet.
+
+STRIKTE VORGABEN:
+- Gib AUSSCHLIESSLICH ein vollständiges HTML-Dokument zurück (beginnend mit <!DOCTYPE html>). Keine Erklärungen, kein Markdown, keine Code-Fences.
+- Alles inline: CSS in <style>, JavaScript in <script>. KEINE externen Dateien, Links, Bilder oder CDNs.
+- Die Aufgabe muss funktional sein: Eingaben/Auswahl möglich, Auswerten-Button, direktes Feedback (richtig/falsch), am Ende eine kurze Zusammenfassung.
+- Modernes, freundliches, gut lesbares Design. Schrift system-ui. Passend für ein iPad (Breite ~960px).
+- Sprache: Deutsch. Einzelarbeit, rein digital, keine Gruppen- oder Materialhinweise.
+
+AUFGABENBESCHREIBUNG:
+${description}`,
+        model: 'claude_sonnet_4_6',
+      });
+      const html = extractHtml(typeof result === 'string' ? result : result?.text || '');
+      if (!html) throw new Error('Die KI hat keine Aufgabe zurückgegeben.');
+      setPreviewHtml(html);
+    } catch (err) {
+      toast.error('Erstellung fehlgeschlagen: ' + (err?.message || 'Unbekannt'));
+    } finally {
       setIsGenerating(false);
-    }, 1600);
+    }
   };
 
   const handleApprove = async () => {
