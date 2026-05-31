@@ -20,6 +20,7 @@ import MatchTermsBody from '@/components/workspace/preview/bodies/MatchTermsBody
 import SortingListBody from '@/components/workspace/preview/bodies/SortingListBody';
 import ConfirmationBody from '@/components/workspace/preview/bodies/ConfirmationBody';
 import ImageLabelingBody from '@/components/workspace/preview/bodies/ImageLabelingBody';
+import LehrwerkQuelleBody from '@/components/workspace/preview/bodies/LehrwerkQuelleBody';
 
 const SLIDE_W = 960;
 const SLIDE_H = 600;
@@ -229,6 +230,7 @@ function renderActivityBody(activity, katalogName, masters, variantIdx) {
   if (name.includes('bestätig') || name.includes('bestaetig') || name.includes('bearbeitung best')) {
     return <ConfirmationBody key={selectedMaster?.id || activity.id} fieldValues={(selectedMaster?.field_values) || fv} />;
   }
+  if (name.includes('lehrwerk') || name.includes('quelle')) return <LehrwerkQuelleBody fieldValues={fv} />;
   if (name.includes('bildbeschriftung')) return <ImageLabelingBody fieldValues={fv} />;
   if (name.includes('offene')) return <OffeneBody fv={fv} />;
   return <DefaultBody fv={fv} />;
