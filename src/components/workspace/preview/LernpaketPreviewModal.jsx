@@ -16,6 +16,7 @@ import {
 import LueckentextBody from '@/components/workspace/preview/bodies/LueckentextBody';
 import TestBody from '@/components/workspace/preview/bodies/TestBody';
 import KITutorBody from '@/components/workspace/preview/bodies/KITutorBody';
+import MatchTermsBody from '@/components/workspace/preview/bodies/MatchTermsBody';
 
 const SLIDE_W = 960;
 const SLIDE_H = 600;
@@ -187,6 +188,10 @@ function renderActivityBody(activity, katalogName, masters, variantIdx) {
   if (name.includes('lückentext') || name.includes('lueckentext')) {
     if (!selectedMaster) return <LeerHinweis text="Für diesen Lückentext sind noch keine Aufgaben hinterlegt." />;
     return <LueckentextBody key={selectedMaster.id} fieldValues={selectedMaster.field_values || {}} />;
+  }
+  if (name.includes('begriffe zuordnen') || name.includes('zuordnen') || name.includes('match')) {
+    if (!selectedMaster) return <LeerHinweis text="Für diese Aufgabe sind noch keine Begriffspaare hinterlegt." />;
+    return <MatchTermsBody key={selectedMaster.id} fieldValues={selectedMaster.field_values || {}} />;
   }
   if (name === 'test' || name.includes('test')) {
     if (!selectedMaster) return <LeerHinweis text="Für diesen Test sind noch keine Fragen hinterlegt." />;

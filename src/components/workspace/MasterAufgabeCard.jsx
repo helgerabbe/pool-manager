@@ -21,6 +21,7 @@ import MatchTermsModal from '@/components/workspace/MatchTermsModal';
 import LueckentextEditor, { LueckentextRenderer, validateBeforeSave } from '@/components/workspace/LueckentextEditor';
 import LueckentextWysiwygModal from '@/components/workspace/LueckentextWysiwygModal';
 import LueckentextPreviewModal from '@/components/workspace/preview/LueckentextPreviewModal';
+import MatchTermsPreviewModal from '@/components/workspace/preview/MatchTermsPreviewModal';
 import { Eye } from 'lucide-react';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import SortingListEditor from '@/components/workspace/SortingListEditor';
@@ -198,7 +199,7 @@ function MasterApprovalButton({ master, queryClient, catalogName, fieldValues, s
               onClick={handleApproveWithDefaults}
               className="bg-green-600 hover:bg-green-700"
             >
-              Mit Standardfrage füllen & freigeben
+              Mit Standardfrage füllen {'&'} freigeben
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -247,6 +248,7 @@ export default function MasterAufgabeCard({
   const [klonModalOpen, setKlonModalOpen] = useState(false);
   const [lueckentextModalOpen, setLueckentextModalOpen] = useState(false);
   const [lueckentextPreviewOpen, setLueckentextPreviewOpen] = useState(false);
+  const [matchTermsPreviewOpen, setMatchTermsPreviewOpen] = useState(false);
   const [sortingListModalOpen, setSortingListModalOpen] = useState(false);
   const [miniQuizModalOpen, setMiniQuizModalOpen] = useState(false);
   const [testModalOpen, setTestModalOpen] = useState(false);
@@ -601,6 +603,18 @@ export default function MasterAufgabeCard({
                 Vorschau
               </Button>
             )}
+            {isMatch && fieldValues.pairs?.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setMatchTermsPreviewOpen(true)}
+                className="gap-1.5 border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100"
+                title="So bearbeiten Schüler:innen diese Aufgabe"
+              >
+                <Eye className="w-4 h-4" />
+                Vorschau
+              </Button>
+            )}
             {!editMode && !locked && (
               <Button
                 size="sm"
@@ -671,6 +685,12 @@ export default function MasterAufgabeCard({
                   {acquiringLock ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sperren…</> : 'Inhalt bearbeiten'}
                 </Button>
               )}
+              <MatchTermsPreviewModal
+                open={matchTermsPreviewOpen}
+                onOpenChange={setMatchTermsPreviewOpen}
+                fieldValues={fieldValues}
+                catalogName={catalogName}
+              />
               <MatchTermsModal
                 open={matchTermsModalOpen}
                 onOpenChange={(isOpen) => { if (!isOpen) handleCloseMatchTermsModal(); }}
@@ -1116,7 +1136,7 @@ export default function MasterAufgabeCard({
                        </Button>
                      )}
                     <Button size="sm" onClick={() => handleSaveAndClose()} disabled={saveMutation.isPending} className="gap-1.5 ml-auto">
-                      {saveMutation.isPending && <Loader2 className="w-3 h-3 animate-spin" />} Speichern & schließen
+                      {saveMutation.isPending && <Loader2 className="w-3 h-3 animate-spin" />} Speichern {'&'} schließen
                     </Button>
                   </div>
                 </div>
