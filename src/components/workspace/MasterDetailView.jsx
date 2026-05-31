@@ -17,6 +17,7 @@ import KITutorPreviewModal from '@/components/workspace/preview/KITutorPreviewMo
 import TestPreviewModal from '@/components/workspace/preview/TestPreviewModal';
 import MatchTermsPreviewModal from '@/components/workspace/preview/MatchTermsPreviewModal';
 import SortingListPreviewModal from '@/components/workspace/preview/SortingListPreviewModal';
+import MiniQuizPreviewModal from '@/components/workspace/preview/MiniQuizPreviewModal';
 import ReleaseToggleSection from '@/components/release/ReleaseToggleSection';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { getFriendlyErrorMessage } from '@/lib/errorMapper';
@@ -332,6 +333,7 @@ export default function MasterDetailView({
   const [testPreviewOpen, setTestPreviewOpen] = useState(false);
   const [matchTermsPreviewOpen, setMatchTermsPreviewOpen] = useState(false);
   const [sortingPreviewOpen, setSortingPreviewOpen] = useState(false);
+  const [quizPreviewOpen, setQuizPreviewOpen] = useState(false);
   const [fieldValues, setFieldValues] = useState(master.field_values || {});
   const [localContentStatus, setLocalContentStatus] = useState(master.content_status || 'draft');
   const [localReleasedAt, setLocalReleasedAt] = useState(master.released_at || null);
@@ -665,6 +667,16 @@ export default function MasterDetailView({
               onClick={() => setSortingPreviewOpen(true)}
               className="gap-2 border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100"
               title="So bearbeitet der Schüler diese Sortier-Aufgabe"
+            >
+              <Eye className="w-4 h-4" /> Vorschau
+            </Button>
+          )}
+          {isQuiz && Array.isArray(fieldValues.questions) && fieldValues.questions.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={() => setQuizPreviewOpen(true)}
+              className="gap-2 border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100"
+              title="So bearbeitet der Schüler dieses Mini-Quiz"
             >
               <Eye className="w-4 h-4" /> Vorschau
             </Button>
@@ -1022,6 +1034,17 @@ export default function MasterDetailView({
         <SortingListPreviewModal
           open={sortingPreviewOpen}
           onOpenChange={setSortingPreviewOpen}
+          fieldValues={fieldValues}
+          catalogName={catalogName}
+          phase={master?.phase || 'Übung'}
+        />
+      )}
+
+      {/* ── Schüler-Vorschau Modal (Mini-Quiz) ── */}
+      {isQuiz && (
+        <MiniQuizPreviewModal
+          open={quizPreviewOpen}
+          onOpenChange={setQuizPreviewOpen}
           fieldValues={fieldValues}
           catalogName={catalogName}
           phase={master?.phase || 'Übung'}
