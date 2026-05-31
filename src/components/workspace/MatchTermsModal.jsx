@@ -277,11 +277,20 @@ export default function MatchTermsModal({
   const prevOpenRef = useRef(false);
   useEffect(() => {
     if (open && !prevOpenRef.current) {
-      setIsReleased(initialData?.content_status === 'approved');
+      // Robust gegenüber unterschiedlichen Aufrufern: manche Parents reichen
+      // den flachen field_values-Block hinein, manche das komplette Master-Objekt.
+      // Beide Wege müssen funktionieren, sonst sieht die Lehrkraft beim erneuten
+      // Öffnen einer freigegebenen Aufgabe ein leeres Formular.
+      const src = (initialData && initialData.field_values && typeof initialData.field_values === 'object')
+        ? { ...initialData, ...initialData.field_values }
+        : (initialData || {});
+      setIsReleased(src.content_status === 'approved');
       setEditorData({
-        instruction: initialData?.instruction || '',
-        pairs: initialData?.pairs || [],
-        distractors: (initialData?.distractors || []).map(v => typeof v === 'string' ? v : v?.value || '').filter(Boolean),
+        instruction: src.instruction || '',
+        pairs: Array.isArray(src.pairs) ? src.pairs : [],
+        distractors: (Array.isArray(src.distractors) ? src.distractors : [])
+          .map(v => typeof v === 'string' ? v : v?.value || '')
+          .filter(Boolean),
       });
       setActiveTab('manual');
       setDeleteConfirm(false);
@@ -389,20 +398,28 @@ export default function MatchTermsModal({
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-border shrink-0 space-y-4">
-          <ReleaseStatusToggle isReleased={isReleased} onToggle={setIsReleased} disabled={isSaving || !isReadyToSave} />
-          {!isReadyToSave && (
+          {/* Freigabe-Toggle bleibt IMMER bedienbar — nur so kann die Lehrkraft
+              eine freigegebene Aufgabe überhaupt wieder zurückholen. */}
+          <ReleaseStatusToggle isReleased={isReleased} onToggle={setIsReleased} disabled={isSaving || isDeleting} />
+          {!isReleased && !isReadyToSave && (
             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
               Mindestens 1 vollständiges Begriffspaar erforderlich.
             </p>
           )}
+          {isReleased && (
+            <p className="text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-2 py-1">
+              Aufgabe ist freigegeben. Zum Bearbeiten oder Löschen zuerst die Freigabe oben zurücknehmen.
+            </p>
+          )}
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              {onDelete && !deleteConfirm && (
+              {/* Löschen nur sichtbar, wenn NICHT freigegeben. */}
+              {!isReleased && onDelete && !deleteConfirm && (
                 <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(true)} disabled={isSaving || isDeleting} className="gap-1.5 text-destructive hover:bg-red-50 hover:text-destructive">
                   <Trash2 className="w-4 h-4" /> Löschen
                 </Button>
               )}
-              {deleteConfirm && (
+              {!isReleased && deleteConfirm && (
                 <>
                   <span className="text-xs text-destructive font-medium">Wirklich löschen?</span>
                   <Button variant="destructive" size="sm" onClick={handleDelete} disabled={isDeleting} className="gap-1.5 h-7 text-xs">
@@ -413,15 +430,20 @@ export default function MatchTermsModal({
               )}
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={handleCancel} disabled={isSaving || isDeleting}>Abbrechen</Button>
-              <Button
-                onClick={handleSave}
-                disabled={isSaving || exportLocked || isDeleting || !isReadyToSave}
-                title={exportLocked ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : !isReadyToSave ? 'Mindestens 1 Paar erforderlich' : ''}
-                className="gap-2"
-              >
-                {isSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</> : 'Speichern'}
+              <Button variant="outline" onClick={handleCancel} disabled={isSaving || isDeleting}>
+                {isReleased ? 'Schließen' : 'Abbrechen'}
               </Button>
+              {/* Speichern nur sichtbar, wenn NICHT freigegeben. */}
+              {!isReleased && (
+                <Button
+                  onClick={handleSave}
+                  disabled={isSaving || exportLocked || isDeleting || !isReadyToSave}
+                  title={exportLocked ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : !isReadyToSave ? 'Mindestens 1 Paar erforderlich' : ''}
+                  className="gap-2"
+                >
+                  {isSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</> : 'Speichern'}
+                </Button>
+              )}
             </div>
           </div>
         </div>
