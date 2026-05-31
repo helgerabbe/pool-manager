@@ -64,7 +64,8 @@ function isImageLabeling(name = '') {
 }
 
 function isKITutor(name = '') {
-  return name.toLowerCase().includes('ki-tutor');
+  const n = name.toLowerCase();
+  return n.includes('ki-tutor') || n.includes('ki-check');
 }
 
 function isOffeneAufgabe(name = '') {
@@ -255,8 +256,8 @@ function MasterContentReadOnly({ master, catalogName }) {
       : <p className="text-sm text-muted-foreground italic">Noch kein Inhalt vorhanden.</p>;
   }
 
-  // KI-Tutor
-  if (catalogName.toLowerCase().includes('ki-tutor')) {
+  // KI-Tutor / KI-Check
+  if (catalogName.toLowerCase().includes('ki-tutor') || catalogName.toLowerCase().includes('ki-check')) {
     return (
       <div className="space-y-3">
         {fv.aufgabenstellung && (
@@ -388,7 +389,7 @@ export default function MasterDetailView({
     if (name.includes('bildbeschriftung') || name.includes('image labeling')) {
       return !!(fv.backgroundImage && Array.isArray(fv.dropZones) && fv.dropZones.length >= 1);
     }
-    if (name.includes('ki-tutor')) {
+    if (name.includes('ki-tutor') || name.includes('ki-check')) {
       return !!(fv.aufgabenstellung && String(fv.aufgabenstellung).trim() !== '');
     }
     return Object.values(fv).some(v => {
