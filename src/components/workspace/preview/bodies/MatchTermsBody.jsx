@@ -12,10 +12,21 @@
  *   Bei voller Korrektheit: Konfetti.
  */
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { RotateCcw, CheckCircle2, XCircle, Trophy } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import confetti from 'canvas-confetti';
+
+// Radix-Dialog rendert seinen Content mit `transform: translate(-50%, -50%)`.
+// @hello-pangea/dnd nutzt `position: fixed` für das gezogene Element — in einem
+// transformierten Vorfahren wird `fixed` aber relativ zum Vorfahren positioniert,
+// nicht zum Viewport. Folge: Das gezogene Element „springt“ weg und Drops landen
+// im Nichts. Lösung: während des Drags via Portal an document.body hängen.
+const DragPortal = ({ isDragging, children }) => {
+  if (!isDragging || typeof document === 'undefined') return children;
+  return createPortal(children, document.body);
+};
 
 function shuffle(arr) {
   const a = [...arr];
@@ -192,19 +203,21 @@ export default function MatchTermsBody({ fieldValues = {} }) {
                         {assignedItem ? (
                           <Draggable draggableId={assignedItem.id} index={0} isDragDisabled={checked}>
                             {(dragProvided, dragSnapshot) => (
-                              <div
-                                ref={dragProvided.innerRef}
-                                {...dragProvided.draggableProps}
-                                {...dragProvided.dragHandleProps}
-                                className={[
-                                  'select-none cursor-grab active:cursor-grabbing flex items-center gap-2',
-                                  dragSnapshot.isDragging && 'opacity-80',
-                                ].filter(Boolean).join(' ')}
-                              >
-                                {checked && correct && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
-                                {checked && wrong && <XCircle className="w-4 h-4 text-red-500 shrink-0" />}
-                                <span className="flex-1">{assignedItem.text}</span>
-                              </div>
+                              <DragPortal isDragging={dragSnapshot.isDragging}>
+                                <div
+                                  ref={dragProvided.innerRef}
+                                  {...dragProvided.draggableProps}
+                                  {...dragProvided.dragHandleProps}
+                                  className={[
+                                    'select-none cursor-grab active:cursor-grabbing flex items-center gap-2',
+                                    dragSnapshot.isDragging && 'px-3 py-1.5 rounded-lg bg-white border border-blue-400 shadow-lg text-[13px] text-blue-900',
+                                  ].filter(Boolean).join(' ')}
+                                >
+                                  {checked && correct && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                                  {checked && wrong && <XCircle className="w-4 h-4 text-red-500 shrink-0" />}
+                                  <span className="flex-1">{assignedItem.text}</span>
+                                </div>
+                              </DragPortal>
                             )}
                           </Draggable>
                         ) : (
@@ -238,22 +251,24 @@ export default function MatchTermsBody({ fieldValues = {} }) {
                   {poolItems.map((item, idx) => (
                     <Draggable key={item.id} draggableId={item.id} index={idx} isDragDisabled={checked}>
                       {(dragProvided, dragSnapshot) => (
-                        <button
-                          type="button"
-                          ref={dragProvided.innerRef}
-                          {...dragProvided.draggableProps}
-                          {...dragProvided.dragHandleProps}
-                          onClick={() => handlePoolClick(item.id)}
-                          disabled={checked}
-                          className={[
-                            'select-none cursor-grab active:cursor-grabbing',
-                            'px-3 py-1.5 rounded-full border border-slate-300 bg-white text-[12px] text-slate-700',
-                            'hover:border-blue-400 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors',
-                            dragSnapshot.isDragging && 'shadow-lg ring-2 ring-blue-300',
-                          ].filter(Boolean).join(' ')}
-                        >
-                          {item.text}
-                        </button>
+                        <DragPortal isDragging={dragSnapshot.isDragging}>
+                          <button
+                            type="button"
+                            ref={dragProvided.innerRef}
+                            {...dragProvided.draggableProps}
+                            {...dragProvided.dragHandleProps}
+                            onClick={() => handlePoolClick(item.id)}
+                            disabled={checked}
+                            className={[
+                              'select-none cursor-grab active:cursor-grabbing',
+                              'px-3 py-1.5 rounded-full border border-slate-300 bg-white text-[12px] text-slate-700',
+                              'hover:border-blue-400 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors',
+                              dragSnapshot.isDragging && 'shadow-lg ring-2 ring-blue-300',
+                            ].filter(Boolean).join(' ')}
+                          >
+                            {item.text}
+                          </button>
+                        </DragPortal>
                       )}
                     </Draggable>
                   ))}
