@@ -648,12 +648,14 @@ export default function ActivityMasterPanel({
             {kannBearbeiten && (
               <div className="flex justify-end gap-2">
                 {/* Schüler-Vorschau (Stufe-1-Pilot, für "Text lesen", "Video / Audio" und "Link / URL"). */}
-                {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio') || catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url') || catalogEntry?.name?.toLowerCase().includes('ki-tutor') || catalogEntry?.name?.toLowerCase().includes('bestätigen')) && (
+                {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio') || catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url') || catalogEntry?.name?.toLowerCase().includes('ki-tutor') || catalogEntry?.name?.toLowerCase().includes('bestätigen') || catalogEntry?.name?.toLowerCase().includes('offene')) && (
                   <Button
                     variant="outline"
                     onClick={() => {
                       const n = catalogEntry?.name?.toLowerCase() || '';
-                      if (n.includes('bestätigen')) {
+                      if (n.includes('offene')) {
+                        setOffenePreviewOpen(true);
+                      } else if (n.includes('bestätigen')) {
                         setConfirmationPreviewOpen(true);
                       } else if (n.includes('ki-tutor')) {
                         setKiTutorActivityPreviewOpen(true);
@@ -759,15 +761,6 @@ export default function ActivityMasterPanel({
                       <p className="text-[11px] text-muted-foreground">
                         Vorlage gestaltet am {new Date(fieldValues.snapshot_approved_at).toLocaleString('de-DE')}
                       </p>
-                    )}
-                    {fieldValues.description && (
-                      <Button
-                        variant="outline"
-                        onClick={() => setOffenePreviewOpen(true)}
-                        className="gap-2 border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100 hover:text-violet-900"
-                      >
-                        <Eye className="w-4 h-4" /> Vorschau {fieldValues.approved_snapshot_html ? 'ansehen' : 'erstellen'}
-                      </Button>
                     )}
                   </div>
                 )}
