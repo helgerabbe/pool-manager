@@ -429,6 +429,13 @@ export default function MasterAufgabeCard({
   };
 
   const handleEditMatchTerms = async () => {
+    // Frische Daten aus master.field_values laden, bevor das Modal öffnet —
+    // der lokale fieldValues-State kann veraltet/leer sein, wenn die Karte schon
+    // länger gemountet ist (z. B. bei freigegebenen Mastern, die per Refetch
+    // nachgeladen wurden). Sonst sieht die Lehrkraft beim Klick auf
+    // "Inhalt bearbeiten" ein leeres Formular.
+    const fresh = master.field_values || {};
+    setFieldValues(fresh);
     if (kannBearbeiten) {
       onEditModeChange?.(true);
       setMatchTermsModalOpen(true);
@@ -694,7 +701,7 @@ export default function MasterAufgabeCard({
               <MatchTermsModal
                 open={matchTermsModalOpen}
                 onOpenChange={(isOpen) => { if (!isOpen) handleCloseMatchTermsModal(); }}
-                initialData={{ ...fieldValues, content_status: master.content_status }}
+                initialData={{ ...(master.field_values || {}), ...fieldValues, content_status: master.content_status }}
                 isSaving={saveMutation.isPending}
                 exportLocked={false}
                 onSave={(data) => {
