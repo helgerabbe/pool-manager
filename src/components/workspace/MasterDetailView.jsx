@@ -425,6 +425,13 @@ export default function MasterDetailView({
   const handleEdit = async () => {
     if (!isSupportedType) return;
 
+    // Vor dem Öffnen immer die aktuell gespeicherten Master-Daten ins Modal geben.
+    // Sonst kann ein leerer lokaler Zwischenstand angezeigt werden, obwohl Daten gespeichert sind.
+    setFieldValues(master.field_values || {});
+    setLocalContentStatus(master.content_status || 'draft');
+    setLocalReleasedAt(master.released_at || null);
+    setLocalReleasedBy(master.released_by || null);
+
     setAcquiringLock(true);
     const ok = await acquireLock();
     setAcquiringLock(false);
@@ -723,7 +730,9 @@ export default function MasterDetailView({
 
       {/* Helper: Aktuelle initialData für Modals (Master oder Klon) */}
       {(() => {
-        const activeData = editingKlonId ? klonFieldValues : { ...fieldValues, content_status: localContentStatus };
+        const activeData = editingKlonId
+          ? klonFieldValues
+          : { ...(master.field_values || {}), ...fieldValues, content_status: localContentStatus };
         const isSavingAny = saveMutation.isPending || saveKlonMutation.isPending;
 
         const masterIsReleased = !editingKlonId && localContentStatus === 'approved';
