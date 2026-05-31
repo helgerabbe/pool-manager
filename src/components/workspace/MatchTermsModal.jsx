@@ -305,6 +305,19 @@ export default function MatchTermsModal({
       .map(v => typeof v === 'string' ? v : v?.value || '')
       .filter(Boolean);
     const sig = JSON.stringify({ i: src.instruction || '', p: pairs, d: distractors, c: src.content_status || '' });
+    // ── DIAGNOSE (Begriffe-zuordnen Debug 2026-05-31) ──
+    // Zeigt exakt, was beim Öffnen ankommt. Sobald der Bug gefunden ist,
+    // kann dieser Block wieder entfernt werden.
+    console.log('[MatchTermsModal] init', {
+      open,
+      initialDataKeys: initialData ? Object.keys(initialData) : null,
+      initialDataPairsLen: Array.isArray(initialData?.pairs) ? initialData.pairs.length : 'no-array',
+      srcPairsLen: pairs.length,
+      distractorsLen: distractors.length,
+      content_status: src.content_status,
+      sigChanged: initSigRef.current !== sig,
+      rawInitialData: initialData,
+    });
     if (initSigRef.current === sig) return;
     initSigRef.current = sig;
     setIsReleased(src.content_status === 'approved');
