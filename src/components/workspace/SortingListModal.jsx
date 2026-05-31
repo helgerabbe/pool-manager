@@ -119,37 +119,55 @@ export default function SortingListModal({
         {/* Footer */}
         <div className="px-6 py-5 border-t border-border shrink-0 space-y-4">
           <ReleaseStatusToggle isReleased={isReleased} onToggle={setIsReleased} disabled={isSaving} />
+          {!isReleased && !isConverting && (
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+              Speichere Änderungen ab.
+            </p>
+          )}
+          {isReleased && (
+            <p className="text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-2 py-1">
+              Aufgabe ist freigegeben. Zum Bearbeiten oder Löschen zuerst die Freigabe oben zurücknehmen.
+            </p>
+          )}
           <div className="flex items-center justify-between gap-3">
-            {/* Lösch- & Promote-Buttons links */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {onDelete && !deleteConfirm && (
-                <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(true)} disabled={isSaving || isDeleting || isConverting} className="gap-1.5 text-destructive hover:bg-red-50 hover:text-destructive">
-                  <Trash2 className="w-4 h-4" /> Löschen
-                </Button>
-              )}
-              {deleteConfirm && (
-                <>
-                  <span className="text-xs text-destructive font-medium">Wirklich löschen?</span>
-                  <Button variant="destructive" size="sm" onClick={handleDelete} disabled={isDeleting} className="gap-1.5 h-7 text-xs">
-                    {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />} Ja, löschen
+            {/* Lösch- & Promote-Buttons links — nur wenn NICHT freigegeben */}
+            {!isReleased && (
+              <div className="flex items-center gap-2 flex-wrap">
+                {onDelete && !deleteConfirm && (
+                  <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(true)} disabled={isSaving || isDeleting || isConverting} className="gap-1.5 text-destructive hover:bg-red-50 hover:text-destructive">
+                    <Trash2 className="w-4 h-4" /> Löschen
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(false)} disabled={isDeleting} className="h-7 text-xs">Abbrechen</Button>
-                </>
-              )}
-              {onConvertToMaster && !deleteConfirm && (
-                <Button variant="outline" size="sm" onClick={onConvertToMaster} disabled={isSaving || isDeleting || isConverting} className="gap-1.5 text-primary border-primary/40 hover:bg-primary/5">
-                  {isConverting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Crown className="w-3.5 h-3.5" />}
-                  Zur Masteraufgabe machen
+                )}
+                {deleteConfirm && (
+                  <>
+                    <span className="text-xs text-destructive font-medium">Wirklich löschen?</span>
+                    <Button variant="destructive" size="sm" onClick={handleDelete} disabled={isDeleting} className="gap-1.5 h-7 text-xs">
+                      {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />} Ja, löschen
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(false)} disabled={isDeleting} className="h-7 text-xs">Abbrechen</Button>
+                  </>
+                )}
+                {onConvertToMaster && !deleteConfirm && (
+                  <Button variant="outline" size="sm" onClick={onConvertToMaster} disabled={isSaving || isDeleting || isConverting} className="gap-1.5 text-primary border-primary/40 hover:bg-primary/5">
+                    {isConverting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Crown className="w-3.5 h-3.5" />}
+                    Zur Masteraufgabe machen
+                  </Button>
+                )}
+              </div>
+            )}
+            {isReleased && <div />}
+            {/* Speichern-Buttons rechts — nur wenn NICHT freigegeben */}
+            {!isReleased && (
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={handleCancel} disabled={isSaving || isDeleting || isConverting}>Abbrechen</Button>
+                <Button onClick={handleSave} disabled={isSaving || exportLocked || isDeleting || isConverting} title={exportLocked ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''} className="gap-2">
+                  {isSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</> : 'Speichern'}
                 </Button>
-              )}
-            </div>
-            {/* Speichern-Buttons rechts */}
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={handleCancel} disabled={isSaving || isDeleting || isConverting}>Abbrechen</Button>
-              <Button onClick={handleSave} disabled={isSaving || exportLocked || isDeleting || isConverting} title={exportLocked ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''} className="gap-2">
-                {isSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</> : 'Speichern'}
-              </Button>
-            </div>
+              </div>
+            )}
+            {isReleased && (
+              <Button variant="outline" onClick={handleCancel} disabled={isSaving || isDeleting}>Schließen</Button>
+            )}
           </div>
         </div>
       </DialogContent>
