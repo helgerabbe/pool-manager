@@ -511,7 +511,8 @@ export default function ActivityMasterPanel({
   const isBegriffeZuordnen = ['begriffe zuordnen', 'zuordnen'].some(n => catalogNameLower.includes(n));
   const isReihenfolgeSortierung = catalogNameLower.includes('reihenfolge') || catalogNameLower.includes('sortierung');
   const isTestActivity = catalogNameLower === 'test' || catalogNameLower.includes('abschlusstest');
-  const showModusSwitch = supportsMaster && !isKITutor && !isLueckentext && !isBegriffeZuordnen && !isReihenfolgeSortierung && !isTestActivity;
+  const isMiniquiz = catalogNameLower.includes('quiz');
+  const showModusSwitch = supportsMaster && !isKITutor && !isLueckentext && !isBegriffeZuordnen && !isReihenfolgeSortierung && !isTestActivity && !isMiniquiz;
   const effectiveIstKiModus = showModusSwitch && istKiModus;
   const emptyMasterHint = isBegriffeZuordnen
     ? 'Es sind noch keine Begriffe oder Zuordnungen hinterlegt. Klicke auf „Erste Aufgabe erstellen“, um die Begriffe zu erfassen.'
