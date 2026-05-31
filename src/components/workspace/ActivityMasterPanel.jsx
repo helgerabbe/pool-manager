@@ -22,6 +22,7 @@ import TextLesenPreviewModal from '@/components/workspace/preview/TextLesenPrevi
 import VideoAudioPreviewModal from '@/components/workspace/preview/VideoAudioPreviewModal';
 import LinkUrlPreviewModal from '@/components/workspace/preview/LinkUrlPreviewModal';
 import KITutorPreviewModal from '@/components/workspace/preview/KITutorPreviewModal';
+import ConfirmationPreviewModal from '@/components/workspace/preview/ConfirmationPreviewModal';
 import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import MoodleSyncStatusBadge from '@/components/workspace/MoodleSyncStatusBadge';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
@@ -157,6 +158,8 @@ export default function ActivityMasterPanel({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [videoAudioPreviewOpen, setVideoAudioPreviewOpen] = useState(false);
   const [linkUrlPreviewOpen, setLinkUrlPreviewOpen] = useState(false);
+  // Abschluss-Aktivität „Bearbeitung bestätigen": Schüler-Vorschau.
+  const [confirmationPreviewOpen, setConfirmationPreviewOpen] = useState(false);
   // KI-Tutor-Vorschau: Master, dessen Aufgabenstellung gerade angezeigt wird (oder null).
   const [kiTutorPreviewMaster, setKiTutorPreviewMaster] = useState(null);
   // KI-Tutor-Vorschau für Aktivitäten OHNE Masteraufgaben (Standardfall).
@@ -620,12 +623,14 @@ export default function ActivityMasterPanel({
             {kannBearbeiten && (
               <div className="flex justify-end gap-2">
                 {/* Schüler-Vorschau (Stufe-1-Pilot, für "Text lesen", "Video / Audio" und "Link / URL"). */}
-                {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio') || catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url') || catalogEntry?.name?.toLowerCase().includes('ki-tutor')) && (
+                {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio') || catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url') || catalogEntry?.name?.toLowerCase().includes('ki-tutor') || catalogEntry?.name?.toLowerCase().includes('bestätigen')) && (
                   <Button
                     variant="outline"
                     onClick={() => {
                       const n = catalogEntry?.name?.toLowerCase() || '';
-                      if (n.includes('ki-tutor')) {
+                      if (n.includes('bestätigen')) {
+                        setConfirmationPreviewOpen(true);
+                      } else if (n.includes('ki-tutor')) {
                         setKiTutorActivityPreviewOpen(true);
                       } else if (n.includes('video') || n.includes('audio')) {
                         setVideoAudioPreviewOpen(true);
@@ -682,6 +687,13 @@ export default function ActivityMasterPanel({
                 onOpenChange={setKiTutorActivityPreviewOpen}
                 activityRecord={{ ...activityRecord, field_values: fieldValues }}
                 master={null}
+                catalogName={catalogEntry?.name}
+                phase={activityRecord?.phase}
+              />
+              <ConfirmationPreviewModal
+                open={confirmationPreviewOpen}
+                onOpenChange={setConfirmationPreviewOpen}
+                fieldValues={fieldValues}
                 catalogName={catalogEntry?.name}
                 phase={activityRecord?.phase}
               />
