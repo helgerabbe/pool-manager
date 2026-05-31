@@ -21,6 +21,11 @@ import { toast } from 'sonner';
 
 // ── Manueller Editor ──────────────────────────────────────────────────────────
 
+// Hard-Limit: mehr als 8 Begriffspaare passen nicht scrollfrei in den 960×600-Slide-Slot
+// (Stand 2026-05-31 nach Lehrkraft-Test). Greift sowohl beim manuellen Hinzufügen
+// als auch beim KI-Assistenten.
+const MAX_PAIRS = 8;
+
 function ManualEditor({ data, onChange }) {
   const [pairs, setPairs] = useState(data.pairs || []);
   const [distractors, setDistractors] = useState(data.distractors || []);
@@ -31,7 +36,13 @@ function ManualEditor({ data, onChange }) {
     onChange({ instruction, pairs, distractors });
   }, [instruction, pairs, distractors]);
 
-  const addPair = () => setPairs(p => [...p, { left: '', right: '' }]);
+  const addPair = () => setPairs(p => {
+    if (p.length >= MAX_PAIRS) {
+      toast.error(`Maximal ${MAX_PAIRS} Begriffspaare — sonst passt die Aufgabe nicht auf den Bildschirm.`);
+      return p;
+    }
+    return [...p, { left: '', right: '' }];
+  });
   const updatePair = (idx, side, val) => setPairs(p => p.map((item, i) => i === idx ? { ...item, [side]: val } : item));
   const removePair = (idx) => setPairs(p => p.filter((_, i) => i !== idx));
 
@@ -56,8 +67,18 @@ function ManualEditor({ data, onChange }) {
       {/* Begriffspaare */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">Begriffspaare</Label>
-          <Button size="sm" variant="ghost" onClick={addPair} className="gap-1 text-xs h-7">
+          <div>
+            <Label className="text-sm font-medium">Begriffspaare</Label>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{pairs.length} / {MAX_PAIRS} — max. {MAX_PAIRS}, damit die Aufgabe scrollfrei aufs iPad passt.</p>
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={addPair}
+            disabled={pairs.length >= MAX_PAIRS}
+            className="gap-1 text-xs h-7"
+            title={pairs.length >= MAX_PAIRS ? `Maximum von ${MAX_PAIRS} Paaren erreicht.` : ''}
+          >
             <Plus className="w-3 h-3" /> Paar hinzufügen
           </Button>
         </div>
@@ -124,6 +145,12 @@ function ManualEditor({ data, onChange }) {
 function KIAssistent({ onApply }) {
   const [topic, setTopic] = useState('');
   const [numPairs, setNumPairs] = useState('5');
+  const clampNumPairs = (v) => {
+    const n = Number(v);
+    if (!Number.isFinite(n) || n < 1) return '1';
+    if (n > MAX_PAIRS) return String(MAX_PAIRS);
+    return String(Math.floor(n));
+  };
   const [numDistractors, setNumDistractors] = useState('3');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -153,8 +180,9 @@ Distraktoren sind plausible, aber falsche Antwortoptionen zum Thema.`,
       });
 
       const data = response.data || response;
-      const validPairs = (data.pairs || []).filter(p => p?.left && p?.right);
-      if (validPairs.length === 0) throw new Error('KI konnte keine gültigen Paare generieren.');
+      const validPairsRaw = (data.pairs || []).filter(p => p?.left && p?.right);
+      if (validPairsRaw.length === 0) throw new Error('KI konnte keine gültigen Paare generieren.');
+      const validPairs = validPairsRaw.slice(0, MAX_PAIRS);
       const validDistractors = (data.distractors || []).filter(d => typeof d === 'string' && d.trim());
       setPreview({ pairs: validPairs, distractors: validDistractors });
     } catch (err) {
@@ -179,8 +207,8 @@ Distraktoren sind plausible, aber falsche Antwortoptionen zum Thema.`,
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label className="text-sm font-medium">Anzahl Paare</Label>
-          <Input type="number" value={numPairs} onChange={e => setNumPairs(e.target.value)} min="1" max="20" className="text-sm" />
+          <Label className="text-sm font-medium">Anzahl Paare (max. {MAX_PAIRS})</Label>
+          <Input type="number" value={numPairs} onChange={e => setNumPairs(clampNumPairs(e.target.value))} min="1" max={MAX_PAIRS} className="text-sm" />
         </div>
         <div className="space-y-1.5">
           <Label className="text-sm font-medium">Distraktoren</Label>
@@ -220,7 +248,7 @@ Distraktoren sind plausible, aber falsche Antwortoptionen zum Thema.`,
             className="w-full gap-2"
             variant="default"
           >
-            <Sparkles className="w-4 h-4" /> Übernehmen & manuell bearbeiten
+            <Sparkles className="w-4 h-4" /> Übernehmen {'&'} manuell bearbeiten
           </Button>
         </div>
       )}
@@ -287,13 +315,18 @@ export default function MatchTermsModal({
   };
 
   const handleKIApply = (generated) => {
+    const cappedPairs = (generated.pairs || []).slice(0, MAX_PAIRS);
     setEditorData(prev => ({
       ...prev,
-      pairs: generated.pairs,
+      pairs: cappedPairs,
       distractors: generated.distractors,
     }));
     setActiveTab('manual');
-    toast.success('KI-Paare übernommen – jetzt manuell anpassen.');
+    if ((generated.pairs || []).length > MAX_PAIRS) {
+      toast.warning(`Nur die ersten ${MAX_PAIRS} Paare übernommen — mehr passen nicht auf den Bildschirm.`);
+    } else {
+      toast.success('KI-Paare übernommen – jetzt manuell anpassen.');
+    }
   };
 
   const validPairs = (editorData.pairs || []).filter(p => p?.left?.trim() && p?.right?.trim());
