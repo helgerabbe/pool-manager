@@ -291,29 +291,27 @@ export default function MatchTermsModal({
   const [isDeleting, setIsDeleting] = useState(false);
   const [editorData, setEditorData] = useState({ instruction: '', pairs: [], distractors: [] });
 
-  const prevOpenRef = useRef(false);
+  // Re-Init nicht nur beim Öffnen, sondern auch wenn die DB-Werte erst NACH dem
+  // Öffnen eintreffen (z.B. nach Lock-Erwerb + Query-Refetch). Wir vergleichen
+  // eine Signatur der relevanten Inhalte, damit echte Edits nicht überschrieben werden.
+  const initSigRef = useRef(null);
   useEffect(() => {
-    if (open && !prevOpenRef.current) {
-      // Robust gegenüber unterschiedlichen Aufrufern: manche Parents reichen
-      // den flachen field_values-Block hinein, manche das komplette Master-Objekt.
-      // Beide Wege müssen funktionieren, sonst sieht die Lehrkraft beim erneuten
-      // Öffnen einer freigegebenen Aufgabe ein leeres Formular.
-      const src = (initialData && initialData.field_values && typeof initialData.field_values === 'object')
-        ? { ...initialData, ...initialData.field_values }
-        : (initialData || {});
-      setIsReleased(src.content_status === 'approved');
-      setEditorData({
-        instruction: src.instruction || '',
-        pairs: Array.isArray(src.pairs) ? src.pairs : [],
-        distractors: (Array.isArray(src.distractors) ? src.distractors : [])
-          .map(v => typeof v === 'string' ? v : v?.value || '')
-          .filter(Boolean),
-      });
-      setActiveTab('manual');
-      setDeleteConfirm(false);
-    }
-    prevOpenRef.current = open;
-  }, [open]);
+    if (!open) { initSigRef.current = null; return; }
+    const src = (initialData && initialData.field_values && typeof initialData.field_values === 'object')
+      ? { ...initialData, ...initialData.field_values }
+      : (initialData || {});
+    const pairs = Array.isArray(src.pairs) ? src.pairs : [];
+    const distractors = (Array.isArray(src.distractors) ? src.distractors : [])
+      .map(v => typeof v === 'string' ? v : v?.value || '')
+      .filter(Boolean);
+    const sig = JSON.stringify({ i: src.instruction || '', p: pairs, d: distractors, c: src.content_status || '' });
+    if (initSigRef.current === sig) return;
+    initSigRef.current = sig;
+    setIsReleased(src.content_status === 'approved');
+    setEditorData({ instruction: src.instruction || '', pairs, distractors });
+    setActiveTab('manual');
+    setDeleteConfirm(false);
+  }, [open, initialData]);
 
   const handleCancel = () => {
     setDeleteConfirm(false);
