@@ -403,7 +403,15 @@ export default function MasterDetailView({
       return base44.entities.MasterAufgabe.update(master.id, { field_values: fv, is_complete: isComplete });
     },
     onSuccess: async (_, fv) => {
-      await syncMasterStatusNow({ queryClient, master, fieldValues: fv });
+      // syncMasterStatusNow ruft eine Backend-Touch-Funktion auf und kann
+      // fehlschlagen. Wirft sie hier (unverpackt), bricht react-query die
+      // Callback-Kette ab und die per-Call-onSuccess (mit handleCloseModal)
+      // laeuft nie -> der Dialog bleibt offen, obwohl gespeichert wurde.
+      try {
+        await syncMasterStatusNow({ queryClient, master, fieldValues: fv });
+      } catch (err) {
+        console.warn('[MasterDetailView] syncMasterStatusNow failed:', err?.message);
+      }
       toast.success('Masteraufgabe gespeichert.');
     },
     onError: (err) => toast.error(getFriendlyErrorMessage(err)),
