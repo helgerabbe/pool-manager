@@ -32,6 +32,8 @@ import KiBriefingForm from '@/components/workspace/ki/KiBriefingForm';
 import TranskriptStatusBadge from '@/components/workspace/ki/TranskriptStatusBadge';
 import { shouldShowTranskript } from '@/components/workspace/ki/TranskriptField';
 import VideoThumbnailPreview from '@/components/workspace/VideoThumbnailPreview';
+import ReleaseToggleSection from '@/components/release/ReleaseToggleSection';
+import useSetReleaseStatus from '@/hooks/useSetReleaseStatus';
 import { toast } from 'sonner';
 
 // Inline-editierbares Aufgabentext-Feld — gleicher Stil wie read-only (blauer Kasten, nicht kursiv)
@@ -367,6 +369,12 @@ export default function ActivityMasterPanel({
     setFieldValues(newFieldValues);
     await queryClient.refetchQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
     toast.success('Vorschau-Vorlage gespeichert.');
+  };
+
+  // Freigabe / Veröffentlichen der Offenen Aufgabe (Activity-Freigabe).
+  const { setReleaseStatus: setOffeneRelease, isPending: offeneReleasePending } = useSetReleaseStatus();
+  const handleOffeneRelease = (next) => {
+    setOffeneRelease({ targetType: 'activity', targetId: activityRecord.id, release: next });
   };
 
   // Alle MasterAufgaben für diese Aktivität
@@ -789,6 +797,19 @@ export default function ActivityMasterPanel({
                       </p>
                     )}
                   </div>
+                )}
+                {/* Freigabe / Veröffentlichen der Offenen Aufgabe */}
+                {!editModalOpen && kannBearbeiten && (
+                  <ReleaseToggleSection
+                    isReleased={activityIsReleased}
+                    canRelease={effectivelyComplete}
+                    hierarchyLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || (lernpaket?.content_status === 'approved' && !!lernpaket?.released_at)}
+                    hierarchyLockMessage={'Freigabe gesperrt (Export läuft oder Lernpaket ist freigegeben).'}
+                    onToggle={handleOffeneRelease}
+                    disabled={offeneReleasePending}
+                    releasedAt={activityRecord?.released_at}
+                    releasedBy={activityRecord?.released_by}
+                  />
                 )}
                 {/* Offene Aufgabe Modal */}
                 <OffeneAufgabeModal
