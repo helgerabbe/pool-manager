@@ -142,13 +142,16 @@ function ManualEditor({ data, onChange }) {
 
 // ── KI-Assistent ──────────────────────────────────────────────────────────────
 
-function KIAssistent({ onApply }) {
+function KIAssistent({ onApply, existingPairsCount = 0 }) {
+  // Wie viele Paare passen noch in den 8-Slot-Rahmen?
+  const slotsRemaining = Math.max(0, MAX_PAIRS - existingPairsCount);
   const [topic, setTopic] = useState('');
-  const [numPairs, setNumPairs] = useState('5');
+  const [numPairs, setNumPairs] = useState(() => String(Math.min(5, slotsRemaining || 5)));
   const clampNumPairs = (v) => {
+    const max = Math.max(1, slotsRemaining);
     const n = Number(v);
     if (!Number.isFinite(n) || n < 1) return '1';
-    if (n > MAX_PAIRS) return String(MAX_PAIRS);
+    if (n > max) return String(max);
     return String(Math.floor(n));
   };
   const [numDistractors, setNumDistractors] = useState('3');
@@ -158,6 +161,10 @@ function KIAssistent({ onApply }) {
 
   const handleGenerate = async () => {
     if (!topic.trim()) { setError('Bitte ein Thema eingeben.'); return; }
+    if (slotsRemaining <= 0) {
+      setError(`Maximum von ${MAX_PAIRS} Paaren bereits erreicht. Lösche zuerst ein bestehendes Paar.`);
+      return;
+    }
     setError('');
     setPreview(null);
     setIsLoading(true);
@@ -182,7 +189,8 @@ Distraktoren sind plausible, aber falsche Antwortoptionen zum Thema.`,
       const data = response.data || response;
       const validPairsRaw = (data.pairs || []).filter(p => p?.left && p?.right);
       if (validPairsRaw.length === 0) throw new Error('KI konnte keine gültigen Paare generieren.');
-      const validPairs = validPairsRaw.slice(0, MAX_PAIRS);
+      // Nur so viele Paare übernehmen, wie noch in das Limit passen.
+      const validPairs = validPairsRaw.slice(0, slotsRemaining);
       const validDistractors = (data.distractors || []).filter(d => typeof d === 'string' && d.trim());
       setPreview({ pairs: validPairs, distractors: validDistractors });
     } catch (err) {
@@ -195,6 +203,13 @@ Distraktoren sind plausible, aber falsche Antwortoptionen zum Thema.`,
 
   return (
     <div className="space-y-4">
+      {existingPairsCount > 0 && (
+        <div className="text-xs px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
+          {slotsRemaining > 0
+            ? <>Bestehende Paare bleiben erhalten. Die KI ergänzt bis zu <strong>{slotsRemaining}</strong> weitere {slotsRemaining === 1 ? 'Paar' : 'Paare'} (Max. {MAX_PAIRS}).</>
+            : <>Maximum von {MAX_PAIRS} Paaren bereits erreicht. Lösche zuerst ein Paar im Tab „Manuell“, um neue von der KI zu ergänzen.</>}
+        </div>
+      )}
       <div className="space-y-1.5">
         <Label className="text-sm font-medium">Thema *</Label>
         <Textarea
@@ -207,8 +222,10 @@ Distraktoren sind plausible, aber falsche Antwortoptionen zum Thema.`,
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label className="text-sm font-medium">Anzahl Paare (max. {MAX_PAIRS})</Label>
-          <Input type="number" value={numPairs} onChange={e => setNumPairs(clampNumPairs(e.target.value))} min="1" max={MAX_PAIRS} className="text-sm" />
+          <Label className="text-sm font-medium">
+            Anzahl Paare (max. {Math.max(1, slotsRemaining)})
+          </Label>
+          <Input type="number" value={numPairs} onChange={e => setNumPairs(clampNumPairs(e.target.value))} min="1" max={Math.max(1, slotsRemaining)} disabled={slotsRemaining <= 0} className="text-sm" />
         </div>
         <div className="space-y-1.5">
           <Label className="text-sm font-medium">Distraktoren</Label>
@@ -222,7 +239,7 @@ Distraktoren sind plausible, aber falsche Antwortoptionen zum Thema.`,
         </div>
       )}
 
-      <Button onClick={handleGenerate} disabled={isLoading || !topic.trim()} className="w-full gap-2">
+      <Button onClick={handleGenerate} disabled={isLoading || !topic.trim() || slotsRemaining <= 0} className="w-full gap-2">
         {isLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Wird generiert…</> : <><Sparkles className="w-4 h-4" /> Paare generieren</>}
       </Button>
 
@@ -324,18 +341,28 @@ export default function MatchTermsModal({
   };
 
   const handleKIApply = (generated) => {
-    const cappedPairs = (generated.pairs || []).slice(0, MAX_PAIRS);
-    setEditorData(prev => ({
-      ...prev,
-      pairs: cappedPairs,
-      distractors: generated.distractors,
-    }));
+    // Append-Modus: vorhandene Paare bleiben, neue werden ergänzt; Limit harten cappen.
+    setEditorData(prev => {
+      const existingPairs = Array.isArray(prev.pairs) ? prev.pairs : [];
+      const room = Math.max(0, MAX_PAIRS - existingPairs.length);
+      const newPairs = (generated.pairs || []).slice(0, room);
+      const mergedDistractors = Array.from(new Set([
+        ...(Array.isArray(prev.distractors) ? prev.distractors : []),
+        ...((generated.distractors || []).filter(d => typeof d === 'string' && d.trim())),
+      ]));
+      const dropped = (generated.pairs || []).length - newPairs.length;
+      if (dropped > 0) {
+        toast.warning(`Nur ${newPairs.length} ${newPairs.length === 1 ? 'Paar' : 'Paare'} übernommen — ${dropped} überschreiten das Maximum von ${MAX_PAIRS}.`);
+      } else if (newPairs.length > 0) {
+        toast.success(`${newPairs.length} KI-${newPairs.length === 1 ? 'Paar' : 'Paare'} ergänzt.`);
+      }
+      return {
+        ...prev,
+        pairs: [...existingPairs, ...newPairs],
+        distractors: mergedDistractors,
+      };
+    });
     setActiveTab('manual');
-    if ((generated.pairs || []).length > MAX_PAIRS) {
-      toast.warning(`Nur die ersten ${MAX_PAIRS} Paare übernommen — mehr passen nicht auf den Bildschirm.`);
-    } else {
-      toast.success('KI-Paare übernommen – jetzt manuell anpassen.');
-    }
   };
 
   const validPairs = (editorData.pairs || []).filter(p => p?.left?.trim() && p?.right?.trim());
@@ -392,7 +419,7 @@ export default function MatchTermsModal({
               onChange={setEditorData}
             />
           ) : (
-            <KIAssistent onApply={handleKIApply} />
+            <KIAssistent onApply={handleKIApply} existingPairsCount={(editorData.pairs || []).length} />
           )}
         </div>
 

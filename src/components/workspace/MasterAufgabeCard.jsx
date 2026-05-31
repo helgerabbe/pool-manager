@@ -262,6 +262,22 @@ export default function MasterAufgabeCard({
 
   const [matchTermsModalOpen, setMatchTermsModalOpen] = useState(false);
 
+  // WICHTIG: master.field_values kann sich nach einem Refetch ändern. Ohne diese
+  // Synchronisierung bleibt der lokale fieldValues-State stale und das
+  // Bearbeiten-Modal zeigt ein leeres Formular trotz vorhandener Daten.
+  // Während ein Modal/EditMode offen ist, wird NICHT synchronisiert, sonst
+  // verlieren wir unsaved Edits.
+  const _anyEditOpen = matchTermsModalOpen || lueckentextModalOpen || sortingListModalOpen || testModalOpen || miniQuizModalOpen || editMode;
+  useEffect(() => {
+    if (_anyEditOpen) return;
+    const incoming = master.field_values || {};
+    setFieldValues(prev => {
+      try { return JSON.stringify(prev) === JSON.stringify(incoming) ? prev : incoming; }
+      catch { return incoming; }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [master.field_values, _anyEditOpen]);
+
   const locked = isLockedByOther(master, userEmail);
   const activityType = getActivityType(catalogName);
   const isMatch = activityType === 'match';
