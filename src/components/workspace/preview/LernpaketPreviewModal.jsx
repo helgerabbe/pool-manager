@@ -202,7 +202,7 @@ function renderActivityBody(activity, katalogName, masters, variantIdx) {
   if (name.includes('video') || name.includes('audio')) return <VideoAudioBody fv={fv} />;
   if (name.includes('link') || name.includes('url')) return <LinkBody fv={fv} />;
 
-  if (name.includes('ki-tutor')) {
+  if (name.includes('ki-tutor') || name.includes('ki-check')) {
     return (
       <KITutorBody
         key={selectedMaster?.id || activity.id}
@@ -210,6 +210,10 @@ function renderActivityBody(activity, katalogName, masters, variantIdx) {
         activityFieldValues={fv}
       />
     );
+  }
+  if (name.includes('quiz')) {
+    if (!selectedMaster) return <LeerHinweis text="Für dieses Mini-Quiz sind noch keine Fragen hinterlegt." />;
+    return <TestBody key={selectedMaster.id} fieldValues={selectedMaster.field_values || {}} />;
   }
   if (name.includes('lückentext') || name.includes('lueckentext')) {
     if (!selectedMaster) return <LeerHinweis text="Für diesen Lückentext sind noch keine Aufgaben hinterlegt." />;
