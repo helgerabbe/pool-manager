@@ -189,7 +189,7 @@ export default function LernpfadeSektor({
           onSelect={onSelectSystemBaustein}
           onRemove={handleRemove}
           onPreview={
-            item.ref_id === 'sys_einfuehrung' && onPreviewEinfuehrung
+            item.ref_id === 'sys_sec0_overview' && onPreviewEinfuehrung
               ? onPreviewEinfuehrung
               : undefined
           }

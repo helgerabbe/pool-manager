@@ -109,7 +109,7 @@ export default function DashboardPreviewModal({
 
   const selectedEntry = entries[selected];
   const selectedIsCurrent = isSequential && selected === completed;
-  const showEinfuehrung = selectedEntry?.refId === 'sys_einfuehrung' && !!einfuehrungSnapshot;
+  const showEinfuehrung = selectedEntry?.refId === 'sys_sec0_overview' && !!einfuehrungSnapshot;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
