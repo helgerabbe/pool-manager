@@ -3,37 +3,35 @@
  *
  * Schüler-Vorschau für ein Lerntyp-Dashboard – im iPad-Rahmen.
  *
- * Optik angeglichen an components/workspace/preview/IPadFrame:
- *   - Dunkler iPad-Rahmen (rounded-[28px], bg-slate-800).
- *   - Safari-Andeutung (Ampel-Punkte, Navigation, Adresszeile).
- *   - Darunter: Infoleiste (Fach · Einheit · Lerntyp + Datum),
- *     ein-/ausklappbares Burger-Menü links, Arbeitsbereich rechts.
+ * Die linke Menüleiste IST das Dashboard: jedes Element, das im Pool-Manager
+ * in den Lernpfad gezogen wurde, taucht hier in genau der konfigurierten
+ * Reihenfolge auf.
  *
- * Wird in den nächsten Schritten mit der echten Sektor-/Aufgaben-Ansicht
- * gefüllt.
+ * Sichtbarkeits-/Klick-Logik (Schritt 1: Minimalist):
+ *   - Streng sequenziell: der Schüler arbeitet die Elemente der Reihe nach ab.
+ *   - Bereits erledigte Elemente bleiben dauerhaft anklickbar (Nachschlagen).
+ *   - Das aktuelle Element ist aktiv/anklickbar.
+ *   - Noch nicht freigeschaltete Elemente werden angezeigt, sind aber gesperrt
+ *     (Schloss-Icon, nicht klickbar).
+ *   - Andere Lerntypen: vorerst alle Elemente frei anklickbar (folgt später).
+ *
+ * Der "erledigt"-Fortschritt ist hier reine Vorschau-Simulation
+ * (lokaler State) – es werden keine echten Schülerdaten geschrieben.
  */
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
-  X, Menu, Sparkles, Layers, Trophy, Star, BookOpen, Calendar,
-  Clock, GraduationCap, Home, NotebookPen, Settings, ChevronRight,
-  ChevronLeft, RotateCw, Eye,
+  Menu, Sparkles, Layers, Trophy, Star, BookOpen, Calendar, Clock,
+  ChevronRight, ChevronLeft, RotateCw, Eye, Lock, CheckCircle2, Package,
+  FileText, ArrowRight,
 } from 'lucide-react';
 
 const LERNTYP_META = {
-  minimalist: { label: 'Minimalist', icon: Sparkles, accent: 'bg-slate-700', soft: 'bg-slate-100 text-slate-700' },
-  pragmatiker: { label: 'Pragmatiker', icon: Layers, accent: 'bg-blue-600', soft: 'bg-blue-100 text-blue-700' },
-  ehrgeizig: { label: 'Ehrgeizig', icon: Trophy, accent: 'bg-amber-600', soft: 'bg-amber-100 text-amber-700' },
-  passioniert: { label: 'Passioniert', icon: Star, accent: 'bg-violet-600', soft: 'bg-violet-100 text-violet-700' },
+  minimalist: { label: 'Minimalist', icon: Sparkles, accent: 'bg-slate-700', soft: 'bg-slate-100 text-slate-700', ring: 'ring-slate-300' },
+  pragmatiker: { label: 'Pragmatiker', icon: Layers, accent: 'bg-blue-600', soft: 'bg-blue-100 text-blue-700', ring: 'ring-blue-300' },
+  ehrgeizig: { label: 'Ehrgeizig', icon: Trophy, accent: 'bg-amber-600', soft: 'bg-amber-100 text-amber-700', ring: 'ring-amber-300' },
+  passioniert: { label: 'Passioniert', icon: Star, accent: 'bg-violet-600', soft: 'bg-violet-100 text-violet-700', ring: 'ring-violet-300' },
 };
-
-const NAV_ITEMS = [
-  { icon: Home, label: 'Übersicht' },
-  { icon: BookOpen, label: 'Lerneinheit' },
-  { icon: NotebookPen, label: 'Lerntagebuch' },
-  { icon: GraduationCap, label: 'KI-Tutor' },
-  { icon: Settings, label: 'Einstellungen' },
-];
 
 function formatToday() {
   return new Date().toLocaleDateString('de-DE', {
@@ -41,10 +39,73 @@ function formatToday() {
   });
 }
 
-export default function DashboardPreviewModal({ open, onOpenChange, lerntyp, einheitTitel, fach }) {
+/**
+ * Flacht die Sektoren des Dashboards zu einer geordneten Liste von
+ * Menü-Einträgen ab. Es werden nur Root-Items berücksichtigt
+ * (parent_instance_id leer); Bündel-Kinder bleiben außen vor.
+ */
+function buildEntries(sektoren, aufgabenById, systemBausteineById) {
+  const entries = [];
+  (sektoren || []).forEach((sektor) => {
+    (sektor.items || []).forEach((item) => {
+      if (item.parent_instance_id) return; // Bündel-Kinder überspringen
+      if (item.type === 'system') {
+        const baustein = systemBausteineById?.get?.(item.ref_id);
+        entries.push({
+          key: item.instance_id || `${sektor.sektor_id}-${item.ref_id}`,
+          label: baustein?.titel || 'Baustein',
+          kind: 'system',
+        });
+      } else {
+        const aufgabe = aufgabenById?.get?.(item.ref_id);
+        entries.push({
+          key: item.instance_id || `${sektor.sektor_id}-${item.ref_id}`,
+          label: aufgabe?.titel || 'Aufgabe',
+          kind: aufgabe?.aufgaben_typ === 'buendel' ? 'lernpaket' : 'aufgabe',
+        });
+      }
+    });
+  });
+  return entries;
+}
+
+const KIND_ICON = { lernpaket: Package, system: Star, aufgabe: FileText };
+
+export default function DashboardPreviewModal({
+  open, onOpenChange, lerntyp, einheitTitel, fach,
+  sektoren = [], aufgabenById, systemBausteineById,
+}) {
   const [menuOpen, setMenuOpen] = useState(true);
-  const meta = LERNTYP_META[lerntyp] || { label: lerntyp || 'Dashboard', icon: Eye, accent: 'bg-slate-700', soft: 'bg-slate-100 text-slate-700' };
+  // Simulierter Fortschritt: wie viele Elemente gelten als "erledigt".
+  const [completed, setCompleted] = useState(0);
+  // Welches Element wird gerade im Arbeitsbereich angezeigt.
+  const [selected, setSelected] = useState(0);
+
+  const meta = LERNTYP_META[lerntyp] || { label: lerntyp || 'Dashboard', icon: Eye, accent: 'bg-slate-700', soft: 'bg-slate-100 text-slate-700', ring: 'ring-slate-300' };
   const Icon = meta.icon;
+  const isSequential = lerntyp === 'minimalist';
+
+  const entries = useMemo(
+    () => buildEntries(sektoren, aufgabenById, systemBausteineById),
+    [sektoren, aufgabenById, systemBausteineById]
+  );
+
+  // Beim Öffnen / Lerntyp-Wechsel den Fortschritt zurücksetzen.
+  useEffect(() => {
+    if (open) { setCompleted(0); setSelected(0); }
+  }, [open, lerntyp]);
+
+  // Status eines Eintrags: 'done' | 'current' | 'locked' | 'open'
+  const statusOf = (idx) => {
+    if (!isSequential) return 'open';
+    if (idx < completed) return 'done';
+    if (idx === completed) return 'current';
+    return 'locked';
+  };
+  const isClickable = (idx) => statusOf(idx) !== 'locked';
+
+  const selectedEntry = entries[selected];
+  const selectedIsCurrent = isSequential && selected === completed;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -110,28 +171,59 @@ export default function DashboardPreviewModal({ open, onOpenChange, lerntyp, ein
 
             {/* ── Körper: Menü + Arbeitsbereich ──────────────────── */}
             <div className="flex-1 flex min-h-0 bg-slate-100">
-              {/* Burger-Menü (ein-/ausklappbar) */}
+              {/* Dashboard-Menü (ein-/ausklappbar) */}
               <aside
                 className={`shrink-0 bg-white border-r border-slate-200 overflow-hidden transition-all duration-300 ${
-                  menuOpen ? 'w-56' : 'w-0'
+                  menuOpen ? 'w-64' : 'w-0'
                 }`}
               >
-                <nav className="w-56 p-3 space-y-1">
-                  {NAV_ITEMS.map((item, i) => {
-                    const ItemIcon = item.icon;
-                    const active = i === 1;
+                <nav className="w-64 p-3 space-y-1 overflow-y-auto h-full">
+                  <p className="px-2 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Dein Lernweg
+                  </p>
+
+                  {entries.length === 0 && (
+                    <div className="px-3 py-6 text-center text-xs text-slate-400">
+                      Für diesen Lerntyp wurden noch keine Elemente im Dashboard platziert.
+                    </div>
+                  )}
+
+                  {entries.map((entry, idx) => {
+                    const status = statusOf(idx);
+                    const EntryIcon = KIND_ICON[entry.kind] || FileText;
+                    const locked = status === 'locked';
+                    const active = idx === selected;
+
                     return (
-                      <div
-                        key={item.label}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${
-                          active
-                            ? `${meta.accent} text-white`
-                            : 'text-slate-600 hover:bg-slate-100'
+                      <button
+                        key={entry.key}
+                        disabled={locked}
+                        onClick={() => { if (!locked) setSelected(idx); }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-left transition-colors ${
+                          locked
+                            ? 'text-slate-400 cursor-not-allowed'
+                            : active
+                              ? `${meta.accent} text-white`
+                              : 'text-slate-600 hover:bg-slate-100'
                         }`}
                       >
-                        <ItemIcon className="w-4 h-4 shrink-0" />
-                        {item.label}
-                      </div>
+                        {/* Status-Indikator */}
+                        <span className="shrink-0">
+                          {status === 'done' ? (
+                            <CheckCircle2 className={`w-4 h-4 ${active ? 'text-white' : 'text-emerald-500'}`} />
+                          ) : locked ? (
+                            <Lock className="w-4 h-4" />
+                          ) : (
+                            <EntryIcon className="w-4 h-4" />
+                          )}
+                        </span>
+                        <span className="truncate flex-1">{entry.label}</span>
+                        {status === 'current' && (
+                          <span className={`text-[9px] font-bold uppercase tracking-wide ${active ? 'text-white/80' : 'text-slate-400'}`}>
+                            Jetzt
+                          </span>
+                        )}
+                      </button>
                     );
                   })}
                 </nav>
@@ -139,24 +231,61 @@ export default function DashboardPreviewModal({ open, onOpenChange, lerntyp, ein
 
               {/* Arbeitsbereich */}
               <main className="flex-1 overflow-y-auto p-6">
-                <div className={`rounded-2xl ${meta.accent} text-white px-6 py-7 flex items-center gap-4 shadow-lg`}>
-                  <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-                    <Icon className="w-7 h-7" />
+                <div className={`rounded-2xl ${meta.accent} text-white px-6 py-6 flex items-center gap-4 shadow-lg`}>
+                  <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                    <Icon className="w-6 h-6" />
                   </div>
-                  <div>
-                    <div className="text-[11px] font-bold uppercase tracking-wider opacity-80">
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-bold uppercase tracking-wider opacity-80 truncate">
                       {fach || 'Fach'} · {einheitTitel || 'Einheit'}
                     </div>
-                    <div className="text-2xl font-bold leading-tight">Dashboard {meta.label}</div>
+                    <div className="text-xl font-bold leading-tight">Dashboard {meta.label}</div>
                   </div>
                 </div>
 
-                <div className="mt-5 rounded-2xl border-2 border-dashed border-slate-300 bg-white px-6 py-14 text-center">
-                  <p className="text-base font-semibold text-slate-700">Inhalte folgen</p>
-                  <p className="text-sm text-slate-500 mt-1">
-                    Hier entsteht in den nächsten Schritten der echte Arbeitsbereich für „{meta.label}".
-                  </p>
-                </div>
+                {entries.length === 0 ? (
+                  <div className="mt-5 rounded-2xl border-2 border-dashed border-slate-300 bg-white px-6 py-14 text-center">
+                    <p className="text-base font-semibold text-slate-700">Noch keine Inhalte</p>
+                    <p className="text-sm text-slate-500 mt-1">
+                      Sobald du Elemente in das Dashboard ziehst, erscheinen sie hier als Lernweg.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="mt-5 rounded-2xl border border-slate-200 bg-white px-6 py-8">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      {selectedIsCurrent ? 'Aktuelle Aufgabe' : selected < completed ? 'Bereits erledigt' : 'Vorschau'}
+                    </div>
+                    <h3 className="mt-1 text-2xl font-bold text-slate-900">
+                      {selectedEntry?.label}
+                    </h3>
+                    <p className="mt-2 text-sm text-slate-500">
+                      Hier öffnet sich später der eigentliche Inhalt dieses Elements
+                      (Lernpaket, Aufgabe oder Baustein).
+                    </p>
+
+                    {/* Sequenz-Demo: aktuelles Element abschließen → nächstes frei */}
+                    {selectedIsCurrent && completed < entries.length && (
+                      <button
+                        onClick={() => {
+                          const next = Math.min(completed + 1, entries.length);
+                          setCompleted(next);
+                          setSelected(Math.min(next, entries.length - 1));
+                        }}
+                        className={`mt-5 inline-flex items-center gap-2 h-10 px-5 rounded-xl ${meta.accent} text-white text-sm font-semibold shadow-sm hover:opacity-90`}
+                      >
+                        Diese Aufgabe abschließen
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    )}
+
+                    {isSequential && selected < completed && (
+                      <div className="mt-5 inline-flex items-center gap-2 text-sm text-emerald-600 font-medium">
+                        <CheckCircle2 className="w-4 h-4" />
+                        Abgeschlossen – jederzeit wieder aufrufbar.
+                      </div>
+                    )}
+                  </div>
+                )}
               </main>
             </div>
           </div>

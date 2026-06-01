@@ -1123,6 +1123,9 @@ export default function LernpfadeCockpit({
         lerntyp={activeLernTyp}
         einheitTitel={einheit?.titel_der_einheit}
         fach={einheit?.fach}
+        sektoren={konfiguration?.[activeLernTyp] || []}
+        aufgabenById={aufgabenById}
+        systemBausteineById={systemBausteineById}
       />
 
       <AufgabePreviewDialog
