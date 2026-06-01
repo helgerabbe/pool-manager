@@ -33,6 +33,7 @@ import {
   Layers,
   Trophy,
   Star,
+  Eye,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -168,6 +169,8 @@ export default function DashboardToolbar({
   finalReleaseBusy,
   // Guide
   onOpenGuide,
+  // Schüler-Vorschau
+  onOpenPreview,
   // Edit-Modus
   isStructuralEditingActive,
   isEndingEdit,
@@ -213,6 +216,20 @@ export default function DashboardToolbar({
         />
 
         <div className="ml-auto flex items-center gap-1.5 flex-wrap">
+          {/* Schüler-Vorschau des aktiven Lerntyp-Dashboards */}
+          {onOpenPreview && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onOpenPreview}
+              className="gap-1.5 h-7 text-[11px] px-2.5 border-blue-300 text-blue-700 hover:bg-blue-50"
+              title={`Schüler-Vorschau für „${lerntypLabel}“ öffnen`}
+            >
+              <Eye className="w-3 h-3" />
+              Vorschau
+            </Button>
+          )}
+
           {/* ── Killer-Switch: Lifecycle-Lock-Hinweis ────────────────────
               Sobald die Einheit final freigegeben oder im Export ist,
               werden ALLE Sektor-Pfad-Buttons ausgeblendet. Nur die

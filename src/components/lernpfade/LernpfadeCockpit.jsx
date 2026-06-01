@@ -32,6 +32,7 @@ import AufgabePreviewDialog from '@/components/lernpfade/AufgabePreviewDialog';
 import ReleaseBlockerModal from '@/components/lernpfade/ReleaseBlockerModal';
 import ReleaseConfirmDialog from '@/components/lernpfade/ReleaseConfirmDialog';
 import DidaktischerGuidePanel from '@/components/lernpfade/DidaktischerGuidePanel';
+import DashboardPreviewModal from '@/components/lernpfade/DashboardPreviewModal';
 import { useLernpfadStatus } from '@/hooks/useLernpfadStatus';
 import { useDashboardSync } from '@/hooks/useDashboardSync';
 import { useDashboardDragAndDrop } from '@/hooks/useDashboardDragAndDrop';
@@ -137,6 +138,7 @@ export default function LernpfadeCockpit({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [dashboardPreviewOpen, setDashboardPreviewOpen] = useState(false);
   const [previewAufgabe, setPreviewAufgabe] = useState(null);
   const [editorAufgabe, setEditorAufgabe] = useState(null);
   const [arbeitsphaseModalOpen, setArbeitsphaseModalOpen] = useState(false);
@@ -1065,6 +1067,7 @@ export default function LernpfadeCockpit({
               onUndoFinalRelease={handleUndoFinalRelease}
               finalReleaseBusy={finalReleaseBusy}
               onOpenGuide={() => setIsGuideOpen(true)}
+              onOpenPreview={() => setDashboardPreviewOpen(true)}
               isStructuralEditingActive={isStructuralEditingActive}
               isEndingEdit={isEndingEdit}
               onEndEditing={onEndEditing}
@@ -1113,6 +1116,13 @@ export default function LernpfadeCockpit({
           </main>
         </div>
       </DragDropContext>
+
+      <DashboardPreviewModal
+        open={dashboardPreviewOpen}
+        onOpenChange={setDashboardPreviewOpen}
+        lerntyp={activeLernTyp}
+        einheitTitel={einheit?.titel_der_einheit}
+      />
 
       <AufgabePreviewDialog
         open={!!previewAufgabe}
