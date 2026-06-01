@@ -49,14 +49,6 @@ export default function DashboardPreviewModal({ open, onOpenChange, lerntyp, ein
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[97vh] w-[97vw] max-w-[1200px] overflow-visible bg-transparent border-0 shadow-none p-0">
-        <button
-          onClick={() => onOpenChange(false)}
-          className="absolute -top-2 -right-2 z-20 w-8 h-8 rounded-full bg-white shadow-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:text-slate-900"
-          title="Vorschau schließen"
-        >
-          <X className="w-4 h-4" />
-        </button>
-
         {/* iPad-Rahmen – identische Optik wie IPadFrame */}
         <div className="bg-slate-800 rounded-[28px] p-3 shadow-2xl ring-1 ring-slate-900/10 mx-auto w-full">
           <div className="bg-white rounded-[18px] overflow-hidden flex flex-col" style={{ height: '78vh', maxHeight: 760 }}>
@@ -79,10 +71,10 @@ export default function DashboardPreviewModal({ open, onOpenChange, lerntyp, ein
             </div>
 
             {/* ── Infoleiste ─────────────────────────────────────── */}
-            <header className="shrink-0 bg-white border-b border-slate-200 px-4 py-2.5 flex items-center gap-3">
+            <header className="shrink-0 bg-white border-b border-slate-200 px-4 py-1.5 flex items-center gap-3">
               <button
                 onClick={() => setMenuOpen((o) => !o)}
-                className="w-9 h-9 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-700 shrink-0"
+                className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-700 shrink-0"
                 title={menuOpen ? 'Menü einklappen' : 'Menü ausklappen'}
               >
                 <Menu className="w-5 h-5" />
