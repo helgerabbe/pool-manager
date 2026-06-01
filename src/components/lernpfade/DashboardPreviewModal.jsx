@@ -3,12 +3,11 @@
  *
  * Schüler-Vorschau für ein Lerntyp-Dashboard – im iPad-Rahmen.
  *
- * Schritt 2 (Gerüst der Schüler-App):
- *   - iPad-Frame (Landscape) als realistischer Container.
- *   - Obere Infoleiste: Fach · Einheit · Lerntyp + aktuelles Datum /
- *     "zuletzt gearbeitet"-Platzhalter.
- *   - Links: ein-/ausklappbares Burger-Menü (Navigation, vorerst Platzhalter).
- *   - Rechts: Arbeits-/Inhaltsbereich (vorerst "Inhalte folgen").
+ * Optik angeglichen an components/workspace/preview/IPadFrame:
+ *   - Dunkler iPad-Rahmen (rounded-[28px], bg-slate-800).
+ *   - Safari-Andeutung (Ampel-Punkte, Navigation, Adresszeile).
+ *   - Darunter: Infoleiste (Fach · Einheit · Lerntyp + Datum),
+ *     ein-/ausklappbares Burger-Menü links, Arbeitsbereich rechts.
  *
  * Wird in den nächsten Schritten mit der echten Sektor-/Aufgaben-Ansicht
  * gefüllt.
@@ -17,7 +16,8 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   X, Menu, Sparkles, Layers, Trophy, Star, BookOpen, Calendar,
-  Clock, GraduationCap, Home, NotebookPen, Settings, ChevronRight, Eye,
+  Clock, GraduationCap, Home, NotebookPen, Settings, ChevronRight,
+  ChevronLeft, RotateCw, Eye,
 } from 'lucide-react';
 
 const LERNTYP_META = {
@@ -48,20 +48,37 @@ export default function DashboardPreviewModal({ open, onOpenChange, lerntyp, ein
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[96vh] w-[97vw] max-w-[1180px] overflow-visible bg-transparent border-0 shadow-none p-0">
-        {/* iPad-Rahmen (Landscape) */}
-        <div className="relative mx-auto rounded-[2.2rem] bg-slate-900 p-3 shadow-2xl" style={{ width: '100%', maxWidth: 1120 }}>
-          <button
-            onClick={() => onOpenChange(false)}
-            className="absolute -top-3 -right-3 z-10 w-8 h-8 rounded-full bg-white shadow-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:text-slate-900"
-            title="Vorschau schließen"
-          >
-            <X className="w-4 h-4" />
-          </button>
+      <DialogContent className="max-h-[97vh] w-[97vw] max-w-[1200px] overflow-visible bg-transparent border-0 shadow-none p-0">
+        <button
+          onClick={() => onOpenChange(false)}
+          className="absolute -top-2 -right-2 z-20 w-8 h-8 rounded-full bg-white shadow-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:text-slate-900"
+          title="Vorschau schließen"
+        >
+          <X className="w-4 h-4" />
+        </button>
 
-          {/* Display */}
-          <div className="rounded-[1.5rem] overflow-hidden bg-slate-50 flex flex-col" style={{ height: '72vh', maxHeight: 720 }}>
-            {/* ── Obere Infoleiste ───────────────────────────────── */}
+        {/* iPad-Rahmen – identische Optik wie IPadFrame */}
+        <div className="bg-slate-800 rounded-[28px] p-3 shadow-2xl ring-1 ring-slate-900/10 mx-auto w-full">
+          <div className="bg-white rounded-[18px] overflow-hidden flex flex-col" style={{ height: '78vh', maxHeight: 760 }}>
+
+            {/* ── Safari-Andeutung ───────────────────────────────── */}
+            <div className="h-9 shrink-0 bg-slate-100 border-b border-slate-200 flex items-center px-3 gap-2">
+              <div className="flex gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-400/70" />
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400/70" />
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/70" />
+              </div>
+              <div className="flex items-center gap-1 text-slate-400 ml-2">
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <ChevronRight className="w-3.5 h-3.5" />
+                <RotateCw className="w-3 h-3" />
+              </div>
+              <div className="flex-1 mx-2 h-5 bg-white rounded-md border border-slate-200 flex items-center px-2 text-[10px] text-slate-400 truncate">
+                🔒 schule.moodle.de · {einheitTitel || 'Einheit'}
+              </div>
+            </div>
+
+            {/* ── Infoleiste ─────────────────────────────────────── */}
             <header className="shrink-0 bg-white border-b border-slate-200 px-4 py-2.5 flex items-center gap-3">
               <button
                 onClick={() => setMenuOpen((o) => !o)}
@@ -100,7 +117,7 @@ export default function DashboardPreviewModal({ open, onOpenChange, lerntyp, ein
             </header>
 
             {/* ── Körper: Menü + Arbeitsbereich ──────────────────── */}
-            <div className="flex-1 flex min-h-0">
+            <div className="flex-1 flex min-h-0 bg-slate-100">
               {/* Burger-Menü (ein-/ausklappbar) */}
               <aside
                 className={`shrink-0 bg-white border-r border-slate-200 overflow-hidden transition-all duration-300 ${
