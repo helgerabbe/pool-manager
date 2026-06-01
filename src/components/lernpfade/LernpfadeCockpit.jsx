@@ -33,6 +33,7 @@ import ReleaseBlockerModal from '@/components/lernpfade/ReleaseBlockerModal';
 import ReleaseConfirmDialog from '@/components/lernpfade/ReleaseConfirmDialog';
 import DidaktischerGuidePanel from '@/components/lernpfade/DidaktischerGuidePanel';
 import DashboardPreviewModal from '@/components/lernpfade/DashboardPreviewModal';
+import EinfuehrungPreviewModal from '@/components/lernpfade/EinfuehrungPreviewModal';
 import { useLernpfadStatus } from '@/hooks/useLernpfadStatus';
 import { useDashboardSync } from '@/hooks/useDashboardSync';
 import { useDashboardDragAndDrop } from '@/hooks/useDashboardDragAndDrop';
@@ -139,6 +140,10 @@ export default function LernpfadeCockpit({
   }, [searchParams]);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [dashboardPreviewOpen, setDashboardPreviewOpen] = useState(false);
+  // Vorschau der KI-Einführung (eigenes Fenster) + übernommener Snapshot,
+  // der danach in der Dashboard-Vorschau angezeigt wird (transient).
+  const [einfuehrungPreviewOpen, setEinfuehrungPreviewOpen] = useState(false);
+  const [einfuehrungSnapshot, setEinfuehrungSnapshot] = useState(null);
   const [previewAufgabe, setPreviewAufgabe] = useState(null);
   const [editorAufgabe, setEditorAufgabe] = useState(null);
   const [arbeitsphaseModalOpen, setArbeitsphaseModalOpen] = useState(false);
@@ -1111,6 +1116,7 @@ export default function LernpfadeCockpit({
                 themenfeldTitelById={themenfeldTitelById}
                 getDriftStatus={getDriftStatus}
                 driftReportLoading={driftReportLoading}
+                onPreviewEinfuehrung={() => setEinfuehrungPreviewOpen(true)}
               />
             </div>
           </main>
@@ -1126,6 +1132,16 @@ export default function LernpfadeCockpit({
         sektoren={konfiguration?.[activeLernTyp] || []}
         aufgabenById={aufgabenById}
         systemBausteineById={systemBausteineById}
+        einfuehrungSnapshot={einfuehrungSnapshot}
+      />
+
+      <EinfuehrungPreviewModal
+        open={einfuehrungPreviewOpen}
+        onOpenChange={setEinfuehrungPreviewOpen}
+        einheitId={einheit?.id}
+        einheitTitel={einheit?.titel_der_einheit}
+        fach={einheit?.fach}
+        onUebernehmen={setEinfuehrungSnapshot}
       />
 
       <AufgabePreviewDialog

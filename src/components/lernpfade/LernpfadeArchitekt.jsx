@@ -186,6 +186,7 @@ export default function LernpfadeArchitekt({
   themenfeldTitelById,
   getDriftStatus,
   driftReportLoading = false,
+  onPreviewEinfuehrung,
 }) {
   const sektoren = konfiguration?.[activeLernTyp] || [];
   const aktivLabel = LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label;
@@ -244,6 +245,7 @@ export default function LernpfadeArchitekt({
                 getAmpelStatusForItem={getAmpelStatusForItem}
                 onOpenAufgabeEditor={onOpenAufgabeEditor}
                 themenfeldTitelById={themenfeldTitelById}
+                onPreviewEinfuehrung={onPreviewEinfuehrung}
                 driftStatus={
                   driftReportLoading
                     ? 'loading'

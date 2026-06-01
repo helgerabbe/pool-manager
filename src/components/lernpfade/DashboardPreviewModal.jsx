@@ -19,6 +19,7 @@
  * (lokaler State) – es werden keine echten Schülerdaten geschrieben.
  */
 import React, { useState, useMemo, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   Menu, Sparkles, Layers, Trophy, Star, BookOpen, Calendar, Clock,
@@ -55,6 +56,7 @@ function buildEntries(sektoren, aufgabenById, systemBausteineById) {
           key: item.instance_id || `${sektor.sektor_id}-${item.ref_id}`,
           label: baustein?.titel || 'Baustein',
           kind: 'system',
+          refId: item.ref_id,
         });
       } else {
         const aufgabe = aufgabenById?.get?.(item.ref_id);
@@ -62,6 +64,7 @@ function buildEntries(sektoren, aufgabenById, systemBausteineById) {
           key: item.instance_id || `${sektor.sektor_id}-${item.ref_id}`,
           label: aufgabe?.titel || 'Aufgabe',
           kind: aufgabe?.aufgaben_typ === 'buendel' ? 'lernpaket' : 'aufgabe',
+          refId: item.ref_id,
         });
       }
     });
@@ -73,7 +76,7 @@ const KIND_ICON = { lernpaket: Package, system: Star, aufgabe: FileText };
 
 export default function DashboardPreviewModal({
   open, onOpenChange, lerntyp, einheitTitel, fach,
-  sektoren = [], aufgabenById, systemBausteineById,
+  sektoren = [], aufgabenById, systemBausteineById, einfuehrungSnapshot,
 }) {
   const [menuOpen, setMenuOpen] = useState(true);
   // Simulierter Fortschritt: wie viele Elemente gelten als "erledigt".
@@ -106,6 +109,7 @@ export default function DashboardPreviewModal({
 
   const selectedEntry = entries[selected];
   const selectedIsCurrent = isSequential && selected === completed;
+  const showEinfuehrung = selectedEntry?.refId === 'sys_einfuehrung' && !!einfuehrungSnapshot;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -240,13 +244,44 @@ export default function DashboardPreviewModal({
                   </div>
                 ) : (
                   <div className="h-full rounded-2xl border border-slate-200 bg-white px-8 py-8 flex flex-col">
-                    <h3 className="text-2xl font-bold text-slate-900">
-                      {selectedEntry?.label}
-                    </h3>
-                    <p className="mt-2 text-sm text-slate-500">
-                      Hier öffnet sich später der eigentliche Inhalt dieses Elements
-                      (Lernpaket, Aufgabe oder Baustein).
-                    </p>
+                    {showEinfuehrung ? (
+                      <div className="flex-1 overflow-y-auto -mx-2 px-2">
+                        {einfuehrungSnapshot.imageUrl && (
+                          <img src={einfuehrungSnapshot.imageUrl} alt="" className="w-full h-44 object-cover rounded-xl" />
+                        )}
+                        <h3 className="mt-4 text-2xl font-bold text-slate-900">
+                          {einfuehrungSnapshot.titel || selectedEntry?.label}
+                        </h3>
+                        {einfuehrungSnapshot.intro && (
+                          <p className="mt-2 text-base text-slate-600">{einfuehrungSnapshot.intro}</p>
+                        )}
+                        <div className="mt-4 space-y-4">
+                          {(einfuehrungSnapshot.abschnitte || []).map((a, i) => (
+                            <div key={i} className="flex gap-3">
+                              <div className="text-2xl leading-none shrink-0">{a.emoji || '✨'}</div>
+                              <div>
+                                {a.ueberschrift && (
+                                  <h4 className="font-semibold text-slate-800">{a.ueberschrift}</h4>
+                                )}
+                                <div className="text-sm text-slate-600 prose prose-sm max-w-none">
+                                  <ReactMarkdown>{a.text || ''}</ReactMarkdown>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <h3 className="text-2xl font-bold text-slate-900">
+                          {selectedEntry?.label}
+                        </h3>
+                        <p className="mt-2 text-sm text-slate-500">
+                          Hier öffnet sich später der eigentliche Inhalt dieses Elements
+                          (Lernpaket, Aufgabe oder Baustein).
+                        </p>
+                      </>
+                    )}
 
                     {selectedIsCurrent && completed < entries.length && (
                       <button

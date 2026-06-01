@@ -148,6 +148,7 @@ export default function LernpfadeSektor({
   onOpenAufgabeEditor,
   themenfeldTitelById,
   driftStatus,
+  onPreviewEinfuehrung,
   }) {
   const items = Array.isArray(sektor.items) ? sektor.items : [];
 
@@ -187,6 +188,11 @@ export default function LernpfadeSektor({
           disabled={readOnly}
           onSelect={onSelectSystemBaustein}
           onRemove={handleRemove}
+          onPreview={
+            item.ref_id === 'sys_einfuehrung' && onPreviewEinfuehrung
+              ? onPreviewEinfuehrung
+              : undefined
+          }
           bundleConfig={item.bundle_config}
           bundleChildCount={Array.isArray(children) ? children.length : 0}
           onSetBundleConfig={

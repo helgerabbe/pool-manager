@@ -21,7 +21,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { GripVertical, X } from 'lucide-react';
+import { GripVertical, X, Eye } from 'lucide-react';
 import { getSystemBausteinIcon } from '@/lib/systemBausteinIcons';
 import { isPlatzhalterBaustein, PLATZHALTER_CLASSES } from '@/lib/platzhalterUtils';
 import BundleErforderlichControl from '@/components/lernpfade/BundleErforderlichControl';
@@ -41,6 +41,8 @@ export default function SystemBausteinPill({
   disabled,
   onSelect,
   onRemove,
+  // Vorschau-Button (nur am Standardbaustein „Kurze Einführung").
+  onPreview,
   // Phase 4: nur am Aufgabenbündel relevant.
   bundleConfig,
   bundleChildCount = 0,
@@ -134,6 +136,19 @@ export default function SystemBausteinPill({
                   )}
                 </span>
                 <div className="ml-auto flex items-center gap-1.5 shrink-0">
+                  {onPreview && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPreview();
+                      }}
+                      title="KI-Vorschau erstellen"
+                      className="inline-flex items-center gap-1 rounded border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700 hover:bg-violet-100 transition-colors"
+                    >
+                      <Eye className="w-3 h-3" /> Vorschau
+                    </button>
+                  )}
                   {isBundle && (
                     <BundleModusToggle
                       acceptedTypes={baustein?.accepted_types}
