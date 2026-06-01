@@ -1122,6 +1122,7 @@ export default function LernpfadeCockpit({
         onOpenChange={setDashboardPreviewOpen}
         lerntyp={activeLernTyp}
         einheitTitel={einheit?.titel_der_einheit}
+        fach={einheit?.fach}
       />
 
       <AufgabePreviewDialog
