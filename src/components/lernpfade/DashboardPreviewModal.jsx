@@ -231,31 +231,16 @@ export default function DashboardPreviewModal({
 
               {/* Arbeitsbereich */}
               <main className="flex-1 overflow-y-auto p-6">
-                <div className={`rounded-2xl ${meta.accent} text-white px-6 py-6 flex items-center gap-4 shadow-lg`}>
-                  <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-                    <Icon className="w-6 h-6" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-[11px] font-bold uppercase tracking-wider opacity-80 truncate">
-                      {fach || 'Fach'} · {einheitTitel || 'Einheit'}
-                    </div>
-                    <div className="text-xl font-bold leading-tight">Dashboard {meta.label}</div>
-                  </div>
-                </div>
-
                 {entries.length === 0 ? (
-                  <div className="mt-5 rounded-2xl border-2 border-dashed border-slate-300 bg-white px-6 py-14 text-center">
+                  <div className="h-full rounded-2xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center px-6 py-14 text-center">
                     <p className="text-base font-semibold text-slate-700">Noch keine Inhalte</p>
                     <p className="text-sm text-slate-500 mt-1">
                       Sobald du Elemente in das Dashboard ziehst, erscheinen sie hier als Lernweg.
                     </p>
                   </div>
                 ) : (
-                  <div className="mt-5 rounded-2xl border border-slate-200 bg-white px-6 py-8">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      {selectedIsCurrent ? 'Aktuelle Aufgabe' : selected < completed ? 'Bereits erledigt' : 'Vorschau'}
-                    </div>
-                    <h3 className="mt-1 text-2xl font-bold text-slate-900">
+                  <div className="h-full rounded-2xl border border-slate-200 bg-white px-8 py-8 flex flex-col">
+                    <h3 className="text-2xl font-bold text-slate-900">
                       {selectedEntry?.label}
                     </h3>
                     <p className="mt-2 text-sm text-slate-500">
@@ -263,7 +248,6 @@ export default function DashboardPreviewModal({
                       (Lernpaket, Aufgabe oder Baustein).
                     </p>
 
-                    {/* Sequenz-Demo: aktuelles Element abschließen → nächstes frei */}
                     {selectedIsCurrent && completed < entries.length && (
                       <button
                         onClick={() => {
@@ -271,7 +255,7 @@ export default function DashboardPreviewModal({
                           setCompleted(next);
                           setSelected(Math.min(next, entries.length - 1));
                         }}
-                        className={`mt-5 inline-flex items-center gap-2 h-10 px-5 rounded-xl ${meta.accent} text-white text-sm font-semibold shadow-sm hover:opacity-90`}
+                        className={`mt-6 inline-flex items-center gap-2 h-10 px-5 rounded-xl ${meta.accent} text-white text-sm font-semibold shadow-sm hover:opacity-90`}
                       >
                         Diese Aufgabe abschließen
                         <ArrowRight className="w-4 h-4" />
@@ -279,7 +263,7 @@ export default function DashboardPreviewModal({
                     )}
 
                     {isSequential && selected < completed && (
-                      <div className="mt-5 inline-flex items-center gap-2 text-sm text-emerald-600 font-medium">
+                      <div className="mt-6 inline-flex items-center gap-2 text-sm text-emerald-600 font-medium">
                         <CheckCircle2 className="w-4 h-4" />
                         Abgeschlossen – jederzeit wieder aufrufbar.
                       </div>
