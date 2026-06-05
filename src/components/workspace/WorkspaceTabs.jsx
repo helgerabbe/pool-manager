@@ -13,7 +13,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { BookOpen, LayoutGrid, Zap, Wand2, ClipboardList, Target, CheckSquare, Compass } from 'lucide-react';
+import { BookOpen, LayoutGrid, Zap, Wand2, ClipboardList, Target, CheckSquare, Compass, ListChecks } from 'lucide-react';
 import HelpDialog from '@/components/ui/HelpDialog';
 import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
@@ -66,7 +66,27 @@ const getVisibleTabs = (rolle) => {
     },
   },
   {
-    value: 'aktivitaeten', label: 'Aktivitäten und Lernziele', icon: Zap, step: 3,
+    value: 'lernziele', label: 'Lernziele', icon: ListChecks, step: 3,
+    help: {
+      title: 'Lernziele – der zentrale Ort',
+      description: 'Hier wohnen alle Lernziele der Einheit an einem Ort, gruppiert nach Themenfeld und Lernpaket. Du formulierst pro Lernpaket, was deine Schüler:innen am Ende können sollen – in Fachsprache und schülergerecht. Die KI-Prüfung hilft dir dabei, jedes Lernziel sauber und präzise zu formulieren. So gehen die Lernziele nicht mehr in Struktur- oder Aktivitäten-Tab unter, sondern bekommen die Aufmerksamkeit, die sie verdienen.',
+      features: [
+        'Alle Lernpakete der Einheit – gruppiert nach Themenfeld – auf einen Blick',
+        'Du legst pro Lernpaket Lernziele an, bearbeitest oder entfernst sie',
+        'Pro Lernziel: offizielle Formulierung (Fachsprache) + schülergerechte Übersetzung',
+        'KI-Prüfung pro Lernziel: schlägt beide Varianten formuliert vor',
+        'Speichern erfolgt pro Lernpaket – gezielt und ohne Seiteneffekte',
+      ],
+      faqs: [
+        { question: 'Warum gibt es jetzt einen eigenen Lernziele-Tab?', answer: 'Lernziele sind das didaktische Herzstück. Früher waren sie über Tab 2 und Tab 3 verstreut. Mit dem eigenen Tab hast du einen klaren Heimatort, an dem du sie in Ruhe und vollständig pflegst.' },
+        { question: 'Was ist der Unterschied zwischen Fachsprache und schülergerecht?', answer: 'Die Fachsprache („Ich kann …") ist die offizielle Formulierung. Die schülergerechte Übersetzung erklärt dasselbe in einfacher Sprache – sie erscheint später in der Lernlandkarte für die Schüler:innen.' },
+        { question: 'Wie funktioniert die KI-Prüfung?', answer: 'Du tippst deine Idee ein und klickst auf „KI prüfen". Die KI liest deine Eingabe und schlägt eine präzise Fachsprachen- und eine schülergerechte Formulierung vor, die du übernehmen oder verwerfen kannst.' },
+      ],
+      docsSlug: 'lernpakete-aktivitaeten',
+    },
+  },
+  {
+    value: 'aktivitaeten', label: 'Aktivitäten zuordnen', icon: Zap, step: 4,
     help: {
       title: 'Aktivitäten und Lernziele',
       description: 'Ab hier bist du als Fachlehrkraft dran. In Tab 3 legst du für jedes Lernpaket die Lernziele und die didaktischen Aktivitäten fest – also das, was deine Schüler:innen im Lernpaket tatsächlich tun: ein Video schauen, einen Text lesen, ein Quiz lösen. Die eigentlichen konkreten Aufgabeninhalte (z. B. die Lückentext-Sätze) füllst du dann erst in Tab 4 ein.',
@@ -85,7 +105,7 @@ const getVisibleTabs = (rolle) => {
     },
   },
   {
-    value: 'aufgaben', label: 'Basisaufgaben erstellen', icon: Wand2, step: 4,
+    value: 'aufgaben', label: 'Basisaufgaben erstellen', icon: Wand2, step: 5,
     help: {
       title: 'Konkrete Aufgaben (Ebene 1) — die Aufgaben-Werkstatt',
       description: 'In Tab 4 ordnest du als Fachlehrkraft den einzelnen Aktivitäten aus Tab 3 die konkreten Aufgabeninhalte zu. Wenn du z. B. in Tab 3 die Aktivität „Lückentext" gewählt hast, schreibst du hier die einzelnen Lückentext-Sätze – oder du lässt sie dir mithilfe einer Mastervorlage von der KI klonen. Diese Aufgaben werden später automatisch und unmittelbar in den Lernpaketen ausgewertet.',
@@ -104,7 +124,7 @@ const getVisibleTabs = (rolle) => {
     },
   },
   {
-    value: 'ebene2', label: 'Allgemeine Aufgaben (Ebene 2)', icon: ClipboardList, step: 5,
+    value: 'ebene2', label: 'Allgemeine Aufgaben (Ebene 2)', icon: ClipboardList, step: 6,
     help: {
       title: 'Allgemeine Aufgaben (Ebene 2 – Transfer)',
       description: 'In Tab 5 erstellst du als Fachlehrkraft die allgemeinen Transfer-Aufgaben deiner Einheit (Ebene 2). Das sind die größeren, offenen Aufgaben, bei denen Schüler:innen das in den Lernpaketen Gelernte auf eine neue Situation anwenden müssen – z. B. eine Quelle analysieren, ein Diagramm auswerten oder eine kurze Erörterung schreiben. Begleitet werden sie dabei vom KI-Tutor Brian.study, den du in diesem Tab gleich mit konfigurierst. Verschiedene Aufgabentypen (Inhalts-Aufgabe, Prozess-Aufgabe, Handlungs-Aufgabe, Auswahl-Bündel) stehen dir zur Verfügung, je nachdem, welche Denkleistung du fordern willst.',
@@ -126,7 +146,7 @@ const getVisibleTabs = (rolle) => {
     },
   },
   {
-    value: 'ebene3', label: 'Anwendungs- & Projektaufgaben', icon: Target, step: 6,
+    value: 'ebene3', label: 'Anwendungs- & Projektaufgaben', icon: Target, step: 7,
     help: {
       title: 'Anwendungs- & Projektaufgaben (Ebene 3)',
       description: 'In Tab 6 erstellst du als Fachlehrkraft die anspruchsvollen Anwendungs- und Projektaufgaben (Ebene 3). Das sind die offenen, kreativen Aufgaben, bei denen deine Schüler:innen ein Produkt oder Projekt selbstständig planen und erstellen – z. B. ein Plakat, ein Podcast, eine Präsentation oder ein Portfolio. Da es hier keine eindeutige Musterlösung gibt, definierst du Abgabeformat, Bewertungsrubriken und einen Projekt-Coach (KI-Tutor), der die Lernenden über mehrere Sitzungen begleitet.',
@@ -148,7 +168,7 @@ const getVisibleTabs = (rolle) => {
     },
   },
   {
-    value: 'dashboards', label: 'Dashboards (Lernpfade)', icon: Compass, step: 7,
+    value: 'dashboards', label: 'Dashboards (Lernpfade)', icon: Compass, step: 8,
     help: {
       title: 'Dashboards – Lernpfad-Architekt',
       description: 'In Tab 7 baust du als Fachlehrkraft die vier individuellen Lernpfade deiner Einheit – einen pro Lerntyp (Minimalist · Pragmatiker · Ehrgeizig · Passioniert). Du arrangierst dabei die Aufgaben aus Tab 5 und Tab 6 sowie globale System-Bausteine (Lernlandkarte, Pre-Test, Wissensspeicher …) zu klar strukturierten Sektoren. Ergebnis: Jede:r Lernende sieht später ein Dashboard, das genau auf sein Lernprofil zugeschnitten ist.',
@@ -172,7 +192,7 @@ const getVisibleTabs = (rolle) => {
     },
   },
   {
-    value: 'cockpit', label: 'Freigabe-Cockpit (Moodle)', icon: CheckSquare, step: 8,
+    value: 'cockpit', label: 'Freigabe-Cockpit (Moodle)', icon: CheckSquare, step: 9,
     help: {
       title: 'Freigabe-Cockpit – Übergabe an das Export-Team',
       description: 'In Tab 8 übergibt die Fachschaftsleitung bzw. das Export-Team die Einheit an die Moodle-/Brian-Pipeline. Du siehst hier alle Aktivitäten und Aufgaben der Einheit mit ihrem aktuellen Freigabe- und Export-Status auf einen Blick und markierst, was für den nächsten Export-Lauf eingeplant werden soll. Der eigentliche Upload nach Moodle und Brian.study findet danach im zentralen Export-Center (Hauptmenü) statt – Tab 8 ist die saubere Übergabeschnittstelle dorthin.',

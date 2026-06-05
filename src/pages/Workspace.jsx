@@ -23,6 +23,7 @@ import StrukturBoardEmbedded from '@/components/workspace/StrukturBoardEmbedded'
 import WorkspaceTabs from '@/components/workspace/WorkspaceTabs';
 import TaskCreationView from '@/components/workspace/TaskCreationView.jsx';
 import EinheitUebersichtTab from '@/components/workspace/EinheitUebersichtTab';
+import LernzieleUebersichtTab from '@/components/workspace/lernziele/LernzieleUebersichtTab';
 import MoodleExportTab from '@/components/workspace/MoodleExportTab';
 import ExportCockpitView from '@/components/export/ExportCockpitView';
 import AllgemeineAufgabenView from '@/components/allgemeineAufgaben/AllgemeineAufgabenView';
@@ -54,7 +55,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   // Phase H Cleanup: Tabs 9 ('export'/Moodle-Export) und 10 ('brian'/Brian-
   // Export) sind aus der Einheitenansicht entfernt. Beide Workflows laufen
   // jetzt zentral im eigenständigen Export-Center (Hauptmenü).
-  const VALID_TABS = ['einheit', 'struktur', 'aktivitaeten', 'aufgaben', 'ebene2', 'ebene3', 'dashboards', 'cockpit'];
+  const VALID_TABS = ['einheit', 'struktur', 'lernziele', 'aktivitaeten', 'aufgaben', 'ebene2', 'ebene3', 'dashboards', 'cockpit'];
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'einheit');
   const [highlightedAtomIds, setHighlightedAtomIds] = useState(new Set());
@@ -848,7 +849,22 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                     </div>
                   </TabsContent>
 
-            {/* ── Tab 3: Aktivitäten zuordnen → Sidebar-Baum + Detail-Panel ───── */}
+            {/* ── Tab 3: Lernziele (zentraler Heimatort) ───────────────────────── */}
+            <TabsContent value="lernziele" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
+              <div className="flex-1 overflow-hidden min-h-0 flex flex-col">
+                <ErrorBoundary label="Lernziele">
+                  <LernzieleUebersichtTab
+                    einheit={einheit}
+                    lernpakete={paketeFuerEinheit}
+                    lernziele={zieleFuerEinheit}
+                    themenfelder={themenfelder}
+                    kannBearbeiten={kannDieseEinheitBearbeiten && !isLockedByOther}
+                  />
+                </ErrorBoundary>
+              </div>
+            </TabsContent>
+
+            {/* ── Tab 4: Aktivitäten zuordnen → Sidebar-Baum + Detail-Panel ───── */}
             <TabsContent value="aktivitaeten" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
               <ErrorBoundary label="Aktivitäten-Struktur">
                 {/* Sticky Edit-Banner – direkt an globalem isLernpaketEditActive gebunden (Single Source of Truth).
