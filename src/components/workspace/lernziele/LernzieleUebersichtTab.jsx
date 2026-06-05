@@ -3,25 +3,45 @@
  * ──────────────────────
  * Eigener Heimatort für alle Lernziele einer Einheit (Schritt A).
  *
- * Zeigt sämtliche Lernpakete gruppiert nach Themenfeld und lässt pro Paket
- * die Lernziele bearbeiten – inkl. KI-Prüfung (LernzielRow). Speichern läuft
- * pro Paket: neue Ziele werden angelegt, geänderte aktualisiert, entfernte
- * gelöscht. Danach werden die Workspace-Daten neu geladen.
+ * Master-Detail-Layout: links eine kompakte, klickbare Liste aller
+ * Lernpakete (gruppiert nach Themenfeld, mit Ziel-Anzahl), rechts die
+ * Lernziele des gewählten Pakets. Die Erklärung steckt als Kontexthilfe
+ * im HelpDialog (schlanke Kopfzeile) statt als raumgreifende Info-Box.
  *
- * Bewusst rein additiv: Tab 2 (Struktur) und Tab 3 (Aktivitäten) bleiben
- * unverändert, bis dieser Tab als stabil bestätigt ist.
+ * Speichern läuft pro Paket: neue Ziele werden angelegt, geänderte
+ * aktualisiert, entfernte gelöscht. Danach Workspace-Daten neu laden.
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Target, Inbox } from 'lucide-react';
+import HelpDialog from '@/components/ui/HelpDialog';
 import {
   createLernziel,
   updateLernziel,
   deleteLernziel,
 } from '@/services/LernzielService';
 import LernpaketZielKarte from '@/components/workspace/lernziele/LernpaketZielKarte';
+import LernpaketZielSidebar from '@/components/workspace/lernziele/LernpaketZielSidebar';
+
+const HELP = {
+  title: 'Lernziele der Einheit',
+  description:
+    'Hier pflegst du zentral alle Lernziele – gruppiert nach Themenfeld und Lernpaket. Wähle links ein Lernpaket aus, um rechts seine Lernziele zu bearbeiten. Nutze die KI-Prüfung pro Lernziel für eine saubere Formulierung in Fach- und Schülersprache.',
+  features: [
+    'Links alle Lernpakete der Einheit – klick dich durch',
+    'Pro Lernziel: offizielle Formulierung (Fachsprache) + schülergerechte Übersetzung',
+    'Schülergerechte Formulierungen sind grafisch klar markiert (Schüler-Symbol, kursiv)',
+    'KI-Prüfung pro Lernziel schlägt beide Varianten formuliert vor',
+    'Speichern erfolgt gezielt pro Lernpaket',
+  ],
+  faqs: [
+    { question: 'Was ist der Unterschied zwischen Fachsprache und schülergerecht?', answer: 'Die Fachsprache („Ich kann …") ist die offizielle Formulierung. Die schülergerechte Übersetzung erklärt dasselbe in einfacher Sprache und erscheint später in der Lernlandkarte für die Schüler:innen.' },
+    { question: 'Wie funktioniert die KI-Prüfung?', answer: 'Tippe deine Idee ein und klicke auf „KI prüfen". Die KI schlägt eine präzise Fachsprachen- und eine schülergerechte Formulierung vor, die du übernehmen oder verwerfen kannst.' },
+  ],
+  docsSlug: 'lernpakete-aktivitaeten',
+};
 
 export default function LernzieleUebersichtTab({
   einheit,
@@ -31,6 +51,7 @@ export default function LernzieleUebersichtTab({
   kannBearbeiten,
 }) {
   const queryClient = useQueryClient();
+  const [selectedPaketId, setSelectedPaketId] = useState(null);
 
   const kontext = useMemo(
     () => ({ fach: einheit?.fach, jahrgangsstufe: einheit?.jahrgangsstufe }),
@@ -70,13 +91,39 @@ export default function LernzieleUebersichtTab({
     return map;
   }, [lernziele]);
 
+  const zielCount = useMemo(() => {
+    const map = new Map();
+    for (const [paketId, list] of zieleProPaket.entries()) map.set(paketId, list.length);
+    return map;
+  }, [zieleProPaket]);
+
+  // Erstes Paket automatisch wählen, sobald Daten da sind / Auswahl ungültig wird.
+  useEffect(() => {
+    const alleIds = gruppen.flatMap((g) => g.pakete.map((p) => p.id));
+    if (alleIds.length === 0) {
+      if (selectedPaketId !== null) setSelectedPaketId(null);
+      return;
+    }
+    if (!selectedPaketId || !alleIds.includes(selectedPaketId)) {
+      setSelectedPaketId(alleIds[0]);
+    }
+  }, [gruppen, selectedPaketId]);
+
+  const selectedPaket = useMemo(
+    () => lernpakete.find((p) => p.id === selectedPaketId) || null,
+    [lernpakete, selectedPaketId]
+  );
+
+  const selectedThemenfeldTitel = useMemo(() => {
+    if (!selectedPaket?.themenfeld_id) return null;
+    return themenfelder.find((tf) => tf.id === selectedPaket.themenfeld_id)?.titel || null;
+  }, [selectedPaket, themenfelder]);
+
   const gesamtZiele = lernziele.length;
 
   // Speichern eines Pakets: Diff zwischen Entwurf und Server-Stand bilden.
   const handleSavePaket = async (lernpaketId, draft, serverZiele) => {
-    const draftPersistedIds = new Set(
-      draft.filter((d) => d._persisted).map((d) => d.id)
-    );
+    const draftPersistedIds = new Set(draft.filter((d) => d._persisted).map((d) => d.id));
     const toDelete = (serverZiele || []).filter((z) => !draftPersistedIds.has(z.id));
 
     const isEmpty = (d) =>
@@ -86,7 +133,6 @@ export default function LernzieleUebersichtTab({
       const ops = [];
       for (const d of draft) {
         if (isEmpty(d)) {
-          // Leere neue Zeile ignorieren; leere persistierte Zeile löschen.
           if (d._persisted) ops.push(deleteLernziel(d.id));
           continue;
         }
@@ -96,11 +142,8 @@ export default function LernzieleUebersichtTab({
           schueler_uebersetzung: (d.schueler_uebersetzung || '').trim(),
           kategorie: d.kategorie || undefined,
         };
-        if (d._persisted) {
-          ops.push(updateLernziel(d.id, payload));
-        } else {
-          ops.push(createLernziel(payload));
-        }
+        if (d._persisted) ops.push(updateLernziel(d.id, payload));
+        else ops.push(createLernziel(payload));
       }
       for (const z of toDelete) ops.push(deleteLernziel(z.id));
 
@@ -128,45 +171,46 @@ export default function LernzieleUebersichtTab({
   }
 
   return (
-    <div className="h-full overflow-y-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Intro */}
-        <div className="flex items-start gap-3 p-4 rounded-xl border border-primary/20 bg-primary/5">
-          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10 text-primary shrink-0">
-            <Target className="w-5 h-5" />
-          </div>
-          <div className="min-w-0">
-            <h2 className="font-semibold text-sm">Lernziele der Einheit</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Hier pflegst du zentral alle Lernziele – gruppiert nach Themenfeld und Lernpaket.
-              Nutze die KI-Prüfung pro Lernziel für eine saubere Formulierung in Fach- und Schülersprache.
-              Aktuell: <strong>{gesamtZiele}</strong> {gesamtZiele === 1 ? 'Lernziel' : 'Lernziele'} in {lernpakete.length} Lernpaketen.
-            </p>
-          </div>
+    <div className="flex flex-col lg:flex-row flex-1 overflow-hidden h-full">
+      {/* ── Sidebar: Lernpaket-Liste ──────────────────────────────────── */}
+      <aside className="w-full lg:w-72 border-b lg:border-b-0 lg:border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden h-56 lg:h-full min-h-0">
+        <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b">
+          <Target className="w-4 h-4 text-primary shrink-0" />
+          <span className="text-xs font-semibold flex-1">Lernziele</span>
+          <span className="text-[10px] text-muted-foreground">{gesamtZiele} gesamt</span>
+          <HelpDialog {...HELP} />
         </div>
+        <div className="flex-1 overflow-hidden min-h-0">
+          <LernpaketZielSidebar
+            gruppen={gruppen}
+            zielCount={zielCount}
+            selectedPaketId={selectedPaketId}
+            onSelect={setSelectedPaketId}
+          />
+        </div>
+      </aside>
 
-        {/* Gruppen */}
-        {gruppen.map((gruppe) => (
-          <section key={gruppe.id} className="space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground px-1">
-              {gruppe.titel}
-            </h3>
-            <div className="space-y-4">
-              {gruppe.pakete.map((paket) => (
-                <LernpaketZielKarte
-                  key={paket.id}
-                  paket={paket}
-                  themenfeldTitel={gruppe.id === '__none__' ? null : gruppe.titel}
-                  ziele={zieleProPaket.get(paket.id) || []}
-                  kontext={kontext}
-                  kannBearbeiten={kannBearbeiten}
-                  onSave={handleSavePaket}
-                />
-              ))}
+      {/* ── Detail: Lernziele des gewählten Pakets ────────────────────── */}
+      <main className="flex-1 overflow-y-auto min-h-0">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {selectedPaket ? (
+            <LernpaketZielKarte
+              key={selectedPaket.id}
+              paket={selectedPaket}
+              themenfeldTitel={selectedThemenfeldTitel}
+              ziele={zieleProPaket.get(selectedPaket.id) || []}
+              kontext={kontext}
+              kannBearbeiten={kannBearbeiten}
+              onSave={handleSavePaket}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[40vh] gap-2 text-muted-foreground">
+              <Target className="w-10 h-10 opacity-30" />
+              <p className="text-sm">Wähle links ein Lernpaket aus.</p>
             </div>
-          </section>
-        ))}
-      </div>
+          )}
+        </div>
+      </main>
     </div>
   );
 }

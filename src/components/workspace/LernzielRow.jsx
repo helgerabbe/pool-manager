@@ -13,7 +13,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Target, X, Sparkles, Check, RotateCcw } from 'lucide-react';
+import { Target, X, Sparkles, Check, RotateCcw, GraduationCap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -70,14 +70,18 @@ export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext }) {
             rows={2}
             className="text-sm min-h-[44px] resize-y leading-snug"
           />
-          {/* Schülergerecht */}
-          <Textarea
-            placeholder="Schülergerechte Formulierung (optional)"
-            value={lz.schueler_uebersetzung || ''}
-            onChange={e => onUpdate(lz.id, 'schueler_uebersetzung', e.target.value)}
-            rows={1}
-            className="text-sm min-h-[36px] resize-y leading-snug bg-background/60"
-          />
+          {/* Schülergerecht – grafisch klar als Schüler-Variante markiert:
+              Schüler-Icon, kursiv, kleiner, eigene amber/orange Tönung. */}
+          <div className="flex items-start gap-1.5 pl-1 border-l-2 border-amber-300">
+            <GraduationCap className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-1.5" />
+            <Textarea
+              placeholder="Schülergerechte Formulierung (optional)"
+              value={lz.schueler_uebersetzung || ''}
+              onChange={e => onUpdate(lz.id, 'schueler_uebersetzung', e.target.value)}
+              rows={1}
+              className="text-xs italic min-h-[32px] resize-y leading-snug bg-amber-50/50 border-amber-200 text-amber-900 placeholder:text-amber-400/70 placeholder:not-italic"
+            />
+          </div>
 
           {/* Aktionsleiste: Kategorie + KI */}
           <div className="flex items-center gap-1.5 flex-wrap">
