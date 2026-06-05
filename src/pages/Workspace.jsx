@@ -73,8 +73,18 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   // Tab-Wechsel nicht neu gemountet, daher reicht der Mount-Init nicht.
   useEffect(() => {
     const t = searchParams.get('tab');
+    const lernpaketParam = searchParams.get('lernpaket');
     if (t && VALID_TABS.includes(t) && t !== activeTab) {
       handleTabChange(t);
+    }
+    // Deep-Link aus Tab 7 (Dashboard): ein bestimmtes Lernpaket in Tab 3
+    // („Aktivitäten zuordnen") öffnen. Wir setzen den selectedNode auf das
+    // Lernpaket und räumen den Param danach wieder aus der URL.
+    if (lernpaketParam) {
+      setSelectedNode({ type: 'lernpaket', id: lernpaketParam });
+      const next = new URLSearchParams(searchParams);
+      next.delete('lernpaket');
+      setSearchParams(next, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);

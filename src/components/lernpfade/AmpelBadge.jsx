@@ -47,7 +47,7 @@ const STYLES = {
  *                     true → grün-grauer Punkt; false → leer-grauer Punkt.
  *                     System-Bausteine: undefined lassen → kein Punkt.
  */
-export default function AmpelBadge({ status, onFix, tooltipExtra, exportReady = false, contentApproved }) {
+export default function AmpelBadge({ status, onFix, tooltipExtra, exportReady = false, contentApproved, fixLabel = 'Editor öffnen' }) {
   const cfg = STYLES[status] || STYLES[AMPEL.RED];
   const Icon = cfg.Icon;
   const label = getAmpelLabel(status);
@@ -116,7 +116,7 @@ export default function AmpelBadge({ status, onFix, tooltipExtra, exportReady = 
             <span className="font-medium">{label}</span>
             {tooltipExtra && <span className="block mt-0.5 opacity-80">{tooltipExtra}</span>}
             {isRed && onFix && (
-              <span className="block mt-0.5 text-[10px] opacity-70">Klick: Editor öffnen</span>
+              <span className="block mt-0.5 text-[10px] opacity-70">Klick: {fixLabel}</span>
             )}
           </TooltipContent>
         </Tooltip>

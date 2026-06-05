@@ -108,6 +108,7 @@ function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, indent = fal
               status={ampelStatus}
               exportReady={exportReady}
               contentApproved={istLernpaket ? undefined : contentApproved}
+              fixLabel={istLernpaket ? 'Lernpaket öffnen' : 'Editor öffnen'}
               onFix={
                 istLernpaket
                   ? (onOpenLernpaket ? () => onOpenLernpaket(aufgabe) : undefined)

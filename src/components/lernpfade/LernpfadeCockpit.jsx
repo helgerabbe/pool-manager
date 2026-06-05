@@ -185,10 +185,12 @@ export default function LernpfadeCockpit({
   // Lernpaket, keine Aufgabe). Stattdessen navigieren wir zu Tab 4
   // („Aktivitäten zuordnen"), wo die Lehrkraft das Lernpaket öffnen,
   // vervollständigen und freigeben kann.
-  const handleOpenLernpaket = useCallback(() => {
+  const handleOpenLernpaket = useCallback((item) => {
     const next = new URLSearchParams(searchParams);
     if (einheit?.id) next.set('einheit', einheit.id);
     next.set('tab', 'aktivitaeten');
+    // Adaptierte Lernpaket-Items tragen die Lernpaket-ID in `id`.
+    if (item?.id) next.set('lernpaket', item.id);
     setSearchParams(next);
   }, [searchParams, setSearchParams, einheit?.id]);
 
