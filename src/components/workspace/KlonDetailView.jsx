@@ -83,6 +83,14 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
     lernpaket?.locked_at &&
     Date.now() - new Date(lernpaket.locked_at).getTime() < LOCK_TIMEOUT_MS;
 
+  // Eine Kopie darf zur eigenständigen Masteraufgabe befördert werden,
+  // solange das übergeordnete LERNPAKET noch NICHT freigegeben ist. Der
+  // Freigabe-Status einer einzelnen Masteraufgabe spielt dabei keine Rolle –
+  // man darf von einer bereits freigegebenen Masteraufgabe Kopien ziehen und
+  // diese zu neuen Mastern machen.
+  const lernpaketReleased = lernpaket?.content_status === 'approved' && !!lernpaket?.released_at;
+  const canConvertToMaster = kannBearbeiten && !lockedByOther && !lernpaketReleased;
+
   // State Machine für Moodle-Sync
   const syncStatus = useSyncStatus(
     klon.id,
@@ -244,19 +252,37 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
             Kopie {klon.klon_index} · Phase: {activityRecord?.phase}
           </p>
         </div>
-        {kannBearbeiten && !lockedByOther && (isLuecke || isSort || isMatch) && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleEditKlon}
-            disabled={acquiringLock}
-            className="gap-1.5 shrink-0"
-          >
-            {acquiringLock
-              ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sperren…</>
-              : <><Pencil className="w-3.5 h-3.5" /> Kopie bearbeiten</>}
-          </Button>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* "Zur Masteraufgabe machen" – typ-unabhängig, solange das
+              Lernpaket noch nicht freigegeben ist. */}
+          {canConvertToMaster && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setConvertDialogOpen(true)}
+              disabled={convertToMasterMutation.isPending}
+              className="gap-1.5 text-primary border-primary/40 hover:bg-primary/5"
+              title="Diese Kopie als eigenständige Masteraufgabe anlegen"
+            >
+              {convertToMasterMutation.isPending
+                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Umwandeln…</>
+                : <><Crown className="w-3.5 h-3.5" /> Zur Masteraufgabe machen</>}
+            </Button>
+          )}
+          {kannBearbeiten && !lockedByOther && (isLuecke || isSort || isMatch) && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleEditKlon}
+              disabled={acquiringLock}
+              className="gap-1.5"
+            >
+              {acquiringLock
+                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sperren…</>
+                : <><Pencil className="w-3.5 h-3.5" /> Kopie bearbeiten</>}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* ── Aufgabenstellung des Masters ── */}
