@@ -38,12 +38,22 @@ function LernpaketDialog({ open, onOpenChange, initialData, onSave }) {
   const [dauer, setDauer] = useState(45);
   const [lernziele, setLernziele] = useState([]);
 
+  // 🔒 BUGFIX (zurückgekehrter Lernziel-Verlust-Bug):
+  // Den Dialog-State NUR EINMAL beim Öffnen (false→true) initialisieren.
+  // Frühere Version hatte `initialData` als useEffect-Dependency – kam während
+  // des offenen Dialogs ein Realtime-/Parent-Re-Render mit neuer initialData-
+  // Referenz herein, lief der Effekt erneut und ÜBERSCHRIEB die gerade
+  // eingetippten Lernziele mit dem (noch leeren) Remote-Stand. Genau dadurch
+  // gingen frisch eingegebene Lernziele verloren. Wir merken uns den vorherigen
+  // open-Zustand und re-initialisieren ausschließlich beim Öffnungs-Übergang.
+  const wasOpenRef = React.useRef(false);
   useEffect(() => {
-    if (open) {
+    if (open && !wasOpenRef.current) {
       setTitel(initialData?.titel_des_pakets || '');
       setDauer(initialData?.geschaetzte_dauer_minuten || 45);
       setLernziele(initialData?.lernziele || []);
     }
+    wasOpenRef.current = open;
   }, [open, initialData]);
 
   const addLernziel = () =>
