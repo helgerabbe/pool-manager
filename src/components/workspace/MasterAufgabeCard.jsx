@@ -742,6 +742,7 @@ export default function MasterAufgabeCard({
                       if (content_status) {
                         await applyMasterReleaseStatus(content_status);
                         await syncMasterStatusNow({ queryClient, master, fieldValues: newFv });
+                        queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
                       }
                       handleCloseMatchTermsModal();
                     },
@@ -872,6 +873,7 @@ export default function MasterAufgabeCard({
                       if (content_status) {
                         await applyMasterReleaseStatus(content_status);
                         await syncMasterStatusNow({ queryClient, master, fieldValues: newFv });
+                        queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
                       }
                       handleCloseSortierungModal();
                     },
@@ -987,6 +989,7 @@ export default function MasterAufgabeCard({
                     onSuccess: async () => {
                       if (content_status) {
                         await applyMasterReleaseStatus(content_status);
+                        queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
                       }
                       setTestModalOpen(false);
                       releaseLock();
@@ -1052,6 +1055,7 @@ export default function MasterAufgabeCard({
                       if (content_status) {
                         await applyMasterReleaseStatus(content_status);
                         await syncMasterStatusNow({ queryClient, master, fieldValues: newFv });
+                        queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
                       }
                       setMiniQuizModalOpen(false);
                     },
