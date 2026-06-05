@@ -206,6 +206,7 @@ export default function WorkspaceDetailPanel({
       <ThemenfeldPanel
         themenfeld={themenfeld}
         lernpakete={lernpakete}
+        lernziele={lernziele}
         kannBearbeiten={kannBearbeiten}
         queryClient={queryClient}
       />
