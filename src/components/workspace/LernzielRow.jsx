@@ -13,11 +13,15 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Target, X, Sparkles, Check, RotateCcw, GraduationCap } from 'lucide-react';
+import { X, Sparkles, Check, RotateCcw, GraduationCap } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
-const KATEGORIEN = ['Fachwissen', 'Fähigkeit/Fertigkeit'];
+const KATEGORIEN = [
+  { value: 'Fachwissen', kurz: 'W' },
+  { value: 'Fähigkeit/Fertigkeit', kurz: 'F' },
+];
 
 export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext }) {
   const [loading, setLoading] = useState(false);
@@ -56,61 +60,65 @@ export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext }) {
   return (
     <div className="rounded-md border bg-muted/20 px-2 py-1.5">
       <div className="flex items-start gap-2">
-        <span className="flex items-center justify-center w-4 h-4 mt-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold shrink-0">{idx + 1}</span>
+        {/* Aktionsspalte: Nummer + Kategorie-Kürzel + KI-Symbol, vertikal gestapelt */}
+        <div className="flex flex-col items-center gap-1 shrink-0">
+          <span className="flex items-center justify-center w-4 h-4 rounded-full bg-green-100 text-green-700 text-[10px] font-bold">{idx + 1}</span>
+          {KATEGORIEN.map(kat => (
+            <Tooltip key={kat.value}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => onUpdate(lz.id, 'kategorie', kat.value)}
+                  className={cn(
+                    'flex items-center justify-center w-4 h-4 rounded border text-[9px] font-bold transition-all',
+                    lz.kategorie === kat.value
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border text-muted-foreground hover:border-primary/40'
+                  )}
+                >
+                  {kat.kurz}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="text-[11px]">{kat.value}</TooltipContent>
+            </Tooltip>
+          ))}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={handleKICheck}
+                disabled={loading}
+                className="flex items-center justify-center w-4 h-4 rounded border border-violet-300 text-violet-700 hover:bg-violet-50 transition-all disabled:opacity-50"
+              >
+                {loading
+                  ? <div className="w-2 h-2 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin" />
+                  : <Sparkles className="w-2.5 h-2.5" />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="text-[11px]">KI prüfen</TooltipContent>
+          </Tooltip>
+        </div>
 
         <div className="flex-1 min-w-0 space-y-1">
-          {/* Fachsprache */}
+          {/* Fachsprache – zwei Zeilen lesbar */}
           <Textarea
             placeholder="Offizielle Formulierung (Fachsprache) – z.B. „Ich kann…"
             value={lz.formulierung_fachsprache}
             onChange={e => onUpdate(lz.id, 'formulierung_fachsprache', e.target.value)}
-            rows={1}
-            className="text-xs min-h-[30px] resize-y leading-snug py-1"
+            rows={2}
+            className="text-xs min-h-[42px] resize-y leading-snug py-1"
           />
           {/* Schülergerecht – grafisch klar als Schüler-Variante markiert:
-              Schüler-Icon, kursiv, kleiner, eigene amber/orange Tönung. */}
+              Schüler-Icon, kursiv, deutlich kleiner, eigene amber/orange Tönung. */}
           <div className="flex items-start gap-1 pl-1 border-l-2 border-amber-300">
-            <GraduationCap className="w-3 h-3 text-amber-500 shrink-0 mt-1.5" />
+            <GraduationCap className="w-2.5 h-2.5 text-amber-500 shrink-0 mt-1.5" />
             <Textarea
               placeholder="Schülergerechte Formulierung (optional)"
               value={lz.schueler_uebersetzung || ''}
               onChange={e => onUpdate(lz.id, 'schueler_uebersetzung', e.target.value)}
               rows={1}
-              className="text-[11px] italic min-h-[26px] resize-y leading-snug py-1 bg-amber-50/50 border-amber-200 text-amber-900 placeholder:text-amber-400/70 placeholder:not-italic"
+              className="text-[9px] italic min-h-[24px] resize-y leading-snug py-1 bg-amber-50/50 border-amber-200 text-amber-900 placeholder:text-amber-400/70 placeholder:not-italic"
             />
-          </div>
-
-          {/* Aktionsleiste: Kategorie + KI */}
-          <div className="flex items-center gap-1 flex-wrap">
-            {KATEGORIEN.map(kat => (
-              <button
-                key={kat}
-                type="button"
-                onClick={() => onUpdate(lz.id, 'kategorie', kat)}
-                className={cn(
-                  'py-0.5 px-1.5 rounded border text-[10px] font-medium transition-all',
-                  lz.kategorie === kat
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border hover:border-primary/40 text-muted-foreground'
-                )}
-              >
-                {kat}
-              </button>
-            ))}
-            <div className="flex-1" />
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={handleKICheck}
-              disabled={loading}
-              className="h-5 gap-1 text-[10px] px-1.5 border-violet-300 text-violet-700 hover:bg-violet-50"
-            >
-              {loading
-                ? <div className="w-2.5 h-2.5 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin" />
-                : <Sparkles className="w-2.5 h-2.5" />}
-              KI prüfen
-            </Button>
           </div>
 
           {/* KI-Vorschlag */}
