@@ -925,7 +925,8 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
           const masterActivity = allActivities.find(a => a.id === master.activity_id);
           const masterCatalog = masterActivity ? aktivitaetenKatalog.find(c => c.id === masterActivity.aktivitaet_id) : null;
           const masterKlone = kloneByMasterId[master.id] || [];
-          const masterIndex = (masterAufgabenByActivityId[master.activity_id] || []).findIndex(m => m.id === master.id) + 1;
+          const mastersOfActivity = masterAufgabenByActivityId[master.activity_id] || [];
+          const masterIndex = mastersOfActivity.findIndex(m => m.id === master.id) + 1;
           return (
             <div className="max-w-3xl mx-auto px-6 py-6">
               <MasterDetailView
@@ -937,6 +938,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
                 kannBearbeiten={kannBearbeiten}
                 userEmail={userEmail}
                 parentLernpaketName={getLernpaketName(master.lernpaket_id)}
+                anzeigeModus={mastersOfActivity.length >= 2 ? (masterActivity?.master_anzeige_modus || 'shuffle') : null}
                 onDeleted={() => setSelectedItem(masterActivity ? { type: 'activity', activity: masterActivity } : null)}
                 onEditModeChange={handleEditModeChange}
               />
@@ -1020,7 +1022,8 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
               const masterActivity = allActivities.find(a => a.id === master.activity_id);
               const masterCatalog = masterActivity ? aktivitaetenKatalog.find(c => c.id === masterActivity.aktivitaet_id) : null;
               const masterKlone = kloneByMasterId[master.id] || [];
-              const masterIndex = (masterAufgabenByActivityId[master.activity_id] || []).findIndex(m => m.id === master.id) + 1;
+              const mastersOfActivity = masterAufgabenByActivityId[master.activity_id] || [];
+              const masterIndex = mastersOfActivity.findIndex(m => m.id === master.id) + 1;
               return (
                 <div className="max-w-3xl mx-auto px-6 py-6">
                   <MasterDetailView
@@ -1032,6 +1035,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
                     kannBearbeiten={kannBearbeiten}
                     userEmail={userEmail}
                     parentLernpaketName={getLernpaketName(master.lernpaket_id)}
+                    anzeigeModus={mastersOfActivity.length >= 2 ? (masterActivity?.master_anzeige_modus || 'shuffle') : null}
                     onDeleted={() => setSelectedItem(masterActivity ? { type: 'activity', activity: masterActivity } : null)}
                     onEditModeChange={handleEditModeChange}
                   />

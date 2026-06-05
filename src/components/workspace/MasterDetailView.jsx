@@ -19,6 +19,7 @@ import MatchTermsPreviewModal from '@/components/workspace/preview/MatchTermsPre
 import SortingListPreviewModal from '@/components/workspace/preview/SortingListPreviewModal';
 import MiniQuizPreviewModal from '@/components/workspace/preview/MiniQuizPreviewModal';
 import ReleaseToggleSection from '@/components/release/ReleaseToggleSection';
+import MasterModusBadge from '@/components/workspace/MasterModusBadge';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { getFriendlyErrorMessage } from '@/lib/errorMapper';
 import { resolveStatus } from '@/lib/statusUtils';
@@ -295,6 +296,7 @@ export default function MasterDetailView({
   kannBearbeiten,
   userEmail,
   parentLernpaketName = null,
+  anzeigeModus = null,
   onDeleted,
   onEditModeChange,
 }) {
@@ -613,6 +615,7 @@ export default function MasterDetailView({
               {klone.length > 0 && (
                 <Badge variant="secondary" className="text-[10px]">{klone.length} Kopie{klone.length !== 1 ? 'n' : ''}</Badge>
               )}
+              {anzeigeModus && <MasterModusBadge modus={anzeigeModus} />}
             </div>
           </div>
         </div>
