@@ -71,7 +71,7 @@ export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext }) {
                   type="button"
                   onClick={() => onUpdate(lz.id, 'kategorie', kat.value)}
                   className={cn(
-                    'flex items-center justify-center w-4 h-4 rounded border text-[9px] font-bold transition-all',
+                    'flex items-center justify-center w-8 h-4 rounded border text-[9px] font-bold transition-all',
                     lz.kategorie === kat.value
                       ? 'border-primary bg-primary/10 text-primary'
                       : 'border-border text-muted-foreground hover:border-primary/40'
@@ -89,7 +89,7 @@ export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext }) {
                 type="button"
                 onClick={handleKICheck}
                 disabled={loading}
-                className="flex items-center justify-center w-4 h-4 rounded border border-violet-300 text-violet-700 hover:bg-violet-50 transition-all disabled:opacity-50"
+                className="flex items-center justify-center w-8 h-4 rounded border border-violet-300 text-violet-700 hover:bg-violet-50 transition-all disabled:opacity-50"
               >
                 {loading
                   ? <div className="w-2 h-2 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin" />
@@ -119,7 +119,7 @@ export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext }) {
               value={lz.schueler_uebersetzung || ''}
               onChange={e => onUpdate(lz.id, 'schueler_uebersetzung', e.target.value)}
               rows={1}
-              className="text-[9px] italic min-h-[24px] resize-y leading-snug py-1 bg-amber-50/50 border-amber-200 text-amber-900 placeholder:text-amber-400/70 placeholder:not-italic"
+              className="text-[7px] italic min-h-[22px] resize-y leading-snug py-1 bg-amber-50/50 border-amber-200 text-amber-900 placeholder:text-amber-400/70 placeholder:not-italic"
             />
           </div>
 
