@@ -129,25 +129,37 @@ Deno.serve(async (req) => {
     }
 
     // 5. Gefilterte, paginierte Queries: nur Daten dieser Einheit laden.
-    const [themenfelder, lernpakete, einheitMembers] = await Promise.all([
+    // WICHTIG (Bug-Fix 2026-06-05, "Lernziele werden nicht angezeigt"):
+    // Die asServiceRole-Filter liefern Roh-Records, bei denen die fachlichen
+    // Felder im verschachtelten `data`-Objekt stecken (z. B.
+    // record.data.lernpaket_id). Ohne Normalisierung ist `lz.lernpaket_id`
+    // undefined → die Gruppierung schlägt fehl → alle Pakete zeigen 0 Ziele.
+    // Daher JEDEN Record durch normalizeEntityRecord schicken.
+    const [rawThemenfelder, rawLernpakete, rawEinheitMembers] = await Promise.all([
       listAllByFilter(base44.asServiceRole.entities.Themenfeld, { einheit_id }),
       listAllByFilter(base44.asServiceRole.entities.Lernpakete, { einheit_id }),
       listAllByFilter(base44.asServiceRole.entities.EinheitMembers, { einheit_id }),
     ]);
 
+    const themenfelder = rawThemenfelder.map(normalizeEntityRecord);
+    const lernpakete = rawLernpakete.map(normalizeEntityRecord);
+    const einheitMembers = rawEinheitMembers.map(normalizeEntityRecord);
+
     const lernpaketIds = lernpakete.map((paket) => paket.id).filter(Boolean);
-    const lernziele = await listAllByFilterInChunks(
+    const rawLernziele = await listAllByFilterInChunks(
       base44.asServiceRole.entities.Lernziele,
       'lernpaket_id',
       lernpaketIds
     );
+    const lernziele = rawLernziele.map(normalizeEntityRecord);
 
     const lernzielIds = lernziele.map((lernziel) => lernziel.id).filter(Boolean);
-    const aufgaben = await listAllByFilterInChunks(
+    const rawAufgaben = await listAllByFilterInChunks(
       base44.asServiceRole.entities.Aufgabenbausteine,
       'lernziel_id',
       lernzielIds
     );
+    const aufgaben = rawAufgaben.map(normalizeEntityRecord);
 
     // 6. BUILD HIERARCHY: Frontend braucht nicht mehr zu filtern!
     // Gruppiere Lernziele nach Lernpaket
