@@ -17,7 +17,6 @@ import TaskLockBar from '@/components/ui/TaskLockBar';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 import AufgabePreviewModal from '@/components/allgemeineAufgaben/AufgabePreviewModal';
 import AufgabenTypPicker from '@/components/allgemeineAufgaben/AufgabenTypPicker';
-import AufgabeKompetenzMapping from '@/components/allgemeineAufgaben/AufgabeKompetenzMapping';
 import LernzielAnalysePanel from '@/components/allgemeineAufgaben/LernzielAnalysePanel';
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
 import InlineBasisLernzielSelector from '@/components/allgemeineAufgaben/InlineBasisLernzielSelector';
@@ -709,26 +708,12 @@ export default function AllgemeineAufgabenView({
                 />
               </TabsContent>
 
-              {/* Tab 2: Lernzielanalyse (KI-Analyse oben + bestehende Zuordnung unten) */}
+              {/* Tab 2: Lernzielanalyse (KI-gestützte Auswahl) */}
               <TabsContent value="kompetenzen" className="flex-1 overflow-y-auto m-0">
                <LernzielAnalysePanel
                  aufgabe={selectedAufgabe}
                  kannBearbeiten={kannBearbeiten && lock.isEditMode}
                />
-               <div className="border-t border-border mx-6 pt-2">
-                 <div className="px-6 -mx-6 pt-2 pb-1">
-                   <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide px-6">
-                     Bestehende Lernziele zuordnen
-                   </p>
-                 </div>
-                 <AufgabeKompetenzMapping
-                   aufgabe={selectedAufgabe}
-                   einheit={einheit}
-                   einheitId={einheitId}
-                   kannBearbeiten={kannBearbeiten && lock.isEditMode}
-                   onComplete={() => {}}
-                 />
-               </div>
               </TabsContent>
 
               {/* Tab 3: Erwartungshorizont */}

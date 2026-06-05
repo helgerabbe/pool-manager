@@ -1,26 +1,35 @@
 /**
  * LernzielAnalysePanel.jsx
  *
- * Phase 1 der KI-gestützten Lernzielanalyse (vormals "Kompetenzzuordnung").
+ * KI-gestützte Lernzielanalyse (Opt-in-Variante).
  *
- * Der Lehrer startet eine KI-Analyse der Aufgabe. Die KI liefert eine sortierte,
- * fachbezogene Liste von Lernzielen ("Um diese Aufgabe zu lösen, muss der Schüler
- * … können."). Der Lehrer kann die Liste kuratieren:
- *   - einzelne Vorschläge entfernen,
- *   - eigene Lernziele manuell ergänzen.
- * Die kuratierte Liste wird als strukturierte Notiz auf der Aufgabe gespeichert
- * (Feld `lernzielanalyse`). Sie ist NOCH NICHT mit echten Lernziel-Datensätzen
- * verknüpft — das ist Phase 2.
+ * Workflow:
+ *   1. Lehrer startet die KI-Analyse. Die KI schaut sich an:
+ *      - bestehende Lernziele der Einheit (🔵, mit Themenfeld-Kontext),
+ *      - Basis-Lernziele der Basismodule des Faches (🟠),
+ *      - schlägt zusätzlich neue, konkret-übbare Lernziele vor (✨),
+ *      - und nennt Lücken im Basismodul (🟣, "müsste es geben").
+ *   2. Der Lehrer wählt bewusst aus (Anklicken → grün = übernommen).
+ *      Nichts ist vorausgewählt.
+ *   3. KI-Vorschläge & Lücken-Hinweise sind sprachlich editierbar;
+ *      bestehende & Basismodul-Lernziele bleiben unverändert (Originale).
+ *   4. "3 weitere Vorschläge" ergänzt zusätzliche KI-Ideen.
+ *   5. Eigenes Lernziel manuell ergänzen bleibt möglich.
+ *
+ * Gespeichert wird in `aufgabe.lernzielanalyse.items` — aber NUR die
+ * ausgewählten Einträge (die kuratierte Ergebnis-Liste). Vorschläge, die der
+ * Lehrer (noch) nicht angeklickt hat, leben nur im lokalen UI-State.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { updateAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Sparkles, Loader2, Plus, X, Info, Bot, PencilLine } from 'lucide-react';
+import { Sparkles, Loader2, Plus, Info } from 'lucide-react';
 import { toast } from 'sonner';
+import LernzielAnalyseItem from '@/components/allgemeineAufgaben/LernzielAnalyseItem';
 
 let idCounter = 0;
 function makeId() {
@@ -28,39 +37,70 @@ function makeId() {
   return `lz-${Date.now()}-${idCounter}`;
 }
 
+// Gruppen-Reihenfolge + Überschriften für die Anzeige.
+const GRUPPEN = [
+  { key: 'aktuelles', label: 'Aus dem aktuellen Themenfeld' },
+  { key: 'anderes', label: 'Aus anderen Themenfeldern der Einheit' },
+  { key: 'ki', label: 'Neue KI-Vorschläge' },
+  { key: 'basismodul', label: 'Vorwissen aus Basismodulen' },
+  { key: 'basismodul_luecke', label: 'Hinweis: fehlt noch im Basismodul' },
+  { key: 'manuell', label: 'Manuell ergänzt' },
+];
+
+function gruppeOf(item) {
+  if (item.quelle === 'bestehend') return item.ist_aktuelles_themenfeld ? 'aktuelles' : 'anderes';
+  if (item.quelle === 'basismodul') return 'basismodul';
+  if (item.quelle === 'basismodul_luecke') return 'basismodul_luecke';
+  if (item.quelle === 'manuell') return 'manuell';
+  return 'ki';
+}
+
 export default function LernzielAnalysePanel({ aufgabe, kannBearbeiten = false }) {
   const queryClient = useQueryClient();
+  // Alle in der Liste sichtbaren Einträge (ausgewählte + noch nicht ausgewählte Vorschläge).
   const [items, setItems] = useState([]);
-  const [hinweis, setHinweis] = useState('');
-  const [analysiertAm, setAnalysiertAm] = useState(null);
+  // Set lokaler IDs der ausgewählten (= übernommenen) Einträge.
+  const [selected, setSelected] = useState(new Set());
   const [neuerEintrag, setNeuerEintrag] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
+  const [mehrLoading, setMehrLoading] = useState(false);
 
-  // Bestehende Analyse aus der Aufgabe laden / bei Aufgabenwechsel neu setzen.
+  // Gespeicherte (ausgewählte) Liste der Aufgabe laden → sind automatisch "selected".
   useEffect(() => {
-    const analyse = aufgabe?.lernzielanalyse || {};
-    setItems(Array.isArray(analyse.items) ? analyse.items : []);
-    setHinweis(analyse.fachuebergreifender_hinweis || '');
-    setAnalysiertAm(analyse.analysiert_am || null);
+    const gespeichert = Array.isArray(aufgabe?.lernzielanalyse?.items)
+      ? aufgabe.lernzielanalyse.items
+      : [];
+    // Sicherstellen, dass jeder Eintrag eine lokale id hat.
+    const withIds = gespeichert.map((it) => ({ ...it, id: it.id || makeId() }));
+    setItems(withIds);
+    setSelected(new Set(withIds.map((it) => it.id)));
     setNeuerEintrag('');
   }, [aufgabe?.id]);
 
   const saveMutation = useMutation({
-    mutationFn: (analyse) =>
-      updateAllgemeineAufgabe(aufgabe.id, { lernzielanalyse: analyse }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
-    },
+    mutationFn: (itemsToSave) =>
+      updateAllgemeineAufgabe(aufgabe.id, {
+        lernzielanalyse: { items: itemsToSave, analysiert_am: new Date().toISOString() },
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] }),
     onError: () => toast.error('Fehler beim Speichern der Lernzielanalyse'),
   });
 
+  // Speichert nur die ausgewählten Einträge (kuratierte Ergebnis-Liste).
   const persist = useCallback(
-    (nextItems, nextHinweis, nextAnalysiertAm) => {
-      saveMutation.mutate({
-        items: nextItems,
-        fachuebergreifender_hinweis: nextHinweis || '',
-        analysiert_am: nextAnalysiertAm || null,
-      });
+    (nextItems, nextSelected) => {
+      const ausgewaehlt = nextItems
+        .filter((it) => nextSelected.has(it.id))
+        .map(({ id, text, quelle, lernziel_id, basislernziel_id, themenfeld_id, themenfeld_titel, basismodul_titel, ist_aktuelles_themenfeld }) => ({
+          id, text, quelle: quelle || 'manuell',
+          ...(lernziel_id && { lernziel_id }),
+          ...(basislernziel_id && { basislernziel_id }),
+          ...(themenfeld_id && { themenfeld_id }),
+          ...(themenfeld_titel && { themenfeld_titel }),
+          ...(basismodul_titel && { basismodul_titel }),
+          ...(ist_aktuelles_themenfeld != null && { ist_aktuelles_themenfeld }),
+        }));
+      saveMutation.mutate(ausgewaehlt);
     },
     [saveMutation]
   );
@@ -69,22 +109,29 @@ export default function LernzielAnalysePanel({ aufgabe, kannBearbeiten = false }
     if (!kannBearbeiten || !aufgabe?.id) return;
     setAnalyzing(true);
     try {
-      const res = await base44.functions.invoke('analyzeAufgabeLernziele', {
-        aufgabeId: aufgabe.id,
-      });
+      const res = await base44.functions.invoke('analyzeAufgabeLernziele', { aufgabeId: aufgabe.id });
       if (res?.data?.error) throw new Error(res.data.error);
-      const vorschlaege = Array.isArray(res?.data?.lernziele) ? res.data.lernziele : [];
-      const neueItems = vorschlaege.map((text) => ({ id: makeId(), text, quelle: 'ki' }));
-      // KI-Vorschläge ersetzen vorherige KI-Vorschläge, manuelle Einträge bleiben.
-      const manuelle = items.filter((it) => it.quelle === 'manuell');
-      const merged = [...neueItems, ...manuelle];
-      const neuerHinweis = res?.data?.fachuebergreifender_hinweis || '';
-      const ts = new Date().toISOString();
+      const d = res.data || {};
+
+      const neueItems = [];
+      (d.bestehende || []).forEach((lz) => neueItems.push({
+        id: makeId(), text: lz.text, quelle: 'bestehend',
+        lernziel_id: lz.id, themenfeld_id: lz.themenfeld_id,
+        themenfeld_titel: lz.themenfeld_titel, ist_aktuelles_themenfeld: lz.ist_aktuelles_themenfeld,
+      }));
+      (d.basismodul || []).forEach((bl) => neueItems.push({
+        id: makeId(), text: bl.text, quelle: 'basismodul',
+        basislernziel_id: bl.id, basismodul_titel: bl.basismodul_titel,
+      }));
+      (d.neue_vorschlaege || []).forEach((t) => neueItems.push({ id: makeId(), text: t, quelle: 'ki' }));
+      (d.basismodul_luecken || []).forEach((t) => neueItems.push({ id: makeId(), text: t, quelle: 'basismodul_luecke' }));
+
+      // Bereits ausgewählte (gespeicherte) Einträge behalten, Vorschläge ergänzen.
+      const behaltene = items.filter((it) => selected.has(it.id));
+      const merged = [...behaltene, ...neueItems];
       setItems(merged);
-      setHinweis(neuerHinweis);
-      setAnalysiertAm(ts);
-      persist(merged, neuerHinweis, ts);
-      toast.success(`${neueItems.length} Lernziel-Vorschläge erstellt`);
+      // Auswahl bleibt wie sie war (nur bisher Gespeichertes ist grün).
+      toast.success(`${neueItems.length} Vorschläge erstellt – wähle die passenden aus`);
     } catch (err) {
       toast.error(err?.message || 'KI-Analyse fehlgeschlagen');
     } finally {
@@ -92,100 +139,144 @@ export default function LernzielAnalysePanel({ aufgabe, kannBearbeiten = false }
     }
   };
 
+  const handleMehr = async () => {
+    if (!kannBearbeiten || !aufgabe?.id) return;
+    setMehrLoading(true);
+    try {
+      const vorhandene_texte = items.map((it) => it.text);
+      const res = await base44.functions.invoke('analyzeAufgabeLernziele', {
+        aufgabeId: aufgabe.id, modus: 'mehr', vorhandene_texte,
+      });
+      if (res?.data?.error) throw new Error(res.data.error);
+      const neue = res.data?.neue_vorschlaege || [];
+      if (neue.length === 0 || res.data?.keine_weiteren) {
+        toast.info('Die KI hat keine weiteren sinnvollen Lernziele gefunden.');
+        return;
+      }
+      const neueItems = neue.map((t) => ({ id: makeId(), text: t, quelle: 'ki' }));
+      setItems((prev) => [...prev, ...neueItems]);
+      toast.success(`${neueItems.length} weitere Vorschläge ergänzt`);
+    } catch (err) {
+      toast.error(err?.message || 'KI-Analyse fehlgeschlagen');
+    } finally {
+      setMehrLoading(false);
+    }
+  };
+
+  const handleToggle = (id, on) => {
+    if (!kannBearbeiten) return;
+    const next = new Set(selected);
+    if (on) next.add(id); else next.delete(id);
+    setSelected(next);
+    persist(items, next);
+  };
+
+  const handleEdit = (id, text) => {
+    if (!kannBearbeiten) return;
+    const next = items.map((it) => (it.id === id ? { ...it, text } : it));
+    setItems(next);
+    if (selected.has(id)) persist(next, selected);
+  };
+
   const handleRemove = (id) => {
     if (!kannBearbeiten) return;
     const next = items.filter((it) => it.id !== id);
+    const nextSel = new Set(selected);
+    nextSel.delete(id);
     setItems(next);
-    persist(next, hinweis, analysiertAm);
+    setSelected(nextSel);
+    persist(next, nextSel);
   };
 
   const handleAddManual = () => {
     if (!kannBearbeiten) return;
     const text = neuerEintrag.trim();
     if (!text) return;
-    const next = [...items, { id: makeId(), text, quelle: 'manuell' }];
+    const id = makeId();
+    const next = [...items, { id, text, quelle: 'manuell' }];
+    const nextSel = new Set(selected);
+    nextSel.add(id); // manuell ergänzte sind sofort ausgewählt
     setItems(next);
+    setSelected(nextSel);
     setNeuerEintrag('');
-    persist(next, hinweis, analysiertAm);
+    persist(next, nextSel);
   };
 
-  const hatAnalyse = items.length > 0 || !!hinweis;
+  // Items nach Gruppe sortieren.
+  const gruppiert = useMemo(() => {
+    const map = {};
+    for (const g of GRUPPEN) map[g.key] = [];
+    for (const it of items) {
+      const g = gruppeOf(it);
+      (map[g] || map.ki).push(it);
+    }
+    return map;
+  }, [items]);
+
+  const hatItems = items.length > 0;
+  const anzahlAusgewaehlt = selected.size;
 
   return (
     <div className="p-6 space-y-5 max-w-3xl">
-      {/* Kopf / Erklärung */}
+      {/* Kopf */}
       <div className="space-y-2">
         <h3 className="text-sm font-semibold flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-primary" />
           Lernzielanalyse
         </h3>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Lass die KI analysieren, welche fachbezogenen Lernziele ein Schüler beherrschen muss,
-          um diese Aufgabe lösen zu können. Du kannst die Vorschläge anschließend bearbeiten
-          und eigene Lernziele ergänzen.
+          Die KI durchsucht die bestehenden Lernziele der Einheit, das Vorwissen aus den Basismodulen
+          des Faches und schlägt zusätzlich neue, konkret-übbare Lernziele vor.
+          Wähle aus, welche für diese Aufgabe relevant sind (Klick = grün = übernommen).
         </p>
       </div>
 
-      {/* KI-Start-Button */}
+      {/* Aktionen */}
       {kannBearbeiten && (
-        <Button
-          onClick={handleAnalyze}
-          disabled={analyzing || saveMutation.isPending}
-          className="gap-2"
-        >
-          {analyzing ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              KI analysiert die Aufgabe…
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4" />
-              {hatAnalyse ? 'Lernzielanalyse erneut starten' : 'Lernzielanalyse mit KI starten'}
-            </>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button onClick={handleAnalyze} disabled={analyzing || saveMutation.isPending} className="gap-2">
+            {analyzing ? (
+              <><Loader2 className="w-4 h-4 animate-spin" />KI analysiert…</>
+            ) : (
+              <><Sparkles className="w-4 h-4" />{hatItems ? 'Analyse erneut starten' : 'Lernzielanalyse mit KI starten'}</>
+            )}
+          </Button>
+          {hatItems && (
+            <Button variant="outline" onClick={handleMehr} disabled={mehrLoading} className="gap-2">
+              {mehrLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              3 weitere Vorschläge
+            </Button>
           )}
-        </Button>
+        </div>
       )}
 
-      {/* Ergebnis-Liste */}
-      {items.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
-            Benötigte Lernziele ({items.length})
-          </p>
-          <ul className="space-y-2">
-            {items.map((it, idx) => (
-              <li
-                key={it.id}
-                className="flex items-start gap-2 p-2.5 rounded-lg border border-border bg-card text-sm"
-              >
-                <span className="shrink-0 w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[11px] font-semibold text-muted-foreground mt-0.5">
-                  {idx + 1}
-                </span>
-                <span className="flex-1 min-w-0 leading-snug">{it.text}</span>
-                <span
-                  className="shrink-0 mt-0.5"
-                  title={it.quelle === 'ki' ? 'KI-Vorschlag' : 'Manuell ergänzt'}
-                >
-                  {it.quelle === 'ki' ? (
-                    <Bot className="w-3.5 h-3.5 text-primary/70" />
-                  ) : (
-                    <PencilLine className="w-3.5 h-3.5 text-muted-foreground" />
-                  )}
-                </span>
-                {kannBearbeiten && (
-                  <button
-                    type="button"
-                    onClick={() => handleRemove(it.id)}
-                    title="Entfernen"
-                    className="shrink-0 text-muted-foreground hover:text-destructive transition-colors mt-0.5"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
+      {/* Gruppierte Liste */}
+      {hatItems && (
+        <div className="space-y-4">
+          {GRUPPEN.map((g) => {
+            const list = gruppiert[g.key];
+            if (!list || list.length === 0) return null;
+            return (
+              <div key={g.key} className="space-y-2">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                  {g.label} ({list.length})
+                </p>
+                <div className="space-y-2">
+                  {list.map((it) => (
+                    <LernzielAnalyseItem
+                      key={it.id}
+                      item={it}
+                      selected={selected.has(it.id)}
+                      kannBearbeiten={kannBearbeiten}
+                      onToggle={(on) => handleToggle(it.id, on)}
+                      onEdit={(text) => handleEdit(it.id, text)}
+                      onRemove={() => handleRemove(it.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -195,45 +286,31 @@ export default function LernzielAnalysePanel({ aufgabe, kannBearbeiten = false }
           <Input
             value={neuerEintrag}
             onChange={(e) => setNeuerEintrag(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleAddManual();
-              }
-            }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddManual(); } }}
             placeholder="Eigenes Lernziel ergänzen…"
             className="text-sm"
           />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleAddManual}
-            disabled={!neuerEintrag.trim()}
-            className="gap-1 shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            Hinzufügen
+          <Button type="button" variant="outline" onClick={handleAddManual} disabled={!neuerEintrag.trim()} className="gap-1 shrink-0">
+            <Plus className="w-4 h-4" />Hinzufügen
           </Button>
         </div>
       )}
 
-      {/* Fachübergreifender Hinweis */}
-      {hinweis && (
-        <div className="flex items-start gap-2 p-3 rounded-lg border border-amber-200 bg-amber-50 text-xs text-amber-900">
+      {/* Zusammenfassung / Leerzustand */}
+      {hatItems ? (
+        <div className="flex items-start gap-2 p-3 rounded-lg border border-emerald-200 bg-emerald-50 text-xs text-emerald-900">
           <Info className="w-4 h-4 shrink-0 mt-0.5" />
-          <div>
-            <p className="font-semibold mb-0.5">Hinweis: fachübergreifende Voraussetzungen</p>
-            <p className="leading-relaxed">{hinweis}</p>
+          <span>
+            <strong>{anzahlAusgewaehlt}</strong> Lernziel{anzahlAusgewaehlt === 1 ? '' : 'e'} für diese Aufgabe übernommen.
+          </span>
+        </div>
+      ) : (
+        !analyzing && (
+          <div className="text-center py-8 text-xs text-muted-foreground border border-dashed border-border rounded-lg">
+            Noch keine Lernzielanalyse vorhanden.
+            {kannBearbeiten ? ' Starte die Analyse mit der KI oder ergänze Lernziele manuell.' : ''}
           </div>
-        </div>
-      )}
-
-      {/* Leerer Zustand */}
-      {!hatAnalyse && !analyzing && (
-        <div className="text-center py-8 text-xs text-muted-foreground border border-dashed border-border rounded-lg">
-          Noch keine Lernzielanalyse vorhanden.
-          {kannBearbeiten ? ' Starte die Analyse mit der KI oder ergänze Lernziele manuell.' : ''}
-        </div>
+        )
       )}
     </div>
   );

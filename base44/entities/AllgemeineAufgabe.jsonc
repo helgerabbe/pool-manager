@@ -141,11 +141,11 @@
     },
     "lernzielanalyse": {
       "type": "object",
-      "description": "Phase 1 der KI-gest\u00fctzten Lernzielanalyse (vormals 'Kompetenzzuordnung'). Strukturierte, vom Lehrer kuratierte Liste der fachbezogenen Lernziele, die ein Sch\u00fcler beherrschen muss, um diese Aufgabe zu l\u00f6sen. Diese Liste ist NOCH NICHT mit echten Lernziel-Datens\u00e4tzen verkn\u00fcpft (das passiert in Phase 2 \u00fcber den Abgleich), sondern dient als Analyse-Notiz auf der Aufgabe.",
+      "description": "KI-gest\u00fctzte Lernzielanalyse (vormals 'Kompetenzzuordnung'). Vom Lehrer kuratierte Liste der konkret-\u00fcbbaren Lernziele (Lernpaket-Ebene), die ein Sch\u00fcler beherrschen muss, um diese Aufgabe zu l\u00f6sen. Die KI durchsucht bestehende Lernziele der Einheit, Basis-Lernziele der Basismodule des Faches und schl\u00e4gt zus\u00e4tzlich neue vor. Der Lehrer w\u00e4hlt bewusst aus (Opt-in). Bestehende und Basis-Lernziele verweisen per ID auf ihre Original-Datens\u00e4tze und werden nicht textlich ver\u00e4ndert; nur KI-Vorschl\u00e4ge und Basismodul-L\u00fccken sind sprachlich editierbar.",
       "properties": {
         "items": {
           "type": "array",
-          "description": "Sortierte Liste der ben\u00f6tigten Lernziele.",
+          "description": "Liste der ausgew\u00e4hlten (\u00fcbernommenen) Lernziele der Aufgabe.",
           "items": {
             "type": "object",
             "properties": {
@@ -155,16 +155,39 @@
               },
               "text": {
                 "type": "string",
-                "description": "Fachbezogene Lernziel-Formulierung (z.B. 'Der Sch\u00fcler kann lineare Gleichungen mit einer Variablen l\u00f6sen')."
+                "description": "Lernziel-Formulierung. Bei quelle='bestehend'/'basismodul' der Original-Text (read-only); bei 'ki'/'basismodul_luecke'/'manuell' frei formuliert/editierbar."
               },
               "quelle": {
                 "type": "string",
                 "enum": [
+                  "bestehend",
+                  "basismodul",
                   "ki",
+                  "basismodul_luecke",
                   "manuell"
                 ],
                 "default": "manuell",
-                "description": "Herkunft des Eintrags: KI-Vorschlag oder manuell erg\u00e4nzt."
+                "description": "Herkunft: 'bestehend' = vorhandenes Lernziel der Einheit; 'basismodul' = vorhandenes Basis-Lernziel; 'ki' = neuer KI-Vorschlag; 'basismodul_luecke' = KI-Hinweis auf fehlendes Basismodul-Lernziel; 'manuell' = vom Lehrer erg\u00e4nzt."
+              },
+              "lernziel_id": {
+                "type": "string",
+                "description": "Bei quelle='bestehend': FK zum Original-Lernziel (Lernziele-Entity)."
+              },
+              "basislernziel_id": {
+                "type": "string",
+                "description": "Bei quelle='basismodul': FK zum Original-Basis-Lernziel (BasisLernziel-Entity)."
+              },
+              "themenfeld_id": {
+                "type": "string",
+                "description": "Bei quelle='bestehend': FK zum Themenfeld, aus dem das Lernziel stammt (Anzeige-Kontext)."
+              },
+              "themenfeld_titel": {
+                "type": "string",
+                "description": "Bei quelle='bestehend': Titel des Themenfelds zur Anzeige."
+              },
+              "basismodul_titel": {
+                "type": "string",
+                "description": "Bei quelle='basismodul': Titel des Basismoduls zur Anzeige."
               }
             },
             "required": [
@@ -173,10 +196,6 @@
             ]
           },
           "default": []
-        },
-        "fachuebergreifender_hinweis": {
-          "type": "string",
-          "description": "Optionaler KI-Hinweis auf fach\u00fcbergreifende oder aus anderen F\u00e4chern stammende Voraussetzungen, an denen ein Sch\u00fcler zus\u00e4tzlich scheitern k\u00f6nnte."
         },
         "analysiert_am": {
           "type": "string",
