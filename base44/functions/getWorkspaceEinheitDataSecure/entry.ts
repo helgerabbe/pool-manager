@@ -191,8 +191,15 @@ Deno.serve(async (req) => {
       }
 
       // Build Lernziele hierarchy für dieses Paket
+      // WICHTIG (Bug-Fix 2026-06-05): `lernpaket_id` MUSS im eingebetteten
+      // Lernziel-Objekt enthalten sein. Das Frontend flacht den Baum via
+      // flattenWorkspaceTree zu einer Liste ab und gruppiert anschließend
+      // wieder über `lz.lernpaket_id` (Strukturboard, Workspace-Filter,
+      // LernpaketPanel). Fehlt das Feld, ist die Gruppierung leer → überall
+      // "0 Lernziele".
       const paketLernziele = (lernzielByPaketId[paket.id] || []).map((lz) => ({
         id: lz.id,
+        lernpaket_id: lz.lernpaket_id,
         formulierung_fachsprache: lz.formulierung_fachsprache,
         kategorie: lz.kategorie,
         schueler_uebersetzung: lz.schueler_uebersetzung,
