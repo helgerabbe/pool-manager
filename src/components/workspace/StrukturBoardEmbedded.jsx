@@ -62,11 +62,11 @@ function LernpaketDialog({ open, onOpenChange, initialData, onSave }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle>{isNew ? 'Neues Lernpaket' : 'Lernpaket bearbeiten'}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-5 py-2">
+        <div className="space-y-5 py-2 flex-1 overflow-y-auto min-h-0">
           {/* Titel */}
           <div className="space-y-2">
             <Label>Titel des Lernpakets *</Label>
@@ -161,7 +161,7 @@ function LernpaketDialog({ open, onOpenChange, initialData, onSave }) {
             </div>
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="shrink-0 border-t pt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
           <Button onClick={handleSave} disabled={!titel.trim()}>
             {isNew ? 'Erstellen' : 'Speichern'}
