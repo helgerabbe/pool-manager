@@ -245,6 +245,46 @@ export function useDashboardDragAndDrop({
         if (!targetSektorId) return;
       }
 
+      // ── Nested-Droppable-Korrektur ───────────────────────────────────────
+      // @hello-pangea/dnd unterstützt offiziell KEINE verschachtelten
+      // Droppables (Bündel-Droppable liegt im Sektor-Droppable). Beim
+      // Umsortieren eines Bündel-Kindes – v. a. nach oben – meldet die Engine
+      // gelegentlich den umgebenden Sektor als Ziel statt das Bündel. Das Kind
+      // "fliegt" dann aus dem Bündel heraus. Wenn das gezogene Element aus
+      // einem Bündel stammt und direkt am Bündel (davor/danach) im SELBEN
+      // Sektor losgelassen wird, halten wir es im Bündel und sortieren es an
+      // den Anfang bzw. das Ende. Wird es klar woanders (zwischen anderen
+      // Root-Items) abgelegt, bleibt das Herausziehen erlaubt.
+      let rerouteLocalChildIndex = null;
+      if (
+        src.kind === 'bundle' &&
+        dst.kind === 'sektor' &&
+        !dragged.isFromPool &&
+        dragged.parent_instance_id
+      ) {
+        const srcFound = findItemByInstanceId(konfiguration, activeLernTyp, dragged.instance_id);
+        if (srcFound && srcFound.sektorId === dst.id) {
+          const sektorObj = sektoren.find((s) => s.sektor_id === srcFound.sektorId);
+          const itemsArr = sektorObj?.items || [];
+          const bundleAbsIdx = itemsArr.findIndex(
+            (it) => it?.instance_id === dragged.parent_instance_id
+          );
+          if (bundleAbsIdx !== -1) {
+            const rootIdxOfBundle = itemsArr
+              .slice(0, bundleAbsIdx)
+              .filter((it) => !it?.parent_instance_id).length;
+            const dropRootIdx = destination.index;
+            if (dropRootIdx <= rootIdxOfBundle + 1) {
+              targetParentInstanceId = dragged.parent_instance_id;
+              targetSektorId = srcFound.sektorId;
+              targetParentRefId = itemsArr[bundleAbsIdx]?.ref_id || null;
+              // Vor dem Bündel-Header losgelassen → an den Anfang; sonst ans Ende.
+              rerouteLocalChildIndex = dropRootIdx <= rootIdxOfBundle ? 0 : Number.MAX_SAFE_INTEGER;
+            }
+          }
+        }
+      }
+
       // Finale Strict-Drop-Validierung (defense-in-depth, falls onDragUpdate
       // nicht gefeuert hat oder Daten zwischenzeitlich gewandert sind).
       const validation = canDrop({
@@ -310,10 +350,12 @@ export function useDashboardDragAndDrop({
           fromSektorId === targetSektorId
             ? baseItems.filter((_, i) => i !== fromAbsoluteIndex)
             : baseItems;
+        const localTargetIndex =
+          rerouteLocalChildIndex != null ? rerouteLocalChildIndex : destination.index;
         const absoluteToIndex = resolveAbsoluteInsertIndex(
           itemsForResolve,
           targetParentInstanceId,
-          destination.index
+          localTargetIndex
         );
 
         // No-op? (gleicher Sektor, gleicher Parent, gleiche Position)
