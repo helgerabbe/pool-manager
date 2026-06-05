@@ -89,6 +89,7 @@ Deno.serve(async (req) => {
           themenfeld_id: tfId,
           themenfeld_titel: tfId ? (tfTitelById[tfId] || 'Themenfeld') : 'Ohne Themenfeld',
           lernpaket_id: lz.lernpaket_id,
+          lernpaket_titel: paket?.titel_des_pakets || null,
           ist_aktuelles_themenfeld: !!aktuellesThemenfeldId && tfId === aktuellesThemenfeldId,
         });
       });

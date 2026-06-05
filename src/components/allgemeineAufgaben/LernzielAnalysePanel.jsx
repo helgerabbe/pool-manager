@@ -91,12 +91,13 @@ export default function LernzielAnalysePanel({ aufgabe, kannBearbeiten = false }
     (nextItems, nextSelected) => {
       const ausgewaehlt = nextItems
         .filter((it) => nextSelected.has(it.id))
-        .map(({ id, text, quelle, lernziel_id, basislernziel_id, themenfeld_id, themenfeld_titel, basismodul_titel, ist_aktuelles_themenfeld }) => ({
+        .map(({ id, text, quelle, lernziel_id, basislernziel_id, themenfeld_id, themenfeld_titel, lernpaket_titel, basismodul_titel, ist_aktuelles_themenfeld }) => ({
           id, text, quelle: quelle || 'manuell',
           ...(lernziel_id && { lernziel_id }),
           ...(basislernziel_id && { basislernziel_id }),
           ...(themenfeld_id && { themenfeld_id }),
           ...(themenfeld_titel && { themenfeld_titel }),
+          ...(lernpaket_titel && { lernpaket_titel }),
           ...(basismodul_titel && { basismodul_titel }),
           ...(ist_aktuelles_themenfeld != null && { ist_aktuelles_themenfeld }),
         }));
@@ -117,7 +118,8 @@ export default function LernzielAnalysePanel({ aufgabe, kannBearbeiten = false }
       (d.bestehende || []).forEach((lz) => neueItems.push({
         id: makeId(), text: lz.text, quelle: 'bestehend',
         lernziel_id: lz.id, themenfeld_id: lz.themenfeld_id,
-        themenfeld_titel: lz.themenfeld_titel, ist_aktuelles_themenfeld: lz.ist_aktuelles_themenfeld,
+        themenfeld_titel: lz.themenfeld_titel, lernpaket_titel: lz.lernpaket_titel,
+        ist_aktuelles_themenfeld: lz.ist_aktuelles_themenfeld,
       }));
       (d.basismodul || []).forEach((bl) => neueItems.push({
         id: makeId(), text: bl.text, quelle: 'basismodul',
@@ -217,17 +219,13 @@ export default function LernzielAnalysePanel({ aufgabe, kannBearbeiten = false }
   const anzahlAusgewaehlt = selected.size;
 
   return (
-    <div className="p-6 space-y-5 max-w-3xl">
+    <div className="p-4 space-y-3 max-w-3xl">
       {/* Kopf */}
-      <div className="space-y-2">
-        <h3 className="text-sm font-semibold flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-primary" />
-          Lernzielanalyse
-        </h3>
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          Die KI durchsucht die bestehenden Lernziele der Einheit, das Vorwissen aus den Basismodulen
-          des Faches und schlägt zusätzlich neue, konkret-übbare Lernziele vor.
-          Wähle aus, welche für diese Aufgabe relevant sind (Klick = grün = übernommen).
+      <div className="flex items-center gap-2">
+        <Sparkles className="w-4 h-4 text-primary shrink-0" />
+        <h3 className="text-sm font-semibold">Lernzielanalyse</h3>
+        <p className="text-[11px] text-muted-foreground leading-snug hidden sm:block">
+          – KI durchsucht Einheit & Basismodule und schlägt neue Lernziele vor. Klick = grün = übernommen.
         </p>
       </div>
 
@@ -252,16 +250,16 @@ export default function LernzielAnalysePanel({ aufgabe, kannBearbeiten = false }
 
       {/* Gruppierte Liste */}
       {hatItems && (
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           {GRUPPEN.map((g) => {
             const list = gruppiert[g.key];
             if (!list || list.length === 0) return null;
             return (
-              <div key={g.key} className="space-y-2">
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+              <div key={g.key} className="space-y-1">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
                   {g.label} ({list.length})
                 </p>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   {list.map((it) => (
                     <LernzielAnalyseItem
                       key={it.id}
@@ -298,15 +296,15 @@ export default function LernzielAnalysePanel({ aufgabe, kannBearbeiten = false }
 
       {/* Zusammenfassung / Leerzustand */}
       {hatItems ? (
-        <div className="flex items-start gap-2 p-3 rounded-lg border border-emerald-200 bg-emerald-50 text-xs text-emerald-900">
-          <Info className="w-4 h-4 shrink-0 mt-0.5" />
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-emerald-200 bg-emerald-50 text-[11px] text-emerald-900">
+          <Info className="w-3.5 h-3.5 shrink-0" />
           <span>
-            <strong>{anzahlAusgewaehlt}</strong> Lernziel{anzahlAusgewaehlt === 1 ? '' : 'e'} für diese Aufgabe übernommen.
+            <strong>{anzahlAusgewaehlt}</strong> Lernziel{anzahlAusgewaehlt === 1 ? '' : 'e'} übernommen.
           </span>
         </div>
       ) : (
         !analyzing && (
-          <div className="text-center py-8 text-xs text-muted-foreground border border-dashed border-border rounded-lg">
+          <div className="text-center py-5 text-[11px] text-muted-foreground border border-dashed border-border rounded-lg">
             Noch keine Lernzielanalyse vorhanden.
             {kannBearbeiten ? ' Starte die Analyse mit der KI oder ergänze Lernziele manuell.' : ''}
           </div>

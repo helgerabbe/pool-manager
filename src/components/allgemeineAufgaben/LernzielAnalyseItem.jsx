@@ -50,7 +50,7 @@ export default function LernzielAnalyseItem({
 
   if (editing) {
     return (
-      <div className="flex items-center gap-2 p-2.5 rounded-lg border border-primary/40 bg-primary/5">
+      <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-primary/40 bg-primary/5">
         <Input
           autoFocus
           value={draft}
@@ -59,16 +59,26 @@ export default function LernzielAnalyseItem({
             if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
             if (e.key === 'Escape') { setDraft(item.text); setEditing(false); }
           }}
-          className="text-sm"
+          className="text-[13px] h-8"
         />
-        <Button size="sm" onClick={saveEdit} className="shrink-0">Übernehmen</Button>
+        <Button size="sm" onClick={saveEdit} className="shrink-0 h-8">Übernehmen</Button>
       </div>
     );
   }
 
+  // Kontext-Zusatz (nur wenn vorhanden): Lernpaket-Name bei bestehenden,
+  // Basismodul-Name bei Basis-Lernzielen. "Aktuelles Themenfeld" entfällt –
+  // die Zuordnung ist bereits über das blaue Symbol erkennbar.
+  const kontext =
+    item.quelle === 'bestehend'
+      ? (item.lernpaket_titel ? `Lernpaket: ${item.lernpaket_titel}` : (item.themenfeld_titel ? `Themenfeld: ${item.themenfeld_titel}` : null))
+      : item.quelle === 'basismodul'
+      ? `Basismodul: ${item.basismodul_titel}`
+      : null;
+
   return (
     <div
-      className={`group flex items-start gap-2.5 p-2.5 rounded-lg border text-sm transition-colors ${
+      className={`group flex items-center gap-2 px-2 py-1.5 rounded-md border text-[13px] transition-colors ${
         selected
           ? 'border-emerald-300 bg-emerald-50'
           : 'border-border bg-card hover:bg-muted/40'
@@ -80,41 +90,36 @@ export default function LernzielAnalyseItem({
         disabled={!kannBearbeiten}
         onClick={() => onToggle(!selected)}
         title={selected ? 'Ausgewählt – klicken zum Abwählen' : 'Klicken zum Übernehmen'}
-        className={`shrink-0 mt-0.5 w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+        className={`shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-colors ${
           selected
             ? 'bg-emerald-500 border-emerald-500 text-white'
             : 'bg-white border-muted-foreground/40 text-transparent hover:border-emerald-400'
         } ${!kannBearbeiten ? 'opacity-60 cursor-default' : 'cursor-pointer'}`}
       >
-        <Check className="w-3.5 h-3.5" />
+        <Check className="w-3 h-3" />
       </button>
 
-      {/* Text + Kontext */}
+      {/* Text + Kontext (einzeilig) */}
       <div className="flex-1 min-w-0">
-        <p className="leading-snug">{item.text}</p>
-        {(item.themenfeld_titel || item.basismodul_titel) && (
-          <p className="text-[11px] text-muted-foreground mt-0.5">
-            {item.quelle === 'bestehend' && (item.ist_aktuelles_themenfeld
-              ? 'Aktuelles Themenfeld'
-              : `Themenfeld: ${item.themenfeld_titel}`)}
-            {item.quelle === 'basismodul' && `Basismodul: ${item.basismodul_titel}`}
-          </p>
+        <p className="leading-snug truncate" title={item.text}>{item.text}</p>
+        {kontext && (
+          <p className="text-[10px] text-muted-foreground leading-tight truncate">{kontext}</p>
         )}
         {item.quelle === 'basismodul_luecke' && (
-          <p className="text-[11px] text-purple-600 mt-0.5">
-            Hierfür müsste es vermutlich ein Basismodul-Lernziel geben – existiert aber noch nicht.
+          <p className="text-[10px] text-purple-600 leading-tight truncate">
+            Müsste es vermutlich als Basismodul-Lernziel geben.
           </p>
         )}
       </div>
 
       {/* Quelle-Marker */}
-      <span className="shrink-0 mt-0.5" title={meta.title}>
+      <span className="shrink-0" title={meta.title}>
         <Icon className={`w-3.5 h-3.5 ${meta.color}`} />
       </span>
 
       {/* Aktionen */}
       {kannBearbeiten && (
-        <div className="shrink-0 flex items-center gap-1.5 mt-0.5">
+        <div className="shrink-0 flex items-center gap-1">
           {editierbar && (
             <button
               type="button"
@@ -131,7 +136,7 @@ export default function LernzielAnalyseItem({
             title="Aus Liste entfernen"
             className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
