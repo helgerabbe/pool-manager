@@ -14,7 +14,7 @@ import { base44 } from '@/api/base44Client';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { X, Sparkles, Check, RotateCcw, GraduationCap } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -61,6 +61,7 @@ export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext }) {
     <div className="rounded-md border bg-muted/20 px-2 py-1.5">
       <div className="flex items-start gap-2">
         {/* Aktionsspalte: Nummer + Kategorie-Kürzel + KI-Symbol, vertikal gestapelt */}
+        <TooltipProvider>
         <div className="flex flex-col items-center gap-1 shrink-0">
           <span className="flex items-center justify-center w-4 h-4 rounded-full bg-green-100 text-green-700 text-[10px] font-bold">{idx + 1}</span>
           {KATEGORIEN.map(kat => (
@@ -98,6 +99,7 @@ export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext }) {
             <TooltipContent side="right" className="text-[11px]">KI prüfen</TooltipContent>
           </Tooltip>
         </div>
+        </TooltipProvider>
 
         <div className="flex-1 min-w-0 space-y-1">
           {/* Fachsprache – zwei Zeilen lesbar */}
