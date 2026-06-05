@@ -147,6 +147,7 @@ export default function LernpfadeCockpit({
   const [einfuehrungSnapshot, setEinfuehrungSnapshot] = useState(null);
   // Vorschau des freiwilligen Fragenblocks (Einstiegsdiagnose).
   const [qblockPreviewOpen, setQblockPreviewOpen] = useState(false);
+  const [qblockSnapshot, setQblockSnapshot] = useState(null);
   const [previewAufgabe, setPreviewAufgabe] = useState(null);
   const [editorAufgabe, setEditorAufgabe] = useState(null);
   const [arbeitsphaseModalOpen, setArbeitsphaseModalOpen] = useState(false);
@@ -1137,6 +1138,7 @@ export default function LernpfadeCockpit({
         aufgabenById={aufgabenById}
         systemBausteineById={systemBausteineById}
         einfuehrungSnapshot={einfuehrungSnapshot}
+        qblockSnapshot={qblockSnapshot}
       />
 
       <EinfuehrungPreviewModal
@@ -1153,6 +1155,8 @@ export default function LernpfadeCockpit({
         onOpenChange={setQblockPreviewOpen}
         einheitId={einheit?.id}
         einheitTitel={einheit?.titel_der_einheit}
+        fach={einheit?.fach}
+        onUebernehmen={setQblockSnapshot}
       />
 
       <AufgabePreviewDialog

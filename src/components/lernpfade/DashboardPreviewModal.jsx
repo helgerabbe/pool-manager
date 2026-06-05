@@ -76,7 +76,7 @@ const KIND_ICON = { lernpaket: Package, system: Star, aufgabe: FileText };
 
 export default function DashboardPreviewModal({
   open, onOpenChange, lerntyp, einheitTitel, fach,
-  sektoren = [], aufgabenById, systemBausteineById, einfuehrungSnapshot,
+  sektoren = [], aufgabenById, systemBausteineById, einfuehrungSnapshot, qblockSnapshot,
 }) {
   const [menuOpen, setMenuOpen] = useState(true);
   // Simulierter Fortschritt: wie viele Elemente gelten als "erledigt".
@@ -110,6 +110,7 @@ export default function DashboardPreviewModal({
   const selectedEntry = entries[selected];
   const selectedIsCurrent = isSequential && selected === completed;
   const showEinfuehrung = selectedEntry?.refId === 'sys_sec0_overview' && !!einfuehrungSnapshot;
+  const showQblock = selectedEntry?.refId === 'sys_sec0_qblock' && !!qblockSnapshot;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -270,6 +271,35 @@ export default function DashboardPreviewModal({
                             </div>
                           ))}
                         </div>
+                      </div>
+                    ) : showQblock ? (
+                      <div className="flex-1 overflow-y-auto -mx-2 px-2">
+                        <h3 className="text-2xl font-bold text-slate-900">
+                          {qblockSnapshot.titel || selectedEntry?.label}
+                        </h3>
+                        {qblockSnapshot.intro && (
+                          <p className="mt-2 text-base text-slate-600">{qblockSnapshot.intro}</p>
+                        )}
+                        <div className="mt-4 space-y-3">
+                          {(qblockSnapshot.fragen || []).map((f, i) => (
+                            <div key={i} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                              <p className="text-sm font-medium text-slate-800">
+                                <span className="text-violet-500 font-bold mr-1.5">{i + 1}.</span>
+                                {f.frage}
+                              </p>
+                              <div className="mt-3 h-1.5 rounded-full bg-slate-200 relative">
+                                <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-violet-500 shadow" />
+                              </div>
+                              <div className="mt-2 flex justify-between text-[11px] text-slate-500">
+                                <span>{f.links_label}</span>
+                                <span>{f.rechts_label}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {qblockSnapshot.hinweis && (
+                          <p className="mt-4 text-xs text-slate-400">{qblockSnapshot.hinweis}</p>
+                        )}
                       </div>
                     ) : (
                       <>
