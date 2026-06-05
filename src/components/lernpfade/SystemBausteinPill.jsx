@@ -37,6 +37,7 @@ export default function SystemBausteinPill({
   sektorId,
   index,
   instanceId,
+  indent = false,
   isSelected,
   disabled,
   onSelect,
@@ -98,7 +99,7 @@ export default function SystemBausteinPill({
                 data-platzhalter={isPlatzhalter ? 'true' : 'false'}
                 className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs cursor-pointer transition-colors ${containerClasses} ${
                   snapshot.isDragging ? 'shadow-lg ring-2 ring-slate-400 bg-white' : ''
-                }`}
+                } ${indent ? 'ml-5 border-l-2 border-l-bundle/40' : ''}`}
               >
                 <GripVertical className="w-3 h-3 text-muted-foreground/60 shrink-0" />
                 <div

@@ -23,7 +23,7 @@ import { GripVertical, Trash2, X, Plus, ChevronUp, ChevronDown } from 'lucide-re
 import { Button } from '@/components/ui/button';
 import { getAufgabenTyp, ITEM_TYPE } from '@/lib/aufgabenTypen';
 import SystemBausteinPill from '@/components/lernpfade/SystemBausteinPill';
-import BundleContainer from '@/components/lernpfade/BundleContainer';
+import BundleAutoFillButton from '@/components/lernpfade/BundleAutoFillButton';
 import AmpelBadge from '@/components/lernpfade/AmpelBadge';
 import { isExportFreigegeben, isContentApproved } from '@/lib/ampelLogic';
 import { groupItemsByParent } from '@/lib/lernpfadeUtils';
@@ -40,7 +40,7 @@ const LERNTYP_VARIANTE = {
   passioniert: { label: 'Wissensspeicher', cls: 'bg-violet-100 text-violet-700 border-violet-200' },
 };
 
-function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, onRemove, onSelect, isSelected, disabled, ampelStatus, exportReady, contentApproved, onOpenEditor, activeLernTyp, fremdesThemenfeldTitel }) {
+function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, indent = false, onRemove, onSelect, isSelected, disabled, ampelStatus, exportReady, contentApproved, onOpenEditor, activeLernTyp, fremdesThemenfeldTitel }) {
   // Fallback, falls die Aufgabe (noch) nicht im Cache ist.
   const titel = aufgabe?.titel || 'Aufgabe';
   const typMeta = getAufgabenTyp(aufgabe?.aufgaben_typ);
@@ -65,7 +65,7 @@ function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, onRemove, on
             isSelected
               ? `${typMeta.color.border} ${typMeta.color.bg} shadow-sm`
               : 'border-border bg-card hover:border-primary/30'
-          } ${snapshot.isDragging ? 'shadow-lg ring-2 ring-primary/40' : ''}`}
+          } ${snapshot.isDragging ? 'shadow-lg ring-2 ring-primary/40' : ''} ${indent ? 'ml-5 border-l-2 border-l-bundle/40' : ''}`}
         >
           <GripVertical className="w-3 h-3 text-muted-foreground/60 shrink-0" />
           <div className={`w-5 h-5 rounded ${typMeta.color.iconBg} flex items-center justify-center shrink-0`}>
@@ -167,7 +167,7 @@ export default function LernpfadeSektor({
   //   - Children → Index innerhalb des jeweiligen Bündel-Droppables
   // originalIndex (Position in sektor.items) wird weiterhin für die bestehenden
   // Remove-Callbacks gebraucht, damit die Cockpit-Logik unverändert bleibt.
-  const renderItem = ({ item, originalIndex, children }, dndIndex) => {
+  const renderItem = ({ item, originalIndex, children }, dndIndex, indent = false) => {
     if (item.type === ITEM_TYPE.SYSTEM) {
       // Bündel werden über onRemoveBundle (Cascade-Delete mit optionalem
       // Confirm-Modal) gelöscht, alle anderen System-Items über
@@ -185,6 +185,7 @@ export default function LernpfadeSektor({
           sektorId={sektor.sektor_id}
           index={dndIndex}
           instanceId={item.instance_id}
+          indent={indent}
           isSelected={selectedSystemBausteinId === item.ref_id}
           disabled={readOnly}
           onSelect={onSelectSystemBaustein}
@@ -236,6 +237,7 @@ export default function LernpfadeSektor({
         sektorId={sektor.sektor_id}
         index={dndIndex}
         instanceId={item.instance_id}
+        indent={indent}
         onRemove={onRemoveAufgabe}
         onSelect={onSelectAufgabe}
         isSelected={selectedAufgabeId === item.ref_id}
@@ -344,38 +346,43 @@ export default function LernpfadeSektor({
                 Aufgaben oder Standard-Elemente hierher ziehen.
               </div>
             )}
-            {grouped.map((entry, rootIdx) => {
-              // Bündel mit eigenem Children-Droppable.
+            {grouped.map((entry) => {
+              // Bündel: Header + eingerückte Kinder als FLACHE Geschwister im
+              // selben Sektor-Droppable (keine verschachtelten Droppables mehr).
+              // Die Bündel-Zugehörigkeit wird beim Drop aus der Position
+              // abgeleitet (siehe useDashboardDragAndDrop).
               if (entry.children) {
                 const bundleBaustein = systemBausteineById?.get(entry.item.ref_id);
                 return (
-                  <BundleContainer
-                    key={`bundle-${entry.item.instance_id || entry.originalIndex}`}
-                    bundleInstanceId={entry.item.instance_id}
-                    headerSlot={renderItem(entry, rootIdx)}
-                    isEmpty={entry.children.length === 0}
-                    isDropDisabled={
-                      readOnly ||
-                      (getIsDropDisabled?.(`bundle-${entry.item.instance_id}`) ?? false)
-                    }
-                    onAutoFill={
-                      !readOnly && onAutoFillBundle && entry.children.length === 0
-                        ? () =>
-                            onAutoFillBundle(
-                              sektor.sektor_id,
-                              entry.item.instance_id,
-                              bundleBaustein
-                            )
-                        : undefined
-                    }
-                    autoFillDisabled={readOnly}
-                  >
-                    {entry.children.map((child, childIdx) => renderItem(child, childIdx))}
-                  </BundleContainer>
+                  <React.Fragment key={`bundle-${entry.item.instance_id || entry.originalIndex}`}>
+                    {renderItem(entry, entry.originalIndex)}
+                    {entry.children.map((child) =>
+                      renderItem(child, child.originalIndex, true)
+                    )}
+                    {entry.children.length === 0 && (
+                      <div className="ml-5 border-l-2 border-bundle/40 pl-3 py-0.5 space-y-1">
+                        <div className="text-[10px] italic text-muted-foreground/70 py-0.5">
+                          Bündel ist leer – passende Aufgaben hierher ziehen.
+                        </div>
+                        {!readOnly && onAutoFillBundle && (
+                          <BundleAutoFillButton
+                            onAutoFill={() =>
+                              onAutoFillBundle(
+                                sektor.sektor_id,
+                                entry.item.instance_id,
+                                bundleBaustein
+                              )
+                            }
+                            disabled={readOnly}
+                          />
+                        )}
+                      </div>
+                    )}
+                  </React.Fragment>
                 );
               }
               // Reguläres Root-Item (Aufgabe oder Nicht-Bündel-System-Baustein).
-              return renderItem(entry, rootIdx);
+              return renderItem(entry, entry.originalIndex);
             })}
             {provided.placeholder}
           </div>

@@ -32,10 +32,8 @@ import { toast } from 'sonner';
 import { ITEM_TYPE } from '@/lib/aufgabenTypen';
 import {
   canDrop,
-  insertItemInSektorAtAbsolute,
-  moveItemAbsolute,
-  resolveAbsoluteInsertIndex,
   normalizeItem,
+  getUsedAufgabenIds,
 } from '@/lib/lernpfadeUtils';
 
 const SYSTEM_DRAG_PREFIX = 'system-';
@@ -127,6 +125,30 @@ function describeDraggedItem({ draggableId, sourceDroppableId, konfiguration, le
   return { ...found.item, isFromPool: false };
 }
 
+/**
+ * Ist das Item ein Bündel-Header (System-Baustein mit baustein_modus='bundle_1ton')?
+ */
+function isBundleHeader(item, isBundleRef) {
+  return item?.type === ITEM_TYPE.SYSTEM && !!isBundleRef?.(item.ref_id);
+}
+
+/**
+ * Flaches Datenmodell (single Droppable pro Sektor): Die Bündel-Zugehörigkeit
+ * eines an `insertIndex` eingefügten Items wird aus dem VORGÄNGER abgeleitet.
+ *   - Vorgänger ist ein Bündel-Header  → Item wird Kind dieses Bündels.
+ *   - Vorgänger ist selbst ein Kind    → Item tritt demselben Bündel bei.
+ *   - sonst (Root oder Position 0)     → Item ist Root (parent=null).
+ * So kann innerhalb eines Bündels punktgenau sortiert UND ein Element durch
+ * Ablage zwischen Root-Items wieder herausgezogen werden.
+ */
+function inferParentInstanceId(items, insertIndex, isBundleRef) {
+  if (insertIndex <= 0) return null;
+  const prev = items[insertIndex - 1];
+  if (!prev) return null;
+  if (isBundleHeader(prev, isBundleRef)) return prev.instance_id;
+  return prev.parent_instance_id || null;
+}
+
 export function useDashboardDragAndDrop({
   activeLernTyp,
   readOnly,
@@ -212,9 +234,12 @@ export function useDashboardDragAndDrop({
       const src = parseDroppableId(source.droppableId);
       const dst = parseDroppableId(destination.droppableId);
       if (!src || !dst) return;
-
-      // Drop zurück in einen Pool → keine Aktion.
-      if (dst.kind === 'pool' || dst.kind === 'pool-system') return;
+      // Es gibt nur noch EINEN Droppable pro Sektor (keine verschachtelten
+      // Bündel-Droppables mehr). Bündel-Zugehörigkeit wird über die Ablage-
+      // Position abgeleitet (inferParentInstanceId). Pool-Ziele werden
+      // verworfen, Bündel-Ziele existieren nicht mehr als Droppable.
+      if (dst.kind !== 'sektor') return;
+      const toSektorId = dst.id;
 
       const dragged = describeDraggedItem({
         draggableId,
@@ -224,162 +249,109 @@ export function useDashboardDragAndDrop({
       });
       if (!dragged) return;
 
-      // Ziel-Bündel-ref_id für Validator (wenn Drop in ein Bündel geht).
-      const sektoren = konfiguration?.[activeLernTyp] || [];
-      let targetSektorId = null;
-      let targetParentInstanceId = null;
-      let targetParentRefId = null;
+      const isBundleRef = (refId) =>
+        systemBausteineById?.get?.(refId)?.baustein_modus === 'bundle_1ton';
 
-      if (dst.kind === 'sektor') {
-        targetSektorId = dst.id;
-      } else if (dst.kind === 'bundle') {
-        targetParentInstanceId = dst.id;
-        targetSektorId = findSektorIdForBundle(konfiguration, activeLernTyp, dst.id);
-        for (const s of sektoren) {
-          const it = (s.items || []).find((x) => x?.instance_id === dst.id);
-          if (it) {
-            targetParentRefId = it.ref_id;
-            break;
-          }
-        }
-        if (!targetSektorId) return;
-      }
-
-      // ── Nested-Droppable-Korrektur ───────────────────────────────────────
-      // @hello-pangea/dnd unterstützt offiziell KEINE verschachtelten
-      // Droppables (Bündel-Droppable liegt im Sektor-Droppable). Beim
-      // Umsortieren eines Bündel-Kindes – v. a. nach oben – meldet die Engine
-      // gelegentlich den umgebenden Sektor als Ziel statt das Bündel. Das Kind
-      // "fliegt" dann aus dem Bündel heraus. Wenn das gezogene Element aus
-      // einem Bündel stammt und direkt am Bündel (davor/danach) im SELBEN
-      // Sektor losgelassen wird, halten wir es im Bündel und sortieren es an
-      // den Anfang bzw. das Ende. Wird es klar woanders (zwischen anderen
-      // Root-Items) abgelegt, bleibt das Herausziehen erlaubt.
-      let rerouteLocalChildIndex = null;
-      if (
-        src.kind === 'bundle' &&
-        dst.kind === 'sektor' &&
-        !dragged.isFromPool &&
-        dragged.parent_instance_id
-      ) {
-        const srcFound = findItemByInstanceId(konfiguration, activeLernTyp, dragged.instance_id);
-        if (srcFound && srcFound.sektorId === dst.id) {
-          const sektorObj = sektoren.find((s) => s.sektor_id === srcFound.sektorId);
-          const itemsArr = sektorObj?.items || [];
-          const bundleAbsIdx = itemsArr.findIndex(
-            (it) => it?.instance_id === dragged.parent_instance_id
-          );
-          if (bundleAbsIdx !== -1) {
-            const rootIdxOfBundle = itemsArr
-              .slice(0, bundleAbsIdx)
-              .filter((it) => !it?.parent_instance_id).length;
-            const dropRootIdx = destination.index;
-            if (dropRootIdx <= rootIdxOfBundle + 1) {
-              targetParentInstanceId = dragged.parent_instance_id;
-              targetSektorId = srcFound.sektorId;
-              targetParentRefId = itemsArr[bundleAbsIdx]?.ref_id || null;
-              // Vor dem Bündel-Header losgelassen → an den Anfang; sonst ans Ende.
-              rerouteLocalChildIndex = dropRootIdx <= rootIdxOfBundle ? 0 : Number.MAX_SAFE_INTEGER;
-            }
-          }
-        }
-      }
-
-      // Finale Strict-Drop-Validierung (defense-in-depth, falls onDragUpdate
-      // nicht gefeuert hat oder Daten zwischenzeitlich gewandert sind).
-      const validation = canDrop({
-        draggedItem: dragged,
-        lernTyp: activeLernTyp,
-        konfiguration,
-        targetParentRefId,
-        systemBausteineById,
-        aufgabenById,
-      });
-      if (!validation.ok) {
-        if (validation.reason === 'duplicate_in_lerntyp') {
-          toast.error('Diese Aufgabe ist bereits in diesem Lernpfad vorhanden.');
-        } else if (validation.reason === 'bundle_in_bundle') {
-          toast.error('Bündel können nicht in andere Bündel gezogen werden.');
-        } else if (validation.reason === 'wrong_type') {
-          toast.error('Dieser Aufgabentyp passt nicht in dieses Bündel.');
-        }
-        return;
-      }
-
-      // ── Pool → Sektor/Bündel ──
-      if (src.kind === 'pool' || src.kind === 'pool-system') {
-        const targetSektor = sektoren.find((s) => s.sektor_id === targetSektorId);
-        if (!targetSektor) return;
-        const absoluteIndex = resolveAbsoluteInsertIndex(
-          targetSektor.items || [],
-          targetParentInstanceId,
-          destination.index
-        );
-        const newItem = normalizeItem({
-          type: dragged.type,
-          ref_id: dragged.ref_id,
-          parent_instance_id: targetParentInstanceId ?? null,
+      // Finalen Parent bestimmen + Bündel-Aufnahme validieren. Ungültige
+      // Kombinationen (falscher Typ, Bündel-in-Bündel) fallen auf Root zurück,
+      // statt den Drop zu verwerfen.
+      const resolveParent = (items, insertIndex, item) => {
+        const parent = inferParentInstanceId(items, insertIndex, isBundleRef);
+        if (!parent) return null;
+        if (isBundleHeader(item, isBundleRef)) return null; // kein Bündel-in-Bündel
+        const bundleHeader = items.find((it) => it?.instance_id === parent);
+        const validation = canDrop({
+          draggedItem: dragged.isFromPool
+            ? { type: item.type, ref_id: item.ref_id, isFromPool: true }
+            : { ...item, isFromPool: false },
+          lernTyp: activeLernTyp,
+          konfiguration,
+          targetParentRefId: bundleHeader?.ref_id || null,
+          systemBausteineById,
+          aufgabenById,
         });
-        updateKonfiguration((prev) =>
-          insertItemInSektorAtAbsolute(prev, activeLernTyp, targetSektorId, newItem, absoluteIndex)
-        );
-        return;
-      }
+        return validation.ok ? parent : null;
+      };
 
-      // ── Sektor/Bündel → Sektor/Bündel ──
-      if (src.kind === 'sektor' || src.kind === 'bundle') {
-        // Quell-Item finden (über instance_id aus draggableId).
-        let instanceId = null;
-        if (draggableId.startsWith(PFAD_AUFGABE_PREFIX)) {
-          instanceId = draggableId.slice(PFAD_AUFGABE_PREFIX.length);
-        } else if (draggableId.startsWith(PFAD_SYSTEM_PREFIX)) {
-          instanceId = draggableId.slice(PFAD_SYSTEM_PREFIX.length);
-        }
-        if (!instanceId) return;
-
-        const found = findItemByInstanceId(konfiguration, activeLernTyp, instanceId);
-        if (!found) return;
-        const fromSektorId = found.sektorId;
-        const fromAbsoluteIndex = found.absoluteIndex;
-
-        // Bei Move im selben Sektor: Index NACH dem Entfernen des Items neu auflösen.
-        const targetSektor = sektoren.find((s) => s.sektor_id === targetSektorId);
-        if (!targetSektor) return;
-        const baseItems = targetSektor.items || [];
-        const itemsForResolve =
-          fromSektorId === targetSektorId
-            ? baseItems.filter((_, i) => i !== fromAbsoluteIndex)
-            : baseItems;
-        const localTargetIndex =
-          rerouteLocalChildIndex != null ? rerouteLocalChildIndex : destination.index;
-        const absoluteToIndex = resolveAbsoluteInsertIndex(
-          itemsForResolve,
-          targetParentInstanceId,
-          localTargetIndex
-        );
-
-        // No-op? (gleicher Sektor, gleicher Parent, gleiche Position)
+      // ── Pool → Sektor ──
+      if (src.kind === 'pool' || src.kind === 'pool-system') {
         if (
-          fromSektorId === targetSektorId &&
-          (found.item.parent_instance_id ?? null) === (targetParentInstanceId ?? null) &&
-          fromAbsoluteIndex === absoluteToIndex
+          dragged.type === ITEM_TYPE.AUFGABE &&
+          getUsedAufgabenIds(konfiguration, activeLernTyp).has(dragged.ref_id)
         ) {
+          toast.error('Diese Aufgabe ist bereits in diesem Lernpfad vorhanden.');
           return;
         }
-
-        updateKonfiguration((prev) =>
-          moveItemAbsolute(
-            prev,
-            activeLernTyp,
-            fromSektorId,
-            fromAbsoluteIndex,
-            targetSektorId,
-            absoluteToIndex,
-            targetParentInstanceId
-          )
-        );
+        updateKonfiguration((prev) => {
+          const sektoren = (prev?.[activeLernTyp] || []).map((s) => ({
+            ...s,
+            items: [...(s.items || [])],
+          }));
+          const target = sektoren.find((s) => s.sektor_id === toSektorId);
+          if (!target) return prev;
+          const insertAt = Math.max(0, Math.min(destination.index, target.items.length));
+          const newItem = normalizeItem({
+            type: dragged.type,
+            ref_id: dragged.ref_id,
+            parent_instance_id: null,
+          });
+          target.items.splice(insertAt, 0, newItem);
+          const parent = resolveParent(target.items, insertAt, newItem);
+          target.items[insertAt] = { ...newItem, parent_instance_id: parent };
+          return { ...prev, [activeLernTyp]: sektoren };
+        });
         return;
       }
+
+      // ── Sektor → Sektor (bestehendes Item verschieben) ──
+      let instanceId = null;
+      if (draggableId.startsWith(PFAD_AUFGABE_PREFIX)) {
+        instanceId = draggableId.slice(PFAD_AUFGABE_PREFIX.length);
+      } else if (draggableId.startsWith(PFAD_SYSTEM_PREFIX)) {
+        instanceId = draggableId.slice(PFAD_SYSTEM_PREFIX.length);
+      }
+      if (!instanceId) return;
+
+      const found = findItemByInstanceId(konfiguration, activeLernTyp, instanceId);
+      if (!found) return;
+      const fromSektorId = found.sektorId;
+      const movedIsHeader = isBundleHeader(found.item, isBundleRef);
+
+      updateKonfiguration((prev) => {
+        const sektoren = (prev?.[activeLernTyp] || []).map((s) => ({
+          ...s,
+          items: [...(s.items || [])],
+        }));
+        const fromSektor = sektoren.find((s) => s.sektor_id === fromSektorId);
+        const toSektor = sektoren.find((s) => s.sektor_id === toSektorId);
+        if (!fromSektor || !toSektor) return prev;
+
+        // Bündel-Header: Header + alle seine Kinder als zusammenhängenden Block
+        // verschieben, damit das Bündel beim Umsortieren nicht zerfällt.
+        if (movedIsHeader) {
+          const headerId = found.item.instance_id;
+          const block = fromSektor.items.filter(
+            (it) => it.instance_id === headerId || it.parent_instance_id === headerId
+          );
+          const blockIds = new Set(block.map((b) => b.instance_id));
+          fromSektor.items = fromSektor.items.filter((it) => !blockIds.has(it.instance_id));
+          const reHeader = { ...found.item, parent_instance_id: null };
+          const reChildren = block.filter((b) => b.instance_id !== headerId);
+          const insertAt = Math.max(0, Math.min(destination.index, toSektor.items.length));
+          toSektor.items.splice(insertAt, 0, reHeader, ...reChildren);
+          return { ...prev, [activeLernTyp]: sektoren };
+        }
+
+        // Einzelnes Item.
+        const fromIdx = fromSektor.items.findIndex((it) => it.instance_id === instanceId);
+        if (fromIdx === -1) return prev;
+        const [removed] = fromSektor.items.splice(fromIdx, 1);
+        const insertAt = Math.max(0, Math.min(destination.index, toSektor.items.length));
+        toSektor.items.splice(insertAt, 0, removed);
+        const parent = resolveParent(toSektor.items, insertAt, removed);
+        toSektor.items[insertAt] = { ...removed, parent_instance_id: parent };
+        return { ...prev, [activeLernTyp]: sektoren };
+      });
     },
     [
       readOnly,
