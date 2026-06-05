@@ -148,8 +148,9 @@ export default function LernzieleUebersichtTab({
       for (const z of toDelete) ops.push(deleteLernziel(z.id));
 
       await Promise.all(ops);
-      await queryClient.refetchQueries({ queryKey: ['workspace-data', einheit?.id], type: 'all' });
-      queryClient.invalidateQueries({ queryKey: ['lernziele'] });
+      // Robustes Neuladen: erst invalidieren, dann erzwungen neu holen.
+      await queryClient.invalidateQueries({ queryKey: ['workspace-data', einheit?.id] });
+      await queryClient.refetchQueries({ queryKey: ['workspace-data', einheit?.id], type: 'active' });
       toast.success('Lernziele gespeichert.');
     } catch (err) {
       toast.error(`Speichern fehlgeschlagen: ${err.message}`);
