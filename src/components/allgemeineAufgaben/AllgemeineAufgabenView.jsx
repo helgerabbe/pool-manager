@@ -18,6 +18,7 @@ import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView
 import AufgabePreviewModal from '@/components/allgemeineAufgaben/AufgabePreviewModal';
 import AufgabenTypPicker from '@/components/allgemeineAufgaben/AufgabenTypPicker';
 import AufgabeKompetenzMapping from '@/components/allgemeineAufgaben/AufgabeKompetenzMapping';
+import LernzielAnalysePanel from '@/components/allgemeineAufgaben/LernzielAnalysePanel';
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
 import InlineBasisLernzielSelector from '@/components/allgemeineAufgaben/InlineBasisLernzielSelector';
 import PublishAllgemeineAufgabeButton from '@/components/allgemeineAufgaben/PublishAllgemeineAufgabeButton';
@@ -680,8 +681,8 @@ export default function AllgemeineAufgabenView({
               <TabsList className="mx-6 mt-3 bg-muted">
                 <TabsTrigger value="angaben" className="text-xs">Kernangaben</TabsTrigger>
                 <TabsTrigger value="kompetenzen" className="text-xs flex items-center gap-1">
-                  Kompetenzzuordnung
-                  <HelpBadge text="Verknüpfe Lernziele per Drag & Drop mit dieser Aufgabe. Der KI-Tutor nutzt sie für gezieltes Feedback." docsSlug="lernziele" />
+                  Lernzielanalyse
+                  <HelpBadge text="Lass die KI analysieren, welche fachbezogenen Lernziele ein Schüler braucht, um diese Aufgabe zu lösen. Darunter verknüpfst du bestehende Lernziele per Drag & Drop." docsSlug="lernziele" />
                 </TabsTrigger>
                 <TabsTrigger value="erwartungshorizont" className="text-xs flex items-center gap-1">
                   Erwartungshorizont
@@ -708,15 +709,26 @@ export default function AllgemeineAufgabenView({
                 />
               </TabsContent>
 
-              {/* Tab 2: Kompetenzzuordnung */}
-              <TabsContent value="kompetenzen" className="flex-1 overflow-hidden m-0">
-               <AufgabeKompetenzMapping
+              {/* Tab 2: Lernzielanalyse (KI-Analyse oben + bestehende Zuordnung unten) */}
+              <TabsContent value="kompetenzen" className="flex-1 overflow-y-auto m-0">
+               <LernzielAnalysePanel
                  aufgabe={selectedAufgabe}
-                 einheit={einheit}
-                 einheitId={einheitId}
                  kannBearbeiten={kannBearbeiten && lock.isEditMode}
-                 onComplete={() => {}}
                />
+               <div className="border-t border-border mx-6 pt-2">
+                 <div className="px-6 -mx-6 pt-2 pb-1">
+                   <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide px-6">
+                     Bestehende Lernziele zuordnen
+                   </p>
+                 </div>
+                 <AufgabeKompetenzMapping
+                   aufgabe={selectedAufgabe}
+                   einheit={einheit}
+                   einheitId={einheitId}
+                   kannBearbeiten={kannBearbeiten && lock.isEditMode}
+                   onComplete={() => {}}
+                 />
+               </div>
               </TabsContent>
 
               {/* Tab 3: Erwartungshorizont */}

@@ -139,6 +139,53 @@
     "musterloesung": {
       "type": "string"
     },
+    "lernzielanalyse": {
+      "type": "object",
+      "description": "Phase 1 der KI-gest\u00fctzten Lernzielanalyse (vormals 'Kompetenzzuordnung'). Strukturierte, vom Lehrer kuratierte Liste der fachbezogenen Lernziele, die ein Sch\u00fcler beherrschen muss, um diese Aufgabe zu l\u00f6sen. Diese Liste ist NOCH NICHT mit echten Lernziel-Datens\u00e4tzen verkn\u00fcpft (das passiert in Phase 2 \u00fcber den Abgleich), sondern dient als Analyse-Notiz auf der Aufgabe.",
+      "properties": {
+        "items": {
+          "type": "array",
+          "description": "Sortierte Liste der ben\u00f6tigten Lernziele.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Lokale, eindeutige ID des Listeneintrags (clientseitig generiert)."
+              },
+              "text": {
+                "type": "string",
+                "description": "Fachbezogene Lernziel-Formulierung (z.B. 'Der Sch\u00fcler kann lineare Gleichungen mit einer Variablen l\u00f6sen')."
+              },
+              "quelle": {
+                "type": "string",
+                "enum": [
+                  "ki",
+                  "manuell"
+                ],
+                "default": "manuell",
+                "description": "Herkunft des Eintrags: KI-Vorschlag oder manuell erg\u00e4nzt."
+              }
+            },
+            "required": [
+              "id",
+              "text"
+            ]
+          },
+          "default": []
+        },
+        "fachuebergreifender_hinweis": {
+          "type": "string",
+          "description": "Optionaler KI-Hinweis auf fach\u00fcbergreifende oder aus anderen F\u00e4chern stammende Voraussetzungen, an denen ein Sch\u00fcler zus\u00e4tzlich scheitern k\u00f6nnte."
+        },
+        "analysiert_am": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Zeitstempel der letzten KI-Analyse (nullable)."
+        }
+      },
+      "additionalProperties": true
+    },
     "erstellungs_modus": {
       "type": "string",
       "enum": [
