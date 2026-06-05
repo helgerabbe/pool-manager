@@ -68,6 +68,17 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     if (tab !== 'aufgaben') setTaskWorkshopActivityId(null);
   };
 
+  // Reaktiv auf `?tab=`-Deeplinks reagieren (z. B. wenn das Dashboard in
+  // Tab 7 auf ein Lernpaket verweist → Tab 4). Workspace wird beim
+  // Tab-Wechsel nicht neu gemountet, daher reicht der Mount-Init nicht.
+  useEffect(() => {
+    const t = searchParams.get('tab');
+    if (t && VALID_TABS.includes(t) && t !== activeTab) {
+      handleTabChange(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   // ── Structural-Lock State (muss VOR useWorkspaceData deklariert werden) ──────
   const [isStructuralEditingActive, setIsStructuralEditingActive] = useState(false);
   const [acquiringStructLock, setAcquiringStructLock] = useState(false);

@@ -181,6 +181,7 @@ export default function LernpfadeArchitekt({
   selectedSystemBausteinId,
   getAmpelStatusForItem,
   onOpenAufgabeEditor,
+  onOpenLernpaket,
   onOpenGuide,
   canvasScrollRef,
   themenfeldTitelById,
@@ -245,6 +246,7 @@ export default function LernpfadeArchitekt({
                 selectedSystemBausteinId={selectedSystemBausteinId}
                 getAmpelStatusForItem={getAmpelStatusForItem}
                 onOpenAufgabeEditor={onOpenAufgabeEditor}
+                onOpenLernpaket={onOpenLernpaket}
                 themenfeldTitelById={themenfeldTitelById}
                 onPreviewEinfuehrung={onPreviewEinfuehrung}
                 onPreviewQblock={onPreviewQblock}

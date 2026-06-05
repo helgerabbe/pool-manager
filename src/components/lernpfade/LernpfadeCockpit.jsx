@@ -181,6 +181,17 @@ export default function LernpfadeCockpit({
     if (aufgabe) setEditorAufgabe(aufgabe);
   }, []);
 
+  // Lernpaket-Items dürfen NICHT den Aufgaben-Editor öffnen (das ist ein
+  // Lernpaket, keine Aufgabe). Stattdessen navigieren wir zu Tab 4
+  // („Aktivitäten zuordnen"), wo die Lehrkraft das Lernpaket öffnen,
+  // vervollständigen und freigeben kann.
+  const handleOpenLernpaket = useCallback(() => {
+    const next = new URLSearchParams(searchParams);
+    if (einheit?.id) next.set('einheit', einheit.id);
+    next.set('tab', 'aktivitaeten');
+    setSearchParams(next);
+  }, [searchParams, setSearchParams, einheit?.id]);
+
   // ── Daten-Queries ───────────────────────────────────────────────────
   const { data: aufgaben = [] } = useQuery({
     queryKey: ['allgemeineAufgaben', einheit?.id],
@@ -1115,6 +1126,7 @@ export default function LernpfadeCockpit({
                 selectedSystemBausteinId={selectedSystemBausteinId}
                 getAmpelStatusForItem={getAmpelStatusForItem}
                 onOpenAufgabeEditor={handleOpenAufgabeEditor}
+                onOpenLernpaket={handleOpenLernpaket}
                 onOpenGuide={() => setIsGuideOpen(true)}
                 canvasScrollRef={scrollRef}
                 themenfeldTitelById={themenfeldTitelById}

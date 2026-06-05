@@ -40,9 +40,14 @@ const LERNTYP_VARIANTE = {
   passioniert: { label: 'Wissensspeicher', cls: 'bg-violet-100 text-violet-700 border-violet-200' },
 };
 
-function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, indent = false, onRemove, onSelect, isSelected, disabled, ampelStatus, exportReady, contentApproved, onOpenEditor, activeLernTyp, fremdesThemenfeldTitel }) {
+function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, indent = false, onRemove, onSelect, isSelected, disabled, ampelStatus, exportReady, contentApproved, onOpenEditor, onOpenLernpaket, activeLernTyp, fremdesThemenfeldTitel }) {
   // Fallback, falls die Aufgabe (noch) nicht im Cache ist.
   const titel = aufgabe?.titel || 'Aufgabe';
+  // Lernpakete sind keine Aufgaben: Sie tragen den Adapter-Marker _isLernpaket.
+  // Für sie blenden wir (1) den fehleranfälligen Vollständigkeits-Punkt aus und
+  // (2) führt der Klick auf das rote Ausrufezeichen zum Lernpaket (Tab 4),
+  // NICHT in den Aufgaben-Editor.
+  const istLernpaket = aufgabe?._isLernpaket === true;
   const typMeta = getAufgabenTyp(aufgabe?.aufgaben_typ);
   const Icon = typMeta.icon;
   // Phase 3: Draggable-IDs müssen über Sektor- und Bündel-Droppables eindeutig
@@ -102,8 +107,12 @@ function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, indent = fal
             <AmpelBadge
               status={ampelStatus}
               exportReady={exportReady}
-              contentApproved={contentApproved}
-              onFix={onOpenEditor && aufgabe ? () => onOpenEditor(aufgabe) : undefined}
+              contentApproved={istLernpaket ? undefined : contentApproved}
+              onFix={
+                istLernpaket
+                  ? (onOpenLernpaket ? () => onOpenLernpaket(aufgabe) : undefined)
+                  : (onOpenEditor && aufgabe ? () => onOpenEditor(aufgabe) : undefined)
+              }
             />
           )}
           {!disabled && (
@@ -146,6 +155,7 @@ export default function LernpfadeSektor({
   selectedSystemBausteinId,
   getAmpelStatusForItem,
   onOpenAufgabeEditor,
+  onOpenLernpaket,
   themenfeldTitelById,
   driftStatus,
   onPreviewEinfuehrung,
@@ -246,6 +256,7 @@ export default function LernpfadeSektor({
         exportReady={isExportFreigegeben(item, ctx)}
         contentApproved={isContentApproved(item, ctx)}
         onOpenEditor={onOpenAufgabeEditor}
+        onOpenLernpaket={onOpenLernpaket}
         activeLernTyp={activeLernTyp}
         fremdesThemenfeldTitel={fremdesThemenfeldTitel}
       />
