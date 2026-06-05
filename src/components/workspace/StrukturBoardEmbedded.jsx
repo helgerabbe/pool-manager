@@ -23,6 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import LernzielRow from '@/components/workspace/LernzielRow';
 import { Plus, GripVertical, Clock, Trash2, FolderOpen, Layers, X, Save, Target, ChevronLeft, ChevronsLeft, ArrowLeft, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -30,7 +31,7 @@ import { toast } from 'sonner';
 // ── Lernpaket-Dialog ──────────────────────────────────────────────────────────
 // Öffnet sich beim Klick auf eine Paket-Karte oder beim Erstellen eines neuen Pakets.
 
-function LernpaketDialog({ open, onOpenChange, initialData, onSave }) {
+function LernpaketDialog({ open, onOpenChange, initialData, onSave, kontext }) {
   // isNew = true nur wenn initialData null/undefined ist (= "Neues Lernpaket" Button geklickt)
   // Hat initialData eine id oder isNew-Flag, dann ist es immer "Bearbeiten"-Modus
   const isNew = !initialData;
@@ -72,36 +73,38 @@ function LernpaketDialog({ open, onOpenChange, initialData, onSave }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader className="shrink-0">
           <DialogTitle>{isNew ? 'Neues Lernpaket' : 'Lernpaket bearbeiten'}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-5 py-2 flex-1 overflow-y-auto min-h-0">
-          {/* Titel */}
-          <div className="space-y-2">
-            <Label>Titel des Lernpakets *</Label>
-            <Input
-              autoFocus
-              placeholder="z.B. Grundlagen der linearen Funktionen"
-              value={titel}
-              onChange={e => setTitel(e.target.value)}
-            />
-          </div>
-          {/* Dauer */}
-          <div className="space-y-2">
-            <Label>Geschätzte Bearbeitungsdauer</Label>
-            <div className="flex items-center gap-2">
+        <div className="space-y-4 py-2 flex-1 overflow-y-auto min-h-0 px-0.5">
+          {/* Titel + Dauer in einer Reihe → spart vertikalen Platz */}
+          <div className="flex gap-3 items-end">
+            <div className="flex-1 space-y-1.5">
+              <Label>Titel des Lernpakets *</Label>
               <Input
-                type="number" min={5} step={5}
-                value={dauer}
-                onChange={e => setDauer(parseInt(e.target.value) || 45)}
-                className="w-28"
+                autoFocus
+                placeholder="z.B. Grundlagen der linearen Funktionen"
+                value={titel}
+                onChange={e => setTitel(e.target.value)}
               />
-              <span className="text-sm text-muted-foreground">Minuten</span>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Dauer</Label>
+              <div className="flex items-center gap-1.5">
+                <Input
+                  type="number" min={5} step={5}
+                  value={dauer}
+                  onChange={e => setDauer(parseInt(e.target.value) || 45)}
+                  className="w-20"
+                />
+                <span className="text-xs text-muted-foreground">Min.</span>
+              </div>
             </div>
           </div>
+
           {/* Lernziele */}
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <div className="flex items-center justify-between">
               <Label>Lernziele</Label>
               <Button type="button" size="sm" variant="outline" onClick={addLernziel} className="gap-1.5 h-7 text-xs">
@@ -111,62 +114,16 @@ function LernpaketDialog({ open, onOpenChange, initialData, onSave }) {
             {lernziele.length === 0 && (
               <p className="text-xs text-muted-foreground italic">Noch keine Lernziele – optional hier hinzufügen oder später im Workspace anlegen.</p>
             )}
-            <div className="space-y-3">
+            <div className="space-y-2">
               {lernziele.map((lz, idx) => (
-                <div key={lz.id} className="p-3 rounded-lg border bg-muted/30 space-y-2">
-                  <div className="flex items-start gap-2">
-                    <Target className="w-4 h-4 text-green-600 shrink-0 mt-2" />
-                    <div className="flex-1 space-y-2">
-                      {/* Offizielle Formulierung – mehrzeilig, damit lange
-                          „Ich kann…"-Sätze vollständig sichtbar bleiben. */}
-                      <div className="space-y-1">
-                        <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">Offizielle Formulierung (Fachsprache)</Label>
-                        <Textarea
-                          placeholder={`Lernziel ${idx + 1}: Ich kann…`}
-                          value={lz.formulierung_fachsprache}
-                          onChange={e => updateLernziel(lz.id, 'formulierung_fachsprache', e.target.value)}
-                          rows={3}
-                          className="text-sm min-h-[72px] resize-y"
-                        />
-                      </div>
-                      {/* Schüler-Übersetzung – optional, ebenfalls mehrzeilig. */}
-                      <div className="space-y-1">
-                        <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">Schülergerechte Formulierung (optional)</Label>
-                        <Textarea
-                          placeholder="Wie würdest du das Lernziel einem Schüler erklären?"
-                          value={lz.schueler_uebersetzung || ''}
-                          onChange={e => updateLernziel(lz.id, 'schueler_uebersetzung', e.target.value)}
-                          rows={2}
-                          className="text-sm min-h-[56px] resize-y"
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        {['Fachwissen', 'Fähigkeit/Fertigkeit'].map(kat => (
-                          <button
-                            key={kat}
-                            type="button"
-                            onClick={() => updateLernziel(lz.id, 'kategorie', kat)}
-                            className={cn(
-                              'flex-1 py-1 px-2 rounded-md border text-xs font-medium transition-all',
-                              lz.kategorie === kat
-                                ? 'border-primary bg-primary/10 text-primary'
-                                : 'border-border hover:border-primary/40 text-muted-foreground'
-                            )}
-                          >
-                            {kat}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeLernziel(lz.id)}
-                      className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors mt-1"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
+                <LernzielRow
+                  key={lz.id}
+                  lz={lz}
+                  idx={idx}
+                  onUpdate={updateLernziel}
+                  onRemove={removeLernziel}
+                  kontext={{ ...kontext, lernpaket_titel: titel }}
+                />
               ))}
             </div>
           </div>
@@ -1110,6 +1067,7 @@ export default function StrukturBoardEmbedded({
         onOpenChange={(open) => !open && setPaketDialog({ open: false, spalteId: null, paket: null })}
         initialData={paketDialog.paket}
         onSave={handlePaketSave}
+        kontext={{ fach: einheit?.fach, jahrgangsstufe: einheit?.jahrgangsstufe }}
       />
 
       {/* ── Speicher-Overlay (blocking) ── */}
