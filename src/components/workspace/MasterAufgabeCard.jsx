@@ -22,6 +22,7 @@ import LueckentextEditor, { LueckentextRenderer, validateBeforeSave } from '@/co
 import LueckentextWysiwygModal from '@/components/workspace/LueckentextWysiwygModal';
 import LueckentextPreviewModal from '@/components/workspace/preview/LueckentextPreviewModal';
 import MatchTermsPreviewModal from '@/components/workspace/preview/MatchTermsPreviewModal';
+import MasterModusBadge from '@/components/workspace/MasterModusBadge';
 import { Eye } from 'lucide-react';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import SortingListEditor from '@/components/workspace/SortingListEditor';
@@ -217,6 +218,7 @@ export default function MasterAufgabeCard({
   klone,
   kannBearbeiten,
   lernpaketReleased = false,
+  anzeigeModus = null,
   userEmail,
   userRole,
   onDeleted,
@@ -549,6 +551,7 @@ export default function MasterAufgabeCard({
           <MasterStatusIcon className="w-3 h-3" />
           {masterStatusBadge.label}
         </span>
+        {anzeigeModus && <MasterModusBadge modus={anzeigeModus} />}
         {TASK_STATUS_CONFIG[syncStatus.currentStatus] && (
           <Badge variant="outline" className={`text-[10px] shrink-0 ${TASK_STATUS_CONFIG[syncStatus.currentStatus].color}`}>
             {TASK_STATUS_CONFIG[syncStatus.currentStatus].label}

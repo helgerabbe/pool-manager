@@ -30,6 +30,7 @@ import OffeneAufgabePreviewModal from '@/components/workspace/preview/OffeneAufg
 import MoodleSyncStatusBadge from '@/components/workspace/MoodleSyncStatusBadge';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import ModusAuswahlBox from '@/components/workspace/ki/ModusAuswahlBox';
+import MasterAnzeigeModusToggle from '@/components/workspace/MasterAnzeigeModusToggle';
 import KiBriefingForm from '@/components/workspace/ki/KiBriefingForm';
 import TranskriptStatusBadge from '@/components/workspace/ki/TranskriptStatusBadge';
 import { shouldShowTranskript } from '@/components/workspace/ki/TranskriptField';
@@ -399,6 +400,21 @@ export default function ActivityMasterPanel({
   // Freigabe-Status kommt aus der Datenbank. Bei masterfähigen Aktivitäten
   // wird dieser serverseitig aus den Masteraufgaben aggregiert.
   const activityIsReleased = activityRecord?.content_status === 'approved';
+
+  // Anzeige-Modus für mehrere Master-Aufgaben (shuffle | alle). Default 'shuffle'.
+  // Haupteinstellung auf Aktivitäts-Ebene; pro Karte nur als Badge gespiegelt.
+  const masterAnzeigeModus = activityRecord?.master_anzeige_modus || 'shuffle';
+  const saveAnzeigeModusMutation = useMutation({
+    mutationFn: (modus) =>
+      base44.entities.LernpaketPhaseAktivitaet.update(activityRecord.id, {
+        master_anzeige_modus: modus,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      toast.success('Wiedergabe-Modus gespeichert.');
+    },
+    onError: () => toast.error('Modus konnte nicht gespeichert werden.'),
+  });
 
   // Alle Klone für diese Aktivität (gruppiert nach master_aufgabe_id)
   const { data: alleKlone = [] } = useQuery({
@@ -1124,6 +1140,22 @@ export default function ActivityMasterPanel({
 
           </div>
 
+          {/* Wiedergabe-Modus (nur sinnvoll ab 2 Aufgaben, nicht bei KI-Tutor) */}
+          {!isKITutor && masterAufgaben.length >= 2 && (
+            <MasterAnzeigeModusToggle
+              value={masterAnzeigeModus}
+              onChange={(m) => saveAnzeigeModusMutation.mutate(m)}
+              saving={saveAnzeigeModusMutation.isPending}
+              disabled={
+                !kannBearbeiten ||
+                isParentPaketLockedByOther ||
+                lernpaketReleased ||
+                lernpaket?.moodle_sync_status === 'locked' ||
+                lernpaket?.export_locked
+              }
+            />
+          )}
+
           {/* Vorhandene Master-Karten */}
           {masterAufgaben.map((master, idx) => 
             isKITutor ? (
@@ -1191,6 +1223,7 @@ export default function ActivityMasterPanel({
                 klone={kloneByMasterId[master.id] || []}
                 kannBearbeiten={isInEditMode && !isParentPaketLockedByOther && !lernpaketReleased}
                 lernpaketReleased={lernpaketReleased}
+                anzeigeModus={masterAufgaben.length >= 2 ? masterAnzeigeModus : null}
                 userEmail={userEmail}
                 userRole={userRole}
                 autoExpand={master.id === focusedMasterId}

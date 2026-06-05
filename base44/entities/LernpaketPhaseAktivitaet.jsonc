@@ -34,9 +34,14 @@
       "default": false,
       "description": "Opt-in: Diese Aktivit\u00e4t wurde zur Mastervorlage f\u00fcr KI-Klone gemacht"
     },
-    "reihenfolge": {
-      "type": "number",
-      "description": "Sortierreihenfolge innerhalb der Phase"
+    "master_anzeige_modus": {
+      "type": "string",
+      "enum": [
+        "shuffle",
+        "alle"
+      ],
+      "default": "shuffle",
+      "description": "Steuert, wie mehrere MasterAufgaben dieser (masterf\u00e4higen) Aktivit\u00e4t dem Sch\u00fcler in Moodle/Brian pr\u00e4sentiert werden. 'shuffle' (Default) = pro Versuch wird zuf\u00e4llig eine der noch nicht bearbeiteten Master-Aufgaben ausgespielt, bis alle durch sind (Wiederholungs-/Variantentraining). 'alle' = alle Master-Aufgaben sind gleichzeitig sichtbar; der Sch\u00fcler w\u00e4hlt bewusst aus bzw. bearbeitet alle. Nur relevant bei supports_master=true und \u22652 Master-Aufgaben; bei genau 1 Master spielt der Modus keine Rolle. Wird in den MBK-/Export-Payload durchgereicht \u2014 die App selbst trifft keine Laufzeit-Auswahl."
     },
     "erstellungs_modus": {
       "type": "string",
