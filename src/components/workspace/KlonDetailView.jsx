@@ -83,14 +83,6 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
     lernpaket?.locked_at &&
     Date.now() - new Date(lernpaket.locked_at).getTime() < LOCK_TIMEOUT_MS;
 
-  // Eine Kopie darf zur eigenständigen Masteraufgabe befördert werden,
-  // solange das übergeordnete LERNPAKET noch NICHT freigegeben ist. Der
-  // Freigabe-Status einer einzelnen Masteraufgabe spielt dabei keine Rolle –
-  // man darf von einer bereits freigegebenen Masteraufgabe Kopien ziehen und
-  // diese zu neuen Mastern machen.
-  const lernpaketReleased = lernpaket?.content_status === 'approved' && !!lernpaket?.released_at;
-  const canConvertToMaster = kannBearbeiten && !lockedByOther && !lernpaketReleased;
-
   // State Machine für Moodle-Sync
   const syncStatus = useSyncStatus(
     klon.id,
@@ -113,6 +105,14 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
   useKlonLock(klon.id, userEmail, editMode);
 
   const lockedByOther = isKlonLockedByOther(klon, userEmail) || lernpaketLockedByOther;
+
+  // Eine Kopie darf zur eigenständigen Masteraufgabe befördert werden,
+  // solange das übergeordnete LERNPAKET noch NICHT freigegeben ist. Der
+  // Freigabe-Status einer einzelnen Masteraufgabe spielt dabei keine Rolle –
+  // man darf von einer bereits freigegebenen Masteraufgabe Kopien ziehen und
+  // diese zu neuen Mastern machen.
+  const lernpaketReleased = lernpaket?.content_status === 'approved' && !!lernpaket?.released_at;
+  const canConvertToMaster = kannBearbeiten && !lockedByOther && !lernpaketReleased;
 
   // Realtime-Subscription: Lock-Änderungen sofort spiegeln
   useEffect(() => {
