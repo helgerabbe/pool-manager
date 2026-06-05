@@ -165,6 +165,12 @@ export default function ActivityMasterPanel({
 
   const isInEditMode = kannBearbeiten && lernpaketLockActive;
 
+  // Hierarchie-Sperre: Ist das Parent-Lernpaket freigegeben, darf in seinen
+  // Masteraufgaben nichts mehr verändert werden (kein Freigabe-Toggle, kein
+  // Bearbeiten, keine Klone/Kopien, kein Löschen). Verhindert Inkonsistenzen
+  // zwischen freigegebenem Paket und nachträglich geänderten Inhalten.
+  const lernpaketReleased = lernpaket?.content_status === 'approved' && !!lernpaket?.released_at;
+
   // Formular-State für Aktivitäten ohne supports_master
   const [fieldValues, setFieldValues] = useState(activityRecord?.field_values || {});
   const [isDirty, setIsDirty] = useState(false);
@@ -1142,7 +1148,7 @@ export default function ActivityMasterPanel({
                   >
                     <Eye className="w-3.5 h-3.5" /> Vorschau
                   </Button>
-                  {kannBearbeiten && !isParentPaketLockedByOther && (
+                  {kannBearbeiten && !isParentPaketLockedByOther && !lernpaketReleased && (
                     <Button
                       variant="destructive"
                       size="sm"
@@ -1167,7 +1173,7 @@ export default function ActivityMasterPanel({
                 </div>
                 <KITutorMasterForm
                   master={master}
-                  isInEditMode={isInEditMode}
+                  isInEditMode={isInEditMode && !lernpaketReleased}
                   userEmail={userEmail}
                   einheitId={einheitId}
                   catalogEntry={catalogEntry}
@@ -1183,7 +1189,8 @@ export default function ActivityMasterPanel({
                 catalogName={catalogEntry?.name || ''}
                 kontext={aufgabenKontext}
                 klone={kloneByMasterId[master.id] || []}
-                kannBearbeiten={isInEditMode && !isParentPaketLockedByOther}
+                kannBearbeiten={isInEditMode && !isParentPaketLockedByOther && !lernpaketReleased}
+                lernpaketReleased={lernpaketReleased}
                 userEmail={userEmail}
                 userRole={userRole}
                 autoExpand={master.id === focusedMasterId}
@@ -1220,7 +1227,7 @@ export default function ActivityMasterPanel({
                   {emptyMasterHint}
                 </p>
               </div>
-              <Button onClick={handleAddMaster} disabled={creating || isParentPaketLockedByOther} title={isParentPaketLockedByOther ? `🔒 Lernpaket wird gerade von ${lernpaket?.locked_by_email} bearbeitet` : ''} className="gap-2">
+              <Button onClick={handleAddMaster} disabled={creating || isParentPaketLockedByOther || lernpaketReleased} title={lernpaketReleased ? '🔒 Lernpaket ist freigegeben – Inhalte gesperrt' : isParentPaketLockedByOther ? `🔒 Lernpaket wird gerade von ${lernpaket?.locked_by_email} bearbeitet` : ''} className="gap-2">
                 {creating
                   ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren & Erstellen…</>
                   : <><Plus className="w-4 h-4" /> Erste Aufgabe erstellen</>}
@@ -1243,8 +1250,8 @@ export default function ActivityMasterPanel({
             <Button
               variant="default"
               onClick={handleAddMaster}
-              disabled={creating || isParentPaketLockedByOther}
-              title={isParentPaketLockedByOther ? `🔒 Lernpaket wird gerade von ${lernpaket?.locked_by_email} bearbeitet` : ''}
+              disabled={creating || isParentPaketLockedByOther || lernpaketReleased}
+              title={lernpaketReleased ? '🔒 Lernpaket ist freigegeben – Inhalte gesperrt' : isParentPaketLockedByOther ? `🔒 Lernpaket wird gerade von ${lernpaket?.locked_by_email} bearbeitet` : ''}
               className="w-full gap-2"
             >
               {creating

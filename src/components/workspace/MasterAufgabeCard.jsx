@@ -216,6 +216,7 @@ export default function MasterAufgabeCard({
   catalogName,
   klone,
   kannBearbeiten,
+  lernpaketReleased = false,
   userEmail,
   userRole,
   onDeleted,
@@ -575,8 +576,9 @@ export default function MasterAufgabeCard({
         )}
 
         <div className="flex items-center gap-2 ml-auto shrink-0">
-          {/* Fertig markieren / Zurücksetzen Button – nur im aktiven Bearbeitungsmodus */}
-          {kannBearbeiten && editMode && (
+          {/* Fertig markieren / Zurücksetzen Button – nur im aktiven Bearbeitungsmodus.
+              Bei freigegebenem Lernpaket komplett gesperrt (kein Toggle). */}
+          {kannBearbeiten && editMode && !lernpaketReleased && (
             <MasterApprovalButton 
               master={master} 
               queryClient={queryClient}
@@ -592,7 +594,7 @@ export default function MasterAufgabeCard({
           >
             {collapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
           </button>
-          {kannBearbeiten && (
+          {kannBearbeiten && !lernpaketReleased && (
             <button
               onClick={() => setDeleteConfirmOpen(true)}
               disabled={deleteMutation.isPending}
@@ -611,6 +613,13 @@ export default function MasterAufgabeCard({
       {!collapsed && (
         <div className="p-4 space-y-4">
           <LockBanner lockedByUser={locked ? master.locked_by_user : null} />
+
+          {lernpaketReleased && (
+            <div className="flex items-center gap-2 p-2.5 rounded-lg border border-green-200 bg-green-50 text-green-800 text-xs">
+              <Lock className="w-3.5 h-3.5 shrink-0" />
+              <span>Das Lernpaket ist freigegeben. Diese Aufgabe ist gesperrt und kann nicht bearbeitet, kopiert oder gelöscht werden.</span>
+            </div>
+          )}
 
           {/* Action-Buttons als eigene Reihe — IMMER sichtbar (auch wenn freigegeben/gesperrt),
              damit Lehrkraft jederzeit die Schüler-Vorschau öffnen kann. */}
@@ -639,7 +648,7 @@ export default function MasterAufgabeCard({
                 Vorschau
               </Button>
             )}
-            {!editMode && !locked && (
+            {!editMode && !locked && !lernpaketReleased && (
               <Button
                 size="sm"
                 onClick={handleOpenContentEditor}
@@ -698,7 +707,7 @@ export default function MasterAufgabeCard({
                 <p className="text-sm text-muted-foreground italic">Noch kein Inhalt. Klicke „Inhalt bearbeiten".</p>
               )}
               {/* Button immer sichtbar – kein globaler Bearbeitungsmodus nötig */}
-              {!locked && (
+              {!locked && !lernpaketReleased && (
                 <Button
                   size="sm"
                   variant="outline"
@@ -1069,7 +1078,7 @@ export default function MasterAufgabeCard({
                 fieldValues={fieldValues}
               />
               {/* Button-Leiste: Vorschau + Inhalt bearbeiten */}
-              {!locked && (
+              {!locked && !lernpaketReleased && (
                 <div className="flex items-center gap-2">
                   {fieldValues.lueckentext && (
                     <Button
@@ -1205,7 +1214,7 @@ export default function MasterAufgabeCard({
           )}
 
           {/* Klon erstellen – NICHT für KI-Tutor und Bildbeschriftung */}
-          {!isKITutor && !isImageLabeling && (master.field_values?.lueckentext || master.field_values?.pairs?.length > 0 || master.field_values?.orderedItems?.length > 0 || master.field_values?.task_description || master.field_values?.questions?.length > 0) && !editMode && !testModalOpen && (
+          {!lernpaketReleased && !isKITutor && !isImageLabeling && (master.field_values?.lueckentext || master.field_values?.pairs?.length > 0 || master.field_values?.orderedItems?.length > 0 || master.field_values?.task_description || master.field_values?.questions?.length > 0) && !editMode && !testModalOpen && (
             <div className="border-t border-border/60 pt-4">
               <Button
                 variant="ghost"
