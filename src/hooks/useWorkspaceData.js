@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invokeFunction } from '@/utils/functionsHelper';
 import { base44 } from '@/api/base44Client';
 
@@ -27,6 +27,20 @@ function flattenWorkspaceTree(themenfelder = []) {
  * Lädt ALLE hierarchischen Daten einer Einheit inkl. Members für RBAC
  */
 export function useWorkspaceData(einheitId, isStructuralEditingActive = false) {
+  const queryClient = useQueryClient();
+
+  // 🩹 Stale-Cache-Schutz: Beim Wechsel der Einheit (oder erstem Mount) einmal
+  // einen frischen Server-Stand erzwingen. Hintergrund: Eine ältere
+  // Backend-Version lieferte zeitweise leere Lernziele/Themenfelder; diese
+  // veraltete Antwort konnte im React-Query-Cache (staleTime 5 Min) hängen
+  // bleiben und führte zu „0 Lernziele" überall. Außerhalb des Edit-Modus
+  // holen wir die Detaildaten daher beim Einheitswechsel aktiv neu.
+  useEffect(() => {
+    if (!einheitId || isStructuralEditingActive) return;
+    queryClient.refetchQueries({ queryKey: ['workspace-data', einheitId], type: 'active' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [einheitId]);
+
   // ✅ Lade Einheiten-Liste mit Members (für RBAC)
   // - Silent Polling: refetchInterval 0, refetchOnWindowFocus false
   // - Nur beim initialen Load: isLoading wird gezeigt
@@ -55,7 +69,10 @@ export function useWorkspaceData(einheitId, isStructuralEditingActive = false) {
       return res.data;
     },
     enabled: !!einheitId, // ✅ IMMER aktiviert (auch im Read-Only-Modus!)
-    staleTime: isStructuralEditingActive ? Infinity : 5 * 60 * 1000, // ✅ Im Edit-Mode: Cache verwenden, keine Refetches
+    // Edit-Mode: Cache einfrieren (kein Refetch, damit Eingaben nicht überschrieben werden).
+    // Read-Mode: staleTime 0 → frischer Server-Stand bei jedem Mount/Refetch,
+    // verhindert das Hängenbleiben veralteter (leerer) Antworten.
+    staleTime: isStructuralEditingActive ? Infinity : 0,
     refetchInterval: 0, // ✅ Kein automatisches Interval-Polling
     refetchOnWindowFocus: false, // ✅ Silent
     refetchOnReconnect: false, // ✅ Silent
