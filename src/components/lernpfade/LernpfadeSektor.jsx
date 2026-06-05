@@ -90,7 +90,13 @@ function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, indent = fal
           {variante && (
             <span
               className={`shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border ${variante.cls}`}
-              title={`Variante: ${variante.label}`}
+              title={
+                variante.label === 'Standard'
+                  ? 'Dieses Lernpaket muss der Reihe nach abgearbeitet werden, bevor es abgeschlossen werden kann.'
+                  : variante.label === 'Fast-Track'
+                  ? 'Der Schüler kann selbst entscheiden, was und in welcher Reihenfolge er in diesem Lernpaket bearbeitet.'
+                  : `Variante: ${variante.label}`
+              }
             >
               {variante.label}
             </span>
