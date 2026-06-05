@@ -67,6 +67,16 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     setHighlightedAtomIds(new Set());
     setSelectedNode(null); // Zurücksetzen beim Tab-Wechsel
     if (tab !== 'aufgaben') setTaskWorkshopActivityId(null);
+    // 🩹 Frische Workspace-Daten beim Tab-Wechsel erzwingen.
+    // Hintergrund (Bug "Lernziele verschwinden in Tab 2/3/4"): Alle Tabs leben in
+    // EINER Workspace-Komponente, die beim Tab-Wechsel NICHT neu gemountet wird.
+    // Die geteilte workspace-data-Query liefert daher den (evtl. veralteten/leeren)
+    // Cache-Stand, bis irgendwann zufällig ein Refetch passiert. Außerhalb des
+    // Edit-Modus holen wir die Detaildaten beim Tab-Wechsel aktiv neu, damit Tab
+    // 2/3/4 dieselben frischen Lernziele sehen wie Tab 5.
+    if (selectedEinheitId && !isStructuralEditingActive) {
+      queryClient.refetchQueries({ queryKey: ['workspace-data', selectedEinheitId], type: 'active' });
+    }
   };
 
   // Reaktiv auf `?tab=`-Deeplinks reagieren (z. B. wenn das Dashboard in

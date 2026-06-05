@@ -73,6 +73,16 @@ export function useWorkspaceData(einheitId, isStructuralEditingActive = false) {
     // Read-Mode: staleTime 0 → frischer Server-Stand bei jedem Mount/Refetch,
     // verhindert das Hängenbleiben veralteter (leerer) Antworten.
     staleTime: isStructuralEditingActive ? Infinity : 0,
+    // 🩹 KRITISCH (Bug "Lernziele verschwinden in Tab 2/3/4, sind aber in Tab 5 da"):
+    // Tab 5 (TaskCreationView) lädt Lernziele über eigene Queries und ist daher
+    // immer frisch. Die Tabs 2/3/4 hängen alle an DIESER geteilten workspace-data-
+    // Query. Bei einem Tab-Wechsel (gleiche Einheit) wird die Komponente, die den
+    // Hook nutzt, neu verwendet, aber React Query refetcht ohne diese Direktive
+    // NICHT automatisch – der (evtl. veraltete/leere) Cache-Stand bleibt sichtbar.
+    // refetchOnMount:'always' erzwingt im Read-Modus bei jedem Mount einen frischen
+    // Server-Stand. Im Edit-Modus bleibt der Cache eingefroren (false), damit
+    // laufende Eingaben nicht überschrieben werden.
+    refetchOnMount: isStructuralEditingActive ? false : 'always',
     refetchInterval: 0, // ✅ Kein automatisches Interval-Polling
     refetchOnWindowFocus: false, // ✅ Silent
     refetchOnReconnect: false, // ✅ Silent
