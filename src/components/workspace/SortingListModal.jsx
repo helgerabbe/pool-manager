@@ -27,6 +27,10 @@ export default function SortingListModal({
   exportLocked = false,
 }) {
   const [isReleased, setIsReleased] = useState(initialData?.content_status === 'approved');
+  // savedReleased = zuletzt GESPEICHERTER Freigabe-Status. Speichern/Löschen
+  // hängen daran (nicht am Live-Toggle), damit die Freigabe-Aktivierung erst
+  // gespeichert werden kann, bevor die Buttons verschwinden.
+  const [savedReleased, setSavedReleased] = useState(initialData?.content_status === 'approved');
   const [exportLockedWasEnabled, setExportLockedWasEnabled] = useState(exportLocked);
   const [editorData, setEditorData] = useState({
     instruction: initialData?.instruction || '',
@@ -40,6 +44,7 @@ export default function SortingListModal({
   useEffect(() => {
     if (open && !prevOpenRef.current) {
       setIsReleased(initialData?.content_status === 'approved');
+      setSavedReleased(initialData?.content_status === 'approved');
       setExportLockedWasEnabled(exportLocked);
       setEditorData({
         instruction: initialData?.instruction || '',
@@ -48,6 +53,12 @@ export default function SortingListModal({
     }
     prevOpenRef.current = open;
   }, [open]);
+
+  // savedReleased am zuletzt gespeicherten DB-Status nachführen (auch wenn
+  // initialData nach dem Speichern via Refetch verspätet eintrifft).
+  useEffect(() => {
+    if (open) setSavedReleased(initialData?.content_status === 'approved');
+  }, [open, initialData?.content_status]);
 
   // Reagiere auf Export-Lock-Änderung während Modal geöffnet ist
   useEffect(() => {
@@ -119,19 +130,23 @@ export default function SortingListModal({
         {/* Footer */}
         <div className="px-6 py-5 border-t border-border shrink-0 space-y-4">
           <ReleaseStatusToggle isReleased={isReleased} onToggle={setIsReleased} disabled={isSaving} />
-          {!isReleased && !isConverting && (
+          {!savedReleased && !isConverting && !(isReleased && !savedReleased) && (
             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
               Speichere Änderungen ab.
             </p>
           )}
-          {isReleased && (
+          {savedReleased ? (
             <p className="text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-2 py-1">
               Aufgabe ist freigegeben. Zum Bearbeiten oder Löschen zuerst die Freigabe oben zurücknehmen.
             </p>
+          ) : isReleased && (
+            <p className="text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-2 py-1">
+              Auf „Freigegeben" gesetzt — klicke auf <strong>Speichern</strong>, um die Freigabe zu übernehmen.
+            </p>
           )}
           <div className="flex items-center justify-between gap-3">
-            {/* Lösch- & Promote-Buttons links — nur wenn NICHT freigegeben */}
-            {!isReleased && (
+            {/* Lösch- & Promote-Buttons links — nur wenn (gespeichert) NICHT freigegeben */}
+            {!savedReleased && (
               <div className="flex items-center gap-2 flex-wrap">
                 {onDelete && !deleteConfirm && (
                   <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(true)} disabled={isSaving || isDeleting || isConverting} className="gap-1.5 text-destructive hover:bg-red-50 hover:text-destructive">
@@ -155,9 +170,9 @@ export default function SortingListModal({
                 )}
               </div>
             )}
-            {isReleased && <div />}
-            {/* Speichern-Buttons rechts — nur wenn NICHT freigegeben */}
-            {!isReleased && (
+            {savedReleased && <div />}
+            {/* Speichern-Buttons rechts — solange (gespeichert) NICHT freigegeben */}
+            {!savedReleased && (
               <div className="flex items-center gap-2">
                 <Button variant="outline" onClick={handleCancel} disabled={isSaving || isDeleting || isConverting}>Abbrechen</Button>
                 <Button onClick={handleSave} disabled={isSaving || exportLocked || isDeleting || isConverting} title={exportLocked ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''} className="gap-2">
@@ -165,7 +180,7 @@ export default function SortingListModal({
                 </Button>
               </div>
             )}
-            {isReleased && (
+            {savedReleased && (
               <Button variant="outline" onClick={handleCancel} disabled={isSaving || isDeleting}>Schließen</Button>
             )}
           </div>

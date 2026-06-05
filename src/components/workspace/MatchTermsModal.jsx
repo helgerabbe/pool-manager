@@ -293,6 +293,11 @@ export default function MatchTermsModal({
 }) {
   const [activeTab, setActiveTab] = useState('manual');
   const [isReleased, setIsReleased] = useState(false);
+  // savedReleased = der zuletzt GESPEICHERTE Freigabe-Status (aus der DB).
+  // Speichern/Löschen hängen daran (nicht am Live-Toggle), damit man den
+  // Toggle erst aktivieren UND DANN speichern kann. Erst nach dem Speichern
+  // (= savedReleased wird true) verschwinden die Buttons.
+  const [savedReleased, setSavedReleased] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [editorData, setEditorData] = useState({ instruction: '', pairs: [], distractors: [] });
@@ -329,10 +334,22 @@ export default function MatchTermsModal({
     if (!justOpened && populatedRef.current) return;
     if (pairs.length > 0 || (src.instruction || '').trim()) populatedRef.current = true;
     setIsReleased(src.content_status === 'approved');
+    setSavedReleased(src.content_status === 'approved');
     setEditorData({ instruction: src.instruction || '', pairs, distractors });
     setActiveTab('manual');
     setDeleteConfirm(false);
   }, [open, initialData]);
+
+  // savedReleased immer am zuletzt gespeicherten DB-Status nachführen — auch
+  // wenn initialData verspätet (nach dem Speichern via Refetch) eintrifft.
+  // Dadurch verschwinden Speichern/Löschen erst NACH erfolgtem Speichern.
+  useEffect(() => {
+    if (!open) return;
+    const src = (initialData?.field_values && typeof initialData.field_values === 'object')
+      ? { ...initialData, ...initialData.field_values }
+      : (initialData || {});
+    setSavedReleased(src.content_status === 'approved');
+  }, [open, initialData?.content_status]);
 
   const handleCancel = () => {
     setDeleteConfirm(false);
@@ -447,25 +464,29 @@ export default function MatchTermsModal({
           {/* Freigabe-Toggle bleibt IMMER bedienbar — nur so kann die Lehrkraft
               eine freigegebene Aufgabe überhaupt wieder zurückholen. */}
           <ReleaseStatusToggle isReleased={isReleased} onToggle={setIsReleased} disabled={isSaving || isDeleting} />
-          {!isReleased && !isReadyToSave && (
+          {!savedReleased && !isReadyToSave && (
             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
               Mindestens 1 vollständiges Begriffspaar erforderlich.
             </p>
           )}
-          {isReleased && (
+          {savedReleased ? (
             <p className="text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-2 py-1">
               Aufgabe ist freigegeben. Zum Bearbeiten oder Löschen zuerst die Freigabe oben zurücknehmen.
+            </p>
+          ) : isReleased && (
+            <p className="text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-2 py-1">
+              Auf „Freigegeben" gesetzt — klicke auf <strong>Speichern</strong>, um die Freigabe zu übernehmen.
             </p>
           )}
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              {/* Löschen nur sichtbar, wenn NICHT freigegeben. */}
-              {!isReleased && onDelete && !deleteConfirm && (
+              {/* Löschen nur sichtbar, wenn (gespeicherter Status) NICHT freigegeben. */}
+              {!savedReleased && onDelete && !deleteConfirm && (
                 <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(true)} disabled={isSaving || isDeleting} className="gap-1.5 text-destructive hover:bg-red-50 hover:text-destructive">
                   <Trash2 className="w-4 h-4" /> Löschen
                 </Button>
               )}
-              {!isReleased && deleteConfirm && (
+              {!savedReleased && deleteConfirm && (
                 <>
                   <span className="text-xs text-destructive font-medium">Wirklich löschen?</span>
                   <Button variant="destructive" size="sm" onClick={handleDelete} disabled={isDeleting} className="gap-1.5 h-7 text-xs">
@@ -477,10 +498,11 @@ export default function MatchTermsModal({
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" onClick={handleCancel} disabled={isSaving || isDeleting}>
-                {isReleased ? 'Schließen' : 'Abbrechen'}
+                {savedReleased ? 'Schließen' : 'Abbrechen'}
               </Button>
-              {/* Speichern nur sichtbar, wenn NICHT freigegeben. */}
-              {!isReleased && (
+              {/* Speichern sichtbar, solange der GESPEICHERTE Status nicht
+                  freigegeben ist — so kann die Freigabe-Aktivierung gespeichert werden. */}
+              {!savedReleased && (
                 <Button
                   onClick={handleSave}
                   disabled={isSaving || exportLocked || isDeleting || !isReadyToSave}
