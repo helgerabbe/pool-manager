@@ -119,7 +119,8 @@ export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext }) {
               value={lz.schueler_uebersetzung || ''}
               onChange={e => onUpdate(lz.id, 'schueler_uebersetzung', e.target.value)}
               rows={1}
-              className="text-[7px] italic min-h-[22px] resize-y leading-snug py-1 bg-amber-50/50 border-amber-200 text-amber-900 placeholder:text-amber-400/70 placeholder:not-italic"
+              style={{ fontSize: '10px', lineHeight: '1.3' }}
+              className="italic min-h-[20px] resize-y py-0.5 bg-amber-50/50 border-amber-200 text-amber-900 placeholder:text-amber-400/70 placeholder:not-italic"
             />
           </div>
 

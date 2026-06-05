@@ -195,6 +195,10 @@ export default function LernzieleUebersichtTab({
       <main className="flex-1 overflow-y-auto min-h-0">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {selectedPaket ? (
+            <>
+            <h2 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b">
+              {selectedPaket.titel_des_pakets}
+            </h2>
             <LernpaketZielKarte
               key={selectedPaket.id}
               paket={selectedPaket}
@@ -204,6 +208,7 @@ export default function LernzieleUebersichtTab({
               kannBearbeiten={kannBearbeiten}
               onSave={handleSavePaket}
             />
+            </>
           ) : (
             <div className="flex flex-col items-center justify-center h-[40vh] gap-2 text-muted-foreground">
               <Target className="w-10 h-10 opacity-30" />
