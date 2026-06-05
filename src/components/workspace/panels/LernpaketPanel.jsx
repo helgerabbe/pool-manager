@@ -676,12 +676,12 @@ export default function LernpaketPanel({
       </div>
 
       <Dialog open={editDialogOpen} onOpenChange={(open) => { if (!open) handleCancelEditDialog(); }}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
+          <DialogHeader className="shrink-0">
             <DialogTitle>📦 {paket.titel_des_pakets} bearbeiten</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-6 py-4">
+          <div className="space-y-6 py-4 flex-1 overflow-y-auto min-h-0">
             {/* Lernziele-Editor: controlled, persistiert erst beim globalen "Speichern". */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -778,7 +778,7 @@ export default function LernpaketPanel({
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="shrink-0 border-t pt-4">
             <Button
               type="button"
               variant="outline"
