@@ -11,8 +11,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Save, Loader2, Target, Clock, Layers } from 'lucide-react';
+import { Plus, Save, Loader2 } from 'lucide-react';
 import LernzielRow from '@/components/workspace/LernzielRow';
 
 let _tmpCounter = 0;
@@ -74,37 +73,13 @@ export default function LernpaketZielKarte({
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b bg-muted/30">
-        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary shrink-0">
-          <Layers className="w-4 h-4" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-sm truncate">{paket.titel_des_pakets}</h3>
-          <div className="flex items-center gap-2 mt-0.5 text-[11px] text-muted-foreground">
-            {themenfeldTitel && (
-              <span className="truncate">{themenfeldTitel}</span>
-            )}
-            {paket.geschaetzte_dauer_minuten ? (
-              <span className="flex items-center gap-1 shrink-0">
-                <Clock className="w-3 h-3" /> {paket.geschaetzte_dauer_minuten} Min.
-              </span>
-            ) : null}
-          </div>
-        </div>
-        <Badge variant="secondary" className="shrink-0 gap-1">
-          <Target className="w-3 h-3" /> {draft.length}
-        </Badge>
-      </div>
-
-      {/* Body */}
-      <div className="p-4 space-y-2.5">
-        {draft.length === 0 && (
-          <p className="text-xs text-muted-foreground italic py-2">
-            Noch keine Lernziele für dieses Lernpaket.
-          </p>
-        )}
+    <div className="space-y-1.5">
+      {draft.length === 0 && (
+        <p className="text-xs text-muted-foreground italic py-2">
+          Noch keine Lernziele für dieses Lernpaket.
+        </p>
+      )}
+      <div className="space-y-1.5">
         {draft.map((lz, idx) => (
           <LernzielRow
             key={lz.id}
