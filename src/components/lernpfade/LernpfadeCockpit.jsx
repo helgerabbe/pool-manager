@@ -34,6 +34,7 @@ import ReleaseConfirmDialog from '@/components/lernpfade/ReleaseConfirmDialog';
 import DidaktischerGuidePanel from '@/components/lernpfade/DidaktischerGuidePanel';
 import DashboardPreviewModal from '@/components/lernpfade/DashboardPreviewModal';
 import EinfuehrungPreviewModal from '@/components/lernpfade/EinfuehrungPreviewModal';
+import EinstiegsdiagnosePreviewModal from '@/components/lernpfade/EinstiegsdiagnosePreviewModal';
 import { useLernpfadStatus } from '@/hooks/useLernpfadStatus';
 import { useDashboardSync } from '@/hooks/useDashboardSync';
 import { useDashboardDragAndDrop } from '@/hooks/useDashboardDragAndDrop';
@@ -144,6 +145,8 @@ export default function LernpfadeCockpit({
   // der danach in der Dashboard-Vorschau angezeigt wird (transient).
   const [einfuehrungPreviewOpen, setEinfuehrungPreviewOpen] = useState(false);
   const [einfuehrungSnapshot, setEinfuehrungSnapshot] = useState(null);
+  // Vorschau des freiwilligen Fragenblocks (Einstiegsdiagnose).
+  const [qblockPreviewOpen, setQblockPreviewOpen] = useState(false);
   const [previewAufgabe, setPreviewAufgabe] = useState(null);
   const [editorAufgabe, setEditorAufgabe] = useState(null);
   const [arbeitsphaseModalOpen, setArbeitsphaseModalOpen] = useState(false);
@@ -1117,6 +1120,7 @@ export default function LernpfadeCockpit({
                 getDriftStatus={getDriftStatus}
                 driftReportLoading={driftReportLoading}
                 onPreviewEinfuehrung={() => setEinfuehrungPreviewOpen(true)}
+                onPreviewQblock={() => setQblockPreviewOpen(true)}
               />
             </div>
           </main>
@@ -1142,6 +1146,13 @@ export default function LernpfadeCockpit({
         einheitTitel={einheit?.titel_der_einheit}
         fach={einheit?.fach}
         onUebernehmen={setEinfuehrungSnapshot}
+      />
+
+      <EinstiegsdiagnosePreviewModal
+        open={qblockPreviewOpen}
+        onOpenChange={setQblockPreviewOpen}
+        einheitId={einheit?.id}
+        einheitTitel={einheit?.titel_der_einheit}
       />
 
       <AufgabePreviewDialog

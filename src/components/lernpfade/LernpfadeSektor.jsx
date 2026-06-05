@@ -149,6 +149,7 @@ export default function LernpfadeSektor({
   themenfeldTitelById,
   driftStatus,
   onPreviewEinfuehrung,
+  onPreviewQblock,
   }) {
   const items = Array.isArray(sektor.items) ? sektor.items : [];
 
@@ -191,6 +192,8 @@ export default function LernpfadeSektor({
           onPreview={
             item.ref_id === 'sys_sec0_overview' && onPreviewEinfuehrung
               ? onPreviewEinfuehrung
+              : item.ref_id === 'sys_sec0_qblock' && onPreviewQblock
+              ? onPreviewQblock
               : undefined
           }
           bundleConfig={item.bundle_config}
