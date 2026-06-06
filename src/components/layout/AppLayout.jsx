@@ -167,10 +167,10 @@ export default function AppLayout() {
               <NavIconLink to="/" icon={Home} label="Startseite" isActive={isActive('/')} />
 
               {/* Einheiten / Arbeitsbereich */}
-              <NavIconLink to="/einheiten" icon={Layers} label="Einheiten / Arbeitsbereich" isActive={isActive('/einheiten') || isActive('/workspace')} />
+              <NavIconLink to="/einheiten" icon={BookOpen} label="Einheiten / Arbeitsbereich" isActive={isActive('/einheiten') || isActive('/workspace')} />
 
               {/* Basismodule */}
-              <NavIconLink to="/basismodule" icon={BookOpen} label="Basismodule" isActive={isActive('/basismodule')} />
+              <NavIconLink to="/basismodule" icon={Layers} label="Basismodule" isActive={isActive('/basismodule')} />
 
               {/* Phase G: Export-Center (eigenständiger Hauptmenüpunkt
                   zwischen Basismodule und Dokumentation, nur sichtbar
