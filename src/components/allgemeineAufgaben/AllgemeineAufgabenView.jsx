@@ -767,6 +767,8 @@ export default function AllgemeineAufgabenView({
                   lernpakete={lernpakete}
                   basislernpakete={basislernpakete}
                   basismodule={basismodule}
+                  alleLernziele={alleLernziele}
+                  alleBasisLernziele={basisLernziele}
                   einheit={einheit}
                   kannBearbeiten={kannBearbeiten && lock.isEditMode}
                 />

@@ -151,6 +151,8 @@ export default function AITutorPromptPanel({
   lernpakete = [],
   basislernpakete = [],
   basismodule = [],
+  alleLernziele = [],
+  alleBasisLernziele = [],
   einheit,
   kannBearbeiten = false,
 }) {
@@ -158,16 +160,21 @@ export default function AITutorPromptPanel({
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Lernziele + zugehöriges Lernpaket auflösen (für Anzeige UND Brian-Payload).
+  // Primäre Quelle ist die kuratierte Lernzielanalyse der Aufgabe
+  // (aufgabe.lernzielanalyse.items) – nicht die alten Mapping-Tabellen.
   const lernzieleMitLernpaket = React.useMemo(
     () =>
       resolveLernzieleMitLernpaket({
+        analyseItems: aufgabe?.lernzielanalyse?.items || [],
         lernziele: mappedLernziele,
         basisLernziele: mappedBasisLernziele,
         lernpakete,
         basislernpakete,
         basismodule,
+        alleLernziele,
+        alleBasisLernziele,
       }),
-    [mappedLernziele, mappedBasisLernziele, lernpakete, basislernpakete, basismodule]
+    [aufgabe?.lernzielanalyse, mappedLernziele, mappedBasisLernziele, lernpakete, basislernpakete, basismodule, alleLernziele, alleBasisLernziele]
   );
 
   // Lokaler Zustand der Segmente
