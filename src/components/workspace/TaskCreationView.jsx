@@ -770,21 +770,20 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
         />
       )}
       <aside className={cn(
-        "fixed lg:static lg:w-96 z-50 w-80 border-r border-border bg-card flex flex-col shrink-0 overflow-hidden h-full transition-transform lg:transition-none",
+        "fixed lg:static lg:w-80 z-50 w-80 border-r border-border bg-card flex flex-col shrink-0 overflow-hidden h-full transition-transform lg:transition-none",
         sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         isEditingActive && "border-r-2 border-r-orange-400"
       )}>
 
-        <div className="px-3 py-3 border-b border-border shrink-0 space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aktivitäten</p>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-1 hover:bg-muted rounded transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+        <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-border h-11">
+          <Package className="w-4 h-4 text-primary shrink-0" />
+          <span className="text-sm font-semibold flex-1">Aktivitäten</span>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden p-1 hover:bg-muted rounded transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
           {/* Aktivitäts-Selectbox (versteckt, Logik aktiv für programmatische Ansteuerung) */}
           {allActivities.filter(a => paketeFuerEinheit.some(p => p.id === a.lernpaket_id)).length > 0 && (
             <select
