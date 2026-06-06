@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, Layers } from 'lucide-react';
 import BasismodulCard from '@/components/basismodule/BasismodulCard';
+import BasismodulManuellDialog from '@/components/basismodule/BasismodulManuellDialog';
 import EmptyState from '@/components/shared/EmptyState';
 import DeletionOverlay from '@/components/loading/DeletionOverlay';
 import { useNavigate } from 'react-router-dom';
@@ -20,6 +21,7 @@ export default function BasismoduleListe() {
   const [filterFach, setFilterFach] = useState('all');
   const [filterJahrgang, setFilterJahrgang] = useState('all');
   const [isDeletingAny, setIsDeletingAny] = useState(false);
+  const [manuellOpen, setManuellOpen] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -87,10 +89,16 @@ export default function BasismoduleListe() {
           <p className="text-sm text-muted-foreground mt-1">{basismodule.length} Basismodul{basismodule.length !== 1 ? 'e' : ''} insgesamt</p>
         </div>
         {permissions.kannEinheitVerwalten && (
-          <Button variant="outline" onClick={() => navigate('/einheit/create?basismodul=1')} className="gap-2">
-            <Plus className="w-4 h-4" />
-            Neues Basismodul
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => navigate('/einheit/create?basismodul=1')} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Neues Basismodul (Wizard)
+            </Button>
+            <Button variant="outline" onClick={() => setManuellOpen(true)} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Neues Basismodul (manuell)
+            </Button>
+          </div>
         )}
       </div>
 
@@ -152,6 +160,15 @@ export default function BasismoduleListe() {
       ) : (
         <p className="text-sm text-muted-foreground text-center py-10">Keine Basismodule gefunden.</p>
       )}
+
+      <BasismodulManuellDialog
+        open={manuellOpen}
+        onOpenChange={setManuellOpen}
+        onCreated={(einheit) => {
+          queryClient.invalidateQueries({ queryKey: ['basismodule'] });
+          if (einheit?.id) navigate(`/basismodule/${einheit.id}`);
+        }}
+      />
 
       <DeletionOverlay isVisible={isDeletingAny} message="Basismodul wird unwiderruflich gelöscht... Bitte warten." />
     </div>
