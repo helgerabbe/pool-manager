@@ -90,13 +90,13 @@ export default function BasismoduleListe() {
         </div>
         {permissions.kannEinheitVerwalten && (
           <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setManuellOpen(true)} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Neues Basismodul
+            </Button>
             <Button onClick={() => navigate('/einheit/create?basismodul=1')} className="gap-2">
               <Plus className="w-4 h-4" />
               Neues Basismodul (Wizard)
-            </Button>
-            <Button variant="outline" onClick={() => setManuellOpen(true)} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Neues Basismodul (manuell)
             </Button>
           </div>
         )}
