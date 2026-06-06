@@ -67,7 +67,7 @@ export default function BasismodulCard({
 
   return (
     <>
-      <div className="relative group/card">
+      <div className="relative group/card w-full max-w-sm">
         <Card className="group hover:shadow-lg hover:border-primary/20 transition-all duration-300 overflow-hidden flex flex-col">
           <CardContent className="p-0 flex flex-col flex-1">
             <Link
@@ -107,7 +107,12 @@ export default function BasismodulCard({
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
                 Inhalte
               </p>
-              <EinheitMetricsRow einheitId={einheit.id} volume={volume} />
+              <EinheitMetricsRow
+                einheitId={einheit.id}
+                volume={volume}
+                indicatorKeys={['themenfelder', 'lernpakete', 'aktivitaeten']}
+                basePath="/basismodule"
+              />
             </div>
 
             {/* Footer */}

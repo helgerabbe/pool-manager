@@ -55,20 +55,28 @@ const INDICATORS = [
   },
 ];
 
-export default function EinheitMetricsRow({ einheitId, volume }) {
+export default function EinheitMetricsRow({ einheitId, volume, indicatorKeys, basePath = '/workspace' }) {
   const safe = volume || { themenfelder: 0, lernpakete: 0, aktivitaeten: 0, level2: 0, level3: 0 };
+  const visibleIndicators = indicatorKeys
+    ? INDICATORS.filter((ind) => indicatorKeys.includes(ind.key))
+    : INDICATORS;
+  // Basismodule routen auf /basismodule/:id, reguläre Einheiten auf /workspace?einheit=
+  const buildLink = (tab) =>
+    basePath === '/workspace'
+      ? `/workspace?einheit=${einheitId}&tab=${tab}`
+      : `${basePath}/${einheitId}?tab=${tab}`;
 
   return (
     <TooltipProvider delayDuration={150}>
-      <div className="grid grid-cols-5 gap-1">
-        {INDICATORS.map((ind) => {
+      <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${visibleIndicators.length}, minmax(0, 1fr))` }}>
+        {visibleIndicators.map((ind) => {
           const Icon = ind.icon;
           const value = safe[ind.key] || 0;
           return (
             <Tooltip key={ind.key}>
               <TooltipTrigger asChild>
                 <Link
-                  to={`/workspace?einheit=${einheitId}&tab=${ind.tab}`}
+                  to={buildLink(ind.tab)}
                   onClick={(e) => e.stopPropagation()}
                   className="cursor-pointer flex flex-col items-center justify-center gap-0.5 py-1.5 px-1 rounded-md text-muted-foreground hover:text-primary hover:bg-muted active:bg-muted/80 transition-colors"
                   aria-label={ind.tooltip(value)}
