@@ -84,21 +84,25 @@ function SchnellErstellenModal({ open, onOpenChange, onCreated }) {
           </div>
           <div className="space-y-2">
             <Label>Unterrichtsfach *</Label>
-            <Select value={form.fach} onValueChange={v => setForm({ ...form, fach: v })}>
-              <SelectTrigger><SelectValue placeholder="Fach auswählen..." /></SelectTrigger>
-              <SelectContent>
-                {faecher.map(f => <SelectItem key={f.id} value={f.name}>{f.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <select
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              value={form.fach}
+              onChange={e => setForm({ ...form, fach: e.target.value })}
+            >
+              <option value="" disabled>Fach auswählen...</option>
+              {faecher.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
+            </select>
           </div>
           <div className="space-y-2">
             <Label>Jahrgangsstufe *</Label>
-            <Select value={form.jahrgangsstufe} onValueChange={v => setForm({ ...form, jahrgangsstufe: v })}>
-              <SelectTrigger><SelectValue placeholder="Jahrgang auswählen..." /></SelectTrigger>
-              <SelectContent>
-                {jahrgaenge.map(j => <SelectItem key={j.id} value={j.bezeichnung}>{j.bezeichnung}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <select
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              value={form.jahrgangsstufe}
+              onChange={e => setForm({ ...form, jahrgangsstufe: e.target.value })}
+            >
+              <option value="" disabled>Jahrgang auswählen...</option>
+              {jahrgaenge.map(j => <option key={j.id} value={j.bezeichnung}>{j.bezeichnung}</option>)}
+            </select>
           </div>
         </div>
         <DialogFooter>
