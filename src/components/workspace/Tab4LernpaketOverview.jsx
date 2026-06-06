@@ -21,7 +21,8 @@ import LernpaketPreviewModal from '@/components/workspace/preview/LernpaketPrevi
 import { cn } from '@/lib/utils';
 import { useCanToggleLernpaketRelease } from '@/hooks/useReleaseLock';
 import useSetReleaseStatus from '@/hooks/useSetReleaseStatus';
-import { kategorieColors } from '@/components/workspace/panels/SharedUI';
+import { kategorieColors, StatusBadge } from '@/components/workspace/panels/SharedUI';
+import { getLernpaketStatus } from '@/lib/statusLogic';
 
 const PHASE_META = {
   'Input':     { icon: '📚', bg: 'bg-green-50 border-green-200' },
@@ -87,7 +88,12 @@ export default function Tab4LernpaketOverview({
       {/* Header – einheitliches Tab-3-Muster: Titel → feine Trennlinie →
           Buttons rechtsbündig knapp unter der Linie → Inhalt. */}
       <div className="space-y-3">
-      <h2 className="text-lg font-bold pb-3 border-b">{paket.titel_des_pakets}</h2>
+      <div className="pb-3 border-b flex items-center gap-2 flex-wrap">
+        <h2 className="text-lg font-bold">{paket.titel_des_pakets}</h2>
+        <StatusBadge
+          status={getLernpaketStatus(paket, paketZiele, [], '', [], paketAktivitaeten)}
+        />
+      </div>
 
         <div className="flex items-center justify-end gap-2 flex-wrap">
         {/* Schüler-Vorschau für das ganze Lernpaket */}
