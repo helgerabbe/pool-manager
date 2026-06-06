@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useRBAC } from '@/hooks/useRBAC';
+import { ROLLEN } from '@/lib/rbac';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -15,26 +16,24 @@ import { Button } from '@/components/ui/button';
 export default function BasismodulManuellDialog({ open, onOpenChange, onCreated }) {
   const [form, setForm] = useState({ titel_der_einheit: '', fach: '', jahrgangsstufe: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { permissions, faecher: userFaecher } = useRBAC();
+  const { rolle, faecher: userFaecher = [] } = useRBAC();
 
   const { data: faecher = [] } = useQuery({
-    queryKey: ['lookup-faecher'],
+    queryKey: ['lookupFaecher'],
     queryFn: async () => {
       const all = await base44.entities.LookupFaecher.list();
-      const aktiv = all.filter(f => f.ist_aktiv).sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
-      if (permissions.istAdmin) return aktiv;
+      const aktiv = all.filter(f => f.ist_aktiv).sort((a, b) => (a.reihenfolge ?? 999) - (b.reihenfolge ?? 999));
+      if (rolle === ROLLEN.ADMIN) return aktiv;
       return userFaecher.length > 0 ? aktiv.filter(f => userFaecher.includes(f.name)) : aktiv;
     },
-    enabled: open,
   });
 
   const { data: jahrgaenge = [] } = useQuery({
-    queryKey: ['lookup-jahrgaenge'],
+    queryKey: ['lookupJahrgaenge'],
     queryFn: async () => {
       const all = await base44.entities.LookupJahrgaenge.list();
-      return all.filter(j => j.ist_aktiv).sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
+      return all.filter(j => j.ist_aktiv).sort((a, b) => (a.reihenfolge ?? 999) - (b.reihenfolge ?? 999));
     },
-    enabled: open,
   });
 
   const isValid = form.titel_der_einheit.trim() && form.fach && form.jahrgangsstufe;
@@ -68,7 +67,7 @@ export default function BasismodulManuellDialog({ open, onOpenChange, onCreated 
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-2">
-            <Label>Titel des Basismoduls *</Label>
+            <Label>Titel des Basismoduls (Unterrichtseinheit) *</Label>
             <Input
               placeholder="z.B. Prozentrechnung"
               value={form.titel_der_einheit}
