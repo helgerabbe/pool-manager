@@ -40,6 +40,9 @@ export default function LernpaketZielKarte({
         formulierung_fachsprache: z.formulierung_fachsprache || '',
         schueler_uebersetzung: z.schueler_uebersetzung || '',
         kategorie: z.kategorie || '',
+        // Verknüpfungs-Info durchreichen (für Badge + Lösch-Warnung).
+        verknuepfte_aufgaben_count: z.verknuepfte_aufgaben_count || 0,
+        verknuepfte_aufgaben_titel: z.verknuepfte_aufgaben_titel || [],
       }))
     );
   }, [ziele, dirty]);

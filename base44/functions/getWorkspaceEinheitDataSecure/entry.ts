@@ -201,6 +201,44 @@ Deno.serve(async (req) => {
     );
     const aufgaben = rawAufgaben.map(normalizeEntityRecord);
 
+    // ── Lernziel-↔-Aufgabe-Verknüpfungen ermitteln ──────────────────────────
+    // Damit die Lehrkraft im Lernziele-Tab (Tab 3) sieht, ob ein Lernziel
+    // bereits einer Aufgabe (AllgemeineAufgabe) zugeordnet ist, laden wir die
+    // Junction-Table AllgemeineAufgabeLernzielMapping für alle Lernziel-IDs.
+    // So lässt sich vor dem versehentlichen Löschen eines verknüpften
+    // Lernziels warnen (die Verknüpfung ist die Brücke zum KI-Tutor).
+    const rawMappings = await listAllByFilterInChunks(
+      base44.asServiceRole.entities.AllgemeineAufgabeLernzielMapping,
+      'lernziel_id',
+      lernzielIds
+    );
+    const mappings = rawMappings.map(normalizeEntityRecord);
+
+    // Aufgaben-Titel auflösen (für aussagekräftige Anzeige im Tooltip).
+    const mappingAufgabeIds = [...new Set(mappings.map((m) => m.aufgabe_id).filter(Boolean))];
+    const rawMappingAufgaben = await listAllByFilterInChunks(
+      base44.asServiceRole.entities.AllgemeineAufgabe,
+      'id',
+      mappingAufgabeIds
+    );
+    const aufgabenTitelById = {};
+    for (const a of rawMappingAufgaben.map(normalizeEntityRecord)) {
+      aufgabenTitelById[a.id] = a.titel || 'Aufgabe ohne Titel';
+    }
+
+    // Pro Lernziel: Liste der verknüpften Aufgaben-Titel (dedupliziert).
+    const verknuepfteAufgabenByLernzielId = {};
+    for (const m of mappings) {
+      if (!m.lernziel_id) continue;
+      if (!verknuepfteAufgabenByLernzielId[m.lernziel_id]) {
+        verknuepfteAufgabenByLernzielId[m.lernziel_id] = new Map();
+      }
+      verknuepfteAufgabenByLernzielId[m.lernziel_id].set(
+        m.aufgabe_id,
+        aufgabenTitelById[m.aufgabe_id] || 'Aufgabe'
+      );
+    }
+
     // 6. BUILD HIERARCHY: Frontend braucht nicht mehr zu filtern!
     // Gruppiere Lernziele nach Lernpaket
     const lernzielByPaketId = {};
@@ -237,16 +275,24 @@ Deno.serve(async (req) => {
       // wieder über `lz.lernpaket_id` (Strukturboard, Workspace-Filter,
       // LernpaketPanel). Fehlt das Feld, ist die Gruppierung leer → überall
       // "0 Lernziele".
-      const paketLernziele = (lernzielByPaketId[paket.id] || []).map((lz) => ({
-        id: lz.id,
-        lernpaket_id: lz.lernpaket_id,
-        formulierung_fachsprache: lz.formulierung_fachsprache,
-        kategorie: lz.kategorie,
-        schueler_uebersetzung: lz.schueler_uebersetzung,
-        sync_status: lz.sync_status,
-        // Aufgaben für dieses Lernziel
-        aufgaben: aufgabenByLernzielId[lz.id] || [],
-      }));
+      const paketLernziele = (lernzielByPaketId[paket.id] || []).map((lz) => {
+        const verknuepftMap = verknuepfteAufgabenByLernzielId[lz.id];
+        const verknuepfteAufgabenTitel = verknuepftMap ? [...verknuepftMap.values()] : [];
+        return {
+          id: lz.id,
+          lernpaket_id: lz.lernpaket_id,
+          formulierung_fachsprache: lz.formulierung_fachsprache,
+          kategorie: lz.kategorie,
+          schueler_uebersetzung: lz.schueler_uebersetzung,
+          sync_status: lz.sync_status,
+          // Aufgaben für dieses Lernziel
+          aufgaben: aufgabenByLernzielId[lz.id] || [],
+          // ✅ Verknüpfungs-Info: Ist dieses Lernziel bereits einer
+          // AllgemeineAufgabe zugeordnet? (Brücke zum KI-Tutor)
+          verknuepfte_aufgaben_count: verknuepfteAufgabenTitel.length,
+          verknuepfte_aufgaben_titel: verknuepfteAufgabenTitel,
+        };
+      });
 
       // Baue Paket mit eingebetteten Lernzielen
       const paketWithZiele = {
