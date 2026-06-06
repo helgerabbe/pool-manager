@@ -168,7 +168,7 @@ function AufgabeNode({ aufgabe, isSelected, onSelect }) {
 /**
  * Detail-Panel: Allgemeine Angaben (Tab 1)
  */
-function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit, onDelete, onPreview }) {
+function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFreigeben, onEdit, onDelete, onPreview }) {
   const hatTitel = !!aufgabe.titel?.trim();
   const showMission = isMissionApplicable(aufgabe);
   const themenfeld = themenfelder.find((tf) => tf.id === aufgabe.themenfeld_id);
@@ -291,10 +291,6 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
                   Bearbeiten
                 </Button>
               )}
-              <PublishAllgemeineAufgabeButton
-                aufgabe={aufgabe}
-                kannBearbeiten={kannBearbeiten}
-              />
               {!isApproved && (
                 <Button
                   variant="outline"
@@ -309,6 +305,12 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
               )}
             </>
           )}
+          {/* Freigabe-Button: unabhängig vom Bearbeitungsmodus sichtbar,
+              solange der Nutzer Bearbeitungsrechte für die Einheit hat. */}
+          <PublishAllgemeineAufgabeButton
+            aufgabe={aufgabe}
+            kannBearbeiten={kannFreigeben}
+          />
         </div>
       </div>
 
@@ -730,6 +732,7 @@ export default function AllgemeineAufgabenView({
                   aufgabe={selectedAufgabe}
                   themenfelder={themenfelder}
                   kannBearbeiten={kannBearbeiten && lock.isEditMode}
+                  kannFreigeben={kannBearbeiten}
                   onEdit={(a) => {
                     setEditingAufgabe(a);
                     setCreateFormOpen(true);

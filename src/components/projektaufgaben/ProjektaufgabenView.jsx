@@ -121,7 +121,7 @@ function AufgabeNode({ aufgabe, isSelected, onSelect }) {
 }
 
 // ── Detail-Panel: Allgemeine Angaben (Tab 1) ──
-function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit, onDelete }) {
+function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFreigeben, onEdit, onDelete }) {
   const hatTitel = !!aufgabe.titel?.trim();
   const hatInhalt = !!aufgabe.aufgabenstellung?.trim();
 
@@ -198,44 +198,50 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
       )}
 
       {/* Aktionen */}
-      {kannBearbeiten && (
+      {(kannBearbeiten || kannFreigeben) && (
         <div className="flex gap-2 pt-4 border-t border-border flex-wrap">
-          {aufgabe.sync_status === 'pending' ? (
-            <p className="text-xs text-orange-700 bg-orange-50 border border-orange-200 rounded px-2 py-1 flex items-center gap-1">
-              🔒 Im Export – schreibgeschützt bis Moodle-Upload bestätigt
-            </p>
-          ) : aufgabe.content_status === 'approved' ? (
-            <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1 flex items-center gap-1">
-              🔒 Freigegeben – Freigabe aufheben um zu bearbeiten
-            </p>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEdit(aufgabe)}
-              disabled={aufgabe.sync_status === 'pending'}
-              className="gap-2"
-            >
-              <Edit className="w-4 h-4" />
-              Bearbeiten
-            </Button>
+          {kannBearbeiten && (
+            <>
+              {aufgabe.sync_status === 'pending' ? (
+                <p className="text-xs text-orange-700 bg-orange-50 border border-orange-200 rounded px-2 py-1 flex items-center gap-1">
+                  🔒 Im Export – schreibgeschützt bis Moodle-Upload bestätigt
+                </p>
+              ) : aufgabe.content_status === 'approved' ? (
+                <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1 flex items-center gap-1">
+                  🔒 Freigegeben – Freigabe aufheben um zu bearbeiten
+                </p>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onEdit(aufgabe)}
+                  disabled={aufgabe.sync_status === 'pending'}
+                  className="gap-2"
+                >
+                  <Edit className="w-4 h-4" />
+                  Bearbeiten
+                </Button>
+              )}
+              {aufgabe.content_status !== 'approved' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onDelete(aufgabe.id)}
+                  disabled={aufgabe.sync_status === 'pending'}
+                  className="gap-2 text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Löschen
+                </Button>
+              )}
+            </>
           )}
-          <PublishProjektaufgabeButton 
-            aufgabe={aufgabe} 
-            kannBearbeiten={kannBearbeiten}
+          {/* Freigabe-Button: unabhängig vom Bearbeitungsmodus sichtbar,
+              solange der Nutzer Bearbeitungsrechte für die Einheit hat. */}
+          <PublishProjektaufgabeButton
+            aufgabe={aufgabe}
+            kannBearbeiten={kannFreigeben}
           />
-          {aufgabe.content_status !== 'approved' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onDelete(aufgabe.id)}
-              disabled={aufgabe.sync_status === 'pending'}
-              className="gap-2 text-destructive hover:text-destructive ml-auto"
-            >
-              <Trash2 className="w-4 h-4" />
-              Löschen
-            </Button>
-          )}
         </div>
       )}
     </div>
@@ -493,6 +499,7 @@ export default function ProjektaufgabenView({
                  aufgabe={selectedAufgabe}
                  themenfelder={themenfelder}
                  kannBearbeiten={kannBearbeiten && lock.isEditMode}
+                 kannFreigeben={kannBearbeiten}
                  onEdit={() => {
                    setEditingAufgabe(selectedAufgabe);
                    setCreateFormOpen(true);
