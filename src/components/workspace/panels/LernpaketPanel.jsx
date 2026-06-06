@@ -308,11 +308,13 @@ export default function LernpaketPanel({
         </div>
       )}
 
-      {/* Überschrift (Titel + Status-Badges + Dauer) – steht oben, darunter
-          eine feine Trennlinie und dann die Aktions-Buttons. Einheitliches
-          Muster für Tab 3/4/5: Überschrift → Linie → Buttons → Inhalt. */}
+      {/* Überschrift + Aktions-Buttons – einheitliches Tab-3-Muster:
+          Titel → feine Trennlinie → Buttons (rechtsbündig, knapp unter der
+          Linie) → Inhalt. Header und Buttons stehen in EINEM Wrapper, damit
+          der space-y-6-Abstand des Containers sie nicht auseinanderzieht. */}
+      <div className="space-y-3">
       <div className="pb-3 border-b">
-        <div className="flex items-center gap-2 mb-1 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           <h2 className="text-lg font-bold">{paket.titel_des_pakets}</h2>
           <StatusBadge status={pStatus} />
           {isLockedByOther && (
@@ -339,9 +341,6 @@ export default function LernpaketPanel({
             ) : null;
           })()}
         </div>
-        <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
-          <Clock className="w-3.5 h-3.5" />{paket.geschaetzte_dauer_minuten} Minuten
-        </p>
       </div>
 
       {/* Aktions-Leiste (unter der Überschrift). Bearbeiten + Mit KI füllen
@@ -429,6 +428,7 @@ export default function LernpaketPanel({
           )}
         </div>
       )}
+      </div>
 
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Lernziele</h3>

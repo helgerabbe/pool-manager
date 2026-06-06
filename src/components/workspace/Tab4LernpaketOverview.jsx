@@ -84,17 +84,12 @@ export default function Tab4LernpaketOverview({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h2 className="text-xl font-bold">{paket.titel_des_pakets}</h2>
-          <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
-            <Clock className="w-3.5 h-3.5" />
-            {paket.geschaetzte_dauer_minuten} Minuten
-          </p>
-        </div>
+      {/* Header – einheitliches Tab-3-Muster: Titel → feine Trennlinie →
+          Buttons rechtsbündig knapp unter der Linie → Inhalt. */}
+      <div className="space-y-3">
+      <h2 className="text-lg font-bold pb-3 border-b">{paket.titel_des_pakets}</h2>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end gap-2 flex-wrap">
         {/* Schüler-Vorschau für das ganze Lernpaket */}
         <Button
           variant="outline"
