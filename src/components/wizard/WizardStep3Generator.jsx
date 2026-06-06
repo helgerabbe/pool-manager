@@ -48,6 +48,7 @@ export default function WizardStep3Generator({ einheitId, onDone }) {
             lernpakete={paketeFuerEinheit}
             themenfelder={themenfelder}
             queryClient={queryClient}
+            isStructuralEditingActive
           />
         ) : (
           <div className="flex items-center justify-center h-full text-muted-foreground">

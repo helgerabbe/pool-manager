@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { ChevronRight, Loader2, RefreshCw, Check, AlertCircle, CheckCircle2, Circle } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function WizardStepLernziele({ einheitId, onDone, isFinalStep = false }) {
+export default function WizardStepLernziele({ einheitId, onDone, isFinalStep = false, istBasismodul = false }) {
   const queryClient = useQueryClient();
   const [objectives, setObjectives] = useState([]);
   const [approved, setApproved] = useState(new Set()); // IDs der genehmigten Lernziele
@@ -306,7 +306,7 @@ export default function WizardStepLernziele({ einheitId, onDone, isFinalStep = f
           ) : (
             <>
               <Check className="w-4 h-4" />
-              {isFinalStep ? 'Einheit erstellen' : 'Speichern & Weiter'}
+              {isFinalStep ? (istBasismodul ? 'Basismodul erstellen' : 'Einheit erstellen') : 'Speichern & Weiter'}
             </>
           )}
         </Button>

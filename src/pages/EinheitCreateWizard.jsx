@@ -265,6 +265,7 @@ export default function EinheitCreateWizard() {
             einheitId={einheitId}
             onDone={handleStep4Done}
             isFinalStep
+            istBasismodul={istBasismodul}
           />
         </div>
       )}
