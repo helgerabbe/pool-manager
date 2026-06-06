@@ -60,8 +60,9 @@ export default function BasismodulManuellDialog({ open, onOpenChange, onCreated 
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95%] sm:max-w-md">
+    <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
+      {open && <div className="fixed inset-0 z-40 bg-black/50" onClick={() => onOpenChange(false)} />}
+      <DialogContent className="z-50 w-[95%] sm:max-w-md" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Neues Basismodul (manuell)</DialogTitle>
         </DialogHeader>
