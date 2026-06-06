@@ -53,6 +53,7 @@ export default function CompactReleaseRow({
   hierarchyLocked,
   hierarchyLockMessage,
   missingCount = 0,
+  missingFields = [], // [{ fieldName, label, reason }] — für konkrete Auflistung
   onToggle,        // (newValue: boolean) => void — nur lokaler State, kein API-Call
   disabled = false,
   releasedAt = null,
@@ -124,7 +125,7 @@ export default function CompactReleaseRow({
   // ── 3) Unvollständig ───────────────────────────────────────────────────
   if (softDisabledForRelease) {
     return (
-      <div className="w-full rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 flex items-center gap-3">
+      <div className="w-full rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 flex items-start gap-3">
         <div className="shrink-0 p-1.5 rounded-full bg-amber-100 text-amber-700">
           <AlertCircle className="w-4 h-4" />
         </div>
@@ -132,11 +133,25 @@ export default function CompactReleaseRow({
           <p className="text-sm font-semibold text-amber-900">
             Freigabe — erst nach Vollständigkeit möglich
           </p>
-          <p className="text-xs text-amber-800/90 mt-0.5">
-            {missingCount > 0
-              ? `${missingCount} Pflichtfeld${missingCount === 1 ? '' : 'er'} fehl${missingCount === 1 ? 't' : 'en'}`
-              : 'Pflichtfelder fehlen'}
-          </p>
+          {missingFields && missingFields.length > 0 ? (
+            <ul className="mt-1 space-y-0.5">
+              {missingFields.map((m, i) => (
+                <li key={`${m.fieldName}-${i}`} className="text-xs text-amber-800/90 flex items-start gap-1.5">
+                  <span className="text-amber-600 mt-0.5">•</span>
+                  <span>
+                    <span className="font-medium">{m.label || m.fieldName}</span>
+                    {m.reason && <span className="text-amber-700"> — {m.reason}</span>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-amber-800/90 mt-0.5">
+              {missingCount > 0
+                ? `${missingCount} Pflichtfeld${missingCount === 1 ? '' : 'er'} fehl${missingCount === 1 ? 't' : 'en'}`
+                : 'Pflichtfelder fehlen'}
+            </p>
+          )}
         </div>
         <Toggle on={false} disabled title="Pflichtfelder fehlen" />
       </div>

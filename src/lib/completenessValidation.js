@@ -183,6 +183,29 @@ export function validateActivity(catalogEntry, fieldValues = {}) {
     return { isComplete: true, missingFields: [] };
   }
 
+  // ── Sonderfall Bildbeschriftung ──────────────────────────────────────────
+  // Der ImageLabelingEditor speichert seine Daten unter eigenen Keys
+  // (aufgabenstellung / backgroundImage / dropZones) und NICHT unter den
+  // Schema-Feldnamen (instruction / image_url / marker_data). Würden wir hier
+  // das generische Schema prüfen, fehlten immer "3 Pflichtfelder", obwohl die
+  // Lehrkraft alles korrekt eingegeben hat. Deshalb prüfen wir hier die echten
+  // Editor-Keys: Bild vorhanden + mindestens 2 beschriftete Begriffe.
+  const isImageLabeling = (catalogEntry.name || '').toLowerCase().includes('bildbeschriftung')
+    || catalogEntry.form_schema.some(f => f && f.field_name === 'marker_data');
+  if (isImageLabeling) {
+    const missing = [];
+    const hasImage = !isEmptyValue(fieldValues.backgroundImage) || !isEmptyValue(fieldValues.image_url);
+    if (!hasImage) {
+      missing.push(miss('backgroundImage', 'Hintergrundbild', 'Bitte ein Bild hochladen'));
+    }
+    const zones = Array.isArray(fieldValues.dropZones) ? fieldValues.dropZones : [];
+    const validZones = zones.filter(z => z && String(z.label || '').trim() !== '');
+    if (validZones.length < 2) {
+      missing.push(miss('dropZones', 'Zielbegriffe', `Mindestens 2 beschriftete Begriffe erforderlich (aktuell: ${validZones.length})`));
+    }
+    return { isComplete: missing.length === 0, missingFields: missing };
+  }
+
   const missingFields = [];
   for (const field of catalogEntry.form_schema) {
     if (!field || !field.field_name) continue;

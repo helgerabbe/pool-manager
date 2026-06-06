@@ -427,6 +427,7 @@ export default function TextLesenModal({
               pendingRelease={pendingRelease}
               canRelease={completeness.isComplete}
               missingCount={completeness?.missingFields?.length || 0}
+              missingFields={completeness?.missingFields || []}
               hierarchyLocked={!canToggle.allowed}
               hierarchyLockMessage={
                 canToggle.reason === 'einheit_final'
