@@ -228,9 +228,22 @@ const getVisibleTabs = (rolle) => {
   });
 };
 
-export default function WorkspaceTabs({ activeTab, onTabChange }) {
+// Tabs, die im Basismodul-Modus sichtbar sind (in dieser Reihenfolge).
+// Basismodule sind reduzierte Einheiten: keine allgemeinen/Projekt-Aufgaben,
+// keine Dashboards, kein Export-Cockpit. Die Steps werden für die Anzeige
+// frisch von 1 durchnummeriert.
+const BASISMODUL_TAB_VALUES = ['einheit', 'struktur', 'lernziele', 'aktivitaeten', 'aufgaben'];
+
+export default function WorkspaceTabs({ activeTab, onTabChange, isBasismodul = false }) {
   const { rolle } = useRBAC();
-  const visibleTabs = getVisibleTabs(rolle);
+  let visibleTabs = getVisibleTabs(rolle);
+
+  if (isBasismodul) {
+    visibleTabs = BASISMODUL_TAB_VALUES
+      .map((val) => visibleTabs.find((t) => t.value === val))
+      .filter(Boolean)
+      .map((tab, idx) => ({ ...tab, step: idx + 1 }));
+  }
   return (
     <TooltipProvider delayDuration={0}>
       <div className="flex flex-wrap items-center gap-1.5 shrink-0">

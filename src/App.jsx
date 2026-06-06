@@ -21,8 +21,8 @@ import EinheitCreateWizard from '@/pages/EinheitCreateWizard';
 import ExportCenter from '@/pages/ExportCenter';
 import MBKConsole from '@/pages/MBKConsole';
 import EinheitViewManager from '@/components/workspace/EinheitViewManager';
-import BasismoduleOverview from '@/pages/BasismoduleOverview';
-import BasismoduleView from '@/components/basismodule/BasismoduleView';
+import BasismoduleListe from '@/pages/BasismoduleListe';
+import BasismodulViewManager from '@/components/basismodule/BasismodulViewManager';
 import DocsLayout from '@/components/docs/DocsLayout';
 import DocsIndex from '@/pages/DocsIndex';
 import DocViewer from '@/pages/DocViewer';
@@ -58,7 +58,8 @@ const AuthenticatedApp = () => {
           <Route path="/" element={<ErrorBoundary fallback="Dashboard konnte nicht geladen werden."><Dashboard /></ErrorBoundary>} />
           <Route path="/einheiten" element={<ErrorBoundary fallback="Einheitenliste konnte nicht geladen werden."><EinheitenListe /></ErrorBoundary>} />
           <Route path="/einheiten/:id" element={<ErrorBoundary fallback="Einheitansicht konnte nicht geladen werden."><EinheitViewManager /></ErrorBoundary>} />
-          <Route path="/basismodule" element={<ErrorBoundary fallback="Basismodule konnte nicht geladen werden."><BasismoduleView /></ErrorBoundary>} />
+          <Route path="/basismodule" element={<ErrorBoundary fallback="Basismodule konnte nicht geladen werden."><BasismoduleListe /></ErrorBoundary>} />
+          <Route path="/basismodule/:id" element={<ErrorBoundary fallback="Basismodul konnte nicht geladen werden."><BasismodulViewManager /></ErrorBoundary>} />
           <Route path="/docs" element={<ErrorBoundary fallback="Dokumentation konnte nicht geladen werden."><DocsLayout /></ErrorBoundary>}>
             <Route index element={<DocsIndex />} />
             <Route path=":slug" element={<DocViewer />} />

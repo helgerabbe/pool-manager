@@ -42,7 +42,7 @@ const getStoredEinheitId = () => {
   return window.localStorage.getItem(LAST_EINHEIT_STORAGE_KEY);
 };
 
-export default function Workspace({ initialEinheitId: initialEinheitIdProp = null }) {
+export default function Workspace({ initialEinheitId: initialEinheitIdProp = null, isBasismodul = false }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialEinheitId = initialEinheitIdProp || searchParams.get('einheit') || getStoredEinheitId() || null;
 
@@ -56,7 +56,9 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   // Phase H Cleanup: Tabs 9 ('export'/Moodle-Export) und 10 ('brian'/Brian-
   // Export) sind aus der Einheitenansicht entfernt. Beide Workflows laufen
   // jetzt zentral im eigenständigen Export-Center (Hauptmenü).
-  const VALID_TABS = ['einheit', 'struktur', 'lernziele', 'aktivitaeten', 'aufgaben', 'ebene2', 'ebene3', 'dashboards', 'cockpit'];
+  const VALID_TABS = isBasismodul
+    ? ['einheit', 'struktur', 'lernziele', 'aktivitaeten', 'aufgaben']
+    : ['einheit', 'struktur', 'lernziele', 'aktivitaeten', 'aufgaben', 'ebene2', 'ebene3', 'dashboards', 'cockpit'];
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'einheit');
   const [highlightedAtomIds, setHighlightedAtomIds] = useState(new Set());
@@ -777,7 +779,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                 rechts neben der Tab-Leiste eingeblendet, wenn er aktivierbar ist. */}
             <div className="px-4 sm:px-6 lg:px-8 py-1.5 border-b border-border bg-card shrink-0 flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <WorkspaceTabs activeTab={activeTab} onTabChange={handleTabChange} />
+                <WorkspaceTabs activeTab={activeTab} onTabChange={handleTabChange} isBasismodul={isBasismodul} />
               </div>
               {activeTab === 'struktur' && (
                 <Button

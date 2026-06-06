@@ -78,6 +78,16 @@ Deno.serve(async (req) => {
 
     const offset = (page - 1) * limit;
 
+    // scope steuert, ob reguläre Einheiten oder Basismodule geliefert werden.
+    // 'basismodule' → nur ist_basismodul=true. Default ('einheiten') → nur
+    // reguläre Einheiten (ist_basismodul ist false/unset). Basismodule nutzen
+    // dasselbe Datenmodell, werden aber in einer eigenen Übersicht angezeigt.
+    const scope = payload.scope === 'basismodule' ? 'basismodule' : 'einheiten';
+    const basismodulFilter =
+      scope === 'basismodule'
+        ? { ist_basismodul: true }
+        : { ist_basismodul: { $ne: true } };
+
     // 3. RBAC: Bestimme welche Einheiten der User sehen darf
     const benutzerList = await base44.asServiceRole.entities.Benutzer.filter({
       user_id: user.email,
@@ -92,7 +102,7 @@ Deno.serve(async (req) => {
     // Basis-Filter: Entwürfe (noch im Wizard) sind für alle unsichtbar,
     // außer dem Ersteller selbst. Da der Ersteller der einzige ist, der
     // im Wizard arbeitet, reicht es, wizard_status != 'entwurf' zu filtern.
-    const draftFilter = { wizard_status: { $ne: 'entwurf' } };
+    const draftFilter = { wizard_status: { $ne: 'entwurf' }, ...basismodulFilter };
 
     let filterCriteria = { ...draftFilter };
 
@@ -197,6 +207,7 @@ Deno.serve(async (req) => {
         id: einheit.id,
         fach: einheit.fach,
         titel_der_einheit: einheit.titel_der_einheit,
+        ist_basismodul: einheit.ist_basismodul === true,
         jahrgangsstufe: einheit.jahrgangsstufe,
         freigabe_status: einheit.freigabe_status,
         sync_status: einheit.sync_status,

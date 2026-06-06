@@ -30,6 +30,11 @@
       "type": "string",
       "description": "Titel der Unterrichtseinheit"
     },
+    "ist_basismodul": {
+      "type": "boolean",
+      "default": false,
+      "description": "true = diese Einheit ist ein Basismodul (Wissensspeicher aus vorangegangenen Jahrg\u00e4ngen). Basismodule nutzen dasselbe Datenmodell wie regul\u00e4re Einheiten, blenden aber bestimmte Tabs (Allgemeine/Projekt-Aufgaben, Dashboards, Export) aus und werden in einer separaten \u00dcbersicht (/basismodule) angezeigt. Perspektivisch kann ein Basismodul sp\u00e4ter zu einer vollwertigen Einheit erweitert werden, indem das Flag entfernt wird."
+    },
     "gesamtziele": {
       "type": "array",
       "items": {
