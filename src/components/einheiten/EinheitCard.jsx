@@ -100,7 +100,10 @@ export default function EinheitCard({
                   />
                 </div>
               </div>
-              <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+              <h3
+                className="text-base font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 min-h-[2.75rem]"
+                title={einheit.titel_der_einheit}
+              >
                 {einheit.titel_der_einheit}
               </h3>
             </Link>
