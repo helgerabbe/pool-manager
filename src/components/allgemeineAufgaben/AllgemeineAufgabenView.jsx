@@ -81,8 +81,8 @@ function ThemenfeldNode({ themenfeld, aufgaben, selectedId, onSelect }) {
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left hover:bg-muted/50 transition-colors"
       >
-        <ChevronRight className={cn('w-4 h-4 transition-transform shrink-0', isOpen && 'rotate-90')} />
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide truncate">
+        <ChevronRight className={cn('w-3.5 h-3.5 transition-transform shrink-0', isOpen && 'rotate-90')} />
+        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide truncate">
           {themenfeld.titel}
         </span>
         <Badge variant="secondary" className="text-[10px] ml-auto shrink-0">
@@ -662,7 +662,7 @@ export default function AllgemeineAufgabenView({
             </div>
           )}
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-1">
+          <div className="flex-1 overflow-y-auto p-2 space-y-1">
             {allgemeineAufgaben.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-8">
                 Noch keine Aufgaben

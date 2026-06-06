@@ -920,7 +920,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                        docsSlug="lernpakete-aktivitaeten"
                      />
                    </div>
-                   <div className="flex-1 overflow-hidden min-h-0 p-3">
+                   <div className="flex-1 overflow-hidden min-h-0 p-2">
                      <div className="h-full overflow-y-auto pr-2">
                     <SidebarTree
                       einheit={einheit}

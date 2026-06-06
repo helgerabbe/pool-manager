@@ -298,7 +298,7 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
           disabled={isSequenzielleUndGesperrt}
           title={isSequenzielleUndGesperrt ? 'Vorherige Pakete müssen vollständig sein' : undefined}
           className={cn(
-            'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-sm font-medium transition-colors min-w-0 disabled:opacity-50 disabled:cursor-not-allowed',
+            'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs font-medium transition-colors min-w-0 disabled:opacity-50 disabled:cursor-not-allowed',
             isSelected ? 'bg-primary text-primary-foreground'
               : isSequenzielleUndGesperrt ? 'text-muted-foreground/50 bg-muted/30'
               : lockedByOther ? 'text-foreground hover:bg-amber-50 bg-amber-50/50'
@@ -391,8 +391,8 @@ function ThemenfeldNode({ themenfeld, lernpakete, lernziele, aufgaben, selectedI
         <button
           onClick={() => onSelect({ type: 'themenfeld', id: `themenfeld-${themenfeld.id}`, themenfeldId: themenfeld.id, data: themenfeld })}
           className={cn(
-            'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-sm font-semibold transition-colors min-w-0',
-            isSelected ? 'bg-primary text-primary-foreground' : isSammelbecken ? 'text-foreground hover:bg-slate-100' : 'text-foreground hover:bg-muted'
+            'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-[10px] font-bold uppercase tracking-wide transition-colors min-w-0',
+            isSelected ? 'bg-primary text-primary-foreground' : isSammelbecken ? 'text-foreground hover:bg-slate-100' : 'text-muted-foreground hover:bg-muted'
           )}
         >
           <FolderOpen className={cn('w-3.5 h-3.5 shrink-0', isSammelbecken ? 'text-slate-500' : 'text-amber-500')} />
