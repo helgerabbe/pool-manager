@@ -24,3 +24,10 @@ export async function getAllBasisLernziele() {
 export async function getAllBasismodule() {
   return base44.entities.Basismodule.list();
 }
+
+/**
+ * Alle Basislernpakete laden (für die Lernpaket-Zuordnung von Basis-Lernzielen).
+ */
+export async function getAllBasislernpakete() {
+  return base44.entities.Basislernpakete.list('-created_date', 500);
+}

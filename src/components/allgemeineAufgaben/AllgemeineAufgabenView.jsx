@@ -5,7 +5,7 @@ import { getEinheitById } from '@/services/EinheitenService';
 import { getAllLernpakete } from '@/services/LernpaketService';
 import { getAllLernziele } from '@/services/LernzielService';
 import { getAufgabenByEinheit, getMappingsByAufgabe, deleteAllgemeineAufgabe, lockTask, unlockTask, createAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
-import { getAllBasisLernziele, getAllBasismodule } from '@/services/BasisLernzielService';
+import { getAllBasisLernziele, getAllBasismodule, getAllBasislernpakete } from '@/services/BasisLernzielService';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -484,6 +484,11 @@ export default function AllgemeineAufgabenView({
     queryFn: () => getAllBasismodule(),
   });
 
+  const { data: basislernpakete = [] } = useQuery({
+    queryKey: ['basislernpakete'],
+    queryFn: () => getAllBasislernpakete(),
+  });
+
   // Effektive Basis-Lernziele aus Mappings
   const effectiveMappedBasisLernziele = useMemo(() => {
     if (!selectedAufgabeId || mappedBasisLernziele.length === 0) return [];
@@ -760,6 +765,7 @@ export default function AllgemeineAufgabenView({
                   mappedLernziele={effectiveMappedLernziele}
                   mappedBasisLernziele={effectiveMappedBasisLernziele}
                   lernpakete={lernpakete}
+                  basislernpakete={basislernpakete}
                   basismodule={basismodule}
                   einheit={einheit}
                   kannBearbeiten={kannBearbeiten && lock.isEditMode}

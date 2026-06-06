@@ -15,6 +15,8 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, Save, Loader2, Info } from 'lucide-react';
 import { toast } from 'sonner';
+import { resolveLernzieleMitLernpaket } from '@/lib/lernzielLernpaketResolver';
+import VerknuepfteLernzieleBlock from '@/components/allgemeineAufgaben/VerknuepfteLernzieleBlock';
 
 // ── Tutor-Persona Auswahl ─────────────────────────────────────────────────────
 const TUTOR_PERSONAS = [
@@ -146,11 +148,27 @@ export default function AITutorPromptPanel({
   aufgabe,
   mappedLernziele = [],
   mappedBasisLernziele = [],
+  lernpakete = [],
+  basislernpakete = [],
+  basismodule = [],
   einheit,
   kannBearbeiten = false,
 }) {
   const queryClient = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Lernziele + zugehöriges Lernpaket auflösen (für Anzeige UND Brian-Payload).
+  const lernzieleMitLernpaket = React.useMemo(
+    () =>
+      resolveLernzieleMitLernpaket({
+        lernziele: mappedLernziele,
+        basisLernziele: mappedBasisLernziele,
+        lernpakete,
+        basislernpakete,
+        basismodule,
+      }),
+    [mappedLernziele, mappedBasisLernziele, lernpakete, basislernpakete, basismodule]
+  );
 
   // Lokaler Zustand der Segmente
   const [segments, setSegments] = useState({
@@ -195,6 +213,8 @@ export default function AITutorPromptPanel({
         einheit,
         lernziele: mappedLernziele,
         basisLernziele: mappedBasisLernziele,
+        // Lernziel→Lernpaket-Zuordnung, damit Brian gezielt auf Lernpakete verweisen kann.
+        lernzieleMitLernpaket,
       });
       const result = response.data?.segments;
       if (!result) throw new Error('Keine Segmente erhalten');
@@ -332,6 +352,9 @@ export default function AITutorPromptPanel({
           onChange={kannBearbeiten ? v => updateField('brian_completion_rule', v) : undefined}
           kannBearbeiten={kannBearbeiten}
         />
+
+        {/* Verknüpfte Lernziele & Lernpakete – damit Brian gezielt verweisen kann */}
+        <VerknuepfteLernzieleBlock items={lernzieleMitLernpaket} />
 
         {/* Feld 5: Erwartungshorizont als Tutor-Kontext (nur für Ebene-2-Aufgaben) */}
         {!istProjektaufgabe && (

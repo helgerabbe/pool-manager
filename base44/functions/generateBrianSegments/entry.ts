@@ -84,6 +84,7 @@ Deno.serve(async (req) => {
       einheit,
       lernziele,
       basisLernziele,
+      lernzieleMitLernpaket,
     } = body;
 
     let task = null;
@@ -128,6 +129,19 @@ Deno.serve(async (req) => {
       ? lernzieleTexte.map(lz => `- ${lz}`).join('\n')
       : '(keine spezifischen Lernziele hinterlegt)';
 
+    // Lernziel → Lernpaket-Zuordnung. Brian soll Schüler bei nicht erreichten
+    // Lernzielen gezielt auf das passende Lernpaket verweisen. Ist kein
+    // Lernpaket zugeordnet, weist Brian darauf hin, dass der Schüler mit der
+    // Lehrkraft besprechen soll, wie er das Ziel sonst erreichen kann.
+    const lernzieleMitLpListe = Array.isArray(lernzieleMitLernpaket) ? lernzieleMitLernpaket : [];
+    const lernzieleMitLpStr = lernzieleMitLpListe.length > 0
+      ? lernzieleMitLpListe
+          .map(item => item.lernpaket
+            ? `- Lernziel: "${item.text}" → passendes Lernpaket: "${item.lernpaket}"`
+            : `- Lernziel: "${item.text}" → KEIN zugeordnetes Lernpaket (Schüler soll mit der Lehrkraft besprechen, wie er dieses Ziel erreichen kann)`)
+          .join('\n')
+      : '(keine Lernziel-Lernpaket-Zuordnungen hinterlegt)';
+
     const materialienStr = (Array.isArray(task.materialien) ? task.materialien : [])
       .map(m => m.label || m.content || m.url || '')
       .filter(Boolean)
@@ -152,6 +166,11 @@ ${materialienStr !== '(keine Materialien)' ? `- Materialien zur Unterstützung:\
 
 Lernziele, auf die du dich beziehst:
 ${lernzieleStr}
+
+Verknüpfte Lernziele und zugehörige Lernpakete (Verweis-Logik):
+${lernzieleMitLpStr}
+
+WICHTIG für deine Begleitung: Wenn du merkst, dass der Schüler ein bestimmtes Lernziel noch nicht beherrscht, verweise ihn konkret auf das oben genannte zugehörige Lernpaket ("Schau dir dafür nochmal das Lernpaket … an"). Gibt es zu einem Lernziel KEIN zugeordnetes Lernpaket, sage dem Schüler freundlich, dass es dafür aktuell kein Lernpaket gibt, und ermutige ihn, mit seiner Lehrkraft zu besprechen, wie er dieses Ziel erreichen kann.
 
 Leite den Schüler durch gezielte Fragen und Impulse, bis er die Aufgabe vollständig und nach den Lernzielen erarbeitet hat.`;
 
@@ -185,6 +204,7 @@ Leite den Schüler durch gezielte Fragen und Impulse, bis er die Aufgabe vollst�
             aufgabenstellung,
             erwartungshorizont: erwartungshorizont || '(noch nicht hinterlegt)',
             lernziele: lernzieleTexte,
+            lernziele_mit_lernpaket: lernzieleMitLpStr,
             materialien: materialienStr,
             bewertungsrubriken: rubrikenStr,
             aufgabentyp: isEbene3 ? 'Projekt-/Anwendungsaufgabe (Ebene 3)' : 'Transfer-Aufgabe (Ebene 2)',
