@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertCircle, AlertTriangle, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export const kategorieColors = {
   'Fachwissen': 'bg-blue-100 text-blue-700',
@@ -48,10 +49,28 @@ export function StatusBadge({ status }) {
     red: 'Unvollständig',
     new: 'Neu',
   };
+  // Erklärende Tooltips je Status. „Neu" = noch nie nach Moodle exportiert.
+  // Die übrigen Texte sind als Platzhalter für spätere Status-Badges schon
+  // hinterlegt, damit überall derselbe Tooltip erscheint.
+  const tooltip = {
+    green: 'Dieses Lernpaket ist vollständig und bereit zum Export.',
+    yellow: 'Dieses Lernpaket befindet sich noch in Bearbeitung.',
+    red: 'Diesem Lernpaket fehlen noch Inhalte – es ist unvollständig.',
+    new: 'Dieses Lernpaket wurde noch nie nach Moodle exportiert.',
+  };
   return (
-    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${cfg[status] || ''}`}>
-      {label[status]}
-    </span>
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className={`cursor-help text-[11px] font-medium px-2 py-0.5 rounded-full ${cfg[status] || ''}`}>
+            {label[status]}
+          </span>
+        </TooltipTrigger>
+        {tooltip[status] && (
+          <TooltipContent side="bottom">{tooltip[status]}</TooltipContent>
+        )}
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 

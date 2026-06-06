@@ -381,45 +381,9 @@ export default function LernpaketPanel({
             Mit KI füllen
           </Button>
 
-          {/* Freigabe-Button — etwas Abstand vom Rest */}
-          <div className="w-px h-5 bg-border mx-1" />
-          {isReleased ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleLernpaketRelease(false)}
-              disabled={isReleasePending || !canToggleLernpaketRelease}
-              title={releaseLockTitle || 'Freigabe zurücknehmen'}
-              className="gap-2 bg-green-50 border-green-400 text-green-800 hover:bg-green-100"
-            >
-              {isReleasePending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Lock className="w-3.5 h-3.5" />}
-              Freigegeben
-            </Button>
-          ) : (
-            <TooltipProvider delayDuration={300}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => releaseReadiness.isComplete && canToggleLernpaketRelease && handleLernpaketRelease(true)}
-                      disabled={!releaseReadiness.isComplete || !canToggleLernpaketRelease || isReleasePending}
-                      className="gap-2"
-                    >
-                      {isReleasePending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                      Lernpaket freigeben
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                {(!releaseReadiness.isComplete || !canToggleLernpaketRelease) && (
-                  <TooltipContent side="bottom">
-                    {releaseLockTitle || 'Lernpaket kann erst freigegeben werden, wenn alle Aktivitäten freigegeben sind.'}
-                  </TooltipContent>
-                )}
-              </Tooltip>
-            </TooltipProvider>
-          )}
+          {/* Freigabe-Button bewusst NICHT mehr hier: Die Freigabe von
+              Lernpaketen erfolgt zentral in Tab 5 (Ende der Werkbank-Reihe),
+              damit der Freigabe-Workflow an genau einer Stelle lebt. */}
 
           {isLockedByOther && (
             <span className="text-xs px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 font-medium">

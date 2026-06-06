@@ -13,10 +13,13 @@
  */
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { Target, Inbox } from 'lucide-react';
 import HelpDialog from '@/components/ui/HelpDialog';
+import { getLernpaketStatus } from '@/lib/statusLogic';
+import { StatusBadge } from '@/components/workspace/panels/SharedUI';
 import {
   createLernziel,
   updateLernziel,
@@ -52,6 +55,15 @@ export default function LernzieleUebersichtTab({
 }) {
   const queryClient = useQueryClient();
   const [selectedPaketId, setSelectedPaketId] = useState(null);
+
+  // Phase-Aktivitäten laden, damit das Lernpaket-Status-Badge ("Neu" usw.)
+  // identisch zu Tab 4 berechnet werden kann (siehe getLernpaketStatus).
+  const { data: phaseAktivitaeten = [] } = useQuery({
+    queryKey: ['lernpaketPhaseAktivitaeten'],
+    queryFn: () => base44.entities.LernpaketPhaseAktivitaet.filter({
+      sync_status: { $ne: 'to_delete' },
+    }),
+  });
 
   const kontext = useMemo(
     () => ({ fach: einheit?.fach, jahrgangsstufe: einheit?.jahrgangsstufe }),
@@ -195,9 +207,21 @@ export default function LernzieleUebersichtTab({
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {selectedPaket ? (
             <>
-            <h2 className="text-lg font-bold text-foreground mb-3 pb-3 border-b">
-              {selectedPaket.titel_des_pakets}
-            </h2>
+            <div className="mb-3 pb-3 border-b flex items-center gap-2 flex-wrap">
+              <h2 className="text-lg font-bold text-foreground">
+                {selectedPaket.titel_des_pakets}
+              </h2>
+              <StatusBadge
+                status={getLernpaketStatus(
+                  selectedPaket,
+                  zieleProPaket.get(selectedPaket.id) || [],
+                  [],
+                  '',
+                  [],
+                  phaseAktivitaeten
+                )}
+              />
+            </div>
             <LernpaketZielKarte
               key={selectedPaket.id}
               paket={selectedPaket}
