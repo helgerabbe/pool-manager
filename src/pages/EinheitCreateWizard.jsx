@@ -20,6 +20,9 @@ export default function EinheitCreateWizard() {
   const urlParams = new URLSearchParams(window.location.search);
   const draftId = urlParams.get('draftId');
   const draftStep = parseInt(urlParams.get('step') || '1', 10);
+  // Basismodul-Modus: derselbe Wizard, aber die Einheit wird als Basismodul gestempelt.
+  const istBasismodul = urlParams.get('basismodul') === '1';
+  const listePfad = istBasismodul ? '/basismodule' : '/einheiten';
 
   const [currentStep, setCurrentStep] = useState(draftId ? draftStep : 1);
   const [einheitId, setEinheitId]     = useState(draftId || null);
@@ -56,15 +59,16 @@ export default function EinheitCreateWizard() {
     setIsCancelling(true);
     if (draftId) {
       // Draft-Resume: Entwurf bleibt erhalten, einfach zurück
-      navigate('/einheiten');
+      navigate(listePfad);
       return;
     }
     if (einheitId) {
       // Neuer Wizard: Einheit wurde angelegt → Cascade-Delete
       await base44.functions.invoke('deleteEinheitSecure', { einheit_id: einheitId });
       queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+      queryClient.invalidateQueries({ queryKey: ['basismodule'] });
     }
-    navigate('/einheiten');
+    navigate(listePfad);
   };
 
   const handleBack = () => {
@@ -78,9 +82,10 @@ export default function EinheitCreateWizard() {
     // KEIN Feld der Einheiten-Entity → vor dem Backend-Call rausfiltern, aber
     // im Wizard-State behalten, damit es an WizardStepAssistenz weitergeht.
     const { beschreibung, ...metaForDb } = metaData;
-    const res = await base44.functions.invoke('createEinheitMitDefaults', { metaData: metaForDb });
+    const res = await base44.functions.invoke('createEinheitMitDefaults', { metaData: metaForDb, istBasismodul });
     const { einheit } = res.data;
     queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+    queryClient.invalidateQueries({ queryKey: ['basismodule'] });
     queryClient.invalidateQueries({ queryKey: ['themenfelder', einheit.id] });
     queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
     setEinheitId(einheit.id);
@@ -148,6 +153,7 @@ export default function EinheitCreateWizard() {
   const handleStep4Done = async () => {
     queryClient.invalidateQueries({ queryKey: ['lernziele'] });
     queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+    queryClient.invalidateQueries({ queryKey: ['basismodule'] });
     setCompletedSteps(prev => [...new Set([...prev, 4])]);
     if (einheitId) {
       await base44.entities.Einheiten.update(einheitId, {
@@ -155,7 +161,11 @@ export default function EinheitCreateWizard() {
         wizard_status: 'aktiv',
       });
     }
-    navigate(`/workspace?einheit=${einheitId}&tab=einheit&fromWizard=1`);
+    if (istBasismodul) {
+      navigate(`/basismodule/${einheitId}`);
+    } else {
+      navigate(`/workspace?einheit=${einheitId}&tab=einheit&fromWizard=1`);
+    }
   };
 
   const handleStepClick = (stepId) => {
@@ -166,7 +176,11 @@ export default function EinheitCreateWizard() {
 
   const handleSkipToStruktur = () => {
     // Defaults wurden bereits in handleStep1Done atomar angelegt
-    navigate(`/workspace?einheit=${einheitId}&fromWizard=1`);
+    if (istBasismodul) {
+      navigate(`/basismodule/${einheitId}`);
+    } else {
+      navigate(`/workspace?einheit=${einheitId}&fromWizard=1`);
+    }
   };
 
   if (isDraftLoading) {
@@ -182,7 +196,9 @@ export default function EinheitCreateWizard() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">
-          {draftId ? 'Entwurf weiterbearbeiten' : 'Neue Einheit erstellen'}
+          {draftId
+            ? 'Entwurf weiterbearbeiten'
+            : istBasismodul ? 'Neues Basismodul erstellen' : 'Neue Einheit erstellen'}
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">
           {draftId

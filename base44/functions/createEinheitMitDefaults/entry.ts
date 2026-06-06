@@ -32,15 +32,18 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { metaData } = body;
+    const { metaData, istBasismodul } = body;
 
     if (!metaData?.fach || !metaData?.titel_der_einheit || !metaData?.jahrgangsstufe) {
       return Response.json({ error: 'Fehlende Pflichtfelder: fach, titel_der_einheit, jahrgangsstufe' }, { status: 400 });
     }
 
     // Schritt 1: Einheit anlegen (als Entwurf – unsichtbar für andere User bis Wizard abgeschlossen)
+    // istBasismodul=true stempelt diese Einheit als Basismodul. Identischer Wizard,
+    // nur das Flag unterscheidet eine reguläre Einheit von einem Basismodul.
     const einheit = await base44.asServiceRole.entities.Einheiten.create({
       ...metaData,
+      ist_basismodul: istBasismodul === true,
       wizard_status: 'entwurf',
       freigabe_status: 'Freigegeben für Bearbeitung',
       sync_status: 'new',
