@@ -6,12 +6,12 @@ import { ROLLEN } from '@/lib/rbac';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 
 /**
  * Manuelles Anlegen eines Basismoduls – ohne Wizard.
  * Erfasst nur die Pflichtfelder (Titel, Fach, Jahrgang) und legt direkt an.
+ * Verwendet native <select>-Elemente (keine Z-Index-/Portal-Probleme im Dialog).
  */
 export default function BasismodulManuellDialog({ open, onOpenChange, onCreated }) {
   const [form, setForm] = useState({ titel_der_einheit: '', fach: '', jahrgangsstufe: '' });
@@ -59,6 +59,9 @@ export default function BasismodulManuellDialog({ open, onOpenChange, onCreated 
     }
   };
 
+  const selectClass =
+    'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95%] sm:max-w-md" aria-describedby={undefined}>
@@ -77,21 +80,25 @@ export default function BasismodulManuellDialog({ open, onOpenChange, onCreated 
           </div>
           <div className="space-y-2">
             <Label>Unterrichtsfach *</Label>
-            <Select value={form.fach} onValueChange={v => setForm({ ...form, fach: v })}>
-              <SelectTrigger><SelectValue placeholder="Fach auswählen..." /></SelectTrigger>
-              <SelectContent className="z-[200]">
-                {faecher.map(f => <SelectItem key={f.id} value={f.name}>{f.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <select
+              className={selectClass}
+              value={form.fach}
+              onChange={e => setForm({ ...form, fach: e.target.value })}
+            >
+              <option value="" disabled>Fach auswählen...</option>
+              {faecher.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
+            </select>
           </div>
           <div className="space-y-2">
             <Label>Jahrgangsstufe *</Label>
-            <Select value={form.jahrgangsstufe} onValueChange={v => setForm({ ...form, jahrgangsstufe: v })}>
-              <SelectTrigger><SelectValue placeholder="Jahrgang auswählen..." /></SelectTrigger>
-              <SelectContent className="z-[200]">
-                {jahrgaenge.map(j => <SelectItem key={j.id} value={j.bezeichnung}>{j.bezeichnung}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <select
+              className={selectClass}
+              value={form.jahrgangsstufe}
+              onChange={e => setForm({ ...form, jahrgangsstufe: e.target.value })}
+            >
+              <option value="" disabled>Jahrgang auswählen...</option>
+              {jahrgaenge.map(j => <option key={j.id} value={j.bezeichnung}>{j.bezeichnung}</option>)}
+            </select>
           </div>
         </div>
         <DialogFooter>
