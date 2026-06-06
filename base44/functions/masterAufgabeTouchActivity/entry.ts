@@ -145,6 +145,11 @@ Deno.serve(async (req) => {
       return Response.json({ skipped: 'no_activity_id', eventType }, { status: 200 });
     }
 
+    // Frisch berechneter is_complete-Wert des gerade aktualisierten Masters,
+    // damit der spätere Aktivitäts-Roll-up nicht auf einem Stale-Read basiert.
+    let touchedMasterId = null;
+    let touchedMasterIsComplete = null;
+
     // ── Bei update: inhaltliche Vollständigkeitsprüfung ────────────────────
     if (eventType === 'update' && masterData) {
       const masterId = event.entity_id || masterData.id;
@@ -163,6 +168,8 @@ Deno.serve(async (req) => {
 
         const fieldValues = masterData.field_values || {};
         const isComplete = isMasterComplete(catalogName, fieldValues);
+        touchedMasterId = masterId;
+        touchedMasterIsComplete = isComplete;
 
         // Nur schreiben wenn sich der Wert ändert (Idempotenz)
         if (masterData.is_complete !== isComplete) {
@@ -183,17 +190,35 @@ Deno.serve(async (req) => {
       return Response.json({ skipped: 'activity_null', activityId }, { status: 200 });
     }
 
-    // Freigabe-Aggregat aus allen aktuellen MasterAufgaben berechnen.
-    // Eine Activity ist nur freigegeben, wenn mindestens ein Master existiert
-    // UND alle Master freigegeben sind. Create/Delete/Update ziehen damit
-    // den Parent-Status serverseitig zuverlässig nach.
+    // Freigabe- UND Vollständigkeits-Aggregat aus allen aktuellen MasterAufgaben
+    // berechnen. Eine Activity ist nur freigegeben, wenn mindestens ein Master
+    // existiert UND alle Master freigegeben sind. Create/Delete/Update ziehen
+    // damit den Parent-Status serverseitig zuverlässig nach.
     // Pagination: Alle Masters vollständig laden (Pagination-Falle vermeiden).
     const allMasters = await listAllMasters(
       base44.asServiceRole.entities.MasterAufgabe,
       { activity_id: activityId }
     );
+    const liveMasters = allMasters
+      .filter((m) => m.sync_status !== 'to_delete')
+      // Stale-Read-Schutz: gerade aktualisierten Master mit dem frisch
+      // berechneten is_complete-Wert spiegeln.
+      .map((m) =>
+        touchedMasterId && m.id === touchedMasterId
+          ? { ...m, is_complete: touchedMasterIsComplete }
+          : m
+      );
     const allMastersApproved =
-      allMasters.length > 0 && allMasters.every((m) => m.content_status === 'approved');
+      liveMasters.length > 0 && liveMasters.every((m) => m.content_status === 'approved');
+
+    // Vollständigkeit der Aktivität DIREKT hier berechnen, statt sie
+    // pessimistisch auf false zu setzen und auf den asynchronen Guardian zu
+    // warten. Letzteres führte zu Drift: Wenn der Guardian-Roll-up (Race /
+    // Stale-Read) nicht griff, blieb die Aktivität fälschlich „unvollständig",
+    // obwohl alle Master vollständig waren (z. B. Mini-Quiz mit 1 fertigem
+    // Master). is_complete = (≥1 lebender Master AND alle is_complete=true).
+    const computedActivityIsComplete =
+      liveMasters.length > 0 && liveMasters.every((m) => m.is_complete === true);
 
     const releaseUpdate = allMastersApproved
       ? {
@@ -207,15 +232,12 @@ Deno.serve(async (req) => {
           released_by: null,
         };
 
-    // Bei delete/create: pessimistisch auf false setzen, damit Guardian immer feuert.
-    // Bei update: auch auf false setzen — Guardian berechnet aktiv neu anhand
-    // der aktuellen MasterAufgaben-Vollständigkeit.
     await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(activityId, {
-      is_complete: false,
+      is_complete: computedActivityIsComplete,
       ...releaseUpdate,
     });
 
-    return Response.json({ ok: true, eventType, activityId });
+    return Response.json({ ok: true, eventType, activityId, activityIsComplete: computedActivityIsComplete });
   } catch (error) {
     console.error('[masterAufgabeTouchActivity] Error:', error);
     return Response.json(
