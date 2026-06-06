@@ -209,6 +209,7 @@ export default function EinheitenListe() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
+            <BookOpen className="w-6 h-6 text-accent" />
             Einheiten
             <HelpBadge
               text="Eine Einheit ist das Grundgerüst Ihrer Unterrichtsplanung. Jede Einheit enthält Themenfelder, Lernpakete und Aufgaben."
