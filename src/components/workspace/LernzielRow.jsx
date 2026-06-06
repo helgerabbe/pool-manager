@@ -33,7 +33,7 @@ const KATEGORIEN = [
   { value: 'Fähigkeit/Fertigkeit', kurz: 'F' },
 ];
 
-export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext }) {
+export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext, readOnly = false }) {
   const [loading, setLoading] = useState(false);
   const [vorschlag, setVorschlag] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -46,6 +46,7 @@ export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext }) {
   // Aktuelle Kategorie als kompaktes Kürzel (W / F) – ein Feld statt zwei.
   const aktuelleKat = KATEGORIEN.find(k => k.value === lz.kategorie);
   const toggleKategorie = () => {
+    if (readOnly) return;
     // Durchschalten: keine → W → F → keine
     const idx = KATEGORIEN.findIndex(k => k.value === lz.kategorie);
     const next = idx === -1 ? KATEGORIEN[0].value : (idx + 1 < KATEGORIEN.length ? KATEGORIEN[idx + 1].value : '');
@@ -103,11 +104,13 @@ export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext }) {
               <button
                 type="button"
                 onClick={toggleKategorie}
+                disabled={readOnly}
                 className={cn(
                   'flex items-center justify-center w-8 h-5 rounded border text-[10px] font-bold transition-all',
                   aktuelleKat
                     ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-dashed border-border text-muted-foreground hover:border-primary/40'
+                    : 'border-dashed border-border text-muted-foreground hover:border-primary/40',
+                  readOnly && 'cursor-default opacity-80'
                 )}
               >
                 {aktuelleKat ? aktuelleKat.kurz : '–'}
@@ -136,21 +139,23 @@ export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext }) {
             </Tooltip>
           )}
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                onClick={handleKICheck}
-                disabled={loading}
-                className="flex items-center justify-center w-8 h-5 rounded border border-violet-300 text-violet-700 hover:bg-violet-50 transition-all disabled:opacity-50"
-              >
-                {loading
-                  ? <div className="w-2 h-2 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin" />
-                  : <Sparkles className="w-2.5 h-2.5" />}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="right" className="text-[11px]">KI prüfen</TooltipContent>
-          </Tooltip>
+          {!readOnly && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={handleKICheck}
+                  disabled={loading}
+                  className="flex items-center justify-center w-8 h-5 rounded border border-violet-300 text-violet-700 hover:bg-violet-50 transition-all disabled:opacity-50"
+                >
+                  {loading
+                    ? <div className="w-2 h-2 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin" />
+                    : <Sparkles className="w-2.5 h-2.5" />}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="text-[11px]">KI prüfen</TooltipContent>
+            </Tooltip>
+          )}
         </div>
         </TooltipProvider>
 
@@ -160,8 +165,9 @@ export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext }) {
             placeholder="Offizielle Formulierung (Fachsprache) – z.B. „Ich kann…"
             value={lz.formulierung_fachsprache}
             onChange={e => onUpdate(lz.id, 'formulierung_fachsprache', e.target.value)}
+            readOnly={readOnly}
             rows={2}
-            className="text-xs min-h-[42px] resize-y leading-snug py-1"
+            className={cn('text-xs min-h-[42px] resize-y leading-snug py-1', readOnly && 'bg-muted/40 cursor-default')}
           />
           {/* Schülergerecht – grafisch klar als Schüler-Variante markiert:
               Schüler-Icon, kursiv, deutlich kleiner, eigene amber/orange Tönung. */}
@@ -171,9 +177,10 @@ export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext }) {
               placeholder="Schülergerechte Formulierung (optional)"
               value={lz.schueler_uebersetzung || ''}
               onChange={e => onUpdate(lz.id, 'schueler_uebersetzung', e.target.value)}
+              readOnly={readOnly}
               rows={1}
               style={{ fontSize: '10px', lineHeight: '1.3' }}
-              className="italic min-h-[20px] resize-y py-0.5 bg-amber-50/50 border-amber-200 text-amber-900 placeholder:text-amber-400/70 placeholder:not-italic"
+              className={cn('italic min-h-[20px] resize-y py-0.5 bg-amber-50/50 border-amber-200 text-amber-900 placeholder:text-amber-400/70 placeholder:not-italic', readOnly && 'cursor-default')}
             />
           </div>
 
@@ -205,14 +212,16 @@ export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext }) {
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={handleRemoveClick}
-          className="p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors shrink-0"
-          title="Lernziel entfernen"
-        >
-          <X className="w-3 h-3" />
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={handleRemoveClick}
+            className="p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors shrink-0"
+            title="Lernziel entfernen"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        )}
       </div>
 
       {/* Sicherheits-Dialog: Warnung beim Löschen eines bereits verknüpften Lernziels */}
