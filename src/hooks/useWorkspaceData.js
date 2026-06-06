@@ -139,6 +139,27 @@ export function useWorkspaceData(einheitId, isStructuralEditingActive = false) {
   const themenfelder = detailData?.data?.themenfelder || [];
   const flatData = flattenWorkspaceTree(themenfelder);
 
+  // 🚪 DETAILDATEN-GATE (2026-06-06):
+  // Die Einheit darf erst geöffnet werden, wenn die Detaildaten (Grundgerüst
+  // + Lernziele/Themenfelder) wirklich aus der DB da sind. Hintergrund: Beim
+  // (Re)Mount läuft ein Hintergrund-Fetch; währenddessen wäre kurzzeitig der
+  // alte/leere Cache sichtbar → „Lernziele plötzlich weg". Statt das leere
+  // Zwischenbild zu zeigen, signalisieren wir „noch nicht bereit", damit die
+  // Workspace-Seite ein Lade-Gate rendert.
+  //
+  // detailReady = true ⟺
+  //   • es gibt eine ausgewählte Einheit, UND
+  //   • die geladenen Detaildaten gehören GENAU zu dieser Einheit (kein Stale
+  //     vom vorherigen Einheitswechsel).
+  //
+  // WICHTIG: Wir koppeln das Gate bewusst NUR an „passende Daten vorhanden",
+  // nicht an `detailIsFetching`. Sonst würde jeder harmlose Hintergrund-Refetch
+  // (z. B. beim Tab-Wechsel) das Lade-Gate kurz aufblitzen lassen, obwohl die
+  // korrekten Daten längst im Cache liegen. Das Gate blockiert also nur beim
+  // erstmaligen Öffnen bzw. beim Einheitswechsel, bis erstmals passende
+  // Detaildaten zu DIESER Einheit da sind.
+  const detailReady = !!einheitId && detailData?.data?.einheit?.id === einheitId;
+
   return {
     einheiten,
     lernpakete: flatData.lernpakete,
@@ -154,5 +175,8 @@ export function useWorkspaceData(einheitId, isStructuralEditingActive = false) {
     // - isFetching: Still/unsichtbar (Hintergrund-Updates)
     isLoading: listLoading || detailLoading,
     isFetching: listIsFetching || detailIsFetching, // ✅ NEU: Hintergrund-Updates (ungenutzt, da Silent)
+    // 🚪 Bereitschafts-Signal der Detaildaten (siehe oben) — Workspace nutzt
+    // das, um die Einheit erst NACH vollständigem DB-Load zu öffnen.
+    detailReady,
   };
 }

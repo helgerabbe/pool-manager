@@ -132,6 +132,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     aktivitaetenKatalog = [],
     isLoading: einheitenLoading,
     isFetching: einheitenIsFetching, // ✅ Silent Polling
+    detailReady, // 🚪 Detaildaten-Gate (Grundgerüst + Lernziele vollständig aus DB)
   } = useWorkspaceData(selectedEinheitId, isStructuralEditingActive);
 
   // ── Aktive Einheit + Memoisierte abgeleitete Daten ──────────────────────────────
@@ -653,6 +654,16 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   // kann. Analog zum Strukturboard-Verhalten.
   const showDashboardEndOverlay = endingDashboardEdit || (activeTab === 'dashboards' && releasingStructLock);
 
+  // 🚪 DETAILDATEN-GATE (2026-06-06):
+  // Solange eine Einheit gewählt ist, aber ihre Detaildaten (Grundgerüst +
+  // Lernziele) noch nicht vollständig aus der DB geladen sind, öffnen wir die
+  // Einheit NICHT, sondern zeigen einen Lade-Bildschirm. Das verhindert das
+  // verwirrende „Lernziele/Grundgerüst plötzlich weg" während eines laufenden
+  // (Hintergrund-)Fetchs. Im Struktur-Edit-Modus ist der Cache absichtlich
+  // eingefroren — dort greift das Gate nicht.
+  const detailGateBlocking =
+    !!einheit && !isStructuralEditingActive && !detailReady;
+
   return (
     <ErrorBoundary label="Workspace">
       <LoadingOverlay isVisible={showDashboardEndOverlay} />
@@ -718,6 +729,19 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               <p className="font-semibold">Einheit auswählen</p>
               <p className="text-sm text-muted-foreground mt-1">
                 Wählen Sie oben eine Einheit aus, um mit der Planung zu beginnen.
+              </p>
+            </div>
+          </div>
+        ) : detailGateBlocking ? (
+          /* 🚪 Detaildaten-Gate: Einheit wird erst geöffnet, wenn Grundgerüst
+             und Lernziele vollständig aus der Datenbank geladen sind. */
+          <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center px-6">
+            <Loader2 className="w-10 h-10 text-primary animate-spin" />
+            <div>
+              <p className="font-semibold">Einheit wird vollständig geladen …</p>
+              <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                Grundgerüst und Lernziele werden aus der Datenbank geholt. Die Einheit
+                öffnet sich automatisch, sobald alle Inhalte verfügbar sind.
               </p>
             </div>
           </div>
