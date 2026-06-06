@@ -125,6 +125,30 @@ function validateJsonStruct(fieldName, data) {
 
 function validateActivityCompleteness(catalog, fieldValues = {}) {
   if (!catalog || !Array.isArray(catalog.form_schema)) return { isComplete: true, missingFields: [] };
+
+  // ── Sonderfall Bildbeschriftung ──────────────────────────────────────────
+  // Der ImageLabelingEditor speichert seine Daten unter eigenen Top-Level-Keys
+  // (backgroundImage / dropZones) und NICHT unter den Schema-Feldnamen
+  // (image_url / marker_data). Würde hier das generische Schema geprüft, wäre
+  // die Aktivität fälschlich "unvollständig" → 422 beim Freigeben, obwohl die
+  // Lehrkraft alles korrekt eingegeben hat. Synchron mit
+  // lib/completenessValidation.js halten!
+  const isImageLabeling = (catalog.name || '').toLowerCase().includes('bildbeschriftung')
+    || catalog.form_schema.some(f => f && f.field_name === 'marker_data');
+  if (isImageLabeling) {
+    const missing = [];
+    const hasImage = !isEmpty(fieldValues.backgroundImage) || !isEmpty(fieldValues.image_url);
+    if (!hasImage) {
+      missing.push({ fieldName: 'backgroundImage', label: 'Hintergrundbild', reason: 'Bitte ein Bild hochladen' });
+    }
+    const zones = Array.isArray(fieldValues.dropZones) ? fieldValues.dropZones : [];
+    const validZones = zones.filter(z => z && String(z.label || '').trim() !== '');
+    if (validZones.length < 2) {
+      missing.push({ fieldName: 'dropZones', label: 'Zielbegriffe', reason: `Mindestens 2 beschriftete Begriffe erforderlich (aktuell: ${validZones.length})` });
+    }
+    return { isComplete: missing.length === 0, missingFields: missing };
+  }
+
   const missingFields = [];
   for (const field of catalog.form_schema) {
     if (!field || !field.field_name || field.type === 'info' || !field.required) continue;
