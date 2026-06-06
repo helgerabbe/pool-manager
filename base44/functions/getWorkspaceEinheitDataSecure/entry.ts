@@ -29,10 +29,36 @@
  * }
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 const PAGE_SIZE = 500;
 const IN_FILTER_CHUNK_SIZE = 50;
+
+/**
+ * withRetry – führt einen async DB-Read mit kurzem Retry aus.
+ *
+ * Hintergrund (Bug "Grundgerüst/Lernziele mal da, mal weg"):
+ * Einzelne Reads gegen die Datenbank können transient (Netzwerk-Hiccup,
+ * Kaltstart) fehlschlagen. Ohne Retry liefert die Funktion dann eine
+ * scheinbar erfolgreiche, aber leere Antwort, die im Frontend-Cache landet
+ * und so tut, als wären die Daten wirklich leer. Mit Retry + hartem Wurf
+ * (siehe unten) wird daraus ein echter Fehler, den React Query erneut
+ * versucht – statt leere Daten zu cachen.
+ */
+async function withRetry(fn, label, attempts = 3) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (i < attempts - 1) {
+        await new Promise((r) => setTimeout(r, 150 * (i + 1)));
+      }
+    }
+  }
+  throw new Error(`[${label}] fehlgeschlagen nach ${attempts} Versuchen: ${lastErr?.message || lastErr}`);
+}
 
 const normalizeEntityRecord = (record) => {
   if (!record) return null;
@@ -46,12 +72,18 @@ const normalizeEntityRecord = (record) => {
   };
 };
 
-async function listAllByFilter(entity, query, sort = 'created_date') {
+async function listAllByFilter(entity, query, sort = 'created_date', label = 'filter') {
   const all = [];
   let skip = 0;
 
   while (true) {
-    const page = await entity.filter(query, sort, PAGE_SIZE, skip);
+    // Jede einzelne Seite mit Retry – ein transienter Fehler auf Seite 1
+    // darf nicht zu einer (fälschlich leeren) Erfolgsantwort führen.
+    const currentSkip = skip;
+    const page = await withRetry(
+      () => entity.filter(query, sort, PAGE_SIZE, currentSkip),
+      `${label}@skip=${currentSkip}`
+    );
     if (!page || page.length === 0) break;
     all.push(...page);
     if (page.length < PAGE_SIZE) break;
@@ -75,7 +107,7 @@ async function listAllByFilterInChunks(entity, fieldName, values, sort = 'create
 
   const pages = await Promise.all(
     chunkArray(uniqueValues, IN_FILTER_CHUNK_SIZE).map((chunk) =>
-      listAllByFilter(entity, { [fieldName]: { $in: chunk } }, sort)
+      listAllByFilter(entity, { [fieldName]: { $in: chunk } }, sort, `${fieldName}-in`)
     )
   );
 
@@ -121,7 +153,15 @@ Deno.serve(async (req) => {
     //    die anschließenden Filter (einheit_id) und die EinheitMembers-/Rollen-
     //    Logik im Frontend abgedeckt. Tenant-Isolation: nur eine einzige ID
     //    wird angefragt.
-    const rawEinheit = await base44.asServiceRole.entities.Einheiten.get(einheit_id).catch(() => null);
+    // WICHTIG: Den Einheit-Read NICHT mit catch(()=>null) verschlucken.
+    // Sonst wird ein transienter Read-Fehler fälschlich als "Einheit not found"
+    // interpretiert (oder schlimmer: als leeres Grundgerüst angezeigt).
+    // withRetry wirft bei echtem Fehler → wird unten zu 500 → React Query
+    // versucht erneut. Nur ein echtes `null` (Datensatz existiert nicht) ist 404.
+    const rawEinheit = await withRetry(
+      () => base44.asServiceRole.entities.Einheiten.get(einheit_id),
+      'Einheiten.get'
+    );
     const einheit = normalizeEntityRecord(rawEinheit);
 
     if (!einheit) {
@@ -136,9 +176,9 @@ Deno.serve(async (req) => {
     // undefined → die Gruppierung schlägt fehl → alle Pakete zeigen 0 Ziele.
     // Daher JEDEN Record durch normalizeEntityRecord schicken.
     const [rawThemenfelder, rawLernpakete, rawEinheitMembers] = await Promise.all([
-      listAllByFilter(base44.asServiceRole.entities.Themenfeld, { einheit_id }),
-      listAllByFilter(base44.asServiceRole.entities.Lernpakete, { einheit_id }),
-      listAllByFilter(base44.asServiceRole.entities.EinheitMembers, { einheit_id }),
+      listAllByFilter(base44.asServiceRole.entities.Themenfeld, { einheit_id }, 'created_date', 'Themenfeld'),
+      listAllByFilter(base44.asServiceRole.entities.Lernpakete, { einheit_id }, 'created_date', 'Lernpakete'),
+      listAllByFilter(base44.asServiceRole.entities.EinheitMembers, { einheit_id }, 'created_date', 'EinheitMembers'),
     ]);
 
     const themenfelder = rawThemenfelder.map(normalizeEntityRecord);

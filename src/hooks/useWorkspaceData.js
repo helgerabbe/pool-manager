@@ -66,9 +66,24 @@ export function useWorkspaceData(einheitId, isStructuralEditingActive = false) {
     queryFn: async () => {
       if (!einheitId) return null;
       const res = await invokeFunction('getWorkspaceEinheitDataSecure', { einheit_id: einheitId });
-      return res.data;
+      // 🛡️ Sicherheitsnetz gegen "mal da, mal weg":
+      // Das Backend wirft jetzt bei transienten Read-Fehlern (statt leere
+      // Daten zu liefern). Hier prüfen wir zusätzlich, ob die Antwort
+      // strukturell plausibel ist. Eine Antwort ohne success-Flag oder ohne
+      // einheit-Objekt ist KEINE valide Antwort → Fehler werfen, damit
+      // React Query erneut versucht und NICHT den leeren Stand cacht.
+      const payload = res?.data;
+      if (!payload || payload.success !== true || !payload.data?.einheit?.id) {
+        throw new Error('Unvollständige Workspace-Antwort – wird erneut geladen.');
+      }
+      return payload;
     },
     enabled: !!einheitId, // ✅ IMMER aktiviert (auch im Read-Only-Modus!)
+    // 🛡️ Transiente Fehler automatisch erneut versuchen (statt leeren Stand
+    // anzuzeigen). 2 Wiederholungen mit kurzem Backoff reichen für die
+    // gelegentlichen Kaltstart-/Netzwerk-Hiccups, die das Problem ausgelöst haben.
+    retry: 2,
+    retryDelay: (attempt) => 300 * (attempt + 1),
     // Edit-Mode: Cache einfrieren (kein Refetch, damit Eingaben nicht überschrieben werden).
     // Read-Mode: staleTime 0 → frischer Server-Stand bei jedem Mount/Refetch,
     // verhindert das Hängenbleiben veralteter (leerer) Antworten.
