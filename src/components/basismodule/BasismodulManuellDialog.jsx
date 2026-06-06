@@ -28,13 +28,8 @@ export default function BasismodulManuellDialog({ open, onOpenChange, onCreated 
     },
   });
 
-  const { data: jahrgaenge = [] } = useQuery({
-    queryKey: ['lookupJahrgaenge'],
-    queryFn: async () => {
-      const all = await base44.entities.LookupJahrgaenge.list();
-      return all.filter(j => j.ist_aktiv).sort((a, b) => (a.reihenfolge ?? 999) - (b.reihenfolge ?? 999));
-    },
-  });
+  // Basismodule können aus den Klassen 5–8 stammen → fest 5 bis 10 anbieten.
+  const jahrgaenge = ['5', '6', '7', '8', '9', '10'];
 
   const isValid = form.titel_der_einheit.trim() && form.fach && form.jahrgangsstufe;
 
@@ -97,7 +92,7 @@ export default function BasismodulManuellDialog({ open, onOpenChange, onCreated 
               onChange={e => setForm({ ...form, jahrgangsstufe: e.target.value })}
             >
               <option value="" disabled>Jahrgang auswählen...</option>
-              {jahrgaenge.map(j => <option key={j.id} value={j.bezeichnung}>{j.bezeichnung}</option>)}
+              {jahrgaenge.map(j => <option key={j} value={j}>{j}</option>)}
             </select>
           </div>
         </div>
