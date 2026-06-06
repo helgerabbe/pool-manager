@@ -430,41 +430,6 @@ export default function LernpaketPanel({
       )}
       </div>
 
-      <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Lernziele</h3>
-        <div className="space-y-2">
-          {paketZiele.length === 0 ? (
-            <div className="w-full flex flex-col items-center justify-center gap-2 p-6 rounded-lg border-2 border-dashed border-border text-center">
-              <Target className="w-6 h-6 text-muted-foreground/40" />
-              <span className="text-sm text-muted-foreground">Noch kein Lernziel zugeordnet.</span>
-              <span className="text-xs text-muted-foreground">Lernziele werden im Tab „Lernziele" angelegt und bearbeitet.</span>
-            </div>
-          ) : (
-            <>
-              {paketZiele.map(lz => (
-                <div
-                  key={lz.id}
-                  className="w-full flex items-start gap-3 p-3 rounded-lg border bg-card text-left"
-                >
-                  <Target className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">{lz.formulierung_fachsprache}</p>
-                    {lz.schueler_uebersetzung && (
-                      <p className="text-xs text-muted-foreground italic mt-0.5">„{lz.schueler_uebersetzung}"</p>
-                    )}
-                    {lz.kategorie && (
-                      <Badge className={`text-[10px] mt-1 ${kategorieColors[lz.kategorie] || ''}`}>
-                        {lz.kategorie}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </>
-          )}
-        </div>
-      </div>
-
       {/* Zugeordnete Aktivitäten (informativ, nur lesend).
           Wir zeigen IMMER alle aktiven Phasen als Baum an — auch wenn sie noch
           leer sind. So sieht die Lehrkraft sofort, welche Phasen für dieses
@@ -472,7 +437,7 @@ export default function LernpaketPanel({
           Deaktivierte Phasen (phasen_konfiguration[phase].disabled === true)
           werden ausgeblendet, damit der Baum die tatsächliche Konfiguration
           widerspiegelt. */}
-      <div className="space-y-2 border-t pt-6">
+      <div className="space-y-2">
         <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Aktivitäten</h3>
         {(() => {
           const paketAktivitaeten = lernpaketAktivitaeten.filter(a => a.lernpaket_id === paket.id);
