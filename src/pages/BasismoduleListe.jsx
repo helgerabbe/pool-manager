@@ -146,6 +146,8 @@ export default function BasismoduleListe() {
           icon={Layers}
           title="Noch keine Basismodule"
           description="Erstellen Sie Ihr erstes Basismodul (z.B. Prozentrechnung), um Grundwissen aus vorangegangenen Jahrgängen abzubilden."
+          actionLabel={permissions.kannEinheitVerwalten ? 'Neues Basismodul erstellen' : undefined}
+          onAction={permissions.kannEinheitVerwalten ? () => navigate('/einheit/create?basismodul=1') : undefined}
         />
       ) : (
         <p className="text-sm text-muted-foreground text-center py-10">Keine Basismodule gefunden.</p>
