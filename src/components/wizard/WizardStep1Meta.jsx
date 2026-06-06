@@ -10,7 +10,7 @@ import { ChevronRight, Loader2 } from 'lucide-react';
 import { useRBAC } from '@/hooks/useRBAC';
 import SpeechInputButton from '@/components/ui/SpeechInputButton';
 
-export default function WizardStep1Meta({ onDone }) {
+export default function WizardStep1Meta({ onDone, istBasismodul = false }) {
   const { permissions, faecher: userFaecher } = useRBAC();
   const [form, setForm] = useState({ 
     fach: '', 
@@ -57,6 +57,19 @@ export default function WizardStep1Meta({ onDone }) {
     },
   });
 
+  // Basismodule decken die Klassenstufen 5–10 ab (hartcodiert), reguläre
+  // Einheiten nutzen die Lookup-Jahrgänge (Schuljahr-Zuordnung).
+  const basismodulJahrgaenge = ['5', '6', '7', '8', '9', '10'];
+
+  // Basismodule haben keine Halbjahres-Phase. Da das Feld aber Pflicht im
+  // Datenmodell ist, setzen wir automatisch die erste verfügbare Phase, sobald
+  // die Phasen geladen sind – ohne dass die Lehrkraft etwas auswählen muss.
+  useEffect(() => {
+    if (istBasismodul && phasen.length > 0 && !form.zeit_phase_id) {
+      setForm(f => ({ ...f, zeit_phase_id: phasen[0].id }));
+    }
+  }, [istBasismodul, phasen, form.zeit_phase_id]);
+
   const canSubmit = form.fach && form.titel_der_einheit.trim() && form.jahrgangsstufe && form.zeit_phase_id;
 
   const handleSubmit = async (e) => {
@@ -70,12 +83,18 @@ export default function WizardStep1Meta({ onDone }) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold">Schritt 1: Meta-Daten der Einheit</h2>
-        <p className="text-sm text-muted-foreground mt-1">Legen Sie die grundlegenden Informationen für die neue Unterrichtseinheit fest.</p>
+        <h2 className="text-lg font-semibold">
+          {istBasismodul ? 'Schritt 1: Meta-Daten des Basismoduls' : 'Schritt 1: Meta-Daten der Einheit'}
+        </h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          {istBasismodul
+            ? 'Legen Sie die grundlegenden Informationen für das neue Basismodul fest.'
+            : 'Legen Sie die grundlegenden Informationen für die neue Unterrichtseinheit fest.'}
+        </p>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5 max-w-lg">
         <div className="space-y-2">
-          <Label>Titel der Einheit *</Label>
+          <Label>{istBasismodul ? 'Titel des Basismoduls (Unterrichtseinheit) *' : 'Titel der Einheit *'}</Label>
           <Input
             placeholder="z. B. Lineare Gleichungen"
             value={form.titel_der_einheit}
@@ -98,26 +117,30 @@ export default function WizardStep1Meta({ onDone }) {
             <Select value={form.jahrgangsstufe} onValueChange={v => setForm({ ...form, jahrgangsstufe: v })}>
               <SelectTrigger><SelectValue placeholder="Jahrgang" /></SelectTrigger>
               <SelectContent>
-                {jahrgaenge.map(j => <SelectItem key={j.id} value={j.bezeichnung}>Jg. {j.bezeichnung}</SelectItem>)}
+                {istBasismodul
+                  ? basismodulJahrgaenge.map(j => <SelectItem key={j} value={j}>Jg. {j}</SelectItem>)
+                  : jahrgaenge.map(j => <SelectItem key={j.id} value={j.bezeichnung}>Jg. {j.bezeichnung}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
         </div>
-        <div className="space-y-2">
-          <Label>Zeitraum / Phase (Halbjahr) *</Label>
-          <Select value={form.zeit_phase_id} onValueChange={v => setForm({ ...form, zeit_phase_id: v })}>
-            <SelectTrigger><SelectValue placeholder="Phase wählen" /></SelectTrigger>
-            <SelectContent>
-              {phasen.map(p => <SelectItem key={p.id} value={p.id}>{p.bezeichnung}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
+        {!istBasismodul && (
+          <div className="space-y-2">
+            <Label>Zeitraum / Phase (Halbjahr) *</Label>
+            <Select value={form.zeit_phase_id} onValueChange={v => setForm({ ...form, zeit_phase_id: v })}>
+              <SelectTrigger><SelectValue placeholder="Phase wählen" /></SelectTrigger>
+              <SelectContent>
+                {phasen.map(p => <SelectItem key={p.id} value={p.id}>{p.bezeichnung}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         {/* Optionales Briefing für die KI im Strukturentwurf (Schritt 2). Wird
             NICHT in der Einheit gespeichert (kein Schema-Feld), sondern nur
             durch den Wizard-State an generateUnitStructure weitergereicht. */}
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
-            <Label>Was soll in dieser Einheit gelernt werden? <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Label>Was soll in {istBasismodul ? 'diesem Basismodul' : 'dieser Einheit'} gelernt werden? <span className="text-muted-foreground font-normal">(optional)</span></Label>
             <SpeechInputButton
               value={form.beschreibung}
               onResult={(text) => setForm({ ...form, beschreibung: text })}

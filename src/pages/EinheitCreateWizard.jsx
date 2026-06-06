@@ -240,7 +240,7 @@ export default function EinheitCreateWizard() {
       {/* Step Content */}
       {currentStep === 1 && (
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-          <WizardStep1Meta onDone={handleStep1Done} />
+          <WizardStep1Meta onDone={handleStep1Done} istBasismodul={istBasismodul} />
         </div>
       )}
       {currentStep === 2 && einheitId && (
