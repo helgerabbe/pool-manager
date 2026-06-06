@@ -26,7 +26,7 @@ function flattenWorkspaceTree(themenfelder = []) {
  * useWorkspaceData – Custom Hook für Workspace-Daten
  * Lädt ALLE hierarchischen Daten einer Einheit inkl. Members für RBAC
  */
-export function useWorkspaceData(einheitId, isStructuralEditingActive = false) {
+export function useWorkspaceData(einheitId, isStructuralEditingActive = false, isBasismodul = false) {
   const queryClient = useQueryClient();
 
   // 🩹 Stale-Cache-Schutz: Beim Wechsel der Einheit (oder erstem Mount) einmal
@@ -46,9 +46,13 @@ export function useWorkspaceData(einheitId, isStructuralEditingActive = false) {
   // - Nur beim initialen Load: isLoading wird gezeigt
   // - Hintergrund-Updates: isFetching läuft stillschweigend ab
   const { data: listData, isLoading: listLoading, isFetching: listIsFetching } = useQuery({
-    queryKey: ['einheiten-list-secure'],
+    queryKey: ['einheiten-list-secure', isBasismodul ? 'basismodule' : 'einheiten'],
     queryFn: async () => {
-      const res = await base44.functions.invoke('getEinheitenListSecure', { page: 1, limit: 100 });
+      const res = await base44.functions.invoke('getEinheitenListSecure', {
+        page: 1,
+        limit: 100,
+        scope: isBasismodul ? 'basismodule' : 'einheiten',
+      });
       return res.data?.data || [];
     },
     staleTime: 5 * 60 * 1000, // 5 Minuten

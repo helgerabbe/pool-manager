@@ -135,7 +135,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     isLoading: einheitenLoading,
     isFetching: einheitenIsFetching, // ✅ Silent Polling
     detailReady, // 🚪 Detaildaten-Gate (Grundgerüst + Lernziele vollständig aus DB)
-  } = useWorkspaceData(selectedEinheitId, isStructuralEditingActive);
+  } = useWorkspaceData(selectedEinheitId, isStructuralEditingActive, isBasismodul);
 
   // ── Aktive Einheit + Memoisierte abgeleitete Daten ──────────────────────────────
   const einheit = einheiten.find((e) => e.id === selectedEinheitId) || null;
