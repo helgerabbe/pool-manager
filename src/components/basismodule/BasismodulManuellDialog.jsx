@@ -80,7 +80,7 @@ export default function BasismodulManuellDialog({ open, onOpenChange, onCreated 
             <Label>Unterrichtsfach *</Label>
             <Select value={form.fach} onValueChange={v => setForm({ ...form, fach: v })}>
               <SelectTrigger><SelectValue placeholder="Fach auswählen..." /></SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[60]">
                 {faecher.map(f => <SelectItem key={f.id} value={f.name}>{f.name}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -89,7 +89,7 @@ export default function BasismodulManuellDialog({ open, onOpenChange, onCreated 
             <Label>Jahrgangsstufe *</Label>
             <Select value={form.jahrgangsstufe} onValueChange={v => setForm({ ...form, jahrgangsstufe: v })}>
               <SelectTrigger><SelectValue placeholder="Jahrgang auswählen..." /></SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[60]">
                 {jahrgaenge.map(j => <SelectItem key={j.id} value={j.bezeichnung}>{j.bezeichnung}</SelectItem>)}
               </SelectContent>
             </Select>
