@@ -36,9 +36,7 @@ const DialogContent = React.forwardRef(({ className, children, ...props }, ref) 
         left: '50%',
         top: '50%',
         transform: 'translate(-50%, -50%)',
-        zIndex: 9999,
-        minWidth: '400px',
-        minHeight: '400px'
+        zIndex: 9999
       }}
       className={cn(
         "grid w-full max-w-lg gap-4 border border-border p-6 shadow-lg rounded-lg",
