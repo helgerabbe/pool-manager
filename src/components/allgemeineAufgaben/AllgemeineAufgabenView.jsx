@@ -29,7 +29,25 @@ import { base44 } from '@/api/base44Client';
 import AiTaskWizardModal from '@/components/ui/AiTaskWizardModal';
 import ThemenfeldIdeenModal from '@/components/missionen/ThemenfeldIdeenModal';
 import HelpBadge from '@/components/ui/HelpBadge';
+import HelpDialog from '@/components/ui/HelpDialog';
 import MissionBadge from '@/components/missionen/MissionBadge';
+
+// Kontext-Hilfe für die Sidebar-Kopfzeile (einheitlich mit Tab 3/4: HelpDialog).
+const AKTIVITAETEN_HELP = {
+  title: 'Allgemeine Aufgaben (Transfer)',
+  description:
+    'Hier erstellst und verwaltest du die allgemeinen Transfer-Aufgaben der Einheit, gruppiert nach Themenfeld. Wähle links eine Aufgabe aus, um sie rechts in den Reitern (Kernangaben, Lernzielanalyse, Erwartungshorizont, KI-Tutor-Prompt) zu bearbeiten.',
+  features: [
+    'Aufgaben links nach Themenfeld gruppiert – klick dich durch',
+    'Neue Aufgabe manuell anlegen oder per KI entwerfen',
+    'Lernziele per Drag & Drop verknüpfen (Lernzielanalyse)',
+    'Erwartungshorizont und KI-Tutor-Prompt für Brian.study pflegen',
+  ],
+  faqs: [
+    { question: 'Worin unterscheiden sich diese Aufgaben von Tab 4?', answer: 'Tab 4 enthält kurze, automatisch auswertbare Übungen direkt im Lernpaket. Hier liegen die größeren, offenen Transfer-Aufgaben der ganzen Einheit.' },
+  ],
+  docsSlug: 'ebene-2-allgemeine-aufgaben',
+};
 import MissionStripe from '@/components/missionen/MissionStripe';
 import MissionFilterSelect, { FILTER_ALL, FILTER_NONE } from '@/components/missionen/MissionFilterSelect';
 import { isMissionApplicable, getMission } from '@/lib/missionen';
@@ -175,7 +193,7 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
           Buttons → Inhalt. */}
       <div className="pb-3 border-b space-y-2">
         <h2 className={cn(
-          'text-base font-semibold leading-snug',
+          'text-lg font-bold leading-snug',
           !hatTitel && 'italic text-muted-foreground font-normal'
         )}>
           {hatTitel ? aufgabe.titel : 'Kein Titel vergeben'}
@@ -580,12 +598,12 @@ export default function AllgemeineAufgabenView({
       {/* Two-Column Layout */}
       <div className="flex flex-col lg:flex-row flex-1 overflow-hidden min-h-0">
         {/* Linke Spalte: Sidebar mit Baumstruktur */}
-        <aside className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-border bg-card/50 flex flex-col shrink-0 lg:shrink-0 overflow-hidden max-h-64 lg:max-h-full h-full lg:h-auto min-h-0">
+        <aside className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden h-64 lg:h-full min-h-0">
           {/* Einheitliche Kopfzeile (Icon + Titel + Hilfe) – wie in Tab 3/4 */}
-          <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b">
+          <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b h-11">
             <Package className="w-4 h-4 text-primary shrink-0" />
-            <span className="text-xs font-semibold flex-1">Aktivitäten</span>
-            <HelpBadge text="Hier erstellst und verwaltest du allgemeine Aufgaben (Transfer-Ebene), gruppiert nach Themenfeld. Wähle links eine Aufgabe aus, um sie rechts zu bearbeiten." docsSlug="ebene-2-allgemeine-aufgaben" />
+            <span className="text-sm font-semibold flex-1">Aktivitäten</span>
+            <HelpDialog {...AKTIVITAETEN_HELP} />
           </div>
           {/* Button für neue Aufgabe */}
           {kannBearbeiten && (

@@ -911,9 +911,9 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                   isLernpaketEditActive && "bg-orange-50/60 ring-2 ring-inset ring-orange-300"
                 )}>
                 <aside className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden h-64 lg:h-full min-h-0">
-                   <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b">
+                   <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b h-11">
                      <Layers className="w-4 h-4 text-primary shrink-0" />
-                     <span className="text-xs font-semibold flex-1">Lernpakete</span>
+                     <span className="text-sm font-semibold flex-1">Lernpakete</span>
                      <HelpDialog
                        title="Aktivitäten zuordnen"
                        description="Hier ordnest du jedem Lernpaket konkrete Aktivitäten zu – gegliedert nach den Lernphasen Input, Übung und Abschluss. Wähle links ein Lernpaket aus, um rechts seine Phasen und Aktivitäten zu bearbeiten."

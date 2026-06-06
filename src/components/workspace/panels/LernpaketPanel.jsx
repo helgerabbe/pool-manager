@@ -313,7 +313,7 @@ export default function LernpaketPanel({
           Muster für Tab 3/4/5: Überschrift → Linie → Buttons → Inhalt. */}
       <div className="pb-3 border-b">
         <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <h2 className="text-xl font-bold">{paket.titel_des_pakets}</h2>
+          <h2 className="text-lg font-bold">{paket.titel_des_pakets}</h2>
           <StatusBadge status={pStatus} />
           {isLockedByOther && (
             <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 border border-amber-200 text-amber-800 text-xs font-medium">
