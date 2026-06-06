@@ -267,7 +267,7 @@ function SidebarLernpaketFolder({
            onSelect?.({ type: 'lernpaket', lernpaket });
          }}
          className={cn(
-           "w-full flex items-center gap-2 px-2 py-2 rounded-lg text-left text-sm font-medium transition-colors",
+           "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-xs font-medium transition-colors",
            isActiveLocked
              ? "text-orange-800 hover:bg-orange-100"
              : isLernpaketSelected
