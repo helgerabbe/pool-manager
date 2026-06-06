@@ -156,35 +156,8 @@ export default function Tab4LernpaketOverview({
         lernziele={paketZiele}
       />
 
-      {/* Zugeordnete Lernziele */}
-      <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Lernziele</h3>
-        {paketZiele.length === 0 ? (
-          <p className="text-sm text-muted-foreground italic px-1">Keine Lernziele zugeordnet.</p>
-        ) : (
-          <div className="space-y-2">
-            {paketZiele.map(lz => (
-              <div key={lz.id} className="w-full flex items-start gap-3 p-3 rounded-lg border bg-card">
-                <Target className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{lz.formulierung_fachsprache}</p>
-                  {lz.schueler_uebersetzung && (
-                    <p className="text-xs text-muted-foreground italic mt-0.5">„{lz.schueler_uebersetzung}"</p>
-                  )}
-                  {lz.kategorie && (
-                    <Badge className={`text-[10px] mt-1 ${kategorieColors[lz.kategorie] || ''}`}>
-                      {lz.kategorie}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* Zugeordnete Aktivitäten */}
-      <div className="space-y-2 border-t pt-6">
+      <div className="space-y-2">
         <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Aktivitäten</h3>
         {activePhases.length === 0 ? (
           <p className="text-sm text-muted-foreground italic">Alle Phasen deaktiviert.</p>
