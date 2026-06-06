@@ -90,14 +90,20 @@ export default function BasismoduleListe() {
         </div>
         {permissions.kannEinheitVerwalten && (
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setManuellOpen(true)} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Neues Basismodul
-            </Button>
-            <Button onClick={() => navigate('/einheit/create?basismodul=1')} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Neues Basismodul (Wizard)
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button variant="outline" onClick={() => setManuellOpen(true)} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Neues Basismodul
+              </Button>
+              <HelpBadge text="Schnell ein neues Basismodul anlegen: Nur Titel, Fach und Jahrgang erforderlich. Inhalte können Sie später ergänzen." />
+            </div>
+            <div className="flex items-center gap-1">
+              <Button onClick={() => navigate('/einheit/create?basismodul=1')} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Neues Basismodul (Wizard)
+              </Button>
+              <HelpBadge text="Der geführte Wizard hilft Ihnen Schritt für Schritt durch die Erstellung des Basismoduls. Empfohlen für neue Basismodule." />
+            </div>
           </div>
         )}
       </div>
