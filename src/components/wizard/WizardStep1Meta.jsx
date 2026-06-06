@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronRight, Loader2 } from 'lucide-react';
 import { useRBAC } from '@/hooks/useRBAC';
+import SpeechInputButton from '@/components/ui/SpeechInputButton';
 
 export default function WizardStep1Meta({ onDone }) {
   const { permissions, faecher: userFaecher } = useRBAC();
@@ -115,7 +116,16 @@ export default function WizardStep1Meta({ onDone }) {
             NICHT in der Einheit gespeichert (kein Schema-Feld), sondern nur
             durch den Wizard-State an generateUnitStructure weitergereicht. */}
         <div className="space-y-2">
-          <Label>Was soll in dieser Einheit gelernt werden? <span className="text-muted-foreground font-normal">(optional)</span></Label>
+          <div className="flex items-center justify-between gap-2">
+            <Label>Was soll in dieser Einheit gelernt werden? <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <SpeechInputButton
+              value={form.beschreibung}
+              onResult={(text) => setForm({ ...form, beschreibung: text })}
+              maxSeconds={60}
+              label="Diktieren"
+              listeningLabel="Stopp"
+            />
+          </div>
           <Textarea
             placeholder="Stichpunkte oder kurzer Fließtext – z. B. „Lineare Gleichungen lösen, Textaufgaben modellieren, grafisch interpretieren.“ Diese Beschreibung wird der KI im nächsten Schritt als zusätzlicher Kontext für den Strukturentwurf mitgegeben."
             value={form.beschreibung}
