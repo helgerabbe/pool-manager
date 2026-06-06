@@ -60,9 +60,8 @@ export default function BasismodulManuellDialog({ open, onOpenChange, onCreated 
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
-      {open && <div className="fixed inset-0 z-40 bg-black/50" onClick={() => onOpenChange(false)} />}
-      <DialogContent className="z-50 w-[95%] sm:max-w-md" aria-describedby={undefined}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="w-[95%] sm:max-w-md" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Neues Basismodul (manuell)</DialogTitle>
         </DialogHeader>
@@ -80,7 +79,7 @@ export default function BasismodulManuellDialog({ open, onOpenChange, onCreated 
             <Label>Unterrichtsfach *</Label>
             <Select value={form.fach} onValueChange={v => setForm({ ...form, fach: v })}>
               <SelectTrigger><SelectValue placeholder="Fach auswählen..." /></SelectTrigger>
-              <SelectContent className="z-[60]">
+              <SelectContent className="z-[200]">
                 {faecher.map(f => <SelectItem key={f.id} value={f.name}>{f.name}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -89,7 +88,7 @@ export default function BasismodulManuellDialog({ open, onOpenChange, onCreated 
             <Label>Jahrgangsstufe *</Label>
             <Select value={form.jahrgangsstufe} onValueChange={v => setForm({ ...form, jahrgangsstufe: v })}>
               <SelectTrigger><SelectValue placeholder="Jahrgang auswählen..." /></SelectTrigger>
-              <SelectContent className="z-[60]">
+              <SelectContent className="z-[200]">
                 {jahrgaenge.map(j => <SelectItem key={j.id} value={j.bezeichnung}>{j.bezeichnung}</SelectItem>)}
               </SelectContent>
             </Select>
