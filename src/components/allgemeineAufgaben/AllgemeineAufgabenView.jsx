@@ -170,18 +170,63 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
     <TooltipProvider>
     <div className="space-y-3 p-4">
 
-      {/* ── Zeile 1: Status-Header ──
-          Links das Themenfeld (Wo gehört die Aufgabe hin?), rechtsbündig
-          die Zustands-Badges: Freigabe-Status + Moodle/Brian-Export.
-          Alle Badges teilen die gleiche Pillen-Optik. */}
-      <div className="flex items-center gap-x-3 gap-y-1.5 flex-wrap text-xs text-muted-foreground">
-        <span className="inline-flex items-center gap-1 min-w-0">
-          <Folder className="w-3.5 h-3.5 shrink-0" />
-          <span className={cn('truncate', !themenfeld && 'italic')}>
-            {themenfeld?.titel || 'Ohne Themenfeld'}
+      {/* ── Überschrift (Titel + Themenfeld + Klassifikation) ──
+          Einheitliches Muster Tab 3/4/5: Überschrift → feine Linie →
+          Buttons → Inhalt. */}
+      <div className="pb-3 border-b space-y-2">
+        <h2 className={cn(
+          'text-base font-semibold leading-snug',
+          !hatTitel && 'italic text-muted-foreground font-normal'
+        )}>
+          {hatTitel ? aufgabe.titel : 'Kein Titel vergeben'}
+        </h2>
+
+        <div className="flex items-center gap-1.5 flex-wrap text-xs">
+          <span className="inline-flex items-center gap-1 min-w-0 text-muted-foreground">
+            <Folder className="w-3.5 h-3.5 shrink-0" />
+            <span className={cn('truncate', !themenfeld && 'italic')}>
+              {themenfeld?.titel || 'Ohne Themenfeld'}
+            </span>
           </span>
-        </span>
-        <div className="flex items-center gap-1.5 flex-wrap ml-auto">
+
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1 h-5 px-2 rounded-full border text-[11px] font-semibold cursor-help',
+                  typMeta.color.bg, typMeta.color.text, typMeta.color.border
+                )}
+              >
+                <TypIcon className="w-3 h-3" />
+                {typMeta.label}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs text-left leading-snug">
+              {typMeta.description}
+            </TooltipContent>
+          </Tooltip>
+
+          {showMission && (
+            <MissionBadge missionId={aufgabe.mission_type} size="sm" showFallback />
+          )}
+
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full border border-amber-200 bg-amber-50 cursor-help">
+                <SternDisplay grad={aufgabe.schwierigkeitsgrad || 0} />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs text-left leading-snug">
+              {schwierigkeitTooltip}
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </div>
+
+      {/* ── Aktions-Leiste (unter der Überschrift) ──
+          Status-Badges (Freigabe + Export) links, Aktions-Buttons rechts. */}
+      <div className="flex items-center gap-x-3 gap-y-1.5 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap text-xs">
           <span className={cn(
             'inline-flex items-center gap-1 h-5 px-2 rounded-full border text-[11px] font-semibold',
             isApproved
@@ -194,61 +239,59 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
             }
           </span>
           <AufgabeExportStatusInline aufgabe={aufgabe} />
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap ml-auto">
           <Button
             variant="outline"
             size="sm"
             onClick={() => onPreview?.(aufgabe)}
-            className="h-5 px-2 gap-1 text-[11px] border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100"
+            className="gap-1 border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100"
             title="So sieht der Schüler diese Aufgabe auf dem iPad"
           >
-            <Eye className="w-3 h-3" /> Vorschau
+            <Eye className="w-4 h-4" /> Vorschau
           </Button>
-        </div>
-      </div>
-
-      {/* ── Zeile 2: Titel ── */}
-      <h2 className={cn(
-        'text-base font-semibold leading-snug',
-        !hatTitel && 'italic text-muted-foreground font-normal'
-      )}>
-        {hatTitel ? aufgabe.titel : 'Kein Titel vergeben'}
-      </h2>
-
-      {/* ── Zeile 3: Didaktische Klassifikation ──
-          Drei gleich hohe Badges (Aufgabentyp · Mission · Schwierigkeit).
-          Jedes hat einen Tooltip mit Klartext-Erklärung. */}
-      <div className="flex items-center gap-1.5 flex-wrap -mt-1">
-        <Tooltip delayDuration={150}>
-          <TooltipTrigger asChild>
-            <span
-              className={cn(
-                'inline-flex items-center gap-1 h-5 px-2 rounded-full border text-[11px] font-semibold cursor-help',
-                typMeta.color.bg, typMeta.color.text, typMeta.color.border
+          {kannBearbeiten && (
+            <>
+              {aufgabe.sync_status === 'pending' ? (
+                <span className="text-xs text-orange-700 bg-orange-50 border border-orange-200 rounded px-2 py-1 flex items-center gap-1">
+                  🔒 Im Export – schreibgeschützt
+                </span>
+              ) : isApproved ? (
+                <span className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1 flex items-center gap-1">
+                  🔒 Freigegeben
+                </span>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onEdit(aufgabe)}
+                  disabled={aufgabe.sync_status === 'pending'}
+                  className="gap-2"
+                >
+                  <Edit className="w-4 h-4" />
+                  Bearbeiten
+                </Button>
               )}
-            >
-              <TypIcon className="w-3 h-3" />
-              {typMeta.label}
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-xs text-left leading-snug">
-            {typMeta.description}
-          </TooltipContent>
-        </Tooltip>
-
-        {showMission && (
-          <MissionBadge missionId={aufgabe.mission_type} size="sm" showFallback />
-        )}
-
-        <Tooltip delayDuration={150}>
-          <TooltipTrigger asChild>
-            <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full border border-amber-200 bg-amber-50 cursor-help">
-              <SternDisplay grad={aufgabe.schwierigkeitsgrad || 0} />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-xs text-left leading-snug">
-            {schwierigkeitTooltip}
-          </TooltipContent>
-        </Tooltip>
+              <PublishAllgemeineAufgabeButton
+                aufgabe={aufgabe}
+                kannBearbeiten={kannBearbeiten}
+              />
+              {!isApproved && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onDelete(aufgabe.id)}
+                  disabled={aufgabe.sync_status === 'pending'}
+                  className="gap-2 text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Löschen
+                </Button>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Aufgabenstellung */}
@@ -337,47 +380,6 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, onEdit,
         </div>
       )}
 
-      {/* Aktionen */}
-      {kannBearbeiten && (
-        <div className="flex gap-2 pt-3 border-t border-border flex-wrap">
-          {aufgabe.sync_status === 'pending' ? (
-            <p className="text-xs text-orange-700 bg-orange-50 border border-orange-200 rounded px-2 py-1 flex items-center gap-1">
-              🔒 Im Export – schreibgeschützt bis Moodle-Upload bestätigt
-            </p>
-          ) : isApproved ? (
-            <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1 flex items-center gap-1">
-              🔒 Freigegeben – Freigabe aufheben um zu bearbeiten
-            </p>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEdit(aufgabe)}
-              disabled={aufgabe.sync_status === 'pending'}
-              className="gap-2"
-            >
-              <Edit className="w-4 h-4" />
-              Bearbeiten
-            </Button>
-          )}
-          <PublishAllgemeineAufgabeButton
-            aufgabe={aufgabe}
-            kannBearbeiten={kannBearbeiten}
-          />
-          {!isApproved && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onDelete(aufgabe.id)}
-              disabled={aufgabe.sync_status === 'pending'}
-              className="gap-2 text-destructive hover:text-destructive ml-auto"
-            >
-              <Trash2 className="w-4 h-4" />
-              Löschen
-            </Button>
-          )}
-        </div>
-      )}
     </div>
     </TooltipProvider>
   );
@@ -579,6 +581,12 @@ export default function AllgemeineAufgabenView({
       <div className="flex flex-col lg:flex-row flex-1 overflow-hidden min-h-0">
         {/* Linke Spalte: Sidebar mit Baumstruktur */}
         <aside className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-border bg-card/50 flex flex-col shrink-0 lg:shrink-0 overflow-hidden max-h-64 lg:max-h-full h-full lg:h-auto min-h-0">
+          {/* Einheitliche Kopfzeile (Icon + Titel + Hilfe) – wie in Tab 3/4 */}
+          <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b">
+            <Package className="w-4 h-4 text-primary shrink-0" />
+            <span className="text-xs font-semibold flex-1">Aktivitäten</span>
+            <HelpBadge text="Hier erstellst und verwaltest du allgemeine Aufgaben (Transfer-Ebene), gruppiert nach Themenfeld. Wähle links eine Aufgabe aus, um sie rechts zu bearbeiten." docsSlug="ebene-2-allgemeine-aufgaben" />
+          </div>
           {/* Button für neue Aufgabe */}
           {kannBearbeiten && (
             <div className="shrink-0 px-4 py-3 border-b border-border space-y-2">

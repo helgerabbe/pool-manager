@@ -308,11 +308,46 @@ export default function LernpaketPanel({
         </div>
       )}
 
-      {/* Aktions-Leiste (eigene Zeile über dem Titel, damit die Titel-Zeile
-          ruhig bleibt). Bearbeiten + Mit KI füllen stehen hier nebeneinander.
-          Der Löschen-Button wurde absichtlich entfernt: das Löschen von
-          Lernpaketen erfolgt zentral durch die Fachschaftsleitung im
-          Strukturboard. */}
+      {/* Überschrift (Titel + Status-Badges + Dauer) – steht oben, darunter
+          eine feine Trennlinie und dann die Aktions-Buttons. Einheitliches
+          Muster für Tab 3/4/5: Überschrift → Linie → Buttons → Inhalt. */}
+      <div className="pb-3 border-b">
+        <div className="flex items-center gap-2 mb-1 flex-wrap">
+          <h2 className="text-xl font-bold">{paket.titel_des_pakets}</h2>
+          <StatusBadge status={pStatus} />
+          {isLockedByOther && (
+            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 border border-amber-200 text-amber-800 text-xs font-medium">
+              <Lock className="w-3 h-3" />
+              Gesperrt von {paket.locked_by_email}
+            </div>
+          )}
+          {canEdit && (
+            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 border border-blue-200 text-blue-700 text-xs font-medium">
+              <PenLine className="w-3 h-3" />
+              In Bearbeitung
+            </div>
+          )}
+          {(() => {
+            const phasenConfig = paket.phasen_konfiguration || {};
+            const hasIncomplete = Object.values(phasenConfig).some(
+              phase => phase && phase.selected_aktivitaet_id && !phase.is_complete
+            );
+            return hasIncomplete ? (
+              <span title="Aktivität-Inhalte unvollständig" className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" /> Inhalt unvollständig
+              </span>
+            ) : null;
+          })()}
+        </div>
+        <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
+          <Clock className="w-3.5 h-3.5" />{paket.geschaetzte_dauer_minuten} Minuten
+        </p>
+      </div>
+
+      {/* Aktions-Leiste (unter der Überschrift). Bearbeiten + Mit KI füllen
+          + Freigeben. Der Löschen-Button wurde absichtlich entfernt: das
+          Löschen von Lernpaketen erfolgt zentral durch die Fachschaftsleitung
+          im Strukturboard. */}
       {kannBearbeiten && (
         <div className="flex items-center justify-end gap-2 flex-wrap">
           <Button
@@ -394,39 +429,6 @@ export default function LernpaketPanel({
           )}
         </div>
       )}
-
-      <div>
-        <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <h2 className="text-xl font-bold">{paket.titel_des_pakets}</h2>
-          <StatusBadge status={pStatus} />
-          {isLockedByOther && (
-            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 border border-amber-200 text-amber-800 text-xs font-medium">
-              <Lock className="w-3 h-3" />
-              Gesperrt von {paket.locked_by_email}
-            </div>
-          )}
-          {canEdit && (
-            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 border border-blue-200 text-blue-700 text-xs font-medium">
-              <PenLine className="w-3 h-3" />
-              In Bearbeitung
-            </div>
-          )}
-          {(() => {
-            const phasenConfig = paket.phasen_konfiguration || {};
-            const hasIncomplete = Object.values(phasenConfig).some(
-              phase => phase && phase.selected_aktivitaet_id && !phase.is_complete
-            );
-            return hasIncomplete ? (
-              <span title="Aktivität-Inhalte unvollständig" className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3" /> Inhalt unvollständig
-              </span>
-            ) : null;
-          })()}
-        </div>
-        <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
-          <Clock className="w-3.5 h-3.5" />{paket.geschaetzte_dauer_minuten} Minuten
-        </p>
-      </div>
 
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Lernziele</h3>

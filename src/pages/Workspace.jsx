@@ -15,7 +15,8 @@ import { useEinheitFreigabeStatus } from '@/hooks/useEinheitFreigabeStatus';
 import { EXPORT_LIFECYCLE_LABELS, EXPORT_LIFECYCLE_STATUS } from '@/lib/exportLifecycle';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { BookOpen, Lock, ArrowRight, PenLine, Unlock, Loader2, AlignJustify, LayoutList } from 'lucide-react';
+import { BookOpen, Lock, ArrowRight, PenLine, Unlock, Loader2, AlignJustify, LayoutList, Layers } from 'lucide-react';
+import HelpDialog from '@/components/ui/HelpDialog';
 import { cn } from '@/lib/utils';
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -909,7 +910,16 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                   "flex flex-col lg:flex-row flex-1 overflow-hidden transition-colors",
                   isLernpaketEditActive && "bg-orange-50/60 ring-2 ring-inset ring-orange-300"
                 )}>
-                <aside className="w-full lg:w-96 border-b lg:border-b-0 lg:border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden h-64 lg:h-full min-h-0">
+                <aside className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden h-64 lg:h-full min-h-0">
+                   <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b">
+                     <Layers className="w-4 h-4 text-primary shrink-0" />
+                     <span className="text-xs font-semibold flex-1">Lernpakete</span>
+                     <HelpDialog
+                       title="Aktivitäten zuordnen"
+                       description="Hier ordnest du jedem Lernpaket konkrete Aktivitäten zu – gegliedert nach den Lernphasen Input, Übung und Abschluss. Wähle links ein Lernpaket aus, um rechts seine Phasen und Aktivitäten zu bearbeiten."
+                       docsSlug="lernpakete-aktivitaeten"
+                     />
+                   </div>
                    <div className="flex-1 overflow-hidden min-h-0 p-3">
                      <div className="h-full overflow-y-auto pr-2">
                     <SidebarTree

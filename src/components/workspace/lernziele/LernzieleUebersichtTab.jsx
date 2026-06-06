@@ -174,11 +174,10 @@ export default function LernzieleUebersichtTab({
   return (
     <div className="flex flex-col lg:flex-row flex-1 overflow-hidden h-full">
       {/* ── Sidebar: Lernpaket-Liste ──────────────────────────────────── */}
-      <aside className="w-full lg:w-72 border-b lg:border-b-0 lg:border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden h-56 lg:h-full min-h-0">
+      <aside className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden h-56 lg:h-full min-h-0">
         <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b">
           <Target className="w-4 h-4 text-primary shrink-0" />
           <span className="text-xs font-semibold flex-1">Lernziele</span>
-          <span className="text-[10px] text-muted-foreground">{gesamtZiele} gesamt</span>
           <HelpDialog {...HELP} />
         </div>
         <div className="flex-1 overflow-hidden min-h-0">
