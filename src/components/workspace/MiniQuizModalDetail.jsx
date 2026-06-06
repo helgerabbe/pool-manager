@@ -27,13 +27,20 @@ export default function MiniQuizModalDetail({
   const [exportLockedWasEnabled, setExportLockedWasEnabled] = useState(exportLocked);
   const [editorData, setEditorData] = useState({ questions: initialData?.questions || [] });
 
+  // WICHTIG: Nur beim Öffnen des Modals (open-Flanke) initialisieren.
+  // `initialData` ist im Parent (MasterDetailView) ein bei jedem Render neu
+  // erzeugtes Objekt (`activeData`). Hätten wir `initialData` in den
+  // Dependencies, würde dieser Effekt bei jedem Render feuern und den
+  // Freigabe-Toggle sofort wieder auf den gespeicherten Wert zurücksetzen
+  // ("Toggle springt zurück"-Bug). Wir hängen daher nur an `open`.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (open) {
       setIsReleased(initialData?.content_status === 'approved');
       setExportLockedWasEnabled(exportLocked);
       setEditorData({ questions: initialData?.questions || [] });
     }
-  }, [open, initialData]);
+  }, [open]);
 
   useEffect(() => {
     if (exportLocked && !exportLockedWasEnabled) {
