@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 import { useLernpaketLock } from '@/hooks/useLocks';
 import { StatusBadge, kategorieColors } from './SharedUI';
 import PhaseContent from './PhaseContent';
-import LernzielEditList from './LernzielEditList';
 import LernpaketWizardModal from '@/components/workspace/lernpaketWizard/LernpaketWizardModal';
 
 
@@ -41,13 +40,9 @@ export default function LernpaketPanel({
   const onNavigate = onNavigateRaw;
   const paketZiele = lernziele.filter(lz => lz.lernpaket_id === paket.id);
   const pStatus = getLernpaketStatus(paket, paketZiele, aufgaben, userEmail);
-  const [editLernzielId, setEditLernzielId] = useState(null);
-  const [editLernzielData, setEditLernzielData] = useState(null);
   const [expandedPhase, setExpandedPhase] = useState(null);
   const [localTitel, setLocalTitel] = useState(paket.titel_des_pakets || '');
   const [localPhasenConfig, setLocalPhasenConfig] = useState(paket.phasen_konfiguration || {});
-  // Drafts für Lernziele im Bearbeiten-Dialog: { [lernzielId]: { formulierung_fachsprache, schueler_uebersetzung } }
-  const [lernzielDrafts, setLernzielDrafts] = useState({});
   const [isSavingDialog, setIsSavingDialog] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -115,9 +110,7 @@ export default function LernpaketPanel({
         toast.error(msg);
         return;
       }
-      // Drafts aus aktuellem DB-Stand initialisieren
       setLocalPhasenConfig(paket.phasen_konfiguration || {});
-      setLernzielDrafts({});
       setEditDialogOpen(true);
     } catch (err) {
       console.error('[LernpaketPanel] acquireLock failed:', err);
@@ -164,7 +157,6 @@ export default function LernpaketPanel({
   const handleCancelEditDialog = async () => {
     setEditDialogOpen(false);
     setLocalPhasenConfig(paket.phasen_konfiguration || {});
-    setLernzielDrafts({});
     try {
       await releaseLock();
     } catch (err) {
@@ -191,41 +183,10 @@ export default function LernpaketPanel({
     setIsSavingDialog(true);
     let saveSucceeded = false;
     try {
-      // 1) Lernziel-Drafts validieren & in das vom Backend erwartete Format
-      //    bringen ({ id, data }). Wenn ein Feld im Draft fehlt, gilt der
-      //    Original-Wert weiter — sonst würde z.B. das Tippen nur in der
-      //    Schüler-Übersetzung die Fachsprache fälschlich als "leer" werten.
+      // Lernziele werden nicht mehr hier gespeichert (Pflege erfolgt in Tab 3).
       const lernzielUpdates = [];
-      const drafts = lernzielDrafts || {};
-      for (const lzId of Object.keys(drafts)) {
-        const draft = drafts[lzId] || {};
-        const original = paketZiele.find((lz) => lz.id === lzId);
-        if (!original) continue;
-        // Wenn ein Feld im Draft fehlt, gilt der Original-Wert weiter — sonst
-        // würde z.B. das Tippen nur in der Schüler-Übersetzung die Fachsprache
-        // fälschlich als "leer" werten und den Save mit einer Pflichtfeld-
-        // Fehlermeldung blockieren.
-        const oldFach = String(original.formulierung_fachsprache ?? '').trim();
-        const oldUe = String(original.schueler_uebersetzung ?? '').trim();
-        const newFach = String(
-          draft.formulierung_fachsprache ?? original.formulierung_fachsprache ?? ''
-        ).trim();
-        const newUe = String(
-          draft.schueler_uebersetzung ?? original.schueler_uebersetzung ?? ''
-        ).trim();
-        if (newFach === oldFach && newUe === oldUe) continue;
-        if (!newFach) {
-          toast.error('Die offizielle Formulierung darf nicht leer sein.');
-          setIsSavingDialog(false);
-          return;
-        }
-        lernzielUpdates.push({
-          id: lzId,
-          data: { formulierung_fachsprache: newFach, schueler_uebersetzung: newUe },
-        });
-      }
 
-      // 2) Atomic Save via secure-Function (Lernpaket-Felder + Lernziele).
+      // Atomic Save via secure-Function (nur Lernpaket-Felder).
       //
       // WICHTIG (Bug-Fix 2026-05-14, "Speichern reagiert nicht"):
       // Das Base44-SDK wirft bei HTTP-Non-2xx-Antworten NICHT zuverlässig
@@ -272,7 +233,6 @@ export default function LernpaketPanel({
       setIsSavingDialog(false);
       if (saveSucceeded) {
         setEditDialogOpen(false);
-        setLernzielDrafts({});
       }
       try {
         await releaseLock();
@@ -307,19 +267,6 @@ export default function LernpaketPanel({
         ...prev,
         [phaseKey]: { ...phaseConfig, disabled: !phaseConfig.disabled },
       };
-    });
-  };
-
-  const handleLernzielDraftChange = (lzId, draft) => {
-    setLernzielDrafts((prev) => ({ ...prev, [lzId]: draft }));
-  };
-
-  const handleEditLernziel = (lz) => {
-    setEditLernzielId(lz.id);
-    setEditLernzielData({
-      formulierung_fachsprache: lz.formulierung_fachsprache,
-      kategorie: lz.kategorie,
-      schueler_uebersetzung: lz.schueler_uebersetzung,
     });
   };
 
@@ -482,38 +429,14 @@ export default function LernpaketPanel({
       </div>
 
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Lernziele</h3>
-          {canEdit && kannBearbeiten && !isLockedByOther && paketZiele.length > 0 && (
-            <button
-              onClick={onNewLernziel}
-              className="flex items-center gap-1 text-xs text-primary hover:underline"
-            >
-              <Plus className="w-3 h-3" /> Hinzufügen
-            </button>
-          )}
-        </div>
+        <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Lernziele</h3>
         <div className="space-y-2">
           {paketZiele.length === 0 ? (
-            <button
-              onClick={canEdit && kannBearbeiten ? onNewLernziel : undefined}
-              disabled={!canEdit || !kannBearbeiten}
-              className={`w-full flex flex-col items-center justify-center gap-2 p-6 rounded-lg border-2 border-dashed transition-colors text-center
-                ${canEdit && kannBearbeiten
-                  ? 'border-primary/30 hover:border-primary hover:bg-primary/5 cursor-pointer'
-                  : 'border-border cursor-default opacity-60'
-                }`}
-            >
+            <div className="w-full flex flex-col items-center justify-center gap-2 p-6 rounded-lg border-2 border-dashed border-border text-center">
               <Target className="w-6 h-6 text-muted-foreground/40" />
-              <span className="text-sm text-muted-foreground">
-                {canEdit && kannBearbeiten
-                  ? 'Noch kein Lernziel zugeordnet. Hier klicken, um ein Lernziel hinzuzufügen.'
-                  : 'Noch kein Lernziel zugeordnet.'}
-              </span>
-              {canEdit && kannBearbeiten && (
-                <span className="text-xs text-primary font-medium">+ Lernziel hinzufügen</span>
-              )}
-            </button>
+              <span className="text-sm text-muted-foreground">Noch kein Lernziel zugeordnet.</span>
+              <span className="text-xs text-muted-foreground">Lernziele werden im Tab „Lernziele" angelegt und bearbeitet.</span>
+            </div>
           ) : (
             <>
               {paketZiele.map(lz => (
@@ -533,31 +456,6 @@ export default function LernpaketPanel({
                       </Badge>
                     )}
                   </div>
-                  {canEdit && kannBearbeiten && !isLockedByOther && (
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        onClick={() => handleEditLernziel(lz)}
-                        className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                        title="Bearbeiten"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (window.confirm('Dieses Lernziel wirklich löschen?')) {
-                            base44.entities.Lernziele.delete(lz.id).then(() => {
-                              queryClient.invalidateQueries({ queryKey: ['lernziele'] });
-                              toast.success('Lernziel gelöscht.');
-                            }).catch(() => toast.error('Fehler beim Löschen.'));
-                          }
-                        }}
-                        className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                        title="Löschen"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
                 </div>
               ))}
             </>
@@ -682,17 +580,16 @@ export default function LernpaketPanel({
           </DialogHeader>
 
           <div className="space-y-6 py-4 flex-1 overflow-y-auto min-h-0">
-            {/* Lernziele-Editor: controlled, persistiert erst beim globalen "Speichern". */}
+            {/* Lernziele werden zentral in Tab 3 ("Lernziele") gepflegt. Hier nur lesender Hinweis. */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-muted-foreground">Lernziele bearbeiten</h3>
+                <h3 className="text-sm font-semibold text-muted-foreground">Lernziele</h3>
                 <span className="text-xs text-muted-foreground">{paketZiele.length} Ziel{paketZiele.length !== 1 ? 'e' : ''}</span>
               </div>
-              <LernzielEditList
-                lernziele={paketZiele}
-                drafts={lernzielDrafts}
-                onChangeDraft={handleLernzielDraftChange}
-              />
+              <div className="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+                <Target className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <span>Lernziele werden zentral im Tab <strong>„Lernziele"</strong> angelegt und bearbeitet.</span>
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -806,76 +703,6 @@ export default function LernpaketPanel({
         paket={paket}
         existingActivityCount={lernpaketAktivitaeten.filter(a => a.lernpaket_id === paket.id).length}
       />
-
-      <Dialog open={!!editLernzielId} onOpenChange={(open) => { if (!open) setEditLernzielId(null); }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Lernziel bearbeiten</DialogTitle>
-          </DialogHeader>
-          {editLernzielData && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Formulierung (Fachsprache)</Label>
-                <input
-                  type="text"
-                  value={editLernzielData.formulierung_fachsprache || ''}
-                  onChange={(e) => setEditLernzielData({ ...editLernzielData, formulierung_fachsprache: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-input"
-                  placeholder="Ich kann..."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Kategorie</Label>
-                <div className="flex gap-2">
-                  {['Fachwissen', 'Fähigkeit/Fertigkeit'].map(cat => (
-                    <button
-                      key={cat}
-                      onClick={() => setEditLernzielData({ ...editLernzielData, kategorie: cat })}
-                      className={`flex-1 py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all ${
-                        editLernzielData.kategorie === cat
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border hover:border-primary/40'
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Schüler-Übersetzung (optional)</Label>
-                <input
-                  type="text"
-                  value={editLernzielData.schueler_uebersetzung || ''}
-                  onChange={(e) => setEditLernzielData({ ...editLernzielData, schueler_uebersetzung: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-input"
-                  placeholder="Schülergerechte Formulierung..."
-                />
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditLernzielId(null)}>Abbrechen</Button>
-            <Button
-              onClick={async () => {
-                if (!editLernzielId || !editLernzielData) return;
-                try {
-                  await base44.entities.Lernziele.update(editLernzielId, editLernzielData);
-                  queryClient.invalidateQueries({ queryKey: ['lernziele'] });
-                  setEditLernzielId(null);
-                  setEditLernzielData(null);
-                  toast.success('Lernziel gespeichert.');
-                } catch (error) {
-                  console.error('Fehler beim Speichern des Lernziels:', error);
-                  toast.error('Fehler beim Speichern des Lernziels.');
-                }
-              }}
-            >
-              Speichern
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

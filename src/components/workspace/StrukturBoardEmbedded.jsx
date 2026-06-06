@@ -10,7 +10,6 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { createThemenfeld, updateThemenfeld, deleteThemenfeld } from '@/services/ThemenfeldService';
-import { createLernziel, updateLernziel, deleteLernziel } from '@/services/LernzielService';
 import { createLernpaket, updateLernpaket, deleteLernpaket } from '@/services/LernpaketService';
 import { useRBAC } from '@/hooks/useRBAC';
 import { hasUnitLevelAccess } from '@/lib/rbac';
@@ -23,7 +22,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import LernzielRow from '@/components/workspace/LernzielRow';
 import { Plus, GripVertical, Clock, Trash2, FolderOpen, Layers, X, Save, Target, ChevronLeft, ChevronsLeft, ArrowLeft, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -31,22 +29,19 @@ import { toast } from 'sonner';
 // ── Lernpaket-Dialog ──────────────────────────────────────────────────────────
 // Öffnet sich beim Klick auf eine Paket-Karte oder beim Erstellen eines neuen Pakets.
 
-function LernpaketDialog({ open, onOpenChange, initialData, onSave, kontext }) {
+function LernpaketDialog({ open, onOpenChange, initialData, onSave }) {
   // isNew = true nur wenn initialData null/undefined ist (= "Neues Lernpaket" Button geklickt)
   // Hat initialData eine id oder isNew-Flag, dann ist es immer "Bearbeiten"-Modus
   const isNew = !initialData;
   const [titel, setTitel] = useState('');
   const [dauer, setDauer] = useState(45);
+  // Lernziele werden hier NUR lesend angezeigt. Bearbeitet/angelegt werden sie
+  // zentral in Tab 3 ("Lernziele"). Das Strukturboard kümmert sich nur noch um
+  // Titel, Dauer und die Themenfeld-/Reihenfolge-Struktur.
   const [lernziele, setLernziele] = useState([]);
 
-  // 🔒 BUGFIX (zurückgekehrter Lernziel-Verlust-Bug):
-  // Den Dialog-State NUR EINMAL beim Öffnen (false→true) initialisieren.
-  // Frühere Version hatte `initialData` als useEffect-Dependency – kam während
-  // des offenen Dialogs ein Realtime-/Parent-Re-Render mit neuer initialData-
-  // Referenz herein, lief der Effekt erneut und ÜBERSCHRIEB die gerade
-  // eingetippten Lernziele mit dem (noch leeren) Remote-Stand. Genau dadurch
-  // gingen frisch eingegebene Lernziele verloren. Wir merken uns den vorherigen
-  // open-Zustand und re-initialisieren ausschließlich beim Öffnungs-Übergang.
+  // Dialog-State NUR EINMAL beim Öffnen (false→true) initialisieren, damit ein
+  // Hintergrund-Refetch die laufende Eingabe nicht überschreibt.
   const wasOpenRef = React.useRef(false);
   useEffect(() => {
     if (open && !wasOpenRef.current) {
@@ -57,17 +52,8 @@ function LernpaketDialog({ open, onOpenChange, initialData, onSave, kontext }) {
     wasOpenRef.current = open;
   }, [open, initialData]);
 
-  const addLernziel = () =>
-    setLernziele(prev => [...prev, { id: `lz-${Date.now()}`, formulierung_fachsprache: '', kategorie: 'Fachwissen', isNew: true }]);
-
-  const updateLernziel = (id, field, value) =>
-    setLernziele(prev => prev.map(lz => lz.id === id ? { ...lz, [field]: value } : lz));
-
-  const removeLernziel = (id) =>
-    setLernziele(prev => prev.filter(lz => lz.id !== id));
-
   const handleSave = () => {
-    onSave({ titel, dauer, lernziele });
+    onSave({ titel, dauer });
     onOpenChange(false);
   };
 
@@ -103,29 +89,30 @@ function LernpaketDialog({ open, onOpenChange, initialData, onSave, kontext }) {
             </div>
           </div>
 
-          {/* Lernziele */}
+          {/* Lernziele – nur lesend. Bearbeitung erfolgt zentral in Tab 3. */}
           <div className="space-y-2.5">
-            <div className="flex items-center justify-between">
-              <Label>Lernziele</Label>
-              <Button type="button" size="sm" variant="outline" onClick={addLernziel} className="gap-1.5 h-7 text-xs">
-                <Plus className="w-3.5 h-3.5" /> Lernziel hinzufügen
-              </Button>
+            <Label>Lernziele</Label>
+            <div className="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+              <Target className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span>Lernziele werden zentral im Tab <strong>„Lernziele"</strong> angelegt und bearbeitet.</span>
             </div>
-            {lernziele.length === 0 && (
-              <p className="text-xs text-muted-foreground italic">Noch keine Lernziele – optional hier hinzufügen oder später im Workspace anlegen.</p>
+            {lernziele.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic">Diesem Lernpaket sind noch keine Lernziele zugeordnet.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {lernziele.map((lz) => (
+                  <div key={lz.id} className="flex items-start gap-2 rounded-md border bg-muted/20 px-2.5 py-1.5 text-sm">
+                    <Target className="w-3.5 h-3.5 text-green-600 shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="leading-snug">{lz.formulierung_fachsprache}</p>
+                      {lz.schueler_uebersetzung && (
+                        <p className="text-xs text-muted-foreground italic mt-0.5">„{lz.schueler_uebersetzung}"</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
-            <div className="space-y-2">
-              {lernziele.map((lz, idx) => (
-                <LernzielRow
-                  key={lz.id}
-                  lz={lz}
-                  idx={idx}
-                  onUpdate={updateLernziel}
-                  onRemove={removeLernziel}
-                  kontext={{ ...kontext, lernpaket_titel: titel }}
-                />
-              ))}
-            </div>
           </div>
         </div>
         <DialogFooter className="shrink-0 border-t pt-4">
@@ -602,18 +589,16 @@ export default function StrukturBoardEmbedded({
     setPaketDialog({ open: true, spalteId, paket });
   };
 
-  const handlePaketSave = ({ titel, dauer, lernziele }) => {
-   console.log('[StrukturBoard] 📝 handlePaketSave aufgerufen:', { titel, dauer, lernzieleCount: lernziele?.length, lernziele });
+  const handlePaketSave = ({ titel, dauer }) => {
    setIsDirty(true);
    const { spalteId, paket } = paketDialog;
-   console.log('[StrukturBoard] 📝 Dialog-Kontext:', { spalteId, paketId: paket?.id, istBearbeiten: !!paket });
    if (paket) {
-     // Paket bearbeiten (ob neu oder existierend)
+     // Paket bearbeiten – nur Titel & Dauer (Lernziele werden in Tab 3 gepflegt).
      setPaketeMap(prev => {
        const next = {};
        Object.entries(prev).forEach(([k, v]) => {
          next[k] = v.map(p => p.id === paket.id
-           ? { ...p, titel_des_pakets: titel, geschaetzte_dauer_minuten: dauer, lernziele }
+           ? { ...p, titel_des_pakets: titel, geschaetzte_dauer_minuten: dauer }
            : p);
        });
        return next;
@@ -627,7 +612,7 @@ export default function StrukturBoardEmbedded({
          id: tempId,
          titel_des_pakets: titel,
          geschaetzte_dauer_minuten: dauer,
-         lernziele,
+         lernziele: [],
          reihenfolge_nummer: (prev[spalteId] || []).length + 1,
          einheit_id: einheitId,
          phasen_konfiguration: DEFAULT_PHASEN,
@@ -762,22 +747,7 @@ export default function StrukturBoardEmbedded({
               });
               console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}] ✓ Paket erstellt. ID:`, neuesPaket?.id);
               if (!neuesPaket?.id) throw new Error(`Fehler: Neu erstelltes Lernpaket hat keine ID`);
-
-              if (paket.lernziele && paket.lernziele.length > 0) {
-                console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}] Erstelle ${paket.lernziele.length} Lernziele...`);
-                for (let lzIdx = 0; lzIdx < paket.lernziele.length; lzIdx++) {
-                  const lz = paket.lernziele[lzIdx];
-                  if (lz.formulierung_fachsprache?.trim()) {
-                    console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}]   → LZ${lzIdx}: "${lz.formulierung_fachsprache.substring(0, 40)}..."...`);
-                    await createLernziel({
-                      lernpaket_id: neuesPaket.id,
-                      formulierung_fachsprache: lz.formulierung_fachsprache.trim(),
-                      kategorie: lz.kategorie || 'Fachwissen',
-                    });
-                    console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}]   ✓ LZ${lzIdx} fertig`);
-                  }
-                }
-              }
+              // Lernziele werden NICHT mehr hier angelegt – das geschieht zentral in Tab 3.
             } else {
               console.log(`[StrukturBoard] ✏️ PHASE4[${paketCounter}] Update Paket: "${paket.titel_des_pakets}" (ID: ${paket.id})...`);
               // Titel-Änderungen auch speichern, falls geändert
@@ -790,68 +760,7 @@ export default function StrukturBoardEmbedded({
               const result = await updateLernpaket(paket.id, updateData);
               console.log(`[StrukturBoard] ✏️ PHASE4[${paketCounter}] ✓ Fertig. Result:`, result);
               if (!result) throw new Error(`Fehler: Paket ${paket.id} konnte nicht aktualisiert werden`);
-
-              // Lernziele synchronisieren: Neue anlegen, entfernte löschen
-              const aktuelleLernziele = Array.isArray(paket.lernziele) ? paket.lernziele : [];
-              const originalLernziele = (remoteLernziele || []).filter(lz => lz.lernpaket_id === paket.id);
-              console.log(`[StrukturBoard] 🔍 PHASE4[${paketCounter}] Lernziele: ${originalLernziele.length} original, ${aktuelleLernziele.length} aktuell`);
-
-              // 1) Gelöschte Lernziele finden (waren in DB, sind jetzt nicht mehr in der Liste)
-              const aktuelleIds = new Set(aktuelleLernziele.map(lz => lz.id));
-              const zuLoeschen = originalLernziele.filter(lz => !aktuelleIds.has(lz.id));
-              if (zuLoeschen.length > 0) {
-                console.log(`[StrukturBoard] 🗑️ PHASE4[${paketCounter}] Lösche ${zuLoeschen.length} Lernziele...`);
-                for (const lz of zuLoeschen) {
-                  console.log(`[StrukturBoard] 🗑️ PHASE4[${paketCounter}]   → deleteLernziel(${lz.id})...`);
-                  await deleteLernziel(lz.id);
-                  console.log(`[StrukturBoard] 🗑️ PHASE4[${paketCounter}]   ✓ Gelöscht`);
-                }
-              }
-
-              // 2) Neue Lernziele anlegen (isNew=true ODER Temp-ID 'lz-...')
-              const istNeu = (lz) => lz.isNew === true || (typeof lz.id === 'string' && lz.id.startsWith('lz-'));
-              const neueLernziele = aktuelleLernziele.filter(lz =>
-                istNeu(lz) && lz.formulierung_fachsprache?.trim()
-              );
-              if (neueLernziele.length > 0) {
-                console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}] Erstelle ${neueLernziele.length} neue Lernziele für Paket ${paket.id}...`);
-                for (const lz of neueLernziele) {
-                  console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}]   → LZ: "${lz.formulierung_fachsprache.substring(0, 40)}..."`);
-                  await createLernziel({
-                    lernpaket_id: paket.id,
-                    formulierung_fachsprache: lz.formulierung_fachsprache.trim(),
-                    kategorie: lz.kategorie || 'Fachwissen',
-                  });
-                  console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}]   ✓ Fertig`);
-                }
-              }
-
-              // 3) Bestehende Lernziele aktualisieren (echte DB-ID, nicht neu) –
-              //    nur wenn sich Formulierung, Kategorie oder Schüler-Übersetzung
-              //    tatsächlich geändert haben. Ohne diesen Pfad gingen
-              //    Inline-Edits (z. B. Tippfehler korrigieren) verloren, weil sie
-              //    weder in „neu" noch in „löschen" fielen.
-              const bestehendeLernziele = aktuelleLernziele.filter(lz => !istNeu(lz));
-              for (const lz of bestehendeLernziele) {
-                const original = originalLernziele.find(o => o.id === lz.id);
-                if (!original) continue;
-                const neueFormulierung = (lz.formulierung_fachsprache || '').trim();
-                if (!neueFormulierung) continue;
-                const neueKategorie = lz.kategorie || 'Fachwissen';
-                const neueUebersetzung = lz.schueler_uebersetzung ?? original.schueler_uebersetzung ?? '';
-                const titelGeandert = neueFormulierung !== (original.formulierung_fachsprache || '').trim();
-                const kategorieGeandert = neueKategorie !== (original.kategorie || 'Fachwissen');
-                const uebersetzungGeandert = (neueUebersetzung || '') !== (original.schueler_uebersetzung || '');
-                if (!titelGeandert && !kategorieGeandert && !uebersetzungGeandert) continue;
-
-                const lzUpdate = {};
-                if (titelGeandert) lzUpdate.formulierung_fachsprache = neueFormulierung;
-                if (kategorieGeandert) lzUpdate.kategorie = neueKategorie;
-                if (uebersetzungGeandert) lzUpdate.schueler_uebersetzung = neueUebersetzung;
-                console.log(`[StrukturBoard] ✏️ PHASE4[${paketCounter}] Update Lernziel ${lz.id}:`, lzUpdate);
-                await updateLernziel(lz.id, lzUpdate);
-                console.log(`[StrukturBoard] ✏️ PHASE4[${paketCounter}]   ✓ Lernziel aktualisiert`);
-              }
+              // Lernziele werden NICHT mehr hier synchronisiert – Pflege erfolgt in Tab 3.
             }
           } catch (err) {
             console.error(`[StrukturBoard] ❌ PHASE4[${paketCounter}] FEHLER:`, err);
@@ -1067,7 +976,6 @@ export default function StrukturBoardEmbedded({
         onOpenChange={(open) => !open && setPaketDialog({ open: false, spalteId: null, paket: null })}
         initialData={paketDialog.paket}
         onSave={handlePaketSave}
-        kontext={{ fach: einheit?.fach, jahrgangsstufe: einheit?.jahrgangsstufe }}
       />
 
       {/* ── Speicher-Overlay (blocking) ── */}
