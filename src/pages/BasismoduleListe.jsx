@@ -48,14 +48,8 @@ export default function BasismoduleListe() {
 
   const isInitialLoading = isLoading || isFetching;
 
-  const { data: jahrgaengeLookup = [] } = useQuery({
-    queryKey: ['lookup-jahrgaenge'],
-    queryFn: async () => {
-      const all = await base44.entities.LookupJahrgaenge.list();
-      return all.filter((j) => j.ist_aktiv).sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
-    },
-    staleTime: 5 * 60 * 1000,
-  });
+  // Basismodule decken hartcodiert die Klassenstufen 5–10 ab.
+  const basismodulJahrgaenge = ['5', '6', '7', '8', '9', '10'];
 
   const filtered = basismodule.filter(e => {
     const matchSearch = e.titel_der_einheit?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -134,8 +128,8 @@ export default function BasismoduleListe() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Alle Jahrgänge</SelectItem>
-              {jahrgaengeLookup.map(j => (
-                <SelectItem key={j.id} value={j.bezeichnung}>Jg. {j.bezeichnung}</SelectItem>
+              {basismodulJahrgaenge.map(j => (
+                <SelectItem key={j} value={j}>Jg. {j}</SelectItem>
               ))}
             </SelectContent>
           </Select>
