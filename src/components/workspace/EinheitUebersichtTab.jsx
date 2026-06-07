@@ -44,6 +44,21 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import GesamtzielManager from './GesamtzielManager';
 import EinheitGrundgeruestSection from './EinheitGrundgeruestSection';
 import { hasUnitLevelAccess } from '@/lib/rbac';
+import { base44 } from '@/api/base44Client';
+import EinheitStrukturLebenszyklusBadge from '@/components/workspace/panels/EinheitStrukturLebenszyklusBadge';
+
+/**
+ * Markiert eine bereits mit Moodle synchronisierte Einheit als 'modified',
+ * sobald Moodle-relevante Felder (Titel, Gesamtziele, Grundgerüst) geändert
+ * wurden. Idempotent & no-op für 'new'/'pending' – siehe Backend-Funktion.
+ */
+async function markStrukturModified(einheitId) {
+  try {
+    await base44.functions.invoke('markEinheitStrukturModified', { einheitId });
+  } catch (err) {
+    console.warn('[Tab1] markEinheitStrukturModified fehlgeschlagen:', err);
+  }
+}
 
 const UNIT_ROLE_CONFIG = {
   LEITUNG: { 
@@ -365,6 +380,10 @@ export default function EinheitUebersichtTab({
         throw new Error(result.data.error);
       }
 
+      // War die Einheit bereits 'synced', markiert die Metadaten-Änderung sie
+      // als 'modified' → Neu-Export nötig (vor dem Refetch, damit Badge frisch lädt).
+      await markStrukturModified(einheit.id);
+
       await queryClient.refetchQueries({ queryKey: ['workspace-data', einheit.id] });
       await queryClient.refetchQueries({ queryKey: ['einheiten-list-secure'] });
 
@@ -443,6 +462,13 @@ export default function EinheitUebersichtTab({
               <p className="text-sm text-muted-foreground mt-0.5">Titel, Ziel, Fach und Status dieser Unterrichtseinheit.</p>
             </div>
             <HelpDialog {...EINHEIT_HELP} />
+          </div>
+
+          {/* Moodle-Lebenszyklus dieser Einheit: Neu / Im Export / Synchronisiert /
+              Geändert. Immer sichtbar – auch im Lesemodus. */}
+          <div className="flex items-center gap-2 -mt-1">
+            <span className="text-xs text-muted-foreground">Moodle-Status:</span>
+            <EinheitStrukturLebenszyklusBadge syncStatus={einheit?.sync_status || 'new'} />
           </div>
 
           <div className={cn(
@@ -545,7 +571,8 @@ export default function EinheitUebersichtTab({
                   <GesamtzielManager 
                     einheitId={einheit.id}
                     gesamtziele={einheit.gesamtziele || []}
-                    onUpdate={() => {
+                    onUpdate={async () => {
+                      await markStrukturModified(einheit.id);
                       queryClient.refetchQueries({ queryKey: ['workspace-data', einheit.id] });
                       queryClient.refetchQueries({ queryKey: ['einheiten-list-secure'] });
                     }}
@@ -612,6 +639,7 @@ export default function EinheitUebersichtTab({
             einheit={einheit}
             canEdit={kannEinheitBearbeiten}
             onSaved={async () => {
+              await markStrukturModified(einheit.id);
               await queryClient.refetchQueries({ queryKey: ['workspace-data', einheit.id] });
               await queryClient.refetchQueries({ queryKey: ['einheiten-list-secure'] });
             }}
