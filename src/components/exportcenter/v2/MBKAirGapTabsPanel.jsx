@@ -622,7 +622,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
       >
         {/* Einrichtung — nur Info ohne Payload-Aktionen */}
         <ExportTodoRow value="info" stepNumber="i" title="Info & Status"
-          description="Überblick über Einheit, Lebenszyklus und Delta-Analyse.">
+          description="Überblick über Einheit, Lebenszyklus und Stand der Inhalte.">
           <InfoTab einheit={einheit} />
         </ExportTodoRow>
 
