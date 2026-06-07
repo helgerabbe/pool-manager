@@ -30,13 +30,20 @@
  */
 
 import { getSektorTypLabel } from '@/lib/sektorTypen';
+import { annotateSektorItems, DASHBOARD_GATING_ENGINE } from '@/lib/dashboardGating';
 
 /**
  * Versionskennung der Air-Gap-Payload-Engine.
  * Wird bei jedem Build in `meta.schema_version` geschrieben und beim
  * Persistieren als `template_version` der ExportPrompts-Records.
+ *
+ * airgap-1.7.0: Dashboard-Gating-Engine (siehe docs/dashboard-gating-engine.md).
+ *   - Payload 1: `dashboard_gating_engine`-Vertrag (Status-Feld, Gating-Regeln,
+ *     Initial-Status-Ableitung, universeller Weiter-Button).
+ *   - Payload 2: jedes Lernpfad-Item erhält `initial_status` (offen|erledigt)
+ *     und `abschluss_bedingung`; jeder Sektor erhält zusätzlich `modus`.
  */
-export const MBK_AIRGAP_VERSION = 'airgap-1.6.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.7.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -422,6 +429,10 @@ export function buildSystemContextPayload({
     // Generische SCORM-Modularitäts-Anweisung. Bewusst inhalts-unabhängig,
     // damit der system_context_hash bei Aufgaben-Änderungen nicht kippt.
     scorm_delivery_contract: SCORM_DELIVERY_CONTRACT,
+    // airgap-1.7.0: Gating-Engine-Vertrag (siehe docs/dashboard-gating-engine.md).
+    // Beschreibt Status-Feld, Gating-Regeln, Initial-Status-Ableitung und den
+    // universellen Weiter-Button — ebenfalls inhalts-unabhängig.
+    dashboard_gating_engine: DASHBOARD_GATING_ENGINE,
   };
 }
 
@@ -468,7 +479,7 @@ function summarizeLernpaket(lp, phasenDesPakets, katalogById) {
  * portierbare Struktur um. Items werden hierarchisch (parent/children)
  * gerendert, damit Bündel-Verschachtelungen klar bleiben.
  */
-function summarizeSektor(sektor, themenfelderById) {
+function summarizeSektor(sektor, themenfelderById, bausteinById = new Map()) {
   // Platzhalter-Bausteine bleiben in der DB-Konfiguration als Arbeitshilfe
   // für Tab 7 erhalten, fließen aber NICHT in den Export. Wir filtern sie
   // hier ein einziges Mal raus — alles weiter unten arbeitet auf der
@@ -510,6 +521,26 @@ function summarizeSektor(sektor, themenfelderById) {
     ? sektor.bearbeitungsmodus
     : 'sequenziell';
 
+  // airgap-1.7.0: Gating-Modus des Sektors. Schema v4 trennt `bearbeitungsmodus`
+  // (legacy Sektor-Gating: sichtbar-ab-wann) vom neuen Item-Gating. Für die
+  // Initial-Status-Ableitung nutzen wir bevorzugt `modus` (sequenziell/frei,
+  // gesetzt durch den Sektor-Modus-Toggle); fehlt er, fällt es auf
+  // `bearbeitungsmodus` zurück.
+  const sektorGatingModus = (sektor?.modus === 'frei' || sektor?.modus === 'sequenziell')
+    ? sektor.modus
+    : bearbeitungsmodus;
+
+  // airgap-1.7.0: jedem Item initial_status + abschluss_bedingung beigeben
+  // (siehe docs/dashboard-gating-engine.md). Test-Sektoren markieren ihre
+  // Items als "absolviert"-pflichtig.
+  const istTestSektor = sektor?.sektor_typ === 'zwischentest' || sektor?.sektor_typ === 'abschlusstest';
+  const itemsAnnotated = annotateSektorItems({
+    items: itemsOut,
+    sektorModus: sektorGatingModus,
+    bausteinById,
+    istTestItem: () => istTestSektor,
+  });
+
   return {
     sektor_id: sektor?.sektor_id || null,
     sektor_typ: sektor?.sektor_typ || null,
@@ -518,7 +549,8 @@ function summarizeSektor(sektor, themenfelderById) {
     themenfeld_id: sektor?.themenfeld_id || null,
     themenfeld_titel: themenfeldTitel,
     bearbeitungsmodus,
-    items: itemsOut,
+    modus: sektorGatingModus,
+    items: itemsAnnotated,
   };
 }
 
@@ -567,6 +599,12 @@ export function buildStructurePayload({
     (a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)
   );
   const themenfelderById = new Map(themenfelderSorted.map((tf) => [tf.id, tf]));
+  // System-Bausteine früh indizieren — wird sowohl für die Item-Annotation
+  // (Gating: Bündel-Erkennung) in summarizeSektor als auch weiter unten fürs
+  // SCORM-Mapping benötigt.
+  const bausteinByKey = new Map(
+    (systemBausteine || []).map((b) => [b.baustein_id, b])
+  );
 
   // Lernpakete pro Themenfeld + Lernziele pro Lernpaket + Phase-Aktivitäten
   // pro Lernpaket vorgruppieren.
@@ -640,7 +678,7 @@ export function buildStructurePayload({
   };
   for (const lt of LERNTYP_KEYS) {
     const sektoren = einheit?.lernpfade_konfiguration?.[lt] || [];
-    lernpfade[lt] = sektoren.map((s) => summarizeSektor(s, themenfelderById));
+    lernpfade[lt] = sektoren.map((s) => summarizeSektor(s, themenfelderById, bausteinByKey));
     const dashboardFile = fnDashboard(lt);
     for (const sektor of sektoren) {
       for (const item of sektor?.items || []) {
@@ -816,9 +854,6 @@ export function buildStructurePayload({
   //    für die Stamm-Definitionen (titel, icon, export_instruktion). Der
   //    eigentliche persona-spezifische Inhalt entsteht erst über
   //    Payload 5 (mbk_systembaustein_payload).
-  const bausteinByKey = new Map(
-    (systemBausteine || []).map((b) => [b.baustein_id, b])
-  );
   const usedBausteinIds = new Set();
   // Stabile Reihenfolge: erst lerntyp-Reihenfolge, dann baustein_id
   // alphabetisch — wichtig für deterministische Test-Outputs und Hashes.
