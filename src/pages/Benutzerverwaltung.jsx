@@ -117,11 +117,12 @@ function BenutzerForm({ open, onOpenChange, onSubmit, initialData, faecher = [] 
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b">
           <DialogTitle>{initialData ? 'Benutzer bearbeiten' : 'Benutzer hinzufügen'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
+          <div className="space-y-5 overflow-y-auto scroll-container px-6 py-5 flex-1 min-h-0">
           <div className="space-y-2">
             <Label>E-Mail-Adresse *</Label>
             <Input
@@ -203,8 +204,9 @@ function BenutzerForm({ open, onOpenChange, onSubmit, initialData, faecher = [] 
             ausnahmen={formData.fach_ausnahmen || []}
             onChange={(next) => setFormData({ ...formData, fach_ausnahmen: next })}
           />
+          </div>
 
-          <DialogFooter>
+          <DialogFooter className="px-6 py-4 border-t">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
             <Button
               type="submit"

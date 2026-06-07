@@ -16,9 +16,19 @@ import { Info } from 'lucide-react';
  *   Fachbereich-Zugehörigkeit automatisch additiven Fachlehrkraft-Zugriff.
  */
 export default function FachRollenEditor({ basisRolle, faecher = [], ausnahmen = [], onChange }) {
-  if (basisRolle !== 'Fachschaftsleitung' || faecher.length === 0) {
+  // Normalisieren: jeden Eintrag in einzelne Fächer aufsplitten (falls ein
+  // Eintrag versehentlich kommasepariert ist) und Duplikate entfernen.
+  const faecherListe = Array.from(
+    new Set(
+      (faecher || [])
+        .flatMap((f) => String(f).split(',').map((s) => s.trim()))
+        .filter(Boolean)
+    )
+  );
+
+  if (basisRolle !== 'Fachschaftsleitung' || faecherListe.length === 0) {
     // Hinweis für Moodle-Designer: additiver Lehrkraft-Zugriff
-    if (basisRolle === 'Moodle-Designer' && faecher.length > 0) {
+    if (basisRolle === 'Moodle-Designer' && faecherListe.length > 0) {
       return (
         <div className="flex items-start gap-2 rounded-lg border bg-blue-50/60 p-3 text-xs text-blue-800">
           <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
@@ -48,7 +58,7 @@ export default function FachRollenEditor({ basisRolle, faecher = [], ausnahmen =
         „Nur Fachlehrkraft" herabgestuft werden.
       </p>
       <div className="space-y-1.5 rounded-lg border bg-muted/30 p-3">
-        {faecher.map((fach) => {
+        {faecherListe.map((fach) => {
           const herab = istHerabgestuft(fach);
           return (
             <div key={fach} className="flex items-center justify-between gap-3 py-1">
