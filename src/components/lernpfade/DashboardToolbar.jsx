@@ -219,10 +219,8 @@ export default function DashboardToolbar({
 
   return (
     <div className="shrink-0 border-b border-border bg-card">
-      {/* Zeile 1: Status, Drift, Aktionen, Save */}
+      {/* Zeile 1: Drift, Aktionen, Save */}
       <div className="px-3 py-1.5 flex items-center gap-2 flex-wrap">
-        <EinheitStatusBadge status={status} />
-
         <DashboardDriftPill
           lerntypReport={driftForActiveLerntyp}
           lerntypLabel={lerntypLabel}

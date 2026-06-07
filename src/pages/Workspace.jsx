@@ -673,8 +673,8 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
         {/* ── Lifecycle-Lock-Banner (Ring der Macht) ───────────────────────── */}
         {isEinheitContentLocked && (
-          <div className="shrink-0 px-4 py-2.5 bg-emerald-50 border-b border-emerald-200 text-xs text-emerald-900 flex items-center gap-2">
-            <Lock className="w-3.5 h-3.5 shrink-0 text-emerald-700" />
+          <div className="shrink-0 px-4 py-2.5 bg-red-50 border-b border-red-200 text-xs text-red-900 flex items-center gap-2">
+            <Lock className="w-3.5 h-3.5 shrink-0 text-red-600" />
             <span>
               <strong>{EXPORT_LIFECYCLE_LABELS[lifecycleStatus] || 'Einheit final freigegeben'}</strong> – Alle Bearbeitungsfunktionen in allen Tabs sind gesperrt.{' '}
               {lifecycleStatus === EXPORT_LIFECYCLE_STATUS.EXPORT_RUNNING
@@ -781,16 +781,6 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               <div className="flex-1 min-w-0">
                 <WorkspaceTabs activeTab={activeTab} onTabChange={handleTabChange} isBasismodul={isBasismodul} />
               </div>
-              {/* Poppiges „Im Export"-Badge neben der Tab-Leiste — erscheint nur,
-                  solange die Einheit final freigegeben / im Export ist, und
-                  verschwindet automatisch, sobald die Freigabe aufgehoben wird.
-                  Erspart Tooltips an jedem gesperrten Button. */}
-              {isEinheitContentLocked && (
-                <div className="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-fuchsia-600 to-orange-500 text-white text-xs font-bold shadow-lg shadow-fuchsia-500/30 ring-2 ring-white/40 animate-pulse">
-                  <Lock className="w-3.5 h-3.5 shrink-0" />
-                  Einheit ist im Export – Bearbeiten nicht möglich
-                </div>
-              )}
               {/* Tab 2 (Struktur): Kompakt- + Struktur-bearbeiten-Buttons sind in
                   die Moodle-Status-Zeile von StrukturBoardEmbedded gewandert. */}
               {activeTab === 'dashboards' &&
