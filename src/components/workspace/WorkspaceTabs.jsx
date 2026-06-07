@@ -149,18 +149,20 @@ const getVisibleTabs = (rolle) => {
     value: 'ebene3', label: 'Anwendungs- & Projektaufgaben', icon: Target, step: 7,
     help: {
       title: 'Anwendungs- & Projektaufgaben (Ebene 3)',
-      description: 'In Tab 6 erstellst du als Fachlehrkraft die anspruchsvollen Anwendungs- und Projektaufgaben (Ebene 3). Das sind die offenen, kreativen Aufgaben, bei denen deine Schüler:innen ein Produkt oder Projekt selbstständig planen und erstellen – z. B. ein Plakat, ein Podcast, eine Präsentation oder ein Portfolio. Da es hier keine eindeutige Musterlösung gibt, definierst du Abgabeformat, Bewertungsrubriken und einen Projekt-Coach (KI-Tutor), der die Lernenden über mehrere Sitzungen begleitet.',
+      description: 'In diesem Tab erstellst du als Fachlehrkraft die anspruchsvollen Anwendungs- und Projektaufgaben (Ebene 3). Das sind die offenen, kreativen Aufgaben, bei denen deine Schüler:innen ein Produkt oder Projekt selbstständig planen und erstellen – z. B. ein Plakat, ein Podcast, eine Präsentation oder ein Portfolio. Da es hier keine eindeutige Musterlösung gibt, definierst du die Abgabeformate, Bewertungsrubriken und einen Projekt-Coach (KI-Tutor), der die Lernenden über mehrere Sitzungen begleitet.',
       features: [
         'Du wählst zwischen Anwendungsaufgabe (kürzer, fokussiert) und Projektaufgabe (umfangreicher, produktorientiert)',
         'Du nutzt den KI-Aufgaben-Assistenten, um aus einer groben Idee (auch per Sprache) einen Aufgabenentwurf zu erzeugen',
-        'Du legst Abgabeformat und „Besonderen Fokus" fest und lässt dir daraus die Bewertungsrubriken per KI vorschlagen',
+        'Du legst die Abgabeformate per Kachel fest (Text · Präsentation · Zeitleiste · Bild · Grafik · Audio/Podcast) oder definierst ein eigenes Format',
+        'Du beschreibst einen „Besonderen Fokus" und lässt dir daraus die Bewertungsrubriken per KI vorschlagen',
         'Du verfeinerst Rubriken (Titel · Punkte · Kriterientext) im Brian-Format manuell nach',
         'Du füllst die Lernlandkarte: welche Lernziele/Basismodule sind für dieses Projekt zwingend nötig?',
         'Du lässt den vollständigen Projekt-Coach-Prompt automatisch aus Aufgabe + Rubriken + Lernlandkarte generieren',
       ],
       faqs: [
         { question: 'Was ist der Unterschied zwischen Anwendungs- und Projektaufgabe?', answer: 'Anwendungsaufgaben sind kürzer und fokussierter (z. B. einen Text analysieren). Projektaufgaben sind umfangreicher und verlangen eigenständige Planung, Recherche und Umsetzung – meist über mehrere Sitzungen.' },
-        { question: 'Was sind Bewertungsrubriken im Brian-Format?', answer: 'Anstelle starrer Schulnoten gibt es thematische Kategorien (z. B. „Inhaltliche Tiefe", „Darstellung") mit Punktzahl und Kriterientext. Die KI generiert dir auf Basis von Aufgabe und Fokus 2–3 passende Kategorien als Startpunkt.' },
+        { question: 'Wozu dienen die Abgabeformate?', answer: 'Sie legen fest, in welcher Form die Schüler:innen ihr Ergebnis einreichen (z. B. Präsentation, Zeitleiste, Podcast). Wichtig: Brian bewertet das fertige Format nicht, sondern begleitet die Lernenden bei dessen Erstellung – deshalb braucht er die Angabe, in welche Richtung er unterstützen soll. Mehrfachauswahl und ein eigenes Format sind möglich.' },
+        { question: 'Was sind Bewertungsrubriken im Brian-Format?', answer: 'Anstelle starrer Schulnoten gibt es thematische Kategorien (z. B. „Inhaltliche Tiefe", „Darstellung") mit Punktzahl und Kriterientext. Die KI generiert dir auf Basis von Aufgabe und Fokus passende Kategorien als Startpunkt. Sie sind keine starre Vorgabe, sondern lenken Brians Begleitung.' },
         { question: 'Was ist der Projekt-Coach?', answer: 'Ein speziell konfigurierter KI-Tutor, der Schüler:innen per Sokrates-Methode durch das Projekt führt – ohne die Lösung vorwegzunehmen. Du erzeugst seinen Prompt im Reiter „KI-Tutor Prompt" auf Knopfdruck.' },
         { question: 'Warum verlangt das System Lernziele für ein Projekt?', answer: 'Damit Brian.study weiß, welche Grundlagen aus Ebene 1 das Projekt voraussetzt. Wenn ein:e Lerner:in scheitert, kann der Tutor gezielt zurück zu den passenden Basis-Übungen verweisen.' },
       ],
