@@ -7,9 +7,10 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useQueryClient, useMutation } from '@tanstack/react-query';
+import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Crown, Pencil, Loader2, CheckCircle2, Sparkles, Lock, Eye } from 'lucide-react';
 import LueckentextPreviewModal from '@/components/workspace/preview/LueckentextPreviewModal';
@@ -320,6 +321,17 @@ export default function MasterDetailView({
   const isSupportedType = isLuecke || isSort || matchTerms || isQuiz || isMCType || isKITutorType || isImageLabelingType || isTest || isOffeneType;
 
   const { acquireLock, releaseLock } = useLernpaketLock(isSupportedType ? master.lernpaket_id : null);
+
+  // Parent-Lernpaket laden, um zu prüfen, ob es freigegeben ist. Ist es
+  // freigegeben, dürfen die Masteraufgaben darin nicht mehr bearbeitet werden.
+  const { data: parentLernpaket } = useQuery({
+    queryKey: ['lernpakete', master?.lernpaket_id],
+    queryFn: () => base44.entities.Lernpakete.filter({ id: master.lernpaket_id }),
+    select: (data) => data[0],
+    enabled: !!master?.lernpaket_id,
+  });
+  const lernpaketReleased = parentLernpaket?.content_status === 'approved' && !!parentLernpaket?.released_at;
+
   const [acquiringLock, setAcquiringLock] = useState(false);
   const [klonModalOpen, setKlonModalOpen] = useState(false);
   const [lueckeModalOpen, setLueckeModalOpen] = useState(false);
@@ -686,15 +698,28 @@ export default function MasterDetailView({
             </Button>
           )}
           {kannBearbeiten && isSupportedType && (
-            <Button
-              onClick={handleEdit}
-              disabled={acquiringLock}
-              className="gap-2"
-            >
-              {acquiringLock
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren…</>
-                : <><Pencil className="w-4 h-4" /> Inhalt bearbeiten</>}
-            </Button>
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className={lernpaketReleased ? 'cursor-not-allowed' : undefined}>
+                    <Button
+                      onClick={lernpaketReleased ? undefined : handleEdit}
+                      disabled={acquiringLock || lernpaketReleased}
+                      className={`gap-2 ${lernpaketReleased ? 'pointer-events-none' : ''}`}
+                    >
+                      {acquiringLock
+                        ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren…</>
+                        : <><Pencil className="w-4 h-4" /> Inhalt bearbeiten</>}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {lernpaketReleased && (
+                  <TooltipContent side="bottom" className="max-w-xs">
+                    🔒 Das Lernpaket ist freigegeben. Diese Aufgabe kann nicht mehr bearbeitet werden. Hebe zuerst die Freigabe des Lernpakets auf.
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
       )}

@@ -1106,12 +1106,12 @@ export default function ActivityMasterPanel({
             </div>
           ) : (
             <button
-              onClick={kannBearbeiten && !isParentPaketLockedByOther && !(lernpaket?.moodle_sync_status === 'locked') && !lernpaket?.export_locked && !(globalEditActive && !lernpaketLockActive) && !acquiringLock
+              onClick={kannBearbeiten && !isParentPaketLockedByOther && !lernpaketReleased && !(lernpaket?.moodle_sync_status === 'locked') && !lernpaket?.export_locked && !(globalEditActive && !lernpaketLockActive) && !acquiringLock
                 ? handleOpenEditModal
                 : undefined}
-              disabled={!kannBearbeiten || isParentPaketLockedByOther || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || (globalEditActive && !lernpaketLockActive) || acquiringLock}
+              disabled={!kannBearbeiten || isParentPaketLockedByOther || lernpaketReleased || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || (globalEditActive && !lernpaketLockActive) || acquiringLock}
               className="w-full text-left bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 text-sm text-blue-900 cursor-pointer hover:bg-blue-100 transition-colors disabled:cursor-default disabled:hover:bg-blue-50 disabled:opacity-60"
-              title={kannBearbeiten ? 'Klicken zum Bearbeiten' : ''}
+              title={lernpaketReleased ? '🔒 Lernpaket ist freigegeben – Inhalte gesperrt' : kannBearbeiten ? 'Klicken zum Bearbeiten' : ''}
             >
               <span className="leading-relaxed whitespace-pre-wrap">{aufgabentext || defaultAufgabentext}</span>
             </button>
