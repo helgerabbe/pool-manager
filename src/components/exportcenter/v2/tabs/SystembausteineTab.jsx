@@ -1,29 +1,24 @@
 /**
- * SystembausteineTab.jsx — Tab 4 (airgap-1.6.0)
+ * SystembausteineTab.jsx — Schritt 5 (airgap-1.6.0)
  *
  * Payload 5 (`mbk_systembaustein_payload`). Pro Lernpfad-Referenz × Lerntyp
- * ein eigenes Briefing-Item — derselbe Baustein erhält in unterschiedlichen
- * Lernpfaden hochgradig differenzierte Inhalte (Persona, Sprache, Tiefe).
+ * ein eigenes Briefing-Item. Alle werden gemeinsam als ein Bündel übergeben
+ * — der Operator muss sie NICHT einzeln erzeugen. Diese Liste dient nur der
+ * Kontrolle + bietet pro Item Copy/Download.
  *
- * UI analog zu KiAufgabenTab: Block-Card + Bundle-Groups (gruppiert pro
- * Lerntyp), Sync-Status pro Item, Vorschau pro Item.
+ * Die Haupt-Aktionen liegen auf der To-Do-Zeilen-Ebene (ExportTodoRow).
  */
 import React from 'react';
-import { Puzzle } from 'lucide-react';
-import AirGapBlockCard from '@/components/export/airgap/AirGapBlockCard';
+import { FileArchive } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import AirGapBundleGroup from '@/components/export/airgap/AirGapBundleGroup';
 import SyncStatusBadge, { planStatusToUiStatus } from '../shared/SyncStatusBadge';
 
 export default function SystembausteineTab({
-  blockStatus,
-  blockAggregate,
   systembausteinItems,
   systembausteinGroups,
   itemPlanLookup,
   isInitialExport = false,
-  onToggleDelivered,
-  onCopy,
-  onDownload,
   onDownloadBundle,
   onCopyItem,
   onDownloadItem,
@@ -48,39 +43,37 @@ export default function SystembausteineTab({
 
   return (
     <div className="space-y-3">
-      <AirGapBlockCard
-        index={4}
-        icon={<Puzzle className="w-4 h-4 text-primary" />}
-        title="Systembausteine (Pro Lerntyp)"
-        description='Pro Lernpfad-Referenz × Lerntyp ein eigenes Briefing. Derselbe Baustein (z.B. „Einführung in die Einheit") erhält in jedem Pfad einen persona-spezifisch unterschiedlichen Inhalt. Quelle: SystemBausteine-Verwaltung (export_instruktion) + Lernpfad-Konfiguration der Einheit.'
-        itemCount={systembausteinItems.length}
-        delivered={blockStatus.systembausteine.delivered}
-        rawDelivered={blockStatus.systembausteine.rawDelivered}
-        isStale={blockStatus.systembausteine.isStale || blockAggregate.mbk_systembaustein_payload.hasAnyStale}
-        treatStaleAsNew={isInitialExport}
-        onToggleDelivered={onToggleDelivered}
-        onCopy={onCopy}
-        onDownload={onDownload}
-        onDownloadBundle={systembausteinItems.length > 0 ? onDownloadBundle : null}
-      >
-        {systembausteinGroups.length === 0 ? (
-          <p className="text-xs text-muted-foreground italic px-2">
-            Keine Systembausteine in den Lernpfaden dieser Einheit referenziert.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {systembausteinGroups.map((group) => (
-              <AirGapBundleGroup
-                key={group.key}
-                group={{ ...group, items: decorateItems(group.items) }}
-                onCopyItem={onCopyItem}
-                onDownloadItem={onDownloadItem}
-                onDownloadGroupZip={onDownloadGroupZip}
-              />
-            ))}
-          </div>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <p className="text-xs text-muted-foreground max-w-xl">
+          {systembausteinItems.length} Item{systembausteinItems.length === 1 ? '' : 's'} —
+          derselbe Baustein erhält pro Lernpfad einen persona-spezifischen
+          Inhalt. Werden gemeinsam als ein Bündel übergeben.
+        </p>
+        {systembausteinItems.length > 0 && onDownloadBundle && (
+          <Button size="sm" variant="outline" onClick={onDownloadBundle} className="gap-1.5">
+            <FileArchive className="w-3.5 h-3.5" />
+            Bundle.zip
+          </Button>
         )}
-      </AirGapBlockCard>
+      </div>
+
+      {systembausteinGroups.length === 0 ? (
+        <p className="text-xs text-muted-foreground italic px-2">
+          Keine Systembausteine in den Lernpfaden dieser Einheit referenziert.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {systembausteinGroups.map((group) => (
+            <AirGapBundleGroup
+              key={group.key}
+              group={{ ...group, items: decorateItems(group.items) }}
+              onCopyItem={onCopyItem}
+              onDownloadItem={onDownloadItem}
+              onDownloadGroupZip={onDownloadGroupZip}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

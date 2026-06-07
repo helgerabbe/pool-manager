@@ -1,25 +1,23 @@
 /**
- * KiAufgabenTab.jsx — Tab 5
+ * KiAufgabenTab.jsx — Schritt 6
  *
  * Payload 4 (Micro-Briefings). Ein Item pro KI-Aktivität bzw.
- * KI-Allgemeiner-Aufgabe. Akkordeon analog zu Tab 2.
+ * KI-Allgemeiner-Aufgabe. Alle werden gemeinsam als ein Bündel übergeben.
+ * Diese Liste dient nur der Kontrolle + bietet pro Item Copy/Download.
+ *
+ * Die Haupt-Aktionen liegen auf der To-Do-Zeilen-Ebene (ExportTodoRow).
  */
 import React from 'react';
-import { Sparkles } from 'lucide-react';
-import AirGapBlockCard from '@/components/export/airgap/AirGapBlockCard';
+import { FileArchive } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import AirGapBundleGroup from '@/components/export/airgap/AirGapBundleGroup';
 import SyncStatusBadge, { planStatusToUiStatus } from '../shared/SyncStatusBadge';
 
 export default function KiAufgabenTab({
-  blockStatus,
-  blockAggregate,
   microItems,
   microGroups,
   itemPlanLookup,
   isInitialExport = false,
-  onToggleDelivered,
-  onCopy,
-  onDownload,
   onDownloadBundle,
   onCopyItem,
   onDownloadItem,
@@ -44,39 +42,37 @@ export default function KiAufgabenTab({
 
   return (
     <div className="space-y-3">
-      <AirGapBlockCard
-        index={5}
-        icon={<Sparkles className="w-4 h-4 text-primary" />}
-        title="KI-Aufgaben (Micro-Briefings)"
-        description="Pro KI-Aktivität / KI-Aufgabe ein schlankes Briefing (GPS, Lernziele, Source-of-Truth, Blueprint). Nur Items mit erstellungs_modus='ki'."
-        itemCount={microItems.length}
-        delivered={blockStatus.micro.delivered}
-        rawDelivered={blockStatus.micro.rawDelivered}
-        isStale={blockStatus.micro.isStale || blockAggregate.mbk_micro_payload.hasAnyStale}
-        treatStaleAsNew={isInitialExport}
-        onToggleDelivered={onToggleDelivered}
-        onCopy={onCopy}
-        onDownload={onDownload}
-        onDownloadBundle={microItems.length > 0 ? onDownloadBundle : null}
-      >
-        {microGroups.length === 0 ? (
-          <p className="text-xs text-muted-foreground italic px-2">
-            Keine KI-Aktivitäten oder KI-Aufgaben in dieser Einheit.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {microGroups.map((group) => (
-              <AirGapBundleGroup
-                key={group.key}
-                group={{ ...group, items: decorateItems(group.items) }}
-                onCopyItem={onCopyItem}
-                onDownloadItem={onDownloadItem}
-                onDownloadGroupZip={onDownloadGroupZip}
-              />
-            ))}
-          </div>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <p className="text-xs text-muted-foreground max-w-xl">
+          {microItems.length} Item{microItems.length === 1 ? '' : 's'} — pro
+          KI-Aktivität ein schlankes Briefing. Werden gemeinsam als ein Bündel
+          übergeben. Nur Items mit erstellungs_modus='ki'.
+        </p>
+        {microItems.length > 0 && onDownloadBundle && (
+          <Button size="sm" variant="outline" onClick={onDownloadBundle} className="gap-1.5">
+            <FileArchive className="w-3.5 h-3.5" />
+            Bundle.zip
+          </Button>
         )}
-      </AirGapBlockCard>
+      </div>
+
+      {microGroups.length === 0 ? (
+        <p className="text-xs text-muted-foreground italic px-2">
+          Keine KI-Aktivitäten oder KI-Aufgaben in dieser Einheit.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {microGroups.map((group) => (
+            <AirGapBundleGroup
+              key={group.key}
+              group={{ ...group, items: decorateItems(group.items) }}
+              onCopyItem={onCopyItem}
+              onDownloadItem={onDownloadItem}
+              onDownloadGroupZip={onDownloadGroupZip}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

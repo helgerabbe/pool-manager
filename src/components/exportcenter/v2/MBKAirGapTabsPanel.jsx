@@ -26,6 +26,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import * as AccordionPrimitive from '@radix-ui/react-accordion';
 import ExportTodoRow from './shared/ExportTodoRow';
+import PayloadPreviewDialog from './shared/PayloadPreviewDialog';
 
 import { useExportPrompts } from '@/hooks/useExportPrompts';
 import { useAirGapBulk } from '@/hooks/useAirGapBulk';
@@ -70,6 +71,8 @@ import TabDriftIndicator from './shared/TabDriftIndicator';
 
 export default function MBKAirGapTabsPanel({ einheitId }) {
   const [activeTab, setActiveTab] = useState('info');
+  // Preview-Dialog ("Payload ansehen"): { title, payload, onCopy, onDownload }
+  const [preview, setPreview] = useState(null);
 
   const { land, bundesland, schulform } = useSchulStammdaten();
   const stammdaten = { land, bundesland, schulform };
@@ -614,7 +617,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
         onValueChange={setActiveTab}
         className="space-y-2"
       >
-        {/* Einrichtung */}
+        {/* Einrichtung — keine Payload-Aktionen */}
         <ExportTodoRow value="info" stepNumber="i" title="Info & Status"
           description="Überblick über Einheit, Lebenszyklus und Delta-Analyse.">
           <InfoTab einheit={einheit} />
@@ -625,54 +628,63 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
           <MetaPromptTab />
         </ExportTodoRow>
 
-        {/* Übergabe-Payloads */}
+        {/* Übergabe-Payloads — Steuerzentrale (Aktionen) auf Zeilen-Ebene */}
         <ExportTodoRow value="ui-config" stepNumber="1" title="🎨 UI"
           description="Darstellung: CSS, Tab-Leiste, Kopfzeilen-Vorlage."
           done={blockStatus.ui_config.delivered}
-          badge={driftBadge(tabCounts.mbk_ui_config)}>
-          <UiConfigTab
-            blockStatus={blockStatus}
-            blockAggregate={blockAggregate}
-            planItem={uiPlanItem}
-            payload={buildUi()}
-            isInitialExport={isInitialExport}
-            onToggleDelivered={(v) => setDelivered('ui_config', v)}
-            onCopy={() => handleCopy(buildUi())}
-            onDownload={() => handleDownload(buildUi(), `mbk-ui-config_${baseSlug}.json`)}
-          />
+          badge={driftBadge(tabCounts.mbk_ui_config)}
+          showActions
+          onToggleDelivered={(v) => setDelivered('ui_config', v)}
+          onCopy={() => handleCopy(buildUi())}
+          onDownload={() => handleDownload(buildUi(), `mbk-ui-config_${baseSlug}.json`)}
+          onPreview={() => setPreview({
+            title: 'UI-Config',
+            payload: buildUi(),
+            onCopy: () => handleCopy(buildUi()),
+            onDownload: () => handleDownload(buildUi(), `mbk-ui-config_${baseSlug}.json`),
+          })}
+        >
+          <UiConfigTab planItem={uiPlanItem} isInitialExport={isInitialExport} />
         </ExportTodoRow>
 
         <ExportTodoRow value="struktur" stepNumber="2" title="Struktur"
           description="Inhaltsverzeichnis: Themenfelder, Lernpakete, Lernpfade."
           done={blockStatus.structure.delivered}
-          badge={driftBadge(tabCounts.mbk_structure_payload)}>
-          <StrukturTab
-            blockStatus={blockStatus}
-            blockAggregate={blockAggregate}
-            planItem={structurePlanItem}
-            payload={buildStructure()}
-            isInitialExport={isInitialExport}
-            onToggleDelivered={(v) => setDelivered('structure', v)}
-            onCopy={() => handleCopy(buildStructure())}
-            onDownload={() => handleDownload(buildStructure(), `mbk-structure_${baseSlug}.json`)}
-          />
+          badge={driftBadge(tabCounts.mbk_structure_payload)}
+          showActions
+          onToggleDelivered={(v) => setDelivered('structure', v)}
+          onCopy={() => handleCopy(buildStructure())}
+          onDownload={() => handleDownload(buildStructure(), `mbk-structure_${baseSlug}.json`)}
+          onPreview={() => setPreview({
+            title: 'Struktur der Einheit',
+            payload: buildStructure(),
+            onCopy: () => handleCopy(buildStructure()),
+            onDownload: () => handleDownload(buildStructure(), `mbk-structure_${baseSlug}.json`),
+          })}
+        >
+          <StrukturTab planItem={structurePlanItem} isInitialExport={isInitialExport} />
         </ExportTodoRow>
 
         <ExportTodoRow value="aufgaben" stepNumber="3" title="Aufgaben"
           description="Ausgearbeitete Aufgabeninhalte pro Lernpaket / Aufgabe."
           done={blockStatus.task_content.delivered}
-          badge={driftBadge(tabCounts.mbk_task_content_payload)}>
+          badge={driftBadge(tabCounts.mbk_task_content_payload)}
+          showActions
+          onToggleDelivered={(v) => setDelivered('task_content', v)}
+          onCopy={() => handleCopy(taskBundle)}
+          onDownload={() => handleDownload(taskBundle, `mbk-task-content_${baseSlug}.json`)}
+          onPreview={() => setPreview({
+            title: 'Aufgabeninhalte (Bündel)',
+            payload: taskBundle,
+            onCopy: () => handleCopy(taskBundle),
+            onDownload: () => handleDownload(taskBundle, `mbk-task-content_${baseSlug}.json`),
+          })}
+        >
           <AufgabenTab
-            blockStatus={blockStatus}
-            blockAggregate={blockAggregate}
             taskItems={taskItems}
             taskGroups={taskGroups}
-            taskBundle={taskBundle}
             itemPlanLookup={itemPlanLookup}
             isInitialExport={isInitialExport}
-            onToggleDelivered={(v) => setDelivered('task_content', v)}
-            onCopy={() => handleCopy(taskBundle)}
-            onDownload={() => handleDownload(taskBundle, `mbk-task-content_${baseSlug}.json`)}
             onDownloadBundle={() =>
               handleDownloadZip(
                 [
@@ -693,33 +705,41 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
         <ExportTodoRow value="globale-ki" stepNumber="4" title="Globale KI"
           description="Schulweiter System-Kontext (Nomenklatur, Stammdaten)."
           done={blockStatus.system_context.delivered}
-          badge={driftBadge(tabCounts.mbk_system_context)}>
-          <GlobaleKiTab
-            blockStatus={blockStatus}
-            blockAggregate={blockAggregate}
-            planItem={systemPlanItem}
-            payload={buildSysCtx()}
-            isInitialExport={isInitialExport}
-            onToggleDelivered={(v) => setDelivered('system_context', v)}
-            onCopy={() => handleCopy(buildSysCtx())}
-            onDownload={() => handleDownload(buildSysCtx(), `mbk-system-context_${baseSlug}.json`)}
-          />
+          badge={driftBadge(tabCounts.mbk_system_context)}
+          showActions
+          onToggleDelivered={(v) => setDelivered('system_context', v)}
+          onCopy={() => handleCopy(buildSysCtx())}
+          onDownload={() => handleDownload(buildSysCtx(), `mbk-system-context_${baseSlug}.json`)}
+          onPreview={() => setPreview({
+            title: 'Globale KI (System-Kontext)',
+            payload: buildSysCtx(),
+            onCopy: () => handleCopy(buildSysCtx()),
+            onDownload: () => handleDownload(buildSysCtx(), `mbk-system-context_${baseSlug}.json`),
+          })}
+        >
+          <GlobaleKiTab planItem={systemPlanItem} isInitialExport={isInitialExport} />
         </ExportTodoRow>
 
         <ExportTodoRow value="systembausteine" stepNumber="5" title="Systembausteine"
           description="Standard-Bausteine pro Lerntyp (Einführung, Diagnose …)."
           done={blockStatus.systembausteine.delivered}
-          badge={driftBadge(tabCounts.mbk_systembaustein_payload)}>
+          badge={driftBadge(tabCounts.mbk_systembaustein_payload)}
+          showActions
+          onToggleDelivered={(v) => setDelivered('systembausteine', v)}
+          onCopy={() => handleCopy(systembausteinBundle)}
+          onDownload={() => handleDownload(systembausteinBundle, `mbk-systembausteine_${baseSlug}.json`)}
+          onPreview={() => setPreview({
+            title: 'Systembausteine (Bündel)',
+            payload: systembausteinBundle,
+            onCopy: () => handleCopy(systembausteinBundle),
+            onDownload: () => handleDownload(systembausteinBundle, `mbk-systembausteine_${baseSlug}.json`),
+          })}
+        >
           <SystembausteineTab
-            blockStatus={blockStatus}
-            blockAggregate={blockAggregate}
             systembausteinItems={systembausteinItems}
             systembausteinGroups={systembausteinGroups}
             itemPlanLookup={itemPlanLookup}
             isInitialExport={isInitialExport}
-            onToggleDelivered={(v) => setDelivered('systembausteine', v)}
-            onCopy={() => handleCopy(systembausteinBundle)}
-            onDownload={() => handleDownload(systembausteinBundle, `mbk-systembausteine_${baseSlug}.json`)}
             onDownloadBundle={() =>
               handleDownloadZip(
                 [
@@ -740,17 +760,23 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
         <ExportTodoRow value="ki-aufgaben" stepNumber="6" title="KI-Aufgaben"
           description="Briefings für KI-generierte Aufgaben (Payload 4)."
           done={blockStatus.micro.delivered}
-          badge={driftBadge(tabCounts.mbk_micro_payload)}>
+          badge={driftBadge(tabCounts.mbk_micro_payload)}
+          showActions
+          onToggleDelivered={(v) => setDelivered('micro', v)}
+          onCopy={() => handleCopy(microBundle)}
+          onDownload={() => handleDownload(microBundle, `mbk-micro_${baseSlug}.json`)}
+          onPreview={() => setPreview({
+            title: 'KI-Aufgaben (Bündel)',
+            payload: microBundle,
+            onCopy: () => handleCopy(microBundle),
+            onDownload: () => handleDownload(microBundle, `mbk-micro_${baseSlug}.json`),
+          })}
+        >
           <KiAufgabenTab
-            blockStatus={blockStatus}
-            blockAggregate={blockAggregate}
             microItems={microItems}
             microGroups={microGroups}
             itemPlanLookup={itemPlanLookup}
             isInitialExport={isInitialExport}
-            onToggleDelivered={(v) => setDelivered('micro', v)}
-            onCopy={() => handleCopy(microBundle)}
-            onDownload={() => handleDownload(microBundle, `mbk-micro_${baseSlug}.json`)}
             onDownloadBundle={() =>
               handleDownloadZip(
                 [
@@ -768,6 +794,15 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
           />
         </ExportTodoRow>
       </AccordionPrimitive.Root>
+
+      <PayloadPreviewDialog
+        open={!!preview}
+        onOpenChange={(v) => { if (!v) setPreview(null); }}
+        title={preview?.title}
+        payload={preview?.payload}
+        onCopy={preview?.onCopy}
+        onDownload={preview?.onDownload}
+      />
     </div>
   );
 }
