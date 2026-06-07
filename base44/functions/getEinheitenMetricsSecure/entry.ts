@@ -1,8 +1,9 @@
 /**
  * getEinheitenMetricsSecure.js
  *
- * Liefert pro Einheit die Volumen-Metriken und die 4 Dashboard-Fortschritte
- * für die Kachel-Übersicht. Read-Time-Berechnung mit Bulk-Fetch:
+ * Liefert pro Einheit die Volumen-Metriken und den Dashboard-Bearbeitungs-
+ * status der 4 Lerntypen für die Kachel-Übersicht. Read-Time-Berechnung
+ * mit Bulk-Fetch:
  * - 1× Themenfeld.list   (alle Einheiten)
  * - 1× Lernpakete.list   (alle Einheiten)
  * - 1× AllgemeineAufgabe.list (alle Einheiten)
@@ -19,27 +20,20 @@
  *     metrics: {
  *       <einheitId>: {
  *         volume: { themenfelder, lernpakete, level2, level3 },
- *         progress: { minimalist, pragmatiker, ehrgeizig, passioniert }  // 0..100
+ *         dashboardStatus: { minimalist, pragmatiker, ehrgeizig, passioniert }
+ *           // jeweils 'vorlage' | 'bearbeitet' | 'fertig'
  *       }
  *     }
  *   }
  *
- * Progress-Regel:
- *   1. Sobald der Pfad eines Lerntyps formal freigegeben ist
- *      (alle Memberships in LernpfadAufgabeMembership für diese (einheit_id,
- *      lerntyp) haben pfad_status='locked_for_export' UND es gibt
- *      mindestens eine Membership), ist der Fortschritt **100 %** —
- *      unabhängig davon, ob alle Einheits-Inhalte im Pfad platziert sind.
- *      Begründung: Die didaktische Auswahl pro Lerntyp ist bewusst
- *      kuratiert; der Minimalist nutzt z. B. absichtlich weniger Aufgaben
- *      als der Passionierte. Ein freigegebener Pfad ist „fertig".
- *
- *   2. Andernfalls (Pfad noch DRAFT / EMPTY): Coverage als Orientierung —
- *      Prozent = (platzierte Einheits-Inhalte) / (Gesamtzahl Einheits-Inhalte).
- *      Einheits-Inhalte = Lernpakete + AllgemeineAufgabe-Datensätze
- *      (ohne Tombstones), inkl. Ebene-3-Projekte. Platziert = ref_id taucht
- *      mindestens einmal in einem Aufgaben-Item irgendeines Sektors auf.
- *      Leere Einheit → 0 %.
+ * Status-Regel pro Lerntyp:
+ *   1. 'fertig': Pfad formal freigegeben (alle Memberships in
+ *      LernpfadAufgabeMembership für diese (einheit_id, lerntyp) haben
+ *      pfad_status='locked_for_export' UND es gibt mindestens eine).
+ *   2. 'bearbeitet': mindestens ein echter Einheits-Inhalt (Lernpaket oder
+ *      AllgemeineAufgabe, ohne Tombstones) ist als Aufgaben-Item in einem
+ *      Sektor platziert.
+ *   3. 'vorlage': sonst (leer / Standard-Vorlage, noch nicht bearbeitet).
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
@@ -67,24 +61,27 @@ function createEmptyVolume() {
   return { themenfelder: 0, lernpakete: 0, aktivitaeten: 0, level2: 0, level3: 0 };
 }
 
-// ── Progress-Berechnung pro Lerntyp ──
-// Einfache Coverage-Logik: Wie viele der "echten Inhalte" der Einheit
-// (Lernpakete + Aufgaben + Projekte, ohne Tombstones) tauchen mindestens
-// einmal als Aufgaben-Item in irgendeinem Sektor des Lerntyps auf?
-function calcProgressForLerntyp(sektoren, totalContentIds) {
-  if (totalContentIds.size === 0) return 0;
-  if (!Array.isArray(sektoren) || sektoren.length === 0) return 0;
+// ── Status-Ableitung pro Lerntyp ──
+// Drei Zustände für die Kachel-Badges:
+//   'vorlage'    = noch unbearbeitet (Standard-Vorlage, keine echten Inhalte
+//                  im Pfad platziert).
+//   'bearbeitet' = es wurde bereits am Dashboard gearbeitet (mindestens ein
+//                  echter Einheits-Inhalt im Pfad platziert), aber noch nicht
+//                  freigegeben.
+//   'fertig'     = Pfad formal freigegeben (wird im Aufrufer über die
+//                  Membership-Locks gesetzt).
+function calcDashboardStatusForLerntyp(sektoren, totalContentIds) {
+  if (!Array.isArray(sektoren) || sektoren.length === 0) return 'vorlage';
+  if (totalContentIds.size === 0) return 'vorlage';
 
-  const placedIds = new Set();
   for (const sektor of sektoren) {
     const items = Array.isArray(sektor?.items) ? sektor.items : [];
     for (const item of items) {
       if (!item || item.type !== 'aufgabe' || !item.ref_id) continue;
-      if (totalContentIds.has(item.ref_id)) placedIds.add(item.ref_id);
+      if (totalContentIds.has(item.ref_id)) return 'bearbeitet';
     }
   }
-
-  return Math.round((placedIds.size / totalContentIds.size) * 100);
+  return 'vorlage';
 }
 
 // ── Volumen-Metriken pro Einheit ──
@@ -154,7 +151,7 @@ Deno.serve(async (req) => {
       for (const id of einheitIds) {
         metrics[id] = {
           volume: createEmptyVolume(),
-          progress: { minimalist: 0, pragmatiker: 0, ehrgeizig: 0, passioniert: 0 },
+          dashboardStatus: { minimalist: 'vorlage', pragmatiker: 'vorlage', ehrgeizig: 'vorlage', passioniert: 'vorlage' },
         };
       }
       return Response.json({ success: true, metrics }, {
@@ -255,22 +252,22 @@ Deno.serve(async (req) => {
 
       const konfig = einheit.lernpfade_konfiguration || {};
       const lockedMap = lockedPathsByEinheit.get(id) || new Map();
-      const progress = {};
+      const dashboardStatus = {};
       for (const lt of LERN_TYPEN) {
-        // Regel 1: Pfad formal freigegeben → 100 %.
+        // Regel 1: Pfad formal freigegeben → 'fertig'.
         const lock = lockedMap.get(lt);
         const isPathLocked = lock && lock.total > 0 && lock.locked === lock.total;
         if (isPathLocked) {
-          progress[lt] = 100;
+          dashboardStatus[lt] = 'fertig';
           continue;
         }
-        // Regel 2: Coverage-Fallback.
-        progress[lt] = calcProgressForLerntyp(konfig[lt], totalContentIds);
+        // Regel 2: 'vorlage' (unbearbeitet) oder 'bearbeitet'.
+        dashboardStatus[lt] = calcDashboardStatusForLerntyp(konfig[lt], totalContentIds);
       }
 
       const volume = calcVolume(tfs, lps, aufs);
       volume.aktivitaeten = aktivitaetenByEinheit.get(id) || 0;
-      metrics[id] = { volume, progress };
+      metrics[id] = { volume, dashboardStatus };
     }
 
     // Für nicht aufgelöste IDs (z.B. RBAC-blockiert) leere Metrik liefern.
@@ -278,7 +275,7 @@ Deno.serve(async (req) => {
       if (!metrics[id]) {
         metrics[id] = {
           volume: createEmptyVolume(),
-          progress: { minimalist: 0, pragmatiker: 0, ehrgeizig: 0, passioniert: 0 },
+          dashboardStatus: { minimalist: 'vorlage', pragmatiker: 'vorlage', ehrgeizig: 'vorlage', passioniert: 'vorlage' },
         };
       }
     }

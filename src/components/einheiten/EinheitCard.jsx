@@ -13,7 +13,7 @@ import { ROLLEN } from '@/lib/rbac';
 import { getFachFarbe, getFachBadgeStyle } from '@/lib/fachFarben';
 import EinheitAccessBadge from '@/components/ui/EinheitAccessBadge';
 import EinheitMetricsRow from '@/components/einheiten/EinheitMetricsRow';
-import DashboardProgressBar from '@/components/einheiten/DashboardProgressBar';
+import DashboardStatusBadges from '@/components/einheiten/DashboardStatusBadges';
 import EinheitExportLifecycleBadge from '@/components/einheiten/EinheitExportLifecycleBadge';
 
 export default function EinheitCard({
@@ -37,7 +37,7 @@ export default function EinheitCard({
   const isAdmin = rolle === ROLLEN.ADMIN;
 
   const volume = metrics?.volume;
-  const progress = metrics?.progress;
+  const dashboardStatus = metrics?.dashboardStatus;
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -121,7 +121,7 @@ export default function EinheitCard({
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
                 Dashboards
               </p>
-              <DashboardProgressBar einheitId={einheit.id} progress={progress} />
+              <DashboardStatusBadges einheitId={einheit.id} dashboardStatus={dashboardStatus} />
             </div>
 
             {/* ── Footer ── */}
