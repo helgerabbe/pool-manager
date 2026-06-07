@@ -304,7 +304,14 @@ Deno.serve(async (req) => {
         geschaetzte_dauer_minuten: paket.geschaetzte_dauer_minuten,
         locked_by: paket.locked_by,
         locked_at: paket.locked_at,
+        locked_by_email: paket.locked_by_email,
         sync_status: paket.sync_status,
+        // ✅ Freigabe-Status (Phase 3 des Freigabe-Konzepts): Ohne diese Felder
+        // weiß Tab 3 nicht, dass ein Lernpaket freigegeben ist → Badge zeigt
+        // fälschlich "Vollständig" und der Bearbeiten-Button bleibt aktiv.
+        content_status: paket.content_status,
+        released_at: paket.released_at,
+        released_by: paket.released_by,
         phasen_konfiguration: paket.phasen_konfiguration,
         version: paket.version,
         lernziele: paketLernziele,
