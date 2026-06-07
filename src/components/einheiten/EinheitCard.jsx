@@ -108,7 +108,7 @@ export default function EinheitCard({
               {/* Eigene Status-Zeile unter dem Titel: hält die Kopfzeile schmal
                   und die Kachelhöhe über alle Karten hinweg konsistent. */}
               <div className="mt-2 min-h-[1.5rem] flex items-center">
-                <EinheitExportLifecycleBadge status={einheit.export_lifecycle_status} />
+                <EinheitExportLifecycleBadge einheit={einheit} />
               </div>
             </Link>
 
