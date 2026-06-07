@@ -135,12 +135,16 @@ export function normalizeSektor(sektor) {
       ? rest.titel_snapshot
       : null;
 
+  // Sektor-Modus ist wieder nutzerveränderlich (sequenziell|frei).
+  // Default = 'sequenziell'. Ungültige Werte fallen defensiv auf 'sequenziell'.
+  const sektorModus = rest.modus === 'frei' ? 'frei' : 'sequenziell';
+
   return {
     ...rest,
     sektor_typ: sektorTyp,
     themenfeld_id: themenfeldId,
     titel_snapshot: titelSnapshot,
-    modus: 'sequenziell', // Phase A: hart fixiert.
+    modus: sektorModus,
     items: rawItems.map(normalizeItem).filter(Boolean),
   };
 }
@@ -713,7 +717,7 @@ export function copySektorenBetweenLernTypen(konfig, fromLernTyp, toLernTyp) {
   const cloned = source.map((s) => ({
     sektor_id: `sec_${uuid()}`,
     titel: s.titel || 'Neuer Sektor',
-    modus: 'sequenziell', // Phase A: hart fixiert.
+    modus: s.modus === 'frei' ? 'frei' : 'sequenziell',
     sektor_typ: s.sektor_typ || DEFAULT_SEKTOR_TYP,
     themenfeld_id: s.themenfeld_id || null,
     titel_snapshot: null, // Snapshot wird im Ziel-Lerntyp neu erzeugt.
@@ -791,11 +795,8 @@ export function applyDashboardTemplate(aktuelleKonfig, lerntyp, templateData, th
   const buildSektor = (sektor, overrides = {}) => ({
     sektor_id: `sec_${uuid()}`,
     titel: sektor?.titel || 'Neuer Sektor',
-    // Phase A: Sektor-Modus ist nicht mehr nutzerveränderlich. Wir
-    // schreiben hart 'sequenziell' — auch wenn das Template 'frei' sagt,
-    // weil der Sektor-Modus für den Export-Generator irrelevant geworden
-    // ist (Bündel-Modus übernimmt diese Rolle).
-    modus: 'sequenziell',
+    // Sektor-Modus aus dem Template übernehmen (Default 'sequenziell').
+    modus: sektor?.modus === 'frei' ? 'frei' : 'sequenziell',
     sektor_typ: isValidSektorTyp(sektor?.sektor_typ) ? sektor.sektor_typ : DEFAULT_SEKTOR_TYP,
     themenfeld_id: null, // Templates haben keine Themenfeld-Bindung.
     titel_snapshot: null,

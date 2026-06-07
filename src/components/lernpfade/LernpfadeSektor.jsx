@@ -23,6 +23,7 @@ import { GripVertical, Trash2, X, Plus, ChevronUp, ChevronDown, Pencil } from 'l
 import { Button } from '@/components/ui/button';
 import { getAufgabenTyp, ITEM_TYPE } from '@/lib/aufgabenTypen';
 import SystemBausteinPill from '@/components/lernpfade/SystemBausteinPill';
+import SektorModusToggle from '@/components/lernpfade/SektorModusToggle';
 import BundleAutoFillButton from '@/components/lernpfade/BundleAutoFillButton';
 import AmpelBadge from '@/components/lernpfade/AmpelBadge';
 import { isExportFreigegeben, isContentApproved } from '@/lib/ampelLogic';
@@ -354,6 +355,15 @@ export default function LernpfadeSektor({
         {/* Phase E.4: Drift-Badge — zeigt nur bei 'drifted' bzw. 'loading'
             etwas an. Bei clean/never_locked/unknown bleibt der Header ruhig. */}
         <SektorDriftBadge status={driftStatus} />
+        {/* Sektor-Modus-Toggle (sequenziell/frei). Feedback-Sektoren brauchen
+            keinen Toggle (enthalten nur ein einzelnes Item). */}
+        {sektor.sektor_typ !== SEKTOR_TYP.FEEDBACK && (
+          <SektorModusToggle
+            modus={sektor.modus}
+            disabled={readOnly}
+            onChange={(val) => onPatch?.(sektor.sektor_id, { modus: val })}
+          />
+        )}
         <div className="flex-1" />
         {!readOnly && (
           <>
