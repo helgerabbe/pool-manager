@@ -54,7 +54,7 @@ export default function CockpitSyncBadge({ syncStatus }) {
 export function CockpitFreigabeBadge({ contentStatus }) {
   const approved = contentStatus === 'approved';
   return (
-    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${approved ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${approved ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
       {approved ? <Upload className="w-3 h-3" /> : <Pencil className="w-3 h-3" />}
       {approved ? 'Freigegeben' : 'Entwurf'}
     </span>
