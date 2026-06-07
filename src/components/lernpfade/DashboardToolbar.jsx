@@ -174,10 +174,6 @@ export default function DashboardToolbar({
   pfadStatusBusy,
   onReleasePath,
   onUnlockPath,
-  // Einheit-Final-Release
-  onOpenFinalReleaseConfirm,
-  onUndoFinalRelease,
-  finalReleaseBusy,
   // Guide
   onOpenGuide,
   // Schüler-Vorschau
@@ -199,9 +195,6 @@ export default function DashboardToolbar({
 }) {
   const status = einheitFreigabe?.status || EXPORT_LIFECYCLE_STATUS.DRAFT;
   const dashboards = einheitFreigabe?.dashboards || {};
-  const isFinal = einheitFreigabe?.isFinal;
-  const canEnterFinal = darfFreigeben && status === EXPORT_LIFECYCLE_STATUS.DRAFT && einheitFreigabe?.allDashboardsLocked;
-  const canUndoFinal = darfFreigeben && einheitFreigabe?.canUndoInUnit;
 
   // Killer-Switch: Sobald die Einheit final freigegeben oder im Export ist,
   // werden ALLE Sektor-Pfad-Aktionen UND alle Dashboard-Reset-Aktionen
@@ -288,50 +281,9 @@ export default function DashboardToolbar({
             </Button>
           )}
 
-          {/* Einheit final freigeben / aufheben */}
-          {status === EXPORT_LIFECYCLE_STATUS.DRAFT && darfFreigeben && (
-            <div className="inline-flex items-center gap-1">
-              <Button
-                size="sm"
-                onClick={onOpenFinalReleaseConfirm}
-                disabled={!canEnterFinal || finalReleaseBusy}
-                className="gap-1.5 h-7 text-[11px] px-2.5 bg-emerald-700 hover:bg-emerald-800 text-white border-transparent"
-                title={
-                  !einheitFreigabe?.allDashboardsLocked
-                    ? 'Erst möglich, wenn alle 4 Dashboards geprüft sind.'
-                    : 'Einheit final freigeben'
-                }
-              >
-                {finalReleaseBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Lock className="w-3 h-3" />}
-                Einheit final freigeben
-              </Button>
-              <InfoHint title="Einheit final freigeben">
-                Sperrt die Inhalte aller Aufgaben/Pakete. Erst möglich, wenn alle 4 Dashboards geprüft sind.
-              </InfoHint>
-            </div>
-          )}
-          {isFinal && darfFreigeben && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onUndoFinalRelease}
-              disabled={!canUndoFinal || finalReleaseBusy}
-              className="gap-1.5 h-7 text-[11px] px-2.5 border-red-300 text-red-700 hover:bg-red-50"
-              title="Finale Einheits-Freigabe aufheben"
-            >
-              {finalReleaseBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldOff className="w-3 h-3" />}
-              Freigabe aufheben
-            </Button>
-          )}
-          {/* Im Export gibt es keine Aufhebung in der Einheit. */}
-          {isExportRunning && (
-            <span
-              className="inline-flex items-center gap-1 h-7 px-2 text-[11px] text-orange-800 italic"
-              title="Das Moodle-Team hat die Einheit gesperrt. Bitte mit dem Export-Team Kontakt aufnehmen."
-            >
-              🔒 Aufhebung nur über das Moodle-Team
-            </span>
-          )}
+          {/* Hinweis: „Einheit final freigeben" / „Freigabe aufheben" sind
+              ins Freigabe-Cockpit (Tab 9) umgezogen – dort, wo der
+              Gesamtstatus der Einheit sichtbar ist. */}
 
           {/* Bearbeitung beenden */}
           {isStructuralEditingActive && onEndEditing && (

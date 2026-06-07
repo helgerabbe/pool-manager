@@ -16,13 +16,11 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { DragDropContext } from '@hello-pangea/dnd';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Cloud, CloudOff, Check, Loader2 } from 'lucide-react';
 import { useEinheitFreigabeStatus } from '@/hooks/useEinheitFreigabeStatus';
-import { EXPORT_LIFECYCLE_STATUS } from '@/lib/exportLifecycle';
-import EinheitFreigabeConfirmDialog from '@/components/lernpfade/EinheitFreigabeConfirmDialog';
 import DashboardToolbar from '@/components/lernpfade/DashboardToolbar';
 // Loader2 wird im Save-Indicator (saving-State) als animiertes Spinner-Icon
 // genutzt – siehe `saveIndicator` weiter unten. Nicht entfernen.
@@ -943,83 +941,10 @@ export default function LernpfadeCockpit({
     [systemBausteineById, selectedSystemBausteinId]
   );
 
-  // einheitFreigabe wurde oben (vor readOnly) bereits gelesen.
-  const [finalReleaseConfirmOpen, setFinalReleaseConfirmOpen] = useState(false);
-  const [finalReleaseActiveLocks, setFinalReleaseActiveLocks] = useState([]);
-
-  const preflightMutation = useMutation({
-    mutationFn: async () => {
-      const res = await base44.functions.invoke('preflightFinalRelease', { einheitId: einheit?.id });
-      if (res?.data?.error) throw new Error(res.data.error);
-      return res?.data;
-    },
-    onSuccess: (result) => {
-      setFinalReleaseActiveLocks(result?.activeLocks || []);
-      setFinalReleaseConfirmOpen(true);
-    },
-    onError: (err) => {
-      toast({
-        variant: 'destructive',
-        title: 'Pre-Flight fehlgeschlagen',
-        description: err?.message || 'Bitte erneut versuchen.',
-      });
-    },
-  });
-
-  const finalReleaseWriteMutation = useMutation({
-    mutationFn: async (newStatus) => {
-      const res = await base44.functions.invoke('setEinheitFreigabeStatus', {
-        einheitId: einheit?.id,
-        newStatus,
-      });
-      if (res?.data?.error) {
-        const e = new Error(res.data.error);
-        e.code = res.data.code;
-        e.activeLocks = res.data.activeLocks;
-        throw e;
-      }
-      return res?.data;
-    },
-    onSuccess: (_res, newStatus) => {
-      queryClient.invalidateQueries({ queryKey: ['einheitFreigabeStatus', einheit?.id] });
-      queryClient.invalidateQueries({ queryKey: ['aufgabeLock'] });
-      setFinalReleaseConfirmOpen(false);
-      setFinalReleaseActiveLocks([]);
-      toast({
-        title:
-          newStatus === EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN
-            ? 'Einheit final freigegeben'
-            : 'Freigabe aufgehoben',
-        description:
-          newStatus === EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN
-            ? 'Die Inhalte aller Aufgaben sind jetzt gesperrt.'
-            : 'Die Inhalte können wieder bearbeitet werden.',
-      });
-    },
-    onError: (err) => {
-      if (err.code === 'ACTIVE_LOCKS' && Array.isArray(err.activeLocks)) {
-        setFinalReleaseActiveLocks(err.activeLocks);
-        setFinalReleaseConfirmOpen(true);
-        return;
-      }
-      toast({
-        variant: 'destructive',
-        title: 'Aktion fehlgeschlagen',
-        description: err?.message || 'Bitte erneut versuchen.',
-      });
-    },
-  });
-
-  const handleOpenFinalReleaseConfirm = useCallback(() => {
-    setFinalReleaseActiveLocks([]);
-    preflightMutation.mutate();
-  }, [preflightMutation]);
-
-  const handleUndoFinalRelease = useCallback(() => {
-    finalReleaseWriteMutation.mutate(EXPORT_LIFECYCLE_STATUS.DRAFT);
-  }, [finalReleaseWriteMutation]);
-
-  const finalReleaseBusy = preflightMutation.isPending || finalReleaseWriteMutation.isPending;
+  // Hinweis: Die finale Einheits-Freigabe (Button + Confirm-Dialog) ist ins
+  // Freigabe-Cockpit (Tab 9, EinheitFinalReleaseControl) umgezogen. `einheitFreigabe`
+  // wird hier nur noch gelesen, um den read-only Killer-Switch (isEinheitContentLocked)
+  // und die Dashboard-Status-Pills in der Toolbar zu speisen.
 
   // Save-Indicator als kompaktes Icon (statt eigener Zeile).
   const saveIndicator = (() => {
@@ -1106,9 +1031,6 @@ export default function LernpfadeCockpit({
               pfadStatusBusy={statusBusy}
               onReleasePath={handleReleasePath}
               onUnlockPath={handleUnlockPath}
-              onOpenFinalReleaseConfirm={handleOpenFinalReleaseConfirm}
-              onUndoFinalRelease={handleUndoFinalRelease}
-              finalReleaseBusy={finalReleaseBusy}
               onOpenGuide={() => setIsGuideOpen(true)}
               onOpenPreview={() => setDashboardPreviewOpen(true)}
               isStructuralEditingActive={isStructuralEditingActive}
@@ -1268,19 +1190,6 @@ export default function LernpfadeCockpit({
         belegteThemenfeldIds={belegteThemenfeldIds}
         busy={arbeitsphaseModalBusy}
         onConfirm={handleConfirmArbeitsphase}
-      />
-
-      <EinheitFreigabeConfirmDialog
-        open={finalReleaseConfirmOpen}
-        onOpenChange={(v) => {
-          setFinalReleaseConfirmOpen(v);
-          if (!v) setFinalReleaseActiveLocks([]);
-        }}
-        busy={finalReleaseWriteMutation.isPending}
-        preflightBusy={preflightMutation.isPending}
-        activeLocks={finalReleaseActiveLocks}
-        onRecheck={() => preflightMutation.mutate()}
-        onConfirm={() => finalReleaseWriteMutation.mutate(EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN)}
       />
 
       <AufgabeCreateView

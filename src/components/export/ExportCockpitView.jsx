@@ -24,6 +24,7 @@ import { ROLLEN } from '@/lib/rbac';
 import { ShieldCheck, Info } from 'lucide-react';
 import HelpBadge from '@/components/ui/HelpBadge';
 import EinheitStatusTabelle from '@/components/export/EinheitStatusTabelle';
+import EinheitFinalReleaseControl from '@/components/export/EinheitFinalReleaseControl';
 
 // ── Main Component ──────────────────────────────────────────────────
 
@@ -130,6 +131,11 @@ export default function ExportCockpitView({
           />
         </h2>
       </div>
+
+      {/* Finale Einheits-Freigabe: hier im Cockpit beheimatet, weil hier der
+          Gesamtstatus der Einheit sichtbar ist und die Freigabe-Entscheidung
+          getroffen wird. */}
+      <EinheitFinalReleaseControl einheitId={selectedUnitId} darfFreigeben={darfFreigeben} />
 
       {/* Auf-einen-Blick-Tabelle: jeder Bestandteil der Einheit mit
           Lebenszyklus + Freigabestatus, inkl. Strukturboard, allgemeinen
