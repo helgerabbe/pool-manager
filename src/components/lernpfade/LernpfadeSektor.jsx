@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { getAufgabenTyp, ITEM_TYPE } from '@/lib/aufgabenTypen';
 import SystemBausteinPill from '@/components/lernpfade/SystemBausteinPill';
 import SektorModusToggle from '@/components/lernpfade/SektorModusToggle';
+import SektorFreischaltControl from '@/components/lernpfade/SektorFreischaltControl';
 import BundleAutoFillButton from '@/components/lernpfade/BundleAutoFillButton';
 import AmpelBadge from '@/components/lernpfade/AmpelBadge';
 import { isExportFreigegeben, isContentApproved } from '@/lib/ampelLogic';
@@ -169,6 +170,7 @@ export default function LernpfadeSektor({
   onPreviewEinfuehrung,
   onPreviewQblock,
   onPreviewDiagnoseQuiz,
+  alleSektoren = [],
   }) {
   const items = Array.isArray(sektor.items) ? sektor.items : [];
 
@@ -366,6 +368,19 @@ export default function LernpfadeSektor({
             modus={sektor.modus}
             disabled={readOnly}
             onChange={(val) => onPatch?.(sektor.sektor_id, { modus: val })}
+          />
+        )}
+        {sektor.sektor_typ !== SEKTOR_TYP.FEEDBACK && (
+          <SektorFreischaltControl
+            sektor={sektor}
+            alleSektoren={alleSektoren}
+            disabled={readOnly}
+            onChange={(val) => onPatch?.(sektor.sektor_id, { freischalt_bedingung: val })}
+            getSektorLabel={(s) =>
+              s.sektor_typ === SEKTOR_TYP.ARBEITSPHASE
+                ? (s.titel_snapshot || s.titel || getSektorTypLabel(s.sektor_typ))
+                : (s.titel?.trim() || getSektorTypLabel(s.sektor_typ))
+            }
           />
         )}
         <div className="flex-1" />

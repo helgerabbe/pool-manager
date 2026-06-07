@@ -249,6 +249,7 @@ export default function LernpfadeArchitekt({
                 onOpenAufgabeEditor={onOpenAufgabeEditor}
                 onOpenLernpaket={onOpenLernpaket}
                 themenfeldTitelById={themenfeldTitelById}
+                alleSektoren={sektoren}
                 onPreviewEinfuehrung={onPreviewEinfuehrung}
                 onPreviewQblock={onPreviewQblock}
                 onPreviewDiagnoseQuiz={onPreviewDiagnoseQuiz}

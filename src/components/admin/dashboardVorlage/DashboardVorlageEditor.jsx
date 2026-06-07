@@ -229,6 +229,10 @@ export default function DashboardVorlageEditor() {
         titel: s.titel,
         modus: s.modus === 'frei' ? 'frei' : 'sequenziell',
         sektor_typ: s.sektor_typ,
+        freischalt_bedingung:
+          s.freischalt_bedingung?.modus === 'nach_sektor' && s.freischalt_bedingung?.voraussetzung_sektor_id
+            ? { modus: 'nach_sektor', voraussetzung_sektor_id: s.freischalt_bedingung.voraussetzung_sektor_id }
+            : { modus: 'sofort', voraussetzung_sektor_id: null },
         items: (s.items || []).map((it) => {
           const out = { type: it.type, ref_id: it.ref_id };
           if (it.bundle_config?.modus) {
@@ -360,6 +364,7 @@ export default function DashboardVorlageEditor() {
                     onMoveSektor={handleMoveSektor}
                     onRemoveItem={handleRemoveItem}
                     onSetBundleModus={handleSetBundleModus}
+                    alleSektoren={sektoren}
                   />
                 ))
               )}

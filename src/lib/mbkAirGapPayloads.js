@@ -42,8 +42,12 @@ import { annotateSektorItems, DASHBOARD_GATING_ENGINE } from '@/lib/dashboardGat
  *     Initial-Status-Ableitung, universeller Weiter-Button).
  *   - Payload 2: jedes Lernpfad-Item erhält `initial_status` (offen|erledigt)
  *     und `abschluss_bedingung`; jeder Sektor erhält zusätzlich `modus`.
+ * airgap-1.8.0: Sektor-Freischaltung (Sektor-Level-Gating).
+ *   - Payload 1: `dashboard_gating_engine.sektor_freischaltung`-Regel.
+ *   - Payload 2: jeder Sektor erhält `freischalt_bedingung`
+ *     ({ modus: 'sofort'|'nach_sektor', voraussetzung_sektor_id }).
  */
-export const MBK_AIRGAP_VERSION = 'airgap-1.7.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.8.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -541,6 +545,16 @@ function summarizeSektor(sektor, themenfelderById, bausteinById = new Map()) {
     istTestItem: () => istTestSektor,
   });
 
+  // airgap-1.8.0: Sektor-Freischaltung (Sektor-Level-Gating). Regelt, WANN der
+  // Sektor im Dashboard zugänglich wird: 'sofort' (von Anfang an) oder
+  // 'nach_sektor' (gesperrt, bis der Voraussetzungs-Sektor erledigt ist).
+  // Genau EIN Voraussetzungs-Sektor — keine UND/ODER-Logik.
+  const fb = sektor?.freischalt_bedingung;
+  const freischalt_bedingung =
+    fb?.modus === 'nach_sektor' && typeof fb?.voraussetzung_sektor_id === 'string' && fb.voraussetzung_sektor_id
+      ? { modus: 'nach_sektor', voraussetzung_sektor_id: fb.voraussetzung_sektor_id }
+      : { modus: 'sofort', voraussetzung_sektor_id: null };
+
   return {
     sektor_id: sektor?.sektor_id || null,
     sektor_typ: sektor?.sektor_typ || null,
@@ -550,6 +564,7 @@ function summarizeSektor(sektor, themenfelderById, bausteinById = new Map()) {
     themenfeld_titel: themenfeldTitel,
     bearbeitungsmodus,
     modus: sektorGatingModus,
+    freischalt_bedingung,
     items: itemsAnnotated,
   };
 }

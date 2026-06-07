@@ -34,6 +34,7 @@ import {
   isValidSektorTyp,
   SEKTOR_TYP,
 } from '@/lib/sektorTypen';
+import { normalizeFreischaltBedingung } from '@/lib/sektorFreischaltung';
 
 // ── Normalisierung (Lazy Migration) ─────────────────────────────────────────
 
@@ -145,6 +146,7 @@ export function normalizeSektor(sektor) {
     themenfeld_id: themenfeldId,
     titel_snapshot: titelSnapshot,
     modus: sektorModus,
+    freischalt_bedingung: normalizeFreischaltBedingung(rest.freischalt_bedingung),
     items: rawItems.map(normalizeItem).filter(Boolean),
   };
 }

@@ -208,4 +208,17 @@ export const DASHBOARD_GATING_ENGINE = Object.freeze({
     alle_kinder: 'Bündel sequenziell: aktiv, sobald alle Kinder "erledigt" sind.',
     x_von_y: 'Bündel frei mit Schwelle: aktiv, sobald erforderliche_anzahl Kinder "erledigt" sind.',
   },
+  sektor_freischaltung: {
+    description:
+      'Jeder Sektor trägt eine freischalt_bedingung, die regelt, WANN der Sektor '
+      + 'im Dashboard zugänglich ist (unabhängig vom Item-Gating innerhalb des '
+      + 'Sektors). modus="sofort": Sektor ist von Anfang an sichtbar und '
+      + 'zugänglich. modus="nach_sektor": Sektor ist sichtbar, aber GESPERRT, bis '
+      + 'der Sektor mit der id voraussetzung_sektor_id vollständig erledigt ist '
+      + '(alle seine Wurzel-Elemente "erledigt"). Ein gesperrter Sektor wird im '
+      + 'Menü mit Schloss-Symbol und Hinweis "Erst verfügbar, wenn <Titel> '
+      + 'abgeschlossen ist" angezeigt; seine Inhalte sind nicht anklickbar. Es '
+      + 'gibt genau EINEN Voraussetzungs-Sektor (keine UND/ODER-Verknüpfung) — '
+      + 'Ketten ergeben sich kaskadisch.',
+  },
 });

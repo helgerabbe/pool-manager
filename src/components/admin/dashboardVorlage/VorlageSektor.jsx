@@ -20,6 +20,7 @@ import { isPlatzhalterBaustein, PLATZHALTER_CLASSES } from '@/lib/platzhalterUti
 import { getSektorTypLabel, SEKTOR_TYP } from '@/lib/sektorTypen';
 import SektorModusToggle from '@/components/lernpfade/SektorModusToggle';
 import BundleModusToggle from '@/components/lernpfade/BundleModusToggle';
+import SektorFreischaltControl from '@/components/lernpfade/SektorFreischaltControl';
 
 function ItemPill({ item, baustein, index, readOnly, onRemove, onSetBundleModus }) {
   const Icon = getSystemBausteinIcon(baustein?.icon);
@@ -101,6 +102,7 @@ export default function VorlageSektor({
   onMoveSektor,
   onRemoveItem,
   onSetBundleModus,
+  alleSektoren = [],
 }) {
   const items = Array.isArray(sektor.items) ? sektor.items : [];
 
@@ -123,6 +125,15 @@ export default function VorlageSektor({
             modus={sektor.modus}
             disabled={readOnly}
             onChange={(val) => onPatch(sektor.sektor_id, { modus: val })}
+          />
+        )}
+        {sektor.sektor_typ !== SEKTOR_TYP.FEEDBACK && (
+          <SektorFreischaltControl
+            sektor={sektor}
+            alleSektoren={alleSektoren}
+            disabled={readOnly}
+            onChange={(val) => onPatch(sektor.sektor_id, { freischalt_bedingung: val })}
+            getSektorLabel={(s) => s.titel?.trim() || getSektorTypLabel(s.sektor_typ)}
           />
         )}
         {!readOnly && (
