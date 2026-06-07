@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import TutorialSlideshow from '@/components/onboarding/TutorialSlideshow';
-import { Layers, Home, ShieldCheck, LogOut, ChevronRight, BookOpen, Settings, FileText, Send, Cpu } from 'lucide-react';
+import { Layers, Home, User, LogOut, ChevronRight, BookOpen, Settings, FileText, Send, Cpu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
 import WartungsBanner from '@/components/layout/WartungsBanner';
@@ -191,7 +191,7 @@ export default function AppLayout() {
               {permissions.kannBenutzerVerwalten && (
                 <>
                   <div className="w-px h-6 bg-border mx-1" />
-                  <NavIconLink to="/benutzerverwaltung" icon={ShieldCheck} label="Benutzerverwaltung" isActive={isActive('/benutzerverwaltung')} />
+                  <NavIconLink to="/benutzerverwaltung" icon={User} label="Benutzerverwaltung" isActive={isActive('/benutzerverwaltung')} />
                   <NavIconLink to="/admin-settings" icon={Settings} label="Einstellungen" isActive={isActive('/admin-settings')} />
                 </>
               )}
