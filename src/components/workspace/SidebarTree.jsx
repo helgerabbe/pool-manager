@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { ChevronRight, BookOpen, Layers, Puzzle, Lock, Edit, UserRound, FolderOpen, PenLine } from 'lucide-react';
+import { ChevronRight, BookOpen, Layers, Puzzle, Lock, Edit, UserRound, FolderOpen, PenLine, Check } from 'lucide-react';
 import {
   getLernpaketStatus,
   getEinheitFortschritt,
@@ -275,9 +275,14 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
   )).length;
   const totalCount = activeActivities.length;
   const isPaketLiveComplete = totalCount > 0 && completeCount === totalCount;
+  // Freigegebenes Lernpaket: content_status='approved' UND released_at gesetzt
+  // (siehe Lernpakete-Schema). Dann zeigt die Pille einen grünen Haken statt
+  // der Aktivitätszahl.
+  const isPaketReleased = paket.content_status === 'approved' && !!paket.released_at;
   // Farbige Pille: grau=leer, grün=alle sichtbar vollständigen Aktivitäten, gelb=teilweise
   const countPillClass =
-    totalCount === 0 ? 'bg-slate-200 text-slate-700'
+    isPaketReleased ? 'bg-green-600 text-white'
+    : totalCount === 0 ? 'bg-slate-200 text-slate-700'
     : isPaketLiveComplete ? 'bg-green-500 text-white'
     : 'bg-amber-400 text-white';
 
@@ -325,8 +330,11 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
             <PenLine className="w-3.5 h-3.5 text-orange-500 shrink-0 animate-pulse" />
           )}
 
-          <div className={cn('w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0', countPillClass)}>
-            {totalCount}
+          <div
+            className={cn('w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0', countPillClass)}
+            title={isPaketReleased ? 'Lernpaket ist freigegeben' : undefined}
+          >
+            {isPaketReleased ? <Check className="w-3.5 h-3.5" /> : totalCount}
           </div>
           </button>
       </div>
