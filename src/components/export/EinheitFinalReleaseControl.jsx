@@ -101,6 +101,13 @@ export default function EinheitFinalReleaseControl({ einheitId, darfFreigeben = 
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
       queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
       queryClient.invalidateQueries({ queryKey: ['workspace-data', einheitId] });
+      // Cockpit-Tabelle (EinheitStatusTabelle) liest den Grundzustand + Dashboard-
+      // Status aus dem `einheit`-Objekt (export_lifecycle_status) und den
+      // Lernpfad-Memberships ab. Diese Queries müssen ebenfalls frisch geladen
+      // werden, damit "Im Export" nach dem Aufheben wieder zu "Neu" wird.
+      queryClient.invalidateQueries({ queryKey: ['einheit', einheitId] });
+      queryClient.invalidateQueries({ queryKey: ['lernpfadMemberships', einheitId] });
+      queryClient.invalidateQueries({ queryKey: ['themenfelder'] });
       setConfirmOpen(false);
       setActiveLocks([]);
       toast({
