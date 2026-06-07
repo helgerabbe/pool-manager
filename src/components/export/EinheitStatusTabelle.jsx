@@ -25,6 +25,7 @@ import { base44 } from '@/api/base44Client';
 import { Layers, ListChecks, Target, LayoutDashboard, Settings2 } from 'lucide-react';
 import CockpitSyncBadge, { CockpitFreigabeBadge, CockpitPruefBadge } from '@/components/export/CockpitSyncBadge';
 import { useLernpfadDriftReport } from '@/hooks/useLernpfadDriftReport';
+import { isEinheitLocked } from '@/lib/releaseLockCheck';
 
 const LERNTYP_LABELS = {
   minimalist: 'Minimalist',
@@ -131,6 +132,12 @@ export default function EinheitStatusTabelle({
   // können Dashboards "Synchron"/"Geändert" sein – sonst sind sie schlicht "Neu".
   const einheitExportiert = einheit?.sync_status === 'synced' || einheit?.sync_status === 'modified';
 
+  // Final freigegeben / im Export? Dann zeigen Strukturboard, Einheits-Infos
+  // und alle Dashboards rein anzeigend "Im Export" (pending) — analog zu den
+  // untergeordneten Inhalten, deren sync_status beim Freigeben umgestellt wird.
+  const einheitImExport = isEinheitLocked(einheit);
+  const grundzustandSync = einheitImExport ? 'pending' : (einheit?.sync_status || 'new');
+
   const dashboardRows = Object.keys(LERNTYP_LABELS).map(lt => {
     const sektoren = Array.isArray(konfiguration[lt]) ? konfiguration[lt] : [];
     let drifted = 0;
@@ -142,13 +149,17 @@ export default function EinheitStatusTabelle({
     //  - Drift seit Freigabe     → modified
     //  - sonst                   → synced
     let sync = 'new';
-    if (sektoren.length > 0 && einheitExportiert) {
+    if (einheitImExport && sektoren.length > 0) {
+      sync = 'pending';
+    } else if (sektoren.length > 0 && einheitExportiert) {
       sync = drifted > 0 ? 'modified' : 'synced';
     }
 
     const sublabel = sektoren.length === 0
       ? 'Noch keine Sektoren'
-      : !einheitExportiert
+      : einheitImExport
+        ? `${sektoren.length} Sektoren – im Export`
+        : !einheitExportiert
         ? `${sektoren.length} Sektoren – noch nie nach Moodle exportiert`
         : drifted > 0
           ? `${drifted} von ${sektoren.length} Sektoren geändert seit Freigabe`
@@ -163,12 +174,12 @@ export default function EinheitStatusTabelle({
         <Row
           label="Strukturboard (Themenfelder & Lernpakete)"
           sublabel="Lebenszyklus der Struktur dieser Einheit"
-          syncStatus={einheit?.sync_status || 'new'}
+          syncStatus={grundzustandSync}
         />
         <Row
           label="Allgemeine Informationen der Einheit"
           sublabel="Titel, Gesamtziele & Metadaten"
-          syncStatus={einheit?.sync_status || 'new'}
+          syncStatus={grundzustandSync}
         />
       </Section>
 
