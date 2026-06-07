@@ -884,6 +884,16 @@ export default function StrukturBoardEmbedded({
   const zugeordnet   = spalten.reduce((n, s) => n + (paketeMap[s.id]?.length || 0), 0);
   const sammelbeckenPakete = paketeMap[SAMMELBECKEN_ID] || [];
 
+  // Effektiver Moodle-Status der Struktur: Sobald die Einheit final freigegeben
+  // oder im Export ist (export_lifecycle_status ≠ draft), zeigt das Badge
+  // konsistent zu Tab 7 „Im Export" (pending) – unabhängig davon, ob das
+  // Einheiten-Feld sync_status noch auf 'new' steht.
+  const lifecycle = einheit?.export_lifecycle_status || 'draft';
+  const istImExport = lifecycle !== 'draft';
+  const strukturSyncStatus = istImExport
+    ? 'pending'
+    : (einheit?.sync_status || 'new');
+
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* Lebenszyklus-Leiste – immer sichtbar (auch im Lesemodus).
@@ -891,7 +901,7 @@ export default function StrukturBoardEmbedded({
           Struktur geändert. */}
       <div className="shrink-0 px-4 py-2 border-b border-border bg-muted/20 flex items-center gap-2 flex-wrap">
         <span className="text-xs text-muted-foreground">Moodle-Status der Struktur:</span>
-        <EinheitStrukturLebenszyklusBadge syncStatus={einheit?.sync_status || 'new'} />
+        <EinheitStrukturLebenszyklusBadge syncStatus={strukturSyncStatus} />
 
         {/* Kompakt-Umschalter + Struktur-bearbeiten (grün) / Bearbeitung beenden.
             Aus der Tab-Leiste hierher verschoben. */}
