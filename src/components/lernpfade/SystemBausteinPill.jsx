@@ -182,9 +182,11 @@ export default function SystemBausteinPill({
                 </div>
               </div>
             </TooltipTrigger>
-            {baustein?.admin_beschreibung && (
+            {(isBundle || baustein?.admin_beschreibung) && (
               <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
-                {baustein.admin_beschreibung}
+                {isBundle
+                  ? `${titel}: Ein Container, der mehrere Elemente aufnimmt. Ziehe passende Aufgaben oder Lernpakete per Drag & Drop hinein.`
+                  : baustein.admin_beschreibung}
               </TooltipContent>
             )}
           </Tooltip>
