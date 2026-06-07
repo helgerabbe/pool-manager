@@ -59,10 +59,9 @@ Deno.serve(async (req) => {
       lernziele: lernzielTexte,
     };
 
-    const prompt = `Du erstellst einen FREIWILLIGEN ORIENTIERUNGS-FRAGENBLOCK für die Einstiegsdiagnose einer Unterrichtseinheit – direkt an Schülerinnen und Schüler gerichtet.
-
-KONTEXT DER EINHEIT (als JSON):
-${JSON.stringify(kontext, null, 2)}
+    // Didaktische Bauanleitung aus der Verwaltung (Single Source of Truth).
+    // Fällt der DB-Text weg, greift der bewährte Default.
+    const FALLBACK_INSTRUKTION = `Du erstellst einen FREIWILLIGEN ORIENTIERUNGS-FRAGENBLOCK für die Einstiegsdiagnose einer Unterrichtseinheit – direkt an Schülerinnen und Schüler gerichtet.
 
 ZIEL: Ein Schüler, der noch nicht weiß, ob er Vorwissen hat oder sich selbst schwer einschätzen kann, soll durch 5-6 Fragen ein GEFÜHL dafür bekommen, ob er sich in dieser Einheit sicher fühlt. Das hilft ihm, seinen Lerntyp zu wählen.
 
@@ -73,12 +72,31 @@ WICHTIG – das ist KEIN Quiz und KEINE Wissensabfrage:
 - Beziehe dich KONKRET auf die Inhalte/Themen/Lernziele der Einheit aus dem Kontext.
 
 REGELN:
-- Sehr schülergerechte, einfache, freundliche Sprache (Klasse ${einheit.jahrgangsstufe || ''}). Direkte Ansprache ("du").
+- Sehr schülergerechte, einfache, freundliche Sprache. Direkte Ansprache ("du").
 - Genau 5 bis 6 Fragen.
 - Jede Frage wird mit EINEM Schieberegler beantwortet.
-- WICHTIG zur Polung: 'links_label' ist immer der UNSICHERE Pol (z. B. „verstehe ich gar nicht", „noch nie gemacht", „keine Ahnung"), 'rechts_label' ist immer der SICHERE Pol (z. B. „kenne ich gut", „kann ich sicher", „ist mir vertraut"). Halte diese Reihenfolge bei JEDER Frage ein.
+- WICHTIG zur Polung: Das linke Label ist immer der UNSICHERE Pol, das rechte Label ist immer der SICHERE Pol. Halte diese Reihenfolge bei JEDER Frage ein.
 - Halte die Pol-Labels kurz (max. ~4 Wörter).
 - KEINE erfundenen Fakten, die dem Kontext widersprechen.`;
+
+    let instruktion = FALLBACK_INSTRUKTION;
+    try {
+      const bausteine = await base44.asServiceRole.entities.SystemBausteine.filter({ baustein_id: 'sys_sec0_qblock' });
+      const dbText = Array.isArray(bausteine) ? bausteine[0]?.export_instruktion : null;
+      if (dbText && dbText.trim()) instruktion = dbText.trim();
+    } catch (_e) {
+      // Fallback bleibt aktiv.
+    }
+
+    const prompt = `${instruktion}
+
+KONTEXT DER EINHEIT (als JSON):
+${JSON.stringify(kontext, null, 2)}
+
+TECHNISCHE AUSGABE-VORGABE (von der Vorschau-/Export-Komponente erzwungen, NICHT verhandelbar):
+- Genau 5 bis 6 Fragen.
+- Jede Frage hat ein 'links_label' (UNSICHERER Pol) und ein 'rechts_label' (SICHERER Pol) – diese Polung ist zwingend.
+- Schreibe in einer Sprache, die für Klasse ${einheit.jahrgangsstufe || ''} angemessen ist.`;
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,

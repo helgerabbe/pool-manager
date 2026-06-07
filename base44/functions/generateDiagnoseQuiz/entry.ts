@@ -85,10 +85,9 @@ Deno.serve(async (req) => {
       lernziele: lernzielTexte,
     };
 
-    const prompt = `Du erstellst eine EINSTIEGSDIAGNOSE als Multiple-Choice-Quiz für eine Unterrichtseinheit – direkt an Schülerinnen und Schüler gerichtet.
-
-KONTEXT DER EINHEIT (als JSON):
-${JSON.stringify(kontext, null, 2)}
+    // Didaktische Bauanleitung aus der Verwaltung (Single Source of Truth).
+    // Fällt der DB-Text weg, greift der bewährte Default.
+    const FALLBACK_INSTRUKTION = `Du erstellst eine EINSTIEGSDIAGNOSE als Multiple-Choice-Quiz für eine Unterrichtseinheit – direkt an Schülerinnen und Schüler gerichtet.
 
 ZIEL: Ein Schüler, der die Einheit NOCH NICHT bearbeitet hat, soll mit diesen Fragen ein grobes Gefühl dafür bekommen, ob er die Themen der Einheit schon kennt und versteht. Es ist KEIN benoteter Test – es geht um Selbsteinschätzung und Orientierung. Schüler überschätzen oder unterschätzen sich oft; die Diagnose hilft ihnen, sich realistisch einzuordnen.
 
@@ -97,11 +96,11 @@ ANZAHL DER FRAGEN: Entscheide SELBST je nach Umfang der Einheit zwischen 3 und 8
 STRIKTE REGELN ZU DEN FRAGEN:
 - AUSSCHLIESSLICH Multiple-Choice-Fragen. Keine offenen Fragen.
 - Jede Frage hat 4 ODER 5 Antwortoptionen.
-- GENAU EINE Option ist richtig (Index in 'richtige_antwort_index', 0-basiert).
+- GENAU EINE Option ist richtig.
 - Die FALSCHEN Optionen (Distraktoren) müssen PLAUSIBEL und themennah sein – sie müssen theoretisch denkbare Antworten sein, damit der Schüler nicht durch reines Raten die richtige Antwort findet.
   NEGATIV-BEISPIEL (verboten): Frage „Wie heißt der Erdtrabant?" mit Optionen Mond / Banane / Affe / Schaukel → die falschen Optionen sind absurd, die richtige ist sofort erkennbar.
   POSITIV-BEISPIEL: Frage „Wie heißt der Erdtrabant?" mit Optionen Mond / Phobos / Io / Titan / Europa → alle sind echte Monde, also alle plausibel.
-- Sehr schülergerechte, einfache, klare Sprache (Klasse ${einheit.jahrgangsstufe || ''}). Direkte Ansprache ("du").
+- Sehr schülergerechte, einfache, klare Sprache. Direkte Ansprache ("du").
 - Beziehe dich KONKRET auf die Inhalte/Themen/Lernziele der Einheit aus dem Kontext.
 - KEINE erfundenen Fakten. Wenn du unsicher bist, formuliere die Frage allgemeiner statt falsch.
 
@@ -109,6 +108,24 @@ ABSCHLUSS-RÜCKMELDUNGEN: Liefere drei ermutigende Rückmeldungstexte (schülerg
 - 'hoch' (viele richtig): z. B. „Stark – du hast schon richtig viel Ahnung!"
 - 'mittel' (teils richtig): z. B. „Nicht schlecht, du hast schon ein gutes Überblickswissen!"
 - 'niedrig' (wenige richtig): z. B. „Noch viel Neues für dich – aber genau dafür ist die Einheit ja da!"`;
+
+    let instruktion = FALLBACK_INSTRUKTION;
+    try {
+      const bausteine = await base44.asServiceRole.entities.SystemBausteine.filter({ baustein_id: 'sys_diagnose_entry' });
+      const dbText = Array.isArray(bausteine) ? bausteine[0]?.export_instruktion : null;
+      if (dbText && dbText.trim()) instruktion = dbText.trim();
+    } catch (_e) {
+      // Fallback bleibt aktiv.
+    }
+
+    const prompt = `${instruktion}
+
+KONTEXT DER EINHEIT (als JSON):
+${JSON.stringify(kontext, null, 2)}
+
+TECHNISCHE AUSGABE-VORGABE (von der Vorschau-/Export-Komponente erzwungen, NICHT verhandelbar):
+- Gib 'richtige_antwort_index' als 0-basierten Index der genau einen richtigen Option an.
+- Schreibe in einer Sprache, die für Klasse ${einheit.jahrgangsstufe || ''} angemessen ist.`;
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,

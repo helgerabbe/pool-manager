@@ -55,20 +55,35 @@ Deno.serve(async (req) => {
       lernziele: lernzielTexte,
     };
 
-    const prompt = `Du erstellst eine kurze, motivierende EINFÜHRUNG in eine Unterrichtseinheit – direkt an die Schülerinnen und Schüler gerichtet.
-
-KONTEXT DER EINHEIT (als JSON):
-${JSON.stringify(kontext, null, 2)}
+    // Didaktische Bauanleitung aus der Verwaltung (Single Source of Truth).
+    // Fällt der DB-Text weg, greift der bewährte Default.
+    const FALLBACK_INSTRUKTION = `Du erstellst eine kurze, motivierende EINFÜHRUNG in eine Unterrichtseinheit – direkt an die Schülerinnen und Schüler gerichtet.
 
 ZIEL: Die Schüler:innen sollen nach dem Lesen ein Gefühl dafür haben, worum es in dieser Einheit geht und was sie erwartet – damit sie selbst einschätzen können, wie tief sie einsteigen möchten (Lerntyp-Wahl).
 
 REGELN:
-- Sehr schülergerechte, einfache, freundliche Sprache (Klasse ${einheit.jahrgangsstufe || ''}). Direkte Ansprache ("du").
+- Sehr schülergerechte, einfache, freundliche Sprache. Direkte Ansprache ("du").
 - Kurz und ansprechend, nicht belehrend. Wecke Neugier.
 - Erkläre konkret: Worum geht es? Was wirst du hier machen/lernen? Warum ist das spannend oder nützlich?
 - Nutze gerne kleine, passende Emojis als Veranschaulichung.
 - KEINE erfundenen Fakten, die dem Kontext widersprechen.
 - Liefere zusätzlich einen englischen Bild-Prompt für eine fröhliche, kindgerechte Comic-Illustration (flat, bunt, freundlich), die zum Thema passt.`;
+
+    let instruktion = FALLBACK_INSTRUKTION;
+    try {
+      const bausteine = await base44.asServiceRole.entities.SystemBausteine.filter({ baustein_id: 'sys_sec0_overview' });
+      const dbText = Array.isArray(bausteine) ? bausteine[0]?.export_instruktion : null;
+      if (dbText && dbText.trim()) instruktion = dbText.trim();
+    } catch (_e) {
+      // Fallback bleibt aktiv.
+    }
+
+    const prompt = `${instruktion}
+
+KONTEXT DER EINHEIT (als JSON):
+${JSON.stringify(kontext, null, 2)}
+
+Hinweis: Schreibe in einer Sprache, die für Klasse ${einheit.jahrgangsstufe || ''} angemessen ist.`;
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,
