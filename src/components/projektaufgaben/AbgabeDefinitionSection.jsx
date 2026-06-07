@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Sparkles, Loader2, Save, Plus, Trash2, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Loader2, Save, Plus, Trash2, CheckCircle2, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { updateAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
@@ -197,6 +197,17 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
           <h3 className="text-sm font-semibold">Abgabeformate</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             Welche Formate sollen Schülerinnen und Schüler einreichen? Mehrfachauswahl möglich.
+          </p>
+        </div>
+
+        {/* Hinweis: Das Abgabeformat steuert den KI-Tutor, wird von ihm aber NICHT geprüft. */}
+        <div className="flex items-start gap-2.5 rounded-lg border border-blue-200 bg-blue-50/70 px-3.5 py-3 text-xs text-blue-900 leading-relaxed">
+          <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-500" />
+          <p>
+            <strong>Wichtig:</strong> Der KI-Tutor Brian prüft oder bewertet das fertige Abgabeformat <strong>nicht</strong>.
+            Stattdessen <strong>begleitet</strong> er die Schülerinnen und Schüler bei dessen Erstellung – er weist sie z.&nbsp;B.
+            gezielt darauf hin, eine Zeitleiste oder Präsentation anzulegen, und berät sie auf dem Weg dorthin.
+            Deshalb ist es wichtig, das gewünschte Format hier anzugeben: nur so weiß Brian, in welche Richtung er unterstützen soll.
           </p>
         </div>
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
