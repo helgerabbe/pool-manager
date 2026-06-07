@@ -543,6 +543,8 @@ export default function ProjektaufgabenView({
                   einheit={einheit}
                   mappedLernziele={lernziele}
                   mappedBasisLernziele={[]}
+                  lernpakete={lernpakete}
+                  alleLernziele={allLernziele}
                   kannBearbeiten={kannBearbeiten && lock.isEditMode}
                 />
               </TabsContent>
