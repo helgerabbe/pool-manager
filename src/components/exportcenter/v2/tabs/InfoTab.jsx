@@ -12,12 +12,14 @@
 import React from 'react';
 import ExportCenterStatusHeader from '@/components/exportcenter/ExportCenterStatusHeader';
 import ExportCenterDeltaPanel from '@/components/exportcenter/ExportCenterDeltaPanel';
+import ExportContentTimestamp from '@/components/exportcenter/ExportContentTimestamp';
 
 export default function InfoTab({ einheit }) {
   if (!einheit) return null;
   return (
     <div className="space-y-4">
       <ExportCenterStatusHeader einheit={einheit} />
+      <ExportContentTimestamp einheit={einheit} />
       <ExportCenterDeltaPanel einheit={einheit} />
     </div>
   );
