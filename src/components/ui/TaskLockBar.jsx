@@ -28,6 +28,11 @@ export default function TaskLockBar({
   canEdit = true,
   isAdmin = false,
   editButtonLabel = 'Aufgabe bearbeiten',
+  // Wenn editDisabled=true, ist der Bearbeiten-Button ausgegraut und nicht
+  // klickbar. lockReason ersetzt dann die "Leseansicht"-Meldung links durch
+  // eine erklärende Klartext-Begründung (z.B. Freigabe aktiv / im Export).
+  editDisabled = false,
+  lockReason = null,
 }) {
   // Berechne ob Lock älter als 60 Min ist (MUSS vor allen bedingten returns aufgerufen werden)
   const isLockStale = useMemo(() => {
@@ -113,13 +118,20 @@ export default function TaskLockBar({
 
   return (
     <div className="flex items-center gap-2 px-4 py-2 bg-muted/30 border-b border-border">
-      <span className="text-xs text-muted-foreground flex-1">Leseansicht – keine Änderungen möglich</span>
+      <span className="text-xs text-muted-foreground flex-1">
+        {lockReason || 'Leseansicht – keine Änderungen möglich'}
+      </span>
       <Button
         size="sm"
         variant="outline"
         onClick={onEdit}
-        disabled={isLocking}
-        className="gap-1.5 h-7 text-xs border-green-300 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
+        disabled={isLocking || editDisabled}
+        title={editDisabled ? (lockReason || undefined) : undefined}
+        className={
+          editDisabled
+            ? 'gap-1.5 h-7 text-xs border-border bg-muted text-muted-foreground cursor-not-allowed'
+            : 'gap-1.5 h-7 text-xs border-green-300 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800'
+        }
       >
         {isLocking ? (
           <Loader2 className="w-3.5 h-3.5 animate-spin" />

@@ -18,6 +18,7 @@ import TaskStatusBadge from '@/components/ui/TaskStatusBadge';
 import TaskLockBar from '@/components/ui/TaskLockBar';
 import ProjektCreateView from './ProjektCreateView';
 import PublishProjektaufgabeButton from './PublishProjektaufgabeButton';
+import { AufgabeExportStatusInline } from '@/components/allgemeineAufgaben/AufgabeExportStatusRow';
 import AbgabeDefinitionSection from './AbgabeDefinitionSection';
 import LernlandkartePreview from '@/components/lernlandkarte/LernlandkartePreview';
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
@@ -159,6 +160,10 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
               : <><PenLine className="w-3 h-3" /> In Bearbeitung</>
             }
           </Badge>
+          {/* Export-Status (neu / synchron / geändert) für Moodle & Brian */}
+          <div className="mt-2">
+            <AufgabeExportStatusInline aufgabe={aufgabe} />
+          </div>
         </div>
       </div>
 
@@ -469,6 +474,19 @@ export default function ProjektaufgabenView({
                 isLockedByOther={lock.isLockedByOther}
                 lockedByEmail={lock.lockedByEmail}
                 lockedAt={selectedAufgabe?.locked_at}
+                // Freigegebene oder im Export befindliche Aufgaben können nicht
+                // direkt bearbeitet werden: Button ausgrauen + Klartext-Grund.
+                editDisabled={
+                  selectedAufgabe?.sync_status === 'pending' ||
+                  selectedAufgabe?.content_status === 'approved'
+                }
+                lockReason={
+                  selectedAufgabe?.sync_status === 'pending'
+                    ? 'Diese Aufgabe befindet sich im Export – Änderungen sind nicht möglich. Sobald der Export abgeschlossen ist, kann hier wieder gearbeitet werden.'
+                    : selectedAufgabe?.content_status === 'approved'
+                      ? 'Diese Aufgabe ist freigegeben – Änderungen sind nicht möglich. Nimm erst die Freigabe zurück, bevor du sie wieder bearbeitest.'
+                      : null
+                }
                 onEdit={lock.enterEditMode}
                 onCancel={lock.exitEditMode}
                 onForceUnlock={async () => {
