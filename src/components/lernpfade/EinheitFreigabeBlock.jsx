@@ -129,6 +129,13 @@ export default function EinheitFreigabeBlock({ einheitId, darfFreigeben = false 
       queryClient.invalidateQueries({ queryKey: ['einheitFreigabeStatus', einheitId] });
       // Inhalts-Sperre der Aufgaben hängt jetzt an export_lifecycle_status.
       queryClient.invalidateQueries({ queryKey: ['aufgabeLock'] });
+      // Lebenszyklus-Badges (sync_status 'neu' → 'Im Export') aktualisieren:
+      // betrifft Lernpakete, Aktivitäten, Aufgaben und die Workspace-Daten.
+      queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
+      queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
+      queryClient.invalidateQueries({ queryKey: ['workspace-data', einheitId] });
       setConfirmOpen(false);
       setActiveLocks([]);
       toast({

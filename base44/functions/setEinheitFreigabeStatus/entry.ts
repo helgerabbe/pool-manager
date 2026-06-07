@@ -208,6 +208,84 @@ async function collectActiveLocks(base44, einheit, currentUserEmail) {
   return activeLocks;
 }
 
+/**
+ * Lebenszyklus-Wechsel beim Final-Freigeben / Aufheben.
+ *
+ * Setzt den Moodle-Lebenszyklus (`sync_status`) aller Inhalte der Einheit:
+ *   - Final freigeben (draft → final_freigegeben): 'new' → 'pending' ("Im Export")
+ *   - Aufheben (final_freigegeben → draft):        'pending' → 'new' ("Neu")
+ *
+ * Nur diese eine Übergangs-Kante wird angefasst. Bereits 'synced',
+ * 'modified' oder 'to_delete' bleiben unberührt — dort hat der echte
+ * Moodle-Export bzw. eine spätere Änderung schon einen anderen Zustand
+ * gesetzt, den wir nicht überschreiben dürfen.
+ *
+ * Betroffene Entities (alle mit `sync_status`):
+ *   - Lernpakete            (FK: einheit_id ODER themenfeld_id→einheit)
+ *   - AllgemeineAufgabe     (FK: einheit_id) — Ebene 2 + 3 inkl. Projekte
+ *   - LernpaketPhaseAktivitaet (FK: lernpaket_id → Pakete der Einheit)
+ *   - MasterAufgabe         (FK: lernpaket_id → Pakete der Einheit)
+ */
+async function transitionSyncStatus(base44, einheit, direction) {
+  const fromStatus = direction === 'to_export' ? 'new' : 'pending';
+  const toStatus = direction === 'to_export' ? 'pending' : 'new';
+
+  const sr = base44.asServiceRole.entities;
+
+  // Lernpakete der Einheit (zwei FK-Pfade, dedupliziert).
+  const themenfelder = await listAllByFilter(sr.Themenfeld, { einheit_id: einheit.id });
+  const themenfeldIds = (themenfelder || []).map((t) => t.id);
+  const [lpByEinheit, lpByThemenfeld] = await Promise.all([
+    listAllByFilter(sr.Lernpakete, { einheit_id: einheit.id }),
+    themenfeldIds.length > 0
+      ? filterInChunks(sr.Lernpakete, 'themenfeld_id', themenfeldIds)
+      : Promise.resolve([]),
+  ]);
+  const lernpaketeMap = new Map();
+  for (const lp of [...(lpByEinheit || []), ...(lpByThemenfeld || [])]) {
+    lernpaketeMap.set(lp.id, lp);
+  }
+  const lernpakete = Array.from(lernpaketeMap.values());
+  const lernpaketIds = lernpakete.map((lp) => lp.id);
+
+  // Aufgaben (Ebene 2 + 3) der Einheit.
+  const aufgaben = await listAllByFilter(sr.AllgemeineAufgabe, { einheit_id: einheit.id });
+
+  // Aktivitäten + Master über die Pakete der Einheit.
+  const [aktivitaeten, masters] = await Promise.all([
+    lernpaketIds.length > 0
+      ? filterInChunks(sr.LernpaketPhaseAktivitaet, 'lernpaket_id', lernpaketIds)
+      : Promise.resolve([]),
+    lernpaketIds.length > 0
+      ? filterInChunks(sr.MasterAufgabe, 'lernpaket_id', lernpaketIds)
+      : Promise.resolve([]),
+  ]);
+
+  // Pro Entity-Typ nur die Records anfassen, die exakt auf fromStatus stehen.
+  const tasks = [];
+  const queueUpdate = (entity, records) => {
+    for (const r of records || []) {
+      if ((r.sync_status || 'new') === fromStatus) {
+        tasks.push(entity.update(r.id, { sync_status: toStatus }));
+      }
+    }
+  };
+  queueUpdate(sr.Lernpakete, lernpakete);
+  queueUpdate(sr.AllgemeineAufgabe, aufgaben);
+  queueUpdate(sr.LernpaketPhaseAktivitaet, aktivitaeten);
+  queueUpdate(sr.MasterAufgabe, masters);
+
+  // In moderaten Batches abarbeiten, um Rate-Limits zu schonen.
+  const BATCH = 25;
+  let changed = 0;
+  for (let i = 0; i < tasks.length; i += BATCH) {
+    const slice = tasks.slice(i, i + BATCH);
+    const results = await Promise.allSettled(slice);
+    changed += results.filter((r) => r.status === 'fulfilled').length;
+  }
+  return changed;
+}
+
 Deno.serve(async (req) => {
   if (req.method !== 'POST') {
     return Response.json({ error: 'Method not allowed' }, { status: 405 });
@@ -345,6 +423,24 @@ Deno.serve(async (req) => {
     };
     await base44.entities.Einheiten.update(einheitId, update);
 
+    // ── Lebenszyklus-Wechsel der Inhalte ────────────────────────────────
+    // Final freigeben → alle "neu"-Inhalte auf "Im Export" (pending) setzen.
+    // Aufheben       → die zuvor auf "pending" gesetzten zurück auf "neu".
+    // Bewusst NACH dem Einheiten-Update: schlägt der Lebenszyklus-Teil fehl,
+    // bleibt der Einheiten-Status maßgeblich (Single Source of Truth für die
+    // Sperren); der Badge-Wechsel ist rein kosmetisch und idempotent
+    // wiederholbar.
+    let lifecycleChanged = 0;
+    try {
+      lifecycleChanged = await transitionSyncStatus(
+        base44,
+        einheit,
+        newStatus === STATUS_FINAL ? 'to_export' : 'to_new'
+      );
+    } catch (lifecycleErr) {
+      console.error('[setEinheitFreigabeStatus] Lebenszyklus-Wechsel fehlgeschlagen:', lifecycleErr);
+    }
+
     await logAuditEvent(base44, {
       user: user.email,
       action: 'PUBLISH',
@@ -367,6 +463,7 @@ Deno.serve(async (req) => {
       newStatus,
       changed_at: nowIso,
       changed_by: user.email,
+      lifecycleChanged,
     });
   } catch (error) {
     console.error('[setEinheitFreigabeStatus] Fehler:', error);
