@@ -19,7 +19,7 @@
 
 import React from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
-import { GripVertical, Trash2, X, Plus, ChevronUp, ChevronDown } from 'lucide-react';
+import { GripVertical, Trash2, X, Plus, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getAufgabenTyp, ITEM_TYPE } from '@/lib/aufgabenTypen';
 import SystemBausteinPill from '@/components/lernpfade/SystemBausteinPill';
@@ -288,6 +288,27 @@ export default function LernpfadeSektor({
     ? `${typLabel} · ${themenfeldTitel}`
     : typLabel;
 
+  // Individuelle Sektoren dürfen einen frei wählbaren Namen tragen. Der
+  // Titel wird inline editierbar (Klick auf den Header). Bei allen anderen
+  // Sektor-Typen bleibt der Titel automatisch aus dem Typ abgeleitet.
+  const isIndividuell = sektor.sektor_typ === SEKTOR_TYP.INDIVIDUELL;
+  const [isEditingTitel, setIsEditingTitel] = React.useState(false);
+  const [titelDraft, setTitelDraft] = React.useState(sektor.titel || '');
+
+  React.useEffect(() => {
+    if (!isEditingTitel) setTitelDraft(sektor.titel || '');
+  }, [sektor.titel, isEditingTitel]);
+
+  const commitTitel = () => {
+    const trimmed = (titelDraft || '').trim();
+    if (trimmed && trimmed !== sektor.titel) {
+      onPatch?.(sektor.sektor_id, { titel: trimmed });
+    } else {
+      setTitelDraft(sektor.titel || '');
+    }
+    setIsEditingTitel(false);
+  };
+
   return (
     <div
       data-sektor-id={sektor.sektor_id}
@@ -297,12 +318,39 @@ export default function LernpfadeSektor({
           abgeleitet und nicht mehr per Input editiert. Bei Arbeitsphasen
           steht der Themenfeld-Titel bereits im headerLabel. */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span
-          className="text-[11px] font-semibold uppercase tracking-wide text-foreground bg-secondary px-2 py-0.5 rounded shrink-0"
-          title={typLabel}
-        >
-          {headerLabel}
-        </span>
+        {isIndividuell && !readOnly ? (
+          isEditingTitel ? (
+            <input
+              autoFocus
+              value={titelDraft}
+              onChange={(e) => setTitelDraft(e.target.value)}
+              onBlur={commitTitel}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commitTitel();
+                if (e.key === 'Escape') { setTitelDraft(sektor.titel || ''); setIsEditingTitel(false); }
+              }}
+              placeholder="Sektor-Name…"
+              className="text-[11px] font-semibold uppercase tracking-wide text-foreground bg-card border border-primary/40 rounded px-2 py-0.5 outline-none focus:ring-1 focus:ring-primary/40 min-w-[140px]"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsEditingTitel(true)}
+              title="Sektor-Name bearbeiten"
+              className="group inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-foreground bg-secondary hover:bg-secondary/70 px-2 py-0.5 rounded shrink-0 transition-colors"
+            >
+              {sektor.titel?.trim() || headerLabel}
+              <Pencil className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            </button>
+          )
+        ) : (
+          <span
+            className="text-[11px] font-semibold uppercase tracking-wide text-foreground bg-secondary px-2 py-0.5 rounded shrink-0"
+            title={typLabel}
+          >
+            {isIndividuell ? (sektor.titel?.trim() || headerLabel) : headerLabel}
+          </span>
+        )}
         {/* Phase E.4: Drift-Badge — zeigt nur bei 'drifted' bzw. 'loading'
             etwas an. Bei clean/never_locked/unknown bleibt der Header ruhig. */}
         <SektorDriftBadge status={driftStatus} />
