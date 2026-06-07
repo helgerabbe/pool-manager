@@ -601,40 +601,62 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
     <div className="space-y-4">
       {/* Tab-Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-8 w-full">
-          <TabsTrigger value="info" className="text-xs">
+        <TabsList className="flex flex-wrap items-center gap-1 w-full h-auto p-1.5 bg-muted/60 rounded-xl">
+          <TabsTrigger
+            value="info"
+            className="text-xs px-3 py-1.5 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-primary font-medium"
+          >
             Info
           </TabsTrigger>
-          <TabsTrigger value="meta" className="text-xs">
+          <TabsTrigger
+            value="meta"
+            className="text-xs px-3 py-1.5 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-primary font-medium"
+          >
             Meta
           </TabsTrigger>
-          <TabsTrigger value="ui-config" className="text-xs">
-            <span className="font-mono mr-1 opacity-60">0·</span>
+
+          {/* Trennlinie zwischen Einrichtung (Info/Meta) und den Export-Payloads */}
+          <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
+
+          <TabsTrigger
+            value="ui-config"
+            className="text-xs px-3 py-1.5 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-primary font-medium gap-1"
+          >
             🎨 UI
             <TabDriftIndicator {...tabCounts.mbk_ui_config} treatStaleAsNew={isInitialExport} />
           </TabsTrigger>
-          <TabsTrigger value="struktur" className="text-xs">
-            <span className="font-mono mr-1 opacity-60">1·</span>
+          <TabsTrigger
+            value="struktur"
+            className="text-xs px-3 py-1.5 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-primary font-medium gap-1"
+          >
             Struktur
             <TabDriftIndicator {...tabCounts.mbk_structure_payload} treatStaleAsNew={isInitialExport} />
           </TabsTrigger>
-          <TabsTrigger value="aufgaben" className="text-xs">
-            <span className="font-mono mr-1 opacity-60">2·</span>
+          <TabsTrigger
+            value="aufgaben"
+            className="text-xs px-3 py-1.5 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-primary font-medium gap-1"
+          >
             Aufgaben
             <TabDriftIndicator {...tabCounts.mbk_task_content_payload} treatStaleAsNew={isInitialExport} />
           </TabsTrigger>
-          <TabsTrigger value="globale-ki" className="text-xs">
-            <span className="font-mono mr-1 opacity-60">3·</span>
+          <TabsTrigger
+            value="globale-ki"
+            className="text-xs px-3 py-1.5 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-primary font-medium gap-1"
+          >
             Globale KI
             <TabDriftIndicator {...tabCounts.mbk_system_context} treatStaleAsNew={isInitialExport} />
           </TabsTrigger>
-          <TabsTrigger value="systembausteine" className="text-xs">
-            <span className="font-mono mr-1 opacity-60">4·</span>
+          <TabsTrigger
+            value="systembausteine"
+            className="text-xs px-3 py-1.5 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-primary font-medium gap-1"
+          >
             Systembausteine
             <TabDriftIndicator {...tabCounts.mbk_systembaustein_payload} treatStaleAsNew={isInitialExport} />
           </TabsTrigger>
-          <TabsTrigger value="ki-aufgaben" className="text-xs">
-            <span className="font-mono mr-1 opacity-60">5·</span>
+          <TabsTrigger
+            value="ki-aufgaben"
+            className="text-xs px-3 py-1.5 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-primary font-medium gap-1"
+          >
             KI-Aufgaben
             <TabDriftIndicator {...tabCounts.mbk_micro_payload} treatStaleAsNew={isInitialExport} />
           </TabsTrigger>
