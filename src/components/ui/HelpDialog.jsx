@@ -31,15 +31,15 @@ export default function HelpDialog({ title, description, features = [], faqs = [
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col">
+          <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <HelpCircle className="w-5 h-5 text-primary" />
               Hilfe: {title}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-5 py-1">
+          <div className="space-y-5 py-1 overflow-y-auto flex-1 -mr-2 pr-2">
             {/* Beschreibung */}
             <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
 
