@@ -645,7 +645,14 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
       const updated = alleKlone.find(k => k.id === selectedItem.klon.id);
       if (updated) setSelectedItem({ type: 'klon', klon: updated });
     }
-  }, [allActivities, alleMaster, alleKlone, isEditingActive]);
+    // Auch das gewählte Lernpaket frisch nachziehen, damit der Freigabe-Button
+    // in Tab4LernpaketOverview nach setReleaseStatus sofort umschaltet
+    // (content_status / released_at kommen aus dem neu geladenen Record).
+    if (selectedItem?.type === 'lernpaket') {
+      const updated = lernpakete.find(p => p.id === selectedItem.lernpaket.id);
+      if (updated) setSelectedItem({ type: 'lernpaket', lernpaket: updated });
+    }
+  }, [allActivities, alleMaster, alleKlone, lernpakete, isEditingActive]);
 
   // ── Kern-Funktion: Baum öffnen und Activity laden ─────────────────────────
   const openTreeAndLoadContent = (activityId) => {
