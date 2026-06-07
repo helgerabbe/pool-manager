@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { Plus, Star, FileText, ChevronRight, Edit, Trash2, CheckCircle2, PenLine, Lock, Wand2 } from 'lucide-react';
 import TaskStatusBadge from '@/components/ui/TaskStatusBadge';
+import SyncStatusBadge from '@/components/release/SyncStatusBadge';
 import TaskLockBar from '@/components/ui/TaskLockBar';
 import ProjektCreateView from './ProjektCreateView';
 import PublishProjektaufgabeButton from './PublishProjektaufgabeButton';
@@ -129,28 +130,25 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
   return (
     <div className="space-y-6 p-6">
 
-      {/* Metadaten */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-lg bg-muted/30 border border-border">
-        <div>
-          <p className="text-xs text-muted-foreground">Schwierigkeitsgrad</p>
-          <div className="mt-1">
-            {aufgabe.schwierigkeitsgrad ? (
-              <div className="flex gap-0.5">
-                {[1, 2, 3].map(n => (
-                  <Star
-                    key={n}
-                    className={cn('w-3 h-3', n <= aufgabe.schwierigkeitsgrad ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/20')}
-                  />
-                ))}
-              </div>
-            ) : (
-              <span className="text-xs text-muted-foreground">Nicht gesetzt</span>
-            )}
-          </div>
+      {/* Kompakter Header: Titel + Sterne, daneben Freigabe- + Lebenszyklus-Badge */}
+      <div className="flex items-start justify-between gap-4 flex-wrap pb-4 border-b border-border">
+        <div className="flex items-center gap-3 min-w-0">
+          <h2 className={cn('text-xl font-bold truncate', !hatTitel && 'italic text-muted-foreground')}>
+            {hatTitel ? aufgabe.titel : 'Kein Titel'}
+          </h2>
+          {aufgabe.schwierigkeitsgrad ? (
+            <div className="flex gap-0.5 shrink-0" title={`Schwierigkeitsgrad: ${aufgabe.schwierigkeitsgrad}/3`}>
+              {[1, 2, 3].map(n => (
+                <Star
+                  key={n}
+                  className={cn('w-4 h-4', n <= aufgabe.schwierigkeitsgrad ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/20')}
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
-        <div>
-          <p className="text-xs text-muted-foreground">Freigabe-Status</p>
-          <Badge className={cn('mt-1 flex items-center gap-1 w-fit',
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Badge className={cn('flex items-center gap-1 w-fit',
             aufgabe.content_status === 'approved'
               ? 'bg-green-100 text-green-700 border border-green-300'
               : 'bg-amber-100 text-amber-700 border border-amber-300'
@@ -160,10 +158,8 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
               : <><PenLine className="w-3 h-3" /> In Bearbeitung</>
             }
           </Badge>
-          {/* Export-Status (neu / synchron / geändert) für Moodle & Brian */}
-          <div className="mt-2">
-            <AufgabeExportStatusInline aufgabe={aufgabe} />
-          </div>
+          {/* Lebenszyklus-Badge (Neu / Im Export / Synchron / Geändert) */}
+          <SyncStatusBadge status={aufgabe.sync_status || 'new'} />
         </div>
       </div>
 
