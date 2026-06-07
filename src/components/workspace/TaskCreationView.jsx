@@ -30,7 +30,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { ChevronRight, Package, MousePointerClick, Lock, Crown, CheckCircle2, Menu, X, PenLine } from 'lucide-react';
+import { ChevronRight, Package, MousePointerClick, Lock, Crown, CheckCircle2, Check, Menu, X, PenLine } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import ActivityMasterPanel from '@/components/workspace/ActivityMasterPanel';
 import KlonDetailView from '@/components/workspace/KlonDetailView';
@@ -296,13 +296,22 @@ function SidebarLernpaketFolder({
            };
            const total = activePaketActivities.length;
            const completeCount = activePaketActivities.filter(isActivityCompleteForTree).length;
+           // Freigegebenes Lernpaket (content_status='approved' UND released_at):
+           // grüne Pille mit Häkchen statt Aktivitätszahl — identisch zu Tab 4
+           // (SidebarTree.LernpaketNode). Sofort sichtbar, wo noch freigegeben
+           // werden muss.
+           const isPaketReleased = lernpaket.content_status === 'approved' && !!lernpaket.released_at;
            const pillClass =
-             total === 0 ? 'bg-slate-200 text-slate-700'
+             isPaketReleased ? 'bg-green-600 text-white'
+             : total === 0 ? 'bg-slate-200 text-slate-700'
              : completeCount === total ? 'bg-green-500 text-white'
              : 'bg-amber-400 text-white';
            return (
-             <div className={cn('w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0', pillClass)}>
-               {total}
+             <div
+               className={cn('w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0', pillClass)}
+               title={isPaketReleased ? 'Lernpaket ist freigegeben' : undefined}
+             >
+               {isPaketReleased ? <Check className="w-3.5 h-3.5" /> : total}
              </div>
            );
          })()}
