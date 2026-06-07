@@ -167,6 +167,7 @@ export default function LernpfadeSektor({
   driftStatus,
   onPreviewEinfuehrung,
   onPreviewQblock,
+  onPreviewDiagnoseQuiz,
   }) {
   const items = Array.isArray(sektor.items) ? sektor.items : [];
 
@@ -212,6 +213,8 @@ export default function LernpfadeSektor({
               ? onPreviewEinfuehrung
               : item.ref_id === 'sys_sec0_qblock' && onPreviewQblock
               ? onPreviewQblock
+              : item.ref_id === 'sys_diagnose_entry' && onPreviewDiagnoseQuiz
+              ? onPreviewDiagnoseQuiz
               : undefined
           }
           bundleConfig={item.bundle_config}

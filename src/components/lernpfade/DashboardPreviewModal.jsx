@@ -24,8 +24,36 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   Menu, Sparkles, Layers, Trophy, Star, BookOpen, Calendar, Clock,
   ChevronRight, ChevronLeft, RotateCw, Eye, Lock, CheckCircle2, Package,
-  FileText, ArrowRight,
+  FileText, ArrowRight, ClipboardCheck, Compass, RefreshCw, Check, X,
 } from 'lucide-react';
+
+// Standard-Elemente, die eine KI-Vorschau besitzen. Sie werden in der
+// Dashboard-Vorschau NICHT automatisch generiert (Credits/Zeit) – stattdessen
+// zeigt das Modal eine Erklärung + „Vorschau jetzt erstellen"-Button, der das
+// jeweilige dedizierte Vorschau-Fenster öffnet.
+const PREVIEW_BAUSTEINE = {
+  sys_sec0_overview: {
+    icon: BookOpen,
+    titel: 'Kurze Einführung in die Einheit',
+    was: 'Hier bekommt der Schüler einen kompakten, schülergerechten Überblick über die Einheit, bevor er startet.',
+    accent: 'text-violet-600',
+    bg: 'bg-violet-100',
+  },
+  sys_sec0_qblock: {
+    icon: Compass,
+    titel: 'Freiwilliger Fragenblock',
+    was: 'Hier schätzt der Schüler per Schieberegler ein, wie sicher er sich bei den Themen schon fühlt – als Orientierung für die Lerntyp-Wahl.',
+    accent: 'text-violet-600',
+    bg: 'bg-violet-100',
+  },
+  sys_diagnose_entry: {
+    icon: ClipboardCheck,
+    titel: 'Einstiegsdiagnose',
+    was: 'Hier überprüft der Schüler mit ein paar Multiple-Choice-Fragen sein Vorwissen, bevor er mit der Einheit startet.',
+    accent: 'text-rose-600',
+    bg: 'bg-rose-100',
+  },
+};
 
 const LERNTYP_META = {
   minimalist: { label: 'Minimalist', icon: Sparkles, accent: 'bg-slate-700', soft: 'bg-slate-100 text-slate-700', ring: 'ring-slate-300' },
@@ -76,7 +104,9 @@ const KIND_ICON = { lernpaket: Package, system: Star, aufgabe: FileText };
 
 export default function DashboardPreviewModal({
   open, onOpenChange, lerntyp, einheitTitel, fach,
-  sektoren = [], aufgabenById, systemBausteineById, einfuehrungSnapshot, qblockSnapshot,
+  sektoren = [], aufgabenById, systemBausteineById,
+  einfuehrungSnapshot, qblockSnapshot, diagnoseQuizSnapshot,
+  onPreviewEinfuehrung, onPreviewQblock, onPreviewDiagnoseQuiz,
 }) {
   const [menuOpen, setMenuOpen] = useState(true);
   // Simulierter Fortschritt: wie viele Elemente gelten als "erledigt".
@@ -111,6 +141,24 @@ export default function DashboardPreviewModal({
   const selectedIsCurrent = isSequential && selected === completed;
   const showEinfuehrung = selectedEntry?.refId === 'sys_sec0_overview' && !!einfuehrungSnapshot;
   const showQblock = selectedEntry?.refId === 'sys_sec0_qblock' && !!qblockSnapshot;
+  const showDiagnoseQuiz = selectedEntry?.refId === 'sys_diagnose_entry' && !!diagnoseQuizSnapshot;
+
+  // Lokaler Antwort-State für die interaktive Diagnose-Quiz-Anzeige.
+  const [quizAntworten, setQuizAntworten] = useState({});
+  useEffect(() => { setQuizAntworten({}); }, [selected, diagnoseQuizSnapshot]);
+
+  // Ein Standard-Element mit Vorschau-Funktion, das noch KEINEN Snapshot hat,
+  // bekommt den Erklär-/Generieren-Hinweis (statt automatischer Generierung).
+  const previewMeta = selectedEntry ? PREVIEW_BAUSTEINE[selectedEntry.refId] : null;
+  const previewHandler = selectedEntry?.refId === 'sys_sec0_overview'
+    ? onPreviewEinfuehrung
+    : selectedEntry?.refId === 'sys_sec0_qblock'
+    ? onPreviewQblock
+    : selectedEntry?.refId === 'sys_diagnose_entry'
+    ? onPreviewDiagnoseQuiz
+    : null;
+  const hasSnapshotForSelected = showEinfuehrung || showQblock || showDiagnoseQuiz;
+  const showPlaceholderHint = !!previewMeta && !hasSnapshotForSelected;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -299,6 +347,75 @@ export default function DashboardPreviewModal({
                         </div>
                         {qblockSnapshot.hinweis && (
                           <p className="mt-4 text-xs text-slate-400">{qblockSnapshot.hinweis}</p>
+                        )}
+                      </div>
+                    ) : showDiagnoseQuiz ? (
+                      <div className="flex-1 overflow-y-auto -mx-2 px-2">
+                        <h3 className="text-2xl font-bold text-slate-900">
+                          {diagnoseQuizSnapshot.titel || selectedEntry?.label}
+                        </h3>
+                        {diagnoseQuizSnapshot.intro && (
+                          <p className="mt-2 text-base text-slate-600">{diagnoseQuizSnapshot.intro}</p>
+                        )}
+                        <div className="mt-4 space-y-3">
+                          {(diagnoseQuizSnapshot.fragen || []).map((f, i) => {
+                            const gewaehlt = quizAntworten[i];
+                            return (
+                              <div key={i} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                <p className="text-sm font-medium text-slate-800">
+                                  <span className="text-rose-500 font-bold mr-1.5">{i + 1}.</span>
+                                  {f.frage}
+                                </p>
+                                <div className="mt-3 space-y-2">
+                                  {(f.optionen || []).map((opt, oi) => {
+                                    const isChosen = gewaehlt === oi;
+                                    const isCorrect = oi === f.richtige_antwort_index;
+                                    let cls = 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700';
+                                    if (gewaehlt !== undefined) {
+                                      if (isCorrect) cls = 'border-emerald-300 bg-emerald-50 text-emerald-800';
+                                      else if (isChosen) cls = 'border-red-300 bg-red-50 text-red-700';
+                                      else cls = 'border-slate-200 bg-white text-slate-500';
+                                    }
+                                    return (
+                                      <button
+                                        key={oi}
+                                        type="button"
+                                        onClick={() => setQuizAntworten((prev) => ({ ...prev, [i]: oi }))}
+                                        className={`w-full flex items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-sm transition-colors ${cls}`}
+                                      >
+                                        <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center text-[11px] font-bold shrink-0">
+                                          {String.fromCharCode(65 + oi)}
+                                        </span>
+                                        <span className="flex-1">{opt}</span>
+                                        {gewaehlt !== undefined && isCorrect && <Check className="w-4 h-4 text-emerald-600 shrink-0" />}
+                                        {gewaehlt !== undefined && isChosen && !isCorrect && <X className="w-4 h-4 text-red-500 shrink-0" />}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : showPlaceholderHint ? (
+                      <div className="flex-1 flex flex-col items-center justify-center text-center px-6 py-10 max-w-md mx-auto">
+                        <div className={`w-14 h-14 rounded-2xl ${previewMeta.bg} flex items-center justify-center mb-4`}>
+                          {React.createElement(previewMeta.icon, { className: `w-7 h-7 ${previewMeta.accent}` })}
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-800">{previewMeta.titel}</h3>
+                        <p className="mt-1.5 text-sm text-slate-600">{previewMeta.was}</p>
+                        <p className="mt-3 text-xs text-slate-400">
+                          Für dieses Element wurde noch keine Vorschau erstellt.
+                        </p>
+                        {previewHandler && (
+                          <button
+                            onClick={previewHandler}
+                            className="mt-4 inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-slate-800 text-white text-sm font-semibold shadow-sm hover:bg-slate-700"
+                          >
+                            <RefreshCw className="w-4 h-4" />
+                            Vorschau jetzt erstellen
+                          </button>
                         )}
                       </div>
                     ) : (

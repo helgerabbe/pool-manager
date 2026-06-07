@@ -35,6 +35,7 @@ import DidaktischerGuidePanel from '@/components/lernpfade/DidaktischerGuidePane
 import DashboardPreviewModal from '@/components/lernpfade/DashboardPreviewModal';
 import EinfuehrungPreviewModal from '@/components/lernpfade/EinfuehrungPreviewModal';
 import EinstiegsdiagnosePreviewModal from '@/components/lernpfade/EinstiegsdiagnosePreviewModal';
+import DiagnoseQuizPreviewModal from '@/components/lernpfade/DiagnoseQuizPreviewModal';
 import { useLernpfadStatus } from '@/hooks/useLernpfadStatus';
 import { useDashboardSync } from '@/hooks/useDashboardSync';
 import { useDashboardDragAndDrop } from '@/hooks/useDashboardDragAndDrop';
@@ -148,6 +149,9 @@ export default function LernpfadeCockpit({
   // Vorschau des freiwilligen Fragenblocks (Einstiegsdiagnose).
   const [qblockPreviewOpen, setQblockPreviewOpen] = useState(false);
   const [qblockSnapshot, setQblockSnapshot] = useState(null);
+  // Vorschau der echten Einstiegsdiagnose (Multiple-Choice-Wissensquiz).
+  const [diagnoseQuizPreviewOpen, setDiagnoseQuizPreviewOpen] = useState(false);
+  const [diagnoseQuizSnapshot, setDiagnoseQuizSnapshot] = useState(null);
   const [previewAufgabe, setPreviewAufgabe] = useState(null);
   const [editorAufgabe, setEditorAufgabe] = useState(null);
   const [arbeitsphaseModalOpen, setArbeitsphaseModalOpen] = useState(false);
@@ -1136,6 +1140,7 @@ export default function LernpfadeCockpit({
                 driftReportLoading={driftReportLoading}
                 onPreviewEinfuehrung={() => setEinfuehrungPreviewOpen(true)}
                 onPreviewQblock={() => setQblockPreviewOpen(true)}
+                onPreviewDiagnoseQuiz={() => setDiagnoseQuizPreviewOpen(true)}
               />
             </div>
           </main>
@@ -1153,6 +1158,10 @@ export default function LernpfadeCockpit({
         systemBausteineById={systemBausteineById}
         einfuehrungSnapshot={einfuehrungSnapshot}
         qblockSnapshot={qblockSnapshot}
+        diagnoseQuizSnapshot={diagnoseQuizSnapshot}
+        onPreviewEinfuehrung={() => setEinfuehrungPreviewOpen(true)}
+        onPreviewQblock={() => setQblockPreviewOpen(true)}
+        onPreviewDiagnoseQuiz={() => setDiagnoseQuizPreviewOpen(true)}
       />
 
       <EinfuehrungPreviewModal
@@ -1171,6 +1180,16 @@ export default function LernpfadeCockpit({
         einheitTitel={einheit?.titel_der_einheit}
         fach={einheit?.fach}
         onUebernehmen={setQblockSnapshot}
+      />
+
+      <DiagnoseQuizPreviewModal
+        open={diagnoseQuizPreviewOpen}
+        onOpenChange={setDiagnoseQuizPreviewOpen}
+        einheitId={einheit?.id}
+        einheitTitel={einheit?.titel_der_einheit}
+        fach={einheit?.fach}
+        initialSnapshot={diagnoseQuizSnapshot}
+        onUebernehmen={setDiagnoseQuizSnapshot}
       />
 
       <AufgabePreviewDialog
