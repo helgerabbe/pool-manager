@@ -42,8 +42,8 @@ export function StatusBadge({ status }) {
     red: 'bg-red-100 text-red-600',
     // 'new' = noch nie Aktivitäten zugeordnet → neutral grau, nicht rot.
     new: 'bg-slate-100 text-slate-600',
-    // 'released' = Lernpaket freigegeben → kräftiges Grün mit Rahmen.
-    released: 'bg-green-100 text-green-700 border border-green-300',
+    // 'released' = Lernpaket freigegeben → kräftiges Dunkelgrün, weiße Schrift.
+    released: 'bg-green-700 text-white',
   };
   const label = {
     green: 'Vollständig',
