@@ -279,6 +279,17 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
           )}
         </div>
 
+        {/* Hinweis: Rubriken sind keine starre Vorgabe, sondern steuern Brians Begleitung. */}
+        <div className="flex items-start gap-2.5 rounded-lg border border-blue-200 bg-blue-50/70 px-3.5 py-3 text-xs text-blue-900 leading-relaxed">
+          <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-500" />
+          <p>
+            <strong>Wichtig:</strong> Diese Rubriken sind <strong>keine starre Bewertungsvorgabe</strong>, an die du dich später halten musst.
+            Sie halten fest, worauf du als Lehrkraft besonders achten wirst – und genau das ist eine wertvolle Information für Brian:
+            Der KI-Tutor nutzt diese Kriterien, um die Schülerinnen und Schüler gezielt in diese Richtung zu lenken und sie
+            zum Reflektieren anzuregen, ob sie die jeweiligen Aspekte schon gut umgesetzt haben.
+          </p>
+        </div>
+
         {rubrics.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground text-sm border border-dashed border-border rounded-xl">
             Noch keine Rubriken. KI generieren oder manuell hinzufügen.
