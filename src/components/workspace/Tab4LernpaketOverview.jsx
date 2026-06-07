@@ -134,7 +134,7 @@ export default function Tab4LernpaketOverview({
               className="gap-2 bg-green-50 border-green-400 text-green-800 hover:bg-green-100"
             >
               {isReleasePending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Lock className="w-3.5 h-3.5" />}
-              Freigegeben
+              Freigabe zurücknehmen
             </Button>
           ) : (
             <TooltipProvider delayDuration={300}>
