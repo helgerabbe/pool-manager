@@ -858,7 +858,7 @@ export default function ActivityMasterPanel({
                     releasedBy={activityRecord?.released_by}
                   />
                 )}
-                {/* Offene Aufgabe Modal */}
+                {/* Offene Aufgabe Modal — Freigabe-Toggle wird im Footer gespiegelt */}
                 <OffeneAufgabeModal
                   open={editModalOpen}
                   onOpenChange={(isOpen) => { if (!isOpen) handleModalCancel(); }}
@@ -868,6 +868,18 @@ export default function ActivityMasterPanel({
                   onCancel={handleModalCancel}
                   onReset={handleModalReset}
                   exportLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
+                  footerExtra={kannBearbeiten ? (
+                    <ReleaseToggleSection
+                      isReleased={activityIsReleased}
+                      canRelease={effectivelyComplete}
+                      hierarchyLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || (lernpaket?.content_status === 'approved' && !!lernpaket?.released_at)}
+                      hierarchyLockMessage={'Freigabe gesperrt (Export läuft oder Lernpaket ist freigegeben).'}
+                      onToggle={handleOffeneRelease}
+                      disabled={offeneReleasePending}
+                      releasedAt={activityRecord?.released_at}
+                      releasedBy={activityRecord?.released_by}
+                    />
+                  ) : null}
                 />
                 {/* Schüler-Vorschau (Sandbox-Snapshot) */}
                 <OffeneAufgabePreviewModal
