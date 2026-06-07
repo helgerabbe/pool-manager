@@ -59,6 +59,7 @@ import { useAirGapHandoverState } from '@/hooks/useAirGapHandoverState';
 import { groupTaskItems, groupMicroItems, groupSystembausteinItems } from '@/lib/airGapBundleGroups';
 import { buildLernpaketSubLabel, buildAllgemeineAufgabeSubLabel } from '@/lib/airGapTaskItemSubLabel';
 
+import { META_SYSTEM_PROMPT } from '@/lib/operatorMetaSystemPrompt';
 import InfoTab from './tabs/InfoTab';
 import MetaPromptTab from './tabs/MetaPromptTab';
 import UiConfigTab from './tabs/UiConfigTab';
@@ -252,6 +253,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
   }, [blockAggregate, einheitId]);
 
   // ── Payload-Builder ──────────────────────────────────────────────────
+  const buildMeta = () => ({ prompt: META_SYSTEM_PROMPT });
   const buildUi = () =>
     buildUiConfigPayload({ globalPrompts, uiConfigHash: currentUiHash });
   const buildSysCtx = () =>
@@ -551,6 +553,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
   // Plan-Items pro Tab → für Reiter-Indikatoren.
   const tabCounts = useMemo(() => {
     const counts = {
+      'mbk_meta_system_prompt': { newCount: 0, staleCount: 0 },
       'mbk_ui_config': { newCount: 0, staleCount: 0 },
       'mbk_structure_payload': { newCount: 0, staleCount: 0 },
       'mbk_task_content_payload': { newCount: 0, staleCount: 0 },
@@ -617,14 +620,28 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
         onValueChange={setActiveTab}
         className="space-y-2"
       >
-        {/* Einrichtung — keine Payload-Aktionen */}
+        {/* Einrichtung — nur Info ohne Payload-Aktionen */}
         <ExportTodoRow value="info" stepNumber="i" title="Info & Status"
           description="Überblick über Einheit, Lebenszyklus und Delta-Analyse.">
           <InfoTab einheit={einheit} />
         </ExportTodoRow>
 
+        {/* Meta-System-Prompt — mit Steuerzentrale */}
         <ExportTodoRow value="meta" stepNumber="M" title="Meta-System-Prompt"
-          description="Einmalige Grundanweisung an die KI für diese Übergabe.">
+          description="Einmalige Grundanweisung an die KI für diese Übergabe."
+          done={blockStatus.meta.delivered}
+          badge={driftBadge(tabCounts.mbk_meta_system_prompt)}
+          showActions
+          onToggleDelivered={(v) => setDelivered('meta', v)}
+          onCopy={() => handleCopy(buildMeta())}
+          onDownload={() => handleDownload(buildMeta(), `mbk-meta-system-prompt_${baseSlug}.json`)}
+          onPreview={() => setPreview({
+            title: 'Meta-System-Prompt',
+            payload: buildMeta(),
+            onCopy: () => handleCopy(buildMeta()),
+            onDownload: () => handleDownload(buildMeta(), `mbk-meta-system-prompt_${baseSlug}.json`),
+          })}
+        >
           <MetaPromptTab />
         </ExportTodoRow>
 
