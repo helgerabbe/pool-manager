@@ -111,7 +111,7 @@ export default function AdminSettings() {
             <TabsTrigger
               key={tab.value}
               value={tab.value}
-              className="text-xs font-medium px-2 py-2 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-colors"
+              className="text-xs font-medium px-1.5 py-2 rounded-md leading-tight text-center whitespace-normal data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-colors"
             >
               {tab.label}
             </TabsTrigger>

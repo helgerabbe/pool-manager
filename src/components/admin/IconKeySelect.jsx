@@ -17,14 +17,10 @@ import {
 import { getSystemBausteinIcon, SYSTEM_BAUSTEIN_ICON_KEYS } from '@/lib/systemBausteinIcons';
 
 export default function IconKeySelect({ value, onChange, className = '' }) {
-  const SelectedIcon = getSystemBausteinIcon(value);
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className={`h-8 text-xs ${className}`}>
-        <span className="flex items-center gap-2 min-w-0">
-          <SelectedIcon className="w-4 h-4 shrink-0 text-slate-700" />
-          <SelectValue placeholder="Symbol wählen…" />
-        </span>
+        <SelectValue placeholder="Symbol wählen…" />
       </SelectTrigger>
       <SelectContent>
         {SYSTEM_BAUSTEIN_ICON_KEYS.map((key) => {
