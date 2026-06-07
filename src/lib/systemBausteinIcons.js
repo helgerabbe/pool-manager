@@ -60,3 +60,8 @@ const ICONS = {
 export function getSystemBausteinIcon(iconKey) {
   return ICONS[iconKey] || HelpCircle;
 }
+
+/**
+ * Alle verfügbaren Icon-Keys (für Auswahlmenüs in der Admin-UI).
+ */
+export const SYSTEM_BAUSTEIN_ICON_KEYS = Object.keys(ICONS);

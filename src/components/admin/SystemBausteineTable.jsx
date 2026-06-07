@@ -25,9 +25,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Plus, Trash2, Pencil, Loader2, Sparkles } from 'lucide-react';
+import { Plus, Trash2, Pencil, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getSystemBausteinIcon } from '@/lib/systemBausteinIcons';
+import IconKeySelect from '@/components/admin/IconKeySelect';
 
 const QUERY_KEY = ['systemBausteine'];
 
@@ -81,20 +82,6 @@ export default function SystemBausteineTable() {
     onError: (err) => toast.error('Fehler: ' + (err?.message || 'Unbekannt')),
   });
 
-  const seedMutation = useMutation({
-    mutationFn: () => base44.functions.invoke('seedSystemBausteine', {}),
-    onSuccess: (res) => {
-      invalidate();
-      const created = res?.data?.created?.length || 0;
-      toast.success(
-        created > 0
-          ? `${created} Pflicht-Baustein${created === 1 ? '' : 'e'} angelegt.`
-          : 'Alle Pflicht-Bausteine sind bereits vorhanden.'
-      );
-    },
-    onError: (err) => toast.error('Seeding fehlgeschlagen: ' + (err?.message || 'Unbekannt')),
-  });
-
   const handleCreate = () => {
     const id = newId.trim();
     const titel = newTitel.trim();
@@ -121,24 +108,6 @@ export default function SystemBausteineTable() {
 
   return (
     <div className="space-y-4">
-      {/* Seeding-Button */}
-      <div className="flex items-start justify-between gap-3 rounded-lg border border-dashed border-border bg-muted/30 p-3">
-        <div className="text-xs text-muted-foreground">
-          <p className="font-medium text-foreground mb-0.5">Pflicht-Bausteine seeden</p>
-          <p>Legt die vier Standard-Bausteine (Diagnose, Landkarte, Lehrer-Check, Zwischentest) an, falls sie fehlen.</p>
-        </div>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => seedMutation.mutate()}
-          disabled={seedMutation.isPending}
-          className="gap-1.5 shrink-0"
-        >
-          {seedMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-          Seeden
-        </Button>
-      </div>
-
       {/* Anlegen */}
       <div className="grid grid-cols-1 md:grid-cols-[180px_1fr_140px_auto] gap-2 items-end">
         <div className="space-y-1">
@@ -160,13 +129,8 @@ export default function SystemBausteineTable() {
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">Icon-Key</Label>
-          <Input
-            placeholder="sparkles"
-            value={newIcon}
-            onChange={(e) => setNewIcon(e.target.value)}
-            className="h-8 text-xs font-mono"
-          />
+          <Label className="text-xs">Symbol</Label>
+          <IconKeySelect value={newIcon} onChange={setNewIcon} />
         </div>
         <Button
           size="sm"
@@ -186,7 +150,7 @@ export default function SystemBausteineTable() {
           </div>
         ) : items.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6">
-            Noch keine System-Bausteine. Klick oben auf „Seeden", um die Pflicht-Bausteine anzulegen.
+            Noch keine System-Bausteine. Lege oben einen neuen Baustein an.
           </p>
         ) : (
           items.map((item) => (
@@ -276,16 +240,10 @@ function EditDialog({ baustein, onClose, onSave, isPending }) {
             <Input value={titel} onChange={(e) => setTitel(e.target.value)} className="h-8 text-xs mt-1" />
           </div>
           <div>
-            <Label className="text-xs">Icon-Key (Lucide)</Label>
-            <Input
-              value={icon}
-              onChange={(e) => setIcon(e.target.value)}
-              className="h-8 text-xs font-mono mt-1"
-              placeholder="z. B. message-circle, map, stop-circle"
-            />
-            <p className="text-[10px] text-muted-foreground mt-1">
-              Bekannt: message-circle, map, stop-circle, clipboard-check, sparkles, flag, help-circle, compass
-            </p>
+            <Label className="text-xs">Symbol</Label>
+            <div className="mt-1">
+              <IconKeySelect value={icon} onChange={setIcon} />
+            </div>
           </div>
           <div>
             <Label className="text-xs">Admin-Beschreibung (Tooltip)</Label>
