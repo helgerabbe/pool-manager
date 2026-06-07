@@ -31,20 +31,22 @@ export default function useSetReleaseStatus(options = {}) {
       });
       return res?.data ?? res;
     },
-    onSuccess: (response) => {
+    onSuccess: async (response) => {
       setMissingFields([]);
-      // Sinnvolle Default-Invalidierungen
-      queryClient.invalidateQueries({ queryKey: ['workspace'] });
-      queryClient.invalidateQueries({ queryKey: ['workspace-data'] });
-      queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-      queryClient.invalidateQueries({ queryKey: ['einheit'] });
-      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-      queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
-      // Benutzerdefinierte Keys
+      // AKTIV auf frische Server-Daten warten (nicht nur invalidieren), damit
+      // der aufrufende Button erst dann umschaltet, wenn die DB-Freigabe
+      // garantiert übernommen wurde. Der `isPending`-Status bleibt während
+      // dieses Refetchs aktiv, sodass die UI gesperrt bleiben kann.
       const keys = options.invalidateKeys || [];
-      for (const k of keys) {
-        queryClient.invalidateQueries({ queryKey: Array.isArray(k) ? k : [k] });
-      }
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['workspace'] }),
+        queryClient.refetchQueries({ queryKey: ['workspace-data'] }),
+        queryClient.refetchQueries({ queryKey: ['lernpakete'] }),
+        queryClient.refetchQueries({ queryKey: ['einheit'] }),
+        queryClient.refetchQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] }),
+        queryClient.refetchQueries({ queryKey: ['masterAufgaben'] }),
+        ...keys.map((k) => queryClient.refetchQueries({ queryKey: Array.isArray(k) ? k : [k] })),
+      ]);
       if (options.onSuccess) options.onSuccess(response);
     },
     onError: (err) => {

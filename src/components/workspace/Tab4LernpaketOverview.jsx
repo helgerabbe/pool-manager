@@ -85,6 +85,19 @@ export default function Tab4LernpaketOverview({
 
   return (
     <div className="space-y-6">
+      {/* Bildschirm-Sperre während der Freigabe-Aktion: blockiert die ganze
+          Oberfläche mit einem Wartesymbol, bis die Freigabe sicher in der DB
+          übernommen UND frisch nachgeladen ist (siehe useSetReleaseStatus).
+          Verhindert wiederholtes Klicken, weil der Status sofort sichtbar
+          umschaltet, sobald das Overlay verschwindet. */}
+      {isReleasePending && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/70 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3 px-6 py-5 rounded-xl bg-card border border-border shadow-lg">
+            <Loader2 className="w-7 h-7 animate-spin text-primary" />
+            <p className="text-sm font-medium text-foreground">Freigabe wird übernommen…</p>
+          </div>
+        </div>
+      )}
       {/* Header – einheitliches Tab-3-Muster: Titel → feine Trennlinie →
           Buttons rechtsbündig knapp unter der Linie → Inhalt. */}
       <div className="space-y-3">
