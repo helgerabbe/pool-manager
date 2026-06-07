@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { useCanToggleLernpaketRelease } from '@/hooks/useReleaseLock';
 import useSetReleaseStatus from '@/hooks/useSetReleaseStatus';
 import { kategorieColors, StatusBadge } from '@/components/workspace/panels/SharedUI';
+import LernpaketLebenszyklusBadge from '@/components/workspace/panels/LernpaketLebenszyklusBadge';
 import { getLernpaketStatus } from '@/lib/statusLogic';
 
 const PHASE_META = {
@@ -106,6 +107,7 @@ export default function Tab4LernpaketOverview({
         <StatusBadge
           status={isReleased ? 'released' : getLernpaketStatus(paket, paketZiele, [], '', [], paketAktivitaeten)}
         />
+        <LernpaketLebenszyklusBadge syncStatus={paket.sync_status} />
       </div>
 
         <div className="flex items-center justify-end gap-2 flex-wrap">

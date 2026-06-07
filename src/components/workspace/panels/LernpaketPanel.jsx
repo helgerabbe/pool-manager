@@ -6,6 +6,7 @@ import { getLernpaketStatus } from '@/lib/statusLogic';
 import { cn } from '@/lib/utils';
 import { useLernpaketLock } from '@/hooks/useLocks';
 import { StatusBadge, kategorieColors } from './SharedUI';
+import LernpaketLebenszyklusBadge from './LernpaketLebenszyklusBadge';
 import PhaseContent from './PhaseContent';
 import LernpaketWizardModal from '@/components/workspace/lernpaketWizard/LernpaketWizardModal';
 
@@ -319,6 +320,7 @@ export default function LernpaketPanel({
         <div className="flex items-center gap-2 flex-wrap">
           <h2 className="text-lg font-bold">{paket.titel_des_pakets}</h2>
           <StatusBadge status={isReleased ? 'released' : pStatus} />
+          <LernpaketLebenszyklusBadge syncStatus={paket.sync_status} />
           {isLockedByOther && (
             <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 border border-amber-200 text-amber-800 text-xs font-medium">
               <Lock className="w-3 h-3" />

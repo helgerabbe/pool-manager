@@ -27,6 +27,7 @@ import {
 } from '@/services/LernzielService';
 import LernpaketZielKarte from '@/components/workspace/lernziele/LernpaketZielKarte';
 import LernpaketZielSidebar from '@/components/workspace/lernziele/LernpaketZielSidebar';
+import LernpaketLebenszyklusBadge from '@/components/workspace/panels/LernpaketLebenszyklusBadge';
 
 const HELP = {
   title: 'Lernziele der Einheit',
@@ -225,6 +226,7 @@ export default function LernzieleUebersichtTab({
                       )
                 }
               />
+              <LernpaketLebenszyklusBadge syncStatus={selectedPaket.sync_status} />
             </div>
             <LernpaketZielKarte
               key={selectedPaket.id}
