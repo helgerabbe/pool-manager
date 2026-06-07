@@ -21,7 +21,7 @@ import LernzielAnalysePanel from '@/components/allgemeineAufgaben/LernzielAnalys
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
 import InlineBasisLernzielSelector from '@/components/allgemeineAufgaben/InlineBasisLernzielSelector';
 import PublishAllgemeineAufgabeButton from '@/components/allgemeineAufgaben/PublishAllgemeineAufgabeButton';
-import { AufgabeExportStatusInline } from '@/components/allgemeineAufgaben/AufgabeExportStatusRow';
+import SyncStatusBadge from '@/components/release/SyncStatusBadge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ErwartungshorizontTab from '@/components/allgemeineAufgaben/ErwartungshorizontTab';
 import { useTaskLock } from '@/hooks/useLocks';
@@ -256,7 +256,7 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
               : <><PenLine className="w-3 h-3" /> In Bearbeitung</>
             }
           </span>
-          <AufgabeExportStatusInline aufgabe={aufgabe} />
+          <SyncStatusBadge status={aufgabe.sync_status || 'new'} />
         </div>
 
         <div className="flex items-center gap-2 flex-wrap ml-auto">
