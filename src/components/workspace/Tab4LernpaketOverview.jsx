@@ -104,7 +104,7 @@ export default function Tab4LernpaketOverview({
       <div className="pb-3 border-b flex items-center gap-2 flex-wrap">
         <h2 className="text-lg font-bold">{paket.titel_des_pakets}</h2>
         <StatusBadge
-          status={getLernpaketStatus(paket, paketZiele, [], '', [], paketAktivitaeten)}
+          status={isReleased ? 'released' : getLernpaketStatus(paket, paketZiele, [], '', [], paketAktivitaeten)}
         />
       </div>
 

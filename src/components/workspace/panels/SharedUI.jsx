@@ -42,12 +42,15 @@ export function StatusBadge({ status }) {
     red: 'bg-red-100 text-red-600',
     // 'new' = noch nie Aktivitäten zugeordnet → neutral grau, nicht rot.
     new: 'bg-slate-100 text-slate-600',
+    // 'released' = Lernpaket freigegeben → kräftiges Grün mit Rahmen.
+    released: 'bg-green-100 text-green-700 border border-green-300',
   };
   const label = {
     green: 'Vollständig',
     yellow: 'In Bearbeitung',
     red: 'Unvollständig',
     new: 'Neu',
+    released: 'Freigegeben',
   };
   // Erklärende Tooltips je Status. „Neu" = noch nie nach Moodle exportiert.
   // Die übrigen Texte sind als Platzhalter für spätere Status-Badges schon
@@ -57,6 +60,7 @@ export function StatusBadge({ status }) {
     yellow: 'Dieses Lernpaket befindet sich noch in Bearbeitung.',
     red: 'Diesem Lernpaket fehlen noch Inhalte – es ist unvollständig.',
     new: 'Dieses Lernpaket wurde noch nie nach Moodle exportiert.',
+    released: 'Dieses Lernpaket ist freigegeben und alle Inhalte sind gesperrt.',
   };
   return (
     <TooltipProvider delayDuration={200}>
