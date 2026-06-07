@@ -358,6 +358,16 @@ Deno.serve(async (req) => {
           sync_status: einheit.sync_status,
           last_synced_at: einheit.last_synced_at,
           last_exported_at: einheit.last_exported_at,
+          // ✅ KRITISCH (2026-06-07): Export-Lifecycle-Status mitliefern.
+          // Tab 1 & Tab 2 (und das Cockpit) leiten den Moodle-Status der
+          // Struktur aus export_lifecycle_status ab. Ohne dieses Feld bleibt
+          // beim Merge in useWorkspaceData der alte Wert aus der Listen-Query
+          // hängen → "Im Export" wird nach "Freigabe aufheben" nicht aktualisiert.
+          export_lifecycle_status: einheit.export_lifecycle_status || 'draft',
+          export_lifecycle_changed_at: einheit.export_lifecycle_changed_at || null,
+          export_lifecycle_changed_by: einheit.export_lifecycle_changed_by || null,
+          export_started_at: einheit.export_started_at || null,
+          export_published_at: einheit.export_published_at || null,
           structural_lock: einheit.structural_lock,
           structural_locked_at: einheit.structural_locked_at,
           version: einheit.version,

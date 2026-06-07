@@ -108,6 +108,10 @@ export default function EinheitFinalReleaseControl({ einheitId, darfFreigeben = 
       queryClient.invalidateQueries({ queryKey: ['einheit', einheitId] });
       queryClient.invalidateQueries({ queryKey: ['lernpfadMemberships', einheitId] });
       queryClient.invalidateQueries({ queryKey: ['themenfelder'] });
+      // Tab 1 & Tab 2 mergen die Einheit aus workspace-data UND der Listen-Query.
+      // Die Listen-Query hält export_lifecycle_status 5 Min im Cache → ohne
+      // Refetch bliebe der alte "Im Export"-Wert hängen.
+      queryClient.invalidateQueries({ queryKey: ['einheiten-list-secure'] });
       setConfirmOpen(false);
       setActiveLocks([]);
       toast({
