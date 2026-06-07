@@ -5,7 +5,7 @@ import { ROLLEN } from '@/lib/rbac';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ShieldCheck, BookOpen, GraduationCap, Puzzle, CalendarRange, Settings2, RotateCcw, AlertTriangle, Sparkles, Languages } from 'lucide-react';
+import { ShieldCheck, BookOpen, GraduationCap, Puzzle, CalendarRange, Settings2, RotateCcw, AlertTriangle, Sparkles, Languages, Building2, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -93,50 +93,15 @@ export default function AdminSettings() {
         </p>
       </div>
 
-      {/* Wartungsmodus — prominent ganz oben */}
-      <WartungsmodusToggle
-        aktiv={wartungsmodus}
-        onChange={setWartungsmodus}
-        isPending={isWartungsmodusLoading}
-      />
-
-      {/* Schul-Stammdaten (Land/Bundesland/Schulform für MBK-Nukleus-Prompt) */}
-      <SchulStammdatenCard />
-
-      {/* Factory Reset */}
-      <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
-              <AlertTriangle className="w-5 h-5 text-destructive" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-foreground">System auf Werkszustand zurücksetzen</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Löscht alle Einheiten, Themenfelder, Lernpakete und Aufgaben. Benutzerkonten und Systemeinstellungen bleiben erhalten.
-                Eine Beispiel-Einheit wird neu erstellt.
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="destructive"
-            onClick={() => setShowResetDialog(true)}
-            disabled={resetMutation.isPending}
-            className="gap-2 shrink-0"
-          >
-            {resetMutation.isPending ? (
-              <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <RotateCcw className="w-4 h-4" />
-            )}
-            {resetMutation.isPending ? 'Wird zurückgesetzt...' : 'Jetzt zurücksetzen'}
-          </Button>
-        </div>
-      </div>
-
-      {/* Lookup-Tabellen */}
-      <Tabs defaultValue="faecher">
-        <TabsList className="bg-muted grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+      {/* Alle Bereiche als Tabs — direkt unter dem Header */}
+      <Tabs defaultValue="allgemein">
+        <TabsList className="bg-muted grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8">
+          <TabsTrigger value="allgemein" className="gap-1.5 text-xs">
+            <Building2 className="w-3.5 h-3.5" />Allgemein
+          </TabsTrigger>
+          <TabsTrigger value="system" className="gap-1.5 text-xs">
+            <Wrench className="w-3.5 h-3.5" />System
+          </TabsTrigger>
           <TabsTrigger value="faecher" className="gap-1.5 text-xs">
             <BookOpen className="w-3.5 h-3.5" />Fächer
           </TabsTrigger>
@@ -156,6 +121,57 @@ export default function AdminSettings() {
             <Languages className="w-3.5 h-3.5" />Nomenklatur
           </TabsTrigger>
         </TabsList>
+
+        {/* Allgemein — Schul-Stammdaten */}
+        <TabsContent value="allgemein" className="mt-4">
+          <SchulStammdatenCard />
+        </TabsContent>
+
+        {/* System — Wartungsmodus & Werkszustand */}
+        <TabsContent value="system" className="mt-4 space-y-6">
+          <WartungsmodusToggle
+            aktiv={wartungsmodus}
+            onChange={setWartungsmodus}
+            isPending={isWartungsmodusLoading}
+          />
+
+          {/* Factory Reset — dezent, mit ausklappbarem Bereich gegen versehentliche Klicks */}
+          <Card className="border shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-base flex items-center gap-2">
+                <RotateCcw className="w-4 h-4 text-muted-foreground" />
+                System auf Werkszustand zurücksetzen
+              </CardTitle>
+              <CardDescription>
+                Löscht alle Einheiten, Themenfelder, Lernpakete und Aufgaben. Benutzerkonten und Systemeinstellungen
+                bleiben erhalten. Eine Beispiel-Einheit wird neu erstellt.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 flex items-start gap-3">
+                <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                <div className="flex-1 text-sm text-muted-foreground">
+                  Dieser Vorgang kann <span className="font-semibold text-destructive">nicht rückgängig</span> gemacht werden.
+                  Bitte nur nutzen, wenn Sie sicher sind.
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowResetDialog(true)}
+                  disabled={resetMutation.isPending}
+                  className="gap-2 shrink-0 border-destructive/40 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                >
+                  {resetMutation.isPending ? (
+                    <div className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                  ) : (
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  )}
+                  {resetMutation.isPending ? 'Wird zurückgesetzt...' : 'Zurücksetzen…'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Fächer */}
         <TabsContent value="faecher" className="mt-4">
