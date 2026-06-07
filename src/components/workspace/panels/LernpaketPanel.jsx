@@ -89,6 +89,8 @@ export default function LernpaketPanel({
       : '';
   const { setReleaseStatus, isPending: isReleasePending } = useSetReleaseStatus();
   const isReleased = paket.content_status === 'approved' && !!paket.released_at;
+  // Freigegebenes Lernpaket → Inhalte gesperrt, Bearbeiten/KI-Füllen deaktiviert.
+  const releasedLockTitle = '🔒 Lernpaket ist freigegeben – Inhalte können nicht mehr bearbeitet werden.';
 
   const handleLernpaketRelease = (next) => {
     setReleaseStatus({ targetType: 'lernpaket', targetId: paket.id, release: next });
@@ -316,7 +318,7 @@ export default function LernpaketPanel({
       <div className="pb-3 border-b">
         <div className="flex items-center gap-2 flex-wrap">
           <h2 className="text-lg font-bold">{paket.titel_des_pakets}</h2>
-          <StatusBadge status={pStatus} />
+          <StatusBadge status={isReleased ? 'released' : pStatus} />
           {isLockedByOther && (
             <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 border border-amber-200 text-amber-800 text-xs font-medium">
               <Lock className="w-3 h-3" />
@@ -353,8 +355,8 @@ export default function LernpaketPanel({
             variant="outline"
             size="sm"
             onClick={handleOpenEditDialog}
-            disabled={isAcquiringLock || canEdit || isLockedByOther}
-            title={isLockedByOther ? `🔒 Wird gerade von ${paket.locked_by_email} bearbeitet` : ''}
+            disabled={isAcquiringLock || canEdit || isLockedByOther || isReleased}
+            title={isReleased ? releasedLockTitle : isLockedByOther ? `🔒 Wird gerade von ${paket.locked_by_email} bearbeitet` : ''}
             className="gap-2 bg-green-50 border-green-200 text-green-800 hover:bg-green-100 hover:text-green-900"
           >
             {isAcquiringLock ? (
@@ -373,8 +375,8 @@ export default function LernpaketPanel({
             variant="outline"
             size="sm"
             onClick={handleOpenWizard}
-            disabled={isAcquiringLock || canEdit || isLockedByOther}
-            title={isLockedByOther ? `🔒 Wird gerade von ${paket.locked_by_email} bearbeitet` : 'Lernpaket mit KI-Assistent füllen'}
+            disabled={isAcquiringLock || canEdit || isLockedByOther || isReleased}
+            title={isReleased ? releasedLockTitle : isLockedByOther ? `🔒 Wird gerade von ${paket.locked_by_email} bearbeitet` : 'Lernpaket mit KI-Assistent füllen'}
             className="gap-2 bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100 hover:text-blue-900"
           >
             <Wand2 className="w-3.5 h-3.5 text-blue-600" />

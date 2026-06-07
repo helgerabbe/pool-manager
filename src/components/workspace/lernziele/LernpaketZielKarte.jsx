@@ -44,6 +44,9 @@ export default function LernpaketZielKarte({
     releaseLock,
   } = useLernpaketLock(paket.id);
 
+  // Freigegebenes Lernpaket → alle Inhalte gesperrt, kein Bearbeiten.
+  const lernpaketReleased = paket.content_status === 'approved' && !!paket.released_at;
+
   // Effektive Bearbeitbarkeit: nur wenn Rolle erlaubt UND Lock gehalten wird.
   const editierbar = kannBearbeiten && canEdit;
 
@@ -178,8 +181,8 @@ export default function LernpaketZielKarte({
               size="sm"
               variant="outline"
               onClick={handleEnterEdit}
-              disabled={isAcquiringLock || isLockedByOther}
-              title={isLockedByOther ? `🔒 Wird gerade von ${lockedByEmail} bearbeitet` : ''}
+              disabled={isAcquiringLock || isLockedByOther || lernpaketReleased}
+              title={lernpaketReleased ? '🔒 Lernpaket ist freigegeben – Inhalte können nicht mehr bearbeitet werden.' : isLockedByOther ? `🔒 Wird gerade von ${lockedByEmail} bearbeitet` : ''}
               className="gap-1.5 h-7 text-xs bg-green-50 border-green-200 text-green-800 hover:bg-green-100 hover:text-green-900"
             >
               {isAcquiringLock ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PenLine className="w-3.5 h-3.5" />}

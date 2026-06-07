@@ -212,14 +212,18 @@ export default function LernzieleUebersichtTab({
                 {selectedPaket.titel_des_pakets}
               </h2>
               <StatusBadge
-                status={getLernpaketStatus(
-                  selectedPaket,
-                  zieleProPaket.get(selectedPaket.id) || [],
-                  [],
-                  '',
-                  [],
-                  phaseAktivitaeten
-                )}
+                status={
+                  selectedPaket.content_status === 'approved' && !!selectedPaket.released_at
+                    ? 'released'
+                    : getLernpaketStatus(
+                        selectedPaket,
+                        zieleProPaket.get(selectedPaket.id) || [],
+                        [],
+                        '',
+                        [],
+                        phaseAktivitaeten
+                      )
+                }
               />
             </div>
             <LernpaketZielKarte
