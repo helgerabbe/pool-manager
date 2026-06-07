@@ -19,17 +19,15 @@
 
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, Circle, Loader2, Lock, ShieldOff, Truck } from 'lucide-react';
+import { CheckCircle2, Circle, Loader2, Lock, ShieldOff } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useEinheitFreigabeStatus } from '@/hooks/useEinheitFreigabeStatus';
-import {
-  EXPORT_LIFECYCLE_STATUS,
-  EXPORT_LIFECYCLE_LABELS,
-} from '@/lib/exportLifecycle';
+import { EXPORT_LIFECYCLE_STATUS } from '@/lib/exportLifecycle';
 import EinheitFreigabeConfirmDialog from '@/components/lernpfade/EinheitFreigabeConfirmDialog';
 import InfoHint from '@/components/lernpfade/InfoHint';
+import EinheitLifecycleInfoBox from '@/components/export/EinheitLifecycleInfoBox';
 
 const LERNTYP_LABELS = {
   minimalist: 'Minimalist',
@@ -49,33 +47,6 @@ function DashboardPill({ label, locked }) {
       title={locked ? `${label}: geprüft` : `${label}: noch in Bearbeitung`}
     >
       <Icon className="w-3 h-3" />
-      {label}
-    </span>
-  );
-}
-
-function StatusBadge({ status }) {
-  const label = EXPORT_LIFECYCLE_LABELS[status] || EXPORT_LIFECYCLE_LABELS.draft;
-  const cls =
-    status === EXPORT_LIFECYCLE_STATUS.PUBLISHED
-      ? 'bg-blue-600 text-white border-transparent'
-      : status === EXPORT_LIFECYCLE_STATUS.EXPORT_RUNNING
-        ? 'bg-orange-500 text-white border-transparent'
-        : status === EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN
-          ? 'bg-emerald-600 text-white border-transparent'
-          : 'bg-slate-100 text-slate-700 border-slate-200';
-  const Icon =
-    status === EXPORT_LIFECYCLE_STATUS.EXPORT_RUNNING
-      ? Truck
-      : status === EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN ||
-          status === EXPORT_LIFECYCLE_STATUS.PUBLISHED
-        ? Lock
-        : ShieldOff;
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border text-xs font-semibold ${cls}`}
-    >
-      <Icon className="w-3.5 h-3.5" />
       {label}
     </span>
   );
@@ -176,35 +147,34 @@ export default function EinheitFinalReleaseControl({ einheitId, darfFreigeben = 
   return (
     <>
       <div
-        className={`rounded-xl border p-4 ${
+        className={`rounded-xl border p-4 space-y-3 ${
           isContentLocked ? 'border-emerald-300 bg-emerald-50/60' : 'border-border bg-card'
         }`}
       >
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-sm font-semibold">Finale Einheits-Freigabe</h3>
-              <InfoHint title="Wie funktioniert die finale Freigabe?">
-                Die finale Einheits-Freigabe ist erst möglich, wenn alle 4 Lerntyp-Dashboards
-                geprüft sind UND aktuell niemand mehr in einer Aufgabe oder einem Lernpaket
-                aktiv arbeitet. Mit der Freigabe werden die <strong>Inhalte aller Aufgaben,
-                Lernpakete und Aktivitäten</strong> gesperrt – die Bearbeitungs-Tabs werden
-                read-only. „Freigabe aufheben" ist möglich, solange das Export-Team noch nicht
-                „Export starten" geklickt hat.
-              </InfoHint>
+        <div className="flex items-center gap-2 flex-wrap">
+          <h3 className="text-sm font-semibold">Finale Einheits-Freigabe</h3>
+          <InfoHint title="Wie funktioniert die finale Freigabe?">
+            Die finale Einheits-Freigabe ist erst möglich, wenn alle 4 Lerntyp-Dashboards
+            geprüft sind UND aktuell niemand mehr in einer Aufgabe oder einem Lernpaket
+            aktiv arbeitet. Mit der Freigabe werden die <strong>Inhalte aller Aufgaben,
+            Lernpakete und Aktivitäten</strong> gesperrt – die Bearbeitungs-Tabs werden
+            read-only. „Freigabe aufheben" ist möglich, solange das Export-Team noch nicht
+            „Export starten" geklickt hat.
+          </InfoHint>
+        </div>
+
+        {/* Dashboards linksbündig, Button rechtsbündig — auf einer Linie. */}
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] text-muted-foreground">Dashboards:</span>
+            <div className="flex items-center gap-1 flex-wrap">
+              {Object.entries(data.dashboards).map(([lt, locked]) => (
+                <DashboardPill key={lt} label={LERNTYP_LABELS[lt]} locked={locked} />
+              ))}
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <StatusBadge status={status} />
-              <span className="text-[11px] text-muted-foreground">Dashboards:</span>
-              <div className="flex items-center gap-1 flex-wrap">
-                {Object.entries(data.dashboards).map(([lt, locked]) => (
-                  <DashboardPill key={lt} label={LERNTYP_LABELS[lt]} locked={locked} />
-                ))}
-              </div>
-              <span className="text-[11px] font-medium text-muted-foreground">
-                {data.lockedCount} / 4 geprüft
-              </span>
-            </div>
+            <span className="text-[11px] font-medium text-muted-foreground">
+              {data.lockedCount} / 4 geprüft
+            </span>
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
@@ -251,29 +221,11 @@ export default function EinheitFinalReleaseControl({ einheitId, darfFreigeben = 
                 Freigabe aufheben
               </Button>
             )}
-            {status === EXPORT_LIFECYCLE_STATUS.EXPORT_RUNNING && (
-              <span className="text-[11px] text-orange-700 italic max-w-[22rem] text-right">
-                🔒 Diese Einheit wird gerade nach Moodle exportiert. Die Freigabe
-                kann nicht aufgehoben werden — bitte mit dem Moodle-Team Kontakt aufnehmen.
-              </span>
-            )}
-            {status === EXPORT_LIFECYCLE_STATUS.PUBLISHED && (
-              <span className="text-[11px] text-muted-foreground italic max-w-[22rem] text-right">
-                Bereits in Moodle veröffentlicht — Aufhebung nur über das Export-Center.
-              </span>
-            )}
           </div>
         </div>
 
-        {(isFinal || isContentLocked) && data.changed_by && (
-          <div className="mt-2 text-[11px] text-emerald-800/80">
-            Freigegeben von <strong>{data.changed_by}</strong>
-            {data.changed_at
-              ? ` am ${new Date(data.changed_at).toLocaleString('de-DE')}`
-              : ''}
-            .
-          </div>
-        )}
+        {/* Infobox: Zustand der ganzen Einheit in Klartext + Zeitstempel. */}
+        <EinheitLifecycleInfoBox data={data} />
       </div>
 
       <EinheitFreigabeConfirmDialog
