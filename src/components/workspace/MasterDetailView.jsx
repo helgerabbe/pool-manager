@@ -20,6 +20,7 @@ import MatchTermsPreviewModal from '@/components/workspace/preview/MatchTermsPre
 import SortingListPreviewModal from '@/components/workspace/preview/SortingListPreviewModal';
 import MiniQuizPreviewModal from '@/components/workspace/preview/MiniQuizPreviewModal';
 import ReleaseToggleSection from '@/components/release/ReleaseToggleSection';
+import SyncStatusBadge from '@/components/release/SyncStatusBadge';
 import MasterModusBadge from '@/components/workspace/MasterModusBadge';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { getFriendlyErrorMessage } from '@/lib/errorMapper';
@@ -609,8 +610,11 @@ export default function MasterDetailView({
               </p>
             )}
             <h2 className="text-base font-bold truncate">{master.titel || `Masteraufgabe ${index}`}</h2>
-            <div className="flex items-center gap-2 mt-0.5">
+            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
               <p className="text-xs text-muted-foreground">{catalogName}</p>
+              {/* Lebenszyklus-Badge (Neu / Im Export / Synchron / Geändert) –
+                  einheitlich mit Aktivitäten, Aufgaben und Lernpaketen. */}
+              <SyncStatusBadge status={master.sync_status || 'new'} />
               {localContentStatus === 'approved' ? (
                 <Badge className="text-[10px] bg-green-100 text-green-700 border-green-300 gap-1">
                   <Lock className="w-3 h-3" /> Freigegeben

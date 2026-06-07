@@ -28,7 +28,7 @@ import ImageLabelingPreviewModal from '@/components/workspace/preview/ImageLabel
 import LehrwerkQuellePreviewModal from '@/components/workspace/preview/LehrwerkQuellePreviewModal';
 import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import OffeneAufgabePreviewModal from '@/components/workspace/preview/OffeneAufgabePreviewModal';
-import MoodleSyncStatusBadge from '@/components/workspace/MoodleSyncStatusBadge';
+import SyncStatusBadge from '@/components/release/SyncStatusBadge';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import ModusAuswahlBox from '@/components/workspace/ki/ModusAuswahlBox';
 import MasterAnzeigeModusToggle from '@/components/workspace/MasterAnzeigeModusToggle';
@@ -668,11 +668,8 @@ export default function ActivityMasterPanel({
           <p className="text-xs text-muted-foreground mt-0.5">Phase: {activityRecord?.phase}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <MoodleSyncStatusBadge
-            status={activityRecord?.moodle_sync_status || 'new'}
-            lastSyncedAt={activityRecord?.last_synced_at}
-            isDirtySinceExport={activityRecord?.is_dirty_since_export}
-            exportLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
+          <SyncStatusBadge
+            status={activityRecord?.moodle_sync_status || activityRecord?.sync_status || 'new'}
           />
           {activityIsReleased
             ? <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 border border-green-300 px-2 py-0.5 rounded-full">

@@ -38,11 +38,10 @@ const PRESETS = {
     title: 'Wurde nach dem letzten Export geändert',
   },
   pending: {
-    label: 'Sync läuft',
-    icon: Loader2,
-    cls: 'bg-slate-50 border-slate-200 text-slate-700',
-    title: 'Synchronisation läuft',
-    spin: true,
+    label: 'Im Export',
+    icon: RefreshCw,
+    cls: 'bg-blue-100 border-blue-300 text-blue-700',
+    title: 'Für den Export nach Moodle/Brian vorgemerkt – Bearbeitung gesperrt',
   },
   error: {
     label: 'Sync-Fehler',
