@@ -465,10 +465,27 @@ export default function EinheitUebersichtTab({
           </div>
 
           {/* Moodle-Lebenszyklus dieser Einheit: Neu / Im Export / Synchronisiert /
-              Geändert. Immer sichtbar – auch im Lesemodus. */}
-          <div className="flex items-center gap-2 -mt-1">
+              Geändert. Immer sichtbar – auch im Lesemodus.
+              Kompakter, grüner Bearbeitungsmodus-Button (analog zu den anderen Tabs). */}
+          <div className="flex items-center gap-2 flex-wrap -mt-1">
             <span className="text-xs text-muted-foreground">Moodle-Status:</span>
             <EinheitStrukturLebenszyklusBadge syncStatus={einheit?.sync_status || 'new'} />
+            {!isEditingActive && kannBearbeitungsstartButton && (
+              <button
+                onClick={onAcquireLock}
+                disabled={isAcquiring}
+                className="ml-auto inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isAcquiring ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PenLine className="w-3.5 h-3.5" />}
+                Bearbeiten
+              </button>
+            )}
+            {isEditingActive && (
+              <span className="ml-auto inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-green-100 text-green-700 border border-green-300">
+                <Edit className="w-3.5 h-3.5" />
+                Bearbeitungsmodus aktiv
+              </span>
+            )}
           </div>
 
           <div className={cn(
@@ -531,20 +548,10 @@ export default function EinheitUebersichtTab({
                       Bearbeitungsmodus aktiv – Du kannst Änderungen vornehmen.
                     </p>
                   ) : kannBearbeitungsstartButton ? (
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                        <Lock className="w-3 h-3" />
-                        Bearbeitungsmodus ist deaktiviert.
-                      </p>
-                      <button
-                        onClick={onAcquireLock}
-                        disabled={isAcquiring}
-                        className="w-full flex items-center justify-center gap-2 text-xs font-medium px-3 py-2 rounded-lg border border-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isAcquiring ? <Loader2 className="w-3 h-3 animate-spin" /> : <PenLine className="w-3 h-3" />}
-                        Bearbeitungsmodus aktivieren
-                      </button>
-                    </div>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <Lock className="w-3 h-3" />
+                      Bearbeitungsmodus ist deaktiviert. Nutze „Bearbeiten" oben rechts.
+                    </p>
                   ) : (
                     <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                       <Lock className="w-3 h-3" />
