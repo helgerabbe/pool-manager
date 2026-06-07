@@ -469,7 +469,13 @@ export default function EinheitUebersichtTab({
               Kompakter, grüner Bearbeitungsmodus-Button (analog zu den anderen Tabs). */}
           <div className="flex items-center gap-2 flex-wrap -mt-1">
             <span className="text-xs text-muted-foreground">Moodle-Status:</span>
-            <EinheitStrukturLebenszyklusBadge syncStatus={einheit?.sync_status || 'new'} />
+            <EinheitStrukturLebenszyklusBadge
+              syncStatus={
+                (einheit?.export_lifecycle_status && einheit.export_lifecycle_status !== 'draft')
+                  ? 'pending'
+                  : (einheit?.sync_status || 'new')
+              }
+            />
             {!isEditingActive && kannBearbeitungsstartButton && (
               <button
                 onClick={onAcquireLock}
