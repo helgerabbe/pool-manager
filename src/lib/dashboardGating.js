@@ -14,8 +14,10 @@
 
 import { getBundleKindByAcceptedTypes } from '@/lib/sektorTypen';
 
-/** Versionskennung der Gating-Engine (siehe Spec-Doc). */
-export const GATING_ENGINE_VERSION = 'gating-1.0.0';
+/** Versionskennung der Gating-Engine (siehe Spec-Doc).
+ *  gating-1.1.0: Sektor-Freischaltung (sektor_freischaltung-Regel +
+ *  freischalt_bedingung pro Sektor). */
+export const GATING_ENGINE_VERSION = 'gating-1.1.0';
 
 export const INITIAL_STATUS = Object.freeze({
   OFFEN: 'offen',
