@@ -87,7 +87,6 @@ export default function EinheitCard({
                   </span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <EinheitExportLifecycleBadge status={einheit.export_lifecycle_status} />
                   {einheit.freigabe_status === 'Gesperrt' && (
                     <Badge className="bg-red-100 text-red-700 border border-red-200 gap-1">
                       <Lock className="w-3 h-3" />
@@ -106,6 +105,11 @@ export default function EinheitCard({
               >
                 {einheit.titel_der_einheit}
               </h3>
+              {/* Eigene Status-Zeile unter dem Titel: hält die Kopfzeile schmal
+                  und die Kachelhöhe über alle Karten hinweg konsistent. */}
+              <div className="mt-2 min-h-[1.5rem] flex items-center">
+                <EinheitExportLifecycleBadge status={einheit.export_lifecycle_status} />
+              </div>
             </Link>
 
             {/* ── Mittlerer Bereich: Volumen-Metriken (eigene Klick-Zonen) ── */}
