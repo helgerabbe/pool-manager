@@ -25,6 +25,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Plus, GripVertical, Clock, Trash2, FolderOpen, Layers, X, Save, Target, ChevronLeft, ChevronsLeft, ArrowLeft, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { base44 } from '@/api/base44Client';
+import EinheitStrukturLebenszyklusBadge from '@/components/workspace/panels/EinheitStrukturLebenszyklusBadge';
 
 // ── Lernpaket-Dialog ──────────────────────────────────────────────────────────
 // Öffnet sich beim Klick auf eine Paket-Karte oder beim Erstellen eines neuen Pakets.
@@ -770,6 +772,17 @@ export default function StrukturBoardEmbedded({
       }
       console.log(`[StrukturBoard] 📦 PHASE4 ✓ ALLE ${paketCounter} PAKETE FERTIG!`);
 
+      // ── PHASE 4b: "Struktur geändert"-Signal ────────────────────────────
+      // War die Einheit bereits mit Moodle synchronisiert ('synced'), markiert
+      // die Strukturänderung sie als 'modified' → Neu-Export nötig. Die Funktion
+      // ist idempotent und no-op für 'new'/'pending', daher gefahrlos.
+      try {
+        await base44.functions.invoke('markEinheitStrukturModified', { einheitId });
+      } catch (markErr) {
+        // Rein kosmetisches Badge-Signal — Fehler darf das Speichern nicht kippen.
+        console.warn('[StrukturBoard] ⚠️ markEinheitStrukturModified fehlgeschlagen:', markErr);
+      }
+
       // ── PHASE 5: Dirty-Flag SOFORT auf false setzen ─────────────────────
       // Damit der useEffect die neuen Props nicht blockiert
       console.log('[StrukturBoard] 🔄 Setze isDirty=false, damit UI-Sync stattfinden kann...');
@@ -864,6 +877,14 @@ export default function StrukturBoardEmbedded({
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
+      {/* Lebenszyklus-Leiste – immer sichtbar (auch im Lesemodus).
+          Zeigt den Moodle-Status der Struktur: Neu / Im Export / Synchronisiert /
+          Struktur geändert. */}
+      <div className="shrink-0 px-4 py-2 border-b border-border bg-muted/20 flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">Moodle-Status der Struktur:</span>
+        <EinheitStrukturLebenszyklusBadge syncStatus={einheit?.sync_status || 'new'} />
+      </div>
+
       {/* Aktions-Leiste – nur im Edit-Modus */}
       {!readOnly && isStructuralEditingActive && (
         <div className="shrink-0 px-4 py-2 border-b border-border bg-card/50 flex items-center gap-3">
