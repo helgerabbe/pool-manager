@@ -302,7 +302,7 @@ function SidebarLernpaketFolder({
            // werden muss.
            const isPaketReleased = lernpaket.content_status === 'approved' && !!lernpaket.released_at;
            const pillClass =
-             isPaketReleased ? 'bg-green-600 text-white'
+             isPaketReleased ? 'bg-green-700 text-white ring-2 ring-green-300'
              : total === 0 ? 'bg-slate-200 text-slate-700'
              : completeCount === total ? 'bg-green-500 text-white'
              : 'bg-amber-400 text-white';

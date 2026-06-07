@@ -281,7 +281,7 @@ function LernpaketNode({ paket, lernziele, aufgaben, selectedId, onSelect, kannB
   const isPaketReleased = paket.content_status === 'approved' && !!paket.released_at;
   // Farbige Pille: grau=leer, grün=alle sichtbar vollständigen Aktivitäten, gelb=teilweise
   const countPillClass =
-    isPaketReleased ? 'bg-green-600 text-white'
+    isPaketReleased ? 'bg-green-700 text-white ring-2 ring-green-300'
     : totalCount === 0 ? 'bg-slate-200 text-slate-700'
     : isPaketLiveComplete ? 'bg-green-500 text-white'
     : 'bg-amber-400 text-white';
