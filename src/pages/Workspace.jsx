@@ -781,45 +781,26 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               <div className="flex-1 min-w-0">
                 <WorkspaceTabs activeTab={activeTab} onTabChange={handleTabChange} isBasismodul={isBasismodul} />
               </div>
-              {activeTab === 'struktur' && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setStrukturCompact(c => !c)}
-                  className="h-7 gap-1.5 text-xs shrink-0"
-                >
-                  {strukturCompact ? <AlignJustify className="w-3.5 h-3.5" /> : <LayoutList className="w-3.5 h-3.5" />}
-                  {strukturCompact ? 'Normal' : 'Kompakt'}
-                </Button>
-              )}
-              {activeTab === 'struktur' && isStructuralEditingActive && (
-                <button
-                  onClick={handleReleaseStructLock}
-                  disabled={releasingStructLock}
-                  className="shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50"
-                >
-                  {releasingStructLock ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unlock className="w-3.5 h-3.5" />}
-                  Bearbeitung beenden
-                </button>
-              )}
-              {(activeTab === 'struktur' || activeTab === 'dashboards') &&
+              {/* Tab 2 (Struktur): Kompakt- + Struktur-bearbeiten-Buttons sind in
+                  die Moodle-Status-Zeile von StrukturBoardEmbedded gewandert. */}
+              {activeTab === 'dashboards' &&
                 !isStructuralEditingActive &&
                 !isEinheitContentLocked &&
                 (permissions.kannStrukturBearbeiten(einheit?.fach) || unitAccess.hasFullAccess) && (
                   <button
-                    onClick={activeTab === 'dashboards' ? handleAcquireDashboardLock : handleAcquireStructLock}
+                    onClick={handleAcquireDashboardLock}
                     disabled={acquiringStructLock || structLocked}
                     title={
                       structLocked
                         ? `Gesperrt von ${einheit?.structural_lock}`
-                        : (activeTab === 'dashboards' ? 'Dashboards-Bearbeitung starten' : 'Strukturbearbeitung starten')
+                        : 'Dashboards-Bearbeitung starten'
                     }
                     className="shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {acquiringStructLock
                       ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       : <PenLine className="w-3.5 h-3.5" />}
-                    {activeTab === 'dashboards' ? 'Dashboards bearbeiten' : 'Struktur bearbeiten'}
+                    Dashboards bearbeiten
                   </button>
                 )}
             </div>
@@ -863,6 +844,17 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                             isStructuralEditingActive={isStructuralEditingActive && !isEinheitContentLocked}
                             isLockedByOther={isLockedByOther}
                             compact={strukturCompact}
+                            onToggleCompact={() => setStrukturCompact(c => !c)}
+                            canStartStructEdit={
+                              !isEinheitContentLocked &&
+                              (permissions.kannStrukturBearbeiten(einheit?.fach) || unitAccess.hasFullAccess)
+                            }
+                            structLockedByOther={structLocked}
+                            structLockedByName={einheit?.structural_lock}
+                            onAcquireStructLock={handleAcquireStructLock}
+                            onReleaseStructLock={handleReleaseStructLock}
+                            isAcquiringStructLock={acquiringStructLock}
+                            isReleasingStructLock={releasingStructLock}
                             onSaved={async () => {
                               // 🔄 PHASE 1: Key-Remount erzwingt kompletten Neustart der Komponente
                               console.log('[Workspace] 🔄 onSaved-Callback: Triggere Board-Remount via Key-Increment');

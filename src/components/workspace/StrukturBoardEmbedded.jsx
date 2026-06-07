@@ -22,7 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, GripVertical, Clock, Trash2, FolderOpen, Layers, X, Save, Target, ChevronLeft, ChevronsLeft, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Plus, GripVertical, Clock, Trash2, FolderOpen, Layers, X, Save, Target, ChevronLeft, ChevronsLeft, ArrowLeft, ArrowRight, AlignJustify, LayoutList, PenLine, Unlock, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
@@ -374,6 +374,15 @@ export default function StrukturBoardEmbedded({
   isStructuralEditingActive = false, // ← NEU: Expliziter Lock-Status von Workspace
   isLockedByOther = false, // ← GLOBALE SPERRE: Wenn true, dann ist gesamte Einheit read-only
   compact = false,
+  // ── Toolbar-Aktionen (aus Workspace), in die Moodle-Status-Zeile integriert ──
+  onToggleCompact = null,
+  canStartStructEdit = false,
+  structLockedByOther = false,
+  structLockedByName = null,
+  onAcquireStructLock = null,
+  onReleaseStructLock = null,
+  isAcquiringStructLock = false,
+  isReleasingStructLock = false,
 }) {
   const { permissions, authUser, rolle } = useRBAC();
 
@@ -880,9 +889,48 @@ export default function StrukturBoardEmbedded({
       {/* Lebenszyklus-Leiste – immer sichtbar (auch im Lesemodus).
           Zeigt den Moodle-Status der Struktur: Neu / Im Export / Synchronisiert /
           Struktur geändert. */}
-      <div className="shrink-0 px-4 py-2 border-b border-border bg-muted/20 flex items-center gap-2">
+      <div className="shrink-0 px-4 py-2 border-b border-border bg-muted/20 flex items-center gap-2 flex-wrap">
         <span className="text-xs text-muted-foreground">Moodle-Status der Struktur:</span>
         <EinheitStrukturLebenszyklusBadge syncStatus={einheit?.sync_status || 'new'} />
+
+        {/* Kompakt-Umschalter + Struktur-bearbeiten (grün) / Bearbeitung beenden.
+            Aus der Tab-Leiste hierher verschoben. */}
+        <div className="ml-auto flex items-center gap-2">
+          {onToggleCompact && (
+            <button
+              onClick={onToggleCompact}
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-border bg-card text-foreground hover:bg-muted transition-colors"
+            >
+              {compact ? <AlignJustify className="w-3.5 h-3.5" /> : <LayoutList className="w-3.5 h-3.5" />}
+              {compact ? 'Normal' : 'Kompakt'}
+            </button>
+          )}
+
+          {isStructuralEditingActive ? (
+            onReleaseStructLock && (
+              <button
+                onClick={onReleaseStructLock}
+                disabled={isReleasingStructLock}
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50"
+              >
+                {isReleasingStructLock ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unlock className="w-3.5 h-3.5" />}
+                Bearbeitung beenden
+              </button>
+            )
+          ) : (
+            canStartStructEdit && onAcquireStructLock && (
+              <button
+                onClick={onAcquireStructLock}
+                disabled={isAcquiringStructLock || structLockedByOther}
+                title={structLockedByOther ? `Gesperrt von ${structLockedByName}` : 'Strukturbearbeitung starten'}
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isAcquiringStructLock ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PenLine className="w-3.5 h-3.5" />}
+                Struktur bearbeiten
+              </button>
+            )
+          )}
+        </div>
       </div>
 
       {/* Aktions-Leiste – nur im Edit-Modus */}
