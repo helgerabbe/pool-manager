@@ -47,6 +47,7 @@ import {
 import { EXPORT_LIFECYCLE_STATUS, EXPORT_LIFECYCLE_LABELS } from '@/lib/exportLifecycle';
 import DashboardDriftPill from '@/components/lernpfade/DashboardDriftPill';
 import InfoHint from '@/components/lernpfade/InfoHint';
+import CockpitSyncBadge from '@/components/export/CockpitSyncBadge';
 
 const LERNTYP_META = {
   minimalist: { label: 'Minimalist', icon: Sparkles, activeBg: 'bg-slate-700', activeText: 'text-white', inactiveText: 'text-slate-700' },
@@ -56,8 +57,12 @@ const LERNTYP_META = {
 };
 const LERNTYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 
-// ── Lerntyp-Pill: Tab-Switcher + Status-Anzeige + Direkthilfe ──────────────
-function LerntypPill({ typKey, active, locked, onClick, onOpenGuide }) {
+// ── Lerntyp-Pill: Tab-Switcher + Prüf-/Lebenszyklus-Status + Direkthilfe ────
+// Zweizeiliges, etwas höheres Layout: oben Name + Prüf-Status + Direkthilfe,
+// unten der Lebenszyklus (Neu / Im Export / Synchron / Geändert). Dadurch ist
+// auf Tab 7 jederzeit sichtbar, in welchem Moodle-Sync-Zustand jedes der vier
+// Dashboards gerade steckt.
+function LerntypPill({ typKey, active, locked, syncStatus, onClick, onOpenGuide }) {
   const meta = LERNTYP_META[typKey];
   const Icon = meta.icon;
 
@@ -65,7 +70,7 @@ function LerntypPill({ typKey, active, locked, onClick, onOpenGuide }) {
     <div className="max-w-[240px] space-y-1 text-xs leading-snug">
       <p className="font-semibold">{meta.label}</p>
       <p>
-        <span className="font-medium">Status:</span> {locked ? 'Als geprüft markiert ✓' : 'Entwurf – noch in Bearbeitung'}
+        <span className="font-medium">Prüfung:</span> {locked ? 'Als geprüft markiert ✓' : 'Entwurf – noch in Bearbeitung'}
       </p>
       {locked && (
         <p className="text-muted-foreground">
@@ -81,57 +86,66 @@ function LerntypPill({ typKey, active, locked, onClick, onOpenGuide }) {
   };
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            type="button"
-            onClick={onClick}
-            className={`inline-flex items-center gap-1.5 h-7 px-2 rounded-md border text-[11px] font-semibold transition-all ${
-              active
-                ? `${meta.activeBg} ${meta.activeText} border-transparent shadow-sm`
-                : `bg-card ${meta.inactiveText} border-border hover:bg-muted`
-            }`}
-          >
-            {locked ? (
-              <CheckCircle2
-                className={`w-3.5 h-3.5 shrink-0 ${active ? 'text-emerald-200' : 'text-emerald-600'}`}
-                title="Als geprüft markiert"
-              />
-            ) : (
-              <span className="w-2 h-2 rounded-full bg-slate-300 shrink-0" title="Entwurf" />
-            )}
-            <Icon className="w-3 h-3 shrink-0" />
-            <span>{meta.label}</span>
-            {onOpenGuide && (
-              <span
-                role="button"
-                tabIndex={0}
-                aria-label={`Direkthilfe zu „${meta.label}"`}
-                onClick={handleHelpClick}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleHelpClick(e);
-                  }
-                }}
-                className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold transition-colors cursor-pointer ${
-                  active
-                    ? 'bg-white/25 hover:bg-white/40 text-white'
-                    : 'bg-muted hover:bg-muted-foreground/20 text-muted-foreground'
-                }`}
-                title="Direkthilfe öffnen"
-              >
-                ?
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex flex-col items-start gap-1 px-2.5 py-1.5 rounded-lg border text-[11px] font-semibold transition-all min-w-[150px] ${
+        active
+          ? `${meta.activeBg} ${meta.activeText} border-transparent shadow-sm`
+          : `bg-card ${meta.inactiveText} border-border hover:bg-muted`
+      }`}
+    >
+      {/* Zeile 1: Prüf-Status, Icon, Name, Direkthilfe */}
+      <span className="inline-flex items-center gap-1.5 w-full">
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center gap-1.5">
+                {locked ? (
+                  <CheckCircle2
+                    className={`w-3.5 h-3.5 shrink-0 ${active ? 'text-emerald-200' : 'text-emerald-600'}`}
+                  />
+                ) : (
+                  <span className="w-2 h-2 rounded-full bg-slate-300 shrink-0" />
+                )}
+                <Icon className="w-3.5 h-3.5 shrink-0" />
+                <span>{meta.label}</span>
               </span>
-            )}
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" className="bg-card text-card-foreground border border-border shadow-md p-2.5">
-          {tooltip}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="bg-card text-card-foreground border border-border shadow-md p-2.5">
+              {tooltip}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        {onOpenGuide && (
+          <span
+            role="button"
+            tabIndex={0}
+            aria-label={`Direkthilfe zu „${meta.label}"`}
+            onClick={handleHelpClick}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleHelpClick(e);
+              }
+            }}
+            className={`ml-auto inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold transition-colors cursor-pointer ${
+              active
+                ? 'bg-white/25 hover:bg-white/40 text-white'
+                : 'bg-muted hover:bg-muted-foreground/20 text-muted-foreground'
+            }`}
+            title="Direkthilfe öffnen"
+          >
+            ?
+          </span>
+        )}
+      </span>
+
+      {/* Zeile 2: Lebenszyklus-Badge (Moodle-Sync) */}
+      <span className="pointer-events-auto">
+        <CockpitSyncBadge syncStatus={syncStatus || 'new'} />
+      </span>
+    </button>
   );
 }
 
@@ -167,6 +181,8 @@ export default function DashboardToolbar({
   onActiveLernTypChange,
   // Einheit-Freigabe-Daten (aus useEinheitFreigabeStatus)
   einheitFreigabe,
+  // Lebenszyklus pro Dashboard: { [lerntyp]: 'new'|'pending'|'synced'|'modified' }
+  dashboardSyncByLerntyp = {},
   // Aktiver Pfad
   istPfadGesperrt,
   darfFreigeben,
@@ -316,6 +332,7 @@ export default function DashboardToolbar({
             typKey={lt}
             active={activeLernTyp === lt}
             locked={!!dashboards[lt]}
+            syncStatus={dashboardSyncByLerntyp[lt]}
             onClick={() => onActiveLernTypChange?.(lt)}
             onOpenGuide={onOpenGuide}
           />

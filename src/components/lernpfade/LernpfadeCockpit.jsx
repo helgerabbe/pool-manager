@@ -946,6 +946,35 @@ export default function LernpfadeCockpit({
   // wird hier nur noch gelesen, um den read-only Killer-Switch (isEinheitContentLocked)
   // und die Dashboard-Status-Pills in der Toolbar zu speisen.
 
+  // ── Lebenszyklus-Status pro Dashboard (für die Lerntyp-Pills) ───────
+  // Gleiche Ableitung wie in der Tab-9-Statustabelle, damit beide Ansichten
+  // konsistent sind:
+  //   - Einheit im Export (final freigegeben/laufend) → pending ("Im Export")
+  //   - Einheit nie exportiert / keine Sektoren        → new ("Neu")
+  //   - Drift seit Freigabe                            → modified ("Geändert")
+  //   - sonst                                          → synced ("Synchron")
+  const dashboardSyncByLerntyp = useMemo(() => {
+    const einheitImExport = isEinheitContentLocked;
+    const einheitExportiert =
+      einheit?.sync_status === 'synced' || einheit?.sync_status === 'modified';
+    const result = {};
+    for (const lt of ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert']) {
+      const sektoren = Array.isArray(konfiguration?.[lt]) ? konfiguration[lt] : [];
+      let drifted = 0;
+      sektoren.forEach((s) => {
+        if (getDriftStatus(lt, s.sektor_id) === 'drifted') drifted += 1;
+      });
+      let sync = 'new';
+      if (einheitImExport && sektoren.length > 0) {
+        sync = 'pending';
+      } else if (sektoren.length > 0 && einheitExportiert) {
+        sync = drifted > 0 ? 'modified' : 'synced';
+      }
+      result[lt] = sync;
+    }
+    return result;
+  }, [konfiguration, isEinheitContentLocked, einheit?.sync_status, getDriftStatus]);
+
   // Save-Indicator als kompaktes Icon (statt eigener Zeile).
   const saveIndicator = (() => {
     if (saveState === 'pending') return { icon: Cloud, cls: 'text-muted-foreground', title: 'Änderung registriert…' };
@@ -1025,6 +1054,7 @@ export default function LernpfadeCockpit({
               activeLernTyp={activeLernTyp}
               onActiveLernTypChange={handleActiveLernTypChange}
               einheitFreigabe={einheitFreigabe}
+              dashboardSyncByLerntyp={dashboardSyncByLerntyp}
               istPfadGesperrt={istPfadGesperrt}
               darfFreigeben={darfFreigeben}
               darfEntsperren={darfEntsperren}
