@@ -89,28 +89,18 @@ function LerntypPill({ typKey, active, locked, syncStatus, onClick, onOpenGuide 
     <button
       type="button"
       onClick={onClick}
-      className={`flex flex-col items-start gap-1 px-2.5 py-1.5 rounded-lg border text-[11px] font-semibold transition-all min-w-[150px] ${
+      className={`flex flex-col items-start gap-1.5 px-2.5 py-1.5 rounded-lg border font-semibold transition-all min-w-[150px] ${
         active
           ? `${meta.activeBg} ${meta.activeText} border-transparent shadow-sm`
           : `bg-card ${meta.inactiveText} border-border hover:bg-muted`
       }`}
     >
-      {/* Zeile 1: Prüf-Status, Icon, Name, Direkthilfe */}
+      {/* Zeile 1: Name (groß) + Direkthilfe rechts oben */}
       <span className="inline-flex items-center gap-1.5 w-full">
         <TooltipProvider delayDuration={200}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="inline-flex items-center gap-1.5">
-                {locked ? (
-                  <CheckCircle2
-                    className={`w-3.5 h-3.5 shrink-0 ${active ? 'text-emerald-200' : 'text-emerald-600'}`}
-                  />
-                ) : (
-                  <span className="w-2 h-2 rounded-full bg-slate-300 shrink-0" />
-                )}
-                <Icon className="w-3.5 h-3.5 shrink-0" />
-                <span>{meta.label}</span>
-              </span>
+              <span className="text-sm">{meta.label}</span>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="bg-card text-card-foreground border border-border shadow-md p-2.5">
               {tooltip}
@@ -141,8 +131,15 @@ function LerntypPill({ typKey, active, locked, syncStatus, onClick, onOpenGuide 
         )}
       </span>
 
-      {/* Zeile 2: Lebenszyklus-Badge (Moodle-Sync) */}
-      <span className="pointer-events-auto">
+      {/* Zeile 2: grünes Häkchen (Prüf-Status) + Lebenszyklus-Badge */}
+      <span className="inline-flex items-center gap-1.5 pointer-events-auto">
+        {locked ? (
+          <CheckCircle2
+            className={`w-3.5 h-3.5 shrink-0 ${active ? 'text-emerald-200' : 'text-emerald-600'}`}
+          />
+        ) : (
+          <span className="w-2 h-2 rounded-full bg-slate-300 shrink-0" />
+        )}
         <CockpitSyncBadge syncStatus={syncStatus || 'new'} />
       </span>
     </button>
