@@ -547,12 +547,7 @@ export default function EinheitUebersichtTab({
                       <Edit className="w-3 h-3" />
                       Bearbeitungsmodus aktiv – Du kannst Änderungen vornehmen.
                     </p>
-                  ) : kannBearbeitungsstartButton ? (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                      <Lock className="w-3 h-3" />
-                      Bearbeitungsmodus ist deaktiviert. Nutze „Bearbeiten" oben rechts.
-                    </p>
-                  ) : (
+                  ) : kannBearbeitungsstartButton ? null : (
                     <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                       <Lock className="w-3 h-3" />
                       {!unitAccess.isAssignedMember 
