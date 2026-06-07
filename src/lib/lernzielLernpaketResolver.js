@@ -48,20 +48,24 @@ export function resolveLernzieleMitLernpaket({
       if (!text) return;
 
       let lernpaket = null;
+      let lernpaketId = null;
       if (item.quelle === 'bestehend' && item.lernziel_id) {
         const lz = lzById.get(item.lernziel_id);
         const lp = lz?.lernpaket_id ? lpById.get(lz.lernpaket_id) : null;
         lernpaket = lp?.titel_des_pakets || null;
+        lernpaketId = lp?.id || null;
       } else if (item.quelle === 'basismodul' && item.basislernziel_id) {
         const blz = blzById.get(item.basislernziel_id);
         const blp = blz?.basislernpaket_id ? blpById.get(blz.basislernpaket_id) : null;
         const bm = blp?.basismodul_id ? bmById.get(blp.basismodul_id) : null;
         lernpaket = blp?.titel || bm?.basismodul_titel || bm?.titel || item.basismodul_titel || null;
+        lernpaketId = blp?.id || null;
       }
 
       result.push({
         text,
         lernpaket,
+        lernpaketId,
         quelle: item.quelle === 'basismodul' ? 'basismodul' : 'einheit',
       });
     });
@@ -77,6 +81,7 @@ export function resolveLernzieleMitLernpaket({
     result.push({
       text,
       lernpaket: lp?.titel_des_pakets || null,
+      lernpaketId: lp?.id || null,
       quelle: 'einheit',
     });
   });
@@ -91,6 +96,7 @@ export function resolveLernzieleMitLernpaket({
     result.push({
       text,
       lernpaket: blp?.titel || bm?.titel || null,
+      lernpaketId: blp?.id || null,
       quelle: 'basismodul',
     });
   });

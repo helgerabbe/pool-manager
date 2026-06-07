@@ -43,9 +43,12 @@ export default function VerknuepfteLernzieleBlock({ items = [] }) {
               <div className="min-w-0 flex-1">
                 <p className="text-foreground leading-snug">{item.text}</p>
                 {item.lernpaket ? (
-                  <p className="text-xs text-emerald-700 mt-1 flex items-center gap-1">
+                  <p className="text-xs text-emerald-700 mt-1 flex items-center gap-1 flex-wrap">
                     <Package className="w-3 h-3 shrink-0" />
                     Lernpaket: <span className="font-medium">{item.lernpaket}</span>
+                    {item.lernpaketId && (
+                      <span className="font-mono text-[10px] text-emerald-600/80">({item.lernpaketId})</span>
+                    )}
                   </p>
                 ) : (
                   <p className="text-xs text-amber-700 mt-1 flex items-center gap-1">

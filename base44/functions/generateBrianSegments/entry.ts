@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
     const lernzieleMitLpStr = lernzieleMitLpListe.length > 0
       ? lernzieleMitLpListe
           .map(item => item.lernpaket
-            ? `- Lernziel: "${item.text}" → passendes Lernpaket: "${item.lernpaket}"`
+            ? `- Lernziel: "${item.text}" → passendes Lernpaket: "${item.lernpaket}"${item.lernpaketId ? ` (Lernpaket-ID: ${item.lernpaketId})` : ''}`
             : `- Lernziel: "${item.text}" → KEIN zugeordnetes Lernpaket (Schüler soll mit der Lehrkraft besprechen, wie er dieses Ziel erreichen kann)`)
           .join('\n')
       : '(keine Lernziel-Lernpaket-Zuordnungen hinterlegt)';
