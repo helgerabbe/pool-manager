@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import { Loader2, ShieldCheck, ShieldOff } from 'lucide-react';
+import { Loader2, CheckCircle2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function CockpitActionToolbar({
@@ -42,10 +42,10 @@ export default function CockpitActionToolbar({
         <>
           <span
             className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0.5"
-            title={`Pfad „${lerntypLabel}" freigegeben & gesperrt – Aufgaben in Tab 5 sind read-only`}
+            title={`Dashboard „${lerntypLabel}" als geprüft markiert – die Aufgaben bleiben bearbeitbar. Erst die finale Einheits-Freigabe sperrt alles.`}
           >
-            <ShieldCheck className="w-3 h-3" />
-            {lerntypLabel} · gesperrt
+            <CheckCircle2 className="w-3 h-3" />
+            {lerntypLabel} · geprüft
           </span>
           {darfEntsperren && (
             <Button
@@ -53,10 +53,11 @@ export default function CockpitActionToolbar({
               variant="outline"
               onClick={onUnlockPath}
               disabled={statusBusy}
-              className="ml-auto gap-1.5 h-6 text-[11px] px-2 border-red-300 text-red-700 hover:bg-red-50"
+              className="ml-auto gap-1.5 h-6 text-[11px] px-2 border-amber-300 text-amber-700 hover:bg-amber-50"
+              title={`Das Dashboard „${lerntypLabel}" wurde als geprüft markiert – die Aufgaben sind dadurch NICHT gesperrt und können weiter bearbeitet werden. Erst „Einheit final freigeben" sperrt alle Aufgaben. Hier nimmst du nur die Prüf-Markierung zurück.`}
             >
-              {statusBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldOff className="w-3 h-3" />}
-              Entsperren
+              {statusBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
+              Prüfung zurücknehmen
             </Button>
           )}
         </>
@@ -74,11 +75,11 @@ export default function CockpitActionToolbar({
               title={
                 !isStructuralEditingActive
                   ? 'Bitte zuerst Bearbeiten starten'
-                  : 'Validieren und freigeben'
+                  : 'Dashboard als geprüft markieren'
               }
             >
-              {statusBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
-              Prüfen & freigeben
+              {statusBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+              Als geprüft markieren
             </Button>
           )}
         </>

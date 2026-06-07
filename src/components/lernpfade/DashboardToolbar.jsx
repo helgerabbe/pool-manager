@@ -34,6 +34,8 @@ import {
   Trophy,
   Star,
   Eye,
+  CheckCircle2,
+  RotateCcw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -58,16 +60,18 @@ const LERNTYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 function LerntypPill({ typKey, active, locked, onClick, onOpenGuide }) {
   const meta = LERNTYP_META[typKey];
   const Icon = meta.icon;
-  // Status-Dot: grün=gesperrt(geprüft), grau=Entwurf
-  const dotCls = locked ? 'bg-emerald-500' : 'bg-slate-300';
-  const dotTitle = locked ? 'Geprüft & gesperrt' : 'Entwurf';
 
   const tooltip = (
     <div className="max-w-[240px] space-y-1 text-xs leading-snug">
       <p className="font-semibold">{meta.label}</p>
       <p>
-        <span className="font-medium">Status:</span> {locked ? 'Geprüft & für Schüler freigegeben' : 'Entwurf – noch in Bearbeitung'}
+        <span className="font-medium">Status:</span> {locked ? 'Als geprüft markiert ✓' : 'Entwurf – noch in Bearbeitung'}
       </p>
+      {locked && (
+        <p className="text-muted-foreground">
+          Dieses Dashboard wurde als fertig markiert. Die Aufgaben bleiben weiterhin bearbeitbar – erst die finale Einheits-Freigabe sperrt alles.
+        </p>
+      )}
     </div>
   );
 
@@ -89,7 +93,14 @@ function LerntypPill({ typKey, active, locked, onClick, onOpenGuide }) {
                 : `bg-card ${meta.inactiveText} border-border hover:bg-muted`
             }`}
           >
-            <span className={`w-2 h-2 rounded-full ${dotCls} shrink-0`} title={dotTitle} />
+            {locked ? (
+              <CheckCircle2
+                className={`w-3.5 h-3.5 shrink-0 ${active ? 'text-emerald-200' : 'text-emerald-600'}`}
+                title="Als geprüft markiert"
+              />
+            ) : (
+              <span className="w-2 h-2 rounded-full bg-slate-300 shrink-0" title="Entwurf" />
+            )}
             <Icon className="w-3 h-3 shrink-0" />
             <span>{meta.label}</span>
             {onOpenGuide && (
@@ -253,13 +264,13 @@ export default function DashboardToolbar({
                 onClick={onReleasePath}
                 disabled={pfadStatusBusy || !isStructuralEditingActive}
                 className="gap-1.5 h-7 text-[11px] px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white border-transparent"
-                title={!isStructuralEditingActive ? 'Bitte zuerst Bearbeiten starten' : `„${lerntypLabel}" prüfen und freigeben`}
+                title={!isStructuralEditingActive ? 'Bitte zuerst Bearbeiten starten' : `„${lerntypLabel}" als geprüft markieren`}
               >
-                {pfadStatusBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
-                Dashboard prüfen & freigeben
+                {pfadStatusBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                Dashboard als geprüft markieren
               </Button>
-              <InfoHint title="Dashboard prüfen & freigeben">
-                Validiert den aktuellen Lernpfad „{lerntypLabel}" und gibt ihn anschließend für Schüler frei. Danach ist der Pfad gesperrt.
+              <InfoHint title="Dashboard als geprüft markieren">
+                Markiert den Lernpfad „{lerntypLabel}" als fertig geprüft. Das ist nur ein Status – die Aufgaben bleiben weiterhin bearbeitbar. Erst wenn alle 4 Dashboards geprüft sind und du „Einheit final freigeben" klickst, werden alle Inhalte gesperrt.
               </InfoHint>
             </div>
           )}
@@ -269,11 +280,11 @@ export default function DashboardToolbar({
               variant="outline"
               onClick={onUnlockPath}
               disabled={pfadStatusBusy}
-              className="gap-1.5 h-7 text-[11px] px-2.5 border-red-300 text-red-700 hover:bg-red-50"
-              title={`Lernpfad „${lerntypLabel}" entsperren`}
+              className="gap-1.5 h-7 text-[11px] px-2.5 border-amber-300 text-amber-700 hover:bg-amber-50"
+              title={`Das Dashboard „${lerntypLabel}" wurde als geprüft markiert – die Aufgaben sind dadurch NICHT gesperrt und können weiter bearbeitet werden. Erst „Einheit final freigeben" sperrt alle Aufgaben, bis der Export abgeschlossen ist. Hier nimmst du nur die Prüf-Markierung zurück.`}
             >
-              {pfadStatusBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldOff className="w-3 h-3" />}
-              Entsperren
+              {pfadStatusBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
+              Prüfung zurücknehmen
             </Button>
           )}
 
