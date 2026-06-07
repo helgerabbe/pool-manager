@@ -139,6 +139,21 @@ export default function DashboardVorlageEditor() {
     });
   }, [updateSektoren]);
 
+  const handleSetBundleModus = useCallback((sektorId, itemIndex, modus) => {
+    updateSektoren((list) =>
+      list.map((s) => {
+        if (s.sektor_id !== sektorId) return s;
+        const items = (s.items || []).map((it, idx) => {
+          if (idx !== itemIndex) return it;
+          const nextConfig = { ...(it.bundle_config || {}), modus };
+          if (modus === 'sequenziell') delete nextConfig.erforderliche_anzahl;
+          return { ...it, bundle_config: nextConfig };
+        });
+        return { ...s, items };
+      })
+    );
+  }, [updateSektoren]);
+
   const handleRemoveItem = useCallback((sektorId, itemIndex) => {
     updateSektoren((list) =>
       list.map((s) => {
@@ -212,9 +227,15 @@ export default function DashboardVorlageEditor() {
       const cleanSektoren = list.map((s) => ({
         sektor_id: s.sektor_id,
         titel: s.titel,
-        modus: 'sequenziell',
+        modus: s.modus === 'frei' ? 'frei' : 'sequenziell',
         sektor_typ: s.sektor_typ,
-        items: (s.items || []).map((it) => ({ type: it.type, ref_id: it.ref_id })),
+        items: (s.items || []).map((it) => {
+          const out = { type: it.type, ref_id: it.ref_id };
+          if (it.bundle_config?.modus) {
+            out.bundle_config = { modus: it.bundle_config.modus };
+          }
+          return out;
+        }),
       }));
       const res = await base44.functions.invoke('saveDashboardStandardVorlage', {
         lerntyp,
@@ -338,6 +359,7 @@ export default function DashboardVorlageEditor() {
                     onRemoveSektor={handleRemoveSektor}
                     onMoveSektor={handleMoveSektor}
                     onRemoveItem={handleRemoveItem}
+                    onSetBundleModus={handleSetBundleModus}
                   />
                 ))
               )}

@@ -17,9 +17,11 @@ import { Button } from '@/components/ui/button';
 import { ChevronUp, ChevronDown, Trash2, GripVertical, X } from 'lucide-react';
 import { getSystemBausteinIcon } from '@/lib/systemBausteinIcons';
 import { isPlatzhalterBaustein, PLATZHALTER_CLASSES } from '@/lib/platzhalterUtils';
-import { getSektorTypLabel } from '@/lib/sektorTypen';
+import { getSektorTypLabel, SEKTOR_TYP } from '@/lib/sektorTypen';
+import SektorModusToggle from '@/components/lernpfade/SektorModusToggle';
+import BundleModusToggle from '@/components/lernpfade/BundleModusToggle';
 
-function ItemPill({ item, baustein, index, readOnly, onRemove }) {
+function ItemPill({ item, baustein, index, readOnly, onRemove, onSetBundleModus }) {
   const Icon = getSystemBausteinIcon(baustein?.icon);
   const titel = baustein?.titel || item.ref_id;
   const isPlatzhalter = isPlatzhalterBaustein(baustein || item.ref_id);
@@ -64,6 +66,14 @@ function ItemPill({ item, baustein, index, readOnly, onRemove }) {
             <Icon strokeWidth={2.5} className={`w-3 h-3 ${iconCls}`} />
           </div>
           <p className="text-xs font-semibold text-foreground truncate flex-1 leading-snug">{titel}</p>
+          {isBundle && (
+            <BundleModusToggle
+              acceptedTypes={baustein?.accepted_types}
+              modus={item.bundle_config?.modus}
+              disabled={readOnly}
+              onChange={(val) => onSetBundleModus?.(index, val)}
+            />
+          )}
           {!readOnly && (
             <button
               type="button"
@@ -90,6 +100,7 @@ export default function VorlageSektor({
   onRemoveSektor,
   onMoveSektor,
   onRemoveItem,
+  onSetBundleModus,
 }) {
   const items = Array.isArray(sektor.items) ? sektor.items : [];
 
@@ -107,6 +118,13 @@ export default function VorlageSektor({
           className="h-7 text-sm font-medium flex-1 bg-card"
           placeholder="Sektor-Titel"
         />
+        {sektor.sektor_typ !== SEKTOR_TYP.FEEDBACK && (
+          <SektorModusToggle
+            modus={sektor.modus}
+            disabled={readOnly}
+            onChange={(val) => onPatch(sektor.sektor_id, { modus: val })}
+          />
+        )}
         {!readOnly && (
           <div className="flex items-center gap-0.5 shrink-0">
             <Button variant="ghost" size="icon" className="h-7 w-7" disabled={index === 0} onClick={() => onMoveSektor(sektor.sektor_id, -1)} title="Nach oben">
@@ -143,6 +161,7 @@ export default function VorlageSektor({
                 baustein={systemBausteineById?.get(item.ref_id)}
                 readOnly={readOnly}
                 onRemove={onRemoveItem ? (idx) => onRemoveItem(sektor.sektor_id, idx) : () => {}}
+                onSetBundleModus={onSetBundleModus ? (idx, val) => onSetBundleModus(sektor.sektor_id, idx, val) : undefined}
               />
             ))}
             {provided.placeholder}
