@@ -72,15 +72,31 @@ function createEmptyVolume() {
 //                  Membership-Locks gesetzt).
 function calcDashboardStatusForLerntyp(sektoren, totalContentIds) {
   if (!Array.isArray(sektoren) || sektoren.length === 0) return 'vorlage';
-  if (totalContentIds.size === 0) return 'vorlage';
 
-  for (const sektor of sektoren) {
-    const items = Array.isArray(sektor?.items) ? sektor.items : [];
-    for (const item of items) {
-      if (!item || item.type !== 'aufgabe' || !item.ref_id) continue;
-      if (totalContentIds.has(item.ref_id)) return 'bearbeitet';
+  // Signal 1: Mindestens ein echter Einheits-Inhalt (Lernpaket/Aufgabe) ist
+  // als Item in einem Sektor platziert.
+  if (totalContentIds.size > 0) {
+    for (const sektor of sektoren) {
+      const items = Array.isArray(sektor?.items) ? sektor.items : [];
+      for (const item of items) {
+        if (!item || item.type !== 'aufgabe' || !item.ref_id) continue;
+        if (totalContentIds.has(item.ref_id)) return 'bearbeitet';
+      }
     }
   }
+
+  // Signal 2: Die Lehrkraft hat das Dashboard strukturell an die Einheit
+  // angepasst. Die reine Standard-Vorlage enthält nur einen *Muster*-
+  // Arbeitsphase-Sektor OHNE Themenfeld-Bindung. Sobald ein Arbeitsphase-
+  // Sektor an ein konkretes Themenfeld gebunden ist (themenfeld_id gesetzt),
+  // wurde die Vorlage bewusst auf diese Einheit angewendet/bearbeitet —
+  // auch wenn noch keine echte Aufgabe platziert ist.
+  for (const sektor of sektoren) {
+    if (sektor?.sektor_typ === 'arbeitsphase_themenfeld' && sektor?.themenfeld_id) {
+      return 'bearbeitet';
+    }
+  }
+
   return 'vorlage';
 }
 
