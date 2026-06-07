@@ -46,8 +46,15 @@ import { annotateSektorItems, DASHBOARD_GATING_ENGINE } from '@/lib/dashboardGat
  *   - Payload 1: `dashboard_gating_engine.sektor_freischaltung`-Regel.
  *   - Payload 2: jeder Sektor erhält `freischalt_bedingung`
  *     ({ modus: 'sofort'|'nach_sektor', voraussetzung_sektor_id }).
+ * airgap-1.9.0: Master-Anzeige-Modus (Shuffle vs. Alle) für Aktivitäten mit
+ *   mehreren MasterAufgaben.
+ *   - Payload 1: `master_anzeige_modus_contract` erklärt der MBK die Bedeutung
+ *     von 'shuffle' (zufällig eine Variante pro Versuch) vs. 'alle' (alle
+ *     Varianten sichtbar/zu bearbeiten).
+ *   - Payload 3: jede Aktivität erhält `master_anzeige_modus`
+ *     ('shuffle'|'alle'), damit die MBK das Variantentraining korrekt umsetzt.
  */
-export const MBK_AIRGAP_VERSION = 'airgap-1.8.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.9.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -131,6 +138,34 @@ const SCORM_DELIVERY_CONTRACT = {
     + 'an einem Bündel-Element wird das gesamte Bündel neu generiert (kein '
     + 'Patching). Die zentrale imsmanifest.xml ist der einzige Index und '
     + 'muss bei jeder Strukturänderung neu generiert werden.',
+};
+
+/**
+ * Master-Anzeige-Modus-Vertrag (airgap-1.9.0).
+ *
+ * Wird von Payload 1 als FESTE, inhalts-UNABHÄNGIGE Anweisung an die MBK
+ * übergeben. Erklärt, wie eine Aktivität mit MEHREREN MasterAufgaben den
+ * Schüler:innen präsentiert werden soll. Der konkrete Modus pro Aktivität
+ * (`master_anzeige_modus`) steht in Payload 3.
+ */
+const MASTER_ANZEIGE_MODUS_CONTRACT = {
+  field: 'master_anzeige_modus',
+  applies_to: 'activity_with_multiple_master_aufgaben',
+  modi: {
+    shuffle:
+      'Pro Versuch wird genau EINE der MasterAufgaben zufällig ausgespielt. '
+      + 'Bereits bearbeitete Varianten werden ausgeschlossen, bis alle einmal '
+      + 'durchlaufen wurden (Wiederholungs-/Variantentraining). Im SCORM/Brian '
+      + 'muss die Auswahl-Logik die Varianten zufällig rotieren; es ist NICHT '
+      + 'vorgesehen, dass der Schüler alle Varianten gleichzeitig sieht.',
+    alle:
+      'Alle MasterAufgaben sind gleichzeitig sichtbar. Der Schüler wählt '
+      + 'bewusst aus bzw. bearbeitet alle nacheinander. Keine Zufallsauswahl.',
+  },
+  default: 'shuffle',
+  note:
+    'Nur relevant, wenn eine Aktivität ≥2 MasterAufgaben hat. Bei genau einer '
+    + 'MasterAufgabe spielt der Modus keine Rolle (es gibt nur eine Variante).',
 };
 
 /**
@@ -437,6 +472,10 @@ export function buildSystemContextPayload({
     // Beschreibt Status-Feld, Gating-Regeln, Initial-Status-Ableitung und den
     // universellen Weiter-Button — ebenfalls inhalts-unabhängig.
     dashboard_gating_engine: DASHBOARD_GATING_ENGINE,
+    // airgap-1.9.0: Erklärt den Master-Anzeige-Modus (shuffle/alle) für
+    // Aktivitäten mit mehreren MasterAufgaben. Der konkrete Modus pro
+    // Aktivität steht in Payload 3 (`master_anzeige_modus`).
+    master_anzeige_modus_contract: MASTER_ANZEIGE_MODUS_CONTRACT,
   };
 }
 
@@ -1224,6 +1263,12 @@ export function buildTaskContentItemForLernpaket({
       phase: nullable(pa.phase),
       reihenfolge: pa.reihenfolge ?? null,
       erstellungs_modus: pa.erstellungs_modus || 'manuell',
+      // airgap-1.9.0: Master-Anzeige-Modus (shuffle/alle). Steuert, wie mehrere
+      // MasterAufgaben dieser Aktivität dem Schüler präsentiert werden. Siehe
+      // master_anzeige_modus_contract in Payload 1. Default 'shuffle'.
+      master_anzeige_modus: (pa.master_anzeige_modus === 'alle' || pa.master_anzeige_modus === 'shuffle')
+        ? pa.master_anzeige_modus
+        : 'shuffle',
       // KI-Aktivitäten: Inhalte stehen im Briefing → hier nur Hinweis-Felder.
       // Manuelle Aktivitäten: vollständige field_values + MasterAufgaben.
       field_values: pa.erstellungs_modus === 'ki'
