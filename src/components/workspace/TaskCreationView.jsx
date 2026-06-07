@@ -575,6 +575,15 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
     queryKey: ['lernpakete'],
     queryFn: () => base44.entities.Lernpakete.list(),
     enabled: !!einheitId,
+    // 🩹 Freigabe-Status-Fix (2026-06-07): Diese Query speist den Freigabe-/
+    // Status-Badge UND den Bearbeiten-Button in Tab 4 (Tab4LernpaketOverview).
+    // Ohne frischen Mount-Refetch konnte ein vor der Freigabe geladener
+    // Cache hängenbleiben → das Lernpaket erschien fälschlich als nicht
+    // freigegeben (zwei "Neu"-Badges, Bearbeiten aktiv), obwohl
+    // content_status='approved' in der DB stand. staleTime:0 + Mount-Refetch
+    // erzwingen beim Öffnen von Tab 4 stets den aktuellen Freigabe-Status.
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
   const { data: themenfelder = [] } = useQuery({
