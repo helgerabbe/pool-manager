@@ -781,6 +781,16 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               <div className="flex-1 min-w-0">
                 <WorkspaceTabs activeTab={activeTab} onTabChange={handleTabChange} isBasismodul={isBasismodul} />
               </div>
+              {/* Poppiges „Im Export"-Badge neben der Tab-Leiste — erscheint nur,
+                  solange die Einheit final freigegeben / im Export ist, und
+                  verschwindet automatisch, sobald die Freigabe aufgehoben wird.
+                  Erspart Tooltips an jedem gesperrten Button. */}
+              {isEinheitContentLocked && (
+                <div className="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-fuchsia-600 to-orange-500 text-white text-xs font-bold shadow-lg shadow-fuchsia-500/30 ring-2 ring-white/40 animate-pulse">
+                  <Lock className="w-3.5 h-3.5 shrink-0" />
+                  Einheit ist im Export – Bearbeiten nicht möglich
+                </div>
+              )}
               {/* Tab 2 (Struktur): Kompakt- + Struktur-bearbeiten-Buttons sind in
                   die Moodle-Status-Zeile von StrukturBoardEmbedded gewandert. */}
               {activeTab === 'dashboards' &&
