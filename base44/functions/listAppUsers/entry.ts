@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 const PAGE_SIZE = 500;
 
@@ -18,10 +18,6 @@ async function listAll(entity, query = {}) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method !== 'GET') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405 });
-  }
-
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
