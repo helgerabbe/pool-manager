@@ -31,6 +31,7 @@ import { isMissionApplicable } from '@/lib/missionen';
 import { cn } from '@/lib/utils';
 import ExportLifecycleHeaderCard from '@/components/export/ExportLifecycleHeaderCard';
 import LerntypDashboardCard from '@/components/export/LerntypDashboardCard';
+import EinheitStatusTabelle from '@/components/export/EinheitStatusTabelle';
 const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 
 // ── Status-Badge für eine Aktivität (alle 6 Zustände) ───────────────────────
@@ -360,6 +361,26 @@ export default function ExportCockpitView({
         einheitId={selectedUnitId}
         einheitTitel={einheit?.titel_der_einheit}
         darfFreigeben={darfFreigeben}
+      />
+
+      {/* Auf-einen-Blick-Tabelle: jeder Bestandteil der Einheit mit
+          Lebenszyklus + Freigabestatus, inkl. Strukturboard, allgemeinen
+          Einheits-Infos und Dashboards. */}
+      <div className="space-y-1.5">
+        <h3 className="text-sm font-semibold">Status aller Elemente auf einen Blick</h3>
+        <p className="text-xs text-muted-foreground">
+          Lebenszyklus (Moodle-Sync) und Freigabestatus pro Element – inkl. Strukturboard, Einheits-Infos und Dashboards.
+        </p>
+      </div>
+      <EinheitStatusTabelle
+        einheit={einheit}
+        lernpakete={lernpakete}
+        themenfelder={themenfelder}
+        allgemeineAufgaben={allgemeineAufgaben}
+        aktivitaeten={aktivitaeten.filter(a => a.sync_status !== 'to_delete')}
+        aktivitaetenKatalog={aktivitaetenKatalog}
+        onNavigateToActivity={onNavigateToActivity}
+        onNavigateToTask={onNavigateToTask}
       />
 
       {/* Phase F.2: Vier Lerntyp-Karten mit aggregierter Drift-Anzeige.
