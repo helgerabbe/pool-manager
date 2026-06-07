@@ -216,7 +216,7 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
                   size="sm"
                   onClick={() => onEdit(aufgabe)}
                   disabled={aufgabe.sync_status === 'pending'}
-                  className="gap-2"
+                  className="gap-2 border-green-300 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
                 >
                   <Edit className="w-4 h-4" />
                   Bearbeiten

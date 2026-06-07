@@ -119,7 +119,7 @@ export default function TaskLockBar({
         variant="outline"
         onClick={onEdit}
         disabled={isLocking}
-        className="gap-1.5 h-7 text-xs"
+        className="gap-1.5 h-7 text-xs border-green-300 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
       >
         {isLocking ? (
           <Loader2 className="w-3.5 h-3.5 animate-spin" />

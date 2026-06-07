@@ -102,7 +102,7 @@ function SegmentField({ label, description, value, onChange, kannBearbeiten, mul
           value={value || ''}
           onChange={e => onChange && onChange(e.target.value)}
           readOnly={!kannBearbeiten}
-          className="w-full px-3 py-2.5 text-sm border border-border rounded-lg resize-none bg-background focus:outline-none focus:ring-1 focus:ring-ring leading-relaxed read-only:bg-muted/20 read-only:text-foreground"
+          className="w-full px-3 py-2.5 text-sm border-2 border-blue-200 rounded-lg resize-none bg-blue-50/70 text-foreground focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 leading-relaxed read-only:bg-blue-50/70 read-only:text-foreground"
           style={{ minHeight: '90px' }}
           placeholder="(noch nicht generiert)"
         />
@@ -112,7 +112,7 @@ function SegmentField({ label, description, value, onChange, kannBearbeiten, mul
           value={value || ''}
           onChange={e => onChange && onChange(e.target.value)}
           readOnly={!kannBearbeiten}
-          className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-1 focus:ring-ring read-only:bg-muted/20"
+          className="w-full px-3 py-2 text-sm border-2 border-blue-200 rounded-lg bg-blue-50/70 text-foreground focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 read-only:bg-blue-50/70"
           placeholder="(noch nicht generiert)"
         />
       )}
@@ -290,7 +290,12 @@ export default function AITutorPromptPanel({
         )}
 
         {/* Aktionsleiste */}
-        <div className="flex items-center gap-2 flex-wrap pb-1 border-b border-border">
+        <div className="flex items-center gap-3 flex-wrap pb-1 border-b border-border">
+          <img
+            src="https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/306ee496b_generated_image.png"
+            alt="Brian"
+            className="w-10 h-10 shrink-0 object-contain"
+          />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold">Brian.study – KI-Tutor Konfiguration</p>
             <p className="text-xs text-muted-foreground">Automatisch generierte Felder. Prüfen und ggf. verfeinern. Kopieren im Brian-Export-Cockpit (Tab 9).</p>
