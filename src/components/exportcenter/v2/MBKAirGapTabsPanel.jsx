@@ -24,7 +24,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import * as AccordionPrimitive from '@radix-ui/react-accordion';
+import ExportTodoRow from './shared/ExportTodoRow';
 
 import { useExportPrompts } from '@/hooks/useExportPrompts';
 import { useAirGapBulk } from '@/hooks/useAirGapBulk';
@@ -597,80 +598,38 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
   }
 
   // ── Render ───────────────────────────────────────────────────────────
+  // Vertikale To-Do-Liste: Info/Meta zuerst (Einrichtung), dann die
+  // sechs Übergabe-Payloads in der empfohlenen Reihenfolge. Jeder Schritt
+  // ist eine aufklappbare Zeile mit Status-Zähler + Erledigt-Häkchen.
+  const driftBadge = (counts) => (
+    <TabDriftIndicator {...counts} treatStaleAsNew={isInitialExport} />
+  );
+
   return (
     <div className="space-y-4">
-      {/* Tab-Navigation */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="flex flex-wrap items-center gap-1 w-full h-auto p-1.5 bg-muted/60 rounded-xl">
-          <TabsTrigger
-            value="info"
-            className="text-xs px-3 py-1.5 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-primary font-medium"
-          >
-            Info
-          </TabsTrigger>
-          <TabsTrigger
-            value="meta"
-            className="text-xs px-3 py-1.5 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-primary font-medium"
-          >
-            Meta
-          </TabsTrigger>
-
-          {/* Trennlinie zwischen Einrichtung (Info/Meta) und den Export-Payloads */}
-          <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
-
-          <TabsTrigger
-            value="ui-config"
-            className="text-xs px-3 py-1.5 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-primary font-medium gap-1"
-          >
-            🎨 UI
-            <TabDriftIndicator {...tabCounts.mbk_ui_config} treatStaleAsNew={isInitialExport} />
-          </TabsTrigger>
-          <TabsTrigger
-            value="struktur"
-            className="text-xs px-3 py-1.5 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-primary font-medium gap-1"
-          >
-            Struktur
-            <TabDriftIndicator {...tabCounts.mbk_structure_payload} treatStaleAsNew={isInitialExport} />
-          </TabsTrigger>
-          <TabsTrigger
-            value="aufgaben"
-            className="text-xs px-3 py-1.5 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-primary font-medium gap-1"
-          >
-            Aufgaben
-            <TabDriftIndicator {...tabCounts.mbk_task_content_payload} treatStaleAsNew={isInitialExport} />
-          </TabsTrigger>
-          <TabsTrigger
-            value="globale-ki"
-            className="text-xs px-3 py-1.5 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-primary font-medium gap-1"
-          >
-            Globale KI
-            <TabDriftIndicator {...tabCounts.mbk_system_context} treatStaleAsNew={isInitialExport} />
-          </TabsTrigger>
-          <TabsTrigger
-            value="systembausteine"
-            className="text-xs px-3 py-1.5 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-primary font-medium gap-1"
-          >
-            Systembausteine
-            <TabDriftIndicator {...tabCounts.mbk_systembaustein_payload} treatStaleAsNew={isInitialExport} />
-          </TabsTrigger>
-          <TabsTrigger
-            value="ki-aufgaben"
-            className="text-xs px-3 py-1.5 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-primary font-medium gap-1"
-          >
-            KI-Aufgaben
-            <TabDriftIndicator {...tabCounts.mbk_micro_payload} treatStaleAsNew={isInitialExport} />
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="info" className="mt-4">
+      <AccordionPrimitive.Root
+        type="single"
+        collapsible
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-2"
+      >
+        {/* Einrichtung */}
+        <ExportTodoRow value="info" stepNumber="i" title="Info & Status"
+          description="Überblick über Einheit, Lebenszyklus und Delta-Analyse.">
           <InfoTab einheit={einheit} />
-        </TabsContent>
+        </ExportTodoRow>
 
-        <TabsContent value="meta" className="mt-4">
+        <ExportTodoRow value="meta" stepNumber="M" title="Meta-System-Prompt"
+          description="Einmalige Grundanweisung an die KI für diese Übergabe.">
           <MetaPromptTab />
-        </TabsContent>
+        </ExportTodoRow>
 
-        <TabsContent value="ui-config" className="mt-4">
+        {/* Übergabe-Payloads */}
+        <ExportTodoRow value="ui-config" stepNumber="1" title="🎨 UI"
+          description="Darstellung: CSS, Tab-Leiste, Kopfzeilen-Vorlage."
+          done={blockStatus.ui_config.delivered}
+          badge={driftBadge(tabCounts.mbk_ui_config)}>
           <UiConfigTab
             blockStatus={blockStatus}
             blockAggregate={blockAggregate}
@@ -681,9 +640,12 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
             onCopy={() => handleCopy(buildUi())}
             onDownload={() => handleDownload(buildUi(), `mbk-ui-config_${baseSlug}.json`)}
           />
-        </TabsContent>
+        </ExportTodoRow>
 
-        <TabsContent value="struktur" className="mt-4">
+        <ExportTodoRow value="struktur" stepNumber="2" title="Struktur"
+          description="Inhaltsverzeichnis: Themenfelder, Lernpakete, Lernpfade."
+          done={blockStatus.structure.delivered}
+          badge={driftBadge(tabCounts.mbk_structure_payload)}>
           <StrukturTab
             blockStatus={blockStatus}
             blockAggregate={blockAggregate}
@@ -694,9 +656,12 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
             onCopy={() => handleCopy(buildStructure())}
             onDownload={() => handleDownload(buildStructure(), `mbk-structure_${baseSlug}.json`)}
           />
-        </TabsContent>
+        </ExportTodoRow>
 
-        <TabsContent value="aufgaben" className="mt-4">
+        <ExportTodoRow value="aufgaben" stepNumber="3" title="Aufgaben"
+          description="Ausgearbeitete Aufgabeninhalte pro Lernpaket / Aufgabe."
+          done={blockStatus.task_content.delivered}
+          badge={driftBadge(tabCounts.mbk_task_content_payload)}>
           <AufgabenTab
             blockStatus={blockStatus}
             blockAggregate={blockAggregate}
@@ -723,9 +688,12 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
             }
             onDownloadGroupZip={(g) => handleDownloadGroupZip(g, 'task-content')}
           />
-        </TabsContent>
+        </ExportTodoRow>
 
-        <TabsContent value="globale-ki" className="mt-4">
+        <ExportTodoRow value="globale-ki" stepNumber="4" title="Globale KI"
+          description="Schulweiter System-Kontext (Nomenklatur, Stammdaten)."
+          done={blockStatus.system_context.delivered}
+          badge={driftBadge(tabCounts.mbk_system_context)}>
           <GlobaleKiTab
             blockStatus={blockStatus}
             blockAggregate={blockAggregate}
@@ -736,9 +704,12 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
             onCopy={() => handleCopy(buildSysCtx())}
             onDownload={() => handleDownload(buildSysCtx(), `mbk-system-context_${baseSlug}.json`)}
           />
-        </TabsContent>
+        </ExportTodoRow>
 
-        <TabsContent value="systembausteine" className="mt-4">
+        <ExportTodoRow value="systembausteine" stepNumber="5" title="Systembausteine"
+          description="Standard-Bausteine pro Lerntyp (Einführung, Diagnose …)."
+          done={blockStatus.systembausteine.delivered}
+          badge={driftBadge(tabCounts.mbk_systembaustein_payload)}>
           <SystembausteineTab
             blockStatus={blockStatus}
             blockAggregate={blockAggregate}
@@ -764,9 +735,12 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
             }
             onDownloadGroupZip={(g) => handleDownloadGroupZip(g, 'systembausteine')}
           />
-        </TabsContent>
+        </ExportTodoRow>
 
-        <TabsContent value="ki-aufgaben" className="mt-4">
+        <ExportTodoRow value="ki-aufgaben" stepNumber="6" title="KI-Aufgaben"
+          description="Briefings für KI-generierte Aufgaben (Payload 4)."
+          done={blockStatus.micro.delivered}
+          badge={driftBadge(tabCounts.mbk_micro_payload)}>
           <KiAufgabenTab
             blockStatus={blockStatus}
             blockAggregate={blockAggregate}
@@ -792,8 +766,8 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
             }
             onDownloadGroupZip={(g) => handleDownloadGroupZip(g, 'micro')}
           />
-        </TabsContent>
-      </Tabs>
+        </ExportTodoRow>
+      </AccordionPrimitive.Root>
     </div>
   );
 }
