@@ -1,11 +1,11 @@
 /**
  * useEinheitenMetrics.js
  *
- * Lädt Volumen + Dashboard-Fortschritte für eine Liste von Einheiten in einem Request.
+ * Lädt Volumen + Dashboard-Bearbeitungsstatus für eine Liste von Einheiten in einem Request.
  * Wird in der Einheiten-Übersicht verwendet (siehe pages/EinheitenListe).
  *
  * Returns:
- *   { metrics: Record<einheitId, { volume, progress }>, isLoading, error }
+ *   { metrics: Record<einheitId, { volume, dashboardStatus }>, isLoading, error }
  *
  * Caching: 60s staleTime – Liste bleibt responsiv, aber neue Saves werden zeitnah sichtbar.
  */
