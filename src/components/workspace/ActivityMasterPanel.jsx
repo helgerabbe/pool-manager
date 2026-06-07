@@ -13,6 +13,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useLernpaketLock } from '@/hooks/useLocks';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Crown, Plus, Loader2, Save, Pencil, Check, Lock, Eye } from 'lucide-react';
 import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
@@ -740,16 +741,35 @@ export default function ActivityMasterPanel({
                     <Eye className="w-4 h-4" /> Vorschau
                   </Button>
                 )}
-                <Button
-                  onClick={handleOpenEditModal}
-                  disabled={acquiringLock || isParentPaketLockedByOther || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || (globalEditActive && !lernpaketLockActive)}
-                  title={isParentPaketLockedByOther ? `🔒 Lernpaket wird gerade von ${lernpaket?.locked_by_email} bearbeitet` : (globalEditActive && !lernpaketLockActive) ? '🔒 Ein anderes Lernpaket wird gerade bearbeitet.' : lernpaket?.moodle_sync_status === 'locked' ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
-                  className="gap-2"
-                >
-                    {acquiringLock
-                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren…</>
-                      : <><Pencil className="w-4 h-4" /> Inhalt bearbeiten</>}
-                  </Button>
+                <TooltipProvider delayDuration={300}>
+                  <Tooltip>
+                    {/* disabled-Buttons feuern keine Hover-Events → in span wickeln */}
+                    <TooltipTrigger asChild>
+                      <span className={lernpaketReleased ? 'cursor-not-allowed' : undefined}>
+                        <Button
+                          onClick={handleOpenEditModal}
+                          disabled={acquiringLock || isParentPaketLockedByOther || lernpaketReleased || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || (globalEditActive && !lernpaketLockActive)}
+                          className={`gap-2 ${lernpaketReleased ? 'pointer-events-none' : ''}`}
+                        >
+                            {acquiringLock
+                              ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren…</>
+                              : <><Pencil className="w-4 h-4" /> Inhalt bearbeiten</>}
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {(lernpaketReleased || isParentPaketLockedByOther || (globalEditActive && !lernpaketLockActive) || lernpaket?.moodle_sync_status === 'locked') && (
+                      <TooltipContent side="bottom" className="max-w-xs">
+                        {lernpaketReleased
+                          ? '🔒 Dieses Lernpaket ist freigegeben. Die Inhalte können nicht mehr bearbeitet werden. Hebe zuerst die Freigabe auf, um Änderungen vorzunehmen.'
+                          : isParentPaketLockedByOther
+                          ? `🔒 Lernpaket wird gerade von ${lernpaket?.locked_by_email} bearbeitet.`
+                          : (globalEditActive && !lernpaketLockActive)
+                          ? '🔒 Ein anderes Lernpaket wird gerade bearbeitet.'
+                          : 'Einheit ist zur Moodle-Synchronisation gesperrt.'}
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
                 </div>
               )}
 
