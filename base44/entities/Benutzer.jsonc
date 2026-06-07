@@ -28,29 +28,9 @@
     "fachbereich_zustaendigkeit": {
       "type": "array",
       "items": {
-        "type": "string",
-        "enum": [
-          "Deutsch",
-          "Mathematik",
-          "Englisch",
-          "Franz\u00f6sisch",
-          "Latein",
-          "Biologie",
-          "Chemie",
-          "Physik",
-          "Geschichte",
-          "Geographie",
-          "Politik",
-          "Wirtschaft",
-          "Kunst",
-          "Musik",
-          "Sport",
-          "Religion",
-          "Ethik",
-          "Informatik"
-        ]
+        "type": "string"
       },
-      "description": "Zust\u00e4ndige F\u00e4cher des Benutzers (bis zu 5 m\u00f6glich)",
+      "description": "Zust\u00e4ndige F\u00e4cher des Benutzers (bis zu 5 m\u00f6glich). G\u00fcltige Werte werden \u00fcber die LookupFaecher-Entit\u00e4t gepflegt (kein festes Enum), damit schul-eigene F\u00e4cher wie 'AWT', 'NAT', 'GEP' oder 'Lernen und Lerntechniken' verwendet werden k\u00f6nnen.",
       "maxItems": 5
     },
     "fach_ausnahmen": {
