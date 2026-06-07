@@ -289,10 +289,14 @@ export default function LernpfadeSektor({
     ? `${typLabel} · ${themenfeldTitel}`
     : typLabel;
 
-  // Individuelle Sektoren dürfen einen frei wählbaren Namen tragen. Der
-  // Titel wird inline editierbar (Klick auf den Header). Bei allen anderen
-  // Sektor-Typen bleibt der Titel automatisch aus dem Typ abgeleitet.
-  const isIndividuell = sektor.sektor_typ === SEKTOR_TYP.INDIVIDUELL;
+  // Sektoren dürfen einen frei wählbaren Namen tragen (aus der Vorlage bzw.
+  // im Cockpit editierbar). Der Titel wird inline editierbar (Klick auf den
+  // Header). Ausnahmen: Arbeitsphasen sind an den Themenfeld-Titel gebunden
+  // (headerLabel zeigt ihn bereits) und Feedback ist statisch.
+  const isTitelEditierbar =
+    sektor.sektor_typ !== SEKTOR_TYP.ARBEITSPHASE &&
+    sektor.sektor_typ !== SEKTOR_TYP.FEEDBACK;
+  const isIndividuell = isTitelEditierbar;
   const [isEditingTitel, setIsEditingTitel] = React.useState(false);
   const [titelDraft, setTitelDraft] = React.useState(sektor.titel || '');
 
