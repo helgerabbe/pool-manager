@@ -5,7 +5,7 @@ import { ROLLEN } from '@/lib/rbac';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ShieldCheck, BookOpen, GraduationCap, Puzzle, CalendarRange, Settings2, RotateCcw, AlertTriangle, Sparkles, Languages, Building2, Wrench } from 'lucide-react';
+import { ShieldCheck, BookOpen, GraduationCap, Puzzle, CalendarRange, Settings2, RotateCcw, AlertTriangle, Sparkles, Languages, Building2, Wrench, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -26,6 +26,7 @@ import AktivitaetenKatalog from '@/components/admin/AktivitaetenKatalog';
 import SystemBausteineTable from '@/components/admin/SystemBausteineTable';
 import SchulStammdatenCard from '@/components/admin/SchulStammdatenCard';
 import NomenklaturManagerView from '@/components/admin/nomenklatur/NomenklaturManagerView';
+import DashboardVorlagenTab from '@/components/admin/dashboardVorlage/DashboardVorlagenTab';
 
 const KATEGORIEN = ['Diagnostik', 'Input', 'Übung', 'Projekt', 'Prüfung'];
 
@@ -95,12 +96,15 @@ export default function AdminSettings() {
 
       {/* Alle Bereiche als Tabs — direkt unter dem Header */}
       <Tabs defaultValue="allgemein">
-        <TabsList className="bg-muted grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8">
+        <TabsList className="bg-muted grid w-full grid-cols-3 sm:grid-cols-3 lg:grid-cols-9">
           <TabsTrigger value="allgemein" className="gap-1.5 text-xs">
             <Building2 className="w-3.5 h-3.5" />Allgemein
           </TabsTrigger>
           <TabsTrigger value="system" className="gap-1.5 text-xs">
             <Wrench className="w-3.5 h-3.5" />System
+          </TabsTrigger>
+          <TabsTrigger value="dashboards" className="gap-1.5 text-xs">
+            <LayoutDashboard className="w-3.5 h-3.5" />Dashboards
           </TabsTrigger>
           <TabsTrigger value="faecher" className="gap-1.5 text-xs">
             <BookOpen className="w-3.5 h-3.5" />Fächer
@@ -171,6 +175,11 @@ export default function AdminSettings() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Dashboards — Standard-Vorlagen pro Lerntyp */}
+        <TabsContent value="dashboards" className="mt-4">
+          <DashboardVorlagenTab />
         </TabsContent>
 
         {/* Fächer */}

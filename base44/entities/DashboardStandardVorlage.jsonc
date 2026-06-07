@@ -1,0 +1,47 @@
+{
+  "name": "DashboardStandardVorlage",
+  "type": "object",
+  "description": "Admin-editierbare Standard-Vorlage des Dashboard-Aufbaus pro Lerntyp. Ersetzt die fr\u00fchere Hartkodierung in lib/dashboardTemplates.js als Single Source of Truth. Pro Lerntyp existiert genau ein Datensatz (anwendungsseitig durch saveDashboardStandardVorlage sichergestellt). Diese Vorlage hat KEINE r\u00fcckwirkende Auswirkung auf bestehende Einheiten \u2013 sie wird nur beim Lazy-Init (erstes \u00d6ffnen der Dashboards einer Einheit) und beim manuellen \u201eAuf Standard zur\u00fccksetzen\" angewendet. Enth\u00e4lt ausschlie\u00dflich System-Bausteine/Platzhalter/B\u00fcndel (keine echten Aufgaben), eine Arbeitsphase erscheint als Muster-Sektor und wird beim Anwenden pro Themenfeld der Einheit vervielf\u00e4ltigt.",
+  "properties": {
+    "lerntyp": {
+      "type": "string",
+      "enum": [
+        "minimalist",
+        "pragmatiker",
+        "ehrgeizig",
+        "passioniert"
+      ],
+      "description": "Lerntyp, f\u00fcr den diese Vorlage gilt. Pro Lerntyp genau ein Datensatz."
+    },
+    "sektoren": {
+      "type": "array",
+      "description": "Array von Sektor-Objekten im selben Format wie DASHBOARD_TEMPLATES: { sektor_id, titel, modus, sektor_typ, items: [{ type:'system', ref_id, bundle_config? }] }. Arbeitsphase-Sektoren werden beim Anwenden pro Themenfeld expandiert.",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "default": []
+    }
+  },
+  "required": [
+    "lerntyp"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

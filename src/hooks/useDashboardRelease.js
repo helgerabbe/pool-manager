@@ -41,6 +41,10 @@ export function useDashboardRelease({
   // durchgereicht, damit Arbeitsphase-Sektoren pro Themenfeld expandiert
   // werden. Optional, leeres Array => Fallback auf 1 Arbeitsphase-Sektor.
   themenfelder = [],
+  // Admin-editierbare Standard-Vorlage des aktiven Lerntyps (Array von
+  // Sektoren). Hat Vorrang vor dem Hardcode-Fallback. Wird vom Cockpit aus
+  // den DashboardStandardVorlage-Records gespeist (DB > Hardcode).
+  resetTemplate = null,
   // Killer-Switch: sobald die Einheit `final_freigegeben` oder
   // `export_running` ist, sind ALLE Schreibaktionen aus diesem Hook
   // gesperrt — auch für Admin/Fachschaft. Aufhebung nur über das
@@ -290,7 +294,10 @@ export function useDashboardRelease({
   // Persistierung + Junction-Sync.
   const confirmResetTemplate = useCallback(() => {
     if (!activeLernTyp) return;
-    const template = DASHBOARD_TEMPLATES[activeLernTyp];
+    const template =
+      Array.isArray(resetTemplate) && resetTemplate.length > 0
+        ? resetTemplate
+        : DASHBOARD_TEMPLATES[activeLernTyp];
     if (!Array.isArray(template)) {
       toast.error(`Für „${activeLernTyp}" ist kein Standard-Raster definiert.`);
       setResetConfirmOpen(false);
@@ -302,7 +309,7 @@ export function useDashboardRelease({
     setResetConfirmOpen(false);
     onTemplateApplied?.();
     toast.success(`Dashboard „${lerntypLabel || activeLernTyp}" auf Standard zurückgesetzt.`);
-  }, [activeLernTyp, updateKonfiguration, onTemplateApplied, lerntypLabel, themenfelder]);
+  }, [activeLernTyp, updateKonfiguration, onTemplateApplied, lerntypLabel, themenfelder, resetTemplate]);
 
   return {
     statusBusy,

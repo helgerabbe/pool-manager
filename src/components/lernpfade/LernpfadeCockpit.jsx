@@ -71,6 +71,7 @@ import { getBundleKindByAcceptedTypes } from '@/lib/sektorTypen';
 import CascadeDeleteDialog from '@/components/lernpfade/CascadeDeleteDialog';
 import ArbeitsphaseModal from '@/components/lernpfade/ArbeitsphaseModal.jsx';
 import { DASHBOARD_TEMPLATES, getArbeitsphaseDefaultItems } from '@/lib/dashboardTemplates';
+import { buildEffectiveTemplates, getEffectiveTemplateForLerntyp } from '@/lib/dashboardStandardVorlage';
 import { getSektorTemplate, SEKTOR_TEMPLATE_KEYS } from '@/lib/sektorTemplates';
 import { SEKTOR_TYP } from '@/lib/sektorTypen';
 import { getThemenfelderByEinheit, createThemenfeld } from '@/services/ThemenfeldService';
@@ -209,6 +210,20 @@ export default function LernpfadeCockpit({
     queryKey: ['systemBausteine', 'all'],
     queryFn: () => base44.entities.SystemBausteine.list('reihenfolge'),
   });
+
+  // Admin-editierbare Standard-Dashboard-Vorlagen (DB > Hardcode-Fallback).
+  // Genutzt für Lazy-Init UND „Auf Standard zurücksetzen".
+  const { data: dashboardVorlagen = [] } = useQuery({
+    queryKey: ['dashboardStandardVorlagen'],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('getDashboardStandardVorlagen', {});
+      return res?.data?.vorlagen || [];
+    },
+  });
+  const effectiveTemplates = useMemo(
+    () => buildEffectiveTemplates(dashboardVorlagen),
+    [dashboardVorlagen]
+  );
   const systemBausteineById = useMemo(() => {
     const map = new Map();
     (systemBausteine || []).forEach((b) => map.set(b.baustein_id, b));
@@ -445,7 +460,7 @@ export default function LernpfadeCockpit({
     // Themenfelder hat, läuft der Init mit leerem Array → Fallback auf 1 Sektor.
     if (!themenfelder) return;
     lazyInitDoneRef.current = einheit.id;
-    const filled = applyAllDashboardTemplates({}, DASHBOARD_TEMPLATES, themenfelder);
+    const filled = applyAllDashboardTemplates({}, effectiveTemplates, themenfelder);
     setKonfiguration(filled);
     konfigurationRef.current = filled;
     // Direkter Save via flushSave(forcePayload) — kein Edit-Lock erforderlich,
@@ -453,7 +468,7 @@ export default function LernpfadeCockpit({
     flushSave(filled).catch((err) => {
       console.warn('[LernpfadeCockpit] Lazy-Init Save fehlgeschlagen:', err);
     });
-  }, [einheit?.id, einheit?.lernpfade_konfiguration, flushSave, themenfelder]);
+  }, [einheit?.id, einheit?.lernpfade_konfiguration, flushSave, themenfelder, effectiveTemplates]);
 
   // ── Einheit-Final-Release (vorher in EinheitFreigabeBlock) ──────────
   // Vorgezogen, damit `isEinheitContentLocked` für den Read-Only-Wert
@@ -526,6 +541,8 @@ export default function LernpfadeCockpit({
     // Phase E: durchreichen, damit „Standard zurücksetzen" pro Themenfeld
     // einen eigenen Arbeitsphase-Sektor anlegt.
     themenfelder,
+    // Admin-editierbare Standard-Vorlage des aktiven Lerntyps (DB > Hardcode).
+    resetTemplate: getEffectiveTemplateForLerntyp(dashboardVorlagen, activeLernTyp),
     // Killer-Switch durchreichen.
     isEinheitContentLocked,
   });
