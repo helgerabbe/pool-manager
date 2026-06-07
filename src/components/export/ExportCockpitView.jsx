@@ -129,9 +129,6 @@ export default function ExportCockpitView({
             docsSlug="export-workflow"
           />
         </h2>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Status der Einheit, Dashboard-Übersicht und Inhaltsstatus auf einen Blick.
-        </p>
       </div>
 
       {/* Auf-einen-Blick-Tabelle: jeder Bestandteil der Einheit mit
