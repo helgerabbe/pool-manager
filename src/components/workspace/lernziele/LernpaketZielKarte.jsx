@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Plus, Save, Loader2, PenLine, Lock, X } from 'lucide-react';
 import LernzielRow from '@/components/workspace/LernzielRow';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { useLernpaketLock } from '@/hooks/useLocks';
 
 let _tmpCounter = 0;
@@ -176,18 +177,33 @@ export default function LernpaketZielKarte({
       {kannBearbeiten && (
         <div className="flex items-center justify-end gap-2">
           {!canEdit ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={handleEnterEdit}
-              disabled={isAcquiringLock || isLockedByOther || lernpaketReleased}
-              title={lernpaketReleased ? '🔒 Lernpaket ist freigegeben – Inhalte können nicht mehr bearbeitet werden.' : isLockedByOther ? `🔒 Wird gerade von ${lockedByEmail} bearbeitet` : ''}
-              className="gap-1.5 h-7 text-xs bg-green-50 border-green-200 text-green-800 hover:bg-green-100 hover:text-green-900"
-            >
-              {isAcquiringLock ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PenLine className="w-3.5 h-3.5" />}
-              {isAcquiringLock ? 'Öffne…' : 'Bearbeiten'}
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                {/* disabled-Buttons feuern keine Hover-Events → in span wickeln */}
+                <TooltipTrigger asChild>
+                  <span className={lernpaketReleased ? 'cursor-not-allowed' : undefined}>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={handleEnterEdit}
+                      disabled={isAcquiringLock || isLockedByOther || lernpaketReleased}
+                      className={`gap-1.5 h-7 text-xs bg-green-50 border-green-200 text-green-800 hover:bg-green-100 hover:text-green-900 ${lernpaketReleased ? 'pointer-events-none' : ''}`}
+                    >
+                      {isAcquiringLock ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PenLine className="w-3.5 h-3.5" />}
+                      {isAcquiringLock ? 'Öffne…' : 'Bearbeiten'}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {(lernpaketReleased || isLockedByOther) && (
+                  <TooltipContent side="bottom" className="max-w-xs">
+                    {lernpaketReleased
+                      ? '🔒 Dieses Lernpaket ist freigegeben. Die Lernziele können nicht mehr bearbeitet werden. Hebe zuerst die Freigabe auf, um Änderungen vorzunehmen.'
+                      : `🔒 Wird gerade von ${lockedByEmail} bearbeitet.`}
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           ) : (
             <>
               <Button
