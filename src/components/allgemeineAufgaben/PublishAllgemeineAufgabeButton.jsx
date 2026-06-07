@@ -93,17 +93,29 @@ export default function PublishAllgemeineAufgabeButton({ aufgabe, kannBearbeiten
       aufgabe.moodle_sync_status === 'pending' ||
       aufgabe.brian_sync_status === 'pending';
     return (
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => revokeMutation.mutate()}
-        disabled={revokeMutation.isPending || isPendingExport}
-        title={isPendingExport ? 'Nicht möglich: Aufgabe wartet auf Export-Bestätigung (Moodle oder Brian)' : undefined}
-        className="gap-2 text-green-700 border-green-300 hover:bg-green-50"
-      >
-        {revokeMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCw className="w-3.5 h-3.5" />}
-        Freigabe rückgängig
-      </Button>
+      <div className="flex flex-col gap-1.5">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => revokeMutation.mutate()}
+          disabled={revokeMutation.isPending || isPendingExport}
+          title={isPendingExport ? 'Die Freigabe kann gerade nicht zurückgenommen werden, weil sich die Aufgabe im Export befindet.' : undefined}
+          className={
+            isPendingExport
+              ? 'gap-2 text-muted-foreground border-border bg-muted cursor-not-allowed'
+              : 'gap-2 text-green-700 border-green-300 hover:bg-green-50'
+          }
+        >
+          {revokeMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCw className="w-3.5 h-3.5" />}
+          Freigabe rückgängig
+        </Button>
+        {isPendingExport && (
+          <p className="text-[11px] text-orange-700 leading-snug max-w-xs">
+            Diese Aufgabe ist momentan im Export und kann nicht bearbeitet werden.
+            Sobald der Export abgeschlossen ist, kann man hier wieder arbeiten.
+          </p>
+        )}
+      </div>
     );
   }
 

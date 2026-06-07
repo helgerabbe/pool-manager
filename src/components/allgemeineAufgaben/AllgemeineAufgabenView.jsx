@@ -702,6 +702,23 @@ export default function AllgemeineAufgabenView({
                 isLocking={lock.isLocking}
                 isLockedByOther={lock.isLockedByOther}
                 lockedByEmail={lock.lockedByEmail}
+                // Freigegebene oder im Export befindliche Aufgaben können nicht
+                // direkt bearbeitet werden: Button ausgrauen + Klartext-Grund.
+                editDisabled={
+                  selectedAufgabe?.sync_status === 'pending' ||
+                  selectedAufgabe?.moodle_sync_status === 'pending' ||
+                  selectedAufgabe?.brian_sync_status === 'pending' ||
+                  selectedAufgabe?.content_status === 'approved'
+                }
+                lockReason={
+                  (selectedAufgabe?.sync_status === 'pending' ||
+                   selectedAufgabe?.moodle_sync_status === 'pending' ||
+                   selectedAufgabe?.brian_sync_status === 'pending')
+                    ? 'Diese Aufgabe befindet sich im Export – Änderungen sind nicht möglich. Sobald der Export abgeschlossen ist, kann hier wieder gearbeitet werden.'
+                    : selectedAufgabe?.content_status === 'approved'
+                      ? 'Diese Aufgabe ist bereits freigegeben – Änderungen sind nicht möglich. Nimm erst die Freigabe zurück, bevor du sie wieder bearbeitest.'
+                      : null
+                }
                 onEdit={lock.enterEditMode}
                 onCancel={lock.exitEditMode}
                 editButtonLabel="In den Bearbeitungsmodus wechseln"
