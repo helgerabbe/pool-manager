@@ -216,7 +216,7 @@ export default function Tab4LernpaketOverview({
                                  'group w-full flex items-center gap-2 p-2 rounded border text-xs text-left hover:ring-1 hover:ring-primary/40 hover:shadow-sm transition-all cursor-pointer',
                                  meta.bg
                                )}
-                               title="Aktivität in Tab 4 öffnen"
+                               title="Aktivität in Tab 5 öffnen"
                              >
                                <span className="text-primary font-semibold shrink-0">▸</span>
                                <span className="flex-1 text-foreground">{aktivitaetName}</span>
