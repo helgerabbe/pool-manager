@@ -29,22 +29,22 @@ import { cn } from '@/lib/utils';
 // Status-Farbe, der Tooltip erklärt den Klartext-Zustand.
 const STATUS_META = {
   new: {
-    label: 'noch nicht exportiert',
+    label: 'Neu',
     dotClass: 'bg-slate-300 border-slate-400',
     textClass: 'text-slate-600',
     badgeClass: 'bg-slate-100 text-slate-600 border-slate-300',
     tooltip: 'Diese Aufgabe wurde noch nie exportiert.',
   },
   pending: {
-    label: 'wartet auf Export-Bestätigung',
+    label: 'Im Export',
     dotClass: 'bg-orange-400 border-orange-500 animate-pulse',
     textClass: 'text-orange-700',
-    badgeClass: 'bg-orange-50 text-orange-700 border-orange-300',
+    badgeClass: 'bg-blue-100 text-blue-700 border-blue-300',
     tooltip:
       'Aufgabe wurde im Export-Cockpit für den nächsten Lauf vorgemerkt. Solange dieser Status anliegt, ist die Aufgabe gesperrt – auch die Freigabe kann nicht mehr zurückgenommen werden.',
   },
   synced: {
-    label: 'live im System',
+    label: 'Synchron',
     dotClass: 'bg-green-500 border-green-600',
     textClass: 'text-green-700',
     badgeClass: 'bg-green-50 text-green-700 border-green-300',
@@ -52,7 +52,7 @@ const STATUS_META = {
       'Die aktuelle Version dieser Aufgabe ist erfolgreich im Zielsystem angekommen.',
   },
   modified: {
-    label: 'geändert seit letztem Export',
+    label: 'Geändert',
     dotClass: 'bg-amber-400 border-amber-500',
     textClass: 'text-amber-700',
     badgeClass: 'bg-amber-50 text-amber-700 border-amber-300',
@@ -165,20 +165,38 @@ function SystemPill({ system, status }) {
 }
 
 /**
- * Inline-Variante: gibt nur zwei Pills (Moodle + Brian) ohne eigenen
- * Container aus. Gedacht für die oberste Status-Zeile im Detail-Panel,
- * die rechtsbündig den Zustand der Aufgabe anzeigt.
+ * Inline-Variante: zeigt EIN einziges Lebenszyklus-Badge (Neu / Im Export /
+ * Synchron / Geändert) statt der früheren getrennten Moodle-/Brian-Pills.
+ * Das vereinfacht die oberste Status-Zeile und ist konsistent mit dem
+ * Lebenszyklus-Badge im Freigabe-Cockpit (Tab 9) und in Tab 7.
+ *
+ * Der Sync-Status wird aus dem (Legacy-)Feld `sync_status` bzw.
+ * `moodle_sync_status` abgeleitet — beim finalen Freigeben der Einheit setzt
+ * das Backend diese Felder ohnehin auf 'pending' ("Im Export").
  */
 export function AufgabeExportStatusInline({ aufgabe }) {
   if (!aufgabe) return null;
-  const moodleStatus = resolveMoodleStatus(aufgabe);
-  const brianStatus = aufgabe.brian_sync_status || 'new';
+  const status = resolveMoodleStatus(aufgabe);
+  const meta = getMeta(status);
   return (
     <TooltipProvider>
-      <div className="flex items-center gap-1.5 flex-wrap">
-        <SystemPill system="Moodle" status={moodleStatus} />
-        <SystemPill system="Brian" status={brianStatus} />
-      </div>
+      <Tooltip delayDuration={150}>
+        <TooltipTrigger asChild>
+          <span
+            className={cn(
+              'inline-flex items-center h-5 px-2 rounded-full border text-[11px] font-semibold cursor-help select-none',
+              meta.badgeClass
+            )}
+            aria-label={`Lebenszyklus: ${meta.label}`}
+          >
+            {meta.label}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="max-w-xs text-left leading-snug">
+          <div className="font-semibold mb-0.5">{meta.label}</div>
+          <div className="text-[11px] opacity-90">{meta.tooltip}</div>
+        </TooltipContent>
+      </Tooltip>
     </TooltipProvider>
   );
 }
