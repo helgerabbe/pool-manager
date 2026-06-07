@@ -19,6 +19,7 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import UserImport from '@/components/admin/UserImport';
 import UserInviteTab from '@/components/admin/UserInviteTab';
+import FachRollenEditor from '@/components/admin/FachRollenEditor';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -45,6 +46,7 @@ function BenutzerForm({ open, onOpenChange, onSubmit, initialData, faecher = [] 
     nachname: initialData?.nachname || '',
     rolle: initialData?.rolle || '',
     fachbereich_zustaendigkeit: initialData?.fachbereich_zustaendigkeit || [],
+    fach_ausnahmen: initialData?.fach_ausnahmen || [],
     ist_aktiv: initialData?.ist_aktiv !== undefined ? initialData.ist_aktiv : true,
   });
 
@@ -57,6 +59,7 @@ function BenutzerForm({ open, onOpenChange, onSubmit, initialData, faecher = [] 
         nachname: initialData.nachname || '',
         rolle: initialData.rolle || '',
         fachbereich_zustaendigkeit: initialData.fachbereich_zustaendigkeit || [],
+        fach_ausnahmen: initialData.fach_ausnahmen || [],
         ist_aktiv: initialData.ist_aktiv !== undefined ? initialData.ist_aktiv : true,
       });
     }
@@ -71,6 +74,7 @@ function BenutzerForm({ open, onOpenChange, onSubmit, initialData, faecher = [] 
         nachname: '',
         rolle: '',
         fachbereich_zustaendigkeit: [],
+        fach_ausnahmen: [],
         ist_aktiv: true,
       });
     }
@@ -79,11 +83,16 @@ function BenutzerForm({ open, onOpenChange, onSubmit, initialData, faecher = [] 
 
   const toggleFach = (fach) => {
     const current = formData.fachbereich_zustaendigkeit || [];
+    const removing = current.includes(fach);
     setFormData({
       ...formData,
-      fachbereich_zustaendigkeit: current.includes(fach)
+      fachbereich_zustaendigkeit: removing
         ? current.filter(f => f !== fach)
         : [...current, fach],
+      // Beim Entfernen eines Fachs auch dessen Ausnahme-Eintrag bereinigen.
+      fach_ausnahmen: removing
+        ? (formData.fach_ausnahmen || []).filter(a => a.fach !== fach)
+        : (formData.fach_ausnahmen || []),
     });
   };
 
@@ -97,6 +106,7 @@ function BenutzerForm({ open, onOpenChange, onSubmit, initialData, faecher = [] 
         nachname: '',
         rolle: '',
         fachbereich_zustaendigkeit: [],
+        fach_ausnahmen: [],
         ist_aktiv: true,
       });
     }
@@ -186,6 +196,13 @@ function BenutzerForm({ open, onOpenChange, onSubmit, initialData, faecher = [] 
               {(formData.fachbereich_zustaendigkeit || []).length}/5 Fächer ausgewählt (Zugehörigkeit)
             </p>
           </div>
+
+          <FachRollenEditor
+            basisRolle={formData.rolle}
+            faecher={formData.fachbereich_zustaendigkeit || []}
+            ausnahmen={formData.fach_ausnahmen || []}
+            onChange={(next) => setFormData({ ...formData, fach_ausnahmen: next })}
+          />
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
@@ -283,9 +300,14 @@ function MobileBenutzerCard({ b, authUser, onEdit, onDelete }) {
         </Badge>
         {b.fachbereich_zustaendigkeit?.length > 0 && (
           <div className="flex flex-wrap gap-1 justify-end">
-            {b.fachbereich_zustaendigkeit.map(f => (
-              <span key={f} className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{f}</span>
-            ))}
+            {b.fachbereich_zustaendigkeit.map(f => {
+              const herab = (b.fach_ausnahmen || []).some(a => a.fach === f);
+              return (
+                <span key={f} className={`text-[10px] px-1.5 py-0.5 rounded ${herab ? 'bg-blue-100 text-blue-700' : 'bg-muted'}`}>
+                  {f}{herab ? ' · nur Lehrkraft' : ''}
+                </span>
+              );
+            })}
           </div>
         )}
       </div>
@@ -548,9 +570,14 @@ export default function Benutzerverwaltung() {
                           <p className="text-xs text-muted-foreground">{b.user_id}</p>
                           {b.fachbereich_zustaendigkeit?.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-1">
-                              {b.fachbereich_zustaendigkeit.map(f => (
-                                <span key={f} className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{f}</span>
-                              ))}
+                              {b.fachbereich_zustaendigkeit.map(f => {
+                                const herab = (b.fach_ausnahmen || []).some(a => a.fach === f);
+                                return (
+                                  <span key={f} className={`text-[10px] px-1.5 py-0.5 rounded ${herab ? 'bg-blue-100 text-blue-700' : 'bg-muted'}`}>
+                                    {f}{herab ? ' · nur Lehrkraft' : ''}
+                                  </span>
+                                );
+                              })}
                             </div>
                           )}
                         </div>

@@ -23,7 +23,7 @@
         "Betrachter",
         "Moodle-Designer"
       ],
-      "description": "Systemrolle des Benutzers"
+      "description": "Globale Basis-/Systemrolle des Benutzers. Gilt als Standard f\u00fcr alle zust\u00e4ndigen F\u00e4cher, sofern keine abweichende Fach-Ausnahme (fach_ausnahmen) gesetzt ist."
     },
     "fachbereich_zustaendigkeit": {
       "type": "array",
@@ -52,6 +52,31 @@
       },
       "description": "Zust\u00e4ndige F\u00e4cher des Benutzers (bis zu 5 m\u00f6glich)",
       "maxItems": 5
+    },
+    "fach_ausnahmen": {
+      "type": "array",
+      "description": "Optionale, fachspezifische Rollen-Ausnahmen, die von der globalen Basisrolle (rolle) abweichen. Anwendungsfall 1: Eine Fachschaftsleitung ist nur in EINEM ihrer F\u00e4cher Fachschaftsleitung und in anderen F\u00e4chern lediglich Fachlehrkraft \u2192 pro betroffenem Fach ein Eintrag { fach, rolle: 'Fachlehrkraft' }. Anwendungsfall 2: Ein Moodle-Designer (fachunabh\u00e4ngige Basisrolle) erh\u00e4lt in bestimmten F\u00e4chern zus\u00e4tzlich Fachlehrkraft-Zugriff (dies wird jedoch implizit \u00fcber fachbereich_zustaendigkeit abgebildet und braucht keinen Eintrag). Die effektive Rolle pro Fach: 1) gibt es einen fach_ausnahmen-Eintrag f\u00fcr das Fach \u2192 diese Rolle; 2) sonst Basisrolle, falls diese Fachschaftsleitung/Fachlehrkraft ist; 3) sonst (Admin/Moodle-Designer/Betrachter) + Fach in fachbereich_zustaendigkeit \u2192 Fachlehrkraft.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "fach": {
+            "type": "string",
+            "description": "Fach-Name (muss in fachbereich_zustaendigkeit enthalten sein)."
+          },
+          "rolle": {
+            "type": "string",
+            "enum": [
+              "Fachlehrkraft"
+            ],
+            "description": "Abweichende, herabgestufte Rolle f\u00fcr dieses Fach. Aktuell nur 'Fachlehrkraft' (Herabstufung einer Fachschaftsleitung). Eine Hochstufung von Fachlehrkraft zu Fachschaftsleitung ist fachlich nicht vorgesehen."
+          }
+        },
+        "required": [
+          "fach",
+          "rolle"
+        ]
+      },
+      "default": []
     },
     "ist_aktiv": {
       "type": "boolean",
