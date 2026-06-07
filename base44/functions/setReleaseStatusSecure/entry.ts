@@ -416,6 +416,15 @@ Deno.serve(async (req) => {
       ? { content_status: 'approved', released_at: now, released_by: user.email }
       : { content_status: 'draft', released_at: null, released_by: null };
 
+    // Wird ein Lernpaket direkt freigegeben, ist es per Validierung oben
+    // vollständig (alle aktiven Aktivitäten sind 'approved'). Die Dashboard-
+    // Ampel (lib/ampelLogic.js) verlangt `is_complete === true` für Grün —
+    // daher hier mitschreiben, sonst bleibt das freigegebene Lernpaket im
+    // Dashboard fälschlich rot ("Entwurf"), bis eine Automation nachzieht.
+    if (targetType === 'lernpaket' && release === true) {
+      updatePayload.is_complete = true;
+    }
+
     const entityMap = {
       activity: 'LernpaketPhaseAktivitaet',
       lernpaket: 'Lernpakete',
