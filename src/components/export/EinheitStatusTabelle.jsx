@@ -20,8 +20,10 @@
  */
 
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import { Layers, ListChecks, Target, LayoutDashboard, Settings2 } from 'lucide-react';
-import CockpitSyncBadge, { CockpitFreigabeBadge } from '@/components/export/CockpitSyncBadge';
+import CockpitSyncBadge, { CockpitFreigabeBadge, CockpitPruefBadge } from '@/components/export/CockpitSyncBadge';
 import { useLernpfadDriftReport } from '@/hooks/useLernpfadDriftReport';
 
 const LERNTYP_LABELS = {
@@ -48,7 +50,7 @@ function Section({ icon: Icon, title, count, children }) {
 }
 
 // ── Einzelne Zeile ───────────────────────────────────────────────────────────
-function Row({ label, sublabel, syncStatus, contentStatus, onClick }) {
+function Row({ label, sublabel, syncStatus, contentStatus, pruefLocked, onClick }) {
   const Comp = onClick ? 'button' : 'div';
   return (
     <Comp
@@ -59,6 +61,7 @@ function Row({ label, sublabel, syncStatus, contentStatus, onClick }) {
         <p className={`text-sm truncate ${onClick ? 'text-primary' : 'text-foreground'}`}>{label}</p>
         {sublabel && <p className="text-[11px] text-muted-foreground truncate">{sublabel}</p>}
       </div>
+      {pruefLocked !== undefined && <CockpitPruefBadge locked={pruefLocked} />}
       {contentStatus !== undefined && <CockpitFreigabeBadge contentStatus={contentStatus} />}
       <CockpitSyncBadge syncStatus={syncStatus} />
     </Comp>
@@ -108,6 +111,22 @@ export default function EinheitStatusTabelle({
   const { getStatus } = useLernpfadDriftReport(unitId);
   const konfiguration = einheit?.lernpfade_konfiguration || {};
 
+  // Prüf-Status pro Lerntyp: Ein Dashboard gilt als "geprüft & gesperrt",
+  // sobald mindestens eine seiner Memberships pfad_status='locked_for_export'
+  // trägt (so wird es auch in Tab 7 markiert). Sonst "in Bearbeitung".
+  const { data: memberships = [] } = useQuery({
+    queryKey: ['lernpfadMemberships', unitId],
+    queryFn: () => base44.entities.LernpfadAufgabeMembership.filter({ einheit_id: unitId }),
+    enabled: !!unitId,
+  });
+  const lockedByLerntyp = React.useMemo(() => {
+    const m = {};
+    memberships.forEach(mem => {
+      if (mem.pfad_status === 'locked_for_export') m[mem.lerntyp] = true;
+    });
+    return m;
+  }, [memberships]);
+
   // Wurde die Einheit überhaupt schon einmal nach Moodle exportiert? Nur dann
   // können Dashboards "Synchron"/"Geändert" sein – sonst sind sie schlicht "Neu".
   const einheitExportiert = einheit?.sync_status === 'synced' || einheit?.sync_status === 'modified';
@@ -134,7 +153,7 @@ export default function EinheitStatusTabelle({
         : drifted > 0
           ? `${drifted} von ${sektoren.length} Sektoren geändert seit Freigabe`
           : `${sektoren.length} Sektoren – unverändert`;
-    return { lt, sync, sublabel };
+    return { lt, sync, sublabel, pruefLocked: !!lockedByLerntyp[lt] };
   });
 
   return (
@@ -208,12 +227,13 @@ export default function EinheitStatusTabelle({
 
       {/* 6: Dashboards */}
       <Section icon={LayoutDashboard} title="Dashboards (Lernpfade)" count={dashboardRows.length}>
-        {dashboardRows.map(({ lt, sync, sublabel }) => (
+        {dashboardRows.map(({ lt, sync, sublabel, pruefLocked }) => (
           <Row
             key={lt}
             label={`Dashboard – ${LERNTYP_LABELS[lt]}`}
             sublabel={sublabel}
             syncStatus={sync}
+            pruefLocked={pruefLocked}
           />
         ))}
       </Section>

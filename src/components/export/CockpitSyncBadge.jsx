@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, AlertCircle, Clock, RefreshCw, Trash2, Pencil, Upload } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Clock, RefreshCw, Trash2, Pencil, Upload, Lock, Unlock } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 /**
@@ -58,5 +58,31 @@ export function CockpitFreigabeBadge({ contentStatus }) {
       {approved ? <Upload className="w-3 h-3" /> : <Pencil className="w-3 h-3" />}
       {approved ? 'Freigegeben' : 'Entwurf'}
     </span>
+  );
+}
+
+/**
+ * CockpitPruefBadge
+ * ─────────────────
+ * Zeigt für ein Dashboard, ob es geprüft & für die Bearbeitung gesperrt
+ * (`locked_for_export`) oder noch offen/in Bearbeitung (`draft`) ist.
+ */
+export function CockpitPruefBadge({ locked }) {
+  return (
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className={`cursor-help inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${locked ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+            {locked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+            {locked ? 'Geprüft' : 'In Bearbeitung'}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="left" className="max-w-xs text-xs">
+          {locked
+            ? 'Dashboard wurde geprüft und ist für die Bearbeitung gesperrt.'
+            : 'Dashboard ist noch offen – Änderungen am Lernpfad sind möglich.'}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

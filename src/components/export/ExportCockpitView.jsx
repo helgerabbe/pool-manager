@@ -23,7 +23,6 @@ import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
 import { ShieldCheck, Info } from 'lucide-react';
 import HelpBadge from '@/components/ui/HelpBadge';
-import ExportLifecycleHeaderCard from '@/components/export/ExportLifecycleHeaderCard';
 import EinheitStatusTabelle from '@/components/export/EinheitStatusTabelle';
 
 // ── Main Component ──────────────────────────────────────────────────
@@ -134,13 +133,6 @@ export default function ExportCockpitView({
           Status der Einheit, Dashboard-Übersicht und Inhaltsstatus auf einen Blick.
         </p>
       </div>
-
-      {/* Phase F.1: Neue Header-Karte mit Lifecycle-Status & Aufheben-Button. */}
-      <ExportLifecycleHeaderCard
-        einheitId={selectedUnitId}
-        einheitTitel={einheit?.titel_der_einheit}
-        darfFreigeben={darfFreigeben}
-      />
 
       {/* Auf-einen-Blick-Tabelle: jeder Bestandteil der Einheit mit
           Lebenszyklus + Freigabestatus, inkl. Strukturboard, allgemeinen
