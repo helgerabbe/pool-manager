@@ -45,10 +45,6 @@ export default function MetaPromptTab() {
         </div>
       </div>
 
-      <pre className="rounded-lg border bg-muted/40 p-4 text-xs whitespace-pre-wrap font-mono max-h-[60vh] overflow-y-auto">
-        {META_SYSTEM_PROMPT}
-      </pre>
-
       <p className="text-xs text-muted-foreground italic px-1">
         Dieser Prompt ist statisch — er ändert sich nur, wenn das Ops-Team
         die Datei <code className="bg-muted px-1 py-0.5 rounded text-[11px]">lib/operatorMetaSystemPrompt.js</code> aktualisiert.
