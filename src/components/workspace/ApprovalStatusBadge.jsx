@@ -12,7 +12,7 @@ export default function ApprovalStatusBadge({ contentStatus }) {
   if (contentStatus !== 'approved') return null;
 
   return (
-    <Badge className="bg-green-50 text-green-700 border border-green-300 flex items-center gap-1.5">
+    <Badge className="bg-green-700 text-white border border-green-700 flex items-center gap-1.5">
       <CheckCircle2 className="w-3 h-3" />
       Freigegeben
     </Badge>
