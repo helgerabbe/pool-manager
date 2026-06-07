@@ -5,7 +5,7 @@ import { ROLLEN } from '@/lib/rbac';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ShieldCheck, BookOpen, GraduationCap, Puzzle, CalendarRange, Settings2, RotateCcw, AlertTriangle, Sparkles, Languages, Building2, Wrench, LayoutDashboard } from 'lucide-react';
+import { ShieldCheck, Settings2, RotateCcw, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -96,34 +96,26 @@ export default function AdminSettings() {
 
       {/* Alle Bereiche als Tabs — direkt unter dem Header */}
       <Tabs defaultValue="allgemein">
-        <TabsList className="bg-muted grid w-full grid-cols-3 sm:grid-cols-3 lg:grid-cols-9">
-          <TabsTrigger value="allgemein" className="gap-1.5 text-xs">
-            <Building2 className="w-3.5 h-3.5" />Allgemein
-          </TabsTrigger>
-          <TabsTrigger value="system" className="gap-1.5 text-xs">
-            <Wrench className="w-3.5 h-3.5" />System
-          </TabsTrigger>
-          <TabsTrigger value="dashboards" className="gap-1.5 text-xs">
-            <LayoutDashboard className="w-3.5 h-3.5" />Dashboards
-          </TabsTrigger>
-          <TabsTrigger value="faecher" className="gap-1.5 text-xs">
-            <BookOpen className="w-3.5 h-3.5" />Fächer
-          </TabsTrigger>
-          <TabsTrigger value="jahrgaenge" className="gap-1.5 text-xs">
-            <GraduationCap className="w-3.5 h-3.5" />Jahrgänge
-          </TabsTrigger>
-          <TabsTrigger value="phasen" className="gap-1.5 text-xs">
-            <CalendarRange className="w-3.5 h-3.5" />Phasen
-          </TabsTrigger>
-          <TabsTrigger value="aktivitaeten" className="gap-1.5 text-xs">
-            <Puzzle className="w-3.5 h-3.5" />Aktivitäten
-          </TabsTrigger>
-          <TabsTrigger value="systembausteine" className="gap-1.5 text-xs">
-            <Sparkles className="w-3.5 h-3.5" />System-Bausteine
-          </TabsTrigger>
-          <TabsTrigger value="nomenklatur" className="gap-1.5 text-xs">
-            <Languages className="w-3.5 h-3.5" />Nomenklatur
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-3 lg:grid-cols-9 h-auto gap-1.5 bg-muted p-1.5 rounded-lg">
+          {[
+            { value: 'allgemein', label: 'Allgemein' },
+            { value: 'system', label: 'System' },
+            { value: 'dashboards', label: 'Dashboards' },
+            { value: 'faecher', label: 'Fächer' },
+            { value: 'jahrgaenge', label: 'Jahrgänge' },
+            { value: 'phasen', label: 'Phasen' },
+            { value: 'aktivitaeten', label: 'Aktivitäten' },
+            { value: 'systembausteine', label: 'System-Bausteine' },
+            { value: 'nomenklatur', label: 'Nomenklatur' },
+          ].map((tab) => (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              className="text-xs font-medium px-2 py-2 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-colors"
+            >
+              {tab.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         {/* Allgemein — Schul-Stammdaten */}
