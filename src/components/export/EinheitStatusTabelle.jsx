@@ -108,18 +108,32 @@ export default function EinheitStatusTabelle({
   const { getStatus } = useLernpfadDriftReport(unitId);
   const konfiguration = einheit?.lernpfade_konfiguration || {};
 
+  // Wurde die Einheit überhaupt schon einmal nach Moodle exportiert? Nur dann
+  // können Dashboards "Synchron"/"Geändert" sein – sonst sind sie schlicht "Neu".
+  const einheitExportiert = einheit?.sync_status === 'synced' || einheit?.sync_status === 'modified';
+
   const dashboardRows = Object.keys(LERNTYP_LABELS).map(lt => {
     const sektoren = Array.isArray(konfiguration[lt]) ? konfiguration[lt] : [];
     let drifted = 0;
     sektoren.forEach(s => { if (getStatus(lt, s.sektor_id) === 'drifted') drifted += 1; });
-    // Lebenszyklus-Status ableiten: keine Sektoren = new, Drift = modified, sonst synced
+
+    // Lebenszyklus ableiten:
+    //  - keine Sektoren          → new (noch nichts angelegt)
+    //  - Einheit nie exportiert  → new (Dashboard kann nicht "synchron" sein)
+    //  - Drift seit Freigabe     → modified
+    //  - sonst                   → synced
     let sync = 'new';
-    if (sektoren.length > 0) sync = drifted > 0 ? 'modified' : 'synced';
+    if (sektoren.length > 0 && einheitExportiert) {
+      sync = drifted > 0 ? 'modified' : 'synced';
+    }
+
     const sublabel = sektoren.length === 0
       ? 'Noch keine Sektoren'
-      : drifted > 0
-        ? `${drifted} von ${sektoren.length} Sektoren geändert seit Freigabe`
-        : `${sektoren.length} Sektoren – unverändert`;
+      : !einheitExportiert
+        ? `${sektoren.length} Sektoren – noch nie nach Moodle exportiert`
+        : drifted > 0
+          ? `${drifted} von ${sektoren.length} Sektoren geändert seit Freigabe`
+          : `${sektoren.length} Sektoren – unverändert`;
     return { lt, sync, sublabel };
   });
 
