@@ -28,6 +28,7 @@ import { EXPORT_LIFECYCLE_STATUS } from '@/lib/exportLifecycle';
 import EinheitFreigabeConfirmDialog from '@/components/lernpfade/EinheitFreigabeConfirmDialog';
 import InfoHint from '@/components/lernpfade/InfoHint';
 import EinheitLifecycleInfoBox from '@/components/export/EinheitLifecycleInfoBox';
+import EinheitDeltaSummary from '@/components/export/EinheitDeltaSummary';
 
 const LERNTYP_LABELS = {
   minimalist: 'Minimalist',
@@ -52,7 +53,18 @@ function DashboardPill({ label, locked }) {
   );
 }
 
-export default function EinheitFinalReleaseControl({ einheitId, darfFreigeben = false }) {
+export default function EinheitFinalReleaseControl({
+  einheitId,
+  darfFreigeben = false,
+  // Delta-Quelle (bereits im Cockpit geladen) — für die "nur das Delta wird
+  // gemeldet"-Anzeige. Optional: fehlt sie, wird die Summary einfach weggelassen.
+  einheit = null,
+  lernpakete = [],
+  themenfelder = [],
+  allgemeineAufgaben = [],
+  aktivitaeten = [],
+  masterAufgaben = [],
+}) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data, isLoading } = useEinheitFreigabeStatus(einheitId);
@@ -117,11 +129,11 @@ export default function EinheitFinalReleaseControl({ einheitId, darfFreigeben = 
       toast({
         title:
           newStatus === EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN
-            ? 'Einheit final freigegeben'
+            ? 'Änderungen ans Export-Center gemeldet'
             : 'Freigabe aufgehoben',
         description:
           newStatus === EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN
-            ? 'Die Inhalte aller Aufgaben sind jetzt gesperrt.'
+            ? 'Nur neue und geänderte Elemente wurden gemeldet. Die Inhalte sind jetzt gesperrt.'
             : 'Die Inhalte können wieder bearbeitet werden.',
       });
     },
@@ -163,13 +175,16 @@ export default function EinheitFinalReleaseControl({ einheitId, darfFreigeben = 
         }`}
       >
         <div className="flex items-center gap-2 flex-wrap">
-          <h3 className="text-sm font-semibold">Finale Einheits-Freigabe</h3>
-          <InfoHint title="Wie funktioniert die finale Freigabe?">
-            Die finale Einheits-Freigabe ist erst möglich, wenn alle 4 Lerntyp-Dashboards
-            geprüft sind UND aktuell niemand mehr in einer Aufgabe oder einem Lernpaket
-            aktiv arbeitet. Mit der Freigabe werden die <strong>Inhalte aller Aufgaben,
-            Lernpakete und Aktivitäten</strong> gesperrt – die Bearbeitungs-Tabs werden
-            read-only. „Freigabe aufheben" ist möglich, solange das Export-Team noch nicht
+          <h3 className="text-sm font-semibold">Änderungen an das Export-Center melden</h3>
+          <InfoHint title="Was passiert beim Freigeben?">
+            Beim Freigeben wird <strong>nicht die ganze Einheit</strong> neu nach Moodle
+            geschickt, sondern <strong>nur das Delta</strong> – also die Elemente, die neu
+            sind oder seit dem letzten Export geändert wurden. Dank der eindeutigen IDs
+            weiß das Export-Center genau, welche einzelne Aufgabe, welches Lernpaket oder
+            welche Aktivität es aktualisieren muss. Voraussetzung: alle 4 Lerntyp-Dashboards
+            sind geprüft UND niemand arbeitet mehr aktiv in einer Aufgabe oder einem
+            Lernpaket. Während der Freigabe sind die Inhalte gesperrt (Bearbeitungs-Tabs
+            read-only). „Freigabe aufheben" ist möglich, solange das Export-Team noch nicht
             „Export starten" geklickt hat.
           </InfoHint>
         </div>
@@ -208,7 +223,7 @@ export default function EinheitFinalReleaseControl({ einheitId, darfFreigeben = 
                 ) : (
                   <Lock className="w-4 h-4" />
                 )}
-                Einheit final freigeben
+                Änderungen ans Export-Center melden
               </Button>
             )}
             {isFinal && (
@@ -234,6 +249,19 @@ export default function EinheitFinalReleaseControl({ einheitId, darfFreigeben = 
             )}
           </div>
         </div>
+
+        {/* Delta-Hinweis: was würde tatsächlich gemeldet (nur vor der Freigabe
+            relevant — danach ist die Einheit gesperrt). */}
+        {status === EXPORT_LIFECYCLE_STATUS.DRAFT && (
+          <EinheitDeltaSummary
+            einheit={einheit}
+            lernpakete={lernpakete}
+            themenfelder={themenfelder}
+            allgemeineAufgaben={allgemeineAufgaben}
+            aktivitaeten={aktivitaeten}
+            masterAufgaben={masterAufgaben}
+          />
+        )}
 
         {/* Infobox: Zustand der ganzen Einheit in Klartext + Zeitstempel. */}
         <EinheitLifecycleInfoBox data={data} />

@@ -135,7 +135,16 @@ export default function ExportCockpitView({
       {/* Finale Einheits-Freigabe: hier im Cockpit beheimatet, weil hier der
           Gesamtstatus der Einheit sichtbar ist und die Freigabe-Entscheidung
           getroffen wird. */}
-      <EinheitFinalReleaseControl einheitId={selectedUnitId} darfFreigeben={darfFreigeben} />
+      <EinheitFinalReleaseControl
+        einheitId={selectedUnitId}
+        darfFreigeben={darfFreigeben}
+        einheit={einheit}
+        lernpakete={lernpakete}
+        themenfelder={themenfelder}
+        allgemeineAufgaben={allgemeineAufgaben}
+        aktivitaeten={aktivitaeten}
+        masterAufgaben={masterAufgaben}
+      />
 
       {/* Auf-einen-Blick-Tabelle: jeder Bestandteil der Einheit mit
           Lebenszyklus + Freigabestatus, inkl. Strukturboard, allgemeinen
