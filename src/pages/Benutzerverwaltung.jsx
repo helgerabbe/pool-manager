@@ -355,6 +355,16 @@ export default function Benutzerverwaltung() {
   // Beide Queries müssen fertig sein – kein halbgares Rendering
   const isLoading = benutzerLoading || usersLoading;
 
+  // Registrierte Benutzer, alphabetisch nach Nachname (dann Vorname) sortiert
+  const registrierteBenutzer = React.useMemo(() => {
+    return benutzer
+      .filter(b => users?.find(u => u.email === b.user_id))
+      .sort((a, b) =>
+        (a.nachname || '').localeCompare(b.nachname || '', 'de', { sensitivity: 'base' }) ||
+        (a.vorname || '').localeCompare(b.vorname || '', 'de', { sensitivity: 'base' })
+      );
+  }, [benutzer, users]);
+
 
 
   const createMutation = useMutation({
@@ -535,13 +545,13 @@ export default function Benutzerverwaltung() {
 
             {/* Tab 1: Registrierte */}
             <TabsContent value="registered" className="p-4 m-0">
-              {benutzer.filter(b => users?.find(u => u.email === b.user_id)).length === 0 ? (
+              {registrierteBenutzer.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-10">
                   Noch keine registrierten Benutzer.
                 </p>
               ) : isMobile ? (
                 <div className="space-y-3">
-                  {benutzer.filter(b => users?.find(u => u.email === b.user_id)).map(b => (
+                  {registrierteBenutzer.map(b => (
                     <MobileBenutzerCard
                       key={b.id}
                       b={b}
@@ -553,7 +563,7 @@ export default function Benutzerverwaltung() {
                 </div>
               ) : (
                 <div className="divide-y">
-                  {benutzer.filter(b => users?.find(u => u.email === b.user_id)).map(b => (
+                  {registrierteBenutzer.map(b => (
                     <div key={b.id} className={`flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors ${!b.ist_aktiv ? 'opacity-50' : ''}`}>
                       <div className="flex items-center gap-4">
                         <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
