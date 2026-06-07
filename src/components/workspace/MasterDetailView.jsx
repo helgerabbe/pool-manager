@@ -786,6 +786,20 @@ export default function MasterDetailView({
           />
         ) : null;
 
+        // Freigabe-Schalter für die Offene Aufgabe (symmetrisch zum Test).
+        const offeneReleaseFooter = !editingKlonId && isOffeneType ? (
+          <ReleaseToggleSection
+            isReleased={localContentStatus === 'approved'}
+            canRelease={canReleaseMaster}
+            hierarchyLocked={false}
+            hierarchyLockMessage={null}
+            onToggle={(next) => masterReleaseMutation.mutate(next)}
+            disabled={isSavingAny || masterReleaseMutation.isPending}
+            releasedAt={localReleasedAt}
+            releasedBy={localReleasedBy}
+          />
+        ) : null;
+
         const handleModalSave = (newData) => {
           const { content_status, ...fvData } = newData;
           if (editingKlonId) {
@@ -979,7 +993,10 @@ export default function MasterDetailView({
                   onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
                   initialData={activeData}
                   isSaving={isSavingAny}
-                  onDelete={editingKlonId ? undefined : handleDelete}
+                  footerExtra={offeneReleaseFooter}
+                  readOnly={masterIsReleased}
+                  lockedMessage="Diese Masteraufgabe ist freigegeben und kann nicht bearbeitet werden. Hebe die Freigabe unten auf, um Änderungen vorzunehmen."
+                  onDelete={editingKlonId || masterIsReleased ? undefined : handleDelete}
                   onSave={handleModalSave}
                   onCancel={handleCloseModal}
                 />

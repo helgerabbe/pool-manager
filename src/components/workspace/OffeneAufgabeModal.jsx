@@ -19,6 +19,9 @@ export default function OffeneAufgabeModal({
   isSaving = false,
   isCopy = false,
   exportLocked = false,
+  footerExtra = null,
+  readOnly = false,
+  lockedMessage = null,
 }) {
   const [editorData, setEditorData] = useState(initialData);
 
@@ -31,6 +34,9 @@ export default function OffeneAufgabeModal({
       isSaving={isSaving}
       isCopy={isCopy}
       exportLocked={exportLocked}
+      footerExtra={footerExtra}
+      readOnly={readOnly}
+      lockedMessage={lockedMessage}
       onDelete={onDelete}
       onReset={onReset}
       onSave={(baseData) => {
@@ -40,7 +46,7 @@ export default function OffeneAufgabeModal({
       <OffeneAufgabeEditor
         initialData={initialData}
         onChange={(data) => setEditorData(data)}
-        readOnly={false}
+        readOnly={readOnly}
       />
     </BaseActivityModal>
   );
