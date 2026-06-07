@@ -114,10 +114,11 @@ Deno.serve(async (req) => {
 
     const lernpakete = await listAll(e.Lernpakete, { einheit_id: einheitId });
     const paketIds = lernpakete.map((lp) => lp.id);
-    const [aktivitaeten, allgemeineAufgaben, masters] = await Promise.all([
+    const [aktivitaeten, allgemeineAufgaben, masters, themenfelder] = await Promise.all([
       listAllForPaketIds(e.LernpaketPhaseAktivitaet, paketIds),
       listAll(e.AllgemeineAufgabe, { einheit_id: einheitId }),
       listAllForPaketIds(e.MasterAufgabe, paketIds),
+      listAll(e.Themenfeld, { einheit_id: einheitId }),
     ]);
 
     const aktivitaetMap = new Map(aktivitaeten.map((a) => [a.id, a]));
@@ -185,6 +186,25 @@ Deno.serve(async (req) => {
       itemUpdatePromises.push(e[resolved.type].update(id, payload));
     }
 
+    // ── Struktur-Container (Themenfelder) auf 'synced' ziehen ───────────
+    // Die einzelnen Inhalte (Aktivitäten, Aufgaben, Lernpakete) werden
+    // bereits über successfulIds erfasst. Die reinen Struktur-Container
+    // (Themenfelder) tauchen aber nicht im Delta-Picker auf — sie sollen
+    // nach einem erfolgreichen Export trotzdem als „synchron" gelten,
+    // damit ihre Lebenszyklus-Badges nicht fälschlich „Neu/Geändert"
+    // anzeigen. Wir ziehen sie nur dann nach, wenn KEINE Fehler gemeldet
+    // wurden (failedIds leer) — sonst bleibt der Delta-Zustand erhalten.
+    const exportFehlerfrei = failedIds.length === 0;
+    if (exportFehlerfrei) {
+      for (const tf of themenfelder) {
+        if (tf.sync_status !== 'synced') {
+          itemUpdatePromises.push(
+            e.Themenfeld.update(tf.id, { sync_status: 'synced', last_synced_at: now })
+          );
+        }
+      }
+    }
+
     let sektorErrorCount = 0;
     const sektorUpdatePromises = [];
     if (Array.isArray(failedSektors) && failedSektors.length > 0) {
@@ -214,12 +234,22 @@ Deno.serve(async (req) => {
       );
     }
 
-    await e.Einheiten.update(einheitId, {
+    // Einheit: finale Freigabe zurücknehmen (Lifecycle → 'draft'). Die
+    // INHALTE bleiben freigegeben (content_status/released_* werden NICHT
+    // angefasst) — es wird ausschließlich der "final freigegeben"-Zustand
+    // aufgehoben. Zusätzlich: Wenn der Export fehlerfrei war, wird der
+    // Lebenszyklus der Einheit selbst auf 'synced' gestellt, damit ihr
+    // Struktur-Badge "Synchron" statt "Neu/Geändert" zeigt.
+    const einheitUpdate = {
       export_lifecycle_status: 'draft',
       export_lifecycle_changed_at: now,
       export_lifecycle_changed_by: user.email,
       last_synced_at: now,
-    });
+    };
+    if (exportFehlerfrei) {
+      einheitUpdate.sync_status = 'synced';
+    }
+    await e.Einheiten.update(einheitId, einheitUpdate);
 
     if (dualLockReleasedIds.length > 0) {
       const auditResults = await Promise.allSettled(
