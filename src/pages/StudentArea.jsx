@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { getCurrentUser } from '@/services/AuthService';
-import CockpitHeader from '@/components/schueler/CockpitHeader';
+import CockpitHeaderOverlay from '@/components/schueler/CockpitHeaderOverlay';
 import StartButton from '@/components/schueler/StartButton';
 import SelbstNotizKarte from '@/components/schueler/SelbstNotizKarte';
 import RueckblickLeiste from '@/components/schueler/RueckblickLeiste';
@@ -44,11 +44,11 @@ export default function StudentArea() {
   return (
     // Volle Höhe des Content-Bereichs, KEIN Scrollen: alles passt auf eine
     // iPad-Seite. Inhalte verteilen sich über ein flex-column-Raster.
-    <div className="h-full overflow-hidden bg-background">
-      <div className="h-full max-w-5xl mx-auto px-5 sm:px-8 py-5 flex flex-col gap-4 min-h-0">
-        {/* Kopf: Begrüßung + Datum/Uhrzeit */}
-        <CockpitHeader name={user?.full_name} />
+    <div className="relative h-full overflow-hidden bg-background">
+      {/* Verborgener Header: nur ein Dreieck oben mittig, klappt als Overlay aus */}
+      <CockpitHeaderOverlay name={user?.full_name} />
 
+      <div className="h-full max-w-5xl mx-auto px-5 sm:px-8 pt-8 pb-5 flex flex-col gap-4 min-h-0">
         {/* Startknopf + Selbst-Notiz nebeneinander (spart vertikalen Platz) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 shrink-0">
           <StartButton onClick={() => {}} />
