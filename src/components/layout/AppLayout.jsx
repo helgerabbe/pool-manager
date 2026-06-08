@@ -7,7 +7,6 @@ import { useRBAC } from '@/hooks/useRBAC';
 import WartungsBanner from '@/components/layout/WartungsBanner';
 import NavigationTooltip from '@/components/layout/NavigationTooltip';
 import { logout } from '@/services/AuthService';
-import SchueleransichtVerlassenButton from '@/components/schueler/SchueleransichtVerlassenButton';
 import { useQuery } from '@tanstack/react-query';
 import { getAllEinheiten } from '@/services/EinheitenService';
 import { usePresence } from '@/hooks/usePresence';
@@ -129,7 +128,6 @@ export default function AppLayout() {
       <GlobalRealtimeUpdates />
       <TutorialSlideshow />
       <WartungsBanner />
-      {istSchuelerAnsicht && <SchueleransichtVerlassenButton />}
       {/* ═══════════════════════════════════════════════════════════════════════════ */}
       {/* ──────────────────── GLOBALE TOP BAR (immer sichtbar) ──────────────────── */}
       {/* ═══════════════════════════════════════════════════════════════════════════ */}

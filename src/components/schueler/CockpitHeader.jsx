@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import SchueleransichtVerlassenButton from '@/components/schueler/SchueleransichtVerlassenButton';
 
 const WOCHENTAGE = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
 const MONATE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
@@ -32,9 +33,12 @@ export default function CockpitHeader({ name }) {
         </h1>
         <p className="text-muted-foreground text-sm">Schön, dass du da bist.</p>
       </div>
-      <div className="text-right">
-        <p className="text-sm font-medium text-foreground">{formatDatum(jetzt)}</p>
-        <p className="text-sm text-muted-foreground">Es ist {formatUhrzeit(jetzt)}</p>
+      <div className="flex items-center gap-4">
+        <div className="text-right">
+          <p className="text-sm font-medium text-foreground">{formatDatum(jetzt)}</p>
+          <p className="text-sm text-muted-foreground">Es ist {formatUhrzeit(jetzt)}</p>
+        </div>
+        <SchueleransichtVerlassenButton />
       </div>
     </div>
   );

@@ -5,11 +5,11 @@ import { ROLLEN } from '@/lib/rbac';
 import { logout } from '@/services/AuthService';
 
 /**
- * Schwebender Button in der Schüleransicht (oben rechts).
+ * Fest integrierter Button im Cockpit-Header (rechts neben Datum/Uhrzeit).
  *
  * - Für Lehrkräfte/Admins (kein Schüler): „Schüleransicht verlassen" → zurück
  *   zum normalen Dashboard. So testen sie die Schüleransicht in voller Höhe.
- * - Für echte Schüler: „Abmelden" → Logout aus der App.
+ * - Für echte Schüler: „App verlassen" → Logout aus der App.
  *
  * Hinweis: Da es aktuell noch keine eigene Schüler-Rolle gibt, gilt jede:r
  * mit Betrachter-Rolle (oder niedriger) als „Schüler" im Sinne dieses Buttons.
@@ -39,7 +39,7 @@ export default function SchueleransichtVerlassenButton() {
   return (
     <button
       onClick={handleClick}
-      className="fixed top-4 right-4 z-50 flex items-center gap-2 rounded-full border border-border bg-card/80 backdrop-blur-md px-4 py-2 text-sm font-medium text-muted-foreground shadow-md hover:text-foreground hover:border-primary/40 hover:shadow-lg transition-all"
+      className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground shadow-sm hover:text-foreground hover:border-primary/40 hover:shadow-md transition-all shrink-0"
     >
       {istMitarbeiter ? (
         <>
@@ -49,7 +49,7 @@ export default function SchueleransichtVerlassenButton() {
       ) : (
         <>
           <LogOut className="w-4 h-4" />
-          Abmelden
+          App verlassen
         </>
       )}
     </button>
