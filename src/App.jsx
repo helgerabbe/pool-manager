@@ -26,6 +26,7 @@ import BasismodulViewManager from '@/components/basismodule/BasismodulViewManage
 import DocsLayout from '@/components/docs/DocsLayout';
 import DocsIndex from '@/pages/DocsIndex';
 import DocViewer from '@/pages/DocViewer';
+import StudentArea from '@/pages/StudentArea';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -64,6 +65,9 @@ const AuthenticatedApp = () => {
             <Route index element={<DocsIndex />} />
             <Route path=":slug" element={<DocViewer />} />
           </Route>
+
+          <Route path="/lernen" element={<StudentArea />} />
+          
           
           {/* ✅ GESCHÜTZT: Admin-Bereich */}
           <Route
