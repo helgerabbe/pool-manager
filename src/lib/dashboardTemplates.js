@@ -51,15 +51,10 @@ const B = Object.freeze({
   externalTest: 'sys_external_test',
   // Standard-Anker (statisch, keine Drop-Zone)
   themenfeldIntro: 'sys_themenfeld_intro',
-  // Platzhalter
-  pInfo: 'sys_platzhalter_info',
-  pHandlung: 'sys_platzhalter_handlung',
-  pMoodleBuendel: 'sys_platzhalter_moodle_buendel',
-  pZwischentest: 'sys_platzhalter_zwischentest',
-  pBrianBuendel: 'sys_platzhalter_brian_buendel',
-  pProjekt: 'sys_platzhalter_projekt',
-  // Phase 2: Projektaufgaben-Bündel (1:n-Container) – ersetzt im Ehrgeizig-/
-  // Passioniert-Template den alten 1:1-Platzhalter `sys_platzhalter_projekt`.
+  // Bündel (typ='buendel', 1:n-Container). IDs tragen aus historischen
+  // Gründen noch das Platzhalter-Präfix, sind aber dauerhafte Bündel.
+  moodleBuendel: 'sys_platzhalter_moodle_buendel',
+  brianBuendel: 'sys_platzhalter_brian_buendel',
   projektBuendel: 'sys_projektbuendel',
 });
 
@@ -86,14 +81,14 @@ const MINIMALIST = [
     titel: 'Erste Erarbeitungsphase',
     modus: 'sequenziell',
     sektor_typ: SEKTOR_TYP.ARBEITSPHASE,
-    items: [sys(B.themenfeldIntro), sys(B.pHandlung), sys(B.pMoodleBuendel)],
+    items: [sys(B.themenfeldIntro), sys(B.moodleBuendel)],
   },
   {
     sektor_id: 'tpl_min_sec3',
     titel: 'Zwischentest',
     modus: 'sequenziell',
     sektor_typ: SEKTOR_TYP.ZWISCHENTEST,
-    items: [sys(B.themenfeldIntro), sys(B.pZwischentest)],
+    items: [sys(B.themenfeldIntro)],
   },
 ];
 
@@ -117,7 +112,7 @@ const PRAGMATIKER = [
     titel: 'Erarbeitungs- und Trainingsphase',
     modus: 'sequenziell',
     sektor_typ: SEKTOR_TYP.ARBEITSPHASE,
-    items: [sys(B.themenfeldIntro), sys(B.pHandlung), sys(B.pMoodleBuendel), sys(B.pBrianBuendel)],
+    items: [sys(B.themenfeldIntro), sys(B.moodleBuendel), sys(B.brianBuendel)],
   },
   {
     sektor_id: 'tpl_prag_sec3',
@@ -149,7 +144,7 @@ const EHRGEIZIG = [
     titel: 'Erarbeitungs- und Trainingsphase',
     modus: 'sequenziell',
     sektor_typ: SEKTOR_TYP.ARBEITSPHASE,
-    items: [sys(B.themenfeldIntro), sys(B.pHandlung), sys(B.pMoodleBuendel), sys(B.pBrianBuendel)],
+    items: [sys(B.themenfeldIntro), sys(B.moodleBuendel), sys(B.brianBuendel)],
   },
   {
     sektor_id: 'tpl_ehr_sec3',
@@ -187,7 +182,7 @@ const PASSIONIERT = [
     titel: 'Anwendung & Training',
     modus: 'sequenziell',
     sektor_typ: SEKTOR_TYP.ARBEITSPHASE,
-    items: [sys(B.pBrianBuendel)],
+    items: [sys(B.brianBuendel)],
   },
   {
     sektor_id: 'tpl_pass_sec3',

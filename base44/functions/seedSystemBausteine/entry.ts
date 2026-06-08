@@ -17,20 +17,10 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const PFLICHT_BAUSTEINE = [
   {
-    baustein_id: 'sys_diagnose',
-    titel: 'KI-Lerntyp-Diagnose',
-    icon: 'message-circle',
-    admin_beschreibung:
-      'Brian führt mit dem Schüler ein kurzes Diagnose-Gespräch und ordnet ihn einem der vier Lerntypen zu.',
-    export_instruktion:
-      'Starte ein Diagnosegespräch mit dem Schüler, um seinen Lerntyp (Minimalist, Pragmatiker, Ehrgeizig, Passioniert) zu bestimmen. Ergebnis wird im Profil hinterlegt.',
-    ist_aktiv: true,
-    reihenfolge: 10,
-  },
-  {
     baustein_id: 'sys_landkarte',
     titel: 'Lernlandkarte sichten',
     icon: 'map',
+    typ: 'baustein',
     admin_beschreibung:
       'Schüler verschafft sich einen Überblick über die Lernziele und Themen der Einheit auf der Lernlandkarte.',
     export_instruktion:
@@ -42,6 +32,7 @@ const PFLICHT_BAUSTEINE = [
     baustein_id: 'sys_lehrer_check',
     titel: 'Lehrer-Check (Stoppschild)',
     icon: 'stop-circle',
+    typ: 'baustein',
     admin_beschreibung:
       'Sperrpunkt: Der Schüler muss vor dem Weiterarbeiten ein kurzes Gespräch oder eine Sichtprüfung mit der Lehrkraft absolvieren.',
     export_instruktion:
@@ -53,6 +44,7 @@ const PFLICHT_BAUSTEINE = [
     baustein_id: 'sys_zwischentest',
     titel: 'Zwischenprüfung / Diagnosetest',
     icon: 'clipboard-check',
+    typ: 'baustein',
     admin_beschreibung:
       'Standardisierter Diagnosetest, der den aktuellen Lernstand abfragt und Empfehlungen für den weiteren Pfad gibt.',
     export_instruktion:
@@ -60,104 +52,24 @@ const PFLICHT_BAUSTEINE = [
     ist_aktiv: true,
     reihenfolge: 40,
   },
-  // ── Magic-Raster Platzhalter (Phase 1) ───────────────────────────────
-  // Diese vier Bausteine fungieren als Drop-Zonen-Erinnerungen in
-  // Standard-Vorlagen. Sie werden vor dem Export entfernt und tragen
-  // deshalb eine warnende export_instruktion.
   {
-    baustein_id: 'sys_platzhalter_handlung',
-    titel: 'Ggf. handlungsorientierte Aufgabe (optional)',
-    icon: 'hand',
-    admin_beschreibung:
-      'Optionaler Platzhalter: Hier kann – muss aber nicht – eine handlungsorientierte Aufgabe eingefügt werden. Visuell als fakultativ gekennzeichnet.',
-    export_instruktion:
-      'OPTIONALER PLATZHALTER – kann durch eine handlungsorientierte Aufgabe ersetzt werden. Wenn nicht benötigt, vor Freigabe entfernen.',
-    ist_aktiv: true,
-    reihenfolge: 100,
-  },
-  {
-    baustein_id: 'sys_platzhalter_basispaket',
-    titel: 'Platzhalter: Basispaket / Bündel',
-    icon: 'layers',
-    admin_beschreibung:
-      'Drop-Zone-Erinnerung: Hier soll später ein Bündel (mehrere Lernpakete der Ebene 1) eingefügt werden.',
-    export_instruktion:
-      'PLATZHALTER – muss durch eine echte Bündel-Aufgabe ersetzt werden, bevor der Pfad freigegeben wird.',
-    ist_aktiv: true,
-    reihenfolge: 110,
-  },
-  {
-    baustein_id: 'sys_platzhalter_ebene2',
-    titel: 'Platzhalter: Inhaltliche Aufgabe (Ebene 2)',
-    icon: 'file-text',
-    admin_beschreibung:
-      'Drop-Zone-Erinnerung: Hier soll später eine inhaltliche Transfer-Aufgabe (Ebene 2) eingefügt werden.',
-    export_instruktion:
-      'PLATZHALTER – muss durch eine echte Ebene-2-Aufgabe ersetzt werden, bevor der Pfad freigegeben wird.',
-    ist_aktiv: true,
-    reihenfolge: 120,
-  },
-  {
-    baustein_id: 'sys_platzhalter_projekt',
-    titel: 'Platzhalter: Projekt-Aufgabe (Ebene 3)',
-    icon: 'star',
-    admin_beschreibung:
-      'Drop-Zone-Erinnerung: Hier soll später ein Projekt-Anker auf eine Ebene-3-Projektaufgabe eingefügt werden.',
-    export_instruktion:
-      'PLATZHALTER – muss durch eine echte Projekt-Aufgabe ersetzt werden, bevor der Pfad freigegeben wird.',
-    ist_aktiv: true,
-    reihenfolge: 130,
-  },
-  {
-    baustein_id: 'sys_platzhalter_info',
+    baustein_id: 'sys_themenfeld_intro',
     titel: 'Einführung in das Themenfeld',
     icon: 'info',
+    typ: 'baustein',
     admin_beschreibung:
-      'Drop-Zone-Erinnerung: Hier soll später eine Einführung in das Themenfeld (Infoseite oder Prozess-Aufgabe) eingefügt werden.',
+      'Kurze Einführung in das jeweilige Themenfeld – worum geht es, was sind die Schwerpunkte.',
     export_instruktion:
-      'PLATZHALTER – muss durch eine echte Einführung (Infoseite oder Prozess-Aufgabe) ersetzt werden, bevor der Pfad freigegeben wird.',
+      'Gib dem Schüler eine kurze, motivierende Einführung in das aktuelle Themenfeld: worum geht es, welche Schwerpunkte erwarten ihn.',
     ist_aktiv: true,
-    reihenfolge: 140,
-  },
-  {
-    baustein_id: 'sys_platzhalter_reflexion',
-    titel: 'Platzhalter: Reflexionsaufgabe',
-    icon: 'message-circle',
-    admin_beschreibung:
-      'Drop-Zone-Erinnerung: Hier soll später eine Reflexionsaufgabe (Selbsteinschätzung, Lernrückblick) eingefügt werden.',
-    export_instruktion:
-      'PLATZHALTER – muss durch eine echte Reflexionsaufgabe ersetzt werden, bevor der Pfad freigegeben wird.',
-    ist_aktiv: true,
-    reihenfolge: 150,
-  },
-  // ── Dashboards V2: Sektion-0-Bausteine ───────────────────────────────
-  {
-    baustein_id: 'sys_sec0_overview',
-    titel: 'Kurze Einführung in die Einheit',
-    icon: 'book-open',
-    admin_beschreibung:
-      'Einfache Sprache: Schüler bekommt eine kompakte Übersicht der Einheit. Bestätigung per Button („Verstanden").',
-    export_instruktion:
-      'Zeige dem Schüler eine kurze Übersicht der Einheit in einfacher Sprache. Der Schüler bestätigt das Lesen per Klick auf den „Verstanden"-Button, bevor es weitergeht.',
-    ist_aktiv: true,
-    reihenfolge: 5,
-  },
-  {
-    baustein_id: 'sys_sec0_qblock',
-    titel: 'Freiwilliger Fragenblock für die Einstiegsdiagnose',
-    icon: 'help-circle',
-    admin_beschreibung:
-      'Optionale Eingangsfragen, die der Schüler an die KI stellen kann, bevor er mit der Einheit beginnt.',
-    export_instruktion:
-      'Biete dem Schüler einen freiwilligen Fragenblock an. Er darf offene Fragen zur Einheit stellen; die KI beantwortet sie kurz und verständlich. Überspringbar.',
-    ist_aktiv: true,
-    reihenfolge: 7,
+    reihenfolge: 45,
   },
   // ── Dashboards V2: Lernlandkarten-Varianten ──────────────────────────
   {
     baustein_id: 'sys_map_reduced',
     titel: 'Lernlandkarte (verringerte Version)',
     icon: 'map',
+    typ: 'baustein',
     admin_beschreibung:
       'Reduzierte Lernlandkarte – nur die wichtigsten Lernziele und Themen werden angezeigt. Wird später per KI dynamisch generiert.',
     export_instruktion:
@@ -169,6 +81,7 @@ const PFLICHT_BAUSTEINE = [
     baustein_id: 'sys_map_full',
     titel: 'Lernlandkarte (vollständige Version)',
     icon: 'map',
+    typ: 'baustein',
     admin_beschreibung:
       'Vollständige Lernlandkarte mit allen Lernzielen, Themen und Verknüpfungen. Wird später per KI dynamisch generiert.',
     export_instruktion:
@@ -181,6 +94,7 @@ const PFLICHT_BAUSTEINE = [
     baustein_id: 'sys_exam_register',
     titel: 'Anmeldung zur schriftlichen Arbeit',
     icon: 'pencil',
+    typ: 'baustein',
     admin_beschreibung:
       'Anmelde-Hinweis: Schüler bestätigt seine Bereitschaft für die schriftliche Arbeit.',
     export_instruktion:
@@ -192,6 +106,7 @@ const PFLICHT_BAUSTEINE = [
     baustein_id: 'sys_external_test',
     titel: 'Externer Test (z. B. Classtime)',
     icon: 'external-link',
+    typ: 'baustein',
     admin_beschreibung:
       'Hinweis auf einen externen Test (z. B. Classtime, Kahoot). Der eigentliche Test findet außerhalb der App statt.',
     export_instruktion:
@@ -199,51 +114,51 @@ const PFLICHT_BAUSTEINE = [
     ist_aktiv: true,
     reihenfolge: 55,
   },
-  // ── Dashboards V2: Bündel-Platzhalter ────────────────────────────────
+  // ── Bündel (typ='buendel'): 1:n-Container, die andere Bausteine/Aufgaben
+  //    aufnehmen. Die IDs tragen aus historischen Gründen noch das
+  //    `sys_platzhalter_`-Präfix, sind aber KEINE Platzhalter mehr, sondern
+  //    eine eigene, dauerhafte Systembaustein-Art. ────────────────────────
   {
     baustein_id: 'sys_platzhalter_moodle_buendel',
-    titel: 'Platzhalter für ein oder mehrere Lernpakete',
+    titel: 'Lernpaket-Bündel',
     icon: 'package',
+    typ: 'buendel',
+    baustein_modus: 'bundle_1ton',
+    accepted_types: ['lernpaket'],
     admin_beschreibung:
-      'Drop-Zone-Erinnerung: Hier soll später ein oder mehrere Lernpakete (aufgaben_typ=buendel mit lernpaket_logik) eingefügt werden.',
+      'Bündel: nimmt ein oder mehrere Lernpakete auf. Die enthaltenen Pakete werden im Schülerpfad nacheinander bearbeitet.',
     export_instruktion:
-      'PLATZHALTER – muss durch ein oder mehrere echte Lernpakete ersetzt werden, bevor der Pfad freigegeben wird.',
+      'Bündel aus einem oder mehreren Lernpaketen. Der Schüler bearbeitet die enthaltenen Pakete in der vorgegebenen Reihenfolge.',
     ist_aktiv: true,
     reihenfolge: 160,
   },
   {
-    baustein_id: 'sys_platzhalter_zwischentest',
-    titel: 'Platzhalter für einen Zwischentest',
-    icon: 'clipboard-check',
-    admin_beschreibung:
-      'Drop-Zone-Erinnerung: Hier soll später ein Lernpaket eingefügt werden, das als Zwischentest (test_only) dient.',
-    export_instruktion:
-      'PLATZHALTER – muss durch ein echtes Zwischentest-Lernpaket ersetzt werden, bevor der Pfad freigegeben wird.',
-    ist_aktiv: true,
-    reihenfolge: 165,
-  },
-  {
     baustein_id: 'sys_platzhalter_brian_buendel',
-    titel: 'Platzhalter: Brian-Bündel (X von Y)',
+    titel: 'Aufgaben-Bündel (X von Y)',
     icon: 'package-check',
+    typ: 'buendel',
+    baustein_modus: 'bundle_1ton',
+    accepted_types: ['auswahl_buendel'],
     admin_beschreibung:
-      'Drop-Zone-Erinnerung: Hier soll später ein Brian-Bündel (aufgaben_typ=auswahl_buendel mit erforderliche_anzahl) eingefügt werden.',
+      'Bündel: nimmt mehrere Aufgaben auf, von denen der Schüler eine festgelegte Anzahl (X von Y) bearbeiten muss.',
     export_instruktion:
-      'PLATZHALTER – muss durch ein echtes Brian-Bündel mit X-von-Y-Auswahl ersetzt werden, bevor der Pfad freigegeben wird.',
+      'Bündel aus mehreren Aufgaben. Der Schüler wählt aus dem Angebot eine festgelegte Anzahl (X von Y) aus und bearbeitet sie.',
     ist_aktiv: true,
     reihenfolge: 170,
   },
-  // ── Sektor 0: Einstiegsdiagnose ──────────────────────────────────────
   {
-    baustein_id: 'sys_diagnose_entry',
-    titel: 'Einstiegsdiagnose',
-    icon: 'clipboard-check',
+    baustein_id: 'sys_projektbuendel',
+    titel: 'Projekt-Bündel',
+    icon: 'rocket',
+    typ: 'buendel',
+    baustein_modus: 'bundle_1ton',
+    accepted_types: ['projekt'],
     admin_beschreibung:
-      'Kurze Eingangsdiagnose zur Bestimmung des individuellen Startpunkts in der Einheit. Ergebnisse fließen in die Pfad-Empfehlung ein.',
+      'Bündel: nimmt eine oder mehrere Projektaufgaben (Ebene 3) auf, die der Schüler frei wählen kann.',
     export_instruktion:
-      'Bearbeite eine kurze Einstiegsdiagnose, um deinen Startpunkt in der Einheit zu bestimmen.',
+      'Bündel aus Projektaufgaben. Der Schüler wählt frei aus dem Angebot und bearbeitet die gewählten Projekte.',
     ist_aktiv: true,
-    reihenfolge: 8,
+    reihenfolge: 175,
   },
   // ── Feedback-Sektor (Schüler-Rückmeldung am Ende der Einheit) ────────
   // Statischer Anker, kein Drop-Target. Wird im Schüler-Frontend zu einem
@@ -253,6 +168,7 @@ const PFLICHT_BAUSTEINE = [
     baustein_id: 'sys_feedback',
     titel: 'Schüler-Feedback zur Einheit',
     icon: 'message-square',
+    typ: 'baustein',
     admin_beschreibung:
       'Ticketing-Formular am Ende der Einheit: Schüler melden zurück, was gut lief, was nicht und was verbessert werden kann. Lehrkraft erhält die Tickets im Feedback-Postfach.',
     export_instruktion:
@@ -284,6 +200,35 @@ Deno.serve(async (req) => {
     const existing = await base44.asServiceRole.entities.SystemBausteine.list();
     const existingByKey = new Map(existing.map((b) => [b.baustein_id, b]));
 
+    // ── Aufräumen: veraltete echte 1:1-Platzhalter + Onboarding-Bausteine
+    //    aus der DB entfernen. Bündel-IDs (sys_platzhalter_*_buendel) bleiben
+    //    erhalten — sie sind jetzt typ='buendel'. Onboarding-Bausteine sind in
+    //    den Generate-Funktionen + OnboardingTab hart codiert und werden nicht
+    //    mehr aus den SystemBausteinen gezogen.
+    const VERALTETE_IDS = new Set([
+      'sys_platzhalter_handlung',
+      'sys_platzhalter_basispaket',
+      'sys_platzhalter_ebene2',
+      'sys_platzhalter_projekt',
+      'sys_platzhalter_info',
+      'sys_platzhalter_reflexion',
+      'sys_platzhalter_zwischentest',
+      // Onboarding-Bausteine: jetzt hart codiert im OnboardingTab + Generate-
+      // Funktionen, daher aus dem Pool entfernt.
+      'sys_sec0_overview',
+      'sys_sec0_qblock',
+      'sys_diagnose_entry',
+      'sys_diagnose',
+    ]);
+    const deleted = [];
+    for (const b of existing) {
+      if (VERALTETE_IDS.has(b.baustein_id)) {
+        await base44.asServiceRole.entities.SystemBausteine.delete(b.id);
+        deleted.push(b.baustein_id);
+      }
+    }
+
+    const seedKeys = new Set(PFLICHT_BAUSTEINE.map((s) => s.baustein_id));
     const created = [];
     const updated = [];
     const skipped = [];
@@ -297,7 +242,15 @@ Deno.serve(async (req) => {
         await base44.asServiceRole.entities.SystemBausteine.update(found.id, seed);
         updated.push(seed.baustein_id);
       } else {
-        skipped.push(seed.baustein_id);
+        // typ nachziehen, falls bei Bestands-Bausteinen noch nicht gesetzt
+        // (idempotent, auch ohne force) — leichter Migrationsschritt.
+        if (!found.typ) {
+          const typ = seed.typ || 'baustein';
+          await base44.asServiceRole.entities.SystemBausteine.update(found.id, { typ });
+          updated.push(`${seed.baustein_id} (typ)`);
+        } else {
+          skipped.push(seed.baustein_id);
+        }
       }
     }
 
@@ -305,6 +258,7 @@ Deno.serve(async (req) => {
       ok: true,
       created,
       updated,
+      deleted,
       skipped,
       total: PFLICHT_BAUSTEINE.length,
     });

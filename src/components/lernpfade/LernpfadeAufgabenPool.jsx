@@ -294,7 +294,7 @@ export default function LernpfadeAufgabenPool({
               <BookOpen className="w-3 h-3" /> Einheit-Aufgaben
             </TabsTrigger>
             <TabsTrigger value="system" className="text-xs gap-1.5">
-              <Sparkles className="w-3 h-3" /> Standard-Elemente
+              <Sparkles className="w-3 h-3" /> Systembausteine
             </TabsTrigger>
           </TabsList>
         </div>
@@ -396,7 +396,7 @@ export default function LernpfadeAufgabenPool({
         <TabsContent value="system" className="flex-1 flex flex-col overflow-hidden m-0 data-[state=inactive]:hidden">
           <div className="shrink-0 p-3 border-b border-border bg-card">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold text-foreground uppercase tracking-wide">Standard-Elemente</h3>
+              <h3 className="text-xs font-semibold text-foreground uppercase tracking-wide">Systembausteine</h3>
               <span className="text-[10px] text-muted-foreground">{systemBausteine.length} verfügbar</span>
             </div>
             <p className="text-[11px] text-muted-foreground mt-1">

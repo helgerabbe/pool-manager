@@ -18,6 +18,14 @@
 
 export const PLATZHALTER_PREFIX = 'sys_platzhalter_';
 
+// Bündel-IDs tragen aus historischen Gründen noch das Platzhalter-Präfix,
+// sind aber eine eigene, dauerhafte Systembaustein-Art (typ='buendel') und
+// KEINE Platzhalter. Sie werden separat (lila) gerendert.
+const BUENDEL_LEGACY_IDS = new Set([
+  'sys_platzhalter_moodle_buendel',
+  'sys_platzhalter_brian_buendel',
+]);
+
 /**
  * Liefert die effektive Baustein-ID. Bevorzugt das DB-Feld
  * `baustein_id`, fällt aber auf `id` zurück (für Tests/Fixtures).
@@ -34,7 +42,9 @@ function resolveBausteinId(baustein) {
 export function isPlatzhalterBaustein(bausteinOrId) {
   if (!bausteinOrId) return false;
   const id = typeof bausteinOrId === 'string' ? bausteinOrId : resolveBausteinId(bausteinOrId);
-  return typeof id === 'string' && id.startsWith(PLATZHALTER_PREFIX);
+  if (typeof id !== 'string' || !id.startsWith(PLATZHALTER_PREFIX)) return false;
+  // Bündel sind keine Platzhalter.
+  return !BUENDEL_LEGACY_IDS.has(id);
 }
 
 /**

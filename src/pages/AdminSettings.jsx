@@ -105,7 +105,7 @@ export default function AdminSettings() {
             { value: 'jahrgaenge', label: 'Jahrgänge' },
             { value: 'phasen', label: 'Phasen' },
             { value: 'aktivitaeten', label: 'Aktivitäten' },
-            { value: 'systembausteine', label: 'System-Bausteine' },
+            { value: 'systembausteine', label: 'Systembausteine' },
             { value: 'nomenklatur', label: 'Nomenklatur' },
           ].map((tab) => (
             <TabsTrigger
@@ -266,15 +266,15 @@ export default function AdminSettings() {
           <NomenklaturManagerView />
         </TabsContent>
 
-        {/* System-Bausteine (globale Standard-Elemente für Tab 7) */}
+        {/* Systembausteine (globaler Pool für Tab „Dashboards") */}
         <TabsContent value="systembausteine" className="mt-4">
           <Card className="border shadow-sm">
             <CardHeader className="pb-4">
-              <CardTitle className="text-base">System-Bausteine verwalten</CardTitle>
+              <CardTitle className="text-base">Systembausteine verwalten</CardTitle>
               <CardDescription>
-                Globale Standard-Elemente, die im Lernpfad-Architekt (Tab „Dashboards") als Standard-Elemente
-                angeboten werden. Sie können beliebig oft in Sektoren gezogen werden und tragen einen
-                klartext-basierten Export-Hinweis für Moodle/Brian.
+                Globale Systembausteine, die im Lernpfad-Architekt (Tab „Dashboards") als Pool angeboten werden.
+                Es gibt zwei Arten: normale <strong>Systembausteine</strong> und <strong>Bündel</strong> (Container,
+                die andere Bausteine/Aufgaben aufnehmen). Die Reihenfolge per Pfeilen bestimmt auch die Anzeige im Pool.
               </CardDescription>
             </CardHeader>
             <CardContent>

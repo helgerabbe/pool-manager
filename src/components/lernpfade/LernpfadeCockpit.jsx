@@ -34,6 +34,7 @@ import DashboardPreviewModal from '@/components/lernpfade/DashboardPreviewModal'
 import EinfuehrungPreviewModal from '@/components/lernpfade/EinfuehrungPreviewModal';
 import EinstiegsdiagnosePreviewModal from '@/components/lernpfade/EinstiegsdiagnosePreviewModal';
 import DiagnoseQuizPreviewModal from '@/components/lernpfade/DiagnoseQuizPreviewModal';
+import LerntypDiagnosePreviewModal from '@/components/lernpfade/LerntypDiagnosePreviewModal';
 import OnboardingTab from '@/components/lernpfade/OnboardingTab';
 import { useLernpfadStatus } from '@/hooks/useLernpfadStatus';
 import { useDashboardSync } from '@/hooks/useDashboardSync';
@@ -152,6 +153,9 @@ export default function LernpfadeCockpit({
   // Vorschau der echten Einstiegsdiagnose (Multiple-Choice-Wissensquiz).
   const [diagnoseQuizPreviewOpen, setDiagnoseQuizPreviewOpen] = useState(false);
   const [diagnoseQuizSnapshot, setDiagnoseQuizSnapshot] = useState(null);
+  // Vorschau der KI-Lerntyp-Diagnose (Brian-Gespräch, 4./letztes Onboarding-Element).
+  const [lerntypDiagnosePreviewOpen, setLerntypDiagnosePreviewOpen] = useState(false);
+  const [lerntypDiagnoseSnapshot, setLerntypDiagnoseSnapshot] = useState(null);
   const [previewAufgabe, setPreviewAufgabe] = useState(null);
   const [editorAufgabe, setEditorAufgabe] = useState(null);
   const [arbeitsphaseModalOpen, setArbeitsphaseModalOpen] = useState(false);
@@ -1118,6 +1122,7 @@ export default function LernpfadeCockpit({
                   onPreviewEinfuehrung={() => setEinfuehrungPreviewOpen(true)}
                   onPreviewQblock={() => setQblockPreviewOpen(true)}
                   onPreviewDiagnoseQuiz={() => setDiagnoseQuizPreviewOpen(true)}
+                  onPreviewLerntypDiagnose={() => setLerntypDiagnosePreviewOpen(true)}
                 />
               ) : (
               <LernpfadeArchitekt
@@ -1212,6 +1217,18 @@ export default function LernpfadeCockpit({
         onUebernehmen={(snap) => {
           setDiagnoseQuizSnapshot(snap);
           persistOnboardingElement('einstiegsdiagnose', snap);
+        }}
+      />
+
+      <LerntypDiagnosePreviewModal
+        open={lerntypDiagnosePreviewOpen}
+        onOpenChange={setLerntypDiagnosePreviewOpen}
+        einheitId={einheit?.id}
+        einheitTitel={einheit?.titel_der_einheit}
+        fach={einheit?.fach}
+        onUebernehmen={(snap) => {
+          setLerntypDiagnoseSnapshot(snap);
+          persistOnboardingElement('lerntyp_diagnose', snap);
         }}
       />
 

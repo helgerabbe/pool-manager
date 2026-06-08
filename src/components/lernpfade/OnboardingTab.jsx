@@ -19,7 +19,7 @@
  * Speichern laufen über Callbacks ans Cockpit.
  */
 import React from 'react';
-import { BookOpen, Compass, ClipboardCheck, Eye, CheckCircle2, Circle } from 'lucide-react';
+import { BookOpen, Compass, ClipboardCheck, MessageCircle, Eye, CheckCircle2, Circle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const ELEMENTE = [
@@ -47,6 +47,14 @@ const ELEMENTE = [
     accent: 'text-emerald-600',
     accentBg: 'bg-emerald-50',
   },
+  {
+    key: 'lerntyp_diagnose',
+    titel: 'KI-Lerntyp-Diagnose',
+    beschreibung: 'Brian-Gespräch: Bei Unsicherheit hilft Brian dem Schüler, den passenden Lerntyp zu finden. Immer das letzte Onboarding-Element.',
+    Icon: MessageCircle,
+    accent: 'text-sky-600',
+    accentBg: 'bg-sky-50',
+  },
 ];
 
 export default function OnboardingTab({
@@ -54,11 +62,13 @@ export default function OnboardingTab({
   onPreviewEinfuehrung,
   onPreviewQblock,
   onPreviewDiagnoseQuiz,
+  onPreviewLerntypDiagnose,
 }) {
   const previewHandlers = {
     einfuehrung: onPreviewEinfuehrung,
     fragenblock: onPreviewQblock,
     einstiegsdiagnose: onPreviewDiagnoseQuiz,
+    lerntyp_diagnose: onPreviewLerntypDiagnose,
   };
 
   return (

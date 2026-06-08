@@ -39,7 +39,6 @@ export const SEKTOR_TEMPLATES = Object.freeze({
     modus: 'sequenziell',
     items: [
       sys('sys_themenfeld_intro'),
-      sys('sys_platzhalter_zwischentest'),
     ],
   },
 });

@@ -55,12 +55,15 @@ import { annotateSektorItems, DASHBOARD_GATING_ENGINE } from '@/lib/dashboardGat
  *     ('shuffle'|'alle'), damit die MBK das Variantentraining korrekt umsetzt.
  * airgap-1.10.0: Onboarding-/Orientierungsphase (einheits-global).
  *   - Payload 1: `onboarding_contract` erklärt der MBK die allen vier
- *     Dashboards vorgeschaltete Orientierungsphase und ihre drei festen
- *     Elemente (Einführung, freiwilliger Fragenblock, Einstiegsdiagnose).
+ *     Dashboards vorgeschaltete Orientierungsphase und ihre festen Elemente.
  *   - Payload 2: `einheit.onboarding` liefert die konkreten, von der
  *     Lehrkraft erzeugten Inhalte (Snapshot aus Einheiten.onboarding_konfiguration).
+ * airgap-1.11.0: Viertes Onboarding-Element „KI-Lerntyp-Diagnose" (Brian-
+ *   Gespräch, immer an letzter Stelle).
+ *   - Payload 1: `onboarding_contract.elemente` enthält jetzt vier Elemente.
+ *   - Payload 2: `einheit.onboarding.lerntyp_diagnose` (Snapshot).
  */
-export const MBK_AIRGAP_VERSION = 'airgap-1.10.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.11.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -229,6 +232,16 @@ const ONBOARDING_CONTRACT = {
         + 'der Standortbestimmung des Schülers vor dem Start. Kann später eine '
         + 'Dashboard-/Lerntyp-Empfehlung speisen.',
     },
+    {
+      key: 'lerntyp_diagnose',
+      titel: 'KI-Lerntyp-Diagnose (Brian-Gespräch)',
+      zweck:
+        'IMMER das LETZTE Element der Orientierungsphase. Wenn der Schüler '
+        + 'nach den vorherigen Elementen weiterhin unsicher ist, welcher der '
+        + 'vier Lerntypen zu ihm passt, kann er mit dem KI-Lernbegleiter Brian '
+        + 'sprechen. Struktur (titel, intro, gespraechs_leitfaden[], hinweis). '
+        + 'Brian stellt die Leitfragen und spricht am Ende eine Empfehlung aus.',
+    },
   ],
   hinweis_fuer_mbk:
     'Baue die Orientierungsphase als EINE, allen vier Dashboards '
@@ -255,6 +268,7 @@ function buildOnboardingForStructure(konfig) {
     einfuehrung: obj(k.einfuehrung),
     fragenblock: obj(k.fragenblock),
     einstiegsdiagnose: obj(k.einstiegsdiagnose),
+    lerntyp_diagnose: obj(k.lerntyp_diagnose),
     generiert_am: nullable(k.generiert_am),
   };
 }
@@ -274,12 +288,21 @@ function buildOnboardingForStructure(konfig) {
  * Single Source of Truth für den Filter — sowohl summarizeSektor als auch
  * das SCORM-File-Mapping in buildStructurePayload nutzen sie.
  */
+// Bündel-IDs tragen aus historischen Gründen noch das `sys_platzhalter_`-
+// Präfix, sind aber KEINE Platzhalter mehr (typ='buendel'). Sie müssen im
+// Export erhalten bleiben und dürfen NICHT herausgefiltert werden.
+const BUENDEL_LEGACY_IDS = new Set([
+  'sys_platzhalter_moodle_buendel',
+  'sys_platzhalter_brian_buendel',
+]);
+
 function isPlatzhalterItem(item) {
   return !!(
     item
     && item.type === 'system'
     && typeof item.ref_id === 'string'
     && item.ref_id.startsWith('sys_platzhalter_')
+    && !BUENDEL_LEGACY_IDS.has(item.ref_id)
   );
 }
 

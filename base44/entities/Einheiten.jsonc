@@ -87,7 +87,7 @@
     },
     "onboarding_konfiguration": {
       "type": "object",
-      "description": "Einheits-GLOBALE Orientierungs-/Onboarding-Phase, die dem Sch\u00fcler VOR der Dashboard-Wahl vorgeschaltet ist. Bewusst NICHT Teil von lernpfade_konfiguration (war dort fr\u00fcher 4x redundant in jedem Lerntyp-Dashboard). Feste Struktur aus genau drei KI-generierten Elementen: einfuehrung (Kurze Einf\u00fchrung in die Einheit), fragenblock (freiwilliger Selbsteinsch\u00e4tzungs-Fragenblock), einstiegsdiagnose (Wissens-Quiz). Lehrkr\u00e4fte k\u00f6nnen die STRUKTUR nicht ver\u00e4ndern, nur die drei Inhalte per Vorschau neu generieren und in dieses Feld speichern. Wird im Tab 8 \u00fcber das 5. Pill 'Onboarding' gepflegt und in der Sch\u00fcleransicht aus genau diesem Feld gelesen (kein Re-Generieren beim Sch\u00fclerklick).",
+      "description": "Einheits-GLOBALE Orientierungs-/Onboarding-Phase, die dem Sch\u00fcler VOR der Dashboard-Wahl vorgeschaltet ist. Bewusst NICHT Teil von lernpfade_konfiguration (war dort fr\u00fcher 4x redundant in jedem Lerntyp-Dashboard). Feste Struktur aus genau vier KI-generierten Elementen: einfuehrung (Kurze Einf\u00fchrung in die Einheit), fragenblock (freiwilliger Selbsteinsch\u00e4tzungs-Fragenblock), einstiegsdiagnose (Wissens-Quiz) und lerntyp_diagnose (KI-Lerntyp-Diagnose / Brian-Gespr\u00e4ch, immer an letzter Stelle). Lehrkr\u00e4fte k\u00f6nnen die STRUKTUR nicht ver\u00e4ndern, nur die Inhalte per Vorschau neu generieren und in dieses Feld speichern. Wird im Tab 8 \u00fcber das 5. Pill 'Onboarding' gepflegt und in der Sch\u00fcleransicht aus genau diesem Feld gelesen (kein Re-Generieren beim Sch\u00fclerklick).",
       "additionalProperties": true,
       "properties": {
         "einfuehrung": {
@@ -103,6 +103,11 @@
         "einstiegsdiagnose": {
           "type": "object",
           "description": "Snapshot der Einstiegsdiagnose (Multiple-Choice-Wissensquiz). Null = noch nicht generiert/gespeichert.",
+          "additionalProperties": true
+        },
+        "lerntyp_diagnose": {
+          "type": "object",
+          "description": "Snapshot der KI-Lerntyp-Diagnose (4. Onboarding-Element, immer an letzter Stelle). Brian-Gespr\u00e4ch, das dem Sch\u00fcler bei Unsicherheit eine Lerntyp-Empfehlung gibt. Struktur (titel, intro, gespraechs_leitfaden[], hinweis). Null = noch nicht generiert/gespeichert.",
           "additionalProperties": true
         },
         "generiert_am": {
