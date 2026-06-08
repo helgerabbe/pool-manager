@@ -33,11 +33,14 @@ export default function StepEinheit({ block, onWeiter, onZurueck }) {
 
   const phasenLabel = (id) => phasen.find((p) => p.id === id)?.bezeichnung || '';
 
+  // Zum Testen: alle Einheiten dieses Fachs, die mindestens "im Export" sind
+  // (final_freigegeben, export_running, published) – nicht nur veröffentlichte.
+  const SICHTBARE_STATUS = ['final_freigegeben', 'export_running', 'published'];
   const einheiten = alleEinheiten
     .filter(
       (e) =>
         e.fach === block?.name &&
-        e.export_lifecycle_status === 'published' &&
+        SICHTBARE_STATUS.includes(e.export_lifecycle_status) &&
         e.ist_basismodul !== true
     )
     .sort((a, b) => {
