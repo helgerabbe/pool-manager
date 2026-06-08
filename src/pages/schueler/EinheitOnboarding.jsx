@@ -88,35 +88,35 @@ export default function EinheitOnboarding() {
 
   return (
     <div className="h-full overflow-y-auto bg-background">
-      <div className="max-w-4xl mx-auto px-5 sm:px-8 py-10">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-5">
         <Link
           to="/lernen"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
           Zurück
         </Link>
 
         {/* Vorstellung der Einheit */}
-        <div className="rounded-2xl border border-border bg-card p-6 mb-8">
-          <div className="flex items-start gap-4">
-            <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 text-primary shrink-0">
-              <BookOpen className="w-7 h-7" />
+        <div className="rounded-xl border border-border bg-card p-4 mb-4">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary shrink-0">
+              <BookOpen className="w-5 h-5" />
             </span>
-            <div>
-              <p className="text-sm text-muted-foreground">
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">
                 {einheit.fach}
                 {einheit.jahrgangsstufe ? ` · Klasse ${einheit.jahrgangsstufe}` : ''}
               </p>
-              <h1 className="text-2xl font-bold text-foreground tracking-tight">{einheit.titel_der_einheit}</h1>
+              <h1 className="text-lg font-bold text-foreground tracking-tight truncate">{einheit.titel_der_einheit}</h1>
             </div>
           </div>
           {Array.isArray(einheit.gesamtziele) && einheit.gesamtziele.length > 0 && (
-            <div className="mt-5 pt-5 border-t border-border">
-              <p className="text-sm font-semibold text-foreground mb-2">Das lernst du in dieser Einheit:</p>
-              <ul className="space-y-1.5">
+            <div className="mt-3 pt-3 border-t border-border">
+              <p className="text-xs font-semibold text-foreground mb-1.5">Das lernst du in dieser Einheit:</p>
+              <ul className="space-y-1">
                 {einheit.gesamtziele.map((ziel, i) => (
-                  <li key={i} className="text-sm text-muted-foreground flex gap-2">
+                  <li key={i} className="text-xs text-muted-foreground flex gap-2">
                     <span className="text-primary">•</span>
                     {ziel}
                   </li>
@@ -127,7 +127,7 @@ export default function EinheitOnboarding() {
         </div>
 
         {/* Onboarding */}
-        <div className="mb-6">
+        <div className="mb-4">
           <OnboardingKachel
             done={!!fortschritt?.onboarding_done}
             empfehlung={fortschritt?.onboarding_empfehlung}
@@ -136,13 +136,13 @@ export default function EinheitOnboarding() {
         </div>
 
         {/* Dashboard-Auswahl */}
-        <h2 className="text-lg font-bold text-foreground mb-1">Wähle dein Dashboard</h2>
-        <p className="text-sm text-muted-foreground mb-4">
+        <h2 className="text-sm font-bold text-foreground mb-0.5">Wähle dein Dashboard</h2>
+        <p className="text-xs text-muted-foreground mb-3">
           {aktiverTyp
             ? 'Du kannst dein Dashboard wechseln – dein Fortschritt startet dann neu.'
             : 'Mit welchem Lerntyp möchtest du an dieser Einheit arbeiten?'}
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {LERNTYPEN.map((lt) => (
             <DashboardKachel
               key={lt.key}

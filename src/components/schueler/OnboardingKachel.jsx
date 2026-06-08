@@ -1,40 +1,51 @@
-import { Compass, CheckCircle2 } from 'lucide-react';
+import { Compass, CheckCircle2, HelpCircle } from 'lucide-react';
 import { getLerntyp } from '@/lib/lerntypen';
 
 /**
- * Große Kachel, die das Onboarding startet. Wenn der Schüler das Onboarding
- * schon durchlaufen hat, wird die ausgesprochene Empfehlung angezeigt.
+ * Kompakte Kachel, die das Onboarding startet. Darunter steht IMMER ein
+ * Ergebnisfeld: entweder die ausgesprochene Dashboard-Empfehlung oder der
+ * Hinweis, dass noch keine Diagnose durchgeführt wurde.
  */
 export default function OnboardingKachel({ done, empfehlung, onClick }) {
   const empfLerntyp = empfehlung ? getLerntyp(empfehlung) : null;
 
   return (
-    <button
-      onClick={onClick}
-      className="text-left flex items-start gap-4 rounded-2xl border-2 border-dashed border-primary/40 bg-primary/5 p-5 hover:bg-primary/10 transition-all w-full"
-    >
-      <span className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/15 text-primary shrink-0">
-        <Compass className="w-6 h-6" />
-      </span>
-      <div className="min-w-0">
-        <h3 className="text-lg font-bold text-foreground">
-          {done ? 'Onboarding erneut starten' : 'Welcher Lerntyp bist du?'}
-        </h3>
-        {done && empfLerntyp ? (
-          <p className="mt-1 text-sm text-muted-foreground inline-flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-green-600" />
-            Onboarding abgeschlossen – empfohlen wurde dir{' '}
-            <span className="font-semibold" style={{ color: empfLerntyp.farbe }}>
-              {empfLerntyp.name}
-            </span>
-            .
+    <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3">
+      <button onClick={onClick} className="text-left flex items-center gap-3 w-full group">
+        <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary/15 text-primary shrink-0">
+          <Compass className="w-5 h-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
+            {done ? 'Diagnose erneut durchführen' : 'Welcher Lerntyp bist du?'}
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Lass dir helfen, das passende Dashboard zu finden.
           </p>
+        </div>
+      </button>
+
+      {/* Ergebnisfeld – immer sichtbar */}
+      <div className="mt-2.5 flex items-center gap-2 rounded-lg bg-card border border-border px-3 py-2">
+        {empfLerntyp ? (
+          <>
+            <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
+            <p className="text-xs text-foreground">
+              Empfehlung für dein Dashboard:{' '}
+              <span className="font-bold" style={{ color: empfLerntyp.farbe }}>
+                {empfLerntyp.name}
+              </span>
+            </p>
+          </>
         ) : (
-          <p className="mt-1 text-sm text-muted-foreground">
-            Lass dir helfen, das passende Dashboard zu finden. Du kannst es jederzeit durchführen.
-          </p>
+          <>
+            <HelpCircle className="w-4 h-4 text-muted-foreground shrink-0" />
+            <p className="text-xs text-muted-foreground">
+              Es wurde noch keine Diagnose durchgeführt.
+            </p>
+          </>
         )}
       </div>
-    </button>
+    </div>
   );
 }
