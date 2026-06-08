@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 /**
  * generateEinheitEinfuehrung
@@ -62,16 +62,17 @@ Deno.serve(async (req) => {
 ZIEL: Die Schüler:innen sollen nach dem Lesen ein Gefühl dafür haben, worum es in dieser Einheit geht und was sie erwartet – damit sie selbst einschätzen können, wie tief sie einsteigen möchten (Lerntyp-Wahl).
 
 REGELN:
-- Sehr schülergerechte, einfache, freundliche Sprache. Direkte Ansprache ("du").
-- Kurz und ansprechend, nicht belehrend. Wecke Neugier.
+- Sehr schülergerechte, EINFACHE Sprache. KURZE Sätze. Direkte Ansprache ("du").
+- SEHR KURZ HALTEN: Der gesamte Text (intro + alle Abschnitte zusammen) darf MAXIMAL 100 Wörter haben. Lieber weniger.
+- 2 bis 3 kurze Abschnitte, jeder nur 1-2 kurze Sätze.
 - Erkläre konkret: Worum geht es? Was wirst du hier machen/lernen? Warum ist das spannend oder nützlich?
-- Nutze gerne kleine, passende Emojis als Veranschaulichung.
+- Nutze pro Abschnitt ein kleines, passendes Emoji als Veranschaulichung.
 - KEINE erfundenen Fakten, die dem Kontext widersprechen.
 - Liefere zusätzlich einen englischen Bild-Prompt für eine fröhliche, kindgerechte Comic-Illustration (flat, bunt, freundlich), die zum Thema passt.`;
 
     let instruktion = FALLBACK_INSTRUKTION;
     try {
-      const bausteine = await base44.asServiceRole.entities.SystemBausteine.filter({ baustein_id: 'sys_sec0_overview' });
+      const bausteine = await base44.asServiceRole.entities.SystemBausteine.filter({ baustein_id: 'sys_einfuehrung' });
       const dbText = Array.isArray(bausteine) ? bausteine[0]?.export_instruktion : null;
       if (dbText && dbText.trim()) instruktion = dbText.trim();
     } catch (_e) {
