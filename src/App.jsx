@@ -30,6 +30,9 @@ import StudentArea from '@/pages/StudentArea';
 import PoolzeitStart from '@/pages/schueler/PoolzeitStart';
 import Lerntagebuch from '@/pages/schueler/Lerntagebuch';
 import FachSeite from '@/pages/schueler/FachSeite';
+import EinheitOnboarding from '@/pages/schueler/EinheitOnboarding';
+import EinheitOnboardingQuiz from '@/pages/schueler/EinheitOnboardingQuiz';
+import EinheitDashboard from '@/pages/schueler/EinheitDashboard';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -73,6 +76,9 @@ const AuthenticatedApp = () => {
           <Route path="/lernen/poolzeit" element={<PoolzeitStart />} />
           <Route path="/lernen/lerntagebuch" element={<Lerntagebuch />} />
           <Route path="/lernen/fach" element={<FachSeite />} />
+          <Route path="/lernen/einheit" element={<EinheitOnboarding />} />
+          <Route path="/lernen/onboarding" element={<EinheitOnboardingQuiz />} />
+          <Route path="/lernen/dashboard" element={<EinheitDashboard />} />
           
           
           {/* ✅ GESCHÜTZT: Admin-Bereich */}

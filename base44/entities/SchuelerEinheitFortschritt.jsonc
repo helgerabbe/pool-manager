@@ -1,0 +1,85 @@
+{
+  "name": "SchuelerEinheitFortschritt",
+  "type": "object",
+  "description": "Speichert pro Sch\u00fcler und Einheit, welchen Lerntyp (Dashboard) der Sch\u00fcler gew\u00e4hlt hat und ob/welche Onboarding-Empfehlung ausgesprochen wurde. Eindeutigkeit pro (user_email, einheit_id) ist anwendungsseitig sichergestellt.",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "E-Mail des Sch\u00fclers (Referenz zur User-Entity)."
+    },
+    "einheit_id": {
+      "type": "string",
+      "description": "FK zur Einheit, auf die sich der Fortschritt bezieht."
+    },
+    "gewaehlter_lerntyp": {
+      "type": "string",
+      "enum": [
+        "minimalist",
+        "pragmatiker",
+        "ehrgeizig",
+        "passioniert"
+      ],
+      "description": "Aktiv gew\u00e4hltes Dashboard / Lerntyp. Null, wenn der Sch\u00fcler sich noch nicht entschieden hat."
+    },
+    "onboarding_done": {
+      "type": "boolean",
+      "default": false,
+      "description": "Ob der Sch\u00fcler das Onboarding f\u00fcr diese Einheit abgeschlossen hat."
+    },
+    "onboarding_empfehlung": {
+      "type": "string",
+      "enum": [
+        "minimalist",
+        "pragmatiker",
+        "ehrgeizig",
+        "passioniert"
+      ],
+      "description": "Lerntyp, der am Ende des Onboardings empfohlen wurde. Null, wenn noch kein Onboarding gemacht wurde."
+    }
+  },
+  "required": [
+    "user_email",
+    "einheit_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
