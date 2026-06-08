@@ -30,17 +30,25 @@
     "reihenfolge": {
       "type": "number",
       "default": 100,
-      "description": "Sortierreihenfolge im Standard-Elemente-Tab."
+      "description": "Sortierreihenfolge im Systembausteine-Tab. Per Hoch/Runter-Pfeilen in der Admin-Verwaltung \u00e4nderbar; steuert auch die Anzeige-Reihenfolge im Pool des Lernpfad-Architekten."
+    },
+    "typ": {
+      "type": "string",
+      "enum": [
+        "baustein",
+        "buendel"
+      ],
+      "default": "baustein",
+      "description": "Art des Systembausteins. 'baustein' = normaler, atomarer Systembaustein (Informations-Anker, Test, Karte etc.) ohne Drop-Zone. 'buendel' = besondere Container-Art (1:n), die ANDERE Bausteine/Aufgaben aufnehmen kann (Lernpaket-, Aufgaben- oder Projekt-B\u00fcndel). Ersetzt das fr\u00fchere Feld `baustein_modus` ('static'|'placeholder_1to1'|'bundle_1ton'); der Platzhalter-Typ ist entfernt."
     },
     "baustein_modus": {
       "type": "string",
       "enum": [
         "static",
-        "placeholder_1to1",
         "bundle_1ton"
       ],
       "default": "static",
-      "description": "Verhalten im Dashboard (siehe Epic Dashboard-Architektur, Phase 1): 'static' = reiner Informations-Anker ohne Drop-Zone (z. B. 'Kurze Einf\u00fchrung'). 'placeholder_1to1' = blauer Platzhalter, der beim Drop einer passenden Aufgabe durch diese ersetzt wird (1:1). 'bundle_1ton' = lila Container, der dauerhaft bleibt und beliebig viele Children der erlaubten Typen aufnimmt (1:n, signalisiert dem Export Pool-Modus)."
+      "description": "@legacy Spiegel-Feld zu `typ` (static \u2194 baustein, bundle_1ton \u2194 buendel). Wird f\u00fcr R\u00fcckw\u00e4rtskompatibilit\u00e4t der Gating-/Export-Logik weitergef\u00fchrt, bis alle Konsumenten auf `typ` umgestellt sind. Der fr\u00fchere Wert 'placeholder_1to1' ist entfernt."
     },
     "accepted_types": {
       "type": "array",
@@ -48,7 +56,7 @@
         "type": "string"
       },
       "default": [],
-      "description": "Welche Item-Typen darf dieser Baustein im Drag&Drop annehmen? Wird vom Strict-Drop-Validator im Lernpfad-Architekt ausgelesen. Erlaubtes Vokabular: 'lernpaket' (AllgemeineAufgabe.aufgaben_typ='buendel'), 'inhalt', 'prozess', 'handlung', 'auswahl_buendel', 'projekt' (AllgemeineAufgabe.aufgaben_typ='projekt_anker' oder anforderungsebene='3 - Projekt'). Leeres Array = keine Drop-Zone (gilt f\u00fcr baustein_modus='static')."
+      "description": "Nur bei typ='buendel' relevant: Welche Item-Typen darf dieses B\u00fcndel im Drag&Drop aufnehmen? Erlaubtes Vokabular: 'lernpaket' (AllgemeineAufgabe.aufgaben_typ='buendel'), 'inhalt', 'prozess', 'handlung', 'auswahl_buendel', 'projekt'. Leeres Array = keine Drop-Zone (gilt f\u00fcr typ='baustein')."
     }
   },
   "required": [
