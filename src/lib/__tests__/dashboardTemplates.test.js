@@ -132,65 +132,69 @@ describe('DASHBOARD_TEMPLATES – Item-Schema', () => {
 // V2-Spezifikation: konkrete Sektor-Längen, Modi und Schlüssel-Items
 // ─────────────────────────────────────────────────────────────────────────
 describe('DASHBOARD_TEMPLATES – V2-Spezifikation', () => {
-  // ── Minimalist (V2.1) ─────────────────────────────────────────────────
-  it('minimalist hat 4 Sektoren, alle sequenziell', () => {
+  // Onboarding ist ab V2.2 einheits-GLOBAL und NICHT mehr Teil der Dashboards.
+  it('kein Lerntyp enthält noch einen Onboarding-Sektor (sektor_typ="onboarding")', () => {
+    for (const lerntyp of TEMPLATE_LERN_TYPEN) {
+      for (const sektor of DASHBOARD_TEMPLATES[lerntyp]) {
+        expect(sektor.sektor_typ).not.toBe('onboarding');
+      }
+    }
+  });
+
+  it('kein Lerntyp enthält noch Onboarding-Bausteine (Overview/Qblock/Diagnose)', () => {
+    const ONBOARDING_REFS = ['sys_sec0_overview', 'sys_sec0_qblock', 'sys_diagnose_entry'];
+    for (const lerntyp of TEMPLATE_LERN_TYPEN) {
+      for (const sektor of DASHBOARD_TEMPLATES[lerntyp]) {
+        for (const item of sektor.items) {
+          expect(ONBOARDING_REFS).not.toContain(item.ref_id);
+        }
+      }
+    }
+  });
+
+  // ── Minimalist (V2.2 – ohne Orientierung) ─────────────────────────────
+  it('minimalist hat 3 Sektoren, alle sequenziell', () => {
     const t = DASHBOARD_TEMPLATES.minimalist;
-    expect(t).toHaveLength(4);
+    expect(t).toHaveLength(3);
     t.forEach((s) => expect(s.modus).toBe('sequenziell'));
   });
 
-  it('minimalist Sektor 0: Overview → freiwilliger Frageblock → Einstiegsdiagnose', () => {
+  it('minimalist Sektor 0: nur reduzierte Lernlandkarte', () => {
     expect(DASHBOARD_TEMPLATES.minimalist[0].items.map((i) => i.ref_id)).toEqual([
-      'sys_sec0_overview',
-      'sys_sec0_qblock',
-      'sys_diagnose_entry',
-    ]);
-  });
-
-  it('minimalist Sektor 1: nur reduzierte Lernlandkarte', () => {
-    expect(DASHBOARD_TEMPLATES.minimalist[1].items.map((i) => i.ref_id)).toEqual([
       'sys_map_reduced',
     ]);
   });
 
-  it('minimalist Sektor 2: Einführung → optionale Handlung → Lernpaket-Platzhalter (kein Lehrer-Check)', () => {
-    expect(DASHBOARD_TEMPLATES.minimalist[2].items.map((i) => i.ref_id)).toEqual([
+  it('minimalist Sektor 1: Einführung → optionale Handlung → Lernpaket-Platzhalter (kein Lehrer-Check)', () => {
+    expect(DASHBOARD_TEMPLATES.minimalist[1].items.map((i) => i.ref_id)).toEqual([
       'sys_platzhalter_info',
       'sys_platzhalter_handlung',
       'sys_platzhalter_moodle_buendel',
     ]);
   });
 
-  it('minimalist Sektor 3: Einstiegsseite → Zwischentest-Platzhalter', () => {
-    expect(DASHBOARD_TEMPLATES.minimalist[3].items.map((i) => i.ref_id)).toEqual([
+  it('minimalist Sektor 2: Einstiegsseite → Zwischentest-Platzhalter', () => {
+    expect(DASHBOARD_TEMPLATES.minimalist[2].items.map((i) => i.ref_id)).toEqual([
       'sys_platzhalter_info',
       'sys_platzhalter_zwischentest',
     ]);
   });
 
-  // ── Pragmatiker (V2.2) ────────────────────────────────────────────────
-  it('pragmatiker hat 4 Sektoren, alle sequenziell', () => {
+  // ── Pragmatiker (V2.2 – ohne Orientierung) ────────────────────────────
+  it('pragmatiker hat 3 Sektoren, alle sequenziell', () => {
     const t = DASHBOARD_TEMPLATES.pragmatiker;
-    expect(t).toHaveLength(4);
+    expect(t).toHaveLength(3);
     t.forEach((s) => expect(s.modus).toBe('sequenziell'));
   });
 
-  it('pragmatiker Sektor 0: Overview → Frageblock → Einstiegsdiagnose', () => {
+  it('pragmatiker Sektor 0: nur reduzierte Lernlandkarte', () => {
     expect(DASHBOARD_TEMPLATES.pragmatiker[0].items.map((i) => i.ref_id)).toEqual([
-      'sys_sec0_overview',
-      'sys_sec0_qblock',
-      'sys_diagnose_entry',
-    ]);
-  });
-
-  it('pragmatiker Sektor 1: nur reduzierte Lernlandkarte', () => {
-    expect(DASHBOARD_TEMPLATES.pragmatiker[1].items.map((i) => i.ref_id)).toEqual([
       'sys_map_reduced',
     ]);
   });
 
-  it('pragmatiker Sektor 2: Erarbeitungs- und Trainingsphase (Info → Handlung → Lernpaket → Brian-Bündel)', () => {
-    const sec = DASHBOARD_TEMPLATES.pragmatiker[2];
+  it('pragmatiker Sektor 1: Erarbeitungs- und Trainingsphase (Info → Handlung → Lernpaket → Brian-Bündel)', () => {
+    const sec = DASHBOARD_TEMPLATES.pragmatiker[1];
     expect(sec.titel).toBe('Erarbeitungs- und Trainingsphase');
     expect(sec.items.map((i) => i.ref_id)).toEqual([
       'sys_platzhalter_info',
@@ -200,18 +204,17 @@ describe('DASHBOARD_TEMPLATES – V2-Spezifikation', () => {
     ]);
   });
 
-  it('pragmatiker Sektor 3 ist der externe Abschlusstest', () => {
-    expect(DASHBOARD_TEMPLATES.pragmatiker[3].items.map((i) => i.ref_id)).toEqual([
+  it('pragmatiker Sektor 2 ist der externe Abschlusstest', () => {
+    expect(DASHBOARD_TEMPLATES.pragmatiker[2].items.map((i) => i.ref_id)).toEqual([
       'sys_external_test',
     ]);
   });
 
-  // ── Ehrgeizig (V2.2) ──────────────────────────────────────────────────
-  it('ehrgeizig hat 5 Sektoren mit erwartetem Modus-Muster', () => {
+  // ── Ehrgeizig (V2.2 – ohne Orientierung) ──────────────────────────────
+  it('ehrgeizig hat 4 Sektoren mit erwartetem Modus-Muster', () => {
     const t = DASHBOARD_TEMPLATES.ehrgeizig;
-    expect(t).toHaveLength(5);
+    expect(t).toHaveLength(4);
     expect(t.map((s) => s.modus)).toEqual([
-      'sequenziell',
       'sequenziell',
       'sequenziell',
       'sequenziell',
@@ -219,23 +222,15 @@ describe('DASHBOARD_TEMPLATES – V2-Spezifikation', () => {
     ]);
   });
 
-  it('ehrgeizig Sektor 0: Overview → Frageblock → Einstiegsdiagnose', () => {
+  it('ehrgeizig Sektor 0: volle Karte + Anmeldung', () => {
     expect(DASHBOARD_TEMPLATES.ehrgeizig[0].items.map((i) => i.ref_id)).toEqual([
-      'sys_sec0_overview',
-      'sys_sec0_qblock',
-      'sys_diagnose_entry',
-    ]);
-  });
-
-  it('ehrgeizig Sektor 1: volle Karte + Anmeldung', () => {
-    expect(DASHBOARD_TEMPLATES.ehrgeizig[1].items.map((i) => i.ref_id)).toEqual([
       'sys_map_full',
       'sys_exam_register',
     ]);
   });
 
-  it('ehrgeizig Sektor 2: Erarbeitungs- und Trainingsphase (Info → Handlung → Lernpaket → Brian-Bündel)', () => {
-    const sec = DASHBOARD_TEMPLATES.ehrgeizig[2];
+  it('ehrgeizig Sektor 1: Erarbeitungs- und Trainingsphase (Info → Handlung → Lernpaket → Brian-Bündel)', () => {
+    const sec = DASHBOARD_TEMPLATES.ehrgeizig[1];
     expect(sec.titel).toBe('Erarbeitungs- und Trainingsphase');
     expect(sec.items.map((i) => i.ref_id)).toEqual([
       'sys_platzhalter_info',
@@ -245,60 +240,51 @@ describe('DASHBOARD_TEMPLATES – V2-Spezifikation', () => {
     ]);
   });
 
-  it('ehrgeizig Sektor 3: Vorbereitung auf die schriftliche Arbeit', () => {
-    const sec = DASHBOARD_TEMPLATES.ehrgeizig[3];
+  it('ehrgeizig Sektor 2: Vorbereitung auf die schriftliche Arbeit', () => {
+    const sec = DASHBOARD_TEMPLATES.ehrgeizig[2];
     expect(sec.titel).toBe('Vorbereitung auf die schriftliche Arbeit');
     expect(sec.items.map((i) => i.ref_id)).toEqual(['sys_zwischentest']);
   });
 
-  it('ehrgeizig Sektor 4 (frei) ist der Projekt-Platzhalter', () => {
-    const sec = DASHBOARD_TEMPLATES.ehrgeizig[4];
+  it('ehrgeizig Sektor 3 (frei) ist der Projekt-Platzhalter', () => {
+    const sec = DASHBOARD_TEMPLATES.ehrgeizig[3];
     expect(sec.modus).toBe('frei');
-    expect(sec.items.map((i) => i.ref_id)).toEqual(['sys_platzhalter_projekt']);
+    expect(sec.items.map((i) => i.ref_id)).toEqual(['sys_projektbuendel']);
   });
 
-  // ── Passioniert (V2.2) ────────────────────────────────────────────────
-  it('passioniert hat 5 Sektoren mit erwartetem Modus-Muster', () => {
+  // ── Passioniert (V2.2 – ohne Orientierung) ────────────────────────────
+  it('passioniert hat 4 Sektoren mit erwartetem Modus-Muster', () => {
     const t = DASHBOARD_TEMPLATES.passioniert;
-    expect(t).toHaveLength(5);
+    expect(t).toHaveLength(4);
     expect(t.map((s) => s.modus)).toEqual([
       'sequenziell',
       'frei',
       'frei',
       'frei',
-      'frei',
     ]);
   });
 
-  it('passioniert Sektor 0: Overview → Frageblock → Einstiegsdiagnose', () => {
+  it('passioniert Sektor 0: volle Karte + Anmeldung', () => {
     expect(DASHBOARD_TEMPLATES.passioniert[0].items.map((i) => i.ref_id)).toEqual([
-      'sys_sec0_overview',
-      'sys_sec0_qblock',
-      'sys_diagnose_entry',
-    ]);
-  });
-
-  it('passioniert Sektor 1: volle Karte + Anmeldung', () => {
-    expect(DASHBOARD_TEMPLATES.passioniert[1].items.map((i) => i.ref_id)).toEqual([
       'sys_map_full',
       'sys_exam_register',
     ]);
   });
 
-  it('passioniert Sektor 2 ist das Brian-Bündel', () => {
-    expect(DASHBOARD_TEMPLATES.passioniert[2].items.map((i) => i.ref_id)).toEqual([
+  it('passioniert Sektor 1 ist das Brian-Bündel', () => {
+    expect(DASHBOARD_TEMPLATES.passioniert[1].items.map((i) => i.ref_id)).toEqual([
       'sys_platzhalter_brian_buendel',
     ]);
   });
 
-  it('passioniert Sektor 3 ist der Projekt-Platzhalter', () => {
-    expect(DASHBOARD_TEMPLATES.passioniert[3].items.map((i) => i.ref_id)).toEqual([
-      'sys_platzhalter_projekt',
+  it('passioniert Sektor 2 ist der Projekt-Platzhalter', () => {
+    expect(DASHBOARD_TEMPLATES.passioniert[2].items.map((i) => i.ref_id)).toEqual([
+      'sys_projektbuendel',
     ]);
   });
 
-  it('passioniert Sektor 4 ist der externe Abschlusstest', () => {
-    expect(DASHBOARD_TEMPLATES.passioniert[4].items.map((i) => i.ref_id)).toEqual([
+  it('passioniert Sektor 3 ist der externe Abschlusstest', () => {
+    expect(DASHBOARD_TEMPLATES.passioniert[3].items.map((i) => i.ref_id)).toEqual([
       'sys_external_test',
     ]);
   });

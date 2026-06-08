@@ -66,19 +66,14 @@ const B = Object.freeze({
 // ── Template: Minimalist ────────────────────────────────────────────────
 // Alle Sektoren initial 'sequenziell'.
 //
-// Aufbau (V2.1):
-//   Sektor 0  – Orientierung   : Einführung, Freiwilliger Frageblock, Einstiegsdiagnose
+// Aufbau (V2.2 – ohne Orientierung):
+//   Die Orientierungs-/Onboarding-Phase ist jetzt einheits-GLOBAL
+//   (Einheiten.onboarding_konfiguration, gepflegt im 5. Pill „Onboarding")
+//   und NICHT mehr Teil der Lerntyp-Dashboards.
 //   Sektor 1  – Lernlandkarte  : nur die verringerte Karte
 //   Sektor 2  – Erarbeitung    : Einführung, ggf. Handlung, Lernpaket-Platzhalter
 //   Sektor 3  – Zwischentest   : Einstiegsseite, Zwischentest-Platzhalter
 const MINIMALIST = [
-  {
-    sektor_id: 'tpl_min_sec0',
-    titel: 'Orientierung',
-    modus: 'sequenziell',
-    sektor_typ: SEKTOR_TYP.ONBOARDING,
-    items: [sys(B.sec0Overview), sys(B.sec0Qblock), sys(B.diagnoseEntry)],
-  },
   {
     sektor_id: 'tpl_min_sec1',
     titel: 'Lernlandkarte',
@@ -104,20 +99,12 @@ const MINIMALIST = [
 
 // ── Template: Pragmatiker ───────────────────────────────────────────────
 //
-// Aufbau (V2.2):
-//   Sektor 0  – Orientierung           : Einführung, Frageblock, Einstiegsdiagnose
+// Aufbau (V2.2 – ohne Orientierung; siehe Minimalist):
 //   Sektor 1  – Lernlandkarte          : nur die verringerte Karte
 //   Sektor 2  – Grundlagen und Training: Einführung, ggf. Handlung,
 //                                        Lernpaket-Platzhalter, Brian-Bündel
 //   Sektor 3  – Abschlusstest          : externer Test
 const PRAGMATIKER = [
-  {
-    sektor_id: 'tpl_prag_sec0',
-    titel: 'Orientierung',
-    modus: 'sequenziell',
-    sektor_typ: SEKTOR_TYP.ONBOARDING,
-    items: [sys(B.sec0Overview), sys(B.sec0Qblock), sys(B.diagnoseEntry)],
-  },
   {
     sektor_id: 'tpl_prag_sec1',
     titel: 'Lernlandkarte',
@@ -143,21 +130,13 @@ const PRAGMATIKER = [
 
 // ── Template: Ehrgeizig ─────────────────────────────────────────────────
 //
-// Aufbau (V2.2):
-//   Sektor 0 – Orientierung                       : Einführung, Frageblock, Einstiegsdiagnose
+// Aufbau (V2.2 – ohne Orientierung; siehe Minimalist):
 //   Sektor 1 – Einstieg & Anmeldung               : volle Karte + Anmeldung
 //   Sektor 2 – Grundlagen und Training            : Info, Handlung, Lernpaket, Brian-Bündel
 //   Sektor 3 – Vorbereitung auf die schriftliche
 //              Arbeit                             : Zwischenprüfung / Diagnosetest
 //   Sektor 4 – Projekt                            : Projekt-Platzhalter
 const EHRGEIZIG = [
-  {
-    sektor_id: 'tpl_ehr_sec0',
-    titel: 'Orientierung',
-    modus: 'sequenziell',
-    sektor_typ: SEKTOR_TYP.ONBOARDING,
-    items: [sys(B.sec0Overview), sys(B.sec0Qblock), sys(B.diagnoseEntry)],
-  },
   {
     sektor_id: 'tpl_ehr_sec1',
     titel: 'Einstieg & Anmeldung',
@@ -190,20 +169,12 @@ const EHRGEIZIG = [
 
 // ── Template: Passioniert ───────────────────────────────────────────────
 //
-// Aufbau (V2.2):
-//   Sektor 0 – Orientierung      : Einführung, Frageblock, Einstiegsdiagnose
+// Aufbau (V2.2 – ohne Orientierung; siehe Minimalist):
 //   Sektor 1 – Einstieg & Anmeldung : volle Karte + Anmeldung
 //   Sektor 2 – Anwendung & Training : Brian-Bündel
 //   Sektor 3 – Projekt           : Projekt-Platzhalter
 //   Sektor 4 – Abschlusstest     : externer Test
 const PASSIONIERT = [
-  {
-    sektor_id: 'tpl_pass_sec0',
-    titel: 'Orientierung',
-    modus: 'sequenziell',
-    sektor_typ: SEKTOR_TYP.ONBOARDING,
-    items: [sys(B.sec0Overview), sys(B.sec0Qblock), sys(B.diagnoseEntry)],
-  },
   {
     sektor_id: 'tpl_pass_sec1',
     titel: 'Einstieg & Anmeldung',
