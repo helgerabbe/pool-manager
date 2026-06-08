@@ -13,7 +13,8 @@ import {
 import { Button } from '@/components/ui/button';
 import ReactMarkdown from 'react-markdown';
 import { base44 } from '@/api/base44Client';
-import { Sparkles, RefreshCw, Check, Loader2, ImageIcon, AlertTriangle } from 'lucide-react';
+import { Sparkles, RefreshCw, Loader2, ImageIcon, AlertTriangle } from 'lucide-react';
+import PreviewActionBar from './preview/PreviewActionBar';
 
 export default function EinfuehrungPreviewModal({
   open, onOpenChange, einheitId, einheitTitel, fach, onUebernehmen,
@@ -24,14 +25,14 @@ export default function EinfuehrungPreviewModal({
   const [imageUrl, setImageUrl] = useState(null);
   const [imageLoading, setImageLoading] = useState(false);
 
-  const generate = useCallback(async () => {
+  const generate = useCallback(async (verfeinerung = null) => {
     if (!einheitId) return;
     setLoading(true);
     setError(null);
     setEinfuehrung(null);
     setImageUrl(null);
     try {
-      const res = await base44.functions.invoke('generateEinheitEinfuehrung', { einheitId });
+      const res = await base44.functions.invoke('generateEinheitEinfuehrung', { einheitId, verfeinerung });
       if (res?.data?.error) throw new Error(res.data.error);
       const content = res?.data?.einfuehrung;
       setEinfuehrung(content);
@@ -143,24 +144,15 @@ export default function EinfuehrungPreviewModal({
           )}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-2">
-          <Button
-            variant="outline"
-            onClick={generate}
-            disabled={loading}
-            className="gap-1.5"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Neu generieren
-          </Button>
-          <Button
-            onClick={handleUebernehmen}
-            disabled={loading || !einfuehrung}
-            className="gap-1.5 bg-violet-600 hover:bg-violet-700"
-          >
-            <Check className="w-4 h-4" />
-            In Dashboard-Vorschau übernehmen
-          </Button>
+        <DialogFooter className="sm:flex-col sm:items-stretch sm:space-x-0">
+          <PreviewActionBar
+            loading={loading}
+            canUebernehmen={!!einfuehrung}
+            onRegenerate={(v) => generate(v)}
+            onUebernehmen={handleUebernehmen}
+            onCancel={() => onOpenChange(false)}
+            uebernehmenLabel="In Dashboard-Vorschau übernehmen"
+          />
         </DialogFooter>
       </DialogContent>
     </Dialog>

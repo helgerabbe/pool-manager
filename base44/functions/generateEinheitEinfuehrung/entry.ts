@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { einheitId } = await req.json();
+    const { einheitId, verfeinerung } = await req.json();
     if (!einheitId) {
       return Response.json({ error: 'einheitId fehlt' }, { status: 400 });
     }
@@ -78,12 +78,17 @@ REGELN:
       // Fallback bleibt aktiv.
     }
 
+    // Optionaler Verfeinerungs-Hinweis der Lehrkraft (ERSETZT, kumuliert nicht).
+    const verfeinerungBlock = (typeof verfeinerung === 'string' && verfeinerung.trim())
+      ? `\n\nZUSÄTZLICHER WUNSCH DER LEHRKRAFT (mit Vorrang berücksichtigen):\n${verfeinerung.trim()}`
+      : '';
+
     const prompt = `${instruktion}
 
 KONTEXT DER EINHEIT (als JSON):
 ${JSON.stringify(kontext, null, 2)}
 
-Hinweis: Schreibe in einer Sprache, die für Klasse ${einheit.jahrgangsstufe || ''} angemessen ist.`;
+Hinweis: Schreibe in einer Sprache, die für Klasse ${einheit.jahrgangsstufe || ''} angemessen ist.${verfeinerungBlock}`;
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,

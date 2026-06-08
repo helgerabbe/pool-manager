@@ -19,9 +19,10 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { base44 } from '@/api/base44Client';
 import {
-  Compass, RefreshCw, Loader2, AlertTriangle, Gauge, Check,
+  Compass, RefreshCw, Loader2, AlertTriangle, Gauge,
   ChevronLeft, ChevronRight, RotateCw,
 } from 'lucide-react';
+import PreviewActionBar from './preview/PreviewActionBar';
 
 // Einschätzungs-Bänder anhand des Schieberegler-Durchschnitts (0 = unsicher,
 // 100 = sicher). Reine Orientierung, keine Bewertung.
@@ -59,7 +60,7 @@ export default function EinstiegsdiagnosePreviewModal({
   const [werte, setWerte] = useState({});
   const [auswertung, setAuswertung] = useState(false);
 
-  const generate = useCallback(async () => {
+  const generate = useCallback(async (verfeinerung = null) => {
     if (!einheitId) return;
     setLoading(true);
     setError(null);
@@ -67,7 +68,7 @@ export default function EinstiegsdiagnosePreviewModal({
     setWerte({});
     setAuswertung(false);
     try {
-      const res = await base44.functions.invoke('generateEinstiegsdiagnose', { einheitId });
+      const res = await base44.functions.invoke('generateEinstiegsdiagnose', { einheitId, verfeinerung });
       if (res?.data?.error) throw new Error(res.data.error);
       const content = res?.data?.diagnose;
       setDiagnose(content);
@@ -217,35 +218,30 @@ export default function EinstiegsdiagnosePreviewModal({
           </div>
         </div>
 
-        {/* Aktionsleiste unterhalb des iPads */}
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+        {/* Modalspezifische Vorschau-Hilfe: Einschätzung simulieren */}
+        <div className="mt-3 flex items-center justify-center">
           <Button
-            variant="outline"
-            onClick={generate}
-            disabled={loading}
-            className="gap-1.5 bg-white"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Neu generieren
-          </Button>
-          <Button
-            variant="outline"
+            variant="ghost"
+            size="sm"
             onClick={() => setAuswertung(true)}
             disabled={loading || fragen.length === 0}
-            className="gap-1.5 bg-white"
+            className="gap-1.5 text-slate-500"
           >
             <Gauge className="w-4 h-4" />
-            Einschätzung anzeigen
-          </Button>
-          <Button
-            onClick={handleUebernehmen}
-            disabled={loading || !diagnose}
-            className="gap-1.5 bg-violet-600 hover:bg-violet-700"
-          >
-            <Check className="w-4 h-4" />
-            In Dashboard-Vorschau übernehmen
+            Einschätzung anzeigen (Vorschau)
           </Button>
         </div>
+
+        {/* Aktionsleiste unterhalb des iPads (Premium-Standard) */}
+        <PreviewActionBar
+          className="mt-2"
+          loading={loading}
+          canUebernehmen={!!diagnose}
+          onRegenerate={(v) => generate(v)}
+          onUebernehmen={handleUebernehmen}
+          onCancel={() => onOpenChange(false)}
+          uebernehmenLabel="In Dashboard-Vorschau übernehmen"
+        />
       </DialogContent>
     </Dialog>
   );
