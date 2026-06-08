@@ -66,6 +66,7 @@ Deno.serve(async (req) => {
       grundgeruest_strukturiert,
       grundgeruest_status,
       grundgeruest_updated_at,
+      onboarding_konfiguration,
       version, // CRITICAL: Client-side version für Optimistic Locking
     } = payload;
 
@@ -182,6 +183,7 @@ Deno.serve(async (req) => {
     if (grundgeruest_strukturiert !== undefined) updateData.grundgeruest_strukturiert = grundgeruest_strukturiert;
     if (grundgeruest_status !== undefined) updateData.grundgeruest_status = grundgeruest_status;
     if (grundgeruest_updated_at !== undefined) updateData.grundgeruest_updated_at = grundgeruest_updated_at;
+    if (onboarding_konfiguration !== undefined) updateData.onboarding_konfiguration = onboarding_konfiguration;
 
     console.log('[updateEinheitSecure] Payload:', { einheit_id, updateData, version });
 

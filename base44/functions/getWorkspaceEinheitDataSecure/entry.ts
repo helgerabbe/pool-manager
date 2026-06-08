@@ -378,6 +378,8 @@ Deno.serve(async (req) => {
           // zurück und überschreibt beim Lazy-Init die DB mit Templates.
           lernpfade_konfiguration: einheit.lernpfade_konfiguration,
           lernpfade_schema_version: einheit.lernpfade_schema_version,
+          // Einheits-globale Onboarding-/Orientierungsphase (5. Pill in Tab 8).
+          onboarding_konfiguration: einheit.onboarding_konfiguration || null,
           // ✅ Members für Unit-Level RBAC
           members: einheitMembers || [],
         },

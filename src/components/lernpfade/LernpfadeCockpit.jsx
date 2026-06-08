@@ -34,6 +34,7 @@ import DashboardPreviewModal from '@/components/lernpfade/DashboardPreviewModal'
 import EinfuehrungPreviewModal from '@/components/lernpfade/EinfuehrungPreviewModal';
 import EinstiegsdiagnosePreviewModal from '@/components/lernpfade/EinstiegsdiagnosePreviewModal';
 import DiagnoseQuizPreviewModal from '@/components/lernpfade/DiagnoseQuizPreviewModal';
+import OnboardingTab from '@/components/lernpfade/OnboardingTab';
 import { useLernpfadStatus } from '@/hooks/useLernpfadStatus';
 import { useDashboardSync } from '@/hooks/useDashboardSync';
 import { useDashboardDragAndDrop } from '@/hooks/useDashboardDragAndDrop';
@@ -408,6 +409,41 @@ export default function LernpfadeCockpit({
       scheduleSave(next);
     },
     [scheduleSave]
+  );
+
+  // ── Onboarding-Persistenz (einheits-global) ─────────────────────────
+  // Speichert ein einzelnes Onboarding-Element (einfuehrung | fragenblock |
+  // einstiegsdiagnose) dauerhaft in Einheiten.onboarding_konfiguration.
+  // Wird aus den drei Vorschau-Modals via „Übernehmen" aufgerufen. Mergt
+  // mit dem aktuellen Feld und schreibt über updateEinheitSecure zurück.
+  const persistOnboardingElement = useCallback(
+    async (key, snapshot) => {
+      if (!einheit?.id) return;
+      const prev = einheit?.onboarding_konfiguration || {};
+      const next = {
+        ...prev,
+        [key]: snapshot,
+        generiert_am: new Date().toISOString(),
+      };
+      try {
+        await base44.functions.invoke('updateEinheitSecure', {
+          einheit_id: einheit.id,
+          onboarding_konfiguration: next,
+        });
+        queryClient.invalidateQueries({ queryKey: ['workspace-data', einheit.id] });
+        toast({
+          title: 'Für die Einheit gespeichert',
+          description: 'Dieses Onboarding-Element wird allen Dashboards vorgeschaltet.',
+        });
+      } catch (err) {
+        toast({
+          variant: 'destructive',
+          title: 'Speichern fehlgeschlagen',
+          description: err?.message || 'Bitte erneut versuchen.',
+        });
+      }
+    },
+    [einheit?.id, einheit?.onboarding_konfiguration, queryClient, toast]
   );
 
   // ── Phase B: Live-Titel-Binding für Arbeitsphase-Sektoren ──────────
@@ -1076,6 +1112,14 @@ export default function LernpfadeCockpit({
               driftDisabled={readOnly}
             />
             <div className="flex-1 overflow-hidden min-h-0">
+              {activeLernTyp === 'onboarding' ? (
+                <OnboardingTab
+                  onboardingKonfig={einheit?.onboarding_konfiguration}
+                  onPreviewEinfuehrung={() => setEinfuehrungPreviewOpen(true)}
+                  onPreviewQblock={() => setQblockPreviewOpen(true)}
+                  onPreviewDiagnoseQuiz={() => setDiagnoseQuizPreviewOpen(true)}
+                />
+              ) : (
               <LernpfadeArchitekt
                 einheitId={einheit?.id}
                 konfiguration={konfiguration}
@@ -1111,6 +1155,7 @@ export default function LernpfadeCockpit({
                 onPreviewQblock={() => setQblockPreviewOpen(true)}
                 onPreviewDiagnoseQuiz={() => setDiagnoseQuizPreviewOpen(true)}
               />
+              )}
             </div>
           </main>
         </div>
@@ -1139,7 +1184,10 @@ export default function LernpfadeCockpit({
         einheitId={einheit?.id}
         einheitTitel={einheit?.titel_der_einheit}
         fach={einheit?.fach}
-        onUebernehmen={setEinfuehrungSnapshot}
+        onUebernehmen={(snap) => {
+          setEinfuehrungSnapshot(snap);
+          persistOnboardingElement('einfuehrung', snap);
+        }}
       />
 
       <EinstiegsdiagnosePreviewModal
@@ -1148,7 +1196,10 @@ export default function LernpfadeCockpit({
         einheitId={einheit?.id}
         einheitTitel={einheit?.titel_der_einheit}
         fach={einheit?.fach}
-        onUebernehmen={setQblockSnapshot}
+        onUebernehmen={(snap) => {
+          setQblockSnapshot(snap);
+          persistOnboardingElement('fragenblock', snap);
+        }}
       />
 
       <DiagnoseQuizPreviewModal
@@ -1158,7 +1209,10 @@ export default function LernpfadeCockpit({
         einheitTitel={einheit?.titel_der_einheit}
         fach={einheit?.fach}
         initialSnapshot={diagnoseQuizSnapshot}
-        onUebernehmen={setDiagnoseQuizSnapshot}
+        onUebernehmen={(snap) => {
+          setDiagnoseQuizSnapshot(snap);
+          persistOnboardingElement('einstiegsdiagnose', snap);
+        }}
       />
 
       <AufgabePreviewDialog

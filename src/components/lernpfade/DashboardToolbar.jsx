@@ -36,6 +36,7 @@ import {
   Eye,
   CheckCircle2,
   RotateCcw,
+  Compass,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -216,23 +217,26 @@ export default function DashboardToolbar({
   const isExportRunning = status === EXPORT_LIFECYCLE_STATUS.EXPORT_RUNNING;
 
   const lerntypLabel = LERNTYP_META[activeLernTyp]?.label || activeLernTyp;
+  // Onboarding ist einheits-global, kein Lerntyp-Dashboard → lerntyp-spezifische
+  // Aktionen (Prüfen/Freigeben, Schüler-Vorschau, Drift) sind dort nicht sinnvoll.
+  const istOnboarding = activeLernTyp === 'onboarding';
 
   return (
     <div className="shrink-0 border-b border-border bg-card">
       {/* Zeile 1: Drift, Aktionen, Save */}
       <div className="px-3 py-1.5 flex items-center gap-2 flex-wrap">
-        <DashboardDriftPill
+        {!istOnboarding && <DashboardDriftPill
           lerntypReport={driftForActiveLerntyp}
           lerntypLabel={lerntypLabel}
           onAddSektor={onDriftAddSektor}
           onRemoveSektor={onDriftRemoveSektor}
           onRemoveItem={onDriftRemoveItem}
           disabled={driftDisabled}
-        />
+        />}
 
         <div className="ml-auto flex items-center gap-1.5 flex-wrap">
           {/* Schüler-Vorschau des aktiven Lerntyp-Dashboards */}
-          {onOpenPreview && (
+          {!istOnboarding && onOpenPreview && (
             <Button
               size="sm"
               variant="outline"
@@ -261,7 +265,7 @@ export default function DashboardToolbar({
 
           {/* Aktiver Pfad: Prüfen & freigeben / Entsperren — NUR sichtbar,
               solange die Einheit nicht final ist. */}
-          {!isEinheitContentLocked && !istPfadGesperrt && darfFreigeben && (
+          {!istOnboarding && !isEinheitContentLocked && !istPfadGesperrt && darfFreigeben && (
             <div className="inline-flex items-center gap-1">
               <Button
                 size="sm"
@@ -278,7 +282,7 @@ export default function DashboardToolbar({
               </InfoHint>
             </div>
           )}
-          {!isEinheitContentLocked && istPfadGesperrt && darfEntsperren && (
+          {!istOnboarding && !isEinheitContentLocked && istPfadGesperrt && darfEntsperren && (
             <Button
               size="sm"
               variant="outline"
@@ -319,8 +323,24 @@ export default function DashboardToolbar({
         </div>
       </div>
 
-      {/* Zeile 2: Reiter-Leiste mit den 4 Lerntyp-Pills */}
+      {/* Zeile 2: Reiter-Leiste – Onboarding-Pill (einheits-global) + 4 Lerntyp-Pills */}
       <div className="px-3 py-1.5 border-t border-border/60 bg-muted/30 flex items-center gap-1 flex-wrap">
+        <button
+          type="button"
+          onClick={() => onActiveLernTypChange?.('onboarding')}
+          className={`flex flex-col items-start gap-1.5 px-2.5 py-1.5 rounded-lg border font-semibold transition-all min-w-[150px] ${
+            activeLernTyp === 'onboarding'
+              ? 'bg-primary text-primary-foreground border-transparent shadow-sm'
+              : 'bg-card text-primary border-border hover:bg-muted'
+          }`}
+        >
+          <span className="inline-flex items-center gap-1.5 w-full">
+            <Compass className="w-3.5 h-3.5" />
+            <span className="text-sm">Onboarding</span>
+          </span>
+          <span className="text-[10px] font-medium opacity-80">Vor den Dashboards</span>
+        </button>
+        <span className="w-px h-9 bg-border mx-1 self-center" />
         {LERNTYPEN.map((lt) => (
           <LerntypPill
             key={lt}
