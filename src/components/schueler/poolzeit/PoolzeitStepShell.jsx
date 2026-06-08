@@ -16,17 +16,17 @@ export default function PoolzeitStepShell({
   zeigeZurueck = true,
 }) {
   return (
-    <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 sm:px-8 py-10">
-      <div className="text-center mb-8 shrink-0">
+    <div className="h-full flex flex-col max-w-2xl mx-auto w-full">
+      <div className="text-center pt-10 pb-6 px-5 sm:px-8 shrink-0">
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">{titel}</h1>
         {untertitel && <p className="text-muted-foreground mt-2">{untertitel}</p>}
       </div>
 
-      <div className="flex-1 flex flex-col justify-center min-h-0 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto px-5 sm:px-8 flex flex-col justify-center">
         {children}
       </div>
 
-      <div className="flex items-center justify-between gap-4 pt-8 shrink-0">
+      <div className="flex items-center justify-between gap-4 px-5 sm:px-8 py-6 shrink-0 border-t border-border bg-card/50 backdrop-blur-sm">
         {zeigeZurueck ? (
           <button
             onClick={onZurueck}
