@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { ChevronDown, Home } from 'lucide-react';
 import CockpitHeader from '@/components/schueler/CockpitHeader';
 
 /**
@@ -11,6 +12,8 @@ import CockpitHeader from '@/components/schueler/CockpitHeader';
  */
 export default function CockpitHeaderOverlay({ name }) {
   const [offen, setOffen] = useState(false);
+  const location = useLocation();
+  const istDashboard = location.pathname === '/lernen';
 
   return (
     <>
@@ -27,6 +30,15 @@ export default function CockpitHeaderOverlay({ name }) {
             <div className="max-w-5xl mx-auto px-5 sm:px-8 pt-5 pb-4">
               <div className="rounded-2xl border border-border bg-card shadow-lg px-5 py-4">
                 <CockpitHeader name={name} />
+                {!istDashboard && (
+                  <Link
+                    to="/lernen"
+                    className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+                  >
+                    <Home className="w-4 h-4" />
+                    Zurück zum Dashboard
+                  </Link>
+                )}
               </div>
             </div>
           </motion.div>

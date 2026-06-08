@@ -27,6 +27,9 @@ import DocsLayout from '@/components/docs/DocsLayout';
 import DocsIndex from '@/pages/DocsIndex';
 import DocViewer from '@/pages/DocViewer';
 import StudentArea from '@/pages/StudentArea';
+import PoolzeitStart from '@/pages/schueler/PoolzeitStart';
+import Lerntagebuch from '@/pages/schueler/Lerntagebuch';
+import FachSeite from '@/pages/schueler/FachSeite';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -67,6 +70,9 @@ const AuthenticatedApp = () => {
           </Route>
 
           <Route path="/lernen" element={<StudentArea />} />
+          <Route path="/lernen/poolzeit" element={<PoolzeitStart />} />
+          <Route path="/lernen/lerntagebuch" element={<Lerntagebuch />} />
+          <Route path="/lernen/fach" element={<FachSeite />} />
           
           
           {/* ✅ GESCHÜTZT: Admin-Bereich */}

@@ -70,7 +70,7 @@ function useActiveEinheit(location) {
 function WorkspaceAwareContent({ location }) {
   const isFullScreen =
     location.pathname === '/workspace' ||
-    location.pathname === '/lernen' ||
+    location.pathname.startsWith('/lernen') ||
     location.pathname.startsWith('/einheiten/') ||
     (location.pathname.startsWith('/einheit/') && location.pathname !== '/einheit/create');
 
@@ -120,7 +120,7 @@ export default function AppLayout() {
   // Schüleransicht (/lernen): KEINE globale Top-Bar – die volle Höhe gehört
   // dem Cockpit. Stattdessen ein dezenter schwebender Button zum Verlassen
   // (Lehrkraft/Admin) bzw. Abmelden (Schüler).
-  const istSchuelerAnsicht = location.pathname === '/lernen';
+  const istSchuelerAnsicht = location.pathname.startsWith('/lernen');
 
   return (
     <div className="h-[100dvh] w-full flex flex-col overflow-hidden overflow-x-hidden bg-background">

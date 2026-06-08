@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { getCurrentUser } from '@/services/AuthService';
 import CockpitHeaderOverlay from '@/components/schueler/CockpitHeaderOverlay';
@@ -25,6 +26,7 @@ const BEISPIEL_STUFEN = {
 };
 
 export default function StudentArea() {
+  const navigate = useNavigate();
   const { data: user } = useQuery({
     queryKey: ['authUser'],
     queryFn: () => getCurrentUser(),
@@ -51,8 +53,12 @@ export default function StudentArea() {
       <div className="h-full max-w-5xl mx-auto px-5 sm:px-8 pt-8 pb-5 flex flex-col gap-4 min-h-0">
         {/* Startknopf + Selbst-Notiz nebeneinander (spart vertikalen Platz) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 shrink-0">
-          <StartButton onClick={() => {}} />
-          <SelbstNotizKarte notiz={BEISPIEL_NOTIZ.notiz} datum={BEISPIEL_NOTIZ.datum} />
+          <StartButton onClick={() => navigate('/lernen/poolzeit')} />
+          <SelbstNotizKarte
+            notiz={BEISPIEL_NOTIZ.notiz}
+            datum={BEISPIEL_NOTIZ.datum}
+            onClick={() => navigate('/lernen/lerntagebuch')}
+          />
         </div>
 
         {/* Fächer-Übersicht – nimmt den verbleibenden Platz, scrollt intern
@@ -70,7 +76,7 @@ export default function StudentArea() {
                   fach={fach}
                   stufe={meta.stufe}
                   zuletztVor={meta.zuletztVor}
-                  onClick={() => {}}
+                  onClick={() => navigate(`/lernen/fach?fach=${fach.id}`)}
                 />
               );
             })}
