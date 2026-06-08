@@ -7,6 +7,7 @@ import { useRBAC } from '@/hooks/useRBAC';
 import WartungsBanner from '@/components/layout/WartungsBanner';
 import NavigationTooltip from '@/components/layout/NavigationTooltip';
 import { logout } from '@/services/AuthService';
+import SchueleransichtVerlassenButton from '@/components/schueler/SchueleransichtVerlassenButton';
 import { useQuery } from '@tanstack/react-query';
 import { getAllEinheiten } from '@/services/EinheitenService';
 import { usePresence } from '@/hooks/usePresence';
@@ -117,15 +118,22 @@ export default function AppLayout() {
       ? location.pathname === '/'
       : location.pathname === path || location.pathname.startsWith(path);
 
+  // Schüleransicht (/lernen): KEINE globale Top-Bar – die volle Höhe gehört
+  // dem Cockpit. Stattdessen ein dezenter schwebender Button zum Verlassen
+  // (Lehrkraft/Admin) bzw. Abmelden (Schüler).
+  const istSchuelerAnsicht = location.pathname === '/lernen';
+
   return (
     <div className="h-[100dvh] w-full flex flex-col overflow-hidden overflow-x-hidden bg-background">
       <GlobalPresenceHeartbeat />
       <GlobalRealtimeUpdates />
       <TutorialSlideshow />
       <WartungsBanner />
+      {istSchuelerAnsicht && <SchueleransichtVerlassenButton />}
       {/* ═══════════════════════════════════════════════════════════════════════════ */}
       {/* ──────────────────── GLOBALE TOP BAR (immer sichtbar) ──────────────────── */}
       {/* ═══════════════════════════════════════════════════════════════════════════ */}
+      {!istSchuelerAnsicht && (
       <header className="shrink-0 bg-card/80 backdrop-blur-xl border-b border-border z-50">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-12">
@@ -227,6 +235,7 @@ export default function AppLayout() {
           </div>
         </div>
       </header>
+      )}
 
       {/* Main Content */}
       <main className="flex-1 overflow-hidden overflow-x-hidden min-h-0">
