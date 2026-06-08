@@ -6,7 +6,6 @@ import { getCurrentUser } from '@/services/AuthService';
 import CockpitHeaderOverlay from '@/components/schueler/CockpitHeaderOverlay';
 import StepGesamtzeit from '@/components/schueler/poolzeit/StepGesamtzeit';
 import StepFaecherPlanung from '@/components/schueler/poolzeit/StepFaecherPlanung';
-import StepOrientierung from '@/components/schueler/poolzeit/StepOrientierung';
 import StepEinheit from '@/components/schueler/poolzeit/StepEinheit';
 import StepAbschluss from '@/components/schueler/poolzeit/StepAbschluss';
 
@@ -14,11 +13,10 @@ import StepAbschluss from '@/components/schueler/poolzeit/StepAbschluss';
  * Poolzeit-Flow (Gerüst). Schritt-für-Schritt-Ablauf:
  *  1. gesamtzeit  – wie viel Zeit habe ich heute?
  *  2. planung     – Fächer + Zeit verteilen (Zeitleiste)
- *  3. orientierung – pro Fach-Block: Lerntagebuch ansehen
- *  4. einheit      – pro Fach-Block: Arbeitsansicht (später Dashboard)
- *  5. abschluss    – Reflexion + Notiz fürs nächste Mal
+ *  3. einheit      – pro Fach-Block: Notizen ansehen + Einheit wählen
+ *  4. abschluss    – Reflexion + Notiz fürs nächste Mal
  *
- * Phasen 3+4 werden pro geplantem Fach-Block durchlaufen (blockIndex).
+ * Phase 3 wird pro geplantem Fach-Block durchlaufen (blockIndex).
  */
 export default function PoolzeitStart() {
   const navigate = useNavigate();
@@ -65,19 +63,9 @@ export default function PoolzeitStart() {
         setBloecke={setBloecke}
         onWeiter={() => {
           setBlockIndex(0);
-          setPhase('orientierung');
+          setPhase('einheit');
         }}
         onZurueck={() => setPhase('gesamtzeit')}
-      />
-    );
-  }
-
-  if (phase === 'orientierung') {
-    return (
-      <StepOrientierung
-        block={aktuellerBlock}
-        onWeiter={() => setPhase('einheit')}
-        onZurueck={() => (blockIndex === 0 ? setPhase('planung') : (setBlockIndex(blockIndex - 1), setPhase('einheit')))}
       />
     );
   }
@@ -92,10 +80,10 @@ export default function PoolzeitStart() {
             setPhase('abschluss');
           } else {
             setBlockIndex(blockIndex + 1);
-            setPhase('orientierung');
+            setPhase('einheit');
           }
         }}
-        onZurueck={() => setPhase('orientierung')}
+        onZurueck={() => (blockIndex === 0 ? setPhase('planung') : setBlockIndex(blockIndex - 1))}
       />
     );
   }
