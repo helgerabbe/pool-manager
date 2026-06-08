@@ -239,6 +239,15 @@ describe('MBK Air-Gap Payloads', () => {
       expect(JSON.stringify(a.scorm_delivery_contract))
         .toBe(JSON.stringify(b.scorm_delivery_contract));
     });
+
+    // ── airgap-1.10.0: Onboarding-Vertrag ───────────────────────────────
+    it('liefert einen Onboarding-Vertrag mit drei festen Elementen', () => {
+      const out = buildSystemContextPayload(baseArgs);
+      expect(out.onboarding_contract).toBeDefined();
+      expect(out.onboarding_contract.was_ist_das).toContain('VOR der Wahl');
+      const keys = out.onboarding_contract.elemente.map((e) => e.key);
+      expect(keys).toEqual(['einfuehrung', 'fragenblock', 'einstiegsdiagnose']);
+    });
   });
 
   // ── Payload 2: Struktur ────────────────────────────────────────────────────
@@ -321,6 +330,40 @@ describe('MBK Air-Gap Payloads', () => {
       expect(out.lernpfade.pragmatiker).toHaveLength(1);
       // Sektor-Items werden hierarchisch rendert (parent → child).
       expect(out.lernpfade.pragmatiker[0].items.map((i) => i.instance_id)).toEqual(['i1', 'i2']);
+    });
+
+    // ── airgap-1.10.0: Onboarding-Snapshot im einheit-Block ─────────────
+    it('reicht den Onboarding-Snapshot der Einheit durch (einheit.onboarding)', () => {
+      const einheitMitOnboarding = {
+        ...einheit,
+        onboarding_konfiguration: {
+          einfuehrung: { titel: 'Los geht\'s', intro: 'Hallo' },
+          fragenblock: { titel: 'Wie fit bist du?' },
+          einstiegsdiagnose: null,
+          generiert_am: '2026-06-08T10:00:00.000Z',
+        },
+      };
+      const out = buildStructurePayload({
+        einheit: einheitMitOnboarding, themenfelder, lernpakete, lernziele,
+        phaseAktivitaeten, katalogById, allgemeineAufgaben,
+      });
+      expect(out.einheit.onboarding.einfuehrung.titel).toBe('Los geht\'s');
+      expect(out.einheit.onboarding.fragenblock.titel).toBe('Wie fit bist du?');
+      // Noch nicht erzeugtes Element bleibt null (MBK darf es nicht erfinden).
+      expect(out.einheit.onboarding.einstiegsdiagnose).toBeNull();
+      expect(out.einheit.onboarding.generiert_am).toBe('2026-06-08T10:00:00.000Z');
+    });
+
+    it('liefert einen leeren Onboarding-Block, wenn die Einheit keinen hat', () => {
+      const out = buildStructurePayload({
+        einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById, allgemeineAufgaben,
+      });
+      expect(out.einheit.onboarding).toEqual({
+        einfuehrung: null,
+        fragenblock: null,
+        einstiegsdiagnose: null,
+        generiert_am: null,
+      });
     });
 
     it('gibt allgemeine Aufgaben auf Struktur-Niveau aus', () => {

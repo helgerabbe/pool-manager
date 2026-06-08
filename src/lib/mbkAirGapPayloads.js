@@ -53,8 +53,14 @@ import { annotateSektorItems, DASHBOARD_GATING_ENGINE } from '@/lib/dashboardGat
  *     Varianten sichtbar/zu bearbeiten).
  *   - Payload 3: jede Aktivität erhält `master_anzeige_modus`
  *     ('shuffle'|'alle'), damit die MBK das Variantentraining korrekt umsetzt.
+ * airgap-1.10.0: Onboarding-/Orientierungsphase (einheits-global).
+ *   - Payload 1: `onboarding_contract` erklärt der MBK die allen vier
+ *     Dashboards vorgeschaltete Orientierungsphase und ihre drei festen
+ *     Elemente (Einführung, freiwilliger Fragenblock, Einstiegsdiagnose).
+ *   - Payload 2: `einheit.onboarding` liefert die konkreten, von der
+ *     Lehrkraft erzeugten Inhalte (Snapshot aus Einheiten.onboarding_konfiguration).
  */
-export const MBK_AIRGAP_VERSION = 'airgap-1.9.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.10.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -167,6 +173,91 @@ const MASTER_ANZEIGE_MODUS_CONTRACT = {
     'Nur relevant, wenn eine Aktivität ≥2 MasterAufgaben hat. Bei genau einer '
     + 'MasterAufgabe spielt der Modus keine Rolle (es gibt nur eine Variante).',
 };
+
+/**
+ * Onboarding-/Orientierungs-Vertrag (airgap-1.10.0).
+ *
+ * FESTE, inhalts-UNABHÄNGIGE Anweisung an die MBK in Payload 1. Erklärt der
+ * Programmier-KI, dass jeder Einheit eine GLOBALE Orientierungsphase
+ * VORGESCHALTET ist, die NICHT Teil der vier Lerntyp-Dashboards ist, sondern
+ * dem Schüler VOR der Dashboard-Wahl gezeigt wird. Die konkreten, von der
+ * Lehrkraft erzeugten Inhalte stehen in Payload 2
+ * (`einheit.onboarding`), weil sie sich pro Einheit ändern und den
+ * system_context_hash nicht kippen dürfen.
+ *
+ * Die drei festen Elemente spiegeln exakt die Schüleransicht
+ * (pages/schueler/EinheitOnboarding* + Einheiten.onboarding_konfiguration).
+ */
+const ONBOARDING_CONTRACT = {
+  was_ist_das:
+    'Jede Einheit hat eine einheits-GLOBALE Orientierungs-/Onboarding-Phase, '
+    + 'die dem Schüler VOR der Wahl eines der vier Lerntyp-Dashboards '
+    + '(minimalist/pragmatiker/ehrgeizig/passioniert) angezeigt wird. Sie ist '
+    + 'bewusst NICHT Teil der Dashboards/Lernpfade, sondern eine eigene, allen '
+    + 'vier Dashboards vorgeschaltete Einstiegsseite der Einheit. Früher war '
+    + 'diese Phase 4× redundant in jedem Dashboard — jetzt existiert sie genau '
+    + 'einmal pro Einheit.',
+  ablauf:
+    'Reihenfolge der Schüleransicht: 1) Vorstellung der Einheit (Titel, Fach, '
+    + 'Jahrgang, Gesamtziele). 2) Die drei Onboarding-Elemente (siehe '
+    + 'elemente). 3) Erst danach wählt der Schüler sein Dashboard und startet '
+    + 'den eigentlichen Lernpfad. Die Onboarding-Inhalte werden EINMAL beim '
+    + 'Bauen festgelegt (Snapshot) und NICHT bei jedem Schülerklick neu '
+    + 'generiert.',
+  elemente: [
+    {
+      key: 'einfuehrung',
+      titel: 'Kurze Einführung in die Einheit',
+      zweck:
+        'Motivierender, schülergerechter Einstieg: worum geht es in dieser '
+        + 'Einheit, warum ist das relevant. Struktur (titel, intro, '
+        + 'abschnitte[], optional bild). Reine Information, keine Bewertung.',
+    },
+    {
+      key: 'fragenblock',
+      titel: 'Freiwilliger Selbsteinschätzungs-Fragenblock',
+      zweck:
+        'FREIWILLIGE Selbsteinschätzung des Schülers (kein Test, keine '
+        + 'Wertung). Hilft dem Schüler, seinen eigenen Stand/seine Motivation '
+        + 'einzuordnen. Struktur (titel, intro, fragen[], hinweis).',
+    },
+    {
+      key: 'einstiegsdiagnose',
+      titel: 'Einstiegsdiagnose (Wissens-Quiz)',
+      zweck:
+        'Multiple-Choice-Wissensquiz zum Vorwissen für diese Einheit. Dient '
+        + 'der Standortbestimmung des Schülers vor dem Start. Kann später eine '
+        + 'Dashboard-/Lerntyp-Empfehlung speisen.',
+    },
+  ],
+  hinweis_fuer_mbk:
+    'Baue die Orientierungsphase als EINE, allen vier Dashboards '
+    + 'vorgeschaltete Einstiegsseite der Einheit (nicht pro Dashboard '
+    + 'wiederholen). Die konkreten Inhalte der drei Elemente stehen in '
+    + 'Payload 2 unter `einheit.onboarding`. Fehlt dort ein Element (null), '
+    + 'wurde es von der Lehrkraft noch nicht erzeugt und darf NICHT erfunden '
+    + 'werden.',
+};
+
+/**
+ * Normalisiert den Onboarding-Snapshot der Einheit für Payload 2.
+ *
+ * Liest `Einheiten.onboarding_konfiguration` (siehe Entity-Schema + Tab 8,
+ * 5. Pill „Onboarding") und reicht die drei festen Elemente 1:1 durch.
+ * Jedes Element ist `null`, solange es die Lehrkraft nicht erzeugt/gespeichert
+ * hat — die MBK darf fehlende Elemente NICHT erfinden (siehe
+ * ONBOARDING_CONTRACT.hinweis_fuer_mbk).
+ */
+function buildOnboardingForStructure(konfig) {
+  const k = konfig && typeof konfig === 'object' ? konfig : {};
+  const obj = (v) => (v && typeof v === 'object' ? v : null);
+  return {
+    einfuehrung: obj(k.einfuehrung),
+    fragenblock: obj(k.fragenblock),
+    einstiegsdiagnose: obj(k.einstiegsdiagnose),
+    generiert_am: nullable(k.generiert_am),
+  };
+}
 
 /**
  * Erkennt Platzhalter-System-Bausteine (`sys_platzhalter_*`).
@@ -476,6 +567,10 @@ export function buildSystemContextPayload({
     // Aktivitäten mit mehreren MasterAufgaben. Der konkrete Modus pro
     // Aktivität steht in Payload 3 (`master_anzeige_modus`).
     master_anzeige_modus_contract: MASTER_ANZEIGE_MODUS_CONTRACT,
+    // airgap-1.10.0: Erklärt die einheits-globale Orientierungs-/Onboarding-
+    // Phase, die allen vier Dashboards vorgeschaltet ist. Die konkreten
+    // Inhalte stehen in Payload 2 (`einheit.onboarding`).
+    onboarding_contract: ONBOARDING_CONTRACT,
   };
 }
 
@@ -963,6 +1058,10 @@ export function buildStructurePayload({
       jahrgangsstufe: nullable(einheit?.jahrgangsstufe),
       titel_der_einheit: nullable(einheit?.titel_der_einheit),
       gesamtziele: Array.isArray(einheit?.gesamtziele) ? einheit.gesamtziele : [],
+      // airgap-1.10.0: Konkrete Inhalte der einheits-globalen Orientierungs-/
+      // Onboarding-Phase (Snapshot aus Einheiten.onboarding_konfiguration).
+      // Der generische Vertrag dazu steht in Payload 1 (`onboarding_contract`).
+      onboarding: buildOnboardingForStructure(einheit?.onboarding_konfiguration),
     },
     themenfelder: themenfelderOut,
     lernpakete_ohne_themenfeld: orphans.map(renderLernpaketEntry),
