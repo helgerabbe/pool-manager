@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { invokeFunction } from '@/utils/functionsHelper';
-import { Brain, Loader2, Save, Sparkles } from 'lucide-react';
+import { Brain, Loader2, Save, Sparkles, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 import GrundgeruestAnalyseDialog from './GrundgeruestAnalyseDialog';
 
@@ -10,6 +10,7 @@ export default function EinheitGrundgeruestSection({ einheit, canEdit, onSaved }
   const [text, setText] = useState(einheit.grundgeruest_rohtext || '');
   const [structured, setStructured] = useState(einheit.grundgeruest_strukturiert || null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -40,6 +41,23 @@ export default function EinheitGrundgeruestSection({ einheit, canEdit, onSaved }
     setIsSaving(false);
   };
 
+  const handleGenerateAusEinheit = async () => {
+    setIsGenerating(true);
+    try {
+      const res = await invokeFunction('generateGrundgeruestAusEinheit', { einheitId: einheit.id });
+      const vorschlag = res.data?.grundgeruest?.trim();
+      if (vorschlag) {
+        setText(vorschlag);
+        setStructured(null);
+        toast.success('Vorschlag aus den Einheits-Daten erstellt. Bitte prüfen und speichern.');
+      } else {
+        toast.error('Es konnten keine ausreichenden Daten gefunden werden.');
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <section className="space-y-4 p-5 rounded-xl border bg-card">
       <div className="flex items-start justify-between gap-4">
@@ -64,10 +82,15 @@ export default function EinheitGrundgeruestSection({ einheit, canEdit, onSaved }
 
       <div className="flex flex-col sm:flex-row gap-2 sm:justify-between">
         <p className="text-xs text-muted-foreground">
-          Tipp: Du kannst einen Rohtext einfügen und ihn in der KI-Sandbox strukturieren lassen.
+          Tipp: Du kannst einen Rohtext einfügen und ihn in der KI-Sandbox strukturieren lassen –
+          oder das Grundgerüst aus den bereits vorhandenen Einheits-Daten erstellen lassen.
         </p>
         {canEdit && (
-          <div className="flex gap-2 justify-end">
+          <div className="flex flex-wrap gap-2 justify-end">
+            <Button variant="outline" onClick={handleGenerateAusEinheit} disabled={isGenerating} className="gap-2">
+              {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+              Aus Einheit erstellen
+            </Button>
             <Button variant="outline" onClick={() => setDialogOpen(true)} className="gap-2">
               <Sparkles className="w-4 h-4" /> KI-Sandbox
             </Button>
