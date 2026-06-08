@@ -1,9 +1,10 @@
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Home } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * Einheitliche Hülle für jeden Poolzeit-Schritt:
  * großer Titel, optionaler Untertitel, Inhalt, und unten eine
- * Navigationsleiste (Zurück / Weiter).
+ * Navigationsleiste (Zur Startseite / Zurück / Weiter).
  */
 export default function PoolzeitStepShell({
   titel,
@@ -15,6 +16,7 @@ export default function PoolzeitStepShell({
   weiterDisabled = false,
   zeigeZurueck = true,
 }) {
+  const navigate = useNavigate();
   return (
     <div className="h-full flex flex-col max-w-2xl mx-auto w-full">
       <div className="text-center pt-10 pb-6 px-5 sm:px-8 shrink-0">
@@ -27,17 +29,24 @@ export default function PoolzeitStepShell({
       </div>
 
       <div className="flex items-center justify-between gap-4 px-5 sm:px-8 py-6 shrink-0 border-t border-border bg-card/50 backdrop-blur-sm">
-        {zeigeZurueck ? (
+        <div className="flex items-center gap-2">
           <button
-            onClick={onZurueck}
+            onClick={() => navigate('/lernen')}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" />
-            Zurück
+            <Home className="w-4 h-4" />
+            Zur Startseite
           </button>
-        ) : (
-          <span />
-        )}
+          {zeigeZurueck && (
+            <button
+              onClick={onZurueck}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Zurück
+            </button>
+          )}
+        </div>
         <button
           onClick={onWeiter}
           disabled={weiterDisabled}

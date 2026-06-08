@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { getCurrentUser } from '@/services/AuthService';
+import CockpitHeaderOverlay from '@/components/schueler/CockpitHeaderOverlay';
 import StepGesamtzeit from '@/components/schueler/poolzeit/StepGesamtzeit';
 import StepFaecherPlanung from '@/components/schueler/poolzeit/StepFaecherPlanung';
 import StepOrientierung from '@/components/schueler/poolzeit/StepOrientierung';
@@ -21,6 +23,12 @@ import StepAbschluss from '@/components/schueler/poolzeit/StepAbschluss';
 export default function PoolzeitStart() {
   const navigate = useNavigate();
 
+  const { data: user } = useQuery({
+    queryKey: ['authUser'],
+    queryFn: () => getCurrentUser(),
+    staleTime: 30 * 1000,
+  });
+
   const { data: faecher = [] } = useQuery({
     queryKey: ['lookupFaecher'],
     queryFn: () => base44.entities.LookupFaecher.list('reihenfolge'),
@@ -36,6 +44,7 @@ export default function PoolzeitStart() {
 
   const aktuellerBlock = bloecke[blockIndex];
 
+  const renderPhase = () => {
   if (phase === 'gesamtzeit') {
     return (
       <StepGesamtzeit
@@ -101,5 +110,13 @@ export default function PoolzeitStart() {
       onFertig={() => navigate('/lernen')}
       onZurueck={() => setPhase('einheit')}
     />
+  );
+  };
+
+  return (
+    <div className="relative h-full overflow-hidden bg-background">
+      <CockpitHeaderOverlay name={user?.full_name} />
+      {renderPhase()}
+    </div>
   );
 }
