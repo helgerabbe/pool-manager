@@ -19,16 +19,16 @@ export default function PoolzeitStepShell({
   const navigate = useNavigate();
   return (
     <div className="h-full flex flex-col max-w-2xl mx-auto w-full">
-      <div className="text-center pt-10 pb-6 px-5 sm:px-8 shrink-0">
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">{titel}</h1>
-        {untertitel && <p className="text-muted-foreground mt-2">{untertitel}</p>}
+      <div className="text-center pt-5 pb-3 px-5 sm:px-8 shrink-0">
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{titel}</h1>
+        {untertitel && <p className="text-sm text-muted-foreground mt-1">{untertitel}</p>}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 sm:px-8 flex flex-col justify-center">
+      <div className="flex-1 overflow-y-auto px-5 sm:px-8 flex flex-col justify-center min-h-0">
         {children}
       </div>
 
-      <div className="flex items-center justify-between gap-4 px-5 sm:px-8 py-6 shrink-0 border-t border-border bg-card/50 backdrop-blur-sm">
+      <div className="flex items-center justify-between gap-4 px-5 sm:px-8 py-4 shrink-0 border-t border-border bg-card/50 backdrop-blur-sm">
         <div className="flex items-center gap-2">
           <button
             onClick={() => navigate('/lernen')}
