@@ -80,27 +80,26 @@ export default function EinheitGrundgeruestSection({ einheit, canEdit, onSaved }
         placeholder="Beschreibe hier frei, worum es in der Einheit geht: Was sollen Schüler lernen? Welche Materialien, Software oder Quellen werden genutzt? Was gehört ausdrücklich nicht dazu? Welche Begriffe und Grenzen sind wichtig?"
       />
 
-      <div className="flex flex-col sm:flex-row gap-2 sm:justify-between">
-        <p className="text-xs text-muted-foreground">
-          Tipp: Du kannst einen Rohtext einfügen und ihn in der KI-Sandbox strukturieren lassen –
-          oder das Grundgerüst aus den bereits vorhandenen Einheits-Daten erstellen lassen.
-        </p>
-        {canEdit && (
-          <div className="flex flex-wrap gap-2 justify-end">
-            <Button variant="outline" onClick={handleGenerateAusEinheit} disabled={isGenerating} className="gap-2">
-              {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-              Aus Einheit erstellen
-            </Button>
-            <Button variant="outline" onClick={() => setDialogOpen(true)} className="gap-2">
-              <Sparkles className="w-4 h-4" /> KI-Sandbox
-            </Button>
-            <Button onClick={handleSave} disabled={isSaving} className="gap-2">
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Speichern
-            </Button>
-          </div>
-        )}
-      </div>
+      {canEdit && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" onClick={handleGenerateAusEinheit} disabled={isGenerating} className="gap-2">
+            {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+            Aus Einheit erstellen
+          </Button>
+          <Button variant="outline" onClick={() => setDialogOpen(true)} className="gap-2">
+            <Sparkles className="w-4 h-4" /> KI-Sandbox
+          </Button>
+          <Button onClick={handleSave} disabled={isSaving} className="gap-2 sm:ml-auto">
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Speichern
+          </Button>
+        </div>
+      )}
+
+      <p className="text-xs text-muted-foreground">
+        Tipp: Du kannst einen Rohtext einfügen und ihn in der KI-Sandbox strukturieren lassen –
+        oder das Grundgerüst aus den bereits vorhandenen Einheits-Daten erstellen lassen.
+      </p>
 
       <GrundgeruestAnalyseDialog
         open={dialogOpen}
