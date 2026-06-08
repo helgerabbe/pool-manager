@@ -42,21 +42,26 @@ export default function StudentArea() {
   );
 
   return (
-    <div className="h-full overflow-y-auto bg-background">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 space-y-8">
+    // Volle Höhe des Content-Bereichs, KEIN Scrollen: alles passt auf eine
+    // iPad-Seite. Inhalte verteilen sich über ein flex-column-Raster.
+    <div className="h-full overflow-hidden bg-background">
+      <div className="h-full max-w-5xl mx-auto px-5 sm:px-8 py-5 flex flex-col gap-4 min-h-0">
+        {/* Kopf: Begrüßung + Datum/Uhrzeit */}
         <CockpitHeader name={user?.full_name} />
 
-        <StartButton onClick={() => {}} />
+        {/* Startknopf + Selbst-Notiz nebeneinander (spart vertikalen Platz) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 shrink-0">
+          <StartButton onClick={() => {}} />
+          <SelbstNotizKarte notiz={BEISPIEL_NOTIZ.notiz} datum={BEISPIEL_NOTIZ.datum} />
+        </div>
 
-        <SelbstNotizKarte notiz={BEISPIEL_NOTIZ.notiz} datum={BEISPIEL_NOTIZ.datum} />
-
-        <RueckblickLeiste eintraege={BEISPIEL_RUECKBLICK} />
-
-        <div>
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+        {/* Fächer-Übersicht – nimmt den verbleibenden Platz, scrollt intern
+            nur falls extrem viele Fächer (Normalfall: passt ohne Scroll). */}
+        <div className="flex flex-col min-h-0 flex-1">
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 shrink-0">
             Deine Fächer
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 min-h-0 flex-1 content-start overflow-y-auto">
             {poolzeitFaecher.map((fach) => {
               const meta = BEISPIEL_STUFEN[fach.name] || { stufe: 'nicht_gestartet', zuletztVor: null };
               return (
@@ -70,6 +75,11 @@ export default function StudentArea() {
               );
             })}
           </div>
+        </div>
+
+        {/* Rückblick als ruhiger Abschluss-Streifen unten */}
+        <div className="shrink-0">
+          <RueckblickLeiste eintraege={BEISPIEL_RUECKBLICK} />
         </div>
       </div>
     </div>

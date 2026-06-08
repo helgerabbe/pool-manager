@@ -70,6 +70,7 @@ function useActiveEinheit(location) {
 function WorkspaceAwareContent({ location }) {
   const isFullScreen =
     location.pathname === '/workspace' ||
+    location.pathname === '/lernen' ||
     location.pathname.startsWith('/einheiten/') ||
     (location.pathname.startsWith('/einheit/') && location.pathname !== '/einheit/create');
 

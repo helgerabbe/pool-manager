@@ -16,23 +16,3 @@ export const FORTSCHRITT_STUFEN = {
 export function getFortschrittStufe(key) {
   return FORTSCHRITT_STUFEN[key] || FORTSCHRITT_STUFEN.nicht_gestartet;
 }
-
-/**
- * "ungefähr Viertel vor fünf" – menschliche, unscharfe Uhrzeit.
- * Rundet auf das nächste Viertel und formuliert umgangssprachlich.
- */
-export function ungefaehreUhrzeit(date = new Date()) {
-  const h = date.getHours();
-  const m = date.getMinutes();
-  const viertel = Math.round(m / 15) % 4;
-  // Stunde, auf die sich "vor/nach" bezieht
-  const naechsteStunde = (m >= 23 ? h + 1 : h) % 24;
-  const std = (n) => {
-    const x = n % 12 === 0 ? 12 : n % 12;
-    return x;
-  };
-  if (viertel === 0) return `ungefähr ${std(h)} Uhr`;
-  if (viertel === 1) return `ungefähr Viertel nach ${std(h)}`;
-  if (viertel === 2) return `ungefähr halb ${std(naechsteStunde)}`;
-  return `ungefähr Viertel vor ${std(naechsteStunde)}`;
-}

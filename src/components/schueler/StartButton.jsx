@@ -8,12 +8,12 @@ export default function StartButton({ onClick }) {
   return (
     <button
       onClick={onClick}
-      className="group w-full rounded-2xl bg-primary text-primary-foreground px-8 py-7 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all hover:-translate-y-0.5 flex items-center justify-center gap-4"
+      className="group w-full h-full rounded-2xl bg-primary text-primary-foreground px-6 py-5 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all hover:-translate-y-0.5 flex items-center justify-center gap-4"
     >
-      <span className="flex items-center justify-center w-12 h-12 rounded-full bg-white/15 group-hover:bg-white/25 transition-colors">
-        <Play className="w-6 h-6 fill-current" />
+      <span className="flex items-center justify-center w-11 h-11 rounded-full bg-white/15 group-hover:bg-white/25 transition-colors shrink-0">
+        <Play className="w-5 h-5 fill-current" />
       </span>
-      <span className="text-2xl font-bold tracking-tight">Poolzeit beginnen</span>
+      <span className="text-xl font-bold tracking-tight">Poolzeit beginnen</span>
     </button>
   );
 }
