@@ -3,12 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { getCurrentUser } from '@/services/AuthService';
-import { ArrowLeft, BookOpen, Map } from 'lucide-react';
+import { ArrowLeft, BookOpen } from 'lucide-react';
 import { LERNTYPEN } from '@/lib/lerntypen';
 import DashboardKachel from '@/components/schueler/DashboardKachel';
 import OnboardingKachel from '@/components/schueler/OnboardingKachel';
 import LerntypWechselDialog from '@/components/schueler/LerntypWechselDialog';
-import LernlandkarteDialog from '@/components/schueler/LernlandkarteDialog';
 
 /**
  * Einheits-Onboarding: Vorstellung der Einheit + Auswahl des Dashboards
@@ -25,7 +24,6 @@ export default function EinheitOnboarding() {
 
   const [wechselZiel, setWechselZiel] = useState(null);
   const [speichert, setSpeichert] = useState(false);
-  const [llkOffen, setLlkOffen] = useState(false);
 
   const { data: einheit, isLoading } = useQuery({
     queryKey: ['einheit', einheitId],
@@ -113,15 +111,6 @@ export default function EinheitOnboarding() {
               <h1 className="text-lg font-bold text-foreground tracking-tight truncate">{einheit.titel_der_einheit}</h1>
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-border">
-            <button
-              onClick={() => setLlkOffen(true)}
-              className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
-            >
-              <Map className="w-4 h-4" />
-              Lernlandkarte ansehen
-            </button>
-          </div>
         </div>
 
         {/* Onboarding */}
@@ -153,12 +142,6 @@ export default function EinheitOnboarding() {
           ))}
         </div>
       </div>
-
-      <LernlandkarteDialog
-        open={llkOffen}
-        onOpenChange={setLlkOffen}
-        einheit={einheit}
-      />
 
       <LerntypWechselDialog
         open={!!wechselZiel}

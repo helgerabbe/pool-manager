@@ -16,7 +16,6 @@ import { cn } from '@/lib/utils';
  * "vollständig" (alle Lernziele).
  */
 export default function LernlandkarteDialog({ open, onOpenChange, einheit }) {
-  const [modus, setModus] = useState('verringert'); // 'verringert' | 'vollstaendig'
   const einheitId = einheit?.id;
 
   const { data: themenfelder = [] } = useQuery({
@@ -36,13 +35,7 @@ export default function LernlandkarteDialog({ open, onOpenChange, einheit }) {
   });
 
   const paketIds = new Set(lernpakete.map((p) => p.id));
-  const lernziele = alleLernziele.filter((lz) => paketIds.has(lz.lernpaket_id));
-
-  // Im "verringert"-Modus nur Lernziele mit Schüler-Übersetzung zeigen.
-  const sichtbareZiele =
-    modus === 'verringert'
-      ? lernziele.filter((lz) => (lz.schueler_uebersetzung || '').trim().length > 0)
-      : lernziele;
+  const sichtbareZiele = alleLernziele.filter((lz) => paketIds.has(lz.lernpaket_id));
 
   const themenfelderSortiert = [...themenfelder].sort(
     (a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)
@@ -56,26 +49,6 @@ export default function LernlandkarteDialog({ open, onOpenChange, einheit }) {
             <Map className="w-5 h-5 text-primary" />
             Lernlandkarte – {einheit?.titel_der_einheit}
           </DialogTitle>
-          {/* Umschalter */}
-          <div className="flex gap-1 mt-3 bg-muted rounded-lg p-1 w-fit">
-            {[
-              { key: 'verringert', label: 'Verringert' },
-              { key: 'vollstaendig', label: 'Vollständig' },
-            ].map((opt) => (
-              <button
-                key={opt.key}
-                onClick={() => setModus(opt.key)}
-                className={cn(
-                  'px-3 py-1 rounded-md text-xs font-semibold transition-all',
-                  modus === opt.key
-                    ? 'bg-card text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
