@@ -70,7 +70,7 @@ const MINIMALIST = [
     titel: 'Lernlandkarte',
     modus: 'sequenziell',
     sektor_typ: SEKTOR_TYP.UEBERBLICK,
-    items: [sys(B.mapReduced)],
+    items: [sys(B.mapFull)],
   },
   {
     sektor_id: 'tpl_min_sec2',
@@ -101,7 +101,7 @@ const PRAGMATIKER = [
     titel: 'Lernlandkarte',
     modus: 'sequenziell',
     sektor_typ: SEKTOR_TYP.UEBERBLICK,
-    items: [sys(B.mapReduced)],
+    items: [sys(B.mapFull)],
   },
   {
     sektor_id: 'tpl_prag_sec2',
@@ -258,8 +258,9 @@ export function getArbeitsphaseDefaultItems(lernTyp) {
  *     Bestandspfade), bis dahin BLEIBT diese Map zwingend bestehen.
  */
 export const LEGACY_BAUSTEIN_ALIAS = Object.freeze({
-  // @legacy V1 → V2: Default-Mapping für die alte, eindeutige Karte.
-  // Reduced ist der konservativere Default (V1 hatte nur eine Karte für
-  // alle Lerntypen, V2 unterscheidet zwischen reduced und full).
-  sys_landkarte: 'sys_map_reduced',
+  // @legacy → V2: Die verringerte Karte (sys_map_reduced) wurde entfernt.
+  // Alle alten Karten-Bausteine werden auf die einheitliche Dashboard-Karte
+  // (sys_map_full) abgebildet.
+  sys_landkarte: 'sys_map_full',
+  sys_map_reduced: 'sys_map_full',
 });
