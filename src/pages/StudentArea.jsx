@@ -61,7 +61,7 @@ export default function StudentArea() {
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 shrink-0">
             Deine Fächer
           </h2>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 min-h-0 flex-1 content-start overflow-y-auto">
+          <div className="grid grid-cols-3 gap-3 min-h-0 flex-1 content-start overflow-y-auto">
             {poolzeitFaecher.map((fach) => {
               const meta = BEISPIEL_STUFEN[fach.name] || { stufe: 'nicht_gestartet', zuletztVor: null };
               return (
