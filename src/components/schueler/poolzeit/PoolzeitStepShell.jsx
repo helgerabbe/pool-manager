@@ -18,13 +18,13 @@ export default function PoolzeitStepShell({
 }) {
   const navigate = useNavigate();
   return (
-    <div className="h-full flex flex-col max-w-2xl mx-auto w-full">
+    <div className="h-full flex flex-col max-w-2xl mx-auto w-full overflow-hidden">
       <div className="text-center pt-5 pb-3 px-5 sm:px-8 shrink-0">
         <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{titel}</h1>
         {untertitel && <p className="text-sm text-muted-foreground mt-1">{untertitel}</p>}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 sm:px-8 flex flex-col justify-start pt-4 min-h-0">
+      <div className="flex-1 overflow-y-auto px-5 sm:px-8 flex flex-col justify-center min-h-0">
         {children}
       </div>
 
