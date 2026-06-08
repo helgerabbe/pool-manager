@@ -15,6 +15,11 @@
       "default": true,
       "description": "Ob das Fach in Dropdowns erscheint"
     },
+    "ist_poolzeit_fach": {
+      "type": "boolean",
+      "default": true,
+      "description": "Ob dieses Fach im Sch\u00fcler-Poolzeit-Cockpit als Arbeitsfach erscheint. F\u00e4cher wie 'Lernen und Lerntechniken' k\u00f6nnen hier ausgeschlossen werden."
+    },
     "reihenfolge": {
       "type": "number",
       "description": "Sortierreihenfolge in Dropdown-Listen"

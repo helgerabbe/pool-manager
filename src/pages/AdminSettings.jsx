@@ -190,16 +190,28 @@ export default function AdminSettings() {
                 queryKey={['lookupFaecher']}
                 items={faecherRaw}
                 labelField="name"
+                createDefaults={{ ist_poolzeit_fach: true }}
                 renderExtra={(values, setValues) => (
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <label className="text-xs text-muted-foreground whitespace-nowrap">Farbe:</label>
-                    <input
-                      type="color"
-                      value={values.farbe || '#94a3b8'}
-                      onChange={e => setValues({ farbe: e.target.value })}
-                      className="w-8 h-7 rounded cursor-pointer border border-input p-0.5 bg-transparent"
-                      title="Fach-Farbe auswählen"
-                    />
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="flex items-center gap-1.5">
+                      <label className="text-xs text-muted-foreground whitespace-nowrap">Farbe:</label>
+                      <input
+                        type="color"
+                        value={values.farbe || '#94a3b8'}
+                        onChange={e => setValues({ farbe: e.target.value })}
+                        className="w-8 h-7 rounded cursor-pointer border border-input p-0.5 bg-transparent"
+                        title="Fach-Farbe auswählen"
+                      />
+                    </div>
+                    <label className="flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={values.ist_poolzeit_fach !== false}
+                        onChange={e => setValues({ ist_poolzeit_fach: e.target.checked })}
+                        className="cursor-pointer"
+                      />
+                      Poolzeit
+                    </label>
                   </div>
                 )}
               />
