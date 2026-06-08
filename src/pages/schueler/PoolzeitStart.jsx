@@ -1,30 +1,105 @@
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Play } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import StepGesamtzeit from '@/components/schueler/poolzeit/StepGesamtzeit';
+import StepFaecherPlanung from '@/components/schueler/poolzeit/StepFaecherPlanung';
+import StepOrientierung from '@/components/schueler/poolzeit/StepOrientierung';
+import StepEinheit from '@/components/schueler/poolzeit/StepEinheit';
+import StepAbschluss from '@/components/schueler/poolzeit/StepAbschluss';
 
 /**
- * Hülle: Hier beginnt die eigentliche Poolzeit-Session.
- * Inhalt/Logik folgt später.
+ * Poolzeit-Flow (Gerüst). Schritt-für-Schritt-Ablauf:
+ *  1. gesamtzeit  – wie viel Zeit habe ich heute?
+ *  2. planung     – Fächer + Zeit verteilen (Zeitleiste)
+ *  3. orientierung – pro Fach-Block: Lerntagebuch ansehen
+ *  4. einheit      – pro Fach-Block: Arbeitsansicht (später Dashboard)
+ *  5. abschluss    – Reflexion + Notiz fürs nächste Mal
+ *
+ * Phasen 3+4 werden pro geplantem Fach-Block durchlaufen (blockIndex).
  */
 export default function PoolzeitStart() {
-  return (
-    <div className="h-full overflow-y-auto bg-background">
-      <div className="max-w-3xl mx-auto px-5 sm:px-8 py-10">
-        <Link
-          to="/lernen"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Zurück zum Dashboard
-        </Link>
+  const navigate = useNavigate();
 
-        <div className="flex flex-col items-center text-center gap-4 py-16">
-          <span className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary">
-            <Play className="w-7 h-7 fill-current" />
-          </span>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Hier geht es los mit der Poolzeit</h1>
-          <p className="text-muted-foreground max-w-md">Dieser Bereich wird bald mit deiner Lern-Session gefüllt.</p>
-        </div>
-      </div>
-    </div>
+  const { data: faecher = [] } = useQuery({
+    queryKey: ['lookupFaecher'],
+    queryFn: () => base44.entities.LookupFaecher.list('reihenfolge'),
+  });
+  const poolzeitFaecher = faecher.filter((f) => f.ist_aktiv !== false && f.ist_poolzeit_fach !== false);
+
+  const [phase, setPhase] = useState('gesamtzeit');
+  const [gesamtzeit, setGesamtzeit] = useState(60);
+  const [bloecke, setBloecke] = useState([]);
+  const [blockIndex, setBlockIndex] = useState(0);
+  const [reflexion, setReflexion] = useState('');
+  const [nachricht, setNachricht] = useState('');
+
+  const aktuellerBlock = bloecke[blockIndex];
+
+  if (phase === 'gesamtzeit') {
+    return (
+      <StepGesamtzeit
+        gesamtzeit={gesamtzeit}
+        setGesamtzeit={setGesamtzeit}
+        onWeiter={() => setPhase('planung')}
+        onZurueck={() => navigate('/lernen')}
+      />
+    );
+  }
+
+  if (phase === 'planung') {
+    return (
+      <StepFaecherPlanung
+        gesamtzeit={gesamtzeit}
+        faecher={poolzeitFaecher}
+        bloecke={bloecke}
+        setBloecke={setBloecke}
+        onWeiter={() => {
+          setBlockIndex(0);
+          setPhase('orientierung');
+        }}
+        onZurueck={() => setPhase('gesamtzeit')}
+      />
+    );
+  }
+
+  if (phase === 'orientierung') {
+    return (
+      <StepOrientierung
+        block={aktuellerBlock}
+        onWeiter={() => setPhase('einheit')}
+        onZurueck={() => (blockIndex === 0 ? setPhase('planung') : (setBlockIndex(blockIndex - 1), setPhase('einheit')))}
+      />
+    );
+  }
+
+  if (phase === 'einheit') {
+    const istLetzterBlock = blockIndex >= bloecke.length - 1;
+    return (
+      <StepEinheit
+        block={aktuellerBlock}
+        onWeiter={() => {
+          if (istLetzterBlock) {
+            setPhase('abschluss');
+          } else {
+            setBlockIndex(blockIndex + 1);
+            setPhase('orientierung');
+          }
+        }}
+        onZurueck={() => setPhase('orientierung')}
+      />
+    );
+  }
+
+  // abschluss
+  return (
+    <StepAbschluss
+      reflexion={reflexion}
+      setReflexion={setReflexion}
+      nachricht={nachricht}
+      setNachricht={setNachricht}
+      onFertig={() => navigate('/lernen')}
+      onZurueck={() => setPhase('einheit')}
+    />
   );
 }
