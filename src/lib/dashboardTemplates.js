@@ -37,10 +37,6 @@ const sys = (refId) => ({ type: ITEM_TYPE.SYSTEM, ref_id: refId });
 
 // Spiegel-Konstanten der genutzten System-Bausteine (Tippfehler-Schutz).
 const B = Object.freeze({
-  // Sektion 0
-  sec0Overview: 'sys_sec0_overview',
-  sec0Qblock: 'sys_sec0_qblock',
-  diagnoseEntry: 'sys_diagnose_entry',
   // Karte
   mapReduced: 'sys_map_reduced',
   mapFull: 'sys_map_full',
