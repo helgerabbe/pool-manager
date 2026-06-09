@@ -19,6 +19,7 @@ import { base44 } from '@/api/base44Client';
 import { getCurrentUser } from '@/services/AuthService';
 import { normalizeSektor } from '@/lib/lernpfadeUtils';
 import { adaptLernpaketToPoolItem } from '@/lib/lernpaketAdapter';
+import { getAktivitaetenByLernpaket, getAktivitaetenKatalog } from '@/services/AktivitaetService';
 
 export function useSchuelerPfad(einheitId, lerntyp) {
   const queryClient = useQueryClient();
@@ -50,6 +51,13 @@ export function useSchuelerPfad(einheitId, lerntyp) {
     queryKey: ['lernpakete-by-einheit', einheitId],
     queryFn: () => base44.entities.Lernpakete.filter({ einheit_id: einheitId }),
     enabled: !!einheitId,
+  });
+
+  // Globaler Aktivitäten-Katalog (für Aktivitäts-Namen in der Sub-Ansicht).
+  const { data: katalog = [] } = useQuery({
+    queryKey: ['aktivitaetenKatalog', 'all'],
+    queryFn: () => getAktivitaetenKatalog(),
+    staleTime: 5 * 60 * 1000,
   });
 
   const fortschrittQueryKey = ['schuelerAktFortschritt', user?.email, einheitId, lerntyp];
@@ -100,6 +108,11 @@ export function useSchuelerPfad(einheitId, lerntyp) {
     return map;
   }, [fortschritte]);
 
+  // instance_id → status, AUCH für Lernpaket-Aktivitäten (zusammengesetzte
+  // Keys `<lernpaketInstanceId>::<aktivitaetId>`). Wird vom Lernpaket-
+  // Durcharbeiten gebraucht, um pro Aktivität „erledigt" anzuzeigen.
+  const fortschrittByCompositeId = fortschrittByInstance;
+
   // ── Mutation: Aktivität als erledigt markieren ──────────────────────
   const markErledigt = useCallback(
     async (item, sektor) => {
@@ -138,6 +151,23 @@ export function useSchuelerPfad(einheitId, lerntyp) {
     [user?.email, einheitId, lerntyp, recordByInstance, queryClient]
   );
 
+  const katalogById = useMemo(() => {
+    const map = new Map();
+    (katalog || []).forEach((k) => map.set(k.id, k));
+    return map;
+  }, [katalog]);
+
+  // Lazy-Loader: Aktivitäten eines Lernpakets (per React-Query-Cache).
+  const loadLernpaketAktivitaeten = useCallback(
+    (lernpaketId) =>
+      queryClient.fetchQuery({
+        queryKey: ['lernpaketAktivitaeten', lernpaketId],
+        queryFn: () => getAktivitaetenByLernpaket(lernpaketId),
+        staleTime: 60 * 1000,
+      }),
+    [queryClient]
+  );
+
   return {
     user,
     einheit,
@@ -145,7 +175,10 @@ export function useSchuelerPfad(einheitId, lerntyp) {
     sektoren,
     bausteinById,
     aufgabenById,
+    katalogById,
     fortschrittByInstance,
+    fortschrittByCompositeId,
     markErledigt,
+    loadLernpaketAktivitaeten,
   };
 }

@@ -111,7 +111,7 @@ export default function PfadNavigation({
                             ) : (
                               <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
                             )}
-                            <span className={cn('truncate flex-1', erledigt && 'text-muted-foreground line-through')}>
+                            <span className={cn('truncate flex-1', erledigt && 'text-emerald-700 font-medium')}>
                               {item.meta.titel}
                             </span>
                             {gesperrt && (

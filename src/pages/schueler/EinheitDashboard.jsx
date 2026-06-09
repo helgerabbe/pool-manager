@@ -12,6 +12,7 @@ import { buildSichtbarePfadItems } from '@/lib/schuelerPfadView';
 import PfadNavigation from '@/components/schueler/pfad/PfadNavigation';
 import AktivitaetSeite from '@/components/schueler/pfad/AktivitaetSeite';
 import PfadStartseite from '@/components/schueler/pfad/PfadStartseite';
+import LernpaketDurcharbeiten from '@/components/schueler/pfad/LernpaketDurcharbeiten';
 
 /**
  * Lerntyp-Dashboard der Einheit (Schüleransicht). Burger-Navigation als
@@ -30,8 +31,11 @@ export default function EinheitDashboard() {
     sektoren,
     bausteinById,
     aufgabenById,
+    katalogById,
     fortschrittByInstance,
+    fortschrittByCompositeId,
     markErledigt,
+    loadLernpaketAktivitaeten,
   } = useSchuelerPfad(einheitId, lerntypKey);
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -74,6 +78,10 @@ export default function EinheitDashboard() {
   const activeItem = activeInstanceId ? itemByInstance.get(activeInstanceId) : null;
   const activeMeta = activeItem?.meta || null;
 
+  // Ist das aktive Item ein Lernpaket? Dann zeigen wir die Aktivitäten-Sub-Ansicht.
+  const activeAufgabe = activeItem ? aufgabenById.get(activeItem.ref_id) : null;
+  const istLernpaket = activeItem?.type === 'aufgabe' && activeAufgabe?._isLernpaket === true;
+
   // „Weiter“: nächstes nicht-gesperrtes Item nach dem aktuellen.
   const goWeiter = () => {
     if (!activeItem) return;
@@ -94,6 +102,17 @@ export default function EinheitDashboard() {
     } finally {
       setBusy(false);
     }
+  };
+
+  // Eine einzelne Lernpaket-Aktivität als erledigt markieren. Der Fortschritt
+  // wird unter einer zusammengesetzten instance_id `<lernpaketInstanceId>::<aktivitaetId>`
+  // geführt, getrennt vom Erledigt-Status des Lernpakets selbst.
+  const handleAktivitaetErledigt = async (compositeId, akt) => {
+    if (!activeItem) return;
+    await markErledigt(
+      { instance_id: compositeId, type: 'system', ref_id: akt.aktivitaet_id },
+      activeItem.sektor
+    );
   };
 
   if (isLoading) {
@@ -126,7 +145,20 @@ export default function EinheitDashboard() {
       </header>
 
       <main className="flex-1 min-h-0 overflow-hidden">
-        {activeItem ? (
+        {activeItem && istLernpaket ? (
+          <LernpaketDurcharbeiten
+            item={activeItem}
+            meta={activeMeta}
+            lernpaketLogik={activeAufgabe?.lernpaket_logik || 'standard'}
+            loadLernpaketAktivitaeten={loadLernpaketAktivitaeten}
+            katalogById={katalogById}
+            fortschrittByCompositeId={fortschrittByCompositeId}
+            onMarkErledigt={handleAktivitaetErledigt}
+            onMarkLernpaketErledigt={() => markErledigt(activeItem, activeItem.sektor)}
+            istLernpaketErledigt={activeItem?.gate === ITEM_GATE.ERLEDIGT}
+            onBack={() => setActiveInstanceId(null)}
+          />
+        ) : activeItem ? (
           <AktivitaetSeite
             item={activeItem}
             meta={activeMeta}
