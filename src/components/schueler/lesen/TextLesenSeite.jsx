@@ -1,6 +1,7 @@
 import { CheckCircle2, Loader2, ArrowLeft, FileText, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLeseEinstellungen } from '@/hooks/useLeseEinstellungen';
+import { getAktivitaetComicBild } from '@/lib/aktivitaetComicBilder';
 import LeseSchriftgroesseToggle from './LeseSchriftgroesseToggle';
 import LesetextDarstellung from './LesetextDarstellung';
 
@@ -24,6 +25,7 @@ export default function TextLesenSeite({ aktivitaet, kat, lernpaketTitel, busy, 
   const inhaltTyp = fv.inhalt_typ || 'text';
   const bilder = Array.isArray(fv.bilder) ? fv.bilder : [];
   const istText = inhaltTyp === 'text';
+  const comicBild = getAktivitaetComicBild(kat?.name);
 
   return (
     <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 py-6">
@@ -54,6 +56,9 @@ export default function TextLesenSeite({ aktivitaet, kat, lernpaketTitel, busy, 
       {/* Inhalt – Scrollen ausdrücklich erlaubt */}
       <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
         <div className="space-y-5 pb-2">
+          {comicBild && (
+            <img src={comicBild} alt="" className="w-24 h-24 mx-auto object-contain" />
+          )}
           {fv.aufgabentext && (
             <div className="rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-900 leading-relaxed">
               {fv.aufgabentext}
