@@ -29,7 +29,7 @@ function mischen(items) {
  * bringt sie per Drag&Drop in die richtige Reihenfolge. Bewusst auf max. 8
  * Elemente begrenzt – große Karten, gut lesbar, scrollfrei auf dem Tablet.
  */
-export default function ReihenfolgeSortierenSeite({ aktivitaet, busy, onErledigt, onBack }) {
+export default function ReihenfolgeSortierenSeite({ aktivitaet, busy, onErledigt, onBack, masterHinweis }) {
   const fv = aktivitaet?.field_values || {};
 
   // Korrekte Reihenfolge als stabile Karten-Objekte (mit ursprünglichem Index).
@@ -59,6 +59,13 @@ export default function ReihenfolgeSortierenSeite({ aktivitaet, busy, onErledigt
 
   return (
     <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 py-6">
+      {/* Hinweis bei sequenziellen Master-Aufgaben: „Aufgabe x von y". */}
+      {masterHinweis && (
+        <div className="mb-3 shrink-0 inline-flex items-center self-start rounded-full bg-primary/10 text-primary text-xs font-semibold px-3 py-1">
+          Aufgabe {masterHinweis.aktuell} von {masterHinweis.gesamt}
+        </div>
+      )}
+
       {/* Aufgabenstellung – einheitlicher blauer Anker mit Icon. */}
       <AufgabenstellungBox className="mb-4 shrink-0">
         {fv.instruction || 'Bringe die Elemente in die richtige Reihenfolge.'}

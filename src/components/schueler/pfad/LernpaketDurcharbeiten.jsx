@@ -6,10 +6,13 @@ import {
   sortAktivitaetenNachLogik,
   istLernpaketGegated,
 } from '@/lib/lernpaketAktivitaetenOrder';
-import LernpaketAktivitaetSeite from './LernpaketAktivitaetSeite';
-import TextLesenSeite from '@/components/schueler/lesen/TextLesenSeite';
-import LinkOeffnenSeite from '@/components/schueler/lesen/LinkOeffnenSeite';
-import ReihenfolgeSortierenSeite from '@/components/schueler/lesen/ReihenfolgeSortierenSeite';
+import MasterfaehigeAktivitaet from './MasterfaehigeAktivitaet';
+import MasterModusBadge from './MasterModusBadge';
+import {
+  ermittleMasterModus,
+  masterFortschritt,
+  istMasterAktivitaetErledigt,
+} from '@/lib/masterAufgabenModus';
 
 const PHASE_LABEL = { Input: 'Erklärung', 'Übung': 'Übung', Abschluss: 'Abschluss' };
 
@@ -28,6 +31,7 @@ export default function LernpaketDurcharbeiten({
   katalogById,
   fortschrittByCompositeId,
   onMarkErledigt,        // (compositeId, aktivitaet) => Promise
+  onMarkMaster,          // (compositeId, { itemType, refId }) => Promise – pro MasterAufgabe
   onMarkLernpaketErledigt, // () => Promise – markiert das Lernpaket selbst als erledigt
   istLernpaketErledigt,  // bool – ob das Lernpaket-Item bereits erledigt ist
   onBack,                // zurück zur Pfad-Startseite
@@ -53,14 +57,21 @@ export default function LernpaketDurcharbeiten({
     [aktivitaeten, lernpaketLogik]
   );
 
+  // Erledigt-Status pro Aktivität – master-aware:
+  //  - masterfähig (≥1 MasterAufgabe): zentrale Logik (sequenziell=alle, shuffle=eine).
+  //  - sonst: klassischer Composite-Status der Aktivität selbst.
   const erledigtSet = useMemo(() => {
     const set = new Set();
     sortiert.forEach((akt) => {
-      if (fortschrittByCompositeId.get(compositeId(akt)) === 'erledigt') set.add(akt.id);
+      const masterErledigt = istMasterAktivitaetErledigt(akt, item.instance_id, fortschrittByCompositeId);
+      const erledigt = masterErledigt !== null
+        ? masterErledigt
+        : fortschrittByCompositeId.get(compositeId(akt)) === 'erledigt';
+      if (erledigt) set.add(akt.id);
     });
     return set;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortiert, fortschrittByCompositeId]);
+  }, [sortiert, fortschrittByCompositeId, item.instance_id]);
 
   const alleErledigt = sortiert.length > 0 && sortiert.every((akt) => erledigtSet.has(akt.id));
   const gegated = istLernpaketGegated(lernpaketLogik, alleErledigt);
@@ -80,36 +91,23 @@ export default function LernpaketDurcharbeiten({
     return sortiert.slice(0, idx).some((akt) => !erledigtSet.has(akt.id));
   };
 
-  const handleErledigt = async (akt) => {
-    setBusyId(akt.id);
-    try {
-      await onMarkErledigt(compositeId(akt), akt);
-      setAktiveAktId(null); // zurück zur Inhaltsseite
-    } finally {
-      setBusyId(null);
-    }
-  };
-
   // Einzel-Aktivitätsseite anzeigen, wenn eine Aktivität gewählt ist.
   const aktiveAkt = aktiveAktId ? sortiert.find((a) => a.id === aktiveAktId) : null;
   if (aktiveAkt) {
     const aktiveKat = katalogById.get(aktiveAkt.aktivitaet_id);
-    const katName = (aktiveKat?.name || '').toLowerCase();
-    const istTextLesen = katName.includes('text lesen');
-    const istLinkUrl = katName.includes('link') || katName.includes('url');
-    const istReihenfolge = katName.includes('reihenfolge') || katName.includes('sortier');
-    const gemeinsameProps = {
-      aktivitaet: aktiveAkt,
-      kat: aktiveKat,
-      lernpaketTitel: meta.titel,
-      busy: busyId === aktiveAkt.id,
-      onErledigt: () => handleErledigt(aktiveAkt),
-      onBack: () => setAktiveAktId(null),
-    };
-    if (istTextLesen) return <TextLesenSeite {...gemeinsameProps} />;
-    if (istLinkUrl) return <LinkOeffnenSeite {...gemeinsameProps} />;
-    if (istReihenfolge) return <ReihenfolgeSortierenSeite {...gemeinsameProps} />;
-    return <LernpaketAktivitaetSeite {...gemeinsameProps} />;
+    return (
+      <MasterfaehigeAktivitaet
+        aktivitaet={aktiveAkt}
+        kat={aktiveKat}
+        lernpaketInstanceId={item.instance_id}
+        lernpaketTitel={meta.titel}
+        fortschrittByCompositeId={fortschrittByCompositeId}
+        busy={busyId === aktiveAkt.id}
+        onMarkMaster={onMarkMaster}
+        onFertig={() => { setBusyId(null); setAktiveAktId(null); }}
+        onBack={() => setAktiveAktId(null)}
+      />
+    );
   }
 
   return (
@@ -173,9 +171,15 @@ export default function LernpaketDurcharbeiten({
                       <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
                         {PHASE_LABEL[akt.phase] || akt.phase}
                       </p>
-                      <p className={cn('text-sm font-semibold truncate', erledigt ? 'text-emerald-700' : 'text-foreground')}>
-                        {kat?.name || 'Aktivität'}
-                      </p>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <p className={cn('text-sm font-semibold truncate', erledigt ? 'text-emerald-700' : 'text-foreground')}>
+                          {kat?.name || 'Aktivität'}
+                        </p>
+                        <MasterModusBadge
+                          modus={ermittleMasterModus(akt)}
+                          {...masterFortschritt(akt, item.instance_id, fortschrittByCompositeId)}
+                        />
+                      </div>
                     </div>
                     {!gesperrt && (
                       <Button
