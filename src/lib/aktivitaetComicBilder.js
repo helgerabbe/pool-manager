@@ -8,10 +8,10 @@
  */
 
 const COMIC_BILDER = {
-  text_lesen:
-    'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/comic_text_lesen.png',
-  link_url:
-    'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/comic_link_url.png',
+  // null = noch kein gültiges Bild hinterlegt → Illustration fällt sauber weg.
+  // Die Lehrkraft fügt später eigene KI-Bilder ein.
+  text_lesen: null,
+  link_url: null,
   reihenfolge:
     'https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/82ed8841d_generated_image.png',
 };
