@@ -1,4 +1,5 @@
-import { Lock, CheckCircle2, X } from 'lucide-react';
+import { Lock, CheckCircle2, X, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   ITEM_GATE,
@@ -20,6 +21,7 @@ import { cn } from '@/lib/utils';
 export default function PfadNavigation({
   open,
   onClose,
+  einheitId,
   einheitTitel,
   sektoren,
   fortschrittByInstance,
@@ -139,6 +141,15 @@ export default function PfadNavigation({
             );
           })}
         </nav>
+
+        <footer className="border-t border-border p-3 shrink-0">
+          <Link
+            to={`/lernen/einheit?id=${einheitId}`}
+            className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" /> Einheit verlassen
+          </Link>
+        </footer>
       </aside>
     </TooltipProvider>
   );

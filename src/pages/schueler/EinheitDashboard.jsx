@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { getLerntyp } from '@/lib/lerntypen';
 import { useSchuelerPfad } from '@/hooks/useSchuelerPfad';
 import {
@@ -120,29 +119,15 @@ export default function EinheitDashboard() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-background">
-      {/* Top-Bar mit Burger */}
-      <header className="flex items-center gap-3 px-3 sm:px-4 h-14 border-b border-border bg-card shrink-0">
-        <button
-          onClick={() => setMenuOpen(true)}
-          className="p-2 rounded-md hover:bg-muted text-foreground"
-          aria-label="Lernpfad-Menü öffnen"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
-        <button
-          onClick={() => setActiveInstanceId(null)}
-          className="text-sm font-semibold text-foreground truncate hover:text-primary transition-colors"
-        >
-          {einheit?.titel_der_einheit || 'Einheit'}
-        </button>
-        <Link
-          to={`/lernen/einheit?id=${einheitId}`}
-          className="ml-auto inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" /> Verlassen
-        </Link>
-      </header>
+    <div className="h-full flex flex-col bg-background relative">
+      {/* Schwebendes Burger-Symbol oben links */}
+      <button
+        onClick={() => setMenuOpen(true)}
+        className="fixed top-3 left-3 z-30 p-2.5 rounded-full bg-card border border-border shadow-md hover:bg-muted text-foreground"
+        aria-label="Lernpfad-Menü öffnen"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
 
       <main className="flex-1 min-h-0 overflow-hidden">
         {activeItem && istLernpaket ? (
@@ -180,6 +165,7 @@ export default function EinheitDashboard() {
       <PfadNavigation
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
+        einheitId={einheitId}
         einheitTitel={einheit?.titel_der_einheit}
         sektoren={sektoren}
         fortschrittByInstance={fortschrittByInstance}
