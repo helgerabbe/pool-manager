@@ -170,6 +170,7 @@ export default function LernpfadeSektor({
   onPreviewEinfuehrung,
   onPreviewQblock,
   onPreviewDiagnoseQuiz,
+  onPreviewThemenfeldIntro,
   alleSektoren = [],
   }) {
   const items = Array.isArray(sektor.items) ? sektor.items : [];
@@ -218,6 +219,12 @@ export default function LernpfadeSektor({
               ? onPreviewQblock
               : item.ref_id === 'sys_diagnose_entry' && onPreviewDiagnoseQuiz
               ? onPreviewDiagnoseQuiz
+              : item.ref_id === 'sys_themenfeld_intro' && onPreviewThemenfeldIntro
+              ? () => onPreviewThemenfeldIntro({
+                  instanceId: item.instance_id,
+                  themenfeldId: sektor.themenfeld_id || null,
+                  sektorTitel: sektor.titel_snapshot || sektor.titel || '',
+                })
               : undefined
           }
           bundleConfig={item.bundle_config}

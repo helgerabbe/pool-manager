@@ -12,6 +12,7 @@
 import React from 'react';
 import ExportCenterStatusHeader from '@/components/exportcenter/ExportCenterStatusHeader';
 import ExportContentTimestamp from '@/components/exportcenter/ExportContentTimestamp';
+import InterneInhalteCard from '@/components/exportcenter/InterneInhalteCard';
 
 export default function InfoTab({ einheit }) {
   if (!einheit) return null;
@@ -19,6 +20,7 @@ export default function InfoTab({ einheit }) {
     <div className="space-y-4">
       <ExportCenterStatusHeader einheit={einheit} />
       <ExportContentTimestamp einheit={einheit} />
+      <InterneInhalteCard einheitId={einheit.id} />
     </div>
   );
 }

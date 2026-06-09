@@ -35,6 +35,7 @@ import EinfuehrungPreviewModal from '@/components/lernpfade/EinfuehrungPreviewMo
 import EinstiegsdiagnosePreviewModal from '@/components/lernpfade/EinstiegsdiagnosePreviewModal';
 import DiagnoseQuizPreviewModal from '@/components/lernpfade/DiagnoseQuizPreviewModal';
 import LerntypDiagnosePreviewModal from '@/components/lernpfade/LerntypDiagnosePreviewModal';
+import ThemenfeldEinfuehrungPreviewModal from '@/components/lernpfade/ThemenfeldEinfuehrungPreviewModal';
 import OnboardingTab from '@/components/lernpfade/OnboardingTab';
 import { useLernpfadStatus } from '@/hooks/useLernpfadStatus';
 import { useDashboardSync } from '@/hooks/useDashboardSync';
@@ -156,6 +157,10 @@ export default function LernpfadeCockpit({
   // Vorschau der KI-Lerntyp-Diagnose (Brian-Gespräch, 4./letztes Onboarding-Element).
   const [lerntypDiagnosePreviewOpen, setLerntypDiagnosePreviewOpen] = useState(false);
   const [lerntypDiagnoseSnapshot, setLerntypDiagnoseSnapshot] = useState(null);
+  // Lehrer-Vorschau des Lernpfad-Bausteins „Einführung in das Themenfeld".
+  // Trägt den Instanz-Kontext (Lerntyp + instance_id + themenfeld_id), damit
+  // das Modal genau die richtige Snapshot-Instanz vorschaut/überschreibt.
+  const [themenfeldIntroContext, setThemenfeldIntroContext] = useState(null);
   const [previewAufgabe, setPreviewAufgabe] = useState(null);
   const [editorAufgabe, setEditorAufgabe] = useState(null);
   const [arbeitsphaseModalOpen, setArbeitsphaseModalOpen] = useState(false);
@@ -1159,6 +1164,9 @@ export default function LernpfadeCockpit({
                 onPreviewEinfuehrung={() => setEinfuehrungPreviewOpen(true)}
                 onPreviewQblock={() => setQblockPreviewOpen(true)}
                 onPreviewDiagnoseQuiz={() => setDiagnoseQuizPreviewOpen(true)}
+                onPreviewThemenfeldIntro={(ctx) =>
+                  setThemenfeldIntroContext({ ...ctx, lerntyp: activeLernTyp })
+                }
               />
               )}
             </div>
@@ -1230,6 +1238,15 @@ export default function LernpfadeCockpit({
           setLerntypDiagnoseSnapshot(snap);
           persistOnboardingElement('lerntyp_diagnose', snap);
         }}
+      />
+
+      <ThemenfeldEinfuehrungPreviewModal
+        open={!!themenfeldIntroContext}
+        onOpenChange={(v) => { if (!v) setThemenfeldIntroContext(null); }}
+        einheitId={einheit?.id}
+        einheitTitel={einheit?.titel_der_einheit}
+        fach={einheit?.fach}
+        context={themenfeldIntroContext}
       />
 
       <AufgabePreviewDialog
