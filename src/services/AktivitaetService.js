@@ -44,23 +44,33 @@ export async function getAktivitaetenByLernpaket(lernpaketId) {
     base44.entities.MasterAufgabe.filter({ lernpaket_id: lernpaketId }),
   ]);
 
-  // activity_id → MasterAufgaben (nach reihenfolge sortiert, erste gewinnt).
-  const masterByActivity = new Map();
+  // activity_id → ALLE MasterAufgaben (nach reihenfolge sortiert).
+  const masterListeByActivity = new Map();
   masterAufgaben
     .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
     .forEach((m) => {
-      if (!masterByActivity.has(m.activity_id)) masterByActivity.set(m.activity_id, m);
+      if (!masterListeByActivity.has(m.activity_id)) masterListeByActivity.set(m.activity_id, []);
+      masterListeByActivity.get(m.activity_id).push(m);
     });
 
   const angereichert = aktivitaeten.map((akt) => {
+    const masterListe = masterListeByActivity.get(akt.id) || [];
+    // master_aufgaben IMMER anhängen, damit die Schüleransicht die Master-Modi
+    // (einzel/sequenziell/shuffle) korrekt erkennt und den Fortschritt unter dem
+    // richtigen Composite-Key speichert/prüft.
+    const mitMaster = { ...akt, master_aufgaben: masterListe };
+
+    // Inhalte mergen: liegen keine eigenen field_values vor, die der ersten
+    // MasterAufgabe übernehmen (für nicht-masterfähige Einzelansicht / Fallback).
     const eigeneFv = akt.field_values || {};
     const hatEigeneInhalte = Object.keys(eigeneFv).length > 0;
-    if (hatEigeneInhalte) return akt;
-    const master = masterByActivity.get(akt.id);
-    if (master?.field_values && Object.keys(master.field_values).length > 0) {
-      return { ...akt, field_values: master.field_values };
+    if (!hatEigeneInhalte) {
+      const ersteMaster = masterListe[0];
+      if (ersteMaster?.field_values && Object.keys(ersteMaster.field_values).length > 0) {
+        mitMaster.field_values = ersteMaster.field_values;
+      }
     }
-    return akt;
+    return mitMaster;
   });
 
   return angereichert.sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
