@@ -1,11 +1,9 @@
-import { CheckCircle2, Loader2, ArrowLeft, FileText, ExternalLink } from 'lucide-react';
+import { CheckCircle2, Loader2, FileText, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLeseEinstellungen } from '@/hooks/useLeseEinstellungen';
 import { getAktivitaetComicBild } from '@/lib/aktivitaetComicBilder';
 import LeseSchriftgroesseToggle from './LeseSchriftgroesseToggle';
 import LesetextDarstellung from './LesetextDarstellung';
-
-const PHASE_LABEL = { Input: 'Erklärung', 'Übung': 'Übung', Abschluss: 'Abschluss' };
 
 /**
  * Schüler-Aktivität „Text lesen".
@@ -15,12 +13,15 @@ const PHASE_LABEL = { Input: 'Erklärung', 'Übung': 'Übung', Abschluss: 'Absch
  * der „eine Seite"-Regel). Das eigentliche Lese-Layout (Absätze, Überschriften,
  * Zeilenlänge, Zeilenhöhe, wählbare Schriftgröße) übernimmt die wiederverwendbare
  * Komponente `LesetextDarstellung` zusammen mit `LeseSchriftgroesseToggle`.
+ *
+ * Kopfzeile (Phase/Titel/Zurück) wird bewusst NICHT gerendert – diese
+ * Informationen liest der Schüler aus dem Menübaum/der Navigation ab. Stattdessen
+ * bildet ein kompakter blauer Aufgabenstellungs-Streifen (kleines Comic-Idiom +
+ * Aufgabentext) ganz oben den festen Wiedererkennungs-Anker.
  */
-export default function TextLesenSeite({ aktivitaet, kat, lernpaketTitel, busy, onErledigt, onBack }) {
+export default function TextLesenSeite({ aktivitaet, kat, busy, onErledigt }) {
   const fv = aktivitaet?.field_values || {};
   const { groesse, setGroesse } = useLeseEinstellungen();
-  const phase = PHASE_LABEL[aktivitaet.phase] || aktivitaet.phase;
-  const titel = fv.titel || kat?.name || 'Text lesen';
 
   const inhaltTyp = fv.inhalt_typ || 'text';
   const bilder = Array.isArray(fv.bilder) ? fv.bilder : [];
@@ -28,27 +29,23 @@ export default function TextLesenSeite({ aktivitaet, kat, lernpaketTitel, busy, 
   const comicBild = getAktivitaetComicBild(kat?.name);
 
   return (
-    <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 py-6">
-      {/* Kopf */}
-      <div className="flex items-center gap-3 mb-1">
-        <span className="flex items-center justify-center w-11 h-11 rounded-xl bg-primary/10 text-primary shrink-0">
-          <FileText className="w-5 h-5" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-xs font-medium text-muted-foreground">{phase} · {lernpaketTitel}</p>
-          <h1 className="text-lg font-bold text-foreground tracking-tight truncate">{titel}</h1>
+    <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 py-4">
+      {/* Aufgabenstellungs-Streifen: kleines Comic-Idiom + Aufgabentext als eine
+          kompakte, blaue Einheit – immer oben, fester Wiedererkennungs-Anker. */}
+      {(fv.aufgabentext || comicBild) && (
+        <div className="flex items-center gap-3 rounded-xl bg-blue-50 border border-blue-200 px-3 py-2 mb-3 shrink-0">
+          {comicBild && (
+            <img src={comicBild} alt="" className="w-10 h-10 object-contain shrink-0" />
+          )}
+          <p className="text-sm text-blue-900 leading-snug">
+            {fv.aufgabentext || 'Lies den folgenden Text aufmerksam durch.'}
+          </p>
         </div>
-      </div>
-      <button
-        onClick={onBack}
-        className="self-start inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-3"
-      >
-        <ArrowLeft className="w-3.5 h-3.5" /> Zurück zum Lernpaket
-      </button>
+      )}
 
-      {/* Schriftgrößen-Umschalter (nur sinnvoll bei direktem Text) */}
+      {/* Schriftgrößen-Umschalter (kompakt, oben rechts; nur bei direktem Text) */}
       {istText && fv.inhalt && (
-        <div className="flex items-center justify-end mb-3 shrink-0">
+        <div className="flex items-center justify-end mb-2 shrink-0">
           <LeseSchriftgroesseToggle groesse={groesse} onChange={setGroesse} />
         </div>
       )}
@@ -56,15 +53,6 @@ export default function TextLesenSeite({ aktivitaet, kat, lernpaketTitel, busy, 
       {/* Inhalt – Scrollen ausdrücklich erlaubt */}
       <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
         <div className="space-y-5 pb-2">
-          {comicBild && (
-            <img src={comicBild} alt="" className="w-24 h-24 mx-auto object-contain" />
-          )}
-          {fv.aufgabentext && (
-            <div className="rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-900 leading-relaxed">
-              {fv.aufgabentext}
-            </div>
-          )}
-
           {istText && fv.inhalt && (
             <LesetextDarstellung text={fv.inhalt} groesse={groesse} />
           )}

@@ -15,7 +15,7 @@ const OPTIONS = [
  */
 export default function LeseSchriftgroesseToggle({ groesse, onChange }) {
   return (
-    <div className="inline-flex items-center gap-1 rounded-full border border-border bg-card p-1 shadow-sm">
+    <div className="inline-flex items-center gap-0.5 rounded-full border border-border bg-card p-0.5 shadow-sm">
       <span className="sr-only">Schriftgröße wählen</span>
       {OPTIONS.map(({ key, label, Icon }) => {
         const aktiv = (LESE_GROESSEN.includes(groesse) ? groesse : 'mittel') === key;
@@ -27,13 +27,13 @@ export default function LeseSchriftgroesseToggle({ groesse, onChange }) {
             aria-pressed={aktiv}
             title={`Schriftgröße: ${label}`}
             className={cn(
-              'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
+              'flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold transition-colors',
               aktiv
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:bg-muted'
             )}
           >
-            <Icon className="w-4 h-4" />
+            <Icon className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">{label}</span>
           </button>
         );
