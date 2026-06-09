@@ -1,24 +1,28 @@
 /**
- * Zentrale Sammlung der schülergerechten Comic-„Idiome" pro Aktivitätsart.
+ * Zentrale, wiederverwendbare Comic-Idiome (Illustrationen) für Aktivitätstypen
+ * in der Schüleransicht. Jeder Aktivitätstyp bekommt ein einprägsames Bild,
+ * damit leseschwache Schüler die Aufgabe schon an der Illustration wiedererkennen.
  *
- * Diese kleinen, immer wiederkehrenden KI-Comicbilder helfen schwächeren
- * Schülern, eine Aktivität auf einen Blick wiederzuerkennen (z. B. „lesen",
- * „Webseite öffnen"). Die Zuordnung erfolgt über ein Schlüsselwort im
- * Katalog-Namen der Aktivität. Neue Idiome hier einfach ergänzen.
+ * Die Bilder sind als feste URLs hinterlegt (KI-generiert, einmalig). Über den
+ * Aktivitäts-Namen aus dem Katalog wird das passende Idiom ausgewählt.
  */
+
 const COMIC_BILDER = {
-  text_lesen: 'https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/5dbee1f65_generated_image.png',
-  link_url: 'https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/51d0dddb5_generated_image.png',
+  text_lesen:
+    'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/comic_text_lesen.png',
+  link_url:
+    'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/comic_link_url.png',
 };
 
 /**
- * Liefert die Comic-Bild-URL für einen Aktivitäts-Katalognamen (oder null).
+ * Liefert die Comic-Bild-URL für einen Aktivitäts-Namen, oder null wenn keine
+ * passende Illustration existiert.
+ * @param {string} [name] Name der Aktivität aus dem AktivitaetenKatalog
+ * @returns {string|null}
  */
-export function getAktivitaetComicBild(katalogName) {
-  const n = (katalogName || '').toLowerCase();
+export function getAktivitaetComicBild(name) {
+  const n = (name || '').toLowerCase();
   if (n.includes('text lesen')) return COMIC_BILDER.text_lesen;
   if (n.includes('link') || n.includes('url')) return COMIC_BILDER.link_url;
   return null;
 }
-
-export default COMIC_BILDER;
