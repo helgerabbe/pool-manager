@@ -12,6 +12,7 @@ import PfadNavigation from '@/components/schueler/pfad/PfadNavigation';
 import AktivitaetSeite from '@/components/schueler/pfad/AktivitaetSeite';
 import PfadStartseite from '@/components/schueler/pfad/PfadStartseite';
 import LernpaketDurcharbeiten from '@/components/schueler/pfad/LernpaketDurcharbeiten';
+import ThemenfeldEinfuehrungSeite from '@/components/schueler/pfad/ThemenfeldEinfuehrungSeite';
 
 /**
  * Lerntyp-Dashboard der Einheit (Schüleransicht). Burger-Navigation als
@@ -81,6 +82,9 @@ export default function EinheitDashboard() {
   const activeAufgabe = activeItem ? aufgabenById.get(activeItem.ref_id) : null;
   const istLernpaket = activeItem?.type === 'aufgabe' && activeAufgabe?._isLernpaket === true;
 
+  // Ist das aktive Item die „Einführung in das Themenfeld"? Eigene KI-Snapshot-Ansicht.
+  const istEinfuehrung = activeItem?.type === 'system' && activeItem?.ref_id === 'sys_themenfeld_intro';
+
   // „Weiter“: nächstes nicht-gesperrtes Item nach dem aktuellen.
   const goWeiter = () => {
     if (!activeItem) return;
@@ -142,6 +146,17 @@ export default function EinheitDashboard() {
             onMarkLernpaketErledigt={() => markErledigt(activeItem, activeItem.sektor)}
             istLernpaketErledigt={activeItem?.gate === ITEM_GATE.ERLEDIGT}
             onBack={() => setActiveInstanceId(null)}
+          />
+        ) : activeItem && istEinfuehrung ? (
+          <ThemenfeldEinfuehrungSeite
+            einheitId={einheitId}
+            lerntyp={lerntypKey}
+            item={activeItem}
+            sektor={activeItem.sektor}
+            meta={activeMeta}
+            erledigt={activeItem.gate === ITEM_GATE.ERLEDIGT}
+            busy={busy}
+            onErledigt={handleErledigt}
           />
         ) : activeItem ? (
           <AktivitaetSeite

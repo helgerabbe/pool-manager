@@ -1,0 +1,63 @@
+{
+  "name": "SchuelerInhaltSnapshot",
+  "type": "object",
+  "description": "Single Source of Truth f\u00fcr die einmalig KI-generierten, sch\u00fclergerechten Inhalte von System-Bausteinen im Lernpfad (z. B. \u201eEinf\u00fchrung in das Themenfeld\", sp\u00e4ter Exit-Ticket, Lernlandkarte usw.). Pro (einheit_id, lerntyp, instance_id) genau EIN Snapshot. Die Existenz eines Snapshots IST das \u201eschon generiert\"-Flag \u2013 kein separates Flag n\u00f6tig. Geschrieben wird hier (a) im Lehrer-Tool nach \u201eVorschau \u2192 \u00dcbernehmen\", (b) beim Export-Center-Trigger \u201eInterne Inhalte erzeugen\", (c) \u00fcbergangsweise durch den Sch\u00fcler-Button \u201eKI-Inhalt jetzt erstellen\", wenn noch kein Snapshot existiert. Die Sch\u00fcleransicht liest ausschlie\u00dflich (schnell) aus dieser Entity. Snapshots k\u00f6nnen jederzeit \u00fcberschrieben werden (neue Vorschau \u00fcbernehmen).",
+  "properties": {
+    "einheit_id": {
+      "type": "string",
+      "description": "FK zur Einheit, zu der dieser Inhalt geh\u00f6rt."
+    },
+    "lerntyp": {
+      "type": "string",
+      "enum": [
+        "minimalist",
+        "pragmatiker",
+        "ehrgeizig",
+        "passioniert"
+      ],
+      "description": "Lerntyp-Dashboard, in dem die Baustein-Instanz liegt. Da jeder Pfad eigene Instanzen hat, wird der Snapshot pro Lerntyp getrennt gef\u00fchrt."
+    },
+    "instance_id": {
+      "type": "string",
+      "description": "Stabile instance_id des System-Baustein-Items aus lernpfade_konfiguration. Identifiziert die konkrete Baustein-Instanz im Pfad eindeutig."
+    },
+    "baustein_id": {
+      "type": "string",
+      "description": "Semantischer Identifier des System-Bausteins (z. B. 'sys_einfuehrung'). Bestimmt, welcher KI-Generator den Inhalt erzeugt hat."
+    },
+    "themenfeld_id": {
+      "type": "string",
+      "description": "Optional: Themenfeld, dem die Baustein-Instanz zugeordnet ist (bei Themenfeld-Einf\u00fchrungen f\u00fcr den KI-Kontext relevant)."
+    },
+    "inhalt": {
+      "type": "object",
+      "description": "Das fertige, sch\u00fclergerechte JSON-Objekt (Struktur abh\u00e4ngig vom baustein_id, z. B. { titel, intro, abschnitte:[{emoji, ueberschrift, text}], bild_url }). Wird 1:1 von der Sch\u00fcleransicht gerendert.",
+      "additionalProperties": true
+    },
+    "generiert_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel der letzten Generierung/\u00dcbernahme dieses Snapshots."
+    },
+    "generiert_von": {
+      "type": "string",
+      "description": "E-Mail der Person bzw. 'export_center' / 'schueler_trigger', die den Snapshot zuletzt erzeugt hat (Audit)."
+    }
+  },
+  "required": [
+    "einheit_id",
+    "lerntyp",
+    "instance_id",
+    "baustein_id"
+  ],
+  "rls": {
+    "read": {},
+    "create": {},
+    "update": {},
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
