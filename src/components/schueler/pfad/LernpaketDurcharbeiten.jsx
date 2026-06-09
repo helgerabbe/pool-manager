@@ -7,6 +7,7 @@ import {
   istLernpaketGegated,
 } from '@/lib/lernpaketAktivitaetenOrder';
 import LernpaketAktivitaetSeite from './LernpaketAktivitaetSeite';
+import TextLesenSeite from '@/components/schueler/lesen/TextLesenSeite';
 
 const PHASE_LABEL = { Input: 'Erklärung', 'Übung': 'Übung', Abschluss: 'Abschluss' };
 
@@ -87,19 +88,22 @@ export default function LernpaketDurcharbeiten({
     }
   };
 
-  // Einzel-Aktivitätsseite (Blanko) anzeigen, wenn eine Aktivität gewählt ist.
+  // Einzel-Aktivitätsseite anzeigen, wenn eine Aktivität gewählt ist.
   const aktiveAkt = aktiveAktId ? sortiert.find((a) => a.id === aktiveAktId) : null;
   if (aktiveAkt) {
-    return (
-      <LernpaketAktivitaetSeite
-        aktivitaet={aktiveAkt}
-        kat={katalogById.get(aktiveAkt.aktivitaet_id)}
-        lernpaketTitel={meta.titel}
-        busy={busyId === aktiveAkt.id}
-        onErledigt={() => handleErledigt(aktiveAkt)}
-        onBack={() => setAktiveAktId(null)}
-      />
-    );
+    const aktiveKat = katalogById.get(aktiveAkt.aktivitaet_id);
+    const istTextLesen = (aktiveKat?.name || '').toLowerCase().includes('text lesen');
+    const gemeinsameProps = {
+      aktivitaet: aktiveAkt,
+      kat: aktiveKat,
+      lernpaketTitel: meta.titel,
+      busy: busyId === aktiveAkt.id,
+      onErledigt: () => handleErledigt(aktiveAkt),
+      onBack: () => setAktiveAktId(null),
+    };
+    return istTextLesen
+      ? <TextLesenSeite {...gemeinsameProps} />
+      : <LernpaketAktivitaetSeite {...gemeinsameProps} />;
   }
 
   return (
