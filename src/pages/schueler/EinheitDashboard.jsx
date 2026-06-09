@@ -118,6 +118,18 @@ export default function EinheitDashboard() {
     );
   };
 
+  // Eine einzelne MasterAufgabe (innerhalb einer masterfähigen Aktivität) als
+  // erledigt markieren. Der Wrapper liefert bereits den vollständigen
+  // Composite-Key `<lernpaketInstanceId>::<aktivitaetId>::<masterId>` – genau
+  // unter diesem Key liest die Erledigt-Prüfung später wieder.
+  const handleMasterErledigt = async (compositeId, { itemType, refId }) => {
+    if (!activeItem) return;
+    await markErledigt(
+      { instance_id: compositeId, type: itemType || 'aufgabe', ref_id: refId || null },
+      activeItem.sektor
+    );
+  };
+
   if (isLoading) {
     return <div className="h-full flex items-center justify-center text-muted-foreground">Lädt …</div>;
   }
@@ -143,6 +155,7 @@ export default function EinheitDashboard() {
             katalogById={katalogById}
             fortschrittByCompositeId={fortschrittByCompositeId}
             onMarkErledigt={handleAktivitaetErledigt}
+            onMarkMaster={handleMasterErledigt}
             onMarkLernpaketErledigt={() => markErledigt(activeItem, activeItem.sektor)}
             istLernpaketErledigt={activeItem?.gate === ITEM_GATE.ERLEDIGT}
             onBack={() => setActiveInstanceId(null)}
