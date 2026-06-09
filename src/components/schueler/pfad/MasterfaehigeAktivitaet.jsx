@@ -9,6 +9,7 @@ import {
 import TextLesenSeite from '@/components/schueler/lesen/TextLesenSeite';
 import LinkOeffnenSeite from '@/components/schueler/lesen/LinkOeffnenSeite';
 import ReihenfolgeSortierenSeite from '@/components/schueler/lesen/ReihenfolgeSortierenSeite';
+import BegriffeZuordnenSeite from '@/components/schueler/lesen/BegriffeZuordnenSeite';
 import LernpaketAktivitaetSeite from './LernpaketAktivitaetSeite';
 
 /**
@@ -81,6 +82,7 @@ export default function MasterfaehigeAktivitaet({
   const istTextLesen = katName.includes('text lesen');
   const istLinkUrl = katName.includes('link') || katName.includes('url');
   const istReihenfolge = katName.includes('reihenfolge') || katName.includes('sortier');
+  const istBegriffeZuordnen = katName.includes('begriffe zuordnen') || katName.includes('zuordn');
 
   // key pro aktiver MasterAufgabe → erzwingt frischen internen State der
   // Einzelseite (z. B. neu gemischte Karten), wenn sequenziell die nächste kommt.
@@ -104,6 +106,7 @@ export default function MasterfaehigeAktivitaet({
   if (istTextLesen) return <TextLesenSeite {...gemeinsameProps} />;
   if (istLinkUrl) return <LinkOeffnenSeite {...gemeinsameProps} />;
   if (istReihenfolge) return <ReihenfolgeSortierenSeite {...gemeinsameProps} />;
+  if (istBegriffeZuordnen) return <BegriffeZuordnenSeite {...gemeinsameProps} />;
   return <LernpaketAktivitaetSeite {...gemeinsameProps} />;
 }
 
