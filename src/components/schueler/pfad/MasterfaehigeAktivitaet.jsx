@@ -37,6 +37,7 @@ export default function MasterfaehigeAktivitaet({
   fortschrittByCompositeId,
   busy,
   onMarkMaster,   // (compositeId, { itemType, refId }) => Promise
+  onMarkErledigt, // (aktivitaet) => Promise – markiert eine Aktivität OHNE MasterAufgaben
   onFertig,       // () => void  – Aktivität (als Ganzes) abgeschlossen → zurück
   onBack,
 }) {
@@ -56,7 +57,13 @@ export default function MasterfaehigeAktivitaet({
   }, [aktivitaet, aktiveMaster]);
 
   const handleErledigt = async () => {
-    if (!aktiveMaster) { onFertig?.(); return; }
+    // Aktivität ohne MasterAufgaben (z. B. „Bearbeitung bestätigen", „Text lesen"
+    // ohne Master): die Aktivität selbst als erledigt speichern, damit sie grün wird.
+    if (!aktiveMaster) {
+      await onMarkErledigt?.(aktivitaet);
+      onFertig?.();
+      return;
+    }
     const compositeId = masterCompositeId(lernpaketInstanceId, aktivitaet.id, aktiveMaster.id);
     await onMarkMaster(compositeId, { itemType: 'aufgabe', refId: aktivitaet.ref_id || null });
 

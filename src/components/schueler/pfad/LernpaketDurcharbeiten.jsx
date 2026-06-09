@@ -110,6 +110,10 @@ export default function LernpaketDurcharbeiten({
         fortschrittByCompositeId={fortschrittByCompositeId}
         busy={busyId === aktiveAkt.id}
         onMarkMaster={onMarkMaster}
+        onMarkErledigt={async (akt) => {
+          setBusyId(akt.id);
+          await onMarkErledigt?.(compositeId(akt), akt);
+        }}
         onFertig={() => { setBusyId(null); setAktiveAktId(null); }}
         onBack={() => setAktiveAktId(null)}
       />
