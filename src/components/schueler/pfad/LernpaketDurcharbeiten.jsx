@@ -6,6 +6,7 @@ import {
   sortAktivitaetenNachLogik,
   istLernpaketGegated,
 } from '@/lib/lernpaketAktivitaetenOrder';
+import LernpaketAktivitaetSeite from './LernpaketAktivitaetSeite';
 
 const PHASE_LABEL = { Input: 'Erklärung', 'Übung': 'Übung', Abschluss: 'Abschluss' };
 
@@ -30,10 +31,12 @@ export default function LernpaketDurcharbeiten({
 }) {
   const [aktivitaeten, setAktivitaeten] = useState(null);
   const [busyId, setBusyId] = useState(null);
+  const [aktiveAktId, setAktiveAktId] = useState(null); // null = Inhaltsseite
 
   useEffect(() => {
     let abort = false;
     setAktivitaeten(null);
+    setAktiveAktId(null);
     loadLernpaketAktivitaeten(item.ref_id).then((list) => {
       if (!abort) setAktivitaeten(list || []);
     });
@@ -78,10 +81,26 @@ export default function LernpaketDurcharbeiten({
     setBusyId(akt.id);
     try {
       await onMarkErledigt(compositeId(akt), akt);
+      setAktiveAktId(null); // zurück zur Inhaltsseite
     } finally {
       setBusyId(null);
     }
   };
+
+  // Einzel-Aktivitätsseite (Blanko) anzeigen, wenn eine Aktivität gewählt ist.
+  const aktiveAkt = aktiveAktId ? sortiert.find((a) => a.id === aktiveAktId) : null;
+  if (aktiveAkt) {
+    return (
+      <LernpaketAktivitaetSeite
+        aktivitaet={aktiveAkt}
+        kat={katalogById.get(aktiveAkt.aktivitaet_id)}
+        lernpaketTitel={meta.titel}
+        busy={busyId === aktiveAkt.id}
+        onErledigt={() => handleErledigt(aktiveAkt)}
+        onBack={() => setAktiveAktId(null)}
+      />
+    );
+  }
 
   return (
     <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 py-6">
@@ -152,17 +171,10 @@ export default function LernpaketDurcharbeiten({
                       <Button
                         size="sm"
                         variant={erledigt ? 'outline' : 'default'}
-                        className={cn('shrink-0', !erledigt && 'bg-emerald-600 hover:bg-emerald-700')}
-                        disabled={busy}
-                        onClick={() => handleErledigt(akt)}
+                        className={cn('shrink-0', !erledigt && 'bg-primary hover:bg-primary/90')}
+                        onClick={() => setAktiveAktId(akt.id)}
                       >
-                        {busy ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : erledigt ? (
-                          'Nochmal machen'
-                        ) : (
-                          'Erledigt'
-                        )}
+                        {erledigt ? 'Nochmal machen' : 'Jetzt machen'}
                       </Button>
                     )}
                   </div>
