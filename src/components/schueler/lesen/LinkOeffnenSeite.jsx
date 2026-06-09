@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   CheckCircle2, Loader2, ArrowLeft, ExternalLink, AppWindow,
-  Copy, Check, Globe, ArrowLeftCircle,
+  Copy, Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -51,25 +51,6 @@ export default function LinkOeffnenSeite({ aktivitaet, kat, lernpaketTitel, busy
 
   return (
     <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 py-6">
-      {/* Kopf */}
-      <div className="flex items-center gap-3 mb-1">
-        <span className="flex items-center justify-center w-11 h-11 rounded-xl bg-primary/10 text-primary shrink-0">
-          <Globe className="w-5 h-5" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-xs font-medium text-muted-foreground">{phase} · {lernpaketTitel}</p>
-          <h1 className="text-lg font-bold text-foreground tracking-tight truncate">
-            {fv.titel || kat?.name || 'Link öffnen'}
-          </h1>
-        </div>
-      </div>
-      <button
-        onClick={onBack}
-        className="self-start inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-4"
-      >
-        <ArrowLeft className="w-3.5 h-3.5" /> Zurück zum Lernpaket
-      </button>
-
       <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
         <div className="space-y-5 pb-2">
           {/* Comic-Idiom */}
@@ -121,23 +102,21 @@ export default function LinkOeffnenSeite({ aktivitaet, kat, lernpaketTitel, busy
             </div>
           )}
 
-          {/* Rückkehr-Hinweis */}
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-            <ArrowLeftCircle className="w-4 h-4" />
-            Wenn du fertig bist, komm hierher zurück.
-          </div>
         </div>
       </div>
 
-      {/* Aktion */}
-      <div className="pt-5 shrink-0">
+      {/* Aktion: links zurück, rechts grün „Erledigt" */}
+      <div className="pt-4 shrink-0 grid grid-cols-2 gap-3">
+        <Button variant="outline" className="gap-2" onClick={onBack} disabled={busy}>
+          <ArrowLeft className="w-4 h-4" /> Zurück zum Lernpaket
+        </Button>
         <Button
-          className={cn('w-full gap-2 bg-emerald-600 hover:bg-emerald-700')}
+          className={cn('gap-2 bg-emerald-600 hover:bg-emerald-700')}
           disabled={busy}
           onClick={onErledigt}
         >
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-          Erledigt – ich habe mir den Link angeschaut
+          Erledigt
         </Button>
       </div>
     </div>
