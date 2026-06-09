@@ -90,29 +90,31 @@ export default function BegriffeZuordnenSeite({ aktivitaet, busy, onErledigt, on
   };
 
   return (
-    <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 py-6">
+    <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 py-4">
       {/* Master-Hinweis bei sequenziellen Aufgaben: „Aufgabe x von y". */}
       {masterHinweis && (
-        <div className="mb-3 shrink-0 inline-flex items-center self-start rounded-full bg-primary/10 text-primary text-xs font-semibold px-3 py-1">
+        <div className="mb-2 shrink-0 inline-flex items-center self-start rounded-full bg-primary/10 text-primary text-xs font-semibold px-3 py-1">
           Aufgabe {masterHinweis.aktuell} von {masterHinweis.gesamt}
         </div>
       )}
 
       {/* Aufgabenstellung – einheitlicher blauer Anker. */}
-      <AufgabenstellungBox className="mb-4 shrink-0">
+      <AufgabenstellungBox className="mb-3 shrink-0">
         {fv.instruction || 'Tippe links auf einen Begriff und dann rechts auf die passende Antwort.'}
       </AufgabenstellungBox>
 
-      {/* Zuordnungs-Bereich – scrollfrei (max. 8 Paare laut Editor-Limit). */}
-      <div className="flex-1 min-h-0">
+      {/* Zuordnungs-Bereich – scrollbar, damit auch viele Paare/Distraktoren
+          nie unten aus dem Bildschirm laufen. Kompakte Karten (kleine Schrift,
+          wenig Padding), damit möglichst viel auf eine Seite passt. */}
+      <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
         {begriffe.length === 0 ? (
           <p className="text-sm text-muted-foreground italic text-center py-10">
             Für diese Aktivität sind noch keine Begriffspaare hinterlegt.
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 h-full content-start">
+          <div className="grid grid-cols-2 gap-2 content-start">
             {/* Linke Spalte: Begriffe */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {begriffe.map((b) => {
                 const status = statusFor(b);
                 const aktiv = aktiverBegriff === b.id;
@@ -124,21 +126,21 @@ export default function BegriffeZuordnenSeite({ aktivitaet, busy, onErledigt, on
                     onClick={() => waehleBegriff(b.id)}
                     disabled={geprueft}
                     className={cn(
-                      'w-full text-left rounded-xl border-2 px-3.5 py-2.5 transition-colors',
+                      'w-full text-left rounded-lg border-2 px-2.5 py-1.5 transition-colors',
                       'flex flex-col gap-0.5',
                       status === 'neutral' && (aktiv ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'),
                       status === 'richtig' && 'border-emerald-300 bg-emerald-50',
                       status === 'falsch' && 'border-rose-300 bg-rose-50'
                     )}
                   >
-                    <span className="text-sm sm:text-base font-semibold text-foreground leading-snug">{b.text}</span>
+                    <span className="text-xs sm:text-sm font-semibold text-foreground leading-tight">{b.text}</span>
                     {zugeordnet && (
                       <span className={cn(
-                        'inline-flex items-center gap-1 text-xs font-medium',
+                        'inline-flex items-center gap-1 text-[11px] font-medium leading-tight',
                         status === 'falsch' ? 'text-rose-600' : status === 'richtig' ? 'text-emerald-700' : 'text-primary'
                       )}>
-                        {status === 'richtig' && <CheckCircle2 className="w-3.5 h-3.5" />}
-                        {status === 'falsch' && <XCircle className="w-3.5 h-3.5" />}
+                        {status === 'richtig' && <CheckCircle2 className="w-3 h-3 shrink-0" />}
+                        {status === 'falsch' && <XCircle className="w-3 h-3 shrink-0" />}
                         → {zugeordnet}
                       </span>
                     )}
@@ -148,7 +150,7 @@ export default function BegriffeZuordnenSeite({ aktivitaet, busy, onErledigt, on
             </div>
 
             {/* Rechte Spalte: Antworten (inkl. Distraktoren) */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {antworten.map((a) => {
                 const belegt = belegteAntworten.has(a.text);
                 return (
@@ -158,7 +160,7 @@ export default function BegriffeZuordnenSeite({ aktivitaet, busy, onErledigt, on
                     onClick={() => waehleAntwort(a.text)}
                     disabled={geprueft || !aktiverBegriff}
                     className={cn(
-                      'w-full text-left rounded-xl border-2 px-3.5 py-2.5 text-sm sm:text-base text-foreground leading-snug transition-colors',
+                      'w-full text-left rounded-lg border-2 px-2.5 py-1.5 text-xs sm:text-sm text-foreground leading-tight transition-colors',
                       belegt ? 'border-border bg-muted/60 text-muted-foreground' : 'border-border bg-card',
                       !geprueft && aktiverBegriff && 'hover:border-primary/50 hover:bg-primary/5'
                     )}
@@ -186,7 +188,7 @@ export default function BegriffeZuordnenSeite({ aktivitaet, busy, onErledigt, on
       </div>
 
       {/* Aktionen: links zurück, rechts grün */}
-      <div className="pt-5 shrink-0 grid grid-cols-2 gap-3">
+      <div className="pt-3 shrink-0 grid grid-cols-2 gap-3">
         <Button variant="outline" className="gap-2" onClick={onBack} disabled={busy}>
           <ArrowLeft className="w-4 h-4" /> Zurück zum Lernpaket
         </Button>
