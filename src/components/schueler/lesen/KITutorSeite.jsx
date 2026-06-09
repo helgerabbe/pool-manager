@@ -9,7 +9,7 @@ import AufgabenstellungBox from './AufgabenstellungBox';
 import HinweisBox from './HinweisBox';
 
 const BRIAN_URL = 'https://brian.study';
-const BRIAN_LOGO = 'https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/136dd5a22_image.png';
+const BRIAN_LOGO = 'https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/2d9be32ce_image.png';
 
 /**
  * Schüler-Aktivität „KI-Tutor Aufgabe".
