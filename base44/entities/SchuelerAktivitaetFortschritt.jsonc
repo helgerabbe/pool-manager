@@ -1,0 +1,134 @@
+{
+  "name": "SchuelerAktivitaetFortschritt",
+  "type": "object",
+  "description": "Pro Sch\u00fcler \u00d7 Einheit \u00d7 Lernpfad-Item (instance_id) ein Fortschritts-Datensatz. H\u00e4lt reiche Bearbeitungs-Informationen (Status, Versuche, letztes Bearbeitungsdatum, Erfolg/Prozent), damit sp\u00e4ter \u00dcbersichten und statistische Auswertungen (z. B. '4 von 6 Aufgaben im Themenfeld erledigt') m\u00f6glich sind. Eindeutigkeit pro (user_email, einheit_id, lerntyp, instance_id) ist anwendungsseitig sichergestellt.",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "E-Mail des Sch\u00fclers (Referenz zur User-Entity)."
+    },
+    "einheit_id": {
+      "type": "string",
+      "description": "FK zur Einheit, in der diese Aktivit\u00e4t liegt."
+    },
+    "lerntyp": {
+      "type": "string",
+      "enum": [
+        "minimalist",
+        "pragmatiker",
+        "ehrgeizig",
+        "passioniert"
+      ],
+      "description": "Lerntyp-Dashboard, in dem der Sch\u00fcler diese Aktivit\u00e4t bearbeitet hat. Da die vier Pfade unterschiedliche Item-Instanzen haben, wird der Fortschritt pro Lerntyp getrennt gef\u00fchrt."
+    },
+    "instance_id": {
+      "type": "string",
+      "description": "Stabile instance_id des Lernpfad-Items (aus lernpfade_konfiguration). Identifiziert die konkrete Aktivit\u00e4t im Pfad eindeutig."
+    },
+    "sektor_id": {
+      "type": "string",
+      "description": "Sektor, in dem das Item beim letzten Bearbeiten lag (f\u00fcr \u00dcbersichten/Statistik)."
+    },
+    "item_type": {
+      "type": "string",
+      "enum": [
+        "aufgabe",
+        "system"
+      ],
+      "description": "Typ des Lernpfad-Items (Aufgabe/Lernpaket oder System-Baustein)."
+    },
+    "ref_id": {
+      "type": "string",
+      "description": "ref_id des Items (Aufgaben-/Lernpaket-ID oder baustein_id). Erlaubt sp\u00e4tere Verkn\u00fcpfung mit dem Original-Inhalt."
+    },
+    "themenfeld_id": {
+      "type": "string",
+      "description": "Optional: Themenfeld, dem das Item zugeordnet ist (f\u00fcr Themenfeld-Statistiken)."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "offen",
+        "in_bearbeitung",
+        "erledigt"
+      ],
+      "default": "offen",
+      "description": "Bearbeitungsstatus dieser Aktivit\u00e4t f\u00fcr diesen Sch\u00fcler."
+    },
+    "erfolgreich": {
+      "type": "boolean",
+      "description": "Optional: Wurde die Aktivit\u00e4t erfolgreich bearbeitet? (Platzhalter f\u00fcr sp\u00e4tere Bewertung; bei reiner 'Habe ich erledigt'-Best\u00e4tigung null.)"
+    },
+    "prozent": {
+      "type": "number",
+      "description": "Optional: Erreichte Punktzahl/Quote in Prozent (Platzhalter f\u00fcr sp\u00e4tere Auswertung; bei reiner Best\u00e4tigung null)."
+    },
+    "versuche": {
+      "type": "number",
+      "default": 0,
+      "description": "Anzahl der Bearbeitungen/Versuche."
+    },
+    "erste_bearbeitung_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel der ersten Bearbeitung."
+    },
+    "letzte_bearbeitung_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel der letzten Bearbeitung."
+    },
+    "erledigt_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel, wann die Aktivit\u00e4t als erledigt markiert wurde (null solange offen)."
+    }
+  },
+  "required": [
+    "user_email",
+    "einheit_id",
+    "lerntyp",
+    "instance_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
