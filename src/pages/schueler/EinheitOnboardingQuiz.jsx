@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { getCurrentUser } from '@/services/AuthService';
 import { ArrowLeft } from 'lucide-react';
+import { ladeOnboardingSnapshots } from '@/lib/onboardingSnapshots';
 import OnboardingStepNav from '@/components/schueler/onboarding/OnboardingStepNav';
 import StepUeberblick from '@/components/schueler/onboarding/StepUeberblick';
 import StepSelbsteinschaetzung from '@/components/schueler/onboarding/StepSelbsteinschaetzung';
@@ -21,8 +22,8 @@ import StepEmpfehlung from '@/components/schueler/onboarding/StepEmpfehlung';
  *   4. Brian fragen (simuliertes KI-Gespräch)
  *   5. Empfehlung (KI wertet alles aus → Lerntyp-Vorschlag)
  *
- * Die Inhalte stammen aus dem Snapshot Einheiten.onboarding_konfiguration.
- * Am Ende wird die Empfehlung in SchuelerEinheitFortschritt gespeichert –
+ * Die Inhalte stammen aus der Single Source of Truth (SchuelerInhaltSnapshot,
+ * geltungsbereich='einheit'). Am Ende wird die Empfehlung in SchuelerEinheitFortschritt gespeichert –
  * der Schüler kann das Onboarding beliebig oft wiederholen.
  */
 export default function EinheitOnboardingQuiz() {
@@ -57,7 +58,14 @@ export default function EinheitOnboardingQuiz() {
   });
 
   const fortschritt = fortschritte.find((f) => f.einheit_id === einheitId) || null;
-  const onboarding = einheit?.onboarding_konfiguration || {};
+
+  // Onboarding-Inhalte aus der Single Source of Truth lesen (SchuelerInhaltSnapshot,
+  // geltungsbereich='einheit'), nicht mehr aus einheit.onboarding_konfiguration.
+  const { data: onboarding = {} } = useQuery({
+    queryKey: ['onboardingSnapshots', einheitId],
+    queryFn: () => ladeOnboardingSnapshots(einheitId),
+    enabled: !!einheitId,
+  });
 
   const geheZu = (key) => {
     setBesucht((b) => (b.includes(key) ? b : [...b, key]));

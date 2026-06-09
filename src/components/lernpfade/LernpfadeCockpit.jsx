@@ -82,6 +82,7 @@ import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { getAmpelStatus } from '@/lib/ampelLogic';
 import { adaptLernpaketToPoolItem } from '@/lib/lernpaketAdapter';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
+import { ladeOnboardingSnapshots, speichereOnboardingSnapshot } from '@/lib/onboardingSnapshots';
 
 const DEFAULT_KONFIG = { minimalist: [], pragmatiker: [], ehrgeizig: [], passioniert: [] };
 
@@ -217,6 +218,15 @@ export default function LernpfadeCockpit({
   const { data: systemBausteine = [] } = useQuery({
     queryKey: ['systemBausteine', 'all'],
     queryFn: () => base44.entities.SystemBausteine.list('reihenfolge'),
+  });
+
+  // Onboarding-Inhalte aus der Single Source of Truth (SchuelerInhaltSnapshot,
+  // geltungsbereich='einheit'). Ersetzt das frühere Lesen aus
+  // einheit.onboarding_konfiguration.
+  const { data: onboardingSnapshots = {} } = useQuery({
+    queryKey: ['onboardingSnapshots', einheit?.id],
+    queryFn: () => ladeOnboardingSnapshots(einheit?.id),
+    enabled: !!einheit?.id,
   });
 
   // Admin-editierbare Standard-Dashboard-Vorlagen (DB > Hardcode-Fallback).
@@ -420,26 +430,17 @@ export default function LernpfadeCockpit({
     [scheduleSave]
   );
 
-  // ── Onboarding-Persistenz (einheits-global) ─────────────────────────
+  // ── Onboarding-Persistenz (einheits-global, Single Source of Truth) ──
   // Speichert ein einzelnes Onboarding-Element (einfuehrung | fragenblock |
-  // einstiegsdiagnose) dauerhaft in Einheiten.onboarding_konfiguration.
-  // Wird aus den drei Vorschau-Modals via „Übernehmen" aufgerufen. Mergt
-  // mit dem aktuellen Feld und schreibt über updateEinheitSecure zurück.
+  // einstiegsdiagnose | lerntyp_diagnose) als einheits-globalen Snapshot in
+  // der SchuelerInhaltSnapshot-Tabelle (geltungsbereich='einheit'). Wird aus
+  // den vier Vorschau-Modals via „Übernehmen" aufgerufen (Upsert/Überschreiben).
   const persistOnboardingElement = useCallback(
     async (key, snapshot) => {
       if (!einheit?.id) return;
-      const prev = einheit?.onboarding_konfiguration || {};
-      const next = {
-        ...prev,
-        [key]: snapshot,
-        generiert_am: new Date().toISOString(),
-      };
       try {
-        await base44.functions.invoke('updateEinheitSecure', {
-          einheit_id: einheit.id,
-          onboarding_konfiguration: next,
-        });
-        queryClient.invalidateQueries({ queryKey: ['workspace-data', einheit.id] });
+        await speichereOnboardingSnapshot(einheit.id, key, snapshot, 'lehrer_tool');
+        queryClient.invalidateQueries({ queryKey: ['onboardingSnapshots', einheit.id] });
         toast({
           title: 'Für die Einheit gespeichert',
           description: 'Dieses Onboarding-Element wird allen Dashboards vorgeschaltet.',
@@ -452,7 +453,7 @@ export default function LernpfadeCockpit({
         });
       }
     },
-    [einheit?.id, einheit?.onboarding_konfiguration, queryClient, toast]
+    [einheit?.id, queryClient, toast]
   );
 
   // ── Phase B: Live-Titel-Binding für Arbeitsphase-Sektoren ──────────
@@ -1123,7 +1124,7 @@ export default function LernpfadeCockpit({
             <div className="flex-1 overflow-hidden min-h-0">
               {activeLernTyp === 'onboarding' ? (
                 <OnboardingTab
-                  onboardingKonfig={einheit?.onboarding_konfiguration}
+                  onboardingKonfig={onboardingSnapshots}
                   onPreviewEinfuehrung={() => setEinfuehrungPreviewOpen(true)}
                   onPreviewQblock={() => setQblockPreviewOpen(true)}
                   onPreviewDiagnoseQuiz={() => setDiagnoseQuizPreviewOpen(true)}
