@@ -8,7 +8,7 @@ import {
   deriveSektorFreischaltung,
   ITEM_GATE,
 } from '@/lib/schuelerPfadGating';
-import { getItemMeta } from '@/lib/schuelerItemMeta';
+import { buildSichtbarePfadItems } from '@/lib/schuelerPfadView';
 import PfadNavigation from '@/components/schueler/pfad/PfadNavigation';
 import AktivitaetSeite from '@/components/schueler/pfad/AktivitaetSeite';
 import PfadStartseite from '@/components/schueler/pfad/PfadStartseite';
@@ -38,20 +38,29 @@ export default function EinheitDashboard() {
   const [activeInstanceId, setActiveInstanceId] = useState(null); // null = Startseite
   const [busy, setBusy] = useState(false);
 
-  // Flache Liste aller (freigeschalteten) Items in Pfad-Reihenfolge,
-  // angereichert mit Gate-Status + Sektor-Bezug. Basis für Navigation + Weiter.
+  // Flache Liste aller SICHTBAREN Items (Bündel-Container ausgeschlossen, deren
+  // Kinder enthalten) in Pfad-Reihenfolge, angereichert mit Gate-Status +
+  // Sektor-Bezug + Meta. Basis für Navigation + „Weiter".
   const flatItems = useMemo(() => {
     const sektorFrei = deriveSektorFreischaltung(sektoren, fortschrittByInstance);
     const list = [];
     for (const sektor of sektoren) {
       const frei = sektorFrei.get(sektor.sektor_id);
       const annotated = annotateSektorForSchueler(sektor, fortschrittByInstance, bausteinById);
-      for (const item of annotated) {
+      const sichtbar = buildSichtbarePfadItems(
+        sektor,
+        annotated,
+        aufgabenById,
+        bausteinById,
+        !!frei?.freigeschaltet,
+        frei?.voraussetzungTitel
+      );
+      for (const item of sichtbar) {
         list.push({ ...item, sektor, sektorFreigeschaltet: !!frei?.freigeschaltet });
       }
     }
     return list;
-  }, [sektoren, fortschrittByInstance, bausteinById]);
+  }, [sektoren, fortschrittByInstance, bausteinById, aufgabenById]);
 
   const itemByInstance = useMemo(() => {
     const map = new Map();
@@ -63,7 +72,7 @@ export default function EinheitDashboard() {
   const erledigtAnzahl = flatItems.filter((it) => it.gate === ITEM_GATE.ERLEDIGT).length;
 
   const activeItem = activeInstanceId ? itemByInstance.get(activeInstanceId) : null;
-  const activeMeta = activeItem ? getItemMeta(activeItem, aufgabenById, bausteinById) : null;
+  const activeMeta = activeItem?.meta || null;
 
   // „Weiter“: nächstes nicht-gesperrtes Item nach dem aktuellen.
   const goWeiter = () => {

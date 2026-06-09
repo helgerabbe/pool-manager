@@ -1,15 +1,21 @@
-import { Lock, CheckCircle2, Circle, X } from 'lucide-react';
-import { ITEM_GATE, annotateSektorForSchueler, deriveSektorFreischaltung } from '@/lib/schuelerPfadGating';
-import { getItemMeta } from '@/lib/schuelerItemMeta';
+import { Lock, CheckCircle2, X } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  ITEM_GATE,
+  annotateSektorForSchueler,
+  deriveSektorFreischaltung,
+} from '@/lib/schuelerPfadGating';
+import { buildSichtbarePfadItems } from '@/lib/schuelerPfadView';
 import { getSystemBausteinIcon } from '@/lib/systemBausteinIcons';
 import { getSektorTypLabel } from '@/lib/sektorTypen';
 import { cn } from '@/lib/utils';
 
 /**
  * Overlay-Navigation (Burger-Menü) für die Schüleransicht. Zeigt die gesamte
- * Einheit als Liste aus Sektoren mit ihren Items. Gesperrte Sektoren tragen
- * ein Schloss, erledigte Items einen grünen Haken. Klick auf ein
- * (freigeschaltetes) Item navigiert dorthin.
+ * Einheit als Liste aus Sektoren mit ihren Items. WICHTIG: Bündel-Container
+ * (Lernpaket-/Aufgaben-/Projektbündel) erscheinen NICHT als eigene Punkte –
+ * nur die darin enthaltenen Lernpakete/Aufgaben werden gleichrangig gezeigt.
+ * Gesperrte Items tragen ein Schloss mit Tooltip-Begründung.
  */
 export default function PfadNavigation({
   open,
@@ -25,7 +31,7 @@ export default function PfadNavigation({
   const sektorFrei = deriveSektorFreischaltung(sektoren, fortschrittByInstance);
 
   return (
-    <>
+    <TooltipProvider delayDuration={150}>
       {/* Backdrop */}
       <div
         className={cn(
@@ -57,7 +63,14 @@ export default function PfadNavigation({
           {sektoren.map((sektor) => {
             const frei = sektorFrei.get(sektor.sektor_id);
             const annotated = annotateSektorForSchueler(sektor, fortschrittByInstance, bausteinById);
-            const rootItems = annotated.filter((it) => !it.parent_instance_id);
+            const sichtbar = buildSichtbarePfadItems(
+              sektor,
+              annotated,
+              aufgabenById,
+              bausteinById,
+              !!frei?.freigeschaltet,
+              frei?.voraussetzungTitel
+            );
 
             return (
               <div key={sektor.sektor_id}>
@@ -69,16 +82,13 @@ export default function PfadNavigation({
                 </div>
                 <p className="text-sm font-semibold text-foreground mb-2">{sektor.titel}</p>
 
-                {!frei?.freigeschaltet ? (
-                  <p className="text-xs text-muted-foreground italic pl-1">
-                    Erst verfügbar, wenn „{frei?.voraussetzungTitel || 'der vorige Abschnitt'}“ abgeschlossen ist.
-                  </p>
+                {sichtbar.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic pl-1">Keine Inhalte.</p>
                 ) : (
                   <ul className="space-y-1">
-                    {rootItems.map((item) => {
-                      const meta = getItemMeta(item, aufgabenById, bausteinById);
+                    {sichtbar.map((item) => {
                       const Icon = item.type === 'system'
-                        ? getSystemBausteinIcon(meta.iconKey)
+                        ? getSystemBausteinIcon(item.meta.iconKey)
                         : getSystemBausteinIcon('file-text');
                       const gesperrt = item.gate === ITEM_GATE.GESPERRT;
                       const erledigt = item.gate === ITEM_GATE.ERLEDIGT;
@@ -91,21 +101,34 @@ export default function PfadNavigation({
                             onClick={() => { onSelectItem(item.instance_id); onClose(); }}
                             className={cn(
                               'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left text-sm transition-colors',
-                              gesperrt && 'opacity-50 cursor-not-allowed',
+                              gesperrt && 'opacity-60 cursor-not-allowed',
                               !gesperrt && 'hover:bg-muted',
                               aktiv && 'bg-primary/10 ring-1 ring-primary/30'
                             )}
                           >
                             {erledigt ? (
                               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                            ) : gesperrt ? (
-                              <Lock className="w-4 h-4 text-muted-foreground shrink-0" />
                             ) : (
                               <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
                             )}
-                            <span className={cn('truncate', erledigt && 'text-muted-foreground line-through')}>
-                              {meta.titel}
+                            <span className={cn('truncate flex-1', erledigt && 'text-muted-foreground line-through')}>
+                              {item.meta.titel}
                             </span>
+                            {gesperrt && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="shrink-0 p-0.5 rounded hover:bg-muted-foreground/10 pointer-events-auto"
+                                  >
+                                    <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="left" className="max-w-[220px]">
+                                  {item.lockReason}
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
                           </button>
                         </li>
                       );
@@ -117,6 +140,6 @@ export default function PfadNavigation({
           })}
         </nav>
       </aside>
-    </>
+    </TooltipProvider>
   );
 }
