@@ -13,9 +13,15 @@ export default function MasterModusBadge({ erledigt, gesamt, modus }) {
   if (!gesamt || gesamt < 2) return null;
 
   if (modus === MASTER_MODUS.SHUFFLE) {
+    const alleFertig = erledigt >= gesamt;
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 text-violet-700 text-[11px] font-bold px-2 py-0.5">
-        <Shuffle className="w-3 h-3" /> {gesamt}
+      <span
+        className={cn(
+          'inline-flex items-center gap-1 rounded-full text-[11px] font-bold px-2 py-0.5',
+          alleFertig ? 'bg-emerald-100 text-emerald-700' : 'bg-violet-100 text-violet-700'
+        )}
+      >
+        <Shuffle className="w-3 h-3" /> {erledigt} von {gesamt}
       </span>
     );
   }
