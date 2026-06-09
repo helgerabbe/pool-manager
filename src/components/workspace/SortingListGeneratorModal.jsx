@@ -56,8 +56,8 @@ export default function SortingListGeneratorModal({ open, onClose, onGenerate })
         throw new Error(response.data?.error || 'Die KI konnte keine gültige Liste generieren.');
       }
 
-      // Max 12 Elemente
-      setGeneratedItems(items.slice(0, 12));
+      // Max 8 Elemente (passt scrollfrei auf die Schüler-Tablet-Seite)
+      setGeneratedItems(items.slice(0, 8));
     } catch (err) {
       console.error('generateSortingList error:', err);
       setError(err.message || 'Ein unbekannter Fehler ist aufgetreten.');

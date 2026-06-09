@@ -65,7 +65,9 @@ export default function SortingListEditor({
     onChange?.();
   };
 
-  const MAX_ITEMS = 12;
+  // Begrenzung auf 8 Elemente: So bleibt die Schüler-Sortierseite ohne
+  // Scrollen bedienbar und die Elemente bleiben gut lesbar (leseschwache Schüler).
+  const MAX_ITEMS = 8;
   const canAddMore = orderedItems.length < MAX_ITEMS;
   const isAtLimit = orderedItems.length >= MAX_ITEMS;
 

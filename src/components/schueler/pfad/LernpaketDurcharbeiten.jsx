@@ -8,6 +8,8 @@ import {
 } from '@/lib/lernpaketAktivitaetenOrder';
 import LernpaketAktivitaetSeite from './LernpaketAktivitaetSeite';
 import TextLesenSeite from '@/components/schueler/lesen/TextLesenSeite';
+import LinkOeffnenSeite from '@/components/schueler/lesen/LinkOeffnenSeite';
+import ReihenfolgeSortierenSeite from '@/components/schueler/lesen/ReihenfolgeSortierenSeite';
 
 const PHASE_LABEL = { Input: 'Erklärung', 'Übung': 'Übung', Abschluss: 'Abschluss' };
 
@@ -92,7 +94,10 @@ export default function LernpaketDurcharbeiten({
   const aktiveAkt = aktiveAktId ? sortiert.find((a) => a.id === aktiveAktId) : null;
   if (aktiveAkt) {
     const aktiveKat = katalogById.get(aktiveAkt.aktivitaet_id);
-    const istTextLesen = (aktiveKat?.name || '').toLowerCase().includes('text lesen');
+    const katName = (aktiveKat?.name || '').toLowerCase();
+    const istTextLesen = katName.includes('text lesen');
+    const istLinkUrl = katName.includes('link') || katName.includes('url');
+    const istReihenfolge = katName.includes('reihenfolge') || katName.includes('sortier');
     const gemeinsameProps = {
       aktivitaet: aktiveAkt,
       kat: aktiveKat,
@@ -101,9 +106,10 @@ export default function LernpaketDurcharbeiten({
       onErledigt: () => handleErledigt(aktiveAkt),
       onBack: () => setAktiveAktId(null),
     };
-    return istTextLesen
-      ? <TextLesenSeite {...gemeinsameProps} />
-      : <LernpaketAktivitaetSeite {...gemeinsameProps} />;
+    if (istTextLesen) return <TextLesenSeite {...gemeinsameProps} />;
+    if (istLinkUrl) return <LinkOeffnenSeite {...gemeinsameProps} />;
+    if (istReihenfolge) return <ReihenfolgeSortierenSeite {...gemeinsameProps} />;
+    return <LernpaketAktivitaetSeite {...gemeinsameProps} />;
   }
 
   return (
