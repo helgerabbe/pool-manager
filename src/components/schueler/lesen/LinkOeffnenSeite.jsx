@@ -5,7 +5,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { getAktivitaetComicBild } from '@/lib/aktivitaetComicBilder';
+import AufgabenstellungBox from './AufgabenstellungBox';
+import HinweisBox from './HinweisBox';
 
 const PHASE_LABEL = { Input: 'Erklärung', 'Übung': 'Übung', Abschluss: 'Abschluss' };
 
@@ -24,7 +25,6 @@ function hostname(url) {
 export default function LinkOeffnenSeite({ aktivitaet, kat, lernpaketTitel, busy, onErledigt, onBack }) {
   const fv = aktivitaet?.field_values || {};
   const phase = PHASE_LABEL[aktivitaet.phase] || aktivitaet.phase;
-  const comicBild = getAktivitaetComicBild(kat?.name);
 
   const rawList = Array.isArray(fv.webadressen) ? fv.webadressen : [];
   const links = (rawList.length > 0
@@ -53,23 +53,16 @@ export default function LinkOeffnenSeite({ aktivitaet, kat, lernpaketTitel, busy
     <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 py-6">
       <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
         <div className="space-y-5 pb-2">
-          {/* Comic-Idiom */}
-          {comicBild && (
-            <img src={comicBild} alt="" className="w-28 h-28 mx-auto object-contain" />
-          )}
-
-          {/* Aufgabenstellung */}
+          {/* Aufgabenstellung – einheitlicher blauer Anker mit Icon. */}
           {fv.aufgabentext && (
-            <div className="rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-900 leading-relaxed">
-              {fv.aufgabentext}
-            </div>
+            <AufgabenstellungBox>{fv.aufgabentext}</AufgabenstellungBox>
           )}
 
-          {/* Hinweis: Du verlässt die App */}
-          <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900 leading-relaxed">
+          {/* Hinweis: Du verlässt die App – einheitlicher gelber Anker mit Warn-Icon. */}
+          <HinweisBox>
             <p className="font-semibold">Du verlässt jetzt die Lern-App.</p>
             <p>Der Link öffnet eine andere Webseite. Schau sie dir in Ruhe an und <strong>komm danach hierher zurück</strong>, um unten auf „Erledigt" zu tippen.</p>
-          </div>
+          </HinweisBox>
 
           {/* Links mit Optionen */}
           {links.length === 0 ? (

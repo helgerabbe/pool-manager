@@ -6,6 +6,7 @@ import { getAktivitaetComicBild } from '@/lib/aktivitaetComicBilder';
 import LeseSchriftgroesseToggle from './LeseSchriftgroesseToggle';
 import LesetextDarstellung from './LesetextDarstellung';
 import BildLightbox from './BildLightbox';
+import AufgabenstellungBox from './AufgabenstellungBox';
 
 /**
  * Schüler-Aktivität „Text lesen".
@@ -33,18 +34,10 @@ export default function TextLesenSeite({ aktivitaet, kat, busy, onErledigt, onBa
 
   return (
     <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 py-4">
-      {/* Aufgabenstellungs-Streifen: kleines Comic-Idiom + Aufgabentext als eine
-          kompakte, blaue Einheit – immer oben, fester Wiedererkennungs-Anker. */}
-      {(fv.aufgabentext || comicBild) && (
-        <div className="flex items-center gap-3 rounded-xl bg-blue-50 border border-blue-200 px-3 py-2 mb-3 shrink-0">
-          {comicBild && (
-            <img src={comicBild} alt="" className="w-10 h-10 object-contain shrink-0" />
-          )}
-          <p className="text-sm text-blue-900 leading-snug">
-            {fv.aufgabentext || 'Lies den folgenden Text aufmerksam durch.'}
-          </p>
-        </div>
-      )}
+      {/* Aufgabenstellung – einheitlicher blauer Wiedererkennungs-Anker mit Icon. */}
+      <AufgabenstellungBox className="mb-3 shrink-0">
+        {fv.aufgabentext || 'Lies den folgenden Text aufmerksam durch.'}
+      </AufgabenstellungBox>
 
       {/* Schriftgrößen-Umschalter (kompakt, oben rechts; nur bei direktem Text) */}
       {istText && fv.inhalt && (
@@ -131,7 +124,7 @@ export default function TextLesenSeite({ aktivitaet, kat, busy, onErledigt, onBa
       {/* Aktion: links zurück (ohne Bestätigung), rechts grün „Gelesen" */}
       <div className="pt-4 shrink-0 grid grid-cols-2 gap-3">
         <Button variant="outline" className="gap-2" onClick={onBack} disabled={busy}>
-          <ArrowLeft className="w-4 h-4" /> Zurück
+          <ArrowLeft className="w-4 h-4" /> Zurück zum Lernpaket
         </Button>
         <Button
           className="gap-2 bg-emerald-600 hover:bg-emerald-700"
