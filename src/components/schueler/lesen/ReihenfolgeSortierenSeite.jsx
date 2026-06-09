@@ -1,11 +1,9 @@
 import { useMemo, useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { CheckCircle2, Loader2, ArrowLeft, GripVertical, ListOrdered, RotateCcw, XCircle } from 'lucide-react';
+import { CheckCircle2, Loader2, ArrowLeft, GripVertical, RotateCcw, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { getAktivitaetComicBild } from '@/lib/aktivitaetComicBilder';
-
-const PHASE_LABEL = { Input: 'Erklärung', 'Übung': 'Übung', Abschluss: 'Abschluss' };
+import AufgabenstellungBox from './AufgabenstellungBox';
 
 /** Fisher-Yates Shuffle, der sicherstellt, dass die Startreihenfolge nicht der Lösung entspricht. */
 function mischen(items) {
@@ -31,10 +29,8 @@ function mischen(items) {
  * bringt sie per Drag&Drop in die richtige Reihenfolge. Bewusst auf max. 8
  * Elemente begrenzt – große Karten, gut lesbar, scrollfrei auf dem Tablet.
  */
-export default function ReihenfolgeSortierenSeite({ aktivitaet, kat, lernpaketTitel, busy, onErledigt, onBack }) {
+export default function ReihenfolgeSortierenSeite({ aktivitaet, busy, onErledigt, onBack }) {
   const fv = aktivitaet?.field_values || {};
-  const phase = PHASE_LABEL[aktivitaet.phase] || aktivitaet.phase;
-  const comicBild = getAktivitaetComicBild(kat?.name);
 
   // Korrekte Reihenfolge als stabile Karten-Objekte (mit ursprünglichem Index).
   const loesung = useMemo(
@@ -63,39 +59,13 @@ export default function ReihenfolgeSortierenSeite({ aktivitaet, kat, lernpaketTi
 
   return (
     <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 py-6">
-      {/* Kopf */}
-      <div className="flex items-center gap-3 mb-1">
-        <span className="flex items-center justify-center w-11 h-11 rounded-xl bg-primary/10 text-primary shrink-0">
-          <ListOrdered className="w-5 h-5" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-xs font-medium text-muted-foreground">{phase} · {lernpaketTitel}</p>
-          <h1 className="text-lg font-bold text-foreground tracking-tight truncate">
-            {kat?.name || 'Reihenfolge sortieren'}
-          </h1>
-        </div>
-      </div>
-      <button
-        onClick={onBack}
-        className="self-start inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-4"
-      >
-        <ArrowLeft className="w-3.5 h-3.5" /> Zurück zum Lernpaket
-      </button>
+      {/* Aufgabenstellung – einheitlicher blauer Anker mit Icon. */}
+      <AufgabenstellungBox className="mb-4 shrink-0">
+        {fv.instruction || 'Bringe die Elemente in die richtige Reihenfolge.'}
+      </AufgabenstellungBox>
 
       <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
         <div className="space-y-4 pb-2">
-          {/* Comic-Idiom */}
-          {comicBild && (
-            <img src={comicBild} alt="" className="w-24 h-24 mx-auto object-contain" />
-          )}
-
-          {/* Aufgabenstellung */}
-          {fv.instruction && (
-            <div className="rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-base text-blue-900 leading-relaxed text-center">
-              {fv.instruction}
-            </div>
-          )}
-
           {karten.length === 0 ? (
             <p className="text-sm text-muted-foreground italic text-center py-10">
               Für diese Aktivität sind noch keine Elemente hinterlegt.
@@ -170,11 +140,14 @@ export default function ReihenfolgeSortierenSeite({ aktivitaet, kat, lernpaketTi
         </div>
       </div>
 
-      {/* Aktionen */}
-      <div className="pt-5 shrink-0 space-y-2">
+      {/* Aktionen: links zurück, rechts grün */}
+      <div className="pt-5 shrink-0 grid grid-cols-2 gap-3">
+        <Button variant="outline" className="gap-2" onClick={onBack} disabled={busy}>
+          <ArrowLeft className="w-4 h-4" /> Zurück zum Lernpaket
+        </Button>
         {!geprueft ? (
           <Button
-            className="w-full gap-2 bg-primary hover:bg-primary/90"
+            className="gap-2 bg-emerald-600 hover:bg-emerald-700"
             disabled={karten.length < 2}
             onClick={() => setGeprueft(true)}
           >
@@ -182,7 +155,7 @@ export default function ReihenfolgeSortierenSeite({ aktivitaet, kat, lernpaketTi
           </Button>
         ) : alleRichtig ? (
           <Button
-            className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700"
+            className="gap-2 bg-emerald-600 hover:bg-emerald-700"
             disabled={busy}
             onClick={onErledigt}
           >
@@ -190,7 +163,7 @@ export default function ReihenfolgeSortierenSeite({ aktivitaet, kat, lernpaketTi
             Erledigt
           </Button>
         ) : (
-          <Button variant="outline" className="w-full gap-2" onClick={neuMischen}>
+          <Button variant="outline" className="gap-2" onClick={neuMischen}>
             <RotateCcw className="w-4 h-4" /> Nochmal versuchen
           </Button>
         )}
