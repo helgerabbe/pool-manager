@@ -19,6 +19,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import AktivitaetThumbnailUpload from './AktivitaetThumbnailUpload';
 
 const PHASEN = [
   { value: 'Input', label: 'Input (Erarbeitung)', color: 'bg-blue-100 text-blue-700', backendValue: 'Input' },
@@ -95,6 +96,15 @@ export default function AktivitaetenKatalog() {
       queryClient.invalidateQueries({ queryKey: ['aktivitaetenKatalog'] });
       setEditDialog({ open: false, aktivitaet: null });
       toast.success('Form-Schema aktualisiert');
+    },
+  });
+
+  const updateThumbnail = useMutation({
+    mutationFn: ({ id, thumbnailUrl }) =>
+      base44.entities.AktivitaetenKatalog.update(id, { thumbnail_url: thumbnailUrl }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['aktivitaetenKatalog'] });
+      toast.success('Thumbnail aktualisiert');
     },
   });
 
@@ -217,6 +227,14 @@ export default function AktivitaetenKatalog() {
                                 {aktivitaet.form_schema.map((f) => f.field_name).join(', ')}
                               </div>
                             )}
+
+                            <AktivitaetThumbnailUpload
+                              value={aktivitaet.thumbnail_url}
+                              disabled={updateThumbnail.isPending}
+                              onChange={(thumbnailUrl) =>
+                                updateThumbnail.mutate({ id: aktivitaet.id, thumbnailUrl })
+                              }
+                            />
                           </div>
 
                           <div className="flex items-center gap-3 shrink-0 whitespace-nowrap">

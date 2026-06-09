@@ -1,20 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Lock, Loader2, ArrowLeft, Layers } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { CheckCircle2, Loader2, ArrowLeft, Layers } from 'lucide-react';
 import {
   sortAktivitaetenNachLogik,
   istLernpaketGegated,
 } from '@/lib/lernpaketAktivitaetenOrder';
 import MasterfaehigeAktivitaet from './MasterfaehigeAktivitaet';
-import MasterModusBadge from './MasterModusBadge';
-import {
-  ermittleMasterModus,
-  masterFortschritt,
-  istMasterAktivitaetErledigt,
-} from '@/lib/masterAufgabenModus';
-
-const PHASE_LABEL = { Input: 'Erklärung', 'Übung': 'Übung', Abschluss: 'Abschluss' };
+import LernpaketAktivitaetItem from './LernpaketAktivitaetItem';
+import PhasenAbschnitt from './PhasenAbschnitt';
+import { istMasterAktivitaetErledigt } from '@/lib/masterAufgabenModus';
 
 /**
  * Sub-Ansicht: Ein Lernpaket „durcharbeiten". Zeigt die enthaltenen
@@ -56,6 +49,19 @@ export default function LernpaketDurcharbeiten({
     () => (aktivitaeten ? sortAktivitaetenNachLogik(aktivitaeten, lernpaketLogik) : []),
     [aktivitaeten, lernpaketLogik]
   );
+
+  // Nach Phase gruppiert (Reihenfolge der ersten Vorkommen bleibt erhalten),
+  // jeweils mit dem ORIGINAL-Index aus `sortiert` – wichtig für Nummerierung
+  // und das sequenzielle Gating.
+  const gruppiertNachPhase = useMemo(() => {
+    const gruppen = [];
+    sortiert.forEach((akt, idx) => {
+      let g = gruppen.find((x) => x.phase === akt.phase);
+      if (!g) { g = { phase: akt.phase, items: [] }; gruppen.push(g); }
+      g.items.push({ akt, idx });
+    });
+    return gruppen;
+  }, [sortiert]);
 
   // Erledigt-Status pro Aktivität – master-aware:
   //  - masterfähig (≥1 MasterAufgabe): zentrale Logik (sequenziell=alle, shuffle=eine).
@@ -140,62 +146,28 @@ export default function LernpaketDurcharbeiten({
             Dieses Lernpaket enthält noch keine Aktivitäten.
           </div>
         ) : (
-          <ul className="space-y-2.5">
-            {sortiert.map((akt, idx) => {
-              const kat = katalogById.get(akt.aktivitaet_id);
-              const erledigt = erledigtSet.has(akt.id);
-              const gesperrt = istGesperrt(idx);
-              const busy = busyId === akt.id;
-              return (
-                <li
-                  key={akt.id}
-                  className={cn(
-                    'rounded-xl border p-3.5 transition-colors',
-                    gesperrt ? 'border-border bg-muted/30 opacity-70' : 'border-border bg-card',
-                    erledigt && 'border-emerald-200 bg-emerald-50/60'
-                  )}
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="shrink-0 mt-0.5">
-                      {erledigt ? (
-                        <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                      ) : gesperrt ? (
-                        <Lock className="w-5 h-5 text-muted-foreground" />
-                      ) : (
-                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[11px] font-bold">
-                          {idx + 1}
-                        </span>
-                      )}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                        {PHASE_LABEL[akt.phase] || akt.phase}
-                      </p>
-                      <div className="flex items-center gap-2 min-w-0">
-                        <p className={cn('text-sm font-semibold truncate', erledigt ? 'text-emerald-700' : 'text-foreground')}>
-                          {kat?.name || 'Aktivität'}
-                        </p>
-                        <MasterModusBadge
-                          modus={ermittleMasterModus(akt)}
-                          {...masterFortschritt(akt, item.instance_id, fortschrittByCompositeId)}
-                        />
-                      </div>
-                    </div>
-                    {!gesperrt && (
-                      <Button
-                        size="sm"
-                        variant={erledigt ? 'outline' : 'default'}
-                        className={cn('shrink-0', !erledigt && 'bg-primary hover:bg-primary/90')}
-                        onClick={() => setAktiveAktId(akt.id)}
-                      >
-                        {erledigt ? 'Nochmal machen' : 'Jetzt machen'}
-                      </Button>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="space-y-7">
+            {gruppiertNachPhase.map((gruppe) => (
+              <section key={gruppe.phase} className="space-y-3">
+                <PhasenAbschnitt phase={gruppe.phase} />
+                <ul className="space-y-2.5">
+                  {gruppe.items.map(({ akt, idx }) => (
+                    <LernpaketAktivitaetItem
+                      key={akt.id}
+                      aktivitaet={akt}
+                      kat={katalogById.get(akt.aktivitaet_id)}
+                      nummer={idx + 1}
+                      lernpaketInstanceId={item.instance_id}
+                      fortschrittByCompositeId={fortschrittByCompositeId}
+                      erledigt={erledigtSet.has(akt.id)}
+                      gesperrt={istGesperrt(idx)}
+                      onOeffnen={() => setAktiveAktId(akt.id)}
+                    />
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
         )}
       </div>
 
