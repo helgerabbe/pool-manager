@@ -29,6 +29,8 @@ import {
   Package,
   PackageCheck,
   Calendar,
+  Rocket,
+  Dumbbell,
 } from 'lucide-react';
 
 const ICONS = {
@@ -53,6 +55,8 @@ const ICONS = {
   package: Package,
   'package-check': PackageCheck,
   calendar: Calendar,
+  rocket: Rocket,
+  dumbbell: Dumbbell,
   // info-circle existiert nicht in lucide-react – auf vorhandenes Info-Icon mappen
   'info-circle': Info,
 };

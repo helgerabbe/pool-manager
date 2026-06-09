@@ -89,9 +89,7 @@ export default function PfadNavigation({
                 ) : (
                   <ul className="space-y-1">
                     {sichtbar.map((item) => {
-                      const Icon = item.type === 'system'
-                        ? getSystemBausteinIcon(item.meta.iconKey)
-                        : getSystemBausteinIcon('file-text');
+                      const Icon = getSystemBausteinIcon(item.meta.iconKey);
                       const gesperrt = item.gate === ITEM_GATE.GESPERRT;
                       const erledigt = item.gate === ITEM_GATE.ERLEDIGT;
                       const aktiv = activeInstanceId === item.instance_id;
@@ -108,11 +106,12 @@ export default function PfadNavigation({
                               aktiv && 'bg-primary/10 ring-1 ring-primary/30'
                             )}
                           >
-                            {erledigt ? (
-                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                            ) : (
-                              <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
-                            )}
+                            <span className="relative shrink-0">
+                              <Icon className={cn('w-4 h-4', erledigt ? 'text-emerald-600' : 'text-muted-foreground')} />
+                              {erledigt && (
+                                <CheckCircle2 className="absolute -bottom-1 -right-1 w-2.5 h-2.5 text-emerald-600 bg-card rounded-full" />
+                              )}
+                            </span>
                             <span className={cn('truncate flex-1', erledigt && 'text-emerald-700 font-medium')}>
                               {item.meta.titel}
                             </span>

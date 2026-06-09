@@ -33,9 +33,22 @@ export function getItemMeta(item, aufgabenById = new Map(), bausteinById = new M
   return {
     titel,
     untertitel: typLabel,
-    iconKey: 'file-text',
+    iconKey: aufgabeIconKey(a),
     platzhalter: `Hier erscheint gleich ${typLabel ? `: ${typLabel}` : 'die Aufgabe'} „${titel}“.`,
   };
+}
+
+/**
+ * Icon-Key passend zum Aufgaben-/Lernpaket-Typ, damit der Schüler im Menü
+ * Lernpaket, Projekt, Übung etc. auf einen Blick unterscheiden kann.
+ */
+function aufgabeIconKey(a) {
+  if (!a) return 'file-text';
+  if (a.aufgaben_typ === 'buendel') return 'package';
+  if (a.aufgaben_typ === 'projekt_anker' || a.anforderungsebene === '3 - Projekt') return 'rocket';
+  if (a.aufgaben_typ === 'prozess') return 'dumbbell';
+  if (a.aufgaben_typ === 'handlung') return 'hand';
+  return 'file-text';
 }
 
 /**
