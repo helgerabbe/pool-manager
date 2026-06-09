@@ -1,17 +1,18 @@
 /**
- * Zentrale Logik für „masterfähige" Aktivitäten (Aktivitäten mit ≥1 MasterAufgabe).
+ * Zentrale Logik für „masterfähige" Aktivitäten (Aktivitäten mit MasterAufgaben).
  *
  * Drei Modi:
- *   - einzel:      genau 1 MasterAufgabe → wird direkt angezeigt.
- *   - sequenziell: mehrere MasterAufgaben, die der Reihe nach abgearbeitet werden;
- *                  erledigt = ALLE MasterAufgaben gelöst.
- *   - shuffle:     mehrere MasterAufgaben, zufällige Auswahl; erledigt = EINE gelöst.
+ *   - einzel:      genau eine MasterAufgabe → wird direkt angezeigt.
+ *   - sequenziell: mehrere MasterAufgaben, die der Reihe nach abgearbeitet werden.
+ *                  Erledigt, wenn ALLE MasterAufgaben gelöst sind.
+ *   - shuffle:     mehrere MasterAufgaben, von denen eine zufällige ausgespielt wird.
+ *                  Erledigt, sobald EINE gelöst wurde.
  *
- * Der Modus wird aus dem Feld `master_anzeige_modus` der Aktivität abgeleitet
- * ('shuffle' | 'alle'); 'alle' wird auf den sequenziellen Modus abgebildet.
+ * Der Modus ergibt sich aus `master_anzeige_modus` der Aktivität
+ * ('shuffle' | 'alle') in Kombination mit der Anzahl der MasterAufgaben.
  *
  * Fortschritt wird über zusammengesetzte IDs getrackt:
- *   `${lernpaketInstanceId}::${activityId}::${masterId}`
+ *   `<lernpaketInstanceId>::<activityId>::<masterId>`
  */
 
 export const MASTER_MODUS = {
@@ -20,76 +21,86 @@ export const MASTER_MODUS = {
   SHUFFLE: 'shuffle',
 };
 
-/** Liefert das Array der MasterAufgaben einer Aktivität (immer ein Array). */
-function masterListe(aktivitaet) {
-  return Array.isArray(aktivitaet?.master_aufgaben) ? aktivitaet.master_aufgaben : [];
-}
-
-/** Zusammengesetzte Fortschritts-ID für eine einzelne MasterAufgabe. */
+/** Composite-ID für den Fortschritt einer einzelnen MasterAufgabe. */
 export function masterCompositeId(lernpaketInstanceId, activityId, masterId) {
   return `${lernpaketInstanceId}::${activityId}::${masterId}`;
 }
 
-/** Bestimmt den Master-Modus einer Aktivität. */
+/** Liste der MasterAufgaben einer Aktivität (immer ein Array). */
+function masterListe(aktivitaet) {
+  return Array.isArray(aktivitaet?.master_aufgaben) ? aktivitaet.master_aufgaben : [];
+}
+
+/**
+ * Ermittelt den Master-Modus einer Aktivität.
+ * - 0 MasterAufgaben → null (keine masterfähige Aktivität / klassisch).
+ * - 1 MasterAufgabe  → 'einzel'.
+ * - ≥2 + Anzeigemodus 'shuffle' → 'shuffle', sonst 'sequenziell' ('alle').
+ */
 export function ermittleMasterModus(aktivitaet) {
-  const master = masterListe(aktivitaet);
-  if (master.length <= 1) return MASTER_MODUS.EINZEL;
+  const liste = masterListe(aktivitaet);
+  if (liste.length === 0) return null;
+  if (liste.length === 1) return MASTER_MODUS.EINZEL;
   return aktivitaet?.master_anzeige_modus === 'shuffle'
     ? MASTER_MODUS.SHUFFLE
     : MASTER_MODUS.SEQUENZIELL;
 }
 
-/** Fortschritt einer masterfähigen Aktivität: { erledigt, gesamt }. */
-export function masterFortschritt(aktivitaet, lernpaketInstanceId, fortschrittByCompositeId) {
-  const master = masterListe(aktivitaet);
-  const gesamt = master.length;
-  const erledigt = master.filter(
-    (m) =>
-      fortschrittByCompositeId.get(
-        masterCompositeId(lernpaketInstanceId, aktivitaet.id, m.id)
-      ) === 'erledigt'
-  ).length;
-  return { erledigt, gesamt };
+/** Set der bereits erledigten MasterAufgaben-IDs einer Aktivität. */
+function erledigteMasterIds(aktivitaet, lernpaketInstanceId, fortschrittByCompositeId) {
+  const ids = new Set();
+  masterListe(aktivitaet).forEach((m) => {
+    const id = masterCompositeId(lernpaketInstanceId, aktivitaet.id, m.id);
+    if (fortschrittByCompositeId.get(id) === 'erledigt') ids.add(m.id);
+  });
+  return ids;
 }
 
 /**
- * Ist die masterfähige Aktivität als Ganzes erledigt?
- *   - sequenziell/einzel: alle MasterAufgaben gelöst.
- *   - shuffle: mindestens eine gelöst.
- * Liefert `null`, wenn die Aktivität NICHT masterfähig ist (keine MasterAufgaben),
- * damit der Aufrufer auf seine klassische Logik zurückfallen kann.
+ * Fortschrittszähler: { erledigt, gesamt } über die MasterAufgaben.
  */
-export function istMasterAktivitaetErledigt(aktivitaet, lernpaketInstanceId, fortschrittByCompositeId) {
-  const master = masterListe(aktivitaet);
-  if (master.length === 0) return null;
-
-  const { erledigt, gesamt } = masterFortschritt(aktivitaet, lernpaketInstanceId, fortschrittByCompositeId);
-  const modus = ermittleMasterModus(aktivitaet);
-  if (modus === MASTER_MODUS.SHUFFLE) return erledigt >= 1;
-  return erledigt >= gesamt;
+export function masterFortschritt(aktivitaet, lernpaketInstanceId, fortschrittByCompositeId) {
+  const liste = masterListe(aktivitaet);
+  const erledigt = erledigteMasterIds(aktivitaet, lernpaketInstanceId, fortschrittByCompositeId).size;
+  return { erledigt, gesamt: liste.length };
 }
 
 /**
- * Wählt die nächste anzuzeigende MasterAufgabe:
- *   - sequenziell/einzel: erste noch offene (in Reihenfolge), sonst die erste.
- *   - shuffle: zufällige noch offene, sonst eine zufällige.
+ * Wählt die nächste anzuzeigende MasterAufgabe.
+ * - sequenziell/einzel: erste noch offene (nach Reihenfolge), sonst die erste.
+ * - shuffle:            zufällige noch offene, sonst eine zufällige.
+ * Gibt null zurück, wenn keine MasterAufgaben existieren.
  */
 export function naechsteMasterAufgabe(aktivitaet, lernpaketInstanceId, fortschrittByCompositeId) {
-  const master = masterListe(aktivitaet);
-  if (master.length === 0) return null;
+  const liste = [...masterListe(aktivitaet)].sort(
+    (a, b) => (a.reihenfolge ?? 0) - (b.reihenfolge ?? 0)
+  );
+  if (liste.length === 0) return null;
 
-  const istErledigt = (m) =>
-    fortschrittByCompositeId.get(
-      masterCompositeId(lernpaketInstanceId, aktivitaet.id, m.id)
-    ) === 'erledigt';
+  const erledigt = erledigteMasterIds(aktivitaet, lernpaketInstanceId, fortschrittByCompositeId);
+  const offen = liste.filter((m) => !erledigt.has(m.id));
+  const pool = offen.length > 0 ? offen : liste;
 
-  const offen = master.filter((m) => !istErledigt(m));
   const modus = ermittleMasterModus(aktivitaet);
-
   if (modus === MASTER_MODUS.SHUFFLE) {
-    const pool = offen.length > 0 ? offen : master;
     return pool[Math.floor(Math.random() * pool.length)];
   }
+  return pool[0];
+}
 
-  return offen.length > 0 ? offen[0] : master[0];
+/**
+ * Ist die Aktivität als Ganzes „erledigt"?
+ *   - null  → keine masterfähige Aktivität (Aufrufer soll klassisch prüfen).
+ *   - shuffle:      true, sobald ≥1 MasterAufgabe erledigt ist.
+ *   - sequenziell/einzel: true, wenn ALLE MasterAufgaben erledigt sind.
+ */
+export function istMasterAktivitaetErledigt(aktivitaet, lernpaketInstanceId, fortschrittByCompositeId) {
+  const modus = ermittleMasterModus(aktivitaet);
+  if (modus === null) return null;
+
+  const { erledigt, gesamt } = masterFortschritt(aktivitaet, lernpaketInstanceId, fortschrittByCompositeId);
+  if (gesamt === 0) return null;
+
+  if (modus === MASTER_MODUS.SHUFFLE) return erledigt >= 1;
+  return erledigt >= gesamt;
 }
