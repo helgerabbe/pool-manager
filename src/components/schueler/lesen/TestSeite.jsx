@@ -5,6 +5,43 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import AufgabenstellungBox from './AufgabenstellungBox';
 
+/** Levenshtein-Distanz (Anzahl Buchstaben-Änderungen zwischen zwei Wörtern). */
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  let prev = Array.from({ length: n + 1 }, (_, j) => j);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) {
+      cur[j] = Math.min(
+        prev[j] + 1,
+        cur[j - 1] + 1,
+        prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+      );
+    }
+    prev = cur;
+  }
+  return prev[n];
+}
+
+const normalisiere = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+
+/**
+ * Bewertet eine Lösungswort-Antwort tippfehler-tolerant.
+ * Rückgabe: 'richtig' | 'tippfehler' (richtig gemeint, falsch geschrieben) | 'falsch'.
+ * Erlaubte Abweichung wächst mit der Wortlänge (1 Fehler bei kurzen Wörtern,
+ * bis zu 3 bei langen Fachausdrücken).
+ */
+function bewerteLoesungswort(antwort, erwartet) {
+  const a = normalisiere(antwort);
+  const e = normalisiere(erwartet);
+  if (!e) return 'falsch';
+  if (a === e) return 'richtig';
+  const erlaubt = e.length <= 4 ? 1 : e.length <= 10 ? 2 : 3;
+  return levenshtein(a, e) <= erlaubt ? 'tippfehler' : 'falsch';
+}
+
 /**
  * Schüler-Aktivität „Test" (Abschluss-Phase).
  *
@@ -33,13 +70,24 @@ export default function TestSeite({ aktivitaet, busy, onErledigt, onBack, master
   const [antworten, setAntworten] = useState({});
   const [aktuelleFrage, setAktuelleFrage] = useState(0);
   const [ausgewertet, setAusgewertet] = useState(false);
+  // Wiederholungs-Runde: null = alle Fragen, sonst nur die IDs der zuvor
+  // falsch beantworteten Fragen (richtige müssen NICHT erneut gemacht werden).
+  const [rundenIds, setRundenIds] = useState(null);
 
-  const frage = fragen[aktuelleFrage];
+  const rundenFragen = useMemo(
+    () => (rundenIds ? fragen.filter((q) => rundenIds.includes(q.id)) : fragen),
+    [fragen, rundenIds]
+  );
+
+  const frage = rundenFragen[aktuelleFrage];
   const antwort = frage ? antworten[frage.id] : undefined;
   const beantwortet = antwort !== undefined && antwort !== '';
-  const istLetzte = aktuelleFrage === fragen.length - 1;
+  const istLetzte = aktuelleFrage === rundenFragen.length - 1;
 
   const setAntwort = (wert) => setAntworten((prev) => ({ ...prev, [frage.id]: wert }));
+
+  // Tippfehler-tolerante Bewertung eines Lösungsworts.
+  const loesungswortStatus = (q) => bewerteLoesungswort(antworten[q.id], q.expectedAnswer);
 
   const punkteFuer = (q) => {
     const a = antworten[q.id];
@@ -51,8 +99,9 @@ export default function TestSeite({ aktivitaet, busy, onErledigt, onBack, master
       return a === q.correctAnswer ? (q.points || 1) : 0;
     }
     if (q.type === 'solution_word') {
-      return String(a || '').trim().toLowerCase() === String(q.expectedAnswer || '').trim().toLowerCase()
-        ? (q.points || 1) : 0;
+      // 'tippfehler' zählt als richtig – der Schüler hat das Richtige gemeint,
+      // bekommt aber einen Hinweis auf die korrekte Schreibweise.
+      return loesungswortStatus(q) !== 'falsch' ? (q.points || 1) : 0;
     }
     return 0;
   };
@@ -60,8 +109,15 @@ export default function TestSeite({ aktivitaet, busy, onErledigt, onBack, master
   const erreicht = fragen.reduce((s, q) => s + punkteFuer(q), 0);
   const bestanden = erreicht >= schwelle;
 
-  const reset = () => {
-    setAntworten({});
+  // Nur die falsch beantworteten Fragen erneut bearbeiten lassen.
+  const falscheWiederholen = () => {
+    const falsche = fragen.filter((q) => punkteFuer(q) === 0).map((q) => q.id);
+    setAntworten((prev) => {
+      const next = { ...prev };
+      falsche.forEach((id) => delete next[id]);
+      return next;
+    });
+    setRundenIds(falsche);
     setAktuelleFrage(0);
     setAusgewertet(false);
   };
@@ -119,6 +175,7 @@ export default function TestSeite({ aktivitaet, busy, onErledigt, onBack, master
             <div className="w-full max-w-md space-y-1.5 text-left">
               {fragen.map((q, i) => {
                 const ok = punkteFuer(q) > 0;
+                const tippfehler = q.type === 'solution_word' && loesungswortStatus(q) === 'tippfehler';
                 return (
                   <div key={q.id} className={cn(
                     'flex items-start gap-2 rounded-lg border px-3 py-2 text-xs',
@@ -127,21 +184,37 @@ export default function TestSeite({ aktivitaet, busy, onErledigt, onBack, master
                     {ok
                       ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
                       : <XCircle className="w-3.5 h-3.5 text-rose-500 mt-0.5 shrink-0" />}
-                    <span className="text-foreground leading-snug">Frage {i + 1}: {q.question}</span>
+                    <div className="min-w-0">
+                      <span className="text-foreground leading-snug">Frage {i + 1}: {q.question}</span>
+                      {tippfehler && (
+                        <p className="mt-1 text-amber-700 leading-snug">
+                          Du hast das Richtige gemeint! Achte aber auf die Schreibweise:{' '}
+                          <span className="font-semibold">{q.expectedAnswer}</span>
+                          {' '}(deine Antwort: „{String(antworten[q.id] || '').trim()}“)
+                        </p>
+                      )}
+                    </div>
                   </div>
                 );
               })}
             </div>
+
+            {!bestanden && fragen.some((q) => punkteFuer(q) > 0) && (
+              <p className="text-xs text-muted-foreground max-w-md">
+                Keine Sorge: Deine richtigen Antworten bleiben gespeichert – du musst nur die
+                falschen Fragen wiederholen.
+              </p>
+            )}
           </div>
         ) : (
           /* ── Frage-Ansicht (Stepper) ──────────────────────────────────── */
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Frage {aktuelleFrage + 1} von {fragen.length}
+                {rundenIds ? 'Wiederholung – ' : ''}Frage {aktuelleFrage + 1} von {rundenFragen.length}
               </span>
               <div className="flex gap-1">
-                {fragen.map((q, i) => (
+                {rundenFragen.map((q, i) => (
                   <span key={q.id} className={cn(
                     'w-2 h-2 rounded-full',
                     i === aktuelleFrage ? 'bg-primary'
@@ -236,8 +309,9 @@ export default function TestSeite({ aktivitaet, busy, onErledigt, onBack, master
             Erledigt
           </Button>
         ) : (
-          <Button variant="outline" className="gap-2" onClick={reset}>
-            <RotateCcw className="w-4 h-4" /> Nochmal versuchen
+          <Button variant="outline" className="gap-2" onClick={falscheWiederholen}>
+            <RotateCcw className="w-4 h-4" />
+            {fragen.some((q) => punkteFuer(q) > 0) ? 'Falsche Fragen wiederholen' : 'Nochmal versuchen'}
           </Button>
         )}
       </div>
