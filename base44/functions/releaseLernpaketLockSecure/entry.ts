@@ -59,11 +59,22 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Lernpaket not found' }, { status: 404 });
     }
 
-    const lockStillOwned = latestPaket.is_locked && latestPaket.locked_by_email === paket.locked_by_email;
-    const sameLockTimestamp = (latestPaket.locked_at || null) === (paket.locked_at || null);
-    if (!lockStillOwned || !sameLockTimestamp) {
+    // Self-Lockout-Fix 2026-06-10: KEIN Timestamp-Vergleich mehr.
+    // Der Heartbeat (useLocks.js, alle 25 s) schreibt laufend ein neues
+    // `locked_at` auf das eigene Lernpaket. Ein Vergleich gegen den vorher
+    // gelesenen Timestamp schlug daher fast immer fehl → 409 LOCK_CHANGED →
+    // der eigene Bearbeitungsmodus liess sich nicht mehr beenden (User blieb
+    // dauerhaft ausgesperrt). Maßgeblich ist allein: Bin ICH noch der Owner?
+    // Wenn ja, darf ich immer freigeben. Hat zwischenzeitlich JEMAND ANDERES
+    // den Lock übernommen, brechen wir ab (sein Lock bleibt unangetastet).
+    const lockTakenByOther =
+      latestPaket.is_locked &&
+      latestPaket.locked_by_email &&
+      latestPaket.locked_by_email !== user.email &&
+      !isAdmin;
+    if (lockTakenByOther) {
       return Response.json(
-        { error: 'Der Lock wurde zwischenzeitlich geändert. Bitte neu laden.', code: 'LOCK_CHANGED' },
+        { error: 'Der Lock wurde zwischenzeitlich von einer anderen Person übernommen.', code: 'LOCK_CHANGED' },
         { status: 409 }
       );
     }

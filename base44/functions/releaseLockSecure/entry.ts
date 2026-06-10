@@ -55,11 +55,18 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Einheit not found' }, { status: 404 });
     }
 
-    const sameLockOwner = (latestEinheit.structural_lock || null) === (einheit.structural_lock || null);
-    const sameLockTimestamp = (latestEinheit.structural_locked_at || null) === (einheit.structural_locked_at || null);
-    if (!sameLockOwner || !sameLockTimestamp) {
+    // Self-Lockout-Fix 2026-06-10: KEIN Timestamp-Vergleich mehr (analog
+    // releaseLernpaketLockSecure). Maßgeblich ist allein: Hat jemand ANDERES
+    // den Lock zwischenzeitlich übernommen? Wenn nicht (ich bin noch Owner
+    // oder der Lock ist schon frei), darf ich freigeben — sonst bliebe der
+    // eigene Bearbeitungsmodus dauerhaft hängen.
+    const lockTakenByOther =
+      latestEinheit.structural_lock &&
+      latestEinheit.structural_lock !== user.email &&
+      !isAdmin;
+    if (lockTakenByOther) {
       return Response.json(
-        { error: 'Der Lock wurde zwischenzeitlich geändert. Bitte neu laden.', code: 'LOCK_CHANGED' },
+        { error: 'Der Lock wurde zwischenzeitlich von einer anderen Person übernommen.', code: 'LOCK_CHANGED' },
         { status: 409 }
       );
     }
