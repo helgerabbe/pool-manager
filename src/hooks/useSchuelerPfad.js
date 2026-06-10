@@ -85,6 +85,18 @@ export function useSchuelerPfad(einheitId, lerntyp) {
   const kernQueries = [einheitQ, bausteineQ, aufgabenQ, lernpaketeQ, katalogQ, fortschrittQ];
   const isLoading = kernQueries.some((q) => q.isLoading);
   const isError = kernQueries.some((q) => q.isError);
+
+  // Diagnose: Welche Abfrage(n) sind fehlgeschlagen und warum?
+  const fehlerDetails = useMemo(() => {
+    const namen = ['Einheit', 'Bausteine', 'Aufgaben', 'Lernpakete', 'Katalog', 'Fortschritt'];
+    const details = kernQueries
+      .map((q, i) => (q.isError ? `${namen[i]}: ${q.error?.message || 'Unbekannter Fehler'}` : null))
+      .filter(Boolean);
+    if (details.length === 0 && !einheitId) details.push('Keine Einheit-ID in der URL gefunden.');
+    if (details.length === 0 && einheitQ.isSuccess && !einheitQ.data) details.push('Einheit wurde nicht gefunden (leere Antwort).');
+    return details;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [einheitQ.status, bausteineQ.status, aufgabenQ.status, lernpaketeQ.status, katalogQ.status, fortschrittQ.status, einheitId, einheitQ.data]);
   // Retry lädt ALLE Kern-Daten neu (nicht nur die als fehlerhaft markierten):
   // Auch erfolgreich-aber-leer beantwortete Abfragen (z. B. Einheit = null nach
   // Verbindungsproblemen) werden so repariert.
@@ -204,6 +216,7 @@ export function useSchuelerPfad(einheitId, lerntyp) {
     einheit,
     isLoading,
     isError,
+    fehlerDetails,
     retry,
     sektoren,
     bausteinById,

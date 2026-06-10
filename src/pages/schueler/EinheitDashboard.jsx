@@ -30,6 +30,7 @@ export default function EinheitDashboard() {
     einheit,
     isLoading,
     isError,
+    fehlerDetails,
     retry,
     sektoren,
     bausteinById,
@@ -138,7 +139,7 @@ export default function EinheitDashboard() {
     return <div className="h-full flex items-center justify-center text-muted-foreground">Lädt …</div>;
   }
   if (isError || !einheit) {
-    return <LadeFehlerHinweis onRetry={retry} />;
+    return <LadeFehlerHinweis onRetry={retry} details={fehlerDetails} />;
   }
 
   return (

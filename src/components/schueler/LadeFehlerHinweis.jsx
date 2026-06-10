@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
  * nicht vollständig geladen werden konnten. Bietet einen
  * „Nochmal versuchen"-Button, der die fehlgeschlagenen Abfragen neu startet.
  */
-export default function LadeFehlerHinweis({ onRetry }) {
+export default function LadeFehlerHinweis({ onRetry, details }) {
   const [retrying, setRetrying] = useState(false);
 
   const handleRetry = async () => {
@@ -32,6 +32,13 @@ export default function LadeFehlerHinweis({ onRetry }) {
             vollständig geladen werden.
           </p>
         </div>
+        {Array.isArray(details) && details.length > 0 && (
+          <div className="text-left rounded-lg bg-muted px-3 py-2 space-y-1">
+            {details.map((d, i) => (
+              <p key={i} className="text-[11px] text-muted-foreground break-words font-mono">{d}</p>
+            ))}
+          </div>
+        )}
         <Button onClick={handleRetry} disabled={retrying} className="gap-2">
           {retrying ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
           Nochmal versuchen
