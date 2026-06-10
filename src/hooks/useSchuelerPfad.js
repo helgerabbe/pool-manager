@@ -30,38 +30,43 @@ export function useSchuelerPfad(einheitId, lerntyp) {
     staleTime: 30 * 1000,
   });
 
-  const { data: einheit, isLoading: einheitLoading } = useQuery({
+  const einheitQ = useQuery({
     queryKey: ['einheit', einheitId],
     queryFn: () => base44.entities.Einheiten.get(einheitId),
     enabled: !!einheitId,
   });
+  const einheit = einheitQ.data;
 
-  const { data: systemBausteine = [] } = useQuery({
+  const bausteineQ = useQuery({
     queryKey: ['systemBausteine', 'all'],
     queryFn: () => base44.entities.SystemBausteine.list('reihenfolge'),
   });
+  const systemBausteine = bausteineQ.data || [];
 
-  const { data: aufgaben = [] } = useQuery({
+  const aufgabenQ = useQuery({
     queryKey: ['allgemeineAufgaben', einheitId],
     queryFn: () => base44.entities.AllgemeineAufgabe.filter({ einheit_id: einheitId }),
     enabled: !!einheitId,
   });
+  const aufgaben = aufgabenQ.data || [];
 
-  const { data: lernpakete = [] } = useQuery({
+  const lernpaketeQ = useQuery({
     queryKey: ['lernpakete-by-einheit', einheitId],
     queryFn: () => base44.entities.Lernpakete.filter({ einheit_id: einheitId }),
     enabled: !!einheitId,
   });
+  const lernpakete = lernpaketeQ.data || [];
 
   // Globaler Aktivitäten-Katalog (für Aktivitäts-Namen in der Sub-Ansicht).
-  const { data: katalog = [] } = useQuery({
+  const katalogQ = useQuery({
     queryKey: ['aktivitaetenKatalog', 'all'],
     queryFn: () => getAktivitaetenKatalog(),
     staleTime: 5 * 60 * 1000,
   });
+  const katalog = katalogQ.data || [];
 
   const fortschrittQueryKey = ['schuelerAktFortschritt', user?.email, einheitId, lerntyp];
-  const { data: fortschritte = [] } = useQuery({
+  const fortschrittQ = useQuery({
     queryKey: fortschrittQueryKey,
     queryFn: () =>
       base44.entities.SchuelerAktivitaetFortschritt.filter({
@@ -71,6 +76,20 @@ export function useSchuelerPfad(einheitId, lerntyp) {
       }),
     enabled: !!user?.email && !!einheitId && !!lerntyp,
   });
+  const fortschritte = fortschrittQ.data || [];
+
+  // ── Sicherheitsstufe: UI erst zeigen, wenn ALLE Kern-Daten sauber da sind ──
+  // Vorher steuerte nur `einheitLoading` den Spinner – Aufgaben/Lernpakete/
+  // Bausteine defaulteten auf [], wodurch die Oberfläche mit Platzhaltern
+  // („Aufgabe") erschien, obwohl die Daten noch fehlten oder fehlschlugen.
+  const kernQueries = [einheitQ, bausteineQ, aufgabenQ, lernpaketeQ, katalogQ, fortschrittQ];
+  const isLoading = kernQueries.some((q) => q.isLoading);
+  const isError = kernQueries.some((q) => q.isError);
+  const retry = useCallback(
+    () => Promise.all(kernQueries.filter((q) => q.isError).map((q) => q.refetch())),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [einheitQ.isError, bausteineQ.isError, aufgabenQ.isError, lernpaketeQ.isError, katalogQ.isError, fortschrittQ.isError]
+  );
 
   // ── Abgeleitete Maps ────────────────────────────────────────────────
   const sektoren = useMemo(() => {
@@ -171,7 +190,9 @@ export function useSchuelerPfad(einheitId, lerntyp) {
   return {
     user,
     einheit,
-    isLoading: einheitLoading,
+    isLoading,
+    isError,
+    retry,
     sektoren,
     bausteinById,
     aufgabenById,

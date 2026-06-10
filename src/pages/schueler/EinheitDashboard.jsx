@@ -13,6 +13,7 @@ import AktivitaetSeite from '@/components/schueler/pfad/AktivitaetSeite';
 import PfadStartseite from '@/components/schueler/pfad/PfadStartseite';
 import LernpaketDurcharbeiten from '@/components/schueler/pfad/LernpaketDurcharbeiten';
 import ThemenfeldEinfuehrungSeite from '@/components/schueler/pfad/ThemenfeldEinfuehrungSeite';
+import LadeFehlerHinweis from '@/components/schueler/LadeFehlerHinweis';
 
 /**
  * Lerntyp-Dashboard der Einheit (Schüleransicht). Burger-Navigation als
@@ -28,6 +29,8 @@ export default function EinheitDashboard() {
   const {
     einheit,
     isLoading,
+    isError,
+    retry,
     sektoren,
     bausteinById,
     aufgabenById,
@@ -130,8 +133,12 @@ export default function EinheitDashboard() {
     );
   };
 
+  // Sicherheitsstufe: UI erst rendern, wenn ALLE Daten sauber geladen wurden.
   if (isLoading) {
     return <div className="h-full flex items-center justify-center text-muted-foreground">Lädt …</div>;
+  }
+  if (isError || !einheit) {
+    return <LadeFehlerHinweis onRetry={retry} />;
   }
 
   return (
