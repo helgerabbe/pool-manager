@@ -124,10 +124,22 @@ Deno.serve(async (req) => {
     );
 
     const benutzer = benutzerList?.[0];
-    
-    // CRITICAL: Admin-Rolle hat höchste Priorität - auch wenn kein Profil existiert
-    // User.role ist die Systemrolle aus der eingebauten User-Entität
-    const role = user.role === 'admin' ? 'Administrator' : (benutzer?.rolle || 'Betrachter');
+
+    // Rollen-Bestimmung (Bug "User sieht plötzlich ALLE Fächer"):
+    // Das eingebaute Feld user.role ist bei Base44 standardmäßig 'admin' für
+    // viele Konten und darf NICHT automatisch zur Anzeige aller Einheiten
+    // führen. Maßgeblich ist das Benutzer-Profil (benutzer.rolle) – das ist die
+    // fachliche Rolle der App. Nur wenn KEIN Profil existiert, fällt die
+    // Systemrolle als Notnagel: dann ist 'admin' → Administrator, sonst
+    // 'Betrachter'.
+    let role;
+    if (benutzer?.rolle) {
+      // Profil vorhanden → seine Rolle ist verbindlich (Fachlehrkraft sieht
+      // nur ihre Fächer, auch wenn user.role technisch 'admin' ist).
+      role = benutzer.rolle;
+    } else {
+      role = user.role === 'admin' ? 'Administrator' : 'Betrachter';
+    }
 
     // Basis-Filter: Entwürfe (noch im Wizard) sind für alle unsichtbar,
     // außer dem Ersteller selbst. Da der Ersteller der einzige ist, der
@@ -194,12 +206,17 @@ Deno.serve(async (req) => {
     // 4. ZÄHLE GESAMT (für Pagination Metadata), falls vom SDK unterstützt
     const totalCountFromSdk = await getCountIfAvailable(base44.asServiceRole.entities.Einheiten, filterCriteria);
 
-    // 5. FETCH SEITE mit SDK skip/limit statt In-Memory-Pagination
-    const pageData = await base44.asServiceRole.entities.Einheiten.filter(
-      filterCriteria,
-      '-updated_date',
-      limit + 1,
-      offset
+    // 5. FETCH SEITE mit SDK skip/limit statt In-Memory-Pagination.
+    // Mit Retry, damit ein transienter Read-Fehler nicht zu einer leeren
+    // Anzeige führt (Bug "manchmal keine Einheiten, obwohl welche da sind").
+    const pageData = await withRetry(
+      () => base44.asServiceRole.entities.Einheiten.filter(
+        filterCriteria,
+        '-updated_date',
+        limit + 1,
+        offset
+      ),
+      'Einheiten.filter'
     );
     const hasNextPage = pageData.length > limit;
     const pageItems = pageData.slice(0, limit);
@@ -213,9 +230,12 @@ Deno.serve(async (req) => {
     // 6. LADE MITGLIEDER FÜR ALLE EINHEITEN (für Unit-Level RBAC)
     const einheitIds = pageItems.map(e => e.id);
     const alleMembers = einheitIds.length > 0
-      ? await base44.asServiceRole.entities.EinheitMembers.filter({
-          einheit_id: { $in: einheitIds }
-        })
+      ? await withRetry(
+          () => base44.asServiceRole.entities.EinheitMembers.filter({
+            einheit_id: { $in: einheitIds }
+          }),
+          'EinheitMembers.filter'
+        )
       : [];
 
     // 7. MAP SELECTIVE FIELDS (nur was die Liste braucht) + Members
