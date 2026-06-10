@@ -1,0 +1,75 @@
+{
+  "name": "SchuelerLerntagebuchEintrag",
+  "type": "object",
+  "description": "Eintrag im fach\u00fcbergreifenden Lerntagebuch (Logbuch) eines Sch\u00fclers. Wird am Ende der Poolzeit (Reflexion + Nachricht ans n\u00e4chste Mal), beim Fachwechsel (Zwischennotiz) oder frei auf der Lerntagebuch-Seite erstellt. Zeitstempel = created_date (built-in).",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "E-Mail des Sch\u00fclers."
+    },
+    "text": {
+      "type": "string",
+      "description": "Inhalt des Eintrags."
+    },
+    "typ": {
+      "type": "string",
+      "enum": [
+        "reflexion",
+        "nachricht",
+        "zwischennotiz",
+        "frei"
+      ],
+      "default": "frei",
+      "description": "Art des Eintrags: 'reflexion' = R\u00fcckblick am Poolzeit-Ende, 'nachricht' = Nachricht an sich selbst f\u00fcrs n\u00e4chste Mal (wird im Cockpit als 'Deine Notiz von letztem Mal' angezeigt), 'zwischennotiz' = kurze Notiz beim Fachwechsel, 'frei' = freier Eintrag auf der Lerntagebuch-Seite."
+    },
+    "fach_name": {
+      "type": "string",
+      "description": "Optional: Fach, auf das sich der Eintrag bezieht (z. B. bei Zwischennotizen)."
+    }
+  },
+  "required": [
+    "user_email",
+    "text"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

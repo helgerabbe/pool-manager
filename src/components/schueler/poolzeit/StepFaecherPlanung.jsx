@@ -21,8 +21,12 @@ export default function StepFaecherPlanung({
   const [aktivesFach, setAktivesFach] = useState(null);
   const [tempMinuten, setTempMinuten] = useState(20);
 
+  // Die letzten Minuten der Poolzeit sind fest fürs Lerntagebuch reserviert
+  // (Rückblick + Planung fürs nächste Mal) und können nicht verplant werden.
+  const REFLEXION_MINUTEN = 3;
+  const verplanbar = Math.max(0, gesamtzeit - REFLEXION_MINUTEN);
   const verplant = bloecke.reduce((s, b) => s + b.minuten, 0);
-  const rest = gesamtzeit - verplant;
+  const rest = verplanbar - verplant;
 
   // Schon verplante Fächer ausblenden
   const verfuegbareFaecher = faecher.filter((f) => !bloecke.some((b) => b.fachId === f.id));
@@ -46,14 +50,14 @@ export default function StepFaecherPlanung({
   return (
     <PoolzeitStepShell
       titel="Was möchtest du heute machen?"
-      untertitel="Wähle ein Fach und stell ein, wie lange du daran arbeiten willst."
+      untertitel={`Wähle ein Fach und stell ein, wie lange du daran arbeiten willst. Die letzten ${REFLEXION_MINUTEN} Minuten gehören deinem Lerntagebuch – du kannst also ${verplanbar} Minuten verplanen.`}
       onWeiter={onWeiter}
       onZurueck={onZurueck}
       weiterDisabled={bloecke.length === 0}
     >
       <div className="flex flex-col gap-6 w-full">
         {/* Zeitleiste */}
-        <Zeitleiste gesamtzeit={gesamtzeit} bloecke={bloecke} />
+        <Zeitleiste gesamtzeit={gesamtzeit} bloecke={bloecke} reserviertMinuten={REFLEXION_MINUTEN} />
 
         {/* Bereits geplante Blöcke */}
         {bloecke.length > 0 && (
@@ -100,7 +104,8 @@ export default function StepFaecherPlanung({
           <>
             {rest <= 0 ? (
               <p className="text-center text-sm text-muted-foreground bg-muted/50 rounded-xl py-3">
-                Deine Zeit ist komplett verplant. Du kannst Blöcke entfernen, um etwas zu ändern.
+                Deine Zeit ist komplett verplant – die letzten {REFLEXION_MINUTEN} Minuten gehören
+                deinem Lerntagebuch. Du kannst Blöcke entfernen, um etwas zu ändern.
               </p>
             ) : (
               <div>

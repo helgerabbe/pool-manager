@@ -1,22 +1,24 @@
 import { Info } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
+import SpeechInputButton from '@/components/ui/SpeechInputButton';
 import PoolzeitStepShell from './PoolzeitStepShell';
 
 /**
- * Schritt 5: Abschluss / Reflexion. Der Schüler kann sich eine Notiz fürs
- * Lerntagebuch und eine Nachricht fürs nächste Mal hinterlassen.
+ * Abschluss / Reflexion am Ende der Poolzeit: Rückblick + Nachricht ans
+ * nächste Mal. Beides wird ins Lerntagebuch gespeichert (macht der Parent
+ * in onFertig). Beide Felder mit Spracheingabe.
  * Wichtig: Die App merkt sich NICHT automatisch den Fortschritt –
  * das macht der Schüler selbst (Selbstorganisation).
- * Hier nur Gerüst – das Speichern folgt später.
  */
-export default function StepAbschluss({ reflexion, setReflexion, nachricht, setNachricht, onFertig, onZurueck }) {
+export default function StepAbschluss({ reflexion, setReflexion, nachricht, setNachricht, onFertig, onZurueck, busy = false }) {
   return (
     <PoolzeitStepShell
       titel="Wie lief deine Poolzeit?"
-      untertitel="Nimm dir kurz Zeit, um zurückzublicken."
+      untertitel="Nimm dir 3 Minuten: Was war schwierig? Wo machst du nächstes Mal weiter?"
       onWeiter={onFertig}
       onZurueck={onZurueck}
-      weiterLabel="Fertig"
+      weiterLabel={busy ? 'Wird gespeichert …' : 'Fertig'}
+      weiterDisabled={busy}
     >
       <div className="w-full flex flex-col gap-5">
         <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
@@ -37,6 +39,9 @@ export default function StepAbschluss({ reflexion, setReflexion, nachricht, setN
             placeholder="Heute habe ich …"
             className="h-24"
           />
+          <div className="mt-1.5">
+            <SpeechInputButton value={reflexion} onResult={setReflexion} maxSeconds={60} label="Aufsprechen" />
+          </div>
         </div>
 
         <div>
@@ -49,6 +54,9 @@ export default function StepAbschluss({ reflexion, setReflexion, nachricht, setN
             placeholder="Beim nächsten Mal weitermachen bei …"
             className="h-20"
           />
+          <div className="mt-1.5">
+            <SpeechInputButton value={nachricht} onResult={setNachricht} maxSeconds={60} label="Aufsprechen" />
+          </div>
         </div>
       </div>
     </PoolzeitStepShell>

@@ -7,6 +7,7 @@ import CockpitHeaderOverlay from '@/components/schueler/CockpitHeaderOverlay';
 import StepGesamtzeit from '@/components/schueler/poolzeit/StepGesamtzeit';
 import StepFaecherPlanung from '@/components/schueler/poolzeit/StepFaecherPlanung';
 import StepEinheit from '@/components/schueler/poolzeit/StepEinheit';
+import StepWechselNotiz from '@/components/schueler/poolzeit/StepWechselNotiz';
 import StepAbschluss from '@/components/schueler/poolzeit/StepAbschluss';
 
 /**
@@ -34,11 +35,29 @@ export default function PoolzeitStart() {
   const poolzeitFaecher = faecher.filter((f) => f.ist_aktiv !== false && f.ist_poolzeit_fach !== false);
 
   const [phase, setPhase] = useState('gesamtzeit');
-  const [gesamtzeit, setGesamtzeit] = useState(60);
+  const [gesamtzeit, setGesamtzeit] = useState(40);
   const [bloecke, setBloecke] = useState([]);
   const [blockIndex, setBlockIndex] = useState(0);
   const [reflexion, setReflexion] = useState('');
   const [nachricht, setNachricht] = useState('');
+  const [speichert, setSpeichert] = useState(false);
+
+  // Abschluss-Einträge ins Lerntagebuch speichern, dann zurück zum Cockpit.
+  const abschlussSpeichern = async () => {
+    const eintraege = [
+      reflexion.trim() && { user_email: user?.email, text: reflexion.trim(), typ: 'reflexion' },
+      nachricht.trim() && { user_email: user?.email, text: nachricht.trim(), typ: 'nachricht' },
+    ].filter(Boolean);
+    if (eintraege.length > 0 && user?.email) {
+      setSpeichert(true);
+      try {
+        await base44.entities.SchuelerLerntagebuchEintrag.bulkCreate(eintraege);
+      } finally {
+        setSpeichert(false);
+      }
+    }
+    navigate('/lernen');
+  };
 
   const aktuellerBlock = bloecke[blockIndex];
 
@@ -79,11 +98,25 @@ export default function PoolzeitStart() {
           if (istLetzterBlock) {
             setPhase('abschluss');
           } else {
-            setBlockIndex(blockIndex + 1);
-            setPhase('einheit');
+            setPhase('wechsel');
           }
         }}
         onZurueck={() => (blockIndex === 0 ? setPhase('planung') : setBlockIndex(blockIndex - 1))}
+      />
+    );
+  }
+
+  if (phase === 'wechsel') {
+    // Erinnerung beim Fachwechsel: kurze Zwischennotiz fürs Lerntagebuch (freiwillig).
+    return (
+      <StepWechselNotiz
+        vorherigesFach={bloecke[blockIndex]?.name}
+        naechstesFach={bloecke[blockIndex + 1]?.name}
+        userEmail={user?.email}
+        onWeiter={() => {
+          setBlockIndex(blockIndex + 1);
+          setPhase('einheit');
+        }}
       />
     );
   }
@@ -95,7 +128,8 @@ export default function PoolzeitStart() {
       setReflexion={setReflexion}
       nachricht={nachricht}
       setNachricht={setNachricht}
-      onFertig={() => navigate('/lernen')}
+      busy={speichert}
+      onFertig={abschlussSpeichern}
       onZurueck={() => setPhase('einheit')}
     />
   );

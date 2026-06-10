@@ -10,10 +10,6 @@ import FachKachel from '@/components/schueler/FachKachel';
 import { deriveFachStufe, zuletztVorLabel } from '@/lib/fortschrittsBadge';
 
 // ─── Beispiel-Daten (nur Bühne – noch keine Speicherung/Logik) ───────────────
-const BEISPIEL_NOTIZ = {
-  notiz: 'Bei Mathe-Aufgabe 5 weitermachen – die mit den Brüchen!',
-  datum: 'letzte Woche Mittwoch',
-};
 const BEISPIEL_RUECKBLICK = [
   { tag: 'Mo', minuten: 25, fach: 'Deutsch', erledigt: 'Aufgabe 3 & 4 erledigt' },
   { tag: 'Mi', minuten: 40, fach: 'Mathematik', erledigt: 'Themenfeld „Brüche" begonnen' },
@@ -49,6 +45,18 @@ export default function StudentArea() {
     queryFn: () => base44.entities.SchuelerEinheitZeitLog.filter({ user_email: user.email }),
     enabled: !!user?.email,
   });
+  // Letzte „Nachricht an dich selbst" aus dem Lerntagebuch (Poolzeit-Abschluss).
+  const { data: letzteNachrichten = [] } = useQuery({
+    queryKey: ['lerntagebuchLetzteNachricht', user?.email],
+    queryFn: () =>
+      base44.entities.SchuelerLerntagebuchEintrag.filter(
+        { user_email: user.email, typ: 'nachricht' },
+        '-created_date',
+        1
+      ),
+    enabled: !!user?.email,
+  });
+  const letzteNotiz = letzteNachrichten[0] || null;
 
   // Nur aktive Poolzeit-Fächer (Lernen und Lerntechniken etc. ausgeschlossen).
   const poolzeitFaecher = faecher.filter(
@@ -91,8 +99,8 @@ export default function StudentArea() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 shrink-0">
           <StartButton onClick={() => navigate('/lernen/poolzeit')} />
           <SelbstNotizKarte
-            notiz={BEISPIEL_NOTIZ.notiz}
-            datum={BEISPIEL_NOTIZ.datum}
+            notiz={letzteNotiz?.text}
+            datum={letzteNotiz ? zuletztVorLabel(letzteNotiz.created_date.slice(0, 10)) : null}
             onClick={() => navigate('/lernen/lerntagebuch')}
           />
         </div>
