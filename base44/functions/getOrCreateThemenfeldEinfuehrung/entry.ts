@@ -29,11 +29,25 @@ Deno.serve(async (req) => {
     }
 
     // ── 1. Vorhandenen Snapshot prüfen (Single Source of Truth) ──────────
-    const vorhandene = await base44.asServiceRole.entities.SchuelerInhaltSnapshot.filter({
-      einheit_id: einheitId,
-      lerntyp,
-      instance_id: instanceId,
-    });
+    // Themenfeld-Einführungen sind inhaltlich für ALLE Dashboards identisch.
+    // Lookup daher primär dashboard-übergreifend über (einheit_id, baustein_id,
+    // themenfeld_id) – egal, welcher Lerntyp den Snapshot ursprünglich erzeugt
+    // hat. Nur ohne Themenfeld-Bezug bleibt der alte Instance-Lookup.
+    let vorhandene = [];
+    if (themenfeldId) {
+      vorhandene = await base44.asServiceRole.entities.SchuelerInhaltSnapshot.filter({
+        einheit_id: einheitId,
+        baustein_id: 'sys_themenfeld_intro',
+        themenfeld_id: themenfeldId,
+      });
+    }
+    if (!Array.isArray(vorhandene) || vorhandene.length === 0) {
+      vorhandene = await base44.asServiceRole.entities.SchuelerInhaltSnapshot.filter({
+        einheit_id: einheitId,
+        lerntyp,
+        instance_id: instanceId,
+      });
+    }
     const existing = Array.isArray(vorhandene) ? vorhandene[0] : null;
     if (existing && !force) {
       return Response.json({ inhalt: existing.inhalt, snapshotId: existing.id, cached: true });

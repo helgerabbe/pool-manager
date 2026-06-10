@@ -49,8 +49,14 @@ export default function ThemenfeldEinfuehrungSeite({
     setLoading(true);
     setInhalt(null);
     // Erst still prüfen, ob ein Snapshot existiert – nur lesen, nicht generieren.
+    // Themenfeld-Einführungen werden dashboard-übergreifend geteilt: bei
+    // vorhandenem Themenfeld-Bezug zählt (Einheit × Themenfeld), unabhängig
+    // davon, in welchem Lerntyp-Dashboard der Snapshot erzeugt wurde.
+    const snapshotFilter = themenfeldId
+      ? { einheit_id: einheitId, baustein_id: 'sys_themenfeld_intro', themenfeld_id: themenfeldId }
+      : { einheit_id: einheitId, lerntyp, instance_id: item.instance_id };
     base44.entities.SchuelerInhaltSnapshot
-      .filter({ einheit_id: einheitId, lerntyp, instance_id: item.instance_id })
+      .filter(snapshotFilter)
       .then((list) => {
         if (abort) return;
         const snap = Array.isArray(list) ? list[0] : null;
@@ -59,7 +65,7 @@ export default function ThemenfeldEinfuehrungSeite({
       .catch(() => { if (!abort) setInhalt(null); })
       .finally(() => { if (!abort) setLoading(false); });
     return () => { abort = true; };
-  }, [einheitId, lerntyp, item.instance_id]);
+  }, [einheitId, lerntyp, item.instance_id, themenfeldId]);
 
   const handleGenerate = async () => {
     setGenerating(true);
