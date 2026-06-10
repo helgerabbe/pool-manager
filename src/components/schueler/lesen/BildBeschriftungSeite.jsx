@@ -43,6 +43,7 @@ export default function BildBeschriftungSeite({ aktivitaet, busy, onErledigt, on
   // zuordnung: { [zoneId]: begriff }
   const [zuordnung, setZuordnung] = useState({});
   const [aktiverBegriff, setAktiverBegriff] = useState(null);
+  const [aktiveZoneId, setAktiveZoneId] = useState(null);
   const [geprueft, setGeprueft] = useState(false);
 
   const vergebeneBegriffe = Object.values(zuordnung);
@@ -51,10 +52,29 @@ export default function BildBeschriftungSeite({ aktivitaet, busy, onErledigt, on
 
   const istZoneRichtig = (z) => zuordnung[z.id] === z.label;
 
+  // Begriff einer Zone zuweisen (zentrale Stelle für beide Richtungen).
+  const zuweisen = (zoneId, begriff) => {
+    setZuordnung((prev) => {
+      const next = { ...prev };
+      // Begriff ggf. von anderer Zone entfernen (jeder Begriff nur 1x).
+      for (const k of Object.keys(next)) if (next[k] === begriff) delete next[k];
+      next[zoneId] = begriff;
+      return next;
+    });
+    setAktiverBegriff(null);
+    setAktiveZoneId(null);
+    setGeprueft(false);
+  };
+
   // Begriff in der Wortbank antippen.
   const begriffTap = (begriff) => {
     if (geprueft && alleRichtig) return;
-    setAktiverBegriff((prev) => (prev === begriff ? null : begriff));
+    if (aktiveZoneId) {
+      // Richtung 2: Zone war zuerst gewählt → Begriff direkt zuweisen.
+      zuweisen(aktiveZoneId, begriff);
+    } else {
+      setAktiverBegriff((prev) => (prev === begriff ? null : begriff));
+    }
   };
 
   // Marker / Legenden-Zeile antippen.
@@ -62,23 +82,20 @@ export default function BildBeschriftungSeite({ aktivitaet, busy, onErledigt, on
     if (geprueft && alleRichtig) return;
     if (geprueft && istZoneRichtig(zone)) return; // richtige bleiben fixiert
     if (aktiverBegriff) {
-      setZuordnung((prev) => {
-        const next = { ...prev };
-        // Begriff ggf. von anderer Zone entfernen (jeder Begriff nur 1x).
-        for (const k of Object.keys(next)) if (next[k] === aktiverBegriff) delete next[k];
-        next[zone.id] = aktiverBegriff;
-        return next;
-      });
-      setAktiverBegriff(null);
-      setGeprueft(false);
+      // Richtung 1: Begriff war zuerst gewählt → in diese Zone legen.
+      zuweisen(zone.id, aktiverBegriff);
     } else if (zuordnung[zone.id]) {
-      // Ohne aktiven Begriff: Zuordnung wieder lösen.
+      // Belegte Zone ohne aktiven Begriff: Zuordnung wieder lösen.
       setZuordnung((prev) => {
         const next = { ...prev };
         delete next[zone.id];
         return next;
       });
+      setAktiveZoneId(null);
       setGeprueft(false);
+    } else {
+      // Richtung 2: leere Zone aktivieren, danach Begriff antippen.
+      setAktiveZoneId((prev) => (prev === zone.id ? null : zone.id));
     }
   };
 
@@ -130,6 +147,8 @@ export default function BildBeschriftungSeite({ aktivitaet, busy, onErledigt, on
                       vergeben && 'opacity-30 border-border bg-muted text-muted-foreground line-through',
                       !vergeben && aktiverBegriff === b
                         ? 'border-primary bg-primary text-primary-foreground'
+                        : !vergeben && aktiveZoneId
+                        ? 'border-amber-400 bg-amber-50 hover:border-amber-500'
                         : !vergeben && 'border-border bg-card hover:border-primary/60'
                     )}
                   >
@@ -162,6 +181,7 @@ export default function BildBeschriftungSeite({ aktivitaet, busy, onErledigt, on
                       'flex items-center justify-center text-xs font-bold transition-colors',
                       richtig ? 'bg-emerald-500 border-emerald-600 text-white'
                         : falsch ? 'bg-rose-500 border-rose-600 text-white'
+                        : aktiveZoneId === z.id ? 'bg-amber-400 border-amber-500 text-amber-950 ring-4 ring-amber-300/60'
                         : belegt ? 'bg-primary border-primary text-primary-foreground'
                         : aktiverBegriff ? 'bg-amber-400 border-amber-500 text-amber-950 animate-pulse'
                         : 'bg-card border-primary text-primary'
@@ -188,6 +208,7 @@ export default function BildBeschriftungSeite({ aktivitaet, busy, onErledigt, on
                       'w-full flex items-center gap-3 rounded-lg border-2 px-3 py-2 text-sm text-left transition-colors',
                       richtig ? 'border-emerald-300 bg-emerald-50'
                         : falsch ? 'border-rose-300 bg-rose-50'
+                        : aktiveZoneId === z.id ? 'border-amber-400 bg-amber-50 ring-2 ring-amber-300/60'
                         : belegt ? 'border-primary/40 bg-primary/5'
                         : aktiverBegriff ? 'border-amber-300 bg-amber-50'
                         : 'border-border bg-card'
@@ -205,7 +226,7 @@ export default function BildBeschriftungSeite({ aktivitaet, busy, onErledigt, on
                       <span className="font-medium text-foreground">{zuordnung[z.id]}</span>
                     ) : (
                       <span className="text-muted-foreground italic">
-                        {aktiverBegriff ? 'Hier ablegen' : 'Noch frei'}
+                        {aktiverBegriff ? 'Hier ablegen' : aktiveZoneId === z.id ? 'Wähle jetzt einen Begriff' : 'Noch frei'}
                       </span>
                     )}
                     {richtig && <CheckCircle2 className="w-4 h-4 text-emerald-600 ml-auto shrink-0" />}
