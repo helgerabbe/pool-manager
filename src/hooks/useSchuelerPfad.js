@@ -85,10 +85,22 @@ export function useSchuelerPfad(einheitId, lerntyp) {
   const kernQueries = [einheitQ, bausteineQ, aufgabenQ, lernpaketeQ, katalogQ, fortschrittQ];
   const isLoading = kernQueries.some((q) => q.isLoading);
   const isError = kernQueries.some((q) => q.isError);
+  // Retry lädt ALLE Kern-Daten neu (nicht nur die als fehlerhaft markierten):
+  // Auch erfolgreich-aber-leer beantwortete Abfragen (z. B. Einheit = null nach
+  // Verbindungsproblemen) werden so repariert.
   const retry = useCallback(
-    () => Promise.all(kernQueries.filter((q) => q.isError).map((q) => q.refetch())),
+    () =>
+      Promise.all([
+        queryClient.refetchQueries({ queryKey: ['einheit', einheitId] }),
+        queryClient.refetchQueries({ queryKey: ['systemBausteine', 'all'] }),
+        queryClient.refetchQueries({ queryKey: ['allgemeineAufgaben', einheitId] }),
+        queryClient.refetchQueries({ queryKey: ['lernpakete-by-einheit', einheitId] }),
+        queryClient.refetchQueries({ queryKey: ['aktivitaetenKatalog', 'all'] }),
+        queryClient.refetchQueries({ queryKey: ['authUser'] }),
+        queryClient.refetchQueries({ queryKey: fortschrittQueryKey }),
+      ]),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [einheitQ.isError, bausteineQ.isError, aufgabenQ.isError, lernpaketeQ.isError, katalogQ.isError, fortschrittQ.isError]
+    [queryClient, einheitId, user?.email, lerntyp]
   );
 
   // ── Abgeleitete Maps ────────────────────────────────────────────────
