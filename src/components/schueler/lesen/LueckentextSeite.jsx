@@ -68,31 +68,48 @@ export default function LueckentextSeite({ aktivitaet, busy, onErledigt, onBack,
   // belegung: { [gapId]: chipId } — chips sind 1:1 verbraucht.
   const [belegung, setBelegung] = useState({});
   const [aktiverChip, setAktiverChip] = useState(null);
+  const [aktiveLuecke, setAktiveLuecke] = useState(null);
   const [geprueft, setGeprueft] = useState(false);
 
   const chipById = useMemo(() => new Map(bankChips.map((c) => [c.id, c])), [bankChips]);
   const verbrauchteChips = useMemo(() => new Set(Object.values(belegung)), [belegung]);
 
+  // Beide Richtungen erlaubt:
+  //  a) Wort antippen → Lücke antippen
+  //  b) Lücke antippen → Wort antippen
   const waehleChip = (chipId) => {
     if (geprueft || verbrauchteChips.has(chipId)) return;
+    if (aktiveLuecke) {
+      // Richtung b): Es ist bereits eine Lücke gewählt → Wort direkt einsetzen.
+      setBelegung((prev) => ({ ...prev, [aktiveLuecke]: chipId }));
+      setAktiveLuecke(null);
+      setAktiverChip(null);
+      return;
+    }
     setAktiverChip((cur) => (cur === chipId ? null : chipId));
   };
 
   const tippeLuecke = (gapId) => {
     if (geprueft) return;
-    setBelegung((prev) => {
-      const next = { ...prev };
-      if (next[gapId]) {
-        // Gefüllte Lücke → Wort zurück in die Bank.
+    if (belegung[gapId]) {
+      // Gefüllte Lücke → Wort zurück in die Bank.
+      setBelegung((prev) => {
+        const next = { ...prev };
         delete next[gapId];
         return next;
-      }
-      if (aktiverChip) {
-        next[gapId] = aktiverChip;
-      }
-      return next;
-    });
-    if (aktiverChip && !belegung[gapId]) setAktiverChip(null);
+      });
+      setAktiveLuecke(null);
+      return;
+    }
+    if (aktiverChip) {
+      // Richtung a): Es ist bereits ein Wort gewählt → in die Lücke einsetzen.
+      setBelegung((prev) => ({ ...prev, [gapId]: aktiverChip }));
+      setAktiverChip(null);
+      setAktiveLuecke(null);
+      return;
+    }
+    // Richtung b): Leere Lücke auswählen/abwählen → danach Wort antippen.
+    setAktiveLuecke((cur) => (cur === gapId ? null : gapId));
   };
 
   const alleGefuellt = gaps.length > 0 && gaps.every((g) => belegung[g.id]);
@@ -123,7 +140,7 @@ export default function LueckentextSeite({ aktivitaet, busy, onErledigt, onBack,
 
       {/* Aufgabenstellung – einheitlicher blauer Anker. */}
       <AufgabenstellungBox className="mb-3 shrink-0">
-        {fv.instruction || 'Tippe ein Wort in der Wortbank an und dann auf die passende Lücke im Text.'}
+        {fv.instruction || 'Tippe ein Wort und dann eine Lücke an – oder zuerst eine Lücke und dann das passende Wort.'}
       </AufgabenstellungBox>
 
       {gaps.length === 0 ? (
@@ -183,6 +200,7 @@ export default function LueckentextSeite({ aktivitaet, busy, onErledigt, onBack,
                 const chip = belegung[gap.id] ? chipById.get(belegung[gap.id]) : null;
                 const richtig = geprueft && chip && chip.text === gap.antwort;
                 const falsch = geprueft && chip && chip.text !== gap.antwort;
+                const istAktiveLuecke = aktiveLuecke === gap.id;
                 return (
                   <button
                     key={i}
@@ -191,8 +209,9 @@ export default function LueckentextSeite({ aktivitaet, busy, onErledigt, onBack,
                     disabled={geprueft}
                     className={cn(
                       'inline-flex items-center justify-center align-baseline mx-0.5 px-2 rounded-md border-2 text-xs sm:text-sm font-semibold transition-colors min-w-[4.5rem] h-6 leading-none',
-                      !chip && !aktiverChip && 'border-dashed border-slate-300 bg-slate-50 text-transparent',
-                      !chip && aktiverChip && 'border-dashed border-primary bg-primary/5 text-transparent animate-pulse',
+                      !chip && istAktiveLuecke && 'border-primary bg-primary/15 text-transparent ring-2 ring-primary/30',
+                      !chip && !istAktiveLuecke && !aktiverChip && 'border-dashed border-slate-300 bg-slate-50 text-transparent',
+                      !chip && !istAktiveLuecke && aktiverChip && 'border-dashed border-primary bg-primary/5 text-transparent animate-pulse',
                       chip && !geprueft && 'border-primary/40 bg-primary/5 text-primary',
                       richtig && 'border-emerald-300 bg-emerald-50 text-emerald-700',
                       falsch && 'border-rose-300 bg-rose-50 text-rose-700 line-through'
