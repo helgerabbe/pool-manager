@@ -7,6 +7,7 @@ import StartButton from '@/components/schueler/StartButton';
 import SelbstNotizKarte from '@/components/schueler/SelbstNotizKarte';
 import RueckblickLeiste from '@/components/schueler/RueckblickLeiste';
 import FachKachel from '@/components/schueler/FachKachel';
+import { deriveFachStufe, zuletztVorLabel } from '@/lib/fortschrittsBadge';
 
 // ─── Beispiel-Daten (nur Bühne – noch keine Speicherung/Logik) ───────────────
 const BEISPIEL_NOTIZ = {
@@ -18,12 +19,9 @@ const BEISPIEL_RUECKBLICK = [
   { tag: 'Mi', minuten: 40, fach: 'Mathematik', erledigt: 'Themenfeld „Brüche" begonnen' },
   { tag: 'Do', minuten: 20, fach: 'Englisch', erledigt: '' },
 ];
-// Grobe Beispiel-Zuordnung von Fortschritts-Stufen pro Fach-Name.
-const BEISPIEL_STUFEN = {
-  Deutsch: { stufe: 'mittendrin', zuletztVor: 'vor 2 Tagen' },
-  Mathematik: { stufe: 'fast_geschafft', zuletztVor: 'vor 5 Tagen' },
-  Englisch: { stufe: 'angefangen', zuletztVor: 'vor 3 Wochen' },
-};
+
+// Für Schüler sichtbare Einheiten (analog FachSeite): ab finaler Freigabe.
+const SICHTBARE_STATUS = ['final_freigegeben', 'export_running', 'published'];
 
 export default function StudentArea() {
   const navigate = useNavigate();
@@ -37,11 +35,49 @@ export default function StudentArea() {
     queryKey: ['lookupFaecher'],
     queryFn: () => base44.entities.LookupFaecher.list('reihenfolge'),
   });
+  const { data: alleEinheiten = [] } = useQuery({
+    queryKey: ['einheiten'],
+    queryFn: () => base44.entities.Einheiten.list(),
+  });
+  const { data: fortschritte = [] } = useQuery({
+    queryKey: ['schuelerFortschritt', user?.email],
+    queryFn: () => base44.entities.SchuelerEinheitFortschritt.filter({ user_email: user.email }),
+    enabled: !!user?.email,
+  });
+  const { data: zeitLogs = [] } = useQuery({
+    queryKey: ['einheitZeitLogs', user?.email],
+    queryFn: () => base44.entities.SchuelerEinheitZeitLog.filter({ user_email: user.email }),
+    enabled: !!user?.email,
+  });
 
   // Nur aktive Poolzeit-Fächer (Lernen und Lerntechniken etc. ausgeschlossen).
   const poolzeitFaecher = faecher.filter(
     (f) => f.ist_aktiv !== false && f.ist_poolzeit_fach !== false
   );
+
+  // Echte Fortschritts-Stufe + letzter Arbeitstag pro Fach.
+  const metaFuerFach = (fachName) => {
+    const einheitIds = new Set(
+      alleEinheiten
+        .filter(
+          (e) =>
+            e.fach === fachName &&
+            SICHTBARE_STATUS.includes(e.export_lifecycle_status) &&
+            e.ist_basismodul !== true
+        )
+        .map((e) => e.id)
+    );
+    const fs = fortschritte.filter((f) => einheitIds.has(f.einheit_id));
+    const stufe = deriveFachStufe({
+      gesamt: einheitIds.size,
+      abgeschlossen: fs.filter((f) => f.abgeschlossen).length,
+      begonnen: fs.some((f) => f.gewaehlter_lerntyp),
+    });
+    const letzterTag = zeitLogs
+      .filter((z) => einheitIds.has(z.einheit_id))
+      .reduce((max, z) => (z.datum > max ? z.datum : max), '');
+    return { stufe, zuletztVor: zuletztVorLabel(letzterTag || null) };
+  };
 
   return (
     // Volle Höhe des Content-Bereichs, KEIN Scrollen: alles passt auf eine
@@ -69,7 +105,7 @@ export default function StudentArea() {
           </h2>
           <div className="grid grid-cols-3 gap-3 min-h-0 flex-1 content-start overflow-y-auto">
             {poolzeitFaecher.map((fach) => {
-              const meta = BEISPIEL_STUFEN[fach.name] || { stufe: 'nicht_gestartet', zuletztVor: null };
+              const meta = metaFuerFach(fach.name);
               return (
                 <FachKachel
                   key={fach.id}
