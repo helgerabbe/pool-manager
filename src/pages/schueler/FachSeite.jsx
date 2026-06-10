@@ -52,12 +52,14 @@ export default function FachSeite() {
 
   const phasenLabel = (id) => phasen.find((p) => p.id === id)?.bezeichnung || '';
 
-  // Nur veröffentlichte Einheiten dieses Fachs, sortiert nach Jahrgang + Halbjahr.
+  // Einheiten dieses Fachs, die für Schüler sichtbar sind: alles ab finaler
+  // Freigabe (final_freigegeben, export_running, published). Drafts bleiben verborgen.
+  const SICHTBARE_STATUS = ['final_freigegeben', 'export_running', 'published'];
   const einheiten = alleEinheiten
     .filter(
       (e) =>
         e.fach === fachName &&
-        e.export_lifecycle_status === 'published' &&
+        SICHTBARE_STATUS.includes(e.export_lifecycle_status) &&
         e.ist_basismodul !== true
     )
     .sort((a, b) => {
