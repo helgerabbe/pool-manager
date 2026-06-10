@@ -25,6 +25,32 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+/**
+ * withRetry – führt einen async DB-Read mit kurzem Retry aus.
+ *
+ * Hintergrund (Bug "Einheitenliste mal leer, mal voll"): Der Read des
+ * Benutzer-Profils (Rolle + zuständige Fächer) konnte transient fehlschlagen
+ * oder leer zurückkommen. Ohne Retry fiel die Rolle dann still auf
+ * 'Betrachter' mit leerer Fächerliste zurück → die Funktion lieferte eine
+ * fälschlich leere Liste, obwohl der User Fächer (und damit Einheiten) hat.
+ * Mit Retry + hartem Wurf wird daraus ein echter Fehler, den React Query
+ * erneut versucht – statt eine leere Liste anzuzeigen.
+ */
+async function withRetry(fn, label, attempts = 3) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (i < attempts - 1) {
+        await new Promise((r) => setTimeout(r, 150 * (i + 1)));
+      }
+    }
+  }
+  throw new Error(`[${label}] fehlgeschlagen nach ${attempts} Versuchen: ${lastErr?.message || lastErr}`);
+}
+
 async function getCountIfAvailable(entity, filterCriteria) {
   if (typeof entity.count === 'function') {
     return await entity.count(filterCriteria);
@@ -88,10 +114,14 @@ Deno.serve(async (req) => {
         ? { ist_basismodul: true }
         : { ist_basismodul: { $ne: true } };
 
-    // 3. RBAC: Bestimme welche Einheiten der User sehen darf
-    const benutzerList = await base44.asServiceRole.entities.Benutzer.filter({
-      user_id: user.email,
-    });
+    // 3. RBAC: Bestimme welche Einheiten der User sehen darf.
+    // WICHTIG: Mit Retry, damit ein transienter Read-Fehler NICHT still auf
+    // "Betrachter mit 0 Fächern" zurückfällt und eine fälschlich leere Liste
+    // liefert (Bug "Einheitenliste mal leer, mal voll").
+    const benutzerList = await withRetry(
+      () => base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email }),
+      'Benutzer.filter'
+    );
 
     const benutzer = benutzerList?.[0];
     
