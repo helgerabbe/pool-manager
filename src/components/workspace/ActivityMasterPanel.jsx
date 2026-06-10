@@ -110,7 +110,7 @@ export default function ActivityMasterPanel({
   const [focusedMasterId, setFocusedMasterId] = useState(selectedMasterId);
   const [autoOpenModalForId, setAutoOpenModalForId] = useState(null);
   // Implizites Locking für "Neue Master-Aufgabe"
-  const { acquireLock, releaseLock } = useLernpaketLock(activityRecord?.lernpaket_id);
+  const { acquireLock, releaseLock, lockErrorMessage } = useLernpaketLock(activityRecord?.lernpaket_id);
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
 
   // Wenn selectedMasterId von außen übergeben wird, setze focusedMasterId
@@ -273,14 +273,26 @@ export default function ActivityMasterPanel({
       return;
     }
 
+    // Guard: Wenn der User-Kontext noch lädt, würde acquireLock() still mit
+    // false zurückkehren (ohne Fehlertext). Dann lieber klare Meldung.
+    if (!currentUserEmail) {
+      toast.error('Benutzer wird noch geladen. Bitte einen Moment warten und erneut klicken.');
+      return;
+    }
+
     modalUsesExistingLockRef.current = false;
     setAcquiringLock(true);
-    const ok = await acquireLock();
+    const result = await acquireLock();
     setAcquiringLock(false);
-    if (!ok) {
-      const msg = lernpaket?.locked_by_email
-        ? `🔒 Dieses Lernpaket wird gerade von ${lernpaket.locked_by_email} bearbeitet.`
-        : 'Bearbeitungsmodus konnte nicht gestartet werden. Bitte laden Sie die Seite neu.';
+    if (!result?.ok) {
+      // Bevorzugt die konkrete Server-Begründung (z.B. "Einheit final
+      // freigegeben", "wird von X bearbeitet"), damit der Nutzer nicht
+      // ohne Rückmeldung dasteht.
+      const msg = result?.error
+        || lockErrorMessage
+        || (lernpaket?.locked_by_email
+          ? `🔒 Dieses Lernpaket wird gerade von ${lernpaket.locked_by_email} bearbeitet.`
+          : 'Bearbeitungsmodus konnte nicht gestartet werden. Bitte laden Sie die Seite neu.');
       toast.error(msg);
       return;
     }
@@ -434,12 +446,14 @@ export default function ActivityMasterPanel({
   const handleAddMaster = async () => {
     setCreating(true);
     // Lock erwerben bevor Karte erstellt wird
-    const lockOk = await acquireLock();
-    if (!lockOk) {
+    const lockResult = await acquireLock();
+    if (!lockResult?.ok) {
       setCreating(false);
-      const msg = lernpaket?.locked_by_email
-        ? `🔒 Dieses Lernpaket wird gerade von ${lernpaket.locked_by_email} bearbeitet.`
-        : 'Bearbeitungsmodus konnte nicht gestartet werden. Bitte laden Sie die Seite neu.';
+      const msg = lockResult?.error
+        || lockErrorMessage
+        || (lernpaket?.locked_by_email
+          ? `🔒 Dieses Lernpaket wird gerade von ${lernpaket.locked_by_email} bearbeitet.`
+          : 'Bearbeitungsmodus konnte nicht gestartet werden. Bitte laden Sie die Seite neu.');
       toast.error(msg);
       return;
     }
@@ -565,12 +579,13 @@ export default function ActivityMasterPanel({
     }
 
     setSavingModusBriefing(true);
-    const lockOk = await acquireLock();
-    if (!lockOk) {
+    const lockResult = await acquireLock();
+    if (!lockResult?.ok) {
       setSavingModusBriefing(false);
-      const msg = lernpaket?.locked_by_email
-        ? `🔒 Dieses Lernpaket wird gerade von ${lernpaket.locked_by_email} bearbeitet.`
-        : 'Bearbeitungsmodus konnte nicht gestartet werden. Bitte laden Sie die Seite neu.';
+      const msg = lockResult?.error
+        || (lernpaket?.locked_by_email
+          ? `🔒 Dieses Lernpaket wird gerade von ${lernpaket.locked_by_email} bearbeitet.`
+          : 'Bearbeitungsmodus konnte nicht gestartet werden. Bitte laden Sie die Seite neu.');
       toast.error(msg);
       return;
     }
@@ -608,10 +623,10 @@ export default function ActivityMasterPanel({
       return;
     }
     setSavingModusBriefing(true);
-    const lockOk = await acquireLock();
-    if (!lockOk) {
+    const lockResult = await acquireLock();
+    if (!lockResult?.ok) {
       setSavingModusBriefing(false);
-      toast.error('Bearbeitungsmodus konnte nicht gestartet werden.');
+      toast.error(lockResult?.error || 'Bearbeitungsmodus konnte nicht gestartet werden.');
       return;
     }
     try {

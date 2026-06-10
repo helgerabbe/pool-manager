@@ -132,9 +132,15 @@ function useGenericLock({
   // `canEdit` fälschlich auf `true` springen, obwohl das Backend den
   // Lock gar nicht vergeben hat. Folge: Save schlug serverseitig mit
   // LOCK_NOT_HELD fehl und das UI blieb stumm.
+  // Rückgabe: { ok: boolean, error?: string }. Die Begründung wird DIREKT
+  // zurückgegeben (nicht nur in den State geschrieben), weil State-Updates
+  // asynchron sind und der Aufrufer den Fehlertext sofort nach dem await
+  // braucht (sonst „passiert nichts ohne Meldung").
   const acquire = useCallback(async () => {
     const aFn = acquireFnRef.current;
-    if (!resourceId || !userEmail || !aFn) return false;
+    if (!resourceId || !userEmail || !aFn) {
+      return { ok: false, error: 'Benutzer oder Ressource noch nicht geladen. Bitte erneut versuchen.' };
+    }
     setErrorMessage(null);
     try {
       const res = await aFn(resourceId, userEmail);
@@ -144,24 +150,24 @@ function useGenericLock({
         (status !== undefined && status >= 400) ||
         (data && (data.success === false || data.error));
       if (failed) {
-        const msg = data?.error || 'Lock konnte nicht erworben werden.';
+        const msg = data?.error || 'Bearbeitungsmodus konnte nicht gestartet werden.';
         setErrorMessage(msg);
         setIsLockedByOther(true);
         setLockedByEmail(data?.locked_by_email || null);
-        return false;
+        return { ok: false, error: msg };
       }
       heldRef.current = true;
       setCanEdit(true);
       setIsLockedByOther(false);
       setLockedByEmail(userEmail);
       startTimer(); // Startet Heartbeat
-      return true;
+      return { ok: true };
     } catch (error) {
-      const msg = error?.response?.data?.error || error.message;
+      const msg = error?.response?.data?.error || error.message || 'Bearbeitungsmodus konnte nicht gestartet werden.';
       setErrorMessage(msg);
       setIsLockedByOther(true);
       setLockedByEmail(error?.response?.data?.locked_by_email);
-      return false;
+      return { ok: false, error: msg };
     }
   }, [resourceId, userEmail, startTimer]);
 
@@ -252,12 +258,12 @@ export function useTaskLock({ aufgabe, userEmail, lockFn, unlockFn, invalidateKe
   });
 
   const enterEditMode = async () => {
-    const success = await lock.acquire();
-    if (success) {
+    const result = await lock.acquire();
+    if (result?.ok) {
       invalidateKeys.forEach(key => queryClient.invalidateQueries({ queryKey: key }));
       toast.success('Bearbeitungsmodus aktiviert.');
     } else {
-      toast.error(lock.errorMessage || 'Aufgabe konnte nicht gesperrt werden.');
+      toast.error(result?.error || lock.errorMessage || 'Aufgabe konnte nicht gesperrt werden.');
     }
   };
 

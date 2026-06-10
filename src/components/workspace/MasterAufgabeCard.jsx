@@ -414,9 +414,12 @@ export default function MasterAufgabeCard({
       return;
     }
     setAcquiringLock(true);
-    const ok = await acquireLock();
+    const result = await acquireLock();
     setAcquiringLock(false);
-    if (!ok) return;
+    if (!result?.ok) {
+      toast.error(result?.error || 'Bearbeitungsmodus konnte nicht gestartet werden.');
+      return;
+    }
     onEditModeChange?.(true);
     setLueckentextModalOpen(true);
   };
@@ -435,9 +438,12 @@ export default function MasterAufgabeCard({
       return;
     }
     setAcquiringLock(true);
-    const ok = await acquireLock();
+    const result = await acquireLock();
     setAcquiringLock(false);
-    if (!ok) return;
+    if (!result?.ok) {
+      toast.error(result?.error || 'Bearbeitungsmodus konnte nicht gestartet werden.');
+      return;
+    }
     onEditModeChange?.(true);
     setSortingListModalOpen(true);
   };
@@ -462,9 +468,12 @@ export default function MasterAufgabeCard({
       return;
     }
     setAcquiringLock(true);
-    const ok = await acquireLock();
+    const result = await acquireLock();
     setAcquiringLock(false);
-    if (!ok) return;
+    if (!result?.ok) {
+      toast.error(result?.error || 'Bearbeitungsmodus konnte nicht gestartet werden.');
+      return;
+    }
     onEditModeChange?.(true);
     setMatchTermsModalOpen(true);
   };
@@ -482,9 +491,12 @@ export default function MasterAufgabeCard({
       return;
     }
     setAcquiringLock(true);
-    const ok = await acquireLock();
+    const result = await acquireLock();
     setAcquiringLock(false);
-    if (!ok) return;
+    if (!result?.ok) {
+      toast.error(result?.error || 'Bearbeitungsmodus konnte nicht gestartet werden.');
+      return;
+    }
     onEditModeChange?.(true);
     setTestModalOpen(true);
   };

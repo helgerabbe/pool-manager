@@ -437,9 +437,12 @@ export default function MasterDetailView({
 
   const handleOpenKlonModal = async () => {
     setAcquiringLock(true);
-    const ok = await acquireLock();
+    const result = await acquireLock();
     setAcquiringLock(false);
-    if (!ok) return;
+    if (!result?.ok) {
+      toast.error(result?.error || 'Bearbeitungsmodus konnte nicht gestartet werden.');
+      return;
+    }
     onEditModeChange?.(true);
     setKlonModalOpen(true);
   };
@@ -461,10 +464,13 @@ export default function MasterDetailView({
     setLocalReleasedBy(master.released_by || null);
 
     setAcquiringLock(true);
-    const ok = await acquireLock();
+    const result = await acquireLock();
     setAcquiringLock(false);
     
-    if (!ok) return;
+    if (!result?.ok) {
+      toast.error(result?.error || 'Bearbeitungsmodus konnte nicht gestartet werden.');
+      return;
+    }
     onEditModeChange?.(true);
     
     if (isLuecke) setLueckeModalOpen(true);
@@ -498,9 +504,12 @@ export default function MasterDetailView({
   const handleEditKopie = async (klon) => {
     if (!isSupportedType) return;
     setAcquiringLock(true);
-    const ok = await acquireLock();
+    const result = await acquireLock();
     setAcquiringLock(false);
-    if (!ok) return;
+    if (!result?.ok) {
+      toast.error(result?.error || 'Bearbeitungsmodus konnte nicht gestartet werden.');
+      return;
+    }
     onEditModeChange?.(true);
     // Lade Klon-Daten: Klone speichern ihre Daten in aufgabentext_inhalt (JSON-String)
     let parsed = {};

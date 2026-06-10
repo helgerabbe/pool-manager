@@ -59,10 +59,10 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
   const handleEnterEditMode = async () => {
     if (!canEditFromLock) {
       setLockTransition('activating');
-      const ok = await acquireLock();
+      const result = await acquireLock();
       setLockTransition(null);
-      if (!ok) {
-        toast.error(`Aktivität ist bereits gesperrt von ${lockedByEmail}`);
+      if (!result?.ok) {
+        toast.error(result?.error || `Aktivität ist bereits gesperrt von ${lockedByEmail}`);
       }
     }
   };
