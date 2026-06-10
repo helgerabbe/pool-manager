@@ -62,7 +62,13 @@ export async function acquireLockWithVersion(base44, config) {
     throw new Error('acquireLockWithVersion: missing required config field');
   }
 
-  const record = await base44.entities[entityName].get(entityId);
+  // KRITISCH (Self-Lockout-Fix 2026-06-10): READ + VERIFY laufen BEIDE über
+  // asServiceRole. Vorher las der State-Check über base44.entities (User-Token,
+  // möglicherweise replikations-/cache-verzögert) und der VERIFY über
+  // asServiceRole – diese inkonsistenten Lesequellen konnten dazu führen, dass
+  // der rechtmäßige Lock-Gewinner seinen eigenen, frisch geschriebenen Lock im
+  // VERIFY noch nicht sah und sich fälschlich selbst mit 'race_lost' aussperrte.
+  const record = await base44.asServiceRole.entities[entityName].get(entityId);
   if (!record) {
     return { ok: false, reason: 'not_found', lockedByEmail: null, lockedAt: null };
   }
@@ -94,18 +100,48 @@ export async function acquireLockWithVersion(base44, config) {
     version: nextVersion,
   });
 
-  const verify = await base44.asServiceRole.entities[entityName].get(entityId);
-  if (verify?.[lockField] !== userEmail) {
-    return {
-      ok: false,
-      reason: 'race_lost',
-      lockedByEmail: verify?.[lockField] || null,
-      lockedAt: verify?.[timeField] || null,
-      currentRecord: verify,
-    };
+  // VERIFY mit kurzem Retry: der eigene Write kann minimal verzögert
+  // propagieren. Erst wenn nach mehreren Re-Reads ein ANDERER Owner im
+  // Lock-Feld steht, hat man den Race wirklich verloren. Sieht man den eigenen
+  // Lock (oder noch leer = eigener Write nicht propagiert), wird weiter geprüft
+  // – so sperrt sich der rechtmäßige Gewinner nie selbst aus.
+  let verify = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    verify = await base44.asServiceRole.entities[entityName].get(entityId);
+    if (verify?.[lockField] === userEmail) {
+      return { ok: true, version: nextVersion, lockedAt: isoNow };
+    }
+    // Ein anderer, gültiger Owner steht drin → echter Race-Verlust, kein Retry.
+    if (verify?.[lockField] && verify[lockField] !== userEmail) {
+      return {
+        ok: false,
+        reason: 'race_lost',
+        lockedByEmail: verify[lockField],
+        lockedAt: verify?.[timeField] || null,
+        currentRecord: verify,
+      };
+    }
+    // Lock-Feld (noch) leer oder Stand veraltet → kurz warten und erneut lesen.
+    await new Promise((r) => setTimeout(r, 120 * (attempt + 1)));
   }
 
-  return { ok: true, version: nextVersion, lockedAt: isoNow };
+  // Nach allen Retries weder eigener noch fremder Owner sichtbar: Schreib-Write
+  // erneut bestätigen, indem wir den Lock idempotent nochmal setzen und prüfen.
+  await base44.entities[entityName].update(entityId, {
+    [lockField]: userEmail,
+    [timeField]: isoNow,
+  });
+  verify = await base44.asServiceRole.entities[entityName].get(entityId);
+  if (verify?.[lockField] === userEmail) {
+    return { ok: true, version: nextVersion, lockedAt: isoNow };
+  }
+  return {
+    ok: false,
+    reason: 'race_lost',
+    lockedByEmail: verify?.[lockField] || null,
+    lockedAt: verify?.[timeField] || null,
+    currentRecord: verify,
+  };
 }
 
 // ── Deno.serve-Stub ──

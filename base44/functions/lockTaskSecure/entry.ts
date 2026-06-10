@@ -16,12 +16,16 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 const LOCK_TIMEOUT_MS = 60 * 60 * 1000;
 
 async function acquireTaskLock(base44, taskId, userEmail) {
-  const aufgabe = await base44.entities.AllgemeineAufgabe.get(taskId).catch(() => null);
+  // Self-Lockout-Fix 2026-06-10: State-Read + VERIFY beide über asServiceRole
+  // (konsistente Quelle) + VERIFY-Retry, damit der eigene, frisch geschriebene
+  // Lock nicht fälschlich als 'race_lost' gewertet wird. Begründung: siehe
+  // occLockUtils.js.
+  const aufgabe = await base44.asServiceRole.entities.AllgemeineAufgabe.get(taskId).catch(() => null);
   if (!aufgabe) {
     return { ok: false, reason: 'not_found' };
   }
 
-  const einheit = await base44.entities.Einheiten.get(aufgabe.einheit_id).catch(() => null);
+  const einheit = await base44.asServiceRole.entities.Einheiten.get(aufgabe.einheit_id).catch(() => null);
   if (!einheit) {
     return { ok: false, reason: 'einheit_not_found' };
   }
@@ -58,17 +62,37 @@ async function acquireTaskLock(base44, taskId, userEmail) {
     version: nextVersion,
   });
 
-  const verify = await base44.asServiceRole.entities.AllgemeineAufgabe.get(taskId);
-  if (verify?.locked_by !== userEmail) {
-    return {
-      ok: false,
-      reason: 'race_lost',
-      lockedBy: verify?.locked_by || null,
-      lockedAt: verify?.locked_at || null,
-    };
+  let verify = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    verify = await base44.asServiceRole.entities.AllgemeineAufgabe.get(taskId);
+    if (verify?.locked_by === userEmail) {
+      return { ok: true, version: nextVersion, lockedAt };
+    }
+    if (verify?.locked_by && verify.locked_by !== userEmail) {
+      return {
+        ok: false,
+        reason: 'race_lost',
+        lockedBy: verify.locked_by,
+        lockedAt: verify?.locked_at || null,
+      };
+    }
+    await new Promise((r) => setTimeout(r, 120 * (attempt + 1)));
   }
 
-  return { ok: true, version: nextVersion, lockedAt };
+  await base44.entities.AllgemeineAufgabe.update(taskId, {
+    locked_by: userEmail,
+    locked_at: lockedAt,
+  });
+  verify = await base44.asServiceRole.entities.AllgemeineAufgabe.get(taskId);
+  if (verify?.locked_by === userEmail) {
+    return { ok: true, version: nextVersion, lockedAt };
+  }
+  return {
+    ok: false,
+    reason: 'race_lost',
+    lockedBy: verify?.locked_by || null,
+    lockedAt: verify?.locked_at || null,
+  };
 }
 
 Deno.serve(async (req) => {

@@ -50,7 +50,9 @@ async function acquireLockWithVersion(base44, config) {
   if (!entityName || !entityId || !lockField || !timeField || !userEmail || !timeoutMs) {
     throw new Error('acquireLockWithVersion: missing required config field');
   }
-  const record = await base44.entities[entityName].get(entityId);
+  // Self-Lockout-Fix 2026-06-10: READ + VERIFY beide über asServiceRole +
+  // VERIFY-Retry. Siehe occLockUtils.js für die ausführliche Begründung.
+  const record = await base44.asServiceRole.entities[entityName].get(entityId);
   if (!record) {
     return { ok: false, reason: 'not_found', lockedByEmail: null, lockedAt: null };
   }
@@ -76,16 +78,36 @@ async function acquireLockWithVersion(base44, config) {
     [timeField]: isoNow,
     version: nextVersion,
   });
-  const verify = await base44.asServiceRole.entities[entityName].get(entityId);
-  if (verify?.[lockField] !== userEmail) {
-    return {
-      ok: false, reason: 'race_lost',
-      lockedByEmail: verify?.[lockField] || null,
-      lockedAt: verify?.[timeField] || null,
-      currentRecord: verify,
-    };
+  let verify = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    verify = await base44.asServiceRole.entities[entityName].get(entityId);
+    if (verify?.[lockField] === userEmail) {
+      return { ok: true, version: nextVersion, lockedAt: isoNow };
+    }
+    if (verify?.[lockField] && verify[lockField] !== userEmail) {
+      return {
+        ok: false, reason: 'race_lost',
+        lockedByEmail: verify[lockField],
+        lockedAt: verify?.[timeField] || null,
+        currentRecord: verify,
+      };
+    }
+    await new Promise((r) => setTimeout(r, 120 * (attempt + 1)));
   }
-  return { ok: true, version: nextVersion, lockedAt: isoNow };
+  await base44.entities[entityName].update(entityId, {
+    [lockField]: userEmail,
+    [timeField]: isoNow,
+  });
+  verify = await base44.asServiceRole.entities[entityName].get(entityId);
+  if (verify?.[lockField] === userEmail) {
+    return { ok: true, version: nextVersion, lockedAt: isoNow };
+  }
+  return {
+    ok: false, reason: 'race_lost',
+    lockedByEmail: verify?.[lockField] || null,
+    lockedAt: verify?.[timeField] || null,
+    currentRecord: verify,
+  };
 }
 
 async function resolveDisplayName(base44, email) {
