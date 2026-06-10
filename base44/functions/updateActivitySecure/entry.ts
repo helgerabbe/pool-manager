@@ -55,6 +55,15 @@ function validateEditPermissionWithScope(
   einheitId,
   delegatedMembership
 ) {
+  // RBAC-Angleichung 2026-06-10 (Bugfix "Bearbeitungsmodus startet nicht"):
+  // Die Frontend-Matrix (lib/rbac.js, Bereich 2 INHALTE) erlaubt der
+  // FACHLEHRKRAFT die Inhalts-Bearbeitung im eigenen Fach — ohne
+  // delegierte EinheitMembers-Rolle. Das Backend verlangte bisher
+  // zusätzlich eine Delegation und wies fachzuständige Lehrkräfte ab.
+  if (rolle === 'Fachlehrkraft' && Array.isArray(faecher) && faecher.includes(targetFach)) {
+    return { allowed: true, reason: 'lehrkraft_fach' };
+  }
+
   // ADMIN: immer erlaubt (GLOBAL, alle Einheiten)
   if (rolle === 'Administrator') {
     return { allowed: true, reason: 'admin_global' };

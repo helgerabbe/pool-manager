@@ -198,9 +198,16 @@ Deno.serve(async (req) => {
       const rolle = benutzerRecord?.rolle;
       const fachzustaendig =
         benutzerRecord?.fachbereich_zustaendigkeit?.includes(einheit.fach) || false;
-      const istFachschaftFuerFach = rolle === 'Fachschaftsleitung' && fachzustaendig;
+      // RBAC-Matrix (lib/rbac.js, Bereich 2 INHALTE): Lernpaket-Lock = Inhalte
+      // bearbeiten. Das dürfen Fachschaftsleitung UND Fachlehrkraft im
+      // jeweils zuständigen Fach. Vorher war hier nur die Fachschaftsleitung
+      // erlaubt — Fachlehrkräfte ohne expliziten EinheitMembers-Eintrag
+      // bekamen 403, obwohl das Frontend ihnen Bearbeitung anbot
+      // (Bugfix 2026-06-10: "Bearbeitungsmodus startet nicht").
+      const istInhaltsberechtigtFuerFach =
+        (rolle === 'Fachschaftsleitung' || rolle === 'Fachlehrkraft') && fachzustaendig;
 
-      if (!istFachschaftFuerFach) {
+      if (!istInhaltsberechtigtFuerFach) {
         const members = await base44.asServiceRole.entities.EinheitMembers.filter({
           einheit_id: einheit.id,
           user_email: user.email,
