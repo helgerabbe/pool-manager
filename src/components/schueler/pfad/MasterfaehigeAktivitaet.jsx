@@ -13,6 +13,7 @@ import BegriffeZuordnenSeite from '@/components/schueler/lesen/BegriffeZuordnenS
 import BearbeitungBestaetigenSeite from '@/components/schueler/lesen/BearbeitungBestaetigenSeite';
 import VideoAudioSeite from '@/components/schueler/lesen/VideoAudioSeite';
 import KITutorSeite from '@/components/schueler/lesen/KITutorSeite';
+import LueckentextSeite from '@/components/schueler/lesen/LueckentextSeite';
 import LernpaketAktivitaetSeite from './LernpaketAktivitaetSeite';
 
 /**
@@ -96,6 +97,7 @@ export default function MasterfaehigeAktivitaet({
   const istBestaetigen = katName.includes('bestätig') || katName.includes('bestaetig');
   const istVideoAudio = katName.includes('video') || katName.includes('audio');
   const istKITutor = katName.includes('ki-tutor') || katName.includes('ki tutor') || katName.includes('tutor');
+  const istLueckentext = katName.includes('lückentext') || katName.includes('lueckentext');
 
   // key pro aktiver MasterAufgabe → erzwingt frischen internen State der
   // Einzelseite (z. B. neu gemischte Karten), wenn sequenziell die nächste kommt.
@@ -123,6 +125,7 @@ export default function MasterfaehigeAktivitaet({
   if (istBestaetigen) return <BearbeitungBestaetigenSeite {...gemeinsameProps} />;
   if (istVideoAudio) return <VideoAudioSeite {...gemeinsameProps} />;
   if (istKITutor) return <KITutorSeite {...gemeinsameProps} />;
+  if (istLueckentext) return <LueckentextSeite {...gemeinsameProps} />;
   return <LernpaketAktivitaetSeite {...gemeinsameProps} />;
 }
 
