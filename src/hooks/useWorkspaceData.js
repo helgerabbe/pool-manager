@@ -121,7 +121,17 @@ export function useWorkspaceData(einheitId, isStructuralEditingActive = false, i
     }
     return e;
   });
-  
+
+  // 🩹 Bug-Fix ("Einheit mal da, mal weg"): Wenn die Detaildaten der geöffneten
+  // Einheit geladen sind, sie aber (noch) NICHT in der gecachten Listen-Query
+  // steht (z. B. wegen 5-Min-Cache, Pagination-Timing oder einer veralteten
+  // RBAC-Antwort), würde die Einheit fälschlich als "nicht vorhanden" gelten.
+  // Die Detail-Query ist die verlässliche Quelle für die geöffnete Einheit →
+  // hängen wir sie an, falls die Liste sie nicht enthält.
+  if (einheitData?.id && !einheiten.some(e => e.id === einheitData.id)) {
+    einheiten.push(einheitData);
+  }
+
   // Finde aktive Einheit
   const activeEinheit = einheiten.find(e => e.id === einheitId) || null;
   
