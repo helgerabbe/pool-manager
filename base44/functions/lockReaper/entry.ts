@@ -6,7 +6,7 @@
  *
  * Sicherheit & Architektur:
  * - Erzwingt Automation-Secret-Validierung
- * - Nur Lernpakete und Einheiten (keine untergeordneten Entities)
+ * - Lernpakete, Einheiten, Aufgabenbausteine, AllgemeineAufgabe, MasterAufgabe
  * - DB-Level Filtering (nur stale Locks)
  * - Parallele Batch-Updates statt sequenzieller Aufrufe
  * - Heartbeat-Konsept: Frontend erneuert Lock regelmäßig
@@ -66,6 +66,25 @@ const ENTITIES_WITH_LOCKS = [
   {
     name: 'Aufgabenbausteine',
     lockField: 'lock_status',
+    lockClearValue: false,
+    lockQueryValue: true, // Boolean-Lock: nur aktiv gesperrte Records matchen
+    lockTimeField: 'locked_at',
+    ownerField: 'locked_by_user',
+  },
+  // Lock-Audit Punkt 4 (2026-06-10): AllgemeineAufgabe & MasterAufgabe
+  // hatten bisher KEINE automatische Bereinigung — verwaiste Locks blieben
+  // bis zum nächsten manuellen Eingriff hängen.
+  {
+    name: 'AllgemeineAufgabe',
+    lockField: 'locked_by',
+    lockTimeField: 'locked_at',
+    ownerField: null, // locked_by hält bereits den Owner-String
+  },
+  {
+    name: 'MasterAufgabe',
+    lockField: 'lock_status',
+    lockClearValue: false,
+    lockQueryValue: true,
     lockTimeField: 'locked_at',
     ownerField: 'locked_by_user',
   },
@@ -126,7 +145,13 @@ Deno.serve(async (req) => {
     // 2. Verarbeite jede Entity mit Lock-Fähigkeit
     // ─────────────────────────────────────────────────────────────────
     for (const entityConfig of ENTITIES_WITH_LOCKS) {
-      const { name, lockField, lockTimeField, ownerField, lockClearValue = null } = entityConfig;
+      const {
+        name, lockField, lockTimeField, ownerField,
+        lockClearValue = null,
+        // Boolean-Locks (is_locked, lock_status): { $ne: null } würde auch
+        // `false` matchen → explizit `true` abfragen. String-Locks: $ne null.
+        lockQueryValue = { $ne: null },
+      } = entityConfig;
       const entity = base44.asServiceRole.entities[name];
 
       if (!entity) {
@@ -144,7 +169,7 @@ Deno.serve(async (req) => {
       try {
         // Filter: Lock gesetzt UND älter als Threshold – vollständig paginiert.
         staleLocks = await listAll(entity, {
-          [lockField]: { $ne: null },
+          [lockField]: lockQueryValue,
           [lockTimeField]: { $lt: staleThreshold },
         });
       } catch (filterError) {
@@ -155,7 +180,7 @@ Deno.serve(async (req) => {
         );
         try {
           const allWithLock = await listAll(entity, {
-            [lockField]: { $ne: null },
+            [lockField]: lockQueryValue,
           });
           staleLocks = allWithLock.filter(record => {
             const lockTime = record[lockTimeField];

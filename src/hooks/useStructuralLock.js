@@ -4,8 +4,8 @@
  * 
  * Beachte: Auto-Locking wurde entfernt, um Race Conditions zu vermeiden.
  * Locks werden ausschließlich über explizite Backend-Funktionen gesteuert:
- *   - acquireLockSecure() zum Setzen des Locks
- *   - releaseLockSecure() zum Freigeben des Locks
+ *   - acquireUnitLockSecure() zum Setzen des Locks
+ *   - releaseStructuralLockSecure() zum Freigeben des Locks
  *   - lockReaper läuft server-seitig zur Timeout-Bereinigung
  * 
  * Diese Datei enthält nur die Hilfsfunktion zur Evaluierung des Lock-Status.
