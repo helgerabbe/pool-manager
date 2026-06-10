@@ -353,10 +353,19 @@ export default function ProjektaufgabenView({
     enterEditMode: async () => {
       setLockState(prev => ({ ...prev, isLocking: true }));
       try {
-        await lockProjectTask(selectedAufgabeForLock.id);
+        // Lock-UX-Audit 2026-06-10: Das SDK wirft bei HTTP 409 nicht immer eine
+        // Exception — die Antwort muss explizit geprüft werden, sonst ging der
+        // Bearbeitungsmodus stillschweigend "an", obwohl der Lock verweigert wurde.
+        const res = await lockProjectTask(selectedAufgabeForLock.id);
+        if (res?.success !== true) {
+          toast.error(res?.error || 'Bearbeitungsmodus konnte nicht gestartet werden.');
+          return;
+        }
         setLockState(prev => ({ ...prev, isEditMode: true }));
+        toast.success('Bearbeitungsmodus aktiviert.');
+        queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheitId] });
       } catch (err) {
-        toast.error('Fehler beim Aktivieren des Bearbeitungsmodus: ' + err.message);
+        toast.error(err?.response?.data?.error || 'Fehler beim Aktivieren des Bearbeitungsmodus: ' + err.message);
       } finally {
         setLockState(prev => ({ ...prev, isLocking: false }));
       }
