@@ -186,7 +186,7 @@ function CompressionHelp({ isAudio = false }) {
             Wie komprimieren?
           </button>
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-80 text-sm space-y-3">
+        <PopoverContent align="end" className="w-80 text-sm space-y-3 z-[10000]">
           <div>
             <p className="font-semibold text-foreground">Audiodatei unter {MAX_MB} MB bringen</p>
             <p className="text-xs text-muted-foreground mt-1">
