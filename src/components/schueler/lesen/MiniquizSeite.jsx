@@ -22,7 +22,12 @@ export default function MiniquizSeite({ aktivitaet, busy, onErledigt, onBack, ma
   const fragen = useMemo(
     () => (Array.isArray(fv.questions) ? fv.questions : [])
       .filter((q) => q?.question?.trim())
-      .map((q, i) => ({ ...q, id: q.id || `q-${i}` })),
+      .map((q, i) => ({
+        ...q,
+        id: q.id || `q-${i}`,
+        // Antworten mischen, damit die richtige nicht immer oben steht.
+        answers: [...(q.answers || [])].sort(() => Math.random() - 0.5),
+      })),
     [fv.questions]
   );
 
