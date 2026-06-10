@@ -14,6 +14,7 @@ import AktivitaetSeite from '@/components/schueler/pfad/AktivitaetSeite';
 import PfadStartseite from '@/components/schueler/pfad/PfadStartseite';
 import LernpaketDurcharbeiten from '@/components/schueler/pfad/LernpaketDurcharbeiten';
 import ThemenfeldEinfuehrungSeite from '@/components/schueler/pfad/ThemenfeldEinfuehrungSeite';
+import LernlandkarteSeite from '@/components/schueler/pfad/LernlandkarteSeite';
 import LadeFehlerHinweis from '@/components/schueler/LadeFehlerHinweis';
 import MerkheftDialog from '@/components/schueler/MerkheftDialog';
 import { useEinheitZeitTracker } from '@/hooks/useEinheitZeitTracker';
@@ -108,6 +109,9 @@ export default function EinheitDashboard() {
 
   // Ist das aktive Item die „Einführung in das Themenfeld"? Eigene KI-Snapshot-Ansicht.
   const istEinfuehrung = activeItem?.type === 'system' && activeItem?.ref_id === 'sys_themenfeld_intro';
+
+  // Ist das aktive Item die Lernlandkarte? Interaktive Lernziel-Übersicht.
+  const istLernlandkarte = activeItem?.type === 'system' && activeItem?.ref_id === 'sys_map_full';
 
   // „Weiter“: nächstes nicht-gesperrtes Item nach dem aktuellen.
   const goWeiter = () => {
@@ -209,6 +213,17 @@ export default function EinheitDashboard() {
             onMarkLernpaketErledigt={() => markErledigt(activeItem, activeItem.sektor)}
             istLernpaketErledigt={activeItem?.gate === ITEM_GATE.ERLEDIGT}
             onBack={() => setActiveInstanceId(null)}
+          />
+        ) : activeItem && istLernlandkarte ? (
+          <LernlandkarteSeite
+            einheitId={einheitId}
+            userEmail={user?.email}
+            flatItems={flatItems}
+            aufgabenById={aufgabenById}
+            erledigt={activeItem.gate === ITEM_GATE.ERLEDIGT}
+            busy={busy}
+            onErledigt={handleErledigt}
+            onOpenLernpaket={setActiveInstanceId}
           />
         ) : activeItem && istEinfuehrung ? (
           <ThemenfeldEinfuehrungSeite

@@ -1,0 +1,79 @@
+{
+  "name": "SchuelerLernzielEinschaetzung",
+  "type": "object",
+  "description": "Selbsteinsch\u00e4tzung eines Sch\u00fclers zu einem Lernziel auf der Lernlandkarte (sys_map_full). Pro (user_email, einheit_id, lernziel_id) maximal ein Datensatz (anwendungsseitig sichergestellt). 'sicher' = Kann ich, 'unsicher' = Bin unsicher, 'schwierig' = Brauche Hilfe. Kein Eintrag = noch nicht eingesch\u00e4tzt.",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "E-Mail des Sch\u00fclers."
+    },
+    "einheit_id": {
+      "type": "string",
+      "description": "FK zur Einheit (f\u00fcr schnelle Abfrage aller Einsch\u00e4tzungen einer Einheit)."
+    },
+    "lernziel_id": {
+      "type": "string",
+      "description": "FK zum Lernziel (Lernziele-Entity)."
+    },
+    "lernpaket_id": {
+      "type": "string",
+      "description": "Denormalisiert: Lernpaket, zu dem das Lernziel geh\u00f6rt (f\u00fcr Auswertungen)."
+    },
+    "einschaetzung": {
+      "type": "string",
+      "enum": [
+        "sicher",
+        "unsicher",
+        "schwierig"
+      ],
+      "description": "Selbsteinsch\u00e4tzung des Sch\u00fclers zu diesem Lernziel."
+    }
+  },
+  "required": [
+    "user_email",
+    "einheit_id",
+    "lernziel_id",
+    "einschaetzung"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
