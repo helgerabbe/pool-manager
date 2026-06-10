@@ -16,6 +16,7 @@ import KITutorSeite from '@/components/schueler/lesen/KITutorSeite';
 import LueckentextSeite from '@/components/schueler/lesen/LueckentextSeite';
 import TestSeite from '@/components/schueler/lesen/TestSeite';
 import LehrwerkQuelleSeite from '@/components/schueler/lesen/LehrwerkQuelleSeite';
+import MiniquizSeite from '@/components/schueler/lesen/MiniquizSeite';
 import LernpaketAktivitaetSeite from './LernpaketAktivitaetSeite';
 
 /**
@@ -102,6 +103,7 @@ export default function MasterfaehigeAktivitaet({
   const istLueckentext = katName.includes('lückentext') || katName.includes('lueckentext');
   const istTest = katName === 'test' || katName.includes('abschlusstest');
   const istLehrwerk = katName.includes('lehrwerk') || katName.includes('quelle');
+  const istMiniquiz = katName.includes('miniquiz') || katName.includes('mini-quiz');
 
   // key pro aktiver MasterAufgabe → erzwingt frischen internen State der
   // Einzelseite (z. B. neu gemischte Karten), wenn sequenziell die nächste kommt.
@@ -132,6 +134,7 @@ export default function MasterfaehigeAktivitaet({
   if (istLueckentext) return <LueckentextSeite {...gemeinsameProps} />;
   if (istTest) return <TestSeite {...gemeinsameProps} />;
   if (istLehrwerk) return <LehrwerkQuelleSeite {...gemeinsameProps} />;
+  if (istMiniquiz) return <MiniquizSeite {...gemeinsameProps} />;
   return <LernpaketAktivitaetSeite {...gemeinsameProps} />;
 }
 
