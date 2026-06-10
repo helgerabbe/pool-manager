@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Menu } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Menu, ArrowLeft } from 'lucide-react';
 import { getLerntyp } from '@/lib/lerntypen';
 import { useSchuelerPfad } from '@/hooks/useSchuelerPfad';
 import {
@@ -21,9 +22,11 @@ import LadeFehlerHinweis from '@/components/schueler/LadeFehlerHinweis';
  * Einheit-Startseite (kein Auto-Resume) – der Schüler steuert selbst.
  */
 export default function EinheitDashboard() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const einheitId = urlParams.get('id');
-  const lerntypKey = urlParams.get('lerntyp');
+  // useSearchParams statt window.location: reagiert zuverlässig auf
+  // Client-Navigation und liefert die Parameter auch nach Re-Renders korrekt.
+  const [searchParams] = useSearchParams();
+  const einheitId = searchParams.get('id');
+  const lerntypKey = searchParams.get('lerntyp');
   const lerntyp = getLerntyp(lerntypKey);
 
   const {
@@ -133,6 +136,27 @@ export default function EinheitDashboard() {
       activeItem.sektor
     );
   };
+
+  // Ohne Einheit-ID (z. B. Seite direkt aufgerufen): kein Verbindungsfehler,
+  // sondern klare Weiterleitung zur Fächer-Übersicht.
+  if (!einheitId || !lerntypKey) {
+    return (
+      <div className="h-full flex items-center justify-center p-6">
+        <div className="max-w-sm w-full text-center space-y-4 rounded-2xl border border-border bg-card px-6 py-8 shadow-sm">
+          <p className="text-sm font-semibold text-foreground">Keine Einheit ausgewählt</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Diese Seite braucht eine Einheit. Wähle zuerst ein Fach und eine Einheit aus.
+          </p>
+          <Link
+            to="/lernen"
+            className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+          >
+            <ArrowLeft className="w-4 h-4" /> Zur Lern-Übersicht
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // Sicherheitsstufe: UI erst rendern, wenn ALLE Daten sauber geladen wurden.
   if (isLoading) {
