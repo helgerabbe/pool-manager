@@ -169,9 +169,12 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
   // Implizites Locking: Lock erwerben → richtiges Modal öffnen
   const handleEditKlon = async () => {
     setAcquiringLock(true);
-    const ok = await acquireLock();
+    const result = await acquireLock();
     setAcquiringLock(false);
-    if (!ok) return;
+    if (!result?.ok) {
+      toast.error(result?.error || 'Bearbeitungsmodus konnte nicht gestartet werden.');
+      return;
+    }
     onEditModeChange?.(true);
     if (isLuecke) setLueckentextModalOpen(true);
     else if (isSort) setSortingModalOpen(true);

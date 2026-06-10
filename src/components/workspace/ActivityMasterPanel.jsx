@@ -254,6 +254,12 @@ export default function ActivityMasterPanel({
   // Modal-Workflow: Lock erwerben → Modal öffnen
   // HARD-LOCK: Prüfe Export-Sperre vor Modal-Öffnung
   const handleOpenEditModal = async () => {
+    // Check 0: Lernpaket bereits freigegeben? (Hard-Lock der Hierarchie)
+    if (lernpaketReleased) {
+      toast.error('🔒 Dieses Lernpaket ist freigegeben. Hebe zuerst die Freigabe auf, um Inhalte zu bearbeiten.');
+      return;
+    }
+
     // Check 1: Ist das Lernpaket von anderem User gesperrt?
     if (isParentPaketLockedByOther) {
       toast.error(`🔒 Dieses Lernpaket wird gerade von ${lernpaket?.locked_by_email} bearbeitet. Sie können erst Änderungen vornehmen, wenn die Bearbeitung abgeschlossen ist.`);
@@ -263,6 +269,14 @@ export default function ActivityMasterPanel({
     // Check 2: Ist die Einheit zur Moodle-Synchronisation gesperrt?
     if (lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked) {
       toast.error('Einheit ist zur Moodle-Synchronisation gesperrt. Bitte später erneut versuchen.');
+      return;
+    }
+
+    // Check 3: Ein ANDERES Lernpaket ist gerade global im Bearbeitungsmodus.
+    // Vorher führte das nur zu einem (stillen) disabled-Button. Jetzt erklären
+    // wir es aktiv, damit der Nutzer nicht ohne Rückmeldung dasteht.
+    if (globalEditActive && !lernpaketLockActive) {
+      toast.error('🔒 Ein anderes Lernpaket wird gerade bearbeitet. Bitte schließe diese Bearbeitung zuerst über „Bearbeitung abschließen" oben ab.');
       return;
     }
 
@@ -757,11 +771,11 @@ export default function ActivityMasterPanel({
                   <Tooltip>
                     {/* disabled-Buttons feuern keine Hover-Events → in span wickeln */}
                     <TooltipTrigger asChild>
-                      <span className={lernpaketReleased ? 'cursor-not-allowed' : undefined}>
+                      <span>
                         <Button
                           onClick={handleOpenEditModal}
-                          disabled={acquiringLock || isParentPaketLockedByOther || lernpaketReleased || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || (globalEditActive && !lernpaketLockActive)}
-                          className={`gap-2 ${lernpaketReleased ? 'pointer-events-none' : ''}`}
+                          disabled={acquiringLock}
+                          className="gap-2"
                         >
                             {acquiringLock
                               ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren…</>
@@ -1118,10 +1132,8 @@ export default function ActivityMasterPanel({
             </div>
           ) : (
             <button
-              onClick={kannBearbeiten && !isParentPaketLockedByOther && !lernpaketReleased && !(lernpaket?.moodle_sync_status === 'locked') && !lernpaket?.export_locked && !(globalEditActive && !lernpaketLockActive) && !acquiringLock
-                ? handleOpenEditModal
-                : undefined}
-              disabled={!kannBearbeiten || isParentPaketLockedByOther || lernpaketReleased || lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || (globalEditActive && !lernpaketLockActive) || acquiringLock}
+              onClick={kannBearbeiten && !acquiringLock ? handleOpenEditModal : undefined}
+              disabled={!kannBearbeiten || acquiringLock}
               className="w-full text-left bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 text-sm text-blue-900 cursor-pointer hover:bg-blue-100 transition-colors disabled:cursor-default disabled:hover:bg-blue-50 disabled:opacity-60"
               title={lernpaketReleased ? '🔒 Lernpaket ist freigegeben – Inhalte gesperrt' : kannBearbeiten ? 'Klicken zum Bearbeiten' : ''}
             >
