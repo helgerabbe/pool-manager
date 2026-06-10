@@ -131,7 +131,13 @@ Im Zuge der jüngsten Härtung wurden **zwei** zusammenhängende Defekte identif
 ### 7.3 Rollenabhängigkeit der Symptome (Beobachtung)
 Es wurde beobachtet, dass **Administratoren und Fachschaftsleitungen** das Self-Lockout-Problem praktisch nie erlebten, **normale Fachlehrkräfte** hingegen häufig. Erklärung: Lese-Operationen über das User-Token unterliegen für Fachlehrkräfte der **RLS-Filterung über `EinheitMembers`** — der einzige Pfad, der für die genannte Replikationsverzögerung anfällig war. Admins umgehen RLS, Fachschaftsleitungen nutzen oft einen priorisierten RBAC-Pfad. Der Fix aus §7.1 (Service-Rolle für READ+VERIFY) eliminiert diesen Rollenunterschied im Erwerb.
 
-> **Verbleibender Restpunkt (offen, niedrig priorisiert):** `functions/checkLockSecure` (Status-Check fürs Frontend) liest den Sperrstatus weiterhin über `base44.entities` mit RLS. Für Fachlehrkräfte könnte dieser eine Lese-Pfad theoretisch einen leicht veralteten Status melden. Eine Umstellung auf die Service-Rolle würde den Check rollenunabhängig konsistent machen.
+### 7.4 Status-Check `checkLockSecure` auf Service-Rolle umgestellt (geschlossen)
+**Ursache:** `functions/checkLockSecure` las den Sperrstatus über `base44.entities` (User-Token + RLS). Für normale Fachlehrkräfte (Zugriff via `EinheitMembers`) war dies derselbe replikations-/cache-verzögerungsanfällige Pfad wie in §7.1/§7.3 — und konnte einen veralteten Lock-Status ans Frontend melden. Admins/Fachschaftsleitungen umgehen RLS und sahen das Problem nicht.
+**Fix:** Lesen jetzt über `base44.asServiceRole` → konsistente Quelle, rollenunabhängiger Status-Check. Damit ist die letzte Stelle des Rollen-Zusammenhangs geschlossen.
+
+### 7.5 TOCTOU bei hierarchischen Unit-Locks abgemildert (Re-Scan)
+**Ursache:** Deep Scan (Phase 2) und OCC-Lock-Write (Phase 3) in `acquireUnitLockSecure` laufen nicht in einer DB-Transaktion. Im Fenster dazwischen konnte eine andere Lehrkraft einen untergeordneten Lernpaket-/Aufgaben-Lock erwerben → kurzzeitig gleichzeitig gehaltene, widersprüchliche Sperren.
+**Fix (pragmatisch, plattformbedingt):** Nach dem erfolgreichen Unit-Lock erfolgt ein **erneuter Deep Scan (Phase 4b)**. Wird ein konkurrierender untergeordneter Lock gefunden, wird der gerade erworbene Unit-Lock **idempotent zurückgerollt** und der Erwerb scheitert sauber (HTTP 409) — der untergeordnete Bearbeiter behält seine Arbeit. Das schließt das Fenster praktisch, ersetzt aber **keine** echte DB-Transaktion (vollständige Atomarität erst nach Supabase-Migration via Stored Procedure — siehe §8, Punkt 1).
 
 ---
 

@@ -354,6 +354,92 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ── PHASE 4b: TOCTOU-Re-Scan (Härtung gegen Befund 1) ──────────────
+    // Da Deep Scan (Phase 2) und OCC-Lock-Write (Phase 3) NICHT in einer
+    // DB-Transaktion laufen, existiert ein schmales Zeitfenster, in dem eine
+    // andere Lehrkraft zwischen Scan und Write einen Lernpaket-/Aufgaben-Lock
+    // innerhalb dieser Einheit erworben haben könnte. Ein vollständig
+    // atomarer Schutz ist erst nach der Supabase-Migration (Stored Procedure)
+    // möglich. Bis dahin schließen wir das Fenster praktisch, indem wir NACH
+    // dem erfolgreichen Unit-Lock erneut scannen. Finden wir jetzt einen
+    // konkurrierenden untergeordneten Lock, geben wir unseren gerade
+    // erworbenen Unit-Lock sofort wieder frei und scheitern sauber (409) —
+    // der untergeordnete Bearbeiter behält seine Arbeit.
+    {
+      const rescanNow = Date.now();
+
+      const rescanLernpakete = await base44.asServiceRole.entities.Lernpakete.filter({
+        einheit_id,
+        is_locked: true,
+      }, undefined, DEEP_SCAN_LIMIT);
+      const konkurrierendPaket = (rescanLernpakete || []).find(
+        (p) =>
+          p.locked_by_email &&
+          p.locked_by_email !== user.email &&
+          p.locked_at &&
+          rescanNow - new Date(p.locked_at).getTime() < PAKET_LOCK_TIMEOUT_MS
+      );
+
+      let konkurrierendAufgabe = null;
+      if (!konkurrierendPaket) {
+        let rescanAufgaben;
+        try {
+          rescanAufgaben = await base44.asServiceRole.entities.AllgemeineAufgabe.filter({
+            einheit_id,
+            locked_by: { $ne: null },
+          }, undefined, DEEP_SCAN_LIMIT);
+        } catch (_e) {
+          rescanAufgaben = await base44.asServiceRole.entities.AllgemeineAufgabe.filter({
+            einheit_id,
+          }, undefined, DEEP_SCAN_LIMIT);
+          rescanAufgaben = (rescanAufgaben || []).filter((a) => !!a.locked_by);
+        }
+        konkurrierendAufgabe = (rescanAufgaben || []).find(
+          (a) =>
+            a.locked_by !== user.email &&
+            a.locked_at &&
+            rescanNow - new Date(a.locked_at).getTime() < AUFGABE_LOCK_TIMEOUT_MS
+        );
+      }
+
+      if (konkurrierendPaket || konkurrierendAufgabe) {
+        // Rollback: eigenen Unit-Lock wieder freigeben (idempotent).
+        try {
+          const cur = await base44.asServiceRole.entities.Einheiten.get(einheit_id);
+          if (cur?.structural_lock === user.email) {
+            const v = Number.isFinite(cur?.version) ? cur.version : 1;
+            await base44.entities.Einheiten.update(einheit_id, {
+              structural_lock: null,
+              structural_locked_at: null,
+              version: v + 1,
+            });
+          }
+        } catch (rollbackErr) {
+          console.error('[acquireUnitLockSecure] TOCTOU rollback failed:', rollbackErr.message);
+        }
+
+        const blockerScope = konkurrierendPaket ? 'lernpaket' : 'aufgabe';
+        const blockerEmail = konkurrierendPaket
+          ? konkurrierendPaket.locked_by_email
+          : konkurrierendAufgabe.locked_by;
+        const displayName = await resolveDisplayName(base44, blockerEmail);
+        await logLockConflict(base44, {
+          user, einheit_id, scope, reason: 'unit_busy_toctou', blockerScope,
+          lockedByEmail: blockerEmail,
+        });
+        return Response.json(
+          {
+            success: false, reason: 'unit_busy', scope: blockerScope,
+            lockedByEmail: blockerEmail, lockedByName: displayName,
+            blockerTitle: konkurrierendPaket
+              ? (konkurrierendPaket.titel_des_pakets || null)
+              : (konkurrierendAufgabe.titel || null),
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     // Erfolg → Audit-Eintrag.
     try {
       await base44.asServiceRole.entities.AuditLog.create({

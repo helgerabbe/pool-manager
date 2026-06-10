@@ -45,7 +45,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'lernpaketId required' }, { status: 400 });
     }
 
-    const paket = await base44.entities.Lernpakete.get(lernpaketId);
+    // Self-Lockout-Fix 2026-06-10 (Folgepunkt §7.3): Lesen über die
+    // Service-Rolle statt über base44.entities (User-Token + RLS). Der
+    // RLS-gefilterte Lesepfad war für normale Fachlehrkräfte (Zugriff via
+    // EinheitMembers) replikations-/cache-verzögerungsanfällig und konnte
+    // einen veralteten Lock-Status melden. Admins/Fachschaftsleitungen
+    // umgehen RLS und sahen das Problem nicht. asServiceRole liefert eine
+    // konsistente Quelle und macht den Status-Check rollenunabhängig.
+    const paket = await base44.asServiceRole.entities.Lernpakete.get(lernpaketId);
 
     if (!paket) {
       return Response.json({ error: 'Lernpaket not found' }, { status: 404 });
