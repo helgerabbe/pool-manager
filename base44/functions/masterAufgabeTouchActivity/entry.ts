@@ -45,16 +45,6 @@ async function listAllMasters(entity, query) {
   return all;
 }
 
-function validateWebhookSecret(req) {
-  const authHeader = req.headers.get('authorization') || '';
-  const token = authHeader.replace('Bearer ', '');
-  const expectedSecret = Deno.env.get('MASTER_AUFGABE_TOUCH_SECRET');
-  if (!expectedSecret || !token || token !== expectedSecret) {
-    return false;
-  }
-  return true;
-}
-
 // ── Vollständigkeitsprüfung pro Typ ──────────────────────────────────────────
 
 function isMasterComplete(catalogName = '', fieldValues = {}) {
@@ -129,10 +119,11 @@ function isMasterComplete(catalogName = '', fieldValues = {}) {
 
 Deno.serve(async (req) => {
   try {
-    if (!validateWebhookSecret(req)) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+    // Fix 2026-06-10: Der frühere Secret-Header-Check (MASTER_AUFGABE_TOUCH_SECRET)
+    // führte zu 401-Dauerfehlern, weil Base44-Entity-Automationen den Custom-Header
+    // nicht senden. Stattdessen: kein Header-Gate (wie lernpaketAggregateGuardian),
+    // dafür werden alle entscheidungsrelevanten Daten frisch aus der DB gelesen —
+    // ein externer Aufrufer kann damit nur eine harmlose Neuberechnung anstoßen.
     const base44 = createClientFromRequest(req);
     const payload = await req.json().catch(() => ({}));
 
@@ -154,26 +145,36 @@ Deno.serve(async (req) => {
     if (eventType === 'update' && masterData) {
       const masterId = event.entity_id || masterData.id;
       if (masterId) {
-        // Katalog-Eintrag für die zugehörige Aktivität laden
-        let catalogName = '';
+        // Master FRISCH aus der DB lesen (nicht dem Payload vertrauen).
+        let freshMaster = null;
         try {
-          const activity = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.get(activityId);
-          if (activity?.aktivitaet_id) {
-            const katalog = await base44.asServiceRole.entities.AktivitaetenKatalog.get(activity.aktivitaet_id);
-            catalogName = katalog?.name || '';
-          }
+          freshMaster = await base44.asServiceRole.entities.MasterAufgabe.get(masterId);
         } catch (e) {
-          console.warn('[masterAufgabeTouchActivity] Katalog-Load fehlgeschlagen:', e?.message);
+          console.warn('[masterAufgabeTouchActivity] Master-Read fehlgeschlagen:', e?.message);
         }
 
-        const fieldValues = masterData.field_values || {};
-        const isComplete = isMasterComplete(catalogName, fieldValues);
-        touchedMasterId = masterId;
-        touchedMasterIsComplete = isComplete;
+        if (freshMaster) {
+          // Katalog-Eintrag für die zugehörige Aktivität laden
+          let catalogName = '';
+          try {
+            const activity = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.get(activityId);
+            if (activity?.aktivitaet_id) {
+              const katalog = await base44.asServiceRole.entities.AktivitaetenKatalog.get(activity.aktivitaet_id);
+              catalogName = katalog?.name || '';
+            }
+          } catch (e) {
+            console.warn('[masterAufgabeTouchActivity] Katalog-Load fehlgeschlagen:', e?.message);
+          }
 
-        // Nur schreiben wenn sich der Wert ändert (Idempotenz)
-        if (masterData.is_complete !== isComplete) {
-          await base44.asServiceRole.entities.MasterAufgabe.update(masterId, { is_complete: isComplete });
+          const fieldValues = freshMaster.field_values || {};
+          const isComplete = isMasterComplete(catalogName, fieldValues);
+          touchedMasterId = masterId;
+          touchedMasterIsComplete = isComplete;
+
+          // Nur schreiben wenn sich der Wert ändert (Idempotenz)
+          if (freshMaster.is_complete !== isComplete) {
+            await base44.asServiceRole.entities.MasterAufgabe.update(masterId, { is_complete: isComplete });
+          }
         }
       }
     }
