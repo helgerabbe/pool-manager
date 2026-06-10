@@ -1,7 +1,7 @@
 {
   "name": "SchuelerEinheitFortschritt",
   "type": "object",
-  "description": "Speichert pro Sch\u00fcler und Einheit, welchen Lerntyp (Dashboard) der Sch\u00fcler gew\u00e4hlt hat und ob/welche Onboarding-Empfehlung ausgesprochen wurde. Eindeutigkeit pro (user_email, einheit_id) ist anwendungsseitig sichergestellt.",
+  "description": "Speichert pro Sch\u00fcler und Einheit, welchen Lerntyp (Dashboard) der Sch\u00fcler gew\u00e4hlt hat, ob/welche Onboarding-Empfehlung ausgesprochen wurde und ob die Einheit vollst\u00e4ndig abgeschlossen ist. Eindeutigkeit pro (user_email, einheit_id) ist anwendungsseitig sichergestellt.",
   "properties": {
     "user_email": {
       "type": "string",
@@ -35,6 +35,26 @@
         "passioniert"
       ],
       "description": "Lerntyp, der am Ende des Onboardings empfohlen wurde. Null, wenn noch kein Onboarding gemacht wurde."
+    },
+    "abgeschlossen": {
+      "type": "boolean",
+      "default": false,
+      "description": "True, sobald der Sch\u00fcler ALLE sichtbaren Items seines Lernpfads in dieser Einheit erledigt hat. Wird automatisch vom Einheit-Dashboard gesetzt (useEinheitAbschluss) und steuert den Abgeschlossen-Haken auf der Fachseite."
+    },
+    "abgeschlossen_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel des vollst\u00e4ndigen Abschlusses der Einheit. Null solange offen."
+    },
+    "abgeschlossen_lerntyp": {
+      "type": "string",
+      "enum": [
+        "minimalist",
+        "pragmatiker",
+        "ehrgeizig",
+        "passioniert"
+      ],
+      "description": "Lerntyp/Lernprofil, mit dem der Sch\u00fcler die Einheit beendet hat (eingefroren beim Abschluss)."
     }
   },
   "required": [

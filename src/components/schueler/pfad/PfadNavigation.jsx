@@ -1,10 +1,11 @@
-import { Lock, CheckCircle2, X, ArrowLeft } from 'lucide-react';
+import { Lock, CheckCircle2, X, ArrowLeft, NotebookPen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   ITEM_GATE,
   annotateSektorForSchueler,
   deriveSektorFreischaltung,
+  istSektorErledigt,
 } from '@/lib/schuelerPfadGating';
 import { buildSichtbarePfadItems } from '@/lib/schuelerPfadView';
 import { getSystemBausteinIcon } from '@/lib/systemBausteinIcons';
@@ -29,6 +30,7 @@ export default function PfadNavigation({
   aufgabenById,
   activeInstanceId,
   onSelectItem,
+  onOpenMerkheft,
 }) {
   const sektorFrei = deriveSektorFreischaltung(sektoren, fortschrittByInstance);
 
@@ -73,6 +75,7 @@ export default function PfadNavigation({
               !!frei?.freigeschaltet,
               frei?.voraussetzungTitel
             );
+            const sektorFertig = istSektorErledigt(sektor, fortschrittByInstance);
 
             return (
               <div key={sektor.sektor_id}>
@@ -82,7 +85,13 @@ export default function PfadNavigation({
                   </span>
                   {!frei?.freigeschaltet && <Lock className="w-3 h-3 text-muted-foreground" />}
                 </div>
-                <p className="text-sm font-semibold text-foreground mb-2">{sektor.titel}</p>
+                <p className={cn(
+                  'text-sm font-semibold mb-2 flex items-center gap-1.5',
+                  sektorFertig ? 'text-emerald-700' : 'text-foreground'
+                )}>
+                  {sektor.titel}
+                  {sektorFertig && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                </p>
 
                 {sichtbar.length === 0 ? (
                   <p className="text-xs text-muted-foreground italic pl-1">Keine Inhalte.</p>
@@ -141,7 +150,15 @@ export default function PfadNavigation({
           })}
         </nav>
 
-        <footer className="border-t border-border p-3 shrink-0">
+        <footer className="border-t border-border p-3 shrink-0 space-y-1">
+          {onOpenMerkheft && (
+            <button
+              onClick={() => { onOpenMerkheft(); onClose(); }}
+              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm font-medium text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-colors"
+            >
+              <NotebookPen className="w-4 h-4" /> Mein Merkheft
+            </button>
+          )}
           <Link
             to={`/lernen/einheit?id=${einheitId}`}
             className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"

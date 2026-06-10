@@ -34,6 +34,16 @@ export default function FachSeite() {
     queryFn: () => base44.entities.SchuelerEinheitFortschritt.filter({ user_email: user.email }),
     enabled: !!user?.email,
   });
+  const { data: zeitLogs = [] } = useQuery({
+    queryKey: ['einheitZeitLogs', user?.email],
+    queryFn: () => base44.entities.SchuelerEinheitZeitLog.filter({ user_email: user.email }),
+    enabled: !!user?.email,
+  });
+  const { data: notizen = [] } = useQuery({
+    queryKey: ['einheitNotizenAlle', user?.email],
+    queryFn: () => base44.entities.SchuelerEinheitNotiz.filter({ user_email: user.email }),
+    enabled: !!user?.email,
+  });
 
   const urlParams = new URLSearchParams(window.location.search);
   const fachId = urlParams.get('fach');
@@ -101,6 +111,9 @@ export default function FachSeite() {
                 fachFarbe={fach?.farbe}
                 fortschritt={fortschrittFor(einheit.id)}
                 nummer={idx + 1}
+                zeitLogs={zeitLogs.filter((z) => z.einheit_id === einheit.id)}
+                notizen={notizen.filter((n) => n.einheit_id === einheit.id)}
+                userEmail={user?.email}
               />
             ))}
           </div>

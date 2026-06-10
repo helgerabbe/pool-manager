@@ -15,6 +15,9 @@ import PfadStartseite from '@/components/schueler/pfad/PfadStartseite';
 import LernpaketDurcharbeiten from '@/components/schueler/pfad/LernpaketDurcharbeiten';
 import ThemenfeldEinfuehrungSeite from '@/components/schueler/pfad/ThemenfeldEinfuehrungSeite';
 import LadeFehlerHinweis from '@/components/schueler/LadeFehlerHinweis';
+import MerkheftDialog from '@/components/schueler/MerkheftDialog';
+import { useEinheitZeitTracker } from '@/hooks/useEinheitZeitTracker';
+import { useEinheitAbschluss } from '@/hooks/useEinheitAbschluss';
 
 /**
  * Lerntyp-Dashboard der Einheit (Schüleransicht). Burger-Navigation als
@@ -30,6 +33,7 @@ export default function EinheitDashboard() {
   const lerntyp = getLerntyp(lerntypKey);
 
   const {
+    user,
     einheit,
     isLoading,
     isError,
@@ -46,8 +50,12 @@ export default function EinheitDashboard() {
   } = useSchuelerPfad(einheitId, lerntypKey);
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [merkheftOpen, setMerkheftOpen] = useState(false);
   const [activeInstanceId, setActiveInstanceId] = useState(null); // null = Startseite
   const [busy, setBusy] = useState(false);
+
+  // Lernzeit minütlich mitloggen, solange der Schüler in der Einheit arbeitet.
+  useEinheitZeitTracker(einheitId, user?.email);
 
   // Flache Liste aller SICHTBAREN Items (Bündel-Container ausgeschlossen, deren
   // Kinder enthalten) in Pfad-Reihenfolge, angereichert mit Gate-Status +
@@ -81,6 +89,15 @@ export default function EinheitDashboard() {
 
   const gesamtAnzahl = flatItems.length;
   const erledigtAnzahl = flatItems.filter((it) => it.gate === ITEM_GATE.ERLEDIGT).length;
+
+  // Einheit-Abschluss-Flag setzen, sobald alles erledigt ist.
+  useEinheitAbschluss({
+    einheitId,
+    lerntyp: lerntypKey,
+    userEmail: user?.email,
+    erledigtAnzahl,
+    gesamtAnzahl,
+  });
 
   const activeItem = activeInstanceId ? itemByInstance.get(activeInstanceId) : null;
   const activeMeta = activeItem?.meta || null;
@@ -233,6 +250,15 @@ export default function EinheitDashboard() {
         aufgabenById={aufgabenById}
         activeInstanceId={activeInstanceId}
         onSelectItem={setActiveInstanceId}
+        onOpenMerkheft={() => setMerkheftOpen(true)}
+      />
+
+      <MerkheftDialog
+        open={merkheftOpen}
+        onOpenChange={setMerkheftOpen}
+        einheitId={einheitId}
+        einheitTitel={einheit?.titel_der_einheit}
+        userEmail={user?.email}
       />
     </div>
   );

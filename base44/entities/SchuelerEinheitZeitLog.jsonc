@@ -1,0 +1,70 @@
+{
+  "name": "SchuelerEinheitZeitLog",
+  "type": "object",
+  "description": "Pro Sch\u00fcler \u00d7 Einheit \u00d7 Kalendertag ein Datensatz mit den an diesem Tag in der Einheit verbrachten Minuten. Wird vom Zeit-Tracker im Einheit-Dashboard (useEinheitZeitTracker) min\u00fctlich hochgez\u00e4hlt, solange die Seite sichtbar ist. Eindeutigkeit pro (user_email, einheit_id, datum) ist anwendungsseitig sichergestellt. Anzeige: Fachseite \u2192 Einheit-Kachel \u2192 'X Min. gelernt' mit Tagesliste.",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "E-Mail des Sch\u00fclers."
+    },
+    "einheit_id": {
+      "type": "string",
+      "description": "FK zur Einheit."
+    },
+    "datum": {
+      "type": "string",
+      "description": "Kalendertag im Format YYYY-MM-DD (lokale Zeit des Sch\u00fclers)."
+    },
+    "minuten": {
+      "type": "number",
+      "default": 0,
+      "description": "An diesem Tag in der Einheit verbrachte Minuten (ganzzahlig, keine Sekunden)."
+    }
+  },
+  "required": [
+    "user_email",
+    "einheit_id",
+    "datum"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

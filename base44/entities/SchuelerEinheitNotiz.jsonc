@@ -1,0 +1,65 @@
+{
+  "name": "SchuelerEinheitNotiz",
+  "type": "object",
+  "description": "Merkheft-Notiz eines Sch\u00fclers zu einer Einheit (kleines Lerntagebuch pro Einheit). Wird im Einheit-Dashboard \u00fcber das Merkheft (Burger-Men\u00fc) erstellt \u2013 per Tippen oder Spracheingabe \u2013 und auf der Fachseite an der Einheit-Kachel wieder angezeigt. Zeitstempel = created_date (built-in).",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "E-Mail des Sch\u00fclers."
+    },
+    "einheit_id": {
+      "type": "string",
+      "description": "FK zur Einheit, zu der die Notiz geh\u00f6rt."
+    },
+    "text": {
+      "type": "string",
+      "description": "Inhalt der Notiz."
+    }
+  },
+  "required": [
+    "user_email",
+    "einheit_id",
+    "text"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
