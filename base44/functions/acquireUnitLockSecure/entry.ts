@@ -45,7 +45,12 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 // max. 5 Min weggeräumt statt nach 30–60 Min.
 const STRUCT_LOCK_TIMEOUT_MS  = 5 * 60 * 1000;
 const PAKET_LOCK_TIMEOUT_MS   = 5 * 60 * 1000;
-const AUFGABE_LOCK_TIMEOUT_MS = 5 * 60 * 1000;
+// Lock-Audit 2026-06-10: Aufgaben-Locks (AllgemeineAufgabe) haben KEINEN
+// Heartbeat — lockTaskSecure/lockProjectTaskSecure honorieren sie 60 Min.
+// Der Deep Scan muss dieselbe Gültigkeit ansetzen, sonst konnte eine
+// Fachschaftsleitung nach nur 5 Min die Einheit sperren, während eine
+// Lehrkraft noch aktiv an einer Aufgabe arbeitete (Daten-Verlust-Gefahr).
+const AUFGABE_LOCK_TIMEOUT_MS = 60 * 60 * 1000;
 const DEEP_SCAN_LIMIT = 1000;
 
 const VALID_SCOPES = new Set(['structure', 'dashboard']);

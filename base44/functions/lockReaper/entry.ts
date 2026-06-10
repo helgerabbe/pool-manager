@@ -46,10 +46,16 @@ const BATCH_SIZE = 50; // Parallele Updates in Batches
 // Flexibles Config-Array mit Lock-Feldnamen & Owner-Information
 const ENTITIES_WITH_LOCKS = [
   {
+    // Lock-Audit 2026-06-10: ownerField war fälschlich 'locked_by' — das
+    // Schema-Feld heißt 'locked_by_email'. Vorher blieb die Besitzer-E-Mail
+    // nach dem Reapen in der DB hängen und ein Junk-Feld 'locked_by' wurde
+    // geschrieben. Zusätzlich: is_locked ist ein Boolean → mit `false`
+    // statt `null` zurücksetzen (lockClearValue).
     name: 'Lernpakete',
     lockField: 'is_locked',
+    lockClearValue: false,
     lockTimeField: 'locked_at',
-    ownerField: 'locked_by',
+    ownerField: 'locked_by_email',
   },
   {
     name: 'Einheiten',
@@ -120,7 +126,7 @@ Deno.serve(async (req) => {
     // 2. Verarbeite jede Entity mit Lock-Fähigkeit
     // ─────────────────────────────────────────────────────────────────
     for (const entityConfig of ENTITIES_WITH_LOCKS) {
-      const { name, lockField, lockTimeField, ownerField } = entityConfig;
+      const { name, lockField, lockTimeField, ownerField, lockClearValue = null } = entityConfig;
       const entity = base44.asServiceRole.entities[name];
 
       if (!entity) {
@@ -172,7 +178,7 @@ Deno.serve(async (req) => {
       // 4. Dynamisches Update-Payload (flexibel für alle Entities)
       // ─────────────────────────────────────────────────────────────────
       const updatePayload = {
-        [lockField]: null,
+        [lockField]: lockClearValue,
         [lockTimeField]: null,
       };
       if (ownerField) {

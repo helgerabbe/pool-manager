@@ -11,7 +11,11 @@
  * Diese Datei enthält nur die Hilfsfunktion zur Evaluierung des Lock-Status.
  */
 
-const LOCK_TIMEOUT_MS = 60 * 60 * 1000; // 60 Min
+// Lock-Audit 2026-06-10: synchron zum Backend (5 Min). Der Lock-Inhaber
+// hält die Sperre per Heartbeat (alle 25 s, pages/Workspace) frisch; der
+// lockReaper räumt verwaiste Sperren nach 5 Min ab. Die vorherigen 60 Min
+// zeigten anderen Nutzern eine längst abgeräumte Sperre als aktiv an.
+const LOCK_TIMEOUT_MS = 5 * 60 * 1000; // 5 Min
 
 /**
  * Prüft ob eine Einheit aktuell einen aktiven Structural Lock hat

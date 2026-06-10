@@ -28,6 +28,7 @@ import LernzieleUebersichtTab from '@/components/workspace/lernziele/LernzieleUe
 import MoodleExportTab from '@/components/workspace/MoodleExportTab';
 import ExportCockpitView from '@/components/export/ExportCockpitView';
 import AllgemeineAufgabenView from '@/components/allgemeineAufgaben/AllgemeineAufgabenView';
+import { base44 } from '@/api/base44Client';
 import { deleteLernpaket as deleteLernpaketService } from '@/services/LernpaketService';
 import { deleteLernziel as deleteLernzielService } from '@/services/LernzielService';
 import { deleteAufgabenbaustein } from '@/services/AufgabenbausteinService';
@@ -295,6 +296,26 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     };
   }, [isStructuralEditingActive, isTab1EditingActive, einheit?.id]);
 
+  // 💓 STRUKTUR-LOCK-HEARTBEAT (Lock-Audit 2026-06-10):
+  // Der lockReaper räumt Einheiten-Sperren nach 5 Min Inaktivität ab. Ohne
+  // Heartbeat verlor eine Fachschaftsleitung, die länger als 5 Min im
+  // Strukturboard/Dashboard arbeitete, ihre Sperre UNBEMERKT — andere konnten
+  // dann parallel Locks erwerben und sich gegenseitig überschreiben. Analog
+  // zum Lernpaket-Heartbeat (useLocks.js) erneuern wir den Zeitstempel alle
+  // 25 s, solange der Bearbeitungsmodus aktiv ist. syncStatusTracker
+  // ignoriert structural_locked_at explizit (kein 'modified'-Flag).
+  useEffect(() => {
+    if (!(isStructuralEditingActive || isTab1EditingActive) || !einheit?.id) return;
+    const intervalId = setInterval(() => {
+      base44.entities.Einheiten.update(einheit.id, {
+        structural_locked_at: new Date().toISOString(),
+      }).catch((err) => {
+        console.warn('[Workspace] Struktur-Lock-Heartbeat fehlgeschlagen:', err?.message);
+      });
+    }, 25000);
+    return () => clearInterval(intervalId);
+  }, [isStructuralEditingActive, isTab1EditingActive, einheit?.id]);
+
   // ✅ BEFOREUNLOAD: Not-Unlock wenn Browser-Tab geschlossen wird (Race Condition Fix)
   // Hinweis: Der Backend-Timeout (60 Min) bereinigt verwaiste Locks automatisch
   useEffect(() => {
@@ -529,8 +550,10 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     () =>
       paketeFuerEinheit.filter(
         (p) =>
-          p.locked_by &&
-          p.locked_by !== authUser?.email &&
+          // Lock-Audit 2026-06-10: Schema-Feld heißt locked_by_email (nicht
+          // locked_by) — vorher war diese Liste immer leer.
+          p.locked_by_email &&
+          p.locked_by_email !== authUser?.email &&
           p.locked_at &&
           Date.now() - new Date(p.locked_at).getTime() < PAKET_LOCK_TIMEOUT_MS
       ),
@@ -538,7 +561,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   );
 
   const kollegen = useMemo(
-    () => [...new Set(aktivePaketLocks.map((p) => p.locked_by))],
+    () => [...new Set(aktivePaketLocks.map((p) => p.locked_by_email))],
     [aktivePaketLocks]
   );
 

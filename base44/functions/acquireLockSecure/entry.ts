@@ -36,7 +36,10 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 // Im AFK-/Crash-Fall fliegt der verwaiste Lock damit nach 5 Min weg
 // statt nach 30 Min, was die Frustration drastisch reduziert.
 const PAKET_LOCK_TIMEOUT_MS = 5 * 60 * 1000;
-const STRUCTURAL_LOCK_TIMEOUT_MS = 60 * 60 * 1000;
+// Lock-Audit 2026-06-10: auf 5 Min angeglichen (Heartbeat hält aktive
+// Struktur-Sperren frisch, lockReaper räumt nach 5 Min ab). Vorher
+// blockierte eine verwaiste Struktur-Sperre Lernpaket-Locks bis zu 60 Min.
+const STRUCTURAL_LOCK_TIMEOUT_MS = 5 * 60 * 1000;
 
 // ──────────────────────────────────────────────────────────────────────
 // Inline-Kopie aus functions/utils/occLockUtils.js (Single Source of Truth).

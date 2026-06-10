@@ -13,6 +13,22 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const LOCK_TIMEOUT_MS = 60 * 60 * 1000;
+// Struktur-Lock-Gültigkeit: 5 Min, gehalten per Heartbeat (pages/Workspace).
+const STRUCT_LOCK_TIMEOUT_MS = 5 * 60 * 1000;
+
+async function resolveDisplayName(base44, email) {
+  if (!email) return null;
+  try {
+    const benutzer = await base44.asServiceRole.entities.Benutzer.filter({ user_id: email });
+    const b = benutzer?.[0];
+    if (b?.vorname || b?.nachname) {
+      return `${b.vorname || ''} ${b.nachname || ''}`.trim();
+    }
+  } catch (_e) {
+    // Anzeigename ist Kosmetik.
+  }
+  return null;
+}
 
 async function acquireProjectTaskLock(base44, taskId, userEmail) {
   // Self-Lockout-Fix 2026-06-10: State-Read + VERIFY beide über asServiceRole
@@ -25,6 +41,23 @@ async function acquireProjectTaskLock(base44, taskId, userEmail) {
   const einheit = await base44.asServiceRole.entities.Einheiten.get(aufgabe.einheit_id).catch(() => null);
   if (!einheit) {
     return { ok: false, reason: 'einheit_not_found' };
+  }
+
+  // ⛔ Struktur-Lock der Einheit (Lock-Audit 2026-06-10): Während die Einheit
+  // strukturell bearbeitet wird (Strukturboard/Dashboards), dürfen keine
+  // Projektaufgaben-Locks vergeben werden — analog lockTaskSecure.
+  if (einheit.structural_lock && einheit.structural_lock !== userEmail) {
+    const structAge = einheit.structural_locked_at
+      ? Date.now() - new Date(einheit.structural_locked_at).getTime()
+      : 0;
+    if (structAge < STRUCT_LOCK_TIMEOUT_MS) {
+      return {
+        ok: false,
+        reason: 'unit_structural_locked',
+        lockedBy: einheit.structural_lock,
+        lockedAt: einheit.structural_locked_at,
+      };
+    }
   }
 
   const lockedByOther = aufgabe.locked_by && aufgabe.locked_by !== userEmail;
@@ -115,6 +148,19 @@ Deno.serve(async (req) => {
 
     if (result.reason === 'einheit_not_found') {
       return Response.json({ error: 'Einheit not found' }, { status: 404 });
+    }
+
+    if (result.reason === 'unit_structural_locked') {
+      const displayName = (await resolveDisplayName(base44, result.lockedBy)) || 'einer anderen Person';
+      return Response.json(
+        {
+          error: `🔒 Die Einheit wird gerade strukturell von ${displayName} überarbeitet. Aufgaben können währenddessen nicht bearbeitet werden.`,
+          locked_by: result.lockedBy,
+          locked_at: result.lockedAt,
+          code: 'UNIT_STRUCTURAL_LOCKED',
+        },
+        { status: 409 }
+      );
     }
 
     return Response.json(
