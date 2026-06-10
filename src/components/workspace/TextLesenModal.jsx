@@ -274,7 +274,9 @@ export default function TextLesenModal({
           {(() => {
             const inhaltTyp = fieldValues?.inhalt_typ;
             const medientyp = fieldValues?.medientyp;
-            const isUploadMode = medientyp === 'upload';
+            const isVideoUploadMode = medientyp === 'upload';
+            const isAudioUploadMode = medientyp === 'audio_upload';
+            const isUploadMode = isVideoUploadMode || isAudioUploadMode;
             const isFieldVisible = (f) => {
               if (f.field_name === 'aufgabentext') return false; // schon oben gerendert
               if (f.field_name === 'inhalt' && inhaltTyp && inhaltTyp !== 'text') return false;
@@ -367,13 +369,14 @@ export default function TextLesenModal({
                 out.push(
                   <div key="__video_upload__" className="space-y-1.5">
                     <Label>
-                      Eigenes Video
+                      {isAudioUploadMode ? 'Eigene Audiodatei' : 'Eigenes Video'}
                       <span className="text-destructive ml-1">*</span>
                     </Label>
                     <VideoUploadField
                       value={fieldValues.url || ''}
                       onChange={(val) => handleFieldChange('url', val)}
                       disabled={isSaving || exportLocked}
+                      mode={isAudioUploadMode ? 'audio' : 'video'}
                     />
                   </div>
                 );

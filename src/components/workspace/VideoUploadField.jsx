@@ -18,18 +18,26 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
-  UploadCloud, Loader2, AlertCircle, CheckCircle2, HelpCircle, X, Film, ExternalLink,
+  UploadCloud, Loader2, AlertCircle, CheckCircle2, HelpCircle, X, Film, Music, ExternalLink,
 } from 'lucide-react';
 
 const MAX_MB = 100;
 const MAX_BYTES = MAX_MB * 1024 * 1024;
-const ACCEPT = 'video/mp4,video/webm,video/quicktime';
+const ACCEPT_VIDEO = 'video/mp4,video/webm,video/quicktime';
+const ACCEPT_AUDIO = 'audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/ogg,audio/webm';
 
 function formatMB(bytes) {
   return (bytes / 1024 / 1024).toFixed(1);
 }
 
-export default function VideoUploadField({ value, onChange, disabled = false }) {
+/**
+ * mode: 'video' (Default) | 'audio'
+ * Steuert erlaubte Formate, Beschriftungen und den Komprimierungs-Hilfetext.
+ */
+export default function VideoUploadField({ value, onChange, disabled = false, mode = 'video' }) {
+  const isAudio = mode === 'audio';
+  const ACCEPT = isAudio ? ACCEPT_AUDIO : ACCEPT_VIDEO;
+  const MediaIcon = isAudio ? Music : Film;
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState(null);
   const [uploadedName, setUploadedName] = useState(null);
@@ -46,7 +54,9 @@ export default function VideoUploadField({ value, onChange, disabled = false }) 
     if (file.size > MAX_BYTES) {
       setError(
         `Diese Datei ist ${formatMB(file.size)} MB groß. Das Limit liegt bei ${MAX_MB} MB. ` +
-        `Bitte komprimiere das Video vorher (siehe „Wie komprimiere ich mein Video?").`,
+        (isAudio
+          ? `Bitte komprimiere die Audiodatei vorher (siehe „Wie komprimieren?").`
+          : `Bitte komprimiere das Video vorher (siehe „Wie komprimiere ich mein Video?").`),
       );
       return;
     }
@@ -79,7 +89,7 @@ export default function VideoUploadField({ value, onChange, disabled = false }) 
             <CheckCircle2 className="w-4 h-4 text-green-700 shrink-0" />
             <div className="min-w-0">
               <p className="text-sm font-medium text-green-900 truncate">
-                {uploadedName || 'Video hochgeladen'}
+                {uploadedName || (isAudio ? 'Audiodatei hochgeladen' : 'Video hochgeladen')}
               </p>
               <a
                 href={value}
@@ -110,15 +120,17 @@ export default function VideoUploadField({ value, onChange, disabled = false }) 
       <div className="rounded-lg border-2 border-dashed border-input bg-muted/30 p-4">
         <div className="flex items-start gap-3">
           <div className="shrink-0 p-2 rounded-lg bg-primary/10 text-primary">
-            <Film className="w-5 h-5" />
+            <MediaIcon className="w-5 h-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground">Eigenes Video hochladen</p>
+            <p className="text-sm font-semibold text-foreground">
+              {isAudio ? 'Eigene Audiodatei hochladen' : 'Eigenes Video hochladen'}
+            </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Max. <strong>{MAX_MB} MB</strong> · MP4, WebM oder MOV
+              Max. <strong>{MAX_MB} MB</strong> · {isAudio ? 'MP3, M4A, WAV oder OGG' : 'MP4, WebM oder MOV'}
             </p>
           </div>
-          <CompressionHelp />
+          <CompressionHelp isAudio={isAudio} />
         </div>
 
         <div className="mt-3 flex items-center gap-2">
@@ -141,7 +153,7 @@ export default function VideoUploadField({ value, onChange, disabled = false }) 
           >
             {isUploading
               ? <><Loader2 className="w-4 h-4 animate-spin" /> Lädt hoch…</>
-              : <><UploadCloud className="w-4 h-4" /> Video auswählen</>}
+              : <><UploadCloud className="w-4 h-4" /> {isAudio ? 'Audiodatei auswählen' : 'Video auswählen'}</>}
           </Button>
           {isUploading && (
             <span className="text-xs text-muted-foreground">
@@ -161,7 +173,71 @@ export default function VideoUploadField({ value, onChange, disabled = false }) 
   );
 }
 
-function CompressionHelp() {
+function CompressionHelp({ isAudio = false }) {
+  if (isAudio) {
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="shrink-0 inline-flex items-center gap-1 text-xs text-primary hover:underline"
+          >
+            <HelpCircle className="w-3.5 h-3.5" />
+            Wie komprimieren?
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-80 text-sm space-y-3">
+          <div>
+            <p className="font-semibold text-foreground">Audiodatei unter {MAX_MB} MB bringen</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Lange Aufnahmen können groß werden. Mit einem dieser kostenlosen Tools
+              bekommst du fast jede Tondatei unter {MAX_MB} MB:
+            </p>
+          </div>
+          <ul className="space-y-2 text-xs">
+            <li className="flex gap-2">
+              <span className="font-bold text-primary">1.</span>
+              <div>
+                <a
+                  href="https://www.freeconvert.com/audio-compressor"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-primary hover:underline inline-flex items-center gap-1"
+                >
+                  FreeConvert <ExternalLink className="w-3 h-3" />
+                </a>{' '}
+                <span className="text-muted-foreground">(im Browser, ohne Account)</span>
+                <p className="text-muted-foreground mt-0.5">
+                  MP3 mit z. B. 128 kbit/s exportieren — das reicht für Sprache locker.
+                </p>
+              </div>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold text-primary">2.</span>
+              <div>
+                <a
+                  href="https://www.audacityteam.org/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-primary hover:underline inline-flex items-center gap-1"
+                >
+                  Audacity <ExternalLink className="w-3 h-3" />
+                </a>{' '}
+                <span className="text-muted-foreground">(kostenlos, Mac/Win)</span>
+                <p className="text-muted-foreground mt-0.5">
+                  „Exportieren als MP3" mit niedriger Bitrate für kleine Dateien.
+                </p>
+              </div>
+            </li>
+          </ul>
+          <div className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
+            <strong className="text-foreground">Tipp:</strong> Für gesprochene Inhalte
+            genügt eine niedrige Bitrate (z. B. 96–128 kbit/s).
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
+  }
   return (
     <Popover>
       <PopoverTrigger asChild>
