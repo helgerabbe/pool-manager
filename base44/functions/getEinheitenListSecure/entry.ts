@@ -129,8 +129,8 @@ Deno.serve(async (req) => {
       // Fach muss in der Liste sein, und kein Entwurf
       filterCriteria = { ...draftFilter, fach: { $in: subjects } };
     } else if (role === 'Fachlehrkraft' || role === 'Betrachter') {
-      // Fachlehrkraft/Betrachter sieht alle Einheiten IHRER FÄCHER
-      // Primäre Regel: fach muss in fachbereich_zustaendigkeit enthalten sein
+      // Fachlehrkraft/Betrachter sieht ALLE Einheiten ihrer zugeordneten Fächer
+      // (nicht nur die, denen sie als Mitarbeiter zugeordnet sind).
       const subjects = benutzer?.fachbereich_zustaendigkeit || [];
       if (subjects.length === 0) {
         // Keine Fächer zugeordnet → keine Einheiten
@@ -145,20 +145,8 @@ Deno.serve(async (req) => {
           }
         );
       }
-      const userMemberships = await base44.asServiceRole.entities.EinheitMembers.filter({
-        user_email: user.email,
-      });
-      const memberEinheitIds = (userMemberships || []).map(m => m.einheit_id).filter(Boolean);
-      if (memberEinheitIds.length === 0) {
-        return Response.json(emptyResponse(page, limit), {
-          status: 200,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'application/json',
-          },
-        });
-      }
-      filterCriteria = { ...draftFilter, id: { $in: memberEinheitIds }, fach: { $in: subjects } };
+      // Fach muss in der Liste sein, und kein Entwurf
+      filterCriteria = { ...draftFilter, fach: { $in: subjects } };
     } else {
       // Unbekannte Rolle → keine Einheiten
       return Response.json(
