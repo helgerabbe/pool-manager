@@ -162,10 +162,12 @@ export default function EinheitUebersichtTab({
     setIsLocking(true);
     try {
       const neuerStatus = istGesperrt ? 'Freigegeben für Bearbeitung' : 'Gesperrt';
+      // Hinweis: Wie bei handleSave bewusst KEIN `version`-Feld mitschicken.
+      // Der Edit-Lock (acquireUnitLockSecure) bumpt die DB-Version, sodass der
+      // hier gehaltene einheit.version-Wert veraltet wäre → unnötiger 409.
       await invokeFunction('updateEinheitSecure', {
         einheit_id: einheit.id,
         freigabe_status: neuerStatus,
-        version: einheit.version,
       });
       await queryClient.refetchQueries({ queryKey: ['workspace-data', einheit.id] });
       await queryClient.refetchQueries({ queryKey: ['einheiten-list-secure'] });
