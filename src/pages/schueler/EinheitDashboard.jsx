@@ -200,6 +200,7 @@ export default function EinheitDashboard() {
             item={activeItem}
             meta={activeMeta}
             lernpaketLogik={activeAufgabe?.lernpaket_logik || 'standard'}
+            lerntyp={lerntypKey}
             loadLernpaketAktivitaeten={loadLernpaketAktivitaeten}
             katalogById={katalogById}
             fortschrittByCompositeId={fortschrittByCompositeId}

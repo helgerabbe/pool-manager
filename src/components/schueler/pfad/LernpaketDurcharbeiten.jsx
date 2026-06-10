@@ -3,6 +3,7 @@ import { CheckCircle2, Loader2, ArrowLeft, Layers } from 'lucide-react';
 import {
   sortAktivitaetenNachLogik,
   istLernpaketGegated,
+  istPhaseOptional,
 } from '@/lib/lernpaketAktivitaetenOrder';
 import MasterfaehigeAktivitaet from './MasterfaehigeAktivitaet';
 import LernpaketAktivitaetItem from './LernpaketAktivitaetItem';
@@ -20,6 +21,7 @@ export default function LernpaketDurcharbeiten({
   item,                  // Lernpaket-Item aus dem Pfad ({ instance_id, ref_id, ... })
   meta,                  // Anzeige-Meta des Lernpakets
   lernpaketLogik,        // 'standard' | 'fast_track' | 'wissensspeicher' | 'test_only'
+  lerntyp,               // Lerntyp des Dashboards – steuert Phasen-Reihenfolge + optionale Übungen (Pragmatiker)
   loadLernpaketAktivitaeten,
   katalogById,
   fortschrittByCompositeId,
@@ -46,8 +48,8 @@ export default function LernpaketDurcharbeiten({
   const compositeId = (akt) => `${item.instance_id}::${akt.id}`;
 
   const sortiert = useMemo(
-    () => (aktivitaeten ? sortAktivitaetenNachLogik(aktivitaeten, lernpaketLogik) : []),
-    [aktivitaeten, lernpaketLogik]
+    () => (aktivitaeten ? sortAktivitaetenNachLogik(aktivitaeten, lernpaketLogik, lerntyp) : []),
+    [aktivitaeten, lernpaketLogik, lerntyp]
   );
 
   // Nach Phase gruppiert (Reihenfolge der ersten Vorkommen bleibt erhalten),
@@ -79,7 +81,13 @@ export default function LernpaketDurcharbeiten({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortiert, fortschrittByCompositeId, item.instance_id]);
 
-  const alleErledigt = sortiert.length > 0 && sortiert.every((akt) => erledigtSet.has(akt.id));
+  // Pflicht-Aktivitäten: optionale Phasen (Übung beim Pragmatiker) zählen
+  // NICHT für den Paket-Abschluss – Input + Abschluss genügen.
+  const pflicht = useMemo(
+    () => sortiert.filter((akt) => !istPhaseOptional(akt.phase, lerntyp)),
+    [sortiert, lerntyp]
+  );
+  const alleErledigt = pflicht.length > 0 && pflicht.every((akt) => erledigtSet.has(akt.id));
   const gegated = istLernpaketGegated(lernpaketLogik, alleErledigt);
 
   // Sobald alle Aktivitäten erledigt sind, das Lernpaket-Item selbst als
@@ -91,10 +99,15 @@ export default function LernpaketDurcharbeiten({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [alleErledigt, istLernpaketErledigt]);
 
-  // Sequenzielles Gating: eine Aktivität ist nur frei, wenn alle davor erledigt sind.
+  // Sequenzielles Gating: eine Aktivität ist nur frei, wenn alle PFLICHT-
+  // Aktivitäten davor erledigt sind. Optionale Aktivitäten (Übungen beim
+  // Pragmatiker) sind nie gesperrt und blockieren nichts.
   const istGesperrt = (idx) => {
     if (!gegated) return false;
-    return sortiert.slice(0, idx).some((akt) => !erledigtSet.has(akt.id));
+    if (istPhaseOptional(sortiert[idx]?.phase, lerntyp)) return false;
+    return sortiert
+      .slice(0, idx)
+      .some((akt) => !istPhaseOptional(akt.phase, lerntyp) && !erledigtSet.has(akt.id));
   };
 
   // Einzel-Aktivitätsseite anzeigen, wenn eine Aktivität gewählt ist.
@@ -153,7 +166,10 @@ export default function LernpaketDurcharbeiten({
           <div className="space-y-7">
             {gruppiertNachPhase.map((gruppe) => (
               <section key={gruppe.phase} className="space-y-3">
-                <PhasenAbschnitt phase={gruppe.phase} />
+                <PhasenAbschnitt
+                  phase={gruppe.phase}
+                  optional={istPhaseOptional(gruppe.phase, lerntyp)}
+                />
                 <ul className="space-y-2.5">
                   {gruppe.items.map(({ akt, idx }) => (
                     <LernpaketAktivitaetItem
@@ -178,7 +194,9 @@ export default function LernpaketDurcharbeiten({
       {alleErledigt && (
         <p className="pt-4 text-center text-sm font-medium text-emerald-600 shrink-0">
           <CheckCircle2 className="inline w-4 h-4 mr-1.5 -mt-0.5" />
-          Lernpaket abgeschlossen – du kannst alle Übungen jederzeit wiederholen.
+          {lerntyp === 'pragmatiker'
+            ? 'Lernpaket abgeschlossen – die Übungen stehen dir weiterhin freiwillig zur Verfügung.'
+            : 'Lernpaket abgeschlossen – du kannst alle Übungen jederzeit wiederholen.'}
         </p>
       )}
     </div>

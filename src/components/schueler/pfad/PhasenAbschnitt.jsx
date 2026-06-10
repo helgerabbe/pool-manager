@@ -12,7 +12,7 @@ const PHASE_META = {
   Abschluss: { label: 'Abschluss', icon: Flag, color: 'text-violet-600', bg: 'bg-violet-100', line: 'bg-violet-200' },
 };
 
-export default function PhasenAbschnitt({ phase }) {
+export default function PhasenAbschnitt({ phase, optional = false }) {
   const meta = PHASE_META[phase] || PHASE_META.Input;
   const Icon = meta.icon;
   return (
@@ -23,6 +23,11 @@ export default function PhasenAbschnitt({ phase }) {
       <span className={cn('text-sm font-bold uppercase tracking-wide shrink-0', meta.color)}>
         {meta.label}
       </span>
+      {optional && (
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground bg-muted rounded-full px-2 py-0.5 shrink-0">
+          Freiwillig
+        </span>
+      )}
       <span className={cn('h-px flex-1 rounded-full', meta.line)} />
     </div>
   );

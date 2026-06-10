@@ -13,6 +13,12 @@
  * durchgearbeitet wurde, verhält es sich wie ein Wissensspeicher – alle
  * Aktivitäten sind dann frei wiederholbar (Gating fällt weg), die
  * Erledigt-Markierungen bleiben erhalten.
+ *
+ * LERNTYP-ÜBERSTEUERUNG (Pragmatiker):
+ * Beim Lerntyp 'pragmatiker' ist der Abschluss IMMER vorgezogen
+ * (Input → Abschluss → Übung) – er prüft zuerst, ob er den Stoff schon kann.
+ * Die Übungen sind für ihn OPTIONAL: frei zugänglich, blockieren nichts und
+ * zählen nicht für den Paket-Abschluss (Input + Abschluss genügen).
  */
 
 export const PHASEN_REIHENFOLGE = {
@@ -23,15 +29,29 @@ export const PHASEN_REIHENFOLGE = {
 };
 
 /**
+ * Ob eine Phase für diesen Lerntyp optional ist (zählt nicht für den
+ * Paket-Abschluss, wird nie gegated). Aktuell: Übung beim Pragmatiker.
+ */
+export function istPhaseOptional(phase, lerntyp) {
+  return lerntyp === 'pragmatiker' && phase === 'Übung';
+}
+
+/**
  * Sortiert eine Liste von LernpaketPhaseAktivitaet nach der Phasen-Reihenfolge
  * des jeweiligen Logik-Typs; innerhalb einer Phase nach `reihenfolge`.
+ * Beim Lerntyp 'pragmatiker' wird die Reihenfolge übersteuert:
+ * Input → Abschluss → Übung (Abschluss vorgezogen).
  *
  * @param {Array}  aktivitaeten  LernpaketPhaseAktivitaet-Records
  * @param {string} logik         lernpaket_logik
+ * @param {string} [lerntyp]     Lerntyp des Schüler-Dashboards
  * @returns {Array} sortierte Aktivitäten
  */
-export function sortAktivitaetenNachLogik(aktivitaeten = [], logik = 'standard') {
-  const order = PHASEN_REIHENFOLGE[logik] || PHASEN_REIHENFOLGE.standard;
+export function sortAktivitaetenNachLogik(aktivitaeten = [], logik = 'standard', lerntyp = null) {
+  const order =
+    lerntyp === 'pragmatiker'
+      ? ['Input', 'Abschluss', 'Übung']
+      : PHASEN_REIHENFOLGE[logik] || PHASEN_REIHENFOLGE.standard;
   const phaseIndex = (phase) => {
     const i = order.indexOf(phase);
     return i === -1 ? 99 : i;
