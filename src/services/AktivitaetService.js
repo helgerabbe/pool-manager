@@ -39,10 +39,16 @@ export async function getAllLernpaketAktivitaeten() {
  * freigegebenen) MasterAufgabe an. So sieht der Schüler die hinterlegten Inhalte.
  */
 export async function getAktivitaetenByLernpaket(lernpaketId) {
-  const [aktivitaeten, masterAufgaben] = await Promise.all([
+  const [aktivitaetenRaw, masterAufgaben] = await Promise.all([
     base44.entities.LernpaketPhaseAktivitaet.filter({ lernpaket_id: lernpaketId }),
     base44.entities.MasterAufgabe.filter({ lernpaket_id: lernpaketId }),
   ]);
+
+  // Tombstones ausblenden: Aktivitäten mit sync_status='to_delete' wurden von
+  // der Lehrkraft gelöscht und warten nur noch auf den Export-Abgleich. Sie
+  // dürfen Schülern NICHT mehr angezeigt werden (sonst erscheinen leere
+  // Aufgaben wie „keine Begriffspaare hinterlegt").
+  const aktivitaeten = aktivitaetenRaw.filter((a) => a.sync_status !== 'to_delete');
 
   // activity_id → ALLE MasterAufgaben (nach reihenfolge sortiert).
   const masterListeByActivity = new Map();
