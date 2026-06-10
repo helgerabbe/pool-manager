@@ -28,7 +28,7 @@ function vimeoEmbed(url) {
 export default function VideoAudioSeite({ aktivitaet, busy, onErledigt, onBack }) {
   const fv = aktivitaet?.field_values || {};
   const url = fv.url || fv.video_url || '';
-  const istAudio = fv.medientyp === 'audio';
+  const istAudio = fv.medientyp === 'audio' || fv.medientyp === 'audio_upload';
 
   const ytEmbed = !istAudio ? youtubeEmbed(url) : null;
   const vmEmbed = !istAudio ? vimeoEmbed(url) : null;
