@@ -215,15 +215,30 @@ Deno.serve(async (req) => {
         );
       }
 
-      const isLockedByUser = lernpaket.locked_by_email === user.email;
-      const isLocked = !!lernpaket.is_locked;
+      // Lock-Audit Punkt 3 (2026-06-10): Bisher wurde nur abgelehnt, wenn ein
+      // ANDERER Nutzer den Lock hielt. War der eigene Lock bereits abgelaufen
+      // (z. B. vom lockReaper nach AFK weggeräumt), ging der Save OHNE Lock
+      // durch und konnte zwischenzeitliche Änderungen eines Kollegen still
+      // überschreiben. Jetzt: Inhaltsänderungen erfordern einen AKTIV
+      // gehaltenen Lock — entweder den Task-Lock (lockTaskSecure) oder den
+      // Lock auf dem übergeordneten Lernpaket.
+      const paketLockHeldByUser =
+        lernpaket.is_locked === true && lernpaket.locked_by_email === user.email;
+      const taskLockHeldByUser =
+        currentTask.lock_status === true && currentTask.locked_by_user === user.email;
 
-      if (isLocked && !isLockedByUser) {
+      if (!paketLockHeldByUser && !taskLockHeldByUser) {
+        const otherOwner = lernpaket.is_locked
+          ? lernpaket.locked_by_email
+          : (currentTask.lock_status ? currentTask.locked_by_user : null);
         return Response.json(
           {
-            error: `Bearbeitungs-Lock fehlt. Lernpaket ist durch ${lernpaket.locked_by_email} gesperrt.`,
+            error: otherOwner && otherOwner !== user.email
+              ? `Bearbeitungs-Lock fehlt. Gesperrt durch ${otherOwner}.`
+              : 'Kein aktiver Bearbeitungs-Lock vorhanden (ggf. nach Inaktivität abgelaufen). Bitte Bearbeitungsmodus neu starten.',
+            code: 'LOCK_NOT_HELD',
           },
-          { status: 403 }
+          { status: 409 }
         );
       }
     }
