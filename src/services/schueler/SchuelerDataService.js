@@ -13,11 +13,12 @@
  */
 
 import * as base44Adapter from './adapters/base44Adapter';
+import * as supabaseAdapter from './adapters/supabaseAdapter';
 import { getBackendName } from './backend';
 
-// Phase 2: hier kommt der supabaseAdapter dazu.
 const ADAPTERS = {
   base44: base44Adapter,
+  supabase: supabaseAdapter,
 };
 
 const adapter = ADAPTERS[getBackendName()] || base44Adapter;

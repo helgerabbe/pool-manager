@@ -89,17 +89,25 @@ sich exakt wie vorher verhalten.
 
 ## Phase 2: Supabase-Adapter
 
-- [ ] `@supabase/supabase-js` Paket installieren
-- [ ] `services/schueler/adapters/supabaseAdapter.js`: Lese-Methoden gegen die
-      Tabellen aus `supabase-schema.sql` (einheiten, lernpakete, lernpaket_aktivitaeten,
-      master_aufgaben, lernziele, system_bausteine, inhalt_snapshots, …)
-- [ ] Schreib-Methoden: einheit_fortschritt, aktivitaet_fortschritt,
+- [x] `@supabase/supabase-js` Paket installiert
+- [x] `services/schueler/adapters/supabaseClient.js`: Singleton-Client
+      (liest `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` zur Build-Zeit)
+- [x] `services/schueler/adapters/supabaseAdapter.js`: Lese-Methoden gegen die
+      Tabellen aus `supabase-schema.sql` (einheiten, lernpakete, lernpaket_aktivitaeten
+      inkl. MasterAufgaben-Anreicherung, lernziele, system_bausteine, inhalt_snapshots, …).
+      `daten`-jsonb wird mit den Kern-Spalten zur Base44-Form gemergt.
+      Fächer werden aus den exportierten Einheiten abgeleitet (keine Lookup-Tabelle).
+- [x] Schreib-Methoden: einheit_fortschritt, aktivitaet_fortschritt,
       lernziel_einschaetzungen, zeit_logs, einheit_notizen, lerntagebuch_eintraege
-      (Upsert-Logik analog zur heutigen App)
-- [ ] Supabase-Auth-Adapter (E-Mail/Passwort-Login, Session-Handling)
+      (`user_email` wird entfernt – `user_id` setzt die DB via auth.uid();
+      `created_at` wird als `created_date` gespiegelt)
+- [x] Adapter in der Plattform-Weiche registriert (`SchuelerDataService.js`)
+- [x] Verhalten im Supabase-Modus für KI-Features definiert:
+      `invokeFunction`/`uploadFile`/`transcribeAudio` werfen einen freundlichen
+      Hinweis; Inhalte kommen ausschließlich aus `inhalt_snapshots`
+- [ ] Supabase-Auth: `getCurrentUser()` ist implementiert; offen sind
+      E-Mail/Passwort-Login-Fluss + Session-Handling
 - [ ] Einfache Login-Maske für den Supabase-Modus (im Base44-Modus unsichtbar)
-- [ ] Verhalten im Supabase-Modus für KI-Features definieren:
-      Snapshot vorhanden → anzeigen; nicht vorhanden → freundlicher Hinweis
 
 **✋ Checkpoint 2:** Code-Review – beide Adapter implementieren dieselbe Schnittstelle.
 
