@@ -15,8 +15,11 @@ let client = null;
 
 export function getSupabase() {
   if (!client) {
-    const url = import.meta.env?.VITE_SUPABASE_URL;
-    const anonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY;
+    // URL bereinigen: Pfade wie /rest/v1/ oder anhängende Slashes entfernen –
+    // der Client braucht die nackte Projekt-URL (https://<ref>.supabase.co).
+    const rawUrl = import.meta.env?.VITE_SUPABASE_URL || '';
+    const url = rawUrl.trim().replace(/\/(rest|auth|storage|realtime)\/v\d+\/?$/i, '').replace(/\/+$/, '');
+    const anonKey = (import.meta.env?.VITE_SUPABASE_ANON_KEY || '').trim();
     if (!url || !anonKey) {
       throw new Error(
         'Supabase ist nicht konfiguriert: VITE_SUPABASE_URL und VITE_SUPABASE_ANON_KEY müssen beim Build gesetzt sein.'
