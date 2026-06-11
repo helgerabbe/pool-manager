@@ -33,6 +33,7 @@ import FachSeite from '@/pages/schueler/FachSeite';
 import EinheitOnboarding from '@/pages/schueler/EinheitOnboarding';
 import EinheitOnboardingQuiz from '@/pages/schueler/EinheitOnboardingQuiz';
 import EinheitDashboard from '@/pages/schueler/EinheitDashboard';
+import SupabaseLoginGate from '@/components/schueler/auth/SupabaseLoginGate';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -72,13 +73,17 @@ const AuthenticatedApp = () => {
             <Route path=":slug" element={<DocViewer />} />
           </Route>
 
-          <Route path="/lernen" element={<StudentArea />} />
-          <Route path="/lernen/poolzeit" element={<PoolzeitStart />} />
-          <Route path="/lernen/lerntagebuch" element={<Lerntagebuch />} />
-          <Route path="/lernen/fach" element={<FachSeite />} />
-          <Route path="/lernen/einheit" element={<EinheitOnboarding />} />
-          <Route path="/lernen/onboarding" element={<EinheitOnboardingQuiz />} />
-          <Route path="/lernen/dashboard" element={<EinheitDashboard />} />
+          {/* Schülerbereich: Im Supabase-Modus durch Login-Gate geschützt,
+              im Base44-Modus rendert das Gate transparent durch. */}
+          <Route element={<SupabaseLoginGate />}>
+            <Route path="/lernen" element={<StudentArea />} />
+            <Route path="/lernen/poolzeit" element={<PoolzeitStart />} />
+            <Route path="/lernen/lerntagebuch" element={<Lerntagebuch />} />
+            <Route path="/lernen/fach" element={<FachSeite />} />
+            <Route path="/lernen/einheit" element={<EinheitOnboarding />} />
+            <Route path="/lernen/onboarding" element={<EinheitOnboardingQuiz />} />
+            <Route path="/lernen/dashboard" element={<EinheitDashboard />} />
+          </Route>
           
           
           {/* ✅ GESCHÜTZT: Admin-Bereich */}

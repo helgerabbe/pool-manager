@@ -105,9 +105,11 @@ sich exakt wie vorher verhalten.
 - [x] Verhalten im Supabase-Modus für KI-Features definiert:
       `invokeFunction`/`uploadFile`/`transcribeAudio` werfen einen freundlichen
       Hinweis; Inhalte kommen ausschließlich aus `inhalt_snapshots`
-- [ ] Supabase-Auth: `getCurrentUser()` ist implementiert; offen sind
-      E-Mail/Passwort-Login-Fluss + Session-Handling
-- [ ] Einfache Login-Maske für den Supabase-Modus (im Base44-Modus unsichtbar)
+- [x] Supabase-Auth: `getCurrentUser()` im Adapter; Login-Fluss + Session-Handling
+      über `SupabaseLoginGate` (Session-Check + onAuthStateChange)
+- [x] Login-Maske für den Supabase-Modus (`components/schueler/auth/SupabaseLoginForm`);
+      die `/lernen`-Routen sind in App.jsx durch das Gate gewrappt –
+      im Base44-Modus rendert es transparent durch (Client wird nie geladen)
 
 **✋ Checkpoint 2:** Code-Review – beide Adapter implementieren dieselbe Schnittstelle.
 
