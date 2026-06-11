@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { CheckCircle2, Loader2, Sparkles, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { base44 } from '@/api/base44Client';
+import { listInhaltSnapshots, invokeFunction } from '@/services/schueler/SchuelerDataService';
 
 /**
  * Schüler-Anzeige des System-Bausteins „Einführung in das Themenfeld".
@@ -31,14 +31,14 @@ export default function ThemenfeldEinfuehrungSeite({
 
   const fetchSnapshot = useCallback(async ({ force = false } = {}) => {
     setError(null);
-    const res = await base44.functions.invoke('getOrCreateThemenfeldEinfuehrung', {
+    const res = await invokeFunction('getOrCreateThemenfeldEinfuehrung', {
       einheitId,
       lerntyp,
       instanceId: item.instance_id,
       themenfeldId,
       force,
     });
-    return res?.data?.inhalt || null;
+    return res?.inhalt || null;
   }, [einheitId, lerntyp, item.instance_id, themenfeldId]);
 
   // Beim Öffnen: nur LESEN (kein erzwungenes Generieren). Die Backend-Funktion
@@ -55,8 +55,7 @@ export default function ThemenfeldEinfuehrungSeite({
     const snapshotFilter = themenfeldId
       ? { einheit_id: einheitId, baustein_id: 'sys_themenfeld_intro', themenfeld_id: themenfeldId }
       : { einheit_id: einheitId, lerntyp, instance_id: item.instance_id };
-    base44.entities.SchuelerInhaltSnapshot
-      .filter(snapshotFilter)
+    listInhaltSnapshots(snapshotFilter)
       .then((list) => {
         if (abort) return;
         const snap = Array.isArray(list) ? list[0] : null;

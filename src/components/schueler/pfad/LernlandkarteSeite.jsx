@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Map as MapIcon, CheckCircle2, Loader2, Layers, ArrowRight, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { base44 } from '@/api/base44Client';
+import * as SchuelerData from '@/services/schueler/SchuelerDataService';
 import { ITEM_GATE } from '@/lib/schuelerPfadGating';
 import LernzielAmpel from './LernzielAmpel';
 
@@ -34,12 +34,12 @@ export default function LernlandkarteSeite({
   // ── Daten laden ───────────────────────────────────────────────────────
   const themenfelderQ = useQuery({
     queryKey: ['themenfelder', einheitId],
-    queryFn: () => base44.entities.Themenfeld.filter({ einheit_id: einheitId }),
+    queryFn: () => SchuelerData.listThemenfelderByEinheit(einheitId),
     enabled: !!einheitId,
   });
   const lernpaketeQ = useQuery({
     queryKey: ['lernpakete-by-einheit', einheitId],
-    queryFn: () => base44.entities.Lernpakete.filter({ einheit_id: einheitId }),
+    queryFn: () => SchuelerData.listLernpaketeByEinheit(einheitId),
     enabled: !!einheitId,
   });
 
@@ -56,7 +56,7 @@ export default function LernlandkarteSeite({
     queryKey: ['lernzieleByPakete', paketIdsKey],
     queryFn: async () => {
       const lists = await Promise.all(
-        pakete.map((p) => base44.entities.Lernziele.filter({ lernpaket_id: p.id }))
+        pakete.map((p) => SchuelerData.listLernzieleByLernpaket(p.id))
       );
       return lists.flat();
     },
@@ -67,11 +67,7 @@ export default function LernlandkarteSeite({
   const einschaetzungenKey = ['lernzielEinschaetzungen', userEmail, einheitId];
   const einschaetzungenQ = useQuery({
     queryKey: einschaetzungenKey,
-    queryFn: () =>
-      base44.entities.SchuelerLernzielEinschaetzung.filter({
-        user_email: userEmail,
-        einheit_id: einheitId,
-      }),
+    queryFn: () => SchuelerData.listLernzielEinschaetzungen(userEmail, einheitId),
     enabled: !!userEmail && !!einheitId,
   });
   const einschaetzungen = einschaetzungenQ.data || [];
@@ -140,10 +136,10 @@ export default function LernlandkarteSeite({
 
     const existing = einschaetzungen.find((e) => e.lernziel_id === ziel.id);
     if (existing) {
-      if (wert === null) await base44.entities.SchuelerLernzielEinschaetzung.delete(existing.id);
-      else await base44.entities.SchuelerLernzielEinschaetzung.update(existing.id, { einschaetzung: wert });
+      if (wert === null) await SchuelerData.deleteLernzielEinschaetzung(existing.id);
+      else await SchuelerData.updateLernzielEinschaetzung(existing.id, { einschaetzung: wert });
     } else if (wert !== null) {
-      await base44.entities.SchuelerLernzielEinschaetzung.create({
+      await SchuelerData.createLernzielEinschaetzung({
         user_email: userEmail,
         einheit_id: einheitId,
         lernziel_id: ziel.id,

@@ -73,8 +73,10 @@ export async function listInhaltSnapshots(filter) {
 
 // ── Schülerdaten: Einheit-Fortschritt ───────────────────────────────────────
 
-export async function listEinheitFortschritt(userEmail) {
-  return base44.entities.SchuelerEinheitFortschritt.filter({ user_email: userEmail });
+export async function listEinheitFortschritt(userEmail, einheitId) {
+  const filter = { user_email: userEmail };
+  if (einheitId) filter.einheit_id = einheitId;
+  return base44.entities.SchuelerEinheitFortschritt.filter(filter);
 }
 
 export async function createEinheitFortschritt(data) {

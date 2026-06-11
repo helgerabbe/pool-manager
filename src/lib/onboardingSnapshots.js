@@ -13,6 +13,7 @@
  * Funktionen, damit es genau EINEN Lese-/Schreibpfad gibt.
  */
 import { base44 } from '@/api/base44Client';
+import { listInhaltSnapshots } from '@/services/schueler/SchuelerDataService';
 
 // UI-Schlüssel (im Cockpit/Schüler-Quiz) → baustein_id in der SSOT-Tabelle.
 export const ONBOARDING_BAUSTEIN_IDS = {
@@ -36,7 +37,8 @@ export async function ladeOnboardingSnapshots(einheitId) {
     lerntyp_diagnose: null,
   };
   if (!einheitId) return result;
-  const list = await base44.entities.SchuelerInhaltSnapshot.filter({
+  // Lesepfad über den Schüler-Service-Layer (Schreibpfad bleibt Lehrer-Tool/Base44).
+  const list = await listInhaltSnapshots({
     einheit_id: einheitId,
     geltungsbereich: 'einheit',
   });

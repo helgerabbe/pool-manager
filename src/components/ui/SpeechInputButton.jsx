@@ -8,7 +8,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Mic, MicOff, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { base44 } from '@/api/base44Client';
+import { uploadFile, transcribeAudio } from '@/services/schueler/SchuelerDataService';
 
 export default function SpeechInputButton({
   onResult,
@@ -71,8 +71,8 @@ export default function SpeechInputButton({
       const extension = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
       const audioBlob = new Blob(chunks, { type: mimeType });
       const audioFile = new File([audioBlob], `spracheingabe-${Date.now()}.${extension}`, { type: mimeType });
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: audioFile });
-      const transcript = await base44.integrations.Core.TranscribeAudio({ audio_url: file_url });
+      const { file_url } = await uploadFile(audioFile);
+      const transcript = await transcribeAudio(file_url);
       appendTranscript(transcript);
     } finally {
       setIsTranscribing(false);

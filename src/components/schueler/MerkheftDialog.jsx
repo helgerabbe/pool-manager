@@ -8,7 +8,7 @@
  */
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { listNotizen, createNotiz, deleteNotiz } from '@/services/schueler/SchuelerDataService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -29,10 +29,7 @@ export default function MerkheftDialog({ open, onOpenChange, einheitId, einheitT
   const { data: notizen = [], isLoading } = useQuery({
     queryKey: notizenKey,
     queryFn: () =>
-      base44.entities.SchuelerEinheitNotiz.filter(
-        { user_email: userEmail, einheit_id: einheitId },
-        '-created_date'
-      ),
+      listNotizen({ user_email: userEmail, einheit_id: einheitId }, '-created_date'),
     enabled: open && !!userEmail && !!einheitId,
   });
 
@@ -41,7 +38,7 @@ export default function MerkheftDialog({ open, onOpenChange, einheitId, einheitT
     if (!clean) return;
     setSaving(true);
     try {
-      await base44.entities.SchuelerEinheitNotiz.create({
+      await createNotiz({
         user_email: userEmail,
         einheit_id: einheitId,
         text: clean,
@@ -56,7 +53,7 @@ export default function MerkheftDialog({ open, onOpenChange, einheitId, einheitT
   };
 
   const loeschen = async (id) => {
-    await base44.entities.SchuelerEinheitNotiz.delete(id);
+    await deleteNotiz(id);
     await queryClient.invalidateQueries({ queryKey: notizenKey });
     queryClient.invalidateQueries({ queryKey: ['einheitNotizenAlle'] });
   };

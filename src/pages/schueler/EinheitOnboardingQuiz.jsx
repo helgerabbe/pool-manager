@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
-import { getCurrentUser } from '@/services/AuthService';
+import * as SchuelerData from '@/services/schueler/SchuelerDataService';
 import { ArrowLeft } from 'lucide-react';
 import { ladeOnboardingSnapshots } from '@/lib/onboardingSnapshots';
 import OnboardingStepNav from '@/components/schueler/onboarding/OnboardingStepNav';
@@ -41,19 +40,19 @@ export default function EinheitOnboardingQuiz() {
 
   const { data: einheit, isLoading } = useQuery({
     queryKey: ['einheit', einheitId],
-    queryFn: () => base44.entities.Einheiten.get(einheitId),
+    queryFn: () => SchuelerData.getEinheit(einheitId),
     enabled: !!einheitId,
   });
 
   const { data: user } = useQuery({
     queryKey: ['authUser'],
-    queryFn: () => getCurrentUser(),
+    queryFn: () => SchuelerData.getCurrentUser(),
     staleTime: 30 * 1000,
   });
 
   const { data: fortschritte = [] } = useQuery({
     queryKey: ['schuelerFortschritt', user?.email],
-    queryFn: () => base44.entities.SchuelerEinheitFortschritt.filter({ user_email: user.email }),
+    queryFn: () => SchuelerData.listEinheitFortschritt(user.email),
     enabled: !!user?.email,
   });
 
@@ -85,12 +84,12 @@ export default function EinheitOnboardingQuiz() {
   const empfehlungSpeichern = async (empfehlung) => {
     if (!user?.email || !einheitId || !empfehlung) return;
     if (fortschritt) {
-      await base44.entities.SchuelerEinheitFortschritt.update(fortschritt.id, {
+      await SchuelerData.updateEinheitFortschritt(fortschritt.id, {
         onboarding_done: true,
         onboarding_empfehlung: empfehlung,
       });
     } else {
-      await base44.entities.SchuelerEinheitFortschritt.create({
+      await SchuelerData.createEinheitFortschritt({
         user_email: user.email,
         einheit_id: einheitId,
         onboarding_done: true,
@@ -104,9 +103,9 @@ export default function EinheitOnboardingQuiz() {
   const dashboardWaehlen = async (typKey) => {
     if (!user?.email || !einheitId) return;
     if (fortschritt) {
-      await base44.entities.SchuelerEinheitFortschritt.update(fortschritt.id, { gewaehlter_lerntyp: typKey });
+      await SchuelerData.updateEinheitFortschritt(fortschritt.id, { gewaehlter_lerntyp: typKey });
     } else {
-      await base44.entities.SchuelerEinheitFortschritt.create({
+      await SchuelerData.createEinheitFortschritt({
         user_email: user.email,
         einheit_id: einheitId,
         gewaehlter_lerntyp: typKey,

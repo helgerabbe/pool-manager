@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { MessageCircle, ArrowRight, ArrowLeft, Send, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { base44 } from '@/api/base44Client';
+import { invokeFunction } from '@/services/schueler/SchuelerDataService';
 
 /**
  * Schritt 4 – simuliertes Gespräch mit dem KI-Lernbegleiter „Brian".
@@ -29,12 +29,12 @@ export default function StepBrianChat({ einheitId, leitfaden, verlauf, setVerlau
   const brianAntwort = async (aktuellerVerlauf) => {
     setLaedt(true);
     try {
-      const res = await base44.functions.invoke('brianLerntypChat', {
+      const res = await invokeFunction('brianLerntypChat', {
         einheitId,
         verlauf: aktuellerVerlauf,
         leitfaden,
       });
-      const antwort = res?.data?.antwort;
+      const antwort = res?.antwort;
       if (antwort) {
         setVerlauf([...aktuellerVerlauf, { rolle: 'assistant', text: antwort }]);
       }

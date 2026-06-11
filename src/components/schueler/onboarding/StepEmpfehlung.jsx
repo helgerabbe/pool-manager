@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Sparkles, Loader2, ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { base44 } from '@/api/base44Client';
+import { invokeFunction } from '@/services/schueler/SchuelerDataService';
 import { getLerntyp } from '@/lib/lerntypen';
 
 /**
@@ -22,16 +22,16 @@ export default function StepEmpfehlung({
     setLaedt(true);
     setFehler(null);
     try {
-      const res = await base44.functions.invoke('empfehleLerntyp', {
+      const res = await invokeFunction('empfehleLerntyp', {
         einheitId,
         selbsteinschaetzung_avg: selbstAvg,
         quiz_anteil_richtig: quizAnteil,
         brian_transkript: brianVerlauf,
       });
-      if (res?.data?.error) throw new Error(res.data.error);
-      setEmpfehlung(res.data.empfehlung);
-      setBegruendung(res.data.begruendung || '');
-      onSpeichern?.(res.data.empfehlung);
+      if (res?.error) throw new Error(res.error);
+      setEmpfehlung(res.empfehlung);
+      setBegruendung(res.begruendung || '');
+      onSpeichern?.(res.empfehlung);
     } catch (e) {
       setFehler(e?.message || 'Empfehlung konnte nicht erstellt werden.');
     } finally {

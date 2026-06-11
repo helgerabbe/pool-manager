@@ -50,31 +50,37 @@ Bereits gut vorbereitet: `services/AuthService.js` (Auth gekapselt) und
 `services/AktivitaetService.js` (Aktivitäten gekapselt) – der base44Adapter
 delegiert an diese.
 
-### Etappe 1.2: Lese-Pfade umstellen (Inhalte)
-- [ ] `useSchuelerPfad.js`: Einheit, Systembausteine, Aufgaben, Lernpakete,
+### Etappe 1.2: Lese-Pfade umstellen (Inhalte) ✅
+- [x] `useSchuelerPfad.js`: Einheit, Systembausteine, Aufgaben, Lernpakete,
       Aktivitätenkatalog über DataService laden
-- [ ] `FachSeite`: Fächer, Phasen, Einheiten über DataService
-- [ ] `LernlandkarteSeite`: Themenfelder, Lernpakete, Lernziele über DataService
-- [ ] `LernpaketDurcharbeiten` / `loadLernpaketAktivitaeten`: Aktivitäten + Master über DataService
-- [ ] `ThemenfeldEinfuehrungSeite` + Onboarding-Seiten: Snapshots (`SchuelerInhaltSnapshot`)
-      über DataService lesen
+- [x] `FachSeite` + `StudentArea` + `PoolzeitStart`: Fächer, Phasen, Einheiten über DataService
+- [x] `LernlandkarteSeite`: Themenfelder, Lernpakete, Lernziele über DataService
+- [x] `loadLernpaketAktivitaeten`: Aktivitäten + Master über DataService
+- [x] `ThemenfeldEinfuehrungSeite` + `lib/onboardingSnapshots.js` (Lesepfad):
+      Snapshots (`SchuelerInhaltSnapshot`) über DataService lesen
 
-### Etappe 1.3: Schreib-Pfade umstellen (Schülerdaten)
-- [ ] `markErledigt` / Aktivitäts-Fortschritt (`SchuelerAktivitaetFortschritt`)
-- [ ] Einheit-Fortschritt + Lerntyp-Wahl (`SchuelerEinheitFortschritt`, `useEinheitAbschluss`)
-- [ ] Lernziel-Ampel (`SchuelerLernzielEinschaetzung`)
-- [ ] Zeit-Tracker (`SchuelerEinheitZeitLog`, `useEinheitZeitTracker`)
-- [ ] Merkheft-Notizen (`SchuelerEinheitNotiz`, `MerkheftDialog`, `EinheitZeitDialog`)
-- [ ] Lerntagebuch (`SchuelerLerntagebuchEintrag`, `Lerntagebuch`, `PoolzeitStart`)
+### Etappe 1.3: Schreib-Pfade umstellen (Schülerdaten) ✅
+- [x] `markErledigt` / Aktivitäts-Fortschritt (`SchuelerAktivitaetFortschritt`)
+- [x] Einheit-Fortschritt + Lerntyp-Wahl (`SchuelerEinheitFortschritt`,
+      `useEinheitAbschluss`, `EinheitOnboarding`, `EinheitOnboardingQuiz`)
+- [x] Lernziel-Ampel (`SchuelerLernzielEinschaetzung`)
+- [x] Zeit-Tracker (`SchuelerEinheitZeitLog`, `useEinheitZeitTracker`)
+- [x] Merkheft-Notizen (`SchuelerEinheitNotiz`, `MerkheftDialog`;
+      `EinheitZeitDialog` geprüft: reine Anzeige, keine Datenzugriffe)
+- [x] Lerntagebuch (`SchuelerLerntagebuchEintrag`, `Lerntagebuch`, `PoolzeitStart`,
+      `StepWechselNotiz`)
 
-### Etappe 1.4: Auth + Sonderfälle
-- [ ] `AuthService` für Schülerbereich: `me()`, `isAuthenticated()` über Adapter
-- [ ] KI-/Funktionsaufrufe identifizieren und markieren
-      (`getOrCreateThemenfeldEinfuehrung`, `brianLerntypChat`, `empfehleLerntyp`,
-      Onboarding-Generatoren, `TranscribeAudio` in SpeechInputButton)
-      → Entscheidung pro Fall: Snapshot-only in Supabase-Modus oder später Edge Function
-- [ ] Abschluss-Check: kein direkter `base44.`-Import mehr in Schüler-Dateien
-      (außer im base44Adapter)
+### Etappe 1.4: Auth + Sonderfälle ✅
+- [x] Auth im Schülerbereich: `getCurrentUser()` läuft über den DataService
+      (delegiert an AuthService)
+- [x] KI-/Funktionsaufrufe über `invokeFunction()` im DataService gekapselt
+      (`getOrCreateThemenfeldEinfuehrung`, `brianLerntypChat`, `empfehleLerntyp`)
+      → im Supabase-Modus: Snapshot-only bzw. freundlicher Hinweis (Phase 2)
+- [x] `SpeechInputButton`: `uploadFile()` + `transcribeAudio()` über DataService
+- [x] Abschluss-Check: kein direkter `base44.`-Import mehr in Schüler-Dateien
+      (geprüft inkl. `components/schueler/lesen/*` – KITutor/KICheck sind reine
+      Brian-Links ohne Datenzugriff). Ausnahme bewusst: Schreibpfad in
+      `lib/onboardingSnapshots.js` (Lehrer-Tool)
 
 **✋ Checkpoint 1:** Nutzer testet den Schülerbereich auf Base44 – alles muss
 sich exakt wie vorher verhalten.

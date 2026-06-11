@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
-import { getCurrentUser } from '@/services/AuthService';
+import * as SchuelerData from '@/services/schueler/SchuelerDataService';
 import CockpitHeaderOverlay from '@/components/schueler/CockpitHeaderOverlay';
 import StartButton from '@/components/schueler/StartButton';
 import SelbstNotizKarte from '@/components/schueler/SelbstNotizKarte';
@@ -23,37 +22,33 @@ export default function StudentArea() {
   const navigate = useNavigate();
   const { data: user } = useQuery({
     queryKey: ['authUser'],
-    queryFn: () => getCurrentUser(),
+    queryFn: () => SchuelerData.getCurrentUser(),
     staleTime: 30 * 1000,
   });
 
   const { data: faecher = [] } = useQuery({
     queryKey: ['lookupFaecher'],
-    queryFn: () => base44.entities.LookupFaecher.list('reihenfolge'),
+    queryFn: () => SchuelerData.listFaecher(),
   });
   const { data: alleEinheiten = [] } = useQuery({
     queryKey: ['einheiten'],
-    queryFn: () => base44.entities.Einheiten.list(),
+    queryFn: () => SchuelerData.listEinheiten(),
   });
   const { data: fortschritte = [] } = useQuery({
     queryKey: ['schuelerFortschritt', user?.email],
-    queryFn: () => base44.entities.SchuelerEinheitFortschritt.filter({ user_email: user.email }),
+    queryFn: () => SchuelerData.listEinheitFortschritt(user.email),
     enabled: !!user?.email,
   });
   const { data: zeitLogs = [] } = useQuery({
     queryKey: ['einheitZeitLogs', user?.email],
-    queryFn: () => base44.entities.SchuelerEinheitZeitLog.filter({ user_email: user.email }),
+    queryFn: () => SchuelerData.listZeitLogs({ user_email: user.email }),
     enabled: !!user?.email,
   });
   // Letzte „Nachricht an dich selbst" aus dem Lerntagebuch (Poolzeit-Abschluss).
   const { data: letzteNachrichten = [] } = useQuery({
     queryKey: ['lerntagebuchLetzteNachricht', user?.email],
     queryFn: () =>
-      base44.entities.SchuelerLerntagebuchEintrag.filter(
-        { user_email: user.email, typ: 'nachricht' },
-        '-created_date',
-        1
-      ),
+      SchuelerData.listLerntagebuch({ user_email: user.email, typ: 'nachricht' }, '-created_date', 1),
     enabled: !!user?.email,
   });
   const letzteNotiz = letzteNachrichten[0] || null;

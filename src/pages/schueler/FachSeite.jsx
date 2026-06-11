@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
-import { getCurrentUser } from '@/services/AuthService';
+import * as SchuelerData from '@/services/schueler/SchuelerDataService';
 import { ArrowLeft, BookOpen } from 'lucide-react';
 import EinheitKachel from '@/components/schueler/EinheitKachel';
 
@@ -14,34 +13,34 @@ import EinheitKachel from '@/components/schueler/EinheitKachel';
 export default function FachSeite() {
   const { data: faecher = [] } = useQuery({
     queryKey: ['lookupFaecher'],
-    queryFn: () => base44.entities.LookupFaecher.list('reihenfolge'),
+    queryFn: () => SchuelerData.listFaecher(),
   });
   const { data: phasen = [] } = useQuery({
     queryKey: ['lookupPhasen'],
-    queryFn: () => base44.entities.LookupPhasen.list(),
+    queryFn: () => SchuelerData.listPhasen(),
   });
   const { data: alleEinheiten = [], isLoading } = useQuery({
     queryKey: ['einheiten'],
-    queryFn: () => base44.entities.Einheiten.list(),
+    queryFn: () => SchuelerData.listEinheiten(),
   });
   const { data: user } = useQuery({
     queryKey: ['authUser'],
-    queryFn: () => getCurrentUser(),
+    queryFn: () => SchuelerData.getCurrentUser(),
     staleTime: 30 * 1000,
   });
   const { data: fortschritte = [] } = useQuery({
     queryKey: ['schuelerFortschritt', user?.email],
-    queryFn: () => base44.entities.SchuelerEinheitFortschritt.filter({ user_email: user.email }),
+    queryFn: () => SchuelerData.listEinheitFortschritt(user.email),
     enabled: !!user?.email,
   });
   const { data: zeitLogs = [] } = useQuery({
     queryKey: ['einheitZeitLogs', user?.email],
-    queryFn: () => base44.entities.SchuelerEinheitZeitLog.filter({ user_email: user.email }),
+    queryFn: () => SchuelerData.listZeitLogs({ user_email: user.email }),
     enabled: !!user?.email,
   });
   const { data: notizen = [] } = useQuery({
     queryKey: ['einheitNotizenAlle', user?.email],
-    queryFn: () => base44.entities.SchuelerEinheitNotiz.filter({ user_email: user.email }),
+    queryFn: () => SchuelerData.listNotizen({ user_email: user.email }),
     enabled: !!user?.email,
   });
 

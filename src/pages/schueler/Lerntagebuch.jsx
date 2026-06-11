@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
-import { getCurrentUser } from '@/services/AuthService';
+import * as SchuelerData from '@/services/schueler/SchuelerDataService';
 import { ArrowLeft, NotebookPen, Loader2, Send } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -23,7 +22,7 @@ export default function Lerntagebuch() {
 
   const { data: user } = useQuery({
     queryKey: ['authUser'],
-    queryFn: () => getCurrentUser(),
+    queryFn: () => SchuelerData.getCurrentUser(),
     staleTime: 30 * 1000,
   });
 
@@ -31,11 +30,7 @@ export default function Lerntagebuch() {
   const { data: eintraege = [], isLoading } = useQuery({
     queryKey: eintraegeKey,
     queryFn: () =>
-      base44.entities.SchuelerLerntagebuchEintrag.filter(
-        { user_email: user.email },
-        '-created_date',
-        200
-      ),
+      SchuelerData.listLerntagebuch({ user_email: user.email }, '-created_date', 200),
     enabled: !!user?.email,
   });
 
@@ -44,7 +39,7 @@ export default function Lerntagebuch() {
     if (!clean) return;
     setSaving(true);
     try {
-      await base44.entities.SchuelerLerntagebuchEintrag.create({
+      await SchuelerData.createLerntagebuchEintrag({
         user_email: user.email,
         text: clean,
         typ: 'frei',
@@ -58,7 +53,7 @@ export default function Lerntagebuch() {
   };
 
   const loeschen = async (id) => {
-    await base44.entities.SchuelerLerntagebuchEintrag.delete(id);
+    await SchuelerData.deleteLerntagebuchEintrag(id);
     await queryClient.invalidateQueries({ queryKey: eintraegeKey });
   };
 

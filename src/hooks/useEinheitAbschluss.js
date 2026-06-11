@@ -8,7 +8,7 @@
  */
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { listEinheitFortschritt, updateEinheitFortschritt } from '@/services/schueler/SchuelerDataService';
 
 export function useEinheitAbschluss({ einheitId, lerntyp, userEmail, erledigtAnzahl, gesamtAnzahl }) {
   const queryClient = useQueryClient();
@@ -26,13 +26,10 @@ export function useEinheitAbschluss({ einheitId, lerntyp, userEmail, erledigtAnz
     doneRef.current = true;
     (async () => {
       try {
-        const list = await base44.entities.SchuelerEinheitFortschritt.filter({
-          user_email: userEmail,
-          einheit_id: einheitId,
-        });
+        const list = await listEinheitFortschritt(userEmail, einheitId);
         const record = list[0];
         if (!record || record.abgeschlossen) return;
-        await base44.entities.SchuelerEinheitFortschritt.update(record.id, {
+        await updateEinheitFortschritt(record.id, {
           abgeschlossen: true,
           abgeschlossen_am: new Date().toISOString(),
           abgeschlossen_lerntyp: lerntyp,

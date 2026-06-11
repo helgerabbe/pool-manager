@@ -8,7 +8,7 @@
  * Keine Sekunden – bewusst grob, schülergerecht.
  */
 import { useEffect, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
+import { listZeitLogs, createZeitLog, updateZeitLog } from '@/services/schueler/SchuelerDataService';
 
 function heuteLokal() {
   const d = new Date();
@@ -33,7 +33,7 @@ export function useEinheitZeitTracker(einheitId, userEmail) {
         const datum = heuteLokal();
         // Tageswechsel oder erster Tick: passenden Record suchen/anlegen.
         if (!recordRef.current || recordRef.current.datum !== datum) {
-          const list = await base44.entities.SchuelerEinheitZeitLog.filter({
+          const list = await listZeitLogs({
             user_email: userEmail,
             einheit_id: einheitId,
             datum,
@@ -44,10 +44,10 @@ export function useEinheitZeitTracker(einheitId, userEmail) {
         }
         if (recordRef.current) {
           const neu = recordRef.current.minuten + 1;
-          await base44.entities.SchuelerEinheitZeitLog.update(recordRef.current.id, { minuten: neu });
+          await updateZeitLog(recordRef.current.id, { minuten: neu });
           recordRef.current.minuten = neu;
         } else {
-          const created = await base44.entities.SchuelerEinheitZeitLog.create({
+          const created = await createZeitLog({
             user_email: userEmail,
             einheit_id: einheitId,
             datum,

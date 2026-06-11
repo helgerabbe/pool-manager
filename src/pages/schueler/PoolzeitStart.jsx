@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
-import { getCurrentUser } from '@/services/AuthService';
+import * as SchuelerData from '@/services/schueler/SchuelerDataService';
 import CockpitHeaderOverlay from '@/components/schueler/CockpitHeaderOverlay';
 import StepGesamtzeit from '@/components/schueler/poolzeit/StepGesamtzeit';
 import StepFaecherPlanung from '@/components/schueler/poolzeit/StepFaecherPlanung';
@@ -24,13 +23,13 @@ export default function PoolzeitStart() {
 
   const { data: user } = useQuery({
     queryKey: ['authUser'],
-    queryFn: () => getCurrentUser(),
+    queryFn: () => SchuelerData.getCurrentUser(),
     staleTime: 30 * 1000,
   });
 
   const { data: faecher = [] } = useQuery({
     queryKey: ['lookupFaecher'],
-    queryFn: () => base44.entities.LookupFaecher.list('reihenfolge'),
+    queryFn: () => SchuelerData.listFaecher(),
   });
   const poolzeitFaecher = faecher.filter((f) => f.ist_aktiv !== false && f.ist_poolzeit_fach !== false);
 
@@ -51,7 +50,7 @@ export default function PoolzeitStart() {
     if (eintraege.length > 0 && user?.email) {
       setSpeichert(true);
       try {
-        await base44.entities.SchuelerLerntagebuchEintrag.bulkCreate(eintraege);
+        await SchuelerData.bulkCreateLerntagebuch(eintraege);
       } finally {
         setSpeichert(false);
       }

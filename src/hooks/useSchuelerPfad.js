@@ -15,44 +15,42 @@
 
 import { useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
-import { getCurrentUser } from '@/services/AuthService';
 import { normalizeSektor } from '@/lib/lernpfadeUtils';
 import { adaptLernpaketToPoolItem } from '@/lib/lernpaketAdapter';
-import { getAktivitaetenByLernpaket, getAktivitaetenKatalog } from '@/services/AktivitaetService';
+import * as SchuelerData from '@/services/schueler/SchuelerDataService';
 
 export function useSchuelerPfad(einheitId, lerntyp) {
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
     queryKey: ['authUser'],
-    queryFn: () => getCurrentUser(),
+    queryFn: () => SchuelerData.getCurrentUser(),
     staleTime: 30 * 1000,
   });
 
   const einheitQ = useQuery({
     queryKey: ['einheit', einheitId],
-    queryFn: () => base44.entities.Einheiten.get(einheitId),
+    queryFn: () => SchuelerData.getEinheit(einheitId),
     enabled: !!einheitId,
   });
   const einheit = einheitQ.data;
 
   const bausteineQ = useQuery({
     queryKey: ['systemBausteine', 'all'],
-    queryFn: () => base44.entities.SystemBausteine.list('reihenfolge'),
+    queryFn: () => SchuelerData.listSystemBausteine(),
   });
   const systemBausteine = bausteineQ.data || [];
 
   const aufgabenQ = useQuery({
     queryKey: ['allgemeineAufgaben', einheitId],
-    queryFn: () => base44.entities.AllgemeineAufgabe.filter({ einheit_id: einheitId }),
+    queryFn: () => SchuelerData.listAufgabenByEinheit(einheitId),
     enabled: !!einheitId,
   });
   const aufgaben = aufgabenQ.data || [];
 
   const lernpaketeQ = useQuery({
     queryKey: ['lernpakete-by-einheit', einheitId],
-    queryFn: () => base44.entities.Lernpakete.filter({ einheit_id: einheitId }),
+    queryFn: () => SchuelerData.listLernpaketeByEinheit(einheitId),
     enabled: !!einheitId,
   });
   const lernpakete = lernpaketeQ.data || [];
@@ -60,7 +58,7 @@ export function useSchuelerPfad(einheitId, lerntyp) {
   // Globaler Aktivitäten-Katalog (für Aktivitäts-Namen in der Sub-Ansicht).
   const katalogQ = useQuery({
     queryKey: ['aktivitaetenKatalog', 'all'],
-    queryFn: () => getAktivitaetenKatalog(),
+    queryFn: () => SchuelerData.getAktivitaetenKatalog(),
     staleTime: 5 * 60 * 1000,
   });
   const katalog = katalogQ.data || [];
@@ -68,12 +66,7 @@ export function useSchuelerPfad(einheitId, lerntyp) {
   const fortschrittQueryKey = ['schuelerAktFortschritt', user?.email, einheitId, lerntyp];
   const fortschrittQ = useQuery({
     queryKey: fortschrittQueryKey,
-    queryFn: () =>
-      base44.entities.SchuelerAktivitaetFortschritt.filter({
-        user_email: user.email,
-        einheit_id: einheitId,
-        lerntyp,
-      }),
+    queryFn: () => SchuelerData.listAktivitaetFortschritt(user.email, einheitId, lerntyp),
     enabled: !!user?.email && !!einheitId && !!lerntyp,
   });
   const fortschritte = fortschrittQ.data || [];
@@ -164,7 +157,7 @@ export function useSchuelerPfad(einheitId, lerntyp) {
       const existing = recordByInstance.get(item.instance_id);
 
       if (existing) {
-        await base44.entities.SchuelerAktivitaetFortschritt.update(existing.id, {
+        await SchuelerData.updateAktivitaetFortschritt(existing.id, {
           status: 'erledigt',
           versuche: (existing.versuche || 0) + 1,
           letzte_bearbeitung_am: now,
@@ -172,7 +165,7 @@ export function useSchuelerPfad(einheitId, lerntyp) {
           sektor_id: sektor?.sektor_id || existing.sektor_id,
         });
       } else {
-        await base44.entities.SchuelerAktivitaetFortschritt.create({
+        await SchuelerData.createAktivitaetFortschritt({
           user_email: user.email,
           einheit_id: einheitId,
           lerntyp,
@@ -205,7 +198,7 @@ export function useSchuelerPfad(einheitId, lerntyp) {
     (lernpaketId) =>
       queryClient.fetchQuery({
         queryKey: ['lernpaketAktivitaeten', lernpaketId],
-        queryFn: () => getAktivitaetenByLernpaket(lernpaketId),
+        queryFn: () => SchuelerData.getAktivitaetenByLernpaket(lernpaketId),
         staleTime: 60 * 1000,
       }),
     [queryClient]

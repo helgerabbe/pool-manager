@@ -3,7 +3,7 @@ import { NotebookPen, Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import SpeechInputButton from '@/components/ui/SpeechInputButton';
-import { base44 } from '@/api/base44Client';
+import { createLerntagebuchEintrag } from '@/services/schueler/SchuelerDataService';
 import PoolzeitStepShell from './PoolzeitStepShell';
 
 /**
@@ -20,7 +20,7 @@ export default function StepWechselNotiz({ vorherigesFach, naechstesFach, userEm
     if (clean && userEmail) {
       setSaving(true);
       try {
-        await base44.entities.SchuelerLerntagebuchEintrag.create({
+        await createLerntagebuchEintrag({
           user_email: userEmail,
           text: clean,
           typ: 'zwischennotiz',
