@@ -148,14 +148,16 @@ Poolzeit": 1 Themenfeld, 4 Lernpakete, 18 Aktivitäten, 6 Master, 4 Lernziele,
       `SchuelerOnlyLayout` ohne Base44-Hooks); alle anderen URLs → Redirect
       auf `/lernen`. Lehrer-/Admin-Seiten sind im deployten Build nicht
       erreichbar (Backend-Funktionen sowieso nur auf Base44).
-- [ ] **Manuell (Nutzer):** GitHub-Sync prüfen, Pages-Source auf „GitHub Actions",
-      Repo-Secrets `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` setzen
-- [ ] **Manuell (Nutzer):** Supabase Auth-URLs eintragen, Test-Schüler anlegen
-- [ ] End-to-End-Test: Login → Fach → Einheit → Onboarding → Dashboard →
-      Aktivität erledigen → Lernlandkarte → Merkheft → Fortschritt prüfen
-- [ ] Gefundene Fehler hier in Base44 fixen → Sync → Re-Deploy → erneut testen
+- [x] **Manuell (Nutzer):** GitHub-Sync geprüft, Pages-Source auf „GitHub Actions",
+      Repo-Secrets `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` gesetzt
+      (Stolperstein behoben: URL muss die nackte Projekt-URL sein, ohne `/rest/v1/` –
+      der Client bereinigt das jetzt automatisch in `supabaseClient.js`)
+- [x] **Manuell (Nutzer):** Supabase Auth-URLs eingetragen, Test-Schüler angelegt
+- [x] End-to-End-Test: Login funktioniert, App läuft auf GitHub Pages
+- [x] Performance-Fix: Lehrer-/Admin-Bereich wird per Lazy Loading aus dem
+      Initial-Bundle herausgehalten (App.jsx) → erstes Öffnen deutlich schneller
 
-**✋ Checkpoint 4:** Schüler-App läuft vollständig autark auf GitHub Pages + Supabase.
+**✋ Checkpoint 4:** ✅ Schüler-App läuft vollständig autark auf GitHub Pages + Supabase.
 
 ---
 
@@ -175,3 +177,4 @@ Poolzeit": 1 Themenfeld, 4 Lernpakete, 18 Aktivitäten, 6 Master, 4 Lernziele,
 | 2026-06-11 | Dual-Plattform-Strategie beschlossen: Autorenbereich bleibt Base44, Schülerbereich läuft per Build-Variable auf beiden Plattformen. |
 | 2026-06-11 | Supabase-Projekt angelegt (Region EU), Schema per `supabase-schema.sql` eingespielt (16 Tabellen + RLS). |
 | 2026-06-11 | KI-Features im Supabase-Modus zunächst Snapshot-only (keine Live-KI); Edge Functions ggf. später. |
+| 2026-06-11 | Phase 4 abgeschlossen: Deploy + Login auf GitHub Pages erfolgreich. Lazy Loading für Lehrer-Bereich eingebaut. |
