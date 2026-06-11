@@ -117,15 +117,21 @@ sich exakt wie vorher verhalten.
 
 ## Phase 3: Export-Brücke (Base44 → Supabase)
 
-- [ ] Secrets anlegen: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
-- [ ] Backend-Funktion `exportEinheitToSupabase`: veröffentlichte Einheit inkl.
-      Themenfelder, Lernpakete, Aktivitäten, Master, Lernziele, Aufgaben,
-      Systembausteine, Snapshots in die Supabase-Inhaltstabellen schreiben (Upsert)
-- [ ] Admin-UI-Knopf im Export-Center: „Nach Supabase exportieren"
-- [ ] Voraussetzung dokumentieren: vor Export „Interne Inhalte erzeugen"
-      (alle KI-Snapshots generieren), damit der Supabase-Modus vollständig ist
+- [x] Secrets angelegt: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+- [x] Backend-Funktion `exportEinheitToSupabase`: Einheit upserten, Kind-Daten
+      löschen (FK-Cascade) und frisch einfügen – Themenfelder, Lernpakete,
+      Aktivitäten (ohne Tombstones), Master, Lernziele, Aufgaben, Snapshots;
+      Katalog + Systembausteine als globale Upserts. Berechtigung: Base44-Admin
+      oder App-Rolle Administrator/Fachschaftsleitung/Moodle-Designer.
+- [x] UI-Karte im Export-Center: „Nach Supabase exportieren"
+      (`components/exportcenter/SupabaseExportCard`, im Arbeitsbereich eingebunden)
+- [x] Voraussetzung dokumentiert (in der Karte sichtbar): vor Export
+      „Interne Inhalte erzeugen", damit alle KI-Snapshots vorliegen
 
-**✋ Checkpoint 3:** Test-Export einer Einheit, Daten im Supabase Table Editor prüfen.
+**✋ Checkpoint 3:** ✅ Test-Export erfolgreich (Einheit „Einführung in die
+Poolzeit": 1 Themenfeld, 4 Lernpakete, 18 Aktivitäten, 6 Master, 4 Lernziele,
+3 Aufgaben, 1 Snapshot, 15 Katalog-Einträge, 11 Systembausteine).
+→ Optional: Daten im Supabase Table Editor gegenprüfen.
 
 ---
 
