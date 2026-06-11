@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -12,22 +12,24 @@ import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ProtectedRoute from '@/lib/ProtectedRoute';
-import AppLayout from '@/components/layout/AppLayout';
-import Dashboard from '@/pages/Dashboard';
-import EinheitenListe from '@/pages/EinheitenListe';
-import Benutzerverwaltung from '@/pages/Benutzerverwaltung';
-import MoodleExport from '@/pages/MoodleExport';
-import Workspace from '@/pages/Workspace';
-import AdminSettings from '@/pages/AdminSettings';
-import EinheitCreateWizard from '@/pages/EinheitCreateWizard';
-import ExportCenter from '@/pages/ExportCenter';
-import MBKConsole from '@/pages/MBKConsole';
-import EinheitViewManager from '@/components/workspace/EinheitViewManager';
-import BasismoduleListe from '@/pages/BasismoduleListe';
-import BasismodulViewManager from '@/components/basismodule/BasismodulViewManager';
-import DocsLayout from '@/components/docs/DocsLayout';
-import DocsIndex from '@/pages/DocsIndex';
-import DocViewer from '@/pages/DocViewer';
+// Lehrer-/Admin-Bereich: Lazy Loading, damit der Schüler-Build (GitHub Pages)
+// diesen Code beim ersten Öffnen NICHT mit herunterladen muss.
+const AppLayout = lazy(() => import('@/components/layout/AppLayout'));
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const EinheitenListe = lazy(() => import('@/pages/EinheitenListe'));
+const Benutzerverwaltung = lazy(() => import('@/pages/Benutzerverwaltung'));
+const MoodleExport = lazy(() => import('@/pages/MoodleExport'));
+const Workspace = lazy(() => import('@/pages/Workspace'));
+const AdminSettings = lazy(() => import('@/pages/AdminSettings'));
+const EinheitCreateWizard = lazy(() => import('@/pages/EinheitCreateWizard'));
+const ExportCenter = lazy(() => import('@/pages/ExportCenter'));
+const MBKConsole = lazy(() => import('@/pages/MBKConsole'));
+const EinheitViewManager = lazy(() => import('@/components/workspace/EinheitViewManager'));
+const BasismoduleListe = lazy(() => import('@/pages/BasismoduleListe'));
+const BasismodulViewManager = lazy(() => import('@/components/basismodule/BasismodulViewManager'));
+const DocsLayout = lazy(() => import('@/components/docs/DocsLayout'));
+const DocsIndex = lazy(() => import('@/pages/DocsIndex'));
+const DocViewer = lazy(() => import('@/pages/DocViewer'));
 import StudentArea from '@/pages/StudentArea';
 import PoolzeitStart from '@/pages/schueler/PoolzeitStart';
 import Lerntagebuch from '@/pages/schueler/Lerntagebuch';
@@ -87,6 +89,13 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <ErrorBoundary fallback="Die Navigation konnte nicht geladen werden.">
+      <Suspense
+        fallback={
+          <div className="fixed inset-0 flex items-center justify-center">
+            <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+          </div>
+        }
+      >
       <Routes>
         <Route element={<AppLayout />}>
           <Route path="/" element={<ErrorBoundary fallback="Dashboard konnte nicht geladen werden."><Dashboard /></ErrorBoundary>} />
@@ -187,6 +196,7 @@ const AuthenticatedApp = () => {
         </Route>
         <Route path="*" element={<PageNotFound />} />
       </Routes>
+      </Suspense>
     </ErrorBoundary>
   );
 };
