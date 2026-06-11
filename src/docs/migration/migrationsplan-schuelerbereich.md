@@ -143,6 +143,11 @@ Poolzeit": 1 Themenfeld, 4 Lernpakete, 18 Aktivitäten, 6 Master, 4 Lernziele,
 - [x] Router GitHub-Pages-tauglich: `basename={import.meta.env.BASE_URL}` in App.jsx
       (auf Base44 wirkungslos, da BASE_URL="/")
 - [x] Anleitung für die manuellen Schritte: `docs/migration/phase4-probelauf-anleitung.md`
+- [x] Schüler-only-Routing im Supabase-Build: In App.jsx existieren bei
+      `VITE_BACKEND=supabase` NUR die `/lernen`-Routen (eigenes
+      `SchuelerOnlyLayout` ohne Base44-Hooks); alle anderen URLs → Redirect
+      auf `/lernen`. Lehrer-/Admin-Seiten sind im deployten Build nicht
+      erreichbar (Backend-Funktionen sowieso nur auf Base44).
 - [ ] **Manuell (Nutzer):** GitHub-Sync prüfen, Pages-Source auf „GitHub Actions",
       Repo-Secrets `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` setzen
 - [ ] **Manuell (Nutzer):** Supabase Auth-URLs eintragen, Test-Schüler anlegen

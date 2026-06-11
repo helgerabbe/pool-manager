@@ -2,7 +2,9 @@ import React from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { isSupabase } from '@/services/schueler/backend';
+import SchuelerOnlyLayout from '@/components/schueler/SchuelerOnlyLayout';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { RoleProvider } from '@/lib/RoleContext';
@@ -37,6 +39,30 @@ import SupabaseLoginGate from '@/components/schueler/auth/SupabaseLoginGate';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+
+  // ── Supabase-Build (GitHub Pages): NUR der Schülerbereich existiert. ──
+  // Alle Lehrer-/Admin-Routen sind nicht registriert; jede andere URL
+  // leitet auf /lernen um. Base44-Auth/-Layout werden komplett umgangen.
+  if (isSupabase()) {
+    return (
+      <ErrorBoundary fallback="Die Schüler-App konnte nicht geladen werden.">
+        <Routes>
+          <Route element={<SchuelerOnlyLayout />}>
+            <Route element={<SupabaseLoginGate />}>
+              <Route path="/lernen" element={<StudentArea />} />
+              <Route path="/lernen/poolzeit" element={<PoolzeitStart />} />
+              <Route path="/lernen/lerntagebuch" element={<Lerntagebuch />} />
+              <Route path="/lernen/fach" element={<FachSeite />} />
+              <Route path="/lernen/einheit" element={<EinheitOnboarding />} />
+              <Route path="/lernen/onboarding" element={<EinheitOnboardingQuiz />} />
+              <Route path="/lernen/dashboard" element={<EinheitDashboard />} />
+            </Route>
+          </Route>
+          <Route path="*" element={<Navigate to="/lernen" replace />} />
+        </Routes>
+      </ErrorBoundary>
+    );
+  }
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
