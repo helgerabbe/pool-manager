@@ -172,7 +172,9 @@ function App() {
     <AuthProvider>
       <RoleProvider>
         <QueryClientProvider client={queryClientInstance}>
-          <Router>
+          {/* basename: auf Base44 ist BASE_URL "/" (kein Effekt); im GitHub-Pages-Build
+              läuft die App unter /<repo>/ – Vite setzt BASE_URL entsprechend. */}
+          <Router basename={import.meta.env.BASE_URL}>
             <AuthenticatedApp />
           </Router>
           <Toaster />

@@ -137,10 +137,15 @@ Poolzeit": 1 Themenfeld, 4 Lernpakete, 18 Aktivitäten, 6 Master, 4 Lernziele,
 
 ## Phase 4: Probelauf auf Supabase
 
-- [ ] GitHub-Sync verifizieren (Repository aktuell?)
-- [ ] GitHub Action: Build mit `VITE_BACKEND=supabase` + `VITE_SUPABASE_URL` +
-      `VITE_SUPABASE_ANON_KEY` → Deploy auf GitHub Pages
-- [ ] Test-Schüler in Supabase anlegen (Authentication → Users)
+- [x] GitHub Action angelegt: `.github/workflows/deploy-schueler-supabase.yml`
+      (Build mit `VITE_BACKEND=supabase` + Secrets, Deploy auf GitHub Pages,
+      SPA-Fallback via 404.html, `--base /<repo>/`)
+- [x] Router GitHub-Pages-tauglich: `basename={import.meta.env.BASE_URL}` in App.jsx
+      (auf Base44 wirkungslos, da BASE_URL="/")
+- [x] Anleitung für die manuellen Schritte: `docs/migration/phase4-probelauf-anleitung.md`
+- [ ] **Manuell (Nutzer):** GitHub-Sync prüfen, Pages-Source auf „GitHub Actions",
+      Repo-Secrets `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` setzen
+- [ ] **Manuell (Nutzer):** Supabase Auth-URLs eintragen, Test-Schüler anlegen
 - [ ] End-to-End-Test: Login → Fach → Einheit → Onboarding → Dashboard →
       Aktivität erledigen → Lernlandkarte → Merkheft → Fortschritt prüfen
 - [ ] Gefundene Fehler hier in Base44 fixen → Sync → Re-Deploy → erneut testen
