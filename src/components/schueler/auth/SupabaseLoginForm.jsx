@@ -26,7 +26,18 @@ export default function SupabaseLoginForm({ onSuccess }) {
     });
     setLoading(false);
     if (authError) {
-      setError('Anmeldung fehlgeschlagen. Prüfe E-Mail und Passwort.');
+      // Konkrete Ursache anzeigen, damit Fehlkonfiguration (Key/URL)
+      // von falschen Zugangsdaten unterscheidbar ist.
+      const msg = authError.message || '';
+      if (msg.includes('Invalid login credentials')) {
+        setError('E-Mail oder Passwort ist falsch.');
+      } else if (msg.includes('Email not confirmed')) {
+        setError('E-Mail-Adresse wurde noch nicht bestätigt.');
+      } else if (msg.includes('Invalid API key') || msg.includes('JWT')) {
+        setError('Konfigurationsfehler: API-Key der App ist ungültig. (' + msg + ')');
+      } else {
+        setError('Anmeldung fehlgeschlagen: ' + (msg || 'Unbekannter Fehler. Prüfe deine Internetverbindung.'));
+      }
       return;
     }
     onSuccess?.();
