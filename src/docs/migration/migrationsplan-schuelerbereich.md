@@ -19,13 +19,36 @@
 *Risikoarm, aber umfangreich. Nach jeder Etappe muss der Schülerbereich
 unverändert funktionieren. Keine sichtbaren Änderungen für Nutzer.*
 
-### Etappe 1.1: Inventur + Grundgerüst
-- [ ] Inventur: alle direkten `base44.`-Aufrufe in Schüler-Dateien auflisten
-      (pages/schueler/**, pages/StudentArea, components/schueler/**, hooks/useSchuelerPfad,
-      useEinheitZeitTracker, useEinheitAbschluss, components/ui/SpeechInputButton)
-- [ ] `services/schueler/SchuelerDataService.js` anlegen (zentrale Fassade)
-- [ ] `services/schueler/adapters/base44Adapter.js` anlegen (kapselt heutige Aufrufe 1:1)
-- [ ] Plattform-Weiche `services/schueler/backend.js` (liest `VITE_BACKEND`, Default base44)
+### Etappe 1.1: Inventur + Grundgerüst ✅
+- [x] Inventur: alle direkten `base44.`-Aufrufe in Schüler-Dateien aufgelistet (siehe Tabelle unten)
+- [x] `services/schueler/SchuelerDataService.js` angelegt (zentrale Fassade)
+- [x] `services/schueler/adapters/base44Adapter.js` angelegt (kapselt heutige Aufrufe 1:1)
+- [x] Plattform-Weiche `services/schueler/backend.js` (liest `VITE_BACKEND`, Default base44)
+
+**Inventur-Ergebnis (direkte `base44.`-Nutzung in Schüler-Dateien):**
+
+| Datei | Nutzt | Etappe |
+|---|---|---|
+| `hooks/useSchuelerPfad.js` | Einheiten.get, SystemBausteine, AllgemeineAufgabe, Lernpakete, SchuelerAktivitaetFortschritt (CRUD) | 1.2 + 1.3 |
+| `hooks/useEinheitZeitTracker.js` | SchuelerEinheitZeitLog (filter/create/update) | 1.3 |
+| `hooks/useEinheitAbschluss.js` | SchuelerEinheitFortschritt (filter/update) | 1.3 |
+| `pages/StudentArea` | LookupFaecher, Einheiten, SchuelerEinheitFortschritt, SchuelerEinheitZeitLog, SchuelerLerntagebuchEintrag | 1.2 + 1.3 |
+| `pages/schueler/FachSeite` | LookupFaecher, LookupPhasen, Einheiten, SchuelerEinheitFortschritt, ZeitLog, Notizen | 1.2 + 1.3 |
+| `pages/schueler/Lerntagebuch` | SchuelerLerntagebuchEintrag (filter/create/delete) | 1.3 |
+| `pages/schueler/EinheitOnboarding` | Einheiten.get, SchuelerEinheitFortschritt (CRUD) | 1.2 + 1.3 |
+| `pages/schueler/EinheitOnboardingQuiz` | Einheiten.get, SchuelerEinheitFortschritt (CRUD), lib/onboardingSnapshots | 1.2 + 1.3 |
+| `pages/schueler/PoolzeitStart` | SchuelerLerntagebuchEintrag (bulkCreate) | 1.3 |
+| `components/schueler/pfad/LernlandkarteSeite` | Themenfeld, Lernpakete, Lernziele, SchuelerLernzielEinschaetzung (CRUD) | 1.2 + 1.3 |
+| `components/schueler/pfad/ThemenfeldEinfuehrungSeite` | SchuelerInhaltSnapshot, functions.invoke(getOrCreateThemenfeldEinfuehrung) | 1.2 + 1.4 |
+| `components/schueler/MerkheftDialog` | SchuelerEinheitNotiz (filter/create/delete) | 1.3 |
+| `components/schueler/EinheitZeitDialog` | (prüfen in 1.3) | 1.3 |
+| `components/ui/SpeechInputButton` | integrations UploadFile + TranscribeAudio | 1.4 |
+| `components/schueler/onboarding/StepBrianChat` / `StepEmpfehlung` | functions (brianLerntypChat, empfehleLerntyp) | 1.4 |
+| `lib/onboardingSnapshots.js` | SchuelerInhaltSnapshot (prüfen) | 1.2 |
+
+Bereits gut vorbereitet: `services/AuthService.js` (Auth gekapselt) und
+`services/AktivitaetService.js` (Aktivitäten gekapselt) – der base44Adapter
+delegiert an diese.
 
 ### Etappe 1.2: Lese-Pfade umstellen (Inhalte)
 - [ ] `useSchuelerPfad.js`: Einheit, Systembausteine, Aufgaben, Lernpakete,
