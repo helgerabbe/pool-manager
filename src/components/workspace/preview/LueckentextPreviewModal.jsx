@@ -1,17 +1,20 @@
 /**
  * LueckentextPreviewModal.jsx
  *
- * Voll interaktive Schüler-Vorschau für Lückentext-Masteraufgaben.
- * Lehrkräfte können die Aufgabe so erleben, wie Schüler:innen sie später
- * bearbeiten: Wörter aus der Wortbank werden per Drag & Drop oder Klick
- * in die Lücken gezogen, beim Überprüfen gibt es bei vollständig richtiger
- * Lösung eine Konfetti-Belohnung.
+ * Schüler-Vorschau für Lückentext-Aufgaben.
+ *
+ * Seit dem "Deckungsgleiche Vorschau"-Pilot (2026-06-11) rendert dieses Modal
+ * die ECHTE Schüler-Komponente (components/schueler/lesen/LueckentextSeite)
+ * statt eines nachgebauten Preview-Bodys. Damit ist die Lehrer-Vorschau
+ * garantiert 1:1 identisch mit dem, was Schüler:innen in der Schüleransicht
+ * sehen – jede Änderung an der Schüleransicht wirkt automatisch auch hier.
+ * Die Aktions-Callbacks (onErledigt/onBack) sind in der Vorschau Leerlauf.
  */
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Eye } from 'lucide-react';
 import IPadFrame from '@/components/workspace/preview/IPadFrame';
-import LueckentextBody from '@/components/workspace/preview/bodies/LueckentextBody';
+import LueckentextSeite from '@/components/schueler/lesen/LueckentextSeite';
 
 export default function LueckentextPreviewModal({ open, onOpenChange, fieldValues = {}, catalogName = 'Lückentext', phase = 'Übung' }) {
   return (
@@ -24,19 +27,19 @@ export default function LueckentextPreviewModal({ open, onOpenChange, fieldValue
             <span className="text-xs font-normal text-slate-500 ml-1">· {catalogName}</span>
           </DialogTitle>
           <p className="text-xs text-slate-500 mt-1">
-            So sehen Schüler:innen die Aufgabe auf dem iPad (960 × 600 px Slide). Erscheint hier ein Scrollbalken, passt der Inhalt nicht auf eine Seite.
+            Diese Vorschau zeigt exakt die Schüleransicht – du kannst die Aufgabe wie ein:e Schüler:in durchspielen. Die Buttons „Zurück" und „Erledigt" sind in der Vorschau ohne Funktion.
           </p>
         </DialogHeader>
 
         <div className="pt-3">
           <IPadFrame lernpaketTitel={catalogName} phaseLabel={phase}>
-            <div className="bg-white h-full flex flex-col">
-              <div className="px-4 py-1.5 bg-amber-50 border-b border-amber-100 text-[12px] text-amber-800 shrink-0">
-                <span className="font-semibold">Übung ·</span> Hier übst du, was du gelernt hast.
-              </div>
-              <div className="flex-1 min-h-0">
-                <LueckentextBody fieldValues={fieldValues} />
-              </div>
+            <div className="bg-background h-full overflow-hidden">
+              <LueckentextSeite
+                aktivitaet={{ field_values: fieldValues }}
+                busy={false}
+                onErledigt={() => {}}
+                onBack={() => {}}
+              />
             </div>
           </IPadFrame>
         </div>
