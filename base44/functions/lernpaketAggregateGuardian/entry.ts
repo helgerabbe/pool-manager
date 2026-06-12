@@ -88,21 +88,28 @@ Deno.serve(async (req) => {
         // (nicht-leeres) Briefing gespeichert ist, gilt die Aktivität als
         // vollständig. Im manuellen Modus: alle MasterAufgaben müssen
         // vollständig sein (is_complete=true), UND es muss ≥1 geben.
+        const masters = await base44.asServiceRole.entities.MasterAufgabe.filter({
+          activity_id: entityId,
+        });
+        const liveMasters = (masters || []).filter(m => m.sync_status !== 'to_delete');
+        // Aktivität vollständig = ≥1 Master AND alle Master vollständig
+        const mastersComplete =
+          liveMasters.length > 0 &&
+          liveMasters.every(m => m.is_complete === true);
+
         if (data.erstellungs_modus === 'ki') {
           const briefing = data.ki_briefing;
-          computedIsComplete =
+          const hasBriefing =
             !!briefing &&
             typeof briefing === 'object' &&
             Object.keys(briefing).length > 0;
+          // Hybrid-Schutz: Manche (z. B. vom Wizard angelegte) Aktivitäten
+          // tragen das 'ki'-Flag, wurden aber tatsächlich manuell über
+          // MasterAufgaben ausgearbeitet. Vollständig = Briefing ODER
+          // vollständige Master vorhanden.
+          computedIsComplete = hasBriefing || mastersComplete;
         } else {
-          const masters = await base44.asServiceRole.entities.MasterAufgabe.filter({
-            activity_id: entityId,
-          });
-          const liveMasters = (masters || []).filter(m => m.sync_status !== 'to_delete');
-          // Aktivität vollständig = ≥1 Master AND alle Master vollständig
-          computedIsComplete =
-            liveMasters.length > 0 &&
-            liveMasters.every(m => m.is_complete === true);
+          computedIsComplete = mastersComplete;
         }
       }
       // Sonst: Frontend-Wert übernehmen (Pflichtfeld-Prüfung läuft dort).
