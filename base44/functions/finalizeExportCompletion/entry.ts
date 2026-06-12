@@ -156,7 +156,28 @@ Deno.serve(async (req) => {
       itemUpdatePromises.push(e[resolved.type].update(id, payload));
     }
 
-    const successMasterIds = successfulIds.filter((id) => masterMap.has(id));
+    // Master-Aufgaben nachziehen: Der Abschluss-Dialog listet Master nicht
+    // als eigene Delta-Items, daher tauchen ihre IDs i.d.R. nicht in
+    // successfulIds auf. Bei fehlerfreiem Export werden deshalb ALLE noch
+    // nicht synchronen Master dieser Einheit auf 'synced' gezogen —
+    // sonst bleiben sie dauerhaft auf „Im Export" stehen.
+    const exportFehlerfrei = failedIds.length === 0;
+    const successMasterIdSet = new Set(successfulIds.filter((id) => masterMap.has(id)));
+    if (exportFehlerfrei) {
+      for (const m of masters) {
+        if (m.sync_status !== 'synced' && !successMasterIdSet.has(m.id)) {
+          successMasterIdSet.add(m.id);
+          itemUpdatePromises.push(
+            e.MasterAufgabe.update(m.id, {
+              sync_status: 'synced',
+              last_synced_at: now,
+              export_error: false,
+            })
+          );
+        }
+      }
+    }
+    const successMasterIds = Array.from(successMasterIdSet);
     let kloneSynced = 0;
     if (successMasterIds.length > 0) {
       const klonPages = await Promise.all(
@@ -194,7 +215,6 @@ Deno.serve(async (req) => {
     // damit ihre Lebenszyklus-Badges nicht fälschlich „Neu/Geändert"
     // anzeigen. Wir ziehen sie nur dann nach, wenn KEINE Fehler gemeldet
     // wurden (failedIds leer) — sonst bleibt der Delta-Zustand erhalten.
-    const exportFehlerfrei = failedIds.length === 0;
     if (exportFehlerfrei) {
       for (const tf of themenfelder) {
         if (tf.sync_status !== 'synced') {
