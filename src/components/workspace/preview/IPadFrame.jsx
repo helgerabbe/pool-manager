@@ -14,9 +14,21 @@ import { Home, ChevronLeft, ChevronRight, RotateCw, Menu } from 'lucide-react';
 export const SLIDE_WIDTH = 960;
 export const SLIDE_HEIGHT = 600;
 
-export default function IPadFrame({ children, lernpaketTitel = 'Lernpaket', phaseLabel = 'Aktivität' }) {
+// Gesamtmaße des iPad-Rahmens (Slot + Innen-/Außen-Padding + Safari- & App-Leiste).
+// Werden für die verlustfreie CSS-Skalierung der Vorschau benötigt.
+const FRAME_WIDTH = SLIDE_WIDTH + 32 + 24;            // Slot + p-4 + p-3
+const FRAME_HEIGHT = SLIDE_HEIGHT + 32 + 24 + 36 + 44; // Slot + Paddings + Safari-Bar + App-Header
+
+export default function IPadFrame({ children, lernpaketTitel = 'Lernpaket', phaseLabel = 'Aktivität', scale = 0.7 }) {
   return (
-    <div className="bg-slate-800 rounded-[28px] p-3 shadow-2xl ring-1 ring-slate-900/10 mx-auto" style={{ width: 'fit-content' }}>
+    <div
+      className="mx-auto"
+      style={{ width: FRAME_WIDTH * scale, height: FRAME_HEIGHT * scale }}
+    >
+    <div
+      className="bg-slate-800 rounded-[28px] p-3 shadow-2xl ring-1 ring-slate-900/10"
+      style={{ width: FRAME_WIDTH, transform: `scale(${scale})`, transformOrigin: 'top left' }}
+    >
       <div className="bg-white rounded-[18px] overflow-hidden">
         {/* Safari-Andeutung */}
         <div className="h-9 bg-slate-100 border-b border-slate-200 flex items-center px-3 gap-2">
@@ -54,6 +66,7 @@ export default function IPadFrame({ children, lernpaketTitel = 'Lernpaket', phas
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }

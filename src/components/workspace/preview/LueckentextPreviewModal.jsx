@@ -19,7 +19,7 @@ import LueckentextSeite from '@/components/schueler/lesen/LueckentextSeite';
 export default function LueckentextPreviewModal({ open, onOpenChange, fieldValues = {}, catalogName = 'Lückentext', phase = 'Übung' }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[95vh] w-[95vw] max-w-[1100px] overflow-y-auto bg-slate-100 p-4">
+      <DialogContent className="max-h-[95vh] w-[95vw] max-w-[820px] overflow-y-auto bg-slate-100 p-4">
         <DialogHeader className="border-b border-slate-200 pb-3">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Eye className="w-4 h-4 text-violet-600" />
