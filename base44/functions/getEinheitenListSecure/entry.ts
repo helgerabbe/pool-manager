@@ -264,6 +264,9 @@ Deno.serve(async (req) => {
         lernpfade_schema_version: einheit.lernpfade_schema_version,
         // ✅ Phase D: Export-Lifecycle für Status-Badges + Filter in der Übersicht.
         export_lifecycle_status: einheit.export_lifecycle_status || 'draft',
+        // ✅ Für das Lebenszyklus-Badge (Neu/Synchron/Asynchron) auf der Karte:
+        // ohne dieses Feld zeigt die Karte fälschlich immer "Neu".
+        export_published_at: einheit.export_published_at,
         // ✅ Unit-Level-Mitglieder für RBAC-Prüfung
         members: members.map(m => ({
           user_email: m.user_email,
