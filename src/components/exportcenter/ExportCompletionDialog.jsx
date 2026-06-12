@@ -104,6 +104,7 @@ export default function ExportCompletionDialog({ open, onOpenChange, einheit }) 
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['einheit', einheit.id] });
+      queryClient.invalidateQueries({ queryKey: ['einheiten'] });
       queryClient.invalidateQueries({ queryKey: ['einheiten-export-center'] });
       queryClient.invalidateQueries({ queryKey: ['lernpakete', einheit.id] });
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheit.id] });

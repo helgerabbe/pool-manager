@@ -245,6 +245,11 @@ Deno.serve(async (req) => {
       export_lifecycle_changed_at: now,
       export_lifecycle_changed_by: user.email,
       last_synced_at: now,
+      // Veröffentlichungs-Zeitstempel: Die Einheit liegt nach dem Abschluss
+      // in Moodle vor. Ohne dieses Feld zeigt das Lebenszyklus-Badge auf der
+      // Einheitenkarte weiterhin fälschlich "Neu" an.
+      export_published_at: now,
+      export_published_by: user.email,
     };
     if (exportFehlerfrei) {
       einheitUpdate.sync_status = 'synced';
