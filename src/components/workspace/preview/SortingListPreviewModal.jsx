@@ -1,19 +1,23 @@
 /**
  * SortingListPreviewModal.jsx
  *
- * Schüler-Vorschau für "Reihenfolge / Sortierung" im iPad-Frame (960×600-Slot).
- * Masterfähig: zeigt EINE Master-Variante.
+ * Schüler-Vorschau für "Reihenfolge / Sortierung" – rendert seit dem
+ * "Deckungsgleiche Vorschau"-Umbau (2026-06-12) die ECHTE Schüler-Komponente
+ * (components/schueler/lesen/ReihenfolgeSortierenSeite) im iPad-Rahmen.
+ *
+ * Masterfähig: zeigt EINE Master-Variante; das Umschalten zwischen mehreren
+ * Mastern übernimmt der Aufrufer. Optional `masterHinweis` ({ aktuell, gesamt }).
  */
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Eye } from 'lucide-react';
 import IPadFrame from '@/components/workspace/preview/IPadFrame';
-import SortingListBody from '@/components/workspace/preview/bodies/SortingListBody';
+import ReihenfolgeSortierenSeite from '@/components/schueler/lesen/ReihenfolgeSortierenSeite';
 
-export default function SortingListPreviewModal({ open, onOpenChange, fieldValues = {}, catalogName = 'Reihenfolge / Sortierung', phase = 'Übung' }) {
+export default function SortingListPreviewModal({ open, onOpenChange, fieldValues = {}, catalogName = 'Reihenfolge / Sortierung', phase = 'Übung', masterHinweis }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[95vh] w-[95vw] max-w-[1280px] overflow-y-auto bg-slate-100 p-4">
+      <DialogContent className="max-h-[95vh] w-[95vw] max-w-[820px] overflow-y-auto bg-slate-100 p-4">
         <DialogHeader className="border-b border-slate-200 pb-3">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Eye className="w-4 h-4 text-violet-600" />
@@ -21,19 +25,20 @@ export default function SortingListPreviewModal({ open, onOpenChange, fieldValue
             <span className="text-xs font-normal text-slate-500 ml-1">· {catalogName}</span>
           </DialogTitle>
           <p className="text-xs text-slate-500 mt-1">
-            So bearbeitet der Schüler diese Aufgabe auf dem iPad (960 × 600 px Slide).
+            Diese Vorschau zeigt exakt die Schüleransicht (eine Master-Variante) – du kannst die Aufgabe wie ein:e Schüler:in durchspielen. Die Buttons „Zurück" und „Erledigt" sind in der Vorschau ohne Funktion.
           </p>
         </DialogHeader>
 
         <div className="pt-3">
           <IPadFrame lernpaketTitel={catalogName} phaseLabel={phase}>
-            <div className="bg-white h-full flex flex-col">
-              <div className="px-4 py-1.5 bg-amber-50 border-b border-amber-100 text-[12px] text-amber-800 shrink-0">
-                <span className="font-semibold">Übung ·</span> Hier übst du, was du gelernt hast.
-              </div>
-              <div className="flex-1 min-h-0">
-                <SortingListBody fieldValues={fieldValues} />
-              </div>
+            <div className="bg-background h-full overflow-hidden">
+              <ReihenfolgeSortierenSeite
+                aktivitaet={{ field_values: fieldValues }}
+                busy={false}
+                onErledigt={() => {}}
+                onBack={() => {}}
+                masterHinweis={masterHinweis}
+              />
             </div>
           </IPadFrame>
         </div>
