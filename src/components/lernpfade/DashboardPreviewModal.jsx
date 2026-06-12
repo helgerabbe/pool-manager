@@ -161,18 +161,6 @@ export default function DashboardPreviewModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[97vh] w-[97vw] max-w-[1200px] overflow-visible bg-transparent border-0 shadow-none p-0">
         <TooltipProvider delayDuration={150}>
-        {/* Hinweis: Funktions-Vorschau, kein 1:1-Original */}
-        <div className="mx-auto w-full mb-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-2.5 flex items-start gap-2.5">
-          <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-900 leading-relaxed">
-            <span className="font-semibold">Hinweis:</span> Du siehst hier nicht das absolute Original –
-            diese Vorschau soll dir ein Gefühl dafür geben, wie das Dashboard für den Schüler
-            im <span className="font-semibold">Ablauf</span> funktioniert. So kannst du prüfen, ob deine
-            Einstellungen (Reihenfolge, Freischaltungen, Sektoren) tatsächlich so greifen, wie du es möchtest.
-            Die volle Funktionstüchtigkeit siehst du, wenn du einmal in den <span className="font-semibold">Schülerbereich</span> wechselst
-            und es dir dort anschaust.
-          </p>
-        </div>
         {/* iPad-Rahmen – identische Optik wie IPadFrame */}
         <div className="bg-slate-800 rounded-[28px] p-3 shadow-2xl ring-1 ring-slate-900/10 mx-auto w-full">
           <div className="bg-white rounded-[18px] overflow-hidden flex flex-col" style={{ height: '74vh', maxHeight: 720 }}>
@@ -357,6 +345,16 @@ export default function DashboardPreviewModal({
                       er sein nächstes Element – gesperrte Elemente werden erst durch Erledigen
                       der Voraussetzungen freigeschaltet.
                     </p>
+                    {/* Hinweis: Funktions-Vorschau, kein 1:1-Original (in die Startkarte integriert) */}
+                    <div className="mt-4 max-w-xl rounded-xl bg-amber-50 border border-amber-200 px-4 py-2.5 flex items-start gap-2.5 text-left">
+                      <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <p className="text-xs text-amber-900 leading-relaxed">
+                        <span className="font-semibold">Hinweis:</span> Diese Vorschau zeigt nicht das
+                        absolute Original, sondern den <span className="font-semibold">Ablauf</span> –
+                        so prüfst du, ob Reihenfolge, Freischaltungen und Sektoren wie gewünscht greifen.
+                        Die volle Funktionstüchtigkeit siehst du im <span className="font-semibold">Schülerbereich</span>.
+                      </p>
+                    </div>
                     <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-slate-700 bg-slate-100 rounded-full px-4 py-2">
                       <MapIcon className="w-4 h-4 text-slate-500" />
                       {erledigtAnzahl} von {gesamtAnzahl} Elementen erledigt
