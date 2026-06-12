@@ -163,6 +163,27 @@ function _validateJsonStruct(fieldName, data) {
 function validateActivityCompletenessInline(catalog, fieldValues = {}) {
   if (!catalog || !Array.isArray(catalog.form_schema)) return { isComplete: true, missingFields: [] };
   const missing = [];
+
+  // ── Sonderfall Bildbeschriftung (synchron zu lib/completenessValidation.js) ──
+  // Der ImageLabelingEditor speichert unter eigenen Keys (aufgabenstellung /
+  // backgroundImage / dropZones), NICHT unter den Schema-Feldnamen
+  // (instruction / image_url / marker_data). Generische Schema-Prüfung würde
+  // hier fälschlich "unvollständig" liefern.
+  const isImageLabeling = (catalog.name || '').toLowerCase().includes('bildbeschriftung')
+    || catalog.form_schema.some(f => f && f.field_name === 'marker_data');
+  if (isImageLabeling) {
+    const hasImage = !_isEmpty(fieldValues.backgroundImage) || !_isEmpty(fieldValues.image_url);
+    if (!hasImage) {
+      missing.push({ fieldName: 'backgroundImage', label: 'Hintergrundbild', reason: 'Bitte ein Bild hochladen' });
+    }
+    const zones = Array.isArray(fieldValues.dropZones) ? fieldValues.dropZones : [];
+    const validZones = zones.filter(z => z && !_isEmpty(z.label));
+    if (validZones.length < 2) {
+      missing.push({ fieldName: 'dropZones', label: 'Zielbegriffe', reason: `Mindestens 2 beschriftete Begriffe erforderlich (aktuell: ${validZones.length})` });
+    }
+    return { isComplete: missing.length === 0, missingFields: missing };
+  }
+
   for (const field of catalog.form_schema) {
     if (!field || !field.field_name || field.type === 'info' || !field.required) continue;
     const value = fieldValues[field.field_name];
