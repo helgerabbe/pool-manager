@@ -263,18 +263,18 @@ alter table inhalt_snapshots       enable row level security;
 alter table mbk_global_prompts     enable row level security;
 alter table export_prompts         enable row level security;
 
-create policy "Inhalte lesen" on einheiten              for select to authenticated using (true);
-create policy "Inhalte lesen" on themenfelder           for select to authenticated using (true);
-create policy "Inhalte lesen" on lernpakete             for select to authenticated using (true);
-create policy "Inhalte lesen" on aktivitaeten_katalog   for select to authenticated using (true);
-create policy "Inhalte lesen" on lernpaket_aktivitaeten for select to authenticated using (true);
-create policy "Inhalte lesen" on master_aufgaben        for select to authenticated using (true);
-create policy "Inhalte lesen" on lernziele              for select to authenticated using (true);
-create policy "Inhalte lesen" on allgemeine_aufgaben    for select to authenticated using (true);
-create policy "Inhalte lesen" on system_bausteine       for select to authenticated using (true);
-create policy "Inhalte lesen" on inhalt_snapshots       for select to authenticated using (true);
-create policy "Inhalte lesen" on mbk_global_prompts     for select to authenticated using (true);
-create policy "Inhalte lesen" on export_prompts         for select to authenticated using (true);
+create policy if not exists "Inhalte lesen" on einheiten              for select to authenticated using (true);
+create policy if not exists "Inhalte lesen" on themenfelder           for select to authenticated using (true);
+create policy if not exists "Inhalte lesen" on lernpakete             for select to authenticated using (true);
+create policy if not exists "Inhalte lesen" on aktivitaeten_katalog   for select to authenticated using (true);
+create policy if not exists "Inhalte lesen" on lernpaket_aktivitaeten for select to authenticated using (true);
+create policy if not exists "Inhalte lesen" on master_aufgaben        for select to authenticated using (true);
+create policy if not exists "Inhalte lesen" on lernziele              for select to authenticated using (true);
+create policy if not exists "Inhalte lesen" on allgemeine_aufgaben    for select to authenticated using (true);
+create policy if not exists "Inhalte lesen" on system_bausteine       for select to authenticated using (true);
+create policy if not exists "Inhalte lesen" on inhalt_snapshots       for select to authenticated using (true);
+create policy if not exists "Inhalte lesen" on mbk_global_prompts     for select to authenticated using (true);
+create policy if not exists "Inhalte lesen" on export_prompts         for select to authenticated using (true);
 
 -- Schüler-Tabellen: jeder nur seine eigenen Zeilen (lesen + schreiben).
 
@@ -285,12 +285,12 @@ alter table zeit_logs                enable row level security;
 alter table einheit_notizen          enable row level security;
 alter table lerntagebuch_eintraege   enable row level security;
 
-create policy "Eigene Daten" on einheit_fortschritt      for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
-create policy "Eigene Daten" on aktivitaet_fortschritt   for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
-create policy "Eigene Daten" on lernziel_einschaetzungen for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
-create policy "Eigene Daten" on zeit_logs                for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
-create policy "Eigene Daten" on einheit_notizen          for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
-create policy "Eigene Daten" on lerntagebuch_eintraege   for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy if not exists "Eigene Daten" on einheit_fortschritt      for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy if not exists "Eigene Daten" on aktivitaet_fortschritt   for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy if not exists "Eigene Daten" on lernziel_einschaetzungen for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy if not exists "Eigene Daten" on zeit_logs                for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy if not exists "Eigene Daten" on einheit_notizen          for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy if not exists "Eigene Daten" on lerntagebuch_eintraege   for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 -- ─────────────────────────────────────────────────────────────────────────
 -- E) Hilfreiche Indizes für die typischen Abfragen des Schülerbereichs
