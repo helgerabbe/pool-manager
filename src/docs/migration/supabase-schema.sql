@@ -13,6 +13,10 @@
 --      und das Schema muss bei Feld-Erweiterungen nicht angefasst werden.
 --   B) SCHÜLER-TABELLEN (Schreibdaten): jeder Schüler sieht und bearbeitet
 --      nur seine eigenen Zeilen (auth.uid()).
+--   C) MBK-PROMPT-TABELLEN: enthalten die von der Lehrkraft kuratierten
+--      KI-Bauanleitungen (MBKGlobalPrompt + ExportPrompts), damit ein
+--      externer Entwickler (Malte) ohne Base44-Zugang alle Informationen
+--      hat, um daraus Moodle-HTML-Seiten zu generieren.
 -- ============================================================================
 
 -- ─────────────────────────────────────────────────────────────────────────
@@ -130,6 +134,42 @@ create unique index if not exists ux_snapshot_einheit
   where geltungsbereich = 'einheit';
 
 -- ─────────────────────────────────────────────────────────────────────────
+-- C) MBK-PROMPT-TABELLEN (global + pro Einheit)
+-- ─────────────────────────────────────────────────────────────────────────
+-- Diese Tabellen enthalten die gesamte KI-Bauanleitung, die im Export-Center
+-- kuratiert und generiert wird. Ein externer Entwickler kann daraus komplett
+-- eigenständig Moodle-HTML-Seiten bauen – ohne jemals Base44 zu berühren.
+
+-- MBKGlobalPrompt: globale, einheits-übergreifende KI-Anweisungen.
+-- Entspricht 1:1 der Base44-Entity MBKGlobalPrompt.
+create table if not exists mbk_global_prompts (
+  id            text primary key,
+  kategorie     text not null,
+  schluessel    text not null unique,
+  anzeigename   text not null,
+  prompt_text   text,
+  ist_aktiv     boolean not null default true,
+  sort_order    integer not null default 100
+);
+
+-- ExportPrompts: die generierten Air-Gap-Payloads (Payloads 0–5) pro Einheit.
+-- Entspricht 1:1 der Base44-Entity ExportPrompts. Nur für die exportierte
+-- Einheit relevant; wird beim Re-Export gelöscht + neu eingefügt.
+create table if not exists export_prompts (
+  id                              text primary key,
+  einheit_id                      text not null references einheiten(id) on delete cascade,
+  prompt_type                     text not null,
+  reference_id                    text,
+  content                         text,
+  is_customized                   boolean not null default false,
+  source_updated_at               timestamptz,
+  template_version                text,
+  system_context_hash_at_generation text,
+  ui_config_hash_at_generation    text
+);
+create index if not exists ix_export_prompts_einheit on export_prompts (einheit_id, prompt_type);
+
+-- ─────────────────────────────────────────────────────────────────────────
 -- B) SCHÜLER-TABELLEN (read/write, pro Schüler isoliert)
 -- ─────────────────────────────────────────────────────────────────────────
 -- user_id verweist auf das eingebaute Supabase-Login (auth.users).
@@ -204,7 +244,7 @@ create table if not exists lerntagebuch_eintraege (
 );
 
 -- ─────────────────────────────────────────────────────────────────────────
--- C) ROW LEVEL SECURITY
+-- D) ROW LEVEL SECURITY
 -- ─────────────────────────────────────────────────────────────────────────
 -- Inhalts-Tabellen: Schüler (eingeloggt) dürfen lesen. Schreiben ist NICHT
 -- erlaubt – der Export aus dem Autoren-System nutzt den service_role-Key,
@@ -220,6 +260,8 @@ alter table lernziele              enable row level security;
 alter table allgemeine_aufgaben    enable row level security;
 alter table system_bausteine       enable row level security;
 alter table inhalt_snapshots       enable row level security;
+alter table mbk_global_prompts     enable row level security;
+alter table export_prompts         enable row level security;
 
 create policy "Inhalte lesen" on einheiten              for select to authenticated using (true);
 create policy "Inhalte lesen" on themenfelder           for select to authenticated using (true);
@@ -231,6 +273,8 @@ create policy "Inhalte lesen" on lernziele              for select to authentica
 create policy "Inhalte lesen" on allgemeine_aufgaben    for select to authenticated using (true);
 create policy "Inhalte lesen" on system_bausteine       for select to authenticated using (true);
 create policy "Inhalte lesen" on inhalt_snapshots       for select to authenticated using (true);
+create policy "Inhalte lesen" on mbk_global_prompts     for select to authenticated using (true);
+create policy "Inhalte lesen" on export_prompts         for select to authenticated using (true);
 
 -- Schüler-Tabellen: jeder nur seine eigenen Zeilen (lesen + schreiben).
 
@@ -249,7 +293,7 @@ create policy "Eigene Daten" on einheit_notizen          for all to authenticate
 create policy "Eigene Daten" on lerntagebuch_eintraege   for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 -- ─────────────────────────────────────────────────────────────────────────
--- D) Hilfreiche Indizes für die typischen Abfragen des Schülerbereichs
+-- E) Hilfreiche Indizes für die typischen Abfragen des Schülerbereichs
 -- ─────────────────────────────────────────────────────────────────────────
 
 create index if not exists ix_themenfelder_einheit   on themenfelder (einheit_id);

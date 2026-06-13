@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
     }
 
-    const [themenfelder, lernpaketeRaw, aufgabenRaw, katalog, bausteine, snapshots] =
+    const [themenfelder, lernpaketeRaw, aufgabenRaw, katalog, bausteine, snapshots, globalPrompts, exportPrompts] =
       await Promise.all([
         sr.Themenfeld.filter({ einheit_id: einheitId }),
         sr.Lernpakete.filter({ einheit_id: einheitId }),
@@ -67,6 +67,8 @@ Deno.serve(async (req) => {
         sr.AktivitaetenKatalog.list(),
         sr.SystemBausteine.list(),
         sr.SchuelerInhaltSnapshot.filter({ einheit_id: einheitId }),
+        sr.MBKGlobalPrompt.list(),
+        sr.ExportPrompts.filter({ einheit_id: einheitId }),
       ]);
 
     const lernpakete = ohneTombstones(lernpaketeRaw);
@@ -106,7 +108,7 @@ Deno.serve(async (req) => {
 
     // Kind-Daten der Einheit leeren (lernpakete-Cascade räumt Aktivitäten,
     // MasterAufgaben und Lernziele mit ab).
-    for (const table of ['themenfelder', 'lernpakete', 'allgemeine_aufgaben', 'inhalt_snapshots']) {
+    for (const table of ['themenfelder', 'lernpakete', 'allgemeine_aufgaben', 'inhalt_snapshots', 'export_prompts']) {
       const { error } = await supabase.from(table).delete().eq('einheit_id', einheitId);
       if (error) fail(`${table} (delete)`, error);
     }
@@ -140,6 +142,24 @@ Deno.serve(async (req) => {
         { onConflict: 'baustein_id' }
       );
       if (error) fail('system_bausteine', error);
+    }
+
+    // MBK-Global-Prompts: globale Bauanleitungen für die externe KI.
+    // Diese sind einheits-übergreifend, werden daher per Upsert synchronisiert.
+    if (globalPrompts.length > 0) {
+      const { error } = await supabase.from('mbk_global_prompts').upsert(
+        globalPrompts.map((p) => ({
+          id: p.id,
+          kategorie: p.kategorie,
+          schluessel: p.schluessel,
+          anzeigename: p.anzeigename,
+          prompt_text: p.prompt_text ?? null,
+          ist_aktiv: p.ist_aktiv !== false,
+          sort_order: p.sort_order ?? 100,
+        })),
+        { onConflict: 'schluessel' }
+      );
+      if (error) fail('mbk_global_prompts', error);
     }
 
     // Einheits-Inhalte frisch einfügen.
@@ -240,6 +260,26 @@ Deno.serve(async (req) => {
       if (error) fail('inhalt_snapshots', error);
     }
 
+    // Export-Prompts (Air-Gap-Payloads 0-5): die generierten KI-Bauanleitungen.
+    // Diese sind einheits-spezifisch und werden pro Export frisch eingefügt.
+    if (exportPrompts.length > 0) {
+      const { error } = await supabase.from('export_prompts').insert(
+        exportPrompts.map((p) => ({
+          id: p.id,
+          einheit_id: einheitId,
+          prompt_type: p.prompt_type,
+          reference_id: p.reference_id ?? null,
+          content: p.content ?? null,
+          is_customized: !!p.is_customized,
+          source_updated_at: p.source_updated_at ?? null,
+          template_version: p.template_version ?? null,
+          system_context_hash_at_generation: p.system_context_hash_at_generation ?? null,
+          ui_config_hash_at_generation: p.ui_config_hash_at_generation ?? null,
+        }))
+      );
+      if (error) fail('export_prompts', error);
+    }
+
     return Response.json({
       success: true,
       einheit: einheit.titel_der_einheit,
@@ -253,6 +293,8 @@ Deno.serve(async (req) => {
         snapshots: snapshots.length,
         katalog: katalog.length,
         system_bausteine: bausteine.length,
+        global_prompts: globalPrompts.length,
+        export_prompts: exportPrompts.length,
       },
     });
   } catch (error) {
