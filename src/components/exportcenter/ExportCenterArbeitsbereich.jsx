@@ -2,17 +2,14 @@
  * ExportCenterArbeitsbereich.jsx
  *
  * Rechte Spalte des Export-Centers. Zeigt pro ausgewählter Einheit:
- *   - Status-Header mit Lifecycle-Badge, Timestamps und "Export beendet"-Button
- *   - InterneInhalteCard (KI-Snapshots prüfen & generieren)
- *   - MBKPromptGeneratorPanel (Air-Gap-Tabs)
+ *   - MBKPromptGeneratorPanel (Air-Gap-Tabs — enthält InfoTab mit
+ *     Status-Header, InterneInhalteCard und allen Übergabe-Payloads)
  *   - SupabaseExportCard (Export nach Supabase)
  */
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Send } from 'lucide-react';
-import ExportCenterStatusHeader from '@/components/exportcenter/ExportCenterStatusHeader';
-import InterneInhalteCard from '@/components/exportcenter/InterneInhalteCard';
 import MBKPromptGeneratorPanel from '@/components/export/MBKPromptGeneratorPanel';
 import SupabaseExportCard from '@/components/exportcenter/SupabaseExportCard';
 
@@ -48,8 +45,6 @@ export default function ExportCenterArbeitsbereich({ einheitId }) {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-4">
-      <ExportCenterStatusHeader einheit={einheit} />
-      <InterneInhalteCard einheitId={einheitId} />
       <MBKPromptGeneratorPanel einheitId={einheitId} />
       <SupabaseExportCard einheitId={einheitId} />
     </div>
