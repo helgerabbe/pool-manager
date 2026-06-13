@@ -63,7 +63,7 @@ import { annotateSektorItems, DASHBOARD_GATING_ENGINE } from '@/lib/dashboardGat
  *   - Payload 1: `onboarding_contract.elemente` enthält jetzt vier Elemente.
  *   - Payload 2: `einheit.onboarding.lerntyp_diagnose` (Snapshot).
  */
-export const MBK_AIRGAP_VERSION = 'airgap-1.11.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.12.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -191,6 +191,113 @@ const MASTER_ANZEIGE_MODUS_CONTRACT = {
  * Die drei festen Elemente spiegeln exakt die Schüleransicht
  * (pages/schueler/EinheitOnboarding* + Einheiten.onboarding_konfiguration).
  */
+/**
+ * Update-Lifecycle-Vertrag (airgap-1.12.0).
+ *
+ * FESTE, inhalts-UNABHÄNGIGE Anweisung an die MBK in Payload 1. Erklärt der
+ * Programmier-KI, was bei einer ERNEUTEN Veröffentlichung einer bereits
+ * publizierten Einheit passiert — je nach gewählter update_strategy.
+ *
+ * Die konkrete Strategie pro Einheit steht in Payload 2 (`einheit.update_strategy`).
+ */
+const UPDATE_LIFECYCLE_CONTRACT = {
+  was_ist_das:
+    'Eine Einheit durchläuft den Lifecycle: draft → final_freigegeben → '
+    + 'export_running → published. Wird eine bereits veröffentlichte Einheit '
+    + 'ERNEUT final freigegeben, handelt es sich um ein UPDATE — die Einheit '
+    + 'existiert bereits in Moodle und Schüler haben dort Fortschritt. In '
+    + 'diesem Fall greift eine von der Fachschaftsleitung gewählte '
+    + 'update_strategy.',
+  strategien: {
+    no_reset: {
+      label: 'Update ohne Reset',
+      bedeutung:
+        'Die Einheit wird ADDITIV aktualisiert. Bestehende Inhalte bleiben '
+        + 'erhalten, neue/geänderte Inhalte werden ergänzt. Schüler behalten '
+        + 'ihren Fortschritt in bereits bearbeiteten Bereichen.',
+      mbk_verhalten:
+        'Generiere ALLE Dateien wie gewohnt — aber beachte: Bereits beim '
+        + 'letzten Export existierende Dateien (gleicher filename) könnten '
+        + 'noch in Moodle im Einsatz sein. Der Merger wird nur Dateien '
+        + 'ersetzen, deren Inhalt sich tatsächlich geändert hat. Du musst '
+        + 'trotzdem ALLE Dateien neu generieren (stateless — du weißt nicht, '
+        + 'welche sich geändert haben). Neue Items erhalten neue Einträge im '
+        + 'scorm_file_mapping und im Manifest. Gelöschte Items entfallen '
+        + 'ersatzlos aus dem Mapping und Manifest.',
+    },
+    full_reset: {
+      label: 'Mit Reset – Schüler starten neu',
+      bedeutung:
+        'Die gesamte Einheit wird von Grund auf neu gebaut. Alle Schüler '
+        + 'müssen die Einheit von vorne beginnen — bestehender Fortschritt '
+        + 'wird verworfen.',
+      mbk_verhalten:
+        'Generiere ALLE Dateien komplett neu, als wäre es die ERSTE '
+        + 'Veröffentlichung dieser Einheit. Keine Rücksicht auf bestehende '
+        + 'Dateien oder Schüler-Fortschritt. Der Merger wird ALLE Dateien '
+        + 'ersetzen. Die imsmanifest.xml kann sich strukturell komplett '
+        + 'ändern — alte SCORM-Zustände sind irrelevant.',
+    },
+  },
+  override_hinweis:
+    'Die update_strategy wird von der Fachschaftsleitung gewählt. Das '
+    + 'Export-Center kann sie im Einzelfall überschreiben '
+    + '(update_strategy_override). Die EFFEKTIVE Strategie steht in Payload 2 '
+    + 'unter einheit.effektive_update_strategy.',
+  hinweis_fuer_mbk:
+    'Du generierst in BEIDEN Strategien alle Dateien neu — der Unterschied '
+    + 'liegt im erwarteten Verhalten des Mergers: bei no_reset werden '
+    + 'unveränderte Dateien nicht überschrieben, bei full_reset alles. Du '
+    + 'selbst musst keine "Hat sich geändert?"-Logik implementieren.',
+};
+
+/**
+ * Snapshot-Prioritäts-Vertrag (airgap-1.12.0).
+ *
+ * FESTE, inhalts-UNABHÄNGIGE Anweisung an die MBK in Payload 1. Erklärt der
+ * Programmier-KI, dass viele Inhalte bereits VOR dem Export von der Lehrkraft
+ * erzeugt und als fertige, schülergerechte Snapshots gespeichert wurden.
+ * Diese Snapshots haben VORRANG vor KI-generierten Inhalten.
+ *
+ * Die konkreten Snapshots stehen in Payload 2 (einheit.onboarding.*) und
+ * in Payload 6 (Systembaustein-Briefings mit gefülltem Inhalt).
+ */
+const SNAPSHOT_PRIORITY_CONTRACT = {
+  was_ist_das:
+    'Die App erzeugt viele schülergerechte Inhalte BEREITS VOR dem Export '
+    + 'und speichert sie als fertige Snapshots (SchuelerInhaltSnapshot). '
+    + 'Diese Snapshots sind didaktisch geprüfte, schülergerechte Texte/Hinweise/'
+    + 'Quizze — sie müssen NICHT von der MBK neu formuliert oder '
+    + '"verbessert" werden.',
+  prioritaetsregel:
+    '1. Snapshot existiert → 1:1 übernehmen (nicht umformulieren, nicht '
+    + '"verbessern", nicht kürzen). 2. Kein Snapshot, aber Briefing in '
+    + 'Payload 5/6 → Inhalt aus dem Briefing generieren. 3. Weder Snapshot '
+    + 'noch Briefing → Shell-Platzhalter setzen (siehe §3 des '
+    + 'Meta-System-Prompts).',
+  wo_findest_du_snapshots: {
+    onboarding:
+      'In Payload 2 unter einheit.onboarding.{einfuehrung,fragenblock,'
+      + 'einstiegsdiagnose,lerntyp_diagnose}. Jedes Feld ist entweder ein '
+      + 'fertiges JSON-Objekt (Snapshot) oder null (noch nicht erzeugt → '
+      + 'NICHT erfinden).',
+    systembausteine:
+      'In Payload 6 (Systembaustein-Briefings). Wenn ein Briefing-Eintrag '
+      + 'konkrete Text-Inhalte enthält (nicht nur Metadaten), sind das die '
+      + 'fertigen Snapshots. Verwende sie 1:1 für die HTML-Generierung.',
+    interne_inhalte:
+      'Die Funktion "Interne Inhalte erzeugen" im Export-Center generiert '
+      + 'diese Snapshots VOR dem Export. Nach der Generierung existiert für '
+      + 'jeden benötigten Inhalt genau ein Snapshot. Die MBK muss NICHTS '
+      + 'mehr "ausdenken" — nur einbauen.',
+  },
+  hinweis_fuer_mbk:
+    'Wenn du einen Snapshot vorfindest, vertraue ihm. Die Lehrkraft hat ihn '
+    + 'geprüft und freigegeben. Deine Aufgabe ist es, ihn korrekt in die '
+    + 'HTML-Struktur einzubetten — nicht, ihn didaktisch oder sprachlich zu '
+    + 'verändern.',
+};
+
 const ONBOARDING_CONTRACT = {
   was_ist_das:
     'Jede Einheit hat eine einheits-GLOBALE Orientierungs-/Onboarding-Phase, '
@@ -594,6 +701,10 @@ export function buildSystemContextPayload({
     // Phase, die allen vier Dashboards vorgeschaltet ist. Die konkreten
     // Inhalte stehen in Payload 2 (`einheit.onboarding`).
     onboarding_contract: ONBOARDING_CONTRACT,
+    // airgap-1.12.0: Update-Lifecycle-Vertrag (draft → published → Update).
+    update_lifecycle_contract: UPDATE_LIFECYCLE_CONTRACT,
+    // airgap-1.12.0: Snapshot-Priorität (fertige Inhalte > KI-Briefing > Platzhalter).
+    snapshot_priority_contract: SNAPSHOT_PRIORITY_CONTRACT,
   };
 }
 
@@ -1085,6 +1196,15 @@ export function buildStructurePayload({
       // Onboarding-Phase (Snapshot aus Einheiten.onboarding_konfiguration).
       // Der generische Vertrag dazu steht in Payload 1 (`onboarding_contract`).
       onboarding: buildOnboardingForStructure(einheit?.onboarding_konfiguration),
+      // airgap-1.12.0: Update-Lifecycle-Informationen für die MBK.
+      // Effektive Strategie = override (Export-Center) > Strategie (Fachschaftsleitung).
+      update_strategy: nullable(einheit?.update_strategy),
+      update_strategy_override: nullable(einheit?.update_strategy_override),
+      effektive_update_strategy: nullable(
+        einheit?.update_strategy_override || einheit?.update_strategy
+      ),
+      is_update: einheit?.export_published_at ? true : false,
+      last_published_at: nullable(einheit?.export_published_at),
     },
     themenfelder: themenfelderOut,
     lernpakete_ohne_themenfeld: orphans.map(renderLernpaketEntry),
