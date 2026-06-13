@@ -237,6 +237,53 @@
       "type": "integer",
       "default": 1,
       "description": "Optimistic Locking Version (inkrementiert bei jedem Update)"
+    },
+    "update_strategy": {
+      "type": "string",
+      "enum": [
+        "no_reset",
+        "full_reset"
+      ],
+      "description": "Von der Fachschaftsleitung gew\u00e4hlte Update-Strategie beim erneuten Freigeben einer bereits ver\u00f6ffentlichten Einheit. 'no_reset' = Sch\u00fcler behalten ihren Fortschritt, neue/ge\u00e4nderte Inhalte werden eingeblendet. 'full_reset' = alle Sch\u00fcler m\u00fcssen die Einheit von vorne beginnen. Null = noch nicht gesetzt (kein Update-Delta)."
+    },
+    "update_strategy_empfehlung": {
+      "type": "string",
+      "enum": [
+        "no_reset",
+        "full_reset"
+      ],
+      "description": "Automatische Empfehlung der App auf Basis der Delta-Analyse. 'no_reset' bei rein textuellen oder additiven \u00c4nderungen. 'full_reset' nur bei massiven strukturellen \u00c4nderungen."
+    },
+    "update_strategy_analysis": {
+      "type": "object",
+      "description": "Ergebnis der Delta-Analyse beim erneuten Freigeben. Enth\u00e4lt: textOnly (boolean), hasNewItems, hasDeletedItems, hasDashboardChanges, deletedCount, newCount, modifiedCount, dashboardChangedLerntypen[].",
+      "additionalProperties": true
+    },
+    "update_strategy_set_by": {
+      "type": "string",
+      "description": "E-Mail der Person, die die Update-Strategie gew\u00e4hlt hat."
+    },
+    "update_strategy_set_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel der Strategie-Wahl."
+    },
+    "update_strategy_override": {
+      "type": "string",
+      "enum": [
+        "no_reset",
+        "full_reset"
+      ],
+      "description": "Vom Export-Center gesetzter Override der Update-Strategie. Nur gesetzt, wenn der Operator die Entscheidung der Fachschaftsleitung \u00fcberschrieben hat. Null = keine \u00dcberschreibung."
+    },
+    "update_strategy_override_by": {
+      "type": "string",
+      "description": "E-Mail des Export-Center-Operators, der die Strategie \u00fcberschrieben hat."
+    },
+    "update_strategy_override_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel des Strategy-Overrides."
     }
   },
   "required": [

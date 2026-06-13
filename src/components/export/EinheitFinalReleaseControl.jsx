@@ -71,15 +71,20 @@ export default function EinheitFinalReleaseControl({
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [activeLocks, setActiveLocks] = useState([]);
+  const [deltaData, setDeltaData] = useState(null);
 
   const preflightMutation = useMutation({
     mutationFn: async () => {
-      const res = await base44.functions.invoke('preflightFinalRelease', { einheitId });
-      if (res?.data?.error) throw new Error(res.data.error);
-      return res?.data;
+      const [preflightRes, deltaRes] = await Promise.all([
+        base44.functions.invoke('preflightFinalRelease', { einheitId }),
+        base44.functions.invoke('analyzeUpdateDelta', { einheitId }).catch(() => ({ data: null })),
+      ]);
+      if (preflightRes?.data?.error) throw new Error(preflightRes.data.error);
+      return { preflight: preflightRes?.data, delta: deltaRes?.data };
     },
-    onSuccess: (result) => {
-      setActiveLocks(result?.activeLocks || []);
+    onSuccess: ({ preflight, delta }) => {
+      setActiveLocks(preflight?.activeLocks || []);
+      setDeltaData(delta || null);
       setConfirmOpen(true);
     },
     onError: (err) => {
@@ -92,11 +97,10 @@ export default function EinheitFinalReleaseControl({
   });
 
   const writeMutation = useMutation({
-    mutationFn: async (newStatus) => {
-      const res = await base44.functions.invoke('setEinheitFreigabeStatus', {
-        einheitId,
-        newStatus,
-      });
+    mutationFn: async ({ newStatus, strategy }) => {
+      const payload = { einheitId, newStatus };
+      if (strategy) payload.update_strategy = strategy;
+      const res = await base44.functions.invoke('setEinheitFreigabeStatus', payload);
       if (res?.data?.error) {
         const err = new Error(res.data.error);
         err.code = res.data.code;
@@ -164,6 +168,7 @@ export default function EinheitFinalReleaseControl({
 
   const handleOpenConfirm = () => {
     setActiveLocks([]);
+    setDeltaData(null);
     preflightMutation.mutate();
   };
 
@@ -271,13 +276,17 @@ export default function EinheitFinalReleaseControl({
         open={confirmOpen}
         onOpenChange={(v) => {
           setConfirmOpen(v);
-          if (!v) setActiveLocks([]);
+          if (!v) { setActiveLocks([]); setDeltaData(null); }
         }}
         busy={writeMutation.isPending}
         preflightBusy={preflightMutation.isPending}
         activeLocks={activeLocks}
+        deltaData={deltaData}
+        einheitId={einheitId}
         onRecheck={() => preflightMutation.mutate()}
-        onConfirm={() => writeMutation.mutate(EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN)}
+        onConfirm={(strategy) =>
+          writeMutation.mutate({ newStatus: EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN, strategy })
+        }
       />
     </>
   );

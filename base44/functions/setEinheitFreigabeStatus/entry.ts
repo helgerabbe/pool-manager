@@ -297,10 +297,13 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
-    const { einheitId, newStatus } = body;
+    const { einheitId, newStatus, update_strategy } = body;
     if (!einheitId) return Response.json({ error: 'einheitId required' }, { status: 400 });
     if (!VALID_TARGET_STATUS.includes(newStatus)) {
       return Response.json({ error: 'invalid newStatus' }, { status: 400 });
+    }
+    if (update_strategy && !['no_reset', 'full_reset'].includes(update_strategy)) {
+      return Response.json({ error: 'invalid update_strategy' }, { status: 400 });
     }
 
     let einheit;
@@ -421,6 +424,11 @@ Deno.serve(async (req) => {
       export_lifecycle_changed_at: nowIso,
       export_lifecycle_changed_by: user.email,
     };
+    if (update_strategy) {
+      update.update_strategy = update_strategy;
+      update.update_strategy_set_by = user.email;
+      update.update_strategy_set_at = nowIso;
+    }
     await base44.entities.Einheiten.update(einheitId, update);
 
     // ── Lebenszyklus-Wechsel der Inhalte ────────────────────────────────

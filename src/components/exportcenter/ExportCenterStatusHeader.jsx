@@ -15,9 +15,9 @@
  */
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { CheckCircle2, Clock, Send, Pencil, Layers, Database } from 'lucide-react';
+import { CheckCircle2, Clock, Send, Pencil, Layers, Database, RefreshCw, AlertTriangle } from 'lucide-react';
 import moment from 'moment';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +28,11 @@ import {
 } from '@/lib/exportLifecycle';
 import ExportCompletionDialog from '@/components/exportcenter/ExportCompletionDialog';
 
+const STRATEGY_LABELS = {
+  no_reset: 'Update ohne Reset',
+  full_reset: 'Mit Reset – Schüler starten neu',
+};
+
 const STATUS_META = {
   [EXPORT_LIFECYCLE_STATUS.DRAFT]: { icon: Pencil, cls: 'bg-slate-100 text-slate-700 border-slate-300' },
   [EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN]: { icon: CheckCircle2, cls: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
@@ -37,6 +42,22 @@ const STATUS_META = {
 
 export default function ExportCenterStatusHeader({ einheit }) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [overrideOpen, setOverrideOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  const overrideMutation = useMutation({
+    mutationFn: async (newStrategy) => {
+      await base44.entities.Einheiten.update(einheit.id, {
+        update_strategy_override: newStrategy,
+        update_strategy_override_by: (await base44.auth.me())?.email || 'unknown',
+        update_strategy_override_at: new Date().toISOString(),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['einheit', einheit.id] });
+      setOverrideOpen(false);
+    },
+  });
 
   // Strukturzahlen (klein, nur für Zusammenfassung).
   const { data: themenfelder = [] } = useQuery({
@@ -99,6 +120,104 @@ export default function ExportCenterStatusHeader({ einheit }) {
           {EXPORT_LIFECYCLE_LABELS[status]}
         </Badge>
       </div>
+
+      {/* Update-Strategie (nur bei bereits veröffentlichter Einheit mit Delta) */}
+      {(einheit.update_strategy || einheit.update_strategy_empfehlung) && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
+          <p className="text-xs font-semibold text-amber-900">Update-Strategie</p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
+            {einheit.update_strategy_empfehlung && (
+              <span className="inline-flex items-center gap-1 text-muted-foreground">
+                App-Empfehlung:{' '}
+                <Badge className={cn(
+                  'text-[10px] h-5 px-1.5',
+                  einheit.update_strategy_empfehlung === 'full_reset'
+                    ? 'bg-amber-100 text-amber-800 border-amber-300'
+                    : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                )}>
+                  {STRATEGY_LABELS[einheit.update_strategy_empfehlung]}
+                </Badge>
+              </span>
+            )}
+            {einheit.update_strategy && (
+              <span className="inline-flex items-center gap-1 text-muted-foreground">
+                Fachschaftsleitung:{' '}
+                <Badge className={cn(
+                  'text-[10px] h-5 px-1.5',
+                  einheit.update_strategy === 'full_reset'
+                    ? 'bg-red-100 text-red-800 border-red-300'
+                    : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                )}>
+                  {STRATEGY_LABELS[einheit.update_strategy]}
+                </Badge>
+                {einheit.update_strategy_set_by && (
+                  <span className="text-muted-foreground">· {einheit.update_strategy_set_by}</span>
+                )}
+              </span>
+            )}
+            {einheit.update_strategy_override && (
+              <span className="inline-flex items-center gap-1 text-orange-700">
+                <AlertTriangle className="w-3 h-3" />
+                Export-Center-Override:{' '}
+                <Badge className={cn(
+                  'text-[10px] h-5 px-1.5',
+                  einheit.update_strategy_override === 'full_reset'
+                    ? 'bg-red-100 text-red-800 border-red-300'
+                    : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                )}>
+                  {STRATEGY_LABELS[einheit.update_strategy_override]}
+                </Badge>
+              </span>
+            )}
+          </div>
+          {/* Aktive Strategie (effektiv) */}
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-medium text-foreground">
+              Effektiv:{' '}
+              <Badge className={cn(
+                'text-[10px] h-5 px-1.5',
+                (einheit.update_strategy_override || einheit.update_strategy) === 'full_reset'
+                  ? 'bg-red-100 text-red-800 border-red-300'
+                  : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+              )}>
+                {STRATEGY_LABELS[einheit.update_strategy_override || einheit.update_strategy || 'no_reset']}
+              </Badge>
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setOverrideOpen(!overrideOpen)}
+              className="h-6 text-[10px] px-2 text-muted-foreground hover:text-foreground"
+            >
+              {overrideOpen ? 'Abbrechen' : 'Überschreiben'}
+            </Button>
+          </div>
+          {overrideOpen && (
+            <div className="flex items-center gap-2 pt-1">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => overrideMutation.mutate('no_reset')}
+                disabled={overrideMutation.isPending}
+                className="h-7 text-[11px] px-2.5 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+              >
+                <CheckCircle2 className="w-3 h-3 mr-1" />
+                Update ohne Reset
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => overrideMutation.mutate('full_reset')}
+                disabled={overrideMutation.isPending}
+                className="h-7 text-[11px] px-2.5 border-red-300 text-red-700 hover:bg-red-50"
+              >
+                <RefreshCw className="w-3 h-3 mr-1" />
+                Reset erzwingen
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Zeitstempel: Supabase-Export und Export-Abschluss */}
       {(lastExportTs || lastPublishedTs) && (

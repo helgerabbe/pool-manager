@@ -12,7 +12,7 @@
  *      „Erneut prüfen" + „Abbrechen".
  */
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Loader2, ShieldCheck, Lock, RefreshCw } from 'lucide-react';
 import {
   Dialog,
@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import ActiveLocksList from '@/components/lernpfade/ActiveLocksList';
+import UpdateStrategyStep from '@/components/export/UpdateStrategyStep';
 
 export default function EinheitFreigabeConfirmDialog({
   open,
@@ -30,10 +31,19 @@ export default function EinheitFreigabeConfirmDialog({
   busy = false,
   preflightBusy = false,
   activeLocks = [],
+  deltaData = null,
+  einheitId = null,
   onConfirm,
   onRecheck,
 }) {
   const blocked = Array.isArray(activeLocks) && activeLocks.length > 0;
+  const [strategy, setStrategy] = useState(null);
+
+  const handleStrategyChosen = useCallback((s) => {
+    setStrategy(s);
+  }, []);
+
+  const isUpdate = deltaData?.isUpdate || deltaData?.hasNewItems || deltaData?.hasDeletedItems || deltaData?.hasDashboardChanges || deltaData?.modifiedCount > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -60,6 +70,18 @@ export default function EinheitFreigabeConfirmDialog({
             <p className="text-xs text-muted-foreground">
               Mit „Erneut prüfen" wird der Status der Bearbeitungs-Sperren neu geladen.
             </p>
+          </div>
+        ) : isUpdate && einheitId ? (
+          <div className="space-y-3">
+            <p className="text-sm leading-snug">
+              Diese Einheit wurde bereits veröffentlicht. Es liegen Änderungen vor,
+              die jetzt an das Export-Center gemeldet werden.
+            </p>
+            <UpdateStrategyStep
+              einheitId={einheitId}
+              onStrategyChosen={handleStrategyChosen}
+              busy={busy}
+            />
           </div>
         ) : (
           <div className="space-y-3 text-sm leading-snug">
@@ -108,8 +130,8 @@ export default function EinheitFreigabeConfirmDialog({
             </Button>
           ) : (
             <Button
-              onClick={onConfirm}
-              disabled={busy || preflightBusy}
+              onClick={() => onConfirm(strategy)}
+              disabled={busy || preflightBusy || (isUpdate && !strategy)}
               className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               {busy ? (
