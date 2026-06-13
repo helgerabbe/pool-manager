@@ -62,8 +62,14 @@ import { annotateSektorItems, DASHBOARD_GATING_ENGINE } from '@/lib/dashboardGat
  *   Gespräch, immer an letzter Stelle).
  *   - Payload 1: `onboarding_contract.elemente` enthält jetzt vier Elemente.
  *   - Payload 2: `einheit.onboarding.lerntyp_diagnose` (Snapshot).
+ * airgap-1.13.0: Schüler-Arbeitsumgebung (Methodische Hülle).
+ *   - Payload 1: `schueler_arbeitsumgebung_contract` beschreibt der MBK das
+ *     gesamte „Betriebssystem" der Schüler-App: Cockpit, Poolzeit-Ritual,
+ *     Lerntagebuch, Merkheft, Einheit-Dashboard mit PfadNavigation und
+ *     Zeit-Tracker. Die Hülle wird EINMAL gebaut und ist für alle Einheiten
+ *     gültig — nur die Inhalte an den Anker-Punkten wechseln.
  */
-export const MBK_AIRGAP_VERSION = 'airgap-1.12.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.13.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -296,6 +302,208 @@ const SNAPSHOT_PRIORITY_CONTRACT = {
     + 'geprüft und freigegeben. Deine Aufgabe ist es, ihn korrekt in die '
     + 'HTML-Struktur einzubetten — nicht, ihn didaktisch oder sprachlich zu '
     + 'verändern.',
+};
+
+/**
+ * Schüler-Arbeitsumgebung-Vertrag (airgap-1.13.0).
+ *
+ * FESTE, inhalts-UNABHÄNGIGE Anweisung an die MBK in Payload 1. Beschreibt
+ * die methodische Hülle (Schüler-Arbeitsumgebung), die sich um JEDE Einheit
+ * legt — unabhängig von Fach, Jahrgang oder Inhalt. Diese Hülle ist das
+ * „Betriebssystem" der Schüler-App: Cockpit, Poolzeit-Ritual, Lerntagebuch,
+ * Merkheft, Navigation und Onboarding.
+ *
+ * Die MBK baut diese Hülle EINMAL pro App-Instanz — die Inhalte (Einheiten,
+ * Lernpakete, Aktivitäten) werden dann dort eingehängt, wo die Hülle
+ * Platzhalter/Anker vorsieht.
+ */
+const SCHUELER_ARBEITSUMGEBUNG_CONTRACT = {
+  was_ist_das:
+    'Die Schüler-Arbeitsumgebung ist die methodische Hülle, die sich um JEDE '
+    + 'Einheit legt. Sie ist das „Betriebssystem" der Schüler-App — unabhängig '
+    + 'von konkreten Inhalten. Sie wird EINMAL pro App-Instanz gebaut; jede '
+    + 'Einheit wird dann in diesen Rahmen eingehängt. Die Hülle enthält fünf '
+    + 'Ebenen, die alle vor, während und nach der Einheiten-Bearbeitung aktiv sind.',
+
+  ebenen: {
+
+    cockpit: {
+      beschreibung:
+        'Die zentrale Startseite des Schülers. Wird NACH dem Login und VOR '
+        + 'jedem Fach-/Einheit-Zugriff angezeigt.',
+      elemente: [
+        {
+          name: 'CockpitHeader',
+          funktion:
+            'Dezentes Dreieck oben mittig — antippt klappt Overlay mit '
+            + 'Schülername, Logout, Lerntagebuch-Link und optionalem '
+            + 'Lerntyp-Wechsel-Dialog aus.',
+        },
+        {
+          name: 'StartButton',
+          funktion:
+            'Großer, prominenter Button „Poolzeit beginnen". Führt den '
+            + 'Schüler in den strukturierten Poolzeit-Ablauf.',
+        },
+        {
+          name: 'SelbstNotizKarte',
+          funktion:
+            'Kompakte Karte mit der letzten „Nachricht an mich selbst" aus '
+            + 'dem Lerntagebuch. Zeigt Datum der letzten Notiz und verlinkt '
+            + 'ins Lerntagebuch.',
+        },
+        {
+          name: 'FachKacheln (3-spaltiges Grid)',
+          funktion:
+            'Pro Poolzeit-Fach eine Kachel mit Fach-Icon/-Farbe, '
+            + 'Fortschrittsstufe (aktiv/inaktiv/abgeschlossen) und Angabe, '
+            + 'wie lange die letzte Arbeit zurückliegt. Antippen öffnet die '
+            + 'FachSeite mit den Einheiten dieses Fachs.',
+        },
+        {
+          name: 'RueckblickLeiste',
+          funktion:
+            'Schmaler Streifen am unteren Rand mit Wochen-Rückblick: '
+            + 'pro Tag die gearbeiteten Minuten, das Fach und ggf. eine '
+            + 'kurze Aktivitätsbeschreibung.',
+        },
+      ],
+    },
+
+    poolzeit_ablauf: {
+      beschreibung:
+        'Der strukturierte Poolzeit-Workflow. Führt den Schüler Schritt für '
+        + 'Schritt durch die Planung, Ausführung und Reflexion einer Lernsession.',
+      schritte: [
+        {
+          schritt_nummer: 1,
+          name: 'Gesamtzeit festlegen',
+          funktion:
+            'Schüler legt per Slider fest, wie viele Minuten er heute lernen '
+            + 'möchte (Default: 40 Min).',
+        },
+        {
+          schritt_nummer: 2,
+          name: 'Fächer planen (Zeitleiste)',
+          funktion:
+            'Schüler verteilt die Gesamtzeit auf 1–n Fächer in einer '
+            + 'horizontalen Zeitleiste (5-Min-Schritte).',
+        },
+        {
+          schritt_nummer: 3,
+          name: 'Einheit starten (pro Fachblock)',
+          funktion:
+            'Pro Fachblock wählt und startet der Schüler eine Einheit. '
+            + 'Nach Ablauf der Block-Zeit erscheint ein sanfter Hinweis.',
+        },
+        {
+          schritt_nummer: '4a',
+          name: 'Fachwechsel-Notiz (zwischen zwei Fächern)',
+          funktion:
+            'FREIWILLIGE Zwischennotiz beim Fachwechsel. Wird im '
+            + 'Lerntagebuch als typ="zwischennotiz" gespeichert.',
+        },
+        {
+          schritt_nummer: '4b',
+          name: 'Abschluss (nach dem letzten Fachblock)',
+          funktion:
+            'Zwei Pflichtfelder: Reflexion („Was hast du heute gelernt?") '
+            + 'und Nachricht an mich selbst („Was fürs nächste Mal merken?"). '
+            + 'Die Nachricht erscheint beim nächsten Poolzeit-Start im Cockpit.',
+        },
+      ],
+    },
+
+    lerntagebuch: {
+      beschreibung:
+        'Fachübergreifendes, persönliches Logbuch. Erreichbar über Cockpit '
+        + '(SelbstNotizKarte) oder CockpitHeader.',
+      eintrags_typen: [
+        { typ: 'reflexion', bedeutung: 'Rückblick am Poolzeit-Ende' },
+        { typ: 'nachricht', bedeutung: 'Nachricht an sich selbst fürs nächste Mal' },
+        { typ: 'zwischennotiz', bedeutung: 'Kurze Notiz beim Fachwechsel' },
+        { typ: 'frei', bedeutung: 'Freier Eintrag, jederzeit erstellbar' },
+      ],
+    },
+
+    merkheft: {
+      beschreibung:
+        'Pro-Einheit-Notizblock im Einheit-Dashboard. Erreichbar über das '
+        + 'Burger-Menü (☰). Für schnelle Notizen WÄHREND der Arbeit.',
+      speicherung: 'Pro Notiz: user_email + einheit_id + text.',
+    },
+
+    einheit_dashboard: {
+      beschreibung:
+        'Das Lern-Dashboard NACH Onboarding und Lerntyp-Wahl.',
+      elemente: [
+        {
+          name: 'PfadNavigation (Burger-Slide-out)',
+          funktion:
+            'Seitliches Overlay mit Sektor-/Item-Struktur des Lerntyps. '
+            + 'Zeigt Status (offen/erledigt/aktiv) und Schloss-Symbole.',
+        },
+        {
+          name: 'Zeit-Tracker',
+          funktion:
+            'Misst und zeigt die in dieser Einheit verbrachte Zeit (Minuten).',
+        },
+        {
+          name: 'Lernlandkarte (sys_map_full)',
+          funktion:
+            'Interaktive Lernlandkarte mit Ampel-Selbsteinschätzung pro Lernziel.',
+        },
+        {
+          name: 'Weiter-Button',
+          funktion:
+            'Universeller Abschluss-Mechanismus (siehe dashboard_gating_engine).',
+        },
+      ],
+    },
+  },
+
+  bau_regeln: [
+    'Die Hülle ist ein Set von HTML-Seiten: Cockpit, Poolzeit (Multi-Step), '
+    + 'Lerntagebuch, FachSeite, EinheitOnboarding, EinheitDashboard.',
+    'Cockpit UND EinheitDashboard teilen denselben CockpitHeader. '
+    + 'Das Burger-Menü (☰) existiert NUR im Dashboard.',
+    'Der Zeit-Tracker läuft im Hintergrund, sobald eine Einheit geöffnet ist.',
+    'Sämtliche Fortschritts-/Status-Daten werden persistent gespeichert '
+    + '(nicht flüchtig im Browser).',
+    'Die Hülle wird EINMAL gebaut und nur bei Änderungen an dieser Spec '
+    + 'aktualisiert — NICHT pro Einheit neu generiert.',
+  ],
+
+  integration_mit_einheiten: {
+    beschreibung:
+      'Die Hülle definiert ANKER, in die einheits-spezifische Inhalte '
+      + 'eingehängt werden:',
+    anker: [
+      {
+        wo: 'Cockpit → FachKacheln',
+        was: 'Pro Fach eine Kachel mit Fortschrittsdaten aus '
+          + 'SchuelerEinheitFortschritt + Einheiten.',
+      },
+      {
+        wo: 'FachSeite → EinheitKacheln',
+        was: 'Pro Einheit des Fachs eine Kachel.',
+      },
+      {
+        wo: 'EinheitOnboarding',
+        was: 'Vier Elemente (Einführung, Fragenblock, Einstiegsdiagnose, '
+          + 'KI-Lerntyp-Diagnose) als Snapshot aus Einheiten.onboarding_konfiguration.',
+      },
+      {
+        wo: 'EinheitDashboard → Hauptbereich',
+        was: 'Sektoren und Items des gewählten Lerntyps aus Payload 2–5.',
+      },
+    ],
+  },
+
+  hinweis_fuer_mbk:
+    'Die Hülle ist FEST und wird EINMAL gebaut. Nur die Inhalte an den '
+    + 'Anker-Punkten einhängen. Keine konkreten Fach-/Einheit-Daten in der '
+    + 'Hülle selbst — die kommen aus Payload 2–5.',
 };
 
 const ONBOARDING_CONTRACT = {
@@ -705,6 +913,10 @@ export function buildSystemContextPayload({
     update_lifecycle_contract: UPDATE_LIFECYCLE_CONTRACT,
     // airgap-1.12.0: Snapshot-Priorität (fertige Inhalte > KI-Briefing > Platzhalter).
     snapshot_priority_contract: SNAPSHOT_PRIORITY_CONTRACT,
+    // airgap-1.13.0: Schüler-Arbeitsumgebung (Cockpit, Poolzeit, Lerntagebuch,
+    // Merkheft, Dashboard-Navigation). Die methodische Hülle, die sich um jede
+    // Einheit legt — EINMAL gebaut, für alle Einheiten gültig.
+    schueler_arbeitsumgebung_contract: SCHUELER_ARBEITSUMGEBUNG_CONTRACT,
   };
 }
 
