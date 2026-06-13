@@ -1,20 +1,31 @@
 import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Loader2, Database, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, Database, CheckCircle2, AlertCircle, Clock, Send } from 'lucide-react';
+import moment from 'moment';
 
 /**
- * Export-Center-Karte: „Nach Supabase exportieren" (Phase 3 der Migration).
+ * Export-Center-Karte: „Nach Supabase exportieren".
  *
- * Schreibt die ausgewählte Einheit inkl. aller Inhalte und KI-Snapshots in die
- * Supabase-Inhaltstabellen für den statischen Schüler-Build.
- * Wichtig: Vorher „Interne Inhalte erzeugen", damit alle KI-Snapshots
- * vorhanden sind – im Supabase-Modus gibt es keine Live-KI.
+ * Schreibt die ausgewählte Einheit inkl. aller Inhalte und KI-Snapshots
+ * in die Supabase-Inhaltstabellen. Nach erfolgreichem Export wird der
+ * Zeitstempel auf der Einheit aktualisiert und hier angezeigt.
+ *
+ * Zeigt außerdem an, wann der letzte Export abgeschlossen und die Einheit
+ * wieder freigegeben wurde (export_published_at).
  */
 export default function SupabaseExportCard({ einheitId }) {
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const queryClient = useQueryClient();
+
+  const { data: einheit } = useQuery({
+    queryKey: ['einheit', einheitId],
+    queryFn: () => base44.entities.Einheiten.get(einheitId),
+    enabled: !!einheitId,
+  });
 
   const handleExport = async () => {
     setRunning(true);
@@ -24,11 +35,26 @@ export default function SupabaseExportCard({ einheitId }) {
       const res = await base44.functions.invoke('exportEinheitToSupabase', { einheitId });
       if (res?.data?.error) throw new Error(res.data.error);
       setResult(res.data);
+      // Zeitstempel wird serverseitig in exportEinheitToSupabase aktualisiert.
+      queryClient.invalidateQueries({ queryKey: ['einheit', einheitId] });
     } catch (e) {
       setError(e?.response?.data?.error || e.message || 'Export fehlgeschlagen.');
     } finally {
       setRunning(false);
     }
+  };
+
+  const lastExportDate = einheit?.last_exported_at || null;
+  const lastPublishedDate = einheit?.export_published_at || null;
+
+  const formatTs = (iso) => {
+    if (!iso) return null;
+    const m = moment(iso);
+    if (!m.isValid()) return null;
+    const now = moment();
+    if (m.isSame(now, 'day')) return `Heute, ${m.format('HH:mm')} Uhr`;
+    if (m.isSame(now.clone().subtract(1, 'day'), 'day')) return `Gestern, ${m.format('HH:mm')} Uhr`;
+    return m.format('DD.MM.YYYY, HH:mm') + ' Uhr';
   };
 
   return (
@@ -41,9 +67,32 @@ export default function SupabaseExportCard({ einheitId }) {
           <h3 className="text-sm font-semibold text-foreground">Nach Supabase exportieren</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             Überträgt diese Einheit (Struktur, Lernpakete, Aktivitäten, Lernziele,
-            KI-Snapshots) in die Supabase-Datenbank für die eigenständige Schüler-App.
-            Vorher „Interne Inhalte erzeugen" ausführen, damit alle KI-Snapshots vorliegen.
+            KI-Snapshots, MBK-Prompts) in die Supabase-Datenbank für die eigenständige Schüler-App.
           </p>
+
+          {/* Zeitstempel-Info */}
+          {(lastExportDate || lastPublishedDate) && (
+            <div className="mt-3 space-y-1.5">
+              {lastExportDate && (
+                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <Database className="w-3 h-3 shrink-0" />
+                  <span>Letzter Supabase-Export: <span className="font-medium text-foreground">{formatTs(lastExportDate)}</span></span>
+                </div>
+              )}
+              {lastPublishedDate && (
+                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <Send className="w-3 h-3 shrink-0" />
+                  <span>Export beendet &amp; freigegeben: <span className="font-medium text-foreground">{formatTs(lastPublishedDate)}</span></span>
+                </div>
+              )}
+              {lastExportDate && !lastPublishedDate && (
+                <div className="flex items-center gap-1.5 text-[11px] text-amber-600">
+                  <Clock className="w-3 h-3 shrink-0" />
+                  <span>Export wurde noch nicht als beendet bestätigt.</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {result && (
             <div className="mt-3 flex items-start gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-800">
@@ -51,7 +100,8 @@ export default function SupabaseExportCard({ einheitId }) {
               <span>
                 Export erfolgreich: {result.counts?.lernpakete} Lernpakete,{' '}
                 {result.counts?.aktivitaeten} Aktivitäten, {result.counts?.lernziele} Lernziele,{' '}
-                {result.counts?.snapshots} KI-Snapshots übertragen.
+                {result.counts?.snapshots} KI-Snapshots, {result.counts?.global_prompts || 0} Global-Prompts,{' '}
+                {result.counts?.export_prompts || 0} Export-Prompts übertragen.
               </span>
             </div>
           )}

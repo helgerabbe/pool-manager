@@ -280,6 +280,12 @@ Deno.serve(async (req) => {
       if (error) fail('export_prompts', error);
     }
 
+    // Zeitstempel auf der Einheit aktualisieren.
+    const now = new Date().toISOString();
+    try {
+      await sr.Einheiten.update(einheitId, { last_exported_at: now });
+    } catch (_e) { /* nicht kritisch */ }
+
     return Response.json({
       success: true,
       einheit: einheit.titel_der_einheit,

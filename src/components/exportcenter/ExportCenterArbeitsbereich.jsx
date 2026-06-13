@@ -1,18 +1,18 @@
 /**
  * ExportCenterArbeitsbereich.jsx
  *
- * Rechte Spalte des Export-Centers (Phase G).
- *
- * Nach dem Air-Gap-Refactor wird hier nur noch das 7-Tab-Panel gerendert.
- * Status-Header und Delta-Analyse leben jetzt im ersten Tab „Info"
- * (siehe components/exportcenter/v2/tabs/InfoTab.jsx), damit der
- * eigentliche Übergabe-Workflow nicht mehr nach unten gedrückt wird.
+ * Rechte Spalte des Export-Centers. Zeigt pro ausgewählter Einheit:
+ *   - Status-Header mit Lifecycle-Badge, Timestamps und "Export beendet"-Button
+ *   - InterneInhalteCard (KI-Snapshots prüfen & generieren)
+ *   - MBKPromptGeneratorPanel (Air-Gap-Tabs)
+ *   - SupabaseExportCard (Export nach Supabase)
  */
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Send } from 'lucide-react';
+import ExportCenterStatusHeader from '@/components/exportcenter/ExportCenterStatusHeader';
+import InterneInhalteCard from '@/components/exportcenter/InterneInhalteCard';
 import MBKPromptGeneratorPanel from '@/components/export/MBKPromptGeneratorPanel';
 import SupabaseExportCard from '@/components/exportcenter/SupabaseExportCard';
 
@@ -48,6 +48,8 @@ export default function ExportCenterArbeitsbereich({ einheitId }) {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-4">
+      <ExportCenterStatusHeader einheit={einheit} />
+      <InterneInhalteCard einheitId={einheitId} />
       <MBKPromptGeneratorPanel einheitId={einheitId} />
       <SupabaseExportCard einheitId={einheitId} />
     </div>

@@ -17,7 +17,8 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { CheckCircle2, Clock, Send, Pencil, Layers } from 'lucide-react';
+import { CheckCircle2, Clock, Send, Pencil, Layers, Database } from 'lucide-react';
+import moment from 'moment';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -53,6 +54,19 @@ export default function ExportCenterStatusHeader({ einheit }) {
   const meta = STATUS_META[status];
   const StatusIcon = meta.icon;
 
+  const formatTs = (iso) => {
+    if (!iso) return null;
+    const m = moment(iso);
+    if (!m.isValid()) return null;
+    const now = moment();
+    if (m.isSame(now, 'day')) return `Heute, ${m.format('HH:mm')} Uhr`;
+    if (m.isSame(now.clone().subtract(1, 'day'), 'day')) return `Gestern, ${m.format('HH:mm')} Uhr`;
+    return m.format('DD.MM.YYYY, HH:mm') + ' Uhr';
+  };
+
+  const lastExportTs = formatTs(einheit.last_exported_at);
+  const lastPublishedTs = formatTs(einheit.export_published_at);
+
   // "Export beendet" macht nur Sinn, wenn der Spezialist den Export auch
   // tatsächlich gestartet bzw. die Einheit final freigegeben hat.
   const canComplete =
@@ -85,6 +99,24 @@ export default function ExportCenterStatusHeader({ einheit }) {
           {EXPORT_LIFECYCLE_LABELS[status]}
         </Badge>
       </div>
+
+      {/* Zeitstempel: Supabase-Export und Export-Abschluss */}
+      {(lastExportTs || lastPublishedTs) && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+          {lastExportTs && (
+            <span className="inline-flex items-center gap-1">
+              <Database className="w-3 h-3" />
+              Letzter Supabase-Export: <span className="font-medium text-foreground">{lastExportTs}</span>
+            </span>
+          )}
+          {lastPublishedTs && (
+            <span className="inline-flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+              Export beendet &amp; freigegeben: <span className="font-medium text-foreground">{lastPublishedTs}</span>
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="pt-3 border-t border-border flex items-center justify-between gap-3 flex-wrap">
         <p className="text-xs text-muted-foreground max-w-md">
