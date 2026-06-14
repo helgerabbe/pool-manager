@@ -51,14 +51,15 @@ export default function FachSeite() {
 
   const phasenLabel = (id) => phasen.find((p) => p.id === id)?.bezeichnung || '';
 
-  // Einheiten dieses Fachs, die für Schüler sichtbar sind: alles ab finaler
-  // Freigabe (final_freigegeben, export_running, published). Drafts bleiben verborgen.
-  const SICHTBARE_STATUS = ['final_freigegeben', 'export_running', 'published'];
+  // Einheiten dieses Fachs, die für Schüler sichtbar sind: alles, was jemals
+  // veröffentlicht wurde (export_published_at gesetzt). Der export_lifecycle_status
+  // ist ein interner Workflow-Tracker des Export-Centers und für die Schüleransicht
+  // irrelevant — eine einmal veröffentlichte Einheit bleibt immer sichtbar.
   const einheiten = alleEinheiten
     .filter(
       (e) =>
         e.fach === fachName &&
-        SICHTBARE_STATUS.includes(e.export_lifecycle_status) &&
+        e.export_published_at != null &&
         e.ist_basismodul !== true
     )
     .sort((a, b) => {
