@@ -110,8 +110,8 @@ heruntergeladen werden können (statt nur in Supabase zu schreiben).
 |---|---------|--------|
 | 1 | `lib/mbkAirGapPayloads.js` prüfen/erweitern | ✅ Erledigt |
 | 2 | Export-Center: Download-Button + ZIP-Erzeugung | ✅ Erledigt |
-| 3 | `docs/malte-anleitung-mbk-v2.md` schreiben | 🔜 Nächster Schritt |
-| 4 | `docs/malte-antwort-mbk-abgleich.md` schreiben | ⬜ |
+| 3 | `docs/malte-anleitung-mbk-v2.md` schreiben | ✅ Erledigt |
+| 4 | `docs/malte-antwort-mbk-abgleich.md` schreiben | 🔜 Nächster Schritt |
 | 5 | `docs/malte-email-entwurf.md` schreiben | ⬜ |
 | 6 | Alles an Malte senden | ⬜ |
 
