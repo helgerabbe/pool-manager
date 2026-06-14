@@ -43,23 +43,22 @@ heißt `docs/malte-anleitung-mbk-v2.md`.
 
 ---
 
-## 2. Export-Center – App-Änderungen
+## ✅ Export-Center – App-Änderungen (erledigt)
 
 **Ziel:** Das Base44-Export-Center so erweitern, dass Payloads als **JSON-Dateien**
 heruntergeladen werden können (statt nur in Supabase zu schreiben).
 
 ### 2.1 Neuer Download-Button / Tab
-- [ ] Im `ExportCenterArbeitsbereich` (oder `SupabaseExportCard`) einen neuen Abschnitt **"Air-Gap-Payloads herunterladen"** hinzufügen.
-- [ ] Pro Einheit: Button für ZIP-Download aller 4 Payloads (`mbk-payloads_<slug>.zip`).
-- [ ] Optional: Einzel-Downloads pro Payload-Typ.
+- [x] Im `ExportCenterArbeitsbereich` neuen Abschnitt **"Air-Gap-Payloads herunterladen"** hinzugefügt → `AirGapPayloadDownloadCard.jsx`.
+- [x] Pro Einheit: Button für ZIP-Download aller 6 Payloads (`mbk-payloads_<slug>.zip`).
+- [x] Einzel-Downloads pro Payload-Typ bereits im `MBKAirGapTabsPanel` vorhanden.
 
 ### 2.2 Payload-Generierung im Browser
-- [ ] Prüfen, ob `lib/mbkAirGapPayloads.js` bereits die 4 Payload-Typen als reine JS-Funktionen (ohne DB-Persistenz) erzeugen kann.
-- [ ] Falls nicht: Die Generator-Funktionen (`buildSystemContextPayload`, `buildStructurePayload`, `buildTaskContentPayload`, `buildMicroPayload`) so schreiben/extrahieren, dass sie **rein im Browser** auf Basis der geladenen Einheit-Daten arbeiten.
-- [ ] ZIP-Erzeugung client-seitig mit `JSZip` (bereits installiert: `^3.10.1`).
+- [x] `lib/mbkAirGapPayloads.js` bereits vollständig – alle Builder sind reine JS-Funktionen ohne DB-Persistenz.
+- [x] ZIP-Erzeugung client-seitig mit `JSZip` über `lib/airGapClipboard.js` → `downloadZip()`.
 
 ### 2.3 Bestehenden Supabase-Export erhalten
-- [ ] Der bestehende `exportEinheitToSupabase`-Flow bleibt **unangetastet**. Der neue Download-Weg läuft parallel.
+- [x] Der bestehende `exportEinheitToSupabase`-Flow bleibt **unangetastet**. Der neue Download-Weg läuft parallel.
 
 ---
 
@@ -107,14 +106,14 @@ heruntergeladen werden können (statt nur in Supabase zu schreiben).
 
 ## 6. Reihenfolge der Umsetzung
 
-| # | Schritt | Abhängigkeit |
-|---|---------|-------------|
-| 1 | `lib/mbkAirGapPayloads.js` prüfen/erweitern (reine Browser-Generatoren) | keine |
-| 2 | Export-Center: Download-Button + ZIP-Erzeugung | Schritt 1 |
-| 3 | `docs/malte-anleitung-mbk-v2.md` schreiben | Schritte 1–2 |
-| 4 | `docs/malte-antwort-mbk-abgleich.md` schreiben | Schritte 1–3 |
-| 5 | `docs/malte-email-entwurf.md` schreiben | Schritte 1–4 |
-| 6 | Alles an Malte senden | Schritt 5 |
+| # | Schritt | Status |
+|---|---------|--------|
+| 1 | `lib/mbkAirGapPayloads.js` prüfen/erweitern | ✅ Erledigt |
+| 2 | Export-Center: Download-Button + ZIP-Erzeugung | ✅ Erledigt |
+| 3 | `docs/malte-anleitung-mbk-v2.md` schreiben | 🔜 Nächster Schritt |
+| 4 | `docs/malte-antwort-mbk-abgleich.md` schreiben | ⬜ |
+| 5 | `docs/malte-email-entwurf.md` schreiben | ⬜ |
+| 6 | Alles an Malte senden | ⬜ |
 
 ---
 
