@@ -12,6 +12,7 @@ import { base44 } from '@/api/base44Client';
 import { Send } from 'lucide-react';
 import MBKPromptGeneratorPanel from '@/components/export/MBKPromptGeneratorPanel';
 import SupabaseExportCard from '@/components/exportcenter/SupabaseExportCard';
+import AirGapPayloadDownloadCard from '@/components/exportcenter/AirGapPayloadDownloadCard';
 
 export default function ExportCenterArbeitsbereich({ einheitId }) {
   const { data: einheit, isLoading } = useQuery({
@@ -46,6 +47,7 @@ export default function ExportCenterArbeitsbereich({ einheitId }) {
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-4">
       <MBKPromptGeneratorPanel einheitId={einheitId} />
+      <AirGapPayloadDownloadCard einheitId={einheitId} />
       <SupabaseExportCard einheitId={einheitId} />
     </div>
   );

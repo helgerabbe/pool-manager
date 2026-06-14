@@ -9,6 +9,13 @@
 
 ---
 
+## ✅ Abgeschlossen
+
+- [x] **1. Generator prüfen** – `lib/mbkAirGapPayloads.js` ist bereits vollständig: alle sechs Builder sind reine Browser-Funktionen ohne API-Abhängigkeiten. Keine Änderungen nötig.
+- [x] **2. Export-Center erweitert** – Neue `AirGapPayloadDownloadCard` in `ExportCenterArbeitsbereich` eingebunden. Ein-Klick-ZIP-Download aller 6 Payloads. Dateien im ZIP: `payloads/0-ui-config.json` bis `payloads/5-systembausteine.json`.
+
+---
+
 ## 1. Bauanleitung v2 – Dokument neu schreiben
 
 **Ziel:** `docs/malte-anleitung-mbk.md` komplett überarbeiten. Der neue Entwurf
