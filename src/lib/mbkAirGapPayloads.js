@@ -68,8 +68,14 @@ import { annotateSektorItems, DASHBOARD_GATING_ENGINE } from '@/lib/dashboardGat
  *     Lerntagebuch, Merkheft, Einheit-Dashboard mit PfadNavigation und
  *     Zeit-Tracker. Die Hülle wird EINMAL gebaut und ist für alle Einheiten
  *     gültig — nur die Inhalte an den Anker-Punkten wechseln.
+ * airgap-1.14.0: Portal-/Einheit-Arbeitsumgebung getrennt.
+ *   - Payload 1: `schueler_arbeitsumgebung_contract` wird aufgespalten in
+ *     `portal_arbeitsumgebung_contract` (Cockpit, Poolzeit, fachübergreifendes
+ *     Lerntagebuch — EINMAL gebaute Moodle-Dashboard-Schicht, NICHT pro
+ *     Einheit) und `einheit_arbeitsumgebung_contract` (Einheit-Dashboard +
+ *     Merkheft — das Einzige, was PRO EINHEIT in den SCORM-Bau wandert).
  */
-export const MBK_AIRGAP_VERSION = 'airgap-1.13.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.14.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -305,32 +311,35 @@ const SNAPSHOT_PRIORITY_CONTRACT = {
 };
 
 /**
- * Schüler-Arbeitsumgebung-Vertrag (airgap-1.13.0).
+ * Portal-Arbeitsumgebung-Vertrag (airgap-1.14.0).
  *
  * FESTE, inhalts-UNABHÄNGIGE Anweisung an die MBK in Payload 1. Beschreibt
- * die methodische Hülle (Schüler-Arbeitsumgebung), die sich um JEDE Einheit
- * legt — unabhängig von Fach, Jahrgang oder Inhalt. Diese Hülle ist das
- * „Betriebssystem" der Schüler-App: Cockpit, Poolzeit-Ritual, Lerntagebuch,
- * Merkheft, Navigation und Onboarding.
+ * die EINMALIG gebaute Moodle-Dashboard-Schicht, die sich VOR alle Einheiten
+ * legt: Cockpit, Poolzeit-Planer, Login, fachübergreifendes Lerntagebuch.
  *
- * Die MBK baut diese Hülle EINMAL pro App-Instanz — die Inhalte (Einheiten,
- * Lernpakete, Aktivitäten) werden dann dort eingehängt, wo die Hülle
- * Platzhalter/Anker vorsieht.
+ * ⚠️ DIESER VERTRAG GEHÖRT NICHT IN DEN PER-EINHEIT-SCORM-BAU.
+ * Die Portal-Schicht wird EINMAL als übergeordnete Moodle-Dashboard-Schicht
+ * gebaut. Die Einheiten werden dann dynamisch in diesen Rahmen eingehängt.
+ * Nur der `einheit_arbeitsumgebung_contract` (Einheit-Dashboard + Merkheft)
+ * wird PRO EINHEIT in den SCORM-Bau eingewoben.
  */
-const SCHUELER_ARBEITSUMGEBUNG_CONTRACT = {
+const PORTAL_ARBEITSUMGEBUNG_CONTRACT = {
   was_ist_das:
-    'Die Schüler-Arbeitsumgebung ist die methodische Hülle, die sich um JEDE '
-    + 'Einheit legt. Sie ist das „Betriebssystem" der Schüler-App — unabhängig '
-    + 'von konkreten Inhalten. Sie wird EINMAL pro App-Instanz gebaut; jede '
-    + 'Einheit wird dann in diesen Rahmen eingehängt. Die Hülle enthält fünf '
-    + 'Ebenen, die alle vor, während und nach der Einheiten-Bearbeitung aktiv sind.',
+    'Die Portal-Arbeitsumgebung ist die EINMALIG gebaute Moodle-Dashboard-Schicht, '
+    + 'die sich VOR alle Einheiten legt: Cockpit, Poolzeit-Planer, '
+    + 'fachübergreifendes Lerntagebuch. Sie wird NICHT pro Einheit neu gebaut, '
+    + 'sondern existiert als feste, übergeordnete Hülle, in die alle Einheiten '
+    + 'dynamisch eingehängt werden.',
+
+  ist_einmal_gebaut: true,
+  gehoert_nicht_in_scorm_bau: true,
 
   ebenen: {
 
     cockpit: {
       beschreibung:
         'Die zentrale Startseite des Schülers. Wird NACH dem Login und VOR '
-        + 'jedem Fach-/Einheit-Zugriff angezeigt.',
+        + 'jedem Fach-/Einheit-Zugriff angezeigt. Teil der Portal-Schicht.',
       elemente: [
         {
           name: 'CockpitHeader',
@@ -373,7 +382,8 @@ const SCHUELER_ARBEITSUMGEBUNG_CONTRACT = {
     poolzeit_ablauf: {
       beschreibung:
         'Der strukturierte Poolzeit-Workflow. Führt den Schüler Schritt für '
-        + 'Schritt durch die Planung, Ausführung und Reflexion einer Lernsession.',
+        + 'Schritt durch die Planung, Ausführung und Reflexion einer Lernsession. '
+        + 'Teil der Portal-Schicht.',
       schritte: [
         {
           schritt_nummer: 1,
@@ -417,7 +427,7 @@ const SCHUELER_ARBEITSUMGEBUNG_CONTRACT = {
     lerntagebuch: {
       beschreibung:
         'Fachübergreifendes, persönliches Logbuch. Erreichbar über Cockpit '
-        + '(SelbstNotizKarte) oder CockpitHeader.',
+        + '(SelbstNotizKarte) oder CockpitHeader. Teil der Portal-Schicht.',
       eintrags_typen: [
         { typ: 'reflexion', bedeutung: 'Rückblick am Poolzeit-Ende' },
         { typ: 'nachricht', bedeutung: 'Nachricht an sich selbst fürs nächste Mal' },
@@ -425,17 +435,83 @@ const SCHUELER_ARBEITSUMGEBUNG_CONTRACT = {
         { typ: 'frei', bedeutung: 'Freier Eintrag, jederzeit erstellbar' },
       ],
     },
+  },
 
-    merkheft: {
-      beschreibung:
-        'Pro-Einheit-Notizblock im Einheit-Dashboard. Erreichbar über das '
-        + 'Burger-Menü (☰). Für schnelle Notizen WÄHREND der Arbeit.',
-      speicherung: 'Pro Notiz: user_email + einheit_id + text.',
-    },
+  bau_regeln: [
+    'Die Portal-Schicht ist ein Set von HTML-Seiten: Cockpit, Poolzeit '
+    + '(Multi-Step), Lerntagebuch, FachSeite.',
+    'Sie wird EINMAL als übergeordnete Moodle-Dashboard-Schicht gebaut.',
+    'Sie gehört NICHT in den per-Einheit-SCORM-Bau.',
+    'Sämtliche Fortschritts-/Status-Daten werden persistent gespeichert '
+    + '(nicht flüchtig im Browser).',
+    'Die Portal-Schicht wird nur bei Änderungen an dieser Spec '
+    + 'aktualisiert — NICHT pro Einheit neu generiert.',
+  ],
+
+  integration_mit_einheiten: {
+    beschreibung:
+      'Die Portal-Schicht definiert ANKER, in die Einheiten dynamisch '
+      + 'eingehängt werden (nicht beim SCORM-Bau, sondern zur Laufzeit):',
+    anker: [
+      {
+        wo: 'Cockpit → FachKacheln',
+        was: 'Pro Fach eine Kachel mit Fortschrittsdaten aus '
+          + 'SchuelerEinheitFortschritt + Einheiten.',
+      },
+      {
+        wo: 'FachSeite → EinheitKacheln',
+        was: 'Pro Einheit des Fachs eine Kachel.',
+      },
+      {
+        wo: 'EinheitOnboarding',
+        was: 'Vier Elemente (Einführung, Fragenblock, Einstiegsdiagnose, '
+          + 'KI-Lerntyp-Diagnose) als Snapshot aus Einheiten.onboarding_konfiguration.',
+      },
+      {
+        wo: 'EinheitDashboard → Hauptbereich',
+        was: 'Sektoren und Items des gewählten Lerntyps aus Payload 2–5. '
+          + '(Dieser Teil kommt aus dem per-Einheit-SCORM — siehe '
+          + 'einheit_arbeitsumgebung_contract.)',
+      },
+    ],
+  },
+
+  hinweis_fuer_mbk:
+    '⚠️ Die Portal-Schicht wird EINMAL als übergeordnete Moodle-Dashboard-'
+    + 'Schicht gebaut und gehört NICHT in den per-Einheit-SCORM-Bau. '
+    + 'Keine konkreten Fach-/Einheit-Daten in der Portal-Schicht selbst — '
+    + 'die kommen dynamisch zur Laufzeit. Nur der einheit_arbeitsumgebung_contract '
+    + '(Einheit-Dashboard + Merkheft) wird PRO EINHEIT gebaut.',
+};
+
+/**
+ * Einheit-Arbeitsumgebung-Vertrag (airgap-1.14.0).
+ *
+ * FESTE, inhalts-UNABHÄNGIGE Anweisung an die MBK in Payload 1. Beschreibt
+ * den PRO-EINHEIT-SCORM-Teil der methodischen Hülle: Einheit-Dashboard
+ * (PfadNavigation, Zeit-Tracker, Lernlandkarte, Weiter-Button) und Merkheft.
+ *
+ * ⚠️ DIESER VERTRAG IST DER EINZIGE TEIL DER HÜLLE, DER PRO EINHEIT IN
+ * DEN SCORM-BAU WANDERT. Die Portal-Schicht (Cockpit, Poolzeit, Lerntagebuch)
+ * existiert bereits als übergeordnete Moodle-Dashboard-Schicht und wird
+ * hier NICHT wiederholt — siehe portal_arbeitsumgebung_contract.
+ */
+const EINHEIT_ARBEITSUMGEBUNG_CONTRACT = {
+  was_ist_das:
+    'Die Einheit-Arbeitsumgebung ist der PRO-EINHEIT-SCORM-Teil der '
+    + 'methodischen Hülle. Anders als die Portal-Schicht (Cockpit, Poolzeit, '
+    + 'Lerntagebuch — siehe portal_arbeitsumgebung_contract) wird dieser Teil '
+    + 'FÜR JEDE EINHEIT individuell gebaut und in den SCORM-Bau eingewoben.',
+
+  ist_einmal_gebaut: false,
+  gehoert_in_scorm_bau: true,
+
+  ebenen: {
 
     einheit_dashboard: {
       beschreibung:
-        'Das Lern-Dashboard NACH Onboarding und Lerntyp-Wahl.',
+        'Das Lern-Dashboard NACH Onboarding und Lerntyp-Wahl. Dies ist der '
+        + 'Kern der per-Einheit-SCORM-Hülle.',
       elemente: [
         {
           name: 'PfadNavigation (Burger-Slide-out)',
@@ -460,50 +536,52 @@ const SCHUELER_ARBEITSUMGEBUNG_CONTRACT = {
         },
       ],
     },
+
+    merkheft: {
+      beschreibung:
+        'Pro-Einheit-Notizblock im Einheit-Dashboard. Erreichbar über das '
+        + 'Burger-Menü (☰). Für schnelle Notizen WÄHREND der Arbeit.',
+      speicherung: 'Pro Notiz: user_email + einheit_id + text.',
+    },
   },
 
   bau_regeln: [
-    'Die Hülle ist ein Set von HTML-Seiten: Cockpit, Poolzeit (Multi-Step), '
-    + 'Lerntagebuch, FachSeite, EinheitOnboarding, EinheitDashboard.',
-    'Cockpit UND EinheitDashboard teilen denselben CockpitHeader. '
-    + 'Das Burger-Menü (☰) existiert NUR im Dashboard.',
-    'Der Zeit-Tracker läuft im Hintergrund, sobald eine Einheit geöffnet ist.',
+    'NUR Einheit-Dashboard + Merkheft werden pro Einheit in den SCORM-Bau '
+    + 'eingewoben.',
+    'Das Burger-Menü (☰) existiert NUR im Einheit-Dashboard.',
+    'Der Zeit-Tracker läuft im Hintergrund, sobald das Einheit-Dashboard '
+    + 'geöffnet ist.',
+    'Die Portal-Schicht (Cockpit, Poolzeit, Lerntagebuch, Login) wird '
+    + 'HIER NICHT wiederholt — sie existiert als übergeordnete '
+    + 'Moodle-Dashboard-Schicht.',
     'Sämtliche Fortschritts-/Status-Daten werden persistent gespeichert '
     + '(nicht flüchtig im Browser).',
-    'Die Hülle wird EINMAL gebaut und nur bei Änderungen an dieser Spec '
-    + 'aktualisiert — NICHT pro Einheit neu generiert.',
   ],
 
-  integration_mit_einheiten: {
+  integration_mit_portal: {
     beschreibung:
-      'Die Hülle definiert ANKER, in die einheits-spezifische Inhalte '
-      + 'eingehängt werden:',
-    anker: [
+      'Das Einheit-Dashboard wird aus der Portal-Schicht heraus geöffnet '
+      + '(via FachSeite → EinheitKachel). Es teilt KEINE UI-Elemente mit '
+      + 'der Portal-Schicht, außer dem CockpitHeader, der von der '
+      + 'Portal-Schicht bereitgestellt wird.',
+    verbindungspunkte: [
       {
-        wo: 'Cockpit → FachKacheln',
-        was: 'Pro Fach eine Kachel mit Fortschrittsdaten aus '
-          + 'SchuelerEinheitFortschritt + Einheiten.',
+        von: 'Portal → FachSeite → EinheitKachel',
+        nach: 'Einheit-Dashboard (diese SCORM-Datei)',
       },
       {
-        wo: 'FachSeite → EinheitKacheln',
-        was: 'Pro Einheit des Fachs eine Kachel.',
-      },
-      {
-        wo: 'EinheitOnboarding',
-        was: 'Vier Elemente (Einführung, Fragenblock, Einstiegsdiagnose, '
-          + 'KI-Lerntyp-Diagnose) als Snapshot aus Einheiten.onboarding_konfiguration.',
-      },
-      {
-        wo: 'EinheitDashboard → Hauptbereich',
-        was: 'Sektoren und Items des gewählten Lerntyps aus Payload 2–5.',
+        von: 'Einheit-Dashboard → Burger-Menü → Merkheft',
+        nach: 'Pro-Einheit-Notizen (Teil dieser SCORM-Datei)',
       },
     ],
   },
 
   hinweis_fuer_mbk:
-    'Die Hülle ist FEST und wird EINMAL gebaut. Nur die Inhalte an den '
-    + 'Anker-Punkten einhängen. Keine konkreten Fach-/Einheit-Daten in der '
-    + 'Hülle selbst — die kommen aus Payload 2–5.',
+    '⚠️ NUR Einheit-Dashboard + Merkheft werden pro Einheit gebaut. '
+    + 'Die Portal-Schicht (portal_arbeitsumgebung_contract) existiert '
+    + 'bereits und wird HIER NICHT wiederholt. Keine Cockpit-Seite, keinen '
+    + 'Poolzeit-Ablauf, kein fachübergreifendes Lerntagebuch in diesen '
+    + 'SCORM-Bau einweben — das gehört alles in die Portal-Schicht.',
 };
 
 const ONBOARDING_CONTRACT = {
@@ -913,10 +991,12 @@ export function buildSystemContextPayload({
     update_lifecycle_contract: UPDATE_LIFECYCLE_CONTRACT,
     // airgap-1.12.0: Snapshot-Priorität (fertige Inhalte > KI-Briefing > Platzhalter).
     snapshot_priority_contract: SNAPSHOT_PRIORITY_CONTRACT,
-    // airgap-1.13.0: Schüler-Arbeitsumgebung (Cockpit, Poolzeit, Lerntagebuch,
-    // Merkheft, Dashboard-Navigation). Die methodische Hülle, die sich um jede
-    // Einheit legt — EINMAL gebaut, für alle Einheiten gültig.
-    schueler_arbeitsumgebung_contract: SCHUELER_ARBEITSUMGEBUNG_CONTRACT,
+    // airgap-1.14.0: Portal-Arbeitsumgebung (Cockpit, Poolzeit, Lerntagebuch).
+    // EINMAL gebaute Moodle-Dashboard-Schicht — NICHT pro Einheit.
+    portal_arbeitsumgebung_contract: PORTAL_ARBEITSUMGEBUNG_CONTRACT,
+    // airgap-1.14.0: Einheit-Arbeitsumgebung (Einheit-Dashboard + Merkheft).
+    // Der EINZIGE Teil der Hülle, der PRO EINHEIT in den SCORM-Bau wandert.
+    einheit_arbeitsumgebung_contract: EINHEIT_ARBEITSUMGEBUNG_CONTRACT,
   };
 }
 
