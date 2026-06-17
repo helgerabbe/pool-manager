@@ -16,8 +16,8 @@ import TaskStatusBadge from '@/components/ui/TaskStatusBadge';
 import TaskLockBar from '@/components/ui/TaskLockBar';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 import AufgabePreviewModal from '@/components/allgemeineAufgaben/AufgabePreviewModal';
-import AufgabenTypPicker from '@/components/allgemeineAufgaben/AufgabenTypPicker';
-import AufgabenModusPicker from '@/components/allgemeineAufgaben/AufgabenModusPicker';
+import AufgabenArtPicker from '@/components/allgemeineAufgaben/AufgabenArtPicker';
+import HandlungAufgabeView from '@/components/allgemeineAufgaben/HandlungAufgabeView';
 import SequenzBuilder from '@/components/allgemeineAufgaben/SequenzBuilder';
 import LernzielAnalysePanel from '@/components/allgemeineAufgaben/LernzielAnalysePanel';
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
@@ -467,11 +467,9 @@ export default function AllgemeineAufgabenView({
   const [wizardOpen, setWizardOpen] = useState(false);
   const [ideenboxOpen, setIdeenboxOpen] = useState(false);
   const [previewAufgabe, setPreviewAufgabe] = useState(null);
-  // Phase-1 Lernpfad-Architekt: Picker für Aufgaben-Typ vor dem Editor (nur in Ebene 2).
-  const [typPickerOpen, setTypPickerOpen] = useState(false);
-  const [pendingAufgabenTyp, setPendingAufgabenTyp] = useState('inhalt');
-  // Aufgabensequenz: Modus-Picker (einzeln vs sequenz) vor dem Aufgaben-Typ-Picker.
-  const [modusPickerOpen, setModusPickerOpen] = useState(false);
+  // 3-Wege-Picker (Handlungsaufgabe | KI-Tutor | Aufgabensequenz) – nur in Ebene 2.
+  const [artPickerOpen, setArtPickerOpen] = useState(false);
+  const [handlungViewOpen, setHandlungViewOpen] = useState(false);
   const [sequenzBuilderOpen, setSequenzBuilderOpen] = useState(false);
   const [editingSequenz, setEditingSequenz] = useState(null);
   const isEbene3 = anforderungsebene === '3 - Projekt';
@@ -671,12 +669,11 @@ export default function AllgemeineAufgabenView({
                   setEditingAufgabe(null);
                   setEditingSequenz(null);
                   if (isEbene3) {
-                    // Ebene 3: Picker ueberspringen, Typ zwingend 'inhalt', kein Sequenz-Modus.
-                    setPendingAufgabenTyp('inhalt');
+                    // Ebene 3: Picker ueberspringen, Typ zwingend 'inhalt'.
                     setCreateFormOpen(true);
                   } else {
-                    // Ebene 2: Zuerst Modus-Picker (Einzelaufgabe vs Aufgabensequenz).
-                    setModusPickerOpen(true);
+                    // Ebene 2: 3-Wege-Picker (Handlung | KI-Tutor | Sequenz).
+                    setArtPickerOpen(true);
                   }
                 }}
                 className="gap-2 w-full"
@@ -778,7 +775,35 @@ export default function AllgemeineAufgabenView({
               />
             )}
 
-            {/* Tabs für Angaben & Kompetenzen */}
+            {/* Tabs für Angaben & Kompetenzen.
+                Handlungsaufgaben: nur "Kernangaben" (kein KI-Kontext nötig). */}
+            {selectedAufgabe.aufgaben_typ === 'handlung' ? (
+              <main className="flex-1 overflow-y-auto">
+                <div className="px-6 pt-3 pb-2">
+                  <p className="text-xs text-muted-foreground italic">Handlungsaufgabe – kein KI-Tutor-Kontext erforderlich.</p>
+                </div>
+                <AllgemeineAngabenPanel
+                  aufgabe={selectedAufgabe}
+                  themenfelder={themenfelder}
+                  kannBearbeiten={kannBearbeiten && lock.isEditMode}
+                  kannFreigeben={kannBearbeiten}
+                  onEdit={(a) => {
+                    if (a.aufgaben_modus === 'sequenz') {
+                      setEditingSequenz(a);
+                      setSequenzBuilderOpen(true);
+                    } else if (a.aufgaben_typ === 'handlung') {
+                      setEditingAufgabe(a);
+                      setHandlungViewOpen(true);
+                    } else {
+                      setEditingAufgabe(a);
+                      setCreateFormOpen(true);
+                    }
+                  }}
+                  onDelete={(id) => deleteAufgabe.mutate(id)}
+                  onPreview={(a) => setPreviewAufgabe(a)}
+                />
+              </main>
+            ) : (
             <Tabs defaultValue="angaben" className="flex-1 flex flex-col overflow-hidden">
               <TabsList className="mx-6 mt-3 bg-muted">
                 <TabsTrigger value="angaben" className="text-xs">Kernangaben</TabsTrigger>
@@ -807,6 +832,9 @@ export default function AllgemeineAufgabenView({
                     if (a.aufgaben_modus === 'sequenz') {
                       setEditingSequenz(a);
                       setSequenzBuilderOpen(true);
+                    } else if (a.aufgaben_typ === 'handlung') {
+                      setEditingAufgabe(a);
+                      setHandlungViewOpen(true);
                     } else {
                       setEditingAufgabe(a);
                       setCreateFormOpen(true);
@@ -852,6 +880,7 @@ export default function AllgemeineAufgabenView({
                 />
               </TabsContent>
               </Tabs>
+            )}
           </main>
         ) : (
           <main className="flex-1 flex items-center justify-center text-center">
@@ -874,22 +903,41 @@ export default function AllgemeineAufgabenView({
         onSaveIdea={handleSaveIdee}
       />
 
-      {/* Aufgaben-Modus-Picker (Einzelaufgabe vs Aufgabensequenz) */}
-      <AufgabenModusPicker
-        open={modusPickerOpen}
-        onOpenChange={setModusPickerOpen}
-        onSelect={(modus) => {
-          if (modus === 'sequenz') {
+      {/* 3-Wege-Picker (Handlung | KI-Tutor | Aufgabensequenz) */}
+      <AufgabenArtPicker
+        open={artPickerOpen}
+        onOpenChange={setArtPickerOpen}
+        onSelect={(art) => {
+          if (art === 'sequenz') {
             setEditingSequenz(null);
             setSequenzBuilderOpen(true);
+          } else if (art === 'handlung') {
+            setEditingAufgabe(null);
+            setHandlungViewOpen(true);
           } else {
-            // 'einzeln': wie bisher -> Typ-Picker
-            setTypPickerOpen(true);
+            // 'inhalt': bestehender KI-Tutor-Dialog
+            setEditingAufgabe(null);
+            setCreateFormOpen(true);
           }
         }}
       />
 
-      {/* SequenzBuilder (NEU: Aufgabensequenz) */}
+      {/* Handlungsaufgabe (verschlankter Dialog) */}
+      <HandlungAufgabeView
+        open={handlungViewOpen}
+        onOpenChange={setHandlungViewOpen}
+        einheitId={einheitId}
+        themenfelder={themenfelder}
+        initialData={editingAufgabe}
+        defaultAnforderungsebene={anforderungsebene}
+        onSuccess={() => {
+          setHandlungViewOpen(false);
+          setEditingAufgabe(null);
+          queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheitId] });
+        }}
+      />
+
+      {/* SequenzBuilder (Aufgabensequenz) */}
       <SequenzBuilder
         open={sequenzBuilderOpen}
         onOpenChange={setSequenzBuilderOpen}
@@ -925,16 +973,6 @@ export default function AllgemeineAufgabenView({
         }}
       />
 
-      {/* Aufgaben-Typ-Picker (nur in Ebene 2) */}
-      <AufgabenTypPicker
-        open={typPickerOpen}
-        onOpenChange={setTypPickerOpen}
-        onSelect={(typ) => {
-          setPendingAufgabenTyp(typ);
-          setCreateFormOpen(true);
-        }}
-      />
-
       {/* Schüler-Vorschau (Tablet) */}
       <AufgabePreviewModal
         open={!!previewAufgabe}
@@ -942,7 +980,7 @@ export default function AllgemeineAufgabenView({
         aufgabe={previewAufgabe}
       />
 
-      {/* Create/Edit Dialog */}
+      {/* Create/Edit Dialog (nur für KI-Tutor-Einzelaufgaben) */}
       <AufgabeCreateView
         open={createFormOpen}
         onOpenChange={setCreateFormOpen}
@@ -950,11 +988,10 @@ export default function AllgemeineAufgabenView({
         themenfelder={themenfelder}
         initialData={editingAufgabe}
         defaultAnforderungsebene={anforderungsebene}
-        defaultAufgabenTyp={pendingAufgabenTyp}
+        defaultAufgabenTyp="inhalt"
         onSuccess={() => {
           setCreateFormOpen(false);
           setEditingAufgabe(null);
-          setPendingAufgabenTyp('inhalt');
           queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
         }}
       />
