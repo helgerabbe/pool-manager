@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { CheckCircle2, Loader2, ArrowLeft, ArrowRight, FileText, ListChecks, Film, Music, Image, ExternalLink } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { CheckCircle2, Loader2, ArrowLeft, ArrowRight, FileText, ListChecks, Film, Music, Image, ExternalLink, EyeOff, Copy, Sparkles, MessageCircleQuestion } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
 import AufgabenstellungBox from './AufgabenstellungBox';
 
 /** Erkennt YouTube-Video-IDs. */
@@ -112,6 +113,7 @@ export default function AufgabensequenzSeite({ aktivitaet, busy, onErledigt, onB
   const schritte = Array.isArray(fv.sequenz_schritte) ? fv.sequenz_schritte : [];
   const [currentStep, setCurrentStep] = useState(0);
   const [antworten, setAntworten] = useState({});
+  const [loesungSichtbar, setLoesungSichtbar] = useState({}); // pro schritt.id → boolean
 
   const step = schritte[currentStep] || null;
   const istMaterial = step?.typ === 'material';
@@ -121,6 +123,58 @@ export default function AufgabensequenzSeite({ aktivitaet, busy, onErledigt, onB
 
   const standardAufgabe =
     'Bearbeite die folgende Aufgabensequenz Schritt für Schritt. Lies dir zuerst das Material durch und bearbeite dann die dazugehörigen Aufgaben.';
+
+  /** Baut einen KI-Frage-Prompt aus dem Kontext der Aufgabensequenz zusammen. */
+  const baueKiFragePrompt = useCallback(() => {
+    if (!step) return '';
+    const materialTeile = [];
+    schritte.forEach((s, i) => {
+      if (s.typ === 'material') {
+        const mat = s.material || {};
+        let beschriftung = mat.beschreibung || `Material ${i + 1}`;
+        if (mat.material_typ === 'text' && mat.inhalt) {
+          materialTeile.push(`## ${beschriftung}\n${mat.inhalt}`);
+        } else if ((mat.material_typ === 'video' || mat.material_typ === 'audio') && mat.url) {
+          materialTeile.push(`## ${beschriftung}\nURL: ${mat.url}${mat.transkript ? '\nTranskript:\n' + mat.transkript : ''}`);
+        } else if (mat.url) {
+          materialTeile.push(`## ${beschriftung}\nURL: ${mat.url}`);
+        } else if (mat.datei_url) {
+          materialTeile.push(`## ${beschriftung}\nDatei: ${mat.datei_url}`);
+        }
+      }
+    });
+
+    const aufgabenText = fv.aufgabentext || '';
+    const schrittAufgabe = step?.aufgabe?.aufgabenstellung || '';
+    const musterloesung = step?.aufgabe?.musterloesung || '';
+    const meineAntwort = antworten[step?.id] || '';
+
+    return [
+      'Ich brauche Hilfe bei einer Aufgabe aus einer Aufgabensequenz.',
+      '',
+      aufgabenText ? `## Gesamt-Aufgabenstellung\n${aufgabenText}` : '',
+      '',
+      materialTeile.length > 0 ? `## Material\n${materialTeile.join('\n\n')}` : '',
+      '',
+      schrittAufgabe ? `## Konkrete Aufgabe\n${schrittAufgabe}` : '',
+      '',
+      meineAntwort ? `## Meine Antwort\n${meineAntwort}` : '',
+      '',
+      musterloesung ? `## Musterlösung\n${musterloesung}` : '',
+      '',
+      'Bitte erkläre mir, warum die Musterlösung richtig ist und wo mein Denkfehler liegen könnte. Gehe dabei Schritt für Schritt vor und verwende einfache Sprache.',
+    ].filter(Boolean).join('\n');
+  }, [step, schritte, fv, antworten]);
+
+  const handleKopierePrompt = useCallback(async () => {
+    const text = baueKiFragePrompt();
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('Frage-Prompt in die Zwischenablage kopiert. Du kannst ihn jetzt an eine KI (z.B. ChatGPT) übergeben.');
+    } catch {
+      toast.error('Konnte nicht kopieren.');
+    }
+  }, [baueKiFragePrompt]);
 
   if (schritte.length === 0) {
     return (
@@ -210,8 +264,66 @@ export default function AufgabensequenzSeite({ aktivitaet, busy, onErledigt, onB
                   onChange={(e) => setAntworten(prev => ({ ...prev, [step.id]: e.target.value }))}
                   placeholder="Deine Antwort …"
                   className="min-h-[100px]"
-                  disabled={busy}
+                  disabled={busy || loesungSichtbar[step.id]}
                 />
+              )}
+
+              {/* Musterlösung-Button */}
+              {step.aufgabe?.musterloesung && !loesungSichtbar[step.id] && (
+                <div className="mt-3 flex flex-col gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 self-end border-violet-300 text-violet-700 hover:bg-violet-50"
+                    onClick={() => setLoesungSichtbar(prev => ({ ...prev, [step.id]: true }))}
+                  >
+                    <EyeOff className="w-3.5 h-3.5" />
+                    Ich bin fertig – zeig mir die Lösung
+                  </Button>
+                </div>
+              )}
+
+              {/* Musterlösung anzeigen */}
+              {step.aufgabe?.musterloesung && loesungSichtbar[step.id] && (
+                <div className="mt-3 space-y-3">
+                  <div className="rounded-xl border border-violet-200 bg-violet-50 p-4">
+                    <p className="text-xs font-semibold text-violet-800 mb-1.5">Musterlösung</p>
+                    <p className="text-sm text-violet-900 whitespace-pre-wrap leading-relaxed">
+                      {step.aufgabe.musterloesung}
+                    </p>
+                  </div>
+
+                  {/* KI-Frage-Prompt Button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50"
+                    onClick={handleKopierePrompt}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Frage an KI stellen (Prompt kopieren)
+                  </Button>
+                </div>
+              )}
+
+              {/* Keine Musterlösung → nur Bestätigung */}
+              {!step.aufgabe?.musterloesung && step.aufgabe?.input_erforderlich === false && (
+                <p className="mt-3 text-sm text-muted-foreground italic">
+                  Klicke auf Weiter, wenn du diesen Schritt erledigt hast.
+                </p>
+              )}
+              {!step.aufgabe?.musterloesung && step.aufgabe?.input_erforderlich !== false && (
+                <div className="mt-3 flex flex-col gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 self-end border-amber-300 text-amber-700 hover:bg-amber-50"
+                    onClick={handleKopierePrompt}
+                  >
+                    <MessageCircleQuestion className="w-3.5 h-3.5" />
+                    Frage an KI stellen (Prompt kopieren)
+                  </Button>
+                </div>
               )}
             </div>
           )}

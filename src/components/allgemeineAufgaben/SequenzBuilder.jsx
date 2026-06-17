@@ -27,7 +27,7 @@ function uid() {
 }
 
 const EMPTY_MATERIAL = { material_typ: 'text', inhalt: '', url: '', datei_url: '', beschreibung: '', transkript: '' };
-const EMPTY_AUFGABE = { aufgabenstellung: '', input_erforderlich: true };
+const EMPTY_AUFGABE = { aufgabenstellung: '', input_erforderlich: true, musterloesung: '' };
 
 const MATERIAL_TYPEN = [
   { value: 'text', label: 'Text' },
@@ -151,6 +151,15 @@ function SchrittEditor({ schritt, onChange }) {
         <Label htmlFor="input_erforderlich" className="text-sm cursor-pointer">
           Schueler muss Texteingabe machen
         </Label>
+      </div>
+      <div className="space-y-2">
+        <Label>Musterlösung (optional – wird dem Schüler nach Abgabe angezeigt)</Label>
+        <Textarea
+          value={auf.musterloesung || ''}
+          onChange={(e) => setAuf('musterloesung', e.target.value)}
+          placeholder="Was wäre die richtige Antwort? Leer lassen, wenn keine Musterlösung nötig ist."
+          className="min-h-[100px]"
+        />
       </div>
     </div>
   );
