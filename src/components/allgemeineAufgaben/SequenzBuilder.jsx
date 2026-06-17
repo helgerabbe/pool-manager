@@ -26,7 +26,7 @@ function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
 }
 
-const EMPTY_MATERIAL = { material_typ: 'text', inhalt: '', url: '', datei_url: '', beschreibung: '' };
+const EMPTY_MATERIAL = { material_typ: 'text', inhalt: '', url: '', datei_url: '', beschreibung: '', transkript: '' };
 const EMPTY_AUFGABE = { aufgabenstellung: '', input_erforderlich: true };
 
 const MATERIAL_TYPEN = [
@@ -53,6 +53,7 @@ function SchrittEditor({ schritt, onChange }) {
     const brauchtInhalt = mat.material_typ === 'text';
     const brauchtUrl = mat.material_typ === 'video' || mat.material_typ === 'audio' || mat.material_typ === 'link';
     const brauchtDatei = mat.material_typ === 'bild' || mat.material_typ === 'pdf';
+    const brauchtTranskript = mat.material_typ === 'video' || mat.material_typ === 'audio';
 
     return (
       <div className="space-y-4">
@@ -66,14 +67,26 @@ function SchrittEditor({ schritt, onChange }) {
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <Label>Kurzbeschreibung (fuer Sie)</Label>
-          <Input
-            value={mat.beschreibung || ''}
-            onChange={(e) => setMat('beschreibung', e.target.value)}
-            placeholder="z.B. 'Quelle A: Rede von ...'"
-          />
-        </div>
+        {brauchtTranskript ? (
+          <div className="space-y-2">
+            <Label>Transkript</Label>
+            <Textarea
+              value={mat.transkript || ''}
+              onChange={(e) => setMat('transkript', e.target.value)}
+              placeholder="Gesprochener Inhalt des Videos/Audios als Text – damit Brian den Schülern helfen kann..."
+              className="min-h-[100px]"
+            />
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Label>Kurzbeschreibung (fuer Sie)</Label>
+            <Input
+              value={mat.beschreibung || ''}
+              onChange={(e) => setMat('beschreibung', e.target.value)}
+              placeholder="z.B. 'Quelle A: Rede von ...'"
+            />
+          </div>
+        )}
 
         {brauchtInhalt && (
           <div className="space-y-2">
