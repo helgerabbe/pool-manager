@@ -26,6 +26,7 @@ import KITutorPreviewModal from '@/components/workspace/preview/KITutorPreviewMo
 import ConfirmationPreviewModal from '@/components/workspace/preview/ConfirmationPreviewModal';
 import ImageLabelingPreviewModal from '@/components/workspace/preview/ImageLabelingPreviewModal';
 import LehrwerkQuellePreviewModal from '@/components/workspace/preview/LehrwerkQuellePreviewModal';
+import KompaktwissenPreviewModal from '@/components/workspace/preview/KompaktwissenPreviewModal';
 import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import OffeneAufgabePreviewModal from '@/components/workspace/preview/OffeneAufgabePreviewModal';
 import SyncStatusBadge from '@/components/release/SyncStatusBadge';
@@ -194,6 +195,8 @@ export default function ActivityMasterPanel({
   const [kiTutorPreviewMaster, setKiTutorPreviewMaster] = useState(null);
   // KI-Tutor-Vorschau für Aktivitäten OHNE Masteraufgaben (Standardfall).
   const [kiTutorActivityPreviewOpen, setKiTutorActivityPreviewOpen] = useState(false);
+  // Kompaktwissen: Schüler-Vorschau.
+  const [kompaktwissenPreviewOpen, setKompaktwissenPreviewOpen] = useState(false);
   const [acquiringLock, setAcquiringLock] = useState(false);
   const modalUsesExistingLockRef = React.useRef(false);
 
@@ -738,13 +741,15 @@ export default function ActivityMasterPanel({
             {kannBearbeiten && (
               <div className="flex justify-end gap-2">
                 {/* Schüler-Vorschau (Stufe-1-Pilot, für "Text lesen", "Video / Audio" und "Link / URL"). */}
-                {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio') || catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url') || catalogEntry?.name?.toLowerCase().includes('ki-tutor') || catalogEntry?.name?.toLowerCase().includes('bestätigen') || catalogEntry?.name?.toLowerCase().includes('offene') || catalogEntry?.name?.toLowerCase().includes('bildbeschriftung') || catalogEntry?.name?.toLowerCase().includes('lehrwerk') || catalogEntry?.name?.toLowerCase().includes('quelle')) && (
+                {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio') || catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url') || catalogEntry?.name?.toLowerCase().includes('ki-tutor') || catalogEntry?.name?.toLowerCase().includes('bestätigen') || catalogEntry?.name?.toLowerCase().includes('offene') || catalogEntry?.name?.toLowerCase().includes('bildbeschriftung') || catalogEntry?.name?.toLowerCase().includes('lehrwerk') || catalogEntry?.name?.toLowerCase().includes('quelle') || catalogEntry?.name?.toLowerCase().includes('kompaktwissen')) && (
                   <Button
                     variant="outline"
                     onClick={() => {
                       const n = catalogEntry?.name?.toLowerCase() || '';
                       if (n.includes('lehrwerk') || n.includes('quelle')) {
                         setLehrwerkPreviewOpen(true);
+                      } else if (n.includes('kompaktwissen')) {
+                        setKompaktwissenPreviewOpen(true);
                       } else if (n.includes('bildbeschriftung')) {
                         setImageLabelingPreviewOpen(true);
                       } else if (n.includes('offene')) {
@@ -847,6 +852,13 @@ export default function ActivityMasterPanel({
               <LehrwerkQuellePreviewModal
                 open={lehrwerkPreviewOpen}
                 onOpenChange={setLehrwerkPreviewOpen}
+                fieldValues={fieldValues}
+                catalogName={catalogEntry?.name}
+                phase={activityRecord?.phase}
+              />
+              <KompaktwissenPreviewModal
+                open={kompaktwissenPreviewOpen}
+                onOpenChange={setKompaktwissenPreviewOpen}
                 fieldValues={fieldValues}
                 catalogName={catalogEntry?.name}
                 phase={activityRecord?.phase}
