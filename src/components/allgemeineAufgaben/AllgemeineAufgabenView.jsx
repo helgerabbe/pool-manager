@@ -10,13 +10,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { Plus, Star, FileText, ChevronRight, Edit, Trash2, CheckCircle2, PenLine, Lock, Wand2, Lightbulb, Image as ImageIcon, Package, Tag, Folder, FileType2, Eye } from 'lucide-react';
+import { Plus, Star, FileText, ChevronRight, Edit, Trash2, CheckCircle2, PenLine, Lock, Wand2, Lightbulb, Image as ImageIcon, Package, Tag, Folder, FileType2, Eye, ListChecks } from 'lucide-react';
 import { getAufgabenTyp } from '@/lib/aufgabenTypen';
 import TaskStatusBadge from '@/components/ui/TaskStatusBadge';
 import TaskLockBar from '@/components/ui/TaskLockBar';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 import AufgabePreviewModal from '@/components/allgemeineAufgaben/AufgabePreviewModal';
 import AufgabenTypPicker from '@/components/allgemeineAufgaben/AufgabenTypPicker';
+import AufgabenModusPicker from '@/components/allgemeineAufgaben/AufgabenModusPicker';
+import SequenzBuilder from '@/components/allgemeineAufgaben/SequenzBuilder';
 import LernzielAnalysePanel from '@/components/allgemeineAufgaben/LernzielAnalysePanel';
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
 import InlineBasisLernzielSelector from '@/components/allgemeineAufgaben/InlineBasisLernzielSelector';
@@ -121,6 +123,7 @@ function AufgabeNode({ aufgabe, isSelected, onSelect }) {
   const isApproved = aufgabe.content_status === 'approved';
   const showMission = isMissionApplicable(aufgabe);
   const mission = showMission ? getMission(aufgabe.mission_type) : null;
+  const istSequenz = aufgabe.aufgaben_modus === 'sequenz';
 
   // Mission-Farbe als Karten-Hintergrund. Fällt auf neutrale Optik zurück,
   // wenn die Aufgabe (noch) keine Mission hat oder der Mission-Scope nicht
@@ -155,7 +158,12 @@ function AufgabeNode({ aufgabe, isSelected, onSelect }) {
       <span className={cn('truncate flex-1', !hatTitel && 'italic opacity-70')}>
         {hatTitel ? aufgabe.titel : 'Kein Titel'}
       </span>
-      {!isApproved && (
+      {istSequenz && (
+        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 shrink-0">
+          Sequenz
+        </span>
+      )}
+      {!isApproved && !istSequenz && (
         <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 shrink-0">
           Entwurf
         </span>
@@ -178,6 +186,8 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
   const materialienCount = Array.isArray(aufgabe.materialien) ? aufgabe.materialien.length : 0;
   const hatMaterialHinweise = !!aufgabe.hinweise_zum_material?.trim();
   const isApproved = aufgabe.content_status === 'approved';
+  const istSequenz = aufgabe.aufgaben_modus === 'sequenz';
+  const sequenzSchritte = Array.isArray(aufgabe.sequenz_schritte) ? aufgabe.sequenz_schritte : [];
 
   // Tooltip-Text für das Schwierigkeits-Badge (1-3 Sterne).
   const schwierigkeitTooltip = aufgabe.schwierigkeitsgrad
@@ -224,6 +234,12 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
             </TooltipContent>
           </Tooltip>
 
+          {istSequenz && (
+            <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full border text-[11px] font-semibold bg-emerald-100 text-emerald-700 border-emerald-300">
+              <ListChecks className="w-3 h-3" />
+              Aufgabensequenz
+            </span>
+          )}
           {showMission && (
             <MissionBadge missionId={aufgabe.mission_type} size="sm" showFallback />
           )}
@@ -314,13 +330,43 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
         </div>
       </div>
 
-      {/* Aufgabenstellung */}
-      <div className="pt-1">
-        <p className="text-[11px] font-semibold text-muted-foreground mb-1 uppercase tracking-wide">Aufgabenstellung</p>
-        <div className="p-3 rounded-lg bg-muted/20 border border-border text-sm whitespace-pre-wrap">
-          {aufgabe.aufgabenstellung || <span className="text-muted-foreground italic">Nicht vorhanden</span>}
+      {/* Aufgabenstellung bzw. Sequenz-Vorschau */}
+      {istSequenz ? (
+        <div className="pt-1">
+          <p className="text-[11px] font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1.5">
+            <ListChecks className="w-3 h-3" />
+            Aufgabensequenz ({sequenzSchritte.length} Schritte)
+          </p>
+          <div className="space-y-1.5">
+            {sequenzSchritte.map((s, i) => (
+              <div key={s.id || i} className="flex items-start gap-2 p-2 rounded-md bg-muted/20 border border-border text-xs">
+                <span className={cn(
+                  'shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold mt-0.5',
+                  s.typ === 'material' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+                )}>
+                  {i + 1}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <span className="font-semibold">{s.typ === 'material' ? 'Material' : 'Aufgabe'}</span>
+                  {s.material?.beschreibung && (
+                    <span className="text-muted-foreground ml-1">– {s.material.beschreibung}</span>
+                  )}
+                  {s.aufgabe?.aufgabenstellung && (
+                    <p className="text-muted-foreground mt-0.5 line-clamp-2">{s.aufgabe.aufgabenstellung}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="pt-1">
+          <p className="text-[11px] font-semibold text-muted-foreground mb-1 uppercase tracking-wide">Aufgabenstellung</p>
+          <div className="p-3 rounded-lg bg-muted/20 border border-border text-sm whitespace-pre-wrap">
+            {aufgabe.aufgabenstellung || <span className="text-muted-foreground italic">Nicht vorhanden</span>}
+          </div>
+        </div>
+      )}
 
       {/* Aufgaben-Bild (kompakter) */}
       {hatBild && (
@@ -424,6 +470,10 @@ export default function AllgemeineAufgabenView({
   // Phase-1 Lernpfad-Architekt: Picker für Aufgaben-Typ vor dem Editor (nur in Ebene 2).
   const [typPickerOpen, setTypPickerOpen] = useState(false);
   const [pendingAufgabenTyp, setPendingAufgabenTyp] = useState('inhalt');
+  // Aufgabensequenz: Modus-Picker (einzeln vs sequenz) vor dem Aufgaben-Typ-Picker.
+  const [modusPickerOpen, setModusPickerOpen] = useState(false);
+  const [sequenzBuilderOpen, setSequenzBuilderOpen] = useState(false);
+  const [editingSequenz, setEditingSequenz] = useState(null);
   const isEbene3 = anforderungsebene === '3 - Projekt';
   // Mission-Filter für die Sidebar (nur in Ebene 2 sinnvoll). FILTER_ALL = alle.
   const [missionFilter, setMissionFilter] = useState(FILTER_ALL);
@@ -619,13 +669,14 @@ export default function AllgemeineAufgabenView({
                 size="sm"
                 onClick={() => {
                   setEditingAufgabe(null);
+                  setEditingSequenz(null);
                   if (isEbene3) {
-                    // Ebene 3: Picker überspringen, Typ zwingend 'inhalt'.
+                    // Ebene 3: Picker ueberspringen, Typ zwingend 'inhalt', kein Sequenz-Modus.
                     setPendingAufgabenTyp('inhalt');
                     setCreateFormOpen(true);
                   } else {
-                    // Ebene 2: 4-Kacheln-Picker vorschalten.
-                    setTypPickerOpen(true);
+                    // Ebene 2: Zuerst Modus-Picker (Einzelaufgabe vs Aufgabensequenz).
+                    setModusPickerOpen(true);
                   }
                 }}
                 className="gap-2 w-full"
@@ -634,25 +685,27 @@ export default function AllgemeineAufgabenView({
                 Neue Aufgabe
               </Button>
               {!isEbene3 && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setIdeenboxOpen(true)}
-                  className="gap-2 w-full border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-slate-950"
-                >
-                  <Lightbulb className="w-4 h-4" />
-                  KI-Ideenbox öffnen
-                </Button>
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIdeenboxOpen(true)}
+                    className="gap-2 w-full border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-slate-950"
+                  >
+                    <Lightbulb className="w-4 h-4" />
+                    KI-Ideenbox oeffnen
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setWizardOpen(true)}
+                    className="gap-2 w-full border-blue-300 text-blue-700 hover:bg-blue-50 hover:text-slate-950"
+                  >
+                    <Wand2 className="w-4 h-4" />
+                    Mit KI entwerfen
+                  </Button>
+                </>
               )}
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setWizardOpen(true)}
-                className="gap-2 w-full border-blue-300 text-blue-700 hover:bg-blue-50 hover:text-slate-950"
-              >
-                <Wand2 className="w-4 h-4" />
-                Mit KI entwerfen
-              </Button>
             </div>
           )}
 
@@ -751,8 +804,13 @@ export default function AllgemeineAufgabenView({
                   kannBearbeiten={kannBearbeiten && lock.isEditMode}
                   kannFreigeben={kannBearbeiten}
                   onEdit={(a) => {
-                    setEditingAufgabe(a);
-                    setCreateFormOpen(true);
+                    if (a.aufgaben_modus === 'sequenz') {
+                      setEditingSequenz(a);
+                      setSequenzBuilderOpen(true);
+                    } else {
+                      setEditingAufgabe(a);
+                      setCreateFormOpen(true);
+                    }
                   }}
                   onDelete={(id) => deleteAufgabe.mutate(id)}
                   onPreview={(a) => setPreviewAufgabe(a)}
@@ -814,6 +872,36 @@ export default function AllgemeineAufgabenView({
         themenfelder={themenfelder}
         anforderungsebene={anforderungsebene}
         onSaveIdea={handleSaveIdee}
+      />
+
+      {/* Aufgaben-Modus-Picker (Einzelaufgabe vs Aufgabensequenz) */}
+      <AufgabenModusPicker
+        open={modusPickerOpen}
+        onOpenChange={setModusPickerOpen}
+        onSelect={(modus) => {
+          if (modus === 'sequenz') {
+            setEditingSequenz(null);
+            setSequenzBuilderOpen(true);
+          } else {
+            // 'einzeln': wie bisher -> Typ-Picker
+            setTypPickerOpen(true);
+          }
+        }}
+      />
+
+      {/* SequenzBuilder (NEU: Aufgabensequenz) */}
+      <SequenzBuilder
+        open={sequenzBuilderOpen}
+        onOpenChange={setSequenzBuilderOpen}
+        einheitId={einheitId}
+        themenfelder={themenfelder}
+        initialData={editingSequenz}
+        defaultAnforderungsebene={anforderungsebene}
+        onSuccess={() => {
+          setSequenzBuilderOpen(false);
+          setEditingSequenz(null);
+          queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheitId] });
+        }}
       />
 
       {/* KI-Wizard – erstellt immer Inhalts-Aktivitäten (aufgaben_typ='inhalt'). */}

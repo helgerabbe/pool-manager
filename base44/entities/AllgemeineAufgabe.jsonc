@@ -31,6 +31,95 @@
       ],
       "default": "inhalt"
     },
+    "aufgaben_modus": {
+      "type": "string",
+      "enum": [
+        "einzeln",
+        "sequenz"
+      ],
+      "default": "einzeln",
+      "description": "Aufgabenmodus: 'einzeln' = klassische Einzelaufgabe. 'sequenz' = Aufgabensequenz mit mehreren Schritten."
+    },
+    "sequenz_schritte": {
+      "type": "array",
+      "description": "Nur bei aufgaben_modus='sequenz': Liste der Schritte in fester Reihenfolge.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stabile ID des Schritts (clientseitig generiert)."
+          },
+          "typ": {
+            "type": "string",
+            "enum": [
+              "material",
+              "aufgabe"
+            ]
+          },
+          "reihenfolge": {
+            "type": "number",
+            "description": "0-basierte Reihenfolge innerhalb der Sequenz."
+          },
+          "titel": {
+            "type": "string",
+            "description": "Anzeigetitel des Schritts."
+          },
+          "material": {
+            "type": "object",
+            "properties": {
+              "material_typ": {
+                "type": "string",
+                "enum": [
+                  "text",
+                  "video",
+                  "audio",
+                  "bild",
+                  "pdf",
+                  "link"
+                ]
+              },
+              "inhalt": {
+                "type": "string",
+                "description": "Text-Inhalt (bei material_typ='text')."
+              },
+              "url": {
+                "type": "string",
+                "description": "URL (bei material_typ='video', 'audio', 'link')."
+              },
+              "datei_url": {
+                "type": "string",
+                "description": "URL einer hochgeladenen Datei (bei material_typ='bild', 'pdf')."
+              },
+              "beschreibung": {
+                "type": "string",
+                "description": "Kurze Beschreibung des Materials."
+              }
+            }
+          },
+          "aufgabe": {
+            "type": "object",
+            "properties": {
+              "aufgabenstellung": {
+                "type": "string",
+                "description": "Die konkrete Aufgabenstellung fuer diesen Schritt."
+              },
+              "input_erforderlich": {
+                "type": "boolean",
+                "default": true,
+                "description": "Muss der Schueler eine Texteingabe machen?"
+              }
+            }
+          }
+        },
+        "required": [
+          "id",
+          "typ",
+          "reihenfolge"
+        ]
+      },
+      "default": []
+    },
     "mission_type": {
       "type": "string",
       "enum": [
@@ -116,11 +205,11 @@
     "ergebnis_form": {
       "type": "string",
       "enum": [
-        "Flie\u00dftext / Essay",
+        "Fliess\u0000text / Essay",
         "Tabelle / Matrix",
-        "Pr\u00e4sentation / Folien",
+        "Praesentation / Folien",
         "Schema / Konzept-Map / Zeichnung",
-        "Stichpunktartige \u00dcbersicht",
+        "Stichpunktartige Uebersicht",
         "Mischform / Offen"
       ]
     },
@@ -129,7 +218,7 @@
       "enum": [
         "Textdokument (Word/PDF)",
         "Bilddatei (JPG/PNG)",
-        "Pr\u00e4sentationsdatei (PowerPoint/PDF)",
+        "Praesentationsdatei (PowerPoint/PDF)",
         "Offen / Beliebig"
       ]
     },
@@ -141,21 +230,18 @@
     },
     "lernzielanalyse": {
       "type": "object",
-      "description": "KI-gest\u00fctzte Lernzielanalyse (vormals 'Kompetenzzuordnung'). Vom Lehrer kuratierte Liste der konkret-\u00fcbbaren Lernziele (Lernpaket-Ebene), die ein Sch\u00fcler beherrschen muss, um diese Aufgabe zu l\u00f6sen. Die KI durchsucht bestehende Lernziele der Einheit, Basis-Lernziele der Basismodule des Faches und schl\u00e4gt zus\u00e4tzlich neue vor. Der Lehrer w\u00e4hlt bewusst aus (Opt-in). Bestehende und Basis-Lernziele verweisen per ID auf ihre Original-Datens\u00e4tze und werden nicht textlich ver\u00e4ndert; nur KI-Vorschl\u00e4ge und Basismodul-L\u00fccken sind sprachlich editierbar.",
+      "description": "KI-gestuetzte Lernzielanalyse.",
       "properties": {
         "items": {
           "type": "array",
-          "description": "Liste der ausgew\u00e4hlten (\u00fcbernommenen) Lernziele der Aufgabe.",
           "items": {
             "type": "object",
             "properties": {
               "id": {
-                "type": "string",
-                "description": "Lokale, eindeutige ID des Listeneintrags (clientseitig generiert)."
+                "type": "string"
               },
               "text": {
-                "type": "string",
-                "description": "Lernziel-Formulierung. Bei quelle='bestehend'/'basismodul' der Original-Text (read-only); bei 'ki'/'basismodul_luecke'/'manuell' frei formuliert/editierbar."
+                "type": "string"
               },
               "quelle": {
                 "type": "string",
@@ -166,28 +252,22 @@
                   "basismodul_luecke",
                   "manuell"
                 ],
-                "default": "manuell",
-                "description": "Herkunft: 'bestehend' = vorhandenes Lernziel der Einheit; 'basismodul' = vorhandenes Basis-Lernziel; 'ki' = neuer KI-Vorschlag; 'basismodul_luecke' = KI-Hinweis auf fehlendes Basismodul-Lernziel; 'manuell' = vom Lehrer erg\u00e4nzt."
+                "default": "manuell"
               },
               "lernziel_id": {
-                "type": "string",
-                "description": "Bei quelle='bestehend': FK zum Original-Lernziel (Lernziele-Entity)."
+                "type": "string"
               },
               "basislernziel_id": {
-                "type": "string",
-                "description": "Bei quelle='basismodul': FK zum Original-Basis-Lernziel (BasisLernziel-Entity)."
+                "type": "string"
               },
               "themenfeld_id": {
-                "type": "string",
-                "description": "Bei quelle='bestehend': FK zum Themenfeld, aus dem das Lernziel stammt (Anzeige-Kontext)."
+                "type": "string"
               },
               "themenfeld_titel": {
-                "type": "string",
-                "description": "Bei quelle='bestehend': Titel des Themenfelds zur Anzeige."
+                "type": "string"
               },
               "basismodul_titel": {
-                "type": "string",
-                "description": "Bei quelle='basismodul': Titel des Basismoduls zur Anzeige."
+                "type": "string"
               }
             },
             "required": [
@@ -199,8 +279,7 @@
         },
         "analysiert_am": {
           "type": "string",
-          "format": "date-time",
-          "description": "Zeitstempel der letzten KI-Analyse (nullable)."
+          "format": "date-time"
         }
       },
       "additionalProperties": true
@@ -350,8 +429,7 @@
     },
     "is_complete": {
       "type": "boolean",
-      "default": false,
-      "description": "Vollst\u00e4ndigkeits-Flag (Phase 3 des Freigabe-Konzepts vom 2026-05-14): Wird vom Backend ehrlich auf Basis von `lib/completenessValidation.js` berechnet."
+      "default": false
     },
     "content_status": {
       "type": "string",
@@ -359,17 +437,14 @@
         "draft",
         "approved"
       ],
-      "default": "draft",
-      "description": "Freigabe-Status (Phase 3): 'approved' = von Lehrkraft aktiv freigegeben \u2192 gesperrt. Wechsel nur \u00fcber `setReleaseStatusSecure`."
+      "default": "draft"
     },
     "released_at": {
       "type": "string",
-      "format": "date-time",
-      "description": "Zeitstempel der manuellen Freigabe."
+      "format": "date-time"
     },
     "released_by": {
-      "type": "string",
-      "description": "E-Mail der freigebenden Lehrkraft."
+      "type": "string"
     },
     "sync_status": {
       "type": "string",
