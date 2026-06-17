@@ -10,11 +10,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { cn } from '@/lib/utils';
 import { base44 } from '@/api/base44Client';
 import { useLernpaketLock } from '@/hooks/useLocks';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Crown, Plus, Loader2, Save, Pencil, Check, Lock, Eye } from 'lucide-react';
+import { Crown, Plus, Loader2, Save, Pencil, Check, Lock, Eye, ListChecks } from 'lucide-react';
 import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
@@ -27,6 +28,8 @@ import ConfirmationPreviewModal from '@/components/workspace/preview/Confirmatio
 import ImageLabelingPreviewModal from '@/components/workspace/preview/ImageLabelingPreviewModal';
 import LehrwerkQuellePreviewModal from '@/components/workspace/preview/LehrwerkQuellePreviewModal';
 import KompaktwissenPreviewModal from '@/components/workspace/preview/KompaktwissenPreviewModal';
+import AufgabensequenzPreviewModal from '@/components/workspace/preview/AufgabensequenzPreviewModal';
+import AufgabensequenzModal from '@/components/workspace/AufgabensequenzModal';
 import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import OffeneAufgabePreviewModal from '@/components/workspace/preview/OffeneAufgabePreviewModal';
 import SyncStatusBadge from '@/components/release/SyncStatusBadge';
@@ -197,6 +200,9 @@ export default function ActivityMasterPanel({
   const [kiTutorActivityPreviewOpen, setKiTutorActivityPreviewOpen] = useState(false);
   // Kompaktwissen: Schüler-Vorschau.
   const [kompaktwissenPreviewOpen, setKompaktwissenPreviewOpen] = useState(false);
+  // Aufgabensequenz: Schüler-Vorschau + Editor.
+  const [aufgabensequenzPreviewOpen, setAufgabensequenzPreviewOpen] = useState(false);
+  const [aufgabensequenzEditOpen, setAufgabensequenzEditOpen] = useState(false);
   const [acquiringLock, setAcquiringLock] = useState(false);
   const modalUsesExistingLockRef = React.useRef(false);
 
@@ -741,7 +747,7 @@ export default function ActivityMasterPanel({
             {kannBearbeiten && (
               <div className="flex justify-end gap-2">
                 {/* Schüler-Vorschau (Stufe-1-Pilot, für "Text lesen", "Video / Audio" und "Link / URL"). */}
-                {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio') || catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url') || catalogEntry?.name?.toLowerCase().includes('ki-tutor') || catalogEntry?.name?.toLowerCase().includes('bestätigen') || catalogEntry?.name?.toLowerCase().includes('offene') || catalogEntry?.name?.toLowerCase().includes('bildbeschriftung') || catalogEntry?.name?.toLowerCase().includes('lehrwerk') || catalogEntry?.name?.toLowerCase().includes('quelle') || catalogEntry?.name?.toLowerCase().includes('kompaktwissen')) && (
+                {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio') || catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url') || catalogEntry?.name?.toLowerCase().includes('ki-tutor') || catalogEntry?.name?.toLowerCase().includes('bestätigen') || catalogEntry?.name?.toLowerCase().includes('offene') || catalogEntry?.name?.toLowerCase().includes('bildbeschriftung') || catalogEntry?.name?.toLowerCase().includes('lehrwerk') || catalogEntry?.name?.toLowerCase().includes('quelle') || catalogEntry?.name?.toLowerCase().includes('kompaktwissen') || catalogEntry?.name?.toLowerCase().includes('aufgabensequenz')) && (
                   <Button
                     variant="outline"
                     onClick={() => {
@@ -750,6 +756,8 @@ export default function ActivityMasterPanel({
                         setLehrwerkPreviewOpen(true);
                       } else if (n.includes('kompaktwissen')) {
                         setKompaktwissenPreviewOpen(true);
+                      } else if (n.includes('aufgabensequenz')) {
+                        setAufgabensequenzPreviewOpen(true);
                       } else if (n.includes('bildbeschriftung')) {
                         setImageLabelingPreviewOpen(true);
                       } else if (n.includes('offene')) {
@@ -863,6 +871,13 @@ export default function ActivityMasterPanel({
                 catalogName={catalogEntry?.name}
                 phase={activityRecord?.phase}
               />
+              <AufgabensequenzPreviewModal
+                open={aufgabensequenzPreviewOpen}
+                onOpenChange={setAufgabensequenzPreviewOpen}
+                fieldValues={fieldValues}
+                catalogName={catalogEntry?.name}
+                phase={activityRecord?.phase}
+              />
 
             {/* Spezielle Vorschau für Bildbeschriftung */}
             {isImageLabeling ? (
@@ -878,6 +893,47 @@ export default function ActivityMasterPanel({
                       <span className="text-sm font-medium text-foreground">Aktivität wird in der DB aktualisiert…</span>
                     </div>
                   </div>
+                )}
+              </div>
+            ) : catalogEntry?.name?.toLowerCase().includes('aufgabensequenz') ? (
+              /* Aufgabensequenz: Step-Vorschau in der Read-Only-Ansicht */
+              <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+                {fieldValues.aufgabentext && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-900 mb-3">
+                    <p className="whitespace-pre-wrap leading-relaxed">{fieldValues.aufgabentext}</p>
+                  </div>
+                )}
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <ListChecks className="w-3.5 h-3.5" />
+                  Sequenz ({(Array.isArray(fieldValues.sequenz_schritte) ? fieldValues.sequenz_schritte.length : 0)} Schritte)
+                </p>
+                {(Array.isArray(fieldValues.sequenz_schritte) && fieldValues.sequenz_schritte.length > 0) ? (
+                  <div className="space-y-1.5">
+                    {fieldValues.sequenz_schritte.map((s, i) => (
+                      <div key={s.id || i} className="flex items-start gap-2 p-2.5 rounded-md bg-muted/20 border border-border text-xs">
+                        <span className={cn(
+                          'shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold mt-0.5',
+                          s.typ === 'material' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+                        )}>
+                          {i + 1}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-semibold">{s.typ === 'material' ? 'Material' : 'Aufgabe'}</span>
+                          {s.material?.beschreibung && (
+                            <span className="text-muted-foreground ml-1">– {s.material.beschreibung}</span>
+                          )}
+                          {s.aufgabe?.aufgabenstellung && (
+                            <p className="text-muted-foreground mt-0.5 line-clamp-2">{s.aufgabe.aufgabenstellung}</p>
+                          )}
+                          {s.material?.inhalt && s.material?.material_typ === 'text' && (
+                            <p className="text-muted-foreground mt-0.5 line-clamp-2">{s.material.inhalt}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Noch keine Schritte definiert.</p>
                 )}
               </div>
             ) : catalogEntry?.name?.toLowerCase().includes('offene') ? (
@@ -1082,27 +1138,41 @@ export default function ActivityMasterPanel({
               );
             })()}
 
-              <TextLesenModal
-              open={editModalOpen && !catalogEntry?.name?.toLowerCase().includes('offene')}
-              onOpenChange={(isOpen) => { if (!isOpen) handleModalCancel(); }}
-              catalogEntry={catalogEntry}
-              initialFieldValues={{ ...fieldValues, transkript: activityRecord?.transkript || '', content_status: activityRecord?.content_status, moodle_sync_status: activityRecord?.moodle_sync_status }}
-              onSave={handleModalSave}
-              onCancel={handleModalCancel}
-              onReset={handleModalReset}
-              isSaving={saveFieldsMutation.isPending}
-              exportLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
-              einheitFach={einheit?.fach || 'unbekannt'}
-              einheitJahrgangsstufe={einheit?.jahrgangsstufe || 'unbekannt'}
-              parentLernpaketName={parentLernpaketName || ''}
-              /* Phase 6 (Freigabe-Konzept 2026-05-14): Records für
-                 Vollständigkeits-/Sperr-Logik durchreichen, sonst bleibt
-                 der Toggle wirkungslos (activity=null → setReleaseStatus
-                 ruft mit targetId=undefined auf). */
-              activity={activityRecord}
-              parentLernpaket={lernpaket}
-              parentEinheit={einheit}
-            />
+              {catalogEntry?.name?.toLowerCase().includes('aufgabensequenz') ? (
+                <AufgabensequenzModal
+                  open={editModalOpen}
+                  onOpenChange={(isOpen) => { if (!isOpen) handleModalCancel(); }}
+                  catalogEntry={catalogEntry}
+                  initialFieldValues={{ ...fieldValues, moodle_sync_status: activityRecord?.moodle_sync_status }}
+                  onSave={handleModalSave}
+                  onCancel={handleModalCancel}
+                  onReset={handleModalReset}
+                  isSaving={saveFieldsMutation.isPending}
+                  parentLernpaketName={parentLernpaketName || ''}
+                />
+              ) : (
+                <TextLesenModal
+                  open={editModalOpen && !catalogEntry?.name?.toLowerCase().includes('offene')}
+                  onOpenChange={(isOpen) => { if (!isOpen) handleModalCancel(); }}
+                  catalogEntry={catalogEntry}
+                  initialFieldValues={{ ...fieldValues, transkript: activityRecord?.transkript || '', content_status: activityRecord?.content_status, moodle_sync_status: activityRecord?.moodle_sync_status }}
+                  onSave={handleModalSave}
+                  onCancel={handleModalCancel}
+                  onReset={handleModalReset}
+                  isSaving={saveFieldsMutation.isPending}
+                  exportLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
+                  einheitFach={einheit?.fach || 'unbekannt'}
+                  einheitJahrgangsstufe={einheit?.jahrgangsstufe || 'unbekannt'}
+                  parentLernpaketName={parentLernpaketName || ''}
+                  /* Phase 6 (Freigabe-Konzept 2026-05-14): Records für
+                     Vollständigkeits-/Sperr-Logik durchreichen, sonst bleibt
+                     der Toggle wirkungslos (activity=null → setReleaseStatus
+                     ruft mit targetId=undefined auf). */
+                  activity={activityRecord}
+                  parentLernpaket={lernpaket}
+                  parentEinheit={einheit}
+                />
+              )}
           </>
         );
       })()}
