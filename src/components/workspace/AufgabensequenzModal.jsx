@@ -6,7 +6,7 @@
  * – identisch zum SequenzBuilder der AllgemeinenAufgaben, aber in der
  * Tab-5-Optik und mit field_values-Persistenz.
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -175,16 +175,21 @@ export default function AufgabensequenzModal({
   const [fieldValues, setFieldValues] = useState(initialFieldValues);
   const [schritte, setSchritte] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const prevOpenRef = useRef(false);
 
+  // Nur beim ÖFFNEN des Modals initialisieren – NICHT bei jedem
+  // Hintergrund-Refetch des Parents (initialFieldValues ist bei jedem
+  // Render ein neues Objekt und würde die Eingaben überschreiben).
   useEffect(() => {
-    if (open) {
+    if (open && !prevOpenRef.current) {
       const fv = JSON.parse(JSON.stringify(initialFieldValues || {}));
       setFieldValues(fv);
       const raw = Array.isArray(fv.sequenz_schritte) ? [...fv.sequenz_schritte] : [];
       setSchritte(raw);
       setSelectedIndex(raw.length > 0 ? 0 : -1);
     }
-  }, [open, initialFieldValues]);
+    prevOpenRef.current = open;
+  }, [open]);
 
   const addMaterial = useCallback(() => {
     const neu = { id: uid(), typ: 'material', reihenfolge: schritte.length, titel: '', material: { ...EMPTY_MATERIAL } };
