@@ -63,19 +63,35 @@ export default function PhaseActivitiesSidebar({
     onError: () => toast.error('Fehler beim Hinzufügen.'),
   });
 
-  // Reihenfolge ändern: tauscht die `reihenfolge`-Werte der beiden betroffenen
-  // Aktivitäten. Bewusst simpel gehalten — kein Drag&Drop, kein Bulk-Update.
+  // Reihenfolge ändern: tauscht die Positionen der beiden betroffenen
+  // Aktivitäten und nummeriert danach ALLE Aktivitäten dieser Phase neu
+  // durch (reihenfolge = 0,1,2,…). So werden auch Legacy-Aktivitäten
+  // ohne gesetztes reihenfolge-Feld korrekt geordnet und der Tausch
+  // bleibt stabil, auch wenn beide denselben Wert (z.B. 0) hatten.
   const moveAktivitaet = useMutation({
-    mutationFn: async ({ current, neighbor }) => {
-      // Beide Datensätze atomar nacheinander updaten. Werte tauschen.
-      const curOrder = current.reihenfolge ?? 0;
-      const neighOrder = neighbor.reihenfolge ?? 0;
-      await base44.entities.LernpaketPhaseAktivitaet.update(current.id, {
-        reihenfolge: neighOrder,
+    mutationFn: async ({ current, neighbor, direction }) => {
+      // Alle Aktivitäten dieser Phase laden, sortieren
+      const all = await base44.entities.LernpaketPhaseAktivitaet.filter({
+        lernpaket_id: paket.id,
+        phase,
+        sync_status: { $ne: 'to_delete' },
       });
-      await base44.entities.LernpaketPhaseAktivitaet.update(neighbor.id, {
-        reihenfolge: curOrder,
-      });
+      const sorted = [...all].sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
+      const idx = sorted.findIndex(a => a.id === current.id);
+      if (idx === -1) return;
+
+      // Positionen tauschen
+      if (direction === 'up' && idx > 0) {
+        [sorted[idx - 1], sorted[idx]] = [sorted[idx], sorted[idx - 1]];
+      } else if (direction === 'down' && idx < sorted.length - 1) {
+        [sorted[idx], sorted[idx + 1]] = [sorted[idx + 1], sorted[idx]];
+      }
+
+      // Alle Aktivitäten neu durchnummerieren (reihenfolge = 0,1,2,…)
+      const updates = sorted.map((a, i) =>
+        base44.entities.LernpaketPhaseAktivitaet.update(a.id, { reihenfolge: i })
+      );
+      await Promise.all(updates);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
@@ -222,20 +238,15 @@ export default function PhaseActivitiesSidebar({
                           <div className="flex items-center gap-1 shrink-0">
                             {canEdit && (
                               <>
-                                {/* Reihenfolge: Auf/Ab. Tauscht die `reihenfolge`-
-                                    Werte der beiden betroffenen Aktivitäten. */}
+                                {/* Reihenfolge: Auf/Ab. Nummeriert alle Aktivitäten
+                                    dieser Phase nach dem Tausch neu durch. */}
                                 <Button
                                   variant="ghost"
                                   size="icon"
                                   className="h-7 w-7"
                                   title="Nach oben verschieben"
                                   disabled={isFirst || isMoving}
-                                  onClick={() => {
-                                    const neighbor = sorted[idx - 1];
-                                    if (neighbor) {
-                                      moveAktivitaet.mutate({ current: activity, neighbor });
-                                    }
-                                  }}
+                                  onClick={() => moveAktivitaet.mutate({ current: activity, direction: 'up' })}
                                 >
                                   <ArrowUp className="w-3.5 h-3.5" />
                                 </Button>
@@ -245,12 +256,7 @@ export default function PhaseActivitiesSidebar({
                                   className="h-7 w-7"
                                   title="Nach unten verschieben"
                                   disabled={isLast || isMoving}
-                                  onClick={() => {
-                                    const neighbor = sorted[idx + 1];
-                                    if (neighbor) {
-                                      moveAktivitaet.mutate({ current: activity, neighbor });
-                                    }
-                                  }}
+                                  onClick={() => moveAktivitaet.mutate({ current: activity, direction: 'down' })}
                                 >
                                   <ArrowDown className="w-3.5 h-3.5" />
                                 </Button>
