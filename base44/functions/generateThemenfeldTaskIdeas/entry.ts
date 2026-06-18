@@ -70,6 +70,30 @@ function isFachschaftForFach(profile, fach) {
   return faecher.includes(fach);
 }
 
+function isFachlehrkraftForFach(profile, fach) {
+  // Rolle kann 'Fachlehrkraft' sein ODER via role-Override: ein Fach existiert
+  // in fachbereich_zustaendigkeit, aber die globale Rolle ist nicht Fachschaftsleitung
+  // (z. B. 'Moodle-Designer', 'Betrachter' mit Fach-Zuständigkeit).
+  if (!profile || !fach) return false;
+  const faecher = Array.isArray(profile.fachbereich_zustaendigkeit)
+    ? profile.fachbereich_zustaendigkeit
+    : [];
+  if (!faecher.includes(fach)) return false;
+
+  // Fachschaftsleitung wird bereits von isFachschaftForFach behandelt.
+  if (profile.rolle === 'Fachschaftsleitung') return false;
+
+  // Fachlehrkraft, Admin, Moodle-Designer, Betrachter – sobald das Fach in
+  // fachbereich_zustaendigkeit liegt und keine abweichende fach_ausnahmen
+  // die Berechtigung entziehen, gilt Lesezugriff.
+  const ausnahmen = Array.isArray(profile.fach_ausnahmen) ? profile.fach_ausnahmen : [];
+  // Nur relevant: eine Ausnahme für genau dieses Fach, die NICHT Fachlehrkraft ist.
+  const abweichung = ausnahmen.find((a) => a.fach === fach);
+  if (abweichung && abweichung.rolle && abweichung.rolle !== 'Fachlehrkraft') return false;
+
+  return true;
+}
+
 async function hasUnitReadAccess(base44, user, einheit) {
   const [profiles, memberships] = await Promise.all([
     base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email }),
@@ -80,7 +104,13 @@ async function hasUnitReadAccess(base44, user, einheit) {
   ]);
 
   const profile = profiles?.[0] || null;
-  if (isAdmin(user, profile) || isFachschaftForFach(profile, einheit.fach)) return true;
+  if (
+    isAdmin(user, profile) ||
+    isFachschaftForFach(profile, einheit.fach) ||
+    isFachlehrkraftForFach(profile, einheit.fach)
+  ) {
+    return true;
+  }
 
   return !!memberships?.[0];
 }
