@@ -15,7 +15,7 @@ import { base44 } from '@/api/base44Client';
 import { useLernpaketLock } from '@/hooks/useLocks';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Crown, Plus, Loader2, Save, Pencil, Check, Lock, Eye, ListChecks } from 'lucide-react';
+import { Crown, Plus, Loader2, Save, Pencil, Check, Lock, Eye, ListChecks, Monitor } from 'lucide-react';
 import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
@@ -29,6 +29,7 @@ import ImageLabelingPreviewModal from '@/components/workspace/preview/ImageLabel
 import LehrwerkQuellePreviewModal from '@/components/workspace/preview/LehrwerkQuellePreviewModal';
 import KompaktwissenPreviewModal from '@/components/workspace/preview/KompaktwissenPreviewModal';
 import AufgabensequenzPreviewModal from '@/components/workspace/preview/AufgabensequenzPreviewModal';
+import HtmlSeitePreviewModal from '@/components/workspace/preview/HtmlSeitePreviewModal';
 import AufgabensequenzModal from '@/components/workspace/AufgabensequenzModal';
 import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import OffeneAufgabePreviewModal from '@/components/workspace/preview/OffeneAufgabePreviewModal';
@@ -202,6 +203,7 @@ export default function ActivityMasterPanel({
   const [kompaktwissenPreviewOpen, setKompaktwissenPreviewOpen] = useState(false);
   // Aufgabensequenz: Schüler-Vorschau + Editor.
   const [aufgabensequenzPreviewOpen, setAufgabensequenzPreviewOpen] = useState(false);
+  const [htmlSeitePreviewOpen, setHtmlSeitePreviewOpen] = useState(false);
   const [aufgabensequenzEditOpen, setAufgabensequenzEditOpen] = useState(false);
   const [acquiringLock, setAcquiringLock] = useState(false);
   const modalUsesExistingLockRef = React.useRef(false);
@@ -747,7 +749,7 @@ export default function ActivityMasterPanel({
             {kannBearbeiten && (
               <div className="flex justify-end gap-2">
                 {/* Schüler-Vorschau (Stufe-1-Pilot, für "Text lesen", "Video / Audio" und "Link / URL"). */}
-                {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio') || catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url') || catalogEntry?.name?.toLowerCase().includes('ki-tutor') || catalogEntry?.name?.toLowerCase().includes('bestätigen') || catalogEntry?.name?.toLowerCase().includes('offene') || catalogEntry?.name?.toLowerCase().includes('bildbeschriftung') || catalogEntry?.name?.toLowerCase().includes('lehrwerk') || catalogEntry?.name?.toLowerCase().includes('quelle') || catalogEntry?.name?.toLowerCase().includes('kompaktwissen') || catalogEntry?.name?.toLowerCase().includes('aufgabensequenz')) && (
+                {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio') || catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url') || catalogEntry?.name?.toLowerCase().includes('ki-tutor') || catalogEntry?.name?.toLowerCase().includes('bestätigen') || catalogEntry?.name?.toLowerCase().includes('offene') || catalogEntry?.name?.toLowerCase().includes('bildbeschriftung') || catalogEntry?.name?.toLowerCase().includes('lehrwerk') || catalogEntry?.name?.toLowerCase().includes('quelle') || catalogEntry?.name?.toLowerCase().includes('kompaktwissen') || catalogEntry?.name?.toLowerCase().includes('aufgabensequenz') || catalogEntry?.name?.toLowerCase().includes('html-seite') || catalogEntry?.name?.toLowerCase().includes('html')) && (
                   <Button
                     variant="outline"
                     onClick={() => {
@@ -758,6 +760,8 @@ export default function ActivityMasterPanel({
                         setKompaktwissenPreviewOpen(true);
                       } else if (n.includes('aufgabensequenz')) {
                         setAufgabensequenzPreviewOpen(true);
+                      } else if (n.includes('html-seite') || n.includes('html')) {
+                        setHtmlSeitePreviewOpen(true);
                       } else if (n.includes('bildbeschriftung')) {
                         setImageLabelingPreviewOpen(true);
                       } else if (n.includes('offene')) {
@@ -878,6 +882,13 @@ export default function ActivityMasterPanel({
                 catalogName={catalogEntry?.name}
                 phase={activityRecord?.phase}
               />
+              <HtmlSeitePreviewModal
+                open={htmlSeitePreviewOpen}
+                onOpenChange={setHtmlSeitePreviewOpen}
+                fieldValues={fieldValues}
+                catalogName={catalogEntry?.name}
+                phase={activityRecord?.phase}
+              />
 
             {/* Spezielle Vorschau für Bildbeschriftung */}
             {isImageLabeling ? (
@@ -893,6 +904,35 @@ export default function ActivityMasterPanel({
                       <span className="text-sm font-medium text-foreground">Aktivität wird in der DB aktualisiert…</span>
                     </div>
                   </div>
+                )}
+              </div>
+            ) : catalogEntry?.name?.toLowerCase().includes('html-seite') || catalogEntry?.name?.toLowerCase().includes('html') ? (
+              /* HTML-Seite: Read-Only-Vorschau */
+              <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+                {fieldValues.aufgabentext && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-900">
+                    <p className="whitespace-pre-wrap leading-relaxed">{fieldValues.aufgabentext}</p>
+                  </div>
+                )}
+                {fieldValues.html_code ? (
+                  <div className="rounded-lg border border-border overflow-hidden bg-white">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-border">
+                      <Monitor className="w-3.5 h-3.5 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground font-medium">HTML-Inhalt (Vorschau)</span>
+                    </div>
+                    <div className="max-h-[500px] overflow-hidden relative">
+                      <iframe
+                        srcDoc={fieldValues.html_code}
+                        className="w-full border-0 pointer-events-none"
+                        style={{ minHeight: '400px', height: '50vh' }}
+                        sandbox="allow-scripts allow-same-origin"
+                        title="HTML-Seite Vorschau"
+                      />
+                      <div className="absolute inset-0 bg-transparent" />
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Noch kein HTML-Code hinterlegt.</p>
                 )}
               </div>
             ) : catalogEntry?.name?.toLowerCase().includes('aufgabensequenz') ? (

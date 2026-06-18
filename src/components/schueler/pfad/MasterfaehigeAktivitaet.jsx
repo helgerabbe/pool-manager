@@ -20,6 +20,7 @@ import MiniquizSeite from '@/components/schueler/lesen/MiniquizSeite';
 import BildBeschriftungSeite from '@/components/schueler/lesen/BildBeschriftungSeite';
 import KICheckSeite from '@/components/schueler/lesen/KICheckSeite';
 import OffeneAufgabeSeite from '@/components/schueler/lesen/OffeneAufgabeSeite';
+import HtmlSeite from '@/components/schueler/lesen/HtmlSeite';
 import LernpaketAktivitaetSeite from './LernpaketAktivitaetSeite';
 
 /**
@@ -110,6 +111,7 @@ export default function MasterfaehigeAktivitaet({
   const istBildbeschriftung = katName.includes('bildbeschriftung') || katName.includes('beschriftung');
   const istKICheck = katName.includes('ki-check') || katName.includes('ki check');
   const istOffeneAufgabe = katName.includes('offene');
+  const istHtmlSeite = katName.includes('html-seite') || katName.includes('html');
 
   // key pro aktiver MasterAufgabe → erzwingt frischen internen State der
   // Einzelseite (z. B. neu gemischte Karten), wenn sequenziell die nächste kommt.
@@ -144,6 +146,7 @@ export default function MasterfaehigeAktivitaet({
   if (istBildbeschriftung) return <BildBeschriftungSeite {...gemeinsameProps} />;
   if (istKICheck) return <KICheckSeite {...gemeinsameProps} />;
   if (istOffeneAufgabe) return <OffeneAufgabeSeite {...gemeinsameProps} />;
+  if (istHtmlSeite) return <HtmlSeite {...gemeinsameProps} />;
   return <LernpaketAktivitaetSeite {...gemeinsameProps} />;
 }
 
