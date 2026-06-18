@@ -13,7 +13,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Package, FileText, ListOrdered } from 'lucide-react';
+import { Package, FileText, ListOrdered, Code2 } from 'lucide-react';
 
 const ARTEN = [
   {
@@ -54,6 +54,19 @@ const ARTEN = [
     iconBg: 'bg-violet-100',
     iconText: 'text-violet-700',
     text: 'text-violet-900',
+  },
+  {
+    value: 'externe_html_seite',
+    label: 'Externe HTML-Seite',
+    description:
+      'Bette eine interaktive HTML-Seite ein (z.B. GeoGebra, LearningApps). Die externe Seite steuert die Didaktik; die App wartet auf die Erledigt-Bestätigung.',
+    icon: Code2,
+    border: 'border-teal-200',
+    bg: 'bg-teal-50/60',
+    hover: 'hover:border-teal-400 hover:bg-teal-100/80',
+    iconBg: 'bg-teal-100',
+    iconText: 'text-teal-700',
+    text: 'text-teal-900',
   },
 ];
 

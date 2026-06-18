@@ -19,7 +19,7 @@
  *   Beide Felder sind orthogonal — siehe Spec.
  */
 
-import { Pencil, Hand } from 'lucide-react';
+import { Pencil, Hand, Code2 } from 'lucide-react';
 
 export const AUFGABEN_TYPEN = {
   inhalt: {
@@ -61,10 +61,29 @@ export const AUFGABEN_TYPEN = {
       hover: 'hover:border-emerald-500 hover:bg-emerald-50',
     },
   },
+  externe_html_seite: {
+    value: 'externe_html_seite',
+    label: 'Externe HTML-Seite',
+    short: 'Externe HTML-Seite',
+    description:
+      'Eine externe, interaktive HTML-Seite (z.B. GeoGebra, LearningApps), die im Lernpfad eingebettet wird. Die Didaktik liegt in der externen Seite; der Schüler bestätigt die Erledigung.',
+    icon: Code2,
+    color: {
+      ring: 'ring-teal-400',
+      border: 'border-teal-400',
+      bg: 'bg-teal-50',
+      bgSolid: 'bg-teal-500',
+      text: 'text-teal-700',
+      textOn: 'text-white',
+      iconBg: 'bg-teal-100',
+      iconText: 'text-teal-700',
+      hover: 'hover:border-teal-500 hover:bg-teal-50',
+    },
+  },
 };
 
 // Geordnete Liste in der Anzeigereihenfolge (Picker, Filter-Chips).
-export const AUFGABEN_TYPEN_ORDER = ['inhalt', 'handlung'];
+export const AUFGABEN_TYPEN_ORDER = ['inhalt', 'handlung', 'externe_html_seite'];
 
 // Convenience-Getter mit sauberem Fallback auf 'inhalt'.
 export function getAufgabenTyp(value) {

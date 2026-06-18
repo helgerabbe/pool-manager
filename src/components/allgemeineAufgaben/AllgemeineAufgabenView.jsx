@@ -18,6 +18,7 @@ import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView
 import AufgabePreviewModal from '@/components/allgemeineAufgaben/AufgabePreviewModal';
 import AufgabenArtPicker from '@/components/allgemeineAufgaben/AufgabenArtPicker';
 import HandlungAufgabeView from '@/components/allgemeineAufgaben/HandlungAufgabeView';
+import HtmlEmbedAufgabeView from '@/components/allgemeineAufgaben/HtmlEmbedAufgabeView';
 import SequenzBuilder from '@/components/allgemeineAufgaben/SequenzBuilder';
 import LernzielAnalysePanel from '@/components/allgemeineAufgaben/LernzielAnalysePanel';
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
@@ -470,6 +471,8 @@ export default function AllgemeineAufgabenView({
   // 3-Wege-Picker (Handlungsaufgabe | KI-Tutor | Aufgabensequenz) – nur in Ebene 2.
   const [artPickerOpen, setArtPickerOpen] = useState(false);
   const [handlungViewOpen, setHandlungViewOpen] = useState(false);
+  const [htmlEmbedViewOpen, setHtmlEmbedViewOpen] = useState(false);
+  const [editingHtmlEmbed, setEditingHtmlEmbed] = useState(null);
   const [sequenzBuilderOpen, setSequenzBuilderOpen] = useState(false);
   const [editingSequenz, setEditingSequenz] = useState(null);
   const isEbene3 = anforderungsebene === '3 - Projekt';
@@ -777,10 +780,14 @@ export default function AllgemeineAufgabenView({
 
             {/* Tabs für Angaben & Kompetenzen.
                 Handlungsaufgaben: nur "Kernangaben" (kein KI-Kontext nötig). */}
-            {selectedAufgabe.aufgaben_typ === 'handlung' ? (
+            {(selectedAufgabe.aufgaben_typ === 'handlung' || selectedAufgabe.aufgaben_typ === 'externe_html_seite') ? (
               <main className="flex-1 overflow-y-auto">
                 <div className="px-6 pt-3 pb-2">
-                  <p className="text-xs text-muted-foreground italic">Handlungsaufgabe – kein KI-Tutor-Kontext erforderlich.</p>
+                  <p className="text-xs text-muted-foreground italic">
+                    {selectedAufgabe.aufgaben_typ === 'externe_html_seite'
+                      ? 'Externe HTML-Seite – Didaktik wird durch die externe Seite gesteuert.'
+                      : 'Handlungsaufgabe – kein KI-Tutor-Kontext erforderlich.'}
+                  </p>
                 </div>
                 <AllgemeineAngabenPanel
                   aufgabe={selectedAufgabe}
@@ -794,6 +801,9 @@ export default function AllgemeineAufgabenView({
                     } else if (a.aufgaben_typ === 'handlung') {
                       setEditingAufgabe(a);
                       setHandlungViewOpen(true);
+                    } else if (a.aufgaben_typ === 'externe_html_seite') {
+                      setEditingHtmlEmbed(a);
+                      setHtmlEmbedViewOpen(true);
                     } else {
                       setEditingAufgabe(a);
                       setCreateFormOpen(true);
@@ -835,6 +845,9 @@ export default function AllgemeineAufgabenView({
                     } else if (a.aufgaben_typ === 'handlung') {
                       setEditingAufgabe(a);
                       setHandlungViewOpen(true);
+                    } else if (a.aufgaben_typ === 'externe_html_seite') {
+                      setEditingHtmlEmbed(a);
+                      setHtmlEmbedViewOpen(true);
                     } else {
                       setEditingAufgabe(a);
                       setCreateFormOpen(true);
@@ -914,6 +927,9 @@ export default function AllgemeineAufgabenView({
           } else if (art === 'handlung') {
             setEditingAufgabe(null);
             setHandlungViewOpen(true);
+          } else if (art === 'externe_html_seite') {
+            setEditingHtmlEmbed(null);
+            setHtmlEmbedViewOpen(true);
           } else {
             // 'inhalt': bestehender KI-Tutor-Dialog
             setEditingAufgabe(null);
@@ -933,6 +949,21 @@ export default function AllgemeineAufgabenView({
         onSuccess={() => {
           setHandlungViewOpen(false);
           setEditingAufgabe(null);
+          queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheitId] });
+        }}
+      />
+
+      {/* Externe HTML-Seite (Dialog mit HTML-Editor + KI-Analyse) */}
+      <HtmlEmbedAufgabeView
+        open={htmlEmbedViewOpen}
+        onOpenChange={setHtmlEmbedViewOpen}
+        einheitId={einheitId}
+        themenfelder={themenfelder}
+        initialData={editingHtmlEmbed}
+        defaultAnforderungsebene={anforderungsebene}
+        onSuccess={() => {
+          setHtmlEmbedViewOpen(false);
+          setEditingHtmlEmbed(null);
           queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheitId] });
         }}
       />

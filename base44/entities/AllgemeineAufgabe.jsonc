@@ -27,7 +27,8 @@
         "prozess",
         "projekt_anker",
         "handlung",
-        "auswahl_buendel"
+        "auswahl_buendel",
+        "externe_html_seite"
       ],
       "default": "inhalt"
     },
@@ -37,18 +38,15 @@
         "einzeln",
         "sequenz"
       ],
-      "default": "einzeln",
-      "description": "Aufgabenmodus: 'einzeln' = klassische Einzelaufgabe. 'sequenz' = Aufgabensequenz mit mehreren Schritten."
+      "default": "einzeln"
     },
     "sequenz_schritte": {
       "type": "array",
-      "description": "Nur bei aufgaben_modus='sequenz': Liste der Schritte in fester Reihenfolge.",
       "items": {
         "type": "object",
         "properties": {
           "id": {
-            "type": "string",
-            "description": "Stabile ID des Schritts (clientseitig generiert)."
+            "type": "string"
           },
           "typ": {
             "type": "string",
@@ -58,65 +56,12 @@
             ]
           },
           "reihenfolge": {
-            "type": "number",
-            "description": "0-basierte Reihenfolge innerhalb der Sequenz."
+            "type": "number"
           },
           "titel": {
-            "type": "string",
-            "description": "Anzeigetitel des Schritts."
-          },
-          "material": {
-            "type": "object",
-            "properties": {
-              "material_typ": {
-                "type": "string",
-                "enum": [
-                  "text",
-                  "video",
-                  "audio",
-                  "bild",
-                  "pdf",
-                  "link"
-                ]
-              },
-              "inhalt": {
-                "type": "string",
-                "description": "Text-Inhalt (bei material_typ='text')."
-              },
-              "url": {
-                "type": "string",
-                "description": "URL (bei material_typ='video', 'audio', 'link')."
-              },
-              "datei_url": {
-                "type": "string",
-                "description": "URL einer hochgeladenen Datei (bei material_typ='bild', 'pdf')."
-              },
-              "beschreibung": {
-                "type": "string",
-                "description": "Kurze Beschreibung des Materials."
-              }
-            }
-          },
-          "aufgabe": {
-            "type": "object",
-            "properties": {
-              "aufgabenstellung": {
-                "type": "string",
-                "description": "Die konkrete Aufgabenstellung fuer diesen Schritt."
-              },
-              "input_erforderlich": {
-                "type": "boolean",
-                "default": true,
-                "description": "Muss der Schueler eine Texteingabe machen?"
-              }
-            }
+            "type": "string"
           }
-        },
-        "required": [
-          "id",
-          "typ",
-          "reihenfolge"
-        ]
+        }
       },
       "default": []
     },
@@ -203,24 +148,10 @@
       ]
     },
     "ergebnis_form": {
-      "type": "string",
-      "enum": [
-        "Fliess\u0000text / Essay",
-        "Tabelle / Matrix",
-        "Praesentation / Folien",
-        "Schema / Konzept-Map / Zeichnung",
-        "Stichpunktartige Uebersicht",
-        "Mischform / Offen"
-      ]
+      "type": "string"
     },
     "ergebnis_dateiformat": {
-      "type": "string",
-      "enum": [
-        "Textdokument (Word/PDF)",
-        "Bilddatei (JPG/PNG)",
-        "Praesentationsdatei (PowerPoint/PDF)",
-        "Offen / Beliebig"
-      ]
+      "type": "string"
     },
     "erwartungshorizont": {
       "type": "string"
@@ -228,60 +159,11 @@
     "musterloesung": {
       "type": "string"
     },
+    "html_code": {
+      "type": "string"
+    },
     "lernzielanalyse": {
       "type": "object",
-      "description": "KI-gestuetzte Lernzielanalyse.",
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "text": {
-                "type": "string"
-              },
-              "quelle": {
-                "type": "string",
-                "enum": [
-                  "bestehend",
-                  "basismodul",
-                  "ki",
-                  "basismodul_luecke",
-                  "manuell"
-                ],
-                "default": "manuell"
-              },
-              "lernziel_id": {
-                "type": "string"
-              },
-              "basislernziel_id": {
-                "type": "string"
-              },
-              "themenfeld_id": {
-                "type": "string"
-              },
-              "themenfeld_titel": {
-                "type": "string"
-              },
-              "basismodul_titel": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "id",
-              "text"
-            ]
-          },
-          "default": []
-        },
-        "analysiert_am": {
-          "type": "string",
-          "format": "date-time"
-        }
-      },
       "additionalProperties": true
     },
     "erstellungs_modus": {
@@ -294,49 +176,7 @@
     },
     "ki_briefing": {
       "type": "object",
-      "properties": {
-        "variant": {
-          "type": "string",
-          "enum": [
-            "standard",
-            "offen"
-          ]
-        },
-        "standard": {
-          "type": "object",
-          "properties": {
-            "schwerpunkt": {
-              "type": "string"
-            },
-            "parameter": {
-              "type": "object",
-              "additionalProperties": true
-            }
-          }
-        },
-        "offen": {
-          "type": "object",
-          "properties": {
-            "lernziel": {
-              "type": "string"
-            },
-            "funktionsweise": {
-              "type": "string"
-            },
-            "visuelle_vorlage": {
-              "type": "object",
-              "properties": {
-                "bild_url": {
-                  "type": "string"
-                },
-                "beschreibung": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        }
-      }
+      "additionalProperties": true
     },
     "alt_text": {
       "type": "string"
@@ -347,27 +187,9 @@
         "type": "object",
         "properties": {
           "type": {
-            "type": "string",
-            "enum": [
-              "pdf",
-              "image",
-              "book_ref",
-              "free_text"
-            ]
-          },
-          "content": {
-            "type": "string"
-          },
-          "url": {
-            "type": "string"
-          },
-          "label": {
             "type": "string"
           }
-        },
-        "required": [
-          "type"
-        ]
+        }
       }
     },
     "output_formats": {
