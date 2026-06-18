@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { Plus, Star, FileText, ChevronRight, Edit, Trash2, CheckCircle2, PenLine, Lock, Wand2, Lightbulb, Image as ImageIcon, Package, Tag, Folder, FileType2, Eye, ListChecks } from 'lucide-react';
+import { Plus, Star, FileText, ChevronRight, Edit, Trash2, CheckCircle2, PenLine, Lock, Wand2, Lightbulb, Image as ImageIcon, Package, Tag, Folder, FileType2, Eye, ListChecks, Code2 } from 'lucide-react';
 import { getAufgabenTyp } from '@/lib/aufgabenTypen';
 import TaskStatusBadge from '@/components/ui/TaskStatusBadge';
 import TaskLockBar from '@/components/ui/TaskLockBar';
@@ -401,6 +401,28 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
           </span>
         </span>
       </div>
+
+      {/* HTML-Vorschau (nur bei externen HTML-Seiten) */}
+      {aufgabe.aufgaben_typ === 'externe_html_seite' && aufgabe.html_code && (
+        <div>
+          <p className="text-[11px] font-semibold text-muted-foreground mb-1 uppercase tracking-wide flex items-center gap-1.5">
+            <Code2 className="w-3 h-3" />
+            HTML-Code (Vorschau)
+          </p>
+          <div className="rounded-lg border border-border overflow-hidden bg-white">
+            <div className="max-h-[400px] overflow-hidden relative">
+              <iframe
+                srcDoc={aufgabe.html_code}
+                className="w-full border-0 pointer-events-none"
+                style={{ minHeight: '300px', height: '40vh' }}
+                sandbox="allow-scripts allow-same-origin"
+                title="HTML-Vorschau"
+              />
+              <div className="absolute inset-0 bg-transparent" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Material-Hinweise (nur bei Handlungsaufgaben) */}
       {hatMaterialHinweise && (
