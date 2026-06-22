@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { uploadFile } from '@/services/FileService';
-import { Type, BookMarked, FileUp, ImagePlus, X, Loader2 } from 'lucide-react';
+import { Type, BookMarked, FileUp, ImagePlus, X, Loader2, ClipboardPaste } from 'lucide-react';
 import { toast } from 'sonner';
 
 /**
@@ -26,12 +26,38 @@ export default function ZusaetzlichesMaterialSection({
     file: null,
   });
   const [uploading, setUploading] = useState(false);
+  const [pasteHighlight, setPasteHighlight] = useState(false);
 
   useEffect(() => {
     onUploadingChange?.(uploading);
   }, [uploading, onUploadingChange]);
 
   const typeFromTab = (tab) => (tab === 'freitext' ? 'free_text' : tab);
+
+  const handleImagePasteOrDrop = useCallback((file) => {
+    if (!file?.type.startsWith('image/')) return;
+    setActiveTab('image');
+    setNewMaterial((p) => ({ ...p, type: 'image', file }));
+    toast.info('Bild eingefügt – bitte auf „Hochladen & Hinzufügen" klicken.');
+  }, []);
+
+  const handlePaste = useCallback((e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        handleImagePasteOrDrop(item.getAsFile());
+        return;
+      }
+    }
+  }, [handleImagePasteOrDrop]);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    setPasteHighlight(false);
+    handleImagePasteOrDrop(e.dataTransfer.files?.[0]);
+  }, [handleImagePasteOrDrop]);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -68,7 +94,15 @@ export default function ZusaetzlichesMaterialSection({
   const removeMaterial = (idx) => onMaterialsChange(materials.filter((_, i) => i !== idx));
 
   return (
-    <div className="space-y-3 p-4 rounded-lg bg-muted/20 border border-border">
+    <div
+      className={`space-y-3 p-4 rounded-lg border-2 transition-colors ${
+        pasteHighlight ? 'border-primary bg-primary/5' : 'bg-muted/20 border-border'
+      }`}
+      onPaste={handlePaste}
+      onDrop={handleDrop}
+      onDragOver={(e) => { e.preventDefault(); setPasteHighlight(true); }}
+      onDragLeave={() => setPasteHighlight(false)}
+    >
       <h4 className="text-sm font-semibold">Zusätzliches Material zur Aufgabe</h4>
       <p className="text-xs text-muted-foreground">
         Weitere Informationen, die zum Lösen der Aufgabe hilfreich sind (z.B. Arbeitsblatt, Tabelle,
@@ -210,18 +244,33 @@ export default function ZusaetzlichesMaterialSection({
         </TabsContent>
 
         <TabsContent value="image" className="space-y-2">
-          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer hover:text-foreground">
-            <ImagePlus className="w-4 h-4" />
-            {newMaterial.file ? newMaterial.file.name : 'Bild auswählen…'}
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) =>
-                setNewMaterial((p) => ({ ...p, file: e.target.files?.[0] || null }))
-              }
-            />
-          </label>
+          <div className="space-y-1.5">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer hover:text-foreground">
+              <ImagePlus className="w-4 h-4" />
+              {newMaterial.file ? newMaterial.file.name : 'Bild auswählen…'}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) =>
+                  setNewMaterial((p) => ({ ...p, file: e.target.files?.[0] || null }))
+                }
+              />
+            </label>
+            {newMaterial.file && newMaterial.file.type?.startsWith('image/') && (
+              <img
+                src={URL.createObjectURL(newMaterial.file)}
+                alt="Vorschau"
+                className="max-h-24 rounded border border-border object-contain"
+              />
+            )}
+            {!newMaterial.file && (
+              <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                <ClipboardPaste className="w-3 h-3" />
+                Oder Bild mit <kbd className="px-1 py-0.5 rounded bg-muted border border-border text-[10px] font-mono">Strg+V</kbd> einfügen
+              </p>
+            )}
+          </div>
           <Input
             placeholder="Label (optional)"
             value={newMaterial.label}

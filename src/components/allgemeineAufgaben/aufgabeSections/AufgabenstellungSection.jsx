@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Label } from '@/components/ui/label';
 import { uploadFile } from '@/services/FileService';
-import { AlertCircle, FileUp, ImagePlus, X, Loader2 } from 'lucide-react';
+import { AlertCircle, FileUp, ImagePlus, X, Loader2, ClipboardPaste } from 'lucide-react';
 import { toast } from 'sonner';
 
 /**
  * AufgabenstellungSection
  * Aufgabentext + optionales Aufgabenbild.
- * 1:1 aus AufgabeCreateView extrahiert (nur in eigene Datei verschoben).
+ * Unterstützt Datei-Upload und Einfügen per Copy & Paste (Ctrl+V / Cmd+V).
  */
 export default function AufgabenstellungSection({
   text,
@@ -17,14 +17,14 @@ export default function AufgabenstellungSection({
   onUploadingChange,
 }) {
   const [uploading, setUploading] = useState(false);
+  const [pasteHighlight, setPasteHighlight] = useState(false);
 
   useEffect(() => {
     onUploadingChange?.(uploading);
   }, [uploading, onUploadingChange]);
 
-  const handleBildUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const uploadImageFile = useCallback(async (file) => {
+    if (!file || !file.type.startsWith('image/')) return;
     setUploading(true);
     try {
       const { file_url } = await uploadFile(file);
@@ -35,7 +35,29 @@ export default function AufgabenstellungSection({
     } finally {
       setUploading(false);
     }
-  };
+  }, [onBildUrlChange]);
+
+  const handleBildUpload = (e) => uploadImageFile(e.target.files?.[0]);
+
+  const handlePaste = useCallback((e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) uploadImageFile(file);
+        return;
+      }
+    }
+  }, [uploadImageFile]);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    setPasteHighlight(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file?.type.startsWith('image/')) uploadImageFile(file);
+  }, [uploadImageFile]);
 
   return (
     <div className="space-y-3">
@@ -49,11 +71,20 @@ export default function AufgabenstellungSection({
       <textarea
         value={text}
         onChange={(e) => onTextChange(e.target.value)}
+        onPaste={handlePaste}
         placeholder="Aufgabentext eingeben (optional wenn ein Bild hochgeladen wird)…"
         className="w-full px-3 py-2 border border-border rounded-lg min-h-28 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
       />
 
-      <div className="rounded-lg border border-dashed border-border bg-muted/20 p-3">
+      <div
+        onPaste={handlePaste}
+        onDrop={handleDrop}
+        onDragOver={(e) => { e.preventDefault(); setPasteHighlight(true); }}
+        onDragLeave={() => setPasteHighlight(false)}
+        className={`rounded-lg border-2 border-dashed p-3 transition-colors ${
+          pasteHighlight ? 'border-primary bg-primary/5' : 'border-border bg-muted/20'
+        }`}
+      >
         <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
           <ImagePlus className="w-3.5 h-3.5" /> Aufgaben-Bild / Screenshot (optional)
         </p>
@@ -73,25 +104,29 @@ export default function AufgabenstellungSection({
               <X className="w-3 h-3" />
             </button>
           </div>
+        ) : uploading ? (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="w-4 h-4 animate-spin" /> Wird hochgeladen…
+          </div>
         ) : (
-          <label className="cursor-pointer flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
-            {uploading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Wird hochgeladen…
-              </>
-            ) : (
-              <>
-                <FileUp className="w-4 h-4" /> Bild auswählen (JPG, PNG, GIF…)
-              </>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleBildUpload}
-              disabled={uploading}
-            />
-          </label>
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="cursor-pointer flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+              <FileUp className="w-4 h-4" /> Bild auswählen
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleBildUpload}
+              />
+            </label>
+            <span className="text-xs text-muted-foreground/50">·</span>
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <ClipboardPaste className="w-3.5 h-3.5" />
+              Einfügen mit <kbd className="px-1 py-0.5 rounded bg-muted border border-border text-[10px] font-mono">Strg+V</kbd>
+            </span>
+            <span className="text-xs text-muted-foreground/50">·</span>
+            <span className="text-xs text-muted-foreground">Drag &amp; Drop</span>
+          </div>
         )}
       </div>
 
