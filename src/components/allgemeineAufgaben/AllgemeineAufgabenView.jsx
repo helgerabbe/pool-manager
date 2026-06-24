@@ -410,16 +410,13 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
             HTML-Code (Vorschau)
           </p>
           <div className="rounded-lg border border-border overflow-hidden bg-white">
-            <div className="max-h-[400px] overflow-hidden relative">
-              <iframe
-                srcDoc={aufgabe.html_code}
-                className="w-full border-0 pointer-events-none"
-                style={{ minHeight: '300px', height: '40vh' }}
-                sandbox="allow-scripts allow-same-origin"
-                title="HTML-Vorschau"
-              />
-              <div className="absolute inset-0 bg-transparent" />
-            </div>
+            <iframe
+              srcDoc={aufgabe.html_code}
+              className="w-full border-0"
+              style={{ minHeight: '300px', height: '50vh' }}
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+              title="HTML-Vorschau"
+            />
           </div>
         </div>
       )}

@@ -10,6 +10,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Eye, Sparkles, MessageCircle, ExternalLink, Package, Tag, FileType2 } from 'lucide-react';
 import IPadFrame from '@/components/workspace/preview/IPadFrame';
+import HtmlSeite from '@/components/schueler/lesen/HtmlSeite';
 
 const BRIAN_LOGO_URL = 'https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/829f1dcc1_image.png';
 
@@ -106,6 +107,8 @@ function AufgabeBody({ aufgabe }) {
 
 export default function AufgabePreviewModal({ open, onOpenChange, aufgabe }) {
   const titel = aufgabe?.titel || 'Aufgabe';
+  const isHtml = aufgabe?.aufgaben_typ === 'externe_html_seite';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[95vh] w-[95vw] max-w-[1280px] overflow-y-auto bg-slate-100 p-4">
@@ -122,8 +125,24 @@ export default function AufgabePreviewModal({ open, onOpenChange, aufgabe }) {
 
         <div className="pt-3">
           <IPadFrame lernpaketTitel={titel} phaseLabel="Aufgabe">
-            <div className="bg-white h-full flex flex-col">
-              <AufgabeBody aufgabe={aufgabe} />
+            <div className="bg-background h-full flex flex-col">
+              {isHtml ? (
+                <HtmlSeite
+                  aktivitaet={{
+                    field_values: {
+                      html_code: aufgabe.html_code || '',
+                      aufgabentext: aufgabe.aufgabenstellung || '',
+                    },
+                    phase: 'Input',
+                  }}
+                  kat={{ name: titel }}
+                  busy={false}
+                  onErledigt={() => {}}
+                  onBack={() => {}}
+                />
+              ) : (
+                <AufgabeBody aufgabe={aufgabe} />
+              )}
             </div>
           </IPadFrame>
         </div>
