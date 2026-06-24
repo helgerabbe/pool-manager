@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Label } from '@/components/ui/label';
 import { uploadFile } from '@/services/FileService';
 import { AlertCircle, FileUp, ImagePlus, X, Loader2, ClipboardPaste } from 'lucide-react';
@@ -18,10 +18,34 @@ export default function AufgabenstellungSection({
 }) {
   const [uploading, setUploading] = useState(false);
   const [pasteHighlight, setPasteHighlight] = useState(false);
+  const hasImage = !!bildUrl;
 
   useEffect(() => {
     onUploadingChange?.(uploading);
   }, [uploading, onUploadingChange]);
+
+  // Globaler Paste-Listener: fängt Strg+V überall im Dokument ab,
+  // solange noch kein Bild gesetzt ist und der User nicht gerade in einem
+  // anderen Input tippt (dann hat der normale onPaste-Handler Vorrang).
+  useEffect(() => {
+    if (hasImage) return;
+    const handleGlobalPaste = (e) => {
+      // Nicht abfangen wenn User in textarea/input tippt – dort greift onPaste
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      if (tag === 'textarea' || tag === 'input') return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          uploadImageFile(item.getAsFile());
+          return;
+        }
+      }
+    };
+    window.addEventListener('paste', handleGlobalPaste);
+    return () => window.removeEventListener('paste', handleGlobalPaste);
+  }, [hasImage, uploadImageFile]);
 
   const uploadImageFile = useCallback(async (file) => {
     if (!file || !file.type.startsWith('image/')) return;
