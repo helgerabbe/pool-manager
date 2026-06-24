@@ -24,13 +24,25 @@ export default function AufgabenstellungSection({
     onUploadingChange?.(uploading);
   }, [uploading, onUploadingChange]);
 
+  const uploadImageFile = useCallback(async (file) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    setUploading(true);
+    try {
+      const { file_url } = await uploadFile(file);
+      onBildUrlChange(file_url);
+      toast.success('Bild hochgeladen');
+    } catch (err) {
+      toast.error('Bild-Upload fehlgeschlagen: ' + (err?.message || 'Unbekannter Fehler'));
+    } finally {
+      setUploading(false);
+    }
+  }, [onBildUrlChange]);
+
   // Globaler Paste-Listener: fängt Strg+V überall im Dokument ab,
-  // solange noch kein Bild gesetzt ist und der User nicht gerade in einem
-  // anderen Input tippt (dann hat der normale onPaste-Handler Vorrang).
+  // solange noch kein Bild gesetzt ist und der User nicht in einem Input tippt.
   useEffect(() => {
     if (hasImage) return;
     const handleGlobalPaste = (e) => {
-      // Nicht abfangen wenn User in textarea/input tippt – dort greift onPaste
       const tag = document.activeElement?.tagName?.toLowerCase();
       if (tag === 'textarea' || tag === 'input') return;
       const items = e.clipboardData?.items;
@@ -46,20 +58,6 @@ export default function AufgabenstellungSection({
     window.addEventListener('paste', handleGlobalPaste);
     return () => window.removeEventListener('paste', handleGlobalPaste);
   }, [hasImage, uploadImageFile]);
-
-  const uploadImageFile = useCallback(async (file) => {
-    if (!file || !file.type.startsWith('image/')) return;
-    setUploading(true);
-    try {
-      const { file_url } = await uploadFile(file);
-      onBildUrlChange(file_url);
-      toast.success('Bild hochgeladen');
-    } catch (err) {
-      toast.error('Bild-Upload fehlgeschlagen: ' + (err?.message || 'Unbekannter Fehler'));
-    } finally {
-      setUploading(false);
-    }
-  }, [onBildUrlChange]);
 
   const handleBildUpload = (e) => uploadImageFile(e.target.files?.[0]);
 

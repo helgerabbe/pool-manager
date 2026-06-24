@@ -32,26 +32,6 @@ export default function ZusaetzlichesMaterialSection({
     onUploadingChange?.(uploading);
   }, [uploading, onUploadingChange]);
 
-  // Globaler Paste-Listener wenn Bild-Tab aktiv ist
-  useEffect(() => {
-    if (activeTab !== 'image') return;
-    const handleGlobalPaste = (e) => {
-      const tag = document.activeElement?.tagName?.toLowerCase();
-      if (tag === 'textarea' || tag === 'input') return;
-      const items = e.clipboardData?.items;
-      if (!items) return;
-      for (const item of items) {
-        if (item.type.startsWith('image/')) {
-          e.preventDefault();
-          handleImagePasteOrDrop(item.getAsFile());
-          return;
-        }
-      }
-    };
-    window.addEventListener('paste', handleGlobalPaste);
-    return () => window.removeEventListener('paste', handleGlobalPaste);
-  }, [activeTab, handleImagePasteOrDrop]);
-
   const typeFromTab = (tab) => (tab === 'freitext' ? 'free_text' : tab);
 
   const handleImagePasteOrDrop = useCallback((file) => {
@@ -78,6 +58,26 @@ export default function ZusaetzlichesMaterialSection({
     setPasteHighlight(false);
     handleImagePasteOrDrop(e.dataTransfer.files?.[0]);
   }, [handleImagePasteOrDrop]);
+
+  // Globaler Paste-Listener wenn Bild-Tab aktiv ist
+  useEffect(() => {
+    if (activeTab !== 'image') return;
+    const handleGlobalPaste = (e) => {
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      if (tag === 'textarea' || tag === 'input') return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          handleImagePasteOrDrop(item.getAsFile());
+          return;
+        }
+      }
+    };
+    window.addEventListener('paste', handleGlobalPaste);
+    return () => window.removeEventListener('paste', handleGlobalPaste);
+  }, [activeTab, handleImagePasteOrDrop]);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
