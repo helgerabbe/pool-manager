@@ -46,6 +46,7 @@ import EinheitGrundgeruestSection from './EinheitGrundgeruestSection';
 import { hasUnitLevelAccess } from '@/lib/rbac';
 import { base44 } from '@/api/base44Client';
 import EinheitStrukturLebenszyklusBadge from '@/components/workspace/panels/EinheitStrukturLebenszyklusBadge';
+import EinheitCoverImageSection from '@/components/workspace/EinheitCoverImageSection';
 
 /**
  * Markiert eine bereits mit Moodle synchronisierte Einheit als 'modified',
@@ -644,6 +645,12 @@ export default function EinheitUebersichtTab({
               </>
             )}
           </div>
+
+          {/* ── Titelbild ──────────────────────────────────────────────────────── */}
+          <EinheitCoverImageSection
+            einheit={einheit}
+            canEdit={kannEinheitBearbeiten}
+          />
 
           <EinheitGrundgeruestSection
             einheit={einheit}

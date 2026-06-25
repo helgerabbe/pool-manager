@@ -30,6 +30,10 @@
       "type": "string",
       "description": "Titel der Unterrichtseinheit"
     },
+    "cover_image_url": {
+      "type": "string",
+      "description": "URL des Titelbilds der Einheit. Wird als Hintergrundbild auf der Einheit-Kachel im Sch\u00fclerbereich angezeigt. Empfohlenes Format: 16:9, mindestens 800\u00d7450 px."
+    },
     "ist_basismodul": {
       "type": "boolean",
       "default": false,
@@ -87,33 +91,28 @@
     },
     "onboarding_konfiguration": {
       "type": "object",
-      "description": "Einheits-GLOBALE Orientierungs-/Onboarding-Phase, die dem Sch\u00fcler VOR der Dashboard-Wahl vorgeschaltet ist. Bewusst NICHT Teil von lernpfade_konfiguration (war dort fr\u00fcher 4x redundant in jedem Lerntyp-Dashboard). Feste Struktur aus genau vier KI-generierten Elementen: einfuehrung (Kurze Einf\u00fchrung in die Einheit), fragenblock (freiwilliger Selbsteinsch\u00e4tzungs-Fragenblock), einstiegsdiagnose (Wissens-Quiz) und lerntyp_diagnose (KI-Lerntyp-Diagnose / Brian-Gespr\u00e4ch, immer an letzter Stelle). Lehrkr\u00e4fte k\u00f6nnen die STRUKTUR nicht ver\u00e4ndern, nur die Inhalte per Vorschau neu generieren und in dieses Feld speichern. Wird im Tab 8 \u00fcber das 5. Pill 'Onboarding' gepflegt und in der Sch\u00fcleransicht aus genau diesem Feld gelesen (kein Re-Generieren beim Sch\u00fclerklick).",
+      "description": "Einheits-GLOBALE Orientierungs-/Onboarding-Phase.",
       "additionalProperties": true,
       "properties": {
         "einfuehrung": {
           "type": "object",
-          "description": "Snapshot der KI-Einf\u00fchrung (titel, intro, abschnitte[], bild_prompt, imageUrl). Null = noch nicht generiert/gespeichert.",
           "additionalProperties": true
         },
         "fragenblock": {
           "type": "object",
-          "description": "Snapshot des freiwilligen Selbsteinsch\u00e4tzungs-Fragenblocks (titel, intro, fragen[], hinweis). Null = noch nicht generiert/gespeichert.",
           "additionalProperties": true
         },
         "einstiegsdiagnose": {
           "type": "object",
-          "description": "Snapshot der Einstiegsdiagnose (Multiple-Choice-Wissensquiz). Null = noch nicht generiert/gespeichert.",
           "additionalProperties": true
         },
         "lerntyp_diagnose": {
           "type": "object",
-          "description": "Snapshot der KI-Lerntyp-Diagnose (4. Onboarding-Element, immer an letzter Stelle). Brian-Gespr\u00e4ch, das dem Sch\u00fcler bei Unsicherheit eine Lerntyp-Empfehlung gibt. Struktur (titel, intro, gespraechs_leitfaden[], hinweis). Null = noch nicht generiert/gespeichert.",
           "additionalProperties": true
         },
         "generiert_am": {
           "type": "string",
-          "format": "date-time",
-          "description": "Zeitstempel der letzten Speicherung eines Onboarding-Elements."
+          "format": "date-time"
         }
       }
     },
@@ -123,12 +122,10 @@
         "entwurf",
         "aktiv"
       ],
-      "default": "aktiv",
-      "description": "Wizard-Status: 'entwurf' = noch im Wizard, f\u00fcr andere unsichtbar. 'aktiv' = fertig und sichtbar."
+      "default": "aktiv"
     },
     "wizard_max_step": {
-      "type": "integer",
-      "description": "H\u00f6chster erreichter Wizard-Schritt f\u00fcr Draft-Resume"
+      "type": "integer"
     },
     "freigabe_status": {
       "type": "string",
@@ -136,8 +133,7 @@
         "Freigegeben f\u00fcr Bearbeitung",
         "Gesperrt"
       ],
-      "default": "Freigegeben f\u00fcr Bearbeitung",
-      "description": "Bearbeitungsstatus der Einheit: Freigegeben = Lehrer d\u00fcrfen bearbeiten, Gesperrt = nur Lesen"
+      "default": "Freigegeben f\u00fcr Bearbeitung"
     },
     "content_status": {
       "type": "string",
@@ -145,8 +141,7 @@
         "draft",
         "approved"
       ],
-      "default": "approved",
-      "description": "P\u00e4dagogischer Status: Struktur-Container sind immer 'approved' (Auto-Gr\u00fcn)"
+      "default": "approved"
     },
     "sync_status": {
       "type": "string",
@@ -157,31 +152,25 @@
         "modified",
         "to_delete"
       ],
-      "default": "new",
-      "description": "Moodle-Sync-Status: new, pending, synced, modified, to_delete"
+      "default": "new"
     },
     "last_synced_at": {
       "type": "string",
-      "format": "date-time",
-      "description": "Zeitstempel des letzten erfolgreichen Moodle-Exports (nullable)"
+      "format": "date-time"
     },
     "last_exported_at": {
       "type": "string",
-      "format": "date-time",
-      "description": "Zeitstempel des letzten Exports als JSON-Datei (nullable)"
+      "format": "date-time"
     },
     "structural_lock": {
-      "type": "string",
-      "description": "E-Mail des Nutzers, der gerade die Struktur bearbeitet (Structural Lock). Wird auch f\u00fcr Tab 7 (Lernpfad-Architekt) recycelt."
+      "type": "string"
     },
     "structural_locked_at": {
       "type": "string",
-      "format": "date-time",
-      "description": "Zeitstempel des Structural Locks (Auto-Timeout nach 60 Min)"
+      "format": "date-time"
     },
     "lernpfade_konfiguration": {
       "type": "object",
-      "description": "JSON-Mapping der Lernpfade f\u00fcr die vier Lerntypen. Struktur: { <lerntyp>: [ { sektor_id, titel, modus: 'sequenziell'|'frei', sektor_typ, themenfeld_id, titel_snapshot, freischalt_bedingung: { modus: 'sofort'|'nach_sektor', voraussetzung_sektor_id?: string|null }, items: [ { instance_id, type: 'aufgabe'|'system', ref_id, parent_instance_id?: string|null, bundle_config?: { erforderliche_anzahl?: number, modus?: 'sequenziell'|'frei' } } ] } ] }. instance_id = stabile UUID pro Dashboard-Eintrag. parent_instance_id verweist auf das B\u00fcndel-Item. Root-Items haben parent_instance_id=null. Max. 1 Ebene Verschachtelung. bundle_config existiert NUR an B\u00fcndel-Items (System-Bausteine mit baustein_modus='bundle_1ton') und steuert dort: erforderliche_anzahl (X-von-Y, nur Aufgabenb\u00fcndel) und modus (Bearbeitungsreihenfolge). modus (Sektor-Ebene) steuert das Item-Gating innerhalb des Sektors ('sequenziell' = ein Element nach dem anderen freigeschaltet; 'frei' = alle gleich anklickbar). freischalt_bedingung (Schema v5) regelt das SEKTOR-Level-Gating: modus='sofort' = Sektor von Anfang an zug\u00e4nglich; modus='nach_sektor' = Sektor sichtbar-aber-gesperrt, bis der Sektor mit voraussetzung_sektor_id vollst\u00e4ndig erledigt ist (genau EIN Voraussetzungs-Sektor, keine UND/ODER-Logik; Ketten ergeben sich kaskadisch). sektor_typ ist die semantische Klassifikation ('onboarding'|'ueberblick'|'arbeitsphase_themenfeld'|'zwischentest'|'abschlusstest'|'projekte'|'individuell'). themenfeld_id ist nur bei sektor_typ='arbeitsphase_themenfeld' gesetzt. titel_snapshot friert beim Lock den Themenfeld-Titel ein, damit nachtr\u00e4gliche Umbenennungen den Sch\u00fcler-Pfad nicht r\u00fcckwirkend \u00e4ndern. 1:1-Zuordnung pro Lerntyp: dieselbe aufgabe_id darf pro Lerntyp nur einmal vorkommen. Hinweis: Das fr\u00fchere Feld `bearbeitungsmodus` (Schema v4) wird durch `modus` gespiegelt; neue Records nutzen `modus`.",
       "additionalProperties": true,
       "default": {
         "minimalist": [],
@@ -192,8 +181,7 @@
     },
     "lernpfade_schema_version": {
       "type": "integer",
-      "default": 1,
-      "description": "Schema-Version der lernpfade_konfiguration. 1 = legacy (items ohne instance_id). 2 = Phase 1 Dashboard-Epic (Instanz-IDs, parent_instance_id, B\u00fcndel-Hierarchie). 3 = Epic Semantische Sektoren (sektor_typ, themenfeld_id, titel_snapshot; bundle_config.modus). 4 = Sektor-Gating (Feld `bearbeitungsmodus` pro Sektor: 'sequenziell'|'frei'). 5 = Sektor-Freischaltung (Feld `freischalt_bedingung` pro Sektor: { modus: 'sofort'|'nach_sektor', voraussetzung_sektor_id }). Backfill backfillSemantischeSektoren setzt die Version anhand der Default-Tabelle (Sektor-Typ \u00d7 Lerntyp) und erg\u00e4nzt fehlende Abschluss-Bausteine."
+      "default": 1
     },
     "export_lifecycle_status": {
       "type": "string",
@@ -203,87 +191,71 @@
         "export_running",
         "published"
       ],
-      "default": "draft",
-      "description": "Single Source of Truth f\u00fcr den vierstufigen Export-Workflow einer Einheit. 'draft' = in Bearbeitung. 'final_freigegeben' = Schritt 3: alle 4 Dashboards gepr\u00fcft + Pre-Flight bestanden + Inhalte gesperrt; Aufhebung durch Admin/Fachschaftsleitung m\u00f6glich, solange das Export-Team noch nicht 'Export starten' geklickt hat. 'export_running' = Schritt 4a: Export-Center hat 'Export starten' ausgel\u00f6st; Aufhebung in der Einheit nicht mehr m\u00f6glich. 'published' = Schritt 4b: Export-Team hat 'In Moodle/Brian ver\u00f6ffentlicht' best\u00e4tigt \u2192 Versionierung der Einheit beginnt (ge\u00e4nderte Items erhalten 'modified'-Flags)."
+      "default": "draft"
     },
     "export_lifecycle_changed_at": {
       "type": "string",
-      "format": "date-time",
-      "description": "Zeitstempel des letzten \u00dcbergangs in export_lifecycle_status."
+      "format": "date-time"
     },
     "export_lifecycle_changed_by": {
-      "type": "string",
-      "description": "E-Mail der Person, die den letzten \u00dcbergang in export_lifecycle_status ausgel\u00f6st hat."
+      "type": "string"
     },
     "export_started_at": {
       "type": "string",
-      "format": "date-time",
-      "description": "Zeitstempel, an dem das Export-Team 'Export starten' geklickt hat (Schritt 4a)."
+      "format": "date-time"
     },
     "export_started_by": {
-      "type": "string",
-      "description": "E-Mail des Export-Team-Mitglieds, das den Export gestartet hat."
+      "type": "string"
     },
     "export_published_at": {
       "type": "string",
-      "format": "date-time",
-      "description": "Zeitstempel der manuellen Ver\u00f6ffentlichungs-Best\u00e4tigung (Schritt 4b). Markiert den Beginn der Versionierung."
+      "format": "date-time"
     },
     "export_published_by": {
-      "type": "string",
-      "description": "E-Mail des Export-Team-Mitglieds, das die Ver\u00f6ffentlichung best\u00e4tigt hat."
+      "type": "string"
     },
     "version": {
       "type": "integer",
-      "default": 1,
-      "description": "Optimistic Locking Version (inkrementiert bei jedem Update)"
+      "default": 1
     },
     "update_strategy": {
       "type": "string",
       "enum": [
         "no_reset",
         "full_reset"
-      ],
-      "description": "Von der Fachschaftsleitung gew\u00e4hlte Update-Strategie beim erneuten Freigeben einer bereits ver\u00f6ffentlichten Einheit. 'no_reset' = Sch\u00fcler behalten ihren Fortschritt, neue/ge\u00e4nderte Inhalte werden eingeblendet. 'full_reset' = alle Sch\u00fcler m\u00fcssen die Einheit von vorne beginnen. Null = noch nicht gesetzt (kein Update-Delta)."
+      ]
     },
     "update_strategy_empfehlung": {
       "type": "string",
       "enum": [
         "no_reset",
         "full_reset"
-      ],
-      "description": "Automatische Empfehlung der App auf Basis der Delta-Analyse. 'no_reset' bei rein textuellen oder additiven \u00c4nderungen. 'full_reset' nur bei massiven strukturellen \u00c4nderungen."
+      ]
     },
     "update_strategy_analysis": {
       "type": "object",
-      "description": "Ergebnis der Delta-Analyse beim erneuten Freigeben. Enth\u00e4lt: textOnly (boolean), hasNewItems, hasDeletedItems, hasDashboardChanges, deletedCount, newCount, modifiedCount, dashboardChangedLerntypen[].",
       "additionalProperties": true
     },
     "update_strategy_set_by": {
-      "type": "string",
-      "description": "E-Mail der Person, die die Update-Strategie gew\u00e4hlt hat."
+      "type": "string"
     },
     "update_strategy_set_at": {
       "type": "string",
-      "format": "date-time",
-      "description": "Zeitstempel der Strategie-Wahl."
+      "format": "date-time"
     },
     "update_strategy_override": {
       "type": "string",
       "enum": [
         "no_reset",
         "full_reset"
-      ],
-      "description": "Vom Export-Center gesetzter Override der Update-Strategie. Nur gesetzt, wenn der Operator die Entscheidung der Fachschaftsleitung \u00fcberschrieben hat. Null = keine \u00dcberschreibung."
+      ]
     },
     "update_strategy_override_by": {
-      "type": "string",
-      "description": "E-Mail des Export-Center-Operators, der die Strategie \u00fcberschrieben hat."
+      "type": "string"
     },
     "update_strategy_override_at": {
       "type": "string",
-      "format": "date-time",
-      "description": "Zeitstempel des Strategy-Overrides."
+      "format": "date-time"
     }
   },
   "required": [
