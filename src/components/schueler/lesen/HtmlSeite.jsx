@@ -5,6 +5,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import AufgabenstellungBox from './AufgabenstellungBox';
+import HtmlIframePreview from '@/components/allgemeineAufgaben/HtmlIframePreview';
 
 const PHASE_LABEL = { Input: 'Erklärung', 'Übung': 'Übung', Abschluss: 'Abschluss' };
 
@@ -42,12 +43,9 @@ export default function HtmlSeite({ aktivitaet, kat, lernpaketTitel, busy, onErl
                 <Monitor className="w-3.5 h-3.5 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground font-medium">Interaktive HTML-Seite</span>
               </div>
-              <iframe
-                srcDoc={htmlCode}
-                className="w-full border-0"
+              <HtmlIframePreview
+                htmlCode={htmlCode}
                 style={{ minHeight: '480px', height: '70vh' }}
-                sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-                title="HTML-Seite"
               />
             </div>
           )}

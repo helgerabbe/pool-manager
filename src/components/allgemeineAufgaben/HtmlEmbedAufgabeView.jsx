@@ -165,6 +165,10 @@ export default function HtmlEmbedAufgabeView({
   const isSaving = createAufgabe.isPending || updateAufgabe.isPending;
   const showMissionPicker = isMissionApplicable({ aufgaben_typ: 'externe_html_seite', anforderungsebene: defaultAnforderungsebene });
 
+  // Größenwarnung: Base44 hat ein ~200KB Limit pro Record.
+  const htmlSizeKB = Math.round((new TextEncoder().encode(formData.html_code || '').length) / 1024);
+  const htmlZuGross = htmlSizeKB > 150;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
@@ -214,16 +218,26 @@ export default function HtmlEmbedAufgabeView({
 
           {/* HTML-Code (Pflicht) */}
           <div className="space-y-2">
-            <Label>
-              HTML-Code <span className="text-destructive">*</span>
+            <Label className="flex items-center justify-between">
+              <span>HTML-Code <span className="text-destructive">*</span></span>
+              {formData.html_code && (
+                <span className={`text-xs font-mono ${htmlZuGross ? 'text-red-600 font-semibold' : 'text-muted-foreground'}`}>
+                  {htmlSizeKB} KB {htmlZuGross ? '– zu groß!' : ''}
+                </span>
+              )}
             </Label>
             <Textarea
               value={formData.html_code}
               onChange={(e) => set('html_code', e.target.value)}
               placeholder="Füge hier den kompletten HTML-Code ein (z.B. von GeoGebra generiert)..."
               rows={8}
-              className="font-mono text-xs"
+              className={`font-mono text-xs ${htmlZuGross ? 'border-red-400 focus-visible:ring-red-400' : ''}`}
             />
+            {htmlZuGross && (
+              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded p-2">
+                ⚠️ Der HTML-Code ist zu groß ({htmlSizeKB} KB) und kann nicht gespeichert werden (Limit: ~150 KB). Bitte kürze den Code – z.B. externe Bibliotheken per CDN-Link einbinden statt den Code einzufügen.
+              </p>
+            )}
           </div>
 
           {/* Aufgabenstellung (optional) */}
@@ -337,7 +351,7 @@ export default function HtmlEmbedAufgabeView({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Abbrechen
             </Button>
-            <Button type="submit" disabled={isSaving || !isValid} className="gap-2">
+            <Button type="submit" disabled={isSaving || !isValid || htmlZuGross} className="gap-2">
               {isSaving ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />

@@ -19,6 +19,7 @@ import AufgabePreviewModal from '@/components/allgemeineAufgaben/AufgabePreviewM
 import AufgabenArtPicker from '@/components/allgemeineAufgaben/AufgabenArtPicker';
 import HandlungAufgabeView from '@/components/allgemeineAufgaben/HandlungAufgabeView';
 import HtmlEmbedAufgabeView from '@/components/allgemeineAufgaben/HtmlEmbedAufgabeView';
+import HtmlIframePreview from '@/components/allgemeineAufgaben/HtmlIframePreview';
 import SequenzBuilder from '@/components/allgemeineAufgaben/SequenzBuilder';
 import LernzielAnalysePanel from '@/components/allgemeineAufgaben/LernzielAnalysePanel';
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
@@ -410,12 +411,9 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
             HTML-Code (Vorschau)
           </p>
           <div className="rounded-lg border border-border overflow-hidden bg-white">
-            <iframe
-              srcDoc={aufgabe.html_code}
-              className="w-full border-0"
+            <HtmlIframePreview
+              htmlCode={aufgabe.html_code}
               style={{ minHeight: '300px', height: '50vh' }}
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-              title="HTML-Vorschau"
             />
           </div>
         </div>
