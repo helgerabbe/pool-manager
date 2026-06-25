@@ -33,6 +33,7 @@ export default function AktivitaetenKatalog() {
   const [editDialog, setEditDialog] = useState({ open: false, aktivitaet: null });
   const [formSchemaText, setFormSchemaText] = useState('');
   const [formSchemaError, setFormSchemaError] = useState('');
+  const [beschreibungText, setBeschreibungText] = useState('');
 
   // ── Query ──
   const { data: aktivitaeten = [], isLoading } = useQuery({
@@ -117,8 +118,19 @@ export default function AktivitaetenKatalog() {
   });
 
   // ── Handlers ──
+  const updateBeschreibung = useMutation({
+    mutationFn: ({ id, beschreibung, formSchema }) =>
+      base44.entities.AktivitaetenKatalog.update(id, { beschreibung, form_schema: formSchema }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['aktivitaetenKatalog'] });
+      setEditDialog({ open: false, aktivitaet: null });
+      toast.success('Aktivität aktualisiert');
+    },
+  });
+
   const handleEditClick = (aktivitaet) => {
     setFormSchemaText(JSON.stringify(aktivitaet.form_schema || [], null, 2));
+    setBeschreibungText(aktivitaet.beschreibung || '');
     setFormSchemaError('');
     setEditDialog({ open: true, aktivitaet });
   };
@@ -127,7 +139,11 @@ export default function AktivitaetenKatalog() {
     try {
       const parsed = JSON.parse(formSchemaText);
       if (!Array.isArray(parsed)) throw new Error('Form-Schema muss ein Array sein');
-      updateFormSchema.mutate({ id: editDialog.aktivitaet.id, formSchema: parsed });
+      updateBeschreibung.mutate({
+        id: editDialog.aktivitaet.id,
+        beschreibung: beschreibungText,
+        formSchema: parsed,
+      });
     } catch (err) {
       setFormSchemaError(err.message);
     }
@@ -303,6 +319,20 @@ export default function AktivitaetenKatalog() {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
+            <div>
+              <Label className="text-sm font-medium mb-2 block">
+                Beschreibung (für Lehrkräfte)
+              </Label>
+              <Textarea
+                value={beschreibungText}
+                onChange={(e) => setBeschreibungText(e.target.value)}
+                placeholder="Kurze pädagogische Beschreibung dieser Aktivität (1-3 Sätze). Was passiert hier? Wofür ist sie geeignet?"
+                className="min-h-[80px] text-sm"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Wird im Info-Popup angezeigt, wenn eine Lehrkraft auf das ⓘ-Symbol einer Aktivität klickt.
+              </p>
+            </div>
             <div>
               <Label className="text-sm font-medium mb-2 block">
                 Form-Schema (JSON-Array)

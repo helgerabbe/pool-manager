@@ -14,7 +14,6 @@ import LernpaketWizardModal from '@/components/workspace/lernpaketWizard/Lernpak
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
@@ -46,7 +45,6 @@ export default function LernpaketPanel({
   const [localPhasenConfig, setLocalPhasenConfig] = useState(paket.phasen_konfiguration || {});
   const [isSavingDialog, setIsSavingDialog] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
   // Lernpaket-Wizard (Tab 3, Konzept v0.4 §4.1). Nur sichtbar, solange
   // der Edit-Dialog offen ist UND der Nutzer den Lock hält.
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -114,12 +112,12 @@ export default function LernpaketPanel({
         return;
       }
       setLocalPhasenConfig(paket.phasen_konfiguration || {});
-      setEditDialogOpen(true);
+      // Kein Dialog mehr: Bearbeitungsmodus wird direkt inline aktiviert.
+      // canEdit wird durch acquireLock() automatisch true (Hook-State).
     } catch (err) {
       console.error('[LernpaketPanel] acquireLock failed:', err);
       toast.error('Fehler beim Sperren des Lernpakets.');
     } finally {
-      // WICHTIG: in ALLEN Pfaden zurücksetzen, sonst bleibt der Button hängen.
       setIsAcquiringLock(false);
     }
   };
@@ -156,9 +154,8 @@ export default function LernpaketPanel({
     }
   };
 
-  // Abbrechen: Drafts verwerfen, Dialog schließen, Lock garantiert freigeben.
+  // Abbrechen: Drafts verwerfen, Lock garantiert freigeben.
   const handleCancelEditDialog = async () => {
-    setEditDialogOpen(false);
     setLocalPhasenConfig(paket.phasen_konfiguration || {});
     try {
       await releaseLock();
@@ -234,9 +231,7 @@ export default function LernpaketPanel({
       toast.error(apiMsg ? `Fehler beim Speichern: ${apiMsg}` : 'Fehler beim Speichern.');
     } finally {
       setIsSavingDialog(false);
-      if (saveSucceeded) {
-        setEditDialogOpen(false);
-      }
+      // Lock wird in finally freigegeben; canEdit fällt dadurch automatisch auf false.
       try {
         await releaseLock();
       } catch (releaseErr) {
@@ -248,13 +243,11 @@ export default function LernpaketPanel({
 
   React.useEffect(() => {
     setLocalTitel(paket.titel_des_pakets || '');
-    // localPhasenConfig wird NUR beim Öffnen des Dialogs aus paket geseedet
-    // (siehe handleOpenEditDialog). Hintergrund-Refetches dürfen die laufende
-    // User-Eingabe nicht überschreiben.
-    if (!editDialogOpen) {
+    // localPhasenConfig nur übernehmen, wenn nicht gerade bearbeitet wird
+    if (!canEdit) {
       setLocalPhasenConfig(paket.phasen_konfiguration || {});
     }
-  }, [paket.titel_des_pakets, paket.phasen_konfiguration, editDialogOpen]);
+  }, [paket.titel_des_pakets, paket.phasen_konfiguration, canEdit]);
 
   const PHASES = [
     { key: 'Input', label: 'Input (Erarbeitung)', icon: '📚', defaultDisabled: false },
@@ -353,26 +346,44 @@ export default function LernpaketPanel({
           im Strukturboard. */}
       {kannBearbeiten && (
         <div className="flex items-center justify-end gap-2 flex-wrap">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleOpenEditDialog}
-            disabled={isAcquiringLock || canEdit || isLockedByOther || isReleased}
-            title={isReleased ? releasedLockTitle : isLockedByOther ? `🔒 Wird gerade von ${paket.locked_by_email} bearbeitet` : ''}
-            className="gap-2 bg-green-50 border-green-200 text-green-800 hover:bg-green-100 hover:text-green-900"
-          >
-            {isAcquiringLock ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Öffne...
-              </>
-            ) : (
-              <>
-                <PenLine className="w-3.5 h-3.5" />
-                Bearbeiten
-              </>
-            )}
-          </Button>
+          {canEdit ? (
+            /* Im Bearbeitungsmodus: Button zum Speichern & Beenden */
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCancelEditDialog}
+                disabled={isSavingDialog}
+                className="gap-2"
+              >
+                Abbrechen
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSaveEditDialog}
+                disabled={isSavingDialog}
+                className="gap-2"
+              >
+                {isSavingDialog ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                Speichern
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleOpenEditDialog}
+              disabled={isAcquiringLock || isLockedByOther || isReleased}
+              title={isReleased ? releasedLockTitle : isLockedByOther ? `🔒 Wird gerade von ${paket.locked_by_email} bearbeitet` : ''}
+              className="gap-2 bg-green-50 border-green-200 text-green-800 hover:bg-green-100 hover:text-green-900"
+            >
+              {isAcquiringLock ? (
+                <><Loader2 className="w-3.5 h-3.5 animate-spin" />Öffne...</>
+              ) : (
+                <><PenLine className="w-3.5 h-3.5" />Bearbeiten</>
+              )}
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -398,239 +409,133 @@ export default function LernpaketPanel({
       )}
       </div>
 
-      {/* Zugeordnete Aktivitäten (informativ, nur lesend).
-          Wir zeigen IMMER alle aktiven Phasen als Baum an — auch wenn sie noch
-          leer sind. So sieht die Lehrkraft sofort, welche Phasen für dieses
-          Lernpaket konfiguriert sind, und welche Phase noch Inhalt braucht.
-          Deaktivierte Phasen (phasen_konfiguration[phase].disabled === true)
-          werden ausgeblendet, damit der Baum die tatsächliche Konfiguration
-          widerspiegelt. */}
-      <div className="space-y-2">
+      {/* Aktivitäten-Phasen: Im Bearbeitungsmodus inline editierbar,
+          sonst read-only Übersicht. */}
+      <div className="space-y-3">
         <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Aktivitäten</h3>
-        {(() => {
-          const paketAktivitaeten = lernpaketAktivitaeten.filter(a => a.lernpaket_id === paket.id);
-          const phasenConfig = paket.phasen_konfiguration || {};
 
-          // Gruppiere bestehende Aktivitäten nach Phase
-          const byPhase = {};
-          paketAktivitaeten.forEach(a => {
-            if (!byPhase[a.phase]) byPhase[a.phase] = [];
-            byPhase[a.phase].push(a);
-          });
+        {PHASES.map(phase => {
+          const phaseConfig = (canEdit ? localPhasenConfig : (paket.phasen_konfiguration || {}))[phase.key] || {};
+          const isDisabled = phaseConfig.disabled === true;
+          const phaseActivities = lernpaketAktivitaeten.filter(a => a.lernpaket_id === paket.id && a.phase === phase.key);
+          const hasReleasedActivity = phaseActivities.some(a => a.content_status === 'approved');
+          const isExpanded = expandedPhase === phase.key;
 
-          const phaseMeta = {
-            'Input':     { icon: '📚', bg: 'bg-green-50 border-green-200' },
-            'Übung':     { icon: '✏️', bg: 'bg-pink-50 border-pink-200' },
-            'Abschluss': { icon: '🎯', bg: 'bg-blue-50 border-blue-200' },
-          };
+          if (!canEdit && isDisabled) return null;
 
-          const activePhases = ['Input', 'Übung', 'Abschluss'].filter(
-            phase => (phasenConfig[phase] || {}).disabled !== true
-          );
-
-          if (activePhases.length === 0) {
-            return (
-              <div className="p-4 rounded-lg border border-dashed text-center text-sm text-muted-foreground">
-                Alle Phasen wurden deaktiviert.
-              </div>
-            );
-          }
+          const phaseBg = {
+            'Input':     'border-green-200 bg-green-50',
+            'Übung':     'border-pink-200 bg-pink-50',
+            'Abschluss': 'border-blue-200 bg-blue-50',
+          }[phase.key] || 'border-border bg-card';
 
           return (
-            <div className="space-y-3">
-              {activePhases.map(phase => {
-                const activities = byPhase[phase] || [];
-                const meta = phaseMeta[phase];
-                return (
-                  <div key={phase} className="space-y-1.5">
-                    <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1.5">
-                      <span>{meta.icon}</span>
-                      <span>{phase}</span>
-                      <span className="text-muted-foreground/60">
-                        ({activities.length})
-                      </span>
-                    </p>
-                    {activities.length === 0 ? (
-                      <div className="p-2.5 rounded border border-dashed border-border text-xs text-muted-foreground italic">
-                        Noch keine Aktivität zugeordnet
-                      </div>
-                    ) : (
-                      <div className="space-y-1.5">
-                        {[...activities]
+            <div key={phase.key} className={cn('rounded-lg border-2 overflow-hidden', phaseBg)}>
+              {/* Phase-Header */}
+              <div className="flex items-center gap-2 px-3 py-2">
+                <span className="text-base">{phase.icon}</span>
+                <span className="font-semibold text-sm flex-1">{phase.label}</span>
+                <Badge variant="secondary" className="text-xs">{phaseActivities.length}</Badge>
+                {canEdit && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-muted-foreground">Aktiv</span>
+                    <Switch
+                      checked={!isDisabled}
+                      onCheckedChange={() => handlePhaseToggle(phase.key)}
+                      disabled={hasReleasedActivity}
+                      title={hasReleasedActivity ? '🔒 Phase enthält freigegebene Aktivitäten' : ''}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Phase-Inhalt */}
+              {!isDisabled && (
+                <div className="px-3 pb-3">
+                  {canEdit ? (
+                    /* Bearbeitungsmodus: PhaseContent inline */
+                    <PhaseContent
+                      paket={paket}
+                      phaseKey={phase.key}
+                      phaseLabel={phase.label}
+                      kannBearbeiten={kannBearbeiten}
+                      userEmail={userEmail}
+                      queryClient={queryClient}
+                      inEditMode={true}
+                      onNavigate={onNavigate}
+                      onGoToTaskWorkshop={(activityId) => {
+                        onNavigate({ type: 'goto-task-workshop', activityId });
+                      }}
+                      sidebarOpen={sidebarOpen}
+                      setSidebarOpen={setSidebarOpen}
+                    />
+                  ) : (
+                    /* Lesemodus: kompakte Aktivitätenliste */
+                    <div className="space-y-1.5 mt-1">
+                      {phaseActivities.length === 0 ? (
+                        <p className="text-xs text-muted-foreground italic px-1">Noch keine Aktivität zugeordnet</p>
+                      ) : (
+                        [...phaseActivities]
                           .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
                           .map(activity => {
-                          const katalogEntry = aktivitaetenKatalog.find(a => a.id === activity.aktivitaet_id);
-                          const aktivitaetName = katalogEntry?.name || 'Unbekannte Aktivität';
-                          // Vollständig = is_complete; KI-Briefing zählt analog
-                          // zur Sidebar-Logik (SidebarTree.jsx) ebenfalls als
-                          // fertig zur Übergabe an die MBK.
-                          const isKiBriefed =
-                            activity.erstellungs_modus === 'ki' &&
-                            !!activity.ki_briefing &&
-                            typeof activity.ki_briefing === 'object' &&
-                            Object.keys(activity.ki_briefing).length > 0;
-                          const isComplete = activity.is_complete === true || (isKiBriefed && activity.is_complete === true);
-                          return (
-                            <button
-                              key={activity.id}
-                              onClick={() => onNavigate({ type: 'goto-task-workshop', activityId: activity.id })}
-                              className={`group w-full flex items-center gap-2 p-2 rounded border text-xs text-left ${meta.bg} hover:ring-1 hover:ring-primary/40 hover:shadow-sm transition-all cursor-pointer`}
-                              title="Zur Aufgaben-Werkstatt (Tab 4) springen"
-                            >
-                              <span className="text-primary font-semibold shrink-0">▸</span>
-                              <span className="flex-1 text-foreground">{aktivitaetName}</span>
-                              {activity.content_status === 'approved' ? (
-                                <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-300">
-                                  <Lock className="w-2.5 h-2.5" />
-                                  Freigegeben
-                                </span>
-                              ) : isComplete ? (
-                                <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">
-                                  Vollständig
-                                </span>
-                              ) : (
-                                <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
-                                  <AlertTriangle className="w-2.5 h-2.5" />
-                                  Unvollständig
-                                </span>
-                              )}
-                              <ArrowRight className="w-3 h-3 text-muted-foreground/50 group-hover:text-primary shrink-0 transition-colors" />
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })()}
-      </div>
-
-      <Dialog open={editDialogOpen} onOpenChange={(open) => { if (!open) handleCancelEditDialog(); }}>
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
-          <DialogHeader className="shrink-0">
-            <DialogTitle>📦 {paket.titel_des_pakets} bearbeiten</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-6 py-4 flex-1 overflow-y-auto min-h-0">
-            {/* Lernziele werden zentral in Tab 3 ("Lernziele") gepflegt. Hier nur lesender Hinweis. */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-muted-foreground">Lernziele</h3>
-                <span className="text-xs text-muted-foreground">{paketZiele.length} Ziel{paketZiele.length !== 1 ? 'e' : ''}</span>
-              </div>
-              <div className="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800">
-                <Target className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                <span>Lernziele werden zentral im Tab <strong>„Lernziele"</strong> angelegt und bearbeitet.</span>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-muted-foreground">Lernphasen</h3>
-              {PHASES.map(phase => {
-                const phaseConfig = localPhasenConfig[phase.key] || {};
-                const isDisabled = phaseConfig.disabled === true;
-                const isExpanded = expandedPhase === phase.key;
-                const phaseActivities = lernpaketAktivitaeten.filter(a => a.lernpaket_id === paket.id && a.phase === phase.key);
-                // Phase darf nicht deaktiviert werden, wenn sie freigegebene
-                // Aktivitäten enthält — sonst würde der Toggle die Aktivität
-                // (und damit eine freigegebene Inhaltseinheit) unsichtbar
-                // schalten.
-                const hasReleasedActivity = phaseActivities.some(a => a.content_status === 'approved');
-
-                return (
-                  <div key={phase.key} className="space-y-0">
-                    <div className={cn(
-                      'flex items-center gap-3 p-3 rounded-lg border bg-card transition-all',
-                      isDisabled
-                        ? 'opacity-60'
-                        : 'hover:bg-muted hover:border-primary/30'
-                    )}>
-                      <button
-                        onClick={() => !isDisabled && setExpandedPhase(isExpanded ? null : phase.key)}
-                        disabled={isDisabled}
-                        className="flex items-center gap-3 flex-1 cursor-pointer disabled:cursor-not-allowed"
-                      >
-                        <ChevronRight
-                          className={cn(
-                            'w-5 h-5 text-muted-foreground transition-transform shrink-0',
-                            isExpanded && 'rotate-90'
-                          )}
-                        />
-                        <div className="flex items-center gap-2 flex-1">
-                          <span className="text-lg">{phase.icon}</span>
-                          <p className={cn('font-medium text-sm', isDisabled && 'opacity-60')}>
-                            {phase.label}
-                          </p>
-                        </div>
-                        {!isDisabled && phaseActivities.length > 0 && (
-                          <Badge variant="secondary" className="text-xs">
-                            {phaseActivities.length}
-                          </Badge>
-                        )}
-                      </button>
-
-                      {kannBearbeiten && (
-                        <Switch
-                          checked={!isDisabled}
-                          onCheckedChange={() => handlePhaseToggle(phase.key)}
-                          onClick={e => e.stopPropagation()}
-                          disabled={hasReleasedActivity}
-                          title={hasReleasedActivity ? '🔒 Phase enthält freigegebene Aktivitäten und kann nicht deaktiviert werden.' : ''}
-                          className="shrink-0"
-                        />
+                            const katalogEntry = aktivitaetenKatalog.find(a => a.id === activity.aktivitaet_id);
+                            const isComplete = activity.is_complete === true;
+                            return (
+                              <button
+                                key={activity.id}
+                                onClick={() => onNavigate({ type: 'goto-task-workshop', activityId: activity.id })}
+                                className="group w-full flex items-center gap-2 p-2 rounded border border-black/10 bg-white/70 text-xs text-left hover:ring-1 hover:ring-primary/40 hover:shadow-sm transition-all"
+                                title="Zur Aufgaben-Werkstatt (Tab 4) springen"
+                              >
+                                <span className="text-primary font-semibold shrink-0">▸</span>
+                                <span className="flex-1 text-foreground">{katalogEntry?.name || 'Unbekannte Aktivität'}</span>
+                                {activity.content_status === 'approved' ? (
+                                  <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-300">
+                                    <Lock className="w-2.5 h-2.5" />Freigegeben
+                                  </span>
+                                ) : isComplete ? (
+                                  <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">Vollständig</span>
+                                ) : (
+                                  <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                                    <AlertTriangle className="w-2.5 h-2.5" />Unvollständig
+                                  </span>
+                                )}
+                                <ArrowRight className="w-3 h-3 text-muted-foreground/50 group-hover:text-primary shrink-0 transition-colors" />
+                              </button>
+                            );
+                          })
                       )}
                     </div>
-
-                    {isExpanded && !isDisabled && (
-                      <div className="mt-2">
-                        <PhaseContent
-                          paket={paket}
-                          phaseKey={phase.key}
-                          phaseLabel={phase.label}
-                          kannBearbeiten={kannBearbeiten}
-                          userEmail={userEmail}
-                          queryClient={queryClient}
-                          inEditMode={true}
-                          onNavigate={(data) => {
-                            onNavigate(data);
-                          }}
-                          onGoToTaskWorkshop={(activityId) => {
-                            onNavigate({ type: 'goto-task-workshop', activityId });
-                            handleCancelEditDialog();
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                  )}
+                </div>
+              )}
             </div>
-          </div>
+          );
+        })}
+      </div>
 
-          <DialogFooter className="shrink-0 border-t pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancelEditDialog}
-              disabled={isSavingDialog}
-            >
-              Abbrechen
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSaveEditDialog}
-              disabled={isSavingDialog}
-              className="gap-1.5"
-            >
-              {isSavingDialog ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-              Speichern
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Speichern-Button: nur im Bearbeitungsmodus sichtbar */}
+      {canEdit && (
+        <div className="flex items-center justify-end gap-2 pt-2 border-t">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleCancelEditDialog}
+            disabled={isSavingDialog}
+          >
+            Abbrechen
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSaveEditDialog}
+            disabled={isSavingDialog}
+            className="gap-1.5"
+          >
+            {isSavingDialog ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            Speichern & Beenden
+          </Button>
+        </div>
+      )}
 
       <LernpaketWizardModal
         open={wizardOpen}

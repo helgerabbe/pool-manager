@@ -3,10 +3,51 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, AlertTriangle, GripVertical, ArrowRight, ArrowUp, ArrowDown, X, Menu, Lock } from 'lucide-react';
+import { Plus, Trash2, AlertTriangle, GripVertical, ArrowRight, ArrowUp, ArrowDown, X, Menu, Lock, Info, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import DeleteActivityConfirmDialog from '@/components/workspace/DeleteActivityConfirmDialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
+// Info-Popup für eine Aktivität (Beschreibung + Vorschau-Platzhalter)
+function AktivitaetInfoDialog({ open, onOpenChange, katalogEntry }) {
+  if (!katalogEntry) return null;
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Info className="w-4 h-4 text-primary" />
+            {katalogEntry.name}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          {/* Beschreibung */}
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Was ist das?</p>
+            {katalogEntry.beschreibung ? (
+              <p className="text-sm text-foreground leading-relaxed">{katalogEntry.beschreibung}</p>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">Noch keine Beschreibung hinterlegt. Bitte in den Admin-Einstellungen ergänzen.</p>
+            )}
+          </div>
+
+          {/* Vorschau-Platzhalter */}
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+              <Eye className="w-3.5 h-3.5" />
+              Vorschau (Schüleransicht)
+            </p>
+            <div className="rounded-lg border-2 border-dashed border-border bg-muted/30 flex flex-col items-center justify-center py-10 gap-2 text-muted-foreground">
+              <Eye className="w-8 h-8 opacity-20" />
+              <p className="text-xs text-center">Vorschau wird in einer zukünftigen Version verfügbar sein.</p>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function PhaseActivitiesSidebar({
   paket,
@@ -24,6 +65,7 @@ export default function PhaseActivitiesSidebar({
   const queryClient = useQueryClient();
   const [newActivityId, setNewActivityId] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null); // { id, name }
+  const [infoTarget, setInfoTarget] = useState(null); // katalogEntry für Info-Dialog
 
   const { data: aktivitaeten = [] } = useQuery({
     queryKey: ['lernpaketPhaseAktivitaeten', paket.id, phase],
@@ -222,6 +264,14 @@ export default function PhaseActivitiesSidebar({
                             <div className="flex items-center gap-2">
                               <GripVertical className="w-4 h-4 text-muted-foreground shrink-0" />
                               <p className="font-semibold text-sm">{katalog?.name || '…'}</p>
+                              {/* Info-Button */}
+                              <button
+                                onClick={() => setInfoTarget(katalog)}
+                                className="p-0.5 rounded text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                                title="Informationen zu dieser Aktivität"
+                              >
+                                <Info className="w-3.5 h-3.5" />
+                              </button>
                               {activity.content_status === 'approved' ? (
                                 <span title="Aktivität ist freigegeben und gesperrt" className="flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full border border-green-300">
                                   <Lock className="w-3 h-3" />
@@ -323,6 +373,12 @@ export default function PhaseActivitiesSidebar({
           </div>
         </div>
       </aside>
+
+      <AktivitaetInfoDialog
+        open={!!infoTarget}
+        onOpenChange={(open) => { if (!open) setInfoTarget(null); }}
+        katalogEntry={infoTarget}
+      />
 
       <DeleteActivityConfirmDialog
         open={!!deleteTarget}

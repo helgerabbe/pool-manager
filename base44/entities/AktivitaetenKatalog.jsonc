@@ -6,6 +6,10 @@
       "type": "string",
       "description": "Name der Aktivit\u00e4t (z.B. 'Video anschauen')"
     },
+    "beschreibung": {
+      "type": "string",
+      "description": "Kurze p\u00e4dagogische Beschreibung dieser Aktivit\u00e4t (1-3 S\u00e4tze). Wird im Info-Popup f\u00fcr Lehrkr\u00e4fte angezeigt, damit sie wissen, was diese Aktivit\u00e4t bewirkt und wof\u00fcr sie geeignet ist."
+    },
     "phase": {
       "type": "string",
       "enum": [
