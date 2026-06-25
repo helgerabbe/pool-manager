@@ -27,6 +27,7 @@ import SystemBausteineTable from '@/components/admin/SystemBausteineTable';
 import SchulStammdatenCard from '@/components/admin/SchulStammdatenCard';
 import NomenklaturManagerView from '@/components/admin/nomenklatur/NomenklaturManagerView';
 import DashboardVorlagenTab from '@/components/admin/dashboardVorlage/DashboardVorlagenTab';
+import GitHubConnectorCard from '@/components/admin/GitHubConnectorCard';
 
 const KATEGORIEN = ['Diagnostik', 'Input', 'Übung', 'Projekt', 'Prüfung'];
 
@@ -107,6 +108,7 @@ export default function AdminSettings() {
             { value: 'aktivitaeten', label: 'Aktivitäten' },
             { value: 'systembausteine', label: 'Systembausteine' },
             { value: 'nomenklatur', label: 'Nomenklatur' },
+            { value: 'integrationen', label: 'Integrationen' },
           ].map((tab) => (
             <TabsTrigger
               key={tab.value}
@@ -264,6 +266,11 @@ export default function AdminSettings() {
         {/* Nomenklatur-Manager (AP2) — Sprache der Schule pro Fach */}
         <TabsContent value="nomenklatur" className="mt-4">
           <NomenklaturManagerView />
+        </TabsContent>
+
+        {/* Integrationen — externe Datenquellen (GitHub etc.) */}
+        <TabsContent value="integrationen" className="mt-4">
+          <GitHubConnectorCard />
         </TabsContent>
 
         {/* Systembausteine (globaler Pool für Tab „Dashboards") */}
