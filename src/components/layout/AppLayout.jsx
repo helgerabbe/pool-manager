@@ -45,7 +45,7 @@ function useActiveEinheit(location) {
   // /einheiten/:id  → letzten Pfad-Abschnitt nutzen
   const pathParts = location.pathname.split('/').filter(Boolean);
   const einheitFromPath =
-    pathParts[0] === 'einheiten' && pathParts[1] && pathParts[1] !== 'create'
+    (pathParts[0] === 'einheiten' || pathParts[0] === 'basismodule') && pathParts[1] && pathParts[1] !== 'create'
       ? pathParts[1]
       : null;
   const einheitId = einheitFromQuery || einheitFromPath;
@@ -53,7 +53,8 @@ function useActiveEinheit(location) {
   const isWorkspace =
     location.pathname === '/workspace' ||
     location.pathname.startsWith('/einheiten/') ||
-    location.pathname.startsWith('/einheit/');
+    location.pathname.startsWith('/einheit/') ||
+    location.pathname.startsWith('/basismodule/');
 
   const { data: einheiten = [] } = useQuery({
     queryKey: ['einheiten'],
