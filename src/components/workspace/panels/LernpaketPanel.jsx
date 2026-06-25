@@ -44,7 +44,7 @@ export default function LernpaketPanel({
   const [localTitel, setLocalTitel] = useState(paket.titel_des_pakets || '');
   const [localPhasenConfig, setLocalPhasenConfig] = useState(paket.phasen_konfiguration || {});
   const [isSavingDialog, setIsSavingDialog] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   // Lernpaket-Wizard (Tab 3, Konzept v0.4 §4.1). Nur sichtbar, solange
   // der Edit-Dialog offen ist UND der Nutzer den Lock hält.
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -466,8 +466,6 @@ export default function LernpaketPanel({
                       onGoToTaskWorkshop={(activityId) => {
                         onNavigate({ type: 'goto-task-workshop', activityId });
                       }}
-                      sidebarOpen={sidebarOpen}
-                      setSidebarOpen={setSidebarOpen}
                     />
                   ) : (
                     /* Lesemodus: kompakte Aktivitätenliste */
