@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { invokeFunction } from '@/utils/functionsHelper';
 import { Button } from '@/components/ui/button';
@@ -19,10 +19,17 @@ export default function EinheitCoverImageSection({ einheit, canEdit }) {
   const fileRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [localUrl, setLocalUrl] = useState(einheit.cover_image_url || null);
 
-  const currentUrl = einheit.cover_image_url || null;
+  // Sync wenn einheit von außen aktualisiert wird
+  React.useEffect(() => {
+    setLocalUrl(einheit.cover_image_url || null);
+  }, [einheit.cover_image_url]);
+
+  const currentUrl = localUrl;
 
   const save = async (url) => {
+    setLocalUrl(url); // sofort anzeigen
     await invokeFunction('updateEinheitSecure', {
       einheit_id: einheit.id,
       cover_image_url: url,
