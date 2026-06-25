@@ -67,8 +67,7 @@ export default function ImageLabelingEditor({
   const [dragStart, setDragStart] = useState(null);
   const [hoveredZoneIdx, setHoveredZoneIdx] = useState(null);
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
+  const handleImageFile = async (file) => {
     if (!file) return;
 
     setUploading(true);
@@ -101,6 +100,20 @@ export default function ImageLabelingEditor({
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleImageUpload = async (e) => {
+    await handleImageFile(e.target.files?.[0]);
+  };
+
+  const handlePaste = async (e) => {
+    if (readOnly || uploading) return;
+    const items = Array.from(e.clipboardData?.items || []);
+    const imageItem = items.find(item => item.type.startsWith('image/'));
+    if (!imageItem) return;
+    e.preventDefault();
+    const file = imageItem.getAsFile();
+    await handleImageFile(file);
   };
 
   // Helfer: State setzen. onChange wird via useEffect synchron gemeldet,
@@ -338,72 +351,74 @@ export default function ImageLabelingEditor({
             disabled={uploading}
           />
 
-          {data.backgroundImage ? (
-            <div className="px-3 py-2.5 rounded-lg bg-green-50 border border-green-200 text-sm text-green-800 flex items-center justify-between gap-3">
-              <span className="truncate flex items-center gap-2">
-                <span>✓</span>
-                <span className="truncate">Bild hochgeladen</span>
-              </span>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="h-7 text-xs"
-                >
-                  Ersetzen
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    const previousUrl = data.backgroundImage;
-                    if (previousUrl && trackingContext?.sourceEntity && trackingContext?.sourceRecordId) {
-                      trackOrphanedFile({
-                        fileUrl: previousUrl,
-                        sourceEntity: trackingContext.sourceEntity,
-                        sourceRecordId: trackingContext.sourceRecordId,
-                        fieldName: 'backgroundImage',
-                        contextEinheitId: trackingContext.einheitId,
-                        contextLernpaketId: trackingContext.lernpaketId,
-                      });
-                    }
-                    applyChange(d => ({ ...d, backgroundImage: '' }));
-                  }}
-                  className="h-7 text-xs text-green-700 hover:text-green-900"
-                >
-                  Entfernen
-                </Button>
+          <div onPaste={handlePaste}>
+            {data.backgroundImage ? (
+              <div className="px-3 py-2.5 rounded-lg bg-green-50 border border-green-200 text-sm text-green-800 flex items-center justify-between gap-3">
+                <span className="truncate flex items-center gap-2">
+                  <span>✓</span>
+                  <span className="truncate">Bild hochgeladen</span>
+                </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="h-7 text-xs"
+                  >
+                    Ersetzen
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const previousUrl = data.backgroundImage;
+                      if (previousUrl && trackingContext?.sourceEntity && trackingContext?.sourceRecordId) {
+                        trackOrphanedFile({
+                          fileUrl: previousUrl,
+                          sourceEntity: trackingContext.sourceEntity,
+                          sourceRecordId: trackingContext.sourceRecordId,
+                          fieldName: 'backgroundImage',
+                          contextEinheitId: trackingContext.einheitId,
+                          contextLernpaketId: trackingContext.lernpaketId,
+                        });
+                      }
+                      applyChange(d => ({ ...d, backgroundImage: '' }));
+                    }}
+                    className="h-7 text-xs text-green-700 hover:text-green-900"
+                  >
+                    Entfernen
+                  </Button>
+                </div>
               </div>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => !uploading && fileInputRef.current?.click()}
-              disabled={uploading}
-              className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed transition-colors ${
-                uploading
-                  ? 'border-input opacity-60 cursor-not-allowed'
-                  : 'border-input hover:border-primary hover:bg-primary/5 cursor-pointer'
-              }`}
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                  <span className="text-sm text-muted-foreground">Lädt hoch…</span>
-                </>
-              ) : (
-                <>
-                  <Upload className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium text-foreground">Bild auswählen</span>
-                  <span className="text-xs text-muted-foreground">(JPG, PNG – bis 10 MB)</span>
-                </>
-              )}
-            </button>
-          )}
+            ) : (
+              <button
+                type="button"
+                onClick={() => !uploading && fileInputRef.current?.click()}
+                disabled={uploading}
+                className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed transition-colors ${
+                  uploading
+                    ? 'border-input opacity-60 cursor-not-allowed'
+                    : 'border-input hover:border-primary hover:bg-primary/5 cursor-pointer'
+                }`}
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                    <span className="text-sm text-muted-foreground">Lädt hoch…</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium text-foreground">Bild auswählen</span>
+                    <span className="text-xs text-muted-foreground">(JPG, PNG – bis 10 MB, oder Strg+V)</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
