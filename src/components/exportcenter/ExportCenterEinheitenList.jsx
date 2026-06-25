@@ -21,7 +21,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Send, AlertTriangle, CheckCircle2, Clock, Pencil, Sparkles, RefreshCw } from 'lucide-react';
+import { Search, Send, AlertTriangle, CheckCircle2, Clock, Pencil, Sparkles, RefreshCw, Archive } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -161,7 +161,12 @@ export default function ExportCenterEinheitenList({ selectedEinheitId, onSelect 
                   >
                     <div className="flex items-start gap-2">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate">
+                        <p className="text-sm font-semibold truncate flex items-center gap-1.5">
+                          {e.ist_basismodul && (
+                            <span className="inline-flex items-center gap-0.5 shrink-0 text-[10px] font-semibold text-amber-700 bg-amber-100 border border-amber-300 rounded px-1 py-0.5">
+                              <Archive className="w-3 h-3" /> Basis
+                            </span>
+                          )}
                           {e.titel_der_einheit}
                         </p>
                         <p className="text-[11px] text-muted-foreground">
