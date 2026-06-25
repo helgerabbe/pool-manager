@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Upload, Plus, Trash2, Loader2, Info } from 'lucide-react';
+import { Upload, Plus, Trash2, Loader2, Info, Clipboard } from 'lucide-react';
 import { toast } from 'sonner';
 
 const DEFAULT_BADGE_WIDTH = 150;
@@ -352,6 +352,34 @@ export default function ImageLabelingEditor({
           />
 
           <div onPaste={handlePaste}>
+            {!data.backgroundImage && !uploading && (
+              <div className="flex gap-2 mb-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const items = await navigator.clipboard.read();
+                      for (const item of items) {
+                        const imageType = item.types.find(t => t.startsWith('image/'));
+                        if (imageType) {
+                          const blob = await item.getType(imageType);
+                          const file = new File([blob], 'clipboard.png', { type: imageType });
+                          await handleImageFile(file);
+                          return;
+                        }
+                      }
+                      toast.error('Kein Bild in der Zwischenablage gefunden.');
+                    } catch {
+                      toast.error('Zugriff auf Zwischenablage verweigert. Bitte Strg+V in dem Bereich versuchen.');
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-dashed border-input text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                >
+                  <Clipboard className="w-3.5 h-3.5" />
+                  Aus Zwischenablage einfügen
+                </button>
+              </div>
+            )}
             {data.backgroundImage ? (
               <div className="px-3 py-2.5 rounded-lg bg-green-50 border border-green-200 text-sm text-green-800 flex items-center justify-between gap-3">
                 <span className="truncate flex items-center gap-2">
