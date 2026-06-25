@@ -28,7 +28,7 @@ function AktivitaetenPalette({ phaseAktivitaeten, droppableId }) {
           {phaseAktivitaeten.length === 0 ? (
             <p className="text-xs text-muted-foreground italic px-1">Keine Aktivitäten für diese Phase verfügbar.</p>
           ) : (
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-3 gap-1.5">
               {phaseAktivitaeten.map((akt, idx) => (
                 <AktivitaetPaletteChip key={akt.id} katalogEntry={akt} index={idx} />
               ))}
