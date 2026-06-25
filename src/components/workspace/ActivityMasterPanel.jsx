@@ -15,7 +15,7 @@ import { base44 } from '@/api/base44Client';
 import { useLernpaketLock } from '@/hooks/useLocks';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Crown, Plus, Loader2, Save, Pencil, Check, Lock, Eye, ListChecks, Monitor } from 'lucide-react';
+import { Crown, Plus, Loader2, Save, Pencil, Check, Lock, Eye, ListChecks, Monitor, Bot } from 'lucide-react';
 import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
@@ -31,6 +31,7 @@ import KompaktwissenPreviewModal from '@/components/workspace/preview/Kompaktwis
 import AufgabensequenzPreviewModal from '@/components/workspace/preview/AufgabensequenzPreviewModal';
 import HtmlSeitePreviewModal from '@/components/workspace/preview/HtmlSeitePreviewModal';
 import AufgabensequenzModal from '@/components/workspace/AufgabensequenzModal';
+import KIQuizModal from '@/components/workspace/KIQuizModal';
 import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import OffeneAufgabePreviewModal from '@/components/workspace/preview/OffeneAufgabePreviewModal';
 import SyncStatusBadge from '@/components/release/SyncStatusBadge';
@@ -205,6 +206,8 @@ export default function ActivityMasterPanel({
   const [aufgabensequenzPreviewOpen, setAufgabensequenzPreviewOpen] = useState(false);
   const [htmlSeitePreviewOpen, setHtmlSeitePreviewOpen] = useState(false);
   const [aufgabensequenzEditOpen, setAufgabensequenzEditOpen] = useState(false);
+  // KI-Quiz: kein eigenes Preview-Modal nötig (Fragen in Read-Only gezeigt)
+  const [kiQuizEditOpen, setKiQuizEditOpen] = useState(false);
   const [acquiringLock, setAcquiringLock] = useState(false);
   const modalUsesExistingLockRef = React.useRef(false);
 
@@ -749,7 +752,7 @@ export default function ActivityMasterPanel({
             {kannBearbeiten && (
               <div className="flex justify-end gap-2">
                 {/* Schüler-Vorschau (Stufe-1-Pilot, für "Text lesen", "Video / Audio" und "Link / URL"). */}
-                {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio') || catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url') || catalogEntry?.name?.toLowerCase().includes('ki-tutor') || catalogEntry?.name?.toLowerCase().includes('bestätigen') || catalogEntry?.name?.toLowerCase().includes('offene') || catalogEntry?.name?.toLowerCase().includes('bildbeschriftung') || catalogEntry?.name?.toLowerCase().includes('lehrwerk') || catalogEntry?.name?.toLowerCase().includes('quelle') || catalogEntry?.name?.toLowerCase().includes('kompaktwissen') || catalogEntry?.name?.toLowerCase().includes('aufgabensequenz') || catalogEntry?.name?.toLowerCase().includes('html-seite') || catalogEntry?.name?.toLowerCase().includes('html')) && (
+                {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio') || catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url') || catalogEntry?.name?.toLowerCase().includes('ki-tutor') || catalogEntry?.name?.toLowerCase().includes('bestätigen') || catalogEntry?.name?.toLowerCase().includes('offene') || catalogEntry?.name?.toLowerCase().includes('bildbeschriftung') || catalogEntry?.name?.toLowerCase().includes('lehrwerk') || catalogEntry?.name?.toLowerCase().includes('quelle') || catalogEntry?.name?.toLowerCase().includes('kompaktwissen') || catalogEntry?.name?.toLowerCase().includes('aufgabensequenz') || catalogEntry?.name?.toLowerCase().includes('html-seite') || catalogEntry?.name?.toLowerCase().includes('html')) && !catalogEntry?.name?.toLowerCase().includes('ki-quiz') && (
                   <Button
                     variant="outline"
                     onClick={() => {
@@ -933,6 +936,38 @@ export default function ActivityMasterPanel({
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground italic">Noch kein HTML-Code hinterlegt.</p>
+                )}
+              </div>
+            ) : catalogEntry?.name?.toLowerCase().includes('ki-quiz') ? (
+              /* KI-Quiz: Read-Only-Vorschau */
+              <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+                {fieldValues.einleitung && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-900 mb-3">
+                    <p className="whitespace-pre-wrap leading-relaxed">{fieldValues.einleitung}</p>
+                  </div>
+                )}
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <Bot className="w-3.5 h-3.5 text-violet-500" />
+                  KI-Quiz ({(Array.isArray(fieldValues.ki_quiz_fragen) ? fieldValues.ki_quiz_fragen.length : 0)} Fragen)
+                </p>
+                {(Array.isArray(fieldValues.ki_quiz_fragen) && fieldValues.ki_quiz_fragen.length > 0) ? (
+                  <div className="space-y-2">
+                    {fieldValues.ki_quiz_fragen.map((f, i) => (
+                      <div key={f.id || i} className="flex items-start gap-2 p-2.5 rounded-md bg-violet-50/50 border border-violet-100 text-xs">
+                        <span className="shrink-0 w-5 h-5 rounded-full bg-violet-200 text-violet-700 text-[10px] font-bold flex items-center justify-center mt-0.5">
+                          {i + 1}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-foreground">{f.frage || <span className="italic text-muted-foreground">Noch keine Frage eingegeben</span>}</p>
+                          {f.musterloesung && (
+                            <p className="text-muted-foreground mt-0.5 line-clamp-2 text-[11px]">Musterlösung: {f.musterloesung}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Noch keine Fragen definiert.</p>
                 )}
               </div>
             ) : catalogEntry?.name?.toLowerCase().includes('aufgabensequenz') ? (
@@ -1178,7 +1213,19 @@ export default function ActivityMasterPanel({
               );
             })()}
 
-              {catalogEntry?.name?.toLowerCase().includes('aufgabensequenz') ? (
+              {catalogEntry?.name?.toLowerCase().includes('ki-quiz') ? (
+                <KIQuizModal
+                  open={editModalOpen}
+                  onOpenChange={(isOpen) => { if (!isOpen) handleModalCancel(); }}
+                  catalogEntry={catalogEntry}
+                  initialFieldValues={{ ...fieldValues, moodle_sync_status: activityRecord?.moodle_sync_status }}
+                  onSave={handleModalSave}
+                  onCancel={handleModalCancel}
+                  onReset={handleModalReset}
+                  isSaving={saveFieldsMutation.isPending}
+                  parentLernpaketName={parentLernpaketName || ''}
+                />
+              ) : catalogEntry?.name?.toLowerCase().includes('aufgabensequenz') ? (
                 <AufgabensequenzModal
                   open={editModalOpen}
                   onOpenChange={(isOpen) => { if (!isOpen) handleModalCancel(); }}
