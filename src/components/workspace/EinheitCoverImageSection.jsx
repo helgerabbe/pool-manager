@@ -87,6 +87,16 @@ export default function EinheitCoverImageSection({ einheit, canEdit }) {
         className="relative w-full rounded-xl border overflow-hidden bg-muted/30"
         style={{ aspectRatio: '16/9' }}
       >
+        {/* Lade-Overlay beim Generieren/Uploaden */}
+        {(generating || uploading) && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black/60 text-white rounded-xl">
+            <Loader2 className="w-8 h-8 animate-spin" />
+            <p className="text-sm font-medium">
+              {generating ? 'KI erstellt Titelbild … (ca. 10–15 Sek.)' : 'Bild wird hochgeladen …'}
+            </p>
+          </div>
+        )}
+
         {currentUrl ? (
           <>
             <img
@@ -94,7 +104,7 @@ export default function EinheitCoverImageSection({ einheit, canEdit }) {
               alt="Titelbild"
               className="w-full h-full object-cover"
             />
-            {canEdit && (
+            {canEdit && !generating && !uploading && (
               <button
                 onClick={handleDelete}
                 className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/50 text-white hover:bg-destructive transition-colors"
