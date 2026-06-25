@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { Save, Loader2, Plus, Trash2, GripVertical, FileText, ListChecks, ChevronUp, ChevronDown, Eye } from 'lucide-react';
+import { Save, Loader2, Plus, Trash2, GripVertical, FileText, ListChecks, ChevronUp, ChevronDown, Eye, Bot, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Generiere eine einfache ID ohne externe Abhaengigkeit.
@@ -27,7 +27,7 @@ function uid() {
 }
 
 const EMPTY_MATERIAL = { material_typ: 'text', inhalt: '', url: '', datei_url: '', beschreibung: '', transkript: '' };
-const EMPTY_AUFGABE = { aufgabenstellung: '', input_erforderlich: true, musterloesung: '' };
+const EMPTY_AUFGABE = { aufgabenstellung: '', input_erforderlich: true, musterloesung: '', feedback_modus: 'musterloesung' };
 
 const MATERIAL_TYPEN = [
   { value: 'text', label: 'Text' },
@@ -152,12 +152,57 @@ function SchrittEditor({ schritt, onChange }) {
           Schueler muss Texteingabe machen
         </Label>
       </div>
+      {/* Feedback-Modus */}
       <div className="space-y-2">
-        <Label>Musterlösung (optional – wird dem Schüler nach Abgabe angezeigt)</Label>
+        <Label>Rückmeldung nach der Abgabe</Label>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setAuf('feedback_modus', 'musterloesung')}
+            className={cn(
+              'flex-1 flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors',
+              auf.feedback_modus !== 'ki'
+                ? 'border-primary bg-primary/5 text-primary'
+                : 'border-border bg-background text-muted-foreground hover:bg-muted/50'
+            )}
+          >
+            <BookOpen className="w-4 h-4 shrink-0" />
+            Musterlösung anzeigen
+          </button>
+          <button
+            type="button"
+            onClick={() => setAuf('feedback_modus', 'ki')}
+            className={cn(
+              'flex-1 flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors',
+              auf.feedback_modus === 'ki'
+                ? 'border-violet-500 bg-violet-50 text-violet-700'
+                : 'border-border bg-background text-muted-foreground hover:bg-muted/50'
+            )}
+          >
+            <Bot className="w-4 h-4 shrink-0" />
+            KI-Rückmeldung
+          </button>
+        </div>
+        {auf.feedback_modus === 'ki' && (
+          <p className="text-xs text-muted-foreground bg-violet-50 border border-violet-100 rounded-md px-3 py-2">
+            Die KI bewertet die Schülerantwort einmalig anhand der Musterlösung und gibt eine kurze qualitative Rückmeldung. Kein Chat.
+          </p>
+        )}
+      </div>
+      <div className="space-y-2">
+        <Label>
+          {auf.feedback_modus === 'ki'
+            ? 'Musterlösung (Grundlage für die KI-Bewertung – nicht direkt sichtbar für Schüler)'
+            : 'Musterlösung (optional – wird dem Schüler nach Abgabe angezeigt)'}
+        </Label>
         <Textarea
           value={auf.musterloesung || ''}
           onChange={(e) => setAuf('musterloesung', e.target.value)}
-          placeholder="Was wäre die richtige Antwort? Leer lassen, wenn keine Musterlösung nötig ist."
+          placeholder={
+            auf.feedback_modus === 'ki'
+              ? 'Erwartete Antwort / Kernaspekte, auf deren Grundlage die KI bewertet …'
+              : 'Was wäre die richtige Antwort? Leer lassen, wenn keine Musterlösung nötig ist.'
+          }
           className="min-h-[100px]"
         />
       </div>
