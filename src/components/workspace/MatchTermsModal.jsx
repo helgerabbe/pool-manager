@@ -301,6 +301,12 @@ export default function MatchTermsModal({
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [editorData, setEditorData] = useState({ instruction: '', pairs: [], distractors: [] });
+  // Stabiler Remount-Schlüssel für den ManualEditor. Wird NUR erhöht, wenn der
+  // Editor mit komplett neuen Inhalten neu aufgesetzt werden muss (Öffnen,
+  // KI-Übernahme) — NICHT bei jedem Tastendruck. Früher hing der key an
+  // JSON.stringify(editorData), wodurch der Editor bei jeder Eingabe neu
+  // gemountet wurde und das Eingabefeld nach jedem Buchstaben den Fokus verlor.
+  const [editorKey, setEditorKey] = useState(0);
 
   // Re-Init nicht nur beim Öffnen, sondern auch wenn die DB-Werte erst NACH dem
   // Öffnen eintreffen (z.B. nach Lock-Erwerb + Query-Refetch). Wir vergleichen
@@ -336,6 +342,7 @@ export default function MatchTermsModal({
     setIsReleased(src.content_status === 'approved');
     setSavedReleased(src.content_status === 'approved');
     setEditorData({ instruction: src.instruction || '', pairs, distractors });
+    setEditorKey(k => k + 1); // Editor mit frischen DB-Inhalten neu aufsetzen
     setActiveTab('manual');
     setDeleteConfirm(false);
   }, [open, initialData]);
@@ -398,6 +405,7 @@ export default function MatchTermsModal({
         distractors: mergedDistractors,
       };
     });
+    setEditorKey(k => k + 1); // Editor mit ergänzten KI-Inhalten neu aufsetzen
     setActiveTab('manual');
   };
 
@@ -450,7 +458,7 @@ export default function MatchTermsModal({
         <div className="flex-1 overflow-y-auto px-6 py-5 min-h-0">
           {activeTab === 'manual' ? (
             <ManualEditor
-              key={JSON.stringify(editorData)} // re-mount wenn KI-Daten übernommen werden
+              key={editorKey} // re-mount nur beim Öffnen / bei KI-Übernahme, NICHT bei jeder Eingabe
               data={editorData}
               onChange={setEditorData}
             />
