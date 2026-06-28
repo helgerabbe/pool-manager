@@ -22,10 +22,11 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Save, Loader2 } from 'lucide-react';
+import { Save, Loader2, Info, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MissionPicker from '@/components/missionen/MissionPicker';
 import { isMissionApplicable } from '@/lib/missionen';
+import AufgabenstellungDateiUpload from './AufgabenstellungDateiUpload';
 
 const EMPTY_FORM = {
   themenfeld_id: null,
@@ -33,8 +34,8 @@ const EMPTY_FORM = {
   aufgabenstellung: '',
   aufgaben_bild_url: '',
   hinweise_zum_material: '',
-  ergebnis_form: '',
-  ergebnis_dateiformat: '',
+  aufgabenstellung_datei_url: '',
+  aufgabenstellung_datei_name: '',
   mission_type: null,
 };
 
@@ -59,8 +60,8 @@ export default function HandlungAufgabeView({
         aufgabenstellung: initialData.aufgabenstellung || '',
         aufgaben_bild_url: initialData.aufgaben_bild_url || '',
         hinweise_zum_material: initialData.hinweise_zum_material || '',
-        ergebnis_form: initialData.ergebnis_form || '',
-        ergebnis_dateiformat: initialData.ergebnis_dateiformat || '',
+        aufgabenstellung_datei_url: initialData.aufgabenstellung_datei_url || '',
+        aufgabenstellung_datei_name: initialData.aufgabenstellung_datei_name || '',
         mission_type: initialData.mission_type || null,
       });
     } else {
@@ -84,8 +85,8 @@ export default function HandlungAufgabeView({
         aufgabenstellung: data.aufgabenstellung || null,
         aufgaben_bild_url: data.aufgaben_bild_url || null,
         hinweise_zum_material: data.hinweise_zum_material || null,
-        ergebnis_form: data.ergebnis_form || null,
-        ergebnis_dateiformat: data.ergebnis_dateiformat || null,
+        aufgabenstellung_datei_url: data.aufgabenstellung_datei_url || null,
+        aufgabenstellung_datei_name: data.aufgabenstellung_datei_name || null,
         mission_type: data.mission_type || null,
         content_status: 'draft',
         sync_status: 'new',
@@ -107,8 +108,8 @@ export default function HandlungAufgabeView({
         aufgabenstellung: data.aufgabenstellung || null,
         aufgaben_bild_url: data.aufgaben_bild_url || null,
         hinweise_zum_material: data.hinweise_zum_material || null,
-        ergebnis_form: data.ergebnis_form || null,
-        ergebnis_dateiformat: data.ergebnis_dateiformat || null,
+        aufgabenstellung_datei_url: data.aufgabenstellung_datei_url || null,
+        aufgabenstellung_datei_name: data.aufgabenstellung_datei_name || null,
         mission_type: data.mission_type || null,
       }),
     onSuccess: () => {
@@ -147,6 +148,33 @@ export default function HandlungAufgabeView({
             Eine Aufgabe, die Schüler mit physischem Material in der Realität bearbeiten – ohne KI-Tutor.
           </p>
         </DialogHeader>
+
+        {/* Lehrer-Hinweis: So ist die Handlungsaufgabe gedacht */}
+        <div className="flex items-start gap-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
+          <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <div className="text-xs text-amber-900 leading-relaxed space-y-1">
+            <p className="font-semibold">So funktioniert eine Handlungsaufgabe:</p>
+            <p>
+              Sie findet im echten Leben statt: Das Material und der Aufgabenzettel liegen
+              im Fachraum bereit. Die Schüler bearbeiten die Aufgabe dort und <strong>zeigen
+              ihr Ergebnis anschließend kurz der Lehrkraft vor</strong> – eine digitale
+              Abgabe ist hier bewusst nicht vorgesehen.
+            </p>
+          </div>
+        </div>
+
+        {/* Hinweis: das sieht der Schüler später */}
+        <div className="flex items-start gap-3 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+          <div className="text-xs text-emerald-900 leading-relaxed">
+            <p className="font-semibold mb-0.5">Das sieht der Schüler beim Abschluss:</p>
+            <p className="italic">
+              „Zeig dein Ergebnis jetzt bitte einmal kurz deiner Lehrkraft vor und
+              räume die Materialien wieder sauber weg – der Nächste möchte auch damit
+              arbeiten."
+            </p>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Themenfeld (Pflicht) */}
@@ -219,38 +247,22 @@ export default function HandlungAufgabeView({
             />
           </div>
 
-          {/* Ergebnisform + Dateiformat */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Ergebnisform (optional)</Label>
-              <select
-                value={formData.ergebnis_form || ''}
-                onChange={(e) => set('ergebnis_form', e.target.value || null)}
-                className="w-full h-9 px-3 border border-border rounded-lg text-sm bg-white"
-              >
-                <option value="">-- Optional --</option>
-                <option value="Fließtext / Essay">Fließtext / Essay</option>
-                <option value="Tabelle / Matrix">Tabelle / Matrix</option>
-                <option value="Präsentation / Folien">Präsentation / Folien</option>
-                <option value="Schema / Konzept-Map / Zeichnung">Schema / Konzept-Map / Zeichnung</option>
-                <option value="Stichpunktartige Übersicht">Stichpunktartige Übersicht</option>
-                <option value="Mischform / Offen">Mischform / Offen</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label>Dateiformat (optional)</Label>
-              <select
-                value={formData.ergebnis_dateiformat || ''}
-                onChange={(e) => set('ergebnis_dateiformat', e.target.value || null)}
-                className="w-full h-9 px-3 border border-border rounded-lg text-sm bg-white"
-              >
-                <option value="">-- Optional --</option>
-                <option value="Textdokument (Word/PDF)">Textdokument (Word/PDF)</option>
-                <option value="Bilddatei (JPG/PNG)">Bilddatei (JPG/PNG)</option>
-                <option value="Präsentationsdatei (PowerPoint/PDF)">Präsentationsdatei (PowerPoint/PDF)</option>
-                <option value="Offen / Beliebig">Offen / Beliebig</option>
-              </select>
-            </div>
+          {/* Aufgabenstellung als Datei (optional, digitale Sicherung) */}
+          <div className="space-y-2 border-t border-border pt-4">
+            <Label>Aufgabenstellung als Datei (optional)</Label>
+            <p className="text-xs text-muted-foreground">
+              Normalerweise liegt der Aufgabenzettel direkt beim Material. Du kannst die
+              Aufgabenstellung hier zusätzlich als PDF, Doc oder Bild hochladen – damit der
+              Schüler sie auch digital nachlesen kann, falls der Zettel mal verloren geht.
+            </p>
+            <AufgabenstellungDateiUpload
+              fileUrl={formData.aufgabenstellung_datei_url}
+              fileName={formData.aufgabenstellung_datei_name}
+              onChange={({ url, name }) => {
+                set('aufgabenstellung_datei_url', url);
+                set('aufgabenstellung_datei_name', name);
+              }}
+            />
           </div>
 
           {/* Mission */}

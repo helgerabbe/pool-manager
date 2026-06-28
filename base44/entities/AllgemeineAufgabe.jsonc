@@ -139,6 +139,14 @@
     "aufgaben_bild_url": {
       "type": "string"
     },
+    "aufgabenstellung_datei_url": {
+      "type": "string",
+      "description": "Optionale, hochgeladene Datei der Aufgabenstellung (PDF, Doc oder Bild). Nur bei Handlungsaufgaben relevant: Damit der Sch\u00fcler die Aufgabenstellung auch digital nachlesen kann, falls der analoge Zettel beim Material fehlt. Ersetzt NICHT die Abgabe (Handlungsaufgaben sind reine Best\u00e4tigungsaufgaben)."
+    },
+    "aufgabenstellung_datei_name": {
+      "type": "string",
+      "description": "Urspr\u00fcnglicher Dateiname der hochgeladenen Aufgabenstellungs-Datei (f\u00fcr die Anzeige)."
+    },
     "schwierigkeitsgrad": {
       "type": "integer",
       "enum": [
