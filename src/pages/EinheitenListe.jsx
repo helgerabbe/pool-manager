@@ -140,7 +140,7 @@ export default function EinheitenListe() {
       return () => clearTimeout(timeout);
     }
   }, [isDeletingAny]);
-  const { permissions, rolle, authUser } = useRBAC();
+  const { permissions, rolle, authUser, faecher: userFaecher } = useRBAC();
   
   // ✅ SCHRITT 2: Secure Backend-Funktion statt Client-Side Filtering
    const { data: einheiten = [], isLoading, isFetching } = useQuery({
@@ -315,6 +315,7 @@ export default function EinheitenListe() {
               einheit={einheit}
               metrics={metrics[einheit.id]}
               rolle={rolle}
+              benutzerFaecher={userFaecher}
               currentUserEmail={authUser?.email}
               onDeleteStart={() => setIsDeletingAny(true)}
               onDeleteEnd={() => setIsDeletingAny(false)}

@@ -9,7 +9,7 @@ import { base44 } from '@/api/base44Client';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal';
-import { ROLLEN } from '@/lib/rbac';
+import { ROLLEN, kannStrukturBearbeiten } from '@/lib/rbac';
 import { getFachFarbe, getFachBadgeStyle } from '@/lib/fachFarben';
 import EinheitAccessBadge from '@/components/ui/EinheitAccessBadge';
 import EinheitMetricsRow from '@/components/einheiten/EinheitMetricsRow';
@@ -19,6 +19,7 @@ import EinheitExportLifecycleBadge from '@/components/einheiten/EinheitExportLif
 export default function EinheitCard({
   einheit,
   rolle,
+  benutzerFaecher = [],
   onDeleteStart,
   onDeleteEnd,
   currentUserEmail,
@@ -34,7 +35,9 @@ export default function EinheitCard({
   const [showConfirm, setShowConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const queryClient = useQueryClient();
-  const isAdmin = rolle === ROLLEN.ADMIN;
+  // Löschen darf: Administrator immer, Fachschaftsleitung im eigenen Fach.
+  // Das Backend (deleteEinheitSecure) prüft dieselbe Regel serverseitig.
+  const darfLoeschen = kannStrukturBearbeiten(rolle, benutzerFaecher, einheit.fach);
 
   const volume = metrics?.volume;
   const dashboardStatus = metrics?.dashboardStatus;
@@ -43,7 +46,7 @@ export default function EinheitCard({
     setIsDeleting(true);
     onDeleteStart?.();
     try {
-      const res = await base44.functions.invoke('deleteEinheit', { einheitId: einheit.id });
+      const res = await base44.functions.invoke('deleteEinheitSecure', { einheit_id: einheit.id });
       if (res.data?.success) {
         toast.success('Einheit erfolgreich gelöscht.');
         setShowConfirm(false);
@@ -144,8 +147,8 @@ export default function EinheitCard({
           </CardContent>
         </Card>
 
-        {/* Löschen-Button — nur für Administratoren */}
-        {isAdmin && (
+        {/* Löschen-Button — Administrator + Fachschaftsleitung (eigenes Fach) */}
+        {darfLoeschen && (
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowConfirm(true); }}
             className="absolute top-3 right-3 z-10 p-1.5 rounded-md bg-white/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 hover:bg-red-50 transition-all opacity-0 group-hover/card:opacity-100"
