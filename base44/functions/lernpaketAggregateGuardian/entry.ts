@@ -81,7 +81,31 @@ Deno.serve(async (req) => {
         console.warn('[aggregateGuardian] Katalog-Read fehlgeschlagen:', e?.message);
       }
 
-      if (katalog?.supports_master === true) {
+      // ── Sonderfall Bildbeschriftung ────────────────────────────────────────
+      // Der ImageLabelingEditor speichert seine Daten unter eigenen Keys
+      // (aufgabenstellung / backgroundImage / dropZones), NICHT unter den
+      // Schema-Feldnamen (instruction / image_url / marker_data). Wird der
+      // Frontend-Wert hier nur durchgereicht, bleibt eine voll ausgefüllte
+      // Aufgabe fälschlich „unvollständig" (Drift), weil Saves über das reine
+      // SDK den Wert nicht ehrlich berechnet haben. Deshalb berechnet der
+      // Guardian die Vollständigkeit hier AKTIV: Bild + ≥2 beschriftete Zonen.
+      // (Synchron zu lib/completenessValidation.js und updateActivitySecure.)
+      const fv = data.field_values || {};
+      const isImageLabeling =
+        (katalog?.name || '').toLowerCase().includes('bildbeschriftung') ||
+        (Array.isArray(katalog?.form_schema) &&
+          katalog.form_schema.some((f) => f && f.field_name === 'marker_data'));
+
+      if (isImageLabeling) {
+        const hasImage =
+          (typeof fv.backgroundImage === 'string' && fv.backgroundImage.trim() !== '') ||
+          (typeof fv.image_url === 'string' && fv.image_url.trim() !== '');
+        const zones = Array.isArray(fv.dropZones) ? fv.dropZones : [];
+        const validZones = zones.filter(
+          (z) => z && String(z.label || '').trim() !== ''
+        );
+        computedIsComplete = hasImage && validZones.length >= 2;
+      } else if (katalog?.supports_master === true) {
         // AP2 §3 / KI-Modus: Wenn die Aktivität auf erstellungs_modus='ki'
         // steht, gibt es bewusst KEINE MasterAufgaben — die Aufgabe wird
         // später von der MBK aus dem ki_briefing erzeugt. Sobald ein
