@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Sparkles, Loader2, Save, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
+import BildEinfuegenFeld from '@/components/workspace/BildEinfuegenFeld';
 
 export default function KITutorMasterForm({
   master,
@@ -25,6 +26,7 @@ export default function KITutorMasterForm({
   const queryClient = useQueryClient();
   const [aufgabenstellung, setAufgabenstellung] = useState(master?.field_values?.aufgabenstellung || '');
   const [material, setMaterial] = useState(master?.field_values?.material || '');
+  const [bildUrl, setBildUrl] = useState(master?.field_values?.bild_url || '');
   const [erwartungshorizont, setErwartungshorizont] = useState(master?.field_values?.erwartungshorizont || '');
   const [isDirty, setIsDirty] = useState(false);
 
@@ -53,6 +55,7 @@ export default function KITutorMasterForm({
         field_values: {
           aufgabenstellung,
           material,
+          bild_url: bildUrl,
           erwartungshorizont,
         },
         tutor_prompt: tutorPrompt, // Hidden Prompt für Moodle-Export
@@ -157,6 +160,18 @@ Fokus: Die konkrete, richtige Lösung dieser Aufgabe - nicht allgemeine pädagog
             Bearbeitungsmodus aktivieren um Änderungen vorzunehmen.
           </p>
         )}
+      </div>
+
+      {/* ── Bild zur Aufgabe (z. B. Tabelle per Copy & Paste) ── */}
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">
+          Bild zur Aufgabe <span className="text-muted-foreground font-normal">(optional, z. B. Tabelle)</span>
+        </Label>
+        <BildEinfuegenFeld
+          value={bildUrl}
+          onChange={(url) => { setBildUrl(url); setIsDirty(true); }}
+          disabled={isReadOnly}
+        />
       </div>
 
       {/* ── Begleitmaterial ── */}
