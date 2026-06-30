@@ -423,6 +423,16 @@ export default function TextLesenModal({
                   <Label>
                     Bild zur Aufgabe <span className="text-muted-foreground font-normal">(optional, z. B. Screenshot)</span>
                   </Label>
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <p>
+                      <span className="font-semibold">Wichtig:</span> Brian kennt diese Aufgabe (und das Bild) nicht.
+                      Er bekommt sie nur, wenn der Schüler sie ihm selbst erklärt – z. B. indem er das Bild als
+                      Screenshot in den Chat kopiert. Brian gibt keine Lösung vor, sondern unterstützt nur bei der Bearbeitung.
+                      Soll eine Aufgabe wirklich ausführlich gemeinsam mit Brian gelöst werden, gehört sie eher zu den
+                      allgemeinen Aufgaben (Tab 6).
+                    </p>
+                  </div>
                   <BildEinfuegenFeld
                     value={fieldValues.bild_url || ''}
                     onChange={(val) => handleFieldChange('bild_url', val)}
