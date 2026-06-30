@@ -18,6 +18,7 @@ import ActivityResetButton from '@/components/workspace/ActivityResetButton';
 import TranskriptField, { shouldShowTranskript } from '@/components/workspace/ki/TranskriptField';
 import TextLesenAIGeneratorPanel from '@/components/workspace/TextLesenAIGeneratorPanel';
 import TextLesenBilderUploader from '@/components/workspace/TextLesenBilderUploader';
+import BildEinfuegenFeld from '@/components/workspace/BildEinfuegenFeld';
 
 // Phase 6 (Freigabe-Konzept 2026-05-14): Pilot-Integration.
 import CompactReleaseRow from '@/components/release/CompactReleaseRow';
@@ -409,6 +410,25 @@ export default function TextLesenModal({
                   onChange={(val) => handleFieldChange('bilder', val)}
                   disabled={isSaving || exportLocked}
                 />
+              );
+            }
+
+            // KI-Tutor-Aufgabe: optionales Bild (z. B. Screenshot einer Tabelle)
+            // per Copy & Paste (Strg+V) oder Datei-Auswahl. Wird in
+            // field_values.bild_url gespeichert.
+            const isKITutor = (catalogEntry?.name || '').toLowerCase().includes('ki-tutor');
+            if (isKITutor) {
+              out.push(
+                <div key="__ki_tutor_bild__" className="space-y-1.5">
+                  <Label>
+                    Bild zur Aufgabe <span className="text-muted-foreground font-normal">(optional, z. B. Screenshot)</span>
+                  </Label>
+                  <BildEinfuegenFeld
+                    value={fieldValues.bild_url || ''}
+                    onChange={(val) => handleFieldChange('bild_url', val)}
+                    disabled={isSaving || exportLocked}
+                  />
+                </div>
               );
             }
 
