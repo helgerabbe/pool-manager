@@ -13,6 +13,7 @@ import { usePresence } from '@/hooks/usePresence';
 import { useRealtimeUpdates } from '@/hooks/useRealtimeUpdates';
 import { useQueryClient } from '@tanstack/react-query';
 import { handleRealtimeUpdate } from '@/utils/realtimeCacheManager';
+import ProblemMeldenButton from '@/components/support/ProblemMeldenButton';
 
 // Wiederverwendbarer Icon-Nav-Link mit sofortigem Tooltip
 function NavIconLink({ to, icon: Icon, label, isActive }) {
@@ -197,6 +198,9 @@ export default function AppLayout() {
 
               {/* Schülerbereich */}
               <NavIconLink to="/lernen" icon={GraduationCap} label="Schülerbereich" isActive={isActive('/lernen')} />
+
+              {/* Problem melden → GitHub-Ticket */}
+              <ProblemMeldenButton einheit={activeEinheit} />
 
               {/* Admin-Bereich (nur für Admins) */}
               {permissions.kannBenutzerVerwalten && (
