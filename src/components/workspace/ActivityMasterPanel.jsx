@@ -34,6 +34,7 @@ import AufgabensequenzModal from '@/components/workspace/AufgabensequenzModal';
 import KIQuizModal from '@/components/workspace/KIQuizModal';
 import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import OffeneAufgabePreviewModal from '@/components/workspace/preview/OffeneAufgabePreviewModal';
+import GalerieAktivitaetModal from '@/components/workspace/galerie/GalerieAktivitaetModal';
 import SyncStatusBadge from '@/components/release/SyncStatusBadge';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import ModusAuswahlBox from '@/components/workspace/ki/ModusAuswahlBox';
@@ -1235,6 +1236,17 @@ export default function ActivityMasterPanel({
                   onCancel={handleModalCancel}
                   onReset={handleModalReset}
                   isSaving={saveFieldsMutation.isPending}
+                  parentLernpaketName={parentLernpaketName || ''}
+                />
+              ) : catalogEntry?.name?.toLowerCase().includes('galerie') ? (
+                <GalerieAktivitaetModal
+                  open={editModalOpen}
+                  onOpenChange={(isOpen) => { if (!isOpen) handleModalCancel(); }}
+                  initialFieldValues={fieldValues}
+                  onSave={handleModalSave}
+                  onCancel={handleModalCancel}
+                  isSaving={saveFieldsMutation.isPending}
+                  kontext={aufgabenKontext}
                   parentLernpaketName={parentLernpaketName || ''}
                 />
               ) : (
