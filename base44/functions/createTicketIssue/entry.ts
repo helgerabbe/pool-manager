@@ -8,8 +8,23 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const token = Deno.env.get('GITHUB_TICKET_TOKEN');
-    if (!token) return Response.json({ error: 'GITHUB_TICKET_TOKEN ist nicht gesetzt' }, { status: 500 });
+    // Verbindung: bevorzugt aus den globalen Systemeinstellungen (Ticket-Connector),
+    // Fallback: GITHUB_TICKET_TOKEN-Secret mit fest verdrahtetem Repo.
+    let ghOwner = 'IGS-Seevetal';
+    let ghRepo = 'Poolzeit';
+    let token = Deno.env.get('GITHUB_TICKET_TOKEN') || '';
+    const connSettings = await base44.asServiceRole.entities.Systemeinstellungen.filter({ schluessel: 'github_ticket_connector' });
+    if (connSettings[0]?.wert_text) {
+      try {
+        const cfg = JSON.parse(connSettings[0].wert_text);
+        if (cfg.owner && cfg.repo && cfg.access_token) {
+          ghOwner = cfg.owner;
+          ghRepo = cfg.repo;
+          token = cfg.access_token;
+        }
+      } catch (_e) { /* Fallback auf Secret */ }
+    }
+    if (!token) return Response.json({ error: 'Ticket-Connector ist nicht konfiguriert' }, { status: 500 });
 
     const {
       art,            // 'Fehler' | 'Änderungswunsch'
@@ -79,7 +94,7 @@ Deno.serve(async (req) => {
       prioritaet || 'mittel',
     ].join('\n');
 
-    const ghRes = await fetch('https://api.github.com/repos/IGS-Seevetal/Poolzeit/issues', {
+    const ghRes = await fetch(`https://api.github.com/repos/${ghOwner}/${ghRepo}/issues`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

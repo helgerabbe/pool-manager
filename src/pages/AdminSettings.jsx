@@ -28,6 +28,7 @@ import SchulStammdatenCard from '@/components/admin/SchulStammdatenCard';
 import NomenklaturManagerView from '@/components/admin/nomenklatur/NomenklaturManagerView';
 import DashboardVorlagenTab from '@/components/admin/dashboardVorlage/DashboardVorlagenTab';
 import GitHubConnectorCard from '@/components/admin/GitHubConnectorCard';
+import GitHubTicketConnectorCard from '@/components/admin/GitHubTicketConnectorCard';
 
 const KATEGORIEN = ['Diagnostik', 'Input', 'Übung', 'Projekt', 'Prüfung'];
 
@@ -269,8 +270,9 @@ export default function AdminSettings() {
         </TabsContent>
 
         {/* Integrationen — externe Datenquellen (GitHub etc.) */}
-        <TabsContent value="integrationen" className="mt-4">
+        <TabsContent value="integrationen" className="mt-4 space-y-6">
           <GitHubConnectorCard />
+          <GitHubTicketConnectorCard />
         </TabsContent>
 
         {/* Systembausteine (globaler Pool für Tab „Dashboards") */}
