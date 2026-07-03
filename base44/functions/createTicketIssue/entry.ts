@@ -93,7 +93,12 @@ Deno.serve(async (req) => {
     if (ghRes.status !== 201) {
       const errText = await ghRes.text();
       console.error('[createTicketIssue] GitHub-Fehler', ghRes.status, errText);
-      return Response.json({ error: `GitHub-API-Fehler (${ghRes.status})` }, { status: 502 });
+      let detail = '';
+      try { detail = JSON.parse(errText)?.message || ''; } catch (_e) { /* Rohtext ignorieren */ }
+      const hinweis = ghRes.status === 403 && detail.includes('not accessible')
+        ? ' – Das hinterlegte GitHub-Token hat keine Berechtigung, Issues anzulegen (Issues: Read and write für das Repo erforderlich).'
+        : detail ? ` – ${detail}` : '';
+      return Response.json({ error: `GitHub-API-Fehler (${ghRes.status})${hinweis}` }, { status: 502 });
     }
 
     const issue = await ghRes.json();
