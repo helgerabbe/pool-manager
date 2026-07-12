@@ -29,6 +29,7 @@ import NomenklaturManagerView from '@/components/admin/nomenklatur/NomenklaturMa
 import DashboardVorlagenTab from '@/components/admin/dashboardVorlage/DashboardVorlagenTab';
 import GitHubConnectorCard from '@/components/admin/GitHubConnectorCard';
 import GitHubTicketConnectorCard from '@/components/admin/GitHubTicketConnectorCard';
+import GitHubCssConnectorCard from '@/components/admin/GitHubCssConnectorCard';
 
 const KATEGORIEN = ['Diagnostik', 'Input', 'Übung', 'Projekt', 'Prüfung'];
 
@@ -273,6 +274,7 @@ export default function AdminSettings() {
         <TabsContent value="integrationen" className="mt-4 space-y-6">
           <GitHubConnectorCard />
           <GitHubTicketConnectorCard />
+          <GitHubCssConnectorCard />
         </TabsContent>
 
         {/* Systembausteine (globaler Pool für Tab „Dashboards") */}

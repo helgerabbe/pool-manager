@@ -9,6 +9,7 @@
  */
 import React from 'react';
 import { Home, ChevronLeft, ChevronRight, RotateCw, Menu } from 'lucide-react';
+import ExternesThemeStyle from '@/components/schueler/ExternesThemeStyle';
 
 // Verbindlicher Slot pro Slide (siehe Konzept-Entscheidung 2026-05-30)
 export const SLIDE_WIDTH = 960;
@@ -25,6 +26,9 @@ export default function IPadFrame({ children, lernpaketTitel = 'Lernpaket', phas
       className="mx-auto"
       style={{ width: FRAME_WIDTH * scale, height: FRAME_HEIGHT * scale }}
     >
+    {/* Zentrales CSS aus dem GitHub-CSS-Connector: aktiv, solange die Vorschau offen ist,
+        damit Lehrkräfte exakt das sehen, was Schüler:innen später sehen. */}
+    <ExternesThemeStyle />
     <div
       className="bg-slate-800 rounded-[28px] p-3 shadow-2xl ring-1 ring-slate-900/10"
       style={{ width: FRAME_WIDTH, transform: `scale(${scale})`, transformOrigin: 'top left' }}
