@@ -1,4 +1,5 @@
-import React, { lazy, Suspense } from 'react';
+import React, { Suspense } from 'react';
+import lazyWithRetry from '@/lib/lazyWithRetry';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -14,22 +15,22 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ProtectedRoute from '@/lib/ProtectedRoute';
 // Lehrer-/Admin-Bereich: Lazy Loading, damit der Schüler-Build (GitHub Pages)
 // diesen Code beim ersten Öffnen NICHT mit herunterladen muss.
-const AppLayout = lazy(() => import('@/components/layout/AppLayout'));
-const Dashboard = lazy(() => import('@/pages/Dashboard'));
-const EinheitenListe = lazy(() => import('@/pages/EinheitenListe'));
-const Benutzerverwaltung = lazy(() => import('@/pages/Benutzerverwaltung'));
-const MoodleExport = lazy(() => import('@/pages/MoodleExport'));
-const Workspace = lazy(() => import('@/pages/Workspace'));
-const AdminSettings = lazy(() => import('@/pages/AdminSettings'));
-const EinheitCreateWizard = lazy(() => import('@/pages/EinheitCreateWizard'));
-const ExportCenter = lazy(() => import('@/pages/ExportCenter'));
-const MBKConsole = lazy(() => import('@/pages/MBKConsole'));
-const EinheitViewManager = lazy(() => import('@/components/workspace/EinheitViewManager'));
-const BasismoduleListe = lazy(() => import('@/pages/BasismoduleListe'));
-const BasismodulViewManager = lazy(() => import('@/components/basismodule/BasismodulViewManager'));
-const DocsLayout = lazy(() => import('@/components/docs/DocsLayout'));
-const DocsIndex = lazy(() => import('@/pages/DocsIndex'));
-const DocViewer = lazy(() => import('@/pages/DocViewer'));
+const AppLayout = lazyWithRetry(() => import('@/components/layout/AppLayout'));
+const Dashboard = lazyWithRetry(() => import('@/pages/Dashboard'));
+const EinheitenListe = lazyWithRetry(() => import('@/pages/EinheitenListe'));
+const Benutzerverwaltung = lazyWithRetry(() => import('@/pages/Benutzerverwaltung'));
+const MoodleExport = lazyWithRetry(() => import('@/pages/MoodleExport'));
+const Workspace = lazyWithRetry(() => import('@/pages/Workspace'));
+const AdminSettings = lazyWithRetry(() => import('@/pages/AdminSettings'));
+const EinheitCreateWizard = lazyWithRetry(() => import('@/pages/EinheitCreateWizard'));
+const ExportCenter = lazyWithRetry(() => import('@/pages/ExportCenter'));
+const MBKConsole = lazyWithRetry(() => import('@/pages/MBKConsole'));
+const EinheitViewManager = lazyWithRetry(() => import('@/components/workspace/EinheitViewManager'));
+const BasismoduleListe = lazyWithRetry(() => import('@/pages/BasismoduleListe'));
+const BasismodulViewManager = lazyWithRetry(() => import('@/components/basismodule/BasismodulViewManager'));
+const DocsLayout = lazyWithRetry(() => import('@/components/docs/DocsLayout'));
+const DocsIndex = lazyWithRetry(() => import('@/pages/DocsIndex'));
+const DocViewer = lazyWithRetry(() => import('@/pages/DocViewer'));
 import StudentArea from '@/pages/StudentArea';
 import PoolzeitStart from '@/pages/schueler/PoolzeitStart';
 import Lerntagebuch from '@/pages/schueler/Lerntagebuch';
