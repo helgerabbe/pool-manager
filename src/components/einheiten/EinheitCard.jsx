@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, Trash2, Lock } from 'lucide-react';
+import { ArrowRight, Trash2, Lock, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { base44 } from '@/api/base44Client';
@@ -34,6 +34,7 @@ export default function EinheitCard({
   const badgeStyle = getFachBadgeStyle(fachHex);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isCopying, setIsCopying] = useState(false);
   const queryClient = useQueryClient();
   // Löschen darf: Administrator immer, Fachschaftsleitung im eigenen Fach.
   // Das Backend (deleteEinheitSecure) prüft dieselbe Regel serverseitig.
@@ -66,6 +67,23 @@ export default function EinheitCard({
       console.error('Delete error:', err);
       setIsDeleting(false);
       onDeleteEnd?.();
+    }
+  };
+
+  const handleDuplicate = async () => {
+    setIsCopying(true);
+    try {
+      const res = await base44.functions.invoke('duplicateEinheitSecure', { einheit_id: einheit.id });
+      if (res.data?.success) {
+        toast.success(`Kopie erstellt: „${res.data.titel}"`);
+        queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+      } else {
+        toast.error(res.data?.error || 'Fehler beim Duplizieren.');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || err.message || 'Fehler beim Duplizieren.');
+    } finally {
+      setIsCopying(false);
     }
   };
 
@@ -147,15 +165,28 @@ export default function EinheitCard({
           </CardContent>
         </Card>
 
-        {/* Löschen-Button — Administrator + Fachschaftsleitung (eigenes Fach) */}
+        {/* Löschen- + Duplizieren-Buttons — Administrator + Fachschaftsleitung (eigenes Fach) */}
         {darfLoeschen && (
-          <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowConfirm(true); }}
-            className="absolute top-3 right-3 z-10 p-1.5 rounded-md bg-white/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 hover:bg-red-50 transition-all opacity-0 group-hover/card:opacity-100"
-            title="Einheit löschen"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 opacity-0 group-hover/card:opacity-100 transition-all">
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDuplicate(); }}
+              disabled={isCopying}
+              className="p-1.5 rounded-md bg-white/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-primary hover:border-primary/40 hover:bg-blue-50 transition-all disabled:opacity-60"
+              title="Einheit als Kopie duplizieren (Sandbox — gilt als neu, kein Moodle-Bezug)"
+            >
+              {isCopying
+                ? <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                : <Copy className="w-4 h-4" />
+              }
+            </button>
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowConfirm(true); }}
+              className="p-1.5 rounded-md bg-white/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 hover:bg-red-50 transition-all"
+              title="Einheit löschen"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
         )}
       </div>
 
