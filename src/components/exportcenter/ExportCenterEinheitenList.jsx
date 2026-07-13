@@ -99,6 +99,9 @@ export default function ExportCenterEinheitenList({ selectedEinheitId, onSelect 
     const q = query.trim().toLowerCase();
     return einheiten
       .filter((e) => e.wizard_status === 'aktiv')
+      // Privat-Modus: Private Sandbox-Einheiten sind keine Export-Kandidaten —
+      // sie müssen erst veröffentlicht werden.
+      .filter((e) => e.sichtbarkeit !== 'privat')
       .filter((e) => {
         if (!q) return true;
         return (
