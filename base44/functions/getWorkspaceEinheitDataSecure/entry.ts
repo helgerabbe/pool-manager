@@ -185,6 +185,25 @@ Deno.serve(async (req) => {
     const lernpakete = rawLernpakete.map(normalizeEntityRecord);
     const einheitMembers = rawEinheitMembers.map(normalizeEntityRecord);
 
+    // ── Privat-Modus: Zugriffsschutz ────────────────────────────────────────
+    // Private Einheiten sind nur für den Besitzer, explizit eingetragene
+    // Members und Administratoren sichtbar — auch beim direkten Öffnen per URL.
+    if (einheit.sichtbarkeit === 'privat') {
+      const isOwner = einheit.besitzer_email === user.email;
+      const isMember = einheitMembers.some((m) => m.user_email === user.email);
+      let isAdmin = user.role === 'admin';
+      if (!isAdmin && !isOwner && !isMember) {
+        const benutzerList = await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email });
+        isAdmin = normalizeEntityRecord(benutzerList?.[0])?.rolle === 'Administrator';
+      }
+      if (!isOwner && !isMember && !isAdmin) {
+        return Response.json(
+          { error: 'Keine Berechtigung: Diese Einheit ist privat.' },
+          { status: 403, headers: { 'Access-Control-Allow-Origin': '*' } }
+        );
+      }
+    }
+
     const lernpaketIds = lernpakete.map((paket) => paket.id).filter(Boolean);
     const rawLernziele = await listAllByFilterInChunks(
       base44.asServiceRole.entities.Lernziele,
@@ -354,6 +373,10 @@ Deno.serve(async (req) => {
           grundgeruest_status: einheit.grundgeruest_status || (einheit.grundgeruest_rohtext ? 'entwurf' : 'leer'),
           grundgeruest_updated_at: einheit.grundgeruest_updated_at || null,
           wizard_status: einheit.wizard_status,
+          // Privat-Modus: Sichtbarkeit + Besitzer für die Workspace-UI.
+          sichtbarkeit: einheit.sichtbarkeit || 'oeffentlich',
+          besitzer_email: einheit.besitzer_email || null,
+          erhalten_von: einheit.erhalten_von || null,
           freigabe_status: einheit.freigabe_status,
           sync_status: einheit.sync_status,
           last_synced_at: einheit.last_synced_at,
