@@ -303,6 +303,7 @@ Deno.serve(async (req) => {
         // Aktion und die Admin-Besitzer-Übersicht.
         sichtbarkeit: einheit.sichtbarkeit || 'oeffentlich',
         besitzer_email: einheit.besitzer_email,
+        erhalten_von: einheit.erhalten_von,
         // ✅ Unit-Level-Mitglieder für RBAC-Prüfung
         members: members.map(m => ({
           user_email: m.user_email,

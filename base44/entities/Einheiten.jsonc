@@ -52,6 +52,10 @@
       "type": "string",
       "description": "E-Mail des Besitzers einer PRIVATEN Einheit (die Person, die die Kopie gezogen bzw. die Einheit privat erstellt hat). Nur bei sichtbarkeit='privat' relevant; bleibt nach dem Ver\u00f6ffentlichen als Herkunftsnachweis erhalten. Bei \u00f6ffentlichen Bestands-Einheiten leer."
     },
+    "erhalten_von": {
+      "type": "string",
+      "description": "Weitergeben-Feature: E-Mail der Person, die diese private Einheit als Kopie weitergegeben hat ('Von X erhalten'). Nur gesetzt, wenn die Einheit \u00fcber duplicateEinheitSecure mit target_email in einen fremden Privatbereich kopiert wurde. Dient als Herkunftsnachweis."
+    },
     "gesamtziele": {
       "type": "array",
       "items": {

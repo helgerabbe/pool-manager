@@ -78,6 +78,8 @@ Deno.serve(async (req) => {
     const payload = await req.json().catch(() => ({}));
     const einheitId = payload?.einheit_id;
     if (!einheitId) return Response.json({ error: 'Missing einheit_id' }, { status: 400 });
+    // Optional (Weitergeben): Kopie landet im Privatbereich dieser Person
+    const targetEmail = (payload?.target_email || '').trim() || null;
 
     const e = base44.asServiceRole.entities;
     const einheit = await e.Einheiten.get(einheitId).catch(() => null);
@@ -93,9 +95,24 @@ Deno.serve(async (req) => {
       user.role === 'admin' ||
       userRecord?.rolle === 'Administrator' ||
       (userRecord?.rolle === 'Fachschaftsleitung' && (userRecord?.fachbereich_zustaendigkeit || []).includes(einheit.fach)) ||
-      ownMemberships.some(m => m.unit_role === 'LEITUNG')
+      ownMemberships.some(m => m.unit_role === 'LEITUNG') ||
+      // Besitzer einer privaten Einheit darf sie duplizieren/weitergeben
+      (einheit.sichtbarkeit === 'privat' && einheit.besitzer_email === user.email)
     );
     if (!allowed) return Response.json({ error: 'Keine Berechtigung zum Duplizieren' }, { status: 403 });
+
+    // Weitergeben: Empfänger validieren
+    let targetBenutzer = null;
+    if (targetEmail) {
+      if (targetEmail === user.email) {
+        return Response.json({ error: 'Zum Kopieren für sich selbst bitte Duplizieren nutzen.' }, { status: 400 });
+      }
+      const targetList = await listAll(e.Benutzer, { user_id: targetEmail });
+      targetBenutzer = targetList?.[0];
+      if (!targetBenutzer || targetBenutzer.ist_aktiv === false) {
+        return Response.json({ error: 'Empfänger:in nicht gefunden oder inaktiv' }, { status: 404 });
+      }
+    }
 
     // ── Quelle vollständig einsammeln ──
     const [themenfelder, lernpaketeByEinheit, allgemeineAufgaben, pfadMemberships] = await Promise.all([
@@ -130,8 +147,13 @@ Deno.serve(async (req) => {
     const idMap = new Map();
 
     // ── 1. Einheit anlegen (Reset aller Export-/Sync-/Lifecycle-Felder) ──
+    const ownerEmail = targetEmail || user.email;
     const einheitCopy = sanitize(einheit);
-    einheitCopy.titel_der_einheit = `${einheit.titel_der_einheit} (Kopie)`;
+    delete einheitCopy.erhalten_von;
+    // Weitergabe behält den Original-Titel; eigene Kopie bekommt "(Kopie)"
+    einheitCopy.titel_der_einheit = targetEmail
+      ? einheit.titel_der_einheit
+      : `${einheit.titel_der_einheit} (Kopie)`;
     einheitCopy.sync_status = 'new';
     einheitCopy.export_lifecycle_status = 'draft';
     einheitCopy.freigabe_status = 'Freigegeben für Bearbeitung';
@@ -139,7 +161,8 @@ Deno.serve(async (req) => {
     // Privat-Modus: Kopien landen immer im Privatbereich des Kopierenden
     // und werden erst durch bewusstes Veröffentlichen für alle sichtbar.
     einheitCopy.sichtbarkeit = 'privat';
-    einheitCopy.besitzer_email = user.email;
+    einheitCopy.besitzer_email = ownerEmail;
+    if (targetEmail) einheitCopy.erhalten_von = user.email;
     for (const key of [
       'last_synced_at', 'last_exported_at', 'structural_lock', 'structural_locked_at',
       'export_lifecycle_changed_at', 'export_lifecycle_changed_by',
@@ -280,9 +303,11 @@ Deno.serve(async (req) => {
       // nur der Kopierende selbst wird als LEITUNG eingetragen.
       createMany(e.EinheitMembers, [{
         einheit_id: newEinheit.id,
-        user_email: user.email,
+        user_email: ownerEmail,
         unit_role: 'LEITUNG',
-        user_name: user.full_name || user.email,
+        user_name: targetBenutzer
+          ? (`${targetBenutzer.vorname || ''} ${targetBenutzer.nachname || ''}`.trim() || ownerEmail)
+          : (user.full_name || user.email),
       }]),
     ]);
 
@@ -314,8 +339,9 @@ Deno.serve(async (req) => {
       resource_type: 'Einheiten',
       resource_id: newEinheit.id,
       changes: {
-        action_code: 'DUPLICATE_UNIT',
+        action_code: targetEmail ? 'HANDOVER_UNIT' : 'DUPLICATE_UNIT',
         source_einheit_id: einheit.id,
+        weitergegeben_an: targetEmail,
         titel_der_einheit: einheitCopy.titel_der_einheit,
         copied_counts: {
           themenfelder: themenfelder.length,

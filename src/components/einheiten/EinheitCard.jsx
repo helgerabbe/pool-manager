@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowRight, Trash2, Lock, Copy, EyeOff } from 'lucide-react';
 import EinheitVeroeffentlichenButton from '@/components/einheiten/EinheitVeroeffentlichenButton';
+import EinheitWeitergebenButton from '@/components/einheiten/EinheitWeitergebenButton';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { base44 } from '@/api/base44Client';
@@ -138,8 +139,13 @@ export default function EinheitCard({
               </h3>
               {/* Eigene Status-Zeile unter dem Titel: hält die Kopfzeile schmal
                   und die Kachelhöhe über alle Karten hinweg konsistent. */}
-              <div className="mt-2 min-h-[1.5rem] flex items-center">
+              <div className="mt-2 min-h-[1.5rem] flex items-center gap-2">
                 <EinheitExportLifecycleBadge einheit={einheit} />
+                {istPrivat && einheit.erhalten_von && (
+                  <span className="text-[11px] text-muted-foreground truncate" title={`Von ${einheit.erhalten_von} erhalten`}>
+                    Von {einheit.erhalten_von} erhalten
+                  </span>
+                )}
               </div>
             </Link>
 
@@ -179,7 +185,10 @@ export default function EinheitCard({
         {(darfLoeschen || istPrivatBesitzer) && (
           <div className={`absolute top-3 right-3 z-10 flex items-center gap-1.5 transition-all ${istPrivat ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100'}`}>
             {istPrivat && (istPrivatBesitzer || darfLoeschen) && (
-              <EinheitVeroeffentlichenButton einheit={einheit} />
+              <>
+                <EinheitVeroeffentlichenButton einheit={einheit} />
+                <EinheitWeitergebenButton einheit={einheit} />
+              </>
             )}
             {darfLoeschen && (
               <button
