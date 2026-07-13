@@ -28,7 +28,10 @@ export async function getEinheit(einheitId) {
 }
 
 export async function listEinheiten() {
-  return base44.entities.Einheiten.list();
+  // Privat-Modus: Private Sandbox-Einheiten gehören nicht in den
+  // Schülerbereich — nur öffentliche (bzw. Alt-Einheiten ohne Feld) anzeigen.
+  const alle = await base44.entities.Einheiten.list();
+  return (alle || []).filter((e) => e.sichtbarkeit !== 'privat');
 }
 
 export async function listSystemBausteine() {
