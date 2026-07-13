@@ -39,6 +39,19 @@
       "default": false,
       "description": "true = diese Einheit ist ein Basismodul (Wissensspeicher aus vorangegangenen Jahrg\u00e4ngen). Basismodule nutzen dasselbe Datenmodell wie regul\u00e4re Einheiten, blenden aber bestimmte Tabs (Allgemeine/Projekt-Aufgaben, Dashboards, Export) aus und werden in einer separaten \u00dcbersicht (/basismodule) angezeigt. Perspektivisch kann ein Basismodul sp\u00e4ter zu einer vollwertigen Einheit erweitert werden, indem das Flag entfernt wird."
     },
+    "sichtbarkeit": {
+      "type": "string",
+      "enum": [
+        "oeffentlich",
+        "privat"
+      ],
+      "default": "oeffentlich",
+      "description": "Privat-Modus (Konzept 2026-07-13): 'oeffentlich' = normale, kollaborative Pool-Einheit, sichtbar nach den bestehenden RBAC-Regeln (Fach/Rolle). 'privat' = Sandbox-Einheit im Privatbereich einer Person \u2014 sichtbar nur f\u00fcr den Besitzer (besitzer_email), explizit eingeladene EinheitMembers und Administratoren (Admin-Privatansicht). Duplikate starten immer privat. Der Wechsel privat\u2192\u00f6ffentlich ('Ver\u00f6ffentlichen') erfolgt ausschlie\u00dflich \u00fcber setEinheitSichtbarkeitSecure."
+    },
+    "besitzer_email": {
+      "type": "string",
+      "description": "E-Mail des Besitzers einer PRIVATEN Einheit (die Person, die die Kopie gezogen bzw. die Einheit privat erstellt hat). Nur bei sichtbarkeit='privat' relevant; bleibt nach dem Ver\u00f6ffentlichen als Herkunftsnachweis erhalten. Bei \u00f6ffentlichen Bestands-Einheiten leer."
+    },
     "gesamtziele": {
       "type": "array",
       "items": {

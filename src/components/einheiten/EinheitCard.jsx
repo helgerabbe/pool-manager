@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, Trash2, Lock, Copy } from 'lucide-react';
+import { ArrowRight, Trash2, Lock, Copy, EyeOff } from 'lucide-react';
+import EinheitVeroeffentlichenButton from '@/components/einheiten/EinheitVeroeffentlichenButton';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { base44 } from '@/api/base44Client';
@@ -39,6 +40,9 @@ export default function EinheitCard({
   // Löschen darf: Administrator immer, Fachschaftsleitung im eigenen Fach.
   // Das Backend (deleteEinheitSecure) prüft dieselbe Regel serverseitig.
   const darfLoeschen = kannStrukturBearbeiten(rolle, benutzerFaecher, einheit.fach);
+  // Privat-Modus: Besitzer einer privaten Einheit darf sie veröffentlichen.
+  const istPrivat = einheit.sichtbarkeit === 'privat';
+  const istPrivatBesitzer = istPrivat && einheit.besitzer_email === currentUserEmail;
 
   const volume = metrics?.volume;
   const dashboardStatus = metrics?.dashboardStatus;
@@ -108,6 +112,12 @@ export default function EinheitCard({
                   </span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
+                  {istPrivat && (
+                    <Badge className="bg-amber-100 text-amber-800 border border-amber-200 gap-1">
+                      <EyeOff className="w-3 h-3" />
+                      Privat
+                    </Badge>
+                  )}
                   {einheit.freigabe_status === 'Gesperrt' && (
                     <Badge className="bg-red-100 text-red-700 border border-red-200 gap-1">
                       <Lock className="w-3 h-3" />
@@ -165,27 +175,34 @@ export default function EinheitCard({
           </CardContent>
         </Card>
 
-        {/* Löschen- + Duplizieren-Buttons — Administrator + Fachschaftsleitung (eigenes Fach) */}
-        {darfLoeschen && (
-          <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 opacity-0 group-hover/card:opacity-100 transition-all">
-            <button
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDuplicate(); }}
-              disabled={isCopying}
-              className="p-1.5 rounded-md bg-white/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-primary hover:border-primary/40 hover:bg-blue-50 transition-all disabled:opacity-60"
-              title="Einheit als Kopie duplizieren (Sandbox — gilt als neu, kein Moodle-Bezug)"
-            >
-              {isCopying
-                ? <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                : <Copy className="w-4 h-4" />
-              }
-            </button>
-            <button
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowConfirm(true); }}
-              className="p-1.5 rounded-md bg-white/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 hover:bg-red-50 transition-all"
-              title="Einheit löschen"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+        {/* Aktionen: Veröffentlichen (privat) + Duplizieren/Löschen (Admin/Fachschaftsleitung) */}
+        {(darfLoeschen || istPrivatBesitzer) && (
+          <div className={`absolute top-3 right-3 z-10 flex items-center gap-1.5 transition-all ${istPrivat ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100'}`}>
+            {istPrivat && (istPrivatBesitzer || darfLoeschen) && (
+              <EinheitVeroeffentlichenButton einheit={einheit} />
+            )}
+            {darfLoeschen && (
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDuplicate(); }}
+                disabled={isCopying}
+                className="p-1.5 rounded-md bg-white/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-primary hover:border-primary/40 hover:bg-blue-50 transition-all disabled:opacity-60"
+                title="Einheit als private Kopie duplizieren (landet in Ihrem Privatbereich)"
+              >
+                {isCopying
+                  ? <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                  : <Copy className="w-4 h-4" />
+                }
+              </button>
+            )}
+            {darfLoeschen && (
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowConfirm(true); }}
+                className="p-1.5 rounded-md bg-white/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 hover:bg-red-50 transition-all"
+                title="Einheit löschen"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
           </div>
         )}
       </div>

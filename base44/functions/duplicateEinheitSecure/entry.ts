@@ -98,11 +98,10 @@ Deno.serve(async (req) => {
     if (!allowed) return Response.json({ error: 'Keine Berechtigung zum Duplizieren' }, { status: 403 });
 
     // ── Quelle vollständig einsammeln ──
-    const [themenfelder, lernpaketeByEinheit, allgemeineAufgaben, members, pfadMemberships] = await Promise.all([
+    const [themenfelder, lernpaketeByEinheit, allgemeineAufgaben, pfadMemberships] = await Promise.all([
       listAll(e.Themenfeld, { einheit_id: einheitId }),
       listAll(e.Lernpakete, { einheit_id: einheitId }),
       listAll(e.AllgemeineAufgabe, { einheit_id: einheitId }),
-      listAll(e.EinheitMembers, { einheit_id: einheitId }),
       listAll(e.LernpfadAufgabeMembership, { einheit_id: einheitId }),
     ]);
 
@@ -137,6 +136,10 @@ Deno.serve(async (req) => {
     einheitCopy.export_lifecycle_status = 'draft';
     einheitCopy.freigabe_status = 'Freigegeben für Bearbeitung';
     einheitCopy.version = 1;
+    // Privat-Modus: Kopien landen immer im Privatbereich des Kopierenden
+    // und werden erst durch bewusstes Veröffentlichen für alle sichtbar.
+    einheitCopy.sichtbarkeit = 'privat';
+    einheitCopy.besitzer_email = user.email;
     for (const key of [
       'last_synced_at', 'last_exported_at', 'structural_lock', 'structural_locked_at',
       'export_lifecycle_changed_at', 'export_lifecycle_changed_by',
@@ -273,11 +276,14 @@ Deno.serve(async (req) => {
         delete c.last_export_signature;
         return c;
       })),
-      createMany(e.EinheitMembers, members.map(m => {
-        const c = sanitize(m);
-        c.einheit_id = newEinheit.id;
-        return c;
-      })),
+      // Privat-Kopie: Mitglieder des Originals werden NICHT übernommen —
+      // nur der Kopierende selbst wird als LEITUNG eingetragen.
+      createMany(e.EinheitMembers, [{
+        einheit_id: newEinheit.id,
+        user_email: user.email,
+        unit_role: 'LEITUNG',
+        user_name: user.full_name || user.email,
+      }]),
     ]);
 
     // ── 9. Pass 2: eingebettete ID-Referenzen global remappen ──

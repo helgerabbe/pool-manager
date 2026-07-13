@@ -109,6 +109,12 @@ Deno.serve(async (req) => {
     // reguläre Einheiten (ist_basismodul ist false/unset). Basismodule nutzen
     // dasselbe Datenmodell, werden aber in einer eigenen Übersicht angezeigt.
     const scope = payload.scope === 'basismodule' ? 'basismodule' : 'einheiten';
+
+    // view steuert die Sichtbarkeits-Ansicht (Privat-Modus-Konzept 2026-07-13):
+    // 'oeffentlich' (Default) → nur öffentliche Einheiten (sichtbarkeit != 'privat').
+    // 'privat' → nur private Einheiten: Admin sieht alle, andere nur eigene
+    // (besitzer_email) plus Einheiten, zu denen sie als Mitglied eingeladen sind.
+    const view = payload.view === 'privat' ? 'privat' : 'oeffentlich';
     const basismodulFilter =
       scope === 'basismodule'
         ? { ist_basismodul: true }
@@ -203,6 +209,32 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ── Sichtbarkeits-Filter (Privat-Modus) ──
+    if (view === 'privat') {
+      if (role === 'Administrator') {
+        // Admin sieht ALLE privaten Einheiten (Besitzer-Übersicht)
+        filterCriteria = { ...draftFilter, sichtbarkeit: 'privat' };
+      } else {
+        // Eigene private Einheiten + Einheiten, zu denen man eingeladen wurde
+        const eigeneMitgliedschaften = await withRetry(
+          () => base44.asServiceRole.entities.EinheitMembers.filter({ user_email: user.email }),
+          'EinheitMembers.eigene'
+        );
+        const memberEinheitIds = eigeneMitgliedschaften.map((m) => m.einheit_id).filter(Boolean);
+        filterCriteria = {
+          ...draftFilter,
+          sichtbarkeit: 'privat',
+          $or: [
+            { besitzer_email: user.email },
+            ...(memberEinheitIds.length > 0 ? [{ id: { $in: memberEinheitIds } }] : []),
+          ],
+        };
+      }
+    } else {
+      // Öffentliche Ansicht: private Einheiten sind grundsätzlich unsichtbar
+      filterCriteria = { ...filterCriteria, sichtbarkeit: { $ne: 'privat' } };
+    }
+
     // 4. ZÄHLE GESAMT (für Pagination Metadata), falls vom SDK unterstützt
     const totalCountFromSdk = await getCountIfAvailable(base44.asServiceRole.entities.Einheiten, filterCriteria);
 
@@ -267,6 +299,10 @@ Deno.serve(async (req) => {
         // ✅ Für das Lebenszyklus-Badge (Neu/Synchron/Asynchron) auf der Karte:
         // ohne dieses Feld zeigt die Karte fälschlich immer "Neu".
         export_published_at: einheit.export_published_at,
+        // ✅ Privat-Modus: Sichtbarkeit + Besitzer für Badge, Veröffentlichen-
+        // Aktion und die Admin-Besitzer-Übersicht.
+        sichtbarkeit: einheit.sichtbarkeit || 'oeffentlich',
+        besitzer_email: einheit.besitzer_email,
         // ✅ Unit-Level-Mitglieder für RBAC-Prüfung
         members: members.map(m => ({
           user_email: m.user_email,
