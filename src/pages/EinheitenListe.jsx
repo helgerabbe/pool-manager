@@ -260,7 +260,7 @@ export default function EinheitenListe() {
               />
             </div>
             <div className="flex items-center gap-1">
-              <Button onClick={() => navigate('/einheit/create')} className="gap-2">
+              <Button onClick={() => navigate(`/einheit/create${ansicht === 'privat' ? '?privat=1' : ''}`)} className="gap-2">
                 <Wand2 className="w-4 h-4" />
                 Neue Einheit (Wizard)
               </Button>

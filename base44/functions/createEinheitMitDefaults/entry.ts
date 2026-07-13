@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { metaData, istBasismodul } = body;
+    const { metaData, istBasismodul, privat } = body;
 
     if (!metaData?.fach || !metaData?.titel_der_einheit || !metaData?.jahrgangsstufe) {
       return Response.json({ error: 'Fehlende Pflichtfelder: fach, titel_der_einheit, jahrgangsstufe' }, { status: 400 });
@@ -44,6 +44,8 @@ Deno.serve(async (req) => {
     const einheit = await base44.asServiceRole.entities.Einheiten.create({
       ...metaData,
       ist_basismodul: istBasismodul === true,
+      // Privat-Modus: Einheit direkt im Privatbereich des Erstellers anlegen.
+      ...(privat === true ? { sichtbarkeit: 'privat', besitzer_email: user.email } : {}),
       wizard_status: 'entwurf',
       freigabe_status: 'Freigegeben für Bearbeitung',
       sync_status: 'new',

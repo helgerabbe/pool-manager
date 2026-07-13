@@ -22,6 +22,8 @@ export default function EinheitCreateWizard() {
   const draftStep = parseInt(urlParams.get('step') || '1', 10);
   // Basismodul-Modus: derselbe Wizard, aber die Einheit wird als Basismodul gestempelt.
   const istBasismodul = urlParams.get('basismodul') === '1';
+  // Privat-Modus: Vorauswahl für "Privat erstellen" (aus der Privat-Ansicht gestartet).
+  const startPrivat = urlParams.get('privat') === '1';
   const listePfad = istBasismodul ? '/basismodule' : '/einheiten';
 
   const [currentStep, setCurrentStep] = useState(draftId ? draftStep : 1);
@@ -81,8 +83,8 @@ export default function EinheitCreateWizard() {
     // `beschreibung` ist nur ein Briefing für die Struktur-KI in Schritt 2 und
     // KEIN Feld der Einheiten-Entity → vor dem Backend-Call rausfiltern, aber
     // im Wizard-State behalten, damit es an WizardStepAssistenz weitergeht.
-    const { beschreibung, ...metaForDb } = metaData;
-    const res = await base44.functions.invoke('createEinheitMitDefaults', { metaData: metaForDb, istBasismodul });
+    const { beschreibung, privat, ...metaForDb } = metaData;
+    const res = await base44.functions.invoke('createEinheitMitDefaults', { metaData: metaForDb, istBasismodul, privat: privat === true });
     const { einheit } = res.data;
     queryClient.invalidateQueries({ queryKey: ['einheiten'] });
     queryClient.invalidateQueries({ queryKey: ['basismodule'] });
@@ -240,7 +242,7 @@ export default function EinheitCreateWizard() {
       {/* Step Content */}
       {currentStep === 1 && (
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-          <WizardStep1Meta onDone={handleStep1Done} istBasismodul={istBasismodul} />
+          <WizardStep1Meta onDone={handleStep1Done} istBasismodul={istBasismodul} defaultPrivat={startPrivat} />
         </div>
       )}
       {currentStep === 2 && einheitId && (

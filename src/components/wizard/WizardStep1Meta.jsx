@@ -6,12 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronRight, Loader2, Lock } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { useRBAC } from '@/hooks/useRBAC';
 import SpeechInputButton from '@/components/ui/SpeechInputButton';
 
-export default function WizardStep1Meta({ onDone, istBasismodul = false }) {
+export default function WizardStep1Meta({ onDone, istBasismodul = false, defaultPrivat = false }) {
   const { permissions, faecher: userFaecher } = useRBAC();
+  // Privat-Modus: Einheit direkt im eigenen Privatbereich anlegen.
+  const [privat, setPrivat] = useState(defaultPrivat);
   const [form, setForm] = useState({ 
     fach: '', 
     titel_der_einheit: '', 
@@ -76,7 +79,7 @@ export default function WizardStep1Meta({ onDone, istBasismodul = false }) {
     e.preventDefault();
     if (!canSubmit) return;
     setSaving(true);
-    await onDone(form);
+    await onDone({ ...form, privat });
     setSaving(false);
   };
 
@@ -160,6 +163,20 @@ export default function WizardStep1Meta({ onDone, istBasismodul = false }) {
             Hilft der KI, einen passenderen Strukturentwurf zu erzeugen. Du kannst es auch leer lassen.
           </p>
         </div>
+        {!istBasismodul && (
+          <div className="flex items-start justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3">
+            <div className="space-y-0.5">
+              <Label className="flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                Privat erstellen
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Die Einheit landet nur in Ihrem Privatbereich — Sie können sie später jederzeit veröffentlichen.
+              </p>
+            </div>
+            <Switch checked={privat} onCheckedChange={setPrivat} />
+          </div>
+        )}
         <div className="flex justify-end pt-2">
           <Button type="submit" disabled={!canSubmit || saving} className="gap-2">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
