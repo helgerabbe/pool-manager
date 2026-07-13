@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Plus, Search, AlertCircle, Wand2, Globe, Lock } from 'lucide-react';
 import PrivateEinheitenUebersicht from '@/components/einheiten/PrivateEinheitenUebersicht';
 import SyncStatusBadge from '@/components/sync/SyncStatusBadge';
@@ -22,9 +23,16 @@ import HelpBadge from '@/components/ui/HelpBadge';
 import { useEinheitenMetrics } from '@/hooks/useEinheitenMetrics';
 import { EXPORT_LIFECYCLE_STATUS, EXPORT_LIFECYCLE_LABELS } from '@/lib/exportLifecycle';
 
-function SchnellErstellenModal({ open, onOpenChange, onCreated }) {
+function SchnellErstellenModal({ open, onOpenChange, onCreated, defaultPrivat = false }) {
   const [form, setForm] = useState({ titel_der_einheit: '', fach: '', jahrgangsstufe: '' });
-  const { permissions, faecher: userFaecher } = useRBAC();
+  // Privat-Modus: Einheit direkt im eigenen Privatbereich anlegen (Sandbox).
+  const [privat, setPrivat] = useState(defaultPrivat);
+  const { permissions, faecher: userFaecher, authUser } = useRBAC();
+
+  // Beim Öffnen die Vorauswahl an die aktuelle Ansicht anpassen.
+  useEffect(() => {
+    if (open) setPrivat(defaultPrivat);
+  }, [open, defaultPrivat]);
 
   // ✅ SCHRITT 3: Lade NUR die Fächer des Users (Security-Fix)
   const { data: faecher = [] } = useQuery({
@@ -55,7 +63,12 @@ function SchnellErstellenModal({ open, onOpenChange, onCreated }) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Einheiten.create(data),
+    mutationFn: (data) =>
+      base44.entities.Einheiten.create(
+        privat
+          ? { ...data, sichtbarkeit: 'privat', besitzer_email: authUser?.email }
+          : data
+      ),
     onSuccess: (einheit) => {
       setForm({ titel_der_einheit: '', fach: '', jahrgangsstufe: '' });
       onOpenChange(false);
@@ -104,6 +117,18 @@ function SchnellErstellenModal({ open, onOpenChange, onCreated }) {
               <option value="" disabled>Jahrgang auswählen...</option>
               {jahrgaenge.map(j => <option key={j.id} value={j.bezeichnung}>{j.bezeichnung}</option>)}
             </select>
+          </div>
+          <div className="flex items-start justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3">
+            <div className="space-y-0.5">
+              <Label className="flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                Privat erstellen
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Die Einheit landet nur in Ihrem Privatbereich — Sie können sie später jederzeit veröffentlichen.
+              </p>
+            </div>
+            <Switch checked={privat} onCheckedChange={setPrivat} />
           </div>
         </div>
         <DialogFooter>
@@ -364,6 +389,7 @@ export default function EinheitenListe() {
       <SchnellErstellenModal
         open={schnellErstellen}
         onOpenChange={setSchnellErstellen}
+        defaultPrivat={ansicht === 'privat'}
         onCreated={(einheit) => {
           queryClient.invalidateQueries({ queryKey: ['einheiten'] });
           navigate(`/einheiten/${einheit.id}`);
