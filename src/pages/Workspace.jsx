@@ -15,7 +15,7 @@ import { useEinheitFreigabeStatus } from '@/hooks/useEinheitFreigabeStatus';
 import { EXPORT_LIFECYCLE_LABELS, EXPORT_LIFECYCLE_STATUS } from '@/lib/exportLifecycle';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { BookOpen, Lock, ArrowRight, PenLine, Unlock, Loader2, AlignJustify, LayoutList, Layers } from 'lucide-react';
+import { BookOpen, Lock, ArrowRight, PenLine, Unlock, Loader2, AlignJustify, LayoutList, Layers, Eye } from 'lucide-react';
 import HelpDialog from '@/components/ui/HelpDialog';
 import { cn } from '@/lib/utils';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -35,6 +35,7 @@ import { deleteAufgabenbaustein } from '@/services/AufgabenbausteinService';
 import ProjektaufgabenView from '@/components/projektaufgaben/ProjektaufgabenView';
 import LernpfadeCockpit from '@/components/lernpfade/LernpfadeCockpit';
 import LoadingOverlay from '@/components/workspace/LoadingOverlay';
+import EinheitVorschauModal from '@/components/einheiten/EinheitVorschauModal';
 
 const LAST_EINHEIT_STORAGE_KEY = 'poolmanager:lastEinheitId';
 
@@ -65,6 +66,8 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const [highlightedAtomIds, setHighlightedAtomIds] = useState(new Set());
   const [taskWorkshopActivityId, setTaskWorkshopActivityId] = useState(null);
   const [strukturCompact, setStrukturCompact] = useState(false);
+  // Privat-Modus: Gesamt-Vorschau der Einheit aus Schülersicht (in jedem Tab erreichbar)
+  const [vorschauOpen, setVorschauOpen] = useState(false);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -804,6 +807,17 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               <div className="flex-1 min-w-0">
                 <WorkspaceTabs activeTab={activeTab} onTabChange={handleTabChange} isBasismodul={isBasismodul} />
               </div>
+              {/* Privat-Modus: Gesamt-Vorschau — aus jedem Tab heraus erreichbar */}
+              {einheit?.sichtbarkeit === 'privat' && (
+                <button
+                  onClick={() => setVorschauOpen(true)}
+                  title="Gesamt-Vorschau: Einheit aus Schülersicht ansehen"
+                  className="shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  Vorschau
+                </button>
+              )}
               {/* Tab 2 (Struktur): Kompakt- + Struktur-bearbeiten-Buttons sind in
                   die Moodle-Status-Zeile von StrukturBoardEmbedded gewandert. */}
               {activeTab === 'dashboards' &&
@@ -1125,6 +1139,14 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                 Workflows laufen jetzt zentral im Export-Center (Hauptmenü). */}
 
           </Tabs>
+        )}
+
+        {einheit && (
+          <EinheitVorschauModal
+            open={vorschauOpen}
+            onOpenChange={setVorschauOpen}
+            einheit={einheit}
+          />
         )}
 
       </div>

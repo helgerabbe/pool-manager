@@ -195,6 +195,59 @@ export default function LernpfadeCockpit({
     if (aufgabe) setEditorAufgabe(aufgabe);
   }, []);
 
+  // ── Privat-Modus: Lerntypen-Schalter (ein Dashboard statt vier) ────────
+  // Nur bei privaten Einheiten sichtbar. Im Einzel-Modus dient der
+  // Ehrgeizig-Pfad als das EINE Einheits-Dashboard; die anderen drei Pfade
+  // bleiben gespeichert, werden aber nicht angezeigt.
+  const istPrivat = einheit?.sichtbarkeit === 'privat';
+  const [lerntypenModus, setLerntypenModus] = useState(einheit?.lerntypen_modus || 'vier');
+  useEffect(() => {
+    setLerntypenModus(einheit?.lerntypen_modus || 'vier');
+  }, [einheit?.id, einheit?.lerntypen_modus]);
+  const einzelModus = istPrivat && lerntypenModus === 'einzel';
+  const [modusBusy, setModusBusy] = useState(false);
+
+  const handleToggleEinzelModus = useCallback(async () => {
+    if (!einheit?.id || modusBusy) return;
+    const next = einzelModus ? 'vier' : 'einzel';
+    setModusBusy(true);
+    try {
+      await base44.entities.Einheiten.update(einheit.id, { lerntypen_modus: next });
+      setLerntypenModus(next);
+      if (next === 'einzel') {
+        setActiveLernTyp('ehrgeizig');
+        setSelectedAufgabeIdState(null);
+        setSelectedSystemBausteinIdState(null);
+      }
+      queryClient.invalidateQueries({ queryKey: ['workspace-data', einheit.id] });
+      toast({
+        title: next === 'einzel' ? 'Ohne Lerntypen' : 'Mit Lerntypen',
+        description:
+          next === 'einzel'
+            ? 'Diese Einheit hat jetzt nur EIN Dashboard (Basis: Ehrgeizig-Pfad). Die anderen Pfade bleiben gespeichert.'
+            : 'Alle vier Lerntyp-Dashboards sind wieder aktiv.',
+      });
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: 'Umschalten fehlgeschlagen',
+        description: err?.message || 'Bitte erneut versuchen.',
+      });
+    } finally {
+      setModusBusy(false);
+    }
+  }, [einheit?.id, einzelModus, modusBusy, queryClient, toast]);
+
+  // Im Einzel-Modus ist immer der Ehrgeizig-Pfad das aktive Dashboard
+  // (fängt auch Deep-Links auf andere Lerntypen ab).
+  useEffect(() => {
+    if (einzelModus && activeLernTyp !== 'ehrgeizig') {
+      setActiveLernTyp('ehrgeizig');
+      setSelectedAufgabeIdState(null);
+      setSelectedSystemBausteinIdState(null);
+    }
+  }, [einzelModus, activeLernTyp]);
+
   // Lernpaket-Items dürfen NICHT den Aufgaben-Editor öffnen (das ist ein
   // Lernpaket, keine Aufgabe). Stattdessen navigieren wir zu Tab 4
   // („Aktivitäten zuordnen"), wo die Lehrkraft das Lernpaket öffnen,
@@ -1120,6 +1173,10 @@ export default function LernpfadeCockpit({
               onDriftRemoveSektor={handleDriftRemoveSektor}
               onDriftRemoveItem={handleDriftRemoveItem}
               driftDisabled={readOnly}
+              zeigeLerntypenSchalter={istPrivat}
+              einzelModus={einzelModus}
+              onToggleEinzelModus={handleToggleEinzelModus}
+              modusBusy={modusBusy || isEinheitContentLocked}
             />
             <div className="flex-1 overflow-hidden min-h-0">
               {activeLernTyp === 'onboarding' ? (

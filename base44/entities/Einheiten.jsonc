@@ -56,6 +56,15 @@
       "type": "string",
       "description": "Weitergeben-Feature: E-Mail der Person, die diese private Einheit als Kopie weitergegeben hat ('Von X erhalten'). Nur gesetzt, wenn die Einheit \u00fcber duplicateEinheitSecure mit target_email in einen fremden Privatbereich kopiert wurde. Dient als Herkunftsnachweis."
     },
+    "lerntypen_modus": {
+      "type": "string",
+      "enum": [
+        "vier",
+        "einzel"
+      ],
+      "default": "vier",
+      "description": "Privat-Modus-Erweiterung (2026-07-14): Steuert, ob die Einheit mit den vier Lerntyp-Dashboards arbeitet ('vier', Default) oder als vereinfachte Einheit mit genau EINEM Dashboard ('einzel'). Im Einzel-Modus dient der Ehrgeizig-Pfad (lernpfade_konfiguration.ehrgeizig) als das eine Einheits-Dashboard; die anderen drei Pfade bleiben gespeichert, werden aber nicht angezeigt/genutzt. Es gibt keine Lerntyp-Wahl und keine Lerntyp-Diagnose f\u00fcr Sch\u00fcler. Umschaltbar \u00fcber den Schalter im Dashboard-Tab; aktuell nur bei privaten Einheiten (sichtbarkeit='privat') angeboten."
+    },
     "gesamtziele": {
       "type": "array",
       "items": {

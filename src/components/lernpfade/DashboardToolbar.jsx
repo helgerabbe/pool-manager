@@ -39,6 +39,7 @@ import {
   Compass,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import {
   Tooltip,
   TooltipContent,
@@ -63,8 +64,9 @@ const LERNTYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 // unten der Lebenszyklus (Neu / Im Export / Synchron / Geändert). Dadurch ist
 // auf Tab 7 jederzeit sichtbar, in welchem Moodle-Sync-Zustand jedes der vier
 // Dashboards gerade steckt.
-function LerntypPill({ typKey, active, locked, syncStatus, onClick, onOpenGuide }) {
-  const meta = LERNTYP_META[typKey];
+function LerntypPill({ typKey, active, locked, syncStatus, onClick, onOpenGuide, labelOverride }) {
+  const baseMeta = LERNTYP_META[typKey];
+  const meta = labelOverride ? { ...baseMeta, label: labelOverride } : baseMeta;
   const Icon = meta.icon;
 
   const tooltip = (
@@ -206,6 +208,11 @@ export default function DashboardToolbar({
   onDriftRemoveSektor,
   onDriftRemoveItem,
   driftDisabled,
+  // Privat-Modus: Lerntypen-Schalter (mit/ohne vier Lerntyp-Dashboards)
+  zeigeLerntypenSchalter = false,
+  einzelModus = false,
+  onToggleEinzelModus,
+  modusBusy = false,
 }) {
   const status = einheitFreigabe?.status || EXPORT_LIFECYCLE_STATUS.DRAFT;
   const dashboards = einheitFreigabe?.dashboards || {};
@@ -323,8 +330,40 @@ export default function DashboardToolbar({
         </div>
       </div>
 
-      {/* Zeile 2: Reiter-Leiste – Onboarding-Pill (einheits-global) + 4 Lerntyp-Pills */}
+      {/* Zeile 2: Reiter-Leiste – Onboarding-Pill (einheits-global) + 4 Lerntyp-Pills.
+          Bei privaten Einheiten steht links der Lerntypen-Schalter; im
+          Einzel-Modus gibt es nur EIN Dashboard (Basis: Ehrgeizig-Pfad). */}
       <div className="px-3 py-1.5 border-t border-border/60 bg-muted/30 flex items-center gap-1 flex-wrap">
+        {zeigeLerntypenSchalter && (
+          <div className="flex items-center gap-2 pr-3 mr-2 border-r border-border self-stretch">
+            <Switch
+              checked={!einzelModus}
+              onCheckedChange={() => onToggleEinzelModus?.()}
+              disabled={modusBusy}
+              title={einzelModus ? 'Auf vier Lerntyp-Dashboards umschalten' : 'Auf ein einzelnes Dashboard (ohne Lerntypen) umschalten'}
+            />
+            <div className="flex flex-col leading-tight">
+              <span className="text-[11px] font-semibold text-foreground">
+                {einzelModus ? 'Ohne Lerntypen' : 'Mit Lerntypen'}
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                {einzelModus ? '1 Dashboard für alle Schüler' : '4 Lerntyp-Dashboards'}
+              </span>
+            </div>
+          </div>
+        )}
+        {einzelModus ? (
+          <LerntypPill
+            typKey="ehrgeizig"
+            labelOverride="Einheits-Dashboard"
+            active
+            locked={!!dashboards.ehrgeizig}
+            syncStatus={dashboardSyncByLerntyp.ehrgeizig}
+            onClick={() => onActiveLernTypChange?.('ehrgeizig')}
+            onOpenGuide={onOpenGuide}
+          />
+        ) : (
+        <>
         <button
           type="button"
           onClick={() => onActiveLernTypChange?.('onboarding')}
@@ -352,6 +391,8 @@ export default function DashboardToolbar({
             onOpenGuide={onOpenGuide}
           />
         ))}
+        </>
+        )}
       </div>
     </div>
   );
