@@ -63,7 +63,20 @@
         "einzel"
       ],
       "default": "vier",
-      "description": "Privat-Modus-Erweiterung (2026-07-14): Steuert, ob die Einheit mit den vier Lerntyp-Dashboards arbeitet ('vier', Default) oder als vereinfachte Einheit mit genau EINEM Dashboard ('einzel'). Im Einzel-Modus dient der Ehrgeizig-Pfad (lernpfade_konfiguration.ehrgeizig) als das eine Einheits-Dashboard; die anderen drei Pfade bleiben gespeichert, werden aber nicht angezeigt/genutzt. Es gibt keine Lerntyp-Wahl und keine Lerntyp-Diagnose f\u00fcr Sch\u00fcler. Umschaltbar \u00fcber den Schalter im Dashboard-Tab; aktuell nur bei privaten Einheiten (sichtbarkeit='privat') angeboten."
+      "description": "@legacy (2026-07-14, durch aktive_lerntypen ersetzt): Fr\u00fcherer Pauschal-Schalter 'Mit/Ohne Lerntypen' bei privaten Einheiten. 'einzel' wird von getAktiveLerntypKeys (src/lib/lerntypen.js) als Fallback zu aktive_lerntypen=['ehrgeizig'] interpretiert, solange aktive_lerntypen leer ist. Wird nicht mehr aktiv geschrieben."
+    },
+    "aktive_lerntypen": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "minimalist",
+          "pragmatiker",
+          "ehrgeizig",
+          "passioniert"
+        ]
+      },
+      "description": "Privat-Modus Stufe 1 (2026-07-14): Welche Lerntypen bietet diese PRIVATE Einheit an? Die Lehrkraft kann im Dashboard-Tab jeden Lerntyp einzeln an-/abw\u00e4hlen (mindestens einer, anwendungsseitig sichergestellt). Leer/nicht gesetzt = alle. \u00d6FFENTLICHE Einheiten bieten IMMER alle global definierten Lerntypen an \u2014 dort wird dieses Feld ignoriert (zentrale Auswertung: getAktiveLerntypKeys in src/lib/lerntypen.js). Ersetzt den fr\u00fcheren Pauschal-Schalter lerntypen_modus."
     },
     "gesamtziele": {
       "type": "array",

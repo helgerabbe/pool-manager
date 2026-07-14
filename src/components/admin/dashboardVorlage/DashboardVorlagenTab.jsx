@@ -9,6 +9,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Info } from 'lucide-react';
 import DashboardVorlageEditor from '@/components/admin/dashboardVorlage/DashboardVorlageEditor';
+import LerntypNamenEditor from '@/components/admin/dashboardVorlage/LerntypNamenEditor';
 
 export default function DashboardVorlagenTab() {
   return (
@@ -36,6 +37,7 @@ export default function DashboardVorlagenTab() {
             </p>
           </div>
         </div>
+        <LerntypNamenEditor />
         <DashboardVorlageEditor />
       </CardContent>
     </Card>

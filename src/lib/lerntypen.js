@@ -40,3 +40,21 @@ export const LERNTYPEN = Object.freeze([
 export function getLerntyp(key) {
   return LERNTYPEN.find((l) => l.key === key) || null;
 }
+
+/**
+ * Privat-Modus (Stufe 1): Welche Lerntypen bietet diese Einheit an?
+ * Öffentliche Einheiten bieten IMMER alle an; private Einheiten können
+ * einzelne Lerntypen abwählen (Feld `aktive_lerntypen`).
+ * Legacy-Fallback: der frühere Pauschal-Schalter `lerntypen_modus='einzel'`
+ * entspricht nur ['ehrgeizig'].
+ */
+export function getAktiveLerntypKeys(einheit) {
+  const alle = LERNTYPEN.map((l) => l.key);
+  if (!einheit || einheit.sichtbarkeit !== 'privat') return alle;
+  if (Array.isArray(einheit.aktive_lerntypen) && einheit.aktive_lerntypen.length > 0) {
+    const gefiltert = alle.filter((k) => einheit.aktive_lerntypen.includes(k));
+    if (gefiltert.length > 0) return gefiltert;
+  }
+  if (einheit.lerntypen_modus === 'einzel') return ['ehrgeizig'];
+  return alle;
+}

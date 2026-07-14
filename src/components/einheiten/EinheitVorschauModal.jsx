@@ -5,27 +5,25 @@
  * Lädt das echte Schüler-Dashboard (/lernen/dashboard) in einem iframe —
  * ohne Poolzeit-Rahmen (kein Onboarding, kein Checkout, kein Lerntagebuch).
  *
- * Bei "Ohne Lerntypen" (lerntypen_modus='einzel') wird immer der
- * Ehrgeizig-Pfad als das EINE Einheits-Dashboard gezeigt; sonst kann
- * die Lehrkraft oben zwischen den vier Lerntypen umschalten.
+ * Angeboten werden nur die für diese Einheit aktiven Lerntypen
+ * (aktive_lerntypen); bei genau einem entfällt die Auswahl komplett.
+ * Anzeigenamen kommen aus der schulweiten Lerntyp-Konfiguration.
  */
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Eye, RotateCcw } from 'lucide-react';
-
-const LERNTYPEN = [
-  { key: 'minimalist', label: 'Minimalist' },
-  { key: 'pragmatiker', label: 'Pragmatiker' },
-  { key: 'ehrgeizig', label: 'Ehrgeizig' },
-  { key: 'passioniert', label: 'Passioniert' },
-];
+import { getAktiveLerntypKeys } from '@/lib/lerntypen';
+import { useLerntypDefinitionen } from '@/hooks/useLerntypDefinitionen';
 
 export default function EinheitVorschauModal({ open, onOpenChange, einheit }) {
-  const einzelModus = einheit?.lerntypen_modus === 'einzel';
-  const [lerntyp, setLerntyp] = useState('ehrgeizig');
+  const { lerntypen } = useLerntypDefinitionen();
+  const aktiveKeys = getAktiveLerntypKeys(einheit);
+  const auswahl = lerntypen.filter((l) => aktiveKeys.includes(l.key));
+
+  const [lerntyp, setLerntyp] = useState(aktiveKeys[0]);
   const [reloadKey, setReloadKey] = useState(0);
 
-  const effektiverLerntyp = einzelModus ? 'ehrgeizig' : lerntyp;
+  const effektiverLerntyp = aktiveKeys.includes(lerntyp) ? lerntyp : aktiveKeys[0];
   const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
   const src = `${base}/lernen/dashboard?id=${einheit?.id}&lerntyp=${effektiverLerntyp}`;
 
@@ -43,19 +41,19 @@ export default function EinheitVorschauModal({ open, onOpenChange, einheit }) {
             </DialogDescription>
           </div>
           <div className="ml-auto flex items-center gap-1.5 pr-8 flex-wrap">
-            {!einzelModus &&
-              LERNTYPEN.map((lt) => (
+            {auswahl.length > 1 &&
+              auswahl.map((lt) => (
                 <button
                   key={lt.key}
                   type="button"
                   onClick={() => setLerntyp(lt.key)}
                   className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-colors ${
-                    lerntyp === lt.key
+                    effektiverLerntyp === lt.key
                       ? 'bg-primary text-primary-foreground border-transparent'
                       : 'bg-card text-muted-foreground border-border hover:bg-muted'
                   }`}
                 >
-                  {lt.label}
+                  {lt.name}
                 </button>
               ))}
             <button

@@ -377,8 +377,9 @@ Deno.serve(async (req) => {
           sichtbarkeit: einheit.sichtbarkeit || 'oeffentlich',
           besitzer_email: einheit.besitzer_email || null,
           erhalten_von: einheit.erhalten_von || null,
-          // Privat-Modus: Lerntypen-Schalter (vier Dashboards vs. ein Dashboard).
+          // Privat-Modus: angebotene Lerntypen (Stufe 1) + Legacy-Schalter.
           lerntypen_modus: einheit.lerntypen_modus || 'vier',
+          aktive_lerntypen: einheit.aktive_lerntypen || [],
           freigabe_status: einheit.freigabe_status,
           sync_status: einheit.sync_status,
           last_synced_at: einheit.last_synced_at,

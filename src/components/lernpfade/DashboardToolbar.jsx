@@ -37,9 +37,10 @@ import {
   CheckCircle2,
   RotateCcw,
   Compass,
+  Check,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import {
   Tooltip,
   TooltipContent,
@@ -208,11 +209,12 @@ export default function DashboardToolbar({
   onDriftRemoveSektor,
   onDriftRemoveItem,
   driftDisabled,
-  // Privat-Modus: Lerntypen-Schalter (mit/ohne vier Lerntyp-Dashboards)
+  // Privat-Modus: pro Lerntyp einzeln an-/abschaltbar (nur private Einheiten)
   zeigeLerntypenSchalter = false,
-  einzelModus = false,
-  onToggleEinzelModus,
+  aktiveLerntypen = LERNTYPEN,
+  onToggleLerntyp,
   modusBusy = false,
+  lerntypNamen = {},
 }) {
   const status = einheitFreigabe?.status || EXPORT_LIFECYCLE_STATUS.DRAFT;
   const dashboards = einheitFreigabe?.dashboards || {};
@@ -227,6 +229,11 @@ export default function DashboardToolbar({
   // Onboarding ist einheits-global, kein Lerntyp-Dashboard → lerntyp-spezifische
   // Aktionen (Prüfen/Freigeben, Schüler-Vorschau, Drift) sind dort nicht sinnvoll.
   const istOnboarding = activeLernTyp === 'onboarding';
+
+  // Privat-Modus: nur die angebotenen Lerntypen als Reiter zeigen. Bei genau
+  // EINEM angebotenen Lerntyp entfällt die Lerntyp-Wahl → Onboarding-Pill weg.
+  const sichtbareLerntypen = LERNTYPEN.filter((lt) => aktiveLerntypen.includes(lt));
+  const zeigeOnboardingPill = !(zeigeLerntypenSchalter && aktiveLerntypen.length === 1);
 
   return (
     <div className="shrink-0 border-b border-border bg-card">
@@ -335,34 +342,36 @@ export default function DashboardToolbar({
           Einzel-Modus gibt es nur EIN Dashboard (Basis: Ehrgeizig-Pfad). */}
       <div className="px-3 py-1.5 border-t border-border/60 bg-muted/30 flex items-center gap-1 flex-wrap">
         {zeigeLerntypenSchalter && (
-          <div className="flex items-center gap-2 pr-3 mr-2 border-r border-border self-stretch">
-            <Switch
-              checked={!einzelModus}
-              onCheckedChange={() => onToggleEinzelModus?.()}
-              disabled={modusBusy}
-              title={einzelModus ? 'Auf vier Lerntyp-Dashboards umschalten' : 'Auf ein einzelnes Dashboard (ohne Lerntypen) umschalten'}
-            />
-            <div className="flex flex-col leading-tight">
-              <span className="text-[11px] font-semibold text-foreground">
-                {einzelModus ? 'Ohne Lerntypen' : 'Mit Lerntypen'}
-              </span>
-              <span className="text-[10px] text-muted-foreground">
-                {einzelModus ? '1 Dashboard für alle Schüler' : '4 Lerntyp-Dashboards'}
-              </span>
+          <div className="flex flex-col justify-center gap-1 pr-3 mr-2 border-r border-border self-stretch">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Angebotene Lerntypen
+            </span>
+            <div className="flex items-center gap-1">
+              {LERNTYPEN.map((lt) => {
+                const an = aktiveLerntypen.includes(lt);
+                const name = lerntypNamen[lt] || LERNTYP_META[lt].label;
+                return (
+                  <button
+                    key={lt}
+                    type="button"
+                    disabled={modusBusy}
+                    onClick={() => onToggleLerntyp?.(lt)}
+                    title={an ? `„${name}" für diese Einheit deaktivieren` : `„${name}" für diese Einheit aktivieren`}
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold transition-colors disabled:opacity-50 ${
+                      an
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100'
+                        : 'bg-muted border-border text-muted-foreground opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    {an ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                    {name}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
-        {einzelModus ? (
-          <LerntypPill
-            typKey="ehrgeizig"
-            labelOverride="Einheits-Dashboard"
-            active
-            locked={!!dashboards.ehrgeizig}
-            syncStatus={dashboardSyncByLerntyp.ehrgeizig}
-            onClick={() => onActiveLernTypChange?.('ehrgeizig')}
-            onOpenGuide={onOpenGuide}
-          />
-        ) : (
+        {zeigeOnboardingPill && (
         <>
         <button
           type="button"
@@ -380,7 +389,9 @@ export default function DashboardToolbar({
           <span className="text-[10px] font-medium opacity-80">Vor den Dashboards</span>
         </button>
         <span className="w-px h-9 bg-border mx-1 self-center" />
-        {LERNTYPEN.map((lt) => (
+        </>
+        )}
+        {sichtbareLerntypen.map((lt) => (
           <LerntypPill
             key={lt}
             typKey={lt}
@@ -389,10 +400,9 @@ export default function DashboardToolbar({
             syncStatus={dashboardSyncByLerntyp[lt]}
             onClick={() => onActiveLernTypChange?.(lt)}
             onOpenGuide={onOpenGuide}
+            labelOverride={lerntypNamen[lt]}
           />
         ))}
-        </>
-        )}
       </div>
     </div>
   );

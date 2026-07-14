@@ -83,6 +83,8 @@ import { getAmpelStatus } from '@/lib/ampelLogic';
 import { adaptLernpaketToPoolItem } from '@/lib/lernpaketAdapter';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 import { ladeOnboardingSnapshots, speichereOnboardingSnapshot } from '@/lib/onboardingSnapshots';
+import { getAktiveLerntypKeys } from '@/lib/lerntypen';
+import { useLerntypDefinitionen } from '@/hooks/useLerntypDefinitionen';
 
 const DEFAULT_KONFIG = { minimalist: [], pragmatiker: [], ehrgeizig: [], passioniert: [] };
 
@@ -195,58 +197,67 @@ export default function LernpfadeCockpit({
     if (aufgabe) setEditorAufgabe(aufgabe);
   }, []);
 
-  // ── Privat-Modus: Lerntypen-Schalter (ein Dashboard statt vier) ────────
-  // Nur bei privaten Einheiten sichtbar. Im Einzel-Modus dient der
-  // Ehrgeizig-Pfad als das EINE Einheits-Dashboard; die anderen drei Pfade
-  // bleiben gespeichert, werden aber nicht angezeigt.
+  // ── Privat-Modus: Lerntypen einzeln an-/abschaltbar (Stufe 1) ─────────
+  // Nur bei privaten Einheiten sichtbar. Die Lehrkraft wählt, welche der
+  // global definierten Lerntypen diese Einheit anbietet (mindestens einer).
+  // Öffentliche Einheiten bieten immer alle an.
   const istPrivat = einheit?.sichtbarkeit === 'privat';
-  const [lerntypenModus, setLerntypenModus] = useState(einheit?.lerntypen_modus || 'vier');
+  const { labelByKey: lerntypNamen } = useLerntypDefinitionen();
+  const [aktiveLerntypen, setAktiveLerntypen] = useState(() => getAktiveLerntypKeys(einheit));
   useEffect(() => {
-    setLerntypenModus(einheit?.lerntypen_modus || 'vier');
-  }, [einheit?.id, einheit?.lerntypen_modus]);
-  const einzelModus = istPrivat && lerntypenModus === 'einzel';
+    setAktiveLerntypen(getAktiveLerntypKeys(einheit));
+  }, [einheit?.id, einheit?.aktive_lerntypen, einheit?.lerntypen_modus, einheit?.sichtbarkeit]);
   const [modusBusy, setModusBusy] = useState(false);
 
-  const handleToggleEinzelModus = useCallback(async () => {
-    if (!einheit?.id || modusBusy) return;
-    const next = einzelModus ? 'vier' : 'einzel';
-    setModusBusy(true);
-    try {
-      await base44.entities.Einheiten.update(einheit.id, { lerntypen_modus: next });
-      setLerntypenModus(next);
-      if (next === 'einzel') {
-        setActiveLernTyp('ehrgeizig');
-        setSelectedAufgabeIdState(null);
-        setSelectedSystemBausteinIdState(null);
+  const handleToggleLerntyp = useCallback(
+    async (lerntypKey) => {
+      if (!einheit?.id || modusBusy) return;
+      const istAn = aktiveLerntypen.includes(lerntypKey);
+      if (istAn && aktiveLerntypen.length === 1) {
+        toast({
+          title: 'Mindestens ein Lerntyp nötig',
+          description: 'Eine Einheit braucht mindestens ein aktives Dashboard.',
+        });
+        return;
       }
-      queryClient.invalidateQueries({ queryKey: ['workspace-data', einheit.id] });
-      toast({
-        title: next === 'einzel' ? 'Ohne Lerntypen' : 'Mit Lerntypen',
-        description:
-          next === 'einzel'
-            ? 'Diese Einheit hat jetzt nur EIN Dashboard (Basis: Ehrgeizig-Pfad). Die anderen Pfade bleiben gespeichert.'
-            : 'Alle vier Lerntyp-Dashboards sind wieder aktiv.',
-      });
-    } catch (err) {
-      toast({
-        variant: 'destructive',
-        title: 'Umschalten fehlgeschlagen',
-        description: err?.message || 'Bitte erneut versuchen.',
-      });
-    } finally {
-      setModusBusy(false);
-    }
-  }, [einheit?.id, einzelModus, modusBusy, queryClient, toast]);
+      const next = istAn
+        ? aktiveLerntypen.filter((lt) => lt !== lerntypKey)
+        : VALID_LERNTYPEN.filter((lt) => aktiveLerntypen.includes(lt) || lt === lerntypKey);
+      setModusBusy(true);
+      try {
+        await base44.entities.Einheiten.update(einheit.id, { aktive_lerntypen: next });
+        setAktiveLerntypen(next);
+        if (!next.includes(activeLernTyp) && activeLernTyp !== 'onboarding') {
+          setActiveLernTyp(next[0]);
+          setSelectedAufgabeIdState(null);
+          setSelectedSystemBausteinIdState(null);
+        }
+        queryClient.invalidateQueries({ queryKey: ['workspace-data', einheit.id] });
+      } catch (err) {
+        toast({
+          variant: 'destructive',
+          title: 'Umschalten fehlgeschlagen',
+          description: err?.message || 'Bitte erneut versuchen.',
+        });
+      } finally {
+        setModusBusy(false);
+      }
+    },
+    [einheit?.id, aktiveLerntypen, modusBusy, activeLernTyp, queryClient, toast]
+  );
 
-  // Im Einzel-Modus ist immer der Ehrgeizig-Pfad das aktive Dashboard
-  // (fängt auch Deep-Links auf andere Lerntypen ab).
+  // Der aktive Reiter muss immer ein angebotener Lerntyp sein (fängt auch
+  // Deep-Links ab). Bei genau EINEM angebotenen Lerntyp entfällt zusätzlich
+  // das Onboarding (es gibt keine Lerntyp-Wahl mehr).
   useEffect(() => {
-    if (einzelModus && activeLernTyp !== 'ehrgeizig') {
-      setActiveLernTyp('ehrgeizig');
+    if (!istPrivat) return;
+    if (activeLernTyp === 'onboarding' && aktiveLerntypen.length > 1) return;
+    if (!aktiveLerntypen.includes(activeLernTyp)) {
+      setActiveLernTyp(aktiveLerntypen[0]);
       setSelectedAufgabeIdState(null);
       setSelectedSystemBausteinIdState(null);
     }
-  }, [einzelModus, activeLernTyp]);
+  }, [istPrivat, aktiveLerntypen, activeLernTyp]);
 
   // Lernpaket-Items dürfen NICHT den Aufgaben-Editor öffnen (das ist ein
   // Lernpaket, keine Aufgabe). Stattdessen navigieren wir zu Tab 4
@@ -1174,9 +1185,10 @@ export default function LernpfadeCockpit({
               onDriftRemoveItem={handleDriftRemoveItem}
               driftDisabled={readOnly}
               zeigeLerntypenSchalter={istPrivat}
-              einzelModus={einzelModus}
-              onToggleEinzelModus={handleToggleEinzelModus}
+              aktiveLerntypen={aktiveLerntypen}
+              onToggleLerntyp={handleToggleLerntyp}
               modusBusy={modusBusy || isEinheitContentLocked}
+              lerntypNamen={lerntypNamen}
             />
             <div className="flex-1 overflow-hidden min-h-0">
               {activeLernTyp === 'onboarding' ? (

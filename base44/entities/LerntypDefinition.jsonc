@@ -1,0 +1,50 @@
+{
+  "name": "LerntypDefinition",
+  "type": "object",
+  "description": "Schulweite Konfiguration der Lerntypen (Stufe 1, 2026-07-14): Die vier technischen Lerntyp-Schl\u00fcssel sind systemweit fix (minimalist | pragmatiker | ehrgeizig | passioniert \u2014 sie sind Keys in Einheiten.lernpfade_konfiguration und im Sch\u00fcler-Fortschritt). Diese Entity erlaubt dem Administrator, pro Schl\u00fcssel den Anzeigenamen und Untertitel schulweit zu \u00fcberschreiben (z. B. Umbenennung in 'Level 1\u20134' oder 'Lernwege'). Pro Schl\u00fcssel existiert maximal ein Datensatz (anwendungsseitig sichergestellt). Fehlt ein Datensatz, gelten die Defaults aus src/lib/lerntypen.js. Stufe 2 (perspektivisch, bewusst offen gehalten): freie Anzahl von Lerntypen \u2014 dann w\u00fcrde diese Entity zur f\u00fchrenden Quelle inkl. eigener Schl\u00fcssel ausgebaut und eine Datenmigration n\u00f6tig.",
+  "properties": {
+    "schluessel": {
+      "type": "string",
+      "enum": [
+        "minimalist",
+        "pragmatiker",
+        "ehrgeizig",
+        "passioniert"
+      ],
+      "description": "Technischer, systemweit fixer Lerntyp-Schl\u00fcssel."
+    },
+    "anzeigename": {
+      "type": "string",
+      "description": "Schulweiter Anzeigename (\u00fcberschreibt den Default, z. B. 'Minimalist')."
+    },
+    "untertitel": {
+      "type": "string",
+      "description": "Kurzbeschreibung, die Lehrkr\u00e4ften/Sch\u00fclern erkl\u00e4rt, wof\u00fcr dieser Lerntyp steht."
+    },
+    "reihenfolge": {
+      "type": "number",
+      "description": "Sortierreihenfolge (Default: Systemreihenfolge)."
+    }
+  },
+  "required": [
+    "schluessel"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
