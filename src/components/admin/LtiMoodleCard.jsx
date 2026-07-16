@@ -10,6 +10,10 @@ import { GraduationCap, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import LtiCopyRow from '@/components/admin/LtiCopyRow';
 
+// Veröffentlichte App-Adresse — Basis für alle LTI-URLs, unabhängig davon,
+// ob die Karte gerade in der Editor-Vorschau oder in der Live-App angezeigt wird.
+const APP_BASE_URL = 'https://righteous-edu-flow-hub.base44.app';
+
 /**
  * Admin-Karte: Moodle-Anbindung (LTI 1.3).
  * Zeigt die Tool-URLs für die einmalige Registrierung in Moodle und nimmt die
@@ -30,10 +34,10 @@ export default function LtiMoodleCard() {
         issuer: data.config.issuer || '',
         client_id: data.config.client_id || '',
         deployment_id: data.config.deployment_id || '',
-        app_basis_url: data.config.app_basis_url || window.location.origin,
+        app_basis_url: data.config.app_basis_url || APP_BASE_URL,
       });
     } else if (data) {
-      setForm((f) => ({ ...f, app_basis_url: f.app_basis_url || window.location.origin }));
+      setForm((f) => ({ ...f, app_basis_url: f.app_basis_url || APP_BASE_URL }));
     }
   }, [data]);
 
@@ -46,9 +50,9 @@ export default function LtiMoodleCard() {
     onError: (err) => toast.error('Speichern fehlgeschlagen: ' + (err.response?.data?.error || err.message)),
   });
 
-  // Die öffentlichen Funktions-URLs aus der App-Adresse ableiten
+  // Die öffentlichen Funktions-URLs aus der veröffentlichten App-Adresse ableiten
   // (Format lt. Plattform: https://<app-domain>/functions/<name>).
-  const fnBase = `${window.location.origin}/functions/`;
+  const fnBase = `${APP_BASE_URL}/functions/`;
   const urls = {
     login_url: fnBase + 'ltiLogin',
     launch_url: fnBase + 'ltiLaunch',
@@ -129,7 +133,7 @@ export default function LtiMoodleCard() {
                   <Input
                     value={form.app_basis_url}
                     onChange={(e) => setForm({ ...form, app_basis_url: e.target.value })}
-                    placeholder={window.location.origin}
+                    placeholder={APP_BASE_URL}
                   />
                 </div>
               </div>
