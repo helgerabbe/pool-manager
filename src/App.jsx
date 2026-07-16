@@ -39,6 +39,7 @@ import EinheitOnboarding from '@/pages/schueler/EinheitOnboarding';
 import EinheitOnboardingQuiz from '@/pages/schueler/EinheitOnboardingQuiz';
 import EinheitDashboard from '@/pages/schueler/EinheitDashboard';
 import SupabaseLoginGate from '@/components/schueler/auth/SupabaseLoginGate';
+import MoodleEinstieg from '@/pages/schueler/MoodleEinstieg';
 import ExternesThemeGate from '@/components/schueler/ExternesThemeGate';
 
 const AuthenticatedApp = () => {
@@ -66,6 +67,13 @@ const AuthenticatedApp = () => {
         </Routes>
       </ErrorBoundary>
     );
+  }
+
+  // ── Moodle-LTI-Einstieg (Etappe 1): Schüler kommen signiert aus Moodle,
+  // OHNE Base44-Konto. Diese Route muss VOR jeder Auth-Prüfung gerendert
+  // werden, sonst würden die Schüler zum Login umgeleitet.
+  if (window.location.pathname.includes('/lernen/moodle')) {
+    return <MoodleEinstieg />;
   }
 
   // Show loading spinner while checking app public settings or auth

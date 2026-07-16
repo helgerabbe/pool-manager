@@ -30,6 +30,7 @@ import DashboardVorlagenTab from '@/components/admin/dashboardVorlage/DashboardV
 import GitHubConnectorCard from '@/components/admin/GitHubConnectorCard';
 import GitHubTicketConnectorCard from '@/components/admin/GitHubTicketConnectorCard';
 import GitHubCssConnectorCard from '@/components/admin/GitHubCssConnectorCard';
+import LtiMoodleCard from '@/components/admin/LtiMoodleCard';
 
 const KATEGORIEN = ['Diagnostik', 'Input', 'Übung', 'Projekt', 'Prüfung'];
 
@@ -272,6 +273,7 @@ export default function AdminSettings() {
 
         {/* Integrationen — externe Datenquellen (GitHub etc.) */}
         <TabsContent value="integrationen" className="mt-4 space-y-6">
+          <LtiMoodleCard />
           <GitHubConnectorCard />
           <GitHubTicketConnectorCard />
           <GitHubCssConnectorCard />

@@ -1,0 +1,41 @@
+{
+  "name": "LtiInterna",
+  "type": "object",
+  "description": "Interne, automatisch erzeugte Schluessel fuer die Moodle-LTI-Anbindung (Signier-Schluessel fuer Schueler-Sitzungen, RSA-Schluesselpaar fuer das Tool-Keyset). Wird ausschliesslich von den LTI-Backend-Funktionen per Service-Role gelesen/geschrieben. Pro 'schluessel' genau ein Datensatz. RLS: komplett admin-only, damit die Werte nie an normale Nutzer gelangen.",
+  "properties": {
+    "schluessel": {
+      "type": "string",
+      "description": "Identifier, z. B. 'session_signing_key', 'tool_private_jwk', 'tool_public_jwk'."
+    },
+    "wert": {
+      "type": "string",
+      "description": "Der Schluesselwert (Hex-String oder JWK-JSON)."
+    }
+  },
+  "required": [
+    "schluessel",
+    "wert"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

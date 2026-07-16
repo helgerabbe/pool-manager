@@ -1,0 +1,67 @@
+{
+  "name": "MoodleSchueler",
+  "type": "object",
+  "description": "Automatisch angelegtes Schuelerprofil fuer Schueler, die per Moodle-LTI-Launch in die App kommen (kein Base44-Konto noetig). Eindeutigkeit pro (issuer, moodle_sub) wird von ltiLaunch sichergestellt. Dient als Identitaets-Anker fuer Fortschritt und Lehrer-Reporting.",
+  "properties": {
+    "issuer": {
+      "type": "string",
+      "description": "Plattform-ID der Moodle-Instanz, aus der der Schueler kommt."
+    },
+    "moodle_sub": {
+      "type": "string",
+      "description": "Stabile Moodle-Nutzer-ID (LTI 'sub'-Claim). Faelschungssicher, da vom signierten Moodle-Token stammend."
+    },
+    "anzeige_name": {
+      "type": "string",
+      "description": "Voller Name aus Moodle (falls uebermittelt)."
+    },
+    "vorname": {
+      "type": "string"
+    },
+    "nachname": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string",
+      "description": "E-Mail aus Moodle (falls uebermittelt; haengt von den Datenschutz-Einstellungen des Tools in Moodle ab)."
+    },
+    "erster_login_am": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "letzter_login_am": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "login_anzahl": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "issuer",
+    "moodle_sub"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
