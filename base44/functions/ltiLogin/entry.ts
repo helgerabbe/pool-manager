@@ -81,8 +81,11 @@ Deno.serve(async (req) => {
     const stateSig = await hmacSign(signingKey.wert, statePart);
     const state = `${statePart}.${stateSig}`;
 
-    // Redirect-URI = unsere ltiLaunch-Funktion (Schwester-URL dieser Funktion)
-    const redirectUri = u.origin + u.pathname.replace(/ltiLogin\/?$/, 'ltiLaunch');
+    // Redirect-URI = unsere ltiLaunch-Funktion. WICHTIG: Muss exakt der in Moodle
+    // eingetragenen Umleitungs-URI entsprechen — daher aus der gespeicherten
+    // App-Adresse ableiten, nicht aus der internen Request-URL (Proxy-Domain).
+    const appBase = (cfg.app_basis_url || u.origin).replace(/\/+$/, '');
+    const redirectUri = appBase + '/functions/ltiLaunch';
 
     const authUrl = new URL(cfg.issuer + '/mod/lti/auth.php');
     authUrl.searchParams.set('scope', 'openid');
