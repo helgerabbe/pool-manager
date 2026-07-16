@@ -40,6 +40,8 @@ import EinheitOnboardingQuiz from '@/pages/schueler/EinheitOnboardingQuiz';
 import EinheitDashboard from '@/pages/schueler/EinheitDashboard';
 import SupabaseLoginGate from '@/components/schueler/auth/SupabaseLoginGate';
 import MoodleEinstieg from '@/pages/schueler/MoodleEinstieg';
+import { hatGueltigeLtiSession } from '@/lib/ltiSession';
+import { hasToken } from '@/services/AuthService';
 import ExternesThemeGate from '@/components/schueler/ExternesThemeGate';
 
 const AuthenticatedApp = () => {
@@ -74,6 +76,29 @@ const AuthenticatedApp = () => {
   // werden, sonst würden die Schüler zum Login umgeleitet.
   if (window.location.pathname.includes('/lernen/moodle')) {
     return <MoodleEinstieg />;
+  }
+
+  // ── Moodle-Schüler-Sitzung (Etappe 2): Schüler mit gültiger LTI-Sitzung,
+  // aber OHNE Base44-Login, bekommen den Schülerbereich im Minimal-Layout —
+  // komplett an der Base44-Auth vorbei. Die Daten laufen über die geprüfte
+  // ltiApi (siehe SchuelerDataService → ltiAdapter).
+  if (!hasToken() && hatGueltigeLtiSession() && window.location.pathname.startsWith('/lernen')) {
+    return (
+      <ErrorBoundary fallback="Der Schülerbereich konnte nicht geladen werden.">
+        <Routes>
+          <Route element={<SchuelerOnlyLayout />}>
+            <Route path="/lernen" element={<StudentArea />} />
+            <Route path="/lernen/poolzeit" element={<PoolzeitStart />} />
+            <Route path="/lernen/lerntagebuch" element={<Lerntagebuch />} />
+            <Route path="/lernen/fach" element={<FachSeite />} />
+            <Route path="/lernen/einheit" element={<EinheitOnboarding />} />
+            <Route path="/lernen/onboarding" element={<EinheitOnboardingQuiz />} />
+            <Route path="/lernen/dashboard" element={<EinheitDashboard />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/lernen" replace />} />
+        </Routes>
+      </ErrorBoundary>
+    );
   }
 
   // Show loading spinner while checking app public settings or auth
