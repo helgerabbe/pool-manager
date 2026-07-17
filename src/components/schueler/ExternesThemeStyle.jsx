@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import useExternesCss from '@/hooks/useExternesCss';
 import { buildThemeBridgeCss } from '@/lib/externesThemeBridge';
 
@@ -11,8 +11,16 @@ import { buildThemeBridgeCss } from '@/lib/externesThemeBridge';
  * Ist der Connector deaktiviert oder nicht konfiguriert, rendert die
  * Komponente nichts — dann gilt das lokale Layout.
  */
-export default function ExternesThemeStyle() {
-  const { enabled, css } = useExternesCss();
+export default function ExternesThemeStyle({ fresh = false }) {
+  const { enabled, css, refetch } = useExternesCss();
+
+  // fresh=true (Element-Vorschau): Beim Öffnen die CSS-Datei IMMER direkt
+  // neu aus dem Repository laden, damit nie eine alte Version zu sehen ist.
+  useEffect(() => {
+    if (fresh) refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fresh]);
+
   const bridgeCss = useMemo(() => (enabled ? buildThemeBridgeCss(css) : ''), [enabled, css]);
   if (!enabled) return null;
   return <style data-externes-theme="true">{css + '\n' + bridgeCss}</style>;

@@ -28,7 +28,7 @@ export default function IPadFrame({ children, lernpaketTitel = 'Lernpaket', phas
     >
     {/* Zentrales CSS aus dem GitHub-CSS-Connector: aktiv, solange die Vorschau offen ist,
         damit Lehrkräfte exakt das sehen, was Schüler:innen später sehen. */}
-    <ExternesThemeStyle />
+    <ExternesThemeStyle fresh />
     <div
       className="bg-slate-800 rounded-[28px] p-3 shadow-2xl ring-1 ring-slate-900/10"
       style={{ width: FRAME_WIDTH, transform: `scale(${scale})`, transformOrigin: 'top left' }}

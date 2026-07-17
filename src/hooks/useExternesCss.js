@@ -14,7 +14,7 @@ import { isSupabase } from '@/services/schueler/backend';
  * Base44-Funktionen zur Verfügung — dort ist der Hook inaktiv.
  */
 export default function useExternesCss() {
-  const { data } = useQuery({
+  const { data, refetch } = useQuery({
     queryKey: ['externes-css'],
     queryFn: async () => {
       const res = await base44.functions.invoke('getExternesCss', {});
@@ -28,5 +28,6 @@ export default function useExternesCss() {
   return {
     enabled: !!data?.enabled && !!data?.css,
     css: data?.css || '',
+    refetch,
   };
 }
