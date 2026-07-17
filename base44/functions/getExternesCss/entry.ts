@@ -33,17 +33,29 @@ Deno.serve(async (req) => {
       return Response.json({ enabled: false, reason: 'deaktiviert' });
     }
 
-    const branch = cfg.branch || 'main';
-    const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${cfg.file_path}?ref=${branch}`;
+    const branch = (cfg.branch || 'main').trim();
+    const owner = String(cfg.owner).trim();
+    const repo = String(cfg.repo).trim();
+    const filePath = String(cfg.file_path).trim().replace(/^\/+/, '');
+    const token = String(cfg.access_token).trim();
+    const url = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}?ref=${branch}`;
     const res = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${cfg.access_token}`,
+        Authorization: `Bearer ${token}`,
         Accept: 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
+        'User-Agent': 'PoolManager-CSS-Connector',
       },
     });
     if (!res.ok) {
-      return Response.json({ enabled: false, reason: 'fetch_fehler', error: `CSS-Datei nicht erreichbar (HTTP ${res.status}).` });
+      // GitHubs eigene Fehlermeldung mit ausgeben, damit die Ursache
+      // (z. B. "Resource not accessible", "Bad credentials") sichtbar wird.
+      let detail = '';
+      try {
+        const body = await res.json();
+        if (body && body.message) detail = ` GitHub sagt: "${body.message}"`;
+      } catch (_e) { /* ignorieren */ }
+      return Response.json({ enabled: false, reason: 'fetch_fehler', error: `CSS-Datei nicht erreichbar (HTTP ${res.status}).${detail}` });
     }
     const file = await res.json();
     const b64 = String(file.content || '').replace(/\s/g, '');
