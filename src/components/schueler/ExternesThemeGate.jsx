@@ -10,7 +10,11 @@ export default function ExternesThemeGate() {
   return (
     <>
       <ExternesThemeStyle />
-      <Outlet />
+      {/* display:contents — nimmt am Layout nicht teil, vererbt aber die
+          Design-Brücken-Tokens (.externes-theme-scope) an den Schülerbereich. */}
+      <div className="externes-theme-scope" style={{ display: 'contents' }}>
+        <Outlet />
+      </div>
     </>
   );
 }

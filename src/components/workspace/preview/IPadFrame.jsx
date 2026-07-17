@@ -66,7 +66,11 @@ export default function IPadFrame({ children, lernpaketTitel = 'Lernpaket', phas
             className="bg-white rounded-lg shadow-md ring-1 ring-slate-200 overflow-auto"
             style={{ width: SLIDE_WIDTH, height: SLIDE_HEIGHT }}
           >
-            {children}
+            {/* Design-Brücke: Innerhalb des Slots gelten die Farben/Schriften
+                des externen MBK-Design-Kits (sofern der Connector aktiv ist). */}
+            <div className="externes-theme-scope" style={{ display: 'contents' }}>
+              {children}
+            </div>
           </div>
         </div>
       </div>
