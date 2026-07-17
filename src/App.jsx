@@ -40,7 +40,8 @@ import EinheitOnboardingQuiz from '@/pages/schueler/EinheitOnboardingQuiz';
 import EinheitDashboard from '@/pages/schueler/EinheitDashboard';
 import SupabaseLoginGate from '@/components/schueler/auth/SupabaseLoginGate';
 import MoodleEinstieg from '@/pages/schueler/MoodleEinstieg';
-import { hatGueltigeLtiSession } from '@/lib/ltiSession';
+import { hatGueltigeLtiSession, getLtiSession } from '@/lib/ltiSession';
+import MoodleKeineEinheit from '@/components/schueler/MoodleKeineEinheit';
 import { hasToken } from '@/services/AuthService';
 import ExternesThemeGate from '@/components/schueler/ExternesThemeGate';
 
@@ -79,23 +80,29 @@ const AuthenticatedApp = () => {
   }
 
   // ── Moodle-Schüler-Sitzung (Etappe 2): Schüler mit gültiger LTI-Sitzung,
-  // aber OHNE Base44-Login, bekommen den Schülerbereich im Minimal-Layout —
-  // komplett an der Base44-Auth vorbei. Die Daten laufen über die geprüfte
-  // ltiApi (siehe SchuelerDataService → ltiAdapter).
+  // aber OHNE Base44-Login, sehen AUSSCHLIESSLICH die verknüpfte Einheit
+  // (Inhaltscontainer) — keine Übersicht, keine Poolzeit, kein Lerntagebuch.
+  // Die Daten laufen über die geprüfte ltiApi (SchuelerDataService → ltiAdapter).
   if (!hasToken() && hatGueltigeLtiSession() && window.location.pathname.startsWith('/lernen')) {
+    const ltiEinheitId = getLtiSession()?.einheit || '';
     return (
       <ErrorBoundary fallback="Der Schülerbereich konnte nicht geladen werden.">
         <Routes>
           <Route element={<SchuelerOnlyLayout />}>
-            <Route path="/lernen" element={<StudentArea />} />
-            <Route path="/lernen/poolzeit" element={<PoolzeitStart />} />
-            <Route path="/lernen/lerntagebuch" element={<Lerntagebuch />} />
-            <Route path="/lernen/fach" element={<FachSeite />} />
             <Route path="/lernen/einheit" element={<EinheitOnboarding />} />
             <Route path="/lernen/onboarding" element={<EinheitOnboardingQuiz />} />
             <Route path="/lernen/dashboard" element={<EinheitDashboard />} />
           </Route>
-          <Route path="*" element={<Navigate to="/lernen" replace />} />
+          <Route
+            path="*"
+            element={
+              ltiEinheitId ? (
+                <Navigate to={`/lernen/einheit?id=${ltiEinheitId}`} replace />
+              ) : (
+                <MoodleKeineEinheit />
+              )
+            }
+          />
         </Routes>
       </ErrorBoundary>
     );

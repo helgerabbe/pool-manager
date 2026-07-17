@@ -1,13 +1,15 @@
 import React, { useEffect } from 'react';
 import { CheckCircle2, AlertTriangle } from 'lucide-react';
 import { parseLtiToken, speichereLtiToken } from '@/lib/ltiSession';
+import MoodleKeineEinheit from '@/components/schueler/MoodleKeineEinheit';
 
 /**
  * Landeseite für Schüler, die per Moodle-LTI-Launch ankommen (Etappe 2).
  * Wird OHNE Base44-Login gerendert (Bypass in App.jsx) — die Identität steckt
  * im signierten ?lti=-Token aus ltiLaunch und wird lokal gespeichert.
- * Danach springt die Seite automatisch in die verknüpfte Einheit (oder in
- * die Schüler-Übersicht, wenn die Aktivität keine Einheit angibt).
+ * Danach springt die Seite automatisch in die verknüpfte Einheit. Ist KEINE
+ * Einheit verknüpft, erscheint ein Hinweis (Moodle-Schüler sehen bewusst nur
+ * den Einheiten-Container, keine Schüler-Übersicht).
  */
 export default function MoodleEinstieg() {
   const params = new URLSearchParams(window.location.search);
@@ -20,14 +22,20 @@ export default function MoodleEinstieg() {
   }
 
   useEffect(() => {
-    if (!gueltig) return;
-    const ziel = payload.einheit ? `/lernen/einheit?id=${payload.einheit}` : '/lernen';
+    if (!gueltig || !payload.einheit) return;
     // Kurze Pause, damit die Begrüßung sichtbar ist, dann Neuladen ohne
     // ?lti=-Parameter — App.jsx erkennt die gespeicherte Sitzung.
-    const timer = setTimeout(() => window.location.replace(ziel), 1200);
+    const timer = setTimeout(
+      () => window.location.replace(`/lernen/einheit?id=${payload.einheit}`),
+      1200
+    );
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  if (gueltig && !payload.einheit) {
+    return <MoodleKeineEinheit />;
+  }
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-slate-50 p-6">
@@ -43,9 +51,7 @@ export default function MoodleEinstieg() {
             </p>
             <div className="flex items-center justify-center gap-2 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800">
               <span className="inline-block w-4 h-4 border-2 border-blue-300 border-t-blue-700 rounded-full animate-spin" />
-              {payload.einheit
-                ? 'Deine Lerneinheit öffnet sich gleich automatisch …'
-                : 'Deine Lernübersicht öffnet sich gleich automatisch …'}
+              Deine Lerneinheit öffnet sich gleich automatisch …
             </div>
           </>
         ) : (
