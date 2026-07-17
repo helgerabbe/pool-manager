@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as SchuelerData from '@/services/schueler/SchuelerDataService';
 import { ArrowLeft, BookOpen } from 'lucide-react';
-import { LERNTYPEN } from '@/lib/lerntypen';
+import { LERNTYPEN, getAktiveLerntypKeys } from '@/lib/lerntypen';
 import DashboardKachel from '@/components/schueler/DashboardKachel';
 import OnboardingKachel from '@/components/schueler/OnboardingKachel';
 import LerntypWechselDialog from '@/components/schueler/LerntypWechselDialog';
@@ -36,7 +36,7 @@ export default function EinheitOnboarding() {
     staleTime: 30 * 1000,
   });
 
-  const { data: fortschritte = [] } = useQuery({
+  const { data: fortschritte = [], isLoading: fortschrittLaedt } = useQuery({
     queryKey: ['schuelerFortschritt', user?.email],
     queryFn: () => SchuelerData.listEinheitFortschritt(user.email),
     enabled: !!user?.email,
@@ -70,6 +70,26 @@ export default function EinheitOnboarding() {
     }
   };
 
+  // Angebotene Lerntypen dieser Einheit (private Einheiten können Lerntypen
+  // abwählen; öffentliche bieten immer alle an — zentrale Logik in lerntypen.js).
+  const aktiveKeys = getAktiveLerntypKeys(einheit);
+  const angebotene = LERNTYPEN.filter((lt) => aktiveKeys.includes(lt.key));
+  const einzelTyp = angebotene.length === 1 ? angebotene[0].key : null;
+
+  // Nur EIN Lerntyp angeboten → Auswahl komplett überspringen und direkt
+  // ins Dashboard einsteigen (typischer Fall: private Einheit via Moodle).
+  const autoGestartet = useRef(false);
+  useEffect(() => {
+    if (!einzelTyp || !einheit || !user?.email || fortschrittLaedt || autoGestartet.current) return;
+    autoGestartet.current = true;
+    if (fortschritt?.gewaehlter_lerntyp === einzelTyp) {
+      navigate(`/lernen/dashboard?id=${einheitId}&lerntyp=${einzelTyp}`, { replace: true });
+    } else {
+      dashboardWaehlen(einzelTyp);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [einzelTyp, einheit, user?.email, fortschrittLaedt]);
+
   const handleKachelKlick = (typKey) => {
     if (aktiverTyp && aktiverTyp !== typKey) {
       setWechselZiel(typKey);
@@ -83,6 +103,9 @@ export default function EinheitOnboarding() {
   }
   if (!einheit) {
     return <div className="h-full flex items-center justify-center text-muted-foreground">Einheit nicht gefunden.</div>;
+  }
+  if (einzelTyp) {
+    return <div className="h-full flex items-center justify-center text-muted-foreground">Einheit wird geöffnet …</div>;
   }
 
   return (
@@ -129,7 +152,7 @@ export default function EinheitOnboarding() {
             : 'Mit welchem Lerntyp möchtest du an dieser Einheit arbeiten?'}
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {LERNTYPEN.map((lt) => (
+          {angebotene.map((lt) => (
             <DashboardKachel
               key={lt.key}
               lerntyp={lt}
