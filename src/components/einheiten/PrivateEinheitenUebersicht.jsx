@@ -5,10 +5,11 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { ChevronDown, ChevronRight, ExternalLink, Trash2, User, Lock } from 'lucide-react';
+import { ChevronDown, ChevronRight, ExternalLink, Eye, Trash2, User, Lock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal';
 import EinheitVeroeffentlichenButton from './EinheitVeroeffentlichenButton';
+import EinheitVorschauModal from './EinheitVorschauModal';
 import EmptyState from '@/components/shared/EmptyState';
 
 /**
@@ -20,6 +21,7 @@ import EmptyState from '@/components/shared/EmptyState';
 export default function PrivateEinheitenUebersicht({ einheiten = [] }) {
   const [openGroups, setOpenGroups] = useState({});
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [vorschauEinheit, setVorschauEinheit] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const queryClient = useQueryClient();
 
@@ -102,6 +104,13 @@ export default function PrivateEinheitenUebersicht({ einheiten = [] }) {
                       >
                         <ExternalLink className="w-4 h-4" />
                       </Link>
+                      <button
+                        onClick={() => setVorschauEinheit(e)}
+                        className="p-1.5 rounded-md border border-border text-muted-foreground hover:text-blue-600 hover:bg-blue-50 transition-all"
+                        title="Schüler-Vorschau: Einheit so ansehen und durcharbeiten, wie sie ein Schüler sieht"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
                       <EinheitVeroeffentlichenButton einheit={e} />
                       <button
                         onClick={() => setDeleteTarget(e)}
@@ -118,6 +127,14 @@ export default function PrivateEinheitenUebersicht({ einheiten = [] }) {
           </div>
         );
       })}
+
+      {vorschauEinheit && (
+        <EinheitVorschauModal
+          open={!!vorschauEinheit}
+          onOpenChange={(o) => !o && setVorschauEinheit(null)}
+          einheit={vorschauEinheit}
+        />
+      )}
 
       <DeleteConfirmModal
         open={!!deleteTarget}

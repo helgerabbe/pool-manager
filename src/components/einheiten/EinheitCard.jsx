@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, Trash2, Lock, Copy, EyeOff } from 'lucide-react';
+import { ArrowRight, Trash2, Lock, Copy, EyeOff, ChevronDown } from 'lucide-react';
 import EinheitVeroeffentlichenButton from '@/components/einheiten/EinheitVeroeffentlichenButton';
 import EinheitWeitergebenButton from '@/components/einheiten/EinheitWeitergebenButton';
 import { format } from 'date-fns';
@@ -35,6 +35,8 @@ export default function EinheitCard({
   const fachHex = getFachFarbe(einheit.fach, faecher);
   const badgeStyle = getFachBadgeStyle(fachHex);
   const [showConfirm, setShowConfirm] = useState(false);
+  // Akkordeon: Inhalte/Dashboards sind standardmäßig eingeklappt (platzsparend).
+  const [expanded, setExpanded] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCopying, setIsCopying] = useState(false);
   const queryClient = useQueryClient();
@@ -112,7 +114,8 @@ export default function EinheitCard({
                     Jg. {einheit.jahrgangsstufe}
                   </span>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
+                  <EinheitExportLifecycleBadge einheit={einheit} />
                   {istPrivat && (
                     <Badge className="bg-amber-100 text-amber-800 border border-amber-200 gap-1">
                       <EyeOff className="w-3 h-3" />
@@ -132,51 +135,59 @@ export default function EinheitCard({
                 </div>
               </div>
               <h3
-                className="text-base font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 min-h-[2.75rem]"
+                className="text-base font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2"
                 title={einheit.titel_der_einheit}
               >
                 {einheit.titel_der_einheit}
               </h3>
-              {/* Eigene Status-Zeile unter dem Titel: hält die Kopfzeile schmal
-                  und die Kachelhöhe über alle Karten hinweg konsistent. */}
-              <div className="mt-2 min-h-[1.5rem] flex items-center gap-2">
-                <EinheitExportLifecycleBadge einheit={einheit} />
-                {istPrivat && einheit.erhalten_von && (
-                  <span className="text-[11px] text-muted-foreground truncate" title={`Von ${einheit.erhalten_von} erhalten`}>
-                    Von {einheit.erhalten_von} erhalten
-                  </span>
-                )}
-              </div>
+              {istPrivat && einheit.erhalten_von && (
+                <p className="mt-1 text-[11px] text-muted-foreground truncate" title={`Von ${einheit.erhalten_von} erhalten`}>
+                  Von {einheit.erhalten_von} erhalten
+                </p>
+              )}
             </Link>
 
-            {/* ── Mittlerer Bereich: Volumen-Metriken (eigene Klick-Zonen) ── */}
-            <div className="px-4 pt-3 pb-3 border-t border-border/60">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
-                Inhalte
-              </p>
-              <EinheitMetricsRow einheitId={einheit.id} volume={volume} />
-            </div>
-
-            {/* ── Unterer Bereich: Dashboard-Fortschritt (eigene Klick-Zonen) ── */}
-            <div className="px-4 pb-3">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
-                Dashboards
-              </p>
-              <DashboardStatusBadges einheitId={einheit.id} dashboardStatus={dashboardStatus} />
-            </div>
+            {/* ── Akkordeon: Inhalte + Dashboards (standardmäßig eingeklappt) ── */}
+            {expanded && (
+              <>
+                <div className="px-4 pt-3 pb-3 border-t border-border/60">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
+                    Inhalte
+                  </p>
+                  <EinheitMetricsRow einheitId={einheit.id} volume={volume} />
+                </div>
+                <div className="px-4 pb-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
+                    Dashboards
+                  </p>
+                  <DashboardStatusBadges einheitId={einheit.id} dashboardStatus={dashboardStatus} />
+                </div>
+              </>
+            )}
 
             {/* ── Footer ── */}
             <div className="px-4 py-2 bg-muted/40 flex items-center justify-between border-t shrink-0 mt-auto">
               <span className="text-[11px] text-muted-foreground">
-                {einheit.created_date && format(new Date(einheit.created_date), 'dd. MMM yyyy', { locale: de })}
+                {(einheit.updated_date || einheit.created_date) &&
+                  format(new Date(einheit.updated_date || einheit.created_date), 'dd. MMM yyyy', { locale: de })}
               </span>
-              <Link
-                to={`/workspace?einheit=${einheit.id}&tab=einheit`}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
-              >
-                Öffnen
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-all" />
-              </Link>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setExpanded((v) => !v)}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                  title={expanded ? 'Details einklappen' : 'Inhalte und Dashboards anzeigen'}
+                >
+                  Details
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+                </button>
+                <Link
+                  to={`/workspace?einheit=${einheit.id}&tab=einheit`}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Öffnen
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-all" />
+                </Link>
+              </div>
             </div>
           </CardContent>
         </Card>

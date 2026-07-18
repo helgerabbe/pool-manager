@@ -219,6 +219,30 @@ export default function EinheitenListe() {
 
   const faecher = [...new Set(einheiten.map(e => e.fach).filter(Boolean))];
 
+  // Feste Sortierung der öffentlichen Einheiten:
+  // 1. Fach-Reihenfolge aus den Einstellungen (LookupFaecher.reihenfolge),
+  // 2. innerhalb des Fachs nach Jahrgangsstufe (aufsteigend),
+  // 3. dann alphabetisch nach Titel.
+  const { data: faecherLookup = [] } = useQuery({
+    queryKey: ['lookupFaecher'],
+    queryFn: () => base44.entities.LookupFaecher.list(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const fachOrder = new Map(
+    [...faecherLookup]
+      .sort((a, b) => (a.reihenfolge ?? 999) - (b.reihenfolge ?? 999))
+      .map((f, idx) => [f.name, idx])
+  );
+  const sortiert = [...filtered].sort((a, b) => {
+    const fa = fachOrder.has(a.fach) ? fachOrder.get(a.fach) : 999;
+    const fb = fachOrder.has(b.fach) ? fachOrder.get(b.fach) : 999;
+    if (fa !== fb) return fa - fb;
+    const ja = parseInt(a.jahrgangsstufe, 10) || 0;
+    const jb = parseInt(b.jahrgangsstufe, 10) || 0;
+    if (ja !== jb) return ja - jb;
+    return (a.titel_der_einheit || '').localeCompare(b.titel_der_einheit || '', 'de');
+  });
+
   // Volumen + Dashboard-Fortschritte für die sichtbaren Kacheln.
   // Wir laden für ALLE einheiten, damit beim Filter-Wechsel keine Lade-Wartezeiten entstehen.
   const { metrics } = useEinheitenMetrics(einheiten.map((e) => e.id));
@@ -361,7 +385,7 @@ export default function EinheitenListe() {
 
       {filtered.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map(einheit => (
+          {sortiert.map(einheit => (
             <EinheitCard
               key={einheit.id}
               einheit={einheit}
