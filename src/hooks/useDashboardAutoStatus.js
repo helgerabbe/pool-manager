@@ -58,6 +58,18 @@ export function useDashboardAutoStatus(einheit, toast) {
     });
   }, [persistAutoStatus]);
 
+  // Erster manueller Eingriff in ein 'auto'-Dashboard → 'bearbeitet'.
+  // No-op für alle anderen Zustände und für Nicht-Lerntyp-Keys (Onboarding).
+  const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
+  const markLerntypBearbeitet = useCallback(
+    (lerntyp) => {
+      if (!LERNTYP_KEYS.includes(lerntyp)) return;
+      if (autoStatusRef.current?.[lerntyp] !== AUTO_DASHBOARD_STATUS.AUTO) return;
+      persistAutoStatus({ [lerntyp]: AUTO_DASHBOARD_STATUS.BEARBEITET });
+    },
+    [persistAutoStatus]
+  );
+
   // Explizites „Übernehmen" durch die Fachschaftsleitung.
   const confirmAutoDashboard = useCallback(
     (lerntyp) => {
@@ -85,6 +97,7 @@ export function useDashboardAutoStatus(einheit, toast) {
     autoStatusMap,
     markLerntypAutoAssembled,
     markAllAutoAssembled,
+    markLerntypBearbeitet,
     confirmAutoDashboard,
     confirmIfAuto,
   };

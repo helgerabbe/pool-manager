@@ -25,20 +25,33 @@ const LERN_TYPEN = [
 
 const STATUS_META = {
   vorlage: {
-    label: 'Vorlage',
-    tooltip: 'Standard-Vorlage – noch nicht bearbeitet',
-    cls: 'bg-slate-100 text-slate-600 border-slate-200',
-    dot: 'bg-slate-400',
+    label: 'Automatisch',
+    tooltip: 'Automatisch erstellt – noch nicht angepasst oder bestätigt',
+    cls: 'bg-violet-50 text-violet-700 border-violet-200',
+    dot: 'bg-violet-500',
   },
   bearbeitet: {
-    label: 'In Bearbeitung',
-    tooltip: 'Wird bearbeitet / angepasst',
+    label: 'Bearbeitet',
+    tooltip: 'Von der Fachschaft angepasst / übernommen – noch nicht freigegeben',
     cls: 'bg-amber-50 text-amber-700 border-amber-200',
     dot: 'bg-amber-500',
   },
+  freigegeben: {
+    label: 'Freigegeben',
+    tooltip: 'Als geprüft/vollständig freigegeben',
+    cls: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    dot: 'bg-emerald-500',
+  },
+  gesperrt: {
+    label: 'Gesperrt',
+    tooltip: 'Einheit ist final freigegeben / im Export – keine Änderungen möglich',
+    cls: 'bg-blue-50 text-blue-800 border-blue-200',
+    dot: 'bg-blue-600',
+  },
+  // Alias für alte Cache-Antworten (vor der Vier-Zustände-Umstellung).
   fertig: {
-    label: 'Fertig',
-    tooltip: 'Als fertig deklariert (freigegeben)',
+    label: 'Freigegeben',
+    tooltip: 'Als geprüft/vollständig freigegeben',
     cls: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     dot: 'bg-emerald-500',
   },

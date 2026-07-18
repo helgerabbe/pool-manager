@@ -26,14 +26,19 @@
  *     }
  *   }
  *
- * Status-Regel pro Lerntyp:
- *   1. 'fertig': Pfad formal freigegeben (alle Memberships in
+ * Status-Regel pro Lerntyp (VIER Zustände, 2026-07-18):
+ *   1. 'gesperrt': Einheit ist final freigegeben oder im Export
+ *      (export_lifecycle_status = 'final_freigegeben' | 'export_running')
+ *      → keine Änderungen mehr möglich.
+ *   2. 'freigegeben': Pfad formal freigegeben (alle Memberships in
  *      LernpfadAufgabeMembership für diese (einheit_id, lerntyp) haben
  *      pfad_status='locked_for_export' UND es gibt mindestens eine).
- *   2. 'bearbeitet': mindestens ein echter Einheits-Inhalt (Lernpaket oder
- *      AllgemeineAufgabe, ohne Tombstones) ist als Aufgaben-Item in einem
- *      Sektor platziert.
- *   3. 'vorlage': sonst (leer / Standard-Vorlage, noch nicht bearbeitet).
+ *   3. 'vorlage' (= Automatisch erstellt): dashboards_auto_status[lt]='auto'
+ *      → automatisch aufgebaut, noch nicht angepasst/bestätigt.
+ *   4. 'bearbeitet': dashboards_auto_status[lt]='bearbeitet'|'bestaetigt'
+ *      ODER (Bestand ohne Auto-Status) Heuristik: echter Einheits-Inhalt
+ *      im Pfad platziert bzw. Themenfeld-gebundener Arbeitsphase-Sektor.
+ *   Fallback: 'vorlage'.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
@@ -268,16 +273,35 @@ Deno.serve(async (req) => {
 
       const konfig = einheit.lernpfade_konfiguration || {};
       const lockedMap = lockedPathsByEinheit.get(id) || new Map();
+      const autoStatus = einheit.dashboards_auto_status || {};
+      // Killer-Switch: Einheit final freigegeben / im Export → alles gesperrt.
+      const isEinheitLocked =
+        einheit.export_lifecycle_status === 'final_freigegeben' ||
+        einheit.export_lifecycle_status === 'export_running';
       const dashboardStatus = {};
       for (const lt of LERN_TYPEN) {
-        // Regel 1: Pfad formal freigegeben → 'fertig'.
+        // Regel 1: Einheit im Export-Lock → 'gesperrt'.
+        if (isEinheitLocked) {
+          dashboardStatus[lt] = 'gesperrt';
+          continue;
+        }
+        // Regel 2: Pfad formal freigegeben → 'freigegeben'.
         const lock = lockedMap.get(lt);
         const isPathLocked = lock && lock.total > 0 && lock.locked === lock.total;
         if (isPathLocked) {
-          dashboardStatus[lt] = 'fertig';
+          dashboardStatus[lt] = 'freigegeben';
           continue;
         }
-        // Regel 2: 'vorlage' (unbearbeitet) oder 'bearbeitet'.
+        // Regel 3: Auto-Assembly-Status (führend, wenn vorhanden).
+        if (autoStatus[lt] === 'auto') {
+          dashboardStatus[lt] = 'vorlage';
+          continue;
+        }
+        if (autoStatus[lt] === 'bearbeitet' || autoStatus[lt] === 'bestaetigt') {
+          dashboardStatus[lt] = 'bearbeitet';
+          continue;
+        }
+        // Regel 4: Bestand ohne Auto-Status → Heuristik 'vorlage'|'bearbeitet'.
         dashboardStatus[lt] = calcDashboardStatusForLerntyp(konfig[lt], totalContentIds);
       }
 

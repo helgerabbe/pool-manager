@@ -33,6 +33,10 @@ import { TEMPLATE_LERN_TYPEN } from '@/lib/dashboardTemplates';
 
 export const AUTO_DASHBOARD_STATUS = Object.freeze({
   AUTO: 'auto',
+  // Manuell verändert (durch Fachschaftsleitung/berechtigte Person), aber
+  // noch nicht bestätigt/geprüft. Wird automatisch beim ersten manuellen
+  // Eingriff in ein 'auto'-Dashboard gesetzt.
+  BEARBEITET: 'bearbeitet',
   BESTAETIGT: 'bestaetigt',
 });
 

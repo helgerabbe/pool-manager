@@ -487,6 +487,18 @@ export default function LernpfadeCockpit({
     konfigurationRef.current = konfiguration;
   }, [konfiguration]);
 
+  // Auto-Assembly: Status pro Dashboard ('auto' | 'bearbeitet' | 'bestaetigt').
+  // Muss VOR updateKonfiguration stehen, weil jede manuelle Mutation ein
+  // 'auto'-Dashboard automatisch auf 'bearbeitet' hebt.
+  const {
+    autoStatusMap,
+    markLerntypAutoAssembled,
+    markAllAutoAssembled,
+    markLerntypBearbeitet,
+    confirmAutoDashboard,
+    confirmIfAuto,
+  } = useDashboardAutoStatus(einheit, toast);
+
   const updateKonfiguration = useCallback(
     (updater) => {
       const prev = konfigurationRef.current;
@@ -494,8 +506,11 @@ export default function LernpfadeCockpit({
       konfigurationRef.current = next;
       setKonfiguration(next);
       scheduleSave(next);
+      // Zustand „Bearbeitet": erste manuelle Änderung an einem automatisch
+      // erstellten Dashboard (No-op für andere Zustände / Onboarding).
+      markLerntypBearbeitet(activeLernTyp);
     },
-    [scheduleSave]
+    [scheduleSave, markLerntypBearbeitet, activeLernTyp]
   );
 
   // ── Onboarding-Persistenz (einheits-global, Single Source of Truth) ──
@@ -558,15 +573,6 @@ export default function LernpfadeCockpit({
   // organisch mit den Standard-Rastern befüllt und persistiert.
   // Läuft NUR ein einziges Mal pro Einheit (lazyInitDoneRef) und nur,
   // wenn die Konfiguration tatsächlich leer ist.
-  // Auto-Assembly (Etappe 1): Status pro Dashboard ('auto' | 'bestaetigt').
-  const {
-    autoStatusMap,
-    markLerntypAutoAssembled,
-    markAllAutoAssembled,
-    confirmAutoDashboard,
-    confirmIfAuto,
-  } = useDashboardAutoStatus(einheit, toast);
-
   const lazyInitDoneRef = useRef(null);
   useEffect(() => {
     if (!einheit?.id) return;
