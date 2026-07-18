@@ -27,6 +27,7 @@ import {
 } from '@/lib/sektorFreischaltung';
 
 const SOFORT_VALUE = '__sofort__';
+const VORGAENGER_VALUE = '__vorgaenger__';
 
 export default function SektorFreischaltControl({
   sektor,
@@ -34,6 +35,11 @@ export default function SektorFreischaltControl({
   disabled = false,
   onChange,
   getSektorLabel,
+  // nurVorgaenger (Standard-Vorlagen-Editor): reduziert die Auswahl auf
+  // genau zwei Optionen — "Sofort sichtbar" oder "Nach Vorgänger sichtbar"
+  // (positionsbezogen, ohne konkrete Sektor-ID). Vorlagen-Sektoren erhalten
+  // beim Anwenden neue IDs; nur das relative Gating ist dort stabil.
+  nurVorgaenger = false,
 }) {
   const fb = normalizeFreischaltBedingung(sektor?.freischalt_bedingung);
   const verboten = getVerboteneVoraussetzungen(alleSektoren, sektor?.sektor_id);
@@ -43,20 +49,25 @@ export default function SektorFreischaltControl({
   const labelFor = (s) =>
     (getSektorLabel ? getSektorLabel(s) : null) || s.titel?.trim() || 'Sektor';
 
-  const currentValue =
-    fb.modus === FREISCHALT_MODUS.NACH_SEKTOR && fb.voraussetzung_sektor_id
-      ? fb.voraussetzung_sektor_id
-      : SOFORT_VALUE;
+  let currentValue = SOFORT_VALUE;
+  if (fb.modus === FREISCHALT_MODUS.NACH_VORGAENGER) {
+    currentValue = VORGAENGER_VALUE;
+  } else if (fb.modus === FREISCHALT_MODUS.NACH_SEKTOR && fb.voraussetzung_sektor_id) {
+    // Legacy-Werte in Vorlagen (konkrete Sektor-ID) als "nach Vorgänger" anzeigen.
+    currentValue = nurVorgaenger ? VORGAENGER_VALUE : fb.voraussetzung_sektor_id;
+  }
 
   const handleChange = (val) => {
     if (val === SOFORT_VALUE) {
       onChange?.({ modus: FREISCHALT_MODUS.SOFORT, voraussetzung_sektor_id: null });
+    } else if (val === VORGAENGER_VALUE) {
+      onChange?.({ modus: FREISCHALT_MODUS.NACH_VORGAENGER, voraussetzung_sektor_id: null });
     } else {
       onChange?.({ modus: FREISCHALT_MODUS.NACH_SEKTOR, voraussetzung_sektor_id: val });
     }
   };
 
-  const isGated = fb.modus === FREISCHALT_MODUS.NACH_SEKTOR;
+  const isGated = fb.modus !== FREISCHALT_MODUS.SOFORT;
   const Icon = isGated ? Lock : Unlock;
 
   return (
@@ -74,7 +85,9 @@ export default function SektorFreischaltControl({
           </TooltipTrigger>
           <TooltipContent>
             {isGated
-              ? 'Dieser Sektor ist anfangs gesperrt und wird erst nach Abschluss des gewählten Sektors zugänglich.'
+              ? fb.modus === FREISCHALT_MODUS.NACH_VORGAENGER
+                ? 'Dieser Sektor ist anfangs gesperrt und wird erst nach Abschluss des vorhergehenden Sektors zugänglich.'
+                : 'Dieser Sektor ist anfangs gesperrt und wird erst nach Abschluss des gewählten Sektors zugänglich.'
               : 'Dieser Sektor ist von Anfang an sichtbar und zugänglich.'}
           </TooltipContent>
         </Tooltip>
@@ -86,11 +99,15 @@ export default function SektorFreischaltControl({
             <SelectItem value={SOFORT_VALUE} className="text-[11px]">
               Sofort sichtbar
             </SelectItem>
-            {auswahlbar.map((s) => (
-              <SelectItem key={s.sektor_id} value={s.sektor_id} className="text-[11px]">
-                Erst nach: {labelFor(s)}
-              </SelectItem>
-            ))}
+            <SelectItem value={VORGAENGER_VALUE} className="text-[11px]">
+              Nach Vorgänger sichtbar
+            </SelectItem>
+            {!nurVorgaenger &&
+              auswahlbar.map((s) => (
+                <SelectItem key={s.sektor_id} value={s.sektor_id} className="text-[11px]">
+                  Erst nach: {labelFor(s)}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
       </div>

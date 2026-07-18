@@ -134,6 +134,7 @@ export default function VorlageSektor({
             disabled={readOnly}
             onChange={(val) => onPatch(sektor.sektor_id, { freischalt_bedingung: val })}
             getSektorLabel={(s) => s.titel?.trim() || getSektorTypLabel(s.sektor_typ)}
+            nurVorgaenger
           />
         )}
         {!readOnly && (

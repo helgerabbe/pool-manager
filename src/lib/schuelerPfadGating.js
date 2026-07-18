@@ -168,7 +168,9 @@ export function istSektorErledigt(sektor, fortschrittByInstance) {
 /**
  * Leitet pro Sektor ab, ob er freigeschaltet ist (freischalt_bedingung).
  * 'sofort' → immer frei. 'nach_sektor' → frei, sobald der Voraussetzungs-
- * Sektor vollständig erledigt ist.
+ * Sektor vollständig erledigt ist. 'nach_vorgaenger' → frei, sobald der
+ * unmittelbar vorhergehende Sektor in der Liste vollständig erledigt ist
+ * (der erste Sektor ist dann immer frei).
  *
  * @returns {Map<sektor_id, { freigeschaltet: boolean, voraussetzungTitel: string|null }>}
  */
@@ -177,8 +179,20 @@ export function deriveSektorFreischaltung(sektoren, fortschrittByInstance) {
   const byId = new Map(list.map((s) => [s.sektor_id, s]));
   const result = new Map();
 
-  for (const sektor of list) {
+  for (let i = 0; i < list.length; i += 1) {
+    const sektor = list[i];
     const fb = normalizeFreischaltBedingung(sektor?.freischalt_bedingung);
+    if (fb.modus === FREISCHALT_MODUS.NACH_VORGAENGER) {
+      const vorgaenger = i > 0 ? list[i - 1] : null;
+      const freigeschaltet = vorgaenger
+        ? istSektorErledigt(vorgaenger, fortschrittByInstance)
+        : true;
+      result.set(sektor.sektor_id, {
+        freigeschaltet,
+        voraussetzungTitel: vorgaenger?.titel || null,
+      });
+      continue;
+    }
     if (fb.modus !== FREISCHALT_MODUS.NACH_SEKTOR || !fb.voraussetzung_sektor_id) {
       result.set(sektor.sektor_id, { freigeschaltet: true, voraussetzungTitel: null });
       continue;

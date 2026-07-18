@@ -5,9 +5,15 @@
  * Sektor-Ebene). Bewusst minimal gehalten (siehe Konzept-Entscheidung):
  *
  *   freischalt_bedingung: {
- *     modus: 'sofort' | 'nach_sektor',   // Default 'sofort'
+ *     modus: 'sofort' | 'nach_sektor' | 'nach_vorgaenger',   // Default 'sofort'
  *     voraussetzung_sektor_id: string|null   // nur bei 'nach_sektor'
  *   }
+ *
+ * 'nach_vorgaenger' (2026-07-18, Standard-Vorlagen): Der Sektor wird frei,
+ * sobald der UNMITTELBAR VORHERGEHENDE Sektor in der Liste vollständig
+ * erledigt ist — positionsbezogen, ohne konkrete Sektor-ID. Damit sind
+ * Vorlagen-Sektoren robust gegen das Umschreiben der sektor_ids beim
+ * Anwenden eines Templates.
  *
  * KEINE UND/ODER-Logik — genau EIN vorgeschalteter Sektor. Kaskaden ergeben
  * sich implizit (Sektor 3 kann erst erledigt werden, wenn Sektor 2 erledigt
@@ -17,6 +23,7 @@
 export const FREISCHALT_MODUS = Object.freeze({
   SOFORT: 'sofort',
   NACH_SEKTOR: 'nach_sektor',
+  NACH_VORGAENGER: 'nach_vorgaenger',
 });
 
 /**
@@ -27,6 +34,9 @@ export const FREISCHALT_MODUS = Object.freeze({
 export function normalizeFreischaltBedingung(fb) {
   if (!fb || typeof fb !== 'object') {
     return { modus: FREISCHALT_MODUS.SOFORT, voraussetzung_sektor_id: null };
+  }
+  if (fb.modus === FREISCHALT_MODUS.NACH_VORGAENGER) {
+    return { modus: FREISCHALT_MODUS.NACH_VORGAENGER, voraussetzung_sektor_id: null };
   }
   if (fb.modus === FREISCHALT_MODUS.NACH_SEKTOR && typeof fb.voraussetzung_sektor_id === 'string' && fb.voraussetzung_sektor_id) {
     return { modus: FREISCHALT_MODUS.NACH_SEKTOR, voraussetzung_sektor_id: fb.voraussetzung_sektor_id };
