@@ -17,16 +17,21 @@ import { Button } from '@/components/ui/button';
 import { ChevronUp, ChevronDown, Trash2, GripVertical, X } from 'lucide-react';
 import { getSystemBausteinIcon } from '@/lib/systemBausteinIcons';
 import { isPlatzhalterBaustein, PLATZHALTER_CLASSES } from '@/lib/platzhalterUtils';
-import { getSektorTypLabel, SEKTOR_TYP } from '@/lib/sektorTypen';
+import { getSektorTypLabel, SEKTOR_TYP, getBundleKindByAcceptedTypes } from '@/lib/sektorTypen';
 import SektorModusToggle from '@/components/lernpfade/SektorModusToggle';
 import BundleModusToggle from '@/components/lernpfade/BundleModusToggle';
+import LernpaketInnenModusToggle from '@/components/lernpfade/LernpaketInnenModusToggle';
 import SektorFreischaltControl from '@/components/lernpfade/SektorFreischaltControl';
 
-function ItemPill({ item, baustein, index, readOnly, onRemove, onSetBundleModus }) {
+function ItemPill({ item, baustein, index, readOnly, onRemove, onSetBundleModus, onSetLernpaketModus }) {
   const Icon = getSystemBausteinIcon(baustein?.icon);
   const titel = baustein?.titel || item.ref_id;
   const isPlatzhalter = isPlatzhalterBaustein(baustein || item.ref_id);
   const isBundle = baustein?.baustein_modus === 'bundle_1ton';
+  // Nur am Lernpaketebündel: zweiter Toggle für die Bearbeitung INNERHALB
+  // eines einzelnen Lernpakets (sequenziell | frei).
+  const isLernpaketeBundle =
+    isBundle && getBundleKindByAcceptedTypes(baustein?.accepted_types) === 'lernpakete';
 
   let cls;
   if (isBundle) {
@@ -75,6 +80,13 @@ function ItemPill({ item, baustein, index, readOnly, onRemove, onSetBundleModus 
               onChange={(val) => onSetBundleModus?.(index, val)}
             />
           )}
+          {isLernpaketeBundle && (
+            <LernpaketInnenModusToggle
+              modus={item.bundle_config?.lernpaket_modus}
+              disabled={readOnly}
+              onChange={(val) => onSetLernpaketModus?.(index, val)}
+            />
+          )}
           {!readOnly && (
             <button
               type="button"
@@ -102,6 +114,7 @@ export default function VorlageSektor({
   onMoveSektor,
   onRemoveItem,
   onSetBundleModus,
+  onSetLernpaketModus,
   alleSektoren = [],
 }) {
   const items = Array.isArray(sektor.items) ? sektor.items : [];
@@ -174,6 +187,7 @@ export default function VorlageSektor({
                 readOnly={readOnly}
                 onRemove={onRemoveItem ? (idx) => onRemoveItem(sektor.sektor_id, idx) : () => {}}
                 onSetBundleModus={onSetBundleModus ? (idx, val) => onSetBundleModus(sektor.sektor_id, idx, val) : undefined}
+                onSetLernpaketModus={onSetLernpaketModus ? (idx, val) => onSetLernpaketModus(sektor.sektor_id, idx, val) : undefined}
               />
             ))}
             {provided.placeholder}

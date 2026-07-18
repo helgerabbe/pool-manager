@@ -154,6 +154,21 @@ export default function DashboardVorlageEditor() {
     );
   }, [updateSektoren]);
 
+  // Lernpaket-Innen-Modus (nur Lernpaketebündel): Wie werden die Aktivitäten
+  // INNERHALB eines einzelnen Lernpakets bearbeitet? (sequenziell | frei)
+  const handleSetLernpaketModus = useCallback((sektorId, itemIndex, modus) => {
+    updateSektoren((list) =>
+      list.map((s) => {
+        if (s.sektor_id !== sektorId) return s;
+        const items = (s.items || []).map((it, idx) => {
+          if (idx !== itemIndex) return it;
+          return { ...it, bundle_config: { ...(it.bundle_config || {}), lernpaket_modus: modus } };
+        });
+        return { ...s, items };
+      })
+    );
+  }, [updateSektoren]);
+
   const handleRemoveItem = useCallback((sektorId, itemIndex) => {
     updateSektoren((list) =>
       list.map((s) => {
@@ -230,13 +245,19 @@ export default function DashboardVorlageEditor() {
         modus: s.modus === 'frei' ? 'frei' : 'sequenziell',
         sektor_typ: s.sektor_typ,
         freischalt_bedingung:
-          s.freischalt_bedingung?.modus === 'nach_sektor' && s.freischalt_bedingung?.voraussetzung_sektor_id
-            ? { modus: 'nach_sektor', voraussetzung_sektor_id: s.freischalt_bedingung.voraussetzung_sektor_id }
-            : { modus: 'sofort', voraussetzung_sektor_id: null },
+          s.freischalt_bedingung?.modus === 'nach_vorgaenger'
+            ? { modus: 'nach_vorgaenger', voraussetzung_sektor_id: null }
+            : s.freischalt_bedingung?.modus === 'nach_sektor' && s.freischalt_bedingung?.voraussetzung_sektor_id
+              ? { modus: 'nach_sektor', voraussetzung_sektor_id: s.freischalt_bedingung.voraussetzung_sektor_id }
+              : { modus: 'sofort', voraussetzung_sektor_id: null },
         items: (s.items || []).map((it) => {
           const out = { type: it.type, ref_id: it.ref_id };
-          if (it.bundle_config?.modus) {
-            out.bundle_config = { modus: it.bundle_config.modus };
+          if (it.bundle_config?.modus || it.bundle_config?.lernpaket_modus) {
+            out.bundle_config = {};
+            if (it.bundle_config.modus) out.bundle_config.modus = it.bundle_config.modus;
+            if (it.bundle_config.lernpaket_modus) {
+              out.bundle_config.lernpaket_modus = it.bundle_config.lernpaket_modus;
+            }
           }
           return out;
         }),
@@ -364,6 +385,7 @@ export default function DashboardVorlageEditor() {
                     onMoveSektor={handleMoveSektor}
                     onRemoveItem={handleRemoveItem}
                     onSetBundleModus={handleSetBundleModus}
+                    onSetLernpaketModus={handleSetLernpaketModus}
                     alleSektoren={sektoren}
                   />
                 ))

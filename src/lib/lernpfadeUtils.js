@@ -92,6 +92,14 @@ export function normalizeItem(item) {
       if (m === 'sequenziell' || m === 'frei') {
         bc.modus = m;
       }
+      // bundle_config.lernpaket_modus (2026-07-18): Nur an Lernpaketebündeln
+      // relevant — steuert, wie die Aktivitäten INNERHALB eines einzelnen
+      // Lernpakets bearbeitet werden (sequenziell | frei). Default fehlend
+      // = sequenziell.
+      const lm = item.bundle_config.lernpaket_modus;
+      if (lm === 'sequenziell' || lm === 'frei') {
+        bc.lernpaket_modus = lm;
+      }
       if (Object.keys(bc).length > 0) {
         normalized.bundle_config = bc;
       }
