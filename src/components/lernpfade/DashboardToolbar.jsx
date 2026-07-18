@@ -298,7 +298,7 @@ export default function DashboardToolbar({
             variant="outline"
             onClick={onConfirmAuto}
             className="gap-1.5 h-7 text-[11px] px-2.5 border-violet-300 text-violet-700 hover:bg-violet-50"
-            title="Den automatisch erstellten Aufbau so übernehmen"
+            title={`Bestätigt den automatisch erstellten Aufbau – am Dashboard selbst ändert sich dabei nichts. Zwei Auswirkungen: 1) Die Kennzeichnung „Automatisch erstellt" verschwindet; das Dashboard gilt als von dir geprüft. 2) Neue Inhalte, die später über den Aktualisierungs-Hinweis einsortiert werden, starten dann INAKTIV (für Schüler unsichtbar, bis du sie aktivierst) – ein bestätigtes Dashboard verändert sich nicht mehr von selbst. Hinweis: Beim Klick auf „Dashboard als geprüft markieren" passiert diese Bestätigung automatisch mit.`}
           >
             <Check className="w-3 h-3" />
             Übernehmen
