@@ -243,6 +243,15 @@ export default function EinheitenListe() {
     return (a.titel_der_einheit || '').localeCompare(b.titel_der_einheit || '', 'de');
   });
 
+  // Sichtbare Gruppierung: pro Fach ein eigener Block (neue Zeile pro Fach).
+  const fachGruppen = sortiert.reduce((acc, e) => {
+    const key = e.fach || 'Ohne Fach';
+    const letzte = acc[acc.length - 1];
+    if (letzte && letzte.fach === key) letzte.items.push(e);
+    else acc.push({ fach: key, items: [e] });
+    return acc;
+  }, []);
+
   // Volumen + Dashboard-Fortschritte für die sichtbaren Kacheln.
   // Wir laden für ALLE einheiten, damit beim Filter-Wechsel keine Lade-Wartezeiten entstehen.
   const { metrics } = useEinheitenMetrics(einheiten.map((e) => e.id));
@@ -384,18 +393,31 @@ export default function EinheitenListe() {
       )}
 
       {filtered.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {sortiert.map(einheit => (
-            <EinheitCard
-              key={einheit.id}
-              einheit={einheit}
-              metrics={metrics[einheit.id]}
-              rolle={rolle}
-              benutzerFaecher={userFaecher}
-              currentUserEmail={authUser?.email}
-              onDeleteStart={() => setIsDeletingAny(true)}
-              onDeleteEnd={() => setIsDeletingAny(false)}
-            />
+        <div className="space-y-6">
+          {fachGruppen.map((gruppe) => (
+            <div key={gruppe.fach}>
+              <div className="flex items-center gap-2 mb-3">
+                <h2 className="text-sm font-bold text-foreground">{gruppe.fach}</h2>
+                <span className="text-xs text-muted-foreground">
+                  {gruppe.items.length} Einheit{gruppe.items.length !== 1 ? 'en' : ''}
+                </span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {gruppe.items.map(einheit => (
+                  <EinheitCard
+                    key={einheit.id}
+                    einheit={einheit}
+                    metrics={metrics[einheit.id]}
+                    rolle={rolle}
+                    benutzerFaecher={userFaecher}
+                    currentUserEmail={authUser?.email}
+                    onDeleteStart={() => setIsDeletingAny(true)}
+                    onDeleteEnd={() => setIsDeletingAny(false)}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       ) : einheiten.length === 0 ? (
