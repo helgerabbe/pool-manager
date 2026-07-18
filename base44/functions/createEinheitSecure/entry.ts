@@ -163,9 +163,15 @@ Deno.serve(async (req) => {
     let allowed = false;
     let rbacReason = '';
 
+    // Diese Funktion legt ÖFFENTLICHE Einheiten an → nur Administratoren und
+    // die zuständige Fachschaftsleitung (fach_ausnahmen-Herabstufung beachten).
+    // Fachlehrkräfte erstellen ausschließlich PRIVATE Einheiten (anderer Pfad).
+    const ausnahme = (benutzer?.fach_ausnahmen || []).find((a) => a?.fach === fach);
+    const effektiveRolle = ausnahme ? ausnahme.rolle : role;
+
     if (role === 'Administrator' || user.role === 'admin') {
       allowed = true;
-    } else if (role === 'Fachschaftsleitung') {
+    } else if (effektiveRolle === 'Fachschaftsleitung') {
       // Can only create for their subject
       const subjects = benutzer?.fachbereich_zustaendigkeit || [];
       if (subjects.includes(fach)) {
@@ -173,10 +179,8 @@ Deno.serve(async (req) => {
       } else {
         rbacReason = `Cannot create unit for subject: ${fach}. You are responsible for: ${subjects.join(', ') || 'no subjects'}`;
       }
-    } else if (role === 'Fachlehrkraft') {
-      allowed = true;
     } else {
-      rbacReason = `Role ${role} cannot create units`;
+      rbacReason = 'Öffentliche Einheiten können nur von der Fachschaftsleitung oder Administratoren erstellt werden.';
     }
 
     if (!allowed) {

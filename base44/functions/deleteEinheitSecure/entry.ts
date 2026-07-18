@@ -156,15 +156,27 @@ Deno.serve(async (req) => {
     const subjects = benutzer?.fachbereich_zustaendigkeit || [];
     const isAuthAdmin = user.role === 'admin';
     const isProfilAdmin = profilRole === 'Administrator';
-    const isResponsibleLead = profilRole === 'Fachschaftsleitung' && subjects.includes(einheit.fach);
+    // fach_ausnahmen: eine Fachschaftsleitung kann für einzelne Fächer auf
+    // Fachlehrkraft herabgestuft sein — dann gilt sie dort NICHT als Leitung.
+    const ausnahme = (benutzer?.fach_ausnahmen || []).find((a) => a?.fach === einheit.fach);
+    const effektiveRolle = ausnahme ? ausnahme.rolle : profilRole;
+    const isResponsibleLead = effektiveRolle === 'Fachschaftsleitung' && subjects.includes(einheit.fach);
     const isUnitLead = membershipList.some(member => member.unit_role === 'LEITUNG');
+    const istPrivat = einheit.sichtbarkeit === 'privat';
+    const istPrivatBesitzer = istPrivat && einheit.besitzer_email === user.email;
 
+    // Löschregeln (2026-07-18):
+    //  - Wizard-Entwürfe darf der Ersteller selbst löschen (Abbrechen-Flow).
+    //  - ÖFFENTLICHE Einheiten: NUR Administratoren und die zuständige
+    //    Fachschaftsleitung. Eine Unit-LEITUNG-Mitgliedschaft allein genügt
+    //    bei öffentlichen Einheiten ausdrücklich NICHT.
+    //  - PRIVATE Einheiten: zusätzlich der Besitzer bzw. die Unit-Leitung.
     const allowed = Boolean(
       (einheit.wizard_status === 'entwurf' && einheit.created_by === user.email) ||
       isAuthAdmin ||
       isProfilAdmin ||
       isResponsibleLead ||
-      isUnitLead
+      (istPrivat && (istPrivatBesitzer || isUnitLead))
     );
 
     const rbacReason = allowed

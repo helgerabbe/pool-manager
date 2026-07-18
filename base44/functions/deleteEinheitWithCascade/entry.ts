@@ -137,12 +137,20 @@ Deno.serve(async (req) => {
     const userRecord = benutzer?.[0];
     const profilRole = userRecord?.rolle;
     const subjects = userRecord?.fachbereich_zustaendigkeit || [];
+    // fach_ausnahmen: Herabstufung einer Fachschaftsleitung für einzelne Fächer.
+    const ausnahme = (userRecord?.fach_ausnahmen || []).find((a) => a?.fach === einheit.fach);
+    const effektiveRolle = ausnahme ? ausnahme.rolle : profilRole;
+    const istPrivat = einheit.sichtbarkeit === 'privat';
+    const istPrivatBesitzer = istPrivat && einheit.besitzer_email === user.email;
+
+    // Löschregeln (2026-07-18): ÖFFENTLICHE Einheiten nur Admin + zuständige
+    // Fachschaftsleitung; PRIVATE zusätzlich Besitzer bzw. Unit-Leitung.
     const allowed = Boolean(
       user.role === 'admin' ||
       profilRole === 'Administrator' ||
       (einheit.wizard_status === 'entwurf' && einheit.created_by === user.email) ||
-      (profilRole === 'Fachschaftsleitung' && subjects.includes(einheit.fach)) ||
-      memberships.some(member => member.unit_role === 'LEITUNG')
+      (effektiveRolle === 'Fachschaftsleitung' && subjects.includes(einheit.fach)) ||
+      (istPrivat && (istPrivatBesitzer || memberships.some(member => member.unit_role === 'LEITUNG')))
     );
 
     if (!allowed) {

@@ -38,6 +38,32 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Fehlende Pflichtfelder: fach, titel_der_einheit, jahrgangsstufe' }, { status: 400 });
     }
 
+    // ── RBAC (2026-07-18): ÖFFENTLICHE Einheiten dürfen nur Administratoren
+    // und die zuständige Fachschaftsleitung erstellen (fach_ausnahmen-
+    // Herabstufung wird beachtet). PRIVATE Einheiten darf jede schreibende
+    // Rolle (auch Fachlehrkraft) im eigenen Privatbereich anlegen.
+    const benutzerList = await base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email });
+    const benutzer = benutzerList?.[0];
+    const istAdmin = user.role === 'admin' || benutzer?.rolle === 'Administrator';
+
+    if (privat === true) {
+      const schreibRollen = ['Administrator', 'Fachschaftsleitung', 'Fachlehrkraft'];
+      if (!istAdmin && !schreibRollen.includes(benutzer?.rolle)) {
+        return Response.json({ error: 'Keine Berechtigung, Einheiten zu erstellen.' }, { status: 403 });
+      }
+    } else {
+      const ausnahme = (benutzer?.fach_ausnahmen || []).find((a) => a?.fach === metaData.fach);
+      const effektiveRolle = ausnahme ? ausnahme.rolle : benutzer?.rolle;
+      const zustaendig = (benutzer?.fachbereich_zustaendigkeit || []).includes(metaData.fach);
+      const istZustaendigeFachschaft = effektiveRolle === 'Fachschaftsleitung' && zustaendig;
+      if (!istAdmin && !istZustaendigeFachschaft) {
+        return Response.json(
+          { error: 'Öffentliche Einheiten können nur von der zuständigen Fachschaftsleitung oder Administratoren erstellt werden. Tipp: Erstellen Sie die Einheit stattdessen privat.' },
+          { status: 403 }
+        );
+      }
+    }
+
     // Schritt 1: Einheit anlegen (als Entwurf – unsichtbar für andere User bis Wizard abgeschlossen)
     // istBasismodul=true stempelt diese Einheit als Basismodul. Identischer Wizard,
     // nur das Flag unterscheidet eine reguläre Einheit von einem Basismodul.

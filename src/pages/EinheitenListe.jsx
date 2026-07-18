@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useRBAC } from '@/hooks/useRBAC';
-import { kannEinheitSehen } from '@/lib/rbac';
+import { kannEinheitSehen, ROLLEN } from '@/lib/rbac';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -27,12 +27,15 @@ function SchnellErstellenModal({ open, onOpenChange, onCreated, defaultPrivat = 
   const [form, setForm] = useState({ titel_der_einheit: '', fach: '', jahrgangsstufe: '' });
   // Privat-Modus: Einheit direkt im eigenen Privatbereich anlegen (Sandbox).
   const [privat, setPrivat] = useState(defaultPrivat);
-  const { permissions, faecher: userFaecher, authUser } = useRBAC();
+  const { permissions, faecher: userFaecher, authUser, rolle } = useRBAC();
+  // Fachlehrkräfte dürfen NUR private Einheiten anlegen (Backend erzwingt
+  // dieselbe Regel) — der Privat-Schalter ist für sie fest eingeschaltet.
+  const nurPrivatErlaubt = rolle === ROLLEN.LEHRKRAFT;
 
   // Beim Öffnen die Vorauswahl an die aktuelle Ansicht anpassen.
   useEffect(() => {
-    if (open) setPrivat(defaultPrivat);
-  }, [open, defaultPrivat]);
+    if (open) setPrivat(defaultPrivat || nurPrivatErlaubt);
+  }, [open, defaultPrivat, nurPrivatErlaubt]);
 
   // ✅ SCHRITT 3: Lade NUR die Fächer des Users (Security-Fix)
   const { data: faecher = [] } = useQuery({
@@ -125,10 +128,12 @@ function SchnellErstellenModal({ open, onOpenChange, onCreated, defaultPrivat = 
                 Privat erstellen
               </Label>
               <p className="text-xs text-muted-foreground">
-                Die Einheit landet nur in Ihrem Privatbereich — Sie können sie später jederzeit veröffentlichen.
+                {nurPrivatErlaubt
+                  ? 'Als Fachlehrkraft erstellen Sie Einheiten immer privat. Öffentliche Einheiten legt die Fachschaftsleitung an.'
+                  : 'Die Einheit landet nur in Ihrem Privatbereich — Sie können sie später jederzeit veröffentlichen.'}
               </p>
             </div>
-            <Switch checked={privat} onCheckedChange={setPrivat} />
+            <Switch checked={privat} onCheckedChange={setPrivat} disabled={nurPrivatErlaubt} />
           </div>
         </div>
         <DialogFooter>
@@ -280,7 +285,9 @@ export default function EinheitenListe() {
           </h1>
           <p className="text-sm text-muted-foreground mt-1">{einheiten.length} Einheit{einheiten.length !== 1 ? 'en' : ''} insgesamt</p>
         </div>
-        {permissions.kannEinheitVerwalten && (
+        {/* Erstellen dürfen: Admin + Fachschaftsleitung (öffentlich & privat)
+            sowie Fachlehrkräfte (NUR privat — wird in Modal/Wizard erzwungen). */}
+        {(permissions.kannEinheitVerwalten || rolle === ROLLEN.LEHRKRAFT) && (
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1">
               <Button variant="outline" onClick={() => setSchnellErstellen(true)} className="gap-2">

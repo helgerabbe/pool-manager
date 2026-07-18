@@ -9,12 +9,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ChevronRight, Loader2, Lock } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useRBAC } from '@/hooks/useRBAC';
+import { ROLLEN } from '@/lib/rbac';
 import SpeechInputButton from '@/components/ui/SpeechInputButton';
 
 export default function WizardStep1Meta({ onDone, istBasismodul = false, defaultPrivat = false, initialForm = null }) {
-  const { permissions, faecher: userFaecher } = useRBAC();
+  const { permissions, faecher: userFaecher, rolle } = useRBAC();
   // Privat-Modus: Einheit direkt im eigenen Privatbereich anlegen.
   const [privat, setPrivat] = useState(defaultPrivat);
+  // Fachlehrkräfte dürfen NUR private Einheiten anlegen (Backend erzwingt
+  // dieselbe Regel) — der Privat-Schalter ist für sie fest eingeschaltet.
+  const nurPrivatErlaubt = rolle === ROLLEN.LEHRKRAFT;
+  useEffect(() => {
+    if (nurPrivatErlaubt) setPrivat(true);
+  }, [nurPrivatErlaubt]);
   // initialForm: optionale Vorbefüllung (z. B. Handoff aus dem Einheiten-Coach).
   const [form, setForm] = useState({ 
     fach: '', 
@@ -173,10 +180,12 @@ export default function WizardStep1Meta({ onDone, istBasismodul = false, default
                 Privat erstellen
               </Label>
               <p className="text-xs text-muted-foreground">
-                Die Einheit landet nur in Ihrem Privatbereich — Sie können sie später jederzeit veröffentlichen.
+                {nurPrivatErlaubt
+                  ? 'Als Fachlehrkraft erstellen Sie Einheiten immer privat. Öffentliche Einheiten legt die Fachschaftsleitung an.'
+                  : 'Die Einheit landet nur in Ihrem Privatbereich — Sie können sie später jederzeit veröffentlichen.'}
               </p>
             </div>
-            <Switch checked={privat} onCheckedChange={setPrivat} />
+            <Switch checked={privat} onCheckedChange={setPrivat} disabled={nurPrivatErlaubt} />
           </div>
         )}
         <div className="flex justify-end pt-2">

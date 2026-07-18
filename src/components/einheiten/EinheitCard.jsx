@@ -42,12 +42,13 @@ export default function EinheitCard({
   const [isCopying, setIsCopying] = useState(false);
   const [showVorschau, setShowVorschau] = useState(false);
   const queryClient = useQueryClient();
-  // Löschen darf: Administrator immer, Fachschaftsleitung im eigenen Fach.
-  // Das Backend (deleteEinheitSecure) prüft dieselbe Regel serverseitig.
-  const darfLoeschen = kannStrukturBearbeiten(rolle, benutzerFaecher, einheit.fach);
   // Privat-Modus: Besitzer einer privaten Einheit darf sie veröffentlichen.
   const istPrivat = einheit.sichtbarkeit === 'privat';
   const istPrivatBesitzer = istPrivat && einheit.besitzer_email === currentUserEmail;
+  // Löschen darf: Administrator immer, Fachschaftsleitung im eigenen Fach —
+  // bei PRIVATEN Einheiten zusätzlich der Besitzer selbst.
+  // Das Backend (deleteEinheitSecure) prüft dieselben Regeln serverseitig.
+  const darfLoeschen = kannStrukturBearbeiten(rolle, benutzerFaecher, einheit.fach) || istPrivatBesitzer;
 
   const volume = metrics?.volume;
   const dashboardStatus = metrics?.dashboardStatus;
