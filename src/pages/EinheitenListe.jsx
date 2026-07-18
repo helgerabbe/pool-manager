@@ -322,6 +322,10 @@ export default function EinheitenListe() {
           <Lock className="w-3.5 h-3.5" />
           {permissions.istAdmin ? 'Private Einheiten (alle)' : 'Meine privaten Einheiten'}
         </button>
+        <HelpBadge
+          text="Öffentliche Einheiten werden gemeinschaftlich von der Fachgruppe erstellt und von der Fachschaftsleitung begleitet. Sie gelten klassen- bzw. lerngruppenübergreifend: Es ist vereinbart, dass alle Schüler diese Einheiten in der Poolzeit bearbeiten. Private Einheiten sind dagegen für den eigenen, persönlichen Unterricht gedacht — ohne große Abstimmung erstellt und schnell veröffentlicht."
+          docsSlug="einheiten-struktur"
+        />
       </div>
 
       {ansicht === 'privat' && permissions.istAdmin ? (
