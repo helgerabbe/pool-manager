@@ -18,7 +18,13 @@ export function useDashboardAutoStatus(einheit, toast) {
   const [autoStatusMap, setAutoStatusMap] = useState(
     () => einheit?.dashboards_auto_status || {}
   );
+  // Anzahl der aktuell laufenden DB-Writes. Solange Writes in flight sind,
+  // darf ein (potenziell staler) Server-Snapshot den lokalen, optimistischen
+  // Zustand NICHT überschreiben — sonst „vergisst" die UI z. B. den frisch
+  // gesetzten 'auto'-Status nach einem Standard-Reset.
+  const pendingWritesRef = useRef(0);
   useEffect(() => {
+    if (pendingWritesRef.current > 0) return;
     setAutoStatusMap(einheit?.dashboards_auto_status || {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [einheit?.id, einheit?.dashboards_auto_status]);
@@ -28,18 +34,30 @@ export function useDashboardAutoStatus(einheit, toast) {
     autoStatusRef.current = autoStatusMap;
   }, [autoStatusMap]);
 
-  // Patch mergen + persistieren (fire-and-forget mit lokalem Optimismus).
+  // Writes werden SERIALISIERT (Promise-Kette): Bei schnell aufeinander
+  // folgenden Status-Wechseln (z. B. Reset: 'bearbeitet' → 'auto') gewinnt
+  // sonst je nach Netz-Race der FALSCHE Write in der DB, während die UI den
+  // richtigen Zustand zeigt — genau der „Reset merkt sich den Status nicht"-Bug.
+  const writeChainRef = useRef(Promise.resolve());
+
+  // Patch mergen + persistieren (lokal optimistisch, DB-Writes in Reihenfolge).
   const persistAutoStatus = useCallback(
     (patch) => {
       if (!einheit?.id) return;
       const next = { ...(autoStatusRef.current || {}), ...patch };
       autoStatusRef.current = next;
       setAutoStatusMap(next);
-      base44.entities.Einheiten.update(einheit.id, { dashboards_auto_status: next }).catch(
-        (err) => {
+      pendingWritesRef.current += 1;
+      writeChainRef.current = writeChainRef.current
+        .then(() =>
+          base44.entities.Einheiten.update(einheit.id, { dashboards_auto_status: next })
+        )
+        .catch((err) => {
           console.warn('[useDashboardAutoStatus] Speichern fehlgeschlagen:', err);
-        }
-      );
+        })
+        .finally(() => {
+          pendingWritesRef.current -= 1;
+        });
     },
     [einheit?.id]
   );

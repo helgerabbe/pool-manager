@@ -315,13 +315,17 @@ export function useDashboardRelease({
       setResetConfirmOpen(false);
       return;
     }
+    // silent: true → dieser programmatische Aufbau zählt NICHT als manuelle
+    // Bearbeitung. Sonst würde markLerntypBearbeitet einen konkurrierenden
+    // 'bearbeitet'-Write feuern, der den anschließenden 'auto'-Status in der
+    // DB überschreiben kann (Race), obwohl die UI 'Automatisch' zeigt.
     updateKonfiguration((prev) => {
       let next = applyDashboardTemplate(prev, activeLernTyp, template, themenfelder);
       // Auto-Assembly: Bündel direkt mit den passenden Lernpaketen/Aufgaben/
       // Projekten der Einheit befüllen (Regeln: getAutoFillCandidates).
       if (autoFillCtx) next = fillAllBundles(next, activeLernTyp, autoFillCtx);
       return next;
-    });
+    }, { silent: true });
     onAutoAssembled?.(activeLernTyp);
     setResetConfirmOpen(false);
     onTemplateApplied?.();

@@ -175,6 +175,10 @@ export default function LernpfadeArchitekt({
   onSetBundleModus,
   onAutoFillBundle,
   onToggleItemAktiv,
+  expandedSektoren,
+  onToggleSektorExpanded,
+  expandedBundles,
+  onToggleBundleExpanded,
   getIsDropDisabled,
   onSelectAufgabe,
   onSelectSystemBaustein,
@@ -243,6 +247,10 @@ export default function LernpfadeArchitekt({
                 onSetBundleModus={onSetBundleModus}
                 onAutoFillBundle={onAutoFillBundle}
                 onToggleItemAktiv={onToggleItemAktiv}
+                collapsed={!expandedSektoren?.has(sektor.sektor_id)}
+                onToggleCollapsed={() => onToggleSektorExpanded?.(sektor.sektor_id)}
+                expandedBundles={expandedBundles}
+                onToggleBundle={onToggleBundleExpanded}
                 getIsDropDisabled={getIsDropDisabled}
                 onSelectAufgabe={onSelectAufgabe}
                 onSelectSystemBaustein={onSelectSystemBaustein}

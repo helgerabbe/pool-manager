@@ -123,6 +123,12 @@ export default function LernpfadeCockpit({
   })();
   const [activeLernTyp, setActiveLernTyp] = useState(initialLernTyp);
 
+  // Akkordeon (Sektoren + Bündel): standardmäßig ist ALLES zugeklappt —
+  // die Lehrkraft sieht zunächst nur die Sektor-Köpfe und klappt gezielt auf.
+  // Die Sets enthalten die IDs der AUFgeklappten Sektoren/Bündel.
+  const [expandedSektoren, setExpandedSektoren] = useState(() => new Set());
+  const [expandedBundles, setExpandedBundles] = useState(() => new Set());
+
   // Phase F.2: Deep-Link-Sektor. Tab 7 wird im Workspace nicht unmountet,
   // wenn der User von Tab 8 herübernavigiert — daher reagieren wir REAKTIV
   // auf Änderungen der `?lerntyp`- und `?sektor`-Params (nicht nur beim
@@ -140,6 +146,12 @@ export default function LernpfadeCockpit({
     }
     if (sektorParam) {
       pendingScrollSektorRef.current = sektorParam;
+      // Deep-Link-Ziel direkt aufklappen, damit der Scroll etwas zeigt.
+      setExpandedSektoren((prev) => {
+        const next = new Set(prev);
+        next.add(sektorParam);
+        return next;
+      });
     }
     const next = new URLSearchParams(searchParams);
     next.delete('lerntyp');
@@ -313,6 +325,64 @@ export default function LernpfadeCockpit({
     (systemBausteine || []).forEach((b) => map.set(b.baustein_id, b));
     return map;
   }, [systemBausteine]);
+
+  // ── Akkordeon-Steuerung ─────────────────────────────────────────────
+  const toggleSektorExpanded = useCallback((sektorId) => {
+    setExpandedSektoren((prev) => {
+      const next = new Set(prev);
+      if (next.has(sektorId)) next.delete(sektorId);
+      else next.add(sektorId);
+      return next;
+    });
+  }, []);
+  const toggleBundleExpanded = useCallback((instanceId) => {
+    setExpandedBundles((prev) => {
+      const next = new Set(prev);
+      if (next.has(instanceId)) next.delete(instanceId);
+      else next.add(instanceId);
+      return next;
+    });
+  }, []);
+  // Alle Sektor-IDs + Bündel-instance_ids des aktiven Lerntyps (für
+  // „Alles aufklappen / Alles zuklappen" in der Toolbar).
+  const { allSektorIds, allBundleIds } = useMemo(() => {
+    const sIds = [];
+    const bIds = [];
+    for (const s of konfiguration?.[activeLernTyp] || []) {
+      if (s?.sektor_id) sIds.push(s.sektor_id);
+      for (const it of s?.items || []) {
+        if (
+          it?.type === 'system' &&
+          it?.instance_id &&
+          systemBausteineById?.get(it.ref_id)?.baustein_modus === 'bundle_1ton'
+        ) {
+          bIds.push(it.instance_id);
+        }
+      }
+    }
+    return { allSektorIds: sIds, allBundleIds: bIds };
+  }, [konfiguration, activeLernTyp, systemBausteineById]);
+  const allExpanded =
+    allSektorIds.length > 0 &&
+    allSektorIds.every((id) => expandedSektoren.has(id)) &&
+    allBundleIds.every((id) => expandedBundles.has(id));
+  const handleToggleExpandAll = useCallback(() => {
+    if (allExpanded) {
+      setExpandedSektoren((prev) => {
+        const next = new Set(prev);
+        allSektorIds.forEach((id) => next.delete(id));
+        return next;
+      });
+      setExpandedBundles((prev) => {
+        const next = new Set(prev);
+        allBundleIds.forEach((id) => next.delete(id));
+        return next;
+      });
+    } else {
+      setExpandedSektoren((prev) => new Set([...prev, ...allSektorIds]));
+      setExpandedBundles((prev) => new Set([...prev, ...allBundleIds]));
+    }
+  }, [allExpanded, allSektorIds, allBundleIds]);
 
   const { data: lernpakete = [], isLoading: lernpaketeLoading } = useQuery({
     queryKey: ['lernpakete-by-einheit', einheit?.id],
@@ -499,7 +569,7 @@ export default function LernpfadeCockpit({
   } = useDashboardAutoStatus(einheit, toast);
 
   const updateKonfiguration = useCallback(
-    (updater) => {
+    (updater, options = {}) => {
       const prev = konfigurationRef.current;
       const next = typeof updater === 'function' ? updater(prev) : updater;
       konfigurationRef.current = next;
@@ -507,7 +577,9 @@ export default function LernpfadeCockpit({
       scheduleSave(next);
       // Zustand „Bearbeitet": erste manuelle Änderung an einem automatisch
       // erstellten Dashboard (No-op für andere Zustände / Onboarding).
-      markLerntypBearbeitet(activeLernTyp);
+      // options.silent = programmatische Mutationen (Standard-Reset,
+      // Titel-Binding) — die zählen NICHT als manuelle Bearbeitung.
+      if (!options.silent) markLerntypBearbeitet(activeLernTyp);
     },
     [scheduleSave, markLerntypBearbeitet, activeLernTyp]
   );
@@ -561,7 +633,7 @@ export default function LernpfadeCockpit({
         return { ...s, titel: tfTitel };
       });
     }
-    if (changed) updateKonfiguration(() => next);
+    if (changed) updateKonfiguration(() => next, { silent: true });
   }, [themenfeldTitelById, isStructuralEditingActive, updateKonfiguration]);
 
   // ── Lazy-Init für Bestandseinheiten ────────────────────────────────
@@ -1271,6 +1343,8 @@ export default function LernpfadeCockpit({
               onDriftAddItem={handleDriftAddItem}
               driftAddItemInaktiv={dashboardBestaetigt}
               driftDisabled={readOnly}
+              allExpanded={allExpanded}
+              onToggleExpandAll={handleToggleExpandAll}
               autoStatus={autoStatusMap?.[activeLernTyp] || null}
               autoStatusByLerntyp={autoStatusMap}
               onConfirmAuto={() => confirmAutoDashboard(activeLernTyp)}
@@ -1309,6 +1383,10 @@ export default function LernpfadeCockpit({
                 onSetBundleModus={handleSetBundleModus}
                 onAutoFillBundle={handleAutoFillBundle}
                 onToggleItemAktiv={handleToggleItemAktiv}
+                expandedSektoren={expandedSektoren}
+                onToggleSektorExpanded={toggleSektorExpanded}
+                expandedBundles={expandedBundles}
+                onToggleBundleExpanded={toggleBundleExpanded}
                 getIsDropDisabled={getIsDropDisabled}
                 onSelectAufgabe={setSelectedAufgabeId}
                 onSelectSystemBaustein={setSelectedSystemBausteinId}

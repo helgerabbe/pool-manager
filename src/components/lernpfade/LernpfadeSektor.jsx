@@ -19,7 +19,7 @@
 
 import React from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
-import { GripVertical, Trash2, X, Plus, ChevronUp, ChevronDown, Pencil, Eye, EyeOff } from 'lucide-react';
+import { GripVertical, Trash2, X, Plus, ChevronUp, ChevronDown, ChevronRight, Pencil, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getAufgabenTyp, ITEM_TYPE } from '@/lib/aufgabenTypen';
 import SystemBausteinPill from '@/components/lernpfade/SystemBausteinPill';
@@ -195,6 +195,11 @@ export default function LernpfadeSektor({
   onPreviewDiagnoseQuiz,
   onPreviewThemenfeldIntro,
   alleSektoren = [],
+  // Akkordeon: Sektor zugeklappt? + Toggle-Callbacks (Sektor & Bündel).
+  collapsed = false,
+  onToggleCollapsed,
+  expandedBundles,
+  onToggleBundle,
   }) {
   const items = Array.isArray(sektor.items) ? sektor.items : [];
 
@@ -361,6 +366,18 @@ export default function LernpfadeSektor({
           abgeleitet und nicht mehr per Input editiert. Bei Arbeitsphasen
           steht der Themenfeld-Titel bereits im headerLabel. */}
       <div className="flex items-center gap-2 flex-wrap">
+        {onToggleCollapsed && (
+          <button
+            type="button"
+            onClick={onToggleCollapsed}
+            title={collapsed ? 'Sektor aufklappen' : 'Sektor zuklappen'}
+            className="shrink-0 p-0.5 rounded hover:bg-muted text-muted-foreground transition-colors"
+          >
+            <ChevronRight
+              className={`w-4 h-4 transition-transform ${collapsed ? '' : 'rotate-90'}`}
+            />
+          </button>
+        )}
         {isIndividuell && !readOnly ? (
           isEditingTitel ? (
             <input
@@ -392,6 +409,15 @@ export default function LernpfadeSektor({
             title={typLabel}
           >
             {isIndividuell ? (sektor.titel?.trim() || headerLabel) : headerLabel}
+          </span>
+        )}
+        {/* Zugeklappt: kompakte Element-Anzahl im Header. */}
+        {collapsed && (
+          <span
+            className="shrink-0 text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full"
+            title={`${items.length} ${items.length === 1 ? 'Element' : 'Elemente'} in diesem Sektor`}
+          >
+            {items.length} {items.length === 1 ? 'Element' : 'Elemente'}
           </span>
         )}
         {/* Phase E.4: Drift-Badge — zeigt nur bei 'drifted' bzw. 'loading'
@@ -458,7 +484,8 @@ export default function LernpfadeSektor({
         )}
       </div>
 
-      {/* Droppable Item-Liste */}
+      {/* Droppable Item-Liste (bei zugeklapptem Sektor komplett ausgeblendet) */}
+      {!collapsed && (
       <Droppable
         droppableId={`sektor-${sektor.sektor_id}`}
         type="LERNPFAD_ITEM"
@@ -487,13 +514,33 @@ export default function LernpfadeSektor({
               // abgeleitet (siehe useDashboardDragAndDrop).
               if (entry.children) {
                 const bundleBaustein = systemBausteineById?.get(entry.item.ref_id);
+                // Bündel-Akkordeon: ohne Toggle-Callback immer aufgeklappt
+                // (rückwärtskompatibel); sonst nur, wenn explizit expandiert.
+                const bundleExpanded = onToggleBundle
+                  ? !!expandedBundles?.has?.(entry.item.instance_id)
+                  : true;
                 return (
                   <React.Fragment key={`bundle-${entry.item.instance_id || entry.originalIndex}`}>
                     {renderItem(entry, entry.originalIndex)}
-                    {entry.children.map((child) =>
-                      renderItem(child, child.originalIndex, true)
+                    {onToggleBundle && (
+                      <button
+                        type="button"
+                        onClick={() => onToggleBundle(entry.item.instance_id)}
+                        title={bundleExpanded ? 'Bündel zuklappen' : 'Bündel aufklappen'}
+                        className="ml-5 flex items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors py-0.5"
+                      >
+                        <ChevronRight
+                          className={`w-3 h-3 transition-transform ${bundleExpanded ? 'rotate-90' : ''}`}
+                        />
+                        {entry.children.length}{' '}
+                        {entry.children.length === 1 ? 'Element' : 'Elemente'}
+                      </button>
                     )}
-                    {entry.children.length === 0 && (
+                    {bundleExpanded &&
+                      entry.children.map((child) =>
+                        renderItem(child, child.originalIndex, true)
+                      )}
+                    {bundleExpanded && entry.children.length === 0 && (
                       <div className="ml-5 border-l-2 border-bundle/40 pl-3 py-0.5 space-y-1">
                         <div className="text-[10px] italic text-muted-foreground/70 py-0.5">
                           Bündel ist leer – passende Aufgaben hierher ziehen.
@@ -522,6 +569,7 @@ export default function LernpfadeSektor({
           </div>
         )}
       </Droppable>
+      )}
     </div>
   );
 }

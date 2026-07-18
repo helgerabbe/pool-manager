@@ -40,6 +40,8 @@ import {
   Check,
   X,
   Wand2,
+  ChevronsUpDown,
+  ChevronsDownUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -208,6 +210,9 @@ export default function DashboardToolbar({
   onDriftAddItem,
   driftAddItemInaktiv = false,
   driftDisabled,
+  // Akkordeon: alle Sektoren + Bündel auf einmal auf-/zuklappen.
+  allExpanded = false,
+  onToggleExpandAll,
   // Privat-Modus: pro Lerntyp einzeln an-/abschaltbar (nur private Einheiten)
   zeigeLerntypenSchalter = false,
   aktiveLerntypen = LERNTYPEN,
@@ -253,6 +258,28 @@ export default function DashboardToolbar({
           addItemInaktiv={driftAddItemInaktiv}
           disabled={driftDisabled}
         />}
+
+        {/* Akkordeon: Alles auf-/zuklappen (Sektoren + Bündel) */}
+        {!istOnboarding && onToggleExpandAll && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onToggleExpandAll}
+            className="gap-1.5 h-7 text-[11px] px-2.5"
+            title={
+              allExpanded
+                ? 'Alle Sektoren und Bündel zuklappen'
+                : 'Alle Sektoren und Bündel aufklappen'
+            }
+          >
+            {allExpanded ? (
+              <ChevronsDownUp className="w-3 h-3" />
+            ) : (
+              <ChevronsUpDown className="w-3 h-3" />
+            )}
+            {allExpanded ? 'Alles zuklappen' : 'Alles aufklappen'}
+          </Button>
+        )}
 
         {/* Auto-Assembly: Badge + Übernehmen-Aktion, solange das Dashboard
             automatisch erstellt und noch nicht bestätigt wurde. */}
