@@ -13,7 +13,6 @@ import { Plus, Search, AlertCircle, Wand2, Lock, Bot } from 'lucide-react';
 import PrivateEinheitenUebersicht from '@/components/einheiten/PrivateEinheitenUebersicht';
 import BereichSwitcher from '@/components/einheiten/BereichSwitcher';
 import AustauschBibliothek from '@/components/einheiten/AustauschBibliothek';
-import TutorialFooterLink from '@/components/einheiten/TutorialFooterLink';
 import MoodleWegInfoBox from '@/components/einheiten/MoodleWegInfoBox';
 import SyncStatusBadge from '@/components/sync/SyncStatusBadge';
 import EinheitCard from '@/components/einheiten/EinheitCard';
@@ -456,9 +455,6 @@ export default function EinheitenListe() {
 
       {/* Direkthilfe im Privatbereich: Wie kommt meine Einheit nach Moodle? */}
       {ansicht === 'privat' && <MoodleWegInfoBox />}
-
-      {/* Tutorial-Link (ersetzt die frühere Dashboard-Seite) */}
-      <TutorialFooterLink />
 
       <SchnellErstellenModal
         open={schnellErstellen}
