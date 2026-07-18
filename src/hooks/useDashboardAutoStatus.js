@@ -12,6 +12,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { AUTO_DASHBOARD_STATUS } from '@/lib/dashboardAutoAssembly';
 
+const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
+
 export function useDashboardAutoStatus(einheit, toast) {
   const [autoStatusMap, setAutoStatusMap] = useState(
     () => einheit?.dashboards_auto_status || {}
@@ -48,19 +50,23 @@ export function useDashboardAutoStatus(einheit, toast) {
     [persistAutoStatus]
   );
 
-  // Alle vier Dashboards als 'auto' markieren (Lazy-Init-Pfad).
-  const markAllAutoAssembled = useCallback(() => {
-    persistAutoStatus({
-      minimalist: AUTO_DASHBOARD_STATUS.AUTO,
-      pragmatiker: AUTO_DASHBOARD_STATUS.AUTO,
-      ehrgeizig: AUTO_DASHBOARD_STATUS.AUTO,
-      passioniert: AUTO_DASHBOARD_STATUS.AUTO,
-    });
-  }, [persistAutoStatus]);
+  // Dashboards als 'auto' markieren (Lazy-Init-Pfad). Ohne Argument alle
+  // vier; mit Array nur die tatsächlich automatisch aufgebauten Lerntypen.
+  const markAllAutoAssembled = useCallback(
+    (lerntypen) => {
+      const keys =
+        Array.isArray(lerntypen) && lerntypen.length > 0 ? lerntypen : LERNTYP_KEYS;
+      const patch = {};
+      for (const lt of keys) {
+        if (LERNTYP_KEYS.includes(lt)) patch[lt] = AUTO_DASHBOARD_STATUS.AUTO;
+      }
+      persistAutoStatus(patch);
+    },
+    [persistAutoStatus]
+  );
 
   // Erster manueller Eingriff in ein 'auto'-Dashboard → 'bearbeitet'.
   // No-op für alle anderen Zustände und für Nicht-Lerntyp-Keys (Onboarding).
-  const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
   const markLerntypBearbeitet = useCallback(
     (lerntyp) => {
       if (!LERNTYP_KEYS.includes(lerntyp)) return;

@@ -54,7 +54,6 @@ import {
   removeSektor,
   moveSektor,
   removeAufgabeFromLernTyp,
-  isKonfigurationEmpty,
   setBundleConfig,
   setBundleModus,
   setItemAktiv,
@@ -84,7 +83,7 @@ import { getAmpelStatus } from '@/lib/ampelLogic';
 import { adaptLernpaketToPoolItem } from '@/lib/lernpaketAdapter';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 import { ladeOnboardingSnapshots, speichereOnboardingSnapshot } from '@/lib/onboardingSnapshots';
-import { autoAssembleAllDashboards, AUTO_DASHBOARD_STATUS } from '@/lib/dashboardAutoAssembly';
+import { autoAssembleLerntyp, AUTO_DASHBOARD_STATUS } from '@/lib/dashboardAutoAssembly';
 import { useDashboardAutoStatus } from '@/hooks/useDashboardAutoStatus';
 import { getAktiveLerntypKeys } from '@/lib/lerntypen';
 import { useLerntypDefinitionen } from '@/hooks/useLerntypDefinitionen';
@@ -577,7 +576,14 @@ export default function LernpfadeCockpit({
   useEffect(() => {
     if (!einheit?.id) return;
     if (lazyInitDoneRef.current === einheit.id) return;
-    if (!isKonfigurationEmpty(einheit.lernpfade_konfiguration)) {
+    // PRO Lerntyp prüfen: Nur Dashboards, die noch komplett leer sind,
+    // werden automatisch aufgebaut. Bereits bearbeitete/bestehende Pfade
+    // (z. B. Bestandsdaten in einem einzelnen Lerntyp) bleiben unangetastet.
+    const serverKonfig = einheit.lernpfade_konfiguration || {};
+    const emptyLerntypen = VALID_LERNTYPEN.filter(
+      (lt) => !Array.isArray(serverKonfig[lt]) || serverKonfig[lt].length === 0
+    );
+    if (emptyLerntypen.length === 0) {
       lazyInitDoneRef.current = einheit.id;
       return;
     }
@@ -586,22 +592,21 @@ export default function LernpfadeCockpit({
     // würden Arbeitsphasen fehlen oder die Bündel leer bleiben.
     if (themenfelderLoading || aufgabenLoading || lernpaketeLoading || bausteineLoading) return;
     lazyInitDoneRef.current = einheit.id;
-    const filled = autoAssembleAllDashboards({
-      templates: effectiveTemplates,
-      themenfelder,
-      aufgaben,
-      lernpakete,
-      systemBausteineById,
-    });
+    const ctx = { aufgaben, lernpakete, systemBausteineById };
+    let filled = { ...DEFAULT_KONFIG, ...serverKonfig };
+    for (const lt of emptyLerntypen) {
+      if (!Array.isArray(effectiveTemplates?.[lt])) continue;
+      filled = autoAssembleLerntyp(filled, lt, effectiveTemplates[lt], themenfelder, ctx);
+    }
     setKonfiguration(filled);
     konfigurationRef.current = filled;
     // Direkter Save via flushSave(forcePayload) — kein Edit-Lock erforderlich,
-    // weil die Einheit vorher schlicht keine Konfiguration hatte.
+    // weil die betroffenen Dashboards vorher schlicht leer waren.
     flushSave(filled).catch((err) => {
       console.warn('[LernpfadeCockpit] Auto-Assembly Save fehlgeschlagen:', err);
     });
-    // Alle vier Dashboards als „automatisch erstellt" markieren.
-    markAllAutoAssembled();
+    // Nur die automatisch aufgebauten Dashboards als 'auto' markieren.
+    markAllAutoAssembled(emptyLerntypen);
   }, [
     einheit?.id,
     einheit?.lernpfade_konfiguration,
