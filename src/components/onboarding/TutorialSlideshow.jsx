@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import {
   ChevronRight, ChevronLeft, CheckCircle2,
   Users, Star, Trophy, LayoutGrid, ArrowRight,
-  FolderOpen, Target, Layers, HelpCircle, Sparkles
+  FolderOpen, Target, Layers, HelpCircle, Sparkles, Rocket
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -72,14 +72,20 @@ const SLIDES = [
   {
     icon: Target,
     color: 'bg-red-100 text-red-600',
-    title: 'Allgemeine Aufgabe zum Paket',
-    text: 'Das Ziel sind Allgemeine Aufgaben (Ebene 2). Wenn Schüler dort hängen, zeigt das System ihnen das passende Lernpaket (Ebene 1) zur Hilfe.',
+    title: 'Allgemeine Aufgaben – der Normalfall',
+    text: 'Allgemeine Aufgaben sind das, was Schüler in der Mehrzahl bearbeiten. Sie werden mit dem KI-Tutor Brian bearbeitet: Brian führt schrittweise zur Lösung und verrät sie nur im absoluten Notfall. Wer hängen bleibt, bekommt das passende Lernpaket als Hilfe angeboten.',
   },
   {
     icon: Layers,
     color: 'bg-teal-100 text-teal-600',
-    title: 'Das Lernmodul: Input, Übung, Abschluss',
-    text: 'Ein Lernpaket (15–30 Min.) hat immer 3 Phasen: Input (Erklärung), Übung (Anwendung) und Abschluss (Selbstprüfung).',
+    title: 'Lernpakete – die Hilfe-Ebene',
+    text: 'Lernpakete sind kleine, modulare Bausteine (15–30 Min.) mit festen Inhalten: Schüler bekommen hier ohne wesentliche KI-Unterstützung schnell eine Erklärung und können Übungen direkt durchführen. Jedes Paket hat 3 Phasen: Input (Erklärung), Übung (Anwendung) und Abschluss (Selbstprüfung).',
+  },
+  {
+    icon: Rocket,
+    color: 'bg-purple-100 text-purple-600',
+    title: 'Projekte – für Selbstständige',
+    text: 'Projekte richten sich an leistungsstarke Schüler, die selbstständig arbeiten können. Auch hier begleitet Brian – aber anders: Es gibt nicht die eine richtige Lösung. Brian unterstützt rein methodisch auf Grundlage festgelegter Gütekriterien, statt zur Lösung zu führen.',
   },
   {
     icon: HelpCircle,
