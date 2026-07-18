@@ -1272,6 +1272,7 @@ export default function LernpfadeCockpit({
               driftAddItemInaktiv={dashboardBestaetigt}
               driftDisabled={readOnly}
               autoStatus={autoStatusMap?.[activeLernTyp] || null}
+              autoStatusByLerntyp={autoStatusMap}
               onConfirmAuto={() => confirmAutoDashboard(activeLernTyp)}
               zeigeLerntypenSchalter={istPrivat}
               aktiveLerntypen={aktiveLerntypen}

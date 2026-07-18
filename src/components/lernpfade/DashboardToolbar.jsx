@@ -52,6 +52,7 @@ import { EXPORT_LIFECYCLE_STATUS, EXPORT_LIFECYCLE_LABELS } from '@/lib/exportLi
 import DashboardDriftPill from '@/components/lernpfade/DashboardDriftPill';
 import InfoHint from '@/components/lernpfade/InfoHint';
 import CockpitSyncBadge from '@/components/export/CockpitSyncBadge';
+import DashboardZustandBadge from '@/components/lernpfade/DashboardZustandBadge';
 
 const LERNTYP_META = {
   minimalist: { label: 'Minimalist', icon: Sparkles, activeBg: 'bg-slate-700', activeText: 'text-white', inactiveText: 'text-slate-700' },
@@ -66,7 +67,7 @@ const LERNTYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 // unten der Lebenszyklus (Neu / Im Export / Synchron / Geändert). Dadurch ist
 // auf Tab 7 jederzeit sichtbar, in welchem Moodle-Sync-Zustand jedes der vier
 // Dashboards gerade steckt.
-function LerntypPill({ typKey, active, locked, syncStatus, onClick, onOpenGuide, labelOverride }) {
+function LerntypPill({ typKey, active, locked, zustand, syncStatus, onClick, onOpenGuide, labelOverride }) {
   const baseMeta = LERNTYP_META[typKey];
   const meta = labelOverride ? { ...baseMeta, label: labelOverride } : baseMeta;
   const Icon = meta.icon;
@@ -136,15 +137,10 @@ function LerntypPill({ typKey, active, locked, syncStatus, onClick, onOpenGuide,
         )}
       </span>
 
-      {/* Zeile 2: grünes Häkchen (Prüf-Status) + Lebenszyklus-Badge */}
+      {/* Zeile 2: Dashboard-Zustand (Automatisch/Bearbeitet/Freigegeben/
+          Gesperrt) + Moodle-Lebenszyklus-Badge */}
       <span className="inline-flex items-center gap-1.5 pointer-events-auto">
-        {locked ? (
-          <CheckCircle2
-            className={`w-3.5 h-3.5 shrink-0 ${active ? 'text-emerald-200' : 'text-emerald-600'}`}
-          />
-        ) : (
-          <span className="w-2 h-2 rounded-full bg-slate-300 shrink-0" />
-        )}
+        <DashboardZustandBadge zustand={zustand} />
         <CockpitSyncBadge syncStatus={syncStatus || 'new'} />
       </span>
     </button>
@@ -221,6 +217,8 @@ export default function DashboardToolbar({
   // Auto-Assembly: 'auto' | 'bestaetigt' | null für den aktiven Lerntyp.
   autoStatus = null,
   onConfirmAuto,
+  // Auto-Assembly-Status ALLER Lerntypen (für die Zustand-Badges der Pills).
+  autoStatusByLerntyp = {},
 }) {
   const status = einheitFreigabe?.status || EXPORT_LIFECYCLE_STATUS.DRAFT;
   const dashboards = einheitFreigabe?.dashboards || {};
@@ -429,6 +427,15 @@ export default function DashboardToolbar({
             typKey={lt}
             active={activeLernTyp === lt}
             locked={!!dashboards[lt]}
+            zustand={
+              isEinheitContentLocked
+                ? 'gesperrt'
+                : dashboards[lt]
+                  ? 'freigegeben'
+                  : autoStatusByLerntyp?.[lt] === 'auto'
+                    ? 'automatisch'
+                    : 'bearbeitet'
+            }
             syncStatus={dashboardSyncByLerntyp[lt]}
             onClick={() => onActiveLernTypChange?.(lt)}
             onOpenGuide={onOpenGuide}
