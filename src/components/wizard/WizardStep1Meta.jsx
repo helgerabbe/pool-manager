@@ -11,16 +11,18 @@ import { Switch } from '@/components/ui/switch';
 import { useRBAC } from '@/hooks/useRBAC';
 import SpeechInputButton from '@/components/ui/SpeechInputButton';
 
-export default function WizardStep1Meta({ onDone, istBasismodul = false, defaultPrivat = false }) {
+export default function WizardStep1Meta({ onDone, istBasismodul = false, defaultPrivat = false, initialForm = null }) {
   const { permissions, faecher: userFaecher } = useRBAC();
   // Privat-Modus: Einheit direkt im eigenen Privatbereich anlegen.
   const [privat, setPrivat] = useState(defaultPrivat);
+  // initialForm: optionale Vorbefüllung (z. B. Handoff aus dem Einheiten-Coach).
   const [form, setForm] = useState({ 
     fach: '', 
     titel_der_einheit: '', 
     jahrgangsstufe: '', 
     zeit_phase_id: '',
     beschreibung: '',
+    ...(initialForm || {}),
   });
   const [saving, setSaving] = useState(false);
 

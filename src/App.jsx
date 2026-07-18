@@ -23,6 +23,7 @@ const MoodleExport = lazyWithRetry(() => import('@/pages/MoodleExport'));
 const Workspace = lazyWithRetry(() => import('@/pages/Workspace'));
 const AdminSettings = lazyWithRetry(() => import('@/pages/AdminSettings'));
 const EinheitCreateWizard = lazyWithRetry(() => import('@/pages/EinheitCreateWizard'));
+const EinheitenCoach = lazyWithRetry(() => import('@/pages/EinheitenCoach'));
 const ExportCenter = lazyWithRetry(() => import('@/pages/ExportCenter'));
 const MBKConsole = lazyWithRetry(() => import('@/pages/MBKConsole'));
 const EinheitViewManager = lazyWithRetry(() => import('@/components/workspace/EinheitViewManager'));
@@ -196,6 +197,7 @@ const AuthenticatedApp = () => {
           
           <Route path="/workspace" element={<ErrorBoundary fallback="Workspace konnte nicht geladen werden."><Workspace /></ErrorBoundary>} />
           <Route path="/einheit/create" element={<ErrorBoundary fallback="Erstellungsassistent konnte nicht geladen werden."><EinheitCreateWizard /></ErrorBoundary>} />
+          <Route path="/einheit/coach" element={<ErrorBoundary fallback="Einheiten-Coach konnte nicht geladen werden."><EinheitenCoach /></ErrorBoundary>} />
           <Route path="/einheit/export" element={<ErrorBoundary fallback="Export-Center konnte nicht geladen werden."><ExportCenter /></ErrorBoundary>} />
           {/* Phase G: Eigenständiges Export-Center auf Hauptmenü-Ebene */}
           <Route

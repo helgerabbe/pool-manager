@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Search, AlertCircle, Wand2, Globe, Lock } from 'lucide-react';
+import { Plus, Search, AlertCircle, Wand2, Globe, Lock, Bot } from 'lucide-react';
 import PrivateEinheitenUebersicht from '@/components/einheiten/PrivateEinheitenUebersicht';
 import SyncStatusBadge from '@/components/sync/SyncStatusBadge';
 import EinheitCard from '@/components/einheiten/EinheitCard';
@@ -289,6 +289,16 @@ export default function EinheitenListe() {
               </Button>
               <HelpBadge
                 text="Schnell eine neue Einheit anlegen: Nur Titel, Fach und Jahrgang erforderlich. Themenfelder und Inhalte können Sie später im Workspace ergänzen."
+                docsSlug="einheiten-struktur"
+              />
+            </div>
+            <div className="flex items-center gap-1">
+              <Button variant="outline" onClick={() => navigate(`/einheit/coach${ansicht === 'privat' ? '?privat=1' : ''}`)} className="gap-2">
+                <Bot className="w-4 h-4" />
+                Mit KI-Coach planen
+              </Button>
+              <HelpBadge
+                text="Der Einheiten-Coach ist ein KI-Sparringspartner: Sie entwickeln im Gespräch entspannt die Struktur Ihrer Einheit — mit kritischer Prüfung, Inspiration und Studyflix-Recherche. Das Ergebnis wird anschließend an den Wizard übergeben."
                 docsSlug="einheiten-struktur"
               />
             </div>

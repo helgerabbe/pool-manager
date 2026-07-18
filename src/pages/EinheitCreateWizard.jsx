@@ -24,6 +24,15 @@ export default function EinheitCreateWizard() {
   const istBasismodul = urlParams.get('basismodul') === '1';
   // Privat-Modus: Vorauswahl für "Privat erstellen" (aus der Privat-Ansicht gestartet).
   const startPrivat = urlParams.get('privat') === '1';
+  // Einheiten-Coach-Handoff: Vorbefüllung von Schritt 1 aus dem Coach-Gespräch.
+  const [coachPrefill] = useState(() => {
+    if (urlParams.get('coach') !== '1') return null;
+    try {
+      return JSON.parse(sessionStorage.getItem('einheitenCoachHandoff') || 'null');
+    } catch {
+      return null;
+    }
+  });
   const listePfad = istBasismodul ? '/basismodule' : '/einheiten';
 
   const [currentStep, setCurrentStep] = useState(draftId ? draftStep : 1);
@@ -242,7 +251,7 @@ export default function EinheitCreateWizard() {
       {/* Step Content */}
       {currentStep === 1 && (
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-          <WizardStep1Meta onDone={handleStep1Done} istBasismodul={istBasismodul} defaultPrivat={startPrivat} />
+          <WizardStep1Meta onDone={handleStep1Done} istBasismodul={istBasismodul} defaultPrivat={startPrivat} initialForm={coachPrefill} />
         </div>
       )}
       {currentStep === 2 && einheitId && (
