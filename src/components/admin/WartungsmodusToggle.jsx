@@ -2,6 +2,7 @@ import React from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, ShieldOff } from 'lucide-react';
+import AktiveNutzerListe from '@/components/admin/AktiveNutzerListe';
 
 /**
  * Prominenter Toggle für den Globalen Wartungsmodus.
@@ -35,8 +36,8 @@ export default function WartungsmodusToggle({ aktiv, onChange, isPending }) {
             </div>
             <p className="text-sm text-muted-foreground">
               {aktiv
-                ? 'Das System ist für alle Nicht-Administratoren gesperrt. Schreibzugriffe (Erstellen, Bearbeiten, Löschen) sind blockiert.'
-                : 'Alle Nutzer können normal arbeiten. Aktivieren Sie den Wartungsmodus vor einem Moodle-Export, um Datenkonsistenz zu gewährleisten.'
+                ? 'Das System ist für alle Nicht-Administratoren komplett gesperrt — sie sehen einen Wartungs-Hinweis und können sich nur abmelden.'
+                : 'Alle Nutzer können normal arbeiten. Aktivieren Sie den Wartungsmodus vor wichtigen Änderungen, um alle Nutzer vorübergehend auszusperren.'
               }
             </p>
           </div>
@@ -53,10 +54,13 @@ export default function WartungsmodusToggle({ aktiv, onChange, isPending }) {
         <div className="mt-4 p-3 bg-orange-100 rounded-lg border border-orange-200">
           <p className="text-xs text-orange-700 font-medium flex items-center gap-1.5">
             <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-            Non-Admin-Nutzer erhalten bei Schreibzugriffen den Hinweis: „System wird für Moodle-Export gesperrt"
+            Alle Nicht-Administratoren sind ausgesperrt und sehen den Wartungs-Sperrbildschirm.
           </p>
         </div>
       )}
+
+      {/* Vor dem Aktivieren prüfen: Wer arbeitet gerade im System? */}
+      <AktiveNutzerListe />
     </div>
   );
 }

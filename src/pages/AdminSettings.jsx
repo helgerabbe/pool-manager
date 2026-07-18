@@ -5,7 +5,10 @@ import { ROLLEN } from '@/lib/rbac';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ShieldCheck, Settings2, RotateCcw, AlertTriangle } from 'lucide-react';
+import {
+  ShieldCheck, Settings2, RotateCcw, AlertTriangle,
+  Building2, GraduationCap, CalendarRange, BookOpen, Puzzle, Blocks, LayoutDashboard, Plug,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -25,7 +28,6 @@ import WartungsmodusToggle from '@/components/admin/WartungsmodusToggle';
 import AktivitaetenKatalog from '@/components/admin/AktivitaetenKatalog';
 import SystemBausteineTable from '@/components/admin/SystemBausteineTable';
 import SchulStammdatenCard from '@/components/admin/SchulStammdatenCard';
-import NomenklaturManagerView from '@/components/admin/nomenklatur/NomenklaturManagerView';
 import DashboardVorlagenTab from '@/components/admin/dashboardVorlage/DashboardVorlagenTab';
 import GitHubConnectorCard from '@/components/admin/GitHubConnectorCard';
 import GitHubTicketConnectorCard from '@/components/admin/GitHubTicketConnectorCard';
@@ -98,80 +100,64 @@ export default function AdminSettings() {
         </p>
       </div>
 
-      {/* Alle Bereiche als Tabs — direkt unter dem Header */}
+      {/* Alle Bereiche als Tabs — kaskadische Ordnung:
+          Allgemein → Jahrgänge → Phasen → Fächer → Aktivitäten →
+          Systembausteine → Dashboards → Integrationen */}
       <Tabs defaultValue="allgemein">
-        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-3 lg:grid-cols-9 h-auto gap-1.5 bg-muted p-1.5 rounded-lg">
+        <TabsList className="flex flex-wrap justify-start h-auto gap-2 bg-transparent p-0">
           {[
-            { value: 'allgemein', label: 'Allgemein' },
-            { value: 'system', label: 'System' },
-            { value: 'dashboards', label: 'Dashboards' },
-            { value: 'faecher', label: 'Fächer' },
-            { value: 'jahrgaenge', label: 'Jahrgänge' },
-            { value: 'phasen', label: 'Phasen' },
-            { value: 'aktivitaeten', label: 'Aktivitäten' },
-            { value: 'systembausteine', label: 'Systembausteine' },
-            { value: 'nomenklatur', label: 'Nomenklatur' },
-            { value: 'integrationen', label: 'Integrationen' },
+            { value: 'allgemein', label: 'Allgemein', icon: Building2 },
+            { value: 'jahrgaenge', label: 'Jahrgänge', icon: GraduationCap },
+            { value: 'phasen', label: 'Phasen', icon: CalendarRange },
+            { value: 'faecher', label: 'Fächer', icon: BookOpen },
+            { value: 'aktivitaeten', label: 'Aktivitäten', icon: Puzzle },
+            { value: 'systembausteine', label: 'Systembausteine', icon: Blocks },
+            { value: 'dashboards', label: 'Dashboards', icon: LayoutDashboard },
+            { value: 'integrationen', label: 'Integrationen', icon: Plug },
           ].map((tab) => (
             <TabsTrigger
               key={tab.value}
               value={tab.value}
-              className="text-xs font-medium px-1.5 py-2 rounded-md leading-tight text-center whitespace-normal data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-colors"
+              className="gap-1.5 rounded-full border border-border bg-card px-3.5 py-2 text-xs font-medium text-muted-foreground shadow-sm transition-all hover:text-foreground hover:border-primary/40 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow"
             >
+              <tab.icon className="w-3.5 h-3.5" />
               {tab.label}
             </TabsTrigger>
           ))}
         </TabsList>
 
-        {/* Allgemein — Schul-Stammdaten */}
-        <TabsContent value="allgemein" className="mt-4">
+        {/* Allgemein — Schul-Stammdaten, Wartungsmodus, Werkszustand (dezent) */}
+        <TabsContent value="allgemein" className="mt-5 space-y-6">
           <SchulStammdatenCard />
-        </TabsContent>
 
-        {/* System — Wartungsmodus & Werkszustand */}
-        <TabsContent value="system" className="mt-4 space-y-6">
           <WartungsmodusToggle
             aktiv={wartungsmodus}
             onChange={setWartungsmodus}
             isPending={isWartungsmodusLoading}
           />
 
-          {/* Factory Reset — dezent, mit ausklappbarem Bereich gegen versehentliche Klicks */}
-          <Card className="border shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base flex items-center gap-2">
-                <RotateCcw className="w-4 h-4 text-muted-foreground" />
-                System auf Werkszustand zurücksetzen
-              </CardTitle>
-              <CardDescription>
-                Löscht alle Einheiten, Themenfelder, Lernpakete und Aufgaben. Benutzerkonten und Systemeinstellungen
-                bleiben erhalten. Eine Beispiel-Einheit wird neu erstellt.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 flex items-start gap-3">
-                <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-                <div className="flex-1 text-sm text-muted-foreground">
-                  Dieser Vorgang kann <span className="font-semibold text-destructive">nicht rückgängig</span> gemacht werden.
-                  Bitte nur nutzen, wenn Sie sicher sind.
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowResetDialog(true)}
-                  disabled={resetMutation.isPending}
-                  className="gap-2 shrink-0 border-destructive/40 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                >
-                  {resetMutation.isPending ? (
-                    <div className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
-                  ) : (
-                    <RotateCcw className="w-3.5 h-3.5" />
-                  )}
-                  {resetMutation.isPending ? 'Wird zurückgesetzt...' : 'Zurücksetzen…'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Factory Reset — bewusst dezent als schmale Fußzeile */}
+          <div className="rounded-lg border border-border bg-muted/30 px-4 py-3 flex items-center justify-between gap-3">
+            <div className="text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">System auf Werkszustand zurücksetzen</span>
+              {' — '}löscht alle Einheiten, Lernpakete und Aufgaben unwiderruflich. Benutzerkonten und
+              Einstellungen bleiben erhalten.
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowResetDialog(true)}
+              disabled={resetMutation.isPending}
+              className="gap-1.5 shrink-0 text-muted-foreground hover:text-destructive"
+            >
+              {resetMutation.isPending ? (
+                <div className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+              ) : (
+                <RotateCcw className="w-3.5 h-3.5" />
+              )}
+              {resetMutation.isPending ? 'Wird zurückgesetzt...' : 'Zurücksetzen…'}
+            </Button>
+          </div>
         </TabsContent>
 
         {/* Dashboards — Standard-Vorlagen pro Lerntyp */}
@@ -264,11 +250,6 @@ export default function AdminSettings() {
         {/* Aktivitäten-Katalog */}
         <TabsContent value="aktivitaeten" className="mt-4">
           <AktivitaetenKatalog />
-        </TabsContent>
-
-        {/* Nomenklatur-Manager (AP2) — Sprache der Schule pro Fach */}
-        <TabsContent value="nomenklatur" className="mt-4">
-          <NomenklaturManagerView />
         </TabsContent>
 
         {/* Integrationen — externe Datenquellen (GitHub etc.) */}

@@ -17,6 +17,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 
 const KEYS = {
+  schulname: 'system_schulname',
   land: 'system_land',
   bundesland: 'system_bundesland',
   schulform: 'system_schulform',
@@ -32,6 +33,7 @@ export function useSchulStammdaten() {
   });
 
   const findRecord = (schluessel) => settings.find((s) => s.schluessel === schluessel);
+  const schulname = findRecord(KEYS.schulname)?.wert_text || '';
   const land = findRecord(KEYS.land)?.wert_text || '';
   const bundesland = findRecord(KEYS.bundesland)?.wert_text || '';
   const schulform = findRecord(KEYS.schulform)?.wert_text || '';
@@ -49,10 +51,12 @@ export function useSchulStammdaten() {
 
   return {
     isLoading,
+    schulname,
     land,
     bundesland,
     schulform,
     isSaving: saveMutation.isPending,
+    setSchulname: (v) => saveMutation.mutate({ schluessel: KEYS.schulname, wert_text: v }),
     setLand: (v) => saveMutation.mutate({ schluessel: KEYS.land, wert_text: v }),
     setBundesland: (v) => saveMutation.mutate({ schluessel: KEYS.bundesland, wert_text: v }),
     setSchulform: (v) => saveMutation.mutate({ schluessel: KEYS.schulform, wert_text: v }),

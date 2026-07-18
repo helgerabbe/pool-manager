@@ -18,13 +18,19 @@ import { Building2, Loader2 } from 'lucide-react';
 import { useSchulStammdaten } from '@/hooks/useSchulStammdaten';
 
 export default function SchulStammdatenCard() {
-  const { land, bundesland, schulform, setLand, setBundesland, setSchulform, isSaving, isLoading } = useSchulStammdaten();
+  const {
+    schulname, land, bundesland, schulform,
+    setSchulname, setLand, setBundesland, setSchulform,
+    isSaving, isLoading,
+  } = useSchulStammdaten();
 
   // Lokale Form-States, damit Tippen flüssig bleibt; Persistenz onBlur.
+  const [localSchulname, setLocalSchulname] = useState(schulname);
   const [localLand, setLocalLand] = useState(land);
   const [localBundesland, setLocalBundesland] = useState(bundesland);
   const [localSchulform, setLocalSchulform] = useState(schulform);
 
+  useEffect(() => { setLocalSchulname(schulname); }, [schulname]);
   useEffect(() => { setLocalLand(land); }, [land]);
   useEffect(() => { setLocalBundesland(bundesland); }, [bundesland]);
   useEffect(() => { setLocalSchulform(schulform); }, [schulform]);
@@ -43,6 +49,17 @@ export default function SchulStammdatenCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="system_schulname" className="text-xs">Name der Schule</Label>
+          <Input
+            id="system_schulname"
+            value={localSchulname}
+            onChange={(e) => setLocalSchulname(e.target.value)}
+            onBlur={() => { if (localSchulname !== schulname) setSchulname(localSchulname); }}
+            placeholder="z.B. IGS Musterstadt"
+            disabled={isLoading}
+          />
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="space-y-1.5">
             <Label htmlFor="system_land" className="text-xs">Land</Label>

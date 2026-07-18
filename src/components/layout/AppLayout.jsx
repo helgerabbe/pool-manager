@@ -4,7 +4,10 @@ import TutorialSlideshow from '@/components/onboarding/TutorialSlideshow';
 import { Layers, Home, User, LogOut, ChevronRight, BookOpen, Settings, FileText, Send, Cpu, GraduationCap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
+import { useSystemSettings } from '@/hooks/useSystemSettings';
+import { ROLLEN } from '@/lib/rbac';
 import WartungsBanner from '@/components/layout/WartungsBanner';
+import WartungsSperre from '@/components/layout/WartungsSperre';
 import NavigationTooltip from '@/components/layout/NavigationTooltip';
 import { logout } from '@/services/AuthService';
 import { useQuery } from '@tanstack/react-query';
@@ -112,7 +115,15 @@ function GlobalRealtimeUpdates() {
 export default function AppLayout() {
   const location = useLocation();
   const { realRolle, permissions } = useRBAC();
+  const { wartungsmodus } = useSystemSettings();
   const activeEinheit = useActiveEinheit(location);
+
+  // Globaler Wartungsmodus: Nicht-Admins werden komplett ausgesperrt
+  // (Vollbild-Sperre statt App). Admins behalten Zugriff, um die Wartung
+  // durchzuführen und den Modus wieder zu deaktivieren.
+  if (wartungsmodus && realRolle !== ROLLEN.ADMIN) {
+    return <WartungsSperre />;
+  }
 
   const isActive = (path) =>
     path === '/'
