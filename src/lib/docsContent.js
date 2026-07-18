@@ -1,13 +1,16 @@
 /**
  * docsContent.js
  * Zentraler Markdown-Content für das Dokumentationssystem.
+ * Neue Kapitel (2026-07) liegen ausgelagert in src/lib/docs/neueKapitel.js.
  */
+import { NEUE_KAPITEL } from '@/lib/docs/neueKapitel';
 
 export const DOC_GROUPS = [
   {
     label: 'Grundlagen',
     items: [
       { slug: 'erste-schritte', label: 'Erste Schritte' },
+      { slug: 'bereiche-und-austausch', label: 'Poolzeit, Austausch & Privat' },
       { slug: 'einheiten-struktur', label: 'Einheiten & Struktur' },
       { slug: 'lernpakete-aktivitaeten', label: 'Lernpakete & Aktivitäten' },
       { slug: 'lernziele', label: 'Lernziele' },
@@ -24,23 +27,26 @@ export const DOC_GROUPS = [
     ],
   },
   {
+    label: 'Didaktik & Schüler',
+    items: [
+      { slug: 'dashboards-v2', label: 'Dashboards & Lerntypen' },
+      { slug: 'schuelerbereich', label: 'Der Schülerbereich' },
+    ],
+  },
+  {
     label: 'Workflows & Verwaltung',
     items: [
       { slug: 'freigabe-qualitaetssicherung', label: 'Freigabe & Qualitätssicherung' },
       { slug: 'kollaboration-sperren', label: 'Kollaboration & Sperren' },
       { slug: 'export-workflow', label: 'Export-Workflow' },
-    ],
-  },
-  {
-    label: 'Didaktik',
-    items: [
-      { slug: 'dashboards-v2', label: 'Dashboards V2 & Lerntypen' },
+      { slug: 'moodle-anbindung', label: 'Moodle-Anbindung (LTI)' },
     ],
   },
   {
     label: 'System',
     items: [
       { slug: 'administration', label: 'Administration' },
+      { slug: 'problem-melden', label: 'Probleme melden' },
       { slug: 'erste-hilfe-faq', label: 'Erste Hilfe / FAQ' },
     ],
   },
@@ -53,9 +59,9 @@ export const DOC_CONTENT = {
 
   'erste-schritte': `# Erste Schritte: Systemübersicht & Rollen
 
-Herzlich willkommen im Pool-Manager! Dieses System ist Ihr zentraler Arbeitsplatz, um modernen, KI-gestützten und kompetenzorientierten Unterricht zu planen.
+Herzlich willkommen im Pool-Manager! Dieses System ist Ihr zentraler Arbeitsplatz, um modernen, KI-gestützten und kompetenzorientierten Unterricht für die Poolzeit zu planen – und Ihre Schüler:innen arbeiten später direkt darin.
 
-Bevor Sie Ihre erste eigene Unterrichtseinheit anlegen, gibt Ihnen dieses Kapitel einen kurzen Überblick darüber, wie das System „tickt" und welche Rechte Sie in der App haben.
+Bevor Sie Ihre erste eigene Unterrichtseinheit anlegen, gibt Ihnen dieses Kapitel einen kurzen Überblick darüber, wie das System „tickt".
 
 ## Die Philosophie: Das Drei-Ebenen-Modell
 
@@ -63,32 +69,53 @@ Der Pool-Manager bietet Ihnen drei Anforderungsebenen, um Ihre Schüler bestmög
 
 | Ebene | Bezeichnung | Was passiert hier? |
 |-------|-------------|-------------------|
-| **Ebene 1** | Basismodule | Das Fundament – Schüler trainieren Vokabeln, Formeln und grundlegendes Fachwissen. |
+| **Ebene 1** | Basisaufgaben in Lernpaketen | Das Fundament – Schüler trainieren Vokabeln, Formeln und grundlegendes Fachwissen mit automatisch auswertbaren Übungen. |
 | **Ebene 2** | Allgemeine Aufgaben | Der Transfer – Schüler analysieren Texte oder werten Diagramme aus, begleitet durch den KI-Tutor. |
 | **Ebene 3** | Projektaufgaben | Die Königsdisziplin – freie, kreative Aufgaben (z.B. Podcasts, Portfolios) mit maßgeschneiderten Bewertungsrubriken. |
 
-> Wie Sie diese Ebenen strukturieren, erfahren Sie im nächsten Kapitel [Einheiten & Struktur](/docs/einheiten-struktur).
+Aus diesen Bausteinen bauen Sie anschließend im [Dashboard-Architekt](/docs/dashboards-v2) für jeden der vier Lerntypen einen eigenen Lernpfad.
+
+## Die drei Bereiche der Einheiten
+
+Alle Einheiten leben in einem von drei Bereichen – auf der Einheiten-Seite wählen Sie oben per Kachel:
+
+* 🔵 **Poolzeit-Einheiten** – die verbindlichen, offiziellen Einheiten der Fachschaft
+* 🟢 **Freigegebene Einheiten** – die Tauschbörse des Kollegiums
+* 🟡 **Private Einheiten** – Ihr persönlicher Arbeitsbereich, nur für Sie sichtbar
+
+> Alles Wichtige dazu im Kapitel [Poolzeit, Austausch & Privat](/docs/bereiche-und-austausch).
 
 ## Wer darf was? (Benutzerrollen)
 
-Da oft ganze Schulen oder Fachschaften im Pool-Manager zusammenarbeiten, hat nicht jeder Nutzer dieselben Menüs und Buttons. Ihre Möglichkeiten hängen von Ihrer zugewiesenen Rolle ab:
+Ihre Möglichkeiten hängen von Ihrer zugewiesenen Rolle ab:
 
 | Rolle | Aufgabe |
 |-------|---------|
-| **Fachlehrkraft** | Einheiten erstellen, KI-Aufgaben generieren, Lernziele verknüpfen und Aufgaben für den Export freigeben. |
-| **Fachschaftsleitung / Export-Team** | Qualitätssicherung und Zugriff auf das Freigabe-Cockpit – übertragen fertige Aufgaben nach Moodle und Brian.study. |
-| **Betrachter** | Alle Einheiten und Aufgaben lesen, aber nichts bearbeiten oder löschen. Ideal für Referendare oder Vertretungskräfte. |
-| **Moodle-Designer** | Technische Spezialrolle – organisiert die optische Strukturierung der exportierten Kurse in Moodle. |
-| **Admin** | Systemverwaltung – verwaltet Benutzerkonten, lädt neue Kollegen ein und pflegt globale Listen (Fächer, Jahrgänge). |
+| **Fachlehrkraft** | Private Einheiten erstellen, Inhalte und Aufgaben in Poolzeit-Einheiten bearbeiten, KI-Aufgaben generieren, Lernziele verknüpfen und Inhalte freigeben. |
+| **Fachschaftsleitung** | Rahmen und Struktur der Poolzeit-Einheiten festlegen, Qualität sichern, Einheiten final freigeben und Einheiten zur Poolzeit-Einheit machen. |
+| **Moodle-Designer / Export-Team** | Bedient das zentrale Export-Center und überträgt fertige Einheiten nach Moodle und Brian.study. |
+| **Betrachter** | Alles lesen, nichts bearbeiten – ideal für Referendare oder Vertretungskräfte. |
+| **Administrator** | Systemverwaltung – Benutzer, globale Listen, Vorlagen, Moodle-Anbindung. |
 
-## Der erste Schritt ins System
+> **Gut zu wissen:** Rollen können pro Fach unterschiedlich sein. Eine Kollegin kann z.B. in Geschichte Fachschaftsleitung sein, in Politik aber „nur" Fachlehrkraft (sogenannte Fach-Ausnahmen, die die Administration pflegt).
 
-Wenn Sie sich das erste Mal einloggen, landen Sie auf Ihrem **Dashboard**.
+## Die Navigation (Top-Leiste)
 
-* Auf der linken Seite finden Sie die Hauptnavigation.
-* Unter dem Menüpunkt **„Einheiten"** finden Sie alle Unterrichtsvorhaben Ihrer Schule.
+Oben rechts finden Sie die wichtigsten Symbole:
 
-> **Tipp:** Trauen Sie sich ruhig, auf eine bestehende Einheit zu klicken! Solange Sie nicht aktiv auf den Button „Bearbeiten" drücken, befinden Sie sich im sicheren Lese-Modus und können in Ruhe sehen, wie Ihre Kollegen das System nutzen.
+| Symbol | Bereich |
+|--------|---------|
+| 🏠 Haus | Startseite / Dashboard |
+| 📖 Buch | Einheiten & Arbeitsbereich |
+| 🗂️ Ebenen | Basismodule |
+| ✈️ Senden | Export-Center (nur für Export-Rollen sichtbar) |
+| 📄 Dokument | Diese Dokumentation |
+| 🎓 Absolventenhut | Schülerbereich – sehen Sie Ihre Einheiten aus Schülersicht |
+| 💬 Problem melden | Fehler oder Auffälligkeiten direkt ans Entwicklungsteam melden |
+
+## Der beste erste Schritt
+
+Legen Sie sich einfach eine **private Einheit** an – die sieht niemand außer Ihnen, und Sie können gefahrlos alles ausprobieren. Und: Solange Sie nirgends aktiv auf „Bearbeiten" drücken, befinden Sie sich überall im sicheren Lese-Modus.
 `,
 
   'einheiten-struktur': `# Einheiten & Struktur: Das Fundament
@@ -97,37 +124,51 @@ Bevor Sie einzelne Aufgaben oder Lernziele erstellen, benötigen Sie einen struk
 
 ## Die drei Ebenen der Organisation (Die Matroschka-Puppe)
 
-Damit Schülerinnen und Schüler (und Sie als Lehrkraft!) nicht den Überblick verlieren, ist alles in drei ineinandergreifenden Ebenen organisiert:
-
 | Ebene | Metapher | Beschreibung | Beispiel |
 |-------|----------|-------------|---------|
-| **Einheit** | 🗄️ Der Aktenschrank | Der größte Rahmen – ein großes Oberthema für einen bestimmten Jahrgang | „Geschichte, 9. Klasse: Der Erste Weltkrieg und die Weimarer Republik" |
+| **Einheit** | 🗄️ Der Aktenschrank | Der größte Rahmen – ein großes Oberthema für einen bestimmten Jahrgang | „Geschichte, 9. Klasse: Der Erste Weltkrieg" |
 | **Themenfeld** | 🗂️ Die Schublade | Unterteilt die Einheit in logische Abschnitte | TF 1: „Ursachen des 1. Weltkriegs", TF 2: „Kriegsverlauf" |
 | **Lernpaket** | 📁 Die Aktenmappe | Enthält die konkreten Aufgaben, meist für 1–2 Unterrichtsstunden | „Das Attentat von Sarajevo" |
 
-Als Strukturdiagramm:
+## Eine neue Einheit anlegen: Drei Wege
 
-\`\`\`
-Einheit
-└── Themenfeld
-    └── Lernpaket
-        ├── Lernziele
-        └── Aufgabenbausteine (Ebene 1, 2, 3)
-\`\`\`
+Auf der Einheiten-Seite stehen Ihnen drei Erstellungswege zur Auswahl – vom schnellsten zum ausführlichsten:
 
-## Eine neue Einheit anlegen (Der Wizard)
+| Weg | Für wen? | Was passiert? |
+|-----|----------|---------------|
+| **Schnell erstellen** | Sie wollen sofort loslegen | Nur die Grunddaten (Fach, Jahrgang, Titel) eingeben – die leere Einheit ist in 30 Sekunden da und wird danach im Arbeitsbereich befüllt. |
+| **KI-Coach** | Sie haben eine Idee, aber noch keine Struktur | Sie beschreiben Ihr Vorhaben im Chat – der Coach schlägt Ihnen Themenfelder und Lernpakete vor und legt die Struktur auf Wunsch direkt an. |
+| **Assistent (Wizard)** | Sie möchten Schritt für Schritt geführt werden | Ein mehrstufiger Assistent führt Sie durch Grunddaten, Struktur und Lernziele. |
 
-Wenn Sie auf „Neue Einheit" klicken, öffnet sich der **Einheiten-Wizard**. Dieser Assistent führt Sie Schritt für Schritt durch die Erstellung:
+> **Wichtig:** Als Fachlehrkraft landet Ihre neue Einheit automatisch in Ihrem **Privatbereich** – niemand sieht sie außer Ihnen. Mehr dazu im Kapitel [Poolzeit, Austausch & Privat](/docs/bereiche-und-austausch).
 
-1. **Fach & Jahrgang** auswählen (die Listen pflegt Ihre Administration im Hintergrund)
-2. **Titel** vergeben – klar und wiedererkennbar
-3. **Gesamtziele** definieren: Was sollen die Schüler am Ende dieser Einheit grob verstanden haben?
+## Das Grundgerüst: Der didaktische Gesamtkontext
 
-> **Hinweis:** Die detaillierten „Ich-kann"-Lernziele kommen erst später, wenn Sie einzelne Lernpakete befüllen.
+Im ersten Tab der Einheit („Einheit verwalten") gibt es das Feld **Grundgerüst**. Hier beschreiben Sie frei formuliert, worum es in der Einheit geht, was Ihnen wichtig ist und welchen roten Faden Sie verfolgen.
 
-## Themenfelder anlegen
+**Warum lohnt sich das?** Das Grundgerüst ist die „Quelle der Wahrheit" für **alle KI-Funktionen** der Einheit: Aufgaben-Vorschläge, Einführungstexte, Diagnose-Quizze und der KI-Tutor greifen darauf zurück. Je besser das Grundgerüst, desto passgenauer die KI-Ergebnisse.
 
-Themenfelder gliedern Ihre Einheit in inhaltliche Abschnitte. Jedes Themenfeld kann einen **Bearbeitungsmodus** haben:
+## Die Arbeitsschritte im Arbeitsbereich
+
+Wenn Sie eine Einheit öffnen, sehen Sie oben die nummerierte Tab-Leiste – Ihr Arbeits-Fahrplan:
+
+| Schritt | Tab | Wer arbeitet hier? |
+|---------|-----|--------------------|
+| 1 | **Einheit verwalten** – Grunddaten, Gesamtziele, Grundgerüst, Team | Fachschaftsleitung |
+| 2 | **Struktur** – Themenfelder & Lernpakete anlegen | Fachschaftsleitung |
+| 3 | **Lernziele** – alle „Ich kann…"-Ziele an einem Ort | Fachlehrkraft |
+| 4 | **Aktivitäten zuordnen** – welche Aktivitäten hat jedes Lernpaket? | Fachlehrkraft |
+| 5 | **Basisaufgaben erstellen** – die konkreten Übungsinhalte (Ebene 1) | Fachlehrkraft |
+| 6 | **Allgemeine Aufgaben** – Transfer-Aufgaben (Ebene 2) | Fachlehrkraft |
+| 7 | **Anwendungs- & Projektaufgaben** – Projekte (Ebene 3) | Fachlehrkraft |
+| 8 | **Dashboards** – die vier Lernpfade zusammenbauen | Fachlehrkraft / Fachschaftsleitung |
+| 9 | **Freigabe-Cockpit** – reine Statusübersicht vor dem Export | Export-Team / Admin |
+
+> **Hinweis für private Einheiten:** In Ihrer privaten Einheit übernehmen Sie natürlich alle Rollen selbst – dort steht Ihnen alles offen.
+
+## Themenfelder: offen oder sequenziell
+
+Jedes Themenfeld kann einen **Bearbeitungsmodus** haben:
 
 * **offen** – Lernende können alle Pakete in beliebiger Reihenfolge bearbeiten
 * **sequenziell** – Pakete müssen der Reihe nach absolviert werden
@@ -251,7 +292,7 @@ Der Workspace ist Ihr Hauptarbeitsbereich. So finden Sie sich zurecht:
 |---------|---------------|
 | **Linke Sidebar** | Baumansicht: Einheit → Themenfelder → Lernpakete → Aktivitäten |
 | **Hauptbereich** | Detailansicht des ausgewählten Elements |
-| **Tab 3: Aufgaben erstellen** | Hier arbeiten Sie an Ebene-2- und Ebene-3-Aufgaben (Transfer & Projekte) |
+| **Tab-Leiste oben** | Die nummerierten Arbeitsschritte 1–8: von „Einheit verwalten" über Lernziele und Aufgaben bis zu den Dashboards |
 
 > **Tipp:** Nutzen Sie die Suchfunktion in der Sidebar, um schnell zu einem bestimmten Lernpaket zu springen.
 `,
@@ -261,6 +302,10 @@ Der Workspace ist Ihr Hauptarbeitsbereich. So finden Sie sich zurecht:
 In einem guten Unterricht geht es nicht nur darum, „Stoff durchzunehmen", sondern bestimmte Kompetenzen zu erwerben. Im Pool-Manager sind Lernziele daher nicht einfach nur toter Text, sondern der Motor, der das System antreibt.
 
 Sie helfen dem KI-Tutor Brian.study dabei, die Schwächen der Schüler zu erkennen, und sie bilden die Grundlage für die **Lernlandkarte** – eine Art GPS-Tracker für den Lernfortschritt der Schüler.
+
+## Wo pflege ich Lernziele?
+
+Lernziele haben einen eigenen Heimatort: den Tab **„Lernziele"** (Schritt 3) im Arbeitsbereich der Einheit. Dort sehen Sie alle Lernpakete – gruppiert nach Themenfeld – und legen pro Paket die Ziele an. Eine integrierte **KI-Prüfung** schlägt Ihnen auf Knopfdruck eine saubere Fachsprachen-Formulierung und eine schülergerechte Übersetzung vor, die Sie übernehmen oder verwerfen können.
 
 ## Die „Ich-kann"-Formel
 
@@ -438,6 +483,22 @@ Nachdem auf Ebene 1 das Basiswissen (Vokabeln, Formeln, Fakten) gesichert wurde,
 
 Da diese Aufgaben komplexer sind, begleitet der KI-Tutor Brian.study die Lernenden bei jedem Schritt. Der Pool-Manager bietet Ihnen dafür passgenaue Werkzeuge.
 
+## Die Aufgaben-Arten (Missionen)
+
+Beim Anlegen einer neuen Aufgabe wählen Sie zunächst die **Art der Aufgabe** – also welche Denkleistung im Mittelpunkt steht: **Problem lösen · Entdecken · Recherchieren · Anwenden · Transferieren · Kreativ werden**. Diese „Mission" prägt den Zuschnitt der Aufgabe und ist später im Lernpfad als Etikett sichtbar.
+
+Zusätzlich gibt es besondere Aufgabenformen:
+
+| Form | Wofür? |
+|------|--------|
+| **Inhaltsaufgabe** | Die klassische Transfer-Aufgabe mit Aufgabenstellung, Material und Erwartungshorizont |
+| **Handlungsaufgabe** | Etwas wird real getan (Experiment, Plakat, Interview …) – die Schüler:innen bestätigen die Erledigung |
+| **Aufgabensequenz** | Mehrere Schritte (Material → Aufgabe → Aufgabe) als geführte Abfolge |
+| **Auswahl-Bündel** | Die Schüler:innen wählen aus mehreren Aufgaben selbst aus (z. B. „2 von 4 bearbeiten") |
+| **Externe HTML-Seite** | Eine interaktive, selbst gebaute Seite wird direkt eingebettet |
+
+> **Ideen gesucht?** Die **KI-Ideenbox** schlägt Ihnen zu einem ausgewählten Themenfeld mehrere konkrete Aufgaben-Ideen vor – ideal als Startpunkt, wenn der Einstieg fehlt.
+
 ## Schritt 1: Der KI-Aufgaben-Assistent (Ihr „Zauberstab")
 
 Haben Sie grob im Kopf, was die Schüler machen sollen, aber es fehlt noch an der perfekten Formulierung? Lassen Sie sich von der App helfen!
@@ -599,44 +660,48 @@ Bei der Generierung verarbeitet das System:
 * **Fach und Jahrgangsstufe** der Einheit für einen passenden Ton und fachliche Präzision
 `,
 
-  'freigabe-qualitaetssicherung': `# Freigabe & Qualitätssicherung: Der finale Check
+  'freigabe-qualitaetssicherung': `# Freigabe & Qualitätssicherung
 
-Sie haben eine tolle Aufgabe erstellt, Materialien angeheftet und die KI-Gütekriterien generieren lassen. Was nun? Wie kommt die Aufgabe zum Export-Team?
+Alles, was Sie im Pool-Manager neu anlegen, startet im sicheren Status **Entwurf**: Schüler sehen nichts, nichts geht versehentlich „live". Erst durch Ihre **bewusste Freigabe** wird ein Inhalt verbindlich. Dieses Kapitel erklärt die Freigabe-Stufen – von der einzelnen Aufgabe bis zur ganzen Einheit.
 
-Der Pool-Manager nutzt dafür einen bewussten Zwischenschritt: die **Freigabe**. Dieses System funktioniert wie ein digitaler Briefkasten zwischen den Lehrkräften und dem Team, das den Export nach Moodle und Brian.study übernimmt.
+## Das Grundprinzip: Vom Kleinen zum Großen
 
-## Der sichere Hafen: „Entwurf"
+Die Freigabe funktioniert wie ein Staffellauf über vier Stufen:
 
-Keine Sorge: Alles, was Sie im Pool-Manager neu anlegen, hat zunächst automatisch den Status **Entwurf**.
+| Stufe | Was wird freigegeben? | Wer? |
+|-------|----------------------|------|
+| 1 | **Aktivitäten & Aufgaben** – jede einzelne Übung, Transfer- und Projektaufgabe | Fachlehrkraft |
+| 2 | **Lernpakete** – das Paket als Ganzes, wenn alle Inhalte fertig sind | Fachlehrkraft |
+| 3 | **Dashboards** – jeder der vier Lernpfade wird geprüft und gesperrt („Prüfen & freigeben") | Fachlehrkraft / Fachschaftsleitung |
+| 4 | **Die Einheit** – die finale Freigabe für den Export | Fachschaftsleitung |
 
-In diesem Status können nur Sie und Ihre Kollegen in der App die Aufgabe sehen. Schüler haben darauf keinen Zugriff, und auch das Export-Team ignoriert diese Aufgaben noch. Sie können also in aller Ruhe experimentieren, Texte umschreiben oder die Aufgabe an verschiedenen Tagen bearbeiten – nichts geht versehentlich „live".
+## Stufe 1–2: Aufgaben und Lernpakete freigeben
 
-## Der Klick auf „Freigeben"
+Sobald alle Pflichtfelder einer Aktivität oder Aufgabe ausgefüllt sind, erscheint der **„Freigeben"-Button**. Beim Klick passiert zweierlei:
 
-Sobald Sie mit Ihrer Aufgabe hundertprozentig zufrieden sind, klicken Sie auf den Button **„Für Export freigeben"**.
+* **Das Schloss schnappt zu** 🔒 – der Inhalt ist gegen versehentliche Änderungen gesperrt.
+* Der Inhalt gilt als **fertig für den Export**.
 
-Was passiert in diesem Moment?
+> **Fehler entdeckt?** Kein Problem: Ziehen Sie die Freigabe einfach wieder zurück – der Inhalt fällt in den Entwurfs-Status zurück und ist wieder bearbeitbar. (Nur während ein Export läuft, ist das gesperrt.)
 
-| Was? | Warum? |
-|------|--------|
-| **Das Schloss schnappt zu** | Die Aufgabe wird für die Bearbeitung gesperrt, damit das Export-Team nicht an einem sich ändernden Dokument arbeitet. |
-| **Digitaler Briefkasten** | Die Aufgabe taucht beim Export-Team in einer speziellen To-Do-Liste auf. |
+## Stufe 3: Dashboards prüfen
 
-## Das Freigabe-Cockpit (Für das Export-Team)
+Im Dashboard-Architekt markieren Sie jeden Lernpfad über **„Prüfen & freigeben"** als geprüft. Das System kontrolliert dabei, ob alle eingeplanten Aufgaben „grün" (also freigegeben und vollständig) sind, und sperrt den Pfad anschließend gegen Änderungen.
 
-Das Export-Team (oder die Fachschaftsleitung) hat einen eigenen Bereich: das **Freigabe-Cockpit** (auch Export-Cockpit genannt).
+## Stufe 4: Der Lebenszyklus der Einheit
 
-Hier sehen die Verantwortlichen eine aufgeräumte Liste mit allen Aufgaben, die von den Lehrkräften das grüne Licht bekommen haben. Das Team muss sich also nicht mühsam durch alle Einheiten klicken, sondern hat alle „lieferbereiten" Aufgaben zentral an einem Ort.
+Die ganze Einheit durchläuft einen klaren Lebenszyklus, den Sie überall als Badge sehen:
 
-Von hier aus startet das Team den eigentlichen Export nach Moodle und Brian.study (siehe Kapitel [Export-Workflow](/docs/export-workflow)).
+| Status | Bedeutung |
+|--------|-----------|
+| **Entwurf** | Die Einheit ist in Arbeit – der Normalzustand. |
+| **Final freigegeben** | Die Fachschaftsleitung hat die Einheit für den Export freigegeben. Vorher prüft das System automatisch, ob alle Bestandteile fertig sind (Preflight-Check). Die Einheit ist ab jetzt strukturell eingefroren. |
+| **Export läuft** | Das Export-Team überträgt die Einheit gerade nach Moodle und Brian.study. |
+| **Veröffentlicht** | Die Einheit ist live. Nachträgliche Änderungen setzen betroffene Inhalte auf „Geändert" – ein neuer Export-Zyklus beginnt. |
 
-## Ich habe einen Fehler entdeckt! (Freigabe zurückziehen)
+## Das Freigabe-Cockpit: Status auf einen Blick
 
-Haben Sie eine Aufgabe freigegeben und bemerken kurz danach einen Tippfehler im Erwartungshorizont?
-
-Solange das Export-Team noch nicht mit der Arbeit begonnen hat (die Aufgabe also noch nicht den Status **„In Übertragung"** oder **„Live"** hat), können Sie die Freigabe jederzeit zurückziehen.
-
-Die Aufgabe fällt dann wieder in den Status **Entwurf** zurück, das Schloss öffnet sich, und die Aufgabe verschwindet wieder von der To-Do-Liste des Export-Teams.
+Der letzte Tab im Arbeitsbereich („Freigabe-Cockpit") ist eine **reine Informationsseite**: Er zeigt alle Bestandteile der Einheit mit ihrem Freigabe- und Sync-Status in einer Tabelle. Hier wird nichts bearbeitet und nichts exportiert – der eigentliche Export findet im zentralen [Export-Center](/docs/export-workflow) statt.
 `,
 
   'kollaboration-sperren': `# Kollaboration & Sperren
@@ -695,234 +760,171 @@ Das bedeutet meist, dass das Export-Team erst die halbe Arbeit erledigt hat (z.B
 Mehr dazu im Kapitel [Export-Workflow](/docs/export-workflow).
 `,
 
-  'export-workflow': `# Export-Workflow (Moodle & Brian.study)
+  'export-workflow': `# Export-Workflow: Vom Pool-Manager zu den Schülern
 
-In diesem Kapitel erfahren Sie, wie Ihre fertigen Aufgaben den Weg zu den Schülern finden. Da der Pool-Manager mit zwei Systemen arbeitet – **Moodle** für die Struktur und **Brian.study** für das KI-Coaching – folgt die App einem speziellen Sicherheits-Workflow, der sicherstellt, dass beide Systeme stets synchron sind.
+In diesem Kapitel erfahren Sie, wie fertige Einheiten den Weg zu den Schüler:innen finden. Der Pool-Manager arbeitet mit zwei Zielsystemen:
 
-## Die zwei Wege einer Aufgabe
+* **Moodle** liefert den formalen Rahmen und die Kurstruktur.
+* **Brian.study** stellt den KI-Tutor, der die Schüler:innen individuell begleitet.
 
-Aufgaben der Ebene 2 und 3 (Allgemeine Aufgaben und Projektaufgaben) sind **„hybrid"**. Das bedeutet:
+Der gesamte Export läuft zentral über das **Export-Center** (Papierflieger-Symbol im Hauptmenü) und wird vom **Export-Team** (Moodle-Designer / Admin) bedient. Als Fachlehrkraft müssen Sie nichts exportieren – Ihre Aufgabe endet mit der [Freigabe Ihrer Inhalte](/docs/freigabe-qualitaetssicherung).
 
-* In **Moodle** wird der formale Rahmen, die Aufgabenstellung und der Link zum KI-Tutor bereitgestellt.
-* In **Brian.study** arbeitet der eigentliche KI-Tutor, der die Schüler beim Lösen individuell begleitet.
+## Wer macht was?
 
-Damit beides zusammenpasst, muss das Export-Team die Aufgabe an **beide Systeme** übertragen. Erst wenn beide Übertragungen erfolgreich waren, gilt eine Aufgabe als vollständig live.
+| Rolle | Aufgabe im Export |
+|-------|-------------------|
+| **Fachlehrkraft** | Inhalte fertigstellen und freigeben, Dashboards prüfen. |
+| **Fachschaftsleitung** | Die Einheit **final freigeben** – erst dann kann sie exportiert werden. |
+| **Export-Team (Moodle-Designer / Admin)** | Führt den Export im Export-Center durch und bestätigt den Abschluss. |
+
+## So läuft ein Export – Schritt für Schritt
+
+1. **Vorbereitung:** Alle Aufgaben und Dashboards der Einheit sind freigegeben bzw. geprüft.
+2. **Finale Freigabe:** Die Fachschaftsleitung gibt die Einheit final frei. Ein automatischer **Preflight-Check** prüft vorher, ob wirklich alles vollständig ist, und listet ggf. offene Punkte auf.
+3. **Export-Center öffnen:** Das Export-Team wählt die Einheit links in der Liste aus.
+4. **Übergabepakete erzeugen:** Rechts stehen thematische Reiter (Struktur, Aufgaben, KI-Aufgaben, Systembausteine, Globale KI, Oberflächen-Konfiguration). Pro Reiter erzeugt und kopiert das Team fertige **Übergabepakete** – strukturierte Anweisungen, die von der **Moodle-Builder-KI (MBK)** verarbeitet werden und daraus den fertigen Moodle-Kurs bauen. Der **„Anleitung"-Button** oben liefert dabei einen Schritt-für-Schritt-Plan, der genau zur ausgewählten Einheit passt.
+5. **Interne Inhalte erzeugen:** Per Knopfdruck erstellt die KI die schülergerechten Inhalte für die App-interne Schüleransicht (Einführungen, Diagnose-Quizze usw.).
+6. **Abschluss bestätigen:** Ist alles übertragen, bestätigt das Team den Abschluss – die Einheit wechselt auf **„Veröffentlicht"** und alle Export-Sperren öffnen sich wieder.
+
+> **Was ist die MBK?** Die Moodle-Builder-KI ist ein KI-Assistent, der aus den Übergabepaketen des Pool-Managers automatisiert den Moodle-Kurs zusammenbaut. Das erspart dem Export-Team das manuelle Anlegen hunderter Moodle-Aktivitäten.
+
+## Änderungen nach dem Export (Updates)
+
+Wird eine bereits veröffentlichte Einheit verändert, springen die betroffenen Inhalte auf den Status **„Geändert"**. Vor dem erneuten Export hilft die **Delta-Analyse**: Sie zeigt genau, was sich seit dem letzten Export verändert hat, und empfiehlt eine **Update-Strategie**:
+
+| Strategie | Bedeutung |
+|-----------|-----------|
+| **Ohne Zurücksetzen** | Nur kleine inhaltliche Korrekturen – der Lernfortschritt der Schüler:innen bleibt vollständig erhalten. |
+| **Kompletter Neustart** | Die Struktur hat sich grundlegend geändert – der Schülerfortschritt wird zurückgesetzt. Nur bei großen Umbauten sinnvoll. |
 
 ## Den Sync-Status verstehen
 
-An jeder Aufgabe finden Sie ein Status-Label, das verrät, wo die Aufgabe gerade „steckt":
+An jedem Inhalt finden Sie ein Status-Label:
 
 | Status | Farbe | Bedeutung |
 |--------|-------|-----------|
-| **Neu** | Grau | Die Aufgabe wurde erstellt, aber noch nicht für den Export freigegeben. |
-| **In Übertragung** | Gelb | Das Export-Team arbeitet gerade am Upload in Moodle oder Brian.study. |
-| **Live** | Grün | Die Aufgabe ist erfolgreich übertragen und für Schüler verfügbar. |
-| **Geändert** | Orange | Die Aufgabe war live, wurde aber nachträglich bearbeitet. Ein Re-Export ist nötig. |
-| **Fehler** | Rot | Der Export ist fehlgeschlagen. Das Export-Team muss eingreifen. |
+| **Neu** | Grau | Noch nie exportiert. |
+| **In Übertragung** | Gelb | Der Export läuft gerade. |
+| **Live / Synchron** | Grün | Erfolgreich übertragen und für Schüler verfügbar. |
+| **Geändert** | Orange | War live, wurde aber nachträglich bearbeitet – Re-Export nötig. |
+| **Fehler** | Rot | Der Export ist fehlgeschlagen – das Export-Team muss eingreifen. |
 
-> **Hinweis:** Der Status „Geändert" entsteht automatisch, sobald eine Lehrkraft eine bereits exportierte Aufgabe bearbeitet. Moodle und Brian.study werden erst nach dem nächsten Export wieder aktuell sein.
+## „Wie bekomme ich meine private Einheit nach Moodle?"
 
-## Warum ist die Aufgabe gesperrt? (Der Dual-Lock)
+Der kürzeste Weg in drei Etappen:
 
-Sobald eine Aufgabe für den Export freigegeben wird, wird sie **für die Bearbeitung gesperrt**. Das ist ein wichtiger Schutzmechanismus: Würden Inhalte geändert werden, während das Export-Team sie gerade hochlädt, käme es zu Inkonsistenzen zwischen den Systemen.
-
-Das Schloss-Symbol 🔒 an einer Aufgabe zeigt an, dass der Export läuft. **Die Sperre wird erst automatisch aufgehoben, wenn beide Exporte – Moodle UND Brian.study – erfolgreich abgeschlossen wurden.** Erst dann ist die Aufgabe wieder zur Bearbeitung freigegeben.
-
-Als **Administrator** können Sie eine abgelaufene oder fehlerhafte Sperre manuell aufheben, falls der Export-Prozess unterbrochen wurde.
-
-## Der Export-Schritt für Schritt
-
-### Vorbereitung (Lehrkraft)
-
-1. Aufgabe vollständig ausfüllen (Aufgabenstellung, Erwartungshorizont / Rubriken)
-2. KI-Tutor-Felder im Tab „KI-Tutor Prompt" generieren und prüfen
-3. Aufgabe **freigeben** (Content-Status → \`approved\`)
-
-### Export (Export-Team / Moodle-Designer)
-
-1. Im **Export-Cockpit** alle exportbereiten Aufgaben prüfen
-2. **Moodle-Export** durchführen und Übertragung bestätigen
-3. **Brian.study-Export** durchführen: Prompt-Segmente kopieren und im Brian-Backend anlegen
-4. Beide Exporte im Cockpit als erfolgreich **bestätigen** → Dual-Lock wird aufgehoben
-
-### Nach dem Export
-
-* Aufgabe hat Status \`synced\` in beiden Systemen
-* Sperre ist aufgehoben – die Aufgabe kann wieder bearbeitet werden
-* Bei nachträglichen Änderungen: Status springt auf \`modified\` → neuer Export-Zyklus beginnt
-
-## Das Export-Cockpit
-
-Das Export-Cockpit (Tab 9 im Arbeitsbereich) ist die zentrale Schaltzentrale für das Export-Team. Dort sind alle Aufgaben aufgelistet, die:
-
-* noch nie exportiert wurden (\`new\`)
-* auf einen Re-Export warten (\`modified\`)
-* gerade im Export-Prozess sind (\`pending\`)
-
-Im Cockpit können die **Brian.study-Segmente** direkt kopiert werden. Außerdem steht eine **Druckansicht des Moodle-Bauplans** zur Verfügung.
+1. **Fertigstellen:** Bauen Sie Ihre private Einheit komplett (Aufgaben freigeben, Dashboard prüfen) und testen Sie sie über die **Vorschau**.
+2. **Zur Poolzeit-Einheit machen (lassen):** Geben Sie die Einheit für das Kollegium frei oder wenden Sie sich direkt an Ihre Fachschaftsleitung – sie übernimmt die Einheit als Poolzeit-Einheit (siehe [Poolzeit, Austausch & Privat](/docs/bereiche-und-austausch)).
+3. **Export & Verknüpfung:** Nach finaler Freigabe exportiert das Export-Team die Einheit; in Moodle wird sie über einen LTI-Link mit dem Kurs verbunden (siehe [Moodle-Anbindung](/docs/moodle-anbindung)) – Ihre Schüler:innen klicken in Moodle und landen direkt in der Einheit.
 `,
 
-  'administration': `# Administration
+  'administration': `# Administration: Das System verwalten
 
-Der Admin-Bereich ist nur für Benutzer mit der Rolle "Administrator" zugänglich. Hier werden systemweite Einstellungen, Benutzer und Lookup-Daten verwaltet.
+Der Admin-Bereich (Zahnrad- und Personen-Symbol in der Top-Leiste) ist nur für die Rolle **Administrator** sichtbar. Hier werden Benutzer, globale Listen und die technischen Anbindungen der Schule gepflegt.
 
-## Übersicht
+## Benutzerverwaltung
 
-* **Benutzerverwaltung** – Nutzer einladen, Rollen zuweisen
-* **Lookup-Tabellen** – Fächer, Jahrgänge, Phasen konfigurieren
-* **Wartungsmodus** – System vorübergehend sperren
-* **Audit-Log** – Alle Aktionen nachverfolgen
+* **Einladen:** Neue Kolleg:innen werden per E-Mail eingeladen; auch ein Import ganzer Listen ist möglich.
+* **Rollen:** Pro Person wird die Basisrolle vergeben (Administrator, Fachschaftsleitung, Fachlehrkraft, Betrachter, Moodle-Designer).
+* **Fächer:** Jeder Person werden ihre zuständigen Fächer zugeordnet (bis zu fünf) – davon hängt ab, welche Einheiten sie sehen und bearbeiten darf.
+* **Fach-Ausnahmen:** Eine Fachschaftsleitung kann in einzelnen Fächern auf „Fachlehrkraft" herabgestuft werden – z. B. wenn sie nur in einem ihrer Fächer die Leitung innehat.
 
-## Benutzer einladen
+## Admin-Einstellungen: Die Karten im Überblick
 
-Neue Nutzer werden per E-Mail eingeladen. Die Rolle wird bei der Einladung festgelegt und kann nachträglich geändert werden.
-
-## Lookup-Tabellen
-
-Folgende Lookup-Daten können angepasst werden:
-
-* **Fächer** – Welche Fächer im System verfügbar sind
-* **Jahrgangsstufen** – Verfügbare Jahrgänge
-* **Zeitphasen** – Schuljahre/Halbjahre für die Planungsansicht
-* **Baustein-Typen** – Typen für Aufgabenbausteine
+| Karte | Was wird hier gepflegt? |
+|-------|-------------------------|
+| **Globale Listen** | Fächer (inkl. Schalter, ob ein Fach im Schüler-Poolzeit-Cockpit erscheint), Jahrgänge, Zeitphasen |
+| **Aktivitäten-Katalog** | Welche Aktivitätstypen den Lehrkräften zur Verfügung stehen – inklusive Beschreibungen und schülergerechter Symbolbilder |
+| **System-Bausteine** | Die Funktions-Module für den Dashboard-Architekt (Lernlandkarte, Wissensspeicher, Bündel …) |
+| **Dashboard-Standardvorlagen** | Das Standard-Raster pro Lerntyp, aus dem neue Dashboards automatisch aufgebaut werden |
+| **Lerntyp-Namen** | Schulweite Umbenennung der vier Lerntypen (z. B. in „Level 1–4") |
+| **Schul-Stammdaten & Nomenklatur** | Name der Schule und schuleigene Begriffe, die überall in Texten und KI-Ausgaben verwendet werden |
+| **Moodle-LTI** | Die einmalige Anbindung an die Schul-Moodle-Instanz für den Schüler-Zugang (siehe [Moodle-Anbindung](/docs/moodle-anbindung)) |
+| **Design & Tickets** | Technische Verbindungen: zentrales Schüler-Design (CSS) und das Ticket-System hinter dem „Problem melden"-Button |
+| **Aktive Nutzer** | Live-Übersicht, wer gerade im System arbeitet |
 
 ## Wartungsmodus
 
-Im Wartungsmodus können sich nur Administratoren anmelden. Alle anderen Nutzer sehen einen Hinweisbanner. Aktivieren Sie den Wartungsmodus vor größeren Systemupdates.
+Im Wartungsmodus können sich nur Administratoren anmelden – alle anderen sehen eine freundliche Sperrseite. Sinnvoll vor größeren Umbauten oder Datenpflege-Aktionen.
+
+## Sperren aufheben
+
+Bleibt eine Bearbeitungs-Sperre irrtümlich aktiv (z. B. nach einem Browser-Absturz), können Administratoren sie manuell lösen – der entsprechende Button erscheint bei veralteten Sperren automatisch.
+
+## Audit-Log
+
+Wichtige Aktionen (Löschen, Veröffentlichen, Exporte, Freigaben) werden protokolliert und sind für die Fehlersuche nachvollziehbar.
 
 ## Daten zurücksetzen
 
-Im Admin-Bereich können Test- und Sandbox-Daten zurückgesetzt werden. **Achtung:** Diese Aktion ist nicht rückgängig zu machen.
+Test- und Sandbox-Daten können im Admin-Bereich zurückgesetzt werden. **Achtung:** Diese Aktion ist nicht rückgängig zu machen.
 `,
 
-  'dashboards-v2': `# Dashboards V2 & Lerntypen
+  'dashboards-v2': `# Dashboards & Lerntypen: Der Lernpfad-Architekt
 
-Dieses Kapitel beschreibt das Modul **Dashboards V2** (Sprint H): die didaktische Vision, die vier Lerntypen-Profile, die Sektor- und Bündel-Logik sowie die technischen Bausteine, die im Hintergrund die Pfade zusammensetzen, bewerten und exportieren.
+Das Herzstück der Binnendifferenzierung: Jede Einheit bietet **vier parallele Lernpfade** – einen pro Lerntyp. Sie bauen diese Pfade im Tab **„Dashboards"** des Arbeitsbereichs zusammen; Ihre Schüler:innen wählen später (nach der Orientierungsphase) ihren Pfad und sehen genau das Dashboard, das zu ihnen passt.
 
-## 1. Einführung: Vision der Dashboards V2
+## Die vier Lerntypen
 
-Dashboards V2 lösen das Versprechen ein, **Binnendifferenzierung skalierbar** in den Pool-Manager zu bringen. Statt einer einzigen, linearen Pfad-Struktur erhält jede Einheit **vier parallele Dashboard-Raster** – eines pro Lerntyp. Lehrkräfte konfigurieren diese Raster nicht mehr manuell von Grund auf, sondern stützen sich auf:
+| Lerntyp | Wer ist das? | Typischer Pfad |
+|---------|--------------|----------------|
+| **Minimalist** | Braucht schnelle Erfolge und Sicherheit | Kleinschrittig, klare Reihenfolge, Fokus auf die Basis |
+| **Pragmatiker** | Will effizient zum Ziel | Vorab-Test zum Überspringen bekannter Inhalte (Fast-Track), gewonnene Zeit fließt in Transfer |
+| **Ehrgeizig** | Prüfungsorientiert, will alles abdecken | Vollständige Abdeckung aller Lernziele plus gezielte Testvorbereitung |
+| **Passioniert** | Forschend-entdeckend, liebt Autonomie | Große Freiheit, Schwerpunkt auf Projektarbeit, Basis als Nachschlagewerk |
 
-* **automatisierte Standard-Raster** ("Magic Raster"), die je Profil eine didaktisch erprobte Grundstruktur laden,
-* **wiederverwendbare Aufgaben** aus dem Pool der Einheit (Ebene 2 & 3),
-* **System-Bausteine** (z. B. Pre-Test, Wissensspeicher, Reflexion), die als Platzhalter oder fertige Module gesetzt werden können.
+> **Gut zu wissen:** Die Namen der Lerntypen kann Ihre Administration schulweit anpassen (z. B. „Level 1–4"). Und bei **privaten Einheiten** entscheiden Sie selbst, welche Lerntypen Sie überhaupt anbieten – auch ein einziger Pfad ist möglich.
 
-Ziel ist ein **Pfad pro Sitzung in 5 Minuten** statt einer Stunde – bei gleichzeitig pädagogisch fundierten Vorlagen.
+## Der Aufbau: Sektoren und Bausteine
 
-## 2. Detaillierte Profil-Analyse
+Der Dashboard-Architekt ist zweigeteilt: Links der **Pool** mit allen Aufgaben Ihrer Einheit (Ebene 2 & 3) und den System-Bausteinen, rechts die **Leinwand** mit dem Pfad des aktuell gewählten Lerntyps. Per **Drag & Drop** ziehen Sie Elemente in die Sektoren.
 
-### 2.1 Die vier Lerntypen
+### Sektoren
 
-| Profil | Pädagogische Herleitung | Kennzeichen im Raster |
-|--------|-------------------------|------------------------|
-| **Minimalist** | Schüler:innen mit niedriger Selbstwirksamkeitserwartung brauchen schnelle Erfolge. Der Pfad senkt die kognitive Einstiegshürde, baut über kleine Handlungsschritte Sicherheit auf und sichert das Basis-Lernziel ab. | Kleinschrittige Sektoren, hoher Handlungsanteil, keine Transfer-Aufgaben in den ersten Sektoren. |
-| **Pragmatiker** | Effiziente Lerner:innen wollen Zeit nicht in bereits Verstandenes investieren. Ein Vorab-Test (Fast-Track) erlaubt das Überspringen gesicherter Inhalte; gewonnene Zeit fließt in Transfer (Ebene 2). | Pre-Test als Eingangstor, Fast-Track-Logik in den Lernpaket-Bündeln, mehr Ebene-2-Aufgaben. |
-| **Ehrgeizige** | Prüfungsorientierte Lerner:innen brauchen vollständige Abdeckung aller Lernziele plus klare Vorbereitung auf die schriftliche Arbeit. | Vollständige Pfad-Abdeckung, Prüfungs-Sektor mit Anmeldung zur schriftlichen Arbeit, hoher Anteil systematischer Übungen. |
-| **Passionierte** | Forschend-entdeckende Lerner:innen profitieren von Autonomie. Der Pfad öffnet alle Inhalte parallel und verlagert den Schwerpunkt auf Projektarbeit (Ebene 3). | Freier Sektor-Modus, Projektanker als Hauptsektoren, Ebene 1 nur als Backup-Wissensspeicher. |
+Sektoren sind die großen Abschnitte eines Pfads (z. B. „Orientierung", „Training", „Test", „Projekt"). Pro Sektor steuern Sie:
 
-### 2.2 Sektor-Logiken: sequenziell vs. frei
+* **Reihenfolge:** *sequenziell* (Items werden nacheinander freigeschaltet) oder *frei* (alles sofort wählbar).
+* **Freischaltung:** Der Sektor ist *sofort* zugänglich, öffnet sich *nach dem vorherigen Sektor* oder erst *nach einem bestimmten anderen Sektor*. So bauen Sie gestufte Pfade ohne starres Gesamtkorsett.
 
-Sektoren steuern, **wie** der Lerner einen Block bearbeitet:
+### System-Bausteine
 
-| Modus | Verhalten | Wann sinnvoll? |
-|-------|-----------|----------------|
-| **sequenziell** | Items werden in der gesetzten Reihenfolge freigeschaltet. Erst wenn ein Item grün ist, öffnet sich das nächste. | Wenn Inhalte aufeinander aufbauen (Minimalist-Pfad, Prüfungs-Sektor der Ehrgeizigen). |
-| **frei** | Alle Items im Sektor sind sofort sichtbar; der Lerner wählt selbst die Reihenfolge. | Wenn Autonomie pädagogisch gewollt ist (Passionierte, Wissensspeicher als Nachschlagewerk). |
+Fertige Funktions-Module aus dem Pool: Einführungen, Lernlandkarte, Wissensspeicher, Exit-Ticket u. v. m. Die verfügbaren Bausteine pflegt die Administration zentral.
 
-Der Modus wird **pro Sektor** gesetzt – ein Pfad kann sequenzielle und freie Sektoren mischen.
+### Bündel: Container mit Logik
 
-### 2.3 Bündel-Typen: Brian-Auswahl-Bündel vs. Moodle-Logik
+Bündel fassen mehrere Inhalte unter einer Kachel zusammen:
 
-Bündel fassen mehrere Items unter einer übergeordneten Aufgabe zusammen. Sprint G/H unterscheidet zwei fundamentale Bündel-Arten:
+* **Lernpaket-Bündel** verlinken ganze Lernpakete (Ebene 1) und steuern deren inneren Ablauf: *Standard* (Input → Übung → Test), *Fast-Track* (Test zuerst – wer besteht, spart sich die Übung), *Wissensspeicher* (freies Nachschlagewerk) oder *Nur-Test*.
+* **Auswahl-Bündel** verlinken Transfer-Aufgaben (Ebene 2) und legen fest, **wie viele** davon bearbeitet werden müssen (z. B. „2 von 4") – echte Wahlfreiheit ohne Kontrollverlust.
 
-#### Moodle-Bündel (\`aufgaben_typ='buendel'\`)
+## Automatischer Aufbau (Sie starten nie bei null)
 
-* Verlinkt **Lernpakete (Ebene 1)**.
-* Steuerung über das Feld \`lernpaket_logik\`:
-  * \`standard\` – Input → Übung → Test (klassisch)
-  * \`fast_track\` – Input → Test → Übung (Pragmatiker)
-  * \`wissensspeicher\` – Input fix, Übung/Test frei (Nachschlagewerk)
-  * \`test_only\` – nur das Test-Modul ist aktiv
-* Dient als **didaktischer Container** im Moodle-Export: aus dem Bündel werden im Zielsystem mehrere zusammenhängende Aktivitäten generiert.
+Beim ersten Öffnen baut der Pool-Manager die vier Dashboards **automatisch** zusammen – aus Ihrer Einheiten-Struktur (Themenfelder, Lernpakete, Aufgaben) und der schulweiten **Standardvorlage** pro Lerntyp. Solche Dashboards tragen den Hinweis „automatisch erstellt", bis Sie sie bewusst übernehmen oder anpassen. Sie behalten also immer die Kontrolle – sparen sich aber den kompletten Neuaufbau.
 
-#### Brian-Auswahl-Bündel (\`aufgaben_typ='auswahl_buendel'\`)
+## Der Onboarding-Tab: Die Orientierungsphase
 
-* Verlinkt **Aufgaben der Ebene 2** (\`AllgemeineAufgabe\`).
-* Steuerung über zwei Felder:
-  * \`erforderliche_anzahl\` – wie viele der verlinkten Aufgaben muss der Lerner abschließen (\`0\` = alle).
-  * \`interne_reihenfolge\` – \`frei\` oder \`sequenziell\` für den Bündel-Inhalt.
-* Live-Bewertung: das Bündel ist erst grün, wenn die geforderte Anzahl an Kindern grün ist (siehe Ampel-Aggregation).
-* Pädagogischer Zweck: **Wahlpflicht** – der Lerner entscheidet, welche Transfer-Aufgaben er bearbeitet, ohne dass der Pfad-Status verlorengeht.
+Bevor Schüler:innen ihren Lerntyp wählen, durchlaufen sie die einheitsweite **Orientierungsphase**. Deren vier Elemente pflegen Sie im Reiter „Onboarding" – alle werden per KI aus Ihrem Grundgerüst erzeugt und können in der **Vorschau** geprüft und neu generiert werden:
 
-> Faustregel: **Moodle-Bündel** strukturieren *Lernen*, **Brian-Bündel** strukturieren *Wahlfreiheit innerhalb des Transfers*.
+1. **Einführung** – motivierender Überblick über die Einheit
+2. **Fragenblock** – Neugier-Fragen zum Einstieg
+3. **Einstiegsdiagnose** – Quiz zum Vorwissen
+4. **Lerntyp-Diagnose** – Fragen zur Arbeitsweise, Grundlage für die Lerntyp-Empfehlung
 
-## 3. Technische Umsetzung
+## Der Drift-Wächter
 
-### 3.1 Template-Logik (\`lib/dashboardTemplates.js\`)
+Ändert sich später etwas an der Einheit (ein Lernpaket wird gelöscht, eine Aufgabe umbenannt), erkennen die Dashboards das automatisch und zeigen einen **Drift-Hinweis** mit konkreten Lösungsvorschlägen – kaputte Verweise bleiben nicht unbemerkt liegen.
 
-Die Magic-Raster sind als versionierte, eingefrorene Konstanten in \`lib/dashboardTemplates.js\` hinterlegt. Pro Lerntyp definiert das Template eine Liste von **Sektor-Objekten** mit folgender Struktur:
+## Ampeln, Vorschau, Freigabe
 
-\`\`\`
-{
-  titel: 'Basis sichern',
-  modus: 'sequenziell',
-  items: [
-    { type: 'system', ref_id: 'sys_pre_test' },
-    { type: 'system', ref_id: 'sys_platzhalter_input' },
-    { type: 'system', ref_id: 'sys_exit_check' },
-  ],
-}
-\`\`\`
+* **Live-Ampeln** an jeder Aufgabe zeigen: rot (unvollständig), gelb (in Arbeit), grün (freigegeben).
+* Die **Vorschau** zeigt den Pfad jederzeit exakt aus Schülersicht – pro Lerntyp umschaltbar.
+* Mit **„Prüfen & freigeben"** markieren Sie einen Pfad als fertig; er wird gegen Änderungen gesperrt und gilt als exportbereit.
 
-* **\`type='system'\`** – ein System-Baustein. Platzhalter (\`sys_platzhalter_*\`) zählen in der Fortschrittsberechnung **nicht** mit; "echte" System-Bausteine (z. B. \`sys_pre_test\`) zählen wie eine erledigte Aufgabe.
-* **\`type='aufgabe'\`** – eine konkrete Aufgabe aus dem Pool der Einheit. Im Template kommen diese in der Regel **nicht** vor – sie werden von der Lehrkraft beim Befüllen ergänzt.
-* **Legacy-Mapping** – ältere Bausteine werden über eine Mapping-Tabelle auf aktuelle IDs umgeschrieben, damit existierende Pfade nach Template-Updates konsistent bleiben.
+## Weiterführende Kapitel
 
-Templates werden über \`useDashboardRelease\` angewandt: vor dem Apply wird der Live-Status geladen (Race-Condition-Schutz), danach ersetzt das Template die Konfiguration des aktiven Lerntyps.
-
-### 3.2 Ampel-Aggregation: "at least N green"
-
-Die Status-Ampel kennt drei Stufen: \`red\` < \`yellow\` < \`green\`. Für aggregierte Container (Bündel, Sektoren) werden zwei Aggregationsregeln benutzt:
-
-#### \`aggregateMin\` (Standard)
-
-Der Container ist nur so grün wie sein **schwächstes Kind**:
-
-* Alle grün → grün
-* Mindestens ein gelb → gelb
-* Mindestens ein rot → rot
-
-Wird verwendet für **Moodle-Bündel** (\`buendel\`) und **Projektanker** (\`projekt_anker\`) – jedes verlinkte Element muss approved sein.
-
-#### \`aggregateAtLeastNGreen\` (Brian-Bündel)
-
-Für \`auswahl_buendel\` greift eine schwächere Regel, weil der Lerner nicht alle Kinder bearbeiten muss:
-
-* **\`green\`**, sobald \`required\` Kinder grün sind.
-* **\`yellow\`**, falls \`green + yellow >= required\` (Ziel theoretisch erreichbar, aber noch Modifikationen offen).
-* **\`red\`**, sonst.
-
-Bei \`required = 0\` fällt die Logik auf \`aggregateMin\` zurück (alle Kinder erforderlich).
-
-Diese Logik ist gespiegelt im Backend (\`functions/getEinheitenMetricsSecure.js\`) und im Frontend (\`lib/ampelLogic.js\`), damit Dashboard-Karten und Cockpit immer dieselbe Wahrheit zeigen.
-
-### 3.3 Export-Verhalten: Delta-Payloads
-
-Beim Moodle/Brian-Export werden **nicht alle** Entitäten erneut übertragen, sondern nur die seit dem letzten erfolgreichen Export geänderten. Diese Logik liegt in \`lib/deltaPayloadGenerator.js\`:
-
-1. **Filter nach Timestamp** – jede Entity (Themenfeld, Lernpaket, Lernziel, Aufgabe) wird mit \`last_synced_at\` verglichen.
-2. **Transitive Expansion** – bei Brian-Bündeln und Projektankern werden referenzierte Kinder zwingend mitexportiert, auch wenn sie selbst nicht modifiziert wurden. So bleiben referenzielle Beziehungen im Zielsystem konsistent.
-3. **Schema-Mapping** – pro Aufgabentyp werden nur die relevanten Felder serialisiert (\`buendel\` braucht \`lernpaket_logik\`, \`auswahl_buendel\` braucht \`erforderliche_anzahl\` und \`interne_reihenfolge\` etc.).
-4. **Validierung** – vor dem Versand prüft der Generator, dass keine FK-Pointer ins Leere zeigen. Broken Links werden als Audit-Eintrag protokolliert und blockieren den Export.
-
-Das Ergebnis ist ein kompakter JSON-Payload mit Header, Statistik und Audit-Log – ideal für inkrementelle Sync-Zyklen und nachvollziehbare Re-Runs.
-
-## 4. Weiterführende Kapitel
-
-* [Lernpakete & Aktivitäten](/docs/lernpakete-aktivitaeten) – Bausteine, aus denen die Dashboards befüllt werden.
-* [Ebene 2: Allgemeine Aufgaben](/docs/ebene-2-allgemeine-aufgaben) – Hauptquelle für Brian-Bündel.
-* [Ebene 3: Projektaufgaben](/docs/ebene-3-projektaufgaben) – Hauptquelle für Projektanker im Passionierten-Pfad.
-* [Export-Workflow](/docs/export-workflow) – wie Delta-Payloads in Moodle und Brian.study landen.
+* [Der Schülerbereich](/docs/schuelerbereich) – wie die Dashboards bei den Schüler:innen ankommen
+* [Ebene 2: Allgemeine Aufgaben](/docs/ebene-2-allgemeine-aufgaben) – Hauptquelle für die Pfad-Inhalte
+* [Export-Workflow](/docs/export-workflow) – wie die fertigen Pfade zu den Schülern kommen
 `,
 
   'erste-hilfe-faq': `# Erste Hilfe / FAQ
@@ -965,8 +967,8 @@ Prüfen Sie diese Punkte:
 2. Ist der Content-Status auf \`approved\` (freigegeben)?
 3. Wurde der Export im Export-Cockpit korrekt bestätigt?
 
-**Frage: Wie exportiere ich eine Aufgabe nach Brian.study?**
-> Das Export-Team nutzt das **Export-Cockpit** (Tab 9 im Workspace). Dort können die KI-Prompt-Segmente kopiert und im Brian-Backend eingefügt werden.
+**Frage: Wie exportiere ich eine Aufgabe nach Moodle / Brian.study?**
+> Der gesamte Export läuft zentral über das **Export-Center** (Papierflieger-Symbol im Hauptmenü) und wird vom Export-Team bedient. Als Lehrkraft geben Sie Ihre Inhalte nur frei – den Rest übernimmt das Team (siehe [Export-Workflow](/docs/export-workflow)).
 
 ## KI-Funktionen
 
@@ -1001,16 +1003,36 @@ Prüfen Sie diese Punkte:
 > 2. Anderen Browser testen (Chrome, Firefox, Edge)
 > 3. Administrator informieren
 
+## Private Einheiten & Austausch
+
+**Frage: Warum sehen meine Kollegen meine Einheit nicht?**
+> Ihre Einheit ist vermutlich **privat** (der Standard für neue Einheiten). Geben Sie sie über das Bibliotheks-Symbol für das Kollegium frei – dann erscheint sie im Bereich „Freigegebene Einheiten".
+
+**Frage: Ich habe mir eine Kopie aus der Tauschbörse gezogen – wo ist sie?**
+> In Ihrem Bereich **„Meine privaten Einheiten"**. Die Kopie gehört ganz Ihnen und ist vom Original unabhängig.
+
+**Frage: Wie wird meine private Einheit eine offizielle Poolzeit-Einheit?**
+> Das entscheidet die **Fachschaftsleitung** (oder ein Admin) – entweder direkt über das Globus-Symbol oder als Kopie aus der Tauschbörse. Sprechen Sie Ihre Fachschaftsleitung an.
+
+## Schülersicht & Vorschau
+
+**Frage: Wie sehe ich meine Einheit aus Schülersicht?**
+> Drei Wege: das **Auge-Symbol** auf der Einheiten-Karte (Vorschau pro Lerntyp), die **Vorschau** im Dashboard-Architekt oder der komplette **Schülerbereich** über das 🎓-Symbol in der Top-Leiste.
+
 ## Support kontaktieren
 
 | Problem-Typ | Ansprechpartner |
 |-------------|----------------|
-| **Technische Fehler** | Systemadministrator |
+| **Technische Fehler** | „Problem melden"-Button in der Top-Leiste (siehe [Probleme melden](/docs/problem-melden)) |
 | **Inhaltliche Fragen** | Fachschaftsleitung / Export-Team |
 | **Benutzerrechte** | Administrator |
 > **Tipp:** Machen Sie bei Fehlern einen Screenshot und notieren Sie, was Sie gerade gemacht haben. Das hilft bei der Fehlersuche!
 `,
 };
+
+// Neue Kapitel einmischen (ausgelagert nach src/lib/docs/neueKapitel.js,
+// damit diese Datei nicht endlos wächst).
+Object.assign(DOC_CONTENT, NEUE_KAPITEL);
 
 export function getDocContent(slug) {
   return DOC_CONTENT[slug] || `# ${slug}\n\nDieser Artikel ist noch in Bearbeitung.`;
