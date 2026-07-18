@@ -2,10 +2,12 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { DOC_GROUPS } from '@/lib/docsContent';
 import { BookOpen, ChevronRight } from 'lucide-react';
+import TutorialInfoBox from '@/components/docs/TutorialInfoBox';
 
 export default function DocsIndex() {
   return (
     <div>
+      <TutorialInfoBox />
       <div className="mb-10">
         <h1 className="text-2xl font-bold text-foreground mb-2">Dokumentation</h1>
         <p className="text-muted-foreground">Ausführliche Anleitungen und Erklärungen zu allen Bereichen des Pool-Managers.</p>
