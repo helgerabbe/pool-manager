@@ -11,6 +11,7 @@ import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal';
 import EinheitVeroeffentlichenButton from './EinheitVeroeffentlichenButton';
 import EinheitAustauschToggleButton from './EinheitAustauschToggleButton';
 import EinheitVorschauModal from './EinheitVorschauModal';
+import MoodleParameterButton from './MoodleParameterButton';
 import EmptyState from '@/components/shared/EmptyState';
 
 /**
@@ -119,6 +120,7 @@ export default function PrivateEinheitenUebersicht({ einheiten = [] }) {
                       >
                         <Eye className="w-4 h-4" />
                       </button>
+                      <MoodleParameterButton einheit={e} />
                       <EinheitAustauschToggleButton einheit={e} />
                       <EinheitVeroeffentlichenButton einheit={e} />
                       <button

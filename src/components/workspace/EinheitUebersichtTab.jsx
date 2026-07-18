@@ -47,6 +47,7 @@ import { hasUnitLevelAccess } from '@/lib/rbac';
 import { base44 } from '@/api/base44Client';
 import EinheitStrukturLebenszyklusBadge from '@/components/workspace/panels/EinheitStrukturLebenszyklusBadge';
 import EinheitCoverImageSection from '@/components/workspace/EinheitCoverImageSection';
+import MoodleCodeSection from '@/components/einheiten/MoodleCodeSection';
 
 /**
  * Markiert eine bereits mit Moodle synchronisierte Einheit als 'modified',
@@ -158,6 +159,10 @@ export default function EinheitUebersichtTab({
 
 
   const istGesperrt = einheit.freigabe_status === 'Gesperrt';
+  // Private Einheiten: keine kollaborative Bearbeitung — Moodle-Status,
+  // Sperrstatus und Lock-Übersicht werden ausgeblendet; stattdessen gibt es
+  // den Einheiten-Code für die Moodle-Verknüpfung.
+  const istPrivat = einheit.sichtbarkeit === 'privat';
 
   const handleToggleSperre = async () => {
     setIsLocking(true);
@@ -471,14 +476,18 @@ export default function EinheitUebersichtTab({
               Geändert. Immer sichtbar – auch im Lesemodus.
               Kompakter, grüner Bearbeitungsmodus-Button (analog zu den anderen Tabs). */}
           <div className="flex items-center gap-2 flex-wrap -mt-1">
-            <span className="text-xs text-muted-foreground">Moodle-Status:</span>
-            <EinheitStrukturLebenszyklusBadge
-              syncStatus={
-                (einheit?.export_lifecycle_status && einheit.export_lifecycle_status !== 'draft')
-                  ? 'pending'
-                  : (einheit?.sync_status || 'new')
-              }
-            />
+            {!istPrivat && (
+              <>
+                <span className="text-xs text-muted-foreground">Moodle-Status:</span>
+                <EinheitStrukturLebenszyklusBadge
+                  syncStatus={
+                    (einheit?.export_lifecycle_status && einheit.export_lifecycle_status !== 'draft')
+                      ? 'pending'
+                      : (einheit?.sync_status || 'new')
+                  }
+                />
+              </>
+            )}
             {!isEditingActive && kannBearbeitungsstartButton && (
               <button
                 onClick={onAcquireLock}
@@ -665,6 +674,10 @@ export default function EinheitUebersichtTab({
 
         {/* ── Spalte 2: Bearbeitungsstatus + Mitarbeiter ───────────────────────── */}
         <section className="space-y-5">
+          {/* Private Einheiten: Einheiten-Code prominent oben in Spalte 2 */}
+          {istPrivat && <MoodleCodeSection einheit={einheit} />}
+
+          {!istPrivat && (<>
           <div>
             <h2 className="text-lg font-semibold flex items-center gap-1.5">
               Bearbeitungsstatus
@@ -733,7 +746,9 @@ export default function EinheitUebersichtTab({
               </div>
             )}
           </div>
+          </>)}
 
+          {!istPrivat && (<>
           {/* ── Mitarbeiter (direkt unter Bearbeitungsstatus) ─────────────────── */}
           <div>
             <h2 className="text-lg font-semibold flex items-center gap-1.5">
@@ -849,6 +864,7 @@ export default function EinheitUebersichtTab({
              ))
            )}
           </div>
+          </>)}
           </section>
 
           </div>

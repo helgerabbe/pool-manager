@@ -805,7 +805,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                 rechts neben der Tab-Leiste eingeblendet, wenn er aktivierbar ist. */}
             <div className="px-4 sm:px-6 lg:px-8 py-1.5 border-b border-border bg-card shrink-0 flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <WorkspaceTabs activeTab={activeTab} onTabChange={handleTabChange} isBasismodul={isBasismodul} />
+                <WorkspaceTabs activeTab={activeTab} onTabChange={handleTabChange} isBasismodul={isBasismodul} istPrivat={einheit?.sichtbarkeit === 'privat'} />
               </div>
               {/* Privat-Modus: Gesamt-Vorschau — aus jedem Tab heraus erreichbar */}
               {einheit?.sichtbarkeit === 'privat' && (
@@ -1099,7 +1099,8 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               </ErrorBoundary>
             </TabsContent>
 
-            {/* ── Tab 8: Freigabe-Cockpit ──────────────────────────────────────── */}
+            {/* ── Tab 8: Freigabe-Cockpit (nicht bei privaten Einheiten) ──────── */}
+            {einheit?.sichtbarkeit !== 'privat' && (
             <TabsContent value="cockpit" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
               <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6">
                 <ErrorBoundary label="Freigabe-Cockpit">
@@ -1133,6 +1134,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                 </ErrorBoundary>
               </div>
             </TabsContent>
+            )}
 
             {/* Phase H Cleanup: Tabs 9 (Moodle-Export) und 10 (Brian.study
                 Export) wurden aus der Einheitenansicht entfernt. Beide

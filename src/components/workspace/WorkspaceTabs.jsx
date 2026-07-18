@@ -239,9 +239,15 @@ const getVisibleTabs = (rolle) => {
 // frisch von 1 durchnummeriert.
 const BASISMODUL_TAB_VALUES = ['einheit', 'struktur', 'lernziele', 'aktivitaeten', 'aufgaben'];
 
-export default function WorkspaceTabs({ activeTab, onTabChange, isBasismodul = false }) {
+export default function WorkspaceTabs({ activeTab, onTabChange, isBasismodul = false, istPrivat = false }) {
   const { rolle } = useRBAC();
   let visibleTabs = getVisibleTabs(rolle);
+
+  // Private Einheiten: kein Freigabe-Cockpit — der Moodle-Weg läuft dort
+  // direkt über den Einheiten-Code auf Tab 1.
+  if (istPrivat) {
+    visibleTabs = visibleTabs.filter((t) => t.value !== 'cockpit');
+  }
 
   if (isBasismodul) {
     visibleTabs = BASISMODUL_TAB_VALUES
