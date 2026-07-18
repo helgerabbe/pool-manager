@@ -41,7 +41,16 @@ export default function SektorFreischaltControl({
   // beim Anwenden neue IDs; nur das relative Gating ist dort stabil.
   nurVorgaenger = false,
 }) {
-  const fb = normalizeFreischaltBedingung(sektor?.freischalt_bedingung);
+  let fb = normalizeFreischaltBedingung(sektor?.freischalt_bedingung);
+  // Verwaister Verweis (z. B. Vorlagen-ID nach einem Reset): der referenzierte
+  // Sektor existiert nicht mehr → wie 'sofort' behandeln (deckungsgleich mit
+  // der Schüler-Gating-Logik), statt eine leere Auswahlbox zu zeigen.
+  if (
+    fb.modus === FREISCHALT_MODUS.NACH_SEKTOR &&
+    !(alleSektoren || []).some((s) => s.sektor_id === fb.voraussetzung_sektor_id)
+  ) {
+    fb = { modus: FREISCHALT_MODUS.SOFORT, voraussetzung_sektor_id: null };
+  }
   const verboten = getVerboteneVoraussetzungen(alleSektoren, sektor?.sektor_id);
 
   const auswahlbar = (alleSektoren || []).filter((s) => !verboten.has(s.sektor_id));

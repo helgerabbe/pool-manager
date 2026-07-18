@@ -839,11 +839,16 @@ export function applyDashboardTemplate(aktuelleKonfig, lerntyp, templateData, th
     sektor_typ: isValidSektorTyp(sektor?.sektor_typ) ? sektor.sektor_typ : DEFAULT_SEKTOR_TYP,
     themenfeld_id: null, // Templates haben keine Themenfeld-Bindung.
     titel_snapshot: null,
-    // Freischalt-Regel der Vorlage übernehmen. In Vorlagen sind nur die
-    // positionsbezogenen Modi sinnvoll ('sofort' | 'nach_vorgaenger'), da die
-    // sektor_ids beim Anwenden neu vergeben werden — normalize kümmert sich
-    // um Legacy-/ungültige Werte (Fallback 'sofort').
-    freischalt_bedingung: normalizeFreischaltBedingung(sektor?.freischalt_bedingung),
+    // Freischalt-Regel der Vorlage übernehmen. Da die sektor_ids beim
+    // Anwenden NEU vergeben werden, sind konkrete Vorlagen-IDs ('nach_sektor')
+    // hier immer ungültig — jede Gating-Regel wird deshalb positionsbezogen
+    // als 'nach_vorgaenger' übernommen; nur 'sofort' bleibt 'sofort'.
+    freischalt_bedingung: (() => {
+      const fb = normalizeFreischaltBedingung(sektor?.freischalt_bedingung);
+      return fb.modus === 'sofort'
+        ? fb
+        : { modus: 'nach_vorgaenger', voraussetzung_sektor_id: null };
+    })(),
     items: buildItemsFromTemplate(sektor),
     ...overrides,
   });
