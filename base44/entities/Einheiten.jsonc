@@ -46,7 +46,7 @@
         "privat"
       ],
       "default": "oeffentlich",
-      "description": "Privat-Modus (Konzept 2026-07-13): 'oeffentlich' = normale, kollaborative Pool-Einheit, sichtbar nach den bestehenden RBAC-Regeln (Fach/Rolle). 'privat' = Sandbox-Einheit im Privatbereich einer Person \u2014 sichtbar nur f\u00fcr den Besitzer (besitzer_email), explizit eingeladene EinheitMembers und Administratoren (Admin-Privatansicht). Duplikate starten immer privat. Der Wechsel privat\u2192\u00f6ffentlich ('Ver\u00f6ffentlichen') erfolgt ausschlie\u00dflich \u00fcber setEinheitSichtbarkeitSecure."
+      "description": "Privat-Modus (Konzept 2026-07-13): 'oeffentlich' = Poolzeit-Einheit \u2014 kollaborative Pool-Einheit, sichtbar nach den bestehenden RBAC-Regeln (Fach/Rolle). 'privat' = Sandbox-Einheit im Privatbereich einer Person \u2014 sichtbar nur f\u00fcr den Besitzer (besitzer_email), explizit eingeladene EinheitMembers und Administratoren (Admin-Privatansicht). Duplikate starten immer privat. Der Wechsel privat\u2192oeffentlich ('Zur Poolzeit-Einheit machen') erfolgt ausschlie\u00dflich \u00fcber setEinheitSichtbarkeitSecure und ist der Fachschaftsleitung/Administratoren vorbehalten."
     },
     "besitzer_email": {
       "type": "string",
@@ -54,7 +54,12 @@
     },
     "erhalten_von": {
       "type": "string",
-      "description": "Weitergeben-Feature: E-Mail der Person, die diese private Einheit als Kopie weitergegeben hat ('Von X erhalten'). Nur gesetzt, wenn die Einheit \u00fcber duplicateEinheitSecure mit target_email in einen fremden Privatbereich kopiert wurde. Dient als Herkunftsnachweis."
+      "description": "Weitergeben-Feature: E-Mail der Person, die diese private Einheit als Kopie weitergegeben hat ('Von X erhalten'). Gesetzt, wenn die Einheit \u00fcber duplicateEinheitSecure mit target_email in einen fremden Privatbereich kopiert wurde ODER wenn sich jemand eine private Kopie aus der Austausch-Bibliothek gezogen hat. Dient als Herkunftsnachweis."
+    },
+    "im_austausch": {
+      "type": "boolean",
+      "default": false,
+      "description": "Austausch-Bibliothek (2026-07-18): true = der Besitzer hat diese PRIVATE Einheit f\u00fcr das gesamte Kollegium freigegeben. Sie erscheint dann im Bereich 'Freigegebene Einheiten' (Tauschb\u00f6rse/Bibliothek), wo Kolleg:innen sie ansehen und sich eine PRIVATE KOPIE ziehen k\u00f6nnen (duplicateEinheitSecure). Fachschaftsleitung/Administratoren k\u00f6nnen sie zus\u00e4tzlich als Poolzeit-Einheit kopieren (duplicateEinheitSecure mit als_poolzeit=true). Nur bei sichtbarkeit='privat' relevant. Wechsel ausschlie\u00dflich \u00fcber setEinheitAustauschSecure (Besitzer oder Admin)."
     },
     "lerntypen_modus": {
       "type": "string",

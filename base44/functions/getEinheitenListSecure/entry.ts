@@ -114,7 +114,13 @@ Deno.serve(async (req) => {
     // 'oeffentlich' (Default) → nur öffentliche Einheiten (sichtbarkeit != 'privat').
     // 'privat' → nur private Einheiten: Admin sieht alle, andere nur eigene
     // (besitzer_email) plus Einheiten, zu denen sie als Mitglied eingeladen sind.
-    const view = payload.view === 'privat' ? 'privat' : 'oeffentlich';
+    // 'austausch' → Austausch-Bibliothek: alle für das Kollegium freigegebenen
+    // privaten Einheiten (im_austausch=true), fächerübergreifend sichtbar.
+    const view = payload.view === 'privat'
+      ? 'privat'
+      : payload.view === 'austausch'
+        ? 'austausch'
+        : 'oeffentlich';
     const basismodulFilter =
       scope === 'basismodule'
         ? { ist_basismodul: true }
@@ -210,7 +216,12 @@ Deno.serve(async (req) => {
     }
 
     // ── Sichtbarkeits-Filter (Privat-Modus) ──
-    if (view === 'privat') {
+    if (view === 'austausch') {
+      // Austausch-Bibliothek: freigegebene private Einheiten sind für ALLE
+      // Rollen sichtbar (fächerübergreifend) — die Bibliothek ist read-only,
+      // gearbeitet wird nur mit gezogenen privaten Kopien.
+      filterCriteria = { ...draftFilter, sichtbarkeit: 'privat', im_austausch: true };
+    } else if (view === 'privat') {
       if (role === 'Administrator') {
         // Admin sieht ALLE privaten Einheiten (Besitzer-Übersicht)
         filterCriteria = { ...draftFilter, sichtbarkeit: 'privat' };
@@ -304,6 +315,8 @@ Deno.serve(async (req) => {
         sichtbarkeit: einheit.sichtbarkeit || 'oeffentlich',
         besitzer_email: einheit.besitzer_email,
         erhalten_von: einheit.erhalten_von,
+        // ✅ Austausch-Bibliothek: Freigabe-Status für Badge + Toggle-Button.
+        im_austausch: einheit.im_austausch === true,
         // ✅ Unit-Level-Mitglieder für RBAC-Prüfung
         members: members.map(m => ({
           user_email: m.user_email,

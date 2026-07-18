@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Trash2, Lock, Copy, EyeOff, ChevronDown, Eye } from 'lucide-react';
 import EinheitVeroeffentlichenButton from '@/components/einheiten/EinheitVeroeffentlichenButton';
+import EinheitAustauschToggleButton from '@/components/einheiten/EinheitAustauschToggleButton';
 import EinheitWeitergebenButton from '@/components/einheiten/EinheitWeitergebenButton';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -42,13 +43,13 @@ export default function EinheitCard({
   const [isCopying, setIsCopying] = useState(false);
   const [showVorschau, setShowVorschau] = useState(false);
   const queryClient = useQueryClient();
-  // Privat-Modus: Besitzer einer privaten Einheit darf sie veröffentlichen.
   const istPrivat = einheit.sichtbarkeit === 'privat';
   const istPrivatBesitzer = istPrivat && einheit.besitzer_email === currentUserEmail;
-  // Löschen darf: Administrator immer, Fachschaftsleitung im eigenen Fach —
-  // bei PRIVATEN Einheiten zusätzlich der Besitzer selbst.
+  // Struktur-Rechte: Administrator immer, Fachschaftsleitung im eigenen Fach.
+  const darfStruktur = kannStrukturBearbeiten(rolle, benutzerFaecher, einheit.fach);
+  // Löschen darf: darfStruktur — bei PRIVATEN Einheiten zusätzlich der Besitzer.
   // Das Backend (deleteEinheitSecure) prüft dieselben Regeln serverseitig.
-  const darfLoeschen = kannStrukturBearbeiten(rolle, benutzerFaecher, einheit.fach) || istPrivatBesitzer;
+  const darfLoeschen = darfStruktur || istPrivatBesitzer;
 
   const volume = metrics?.volume;
   const dashboardStatus = metrics?.dashboardStatus;
@@ -125,6 +126,11 @@ export default function EinheitCard({
                       Privat
                     </Badge>
                   )}
+                  {istPrivat && einheit.im_austausch === true && (
+                    <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-200 gap-1">
+                      Freigegeben
+                    </Badge>
+                  )}
                   {einheit.freigabe_status === 'Gesperrt' && (
                     <Badge className="bg-red-100 text-red-700 border border-red-200 gap-1">
                       <Lock className="w-3 h-3" />
@@ -175,9 +181,12 @@ export default function EinheitCard({
                   format(new Date(einheit.updated_date || einheit.created_date), 'dd. MMM yyyy', { locale: de })}
               </span>
               <div className="flex items-center gap-2 flex-wrap justify-end">
-                {istPrivat && (istPrivatBesitzer || darfLoeschen) && (
+                {istPrivat && (istPrivatBesitzer || darfStruktur) && (
                   <>
-                    <EinheitVeroeffentlichenButton einheit={einheit} />
+                    {/* Poolzeit-Übernahme: nur Fachschaftsleitung/Admin */}
+                    {darfStruktur && <EinheitVeroeffentlichenButton einheit={einheit} />}
+                    {/* Austausch-Bibliothek: Besitzer/Admin geben frei */}
+                    <EinheitAustauschToggleButton einheit={einheit} />
                     <EinheitWeitergebenButton einheit={einheit} />
                   </>
                 )}

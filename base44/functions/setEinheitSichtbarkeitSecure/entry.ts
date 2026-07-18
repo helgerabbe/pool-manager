@@ -32,18 +32,28 @@ Deno.serve(async (req) => {
     if (!einheit) return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
 
     const benutzerList = await e.Benutzer.filter({ user_id: user.email });
-    const istAdmin = user.role === 'admin' || benutzerList?.[0]?.rolle === 'Administrator';
-    const istBesitzer = einheit.besitzer_email === user.email;
+    const benutzer = benutzerList?.[0];
+    const istAdmin = user.role === 'admin' || benutzer?.rolle === 'Administrator';
 
     if (sichtbarkeit === 'oeffentlich') {
-      if (!istBesitzer && !istAdmin) {
-        return Response.json({ error: 'Nur der Besitzer oder ein Administrator darf diese Einheit veröffentlichen' }, { status: 403 });
+      // Poolzeit-Konzept (2026-07-18): privat → öffentlich macht die Einheit
+      // zur Poolzeit-Einheit. Das dürfen NUR Administratoren und die
+      // zuständige Fachschaftsleitung — nicht der Besitzer allein.
+      const istFachschaftImFach =
+        benutzer?.rolle === 'Fachschaftsleitung' &&
+        (benutzer?.fachbereich_zustaendigkeit || []).includes(einheit.fach);
+      if (!istAdmin && !istFachschaftImFach) {
+        return Response.json({ error: 'Nur die zuständige Fachschaftsleitung oder Administratoren dürfen eine Einheit zur Poolzeit-Einheit machen' }, { status: 403 });
       }
     } else if (!istAdmin) {
       return Response.json({ error: 'Nur Administratoren dürfen eine Einheit auf privat stellen' }, { status: 403 });
     }
 
     const patch = { sichtbarkeit };
+    if (sichtbarkeit === 'oeffentlich') {
+      // Poolzeit-Einheiten stehen nicht (mehr) in der Austausch-Bibliothek.
+      patch.im_austausch = false;
+    }
     if (sichtbarkeit === 'privat' && !einheit.besitzer_email) {
       patch.besitzer_email = user.email;
     }

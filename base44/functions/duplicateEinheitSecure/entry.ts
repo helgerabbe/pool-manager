@@ -80,6 +80,9 @@ Deno.serve(async (req) => {
     if (!einheitId) return Response.json({ error: 'Missing einheit_id' }, { status: 400 });
     // Optional (Weitergeben): Kopie landet im Privatbereich dieser Person
     const targetEmail = (payload?.target_email || '').trim() || null;
+    // Optional (Austausch → Poolzeit): Kopie wird direkt als ÖFFENTLICHE
+    // Poolzeit-Einheit angelegt (nur Fachschaftsleitung im Fach / Admin).
+    const alsPoolzeit = payload?.als_poolzeit === true;
 
     const e = base44.asServiceRole.entities;
     const einheit = await e.Einheiten.get(einheitId).catch(() => null);
@@ -91,15 +94,28 @@ Deno.serve(async (req) => {
       listAll(e.EinheitMembers, { einheit_id: einheitId, user_email: user.email }),
     ]);
     const userRecord = benutzer?.[0];
+    const istAdmin = user.role === 'admin' || userRecord?.rolle === 'Administrator';
+    const istFachschaftImFach =
+      userRecord?.rolle === 'Fachschaftsleitung' && (userRecord?.fachbereich_zustaendigkeit || []).includes(einheit.fach);
     const allowed = Boolean(
-      user.role === 'admin' ||
-      userRecord?.rolle === 'Administrator' ||
-      (userRecord?.rolle === 'Fachschaftsleitung' && (userRecord?.fachbereich_zustaendigkeit || []).includes(einheit.fach)) ||
+      istAdmin ||
+      istFachschaftImFach ||
       ownMemberships.some(m => m.unit_role === 'LEITUNG') ||
       // Besitzer einer privaten Einheit darf sie duplizieren/weitergeben
-      (einheit.sichtbarkeit === 'privat' && einheit.besitzer_email === user.email)
+      (einheit.sichtbarkeit === 'privat' && einheit.besitzer_email === user.email) ||
+      // Austausch-Bibliothek: freigegebene Einheiten darf sich jeder als
+      // private Kopie ziehen (Tauschbörsen-Prinzip).
+      (einheit.sichtbarkeit === 'privat' && einheit.im_austausch === true)
     );
     if (!allowed) return Response.json({ error: 'Keine Berechtigung zum Duplizieren' }, { status: 403 });
+
+    // Poolzeit-Übernahme ist streng: nur Admin oder zuständige Fachschaftsleitung.
+    if (alsPoolzeit && !istAdmin && !istFachschaftImFach) {
+      return Response.json(
+        { error: 'Nur die zuständige Fachschaftsleitung oder Administratoren dürfen eine Einheit als Poolzeit-Einheit übernehmen' },
+        { status: 403 }
+      );
+    }
 
     // Weitergeben: Empfänger validieren
     let targetBenutzer = null;
@@ -150,19 +166,35 @@ Deno.serve(async (req) => {
     const ownerEmail = targetEmail || user.email;
     const einheitCopy = sanitize(einheit);
     delete einheitCopy.erhalten_von;
-    // Weitergabe behält den Original-Titel; eigene Kopie bekommt "(Kopie)"
-    einheitCopy.titel_der_einheit = targetEmail
+    // Weitergabe/Poolzeit-Übernahme behält den Original-Titel; eigene Kopie bekommt "(Kopie)"
+    einheitCopy.titel_der_einheit = (targetEmail || alsPoolzeit)
       ? einheit.titel_der_einheit
       : `${einheit.titel_der_einheit} (Kopie)`;
     einheitCopy.sync_status = 'new';
     einheitCopy.export_lifecycle_status = 'draft';
     einheitCopy.freigabe_status = 'Freigegeben für Bearbeitung';
     einheitCopy.version = 1;
-    // Privat-Modus: Kopien landen immer im Privatbereich des Kopierenden
-    // und werden erst durch bewusstes Veröffentlichen für alle sichtbar.
-    einheitCopy.sichtbarkeit = 'privat';
-    einheitCopy.besitzer_email = ownerEmail;
-    if (targetEmail) einheitCopy.erhalten_von = user.email;
+    // Austausch-Freigabe wird NIE mitkopiert — jede Kopie startet unfreigegeben.
+    einheitCopy.im_austausch = false;
+    if (alsPoolzeit) {
+      // Austausch → Poolzeit: Die Kopie wird als öffentliche Poolzeit-Einheit
+      // angelegt (strenge Poolzeit-Regeln gelten ab sofort). Das private
+      // Original bleibt unangetastet beim Besitzer.
+      einheitCopy.sichtbarkeit = 'oeffentlich';
+      delete einheitCopy.besitzer_email;
+      if (einheit.besitzer_email) einheitCopy.erhalten_von = einheit.besitzer_email;
+    } else {
+      // Privat-Modus: Kopien landen immer im Privatbereich des Kopierenden
+      // und werden erst durch bewusstes Veröffentlichen für alle sichtbar.
+      einheitCopy.sichtbarkeit = 'privat';
+      einheitCopy.besitzer_email = ownerEmail;
+      if (targetEmail) {
+        einheitCopy.erhalten_von = user.email;
+      } else if (einheit.im_austausch === true && einheit.besitzer_email && einheit.besitzer_email !== user.email) {
+        // Kopie aus der Austausch-Bibliothek: Herkunft festhalten.
+        einheitCopy.erhalten_von = einheit.besitzer_email;
+      }
+    }
     for (const key of [
       'last_synced_at', 'last_exported_at', 'structural_lock', 'structural_locked_at',
       'export_lifecycle_changed_at', 'export_lifecycle_changed_by',
@@ -339,7 +371,7 @@ Deno.serve(async (req) => {
       resource_type: 'Einheiten',
       resource_id: newEinheit.id,
       changes: {
-        action_code: targetEmail ? 'HANDOVER_UNIT' : 'DUPLICATE_UNIT',
+        action_code: alsPoolzeit ? 'PROMOTE_TO_POOLZEIT' : (targetEmail ? 'HANDOVER_UNIT' : 'DUPLICATE_UNIT'),
         source_einheit_id: einheit.id,
         weitergegeben_an: targetEmail,
         titel_der_einheit: einheitCopy.titel_der_einheit,

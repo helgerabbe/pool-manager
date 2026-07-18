@@ -9,8 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Search, AlertCircle, Wand2, Globe, Lock, Bot } from 'lucide-react';
+import { Plus, Search, AlertCircle, Wand2, Lock, Bot } from 'lucide-react';
 import PrivateEinheitenUebersicht from '@/components/einheiten/PrivateEinheitenUebersicht';
+import BereichSwitcher from '@/components/einheiten/BereichSwitcher';
+import AustauschBibliothek from '@/components/einheiten/AustauschBibliothek';
 import SyncStatusBadge from '@/components/sync/SyncStatusBadge';
 import EinheitCard from '@/components/einheiten/EinheitCard';
 import EmptyState from '@/components/shared/EmptyState';
@@ -161,8 +163,8 @@ export default function EinheitenListe() {
   const [filterLifecycle, setFilterLifecycle] = useState('all');
   const [showOnlyChanged, setShowOnlyChanged] = useState(false);
   const [schnellErstellen, setSchnellErstellen] = useState(false);
-  // Privat-Modus: Umschalter zwischen öffentlicher und privater Ansicht.
-  const [ansicht, setAnsicht] = useState('oeffentlich'); // 'oeffentlich' | 'privat'
+  // Drei Bereiche: 'oeffentlich' (Poolzeit) | 'austausch' (Bibliothek) | 'privat'.
+  const [ansicht, setAnsicht] = useState('oeffentlich');
   const [isDeletingAny, setIsDeletingAny] = useState(false);
   const queryClient = useQueryClient();
 
@@ -323,29 +325,26 @@ export default function EinheitenListe() {
         )}
       </div>
 
-      {/* Privat-Modus: Umschalter Öffentlich / Privat */}
-      <div className="inline-flex items-center rounded-lg border border-border bg-muted/40 p-1 gap-1">
-        <button
-          onClick={() => setAnsicht('oeffentlich')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${ansicht === 'oeffentlich' ? 'bg-card text-foreground shadow-sm border border-border' : 'text-muted-foreground hover:text-foreground'}`}
-        >
-          <Globe className="w-3.5 h-3.5" />
-          Öffentliche Einheiten
-        </button>
-        <button
-          onClick={() => setAnsicht('privat')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${ansicht === 'privat' ? 'bg-card text-foreground shadow-sm border border-border' : 'text-muted-foreground hover:text-foreground'}`}
-        >
-          <Lock className="w-3.5 h-3.5" />
-          {permissions.istAdmin ? 'Private Einheiten (alle)' : 'Meine privaten Einheiten'}
-        </button>
+      {/* Drei Bereiche: Poolzeit / Freigegebene (Austausch) / Privat */}
+      <div className="flex items-start gap-2">
+        <div className="flex-1">
+          <BereichSwitcher ansicht={ansicht} onChange={setAnsicht} istAdmin={permissions.istAdmin} />
+        </div>
         <HelpBadge
-          text="Öffentliche Einheiten werden gemeinschaftlich von der Fachgruppe erstellt und von der Fachschaftsleitung begleitet. Sie gelten klassen- bzw. lerngruppenübergreifend: Es ist vereinbart, dass alle Schüler diese Einheiten in der Poolzeit bearbeiten. Private Einheiten sind dagegen für den eigenen, persönlichen Unterricht gedacht — ohne große Abstimmung erstellt und schnell veröffentlicht."
+          text="Poolzeit-Einheiten sind die verbindlichen, von der Fachschaft betreuten Einheiten für die Poolzeit. Freigegebene Einheiten sind die Tauschbörse des Kollegiums: private Einheiten, die Kolleg:innen zur Verfügung stellen — Sie können sich davon jederzeit eine eigene private Kopie ziehen. Private Einheiten sind Ihr persönlicher Arbeitsbereich."
           docsSlug="einheiten-struktur"
         />
       </div>
 
-      {ansicht === 'privat' && permissions.istAdmin ? (
+      {ansicht === 'austausch' ? (
+        <AustauschBibliothek
+          einheiten={einheiten}
+          rolle={rolle}
+          benutzerFaecher={userFaecher}
+          currentUserEmail={authUser?.email}
+          istAdmin={permissions.istAdmin}
+        />
+      ) : ansicht === 'privat' && permissions.istAdmin ? (
         /* Admin: kompakte Besitzer-Übersicht statt Kachel-Flut */
         <PrivateEinheitenUebersicht einheiten={einheiten} />
       ) : (
