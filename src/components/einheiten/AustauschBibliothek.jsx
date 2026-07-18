@@ -69,7 +69,10 @@ export default function AustauschBibliothek({ einheiten, rolle, benutzerFaecher 
           </div>
           <div className="space-y-2">
             {gruppe.items.map((einheit) => {
-              const istEigene = einheit.besitzer_email === currentUserEmail;
+              // Robuster Besitzer-Vergleich (Groß-/Kleinschreibung, Leerzeichen):
+              // Besitzer sehen "Freigabe zurückziehen", aber KEIN "private Kopie ziehen".
+              const norm = (s) => (s || '').trim().toLowerCase();
+              const istEigene = norm(einheit.besitzer_email) === norm(currentUserEmail) && !!einheit.besitzer_email;
               return (
                 <AustauschEinheitRow
                   key={einheit.id}
