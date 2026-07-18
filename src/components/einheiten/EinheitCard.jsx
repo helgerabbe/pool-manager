@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, Trash2, Lock, Copy, EyeOff, ChevronDown, Eye } from 'lucide-react';
+import { Trash2, Lock, Copy, EyeOff, ChevronDown, Eye } from 'lucide-react';
 import EinheitVeroeffentlichenButton from '@/components/einheiten/EinheitVeroeffentlichenButton';
 import EinheitWeitergebenButton from '@/components/einheiten/EinheitWeitergebenButton';
 import { format } from 'date-fns';
@@ -217,13 +217,6 @@ export default function EinheitCard({
                   Details
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
                 </button>
-                <Link
-                  to={`/workspace?einheit=${einheit.id}&tab=einheit`}
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
-                >
-                  Öffnen
-                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-all" />
-                </Link>
               </div>
             </div>
           </CardContent>
