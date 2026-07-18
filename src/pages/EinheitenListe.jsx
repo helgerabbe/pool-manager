@@ -14,6 +14,7 @@ import PrivateEinheitenUebersicht from '@/components/einheiten/PrivateEinheitenU
 import BereichSwitcher from '@/components/einheiten/BereichSwitcher';
 import AustauschBibliothek from '@/components/einheiten/AustauschBibliothek';
 import TutorialFooterLink from '@/components/einheiten/TutorialFooterLink';
+import MoodleWegInfoBox from '@/components/einheiten/MoodleWegInfoBox';
 import SyncStatusBadge from '@/components/sync/SyncStatusBadge';
 import EinheitCard from '@/components/einheiten/EinheitCard';
 import EmptyState from '@/components/shared/EmptyState';
@@ -452,6 +453,9 @@ export default function EinheitenListe() {
       )}
       </>
       )}
+
+      {/* Direkthilfe im Privatbereich: Wie kommt meine Einheit nach Moodle? */}
+      {ansicht === 'privat' && <MoodleWegInfoBox />}
 
       {/* Tutorial-Link (ersetzt die frühere Dashboard-Seite) */}
       <TutorialFooterLink />
