@@ -55,7 +55,6 @@ import {
   moveSektor,
   removeAufgabeFromLernTyp,
   isKonfigurationEmpty,
-  applyAllDashboardTemplates,
   setBundleConfig,
   setBundleModus,
   removeBundleAndCascade,
@@ -83,6 +82,8 @@ import { getAmpelStatus } from '@/lib/ampelLogic';
 import { adaptLernpaketToPoolItem } from '@/lib/lernpaketAdapter';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 import { ladeOnboardingSnapshots, speichereOnboardingSnapshot } from '@/lib/onboardingSnapshots';
+import { autoAssembleAllDashboards } from '@/lib/dashboardAutoAssembly';
+import { useDashboardAutoStatus } from '@/hooks/useDashboardAutoStatus';
 import { getAktiveLerntypKeys } from '@/lib/lerntypen';
 import { useLerntypDefinitionen } from '@/hooks/useLerntypDefinitionen';
 
@@ -273,13 +274,13 @@ export default function LernpfadeCockpit({
   }, [searchParams, setSearchParams, einheit?.id]);
 
   // ── Daten-Queries ───────────────────────────────────────────────────
-  const { data: aufgaben = [] } = useQuery({
+  const { data: aufgaben = [], isLoading: aufgabenLoading } = useQuery({
     queryKey: ['allgemeineAufgaben', einheit?.id],
     queryFn: () => (einheit?.id ? getAufgabenByEinheit(einheit.id) : Promise.resolve([])),
     enabled: !!einheit?.id,
   });
 
-  const { data: systemBausteine = [] } = useQuery({
+  const { data: systemBausteine = [], isLoading: bausteineLoading } = useQuery({
     queryKey: ['systemBausteine', 'all'],
     queryFn: () => base44.entities.SystemBausteine.list('reihenfolge'),
   });
@@ -312,7 +313,7 @@ export default function LernpfadeCockpit({
     return map;
   }, [systemBausteine]);
 
-  const { data: lernpakete = [] } = useQuery({
+  const { data: lernpakete = [], isLoading: lernpaketeLoading } = useQuery({
     queryKey: ['lernpakete-by-einheit', einheit?.id],
     queryFn: () =>
       einheit?.id
@@ -322,7 +323,7 @@ export default function LernpfadeCockpit({
   });
 
   // Phase B: Themenfelder für Arbeitsphase-Modal und Live-Titel-Binding.
-  const { data: themenfelder = [] } = useQuery({
+  const { data: themenfelder = [], isLoading: themenfelderLoading } = useQuery({
     queryKey: ['themenfelder-by-einheit', einheit?.id],
     queryFn: () => (einheit?.id ? getThemenfelderByEinheit(einheit.id) : Promise.resolve([])),
     enabled: !!einheit?.id,
@@ -554,6 +555,15 @@ export default function LernpfadeCockpit({
   // organisch mit den Standard-Rastern befüllt und persistiert.
   // Läuft NUR ein einziges Mal pro Einheit (lazyInitDoneRef) und nur,
   // wenn die Konfiguration tatsächlich leer ist.
+  // Auto-Assembly (Etappe 1): Status pro Dashboard ('auto' | 'bestaetigt').
+  const {
+    autoStatusMap,
+    markLerntypAutoAssembled,
+    markAllAutoAssembled,
+    confirmAutoDashboard,
+    confirmIfAuto,
+  } = useDashboardAutoStatus(einheit, toast);
+
   const lazyInitDoneRef = useRef(null);
   useEffect(() => {
     if (!einheit?.id) return;
@@ -562,21 +572,42 @@ export default function LernpfadeCockpit({
       lazyInitDoneRef.current = einheit.id;
       return;
     }
-    // Phase E: warten, bis die Themenfeld-Query mindestens einmal geantwortet
-    // hat — sonst würden wir nur einen einzigen Arbeitsphase-Sektor anlegen,
-    // obwohl die Einheit schon Themenfelder hat. Wenn die Einheit keine
-    // Themenfelder hat, läuft der Init mit leerem Array → Fallback auf 1 Sektor.
-    if (!themenfelder) return;
+    // Auto-Assembly: erst starten, wenn ALLE Struktur-Queries geantwortet
+    // haben (Themenfelder, Aufgaben, Lernpakete, System-Bausteine) — sonst
+    // würden Arbeitsphasen fehlen oder die Bündel leer bleiben.
+    if (themenfelderLoading || aufgabenLoading || lernpaketeLoading || bausteineLoading) return;
     lazyInitDoneRef.current = einheit.id;
-    const filled = applyAllDashboardTemplates({}, effectiveTemplates, themenfelder);
+    const filled = autoAssembleAllDashboards({
+      templates: effectiveTemplates,
+      themenfelder,
+      aufgaben,
+      lernpakete,
+      systemBausteineById,
+    });
     setKonfiguration(filled);
     konfigurationRef.current = filled;
     // Direkter Save via flushSave(forcePayload) — kein Edit-Lock erforderlich,
     // weil die Einheit vorher schlicht keine Konfiguration hatte.
     flushSave(filled).catch((err) => {
-      console.warn('[LernpfadeCockpit] Lazy-Init Save fehlgeschlagen:', err);
+      console.warn('[LernpfadeCockpit] Auto-Assembly Save fehlgeschlagen:', err);
     });
-  }, [einheit?.id, einheit?.lernpfade_konfiguration, flushSave, themenfelder, effectiveTemplates]);
+    // Alle vier Dashboards als „automatisch erstellt" markieren.
+    markAllAutoAssembled();
+  }, [
+    einheit?.id,
+    einheit?.lernpfade_konfiguration,
+    flushSave,
+    themenfelder,
+    effectiveTemplates,
+    themenfelderLoading,
+    aufgabenLoading,
+    lernpaketeLoading,
+    bausteineLoading,
+    aufgaben,
+    lernpakete,
+    systemBausteineById,
+    markAllAutoAssembled,
+  ]);
 
   // ── Einheit-Final-Release (vorher in EinheitFreigabeBlock) ──────────
   // Vorgezogen, damit `isEinheitContentLocked` für den Read-Only-Wert
@@ -651,6 +682,12 @@ export default function LernpfadeCockpit({
     themenfelder,
     // Admin-editierbare Standard-Vorlage des aktiven Lerntyps (DB > Hardcode).
     resetTemplate: getEffectiveTemplateForLerntyp(dashboardVorlagen, activeLernTyp),
+    // Auto-Assembly: Bündel beim Standard-Aufbau automatisch befüllen,
+    // danach das Dashboard als „automatisch erstellt" markieren. Eine
+    // erfolgreiche Prüf-Markierung gilt zugleich als Bestätigung.
+    autoFillCtx: { aufgaben, lernpakete, systemBausteineById },
+    onAutoAssembled: markLerntypAutoAssembled,
+    onPathReleased: confirmIfAuto,
     // Killer-Switch durchreichen.
     isEinheitContentLocked,
   });
@@ -1184,6 +1221,8 @@ export default function LernpfadeCockpit({
               onDriftRemoveSektor={handleDriftRemoveSektor}
               onDriftRemoveItem={handleDriftRemoveItem}
               driftDisabled={readOnly}
+              autoStatus={autoStatusMap?.[activeLernTyp] || null}
+              onConfirmAuto={() => confirmAutoDashboard(activeLernTyp)}
               zeigeLerntypenSchalter={istPrivat}
               aktiveLerntypen={aktiveLerntypen}
               onToggleLerntyp={handleToggleLerntyp}

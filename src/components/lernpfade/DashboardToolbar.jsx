@@ -39,6 +39,7 @@ import {
   Compass,
   Check,
   X,
+  Wand2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -215,6 +216,9 @@ export default function DashboardToolbar({
   onToggleLerntyp,
   modusBusy = false,
   lerntypNamen = {},
+  // Auto-Assembly: 'auto' | 'bestaetigt' | null für den aktiven Lerntyp.
+  autoStatus = null,
+  onConfirmAuto,
 }) {
   const status = einheitFreigabe?.status || EXPORT_LIFECYCLE_STATUS.DRAFT;
   const dashboards = einheitFreigabe?.dashboards || {};
@@ -247,6 +251,30 @@ export default function DashboardToolbar({
           onRemoveItem={onDriftRemoveItem}
           disabled={driftDisabled}
         />}
+
+        {/* Auto-Assembly: Badge + Übernehmen-Aktion, solange das Dashboard
+            automatisch erstellt und noch nicht bestätigt wurde. */}
+        {!istOnboarding && autoStatus === 'auto' && (
+          <span
+            className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-violet-50 border border-violet-300 text-[11px] text-violet-900 font-medium"
+            title="Dieses Dashboard wurde automatisch aus der Einheiten-Struktur und der Standardvorlage aufgebaut und noch nicht bestätigt."
+          >
+            <Wand2 className="w-3 h-3" />
+            Automatisch erstellt
+          </span>
+        )}
+        {!istOnboarding && autoStatus === 'auto' && onConfirmAuto && !isEinheitContentLocked && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onConfirmAuto}
+            className="gap-1.5 h-7 text-[11px] px-2.5 border-violet-300 text-violet-700 hover:bg-violet-50"
+            title="Den automatisch erstellten Aufbau so übernehmen"
+          >
+            <Check className="w-3 h-3" />
+            Übernehmen
+          </Button>
+        )}
 
         <div className="ml-auto flex items-center gap-1.5 flex-wrap">
           {/* Schüler-Vorschau des aktiven Lerntyp-Dashboards */}

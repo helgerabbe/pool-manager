@@ -222,6 +222,12 @@
       "type": "integer",
       "default": 1
     },
+    "dashboards_auto_status": {
+      "type": "object",
+      "description": "Auto-Assembly (Etappe 1, 2026-07-18): Status pro Lerntyp-Dashboard bez\u00fcglich der automatischen Erstellung. Keys: minimalist|pragmatiker|ehrgeizig|passioniert. Werte: 'auto' = das Dashboard wurde automatisch aus Einheiten-Struktur + Standardvorlage aufgebaut (inkl. B\u00fcndel-Bef\u00fcllung) und noch nicht von der Fachschaftsleitung best\u00e4tigt; 'bestaetigt' = bewusst \u00fcbernommen (explizit per \u00dcbernehmen-Button oder implizit durch 'Dashboard als gepr\u00fcft markieren'). Fehlender Eintrag = Bestand / manuell gebaut. Siehe src/lib/dashboardAutoAssembly.js.",
+      "additionalProperties": true,
+      "default": {}
+    },
     "export_lifecycle_status": {
       "type": "string",
       "enum": [

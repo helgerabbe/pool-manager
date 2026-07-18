@@ -21,6 +21,7 @@ import { PFAD_STATUS } from '@/lib/pfadStatus';
 import { AMPEL } from '@/lib/ampelLogic';
 import { ITEM_TYPE } from '@/lib/aufgabenTypen';
 import { applyDashboardTemplate } from '@/lib/lernpfadeUtils';
+import { fillAllBundles } from '@/lib/dashboardAutoAssembly';
 import { DASHBOARD_TEMPLATES } from '@/lib/dashboardTemplates';
 
 export function useDashboardRelease({
@@ -45,6 +46,13 @@ export function useDashboardRelease({
   // Sektoren). Hat Vorrang vor dem Hardcode-Fallback. Wird vom Cockpit aus
   // den DashboardStandardVorlage-Records gespeist (DB > Hardcode).
   resetTemplate = null,
+  // Auto-Assembly (Etappe 1): Kontext zum automatischen Befüllen der Bündel
+  // beim Standard-Aufbau ({ aufgaben, lernpakete, systemBausteineById }).
+  autoFillCtx = null,
+  // Callback nach erfolgreichem Auto-Aufbau eines Lerntyps (→ Status 'auto').
+  onAutoAssembled = null,
+  // Callback nach erfolgreicher Prüf-Markierung eines Lerntyps.
+  onPathReleased = null,
   // Killer-Switch: sobald die Einheit `final_freigegeben` oder
   // `export_running` ist, sind ALLE Schreibaktionen aus diesem Hook
   // gesperrt — auch für Admin/Fachschaft. Aufhebung nur über das
@@ -176,6 +184,9 @@ export function useDashboardRelease({
         // exact: false → trifft alle Aufgaben-Lock-Queries (auch in anderen Tabs/Editoren).
         queryClient.invalidateQueries({ queryKey: ['aufgabeLock'], exact: false });
         setConfirmOpen(false);
+        // Prüf-Markierung gilt zugleich als Bestätigung eines automatisch
+        // erstellten Dashboards (Auto-Assembly-Status).
+        onPathReleased?.(activeLernTyp);
       } else {
         toast.error(res?.data?.error || 'Freigabe fehlgeschlagen.');
       }
@@ -194,6 +205,7 @@ export function useDashboardRelease({
     hasPendingSave,
     lerntypLabel,
     isEinheitContentLocked,
+    onPathReleased,
   ]);
 
   const handleUnlockPath = useCallback(async () => {
@@ -303,13 +315,18 @@ export function useDashboardRelease({
       setResetConfirmOpen(false);
       return;
     }
-    updateKonfiguration((prev) =>
-      applyDashboardTemplate(prev, activeLernTyp, template, themenfelder)
-    );
+    updateKonfiguration((prev) => {
+      let next = applyDashboardTemplate(prev, activeLernTyp, template, themenfelder);
+      // Auto-Assembly: Bündel direkt mit den passenden Lernpaketen/Aufgaben/
+      // Projekten der Einheit befüllen (Regeln: getAutoFillCandidates).
+      if (autoFillCtx) next = fillAllBundles(next, activeLernTyp, autoFillCtx);
+      return next;
+    });
+    onAutoAssembled?.(activeLernTyp);
     setResetConfirmOpen(false);
     onTemplateApplied?.();
-    toast.success(`Dashboard „${lerntypLabel || activeLernTyp}" auf Standard zurückgesetzt.`);
-  }, [activeLernTyp, updateKonfiguration, onTemplateApplied, lerntypLabel, themenfelder, resetTemplate]);
+    toast.success(`Dashboard „${lerntypLabel || activeLernTyp}" automatisch aufgebaut und befüllt.`);
+  }, [activeLernTyp, updateKonfiguration, onTemplateApplied, lerntypLabel, themenfelder, resetTemplate, autoFillCtx, onAutoAssembled]);
 
   return {
     statusBusy,
