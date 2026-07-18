@@ -29,13 +29,22 @@ export default function PfadStartseite({ einheit, lerntyp, erledigtAnzahl, gesam
           </p>
         )}
 
-        <p className="text-sm text-muted-foreground mb-6">
-          Öffne das Menü, um deinen Lernpfad zu sehen und selbst auszuwählen, womit du weitermachen möchtest.
-        </p>
+        {gesamtAnzahl === 0 ? (
+          <div className="rounded-xl border border-dashed border-border bg-muted/40 px-4 py-5 text-sm text-muted-foreground">
+            Diese Einheit wird gerade noch erstellt – es gibt hier noch keine Inhalte.
+            Schau später wieder vorbei.
+          </div>
+        ) : (
+          <>
+            <p className="text-sm text-muted-foreground mb-6">
+              Öffne das Menü, um deinen Lernpfad zu sehen und selbst auszuwählen, womit du weitermachen möchtest.
+            </p>
 
-        <Button onClick={onOpenMenu} className="gap-2">
-          <Menu className="w-4 h-4" /> Lernpfad öffnen
-        </Button>
+            <Button onClick={onOpenMenu} className="gap-2">
+              <Menu className="w-4 h-4" /> Lernpfad öffnen
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );

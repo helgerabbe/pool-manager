@@ -17,6 +17,8 @@ import { useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { normalizeSektor } from '@/lib/lernpfadeUtils';
 import { adaptLernpaketToPoolItem } from '@/lib/lernpaketAdapter';
+import { DASHBOARD_TEMPLATES } from '@/lib/dashboardTemplates';
+import { autoAssembleLerntyp } from '@/lib/dashboardAutoAssembly';
 import * as SchuelerData from '@/services/schueler/SchuelerDataService';
 
 export function useSchuelerPfad(einheitId, lerntyp) {
@@ -54,6 +56,21 @@ export function useSchuelerPfad(einheitId, lerntyp) {
     enabled: !!einheitId,
   });
   const lernpakete = lernpaketeQ.data || [];
+
+  // Vorschau-Fallback: Ist das Dashboard dieses Lerntyps noch nicht
+  // aufgebaut (leere Konfiguration), wird es unten on-the-fly aus der
+  // Standardvorlage zusammengesetzt. Dafür brauchen wir die Themenfelder —
+  // die Query läuft NUR in diesem Fall (enabled), kostet also im
+  // Normalbetrieb nichts.
+  const konfigLeer =
+    !!einheit &&
+    (!Array.isArray(einheit?.lernpfade_konfiguration?.[lerntyp]) ||
+      einheit.lernpfade_konfiguration[lerntyp].length === 0);
+  const themenfelderQ = useQuery({
+    queryKey: ['themenfelder-by-einheit', einheitId],
+    queryFn: () => SchuelerData.listThemenfelderByEinheit(einheitId),
+    enabled: !!einheitId && konfigLeer,
+  });
 
   // Globaler Aktivitäten-Katalog (für Aktivitäts-Namen in der Sub-Ansicht).
   const katalogQ = useQuery({
@@ -109,11 +126,6 @@ export function useSchuelerPfad(einheitId, lerntyp) {
   );
 
   // ── Abgeleitete Maps ────────────────────────────────────────────────
-  const sektoren = useMemo(() => {
-    const raw = einheit?.lernpfade_konfiguration?.[lerntyp] || [];
-    return raw.map(normalizeSektor);
-  }, [einheit?.lernpfade_konfiguration, lerntyp]);
-
   const bausteinById = useMemo(() => {
     const map = new Map();
     (systemBausteine || []).forEach((b) => map.set(b.baustein_id, b));
@@ -129,6 +141,25 @@ export function useSchuelerPfad(einheitId, lerntyp) {
     });
     return map;
   }, [aufgaben, lernpakete]);
+
+  const sektoren = useMemo(() => {
+    const raw = einheit?.lernpfade_konfiguration?.[lerntyp] || [];
+    if (raw.length > 0) return raw.map(normalizeSektor);
+    // On-the-fly-Fallback (Vorschau unfertiger Einheiten): Dashboard noch
+    // nicht aufgebaut → Standardvorlage anwenden + Bündel automatisch mit
+    // den vorhandenen Inhalten der Einheit befüllen. Rein lokal, es wird
+    // NICHTS gespeichert. Warten, bis Themenfelder geladen sind, damit die
+    // Arbeitsphasen korrekt pro Themenfeld entstehen.
+    if (!einheit || !lerntyp) return [];
+    const template = DASHBOARD_TEMPLATES[lerntyp];
+    if (!Array.isArray(template) || themenfelderQ.isLoading) return [];
+    const assembled = autoAssembleLerntyp({}, lerntyp, template, themenfelderQ.data || [], {
+      aufgaben,
+      lernpakete,
+      systemBausteineById: bausteinById,
+    });
+    return (assembled[lerntyp] || []).map(normalizeSektor);
+  }, [einheit, lerntyp, themenfelderQ.isLoading, themenfelderQ.data, aufgaben, lernpakete, bausteinById]);
 
   // instance_id → status (für Gating).
   const fortschrittByInstance = useMemo(() => {
