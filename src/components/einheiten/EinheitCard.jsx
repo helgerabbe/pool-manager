@@ -127,6 +127,15 @@ export default function EinheitCard({
                       Privat
                     </Badge>
                   )}
+                  {istPrivat && einheit.erhalten_von && (
+                    <Badge
+                      className="bg-violet-100 text-violet-800 border border-violet-200 gap-1"
+                      title={`Diese Einheit wurde ursprünglich von ${einheit.erhalten_von} erstellt und von Ihnen als Kopie übernommen.`}
+                    >
+                      <Copy className="w-3 h-3" />
+                      Kopie
+                    </Badge>
+                  )}
                   {istPrivat && einheit.im_austausch === true && (
                     <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-200 gap-1">
                       Freigegeben
@@ -151,8 +160,8 @@ export default function EinheitCard({
                 {einheit.titel_der_einheit}
               </h3>
               {istPrivat && einheit.erhalten_von && (
-                <p className="mt-1 text-[11px] text-muted-foreground truncate" title={`Von ${einheit.erhalten_von} erhalten`}>
-                  Von {einheit.erhalten_von} erhalten
+                <p className="mt-1 text-[11px] text-violet-700 truncate" title={`Original von ${einheit.erhalten_von}`}>
+                  Original von {einheit.erhalten_von}
                 </p>
               )}
             </Link>
