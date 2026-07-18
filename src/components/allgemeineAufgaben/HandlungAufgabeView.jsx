@@ -47,6 +47,8 @@ export default function HandlungAufgabeView({
   onSuccess,
   initialData = null,
   defaultAnforderungsebene = '2 - Transfer',
+  // Vorbelegtes Themenfeld beim Erstellen (z. B. aus der Themenfeld-Übersicht).
+  defaultThemenfeldId = null,
 }) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState(EMPTY_FORM);
@@ -65,9 +67,9 @@ export default function HandlungAufgabeView({
         mission_type: initialData.mission_type || null,
       });
     } else {
-      setFormData(EMPTY_FORM);
+      setFormData({ ...EMPTY_FORM, themenfeld_id: defaultThemenfeldId || null });
     }
-  }, [open, initialData]);
+  }, [open, initialData, defaultThemenfeldId]);
 
   const set = (field, val) => setFormData((p) => ({ ...p, [field]: val }));
 

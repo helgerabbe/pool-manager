@@ -119,6 +119,8 @@ export default function AufgabeCreateView({
   initialData = null,
   defaultAnforderungsebene = '2 - Transfer',
   defaultAufgabenTyp = 'inhalt',
+  // Vorbelegtes Themenfeld beim Erstellen (z. B. aus der Themenfeld-Übersicht).
+  defaultThemenfeldId = null,
 }) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState(EMPTY_FORM);
@@ -150,9 +152,9 @@ export default function AufgabeCreateView({
       });
     } else {
       const safeDefault = defaultAufgabenTyp === 'handlung' ? 'handlung' : 'inhalt';
-      setFormData({ ...EMPTY_FORM, aufgaben_typ: safeDefault });
+      setFormData({ ...EMPTY_FORM, aufgaben_typ: safeDefault, themenfeld_id: defaultThemenfeldId || null });
     }
-  }, [open, initialData, defaultAufgabenTyp]);
+  }, [open, initialData, defaultAufgabenTyp, defaultThemenfeldId]);
 
   const set = (field, val) => setFormData((p) => ({ ...p, [field]: val }));
 

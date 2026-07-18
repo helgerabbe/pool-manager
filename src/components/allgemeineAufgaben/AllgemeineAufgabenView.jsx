@@ -35,6 +35,7 @@ import ThemenfeldIdeenModal from '@/components/missionen/ThemenfeldIdeenModal';
 import HelpBadge from '@/components/ui/HelpBadge';
 import HelpDialog from '@/components/ui/HelpDialog';
 import MissionBadge from '@/components/missionen/MissionBadge';
+import ThemenfeldUebersichtPanel from '@/components/allgemeineAufgaben/ThemenfeldUebersichtPanel';
 
 // Kontext-Hilfe für die Sidebar-Kopfzeile (einheitlich mit Tab 3/4: HelpDialog).
 const AKTIVITAETEN_HELP = {
@@ -74,27 +75,58 @@ function SternDisplay({ grad }) {
 }
 
 /**
- * Baumstruktur-Node für Themenfeld
+ * Baumstruktur-Node für Themenfeld.
+ *
+ * Klick auf den Titel wählt das THEMENFELD aus (Übersicht + Erstell-Aktionen
+ * im Inhaltsbereich); der Chevron klappt die Aufgabenliste auf/zu. Der Zähler-
+ * Badge zeigt auf einen Blick, wie viele Aufgaben schon angelegt sind.
  */
-function ThemenfeldNode({ themenfeld, aufgaben, selectedId, onSelect }) {
+function ThemenfeldNode({ themenfeld, aufgaben, selectedId, selectedThemenfeldId, onSelect, onSelectThemenfeld }) {
   const [isOpen, setIsOpen] = useState(true);
+  const isTfSelected = selectedThemenfeldId === themenfeld.id;
 
   return (
     <div className="space-y-1">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left hover:bg-muted/50 transition-colors"
+      <div
+        className={cn(
+          'w-full flex items-center gap-1.5 px-1.5 py-1.5 rounded transition-colors',
+          isTfSelected ? 'bg-primary/10 ring-1 ring-primary/25' : 'hover:bg-muted/50'
+        )}
       >
-        <ChevronRight className={cn('w-3.5 h-3.5 transition-transform shrink-0', isOpen && 'rotate-90')} />
-        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide truncate">
-          {themenfeld.titel}
-        </span>
-        <Badge variant="secondary" className="text-[10px] ml-auto shrink-0">
-          {aufgaben.length}
-        </Badge>
-      </button>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
+          className="shrink-0 p-0.5 rounded hover:bg-muted"
+          title={isOpen ? 'Zuklappen' : 'Aufklappen'}
+        >
+          <ChevronRight className={cn('w-3.5 h-3.5 transition-transform', isOpen && 'rotate-90')} />
+        </button>
+        <button
+          type="button"
+          onClick={() => onSelectThemenfeld?.(themenfeld.id)}
+          className="flex-1 flex items-center gap-2 min-w-0 text-left"
+          title={`Übersicht zu „${themenfeld.titel}" anzeigen`}
+        >
+          <span className={cn(
+            'text-[10px] font-bold uppercase tracking-wide truncate',
+            isTfSelected ? 'text-primary' : 'text-muted-foreground'
+          )}>
+            {themenfeld.titel}
+          </span>
+          <Badge
+            variant="secondary"
+            className={cn(
+              'text-[10px] ml-auto shrink-0',
+              aufgaben.length === 0 && 'opacity-50'
+            )}
+            title={`${aufgaben.length} ${aufgaben.length === 1 ? 'Aufgabe' : 'Aufgaben'} in diesem Themenfeld`}
+          >
+            {aufgaben.length}
+          </Badge>
+        </button>
+      </div>
 
-      {isOpen && (
+      {isOpen && aufgaben.length > 0 && (
         <div className="pl-4 space-y-0.5">
           {aufgaben.map(aufgabe => (
             <AufgabeNode
@@ -479,6 +511,11 @@ export default function AllgemeineAufgabenView({
 }) {
   const queryClient = useQueryClient();
   const [selectedAufgabeId, setSelectedAufgabeId] = useState(null);
+  // Themenfeld-Anker: Auswahl eines Themenfelds in der Sidebar zeigt die
+  // Übersicht + Erstell-Aktionen im Inhaltsbereich. '_none' = ohne Themenfeld.
+  const [selectedThemenfeldId, setSelectedThemenfeldId] = useState(null);
+  // Vorbelegung des Themenfelds beim Erstellen einer neuen Aufgabe.
+  const [neuThemenfeldId, setNeuThemenfeldId] = useState(null);
   const [createFormOpen, setCreateFormOpen] = useState(false);
   const [editingAufgabe, setEditingAufgabe] = useState(null);
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
@@ -643,7 +680,9 @@ export default function AllgemeineAufgabenView({
     return allgemeineAufgaben.filter((a) => a.mission_type === missionFilter);
   }, [allgemeineAufgaben, missionFilter]);
 
-  // Gruppierung nach Themenfeld
+  // Gruppierung nach Themenfeld. LEERE Themenfelder bleiben sichtbar,
+  // damit Lehrkräfte direkt am Themenfeld andocken und dort Aufgaben anlegen
+  // können. „Ohne Themenfeld" erscheint nur, wenn es dort Aufgaben gibt.
   const gruppiertNachThemenfeld = useMemo(() => {
     const gruppen = {};
 
@@ -663,10 +702,51 @@ export default function AllgemeineAufgabenView({
       }
     });
 
-    return Object.values(gruppen).filter(g => g.aufgaben.length > 0);
+    return Object.values(gruppen).filter(g => g.themenfeld || g.aufgaben.length > 0);
   }, [aufgabenNachFilter, themenfelder]);
 
   const selectedAufgabe = allgemeineAufgaben.find(a => a.id === selectedAufgabeId);
+
+  // Beim ersten Laden das erste Themenfeld als Anker vorauswählen.
+  useEffect(() => {
+    if (!selectedAufgabeId && !selectedThemenfeldId && themenfelder.length > 0) {
+      setSelectedThemenfeldId(themenfelder[0].id);
+    }
+  }, [themenfelder, selectedAufgabeId, selectedThemenfeldId]);
+
+  // Auswahl-Handler: Aufgabe und Themenfeld schließen sich gegenseitig aus.
+  const handleSelectAufgabe = (a) => {
+    setSelectedAufgabeId(a.id);
+    setSelectedThemenfeldId(null);
+  };
+  const handleSelectThemenfeld = (tfId) => {
+    setSelectedThemenfeldId(tfId);
+    setSelectedAufgabeId(null);
+  };
+
+  // Neue Aufgabe anlegen — optional mit vorbelegtem Themenfeld.
+  const handleNeueAufgabe = (themenfeldId = null) => {
+    setNeuThemenfeldId(themenfeldId);
+    setEditingAufgabe(null);
+    setEditingSequenz(null);
+    if (isEbene3) {
+      // Ebene 3: Picker ueberspringen, Typ zwingend 'inhalt'.
+      setCreateFormOpen(true);
+    } else {
+      // Ebene 2: 3-Wege-Picker (Handlung | KI-Tutor | Sequenz).
+      setArtPickerOpen(true);
+    }
+  };
+
+  // Aktuell gewähltes Themenfeld + dessen Aufgaben (für die Übersicht).
+  const selectedThemenfeld = selectedThemenfeldId
+    ? selectedThemenfeldId === '_none'
+      ? { id: '_none', titel: 'Ohne Themenfeld' }
+      : themenfelder.find((tf) => tf.id === selectedThemenfeldId) || null
+    : null;
+  const themenfeldAufgaben = selectedThemenfeldId
+    ? aufgabenNachFilter.filter((a) => (a.themenfeld_id || '_none') === selectedThemenfeldId)
+    : [];
 
   return (
     <div className="flex flex-col flex-1 h-full bg-background overflow-hidden">
@@ -677,54 +757,14 @@ export default function AllgemeineAufgabenView({
           {/* Einheitliche Kopfzeile (Icon + Titel + Hilfe) – wie in Tab 3/4 */}
           <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b h-11">
             <Package className="w-4 h-4 text-primary shrink-0" />
-            <span className="text-sm font-semibold flex-1">Aktivitäten</span>
+            <span className="text-sm font-semibold flex-1">
+              {isEbene3 ? 'Projektaufgaben' : 'Allgemeine Aufgaben'}
+            </span>
             <HelpDialog {...AKTIVITAETEN_HELP} />
           </div>
-          {/* Button für neue Aufgabe */}
-          {kannBearbeiten && (
-            <div className="shrink-0 px-4 py-3 border-b border-border space-y-2">
-              <Button
-                size="sm"
-                onClick={() => {
-                  setEditingAufgabe(null);
-                  setEditingSequenz(null);
-                  if (isEbene3) {
-                    // Ebene 3: Picker ueberspringen, Typ zwingend 'inhalt'.
-                    setCreateFormOpen(true);
-                  } else {
-                    // Ebene 2: 3-Wege-Picker (Handlung | KI-Tutor | Sequenz).
-                    setArtPickerOpen(true);
-                  }
-                }}
-                className="gap-2 w-full"
-              >
-                <Plus className="w-4 h-4" />
-                Neue Aufgabe
-              </Button>
-              {!isEbene3 && (
-                <>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setIdeenboxOpen(true)}
-                    className="gap-2 w-full border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-slate-950"
-                  >
-                    <Lightbulb className="w-4 h-4" />
-                    KI-Ideenbox oeffnen
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setWizardOpen(true)}
-                    className="gap-2 w-full border-blue-300 text-blue-700 hover:bg-blue-50 hover:text-slate-950"
-                  >
-                    <Wand2 className="w-4 h-4" />
-                    Mit KI entwerfen
-                  </Button>
-                </>
-              )}
-            </div>
-          )}
+          {/* Hinweis: Die Erstell-Aktionen (Neue Aufgabe / KI-Ideenbox /
+              Mit KI entwerfen) leben jetzt im Inhaltsbereich der Themenfeld-
+              Übersicht — Lehrkräfte docken zuerst am Themenfeld an. */}
 
           {/* Mission-Filter (nur sinnvoll in Ebene 2 — in Ebene 3 ausgeblendet,
               weil Projekte keine Mission haben). Kompaktes Dropdown, damit die
@@ -740,22 +780,20 @@ export default function AllgemeineAufgabenView({
           )}
 
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {allgemeineAufgaben.length === 0 ? (
+            {gruppiertNachThemenfeld.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-8">
-                Noch keine Aufgaben
-              </p>
-            ) : aufgabenNachFilter.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-8">
-                Keine Aufgaben mit diesem Filter.
+                Noch keine Themenfelder oder Aufgaben
               </p>
             ) : (
               gruppiertNachThemenfeld.map(gruppe => (
                 <ThemenfeldNode
-                  key={gruppe.titel}
+                  key={gruppe.themenfeld?.id || '_none'}
                   themenfeld={gruppe.themenfeld || { id: '_none', titel: gruppe.titel }}
                   aufgaben={gruppe.aufgaben}
                   selectedId={selectedAufgabeId}
-                  onSelect={(a) => setSelectedAufgabeId(a.id)}
+                  selectedThemenfeldId={selectedThemenfeldId}
+                  onSelect={handleSelectAufgabe}
+                  onSelectThemenfeld={handleSelectThemenfeld}
                 />
               ))
             )}
@@ -912,12 +950,23 @@ export default function AllgemeineAufgabenView({
               </Tabs>
             )}
           </main>
+        ) : selectedThemenfeld ? (
+          <ThemenfeldUebersichtPanel
+            themenfeld={selectedThemenfeld}
+            aufgaben={themenfeldAufgaben}
+            kannBearbeiten={kannBearbeiten}
+            isEbene3={isEbene3}
+            onSelectAufgabe={handleSelectAufgabe}
+            onNeueAufgabe={handleNeueAufgabe}
+            onOpenIdeenbox={() => setIdeenboxOpen(true)}
+            onOpenWizard={() => setWizardOpen(true)}
+          />
         ) : (
           <main className="flex-1 flex items-center justify-center text-center">
             <div>
               <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
               <p className="text-sm text-muted-foreground">
-                Wählen Sie eine Aufgabe aus, um Details zu sehen
+                Wähle links ein Themenfeld oder eine Aufgabe aus
               </p>
             </div>
           </main>
@@ -962,6 +1011,7 @@ export default function AllgemeineAufgabenView({
         einheitId={einheitId}
         themenfelder={themenfelder}
         initialData={editingAufgabe}
+        defaultThemenfeldId={neuThemenfeldId}
         defaultAnforderungsebene={anforderungsebene}
         onSuccess={() => {
           setHandlungViewOpen(false);
@@ -1035,6 +1085,7 @@ export default function AllgemeineAufgabenView({
         einheitId={einheitId}
         themenfelder={themenfelder}
         initialData={editingAufgabe}
+        defaultThemenfeldId={neuThemenfeldId}
         defaultAnforderungsebene={anforderungsebene}
         defaultAufgabenTyp="inhalt"
         onSuccess={() => {
