@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, Trash2, Lock, Copy, EyeOff, ChevronDown } from 'lucide-react';
+import { ArrowRight, Trash2, Lock, Copy, EyeOff, ChevronDown, Eye } from 'lucide-react';
 import EinheitVeroeffentlichenButton from '@/components/einheiten/EinheitVeroeffentlichenButton';
 import EinheitWeitergebenButton from '@/components/einheiten/EinheitWeitergebenButton';
 import { format } from 'date-fns';
@@ -17,6 +17,7 @@ import EinheitAccessBadge from '@/components/ui/EinheitAccessBadge';
 import EinheitMetricsRow from '@/components/einheiten/EinheitMetricsRow';
 import DashboardStatusBadges from '@/components/einheiten/DashboardStatusBadges';
 import EinheitExportLifecycleBadge from '@/components/einheiten/EinheitExportLifecycleBadge';
+import EinheitVorschauModal from '@/components/einheiten/EinheitVorschauModal';
 
 export default function EinheitCard({
   einheit,
@@ -39,6 +40,7 @@ export default function EinheitCard({
   const [expanded, setExpanded] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCopying, setIsCopying] = useState(false);
+  const [showVorschau, setShowVorschau] = useState(false);
   const queryClient = useQueryClient();
   // Löschen darf: Administrator immer, Fachschaftsleitung im eigenen Fach.
   // Das Backend (deleteEinheitSecure) prüft dieselbe Regel serverseitig.
@@ -165,13 +167,48 @@ export default function EinheitCard({
               </>
             )}
 
-            {/* ── Footer ── */}
-            <div className="px-4 py-2 bg-muted/40 flex items-center justify-between border-t shrink-0 mt-auto">
-              <span className="text-[11px] text-muted-foreground">
+            {/* ── Footer: Datum + fest integrierte Aktionen ── */}
+            <div className="px-4 py-2 bg-muted/40 flex items-center justify-between gap-2 border-t shrink-0 mt-auto">
+              <span className="text-[11px] text-muted-foreground shrink-0">
                 {(einheit.updated_date || einheit.created_date) &&
                   format(new Date(einheit.updated_date || einheit.created_date), 'dd. MMM yyyy', { locale: de })}
               </span>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                {istPrivat && (istPrivatBesitzer || darfLoeschen) && (
+                  <>
+                    <EinheitVeroeffentlichenButton einheit={einheit} />
+                    <EinheitWeitergebenButton einheit={einheit} />
+                  </>
+                )}
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowVorschau(true); }}
+                  className="p-1 rounded-md border border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/40 transition-all"
+                  title="Vorschau aus Schülersicht: Einheit im aktuellen Zustand durcharbeiten"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                </button>
+                {darfLoeschen && (
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDuplicate(); }}
+                    disabled={isCopying}
+                    className="p-1 rounded-md border border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/40 transition-all disabled:opacity-60"
+                    title="Einheit als private Kopie duplizieren (landet in Ihrem Privatbereich)"
+                  >
+                    {isCopying
+                      ? <div className="w-3.5 h-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                      : <Copy className="w-3.5 h-3.5" />
+                    }
+                  </button>
+                )}
+                {darfLoeschen && (
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowConfirm(true); }}
+                    className="p-1 rounded-md border border-border bg-card text-muted-foreground hover:text-destructive hover:border-destructive/40 transition-all"
+                    title="Einheit löschen"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
                 <button
                   onClick={() => setExpanded((v) => !v)}
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
@@ -191,41 +228,13 @@ export default function EinheitCard({
             </div>
           </CardContent>
         </Card>
-
-        {/* Aktionen: Veröffentlichen (privat) + Duplizieren/Löschen (Admin/Fachschaftsleitung) */}
-        {(darfLoeschen || istPrivatBesitzer) && (
-          <div className={`absolute top-3 right-3 z-10 flex items-center gap-1.5 transition-all ${istPrivat ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100'}`}>
-            {istPrivat && (istPrivatBesitzer || darfLoeschen) && (
-              <>
-                <EinheitVeroeffentlichenButton einheit={einheit} />
-                <EinheitWeitergebenButton einheit={einheit} />
-              </>
-            )}
-            {darfLoeschen && (
-              <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDuplicate(); }}
-                disabled={isCopying}
-                className="p-1.5 rounded-md bg-white/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-primary hover:border-primary/40 hover:bg-blue-50 transition-all disabled:opacity-60"
-                title="Einheit als private Kopie duplizieren (landet in Ihrem Privatbereich)"
-              >
-                {isCopying
-                  ? <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                  : <Copy className="w-4 h-4" />
-                }
-              </button>
-            )}
-            {darfLoeschen && (
-              <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowConfirm(true); }}
-                className="p-1.5 rounded-md bg-white/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 hover:bg-red-50 transition-all"
-                title="Einheit löschen"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-        )}
       </div>
+
+      <EinheitVorschauModal
+        open={showVorschau}
+        onOpenChange={setShowVorschau}
+        einheit={einheit}
+      />
 
       <DeleteConfirmModal
         open={showConfirm}
