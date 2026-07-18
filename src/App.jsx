@@ -16,7 +16,6 @@ import ProtectedRoute from '@/lib/ProtectedRoute';
 // Lehrer-/Admin-Bereich: Lazy Loading, damit der Schüler-Build (GitHub Pages)
 // diesen Code beim ersten Öffnen NICHT mit herunterladen muss.
 const AppLayout = lazyWithRetry(() => import('@/components/layout/AppLayout'));
-const Dashboard = lazyWithRetry(() => import('@/pages/Dashboard'));
 const EinheitenListe = lazyWithRetry(() => import('@/pages/EinheitenListe'));
 const Benutzerverwaltung = lazyWithRetry(() => import('@/pages/Benutzerverwaltung'));
 const MoodleExport = lazyWithRetry(() => import('@/pages/MoodleExport'));
@@ -141,7 +140,8 @@ const AuthenticatedApp = () => {
       >
       <Routes>
         <Route element={<AppLayout />}>
-          <Route path="/" element={<ErrorBoundary fallback="Dashboard konnte nicht geladen werden."><Dashboard /></ErrorBoundary>} />
+          {/* Startseite = Einheiten-Arbeitsbereich (das eigentliche Dashboard) */}
+          <Route path="/" element={<ErrorBoundary fallback="Einheiten konnten nicht geladen werden."><EinheitenListe /></ErrorBoundary>} />
           <Route path="/einheiten" element={<ErrorBoundary fallback="Einheitenliste konnte nicht geladen werden."><EinheitenListe /></ErrorBoundary>} />
           <Route path="/einheiten/:id" element={<ErrorBoundary fallback="Einheitansicht konnte nicht geladen werden."><EinheitViewManager /></ErrorBoundary>} />
           <Route path="/basismodule" element={<ErrorBoundary fallback="Basismodule konnte nicht geladen werden."><BasismoduleListe /></ErrorBoundary>} />

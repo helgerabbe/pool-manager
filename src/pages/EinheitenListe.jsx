@@ -13,6 +13,7 @@ import { Plus, Search, AlertCircle, Wand2, Lock, Bot } from 'lucide-react';
 import PrivateEinheitenUebersicht from '@/components/einheiten/PrivateEinheitenUebersicht';
 import BereichSwitcher from '@/components/einheiten/BereichSwitcher';
 import AustauschBibliothek from '@/components/einheiten/AustauschBibliothek';
+import TutorialFooterLink from '@/components/einheiten/TutorialFooterLink';
 import SyncStatusBadge from '@/components/sync/SyncStatusBadge';
 import EinheitCard from '@/components/einheiten/EinheitCard';
 import EmptyState from '@/components/shared/EmptyState';
@@ -163,8 +164,8 @@ export default function EinheitenListe() {
   const [filterLifecycle, setFilterLifecycle] = useState('all');
   const [showOnlyChanged, setShowOnlyChanged] = useState(false);
   const [schnellErstellen, setSchnellErstellen] = useState(false);
-  // Drei Bereiche: 'oeffentlich' (Poolzeit) | 'austausch' (Bibliothek) | 'privat'.
-  const [ansicht, setAnsicht] = useState('oeffentlich');
+  // Drei Bereiche: 'privat' (Start) | 'austausch' (Bibliothek) | 'oeffentlich' (Poolzeit).
+  const [ansicht, setAnsicht] = useState('privat');
   const [isDeletingAny, setIsDeletingAny] = useState(false);
   const queryClient = useQueryClient();
 
@@ -451,6 +452,9 @@ export default function EinheitenListe() {
       )}
       </>
       )}
+
+      {/* Tutorial-Link (ersetzt die frühere Dashboard-Seite) */}
+      <TutorialFooterLink />
 
       <SchnellErstellenModal
         open={schnellErstellen}

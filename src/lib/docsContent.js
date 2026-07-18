@@ -105,7 +105,7 @@ Oben rechts finden Sie die wichtigsten Symbole:
 
 | Symbol | Bereich |
 |--------|---------|
-| 🏠 Haus | Startseite / Dashboard |
+| 🏠 Haus | Startseite — der Einheiten-Arbeitsbereich mit Ihren drei Bereichen |
 | 📖 Buch | Einheiten & Arbeitsbereich |
 | 🗂️ Ebenen | Basismodule |
 | ✈️ Senden | Export-Center (nur für Export-Rollen sichtbar) |

@@ -28,6 +28,14 @@ export const setTutorialSeen = () => localStorage.setItem(STORAGE_KEY, 'true');
 // ── Slide-Daten ─────────────────────────────────────────────────────────────
 const SLIDES = [
   {
+    hero: true,
+    icon: Sparkles,
+    color: 'bg-primary/10 text-primary',
+    image: 'https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/996944c1f_image.png',
+    title: 'Willkommen im Pool-Manager!',
+    text: 'Die Orga-App für Freiarbeitszeiten. Dieses kurze Tutorial zeigt Ihnen die wichtigsten Konzepte – Sie können es jederzeit unten auf der Einheiten-Seite erneut ansehen.',
+  },
+  {
     icon: Users,
     color: 'bg-blue-100 text-blue-600',
     title: 'Poolzeit & Selbstständigkeit',
@@ -115,11 +123,20 @@ export function TutorialSlideshowDialog({ open: controlledOpen, onClose }) {
       <DialogContent className="sm:max-w-lg p-0 overflow-hidden gap-0">
         <VisuallyHidden><DialogTitle>{current.title}</DialogTitle></VisuallyHidden>
         <div className="flex flex-col items-center text-center px-8 pt-8 pb-4 gap-5">
-          <div className={cn('w-16 h-16 rounded-2xl flex items-center justify-center shrink-0', current.color)}>
-            <Icon className="w-8 h-8" />
-          </div>
+          {!current.hero && (
+            <div className={cn('w-16 h-16 rounded-2xl flex items-center justify-center shrink-0', current.color)}>
+              <Icon className="w-8 h-8" />
+            </div>
+          )}
           {current.image && (
-            <img src={current.image} alt="Menüleisten-Vorschau" className="w-full rounded-xl border border-border shadow-sm object-contain max-h-20" />
+            <img
+              src={current.image}
+              alt={current.hero ? 'Pool-Manager – Die Orga-App für Freiarbeitszeiten' : 'Menüleisten-Vorschau'}
+              className={cn(
+                'w-full rounded-xl border border-border shadow-sm',
+                current.hero ? 'object-cover max-h-52' : 'object-contain max-h-20'
+              )}
+            />
           )}
           <div className="space-y-2">
             <h2 className="text-xl font-bold leading-tight">{current.title}</h2>

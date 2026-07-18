@@ -10,12 +10,12 @@ import { Rocket, Library, Lock } from 'lucide-react';
 export default function BereichSwitcher({ ansicht, onChange, istAdmin }) {
   const bereiche = [
     {
-      key: 'oeffentlich',
-      label: 'Poolzeit-Einheiten',
-      desc: 'Verbindliche Einheiten für die Poolzeit — von der Fachschaft betreut',
-      icon: Rocket,
-      active: 'border-blue-500 bg-blue-50 text-blue-900 ring-2 ring-blue-500/30',
-      iconActive: 'bg-blue-500 text-white',
+      key: 'privat',
+      label: istAdmin ? 'Private Einheiten (alle)' : 'Meine privaten Einheiten',
+      desc: 'Ihr persönlicher Arbeitsbereich — nur für Sie sichtbar',
+      icon: Lock,
+      active: 'border-amber-500 bg-amber-50 text-amber-900 ring-2 ring-amber-500/30',
+      iconActive: 'bg-amber-500 text-white',
     },
     {
       key: 'austausch',
@@ -26,12 +26,12 @@ export default function BereichSwitcher({ ansicht, onChange, istAdmin }) {
       iconActive: 'bg-emerald-500 text-white',
     },
     {
-      key: 'privat',
-      label: istAdmin ? 'Private Einheiten (alle)' : 'Meine privaten Einheiten',
-      desc: 'Ihr persönlicher Arbeitsbereich — nur für Sie sichtbar',
-      icon: Lock,
-      active: 'border-amber-500 bg-amber-50 text-amber-900 ring-2 ring-amber-500/30',
-      iconActive: 'bg-amber-500 text-white',
+      key: 'oeffentlich',
+      label: 'Poolzeit-Einheiten',
+      desc: 'Verbindliche Einheiten für die Poolzeit — von der Fachschaft betreut',
+      icon: Rocket,
+      active: 'border-blue-500 bg-blue-50 text-blue-900 ring-2 ring-blue-500/30',
+      iconActive: 'bg-blue-500 text-white',
     },
   ];
 
