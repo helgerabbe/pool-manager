@@ -465,7 +465,14 @@ export default function DashboardToolbar({
             }
             syncStatus={dashboardSyncByLerntyp[lt]}
             onClick={() => onActiveLernTypChange?.(lt)}
-            onOpenGuide={onOpenGuide}
+            // Direkthilfe: erst auf DIESEN Lerntyp wechseln, dann den Guide
+            // öffnen — so trifft „Auf Standard zurücksetzen" immer genau das
+            // Dashboard, dessen Fragezeichen angeklickt wurde (nicht das
+            // zufällig gerade aktive).
+            onOpenGuide={() => {
+              onActiveLernTypChange?.(lt);
+              onOpenGuide?.();
+            }}
             labelOverride={lerntypNamen[lt]}
           />
         ))}
