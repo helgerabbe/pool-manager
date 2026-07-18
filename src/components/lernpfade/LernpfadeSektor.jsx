@@ -19,7 +19,7 @@
 
 import React from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
-import { GripVertical, Trash2, X, Plus, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
+import { GripVertical, Trash2, X, Plus, ChevronUp, ChevronDown, Pencil, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getAufgabenTyp, ITEM_TYPE } from '@/lib/aufgabenTypen';
 import SystemBausteinPill from '@/components/lernpfade/SystemBausteinPill';
@@ -42,7 +42,7 @@ const LERNTYP_VARIANTE = {
   passioniert: { label: 'Wissensspeicher', cls: 'bg-violet-100 text-violet-700 border-violet-200' },
 };
 
-function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, indent = false, onRemove, onSelect, isSelected, disabled, ampelStatus, exportReady, contentApproved, onOpenEditor, onOpenLernpaket, activeLernTyp, fremdesThemenfeldTitel }) {
+function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, indent = false, onRemove, onSelect, isSelected, disabled, ampelStatus, exportReady, contentApproved, onOpenEditor, onOpenLernpaket, activeLernTyp, fremdesThemenfeldTitel, inaktiv = false, onToggleAktiv }) {
   // Fallback, falls die Aufgabe (noch) nicht im Cache ist.
   const titel = aufgabe?.titel || 'Aufgabe';
   // Lernpakete sind keine Aufgaben: Sie tragen den Adapter-Marker _isLernpaket.
@@ -72,7 +72,7 @@ function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, indent = fal
             isSelected
               ? `${typMeta.color.border} ${typMeta.color.bg} shadow-sm`
               : 'border-border bg-card hover:border-primary/30'
-          } ${snapshot.isDragging ? 'shadow-lg ring-2 ring-primary/40' : ''} ${indent ? 'ml-5 border-l-2 border-l-bundle/40' : ''}`}
+          } ${snapshot.isDragging ? 'shadow-lg ring-2 ring-primary/40' : ''} ${indent ? 'ml-5 border-l-2 border-l-bundle/40' : ''} ${inaktiv ? 'opacity-50' : ''}`}
         >
           <GripVertical className="w-3 h-3 text-muted-foreground/60 shrink-0" />
           <div className={`w-5 h-5 rounded ${typMeta.color.iconBg} flex items-center justify-center shrink-0`}>
@@ -81,6 +81,14 @@ function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, indent = fal
           <span className="flex-1 min-w-0 truncate">
             {aufgabe ? titel : <span className="italic text-muted-foreground">Unbekannte Aufgabe</span>}
           </span>
+          {inaktiv && (
+            <span
+              className="shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border bg-slate-100 text-slate-500 border-slate-300"
+              title="Für diesen Lerntyp deaktiviert – Schüler sehen dieses Element nicht. Es bleibt erhalten und kann jederzeit wieder aktiviert werden."
+            >
+              Inaktiv
+            </span>
+          )}
           {fremdesThemenfeldTitel && (
             <span
               className="shrink-0 inline-flex items-center gap-0.5 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border bg-amber-50 text-amber-800 border-amber-300"
@@ -124,6 +132,20 @@ function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, indent = fal
               }
             />
           )}
+          {!disabled && onToggleAktiv && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onToggleAktiv(inaktiv); }}
+              title={
+                inaktiv
+                  ? 'Für diesen Lerntyp wieder aktivieren'
+                  : 'Für diesen Lerntyp deaktivieren (statt löschen – bleibt im Pfad erhalten, Schüler sehen es nicht)'
+              }
+              className="shrink-0 text-muted-foreground hover:text-primary transition-colors"
+            >
+              {inaktiv ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+            </button>
+          )}
           {!disabled && (
             <button
               type="button"
@@ -157,6 +179,7 @@ export default function LernpfadeSektor({
   onSetBundleConfig,
   onSetBundleModus,
   onAutoFillBundle,
+  onToggleItemAktiv,
   getIsDropDisabled,
   onSelectAufgabe,
   onSelectSystemBaustein,
@@ -279,6 +302,12 @@ export default function LernpfadeSektor({
         onOpenLernpaket={onOpenLernpaket}
         activeLernTyp={activeLernTyp}
         fremdesThemenfeldTitel={fremdesThemenfeldTitel}
+        inaktiv={item.aktiv === false}
+        onToggleAktiv={
+          onToggleItemAktiv
+            ? (nextAktiv) => onToggleItemAktiv(sektor.sektor_id, item.instance_id, nextAktiv)
+            : undefined
+        }
       />
     );
   };

@@ -44,7 +44,7 @@
  */
 
 import { ITEM_TYPE } from '@/lib/aufgabenTypen';
-import { SEKTOR_TYP } from '@/lib/sektorTypen';
+import { SEKTOR_TYP, getBundleKindByAcceptedTypes } from '@/lib/sektorTypen';
 
 const LERNTYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 
@@ -54,6 +54,7 @@ function emptyLerntypReport() {
     orphaned_sektoren: [],
     ghost_items: [],
     misplaced_aufgaben: [],
+    missing_items: [],
     totalDrifts: 0,
   };
 }
@@ -80,6 +81,10 @@ export function detectDashboardDrift({
   themenfelder = [],
   aufgaben = [],
   lernpakete = [],
+  // Etappe 2 (Auto-Assembly): SystemBausteine für die Ziel-Bündel-Erkennung
+  // der Klasse E (missing_items). Optional — ohne Bausteine bleibt die
+  // Klasse leer (rückwärtskompatibel für alle bestehenden Aufrufer).
+  systemBausteine = [],
 } = {}) {
   const report = emptyReport();
   if (!konfiguration || typeof konfiguration !== 'object') return report;
@@ -96,6 +101,10 @@ export function detectDashboardDrift({
   const lernpaketById = new Map();
   for (const lp of lernpakete || []) {
     if (lp?.id) lernpaketById.set(lp.id, lp);
+  }
+  const bausteinById = new Map();
+  for (const b of systemBausteine || []) {
+    if (b?.baustein_id) bausteinById.set(b.baustein_id, b);
   }
 
   let total = 0;
@@ -177,11 +186,82 @@ export function detectDashboardDrift({
       }
     }
 
+    // ── E) missing_items (Etappe 2 Auto-Assembly) ──────────────────────
+    // Neuer Inhalt (Lernpaket / Aufgabe / Projekt), der in diesem Lerntyp
+    // noch nirgends platziert ist, obwohl ein passendes Ziel-Bündel
+    // existiert. Bewusst NUR gemeldet, wenn ein Ziel-Bündel da ist —
+    // fehlt z. B. im Minimalist-Raster das Projekt-Bündel, sind Projekte
+    // dort absichtlich nicht vorgesehen (kein Drift).
+    if (bausteinById.size > 0) {
+      const usedRefIds = new Set();
+      for (const s of sektoren) {
+        for (const it of (Array.isArray(s?.items) ? s.items : [])) {
+          if (it?.type === ITEM_TYPE.AUFGABE && it.ref_id) usedRefIds.add(it.ref_id);
+        }
+      }
+      // Ziel-Bündel sammeln: pro (kind × themenfeld) das erste passende
+      // Bündel; Projekt-Bündel sind themenfeld-frei.
+      const targetByKindAndTf = new Map();
+      let projektTarget = null;
+      for (const s of sektoren) {
+        for (const it of (Array.isArray(s?.items) ? s.items : [])) {
+          if (!it || it.type !== ITEM_TYPE.SYSTEM || !it.instance_id) continue;
+          const b = bausteinById.get(it.ref_id);
+          const isBundle = b?.typ === 'buendel' || b?.baustein_modus === 'bundle_1ton';
+          if (!isBundle) continue;
+          const kind = getBundleKindByAcceptedTypes(b?.accepted_types);
+          if (!kind) continue;
+          const target = {
+            sektor_id: s.sektor_id,
+            sektor_titel: s.titel_snapshot || s.titel || '(unbenannt)',
+            bundle_instance_id: it.instance_id,
+          };
+          if (kind === 'projekte') {
+            if (!projektTarget) projektTarget = target;
+            continue;
+          }
+          const key = `${kind}::${s.themenfeld_id || ''}`;
+          if (s.themenfeld_id && !targetByKindAndTf.has(key)) targetByKindAndTf.set(key, target);
+        }
+      }
+      for (const lp of lernpakete || []) {
+        if (!lp?.id || usedRefIds.has(lp.id) || !lp.themenfeld_id) continue;
+        const target = targetByKindAndTf.get(`lernpakete::${lp.themenfeld_id}`);
+        if (target) {
+          lerntypReport.missing_items.push({
+            ref_id: lp.id, titel: lp.titel_des_pakets || '(unbenannt)', kind: 'lernpakete', ...target,
+          });
+        }
+      }
+      const AUFGABEN_TYPEN = new Set(['inhalt', 'prozess', 'handlung', 'auswahl_buendel']);
+      for (const a of aufgaben || []) {
+        if (!a?.id || usedRefIds.has(a.id)) continue;
+        const istProjekt = a.anforderungsebene === '3 - Projekt' || a.aufgaben_typ === 'projekt_anker';
+        if (istProjekt) {
+          if (projektTarget) {
+            lerntypReport.missing_items.push({
+              ref_id: a.id, titel: a.titel || '(unbenannt)', kind: 'projekte', ...projektTarget,
+            });
+          }
+          continue;
+        }
+        if (!AUFGABEN_TYPEN.has(a.aufgaben_typ || 'inhalt')) continue;
+        if (!a.themenfeld_id) continue;
+        const target = targetByKindAndTf.get(`aufgaben::${a.themenfeld_id}`);
+        if (target) {
+          lerntypReport.missing_items.push({
+            ref_id: a.id, titel: a.titel || '(unbenannt)', kind: 'aufgaben', ...target,
+          });
+        }
+      }
+    }
+
     lerntypReport.totalDrifts =
       lerntypReport.missing_themenfelder.length +
       lerntypReport.orphaned_sektoren.length +
       lerntypReport.ghost_items.length +
-      lerntypReport.misplaced_aufgaben.length;
+      lerntypReport.misplaced_aufgaben.length +
+      lerntypReport.missing_items.length;
     total += lerntypReport.totalDrifts;
   }
 

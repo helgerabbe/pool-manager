@@ -18,6 +18,7 @@ export function useDashboardDrift({
   themenfelder,
   aufgaben,
   lernpakete,
+  systemBausteine,
 } = {}) {
   return useMemo(
     () =>
@@ -26,7 +27,8 @@ export function useDashboardDrift({
         themenfelder,
         aufgaben,
         lernpakete,
+        systemBausteine,
       }),
-    [konfiguration, themenfelder, aufgaben, lernpakete]
+    [konfiguration, themenfelder, aufgaben, lernpakete, systemBausteine]
   );
 }

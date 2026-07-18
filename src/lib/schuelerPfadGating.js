@@ -27,6 +27,24 @@ export const ITEM_GATE = Object.freeze({
 });
 
 /**
+ * Etappe 2 (Auto-Assembly): „Deaktivieren statt Löschen". Entfernt alle
+ * Items mit aktiv=false — und alle Kinder, deren Eltern-Bündel deaktiviert
+ * ist. Deaktivierte Items existieren für Schüler schlicht nicht (kein
+ * Gating, keine Anzeige, kein Fortschritts-Soll).
+ */
+export function filterAktiveItems(items) {
+  const list = Array.isArray(items) ? items : [];
+  const inaktiveParents = new Set(
+    list.filter((it) => it?.aktiv === false && it?.instance_id).map((it) => it.instance_id)
+  );
+  return list.filter(
+    (it) =>
+      it?.aktiv !== false &&
+      !(it?.parent_instance_id && inaktiveParents.has(it.parent_instance_id))
+  );
+}
+
+/**
  * Liefert den persönlichen Status eines Items (offen|in_bearbeitung|erledigt)
  * aus der Fortschritts-Map. Default 'offen'.
  */
@@ -56,7 +74,9 @@ function istErledigt(fortschrittByInstance, instanceId) {
  * @returns {Array} Items mit zusätzlichem Feld `gate` (ITEM_GATE) und `status`
  */
 export function annotateSektorForSchueler(sektor, fortschrittByInstance, bausteinById = new Map()) {
-  const items = Array.isArray(sektor?.items) ? sektor.items : [];
+  // Deaktivierte Items (aktiv=false) sind für Schüler unsichtbar und
+  // fließen auch nicht ins sequenzielle Gating ein.
+  const items = filterAktiveItems(sektor?.items);
   const sektorModus = normalizeSektorModus(sektor?.modus);
 
   // Bündel-Modus pro Bündel-instance_id vormerken.
@@ -140,7 +160,7 @@ export function annotateSektorForSchueler(sektor, fortschrittByInstance, baustei
  * Ist ein Sektor vollständig erledigt? (alle Wurzel-Items erledigt)
  */
 export function istSektorErledigt(sektor, fortschrittByInstance) {
-  const roots = (sektor?.items || []).filter((it) => !it?.parent_instance_id);
+  const roots = filterAktiveItems(sektor?.items).filter((it) => !it?.parent_instance_id);
   if (roots.length === 0) return false;
   return roots.every((it) => istErledigt(fortschrittByInstance, it.instance_id));
 }

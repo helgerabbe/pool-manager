@@ -57,6 +57,7 @@ import {
   isKonfigurationEmpty,
   setBundleConfig,
   setBundleModus,
+  setItemAktiv,
   removeBundleAndCascade,
   getBundleChildren,
   getAutoFillCandidates,
@@ -66,6 +67,7 @@ import {
   addArbeitsphaseSektorForThemenfeld,
   removeOrphanedSektor,
   removeGhostItem,
+  addMissingItemToBundle,
 } from '@/lib/dashboardDriftResolutions';
 import { getBundleKindByAcceptedTypes } from '@/lib/sektorTypen';
 import CascadeDeleteDialog from '@/components/lernpfade/CascadeDeleteDialog';
@@ -82,7 +84,7 @@ import { getAmpelStatus } from '@/lib/ampelLogic';
 import { adaptLernpaketToPoolItem } from '@/lib/lernpaketAdapter';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 import { ladeOnboardingSnapshots, speichereOnboardingSnapshot } from '@/lib/onboardingSnapshots';
-import { autoAssembleAllDashboards } from '@/lib/dashboardAutoAssembly';
+import { autoAssembleAllDashboards, AUTO_DASHBOARD_STATUS } from '@/lib/dashboardAutoAssembly';
 import { useDashboardAutoStatus } from '@/hooks/useDashboardAutoStatus';
 import { getAktiveLerntypKeys } from '@/lib/lerntypen';
 import { useLerntypDefinitionen } from '@/hooks/useLerntypDefinitionen';
@@ -366,6 +368,7 @@ export default function LernpfadeCockpit({
     themenfelder,
     aufgaben,
     lernpakete,
+    systemBausteine,
   });
   const driftForActiveLerntyp = driftReport?.[activeLernTyp] || null;
   const getAmpelStatusForItem = useCallback(
@@ -915,6 +918,40 @@ export default function LernpfadeCockpit({
     [readOnly, activeLernTyp, updateKonfiguration, toast]
   );
 
+  // Etappe 2 (Auto-Assembly): „Neue Inhalte" aus dem Drift-Report per Klick
+  // in ihr Ziel-Bündel einsortieren. Ist das Dashboard bereits bestätigt,
+  // startet das Item INAKTIV — der bestätigte Pfad ändert sich für Schüler
+  // erst, wenn die Lehrkraft es bewusst aktiviert (Augen-Symbol).
+  const dashboardBestaetigt =
+    autoStatusMap?.[activeLernTyp] === AUTO_DASHBOARD_STATUS.BESTAETIGT;
+
+  const handleDriftAddItem = useCallback(
+    (entry) => {
+      if (readOnly || !entry?.ref_id) return;
+      updateKonfiguration((prev) =>
+        addMissingItemToBundle(prev, activeLernTyp, entry, { inaktiv: dashboardBestaetigt })
+      );
+      toast({
+        title: dashboardBestaetigt ? 'Einsortiert (inaktiv)' : 'Einsortiert',
+        description: dashboardBestaetigt
+          ? `„${entry.titel}" wurde inaktiv eingefügt – aktiviere es über das Augen-Symbol am Element.`
+          : `„${entry.titel}" wurde in „${entry.sektor_titel}" eingefügt.`,
+      });
+    },
+    [readOnly, activeLernTyp, updateKonfiguration, toast, dashboardBestaetigt]
+  );
+
+  // Etappe 2: Item pro Lerntyp aktiv/inaktiv schalten (statt löschen).
+  const handleToggleItemAktiv = useCallback(
+    (sektorId, instanceId, aktiv) => {
+      if (readOnly) return;
+      updateKonfiguration((prev) =>
+        setItemAktiv(prev, activeLernTyp, sektorId, instanceId, aktiv)
+      );
+    },
+    [readOnly, activeLernTyp, updateKonfiguration]
+  );
+
   // Phase 3.5/3.6: Cascade-Delete eines Bündel-Containers.
   // - Bei leerem Bündel: direkt löschen (kein Modal).
   // - Bei Bündel mit Children: Modal öffnen, Confirm löst Delete aus.
@@ -1220,6 +1257,8 @@ export default function LernpfadeCockpit({
               onDriftAddSektor={handleDriftAddSektor}
               onDriftRemoveSektor={handleDriftRemoveSektor}
               onDriftRemoveItem={handleDriftRemoveItem}
+              onDriftAddItem={handleDriftAddItem}
+              driftAddItemInaktiv={dashboardBestaetigt}
               driftDisabled={readOnly}
               autoStatus={autoStatusMap?.[activeLernTyp] || null}
               onConfirmAuto={() => confirmAutoDashboard(activeLernTyp)}
@@ -1257,6 +1296,7 @@ export default function LernpfadeCockpit({
                 onSetBundleConfig={handleSetBundleConfig}
                 onSetBundleModus={handleSetBundleModus}
                 onAutoFillBundle={handleAutoFillBundle}
+                onToggleItemAktiv={handleToggleItemAktiv}
                 getIsDropDisabled={getIsDropDisabled}
                 onSelectAufgabe={setSelectedAufgabeId}
                 onSelectSystemBaustein={setSelectedSystemBausteinId}

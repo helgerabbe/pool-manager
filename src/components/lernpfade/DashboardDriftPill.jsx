@@ -25,6 +25,7 @@ import {
   ArrowRightLeft,
   Plus,
   X,
+  PackagePlus,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
@@ -33,6 +34,7 @@ const SECTION_META = {
   orphaned_sektoren: { Icon: Trash2, label: 'Verwaiste Sektoren', cls: 'text-red-700' },
   ghost_items: { Icon: Ghost, label: 'Verwaiste Items', cls: 'text-rose-700' },
   misplaced_aufgaben: { Icon: ArrowRightLeft, label: 'Aufgaben in falschem Themenfeld', cls: 'text-amber-700' },
+  missing_items: { Icon: PackagePlus, label: 'Neue Inhalte, noch nicht im Pfad', cls: 'text-emerald-700' },
 };
 
 function ActionButton({ onClick, disabled, icon: Icon, children, title }) {
@@ -76,6 +78,8 @@ export default function DashboardDriftPill({
   onAddSektor,
   onRemoveSektor,
   onRemoveItem,
+  onAddItem,
+  addItemInaktiv = false,
   disabled = false,
 }) {
   if (!lerntypReport || lerntypReport.totalDrifts === 0) return null;
@@ -141,6 +145,30 @@ export default function DashboardDriftPill({
                 {onRemoveItem && (
                   <ActionButton icon={X} onClick={() => onRemoveItem(it)} disabled={disabled} title={disabledTitle || 'Verweis entfernen'}>
                     Aus Pfad entfernen
+                  </ActionButton>
+                )}
+              </span>
+            )}
+          />
+          <DriftSection
+            kind="missing_items"
+            items={lerntypReport.missing_items}
+            renderItem={(it) => (
+              <span>
+                Neu: <strong>„{it.titel}"</strong> ist noch nicht im Pfad (Ziel: „{it.sektor_titel}").
+                {onAddItem && (
+                  <ActionButton
+                    icon={Plus}
+                    onClick={() => onAddItem(it)}
+                    disabled={disabled}
+                    title={
+                      disabledTitle ||
+                      (addItemInaktiv
+                        ? 'Einsortieren – startet inaktiv, bis du es über das Augen-Symbol aktivierst'
+                        : 'In das passende Bündel einsortieren')
+                    }
+                  >
+                    {addItemInaktiv ? 'Einsortieren (inaktiv)' : 'Einsortieren'}
                   </ActionButton>
                 )}
               </span>

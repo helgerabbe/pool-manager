@@ -38,6 +38,7 @@ import {
   createNewSektor,
   addSektor,
   removeSektor,
+  bulkAddItemsToBundle,
 } from '@/lib/lernpfadeUtils';
 import { getArbeitsphaseDefaultItems } from '@/lib/dashboardTemplates';
 
@@ -105,6 +106,28 @@ export function removeGhostItem(konfig, lernTyp, sektorId, instanceId) {
     return { ...s, items };
   });
   return { ...konfig, [lernTyp]: next };
+}
+
+/**
+ * Aktion 4 (Etappe 2 Auto-Assembly): Neuen Inhalt (missing_items) in sein
+ * Ziel-Bündel einsortieren. `entry` kommt 1:1 aus dem Drift-Report
+ * (ref_id, sektor_id, bundle_instance_id).
+ *
+ * options.inaktiv=true → das Item startet deaktiviert (aktiv=false).
+ * Wird genutzt, wenn das Dashboard bereits bestätigt ist: der Pfad ändert
+ * sich für Schüler erst, wenn die Lehrkraft das Item bewusst aktiviert.
+ */
+export function addMissingItemToBundle(konfig, lernTyp, entry, options = {}) {
+  if (!entry?.ref_id || !entry?.sektor_id || !entry?.bundle_instance_id) return konfig;
+  const { konfig: next } = bulkAddItemsToBundle(
+    konfig,
+    lernTyp,
+    entry.sektor_id,
+    entry.bundle_instance_id,
+    [entry.ref_id],
+    { inaktiv: options.inaktiv === true }
+  );
+  return next;
 }
 
 // Re-Export für Aufrufer, die Item-Type-Prüfungen machen wollen.

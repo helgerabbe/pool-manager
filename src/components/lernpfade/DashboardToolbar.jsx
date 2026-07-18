@@ -209,6 +209,8 @@ export default function DashboardToolbar({
   onDriftAddSektor,
   onDriftRemoveSektor,
   onDriftRemoveItem,
+  onDriftAddItem,
+  driftAddItemInaktiv = false,
   driftDisabled,
   // Privat-Modus: pro Lerntyp einzeln an-/abschaltbar (nur private Einheiten)
   zeigeLerntypenSchalter = false,
@@ -249,6 +251,8 @@ export default function DashboardToolbar({
           onAddSektor={onDriftAddSektor}
           onRemoveSektor={onDriftRemoveSektor}
           onRemoveItem={onDriftRemoveItem}
+          onAddItem={onDriftAddItem}
+          addItemInaktiv={driftAddItemInaktiv}
           disabled={driftDisabled}
         />}
 

@@ -96,6 +96,11 @@ export function normalizeItem(item) {
         normalized.bundle_config = bc;
       }
     }
+    // Etappe 2 (Auto-Assembly): „Deaktivieren statt Löschen". Nur der
+    // Ausnahme-Zustand wird persistiert (aktiv=false); fehlend = aktiv.
+    if (item.aktiv === false) {
+      normalized.aktiv = false;
+    }
     return normalized;
   }
   return null;
@@ -672,6 +677,30 @@ export function setBundleModus(konfig, lernTyp, sektorId, bundleInstanceId, modu
 }
 
 /**
+ * Etappe 2 (Auto-Assembly): Item aktivieren/deaktivieren („Deaktivieren
+ * statt Löschen"). Deaktivierte Items bleiben in der Konfiguration erhalten
+ * (der Auto-Sync legt sie also nicht erneut an), werden aber in der
+ * Schüleransicht ausgeblendet (siehe filterAktiveItems in schuelerPfadGating).
+ *
+ * Es wird nur der Ausnahme-Zustand gespeichert: aktiv=true entfernt das
+ * Feld wieder. Operiert idempotent und immutable.
+ */
+export function setItemAktiv(konfig, lernTyp, sektorId, instanceId, aktiv) {
+  if (!instanceId) return konfig;
+  const next = getSektoren(konfig, lernTyp).map((s) => {
+    if (s.sektor_id !== sektorId) return s;
+    const items = s.items.map((it) => {
+      if (it.instance_id !== instanceId) return it;
+      if (aktiv === false) return { ...it, aktiv: false };
+      const { aktiv: _ignored, ...rest } = it;
+      return rest;
+    });
+    return { ...s, items };
+  });
+  return setSektoren(konfig, lernTyp, next);
+}
+
+/**
  * Phase A: Friert beim Lock den aktuellen Themenfeld-Titel als
  * `titel_snapshot` an allen Arbeitsphase-Sektoren ein, damit ein nachträgliches
  * Umbenennen des Themenfelds den Schüler-Pfad nicht rückwirkend ändert.
@@ -931,7 +960,7 @@ export function getAutoFillCandidates({
  *
  * @returns {{konfig: object, addedCount: number, skippedCount: number}}
  */
-export function bulkAddItemsToBundle(konfig, lernTyp, sektorId, bundleInstanceId, aufgabeIds) {
+export function bulkAddItemsToBundle(konfig, lernTyp, sektorId, bundleInstanceId, aufgabeIds, options = {}) {
   if (!bundleInstanceId || !Array.isArray(aufgabeIds) || aufgabeIds.length === 0) {
     return { konfig, addedCount: 0, skippedCount: 0 };
   }
@@ -957,6 +986,8 @@ export function bulkAddItemsToBundle(konfig, lernTyp, sektorId, bundleInstanceId
         type: ITEM_TYPE.AUFGABE,
         ref_id: refId,
         parent_instance_id: bundleInstanceId,
+        // Etappe 2: Nach Bestätigung nachgezogene Inhalte starten inaktiv.
+        ...(options.inaktiv ? { aktiv: false } : {}),
       })
     );
     return { ...s, items: [...s.items, ...newChildren] };
