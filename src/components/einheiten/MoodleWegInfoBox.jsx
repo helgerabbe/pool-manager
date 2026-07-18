@@ -9,23 +9,23 @@ import { GraduationCap, Eye, Link2, PartyPopper, ArrowRight, Hammer } from 'luci
 const SCHRITTE = [
   {
     icon: Hammer,
-    titel: '1. Einheit fertig bauen',
-    text: 'Legen Sie Themenfelder, Aufgaben und mindestens ein Schüler-Dashboard an. Die Einheit muss dafür nicht perfekt sein — Sie können jederzeit weiterarbeiten.',
-  },
-  {
-    icon: Eye,
-    titel: '2. Aus Schülersicht prüfen',
-    text: 'Klicken Sie auf das Auge-Symbol Ihrer Einheiten-Karte. Sie sehen die Einheit genau so, wie Ihre Schüler:innen sie später sehen werden.',
+    titel: '1. Einheit im Pool-Manager bauen',
+    text: 'Legen Sie Themenfelder, Aufgaben und mindestens ein Schüler-Dashboard an. Tipp: Über das Auge-Symbol Ihrer Einheiten-Karte können Sie die Einheit jederzeit aus Schülersicht prüfen.',
   },
   {
     icon: Link2,
-    titel: '3. Link im Moodle-Kurs anlegen',
-    text: 'In Ihrem Moodle-Kurs wird ein „Externes Tool" angelegt, das auf Ihre Einheit zeigt. Das übernimmt in der Regel Ihr Moodle-Spezialist — sagen Sie einfach Bescheid, welche Einheit verknüpft werden soll.',
+    titel: '2. Moodle-Adresse kopieren',
+    text: 'Jede private Einheit hat eine eigene Adresse. Klicken Sie auf das Ketten-Symbol Ihrer Einheiten-Karte und kopieren Sie den angezeigten Parameter (z. B. „einheit=abc123…").',
+  },
+  {
+    icon: GraduationCap,
+    titel: '3. In Moodle eintragen',
+    text: 'Legen Sie in Ihrem Moodle-Kurs die Aktivität „Externes Tool" an, wählen Sie als vorkonfiguriertes Tool „Pool-Manager", geben Sie der Aktivität einen Namen — und fügen Sie den kopierten Parameter unter „Angepasste Parameter" ein.',
   },
   {
     icon: PartyPopper,
     titel: '4. Fertig — Schüler legen los',
-    text: 'Ihre Schüler:innen klicken in Moodle auf den Link und landen direkt in Ihrer Einheit — ganz ohne eigenes Konto. Ihr Lernfortschritt wird automatisch gespeichert.',
+    text: 'Ihre Schüler:innen klicken in Moodle auf den Link und landen direkt in genau dieser Einheit — ganz ohne eigenes Konto. Ihr Lernfortschritt wird automatisch gespeichert.',
   },
 ];
 

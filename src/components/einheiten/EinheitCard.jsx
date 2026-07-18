@@ -19,6 +19,7 @@ import EinheitMetricsRow from '@/components/einheiten/EinheitMetricsRow';
 import DashboardStatusBadges from '@/components/einheiten/DashboardStatusBadges';
 import EinheitExportLifecycleBadge from '@/components/einheiten/EinheitExportLifecycleBadge';
 import EinheitVorschauModal from '@/components/einheiten/EinheitVorschauModal';
+import MoodleParameterButton from '@/components/einheiten/MoodleParameterButton';
 
 export default function EinheitCard({
   einheit,
@@ -188,6 +189,7 @@ export default function EinheitCard({
                     {/* Austausch-Bibliothek: Besitzer/Admin geben frei */}
                     <EinheitAustauschToggleButton einheit={einheit} />
                     <EinheitWeitergebenButton einheit={einheit} />
+                    <MoodleParameterButton einheit={einheit} />
                   </>
                 )}
                 <button
