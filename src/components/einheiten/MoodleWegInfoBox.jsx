@@ -14,13 +14,13 @@ const SCHRITTE = [
   },
   {
     icon: Link2,
-    titel: '2. Moodle-Adresse kopieren',
-    text: 'Jede private Einheit hat eine eigene Adresse. Klicken Sie auf das Ketten-Symbol Ihrer Einheiten-Karte und kopieren Sie den angezeigten Parameter (z. B. „einheit=abc123…").',
+    titel: '2. Einheiten-Code kopieren',
+    text: 'Jede private Einheit hat einen eigenen Code — wie eine Hausnummer. Klicken Sie auf das Ketten-Symbol Ihrer Einheiten-Karte und kopieren Sie den angezeigten Code.',
   },
   {
     icon: GraduationCap,
-    titel: '3. In Moodle eintragen',
-    text: 'Legen Sie in Ihrem Moodle-Kurs die Aktivität „Externes Tool" an, wählen Sie als vorkonfiguriertes Tool „Pool-Manager", geben Sie der Aktivität einen Namen — und fügen Sie den kopierten Parameter unter „Angepasste Parameter" ein.',
+    titel: '3. Code in Moodle einfügen',
+    text: 'Legen Sie in Ihrem Moodle-Kurs die Aktivität „Externes Tool" an, wählen Sie als vorkonfiguriertes Tool „Pool-Manager", geben Sie der Aktivität einen Namen — und fügen Sie den kopierten Code in das Feld „Angepasste Parameter" ein (so heißt es in Moodle).',
   },
   {
     icon: PartyPopper,

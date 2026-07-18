@@ -17,7 +17,7 @@ export default function MoodleParameterButton({ einheit }) {
     try {
       await navigator.clipboard.writeText(parameter);
       setCopied(true);
-      toast.success('Moodle-Parameter kopiert!');
+      toast.success('Einheiten-Code kopiert!');
       setTimeout(() => setCopied(false), 2000);
     } catch (_e) {
       toast.error('Kopieren fehlgeschlagen — bitte den Text markieren und manuell kopieren.');
@@ -29,7 +29,7 @@ export default function MoodleParameterButton({ einheit }) {
       <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
         className="p-1 rounded-md border border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/40 transition-all"
-        title="Moodle-Adresse dieser Einheit anzeigen (für die Verknüpfung im Moodle-Kurs)"
+        title="Einheiten-Code anzeigen (für die Verknüpfung im Moodle-Kurs)"
       >
         <Link2 className="w-3.5 h-3.5" />
       </button>
@@ -37,12 +37,13 @@ export default function MoodleParameterButton({ einheit }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="w-[95%] sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Moodle-Adresse dieser Einheit</DialogTitle>
+            <DialogTitle>Einheiten-Code für Moodle</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Damit Ihre Schüler:innen in Moodle <strong>genau diese Einheit</strong> („{einheit.titel_der_einheit}") sehen,
-              tragen Sie beim Externen Tool in Moodle diesen Parameter ein:
+              Jede Einheit hat einen eigenen Code — wie eine Hausnummer. Damit Ihre Schüler:innen in Moodle{' '}
+              <strong>genau diese Einheit</strong> („{einheit.titel_der_einheit}") sehen, kopieren Sie diesen Code
+              und fügen ihn in Moodle ein:
             </p>
 
             <div className="flex items-center gap-2">
@@ -59,11 +60,11 @@ export default function MoodleParameterButton({ einheit }) {
             </div>
 
             <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-3 space-y-1.5">
-              <p className="text-xs font-semibold text-blue-900">So tragen Sie den Parameter in Moodle ein:</p>
+              <p className="text-xs font-semibold text-blue-900">So fügen Sie den Code in Moodle ein:</p>
               <ol className="text-xs text-blue-800/90 space-y-1 list-decimal pl-4">
                 <li>In Ihrem Moodle-Kurs: „Aktivität anlegen" → <strong>„Externes Tool"</strong> wählen.</li>
                 <li>Bei „Vorkonfiguriertes Tool" das Tool <strong>„Pool-Manager"</strong> auswählen und der Aktivität einen Namen geben (z.&nbsp;B. den Titel der Einheit).</li>
-                <li>Unter „Mehr anzeigen" das Feld <strong>„Angepasste Parameter"</strong> öffnen und den kopierten Text dort einfügen.</li>
+                <li>Unter „Mehr anzeigen" das Feld <strong>„Angepasste Parameter"</strong> öffnen (so heißt es in Moodle) und den kopierten Code dort einfügen.</li>
                 <li>Speichern — fertig. Der Link führt jetzt genau zu dieser Einheit.</li>
               </ol>
             </div>
