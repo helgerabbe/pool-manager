@@ -183,11 +183,8 @@ export default function AppLayout() {
 
               <div className="w-px h-6 bg-border mx-1" />
 
-              {/* Home / Startseite */}
-              <NavIconLink to="/" icon={Home} label="Startseite" isActive={isActive('/')} />
-
-              {/* Einheiten / Arbeitsbereich */}
-              <NavIconLink to="/einheiten" icon={BookOpen} label="Einheiten / Arbeitsbereich" isActive={isActive('/einheiten') || isActive('/workspace')} />
+              {/* Home / Startseite (= Einheiten-Arbeitsbereich) */}
+              <NavIconLink to="/" icon={Home} label="Startseite" isActive={isActive('/') || isActive('/einheiten') || isActive('/workspace')} />
 
               {/* Basismodule */}
               <NavIconLink to="/basismodule" icon={Layers} label="Basismodule" isActive={isActive('/basismodule')} />
