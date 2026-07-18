@@ -290,7 +290,7 @@ export default function EinheitenListe() {
         {(permissions.kannEinheitVerwalten || rolle === ROLLEN.LEHRKRAFT) && (
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1">
-              <Button variant="outline" onClick={() => setSchnellErstellen(true)} className="gap-2">
+              <Button onClick={() => setSchnellErstellen(true)} className="gap-2 bg-blue-100 text-blue-900 border border-blue-200 shadow-sm hover:bg-blue-200">
                 <Plus className="w-4 h-4" />
                 Neue Einheit
               </Button>
@@ -300,7 +300,7 @@ export default function EinheitenListe() {
               />
             </div>
             <div className="flex items-center gap-1">
-              <Button variant="outline" onClick={() => navigate(`/einheit/coach${ansicht === 'privat' ? '?privat=1' : ''}`)} className="gap-2">
+              <Button onClick={() => navigate(`/einheit/coach${ansicht === 'privat' ? '?privat=1' : ''}`)} className="gap-2 bg-blue-300 text-blue-950 border border-blue-300 shadow-sm hover:bg-blue-400">
                 <Bot className="w-4 h-4" />
                 Mit KI-Coach planen
               </Button>
@@ -310,9 +310,9 @@ export default function EinheitenListe() {
               />
             </div>
             <div className="flex items-center gap-1">
-              <Button onClick={() => navigate(`/einheit/create${ansicht === 'privat' ? '?privat=1' : ''}`)} className="gap-2">
+              <Button onClick={() => navigate(`/einheit/create${ansicht === 'privat' ? '?privat=1' : ''}`)} className="gap-2 bg-blue-500 text-white border border-blue-500 shadow-sm hover:bg-blue-600">
                 <Wand2 className="w-4 h-4" />
-                Neue Einheit (Wizard)
+                Einheiten-Wizard
               </Button>
               <HelpBadge
                 text="Der geführte Wizard hilft Ihnen Schritt für Schritt: Metadaten, Gesamtziele, Themenfelder und Lernpakete werden strukturiert angelegt. Empfohlen für neue Einheiten."
