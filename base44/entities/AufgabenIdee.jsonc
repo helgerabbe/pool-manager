@@ -1,0 +1,61 @@
+{
+  "name": "AufgabenIdee",
+  "type": "object",
+  "description": "Aufgaben-Sammelbox / 'Ideenkiste' (Etappe 1, 2026-07-21): Aufgaben-Entw\u00fcrfe, die eine Lehrkraft f\u00fcr eine Einheit sammelt, BEVOR klar ist, wo sie in der Einheit platziert werden. Jeder Entwurf h\u00e4lt Titel, Beschreibung und optional hochgeladenes Material (Screenshot/PDF/Dokument). Status 'offen' = wartet auf Integration, 'integriert' = wurde (sp\u00e4ter per KI-Assistent, Etappe 3) als echte Aufgabe/Aktivit\u00e4t in die Einheit \u00fcbernommen. Etappe 2 erg\u00e4nzt den KI-Dialog (Material-Analyse), Etappe 3 den Integrations-Assistenten.",
+  "properties": {
+    "einheit_id": {
+      "type": "string",
+      "description": "FK zur Einheit, f\u00fcr die diese Aufgaben-Idee gesammelt wird."
+    },
+    "titel": {
+      "type": "string",
+      "description": "Kurzer Arbeitstitel der Aufgaben-Idee."
+    },
+    "beschreibung": {
+      "type": "string",
+      "description": "Freie Beschreibung: Was sollen die Sch\u00fcler:innen tun, was sollen sie daran lernen, welche Inhalte?"
+    },
+    "material_urls": {
+      "type": "array",
+      "description": "Hochgeladene Materialien (Screenshot, PDF, Dokument) als Vorlage/Inspiration.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
+    "aufgabentyp_vorschlag": {
+      "type": "string",
+      "description": "Optionale Notiz/Vorschlag, welcher App-Aufgabentyp passen k\u00f6nnte (z. B. 'Allgemeine Aufgabe Ebene 2', 'L\u00fcckentext im Lernpaket', 'Projektaufgabe'). Wird ab Etappe 2 auch von der KI bef\u00fcllt."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "offen",
+        "integriert"
+      ],
+      "default": "offen",
+      "description": "'offen' = liegt in der Sammelbox und wartet auf Integration. 'integriert' = wurde als echte Aufgabe in die Einheit \u00fcbernommen."
+    },
+    "integriert_hinweis": {
+      "type": "string",
+      "description": "Klartext-Hinweis, wo die Idee integriert wurde (z. B. 'Als Allgemeine Aufgabe im Themenfeld X angelegt')."
+    },
+    "integriert_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel der Integration."
+    }
+  },
+  "required": [
+    "einheit_id",
+    "titel"
+  ]
+}

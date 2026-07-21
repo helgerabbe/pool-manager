@@ -36,6 +36,7 @@ import ProjektaufgabenView from '@/components/projektaufgaben/ProjektaufgabenVie
 import LernpfadeCockpit from '@/components/lernpfade/LernpfadeCockpit';
 import LoadingOverlay from '@/components/workspace/LoadingOverlay';
 import EinheitVorschauModal from '@/components/einheiten/EinheitVorschauModal';
+import IdeenkisteButton from '@/components/ideenkiste/IdeenkisteButton';
 
 const LAST_EINHEIT_STORAGE_KEY = 'poolmanager:lastEinheitId';
 
@@ -807,6 +808,13 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               <div className="flex-1 min-w-0">
                 <WorkspaceTabs activeTab={activeTab} onTabChange={handleTabChange} isBasismodul={isBasismodul} istPrivat={einheit?.sichtbarkeit === 'privat'} />
               </div>
+              {/* Ideenkiste: einheitenweite Aufgaben-Sammelbox (Etappe 1) */}
+              {!isBasismodul && (
+                <IdeenkisteButton
+                  einheitId={selectedEinheitId}
+                  kannBearbeiten={kannDieseEinheitBearbeiten}
+                />
+              )}
               {/* Privat-Modus: Gesamt-Vorschau — aus jedem Tab heraus erreichbar */}
               {einheit?.sichtbarkeit === 'privat' && (
                 <button
