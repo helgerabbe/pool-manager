@@ -22,9 +22,12 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Sparkles, RefreshCw, Check, Loader2, X } from 'lucide-react';
+import { Sparkles, RefreshCw, Check, Loader2, X, Inbox } from 'lucide-react';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { getMission } from '@/lib/missionen';
+import { speichereIdeeInKiste, baueIdeenBeschreibung } from '@/lib/ideenkisteUebernahme';
 import InspirationBriefingForm from '@/components/missionen/InspirationBriefingForm';
 import InspirationProposalCard from '@/components/missionen/InspirationProposalCard';
 import { DEFAULT_MATERIAL_LEVEL } from '@/lib/inspirationConstants';
@@ -46,6 +49,9 @@ export default function InspirationModal({
   const [proposal, setProposal] = useState(null);
   const [proposalMaterialLevel, setProposalMaterialLevel] = useState(DEFAULT_MATERIAL_LEVEL);
   const [loading, setLoading] = useState(false);
+  const [kisteSaving, setKisteSaving] = useState(false);
+  const [kisteSaved, setKisteSaved] = useState(false);
+  const queryClient = useQueryClient();
 
   // Beim Öffnen: Briefing aus initialMission vorbelegen, alten Vorschlag verwerfen.
   useEffect(() => {
@@ -83,6 +89,7 @@ export default function InspirationModal({
       // korrekt bleibt, bis das nächste "Neu würfeln" stattfindet.
       setProposal(data);
       setProposalMaterialLevel(materialLevel);
+      setKisteSaved(false);
     } catch (err) {
       const msg =
         err?.response?.data?.error ||
@@ -91,6 +98,29 @@ export default function InspirationModal({
       toast.error(msg);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveToKiste = async () => {
+    if (!proposal || !einheitId) return;
+    setKisteSaving(true);
+    try {
+      const missionDef = getMission(mission);
+      await speichereIdeeInKiste({
+        einheitId,
+        titel: proposal.titel,
+        beschreibung: baueIdeenBeschreibung(proposal, {
+          missionLabel: missionDef ? `${missionDef.emoji} ${missionDef.label}` : mission,
+        }),
+        aufgabentypVorschlag: aufgabenTyp === 'handlung' ? 'Handlungsaufgabe' : 'Allgemeine Aufgabe (Ebene 2)',
+      });
+      queryClient.invalidateQueries({ queryKey: ['aufgaben-ideen', einheitId] });
+      setKisteSaved(true);
+      toast.success('Vorschlag liegt jetzt in der Ideenkiste.');
+    } catch (err) {
+      toast.error(err?.message || 'Vorschlag konnte nicht in die Ideenkiste gelegt werden.');
+    } finally {
+      setKisteSaving(false);
     }
   };
 
@@ -178,6 +208,17 @@ export default function InspirationModal({
             <X className="w-4 h-4" />
             Abbrechen
           </Button>
+          {einheitId && (
+            <Button
+              variant="outline"
+              onClick={handleSaveToKiste}
+              disabled={!hasProposal || loading || kisteSaving || kisteSaved}
+              className="gap-2"
+            >
+              {kisteSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Inbox className="w-4 h-4" />}
+              {kisteSaved ? 'In der Ideenkiste' : 'In die Ideenkiste'}
+            </Button>
+          )}
           <Button onClick={handleAccept} disabled={!hasProposal || loading} className="gap-2">
             <Check className="w-4 h-4" />
             Übernehmen

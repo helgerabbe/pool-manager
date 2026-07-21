@@ -3,9 +3,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Lightbulb, RefreshCw, Save, Sparkles, Wand2 } from 'lucide-react';
+import { Loader2, Lightbulb, RefreshCw, Save, Sparkles, Wand2, Inbox } from 'lucide-react';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { speichereIdeeInKiste, baueIdeenBeschreibung } from '@/lib/ideenkisteUebernahme';
 import MissionBadge from '@/components/missionen/MissionBadge';
 import MissionTypeChoiceList from '@/components/missionen/MissionTypeChoiceList';
 import { getMission } from '@/lib/missionen';
@@ -17,7 +19,7 @@ function Stars({ value }) {
   return <span className="text-amber-500 text-xs">{'★'.repeat(safe)}<span className="text-muted-foreground/30">{'★'.repeat(3 - safe)}</span></span>;
 }
 
-function IdeaCard({ idea, saved, saving, onSave }) {
+function IdeaCard({ idea, saved, saving, onSave, kisteSaved, kisteSaving, onSaveToKiste }) {
   const material = getMaterialLevel(idea.material_level);
 
   return (
@@ -47,10 +49,16 @@ function IdeaCard({ idea, saved, saving, onSave }) {
         </div>
       )}
 
-      <Button size="sm" onClick={onSave} disabled={saved || saving} className="gap-2 w-full sm:w-auto">
-        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-        {saved ? 'Gemerkte Idee' : 'Idee merken'}
-      </Button>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <Button size="sm" onClick={onSave} disabled={saved || saving} className="gap-2 w-full sm:w-auto">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {saved ? 'Gemerkte Idee' : 'Idee merken'}
+        </Button>
+        <Button size="sm" variant="outline" onClick={onSaveToKiste} disabled={kisteSaved || kisteSaving} className="gap-2 w-full sm:w-auto">
+          {kisteSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Inbox className="w-4 h-4" />}
+          {kisteSaved ? 'In der Ideenkiste' : 'In die Ideenkiste'}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -71,6 +79,9 @@ export default function ThemenfeldIdeenModal({
   const [loading, setLoading] = useState(false);
   const [savingIndex, setSavingIndex] = useState(null);
   const [savedKeys, setSavedKeys] = useState(new Set());
+  const [kisteSavingIndex, setKisteSavingIndex] = useState(null);
+  const [kisteSavedKeys, setKisteSavedKeys] = useState(new Set());
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!open) return;
@@ -80,6 +91,8 @@ export default function ThemenfeldIdeenModal({
     setIdeen([]);
     setSavedKeys(new Set());
     setSavingIndex(null);
+    setKisteSavedKeys(new Set());
+    setKisteSavingIndex(null);
   }, [open, defaultThemenfeldId, themenfelder]);
 
   const selectedThemenfeld = useMemo(
@@ -136,6 +149,28 @@ export default function ThemenfeldIdeenModal({
       toast.error(err?.message || 'Idee konnte nicht gespeichert werden.');
     } finally {
       setSavingIndex(null);
+    }
+  };
+
+  const saveIdeaToKiste = async (idea, index) => {
+    setKisteSavingIndex(index);
+    try {
+      await speichereIdeeInKiste({
+        einheitId,
+        titel: idea.titel,
+        beschreibung: baueIdeenBeschreibung(idea, {
+          themenfeldTitel: selectedThemenfeld?.titel,
+          missionLabel: selectedMission ? `${selectedMission.emoji} ${selectedMission.label}` : selectedMissionType,
+        }),
+        aufgabentypVorschlag: `Allgemeine Aufgabe (${anforderungsebene})`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['aufgaben-ideen', einheitId] });
+      setKisteSavedKeys((prev) => new Set(prev).add(`${index}-${idea.titel}`));
+      toast.success('Idee liegt jetzt in der Ideenkiste.');
+    } catch (err) {
+      toast.error(err?.message || 'Idee konnte nicht in die Ideenkiste gelegt werden.');
+    } finally {
+      setKisteSavingIndex(null);
     }
   };
 
@@ -225,6 +260,9 @@ export default function ThemenfeldIdeenModal({
                   saved={savedKeys.has(`${index}-${idea.titel}`)}
                   saving={savingIndex === index}
                   onSave={() => saveIdea(idea, index)}
+                  kisteSaved={kisteSavedKeys.has(`${index}-${idea.titel}`)}
+                  kisteSaving={kisteSavingIndex === index}
+                  onSaveToKiste={() => saveIdeaToKiste(idea, index)}
                 />
               ))
             )}
