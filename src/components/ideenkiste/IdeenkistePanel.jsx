@@ -5,6 +5,7 @@ import { Lightbulb, Plus, Sparkles } from 'lucide-react';
 import IdeenkisteEntwurfForm from './IdeenkisteEntwurfForm';
 import IdeenkisteEntwurfCard from './IdeenkisteEntwurfCard';
 import AufgabenAssistentDialog from './AufgabenAssistentDialog';
+import IntegrationAssistentDialog from './IntegrationAssistentDialog';
 
 /**
  * Aufgaben-Sammelbox ("Ideenkiste") einer Einheit: Liste aller Aufgaben-Ideen
@@ -13,6 +14,7 @@ import AufgabenAssistentDialog from './AufgabenAssistentDialog';
 export default function IdeenkistePanel({ open, onOpenChange, einheitId, einheit = null, ideen = [], kannBearbeiten }) {
   const [formIdee, setFormIdee] = useState(null); // null = zu, {} = neu, {id,...} = bearbeiten
   const [assistentOpen, setAssistentOpen] = useState(false);
+  const [integrierenIdee, setIntegrierenIdee] = useState(null);
 
   const offene = ideen.filter((i) => i.status !== 'integriert');
   const integrierte = ideen.filter((i) => i.status === 'integriert');
@@ -68,6 +70,7 @@ export default function IdeenkistePanel({ open, onOpenChange, einheitId, einheit
                 idee={idee}
                 kannBearbeiten={kannBearbeiten}
                 onEdit={() => setFormIdee(idee)}
+                onIntegrieren={() => setIntegrierenIdee(idee)}
               />
             ))}
           </div>
@@ -88,6 +91,13 @@ export default function IdeenkistePanel({ open, onOpenChange, einheitId, einheit
       <AufgabenAssistentDialog
         open={assistentOpen}
         onOpenChange={setAssistentOpen}
+        einheit={einheit || { id: einheitId }}
+      />
+
+      <IntegrationAssistentDialog
+        open={!!integrierenIdee}
+        onOpenChange={(v) => { if (!v) setIntegrierenIdee(null); }}
+        idee={integrierenIdee}
         einheit={einheit || { id: einheitId }}
       />
     </Sheet>

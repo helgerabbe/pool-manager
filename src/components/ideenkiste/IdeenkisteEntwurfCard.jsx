@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
-import { Paperclip, Pencil, Trash2, CheckCircle2 } from 'lucide-react';
+import { Paperclip, Pencil, Trash2, CheckCircle2, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 /**
  * Eine Aufgaben-Idee in der Ideenkiste: Titel, Beschreibung, Materialien,
  * Status-Badge sowie Bearbeiten/Löschen (mit Zwei-Klick-Bestätigung).
  */
-export default function IdeenkisteEntwurfCard({ idee, kannBearbeiten, onEdit }) {
+export default function IdeenkisteEntwurfCard({ idee, kannBearbeiten, onEdit, onIntegrieren }) {
   const queryClient = useQueryClient();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const istIntegriert = idee.status === 'integriert';
@@ -64,6 +64,16 @@ export default function IdeenkisteEntwurfCard({ idee, kannBearbeiten, onEdit }) 
             </>
           ) : (
             <>
+              {onIntegrieren && (
+                <button
+                  onClick={onIntegrieren}
+                  className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors mr-auto"
+                  title="KI-Assistent: Idee in die Einheit integrieren"
+                >
+                  <ArrowRight className="w-3 h-3" />
+                  Integrieren
+                </button>
+              )}
               <button onClick={onEdit} title="Bearbeiten"
                 className="p-1 rounded-md border border-border text-muted-foreground hover:text-primary hover:border-primary/40 transition-all">
                 <Pencil className="w-3.5 h-3.5" />
