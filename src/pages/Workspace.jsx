@@ -812,6 +812,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               {!isBasismodul && (
                 <IdeenkisteButton
                   einheitId={selectedEinheitId}
+                  einheit={einheit}
                   kannBearbeiten={kannDieseEinheitBearbeiten}
                 />
               )}

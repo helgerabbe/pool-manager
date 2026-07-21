@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Lightbulb, Plus } from 'lucide-react';
+import { Lightbulb, Plus, Sparkles } from 'lucide-react';
 import IdeenkisteEntwurfForm from './IdeenkisteEntwurfForm';
 import IdeenkisteEntwurfCard from './IdeenkisteEntwurfCard';
+import AufgabenAssistentDialog from './AufgabenAssistentDialog';
 
 /**
  * Aufgaben-Sammelbox ("Ideenkiste") einer Einheit: Liste aller Aufgaben-Ideen
  * mit Status offen/integriert plus Erfassungsformular für neue Ideen.
  */
-export default function IdeenkistePanel({ open, onOpenChange, einheitId, ideen = [], kannBearbeiten }) {
+export default function IdeenkistePanel({ open, onOpenChange, einheitId, einheit = null, ideen = [], kannBearbeiten }) {
   const [formIdee, setFormIdee] = useState(null); // null = zu, {} = neu, {id,...} = bearbeiten
+  const [assistentOpen, setAssistentOpen] = useState(false);
 
   const offene = ideen.filter((i) => i.status !== 'integriert');
   const integrierte = ideen.filter((i) => i.status === 'integriert');
@@ -31,10 +33,16 @@ export default function IdeenkistePanel({ open, onOpenChange, einheitId, ideen =
 
         <div className="mt-5 space-y-4">
           {kannBearbeiten && !formIdee && (
-            <Button onClick={() => setFormIdee({})} className="w-full gap-1.5" size="sm">
-              <Plus className="w-4 h-4" />
-              Neue Aufgaben-Idee
-            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={() => setFormIdee({})} variant="outline" className="gap-1.5" size="sm">
+                <Plus className="w-4 h-4" />
+                Selbst erfassen
+              </Button>
+              <Button onClick={() => setAssistentOpen(true)} className="gap-1.5" size="sm">
+                <Sparkles className="w-4 h-4" />
+                Mit KI ausarbeiten
+              </Button>
+            </div>
           )}
 
           {formIdee && (
@@ -76,6 +84,12 @@ export default function IdeenkistePanel({ open, onOpenChange, einheitId, ideen =
           )}
         </div>
       </SheetContent>
+
+      <AufgabenAssistentDialog
+        open={assistentOpen}
+        onOpenChange={setAssistentOpen}
+        einheit={einheit || { id: einheitId }}
+      />
     </Sheet>
   );
 }

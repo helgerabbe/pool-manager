@@ -8,7 +8,7 @@ import IdeenkistePanel from './IdeenkistePanel';
  * Einheitenweiter Zugang zur Aufgaben-Sammelbox ("Ideenkiste").
  * Zeigt die Anzahl offener Aufgaben-Ideen als Zähler und öffnet das Panel.
  */
-export default function IdeenkisteButton({ einheitId, kannBearbeiten = true }) {
+export default function IdeenkisteButton({ einheitId, einheit = null, kannBearbeiten = true }) {
   const [open, setOpen] = useState(false);
   const { data: ideen = [] } = useQuery({
     queryKey: ['aufgaben-ideen', einheitId],
@@ -36,6 +36,7 @@ export default function IdeenkisteButton({ einheitId, kannBearbeiten = true }) {
         open={open}
         onOpenChange={setOpen}
         einheitId={einheitId}
+        einheit={einheit}
         ideen={ideen}
         kannBearbeiten={kannBearbeiten}
       />
