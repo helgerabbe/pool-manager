@@ -1,5 +1,6 @@
 import React from 'react';
 import { Rocket, Library, Lock, Layers } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 /**
  * Prominenter Umschalter für die vier Einheiten-Bereiche:
@@ -44,27 +45,32 @@ export default function BereichSwitcher({ ansicht, onChange, istAdmin }) {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-      {bereiche.map(({ key, label, desc, icon: Icon, active, iconActive }) => {
-        const isActive = ansicht === key;
-        return (
-          <button
-            key={key}
-            onClick={() => onChange(key)}
-            className={`flex items-start gap-3 rounded-xl border p-3.5 text-left transition-all ${
-              isActive ? active : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:bg-muted/40'
-            }`}
-          >
-            <div className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${isActive ? iconActive : 'bg-muted text-muted-foreground'}`}>
-              <Icon className="w-5 h-5" />
-            </div>
-            <div className="min-w-0">
-              <p className={`text-sm font-semibold ${isActive ? '' : 'text-foreground'}`}>{label}</p>
-              <p className="text-xs mt-0.5 leading-snug opacity-80">{desc}</p>
-            </div>
-          </button>
-        );
-      })}
-    </div>
+    <TooltipProvider delayDuration={300}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {bereiche.map(({ key, label, desc, icon: Icon, active, iconActive }) => {
+          const isActive = ansicht === key;
+          return (
+            <Tooltip key={key}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => onChange(key)}
+                  className={`flex items-center gap-2.5 rounded-xl border px-3 py-1.5 text-left transition-all ${
+                    isActive ? active : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:bg-muted/40'
+                  }`}
+                >
+                  <div className={`shrink-0 w-7 h-7 rounded-lg flex items-center justify-center ${isActive ? iconActive : 'bg-muted text-muted-foreground'}`}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <p className={`min-w-0 truncate text-sm font-semibold ${isActive ? '' : 'text-foreground'}`}>{label}</p>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs">
+                {desc}
+              </TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </div>
+    </TooltipProvider>
   );
 }

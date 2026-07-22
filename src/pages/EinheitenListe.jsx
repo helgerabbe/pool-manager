@@ -290,7 +290,7 @@ export default function EinheitenListe() {
     <div className="space-y-6">
       {/* Vier Bereiche: Privat / Freigegebene (Austausch) / Poolzeit / Basismodule —
           Auswahl liegt oben, darunter beginnt der inhaltliche Bereich. */}
-      <div className="flex items-start gap-2">
+      <div className="flex items-start gap-2 -mb-3">
         <div className="flex-1">
           <BereichSwitcher ansicht={ansicht} onChange={setAnsicht} istAdmin={permissions.istAdmin} />
         </div>
