@@ -67,6 +67,7 @@ Deno.serve(async (req) => {
       grundgeruest_status,
       grundgeruest_updated_at,
       onboarding_konfiguration,
+      cover_image_url,
       version, // CRITICAL: Client-side version für Optimistic Locking
     } = payload;
 
@@ -184,6 +185,7 @@ Deno.serve(async (req) => {
     if (grundgeruest_status !== undefined) updateData.grundgeruest_status = grundgeruest_status;
     if (grundgeruest_updated_at !== undefined) updateData.grundgeruest_updated_at = grundgeruest_updated_at;
     if (onboarding_konfiguration !== undefined) updateData.onboarding_konfiguration = onboarding_konfiguration;
+    if (cover_image_url !== undefined) updateData.cover_image_url = cover_image_url;
 
     console.log('[updateEinheitSecure] Payload:', { einheit_id, updateData, version });
 
