@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, Trash2, Lock, Layers } from 'lucide-react';
+import { ArrowRight, Trash2, Lock, Layers, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { base44 } from '@/api/base44Client';
@@ -16,6 +16,7 @@ import { useRBAC } from '@/hooks/useRBAC';
 import { getFachFarbe, getFachBadgeStyle } from '@/lib/fachFarben';
 import EinheitMetricsRow from '@/components/einheiten/EinheitMetricsRow';
 import EinheitAustauschToggleButton from '@/components/einheiten/EinheitAustauschToggleButton';
+import EinheitVorschauModal from '@/components/einheiten/EinheitVorschauModal';
 
 /**
  * BasismodulCard – Kachel in der Basismodul-Übersicht.
@@ -42,6 +43,7 @@ export default function BasismodulCard({
   const badgeStyle = getFachBadgeStyle(fachHex);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showVorschau, setShowVorschau] = useState(false);
   const [blockiert, setBlockiert] = useState(null);
   const queryClient = useQueryClient();
   const isAdmin = rolle === ROLLEN.ADMIN;
@@ -156,6 +158,22 @@ export default function BasismodulCard({
                 {/* Für Kollegium freigeben → erscheint in der Austausch-Bibliothek,
                     Kolleg:innen ziehen sich eine private Kopie (inkl. Umwandlung). */}
                 {darfFreigeben && <EinheitAustauschToggleButton einheit={einheit} />}
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowVorschau(true); }}
+                  className="p-1.5 rounded-md border border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/40 transition-all"
+                  title="Vorschau aus Schülersicht"
+                >
+                  <Eye className="w-4 h-4" />
+                </button>
+                {isAdmin && (
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowConfirm(true); }}
+                    className="p-1.5 rounded-md border border-border bg-card text-muted-foreground hover:text-destructive hover:border-destructive/40 transition-all"
+                    title="Basismodul löschen"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
                 <Link
                   to={`/basismodule/${einheit.id}?tab=einheit`}
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
@@ -168,16 +186,13 @@ export default function BasismodulCard({
           </CardContent>
         </Card>
 
-        {isAdmin && (
-          <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowConfirm(true); }}
-            className="absolute top-3 right-3 z-10 p-1.5 rounded-md bg-white/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 hover:bg-red-50 transition-all opacity-0 group-hover/card:opacity-100"
-            title="Basismodul löschen"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        )}
       </div>
+
+      <EinheitVorschauModal
+        open={showVorschau}
+        onOpenChange={setShowVorschau}
+        einheit={einheit}
+      />
 
       <DeleteConfirmModal
         open={showConfirm}

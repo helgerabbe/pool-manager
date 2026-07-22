@@ -231,7 +231,10 @@ export default function EinheitCard({
                 >
                   <Eye className="w-3.5 h-3.5" />
                 </button>
-                {darfLoeschen && (
+                {/* Private Kopie duplizieren: nur im Privatbereich — von
+                    Poolzeit-Einheiten werden bewusst KEINE Kopien gezogen
+                    (private Kopien gibt es nur über Freigegebene Einheiten). */}
+                {istPrivat && darfLoeschen && (
                   <button
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDuplicate(); }}
                     disabled={isCopying}
