@@ -200,7 +200,9 @@ export default function EinheitStatusTabelle({
         )}
       </Section>
 
-      {/* 4: Allgemeine Aufgaben */}
+      {/* 4: Allgemeine Aufgaben — Basismodule bestehen nur aus Lernpaketen,
+          daher werden die Sektionen 4–6 dort komplett ausgeblendet. */}
+      {einheit?.ist_basismodul !== true && (<>
       <Section icon={ListChecks} title="Allgemeine Aufgaben (Ebene 1/2)" count={ebene12.length}>
         {ebene12.length === 0 ? (
           <EmptyRow text="Keine allgemeinen Aufgaben vorhanden." />
@@ -248,6 +250,7 @@ export default function EinheitStatusTabelle({
           />
         ))}
       </Section>
+      </>)}
     </div>
   );
 }

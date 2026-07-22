@@ -80,17 +80,10 @@ export default function ExportCockpitView({
     einheit?.fach &&
     faecher.includes(einheit.fach);
   const darfFreigeben = istAdmin || istFachschaftFuerFach;
-
-  if (!permissions.kannExportBedienen) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <ShieldCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">Kein Zugriff. Nur Moodle-Designer dürfen den Export bedienen.</p>
-        </div>
-      </div>
-    );
-  }
+  // Basismodule: Kontrolle liegt bei der Fachschaftsleitung — sie darf das
+  // Cockpit auch ohne generelles Export-Recht sehen (Prüfung nach dem Laden
+  // der Einheit, siehe unten).
+  const istBasismodul = einheit?.ist_basismodul === true;
 
   // Tab 8 wird ausschließlich im Workspace-Kontext geöffnet — ohne Einheit
   // ist die Seite sinnlos. Statt eines Selectors zeigen wir einen klaren
@@ -114,6 +107,17 @@ export default function ExportCockpitView({
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-4 border-muted border-t-primary rounded-full animate-spin" />
           <p className="text-sm text-muted-foreground font-medium">Cockpit-Daten werden geladen, bitte einen Moment Geduld...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!permissions.kannExportBedienen && !(istBasismodul && darfFreigeben)) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <ShieldCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">Kein Zugriff. Nur Moodle-Designer dürfen den Export bedienen.</p>
         </div>
       </div>
     );

@@ -19,7 +19,7 @@ import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
 
 // ✅ TAB-SPERREN: Welche Tabs sind für welche Rolle sichtbar?
-const getVisibleTabs = (rolle) => {
+const getVisibleTabs = (rolle, isBasismodul = false) => {
   const istAdmin = rolle === ROLLEN.ADMIN;
   const istFachschaft = rolle === ROLLEN.FACHSCHAFT;
   const istMoodleDesigner = rolle === ROLLEN.MOODLE_DESIGNER;
@@ -221,9 +221,11 @@ const getVisibleTabs = (rolle) => {
   ];
 
   return allTabs.filter(tab => {
-    // Tab 8 (Freigabe-Cockpit) nur für Admin und Moodle-Designer
+    // Tab 8 (Freigabe-Cockpit) nur für Admin und Moodle-Designer.
+    // Bei Basismodulen zusätzlich für die Fachschaftsleitung — sie kontrolliert
+    // die (öffentlichen) Basismodule und übergibt sie an das Export-Center.
     if (tab.value === 'cockpit') {
-      return showExportTabs;
+      return showExportTabs || (isBasismodul && istFachschaft);
     }
     // Tab 7 (Dashboards): für alle Lehrkräfte/Admins sichtbar
     if (tab.value === 'dashboards') return true;
@@ -234,14 +236,15 @@ const getVisibleTabs = (rolle) => {
 };
 
 // Tabs, die im Basismodul-Modus sichtbar sind (in dieser Reihenfolge).
-// Basismodule sind reduzierte Einheiten: keine allgemeinen/Projekt-Aufgaben,
-// keine Dashboards, kein Export-Cockpit. Die Steps werden für die Anzeige
-// frisch von 1 durchnummeriert.
-const BASISMODUL_TAB_VALUES = ['einheit', 'struktur', 'lernziele', 'aktivitaeten', 'aufgaben'];
+// Basismodule sind reduzierte, ÖFFENTLICHE Einheiten: keine allgemeinen/
+// Projekt-Aufgaben, keine Dashboards — aber MIT Freigabe-Cockpit, weil sie
+// kollaborativ gepflegt und über das Export-Center exportiert werden.
+// Die Steps werden für die Anzeige frisch von 1 durchnummeriert.
+const BASISMODUL_TAB_VALUES = ['einheit', 'struktur', 'lernziele', 'aktivitaeten', 'aufgaben', 'cockpit'];
 
 export default function WorkspaceTabs({ activeTab, onTabChange, isBasismodul = false, istPrivat = false }) {
   const { rolle } = useRBAC();
-  let visibleTabs = getVisibleTabs(rolle);
+  let visibleTabs = getVisibleTabs(rolle, isBasismodul);
 
   // Private Einheiten: kein Freigabe-Cockpit — der Moodle-Weg läuft dort
   // direkt über den Einheiten-Code auf Tab 1.

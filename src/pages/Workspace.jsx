@@ -60,7 +60,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   // Export) sind aus der Einheitenansicht entfernt. Beide Workflows laufen
   // jetzt zentral im eigenständigen Export-Center (Hauptmenü).
   const VALID_TABS = isBasismodul
-    ? ['einheit', 'struktur', 'lernziele', 'aktivitaeten', 'aufgaben']
+    ? ['einheit', 'struktur', 'lernziele', 'aktivitaeten', 'aufgaben', 'cockpit']
     : ['einheit', 'struktur', 'lernziele', 'aktivitaeten', 'aufgaben', 'ebene2', 'ebene3', 'dashboards', 'cockpit'];
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'einheit');
