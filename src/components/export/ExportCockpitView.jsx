@@ -25,6 +25,7 @@ import { ShieldCheck, Info } from 'lucide-react';
 import HelpBadge from '@/components/ui/HelpBadge';
 import EinheitStatusTabelle from '@/components/export/EinheitStatusTabelle';
 import EinheitFinalReleaseControl from '@/components/export/EinheitFinalReleaseControl';
+import BulkFreigabePanel from '@/components/export/BulkFreigabePanel';
 
 // ── Main Component ──────────────────────────────────────────────────
 
@@ -144,6 +145,16 @@ export default function ExportCockpitView({
         allgemeineAufgaben={allgemeineAufgaben}
         aktivitaeten={aktivitaeten}
         masterAufgaben={masterAufgaben}
+      />
+
+      {/* Sammel-Freigabe: prüft alle Inhalte auf Vollständigkeit und gibt
+          vollständige Elemente gebündelt frei — besonders nützlich, nachdem
+          eine private Einheit zur Poolzeit-Einheit gemacht wurde (dabei
+          werden alle Freigaben zurückgesetzt). */}
+      <BulkFreigabePanel
+        einheitId={selectedUnitId}
+        einheit={einheit}
+        darfFreigeben={darfFreigeben}
       />
 
       {/* Auf-einen-Blick-Tabelle: jeder Bestandteil der Einheit mit

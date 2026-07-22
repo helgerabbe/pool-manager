@@ -59,6 +59,50 @@ Deno.serve(async (req) => {
     }
     await e.Einheiten.update(einheitId, patch);
 
+    // ── Freigabe-Reset (2026-07-22) ────────────────────────────────────────
+    // Wird eine PRIVATE Einheit zur Poolzeit-Einheit, gilt wieder der volle
+    // Freigabe-Workflow. Alle Inhalte (Aktivitäten, Lernpakete, Allgemeine
+    // Aufgaben/Projekte) starten bewusst als "nicht freigegeben" — die
+    // Fachschaftsleitung prüft die Einheit im Freigabe-Cockpit und gibt sie
+    // dort (ggf. per Sammel-Freigabe) frei.
+    let resetCount = 0;
+    if (sichtbarkeit === 'oeffentlich' && einheit.sichtbarkeit === 'privat') {
+      const draftPatch = { content_status: 'draft', released_at: null, released_by: null };
+      const listAll = async (entity, query) => {
+        const all = [];
+        let skip = 0;
+        while (true) {
+          const page = await entity.filter(query, 'created_date', 500, skip);
+          if (!page || page.length === 0) break;
+          all.push(...page);
+          if (page.length < 500) break;
+          skip += 500;
+        }
+        return all;
+      };
+      const [pakete, aufgaben] = await Promise.all([
+        listAll(e.Lernpakete, { einheit_id: einheitId }),
+        listAll(e.AllgemeineAufgabe, { einheit_id: einheitId }),
+      ]);
+      const aktivitaetenNested = await Promise.all(
+        pakete.map((p) => listAll(e.LernpaketPhaseAktivitaet, { lernpaket_id: p.id }))
+      );
+      const releasedRecords = [
+        ...aufgaben
+          .filter((a) => a.content_status === 'approved' || a.released_at)
+          .map((a) => ({ entity: e.AllgemeineAufgabe, id: a.id })),
+        ...pakete
+          .filter((p) => p.content_status === 'approved' || p.released_at)
+          .map((p) => ({ entity: e.Lernpakete, id: p.id })),
+        ...aktivitaetenNested
+          .flat()
+          .filter((a) => a.content_status === 'approved' || a.released_at)
+          .map((a) => ({ entity: e.LernpaketPhaseAktivitaet, id: a.id })),
+      ];
+      await Promise.all(releasedRecords.map((r) => r.entity.update(r.id, draftPatch)));
+      resetCount = releasedRecords.length;
+    }
+
     await e.AuditLog.create({
       user_email: user.email,
       action: 'UPDATE',
@@ -69,11 +113,12 @@ Deno.serve(async (req) => {
         von: einheit.sichtbarkeit || 'oeffentlich',
         nach: sichtbarkeit,
         titel_der_einheit: einheit.titel_der_einheit,
+        freigaben_zurueckgesetzt: resetCount,
       },
       status: 'success',
     });
 
-    return Response.json({ success: true, sichtbarkeit });
+    return Response.json({ success: true, sichtbarkeit, freigaben_zurueckgesetzt: resetCount });
   } catch (error) {
     console.error('[setEinheitSichtbarkeitSecure]', error);
     return Response.json({ error: error.message }, { status: 500 });
