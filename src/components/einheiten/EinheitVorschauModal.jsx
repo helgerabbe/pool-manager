@@ -17,8 +17,12 @@ import { useLerntypDefinitionen } from '@/hooks/useLerntypDefinitionen';
 
 export default function EinheitVorschauModal({ open, onOpenChange, einheit }) {
   const { lerntypen } = useLerntypDefinitionen();
-  const aktiveKeys = getAktiveLerntypKeys(einheit);
-  const auswahl = lerntypen.filter((l) => aktiveKeys.includes(l.key));
+  // Basismodule haben KEINE Lerntyp-Dashboards: alle Inhalte sind für alle
+  // frei zugänglich. Die Vorschau zeigt daher genau eine Ansicht — ohne
+  // Lerntyp-Auswahl (technisch über den Standard-Pfad 'ehrgeizig' geladen).
+  const istBasismodul = einheit?.ist_basismodul === true;
+  const aktiveKeys = istBasismodul ? ['ehrgeizig'] : getAktiveLerntypKeys(einheit);
+  const auswahl = istBasismodul ? [] : lerntypen.filter((l) => aktiveKeys.includes(l.key));
 
   const [lerntyp, setLerntyp] = useState(aktiveKeys[0]);
   const [reloadKey, setReloadKey] = useState(0);
