@@ -6,7 +6,7 @@ import { kannEinheitSehen } from '@/lib/rbac';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Layers } from 'lucide-react';
+import { Plus, Search, Layers, Bot, Wand2 } from 'lucide-react';
 import BasismodulCard from '@/components/basismodule/BasismodulCard';
 import BasismodulManuellDialog from '@/components/basismodule/BasismodulManuellDialog';
 import EmptyState from '@/components/shared/EmptyState';
@@ -85,16 +85,23 @@ export default function BasismoduleListe() {
         {permissions.kannEinheitVerwalten && (
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1">
-              <Button variant="outline" onClick={() => setManuellOpen(true)} className="gap-2">
+              <Button onClick={() => setManuellOpen(true)} className="gap-2 bg-blue-100 text-blue-900 border border-blue-200 shadow-sm hover:bg-blue-200">
                 <Plus className="w-4 h-4" />
                 Neues Basismodul
               </Button>
               <HelpBadge text="Schnell ein neues Basismodul anlegen: Nur Titel, Fach und Jahrgang erforderlich. Inhalte können Sie später ergänzen." />
             </div>
             <div className="flex items-center gap-1">
-              <Button onClick={() => navigate('/einheit/create?basismodul=1')} className="gap-2">
-                <Plus className="w-4 h-4" />
-                Neues Basismodul (Wizard)
+              <Button onClick={() => navigate('/einheit/coach?basismodul=1')} className="gap-2 bg-blue-300 text-blue-950 border border-blue-300 shadow-sm hover:bg-blue-400">
+                <Bot className="w-4 h-4" />
+                Mit KI-Coach planen
+              </Button>
+              <HelpBadge text="Der Einheiten-Coach ist ein KI-Sparringspartner: Sie entwickeln im Gespräch die Struktur Ihres Basismoduls. Das Ergebnis wird anschließend an den Wizard übergeben und als Basismodul angelegt." />
+            </div>
+            <div className="flex items-center gap-1">
+              <Button onClick={() => navigate('/einheit/create?basismodul=1')} className="gap-2 bg-blue-500 text-white border border-blue-500 shadow-sm hover:bg-blue-600">
+                <Wand2 className="w-4 h-4" />
+                Basismodul-Wizard
               </Button>
               <HelpBadge text="Der geführte Wizard hilft Ihnen Schritt für Schritt durch die Erstellung des Basismoduls. Empfohlen für neue Basismodule." />
             </div>

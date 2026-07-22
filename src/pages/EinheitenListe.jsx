@@ -286,17 +286,27 @@ export default function EinheitenListe() {
         <div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
             <BookOpen className="w-6 h-6 text-accent" />
-            Einheiten
+            {ansicht === 'privat' ? 'Private Einheiten' : ansicht === 'austausch' ? 'Freigegebene Einheiten' : 'Poolzeit-Einheiten'}
             <HelpBadge
               text="Eine Einheit ist das Grundgerüst Ihrer Unterrichtsplanung. Jede Einheit enthält Themenfelder, Lernpakete und Aufgaben."
               docsSlug="einheiten-struktur"
             />
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">{einheiten.length} Einheit{einheiten.length !== 1 ? 'en' : ''} insgesamt</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {einheiten.length}{' '}
+            {ansicht === 'privat'
+              ? `private Einheit${einheiten.length !== 1 ? 'en' : ''}`
+              : ansicht === 'austausch'
+                ? `freigegebene Einheit${einheiten.length !== 1 ? 'en' : ''}`
+                : `Poolzeit-Einheit${einheiten.length !== 1 ? 'en' : ''}`}{' '}
+            insgesamt
+          </p>
         </div>
         {/* Erstellen dürfen: Admin + Fachschaftsleitung (öffentlich & privat)
-            sowie Fachlehrkräfte (NUR privat — wird in Modal/Wizard erzwungen). */}
-        {(permissions.kannEinheitVerwalten || rolle === ROLLEN.LEHRKRAFT) && (
+            sowie Fachlehrkräfte (NUR privat — wird in Modal/Wizard erzwungen).
+            Im Bereich "Freigegebene Einheiten" gibt es kein Erstellen —
+            dort landen Einheiten nur per Freigabe. */}
+        {ansicht !== 'austausch' && (permissions.kannEinheitVerwalten || rolle === ROLLEN.LEHRKRAFT) && (
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1">
               <Button onClick={() => setSchnellErstellen(true)} className="gap-2 bg-blue-100 text-blue-900 border border-blue-200 shadow-sm hover:bg-blue-200">

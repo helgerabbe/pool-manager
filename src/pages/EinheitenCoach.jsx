@@ -27,6 +27,8 @@ export default function EinheitenCoach() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const startPrivat = searchParams.get('privat') === '1';
+  // Aus dem Basismodul-Bereich gestartet: das Ergebnis wird als Basismodul angelegt.
+  const startBasismodul = searchParams.get('basismodul') === '1';
 
   const [messages, setMessages] = useState([BEGRUESSUNG]);
   const [struktur, setStruktur] = useState(LEERE_STRUKTUR);
@@ -102,7 +104,7 @@ export default function EinheitenCoach() {
         beschreibung: buildWizardBriefing(struktur),
       })
     );
-    navigate(`/einheit/create?coach=1${startPrivat ? '&privat=1' : ''}`);
+    navigate(`/einheit/create?coach=1${startPrivat ? '&privat=1' : ''}${startBasismodul ? '&basismodul=1' : ''}`);
   };
 
   return (
