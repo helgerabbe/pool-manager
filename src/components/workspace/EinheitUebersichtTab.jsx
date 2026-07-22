@@ -395,7 +395,7 @@ export default function EinheitUebersichtTab({
       await queryClient.refetchQueries({ queryKey: ['workspace-data', einheit.id] });
       await queryClient.refetchQueries({ queryKey: ['einheiten-list-secure'] });
 
-      toast.success('✅ Einheit gespeichert. Bearbeitungsmodus wird beendet.');
+      toast.success(onReleaseLock ? '✅ Einheit gespeichert. Bearbeitungsmodus wird beendet.' : '✅ Einheit gespeichert.');
       if (onReleaseLock) {
         await onReleaseLock();
       }
@@ -498,7 +498,7 @@ export default function EinheitUebersichtTab({
                 Bearbeiten
               </button>
             )}
-            {isEditingActive && (
+            {isEditingActive && !istPrivat && (
               <span className="ml-auto inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-green-100 text-green-700 border border-green-300">
                 <Edit className="w-3.5 h-3.5" />
                 Bearbeitungsmodus aktiv

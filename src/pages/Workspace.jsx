@@ -245,6 +245,13 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   // Einheit gesperrt? → normale Lehrkräfte dürfen nicht bearbeiten
   const einheitGesperrt = einheit?.freigabe_status === 'Gesperrt';
 
+  // ── Privat-Modus: Kein expliziter Bearbeitungsmodus ─────────────────────
+  // Private Einheiten gehören genau einer Person. Die Locks werden trotzdem
+  // im Hintergrund erworben (die Backend-Speicherfunktionen prüfen sie),
+  // aber automatisch und ohne Toasts/Buttons. Öffentliche Einheiten sind
+  // von dieser Logik komplett unberührt.
+  const istPrivat = einheit?.sichtbarkeit === 'privat';
+
   // ── Ring der Macht: Lifecycle-Hard-Lock ─────────────────────────────────
   // Sobald die Einheit final freigegeben oder im Export ist, sind ALLE
   // Bearbeitungsknöpfe in jedem Tab weg — keine „Bearbeiten"-Buttons,
@@ -267,13 +274,14 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   // Lock freigeben wenn Einheit gewechselt wird ODER Tab gewechselt wird.
   // Hinweis: Tab 7 "dashboards" recycelt den Structural Lock – daher hier ebenfalls erlaubt.
   useEffect(() => {
+    if (istPrivat) return; // Privat: Übergänge regelt der Auto-Lock-Effekt (weiter unten)
     if (isStructuralEditingActive && activeTab !== 'struktur' && activeTab !== 'dashboards') {
       handleReleaseStructLock();
     }
     if (isTab1EditingActive && activeTab !== 'einheit') {
       handleReleaseTab1Lock();
     }
-  }, [activeTab, isStructuralEditingActive, isTab1EditingActive]);
+  }, [activeTab, isStructuralEditingActive, isTab1EditingActive, istPrivat]);
 
 
 
@@ -324,7 +332,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   // Hinweis: Der Backend-Timeout (60 Min) bereinigt verwaiste Locks automatisch
   useEffect(() => {
     const handleBeforeUnload = (e) => {
-      if (isStructuralEditingActive && einheit) {
+      if (isStructuralEditingActive && einheit && !istPrivat) {
         // Browser zeigt Standard-Dialog "Möchten Sie diese Seite verlassen?"
         e.preventDefault();
         e.returnValue = '';
@@ -333,7 +341,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isStructuralEditingActive, einheit?.id]);
+  }, [isStructuralEditingActive, einheit?.id, istPrivat]);
 
   // Toast-Text-Helper: erzeugt aus einem 409-Response des Deep-Scans eine
   // sprechende Meldung — abhängig davon, welche Ebene blockiert
@@ -357,8 +365,9 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     return `🔒 ${name} bearbeitet gerade die Struktur dieser Einheit. Bitte warten Sie, bis die Bearbeitung abgeschlossen ist.`;
   };
 
-  const handleAcquireStructLock = async () => {
-    if (!einheit) return;
+  const handleAcquireStructLock = async (opts) => {
+    if (!einheit) return false;
+    const silent = opts?.silent === true || istPrivat;
     setAcquiringStructLock(true);
     try {
       const res = await invokeFunction('acquireUnitLockSecure', {
@@ -368,16 +377,20 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
       if (res.data?.success) {
         setIsStructuralEditingActive(true);
         queryClient.invalidateQueries({ queryKey: ['einheiten'] });
-        toast.success('✅ Strukturbearbeitung aktiviert. Andere Nutzer können jetzt keine Änderungen mehr vornehmen.');
-      } else {
-        toast.error(buildUnitLockBlockerToast(res.data));
+        if (!silent) toast.success('✅ Strukturbearbeitung aktiviert. Andere Nutzer können jetzt keine Änderungen mehr vornehmen.');
+        return true;
       }
+      if (!silent) toast.error(buildUnitLockBlockerToast(res.data));
+      return false;
     } catch (err) {
-      if (err?.response?.status === 409) {
-        toast.error(buildUnitLockBlockerToast(err.response.data));
-      } else {
-        toast.error('Fehler beim Erwerben der Structural-Sperre.');
+      if (!silent) {
+        if (err?.response?.status === 409) {
+          toast.error(buildUnitLockBlockerToast(err.response.data));
+        } else {
+          toast.error('Fehler beim Erwerben der Structural-Sperre.');
+        }
       }
+      return false;
     } finally {
       setAcquiringStructLock(false);
     }
@@ -388,8 +401,9 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   // Meldung mit Klartext-Namen, kein Lock-Erwerb. Bei Erfolg → harter
   // Struktur-Lock auf der gesamten Einheit (gleiche DB-Felder, daher
   // kompatibel zu allen anderen Tabs, die den Lock auswerten).
-  const handleAcquireDashboardLock = async () => {
-    if (!einheit) return;
+  const handleAcquireDashboardLock = async (opts) => {
+    if (!einheit) return false;
+    const silent = opts?.silent === true || istPrivat;
     setAcquiringStructLock(true);
     try {
       const res = await invokeFunction('acquireUnitLockSecure', {
@@ -399,16 +413,20 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
       if (res.data?.success) {
         setIsStructuralEditingActive(true);
         queryClient.invalidateQueries({ queryKey: ['einheiten'] });
-        toast.success('✅ Dashboards-Bearbeitung aktiviert. Die gesamte Einheit ist jetzt für andere gesperrt.');
-        return;
+        if (!silent) toast.success('✅ Dashboards-Bearbeitung aktiviert. Die gesamte Einheit ist jetzt für andere gesperrt.');
+        return true;
       }
-      toast.error(buildUnitLockBlockerToast(res.data));
+      if (!silent) toast.error(buildUnitLockBlockerToast(res.data));
+      return false;
     } catch (err) {
-      if (err?.response?.status === 409) {
-        toast.error(buildUnitLockBlockerToast(err.response.data));
-      } else {
-        toast.error('Fehler beim Starten der Dashboards-Bearbeitung.');
+      if (!silent) {
+        if (err?.response?.status === 409) {
+          toast.error(buildUnitLockBlockerToast(err.response.data));
+        } else {
+          toast.error('Fehler beim Starten der Dashboards-Bearbeitung.');
+        }
       }
+      return false;
     } finally {
       setAcquiringStructLock(false);
     }
@@ -460,8 +478,9 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     }
   };
 
-  const handleReleaseStructLock = async () => {
+  const handleReleaseStructLock = async (opts) => {
     if (!einheit) return;
+    const silent = opts?.silent === true || istPrivat;
     setReleasingStructLock(true);
     try {
       await invokeFunction('releaseStructuralLockSecure', {
@@ -469,9 +488,12 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
       });
       setIsStructuralEditingActive(false);
       queryClient.invalidateQueries({ queryKey: ['einheiten'] });
-      toast.success('✅ Bearbeitungsmodus beendet. Andere Nutzer können jetzt wieder Änderungen vornehmen.');
+      if (!silent) toast.success('✅ Bearbeitungsmodus beendet. Andere Nutzer können jetzt wieder Änderungen vornehmen.');
     } catch (err) {
-      if (err?.response?.status === 403) {
+      if (silent) {
+        // Privat/still: Fehler nicht anzeigen, Edit-Modus trotzdem beenden
+        setIsStructuralEditingActive(false);
+      } else if (err?.response?.status === 403) {
         toast.error('Sie haben diesen Lock nicht. Nur der Lock-Inhaber kann ihn freigeben.');
       } else {
         toast.error('Fehler beim Freigeben der Structural-Sperre.');
@@ -481,8 +503,9 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     }
   };
 
-  const handleAcquireTab1Lock = async () => {
-    if (!einheit) return;
+  const handleAcquireTab1Lock = async (opts) => {
+    if (!einheit) return false;
+    const silent = opts?.silent === true || istPrivat;
     setAcquiringTab1Lock(true);
     try {
       const res = await invokeFunction('acquireUnitLockSecure', {
@@ -492,8 +515,10 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
       if (res.data?.success) {
         setIsTab1EditingActive(true);
         queryClient.invalidateQueries({ queryKey: ['einheiten'] });
-        toast.success('✅ Bearbeitungsmodus aktiviert.');
-      } else {
+        if (!silent) toast.success('✅ Bearbeitungsmodus aktiviert.');
+        return true;
+      }
+      if (!silent) {
         const name = res.data?.lockedByName || res.data?.lockedByEmail;
         toast.error(
           name
@@ -501,14 +526,18 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             : 'Bearbeitungsmodus konnte nicht aktiviert werden. Bitte laden Sie die Seite neu.'
         );
       }
+      return false;
     } catch (err) {
-      const data = err?.response?.data;
-      const name = data?.lockedByName || data?.lockedByEmail;
-      if (err?.response?.status === 409) {
-        toast.error(name ? `🔒 Einheit wird von ${name} bearbeitet.` : '🔒 Einheit ist gerade gesperrt. Bitte versuchen Sie es erneut.');
-      } else {
-        toast.error(`Bearbeitungsmodus konnte nicht gestartet werden: ${err?.message || 'Unbekannter Fehler'}`);
+      if (!silent) {
+        const data = err?.response?.data;
+        const name = data?.lockedByName || data?.lockedByEmail;
+        if (err?.response?.status === 409) {
+          toast.error(name ? `🔒 Einheit wird von ${name} bearbeitet.` : '🔒 Einheit ist gerade gesperrt. Bitte versuchen Sie es erneut.');
+        } else {
+          toast.error(`Bearbeitungsmodus konnte nicht gestartet werden: ${err?.message || 'Unbekannter Fehler'}`);
+        }
       }
+      return false;
     } finally {
       setAcquiringTab1Lock(false);
     }
@@ -531,6 +560,47 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
       queryClient.refetchQueries({ queryKey: ['workspace-data', einheit.id] });
     }
   };
+
+  // ── Privat-Modus: Bearbeitungsmodus automatisch & still ─────────────────────
+  // Private Einheiten gehören genau einer Person — der explizite
+  // "Bearbeiten"-Button entfällt. Die Locks werden trotzdem im Hintergrund
+  // erworben/freigegeben, weil die Backend-Speicherfunktionen sie prüfen.
+  // Öffentliche Einheiten sind von diesem Effekt komplett unberührt.
+  const autoLockBlockedRef = useRef(null);
+  useEffect(() => {
+    if (!istPrivat || !einheit?.id || !kannDieseEinheitBearbeiten) return;
+    if (structLocked || isEinheitContentLocked) return;
+    if (acquiringStructLock || acquiringTab1Lock || releasingStructLock || releasingTab1Lock) return;
+    const blockKey = `${einheit.id}:${activeTab}`;
+    (async () => {
+      // Nicht mehr passendes Lock-Scope zuerst freigeben (strikt sequenziell,
+      // da alle Scopes dieselben DB-Felder nutzen).
+      if (isStructuralEditingActive && activeTab !== 'struktur' && activeTab !== 'dashboards') {
+        const flush = dashboardFlushRef.current;
+        if (typeof flush === 'function') {
+          try { await flush(); } catch (e) { console.warn('[PrivatAutoLock] Dashboard-Flush fehlgeschlagen:', e); }
+        }
+        await handleReleaseStructLock({ silent: true });
+        return; // Effekt läuft nach der State-Änderung erneut
+      }
+      if (isTab1EditingActive && activeTab !== 'einheit') {
+        await handleReleaseTab1Lock();
+        return;
+      }
+      // Fehlgeschlagene Versuche nicht in Endlosschleife wiederholen
+      if (autoLockBlockedRef.current === blockKey) return;
+      let ok = true;
+      if (activeTab === 'einheit' && !isTab1EditingActive) {
+        ok = await handleAcquireTab1Lock({ silent: true });
+      } else if (activeTab === 'struktur' && !isStructuralEditingActive) {
+        ok = await handleAcquireStructLock({ silent: true });
+      } else if (activeTab === 'dashboards' && !isStructuralEditingActive) {
+        ok = await handleAcquireDashboardLock({ silent: true });
+      }
+      autoLockBlockedRef.current = ok ? null : blockKey;
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [istPrivat, einheit?.id, activeTab, isTab1EditingActive, isStructuralEditingActive, acquiringStructLock, acquiringTab1Lock, releasingStructLock, releasingTab1Lock, kannDieseEinheitBearbeiten, structLocked, isEinheitContentLocked]);
 
   // ── "Paket verschoben"-Notification ──────────────────────────────────────────
   const [movedNotification, setMovedNotification] = useState(null);
@@ -783,7 +853,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             {/* ── PERSISTENTER LOCK-STATUS-BANNER (alle Tabs außer Dashboards) ──
                 In Tab 7 (dashboards) wird der Beenden-Button platzsparend in
                 der Aktionszeile des Architekten angezeigt – kein Banner. */}
-            {(isStructuralEditingActive || isTab1EditingActive) && activeTab !== 'dashboards' && activeTab !== 'struktur' && (
+            {(isStructuralEditingActive || isTab1EditingActive) && !istPrivat && activeTab !== 'dashboards' && activeTab !== 'struktur' && (
               <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-1.5 bg-blue-50 border-b border-blue-200 flex items-center gap-3">
                 <PenLine className="w-4 h-4 text-blue-600 animate-pulse shrink-0" />
                 <span className="text-sm font-semibold text-blue-900 flex-1">
@@ -864,7 +934,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                        isLockedByOther={isLockedByOther}
                        isEditingActive={isTab1EditingActive}
                        onAcquireLock={handleAcquireTab1Lock}
-                       onReleaseLock={handleReleaseTab1Lock}
+                       onReleaseLock={istPrivat ? undefined : handleReleaseTab1Lock}
                        isAcquiring={acquiringTab1Lock}
                        isReleasing={releasingTab1Lock}
                        isEinheitContentLocked={isEinheitContentLocked}
