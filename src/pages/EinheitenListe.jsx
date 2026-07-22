@@ -288,6 +288,18 @@ export default function EinheitenListe() {
 
   return (
     <div className="space-y-6">
+      {/* Vier Bereiche: Privat / Freigegebene (Austausch) / Poolzeit / Basismodule —
+          Auswahl liegt oben, darunter beginnt der inhaltliche Bereich. */}
+      <div className="flex items-start gap-2">
+        <div className="flex-1">
+          <BereichSwitcher ansicht={ansicht} onChange={setAnsicht} istAdmin={permissions.istAdmin} />
+        </div>
+        <HelpBadge
+          text="Poolzeit-Einheiten sind die verbindlichen, von der Fachschaft betreuten Einheiten für die Poolzeit. Freigegebene Einheiten sind die Tauschbörse des Kollegiums: private Einheiten, die Kolleg:innen zur Verfügung stellen — Sie können sich davon jederzeit eine eigene private Kopie ziehen. Private Einheiten sind Ihr persönlicher Arbeitsbereich. Basismodule sind verbindliche Wissensspeicher aus vorangegangenen Jahrgängen — ihre Lernziele werden in den Poolzeit-Einheiten angeboten, damit Schüler:innen Themen nachlernen oder nachschlagen können."
+          docsSlug="einheiten-struktur"
+        />
+      </div>
+
       {/* Bereich "Basismodule" bringt seinen eigenen Kopfbereich mit —
           der Einheiten-Header wird dann ausgeblendet. */}
       {ansicht !== 'basismodule' && (
@@ -351,17 +363,6 @@ export default function EinheitenListe() {
         )}
       </div>
       )}
-
-      {/* Vier Bereiche: Privat / Freigegebene (Austausch) / Poolzeit / Basismodule */}
-      <div className="flex items-start gap-2">
-        <div className="flex-1">
-          <BereichSwitcher ansicht={ansicht} onChange={setAnsicht} istAdmin={permissions.istAdmin} />
-        </div>
-        <HelpBadge
-          text="Poolzeit-Einheiten sind die verbindlichen, von der Fachschaft betreuten Einheiten für die Poolzeit. Freigegebene Einheiten sind die Tauschbörse des Kollegiums: private Einheiten, die Kolleg:innen zur Verfügung stellen — Sie können sich davon jederzeit eine eigene private Kopie ziehen. Private Einheiten sind Ihr persönlicher Arbeitsbereich. Basismodule sind verbindliche Wissensspeicher aus vorangegangenen Jahrgängen — ihre Lernziele werden in den Poolzeit-Einheiten angeboten, damit Schüler:innen Themen nachlernen oder nachschlagen können."
-          docsSlug="einheiten-struktur"
-        />
-      </div>
 
       {ansicht === 'basismodule' ? (
         <BasismoduleListe />
