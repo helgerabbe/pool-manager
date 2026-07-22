@@ -1,9 +1,9 @@
 import React from 'react';
-import { Rocket, Library, Lock } from 'lucide-react';
+import { Rocket, Library, Lock, Layers } from 'lucide-react';
 
 /**
- * Prominenter Umschalter für die drei Einheiten-Bereiche:
- * Poolzeit-Einheiten · Freigegebene Einheiten (Austausch) · Private Einheiten.
+ * Prominenter Umschalter für die vier Einheiten-Bereiche:
+ * Private Einheiten · Freigegebene Einheiten (Austausch) · Poolzeit-Einheiten · Basismodule.
  * Die aktive Kachel ist farblich klar hervorgehoben, damit immer eindeutig
  * ist, in welchem Bereich man sich befindet.
  */
@@ -33,10 +33,18 @@ export default function BereichSwitcher({ ansicht, onChange, istAdmin }) {
       active: 'border-blue-500 bg-blue-50 text-blue-900 ring-2 ring-blue-500/30',
       iconActive: 'bg-blue-500 text-white',
     },
+    {
+      key: 'basismodule',
+      label: 'Basismodule',
+      desc: 'Verbindliche Wissensspeicher — zum Nachlernen und Nachschlagen in den Poolzeit-Einheiten',
+      icon: Layers,
+      active: 'border-violet-500 bg-violet-50 text-violet-900 ring-2 ring-violet-500/30',
+      iconActive: 'bg-violet-500 text-white',
+    },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
       {bereiche.map(({ key, label, desc, icon: Icon, active, iconActive }) => {
         const isActive = ansicht === key;
         return (

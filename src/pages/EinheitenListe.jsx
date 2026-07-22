@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Search, AlertCircle, Wand2, Lock, Bot } from 'lucide-react';
 import PrivateEinheitenUebersicht from '@/components/einheiten/PrivateEinheitenUebersicht';
+import BasismoduleListe from '@/pages/BasismoduleListe';
 import BereichSwitcher from '@/components/einheiten/BereichSwitcher';
 import AustauschBibliothek from '@/components/einheiten/AustauschBibliothek';
 import MoodleWegInfoBox from '@/components/einheiten/MoodleWegInfoBox';
@@ -164,7 +165,7 @@ export default function EinheitenListe() {
   const [filterLifecycle, setFilterLifecycle] = useState('all');
   const [showOnlyChanged, setShowOnlyChanged] = useState(false);
   const [schnellErstellen, setSchnellErstellen] = useState(false);
-  // Drei Bereiche: 'privat' (Start) | 'austausch' (Bibliothek) | 'oeffentlich' (Poolzeit).
+  // Vier Bereiche: 'privat' (Start) | 'austausch' (Bibliothek) | 'oeffentlich' (Poolzeit) | 'basismodule'.
   const [ansicht, setAnsicht] = useState('privat');
   const [isDeletingAny, setIsDeletingAny] = useState(false);
   const queryClient = useQueryClient();
@@ -191,6 +192,8 @@ export default function EinheitenListe() {
       return response.data?.data || [];
     },
     staleTime: 0, // ✅ Daten immer als veraltet markieren → zwingt zum Neuladen
+    // Bereich "Basismodule" hat seine eigene Datenladung (BasismoduleListe).
+    enabled: ansicht !== 'basismodule',
   });
 
   // ✅ Strikter Ladezustand: Verhindert "Flash of Unfiltered Data"
@@ -276,6 +279,9 @@ export default function EinheitenListe() {
 
   return (
     <div className="space-y-6">
+      {/* Bereich "Basismodule" bringt seinen eigenen Kopfbereich mit —
+          der Einheiten-Header wird dann ausgeblendet. */}
+      {ansicht !== 'basismodule' && (
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
@@ -325,19 +331,22 @@ export default function EinheitenListe() {
           </div>
         )}
       </div>
+      )}
 
-      {/* Drei Bereiche: Poolzeit / Freigegebene (Austausch) / Privat */}
+      {/* Vier Bereiche: Privat / Freigegebene (Austausch) / Poolzeit / Basismodule */}
       <div className="flex items-start gap-2">
         <div className="flex-1">
           <BereichSwitcher ansicht={ansicht} onChange={setAnsicht} istAdmin={permissions.istAdmin} />
         </div>
         <HelpBadge
-          text="Poolzeit-Einheiten sind die verbindlichen, von der Fachschaft betreuten Einheiten für die Poolzeit. Freigegebene Einheiten sind die Tauschbörse des Kollegiums: private Einheiten, die Kolleg:innen zur Verfügung stellen — Sie können sich davon jederzeit eine eigene private Kopie ziehen. Private Einheiten sind Ihr persönlicher Arbeitsbereich."
+          text="Poolzeit-Einheiten sind die verbindlichen, von der Fachschaft betreuten Einheiten für die Poolzeit. Freigegebene Einheiten sind die Tauschbörse des Kollegiums: private Einheiten, die Kolleg:innen zur Verfügung stellen — Sie können sich davon jederzeit eine eigene private Kopie ziehen. Private Einheiten sind Ihr persönlicher Arbeitsbereich. Basismodule sind verbindliche Wissensspeicher aus vorangegangenen Jahrgängen — ihre Lernziele werden in den Poolzeit-Einheiten angeboten, damit Schüler:innen Themen nachlernen oder nachschlagen können."
           docsSlug="einheiten-struktur"
         />
       </div>
 
-      {ansicht === 'austausch' ? (
+      {ansicht === 'basismodule' ? (
+        <BasismoduleListe />
+      ) : ansicht === 'austausch' ? (
         <AustauschBibliothek
           einheiten={einheiten}
           rolle={rolle}
