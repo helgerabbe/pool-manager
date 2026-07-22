@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import TutorialSlideshow from '@/components/onboarding/TutorialSlideshow';
-import { Layers, Home, User, LogOut, ChevronRight, BookOpen, Settings, FileText, Send, Cpu, GraduationCap } from 'lucide-react';
+import { Home, User, LogOut, ChevronRight, BookOpen, Settings, FileText, Send, Cpu, GraduationCap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
@@ -186,12 +186,9 @@ export default function AppLayout() {
               {/* Home / Startseite (= Einheiten-Arbeitsbereich) */}
               <NavIconLink to="/" icon={Home} label="Startseite" isActive={isActive('/') || isActive('/einheiten') || isActive('/workspace')} />
 
-              {/* Basismodule */}
-              <NavIconLink to="/basismodule" icon={Layers} label="Basismodule" isActive={isActive('/basismodule')} />
-
-              {/* Phase G: Export-Center (eigenständiger Hauptmenüpunkt
-                  zwischen Basismodule und Dokumentation, nur sichtbar
-                  für Rollen mit Export-Berechtigung). */}
+              {/* Phase G: Export-Center (nur sichtbar für Rollen mit
+                  Export-Berechtigung). Basismodule werden über die
+                  Startseite (Bereich-Umschalter) angesteuert. */}
               {permissions.kannExportBedienen && (
                 <NavIconLink to="/export-center" icon={Send} label="Export-Center" isActive={isActive('/export-center')} />
               )}
