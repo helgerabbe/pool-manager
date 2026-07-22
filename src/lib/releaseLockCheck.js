@@ -36,6 +36,16 @@ export function isEinheitLocked(einheit) {
 }
 
 /**
+ * Privat-Modus (2026-07-22): Private Einheiten gehören genau einer Person —
+ * der Freigabe-Workflow (content_status) ist dort kein Sicherheitsmerkmal.
+ * Freigabe-Sperren gelten in privaten Einheiten NICHT; die Toggle-UI wird
+ * dort komplett ausgeblendet. Öffentliche Einheiten sind unberührt.
+ */
+export function isPrivateEinheit(einheit) {
+  return einheit?.sichtbarkeit === 'privat';
+}
+
+/**
  * Ist das Lernpaket selbst freigegeben? (Manuelle Lehrer-Freigabe)
  *
  * Wichtig: Struktur-Container haben historisch immer content_status='approved'
@@ -85,6 +95,10 @@ export function getActivityLockReason(activity, lernpaket, einheit) {
       message: 'Einheit ist final freigegeben — Bearbeitung gesperrt',
     };
   }
+  // Privat: Freigabe-Status sperrt nie die Bearbeitung.
+  if (isPrivateEinheit(einheit)) {
+    return { locked: false, reason: null, message: null };
+  }
   if (isLernpaketReleased(lernpaket)) {
     return {
       locked: true,
@@ -113,6 +127,10 @@ export function getLernpaketLockReason(lernpaket, einheit) {
       message: 'Einheit ist final freigegeben — Bearbeitung gesperrt',
     };
   }
+  // Privat: Freigabe-Status sperrt nie die Bearbeitung.
+  if (isPrivateEinheit(einheit)) {
+    return { locked: false, reason: null, message: null };
+  }
   if (isLernpaketReleased(lernpaket)) {
     return {
       locked: true,
@@ -133,6 +151,10 @@ export function getAllgemeineAufgabeLockReason(aufgabe, einheit) {
       reason: 'einheit_final',
       message: 'Einheit ist final freigegeben — Bearbeitung gesperrt',
     };
+  }
+  // Privat: Freigabe-Status sperrt nie die Bearbeitung.
+  if (isPrivateEinheit(einheit)) {
+    return { locked: false, reason: null, message: null };
   }
   if (isAllgemeineAufgabeReleased(aufgabe)) {
     return {
@@ -182,6 +204,7 @@ export function canToggleLernpaketRelease(lernpaket, einheit) {
 
 export default {
   isEinheitLocked,
+  isPrivateEinheit,
   isLernpaketReleased,
   isActivityReleased,
   isAllgemeineAufgabeReleased,

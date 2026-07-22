@@ -48,6 +48,10 @@ export default function AllgemeineAufgabeReleaseSection({
 
   if (!aufgabe) return null;
 
+  // Privat-Modus: Private Einheiten nutzen den Freigabe-Workflow nicht —
+  // Aufgaben gelten als automatisch freigegeben, der Toggle entfällt.
+  if (einheit?.sichtbarkeit === 'privat') return null;
+
   const isReleased = aufgabe.content_status === 'approved';
 
   const handleToggle = (next) => {

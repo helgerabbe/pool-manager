@@ -51,6 +51,9 @@ export default function BaseActivityModal({
   }, [activity?.id, activity?.content_status, activity?.released_at, activity?.released_by]);
 
   // Phase 7: Vollständigkeit & Sperre
+  // Privat-Modus: Private Einheiten nutzen den Freigabe-Workflow nicht —
+  // Toggle wird ausgeblendet, Freigabe-Sperren greifen nicht (releaseLockCheck).
+  const istPrivat = parentEinheit?.sichtbarkeit === 'privat';
   const hasReleaseControls = !!localActivity && !!catalogEntry;
   const completeness = useActivityCompleteness(
     catalogEntry,
@@ -147,7 +150,7 @@ export default function BaseActivityModal({
             <CompletenessIndicator result={completeness} />
           )}
 
-          {hasReleaseControls && !lockState.locked && (
+          {hasReleaseControls && !istPrivat && !lockState.locked && (
             <ReleaseToggleSection
               isReleased={isReleased}
               canRelease={completeness.isComplete}

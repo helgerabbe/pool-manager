@@ -312,7 +312,10 @@ Deno.serve(async (req) => {
     // Eine freigegebene Aktivität ODER ein freigegebenes Lernpaket sperrt
     // jede inhaltliche Bearbeitung. Die Lehrkraft muss erst die Freigabe
     // zurücknehmen (setReleaseStatusSecure mit release=false).
-    if (aktivitaet.content_status === 'approved') {
+    // Privat-Modus (2026-07-22): Private Einheiten (genau ein Besitzer)
+    // nutzen den Freigabe-Workflow nicht — Freigabe-Sperren gelten dort nicht.
+    const istPrivateEinheit = einheit.sichtbarkeit === 'privat';
+    if (!istPrivateEinheit && aktivitaet.content_status === 'approved') {
       return Response.json(
         {
           error: 'Aktivität ist freigegeben — bitte erst die Freigabe zurücknehmen',
@@ -321,7 +324,7 @@ Deno.serve(async (req) => {
         { status: 423 }
       );
     }
-    if (lernpaket.content_status === 'approved' && lernpaket.released_at) {
+    if (!istPrivateEinheit && lernpaket.content_status === 'approved' && lernpaket.released_at) {
       return Response.json(
         {
           error: 'Übergeordnetes Lernpaket ist freigegeben — bitte erst die Freigabe zurücknehmen',

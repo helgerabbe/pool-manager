@@ -46,6 +46,10 @@ export default function LernpaketReleaseSection({
 
   if (!lernpaket) return null;
 
+  // Privat-Modus: Private Einheiten nutzen den Freigabe-Workflow nicht —
+  // der komplette Freigabe-Block entfällt.
+  if (einheit?.sichtbarkeit === 'privat') return null;
+
   const isReleased =
     lernpaket.content_status === 'approved' && !!lernpaket.released_at;
 

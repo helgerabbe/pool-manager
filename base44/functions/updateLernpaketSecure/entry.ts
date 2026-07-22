@@ -133,7 +133,9 @@ Deno.serve(async (req) => {
     // ⛔ Freigabe-Sperre (Phase 3, 2026-05-14):
     // Wenn das Lernpaket freigegeben ist → kein Edit möglich, erst Freigabe
     // zurücknehmen via setReleaseStatusSecure.
-    if (paket.content_status === 'approved' && paket.released_at) {
+    // Privat-Modus (2026-07-22): Private Einheiten nutzen den Freigabe-
+    // Workflow nicht — die Freigabe-Sperre gilt dort nicht.
+    if (einheit?.sichtbarkeit !== 'privat' && paket.content_status === 'approved' && paket.released_at) {
       return Response.json(
         {
           error: 'Lernpaket ist freigegeben — bitte erst die Freigabe zurücknehmen',
