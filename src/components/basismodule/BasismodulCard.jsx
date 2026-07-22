@@ -9,6 +9,8 @@ import { base44 } from '@/api/base44Client';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal';
+import BasismodulLoeschBlockiertDialog from '@/components/basismodule/BasismodulLoeschBlockiertDialog';
+import { getBasismodulVerwendung } from '@/lib/basismodulVerknuepfung';
 import { ROLLEN } from '@/lib/rbac';
 import { getFachFarbe, getFachBadgeStyle } from '@/lib/fachFarben';
 import EinheitMetricsRow from '@/components/einheiten/EinheitMetricsRow';
@@ -38,6 +40,7 @@ export default function BasismodulCard({
   const badgeStyle = getFachBadgeStyle(fachHex);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [blockiert, setBlockiert] = useState(null);
   const queryClient = useQueryClient();
   const isAdmin = rolle === ROLLEN.ADMIN;
 
@@ -47,6 +50,16 @@ export default function BasismodulCard({
     setIsDeleting(true);
     onDeleteStart?.();
     try {
+      // Lösch-Wächter: Blockieren, wenn Lernziele dieses Basismoduls noch
+      // als Basis-Vorwissen in Einheiten verlinkt sind.
+      const verwendungen = await getBasismodulVerwendung(einheit.id);
+      if (verwendungen.length > 0) {
+        setShowConfirm(false);
+        setBlockiert(verwendungen);
+        setIsDeleting(false);
+        onDeleteEnd?.();
+        return;
+      }
       const res = await base44.functions.invoke('deleteEinheit', { einheitId: einheit.id });
       if (res.data?.success) {
         toast.success('Basismodul erfolgreich gelöscht.');
@@ -151,6 +164,13 @@ export default function BasismodulCard({
         onConfirm={handleDelete}
         titel={einheit.titel_der_einheit}
         isLoading={isDeleting}
+      />
+
+      <BasismodulLoeschBlockiertDialog
+        open={!!blockiert}
+        onClose={() => setBlockiert(null)}
+        titel={einheit.titel_der_einheit}
+        verwendungen={blockiert || []}
       />
     </>
   );

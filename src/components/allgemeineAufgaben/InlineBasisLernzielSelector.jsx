@@ -33,21 +33,21 @@ export default function InlineBasisLernzielSelector({
   const [selectedModul, setSelectedModul] = useState('');
   const [expandedPakete, setExpandedPakete] = useState(new Set());
 
-  // Daten laden – Entity heißt 'Basismodule' (Plural). Singular 'Basismodul'
-  // existiert NICHT in der DB und führt zu 404.
+  // Daten laden – Basismodule sind Einheiten mit ist_basismodul=true;
+  // ihre Lernziele sind reguläre Lernziele in Lernpaketen.
   const { data: basismodule = [] } = useQuery({
-    queryKey: ['basismodule'],
-    queryFn: () => base44.entities.Basismodule.list(),
+    queryKey: ['basismodul-einheiten'],
+    queryFn: () => base44.entities.Einheiten.filter({ ist_basismodul: true }),
   });
 
   const { data: allPakete = [] } = useQuery({
-    queryKey: ['basislernpakete'],
-    queryFn: () => base44.entities.Basislernpakete.list(),
+    queryKey: ['basismodul-lernpakete'],
+    queryFn: () => base44.entities.Lernpakete.list('-created_date', 500),
   });
 
   const { data: allLernziele = [] } = useQuery({
-    queryKey: ['basisLernziele'],
-    queryFn: () => base44.entities.BasisLernziel.list(),
+    queryKey: ['basismodul-lernziele'],
+    queryFn: () => base44.entities.Lernziele.list('-created_date', 1000),
   });
 
   // Gefilterte Module nach dem Fach der Einheit
@@ -60,8 +60,8 @@ export default function InlineBasisLernzielSelector({
   const modulPakete = useMemo(() => {
     if (!selectedModul) return [];
     return allPakete
-      .filter((p) => p.basismodul_id === selectedModul)
-      .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
+      .filter((p) => p.einheit_id === selectedModul)
+      .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0));
   }, [allPakete, selectedModul]);
 
   // Lernziele für jedes Paket (bereits zugeordnete ausblenden)
@@ -69,7 +69,7 @@ export default function InlineBasisLernzielSelector({
     return modulPakete.map((paket) => ({
       paket,
       lernziele: allLernziele
-        .filter((lz) => lz.basislernpaket_id === paket.id && !mappedBasisIds.has(lz.id))
+        .filter((lz) => lz.lernpaket_id === paket.id && !mappedBasisIds.has(lz.id))
         .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)),
     }));
   }, [modulPakete, allLernziele, mappedBasisIds]);
@@ -106,7 +106,7 @@ export default function InlineBasisLernzielSelector({
           <SelectContent>
             {filteredModule.map((m) => (
               <SelectItem key={m.id} value={m.id}>
-                {m.titel}
+                {m.titel_der_einheit}
               </SelectItem>
             ))}
           </SelectContent>
@@ -137,7 +137,7 @@ export default function InlineBasisLernzielSelector({
                       className="w-full flex items-center justify-between px-3 py-2 bg-blue-50 border-b border-blue-200 hover:bg-blue-100 transition-colors"
                     >
                       <span className="text-xs font-semibold text-blue-800 text-left">
-                        {group.paket.titel}
+                        {group.paket.titel_des_pakets}
                       </span>
                       <ChevronRight
                         className={cn(
@@ -171,7 +171,7 @@ export default function InlineBasisLernzielSelector({
                                 >
                                   <GripVertical className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
                                   <div className="flex-1 min-w-0 text-xs">
-                                    <p className="font-medium leading-snug">{lz.text}</p>
+                                    <p className="font-medium leading-snug">{lz.formulierung_fachsprache}</p>
                                     <Badge variant="secondary" className="text-[10px] mt-1">
                                       Vorwissen
                                     </Badge>

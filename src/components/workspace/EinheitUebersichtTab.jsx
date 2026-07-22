@@ -48,6 +48,8 @@ import { base44 } from '@/api/base44Client';
 import EinheitStrukturLebenszyklusBadge from '@/components/workspace/panels/EinheitStrukturLebenszyklusBadge';
 import EinheitCoverImageSection from '@/components/workspace/EinheitCoverImageSection';
 import MoodleCodeSection from '@/components/einheiten/MoodleCodeSection';
+import BasismodulVerwendungSection from '@/components/basismodule/BasismodulVerwendungSection';
+import { getBasismodulVerwendung } from '@/lib/basismodulVerknuepfung';
 
 /**
  * Markiert eine bereits mit Moodle synchronisierte Einheit als 'modified',
@@ -411,6 +413,20 @@ export default function EinheitUebersichtTab({
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
+      // Lösch-Wächter für Basismodule: Blockieren, wenn Lernziele noch als
+      // Basis-Vorwissen in Einheiten verlinkt sind.
+      if (einheit.ist_basismodul) {
+        const verwendungen = await getBasismodulVerwendung(einheit.id);
+        if (verwendungen.length > 0) {
+          toast.error(
+            `Löschen nicht möglich: Lernziele dieses Basismoduls sind als Basis-Vorwissen verlinkt in: ${verwendungen.map((v) => `„${v.einheitTitel}"`).join(', ')}. Bitte zuerst die Verknüpfungen entfernen.`,
+            { duration: 8000 }
+          );
+          setIsDeleting(false);
+          setShowDeleteDialog(false);
+          return;
+        }
+      }
       await invokeFunction('deleteEinheitSecure', {
         einheitId: einheit.id
       });
@@ -676,6 +692,9 @@ export default function EinheitUebersichtTab({
         <section className="space-y-5">
           {/* Private Einheiten: Einheiten-Code prominent oben in Spalte 2 */}
           {istPrivat && <MoodleCodeSection einheit={einheit} />}
+
+          {/* Basismodule: Verwendungs-Übersicht (wo ist dieses Modul verlinkt?) */}
+          {einheit.ist_basismodul && <BasismodulVerwendungSection einheitId={einheit.id} />}
 
           {!istPrivat && (<>
           <div>

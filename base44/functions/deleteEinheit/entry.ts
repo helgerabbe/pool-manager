@@ -117,6 +117,34 @@ Deno.serve(async (req) => {
     const lernpaketAktivitaeten = aktivitaetenPages.flat();
     const masterAufgaben = masterPages.flat();
 
+    // ── Lösch-Wächter für Basismodule ────────────────────────────────────────
+    // Sind Lernziele dieses Basismoduls als Basis-Vorwissen in Aufgaben
+    // anderer Einheiten verlinkt, wird das Löschen serverseitig blockiert.
+    if (einheit.ist_basismodul && lernziele.length > 0) {
+      const basisMappingPages = await Promise.all(
+        lernziele.map(lz => listAll(e.AllgemeineAufgabeBasisLernzielMapping, { basislernziel_id: lz.id }))
+      );
+      const basisMappings = basisMappingPages.flat();
+      if (basisMappings.length > 0) {
+        const aufgabeIds = [...new Set(basisMappings.map(m => m.aufgabe_id))];
+        const verlinkteAufgaben = (await Promise.all(
+          aufgabeIds.map(id => e.AllgemeineAufgabe.filter({ id }))
+        )).flat();
+        const einheitIds = [...new Set(verlinkteAufgaben.map(a => a.einheit_id).filter(Boolean))];
+        const verlinkteEinheiten = (await Promise.all(
+          einheitIds.map(id => e.Einheiten.filter({ id }))
+        )).flat();
+        const titel = verlinkteEinheiten.map(x => `„${x.titel_der_einheit}"`).join(', ');
+        return Response.json(
+          {
+            error: `Basismodul kann nicht gelöscht werden: ${basisMappings.length} Lernziel-Verknüpfung(en) als Basis-Vorwissen in ${titel || 'anderen Einheiten'}. Bitte zuerst die Verknüpfungen entfernen.`,
+            blocked: true,
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     const [mappingPages, allgMappingPages] = await Promise.all([
       Promise.all(aufgaben.map(aufgabe => listAll(e.MappingAufgabeBasisziel, { aufgabe_id: aufgabe.id }))),
       Promise.all(allgemeineAufgaben.map(aufgabe => listAll(e.AllgemeineAufgabeLernzielMapping, { aufgabe_id: aufgabe.id }))),

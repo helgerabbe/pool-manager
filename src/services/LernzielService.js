@@ -13,6 +13,8 @@
  */
 
 import { base44 } from '@/api/base44Client';
+import { toast } from 'sonner';
+import { getVerwendungenFuerLernziele } from '@/lib/basismodulVerknuepfung';
 
 /**
  * Alle Lernziele laden (global, z.B. für den Workspace-Baum).
@@ -44,7 +46,19 @@ export async function updateLernziel(id, data) {
 
 /**
  * Lernziel löschen.
+ *
+ * Lösch-Wächter: Ist das Lernziel als Basis-Vorwissen in Aufgaben anderer
+ * Einheiten verlinkt (AllgemeineAufgabeBasisLernzielMapping), wird das
+ * Löschen blockiert — die Verknüpfungen müssen zuerst entfernt werden.
  */
 export async function deleteLernziel(id) {
+  const mappings = await base44.entities.AllgemeineAufgabeBasisLernzielMapping.filter({ basislernziel_id: id });
+  if (mappings.length > 0) {
+    const verwendungen = await getVerwendungenFuerLernziele([id]);
+    const titel = verwendungen.map((v) => `„${v.einheitTitel}"`).join(', ');
+    const msg = `Löschen nicht möglich: Dieses Lernziel ist als Basis-Vorwissen verlinkt in ${titel || 'anderen Einheiten'}. Bitte zuerst die Verknüpfungen entfernen.`;
+    toast.error(msg, { duration: 8000 });
+    throw new Error(msg);
+  }
   return base44.entities.Lernziele.delete(id);
 }

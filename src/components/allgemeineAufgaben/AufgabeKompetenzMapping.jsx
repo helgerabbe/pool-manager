@@ -4,7 +4,7 @@ import { getAllLernziele } from '@/services/LernzielService';
 import { getAllLernpakete } from '@/services/LernpaketService';
 import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
 import { getMappingsByAufgabe, createMapping, deleteMapping, getBasisMappingsByAufgabe, createBasisMapping, deleteBasisMapping } from '@/services/AllgemeineAufgabeService';
-import { getAllBasisLernziele } from '@/services/BasisLernzielService';
+import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Draggable, Droppable, DragDropContext } from '@hello-pangea/dnd';
@@ -176,10 +176,20 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
     enabled: !!aufgabe?.id,
   });
 
-  const { data: basisLernziele = [] } = useQuery({
-    queryKey: ['basisLernziele'],
-    queryFn: () => getAllBasisLernziele(),
+  // Basis-Vorwissen: Lernziele der Einheiten-Basismodule (ist_basismodul=true),
+  // normalisiert mit `.text`, damit Dropzone/Badges weiter funktionieren.
+  const { data: basismodulEinheiten = [] } = useQuery({
+    queryKey: ['basismodul-einheiten'],
+    queryFn: () => base44.entities.Einheiten.filter({ ist_basismodul: true }),
   });
+
+  const basisLernziele = useMemo(() => {
+    const modulIds = new Set(basismodulEinheiten.map((e) => e.id));
+    const paketIds = new Set(lernpakete.filter((p) => modulIds.has(p.einheit_id)).map((p) => p.id));
+    return alleLernziele
+      .filter((lz) => paketIds.has(lz.lernpaket_id))
+      .map((lz) => ({ ...lz, text: lz.formulierung_fachsprache }));
+  }, [basismodulEinheiten, lernpakete, alleLernziele]);
 
   const { data: existingBasisMappings = [] } = useQuery({
     queryKey: ['allgemeineAufgabeBasisMappings', aufgabe?.id],
