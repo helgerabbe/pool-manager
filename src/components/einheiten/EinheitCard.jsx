@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Trash2, Lock, Copy, EyeOff, ChevronDown, Eye } from 'lucide-react';
+import { Trash2, Lock, Copy, EyeOff, ChevronDown, Eye, Layers } from 'lucide-react';
 import EinheitVeroeffentlichenButton from '@/components/einheiten/EinheitVeroeffentlichenButton';
 import EinheitAustauschToggleButton from '@/components/einheiten/EinheitAustauschToggleButton';
 import EinheitWeitergebenButton from '@/components/einheiten/EinheitWeitergebenButton';
@@ -134,6 +134,15 @@ export default function EinheitCard({
                     >
                       <Copy className="w-3 h-3" />
                       Kopie
+                    </Badge>
+                  )}
+                  {istPrivat && einheit.aus_basismodul === true && (
+                    <Badge
+                      className="bg-amber-100 text-amber-800 border border-amber-200 gap-1"
+                      title="Diese Einheit ist aus einem Basismodul hervorgegangen und wurde beim Kopieren in eine normale private Einheit umgewandelt."
+                    >
+                      <Layers className="w-3 h-3" />
+                      Aus Basismodul
                     </Badge>
                   )}
                   {istPrivat && einheit.im_austausch === true && (

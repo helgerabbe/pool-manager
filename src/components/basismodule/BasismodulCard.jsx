@@ -11,9 +11,11 @@ import { toast } from 'sonner';
 import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal';
 import BasismodulLoeschBlockiertDialog from '@/components/basismodule/BasismodulLoeschBlockiertDialog';
 import { getBasismodulVerwendung } from '@/lib/basismodulVerknuepfung';
-import { ROLLEN } from '@/lib/rbac';
+import { ROLLEN, kannStrukturBearbeiten } from '@/lib/rbac';
+import { useRBAC } from '@/hooks/useRBAC';
 import { getFachFarbe, getFachBadgeStyle } from '@/lib/fachFarben';
 import EinheitMetricsRow from '@/components/einheiten/EinheitMetricsRow';
+import EinheitAustauschToggleButton from '@/components/einheiten/EinheitAustauschToggleButton';
 
 /**
  * BasismodulCard – Kachel in der Basismodul-Übersicht.
@@ -43,6 +45,15 @@ export default function BasismodulCard({
   const [blockiert, setBlockiert] = useState(null);
   const queryClient = useQueryClient();
   const isAdmin = rolle === ROLLEN.ADMIN;
+
+  // Austausch-Freigabe: Admin, zuständige Fachschaftsleitung oder ernannte
+  // Mitarbeiter (LEITUNG) dürfen ein Basismodul für das Kollegium freigeben.
+  const { faecher: benutzerFaecher, authUser } = useRBAC();
+  const norm = (s) => (s || '').trim().toLowerCase();
+  const istLeitungMitglied = (einheit.members || []).some(
+    (m) => norm(m.user_email) === norm(authUser?.email) && m.unit_role === 'LEITUNG'
+  );
+  const darfFreigeben = isAdmin || kannStrukturBearbeiten(rolle, benutzerFaecher, einheit.fach) || istLeitungMitglied;
 
   const volume = metrics?.volume;
 
@@ -102,6 +113,11 @@ export default function BasismodulCard({
                     <Layers className="w-3 h-3" />
                     Basismodul
                   </Badge>
+                  {einheit.im_austausch === true && (
+                    <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-200 gap-1">
+                      Freigegeben
+                    </Badge>
+                  )}
                   {einheit.freigabe_status === 'Gesperrt' && (
                     <Badge className="bg-red-100 text-red-700 border border-red-200 gap-1">
                       <Lock className="w-3 h-3" />
@@ -136,13 +152,18 @@ export default function BasismodulCard({
               <span className="text-[11px] text-muted-foreground">
                 {einheit.created_date && format(new Date(einheit.created_date), 'dd. MMM yyyy', { locale: de })}
               </span>
-              <Link
-                to={`/basismodule/${einheit.id}?tab=einheit`}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
-              >
-                Öffnen
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-all" />
-              </Link>
+              <div className="flex items-center gap-2">
+                {/* Für Kollegium freigeben → erscheint in der Austausch-Bibliothek,
+                    Kolleg:innen ziehen sich eine private Kopie (inkl. Umwandlung). */}
+                {darfFreigeben && <EinheitAustauschToggleButton einheit={einheit} />}
+                <Link
+                  to={`/basismodule/${einheit.id}?tab=einheit`}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Öffnen
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-all" />
+                </Link>
+              </div>
             </div>
           </CardContent>
         </Card>

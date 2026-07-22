@@ -26,16 +26,40 @@ Deno.serve(async (req) => {
     const einheit = await e.Einheiten.get(einheitId).catch(() => null);
     if (!einheit) return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
 
-    if (einheit.sichtbarkeit !== 'privat') {
-      return Response.json({ error: 'Nur private Einheiten können in die Austausch-Bibliothek freigegeben werden' }, { status: 400 });
+    // Freigebbar: private Einheiten (durch Besitzer/Admin) sowie BASISMODULE
+    // (durch Admin, zuständige Fachschaftsleitung oder LEITUNG-Mitglieder).
+    const istBasismodul = einheit.ist_basismodul === true;
+    if (!istBasismodul && einheit.sichtbarkeit !== 'privat') {
+      return Response.json({ error: 'Nur private Einheiten oder Basismodule können in die Austausch-Bibliothek freigegeben werden' }, { status: 400 });
     }
 
     const benutzerList = await e.Benutzer.filter({ user_id: user.email });
-    const istAdmin = user.role === 'admin' || benutzerList?.[0]?.rolle === 'Administrator';
-    const istBesitzer = einheit.besitzer_email === user.email;
+    const userRecord = benutzerList?.[0];
+    const istAdmin = user.role === 'admin' || userRecord?.rolle === 'Administrator';
 
-    if (!istBesitzer && !istAdmin) {
-      return Response.json({ error: 'Nur der Besitzer oder ein Administrator darf die Freigabe ändern' }, { status: 403 });
+    let darf = istAdmin;
+    if (!darf) {
+      if (istBasismodul) {
+        const istFachschaftImFach =
+          userRecord?.rolle === 'Fachschaftsleitung' &&
+          (userRecord?.fachbereich_zustaendigkeit || []).includes(einheit.fach);
+        const memberships = await e.EinheitMembers.filter({ einheit_id: einheitId, user_email: user.email });
+        const istLeitung = memberships.some((m) => m.unit_role === 'LEITUNG');
+        darf = istFachschaftImFach || istLeitung;
+      } else {
+        darf = einheit.besitzer_email === user.email;
+      }
+    }
+
+    if (!darf) {
+      return Response.json(
+        {
+          error: istBasismodul
+            ? 'Basismodule dürfen nur von der zuständigen Fachschaftsleitung, Administratoren oder ernannten Mitarbeitern (Leitung) freigegeben werden'
+            : 'Nur der Besitzer oder ein Administrator darf die Freigabe ändern',
+        },
+        { status: 403 }
+      );
     }
 
     await e.Einheiten.update(einheitId, { im_austausch: imAustausch });

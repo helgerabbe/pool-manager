@@ -217,10 +217,15 @@ Deno.serve(async (req) => {
 
     // ── Sichtbarkeits-Filter (Privat-Modus) ──
     if (view === 'austausch') {
-      // Austausch-Bibliothek: freigegebene private Einheiten sind für ALLE
-      // Rollen sichtbar (fächerübergreifend) — die Bibliothek ist read-only,
-      // gearbeitet wird nur mit gezogenen privaten Kopien.
-      filterCriteria = { ...draftFilter, sichtbarkeit: 'privat', im_austausch: true };
+      // Austausch-Bibliothek: freigegebene private Einheiten UND freigegebene
+      // Basismodule sind für ALLE Rollen sichtbar (fächerübergreifend) — die
+      // Bibliothek ist read-only, gearbeitet wird nur mit gezogenen Kopien.
+      // (Bewusst OHNE basismodulFilter, damit Basismodule mitgeliefert werden.)
+      filterCriteria = {
+        wizard_status: { $ne: 'entwurf' },
+        im_austausch: true,
+        $or: [{ sichtbarkeit: 'privat' }, { ist_basismodul: true }],
+      };
     } else if (view === 'privat') {
       if (role === 'Administrator') {
         // Admin sieht ALLE privaten Einheiten (Besitzer-Übersicht)
@@ -289,6 +294,8 @@ Deno.serve(async (req) => {
         fach: einheit.fach,
         titel_der_einheit: einheit.titel_der_einheit,
         ist_basismodul: einheit.ist_basismodul === true,
+        // Herkunftsvermerk: Kopie ist aus einem Basismodul hervorgegangen.
+        aus_basismodul: einheit.aus_basismodul === true,
         jahrgangsstufe: einheit.jahrgangsstufe,
         freigabe_status: einheit.freigabe_status,
         sync_status: einheit.sync_status,

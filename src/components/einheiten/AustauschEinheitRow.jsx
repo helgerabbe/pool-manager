@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Eye, Copy, Rocket, Undo2 } from 'lucide-react';
+import { Eye, Copy, Rocket, Undo2, Layers } from 'lucide-react';
 import EinheitVorschauModal from '@/components/einheiten/EinheitVorschauModal';
 
 function ActionButton({ onClick, disabled, title, icon: Icon, className = '', spinning }) {
@@ -50,9 +50,19 @@ export default function AustauschEinheitRow({ einheit, darfPoolzeit, darfZurueck
   return (
     <div className="flex items-center justify-between gap-3 px-4 py-3 border border-border rounded-lg bg-card hover:border-emerald-300 transition-colors">
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-foreground truncate">{einheit.titel_der_einheit}</p>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <p className="text-sm font-semibold text-foreground truncate">{einheit.titel_der_einheit}</p>
+          {einheit.ist_basismodul === true && (
+            <span className="inline-flex items-center gap-1 shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-amber-100 text-amber-800 border-amber-200">
+              <Layers className="w-3 h-3" />
+              Basismodul
+            </span>
+          )}
+        </div>
         <p className="text-xs text-muted-foreground truncate">
-          {einheit.fach} · Jg. {einheit.jahrgangsstufe} · von {einheit.besitzer_email || 'unbekannt'}
+          {einheit.fach} · Jg. {einheit.jahrgangsstufe} · {einheit.ist_basismodul === true
+            ? 'verbindliches Basismodul der Fachschaft'
+            : `von ${einheit.besitzer_email || 'unbekannt'}`}
           {istEigene && <span className="ml-1.5 text-emerald-700 font-medium">(Ihre Einheit)</span>}
         </p>
       </div>
@@ -69,7 +79,9 @@ export default function AustauschEinheitRow({ einheit, darfPoolzeit, darfZurueck
               (d) => `Private Kopie erstellt: „${d.titel}" — Sie finden sie in Ihrem Privatbereich.`)}
             disabled={busy !== null}
             spinning={busy === 'kopie'}
-            title="Private Kopie ziehen — eine eigene, unabhängige Kopie in Ihren Privatbereich übernehmen"
+            title={einheit.ist_basismodul === true
+              ? 'Private Kopie ziehen — das Basismodul wird als normale private Einheit (inkl. Dashboard) in Ihren Privatbereich übernommen'
+              : 'Private Kopie ziehen — eine eigene, unabhängige Kopie in Ihren Privatbereich übernehmen'}
             icon={Copy}
             className="hover:text-emerald-700 hover:border-emerald-400/50 hover:bg-emerald-50"
           />

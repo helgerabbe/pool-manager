@@ -30,6 +30,7 @@ export default function EinheitAustauschToggleButton({ einheit }) {
             : `„${einheit.titel_der_einheit}" ist jetzt für das Kollegium freigegeben.`
         );
         queryClient.invalidateQueries({ queryKey: ['einheiten'] });
+        queryClient.invalidateQueries({ queryKey: ['basismodule'] });
       } else {
         toast.error(res.data?.error || 'Änderung fehlgeschlagen.');
       }

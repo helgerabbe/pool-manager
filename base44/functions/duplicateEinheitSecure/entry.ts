@@ -105,9 +105,21 @@ Deno.serve(async (req) => {
       (einheit.sichtbarkeit === 'privat' && einheit.besitzer_email === user.email) ||
       // Austausch-Bibliothek: freigegebene Einheiten darf sich jeder als
       // private Kopie ziehen (Tauschbörsen-Prinzip).
-      (einheit.sichtbarkeit === 'privat' && einheit.im_austausch === true)
+      (einheit.sichtbarkeit === 'privat' && einheit.im_austausch === true) ||
+      // Freigegebene Basismodule darf sich ebenfalls jeder als private Kopie
+      // ziehen — die Kopie wird dabei in eine normale private Einheit umgewandelt.
+      (einheit.ist_basismodul === true && einheit.im_austausch === true)
     );
     if (!allowed) return Response.json({ error: 'Keine Berechtigung zum Duplizieren' }, { status: 403 });
+
+    // Basismodule können nur als private Kopie übernommen werden — eine
+    // direkte Poolzeit-Übernahme würde einen inkonsistenten Zustand erzeugen.
+    if (alsPoolzeit && einheit.ist_basismodul === true) {
+      return Response.json(
+        { error: 'Basismodule können nur als private Kopie übernommen werden.' },
+        { status: 400 }
+      );
+    }
 
     // Poolzeit-Übernahme ist streng: nur Admin oder zuständige Fachschaftsleitung.
     if (alsPoolzeit && !istAdmin && !istFachschaftImFach) {
@@ -195,6 +207,23 @@ Deno.serve(async (req) => {
         einheitCopy.erhalten_von = einheit.besitzer_email;
       }
     }
+
+    // ── Basismodul → private Einheit (Konvertierung, 2026-07-22) ──
+    // Die Kopie eines Basismoduls wird in eine vollwertige private Einheit
+    // umgewandelt: Flag entfernt, Herkunft vermerkt, Start mit genau EINEM
+    // Lerntyp-Dashboard ('ehrgeizig') — wie bei neu erstellten privaten
+    // Einheiten. Das Dashboard baut die Auto-Assembly beim ersten Öffnen
+    // des Dashboard-Tabs aus Struktur + Standardvorlage auf.
+    const basismodulKonvertierung = einheit.ist_basismodul === true;
+    if (basismodulKonvertierung) {
+      einheitCopy.ist_basismodul = false;
+      einheitCopy.aus_basismodul = true;
+      einheitCopy.aktive_lerntypen = ['ehrgeizig'];
+      einheitCopy.lernpfade_konfiguration = { minimalist: [], pragmatiker: [], ehrgeizig: [], passioniert: [] };
+      einheitCopy.dashboards_auto_status = {};
+      delete einheitCopy.erhalten_von;
+    }
+
     for (const key of [
       'last_synced_at', 'last_exported_at', 'structural_lock', 'structural_locked_at',
       'export_lifecycle_changed_at', 'export_lifecycle_changed_by',
@@ -346,7 +375,7 @@ Deno.serve(async (req) => {
     // ── 9. Pass 2: eingebettete ID-Referenzen global remappen ──
     // 9a) Lernpfad-Konfiguration der Einheit (ref_ids auf Aufgaben/Lernpakete)
     const updates = [];
-    if (einheit.lernpfade_konfiguration) {
+    if (einheit.lernpfade_konfiguration && !basismodulKonvertierung) {
       updates.push(e.Einheiten.update(newEinheit.id, {
         lernpfade_konfiguration: remapJson(einheit.lernpfade_konfiguration, idMap),
       }));

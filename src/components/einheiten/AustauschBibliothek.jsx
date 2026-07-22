@@ -23,7 +23,9 @@ export default function AustauschBibliothek({ einheiten, rolle, benutzerFaecher 
     );
   }
 
-  const key = gruppierung === 'fach' ? (e) => e.fach || 'Ohne Fach' : (e) => e.besitzer_email || 'Unbekannt';
+  const key = gruppierung === 'fach'
+    ? (e) => e.fach || 'Ohne Fach'
+    : (e) => (e.ist_basismodul === true ? 'Basismodule' : (e.besitzer_email || 'Unbekannt'));
   const gruppen = [...einheiten]
     .sort((a, b) => key(a).localeCompare(key(b), 'de') || (a.titel_der_einheit || '').localeCompare(b.titel_der_einheit || '', 'de'))
     .reduce((acc, e) => {
@@ -72,14 +74,24 @@ export default function AustauschBibliothek({ einheiten, rolle, benutzerFaecher 
               // Robuster Besitzer-Vergleich (Groß-/Kleinschreibung, Leerzeichen):
               // Besitzer sehen "Freigabe zurückziehen", aber KEIN "private Kopie ziehen".
               const norm = (s) => (s || '').trim().toLowerCase();
-              const istEigene = norm(einheit.besitzer_email) === norm(currentUserEmail) && !!einheit.besitzer_email;
+              const istBasismodul = einheit.ist_basismodul === true;
+              const istEigene = !istBasismodul && norm(einheit.besitzer_email) === norm(currentUserEmail) && !!einheit.besitzer_email;
+              // Basismodule: Zurückziehen dürfen Admin, zuständige Fachschafts-
+              // leitung oder LEITUNG-Mitglieder des Moduls. Keine Poolzeit-
+              // Übernahme — Basismodule werden nur als private Kopie gezogen.
+              const istLeitungMitglied = (einheit.members || []).some(
+                (m) => norm(m.user_email) === norm(currentUserEmail) && m.unit_role === 'LEITUNG'
+              );
+              const darfZurueckziehen = istBasismodul
+                ? (istAdmin || kannStrukturBearbeiten(rolle, benutzerFaecher, einheit.fach) || istLeitungMitglied)
+                : (istEigene || istAdmin);
               return (
                 <AustauschEinheitRow
                   key={einheit.id}
                   einheit={einheit}
                   istEigene={istEigene}
-                  darfPoolzeit={kannStrukturBearbeiten(rolle, benutzerFaecher, einheit.fach)}
-                  darfZurueckziehen={istEigene || istAdmin}
+                  darfPoolzeit={!istBasismodul && kannStrukturBearbeiten(rolle, benutzerFaecher, einheit.fach)}
+                  darfZurueckziehen={darfZurueckziehen}
                 />
               );
             })}

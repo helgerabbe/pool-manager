@@ -39,6 +39,11 @@
       "default": false,
       "description": "true = diese Einheit ist ein Basismodul (Wissensspeicher aus vorangegangenen Jahrg\u00e4ngen). Basismodule nutzen dasselbe Datenmodell wie regul\u00e4re Einheiten, blenden aber bestimmte Tabs (Allgemeine/Projekt-Aufgaben, Dashboards, Export) aus und werden in einer separaten \u00dcbersicht (/basismodule) angezeigt. Perspektivisch kann ein Basismodul sp\u00e4ter zu einer vollwertigen Einheit erweitert werden, indem das Flag entfernt wird."
     },
+    "aus_basismodul": {
+      "type": "boolean",
+      "default": false,
+      "description": "Herkunftsvermerk (2026-07-22): true = diese (private) Einheit ist als Kopie aus einem Basismodul hervorgegangen (duplicateEinheitSecure mit Basismodul-Konvertierung: ist_basismodul-Flag entfernt, aktive_lerntypen=['ehrgeizig'], leere Lernpfad-Konfiguration f\u00fcr die Auto-Assembly). Die UI zeigt statt 'Von X erhalten' den Vermerk 'Aus Basismodul'."
+    },
     "sichtbarkeit": {
       "type": "string",
       "enum": [
@@ -59,7 +64,7 @@
     "im_austausch": {
       "type": "boolean",
       "default": false,
-      "description": "Austausch-Bibliothek (2026-07-18): true = der Besitzer hat diese PRIVATE Einheit f\u00fcr das gesamte Kollegium freigegeben. Sie erscheint dann im Bereich 'Freigegebene Einheiten' (Tauschb\u00f6rse/Bibliothek), wo Kolleg:innen sie ansehen und sich eine PRIVATE KOPIE ziehen k\u00f6nnen (duplicateEinheitSecure). Fachschaftsleitung/Administratoren k\u00f6nnen sie zus\u00e4tzlich als Poolzeit-Einheit kopieren (duplicateEinheitSecure mit als_poolzeit=true). Nur bei sichtbarkeit='privat' relevant. Wechsel ausschlie\u00dflich \u00fcber setEinheitAustauschSecure (Besitzer oder Admin)."
+      "description": "Austausch-Bibliothek (2026-07-18): true = der Besitzer hat diese PRIVATE Einheit f\u00fcr das gesamte Kollegium freigegeben. Sie erscheint dann im Bereich 'Freigegebene Einheiten' (Tauschb\u00f6rse/Bibliothek), wo Kolleg:innen sie ansehen und sich eine PRIVATE KOPIE ziehen k\u00f6nnen (duplicateEinheitSecure). Fachschaftsleitung/Administratoren k\u00f6nnen sie zus\u00e4tzlich als Poolzeit-Einheit kopieren (duplicateEinheitSecure mit als_poolzeit=true). Erweiterung 2026-07-22: Auch BASISMODULE (ist_basismodul=true) k\u00f6nnen freigegeben werden (durch Admin, zust\u00e4ndige Fachschaftsleitung oder LEITUNG-Mitglieder, via setEinheitAustauschSecure); Kolleg:innen ziehen sich dann eine private Kopie, die dabei in eine normale private Einheit umgewandelt wird (aus_basismodul=true)."
     },
     "lerntypen_modus": {
       "type": "string",
