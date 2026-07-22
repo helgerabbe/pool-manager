@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Trash2, Lock, Copy, EyeOff, ChevronDown, Eye, Layers } from 'lucide-react';
 import EinheitVeroeffentlichenButton from '@/components/einheiten/EinheitVeroeffentlichenButton';
 import EinheitBasismodulButton from '@/components/einheiten/EinheitBasismodulButton';
+import EinheitVorschlagButton from '@/components/einheiten/EinheitVorschlagButton';
 import EinheitAustauschToggleButton from '@/components/einheiten/EinheitAustauschToggleButton';
 import EinheitWeitergebenButton from '@/components/einheiten/EinheitWeitergebenButton';
 import { format } from 'date-fns';
@@ -146,6 +147,14 @@ export default function EinheitCard({
                       Aus Basismodul
                     </Badge>
                   )}
+                  {istPrivat && einheit.zur_veroeffentlichung_vorgeschlagen === true && (
+                    <Badge
+                      className="bg-sky-100 text-sky-800 border border-sky-200 gap-1"
+                      title="Diese Einheit ist der Fachschaftsleitung zur Veröffentlichung als Poolzeit-Einheit vorgeschlagen."
+                    >
+                      Vorgeschlagen
+                    </Badge>
+                  )}
                   {istPrivat && einheit.im_austausch === true && (
                     <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-200 gap-1">
                       Freigegeben
@@ -207,6 +216,8 @@ export default function EinheitCard({
                     {darfStruktur && <EinheitVeroeffentlichenButton einheit={einheit} />}
                     {/* Basismodul-Umwandlung: nur Fachschaftsleitung/Admin */}
                     {darfStruktur && <EinheitBasismodulButton einheit={einheit} />}
+                    {/* Vorschlag zur Veröffentlichung: Besitzer (Backend prüft) */}
+                    <EinheitVorschlagButton einheit={einheit} />
                     {/* Austausch-Bibliothek: Besitzer/Admin geben frei */}
                     <EinheitAustauschToggleButton einheit={einheit} />
                     <EinheitWeitergebenButton einheit={einheit} />

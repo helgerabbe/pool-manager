@@ -66,6 +66,20 @@
       "default": false,
       "description": "Austausch-Bibliothek (2026-07-18): true = der Besitzer hat diese PRIVATE Einheit f\u00fcr das gesamte Kollegium freigegeben. Sie erscheint dann im Bereich 'Freigegebene Einheiten' (Tauschb\u00f6rse/Bibliothek), wo Kolleg:innen sie ansehen und sich eine PRIVATE KOPIE ziehen k\u00f6nnen (duplicateEinheitSecure). Fachschaftsleitung/Administratoren k\u00f6nnen sie zus\u00e4tzlich als Poolzeit-Einheit kopieren (duplicateEinheitSecure mit als_poolzeit=true). Erweiterung 2026-07-22: Auch BASISMODULE (ist_basismodul=true) k\u00f6nnen freigegeben werden (durch Admin, zust\u00e4ndige Fachschaftsleitung oder LEITUNG-Mitglieder, via setEinheitAustauschSecure); Kolleg:innen ziehen sich dann eine private Kopie, die dabei in eine normale private Einheit umgewandelt wird (aus_basismodul=true)."
     },
+    "zur_veroeffentlichung_vorgeschlagen": {
+      "type": "boolean",
+      "default": false,
+      "description": "Vorschlags-Workflow (2026-07-22): true = der Besitzer dieser PRIVATEN Einheit hat sie der Fachschaftsleitung 'zur Ver\u00f6ffentlichung als Poolzeit-Einheit' vorgeschlagen. Die Einheit erscheint dann im Poolzeit-Bereich des Fachs in einer eigenen Sektion 'Zur Ver\u00f6ffentlichung vorgeschlagen' \u2014 f\u00fcr alle Kolleg:innen des Fachs NUR im Ansichtsmodus (Sch\u00fcler-Vorschau, kein Workspace-Zugriff). Fachschaftsleitung/Admin kann den Vorschlag freigeben (setEinheitSichtbarkeitSecure \u2192 'oeffentlich', inkl. Freigabe-Reset aller Inhalte auf 'draft') oder ablehnen (Flag zur\u00fcck auf false). Wechsel ausschlie\u00dflich \u00fcber setEinheitVeroeffentlichungVorschlagSecure bzw. die Freigabe."
+    },
+    "vorgeschlagen_von": {
+      "type": "string",
+      "description": "E-Mail der Person, die den Ver\u00f6ffentlichungs-Vorschlag eingereicht hat."
+    },
+    "vorgeschlagen_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel des Ver\u00f6ffentlichungs-Vorschlags."
+    },
     "lerntypen_modus": {
       "type": "string",
       "enum": [

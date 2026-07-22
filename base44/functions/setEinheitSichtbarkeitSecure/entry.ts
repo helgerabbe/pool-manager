@@ -53,6 +53,8 @@ Deno.serve(async (req) => {
     if (sichtbarkeit === 'oeffentlich') {
       // Poolzeit-Einheiten stehen nicht (mehr) in der Austausch-Bibliothek.
       patch.im_austausch = false;
+      // Vorschlags-Workflow: Mit der Freigabe ist der Vorschlag erledigt.
+      patch.zur_veroeffentlichung_vorgeschlagen = false;
     }
     if (sichtbarkeit === 'privat' && !einheit.besitzer_email) {
       patch.besitzer_email = user.email;

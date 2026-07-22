@@ -247,8 +247,17 @@ Deno.serve(async (req) => {
         };
       }
     } else {
-      // Öffentliche Ansicht: private Einheiten sind grundsätzlich unsichtbar
-      filterCriteria = { ...filterCriteria, sichtbarkeit: { $ne: 'privat' } };
+      // Öffentliche Ansicht: private Einheiten sind grundsätzlich unsichtbar —
+      // AUSSER sie wurden "zur Veröffentlichung vorgeschlagen" (Vorschlags-
+      // Workflow 2026-07-22): diese erscheinen im Poolzeit-Bereich des Fachs
+      // in einer eigenen Ansichts-Sektion.
+      filterCriteria = {
+        ...filterCriteria,
+        $or: [
+          { sichtbarkeit: { $ne: 'privat' } },
+          { zur_veroeffentlichung_vorgeschlagen: true },
+        ],
+      };
     }
 
     // 4. ZÄHLE GESAMT (für Pagination Metadata), falls vom SDK unterstützt
@@ -324,6 +333,10 @@ Deno.serve(async (req) => {
         erhalten_von: einheit.erhalten_von,
         // ✅ Austausch-Bibliothek: Freigabe-Status für Badge + Toggle-Button.
         im_austausch: einheit.im_austausch === true,
+        // ✅ Vorschlags-Workflow: Sektion "Zur Veröffentlichung vorgeschlagen".
+        zur_veroeffentlichung_vorgeschlagen: einheit.zur_veroeffentlichung_vorgeschlagen === true,
+        vorgeschlagen_von: einheit.vorgeschlagen_von,
+        vorgeschlagen_am: einheit.vorgeschlagen_am,
         // ✅ Unit-Level-Mitglieder für RBAC-Prüfung
         members: members.map(m => ({
           user_email: m.user_email,

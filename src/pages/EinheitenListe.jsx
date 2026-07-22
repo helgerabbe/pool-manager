@@ -14,6 +14,7 @@ import PrivateEinheitenUebersicht from '@/components/einheiten/PrivateEinheitenU
 import BasismoduleListe from '@/pages/BasismoduleListe';
 import BereichSwitcher from '@/components/einheiten/BereichSwitcher';
 import AustauschBibliothek from '@/components/einheiten/AustauschBibliothek';
+import VorgeschlageneEinheitenSektion from '@/components/einheiten/VorgeschlageneEinheitenSektion';
 import MoodleWegInfoBox from '@/components/einheiten/MoodleWegInfoBox';
 import SyncStatusBadge from '@/components/sync/SyncStatusBadge';
 import EinheitCard from '@/components/einheiten/EinheitCard';
@@ -224,9 +225,17 @@ export default function EinheitenListe() {
     const matchChanged = !showOnlyChanged || (e.sync_status === 'modified' || e.sync_status === 'new' || !e.last_synced_at);
     const lifecycleStatus = e.export_lifecycle_status || EXPORT_LIFECYCLE_STATUS.DRAFT;
     const matchLifecycle = filterLifecycle === 'all' || lifecycleStatus === filterLifecycle;
+    // Vorschlags-Workflow: Im Poolzeit-Bereich erscheinen vorgeschlagene
+    // (noch private) Einheiten NUR in der eigenen Sektion, nicht im Raster.
+    const matchAnsicht = ansicht !== 'oeffentlich' || e.sichtbarkeit !== 'privat';
 
-    return matchSearch && matchFach && matchJahrgang && matchRBAC && matchChanged && matchLifecycle;
+    return matchSearch && matchFach && matchJahrgang && matchRBAC && matchChanged && matchLifecycle && matchAnsicht;
   });
+
+  // Zur Veröffentlichung vorgeschlagene (private) Einheiten im Poolzeit-Bereich.
+  const vorgeschlagene = ansicht === 'oeffentlich'
+    ? einheiten.filter((e) => e.sichtbarkeit === 'privat' && e.zur_veroeffentlichung_vorgeschlagen === true)
+    : [];
 
   const faecher = [...new Set(einheiten.map(e => e.fach).filter(Boolean))];
 
@@ -371,6 +380,15 @@ export default function EinheitenListe() {
       <>
       {/* Angefangene Entwürfe (nur für den Ersteller sichtbar) */}
       {ansicht === 'oeffentlich' && <EntwurfSektion />}
+
+      {/* Zur Veröffentlichung vorgeschlagene Einheiten (Ansichtsmodus) */}
+      {ansicht === 'oeffentlich' && (
+        <VorgeschlageneEinheitenSektion
+          einheiten={vorgeschlagene}
+          rolle={rolle}
+          benutzerFaecher={userFaecher}
+        />
+      )}
 
       {einheiten.length > 0 && (
         <div className="space-y-3">
