@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Trash2, Lock, Copy, EyeOff, ChevronDown, Eye, Layers } from 'lucide-react';
 import EinheitVeroeffentlichenButton from '@/components/einheiten/EinheitVeroeffentlichenButton';
+import EinheitBasismodulButton from '@/components/einheiten/EinheitBasismodulButton';
 import EinheitAustauschToggleButton from '@/components/einheiten/EinheitAustauschToggleButton';
 import EinheitWeitergebenButton from '@/components/einheiten/EinheitWeitergebenButton';
 import { format } from 'date-fns';
@@ -204,6 +205,8 @@ export default function EinheitCard({
                   <>
                     {/* Poolzeit-Übernahme: nur Fachschaftsleitung/Admin */}
                     {darfStruktur && <EinheitVeroeffentlichenButton einheit={einheit} />}
+                    {/* Basismodul-Umwandlung: nur Fachschaftsleitung/Admin */}
+                    {darfStruktur && <EinheitBasismodulButton einheit={einheit} />}
                     {/* Austausch-Bibliothek: Besitzer/Admin geben frei */}
                     <EinheitAustauschToggleButton einheit={einheit} />
                     <EinheitWeitergebenButton einheit={einheit} />
