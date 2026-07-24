@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Lightbulb } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import IdeenkistePanel from './IdeenkistePanel';
 
 /**
- * Einheitenweiter Zugang zur Aufgaben-Sammelbox ("Ideenkiste").
- * Zeigt die Anzahl offener Aufgaben-Ideen als Zähler und öffnet das Panel.
+ * Einheitenweiter Zugang zum Aufgabenassistenten (früher "Ideenkiste"):
+ * Aufgaben im KI-Dialog erstellen und an die gewünschte Stelle der Einheit
+ * integrieren. Zeigt die Anzahl noch nicht integrierter Aufgaben als Zähler.
  */
 export default function IdeenkisteButton({ einheitId, einheit = null, kannBearbeiten = true }) {
   const [open, setOpen] = useState(false);
@@ -21,11 +22,11 @@ export default function IdeenkisteButton({ einheitId, einheit = null, kannBearbe
     <>
       <button
         onClick={() => setOpen(true)}
-        title="Ideenkiste: Aufgaben-Ideen sammeln, bevor klar ist, wo sie in der Einheit hingehören"
+        title="Aufgabenassistent: Aufgaben im Dialog erstellen und an die passende Stelle der Einheit integrieren"
         className="shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors"
       >
-        <Lightbulb className="w-3.5 h-3.5" />
-        Ideenkiste
+        <Sparkles className="w-3.5 h-3.5" />
+        Aufgabenassistent
         {offeneAnzahl > 0 && (
           <span className="flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold">
             {offeneAnzahl}

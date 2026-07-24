@@ -14,7 +14,7 @@ import AssistentEntwurfVorschlag from './AssistentEntwurfVorschlag';
  * Aufgaben-Idee beschreibt und/oder Material hochlädt. Die KI analysiert,
  * stellt Rückfragen und liefert am Ende einen Entwurf für die Ideenkiste.
  */
-export default function AufgabenAssistentDialog({ open, onOpenChange, einheit }) {
+export default function AufgabenAssistentDialog({ open, onOpenChange, einheit, onJetztIntegrieren = null }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [materialien, setMaterialien] = useState([]); // {url, name}
@@ -81,11 +81,12 @@ export default function AufgabenAssistentDialog({ open, onOpenChange, einheit })
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-amber-500" />
-            Aufgaben-Assistent
+            Aufgabenassistent — Aufgabe erstellen
           </DialogTitle>
           <DialogDescription>
-            Beschreiben Sie Ihre Aufgaben-Idee und/oder laden Sie Material hoch (Screenshot, PDF,
-            Dokument). Der Assistent arbeitet die Aufgabe mit Ihnen aus und legt sie in die Ideenkiste.
+            Beschreiben Sie, welche Aufgabe Sie machen möchten, und/oder laden Sie Material hoch
+            (Screenshot, PDF, Dokument). Der Assistent arbeitet die Aufgabe mit Ihnen aus — danach
+            können Sie sie sofort in die Einheit integrieren oder erst einmal nur speichern.
           </DialogDescription>
         </DialogHeader>
 
@@ -110,6 +111,7 @@ export default function AufgabenAssistentDialog({ open, onOpenChange, einheit })
               entwurf={entwurf}
               einheitId={einheit?.id}
               materialien={materialien}
+              onJetztIntegrieren={onJetztIntegrieren}
             />
           )}
         </div>

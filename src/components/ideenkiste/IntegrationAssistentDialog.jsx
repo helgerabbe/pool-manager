@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Check, RefreshCw, ArrowRight, PackageOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { holeIntegrationsVorschlag, legeAufgabeAn, markiereAlsIntegriert } from '@/lib/ideenIntegration';
+import IntegrationZielAuswahl from './IntegrationZielAuswahl';
 
 const ZIEL_LABELS = {
   allgemeine_aufgabe: 'Allgemeine Aufgabe (Ebene 2)',
@@ -25,6 +26,11 @@ export default function IntegrationAssistentDialog({ open, onOpenChange, idee, e
   const [vorschlag, setVorschlag] = useState(null);
   const [struktur, setStruktur] = useState({ themenfelder: [], lernpakete: [] });
   const [anlegen, setAnlegen] = useState(false);
+  // Von der Lehrkraft gewählte Platzierung — mit dem KI-Vorschlag vorbelegt,
+  // aber jederzeit änderbar (die Entscheidung liegt immer bei der Lehrkraft).
+  const [ziel, setZiel] = useState(null);
+  const [themenfeldId, setThemenfeldId] = useState(null);
+  const [lernpaketId, setLernpaketId] = useState(null);
 
   const analysieren = useCallback(async () => {
     if (!idee || !einheit?.id) return;
@@ -45,6 +51,9 @@ export default function IntegrationAssistentDialog({ open, onOpenChange, idee, e
         vorhandeneAufgaben: aufgaben,
       });
       setVorschlag(res);
+      setZiel(res.ziel || 'allgemeine_aufgabe');
+      setThemenfeldId(res.themenfeld_id || null);
+      setLernpaketId(res.lernpaket_id || null);
     } catch (_err) {
       toast.error('Analyse fehlgeschlagen. Bitte erneut versuchen.');
     } finally {
@@ -67,7 +76,9 @@ export default function IntegrationAssistentDialog({ open, onOpenChange, idee, e
   const handleAnlegen = async () => {
     setAnlegen(true);
     try {
-      await legeAufgabeAn({ einheit, idee, vorschlag, themenfelder: struktur.themenfelder });
+      // Die von der Lehrkraft gewählte Platzierung überschreibt den KI-Vorschlag.
+      const gewaehlt = { ...vorschlag, ziel, themenfeld_id: themenfeldId, lernpaket_id: lernpaketId };
+      await legeAufgabeAn({ einheit, idee, vorschlag: gewaehlt, themenfelder: struktur.themenfelder });
       invalidateAll();
       toast.success('Aufgabe wurde in der Einheit angelegt. Die Idee ist jetzt als „Integriert" markiert.');
       onOpenChange(false);
@@ -81,7 +92,7 @@ export default function IntegrationAssistentDialog({ open, onOpenChange, idee, e
   const handleManuellIntegriert = async () => {
     setAnlegen(true);
     try {
-      const lp = struktur.lernpakete.find((p) => p.id === vorschlag?.lernpaket_id);
+      const lp = struktur.lernpakete.find((p) => p.id === lernpaketId);
       await markiereAlsIntegriert(
         idee,
         lp ? `Als Lernpaket-Übung in „${lp.titel_des_pakets}" umgesetzt` : 'Als Lernpaket-Übung umgesetzt'
@@ -96,14 +107,14 @@ export default function IntegrationAssistentDialog({ open, onOpenChange, idee, e
     }
   };
 
-  const themenfeldName = vorschlag?.themenfeld_id
-    ? struktur.themenfelder.find((t) => t.id === vorschlag.themenfeld_id)?.titel ||
-      struktur.themenfelder.find((t) => t.id === vorschlag.themenfeld_id)?.name
+  const themenfeldName = themenfeldId
+    ? struktur.themenfelder.find((t) => t.id === themenfeldId)?.titel ||
+      struktur.themenfelder.find((t) => t.id === themenfeldId)?.name
     : null;
-  const lernpaketName = vorschlag?.lernpaket_id
-    ? struktur.lernpakete.find((p) => p.id === vorschlag.lernpaket_id)?.titel_des_pakets
+  const lernpaketName = lernpaketId
+    ? struktur.lernpakete.find((p) => p.id === lernpaketId)?.titel_des_pakets
     : null;
-  const istEmpfehlung = vorschlag?.ziel === 'lernpaket_empfehlung';
+  const istEmpfehlung = ziel === 'lernpaket_empfehlung';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -114,8 +125,8 @@ export default function IntegrationAssistentDialog({ open, onOpenChange, idee, e
             In die Einheit integrieren
           </DialogTitle>
           <DialogDescription>
-            Der Assistent prüft den aktuellen Stand der Einheit und schlägt vor, wo und in
-            welcher Form „{idee?.titel}" integriert wird.
+            Der Assistent prüft den aktuellen Stand der Einheit und empfiehlt, wo und in welcher
+            Form „{idee?.titel}" integriert wird — die Platzierung wählen Sie selbst.
           </DialogDescription>
         </DialogHeader>
 
@@ -131,7 +142,7 @@ export default function IntegrationAssistentDialog({ open, onOpenChange, idee, e
             <>
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge className="bg-primary/10 text-primary border border-primary/30">
-                  {ZIEL_LABELS[vorschlag.ziel] || vorschlag.ziel}
+                  {ZIEL_LABELS[ziel] || ziel}
                 </Badge>
                 {themenfeldName && <Badge variant="outline">Themenfeld: {themenfeldName}</Badge>}
                 {lernpaketName && <Badge variant="outline">Lernpaket: {lernpaketName}</Badge>}
@@ -139,9 +150,21 @@ export default function IntegrationAssistentDialog({ open, onOpenChange, idee, e
               </div>
 
               <div className="rounded-lg border bg-muted/40 p-3">
-                <p className="text-xs font-semibold text-muted-foreground mb-1">Begründung des Assistenten</p>
+                <p className="text-xs font-semibold text-muted-foreground mb-1">Empfehlung des Assistenten</p>
                 <p className="text-sm">{vorschlag.begruendung}</p>
               </div>
+
+              <IntegrationZielAuswahl
+                ziel={ziel}
+                onZielChange={setZiel}
+                themenfeldId={themenfeldId}
+                onThemenfeldChange={setThemenfeldId}
+                lernpaketId={lernpaketId}
+                onLernpaketChange={setLernpaketId}
+                themenfelder={struktur.themenfelder}
+                lernpakete={struktur.lernpakete}
+                empfohlenesZiel={vorschlag.ziel}
+              />
 
               {istEmpfehlung ? (
                 <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-3 space-y-1.5">
@@ -149,7 +172,9 @@ export default function IntegrationAssistentDialog({ open, onOpenChange, idee, e
                     <PackageOpen className="w-3.5 h-3.5" />
                     Empfehlung für die Umsetzung
                   </p>
-                  <p className="text-sm text-blue-900/90">{vorschlag.empfehlung_text}</p>
+                  <p className="text-sm text-blue-900/90">
+                    {vorschlag.empfehlung_text || 'Legen Sie die kurze Übung im gewählten Lernpaket als passende Aktivität an.'}
+                  </p>
                   <p className="text-xs text-blue-800/70">
                     Kurze Übungen in Lernpaketen legen Sie in den Tabs „Aktivitäten zuordnen" und
                     „Basisaufgaben erstellen" an. Danach können Sie die Idee hier als integriert markieren.
