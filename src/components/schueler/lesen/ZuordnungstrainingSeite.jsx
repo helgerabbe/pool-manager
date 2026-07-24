@@ -108,7 +108,11 @@ export default function ZuordnungstrainingSeite({ aktivitaet, busy, onErledigt, 
 
   const belegteAntworten = useMemo(() => new Set(Object.values(zuordnung)), [zuordnung]);
   const gemeisterteAnzahl = paare.filter((p) => (counts[p.id] || 0) >= schwelle).length;
-  const alleGemeistert = paare.length > 0 && gemeisterteAnzahl === paare.length;
+  // Bestehens-Quote: Lehrkraft legt fest, welcher Anteil der Paare sicher
+  // gemeistert sein muss (100/90/80/70 %). Default: 100 % = alle Paare.
+  const bestehenProzent = [100, 90, 80, 70].includes(Number(fv.bestehen_prozent)) ? Number(fv.bestehen_prozent) : 100;
+  const zielAnzahl = Math.max(1, Math.ceil((paare.length * bestehenProzent) / 100));
+  const bestanden = paare.length > 0 && gemeisterteAnzahl >= zielAnzahl;
 
   const waehleBegriff = (id) => {
     if (geprueft) return;
@@ -164,6 +168,7 @@ export default function ZuordnungstrainingSeite({ aktivitaet, busy, onErledigt, 
           <div className="flex items-center justify-between text-xs font-medium text-muted-foreground mb-1">
             <span>
               Gemeistert: <span className="text-foreground font-semibold">{gemeisterteAnzahl} / {paare.length}</span>
+              {zielAnzahl < paare.length && <span className="ml-1">(Ziel: {zielAnzahl})</span>}
             </span>
             <span>Runde {rundenNr}</span>
           </div>
@@ -182,14 +187,18 @@ export default function ZuordnungstrainingSeite({ aktivitaet, busy, onErledigt, 
           <p className="text-sm text-muted-foreground italic text-center py-10">
             Für dieses Zuordnungstraining sind noch keine Paare hinterlegt.
           </p>
-        ) : alleGemeistert && geprueft ? (
+        ) : bestanden && geprueft ? (
           <div className="flex flex-col items-center justify-center text-center gap-3 py-10">
             <span className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
               <Trophy className="w-8 h-8 text-emerald-600" />
             </span>
-            <p className="text-base font-bold text-emerald-700">Alle {paare.length} Zuordnungen gemeistert! 🎉</p>
+            <p className="text-base font-bold text-emerald-700">
+              {gemeisterteAnzahl === paare.length
+                ? `Alle ${paare.length} Zuordnungen gemeistert! 🎉`
+                : `Ziel erreicht: ${gemeisterteAnzahl} von ${paare.length} Zuordnungen gemeistert! 🎉`}
+            </p>
             <p className="text-sm text-muted-foreground max-w-sm">
-              Du hast jedes Paar {schwelle > 1 ? `${schwelle}-mal ` : ''}richtig zugeordnet. Die Übung ist bestanden.
+              Du hast genug Paare {schwelle > 1 ? `${schwelle}-mal ` : ''}richtig zugeordnet. Die Übung ist bestanden.
             </p>
           </div>
         ) : (
@@ -262,7 +271,7 @@ export default function ZuordnungstrainingSeite({ aktivitaet, busy, onErledigt, 
         )}
 
         {/* Feedback nach dem Prüfen */}
-        {geprueft && !alleGemeistert && (
+        {geprueft && !bestanden && (
           <div className={cn(
             'mt-4 rounded-xl px-4 py-3 text-sm font-medium text-center',
             richtigeInRunde === runde.length
@@ -289,7 +298,7 @@ export default function ZuordnungstrainingSeite({ aktivitaet, busy, onErledigt, 
           >
             <CheckCircle2 className="w-4 h-4" /> Prüfen
           </Button>
-        ) : alleGemeistert ? (
+        ) : bestanden ? (
           <Button
             className="gap-2 bg-emerald-600 hover:bg-emerald-700"
             disabled={busy}

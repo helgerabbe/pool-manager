@@ -36,6 +36,7 @@ export default function ZuordnungstrainingModal({
   const [pairs, setPairs] = useState([]);
   const [rundenGroesse, setRundenGroesse] = useState('6');
   const [schwelle, setSchwelle] = useState('2');
+  const [bestehenProzent, setBestehenProzent] = useState('100');
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkText, setBulkText] = useState('');
 
@@ -47,6 +48,7 @@ export default function ZuordnungstrainingModal({
       : []);
     setRundenGroesse(String(initialFieldValues.runden_groesse || 6));
     setSchwelle(String(initialFieldValues.meister_schwelle || 2));
+    setBestehenProzent(String(initialFieldValues.bestehen_prozent || 100));
     setBulkOpen(false);
     setBulkText('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -87,6 +89,7 @@ export default function ZuordnungstrainingModal({
       training_pairs: pairs,
       runden_groesse: Math.min(12, Math.max(2, Number(rundenGroesse) || 6)),
       meister_schwelle: Math.min(5, Math.max(1, Number(schwelle) || 2)),
+      bestehen_prozent: [100, 90, 80, 70].includes(Number(bestehenProzent)) ? Number(bestehenProzent) : 100,
     });
   };
 
@@ -124,7 +127,23 @@ export default function ZuordnungstrainingModal({
             <div className="space-y-1.5">
               <Label className="text-sm font-medium">Wie oft richtig, bis ein Paar sitzt?</Label>
               <Input type="number" min="1" max="5" value={schwelle} onChange={(e) => setSchwelle(e.target.value)} className="text-sm" />
-              <p className="text-[11px] text-muted-foreground">Erst wenn jedes Paar so oft richtig zugeordnet wurde, ist die Übung bestanden (Standard: 2×).</p>
+              <p className="text-[11px] text-muted-foreground">Erst wenn ein Paar so oft richtig zugeordnet wurde, gilt es als gemeistert (Standard: 2×).</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Bestanden ab (Anteil gemeisterter Paare)</Label>
+              <select
+                value={bestehenProzent}
+                onChange={(e) => setBestehenProzent(e.target.value)}
+                className="h-9 w-full rounded-md border border-input bg-card px-2 text-sm"
+              >
+                <option value="100">100 % — alle Paare müssen sitzen</option>
+                <option value="90">90 % der Paare</option>
+                <option value="80">80 % der Paare</option>
+                <option value="70">70 % der Paare</option>
+              </select>
+              <p className="text-[11px] text-muted-foreground">
+                Die Übung gilt als bestanden, sobald dieser Anteil der Paare sicher gemeistert ist (Standard: 100 %).
+              </p>
             </div>
           </div>
 

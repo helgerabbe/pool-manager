@@ -16,7 +16,7 @@ export default function ZuordnungstrainingReadOnly({ fieldValues = {} }) {
       {pairs.length > 0 ? (
         <>
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            {pairs.length} Zuordnungspaare · Runden zu {fieldValues.runden_groesse || 6} · jedes Paar {fieldValues.meister_schwelle || 2}× richtig
+            {pairs.length} Zuordnungspaare · Runden zu {fieldValues.runden_groesse || 6} · jedes Paar {fieldValues.meister_schwelle || 2}× richtig · bestanden ab {fieldValues.bestehen_prozent || 100} %
           </p>
           <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
             {pairs.map((p, i) => (
