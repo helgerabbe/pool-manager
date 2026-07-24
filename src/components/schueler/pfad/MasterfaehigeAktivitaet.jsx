@@ -10,6 +10,7 @@ import TextLesenSeite from '@/components/schueler/lesen/TextLesenSeite';
 import LinkOeffnenSeite from '@/components/schueler/lesen/LinkOeffnenSeite';
 import ReihenfolgeSortierenSeite from '@/components/schueler/lesen/ReihenfolgeSortierenSeite';
 import BegriffeZuordnenSeite from '@/components/schueler/lesen/BegriffeZuordnenSeite';
+import ZuordnungstrainingSeite from '@/components/schueler/lesen/ZuordnungstrainingSeite';
 import BearbeitungBestaetigenSeite from '@/components/schueler/lesen/BearbeitungBestaetigenSeite';
 import VideoAudioSeite from '@/components/schueler/lesen/VideoAudioSeite';
 import KITutorSeite from '@/components/schueler/lesen/KITutorSeite';
@@ -100,7 +101,10 @@ export default function MasterfaehigeAktivitaet({
   const istTextLesen = katName.includes('text lesen');
   const istLinkUrl = katName.includes('link') || katName.includes('url');
   const istReihenfolge = katName.includes('reihenfolge') || katName.includes('sortier');
-  const istBegriffeZuordnen = katName.includes('begriffe zuordnen') || katName.includes('zuordn');
+  // WICHTIG: 'zuordnungstraining' VOR 'zuordn' prüfen — sonst würde das
+  // Zuordnungstraining fälschlich als „Begriffe zuordnen" gerendert.
+  const istZuordnungstraining = katName.includes('zuordnungstraining');
+  const istBegriffeZuordnen = !istZuordnungstraining && (katName.includes('begriffe zuordnen') || katName.includes('zuordn'));
   const istBestaetigen = katName.includes('bestätig') || katName.includes('bestaetig');
   const istVideoAudio = katName.includes('video') || katName.includes('audio');
   const istKITutor = katName.includes('ki-tutor') || katName.includes('ki tutor') || katName.includes('tutor');
@@ -135,6 +139,7 @@ export default function MasterfaehigeAktivitaet({
   if (istTextLesen) return <TextLesenSeite {...gemeinsameProps} />;
   if (istLinkUrl) return <LinkOeffnenSeite {...gemeinsameProps} />;
   if (istReihenfolge) return <ReihenfolgeSortierenSeite {...gemeinsameProps} />;
+  if (istZuordnungstraining) return <ZuordnungstrainingSeite {...gemeinsameProps} />;
   if (istBegriffeZuordnen) return <BegriffeZuordnenSeite {...gemeinsameProps} />;
   if (istBestaetigen) return <BearbeitungBestaetigenSeite {...gemeinsameProps} />;
   if (istVideoAudio) return <VideoAudioSeite {...gemeinsameProps} />;

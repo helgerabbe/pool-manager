@@ -155,6 +155,25 @@ function validateTestData(data) {
   return null;
 }
 
+/**
+ * Zuordnungstraining: braucht mindestens 4 vollständige Paare.
+ * Struktur: [{ left_typ: 'text'|'bild'|'audio', left_text?, left_url?, right }]
+ */
+function validateTrainingPairsData(data) {
+  const pairs = Array.isArray(data) ? data : [];
+  const valid = pairs.filter(p => {
+    if (!p || String(p.right || '').trim() === '') return false;
+    const typ = p.left_typ || 'text';
+    return typ === 'text'
+      ? String(p.left_text || '').trim() !== ''
+      : String(p.left_url || '').trim() !== '';
+  });
+  if (valid.length < 4) {
+    return `Mindestens 4 vollständige Zuordnungspaare erforderlich (aktuell: ${valid.length})`;
+  }
+  return null;
+}
+
 // JSON-Validatoren pro field_name. Wenn ein field_name hier nicht gelistet ist,
 // wird der generische „nicht leer"-Check verwendet.
 const JSON_FIELD_VALIDATORS = {
@@ -165,6 +184,7 @@ const JSON_FIELD_VALIDATORS = {
   sort_data: validateSortData,
   marker_data: validateMarkerData,
   test_data: validateTestData,
+  training_pairs: validateTrainingPairsData,
 };
 
 // ---------------------------------------------------------------------------
