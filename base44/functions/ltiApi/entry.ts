@@ -68,6 +68,37 @@ Deno.serve(async (req) => {
       return rec;
     };
 
+    // ── Einheiten-Bindung für Inhalts-Zugriffe (Audit-Fix 2026-07-24) ──
+    // Erlaubt sind NUR die per Moodle verknüpfte Einheit (auch wenn privat)
+    // sowie öffentliche Einheiten. Fremde private Einheiten sind tabu.
+    const einheitErlaubt = async (einheitId) => {
+      if (!einheitId) throw new Error('Keine Einheit angegeben.');
+      const einheit = norm(await E.Einheiten.get(einheitId).catch(() => null));
+      if (!einheit) throw new Error('Einheit nicht gefunden.');
+      const istVerknuepft = String(einheitId) === String(payload.einheit || '');
+      if (einheit.sichtbarkeit === 'privat' && !istVerknuepft) {
+        throw new Error('Kein Zugriff auf diese Einheit.');
+      }
+      return einheit;
+    };
+    const lernpaketErlaubt = async (lernpaketId) => {
+      if (!lernpaketId) throw new Error('Kein Lernpaket angegeben.');
+      const lp = norm(await E.Lernpakete.get(lernpaketId).catch(() => null));
+      if (!lp) throw new Error('Lernpaket nicht gefunden.');
+      await einheitErlaubt(lp.einheit_id);
+      return lp;
+    };
+
+    // Lösungs-/Lehrkraft-interne Felder dürfen NIE an Schüler ausgeliefert werden.
+    const ohneLoesungsfelder = (a) => {
+      const d = { ...(a || {}) };
+      delete d.musterloesung;
+      delete d.erwartungshorizont;
+      delete d.ki_briefing;
+      delete d.brian_system_instruction;
+      return d;
+    };
+
     let result = null;
     switch (action) {
       // ── Identität ──
@@ -81,7 +112,7 @@ Deno.serve(async (req) => {
 
       // ── Inhalte (read-only) ──
       case 'getEinheit':
-        result = norm(await E.Einheiten.get(params.id));
+        result = await einheitErlaubt(params.id);
         break;
       case 'listEinheiten':
         result = (await E.Einheiten.list()).map(norm).filter((e) => e.sichtbarkeit !== 'privat');
@@ -90,9 +121,11 @@ Deno.serve(async (req) => {
         result = (await E.SystemBausteine.list('reihenfolge')).map(norm);
         break;
       case 'listAufgabenByEinheit':
-        result = (await E.AllgemeineAufgabe.filter({ einheit_id: params.einheitId })).map(norm);
+        await einheitErlaubt(params.einheitId);
+        result = (await E.AllgemeineAufgabe.filter({ einheit_id: params.einheitId })).map(norm).map(ohneLoesungsfelder);
         break;
       case 'listLernpaketeByEinheit':
+        await einheitErlaubt(params.einheitId);
         result = (await E.Lernpakete.filter({ einheit_id: params.einheitId })).map(norm);
         break;
       case 'getAktivitaetenKatalog':
@@ -101,6 +134,7 @@ Deno.serve(async (req) => {
       case 'getAktivitaetenByLernpaket': {
         // Gleiche Logik wie AktivitaetService.getAktivitaetenByLernpaket:
         // Tombstones ausblenden + MasterAufgaben anhängen/mergen.
+        await lernpaketErlaubt(params.lernpaketId);
         const [aktRaw, master] = await Promise.all([
           E.LernpaketPhaseAktivitaet.filter({ lernpaket_id: params.lernpaketId }),
           E.MasterAufgabe.filter({ lernpaket_id: params.lernpaketId }),
@@ -130,9 +164,11 @@ Deno.serve(async (req) => {
         break;
       }
       case 'listThemenfelderByEinheit':
+        await einheitErlaubt(params.einheitId);
         result = (await E.Themenfeld.filter({ einheit_id: params.einheitId })).map(norm);
         break;
       case 'listLernzieleByLernpaket':
+        await lernpaketErlaubt(params.lernpaketId);
         result = (await E.Lernziele.filter({ lernpaket_id: params.lernpaketId })).map(norm);
         break;
       case 'listFaecher':
