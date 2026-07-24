@@ -22,6 +22,21 @@ async function hmacSign(hexKey, message) {
   return b64url(new Uint8Array(sig));
 }
 
+// Einfache Ratenbegrenzung pro Schüler-Sitzung (Audit-Fix 2026-07-24):
+// In-Memory pro Instanz — dämpft automatisierte Massenanfragen, ohne
+// pro Request in die Datenbank schreiben zu müssen.
+const rateBuckets = new Map();
+function istRateLimited(key, limit = 120, windowMs = 60 * 1000) {
+  const now = Date.now();
+  const bucket = rateBuckets.get(key);
+  if (!bucket || now - bucket.start > windowMs) {
+    rateBuckets.set(key, { start: now, count: 1 });
+    return false;
+  }
+  bucket.count += 1;
+  return bucket.count > limit;
+}
+
 // Update-Daten dürfen die Identität nie umschreiben
 const ohneUserEmail = (data) => {
   const d = { ...(data || {}) };
@@ -53,13 +68,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Deine Sitzung ist abgelaufen. Bitte in Moodle erneut auf die Aktivität klicken.' }, { status: 401 });
     }
 
+    if (istRateLimited(String(payload.sid || 'unbekannt'))) {
+      return Response.json({ error: 'Zu viele Anfragen. Bitte kurz warten und erneut versuchen.' }, { status: 429 });
+    }
+
     let schueler = null;
     try {
       schueler = norm(await E.MoodleSchueler.get(payload.sid));
     } catch (_e) { /* unten behandelt */ }
     if (!schueler) return Response.json({ error: 'Schülerprofil nicht gefunden. Bitte in Moodle erneut einsteigen.' }, { status: 401 });
 
-    const userEmail = (schueler.email || '').trim() || `moodle-${schueler.id}@lti.local`;
+    // Identitäts-Anker (Audit-Fix 2026-07-24): IMMER die stabile synthetische
+    // Kennung statt der Moodle-E-Mail. Verhindert, dass ein Moodle-Konto mit
+    // (zufällig oder absichtlich) identischer E-Mail die Fortschrittsdaten
+    // eines Lehrkraft-/App-Kontos lesen oder beschreiben kann.
+    const userEmail = `moodle-${schueler.id}@lti.local`;
 
     // Eigentums-Prüfung für Updates/Deletes auf Schüler-Datensätzen
     const owned = async (entity, id) => {

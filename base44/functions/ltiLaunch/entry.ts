@@ -69,6 +69,18 @@ Deno.serve(async (req) => {
     });
 
     if (claims.nonce !== st.n) return htmlError('Sicherheitsprüfung fehlgeschlagen (nonce stimmt nicht überein).');
+
+    // Replay-Schutz (Audit-Fix 2026-07-24): Jede nonce darf nur EINMAL für
+    // einen Launch verwendet werden. Ein abgefangenes id_token/state-Paar
+    // kann so nicht innerhalb des 10-Minuten-Fensters erneut eingespielt werden.
+    const nonceStr = String(st.n);
+    const verbraucht = await svc.LtiNonce.filter({ nonce: nonceStr });
+    if (verbraucht.length > 0) {
+      return htmlError('Diese Anmeldung wurde bereits verwendet. Bitte in Moodle erneut auf die Aktivität klicken.');
+    }
+    await svc.LtiNonce.create({ nonce: nonceStr, ablauf_am: new Date(Date.now() + 15 * 60 * 1000).toISOString() });
+    // Abgelaufene Nonce-Einträge beiläufig aufräumen (Best Effort).
+    await svc.LtiNonce.deleteMany({ ablauf_am: { $lt: new Date().toISOString() } }).catch(() => {});
     const deployment = claims['https://purl.imsglobal.org/spec/lti/claim/deployment_id'];
     if (String(deployment) !== String(cfg.deployment_id)) {
       return htmlError(`Unbekannte Deployment-ID (${deployment}). In der App ist "${cfg.deployment_id}" hinterlegt.`);

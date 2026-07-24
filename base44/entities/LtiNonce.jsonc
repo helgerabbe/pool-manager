@@ -1,0 +1,42 @@
+{
+  "name": "LtiNonce",
+  "type": "object",
+  "description": "Replay-Schutz f\u00fcr die Moodle-LTI-Anmeldung (Audit-Fix 2026-07-24): Jede beim Launch verwendete nonce wird hier einmalig registriert. Trifft dieselbe nonce erneut ein (Replay eines abgefangenen id_token/state-Paars), lehnt ltiLaunch den Login ab. Abgelaufene Eintr\u00e4ge werden bei jedem Launch aufger\u00e4umt. Zugriff ausschlie\u00dflich per Service-Role aus den LTI-Backend-Funktionen; RLS komplett admin-only.",
+  "properties": {
+    "nonce": {
+      "type": "string",
+      "description": "Die verbrauchte LTI-nonce (aus dem state/id_token)."
+    },
+    "ablauf_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitpunkt, ab dem dieser Eintrag aufger\u00e4umt werden darf (Launch-Fenster + Puffer)."
+    }
+  },
+  "required": [
+    "nonce",
+    "ablauf_am"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
