@@ -1,4 +1,5 @@
 import { base44 } from '@/api/base44Client';
+import { holeAktivitaetenKatalogKontext } from '@/lib/aktivitaetenKatalogKontext';
 
 /**
  * Integrations-Assistent der Ideenkiste (Etappe 3):
@@ -16,6 +17,7 @@ import { base44 } from '@/api/base44Client';
  */
 
 export async function holeIntegrationsVorschlag({ einheit, idee, themenfelder, lernpakete, vorhandeneAufgaben }) {
+  const katalogListe = await holeAktivitaetenKatalogKontext();
   const tfListe = themenfelder.length > 0
     ? themenfelder.map((t) => `- id: ${t.id} | "${t.titel || t.name || 'Ohne Titel'}"`).join('\n')
     : '(keine Themenfelder angelegt)';
@@ -47,7 +49,8 @@ Notierter Aufgabenform-Vorschlag: ${idee.aufgabentyp_vorschlag || '(keiner)'}
 MÖGLICHE INTEGRATIONSZIELE:
 1. "allgemeine_aufgabe" (Ebene 2, Transfer): offene Aufgabe auf Einheitenebene mit KI-Tutor. Braucht: titel, aufgabenstellung (aus Schülersicht, vollständig ausformuliert), erwartungshorizont (was muss eine gute Antwort enthalten), mission_type (problem|entdeckung|recherche|anwendung|transfer|kreativitaet), schwierigkeitsgrad (1-3), optional themenfeld_id aus der Liste oben.
 2. "projektaufgabe" (Ebene 3): produktorientierte Anwendungs- oder Projektaufgabe. Braucht: titel, aufgabenstellung, erwartungshorizont, aufgabentyp_projekt ("Anwendungsaufgabe" für kürzere fokussierte, "Projektaufgabe" für umfangreiche produktorientierte Aufgaben).
-3. "lernpaket_empfehlung": Die Idee ist eine kurze, automatisch auswertbare Übung (Lückentext, Quiz, Zuordnung o. Ä.) und gehört in ein Lernpaket (Ebene 1). Diese Inhalte werden NICHT automatisch angelegt — empfiehl das passende lernpaket_id aus der Liste und beschreibe in empfehlung_text, welche Aktivitätsform die Lehrkraft dort anlegen soll.
+3. "lernpaket_empfehlung": Die Idee ist eine kurze, automatisch auswertbare Übung und gehört in ein Lernpaket (Ebene 1). Diese Inhalte werden NICHT automatisch angelegt — empfiehl das passende lernpaket_id aus der Liste und nenne in empfehlung_text namentlich das passende Format aus der Aufgabengalerie (AUSSCHLIESSLICH aus dieser Liste wählen):
+${katalogListe}
 
 DEINE AUFGABE:
 - Wähle GENAU EIN Ziel und begründe die Wahl kurz und verständlich (begruendung).

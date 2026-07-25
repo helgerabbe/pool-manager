@@ -1,4 +1,5 @@
 import { base44 } from '@/api/base44Client';
+import { holeAktivitaetenKatalogKontext } from '@/lib/aktivitaetenKatalogKontext';
 
 /**
  * Aufgaben-Assistent (Ideenkiste, Etappe 2):
@@ -8,12 +9,17 @@ import { base44 } from '@/api/base44Client';
  * der in die Ideenkiste übernommen werden kann.
  */
 
-const AUFGABENFORMEN_KONTEXT = `Verfügbare Aufgabenformen der App:
-1. LERNPAKET-AKTIVITÄTEN (Ebene 1): kurze, automatisch auswertbare Übungen INNERHALB eines Lernpakets — Lückentext, Begriffe zuordnen, Mini-Quiz, Reihenfolge sortieren, Bildbeschriftung, Text lesen, Video/Audio, KI-Tutor-Gespräch. Geeignet für Basiswissen, Üben, Wiederholen.
+// Ebene-1-Formate werden NICHT mehr hart kodiert, sondern live aus dem
+// Aktivitäten-Katalog (Aufgabengalerie) geladen — so schlägt die KI nur
+// Formate vor, die es an der Schule tatsächlich gibt.
+const aufgabenformenKontext = (katalogListe) => `Verfügbare Aufgabenformen der App:
+1. LERNPAKET-AKTIVITÄTEN (Ebene 1): kurze, automatisch auswertbare Übungen INNERHALB eines Lernpakets. Geeignet für Basiswissen, Üben, Wiederholen. Die an dieser Schule TATSÄCHLICH verfügbaren Formate (Aufgabengalerie) — schlage bei Ebene 1 AUSSCHLIESSLICH eines dieser Formate namentlich vor:
+${katalogListe}
 2. ALLGEMEINE AUFGABEN (Ebene 2, Transfer): größere, offene Aufgaben auf Einheitenebene, bei denen Schüler:innen Gelerntes auf neue Situationen anwenden (Quelle analysieren, Diagramm auswerten, Erörterung schreiben). Mit KI-Tutor-Begleitung und Erwartungshorizont. Missionen: Problem, Entdeckung, Recherche, Anwendung, Transfer, Kreativität.
 3. ANWENDUNGS-/PROJEKTAUFGABEN (Ebene 3): produktorientierte, mehrstündige Aufgaben (Plakat, Podcast, Präsentation, Portfolio) mit Abgabeformaten, Bewertungsrubriken und Projekt-Coach.`;
 
 export async function frageAufgabenAssistent({ einheit, verlauf, fileUrls = [] }) {
+  const katalogListe = await holeAktivitaetenKatalogKontext();
   const verlaufText = verlauf
     .map((m) => `${m.rolle === 'user' ? 'LEHRKRAFT' : 'ASSISTENT'}: ${m.text}`)
     .join('\n\n');
@@ -25,7 +31,7 @@ KONTEXT DER EINHEIT:
 - Jahrgangsstufe: ${einheit?.jahrgangsstufe || 'unbekannt'}
 - Titel der Einheit: ${einheit?.titel_der_einheit || 'unbekannt'}
 
-${AUFGABENFORMEN_KONTEXT}
+${aufgabenformenKontext(katalogListe)}
 
 DEINE AUFGABE:
 - Falls Material (Bild/PDF/Dokument) angehängt ist: Analysiere es zuerst und beschreibe kurz, was du erkennst.
