@@ -153,6 +153,21 @@ Deno.serve(async (req) => {
       .join('\n') || '';
 
     const outputFormatsStr = (Array.isArray(task.output_formats) ? task.output_formats : []).join(', ') || 'keine spezifischen Formate';
+
+    // Aufgabensequenz: Schritte (Material ⇄ Aufgabe) in den Prompt einweben,
+    // damit Brian den mehrstufigen Ablauf kennt und moderieren kann.
+    const istSequenz = task.aufgaben_modus === 'sequenz';
+    const sequenzSchritte = istSequenz && Array.isArray(task.sequenz_schritte)
+      ? [...task.sequenz_schritte].sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
+      : [];
+    const sequenzStr = sequenzSchritte.length > 0
+      ? sequenzSchritte
+          .map((s, i) => `${i + 1}. [${s.typ === 'material' ? 'Material' : 'Aufgabe'}] ${s.titel || 'Ohne Titel'}`)
+          .join('\n')
+      : '';
+    const sequenzBlock = sequenzStr
+      ? `\n\nDiese Aufgabe ist eine AUFGABENSEQUENZ mit fester Schritt-Reihenfolge:\n${sequenzStr}\n\nBegleite den Schüler Schritt für Schritt durch diese Abfolge. Beziehe dich auf das Material des jeweils vorherigen Schritts, wenn der Schüler feststeckt, und springe nicht voraus.`
+      : '';
     const systemInstructionAuto = `Du bist ein motivierender, geduldiger GEP-Lerncoach für Jahrgangsstufe ${jahrgang} im Fach ${fach}.
 
 Pädagogische Regel: Du darfst NIEMALS die Lösung direkt verraten. Nutze stattdessen Scaffolding – stelle Denkanstöße und gezielte Rückfragen, die den Schüler zum eigenständigen Nachdenken anregen.
@@ -168,7 +183,7 @@ Lernziele, auf die du dich beziehst:
 ${lernzieleStr}
 
 Verknüpfte Lernziele und zugehörige Lernpakete (Verweis-Logik):
-${lernzieleMitLpStr}
+${lernzieleMitLpStr}${sequenzBlock}
 
 WICHTIG für deine Begleitung: Wenn du merkst, dass der Schüler ein bestimmtes Lernziel noch nicht beherrscht, verweise ihn konkret auf das oben genannte zugehörige Lernpaket ("Schau dir dafür nochmal das Lernpaket … an"). Gibt es zu einem Lernziel KEIN zugeordnetes Lernpaket, sage dem Schüler freundlich, dass es dafür aktuell kein Lernpaket gibt, und ermutige ihn, mit seiner Lehrkraft zu besprechen, wie er dieses Ziel erreichen kann.
 
@@ -207,7 +222,10 @@ Leite den Schüler durch gezielte Fragen und Impulse, bis er die Aufgabe vollst�
             lernziele_mit_lernpaket: lernzieleMitLpStr,
             materialien: materialienStr,
             bewertungsrubriken: rubrikenStr,
-            aufgabentyp: isEbene3 ? 'Projekt-/Anwendungsaufgabe (Ebene 3)' : 'Transfer-Aufgabe (Ebene 2)',
+            aufgabentyp: istSequenz
+              ? 'Aufgabensequenz (mehrschrittiger Ablauf Material ⇄ Aufgabe)'
+              : (isEbene3 ? 'Projekt-/Anwendungsaufgabe (Ebene 3)' : 'Transfer-Aufgabe (Ebene 2)'),
+            sequenz_schritte: sequenzStr || null,
             system_instruction_vorlage: systemInstructionAuto,
             completion_rule_vorlage: completionRuleAuto,
           },

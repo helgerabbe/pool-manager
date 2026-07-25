@@ -17,6 +17,14 @@ import HelpBadge from '@/components/ui/HelpBadge';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
+// ── Brian-relevante Aufgabentypen ──
+// Nur KI-Tutor-Aufgaben ('inhalt', inkl. Sequenz-Modus) brauchen Brian.
+// Handlungsaufgaben und externe HTML-Seiten laufen ohne Brian; Meta-Typen
+// (buendel, prozess, projekt_anker, auswahl_buendel) haben keinen Dialog.
+function istBrianAufgabe(a) {
+  return (a.aufgaben_typ || 'inhalt') === 'inhalt';
+}
+
 // ── Segment-Status Checker ──
 function isPromptReady(aufgabe) {
   return !!(
@@ -59,7 +67,9 @@ function AufgabeCard({ aufgabe, onMarkAsSynced }) {
   const isSynced = aufgabe.brian_sync_status === 'synced';
   const isReady = isPromptReady(aufgabe);
 
-  const ebeneLabel = aufgabe.anforderungsebene === '3 - Projekt' ? '🎯 Ebene 3' : '📝 Ebene 2';
+  const ebeneLabel = aufgabe.anforderungsebene === '3 - Projekt'
+    ? '🎯 Ebene 3'
+    : aufgabe.anforderungsebene === '2 - Transfer' ? '📝 Ebene 2' : '📘 Ebene 1';
 
   return (
     <div className={cn(
@@ -182,17 +192,18 @@ export default function BrianExportCockpitView() {
     queryFn: () => base44.entities.AllgemeineAufgabe.list(),
   });
 
-  // Nur Ebene 2 und 3, nur approved
+  // Nur freigegebene KI-Tutor-Aufgaben (alle Ebenen) — Handlungsaufgaben
+  // und externe HTML-Seiten brauchen keinen Brian-Export.
   const aufgaben = useMemo(() => {
     return allAufgaben.filter(a =>
       a.content_status === 'approved' &&
-      (a.anforderungsebene === '2 - Transfer' || a.anforderungsebene === '3 - Projekt') &&
+      istBrianAufgabe(a) &&
       (filterSynced ? true : a.brian_sync_status !== 'synced')
     );
   }, [allAufgaben, filterSynced]);
 
-  const synced   = allAufgaben.filter(a => a.brian_sync_status === 'synced').length;
-  const pending  = allAufgaben.filter(a => a.content_status === 'approved' && a.brian_sync_status !== 'synced' && (a.anforderungsebene === '2 - Transfer' || a.anforderungsebene === '3 - Projekt')).length;
+  const synced   = allAufgaben.filter(a => istBrianAufgabe(a) && a.brian_sync_status === 'synced').length;
+  const pending  = allAufgaben.filter(a => a.content_status === 'approved' && istBrianAufgabe(a) && a.brian_sync_status !== 'synced').length;
 
   const handleConfirmUebertragen = async ({ brian_dialog_id, brian_url }) => {
     if (!uebertragenAufgabe) return;
@@ -271,7 +282,7 @@ export default function BrianExportCockpitView() {
           {aufgaben.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground text-sm border border-dashed border-border rounded-xl">
               {filterSynced
-                ? 'Keine freigegebenen Aufgaben (Ebene 2 & 3) vorhanden.'
+                ? 'Keine freigegebenen KI-Tutor-Aufgaben vorhanden.'
                 : 'Alle Aufgaben sind bereits in Brian exportiert.'}
             </div>
           ) : (
