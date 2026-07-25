@@ -27,6 +27,7 @@ import EinheitUebersichtTab from '@/components/workspace/EinheitUebersichtTab';
 import LernzieleUebersichtTab from '@/components/workspace/lernziele/LernzieleUebersichtTab';
 import MoodleExportTab from '@/components/workspace/MoodleExportTab';
 import ExportCockpitView from '@/components/export/ExportCockpitView';
+import BrianExportCockpitView from '@/components/export/BrianExportCockpitView';
 import AllgemeineAufgabenView from '@/components/allgemeineAufgaben/AllgemeineAufgabenView';
 import { base44 } from '@/api/base44Client';
 import { deleteLernpaket as deleteLernpaketService } from '@/services/LernpaketService';
@@ -61,7 +62,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   // jetzt zentral im eigenständigen Export-Center (Hauptmenü).
   const VALID_TABS = isBasismodul
     ? ['einheit', 'struktur', 'lernziele', 'aktivitaeten', 'aufgaben', 'cockpit']
-    : ['einheit', 'struktur', 'lernziele', 'aktivitaeten', 'aufgaben', 'ebene2', 'ebene3', 'dashboards', 'cockpit'];
+    : ['einheit', 'struktur', 'lernziele', 'aktivitaeten', 'aufgaben', 'ebene2', 'ebene3', 'dashboards', 'cockpit', 'brian'];
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'einheit');
   const [highlightedAtomIds, setHighlightedAtomIds] = useState(new Set());
@@ -1215,9 +1216,25 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
             </TabsContent>
             )}
 
-            {/* Phase H Cleanup: Tabs 9 (Moodle-Export) und 10 (Brian.study
-                Export) wurden aus der Einheitenansicht entfernt. Beide
-                Workflows laufen jetzt zentral im Export-Center (Hauptmenü). */}
+            {/* ── Brian-Export-Tab (NUR private Einheiten) ────────────────────
+                Die Lehrkraft überträgt ihre KI-Tutor-Aufgaben selbst nach
+                Brian.study — mit Schritt-für-Schritt-Anleitung und Kopier-
+                Cockpit, begrenzt auf die Aufgaben dieser Einheit. Bei
+                Poolzeit-Einheiten läuft Brian weiter zentral im Export-Center. */}
+            {einheit?.sichtbarkeit === 'privat' && (
+              <TabsContent value="brian" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
+                <div className="flex-1 overflow-y-auto">
+                  <ErrorBoundary label="Brian-Export">
+                    <BrianExportCockpitView einheitId={selectedEinheitId} embedded />
+                  </ErrorBoundary>
+                </div>
+              </TabsContent>
+            )}
+
+            {/* Phase H Cleanup: Tab 9 (Moodle-Export) wurde aus der
+                Einheitenansicht entfernt — läuft zentral im Export-Center.
+                Der Brian-Workflow läuft dort ebenfalls, außer bei privaten
+                Einheiten (eigener Tab, siehe oben). */}
 
           </Tabs>
         )}

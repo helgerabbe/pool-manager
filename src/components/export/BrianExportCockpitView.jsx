@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Copy, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import BrianUebertragenDialog from '@/components/export/BrianUebertragenDialog';
+import BrianAnleitungPanel from '@/components/export/BrianAnleitungPanel';
 import HelpBadge from '@/components/ui/HelpBadge';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -181,15 +182,21 @@ function AufgabeCard({ aufgabe, onMarkAsSynced }) {
 }
 
 // ── Haupt-Komponente ──
-export default function BrianExportCockpitView() {
+// einheitId (optional): auf eine einzelne Einheit begrenzen — so wird das
+// Cockpit im Workspace privater Einheiten als eigener Tab wiederverwendet.
+// embedded: kompaktere Darstellung inkl. Schritt-für-Schritt-Anleitung.
+export default function BrianExportCockpitView({ einheitId = null, embedded = false }) {
   const queryClient = useQueryClient();
   const [filterSynced, setFilterSynced] = useState(false);
   const [uebertragenAufgabe, setUebertragenAufgabe] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const { data: allAufgaben = [] } = useQuery({
-    queryKey: ['allgemeineAufgaben'],
-    queryFn: () => base44.entities.AllgemeineAufgabe.list(),
+    queryKey: ['allgemeineAufgaben', einheitId],
+    queryFn: () =>
+      einheitId
+        ? base44.entities.AllgemeineAufgabe.filter({ einheit_id: einheitId })
+        : base44.entities.AllgemeineAufgabe.list(),
   });
 
   // Nur freigegebene KI-Tutor-Aufgaben (alle Ebenen) — Handlungsaufgaben
@@ -234,22 +241,27 @@ export default function BrianExportCockpitView() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/20 p-6">
+    <div className={cn(embedded ? 'p-6' : 'min-h-screen bg-muted/20 p-6')}>
       <div className="max-w-4xl mx-auto space-y-6">
 
         {/* Header */}
         <div>
-          <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+          <h2 className={cn('font-bold tracking-tight flex items-center gap-2', embedded ? 'text-2xl' : 'text-3xl')}>
             Brian.study Export
             <HelpBadge
-              text="Hier kopierst du die 5 KI-Tutor-Segmente für jede Aufgabe und markierst sie als in Brian übertragen. Erst wenn Moodle UND Brian bestätigt sind, wird die Bearbeitungssperre aufgehoben."
+              text="Hier kopierst du die KI-Tutor-Segmente für jede Aufgabe, legst sie händisch in Brian.study an und trägst die Brian-ID zurück ein."
               docsSlug="export-workflow"
             />
           </h2>
           <p className="text-muted-foreground mt-2">
-            Generiere Prompts für Brian.study und markiere Aufgaben als exportiert.
+            {embedded
+              ? 'Übertrage die KI-Tutor-Aufgaben dieser Einheit per Kopieren & Einfügen nach Brian.study und verknüpfe sie über die Brian-ID.'
+              : 'Generiere Prompts für Brian.study und markiere Aufgaben als exportiert.'}
           </p>
         </div>
+
+        {/* Schritt-für-Schritt-Anleitung (im Workspace-Tab) */}
+        {embedded && <BrianAnleitungPanel />}
 
         {/* Statistiken */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

@@ -13,7 +13,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { BookOpen, LayoutGrid, Zap, Wand2, ClipboardList, Target, CheckSquare, Compass, ListChecks } from 'lucide-react';
+import { BookOpen, LayoutGrid, Zap, Wand2, ClipboardList, Target, CheckSquare, Compass, ListChecks, Bot } from 'lucide-react';
 import HelpDialog from '@/components/ui/HelpDialog';
 import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
@@ -235,6 +235,32 @@ const getVisibleTabs = (rolle, isBasismodul = false) => {
   });
 };
 
+// Brian-Export-Tab — NUR für PRIVATE Einheiten. Bei Poolzeit-Einheiten läuft
+// der Brian-Workflow zentral im Export-Center; bei privaten Einheiten macht
+// die Lehrkraft die Übertragung nach Brian.study selbst (händisch, mit
+// Anleitung und Kopier-Cockpit direkt im Workspace).
+const BRIAN_TAB = {
+  value: 'brian', label: 'Brian-Export (KI-Tutor)', icon: Bot, step: 9,
+  help: {
+    title: 'Brian-Export — KI-Tutor-Aufgaben übertragen',
+    description: 'Hier überträgst du die KI-Tutor-Aufgaben deiner privaten Einheit nach Brian.study — händisch, aber komfortabel: Der Poolmanager bereitet für jede freigegebene Aufgabe die fertigen Brian-Segmente (Dialogname, Anweisung für Lernende, System-Anweisung, Completion-Rule) vor. Du kopierst sie per Knopfdruck in Brian, testest die Aufgabe und trägst die Brian-ID zurück ein — dann kann z. B. deine Moodle-Seite direkt auf die richtige Brian-Aufgabe verlinken.',
+    features: [
+      'Aufklappbare Schritt-für-Schritt-Anleitung: vom Anlegen der Aufgabe in Brian bis zur Rückmeldung der ID',
+      'Pro Aufgabe alle Brian-Segmente einzeln kopierbar — inklusive Bewertungsrubriken bei Projektaufgaben',
+      'Bei Aufgabensequenzen steckt der Schritt-Ablauf bereits in der System-Anweisung',
+      '„Übertragen"-Bestätigung erfasst Brian-ID und optionalen Deep-Link',
+      'Status-Übersicht: Welche Aufgaben sind bereit, welche schon in Brian?',
+    ],
+    faqs: [
+      { question: 'Warum muss ich das händisch machen?', answer: 'Brian.study bietet aktuell keine öffentliche Schnittstelle, über die Aufgaben automatisch angelegt werden könnten. Der Poolmanager bereitet dir aber alle Texte fertig vor — pro Aufgabe brauchst du nur wenige Minuten. Sobald eine API verfügbar ist, wird dieser Schritt automatisiert.' },
+      { question: 'Welche Aufgaben erscheinen hier?', answer: 'Alle freigegebenen KI-Tutor-Aufgaben der Einheit — allgemeine Aufgaben (auch Ebene 1), Transfer- und Projektaufgaben. Handlungsaufgaben und externe HTML-Seiten brauchen keinen Brian-Export.' },
+      { question: 'Wozu dient die Brian-ID?', answer: 'Sie verknüpft die Aufgabe im Poolmanager mit der Aufgabe in Brian. Bei Exporten (z. B. Moodle-Seiten) wird die ID mitgegeben, sodass direkt auf die richtige Brian-Aufgabe verlinkt werden kann.' },
+      { question: 'Was passiert, wenn ich eine Aufgabe später ändere?', answer: 'Ihr Brian-Status springt auf „Geändert". Du kopierst die aktualisierten Segmente erneut in die bestehende Brian-Aufgabe und bestätigst die Übertragung noch einmal.' },
+    ],
+    docsSlug: 'export-workflow',
+  },
+};
+
 // Tabs, die im Basismodul-Modus sichtbar sind (in dieser Reihenfolge).
 // Basismodule sind reduzierte, ÖFFENTLICHE Einheiten: keine allgemeinen/
 // Projekt-Aufgaben, keine Dashboards — aber MIT Freigabe-Cockpit, weil sie
@@ -247,9 +273,11 @@ export default function WorkspaceTabs({ activeTab, onTabChange, isBasismodul = f
   let visibleTabs = getVisibleTabs(rolle, isBasismodul);
 
   // Private Einheiten: kein Freigabe-Cockpit — der Moodle-Weg läuft dort
-  // direkt über den Einheiten-Code auf Tab 1.
+  // direkt über den Einheiten-Code auf Tab 1. Dafür bekommen sie den
+  // Brian-Export-Tab, weil die Lehrkraft die Übertragung selbst macht.
   if (istPrivat) {
     visibleTabs = visibleTabs.filter((t) => t.value !== 'cockpit');
+    visibleTabs = [...visibleTabs, BRIAN_TAB];
   }
 
   if (isBasismodul) {
