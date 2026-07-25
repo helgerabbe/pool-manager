@@ -220,7 +220,7 @@ export default function LernpfadeArchitekt({
               <div className="inline-flex items-center gap-1.5">
                 <AddSektorMenu onAddSektor={onAddSektor} />
                 <InfoHint title="Was ist ein Sektor?" side="top">
-                  Ein Sektor ist ein Abschnitt im Lernpfad – eine Art Kapitel. Schüler arbeiten ihn entweder „sequenziell" (Aufgabe für Aufgabe) oder „frei" (Reihenfolge offen) ab. Pro Lerntyp lassen sich beliebig viele Sektoren anlegen.
+                  Ein Sektor ist ein Abschnitt im Lernpfad – eine Art Kapitel. Schüler arbeiten ihn entweder „sequenziell" (Aufgabe für Aufgabe) oder „frei" (Reihenfolge offen) ab. Pro Intensitätsstufe lassen sich beliebig viele Sektoren anlegen.
                 </InfoHint>
               </div>
             )}
@@ -276,7 +276,7 @@ export default function LernpfadeArchitekt({
               <div className="flex items-center gap-1.5">
                 <AddSektorMenu onAddSektor={onAddSektor} variant="outline" className="flex-1" />
                 <InfoHint title="Was ist ein Sektor?" side="top">
-                  Ein Sektor ist ein Abschnitt im Lernpfad – eine Art Kapitel. Schüler arbeiten ihn entweder „sequenziell" (Aufgabe für Aufgabe) oder „frei" (Reihenfolge offen) ab. Pro Lerntyp lassen sich beliebig viele Sektoren anlegen.
+                  Ein Sektor ist ein Abschnitt im Lernpfad – eine Art Kapitel. Schüler arbeiten ihn entweder „sequenziell" (Aufgabe für Aufgabe) oder „frei" (Reihenfolge offen) ab. Pro Intensitätsstufe lassen sich beliebig viele Sektoren anlegen.
                 </InfoHint>
               </div>
             )}

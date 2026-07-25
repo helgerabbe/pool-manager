@@ -94,7 +94,7 @@ export default function DashboardDriftPill({
         <button
           type="button"
           className="inline-flex items-center gap-1 h-7 px-2 rounded-full border border-amber-300 bg-amber-50 text-[11px] font-semibold text-amber-900 hover:bg-amber-100 transition-colors"
-          title={`${total} ${total === 1 ? 'Inkonsistenz' : 'Inkonsistenzen'} im Dashboard „${lerntypLabel}" – Details anzeigen`}
+          title={`${total} ${total === 1 ? 'Inkonsistenz' : 'Inkonsistenzen'} im Arbeitsplan „${lerntypLabel}" – Details anzeigen`}
         >
           <AlertTriangle className="w-3 h-3" />
           {total} {total === 1 ? 'Drift' : 'Drifts'}
@@ -104,7 +104,7 @@ export default function DashboardDriftPill({
         <div className="flex items-center gap-2 pb-2 border-b border-amber-200 mb-2">
           <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
           <span className="text-xs font-semibold text-amber-900">
-            Inkonsistenzen im Dashboard „{lerntypLabel}"
+            Inkonsistenzen im Arbeitsplan „{lerntypLabel}"
           </span>
         </div>
         <div className="space-y-2.5 max-h-[60vh] overflow-y-auto">

@@ -145,11 +145,11 @@ export default function EinheitOnboarding() {
         </div>
 
         {/* Dashboard-Auswahl */}
-        <h2 className="text-sm font-bold text-foreground mb-0.5">Wähle dein Dashboard</h2>
+        <h2 className="text-sm font-bold text-foreground mb-0.5">Wähle deinen Arbeitsplan</h2>
         <p className="text-xs text-muted-foreground mb-3">
           {aktiverTyp
-            ? 'Du kannst dein Dashboard wechseln – dein Fortschritt startet dann neu.'
-            : 'Mit welchem Lerntyp möchtest du an dieser Einheit arbeiten?'}
+            ? 'Du kannst deinen Arbeitsplan wechseln – dein Fortschritt startet dann neu.'
+            : 'Mit welcher Intensitätsstufe möchtest du an dieser Einheit arbeiten?'}
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {angebotene.map((lt) => (

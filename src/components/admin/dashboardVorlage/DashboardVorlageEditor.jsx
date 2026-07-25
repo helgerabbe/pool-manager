@@ -282,7 +282,7 @@ export default function DashboardVorlageEditor() {
 
   const handleRestoreHardcode = useCallback(() => {
     const ok = window.confirm(
-      'Werks-Standard für diesen Lerntyp im Editor wiederherstellen? Die Änderungen werden erst beim Speichern übernommen.'
+      'Werks-Standard für diese Intensitätsstufe im Editor wiederherstellen? Die Änderungen werden erst beim Speichern übernommen.'
     );
     if (!ok) return;
     const hard = (DASHBOARD_TEMPLATES[activeLernTyp] || []).map(normalizeSektor);

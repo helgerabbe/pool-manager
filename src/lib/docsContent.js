@@ -29,7 +29,7 @@ export const DOC_GROUPS = [
   {
     label: 'Didaktik & Schüler',
     items: [
-      { slug: 'dashboards-v2', label: 'Dashboards & Lerntypen' },
+      { slug: 'dashboards-v2', label: 'Arbeitspläne & Intensitätsstufen' },
       { slug: 'schuelerbereich', label: 'Der Schülerbereich' },
     ],
   },
@@ -73,7 +73,7 @@ Der Pool-Manager bietet Ihnen drei Anforderungsebenen, um Ihre Schüler bestmög
 | **Ebene 2** | Allgemeine Aufgaben | Der Transfer – Schüler analysieren Texte oder werten Diagramme aus, begleitet durch den KI-Tutor. |
 | **Ebene 3** | Projektaufgaben | Die Königsdisziplin – freie, kreative Aufgaben (z.B. Podcasts, Portfolios) mit maßgeschneiderten Bewertungsrubriken. |
 
-Aus diesen Bausteinen bauen Sie anschließend im [Dashboard-Architekt](/docs/dashboards-v2) für jeden der vier Lerntypen einen eigenen Lernpfad.
+Aus diesen Bausteinen bauen Sie anschließend im [Arbeitsplan-Architekt](/docs/dashboards-v2) für jede der vier Intensitätsstufen einen eigenen Lernpfad.
 
 ## Die drei Bereiche der Einheiten
 
@@ -161,7 +161,7 @@ Wenn Sie eine Einheit öffnen, sehen Sie oben die nummerierte Tab-Leiste – Ihr
 | 5 | **Basisaufgaben erstellen** – die konkreten Übungsinhalte (Ebene 1) | Fachlehrkraft |
 | 6 | **Allgemeine Aufgaben** – Transfer-Aufgaben (Ebene 2) | Fachlehrkraft |
 | 7 | **Anwendungs- & Projektaufgaben** – Projekte (Ebene 3) | Fachlehrkraft |
-| 8 | **Dashboards** – die vier Lernpfade zusammenbauen | Fachlehrkraft / Fachschaftsleitung |
+| 8 | **Arbeitspläne** – die vier Lernpfade zusammenbauen | Fachlehrkraft / Fachschaftsleitung |
 | 9 | **Freigabe-Cockpit** – reine Statusübersicht vor dem Export | Export-Team / Admin |
 
 > **Hinweis für private Einheiten:** In Ihrer privaten Einheit übernehmen Sie natürlich alle Rollen selbst – dort steht Ihnen alles offen.
@@ -292,7 +292,7 @@ Der Workspace ist Ihr Hauptarbeitsbereich. So finden Sie sich zurecht:
 |---------|---------------|
 | **Linke Sidebar** | Baumansicht: Einheit → Themenfelder → Lernpakete → Aktivitäten |
 | **Hauptbereich** | Detailansicht des ausgewählten Elements |
-| **Tab-Leiste oben** | Die nummerierten Arbeitsschritte 1–8: von „Einheit verwalten" über Lernziele und Aufgaben bis zu den Dashboards |
+| **Tab-Leiste oben** | Die nummerierten Arbeitsschritte 1–8: von „Einheit verwalten" über Lernziele und Aufgaben bis zu den Arbeitsplänen |
 
 > **Tipp:** Nutzen Sie die Suchfunktion in der Sidebar, um schnell zu einem bestimmten Lernpaket zu springen.
 `,
@@ -672,7 +672,7 @@ Die Freigabe funktioniert wie ein Staffellauf über vier Stufen:
 |-------|----------------------|------|
 | 1 | **Aktivitäten & Aufgaben** – jede einzelne Übung, Transfer- und Projektaufgabe | Fachlehrkraft |
 | 2 | **Lernpakete** – das Paket als Ganzes, wenn alle Inhalte fertig sind | Fachlehrkraft |
-| 3 | **Dashboards** – jeder der vier Lernpfade wird geprüft und gesperrt („Prüfen & freigeben") | Fachlehrkraft / Fachschaftsleitung |
+| 3 | **Arbeitspläne** – jeder der vier Lernpfade wird geprüft und gesperrt („Prüfen & freigeben") | Fachlehrkraft / Fachschaftsleitung |
 | 4 | **Die Einheit** – die finale Freigabe für den Export | Fachschaftsleitung |
 
 ## Stufe 1–2: Aufgaben und Lernpakete freigeben
@@ -684,9 +684,9 @@ Sobald alle Pflichtfelder einer Aktivität oder Aufgabe ausgefüllt sind, ersche
 
 > **Fehler entdeckt?** Kein Problem: Ziehen Sie die Freigabe einfach wieder zurück – der Inhalt fällt in den Entwurfs-Status zurück und ist wieder bearbeitbar. (Nur während ein Export läuft, ist das gesperrt.)
 
-## Stufe 3: Dashboards prüfen
+## Stufe 3: Arbeitspläne prüfen
 
-Im Dashboard-Architekt markieren Sie jeden Lernpfad über **„Prüfen & freigeben"** als geprüft. Das System kontrolliert dabei, ob alle eingeplanten Aufgaben „grün" (also freigegeben und vollständig) sind, und sperrt den Pfad anschließend gegen Änderungen.
+Im Arbeitsplan-Architekt markieren Sie jeden Lernpfad über **„Prüfen & freigeben"** als geprüft. Das System kontrolliert dabei, ob alle eingeplanten Aufgaben „grün" (also freigegeben und vollständig) sind, und sperrt den Pfad anschließend gegen Änderungen.
 
 ## Stufe 4: Der Lebenszyklus der Einheit
 
@@ -773,13 +773,13 @@ Der gesamte Export läuft zentral über das **Export-Center** (Papierflieger-Sym
 
 | Rolle | Aufgabe im Export |
 |-------|-------------------|
-| **Fachlehrkraft** | Inhalte fertigstellen und freigeben, Dashboards prüfen. |
+| **Fachlehrkraft** | Inhalte fertigstellen und freigeben, Arbeitspläne prüfen. |
 | **Fachschaftsleitung** | Die Einheit **final freigeben** – erst dann kann sie exportiert werden. |
 | **Export-Team (Moodle-Designer / Admin)** | Führt den Export im Export-Center durch und bestätigt den Abschluss. |
 
 ## So läuft ein Export – Schritt für Schritt
 
-1. **Vorbereitung:** Alle Aufgaben und Dashboards der Einheit sind freigegeben bzw. geprüft.
+1. **Vorbereitung:** Alle Aufgaben und Arbeitspläne der Einheit sind freigegeben bzw. geprüft.
 2. **Finale Freigabe:** Die Fachschaftsleitung gibt die Einheit final frei. Ein automatischer **Preflight-Check** prüft vorher, ob wirklich alles vollständig ist, und listet ggf. offene Punkte auf.
 3. **Export-Center öffnen:** Das Export-Team wählt die Einheit links in der Liste aus.
 4. **Übergabepakete erzeugen:** Rechts stehen thematische Reiter (Struktur, Aufgaben, KI-Aufgaben, Systembausteine, Globale KI, Oberflächen-Konfiguration). Pro Reiter erzeugt und kopiert das Team fertige **Übergabepakete** – strukturierte Anweisungen, die von der **Moodle-Builder-KI (MBK)** verarbeitet werden und daraus den fertigen Moodle-Kurs bauen. Der **„Anleitung"-Button** oben liefert dabei einen Schritt-für-Schritt-Plan, der genau zur ausgewählten Einheit passt.
@@ -813,7 +813,7 @@ An jedem Inhalt finden Sie ein Status-Label:
 
 Der kürzeste Weg in drei Etappen:
 
-1. **Fertigstellen:** Bauen Sie Ihre private Einheit komplett (Aufgaben freigeben, Dashboard prüfen) und testen Sie sie über die **Vorschau**.
+1. **Fertigstellen:** Bauen Sie Ihre private Einheit komplett (Aufgaben freigeben, Arbeitsplan prüfen) und testen Sie sie über die **Vorschau**.
 2. **Zur Poolzeit-Einheit machen (lassen):** Geben Sie die Einheit für das Kollegium frei oder wenden Sie sich direkt an Ihre Fachschaftsleitung – sie übernimmt die Einheit als Poolzeit-Einheit (siehe [Poolzeit, Austausch & Privat](/docs/bereiche-und-austausch)).
 3. **Export & Verknüpfung:** Nach finaler Freigabe exportiert das Export-Team die Einheit; in Moodle wird sie über einen LTI-Link mit dem Kurs verbunden (siehe [Moodle-Anbindung](/docs/moodle-anbindung)) – Ihre Schüler:innen klicken in Moodle und landen direkt in der Einheit.
 `,
@@ -835,9 +835,9 @@ Der Admin-Bereich (Zahnrad- und Personen-Symbol in der Top-Leiste) ist nur für 
 |-------|-------------------------|
 | **Globale Listen** | Fächer (inkl. Schalter, ob ein Fach im Schüler-Poolzeit-Cockpit erscheint), Jahrgänge, Zeitphasen |
 | **Aktivitäten-Katalog** | Welche Aktivitätstypen den Lehrkräften zur Verfügung stehen – inklusive Beschreibungen und schülergerechter Symbolbilder |
-| **System-Bausteine** | Die Funktions-Module für den Dashboard-Architekt (Lernlandkarte, Wissensspeicher, Bündel …) |
-| **Dashboard-Standardvorlagen** | Das Standard-Raster pro Lerntyp, aus dem neue Dashboards automatisch aufgebaut werden |
-| **Lerntyp-Namen** | Schulweite Umbenennung der vier Lerntypen (z. B. in „Level 1–4") |
+| **System-Bausteine** | Die Funktions-Module für den Arbeitsplan-Architekt (Lernlandkarte, Wissensspeicher, Bündel …) |
+| **Arbeitsplan-Standardvorlagen** | Das Standard-Raster pro Intensitätsstufe, aus dem neue Arbeitspläne automatisch aufgebaut werden |
+| **Intensitätsstufen-Namen** | Schulweite Umbenennung der vier Intensitätsstufen (z. B. in „Level 1–4") |
 | **Schul-Stammdaten & Nomenklatur** | Name der Schule und schuleigene Begriffe, die überall in Texten und KI-Ausgaben verwendet werden |
 | **Moodle-LTI** | Die einmalige Anbindung an die Schul-Moodle-Instanz für den Schüler-Zugang (siehe [Moodle-Anbindung](/docs/moodle-anbindung)) |
 | **Design & Tickets** | Technische Verbindungen: zentrales Schüler-Design (CSS) und das Ticket-System hinter dem „Problem melden"-Button |
@@ -860,24 +860,24 @@ Wichtige Aktionen (Löschen, Veröffentlichen, Exporte, Freigaben) werden protok
 Test- und Sandbox-Daten können im Admin-Bereich zurückgesetzt werden. **Achtung:** Diese Aktion ist nicht rückgängig zu machen.
 `,
 
-  'dashboards-v2': `# Dashboards & Lerntypen: Der Lernpfad-Architekt
+  'dashboards-v2': `# Arbeitspläne & Intensitätsstufen: Der Lernpfad-Architekt
 
-Das Herzstück der Binnendifferenzierung: Jede Einheit bietet **vier parallele Lernpfade** – einen pro Lerntyp. Sie bauen diese Pfade im Tab **„Dashboards"** des Arbeitsbereichs zusammen; Ihre Schüler:innen wählen später (nach der Orientierungsphase) ihren Pfad und sehen genau das Dashboard, das zu ihnen passt.
+Das Herzstück der Binnendifferenzierung: Jede Einheit bietet **vier parallele Lernpfade** – einen pro Intensitätsstufe. Sie bauen diese Pfade im Tab **„Arbeitspläne"** des Arbeitsbereichs zusammen; Ihre Schüler:innen wählen später (nach der Orientierungsphase) ihren Pfad und sehen genau den Arbeitsplan, der zu ihnen passt.
 
-## Die vier Lerntypen
+## Die vier Intensitätsstufen
 
-| Lerntyp | Wer ist das? | Typischer Pfad |
+| Intensitätsstufe | Wer ist das? | Typischer Pfad |
 |---------|--------------|----------------|
 | **Minimalist** | Braucht schnelle Erfolge und Sicherheit | Kleinschrittig, klare Reihenfolge, Fokus auf die Basis |
 | **Pragmatiker** | Will effizient zum Ziel | Vorab-Test zum Überspringen bekannter Inhalte (Fast-Track), gewonnene Zeit fließt in Transfer |
 | **Ehrgeizig** | Prüfungsorientiert, will alles abdecken | Vollständige Abdeckung aller Lernziele plus gezielte Testvorbereitung |
 | **Passioniert** | Forschend-entdeckend, liebt Autonomie | Große Freiheit, Schwerpunkt auf Projektarbeit, Basis als Nachschlagewerk |
 
-> **Gut zu wissen:** Die Namen der Lerntypen kann Ihre Administration schulweit anpassen (z. B. „Level 1–4"). Und bei **privaten Einheiten** entscheiden Sie selbst, welche Lerntypen Sie überhaupt anbieten – auch ein einziger Pfad ist möglich.
+> **Gut zu wissen:** Die Namen der Intensitätsstufen kann Ihre Administration schulweit anpassen (z. B. „Level 1–4"). Und bei **privaten Einheiten** entscheiden Sie selbst, welche Intensitätsstufen Sie überhaupt anbieten – auch ein einziger Pfad ist möglich.
 
 ## Der Aufbau: Sektoren und Bausteine
 
-Der Dashboard-Architekt ist zweigeteilt: Links der **Pool** mit allen Aufgaben Ihrer Einheit (Ebene 2 & 3) und den System-Bausteinen, rechts die **Leinwand** mit dem Pfad des aktuell gewählten Lerntyps. Per **Drag & Drop** ziehen Sie Elemente in die Sektoren.
+Der Arbeitsplan-Architekt ist zweigeteilt: Links der **Pool** mit allen Aufgaben Ihrer Einheit (Ebene 2 & 3) und den System-Bausteinen, rechts die **Leinwand** mit dem Pfad der aktuell gewählten Intensitätsstufe. Per **Drag & Drop** ziehen Sie Elemente in die Sektoren.
 
 ### Sektoren
 
@@ -899,30 +899,30 @@ Bündel fassen mehrere Inhalte unter einer Kachel zusammen:
 
 ## Automatischer Aufbau (Sie starten nie bei null)
 
-Beim ersten Öffnen baut der Pool-Manager die vier Dashboards **automatisch** zusammen – aus Ihrer Einheiten-Struktur (Themenfelder, Lernpakete, Aufgaben) und der schulweiten **Standardvorlage** pro Lerntyp. Solche Dashboards tragen den Hinweis „automatisch erstellt", bis Sie sie bewusst übernehmen oder anpassen. Sie behalten also immer die Kontrolle – sparen sich aber den kompletten Neuaufbau.
+Beim ersten Öffnen baut der Pool-Manager die vier Arbeitspläne **automatisch** zusammen – aus Ihrer Einheiten-Struktur (Themenfelder, Lernpakete, Aufgaben) und der schulweiten **Standardvorlage** pro Intensitätsstufe. Solche Arbeitspläne tragen den Hinweis „automatisch erstellt", bis Sie sie bewusst übernehmen oder anpassen. Sie behalten also immer die Kontrolle – sparen sich aber den kompletten Neuaufbau.
 
 ## Der Onboarding-Tab: Die Orientierungsphase
 
-Bevor Schüler:innen ihren Lerntyp wählen, durchlaufen sie die einheitsweite **Orientierungsphase**. Deren vier Elemente pflegen Sie im Reiter „Onboarding" – alle werden per KI aus Ihrem Grundgerüst erzeugt und können in der **Vorschau** geprüft und neu generiert werden:
+Bevor Schüler:innen ihre Intensitätsstufe wählen, durchlaufen sie die einheitsweite **Orientierungsphase**. Deren vier Elemente pflegen Sie im Reiter „Onboarding" – alle werden per KI aus Ihrem Grundgerüst erzeugt und können in der **Vorschau** geprüft und neu generiert werden:
 
 1. **Einführung** – motivierender Überblick über die Einheit
 2. **Fragenblock** – Neugier-Fragen zum Einstieg
 3. **Einstiegsdiagnose** – Quiz zum Vorwissen
-4. **Lerntyp-Diagnose** – Fragen zur Arbeitsweise, Grundlage für die Lerntyp-Empfehlung
+4. **Intensitätsstufen-Diagnose** – Fragen zur Arbeitsweise, Grundlage für die Empfehlung der Intensitätsstufe
 
 ## Der Drift-Wächter
 
-Ändert sich später etwas an der Einheit (ein Lernpaket wird gelöscht, eine Aufgabe umbenannt), erkennen die Dashboards das automatisch und zeigen einen **Drift-Hinweis** mit konkreten Lösungsvorschlägen – kaputte Verweise bleiben nicht unbemerkt liegen.
+Ändert sich später etwas an der Einheit (ein Lernpaket wird gelöscht, eine Aufgabe umbenannt), erkennen die Arbeitspläne das automatisch und zeigen einen **Drift-Hinweis** mit konkreten Lösungsvorschlägen – kaputte Verweise bleiben nicht unbemerkt liegen.
 
 ## Ampeln, Vorschau, Freigabe
 
 * **Live-Ampeln** an jeder Aufgabe zeigen: rot (unvollständig), gelb (in Arbeit), grün (freigegeben).
-* Die **Vorschau** zeigt den Pfad jederzeit exakt aus Schülersicht – pro Lerntyp umschaltbar.
+* Die **Vorschau** zeigt den Pfad jederzeit exakt aus Schülersicht – pro Intensitätsstufe umschaltbar.
 * Mit **„Prüfen & freigeben"** markieren Sie einen Pfad als fertig; er wird gegen Änderungen gesperrt und gilt als exportbereit.
 
 ## Weiterführende Kapitel
 
-* [Der Schülerbereich](/docs/schuelerbereich) – wie die Dashboards bei den Schüler:innen ankommen
+* [Der Schülerbereich](/docs/schuelerbereich) – wie die Arbeitspläne bei den Schüler:innen ankommen
 * [Ebene 2: Allgemeine Aufgaben](/docs/ebene-2-allgemeine-aufgaben) – Hauptquelle für die Pfad-Inhalte
 * [Export-Workflow](/docs/export-workflow) – wie die fertigen Pfade zu den Schülern kommen
 `,
@@ -1017,7 +1017,7 @@ Prüfen Sie diese Punkte:
 ## Schülersicht & Vorschau
 
 **Frage: Wie sehe ich meine Einheit aus Schülersicht?**
-> Drei Wege: das **Auge-Symbol** auf der Einheiten-Karte (Vorschau pro Lerntyp), die **Vorschau** im Dashboard-Architekt oder der komplette **Schülerbereich** über das 🎓-Symbol in der Top-Leiste.
+> Drei Wege: das **Auge-Symbol** auf der Einheiten-Karte (Vorschau pro Intensitätsstufe), die **Vorschau** im Arbeitsplan-Architekt oder der komplette **Schülerbereich** über das 🎓-Symbol in der Top-Leiste.
 
 ## Support kontaktieren
 

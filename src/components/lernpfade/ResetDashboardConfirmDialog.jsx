@@ -39,7 +39,7 @@ export default function ResetDashboardConfirmDialog({
             Auf Standard zurücksetzen?
           </DialogTitle>
           <DialogDescription>
-            Möchtest du das Dashboard <strong>„{lerntypLabel}"</strong> wirklich
+            Möchtest du den Arbeitsplan <strong>„{lerntypLabel}"</strong> wirklich
             auf das Standard-Raster zurücksetzen?
           </DialogDescription>
         </DialogHeader>
@@ -47,10 +47,10 @@ export default function ResetDashboardConfirmDialog({
         <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
           <p className="font-medium mb-1">⚠️ Achtung – Daten gehen verloren</p>
           <p className="text-xs leading-relaxed">
-            Alle bisher in diesem Dashboard zugewiesenen Aufgaben sowie deine
+            Alle bisher in diesem Arbeitsplan zugewiesenen Aufgaben sowie deine
             individuellen Sektor-Anpassungen werden entfernt und durch die
-            didaktische Standard-Vorlage ersetzt. Andere Dashboards
-            (Lerntypen) bleiben unangetastet.
+            didaktische Standard-Vorlage ersetzt. Andere Arbeitspläne
+            (Intensitätsstufen) bleiben unangetastet.
           </p>
         </div>
 

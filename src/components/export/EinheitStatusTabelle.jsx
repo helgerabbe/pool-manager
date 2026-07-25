@@ -239,11 +239,11 @@ export default function EinheitStatusTabelle({
       </Section>
 
       {/* 6: Dashboards */}
-      <Section icon={LayoutDashboard} title="Dashboards (Lernpfade)" count={dashboardRows.length}>
+      <Section icon={LayoutDashboard} title="Arbeitspläne (Lernpfade)" count={dashboardRows.length}>
         {dashboardRows.map(({ lt, sync, sublabel, pruefLocked }) => (
           <Row
             key={lt}
-            label={`Dashboard – ${LERNTYP_LABELS[lt]}`}
+            label={`Arbeitsplan – ${LERNTYP_LABELS[lt]}`}
             sublabel={sublabel}
             syncStatus={sync}
             pruefLocked={pruefLocked}

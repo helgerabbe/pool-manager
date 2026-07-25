@@ -88,7 +88,7 @@ const FALLBACK_INFO = {
   label: '–',
   icon: BookOpen,
   accent: 'text-slate-700 bg-slate-50 border-slate-200',
-  description: 'Für diesen Lerntyp liegt aktuell keine Erklärung vor.',
+  description: 'Für diese Intensitätsstufe liegt aktuell keine Erklärung vor.',
 };
 
 export default function DidaktischerGuidePanel({
@@ -120,7 +120,7 @@ export default function DidaktischerGuidePanel({
           </div>
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-wide opacity-70">
-              Lerntyp
+              Intensitätsstufe
             </p>
             <p className="text-sm font-semibold leading-tight">{info.label}</p>
           </div>
@@ -138,7 +138,7 @@ export default function DidaktischerGuidePanel({
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors w-fit"
         >
           <Info className="w-3.5 h-3.5" />
-          Mehr über die Lerntypen und den Aufbau der Dashboards erfahren
+          Mehr über die Intensitätsstufen und den Aufbau der Arbeitspläne erfahren
         </Link>
 
         {/* Sperr-Hinweis – nur sichtbar, wenn der Pfad freigegeben/gesperrt ist */}
@@ -166,7 +166,7 @@ export default function DidaktischerGuidePanel({
             title={
               isLocked
                 ? 'Pfad ist freigegeben und gesperrt – bitte zuerst entsperren.'
-                : `Setzt das Dashboard „${info.label}" auf das didaktische Standard-Raster zurück.`
+                : `Setzt den Arbeitsplan „${info.label}" auf das didaktische Standard-Raster zurück.`
             }
             className="gap-1.5"
           >

@@ -229,8 +229,8 @@ export default function LernpfadeCockpit({
       const istAn = aktiveLerntypen.includes(lerntypKey);
       if (istAn && aktiveLerntypen.length === 1) {
         toast({
-          title: 'Mindestens ein Lerntyp nötig',
-          description: 'Eine Einheit braucht mindestens ein aktives Dashboard.',
+          title: 'Mindestens eine Intensitätsstufe nötig',
+          description: 'Eine Einheit braucht mindestens einen aktiven Arbeitsplan.',
         });
         return;
       }
@@ -597,7 +597,7 @@ export default function LernpfadeCockpit({
         queryClient.invalidateQueries({ queryKey: ['onboardingSnapshots', einheit.id] });
         toast({
           title: 'Für die Einheit gespeichert',
-          description: 'Dieses Onboarding-Element wird allen Dashboards vorgeschaltet.',
+          description: 'Dieses Onboarding-Element wird allen Arbeitsplänen vorgeschaltet.',
         });
       } catch (err) {
         toast({
@@ -825,7 +825,7 @@ export default function LernpfadeCockpit({
         if (existing) {
           toast({
             title: 'Feedback-Sektor existiert bereits',
-            description: 'Pro Lerntyp gibt es genau einen Feedback-Sektor – er steht immer am Ende.',
+            description: 'Pro Intensitätsstufe gibt es genau einen Feedback-Sektor – er steht immer am Ende.',
           });
           return;
         }
@@ -964,7 +964,7 @@ export default function LernpfadeCockpit({
       );
       toast({
         title: 'Sektor angelegt',
-        description: `Arbeitsphase „${themenfeld.titel}" wurde dem Dashboard hinzugefügt.`,
+        description: `Arbeitsphase „${themenfeld.titel}" wurde dem Arbeitsplan hinzugefügt.`,
       });
     },
     [readOnly, activeLernTyp, updateKonfiguration, toast]

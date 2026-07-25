@@ -10,7 +10,7 @@ const SCHRITTE = [
   {
     icon: Hammer,
     titel: '1. Einheit im Pool-Manager bauen',
-    text: 'Legen Sie Themenfelder, Aufgaben und mindestens ein Schüler-Dashboard an. Tipp: Über das Auge-Symbol Ihrer Einheiten-Karte können Sie die Einheit jederzeit aus Schülersicht prüfen.',
+    text: 'Legen Sie Themenfelder, Aufgaben und mindestens einen Schüler-Arbeitsplan an. Tipp: Über das Auge-Symbol Ihrer Einheiten-Karte können Sie die Einheit jederzeit aus Schülersicht prüfen.',
   },
   {
     icon: Link2,

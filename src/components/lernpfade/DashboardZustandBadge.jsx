@@ -63,7 +63,7 @@ export default function DashboardZustandBadge({ zustand }) {
           </span>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="max-w-[240px] text-xs">
-          <p className="font-semibold mb-0.5">Dashboard-Zustand: {meta.label}</p>
+          <p className="font-semibold mb-0.5">Arbeitsplan-Zustand: {meta.label}</p>
           <p>{meta.tooltip}</p>
         </TooltipContent>
       </Tooltip>

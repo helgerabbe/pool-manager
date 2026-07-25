@@ -86,14 +86,14 @@ export default function EinheitFreigabeConfirmDialog({
         ) : (
           <div className="space-y-3 text-sm leading-snug">
             <p>
-              Alle vier Lerntyp-Dashboards sind geprüft und es ist niemand mehr in
+              Alle vier Arbeitspläne sind geprüft und es ist niemand mehr in
               Bearbeitung. Mit der finalen Freigabe schließt du den Workflow ab und
               übergibst die Einheit an das Moodle-Team.
             </p>
             <ul className="list-disc list-inside space-y-1 text-muted-foreground">
               <li>
                 Die <strong>gesamte Einheit wird gesperrt</strong> – alle Tabs und
-                Dashboards werden read-only, es kann nichts mehr verändert werden.
+                Arbeitspläne werden read-only, es kann nichts mehr verändert werden.
               </li>
               <li>
                 Die Einheit wird an das <strong>Moodle-Team</strong> übergeben, das sie

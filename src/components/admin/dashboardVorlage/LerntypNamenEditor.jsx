@@ -56,7 +56,7 @@ export default function LerntypNamenEditor() {
         else await base44.entities.LerntypDefinition.create(payload);
       }
       queryClient.invalidateQueries({ queryKey: ['lerntypDefinitionen'] });
-      toast.success('Lerntyp-Namen gespeichert. Sie gelten ab sofort schulweit.');
+      toast.success('Intensitätsstufen-Namen gespeichert. Sie gelten ab sofort schulweit.');
     } catch (err) {
       toast.error(`Speichern fehlgeschlagen: ${err?.message || 'Unbekannter Fehler'}`);
     } finally {
@@ -68,9 +68,9 @@ export default function LerntypNamenEditor() {
     <div className="rounded-lg border border-border p-4 space-y-3">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold">Namen der Lerntypen</p>
+          <p className="text-sm font-semibold">Namen der Intensitätsstufen</p>
           <p className="text-xs text-muted-foreground">
-            Lege schulweit fest, wie die vier Lerntypen heißen (z. B. „Lernweg" statt „Lerntyp").
+            Lege schulweit fest, wie die vier Intensitätsstufen heißen (z. B. „Lernweg" statt „Intensitätsstufe").
             Die technischen Schlüssel bleiben unverändert.
           </p>
         </div>

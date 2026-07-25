@@ -27,7 +27,7 @@ export default function LerntypWechselDialog({ open, onOpenChange, vonTyp, zuTyp
           <div className="flex items-center justify-center w-12 h-12 rounded-full bg-destructive/10 text-destructive mx-auto mb-2">
             <AlertTriangle className="w-6 h-6" />
           </div>
-          <AlertDialogTitle className="text-center">Dashboard wirklich wechseln?</AlertDialogTitle>
+          <AlertDialogTitle className="text-center">Intensitätsstufe wirklich wechseln?</AlertDialogTitle>
           <AlertDialogDescription className="text-center">
             Du arbeitest gerade als <strong>{von?.name}</strong>. Wenn du zu{' '}
             <strong>{zu?.name}</strong> wechselst, beginnst du{' '}

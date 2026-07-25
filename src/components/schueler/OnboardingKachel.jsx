@@ -17,10 +17,10 @@ export default function OnboardingKachel({ done, empfehlung, onClick }) {
         </span>
         <div className="min-w-0 flex-1">
           <h3 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
-            {done ? 'Diagnose erneut durchführen' : 'Welcher Lerntyp bist du?'}
+            {done ? 'Diagnose erneut durchführen' : 'Welche Intensitätsstufe passt zu dir?'}
           </h3>
           <p className="text-xs text-muted-foreground">
-            Lass dir helfen, das passende Dashboard zu finden.
+            Lass dir helfen, den passenden Arbeitsplan zu finden.
           </p>
         </div>
       </button>
@@ -31,7 +31,7 @@ export default function OnboardingKachel({ done, empfehlung, onClick }) {
           <>
             <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
             <p className="text-xs text-foreground">
-              Empfehlung für dein Dashboard:{' '}
+              Empfehlung für deinen Arbeitsplan:{' '}
               <span className="font-bold" style={{ color: empfLerntyp.farbe }}>
                 {empfLerntyp.name}
               </span>

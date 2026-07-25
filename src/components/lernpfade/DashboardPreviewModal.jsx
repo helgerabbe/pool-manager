@@ -59,7 +59,7 @@ export default function DashboardPreviewModal({
   const [erledigtSet, setErledigtSet] = useState(() => new Set());
   const [activeInstanceId, setActiveInstanceId] = useState(null); // null = Startseite
 
-  const meta = LERNTYP_META[lerntyp] || { label: lerntyp || 'Dashboard', icon: Eye, accent: 'bg-slate-700', soft: 'bg-slate-100 text-slate-700' };
+  const meta = LERNTYP_META[lerntyp] || { label: lerntyp || 'Arbeitsplan', icon: Eye, accent: 'bg-slate-700', soft: 'bg-slate-100 text-slate-700' };
   const Icon = meta.icon;
 
   // Beim Öffnen / Lerntyp-Wechsel zurücksetzen.
@@ -247,7 +247,7 @@ export default function DashboardPreviewModal({
                 <nav className="w-72 p-3 space-y-4 overflow-y-auto h-full">
                   {sektorGroups.length === 0 && (
                     <p className="text-sm text-slate-400 text-center py-8">
-                      Für dieses Dashboard wurde noch kein Lernpfad eingerichtet.
+                      Für diesen Arbeitsplan wurde noch kein Lernpfad eingerichtet.
                     </p>
                   )}
 
@@ -330,7 +330,7 @@ export default function DashboardPreviewModal({
                   <div className="h-full rounded-2xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center px-6 py-14 text-center">
                     <p className="text-base font-semibold text-slate-700">Noch keine Inhalte</p>
                     <p className="text-sm text-slate-500 mt-1">
-                      Sobald du Elemente in das Dashboard ziehst, erscheinen sie hier als Lernweg.
+                      Sobald du Elemente in den Arbeitsplan ziehst, erscheinen sie hier als Lernweg.
                     </p>
                   </div>
                 ) : !activeItem ? (
@@ -341,7 +341,7 @@ export default function DashboardPreviewModal({
                     </div>
                     <h3 className="text-2xl font-bold text-slate-900">{einheitTitel || 'Einheit'}</h3>
                     <p className="mt-2 text-sm text-slate-500 max-w-md">
-                      So startet der Schüler in dein {meta.label}-Dashboard. Über das Menü links wählt
+                      So startet der Schüler in deinen Arbeitsplan „{meta.label}". Über das Menü links wählt
                       er sein nächstes Element – gesperrte Elemente werden erst durch Erledigen
                       der Voraussetzungen freigeschaltet.
                     </p>
@@ -401,7 +401,7 @@ export default function DashboardPreviewModal({
                         {activeItem.meta.platzhalter}
                       </p>
                       <p className="mt-2 text-xs text-slate-400 max-w-md">
-                        In dieser Dashboard-Vorschau geht es um den Ablauf – die detaillierte
+                        In dieser Arbeitsplan-Vorschau geht es um den Ablauf – die detaillierte
                         Schüleransicht jeder Aufgabe findest du über den Vorschau-Button
                         an der jeweiligen Aufgabe.
                       </p>

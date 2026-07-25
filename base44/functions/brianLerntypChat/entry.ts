@@ -42,9 +42,10 @@ Deno.serve(async (req) => {
       .map((m) => `${m.rolle === 'user' ? 'Schüler' : 'Brian'}: ${m.text}`)
       .join('\n');
 
-    const prompt = `Du bist Brian, ein warmherziger, geduldiger KI-Lernbegleiter. Du hilfst einem Schüler herauszufinden, welcher LERNTYP für die Einheit "${titel}" (Fach: ${fach}) zu ihm passt.
+    const prompt = `Du bist Brian, ein warmherziger, geduldiger KI-Lernbegleiter. Du hilfst einem Schüler herauszufinden, welche INTENSITÄTSSTUFE (wie intensiv er das Thema bearbeiten möchte) für die Einheit "${titel}" (Fach: ${fach}) zu ihm passt.
 
-Die vier Lerntypen: Minimalist (kompakt, schnell), Pragmatiker (effizient, ausgewogen), Ehrgeizig (vertiefen, mehr üben), Passioniert (mit Begeisterung in die Tiefe).
+Die vier Intensitätsstufen: Minimalist (kompakt, schnell), Pragmatiker (effizient, ausgewogen), Ehrgeizig (vertiefen, mehr üben), Passioniert (mit Begeisterung in die Tiefe).
+Wichtig: Verwende in deinen Antworten das Wort "Intensitätsstufe", niemals "Lerntyp".
 
 ${leitfragen ? `Orientiere dich locker an diesen Leitfragen (eine nach der anderen, nicht alle auf einmal):\n${leitfragen}\n` : ''}
 REGELN:

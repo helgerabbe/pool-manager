@@ -42,15 +42,15 @@ const ELEMENTE = [
   {
     key: 'einstiegsdiagnose',
     titel: 'Einstiegsdiagnose',
-    beschreibung: 'KI-Wissensquiz zu den Inhalten der Einheit, das eine Lerntyp-Empfehlung vorbereitet.',
+    beschreibung: 'KI-Wissensquiz zu den Inhalten der Einheit, das eine Empfehlung für die Intensitätsstufe vorbereitet.',
     Icon: ClipboardCheck,
     accent: 'text-emerald-600',
     accentBg: 'bg-emerald-50',
   },
   {
     key: 'lerntyp_diagnose',
-    titel: 'KI-Lerntyp-Diagnose',
-    beschreibung: 'Brian-Gespräch: Bei Unsicherheit hilft Brian dem Schüler, den passenden Lerntyp zu finden. Immer das letzte Onboarding-Element.',
+    titel: 'KI-Intensitätsstufen-Diagnose',
+    beschreibung: 'Brian-Gespräch: Bei Unsicherheit hilft Brian dem Schüler, die passende Intensitätsstufe zu finden. Immer das letzte Onboarding-Element.',
     Icon: MessageCircle,
     accent: 'text-sky-600',
     accentBg: 'bg-sky-50',
@@ -84,7 +84,7 @@ export default function OnboardingTab({
               <div>
                 <h2 className="text-sm font-bold text-slate-900">Orientierung &amp; Onboarding</h2>
                 <p className="mt-1 text-xs text-slate-600 leading-relaxed">
-                  Diese Phase ist allen vier Dashboards <strong>vorgeschaltet</strong> und gilt für die
+                  Diese Phase ist allen vier Arbeitsplänen <strong>vorgeschaltet</strong> und gilt für die
                   gesamte Einheit. Die drei Elemente sind <strong>fest vorgegeben</strong> – ihre
                   Struktur kann nicht verändert werden. Du kannst die KI-Inhalte über „Vorschau" erzeugen
                   und für die Einheit speichern.

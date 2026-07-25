@@ -190,7 +190,7 @@ export default function EinheitFreigabeBlock({ einheitId, darfFreigeben = false 
         <div className="flex items-center gap-2 flex-wrap">
           <StatusBadge status={status} />
 
-          <span className="text-[11px] text-muted-foreground ml-1">Dashboards:</span>
+          <span className="text-[11px] text-muted-foreground ml-1">Arbeitspläne:</span>
           <div className="flex items-center gap-1 flex-wrap">
             {Object.entries(data.dashboards).map(([lt, locked]) => (
               <DashboardPill key={lt} label={LERNTYP_LABELS[lt]} locked={locked} />
@@ -201,7 +201,7 @@ export default function EinheitFreigabeBlock({ einheitId, darfFreigeben = false 
           </span>
 
           <InfoHint title="Wie funktioniert die finale Freigabe?">
-            Die finale Einheits-Freigabe ist erst möglich, wenn alle 4 Lerntyp-Dashboards
+            Die finale Einheits-Freigabe ist erst möglich, wenn alle 4 Arbeitspläne
             geprüft sind UND aktuell niemand mehr in einer Aufgabe oder einem Lernpaket
             aktiv arbeitet. Mit der Freigabe werden die <strong>Inhalte aller Aufgaben,
             Lernpakete und Aktivitäten</strong> gesperrt – Tabs 3, 4, 5 und 6 werden
@@ -220,7 +220,7 @@ export default function EinheitFreigabeBlock({ einheitId, darfFreigeben = false 
                   !darfFreigeben
                     ? 'Nur Admin oder Fachschaftsleitung dürfen die Einheit final freigeben.'
                     : !data.allDashboardsLocked
-                      ? 'Erst möglich, wenn alle 4 Dashboards geprüft sind.'
+                      ? 'Erst möglich, wenn alle 4 Arbeitspläne geprüft sind.'
                       : 'Einheit final freigeben'
                 }
               >

@@ -112,7 +112,7 @@ export default function AdminSettings() {
             { value: 'faecher', label: 'Fächer', icon: BookOpen },
             { value: 'aktivitaeten', label: 'Aktivitäten', icon: Puzzle },
             { value: 'systembausteine', label: 'Systembausteine', icon: Blocks },
-            { value: 'dashboards', label: 'Dashboards', icon: LayoutDashboard },
+            { value: 'dashboards', label: 'Arbeitspläne', icon: LayoutDashboard },
             { value: 'integrationen', label: 'Integrationen', icon: Plug },
           ].map((tab) => (
             <TabsTrigger
@@ -266,7 +266,7 @@ export default function AdminSettings() {
             <CardHeader className="pb-4">
               <CardTitle className="text-base">Systembausteine verwalten</CardTitle>
               <CardDescription>
-                Globale Systembausteine, die im Lernpfad-Architekt (Tab „Dashboards") als Pool angeboten werden.
+                Globale Systembausteine, die im Lernpfad-Architekt (Tab „Arbeitspläne") als Pool angeboten werden.
                 Es gibt zwei Arten: normale <strong>Systembausteine</strong> und <strong>Bündel</strong> (Container,
                 die andere Bausteine/Aufgaben aufnehmen). Die Reihenfolge per Pfeilen bestimmt auch die Anzeige im Pool.
               </CardDescription>

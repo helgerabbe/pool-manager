@@ -88,7 +88,7 @@ export default function LerntypDiagnosePreviewModal({
             {/* App-Header */}
             <div className="h-11 shrink-0 bg-gradient-to-r from-sky-600 to-sky-700 text-white flex items-center px-4 gap-3">
               <MessageCircle className="w-4 h-4 opacity-90" />
-              <span className="text-sm font-semibold truncate">Sprich mit Brian über deinen Lerntyp</span>
+              <span className="text-sm font-semibold truncate">Sprich mit Brian über deine Intensitätsstufe</span>
               {fach && (
                 <span className="ml-auto text-[11px] bg-white/15 px-2 py-0.5 rounded-full">{fach}</span>
               )}
@@ -162,7 +162,7 @@ export default function LerntypDiagnosePreviewModal({
           onRegenerate={(v) => generate(v)}
           onUebernehmen={handleUebernehmen}
           onCancel={() => onOpenChange(false)}
-          uebernehmenLabel="In Dashboard-Vorschau übernehmen"
+          uebernehmenLabel="In Arbeitsplan-Vorschau übernehmen"
         />
       </DialogContent>
     </Dialog>

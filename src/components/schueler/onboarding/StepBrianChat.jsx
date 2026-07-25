@@ -61,7 +61,7 @@ export default function StepBrianChat({ einheitId, leitfaden, verlauf, setVerlau
           </span>
           <div>
             <h2 className="text-base font-bold text-foreground">Sprich mit Brian</h2>
-            <p className="text-xs text-muted-foreground">Dein KI-Lernbegleiter hilft dir, deinen Lerntyp zu finden.</p>
+            <p className="text-xs text-muted-foreground">Dein KI-Lernbegleiter hilft dir, die passende Intensitätsstufe zu finden.</p>
           </div>
         </div>
 

@@ -82,7 +82,7 @@ export default function ReleaseConfirmDialog({
             <p>
               Das ist ein <strong>Zwischenschritt zur Einheits-Freigabe</strong> –
               Schüler sehen den Pfad <strong>noch nicht</strong>. Die Komposition
-              wird gesperrt, damit alle 4 Dashboards geprüft werden können.
+              wird gesperrt, damit alle 4 Arbeitspläne geprüft werden können.
             </p>
             <p>
               <strong>Rückgängig machen ist jederzeit möglich</strong>, solange

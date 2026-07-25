@@ -42,9 +42,9 @@ Deno.serve(async (req) => {
       .map((m) => `${m.rolle === 'user' ? 'Schüler' : 'Brian'}: ${m.text}`)
       .join('\n');
 
-    const prompt = `Du bist Brian, ein freundlicher KI-Lernbegleiter. Du sollst einem Schüler einen passenden LERNTYP für die Einheit "${titel}" (Fach: ${fach}) empfehlen.
+    const prompt = `Du bist Brian, ein freundlicher KI-Lernbegleiter. Du sollst einem Schüler eine passende INTENSITÄTSSTUFE (wie intensiv er das Thema bearbeiten möchte) für die Einheit "${titel}" (Fach: ${fach}) empfehlen.
 
-Es gibt genau vier Lerntypen:
+Es gibt genau vier Intensitätsstufen:
 - "minimalist": Klar, kompakt, das Wichtigste zuerst. Für sichere Schüler, die zügig durchwollen.
 - "pragmatiker": Effizient zum Ziel, ohne Umwege. Ausgewogen – etwas Übung, klare Struktur.
 - "ehrgeizig": Tiefer einsteigen, mehr erreichen. Für Schüler, die mehr üben und vertiefen wollen.
@@ -60,7 +60,7 @@ FAUSTREGEL (als Orientierung, das Gespräch hat Vorrang):
 - Mittel (40–70%) → pragmatiker
 - Unsicher (<40%) / Wunsch nach mehr Übung → ehrgeizig oder passioniert
 
-Sprich eine klare Empfehlung aus und begründe sie in 2–3 warmen, ermutigenden Sätzen direkt an den Schüler ("du").`;
+Sprich eine klare Empfehlung aus und begründe sie in 2–3 warmen, ermutigenden Sätzen direkt an den Schüler ("du"). Verwende dabei das Wort "Intensitätsstufe", niemals "Lerntyp".`;
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,

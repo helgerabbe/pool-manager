@@ -28,7 +28,7 @@ Nicht jede gute Einheit muss sofort eine offizielle Poolzeit-Einheit sein. Der t
 ## Private Einheiten: Ihr Sandkasten
 
 * **Standard für Fachlehrkräfte:** Wenn Sie als Fachlehrkraft eine neue Einheit anlegen, ist sie automatisch privat.
-* **Volle Freiheit:** Sie können bei privaten Einheiten sogar auswählen, welche der vier Lerntypen-Dashboards Sie anbieten möchten (z. B. nur einen einzigen Lernpfad statt aller vier).
+* **Volle Freiheit:** Sie können bei privaten Einheiten sogar auswählen, welche der vier Intensitätsstufen-Arbeitspläne Sie anbieten möchten (z. B. nur einen einzigen Lernpfad statt aller vier).
 * **Duplikate sind immer privat:** Wenn Sie eine bestehende Einheit duplizieren, landet die Kopie immer in Ihrem Privatbereich.
 
 ## Eine Einheit für das Kollegium freigeben
@@ -94,19 +94,19 @@ Alle Reflexionen, Notizen und Nachrichten landen automatisch im fächerübergrei
 
 ## Das Einheiten-Onboarding
 
-Wenn Schüler:innen eine Einheit zum ersten Mal öffnen, startet automatisch die **Orientierungsphase** (Onboarding). Diese Inhalte werden von der KI auf Basis Ihrer Einheit erzeugt und von Ihnen im Dashboard-Tab geprüft:
+Wenn Schüler:innen eine Einheit zum ersten Mal öffnen, startet automatisch die **Orientierungsphase** (Onboarding). Diese Inhalte werden von der KI auf Basis Ihrer Einheit erzeugt und von Ihnen im Arbeitsplan-Tab geprüft:
 
 1. **Einführung** – Ein motivierender, schülergerechter Überblick: Worum geht es in dieser Einheit?
 2. **Wissens-Check** – Ein kurzes Quiz zum Vorwissen (Einstiegsdiagnose).
 3. **Selbsteinschätzung** – Die Schüler:innen schätzen ihre eigene Arbeitsweise ein.
-4. **Lerntyp-Empfehlung** – Auf Basis von Wissens-Check und Selbsteinschätzung empfiehlt das System einen der vier Lerntypen. Wer möchte, kann sich dazu auch mit dem KI-Assistenten **Brian** unterhalten.
-5. **Dashboard-Wahl** – Die Schüler:innen wählen ihren Lerntyp (die Empfehlung ist keine Pflicht) und landen in ihrem persönlichen Dashboard.
+4. **Empfehlung der Intensitätsstufe** – Auf Basis von Wissens-Check und Selbsteinschätzung empfiehlt das System eine der vier Intensitätsstufen. Wer möchte, kann sich dazu auch mit dem KI-Assistenten **Brian** unterhalten.
+5. **Arbeitsplan-Wahl** – Die Schüler:innen wählen ihre Intensitätsstufe (die Empfehlung ist keine Pflicht) und landen in ihrem persönlichen Arbeitsplan.
 
-> **Hinweis:** Der Lerntyp kann später jederzeit gewechselt werden – der Fortschritt wird pro Lerntyp getrennt gespeichert.
+> **Hinweis:** Die Intensitätsstufe kann später jederzeit gewechselt werden – der Fortschritt wird pro Intensitätsstufe getrennt gespeichert.
 
-## Das Schüler-Dashboard
+## Der Schüler-Arbeitsplan
 
-Das Dashboard ist der Lernpfad, den Sie als Lehrkraft im [Dashboard-Architekt](/docs/dashboards-v2) gebaut haben – aus Schülersicht:
+Der Arbeitsplan ist der Lernpfad, den Sie als Lehrkraft im [Arbeitsplan-Architekt](/docs/dashboards-v2) gebaut haben – aus Schülersicht:
 
 * **Sektoren** gliedern den Pfad (z. B. „Orientierung", „Training", „Test"). Je nach Ihrer Einstellung sind Sektoren sofort offen oder werden erst nach Abschluss eines anderen Sektors freigeschaltet.
 * **Aufgaben und Lernpakete** werden direkt in der App bearbeitet: Lückentexte, Zuordnungen, Quizze, Videos, Texte, offene Aufgaben u. v. m.
@@ -117,8 +117,8 @@ Das Dashboard ist der Lernpfad, den Sie als Lehrkraft im [Dashboard-Architekt](/
 
 Sie müssen nicht raten, wie Ihre Einheit für Schüler:innen aussieht:
 
-* **Auge-Symbol auf der Einheiten-Karte** → öffnet die komplette Einheit als Schüler-Vorschau, umschaltbar zwischen den Lerntypen.
-* **Vorschau im Dashboard-Architekt** → zeigt den gerade gebauten Lernpfad live aus Schülersicht.
+* **Auge-Symbol auf der Einheiten-Karte** → öffnet die komplette Einheit als Schüler-Vorschau, umschaltbar zwischen den Intensitätsstufen.
+* **Vorschau im Arbeitsplan-Architekt** → zeigt den gerade gebauten Lernpfad live aus Schülersicht.
 * **Vorschau pro Aufgabe** (in der Aufgaben-Werkstatt) → zeigt die einzelne Aufgabe inklusive Interaktion, bevor Sie sie freigeben.
 `,
 
@@ -137,7 +137,7 @@ LTI ist ein sicherer Standard, mit dem sich Lernplattformen gegenseitig „vertr
 
 1. Die Lehrkraft (bzw. der Moodle-Spezialist) legt im Moodle-Kurs ein **„Externes Tool"** an, das auf eine bestimmte Einheit im Pool-Manager zeigt.
 2. Schüler:innen klicken in Moodle auf diesen Link.
-3. Sie landen **direkt in der verknüpften Einheit** – Onboarding, Dashboard, Aufgaben, alles wie im Kapitel [Schülerbereich](/docs/schuelerbereich) beschrieben.
+3. Sie landen **direkt in der verknüpften Einheit** – Onboarding, Arbeitsplan, Aufgaben, alles wie im Kapitel [Schülerbereich](/docs/schuelerbereich) beschrieben.
 4. Ihr Fortschritt wird gespeichert und beim nächsten Klick aus Moodle wieder geladen.
 
 > **Wichtig:** Schüler:innen, die über Moodle kommen, sehen **ausschließlich die verknüpfte Einheit** – keine Einheiten-Übersicht, keine anderen Fächer. Der Moodle-Kurs bleibt das „Zuhause" der Klasse.

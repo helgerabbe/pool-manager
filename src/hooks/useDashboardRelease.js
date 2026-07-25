@@ -103,7 +103,7 @@ export function useDashboardRelease({
   const handleReleasePath = useCallback(async () => {
     if (!einheitId || !darfFreigeben || istPfadGesperrt || statusBusy) return;
     if (isEinheitContentLocked) {
-      toast.error('Die Einheit ist final freigegeben — einzelne Dashboards können nicht mehr verändert werden.');
+      toast.error('Die Einheit ist final freigegeben — einzelne Arbeitspläne können nicht mehr verändert werden.');
       return;
     }
 
@@ -157,7 +157,7 @@ export function useDashboardRelease({
   const confirmReleasePath = useCallback(async () => {
     if (!einheitId || statusBusy) return;
     if (isEinheitContentLocked) {
-      toast.error('Die Einheit ist final freigegeben — einzelne Dashboards können nicht mehr verändert werden.');
+      toast.error('Die Einheit ist final freigegeben — einzelne Arbeitspläne können nicht mehr verändert werden.');
       return;
     }
     const label = lerntypLabel || activeLernTyp;
@@ -211,7 +211,7 @@ export function useDashboardRelease({
   const handleUnlockPath = useCallback(async () => {
     if (!einheitId || !darfEntsperren || !istPfadGesperrt || statusBusy) return;
     if (isEinheitContentLocked) {
-      toast.error('Die Einheit ist final freigegeben — einzelne Dashboards können nicht mehr entsperrt werden. Bitte zuerst die Einheit-Freigabe im Freigabe-Cockpit aufheben.');
+      toast.error('Die Einheit ist final freigegeben — einzelne Arbeitspläne können nicht mehr entsperrt werden. Bitte zuerst die Einheit-Freigabe im Freigabe-Cockpit aufheben.');
       return;
     }
     const label = lerntypLabel || activeLernTyp;
@@ -329,7 +329,7 @@ export function useDashboardRelease({
     onAutoAssembled?.(activeLernTyp);
     setResetConfirmOpen(false);
     onTemplateApplied?.();
-    toast.success(`Dashboard „${lerntypLabel || activeLernTyp}" automatisch aufgebaut und befüllt.`);
+    toast.success(`Arbeitsplan „${lerntypLabel || activeLernTyp}" automatisch aufgebaut und befüllt.`);
   }, [activeLernTyp, updateKonfiguration, onTemplateApplied, lerntypLabel, themenfelder, resetTemplate, autoFillCtx, onAutoAssembled]);
 
   return {

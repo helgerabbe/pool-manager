@@ -49,9 +49,9 @@ Deno.serve(async (req) => {
 
     const FALLBACK_INSTRUKTION = `Du erstellst einen GESPRÄCHS-LEITFADEN für den KI-Lernbegleiter „Brian". Dieses Gespräch ist das LETZTE Element der Orientierungsphase einer Unterrichtseinheit.
 
-ZIEL: Ein Schüler, der sich nach Einführung, Selbsteinschätzung und Einstiegsdiagnose IMMER NOCH unsicher ist, welcher der vier Lerntypen zu ihm passt, kann mit Brian sprechen. Brian stellt ein paar freundliche, lockere Fragen und gibt am Ende eine Empfehlung.
+ZIEL: Ein Schüler, der sich nach Einführung, Selbsteinschätzung und Einstiegsdiagnose IMMER NOCH unsicher ist, welche der vier Intensitätsstufen zu ihm passt, kann mit Brian sprechen. Brian stellt ein paar freundliche, lockere Fragen und gibt am Ende eine Empfehlung.
 
-DIE VIER LERNTYPEN, die Brian empfehlen kann:
+DIE VIER INTENSITÄTSSTUFEN, die Brian empfehlen kann:
 - Minimalist: will zügig und fokussiert das Nötigste lernen.
 - Pragmatiker: will einen ausgewogenen, strukturierten Weg mit Tempo.
 - Ehrgeizig: will mehr üben, sich fordern, gut vorbereitet sein.
@@ -59,7 +59,8 @@ DIE VIER LERNTYPEN, die Brian empfehlen kann:
 
 REGELN:
 - Sehr schülergerechte, freundliche, lockere Sprache. Direkte Ansprache ("du").
-- Erstelle 4 bis 6 Leitfragen, die Brian dem Schüler stellt, um seinen Lerntyp herauszufinden (z. B. zu Tempo, Gründlichkeit, Lust auf Projekte, Sicherheitsbedürfnis).
+- Erstelle 4 bis 6 Leitfragen, die Brian dem Schüler stellt, um seine passende Intensitätsstufe herauszufinden (z. B. zu Tempo, Gründlichkeit, Lust auf Projekte, Sicherheitsbedürfnis).
+- Verwende in allen Texten das Wort "Intensitätsstufe", niemals "Lerntyp".
 - Die Fragen sollen locker und nicht prüfungshaft sein.
 - Beziehe dich, wo es passt, leicht auf die Themen der Einheit aus dem Kontext.
 - Es geht um Orientierung, nicht um Bewertung.`;
@@ -91,7 +92,7 @@ TECHNISCHE AUSGABE-VORGABE (von der Vorschau-/Export-Komponente erzwungen, NICHT
       response_json_schema: {
         type: 'object',
         properties: {
-          titel: { type: 'string', description: 'Kurzer, einladender Titel (z. B. „Sprich mit Brian über deinen Lerntyp")' },
+          titel: { type: 'string', description: 'Kurzer, einladender Titel (z. B. „Sprich mit Brian über deine Intensitätsstufe")' },
           intro: { type: 'string', description: 'Kurzer, ermutigender Einstiegssatz: nur falls du dir noch unsicher bist.' },
           gespraechs_leitfaden: {
             type: 'array',

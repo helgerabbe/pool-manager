@@ -196,7 +196,7 @@ export default function EinheitCard({
                 </div>
                 <div className="px-4 pb-3">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
-                    Dashboards
+                    Arbeitspläne
                   </p>
                   <DashboardStatusBadges einheitId={einheit.id} dashboardStatus={dashboardStatus} />
                 </div>
@@ -259,7 +259,7 @@ export default function EinheitCard({
                 <button
                   onClick={() => setExpanded((v) => !v)}
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
-                  title={expanded ? 'Details einklappen' : 'Inhalte und Dashboards anzeigen'}
+                  title={expanded ? 'Details einklappen' : 'Inhalte und Arbeitspläne anzeigen'}
                 >
                   Details
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />

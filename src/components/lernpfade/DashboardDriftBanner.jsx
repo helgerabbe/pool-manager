@@ -124,7 +124,7 @@ export default function DashboardDriftBanner({
       >
         <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
         <span className="text-xs font-semibold text-amber-900">
-          {total} {total === 1 ? 'Inkonsistenz' : 'Inkonsistenzen'} im Dashboard „{lerntypLabel}"
+          {total} {total === 1 ? 'Inkonsistenz' : 'Inkonsistenzen'} im Arbeitsplan „{lerntypLabel}"
           erkannt
         </span>
         <span className="ml-auto text-[11px] text-amber-800/80 italic">
@@ -145,7 +145,7 @@ export default function DashboardDriftBanner({
             renderItem={(it) => (
               <span>
                 Themenfeld <strong>„{it.titel}"</strong> hat noch keinen Sektor in diesem
-                Dashboard.
+                Arbeitsplan.
                 {onAddSektor && (
                   <ActionButton
                     icon={Plus}

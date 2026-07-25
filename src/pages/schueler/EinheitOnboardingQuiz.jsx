@@ -133,9 +133,9 @@ export default function EinheitOnboardingQuiz() {
           Zurück zur Einheit
         </Link>
 
-        <h1 className="text-2xl font-bold text-foreground tracking-tight mb-1">Welcher Lerntyp bist du?</h1>
+        <h1 className="text-2xl font-bold text-foreground tracking-tight mb-1">Welche Intensitätsstufe passt zu dir?</h1>
         <p className="text-sm text-muted-foreground mb-5">
-          Geh die Schritte durch – am Ende bekommst du eine Empfehlung, welches Dashboard zu dir passt.
+          Geh die Schritte durch – am Ende bekommst du eine Empfehlung, welcher Arbeitsplan zu dir passt.
         </p>
 
         <div className="mb-6">

@@ -76,7 +76,7 @@ export default function StepEmpfehlung({
               <ArrowRight className="w-4 h-4" />
             </Button>
             <p className="text-xs text-muted-foreground mt-3">
-              Du entscheidest selbst – du kannst auch jedes andere Dashboard wählen.
+              Du entscheidest selbst – du kannst auch jeden anderen Arbeitsplan wählen.
             </p>
           </div>
         ) : null}

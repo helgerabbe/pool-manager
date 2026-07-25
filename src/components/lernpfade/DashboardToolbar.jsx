@@ -82,7 +82,7 @@ function LerntypPill({ typKey, active, locked, zustand, syncStatus, onClick, onO
       </p>
       {locked && (
         <p className="text-muted-foreground">
-          Dieses Dashboard wurde als fertig markiert. Die Aufgaben bleiben weiterhin bearbeitbar – erst die finale Einheits-Freigabe sperrt alles.
+          Dieser Arbeitsplan wurde als fertig markiert. Die Aufgaben bleiben weiterhin bearbeitbar – erst die finale Einheits-Freigabe sperrt alles.
         </p>
       )}
     </div>
@@ -286,7 +286,7 @@ export default function DashboardToolbar({
         {!istOnboarding && autoStatus === 'auto' && (
           <span
             className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-violet-50 border border-violet-300 text-[11px] text-violet-900 font-medium"
-            title="Dieses Dashboard wurde automatisch aus der Einheiten-Struktur und der Standardvorlage aufgebaut und noch nicht bestätigt."
+            title="Dieser Arbeitsplan wurde automatisch aus der Einheiten-Struktur und der Standardvorlage aufgebaut und noch nicht bestätigt."
           >
             <Wand2 className="w-3 h-3" />
             Automatisch erstellt
@@ -298,7 +298,7 @@ export default function DashboardToolbar({
             variant="outline"
             onClick={onConfirmAuto}
             className="gap-1.5 h-7 text-[11px] px-2.5 border-violet-300 text-violet-700 hover:bg-violet-50"
-            title={`Bestätigt den automatisch erstellten Aufbau – am Dashboard selbst ändert sich dabei nichts. Zwei Auswirkungen: 1) Die Kennzeichnung „Automatisch erstellt" verschwindet; das Dashboard gilt als von dir geprüft. 2) Neue Inhalte, die später über den Aktualisierungs-Hinweis einsortiert werden, starten dann INAKTIV (für Schüler unsichtbar, bis du sie aktivierst) – ein bestätigtes Dashboard verändert sich nicht mehr von selbst. Hinweis: Beim Klick auf „Dashboard als geprüft markieren" passiert diese Bestätigung automatisch mit.`}
+            title={`Bestätigt den automatisch erstellten Aufbau – am Arbeitsplan selbst ändert sich dabei nichts. Zwei Auswirkungen: 1) Die Kennzeichnung „Automatisch erstellt" verschwindet; der Arbeitsplan gilt als von dir geprüft. 2) Neue Inhalte, die später über den Aktualisierungs-Hinweis einsortiert werden, starten dann INAKTIV (für Schüler unsichtbar, bis du sie aktivierst) – ein bestätigter Arbeitsplan verändert sich nicht mehr von selbst. Hinweis: Beim Klick auf „Arbeitsplan als geprüft markieren" passiert diese Bestätigung automatisch mit.`}
           >
             <Check className="w-3 h-3" />
             Übernehmen
@@ -346,10 +346,10 @@ export default function DashboardToolbar({
                 title={!isStructuralEditingActive ? 'Bitte zuerst Bearbeiten starten' : `„${lerntypLabel}" als geprüft markieren`}
               >
                 {pfadStatusBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
-                Dashboard als geprüft markieren
+                Arbeitsplan als geprüft markieren
               </Button>
-              <InfoHint title="Dashboard als geprüft markieren">
-                Markiert den Lernpfad „{lerntypLabel}" als fertig geprüft. Das ist nur ein Status – die Aufgaben bleiben weiterhin bearbeitbar. Erst wenn alle 4 Dashboards geprüft sind und du „Einheit final freigeben" klickst, werden alle Inhalte gesperrt.
+              <InfoHint title="Arbeitsplan als geprüft markieren">
+                Markiert den Lernpfad „{lerntypLabel}" als fertig geprüft. Das ist nur ein Status – die Aufgaben bleiben weiterhin bearbeitbar. Erst wenn alle 4 Arbeitspläne geprüft sind und du „Einheit final freigeben" klickst, werden alle Inhalte gesperrt.
               </InfoHint>
             </div>
           )}
@@ -360,7 +360,7 @@ export default function DashboardToolbar({
               onClick={onUnlockPath}
               disabled={pfadStatusBusy}
               className="gap-1.5 h-7 text-[11px] px-2.5 border-amber-300 text-amber-700 hover:bg-amber-50"
-              title={`Das Dashboard „${lerntypLabel}" wurde als geprüft markiert – die Aufgaben sind dadurch NICHT gesperrt und können weiter bearbeitet werden. Erst „Einheit final freigeben" sperrt alle Aufgaben, bis der Export abgeschlossen ist. Hier nimmst du nur die Prüf-Markierung zurück.`}
+              title={`Der Arbeitsplan „${lerntypLabel}" wurde als geprüft markiert – die Aufgaben sind dadurch NICHT gesperrt und können weiter bearbeitet werden. Erst „Einheit final freigeben" sperrt alle Aufgaben, bis der Export abgeschlossen ist. Hier nimmst du nur die Prüf-Markierung zurück.`}
             >
               {pfadStatusBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
               Prüfung zurücknehmen
@@ -401,7 +401,7 @@ export default function DashboardToolbar({
         {zeigeLerntypenSchalter && (
           <div className="flex flex-col justify-center gap-1 pr-3 mr-2 border-r border-border self-stretch">
             <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Angebotene Lerntypen
+              Angebotene Intensitätsstufen
             </span>
             <div className="flex items-center gap-1">
               {LERNTYPEN.map((lt) => {
@@ -443,7 +443,7 @@ export default function DashboardToolbar({
             <Compass className="w-3.5 h-3.5" />
             <span className="text-sm">Onboarding</span>
           </span>
-          <span className="text-[10px] font-medium opacity-80">Vor den Dashboards</span>
+          <span className="text-[10px] font-medium opacity-80">Vor den Arbeitsplänen</span>
         </button>
         <span className="w-px h-9 bg-border mx-1 self-center" />
         </>

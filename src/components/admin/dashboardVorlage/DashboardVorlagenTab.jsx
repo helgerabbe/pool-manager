@@ -15,9 +15,9 @@ export default function DashboardVorlagenTab() {
   return (
     <Card className="border shadow-sm">
       <CardHeader className="pb-4">
-        <CardTitle className="text-base">Standard-Aufbau der Dashboards</CardTitle>
+        <CardTitle className="text-base">Standard-Aufbau der Arbeitspläne</CardTitle>
         <CardDescription>
-          Lege hier pro Lerntyp den Standard-Aufbau fest, mit dem ein Dashboard startet.
+          Lege hier pro Intensitätsstufe den Standard-Aufbau fest, mit dem ein Arbeitsplan startet.
           Verwende nur Standard-Elemente (Bausteine, Platzhalter, Bündel) – die echten
           Aufgaben einer Einheit werden später von der Fachschaftsleitung ergänzt.
         </CardDescription>
@@ -29,7 +29,7 @@ export default function DashboardVorlagenTab() {
             <p className="font-medium">So wirkt diese Vorlage</p>
             <p className="text-blue-800/90 leading-relaxed">
               Die Vorlage hat <strong>keine</strong> rückwirkende Wirkung auf bestehende Einheiten.
-              Sie greift nur, wenn ein Dashboard zum ersten Mal geöffnet wird oder eine
+              Sie greift nur, wenn ein Arbeitsplan zum ersten Mal geöffnet wird oder eine
               Fachschaftsleitung bewusst „Auf Standard zurücksetzen" wählt. Danach kann der
               Aufbau pro Einheit frei verändert werden. Eine Arbeitsphase erscheint hier als
               <strong> Muster</strong> – in der echten Einheit wird sie automatisch pro
