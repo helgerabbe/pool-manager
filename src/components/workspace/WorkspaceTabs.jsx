@@ -240,10 +240,10 @@ const getVisibleTabs = (rolle, isBasismodul = false) => {
 // die Lehrkraft die Übertragung nach Brian.study selbst (händisch, mit
 // Anleitung und Kopier-Cockpit direkt im Workspace).
 const BRIAN_TAB = {
-  value: 'brian', label: 'Brian-Export (KI-Tutor)', icon: Bot, step: 9,
+  value: 'brian', label: 'Export (Moodle & Brian)', icon: Bot, step: 9,
   help: {
-    title: 'Brian-Export — KI-Tutor-Aufgaben übertragen',
-    description: 'Hier überträgst du die KI-Tutor-Aufgaben deiner privaten Einheit nach Brian.study — händisch, aber komfortabel: Der Poolmanager bereitet für jede freigegebene Aufgabe die fertigen Brian-Segmente (Dialogname, Anweisung für Lernende, System-Anweisung, Completion-Rule) vor. Du kopierst sie per Knopfdruck in Brian, testest die Aufgabe und trägst die Brian-ID zurück ein — dann kann z. B. deine Moodle-Seite direkt auf die richtige Brian-Aufgabe verlinken.',
+    title: 'Export — Moodle-Einbindung & Brian-Übertragung',
+    description: 'Der Exportbereich deiner privaten Einheit. Oben findest du die Schritt-für-Schritt-Anleitung, wie deine Einheit über den Einheiten-Code in deinen Moodle-Kurs kommt. Darunter überträgst du die KI-Tutor-Aufgaben deiner privaten Einheit nach Brian.study — händisch, aber komfortabel: Der Poolmanager bereitet für jede freigegebene Aufgabe die fertigen Brian-Segmente (Dialogname, Anweisung für Lernende, System-Anweisung, Completion-Rule) vor. Du kopierst sie per Knopfdruck in Brian, testest die Aufgabe und trägst die Brian-ID zurück ein — dann kann z. B. deine Moodle-Seite direkt auf die richtige Brian-Aufgabe verlinken.',
     features: [
       'Aufklappbare Schritt-für-Schritt-Anleitung: vom Anlegen der Aufgabe in Brian bis zur Rückmeldung der ID',
       'Pro Aufgabe alle Brian-Segmente einzeln kopierbar — inklusive Bewertungsrubriken bei Projektaufgaben',

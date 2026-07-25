@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Copy, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import BrianUebertragenDialog from '@/components/export/BrianUebertragenDialog';
 import BrianAnleitungPanel from '@/components/export/BrianAnleitungPanel';
+import MoodleWegInfoBox from '@/components/einheiten/MoodleWegInfoBox';
 import HelpBadge from '@/components/ui/HelpBadge';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -68,6 +69,15 @@ function AufgabeCard({ aufgabe, onMarkAsSynced }) {
   const isSynced = aufgabe.brian_sync_status === 'synced';
   const isReady = isPromptReady(aufgabe);
 
+  // Seit dem letzten Brian-Export geändert? Vergleich updated_date vs.
+  // brian_synced_at (10-Sek-Puffer, weil der Export-Bestätigungs-Update
+  // selbst updated_date anfasst).
+  const modifiedSinceExport =
+    isSynced &&
+    aufgabe.brian_synced_at &&
+    aufgabe.updated_date &&
+    new Date(aufgabe.updated_date).getTime() - new Date(aufgabe.brian_synced_at).getTime() > 10_000;
+
   const ebeneLabel = aufgabe.anforderungsebene === '3 - Projekt'
     ? '🎯 Ebene 3'
     : aufgabe.anforderungsebene === '2 - Transfer' ? '📝 Ebene 2' : '📘 Ebene 1';
@@ -92,7 +102,18 @@ function AufgabeCard({ aufgabe, onMarkAsSynced }) {
                 {aufgabe.brian_dialog_id ? ` · ${aufgabe.brian_dialog_id}` : ''}
               </Badge>
             )}
+            {modifiedSinceExport && (
+              <Badge className="bg-amber-100 text-amber-800 border border-amber-300 text-[10px] shrink-0 gap-1">
+                <AlertTriangle className="w-3 h-3" /> Seit Brian-Export geändert
+              </Badge>
+            )}
           </div>
+          {isSynced && aufgabe.brian_synced_at && (
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Zuletzt nach Brian übertragen am {new Date(aufgabe.brian_synced_at).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })}
+              {modifiedSinceExport && ' — die Aufgabe wurde danach noch bearbeitet. Prüfe, ob die Brian-Version noch aktuell ist.'}
+            </p>
+          )}
           {aufgabe.aufgabenstellung && (
             <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{aufgabe.aufgabenstellung}</p>
           )}
@@ -244,9 +265,22 @@ export default function BrianExportCockpitView({ einheitId = null, embedded = fa
     <div className={cn(embedded ? 'p-6' : 'min-h-screen bg-muted/20 p-6')}>
       <div className="max-w-4xl mx-auto space-y-6">
 
+        {/* Privater Exportbereich: Moodle-Einbindung (nur im Workspace-Tab) */}
+        {embedded && (
+          <div className="space-y-3">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">Export</h2>
+              <p className="text-muted-foreground mt-2">
+                Der Exportbereich deiner privaten Einheit: Einbindung in Moodle und Übertragung der KI-Tutor-Aufgaben nach Brian.study.
+              </p>
+            </div>
+            <MoodleWegInfoBox />
+          </div>
+        )}
+
         {/* Header */}
-        <div>
-          <h2 className={cn('font-bold tracking-tight flex items-center gap-2', embedded ? 'text-2xl' : 'text-3xl')}>
+        <div className={cn(embedded && 'pt-2 border-t border-border')}>
+          <h2 className={cn('font-bold tracking-tight flex items-center gap-2', embedded ? 'text-xl' : 'text-3xl')}>
             Brian.study Export
             <HelpBadge
               text="Hier kopierst du die KI-Tutor-Segmente für jede Aufgabe, legst sie händisch in Brian.study an und trägst die Brian-ID zurück ein."
