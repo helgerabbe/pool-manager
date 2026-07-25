@@ -11,8 +11,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CheckCircle2, Copy, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import BrianUebertragenDialog from '@/components/export/BrianUebertragenDialog';
 import HelpBadge from '@/components/ui/HelpBadge';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -78,6 +78,7 @@ function AufgabeCard({ aufgabe, onMarkAsSynced }) {
             {isSynced && (
               <Badge className="bg-green-100 text-green-800 border border-green-300 text-[10px] shrink-0 gap-1">
                 <CheckCircle2 className="w-3 h-3" /> In Brian
+                {aufgabe.brian_dialog_id ? ` · ${aufgabe.brian_dialog_id}` : ''}
               </Badge>
             )}
           </div>
@@ -94,7 +95,7 @@ function AufgabeCard({ aufgabe, onMarkAsSynced }) {
           {!isSynced && (
             <Button
               size="sm"
-              onClick={() => onMarkAsSynced(aufgabe.id)}
+              onClick={() => onMarkAsSynced(aufgabe)}
               className="gap-1.5 text-xs h-8 bg-green-600 hover:bg-green-700 whitespace-nowrap"
               disabled={!isReady}
             >
@@ -172,10 +173,9 @@ function AufgabeCard({ aufgabe, onMarkAsSynced }) {
 // ── Haupt-Komponente ──
 export default function BrianExportCockpitView() {
   const queryClient = useQueryClient();
-  const [strenge, setStrenge]       = useState('normal');
-  const [sprache, setSprache]       = useState('normal');
-  const [kursniveau, setKursniveau] = useState('');
   const [filterSynced, setFilterSynced] = useState(false);
+  const [uebertragenAufgabe, setUebertragenAufgabe] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const { data: allAufgaben = [] } = useQuery({
     queryKey: ['allgemeineAufgaben'],
@@ -194,17 +194,21 @@ export default function BrianExportCockpitView() {
   const synced   = allAufgaben.filter(a => a.brian_sync_status === 'synced').length;
   const pending  = allAufgaben.filter(a => a.content_status === 'approved' && a.brian_sync_status !== 'synced' && (a.anforderungsebene === '2 - Transfer' || a.anforderungsebene === '3 - Projekt')).length;
 
-  const handleMarkAsSynced = async (aufgabeId) => {
+  const handleConfirmUebertragen = async ({ brian_dialog_id, brian_url }) => {
+    if (!uebertragenAufgabe) return;
+    setIsSaving(true);
     try {
-      // Atomarer Server-Call: setzt brian_sync_status='synced' und löst
-      // im selben Update den Dual-Lock auf, falls Moodle bereits synced
-      // ist. Verhindert Zombie-Locks bei Tab-/Verbindungsabbrüchen
-      // (siehe OPTIMISTIC_LOCKING_VERSION_FIELD.md §14).
+      // Atomarer Server-Call: setzt brian_sync_status='synced' + Brian-ID/URL
+      // und löst im selben Update den Dual-Lock auf, falls Moodle bereits
+      // synced ist (siehe OPTIMISTIC_LOCKING_VERSION_FIELD.md §14).
       const result = await base44.functions.invoke('confirmBrianExport', {
-        aufgabe_id: aufgabeId,
+        aufgabe_id: uebertragenAufgabe.id,
+        brian_dialog_id,
+        brian_url,
       });
 
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
+      setUebertragenAufgabe(null);
 
       if (result.data?.lock_released) {
         toast.success('Als "In Brian" markiert – Dual-Lock aufgehoben (Moodle + Brian beide synced).');
@@ -213,10 +217,10 @@ export default function BrianExportCockpitView() {
       }
     } catch (error) {
       toast.error('Fehler: ' + (error?.response?.data?.error || error.message));
+    } finally {
+      setIsSaving(false);
     }
   };
-
-  const params = { strenge, sprache, kursniveau };
 
   return (
     <div className="min-h-screen bg-muted/20 p-6">
@@ -250,48 +254,6 @@ export default function BrianExportCockpitView() {
           ))}
         </div>
 
-        {/* Globale Parameter */}
-        <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-          <h3 className="text-sm font-semibold">Globale Export-Parameter</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Antwortstrenge</label>
-              <Select value={strenge} onValueChange={setStrenge}>
-                <SelectTrigger className="h-9 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="locker">Locker</SelectItem>
-                  <SelectItem value="normal">Normal</SelectItem>
-                  <SelectItem value="streng">Streng</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Sprachschwierigkeit</label>
-              <Select value={sprache} onValueChange={setSprache}>
-                <SelectTrigger className="h-9 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="einfach">Einfach</SelectItem>
-                  <SelectItem value="normal">Normal</SelectItem>
-                  <SelectItem value="fortgeschritten">Fortgeschritten</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Kursniveau</label>
-              <input
-                value={kursniveau}
-                onChange={e => setKursniveau(e.target.value)}
-                placeholder="z.B. Sek 1, Sek 2, Q1…"
-                className="w-full h-9 px-3 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-            </div>
-          </div>
-        </div>
-
         {/* Aufgaben-Liste */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -317,12 +279,20 @@ export default function BrianExportCockpitView() {
               <AufgabeCard
                 key={aufgabe.id}
                 aufgabe={aufgabe}
-                onMarkAsSynced={handleMarkAsSynced}
+                onMarkAsSynced={setUebertragenAufgabe}
               />
             ))
           )}
         </div>
       </div>
+
+      <BrianUebertragenDialog
+        open={!!uebertragenAufgabe}
+        onOpenChange={(open) => { if (!open) setUebertragenAufgabe(null); }}
+        aufgabe={uebertragenAufgabe}
+        onConfirm={handleConfirmUebertragen}
+        isSaving={isSaving}
+      />
     </div>
   );
 }

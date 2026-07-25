@@ -74,8 +74,13 @@ import { annotateSektorItems, DASHBOARD_GATING_ENGINE } from '@/lib/dashboardGat
  *     Lerntagebuch — EINMAL gebaute Moodle-Dashboard-Schicht, NICHT pro
  *     Einheit) und `einheit_arbeitsumgebung_contract` (Einheit-Dashboard +
  *     Merkheft — das Einzige, was PRO EINHEIT in den SCORM-Bau wandert).
+ * airgap-1.15.0: Brian-Rückkanal (Deep-Linking).
+ *   - Payload 3: `brian_dialog` einer AllgemeinenAufgabe enthält jetzt
+ *     `dialog_id` und `url` — die beim Brian-Export erfasste ID/URL der
+ *     Aufgabe in Brian.study, damit Moodle-HTML-Seiten direkt auf die
+ *     richtige Brian-Aufgabe verlinken können.
  */
-export const MBK_AIRGAP_VERSION = 'airgap-1.14.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.15.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1887,9 +1892,12 @@ export function buildTaskContentItemForAllgemeineAufgabe({ aufgabe, navigationCo
     quality_focus: nullable(aufgabe?.quality_focus),
     rubric_criteria: Array.isArray(aufgabe?.rubric_criteria) ? aufgabe.rubric_criteria : [],
 
-    // Brian-Dialog (durchgereicht).
-    brian_dialog: (aufgabe?.brian_dialog_name || aufgabe?.brian_learner_instruction || aufgabe?.brian_system_instruction || aufgabe?.brian_completion_rule)
+    // Brian-Dialog (durchgereicht). airgap-1.15.0: inkl. dialog_id + url
+    // (Rückkanal des Brian-Exports) für Deep-Links aus den Moodle-HTMLs.
+    brian_dialog: (aufgabe?.brian_dialog_name || aufgabe?.brian_learner_instruction || aufgabe?.brian_system_instruction || aufgabe?.brian_completion_rule || aufgabe?.brian_dialog_id || aufgabe?.brian_url)
       ? {
+        dialog_id: nullable(aufgabe?.brian_dialog_id),
+        url: nullable(aufgabe?.brian_url),
         dialog_name: nullable(aufgabe?.brian_dialog_name),
         learner_instruction: nullable(aufgabe?.brian_learner_instruction),
         system_instruction: nullable(aufgabe?.brian_system_instruction),

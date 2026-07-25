@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { aufgabe_id } = await req.json();
+    const { aufgabe_id, brian_dialog_id, brian_url } = await req.json();
     if (!aufgabe_id) {
       return Response.json({ error: 'aufgabe_id erforderlich' }, { status: 400 });
     }
@@ -99,6 +99,14 @@ Deno.serve(async (req) => {
       brian_sync_status: 'synced',
       brian_synced_at: now,
     };
+    // Brian-Rückkanal (2026-07-25): ID/URL der Aufgabe in Brian.study — wird
+    // in den Moodle-Export-Payload durchgereicht (Deep-Link aus Moodle-HTML).
+    if (typeof brian_dialog_id === 'string' && brian_dialog_id.trim()) {
+      updatePayload.brian_dialog_id = brian_dialog_id.trim();
+    }
+    if (typeof brian_url === 'string' && brian_url.trim()) {
+      updatePayload.brian_url = brian_url.trim();
+    }
     let lockReleased = false;
     if (moodleAlreadySynced) {
       updatePayload.locked_by = null;

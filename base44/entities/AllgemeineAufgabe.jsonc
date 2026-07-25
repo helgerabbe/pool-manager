@@ -243,6 +243,14 @@
     "brian_completion_rule": {
       "type": "string"
     },
+    "brian_dialog_id": {
+      "type": "string",
+      "description": "ID/Kennung der Aufgabe in Brian.study (R\u00fcckkanal des manuellen Exports, 2026-07-25). Wird beim Best\u00e4tigen 'In Brian \u00fcbertragen' im Brian-Export-Cockpit eingetragen und in den Moodle-Export-Payload durchgereicht, damit Moodle-HTML-Seiten direkt auf die richtige Brian-Aufgabe verlinken k\u00f6nnen."
+    },
+    "brian_url": {
+      "type": "string",
+      "description": "Optionale direkte URL (Deep-Link) zur Aufgabe in Brian.study. Wird zusammen mit brian_dialog_id beim Export-Best\u00e4tigen erfasst."
+    },
     "prioritaete_lernziele": {
       "type": "array",
       "items": {
@@ -294,6 +302,7 @@
         "new",
         "pending",
         "synced",
+        "modified",
         "error"
       ],
       "default": "new"
@@ -304,6 +313,7 @@
         "new",
         "pending",
         "synced",
+        "modified",
         "error"
       ],
       "default": "new"
