@@ -19,6 +19,7 @@ import TranskriptField, { shouldShowTranskript } from '@/components/workspace/ki
 import TextLesenAIGeneratorPanel from '@/components/workspace/TextLesenAIGeneratorPanel';
 import TextLesenBilderUploader from '@/components/workspace/TextLesenBilderUploader';
 import BildEinfuegenFeld from '@/components/workspace/BildEinfuegenFeld';
+import StudyflixSucheField from '@/components/workspace/StudyflixSucheField';
 
 // Phase 6 (Freigabe-Konzept 2026-05-14): Pilot-Integration.
 import CompactReleaseRow from '@/components/release/CompactReleaseRow';
@@ -299,9 +300,26 @@ export default function TextLesenModal({
 
             const showTranskript = shouldShowTranskript(catalogEntry?.name);
             const transkriptInserted = !showTranskript;
+            const nameLower = (catalogEntry?.name || '').toLowerCase();
+            const isVideoAudioAktivitaet = nameLower.includes('video') || nameLower.includes('audio');
             const out = [];
 
             sortedFields.forEach((field) => {
+              // Studyflix-Videosuche direkt VOR dem Link/URL-Feld der
+              // Video/Audio-Aktivität (nur im Link-Modus, nicht bei Upload).
+              if (field.field_name === 'url' && isVideoAudioAktivitaet && !isUploadMode) {
+                out.push(
+                  <StudyflixSucheField
+                    key="__studyflix_suche__"
+                    fach={einheitFach}
+                    jahrgangsstufe={einheitJahrgangsstufe}
+                    thema={parentLernpaketName}
+                    disabled={isSaving || exportLocked}
+                    onSelectUrl={(url) => handleFieldChange('url', url)}
+                  />
+                );
+              }
+
               // KI-Generator-Panel direkt VOR dem Textinhalt-Feld einblenden,
               // damit der Workflow optisch lautet: 1. Typ wählen → 2. KI nutzen
               // (optional) → 3. fertigen Text prüfen / nachbearbeiten.
