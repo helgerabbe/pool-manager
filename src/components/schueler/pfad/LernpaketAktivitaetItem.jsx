@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import MasterModusBadge from './MasterModusBadge';
 import { ermittleMasterModus, masterFortschritt } from '@/lib/masterAufgabenModus';
 
-const PHASE_LABEL = { Input: 'Erklärung', 'Übung': 'Übung', Abschluss: 'Abschluss' };
+const PHASE_LABEL = { Input: 'Erarbeitung', 'Übung': 'Übung', Abschluss: 'Abschluss' };
 
 /**
  * Eine einzelne Aktivitäts-Zeile in der Lernpaket-Übersicht (Schüleransicht).

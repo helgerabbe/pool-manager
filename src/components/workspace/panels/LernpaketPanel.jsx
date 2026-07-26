@@ -250,7 +250,7 @@ export default function LernpaketPanel({
   }, [paket.titel_des_pakets, paket.phasen_konfiguration, canEdit]);
 
   const PHASES = [
-    { key: 'Input', label: 'Input (Erarbeitung)', icon: '📚', defaultDisabled: false },
+    { key: 'Input', label: 'Erarbeitung', icon: '📚', defaultDisabled: false },
     { key: 'Übung', label: 'Übung', icon: '✏️', defaultDisabled: false },
     { key: 'Abschluss', label: 'Abschluss', icon: '🎯', defaultDisabled: false },
   ];

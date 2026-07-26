@@ -119,7 +119,7 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
         {/* Linke Seite: Name + Badges */}
         <div className="flex-1 min-w-0">
           <h2 className="text-lg font-semibold">{catalog.name}</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Phase: {activityRecord.phase}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Phase: {activityRecord.phase === 'Input' ? 'Erarbeitung' : activityRecord.phase}</p>
           <div className="flex items-center gap-2 flex-wrap mt-2">
             {isInEditMode && (
               <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 border border-blue-200 text-blue-700 text-xs font-medium">

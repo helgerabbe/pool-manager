@@ -40,7 +40,7 @@ import { isActivityLockedByOther, isLockExpired } from '@/hooks/useActivityLock'
 import { cn } from '@/lib/utils';
 
 const PHASES = [
-  { key: 'Input',     label: 'Input',     icon: '📚' },
+  { key: 'Input',     label: 'Erarbeitung', icon: '📚' },
   { key: 'Übung',     label: 'Übung',     icon: '✏️' },
   { key: 'Abschluss', label: 'Abschluss', icon: '🎯' },
 ];

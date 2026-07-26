@@ -26,7 +26,7 @@ const SLIDE_W = 960;
 const SLIDE_H = 600;
 
 const PHASE_META = {
-  'Input':     { label: 'Input',     subtitle: 'Hier erklären wir dir, was du wissen und können sollst.', bg: 'bg-blue-50',    border: 'border-blue-100',    text: 'text-blue-900',  pill: 'bg-emerald-100 text-emerald-700' },
+  'Input':     { label: 'Erarbeitung', subtitle: 'Hier erklären wir dir, was du wissen und können sollst.', bg: 'bg-blue-50',    border: 'border-blue-100',    text: 'text-blue-900',  pill: 'bg-emerald-100 text-emerald-700' },
   'Übung':     { label: 'Übung',     subtitle: 'Hier übst du, was du gelernt hast.',                       bg: 'bg-amber-50',   border: 'border-amber-100',   text: 'text-amber-800', pill: 'bg-pink-100 text-pink-700' },
   'Abschluss': { label: 'Abschluss', subtitle: 'Hier zeigst du, was du kannst.',                           bg: 'bg-emerald-50', border: 'border-emerald-100', text: 'text-emerald-800', pill: 'bg-blue-100 text-blue-700' },
 };
@@ -370,7 +370,7 @@ export default function LernpaketPreviewModal({ open, onOpenChange, paket, aktiv
                 <Home className="w-4 h-4 opacity-80" />
                 <span className="text-sm font-semibold truncate">{paket?.titel_des_pakets}</span>
                 {selected && (
-                  <span className="ml-auto text-[11px] bg-white/15 px-2 py-0.5 rounded-full">{selected.phase}</span>
+                  <span className="ml-auto text-[11px] bg-white/15 px-2 py-0.5 rounded-full">{PHASE_META[selected.phase]?.label || selected.phase}</span>
                 )}
               </div>
 
@@ -389,7 +389,7 @@ export default function LernpaketPreviewModal({ open, onOpenChange, paket, aktiv
 
                   {Object.entries(grouped).map(([phase, list]) => (
                     <div key={phase} className="space-y-1">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">{phase}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">{PHASE_META[phase]?.label || phase}</p>
                       {list.length === 0 && (
                         <p className="text-[11px] italic text-slate-400 px-1">—</p>
                       )}

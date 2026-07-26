@@ -159,7 +159,7 @@ function AktivitaetSubNode({ activity, aktivitaetName, catalogName = '', isSelec
 }
 
 const PHASES = [
-  { key: 'Input', label: 'Input (Erarbeitung)' },
+  { key: 'Input', label: 'Erarbeitung' },
   { key: 'Übung', label: 'Übung' },
   { key: 'Abschluss', label: 'Abschluss' },
 ];

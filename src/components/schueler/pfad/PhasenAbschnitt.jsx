@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
  * sichtbar: eigenes Icon, eigene Akzentfarbe und eine kleine Trennlinie.
  */
 const PHASE_META = {
-  Input: { label: 'Erklärung', icon: BookOpen, color: 'text-sky-600', bg: 'bg-sky-100', line: 'bg-sky-200' },
+  Input: { label: 'Erarbeitung', icon: BookOpen, color: 'text-sky-600', bg: 'bg-sky-100', line: 'bg-sky-200' },
   'Übung': { label: 'Übung', icon: Dumbbell, color: 'text-amber-600', bg: 'bg-amber-100', line: 'bg-amber-200' },
   Abschluss: { label: 'Abschluss', icon: Flag, color: 'text-violet-600', bg: 'bg-violet-100', line: 'bg-violet-200' },
 };

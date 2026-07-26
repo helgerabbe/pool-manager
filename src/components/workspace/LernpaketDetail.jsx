@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import DynamicFieldRenderer from './DynamicFieldRenderer';
 
 const PHASEN = [
-  { key: 'input', label: 'Erarbeitung (Input)', color: 'border-blue-300 bg-blue-50', icon: '📚' },
+  { key: 'input', label: 'Erarbeitung', color: 'border-blue-300 bg-blue-50', icon: '📚' },
   { key: 'uebung', label: 'Übung', color: 'border-green-300 bg-green-50', icon: '✏️' },
   { key: 'abschluss', label: 'Abschluss', color: 'border-purple-300 bg-purple-50', icon: '🎯' },
 ];

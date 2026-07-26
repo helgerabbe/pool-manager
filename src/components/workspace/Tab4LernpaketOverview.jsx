@@ -194,7 +194,7 @@ export default function Tab4LernpaketOverview({
                 <div key={phase} className="space-y-1.5">
                   <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1.5">
                     <span>{meta.icon}</span>
-                    <span>{phase}</span>
+                    <span>{phase === 'Input' ? 'Erarbeitung' : phase}</span>
                     <span className="text-muted-foreground/60">({activities.length})</span>
                   </p>
                   {activities.length === 0 ? (

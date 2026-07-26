@@ -199,11 +199,11 @@ Jedes Lernpaket ist automatisch in drei didaktische Phasen unterteilt:
 
 | Phase | Wann nutzen? | Beispiele |
 |-------|-------------|---------|
-| **Input** | Zu Beginn eines Themas – Schüler erhalten Informationen | Erklärvideos, Fachtexte, Lehrwerk/Quelle, Podcasts, Infoseiten |
+| **Erarbeitung** | Zu Beginn eines Themas – Schüler erhalten Informationen | Erklärvideos, Fachtexte, Lehrwerk/Quelle, Podcasts, Infoseiten |
 | **Übung** | Während der Erarbeitung – Schüler trainieren | Lückentexte, Begriffe zuordnen, Reihenfolge sortieren, Multiple Choice, Mini-Quizzes |
 | **Abschluss** | Zum Thema-Abschluss – Kontrolle und Reflexion | Exit-Checks, Tests, Offene Aufgaben |
 
-**Wichtig:** Sie müssen nicht alle drei Phasen befüllen! Ein Lernpaket kann auch nur aus einer Input-Phase bestehen (z.B. wenn Sie nur ein Video zur Verfügung stellen möchten).
+**Wichtig:** Sie müssen nicht alle drei Phasen befüllen! Ein Lernpaket kann auch nur aus einer Erarbeitungs-Phase bestehen (z.B. wenn Sie nur ein Video zur Verfügung stellen möchten).
 
 ## Aktivitäten aus dem Katalog
 
@@ -220,7 +220,7 @@ Der Pool-Manager bietet Ihnen einen vorgefertigten **Aktivitäten-Katalog** – 
 
 Der Pool-Manager bietet folgende Aktivitäten pro Phase:
 
-#### **Input-Aktivitäten** (Zum Erarbeiten von Inhalten)
+#### **Erarbeitungs-Aktivitäten** (Zum Erarbeiten von Inhalten)
 
 | Aktivität | Beschreibung | Einsatzgebiet |
 |-----------|-------------|---------------|
@@ -272,7 +272,7 @@ Sie können Phasen auch komplett deaktivieren, wenn Sie sie nicht benötigen:
 * Nutzen Sie den **Switch** neben dem Phasen-Namen
 * Deaktivierte Phasen werden für Schüler nicht angezeigt
 
-> **Beispiel:** Wenn Sie nur einen Input (Video) bereitstellen möchten, deaktivieren Sie Übung und Abschluss. Das Lernpaket besteht dann nur aus der Input-Phase.
+> **Beispiel:** Wenn Sie nur einen Erarbeitungs-Inhalt (Video) bereitstellen möchten, deaktivieren Sie Übung und Abschluss. Das Lernpaket besteht dann nur aus der Erarbeitungs-Phase.
 
 ## Der Fortschrittsanzeiger
 
@@ -372,7 +372,7 @@ Im Pool-Manager können Sie Materialien zentral verwalten und direkt an Ihre Auf
 
 Materialien können an zwei verschiedenen Orten auftauchen, je nachdem, was Sie erreichen möchten:
 
-* **Als „Input" im Lernpaket (Ebene 1):** Wenn Schüler sich völlig unabhängig von einer konkreten Aufgabe erst in ein Thema einlesen sollen (z.B. ein Erklärvideo zum Einstieg).
+* **Als „Erarbeitung" im Lernpaket (Ebene 1):** Wenn Schüler sich völlig unabhängig von einer konkreten Aufgabe erst in ein Thema einlesen sollen (z.B. ein Erklärvideo zum Einstieg).
 * **Direkt in der Aufgabe (Ebene 2 & 3):** Wenn das Material zwingend zur Lösung der Aufgabe benötigt wird (z.B. eine Karikatur, die analysiert werden soll, oder ein Zeitungsartikel, der zusammengefasst werden muss).
 
 ## Das Geheimnis der KI: Wie Brian.study liest
@@ -426,7 +426,7 @@ Da diese Aufgaben oft kleinteilig sind, bietet der Pool-Manager eine stark struk
 | Baustein | Zweck | Beispiel |
 |---------|-------|---------|
 | **Pre-Test** | Vorwissen testen – Schüler die den Test bestehen, können den Input ggf. überspringen | „Was weißt du schon über Brüche?" |
-| **Input** | Wissen aneignen – noch keine Prüfung, nur Materialbereitstellung | Erklärvideo, Buchseite, Fachtext, Podcast |
+| **Erarbeitung** | Wissen aneignen – noch keine Prüfung, nur Materialbereitstellung | Erklärvideo, Buchseite, Fachtext, Podcast |
 | **Übung** | Wissen anwenden – wiederholbares Training bis zur Sicherheit | Vokabeltrainer, Zuordnungsaufgaben, Lückentexte |
 | **Exit-Check** | Wissen prüfen – formaler Abschluss, meldet Lernzielerreichung an Moodle / KI-Tutor | Kurze Abschlussaufgabe |
 
@@ -434,7 +434,7 @@ Da diese Aufgaben oft kleinteilig sind, bietet der Pool-Manager eine stark struk
 
 Müssen Sie immer alle vier Bausteine ausfüllen? **Nein.**
 
-Der Pool-Manager arbeitet mit einem **Opt-out-Prinzip** (bewusstes Auslassen). Wenn Sie für ein Thema keinen Pre-Test benötigen, lassen Sie das Feld einfach leer – das System erkennt das automatisch und überspringt diesen Schritt für die Schüler. Auch ein Lernpaket, das nur aus einem Input (z.B. einem wichtigen Info-Video) besteht, ist völlig in Ordnung.
+Der Pool-Manager arbeitet mit einem **Opt-out-Prinzip** (bewusstes Auslassen). Wenn Sie für ein Thema keinen Pre-Test benötigen, lassen Sie das Feld einfach leer – das System erkennt das automatisch und überspringt diesen Schritt für die Schüler. Auch ein Lernpaket, das nur aus einer Erarbeitung (z.B. einem wichtigen Info-Video) besteht, ist völlig in Ordnung.
 
 ## Zeit sparen: Der KI-Serien-Generator
 
@@ -894,7 +894,7 @@ Fertige Funktions-Module aus dem Pool: Einführungen, Lernlandkarte, Wissensspei
 
 Bündel fassen mehrere Inhalte unter einer Kachel zusammen:
 
-* **Lernpaket-Bündel** verlinken ganze Lernpakete (Ebene 1) und steuern deren inneren Ablauf: *Standard* (Input → Übung → Test), *Fast-Track* (Test zuerst – wer besteht, spart sich die Übung), *Wissensspeicher* (freies Nachschlagewerk) oder *Nur-Test*.
+* **Lernpaket-Bündel** verlinken ganze Lernpakete (Ebene 1) und steuern deren inneren Ablauf: *Standard* (Erarbeitung → Übung → Test), *Fast-Track* (Test zuerst – wer besteht, spart sich die Übung), *Wissensspeicher* (freies Nachschlagewerk) oder *Nur-Test*.
 * **Auswahl-Bündel** verlinken Transfer-Aufgaben (Ebene 2) und legen fest, **wie viele** davon bearbeitet werden müssen (z. B. „2 von 4") – echte Wahlfreiheit ohne Kontrollverlust.
 
 ## Automatischer Aufbau (Sie starten nie bei null)

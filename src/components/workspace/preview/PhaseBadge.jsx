@@ -10,7 +10,7 @@ import { BookOpen, Dumbbell, Trophy } from 'lucide-react';
 
 const PHASE_CONFIG = {
   'Input': {
-    label: 'Input',
+    label: 'Erarbeitung',
     subtitle: 'Hier erklären wir dir, was du wissen und können sollst.',
     icon: BookOpen,
     bg: 'bg-gradient-to-r from-blue-500 to-blue-600',

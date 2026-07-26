@@ -2,7 +2,7 @@ import { CheckCircle2, Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getSystemBausteinIcon } from '@/lib/systemBausteinIcons';
 
-const PHASE_LABEL = { Input: 'Erklärung', 'Übung': 'Übung', Abschluss: 'Abschluss' };
+const PHASE_LABEL = { Input: 'Erarbeitung', 'Übung': 'Übung', Abschluss: 'Abschluss' };
 
 /**
  * Blanko-Einzelseite EINER Lernpaket-Aktivität. Zeigt einen Platzhalter

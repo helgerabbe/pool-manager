@@ -22,7 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import AktivitaetThumbnailUpload from './AktivitaetThumbnailUpload';
 
 const PHASEN = [
-  { value: 'Input', label: 'Input (Erarbeitung)', color: 'bg-blue-100 text-blue-700', backendValue: 'Input' },
+  { value: 'Input', label: 'Erarbeitung', color: 'bg-blue-100 text-blue-700', backendValue: 'Input' },
   { value: 'Übung', label: 'Übung', color: 'bg-green-100 text-green-700', backendValue: 'Übung' },
   { value: 'Abschluss', label: 'Abschluss', color: 'bg-purple-100 text-purple-700', backendValue: 'Abschluss' },
 ];

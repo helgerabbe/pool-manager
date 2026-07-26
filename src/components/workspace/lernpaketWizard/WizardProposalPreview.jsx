@@ -13,9 +13,9 @@ import { Badge } from '@/components/ui/badge';
 import { Trash2, RotateCcw } from 'lucide-react';
 
 const PHASE_META = {
-  Input: { icon: '📚', color: 'bg-green-50 border-green-200' },
-  'Übung': { icon: '✏️', color: 'bg-pink-50 border-pink-200' },
-  Abschluss: { icon: '🎯', color: 'bg-blue-50 border-blue-200' },
+  Input: { label: 'Erarbeitung', icon: '📚', color: 'bg-green-50 border-green-200' },
+  'Übung': { label: 'Übung', icon: '✏️', color: 'bg-pink-50 border-pink-200' },
+  Abschluss: { label: 'Abschluss', icon: '🎯', color: 'bg-blue-50 border-blue-200' },
 };
 
 export default function WizardProposalPreview({ proposal, onRemoveItem }) {
@@ -44,7 +44,7 @@ export default function WizardProposalPreview({ proposal, onRemoveItem }) {
           <div key={phase} className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="text-lg">{meta.icon}</span>
-              <h4 className="text-sm font-semibold text-foreground">{phase}</h4>
+              <h4 className="text-sm font-semibold text-foreground">{meta.label}</h4>
               <Badge variant="secondary" className="text-xs">{items.length}</Badge>
             </div>
             <div className="space-y-1.5">

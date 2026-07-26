@@ -14,9 +14,9 @@ import { getGlossarFuerPhase } from '@/lib/wizardGlossar';
 import { BookOpen } from 'lucide-react';
 
 const PHASE_META = {
-  Input: { icon: '📚', color: 'border-green-200 bg-green-50/50' },
-  'Übung': { icon: '✏️', color: 'border-pink-200 bg-pink-50/50' },
-  Abschluss: { icon: '🎯', color: 'border-blue-200 bg-blue-50/50' },
+  Input: { label: 'Erarbeitung', icon: '📚', color: 'border-green-200 bg-green-50/50' },
+  'Übung': { label: 'Übung', icon: '✏️', color: 'border-pink-200 bg-pink-50/50' },
+  Abschluss: { label: 'Abschluss', icon: '🎯', color: 'border-blue-200 bg-blue-50/50' },
 };
 
 export default function WizardGlossarSidebar({ katalog = [], onInsert }) {
@@ -44,7 +44,7 @@ export default function WizardGlossarSidebar({ katalog = [], onInsert }) {
             <div className="flex items-center gap-1.5">
               <span className="text-sm">{meta.icon}</span>
               <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {phase}
+                {meta.label}
               </span>
               <Badge variant="secondary" className="text-[10px] ml-auto">
                 {items.length}
