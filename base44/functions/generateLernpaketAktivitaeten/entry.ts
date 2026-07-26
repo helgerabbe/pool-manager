@@ -478,6 +478,9 @@ Deno.serve(async (req) => {
       const skizzeRoh = it.ki_briefing_skizze && typeof it.ki_briefing_skizze === 'object' ? it.ki_briefing_skizze : null;
       const skizze = {
         variant: 'offen',
+        // Kurz-Idee für die Anzeige in Listen (z. B. Inhalte-Generator):
+        // Was macht diese Aktivität inhaltlich konkret?
+        idee: String(it.idee || ''),
         offen: {
           lernziel: String(skizzeRoh?.offen?.lernziel || ''),
           funktionsweise: String(skizzeRoh?.offen?.funktionsweise || it.idee || ''),

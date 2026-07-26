@@ -152,7 +152,13 @@ export default function WizardInhalteGenerator({ paket, aktivitaeten = [], katal
               <span className="shrink-0 mt-0.5">{statusIcon(s)}</span>
               <span className="shrink-0">{PHASE_ICON[a.phase] || ''}</span>
               <div className="flex-1 min-w-0">
-                <span className="text-foreground">{katalogById.get(a.aktivitaet_id) || 'Unbekannte Aktivität'}</span>
+                <span className="font-medium text-foreground">{katalogById.get(a.aktivitaet_id) || 'Unbekannte Aktivität'}</span>
+                {(() => {
+                  const idee = a.ki_briefing?.idee || a.ki_briefing?.offen?.lernziel;
+                  return idee ? (
+                    <p className="text-[11px] text-muted-foreground leading-snug">💡 {idee}</p>
+                  ) : null;
+                })()}
                 {s?.message && (
                   <p className="text-[11px] text-muted-foreground leading-snug">{s.message}</p>
                 )}
