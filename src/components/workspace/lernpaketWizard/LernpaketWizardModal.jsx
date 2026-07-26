@@ -24,6 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Sparkles, Loader2, Wand2, Package, Target } from 'lucide-react';
 import WizardProposalPreview from './WizardProposalPreview';
+import WizardIdeenAuswahl from './WizardIdeenAuswahl';
 import WizardBestandsAnalyse from './WizardBestandsAnalyse';
 import WizardInhalteGenerator from './WizardInhalteGenerator';
 import WizardGlossarSidebar from './WizardGlossarSidebar';
@@ -42,6 +43,12 @@ export default function LernpaketWizardModal({
   const [isGenerating, setIsGenerating] = useState(false);
   const [proposal, setProposal] = useState(null);
   const [korrekturen, setKorrekturen] = useState([]);
+
+  // Kreativ-Zwischenstopp: freie Ideen der KI + Auswahl der Lehrkraft.
+  const [ideen, setIdeen] = useState(null);
+  const [recherche, setRecherche] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [isMapping, setIsMapping] = useState(false);
 
   // Super-Wizard Etappe 1: Wie soll die KI mit dem Bestand umgehen?
   // 'ergaenzen' = vorhandene Aktivitäten berücksichtigen, nur Lücken füllen.
@@ -106,6 +113,9 @@ export default function LernpaketWizardModal({
       setBriefing(paket?.kreativ_briefing || '');
       setProposal(null);
       setKorrekturen([]);
+      setIdeen(null);
+      setRecherche(null);
+      setSelectedIds(new Set());
       setStrukturModus('ergaenzen');
     }
   }, [open, paket?.id, paket?.kreativ_briefing]);
@@ -114,7 +124,7 @@ export default function LernpaketWizardModal({
     ? Object.values(proposal.phasen || {}).reduce((s, arr) => s + (arr?.length || 0), 0)
     : 0;
 
-  // ── Schritt 2: Vorschlag generieren ──────────────────────────────
+  // ── Schritt 2a: Kreative Ideen sammeln (Recherche + freier Entwurf) ──
   const handleGenerate = async () => {
     const trimmed = briefing.trim();
     if (!trimmed) {
@@ -128,15 +138,71 @@ export default function LernpaketWizardModal({
     setIsGenerating(true);
     setProposal(null);
     setKorrekturen([]);
+    setIdeen(null);
+    setRecherche(null);
     try {
       const res = await base44.functions.invoke('generateLernpaketAktivitaeten', {
         lernpaketId: paket.id,
         briefing: trimmed,
         strukturModus: bestandAktivitaeten.length > 0 ? strukturModus : 'neu',
+        stage: 'ideen',
+      });
+      const data = res?.data || res;
+      if (!data?.success || !data.ideen) {
+        toast.error(data?.message || 'Generierung fehlgeschlagen. Bitte Briefing präzisieren.');
+        return;
+      }
+      setIdeen(data.ideen);
+      setRecherche(data.recherche || null);
+      // Alle Ideen sind zunächst ausgewählt — die Lehrkraft wählt ab.
+      const alleIds = ['erarbeitung', 'uebung', 'sicherung'].flatMap((k) => (data.ideen[k] || []).map((it) => it.id));
+      setSelectedIds(new Set(alleIds));
+      toast.success('Ideen erstellt — wähle aus, was umgesetzt werden soll.');
+    } catch (err) {
+      console.error('[LernpaketWizardModal] generate failed', err);
+      toast.error(err?.response?.data?.error || 'Fehler beim Generieren.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleToggleIdee = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const selectedCount = selectedIds.size;
+
+  // ── Schritt 2b: Ausgewählte Ideen in Aktivitäten übersetzen ──────
+  const handleMapping = async () => {
+    if (!ideen || selectedCount === 0) {
+      toast.error('Bitte wähle mindestens eine Idee aus.');
+      return;
+    }
+    setIsMapping(true);
+    setProposal(null);
+    setKorrekturen([]);
+    try {
+      const pick = (arr) => (arr || []).filter((it) => selectedIds.has(it.id)).map(({ idee, beschreibung }) => ({ idee, beschreibung }));
+      const res = await base44.functions.invoke('generateLernpaketAktivitaeten', {
+        lernpaketId: paket.id,
+        briefing: briefing.trim(),
+        strukturModus: bestandAktivitaeten.length > 0 ? strukturModus : 'neu',
+        stage: 'mapping',
+        entwurf: {
+          leitidee: ideen.leitidee || '',
+          erarbeitung: pick(ideen.erarbeitung),
+          uebung: pick(ideen.uebung),
+          sicherung: pick(ideen.sicherung),
+        },
+        recherche,
       });
       const data = res?.data || res;
       if (!data?.success) {
-        toast.error(data?.message || 'Generierung fehlgeschlagen. Bitte Briefing präzisieren.');
+        toast.error(data?.message || 'Umsetzung fehlgeschlagen. Bitte erneut versuchen.');
         return;
       }
       setProposal(data.proposal);
@@ -144,13 +210,13 @@ export default function LernpaketWizardModal({
       if ((data.korrekturen || []).length > 0) {
         toast.info(`${data.korrekturen.length} Phase${data.korrekturen.length !== 1 ? 'n' : ''} automatisch korrigiert.`);
       } else {
-        toast.success('Vorschlag erstellt.');
+        toast.success('Umsetzungsvorschlag erstellt.');
       }
     } catch (err) {
-      console.error('[LernpaketWizardModal] generate failed', err);
-      toast.error(err?.response?.data?.error || 'Fehler beim Generieren.');
+      console.error('[LernpaketWizardModal] mapping failed', err);
+      toast.error(err?.response?.data?.error || 'Fehler bei der Umsetzung.');
     } finally {
-      setIsGenerating(false);
+      setIsMapping(false);
     }
   };
 
@@ -217,6 +283,9 @@ export default function LernpaketWizardModal({
       // Inhalte-Generator und können direkt befüllt werden.
       setProposal(null);
       setKorrekturen([]);
+      setIdeen(null);
+      setRecherche(null);
+      setSelectedIds(new Set());
     } catch (err) {
       console.error('[LernpaketWizardModal] apply failed', err);
       const msg = err?.response?.data?.error || 'Fehler beim Übernehmen.';
@@ -227,7 +296,7 @@ export default function LernpaketWizardModal({
   };
 
   const handleClose = () => {
-    if (isGenerating || isApplying || inhalteBusy) return;
+    if (isGenerating || isMapping || isApplying || inhalteBusy) return;
     onClose();
   };
 
@@ -253,8 +322,8 @@ export default function LernpaketWizardModal({
             aktivitaeten={bestandAktivitaeten}
             katalog={aktivitaetenKatalog}
             strukturModus={strukturModus}
-            onModusChange={(m) => { setStrukturModus(m); setProposal(null); setKorrekturen([]); }}
-            disabled={isGenerating || isApplying}
+            onModusChange={(m) => { setStrukturModus(m); setProposal(null); setKorrekturen([]); setIdeen(null); setSelectedIds(new Set()); }}
+            disabled={isGenerating || isMapping || isApplying}
           />
 
           {/* Kompakter Kontext-Anker: Paket + Lernziele kombiniert in einer
@@ -329,24 +398,71 @@ export default function LernpaketWizardModal({
                 <Button
                   type="button"
                   onClick={handleGenerate}
-                  disabled={isGenerating || isApplying || !briefing.trim()}
+                  disabled={isGenerating || isMapping || isApplying || !briefing.trim()}
                   className="gap-2"
                 >
                   {isGenerating ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> Recherchiere & plane… (kann einige Minuten dauern)</>
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Recherchiere & sammle Ideen… (kann einige Minuten dauern)</>
                   ) : (
-                    <><Sparkles className="w-4 h-4" /> Vorschlag generieren</>
+                    <><Sparkles className="w-4 h-4" /> {ideen ? 'Neue Ideen generieren' : 'Ideen generieren'}</>
                   )}
                 </Button>
               </div>
+
+              {/* Kreativ-Zwischenstopp: freie Ideen zur Auswahl */}
+              {ideen && !proposal && (
+                <div className="space-y-3 border-t pt-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-sm font-semibold">
+                      Ideen der KI — wähle aus, was umgesetzt werden soll
+                    </h3>
+                    <span className="text-xs text-muted-foreground">{selectedCount} ausgewählt</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-snug">
+                    Diese Ideen sind bewusst frei gedacht — noch ohne Zuordnung zu einem Aufgabenformat.
+                    Erst im nächsten Schritt prüft die KI für deine Auswahl, wie sie sich am besten umsetzen
+                    lässt: als Standard-Aktivität, mit einer Vorlage aus der Aufgabengalerie oder als offene Aufgabe.
+                  </p>
+                  <WizardIdeenAuswahl
+                    ideen={ideen}
+                    selectedIds={selectedIds}
+                    onToggle={handleToggleIdee}
+                    disabled={isMapping || isApplying}
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      onClick={handleMapping}
+                      disabled={isMapping || isApplying || selectedCount === 0}
+                      className="gap-2"
+                    >
+                      {isMapping ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Übersetze in Aktivitäten…</>
+                      ) : (
+                        <><Sparkles className="w-4 h-4" /> {selectedCount} Idee{selectedCount !== 1 ? 'n' : ''} umsetzen</>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {/* Schritt 3: Vorschau */}
               {proposal && (
                 <div className="space-y-3 border-t pt-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold">
-                      Vorschlag der KI ({totalProposalItems} Aktivität{totalProposalItems !== 1 ? 'en' : ''})
-                    </h3>
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-sm font-semibold">
+                        Umsetzungsvorschlag ({totalProposalItems} Aktivität{totalProposalItems !== 1 ? 'en' : ''})
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => { setProposal(null); setKorrekturen([]); }}
+                        disabled={isApplying}
+                        className="text-xs text-primary underline-offset-2 hover:underline"
+                      >
+                        ← Zurück zur Ideen-Auswahl
+                      </button>
+                    </div>
                     {korrekturen.length > 0 && (
                       <span className="text-xs text-amber-700">
                         {korrekturen.length} Phase-Korrektur{korrekturen.length !== 1 ? 'en' : ''}

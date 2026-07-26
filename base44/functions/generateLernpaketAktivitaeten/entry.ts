@@ -219,6 +219,8 @@ async function freierEntwurf(base44, kontext, recherche, bestehendeAktivitaeten)
             'Nutze das recherche_dossier aktiv: Studyflix-Funde als Material und als Vorlage für den inhaltlichen Aufbau, Netz-Ideen als Inspiration. Nenne konkrete Quellen-URLs, wenn du sie verwendest.',
             'Berücksichtige typische Fehlvorstellungen aus der Recherche gezielt in Übung und Sicherung.',
             'Denke an Abwechslung und Aktivierung — kreative, produktive und offene Formate sind ausdrücklich erwünscht, nicht nur rezeptive oder geschlossene Schritte.',
+            'SEI MUTIG: Entwirf mindestens eine wirklich originelle, spielerische oder interaktive Idee, die spezifisch aus dem THEMA selbst erwächst (z. B. bei Wortbausteinen ein digitaler Wortbaukasten, in dem Schüler:innen Präfixe, Wortstämme und Suffixe kombinieren und prüfen, ob echte Wörter entstehen). Standard-Schemata wie "Video → Lückentext → Quiz" sind zu wenig.',
+            'Die Lehrkraft WÄHLT anschließend aus deinen Ideen aus — biete daher echte Alternativen mit unterschiedlichem Charakter an (geschlossen vs. offen, rezeptiv vs. produktiv, konventionell vs. originell), statt nur einen einzigen sicheren Weg.',
             ...(hatBestand
               ? ['Das Lernpaket enthält bereits die unter bestehende_aktivitaeten gelisteten Aktivitäten. Entwirf ERGÄNZENDE Lernschritte, die didaktische Lücken schließen — der Gesamtumfang (Bestand + Ergänzungen) muss im Lernpaket-Rahmen bleiben.']
               : []),
@@ -337,10 +339,36 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { lernpaketId, briefing, strukturModus = 'ergaenzen' } = body || {};
+    // Kreativ-Zwischenstopp (2026-07-26): stage steuert den Ablauf.
+    //   'komplett' = alte Ein-Schritt-Pipeline (Recherche→Entwurf→Mapping).
+    //   'ideen'    = nur Recherche + freier Entwurf → Ideen zur Auswahl.
+    //   'mapping'  = nimmt die von der Lehrkraft AUSGEWÄHLTEN Ideen entgegen
+    //                und übersetzt nur diese in Pool-Manager-Werkzeuge.
+    const {
+      lernpaketId,
+      briefing,
+      strukturModus = 'ergaenzen',
+      stage = 'komplett',
+      entwurf: entwurfInput,
+      recherche: rechercheInput,
+    } = body || {};
 
     if (!lernpaketId) {
       return Response.json({ error: 'Missing lernpaketId' }, { status: 400 });
+    }
+    if (!['komplett', 'ideen', 'mapping'].includes(stage)) {
+      return Response.json({ error: 'Ungültige stage (erlaubt: komplett, ideen, mapping)' }, { status: 400 });
+    }
+    if (stage === 'mapping') {
+      const anzahlIdeen = ['erarbeitung', 'uebung', 'sicherung'].reduce(
+        (s, k) => s + (Array.isArray(entwurfInput?.[k]) ? entwurfInput[k].length : 0), 0
+      );
+      if (!entwurfInput || typeof entwurfInput !== 'object' || anzahlIdeen === 0) {
+        return Response.json({ error: 'Für stage=mapping muss mindestens eine ausgewählte Idee übergeben werden.' }, { status: 400 });
+      }
+      if (anzahlIdeen > MAX_ITEMS) {
+        return Response.json({ error: `Zu viele Ideen (max. ${MAX_ITEMS}).` }, { status: 400 });
+      }
     }
     if (!['ergaenzen', 'neu'].includes(strukturModus)) {
       return Response.json({ error: 'Ungültiger strukturModus (erlaubt: ergaenzen, neu)' }, { status: 400 });
@@ -434,23 +462,66 @@ Deno.serve(async (req) => {
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // Stufe 1 · Recherche (fail-soft)
+    // Stufe 1 + 2 · Recherche & freier Entwurf
+    // (bei stage='mapping' bereits vorhanden — vom Client übergeben)
     // ═══════════════════════════════════════════════════════════════
-    const tRecherche = Date.now();
-    const recherche = await rechercheDossier(base44, kontext);
-    const rechercheMs = Date.now() - tRecherche;
+    let recherche = null;
+    let entwurf = null;
+    let rechercheMs = 0;
+    let entwurfMs = 0;
+
+    if (stage === 'mapping') {
+      recherche = rechercheInput && typeof rechercheInput === 'object' ? rechercheInput : null;
+      const sanitizeIdeen = (arr) => (Array.isArray(arr) ? arr : []).map((it) => ({
+        idee: kurz(it?.idee, 300),
+        beschreibung: kurz(it?.beschreibung, 2000),
+      })).filter((it) => it.idee || it.beschreibung);
+      entwurf = {
+        leitidee: kurz(entwurfInput.leitidee, 500),
+        erarbeitung: sanitizeIdeen(entwurfInput.erarbeitung),
+        uebung: sanitizeIdeen(entwurfInput.uebung),
+        sicherung: sanitizeIdeen(entwurfInput.sicherung),
+      };
+    } else {
+      const tRecherche = Date.now();
+      recherche = await rechercheDossier(base44, kontext);
+      rechercheMs = Date.now() - tRecherche;
+
+      const tEntwurf = Date.now();
+      entwurf = await freierEntwurf(base44, kontext, recherche, bestehendeAktivitaeten);
+      entwurfMs = Date.now() - tEntwurf;
+      if (!entwurf || !Array.isArray(entwurf.erarbeitung)) {
+        return Response.json({
+          success: false,
+          message: 'Die KI konnte keinen didaktischen Entwurf erstellen. Bitte Briefing präzisieren.',
+        });
+      }
+    }
 
     // ═══════════════════════════════════════════════════════════════
-    // Stufe 2 · Freier didaktischer Entwurf
+    // Kreativ-Zwischenstopp: bei stage='ideen' hier stoppen und die
+    // freien Ideen zur Auswahl an die Lehrkraft zurückgeben.
     // ═══════════════════════════════════════════════════════════════
-    const tEntwurf = Date.now();
-    const entwurf = await freierEntwurf(base44, kontext, recherche, bestehendeAktivitaeten);
-    const entwurfMs = Date.now() - tEntwurf;
-    if (!entwurf || !Array.isArray(entwurf.erarbeitung)) {
-      return Response.json({
-        success: false,
-        message: 'Die KI konnte keinen didaktischen Entwurf erstellen. Bitte Briefing präzisieren.',
+    if (stage === 'ideen') {
+      const withIds = (arr, prefix) => (Array.isArray(arr) ? arr : []).slice(0, 8).map((it, i) => ({
+        id: `idee-${prefix}-${i}`,
+        idee: String(it?.idee || ''),
+        beschreibung: String(it?.beschreibung || ''),
+      }));
+      const ideen = {
+        leitidee: entwurf.leitidee || '',
+        erarbeitung: withIds(entwurf.erarbeitung, 'e'),
+        uebung: withIds(entwurf.uebung, 'u'),
+        sicherung: withIds(entwurf.sicherung, 's'),
+      };
+      console.log('[generateLernpaketAktivitaeten] ideen-stage telemetry', {
+        duration_ms: Date.now() - t0,
+        recherche_ms: rechercheMs,
+        entwurf_ms: entwurfMs,
+        recherche_ok: !!recherche,
+        ideen_count: ideen.erarbeitung.length + ideen.uebung.length + ideen.sicherung.length,
       });
+      return Response.json({ success: true, ideen, recherche });
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -523,6 +594,7 @@ Deno.serve(async (req) => {
       verworfen: verworfen.length,
       briefing_length: briefing.length,
       struktur_modus: strukturModus,
+      stage,
       bestand_count: bestehendeAktivitaeten.length,
     };
     console.log('[generateLernpaketAktivitaeten] telemetry', telemetry);
