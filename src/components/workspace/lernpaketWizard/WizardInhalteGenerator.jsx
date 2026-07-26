@@ -4,9 +4,10 @@
  * Super-Wizard Etappe 2: Generiert KI-Inhalte für die LEEREN Aktivitäten
  * eines Lernpakets — sequenziell, mit Fortschritts-/Statusanzeige pro
  * Aktivität. Nicht-destruktiv: befüllte oder freigegebene Aktivitäten
- * werden vom Backend automatisch übersprungen; Aktivitäten mit
- * Material-Pflichtfeldern (Video, Datei, Link) werden mit Begründung
- * ausgelassen. Alle Ergebnisse bleiben im Entwurfs-Status.
+ * werden vom Backend automatisch übersprungen. Etappe 3: Für Video-/
+ * Link-Aktivitäten recherchiert die KI echte Quellen im Internet
+ * (bevorzugt Studyflix, URL-verifiziert); nur Datei-/Bild-Pflichtfelder
+ * werden noch ausgelassen. Alle Ergebnisse bleiben im Entwurfs-Status.
  */
 import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -123,8 +124,10 @@ export default function WizardInhalteGenerator({ paket, aktivitaeten = [], katal
       </div>
 
       <p className="text-muted-foreground leading-snug">
-        Die KI befüllt nur leere Aktivitäten — mit Inhalt oder freigegeben bleibt unangetastet. Aktivitäten,
-        die externes Material brauchen (Video, Datei, Link), werden übersprungen. Alles bleibt im Entwurfs-Status.
+        Die KI befüllt nur leere Aktivitäten — mit Inhalt oder freigegeben bleibt unangetastet. Für Video- und
+        Link-Aktivitäten recherchiert die KI passende Quellen im Internet (bevorzugt Studyflix) und prüft, ob der
+        Link wirklich existiert. Nur Aktivitäten mit Datei-/Bild-Pflichtfeldern werden übersprungen. Alles bleibt
+        im Entwurfs-Status.
       </p>
     </div>
   );

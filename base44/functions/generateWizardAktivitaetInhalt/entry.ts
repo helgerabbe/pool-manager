@@ -20,8 +20,13 @@
  *   – Freigegebene (approved) oder vollständige Aktivitäten → skipped.
  *   – Aktivitäten mit bereits existierenden Master-Aufgaben → skipped.
  *   – Einzelne Felder, die schon einen Wert haben, werden NIE überschrieben.
- *   – Pflichtfelder mit externem Material (Datei/Bild/Audio/URL) oder
+ *   – Pflichtfelder mit externem Material (Datei/Bild/Audio) oder
  *     unbekanntem Format → skipped mit Begründung.
+ *
+ * Etappe 3 (2026-07-26): URL-Felder werden nicht mehr übersprungen — die
+ * KI recherchiert per Websuche eine echte, existierende Quelle (bei
+ * Video/Audio bevorzugt Studyflix) und jede Kandidaten-URL wird
+ * server-seitig per HTTP-Check verifiziert, bevor sie gespeichert wird.
  *
  * Alle Ergebnisse bleiben content_status='draft' — die Lehrkraft prüft.
  */
@@ -187,7 +192,7 @@ const MASTER_TYP_SPEZIFIKATIONEN = {
 };
 
 // ── Pfad B: Normale Typen — Feldtypen & bekannte json-Felder ─────────
-const NICHT_BEFUELLBARE_FELDTYPEN = new Set(['file', 'image', 'audio', 'url']);
+const NICHT_BEFUELLBARE_FELDTYPEN = new Set(['file', 'image', 'audio']);
 
 const JSON_FELD_SPEZIFIKATIONEN = {
   // Zuordnungstraining (großer Begriffssatz, kein Master-Typ).
@@ -239,6 +244,101 @@ function unwrapLLM(res) {
     }
   }
   return out;
+}
+
+// ── Etappe 3: Web-Recherche für URL-Felder ───────────────────────────
+const URL_CHECK_TIMEOUT_MS = 6000;
+
+async function urlExistiert(rawUrl) {
+  let u;
+  try {
+    u = new URL(rawUrl);
+  } catch {
+    return false;
+  }
+  if (!['http:', 'https:'].includes(u.protocol)) return false;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), URL_CHECK_TIMEOUT_MS);
+  try {
+    const res = await fetch(rawUrl, {
+      method: 'GET',
+      redirect: 'follow',
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; PoolManagerBot/1.0; +https://base44.app)',
+        Accept: 'text/html,application/xhtml+xml',
+      },
+    });
+    res.body?.cancel().catch(() => {});
+    return res.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * Recherchiert per KI-Websuche eine echte, existierende Quelle (URL) für
+ * die Aktivität. Bei Video/Audio wird Studyflix bevorzugt. Jeder Kandidat
+ * wird per HTTP-Check verifiziert — erfundene URLs werden verworfen.
+ */
+async function rechercheQuelle(base44, kontext, aktivitaetInfo, bevorzugtStudyflix) {
+  const auftrag = bevorzugtStudyflix
+    ? 'Finde ein passendes Lernvideo — BEVORZUGT auf studyflix.de (Format https://studyflix.de/...). Nur wenn es dort nichts Passendes gibt, weiche auf andere seriöse deutschsprachige Lernplattformen aus.'
+    : 'Finde eine passende, seriöse deutschsprachige Webseite/Lernressource (z. B. studyflix.de, öffentlich-rechtliche Bildungsangebote, etablierte Lernportale).';
+
+  const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    prompt: `Du suchst Online-Lernmaterial für den Schulunterricht.
+
+Kontext: Fach ${kontext.fach}, Jahrgangsstufe ${kontext.jahrgangsstufe}, Einheit „${kontext.einheit}", Lernpaket „${kontext.lernpaket}".
+Lernziele: ${(kontext.lernziele || []).join(' | ') || '—'}
+Briefing der Lehrkraft: ${kontext.briefing_der_lehrkraft || '—'}
+Aktivität: ${aktivitaetInfo.typ} (Phase: ${aktivitaetInfo.phase})
+
+${auftrag}
+
+WICHTIG:
+- Gib bis zu 4 Kandidaten zurück, den besten zuerst.
+- Gib AUSSCHLIESSLICH echte, existierende URLs zurück. Erfinde keine URLs — im Zweifel weglassen.
+- Zu jedem Kandidaten: titel und eine 1-Satz-Beschreibung des Inhalts.`,
+    add_context_from_internet: true,
+    response_json_schema: {
+      type: 'object',
+      properties: {
+        kandidaten: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              url: { type: 'string' },
+              titel: { type: 'string' },
+              beschreibung: { type: 'string' },
+            },
+            required: ['url', 'titel'],
+          },
+        },
+      },
+      required: ['kandidaten'],
+    },
+  });
+
+  const out = unwrapLLM(llmResponse);
+  let kandidaten = (Array.isArray(out?.kandidaten) ? out.kandidaten : []).filter(
+    (k) => k && typeof k.url === 'string' && k.url.trim() !== ''
+  );
+  if (bevorzugtStudyflix) {
+    kandidaten = [
+      ...kandidaten.filter((k) => k.url.includes('studyflix.de')),
+      ...kandidaten.filter((k) => !k.url.includes('studyflix.de')),
+    ];
+  }
+  for (const k of kandidaten.slice(0, 4)) {
+    if (await urlExistiert(k.url.trim())) {
+      return { url: k.url.trim(), titel: String(k.titel || ''), beschreibung: String(k.beschreibung || '') };
+    }
+  }
+  return null;
 }
 
 function buildKontext(einheit, paket, lernziele) {
@@ -395,10 +495,17 @@ Deno.serve(async (req) => {
     const formSchema = Array.isArray(katalogEintrag.form_schema) ? katalogEintrag.form_schema : [];
     const existing = activity.field_values || {};
     const zuGenerieren = [];
+    const urlFelder = [];
 
     for (const field of formSchema) {
       if (!field || !field.field_name || field.type === 'info') continue;
       if (!isEmptyValue(existing[field.field_name])) continue; // nie überschreiben
+
+      // Etappe 3: URL-Felder werden per Web-Recherche befüllt.
+      if (field.type === 'url') {
+        urlFelder.push(field);
+        continue;
+      }
 
       if (NICHT_BEFUELLBARE_FELDTYPEN.has(field.type)) {
         if (field.required) {
@@ -445,48 +552,73 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (zuGenerieren.length === 0) {
+    // ── Etappe 3: Web-Recherche für URL-Felder (Studyflix bevorzugt) ──
+    const rechercheWerte = {};
+    let quelle = null;
+    if (urlFelder.length > 0) {
+      const bevorzugtStudyflix = /video|audio/i.test(katalogEintrag.name);
+      quelle = await rechercheQuelle(base44, kontext, aktivitaetInfo, bevorzugtStudyflix);
+      if (!quelle) {
+        if (urlFelder.some((f) => f.required)) {
+          return Response.json({
+            success: false,
+            skipped: true,
+            reason: 'Keine passende, existierende Online-Quelle gefunden — bitte manuell verlinken.',
+          });
+        }
+      } else {
+        for (const f of urlFelder) rechercheWerte[f.field_name] = quelle.url;
+      }
+    }
+
+    if (zuGenerieren.length === 0 && Object.keys(rechercheWerte).length === 0) {
       return Response.json({ success: false, skipped: true, reason: 'Keine automatisch befüllbaren Felder gefunden.' });
     }
 
-    const responseSchema = {
-      type: 'object',
-      properties: {
-        field_values: {
-          type: 'object',
-          properties: Object.fromEntries(zuGenerieren.map((z) => [z.field.field_name, z.schema])),
-          required: zuGenerieren.map((z) => z.field.field_name),
-          additionalProperties: false,
+    let generated = {};
+    if (zuGenerieren.length > 0) {
+      const responseSchema = {
+        type: 'object',
+        properties: {
+          field_values: {
+            type: 'object',
+            properties: Object.fromEntries(zuGenerieren.map((z) => [z.field.field_name, z.schema])),
+            required: zuGenerieren.map((z) => z.field.field_name),
+            additionalProperties: false,
+          },
         },
-      },
-      required: ['field_values'],
-    };
+        required: ['field_values'],
+      };
 
-    const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt: JSON.stringify([
-        { role: 'system', content: SYSTEM_PROMPT },
-        {
-          role: 'user',
-          content: JSON.stringify({
-            kontext,
-            aktivitaet: aktivitaetInfo,
-            zu_befuellende_felder: zuGenerieren.map((z) => ({
-              field_name: z.field.field_name,
-              label: z.field.label,
-              hinweis: z.field.placeholder || '',
-              regel: z.regel || 'Inhaltlich passend zum Kontext befüllen.',
-            })),
-            regeln: BASIS_REGELN,
-          }),
-        },
-      ]),
-      response_json_schema: responseSchema,
-    });
+      const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+        prompt: JSON.stringify([
+          { role: 'system', content: SYSTEM_PROMPT },
+          {
+            role: 'user',
+            content: JSON.stringify({
+              kontext,
+              aktivitaet: aktivitaetInfo,
+              ...(quelle ? { gefundene_quelle: quelle } : {}),
+              zu_befuellende_felder: zuGenerieren.map((z) => ({
+                field_name: z.field.field_name,
+                label: z.field.label,
+                hinweis: z.field.placeholder || '',
+                regel: z.regel || 'Inhaltlich passend zum Kontext befüllen.',
+              })),
+              regeln: quelle
+                ? [...BASIS_REGELN, 'Beziehe Texte (z. B. Titel, Aufgabentext) konkret auf die unter gefundene_quelle angegebene Quelle.']
+                : BASIS_REGELN,
+            }),
+          },
+        ]),
+        response_json_schema: responseSchema,
+      });
 
-    const generated = unwrapLLM(llmResponse)?.field_values || {};
+      generated = unwrapLLM(llmResponse)?.field_values || {};
+    }
 
     // Validieren + mergen (nur leere Felder werden gesetzt).
-    const merged = { ...existing };
+    const merged = { ...existing, ...rechercheWerte };
     const probleme = [];
     for (const z of zuGenerieren) {
       const val = generated[z.field.field_name];
@@ -517,10 +649,12 @@ Deno.serve(async (req) => {
       sync_status: activity.sync_status === 'synced' ? 'modified' : activity.sync_status,
     });
 
+    const befuellteFelder = [...Object.keys(rechercheWerte), ...zuGenerieren.map((z) => z.field.field_name)];
     console.log('[generateWizardAktivitaetInhalt] filled', {
       activity: activity.id,
       typ: katalogEintrag.name,
-      felder: zuGenerieren.map((z) => z.field.field_name),
+      felder: befuellteFelder,
+      quelle: quelle?.url || null,
       is_complete: isComplete,
     });
 
@@ -528,7 +662,8 @@ Deno.serve(async (req) => {
       success: true,
       is_complete: isComplete,
       mode: 'fields',
-      felder: zuGenerieren.map((z) => z.field.field_name),
+      felder: befuellteFelder,
+      quelle: quelle ? { url: quelle.url, titel: quelle.titel } : null,
     });
   } catch (error) {
     console.error('[generateWizardAktivitaetInhalt] error', error);
