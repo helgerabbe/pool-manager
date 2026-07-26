@@ -20,6 +20,7 @@
  *     `applyLernpaketWizardProposal` (Etappe 4) übernimmt das.
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { hasUnitWriteAccess } from '../../shared/unitAccess.js';
 
 const VALID_PHASES = ['Input', 'Übung', 'Abschluss'];
 const MAX_BRIEFING_LENGTH = 5000;
@@ -176,33 +177,7 @@ async function listAll(entity, sort = 'created_date') {
   return all;
 }
 
-function isAdmin(user, profile) {
-  return user?.role === 'admin' || user?.role === 'Administrator' || profile?.rolle === 'Administrator';
-}
-
-function isFachschaftForFach(profile, fach) {
-  if (profile?.rolle !== 'Fachschaftsleitung') return false;
-  const faecher = Array.isArray(profile.fachbereich_zustaendigkeit)
-    ? profile.fachbereich_zustaendigkeit
-    : [];
-  return faecher.includes(fach);
-}
-
-async function hasUnitWriteAccess(base44, user, einheit) {
-  const [profiles, memberships] = await Promise.all([
-    base44.asServiceRole.entities.Benutzer.filter({ user_id: user.email }),
-    base44.asServiceRole.entities.EinheitMembers.filter({
-      einheit_id: einheit.id,
-      user_email: user.email,
-    }),
-  ]);
-
-  const profile = profiles?.[0] || null;
-  if (isAdmin(user, profile) || isFachschaftForFach(profile, einheit.fach)) return true;
-
-  const membership = memberships?.[0] || null;
-  return membership?.unit_role === 'LEITUNG' || membership?.unit_role === 'EDITOR';
-}
+// Schreibrechte-Prüfung: gemeinsame Logik in base44/shared/unitAccess.js.
 
 Deno.serve(async (req) => {
   const t0 = Date.now();

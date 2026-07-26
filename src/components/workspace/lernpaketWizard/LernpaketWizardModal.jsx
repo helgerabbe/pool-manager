@@ -25,6 +25,7 @@ import { Label } from '@/components/ui/label';
 import { Sparkles, Loader2, Wand2, Package, Target } from 'lucide-react';
 import WizardProposalPreview from './WizardProposalPreview';
 import WizardBestandsAnalyse from './WizardBestandsAnalyse';
+import WizardInhalteGenerator from './WizardInhalteGenerator';
 import WizardGlossarSidebar from './WizardGlossarSidebar';
 import SpeechInputButton from '@/components/ui/SpeechInputButton';
 
@@ -47,6 +48,8 @@ export default function LernpaketWizardModal({
   // 'neu' = Struktur unabhängig neu denken (Bestand bleibt trotzdem erhalten).
   const [strukturModus, setStrukturModus] = useState('ergaenzen');
   const [isApplying, setIsApplying] = useState(false);
+  // Etappe 2: true, solange die Inhalte-Generierung läuft (blockiert Schließen).
+  const [inhalteBusy, setInhalteBusy] = useState(false);
   const textareaRef = useRef(null);
 
   // Bestandsanalyse: vorhandene (nicht-gelöschte) Aktivitäten dieses Pakets.
@@ -195,15 +198,18 @@ export default function LernpaketWizardModal({
       }
       toast.success(
         bestandAktivitaeten.length > 0
-          ? `${data.stats.items_created} Aktivitäten ergänzt — Bestehendes blieb unverändert.`
-          : `${data.stats.items_created} Aktivitäten angelegt.`
+          ? `${data.stats.items_created} Aktivitäten ergänzt — Bestehendes blieb unverändert. Unten kannst du jetzt Inhalte generieren.`
+          : `${data.stats.items_created} Aktivitäten angelegt. Unten kannst du jetzt Inhalte generieren.`
       );
       // Caches invalidieren, die Aktivitäten/Lernpaket-Daten zeigen.
       queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
       queryClient.invalidateQueries({ queryKey: ['workspace-data'] });
       queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
       queryClient.invalidateQueries({ queryKey: ['wizard-bestand', paket.id] });
-      onClose();
+      // Etappe 2: Modal bleibt offen — die neuen Hüllen erscheinen im
+      // Inhalte-Generator und können direkt befüllt werden.
+      setProposal(null);
+      setKorrekturen([]);
     } catch (err) {
       console.error('[LernpaketWizardModal] apply failed', err);
       const msg = err?.response?.data?.error || 'Fehler beim Übernehmen.';
@@ -214,7 +220,7 @@ export default function LernpaketWizardModal({
   };
 
   const handleClose = () => {
-    if (isGenerating || isApplying) return;
+    if (isGenerating || isApplying || inhalteBusy) return;
     onClose();
   };
 
@@ -357,13 +363,24 @@ export default function LernpaketWizardModal({
             </aside>
           </div>
 
+          {/* Etappe 2: Inhalte-Generator für leere Aktivitäten (erscheint,
+              sobald das Paket leere Aktivitäten enthält — auch direkt nach
+              der Struktur-Übernahme). */}
+          <WizardInhalteGenerator
+            paket={paket}
+            aktivitaeten={bestandAktivitaeten}
+            katalog={aktivitaetenKatalog}
+            disabled={isGenerating || isApplying}
+            onBusyChange={setInhalteBusy}
+          />
+
           <DialogFooter>
-            <Button variant="outline" onClick={handleClose} disabled={isGenerating || isApplying}>
-              Abbrechen
+            <Button variant="outline" onClick={handleClose} disabled={isGenerating || isApplying || inhalteBusy}>
+              {proposal ? 'Abbrechen' : 'Schließen'}
             </Button>
             <Button
               onClick={handleApplyClick}
-              disabled={!proposal || totalProposalItems === 0 || isGenerating || isApplying}
+              disabled={!proposal || totalProposalItems === 0 || isGenerating || isApplying || inhalteBusy}
               className="gap-2"
             >
               {isApplying ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
