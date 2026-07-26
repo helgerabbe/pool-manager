@@ -32,6 +32,7 @@
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 import { hasUnitWriteAccess } from '../../shared/unitAccess.js';
+import { unwrapLLM } from '../../shared/llmUtils.js';
 
 const RATE_LIMIT_MAX_REQUESTS = 20;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
@@ -221,30 +222,7 @@ const TEXT_FELD_REGELN = {
   inhalt_typ: 'Wähle die Option für direkt eingegebenen Text (nicht Datei/Upload), da du den Inhalt selbst lieferst.',
 };
 
-// InvokeLLM liefert das Schema-Objekt je nach Modell teils direkt, teils
-// in einem { response: ... }-Umschlag — und darin teils als JSON-String.
-// Alle drei Formen unterstützen.
-function unwrapLLM(res) {
-  let out = res;
-  if (out && typeof out === 'object' && 'response' in out) {
-    out = out.response;
-  }
-  if (typeof out === 'string') {
-    const cleaned = out.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
-    try {
-      out = JSON.parse(cleaned);
-    } catch {
-      // Fallback: rohe Steuerzeichen (z. B. echte Zeilenumbrüche innerhalb
-      // von String-Werten) durch escaped \n ersetzen und erneut parsen.
-      try {
-        out = JSON.parse(cleaned.replace(/[\u0000-\u001f]+/g, '\\n'));
-      } catch {
-        return null;
-      }
-    }
-  }
-  return out;
-}
+// unwrapLLM: gemeinsamer Helfer in base44/shared/llmUtils.js.
 
 // ── Etappe 3: Web-Recherche für URL-Felder ───────────────────────────
 const URL_CHECK_TIMEOUT_MS = 6000;
@@ -303,6 +281,7 @@ WICHTIG:
 - Gib AUSSCHLIESSLICH echte, existierende URLs zurück. Erfinde keine URLs — im Zweifel weglassen.
 - Zu jedem Kandidaten: titel und eine 1-Satz-Beschreibung des Inhalts.`,
     add_context_from_internet: true,
+    model: 'gemini_3_1_pro',
     response_json_schema: {
       type: 'object',
       properties: {
@@ -422,6 +401,17 @@ Deno.serve(async (req) => {
       beschreibung: katalogEintrag.beschreibung || '',
     };
 
+    // Super-Wizard Etappe 4: Hat der Struktur-Wizard einen Umsetzungsplan
+    // (ki_briefing mit Lernziel/Funktionsweise, ggf. quelle_url) hinterlegt,
+    // wird er zur verbindlichen inhaltlichen Vorgabe für die Generierung.
+    const wizardPlan = activity.ki_briefing && typeof activity.ki_briefing === 'object' ? activity.ki_briefing : null;
+    if (wizardPlan?.offen?.funktionsweise || wizardPlan?.offen?.lernziel) {
+      kontext.umsetzungsplan_des_wizards = wizardPlan.offen;
+    }
+    const planRegeln = kontext.umsetzungsplan_des_wizards
+      ? ['Setze den unter umsetzungsplan_des_wizards beschriebenen inhaltlichen Plan genau um.']
+      : [];
+
     // ═════════════════════════════════════════════════════════════════
     // Pfad A: Masterfähiger Typ → EINE MasterAufgabe anlegen
     // ═════════════════════════════════════════════════════════════════
@@ -455,10 +445,11 @@ Deno.serve(async (req) => {
             content: JSON.stringify({
               kontext,
               aktivitaet: aktivitaetInfo,
-              regeln: [...BASIS_REGELN, ...spez.regeln],
+              regeln: [...BASIS_REGELN, ...planRegeln, ...spez.regeln],
             }),
           },
         ]),
+        model: 'claude-sonnet-5',
         response_json_schema: spez.schema,
       });
 
@@ -556,8 +547,15 @@ Deno.serve(async (req) => {
     const rechercheWerte = {};
     let quelle = null;
     if (urlFelder.length > 0) {
-      const bevorzugtStudyflix = /video|audio/i.test(katalogEintrag.name);
-      quelle = await rechercheQuelle(base44, kontext, aktivitaetInfo, bevorzugtStudyflix);
+      // Vom Struktur-Wizard bereits geplante Quelle zuerst prüfen — nur
+      // wenn sie fehlt oder nicht erreichbar ist, wird neu recherchiert.
+      const geplanteUrl = wizardPlan?.quelle_url ? String(wizardPlan.quelle_url).trim() : '';
+      if (geplanteUrl && (await urlExistiert(geplanteUrl))) {
+        quelle = { url: geplanteUrl, titel: '', beschreibung: 'Vom Super-Wizard geplante Quelle.' };
+      } else {
+        const bevorzugtStudyflix = /video|audio/i.test(katalogEintrag.name);
+        quelle = await rechercheQuelle(base44, kontext, aktivitaetInfo, bevorzugtStudyflix);
+      }
       if (!quelle) {
         if (urlFelder.some((f) => f.required)) {
           return Response.json({
@@ -605,12 +603,17 @@ Deno.serve(async (req) => {
                 hinweis: z.field.placeholder || '',
                 regel: z.regel || 'Inhaltlich passend zum Kontext befüllen.',
               })),
-              regeln: quelle
-                ? [...BASIS_REGELN, 'Beziehe Texte (z. B. Titel, Aufgabentext) konkret auf die unter gefundene_quelle angegebene Quelle.']
-                : BASIS_REGELN,
+              regeln: [
+                ...BASIS_REGELN,
+                ...planRegeln,
+                ...(quelle
+                  ? ['Beziehe Texte (z. B. Titel, Aufgabentext) konkret auf die unter gefundene_quelle angegebene Quelle.']
+                  : []),
+              ],
             }),
           },
         ]),
+        model: 'claude-sonnet-5',
         response_json_schema: responseSchema,
       });
 

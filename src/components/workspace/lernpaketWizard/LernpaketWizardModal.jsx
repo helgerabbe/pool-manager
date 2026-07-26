@@ -181,7 +181,14 @@ export default function LernpaketWizardModal({
       const items = [];
       ['Input', 'Übung', 'Abschluss'].forEach((phase) => {
         (proposal.phasen[phase] || []).forEach((it) => {
-          items.push({ aktivitaetstyp: it.aktivitaetstyp, phase: it.phase });
+          items.push({
+            aktivitaetstyp: it.aktivitaetstyp,
+            phase: it.phase,
+            // Super-Wizard Etappe 4: Umsetzungsplan der KI wandert als
+            // ki_briefing auf die Aktivität und steuert später die
+            // Inhalte-Generierung.
+            ki_briefing_skizze: it.ki_briefing_skizze || null,
+          });
         });
       });
 
@@ -235,7 +242,7 @@ export default function LernpaketWizardModal({
               Lernpaket mit KI-Assistent füllen
             </DialogTitle>
             <DialogDescription className="text-xs leading-snug">
-              Beschreibe in eigenen Worten, was die Schüler:innen lernen sollen — die KI schlägt passende Aktivitäts-Hüllen vor.
+              Beschreibe in eigenen Worten, was die Schüler:innen lernen sollen — die KI sammelt den Einheiten-Kontext, recherchiert im Netz (u. a. Studyflix) und entwirft daraus ein komplettes Lernpaket.
             </DialogDescription>
           </DialogHeader>
 
@@ -326,7 +333,7 @@ export default function LernpaketWizardModal({
                   className="gap-2"
                 >
                   {isGenerating ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> Generiere…</>
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Recherchiere & plane… (kann einige Minuten dauern)</>
                   ) : (
                     <><Sparkles className="w-4 h-4" /> Vorschlag generieren</>
                   )}

@@ -35,6 +35,11 @@ export default function WizardProposalPreview({ proposal, onRemoveItem }) {
 
   return (
     <div className="space-y-4">
+      {proposal.leitidee && (
+        <p className="text-xs text-foreground bg-amber-50 border border-amber-200 rounded-md px-3 py-2 leading-snug">
+          💡 <span className="font-medium">Leitidee der KI:</span> {proposal.leitidee}
+        </p>
+      )}
       {['Input', 'Übung', 'Abschluss'].map((phase) => {
         const items = phasen[phase] || [];
         if (items.length === 0) return null;
@@ -67,6 +72,11 @@ export default function WizardProposalPreview({ proposal, onRemoveItem }) {
                         </Badge>
                       )}
                     </div>
+                    {item.idee && (
+                      <p className="text-xs text-foreground leading-snug">
+                        {item.idee}
+                      </p>
+                    )}
                     {item.begruendung && (
                       <p className="text-xs text-muted-foreground italic leading-snug">
                         {item.begruendung}

@@ -126,7 +126,14 @@ Deno.serve(async (req) => {
     // hier abgefangen werden (defense-in-depth).
     const katalogAlle = await base44.asServiceRole.entities.AktivitaetenKatalog.list();
     const aktiverKatalog = katalogAlle.filter((k) => k.is_active === true);
-    const katalogByName = new Map(aktiverKatalog.map((k) => [k.name, k]));
+    // Manche Typen existieren in mehreren Phasen (z. B. KI-Quiz, Externer
+    // Inhalt) — daher primär über Name+Phase auflösen, Name-only als Fallback.
+    const katalogByNamePhase = new Map();
+    const katalogByName = new Map();
+    aktiverKatalog.forEach((k) => {
+      katalogByNamePhase.set(`${k.name}::${k.phase}`, k);
+      if (!katalogByName.has(k.name)) katalogByName.set(k.name, k);
+    });
 
     const resolved = [];
     const rejected = [];
@@ -139,7 +146,8 @@ Deno.serve(async (req) => {
         rejected.push({ index: idx, grund: 'ungültige phase', wert: it.phase });
         return;
       }
-      const katalogEintrag = katalogByName.get(it.aktivitaetstyp);
+      const katalogEintrag =
+        katalogByNamePhase.get(`${it.aktivitaetstyp}::${it.phase}`) || katalogByName.get(it.aktivitaetstyp);
       if (!katalogEintrag) {
         rejected.push({ index: idx, grund: 'unbekannter aktivitaetstyp', wert: it.aktivitaetstyp });
         return;
