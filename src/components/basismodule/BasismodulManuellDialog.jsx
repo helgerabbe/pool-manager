@@ -61,11 +61,11 @@ export default function BasismodulManuellDialog({ open, onOpenChange, onCreated 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95%] sm:max-w-md" aria-describedby={undefined}>
         <DialogHeader>
-          <DialogTitle>Neues Basismodul (manuell)</DialogTitle>
+          <DialogTitle>Neue Basis-Einheit (manuell)</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-2">
-            <Label>Titel des Basismoduls (Unterrichtseinheit) *</Label>
+            <Label>Titel der Basis-Einheit (Unterrichtseinheit) *</Label>
             <Input
               placeholder="z.B. Prozentrechnung"
               value={form.titel_der_einheit}

@@ -242,7 +242,7 @@ export default function BasisLernzielSelector({ aufgabeId, selectedIds = [] }) {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-medium">Basismodul</label>
+                <label className="text-xs font-medium">Basis-Einheit</label>
                 <Select
                   value={selectedModul}
                   onValueChange={setSelectedModul}

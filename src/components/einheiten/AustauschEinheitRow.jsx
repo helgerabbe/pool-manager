@@ -22,8 +22,9 @@ function ActionButton({ onClick, disabled, title, icon: Icon, className = '', sp
 }
 
 /**
- * Eine Zeile in der Austausch-Bibliothek: Vorschau, private Kopie ziehen,
- * (Fachschaftsleitung/Admin) zu Poolzeit kopieren, (Besitzer/Admin) Freigabe zurückziehen.
+ * Eine Zeile in der Öffentlichen Bibliothek: Vorschau, private Kopie ziehen,
+ * (Fachschaftsleitung/Admin) in die Gemeinschaftliche Bibliothek kopieren,
+ * (Besitzer/Admin) Freigabe zurückziehen.
  */
 export default function AustauschEinheitRow({ einheit, darfPoolzeit, darfZurueckziehen, istEigene }) {
   const [showVorschau, setShowVorschau] = useState(false);
@@ -55,13 +56,13 @@ export default function AustauschEinheitRow({ einheit, darfPoolzeit, darfZurueck
           {einheit.ist_basismodul === true && (
             <span className="inline-flex items-center gap-1 shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-amber-100 text-amber-800 border-amber-200">
               <Layers className="w-3 h-3" />
-              Basismodul
+              Basis-Einheit
             </span>
           )}
         </div>
         <p className="text-xs text-muted-foreground truncate">
           {einheit.fach} · Jg. {einheit.jahrgangsstufe} · {einheit.ist_basismodul === true
-            ? 'verbindliches Basismodul der Fachschaft'
+            ? 'verbindliche Basis-Einheit der Fachschaft'
             : `von ${einheit.besitzer_email || 'unbekannt'}`}
           {istEigene && <span className="ml-1.5 text-emerald-700 font-medium">(Ihre Einheit)</span>}
         </p>
@@ -76,12 +77,12 @@ export default function AustauschEinheitRow({ einheit, darfPoolzeit, darfZurueck
         {!istEigene && (
           <ActionButton
             onClick={() => invoke('kopie', 'duplicateEinheitSecure', { einheit_id: einheit.id },
-              (d) => `Private Kopie erstellt: „${d.titel}" — Sie finden sie in Ihrem Privatbereich.`)}
+              (d) => `Private Kopie erstellt: „${d.titel}" — Sie finden sie in Ihrer Privaten Bibliothek.`)}
             disabled={busy !== null}
             spinning={busy === 'kopie'}
             title={einheit.ist_basismodul === true
-              ? 'Private Kopie ziehen — das Basismodul wird als normale private Einheit (inkl. Dashboard) in Ihren Privatbereich übernommen'
-              : 'Private Kopie ziehen — eine eigene, unabhängige Kopie in Ihren Privatbereich übernehmen'}
+              ? 'Private Kopie ziehen — die Basis-Einheit wird als normale private Einheit (inkl. Arbeitsplan) in Ihre Private Bibliothek übernommen'
+              : 'Private Kopie ziehen — eine eigene, unabhängige Kopie in Ihre Private Bibliothek übernehmen'}
             icon={Copy}
             className="hover:text-emerald-700 hover:border-emerald-400/50 hover:bg-emerald-50"
           />
@@ -89,10 +90,10 @@ export default function AustauschEinheitRow({ einheit, darfPoolzeit, darfZurueck
         {darfPoolzeit && (
           <ActionButton
             onClick={() => invoke('poolzeit', 'duplicateEinheitSecure', { einheit_id: einheit.id, als_poolzeit: true },
-              (d) => `„${d.titel}" wurde als Poolzeit-Einheit übernommen.`)}
+              (d) => `„${d.titel}" wurde in die Gemeinschaftliche Bibliothek übernommen.`)}
             disabled={busy !== null}
             spinning={busy === 'poolzeit'}
-            title="Zu den Poolzeit-Einheiten kopieren — erzeugt auf Grundlage dieser Einheit eine neue Poolzeit-Einheit (nur Fachschaftsleitung/Admin)"
+            title="In die Gemeinschaftliche Bibliothek kopieren — erzeugt auf Grundlage dieser Einheit eine neue verbindliche Einheit (nur Fachschaftsleitung/Admin)"
             icon={Rocket}
             className="hover:text-blue-700 hover:border-blue-400/50 hover:bg-blue-50"
           />

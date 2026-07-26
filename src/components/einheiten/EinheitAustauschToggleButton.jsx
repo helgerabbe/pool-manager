@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { Library } from 'lucide-react';
 
 /**
- * Schaltet eine PRIVATE Einheit für die Austausch-Bibliothek frei
+ * Schaltet eine PRIVATE Einheit für die Öffentliche Bibliothek frei
  * (bzw. zieht die Freigabe zurück). Backend: setEinheitAustauschSecure
  * (Besitzer oder Administrator).
  */
@@ -26,7 +26,7 @@ export default function EinheitAustauschToggleButton({ einheit }) {
       if (res.data?.success) {
         toast.success(
           istFreigegeben
-            ? `„${einheit.titel_der_einheit}" wurde aus der Austausch-Bibliothek zurückgezogen.`
+            ? `„${einheit.titel_der_einheit}" wurde aus der Öffentlichen Bibliothek zurückgezogen.`
             : `„${einheit.titel_der_einheit}" ist jetzt für das Kollegium freigegeben.`
         );
         queryClient.invalidateQueries({ queryKey: ['einheiten'] });
@@ -52,8 +52,8 @@ export default function EinheitAustauschToggleButton({ einheit }) {
       } disabled:opacity-60`}
       title={
         istFreigegeben
-          ? 'Freigabe zurückziehen — Einheit verschwindet aus der Austausch-Bibliothek (gezogene Kopien bleiben erhalten)'
-          : 'Für Kollegium freigeben — Einheit erscheint in der Austausch-Bibliothek, Kolleg:innen können sich eine private Kopie ziehen'
+          ? 'Freigabe zurückziehen — Einheit verschwindet aus der Öffentlichen Bibliothek (gezogene Kopien bleiben erhalten)'
+          : 'Für Kollegium freigeben — Einheit erscheint in der Öffentlichen Bibliothek, Kolleg:innen können sich eine private Kopie ziehen'
       }
     >
       {isSaving

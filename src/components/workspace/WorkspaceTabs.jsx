@@ -134,7 +134,7 @@ const getVisibleTabs = (rolle, isBasismodul = false) => {
         'Du legst neue Aufgaben über ein geführtes Modal an und wählst dabei die Art der Aufgabe (Mission: Problem, Entdeckung, Recherche, Anwendung, Transfer, Kreativität)',
         'Du nutzt die KI-Ideenbox, um dir zu einem Themenfeld passende Aufgaben-Ideen vorschlagen zu lassen',
         'Du beschreibst Aufgaben mit Text, Bild, PDF oder Materialien aus dem Lehrwerk und setzt den Schwierigkeitsgrad (1–3 Sterne)',
-        'Du verknüpfst die benötigten Lernziele/Basismodule per Drag & Drop – das ist die Grundlage für das KI-Tutor-Feedback',
+        'Du verknüpfst die benötigten Lernziele/Basis-Einheiten per Drag & Drop – das ist die Grundlage für das KI-Tutor-Feedback',
         'Du lässt dir vom KI-Aufgaben-Assistenten aus einer groben Idee (auch per Sprache) einen vollständigen Aufgabenentwurf erzeugen',
         'Du füllst den Erwartungshorizont aus oder lässt ihn per KI generieren – das ist das „Gehirn" für den KI-Tutor',
         'Du baust Auswahl-Bündel, in denen Schüler:innen aus mehreren Aufgaben wählen dürfen',
@@ -160,7 +160,7 @@ const getVisibleTabs = (rolle, isBasismodul = false) => {
         'Du legst die Abgabeformate per Kachel fest (Text · Präsentation · Zeitleiste · Bild · Grafik · Audio/Podcast) oder definierst ein eigenes Format',
         'Du beschreibst einen „Besonderen Fokus" und lässt dir daraus die Bewertungsrubriken per KI vorschlagen',
         'Du verfeinerst Rubriken (Titel · Punkte · Kriterientext) im Brian-Format manuell nach',
-        'Du füllst die Lernlandkarte: welche Lernziele/Basismodule sind für dieses Projekt zwingend nötig?',
+        'Du füllst die Lernlandkarte: welche Lernziele/Basis-Einheiten sind für dieses Projekt zwingend nötig?',
         'Du lässt den vollständigen Projekt-Coach-Prompt automatisch aus Aufgabe + Rubriken + Lernlandkarte generieren',
       ],
       faqs: [

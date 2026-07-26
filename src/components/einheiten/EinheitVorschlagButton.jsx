@@ -10,8 +10,8 @@ import {
 
 /**
  * Button + Dialog: Eine PRIVATE Einheit der Fachschaftsleitung "zur
- * Veröffentlichung als Poolzeit-Einheit" vorschlagen (bzw. den Vorschlag
- * zurückziehen). Die Einheit erscheint dann im Poolzeit-Bereich des Fachs
+ * Übernahme in die Gemeinschaftliche Bibliothek" vorschlagen (bzw. den Vorschlag
+ * zurückziehen). Die Einheit erscheint dann in der Gemeinschaftlichen Bibliothek des Fachs
  * in der Sektion "Zur Veröffentlichung vorgeschlagen" — nur im Ansichtsmodus.
  * Backend: setEinheitVeroeffentlichungVorschlagSecure.
  */
@@ -58,7 +58,7 @@ export default function EinheitVorschlagButton({ einheit }) {
         title={
           istVorgeschlagen
             ? 'Diese Einheit ist der Fachschaftsleitung zur Veröffentlichung vorgeschlagen. Klicken, um den Vorschlag zurückzuziehen.'
-            : 'Der Fachschaftsleitung zur Veröffentlichung als Poolzeit-Einheit vorschlagen. Die Einheit erscheint dann im Poolzeit-Bereich zur Ansicht — die Freigabe trifft die Fachschaftsleitung.'
+            : 'Der Fachschaftsleitung zur Übernahme in die Gemeinschaftliche Bibliothek vorschlagen. Die Einheit erscheint dann dort zur Ansicht — die Freigabe trifft die Fachschaftsleitung.'
         }
       >
         {istVorgeschlagen ? <Undo2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}
@@ -73,7 +73,7 @@ export default function EinheitVorschlagButton({ einheit }) {
             <DialogDescription>
               {istVorgeschlagen
                 ? `„${einheit.titel_der_einheit}" wird aus der Sektion „Zur Veröffentlichung vorgeschlagen" entfernt und bleibt eine private Einheit.`
-                : `„${einheit.titel_der_einheit}" erscheint für die Kolleg:innen des Fachs im Poolzeit-Bereich unter „Zur Veröffentlichung vorgeschlagen" — dort nur im Ansichtsmodus. Ob sie tatsächlich Poolzeit-Einheit wird, entscheidet die Fachschaftsleitung (oder ein Administrator). Ihre Einheit bleibt bis dahin privat und Sie können weiter daran arbeiten.`}
+                : `„${einheit.titel_der_einheit}" erscheint für die Kolleg:innen des Fachs in der Gemeinschaftlichen Bibliothek unter „Zur Veröffentlichung vorgeschlagen" — dort nur im Ansichtsmodus. Ob sie tatsächlich übernommen wird, entscheidet die Fachschaftsleitung (oder ein Administrator). Ihre Einheit bleibt bis dahin privat und Sie können weiter daran arbeiten.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

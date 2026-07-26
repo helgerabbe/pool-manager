@@ -10,7 +10,7 @@ export const DOC_GROUPS = [
     label: 'Grundlagen',
     items: [
       { slug: 'erste-schritte', label: 'Erste Schritte' },
-      { slug: 'bereiche-und-austausch', label: 'Poolzeit, Austausch & Privat' },
+      { slug: 'bereiche-und-austausch', label: 'Die drei Bibliotheken' },
       { slug: 'einheiten-struktur', label: 'Einheiten & Struktur' },
       { slug: 'lernpakete-aktivitaeten', label: 'Lernpakete & Aktivitäten' },
       { slug: 'lernziele', label: 'Lernziele' },
@@ -20,7 +20,7 @@ export const DOC_GROUPS = [
   {
     label: 'Aufgaben & KI',
     items: [
-      { slug: 'ebene-1-basismodule', label: 'Ebene 1: Basismodule' },
+      { slug: 'ebene-1-basismodule', label: 'Ebene 1: Basis-Einheiten' },
       { slug: 'ebene-2-allgemeine-aufgaben', label: 'Ebene 2: Allgemeine Aufgaben' },
       { slug: 'ebene-3-projektaufgaben', label: 'Ebene 3: Projektaufgaben' },
       { slug: 'ki-tutor-brian', label: 'KI-Tutor Brian.study' },
@@ -75,15 +75,15 @@ Der Pool-Manager bietet Ihnen drei Anforderungsebenen, um Ihre Schüler bestmög
 
 Aus diesen Bausteinen bauen Sie anschließend im [Arbeitsplan-Architekt](/docs/dashboards-v2) für jede der vier Intensitätsstufen einen eigenen Lernpfad.
 
-## Die drei Bereiche der Einheiten
+## Die drei Bibliotheken
 
-Alle Einheiten leben in einem von drei Bereichen – auf der Einheiten-Seite wählen Sie oben per Kachel:
+Alle Einheiten leben in einer von drei Bibliotheken – auf der Einheiten-Seite wählen Sie oben per Kachel:
 
-* 🔵 **Poolzeit-Einheiten** – die verbindlichen, offiziellen Einheiten der Fachschaft
-* 🟢 **Freigegebene Einheiten** – die Tauschbörse des Kollegiums
-* 🟡 **Private Einheiten** – Ihr persönlicher Arbeitsbereich, nur für Sie sichtbar
+* 🔵 **Gemeinschaftliche Bibliothek** – die verbindlichen, offiziellen Einheiten der Fachschaft für die Poolzeit
+* 🟢 **Öffentliche Bibliothek** – die Tauschbörse des Kollegiums
+* 🟡 **Private Bibliothek** – Ihr persönlicher Arbeitsbereich, nur für Sie sichtbar
 
-> Alles Wichtige dazu im Kapitel [Poolzeit, Austausch & Privat](/docs/bereiche-und-austausch).
+> Alles Wichtige dazu im Kapitel [Die drei Bibliotheken](/docs/bereiche-und-austausch).
 
 ## Wer darf was? (Benutzerrollen)
 
@@ -91,8 +91,8 @@ Ihre Möglichkeiten hängen von Ihrer zugewiesenen Rolle ab:
 
 | Rolle | Aufgabe |
 |-------|---------|
-| **Fachlehrkraft** | Private Einheiten erstellen, Inhalte und Aufgaben in Poolzeit-Einheiten bearbeiten, KI-Aufgaben generieren, Lernziele verknüpfen und Inhalte freigeben. |
-| **Fachschaftsleitung** | Rahmen und Struktur der Poolzeit-Einheiten festlegen, Qualität sichern, Einheiten final freigeben und Einheiten zur Poolzeit-Einheit machen. |
+| **Fachlehrkraft** | Private Einheiten erstellen, Inhalte und Aufgaben in Einheiten der Gemeinschaftlichen Bibliothek bearbeiten, KI-Aufgaben generieren, Lernziele verknüpfen und Inhalte freigeben. |
+| **Fachschaftsleitung** | Rahmen und Struktur der gemeinschaftlichen Einheiten festlegen, Qualität sichern, Einheiten final freigeben und Einheiten in die Gemeinschaftliche Bibliothek übernehmen. |
 | **Moodle-Designer / Export-Team** | Bedient das zentrale Export-Center und überträgt fertige Einheiten nach Moodle und Brian.study. |
 | **Betrachter** | Alles lesen, nichts bearbeiten – ideal für Referendare oder Vertretungskräfte. |
 | **Administrator** | Systemverwaltung – Benutzer, globale Listen, Vorlagen, Moodle-Anbindung. |
@@ -105,9 +105,9 @@ Oben rechts finden Sie die wichtigsten Symbole:
 
 | Symbol | Bereich |
 |--------|---------|
-| 🏠 Haus | Startseite — der Einheiten-Arbeitsbereich mit Ihren drei Bereichen |
+| 🏠 Haus | Startseite — der Einheiten-Arbeitsbereich mit Ihren drei Bibliotheken |
 | 📖 Buch | Einheiten & Arbeitsbereich |
-| 🗂️ Ebenen | Basismodule |
+| 🗂️ Ebenen | Basis-Einheiten |
 | ✈️ Senden | Export-Center (nur für Export-Rollen sichtbar) |
 | 📄 Dokument | Diese Dokumentation |
 | 🎓 Absolventenhut | Schülerbereich – sehen Sie Ihre Einheiten aus Schülersicht |
@@ -115,7 +115,7 @@ Oben rechts finden Sie die wichtigsten Symbole:
 
 ## Der beste erste Schritt
 
-Legen Sie sich einfach eine **private Einheit** an – die sieht niemand außer Ihnen, und Sie können gefahrlos alles ausprobieren. Und: Solange Sie nirgends aktiv auf „Bearbeiten" drücken, befinden Sie sich überall im sicheren Lese-Modus.
+Legen Sie sich einfach eine Einheit in Ihrer **Privaten Bibliothek** an – die sieht niemand außer Ihnen, und Sie können gefahrlos alles ausprobieren. Und: Solange Sie nirgends aktiv auf „Bearbeiten" drücken, befinden Sie sich überall im sicheren Lese-Modus.
 `,
 
   'einheiten-struktur': `# Einheiten & Struktur: Das Fundament
@@ -140,7 +140,7 @@ Auf der Einheiten-Seite stehen Ihnen drei Erstellungswege zur Auswahl – vom sc
 | **KI-Coach** | Sie haben eine Idee, aber noch keine Struktur | Sie beschreiben Ihr Vorhaben im Chat – der Coach schlägt Ihnen Themenfelder und Lernpakete vor und legt die Struktur auf Wunsch direkt an. |
 | **Assistent (Wizard)** | Sie möchten Schritt für Schritt geführt werden | Ein mehrstufiger Assistent führt Sie durch Grunddaten, Struktur und Lernziele. |
 
-> **Wichtig:** Als Fachlehrkraft landet Ihre neue Einheit automatisch in Ihrem **Privatbereich** – niemand sieht sie außer Ihnen. Mehr dazu im Kapitel [Poolzeit, Austausch & Privat](/docs/bereiche-und-austausch).
+> **Wichtig:** Als Fachlehrkraft landet Ihre neue Einheit automatisch in Ihrer **Privaten Bibliothek** – niemand sieht sie außer Ihnen. Mehr dazu im Kapitel [Die drei Bibliotheken](/docs/bereiche-und-austausch).
 
 ## Das Grundgerüst: Der didaktische Gesamtkontext
 
@@ -340,14 +340,14 @@ Was Sie dort eintragen, ist das, was die Schüler später in ihrer Lernlandkarte
 
 Ein Lernziel bringt nichts, wenn es nicht geübt und geprüft wird. Daher werden Ziele im Pool-Manager fest an Aufgaben geknüpft:
 
-* **Ebene 1 (Basismodule):** Jede Übungsaufgabe erhält ein direkt zugehöriges Lernziel. Das System weiß: *Diese Aufgabe trainiert exakt dieses Ziel.*
+* **Ebene 1 (Basis-Einheiten):** Jede Übungsaufgabe erhält ein direkt zugehöriges Lernziel. Das System weiß: *Diese Aufgabe trainiert exakt dieses Ziel.*
 * **Ebene 2 & 3 (Transfer & Projekte):** In der Lernlandkarte (Tab 3) geben Sie an, welche Grundlagen-Ziele aus Ebene 1 für das Projekt zwingend vorausgesetzt werden.
 
 ### Warum ist das Mapping so wichtig?
 
 Wenn ein Schüler bei einer Projektaufgabe (Ebene 3) scheitert, schaut Brian.study nach, welche Lernziele vorausgesetzt waren. Er sucht dann vollautomatisch die passenden Übungsaufgaben aus Ebene 1 heraus und empfiehlt:
 
-> *„Schau dir noch einmal dieses Basismodul an, um deine Lücke zu schließen!"*
+> *„Schau dir noch einmal diese Basis-Einheit an, um deine Lücke zu schließen!"*
 
 ## Prioritäten setzen
 
@@ -393,27 +393,27 @@ Wenn Sie ein Material an eine Aufgabe der Ebene 2 oder 3 anheften, passiert im H
 Wenn Sie ein Video verlinken und möchten, dass der KI-Tutor inhaltliche Fragen der Schüler dazu beantworten kann, fügen Sie im Materialbereich bitte zusätzlich ein kurzes **Video-Skript oder eine inhaltliche Zusammenfassung als Text** ein. So „weiß" die KI, was in dem Video passiert.
 `,
 
-  'ebene-1-basismodule': `# Ebene 1: Basismodule & Bausteine
+  'ebene-1-basismodule': `# Ebene 1: Basis-Einheiten & Bausteine
 
-## Was sind Basismodule? (Wichtig vorab!)
+## Was sind Basis-Einheiten? (Wichtig vorab!)
 
-Basismodule sind **keine fachübergreifenden Grundlagenmodule**, sondern **einheitenübergreifende Grundlagen innerhalb eines Fachs**. Sie repräsentieren Fähigkeiten, Fertigkeiten oder Fachwissen, das in vielen Einheiten immer wieder gebraucht wird – zum Beispiel „Diagramme lesen" in Erdkunde, „Bruchrechnung" in Mathematik oder „Quellenanalyse" in Geschichte.
+Basis-Einheiten sind **keine fachübergreifenden Grundlagenmodule**, sondern **einheitenübergreifende Grundlagen innerhalb eines Fachs**. Sie repräsentieren Fähigkeiten, Fertigkeiten oder Fachwissen, das in vielen Einheiten immer wieder gebraucht wird – zum Beispiel „Diagramme lesen" in Erdkunde, „Bruchrechnung" in Mathematik oder „Quellenanalyse" in Geschichte.
 
-### Warum gibt es Basismodule als eigenen Bereich?
+### Warum gibt es Basis-Einheiten als eigenen Bereich?
 
-Nicht jede Einheit wird im Pool-Manager vollständig eingepflegt. Trotzdem kommt es vor, dass Aufgaben in einer Einheit Grundlagen voraussetzen, die eigentlich in einer anderen – vielleicht noch nicht angelegten – Einheit geübt werden. Genau hier helfen Basismodule:
+Nicht jede Einheit wird im Pool-Manager vollständig eingepflegt. Trotzdem kommt es vor, dass Aufgaben in einer Einheit Grundlagen voraussetzen, die eigentlich in einer anderen – vielleicht noch nicht angelegten – Einheit geübt werden. Genau hier helfen Basis-Einheiten:
 
-> **Basismodule sind bewusst leere Hüllen.** Sie bündeln Lernziele, die fachübergreifend in Aufgaben (Ebene 2 und Ebene 3) referenziert werden können – auch dann, wenn die eigentliche „Übungseinheit" für diese Grundlage gar nicht im Pool-Manager vorhanden ist.
+> **Basis-Einheiten sind bewusst leere Hüllen.** Sie bündeln Lernziele, die fachübergreifend in Aufgaben (Ebene 2 und Ebene 3) referenziert werden können – auch dann, wenn die eigentliche „Übungseinheit" für diese Grundlage gar nicht im Pool-Manager vorhanden ist.
 
-### Wozu werden Basismodule konkret genutzt?
+### Wozu werden Basis-Einheiten konkret genutzt?
 
 | Anwendungsfall | Erklärung |
 |----------------|-----------|
-| **Lernziel-Mapping bei Ebene-2-Aufgaben** | Im Tab „Lernlandkarte" können Sie Lernziele aus Basismodulen mit einer Transferaufgabe verknüpfen. So weiß der KI-Tutor Brian, welche Grundlagen er bei Wissenslücken empfehlen soll. |
+| **Lernziel-Mapping bei Ebene-2-Aufgaben** | Im Tab „Lernlandkarte" können Sie Lernziele aus Basis-Einheiten mit einer Transferaufgabe verknüpfen. So weiß der KI-Tutor Brian, welche Grundlagen er bei Wissenslücken empfehlen soll. |
 | **Lernziel-Mapping bei Ebene-3-Aufgaben** | Auch bei Projektaufgaben können Basisfähigkeiten als Voraussetzungen hinterlegt werden – z.B. „Ich kann eine Zeitleiste lesen" als Voraussetzung für ein Geschichtsprojekt. |
-| **Referenz ohne eigene Einheit** | Eine Fachschaft pflegt z.B. keine eigene Einheit „Bruchrechnen" im Pool, braucht aber trotzdem das Lernziel „Ich kann Brüche addieren" als Voraussetzung in einer Physik-Aufgabe. Das Basismodul liefert genau diese Möglichkeit. |
+| **Referenz ohne eigene Einheit** | Eine Fachschaft pflegt z.B. keine eigene Einheit „Bruchrechnen" im Pool, braucht aber trotzdem das Lernziel „Ich kann Brüche addieren" als Voraussetzung in einer Physik-Aufgabe. Die Basis-Einheit liefert genau diese Möglichkeit. |
 
-> **Kurz gesagt:** Basismodule sind das Bindeglied zwischen einheitenspezifischen Aufgaben und dem allgemeinen Kompetenz-Fundament eines Fachs.
+> **Kurz gesagt:** Basis-Einheiten sind das Bindeglied zwischen einheitenspezifischen Aufgaben und dem allgemeinen Kompetenz-Fundament eines Fachs.
 
 ---
 
@@ -512,7 +512,7 @@ In der Übersicht der Allgemeinen Aufgaben finden Sie den Button **„Mit KI ent
 | **Kompetenz-Vorschläge** | Die KI schlägt vor, welche Kompetenzen die Schüler benötigen (z.B. „Quellenanalyse", „Recherchieren") |
 | **Übernehmen** | Klicken Sie auf „Als neue Aufgabe übernehmen" – der Text ist danach jederzeit anpassbar |
 
-> **Wichtig zu den Kompetenzen:** Die von der KI vorgeschlagenen Kompetenzen sind zunächst nur „Notizzettel" für Sie. Vergessen Sie nicht, in der **Lernlandkarte (Tab 3)** die echten Basismodule (Ebene 1) mit dieser Aufgabe zu verknüpfen, damit das System weiß, wo Schüler bei Schwierigkeiten üben können.
+> **Wichtig zu den Kompetenzen:** Die von der KI vorgeschlagenen Kompetenzen sind zunächst nur „Notizzettel" für Sie. Vergessen Sie nicht, in der **Lernlandkarte (Tab 3)** die echten Basis-Einheiten (Ebene 1) mit dieser Aufgabe zu verknüpfen, damit das System weiß, wo Schüler bei Schwierigkeiten üben können.
 
 ## Schritt 2: Der Erwartungshorizont (Die Musterlösung)
 
@@ -610,7 +610,7 @@ Im Tabreiter **„KI-Tutor Prompt"** erledigt der Pool-Manager die gesamte Arbei
 Vergessen Sie nicht, im Reiter **„Lernlandkarte"** die Lernziele auszuwählen, die für dieses Projekt zwingend benötigt werden.
 
 * Wenn Sie den **KI-Aufgaben-Wizard** (den „Zauberstab" bei der Aufgabenerstellung) genutzt haben, stehen Ihnen die von der KI vorgeschlagenen Kompetenzen bereits als kleine Tags zur Orientierung zur Verfügung.
-* Verknüpfen Sie hier die passenden **Basismodule (Ebene 1)**, damit Schüler bei Lücken genau wissen, wo sie Grundlagen nacharbeiten müssen.
+* Verknüpfen Sie hier die passenden **Basis-Einheiten (Ebene 1)**, damit Schüler bei Lücken genau wissen, wo sie Grundlagen nacharbeiten müssen.
 `,
 
   'ki-tutor-brian': `# Der KI-Tutor: Brian.study
@@ -814,7 +814,7 @@ An jedem Inhalt finden Sie ein Status-Label:
 Der kürzeste Weg in drei Etappen:
 
 1. **Fertigstellen:** Bauen Sie Ihre private Einheit komplett (Aufgaben freigeben, Arbeitsplan prüfen) und testen Sie sie über die **Vorschau**.
-2. **Zur Poolzeit-Einheit machen (lassen):** Geben Sie die Einheit für das Kollegium frei oder wenden Sie sich direkt an Ihre Fachschaftsleitung – sie übernimmt die Einheit als Poolzeit-Einheit (siehe [Poolzeit, Austausch & Privat](/docs/bereiche-und-austausch)).
+2. **In die Gemeinschaftliche Bibliothek übernehmen (lassen):** Geben Sie die Einheit für das Kollegium frei oder wenden Sie sich direkt an Ihre Fachschaftsleitung – sie übernimmt die Einheit in die Gemeinschaftliche Bibliothek (siehe [Die drei Bibliotheken](/docs/bereiche-und-austausch)).
 3. **Export & Verknüpfung:** Nach finaler Freigabe exportiert das Export-Team die Einheit; in Moodle wird sie über einen LTI-Link mit dem Kurs verbunden (siehe [Moodle-Anbindung](/docs/moodle-anbindung)) – Ihre Schüler:innen klicken in Moodle und landen direkt in der Einheit.
 `,
 
@@ -987,7 +987,7 @@ Prüfen Sie diese Punkte:
 > Ohne Lernziel-Zuordnung weiß der KI-Tutor Brian nicht, welche Übungen er Schülern bei Wissenslücken empfehlen soll.
 
 **Frage: Ich finde das passende Lernziel nicht!**
-> Lernziele aus anderen Einheiten oder Basismodulen können ebenfalls ausgewählt werden. Nutzen Sie die Suchfunktion im Lernziel-Dialog.
+> Lernziele aus anderen Einheiten oder Basis-Einheiten können ebenfalls ausgewählt werden. Nutzen Sie die Suchfunktion im Lernziel-Dialog.
 
 ## Technische Probleme
 
@@ -1006,13 +1006,13 @@ Prüfen Sie diese Punkte:
 ## Private Einheiten & Austausch
 
 **Frage: Warum sehen meine Kollegen meine Einheit nicht?**
-> Ihre Einheit ist vermutlich **privat** (der Standard für neue Einheiten). Geben Sie sie über das Bibliotheks-Symbol für das Kollegium frei – dann erscheint sie im Bereich „Freigegebene Einheiten".
+> Ihre Einheit ist vermutlich **privat** (der Standard für neue Einheiten). Geben Sie sie über das Bibliotheks-Symbol für das Kollegium frei – dann erscheint sie in der „Öffentlichen Bibliothek".
 
-**Frage: Ich habe mir eine Kopie aus der Tauschbörse gezogen – wo ist sie?**
-> In Ihrem Bereich **„Meine privaten Einheiten"**. Die Kopie gehört ganz Ihnen und ist vom Original unabhängig.
+**Frage: Ich habe mir eine Kopie aus der Öffentlichen Bibliothek gezogen – wo ist sie?**
+> In Ihrer **Privaten Bibliothek**. Die Kopie gehört ganz Ihnen und ist vom Original unabhängig.
 
-**Frage: Wie wird meine private Einheit eine offizielle Poolzeit-Einheit?**
-> Das entscheidet die **Fachschaftsleitung** (oder ein Admin) – entweder direkt über das Globus-Symbol oder als Kopie aus der Tauschbörse. Sprechen Sie Ihre Fachschaftsleitung an.
+**Frage: Wie kommt meine private Einheit in die Gemeinschaftliche Bibliothek?**
+> Das entscheidet die **Fachschaftsleitung** (oder ein Admin) – entweder direkt über das Globus-Symbol oder als Kopie aus der Öffentlichen Bibliothek. Sprechen Sie Ihre Fachschaftsleitung an.
 
 ## Schülersicht & Vorschau
 

@@ -75,17 +75,17 @@ export default function BasismodulCard({
       }
       const res = await base44.functions.invoke('deleteEinheit', { einheitId: einheit.id });
       if (res.data?.success) {
-        toast.success('Basismodul erfolgreich gelöscht.');
+        toast.success('Basis-Einheit erfolgreich gelöscht.');
         setShowConfirm(false);
         onDeleteEnd?.();
         queryClient.invalidateQueries({ queryKey: ['basismodule'] });
       } else {
-        toast.error(res.data?.error || 'Fehler beim Löschen des Basismoduls.');
+        toast.error(res.data?.error || 'Fehler beim Löschen der Basis-Einheit.');
         setIsDeleting(false);
         onDeleteEnd?.();
       }
     } catch (err) {
-      toast.error(err.response?.data?.error || err.message || 'Fehler beim Löschen des Basismoduls.');
+      toast.error(err.response?.data?.error || err.message || 'Fehler beim Löschen der Basis-Einheit.');
       setIsDeleting(false);
       onDeleteEnd?.();
     }
@@ -113,7 +113,7 @@ export default function BasismodulCard({
                 <div className="flex items-center gap-1 shrink-0">
                   <Badge className="bg-amber-100 text-amber-800 border border-amber-200 gap-1">
                     <Layers className="w-3 h-3" />
-                    Basismodul
+                    Basis-Einheit
                   </Badge>
                   {einheit.im_austausch === true && (
                     <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-200 gap-1">
@@ -169,7 +169,7 @@ export default function BasismodulCard({
                   <button
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowConfirm(true); }}
                     className="p-1.5 rounded-md border border-border bg-card text-muted-foreground hover:text-destructive hover:border-destructive/40 transition-all"
-                    title="Basismodul löschen"
+                    title="Basis-Einheit löschen"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

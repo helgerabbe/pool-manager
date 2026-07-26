@@ -15,10 +15,10 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
 /**
- * Sektion "Zur Veröffentlichung vorgeschlagen" im Poolzeit-Bereich.
+ * Sektion "Zur Veröffentlichung vorgeschlagen" in der Gemeinschaftlichen Bibliothek.
  *
  * Zeigt private Einheiten, die Kolleg:innen der Fachschaftsleitung zur
- * Übernahme als Poolzeit-Einheit vorgeschlagen haben. Grundsätzlich NUR im
+ * Übernahme in die Gemeinschaftliche Bibliothek vorgeschlagen haben. Grundsätzlich NUR im
  * Ansichtsmodus (Schüler-Vorschau) — kein Workspace-Zugriff.
  * Fachschaftsleitung/Admin kann freigeben (setEinheitSichtbarkeitSecure,
  * inkl. Freigabe-Reset aller Inhalte) oder den Vorschlag ablehnen.
@@ -45,7 +45,7 @@ export default function VorgeschlageneEinheitenSektion({ einheiten, rolle, benut
         sichtbarkeit: 'oeffentlich',
       });
       if (res.data?.success) {
-        toast.success(`„${einheit.titel_der_einheit}" ist jetzt eine Poolzeit-Einheit. Alle Inhalte starten als „nicht freigegeben" — Freigabe über das Freigabecockpit.`);
+        toast.success(`„${einheit.titel_der_einheit}" ist jetzt in der Gemeinschaftlichen Bibliothek. Alle Inhalte starten als „nicht freigegeben" — Freigabe über das Freigabecockpit.`);
         setFreigabeEinheit(null);
         queryClient.invalidateQueries({ queryKey: ['einheiten'] });
       } else {
@@ -167,10 +167,10 @@ export default function VorgeschlageneEinheitenSektion({ einheiten, rolle, benut
       <Dialog open={!!freigabeEinheit} onOpenChange={(o) => !o && setFreigabeEinheit(null)}>
         <DialogContent className="w-[95%] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Als Poolzeit-Einheit freigeben?</DialogTitle>
+            <DialogTitle>In die Gemeinschaftliche Bibliothek freigeben?</DialogTitle>
             <DialogDescription>
               „{freigabeEinheit?.titel_der_einheit}" wird mit allen Inhalten zur offiziellen
-              Poolzeit-Einheit und für die Kolleg:innen des Fachs zur Bearbeitung geöffnet.
+              Einheit der Gemeinschaftlichen Bibliothek und für die Kolleg:innen des Fachs zur Bearbeitung geöffnet.
               Alle Aktivitäten, Lernpakete und Aufgaben starten dabei als „nicht freigegeben"
               und müssen über das Freigabecockpit aktiv freigegeben werden.
             </DialogDescription>

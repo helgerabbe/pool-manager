@@ -58,7 +58,7 @@ export default function EinheitWeitergebenButton({ einheit }) {
       <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
         className="p-1.5 rounded-md bg-white/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-primary hover:border-primary/40 hover:bg-blue-50 transition-all"
-        title="An Kollegen weitergeben — eigene Kopie im Privatbereich des Empfängers"
+        title="An Kollegen weitergeben — eigene Kopie in der Privaten Bibliothek des Empfängers"
       >
         <Send className="w-4 h-4" />
       </button>
@@ -68,7 +68,7 @@ export default function EinheitWeitergebenButton({ einheit }) {
           <DialogHeader>
             <DialogTitle>An Kollegen weitergeben</DialogTitle>
             <DialogDescription>
-              „{einheit.titel_der_einheit}" wird als unabhängige Kopie in den Privatbereich
+              „{einheit.titel_der_einheit}" wird als unabhängige Kopie in die Private Bibliothek
               der ausgewählten Person gelegt. Ihr Original bleibt unverändert bei Ihnen.
             </DialogDescription>
           </DialogHeader>

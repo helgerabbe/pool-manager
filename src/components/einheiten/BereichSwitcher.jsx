@@ -4,7 +4,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 /**
  * Prominenter Umschalter für die vier Einheiten-Bereiche:
- * Private Einheiten · Freigegebene Einheiten (Austausch) · Poolzeit-Einheiten · Basismodule.
+ * Private Bibliothek · Öffentliche Bibliothek (Austausch) · Gemeinschaftliche Bibliothek · Basis-Einheiten.
  * Die aktive Kachel ist farblich klar hervorgehoben, damit immer eindeutig
  * ist, in welchem Bereich man sich befindet.
  */
@@ -12,7 +12,7 @@ export default function BereichSwitcher({ ansicht, onChange, istAdmin }) {
   const bereiche = [
     {
       key: 'privat',
-      label: istAdmin ? 'Private Einheiten (alle)' : 'Meine privaten Einheiten',
+      label: istAdmin ? 'Private Bibliothek (alle)' : 'Private Bibliothek',
       desc: 'Ihr persönlicher Arbeitsbereich — nur für Sie sichtbar',
       icon: Lock,
       active: 'border-amber-500 bg-amber-50 text-amber-900 ring-2 ring-amber-500/30',
@@ -20,7 +20,7 @@ export default function BereichSwitcher({ ansicht, onChange, istAdmin }) {
     },
     {
       key: 'austausch',
-      label: 'Freigegebene Einheiten',
+      label: 'Öffentliche Bibliothek',
       desc: 'Tauschbörse des Kollegiums — anschauen und private Kopie ziehen',
       icon: Library,
       active: 'border-emerald-500 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-500/30',
@@ -28,7 +28,7 @@ export default function BereichSwitcher({ ansicht, onChange, istAdmin }) {
     },
     {
       key: 'oeffentlich',
-      label: 'Poolzeit-Einheiten',
+      label: 'Gemeinschaftliche Bibliothek',
       desc: 'Verbindliche Einheiten für die Poolzeit — von der Fachschaft betreut',
       icon: Rocket,
       active: 'border-blue-500 bg-blue-50 text-blue-900 ring-2 ring-blue-500/30',
@@ -36,8 +36,8 @@ export default function BereichSwitcher({ ansicht, onChange, istAdmin }) {
     },
     {
       key: 'basismodule',
-      label: 'Basismodule',
-      desc: 'Verbindliche Wissensspeicher — zum Nachlernen und Nachschlagen in den Poolzeit-Einheiten',
+      label: 'Basis-Einheiten',
+      desc: 'Verbindliche Wissensspeicher — zum Nachlernen und Nachschlagen in den Einheiten der Gemeinschaftlichen Bibliothek',
       icon: Layers,
       active: 'border-violet-500 bg-violet-50 text-violet-900 ring-2 ring-violet-500/30',
       iconActive: 'bg-violet-500 text-white',

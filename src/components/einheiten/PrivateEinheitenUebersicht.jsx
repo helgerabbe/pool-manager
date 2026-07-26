@@ -60,7 +60,7 @@ export default function PrivateEinheitenUebersicht({ einheiten = [] }) {
       <EmptyState
         icon={Lock}
         title="Keine privaten Einheiten"
-        description="Momentan hat niemand private Einheiten im Privatbereich."
+        description="Momentan hat niemand Einheiten in seiner Privaten Bibliothek."
       />
     );
   }

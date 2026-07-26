@@ -22,10 +22,10 @@ export default function BasismodulVerwendungSection({ einheitId }) {
       <h2 className="text-lg font-semibold flex items-center gap-1.5">
         <Link2 className="w-4 h-4 text-violet-600" />
         Verwendung in Einheiten
-        <HelpBadge text="Zeigt, in welchen Einheiten Lernziele dieses Basismoduls als Basis-Vorwissen mit Aufgaben verknüpft sind. Solange solche Verknüpfungen bestehen, kann weder das Basismodul noch das verlinkte Lernziel gelöscht werden." />
+        <HelpBadge text="Zeigt, in welchen Einheiten Lernziele dieser Basis-Einheit als Basis-Vorwissen mit Aufgaben verknüpft sind. Solange solche Verknüpfungen bestehen, kann weder die Basis-Einheit noch das verlinkte Lernziel gelöscht werden." />
       </h2>
       <p className="text-sm text-muted-foreground mt-0.5 mb-3">
-        Hier sind die Lernziele dieses Basismoduls als Vorwissen verlinkt.
+        Hier sind die Lernziele dieser Basis-Einheit als Vorwissen verlinkt.
       </p>
 
       <div className="p-5 rounded-xl border bg-card space-y-3">
@@ -36,7 +36,7 @@ export default function BasismodulVerwendungSection({ einheitId }) {
           </div>
         ) : verwendungen.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6 border border-dashed rounded-lg">
-            Dieses Basismodul ist noch in keiner Einheit verlinkt.
+            Diese Basis-Einheit ist noch in keiner Einheit verlinkt.
           </p>
         ) : (
           verwendungen.map((v) => (

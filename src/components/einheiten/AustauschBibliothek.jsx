@@ -5,10 +5,10 @@ import EmptyState from '@/components/shared/EmptyState';
 import AustauschEinheitRow from '@/components/einheiten/AustauschEinheitRow';
 
 /**
- * Austausch-Bibliothek ("Freigegebene Einheiten"): Tauschbörse des Kollegiums.
+ * Austausch-Bibliothek ("Öffentliche Bibliothek"): Tauschbörse des Kollegiums.
  * Zeigt alle privaten Einheiten mit im_austausch=true — gruppiert wahlweise
  * nach Fach oder nach Kolleg:in. Kolleg:innen ziehen sich private Kopien;
- * Fachschaftsleitung/Admin können eine Einheit als Poolzeit-Einheit kopieren.
+ * Fachschaftsleitung/Admin können eine Einheit in die Gemeinschaftliche Bibliothek kopieren.
  */
 export default function AustauschBibliothek({ einheiten, rolle, benutzerFaecher = [], currentUserEmail, istAdmin }) {
   const [gruppierung, setGruppierung] = useState('fach'); // 'fach' | 'kollege'
@@ -17,7 +17,7 @@ export default function AustauschBibliothek({ einheiten, rolle, benutzerFaecher 
     return (
       <EmptyState
         icon={Library}
-        title="Noch keine freigegebenen Einheiten"
+        title="Die Öffentliche Bibliothek ist noch leer"
         description="Hier erscheinen private Einheiten, die Kolleg:innen für das Kollegium freigegeben haben. Geben Sie eine eigene private Einheit über das Bibliotheks-Symbol frei."
       />
     );
@@ -25,7 +25,7 @@ export default function AustauschBibliothek({ einheiten, rolle, benutzerFaecher 
 
   const key = gruppierung === 'fach'
     ? (e) => e.fach || 'Ohne Fach'
-    : (e) => (e.ist_basismodul === true ? 'Basismodule' : (e.besitzer_email || 'Unbekannt'));
+    : (e) => (e.ist_basismodul === true ? 'Basis-Einheiten' : (e.besitzer_email || 'Unbekannt'));
   const gruppen = [...einheiten]
     .sort((a, b) => key(a).localeCompare(key(b), 'de') || (a.titel_der_einheit || '').localeCompare(b.titel_der_einheit || '', 'de'))
     .reduce((acc, e) => {

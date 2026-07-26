@@ -17,7 +17,7 @@ export default function BasismodulLoeschBlockiertDialog({ open, onClose, titel, 
             Löschen nicht möglich
           </DialogTitle>
           <DialogDescription>
-            Das Basismodul <strong>„{titel}"</strong> kann nicht gelöscht werden, weil seine
+            Die Basis-Einheit <strong>„{titel}"</strong> kann nicht gelöscht werden, weil ihre
             Lernziele noch als Basis-Vorwissen in folgenden Einheiten verlinkt sind:
           </DialogDescription>
         </DialogHeader>
@@ -43,7 +43,7 @@ export default function BasismodulLoeschBlockiertDialog({ open, onClose, titel, 
 
         <p className="text-xs text-muted-foreground shrink-0">
           Entfernen Sie zuerst die Verknüpfungen in den genannten Aufgaben (Tab „Lernzielanalyse"),
-          bevor Sie das Basismodul löschen.
+          bevor Sie die Basis-Einheit löschen.
         </p>
 
         <DialogFooter className="shrink-0">

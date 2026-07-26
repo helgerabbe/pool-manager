@@ -26,7 +26,7 @@ export default function EinheitBasismodulButton({ einheit }) {
         einheit_id: einheit.id,
       });
       if (res.data?.success) {
-        toast.success(`„${einheit.titel_der_einheit}" ist jetzt ein Basismodul.`);
+        toast.success(`„${einheit.titel_der_einheit}" ist jetzt eine Basis-Einheit.`);
         setOpen(false);
         queryClient.invalidateQueries({ queryKey: ['einheiten'] });
         queryClient.invalidateQueries({ queryKey: ['basismodule'] });
@@ -45,7 +45,7 @@ export default function EinheitBasismodulButton({ einheit }) {
       <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
         className="p-1.5 rounded-md bg-white/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-amber-700 hover:border-amber-400/50 hover:bg-amber-50 transition-all flex items-center gap-1.5"
-        title="Zum Basismodul machen — nur Fachschaftsleitung/Admin. Dashboards, Allgemeine Aufgaben und Projektaufgaben werden dabei entfernt; nur die Lernpakete bleiben erhalten."
+        title="Zur Basis-Einheit machen — nur Fachschaftsleitung/Admin. Arbeitspläne, Allgemeine Aufgaben und Projektaufgaben werden dabei entfernt; nur die Lernpakete bleiben erhalten."
       >
         <Layers className="w-4 h-4" />
       </button>
@@ -53,22 +53,22 @@ export default function EinheitBasismodulButton({ einheit }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="w-[95%] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Zum Basismodul machen?</DialogTitle>
+            <DialogTitle>Zur Basis-Einheit machen?</DialogTitle>
             <DialogDescription>
-              „{einheit.titel_der_einheit}" verlässt den Privatbereich und wird zum
-              Basismodul (Wissensspeicher für nachfolgende Jahrgänge).
+              „{einheit.titel_der_einheit}" verlässt die Private Bibliothek und wird zur
+              Basis-Einheit (Wissensspeicher für nachfolgende Jahrgänge).
             </DialogDescription>
           </DialogHeader>
 
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
             <p className="text-sm font-semibold text-amber-900 flex items-center gap-1.5">
               <AlertTriangle className="w-4 h-4 shrink-0" />
-              Wichtig: Basismodule verfügen nur über Lernpakete
+              Wichtig: Basis-Einheiten verfügen nur über Lernpakete
             </p>
             <ul className="text-sm text-amber-900 list-disc pl-5 space-y-1">
               <li>Alle <strong>Allgemeinen Aufgaben</strong> werden unwiderruflich entfernt.</li>
               <li>Alle <strong>Projektaufgaben</strong> werden unwiderruflich entfernt.</li>
-              <li>Alle <strong>Lerntyp-Dashboards</strong> werden entfernt.</li>
+              <li>Alle <strong>Arbeitspläne</strong> werden entfernt.</li>
               <li>Nur die <strong>Themenfelder und Lernpakete</strong> bleiben erhalten.</li>
             </ul>
           </div>
@@ -78,7 +78,7 @@ export default function EinheitBasismodulButton({ einheit }) {
             <Button onClick={handleConvert} disabled={isSaving} className="gap-2 bg-amber-600 hover:bg-amber-700">
               {isSaving && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
               <Layers className="w-4 h-4" />
-              Zum Basismodul machen
+              Zur Basis-Einheit machen
             </Button>
           </DialogFooter>
         </DialogContent>

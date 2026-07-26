@@ -135,7 +135,7 @@ function SchnellErstellenModal({ open, onOpenChange, onCreated, defaultPrivat = 
               <p className="text-xs text-muted-foreground">
                 {nurPrivatErlaubt
                   ? 'Als Fachlehrkraft erstellen Sie Einheiten immer privat. Öffentliche Einheiten legt die Fachschaftsleitung an.'
-                  : 'Die Einheit landet nur in Ihrem Privatbereich — Sie können sie später jederzeit veröffentlichen.'}
+                  : 'Die Einheit landet nur in Ihrer Privaten Bibliothek — Sie können sie später jederzeit veröffentlichen.'}
               </p>
             </div>
             <Switch checked={privat} onCheckedChange={setPrivat} disabled={nurPrivatErlaubt} />
@@ -295,7 +295,7 @@ export default function EinheitenListe() {
           <BereichSwitcher ansicht={ansicht} onChange={setAnsicht} istAdmin={permissions.istAdmin} />
         </div>
         <HelpBadge
-          text="Poolzeit-Einheiten sind die verbindlichen, von der Fachschaft betreuten Einheiten für die Poolzeit. Freigegebene Einheiten sind die Tauschbörse des Kollegiums: private Einheiten, die Kolleg:innen zur Verfügung stellen — Sie können sich davon jederzeit eine eigene private Kopie ziehen. Private Einheiten sind Ihr persönlicher Arbeitsbereich. Basismodule sind verbindliche Wissensspeicher aus vorangegangenen Jahrgängen — ihre Lernziele werden in den Poolzeit-Einheiten angeboten, damit Schüler:innen Themen nachlernen oder nachschlagen können."
+          text="Die Gemeinschaftliche Bibliothek enthält die verbindlichen, von der Fachschaft betreuten Einheiten für die Poolzeit. Die Öffentliche Bibliothek ist die Tauschbörse des Kollegiums: private Einheiten, die Kolleg:innen zur Verfügung stellen — Sie können sich davon jederzeit eine eigene private Kopie ziehen. Die Private Bibliothek ist Ihr persönlicher Arbeitsbereich. Basis-Einheiten sind verbindliche Wissensspeicher aus vorangegangenen Jahrgängen — ihre Lernziele werden in den Einheiten der Gemeinschaftlichen Bibliothek angeboten, damit Schüler:innen Themen nachlernen oder nachschlagen können."
           docsSlug="einheiten-struktur"
         />
       </div>
@@ -307,25 +307,19 @@ export default function EinheitenListe() {
         <div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
             <BookOpen className="w-6 h-6 text-accent" />
-            {ansicht === 'privat' ? 'Private Einheiten' : ansicht === 'austausch' ? 'Freigegebene Einheiten' : 'Poolzeit-Einheiten'}
+            {ansicht === 'privat' ? 'Private Bibliothek' : ansicht === 'austausch' ? 'Öffentliche Bibliothek' : 'Gemeinschaftliche Bibliothek'}
             <HelpBadge
               text="Eine Einheit ist das Grundgerüst Ihrer Unterrichtsplanung. Jede Einheit enthält Themenfelder, Lernpakete und Aufgaben."
               docsSlug="einheiten-struktur"
             />
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {einheiten.length}{' '}
-            {ansicht === 'privat'
-              ? `private Einheit${einheiten.length !== 1 ? 'en' : ''}`
-              : ansicht === 'austausch'
-                ? `freigegebene Einheit${einheiten.length !== 1 ? 'en' : ''}`
-                : `Poolzeit-Einheit${einheiten.length !== 1 ? 'en' : ''}`}{' '}
-            insgesamt
+            {einheiten.length} Einheit{einheiten.length !== 1 ? 'en' : ''} insgesamt
           </p>
         </div>
         {/* Erstellen dürfen: Admin + Fachschaftsleitung (öffentlich & privat)
             sowie Fachlehrkräfte (NUR privat — wird in Modal/Wizard erzwungen).
-            Im Bereich "Freigegebene Einheiten" gibt es kein Erstellen —
+            In der Öffentlichen Bibliothek gibt es kein Erstellen —
             dort landen Einheiten nur per Freigabe. */}
         {ansicht !== 'austausch' && (permissions.kannEinheitVerwalten || rolle === ROLLEN.LEHRKRAFT) && (
           <div className="flex items-center gap-2">

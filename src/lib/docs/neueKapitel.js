@@ -6,64 +6,64 @@
 
 export const NEUE_KAPITEL = {
 
-  'bereiche-und-austausch': `# Die drei Bereiche: Poolzeit, Austausch & Privat
+  'bereiche-und-austausch': `# Die drei Bibliotheken: Gemeinschaftlich, Öffentlich & Privat
 
-Der Pool-Manager organisiert alle Unterrichtseinheiten in **drei klar getrennten Bereichen**. Auf der Einheiten-Seite wählen Sie oben über die drei großen Kacheln, in welchem Bereich Sie sich bewegen – die aktive Kachel ist immer farblich hervorgehoben, damit Sie jederzeit wissen, wo Sie sind.
+Der Pool-Manager organisiert alle Unterrichtseinheiten in **drei klar getrennten Bibliotheken**. Auf der Einheiten-Seite wählen Sie oben über die großen Kacheln, in welcher Bibliothek Sie sich bewegen – die aktive Kachel ist immer farblich hervorgehoben, damit Sie jederzeit wissen, wo Sie sind.
 
-| Bereich | Farbe | Was ist das? |
+| Bibliothek | Farbe | Was ist das? |
 |---------|-------|--------------|
-| **Poolzeit-Einheiten** | 🔵 Blau | Die verbindlichen, offiziellen Einheiten für die Poolzeit. Sie werden gemeinschaftlich von der Fachschaft erstellt und von der Fachschaftsleitung betreut. Hier gelten strenge Regeln (Freigaben, Sperren, Export-Workflow). |
-| **Freigegebene Einheiten** | 🟢 Grün | Die **Tauschbörse des Kollegiums**. Hier stellen Kolleg:innen ihre privaten Einheiten zum Stöbern bereit. Sie können jede Einheit ansehen und sich mit einem Klick eine eigene private Kopie ziehen. |
-| **Private Einheiten** | 🟡 Gelb | Ihr **persönlicher Arbeitsbereich**. Private Einheiten sehen nur Sie selbst (und Administratoren). Hier experimentieren Sie frei – ohne Abstimmung mit der Fachschaft. |
+| **Gemeinschaftliche Bibliothek** | 🔵 Blau | Die verbindlichen, offiziellen Einheiten für die Poolzeit. Sie werden gemeinschaftlich von der Fachschaft erstellt und von der Fachschaftsleitung betreut. Hier gelten strenge Regeln (Freigaben, Sperren, Export-Workflow). |
+| **Öffentliche Bibliothek** | 🟢 Grün | Die **Tauschbörse des Kollegiums**. Hier stellen Kolleg:innen ihre privaten Einheiten zum Stöbern bereit. Sie können jede Einheit ansehen und sich mit einem Klick eine eigene private Kopie ziehen. |
+| **Private Bibliothek** | 🟡 Gelb | Ihr **persönlicher Arbeitsbereich**. Private Einheiten sehen nur Sie selbst (und Administratoren). Hier experimentieren Sie frei – ohne Abstimmung mit der Fachschaft. |
 
 ## Der Grundgedanke
 
-Nicht jede gute Einheit muss sofort eine offizielle Poolzeit-Einheit sein. Der typische Lebensweg einer Einheit sieht so aus:
+Nicht jede gute Einheit muss sofort in die Gemeinschaftliche Bibliothek. Der typische Lebensweg einer Einheit sieht so aus:
 
 1. **Privat starten:** Sie legen eine private Einheit an und bauen sie in Ruhe für Ihren eigenen Unterricht.
-2. **Freigeben (optional):** Wenn die Einheit gut geworden ist, geben Sie sie für das Kollegium frei – sie erscheint in der Tauschbörse.
+2. **Freigeben (optional):** Wenn die Einheit gut geworden ist, geben Sie sie für das Kollegium frei – sie erscheint in der Öffentlichen Bibliothek.
 3. **Kolleg:innen ziehen Kopien:** Andere Lehrkräfte schauen sich Ihre Einheit an und übernehmen sie als eigene private Kopie, die sie beliebig anpassen dürfen.
-4. **Aufstieg zur Poolzeit-Einheit (optional):** Die Fachschaftsleitung entdeckt eine besonders gelungene Einheit und übernimmt sie als offizielle Poolzeit-Einheit.
+4. **Aufstieg in die Gemeinschaftliche Bibliothek (optional):** Die Fachschaftsleitung entdeckt eine besonders gelungene Einheit und übernimmt sie als offizielle, verbindliche Einheit.
 
-## Private Einheiten: Ihr Sandkasten
+## Private Bibliothek: Ihr Sandkasten
 
 * **Standard für Fachlehrkräfte:** Wenn Sie als Fachlehrkraft eine neue Einheit anlegen, ist sie automatisch privat.
 * **Volle Freiheit:** Sie können bei privaten Einheiten sogar auswählen, welche der vier Intensitätsstufen-Arbeitspläne Sie anbieten möchten (z. B. nur einen einzigen Lernpfad statt aller vier).
-* **Duplikate sind immer privat:** Wenn Sie eine bestehende Einheit duplizieren, landet die Kopie immer in Ihrem Privatbereich.
+* **Duplikate sind immer privat:** Wenn Sie eine bestehende Einheit duplizieren, landet die Kopie immer in Ihrer Privaten Bibliothek.
 
 ## Eine Einheit für das Kollegium freigeben
 
 Auf der Karte Ihrer privaten Einheit finden Sie das **Bibliotheks-Symbol** 📚:
 
-* **Ein Klick** → die Einheit erscheint im Bereich „Freigegebene Einheiten" und trägt bei Ihnen das grüne Badge **„Freigegeben"**.
+* **Ein Klick** → die Einheit erscheint in der „Öffentlichen Bibliothek" und trägt bei Ihnen das grüne Badge **„Freigegeben"**.
 * **Noch ein Klick** → Sie ziehen die Freigabe zurück; die Einheit verschwindet aus der Bibliothek. **Wichtig:** Kopien, die sich Kolleg:innen bereits gezogen haben, bleiben davon unberührt – sie gehören den Kolleg:innen.
 * Ihr Original bleibt dabei immer **Ihre** private Einheit. Niemand kann darin etwas verändern.
 
-## In der Tauschbörse stöbern
+## In der Öffentlichen Bibliothek stöbern
 
-Im Bereich „Freigegebene Einheiten" können Sie die Liste **nach Fächern** oder **nach Kolleg:innen** gruppieren. Pro Einheit stehen Ihnen zur Verfügung:
+In der Öffentlichen Bibliothek können Sie die Liste **nach Fächern** oder **nach Kolleg:innen** gruppieren. Pro Einheit stehen Ihnen zur Verfügung:
 
 | Symbol | Aktion | Wer darf das? |
 |--------|--------|---------------|
 | 👁️ Auge | **Vorschau** aus Schülersicht öffnen | Alle |
-| 📄 Kopieren | **Private Kopie ziehen** – eine eigene, unabhängige Kopie in Ihren Privatbereich übernehmen | Alle |
-| 🚀 Rakete | **Zu den Poolzeit-Einheiten kopieren** – die Einheit wird als neue, offizielle Poolzeit-Einheit übernommen (das Original bleibt beim Besitzer) | Nur Fachschaftsleitung im Fach / Admin |
+| 📄 Kopieren | **Private Kopie ziehen** – eine eigene, unabhängige Kopie in Ihre Private Bibliothek übernehmen | Alle |
+| 🚀 Rakete | **In die Gemeinschaftliche Bibliothek kopieren** – die Einheit wird als neue, offizielle Einheit übernommen (das Original bleibt beim Besitzer) | Nur Fachschaftsleitung im Fach / Admin |
 | ↩️ Zurückziehen | Freigabe zurücknehmen | Nur Besitzer / Admin |
 
 > **Tipp:** Bei gezogenen Kopien vermerkt das System die Herkunft („Von … erhalten") – so bleibt nachvollziehbar, von wem eine gute Idee ursprünglich stammt.
 
-## Der Weg zur Poolzeit-Einheit
+## Der Weg in die Gemeinschaftliche Bibliothek
 
-Eine Einheit wird auf zwei Wegen zur offiziellen Poolzeit-Einheit – **beide sind der Fachschaftsleitung (im jeweiligen Fach) und Administratoren vorbehalten**:
+Eine Einheit gelangt auf zwei Wegen in die Gemeinschaftliche Bibliothek – **beide sind der Fachschaftsleitung (im jeweiligen Fach) und Administratoren vorbehalten**:
 
-1. **Direkt umwandeln:** Über das Globus-Symbol auf einer privaten Einheit („Zur Poolzeit-Einheit machen"). Die Einheit verlässt den Privatbereich und wird öffentlich.
-2. **Aus der Tauschbörse kopieren:** Über das Raketen-Symbol in der Bibliothek. Es entsteht eine **Kopie** als Poolzeit-Einheit – das private Original der Kollegin/des Kollegen bleibt unangetastet.
+1. **Direkt übernehmen:** Über das Globus-Symbol auf einer privaten Einheit („In die Gemeinschaftliche Bibliothek"). Die Einheit verlässt die Private Bibliothek und wird öffentlich.
+2. **Aus der Öffentlichen Bibliothek kopieren:** Über das Raketen-Symbol. Es entsteht eine **Kopie** in der Gemeinschaftlichen Bibliothek – das private Original der Kollegin/des Kollegen bleibt unangetastet.
 
-> **Warum so streng?** Poolzeit-Einheiten sind verbindlich für alle Schüler:innen. Damit die Qualität stimmt, entscheidet die Fachschaftsleitung, was in diesen Bereich aufgenommen wird.
+> **Warum so streng?** Einheiten der Gemeinschaftlichen Bibliothek sind verbindlich für alle Schüler:innen. Damit die Qualität stimmt, entscheidet die Fachschaftsleitung, was dort aufgenommen wird.
 
 ## Eine Einheit gezielt weitergeben
 
-Neben der öffentlichen Tauschbörse gibt es auch das **direkte Weitergeben**: Über das Weitergeben-Symbol auf Ihrer privaten Einheit schicken Sie eine Kopie gezielt in den Privatbereich einer einzelnen Kollegin / eines einzelnen Kollegen – z. B. bei einem Klassenwechsel oder zur Vertretung.
+Neben der Öffentlichen Bibliothek gibt es auch das **direkte Weitergeben**: Über das Weitergeben-Symbol auf Ihrer privaten Einheit schicken Sie eine Kopie gezielt in die Private Bibliothek einer einzelnen Kollegin / eines einzelnen Kollegen – z. B. bei einem Klassenwechsel oder zur Vertretung.
 `,
 
   'schuelerbereich': `# Der Schülerbereich

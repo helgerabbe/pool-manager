@@ -141,16 +141,16 @@ export default function EinheitCard({
                   {istPrivat && einheit.aus_basismodul === true && (
                     <Badge
                       className="bg-amber-100 text-amber-800 border border-amber-200 gap-1"
-                      title="Diese Einheit ist aus einem Basismodul hervorgegangen und wurde beim Kopieren in eine normale private Einheit umgewandelt."
+                      title="Diese Einheit ist aus einer Basis-Einheit hervorgegangen und wurde beim Kopieren in eine normale private Einheit umgewandelt."
                     >
                       <Layers className="w-3 h-3" />
-                      Aus Basismodul
+                      Aus Basis-Einheit
                     </Badge>
                   )}
                   {istPrivat && einheit.zur_veroeffentlichung_vorgeschlagen === true && (
                     <Badge
                       className="bg-sky-100 text-sky-800 border border-sky-200 gap-1"
-                      title="Diese Einheit ist der Fachschaftsleitung zur Veröffentlichung als Poolzeit-Einheit vorgeschlagen."
+                      title="Diese Einheit ist der Fachschaftsleitung zur Übernahme in die Gemeinschaftliche Bibliothek vorgeschlagen."
                     >
                       Vorgeschlagen
                     </Badge>
@@ -239,7 +239,7 @@ export default function EinheitCard({
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDuplicate(); }}
                     disabled={isCopying}
                     className="p-1 rounded-md border border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/40 transition-all disabled:opacity-60"
-                    title="Einheit als private Kopie duplizieren (landet in Ihrem Privatbereich)"
+                    title="Einheit als private Kopie duplizieren (landet in Ihrer Privaten Bibliothek)"
                   >
                     {isCopying
                       ? <div className="w-3.5 h-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />

@@ -66,7 +66,7 @@ export default function BasismoduleListe() {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <div className="w-10 h-10 border-4 border-muted border-t-primary rounded-full animate-spin" />
-        <p className="text-sm text-muted-foreground font-medium">Basismodule werden geladen, bitte einen Moment Geduld...</p>
+        <p className="text-sm text-muted-foreground font-medium">Basis-Einheiten werden geladen, bitte einen Moment Geduld...</p>
       </div>
     );
   }
@@ -77,33 +77,33 @@ export default function BasismoduleListe() {
         <div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
             <Layers className="w-6 h-6 text-amber-600" />
-            Basismodule
-            <HelpBadge text="Basismodule sind Wissensspeicher aus vorangegangenen Jahrgängen – z.B. die Prozentrechnung, auf die spätere Einheiten zurückgreifen. Sie funktionieren wie reguläre Einheiten, werden aber nicht über Dashboards exportiert." />
+            Basis-Einheiten
+            <HelpBadge text="Basis-Einheiten sind Wissensspeicher aus vorangegangenen Jahrgängen – z.B. die Prozentrechnung, auf die spätere Einheiten zurückgreifen. Sie funktionieren wie reguläre Einheiten, werden aber nicht über Arbeitspläne exportiert." />
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">{basismodule.length} Basismodul{basismodule.length !== 1 ? 'e' : ''} insgesamt</p>
+          <p className="text-sm text-muted-foreground mt-1">{basismodule.length} Basis-Einheit{basismodule.length !== 1 ? 'en' : ''} insgesamt</p>
         </div>
         {permissions.kannEinheitVerwalten && (
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1">
               <Button onClick={() => setManuellOpen(true)} className="gap-2 bg-blue-100 text-blue-900 border border-blue-200 shadow-sm hover:bg-blue-200">
                 <Plus className="w-4 h-4" />
-                Neues Basismodul
+                Neue Basis-Einheit
               </Button>
-              <HelpBadge text="Schnell ein neues Basismodul anlegen: Nur Titel, Fach und Jahrgang erforderlich. Inhalte können Sie später ergänzen." />
+              <HelpBadge text="Schnell eine neue Basis-Einheit anlegen: Nur Titel, Fach und Jahrgang erforderlich. Inhalte können Sie später ergänzen." />
             </div>
             <div className="flex items-center gap-1">
               <Button onClick={() => navigate('/einheit/coach?basismodul=1')} className="gap-2 bg-blue-300 text-blue-950 border border-blue-300 shadow-sm hover:bg-blue-400">
                 <Bot className="w-4 h-4" />
                 Mit KI-Coach planen
               </Button>
-              <HelpBadge text="Der Einheiten-Coach ist ein KI-Sparringspartner: Sie entwickeln im Gespräch die Struktur Ihres Basismoduls. Das Ergebnis wird anschließend an den Wizard übergeben und als Basismodul angelegt." />
+              <HelpBadge text="Der Einheiten-Coach ist ein KI-Sparringspartner: Sie entwickeln im Gespräch die Struktur Ihrer Basis-Einheit. Das Ergebnis wird anschließend an den Wizard übergeben und als Basis-Einheit angelegt." />
             </div>
             <div className="flex items-center gap-1">
               <Button onClick={() => navigate('/einheit/create?basismodul=1')} className="gap-2 bg-blue-500 text-white border border-blue-500 shadow-sm hover:bg-blue-600">
                 <Wand2 className="w-4 h-4" />
-                Basismodul-Wizard
+                Basis-Einheiten-Wizard
               </Button>
-              <HelpBadge text="Der geführte Wizard hilft Ihnen Schritt für Schritt durch die Erstellung des Basismoduls. Empfohlen für neue Basismodule." />
+              <HelpBadge text="Der geführte Wizard hilft Ihnen Schritt für Schritt durch die Erstellung der Basis-Einheit. Empfohlen für neue Basis-Einheiten." />
             </div>
           </div>
         )}
@@ -114,7 +114,7 @@ export default function BasismoduleListe() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Basismodule durchsuchen..."
+              placeholder="Basis-Einheiten durchsuchen..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -159,13 +159,13 @@ export default function BasismoduleListe() {
       ) : basismodule.length === 0 ? (
         <EmptyState
           icon={Layers}
-          title="Noch keine Basismodule"
-          description="Erstellen Sie Ihr erstes Basismodul (z.B. Prozentrechnung), um Grundwissen aus vorangegangenen Jahrgängen abzubilden."
-          actionLabel={permissions.kannEinheitVerwalten ? 'Neues Basismodul erstellen' : undefined}
+          title="Noch keine Basis-Einheiten"
+          description="Erstellen Sie Ihre erste Basis-Einheit (z.B. Prozentrechnung), um Grundwissen aus vorangegangenen Jahrgängen abzubilden."
+          actionLabel={permissions.kannEinheitVerwalten ? 'Neue Basis-Einheit erstellen' : undefined}
           onAction={permissions.kannEinheitVerwalten ? () => navigate('/einheit/create?basismodul=1') : undefined}
         />
       ) : (
-        <p className="text-sm text-muted-foreground text-center py-10">Keine Basismodule gefunden.</p>
+        <p className="text-sm text-muted-foreground text-center py-10">Keine Basis-Einheiten gefunden.</p>
       )}
 
       <BasismodulManuellDialog
@@ -177,7 +177,7 @@ export default function BasismoduleListe() {
         }}
       />
 
-      <DeletionOverlay isVisible={isDeletingAny} message="Basismodul wird unwiderruflich gelöscht... Bitte warten." />
+      <DeletionOverlay isVisible={isDeletingAny} message="Basis-Einheit wird unwiderruflich gelöscht... Bitte warten." />
     </div>
   );
 }

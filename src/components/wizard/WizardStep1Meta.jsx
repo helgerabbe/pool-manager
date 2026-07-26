@@ -96,17 +96,17 @@ export default function WizardStep1Meta({ onDone, istBasismodul = false, default
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold">
-          {istBasismodul ? 'Schritt 1: Meta-Daten des Basismoduls' : 'Schritt 1: Meta-Daten der Einheit'}
+          {istBasismodul ? 'Schritt 1: Meta-Daten der Basis-Einheit' : 'Schritt 1: Meta-Daten der Einheit'}
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
           {istBasismodul
-            ? 'Legen Sie die grundlegenden Informationen für das neue Basismodul fest.'
+            ? 'Legen Sie die grundlegenden Informationen für die neue Basis-Einheit fest.'
             : 'Legen Sie die grundlegenden Informationen für die neue Unterrichtseinheit fest.'}
         </p>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5 max-w-lg">
         <div className="space-y-2">
-          <Label>{istBasismodul ? 'Titel des Basismoduls (Unterrichtseinheit) *' : 'Titel der Einheit *'}</Label>
+          <Label>{istBasismodul ? 'Titel der Basis-Einheit (Unterrichtseinheit) *' : 'Titel der Einheit *'}</Label>
           <Input
             placeholder="z. B. Lineare Gleichungen"
             value={form.titel_der_einheit}
@@ -152,7 +152,7 @@ export default function WizardStep1Meta({ onDone, istBasismodul = false, default
             durch den Wizard-State an generateUnitStructure weitergereicht. */}
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
-            <Label>Was soll in {istBasismodul ? 'diesem Basismodul' : 'dieser Einheit'} gelernt werden? <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Label>Was soll in {istBasismodul ? 'dieser Basis-Einheit' : 'dieser Einheit'} gelernt werden? <span className="text-muted-foreground font-normal">(optional)</span></Label>
             <SpeechInputButton
               value={form.beschreibung}
               onResult={(text) => setForm({ ...form, beschreibung: text })}
@@ -182,7 +182,7 @@ export default function WizardStep1Meta({ onDone, istBasismodul = false, default
               <p className="text-xs text-muted-foreground">
                 {nurPrivatErlaubt
                   ? 'Als Fachlehrkraft erstellen Sie Einheiten immer privat. Öffentliche Einheiten legt die Fachschaftsleitung an.'
-                  : 'Die Einheit landet nur in Ihrem Privatbereich — Sie können sie später jederzeit veröffentlichen.'}
+                  : 'Die Einheit landet nur in Ihrer Privaten Bibliothek — Sie können sie später jederzeit veröffentlichen.'}
               </p>
             </div>
             <Switch checked={privat} onCheckedChange={setPrivat} disabled={nurPrivatErlaubt} />

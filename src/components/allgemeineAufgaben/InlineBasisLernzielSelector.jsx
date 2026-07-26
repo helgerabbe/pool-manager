@@ -94,7 +94,7 @@ export default function InlineBasisLernzielSelector({
 
       {/* Basismodul Dropdown */}
       <div className="space-y-2">
-        <label className="text-xs font-medium text-muted-foreground mb-1 block">Basismodul</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">Basis-Einheit</label>
         <Select
           value={selectedModul}
           onValueChange={setSelectedModul}
@@ -113,7 +113,7 @@ export default function InlineBasisLernzielSelector({
         </Select>
         {filteredModule.length === 0 && (
           <p className="text-[10px] text-muted-foreground">
-            Keine Basismodule für {einheitFach} verfügbar
+            Keine Basis-Einheiten für {einheitFach} verfügbar
           </p>
         )}
       </div>

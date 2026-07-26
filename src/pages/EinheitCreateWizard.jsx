@@ -209,7 +209,7 @@ export default function EinheitCreateWizard() {
         <h1 className="text-2xl font-bold text-foreground">
           {draftId
             ? 'Entwurf weiterbearbeiten'
-            : istBasismodul ? 'Neues Basismodul erstellen' : 'Neue Einheit erstellen'}
+            : istBasismodul ? 'Neue Basis-Einheit erstellen' : 'Neue Einheit erstellen'}
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">
           {draftId
