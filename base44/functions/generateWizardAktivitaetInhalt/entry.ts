@@ -216,6 +216,31 @@ const TEXT_FELD_REGELN = {
   inhalt_typ: 'Wähle die Option für direkt eingegebenen Text (nicht Datei/Upload), da du den Inhalt selbst lieferst.',
 };
 
+// InvokeLLM liefert das Schema-Objekt je nach Modell teils direkt, teils
+// in einem { response: ... }-Umschlag — und darin teils als JSON-String.
+// Alle drei Formen unterstützen.
+function unwrapLLM(res) {
+  let out = res;
+  if (out && typeof out === 'object' && 'response' in out) {
+    out = out.response;
+  }
+  if (typeof out === 'string') {
+    const cleaned = out.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    try {
+      out = JSON.parse(cleaned);
+    } catch {
+      // Fallback: rohe Steuerzeichen (z. B. echte Zeilenumbrüche innerhalb
+      // von String-Werten) durch escaped \n ersetzen und erneut parsen.
+      try {
+        out = JSON.parse(cleaned.replace(/[\u0000-\u001f]+/g, '\\n'));
+      } catch {
+        return null;
+      }
+    }
+  }
+  return out;
+}
+
 function buildKontext(einheit, paket, lernziele) {
   return {
     fach: einheit.fach,
@@ -334,11 +359,11 @@ Deno.serve(async (req) => {
             }),
           },
         ]),
-        model: 'claude_sonnet_4_6',
         response_json_schema: spez.schema,
       });
 
-      const fieldValues = spez.build(llmResponse);
+      const unwrapped = unwrapLLM(llmResponse);
+      const fieldValues = spez.build(unwrapped);
       if (!fieldValues) {
         console.warn('[generateWizardAktivitaetInhalt] build failed, raw LLM response:', JSON.stringify(llmResponse).slice(0, 1500));
         return Response.json({ success: false, error: 'KI-Inhalt unvollständig. Bitte erneut versuchen.' });
@@ -455,11 +480,10 @@ Deno.serve(async (req) => {
           }),
         },
       ]),
-      model: 'claude_sonnet_4_6',
       response_json_schema: responseSchema,
     });
 
-    const generated = llmResponse?.field_values || {};
+    const generated = unwrapLLM(llmResponse)?.field_values || {};
 
     // Validieren + mergen (nur leere Felder werden gesetzt).
     const merged = { ...existing };
