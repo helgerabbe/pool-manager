@@ -7,13 +7,13 @@
  * bestätigten Vorschlag (Liste von Aktivitäts-Hüllen + Briefing) auf
  * einem Lernpaket.
  *
- * Zwei Modi:
+ * Modus (Super-Wizard-Konzept 2026-07-26 — NICHT-DESTRUKTIV):
  *   – mode = 'additive'   → bestehende Aktivitäten bleiben unangetastet,
  *                           neue Hüllen werden ANGEHÄNGT (reihenfolge =
  *                           letzte_reihenfolge_in_phase + 1, +2, …).
- *   – mode = 'overwrite'  → alle bestehenden Aktivitäten dieses Pakets
- *                           werden zu Tombstones (sync_status='to_delete'),
- *                           neue Hüllen werden ab reihenfolge=0 angelegt.
+ *   Der frühere 'overwrite'-Modus (Tombstonen des Bestands) wurde bewusst
+ *   entfernt: Der Wizard darf niemals löschen oder überschreiben. Nicht
+ *   mehr benötigte Aktivitäten löscht die Lehrkraft proaktiv selbst.
  *
  * Lock-Modell (konsistent zu assignActivityToLernpaket /
  * deleteActivityWithTombstoneAndCascade):
@@ -38,7 +38,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.27';
 
 const VALID_PHASES = new Set(['Input', 'Übung', 'Abschluss']);
-const VALID_MODES = new Set(['additive', 'overwrite']);
+const VALID_MODES = new Set(['additive']);
 const LOCK_TIMEOUT_MS = 30 * 60 * 1000;
 const MAX_BRIEFING_LENGTH = 5000;
 
@@ -159,29 +159,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ── 5. Mode 'overwrite': bestehende Aktivitäten tombstonen ───────
-    let tombstonedCount = 0;
-    if (mode === 'overwrite') {
-      const bestehende = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
-        lernpaket_id: lernpaketId,
-      }, undefined, 1000);
-      // Nur die, die noch nicht Tombstone sind
-      const zuTombstonen = bestehende.filter((a) => a.sync_status !== 'to_delete');
-      await Promise.all(
-        zuTombstonen.map((a) =>
-          base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(a.id, {
-            sync_status: 'to_delete',
-          })
-        )
-      );
-      tombstonedCount = zuTombstonen.length;
-    }
-
-    // ── 6. Reihenfolge-Basis pro Phase ermitteln ─────────────────────
-    // Im Overwrite-Modus: ab 0. Im Additive-Modus: nach dem letzten
-    // existierenden, NICHT-tombstoned Eintrag in dieser Phase.
+    // ── 5. Reihenfolge-Basis pro Phase ermitteln ─────────────────────
+    // Immer additiv: nach dem letzten existierenden, NICHT-tombstoned
+    // Eintrag in dieser Phase. (Der frühere Overwrite-Pfad wurde entfernt.)
+    const tombstonedCount = 0;
     const reihenfolgeBasis = { Input: 0, 'Übung': 0, Abschluss: 0 };
-    if (mode === 'additive') {
+    {
       const bestehende = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
         lernpaket_id: lernpaketId,
       }, undefined, 1000);

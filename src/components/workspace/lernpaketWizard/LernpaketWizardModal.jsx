@@ -22,9 +22,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Sparkles, Loader2, Wand2, Package, Target, Info, X } from 'lucide-react';
+import { Sparkles, Loader2, Wand2, Package, Target } from 'lucide-react';
 import WizardProposalPreview from './WizardProposalPreview';
-import WizardConflictDialog from './WizardConflictDialog';
+import WizardBestandsAnalyse from './WizardBestandsAnalyse';
 import WizardGlossarSidebar from './WizardGlossarSidebar';
 import SpeechInputButton from '@/components/ui/SpeechInputButton';
 
@@ -34,7 +34,6 @@ export default function LernpaketWizardModal({
   open,
   onClose,
   paket,
-  existingActivityCount = 0,
 }) {
   const queryClient = useQueryClient();
 
@@ -43,28 +42,22 @@ export default function LernpaketWizardModal({
   const [proposal, setProposal] = useState(null);
   const [korrekturen, setKorrekturen] = useState([]);
 
-  const [conflictOpen, setConflictOpen] = useState(false);
+  // Super-Wizard Etappe 1: Wie soll die KI mit dem Bestand umgehen?
+  // 'ergaenzen' = vorhandene Aktivitäten berücksichtigen, nur Lücken füllen.
+  // 'neu' = Struktur unabhängig neu denken (Bestand bleibt trotzdem erhalten).
+  const [strukturModus, setStrukturModus] = useState('ergaenzen');
   const [isApplying, setIsApplying] = useState(false);
   const textareaRef = useRef(null);
 
-  // Info-Banner "schon befüllt"-Hinweis. Dauerhaft pro Browser-Profil
-  // wegklickbar — sobald die Lehrkraft den Hinweis einmal zur Kenntnis
-  // genommen hat, taucht er nicht mehr auf. Wir nutzen localStorage,
-  // damit der Hinweis auch nach einem Page-Reload weg bleibt.
-  const INFO_DISMISS_KEY = 'lernpaketWizard.existingActivitiesInfoDismissed';
-  const [infoDismissed, setInfoDismissed] = useState(() => {
-    try {
-      return typeof window !== 'undefined' && window.localStorage.getItem(INFO_DISMISS_KEY) === '1';
-    } catch {
-      return false;
-    }
+  // Bestandsanalyse: vorhandene (nicht-gelöschte) Aktivitäten dieses Pakets.
+  const { data: bestandAktivitaeten = [] } = useQuery({
+    queryKey: ['wizard-bestand', paket?.id],
+    queryFn: () => base44.entities.LernpaketPhaseAktivitaet.filter({
+      lernpaket_id: paket.id,
+      sync_status: { $ne: 'to_delete' },
+    }),
+    enabled: open && !!paket?.id,
   });
-  const dismissInfo = () => {
-    setInfoDismissed(true);
-    try {
-      window.localStorage.setItem(INFO_DISMISS_KEY, '1');
-    } catch { /* ignore */ }
-  };
 
   // Aktivitäten-Katalog für die Glossar-Sidebar (gefiltert auf is_active).
   const { data: aktivitaetenKatalog = [] } = useQuery({
@@ -110,7 +103,7 @@ export default function LernpaketWizardModal({
       setBriefing(paket?.kreativ_briefing || '');
       setProposal(null);
       setKorrekturen([]);
-      setConflictOpen(false);
+      setStrukturModus('ergaenzen');
     }
   }, [open, paket?.id, paket?.kreativ_briefing]);
 
@@ -136,6 +129,7 @@ export default function LernpaketWizardModal({
       const res = await base44.functions.invoke('generateLernpaketAktivitaeten', {
         lernpaketId: paket.id,
         briefing: trimmed,
+        strukturModus: bestandAktivitaeten.length > 0 ? strukturModus : 'neu',
       });
       const data = res?.data || res;
       if (!data?.success) {
@@ -167,20 +161,16 @@ export default function LernpaketWizardModal({
     });
   };
 
-  // ── Schritt 4: Übernehmen ────────────────────────────────────────
+  // ── Schritt 4: Übernehmen — immer additiv (nicht-destruktiv) ─────
   const handleApplyClick = () => {
     if (totalProposalItems === 0) {
       toast.error('Vorschlag ist leer.');
       return;
     }
-    if (existingActivityCount > 0) {
-      setConflictOpen(true);
-    } else {
-      doApply('additive');
-    }
+    doApply();
   };
 
-  const doApply = async (mode) => {
+  const doApply = async () => {
     setIsApplying(true);
     try {
       // proposal.phasen → flache items-Liste in der Reihenfolge
@@ -195,7 +185,7 @@ export default function LernpaketWizardModal({
       const res = await base44.functions.invoke('applyLernpaketWizardProposal', {
         lernpaketId: paket.id,
         items,
-        mode,
+        mode: 'additive',
         briefing: briefing.trim(),
       });
       const data = res?.data || res;
@@ -204,15 +194,15 @@ export default function LernpaketWizardModal({
         return;
       }
       toast.success(
-        mode === 'overwrite'
-          ? `${data.stats.items_created} Aktivitäten ersetzt.`
-          : `${data.stats.items_created} Aktivitäten ergänzt.`
+        bestandAktivitaeten.length > 0
+          ? `${data.stats.items_created} Aktivitäten ergänzt — Bestehendes blieb unverändert.`
+          : `${data.stats.items_created} Aktivitäten angelegt.`
       );
       // Caches invalidieren, die Aktivitäten/Lernpaket-Daten zeigen.
       queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
       queryClient.invalidateQueries({ queryKey: ['workspace-data'] });
       queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-      setConflictOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['wizard-bestand', paket.id] });
       onClose();
     } catch (err) {
       console.error('[LernpaketWizardModal] apply failed', err);
@@ -243,27 +233,16 @@ export default function LernpaketWizardModal({
             </DialogDescription>
           </DialogHeader>
 
-          {/* Wegklickbarer Info-Banner: steht ÜBER dem Kontext-Anker, weil er
-              nur einmal zur Kenntnis genommen werden muss. Persistiert in
-              localStorage, damit er nach Reload nicht wieder auftaucht. */}
-          {existingActivityCount > 0 && !infoDismissed && (
-            <div className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 flex items-start gap-2 text-xs text-blue-900">
-              <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-blue-600" />
-              <p className="flex-1 leading-snug">
-                <strong>Dieses Lernpaket ist bereits mit {existingActivityCount} Aktivität{existingActivityCount !== 1 ? 'en' : ''} befüllt.</strong>{' '}
-                Du kannst hier trotzdem in Ruhe weiter mit der KI experimentieren — es wird nichts automatisch gelöscht. Erst beim Klick auf <strong>„Übernehmen"</strong> fragen wir dich, ob du <strong>zusätzlich</strong> hinzufügen oder <strong>ersetzen</strong> möchtest.
-              </p>
-              <button
-                type="button"
-                onClick={dismissInfo}
-                className="shrink-0 p-0.5 rounded hover:bg-blue-100 text-blue-700"
-                title="Hinweis ausblenden"
-                aria-label="Hinweis ausblenden"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
+          {/* Bestandsanalyse + Struktur-Modus-Wahl (Super-Wizard Etappe 1):
+              Zeigt, was schon im Paket liegt, und lässt wählen, ob die KI
+              den Bestand berücksichtigt oder die Struktur neu denkt. */}
+          <WizardBestandsAnalyse
+            aktivitaeten={bestandAktivitaeten}
+            katalog={aktivitaetenKatalog}
+            strukturModus={strukturModus}
+            onModusChange={(m) => { setStrukturModus(m); setProposal(null); setKorrekturen([]); }}
+            disabled={isGenerating || isApplying}
+          />
 
           {/* Kompakter Kontext-Anker: Paket + Lernziele kombiniert in einer
               zwei­spaltigen, dichten Anordnung — spart ~50% vertikalen Platz. */}
@@ -393,15 +372,6 @@ export default function LernpaketWizardModal({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <WizardConflictDialog
-        open={conflictOpen}
-        onClose={() => setConflictOpen(false)}
-        existingCount={existingActivityCount}
-        newCount={totalProposalItems}
-        onChoose={doApply}
-        isApplying={isApplying}
-      />
     </>
   );
 }

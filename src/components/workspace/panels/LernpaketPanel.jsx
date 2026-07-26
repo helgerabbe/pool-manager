@@ -539,7 +539,6 @@ export default function LernpaketPanel({
         open={wizardOpen}
         onClose={handleCloseWizard}
         paket={paket}
-        existingActivityCount={lernpaketAktivitaeten.filter(a => a.lernpaket_id === paket.id).length}
       />
     </div>
   );

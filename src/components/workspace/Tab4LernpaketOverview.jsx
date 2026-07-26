@@ -3,7 +3,8 @@
  *
  * Kompakte Lernpaket-Übersicht für Tab 4 (Aufgaben erstellen).
  * Zeigt dieselben Inhalte wie Tab 3 (LernpaketPanel), aber OHNE
- * "Bearbeiten" und "Mit KI füllen" — nur der Freigabe-Button bleibt.
+ * "Bearbeiten" — Freigabe-Button und "Mit KI füllen" (Super-Wizard,
+ * zweiter Einstiegspunkt neben Tab 3) sind verfügbar.
  *
  * Aktivitäten-Zeilen sind anklickbar und navigieren direkt zur Aktivität.
  */
@@ -15,9 +16,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
-  Clock, Target, AlertTriangle, Lock, ArrowRight, CheckCircle2, Loader2, Eye
+  Clock, Target, AlertTriangle, Lock, ArrowRight, CheckCircle2, Loader2, Eye, Wand2
 } from 'lucide-react';
+import { toast } from 'sonner';
 import LernpaketPreviewModal from '@/components/workspace/preview/LernpaketPreviewModal';
+import LernpaketWizardModal from '@/components/workspace/lernpaketWizard/LernpaketWizardModal';
+import { useLernpaketLock } from '@/hooks/useLocks';
 import { cn } from '@/lib/utils';
 import { useCanToggleLernpaketRelease } from '@/hooks/useReleaseLock';
 import useSetReleaseStatus from '@/hooks/useSetReleaseStatus';
@@ -80,6 +84,46 @@ export default function Tab4LernpaketOverview({
 
   const [previewOpen, setPreviewOpen] = useState(false);
 
+  // ── Super-Wizard ("Mit KI füllen") — zweiter Einstiegspunkt in Tab 5 ──
+  // Gleicher Lock-Lifecycle wie in Tab 3 (LernpaketPanel): Lock erwerben,
+  // dann Modal öffnen; beim Schließen Lock wieder freigeben.
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [isAcquiringLock, setIsAcquiringLock] = useState(false);
+  const { canEdit, isLockedByOther, lockedByEmail, lockErrorMessage, acquireLock, releaseLock } =
+    useLernpaketLock(paket.id);
+
+  const handleOpenWizard = async () => {
+    if (isAcquiringLock || canEdit || isLockedByOther) return;
+    setIsAcquiringLock(true);
+    try {
+      const ok = await acquireLock();
+      if (!ok) {
+        toast.error(
+          lockErrorMessage ||
+            (lockedByEmail
+              ? `🔒 Dieses Lernpaket wird aktuell von ${lockedByEmail} bearbeitet.`
+              : 'Lock konnte nicht erworben werden.')
+        );
+        return;
+      }
+      setWizardOpen(true);
+    } catch (err) {
+      console.error('[Tab4LernpaketOverview] acquireLock (wizard) failed:', err);
+      toast.error('Fehler beim Sperren des Lernpakets.');
+    } finally {
+      setIsAcquiringLock(false);
+    }
+  };
+
+  const handleCloseWizard = async () => {
+    setWizardOpen(false);
+    try {
+      await releaseLock();
+    } catch (err) {
+      console.warn('[Tab4LernpaketOverview] releaseLock (wizard) failed:', err);
+    }
+  };
+
   const activePhases = ['Input', 'Übung', 'Abschluss'].filter(
     phase => (phasenConfig[phase] || {}).disabled !== true
   );
@@ -121,6 +165,29 @@ export default function Tab4LernpaketOverview({
         >
           <Eye className="w-3.5 h-3.5" /> Vorschau
         </Button>
+
+        {/* Super-Wizard: Lernpaket mit KI füllen */}
+        {kannBearbeiten && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleOpenWizard}
+            disabled={isAcquiringLock || isLockedByOther || isReleased}
+            title={
+              isReleased
+                ? '🔒 Lernpaket ist freigegeben – Inhalte können nicht mehr bearbeitet werden.'
+                : isLockedByOther
+                  ? `🔒 Wird gerade von ${lockedByEmail} bearbeitet`
+                  : 'Lernpaket mit KI-Assistent füllen'
+            }
+            className="gap-2 bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100 hover:text-blue-900"
+          >
+            {isAcquiringLock
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : <Wand2 className="w-3.5 h-3.5 text-blue-600" />}
+            Mit KI füllen
+          </Button>
+        )}
 
         {/* Freigabe-Button */}
         {kannBearbeiten && (
@@ -175,6 +242,12 @@ export default function Tab4LernpaketOverview({
         katalog={aktivitaetenKatalog}
         masters={alleMasters}
         lernziele={paketZiele}
+      />
+
+      <LernpaketWizardModal
+        open={wizardOpen}
+        onClose={handleCloseWizard}
+        paket={paket}
       />
 
       {/* Zugeordnete Aktivitäten */}
