@@ -14,6 +14,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Sparkles, Loader2, CheckCircle2, SkipForward, AlertTriangle, CircleDashed } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -23,11 +24,28 @@ export default function WizardInhalteGenerator({ paket, aktivitaeten = [], katal
   const queryClient = useQueryClient();
   const [statuses, setStatuses] = useState({});
   const [isRunning, setIsRunning] = useState(false);
+  // Auswahl: undefined = ausgewählt (Default: alle), explizit false = abgewählt.
+  const [selection, setSelection] = useState({});
 
   const katalogById = new Map(katalog.map((k) => [k.id, k.name]));
   const leere = aktivitaeten.filter((a) => a.is_complete !== true && a.content_status !== 'approved');
 
   if (leere.length === 0) return null;
+
+  const isSelected = (id) => selection[id] !== false;
+  const ausgewaehlte = leere.filter((a) => isSelected(a.id));
+  const alleAusgewaehlt = ausgewaehlte.length === leere.length;
+
+  const toggleSelection = (id) =>
+    setSelection((prev) => ({ ...prev, [id]: prev[id] === false }));
+
+  const toggleAlle = () => {
+    if (alleAusgewaehlt) {
+      setSelection(Object.fromEntries(leere.map((a) => [a.id, false])));
+    } else {
+      setSelection({});
+    }
+  };
 
   const setStatus = (id, status) => setStatuses((prev) => ({ ...prev, [id]: status }));
 
@@ -36,7 +54,7 @@ export default function WizardInhalteGenerator({ paket, aktivitaeten = [], katal
     onBusyChange?.(true);
     let done = 0, skipped = 0, failed = 0;
 
-    for (const a of leere) {
+    for (const a of ausgewaehlte) {
       setStatus(a.id, { state: 'running' });
       try {
         const res = await base44.functions.invoke('generateWizardAktivitaetInhalt', { activityId: a.id });
@@ -85,18 +103,30 @@ export default function WizardInhalteGenerator({ paket, aktivitaeten = [], katal
     <div className="rounded-md border border-violet-200 bg-violet-50/50 px-3 py-2.5 space-y-2 text-xs">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <p className="font-semibold text-foreground">
-          Inhalte für {leere.length} leere Aktivität{leere.length !== 1 ? 'en' : ''} generieren
+          Inhalte für leere Aktivitäten generieren — {ausgewaehlte.length} von {leere.length} ausgewählt
         </p>
-        <Button
-          type="button"
-          size="sm"
-          onClick={run}
-          disabled={disabled || isRunning}
-          className="gap-2 h-7 text-xs"
-        >
-          {isRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-          {isRunning ? 'Generiere…' : 'Inhalte generieren'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleAlle}
+            disabled={disabled || isRunning}
+            className="text-[11px] text-primary hover:underline disabled:opacity-50"
+          >
+            {alleAusgewaehlt ? 'Keine auswählen' : 'Alle auswählen'}
+          </button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={run}
+            disabled={disabled || isRunning || ausgewaehlte.length === 0}
+            className="gap-2 h-7 text-xs"
+          >
+            {isRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+            {isRunning
+              ? 'Generiere…'
+              : `Inhalte generieren (${ausgewaehlte.length})`}
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-1">
@@ -105,11 +135,20 @@ export default function WizardInhalteGenerator({ paket, aktivitaeten = [], katal
           return (
             <div
               key={a.id}
+              onClick={() => !isRunning && !disabled && toggleSelection(a.id)}
               className={cn(
-                'flex items-start gap-2 px-2 py-1 rounded border bg-background',
-                s?.state === 'error' ? 'border-destructive/40' : 'border-border'
+                'flex items-start gap-2 px-2 py-1 rounded border bg-background cursor-pointer select-none',
+                s?.state === 'error' ? 'border-destructive/40' : 'border-border',
+                !isSelected(a.id) && 'opacity-50'
               )}
             >
+              <Checkbox
+                checked={isSelected(a.id)}
+                onCheckedChange={() => toggleSelection(a.id)}
+                onClick={(e) => e.stopPropagation()}
+                disabled={isRunning || disabled}
+                className="shrink-0 mt-0.5 h-3.5 w-3.5"
+              />
               <span className="shrink-0 mt-0.5">{statusIcon(s)}</span>
               <span className="shrink-0">{PHASE_ICON[a.phase] || ''}</span>
               <div className="flex-1 min-w-0">
