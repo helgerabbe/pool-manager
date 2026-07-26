@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { frageAufgabenAssistent } from '@/lib/aufgabenAssistent';
 import AssistentNachricht from './AssistentNachricht';
 import AssistentEntwurfVorschlag from './AssistentEntwurfVorschlag';
+import SpeechInputButton from '@/components/ui/SpeechInputButton';
 
 /**
  * Aufgaben-Assistent (Etappe 2): KI-Dialog, in dem die Lehrkraft eine
@@ -131,6 +132,14 @@ export default function AufgabenAssistentDialog({ open, onOpenChange, einheit, o
               ))}
             </div>
           )}
+          <div className="flex justify-end">
+            <SpeechInputButton
+              value={input}
+              onResult={(text) => setInput(text)}
+              disabled={loading || uploading}
+              maxSeconds={60}
+            />
+          </div>
           <div className="flex items-end gap-2">
             <label className="shrink-0 p-2 rounded-md border cursor-pointer hover:bg-muted/50 transition-colors" title="Material hochladen">
               {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
