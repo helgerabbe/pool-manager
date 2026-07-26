@@ -86,6 +86,12 @@ function SchnellErstellenModal({ open, onOpenChange, onCreated, defaultPrivat = 
 
   const isSubmitting = createMutation.isPending;
 
+  // Gemeinschaftliche (nicht-private) Einheiten: nur Fächer mit
+  // ist_gemeinschaftsfach anbieten. Private Einheiten: alle Fächer.
+  const waehlbareFaecher = privat
+    ? faecher
+    : faecher.filter(f => f.ist_gemeinschaftsfach !== false);
+
   const isValid = form.titel_der_einheit.trim() && form.fach && form.jahrgangsstufe;
 
   return (
@@ -112,7 +118,7 @@ function SchnellErstellenModal({ open, onOpenChange, onCreated, defaultPrivat = 
               onChange={e => setForm({ ...form, fach: e.target.value })}
             >
               <option value="" disabled>Fach auswählen...</option>
-              {faecher.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
+              {waehlbareFaecher.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
             </select>
           </div>
           <div className="space-y-2">

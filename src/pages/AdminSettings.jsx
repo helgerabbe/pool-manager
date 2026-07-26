@@ -172,7 +172,9 @@ export default function AdminSettings() {
               <CardTitle className="text-base">Fächer verwalten</CardTitle>
               <CardDescription>
                 Aktive Fächer erscheinen in allen Dropdowns der App. Inaktive Fächer sind ausgeblendet,
-                bestehende Einheiten bleiben erhalten.
+                bestehende Einheiten bleiben erhalten. „Gemeinschaftlich" steuert, ob das Fach beim
+                Erstellen von Einheiten der Gemeinschaftlichen Bibliothek wählbar ist — private und
+                Basis-Einheiten sind immer für alle aktiven Fächer möglich.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -181,7 +183,7 @@ export default function AdminSettings() {
                 queryKey={['lookupFaecher']}
                 items={faecherRaw}
                 labelField="name"
-                createDefaults={{ ist_poolzeit_fach: true }}
+                createDefaults={{ ist_poolzeit_fach: true, ist_gemeinschaftsfach: true }}
                 renderExtra={(values, setValues) => (
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="flex items-center gap-1.5">
@@ -202,6 +204,18 @@ export default function AdminSettings() {
                         className="cursor-pointer"
                       />
                       Poolzeit
+                    </label>
+                    <label
+                      className="flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap cursor-pointer"
+                      title="Steht dieses Fach beim Erstellen von Einheiten der Gemeinschaftlichen Bibliothek zur Auswahl? Private und Basis-Einheiten sind für alle Fächer möglich."
+                    >
+                      <input
+                        type="checkbox"
+                        checked={values.ist_gemeinschaftsfach !== false}
+                        onChange={e => setValues({ ist_gemeinschaftsfach: e.target.checked })}
+                        className="cursor-pointer"
+                      />
+                      Gemeinschaftlich
                     </label>
                   </div>
                 )}

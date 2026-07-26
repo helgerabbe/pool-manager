@@ -82,6 +82,12 @@ export default function WizardStep1Meta({ onDone, istBasismodul = false, default
     }
   }, [istBasismodul, phasen, form.zeit_phase_id]);
 
+  // Gemeinschaftliche (nicht-private, nicht-Basis) Einheiten: nur Fächer mit
+  // ist_gemeinschaftsfach anbieten. Private und Basis-Einheiten: alle Fächer.
+  const waehlbareFaecher = (privat || istBasismodul)
+    ? faecher
+    : faecher.filter(f => f.ist_gemeinschaftsfach !== false);
+
   const canSubmit = form.fach && form.titel_der_einheit.trim() && form.jahrgangsstufe && form.zeit_phase_id;
 
   const handleSubmit = async (e) => {
@@ -120,7 +126,7 @@ export default function WizardStep1Meta({ onDone, istBasismodul = false, default
             <Select value={form.fach} onValueChange={v => setForm({ ...form, fach: v })}>
               <SelectTrigger><SelectValue placeholder="Fach wählen" /></SelectTrigger>
               <SelectContent>
-                {faecher.map(f => <SelectItem key={f.id} value={f.name}>{f.name}</SelectItem>)}
+                {waehlbareFaecher.map(f => <SelectItem key={f.id} value={f.name}>{f.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
