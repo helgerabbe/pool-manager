@@ -112,9 +112,12 @@ export function isPaketLocked(paket) {
 /**
  * Berechnet den Ampel-Status eines Lernpakets (neue phasenbasierte Logik).
  *
- * - ROT:   Mindestens eine aktive Phase hat KEINE Aktivität zugeordnet.
+ * - ROT:   Mindestens eine aktive Phase hat KEINE Aktivität zugeordnet,
+ *          ODER mindestens eine Aktivität in einer aktiven Phase ist
+ *          inhaltlich unvollständig (is_complete=false und nicht freigegeben).
  * - GELB:  Paket ist aktuell durch einen anderen Nutzer gesperrt.
- * - GRÜN:  Nicht gesperrt UND alle aktiven Phasen haben eine Aktivität.
+ * - GRÜN:  Nicht gesperrt, alle aktiven Phasen haben eine Aktivität UND
+ *          alle Aktivitäten sind vollständig.
  *
  * @param {object}   paket
  * @param {object[]} lernziele  — (nicht mehr primär genutzt, für Kompatibilität erhalten)
@@ -144,6 +147,16 @@ export function getLernpaketStatus(paket, lernziele, aufgaben, userEmail = '', m
       return !paketAktivitaeten.some(pa => pa.phase === key);
     });
     if (hatUnvollstaendigePhase) return 'red';
+
+    // Inhaltliche Vollständigkeit (Fix 2026-07-26): Solange in einer aktiven
+    // Phase auch nur EINE Aktivität unvollständig ist, ist das Lernpaket
+    // selbst unvollständig — egal wie viele Aktivitäten zugeordnet sind.
+    const hatUnvollstaendigeAktivitaet = paketAktivitaeten.some(pa => {
+      const phase = config[pa.phase] || {};
+      if (phase.disabled === true) return false;
+      return pa.content_status !== 'approved' && pa.is_complete !== true;
+    });
+    if (hatUnvollstaendigeAktivitaet) return 'red';
   } else {
     // Fallback auf alte Logik für Rückwärtskompatibilität
     const hatUnvollstaendigePhase = PHASE_KEYS.some(key => {

@@ -39,7 +39,6 @@ export default function LernpaketPanel({
 }) {
   const onNavigate = onNavigateRaw;
   const paketZiele = lernziele.filter(lz => lz.lernpaket_id === paket.id);
-  const pStatus = getLernpaketStatus(paket, paketZiele, aufgaben, userEmail);
   const [expandedPhase, setExpandedPhase] = useState(null);
   const [localTitel, setLocalTitel] = useState(paket.titel_des_pakets || '');
   const [localPhasenConfig, setLocalPhasenConfig] = useState(paket.phasen_konfiguration || {});
@@ -69,6 +68,9 @@ export default function LernpaketPanel({
 
   // Release-Logik für den kompakten Button in der Aktions-Leiste
   const paketAktivitaetenForRelease = lernpaketAktivitaeten.filter(a => a.lernpaket_id === paket.id);
+  // Status-Badge: mit Aktivitäten berechnen, damit inhaltliche
+  // Unvollständigkeit (is_complete=false) das Paket ehrlich rot zeigt.
+  const pStatus = getLernpaketStatus(paket, paketZiele, aufgaben, userEmail, [], lernpaketAktivitaeten);
   const releaseReadiness = useLernpaketReleaseReadiness(paket, paketAktivitaetenForRelease);
   const canToggleRelease = useCanToggleLernpaketRelease(paket, einheit);
   const { data: lockedDashboardMemberships = [] } = useQuery({
