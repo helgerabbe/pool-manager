@@ -166,9 +166,10 @@ const ENTWURF_SCHEMA = {
         type: 'object',
         properties: {
           idee: { type: 'string', description: 'Kurzer Titel der Idee.' },
-          beschreibung: { type: 'string', description: 'Was tun die Schüler:innen konkret, mit welchem Material, und warum?' },
+          beschreibung: { type: 'string', description: 'Was tun die Schüler:innen in der Aufgabe konkret — Schritt für Schritt, mit welchem Material?' },
+          ziel: { type: 'string', description: 'Mit welchem Ziel: Was sollen die Schüler:innen dadurch lernen bzw. können?' },
         },
-        required: ['idee', 'beschreibung'],
+        required: ['idee', 'beschreibung', 'ziel'],
       },
     },
     uebung: {
@@ -178,8 +179,9 @@ const ENTWURF_SCHEMA = {
         properties: {
           idee: { type: 'string' },
           beschreibung: { type: 'string' },
+          ziel: { type: 'string' },
         },
-        required: ['idee', 'beschreibung'],
+        required: ['idee', 'beschreibung', 'ziel'],
       },
     },
     sicherung: {
@@ -189,15 +191,16 @@ const ENTWURF_SCHEMA = {
         properties: {
           idee: { type: 'string' },
           beschreibung: { type: 'string' },
+          ziel: { type: 'string' },
         },
-        required: ['idee', 'beschreibung'],
+        required: ['idee', 'beschreibung', 'ziel'],
       },
     },
   },
   required: ['leitidee', 'erarbeitung', 'uebung', 'sicherung'],
 };
 
-async function freierEntwurf(base44, kontext, recherche, bestehendeAktivitaeten) {
+async function freierEntwurf(base44, kontext, recherche, bestehendeAktivitaeten, materialien = [], bisherigeIdeen = []) {
   const hatBestand = bestehendeAktivitaeten.length > 0;
   const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
     prompt: JSON.stringify([
@@ -213,9 +216,18 @@ async function freierEntwurf(base44, kontext, recherche, bestehendeAktivitaeten)
           recherche_dossier: recherche,
           lerntypen_hintergrund: LERNTYPEN_HINTERGRUND,
           bestehende_aktivitaeten: bestehendeAktivitaeten,
+          bisherige_ideen: bisherigeIdeen,
           regeln: [
             'Konkrete, altersgerechte Ideen — jede Idee ist ein eigenständiger Lernschritt.',
-            '2–4 Ideen pro Phase — im Zweifel weniger: Das Lernpaket muss in etwa einer Unterrichtsstunde selbstständig zu bewältigen sein und fokussiert ausschließlich auf das/die 1–2 Lernziele dieses Pakets.',
+            'Umfang: GENAU 1–2 Ideen für die Erarbeitung, 2–4 Ideen für die Übung und GENAU 1 Idee für die Sicherung/Abschluss. Das Lernpaket muss in etwa einer Unterrichtsstunde selbstständig zu bewältigen sein und fokussiert ausschließlich auf das/die 1–2 Lernziele dieses Pakets.',
+            'Beschreibe für JEDE Idee explizit, was die Schüler:innen konkret tun (beschreibung) und mit welchem Ziel (ziel).',
+            'WICHTIG — deterministische Aufgaben: Die Schüler:innen arbeiten OHNE Lehrkraft und OHNE KI-Tutor. Jede Aufgabe muss selbstständig bearbeitbar und selbst überprüfbar sein. Erlaubt sind höchstens kleine KI-Kontrollen, z. B. eine kurze Rückmeldung auf frei eingegebene Antworten ("Korrekte Antwort, aber achte auf die Schreibweise" oder "Im Grunde korrekt, aber achte auf das richtige Runden").',
+            ...(materialien.length > 0
+              ? ['Es sind Materialien (Dateien) angehängt — nutze sie als inhaltliche Grundlage und Vorlage für die Ideen.']
+              : []),
+            ...(bisherigeIdeen.length > 0
+              ? ['Unter bisherige_ideen stehen Ideen, die du bereits vorgeschlagen hast. Schlage AUSSCHLIESSLICH neue, deutlich andere Ideen vor — keine Wiederholungen oder bloßen Varianten.']
+              : []),
             'Nutze das recherche_dossier aktiv: Studyflix-Funde als Material und als Vorlage für den inhaltlichen Aufbau, Netz-Ideen als Inspiration. Nenne konkrete Quellen-URLs, wenn du sie verwendest.',
             'Berücksichtige typische Fehlvorstellungen aus der Recherche gezielt in Übung und Sicherung.',
             'Denke an Abwechslung und Aktivierung — kreative, produktive und offene Formate sind ausdrücklich erwünscht, nicht nur rezeptive oder geschlossene Schritte.',
@@ -229,6 +241,7 @@ async function freierEntwurf(base44, kontext, recherche, bestehendeAktivitaeten)
       },
     ]),
     model: MODEL_ENTWURF,
+    ...(materialien.length > 0 ? { file_urls: materialien.map((m) => m.url) } : {}),
     response_json_schema: ENTWURF_SCHEMA,
   });
   return unwrapLLM(res);
@@ -266,6 +279,7 @@ const MAPPING_SCHEMA = {
           },
           quelle_url: { type: 'string', description: 'Nur bei Video/Link: die echte URL aus der Recherche.' },
           galerie_id: { type: 'string', description: 'Nur bei Aktivitätengalerie: die id der gewählten Galerie-Idee.' },
+          material_indizes: { type: 'array', items: { type: 'integer' }, description: 'Indizes der hochgeladenen Materialien, die zu dieser Aktivität gehören.' },
         },
         required: ['aktivitaetstyp', 'phase', 'begruendung', 'idee', 'ki_briefing_skizze'],
       },
@@ -274,7 +288,7 @@ const MAPPING_SCHEMA = {
   required: ['items'],
 };
 
-async function mappeEntwurf(base44, kontext, entwurf, recherche, werkzeuge, galerieIdeen, bestehendeAktivitaeten) {
+async function mappeEntwurf(base44, kontext, entwurf, recherche, werkzeuge, galerieIdeen, bestehendeAktivitaeten, materialien = []) {
   const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
     prompt: JSON.stringify([
       {
@@ -291,9 +305,12 @@ async function mappeEntwurf(base44, kontext, entwurf, recherche, werkzeuge, gale
           verfuegbare_werkzeuge: werkzeuge,
           galerie_ideen: galerieIdeen,
           bestehende_aktivitaeten: bestehendeAktivitaeten,
+          hochgeladene_materialien: materialien.map((m, i) => ({ index: i, name: m.name })),
           regeln: [
             'Setze JEDE Idee des Entwurfs um — pro Idee genau ein Item (eine Idee darf ausnahmsweise in Material-Input + Übung aufgeteilt werden). Erfinde KEINE zusätzlichen Items über den Entwurf hinaus.',
-            'Wahl des Werkzeugs in dieser Reihenfolge: 1) exakt passender Aktivitätstyp aus verfuegbare_werkzeuge, 2) passende Idee aus galerie_ideen (dann aktivitaetstyp "Aktivitätengalerie" und galerie_id angeben), 3) "Offene Aufgabe" oder "KI-Tutor Aufgabe (Brian)".',
+            'Wahl des Werkzeugs in dieser Reihenfolge: 1) exakt passender Aktivitätstyp aus verfuegbare_werkzeuge, 2) passende Idee aus galerie_ideen (dann aktivitaetstyp "Aktivitätengalerie" und galerie_id angeben), 3) "Offene Aufgabe".',
+            'KEIN KI-Tutor: Verwende NIEMALS "KI-Tutor Aufgabe (Brian)" — die Aufgaben müssen ohne Tutor-Begleitung funktionieren. Kleine KI-Kontrollen (kurze Rückmeldung auf freie Eingaben) bildest du über die Offene Aufgabe ab und beschreibst sie in der funktionsweise.',
+            'hochgeladene_materialien: Ordne einer Aktivität passende Materialien über material_indizes (Array der index-Werte) zu — nur wenn das Material inhaltlich wirklich zu dieser Aktivität gehört.',
             '"Offene Aufgabe" ist ein vollwertiges, ausdrücklich ERWÜNSCHTES Format: Beschreibe in ki_briefing_skizze.offen.funktionsweise präzise, wie die erdachte Aufgabe aussehen und funktionieren soll — sie wird später genau danach gebaut. Presse kreative Ideen NIEMALS in Lückentext oder Miniquiz, nur weil die Zuordnung einfacher wäre.',
             'Sorge für Vielfalt der Formate — ein Lernpaket, das nur aus Lückentext und Miniquiz besteht, ist ein Fehlschlag.',
             'Studyflix-/Web-Quellen aus Entwurf oder Recherche: Aktivitätstyp "Video / Audio" bzw. "Link / URL" wählen und die echte URL in quelle_url angeben.',
@@ -351,7 +368,20 @@ Deno.serve(async (req) => {
       stage = 'komplett',
       entwurf: entwurfInput,
       recherche: rechercheInput,
+      materialien: materialienInput,
+      bisherigeIdeen: bisherigeIdeenInput,
     } = body || {};
+
+    // Aufgabeneditor Etappe 2 (2026-07-27): optionale hochgeladene
+    // Materialien + bereits vorgeschlagene Ideen (Weitere-Vorschläge-Schleife).
+    const materialien = (Array.isArray(materialienInput) ? materialienInput : [])
+      .slice(0, 10)
+      .map((m) => ({ url: String(m?.url || ''), name: String(m?.name || 'Material') }))
+      .filter((m) => m.url.startsWith('http'));
+    const bisherigeIdeen = (Array.isArray(bisherigeIdeenInput) ? bisherigeIdeenInput : [])
+      .slice(0, 40)
+      .map((s) => String(s || '').slice(0, 300))
+      .filter(Boolean);
 
     if (!lernpaketId) {
       return Response.json({ error: 'Missing lernpaketId' }, { status: 400 });
@@ -475,6 +505,7 @@ Deno.serve(async (req) => {
       const sanitizeIdeen = (arr) => (Array.isArray(arr) ? arr : []).map((it) => ({
         idee: kurz(it?.idee, 300),
         beschreibung: kurz(it?.beschreibung, 2000),
+        ziel: kurz(it?.ziel, 500),
       })).filter((it) => it.idee || it.beschreibung);
       entwurf = {
         leitidee: kurz(entwurfInput.leitidee, 500),
@@ -488,7 +519,7 @@ Deno.serve(async (req) => {
       rechercheMs = Date.now() - tRecherche;
 
       const tEntwurf = Date.now();
-      entwurf = await freierEntwurf(base44, kontext, recherche, bestehendeAktivitaeten);
+      entwurf = await freierEntwurf(base44, kontext, recherche, bestehendeAktivitaeten, materialien, bisherigeIdeen);
       entwurfMs = Date.now() - tEntwurf;
       if (!entwurf || !Array.isArray(entwurf.erarbeitung)) {
         return Response.json({
@@ -507,6 +538,7 @@ Deno.serve(async (req) => {
         id: `idee-${prefix}-${i}`,
         idee: String(it?.idee || ''),
         beschreibung: String(it?.beschreibung || ''),
+        ziel: String(it?.ziel || ''),
       }));
       const ideen = {
         leitidee: entwurf.leitidee || '',
@@ -528,7 +560,7 @@ Deno.serve(async (req) => {
     // Stufe 3 · Mapping auf Pool-Manager-Werkzeuge
     // ═══════════════════════════════════════════════════════════════
     const tMapping = Date.now();
-    const mapping = await mappeEntwurf(base44, kontext, entwurf, recherche, werkzeuge, galerieIdeen, bestehendeAktivitaeten);
+    const mapping = await mappeEntwurf(base44, kontext, entwurf, recherche, werkzeuge, galerieIdeen, bestehendeAktivitaeten, materialien);
     const mappingMs = Date.now() - tMapping;
     const rawItems = Array.isArray(mapping?.items) ? mapping.items.slice(0, MAX_ITEMS) : [];
 
@@ -568,6 +600,9 @@ Deno.serve(async (req) => {
           begruendung: String(it.begruendung || ''),
           idee: String(it.idee || ''),
           ki_briefing_skizze: skizze,
+          material_urls: (Array.isArray(it.material_indizes) ? it.material_indizes : [])
+            .map((i) => materialien[i])
+            .filter(Boolean),
         },
         phasenByName
       );

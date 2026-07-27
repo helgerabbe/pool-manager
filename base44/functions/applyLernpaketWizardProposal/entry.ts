@@ -157,6 +157,11 @@ Deno.serve(async (req) => {
         aktivitaet_id: katalogEintrag.id,
         aktivitaet_name: katalogEintrag.name,
         ki_briefing: it.ki_briefing_skizze || null,
+        // Aufgabeneditor Etappe 2: Materialien direkt an der Aktivität speichern.
+        material_urls: (Array.isArray(it.material_urls) ? it.material_urls : [])
+          .slice(0, 10)
+          .map((m) => ({ url: String(m?.url || ''), name: String(m?.name || 'Material') }))
+          .filter((m) => m.url.startsWith('http')),
       });
     });
 
@@ -208,6 +213,7 @@ Deno.serve(async (req) => {
           sync_status: 'new',
           erstellungs_modus: 'ki',
           ki_briefing: r.ki_briefing,
+          material_urls: r.material_urls,
         });
         createdActivities.push({ id: created.id, phase: r.phase, name: r.aktivitaet_name });
       } catch (err) {

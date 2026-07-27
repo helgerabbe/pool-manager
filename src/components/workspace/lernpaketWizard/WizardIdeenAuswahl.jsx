@@ -57,6 +57,9 @@ export default function WizardIdeenAuswahl({ ideen, selectedIds, onToggle, disab
                     {it.beschreibung && (
                       <span className="block text-xs text-muted-foreground leading-snug mt-0.5">{it.beschreibung}</span>
                     )}
+                    {it.ziel && (
+                      <span className="block text-[11px] text-emerald-700 leading-snug mt-0.5">🎯 Ziel: {it.ziel}</span>
+                    )}
                   </span>
                 </label>
               );

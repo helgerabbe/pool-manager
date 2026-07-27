@@ -20,7 +20,7 @@
  * Voraussetzung: Aufrufer hat bereits einen aktiven Lernpaket-Lock
  * (sichergestellt durch den Trigger-Button in `LernpaketPanel`).
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -35,6 +35,7 @@ import WizardBestandsAnalyse from './WizardBestandsAnalyse';
 import WizardInhalteGenerator from './WizardInhalteGenerator';
 import WizardStepSection from './WizardStepSection';
 import AufgabeneditorUebersicht from './AufgabeneditorUebersicht';
+import WizardMaterialUpload from './WizardMaterialUpload';
 import SpeechInputButton from '@/components/ui/SpeechInputButton';
 
 const MAX_BRIEFING_LENGTH = 5000;
@@ -56,6 +57,10 @@ export default function LernpaketWizardModal({
   const [recherche, setRecherche] = useState(null);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [isMapping, setIsMapping] = useState(false);
+  // Etappe 2: optionale Materialien fürs Briefing + Runden-Zähler für
+  // eindeutige Ideen-IDs über mehrere "Weitere Vorschläge"-Runden.
+  const [materialien, setMaterialien] = useState([]);
+  const ideenRundeRef = useRef(0);
 
   // Vorschlags-Flow ein-/ausblenden (Editor-Startansicht = Übersicht).
   const [vorschlagOffen, setVorschlagOffen] = useState(false);
@@ -117,6 +122,8 @@ export default function LernpaketWizardModal({
       setBestandOpen(false);
       setVorschlagOffen(false);
       setSessionCreatedIds([]);
+      setMaterialien([]);
+      ideenRundeRef.current = 0;
     }
   }, [open, paket?.id, paket?.kreativ_briefing]);
 
@@ -139,7 +146,7 @@ export default function LernpaketWizardModal({
   };
 
   // ── Kreative Ideen sammeln (Recherche + freier Entwurf) ──────────
-  const handleGenerate = async () => {
+  const handleGenerate = async (weitere = false) => {
     const trimmed = briefing.trim();
     if (!trimmed) {
       toast.error('Bitte schreibe zuerst, was dir wichtig ist.');
@@ -152,26 +159,55 @@ export default function LernpaketWizardModal({
     setIsGenerating(true);
     setProposal(null);
     setKorrekturen([]);
-    setIdeen(null);
-    setRecherche(null);
+    if (!weitere) {
+      setIdeen(null);
+      setRecherche(null);
+    }
     try {
+      // Weitere-Vorschläge-Schleife: bereits vorgeschlagene Ideen mitgeben,
+      // damit die KI nur NEUE, andere Ideen liefert.
+      const bisherige = weitere && ideen
+        ? ['erarbeitung', 'uebung', 'sicherung'].flatMap((k) => (ideen[k] || []).map((it) => it.idee)).filter(Boolean)
+        : [];
       const res = await base44.functions.invoke('generateLernpaketAktivitaeten', {
         lernpaketId: paket.id,
         briefing: trimmed,
         strukturModus: hatBestand ? strukturModus : 'neu',
         stage: 'ideen',
+        materialien,
+        ...(bisherige.length > 0 ? { bisherigeIdeen: bisherige } : {}),
       });
       const data = res?.data || res;
       if (!data?.success || !data.ideen) {
         toast.error(data?.message || 'Generierung fehlgeschlagen. Bitte Hinweise präzisieren.');
         return;
       }
-      setIdeen(data.ideen);
-      setRecherche(data.recherche || null);
-      // Alle Ideen sind zunächst ausgewählt — die Lehrkraft wählt ab.
-      const alleIds = ['erarbeitung', 'uebung', 'sicherung'].flatMap((k) => (data.ideen[k] || []).map((it) => it.id));
-      setSelectedIds(new Set(alleIds));
-      toast.success('Ideen erstellt — wähle aus, was umgesetzt werden soll.');
+      // Ideen über Runden hinweg eindeutig halten.
+      const runde = ideenRundeRef.current++;
+      const rekey = (arr) => (arr || []).map((it) => ({ ...it, id: `r${runde}-${it.id}` }));
+      const neu = {
+        leitidee: data.ideen.leitidee || '',
+        erarbeitung: rekey(data.ideen.erarbeitung),
+        uebung: rekey(data.ideen.uebung),
+        sicherung: rekey(data.ideen.sicherung),
+      };
+      const neueIds = [...neu.erarbeitung, ...neu.uebung, ...neu.sicherung].map((it) => it.id);
+      if (weitere && ideen) {
+        setIdeen((prev) => ({
+          ...prev,
+          erarbeitung: [...prev.erarbeitung, ...neu.erarbeitung],
+          uebung: [...prev.uebung, ...neu.uebung],
+          sicherung: [...prev.sicherung, ...neu.sicherung],
+        }));
+        setSelectedIds((prev) => new Set([...prev, ...neueIds]));
+        if (!recherche && data.recherche) setRecherche(data.recherche);
+        toast.success('Weitere Vorschläge ergänzt.');
+      } else {
+        setIdeen(neu);
+        setRecherche(data.recherche || null);
+        setSelectedIds(new Set(neueIds));
+        toast.success('Vorschläge erstellt — markiere, was übernommen werden soll.');
+      }
     } catch (err) {
       console.error('[LernpaketWizardModal] generate failed', err);
       toast.error(err?.response?.data?.error || 'Fehler beim Generieren.');
@@ -200,7 +236,7 @@ export default function LernpaketWizardModal({
     setProposal(null);
     setKorrekturen([]);
     try {
-      const pick = (arr) => (arr || []).filter((it) => selectedIds.has(it.id)).map(({ idee, beschreibung }) => ({ idee, beschreibung }));
+      const pick = (arr) => (arr || []).filter((it) => selectedIds.has(it.id)).map(({ idee, beschreibung, ziel }) => ({ idee, beschreibung, ziel }));
       const res = await base44.functions.invoke('generateLernpaketAktivitaeten', {
         lernpaketId: paket.id,
         briefing: briefing.trim(),
@@ -213,6 +249,7 @@ export default function LernpaketWizardModal({
           sicherung: pick(ideen.sicherung),
         },
         recherche,
+        materialien,
       });
       const data = res?.data || res;
       if (!data?.success) {
@@ -265,6 +302,7 @@ export default function LernpaketWizardModal({
             aktivitaetstyp: it.aktivitaetstyp,
             phase: it.phase,
             ki_briefing_skizze: it.ki_briefing_skizze || null,
+            material_urls: it.material_urls || [],
           });
         });
       });
@@ -501,6 +539,11 @@ export default function LernpaketWizardModal({
                     disabled={busy}
                     className="resize-none"
                   />
+                  <WizardMaterialUpload
+                    materialien={materialien}
+                    onChange={setMaterialien}
+                    disabled={busy}
+                  />
                   {paket?.kreativ_briefing_updated_at && (
                     <p className="text-xs text-muted-foreground">
                       Zuletzt mit KI gefüllt: {new Date(paket.kreativ_briefing_updated_at).toLocaleString('de-DE')}
@@ -509,7 +552,7 @@ export default function LernpaketWizardModal({
                   <div className="flex justify-end">
                     <Button
                       type="button"
-                      onClick={handleGenerate}
+                      onClick={() => handleGenerate(false)}
                       disabled={busy || !briefing.trim()}
                       className="gap-2"
                     >
@@ -540,17 +583,27 @@ export default function LernpaketWizardModal({
                       onToggle={handleToggleIdee}
                       disabled={isMapping || isApplying}
                     />
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-2 flex-wrap">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleGenerate(true)}
+                        disabled={busy}
+                        className="gap-2"
+                      >
+                        {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                        Weitere Vorschläge erstellen
+                      </Button>
                       <Button
                         type="button"
                         onClick={handleMapping}
-                        disabled={isMapping || isApplying || selectedCount === 0}
+                        disabled={busy || selectedCount === 0}
                         className="gap-2"
                       >
                         {isMapping ? (
                           <><Loader2 className="w-4 h-4 animate-spin" /> Übersetze in Aktivitäten…</>
                         ) : (
-                          <><Sparkles className="w-4 h-4" /> {selectedCount} Idee{selectedCount !== 1 ? 'n' : ''} umsetzen</>
+                          <><Sparkles className="w-4 h-4" /> Weiter: {selectedCount} Vorschl{selectedCount !== 1 ? 'äge' : 'ag'} umsetzen</>
                         )}
                       </Button>
                     </div>
