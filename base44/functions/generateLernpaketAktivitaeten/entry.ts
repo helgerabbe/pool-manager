@@ -308,6 +308,7 @@ async function mappeEntwurf(base44, kontext, entwurf, recherche, werkzeuge, gale
           hochgeladene_materialien: materialien.map((m, i) => ({ index: i, name: m.name })),
           regeln: [
             'Setze JEDE Idee des Entwurfs um — pro Idee genau ein Item (eine Idee darf ausnahmsweise in Material-Input + Übung aufgeteilt werden). Erfinde KEINE zusätzlichen Items über den Entwurf hinaus.',
+            'didaktischer_entwurf.ideenkiste (falls vorhanden): von der Lehrkraft selbst gesammelte Aufgaben-Ideen — setze JEDE davon um und wähle selbst die didaktisch passende Phase (Input/Übung/Abschluss) sowie das passende Werkzeug.',
             'Wahl des Werkzeugs in dieser Reihenfolge: 1) exakt passender Aktivitätstyp aus verfuegbare_werkzeuge, 2) passende Idee aus galerie_ideen (dann aktivitaetstyp "Aktivitätengalerie" und galerie_id angeben), 3) "Offene Aufgabe".',
             'KEIN KI-Tutor: Verwende NIEMALS "KI-Tutor Aufgabe (Brian)" — die Aufgaben müssen ohne Tutor-Begleitung funktionieren. Kleine KI-Kontrollen (kurze Rückmeldung auf freie Eingaben) bildest du über die Offene Aufgabe ab und beschreibst sie in der funktionsweise.',
             'hochgeladene_materialien: Ordne einer Aktivität passende Materialien über material_indizes (Array der index-Werte) zu — nur wenn das Material inhaltlich wirklich zu dieser Aktivität gehört.',
@@ -390,7 +391,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Ungültige stage (erlaubt: komplett, ideen, mapping)' }, { status: 400 });
     }
     if (stage === 'mapping') {
-      const anzahlIdeen = ['erarbeitung', 'uebung', 'sicherung'].reduce(
+      const anzahlIdeen = ['erarbeitung', 'uebung', 'sicherung', 'ideenkiste'].reduce(
         (s, k) => s + (Array.isArray(entwurfInput?.[k]) ? entwurfInput[k].length : 0), 0
       );
       if (!entwurfInput || typeof entwurfInput !== 'object' || anzahlIdeen === 0) {
@@ -512,6 +513,9 @@ Deno.serve(async (req) => {
         erarbeitung: sanitizeIdeen(entwurfInput.erarbeitung),
         uebung: sanitizeIdeen(entwurfInput.uebung),
         sicherung: sanitizeIdeen(entwurfInput.sicherung),
+        // Ideenkiste-Integration: von der Lehrkraft gesammelte Ideen ohne
+        // feste Phase — die KI wählt die passende Phase selbst.
+        ideenkiste: sanitizeIdeen(entwurfInput.ideenkiste),
       };
     } else {
       const tRecherche = Date.now();

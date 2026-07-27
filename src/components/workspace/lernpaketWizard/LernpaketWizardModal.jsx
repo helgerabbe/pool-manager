@@ -36,6 +36,7 @@ import WizardInhalteGenerator from './WizardInhalteGenerator';
 import WizardStepSection from './WizardStepSection';
 import AufgabeneditorUebersicht from './AufgabeneditorUebersicht';
 import WizardMaterialUpload from './WizardMaterialUpload';
+import WizardIdeenkisteAuswahl from './WizardIdeenkisteAuswahl';
 import SpeechInputButton from '@/components/ui/SpeechInputButton';
 
 const MAX_BRIEFING_LENGTH = 5000;
@@ -61,6 +62,10 @@ export default function LernpaketWizardModal({
   // eindeutige Ideen-IDs über mehrere "Weitere Vorschläge"-Runden.
   const [materialien, setMaterialien] = useState([]);
   const ideenRundeRef = useRef(0);
+  // Ideenkiste-Integration: Auswahl offener Aufgaben-Ideen der Einheit.
+  const [kisteSelected, setKisteSelected] = useState(new Set());
+  const kisteImProposalRef = useRef([]);
+  const [kisteZuIntegrieren, setKisteZuIntegrieren] = useState([]);
 
   // Vorschlags-Flow ein-/ausblenden (Editor-Startansicht = Übersicht).
   const [vorschlagOffen, setVorschlagOffen] = useState(false);
@@ -109,6 +114,13 @@ export default function LernpaketWizardModal({
     enabled: open && !!paket?.id,
   });
 
+  // Offene Aufgaben-Ideen aus der Ideenkiste der Einheit.
+  const { data: ideenkisteEintraege = [] } = useQuery({
+    queryKey: ['aufgabenIdeen', 'offen', paket?.einheit_id],
+    queryFn: () => base44.entities.AufgabenIdee.filter({ einheit_id: paket.einheit_id, status: 'offen' }),
+    enabled: open && !!paket?.einheit_id,
+  });
+
   // Beim Öffnen das gespeicherte Briefing seedet, beim Schließen reset.
   useEffect(() => {
     if (open) {
@@ -124,13 +136,19 @@ export default function LernpaketWizardModal({
       setSessionCreatedIds([]);
       setMaterialien([]);
       ideenRundeRef.current = 0;
+      setKisteSelected(new Set());
+      kisteImProposalRef.current = [];
+      setKisteZuIntegrieren([]);
     }
   }, [open, paket?.id, paket?.kreativ_briefing]);
 
   const hatBestand = bestandAktivitaeten.length > 0;
 
+  const hatIdeenkiste = ideenkisteEintraege.length > 0;
+
   // Dynamische Schritt-Nummern im Vorschlags-Flow.
-  const stepWuensche = hatBestand ? 2 : 1;
+  const stepIdeenkiste = hatBestand ? 2 : 1;
+  const stepWuensche = (hatBestand ? 1 : 0) + (hatIdeenkiste ? 1 : 0) + 1;
   const stepIdeen = stepWuensche + 1;
   const stepUmsetzung = stepIdeen + 1;
 
@@ -226,9 +244,11 @@ export default function LernpaketWizardModal({
 
   const selectedCount = selectedIds.size;
 
-  // ── Ausgewählte Ideen in Aktivitäten übersetzen ──────────────────
+  const kisteAusgewaehlt = ideenkisteEintraege.filter((e) => kisteSelected.has(e.id));
+
+  // ── Ausgewählte Ideen (KI + Ideenkiste) in Aktivitäten übersetzen ─
   const handleMapping = async () => {
-    if (!ideen || selectedCount === 0) {
+    if (selectedCount === 0 && kisteAusgewaehlt.length === 0) {
       toast.error('Bitte wähle mindestens eine Idee aus.');
       return;
     }
@@ -239,17 +259,25 @@ export default function LernpaketWizardModal({
       const pick = (arr) => (arr || []).filter((it) => selectedIds.has(it.id)).map(({ idee, beschreibung, ziel }) => ({ idee, beschreibung, ziel }));
       const res = await base44.functions.invoke('generateLernpaketAktivitaeten', {
         lernpaketId: paket.id,
-        briefing: briefing.trim(),
+        briefing: briefing.trim() || 'Setze die ausgewählten Ideen aus der Ideenkiste passend zu Lernpaket und Lernzielen um.',
         strukturModus: hatBestand ? strukturModus : 'neu',
         stage: 'mapping',
         entwurf: {
-          leitidee: ideen.leitidee || '',
-          erarbeitung: pick(ideen.erarbeitung),
-          uebung: pick(ideen.uebung),
-          sicherung: pick(ideen.sicherung),
+          leitidee: ideen?.leitidee || '',
+          erarbeitung: pick(ideen?.erarbeitung),
+          uebung: pick(ideen?.uebung),
+          sicherung: pick(ideen?.sicherung),
+          ideenkiste: kisteAusgewaehlt.map((e) => ({
+            idee: e.titel,
+            beschreibung: e.beschreibung || '',
+            ziel: e.aufgabentyp_vorschlag || '',
+          })),
         },
         recherche,
-        materialien,
+        materialien: [
+          ...materialien,
+          ...kisteAusgewaehlt.flatMap((e) => (Array.isArray(e.material_urls) ? e.material_urls : [])),
+        ],
       });
       const data = res?.data || res;
       if (!data?.success) {
@@ -258,6 +286,9 @@ export default function LernpaketWizardModal({
       }
       setProposal(data.proposal);
       setKorrekturen(data.korrekturen || []);
+      // Verwendete Ideenkiste-Einträge merken — beim Übernehmen + Speichern
+      // werden sie als integriert markiert.
+      kisteImProposalRef.current = kisteAusgewaehlt.map((e) => e.id);
       if ((data.korrekturen || []).length > 0) {
         toast.info(`${data.korrekturen.length} Phase${data.korrekturen.length !== 1 ? 'n' : ''} automatisch korrigiert.`);
       } else {
@@ -321,6 +352,13 @@ export default function LernpaketWizardModal({
       // Sitzungs-Tracking für Speichern/Abbrechen.
       const neueIds = (data.createdActivities || []).map((c) => c.id);
       setSessionCreatedIds((prev) => [...prev, ...neueIds]);
+      // Verwendete Ideenkiste-Einträge fürs Speichern vormerken.
+      if (kisteImProposalRef.current.length > 0) {
+        const verwendete = kisteImProposalRef.current;
+        setKisteZuIntegrieren((prev) => [...new Set([...prev, ...verwendete])]);
+        setKisteSelected(new Set());
+        kisteImProposalRef.current = [];
+      }
       toast.success(
         `${data.stats.items_created} Aktivität${data.stats.items_created !== 1 ? 'en' : ''} angelegt — mit "Speichern & schließen" übernehmen oder mit "Abbrechen" verwerfen.`
       );
@@ -373,6 +411,28 @@ export default function LernpaketWizardModal({
 
   const handleClose = () => {
     if (isGenerating || isMapping || isApplying || isDiscarding || inhalteBusy) return;
+    onClose();
+  };
+
+  // Speichern & schließen: verwendete Ideenkiste-Einträge als integriert markieren.
+  const handleSave = async () => {
+    if (isGenerating || isMapping || isApplying || isDiscarding || inhalteBusy) return;
+    if (kisteZuIntegrieren.length > 0) {
+      try {
+        await base44.entities.AufgabenIdee.bulkUpdate(
+          kisteZuIntegrieren.map((id) => ({
+            id,
+            status: 'integriert',
+            integriert_hinweis: `Im Aufgabeneditor in Lernpaket "${paket?.titel_des_pakets || ''}" übernommen`,
+            integriert_am: new Date().toISOString(),
+          }))
+        );
+        queryClient.invalidateQueries({ queryKey: ['aufgabenIdeen'] });
+      } catch (err) {
+        console.error('[LernpaketWizardModal] ideenkiste update failed', err);
+        toast.error('Ideenkiste-Status konnte nicht aktualisiert werden.');
+      }
+    }
     onClose();
   };
 
@@ -507,6 +567,45 @@ export default function LernpaketWizardModal({
                   </WizardStepSection>
                 )}
 
+                {/* Schritt: Aus der Ideenkiste übernehmen (optional) */}
+                {hatIdeenkiste && (
+                  <WizardStepSection
+                    nummer={stepIdeenkiste}
+                    titel="Aus der Ideenkiste übernehmen (optional)"
+                    rechts={<span className="text-xs text-muted-foreground">{kisteSelected.size} ausgewählt</span>}
+                  >
+                    <p className="text-xs text-muted-foreground leading-snug">
+                      Offene Aufgaben-Ideen aus der Ideenkiste dieser Einheit. Ausgewählte Ideen werden bei der
+                      Umsetzung in passende Aktivitäten übersetzt — inklusive ihrer Materialien. Beim Speichern
+                      werden sie in der Ideenkiste als integriert markiert.
+                    </p>
+                    <WizardIdeenkisteAuswahl
+                      eintraege={ideenkisteEintraege}
+                      selectedIds={kisteSelected}
+                      onToggle={(id) => setKisteSelected((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(id)) next.delete(id); else next.add(id);
+                        return next;
+                      })}
+                      disabled={busy}
+                    />
+                    {kisteSelected.size > 0 && !ideen && !proposal && (
+                      <div className="flex justify-end">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleMapping}
+                          disabled={busy}
+                          className="gap-2"
+                        >
+                          {isMapping ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                          Nur Ideenkiste umsetzen ({kisteSelected.size})
+                        </Button>
+                      </div>
+                    )}
+                  </WizardStepSection>
+                )}
+
                 {/* Schritt: Wünsche an die KI */}
                 <WizardStepSection
                   nummer={stepWuensche}
@@ -603,7 +702,7 @@ export default function LernpaketWizardModal({
                         {isMapping ? (
                           <><Loader2 className="w-4 h-4 animate-spin" /> Übersetze in Aktivitäten…</>
                         ) : (
-                          <><Sparkles className="w-4 h-4" /> Weiter: {selectedCount} Vorschl{selectedCount !== 1 ? 'äge' : 'ag'} umsetzen</>
+                          <><Sparkles className="w-4 h-4" /> Weiter: {selectedCount + kisteAusgewaehlt.length} Vorschl{selectedCount + kisteAusgewaehlt.length !== 1 ? 'äge' : 'ag'} umsetzen</>
                         )}
                       </Button>
                     </div>
@@ -673,7 +772,7 @@ export default function LernpaketWizardModal({
                 {isDiscarding ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 Abbrechen & verwerfen
               </Button>
-              <Button onClick={handleClose} disabled={busy || inhalteBusy}>
+              <Button onClick={handleSave} disabled={busy || inhalteBusy}>
                 Speichern & schließen
               </Button>
             </>
