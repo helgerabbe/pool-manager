@@ -35,7 +35,9 @@ import { Badge } from '@/components/ui/badge';
 import ActivityMasterPanel from '@/components/workspace/ActivityMasterPanel';
 import KlonDetailView from '@/components/workspace/KlonDetailView';
 import MasterDetailView from '@/components/workspace/MasterDetailView';
-import Tab4LernpaketOverview from '@/components/workspace/Tab4LernpaketOverview';
+import LernpaketPanel from '@/components/workspace/panels/LernpaketPanel';
+import EinheitLockBanner from '@/components/workspace/EinheitLockBanner';
+import { useEinheitLock } from '@/hooks/useLocks';
 import { isActivityLockedByOther, isLockExpired } from '@/hooks/useActivityLock';
 import { cn } from '@/lib/utils';
 
@@ -407,11 +409,14 @@ function EmptyState() {
 
 // ── Haupt-Komponente ──────────────────────────────────────────────────────────
 
-export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail, userRole, initialActivityId: initialActivityIdProp = null, globalEditActive = false }) {
+export default function TaskCreationView({ einheitId, einheit = null, kannBearbeiten, userEmail, userRole, initialActivityId: initialActivityIdProp = null, initialLernpaketId = null, globalEditActive = false }) {
    const queryClient = useQueryClient();
    const [searchParams] = useSearchParams();
    const [debugSelectValue, setDebugSelectValue] = useState('');
    const [sidebarOpen, setSidebarOpen] = useState(false);
+
+   // Makro-Lock der Einheit — für die Lernpaket-Detailansicht (vereinter Tab).
+   const { isUnitLocked, lockedByEmail: unitLockedByEmail } = useEinheitLock(einheitId);
 
    // Globaler Edit-Mode State: initial aus globalEditActive (DB-Zustand), dann lokal überschreibbar
    const [isEditingActive, setIsEditingActive] = useState(globalEditActive);
@@ -586,6 +591,13 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
     refetchOnMount: 'always',
   });
 
+  // Lernziele — für die Lernpaket-Detailansicht (LernpaketPanel filtert selbst).
+  const { data: lernziele = [] } = useQuery({
+    queryKey: ['lernziele'],
+    queryFn: () => base44.entities.Lernziele.list(),
+    enabled: !!einheitId,
+  });
+
   const { data: themenfelder = [] } = useQuery({
     queryKey: ['themenfelder', einheitId],
     queryFn: () => base44.entities.Themenfeld.filter({ einheit_id: einheitId }),
@@ -741,10 +753,25 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
   const getLernpaketName = (lernpaketId) =>
     lernpakete.find(lp => lp.id === lernpaketId)?.titel_des_pakets || null;
 
-  // Wenn man auf eine Aktivität aus der Tab4LernpaketOverview klickt
-  const handleActivitySelectFromOverview = (activity) => {
-    setSelectedItem({ type: 'activity', activity });
+  // Navigation aus dem LernpaketPanel: "Zur Werkstatt" öffnet die Aktivität
+  // direkt im selben Baum (früher: Tab-Wechsel 3 → 4).
+  const handlePanelNavigate = (node) => {
+    if (node?.type === 'goto-task-workshop' && node.activityId) {
+      openTreeAndLoadContent(node.activityId);
+    }
   };
+
+  // Deep-Link: bestimmtes Lernpaket direkt öffnen (z. B. aus Dashboard/Cockpit).
+  const appliedInitialPaketRef = useRef(null);
+  useEffect(() => {
+    if (!initialLernpaketId || lernpakete.length === 0) return;
+    if (appliedInitialPaketRef.current === initialLernpaketId) return;
+    const paket = lernpakete.find(p => p.id === initialLernpaketId);
+    if (!paket) return;
+    appliedInitialPaketRef.current = initialLernpaketId;
+    setOpenPacketIds(new Set([paket.id]));
+    setSelectedItem({ type: 'lernpaket', lernpaket: paket });
+  }, [initialLernpaketId, lernpakete]);
 
   // Cleanup bei Unmount: Lock freigeben.
   // Härtung 2026-05-14: nutzt jetzt ebenfalls den gesicherten Endpunkt,
@@ -802,7 +829,7 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
 
         <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-border h-11">
           <Package className="w-4 h-4 text-primary shrink-0" />
-          <span className="text-sm font-semibold flex-1">Aktivitäten</span>
+          <span className="text-sm font-semibold flex-1">Lernpakete</span>
           <button
             onClick={() => setSidebarOpen(false)}
             className="lg:hidden p-1 hover:bg-muted rounded transition-colors"
@@ -907,12 +934,18 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
         {/* Ansicht LP: Lernpaket gewählt → Übersicht (Tab4LernpaketOverview) */}
         {selectedItem?.type === 'lernpaket' && (
           <div className="max-w-3xl mx-auto px-6 py-6">
-            <Tab4LernpaketOverview
-              paket={selectedItem.lernpaket}
-              einheit={null}
-              kannBearbeiten={kannBearbeiten}
-              onActivitySelect={handleActivitySelectFromOverview}
-            />
+            <div className="space-y-4">
+              <EinheitLockBanner isUnitLocked={isUnitLocked} lockedByEmail={unitLockedByEmail} />
+              <LernpaketPanel
+                paket={selectedItem.lernpaket}
+                lernziele={lernziele}
+                aufgaben={alleKlone}
+                kannBearbeiten={kannBearbeiten && !isUnitLocked}
+                userEmail={userEmail}
+                einheit={einheit}
+                onNavigate={handlePanelNavigate}
+              />
+            </div>
           </div>
         )}
 
@@ -1004,12 +1037,18 @@ export default function TaskCreationView({ einheitId, kannBearbeiten, userEmail,
             {/* Ansicht LP: Lernpaket gewählt */}
             {selectedItem?.type === 'lernpaket' && (
               <div className="max-w-3xl mx-auto px-6 py-6">
-                <Tab4LernpaketOverview
-                  paket={selectedItem.lernpaket}
-                  einheit={null}
-                  kannBearbeiten={kannBearbeiten}
-                  onActivitySelect={handleActivitySelectFromOverview}
-                />
+                <div className="space-y-4">
+                  <EinheitLockBanner isUnitLocked={isUnitLocked} lockedByEmail={unitLockedByEmail} />
+                  <LernpaketPanel
+                    paket={selectedItem.lernpaket}
+                    lernziele={lernziele}
+                    aufgaben={alleKlone}
+                    kannBearbeiten={kannBearbeiten && !isUnitLocked}
+                    userEmail={userEmail}
+                    einheit={einheit}
+                    onNavigate={handlePanelNavigate}
+                  />
+                </div>
               </div>
             )}
 

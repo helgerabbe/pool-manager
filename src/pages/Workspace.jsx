@@ -1,22 +1,18 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { invokeFunction } from '@/utils/functionsHelper';
 import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN, hasUnitLevelAccess } from '@/lib/rbac';
 import { useWorkspaceData } from '@/hooks/useWorkspaceData';
 import ErrorBoundary from '@/components/errors/ErrorBoundary';
 import { SkeletonWorkspace } from '@/components/loading/SkeletonLoader';
-import SidebarTree from '@/components/workspace/SidebarTree';
-import WorkspaceDetailPanel from '@/components/workspace/WorkspaceDetailPanel';
-import ActivityDetailView from '@/components/workspace/ActivityDetailView';
 import { usePresence } from '@/hooks/usePresence';
 import { isStructurallyLocked } from '@/hooks/useStructuralLock';
 import { useEinheitFreigabeStatus } from '@/hooks/useEinheitFreigabeStatus';
 import { EXPORT_LIFECYCLE_LABELS, EXPORT_LIFECYCLE_STATUS } from '@/lib/exportLifecycle';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { BookOpen, Lock, ArrowRight, PenLine, Unlock, Loader2, AlignJustify, LayoutList, Layers, Eye } from 'lucide-react';
-import HelpDialog from '@/components/ui/HelpDialog';
+import { BookOpen, Lock, ArrowRight, PenLine, Unlock, Loader2, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -30,9 +26,6 @@ import ExportCockpitView from '@/components/export/ExportCockpitView';
 import BrianExportCockpitView from '@/components/export/BrianExportCockpitView';
 import AllgemeineAufgabenView from '@/components/allgemeineAufgaben/AllgemeineAufgabenView';
 import { base44 } from '@/api/base44Client';
-import { deleteLernpaket as deleteLernpaketService } from '@/services/LernpaketService';
-import { deleteLernziel as deleteLernzielService } from '@/services/LernzielService';
-import { deleteAufgabenbaustein } from '@/services/AufgabenbausteinService';
 import ProjektaufgabenView from '@/components/projektaufgaben/ProjektaufgabenView';
 import LernpfadeCockpit from '@/components/lernpfade/LernpfadeCockpit';
 import LoadingOverlay from '@/components/workspace/LoadingOverlay';
@@ -61,12 +54,18 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   // Export) sind aus der Einheitenansicht entfernt. Beide Workflows laufen
   // jetzt zentral im eigenständigen Export-Center (Hauptmenü).
   const VALID_TABS = isBasismodul
-    ? ['einheit', 'struktur', 'lernziele', 'aktivitaeten', 'aufgaben', 'cockpit']
-    : ['einheit', 'struktur', 'lernziele', 'aktivitaeten', 'aufgaben', 'ebene2', 'ebene3', 'dashboards', 'cockpit', 'brian'];
-  const tabFromUrl = searchParams.get('tab');
+    ? ['einheit', 'struktur', 'lernziele', 'lernpakete', 'cockpit']
+    : ['einheit', 'struktur', 'lernziele', 'lernpakete', 'ebene2', 'ebene3', 'dashboards', 'cockpit', 'brian'];
+  // Tab-Verschmelzung (2026-07-27): Die früheren Tabs 'aktivitaeten' (4) und
+  // 'aufgaben' (5) sind zum Tab 'lernpakete' vereint. Alte Deep-Links werden
+  // transparent auf den neuen Tab abgebildet.
+  const LEGACY_TAB_MAP = { aktivitaeten: 'lernpakete', aufgaben: 'lernpakete' };
+  const tabFromUrlRaw = searchParams.get('tab');
+  const tabFromUrl = LEGACY_TAB_MAP[tabFromUrlRaw] || tabFromUrlRaw;
   const [activeTab, setActiveTab] = useState(VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'einheit');
   const [highlightedAtomIds, setHighlightedAtomIds] = useState(new Set());
   const [taskWorkshopActivityId, setTaskWorkshopActivityId] = useState(null);
+  const [initialLernpaketId, setInitialLernpaketId] = useState(null);
   const [strukturCompact, setStrukturCompact] = useState(false);
   // Privat-Modus: Gesamt-Vorschau der Einheit aus Schülersicht (in jedem Tab erreichbar)
   const [vorschauOpen, setVorschauOpen] = useState(false);
@@ -75,7 +74,10 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     setActiveTab(tab);
     setHighlightedAtomIds(new Set());
     setSelectedNode(null); // Zurücksetzen beim Tab-Wechsel
-    if (tab !== 'aufgaben') setTaskWorkshopActivityId(null);
+    if (tab !== 'lernpakete') {
+      setTaskWorkshopActivityId(null);
+      setInitialLernpaketId(null);
+    }
     // 🩹 Frische Workspace-Daten beim Tab-Wechsel erzwingen.
     // Hintergrund (Bug "Lernziele verschwinden in Tab 2/3/4"): Alle Tabs leben in
     // EINER Workspace-Komponente, die beim Tab-Wechsel NICHT neu gemountet wird.
@@ -92,16 +94,16 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   // Tab 7 auf ein Lernpaket verweist → Tab 4). Workspace wird beim
   // Tab-Wechsel nicht neu gemountet, daher reicht der Mount-Init nicht.
   useEffect(() => {
-    const t = searchParams.get('tab');
+    const tRaw = searchParams.get('tab');
+    const t = LEGACY_TAB_MAP[tRaw] || tRaw;
     const lernpaketParam = searchParams.get('lernpaket');
     if (t && VALID_TABS.includes(t) && t !== activeTab) {
       handleTabChange(t);
     }
-    // Deep-Link aus Tab 7 (Dashboard): ein bestimmtes Lernpaket in Tab 3
-    // („Aktivitäten zuordnen") öffnen. Wir setzen den selectedNode auf das
-    // Lernpaket und räumen den Param danach wieder aus der URL.
+    // Deep-Link (z. B. aus dem Dashboard): ein bestimmtes Lernpaket im
+    // vereinten Lernpakete-Tab öffnen; Param danach aus der URL räumen.
     if (lernpaketParam) {
-      setSelectedNode({ type: 'lernpaket', id: lernpaketParam });
+      setInitialLernpaketId(lernpaketParam);
       const next = new URLSearchParams(searchParams);
       next.delete('lernpaket');
       setSearchParams(next, { replace: true });
@@ -654,10 +656,6 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
     [paketeFuerThemenfeld]
   );
 
-  const activityRecordForEdit = selectedNode?.type === 'aktivitaet-edit' 
-    ? lernpaketAktivitaeten.find((a) => a.id === selectedNode.activityRecordId) 
-    : null;
-
   // ── Callbacks ─────────────────────────────────────────────────────────────────
   const handleEinheitChange = (id) => {
     setSelectedEinheitId(id);
@@ -675,49 +673,12 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const handleSelect = useCallback((node) => {
     if (node?.type === 'goto-task-workshop') {
       setTaskWorkshopActivityId(node.activityId);
-      setActiveTab('aufgaben');
+      setActiveTab('lernpakete');
       return;
     }
     if (node?.type === 'themenfeld') setSelectedThemenfeldId(node.themenfeldId);
     setSelectedNode(node);
   }, []);
-
-  const handleCloseDialog = useCallback(() => {
-    // Dialog geschlossen → selectedNode zurücksetzen auf 'einheit'
-    // Das freigeben des Lernpaket-Locks wird dann automatisch vom Backend übernommen
-    if (selectedNode?.type === 'aktivitaet-edit' || selectedNode?.type === 'phase') {
-      setSelectedNode({ type: 'einheit', id: selectedEinheitId });
-    }
-  }, [selectedNode?.type, selectedEinheitId]);
-
-  // ── Delete-Mutations (parallelisiert) ─────────────────────────────────────────
-  const deleteLernpaket = useMutation({
-    mutationFn: async (id) => {
-      const relZiele = zieleFuerEinheit.filter((lz) => lz.lernpaket_id === id);
-      const relAufgaben = aufgabenFuerEinheit.filter((a) => a.lernpaket_id === id);
-      // Parallele Requests statt sequenzielle for...of Schleifen
-      await Promise.all([
-        ...relZiele.map((z) => deleteLernzielService(z.id)),
-        ...relAufgaben.map((a) => deleteAufgabenbaustein(a.id)),
-      ]);
-      return deleteLernpaketService(id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-      queryClient.invalidateQueries({ queryKey: ['lernziele'] });
-      queryClient.invalidateQueries({ queryKey: ['aufgaben'] });
-      setSelectedNode({ type: 'einheit', id: selectedEinheitId });
-    }
-  });
-
-  const deleteLernziel = useMutation({
-    mutationFn: (id) => deleteLernzielService(id),
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['lernziele'] });
-      const lz = zieleFuerEinheit.find((lz) => lz.id === id);
-      if (lz) setSelectedNode({ type: 'lernpaket', id: lz.lernpaket_id });
-    }
-  });
 
   // ── Loading ───────────────────────────────────────────────────────────────────
   if (rbacLoading || einheitenLoading) {
@@ -1010,13 +971,15 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               </div>
             </TabsContent>
 
-            {/* ── Tab 4: Aktivitäten zuordnen → Sidebar-Baum + Detail-Panel ───── */}
-            <TabsContent value="aktivitaeten" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
-              <ErrorBoundary label="Aktivitäten-Struktur">
-                {/* Sticky Edit-Banner – direkt an globalem isLernpaketEditActive gebunden (Single Source of Truth).
-                    Zeigt die konkret gesperrten Pakete an und erlaubt dem Lock-Inhaber, den Modus
-                    explizit zu beenden — wichtig nach Reload/Verbindungsabbruch, wo der Edit-Dialog
-                    nicht mehr offen ist, der DB-Lock aber noch lebt. */}
+            {/* ── Tab 4: Lernpakete (Aktivitäten & Aufgaben vereint) ──────────
+                Ein gemeinsamer Baum (Lernpaket → Phase → Aktivität → Master →
+                Kopien); die Detailansicht rechts folgt der Auswahl-Tiefe:
+                Lernpaket = Zuordnung/Konfiguration, tiefer = Aufgaben-Werkstatt. */}
+            <TabsContent value="lernpakete" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
+              <ErrorBoundary label="Lernpakete">
+                {/* Sticky Edit-Banner – zeigt vom User gehaltene Lernpaket-Locks
+                    (wichtig nach Reload/Verbindungsabbruch, wo der Edit-Dialog
+                    nicht mehr offen ist, der DB-Lock aber noch lebt). */}
                 {isLernpaketEditActive && (
                   <div className="shrink-0 bg-orange-500 text-white px-6 py-2.5 flex items-center gap-3">
                     <PenLine className="w-4 h-4 shrink-0 animate-pulse" />
@@ -1041,93 +1004,19 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                     </button>
                   </div>
                 )}
-                <div className={cn(
-                  "flex flex-col lg:flex-row flex-1 overflow-hidden transition-colors",
-                  isLernpaketEditActive && "bg-orange-50/60 ring-2 ring-inset ring-orange-300"
-                )}>
-                <aside className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden h-64 lg:h-full min-h-0">
-                   <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b h-11">
-                     <Layers className="w-4 h-4 text-primary shrink-0" />
-                     <span className="text-sm font-semibold flex-1">Lernpakete</span>
-                     <HelpDialog
-                       title="Aktivitäten zuordnen"
-                       description="Hier ordnest du jedem Lernpaket konkrete Aktivitäten zu – gegliedert nach den Lernphasen Input, Übung und Abschluss. Wähle links ein Lernpaket aus, um rechts seine Phasen und Aktivitäten zu bearbeiten."
-                       docsSlug="lernpakete-aktivitaeten"
-                     />
-                   </div>
-                   <div className="flex-1 overflow-hidden min-h-0 p-2">
-                     <div className="h-full overflow-y-auto pr-2">
-                    <SidebarTree
-                      einheit={einheit}
-                      lernpakete={paketeFuerEinheit}
-                      lernziele={zieleFuerEinheit}
-                      aufgaben={aufgabenFuerEinheit}
-                      mappings={mappings}
-                      themenfelder={themenfelder}
-                      selectedNode={selectedNode}
-                      onSelect={handleSelect}
-                      kannBearbeiten={kannDieseEinheitBearbeiten && !isLockedByOther}
-                      userEmail={authUser?.email || ''}
-                      highlightedAtomIds={highlightedAtomIds}
-                      phaseAktivitaeten={lernpaketAktivitaeten}
-                      isEditingActive={isLernpaketEditActive}
-                      />
-                      </div>
-                      </div>
-                      </aside>
-
-                <main className="flex-1 overflow-hidden min-h-0 h-full lg:h-auto">
-                  <ErrorBoundary label="Detail-Panel">
-                    <div className="h-full overflow-y-auto max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full min-h-0">
-                      {selectedNode?.type === 'aktivitaet-edit' ? (
-                        activityRecordForEdit ? (
-                          <ActivityDetailView
-                            activityRecord={activityRecordForEdit}
-                            kannBearbeiten={false}
-                            einheitFach={einheit?.fach}
-                            queryClient={queryClient}
-                            onClose={handleCloseDialog}
-                          />
-                        ) : null
-                      ) : (
-                        <WorkspaceDetailPanel
-                          selectedNode={{ ...selectedNode, themenfelder }}
-                          einheit={einheit}
-                          lernpakete={paketeFuerEinheit}
-                          lernziele={zieleFuerEinheit}
-                          aufgaben={aufgabenFuerEinheit}
-                          userEmail={authUser?.email}
-                          kannBearbeiten={kannDieseEinheitBearbeiten && !isLockedByOther}
-                          istAdmin={istAdmin}
-                          onNavigate={handleSelect}
-                          onNewLernpaket={() => handleSelect({ type: 'new-lernpaket' })}
-                          onNewLernziel={(paketId) => handleSelect({ type: 'new-lernziel', paketId })}
-                          onNewAufgabe={(paketId, lernzielId) => handleSelect({ type: 'new-aufgabe', paketId, lernzielId })}
-                          onEditEinheit={() => {}}
-                          onDeleteLernpaket={(id) => deleteLernpaket.mutate(id)}
-                          onDeleteLernziel={(id) => deleteLernziel.mutate(id)}
-                        />
-                      )}
-                    </div>
-                  </ErrorBoundary>
-                </main>
+                <div className="flex flex-1 overflow-hidden">
+                  <TaskCreationView
+                    einheitId={selectedEinheitId}
+                    einheit={einheit}
+                    initialActivityId={taskWorkshopActivityId}
+                    initialLernpaketId={initialLernpaketId}
+                    kannBearbeiten={kannDieseEinheitBearbeiten && !isLockedByOther}
+                    userEmail={authUser?.email}
+                    userRole={rolle}
+                    isLockedByOther={isLockedByOther}
+                    globalEditActive={isLernpaketEditActive}
+                  />
                 </div>
-                </ErrorBoundary>
-                </TabsContent>
-
-            {/* ── Tab 4: Aufgaben erstellen ─────────────────────────────────── */}
-            <TabsContent value="aufgaben" className="data-[state=active]:flex data-[state=inactive]:hidden flex-row flex-1 overflow-hidden m-0 p-0">
-              <ErrorBoundary label="Aufgaben erstellen">
-                <TaskCreationView
-                  einheitId={selectedEinheitId}
-                  einheit={einheit}
-                  initialActivityId={taskWorkshopActivityId}
-                  kannBearbeiten={kannDieseEinheitBearbeiten && !isLockedByOther}
-                  userEmail={authUser?.email}
-                  userRole={rolle}
-                  isLockedByOther={isLockedByOther}
-                  globalEditActive={isLernpaketEditActive}
-                />
               </ErrorBoundary>
             </TabsContent>
 
@@ -1189,7 +1078,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                     userRole={rolle}
                     onNavigateToActivity={(activityId) => {
                       setTaskWorkshopActivityId(activityId);
-                      handleTabChange('aufgaben');
+                      handleTabChange('lernpakete');
                     }}
                     onNavigateToTask={(ebene, taskId) => {
                       handleTabChange(ebene === 'ebene12' ? 'ebene2' : 'ebene3');

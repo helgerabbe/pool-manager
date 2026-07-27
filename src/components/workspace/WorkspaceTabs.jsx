@@ -13,7 +13,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { BookOpen, LayoutGrid, Zap, Wand2, ClipboardList, Target, CheckSquare, Compass, ListChecks, Bot } from 'lucide-react';
+import { BookOpen, LayoutGrid, Package, ClipboardList, Target, CheckSquare, Compass, ListChecks, Bot } from 'lucide-react';
 import HelpDialog from '@/components/ui/HelpDialog';
 import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
@@ -86,47 +86,29 @@ const getVisibleTabs = (rolle, isBasismodul = false) => {
     },
   },
   {
-    value: 'aktivitaeten', label: 'Aktivitäten zuordnen', icon: Zap, step: 4,
+    value: 'lernpakete', label: 'Lernpakete', icon: Package, step: 4,
     help: {
-      title: 'Aktivitäten und Lernziele',
-      description: 'Ab hier bist du als Fachlehrkraft dran. In Tab 3 legst du für jedes Lernpaket die Lernziele und die didaktischen Aktivitäten fest – also das, was deine Schüler:innen im Lernpaket tatsächlich tun: ein Video schauen, einen Text lesen, ein Quiz lösen. Die eigentlichen konkreten Aufgabeninhalte (z. B. die Lückentext-Sätze) füllst du dann erst in Tab 4 ein.',
+      title: 'Lernpakete — Aktivitäten & Aufgaben an einem Ort',
+      description: 'Hier füllst du als Fachlehrkraft die Lernpakete mit Leben — alles in einem Tab. Links wählst du im Baum ein Lernpaket: Rechts legst du fest, WELCHE Aktivitäten es pro Phase (Erarbeitung · Übung · Abschluss) enthält, startest den Aufgabeneditor (KI) und gibst das Paket frei. Klickst du im Baum tiefer auf eine Aktivität, öffnet sich direkt die Aufgaben-Werkstatt: Dort arbeitest du die konkreten Inhalte aus (z. B. die Lückentext-Sätze), legst Mastervorlagen an und lässt dir KI-Klone generieren. Die Ansicht rechts folgt immer deiner Auswahl im Baum.',
       features: [
-        'Du formulierst pro Lernpaket die Lernziele („Ich kann …") inklusive schülergerechter Übersetzung',
-        'Du wählst pro Phase (Input · Übung · Abschluss) die passenden Aktivitäten aus dem Katalog',
-        'Du blendest Phasen, die du nicht brauchst, gezielt aus',
-        'Du gibst Aktivitäten frei – freigegebene Aktivitäten sind gesperrt und für den Export bereit',
+        'Lernpaket auswählen → Phasen konfigurieren, Aktivitäten aus dem Katalog zuordnen, Aufgabeneditor (KI) starten',
+        'Aktivität auswählen → konkrete Aufgabeninhalte befüllen und über die Vorschau in der Schüler-Ansicht prüfen',
+        'Mastervorlagen anlegen und daraus per KI Varianten (Klone) generieren — jeder Klon einzeln kontrollierbar',
+        'Freigabe an einem Ort: erst Aktivitäten/Master freigeben, dann das ganze Lernpaket',
+        'Schüler-Vorschau des gesamten Lernpakets direkt in der Paket-Ansicht',
       ],
       faqs: [
-        { question: 'Was ist der Unterschied zwischen Tab 3 und Tab 4?', answer: 'In Tab 3 entscheidest du, WELCHE Aktivitäten ein Lernpaket hat (z. B. „Lückentext" als Übungsform). In Tab 4 füllst du dann die konkreten Inhalte dieser Aktivität (z. B. die einzelnen Lückentext-Sätze und die richtigen Lösungen).' },
-        { question: 'Wann ist eine Aktivität „vollständig"?', answer: 'Sobald alle Pflichtfelder ausgefüllt sind, wird sie automatisch als vollständig markiert. Erst vollständige Aktivitäten kannst du freigeben.' },
-        { question: 'Was bedeutet das grüne Schloss neben einer Aktivität?', answer: 'Die Aktivität wurde von dir bewusst freigegeben. Sie ist damit gesperrt und kann nicht mehr versehentlich verändert werden. Wenn du doch noch etwas ändern willst, musst du die Freigabe erst aktiv zurückziehen.' },
+        { question: 'Wo ist der Unterschied zwischen Paket- und Aktivitäts-Ansicht?', answer: 'Im Lernpaket entscheidest du, WELCHE Aktivitäten es gibt (z. B. „Lückentext" als Übungsform). Klickst du im Baum auf eine Aktivität, füllst du deren konkrete Inhalte (z. B. die einzelnen Lückentext-Sätze mit Lösungen).' },
+        { question: 'Was ist eine Mastervorlage?', answer: 'Eine Muster-Aufgabe, die du einmal sauber baust (z. B. „Berechne den Flächeninhalt"). Aus dieser Vorlage erzeugt die KI dir auf Knopfdruck weitere strukturell identische Aufgaben mit anderen Zahlen oder Begriffen.' },
+        { question: 'Wann kann ich ein Lernpaket freigeben?', answer: 'Sobald alle aktiven Aktivitäten des Pakets freigegeben sind. Freigegebene Pakete sind gesperrt und tauchen im Freigabe-Cockpit für den Export auf.' },
+        { question: 'Was bedeutet das grüne Schloss?', answer: 'Das Element wurde bewusst freigegeben und ist gegen versehentliche Änderungen gesperrt. Wenn du doch noch etwas ändern willst, musst du die Freigabe erst aktiv zurückziehen.' },
+        { question: 'Was ist der Unterschied zu den allgemeinen Aufgaben (Ebene 2)?', answer: 'Die Aufgaben hier sind kurze, automatisch auswertbare Übungen direkt im Lernpaket. Die allgemeinen Aufgaben (Ebene 2) sind die größeren, offenen Transfer-Aufgaben, die vom KI-Tutor begleitet werden.' },
       ],
       docsSlug: 'lernpakete-aktivitaeten',
     },
   },
   {
-    value: 'aufgaben', label: 'Basisaufgaben erstellen', icon: Wand2, step: 5,
-    help: {
-      title: 'Konkrete Aufgaben (Ebene 1) — die Aufgaben-Werkstatt',
-      description: 'In diesem Tab ordnest du als Fachlehrkraft den einzelnen Aktivitäten aus dem vorherigen Tab die konkreten Aufgabeninhalte zu. Wenn du z. B. die Aktivität „Lückentext" gewählt hast, schreibst du hier die einzelnen Lückentext-Sätze – oder du lässt sie dir mithilfe einer Mastervorlage von der KI klonen. Über die integrierte Vorschau siehst du jederzeit, wie die Aufgabe später für die Schüler:innen aussieht. Diese Aufgaben werden später automatisch und unmittelbar in den Lernpaketen ausgewertet.',
-      features: [
-        'Du wählst links im Baum eine Aktivität und befüllst rechts deren konkrete Aufgabe',
-        'Du legst Mastervorlagen an, aus denen die KI dir auf Knopfdruck Varianten (Klone) generiert',
-        'Du kontrollierst und justierst jeden Klon einzeln, bevor er freigegeben wird',
-        'Über die Vorschau prüfst du pro Aufgabentyp (z. B. Lückentext, Zuordnung, Quiz) die Schüler-Ansicht, bevor du freigibst',
-        'Du gibst Aufgaben frei – freigegebene Aufgaben sind gesperrt und tauchen im Freigabe-Cockpit auf',
-      ],
-      faqs: [
-        { question: 'Was ist eine Mastervorlage?', answer: 'Eine Mastervorlage ist eine Muster-Aufgabe, die du einmal sauber baust (z. B. „Berechne den Flächeninhalt"). Aus dieser Vorlage erzeugt die KI dir dann auf Knopfdruck weitere strukturell identische Aufgaben mit anderen Zahlen oder Begriffen.' },
-        { question: 'Wozu dient die Vorschau?', answer: 'Über die Vorschau siehst du die Aufgabe genau so, wie sie später den Schüler:innen präsentiert wird – inklusive Interaktion (Lücken füllen, Begriffe zuordnen, Quiz beantworten). So erkennst du Fehler, bevor die Aufgabe freigegeben und exportiert wird.' },
-        { question: 'Wann kann ich eine Aufgabe freigeben?', answer: 'Sobald alle Pflichtfelder ausgefüllt sind, erscheint der „Freigeben"-Button. Freigegebene Aufgaben werden im Freigabe-Cockpit für den Export vorgemerkt.' },
-        { question: 'Was ist der Unterschied zu den allgemeinen Aufgaben (Ebene 2)?', answer: 'Ebene-1-Aufgaben hier sind kurze, automatisch auswertbare Übungen direkt im Lernpaket (Lückentext, Zuordnung, Quiz …). Die allgemeinen Aufgaben (Ebene 2) sind die größeren, offenen Transfer-Aufgaben, bei denen Schüler:innen selbstständig formulieren und vom KI-Tutor begleitet werden.' },
-      ],
-      docsSlug: 'ebene-1-basismodule',
-    },
-  },
-  {
-    value: 'ebene2', label: 'Allgemeine Aufgaben (Ebene 2)', icon: ClipboardList, step: 6,
+    value: 'ebene2', label: 'Allgemeine Aufgaben (Ebene 2)', icon: ClipboardList, step: 5,
     help: {
       title: 'Allgemeine Aufgaben (Ebene 2 – Transfer)',
       description: 'In diesem Tab erstellst du als Fachlehrkraft die allgemeinen Transfer-Aufgaben deiner Einheit (Ebene 2). Das sind die größeren, offenen Aufgaben, bei denen Schüler:innen das in den Lernpaketen Gelernte auf eine neue Situation anwenden müssen – z. B. eine Quelle analysieren, ein Diagramm auswerten oder eine kurze Erörterung schreiben. Begleitet werden sie dabei vom KI-Tutor Brian.study, den du in diesem Tab gleich mit konfigurierst. Beim Anlegen wählst du zunächst die Art der Aufgabe (Mission) – also welche Denkleistung im Vordergrund steht. Wenn dir die Idee fehlt, hilft dir die KI-Ideenbox mit passenden Vorschlägen für das jeweilige Themenfeld.',
@@ -150,7 +132,7 @@ const getVisibleTabs = (rolle, isBasismodul = false) => {
     },
   },
   {
-    value: 'ebene3', label: 'Anwendungs- & Projektaufgaben', icon: Target, step: 7,
+    value: 'ebene3', label: 'Anwendungs- & Projektaufgaben', icon: Target, step: 6,
     help: {
       title: 'Anwendungs- & Projektaufgaben (Ebene 3)',
       description: 'In diesem Tab erstellst du als Fachlehrkraft die anspruchsvollen Anwendungs- und Projektaufgaben (Ebene 3). Das sind die offenen, kreativen Aufgaben, bei denen deine Schüler:innen ein Produkt oder Projekt selbstständig planen und erstellen – z. B. ein Plakat, ein Podcast, eine Präsentation oder ein Portfolio. Da es hier keine eindeutige Musterlösung gibt, definierst du die Abgabeformate, Bewertungsrubriken und einen Projekt-Coach (KI-Tutor), der die Lernenden über mehrere Sitzungen begleitet.',
@@ -174,7 +156,7 @@ const getVisibleTabs = (rolle, isBasismodul = false) => {
     },
   },
   {
-    value: 'dashboards', label: 'Arbeitspläne (Lernpfade)', icon: Compass, step: 8,
+    value: 'dashboards', label: 'Arbeitspläne (Lernpfade)', icon: Compass, step: 7,
     help: {
       title: 'Arbeitspläne – Lernpfad-Architekt',
       description: 'In diesem Tab baust du als Fachlehrkraft die vier individuellen Lernpfade deiner Einheit – einen pro Intensitätsstufe (Minimalist · Pragmatiker · Ehrgeizig · Passioniert). Du arrangierst dabei die allgemeinen Aufgaben (Ebene 1/2) und Projektaufgaben (Ebene 3) sowie globale System-Bausteine (Lernlandkarte, Diagnose, Wissensspeicher …) zu klar strukturierten Sektoren. Ergebnis: Jede:r Lernende sieht später einen Arbeitsplan, der genau auf die gewählte Intensität zugeschnitten ist.',
@@ -198,7 +180,7 @@ const getVisibleTabs = (rolle, isBasismodul = false) => {
     },
   },
   {
-    value: 'cockpit', label: 'Freigabe-Cockpit (Moodle)', icon: CheckSquare, step: 9,
+    value: 'cockpit', label: 'Freigabe-Cockpit (Moodle)', icon: CheckSquare, step: 8,
     help: {
       title: 'Freigabe-Cockpit – Status auf einen Blick',
       description: 'Das Freigabe-Cockpit ist eine reine Informationsseite. Es zeigt dir den Zustand der gesamten Einheit auf einen Blick: Strukturboard, Einheits-Informationen, Lernpakete, allgemeine Aufgaben, Projektaufgaben und die vier Arbeitspläne – jeweils mit ihrem Lebenszyklus (Moodle-Sync) und Freigabestatus. Hier wird nichts bearbeitet und nichts exportiert; du erkennst nur sofort, welche Bestandteile fertig sind und welche noch Aufmerksamkeit brauchen. Der eigentliche Export findet im zentralen Export-Center (Hauptmenü) statt.',
@@ -240,7 +222,7 @@ const getVisibleTabs = (rolle, isBasismodul = false) => {
 // die Lehrkraft die Übertragung nach Brian.study selbst (händisch, mit
 // Anleitung und Kopier-Cockpit direkt im Workspace).
 const BRIAN_TAB = {
-  value: 'brian', label: 'Export (Moodle & Brian)', icon: Bot, step: 9,
+  value: 'brian', label: 'Export (Moodle & Brian)', icon: Bot, step: 8,
   help: {
     title: 'Export — Moodle-Einbindung & Brian-Übertragung',
     description: 'Der Exportbereich deiner privaten Einheit. Oben findest du die Schritt-für-Schritt-Anleitung, wie deine Einheit über den Einheiten-Code in deinen Moodle-Kurs kommt. Darunter überträgst du die KI-Tutor-Aufgaben deiner privaten Einheit nach Brian.study — händisch, aber komfortabel: Der Poolmanager bereitet für jede freigegebene Aufgabe die fertigen Brian-Segmente (Dialogname, Anweisung für Lernende, System-Anweisung, Completion-Rule) vor. Du kopierst sie per Knopfdruck in Brian, testest die Aufgabe und trägst die Brian-ID zurück ein — dann kann z. B. deine Moodle-Seite direkt auf die richtige Brian-Aufgabe verlinken.',
@@ -266,7 +248,7 @@ const BRIAN_TAB = {
 // Projekt-Aufgaben, keine Dashboards — aber MIT Freigabe-Cockpit, weil sie
 // kollaborativ gepflegt und über das Export-Center exportiert werden.
 // Die Steps werden für die Anzeige frisch von 1 durchnummeriert.
-const BASISMODUL_TAB_VALUES = ['einheit', 'struktur', 'lernziele', 'aktivitaeten', 'aufgaben', 'cockpit'];
+const BASISMODUL_TAB_VALUES = ['einheit', 'struktur', 'lernziele', 'lernpakete', 'cockpit'];
 
 export default function WorkspaceTabs({ activeTab, onTabChange, isBasismodul = false, istPrivat = false }) {
   const { rolle } = useRBAC();

@@ -9,6 +9,7 @@ import { StatusBadge, kategorieColors } from './SharedUI';
 import LernpaketLebenszyklusBadge from './LernpaketLebenszyklusBadge';
 import PhaseContent from './PhaseContent';
 import LernpaketWizardModal from '@/components/workspace/lernpaketWizard/LernpaketWizardModal';
+import LernpaketPreviewModal from '@/components/workspace/preview/LernpaketPreviewModal';
 
 
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
-  Lock, Plus, Edit, Trash2, Clock, AlertTriangle, PenLine, Loader2, ChevronRight, Menu, Target, Save, Wand2, ArrowRight, CheckCircle2
+  Lock, Plus, Edit, Trash2, Clock, AlertTriangle, PenLine, Loader2, ChevronRight, Menu, Target, Save, Wand2, ArrowRight, CheckCircle2, Eye
 } from 'lucide-react';
 import { useLernpaketReleaseReadiness } from '@/hooks/useCompleteness';
 import { useCanToggleLernpaketRelease } from '@/hooks/useReleaseLock';
@@ -47,6 +48,8 @@ export default function LernpaketPanel({
   // Lernpaket-Wizard (Tab 3, Konzept v0.4 §4.1). Nur sichtbar, solange
   // der Edit-Dialog offen ist UND der Nutzer den Lock hält.
   const [wizardOpen, setWizardOpen] = useState(false);
+  // Schüler-Vorschau des gesamten Pakets (aus Tab 5 hierher gewandert).
+  const [previewOpen, setPreviewOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: lernpaketAktivitaeten = [] } = useQuery({
@@ -63,11 +66,25 @@ export default function LernpaketPanel({
     queryFn: () => base44.entities.AktivitaetenKatalog.list(),
   });
 
+  // Master-Aufgaben — für die Schüler-Vorschau des gesamten Pakets.
+  const { data: alleMasters = [] } = useQuery({
+    queryKey: ['masterAufgaben'],
+    queryFn: () => base44.entities.MasterAufgabe.list(),
+  });
+
   const { canEdit, isLockedByOther, lockedByEmail, lockErrorMessage, isLoading: isLockLoading, acquireLock, releaseLock } = useLernpaketLock(paket.id);
   const [isAcquiringLock, setIsAcquiringLock] = useState(false);
 
   // Release-Logik für den kompakten Button in der Aktions-Leiste
   const paketAktivitaetenForRelease = lernpaketAktivitaeten.filter(a => a.lernpaket_id === paket.id);
+  // Freigabe-Bereitschaft: alle aktiven (nicht deaktivierten) Aktivitäten freigegeben?
+  const phasenCfgForRelease = paket.phasen_konfiguration || {};
+  const activeAktivitaetenForRelease = paketAktivitaetenForRelease.filter(
+    a => (phasenCfgForRelease[a.phase] || {}).disabled !== true
+  );
+  const canReleaseLernpaket =
+    activeAktivitaetenForRelease.length > 0 &&
+    activeAktivitaetenForRelease.every(a => a.content_status === 'approved');
   // Status-Badge: mit Aktivitäten berechnen, damit inhaltliche
   // Unvollständigkeit (is_complete=false) das Paket ehrlich rot zeigt.
   const pStatus = getLernpaketStatus(paket, paketZiele, aufgaben, userEmail, [], lernpaketAktivitaeten);
@@ -346,8 +363,19 @@ export default function LernpaketPanel({
           + Freigeben. Der Löschen-Button wurde absichtlich entfernt: das
           Löschen von Lernpaketen erfolgt zentral durch die Fachschaftsleitung
           im Strukturboard. */}
-      {kannBearbeiten && (
-        <div className="flex items-center justify-end gap-2 flex-wrap">
+      <div className="flex items-center justify-end gap-2 flex-wrap">
+        {/* Schüler-Vorschau des gesamten Lernpakets (aus Tab 5 übernommen) */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPreviewOpen(true)}
+          className="gap-2 border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100 hover:text-violet-900"
+          title="Das gesamte Lernpaket in der Schüler-Ansicht anzeigen"
+        >
+          <Eye className="w-3.5 h-3.5" /> Vorschau
+        </Button>
+        {kannBearbeiten && (
+          <>
           {canEdit ? (
             /* Im Bearbeitungsmodus: Button zum Speichern & Beenden */
             <>
@@ -398,17 +426,47 @@ export default function LernpaketPanel({
             Aufgabeneditor
           </Button>
 
-          {/* Freigabe-Button bewusst NICHT mehr hier: Die Freigabe von
-              Lernpaketen erfolgt zentral in Tab 5 (Ende der Werkbank-Reihe),
-              damit der Freigabe-Workflow an genau einer Stelle lebt. */}
+          {/* Freigabe des Lernpakets — im vereinten Lernpakete-Tab lebt der
+              Freigabe-Workflow direkt hier in der Paket-Ansicht. */}
+          {isReleased ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleLernpaketRelease(false)}
+              disabled={isReleasePending || !canToggleLernpaketRelease}
+              title={releaseLockTitle || 'Freigabe zurücknehmen'}
+              className="gap-2 bg-green-50 border-green-400 text-green-800 hover:bg-green-100"
+            >
+              {isReleasePending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Lock className="w-3.5 h-3.5" />}
+              Freigabe zurücknehmen
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => canReleaseLernpaket && canToggleLernpaketRelease && handleLernpaketRelease(true)}
+              disabled={!canReleaseLernpaket || !canToggleLernpaketRelease || isReleasePending || canEdit}
+              title={
+                releaseLockTitle ||
+                (!canReleaseLernpaket
+                  ? 'Lernpaket kann erst freigegeben werden, wenn alle Aktivitäten freigegeben sind.'
+                  : 'Lernpaket freigeben')
+              }
+              className="gap-2"
+            >
+              {isReleasePending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+              Lernpaket freigeben
+            </Button>
+          )}
 
           {isLockedByOther && (
             <span className="text-xs px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 font-medium">
               🔒 Gesperrt
             </span>
           )}
-        </div>
-      )}
+          </>
+        )}
+      </div>
       </div>
 
       {/* Aktivitäten-Phasen: Im Bearbeitungsmodus inline editierbar,
@@ -542,6 +600,26 @@ export default function LernpaketPanel({
         onClose={handleCloseWizard}
         paket={paket}
       />
+
+      <LernpaketPreviewModal
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        paket={paket}
+        aktivitaeten={paketAktivitaetenForRelease}
+        katalog={aktivitaetenKatalog}
+        masters={alleMasters}
+        lernziele={paketZiele}
+      />
+
+      {/* Bildschirm-Sperre während der Freigabe-Aktion (aus Tab 5 übernommen) */}
+      {isReleasePending && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/70 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3 px-6 py-5 rounded-xl bg-card border border-border shadow-lg">
+            <Loader2 className="w-7 h-7 animate-spin text-primary" />
+            <p className="text-sm font-medium text-foreground">Freigabe wird übernommen…</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
