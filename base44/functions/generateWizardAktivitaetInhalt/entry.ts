@@ -412,6 +412,29 @@ Deno.serve(async (req) => {
       ? ['Setze den unter umsetzungsplan_des_wizards beschriebenen inhaltlichen Plan genau um.']
       : [];
 
+    // ── Aufgabeneditor Etappe 3: Beschreibungs-Pflicht ───────────────
+    // Ohne inhaltliche Vorgabe der Lehrkraft wird nichts generiert.
+    const aufgabenbeschreibung = String(
+      wizardPlan?.idee || wizardPlan?.offen?.funktionsweise || wizardPlan?.offen?.lernziel || ''
+    ).trim();
+    if (!aufgabenbeschreibung) {
+      return Response.json({
+        success: false,
+        skipped: true,
+        reason: 'Keine Aufgabenbeschreibung vorhanden — bitte in der Übersicht ergänzen (was sollen die Schüler:innen machen?).',
+      });
+    }
+    kontext.aufgabenbeschreibung_der_lehrkraft = aufgabenbeschreibung;
+
+    // ── Etappe 3: An der Aktivität hinterlegte Materialien als Grundlage ──
+    const materialUrls = (Array.isArray(activity.material_urls) ? activity.material_urls : [])
+      .map((m) => String(m?.url || ''))
+      .filter((u) => u.startsWith('http'))
+      .slice(0, 10);
+    const materialRegeln = materialUrls.length > 0
+      ? ['Es sind Materialien der Lehrkraft angehängt (Dateien) — nutze sie als inhaltliche Grundlage und Vorlage für die Aufgabe.']
+      : [];
+
     // ═════════════════════════════════════════════════════════════════
     // Pfad A: Masterfähiger Typ → EINE MasterAufgabe anlegen
     // ═════════════════════════════════════════════════════════════════
@@ -445,11 +468,12 @@ Deno.serve(async (req) => {
             content: JSON.stringify({
               kontext,
               aktivitaet: aktivitaetInfo,
-              regeln: [...BASIS_REGELN, ...planRegeln, ...spez.regeln],
+              regeln: [...BASIS_REGELN, ...planRegeln, ...materialRegeln, ...spez.regeln],
             }),
           },
         ]),
         model: 'claude-sonnet-5',
+        ...(materialUrls.length > 0 ? { file_urls: materialUrls } : {}),
         response_json_schema: spez.schema,
       });
 
@@ -606,6 +630,7 @@ Deno.serve(async (req) => {
               regeln: [
                 ...BASIS_REGELN,
                 ...planRegeln,
+                ...materialRegeln,
                 ...(quelle
                   ? ['Beziehe Texte (z. B. Titel, Aufgabentext) konkret auf die unter gefundene_quelle angegebene Quelle.']
                   : []),
@@ -614,6 +639,7 @@ Deno.serve(async (req) => {
           },
         ]),
         model: 'claude-sonnet-5',
+        ...(materialUrls.length > 0 ? { file_urls: materialUrls } : {}),
         response_json_schema: responseSchema,
       });
 

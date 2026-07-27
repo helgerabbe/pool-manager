@@ -11,8 +11,9 @@ import React, { useRef, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
-import { Paperclip, Loader2, CheckCircle2, CircleDashed, MinusCircle, FileText, Layers } from 'lucide-react';
+import { Paperclip, Loader2, CheckCircle2, CircleDashed, MinusCircle, FileText, Layers, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import WizardBeschreibungEditor from './WizardBeschreibungEditor';
 
 const PHASE_ORDER = ['Input', 'Übung', 'Abschluss'];
 const PHASE_LABEL = { Input: '📚 Erarbeitung', 'Übung': '✏️ Übung', Abschluss: '🎯 Abschluss' };
@@ -64,6 +65,8 @@ export default function AufgabeneditorUebersicht({
   onChanged,
 }) {
   const [uploadingId, setUploadingId] = useState(null);
+  // Etappe 3: Aktivität, deren Aufgabenbeschreibung gerade bearbeitet wird.
+  const [editBeschreibungId, setEditBeschreibungId] = useState(null);
   const fileInputRef = useRef(null);
   const uploadTargetRef = useRef(null);
 
@@ -152,12 +155,22 @@ export default function AufgabeneditorUebersicht({
                         </p>
                       )}
                     </div>
-                    <div className="pt-0.5">
+                    <div className="pt-0.5 space-y-0.5">
                       <BoolZelle
                         ok={!!beschreibung}
                         titelJa="Aufgabenbeschreibung vorhanden"
                         titelNein="Keine Aufgabenbeschreibung — was sollen die Schüler:innen genau machen?"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setEditBeschreibungId(editBeschreibungId === a.id ? null : a.id)}
+                        disabled={disabled}
+                        className="inline-flex items-center gap-1 text-primary hover:underline disabled:opacity-50 text-[11px]"
+                        title="Aufgabenbeschreibung bearbeiten — Pflicht für die KI-Aufgabenerstellung"
+                      >
+                        <Pencil className="w-3 h-3" />
+                        {beschreibung ? 'bearbeiten' : 'ergänzen'}
+                      </button>
                     </div>
                     <div className="pt-0.5 flex items-center gap-1.5 flex-wrap">
                       {material.length > 0 && (
@@ -180,6 +193,17 @@ export default function AufgabeneditorUebersicht({
                     </div>
                     <div className="pt-0.5"><StatusBadge status={status} /></div>
                   </div>
+
+                  {editBeschreibungId === a.id && (
+                    <WizardBeschreibungEditor
+                      activity={a}
+                      disabled={disabled}
+                      onDone={(saved) => {
+                        setEditBeschreibungId(null);
+                        if (saved) onChanged?.();
+                      }}
+                    />
+                  )}
 
                   {/* Master-Aufgaben als eigene Zeilen */}
                   {istMasterfaehig && masters.map((m) => (

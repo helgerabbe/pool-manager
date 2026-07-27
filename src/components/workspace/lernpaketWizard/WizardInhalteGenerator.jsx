@@ -32,16 +32,21 @@ export default function WizardInhalteGenerator({ paket, aktivitaeten = [], katal
 
   if (leere.length === 0) return null;
 
+  // Etappe 3: Beschreibungs-Pflicht — ohne Aufgabenbeschreibung keine Generierung.
+  const hatBeschreibung = (a) =>
+    !!(a.ki_briefing?.idee || a.ki_briefing?.offen?.funktionsweise || a.ki_briefing?.offen?.lernziel);
+  const befuellbar = leere.filter(hatBeschreibung);
+
   const isSelected = (id) => selection[id] !== false;
-  const ausgewaehlte = leere.filter((a) => isSelected(a.id));
-  const alleAusgewaehlt = ausgewaehlte.length === leere.length;
+  const ausgewaehlte = befuellbar.filter((a) => isSelected(a.id));
+  const alleAusgewaehlt = befuellbar.length > 0 && ausgewaehlte.length === befuellbar.length;
 
   const toggleSelection = (id) =>
     setSelection((prev) => ({ ...prev, [id]: prev[id] === false }));
 
   const toggleAlle = () => {
     if (alleAusgewaehlt) {
-      setSelection(Object.fromEntries(leere.map((a) => [a.id, false])));
+      setSelection(Object.fromEntries(befuellbar.map((a) => [a.id, false])));
     } else {
       setSelection({});
     }
@@ -103,7 +108,7 @@ export default function WizardInhalteGenerator({ paket, aktivitaeten = [], katal
     <div className="rounded-md border border-violet-200 bg-violet-50/50 px-3 py-2.5 space-y-2 text-xs">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <p className="font-semibold text-foreground">
-          Inhalte für leere Aktivitäten generieren — {ausgewaehlte.length} von {leere.length} ausgewählt
+          Inhalte für leere Aktivitäten generieren — {ausgewaehlte.length} von {befuellbar.length} ausgewählt
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -132,21 +137,23 @@ export default function WizardInhalteGenerator({ paket, aktivitaeten = [], katal
       <div className="space-y-1">
         {leere.map((a) => {
           const s = statuses[a.id];
+          const beschreibbar = hatBeschreibung(a);
           return (
             <div
               key={a.id}
-              onClick={() => !isRunning && !disabled && toggleSelection(a.id)}
+              onClick={() => beschreibbar && !isRunning && !disabled && toggleSelection(a.id)}
               className={cn(
-                'flex items-start gap-2 px-2 py-1 rounded border bg-background cursor-pointer select-none',
+                'flex items-start gap-2 px-2 py-1 rounded border bg-background select-none',
+                beschreibbar ? 'cursor-pointer' : 'cursor-not-allowed',
                 s?.state === 'error' ? 'border-destructive/40' : 'border-border',
-                !isSelected(a.id) && 'opacity-50'
+                (!beschreibbar || !isSelected(a.id)) && 'opacity-50'
               )}
             >
               <Checkbox
-                checked={isSelected(a.id)}
+                checked={beschreibbar && isSelected(a.id)}
                 onCheckedChange={() => toggleSelection(a.id)}
                 onClick={(e) => e.stopPropagation()}
-                disabled={isRunning || disabled}
+                disabled={isRunning || disabled || !beschreibbar}
                 className="shrink-0 mt-0.5 h-3.5 w-3.5"
               />
               <span className="shrink-0 mt-0.5">{statusIcon(s)}</span>
@@ -154,11 +161,20 @@ export default function WizardInhalteGenerator({ paket, aktivitaeten = [], katal
               <div className="flex-1 min-w-0">
                 <span className="font-medium text-foreground">{katalogById.get(a.aktivitaet_id) || 'Unbekannte Aktivität'}</span>
                 {(() => {
-                  const idee = a.ki_briefing?.idee || a.ki_briefing?.offen?.lernziel;
+                  const idee = a.ki_briefing?.idee || a.ki_briefing?.offen?.funktionsweise || a.ki_briefing?.offen?.lernziel;
                   return idee ? (
                     <p className="text-[11px] text-muted-foreground leading-snug">💡 {idee}</p>
-                  ) : null;
+                  ) : (
+                    <p className="text-[11px] text-amber-700 leading-snug">
+                      ⚠️ Beschreibung fehlt — bitte oben in der Übersicht ergänzen.
+                    </p>
+                  );
                 })()}
+                {Array.isArray(a.material_urls) && a.material_urls.length > 0 && (
+                  <p className="text-[11px] text-muted-foreground leading-snug">
+                    📎 {a.material_urls.length} Material{a.material_urls.length !== 1 ? 'ien' : ''} wird berücksichtigt
+                  </p>
+                )}
                 {s?.message && (
                   <p className="text-[11px] text-muted-foreground leading-snug">{s.message}</p>
                 )}
@@ -169,10 +185,11 @@ export default function WizardInhalteGenerator({ paket, aktivitaeten = [], katal
       </div>
 
       <p className="text-muted-foreground leading-snug">
-        Die KI befüllt nur leere Aktivitäten — mit Inhalt oder freigegeben bleibt unangetastet. Für Video- und
-        Link-Aktivitäten recherchiert die KI passende Quellen im Internet (bevorzugt Studyflix) und prüft, ob der
-        Link wirklich existiert. Nur Aktivitäten mit Datei-/Bild-Pflichtfeldern werden übersprungen. Alles bleibt
-        im Entwurfs-Status.
+        Die KI befüllt nur leere Aktivitäten — mit Inhalt oder freigegeben bleibt unangetastet. Voraussetzung ist
+        eine Aufgabenbeschreibung (oben in der Übersicht ergänzbar); an der Aktivität hinterlegtes Material wird
+        als inhaltliche Grundlage berücksichtigt. Für Video- und Link-Aktivitäten recherchiert die KI passende
+        Quellen im Internet (bevorzugt Studyflix) und prüft, ob der Link wirklich existiert. Nur Aktivitäten mit
+        Datei-/Bild-Pflichtfeldern werden übersprungen. Alles bleibt im Entwurfs-Status.
       </p>
     </div>
   );
